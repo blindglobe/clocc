@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.4 2000/05/12 18:17:23 sds Exp $
+;;; $Id: base.lisp,v 2.5 2000/06/02 18:25:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,8 @@
 (in-package :cllib)
 
 (setf (logical-pathname-translations "cllib")
-      `(("**;*" ,(logical-pathname "clocc:src;cllib;**;*"))))
+      `(("**;*" ,(logical-pathname "clocc:src;cllib;**;*"))
+        ("**;*.*" ,(logical-pathname "clocc:src;cllib;**;*.*"))))
 
 (defcustom *datadir* pathname
   (merge-pathnames "data/" (user-homedir-pathname))

@@ -2,6 +2,34 @@
 
 Changes:
 
+Mar 6, 2002
+-----------
+
+We weren't handling things like
+
+   write(*, '(78a1)') a
+
+very well because the 78a1 was basically converted into a single ~A.
+This caused a lot of need consing and was not correct for mpfun.
+
+So, what we do now is rewrite that as
+
+         write(*, 9000000) a
+9000000  format(78a1)
+
+where the statement number is so large that it can't possibly be a
+real statement number.
+
+This helps printing in mpfun's mpout routine tremendously.  Of course,
+we could have just hacked the Fortran function directly, but it's
+legal Fortran so we should handle it correctly.
+
+Feb (late), 2002
+------------
+
+Some of the macros we use don't pprint very well, so add a pretty
+printer for them.
+
 Feb 16, 2002
 ------------
 
@@ -25,7 +53,7 @@ arrays.  All other arrays can still be declared as simple-arrays.
 This change cut the run time of MPFUN by half (from about 12 to 6
 sec).  CMUCL also printed out many notes about using generic
 arithmetic array indices.  We've wrapped all these index calculations
-in fref with (the fixnum ...).  This cuts the time frob 6 sec to about
+in fref with (the fixnum ...).  This cuts the time from 6 sec to about
 3.2 sec.  Not bad!
 
 I think the only thing left that we can do to speed up mpfun is to
@@ -42,9 +70,9 @@ Fortran.  Had to tweak a couple for Fortran routines to prevent f2cl
 from slicing an array that shouldn't have been, and f2cl didn't
 correctly convert some write/format statements.
 
-I think this is caused array-slicing that we do which has displaced
-arrays to displaced arrays to displaced arrays....  Chasing down the
-data is expensive.  How to solve this:
+I think this is caused by the array-slicing that we do which has
+displaced arrays to displaced arrays to displaced arrays....  Chasing
+down the data is expensive.  How to solve this:
 
 1. Copy the arrays to new arrays, call the function, then copy the
    data back.  The function can now use simple-arrays for speed, but

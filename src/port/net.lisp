@@ -8,43 +8,8 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.9 2000/03/29 15:32:51 sds Exp $
+;;; $Id: net.lisp,v 1.10 2000/04/03 21:33:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
-;;; $Log: net.lisp,v $
-;;; Revision 1.9  2000/03/29 15:32:51  sds
-;;; cannot use `call-next-method' in `define-condition' :report.
-;;; (report-network-condition): new function
-;;; (network, timeout): use it
-;;;
-;;; Revision 1.8  2000/03/28 18:24:45  sds
-;;; (servent): new defstruct
-;;; (socket-service-port): return it
-;;;
-;;; Revision 1.7  2000/03/28 18:02:31  sds
-;;; (resolve-host-ipaddr): in clisp, it's `addrtype'
-;;;
-;;; Revision 1.6  2000/03/08 20:51:40  sds
-;;; (socket-server-host, socket-server-port): exported
-;;;
-;;; Revision 1.5  2000/03/07 20:28:00  sds
-;;; (socket-server-host, socket-server-port): new functions
-;;; (socket-host, socket-accept): fixed for CMUCL
-;;;
-;;; Revision 1.4  2000/03/03 22:01:03  sds
-;;; fixed provide statements
-;;;
-;;; Revision 1.3  2000/02/18 21:16:45  sds
-;;; in-package :port now; make system works
-;;;
-;;; Revision 1.2  2000/02/10 17:55:50  sds
-;;; (hostent): new defstruct
-;;; (resolve-host-ipaddr): return a `hostent' instance
-;;; instead of multiple values.
-;;;
-;;; Revision 1.1  1999/11/24 17:07:09  sds
-;;; Cross-implementation Portability System
-;;;
-;;;
 
 (eval-when (compile load eval)
   (require :ext (translate-logical-pathname "clocc:src;port;ext"))
@@ -197,7 +162,10 @@
 (defun socket-accept (serv &optional bin)
   "Accept a connection on a socket server (passive socket)."
   (declare (type socket-server serv) (values socket))
-  #+allegro (socket:accept-connection serv)
+  #+allegro (let ((sock (socket:accept-connection serv :wait t)))
+              (socket:set-socket-format sock
+                                        (if bin :binary :text))
+              sock)
   #+clisp (lisp:socket-accept serv :element-type
                               (if bin '(unsigned-byte 8) 'character))
   #+cmu (progn

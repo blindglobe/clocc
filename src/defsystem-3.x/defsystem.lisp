@@ -1107,7 +1107,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "v3.0 14-MAR-95"
+(defparameter *defsystem-version* "3.2 Interim, 2000-03-15"
   "Current version number/date for Defsystem.")
 
 ;;; ********************************

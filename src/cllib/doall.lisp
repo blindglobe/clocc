@@ -1,11 +1,11 @@
-;;; File: <doall.lisp - 2000-02-18 Fri 11:43:39 EST sds@ksp.com>
-;;;
 ;;; run a function, answering questions in a pre-defined way,
 ;;; possibly under monitor.
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: doall.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: doall.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/doall.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,13 +1,10 @@
 ;;; Prompt
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold.
-;;; This is open-source software.
-;;; GNU General Public License v.2 (GPL2) is applicable:
-;;; No warranty; you may copy/modify/redistribute under the same
-;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and the precise copyright document.
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.2 2000/03/23 02:38:44 sds Exp $
+;;; $Id: prompt.lisp,v 2.3 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)

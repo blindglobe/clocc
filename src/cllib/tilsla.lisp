@@ -1,10 +1,10 @@
-;;; File: <tilsla.lisp - 2000-02-17 Thu 19:35:16 EST sds@ksp.com>
-;;;
 ;;; Stuff for the format ~// instruction
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tilsla.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: tilsla.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tilsla.lisp,v $
 
 (eval-when (compile load eval)

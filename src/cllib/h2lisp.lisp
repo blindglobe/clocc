@@ -1,11 +1,12 @@
 ;#!/usr/bin/clisp -M ~sds/bin/clisp.mem -C
-;;; File: <h2lisp.lisp - 2000-02-18 Fri 14:08:59 EST sds@ksp.com>
 ;;;
 ;;; Convert *.c to CLISP's ffi
 ;;;
 ;;; Copyright (C) 1999-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,8 +1,10 @@
 ;;; Stuff for Type-optimizations and declarations
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: withtype.lisp,v 1.2 2000/03/23 04:58:57 sds Exp $
+;;; $Id: withtype.lisp,v 1.3 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/withtype.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,10 +1,10 @@
-;;; File: <laser.lisp - 2000-02-18 Fri 12:59:36 EST sds@ksp.com>
-;;;
 ;;; hardcopy printing
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: laser.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: laser.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/laser.lisp,v $
 
 (eval-when (compile load eval)

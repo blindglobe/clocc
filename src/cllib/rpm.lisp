@@ -1,15 +1,12 @@
-;;; File: <rpm.lisp - 2000-02-18 Fri 13:08:09 EST sds@ksp.com>
+;;; RPM updates
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
-;;; This is open-source software.
-;;; GNU General Public License v.2 (GPL2) is applicable:
-;;; No warranty; you may copy/modify/redistribute under the same
-;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and the precise copyright document.
+;;;
+;;; $Id: rpm.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `url' - generic function

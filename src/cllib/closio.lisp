@@ -1,13 +1,12 @@
-;;; File: <closio.lisp - 2000-03-01 Wed 14:56:04 EST sds@ksp.com>
-;;;
 ;;; Read/Write CLOS objects
-;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
-;;;
-;;; Load this file and your CLOS objects will be printeed with #[] format;
+;;; Load this file and you will be able to print CLOS objects with #[] format,
 ;;; bind `*readtable*' to `*clos-readtable*' and `read' will read #[]
 ;;;
-;;; $Id: closio.lisp,v 1.2 2000/03/01 20:10:35 sds Exp $
+;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
+;;;
+;;; $Id: closio.lisp,v 1.3 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)

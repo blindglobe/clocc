@@ -1,17 +1,12 @@
-;;; File: <gq.lisp - 2000-02-18 Fri 12:59:38 EST sds@ksp.com>
-;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
 ;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold.
-;;; This is open-source software.
-;;; GNU General Public License v.2 (GPL2) is applicable:
-;;; No warranty; you may copy/modify/redistribute under the same
-;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and the precise copyright document.
+;;; This is Free Software, covered by the GNU GPL (v2)
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.2 2000/03/23 15:45:57 sds Exp $
+;;; $Id: gq.lisp,v 2.3 2000/03/27 20:02:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)

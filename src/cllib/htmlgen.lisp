@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.5 2000/03/24 00:17:23 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.6 2000/05/19 19:11:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -54,6 +54,9 @@
                                   base comment (title "untitled") (footer t)
                                   head)
                             &body body)
+  "Create an `html-stream-out' stream out of STREAM, bind it to VAR.
+Two local macros are defined inside this one - `with-tag' and `with-tagl'.
+Both print a tag but the second one does not do a `terpri' afterwards."
   (with-gensyms ("HTML-" raw mailto)
     `(let ((,raw ,stream)
            (,mailto (concatenate 'string "mailto:" *user-mail-address*)))
@@ -81,13 +84,14 @@
               (with-tag (:title) (princ ,title ,var)))
             (with-tag (:body)
               ,@body
-              (when ,footer
-                (with-tag (:p)
-                  (with-tag (:hr))
-                  (with-tag (:address)
-                    (with-tag (:a :href ,mailto)
-                      (princ *user-mail-address* ,var)))
-                  (with-tagl (:strong) (current-time ,var)))))))))))
+              ,(when footer
+                     `(when ,footer
+                       (with-tag (:p)
+                         (with-tag (:hr))
+                         (with-tag (:address)
+                           (with-tag (:a :href ,mailto)
+                             (princ *user-mail-address* ,var)))
+                         (with-tagl (:strong) (current-time ,var))))))))))))
 
 ;;;
 ;;; this is an example on how to use `with-open-html' and `with-tag'.

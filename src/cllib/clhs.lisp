@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.5 2003/01/08 19:02:41 sds Exp $
+;;; $Id: clhs.lisp,v 3.6 2005/01/27 18:02:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,6 +17,8 @@
   (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `with-timing'
   (require :cllib-log (translate-logical-pathname "cllib:log"))
+  ;; `xmlize-string'
+  (require :cllib-xml (translate-logical-pathname "cllib:xml"))
   ;; `html-translate-specials'
   (require :cllib-html (translate-logical-pathname "cllib:html")))
 
@@ -57,6 +59,7 @@
 (defstruct clhs-version
   (name (required-argument))
   (sym-tab (required-argument) :type string) ; file in Data/ symbol->file
+  (iss-tab (required-argument) :type string) ; file in Data/ issue->file
   (any (required-argument) :type string) ; "any" file prefix: choice
   (fun (required-argument) :type list) ; FUNCTION prefixes
   (mac (required-argument) :type list) ; MACRO prefixes
@@ -71,18 +74,20 @@
 (defcustom *clhs-version-table* list
   (list (make-clhs-version
          :name :long :sym-tab "Symbol-Table.text" :any "any"
+         :iss-tab "Issue-Cross-Refs.text"
          :doc "stagenfun_doc_umentationcp.html"
          :fun '("acc" "fun" "locfun" "stagenfun")
          :spe '("sym" "spefor" "speope") :mac '("locmac" "mac")
          :typ '("cla" "contyp" "syscla" "typ" "typspe")
          :var '( "convar" "var") :dec '("dec") :res '("res") :glo '("glo"))
         (make-clhs-version
-         :name :short :sym-tab "Map_Sym.txt" :any "a"
+         :name :short :sym-tab "Map_Sym.txt" :any "a" :iss-tab "Map_IssX.txt"
          :doc "f_docume.htm" :fun '("f") :mac '("m") :spe '( "s")
          :typ '("t" "e") :var '("v") :dec '("d") :res '("r") :glo '("26")))
   "*The list of known CLHS versions.")
 
 (defparameter *clhs-alist* nil)
+(defparameter *clhs-issues* nil)
 (defparameter *clhs-version* nil)
 
 (defun clhs-read-map (map root old-path ver err)
@@ -112,6 +117,13 @@
                 :collect (subseq line pos1 pos2))))
      (mesg :log err "~s~%" rec)))
 
+(defun clhs-read-issues (root err)
+  (declare (type url root))
+  (with-open-url (map root :err err)
+    (case (url-prot root) ((:http :www) (flush-http map)))
+    (loop :for iss = (read-line map nil nil) :for file = (read-line map nil nil)
+      :while (and iss file) :collect (list iss (subseq file #.(length ".."))))))
+
 (defcustom *clhs-hashtable* (or null hash-table) nil
   "The hashtable for the CL symbols.")
 
@@ -124,8 +136,7 @@
     ;; check all versions one by one
     (let ((old-path (url-path root)))
       (setf (url-path root)
-            (concatenate 'string (url-path root) "Data/"
-                         (clhs-version-sym-tab ver)))
+            (concatenate 'string old-path "Data/" (clhs-version-sym-tab ver)))
       (mesg :log err "~& *** ~s~%" root)
       (unwind-protect           ; restore the PATH of ROOT
            (handler-case        ; ignore file opening errors
@@ -134,6 +145,11 @@
                  (setf *clhs-version* ver
                        *clhs-alist* (clhs-read-map map root old-path ver err))
                  (mesg :log err "~&read ~:d symbol~:p" (length *clhs-alist*))
+                 (setf (url-path root)
+                       (concatenate 'string old-path "Data/"
+                                    (clhs-version-iss-tab ver))
+                       *clhs-issues* (clhs-read-issues root err))
+                 (mesg :log err "~&read ~:d issue~:p" (length *clhs-issues*))
                  (return *clhs-version*))
              ((or code login net-path file-error) (co)
                ;; ignore the file opening errors
@@ -159,19 +175,13 @@
                                ("-" . "subt") ("1+" . "pl1") ("1-" . "su1"))
                              :test #'string=))
                  (string-downcase name)))
-        (xml-name name)
+        (xml-name (xmlize-string name))
         (type (subseq html 0 (position #\_ html :test #'char=)))
         (font "function")
         (ent-tab '((">=" . "-geq") ("<=" . "-leq") ("/=" . "-neq")
-                   ("=" . "-eq") (">" . "-grt") ("<" . "-lst")))
-        (xml-tab '(("&" . "&amp;") ; & must come first!
-                   (">=" . "&gt;=") ("<=" . "&lt;=")
-                   (">" . "&gt;") ("<" . "&lt;"))))
+                   ("=" . "-eq") (">" . "-grt") ("<" . "-lst"))))
     (dolist (re ent-tab)
       (setq ent (substitute-subseq ent (car re) (cdr re) :test #'char=)))
-    (dolist (re xml-tab)
-      (setq xml-name (substitute-subseq xml-name (car re) (cdr re)
-                                        :test #'char=)))
     (flet ((type-is (what)
              (let ((li (slot-value *clhs-version* what)))
                (if (stringp li) (string= li type)
@@ -228,13 +238,21 @@
       (force-output)
       (format str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>~%
 <!-- generated by `~s' -->~2%" 'clhs-write-entities)
-      (let ((count 0))
+      (let ((count-e 0) (count-i 0))
         (dolist (el *clhs-alist*)
           (dolist (html (cdr el))
-            (incf count)
+            (incf count-e)
             (clhs-write-entity (car el) html str)))
-        (format t "done [~:d entit~:@p] [~:d byte~:p]"
-                count (file-length str))))))
+        (format str "~%<!-- issues -->~%")
+        (dolist (il *clhs-issues*)
+          (incf count-i)
+          (let ((path (second il)))
+            (format str "<!ENTITY ~A \"<ulink url='&clhs;~A'>~A</ulink>\">~%"
+                    (subseq path (1+ (position #\/ path :from-end t))
+                            (position #\. path :from-end t))
+                    path (xmlize-string (first il)))))
+        (format t "done [~:d entit~:@p, ~:d issue~:p] [~:d byte~:p]"
+                count-e count-i (file-length str))))))
 
 (defun clhs-doc (symb &key (out *standard-output*) (root *clhs-root*))
   "Dump the CLHS doc for the symbol."

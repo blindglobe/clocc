@@ -322,14 +322,14 @@
 	     (args (second fcn))
 	     (decl `(function ,(get-upgraded-fun-arg-type args) ,type)))
 	(cond ((member fname *subprog_stmt_fns*)
-	       (push `(ftype ,decl ,fname) stmt-fcns))
+	       (push `(declare (ftype ,decl ,fname)) stmt-fcns))
 	      ((member fname arglist)
-	       (push `(type ,decl ,fname) arg-fcns))
+	       (push `(declare (type ,decl ,fname)) arg-fcns))
 	      (t
-	       (push `(ftype ,decl ,fname) other-fcns)))))
-    (values `((declare ,@(nreverse stmt-fcns)))
-	    `((declare ,@(nreverse other-fcns)))
-	    `((declare ,@(nreverse arg-fcns))))))
+	       (push `(declare (ftype ,decl ,fname)) other-fcns)))))
+    (values (nreverse stmt-fcns)
+	    (nreverse other-fcns)
+	    (nreverse arg-fcns))))
 
 ;; Given the program list P, look through it and try to convert all
 ;; occurrences of f2cl/ with either / or TRUNCATE.  We use TRUNCATE if

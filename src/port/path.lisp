@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.2 2001/11/09 21:22:57 sds Exp $
+;;; $Id: path.lisp,v 1.3 2002/01/22 18:37:45 stig Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -71,11 +71,11 @@ but there is a TYPE slot, move TYPE into NAME."
   "The default directory."
   #+allegro (excl:current-directory)
   #+clisp (#+lisp=cl ext:default-directory #-lisp=cl lisp:default-directory)
-  #+cmucl (ext:default-directory)
+  #+cmu (ext:default-directory)
   #+cormanlisp (ccl:get-current-directory)
   #+lispworks (hcl:get-working-directory)
   #+lucid (lcl:working-directory)
-  #-(or allegro clisp cmucl cormanlisp lispworks lucid) (truename "."))
+  #-(or allegro clisp cmu cormanlisp lispworks lucid) (truename "."))
 
 (defun chdir (dir)
   #+allegro (excl:chdir dir)

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.14 2004/12/23 16:42:30 sds Exp $
+;;; $Id: matrix.lisp,v 2.15 2004/12/23 16:47:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -29,6 +29,7 @@
           matrix-multiply array-copy array-lin-comb dimension
           matrix-id matrix-id-p matrix-transpose matrix-symmetric-p bilinear
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
+          matrix-solve-lup matrix-lup
           matrix-solve matrix-inverse))
 (import '(matrix-print) :cl-user) ; format ~//
 
@@ -286,34 +287,109 @@ The optional third argument is the place where to put the return value."
     (error 'dimension :proc 'matrix-solve :args
            (list (array-dimensions aa) (array-dimensions bb)))))
 
-(defun matrix-solve-lower (aa bb &optional diag1)
+(defun permuted-aref (vec ii permutation)
+  (aref vec (if permutation (aref permutation ii) ii)))
+(defun (setf permuted-aref) (value vec ii permutation)
+  (setf (aref vec (if permutation (aref permutation ii) ii)) value))
+
+(macrolet ((aref-bb (ii)
+             `(permuted-aref bb ,ii permutation)))
+(defun matrix-solve-lower (aa bb diag1 &optional permutation)
   "Solve Ax=b, put the result in b.
 A is assumed to be a lower-triangular matrix."
   (declare (type (array * (* *)) aa) (type (array * (*)) bb))
   (mx-solve-check aa bb)
   (loop :with nn :of-type index-t = (1- (array-dimension aa 0))
     :for ii :of-type index-t :from 0 :to nn :do
-    (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
+    (unless diag1 (divf (aref-bb ii) (aref aa ii ii)))
     (loop :for jj :of-type index-t :from (1+ ii) :to nn :do
-      (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
+      (decf (aref-bb jj) (* (aref aa jj ii) (aref-bb ii))))
     :finally (return bb)))
 
-(defun matrix-solve-upper (aa bb &optional diag1)
+(defun matrix-solve-upper (aa bb diag1 &optional permutation)
   "Solve Ax=b, put the result in b.
 A is assumed to be an upper-triangular matrix."
   (declare (type (array * (* *)) aa) (type (array * (*)) bb))
   (mx-solve-check aa bb)
   (loop :with nn :of-type index-t = (1- (array-dimension aa 0))
     :for ii :of-type index-t :downfrom nn :to 1 :do
-    (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
+    (unless diag1 (divf (aref-bb ii) (aref aa ii ii)))
     (loop :for jj :of-type index-t :downfrom (1- ii) :to 1 :do
-      (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
+      (decf (aref-bb jj) (* (aref aa jj ii) (aref-bb ii))))
     :finally (return bb)))
+)
+(defsubst mx-swap-rows (mx ii jj)
+  (loop :for kk :of-type index-t :from 0 :below (array-dimension mx 1) :do
+    (rotatef (aref mx ii kk) (aref mx jj kk))))
+
+(defsubst mx-swap-cols (mx ii jj)
+  (loop :for kk :of-type index-t :from 0 :below (array-dimension mx 0) :do
+    (rotatef (aref mx kk ii) (aref mx kk jj))))
+
+(defun mx-row-pivots (mx)
+  "return the vector of row pivots"
+  (let* ((size (array-dimension mx 0))
+         (pivots (make-array size)))
+    (loop :for ii :from 0 :below size
+      :for pivot = (loop :for jj :from 0 :below (array-dimension mx 1)
+                     :maximize (abs (aref mx ii jj)))
+      :do (when (zerop pivot)
+            (error 'division-by-zero :operation 'mx-row-pivots
+                   :operands (list mx)))
+      (setf (aref pivots ii) (/ pivot)))
+    pivots))
+
+(defun mx-lu-sum (mx ii jj)
+  "compute the intermediate sum for LU decomposition"
+  (loop :for kk :of-type index-t :from 0 :below (min ii jj)
+    :sum (* (aref mx ii kk) (aref mx kk jj))))
+
+(defun matrix-lup (mx)
+  "LUP decomposition for MX
+Numerical Recipies 2.3
+return the row permutation vector."
+  (unless (and (= 2 (array-rank mx))
+               (= (array-dimension mx 0) (array-dimension mx 1)))
+    (error 'dimension :proc 'matrix-lup :args
+           (list (array-rank mx) (array-dimensions mx))))
+  (let* ((size (array-dimension mx 0))
+         (pivots (mx-row-pivots mx)) (permutations (make-array size)))
+    (loop :for ii :of-type index-t :from 0 :below size
+      :do (setf (aref permutations ii) ii))
+    (loop :for jj :of-type index-t :from 0 :below size
+      :and max = 0 :and imax = 0 :do
+      (loop :for ii :of-type index-t :from 0 :below jj :do
+        (decf (aref mx ii jj) (mx-lu-sum mx ii jj)))
+      (loop :for ii :of-type index-t :from jj :below size
+        :for here = (* (aref pivots ii)
+                       (abs (decf (aref mx ii jj) (mx-lu-sum mx ii jj))))
+        :do (when (< max here) (setq max here imax ii)))
+      (when (zerop max)
+        (error 'division-by-zero :operation 'mx-row-pivots :operands (list mx)))
+      (unless (= jj imax)       ; must swap rows
+        (mx-swap-rows mx jj imax)
+        (rotatef (aref pivots jj) (aref pivots imax)))
+      (rotatef (aref permutations imax) (aref permutations jj))
+      (when (zerop (aref mx jj jj))
+        (error 'division-by-zero :operation 'matrix-lup :operands (list mx)))
+      (unless (= (1+ jj) size)
+        (loop :with scale = (/ (aref mx jj jj))
+          :for ii :of-type index-t :from (1+ jj) :below size :do
+          (mulf (aref mx ii jj) scale))))
+    (values permutations mx)))
+
+(defun matrix-solve-lup (mx bb)
+  "solve Mx=b in-place"
+  (let ((permutation (matrix-lup mx)))
+    (matrix-solve-upper mx bb  t  permutation)
+    (matrix-solve-lower mx bb nil permutation)))
 
 (defun matrix-lu (mx lu)
   "Decompose the matrix MX into Lower*Upper.
 The diagonal elements of the upper-triangular part are 1.
 MX and LU can be the same matrix.
+If one of the principal minors of MX is 0, `matrix-lu'
+ will signal the `division-by-zero' error.
 See Horn/Johnson 'Matrix Analysis' 3.5.2."
   (declare (type (array * (* *)) mx lu))
   (unless (and (= 2 (array-rank mx) (array-rank lu))
@@ -321,19 +397,16 @@ See Horn/Johnson 'Matrix Analysis' 3.5.2."
                (= (array-dimension mx 0) (array-dimension mx 1)))
     (error 'dimension :proc 'matrix-lu :args
            (list (array-dimensions mx) (array-dimensions lu))))
-  (let ((nn (1- (array-dimension mx 0))))
-    (flet ((lu-sum (ii jj)
-             (loop :for kk :of-type index-t :downfrom (1- (min ii jj)) :to 0
-               :sum (* (aref lu ii kk) (aref lu kk jj)))))
-      (loop :for ii :of-type index-t :from 0 :to nn :do
-        (loop :for jj :of-type index-t :from ii :to nn
+  (let ((size (array-dimension mx 0)))
+    (loop :for ii :of-type index-t :from 0 :below size :do
+      (loop :for jj :of-type index-t :from ii :below size
           :do (setf (aref lu jj ii)
-                    (- (aref mx jj ii) (lu-sum jj ii))))
-        (loop :for jj :of-type index-t :from (1+ ii) :to nn
+                  (- (aref mx jj ii) (mx-lu-sum lu jj ii))))
+      (loop :for jj :of-type index-t :from (1+ ii) :below size
           :do (setf (aref lu ii jj)
-                    (/ (- (aref mx ii jj) (lu-sum ii jj))
+                  (/ (- (aref mx ii jj) (mx-lu-sum lu ii jj))
                        (aref lu ii ii))))
-        :finally (return lu)))))
+      :finally (return lu))))
 
 (defun matrix-solve-lu (mx bb &optional (lu mx) (xx bb))
   "Solve the linear system Ax=b.
@@ -354,18 +427,6 @@ If one of the principal minors of A is 0, `matrix-solve-lu'
 ;;;
 ;;; matrix inversion
 ;;;
-
-(defsubst mx-swap-rows (mx nn ii jj)
-  (declare (type simple-array mx) (type index-t nn ii jj))
-  (dotimes (kk nn)
-    (declare (type index-t kk))
-    (rotatef (aref mx ii kk) (aref mx jj kk))))
-
-(defsubst mx-swap-cols (mx nn ii jj)
-  (declare (type simple-array mx) (type index-t nn ii jj))
-  (dotimes (kk nn)
-    (declare (type index-t kk))
-    (rotatef (aref mx kk ii) (aref mx kk jj))))
 
 (defun matrix-inverse (mx)
   "Invert the matrix in-place.

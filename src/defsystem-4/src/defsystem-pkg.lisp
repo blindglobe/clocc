@@ -12,16 +12,14 @@
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (unless (find-package "CL.ENV")
     (error "MK:DEFSYSTEM requires the package CL.ENVIRONMENT to run.~@
-            You can find it in the CLOCC at http://www.sourceforge.net."))
+            You can find it in the CLOCC at~@
+            <http://sourceforge.net/projects/clocc>."))
 
   (unless (find-package "CL.EXT.FILESYSTEM")
     (error "MK:DEFSYSTEM requires the package CL.EXT.FILESYSTEM to run.~@
             It should have been distributed with MK:DEFSYSTEM (check ~@
             file named `adjoin-dirs'.)"))
   )
-
-
-(pushnew :mk-defsystem-4 *features*)
 
 
 ;;;===========================================================================
@@ -37,7 +35,7 @@
 ;;; operation.
 
 (defpackage "MAKE-4" (:use "COMMON-LISP")
-  (:nicknames "MK4")
+  (:nicknames "MK4" "mk4" "make-4")
   ;; (:nicknames "MK" "make")           ; Commented for the time being.
   ;; (:nicknames "MA")			; Ok. I could do this, but it
 					; would make the system messier!
@@ -45,52 +43,49 @@
 
   (:import-from "CL.EXT.FILESYSTEM" "ADJOIN-DIRECTORIES")
   
-  (:export "AFS-BINARY-DIRECTORY"	; Do I still need these?
-	   "AFS-SOURCE-DIRECTORY")
-
-  (:export "DEFSYSTEM"
-	   "FIND-SYSTEM"
-	   "COMPILE-SYSTEM"
-	   "LOAD-SYSTEM"
-	   "UNDEFSYSTEM"
-	   "DEFINED-SYSTEMS"
-	   "DESCRIBE-SYSTEM"
-	   "CLEAN-SYSTEM"
-	   "EDIT-SYSTEM"
-	   "HARDCOPY-SYSTEM"
-	   "OPERATE-ON-SYSTEM"
-	   "OOS"
-	   "FILES-IN-SYSTEM"
-	   "GET-COMPONENT"
-	   "EXECUTE-ACTION"
-  	   )
-
-  (:export "*CENTRAL-REGISTRY*"
-	   "*BIN-SUBDIR*"
-	   "MACHINE-TYPE-TRANSLATION"
-	   "SOFTWARE-TYPE-TRANSLATION"
-	   "COMPILER-TYPE-TRANSLATION"
-	   ;; "REQUIRE"
-	   "ALLEGRO-MAKE-SYSTEM-FASL"
-	   "FILES-WHICH-NEED-COMPILATION"
-	   "SYSTEM-SOURCE-SIZE" "MAKE-SYSTEM-TAG-TABLE"
-	   "*DEFSYSTEM-VERSION*"
-	   "*COMPILE-DURING-LOAD*"
-	   "*MINIMAL-LOAD*"
-	   "*DONT-REDEFINE-REQUIRE*"
-	   "*FILES-MISSING-IS-AN-ERROR*"
-	   "*RELOAD-SYSTEMS-FROM-DISK*"
-	   "*SOURCE-PATHNAME-DEFAULT*"
-	   "*BINARY-PATHNAME-DEFAULT*"
-	   "*MULTIPLE-LISP-SUPPORT*"
+  (:export #:afs-binary-directory	; Do I still need these?
+	   #:afs-source-directory
 	   )
 
-  (:export "DEFINE-LANGUAGE"
-	   "SAVE-WORKING-IMAGE")
+  (:export #:defsystem
+	   #:find-system
+	   #:compile-system
+	   #:load-system
+	   #:undefsystem
+	   #:defined-systems
+	   #:describe-system
+	   #:clean-system
+	   #:edit-system
+	   #:hardcopy-system
+	   #:operate-on-system
+	   #:oos
+	   #:files-in-system
+	   #:get-component
+	   #:execute-action
+  	   )
+
+  (:export #:*central-registry*
+	   #:*bin-subdir*
+	   #:machine-type-translation
+	   #:software-type-translation
+	   #:compiler-type-translation
+	   ;; #:require
+	   #:allegro-make-system-fasl
+	   #:files-which-need-compilation
+	   #:system-source-size #:make-system-tag-table
+	   #:*defsystem-version*
+	   #:*compile-during-load*
+	   #:*minimal-load*
+	   #:*dont-redefine-require*
+	   #:*files-missing-is-an-error*
+	   #:*reload-systems-from-disk*
+	   #:*source-pathname-default*
+	   #:*binary-pathname-default*
+	   #:*multiple-lisp-support*
+	   )
+
+  (:export #:define-language
+	   #:save-working-image)
   )
-
-;;;---------------------------------------------------------------------------
-;;; Extra package related settings.
-
 
 ;;; end of file -- defsystem-pkg.lisp --

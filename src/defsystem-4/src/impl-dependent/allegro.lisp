@@ -11,7 +11,7 @@
 			   (output nil)
 			   (error-output nil)
 			   &allow-other-keys)
-  (excl:run-shell-program (format nil
+  (excl:run-shell-command (format nil
 				  "~A~@[~{ ~A~}~]"
 				  program arguments)
 			  :wait t

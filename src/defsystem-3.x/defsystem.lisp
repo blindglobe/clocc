@@ -2559,6 +2559,14 @@ D
 	    (when parent
 	      (component-compile-only parent))))
 
+    ;; Set up :compiler-options attribute
+    (unless (find :compiler-options definition-body)
+      ;; If the :compiler-option attribute wasn't specified,
+      ;; inherit it from the parent.  If no parent, default it to NIL.
+      (setf (component-compiler-options component)
+	    (when parent
+	      (component-compiler-options parent))))
+
     #|| ISI Extension ||#
     ;; Set up :load-always attribute
     (unless (find :load-always definition-body)

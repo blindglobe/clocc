@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.4 2000/04/04 17:50:52 sds Exp $
+;;; $Id: xml.lisp,v 2.5 2000/04/04 21:43:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,7 +21,7 @@
 
 (in-package :cllib)
 
-(export '(xml-read-from-file))
+(export '(*xml-readtable* with-xml-input with-xml-file xml-read-from-file))
 
 ;;;
 ;;; Entities
@@ -55,7 +55,8 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
           data (if (symbolp type) (read stream) type))
     (check-type data string)
     (setf def (cond ((eq type 'xml-tags::system)
-                     (lambda ()
+                     (lambda (&optional junk)
+                       (declare (ignore junk))
                        (let ((str (handler-case
                                       (open (merge-pathnames
                                              data (xml-path stream))
@@ -68,12 +69,14 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
                                  data (file-length str))
                          str)))
                     ((eq type 'xml-tags::cdata)
-                     (lambda () (make-string-input-stream data)))
+                     (lambda (&optional string)
+                       (if string data (make-string-input-stream data))))
                     ((symbolp type)
                      (error "~s[~a]: not implemented: type: ~s data: ~s"
                             'xml-read-entity stream type data))
                     ((setq data (nsubstitute #\" #\' data))
-                     (lambda () (make-string-input-stream data)))))
+                     (lambda (&optional string)
+                       (if string data (make-string-input-stream data))))))
     ;; finish reading - till #\>
     (xml-read-text stream #\> :clean nil) (read-char stream)
     (multiple-value-bind (val fp) (gethash ent ht)
@@ -83,18 +86,17 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
     (setf (gethash ent ht) def)
     ent))
 
-(defun xml-entity (ent hash type &key (proc 'xml-entity))
+(defun xml-entity (ent hash type &key (proc 'xml-entity) string)
   "Find the entity in the hash table."
   (multiple-value-bind (val fp) (gethash ent hash)
     (unless fp
       (warn "[~s]: ~c entity ~s undefined" proc type ent))
     (typecase val
-      (function (funcall val))
+      (function (funcall val string))
       (null "??")
       (t (error 'code :proc proc :args (list type ent val) :mesg
                 "~c entity ~s was defined as ~s" )))))
 
-#||
 (defun xml-expand-entities (string &key (start 0) end)
   "Substitute the expansions of all the entities in the string."
   (substitute-subseq-if
@@ -103,11 +105,9 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
    (lambda (seq beg fin) (1+ (position #\; seq :start beg :end fin)))
    (lambda (seq beg fin type)
      (declare (ignore type))
-     (xml-entity (subseq seq (1+ beg) (1- fin))
-      ;;; (intern (string-upcase (subseq seq (1+ beg) (1- fin))) *xml-pack*)
-                 *xml-amp* #\& :proc 'xml-expand-entities))
+     (xml-entity (subseq seq (1+ beg) (1- fin)) *xml-amp* #\&
+                 :proc 'xml-expand-entities :string t))
    :start start :end end))
-||#
 
 ;;;
 ;;; XML objects
@@ -134,8 +134,8 @@ the second is `file size' (including tags)."
      (do ((fs (reduce #'+ (xmlo-attribs obj)
                       :key (lambda (att)
                              (+ (length (symbol-name (car att)))
-                                (length (cadr att)) 5))
-                      :initial-value
+                                (length (cadr att)) 4)) ; space=""
+                      :initial-value ; <></>
                       (+ 5 (* 2 (length (symbol-name (xmlo-name obj)))))))
           (ts 0) (dl (xmlo-data obj) (cdr dl)))
          ((null dl) (values ts fs))
@@ -148,12 +148,26 @@ the second is `file size' (including tags)."
   "*Set to non-NIL to print XML-OBJ for XML parsing.
 Note that the Unicode characters will NOT be printed as &#nnnn;.")
 
+(defun xml-ascii-p (char) (> 256 (char-code char)))
+
+(defun xml-de-uunicode (string)
+  "Replace the unicode characters with &#NNNN;"
+  (substitute-subseq-if
+   string
+   (lambda (str beg end)
+     (position-if (complement #'xml-ascii-p) str :start beg :end end))
+   (lambda (str beg end) (declare (ignore str end)) (1+ beg))
+   (lambda (str beg end type)
+     (declare (ignore end type))
+     (format nil "&#~d;" (char-code (char str beg))))))
+
 (defmethod print-object ((xml xml-obj) (out stream))
-  (cond (*print-readably* (call-next-method))
-        (*xml-print-xml*
-         (format out "<~a~:{ ~a=~s~}>~:*~:[~;~%~]~{~a~^~%~}</~a>"
-                 (xmlo-name xml) (xmlo-attribs xml) (xmlo-data xml)
-                 (xmlo-name xml)))
+  (cond (*xml-print-xml*
+         (format out "<~a~:{ ~a=~s~}>" (xmlo-name xml) (xmlo-attribs xml))
+         (dolist (dd (xmlo-data xml))
+           (princ (typecase dd (string (xml-de-uunicode dd)) (t dd)) out))
+         (format out "</~a>" (xmlo-name xml)))
+        (*print-readably* (call-next-method))
         ((print-unreadable-object (xml out :type t :identity t)
            (multiple-value-bind (ts fs) (xml-size xml)
              (format out "~a [~:{~a=~s~^ ~}] ~:d object~:p ~:d/~:d chars"
@@ -176,6 +190,10 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
     (t (error 'case-error :proc 'xml-push :args
               (list 'new new 'xml-obj 'string 'xml-comment 'cons)))))
 
+;;;
+;;; XML streams
+;;;
+
 (defclass xml-stream-in (fundamental-character-input-stream)
   ((input :initarg :stream :initarg :input :type stream :accessor xmlis-st)
    (all-streams :type list :accessor xmlis-all)
@@ -185,17 +203,20 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
             "nil - outside comment, t - inside, 1 - inside, one `-' read"))
   (:documentation "The input stream for reading XML."))
 
+(defsubst stream-length (st)
+  "A safe wrap around for `file-stream'."
+  (typecase st (file-stream (file-length st)) (t 0)))
+
 (defmethod initialize-instance :after ((str xml-stream-in) &rest junk)
   (declare (ignore junk))
-  (if (typep (xmlis-st str) 'concatenated-stream)
-      (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str))
-            (xmlis-size str)
-            (reduce #'+ (concatenated-stream-streams (xmlis-st str)) :key
-                    (lambda (st)
-                      (typecase st (file-stream (file-length st)) (t 0)))))
-      (setf (xmlis-all str) (list (xmlis-st str))
-            (xmlis-size str) (file-length (xmlis-st str))
-            (xmlis-st str) (make-concatenated-stream (xmlis-st str)))))
+  (cond ((typep (xmlis-st str) 'concatenated-stream)
+         (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str))
+               (xmlis-size str)
+               (reduce #'+ (concatenated-stream-streams (xmlis-st str))
+                       :key #'stream-length)))
+        ((setf (xmlis-all str) (list (xmlis-st str))
+               (xmlis-st str) (make-concatenated-stream (xmlis-st str))
+               (xmlis-size str) (stream-length (xmlis-st str))))))
 
 (defmethod stream-read-char ((in xml-stream-in))
   (read-char (xmlis-st in) nil :eof))
@@ -229,14 +250,13 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
 ;;; Reading
 ;;;
 
-(defun xml-trim-key (symbol)
-  (intern (string-right-trim "=;" (symbol-name symbol)) *xml-pack*))
-
 (defun xml-obj-from-list (list)
   (make-xml-obj
    :name (car list) :attribs
    (loop :for xx :on (cdr list) :by #'cddr
-         :collect (list (xml-trim-key (car xx)) (cadr xx)))))
+         :collect (list (intern (string-right-trim "=" (symbol-name (car xx)))
+                                *xml-pack*)
+                        (xml-expand-entities (cadr xx))))))
 
 (defun compress-whitespace (list &optional ends)
   "Replace internal whitespace with #\\Space
@@ -336,7 +356,10 @@ the first character to be read is #\T"
     ((#\& #\%)
      (let* ((ent (xml-read-text stream #\;))
             (str (if (and (char= #\& char) (char= #\# (char ent 0)))
-                     (string (code-char (parse-integer ent :start 1)))
+                     (let ((code (parse-integer ent :start 1)))
+                       (if (< code char-code-limit)
+                           (string (code-char code))
+                           (concatenate 'string "&" ent)))
                      (xml-entity ent (case char
                                        (#\& *xml-amp*) (#\% *xml-per*))
                                  char :proc 'read-xml))))
@@ -353,9 +376,12 @@ the first character to be read is #\T"
                                               (eof-p st))
                                      (close st)))
                                  (xmlis-all stream))))
-          (when (typep str 'file-stream)
-            (incf (xmlis-size stream) (file-length str)))
+          (incf (xmlis-size stream) (stream-length str))
           (read stream t nil t)))))))
+
+;;;
+;;; UI
+;;;
 
 (defun make-xml-readtable ()
   (let ((rt (copy-readtable)))
@@ -373,24 +399,32 @@ the first character to be read is #\T"
 (defcustom *xml-readtable* readtable (make-xml-readtable)
   "The readtable for XML parsing.")
 
+(defmacro with-xml-input ((var stream) &body body)
+  "Open the XML stream, evaluate the forms, make sure the stream is closed."
+  `(with-open-stream (,var (make-instance 'xml-stream-in :input ,stream))
+    (let ((*readtable* (make-xml-readtable))) ,@body)))
+
+(defmacro with-xml-file ((var file &key reset-ent) &body body)
+  "Open the XML stream to file."
+  (with-gensyms ("WXMLI-" bt bt1)
+    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)))
+      (when ,reset-ent (xml-init-entities))
+      (with-xml-input (,var (open ,file :direction :input))
+        (format t "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
+         file (file-length (car (xmlis-all ,var))))
+        (force-output)
+        (let ((*readtable* (make-xml-readtable)))
+          (prog1 (progn ,@body)
+            (format
+             t "done [entities(%/&): ~:d/~:d] [bytes: ~:d] [time: ~a/~a]~%"
+             (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
+             (xmlis-size ,var) (elapsed-1 ,bt t) (elapsed-1 ,bt1 nil))))))))
+
 (defun xml-read-from-file (file &key (reset-ent t))
   "Read all XML objects from the file."
-  (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
-    (when reset-ent (xml-init-entities))
-    (with-open-stream (str (make-instance
-                            'xml-stream-in :input
-                            (open file :direction :input)))
-      (format t "~&~s: `~a' [~:d bytes]..." 'xml-read-from-file
-              file (file-length (car (xmlis-all str))))
-      (force-output)
-      (let ((*readtable* (make-xml-readtable)))
-        (prog1 (loop :for obj = (read str nil +eof+)
-                     :while (not (eq obj +eof+))
-                     :collect obj)
-          (format
-           t "done [entities(%/&): ~:d/~:d] [bytes: ~:d] [time: ~a/~a]~%"
-           (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
-           (xmlis-size str) (elapsed-1 bt t) (elapsed-1 bt1 nil)))))))
+  (with-xml-file (str file :reset-ent reset-ent)
+    (loop :for obj = (read str nil +eof+)
+          :while (not (eq obj +eof+)) :collect obj)))
 
 (provide :xml)
 ;;; file xml.lisp ends here

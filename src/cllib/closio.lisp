@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.8 2000/05/19 19:35:19 sds Exp $
+;;; $Id: closio.lisp,v 1.9 2000/06/14 16:26:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,12 +56,14 @@
 ;;;
 
 (defmethod print-object ((obj standard-object) (out stream))
-  (let ((cl (class-of obj)))
-    (format out "#[~s" (class-name cl))
-    (dolist (slot (class-slot-list cl nil))
-      (when (slot-boundp obj slot)
-        (format out " ~s ~s" slot (slot-value obj slot))))
-    (write-string "]" out)))
+  (if *print-readably*
+      (let ((cl (class-of obj)))
+        (format out "#[~s" (class-name cl))
+        (dolist (slot (class-slot-list cl nil))
+          (when (slot-boundp obj slot)
+            (format out " ~s ~s" slot (slot-value obj slot))))
+        (write-string "]" out))
+      (call-next-method)))
 
 ;;;
 ;;; }}}{{{ macroexpand-r

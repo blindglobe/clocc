@@ -1,6 +1,6 @@
       SUBROUTINE FJACS(X,QR,LENQR,PIVOT)
-C     INTEGER LENQR,N,PIVOT(N+2)
-C     DOUBLE PRECISION QR(LENQR),X(N)
+      INTEGER LENQR,N,PIVOT(N+2)
+      DOUBLE PRECISION QR(LENQR),X(N)
 C
 C Evaluate the N x N symmetric Jacobian matrix of F(X) at X, and return
 C the result in packed skyline storage format in QR.  LENQR is the length

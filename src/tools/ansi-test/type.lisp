@@ -515,11 +515,11 @@ nil
  (subtypep 'signed-byte 'integer) t)
 
 (check-for-bug :type-added-1
-  (type-of (coerce (list 1 2 3 4) '(simple-array (unsigned-byte 8))))
+  (type-of (coerce (list 1 2 3 4) '(simple-array (unsigned-byte 8) (*))))
   (simple-array (unsigned-byte 8) (4)))
 
 (check-for-bug :type-added-2
-  (type-of (coerce (list 1 2 3 4) '(simple-array *)))
+  (type-of (coerce (list 1 2 3 4) '(simple-array * (*))))
   (simple-vector 4))
 
 (check-for-bug :type-added-3

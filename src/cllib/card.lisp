@@ -1,12 +1,29 @@
-;;; File: <card.lisp - 1999-04-20 Tue 19:39:43 EDT sds@eho.eaglets.com>
+;;; File: <card.lisp - 1999-04-22 Thu 18:33:23 EDT sds@eho.eaglets.com>
 ;;;
-;;; Personal Database  - Rolodex (BBDB, VCARD)
+;;; Personal Database - Rolodex (BBDB, VCARD)
+;;; Relevant URLs:
+;;;  http://pweb.netcom.com/~simmonmt/bbdb/index.html
+;;;  http://www.jwz.org/bbdb/
+;;;  http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html
+;;;  http://www.imc.org/pdi
 ;;;
 ;;; Copyright (C) 1999 by Sam Steingold
+;;; This is open-source software.
+;;; GNU General Public License v.2 (GPL2) is applicable:
+;;; No warranty; you may copy/modify/redistribute under the same
+;;; conditions with the source code. See <URL:http://www.gnu.org>
+;;; for details and precise copyright document.
 ;;;
-;;; $Id: card.lisp,v 1.2 1999/04/20 23:39:58 sds Exp $
+;;; $Id: card.lisp,v 1.3 1999/04/22 22:38:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 ;;; $Log: card.lisp,v $
+;;; Revision 1.3  1999/04/22 22:38:09  sds
+;;; Added relevant URLs.
+;;; (card-print-as-vcard): fixed `tz' printing.
+;;; (name-print-as-vcard): fixed slot order.
+;;; (address-print-as-vcard): fixed `street3'.
+;;; (card-read-vcard): new function; can read vCard files now.
+;;;
 ;;; Revision 1.2  1999/04/20 23:39:58  sds
 ;;; BBDB input and all output methods work now.
 ;;; (card-output): slots contain symbols, not functions.
@@ -36,6 +53,7 @@
 ;;; {{{Definitions
 ;;;
 
+(eval-when (load compile eval)
 (defclass name ()
   ((first :type simple-string :initarg first :accessor name-first
           :documentation "the first name")
@@ -45,7 +63,7 @@
          :documentation "the last name")
    (prefix :type simple-string :initarg prefix :accessor name-prefix
            :documentation "the prefix (like `PhD')")
-   (suffix :type simple-string :initarg sufffix :accessor name-suffix
+   (suffix :type simple-string :initarg suffix :accessor name-suffix
             :documentation "the suffix (like `VII')")
    (aka :type cons :initarg aka :accessor name-aka
         :documentation "the list of aliases"))
@@ -110,6 +128,7 @@
    (timestamp :type (integer 0) :initarg timestamp :accessor card-timestamp
               :documentation "The last modification time."))
   (:documentation "The personal information record."))
+)
 
 (defun slot-val (obj slot &optional default)
   (or (when (slot-boundp obj slot) (slot-value obj slot)) default))
@@ -125,10 +144,10 @@
   (declare (type card cc) (simple-string nm))
   (dolist (slot (class-slot-list cc))
     (when (slot-boundp cc slot)
-      (typecase (slot-value cc slot)
-        (string (when (search nm (slot-value cc slot)) (return t)))
-        (standard-object
-         (when (object-match-p (slot-value cc slot) nm) (return t)))))))
+      (let ((val (slot-value cc slot)))
+        (typecase val
+          (standard-object (when (object-match-p val nm) (return t)))
+          (string (when (search nm val) (return t))))))))
 
 (defun find-card (nm &optional (cards *user-cards*))
   "Return the list of cards matching NM."
@@ -139,6 +158,14 @@
 ;;;
 ;;; }}}{{{Output
 ;;;
+
+(eval-when (load compile eval)
+(defstruct card-output
+  (card nil :type symbol)
+  (name nil :type symbol)
+  (phone nil :type symbol)
+  (address nil :type symbol))
+)
 
 (defcustom *card-output-type* (or null card-output) nil
   "The type of output for CARD.
@@ -151,16 +178,15 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   "*The path to the user's BBDB file.")
 
 (defcustom *user-vcard-file* pathname
-  (merge-pathnames (make-pathname :directory '(:relative ".Gnome")
+  (merge-pathnames (make-pathname :directory '(:relative ".gnome")
                                   :name "GnomeCard.gcrd")
                    (user-homedir-pathname))
   "*The path to the user's BBDB file.")
 
-(defstruct card-output
-  (card nil :type symbol)
-  (name nil :type symbol)
-  (phone nil :type symbol)
-  (address nil :type symbol))
+(defcustom *user-native-file* pathname
+  (merge-pathnames (make-pathname :name ".rolodex")
+                   (user-homedir-pathname))
+  "*The path to the user's native data file.")
 
 (defconst +card-output-bbdb+ card-output
   (make-card-output :card 'card-print-as-bbdb
@@ -218,16 +244,16 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 (defun card-print-as-vcard (cc out)
   (declare (type card cc) (stream out))
   (format out "~&BEGIN:VCARD~%FN:~a~%~@[N:~a~%~]~{ADR:~a~%~}~{TEL:~a~%~}~
-~{EMAIL:~a~%~}~{URL:~a~%~}~@[TITLE:~a~%~]~@[ORG:~a~%~]~@[TZ:~a~%~]~
-~@[NOTE:~a~%~]"
+~{EMAIL:~a~%~}~{URL:~a~%~}~@[TITLE:~a~%~]~@[ORG:~a~%~]~@[NOTE:~a~%~]"
           (card-label cc) (slot-val cc 'name) (slot-val cc 'addrl)
           (slot-val cc 'phonel) (slot-val cc 'emaill) (slot-val cc 'urll)
-          (slot-val cc 'title) (slot-val cc 'org) (slot-val cc 'tz)
-          (slot-val cc 'note))
+          (slot-val cc 'title) (slot-val cc 'org) (slot-val cc 'note))
+  (when (slot-boundp cc 'tz)
+    (format out "TZ:~@/pr-secs/~%" (* 3600 (card-tz cc))))
   (when (slot-boundp cc 'geo)
     (format out "GEO:~f:~f~%"
             (realpart (card-geo cc)) (imagpart (card-geo cc))))
-  (format out "REV:~a~%CRE~a~%~@[CLASS:~a~%~]END:VCARD~%"
+  (format out "REV:~a~%CRE:~a~%~@[CLASS:~a~%~]END:VCARD~%"
           (time2string (card-timestamp cc)) (time2string (card-created cc))
           (slot-val cc 'security)))
 
@@ -251,8 +277,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 (defun name-print-as-vcard (nm out)
   (declare (type name nm) (stream out))
   (format out "~@[~a~];~@[~a~];~@[~a~];~@[~a~];~@[~a~]"
-          (slot-val nm 'prefix) (slot-val nm 'first) (slot-val nm 'ini)
-          (slot-val nm 'last) (slot-val nm 'suffix)))
+          (slot-val nm 'last) (slot-val nm 'first) (slot-val nm 'ini)
+          (slot-val nm 'prefix) (slot-val nm 'suffix)))
 
 (defun name-print-as-pretty (nm out)
   (declare (type name nm) (stream out))
@@ -284,7 +310,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   (declare (type address adrs) (stream out))
   (format out "~a:~a;~a;~a;~a;~a;~a;~a"
           (slot-val adrs 'loc "") (slot-val adrs 'street1 "")
-          (slot-val adrs 'street2 "") (slot-val adrs 'street2 "")
+          (slot-val adrs 'street2 "") (slot-val adrs 'street3 "")
           (slot-val adrs 'city "") (slot-val adrs 'state "")
           (slot-val adrs 'zip "") (slot-val adrs 'country "")))
 
@@ -297,12 +323,11 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
    (slot-val adrs 'city) (slot-val adrs 'state)
    (slot-val adrs 'zip) (slot-val adrs 'country)))
 
-(defmacro define-print-method (cla)
-  `(defmethod print-object ((cc ,cla) (out stream))
+(defmacro define-print-method (cs)
+  `(defmethod print-object ((cc ,cs) (out stream))
     (cond ((or *print-readably* (null *card-output-type*)) (call-next-method))
           ((card-output-p *card-output-type*)
-           (funcall (fdefinition (slot-value *card-output-type* ',cla))
-                    cc out))
+           (funcall (fdefinition (slot-value *card-output-type* ',cs)) cc out))
           (t (error 'code :proc 'print-object :args (list *card-output-type*)
                     :mesg "Illegal value of `*card-output-type*': `~s'")))))
 
@@ -314,7 +339,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 (defun init-sans-null-args (obj list)
   "(a 10 b nil c 1 d nil) --> (a 10 c 1)"
   (loop :for arg :in list :by #'cddr :and val :in (cdr list) :by #'cddr
-        :do (when val (setf (slot-value obj arg) val))))
+        :when val :do (setf (slot-value obj arg) val)))
 
 ;; has to be here since it uses `+card-output-pretty+'
 (defmethod initialize-instance ((cc card) &rest args)
@@ -326,9 +351,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
             (format nil "~@[~a ~]<~@[~a~]>" (slot-val cc 'name)
                     (car (slot-val cc 'emaill))))))
   ;; init `timestamp' and `created' from `get-universal-time'
-  (let ((tm (get-universal-time)))
-    (unless (slot-boundp cc 'timestamp) (setf (card-timestamp cc) tm))
-    (unless (slot-boundp cc 'created) (setf (card-created cc) tm)))
+  (unless (and (slot-boundp cc 'timestamp) (slot-boundp cc 'created))
+    (let ((tm (get-universal-time)))
+      (unless (slot-boundp cc 'timestamp) (setf (card-timestamp cc) tm))
+      (unless (slot-boundp cc 'created) (setf (card-created cc) tm))))
   ;; init `tz' from `geo'
   (when (and (slot-boundp cc 'geo) (not (slot-boundp cc 'tz)))
     (setf (card-tz cc) (round (realpart (card-geo cc)) 15)))
@@ -354,22 +380,27 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   (when (slot-boundp nn 'first)
     (let* ((fi (name-first nn)) (len (length fi)))
       (declare (simple-string fi))
+      ;; init `prefix' from `first'
       (unless (slot-boundp nn 'prefix)
         (dolist (st *card-apellations*)
+          (declare (simple-string st))
           (when (string-beg-with st fi len)
             (setf (name-prefix nn) st
                   fi (string-left-trim +whitespace+ (subseq fi (length st)))
                   (name-first nn) fi)
             (return))))
+      ;; init `ini' from `first'
       (unless (slot-boundp nn 'ini)
         (let ((pos (position #\Space fi :from-end t)))
           (when pos
             (setf (name-ini nn) (subseq fi (1+ pos))
                   (name-first nn) (subseq fi 0 pos)))))))
+  ;; init `suffix' from `last'
   (when (and (slot-boundp nn 'last) (not (slot-boundp nn 'suffix)))
     (let* ((la (name-last nn)) (len (length la)))
       (declare (simple-string la))
       (dolist (st *card-suffixes*)
+        (declare (simple-string st))
         (when (string-end-with st la len)
           (setf (name-suffix nn) st
                 (name-last nn)
@@ -401,7 +432,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   (declare (simple-vector vec) (values address))
   (let ((ad (make-instance 'address 'loc (aref vec 0))))
     (macrolet ((putslot (nn slot)
-                 `(unless (zerop (length (aref vec ,nn)))
+                 `(unless (zerop (length (the simple-string (aref vec ,nn))))
                    (setf (slot-value ad ',slot) (aref vec ,nn)))))
       (putslot 1 street1)
       (putslot 2 street2)
@@ -447,25 +478,103 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
       (format t "~& *** [vector-to-card] Broken on~%~s~%" ra)
       (error co))))
 
+(defun card-read-vcard (in ra)
+  "Read CARD from a vCard stream.  Suitable for `read-list-from-file'."
+  (declare (stream in) (ignore ra))
+  (macrolet ((pushslot (val obj slot)
+               `(if (slot-boundp ,obj ',slot)
+                 (push ,val (slot-value ,obj ',slot))
+                 (setf (slot-value ,obj ',slot) (list ,val)))))
+    (loop :with cc :of-type card = (make-instance 'card)
+          :for str :of-type (or null simple-string) = (read-line in nil nil)
+          :for len :of-type index-t = (length str)
+          :while (and str (not (string= str "END:VCARD")))
+          :do
+          (cond ((string-beg-with "FN:" str len)
+                 (setf (card-label cc) (subseq str 3)))
+                ((string-beg-with "N:" str len)
+                 (let ((ll (split-string (subseq str 2) ";" :strict t)))
+                   (setf (card-name cc)
+                         (make-instance
+                          'name 'last (first ll) 'first (second ll)
+                          'ini (third ll) 'prefix (fourth ll)
+                          'suffix (fifth ll)))))
+                ((string-beg-with "ADR;" str len)
+                 (let ((ll (split-string (subseq str 4) ":;" :strict t)))
+                   (pushslot
+                    (make-instance 'address 'loc (first ll)
+                                   'street1 (second ll)
+                                   'street2 (third ll) 'street3 (fourth ll)
+                                   'city (fifth ll)
+                                   'state (sixth ll) 'zip (seventh ll)
+                                   'country (eighth ll))
+                    cc addrl)))
+                ((string-beg-with "TEL;" str len)
+                 (let ((pos (position #\: str :start 4)))
+                   (declare (type index-t pos))
+                   (pushslot (make-instance 'phone 'loc (subseq str 4 pos)
+                                            'nmb (subseq str (1+ pos)))
+                             cc phonel)))
+                ((string-beg-with "EMAIL;" str len)
+                 (pushslot (subseq str (1+ (position #\: str :start 6)))
+                           cc emaill))
+                ((string-beg-with "TZ:" str len)
+                 (let ((ll (split-string (subseq str 3) ":")))
+                   (setf (card-tz cc)
+                         (+ (parse-integer (first ll))
+                            (/ (parse-integer (second ll)) 60)
+                            (if (cddr ll)
+                                (/ (parse-integer (third ll)) 3600) 0)))))
+
+                ((string-beg-with "URL:" str len)
+                 (pushslot (url (subseq str 4)) cc urll))
+                ((string-beg-with "ORG:" str len)
+                 (setf (card-org cc) (subseq str 4)))
+                ((string-beg-with "TITLE:" str len)
+                 (setf (card-title cc) (subseq str 6)))
+                ((string-beg-with "NOTE:" str len)
+                 (setf (card-note cc) (subseq str 5)))
+                (t (format t " *** UNKNOWN: ~s~%" str)))
+          :finally (dolist (slot '(addrl urll emaill phonel))
+                     (when (slot-boundp cc slot)
+                       (setf (slot-value cc slot)
+                             (nreverse (slot-value cc slot)))))
+          :finally (loop :for str = (read-line in nil +eof+)
+                         :until (or (eq str +eof+) (string= str "BEGIN:VCARD"))
+                         :finally (return-from card-read-vcard
+                                    (values (initialize-instance cc) str))))))
+
 #+nil (progn
 
-(setq *readtable* (el::make-elisp-readtable))
-(setq *user-cards* (read-list-from-file *user-bbdb-file* #'card-read-bbdb))
+;;; BBDB i/o
+(let ((*readtable* *elisp-readtable*))
+  (setq *user-cards* (read-list-from-file *user-bbdb-file* #'card-read-bbdb)))
+(let ((*card-output-type* +card-output-bbdb+))
+  (write-list-to-file *user-cards* *user-bbdb-file*))
 
+;;; vCard i/o
 (let ((*card-output-type* +card-output-vcard+))
   (write-list-to-file *user-cards* *user-vcard-file*))
+(make-package :begin)
+(export '(begin::vcard) :begin)
+(setq *user-cards* (read-list-from-file *user-vcard-file* #'card-read-vcard))
+(delete-package :begin)
 
+;;; native i/o
+(let ((*card-output-type* nil))
+  (write-to-file *user-cards* *user-native-file*))
+(let ((*readtable* *object-readtable*))
+  (setq *user-cards* (read-from-file *user-native-file*)))
+
+;;; Pretty printing
 (let ((*card-output-type* +card-output-pretty+))
   (write-list-to-stream *user-cards* *standard-output*))
 
-(let ((*card-output-type* +card-output-bbdb+))
-  (write-list-to-stream *user-cards* *user-bbdb-file*)) ; *standard-output*
+;; testing
+(let ((*card-output-type* +card-output-vcard+))
+  (print (car *user-cards*)))
 
-(setq *user-cards* (read-list-from-file ))
 
-(setq *readtable* (copy-readtable))
-
-nil
 )
 
 (provide "card")

@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1998-10-09 Fri 10:06:58 EDT sds@eho.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-10-19 Mon 15:40:35 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.18 1998/10/09 14:07:33 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.19 1998/10/19 19:41:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.19  1998/10/19 19:41:32  sds
+;;; Added `term' (terminal) gnuplot option, allowing for multiple plot
+;;; windows being displayed simultaneously.
+;;;
 ;;; Revision 1.18  1998/10/09 14:07:33  sds
 ;;; Added `force-output' to `with-plot-stream', which fixes the CMUCL delay
 ;;; problem.
@@ -162,23 +166,24 @@ Type \"load '~a'\" at the gnuplot prompt.~%"
                        *gnuplot-file* *gnuplot-file*)))
         #+unix
         (cond ((or (eq ,plot t) (eq ,plot :plot))
-               (format *gnuplot-msg-stream* "Done plotting.~%"))
+               (format *gnuplot-msg-stream* "~&Done plotting.~%"))
               ((eq ,plot :wait)
+               (fresh-line *gnuplot-msg-stream*)
                (princ "Press <enter> to continue..." *terminal-io*)
                (force-output *terminal-io*) (read-line *terminal-io* nil nil))
               ((eq ,plot :file) (close ,str)
-               (format *gnuplot-msg-stream* "Wrote `~a'.~%" *gnuplot-file*))
+               (format *gnuplot-msg-stream* "~&Wrote `~a'.~%" *gnuplot-file*))
               ((eq ,plot :print)
                (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
                        *gnuplot-printer*)
                (format ,str "set terminal x11~%set output~%")))))))
 
 (defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title key
-                    xtics ytics grid)
+                    xtics ytics grid term)
   "Print the header stuff into the stream.
 This can be called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
- XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND KEY GRID"
+ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND KEY GRID TERM"
   (declare (stream str))
   (flet ((pp (xx) (format nil (if (numberp xx) "~g" "'~a'") xx))
          (tt (nm par)
@@ -189,8 +194,8 @@ The following gnuplot options are accepted:
     (if (eq plot :print)
         (format str "set terminal postscript landscape~%set output '~a'~%"
                 *gnuplot-printer*)
-        (format str "set terminal ~a~%set output~%" #+unix "x11"
-                #+win32 "windows"))
+        (format str "set terminal ~a~@[ ~a~]~%set output~%" #+unix "x11"
+                #+win32 "windows" term))
     (format str "set time '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
 set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'~%set border
@@ -221,10 +226,10 @@ The rest is passed to `plot-dated-lists'."
     (error "plot-data-style got neither number nor list: ~s" num-ls))
   (if (> num-ls 30) "lines" "linespoints"))
 
-(defun plot-dated-lists (begd endd dls &key (title "Plot") (xlabel "time")
-                         (ylabel "value") data-style (timefmt "%Y-%m-%d") ema
-                         rel (slot 'val) channels posl (plot t) plot-key
-                         (xtics t) (ytics t) grid)
+(defun plot-dated-lists (begd endd dls &key (title "Dated Plot")
+                         (xlabel "time") (ylabel "value") data-style
+                         (timefmt "%Y-%m-%d") ema rel (slot 'val) channels
+                         posl (plot t) plot-key (xtics t) (ytics t) grid term)
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -236,7 +241,7 @@ CHANNELS id the list of channels to plot."
   (unless dls (error "nothing to plot for `~a'~%" title))
   (setq data-style (or data-style (plot-data-style (days-between begd endd))))
   (with-plot-stream (str plot xlabel ylabel data-style timefmt begd endd title
-                     plot-key xtics ytics grid)
+                     plot-key xtics ytics grid term)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}"
             ;; Ugly.  But gnuplot requires a comma *between* plots,
             ;; and this is the easiest way to do that.
@@ -273,9 +278,9 @@ CHANNELS id the list of channels to plot."
         ;; clean EMAL for the next pass
         (mapl (lambda (ee) (setf (car ee) nil)) emal)))))
 
-(defun plot-lists (lss &key (key #'value) (title "Plot") (xlabel "nums") rel
-                   (ylabel "value") data-style depth (plot t) plot-key grid
-                   (xtics t) (ytics t))
+(defun plot-lists (lss &key (key #'value) (title "List Plot") (xlabel "nums")
+                   rel (ylabel "value") data-style depth (plot t) plot-key grid
+                   (xtics t) (ytics t) term)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -284,7 +289,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (setq depth (or depth (1- (apply #'min (mapcar #'length lss))))
         data-style (or data-style (plot-data-style depth)))
   (with-plot-stream (str plot xlabel ylabel data-style nil 0 (1- depth) title
-                     plot-key xtics ytics grid)
+                     plot-key xtics ytics grid term)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car lss))
     (let* (bv (val (if rel
                        (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
@@ -296,9 +301,10 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
           (declare (fixnum ix))
           (format str "~f~20t~f~%" ix (funcall val ll)))))))
 
-(defun plot-lists-arg (lss &key (key #'identity) (title "Plot") (xlabel "nums")
-                       (ylabel "value") data-style rel lines quads (plot t)
-                       plot-key xbeg xend (xtics t) (ytics t) grid)
+(defun plot-lists-arg (lss &key (key #'identity) (title "Arg List Plot")
+                       (xlabel "nums") (ylabel "value") data-style rel lines
+                       quads (plot t) plot-key xbeg xend (xtics t) (ytics t)
+                       grid term)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -317,7 +323,7 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
   (setq xbeg (or xbeg (apply #'min (mapcar (compose car 'key cadr) lss)))
         xend (or xend (apply #'max (mapcar (compose car 'key car last) lss))))
   (with-plot-stream (str plot xlabel ylabel data-style nil xbeg xend title
-                     plot-key xtics ytics grid)
+                     plot-key xtics ytics grid term)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}" (mapcar #'car lss))
     (dolist (ln lines) (plot-line-str ln xbeg xend str))
     (dolist (qu quads) (plot-quad-str qu xbeg xend str))
@@ -330,10 +336,10 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
           (setq kk (funcall key (car ll)))
           (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk))))))))
 
-(defun plot-error-bars (ll &key (title "Plot") (xlabel "nums") (ylabel "value")
-                        data-style (plot t) (xkey #'first)
+(defun plot-error-bars (ll &key (title "Error Bar Plot") (xlabel "nums")
+                        (ylabel "value") data-style (plot t) (xkey #'first)
                         (ykey #'second) (ydkey #'third) plot-key
-                        (xtics t) (ytics t) grid)
+                        (xtics t) (ytics t) grid term)
   "Plot the list with errorbars.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -343,7 +349,7 @@ get x, y and ydelta with xkey, ykey and ydkey."
   (setq data-style (or data-style (plot-data-style (list ll))))
   (with-plot-stream (str plot xlabel ylabel data-style nil
                      (funcall xkey (second ll)) (funcall xkey (car (last ll)))
-                     title plot-key xtics ytics grid)
+                     title plot-key xtics ytics grid term)
     (format str "plot 0 title \"\", '-' title \"~a\" with errorbars,~
  '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
     (dolist (rr ll (format str "e~%"))
@@ -361,7 +367,7 @@ get x, y and ydelta with xkey, ykey and ydkey."
 
 (defun plot-functions (fnl xmin xmax numpts &key (title "Function Plot")
                        (xlabel "x") (ylabel "y") data-style (plot t) plot-key
-                       (xtics t) (ytics t) grid)
+                       (xtics t) (ytics t) grid term)
   "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -370,13 +376,12 @@ E.g.: (plot-functions  (list (cons 'sine #'sin)) 0 pi 100)"
   (declare (list fnl) (real xmin xmax) (type (unsigned-byte 20) numpts))
   (setq data-style (or data-style (plot-data-style numpts)))
   (with-plot-stream (str plot xlabel ylabel data-style nil xmin xmax title
-                     plot-key xtics ytics grid)
+                     plot-key xtics ytics grid term)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
     (dolist (fn fnl)
       (dotimes (ii (1+ numpts) (format str "e~%"))
         (declare (type (unsigned-byte 20) ii))
-        (let ((xx (/ (+ (* ii (double-float xmax))
-                        (* (- numpts ii) (double-float xmin))) numpts)))
+        (let ((xx (dfloat (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts))))
           (format str "~f~20t~f~%" xx (funcall (cdr fn) xx)))))))
 
 (defun plot-dated-lists-depth (depth dls slot &rest opts)

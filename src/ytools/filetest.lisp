@@ -52,6 +52,8 @@
 (defvar loaded-file-chunk-c* false)
 (defvar loaded-file-chunk-d* false)
 
+(defvar compiled-file-chunk-c* false)
+
 (defvar file-l-status*)
 (defvar file-s-status*)
 (defvar file-c-status*)
@@ -329,6 +331,8 @@
       (multiple-value-setq
 	  (file-chunk-c* loaded-file-chunk-c*)
 	  (set-em-up "c" file-chunk-l* file-chunk-s* ':compile))
+      (setq compiled-file-chunk-c*
+	    (place-compiled-chunk file-chunk-c*))
       (sml-check)
       (setq file-chunk-d* false)
       (setq loaded-file-chunk-d* false)
@@ -357,6 +361,8 @@
 					 loaded-file-chunk-c*))
 			  (monitor-filoid-basis ch)
 			  (loaded-chunk-set-basis ch))
+;;;;		       (format t "Date of compiled tezt-c: ~s~%"
+;;;;			       (Chunk-date compiled-file-chunk-c*))
 ;;;;		       (break "Filoid bases monitored")
 		       (case i
 			  (0 (chunk-update loaded-file-chunk-c* false))
@@ -394,6 +400,8 @@
                                    File 'd' status = ~s~%~%"
 			       i file-l-status* file-s-status*
 				 file-c-status* file-d-status*)
+;;;;		       (format t "compiled-file-chunk-c* date = ~s~%"
+;;;;			       (Chunk-date compiled-file-chunk-c*))
 		       (list file-l-status* file-s-status*
 			     file-c-status* file-d-status*))
 		    (series 0 (- num-iters 1))

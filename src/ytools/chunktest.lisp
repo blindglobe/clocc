@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.9 2005/03/03 05:34:19 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.10 2005/03/06 01:23:33 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -21,16 +21,34 @@
 
 (defvar num-num-ops* 0)
 
-(defmethod derive-date ((r Num-reg))
-   (cond ((not (slot-boundp r 'fcn))
-	  num-num-ops*)
-	 (t
-	  false)))
+;;; A Num-reg is a leaf iff it has no function.
 
-(defmethod derive ((r Num-reg))
-   (cond ((not (slot-boundp r 'fcn))
+(defmethod derive-date ((r Num-reg))
+   (cond ((chunk-is-leaf r)
+	  (cond ((slot-boundp r 'fcn)
+		 ;; It might be changed by its deriver; there'no
+		 ;; way to tell without running it.
+		 +no-info-date+)
+		((slot-boundp r 'cont)
+		 ;; It has no deriver, so it must have been set
+		 ;;  --- and dated --- by someone outside the
+		 ;; chunk-update protocol
+		 false)
+		(t
+		 ;; If no function and no contents, this Num-reg
+		 ;; is of no use to anyone
+		 (error "Num-reg with no contents or deriver fcn ~s"
+			r))))
+	 ((slot-boundp r 'cont)
+	  ;; Whenever it was last computed, no one else
+	  ;; has changed it since.
 	  false)
 	 (t
+	  ;; It has no value, so it can't be up to date
+	  +no-info-date+)))
+
+(defmethod derive ((r Num-reg))
+   (cond ((slot-boundp r 'fcn)
 	  (let ((new-val 
 		   (funcall (Num-reg-fcn r)
 			 (mapcar #'Num-reg-contents (Chunk-basis r))
@@ -41,10 +59,18 @@
 		    (setf (Num-reg-contents r)
 			  new-val)
 		    num-num-ops*)
-		   (t false))))))
+		   (t false))))
+	 ((slot-boundp r 'cont)
+	  ;; As mentioned above, it's being set outside
+	  ;; the usual channels.  Assume it's up to date.
+	  false)
+	 (t
+	  (error "Num-reg with no contents or deriver fcn ~s"
+		 r))))
 
 ;;; We make this a subclass of Num-reg because it will have derivees
-;;; that are Num-regs.--
+;;; that are Num-regs.
+;;; Its 'fcn' slot is ignored.
 (defclass Num-pair-reg (Num-reg)
    ((cont1 :accessor Num-pair-reg-one
 	   :initarg :one
@@ -55,7 +81,10 @@
 
 ;;; Must override Num-reg version!
 (defmethod derive-date ((npr Num-pair-reg))
-   false)
+   (cond ((and (slot-boundp npr 'cont1)
+	       (slot-boundp npr 'cont2))
+	  false)
+	 (t +no-info-date+)))
 
 (defmethod derive ((npr Num-pair-reg))
    (let ((basis (Chunk-basis npr)))
@@ -96,13 +125,17 @@
 
 ;;; Disjuncts are a Num-pair-reg and a Num-reg that
 ;;; is equal to the second element of the pair
-(defclass Denom-or-chunk (Or-chunk Num-reg)
+(defclass Denom-Or-chunk (Or-chunk Num-reg)
    ())
+;;; The 'fcn' slot is irrelevant.
 
-(defmethod derive-date ((npr Denom-or-chunk))
-   false)
+(defmethod derive-date ((npr Denom-Or-chunk))
+   (cond ((slot-boundp npr 'cont)
+	  false)
+	 (t
+	  +no-info-date+)))
 
-(defmethod derive ((rc Denom-or-chunk))
+(defmethod derive ((rc Denom-Or-chunk))
    (let ((disjuncts (Or-chunk-disjuncts rc)))
       (cond ((Chunk-managed (first disjuncts))
 	     (setf (Num-reg-contents rc)
@@ -113,7 +146,7 @@
 		   (Num-reg-contents (second disjuncts)))
 	     (incf num-num-ops*))
 	    (t
-	     (error "Denom-or-chunk ~s has unmanaged disjuncts"
+	     (error "Denom-Or-chunk ~s has unmanaged disjuncts"
 		    rc)))))
 
 ;; Numbers (these should all be nonnegative to avoid possibility
@@ -212,7 +245,7 @@
 	    :basis (list rough-denom*)
 	    :fcn (\\ (d _) (first d))))
    (setq denom-or-chunk*
-         (make-instance 'Denom-or-chunk
+         (make-instance 'Denom-Or-chunk
 	    :name 'denom
 	    :basis (list numer* rough-denom*)
 	    :disjuncts (list numer-denom-pair* denom*)
@@ -258,6 +291,9 @@
 		(t
 		 d)))))
 	   
+;;; Date at start of current iteration of net-direct-compare--
+(defvar current-test-date*)
+
 ;;; Build net before starting this --
 (defun net-direct-compare (which-input start-val &optional (num-iters 1000))
    (chunk-request-mgt denom-or-chunk*)
@@ -270,7 +306,10 @@
 	     (setq j 0)))
       (setf (aref ivec* j) i)
       (incf num-num-ops*)
-      (chunk-up-to-date (aref input-chunks* j))
+      (setq current-test-date* num-num-ops*)
+      (setf (Chunk-date (aref input-chunks* j))
+	    +no-info-date+)
+;;;;      (chunk-up-to-date (aref input-chunks* j))
       (format t "chunk ~s <- ~s ~%" j i)
       (cond ((Chunk-managed quo*)
 	     (chunk-terminate-mgt quo* false)

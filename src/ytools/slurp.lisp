@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.14 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.15 2005/03/06 01:23:34 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -65,7 +65,16 @@
 
 (defstruct (Slurp-task
 ;;;;	      (:constructor make-Slurp-task (label default-handler))
-           )
+	      (:print-object
+	          (lambda (slurp-tsk srm)
+		     (print-unreadable-object (slurp-tsk srm)
+			(format srm "Slurp-task ~s~a"
+				(Slurp-task-label slurp-tsk)
+				(cond ((Slurp-task-default-handler
+					  slurp-tsk)
+				       " [has default handler]")
+				      (t ""))
+			(print-innards slurp-tsk srm))))))
    label
    (handler-table (make-hash-table :test #'eq :size 100))
    default-handler

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.3 2005/02/11 05:11:31 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.4 2005/03/06 01:23:35 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -18,14 +18,27 @@
 
 (setq *readtable* ytools-readtable*)
 
-(defun yt-comp (fname)
+(defvar last-yt-comp* nil)
+
+(defun yt-comp (&optional fname)
    (setq *readtable* ytools-readtable*)
+   (cond (fname
+	  (setq last-yt-comp* fname))
+	 (last-yt-comp*
+	  (setq fname last-yt-comp*))
+	 (t
+	  (error "No default yt-comp argument set yet")))
    (compile-file fname
 		 :output-file (merge-pathnames
 			         (make-pathname :name fname :type lisp-object-extn*)
 				 ytools-bin-dir-pathname*)))
 
-(defun yt-bload (fname)
+(defun yt-bload (&optional fname)
+   (cond ((not fname)
+	  (cond (last-yt-comp*
+		 (setq fname last-yt-comp*))
+		(t
+		 (error "No default yt-comp argument set yet")))))
    (load (merge-pathnames
 	    (make-pathname :name fname :type lisp-object-extn*)
 	    ytools-bin-dir-pathname*)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.26 2005/03/03 05:34:19 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.27 2005/03/06 01:23:34 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -357,9 +357,7 @@
    (:default-initargs :basis !()))
 ;;; -- The basis of this chunk is the empty list because it's a
 ;;; meta-chunk, which can't be connected to any chunk whose basis it
-;;; might affect.  That's because 'chunks-update' is based on the
-;;; assumption that the bases it sees are not in the process of
-;;; changing.
+;;; might affect.
 
 ;;; Creates a Loadable-chunk to act as a controller for this filoid
 ;;; and the chunk corresponding to its being loaded.
@@ -428,6 +426,9 @@
 	     (setf (Loaded-file-chunk-manip lc) file-manip)))
       lc))
 
+(defmethod derive-date ((lc Loaded-file-chunk))
+   false)
+
 (defmethod derive ((lc Loaded-file-chunk))
    (let ((loaded-ch lc) file-ch)
       (loop 
@@ -448,6 +449,10 @@
 ;;;;	 "About to load " lc)
       (file-chunk-load file-ch)))
 
+;;; Given the names, one might think this should be a subclass of 
+;;; Loaded-file-chunk.  However, Loaded-file-chunks are complex entities
+;;; that can map into different versions depending on user decisions.
+;;; This class is just a simple loaded-or-not-loaded affair.
 (defclass Loaded-source-chunk (Chunk)
    ((file-ch :accessor Loaded-source-chunk-file
 	     :initarg :file)))
@@ -458,6 +463,9 @@
 	 (make-instance 'Loaded-source-chunk
 	    :name name
 	    :file file-ch))))
+
+(defmethod derive-date ((l-source Loaded-source-chunk))
+   false)
 
 (defmethod derive ((l-source Loaded-source-chunk))
    (file-chunk-load (Loaded-source-chunk-file l-source)))
@@ -479,7 +487,7 @@
 				     file-ch)
 				 false
 				 ""))))
-      true)
+      (get-universal-time))
 
 ;;; Possible values: 
 ;;; :compile -- always compile when object file is missing or out of date)
@@ -755,32 +763,43 @@
    (let ((pn (File-chunk-pn
 		(Compiled-file-chunk-source-file cf-ch))))
       (let ((ov (pathname-object-version pn false)))
-	 (let ((real-pn (pathname-resolve pn true))
-	       (real-ov (and (not (eq ov ':none))
+	 (let ((real-ov (and (not (eq ov ':none))
 			     (pathname-resolve ov false)))
 	       (prev-time (Compiled-file-chunk-last-compile-time cf-ch)))
 	    (let  ((old-obj-write-time
 		      (and real-ov
 			   (probe-file real-ov)
 			   (pathname-write-time real-ov))))
-	       (cond ((and (> prev-time 0)
+	       (cond ((and old-obj-write-time
+			   (>= prev-time 0)
 			   (< prev-time old-obj-write-time))
 		      (format *error-output*
 			 !"Warning -- file ~s apparently compiled outside ~
                            control of ~s~%"
 			 real-ov cf-ch)))
-	       old-obj-write-time)))))
+	       (or old-obj-write-time
+		   prev-time))))))
 
 ;;; We can assume that derive-date has already set the date to the old write
 ;;; time, and that some supporter has a more recent time.
 (defmethod derive ((cf-ch Compiled-file-chunk))
-   (let ((now-compiling*    pn)
-	 (now-loading* false)
-	 (now-slurping* false)
-	 (debuggability* debuggability*)
-	 (fload-indent* (+ 3 fload-indent*)))
-      (compile-and-record pn real-pn real-ov
-			  cf-ch old-obj-write-time)))
+   (let* ((pn (File-chunk-pn
+		 (Compiled-file-chunk-source-file cf-ch)))
+	  (real-pn (pathname-resolve pn true))
+	  (ov (pathname-object-version pn false))
+	  (real-ov (and (not (eq ov ':none))
+			(pathname-resolve ov false)))
+	  (old-obj-write-time
+		   (and real-ov
+			(probe-file real-ov)
+			(pathname-write-time real-ov))))
+      (let ((now-compiling* pn)
+	    (now-loading* false)
+	    (now-slurping* false)
+	    (debuggability* debuggability*)
+	    (fload-indent* (+ 3 fload-indent*)))
+	 (compile-and-record pn real-pn real-ov
+			     cf-ch old-obj-write-time))))
 
 ;;;;(defmethod derive ((cf-ch Compiled-file-chunk))
 ;;;;   (let ((pn (File-chunk-pn
@@ -845,7 +864,11 @@
 				  cf-ch)
 			       new-compile-time)
 			 new-compile-time)
-			(t (get-universal-time)))))))
+			(t 
+			 (let ((comp-time (get-universal-time)))
+			    (format *error-output*
+			       "Compilation failed [time ~s]: ~s~%"
+			       comp-time real-pn))))))))
       (file-op-message "...compiled to" object-file false "")))
 
 (eval-when (:compile-toplevel :load-toplevel)
@@ -916,13 +939,13 @@
 			      :initarg :pathname
 			      :type pathname)))
 
+		(defmethod derive-date ((ch ,subfile-class-name))
+		   (file-write-date (,sub-pathname-read-fcn ch)))
+
 		;; There's nothing to derive for the subfile; as long as the
 		;; underlying file is up to date, so is the subfile.	     
 		(defmethod derive ((ch ,subfile-class-name))
 		   false)
-
-		(defmethod derive-date ((ch ,subfile-class-name))
-		   (file-write-date (,sub-pathname-read-fcn ch)))
 
 		(defmethod initialize-instance :after
 				     ((ch ,subfile-class-name)
@@ -1166,7 +1189,7 @@
 				 cease-mgt
 				 postpone-derivees)
    (let* ((file-chunk
-	     (place-File-chunk pn))
+	     (pathname-denotation-chunk pn))
 	  (lpchunk (place-Loaded-chunk
 		      file-chunk
 		      false))

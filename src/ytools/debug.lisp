@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.1 2005/02/06 05:46:32 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.2 2005/03/06 01:23:33 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -14,6 +14,8 @@
 	     get-frame-args
 	     symshow =g htab-show file-show test check condition-display-string)))
 
+(needed-by-macros
+
 ;; Each entry is of the form (flag form type), where flag is a symbol,
 ;; often *.  The idea is to make it easy to munge the forms further,
 ;; while debugging macros or for some other purpose.
@@ -22,6 +24,7 @@
    label
    object
    type)
+)
 
 (defvar dbg-stack* '())
 

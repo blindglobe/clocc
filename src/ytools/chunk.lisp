@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.27 2005/03/03 05:34:19 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.28 2005/03/06 01:23:33 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -168,12 +168,13 @@
 ;;; Report  the last time the chunk became derived or
 ;;; false if it has never been derived. 
 (defgeneric derive-date (chunk)
-   ;; Default dater relies on previous derivations.
+   ;; Default dater marks "no info" for a leaf;
+   ;; for a non-leaf, it leaves the date alone --
    (:method ((c Chunk))
-;;;;       (cond ((> (Chunk-date c) 0)
-;;;;	      (Chunk-date c))
-;;;;	     (t ...))
-      false))
+       (cond ((chunk-is-leaf c)
+	      +no-info-date+)
+	     (t
+	      false))))
 
 ;;;;; <<<< derive
 (defgeneric derive (chunk)
@@ -280,8 +281,8 @@
 	     (chunk-manage b))))
    (set-latest-support-date ch))
 
-;;; Returns a list of all chunks whose 'latest-supporter-date' get
-;;; updated.
+;;; Returns a list starting with 'ch' and containing all derivees* of 'ch'
+;;; whose 'latest-supporter-date' gets updated.
 (defun set-latest-support-date (ch)
    (let ((latest-supporter-date +no-supporters-date+))
       (dolist (b (Chunk-basis ch))
@@ -291,11 +292,16 @@
 		   (setf latest-supporter-date late)))))
       (cond ((> latest-supporter-date
 		(Chunk-latest-supporter-date ch))
-	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)
-	     (cons ch
-		   (mapcan (\\ (d) (set-latest-support-date d))
-			   (Chunk-derivees ch))))
-	    (t !()))))
+	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)))
+      (cons ch
+	    (let ((ch-date (Chunk-date ch)))
+	       (mapcan (\\ (d)
+			  (let ((d-date (Chunk-latest-supporter-date d)))
+			     (cond ((or (> ch-date d-date)
+					(> latest-supporter-date d-date))
+				    (set-latest-support-date d))
+				   (t !()))))
+		       (Chunk-derivees ch))))))
 
 (defmethod (setf Chunk-update-basis) :before (new-update-basis ch)
                                      (declare (ignore new-update-basis))
@@ -650,6 +656,9 @@
 		 ((chunk-is-marked ch up-mark)
 		  "marked")
 		 ((chunk-date-up-to-date ch)
+;;;;		  (cond ((eq ch (elt input-chunks* 3))
+;;;;			 (setq ch* ch)
+;;;;			 (break "Got input 3")))
 		  "up to date")
 		 ((not
 		      (every #'chunk-up-to-date
@@ -718,11 +727,18 @@
 			     ch))
 			(t
 			 (chunk-mark ch down-mark)
-			 (cond (chunk-update-dbg*
-				(format *error-output*
-				   "Dating chunk ~s (after marking ~s)~%"
-				   ch down-mark)))
 			 (chunk-derive-date-and-record ch)
+			 (cond (chunk-update-dbg*
+				(chunk-date-note ch "Dated chunk")))
+			 (cond ((and (chunk-is-leaf ch)
+				     (= (Chunk-date ch) +no-info-date+))
+				(chunk-derive-and-record ch)
+				(cond (chunk-update-dbg*
+				       (chunk-date-note
+					  ch " Leaf chunk; derived")))))
+;;;;			 (cond ((eq ch (elt input-chunks* 3))
+;;;;				(setq ch* ch)
+;;;;				(break "Got input 3")))
 			 (let* ((in-progress (cons ch in-progress))
 				(to-be-derived
 				     (check-from-derivees ch in-progress)))
@@ -747,46 +763,42 @@
 					     (temporarily-manage
 						(Chunk-update-basis ch))
 					     (chunks-leaves-up-to-date
-							  (Chunk-update-basis ch)
-							  in-progress))))))))))
+						(Chunk-update-basis ch)
+						in-progress))))))))))
 
                (check-from-derivees (ch in-progress)
-		  (cons ch
-			(check-from-new-starting-points
-			   (set-latest-support-date ch)
-			   in-progress)))
-
-	       (check-from-new-starting-points (updatees in-progress)
-		  ;; Sweep up from leaves may have found new chunks that
-		  ;; need to be checked.
-		  (let ((new-points
+		  (let ((updatees
 			   (retain-if
-				    (\\ (c)
-				       (and (not (chunk-up-to-date c))
-					    (or (Chunk-managed c)
-						(chunk-is-marked
-						   c down-mark))))
-				    (set-difference updatees
-						    in-progress))))
-		     ;; But if postponing, these are precisely the
-		     ;; chunks we want to save for later.
-		     (cond (postpone-derivees
-			    (cond (chunk-update-dbg*
-				   (format *error-output*
-				      "Postponing chunks ~s~%"
-				      new-points)))
-			    (setq postponed
-				  (nconc new-points postponed))
-			    !())
-			   (t
-			    (cond (chunk-update-dbg*
-				   (format *error-output*
-					   "New starting points from ~s~%   = ~s~%"
-					   updatees new-points)))
-			    ;; Otherwise, start from those chunks as if new-- 
-			    (let ((nsp (chunks-leaves-up-to-date
-					  new-points !())))
-			       nsp)))))
+			      (\\ (c)
+				 (and (not (chunk-up-to-date c))
+				      (not (memq c in-progress))
+				      (or (Chunk-managed c)
+					  (chunk-is-marked c down-mark))))
+			      (set-latest-support-date ch))))
+		     (cons ch
+			   (cond ((null updatees)
+				  !())
+				  ;; Sweep up from leaves may have
+				  ;; found new chunks that need to be
+				  ;; checked.
+				 (postpone-derivees
+				  ;; But if postponing, these are precisely the
+				  ;; chunks we want to save for later.
+				  (cond (chunk-update-dbg*
+					 (format *error-output*
+					    "Postponing chunks ~s~%"
+					    updatees)))
+				  (setq postponed
+					(nconc updatees postponed))
+				  !())
+				 (t
+				  (cond (chunk-update-dbg*
+					 (format *error-output*
+						 "New starting points = ~s~%"
+						 updatees)))
+				  ;; Otherwise, start from those chunks as if new-- 
+				  (chunks-leaves-up-to-date
+				     updatees !()))))))
 
 	       (temporarily-manage (update-chunks)
 		  (dolist (ud-ch update-chunks)
@@ -815,8 +827,14 @@
 			      (every #'chunk-up-to-date
 				     (Chunk-basis ch))
 			      ;; Ditto for update-basis --
-			      (every #'chunk-up-to-date
+			      (every (\\ (ub)
+					(or (not (Chunk-managed ub))
+					    (chunk-up-to-date ub)))
 				     (Chunk-update-basis ch)))
+			 (dolist (ub (Chunk-update-basis ch))
+			    (cond ((not (Chunk-managed ub))
+				   (error "Managed chunk ~s~%  has unmanaged update-basis element ~s"
+					  ch ub))))
 			 (cond ((and postpone-derivees
 				     (not (chunk-is-marked ch down-mark)))
 				;; We're about to go too far; put it on the
@@ -840,16 +858,25 @@
 				       (let ((in-progress
 						(cons ch in-progress)))
 					  (chunk-mark ch up-mark)
-					  (dolist (d (Chunk-derivees ch))
-					     (derivees-update d in-progress))
-					  (dolist (d (Chunk-update-derivees
-							ch))
-					     (derivees-update d in-progress))))))))
+					  (derivees-derivees-update
+					     (Chunk-derivees ch)
+					     in-progress)
+					  (derivees-derivees-update
+					     (Chunk-update-derivees ch)
+					     in-progress)))))))
 			(chunk-update-dbg*
 			 (report-reason-to-skip-chunk))))
 
+	       (derivees-derivees-update (l in-progress)
+		  (dolist (d l)
+		     (dolist (c (set-latest-support-date d))
+		        (derivees-update c in-progress))))
+
 	       (update-interrupted ()
 		  (cond ((> chunk-event-num* max-here)
+;;;;			 (format *error-output*
+;;;;"~%*** UPDATE INTERRUPTED *** max-here = ~s chunk-event-num* = ~s~%   during update triggered by ~s~%"
+;;;;			    max-here chunk-event-num* chunks)
 			 (cond (chunk-update-dbg*
 				(format *error-output*
 				   "Chunk update interrupted~%")))
@@ -906,6 +933,10 @@
 		   (loop 
 		      (setq down-mark chunk-event-num*)
 		      (setq up-mark (+ chunk-event-num* 1))
+		      (cond (chunk-update-dbg*
+			     (format *error-output*
+				"Derive mark: ~s down mark: ~s up mark: ~s~%"
+				derive-mark down-mark up-mark)))
 		      ;; If a chunk event occurs while we're updating,
 		      ;; we must restart.  We detect that if
 		      ;; chunk-event-num* ever exceeds 'max-here' --
@@ -943,6 +974,18 @@
 		   )))
 	 (nodup postponed))))
 
+(defun chunk-date-note (ch context)
+   (format *error-output*
+      "~a ~s ~s [~a]~%"
+      context ch
+      (Chunk-date ch)
+      (cond ((chunk-up-to-date ch)
+	     "up to date")
+	    ((= (Chunk-date ch) +no-info-date+)
+	     "no info")
+	    (t
+	     "out of date"))))
+
 (defun or-chunk-set-update-basis (orch)
    (cond ((null (Or-chunk-disjuncts orch))
 	  (error !"Attempting to maintain Or-chunk with ~
@@ -960,7 +1003,7 @@
 
 ;;; There is no independent content of an Or-chunk to check the date of --
 (defmethod derive-date ((orch Or-chunk))
-   false)
+   +no-info-date+)
 
 ;;; Run 'derive', update ch's date, and return t if date has moved 
 ;;; forward -- 
@@ -1004,23 +1047,29 @@
 ;;; false, it means that there is no way to tell what the date should be; 
 ;;; only the deriver can tell.  If the (content) deriver returns false, it
 ;;; means that the chunk is up to date without further computation.
+;;; In either case, the date should be left unchanged; but in the
+;;; latter case, if some supporter has a later date, then the date
+;;; should be set to the date of the latest supporter.
 
 (defun chunk-derive-date-and-record (ch)
    (let ((old-date (Chunk-date ch)))
       (let ((new-date (derive-date ch)))
 	 (cond (new-date
-		(chunk-date-record ch new-date old-date))
+		(chunk-date-record
+		   ch
+		   new-date
+		   old-date))
 	       (t
-		;; If 'new-date' is false, we have no information
-		;; and must mark the date as -1.
-		(setf (Chunk-date ch) +no-info-date+))))))
+		;; If new-date is false, record nothing.
+		false)))))
 
-;;; The key fact is that *** after a deriver runs, the chunk is up to date ***,
-;;; or as up to date as it's ever gonna be (until its basis changes).  The basis
-;;; is assumed to contain _all_ the factors that could change its value.  If
-;;; the deriver returns false, then the current content (or state or location or
-;;; whatever) of the chunk is correct, and, as far as the deriver can tell, has
-;;; been correct since the last time the basis changed.
+;;; The key fact is that *** after a deriver runs, the chunk is up to
+;;; date ***, or as up to date as it's ever gonna be (until its basis
+;;; changes).  The basis is assumed to contain _all_ the factors that
+;;; could change its value.  If the deriver returns false, then the
+;;; current content (or state or location or whatever) of the chunk is
+;;; correct, and, as far as the deriver can tell, has been correct
+;;; since the last time the basis changed.
 
 ;;; Call 'derive', update date, and return true if date advanced (else
 ;;; false if already up to date).
@@ -1039,28 +1088,41 @@
 	    (setf (Chunk-date ch)
 		  (reduce #'max (Chunk-basis ch)
 			  :key #'Chunk-date
-			  :initial-value (Chunk-latest-supporter-date ch)))))
+			  :initial-value (Chunk-latest-supporter-date ch)))
+;;;;	    (cond ((typep ch 'Compiled-file-chunk)
+;;;;		   (format *error-output*
+;;;;		      "Provisional date: ~s [date was ~s] for ~s~%"
+;;;;		      (Chunk-date ch) old-date ch )))
+	    ))
      (let ((new-date (derive ch)))
-        (chunk-date-record ch new-date old-date))))
+	(chunk-date-record
+	   ch
+	   (or new-date
+	       ;; If the deriver returned false, that means that the chunk
+	       ;; is now up to date with respect to its supporters.
+	       (max 0 old-date (Chunk-latest-supporter-date ch)))
+	   old-date))))
 
+;;; Returns true if the new date is later than the old one.  (No one uses
+;;; the return value at this point.)
 (defun chunk-date-record (ch new-date old-date)
-	 (cond ((and new-date (not (is-Number new-date)))
+	 (cond ((not (is-Number new-date))
+;;;;		(setq ch* ch)
+;;;;		(break 
+;;;;		    "Date = ~s [old ~s] for chunk = ~s~%"
+;;;;		    new-date old-date ch)
 		(setq new-date (get-universal-time))))
-	 (cond ((or (not new-date)
-		    (= new-date old-date)
-		    (and (< new-date old-date)
-			 (progn 
-			    (cerror "I will ignore the new date"
-				    !"Chunk deriver or dater returned date ~s, ~
-				      which is before current date ~s"
-				      new-date old-date)
-			    true)))
-		(setq new-date (max 0 (Chunk-latest-supporter-date ch)))))
-	 ;;; Make sure the date reflects the fact that the chunk
-	 ;;; is now up to date with respect to its supporters.
-	 (cond ((> new-date old-date)
+	 (cond ((or (> new-date old-date)
+		    ;; Loss of information --
+		    (= new-date +no-info-date+))
 		(setf (Chunk-date ch) new-date)
 		true)
+	       ((< new-date old-date)
+		(cerror "I will ignore the new date"
+			!"Chunk deriver or dater returned date ~s, ~
+			  which is before current date ~s"
+			  new-date old-date)
+		false)
 	       (t
 		false)))
 
@@ -1206,6 +1268,18 @@
 	 (make-instance 'Form-chunk
 	    :name name
 	    :form form))))
+
+(defmethod derive-date ((fc Form-chunk))
+   false)
+;;; Why this _isn't_ +no-info-date+:
+;;; If we make the seemingly conservative assumption that
+;;; evaluating the form doesn't "take" and must  be done again,
+;;; then the form of a Form-chunk can never include anything that
+;;; affects the chunk system.  If it does, then chunks-update
+;;; will realize it's been interrupted repeatedly and restart
+;;; ad infinitum.  The default is to evaluate just once, which
+;;; probably isn't right, and should be overridden in more
+;;; specific classes.
 
 (defmethod derive ((fc Form-chunk))
    (eval (Form-chunk-form fc))

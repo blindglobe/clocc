@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.15 2005/02/27 16:55:19 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.16 2005/03/06 01:23:34 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -162,6 +162,42 @@
 		    (place-YT-module-chunk mod)
 		    false)))))
 
+;;; A Form-chunk that is clocked using file-op-count*.
+(defclass Form-timed-file-op-chunk (Form-chunk)
+   ())
+
+(defmethod derive-date ((fop-ch Form-timed-file-op-chunk))
+   (cond ((> (Chunk-date fop-ch) 0)
+	  (Chunk-date fop-ch))
+	 (t +no-info-date+)))
+
+(defmethod derive :around ((fop-ch Form-timed-file-op-chunk))
+   (cond ((not file-op-in-progress*)
+	  (setq file-op-count* (+ file-op-count* 1))))
+   (let ((file-op-in-progress* true)
+	 (initial-count file-op-count*)
+	 (initial-chunk-event-count chunk-event-num*))
+      ;; Binding file-op-in-progress* keeps file-op-count* from
+      ;; being incremented.
+      (call-next-method fop-ch)
+      (cond ((and chunk-update-dbg*
+		  (not (= initial-chunk-event-count
+			  chunk-event-num*)))
+	     (format *error-output*
+		"Chunk event count changed during form evaluation, from ~s to ~s~%"
+		initial-chunk-event-count chunk-event-num*)))
+      (cond ((not (= file-op-count* initial-count))
+	     (error "file-op-count* changed unexpectedly while evaluating ~s~%"
+		    (Form-chunk-form fop-ch))))
+      file-op-count*))
+
+(defun place-Form-timed-file-op-chunk (form)
+   (chunk-with-name `(:form ,form :timed-by-file-ops)
+      (\\ (name)
+	 (make-instance 'Form-timed-file-op-chunk
+	    :name name
+	    :form form))))
+
 (defun module-form-chunks (mod which)
 	   (let ((rforms
 		    (retain-if
@@ -170,7 +206,7 @@
 	      (cond ((null rforms)
 		     !())
 		    (t
-		     (list (place-Form-chunk
+		     (list (place-Form-timed-file-op-chunk
 			      `(progn ,@(mapcan (\\ (e)
 						   (list-copy (rest e)))
 						rforms))))))))

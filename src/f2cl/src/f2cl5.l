@@ -444,6 +444,59 @@
 	 `(,(first p) ,@(mapcar #'optimize-f2cl/ (rest p))))))
 
 ;; Given the program list P, look through it and try to convert all
+;; occurrences of integer arithmetic with the integer arithmetic
+;; macros.  This is done so that integer arithmetic doesn't have to
+;; check for possible overflow because that behavior is undefined in
+;; Fortran anyway.
+;;
+;; A new tree is returned.
+(defun optimize-integer-arithmetic (p)
+  (cond ((or (atom p) (null p))
+	 p)
+	((eq (first p) 'declare)
+	 ;; Skip over declarations
+	 p)
+        ((eq (first p) 'fdo)
+         ;; FDO handled specially
+         (destructuring-bind (fdo (var1 init step-form)
+                                  ((cmp-fun var2 end-form) ret-form)
+                                  &rest body)
+             p
+         `(,fdo (,var1 ,(optimize-integer-arithmetic init)
+                      ,(optimize-integer-arithmetic step-form))
+               ((,cmp-fun ,var2 ,(optimize-integer-arithmetic end-form))
+                ,ret-form)
+           ,@(mapcar #'optimize-integer-arithmetic body))))
+        ((eq (first p) 'fref)
+         ;; FREF handled specially
+         (destructuring-bind (fref data-var indices bounds &rest offset)
+             p
+           `(,fref ,data-var ,(mapcar #'optimize-integer-arithmetic indices)
+                             ,(mapcar #'optimize-integer-arithmetic bounds)
+                             ,@offset)))
+	((member (first p) '(+ - *))
+	 ;;(format t "expr = ~A~%" p)
+	 (let ((fun (if (every #'(lambda (e)
+				   (eq e 'integer4))
+			       (mapcar #'(lambda (arg)
+					   (let ((res (get-fun-arg-type (list arg))))
+					     ;;(format t "arg = type ~A: ~A~%" res arg)
+					     res))
+				       (rest p)))
+			(cdr (assoc (first p) '((+ . int-add)
+						(- . int-sub)
+						(* . int-mul))))
+			(first p))))
+	   ;;(format t "fun = ~A~%" fun)
+	   `(,fun ,@(mapcar #'optimize-integer-arithmetic (rest p)))))
+	((listp (first p))
+	 `(,(mapcar #'optimize-integer-arithmetic
+		     (first p))
+	   ,@(mapcar #'optimize-integer-arithmetic (rest p))))
+	(t
+	 `(,(first p) ,@(mapcar #'optimize-integer-arithmetic (rest p))))))
+  
+;; Given the program list P, look through it and try to convert all
 ;; occurrences of external functions with #'<func>.  Do this only if
 ;; the function is not first element of a list.
 ;;
@@ -1008,6 +1061,10 @@
      ;; Try to optimize out calls to f2cl/.
      ;;(format t "fixed-up prog-bit = ~%~S~%" prog-bit)
      (setf prog-bit (optimize-f2cl/ prog-bit))
+
+     ;;(format t "before opt int:~%~A~%" prog-bit)
+     (setf prog-bit (optimize-integer-arithmetic prog-bit))
+     ;;(format t "after opt int:~%~A~%" prog-bit)
      ;;(format t "opt prog = ~%~S~%" prog-bit)
      ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
      ;;(format t "*data-init*  = ~a~%" *data-init*)
@@ -2509,8 +2566,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.88 2002/03/10 16:19:03 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.89 2002/03/11 16:45:28 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.89  2002/03/11 16:45:28  rtoy
+;;; Try to optimize integer arithmetic. Fortran says integer overflow is
+;;; undefined, so we try to wrap all integer arithmetic with (THE INTEGER4
+;;; (op operands...)).  This can help the compiler generate better code.
+;;;
 ;;; Revision 1.88  2002/03/10 16:19:03  rtoy
 ;;; Assignments in PARAMETER statements need to have them coerced to the
 ;;; right type.

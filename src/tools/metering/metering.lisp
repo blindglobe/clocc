@@ -219,18 +219,18 @@
 ;;; ****************************************************************
 ;;;
 ;;; WITH-MONITORING (&rest functions)                         [Macro]
-;;;                 (&optional (nested :exclusive)
-;;;                            (threshold 0.01)
-;;;                            (key :percent-time))
+;;;                 (&key (nested :exclusive)
+;;;                       (threshold 0.01)
+;;;                       (key :percent-time))
 ;;;                 &body body
 ;;; The named functions will be set up for monitoring, the body forms executed,
 ;;; a table of results printed, and the functions unmonitored. The nested,
 ;;; threshold, and key arguments are passed to report-monitoring below.
 ;;;
 ;;; MONITOR-FORM form                                         [Macro]
-;;;               &optional (nested :exclusive)
-;;;                         (threshold 0.01)
-;;;                         (key :percent-time)
+;;;               &key (nested :exclusive)
+;;;                    (threshold 0.01)
+;;;                    (key :percent-time)
 ;;; All functions in the current package are set up for monitoring while
 ;;; the form is executed, and automatically unmonitored after a table of
 ;;; results has been printed. The nested, threshold, and key arguments
@@ -269,10 +269,10 @@
 ;;; MONITORED name                                            [Function]
 ;;; Predicate to test whether a function is monitored.
 ;;;
-;;; REPORT-MONITORING &optional names                         [Function]
-;;;                             (nested :exclusive)
-;;;                             (threshold 0.01)
-;;;                             (key :percent-time)
+;;; REPORT-MONITORING &key names                         [Function]
+;;;                       (nested :exclusive)
+;;;                       (threshold 0.01)
+;;;                       (key :percent-time)
 ;;; Creates a table of monitoring information for the specified list
 ;;; of names, and displays the table using display-monitoring-results.
 ;;; If names is :all or nil, uses all currently monitored functions.
@@ -303,16 +303,8 @@
 ;;;         :time           same as :percent-time
 ;;;         :cons           same as :percent-cons
 ;;;
-;;; REPORT &key (names :all)                                  [Function]
-;;;             (nested :exclusive)
-;;;             (threshold 0.01)
-;;;             (sort-key :percent-time)
-;;;             (ignore-no-calls nil)
-;;;
-;;; Same as REPORT-MONITORING but we use a nicer keyword interface.
-;;;
-;;; DISPLAY-MONITORING-RESULTS &optional (threshold 0.01)     [Function]
-;;;                                      (key :percent-time)
+;;; DISPLAY-MONITORING-RESULTS &key (threshold 0.01)     [Function]
+;;;                                 (key :percent-time)
 ;;; Prints a table showing for each named function:
 ;;;    - the total CPU time used in that function for all calls
 ;;;    - the total number of bytes consed in that function for all calls
@@ -403,8 +395,7 @@ Estimated total monitoring overhead: 0.88 seconds
 	   "MONITORED"
 	   "REPORT-MONITORING"
 	   "DISPLAY-MONITORING-RESULTS"
-	   "MONITORING-ENCAPSULATE" "MONITORING-UNENCAPSULATE"
-	   "REPORT"))
+	   "MONITORING-ENCAPSULATE" "MONITORING-UNENCAPSULATE"))
 #+(and :cltl2
        (not (or (and :excl (or :allegro-v4.0 (and :allegro-version>=
                                                   (version>= 4 1))))
@@ -439,8 +430,7 @@ Estimated total monitoring overhead: 0.88 seconds
 	  monitored
 	  report-monitoring
 	  display-monitoring-results
-	  monitoring-encapsulate monitoring-unencapsulate
-	  report))
+	  monitoring-encapsulate monitoring-unencapsulate))
 
 
 ;;; Warn user if they're loading the source instead of compiling it first.
@@ -846,15 +836,15 @@ Estimated total monitoring overhead: 0.88 seconds
 
 #|
 ;;;Examples
-(defun square (x) (* x x))
-(defun square2 (x &optional y) (* x x y))
-(defun test (x y &optional (z 3)) 3)
-(defun test2 (x y &optional (z 3) &rest fred) 3)
+ (defun square (x) (* x x))
+ (defun square2 (x &optional y) (* x x y))
+ (defun test (x y &optional (z 3)) 3)
+ (defun test2 (x y &optional (z 3) &rest fred) 3)
 
-(required-arguments 'square) => 1 nil
-(required-arguments 'square2) => 1 t
-(required-arguments 'test) => 2 t
-(required-arguments 'test2) => 2 t
+ (required-arguments 'square) => 1 nil
+ (required-arguments 'square2) => 1 t
+ (required-arguments 'test) => 2 t
+ (required-arguments 'test2) => 2 t
 |#
 
 
@@ -1247,8 +1237,7 @@ adjusted for overhead."
       (when (eq (symbol-package symbol) package)
         (monitoring-encapsulate symbol)))))
 
-(defmacro MONITOR-FORM (form
-                        &optional (nested :exclusive) (threshold 0.01)
+(defmacro MONITOR-FORM (form &key (nested :exclusive) (threshold 0.01)
                         (key :percent-time) (packages *package*))
   "Monitor the execution of all functions in the current package
 during the execution of FORM.  All functions that are executed above
@@ -1258,13 +1247,14 @@ THRESHOLD % will be reported."
          (monitor-all ,packages)
          (reset-all-monitoring)
          (time ,form))
-     (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)
+     (report-monitoring :names :all :nested ,nested :threshold ,threshold
+                        :key ,key)
      (unmonitor)))
 
 (defmacro WITH-MONITORING ((&rest functions)
-                           (&optional (nested :exclusive)
-                                      (threshold 0.01)
-                                      (key :percent-time))
+                           (&key (nested :exclusive)
+                                 (threshold 0.01)
+                                 (key :percent-time))
                            &body body)
   "Monitor the specified functions during the execution of the body."
   `(unwind-protect
@@ -1273,7 +1263,8 @@ THRESHOLD % will be reported."
            (monitoring-encapsulate fun))
          (reset-all-monitoring)
          ,@body)
-     (report-monitoring :all ,nested ,threshold ,key)
+     (report-monitoring :names :all :nested ,nested :threshold ,threshold
+                        :key ,key)
      (unmonitor)))
 
 ;;; ********************************
@@ -1335,23 +1326,11 @@ of an empty function many times."
   time-per-call
   cons-per-call)
 
-(defun REPORT (&key (names :all)
-		    (nested :exclusive)
-		    (threshold 0.01)
-		    (sort-key :percent-time)
-		    (ignore-no-calls nil))
-  "Same as REPORT-MONITORING but with a nicer keyword interface"
-  (declare (type (member :function :percent-time :time :percent-cons
-			 :cons :calls :time-per-call :cons-per-call)
-		 sort-key)
-	   (type (member :inclusive :exclusive) nested))
-  (report-monitoring names nested threshold sort-key ignore-no-calls))
-
-(defun REPORT-MONITORING (&optional names
-				    (nested :exclusive)
-				    (threshold 0.01)
-				    (key :percent-time)
-				    ignore-no-calls)
+(defun REPORT-MONITORING (&key names
+                               (nested :exclusive)
+                               (threshold 0.01)
+                               (key :percent-time)
+                               (ignore-no-calls t))
   "Report the current monitoring state.
 The percentage of the total time spent executing unmonitored code
 in each function (:exclusive mode), or total time (:inclusive mode)
@@ -1405,10 +1384,11 @@ functions set NAMES to be either NIL or :ALL."
                             time-units-per-second) ; sec/call
                          (round (/ cons (float calls)))) ; cons-per-call
                         *monitor-results*))))
-          (display-monitoring-results threshold key ignore-no-calls)))))
+          (display-monitoring-results :threshold threshold :key key
+                                      :ignore-no-calls ignore-no-calls)))))
 
-(defun display-monitoring-results (&optional (threshold 0.01) (key :percent-time)
-					     (ignore-no-calls t))
+(defun display-monitoring-results (&key (threshold 0.01) (key :percent-time)
+					(ignore-no-calls t))
   (let ((max-length 8)			; Function header size
 	(max-cons-length 8)
 	(total-time 0.0)

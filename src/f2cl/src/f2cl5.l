@@ -918,7 +918,7 @@
 			   decl))
 		     (set-difference arglist *external-function-names*))))
        (setf var-type-list (nreverse var-type-list))
-       (format t "declare ~S: ~S~%" (second defun-bit) var-type-list)
+       ;; (format t "declare ~S: ~S~%" (second defun-bit) var-type-list)
        (let ((entry (gethash (second defun-bit) *f2cl-function-info*)))
 	 (if entry
 	     (setf (f2cl-finfo-arg-types entry) var-type-list)
@@ -2745,8 +2745,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.104 2002/05/04 20:33:32 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.105 2002/05/05 21:10:10 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.105  2002/05/05 21:10:10  rtoy
+;;; Comment out extraneous print.
+;;;
 ;;; Revision 1.104  2002/05/04 20:33:32  rtoy
 ;;; When we construct the declarations for the formal args of the
 ;;; function, we save the arg types in away as well for later use.

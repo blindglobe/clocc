@@ -1,3 +1,6 @@
+2004-07-30: Made ytdoc.pdf part of the CVS system, so it will be part of
+            the "nightly snapshot."  (Version 1.4.1)
+	
 2004-07-25: Adding 'nthrest'
 	
 2004-07-10: Simplified Qvar as type	

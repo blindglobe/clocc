@@ -10,11 +10,11 @@
 
 (provide 'sequences)
 
-(defpackage "SEQUENCES" (:nicknames "SEQ"))
+(defpackage "SEQUENCES" #-lispworks (:nicknames "SEQ"))
 (in-package "SEQUENCES")
 
 (eval-when (load compile eval)
-  (defvar *seq-package* (find-package "SEQ")))
+  (defvar *seq-package* (find-package "SEQUENCES")))
 
 (shadow '(elt subseq copy-seq length list-reverse reverse list-nreverse
           nreverse make-sequence concatenate map some every notany notevery

@@ -29,7 +29,7 @@
 (shadow '(length member delete copy merge))
 (export '(treep member insert delete do-avl avl-to-seq seq-to-avl copy merge))
 (require 'sequences)
-(import '(seq::avl-tree seq::seq))
+(import '(sequences::avl-tree sequences::seq))
 
 ;; data structure of a tree: empty tree=nil, else node
 (deftype tree ()
@@ -358,12 +358,12 @@
 (defmethod print-object ((seq avl-tree) (out stream))
   (format out #+VAX "~@!#S(~;~S ~:_~S ~:_~S ~:_~S ~:_~S~;)~."
               #-VAX "#S(~S ~S ~S ~S ~S)"
-              'avl-tree ':contents (seq:coerce seq 'list)
-              ':length (seq:length seq)))
+              'avl-tree ':contents (sequences:coerce seq 'list)
+              ':length (sequences:length seq)))
 
 ;; new constructor function (for the reader):
 (defun new-avl-tree-constructor (&key contents &allow-other-keys)
-  (seq:coerce contents 'avl-tree))
+  (sequences:coerce contents 'avl-tree))
 #+CLISP
 (setf (svref (get 'avl-tree 'SYSTEM::DEFSTRUCT-DESCRIPTION) 3)
       'new-avl-tree-constructor)
@@ -387,7 +387,7 @@
 ;; fill-pointer=0 -> end reached.
 ;; fill-pointer=2*k+1 -> the vector contains the path to the next NODE,
 ;;   alternating a NODE and a direction indicator (LEFT, RIGHT).
-(seq:define-sequence AVL-TREE
+(sequences:define-sequence AVL-TREE
   :init        #'(lambda ()
                    (let* ((tr (unbox seq))
                           (l (level tr))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.9 2004/09/09 16:10:24 sds Exp $
+;;; $Id: csv.lisp,v 2.10 2004/09/09 20:49:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -93,11 +93,12 @@ Return 3 values:
              (when (and ,pro ,out (zerop (mod ,len ,pro)))
                (princ "." ,out) (force-output ,out)
                (when (and ,pro1 (= ,pro1 (incf ,pro1-count)))
-                 (let* ((pos (/ (file-position ,in) ,fsize)) (eta (eta pos)))
-                   (format ,out "<~:D: ~4F%~:[~;!~]~@[ ETA: ~/pr-secs/~]>"
-                           ,len (* pos 1d2)
-                           ,(when limit `(and ,lim (> ,len (* ,lim pos))))
-                           (and (> eta *seconds-long-threshold*) eta)))
+                 (let* ((pos (/ (file-position ,in) ,fsize)) (eta (eta pos))
+                        (incomplete
+                         (if ,(when limit `(and ,lim (> ,len (* ,lim pos))))
+                             "*" "")))
+                   (format ,out "<~A~:D: ~4F% ETA: ~/pr-secs/~A>"
+                           incomplete ,len (* pos 1d2) eta incomplete))
                  (force-output ,out) (setq ,pro1-count 0)))
              :finally (format ,out "done [~:d record~:p, ~:d column~:p]"
                               ,len ,cols)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.20 2000/06/26 15:44:12 sds Exp $
+;;; $Id: xml.lisp,v 2.21 2000/06/29 19:39:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,12 +19,14 @@
   (require :log (translate-logical-pathname "cllib:log"))
   ;; `read-from-stream'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `socket'
+  (require :net (translate-logical-pathname "port:net"))
   (require :gray (translate-logical-pathname "port:gray")))
 
 (in-package :cllib)
 
 (export
- '(*xml-readtable* *xml-print-xml*
+ '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
    with-xml-input with-xml-file xml-read-from-file))
 
 ;;;
@@ -126,16 +128,20 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
   (data nil :type list))        ; contents
 )
 
+(defcustom *xml-print-xml* symbol nil
+  "*Set to non-NIL to print XML-OBJ for future parsing.
+Note that the Unicode characters will NOT be printed as &#nnnn;.
+If this is `:sgml', use maximum SGML compatibility.
+If this is `:readably', print for Lisp reader.")
+
+(defsubst xml-print-readably-p ()
+  `(or *print-readably* (eq :readably *xml-print-xml*)))
+
 (defmethod print-object ((xm xml-misc) (out stream))
-  (if *print-readably* (call-next-method)
+  (if (xml-print-readably-p) (call-next-method)
       (print-unreadable-object (xm out :type t :identity t)
         (format out "~s [~:d object~:p]"
                 (xml-misc-type xm) (length (xml-misc-data xm))))))
-
-(defcustom *xml-print-xml* symbol nil
-  "*Set to non-NIL to print XML-OBJ for future XML parsing.
-Note that the Unicode characters will NOT be printed as &#nnnn;.
-If this is `:sgml', use maximum SGML compatibility.")
 
 (eval-when (compile load eval)  ; ACL
 (defcustom *xml-pre-namespaces* hash-table (make-hash-table :test 'equal)
@@ -233,20 +239,20 @@ If such a name already exists, re-use it."
     (unless (eq ns +xml-namespace-none+) (xmlns-pre ns))))
 
 (defmethod print-object ((cmt xml-comment) (out stream))
-  (cond (*print-readably* (call-next-method))
+  (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml*
          (format out "~&<!-- ~a -->~%" (xml-comment-data cmt)))
         ((print-unreadable-object (cmt out :type t :identity t)
            (format out "~:d char~:p" (length (xml-comment-data cmt)))))))
 
 (defmethod print-object ((ns xml-namespace) (out stream))
-  (if *print-readably* (call-next-method)
+  (if (xml-print-readably-p) (call-next-method)
       (print-unreadable-object (ns out :type t :identity t)
         (format out "~s ~s ~:d" (xmlns-uri ns) (xmlns-pre ns)
                 (hash-table-count (xmlns-nht ns))))))
 
 (defmethod print-object ((xmln xml-name) (out stream))
-  (cond (*print-readably* (call-next-method))
+  (cond ((xml-print-readably-p) (call-next-method))
         ((null (xmln-ns xmln)) (princ (xmln-ln xmln) out))
         (*xml-print-xml*
          (format out "~@[~a:~]~a" (xmln-prefix xmln) (xmln-ln xmln)))
@@ -263,7 +269,7 @@ If such a name already exists, re-use it."
 )
 
 (defmethod print-object ((xmlt xml-tag) (out stream))
-  (cond (*print-readably* (call-next-method))
+  (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml*
          (format out "~a~:{ ~a=~s~}" (xmlt-name xmlt) (xmlt-args xmlt)))
         ((format out "~a [~:{~a=~s~:^ ~}]"
@@ -279,7 +285,7 @@ If such a name already exists, re-use it."
 )
 
 (defmethod print-object ((xml xml-decl) (out stream))
-  (cond (*print-readably* (call-next-method))
+  (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml* (princ "<?" out) (call-next-method) (princ "?>" out))
         ((print-unreadable-object (xml out :type t :identity t)
            (call-next-method)))))
@@ -340,7 +346,7 @@ the second is `file size' (including tags)."
      (format nil "&#~d;" (char-code (char str beg))))))
 
 (defmethod print-object ((xml xml-obj) (out stream))
-  (cond (*print-readably* (call-next-method))
+  (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml*
          (princ "<" out) (call-next-method)
          (cond ((xmlo-long-p xml)
@@ -356,8 +362,10 @@ the second is `file size' (including tags)."
              (format out " ~:d object~:p ~:d/~:d chars"
                      (length (xmlo-data xml)) ts fs))))))
 
+(declaim (ftype (function (t xml-obj) (values xml-obj)) xml-push))
 (defun xml-push (new xml)
   "Add NEW to data in XML."
+  (declare (type xml-obj xml))
   (typecase new
     (xml-obj (push new (xmlo-data xml)))
     (xml-decl (push new (xmlo-data xml)))
@@ -371,7 +379,8 @@ the second is `file size' (including tags)."
                   "~s: ~s was terminated by ~s" 'xml-push (xmlo-name xml) new)
           (setf (xmlo-data xml) (nreverse (xmlo-data xml))))
     (t (error 'case-error :proc 'xml-push :args
-              (list 'new new 'xml-obj 'xml-decl 'string 'xml-comment 'cons)))))
+              (list 'new new 'xml-obj 'xml-decl 'string 'xml-comment 'cons))))
+  xml)
 
 ;;;
 ;;; XML streams
@@ -392,7 +401,8 @@ the second is `file size' (including tags)."
     (file-stream (file-length st))
     (list (reduce #'+ st :key #'stream-length))
     (concatenated-stream (stream-length (concatenated-stream-streams st)))
-    (string-stream 0)))         ; can we do any better than this?
+    (string-stream 0)           ; can we do any better than this?
+    (socket 0)))
 
 (defmethod initialize-instance :after ((str xml-stream-in) &rest junk)
   (declare (ignore junk))
@@ -459,10 +469,10 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
                        (function term)
                        (character (lambda (ch) (char= ch term)))
                        (sequence (lambda (ch) (find ch term :test #'char=))))
-        :for ch = (read-char str t nil t)
-        :until (funcall endp ch) :collect ch :into list
+        :for ch = (read-char str nil nil t)
+        :until (or (null ch) (funcall endp ch)) :collect ch :into list
         :finally
-        (unread-char ch str)
+        (when ch (unread-char ch str))
         (when clean (setq list (compress-whitespace list)))
         (when base
           (do ((ll list (cdr ll))) ((null ll)) ; &#nnnn;
@@ -493,7 +503,10 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
   ;; we do not resolve namespaces here (that is done during the
   ;; post-processing in `xml-resolve-namespaces') because of the
   ;; recursive nature of namespace resolution
-  (flet ((tost (xx) (typecase xx (symbol (symbol-name xx)) (t xx))))
+  (flet ((tost (xx) (etypecase xx
+                      (symbol (symbol-name xx)) (string xx)
+                      (number (prin1-to-string xx)) ; for malformed border=1
+                      (cons xx))))
     (do ((ll list))
         ((null (cddr ll)) (setf (car list) (tost (car list))) list)
       (if (or (eql (cadr ll) #\:) (eql (cadr ll) #\=))
@@ -520,7 +533,7 @@ and `*xml-pre-namespaces*'."
               (lambda (att)
                 (if (consp (car att))
                     (when (string= "xmlns" (caar att))
-                      (format t "ns: ~s~%" att)
+                      (mesg :xml t "ns: ~s~%" att)
                       (when (member (cdar att) pref-list :test #'eq)
                         (error 'code :proc 'xml-resolve-namespaces
                                :mesg "duplicate namespace ~s: ~s"
@@ -529,7 +542,7 @@ and `*xml-pre-namespaces*'."
                         (push pref pref-list)
                         (xmlns-get (cadr att) :pre-tmp pref)))
                     (when (string= "xmlns" (car att))
-                      (format t "dns: ~s~%" att)
+                      (mesg :xml t "dns: ~s~%" att)
                       (when dns
                         (error 'code :proc 'xml-resolve-namespaces
                                :mesg "duplicate default namespace: ~s"
@@ -542,7 +555,7 @@ and `*xml-pre-namespaces*'."
                   (if (consp obj)
                       (xmln-get (cadr obj) (car obj))
                       (xmln-get obj default-ns))))
-           ;; (format t "name: ~s~%" (xmlt-name obj))
+           (mesg :xml t "name: ~s~%" (xmlt-name obj))
            (setf (xmlt-name obj) ; name
                  (xmln-cons (xmlt-name obj) *xml-default-namespace*))
            (do ((attr (xmlt-args obj) (cdr attr))) ; attributes
@@ -550,7 +563,7 @@ and `*xml-pre-namespaces*'."
              ;; http://www.w3.org/TR/REC-xml-names/#defaulting
              ;; "Namespaces in XML": 5.2 "Namespace Defaulting"
              ;; "default namespaces do not apply directly to attributes"
-             ;; (format t "attr: ~s~%" (car attr))
+             (mesg :xml t "attr: ~s~%" (car attr))
              (setf (caar attr) (xmln-cons (caar attr) +xml-namespace-none+))))
          ;; 3rd pass: check for identical attributes
          (do ((ll (xmlt-args obj) (cdr ll))) ((null ll))
@@ -567,24 +580,42 @@ and `*xml-pre-namespaces*'."
            (dolist (pref pref-list)
              (pop (gethash pref *xml-pre-namespaces*)))))))))
 
+(defcustom *xml-read-balanced* boolean t
+  "*Require balanced tags. Bind to NIL when reasing HTML.
+When NIL, `xml-read-tag' is not recursive.")
+(defcustom *xml-read-entities* boolean t
+  "*Parse the entities.")
+
+(defun xml-destructure-attributes (list)
+  "Return the name, the attribute alist and the last element."
+  (do* ((name (car list)) (last (car (last list)))
+        (atts (if (eq 'xml-tags::/ last) (nbutlast (cdr list)) (cdr list)))
+        (ll atts (cdr ll)))
+       ((null ll) (values name atts last))
+    (when (atom (car ll))
+      (setf (car ll) (list (car ll) "true")))))
+
 (defun xml-read-tag (str)
   "Read the tag, from <TAG-NAME> to </TAG-NAME>.
 The first character to be read is #\T."
-  (let ((attribs (xml-list-to-alist (read-delimited-list #\> str t))))
-    (if (eq 'xml-tags::/ (car (last attribs)))
-        (make-xml-obj :name (car attribs) :args (nbutlast (cdr attribs)))
-        (loop :with next
-              :and xml = (make-xml-obj :name (car attribs) :args (cdr attribs))
-              :initially (push (xmlo-name xml) (xmlis-stack str))
-              :while (not (consp next)) :do
-              (xml-push (xml-read-text str "<&") xml)
-              (xml-push (setq next (read str t nil t)) xml)
-              :finally
-              (assert (equal (car next) (car (xmlis-stack str))) (next)
-                      "~s[~a]: ~s terminated ~s" 'xml-read-tag str
-                      next (xmlis-stack str))
-              (pop (xmlis-stack str))
-              (return xml)))))
+  (multiple-value-bind (name atts last)
+      (xml-destructure-attributes
+       (xml-list-to-alist (read-delimited-list #\> str t)))
+    (let ((xml (make-xml-obj :name name :args atts)))
+      (if (eq 'xml-tags::/ last) xml
+          (if *xml-read-balanced*
+              (loop :with next
+                    :initially (push (xmlo-name xml) (xmlis-stack str))
+                    :while (not (consp next)) :do
+                    (xml-push (xml-read-text str "<&") xml)
+                    (xml-push (setq next (read str t nil t)) xml)
+                    :finally
+                    (assert (equal (car next) (car (xmlis-stack str))) (next)
+                            "~s[~a]: ~s terminated ~s" 'xml-read-tag str
+                            next (xmlis-stack str))
+                    (pop (xmlis-stack str))
+                    (return xml))
+              (xml-push (xml-read-text str "<&") xml))))))
 
 (defun read-xml (stream char)
   (ecase char
@@ -596,18 +627,26 @@ The first character to be read is #\T."
                 (assert (null (cdr tag)) (tag)
                         "~s[~a]: end tag ~s has attributes ~s" 'read-xml stream
                         (car tag) (cdr tag))
-                tag))
-         (#\? (let ((args (xml-list-to-alist
-                           ;; can a declaration have namespaces?
-                           (read-delimited-list #\> stream t))))
-                (assert (eq 'xml-tags::? (car (last args))) (args)
-                        "~s[~a]: <? was terminated by ~s" 'read-xml stream
-                        (car (last args)))
-                (make-xml-decl :name (car args) :args (nbutlast (cdr args)))))
-         (#\! (let ((obj (read stream t nil t)))
+                (if *xml-read-balanced* tag
+                    (progn (setf (cdr tag) (xml-read-text stream "<&"
+                                                          :clean nil))
+                           tag))))
+         (#\? (multiple-value-bind (name atts last)
+                  (xml-destructure-attributes
+                   (xml-list-to-alist ; can a declaration have namespaces?
+                    (read-delimited-list #\> stream t)))
+                (assert (eq 'xml-tags::? last) ()
+                        "~s[~a]: <? was terminated by ~s"
+                        'read-xml stream last)
+                (make-xml-decl :name name :args atts)))
+         (#\!
+          (if (char= #\- (peek-char nil stream))
+              (let ((ch (progn (read-char stream) (read-char stream t nil t))))
+                (assert (char= #\- ch) (ch)
+                        "~s: cannot handle: <!-~c" 'read-xml ch)
+                (make-xml-comment :data (xml-read-comment stream)))
+              (let ((obj (read stream t nil t)))
                 (case obj
-                  (xml-tags::-- (make-xml-comment
-                                 :data (xml-read-comment stream)))
                   (xml-tags::entity (make-xml-comment
                                      :data (xml-read-entity stream)))
                   ((xml-tags::doctype xml-tags::element xml-tags::attlist
@@ -617,7 +656,7 @@ The first character to be read is #\T."
                   (t (warn "~s: what is `~s'? proceed, with fingers crossed..."
                            'read-xml obj)
                      (cons obj (xml-list-to-alist
-                                (read-delimited-list #\> stream t)))))))
+                                (read-delimited-list #\> stream t))))))))
          (t (unread-char ch stream)
             (xml-read-tag stream)))))
     (#\[ (xml-list-to-alist (read-delimited-list #\] stream t)))
@@ -659,8 +698,11 @@ The first character to be read is #\T."
   "Return a readtable for reading XML."
   (set-macro-character #\< #'read-xml nil rt)
   (set-macro-character #\[ #'read-xml nil rt)
-  (set-macro-character #\& #'read-xml nil rt)
-  (set-macro-character #\% #'read-xml nil rt)
+  (cond (*xml-read-entities*
+         (set-macro-character #\& #'read-xml nil rt)
+         (set-macro-character #\% #'read-xml nil rt))
+        (t (set-syntax-from-char #\& #\Space rt)
+           (set-syntax-from-char #\% #\Space rt)))
   ;; (set-macro-character #\> #'read-xml nil rt)
   (set-macro-character #\> (get-macro-character #\)) nil rt)
   (set-macro-character #\] (get-macro-character #\)) nil rt)
@@ -672,8 +714,9 @@ The first character to be read is #\T."
   ;; attribute="value"
   (set-syntax-from-char #\= #\Space rt)
   (set-macro-character #\= #'read-xml nil rt)
-  ;; do we really need this?
-  ;; (set-syntax-from-char #\; #\a rt)
+  (set-syntax-from-char #\; #\Space rt) ; for HTML documents
+  (set-syntax-from-char #\, #\Space rt) ; for HTML documents
+  (set-syntax-from-char #\# #\Space rt) ; for HTML documents
   (setf (readtable-case rt) :preserve)
   rt)
 
@@ -683,7 +726,9 @@ The first character to be read is #\T."
 (defmacro with-xml-input ((var stream) &body body)
   "Open the XML stream, evaluate the forms, make sure the stream is closed."
   `(with-open-stream (,var (make-instance 'xml-stream-in :input ,stream))
-    (let ((*readtable* *xml-readtable*)) ,@body)))
+    ;; do not reuse `*xml-readtable*' since the parsing should depend on
+    ;; `*xml-read-entities*' and `*xml-read-balanced*'
+    (let ((*readtable* (make-xml-readtable))) ,@body)))
 
 (defmacro with-xml-file ((var file &key reset-ent (out '*standard-output*))
                          &body body)
@@ -691,22 +736,22 @@ The first character to be read is #\T."
   `(with-timing (:out ,out)
     (when ,reset-ent (xml-init-entities))
     (with-xml-input (,var (open ,file :direction :input))
-      (when ,out
-        (format ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
-                file (file-length (car (xmlis-all ,var))))
-        (force-output ,out))
+      (mesg :xml ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
+       file (file-length (car (xmlis-all ,var))))
       (unwind-protect (progn ,@body)
-        (when ,out
-          (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
-                  (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
-                  (xmlis-size ,var)))))))
+        (mesg :xml ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
+              (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
+              (xmlis-size ,var))))))
 
 ;;;###autoload
-(defun xml-read-from-file (file &key (reset-ent t) (repeat t))
+(defun xml-read-from-file (file &key (repeat t) (reset-ent *xml-read-entities*)
+                           (resolve-namespaces *xml-read-balanced*))
   "Read all XML objects from the file."
-  (xml-resolve-namespaces
-   (with-xml-file (str file :reset-ent reset-ent)
-     (read-from-stream str :repeat repeat))))
+  (let ((obj (with-xml-file (str file :reset-ent reset-ent)
+               (read-from-stream str :repeat repeat))))
+    (if resolve-namespaces
+        (xml-resolve-namespaces obj)
+        obj)))
 
 (provide :xml)
 ;;; file xml.lisp ends here

@@ -4655,12 +4655,10 @@ or does not contain valid compiled code."
   #+clisp
   (with-open-file (in file-name :direction :input :if-does-not-exist nil)
     (and in
-         (let ((line (read-line in nil nil)))
-           (and line
-                (string= line "(SYSTEM::VERSION " :start1 0
-                         :end1 #.(length "(SYSTEM::VERSION "))
-                (null (nth-value 1 (ignore-errors
-                                     (eval (read-from-string line)))))))))
+         (let ((form (ignore-errors (read-from-string (read-line in nil nil)))))
+           (and (consp form)
+                (eq (car form) 'SYSTEM::VERSION)
+                (null (nth-value 1 (ignore-errors (eval form))))))))
   #-clisp t))
 
 (defun needs-compilation (component force)

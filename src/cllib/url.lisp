@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-04-20 Tue 12:20:11 EDT sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-04-26 Mon 13:17:13 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.26 1999/04/20 16:21:08 sds Exp $
+;;; $Id: url.lisp,v 1.27 1999/04/26 17:18:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.27  1999/04/26 17:18:10  sds
+;;; (with-open-html): moved `meta' to `head'; added `link'.
+;;;
 ;;; Revision 1.26  1999/04/20 16:21:08  sds
 ;;; (url string): handle URL with cgi having confusing arguments.
 ;;;
@@ -1209,37 +1212,43 @@ It is bound only by `with-open-html'.")
                                  head))
                           &body body)
   "Output HTML to a file."
-  `(with-open-file (*html-output* ,@open-pars)
-    (format *html-output* "<!doctype~{ ~s~}>~%" ,doctype)
-    ;; print the comment
-    (format *html-output* "<!--~% File: <~a - " ,(car open-pars))
-    (current-time *html-output*)
-    (format *html-output*
-     " ~a@~a>~% Created by `with-open-html'~% Lisp: ~a ~a~@[~%~a~]~% -->~%"
-     (getenv "USER") (machine-instance) (lisp-implementation-type)
-     (lisp-implementation-version) ,comment)
-    (with-tag (:meta :close nil ,@meta))
-    (terpri *html-output*)
-    (when ,base
-      (with-tag (:base :close nil :href ,base))
-      (terpri *html-output*))
-    (with-tag (:html)
-      (terpri *html-output*)
-      (with-tag (:head ,@head) (with-tag (:title :value ,title)))
-      (terpri *html-output*) (terpri *html-output*)
-      (with-tag (:body)
-        ,@body
-        (when ,footer
+  (let ((mailto (gensym "WOH-MAILTO-")))
+    `(let ((,mailto (concatenate 'string "mailto:" *user-mail-address*)))
+      (with-open-file (*html-output* ,@open-pars)
+        (format *html-output* "<!doctype~{ ~s~}>~%" ,doctype)
+        ;; print the comment
+        (format *html-output* "<!--~% File: <~a - " ,(car open-pars))
+        (current-time *html-output*)
+        (format *html-output*
+         " ~a@~a>~% Created by `with-open-html'~% Lisp: ~a ~a~@[~%~a~]~% -->~%"
+         (getenv "USER") (machine-instance) (lisp-implementation-type)
+         (lisp-implementation-version) ,comment)
+        (terpri *html-output*)
+        (when ,base
+          (with-tag (:base :close nil :href ,base))
+          (terpri *html-output*))
+        (with-tag (:html)
+          (terpri *html-output*)
+          (with-tag (:head ,@head)
+            (with-tag (:meta :close nil ,@meta))
+            (terpri *html-output*)
+            (with-tag (:link :close nil :rev 'made :href ,mailto))
+            (terpri *html-output*)
+            (with-tag (:title :value ,title)))
           (terpri *html-output*) (terpri *html-output*)
-          (with-tag (:p :terpri nil)
-            (with-tag (:hr :close nil))
-            (with-tag (:address :terpri nil)
-              (with-tag (:a :href (format nil "mailto:~a" *user-mail-address*)
-                            :value *user-mail-address*)))
-            (terpri *html-output*) (with-tag (:br :close nil))
-            (with-tag (:strong :value (current-time nil)))))))
-    (terpri *html-output*)))
+          (with-tag (:body)
+            ,@body
+            (when ,footer
+              (terpri *html-output*) (terpri *html-output*)
+              (with-tag (:p :terpri nil)
+                (with-tag (:hr :close nil))
+                (with-tag (:address :terpri nil)
+                  (with-tag (:a :href ,mailto :value *user-mail-address*)))
+                (terpri *html-output*) (with-tag (:br :close nil))
+                (with-tag (:strong :value (current-time nil)))))))
+        (terpri *html-output*)))))
 
+;;; this is an example on how to use `with-open-html' and `with-tag'.
 (defun directory-index (dir file &rest opts
                         &key (title (format nil "Index of ~a" dir)))
   "Output the index for a directory."

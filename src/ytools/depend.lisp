@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.10 2005/02/03 05:18:44 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.11 2005/02/05 02:38:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -37,6 +37,8 @@
 		        )))
  )
    
+(setq hidden-slurp-tasks* (adjoin 'scan-depends-on hidden-slurp-tasks*))
+
 (defclass Loadable-file-chunk-from-scan (Loadable-chunk) ())
 
 (defmethod derive ((fb Loadable-file-chunk-from-scan))
@@ -172,27 +174,23 @@
 	 (cond ((not (eq readtab prev-readtab))
 		(format *error-output*
 		   "Changing readtable of ~s from ~s to ~s = ~s~%"
-		   file-ch prev-readtab (cadr form) readtab)))
+		   file-ch prev-readtab (cadr form) readtab)
 		(setf (File-chunk-readtable file-ch)
-		      readtab)
-		;; for the duration of the slurp --
-		(setq *readtable* readtab))))
+		      readtab)))
+	 ;; for the duration of the slurp --
+	 (setq *readtable* readtab)
+	 false)))
 
-(datafun scan-depends-on end-header
-   (defun :^ (form sdo-state) 
-      (cond ((memq ':no-compile (cdr form))
-	     (place-Loaded-chunk (Sds-file-chunk sdo-state)
-				 ':source)))
-      (cond (end-header-dbg*
-	     (format *error-output*
-		     "Executing ~s~% "
-		     form)))
-      (cond ((memq ':continue-slurping (cdr form))
-	     (format *error-output*
-		!"Warning -- ':continue-slurping' encountered in file ~
-                  ~s; this declaration is~
-                  ~%  no longer needed~%")))
-      true))
+(datafun scan-depends-on in-package
+   (defun :^ (e _)
+      (let ((pkg (find-package (cadr e))))
+	 (cond (pkg
+		(setq *package* pkg))
+	       (t
+		(format *error-output*
+		   "Ignoring declaration ~s -- undefined package"
+		   e)))
+	 false)))
 
 (datafun scan-depends-on depends-on
   (defun :^ (e sdo-state)
@@ -221,7 +219,12 @@
 				     (union (mapcar #'pathname-denotation-chunk
 						    pnl)
 					    (File-chunk-read-basis
-						file-ch)))))))))))
+						file-ch)))))
+			(dolist (pn pnl)
+			   (let* ((pchunk (pathname-denotation-chunk pn))
+				  (lpchunk (place-Loaded-chunk pchunk false)))
+			      (monitor-filoid-basis lpchunk)
+			      (loaded-chunk-set-basis lpchunk)))))))))
     false))
 
 ;;; Return a list of groups, each of the form
@@ -284,15 +287,15 @@
 	 (setf (Chunk-update-basis compiled-ch)
 	       (union ubl (Chunk-update-basis compiled-ch))))))
 
-(defun pathnames-note-run-support (pnl file-ch loaded-file-ch)
+(defun pathnames-note-run-support (pnl filoid-ch loaded-filoid-ch)
    (dolist (pn pnl)
       (multiple-value-bind (bl lbl)
 			   (pathname-run-support pn)
-	 (cond (file-ch
-		(setf (File-chunk-callees file-ch)
+	 (cond (filoid-ch
+		(setf (File-chunk-callees filoid-ch)
 		      (union bl
-			     (File-chunk-callees file-ch)))))
-	 (loaded-chunk-augment-basis loaded-file-ch lbl))))
+			     (File-chunk-callees filoid-ch)))))
+	 (loaded-chunk-augment-basis loaded-filoid-ch lbl))))
 
 (defun pathnames-note-sub-file-deps (pnl compiled-ch sub-file-types)
    (dolist (pn pnl)
@@ -300,9 +303,9 @@
 			   (pathname-run-support pn)
 			   (declare (ignore lbl))
 	 (dolist (callee-ch bl)
-	    (dolist (sfty (Sds-sub-file-types sdo-state)))
-            (compiled-ch-sub-file-link
-	       compiled-ch callee-ch sfty true)))))
+	    (dolist (sfty sub-file-types)
+               (compiled-ch-sub-file-link
+		  compiled-ch callee-ch sfty true))))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).
@@ -313,8 +316,14 @@
 ;;; (:loaded <filoid>).	   
 (defgeneric pathname-run-support (xpn))
 
+(defmethod pathname-compile-support ((ytp YTools-pathname))
+   (pathname-compile-support (pathname-resolve ytp false)))
+
+(defmethod pathname-run-support  ((ytp YTools-pathname))
+   (pathname-run-support (pathname-resolve ytp false)))
+
 ;;; For files, you get the same two lists for compile-support as
-;;; for run-support, although with slightly different meanings.
+;;; for run-support, although with slightly different meanings.--
 (defmethod pathname-compile-support ((pn pathname))
    (pathname-run-support pn))
 
@@ -324,7 +333,7 @@
 	      (list (place-Loaded-chunk file-ch false)))))
 
 (defmacro self-compile-dep (&rest sorts)
-   `("self-dependency for compilation " ',sorts))
+   `'("self-dependency for compilation " ',sorts))
 
 (datafun scan-depends-on self-compile-dep
    (defun :^ (e sdo-state)
@@ -340,6 +349,22 @@
 		         compiled-ch file-ch sftype false))))))
      false))
 
+(datafun scan-depends-on end-header
+   (defun :^ (form sdo-state) 
+      (cond ((memq ':no-compile (cdr form))
+	     (place-Loaded-chunk (Sds-file-chunk sdo-state)
+				 ':source)))
+      (cond (end-header-dbg*
+	     (format *error-output*
+		     "Executing ~s~% "
+		     form)))
+      (cond ((memq ':continue-slurping (cdr form))
+	     (format *error-output*
+		!"Warning -- ':continue-slurping' encountered in file ~
+                  ~s; this declaration is~
+                  ~%  no longer needed~%"
+		(Sds-file-chunk sdo-state))))
+      true))
 
 (def-excl-dispatch #\' (srm _)
    (list 'funktion (read srm true nil true)))

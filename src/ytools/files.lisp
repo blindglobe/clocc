@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.19 2005/02/03 05:18:44 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.20 2005/02/05 02:38:26 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -64,6 +64,11 @@
 			    :manip file-manip)
 	  ))))
 
+;;; 'filoid-fload' is the entry point to declare that a filoid
+;;; should be loaded, figure out its basis, and tell the chunk
+;;; network to load it.  
+;;; It should never be called _by_ a filoid (Loaded-) chunk deriver, 
+;;; because it alters the bases of such chunks. 
 (defgeneric filoid-fload (pn &key force-load manip))
 
 (defmethod filoid-fload ((ytpn YTools-pathname) &key force-load manip)
@@ -78,14 +83,17 @@
 
 (defun loaded-chunk-fload (loaded-chunk force-load)
       (monitor-filoid-basis loaded-chunk)
+      (loaded-chunk-set-basis loaded-chunk)
       (chunk-request-mgt loaded-chunk)
-      (cond ((chunk-up-to-date loaded-chunk)
-	     (cond (force-load
-		    ;; Already managed, so forcing makes sense
-		    (chunk-derive-and-record loaded-chunk)
-		    (chunks-update (Chunk-derivees loaded-chunk)))))
-	    (t
-	     (chunk-update loaded-chunk))))
+      (let ((d (Chunk-date loaded-chunk)))
+	 (chunk-update loaded-chunk)
+	 (cond ((and force-load
+		     (= (Chunk-date loaded-chunk)
+			d))
+		;; It was apparently already up to date,
+		;; so forcing makes sense
+		(chunk-derive-and-record loaded-chunk)
+		(chunks-update (Chunk-derivees loaded-chunk))))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -165,9 +173,15 @@
 ;;; 'pn' could be a Pseudo-pathname (see module.lisp)
 (defgeneric pathname-denotation-chunk (pn))
 
+(defmethod pathname-denotation-chunk ((ytpn YTools-pathname))
+   (pathname-denotation-chunk (pathname-resolve ytpn false)))
+
 (defmethod pathname-denotation-chunk ((pn pathname))
    (cond ((null (Pathname-type pn))
-	  (setq pn (pathname-source-version pn))))
+	  (setq pn (pathname-source-version pn))
+	  (cond ((not pn)
+		 (error "No source file corresponding to ~s"
+			pn)))))
    (place-File-chunk pn))
 
 (defun place-File-chunk (pn &key kind)
@@ -223,7 +237,7 @@
     ;; dependencies from whatever places are appropriate --
     (principal-bases :accessor Loaded-chunk-principal-bases
 		     :initform !())
-    ;; The Loadable-chunk that controls the features of this one --
+    ;; The Loadable-chunk that computes the basis of this one --
     (controller :accessor Loaded-chunk-controller
 		:initarg :controller)))
 
@@ -271,8 +285,8 @@
 		   (union non-prin-bases
 			  added-bases)))))
 
-;;; The first elements of the basis are always the principal-bases.  Use this to
-;;; change the rest --
+;;; The first elements of the basis are always the principal-bases.
+;;; Use this to change the rest --
 (defun loaded-chunk-change-basis (loaded-ch revised-basis)
   (loaded-chunk-verify-basis loaded-ch)
   (setf (Chunk-basis loaded-ch)
@@ -316,10 +330,11 @@
 ;;; assumption that the bases it sees are not in the process of
 ;;; changing.
 
-;;; Creates a Loadable-chunk to act as a controller for this file.
+;;; Creates a Loadable-chunk to act as a controller for this filoid
+;;; and the chunk corresponding to its being loaded.
 ;;; In depend.lisp we'll supply the standard controller for ordinary files
 ;;; following YTools rules.  
-(defgeneric create-loaded-controller (file loaded)
+(defgeneric create-loaded-controller (filoid loaded)
   (:method ((x t) y)
      (declare (ignore y))
      (error "No way supplied to create controllers for objects of type ~s~%"
@@ -366,7 +381,7 @@
 							 compiled-chunk)))
 						  (t file-chunk)))))
 ;;;;			   (setq cc* compiled-chunk)
-			   (loaded-file-chunk-set-basis new-lc)
+;;;;			   (loaded-file-chunk-set-basis new-lc)
 			   (push new-lc all-loaded-file-chunks*)
 			   new-lc))))
 		:initializer
@@ -466,7 +481,8 @@
 	 (t
 	  (cerror "I will leave the value unchanged"
 		  !"Illegal value ~s for fload-compile*"
-		  v))))
+		  v)))
+  v)
 
 (define-symbol-macro fload-compile* (default-fload-manip))
 
@@ -479,23 +495,25 @@
 (defvar fload-compile-flag-chunk* (make-instance 'Fload-compile-flag-set))
 
 (defun loadeds-check-bases ()
-   (let ((loadeds-needing-checking !())
-	 (loadeds-needing-update !()))
+   (let ((loadeds-needing-checking !()))
       (dolist (lc all-loaded-file-chunks*)
 	 (cond ((memq (Loaded-file-chunk-manip lc)
 		      '(:defer :follow))
 		(on-list lc loadeds-needing-checking))))
-      (dolist (lc loadeds-needing-checking)
-	 (monitor-filoid-basis lc)
-	 (cond ((not (chunk-up-to-date lc))
-		(on-list lc loadeds-needing-update))))
+;;;;      (dolist (lc loadeds-needing-checking)
+;;;;	 (monitor-filoid-basis lc)
+;;;;	 (cond ((not (chunk-up-to-date lc))
+;;;;		(on-list lc loadeds-needing-update))))
       (chunks-update (cons fload-compile-flag-chunk*
-			   loadeds-needing-update))))
+			   loadeds-needing-checking))))
 
 (defvar loaded-manip-dbg* false)
 
+(defgeneric loaded-chunk-set-basis (loaded-ch)
+   (:method ((lch t)) nil))
+
 ;;; This must be called whenever the 'manip' field changes.
-(defun loaded-file-chunk-set-basis (loaded-ch)
+(defmethod loaded-chunk-set-basis ((loaded-ch Loaded-file-chunk))
    (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
 	  (manip (Loaded-file-chunk-manip loaded-ch))
 	  (source-exists (Loaded-file-chunk-source loaded-ch))
@@ -823,7 +841,8 @@
 				     ((ch ,subfile-class-name)
 				      &rest _)
 		   (setf (Chunk-basis ch)
-			 (list (place-File-chunk (,sub-pathname-read-fcn ch)))))
+			 (list (place-File-chunk
+				  (,sub-pathname-read-fcn ch)))))
 
 		(defclass ,slurped-sym-class-name (Chunk)
 		  ((subfile :reader ,slurped-subfile-read-fcn
@@ -905,13 +924,18 @@
 
 		(defparameter ,sub-file-type-name
 		   (make-Sub-file-type
-		      :name ',sym-name
+		      :name ',sym
 		      :chunker #',subfile-placer-fcn
 		      :slurp-chunker #',slurped-subfile-placer-fcn
 		      :load-chunker #',loaded-subfile-placer-fcn))
 
-		(pushnew ,sub-file-type-name
-			 sub-file-types*))))))
+		(setq sub-file-types*
+		      (cons ,sub-file-type-name
+			    (remove-if
+			       (\\ (sfty)
+				  (eq (Sub-file-type-name sfty)
+				      ',sym))
+			       sub-file-types*))))))))
 )
 
 (defun lookup-sub-file-type (name)
@@ -933,8 +957,7 @@
 			       (Sub-file-type-slurp-chunker
 				  sub-file-type)))
 			 (File-chunk-pathname callee-ch))
-	       (Chunk-update-basis
-			   compiled-ch)))
+	       (Chunk-update-basis compiled-ch)))
 
 (eval-when (:compile-toplevel :load-toplevel)
    (def-sub-file-type :macros)
@@ -1058,7 +1081,7 @@
 	    (t
 	     (let ((comp-date
 		      (Chunk-date compiled-chunk)))
-;;;;	        (monitor-filoid-basis lpchunk)
+	        (monitor-filoid-basis lpchunk)
 		(chunk-request-mgt compiled-chunk)
 		(chunk-update compiled-chunk)
 		(cond ((and force-compile
@@ -1069,9 +1092,11 @@
       (cond ((or load
 		 (load-after-compile))
 	     (setf (Loaded-file-chunk-manip lpchunk) ':compiled)
-	     (monitor-filoid-basis lpchunk)
-	     (chunk-request-mgt lpchunk)
-	     (chunk-update lpchunk)))))
+	     (loaded-chunk-fload lpchunk false)
+;;;;	     (monitor-filoid-basis lpchunk)
+;;;;	     (chunk-request-mgt lpchunk)
+;;;;	     (chunk-update lpchunk)
+	     ))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve

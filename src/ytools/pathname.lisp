@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.8 2005/02/03 05:18:45 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.9 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -41,7 +41,7 @@
 			 ((null dl))
 		        (cond ((symbolp (car dl))
 			       (format srm "%~s" (car dl)))
-			      (t
+			      ((not (listp (car dl)))
 			       (cond ((not firstiter)
 				      (format srm "/")))
 			       (format srm "~a" (car dl)))))

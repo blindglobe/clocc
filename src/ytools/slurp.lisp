@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.13 2005/01/03 14:22:59 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.14 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -251,6 +251,8 @@ after YTools file transducers finish.")
 
 (defvar now-slurping* false)
 
+(defvar hidden-slurp-tasks* !())
+
 ;;; 'states' is a list of data structures, the same length as
 ;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
 ;;; for the corresponding task.  'stream-init', if not false, is
@@ -277,11 +279,19 @@ after YTools file transducers finish.")
 				  (funcall (Slurp-task-file->state-fcn
 						   slurp-task)
 					   pn))
-			       slurp-tasks)))
-		      (file-op-message
-		          (format nil "Slurping ~s"
-				      (mapcar #'Slurp-task-label slurp-tasks))
-			  pn false "...")
+			       slurp-tasks))
+			 (vis-tasks
+			       (remove-if (\\ (k)
+					     (memq (Slurp-task-label
+						      k)
+						   hidden-slurp-tasks*))
+					  slurp-tasks)))
+		      (cond ((not (null vis-tasks))
+			     (file-op-message
+				 (format nil "Slurping ~s"
+					     (mapcar #'Slurp-task-label
+						     vis-tasks))
+				 pn false "...")))
 ;;;;		      (cond ((equal slurped-pn*
 ;;;;				    (->pathname "tezt-s.lisp"))
 ;;;;			     (setq slurped-pn* pn slurp-tasks* slurp-tasks)
@@ -300,7 +310,8 @@ after YTools file transducers finish.")
 			   slurp-states)
 ;;;;			(format t "Slurped form ~s~%" form)
 			)
-		      (file-op-message "...slurped" pn false ""))))))
+		      (cond ((not (null vis-tasks))
+			     (file-op-message "...slurped" pn false ""))))))))
 	 (t !())))
 
 (defun forms-slurp (forms tasks states)
@@ -330,12 +341,15 @@ after YTools file transducers finish.")
 	    (asym (form-fcn-sym r))
 	    (form r))
 	 (loop
+;;;;	    (format t "tasks = ~s form = ~s ~%"
+;;;;		    (mapcar #'Slurp-task-label slurp-tasks) form)
 	   ;; Macro-expand until handled generally or
 	   ;; handled by all
 	   (cond
-	     ((null slurp-tasks)
+	     ((or (null slurp-tasks)
+		  (not asym))
 	      (return (values continuing-tasks continuing-states)))
-	     (asym
+	     (t
 	      (let ((h (href general-slurp-handlers*
 			     asym)))
 		 (cond (h
@@ -374,8 +388,10 @@ after YTools file transducers finish.")
 				     (setq task-done (funcall h form state))))
 			      (cond (handled-by-task
 				     (cond ((not task-done)
-					    (on-list task continuing-tasks)
-					    (on-list state continuing-states))))
+					    (on-list task
+						     continuing-tasks)
+					    (on-list state
+						     continuing-states))))
 				    (t
 				     (on-list task unclear-tasks)
 				     (on-list state unclear-states)))))
@@ -384,10 +400,11 @@ after YTools file transducers finish.")
 			       (setq form (macroexpand-1 form))
 			       (setq asym (form-fcn-sym form)))
 			      (t
-			       (return (values (nconc continuing-tasks
-						      slurp-tasks)
-					       (nconc continuing-states
-						      slurp-states))))))))))))))
+			       (return
+				   (values (nconc continuing-tasks
+						  slurp-tasks)
+					   (nconc continuing-states
+						  slurp-states))))))))))))))
 
 ;;; The idea is that almost every slurp task will treat 'progn'
 ;;; the same way, so we shouldn't have to create many replicas of

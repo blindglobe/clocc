@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.20 2005/02/03 05:18:43 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.21 2005/02/05 02:38:23 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -532,10 +532,67 @@
 
 (defvar temp-mgt-dbg* false)
 
+;;; Debugging instrumentation in 'chunks-update-now' (see below);
+;;; normally commented out.
+(defmacro report-reason-to-skip-chunk ()
+  '(format t " ...Skipping because ~s~%"
+	   (cond ((not (Chunk-managed ch))
+		  "not managed")
+		 ((= (Chunk-update-mark ch) up-mark)
+		  "marked")
+		 ((chunk-date-up-to-date ch)
+		  "up to date")
+		 ((not
+		      (every (\\ (b)
+				(or (chunk-is-leaf b)
+				    (chunk-up-to-date b)))
+			     (Chunk-basis ch)))
+		  (format nil
+		     "Out of date bases")
+		  (setq bad-bases*
+		     (remove-if
+			 (\\ (b)
+			     (or (chunk-is-leaf b)
+				 (chunk-up-to-date b)))
+			 (Chunk-basis ch)))
+		  (setq bad-ch* ch)
+		  (break "bases not up to date: ~s for chunk ~s"
+			 bad-bases* bad-ch*))
+		 ((not
+		     (every (\\ (b)
+			       (or (chunk-is-leaf b)
+				   (chunk-up-to-date b)))
+			    (Chunk-update-basis ch)))
+		  "update-basis not up to date")
+		 (t "of a mystery"))))
+
+(defvar postpone-updates* ':do-now)
+
 (defun chunk-update (ch)
-   (chunks-update (list ch)))
+   (cond ((listp postpone-updates*)
+	  (on-list ch postpone-updates*))
+	 (t
+	  (chunks-update-until-done (list ch)))))
 
 (defun chunks-update (chunks)
+   (cond ((listp postpone-updates*)
+	  (setf postpone-updates*
+		(append chunks postpone-updates*)))
+	 (t
+	  (chunks-update-until-done chunks))))
+
+;;; Any attempt to update something while an update is in progress
+;;; will get postponed until the current one is done.
+(defun chunks-update-until-done (chunks)
+   (let ((postpone-updates* !()))
+      (loop 
+	 (chunks-update-now chunks)
+	 (cond ((null postpone-updates*)
+		(return)))
+	 (setq chunks postpone-updates*)
+	 (setq postpone-updates* !()))))      
+	 
+(defun chunks-update-now (chunks)
    ;; We have two mechanisms for keeping track of updates in progress.
    ;; The 'in-progress' stack is used to detect a situation where a
    ;; chunk feeds its own input, which would cause an infinite recursion
@@ -668,37 +725,8 @@
 				   (dolist (d (Chunk-update-derivees
 						 ch))
 				      (derivees-update d in-progress))))))
-;;;;			(nil
-;;;;			 (format t " ...Skipping because ~s~%"
-;;;;				 (cond ((not (Chunk-managed ch))
-;;;;					"not managed")
-;;;;				       ((= (Chunk-update-mark ch) up-mark)
-;;;;					"marked")
-;;;;				       ((chunk-date-up-to-date ch)
-;;;;					"up to date")
-;;;;				       ((not
-;;;;					    (every (\\ (b)
-;;;;						      (or (chunk-is-leaf b)
-;;;;							  (chunk-up-to-date b)))
-;;;;						   (Chunk-basis ch)))
-;;;;					(format nil
-;;;;					   "Out of date bases")
-;;;;					(setq bad-bases*
-;;;;					   (remove-if
-;;;;					       (\\ (b)
-;;;;						   (or (chunk-is-leaf b)
-;;;;						       (chunk-up-to-date b)))
-;;;;					       (Chunk-basis ch)))
-;;;;					(setq bad-ch* ch)
-;;;;					(break "bases not up to date: ~s for chunk ~s"
-;;;;					       bad-bases* bad-ch*))
-;;;;				       ((not
-;;;;					   (every (\\ (b)
-;;;;						     (or (chunk-is-leaf b)
-;;;;							 (chunk-up-to-date b)))
-;;;;						  (Chunk-update-basis ch)))
-;;;;					"update-basis not up to date")
-;;;;				       (t "of a mystery"))))
+;;;;			(t
+;;;;			 (report-reason-to-skip-chunk))
 			)))
 	 (cond ((some #'Chunk-managed chunks)
 		(setq update-no* up-mark)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 1.4 2004/07/12 22:28:02 airfoyle Exp $
+;;;$Id: object.lisp,v 1.4.2.1 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,7 @@
 
 (depends-on :at-run-time %ytools/ outin)
 
-(end-header :continue-slurping)
+(end-header)   ;;;; :continue-slurping
 
 ;;; We can't use signal-problem in this file, because it requires
 ;;; object.
@@ -227,7 +227,7 @@
 		   x classname))))
       (values storage-class is-testable already-defined)))
 
-(datafun to-slurp declare-ytools-class #'slurp-eval)
+;;;;(datafun to-slurp declare-ytools-class #'slurp-eval)
 
 (declaim (inline default-op-handle))
 

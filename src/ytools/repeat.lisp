@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 1.8 2004/09/16 13:10:37 airfoyle Exp $
+;;;$Id: repeat.lisp,v 1.8.2.1 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,9 @@
 
 (depends-on %ytools/ outin binders)
 
-(slurp-whole-file)
+(self-compile-dep :macros)
+
+;;;;(slurp-whole-file)
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(repeat forall exists keyword-args->alist

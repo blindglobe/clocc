@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: signal.lisp,v 1.3 2004/08/13 16:13:06 airfoyle Exp $
+;;;$Id: signal.lisp,v 1.3.2.1 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,8 @@
    (export '(signal-problem signal-condition
 	     breakpoint error-break tr untr tr* local-tr)))
 
-(slurp-whole-file)
+(self-compile-dep :macros)
+;;;;(slurp-whole-file)
 
 (defmacro breakpoint (&rest stuff)
    (multiple-value-let (simple _ who-prints-place condspec

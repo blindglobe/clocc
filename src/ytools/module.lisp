@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.12 2005/02/03 05:18:44 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.13 2005/02/05 02:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -134,34 +134,32 @@
 
 (defmethod pathname-compile-support ((pspn Module-pseudo-pn))
    (let ((mod (Module-pseudo-pn-module pspn)))
-      (monitor-filoid-basis
-	 (place-Loaded-module-chunk
-	    (place-YT-module-chunk mod)
-	    false))
-      (values (
-	   (let ((cforms
-		    (retain-if
-		       (\\ (e) (memq ':compile-support (first e)))
-		       (YT-module-contents
-			  (Module-pseudo-pathname-module pspn)))))
-	      (cond ((null cforms)
-		     !())
-		    (t
-		     (list (place-Form-chunk
-			      `(progn ,@cforms))))))))      
+      (values
+           (module-loaded-prereqs mod)
+	   (module-form-chunks mod ':compile-support))))
 
 (defmethod pathname-run-support ((pspn Module-pseudo-pn))
-   (values !()
+   (let ((mod (Module-pseudo-pn-module pspn)))
+      (values
+           (module-loaded-prereqs mod)
+	   (module-form-chunks mod ':run-support))))
+
+(defun module-form-chunks (mod which)
 	   (let ((rforms
 		    (retain-if
-		       (\\ (e) (memq ':run-support (first e)))
-		       (YT-module-contents
-			  (Module-pseudo-pathname-module pspn)))))
+		       (\\ (e) (memq which (first e)))
+		       (YT-module-contents mod))))
 	      (cond ((null rforms)
 		     !())
 		    (t
-		     (list (place-Form-chun
-			      `(progn ,@rforms))))))))
+		     (list (place-Form-chunk
+			      `(progn ,@rforms)))))))
+
+(defun module-loaded-prereqs (mod)
+   (let ((loaded-ch (place-Loaded-module-chunk
+		        (place-YT-module-chunk mod)
+			false)))
+      (loaded-chunk-verify-basis loaded-ch)))
 
 (defvar loaded-ytools-modules* !())
 
@@ -192,9 +190,10 @@
 				      mod-chunk new-lc))))))))
       (cond ((eq mod-manip ':noload)
 	     (chunk-terminate-mgt lc ':ask))
-	    ((and mod-manip
-		  (not (eq mod-manip (Loaded-chunk-manip lc))))
-	     (setf (Loaded-chunk-manip lc) mod-manip)))
+;;;;	    ((and mod-manip
+;;;;		  (not (eq mod-manip (Loaded-chunk-manip lc))))
+;;;;	     (setf (Loaded-chunk-manip lc) mod-manip))
+       )
       lc))
 
 (defclass Loadable-module-chunk (Loadable-chunk)
@@ -244,13 +243,15 @@
 					         (cdr g))))
 				      (pathnames-note-run-support
 					  pnl false
-					  loaded-mod-chunk)))
+					  loaded-mod-chunk)
+				      (dolist (pn pnl)
+					 (monitor-filoid-basis pn))))
 				  (t
 				   (format *error-output*
 				      !"Warning: Meaningless to have ~
 					':compile-time' dependency in ~
                                         module ~s"
-				      (Module-name module))))))))))))
+				      (YT-module-name module))))))))))))
    true)
 
 (defvar module-now-loading* false)
@@ -261,45 +262,6 @@
 	 (cond ((memq ':run-support (first c))
 		(dolist (e (rest c))
 		   (eval e)))))))
-
-;;; THIS IS USED by ytools.lmd, so don't just delete it!
-
-(defun ytools-module-load (name force-flag)
-;;;;  (breakpoint ytools-module-load
-;;;;     "Loading module " name)
-   (let ((ytm (find-YT-module name)))
-      (cond (ytm
-	     (let ((module-now-loading* name)
-		   (now-loading-lprec* (YT-module-rec ytm)))
-		(cond ((or force-flag
-			   (not (achieved-load-status now-loading-lprec* ':loaded)))
-		       (cond ((memq name module-trace*)
-			      (format *error-output*
-				 "Loading module ~s Compiling? ~a~%"
-				 name (cond ((eq fload-compile* ':compile)
-					     "Yes")
-					    ((memq fload-compile*
-						   '(:object :source))
-					     "No")
-					    (t
-					     "Maybe")))))
-		       (with-compilation-unit ()
-			  (dolist 
-
-
-			  (eval (YT-module-contents ytm))
-			  (dolist (e (YT-module-expansion ytm))
-			     (eval e)))
-		       (note-load-status now-loading-lprec* ':loaded))
-		      ((memq name module-trace*)
-		       (format *error-output*
-			  "Not loading module ~s, because it's already loaded~%"
-			  name))))
-	     `("Module" ,name "loaded"))
-	    (t
-	     (cerror "The non-module will be ignored"
-		     "Attempt to load nonexistent module ~s"
-		     name)))))
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))
@@ -369,3 +331,12 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
       (fload %ytools/ object mapper)
     ))
 
+(defun ytools-module-load (name)
+   (let ((yt-mod (lookup-YT-module name)))
+      (cond (yt-mod
+	     (let ((chl (module-form-chunks yt-mod ':run-support)))
+	        (dolist (ch chl)
+		   (chunk-request-mgt ch))
+		(chunks-update chl)))
+	    (t
+	     (error "Can't load YTools module -- undefined")))))

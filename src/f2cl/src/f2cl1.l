@@ -35,40 +35,13 @@ block; the value is a list of all variables in the common block.")
 (defvar *common-block-initialized* '())
 (defvar *relaxed-array-decls* t
   "If T, array declarations with sizes are relaxed to be any size.")
-
+(defvar *coerce-assignments* nil
+  "If T, all assignments statemnts are wrapped with a coerce to the appropriate type.  Fortran 77 does this automatically.")
 ;----------------------------------------------------------------------------
-#+nil
-(defun f2cl (&rest args)
- (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
 
-(when *verbose*
- (format t "~%  - compiles for VAX LISP, LUCID, ALLEGRO, CLISP + simpletest~%")
- (format t "  - with-open-file now encapsulates fortran-to-lisp calls~%")
- (format t "  - all f2cl code is now explicitly in the :USER package~%")
- (format t "  - excess labels are removed, else set *prune_labels* to nil.~%")
- (format t "  - do loops have been fixed: these are very tricky so check!~%")
- (format t "  - f2cl has the keyword outfile with default value \"temp\"~%")
- (format t "  - set *print-right-margin* to 100 for deep expressions.~%")
- (format t "  - to include Fortran comments set *comments* to t~%")
- (format t "  - the EOF bug has now been fixed so bottoms can be ragged~%~%"))
-
-
- (if (/= 2 (length args)) 
-     (error "Error in f2cl: this function takes 2 arguments."))
- (prog (infile outfile)
-   (setq infile (first args) outfile (second args))
-   (if (not (stringp infile))
-     (error "Error in f2cl: the first argument should be a string."))
-   (if (not (stringp outfile))
-     (error "Error in f2cl: the second argument should be a string."))
-   (if (not (probe-file infile))
-       (error "Error in f2cl: the file represented by the first argument
-   does not appear to exist."))
-      
-    (fortran-to-lisp (preprocess input-file) output-file)
-    (values output-file)))
-
-(defun f2cl (input-file output-file &key verbose prune-labels include-comments (auto-save t) (relaxed-array-decls t))
+(defun f2cl (input-file output-file &key verbose prune-labels include-comments
+			(auto-save t) (relaxed-array-decls t)
+			(coerce-assigns t))
   "Fortran to Common Lisp converter
 
 INPUT-FILE              File containing Fortran code
@@ -90,7 +63,8 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 	(*comments* include-comments)
 	(*auto-save-data* auto-save)
 	(*common-block-initialized* nil)
-	(*relaxed-array-decls* relaxed-array-decls))
+	(*relaxed-array-decls* relaxed-array-decls)
+	(*coerce-assignments* coerce-assigns))
     #+nil
     (when *verbose*
       (format t "~%  - compiles for VAX LISP, LUCID, ALLEGRO, CLISP + simpletest~%")
@@ -849,7 +823,9 @@ main-loop
        (if (listp lhs)
 	   (parse-arrayref-or-stmtfn lhs rhs)
 	   (and (check_new_vbles (list lhs))
-		`((setf ,lhs ,rhs)))))))
+		(if *coerce-assignments*
+		    `((setf ,lhs (coerce ,rhs (type-of ,lhs))))
+		    `((setf ,lhs ,rhs))))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
   ;;lhs is either an array ref or a statement function name

@@ -297,9 +297,8 @@ nil
 
 (check-for-bug :type-legacy-298
  (subtypep (quote cons) (quote (not atom)))
- #-(or clisp akcl allegro) t
- #+(or clisp akcl allegro) nil
- "Type atom: is equivalent to (not cons)")
+ t
+ "Type atom is equivalent to (not cons)")
 
 (check-for-bug :type-legacy-304
  (subtypep (quote list) (quote (not atom)))

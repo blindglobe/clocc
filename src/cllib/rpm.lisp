@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.9 2001/04/20 16:23:21 sds Exp $
+;;; $Id: rpm.lisp,v 2.10 2001/09/09 21:07:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -306,7 +306,7 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
             (prog1 (map-in (lambda (rr) (setf (rpm-note rr) (list url)) rr)
                            (rpm-read data))
               (url-ask sock err :list))))) ; 226
-    (login (co)
+    ((or path login) (co)
       (mesg :log err " * rpm-available [~a]: Cannot login:~% - ~a~%" url co)
       (error co))
     (network (co)

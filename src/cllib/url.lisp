@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.22 2001/09/05 21:34:02 sds Exp $
+;;; $Id: url.lisp,v 2.23 2001/09/06 13:22:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -131,7 +131,7 @@ guess from the protocol."
 
 (defsubst url-path-dir (url)
   "Return the dir part of the URL's path."
-  (value (url-path-parse url)))
+  (values (url-path-parse url)))
 
 (defsubst url-path-file (url)
   "Return the file part of the URL's path."

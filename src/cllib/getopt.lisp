@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: getopt.lisp,v 2.1 2000/05/04 18:13:48 sds Exp $
+;;; $Id: getopt.lisp,v 2.2 2000/05/08 20:10:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/getopt.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,39 +17,58 @@
 
 (export '(getopt))
 
+(defun parse-object (type string name)
+  "Parse the STRING argument named NAME according to the TYPE."
+  (case type
+    (:char string)
+    (:number
+     (let ((res (ignore-errors (read-from-string string))))
+       (unless (numberp res)
+         (error "argument for ~s must be a number, not ~s~%"
+                name string))
+       res))
+    (:boolean (ignore-errors (read-from-string string)))
+    (t (error "invalid type (~s) for argument ~s~%" type name))))
+
 ;;;###autoload
-(defun getopt (opt-alist arg-list)
+(defun getopt (arg-alist opt-alist arg-list &key (allow-less t) (allow-more t))
   "Parse the command line arguments.
-OPT-ALIST is an alist of (option-name . argument-type),
+`arg-alist' and `opt-alist' are alists of (option-name . argument-type),
 `argument-type' should be `:char', `:number', or `:boolean',
-ARG-LIST is a list of options, like (\"-opt1\" \"val1\" ...)
+`arg-list' is a list of options, like (\"-opt1\" \"val1\" ...)
 Returns two values -
    a list of non-option arguments,
    and a plist of keyword args;
- or T if there was an error."
-  (do ((ll arg-list (cdr ll))
+ or T if there was an error.
+When `allow-less' (`allow-more') is non-NIL (default),
+allow missing (additional) non-option arguments."
+  (do ((ll arg-list (cdr ll)) (aal arg-alist)
        non-opt opts)
-      ((null ll) (values (nreverse non-opt) (nreverse opts)))
-    (if (char/= #\- (char (car ll) 0)) (push (car ll) non-opt)
-        (let* ((cur (pop ll)) (kw (kwd (nstring-upcase (subseq cur 1))))
-               (opt (assoc kw opt-alist :test #'eq)))
-          (unless opt
-            (format t "unknown option: ~s~%" cur)
-            (return t))
-          (push kw opts)
-          (push (case (cdr opt)
-                  (:char (car ll))
-                  (:number
-                   (let ((res (ignore-errors (read-from-string (car ll)))))
-                     (unless (numberp res)
-                       (format t "argument for ~s must be a number, not ~s~%"
-                               cur (car ll))
-                       (return t))
-                     res))
-                  (:boolean (ignore-errors (read-from-string (car ll))))
-                  (t (format t "invalid options spec: ~s~%" opt)
-                     (return t)))
-                opts)))))
+      ((null ll)
+       (when (and aal (not allow-less))
+         (format t "too few non-option arguments (must be at least ~d)~%"
+                 (length arg-alist))
+         (return t))
+       (values (nreverse non-opt) (nreverse opts)))
+    (handler-case
+        (if (char/= #\- (char (car ll) 0))
+            (let ((ar (pop aal)))
+              (when (and (null ar) (not allow-more))
+                (format
+                 t "too many non-option arguments (must be no more than ~d)~%"
+                 (length arg-alist))
+                (return t))
+              (push (parse-object (cdr ar) (car ll) (car ar)) non-opt))
+            (let* ((cur (pop ll)) (kw (kwd (nstring-upcase (subseq cur 1))))
+                   (opt (assoc kw opt-alist :test #'eq)))
+              (unless opt
+                (format t "unknown option: ~s~%" cur)
+                (return t))
+              (push kw opts)
+              (push (parse-object (cdr opt) (car ll) cur) opts)))
+      (error (co)
+        (format t "~a~%" co)
+        (return t)))))
 
 (provide :getopt)
 ;;; file getopt.lisp ends here

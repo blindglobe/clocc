@@ -1,51 +1,57 @@
-;;; File: <gq.lisp - 1999-02-25 Thu 18:33:22 EST sds@eho.eaglets.com>
+;;; File: <gq.lisp - 1999-10-13 Wed 11:33:38 EDT sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
 ;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
-;;; Copyright (C) 1997, 1998 by Sam Steingold.
+;;; Copyright (C) 1997-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.10 1999/02/25 23:38:18 sds Exp $
+;;; $Id: gq.lisp,v 1.11 1999/10/13 15:43:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
-;;; Revision 1.10  1999/02/25 23:38:18  sds
-;;; Updated for the new `dated-list'.
+;;; Revision 1.11  1999/10/13 15:43:19  sds
+;;; (get-quotes-apl): updated.
+;;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
+;;; (code): added a method for PFL.
+;;; (update-quotes): bind `*gq-error-stream*' to nil.
 ;;;
-;;; Revision 1.9  1999/01/10 02:37:25  sds
-;;; Replaced `gq-fix-date' with `gq-guess-date'.
+;; Revision 1.10  1999/02/25 23:38:18  sds
+;; Updated for the new `dated-list'.
+;;
+;; Revision 1.9  1999/01/10 02:37:25  sds
+;; Replaced `gq-fix-date' with `gq-guess-date'.
+;;
+;; Revision 1.8  1999/01/08 17:12:16  sds
+;; Fixed `get-quotes-sm'.
+;;
+;; Revision 1.7  1998/12/23 18:42:20  sds
+;; Added `*gq-error-stream*'.
+;;
+;; Revision 1.6  1998/07/31 16:53:57  sds
+;; Declared `stream' as a stream in `print-*'.
+;;
+;; Revision 1.5  1998/06/30 13:47:42  sds
+;; Switched to `print-object'.
+;;
+;; Revision 1.4  1998/06/15 21:48:32  sds
+;; Made `gq-fix-date' return the last trading date (skip weekend).
+;;
+;; Revision 1.3  1998/03/10 18:29:20  sds
+;; Replaced `multiple-value-set*' with `(setf (values ))'.
+;;
+;; Revision 1.2  1997/10/31 21:59:41  sds
+;; Added `cite-info' and `strip-html-markup'.
+;;
+;; Revision 1.1  1997/10/15 15:49:26  sds
+;; Initial revision
+;;
 ;;;
-;;; Revision 1.8  1999/01/08 17:12:16  sds
-;;; Fixed `get-quotes-sm'.
-;;;
-;;; Revision 1.7  1998/12/23 18:42:20  sds
-;;; Added `*gq-error-stream*'.
-;;;
-;;; Revision 1.6  1998/07/31 16:53:57  sds
-;;; Declared `stream' as a stream in `print-*'.
-;;;
-;;; Revision 1.5  1998/06/30 13:47:42  sds
-;;; Switched to `print-object'.
-;;;
-;;; Revision 1.4  1998/06/15 21:48:32  sds
-;;; Made `gq-fix-date' return the last trading date (skip weekend).
-;;;
-;;; Revision 1.3  1998/03/10 18:29:20  sds
-;;; Replaced `multiple-value-set*' with `(setf (values ))'.
-;;;
-;;; Revision 1.2  1997/10/31 21:59:41  sds
-;;; Added `cite-info' and `strip-html-markup'.
-;;;
-;;; Revision 1.1  1997/10/15 15:49:26  sds
-;;; Initial revision
-;;;
-;;;
-;;; To run regularly (s/a gq.bat)
+;;; to run regularly under winnt (s/a gq.bat):
 ;;; at 19:00 /every:M,T,W,Th,F "c:\bin\clisp\lisp.exe -M c:\bin\clisp\lispinit.mem -q -i c:/home/sds/lisp/gq -x \"(update-quotes :plot nil)\""
 
 (in-package :cl-user)
@@ -90,9 +96,9 @@
       (when (zerop (dd-pre dd)) (setf (dd-pre dd) (- nav chg))))
     dd))
 
-(defmethod print-object ((dd daily-data) (stream stream))
+(defmethod print-object ((dd daily-data) (out stream))
   (if *print-readably* (call-next-method)
-      (format stream "price:~15t~7,2f~35tbid:~45t~7,2f
+      (format out "price:~15t~7,2f~35tbid:~45t~7,2f
 previous:~15t~7,2f~35task:~45t~7,2f
 change:~15t~7,2f~35thigh:~45t~7,2f
 %:~15t~7,2f~35tlow:~45t~7,2f~%"
@@ -112,24 +118,29 @@ change:~15t~7,2f~35thigh:~45t~7,2f
 
 (defun get-quotes-apl (url &rest ticks)
   "Get the data from the APL WWW server."
-  (with-open-url (sock (apply 'gq-complete-url url ticks) :timeout 600
-                       :err *gq-error-stream* :rt *html-readtable*)
-    (do (zz res (ts (make-text-stream :sock sock)))
-        ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
-         (cons (gq-guess-date) (nreverse res)))
-      (when (eq (car ticks) zz)
-        (mesg :log *gq-error-stream* "Found: ~a~%" (pop ticks))
-        (push (mk-daily-data
-               :nav (next-number ts)
-               :chg (next-number ts)
-               :prc (next-number ts)
-               :bid (next-token ts :type 'float :dflt 0.0d0 :num 3)
-               :ask (next-token ts :type 'float :dflt 0.0d0)
-               :pre (next-number ts)
-               :low (next-number ts)
-               :hgh (next-number ts)) res)
-        ;; (setq dt (infer-date (next-token ts 3) (next-token ts)))
-        ))))
+  (let ((url (apply 'gq-complete-url url ticks)))
+    (mesg :log *gq-error-stream* " *** URL: `~s'~%" url)
+    (with-open-url (sock url :timeout 600 :err *gq-error-stream*
+                         :rt *html-readtable*)
+      (do (dt zz res (ts (make-text-stream :sock sock)))
+          ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
+           (cons (or dt (gq-guess-date)) (nreverse res)))
+        (when (eq (car ticks) zz)
+          (mesg :log *gq-error-stream* " *** Found: ~a~%" (car ticks))
+          (pop ticks)
+          (push (mk-daily-data
+                 :nav (next-number ts)
+                 :chg (next-number ts)
+                 :prc (next-number ts)
+                 :bid 0.0d0 ; (next-token ts :type 'float :dflt 0.0d0 :num 3)
+                 :ask 0.0d0 ; (next-token ts :type 'float :dflt 0.0d0)
+                 :pre (next-number ts)
+                 :low (next-number ts)
+                 :hgh (next-number ts)) res)
+          ;; (setq dt (infer-date (next-token ts) (next-token ts)))
+          (setq dt (date (next-token ts :num 3)))
+          (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
+                dt (car res)))))))
 
 (defun get-quotes-pf (url &rest ticks)
   "Get the data from the PathFinder WWW server."
@@ -191,16 +202,16 @@ change:~15t~7,2f~35thigh:~45t~7,2f
             hh))))
 
 (defcustom *get-quote-url-list* list
-  (list (list (make-url :prot :http :host "qs.secapl.com"
+  (list (list (make-url :prot :http :port 80 :host "qs.secapl.com"
                         :path "/cgi-bin/qs?ticks=")
               'get-quotes-apl "APL")
-        (list (make-url :prot :http :host "www.stockmaster.com"
+        (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
                         :path "/wc/form/P1?template=sm/chart&Symbol=")
               'get-quotes-sm "StockMaster")
-        (list (make-url :prot :http :host "quote.pathfinder.com"
+        (list (make-url :prot :http :port 80 :host "quote.pathfinder.com"
                         :path "/money/quote/qc?symbols=")
               'get-quotes-pf "PathFinder")
-        (list (make-url :prot :http :host "www.stockmaster.com"
+        (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
                         :path "/cgi-bin/graph?sym=")
               'get-quotes-sm-old "old StockMaster"))
   "*The list of known URL templates for getting quotes.")
@@ -270,9 +281,9 @@ Suitable for `read-list-from-stream'."
   (values (make-pfl :tick ra :nums (read stream) :bprc (read stream)
                     :name (read stream)) (read stream nil +eof+)))
 
-(defmethod print-object ((pfl pfl) (stream stream))
+(defmethod print-object ((pfl pfl) (out stream))
   (if *print-readably* (call-next-method)
-      (format stream "~:@(~a~) ~8,3f ~7,2f ~a" (pfl-tick pfl) (pfl-nums pfl)
+      (format out "~:@(~a~) ~8,3f ~7,2f ~a" (pfl-tick pfl) (pfl-nums pfl)
               (pfl-bprc pfl) (pfl-name pfl))))
 
 (defsubst find-pfl (sy)
@@ -286,6 +297,7 @@ Suitable for `read-list-from-stream'."
 
 (defmethod value ((hs hist)) (hist-totl hs))
 (defmethod date ((hs hist)) (hist-date hs))
+(defmethod code ((pfl pfl)) (pfl-tick pfl))
 
 (defun read-hist (stream ra)
   "Read a HIST from the STREAM, using the read-ahead RA.
@@ -297,9 +309,9 @@ Suitable for `read-list-from-stream'."
        (values hist vl))
     (push vl rr)))
 
-(defmethod print-object ((hist hist) (stream stream))
+(defmethod print-object ((hist hist) (out stream))
   (if *print-readably* (call-next-method)
-      (format stream "~a ~15,5f~{ ~7,2f~}" (hist-date hist)
+      (format out "~a ~15,5f~{ ~7,2f~}" (hist-date hist)
               (hist-totl hist) (hist-navs hist))))
 
 (defun hist-totl-comp (hold navs)
@@ -490,7 +502,7 @@ if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes."
   ;; interactive (ia) = works with CLISP and ACL, but not with CMUCL
   (let ((ia (eq *standard-output* *standard-input*))
-        (*print-log* (mk-arr 'symbol nil 0)))
+        (*print-log* (mk-arr 'symbol nil 0)) (*gq-error-stream* nil))
     #+win32 (unless ia
               (setq *hist-data-file* (pathname "c:/home/sds/text/invest.txt")))
     (setf (values *holdings* *history*) (read-data-file *hist-data-file*))

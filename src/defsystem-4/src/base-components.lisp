@@ -180,15 +180,15 @@
 ;;; the system component and accessed by approprate accessors.
 
 (defclass session-information ()
-  ((load-source-instead-of-binary :accessor load-source-istead-of-binary
+  ((load-source-instead-of-binary :accessor session-load-source-instead-of-binary
 				  :initform nil)
-   (load-source-if-no-binary :accessor load-source-if-no-binary
+   (load-source-if-no-binary :accessor session-load-source-if-no-binary
 			     :initform nil)
-   (bother-user-if-no-binary :accessor bother-user-if0no-binary
+   (bother-user-if-no-binary :accessor session-bother-user-if-no-binary
 			     :initform t)
-   (compile-during-load :accessor compile-during-load
+   (compile-during-load :accessor session-compile-during-load
 			:initform :query)
-   (compile-and-load :accessor compile-and-load
+   (compile-and-load :accessor session-compile-and-load
 		     :initform t)
    ))
 
@@ -291,7 +291,7 @@
    ;;; Generalization of the changed-timestamp concept.
    ;;; Maintained as an ALIST.
    ;;; Note that the accessor COMPONENT-TIMESTAMPS is not exported.
-   (timestamp-set :accessot component-timestamps
+   (timestamp-set :accessor component-timestamps
 		  :initform ()
 		  :type list)
    

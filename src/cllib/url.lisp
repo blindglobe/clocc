@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.11 2000/05/12 18:36:16 sds Exp $
+;;; $Id: url.lisp,v 2.12 2000/05/12 20:48:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -244,6 +244,8 @@ The argument can be:
 (defcustom *url-default-max-retry* (or null index-t) nil
   "*The default value of max-retry.
 If nil, retry ad infinitum, otherwise a positive fixnum.")
+(defcustom *url-open-init* boolean t
+  "*Issue the initial commands in `open-url' (default :init argument).")
 
 (defun sleep-mesg (sleep out mesg)
   "Sleep for a random period of up to SLEEP seconds.
@@ -295,10 +297,11 @@ Print the appropriate message MESG to OUT."
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
 (defun open-url (url &key (err *error-output*) (sleep *url-default-sleep*)
-                 (timeout *url-default-timeout*)
+                 (timeout *url-default-timeout*) (init *url-open-init*)
                  (max-retry *url-default-max-retry*))
   "Open a socket connection to the URL.
-Issue the appropriate initial commands:
+When INIT keyword argument is non-nil (default - `cllib::*url-open-init*'),
+issue the appropriate initial commands:
  if this is an HTTP URL, also issue the GET command;
  if this is an FTP URL, login and cwd;
  if this is a NEWS/NNTP URL, set group and possibly request article;
@@ -316,32 +319,35 @@ the error `timeout' is signaled."
                            :bin (url-prot-bin (url-prot url))
                            :max-retry max-retry)
         :when
-        (handler-case
-            (with-timeout (timeout nil)
-              (case (url-prot url)
-                ((:http :www) (setq sock (url-open-http sock url err)))
-                (:ftp (url-ask sock err :conn)
-                      (url-login-ftp sock url err))
-                (:telnet (dolist (word (split-string (url-path url) "/") t)
-                           (format sock "~a~%" word)))
-                ((:whois :finger :cfinger)
-                 (format sock "~a~%" (url-path-file url)) t)
-                (:mailto (url-ask sock err :conn))
-                ((:news :nntp)
-                 (url-ask sock err :noop)
-                 (unless (zerop (length (url-path url)))
-                   (let ((strs (split-string (url-path url) "/")))
-                     (url-ask sock err :group "group ~a" (car strs))
-                     (when (cadr strs)
-                       (url-ask sock err :article "article ~a" (cadr strs)))))
-                 t)
-                ((:time :daytime) t)
-                (t (error 'code :proc 'open-url :args (list (url-prot url))
-                          :mesg "Cannot handle protocol ~s"))))
-          (code (co) (error co))
-          (login (co) (error co))
-          (error (co)
-            (mesg :err err "Connection to <~a> dropped:~% - ~a~%" url co)))
+        (or (null init)
+            (handler-case
+                (with-timeout (timeout nil)
+                  (case (url-prot url)
+                    ((:http :www) (setq sock (url-open-http sock url err)))
+                    (:ftp (url-ask sock err :conn)
+                          (url-login-ftp sock url err))
+                    (:telnet (dolist (word (split-string (url-path url) "/") t)
+                               (format sock "~a~%" word)))
+                    ((:whois :finger :cfinger)
+                     (format sock "~a~%" (url-path-file url)) t)
+                    (:mailto (url-ask sock err :conn))
+                    ((:news :nntp)
+                     (url-ask sock err :noop)
+                     (unless (zerop (length (url-path url)))
+                       (let ((strs (split-string (url-path url) "/")))
+                         (url-ask sock err :group "group ~a" (car strs))
+                         (when (cadr strs)
+                           (url-ask sock err :article "article ~a"
+                                    (cadr strs)))))
+                     t)
+                    ((:time :daytime) t)
+                    (t (error 'code :proc 'open-url :args (list (url-prot url))
+                              :mesg "Cannot handle protocol ~s"))))
+              (code (co) (error co))
+              (login (co) (error co))
+              (error (co)
+                (mesg :err err "Connection to <~a> dropped:~% - ~a~%"
+                      url co))))
         :return sock
         :when sock :do (close sock)
         :when (> (- (get-universal-time) begt) timeout)
@@ -358,23 +364,25 @@ the error `timeout' is signaled."
 
 (defmacro with-open-url ((socket url &key (rt '*readtable*) err
                                  (max-retry '*url-default-max-retry*)
-                                 (timeout '*url-default-timeout*))
+                                 (timeout '*url-default-timeout*)
+                                 (init '*url-open-init*))
                          &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
 `*readtable*' is temporarily set to RT (defaults to `*readtable*').
 ERR is the stream for information messages or NIL for none."
   (with-gensyms ("WOU-" uuu)
     `(let* ((,uuu (url ,url)) (*readtable* ,rt)
-            (,socket (open-url ,uuu :err ,err :timeout ,timeout
+            (,socket (open-url ,uuu :err ,err :timeout ,timeout :init ,init
                                :max-retry ,max-retry))
             (*url-opening-time* (get-float-time nil))
             (*url-bytes-transferred* 0))
       (declare (type url ,uuu) (type socket ,socket))
       (unwind-protect (progn ,@body)
-        (case (url-prot ,uuu)
-          ((:ftp :mailto) (url-ask ,socket ,err :quit "quit"))
-          ((:news :nntp) (url-ask ,socket ,err :nntp-quit "quit")))
-        (close ,socket)))))
+        (when (open-stream-p ,socket)
+          (case (url-prot ,uuu)
+            ((:ftp :mailto) (url-ask ,socket ,err :quit "quit"))
+            ((:news :nntp) (url-ask ,socket ,err :nntp-quit "quit")))
+          (close ,socket))))))
 
 (defun url-open-http (sock url err)
   "Open the socket to the HTTP url."

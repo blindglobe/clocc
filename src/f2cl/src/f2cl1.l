@@ -767,6 +767,13 @@ FILENAME                 File containing Fortran code
      
      ;; (return (list '----> (check_new_vbles x)))
 
+     (when (or (eq (car x) 'block)
+	       (eq (car x) 'blockdata))
+       ;; A block data subprogram.  We cheat and pretend it's a
+       ;; subroutine with the special name /blockdata/
+       (setq bindings (id-definition-sub '(subroutine /blockdata/)))
+       (return (parse-subr-definition bindings)))
+
      ;;fall out the bottom:
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
 					       (write-to-string (check_new_vbles x))))))
@@ -2056,8 +2063,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.86 2002/02/08 03:35:30 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.87 2002/02/08 04:24:38 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.87  2002/02/08 04:24:38  rtoy
+;;; Add support for BLOCK DATA subprograms.
+;;;
 ;;; Revision 1.86  2002/02/08 03:35:30  rtoy
 ;;; We need to also fix up the names for any initialization stuff, so add
 ;;; new function FIXUP-F2CL-LIB to do it.

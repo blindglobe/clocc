@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.11 2001/05/01 17:02:35 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.12 2001/05/04 20:23:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -142,7 +142,7 @@ Should not be called directly but only through `with-plot-stream'."
            (labels ((pp (xx)
                       (typecase xx
                         (number (format nil "~g" xx))
-                        (symbol (format nil "~a" xx))
+                        (symbol (format nil "~a" (string-downcase xx)))
                         (list (format nil "~{ ~a~}" xx))
                         (t (format nil "'~a'" xx))))
                     (plot-set (nm par)

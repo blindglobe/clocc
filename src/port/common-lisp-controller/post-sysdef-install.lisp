@@ -398,5 +398,5 @@ than the maximum file-write-date of output-files, return T."
 			 (file-write-date path))))
     (when current-date
       (when (or (null *cached-user-packages-date*)
-		(> current-date *cached-user-packages-date))
+		(> current-date *cached-user-packages-date*))
 	(setq *cached-user-packages* (load-user-package-list))))))

@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.3 $'
+pversion='$Revision: 1.4 $'
 
 if [ `id -u` != 0 ] ; then
  echo $progname: you need to be root to run this program
@@ -24,7 +24,7 @@ all known implementations except for the implementations supplied
 on the command line.
 
 This command also accepts these "virtual" implementation names
-  cmucl    (equivalent to "cmucl-normal cmucl-safe cmucl-safe")
+  cmucl    (equivalent to "cmucl-normal cmucl-safe cmucl-small")
   allegro  (equivalent to "acl alisp alisp8 mlisp mlisp8")
 
 Options: 

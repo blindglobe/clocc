@@ -1,3 +1,10 @@
+common-lisp-controller (3.45) unstable; urgency=low
+
+  * Fix typos (closes: 168326) (closes: 168328)
+  Thanks Matthias Koppe!
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri,  8 Nov 2002 12:04:06 -0700
+
 common-lisp-controller (3.44) unstable; urgency=low
 
   * Fix spelling error in clc-build-daemon.c

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.12 2002/02/12 16:07:10 sds Exp $
+;;; $Id: tests.lisp,v 2.13 2002/03/09 07:38:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -148,6 +148,9 @@
           (make-url :prot :ftp :user "user" :pass "password" :host
                     "host.domain" :port 0 :path "/path/to/file")
           "ftp://user#password@host.domain/path/to/file")
+      (ts "mailto:sds@gnu.org"
+          (make-url :prot :mailto :user "sds" :host "gnu.org")
+          "mailto:sds@gnu.org")
       (ts "www.gnu.org/gpl.html"
           (make-url :prot :http :user "" :pass "" :host "www.gnu.org" :port 0
                     :path "/gpl.html")

@@ -1,7 +1,8 @@
 ;;; ADJOIN-DIRECTORIES
 
 (defpackage "CL.EXT.FILESYSTEM" (:use "COMMON-LISP")
-  (:export "ADJOIN-DIRECTORIES"))
+  (:nicknames "cl.ext.filesystem")
+  (:export #:adjoin-directories))
 
 (in-package "CL.EXT.FILESYSTEM")
 

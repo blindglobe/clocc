@@ -133,6 +133,7 @@
 	       (t
 		'single-float)))))
 
+#+nil
 (defun get-fun-arg-types (args)
   (let ((res '()))
     (dolist (arg args res)
@@ -141,10 +142,26 @@
 		(type-of arg))
 	    res))))
 
+(defun fortran-contagion (t1 t2)
+  (type-of (+ (coerce 0 t1) (coerce 0 t2))))
+
 (defun get-fun-arg-type (arg)
-  (if (symbolp arg)
-      (lookup-vble-type arg)
-      (type-of arg)))
+  (cond ((symbolp arg)
+	 (lookup-vble-type arg))
+	((listp arg)
+	 ;; We have an expression of some type
+	 (cond ((eq 'fref (first arg))
+		;; Look up array references
+		(get-fun-arg-type (second arg)))
+	       ((member (first arg) '(+ - * /))
+		;; Basic arithmetic operations.  (Division is probably
+		;; wrong.)
+		(fortran-contagion (get-fun-arg-type (second arg))
+				   (get-fun-arg-type (third arg))))
+	       (t
+		(get-fun-arg-type (first arg)))))
+	(t
+	 (type-of arg))))
 
 (defun get-upgraded-fun-arg-type (args)
   (let ((res '()))

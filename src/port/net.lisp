@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.31 2001/04/11 14:40:21 sds Exp $
+;;; $Id: net.lisp,v 1.32 2001/06/11 19:41:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -343,8 +343,8 @@ When SERVICE is NIL, return the list of all services."
                                      "/system32/drivers/etc/services")
                         :direction :input)
       (loop :with name :and alis :and port :and prot
-            :for st = (read-line fl nil +eof+)
-            :until (eq +eof+ st)
+            :for st = (read-line fl nil nil)
+            :until (null st)
             :unless (or (equal "" st) (char= #\# (schar st 0)))
               :do (setf (values name alis port prot) (parse st)) :and
               :if service

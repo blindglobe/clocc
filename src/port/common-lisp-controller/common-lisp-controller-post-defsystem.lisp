@@ -94,7 +94,7 @@ than the maximum file-write-date of output-files, return T."
 	(mapcar #'(lambda (y)
 		    (merge-pathnames 
 		     (enough-namestring y (asdf::resolve-symlinks *source-root*))
-		     (asdf::resolve-symlinks *fasl-root*)))
+		     *fasl-root*))
 		orig)
       orig)))
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.16 2001/09/26 12:45:40 sds Exp $
+;;; $Id: date.lisp,v 2.17 2001/09/26 12:52:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -215,11 +215,12 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (declare (type (unsigned-byte 32) nn))
   (time2date (+ nn +unix-epoch+)))
 
-(defun dttm->string (dttm &optional (format :long))
+(defun dttm->string (dttm &key (format :long) (tz 0))
   "Print the date/time as returned by `encode-universal-time'.
-The date is interpreted as GMT (universal time)."
+The date is interpreted in the time zone TZ (defaults to GMT --
+universal time) and printed using DATE-FORMATTER with FORMAT."
   (declare (type (integer 0) dttm))
-  (multiple-value-bind (se mi ho da mo ye dd) (decode-universal-time dttm 0)
+  (multiple-value-bind (se mi ho da mo ye dd) (decode-universal-time dttm tz)
     (date-formatter format se mi ho da mo ye dd)))
 
 (defgeneric date-formatter (format se mi ho da mo ye dd)

@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.11 2004/05/18 21:04:30 sds Exp $
+;;;; $Id: rng.lisp,v 1.12 2005/03/08 21:32:21 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.12  2005/03/08 21:32:21  sds
+;;;;  STATE argument is always optional and binds *RANDOM-STATE*
+;;;;
 ;;;;  Revision 1.11  2004/05/18 21:04:30  sds
 ;;;;  whitespace changes to help emacs
 ;;;;
@@ -202,7 +205,8 @@
 ;;
 ;; See Knuth, The Art of Computer Programming, Volume 2.
 
-(defun gen-exponential-variate-log-method (mu state)
+(defun gen-exponential-variate-log-method
+    (mu &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from an exponential PDF with a
 mean of mu:
                 - X/MU
@@ -212,9 +216,9 @@ mean of mu:
 
  STATE is the random state to use.  The logarithmic method is used.
 "
-  (declare (random-state state)
+  (declare (type random-state *random-state*)
 	   (type (double-float (0d0)) mu))
-  (* mu (- (log (random 1d0 state)))))
+  (* mu (- (log (random 1d0)))))
 
 
 
@@ -246,7 +250,7 @@ mean of mu:
 ;;
 
 (declaim (ftype (function ((double-float (0d0))
-			   random-state)
+			   &optional random-state)
 			  (non-negative-float double-float))
 		gen-std-exponential-variate-algo-s))
 
@@ -290,7 +294,8 @@ mean of mu:
   ;;
   ;; 4.  Set X = m*(j + V)*ln(2)
 
-  (defun gen-exponential-variate-algo-s (mu state)
+  (defun gen-exponential-variate-algo-s
+      (mu &optional (*random-state* *random-state*))
     "Generate a pseudo-random number drawn from an exponential PDF with a
 mean of 1:
 
@@ -303,7 +308,7 @@ mean of 1:
  generate the variate.
 "
     (declare (type (double-float (0d0)) mu)
-	     (random-state state))
+	     (type random-state *random-state*))
 
     (multiple-value-bind (u j)
 	;; Step S1.  Find the first zero bit by comparing against 1/2.
@@ -311,7 +316,7 @@ mean of 1:
 	;; multiply by 2, and take the fractional part.  This drops the
 	;; leading 1 bit.
 	(let ((j 0)
-	      (u (random 1d0 state)))
+	      (u (random 1d0)))
 	  (declare (type (integer 0 100) j)
 		   (type (double-float 0d0 1d0) u)
 		   (optimize (speed 3) (safety 0)))
@@ -326,8 +331,8 @@ mean of 1:
 	       (values (* mu (+ u (* j ln2)))))
 	      (t
 	       (do ((k 2 (+ k 1))
-		    (v (min (random 1d0 state) (random 1d0 state))
-		       (min v (random 1d0 state))))
+		    (v (min (random 1d0) (random 1d0))
+		       (min v (random 1d0))))
 		   ((<= u (aref std-exponential-variate-table k))
 		    (values (* mu ln2 (+ j v))))
 		 (declare (type (double-float 0d0 (1d0)) v)
@@ -371,10 +376,11 @@ mean of 1:
   ;; also shows a typo.  In Knuth: Step S4 reads m*(j + V)*ln(2).
   ;; Step 9 here should read "deliever (a + umin)*ln(2)".
 
-  (defun gen-exponential-variate-sa (mu state)
+  (defun gen-exponential-variate-sa
+      (mu &optional (*random-state* *random-state*))
     (declare (ignore mu))
     (let ((a 0d0)
-	  (u (random 1d0 state)))
+	  (u (random 1d0)))
       (declare (double-float a u))
       (loop
 	  (tagbody
@@ -391,14 +397,14 @@ mean of 1:
 	       (return-from gen-exponential-variate-sa (+ a u)))
 	   step-6
 	     (let* ((i 2)
-		    (u* (random 1d0 state))
+		    (u* (random 1d0))
 		    (umin u*))
 	       (declare (fixnum i)
 			(type (double-float 0d0 1d0) u* umin))
 	       (loop
 		   (tagbody
 		    step-7
-		      (setf umin (min umin (random 1d0 state)))
+		      (setf umin (min umin (random 1d0)))
 		      (if (> u (aref std-exponential-variate-table i))
 			  (progn
 			    (incf i)
@@ -469,7 +475,7 @@ mean of 1:
 		     0.9999999999993086d0 0.9999999999997456d0 0.9999999999999064d0
 		     0.9999999999999656d0 0.9999999999999873d0 0.9999999999999953d0
 		     0.9999999999999983d0 0.9999999999999993d0 0.9999999999999998d0
-		     0.9999999999999999d0 1.0d0)))
+		     0.9999999999999999d0 1d0)))
       (q
        (make-array 17
 		   :element-type 'double-float
@@ -478,21 +484,22 @@ mean of 1:
 		     0.9990600134590104d0 0.9998683144407733d0 0.9999837860095966d0
 		     0.9999982199556996d0 0.9999998237274889d0 0.9999999841046677d0
 		     0.9999999986844113d0 0.9999999998993898d0 0.9999999999928497d0
-		     0.9999999999995255d0 0.9999999999999706d0 0.9999999999999983d0 1.0d0))))
+		     0.9999999999995255d0 0.9999999999999706d0 0.9999999999999983d0 1d0))))
   (declare (type (simple-array double-float (39)) p)
 	   (type (simple-array double-float (17)) q))
-  (defun gen-exponential-variate-algorithm-ma (mu state)
+  (defun gen-exponential-variate-algorithm-ma
+      (mu &optional (*random-state* *random-state*))
     (declare (ignore mu))
     ;; Find i such that u <= p[i+1].
-    (let* ((u (random 1d0 state))
+    (let* ((u (random 1d0))
 	   (i (do ((k 1 (+ 1 k)))
 		  ((<= u (aref p k))
 		   (- k 1)))))
       ;; Find k such that min(u1, u2,...,uk) <= q[k].  Then return i +
       ;; min(u1,...,uk)
-      (do* ((new-u (random 1d0 state))
+      (do* ((new-u (random 1d0))
 	    (k 1 (+ 1 k))
-	    (umin (random 1d0 state) (min umin (random 1d0 state))))
+	    (umin (random 1d0) (min umin (random 1d0))))
 	  ((<= new-u (aref q k))
 	   (+ i umin))
 	(declare (type (double-float 0d0 1d0) umin))))))
@@ -543,12 +550,13 @@ mean of 1:
        (big-d (/ (* b b))))
   (declare (type double-float ln-2 a b c p big-a big-b big-h big-d))
 
-  (defun gen-exponential-variate-ea (mu state)
+  (defun gen-exponential-variate-ea
+      (mu &optional (*random-state* *random-state*))
     (declare (ignore mu))
-    (declare (type random-state state)
+    (declare (type random-state *random-state*)
 	     (type (double-float (0d0)) mu)
 	     (optimize (speed 3)))
-    (let ((u (random 1d0 state))
+    (let ((u (random 1d0))
 	  (u1 0d0)
 	  (y 0d0)
 	  (g c))
@@ -569,18 +577,19 @@ mean of 1:
 	       (go step-6))
 	     (return-from gen-exponential-variate-ea (+ g (/ big-a (- big-b u))))
 	   step-6
-	     (setf u (random 1d0 state))
+	     (setf u (random 1d0))
 	     (setf y (/ a (- b u)))
-	     (setf u1 (random 1d0 state))
+	     (setf u1 (random 1d0))
 	     (when (> (* (+ (* u1 big-h) big-d)
 			 (expt (- b u) 2))
 		      (exp (- (+ y c))))
 	       (go step-6))
 	     (return-from gen-exponential-variate-ea (+ g y))))))
 
-  (defun gen-exponential-variate-ea-2 (mu state)
+  (defun gen-exponential-variate-ea-2
+      (mu &optional (*random-state* *random-state*))
     (declare (ignore mu))
-    (let ((u (random 1d0 state))
+    (let ((u (random 1d0))
 	  (g c))
       (declare (double-float u g))
       (setf u (+ u u))
@@ -593,9 +602,9 @@ mean of 1:
       (when (<= u p)
 	(return-from gen-exponential-variate-ea-2 (+ g (/ big-a (- big-b u)))))
       (loop
-	  (let* ((u (random 1d0 state))
+	  (let* ((u (random 1d0))
 		 (y (/ a (- b u)))
-		 (up (random 1d0 state)))
+		 (up (random 1d0)))
 	    (declare (double-float u y up))
 	    (when (<= (* (+ (* up big-h) big-d)
 			 (expt (- b u) 2))
@@ -605,12 +614,13 @@ mean of 1:
 
 ;; Use the ratio-of-uniforms method to generate exponential variates.
 ;; This could probably be optimized further.
-(defun gen-exponential-variate-ratio (mu state)
-  (declare (random-state state)
+(defun gen-exponential-variate-ratio
+    (mu &optional (*random-state* *random-state*))
+  (declare (type random-state *random-state*)
 	   (type (double-float (0d0)) mu))
   (let ((max-v (* mu #.(* 2 (exp -1d0)))))
-  (do ((u (random 1d0 state) (random 1d0 state))
-       (v (random max-v state) (random max-v state)))
+  (do ((u (random 1d0) (random 1d0))
+       (v (random max-v) (random max-v)))
       ((<= (* u u) (exp (- (/ v u mu))))
        (/ v u)))))
 
@@ -631,19 +641,20 @@ mean of 1:
 		       #'density
 		       #'(lambda (x)
 			   (- (log x))))
-      (defun gen-exponential-variate-ziggurat (mu state)
+      (defun gen-exponential-variate-ziggurat
+          (mu &optional (*random-state* *random-state*))
 	(declare (type (double-float 0d0) mu)
-		 (random-state state)
+		 (type random-state *random-state*)
 		 (optimize (speed 3)))
 	(loop
-	    (let* ((j (random (ash 1 31) state))
+	    (let* ((j (random (ash 1 31)))
 		   (i (logand j 255))
 		   (x (* j (aref w-table i))))
 	      (when (< j (aref k-table i))
 		(return (* mu x)))
 	      (when (zerop i)
-		(return (* mu (- r (log (random 1d0 state))))))
-	      (when (< (* (random 1d0 state) (- (aref f-table (1- i))
+		(return (* mu (- r (log (random 1d0))))))
+	      (when (< (* (random 1d0) (- (aref f-table (1- i))
 						(aref f-table i)))
 		       (- (density x) (aref f-table i)))
 		(return (* mu x)))))))))
@@ -683,7 +694,7 @@ mean of 1:
 ;;;
 ;;; Pick the one that works best for you.
 
-(defmacro gen-exponential-variate (mu state)
+(defmacro gen-exponential-variate (mu &optional (state '*random-state*))
   `(gen-exponential-variate-ziggurat ,mu ,state))
 
 
@@ -695,7 +706,7 @@ mean of 1:
 ;;;;
 ;;;;-------------------------------------------------------------------------
 
-(defun gen-std-laplacian-variate (state)
+(defun gen-std-laplacian-variate (&optional (*random-state* *random-state*))
   "Generate a pseudo-random number for a Laplacian random variable, defined by
 
          1    -|X|
@@ -704,13 +715,13 @@ mean of 1:
 
  for real X.
 "
-  (declare (random-state state))
+  (declare (type random-state *random-state*))
   ;; Instead of using the inverse CDF to generate the random number,
   ;; we generate an exponential and flip its sign with probability
   ;; 1/2.
-  (if (zerop (random 2 state))
-      (gen-exponential-variate 1d0 state)
-      (- (gen-exponential-variate 1d0 state))))
+  (if (zerop (random 2))
+      (gen-exponential-variate 1d0)
+      (- (gen-exponential-variate 1d0))))
 
 ;;;;-------------------------------------------------------------------------
 ;;;; Cauchy random variate.
@@ -724,9 +735,9 @@ mean of 1:
 ;;
 ;; Use the inverse of the CDF to generate the desired Cauchy variate.
 
-(defun gen-cauchy-variate-tan (state)
+(defun gen-cauchy-variate-tan (&optional (*random-state* *random-state*))
   (tan (* #.(dfloat pi)
-	  (- (random 1d0 state) 0.5d0))))
+	  (- (random 1d0) 0.5d0))))
 
 (declaim (inline gen-cauchy-variate-algorithm-ca-aux))
 
@@ -767,17 +778,18 @@ mean of 1:
       (hh 0.0214949004570452d0)
       (pp 4.9125013953033204d0))
   (declare (double-float a b q ww aa bb hh pp))
-  (defun gen-cauchy-variate-algorithm-ca-aux (u state)
+  (defun gen-cauchy-variate-algorithm-ca-aux
+      (u &optional (*random-state* *random-state*))
     (declare (type (non-negative-float double-float (1d0)) u)
-	     (type random-state state)
+	     (type random-state *random-state*)
 	     (optimize (speed 3) (safety 0) (space 0)))
     (let* ((tt (- u 0.5d0))
 	   (s (- ww (* tt tt))))
       (when (> s 0)
 	(return-from gen-cauchy-variate-algorithm-ca-aux (* tt (+ (/ aa s) bb))))
 
-      (do ((u (random 1d0 state) (random 1d0 state))
-	   (u1 (random 1d0 state) (random 1d0 state)))
+      (do ((u (random 1d0) (random 1d0))
+	   (u1 (random 1d0) (random 1d0)))
 	  (nil)
 	(let* ((tt (- u 0.5d0))
 	       (s (- 1/4 (* tt tt)))
@@ -788,13 +800,14 @@ mean of 1:
 			       q)))
 		    1/2)
 	    (return-from gen-cauchy-variate-algorithm-ca-aux x))))))
-  (defun gen-cauchy-variate-algorithm-ca (state)
-    (gen-cauchy-variate-algorithm-ca-aux (random 1d0 state) state))
+  (defun gen-cauchy-variate-algorithm-ca
+      (&optional (*random-state* *random-state*))
+    (gen-cauchy-variate-algorithm-ca-aux (random 1d0)))
   )
 
 ;;; Select the one that works best for you.
 
-(defmacro gen-cauchy-variate (state)
+(defmacro gen-cauchy-variate (&optional (state '*random-state*))
   `(gen-cauchy-variate-tan ,state))
 
 ;;;;-------------------------------------------------------------------------
@@ -812,15 +825,15 @@ mean of 1:
   (cache-valid nil :type (member t nil) ))
 
 (let ((cache (make-gaussian-generator-cache)))
-  (defun gen-gaussian-variate-polar (state)
+  (defun gen-gaussian-variate-polar (&optional (*random-state* *random-state*))
     (cond ((gaussian-generator-cache-cache-valid cache)
 	   (setf (gaussian-generator-cache-cache-valid cache) nil)
 	   (gaussian-generator-cache-cached-value cache))
 	  (t
-	   (do* ((u1 (- (* 2 (random 1d0 state)) 1)
-		     (- (* 2 (random 1d0 state)) 1))
-		 (u2 (- (* 2 (random 1d0 state)) 1)
-		     (- (* 2 (random 1d0 state)) 1))
+	   (do* ((u1 (- (* 2 (random 1d0)) 1)
+		     (- (* 2 (random 1d0)) 1))
+		 (u2 (- (* 2 (random 1d0)) 1)
+		     (- (* 2 (random 1d0)) 1))
 		 (w (+ (* u1 u1) (* u2 u2))
 		    (+ (* u1 u1) (* u2 u2))))
 		((<= w 1)
@@ -855,13 +868,14 @@ mean of 1:
       (gen -1))
   (declare (double-float save)
 	   (fixnum gen))
-  (defun gen-gaussian-variate-algorithm-na (state)
-    (declare (type random-state state)
+  (defun gen-gaussian-variate-algorithm-na
+      (&optional (*random-state* *random-state*))
+    (declare (type random-state *random-state*)
 	     (optimize (speed 3) (safety 0)))
     (setf gen (- gen))
     (cond ((= gen 1)
-	   (let* ((u (random 1d0 state))
-		  (e (gen-exponential-variate-log-method 1d0 state))
+	   (let* ((u (random 1d0))
+		  (e (gen-exponential-variate-log-method 1d0))
 		  (s (+ e e))
 		  (b 0))
 	     (declare (type (non-negative-float double-float) u))
@@ -870,7 +884,7 @@ mean of 1:
 		   (t
 		    (setf b 1)
 		    (setf u (+ u u -1))))
-	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u state))
+	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u))
 		    (x (sqrt (/ s (+ 1 (* c c)))))
 		    (y (* c x)))
 	       (setf save y)
@@ -881,15 +895,16 @@ mean of 1:
 	   save))))
 
 (let ((cache (make-gaussian-generator-cache)))
-  (defun gen-gaussian-variate-algorithm-na (state)
-    (declare (type random-state state)
+  (defun gen-gaussian-variate-algorithm-na
+      (&optional (*random-state* *random-state*))
+    (declare (type random-state *random-state*)
 	     (optimize (speed 3) (safety 0)))
     (cond ((gaussian-generator-cache-cache-valid cache)
 	   (setf (gaussian-generator-cache-cache-valid cache) nil)
 	   (gaussian-generator-cache-cached-value cache))
 	  (t
-	   (let* ((u (random 1d0 state))
-		  (e (gen-exponential-variate-log-method 1d0 state))
+	   (let* ((u (random 1d0))
+		  (e (gen-exponential-variate-log-method 1d0))
 		  (s (+ e e))
 		  (b 0))
 	     (declare (type (non-negative-float double-float) u))
@@ -898,7 +913,7 @@ mean of 1:
 		   (t
 		    (setf b 1)
 		    (setf u (+ u u -1))))
-	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u state))
+	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u))
 		    (x (sqrt (/ s (+ 1 (* c c)))))
 		    (y (* c x)))
 	       (setf (gaussian-generator-cache-cached-value cache) y)
@@ -908,7 +923,8 @@ mean of 1:
 		   (- x))))))))
 
 (let ((cache (make-gaussian-generator-cache)))
-  (defun gen-gaussian-variate-box-trig (state)
+  (defun gen-gaussian-variate-box-trig
+      (&optional (*random-state* *random-state*))
     "Generate a pseudo-random number drawn from a Gaussian PDF with a mean
 of zero and a variance of 1.  The PDF is
 
@@ -926,24 +942,24 @@ of zero and a variance of 1.  The PDF is
  replaced by direct calculation via trigonometric functions..  See
  Knuth, Seminumerical Algorithms.
 "
-    (declare (random-state state))
+    (declare (type random-state *random-state*))
     (cond ((gaussian-generator-cache-cache-valid cache)
 	   (setf (gaussian-generator-cache-cache-valid cache) nil)
 	   (gaussian-generator-cache-cached-value cache))
 	  (t
-	   (let ((r1 (sqrt (* -2d0 (log (random 1.0d0 state)))))
-		 (r2 (random #.(* (dfloat pi) 2d0) state)))
+	   (let ((r1 (sqrt (* -2d0 (log (random 1d0)))))
+		 (r2 (random #.(* (dfloat pi) 2d0))))
 	     ;;(declare (double-float r1 r2))
 	     (setf (gaussian-generator-cache-cached-value cache)
 		   (* r1 (sin r2)))
 	     (setf (gaussian-generator-cache-cache-valid cache) t)
 	     (* r1 (cos r2)))))))
 
-(let ((+sqrt-8/e+ #.(sqrt (/ 8.0d0 (exp 1.0d0))))
+(let ((+sqrt-8/e+ #.(sqrt (/ 8.0d0 (exp 1d0))))
       (+4-exp-1/4+ #.(* 4.0d0 (exp 0.25d0)))
       (+4-exp-minus-1.35+ #.(* 4.0d0 (exp (- 1.35d0)))))
   (declare (double-float +sqrt-8/e+ +4-exp-1/4+ +4-exp-minus-1.35+))
-  (defun gen-gaussian-variate-ratio (state)
+  (defun gen-gaussian-variate-ratio (&optional (*random-state* *random-state*))
     "Generate a pseudo-random number drawn from a Gaussian PDF with a mean
 of zero and a variance of 1.
 
@@ -960,12 +976,12 @@ of zero and a variance of 1.
  The ratio of uniform variates method is used.  See Knuth,
  Seminumerical Algorithms, Algorithm R.
 "
-    (declare (random-state state))
-    (do ((u (random 1.0d0 state) (random 1.0d0 state)))
+    (declare (type random-state *random-state*))
+    (do ((u (random 1d0) (random 1d0)))
 	(nil)
       (declare (double-float u))
       (let* ((x (/ (* +sqrt-8/e+
-		      (- (random 1.0d0 state) 0.5d0))
+		      (- (random 1d0) 0.5d0))
 		   u))
 	     (xs (* x x)))
 	(declare (double-float x xs))
@@ -986,15 +1002,16 @@ of zero and a variance of 1.
 		       #'density
 		       #'(lambda (x)
 			   (sqrt (* -2 (log x)))))
-      (defun gen-gaussian-variate-ziggurat (state)
-	(declare (random-state state)
+      (defun gen-gaussian-variate-ziggurat
+          (&optional (*random-state* *random-state*))
+	(declare (type random-state *random-state*)
 		 (optimize (speed 3)))
 	(loop
 	    ;; We really want a signed 32-bit random number. So make a
 	    ;; 32-bit unsigned number, take the low 31 bits as the
 	    ;; number, and use the most significant bit as the sign.
 	    ;; Doing this in other ways can cause consing.
-	    (let* ((ran (random (ash 1 32) state))
+	    (let* ((ran (random (ash 1 32)))
 		   (sign (ldb (byte 1 31) ran))
 		   (j (if (plusp sign)
 			  (- (ldb (byte 31 0) ran))
@@ -1005,14 +1022,14 @@ of zero and a variance of 1.
 		(return x))
 	      (when (zerop i)
 		(loop
-		    (let ((x (/ (- (log (random 1d0 state))) r))
-			  (y (- (log (random 1d0 state)))))
+		    (let ((x (/ (- (log (random 1d0))) r))
+			  (y (- (log (random 1d0)))))
 		      (when (> (+ y y) (* x x))
 			(return-from gen-gaussian-variate-ziggurat
 			  (if (plusp j)
 			      (- (+ r x))
 			      (+ r x)))))))
-	      (when (< (* (random 1d0 state) (- (aref f-table (1- i))
+	      (when (< (* (random 1d0) (- (aref f-table (1- i))
 						(aref f-table i)))
 		       (- (density x) (aref f-table i)))
 		(return x))))))))
@@ -1050,7 +1067,7 @@ of zero and a variance of 1.
 ;;; the fastest on this platform too.
 
 ;;; Select one that works for you.
-(defmacro gen-gaussian-variate (state)
+(defmacro gen-gaussian-variate (&optional (state '*random-state*))
   `(gen-gaussian-variate-ziggurat ,state))
 
 ;;;;-------------------------------------------------------------------------
@@ -1115,7 +1132,8 @@ of zero and a variance of 1.
 ;;;
 
 #+nil
-(defun gen-gamma-variate-squeeze (order state)
+(defun gen-gamma-variate-squeeze
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1131,7 +1149,7 @@ order ORDER.
   This uses Marsaglia's squeeze method.
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; Marsaglia's squeeze method for gamma variates.  This method is
   ;; valid for all order >= 1/3.  However, its efficiency gets better
   ;; with larger orders.  Thus, we want order to be at least 1.
@@ -1143,8 +1161,8 @@ order ORDER.
 	 (cc (- (* order z0 z0 z0)
 		(* 0.5d0 x0 x0)))
 	 (cl (- 1d0 (* 3d0 order))))
-    (do* ((x (gen-gaussian-variate state)
-	     (gen-gaussian-variate state))
+    (do* ((x (gen-gaussian-variate)
+	     (gen-gaussian-variate))
 	  (z (+ (* s x) cs)
 	     (+ (* s x) cs)))
 	 (nil)
@@ -1152,7 +1170,7 @@ order ORDER.
       (when (plusp z)
 	(let* ((z z)
 	       (rgama (* order z z z))
-	       (e (gen-exponential-variate 1d0 state))
+	       (e (gen-exponential-variate 1d0))
 	       (cd (- (+ e (* 0.5d0 x x) cc)
 		      rgama))
 	       (tt (- 1d0 (/ z0 z))))
@@ -1167,7 +1185,8 @@ order ORDER.
 			0d0))
 	    (return-from gen-gamma-variate-squeeze rgama)))))))
 
-(defun gen-gamma-variate-squeeze (order state)
+(defun gen-gamma-variate-squeeze
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1183,7 +1202,7 @@ order ORDER.
   This uses Marsaglia's squeeze method.
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; Marsaglia's squeeze method for gamma variates.  This method is
   ;; valid for all order >= 1/3.  However, its efficiency gets better
   ;; with larger orders.  Thus, we want order to be at least 1.
@@ -1201,13 +1220,13 @@ order ORDER.
     (loop
 	(tagbody
 	  step-1
-	   (setf x (gen-gaussian-variate state))
+	   (setf x (gen-gaussian-variate))
 	   (setf z (+ (* x s) cs))
 	   (when (<= z 0)
 	     (go step-1))
 	   (let* ((z z)
 		  (rgama (* order z z z))
-		  (e (gen-exponential-variate 1d0 state))
+		  (e (gen-exponential-variate 1d0))
 		  (cd (- (+ e (* 0.5d0 x x) cc)
 			 rgama))
 		  (tt (- 1d0 (/ z0 z))))
@@ -1224,7 +1243,7 @@ order ORDER.
 
 
 #+nil
-(defun gen-gamma-variate-gn (order state)
+(defun gen-gamma-variate-gn (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1240,7 +1259,7 @@ order ORDER.
   This uses Ahrens and Dieter's Algorithm GN
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   ;; Ahrens and Dieter Algorithm GN for gamma variates
   (let* ((mu (- order 1d0))
@@ -1248,15 +1267,15 @@ order ORDER.
 	 (d (* sigma #.(sqrt 6d0)))
 	 (b (+ mu d)))
     ;;(declare (double-float mu sigma d b))
-    (do ((u (random 1d0 state)
-	    (random 1d0 state)))
+    (do ((u (random 1d0)
+	    (random 1d0)))
 	(nil)
       (declare (type (non-negative-float double-float (1d0)) u))
       (cond ((> u 0.009572265238289d0)
-	     (let* ((s (gen-gaussian-variate state))
+	     (let* ((s (gen-gaussian-variate))
 		    (x (+ mu (* sigma s))))
 	       (when (and (<= 0 x b)
-			  (<= (log (random 1d0 state))
+			  (<= (log (random 1d0))
 			      (- (+ (* mu
 				       (+ 1d0
 					  (log (/ (the (non-negative-float double-float) x)
@@ -1265,9 +1284,9 @@ order ORDER.
 				 x)))
 		 (return-from gen-gamma-variate-gn x))))
 	    (t
-	     (let* ((s (gen-exponential-variate 1d0 state))
+	     (let* ((s (gen-exponential-variate 1d0))
 		    (x (* b (+ 1d0 (/ s d)))))
-	       (when (<= (log (random 1d0 state))
+	       (when (<= (log (random 1d0))
 			 (- (+ (* mu
 				  (- (+ 2d0
 					(log (/ x mu)))
@@ -1282,7 +1301,7 @@ order ORDER.
 ;; above.  For example, for order = 100d0 and 50000 trials, the above
 ;; takes 4.4 sec, but this version takes 0.3 sec.  This version also
 ;; cons about 10 times less.  I don't know why that is.
-(defun gen-gamma-variate-gn (order state)
+(defun gen-gamma-variate-gn (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1298,7 +1317,7 @@ order ORDER.
   This uses Ahrens and Dieter's Algorithm GN
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   ;; Ahrens and Dieter Algorithm GN for gamma variates
   (let* ((mu (- order 1d0))
@@ -1313,15 +1332,15 @@ order ORDER.
     (loop
 	(tagbody
 	  step-2
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (when (<= u 0.009572265238289d0)
 	     (go step-5))
-	   (setf s (gen-gaussian-variate state))
+	   (setf s (gen-gaussian-variate))
 	   (setf x (+ mu (* sigma s)))
 	   (when (or (< x 0) (> x b))
 	     (go step-2))
 
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (if (> (log u)
 		  (- (+ (* mu
 			   (+ 1d0
@@ -1332,9 +1351,9 @@ order ORDER.
 	       (go step-2)
 	       (return-from gen-gamma-variate-gn x))
 	  step-5
-	   (setf s (gen-exponential-variate 1d0 state))
+	   (setf s (gen-exponential-variate 1d0))
 	   (setf x (* b (+ 1 (/ s d))))
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (if (> (log u)
 		  (- (+ (* mu
 			   (- (+ 2d0
@@ -1346,7 +1365,8 @@ order ORDER.
 	       (go step-2)
 	       (return-from gen-gamma-variate-gn x))))))
 
-(defun gen-gamma-variate-algo-a (order state)
+(defun gen-gamma-variate-algo-a
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1362,19 +1382,19 @@ order ORDER.
   This uses Algorithm A, in Knuth, Seminumerical Algorithms.
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   ;; The large order case. This is Algorithm A, sec 3.4.1 E.
   (let* ((a order)
 	 (sqrt2a-1 (sqrt (- (* 2d0 a) 1d0)))
 	 (a-1 (- a 1d0)))
-    (declare (type (double-float (1.0d0)) a))
-    (do* ((y (tan (* #.(dfloat pi) (random 1d0 state)))
-	     (tan (* #.(dfloat pi) (random 1d0 state))))
+    (declare (type (double-float (1d0)) a))
+    (do* ((y (tan (* #.(dfloat pi) (random 1d0)))
+	     (tan (* #.(dfloat pi) (random 1d0))))
 	  (x (+ (* sqrt2a-1 y) a-1)
 	     (+ (* sqrt2a-1 y) a-1)))
 	 ((and (> x 0d0)
-	       (<= (random 1d0 state)
+	       (<= (random 1d0)
 		   (* (+ 1d0 (* y y))
 		      (exp (- (* a-1 (log (/ (the (double-float (0d0)) x)
 					     a-1)))
@@ -1387,7 +1407,8 @@ order ORDER.
 ;; Some simple timing tests show that this isn't any faster than the
 ;; above on an Ultra-30 300 MHz.  I guess the tan function is very
 ;; fast (or the CMUCL's RNG is slow).
-(defun gen-gamma-variate-algo-a-2 (order state)
+(defun gen-gamma-variate-algo-a-2
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1403,35 +1424,36 @@ order ORDER.
   This uses Algorithm A, in Knuth, Seminumerical Algorithms.
 "
   (declare (type (double-float 1d0) order)
-	   (random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   ;; The large order case. This is Algorithm A, sec 3.4.1 E.
   (let* ((a order)
 	 (sqrt2a-1 (sqrt (- (* 2d0 a) 1d0)))
 	 (a-1 (- a 1d0)))
-    (declare (type (double-float (1.0d0)) a))
-    (flet ((tan-pi-u (state)
-	     (do* ((u (- (random 2.0d0 state) 1.0d0)
-		      (- (random 2.0d0 state) 1.0d0))
-		   (v (- (random 2.0d0 state) 1.0d0)
-		      (- (random 2.0d0 state) 1.0d0))
+    (declare (type (double-float (1d0)) a))
+    (flet ((tan-pi-u ()
+	     (do* ((u (- (random 2d0) 1d0)
+		      (- (random 2d0) 1d0))
+		   (v (- (random 2d0) 1d0)
+		      (- (random 2d0) 1d0))
 		   (s (+ (* u u) (* v v))
 		      (+ (* u u) (* v v)))
 		   )
-		((< s 1.0d0)
+		((< s 1d0)
 		 (/ v u)))))
-      (do* ((y (tan-pi-u state) (tan-pi-u state))
+      (do* ((y (tan-pi-u) (tan-pi-u))
 	    (x (+ (* sqrt2a-1 y) a-1)
 	       (+ (* sqrt2a-1 y) a-1)))
 	   ((and (> x 0d0)
-		 (<= (random 1d0 state)
+		 (<= (random 1d0)
 		     (* (+ 1d0 (* y y))
 			(exp (- (* a-1 (log (/ (the (double-float (0d0)) x)
 					       a-1)))
 				(* sqrt2a-1 y))))))
 	    x)))))
 
-(defun gen-gamma-variate-small-order (order state)
+(defun gen-gamma-variate-small-order
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of
 order ORDER.
 
@@ -1448,27 +1470,28 @@ order ORDER.
  Algorithms.
 "
   (declare (type (double-float (0d0) (1d0)) order)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; order < 1.  This is the algorithm in problem 16 in Sec. 3.4.1, in
   ;; Knuth.
   (let ((p (/ #.(exp 1d0) (+ order #.(exp 1d0))))
 	(recip-order (/ order))
 	(a-1 (- order 1d0)))
-    (do* ((u (random 1d0 state)
-	     (random 1d0 state))
-	  (v (random 1d0 state)
-	     (random 1d0 state))
+    (do* ((u (random 1d0)
+	     (random 1d0))
+	  (v (random 1d0)
+	     (random 1d0))
 	  (x (if (< u p) (expt v recip-order) (- 1d0 (log v)))
 	     (if (< u p) (expt v recip-order) (- 1d0 (log v))))
 	  (q (if (< u p) (exp (- x)) (expt x a-1))
 	     (if (< u p) (exp (- x)) (expt x a-1))))
-	 ((< (random 1d0 state) q)
+	 ((< (random 1d0) q)
 	  x)
       (declare (type (non-negative-float double-float (1d0))
 		     u v)
 	       (type (double-float (0d0)) x)))))
 
-(defun gen-gamma-variate-direct (order state)
+(defun gen-gamma-variate-direct
+    (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of order ORDER.
 
                A - 1   - X
@@ -1487,7 +1510,7 @@ order ORDER.
  For non-integral orders, the small-order algorithm is called.
 "
   (declare (type (double-float (0d0) (20d0)) order)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; Direct generation of Gamma variates using the fact that the sum
   ;; of two gamma's of order A and B is also a gamma of order A +
   ;; B. Note that gamma of order 1 is exponential and we know how to
@@ -1504,12 +1527,12 @@ order ORDER.
       ;; the end, instead of summing the log of uniform variates.
       (dotimes (k n)
 	(declare (fixnum k))
-	(setf x (* x (random 1d0 state))))
+	(setf x (* x (random 1d0))))
       ;; If we still have some left, add in a gamma variate of
       ;; the remaining order.
       (if (zerop r)
 	  (- (log x))
-	  (- (gen-gamma-variate-small-order r state)
+	  (- (gen-gamma-variate-small-order r)
 	     (log x))))))
 
 (eval-when (compile eval)
@@ -1520,9 +1543,9 @@ order ORDER.
 
 ;; Ahrens and Dieter's Algorithm GO.
 #+nil
-(defun gen-gamma-variate-algo-go (a state)
+(defun gen-gamma-variate-algo-go (a &optional (*random-state* *random-state*))
   (declare (type (double-float (2.5327805161251d0)) a)
-	   (type random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   (let* ((mu (- a 1))
 	 (v (sqrt a))
@@ -1533,13 +1556,13 @@ order ORDER.
 	 (b (+ mu d)))
     ;;(declare (type (double-float 0d0) w))
 
-    (do ((u (random 1d0 state)
-	    (random 1d0 state)))
+    (do ((u (random 1d0)
+	    (random 1d0)))
 	(nil)
       (cond ((<= u +beta-algo-go+)
 	     ;; Step 8 and 9
-	     (let ((x (* b (+ 1 (/ (gen-exponential-variate 1d0 state) d))))
-		   (u (random 1d0 state)))
+	     (let ((x (* b (+ 1 (/ (gen-exponential-variate 1d0) d))))
+		   (u (random 1d0)))
 	       (when (<= (log u) (- (+ (* mu (+ 2 (log (/ x mu)) (- (/ x b))))
 				       #.(- (log (/ (* (sqrt (* 2 pi)) +beta-algo-go+)
 						  (- 1 +beta-algo-go+)))))
@@ -1548,11 +1571,11 @@ order ORDER.
 
 	    (t
 	     ;; Step 3
-	     (let* ((s (gen-gaussian-variate state))
+	     (let* ((s (gen-gaussian-variate))
 		    (x (+ mu (* sigma s))))
 	       (if (<= 0 x b)
 		   (let ((x x)
-			 (u (random 1d0 state))
+			 (u (random 1d0))
 			 (big-s (* 0.5d0 s s)))
 		     (declare (type (non-negative-float double-float) x))
 		     (if (< s 0)
@@ -1571,9 +1594,9 @@ order ORDER.
 ;; above.  For example, for order = 100d0 and 50000 trials, the above
 ;; takes 4.4 sec, but this version takes 0.3 sec.  This version also
 ;; cons about 10 times less.  I don't know why that is.
-(defun gen-gamma-variate-algo-go (a state)
+(defun gen-gamma-variate-algo-go (a &optional (*random-state* *random-state*))
   (declare (type (double-float (2.5327805161251d0)) a)
-	   (type random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   (let* ((mu (- a 1))
 	 (v (sqrt a))
@@ -1592,14 +1615,14 @@ order ORDER.
     (loop
 	(tagbody
 	  step-2
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (when (<= u +beta-algo-go+)
 	     (go step-8))
-	   (setf s (gen-gaussian-variate state))
+	   (setf s (gen-gaussian-variate))
 	   (setf x (+ mu (* sigma s)))
 	   (when (or (< x 0) (> x b))
 	     (go step-2))
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (setf big-s (* 0.5d0 s s))
 	   (when (>= s 0)
 	     (go step-6))
@@ -1616,9 +1639,9 @@ order ORDER.
 	       (go step-2)
 	       (return-from gen-gamma-variate-algo-go x))
 	  step-8
-	   (setf s (gen-exponential-variate 1d0 state))
+	   (setf s (gen-exponential-variate 1d0))
 	   (setf x (* b (+ 1 (/ s d))))
-	   (setf u (random 1d0 state))
+	   (setf u (random 1d0))
 	   (if (> (log u) (- (+ (* mu (+ 2 (log (/ x mu)) (- (/ x b))))
 				#.(- (log (/ (* (sqrt (* 2 (dfloat pi)))
                                                 +beta-algo-go+)
@@ -1633,9 +1656,9 @@ order ORDER.
 ;;; take advantage of the fact that the desired region actually fits
 ;;; in a thin rotated rectangle.  Needs more work.
 #+nil
-(defun gen-gamma-variate-ratio (a state)
+(defun gen-gamma-variate-ratio (a &optional (*random-state* *random-state*))
   (declare (type (double-float 1.5d0) a)
-	   (type random-state state)
+	   (type random-state *random-state*)
 	   (optimize (speed 3)))
   (flet ((g (s)
 	   (declare (type (double-float (0d0)) s))
@@ -1666,10 +1689,10 @@ order ORDER.
 			(+ 1 (* s1 s0))))
 	      (vr-hi (* (sqrt (g s2))
 			(+ 1 (* s2 s0)))))
-	  (do* ((ur (random ur-hi state)
-		    (random ur-hi state))
-		(vr (- (random (- vr-hi vr-lo) state) vr-lo)
-		    (- (random (- vr-hi vr-lo) state) vr-lo))
+	  (do* ((ur (random ur-hi)
+		    (random ur-hi))
+		(vr (- (random (- vr-hi vr-lo)) vr-lo)
+		    (- (random (- vr-hi vr-lo)) vr-lo))
 		(u (/ (- ur (* vr s0)) (+ 1 (* s0 s0)))
 		   (/ (- ur (* vr s0)) (+ 1 (* s0 s0))))
 		(v/u (/ (+ (* ur s0) vr)
@@ -1692,7 +1715,7 @@ order ORDER.
 ;;;    gen-gamma-variate-gn       (doesn't quite match expected values for large values)
 
 
-(defun gen-gamma-variate (order state)
+(defun gen-gamma-variate (order &optional (*random-state* *random-state*))
   "Generate a pseudo-random number drawn from a Gamma distribution of order ORDER.
 
                A - 1   - X
@@ -1707,34 +1730,34 @@ order ORDER.
  This is the main routine for generating Gamma variates.
 "
   (declare (type (double-float (0d0)) order)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; We divide the set of possible orders into these ranges:
   ;; order > s, 1 < order <= s, order = 1, 0 < order < 1.
   ;; Select the appropriate value of s to minimize runtime.
   (cond ((> order 1d0)
 	 ;; Pick the fastest of the three algorithms above.
-	 (gen-gamma-variate-squeeze order state))
+	 (gen-gamma-variate-squeeze order))
 	;; If the threshold s is 1, comment out this code.
 	#+nil
 	((> order 1d0)
-	 (gen-gamma-variate-direct order state))
+	 (gen-gamma-variate-direct order))
 	((= order 1d0)
 	 ;; Gamma variate of order 1 is an exponential variate
-	 (gen-exponential-variate 1d0 state))
+	 (gen-exponential-variate 1d0))
 	(t
 	 ;; order < 1.  This is the algorithm in problem 16 in Sec. 3.4.1
-	 (gen-gamma-variate-small-order order state))))
+	 (gen-gamma-variate-small-order order))))
 
 
 ;;; Geometric random variable
-(defun gen-geometric-variate (p state)
+(defun gen-geometric-variate (p &optional (*random-state* *random-state*))
   (declare (type (non-negative-float double-float (1d0)) p) (optimize (speed 3)))
-  (let ((u (random 1d0 state)))
+  (let ((u (random 1d0)))
     (values (ceiling (/ (log u) (log (- 1 p)))))))
 
 ;;; Beta random variable
 
-(defun gen-beta-variate (a b state)
+(defun gen-beta-variate (a b &optional (*random-state* *random-state*))
   "Generate a pseudo-random number from a beta distribution function
 with parameters a and b:
 
@@ -1764,9 +1787,9 @@ with parameters a and b:
  STATE  = random state to use.
 "
   (declare (type (double-float (0d0)) a b)
-	   (random-state state))
-  (let ((x1 (gen-gamma-variate a state))
-	(x2 (gen-gamma-variate b state)))
+	   (type random-state *random-state*))
+  (let ((x1 (gen-gamma-variate a))
+	(x2 (gen-gamma-variate b)))
     (/ x1 (+ x1 x2))))
 
 ;;; Binomial random variate
@@ -1775,12 +1798,13 @@ with parameters a and b:
 (eval-when (compile eval)
 (declaim (ftype (function ((and (integer 0) fixnum)
 			   (non-negative-float double-float 1d0)
-			   random-state)
+			   &optional random-state)
 			  (and (integer 0) fixnum))
 		gen-binomial-variate))
 )
 
-(defun gen-binomial-variate (ntrials p state)
+(defun gen-binomial-variate (ntrials p
+                             &optional (*random-state* *random-state*))
   "Generate a pseudo-random number from a beta distribution function
 with parameters N and p:
 
@@ -1801,7 +1825,7 @@ with parameters N and p:
 "
   (declare (type (and (integer 0) fixnum) ntrials)
 	   (type (non-negative-float double-float 1d0) p)
-	   (random-state state))
+	   (type random-state *random-state*))
   ;; Select some suitable threshold between the direct generation and
   ;; the iterative technique. For a 486-66, the break-even point is
   ;; near 100.  Same is true for a Sparc-20
@@ -1811,30 +1835,27 @@ with parameters N and p:
 	   (declare (fixnum n))
 	   (dotimes (k ntrials n)
 	     (declare (fixnum k))
-	     (if (< (random 1d0 state) p)
+	     (if (< (random 1d0) p)
 		 (incf n)))))
 	(t
 	 (let* ((a (1+ (floor ntrials 2)))
 		(b (1+ (- ntrials a)))
-		(x (gen-beta-variate (dfloat a) (dfloat b) state)))
+		(x (gen-beta-variate (dfloat a) (dfloat b))))
 	   (declare (fixnum a b)
 		    (double-float x))
 	   (if (>= x p)
-	       (gen-binomial-variate (1- a) (/ p x)
-				     state)
-	       (+ a (gen-binomial-variate (1- b)
-					  (/ (- p x) (- 1d0 x))
-					  state)))))))
+	       (gen-binomial-variate (1- a) (/ p x))
+	       (+ a (gen-binomial-variate (1- b) (/ (- p x) (- 1d0 x)))))))))
 
 ;;; Poisson random variate
 
 #+nil
 (eval-when (compile)
-  (declaim (ftype (function ((double-float 0d0) random-state)
+  (declaim (ftype (function ((double-float 0d0) &optional random-state)
 			    (and (integer 0) fixnum))
 		  gen-poisson-variate)))
 
-(defun gen-poisson-variate (mean state)
+(defun gen-poisson-variate (mean &optional (*random-state* *random-state*))
   "Generate a pseudo-random number from a Poisson distribution
 with mean M:
 
@@ -1849,29 +1870,28 @@ with mean M:
  The output is an integer.
 "
   (declare (type (double-float 0d0) mean)
-	   (random-state state))
+	   (type random-state *random-state*))
   (let ((threshold 30d0))
     (cond ((< mean threshold)
 	   ;; Direct generation
 	   (let ((limit (exp (- mean))))
-	     (do ((prod (random 1.0d0 state))
+	     (do ((prod (random 1d0))
 		  (n 1 (+ n 1)))
 		 ((<= prod limit)
 		  (- n 1))
 	       (declare (fixnum n)
 			(type (double-float 0d0) prod))
-	       (setf prod (* prod (random 1.0d0 state))))))
+	       (setf prod (* prod (random 1d0))))))
 	  (t
 	   ;; Indirect generation
 	   (let* ((alpha #.(coerce 7/8 'double-float)) ; Suggested value
 		  (order (floor (* alpha mean)))
-		  (x (gen-gamma-variate (dfloat order) state)))
+		  (x (gen-gamma-variate (dfloat order))))
 	     (declare (fixnum order))
 	     (if (< x mean)
-		 (+ order (gen-poisson-variate (- mean x) state))
+		 (+ order (gen-poisson-variate (- mean x)))
 		 (gen-binomial-variate (1- order)
-				       (/ mean x)
-				       state)))))))
+				       (/ mean x))))))))
 
 #||
  (defun time-expo (n)
@@ -1884,7 +1904,7 @@ with mean M:
 	     (system:without-gcing
 	      (time (dotimes (k n)
 		      (declare (fixnum k))
-		      (funcall func 1d0 *random-state*))))))
+		      (funcall func 1d0))))))
 	 #-cmu
 	 (timer (f)
 	   (let ((func (coerce f 'function)))
@@ -1892,7 +1912,7 @@ with mean M:
 	     (format t "~&~A~%" f)
 	     (time (dotimes (k n)
 		     (declare (fixnum k))
-		     (funcall func 1d0 *random-state*))))))
+		     (funcall func 1d0))))))
     (declaim (inline timer))
     (dolist (f (list #'gen-exponential-variate-log-method
 		     #'gen-exponential-variate-algo-s
@@ -1913,7 +1933,7 @@ with mean M:
 	     (system:without-gcing
 	      (time (dotimes (k n)
 		      (declare (fixnum k))
-		      (funcall func *random-state*))))))
+		      (funcall func))))))
 	 #-cmu
 	 (timer (f)
 	   (let ((func (coerce f 'function)))
@@ -1921,7 +1941,7 @@ with mean M:
 	     (format t "~&~A~%" f)
 	     (time (dotimes (k n)
 		     (declare (fixnum k))
-		     (funcall func *random-state*))))))
+		     (funcall func))))))
     (declare (inline timer))
     (dolist (f (list #'gen-gaussian-variate-polar
 		     #'gen-gaussian-variate-algorithm-na
@@ -1937,14 +1957,14 @@ with mean M:
   (system:without-gcing
    (time (dotimes (k n)
 	   (declare (fixnum k))
-	   (gen-cauchy-variate-tan *random-state*))))
+	   (gen-cauchy-variate-tan))))
 
   (gc)
   (format t "gen-cauchy-variate-algorithm-ca~%")
   (system:without-gcing
    (time (dotimes (k n)
 	   (declare (fixnum k))
-	   (gen-cauchy-variate-algorithm-ca *random-state*))))
+	   (gen-cauchy-variate-algorithm-ca))))
   )
 
  (defun time-gamma (n a)
@@ -1956,7 +1976,7 @@ with mean M:
 	     (system:without-gcing
 	      (time (dotimes (k n)
 		      (declare (fixnum k))
-		      (funcall func a *random-state*)))))))
+		      (funcall func a)))))))
     (declare (inline timer))
     (dolist (f (list #'gen-gamma-variate-squeeze
 		     #'gen-gamma-variate-gn
@@ -2030,7 +2050,7 @@ with mean M:
   (let ((m 2d0)
 	(r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (setf (aref r k) (funcall gen m *random-state*)))
+      (setf (aref r k) (funcall gen m)))
     (plot-hist-pdf r #'(lambda (x)
 			 (declare (double-float x))
 			 (/ (exp (- (/ x m))) m))
@@ -2039,7 +2059,7 @@ with mean M:
  (defun rng-gaussian-histogram (n gen)
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (setf (aref r k) (funcall gen *random-state*)))
+      (setf (aref r k) (funcall gen)))
     (plot-hist-pdf r #'(lambda (x)
 			 (declare (double-float x))
 			 (* (/ (sqrt (* 2 pi))) (exp (* -0.5d0 x x))))
@@ -2048,7 +2068,7 @@ with mean M:
  (defun rng-cauchy-histogram (n gen &key (limit 100))
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (setf (aref r k) (funcall gen *random-state*)))
+      (setf (aref r k) (funcall gen)))
     (plot-hist-pdf r #'(lambda (x)
 			 (/ (* pi (+ 1 (* x x)))))
 		   :intervals 500 :lo (- limit) :hi limit)))
@@ -2056,7 +2076,7 @@ with mean M:
  (defun rng-gamma-histogram (n a gamma gen)
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (setf (aref r k) (funcall gen a *random-state*)))
+      (setf (aref r k) (funcall gen a)))
     (plot-hist-pdf r #'(lambda (x)
 			 (/ (* (expt x (- a 1)) (exp (- x)))
 			    gamma))

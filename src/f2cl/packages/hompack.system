@@ -1,0 +1,86 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;; This is a simple defsystem for converting some HOMPACK Fortran
+;;; routines to Lisp and compiling the result.
+;;;
+;;; $Id: hompack.system,v 1.1 2003/11/14 19:08:42 rtoy Exp $
+;;; $Log: hompack.system,v $
+;;; Revision 1.1  2003/11/14 19:08:42  rtoy
+;;; Initial revision.
+;;;
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem hompack
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-extension "f"
+    :language :f2cl
+    :depends-on ("blas")
+    :components
+    (
+     (:file "dcpose")
+     (:file "divp")
+     (:file "f")
+     (:file "fjac")
+     (:file "fjacs")
+     (:file "ffunp" :depends-on ("mulp" "powp"))
+     (:file "fixpdf" :depends-on ("rhoa" "steps" "sintrp" "root" "f"))
+     (:file "fixpds" :depends-on ("rhoa" "stepds" "sintrp" "root" "f"))
+     (:file "fixpnf" :depends-on ("stepnf" "rootnf"))
+     (:file "fixpns" :depends-on ("stepns" "rootns"))
+     (:file "fixpqf" :depends-on ("stepqf" "rootqf"))
+     (:file "fixpqs" :depends-on ("stepqs" "rootqs"))
+     (:file "fode" :depends-on ("rhojac" "f" "fjac"))
+     (:file "fodeds" :depends-on ("rhojs" "pcgds" "f" "fjacs"))
+     (:file "gfunp" :depends-on ("powp" "mulp"))
+     (:file "gmfads")
+     (:file "hfun1p" :depends-on ("gfunp"))
+     (:file "hfunp" :depends-on ("hfun1p"))
+     (:file "mfacds" :depends-on ("gmfads"))
+     (:file "mulp")
+     (:file "multds")
+     (:file "pcgds" :depends-on ("qimuds" "mfacds" "multds"))
+     (:file "pcgns" :depends-on ("mfacds" "multds" "qimuds"))
+     (:file "pcgqs" :depends-on ("solvds" "gmfads" "multds"))
+     (:file "powp")
+     (:file "qimuds" :depends-on ("solvds"))
+     (:file "qrfaqf")
+     (:file "qrslqf")
+     (:file "rho")
+     (:file "rhoa")
+     (:file "rhojac" :depends-on ("hfunp"))
+     (:file "rhojs")
+     (:file "root")
+     (:file "rootnf" :depends-on ("tangnf"))
+     (:file "rootns" :depends-on ("tangns"))
+     (:file "rootqf" :depends-on ("upqrqf" "rho" "qrslqf" "f" "fjac"))
+     (:file "rootqs" :depends-on ("rhojs" "rho" "pcgqs" "f" "fjacs"))
+     (:file "sintrp")
+     (:file "solvds")
+     (:file "stepds" :depends-on ("f"))
+     (:file "stepnf" :depends-on ("tangnf"))
+     (:file "stepns" :depends-on ("tangns"))
+     (:file "stepqf" :depends-on ("tangqf" "upqrqf" "rho" "rhojac" "qrslqf" "f" "fjac"))
+     (:file "stepqs" :depends-on ("tangqs" "rhojs" "pcgqs" "f" "fjacs"))
+     (:file "steps" :depends-on ("f"))
+     (:file "r1upqf")
+     (:file "tangnf" :depends-on ("rhojac" "rho" "f" "fjac"))
+     (:file "tangns" :depends-on ("rhojac" "rho" "pcgns" "rhojs" "pcgds" "f" "fjac"))
+     (:file "tangqf" :depends-on ("rhojac" "qrfaqf" "qrslqf" "r1upqf" "f" "fjac"))
+     (:file "tangqs" :depends-on ("rhojs" "pcgqs" "f" "fjac"))
+     (:file "upqrqf" :depends-on ("r1upqf"))
+     ))
+
+(mk:defsystem hompack-test-mainf
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-extension "f"
+    :language :f2cl
+    :depends-on ("hompack")
+    :components
+    (
+     (:file "mainf")
+     (:file "mainp")
+     (:file "mains")
+     ))

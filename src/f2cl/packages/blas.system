@@ -1,0 +1,29 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;; This is a simple defsystem for converting some BLAS Fortran
+;;; routines to Lisp and compiling the result.  These came with
+;;; HOMPACK and are used in HOMPACK, among others.
+;;;
+;;; $Id: blas.system,v 1.1 2003/11/14 19:08:42 rtoy Exp $
+;;; $Log: blas.system,v $
+;;; Revision 1.1  2003/11/14 19:08:42  rtoy
+;;; Initial revision.
+;;;
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem blas
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;blas;")
+    :source-extension "f"
+    :language :f2cl
+    :components
+    (
+     (:file "daxpy")
+     (:file "dcopy")
+     (:file "ddot")
+     (:file "dnrm2")
+     (:file "dscal")
+     (:file "idamax")
+     ))

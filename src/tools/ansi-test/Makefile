@@ -14,7 +14,7 @@ all: cmucl-normal cmucl-safe cmucl-small sbcl clisp
 .PHONY: clisp sbcl cmucl-normal cmucl-safe cmucl-small clean
 
 clean:
-	$(RM) -rf clisp sbcl cmucl-normal cmucl-small cmucl-safe 
+	$(RM) -rf clisp sbcl cmucl-normal cmucl-small cmucl-safe
 
 clisp:
 	$(MKDIR) clisp ;
@@ -24,7 +24,7 @@ clisp:
 	$(RM) *.fas *.lib ;
 	ls -l $@ ;
 	cat clisp/state-info.erg > clisp-ERROR-IDS
-	grep -ah '^Bugid: ' clisp/*.erg  | cut -d ' ' -f 2 >> clisp-ERROR-IDS
+	grep -h '^Bugid: ' clisp/*.erg  | cut -d ' ' -f 2 >> clisp-ERROR-IDS
 	true
 
 sbcl:
@@ -35,7 +35,7 @@ sbcl:
 	$(RM) *.x86f ;
 	ls -l $@ ;
 	cat sbcl/state-info.erg > sbcl-ERROR-IDS
-	grep -ah '^Bugid: ' sbcl/*.erg  | cut -d ' ' -f 2 >> sbcl-ERROR-IDS
+	grep -h '^Bugid: ' sbcl/*.erg  | cut -d ' ' -f 2 >> sbcl-ERROR-IDS
 	true
 
 cmucl-normal:
@@ -46,7 +46,7 @@ cmucl-normal:
 	$(RM) *.x86f ;
 	ls -l $@ ;
 	cat cmucl-normal/state-info.erg > cmucl-normal-ERROR-IDS
-	grep -ah '^Bugid: ' cmucl-normal/*.erg  | cut -d ' ' -f 2 >> cmucl-normal-ERROR-IDS
+	grep -h '^Bugid: ' cmucl-normal/*.erg  | cut -d ' ' -f 2 >> cmucl-normal-ERROR-IDS
 	true
 
 cmucl-small:
@@ -57,7 +57,7 @@ cmucl-small:
 	$(RM) *.x86f ;
 	ls -l $@ ;
 	cat cmucl-small/state-info.erg > cmucl-small-ERROR-IDS
-	grep -ah '^Bugid: ' cmucl-small/*.erg  | cut -d ' ' -f 2 >> cmucl-small-ERROR-IDS
+	grep -h '^Bugid: ' cmucl-small/*.erg  | cut -d ' ' -f 2 >> cmucl-small-ERROR-IDS
 	true
 
 
@@ -69,7 +69,7 @@ cmucl-safe:
 	$(RM) *.x86f ;
 	ls -l $@ ;
 	cat cmucl-safe/state-info.erg > cmucl-safe-ERROR-IDS
-	grep -ah '^Bugid: ' cmucl-safe/*.erg  | cut -d ' ' -f 2 >> cmucl-safe-ERROR-IDS
+	grep -h '^Bugid: ' cmucl-safe/*.erg  | cut -d ' ' -f 2 >> cmucl-safe-ERROR-IDS
 	true
 
 

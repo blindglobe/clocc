@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.7 2000/05/23 17:03:58 sds Exp $
+;;; $Id: elisp.lisp,v 2.8 2001/10/11 21:16:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
 (defpackage emacs-lisp
   #-allegro
   (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
-  (:nicknames elisp el) (:use cl cllib)
+  (:nicknames "ELISP" "EL") (:use "CL" "CLLIB" "PORT")
   (:shadow let let* if member delete load require provide ignore format /
            defcustom defconst autoload))
 
@@ -150,8 +150,11 @@
 (defun el::encode-time (second minute hour day month year &rest zone)
   (encode-universal-time second minute hour day month year (car (last zone))))
 
-(defmacro el::defalias (symbol def)
-  `(setf (fdefinition ,symbol) (fdefinition ,def)))
+;; defalias is a function in Emacs, cannot use defmacro
+;; a simple (setf fdefinition) is no good
+;; since Emacs defalias works on macros too
+(defun el::defalias (symbol def)
+  (eval `(defmacro ,symbol (&body body) (list* ',def body))))
 (defmacro el::defgroup (&rest args) (declare (ignore args)))
 (defmacro el::defcustom (var val doc &key (type t) &allow-other-keys)
   (let ((type (if (and (consp type) (eq 'quote (car type))) (cadr type) type)))
@@ -208,32 +211,21 @@
   (pushnew el (symbol-value list) :test #'equal))
 
 ;;; tmp hacks
-(defun el::define-key (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::define-key args)
-  (values-list args))
-(defun el::make-sparse-keymap (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::make-sparse-keymap args)
-  (values-list args))
-(defun el::substitute-key-definition (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet"
-        'el::substitute-key-definition args)
-  (values-list args))
-(defun el::interactive (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::interactive args)
-  (values-list args))
-(defun el::make-help-screen (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::make-help-screen args)
-  (values-list args))
-(defun el::help-for-help (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::help-for-help args)
-  (values-list args))
-(defun el::start-kbd-macro (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::start-kbd-macro args)
-  (values-list args))
-(defun el::substitute-command-keys (&rest args)
-  (warn "~s [~{~s~^ ~}]: not implemented yet"
-        'el::substitute-command-keys args)
-  (values-list args))
+(defmacro defun-fake (func)
+  `(defun ,func (&rest args)
+    (warn "~s [~{~s~^ ~}]: not implemented yet" ',func args)
+    (values-list args)))
+(defun-fake el::define-key)
+(defun-fake el::make-sparse-keymap)
+(defun-fake el::substitute-key-definition)
+(defun-fake el::interactive)
+(defun-fake el::make-help-screen)
+(defun-fake el::help-for-help)
+(defun-fake el::start-kbd-macro)
+(defun-fake el::substitute-command-keys)
+(defun-fake el::display-color-p)
+(defun-fake el::propertize)
+(defun-fake el::make-mode-line-mouse-map)
 
 (defvar el::global-map (el::make-sparse-keymap))
 (defvar el::help-char (code-char 8))
@@ -285,20 +277,17 @@
 ;;; Load Emacs-Lisp files
 ;;;
 
+(defvar el::emacs-home
+  #+(or mswindows win32) "d:/gnu/emacs/"
+  #-(or mswindows win32) "/usr/local/src/emacs/")
+(defvar el::site-lisp-dir
+  #+(or mswindows win32) "c:/gnu/sitelisp/"
+  #-(or mswindows win32) "/usr/local/share/emacs/site-lisp/")
+
 (defvar el::load-path
-  '("/usr/share/emacs/site-lisp/"
-    "/usr/src/emacs/lisp"
-    "/usr/src/emacs/lisp/textmodes"
-    "/usr/src/emacs/lisp/progmodes"
-    "/usr/src/emacs/lisp/play"
-    "/usr/src/emacs/lisp/mail"
-    "/usr/src/emacs/lisp/language"
-    "/usr/src/emacs/lisp/international"
-    "/usr/src/emacs/lisp/gnus"
-    "/usr/src/emacs/lisp/emulation"
-    "/usr/src/emacs/lisp/emacs-lisp"
-    "/usr/src/emacs/lisp/calendar"
-    "/usr/src/emacs/leim"))
+  (list (concatenate 'string el::emacs-home "lisp/")
+        (concatenate 'string el::emacs-home "leim/")
+        el::site-lisp-dir))
 
 (defvar el::features nil)
 
@@ -311,16 +300,23 @@
 #+gcl (error 'not-implemented :proc 'file-types)
 
 (defun locate-file (file &optional source-only)
-  (dolist (path el::load-path)
-    (let ((dir (to-directory path)))
-      (let ((ff (merge-pathnames file dir)))
-        (when (and (ignore-errors (probe-file ff)) (not (probe-directory ff)))
-          (return-from locate-file ff)))
-      (unless source-only
-        (let ((ff (merge-pathnames (compile-file-pathname file) dir)))
-          (when (probe-file ff) (return-from locate-file ff))))
-      (let ((ff (merge-pathnames (concatenate 'string file ".el") dir)))
-        (when (probe-file ff) (return-from locate-file ff))))))
+  (flet ((file-here (dir)
+           ;; search the local files
+           (let ((ff (merge-pathnames file dir)))
+             (when (and (ignore-errors (probe-file ff))
+                        (not (probe-directory ff)))
+               (return-from locate-file ff)))
+           (unless source-only
+             (let ((ff (merge-pathnames (compile-file-pathname file) dir)))
+               (when (probe-file ff) (return-from locate-file ff))))
+           (let ((ff (merge-pathnames (concatenate 'string file ".el") dir)))
+             (when (probe-file ff) (return-from locate-file ff)))))
+    (dolist (path el::load-path)
+      (let ((dir (to-directory path)))
+        (file-here dir)
+        ;; search the subdirectories
+        (dolist (sub-dir (directory (concatenate 'string dir "*/")))
+          (file-here sub-dir))))))
 
 (defun el::load (file &optional noerror nomessage nosuffix must-suffix)
   "Emacs-Lisp load.
@@ -355,10 +351,11 @@ The suffix stuff is ignored."
 ;; (el::load "cal-hebrew")
 ;; (el::load "subr")
 ;; (el::load "help")
-;; (cl-user::compile-el-file "backquote")
-;; (cl-user::compile-el-file "calendar")
-;; (cl-user::compile-el-file "cal-hebrew")
-;; (calendar-hebrew-date-string)
+;; (cllib::locate-file "calendar")
+;; (cllib::compile-el-file "backquote")
+;; (cllib::compile-el-file "calendar")
+;; (cllib::compile-el-file "cal-hebrew")
+;; (el::calendar-hebrew-date-string)
 
 (provide :elisp)
 ;;; file elisp.lisp ends here

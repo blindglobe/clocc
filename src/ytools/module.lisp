@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.8 2005/01/07 16:45:16 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.9 2005/01/28 13:24:37 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -27,28 +27,50 @@
 (defstruct (Module-pseudo-pn (:include Pseudo-pathname))
    module)
 
-;;; (def-ytools-module name ---acts--- (:insert ---acts---))
-;;; The first group of acts becomes a (run-time or compile-time) supporter
-;;; of the file C containing the 'def-ytools-module' form.  The ':insert'
-;;; acts are treated as if inserted at this point in C.
-(defmacro def-ytools-module (name &rest actions)
-   (multiple-value-bind (contents expansion)
+;;; (def-ytools-module name 
+;;;    (:expansion ---acts---)
+;;;    (:run-support ---acts---)
+;;;    (:compile-support ---acts---))
+;;; Let F be a file that depends-on this module.
+;;; :expansion: The acts are (as it were) inserted in the
+;;;    top level of F.
+;;; :run-support: The acts are executed when F is loaded
+;;; :compile-support: The acts are executed when F is compiled
+;;; Note that this is orthogonal to the :at-run-time/:at-compile-time
+;;; distinction.  If F depends-on a module :at-compile-time, that
+;;; means that the :run-support actions of F are executed when F is
+;;; compiled.
+;;; Actions at the top level of the macro are treated as though
+;;; they occurred inside :run-support (and a warning is issued).
+;;; :contents is a synonym of :run-support, and :insert is a synonym
+;;; for :expansion.
+(defmacro def-ytools-module (name &rest actions &whole dym-exp)
+   (multiple-value-bind (run-support compile-support expansion warn)
 		        (do ((al actions (cdr al))
 			     e
-			     (conts !())
-			     (expans !()))
+			     (rs !())
+			     (cs !()) 
+			     (expans !())
+			     (warn false))
 			    ((null al)
-			     (values (mapcan #'list-copy (reverse conts))
-				     (mapcan #'list-copy (reverse expans))))
+			     (values (mapcan #'list-copy (reverse rs))
+				     (mapcan #'list-copy (reverse cs))
+				     (mapcan #'list-copy (reverse expans))
+				     warn))
 			  (setq e (car al))
 			  (cond ((atom e)
-				 (on-list (list e) conts))
-				((eq (car e) ':contents)
+				 (on-list (list e) rs)
+				 (setq warn t))
+				((memq (car e) '(:run-support :contents))
 				 (on-list (cdr e) conts))
-				((memq (car e) '(:insert :expansion))
+				((memq (car e) '(:expansion :insert))
 				 (on-list (cdr e) expans))
 				(t
-				 (on-list (list e) conts))))
+				 (on-list (list e) conts)
+				 (setq warn t))))
+      (cond (warn
+	     (format *error-output*
+		"Old-style: ~s~%" dym-exp)))
       `(let ((mod (place-YT-module ',name)))
 	  (setf (YT-module-contents mod)
 		',(cond ((= (length contents) 1)

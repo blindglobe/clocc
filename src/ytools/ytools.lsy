@@ -89,43 +89,47 @@
 
 (defparameter ytools-bin-dir-pathname*
 (let ((dirs (pathname-directory (pathname ytools-bin-path*))))
-      (cond ((and (not (null dirs)) (eq (car dirs) ':relative))
-	     (setq dirs (cdr dirs))
-	     (let ((down-layers '())
-		   (yt-dirs (reverse (pathname-directory ytools-dir-pathname*))))
-		(loop
-		   (cond ((or (null yt-dirs)
-			      (member (car yt-dirs) '(:relative :absolute)))
-			  (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
-				 ytools-dir-pathname* (pathname ytools-bin-path*))))
+   (cond ((null dirs)
+	  ytools-dir-pathname*)
+	 ((eq (car dirs) ':relative)
+	  (setq dirs (cdr dirs))
+	  (let ((down-layers '())
+		(yt-dirs (reverse (pathname-directory ytools-dir-pathname*))))
+	     (loop
+		(cond ((or (null yt-dirs)
+			   (member (car yt-dirs) '(:relative :absolute)))
+		       (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
+			      ytools-dir-pathname* (pathname ytools-bin-path*))))
 ;;;;		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
 ;;;;			    down-layers yt-dirs dirs)
-		   (cond ((or (null dirs)
-			      (not (member (car dirs) '(:up :back))))
-			  (let ((final-dirs
-				   (append (reverse yt-dirs)
-					   dirs
-					   (cond ((string= bin-idio* "")
-						  '())
-						 (t (cdr (pathname-directory
-							    (parse-namestring
-							       bin-idio*)))))
-					   down-layers)))
-			     (format t "YTools bin dir = ~S~%" final-dirs)
-			     (return
-				(ensure-directories-exist
-				   (merge-pathnames
-				      (make-pathname
-					 :directory final-dirs)
-				      ytools-dir-pathname*))))))
-		  (cond ((not (equal (car yt-dirs) "src"))
-			 (setq down-layers 
-			       (cons (car yt-dirs) down-layers))))
-		  (setq yt-dirs (cdr yt-dirs))
-		  (setq dirs (cdr dirs)))))
-	    (t
-	     (error "Can't build ytools-bin-dir-pathname* from ~s"
-		    (pathname ytools-bin-path*))))))
+		(cond ((or (null dirs)
+			   (not (member (car dirs) '(:up :back))))
+		       (let ((final-dirs
+				(append (reverse yt-dirs)
+					dirs
+					(cond ((string= bin-idio* "")
+					       '())
+					      (t (cdr (pathname-directory
+							 (parse-namestring
+							    bin-idio*)))))
+					down-layers)))
+			  (format t "YTools bin dir = ~S~%" final-dirs)
+			  (return
+			     (ensure-directories-exist
+				(merge-pathnames
+				   (make-pathname
+				      :directory final-dirs)
+				   ytools-dir-pathname*))))))
+	       (cond ((not (equal (car yt-dirs) "src"))
+		      (setq down-layers 
+			    (cons (car yt-dirs) down-layers))))
+	       (setq yt-dirs (cdr yt-dirs))
+	       (setq dirs (cdr dirs)))))
+	 ((eq (car dirs) ':absolute)
+	  ytools-bin-path*)
+	 (t
+	  (error "Can't build ytools-bin-dir-pathname* from ~s"
+		 (pathname ytools-bin-path*))))))
 
 (setq *features* (adjoin ':ytools *features*))
 

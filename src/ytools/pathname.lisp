@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.6 2004/12/17 21:49:01 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.7 2005/01/28 13:24:37 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -265,10 +265,21 @@
 ;;;;(defvar ytools-logical* "YTOOLS")
 
 (defvar ytools-logical-names-table* (make-hash-table :size 10 :test #'eq))
-;;; -- Each entry is the pathname the logical-name names.  Logical
-;;; name is just a symbol at this point.
-;;; Reserved logical names like 'module' have non-pn definitions, which
-;;; cause an error if someone tries to resolve them into actual pns.
+;;; -- Each entry is the pathname the logical-name names, or
+;;; the symbol :pathname-parse-controller if that's what it is.
+;;; (In which case the code to do the parsing is associated to
+;;; this symbol using 
+;;;   (datafun :pn-parse
+;;;      (defun sym :^ (operands default) 
+;;;         ...))
+;;; where operands are the operands to the right of the symbol in
+;;; a filespecs list, and default is the directory established by
+;;; stuff to the left of the symbol.  The datafun must return three
+;;; values: the pathnames extracted from the operands, the new default
+;;; established by them (or false if there is to be no default), and
+;;; the operands left over after this one did its extraction.
+;;; Logical name is just a symbol at this point.
+;;; See def-ytools-pathname-control, below.
 
 (defvar pathname-prop-table* (make-hash-table :test #'equalp :size 100))
 
@@ -328,9 +339,7 @@
 			     :directory (append obj-dir bin-idio-dir*)
 			     :type lisp-object-extn*)))))))
    ;;;;(format t "name = ~s~%" name)
-   (setf (table-entry ytools-logical-names-table*
-		      name)
-         pn)
+   (set-ytools-logical-pathname name pn)
    (cond (obj-version
 	  (setf (pathname-prop 'obj-version pn)
 	        (pathname-resolve
@@ -346,6 +355,23 @@
 
 (defun lookup-ytools-logical-pathname (sym)
    (href ytools-logical-names-table* sym))
+
+(defun set-ytools-logical-pathname (sym new-val)
+   (let ((old-val (href ytools-logical-names-table*
+			sym)))
+      (cond ((and old-val
+		  (not (eq (eq old-val ':pathname-parse-controller)
+			   (eq new-val ':pathname-parse-controller))))
+	     (format *error-output*
+		     "Warning: ~s changing from ~s~%"
+		     sym
+		     (cond ((eq old-val ':pathname-parse-controller)
+			    "logical-name parser to logical pathname")
+			   (t
+			    "logical pathname to logical-name parser")))))
+      (setf (href ytools-logical-names-table*
+		  sym)
+	    new-val)))
 
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
 (defun place-relative-pathname (pn dir-list suff ensure-existence)
@@ -409,7 +435,7 @@
 			  ;; 'below-dirs' the last layer we passed.
 			  ;; This makes sense only if this layer does
 			  ;; not help discriminate subdirectories.
-			  ;; Useful to purge "src" layers from "bin"
+			  ;; Useful for purging "src" layers from "bin"
 			  ;; directories (assuming *all* "bin"
 			  ;; subdirectories come from "src"
 			  ;; subdirectories).--
@@ -442,8 +468,10 @@
 	(reverse (nconc updnl dl)))))
 
 (defmacro def-ytools-pathname-control (sym parser-defn)
-   `(and (setf (href ytools-logical-names-table* ',sym)
-               (make-Pseudo-pathname ',sym))
+   `(progn
+         (set-ytools-logical-pathname
+	     ',sym
+	     ':pathname-parse-controller) ;;;;(make-Pseudo-pathname ',sym)
 	 (datafun :pn-parse
 	    ,parser-defn)))
 
@@ -562,14 +590,12 @@
 			(t sym))))
 	    (let ((possibly-pseudo-pn
 		     (lookup-ytools-logical-pathname sym-kernel)))
-	       (cond ((is-Pseudo-pathname possibly-pseudo-pn)
-		      (let ((h (alref pn-parsers*
-				      (Pseudo-pathname-name
-				         possibly-pseudo-pn))))
+	       (cond ((eq possibly-pseudo-pn ':pathname-parse-controller)
+		      (let ((h (alref pn-parsers* sym-kernel)))
 			 (cond (h
 				(funcall h operands default))
 			       (t
-				(error "Undefined Pseudo-pathname ~s"
+				(error "Undefined logical-names parser ~s"
 				       possibly-pseudo-pn)))))
 		     (t
 		      ;; Just go back to thinking of it as a YTools-pathname

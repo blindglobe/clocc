@@ -24,13 +24,18 @@
 	  (c (Test-file-chunk-callee file-ch))
 	  (s (Test-file-chunk-slurpee file-ch)))
       (cond (c
-	     (setf (File-chunk-callees file-ch) (list (tuple c !())))
-	     (compiled-chunk-note-sub-file-bases compiled-ch c)))
+	     (setf (File-chunk-callees file-ch)
+		   (list (tuple c (list macros-sub-file-type*))))
+;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch c)
+	     ))
       (cond (s
-	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
-;;;;      (format t "Checking after noting sub-file bases of ~s~%"
-;;;;	      compiled-ch)
-;;;;      (loaded-c-check)
+	     ;; This kind of link corresponds to nothing that
+	     ;; occurs "in nature," namely a slurpee that isnt'
+	     ;; a callee.--
+	     (compiled-ch-sub-file-link
+	         compiled-ch
+		 s macros-sub-file-type*)))
+;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
       file-op-count*))
 
 (defvar file-chunk-l*)
@@ -410,4 +415,24 @@
 		      (memq ch (Chunk-basis loaded-file-chunk-c*)))
 		 (setq oops-ch* ch)
 		 (break "About to clobber ~s" ch))))))
+
+;;; Refactored out of existence--
+(defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
+;;;;   (format t "Setting up subfiles that ~s depends on...~%"
+;;;;	   compiled-ch)
+   (dolist (ssfty standard-sub-file-types*)
+;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
+;;;;	      (Sub-file-type-name ssfty)
+;;;;	      (File-chunk-pathname file-ch))
+      (pushnew (funcall
+		  (Sub-file-type-chunker ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-basis compiled-ch))
+      (pushnew (funcall
+		  (Sub-file-type-load-chunker
+		     ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-update-basis
+		    compiled-ch))))
+
 |#

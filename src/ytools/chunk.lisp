@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.16 2005/01/07 16:45:15 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.17 2005/01/28 13:24:25 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -11,6 +11,14 @@
 	     chunk-request-mgt chunk-terminate-mgt
 	     chunk-up-to-date chunk-update chunks-update)))
 
+;;;;; Some of the code in this file is referred to in the following
+;;;;; paper:
+#| <<<< :eval
+    (referring-paper "McDermott05"
+                      ~/UNIfied/word/pub/Lisp2005/lisp05.txl 
+                      :default true)
+   >>>> :eval
+|#
 
 ;;; The date assigned to chunks with no basis, i.e., leaves.
 (defconstant +no-supporters-date+ -1000)
@@ -21,7 +29,7 @@
 ;;; information in the Chunk.  We just have to ensure that anyone who
 ;;; needs it has a pointer to the Chunk so it can tell whether the
 ;;; information is up to date and if not recompute it.
-;;;;; <<<< Chunk-defn
+;;;;; <<<< Chunk-defn 
 (defclass Chunk ()
   ((name :accessor Chunk-name  ; -- An S-expression
 	  :initarg :name
@@ -191,11 +199,11 @@
    )
 
 (defmethod initialize-instance :after ((orch Or-chunk) &rest _)
-   (cond ((slot-boundp orch 'disjuncts)
-	  (or-chunk-set-update-basis orch)
+   (cond ((not (slot-is-empty orch 'disjuncts))
+	  (or-chunk-set-default-and-update orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
 	     (pushnew orch (Chunk-derivees b)))))
-   (cond ((slot-boundp orch 'default)
+   (cond ((not (slot-is-empty orch 'default))
 	  (or-chunk-modify-height orch (Or-chunk-default orch))))
    orch)
 
@@ -214,8 +222,14 @@
    (dolist (d disjuncts)
       (setf (Chunk-derivees d)
 	    (adjoin orch (Chunk-derivees d))))
-   (or-chunk-set-update-basis orch)
+   (or-chunk-set-default-and-update orch)
    orch)
+
+(defun or-chunk-set-default-and-update (orch)
+	  (cond ((slot-is-empty orch 'default)
+		 (setf (Or-chunk-default orch)
+		       (lastelt (Or-chunk-disjuncts orch)))))
+	  (or-chunk-set-update-basis orch))
 
 (defmethod (setf Or-chunk-default) :after (d (orch Or-chunk))
    (or-chunk-modify-height orch d))
@@ -618,7 +632,8 @@
 					   ud-ch)))
 			    (on-list ud-ch temporarily-managed)
 			    (chunk-request-mgt ud-ch)))
-		    (loaded-c-check)))
+;;;;		    (loaded-c-check)
+		    ))
 
 	       (derivees-update (ch in-progress)
 ;;;;		  (format t "Considering ~s~%" ch)
@@ -678,9 +693,6 @@
 		    (setf (Chunk-update-basis orch)
 			  (list b))
 		    (return-from or-chunk-set-update-basis))))
-	  (cond ((not (Or-chunk-default orch))
-		 (setf (Or-chunk-default orch)
-		       (lastelt (Or-chunk-disjuncts orch)))))
 	  (setf (Chunk-update-basis orch)
 	        (list (Or-chunk-default orch))))))
 

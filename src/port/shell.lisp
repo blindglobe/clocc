@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.4 2000/03/22 23:54:05 sds Exp $
+;;; $Id: shell.lisp,v 1.5 2000/03/24 00:23:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 ;;; $Log: shell.lisp,v $
+;;; Revision 1.5  2000/03/24 00:23:00  sds
+;;; comment
+;;;
 ;;; Revision 1.4  2000/03/22 23:54:05  sds
 ;;; use package prefixes for CMU CL and GCL
 ;;;
@@ -75,10 +78,14 @@
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'pipe-input prog args)))
 
+;;; Allegro CL: a simple `close' does NOT get rid of the process.
+;;; The right way, of course, is to define a Gray stream `pipe-stream',
+;;; define the `close' method and use `with-open-stream'.
+;;; Unfortunately, not every implementation supports Gray streams, so we
+;;; have to stick with this to further the portability.
+
 (defun close-pipe (stream)
-  "Close the pipe stream.
-The trouble is with ACL: a simple `close' doesn't get rid of the process.
-This function takes care of that."
+  "Close the pipe stream."
   (declare (stream stream))
   (close stream)
   #+allegro (sys:reap-os-subprocess))

@@ -871,9 +871,9 @@
       :cormanlisp
       :scl
       (and allegro-version>= (version>= 4 1)))
-(eval-when #-(or :lucid :cmu17 :cmu18)
+(eval-when #-(or :lucid)
            (:compile-toplevel :load-toplevel :execute)
-	   #+(or :lucid :cmu17 :cmu18)
+	   #+(or :lucid)
            (compile load eval)
 
   (unless (or (fboundp 'lisp::require)
@@ -1871,10 +1871,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
      (make-pathname :host host
 		    :device device
                     :directory
-		    #-(and :cmu (not (or :cmu17 :cmu18)))
                     directory
-		    #+(and :cmu (not (or :cmu17 :cmu18)))
-                    (coerce directory 'simple-vector)
 		    :name
 		    #-(or :sbcl :MCL :clisp) rel-file
 		    #+(or :sbcl :MCL :clisp) rel-name
@@ -2330,7 +2327,7 @@ D
 	    (when path
 	      (gethash path *file-load-time-table*)))))))))
 
-#-(or :cmu17 :cmu18)
+#-(or :cmu)
 (defsetf component-load-time (component) (value)
   `(when ,component
     (etypecase ,component
@@ -2355,7 +2352,7 @@ D
 		    ,value)))))))
     ,value))
 
-#+(or :cmu17 :cmu18)
+#+(or :cmu)
 (defun (setf component-load-time) (value component)
   (declare
    (type (or null string pathname component) component)
@@ -2663,11 +2660,9 @@ D
 			         #+scl (string-upcase
 					(component-extension component type))
 			   :device
-			   #+(and :CMU (not (or :cmu17 :cmu18)))
-			   :absolute
 			   #+sbcl
 			   :unspecific
-			   #-(or :sbcl (and :CMU (not (or :cmu17 :cmu18))))
+			   #-(or :sbcl)
 			   (let ((dev (component-device component)))
 			     (if dev
                                  (pathname-device dev
@@ -3791,8 +3786,8 @@ D
 ;;; if anybody does a funcall on #'require.
 
 ;;; Redefine old require to call the new require.
-(eval-when #-(or :lucid :cmu17 :cmu18) (:load-toplevel :execute)
-	   #+(or :lucid :cmu17 :cmu18) (load eval)
+(eval-when #-(or :lucid) (:load-toplevel :execute)
+	   #+(or :lucid) (load eval)
 (unless *old-require*
   (setf *old-require*
 	(symbol-function

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-05-11 Tue 16:02:18 EDT sds@goems.com>
+;;; File: <date.lisp - 1999-05-20 Thu 16:28:27 EDT sds@goems.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.37 1999/05/11 20:02:28 sds Exp $
+;;; $Id: date.lisp,v 1.38 1999/05/20 20:30:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.38  1999/05/20 20:30:19  sds
+;;; (with-truncated-dl): truncate both forward and backwards.
+;;; (volatility-dl): take a keyword arg dev-fn.
+;;; (exp-mov-avg-dl): fixed :name.
+;;;
 ;;; Revision 1.37  1999/05/11 20:02:28  sds
 ;;; (date-latest, date-earliest): new functions.
 ;;;
@@ -879,18 +884,28 @@ so that -1 corresponds to the last record."
         (setf (dated-list-fl ,ll) ,fl (dated-list-cl ,ll) ,cl
               (dated-list-cp ,ll) ,cp)))))
 
-(defmacro with-truncated-dl ((dt dl) &body body)
-  "Evaluate BODY when DL is truncated by the date DT."
-  (let ((ta (gensym "WTDL")) (ll (gensym "WTDL")) (cp (gensym "WTDL")))
+(defmacro with-truncated-dl ((dl bd ed) &body body)
+  "Evaluate BODY when DL is truncated by the dates BD and ED."
+  (let ((ll (gensym "WTDL")) (cp (gensym "WTDL")) (tp (gensym "WTDL"))
+        (cl (gensym "WTDL")) (tl (gensym "WTDL")))
     `(let ((,ll ,dl))
       (with-saved-dl ,ll
-        (dl-shift ,ll ,dt)
-        (let* ((,cp (dated-list-cp ,ll)) (,ta (cdr ,cp)))
-          (unwind-protect (progn (when ,cp (setf (cdr ,cp) nil)) ,@body)
-            (when ,cp (setf (cdr ,cp) ,ta))))))))
+        (when ,bd
+          (dl-shift ,ll ,bd)
+          (setf (dated-list-fl ,ll) (dated-list-cl ,ll)))
+        (when ,ed (dl-shift ,ll ,ed))
+        (let* ((,cp (dated-list-cp ,ll)) (,tp (cdr ,cp))
+               (,cl (dated-list-cl ,ll)) (,tl (cdr ,cl)))
+          (unwind-protect (progn (when ,ed
+                                   (when ,cp (setf (cdr ,cp) nil))
+                                   (when ,cl (setf (cdr ,cl) nil)))
+                                 ,@body)
+            (when ,ed
+              (when ,cp (setf (cdr ,cp) ,tp))
+              (when ,cl (setf (cdr ,cl) ,tl)))))))))
 
 (defmacro with-saved-dls ((&rest dls) &body body)
-  "Save several dated lists, line nested `with-saved-dl'."
+  "Save several dated lists, like nested `with-saved-dl'."
   (let* ((nn (length dls))
          (ll (map-into (make-list nn) #'gensym))
          (fl (map-into (make-list nn) #'gensym))
@@ -1081,15 +1096,22 @@ Return nil if at the end already, or the change in value."
             ((date> (dl-nth-date td) ed) (format prn "~%"))
           (format prn "~a~%" (dl-nth td)))))))
 
-(defsubst volatility-dl (dl &key (split #'date-ye) (slot 'val))
+(defun volatility-dl (dl &rest opts &key (split #'date-ye) (key (dl-val dl))
+                      (dev-fn #'standard-deviation-relative df-p)
+                      &allow-other-keys)
   "Apply `volatility' to the dated list.
 Key defaults to VAL; split defaults to `date-ye'."
-  (declare (type dated-list dl) (function split) (symbol slot))
+  (declare (type dated-list dl) (type (or fixnum function) split)
+           (type (function (sequence) double-float) dev-fn))
+  (remf opts :split) (remf opts :dev-fn)
   (loop :for ll :in (dated-list-fl dl) :and nn :of-type index-t :from 0
-        :with kk :of-type function = (dl-slot dl slot)
-        :and sp :of-type function = (compose 'split (dl-date dl))
+        :with sp :of-type (or function fixnum) =
+        (if (functionp split) (compose 'split (dl-date dl)) split)
         :and ls :of-type list :and vv :of-type double-float
-        :do (setf (values vv ls) (volatility (cdr ll) sp :key kk))
+        :do (setf (values vv ls)
+                  (if df-p
+                      (apply #'volatility (cdr ll) sp :dev-fn dev-fn opts)
+                      (volatility (cdr ll) sp :dev-fn dev-fn :key key)))
         :nconc ls :into lst :sum vv :into tv :of-type double-float
         :finally (return (values (/ tv nn) lst))))
 
@@ -1148,7 +1170,7 @@ and make the latter accessible through MISC."
   (let* ((c2 (/ coeff 2.0d0)) (dd (dl-date idl)) (kk (dl-slot idl slot))
          (dl (make-dated-list
               :date 'car :val 'cdr :name
-              (format nil "EMA [~3,2f~:[~;/~4,3f~]] `~a'" coeff
+              (format nil "EMA [~3,2f~:[~*~;/~4,3f~]] `~a'" coeff
                       double c2 (dated-list-name idl))
               :code (keyword-concat (dated-list-code idl) :-ema)))
          (ll (mapcar (lambda (l1)

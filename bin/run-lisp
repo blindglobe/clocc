@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.9 2000/04/19 17:00:09 sds Exp $
+# $Id: run-lisp,v 1.10 2000/04/19 20:08:35 haible Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -279,7 +279,7 @@ case "$1" in
 
     case "$LISPTYPE" in
       clisp )
-          todo="(setq lisp:*load-paths* '(#P\"\")) "$todo
+          todo="(progn (setq lisp:*load-paths* '(#P\"\")) ${todo})"
           test -z "$image" || image="-M ${image}.mem";
           exec ${CLISP-clisp} -norc -q ${image} -x "$todo"
           ;;

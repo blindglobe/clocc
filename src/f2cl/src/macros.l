@@ -3,7 +3,8 @@
 ;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;Hamilton, New Zeland 1992-95 - all rights reserved;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(in-package :cl-user)
+(in-package :f2cl)
+#+nil
 (eval-when (compile load eval)
   (export '(do1 do! map-defvar double-cdr double-mapcar push 
 	    fexport fproclaim fuse-package fin-package fdo arithmetic-if
@@ -209,7 +210,7 @@
 (defmacro fset-string (a b)
   `(setf (fref-string ,(second a) ,(third a)) ,b))
 
-(defmacro // (a b)
+(defmacro f2cl-// (a b)
   `(concatenate 'string ,a ,b))
 
 ;; Create an array slice for the array named VNAME whose elements are
@@ -463,7 +464,7 @@
 (defun idnint (x)
   (values (round x)))
 
-(defun real (x)
+(defun freal (x)
   (coerce (realpart x) 'single-float))
 
 (defun sngl (x)
@@ -832,8 +833,16 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.23 2000/07/27 16:39:17 rtoy Exp $
+;;; $Id: macros.l,v 1.24 2000/07/28 17:09:13 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.24  2000/07/28 17:09:13  rtoy
+;;; o We are in the f2cl package now.
+;;; o Remove the export expression.
+;;; o // is now called F2CL-//, to prevent problems with the lisp variable
+;;;   //.
+;;; o REAL is now called FREAL, to prevent problems with the lisp type
+;;;   REAL.
+;;;
 ;;; Revision 1.23  2000/07/27 16:39:17  rtoy
 ;;; We want to be in the CL-USER package, not the USER package.
 ;;;

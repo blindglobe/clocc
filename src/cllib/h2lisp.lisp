@@ -1,13 +1,16 @@
 ;#!/usr/bin/clisp -M ~sds/bin/clisp.mem -C
-;;; File: <h2lisp.lisp - 1999-01-13 Wed 15:42:28 EST sds@eho.eaglets.com>
+;;; File: <h2lisp.lisp - 1999-11-24 Wed 12:28:09 EST sds@ksp.com>
 ;;;
 ;;; Convert *.c to CLISP's ffi
 ;;;
 ;;; Copyright (C) 1999 by Sam Steingold
 ;;;
-;;; $Id: h2lisp.lisp,v 1.2 1999/01/13 20:42:55 sds Exp $
+;;; $Id: h2lisp.lisp,v 1.3 1999/11/24 17:49:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 ;;; $Log: h2lisp.lisp,v $
+;;; Revision 1.3  1999/11/24 17:49:55  sds
+;;; bring up to date (long overdue checkin)
+;;;
 ;;; Revision 1.2  1999/01/13 20:42:55  sds
 ;;; Replaced top-level `*c-readtable*' creation forms with a functions
 ;;; `make-c-readtable'.
@@ -20,27 +23,31 @@
 (in-package :cl-user)
 
 (eval-when (load compile eval)
-  (sds-require "base") (sds-require "url")
+  (sds-require "base") (sds-require "url") ; for `text-stream'
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; C parsing
 ;;;
 
-(defcustom *c-comment* cons (list :*c-comment*)
-  "The comment marker.")
-(defcustom *c-dim* cons (list :*c-dim*)
-  "The comment array dimension marker.")
+(defstruct c-dim "C dimension." dim)
+(defstruct c-cmt "C comment." data)
 
 (defun read-c-junk (stream char)
   (declare (stream stream) (character char))
   (ecase char
     (#\{ (read-delimited-list #\} stream t))
-    (#\[ (cons *c-dim* (read-delimited-list #\] stream t)))
-    (#\; #\;) (#\, #\,) (#\: #\:) (#\* #\*)
+    (#\[ (make-c-dim :dim (car (read-delimited-list #\] stream t))))
+    (#\; #\;) (#\, #\,) (#\: #\:) (#\* #\*) (#\| #\|)
     (#\#
      (let ((com (read stream t nil t)))
-       (case com )))
+       (ecase com
+         (|include|
+          (let ((ec (ecase (peek-char t stream t nil t) (#\" #\") (#\< #\>))))
+          (concatenate
+           'string "#include "
+           (loop :for cc :of-type character = (read-char stream t nil t)
+                 :collect cc :until (char= cc ec))))))))
     ;;     (loop :for line :of-type simple-string =
     ;;           (concatenate 'string "#" (read-line stream))
     ;;           :then (read-line stream)
@@ -50,23 +57,24 @@
      (case (peek-char nil stream nil nil t)
        (#\*
         (read-char stream)
-        (cons *c-comment*
-              (concatenate
-               'string "/*"
-               (coerce
-                (loop :for c1 :of-type character = (read-char stream)
-                      :and c2 :of-type character = #\Null :then c1
-                      :until (and (char= c2 #\*) (char= c1 #\/))
-                      :collect c1)
-                'string) "/")))
-       (#\/ (cons *c-comment* (concatenate 'string "/" (read-line stream))))
+        (make-c-cmt :data
+                    (concatenate
+                     'string "/*"
+                     (coerce
+                      (loop :for c1 :of-type character = (read-char stream)
+                            :and c2 :of-type character = #\Null :then c1
+                            :until (and (char= c2 #\*) (char= c1 #\/))
+                            :collect c1)
+                      'string) "/")))
+       (#\/ (make-c-cmt :data (concatenate 'string "/" (read-line stream))))
        (t '/)))))
 
 (defun make-c-readtable ()
   "Make the readtable for parsing C."
   (let ((rt (copy-readtable)))
     (set-macro-character #\/ #'read-c-junk nil rt)
-    ;; (set-macro-character #\# #'read-c-junk nil rt)
+    (set-macro-character #\| #'read-c-junk nil rt)
+    (set-macro-character #\# #'read-c-junk nil rt)
     (set-syntax-from-char #\; #\a rt)
     (set-macro-character #\; #'read-c-junk nil rt)
     (set-syntax-from-char #\# #\a rt)
@@ -83,24 +91,19 @@
     (setf (readtable-case rt) :preserve)
     rt))
 
-(defcustom *c-readtable* readtable (make-c-readtable)
-  "The readtable for C parsing.")
+(defparameter *c-readtable* (make-c-readtable) "The readtable for C parsing.")
 
-(defsubst c-comment-p (obj) (and (consp obj) (eq (car obj) *c-comment*)))
-
-(defun uncomment-split (lst obj)
-  "Read object from TS, remove comments, split on OBJ."
-  (declare (list lst))
-  (nsplit-list (delete-if #'c-comment-p lst) :obj obj))
+;(defun uncomment-split (lst obj)
+;  "Read object from TS, remove comments, split on OBJ."
+;  (declare (list lst))
+;  (nsplit-list (delete-if #'c-cmt-p lst) :obj obj))
 
 (defun read-statement (ts)
   (declare (type text-stream ts))
-  (loop :for zz = (read-next ts) :until (eql zz #\;)
-        :unless (c-comment-p zz) :collect zz))
+  (loop :for zz = (read-next ts :skip #'c-cmt-p) :until (eql zz #\;)
+        :collect zz))
 
-(defparameter *c-types* ; list
-  '(int uint char)
-  "Known C types.")
+(defparameter *c-types* '(int uint char) "Known C types.")
 (defparameter *c-un-types* nil "UnKnown C types.")
 
 (defun c-see-type (sym)
@@ -114,48 +117,76 @@
   (setq *c-un-types* (delete sym *c-un-types* :test #'eq)))
 
 (defun c-convert-decl (lst)
-  "Convert a list of form (type nm [dim]) to (nm (c-array type dim))."
+  "Convert declaration (type obj [dims]||(args)) to CLISP."
   (labels ((voidp (sy) (string-equal (string sy) "void"))
+           (objp (ll) (or (symbolp ll)
+                          (and (consp ll)
+                               (or (eql (car ll) #\*)
+                                   (null (cdr ll))))))
            (cc (ll)
+             (format t " --> ~s~%" ll)
              (etypecase (car ll)
-               (cons (assert (eq (caar ll) *c-dim*))
-                     `(c-array ,(cc (cdr ll)) ,(cadar ll)))
+               (c-dim `(c-array ,(cc (cdr ll)) ,(c-dim-dim (car ll))))
+               (cons (mapcar #'cc ll))
                (null nil)
+               (c-cmt (cc (cdr ll)))
                (symbol
                 (cond ((voidp (car ll))
                        (if (eql #\* (cadr ll))
                            'c-pointer nil))
-                      ((prog1 (if (eql #\* (cadr ll))
-                                  `(c-ptr ,(car ll))
-                                  (car ll))
-                         (c-see-type (car ll)))))))))
-    (let* ((fu (find-if-not #'consp lst :from-end t))
-           (ta (member fu lst)) (ld (nconc (cdr ta) (ldiff lst ta))))
-      (unless (voidp fu)
-        (list fu (cc ld))))))
+                      (t (c-see-type (car ll))
+                         (let* ((ptr (eql #\* (cadr ll))))
+                           (list (c-convert-decl (if ptr (cddr ll) (cdr ll)))
+                                 (if ptr `(c-ptr ,(car ll)) (car ll))))))))))
+    (let* ((fu (find-if #'objp lst :from-end t)) (ta (member fu lst))
+           (ld (ldiff lst ta))
+           (tail (map-in (lambda (el) (nsplit-list el :obj #\,)) (cdr ta))))
+      (typecase fu
+        (symbol (unless (voidp fu) (list fu (cc (nconc tail ld)))))
+        (cons `(,(car (last fu)) (c-function (:arguments ,(cc tail))
+                                  (:return-type ,(cc ld)))))))))
 
-(defmacro string-beg-with (beg strv &optional (lenv `(length ,strv)))
-  (let ((len (length beg)))
-    `(and (>= ,lenv ,len) (string= ,beg ,strv :end2 ,len))))
+(defun c-number (obj)
+  (typecase obj
+    (symbol (let* ((st (symbol-name obj)) (len (length st)))
+              (cond ((string-beg-with "0x" st len)
+                     (unintern obj)
+                     (parse-integer st :radix 16 :start 2))
+                    ((let ((ch (char st (1- len))))
+                       (and (char-equal #\l ch)
+                            (prog2 (setf (char st (1- len)) #\0)
+                                (every #'digit-char-p st)
+                              (setf (char st (1- len)) ch))))
+                     (unintern obj)
+                     (parse-integer st :end (1- len)))
+                    (obj))))
+    (t obj)))
+
+(defun c-eval (lst)
+  (cond ((null (cdr lst)) (c-number (car lst)))
+        ((eq (second lst) '<<)
+         (ash (c-number (first lst)) (c-number (third lst))))))
 
 ;;;
 ;;; H --> LISP
 ;;;
 
+#+cmu (pushnew 'compile pcl::*defmethod-times*)
 (defgeneric h2lisp (in out)
   (:documentation "Convert C header to lisp.
-Return the number of forms processed."))
-(defmethod h2lisp ((in string) (out t)) (h2lisp (merge-pathnames in) out))
-(defmethod h2lisp ((in cons) (out t))
-  (reduce #'+ in :key (lambda (in0) (h2lisp in0 out))))
-(defmethod h2lisp ((in t) (out string)) (h2lisp in (merge-pathnames out)))
-(defmethod h2lisp ((in t) (out pathname))
-  (with-open-file (fout out :direction :output :if-exists :supersede
-                        :if-does-not-exist :create)
-    (h2lisp in fout)))
-(defmethod h2lisp ((in pathname) (out t))
-  (with-open-file (fin in :direction :input)
-    (h2lisp fin out)))
+Return the number of forms processed.")
+  (:method ((in string) (out t)) (h2lisp (merge-pathnames in) out))
+  (:method ((in cons) (out t))
+    (reduce #'+ in :key (lambda (in0) (h2lisp in0 out))))
+  (:method ((in t) (out string)) (h2lisp in (merge-pathnames out)))
+  (:method ((in t) (out pathname))
+    (with-open-file (fout out :direction :output :if-exists :supersede
+                          :if-does-not-exist :create)
+      (h2lisp in fout)))
+  (:method ((in pathname) (out t))
+    (with-open-file (fin in :direction :input)
+      (h2lisp fin out))))
+
 (defmethod h2lisp ((in stream) (out stream))
   (format out "~%;;; reading from ~a~2%" in)
   (unless (eq out *standard-output*)
@@ -185,64 +216,85 @@ Return the number of forms processed."))
                (loop :until (search "*/" line :test #'char=)
                      :do (setq line (read-line in))
                      (format out ";;; ~a~%" line)))
-              ((string-beg-with "#if" line len)
+              ((string-beg-with-cs "#if" line len)
                (incf depth)
                (format out ";;; ~a~%" line))
-              ((string-beg-with "#endif" line len)
+              ((string-beg-with-cs "#endif" line len)
                (decf depth)
                (format out ";;; ~a~%" line))
-              ((string-beg-with "#define" line len) (incf numf)
+              ((string-beg-with-cs "#define" line len) (incf numf)
                ;; only 1-line simple defines!
                (format out ";;; ~a~%" line)
                (multiple-value-bind (var pos)
                    (read-from-string line nil +eof+ :start 7)
-                 (let ((val (read-from-string line nil +eof+ :start pos)))
+                 (let ((val (c-number (read-from-string
+                                       line nil +eof+ :start pos))))
                    (typecase val
                      (symbol
                       (format out "(define-symbol-macro ~s ~s)~%" var val))
                      ((or number string)
                       (format out "(defconstant ~s ~s)~%" var val))))))
-              ((string-beg-with "#include" line len) (incf numf)
+              ((string-beg-with-cs "#include" line len) (incf numf)
                (format out "(c-lines \"~a~~%\")~%" line))
-              ((string-beg-with "typedef struct" line len) (incf numf)
+              ((string-beg-with-cs "typedef struct" line len) (incf numf)
                ;; (format out ";;; ~a~%" line)
                (multiple-value-bind (t0 t1)
-                   (string-tokens line :start 15 :max 2)
+                   (values-list (string-tokens line :start 15 :max 2))
                  (c-def-type t1)
                  (c-see-type t0)
                  (format out "(def-c-type ~s ~s)~%" t0 t1)))
-              ((string-beg-with "typedef enum" line len) (incf numf)
+              ((string-beg-with-cs "typedef union" line len) (incf numf)
+               ;; (format out ";;; ~a~%" line)
+               (multiple-value-bind (t0 t1)
+                   (values-list (string-tokens line :start 14 :max 2))
+                 (c-def-type t1)
+                 (c-see-type t0)
+                 (format out "(def-c-type ~s ~s)~%" t0 t1)))
+              ((string-beg-with-cs "typedef enum" line len) (incf numf)
                (setf (ts-buff ts) line (ts-posn ts) 12)
-               (let ((en (delete #\, (read-next ts))) (tt (read-next ts)))
+               (let* ((rr (read-next ts :skip #'c-cmt-p))
+                      (en (nsplit-list (delete-if #'c-cmt-p rr) :obj #\,))
+                      (tt (read-next ts :skip #'c-cmt-p)))
                  (c-def-type tt)
+                 (dolist (el en)
+                   (when (stringp (car el))
+                     (format out "(c-lines \"~a~%\")~%" (car el))
+                     (setf (car el) (cadr el) (cdr el) (cddr el)))
+                   (when (cdr el)
+                     (assert (eq '= (cadr el)))
+                     (setf (cadr el) (c-eval (cddr el)) (cddr el) nil)))
+                 (map-in (lambda (el) (if (cdr el) el (car el))) en)
+                 ;; (format out "~s~%" (cons 'def-c-enum (cons tt en)))
                  (format out "(def-c-enum ~s~{~%  ~s~})~%" tt en)))
-              ((string-beg-with "typedef" line len) (incf numf)
+              ((string-beg-with-cs "typedef" line len) (incf numf)
                ;; (format out ";;; ~a~%" line)
-               (multiple-value-bind (t0 t1)
-                   (string-tokens line :start 8 :max 2)
-                 (c-def-type t1)
-                 (c-see-type t0)
-                 (format out "(def-c-type ~s ~s)~%" t0 t1)))
-              ((string-beg-with "struct" line len) (incf numf)
+               (setf (ts-buff ts) line (ts-posn ts) 7)
+               (let ((ll (read-statement ts)))
+                 (format out "(def-c-type ~s)~%" ll)
+                 (format out "~s~%" (cons 'def-c-type (c-convert-decl ll)))))
+              ((string-beg-with-cs "struct" line len) (incf numf)
                (setf (ts-buff ts) line (ts-posn ts) 6)
-               (let ((tt (read-next ts))
+               (let ((tt (read-next ts :skip #'c-cmt-p))
                      (ll (map-in #'c-convert-decl
-                                 (uncomment-split (read-next ts) #\;))))
+                                 (nsplit-list (read-next ts :skip #'c-cmt-p)
+                                              :obj #\;))))
                  (c-def-type tt)
                  (format out "(def-c-struct ~s~{~%  ~s~})~%" tt ll)))
-              ((string-beg-with "extern \"C\" {" line len)
+              ((string-beg-with-cs "extern \"C\" {" line len)
                (format out ";;; ~a~%" line))
               ((incf numf)  ; function declaration
                (setf (ts-buff ts) line (ts-posn ts) 0)
                (let* ((ll (read-statement ts))
-                      (zz (uncomment-split (car (last ll)) #\,))
-                      (args (mapcar #'c-convert-decl zz))
+                      (args (mapcar #'c-convert-decl
+                                    (nsplit-list (car (last ll)) :obj #\,)))
                       (fun (c-convert-decl (nbutlast ll))))
                  (format out "(def-c-call-out ~s
   (:arguments~{~<~%~12t ~1,79:; ~s~>~})~%  (:return-type~{ ~s~}))~%"
                          (car fun) args (cdr fun)))))))
 
 ;(h2lisp *standard-input* *standard-output*)
+;(LET ((*readtable* (copy-readtable)))
+;  (eval (read-from-string "(read-next ts :skip #'c-cmt-p)")))
 
 (provide "h2lisp")
 ;;; file h2lisp.lisp ends here

@@ -1,3 +1,10 @@
+cl-defsystem3 (3.3i+cvs.2002.09.24) unstable; urgency=low
+
+  * Updates to upstream
+  * Add call to clc-reregister-impl 
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 24 Sep 2002 12:40:44 -0600
+
 cl-defsystem3 (3.3i+cvs.2002.09.04-1) unstable; urgency=low
 
   * Rename directory to from defsystem3 to defsystem

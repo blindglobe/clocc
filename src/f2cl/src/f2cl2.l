@@ -154,22 +154,27 @@ Tag being parsed:| (cadr x))))
 
 ;------------------------------------------------------------------------------
 (defun lookup-array-bounds (v)
+  ;; Lookup the variable in the explicitly declared variables list.
   (map nil #'(lambda (e)
 	       (let ((res (find v (rest e) :key #'car)))
 		 (when (and res
 			    (not (null (rest res))))
 		   ;; If this entry has dimensions, we're done!
 		   (return-from lookup-array-bounds
-		     ;; Normal arrays look something like
-		     ;; (var (lo-1 hi-1) (lo-2 hi-2) ...)
-		     ;;
-		     ;; However, character arrays look like
-		     ;;
-		     ;; (var ((lo-1 hi-1) (lo-2 hi-2) ...) len)
+		     ;; Arrays, including character strings, look
+		     ;; something like (var (lo-1 hi-1) (lo-2 hi-2)
+		     ;; ...)
+		     (rest res)
+		     #+nil
 		     (if (listp (first (second res)))
 			 (second res)
 			 (rest res))))))
        *explicit_vble_decls*)
+  ;; Check to see if the array was declared in a common statement.
+  (let ((res (member v *common_array_dims*)))
+    (when res
+      (return-from lookup-array-bounds
+	(second res))))
   (error "Cannot find array bounds for ~S!" v))
 
 
@@ -240,6 +245,7 @@ Tag being parsed:| (cadr x))))
 
 					; function of no variables:
     ((and (symbolp (car l)) (eq nil (cadr l)))
+     (update-called-functions-list (car l) nil)
      (list (car l)))
 
 					; boolean expression:
@@ -315,8 +321,7 @@ Tag being parsed:| (cadr x))))
        ;; parameter, if we really want to.
 
        (update-called-functions-list fname args)
-       (cond ((and (member fname *external_function_names*)
-		   (member fname *subprog-arglist*))
+       (cond ((member fname *subprog-arglist*)
 	      ;; We want to use funcall only if the external function
 	      ;; was passed in as a parameter.  If not, then we don't
 	      ;; need to funcall it.  The user was just telling us that

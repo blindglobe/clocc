@@ -1,3 +1,4 @@
+;;; -*- Lisp -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
 ;;; DEFSYSTEM 3.2 Interim.
@@ -1284,13 +1285,13 @@
 ;        #+(and :sun4 :lispworks)             ("lisp" . "wfasl")
 ;        #+(and :mips :lispworks)             ("lisp" . "mfasl")
          #+:mcl                               ("lisp" . "fasl")
-	 #+clisp                              ("lisp" . "fas")
+	 #+clisp                              ("lsp" . "fas")
 
          ;; Otherwise,
          ("lisp" . "fasl")))
   "Filename extensions for Common Lisp. A cons of the form
    (Source-Extension . Binary-Extension). If the system is
-   unknown (as in *features* not known), defaults to lisp and lbin.")
+   unknown (as in *features* not known), defaults to lisp and fasl.")
 
 ;;; In ANSI CL, we should be able to get the object file type by
 ;;; doing (pathname-type (compile-file-pathname "foo.lisp")).
@@ -1300,9 +1301,6 @@
   #-ACLPC "system"
   #+ACLPC "sys"
   "The filename extension to use with systems.")
-
-(defvar *standard-source-file-types* '("lisp" "l" "cl" "lsp"))
-(defvar *standard-binary-file-types* '("fasl"))
 
 ;;; The above variables and code should be extended to allow a list of
 ;;; valid extensions for each lisp implementation, instead of a single
@@ -1987,15 +1985,17 @@ D
 					; with "/"), directory or file
 					; (ends with "/").
   (source-pathname *source-pathname-default*)
-  (source-extension "lisp" :type string) ; A string, e.g., "lisp". If
-					; NIL, uses default for
-					; machine-type.
+  (source-extension (car *filename-extensions*) :type string)
+                                ; A string, e.g., "lisp". If
+                                ; NIL, uses default for
+                                ; machine-type.
   (binary-pathname *binary-pathname-default*)
   binary-root-dir
-  (binary-extension "fasl" :type string) ; A string, e.g., "fasl". If
-					; NIL, uses default for
-					; machine-type.
-  package				; Package for use-package.
+  (binary-extension (cdr *filename-extensions*) :type string)
+                                ; A string, e.g., "fasl". If
+                                ; NIL, uses default for
+                                ; machine-type.
+  package                       ; Package for use-package.
 
   ;; The following three slots are used to provide for alternate compilation
   ;; and loading functions for the files contained within a component. If
@@ -3514,13 +3514,13 @@ D
   (let ((language (find-language (or (component-language component)
 				     :lisp))))
     (or (when language (language-source-extension language))
-	"lisp")))
+	(car *filename-extensions*))))
 
 (defun default-binary-extension (component)
   (let ((language (find-language (or (component-language component)
 				     :lisp))))
     (or (when language (language-binary-extension language))
-	"fasl")))
+	(cdr *filename-extensions*))))
 
 (defmacro define-language (name &key compiler loader
 				source-extension binary-extension)

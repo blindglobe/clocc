@@ -24,7 +24,7 @@
 ;     parse-number
 ;	write-comment-line
 ;--------------------------------------------------------------------------
-(in-package :cl-user)
+(in-package :f2cl)
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -38,58 +38,59 @@
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (do ((prev-line nil)
-	   (line (read-line inport nil 'eof)
-		 (read-line inport nil 'eof)))
-	  ((eq line 'eof)
-	   (when prev-line
-	     (write-line prev-line outport))
-	   outfile-name)
-	;; Hmm, technically it might not be right to trim spaces from
-	;; the end of the line.  Consider what happens we are trying
-	;; to continue a string with trailing spaces.  The resulting
-	;; string is wrong.
-	(let ((line (string-right-trim '(#\Space) line)))
-	  (cond 
-	    ((string= line "") nil)	; we leave out blank lines
-	    ((or (char-equal (char line 0) #\C)
-		 (char-equal (char line 0) #\*))
-	     (if *comments* (write-comment-line line outport)))
-	    (t
-	     (when *verbose* (princ line) (terpri))
-	     ;; Handle tabs.  If the line begins with a tab, replace it with 6
-	     ;; spaces.
-	     (when (char-equal (aref line 0) #\Tab)
-	       (setf line (concatenate 'string "      " (subseq line 1))))
-	     ;; Do we really want to do this?  What if the tab is in a
-	     ;; string?  I think tabs are illegal in Fortran, though.
-	     (setf line (substitute #\Space #\Tab line))
-	     ;; If line is a continuation line, append it.  If not,
-	     ;; print out our buffered line.
-	     (cond ((or (< (length line) 6)
-			(char-equal (aref line 5) #\Space))
-		    ;; Not continuation.  Print out the buffered line, if
-		    ;; any, and save this line for later.
-		    (when prev-line
-		      (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
-		    (setf prev-line (copy-seq line)))
-		   (t
-		    ;; A continuation line!  Append the line to our
-		    ;; buffer, carefully stripping off leading spaces.
-		    ;; If the last character of the buffer or the
-		    ;; first character of this line is a punctuation,
-		    ;; strip off leading spaces.  Otherwise, leave a
-		    ;; space between.
-		    (let ((punc-list '(#\. #\/))
-			  (new-line (string-left-trim '(#\Space) (subseq line 6))))
-		      (setf prev-line
-			    (concatenate 'string prev-line
-					 (if (and prev-line
-						  (or (member (aref prev-line (1- (length prev-line))) punc-list)
-						      (member (aref new-line 0) punc-list)))
-					     ""
-					     " ")
-					 new-line))))))))))))
+      (let ((*package* (find-package "F2CL")))
+	(do ((prev-line nil)
+	     (line (read-line inport nil 'eof)
+		   (read-line inport nil 'eof)))
+	    ((eq line 'eof)
+	     (when prev-line
+	       (write-line prev-line outport))
+	     outfile-name)
+	  ;; Hmm, technically it might not be right to trim spaces from
+	  ;; the end of the line.  Consider what happens we are trying
+	  ;; to continue a string with trailing spaces.  The resulting
+	  ;; string is wrong.
+	  (let ((line (string-right-trim '(#\Space) line)))
+	    (cond 
+	      ((string= line "") nil)	; we leave out blank lines
+	      ((or (char-equal (char line 0) #\C)
+		   (char-equal (char line 0) #\*))
+	       (if *comments* (write-comment-line line outport)))
+	      (t
+	       (when *verbose* (princ line) (terpri))
+	       ;; Handle tabs.  If the line begins with a tab, replace it with 6
+	       ;; spaces.
+	       (when (char-equal (aref line 0) #\Tab)
+		 (setf line (concatenate 'string "      " (subseq line 1))))
+	       ;; Do we really want to do this?  What if the tab is in a
+	       ;; string?  I think tabs are illegal in Fortran, though.
+	       (setf line (substitute #\Space #\Tab line))
+	       ;; If line is a continuation line, append it.  If not,
+	       ;; print out our buffered line.
+	       (cond ((or (< (length line) 6)
+			  (char-equal (aref line 5) #\Space))
+		      ;; Not continuation.  Print out the buffered line, if
+		      ;; any, and save this line for later.
+		      (when prev-line
+			(write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+		      (setf prev-line (copy-seq line)))
+		     (t
+		      ;; A continuation line!  Append the line to our
+		      ;; buffer, carefully stripping off leading spaces.
+		      ;; If the last character of the buffer or the
+		      ;; first character of this line is a punctuation,
+		      ;; strip off leading spaces.  Otherwise, leave a
+		      ;; space between.
+		      (let ((punc-list '(#\. #\/))
+			    (new-line (string-left-trim '(#\Space) (subseq line 6))))
+			(setf prev-line
+			      (concatenate 'string prev-line
+					   (if (and prev-line
+						    (or (member (aref prev-line (1- (length prev-line))) punc-list)
+							(member (aref new-line 0) punc-list)))
+					       ""
+					       " ")
+					   new-line)))))))))))))
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
@@ -277,8 +278,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.15 2000/07/27 16:39:17 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.16 2000/07/28 17:07:11 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.16  2000/07/28 17:07:11  rtoy
+;;; o We are in the f2cl package now.
+;;; o When we preprocess the file, we want to READ using the F2CL package
+;;;   so the symbols are in our package.  (I think that's what I want.)
+;;;
 ;;; Revision 1.15  2000/07/27 16:39:17  rtoy
 ;;; We want to be in the CL-USER package, not the USER package.
 ;;;

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.9 2000/11/15 16:59:05 sds Exp $
+;;; $Id: date.lisp,v 2.10 2001/04/18 17:01:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -200,7 +200,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (number
      (cond ((< -24 obj 24) obj)
            ((multiple-value-bind (ho mi) (floor obj 100)
-              (+ ho (/ mi 60))))))
+              ;; CL uses positive offsets to the West of Greenwich,
+              ;; while the rest of the world count positive to the East.
+              (- (+ ho (/ mi 60)))))))
     (t (error 'case-error :proc 'infer-timezone :args
               (list 'obj obj 'symbol 'string 'number)))))
 

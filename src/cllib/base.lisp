@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-06-03 Thu 13:30:40 EDT sds@goems.com>
+;;; File: <base.lisp - 1999-10-12 Tue 11:12:05 EDT sds@ksp.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.23 1999/06/03 17:33:55 sds Exp $
+;;; $Id: base.lisp,v 1.24 1999/10/12 15:27:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.24  1999/10/12 15:27:56  sds
+;;; Autodetect the compiled extension (`*fas-ext*').
+;;; Treat TERM "emacs" as "dumb" for `lisp::*prompt*'.
+;;; Purged Eagle proprietary modules.
+;;;
 ;;; Revision 1.23  1999/06/03 17:33:55  sds
 ;;; (compose): partially reverted the previous patch.
 ;;;
@@ -181,8 +186,12 @@
                 (map 'vector key (second excl:arglist))))))))
 
 (defvar *fas-ext*
-  #+gcl ".o" #+clisp ".fas" #+allegro ".fasl" #+cmu ".x86f" ; lw: ".ufsl"
-  #+lispworks (concatenate 'string "." (car system::*binary-file-types*))
+  ;; #+gcl ".o" #+clisp ".fas" #+allegro ".fasl"
+  ;; #+cmu (cdr pcl::*pathname-extensions*) ;; ".x86f" ".sparcf"
+  ;; lw: ".ufsl"
+  ;; #+lispworks (concatenate 'string "." (car system::*binary-file-types*))
+  #+(or new-compiler compiler)
+  (concatenate 'string "." (pathname-type (compile-file-pathname "foo")))
   #-(or new-compiler compiler) ".lisp"
   "The extension for the compiled file.")
 
@@ -284,7 +293,10 @@
 #+(or cmu clisp)
 (setq lisp::*prompt*
       (lambda ()
-        (let* ((dumb (string-equal (getenv "TERM") "dumb"))
+        (let* ((term (getenv "TERM"))
+               (dumb (or (null term)
+                         (string-equal term "dumb")
+                         (string-equal term "emacs")))
                (bb (if dumb "" "[1m"))
                (ib (if dumb "" "[7m"))
                (ee (if dumb "" "[m" )))
@@ -387,14 +399,12 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
 ;;;
 
 (eval-when (load compile eval)
-  (defcustom *source-dir* pathname
-    (merge-pathnames "eagle/" (user-homedir-pathname))
-    "*The directory with the Eagle source code.")
   (defcustom *lisp-dir* pathname
     (merge-pathnames "lisp/" (user-homedir-pathname))
-    "*The private lisp sources."))
-(defcustom *datadir* pathname (merge-pathnames "data/" *source-dir*)
-  "*The directory with the financial data.")
+    "*The private lisp sources.")
+  (defcustom *datadir* pathname
+    (merge-pathnames "cllib/data/" (user-homedir-pathname))
+    "*Data diectory."))
 
 #-(or clisp allegro)
 (eval-when (eval load compile)
@@ -409,14 +419,8 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
 (defcustom *require-table* hash-table
   (make-hash-table :test #'equal :size 20)
   "*The table for `sds-require'.")
-(dolist (mo '("base" "channel" "currency" "date" "futures" "fx" "gnuplot"
-              "list" "math" "octave" "print" "report" "rules" "signal" "util"
-              "work" "matrix"))
-  (declare (simple-string mo))
-  (setf (gethash mo *require-table*)
-        (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-(dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests" "elisp"
-              "card"))
+(dolist (mo '("gq" "url" "geo" "animals" "gnuplot" "matrix" "date" "util" "rpm"
+              "list" "math" "print" "base" "h2lisp" "clhs" "tests" "elisp"))
   (declare (simple-string mo))
   (setf (gethash mo *require-table*)
         (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
@@ -463,19 +467,11 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   '(("base") ("print" "base") ("list" "base") ("matrix" "base" "print")
     ("math" "base" "list" "print" "matrix") #-gcl ("monitor")
     ("util" "base" "list" "math" "print" #-gcl "monitor")
-    ("date" "base" "util") ("channel" "base" "date") ("futures" "base" "date")
-    ("signal" "base" "date" "channel" "futures")
-    ("gnuplot" "base" "date" "channel" "signal")
-    ("rules" "base" "date" "channel" "futures" "signal" "gnuplot" "report")
-    ("work" "base" "date" "channel" "futures" "signal" "gnuplot" "rules")
-    ("report" "base" "date" "print" "math" ) ("currency" "base" "date")
-    ("fx" "base" "util" "date" "currency" "futures" "report")
-    #+nil ("octave" "base" "date" "currency") ("animals" "base" "util")
+    ("date" "base" "util") ("gnuplot" "base" "date")
     ("url" "base" "util" "date") ("geo" "base" "url")
     ("gq" "base" "url" "date") ("rpm" "base" "url" "date")
     ("h2lisp" "base" "url") #+nil ("clhs" "base" "url")
-    ("elisp" "base" "list") ("card" "base" "print" "date" "url")
-    ("tests" "base" "date" "url" "rpm" "elisp"))
+    ("elisp" "base" "list") ("tests" "base" "date" "url" "rpm" "elisp"))
   "*The alist of files to work with, in the order of loading.
 Key: name for `sds-require', value - the list of dependencies.")
 
@@ -690,17 +686,6 @@ All the values from nth function are fed to the n-1th."
 (autoload 'url "url" "Convert an object to a URL.")
 (autoload 'view-url "url" "Launch a browser on this URL.")
 (autoload 'weather-report "geo" "Get the weather forecast.")
-
-(autoload 'best-pars "work" "Get the best parameters.")
-(autoload 'load-all-currencies "currency" "Load all the currencies.")
-(autoload 'load-all-futures "rules" "Load all futures data.")
-(autoload 'make-all-contracts "futures" "Init `*contract-list*'.")
-(autoload 'make-all-sig-stat "rules" "Generate all `sig-stat' files.")
-(autoload 'make-emas-channels "rules" "Get the EMAs and channels.")
-(autoload 'make-sig-stat "rules" "Generate `*sig-stat*'.")
-(autoload 'plot-dl-channels "gnuplot" "Plot dated lists with channels.")
-(autoload 'set-depth "signal" "Set the depth and load `*sig-stat*'.")
-(autoload 'test-par "work" "Test run.")
 
 (provide "base")
 ;;; }}} base.lisp ends here

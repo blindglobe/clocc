@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.2 2004/11/18 04:46:05 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.3 2004/12/06 15:09:55 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -366,25 +366,50 @@
 	     (let ((pn-dir (reverse (cdr start)))
 		   (resid !())
 		   (res !()))
+	        ;; We use 'dir-list' as a set of instructions for arriving
+		;; at a relative directory.
+	        ;; As we go, the three variables above represent the
+	        ;; directories traversed so far, leaving us in the "current
+	        ;; directory."
+		;; 'pn-dir' is list (in ascending order) of directories
+	        ;; above (and including) the current dir.
+	        ;; 'resid' is list (in descending order)
+	        ;; of directories we passed on the way up to current dir.
+	        ;; 'res' is a list (in ascending order) of directories
+	        ;; copied from 'dir-list'.
 		(dolist (d dir-list)
+;;;;		   (format t "pn-dir = ~s res = ~s d = ~s resid = ~s~%"
+;;;;			   pn-dir res d resid)
 		   (cond ((or (memq d '(:back :up)) (equal d ".."))
 			  (cond ((null res)
+				 ;; Go up one layer, recording in 'resid'
+				 ;; the directory passed.--
 				 (cond ((null pn-dir)
 					(error "Relative directory ~s undefined wrt ~s"
 					       dir-list pn))
 				       (t
-					;;(setq res (cons ':up res))
-					(setq resid
-					      (cons (car pn-dir) resid))
-					(setq pn-dir (cdr pn-dir)))))
+					(push (pop pn-dir) resid))))
 				((null pn-dir)
-				 (setq res (cdr res)))
+				 ;; But once we've started recording
+				 ;; directories in 'res', a ".." directory
+				 ;; is a puzzle.  We either go up and
+				 ;; leave 'res' alone, or, if we can't go
+				 ;; up, we interpret ".." as perversely
+				 ;; instructing us to undo 
+				 ;; the last addition to 'res' --
+				 (pop res))
 				(t
-				 (setq pn-dir (cdr pn-dir)))))
+				 ;; This is the case where go up 'pn-dir'
+				 ;; and leave 'res' and 'resid' alone --
+				 (pop pn-dir))))
 			 ((eq d '--)
-			  (setq pn-dir (cdr pn-dir)))
+			  ;; Special flag that means *don't* record in 'resid'
+			  ;; the last layer we passed.  Useful to purge
+			  ;; "src" layers from "bin" directories.--
+			  (pop resid))
 			 (t
-			  (setq res (cons d res)))))
+			  ;; A normal directory gets copied to 'res' --
+			  (push d res))))
 ;;;;		(format t "pn-dir = ~s~%res = ~s~%resid = ~s~%"
 ;;;;			pn-dir res resid)
 		(let ((res-pn

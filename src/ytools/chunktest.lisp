@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.2 2004/11/24 04:24:00 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.3 2004/12/06 15:09:54 airfoyle Exp $
 
 (defvar datum-a*)
 (defvar datum-b*)
@@ -214,12 +214,3 @@
 	 (cond ((not (= direct via-chunks))
 		(return))))))
 
-(defun co (s &optional no-lo)
-   (compile-file
-      (concatenate 'string "~/CVSified/dev/clocc/src/ytools/" s ".lisp")
-      :output-file
-      (concatenate 'string "~/CVSified/dev/clocc/bin/ytools/" s ".fasl"))
-  (cond ((not no-lo) (lo s))))
-
-(defun lo (s)
-   (load (concatenate 'string "~/CVSified/dev/clocc/bin/ytools/" s ".fasl")))

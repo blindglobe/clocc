@@ -96,8 +96,8 @@
 			      (member (car yt-dirs) '(:relative :absolute)))
 			  (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
 				 ytools-dir-pathname* (pathname ytools-bin-path*))))
-		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
-			    down-layers yt-dirs dirs)
+;;;;		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
+;;;;			    down-layers yt-dirs dirs)
 		   (cond ((or (null dirs)
 			      (not (member (car dirs) '(:up :back))))
 			  (let ((final-dirs
@@ -109,14 +109,16 @@
 							    (parse-namestring
 							       bin-idio*)))))
 					   down-layers)))
-			     (format t "Final dirs = ~S~%" final-dirs)
+			     (format t "YTools bin dir = ~S~%" final-dirs)
 			     (return
 				(ensure-directories-exist
 				   (merge-pathnames
 				      (make-pathname
 					 :directory final-dirs)
 				      ytools-dir-pathname*))))))
-		  (setq down-layers (cons (car yt-dirs) down-layers))
+		  (cond ((not (equal (car yt-dirs) "src"))
+			 (setq down-layers 
+			       (cons (car yt-dirs) down-layers))))
 		  (setq yt-dirs (cdr yt-dirs))
 		  (setq dirs (cdr dirs)))))
 	    (t

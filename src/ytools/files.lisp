@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.4 2004/11/27 20:03:02 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.5 2004/12/06 15:09:54 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -225,7 +225,7 @@
 ;;;;			  (list fc))
 ;;;;			 (t !()))
 ;;; -- we simply can't connect a basis-computing chunk to the
-;;; chunks whose bases it might affect.  That's because 'chunks-update'
+;;; chunks whose basis it might affect.  That's because 'chunks-update'
 ;;; is based on the assumption that the bases it sees are not in the
 ;;; process of changing.  This comment applies to 
 ;;; 'loadable-chunk-compute-basis' as well.
@@ -645,14 +645,6 @@
 *************************
 
 
-(defun pseudo-pathname-fload (pn force-flag force-compile)
-	  (funcall (Pseudo-pathname-loader pn)
-		   pn force-flag force-compile false))
-
-
-
-
-
 (defvar loading-stack*   nil)
    ;; -- stack of Pathnames of files currently being loaded
 
@@ -663,7 +655,7 @@
 (defmacro fcompl (&rest specs)
   `(do-fcompl ',specs))
 
-(defvar default-fcompl-args* '())
+(defvar default-fcompl-args* (vector false))
 
 (defun do-fcompl (specs)
   (cond ((not file-op-in-progress*)

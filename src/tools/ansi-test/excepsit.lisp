@@ -557,12 +557,12 @@ program-error is signaled.")
  type-error)
 
 ;; deleting a non-existing file can be successful!
-(my-assert
- (progn
-   (with-open-file (s "/tmp/foo35.tmp" :direction :output))
-   (delete-file "/tmp/foo35.tmp/bar"))
- #+CLISP nil
- #-CLISP file-error)
+;; the results are not easily predictable across implementations
+;;(my-assert
+;; (progn
+;;   (with-open-file (s "/tmp/foo35.tmp" :direction :output))
+;;   (delete-file "/tmp/foo35.tmp/bar"))
+;; nil or file-error??)
 
 (my-assert
  (destructuring-bind (a) '(1 2) a)

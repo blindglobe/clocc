@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.18 2002/04/21 20:10:31 sds Exp $
+;;; $Id: html.lisp,v 1.19 2002/09/24 17:38:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -261,12 +261,14 @@ This is mostly a debugging function, to be called interactively."
                           (reset-ent (xml-default-reset-entities))
                           (resolve-namespaces *xml-read-balanced*)
                           (out *standard-output*)
+                          (err *error-output*)
                           ((:max-retry *url-max-retry*) *url-max-retry*)
-                          ((:timeout *url-timeout*) *url-timeout*))
+                          ((:timeout *url-timeout*) *url-timeout*)
+                          &aux (*url-caller* 'xml-read-from-url))
   "Read all XML objects from the stream."
   (when reset-ent (xml-init-entities :out out))
   (let ((obj (with-open-url (sock url :err out)
-               (http-parse-header sock :out out)
+               (http-parse-header sock :out err)
                (with-xml-input (xin sock)
                  (read-from-stream xin :repeat repeat)))))
     (if resolve-namespaces

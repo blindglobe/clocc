@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.14 2002/08/13 22:02:44 sds Exp $
+;;; $Id: rpm.lisp,v 2.15 2002/09/24 17:38:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -301,11 +301,11 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
   (declare (type url url) (type (or null stream) err out) (type index-t retry))
   (handler-case
       (with-open-url (sock url :err err)
-        (let ((data (ftp-get-passive-socket sock err nil)))
-          (when (ignore-errors (url-ask sock err :list "list *.rpm")) ; 150
+        (let ((data (ftp-get-passive-socket sock nil)))
+          (when (ignore-errors (url-ask sock :list "list *.rpm")) ; 150
             (prog1 (map-in (lambda (rr) (setf (rpm-note rr) (list url)) rr)
                            (rpm-read data))
-              (url-ask sock err :list))))) ; 226
+              (url-ask sock :list))))) ; 226
     ((or net-path login) (co)
       (mesg :log err " * rpm-available [~a]: Cannot login:~% - ~a~%" url co)
       (error co))
@@ -457,7 +457,7 @@ Then generate the list to download."
            (type index-t len retry))
   (handler-case
       (with-open-url (sock url :err err)
-        (url-ask sock err :type "type i") ; 200
+        (url-ask sock :type "type i") ; 200
         (loop :for rpm :in rpms
               :and ii :of-type index-t :upfrom 1
               :for pos = (rpm-pos (rpm-name rpm))
@@ -471,7 +471,7 @@ Then generate the list to download."
               :if (rpm< (svref *rpm-present* pos) rpm) :do
               (multiple-value-bind (tot el st path)
                   (ftp-get-file sock (format nil "~a.rpm" rpm)
-                                *rpm-local-target* :err err :bin t :out out)
+                                *rpm-local-target* :err err :out out :bin t)
                 (declare (type file-size-t tot) (double-float el)
                          (simple-string st) (type pathname path))
                 (cond ((rpm-path-valid-p path)
@@ -615,10 +615,10 @@ available in `*rpm-locations*'."
 (defun local-port (serv)
   (#+clisp ext:socket-server-port #+allegro socket:local-port serv))
 
-(defun ftp-port-command (sock serv &optional (out *standard-output*))
+(defun ftp-port-command (sock serv)
   (let ((port (local-port serv)))
     (declare (type index-t port))
-    (url-ask sock out :port "port ~a,~d,~d" ; 200
+    (url-ask sock :port "port ~a,~d,~d" ; 200
              (substitute #\, #\. (local-host sock))
              (logand #xff (ash port -8)) (logand #xff port))))
 )
@@ -649,10 +649,10 @@ available in `*rpm-locations*'."
 
 (ftp-get-file sock "wn.README" "/var/tmp/" )
 (ftp-list sock)
-(url-ask sock *standard-output* :pwd "pwd") ; 257
-(url-ask sock *standard-output* :help "help ~a" "type") ; 214
-(url-ask sock *standard-output* :help "help") ; 214
-(url-ask sock *standard-output* :cwd "cwd gnu") ; 250
+(url-ask sock :pwd "pwd") ; 257
+(url-ask sock :help "help ~a" "type") ; 214
+(url-ask sock :help "help") ; 214
+(url-ask sock :cwd "cwd gnu") ; 250
 (ftp-list sock)
 (show-rpms "print")
 

@@ -1,10 +1,10 @@
 ;;; XML parsing
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.39 2001/11/07 15:37:12 sds Exp $
+;;; $Id: xml.lisp,v 2.40 2002/02/12 19:34:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,10 +29,11 @@
 
 (export
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
-   xml-xhtml-tidy
+   xml-xhtml-tidy xml-purge-data
    with-xml-input with-xml-file xml-read-from-file read-standalone-char
    xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data
-   xml-name xml-name-p xmln-ln xmln-ns
+   xmlo-name-check xmlo-nm xmlo-tag
+   xml-name xml-name-p xmln-ln xmln-ns xmln=
    xml-namespace xml-namespace-p xmlns-uri xmlns-pre xmlns-nht))
 
 ;;;
@@ -211,6 +212,17 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
   (ns +xml-namespace-none+ :type xml-namespace))
 )
 
+(defgeneric xmln= (xn1 xn2)
+  (:documentation "Check whether the two names are the same.")
+  (:method ((xn1 t) (xn2 t)) nil)
+  (:method ((xn1 string) (xn2 string)) (string= xn1 xn2))
+  (:method ((xn1 xml-name) (xn2 xml-name))
+    (and (string= (xmln-ln xn1) (xmln-ln xn2))
+         (eq (xmln-ns xn1) (xmln-ns xn2))))
+  (:method ((xn1 cons) (xn2 cons))
+    (and (string= (car xn1) (car xn2))
+         (string= (cadr xn1) (cadr xn2)))))
+
 (defun xmln-get (name namespace)
   "Create an XML name and add it to the appropriate hashtable.
 If such a name already exists, re-use it."
@@ -299,6 +311,18 @@ If such a name already exists, re-use it."
   (data nil :type list))        ; list of objects in the tag
 )
 
+(defun xmlo-nm (tag)
+  "Return the string name of the XML tag."
+  (let ((nm (xmlo-name tag)))
+    (etypecase nm
+      (string nm)
+      (cons (car nm))
+      (xml-name (xmln-ln nm)))))
+
+(defun xmlo-tag (tag name)
+  "Get the value of the named arg in the XML tag."
+  (cadr (assoc name (xmlo-args tag) :test #'xmln=)))
+
 (defmethod print-object ((xml xml-decl) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml* (princ "<?" out) (call-next-method) (princ "?>" out))
@@ -308,6 +332,12 @@ If such a name already exists, re-use it."
 (defsubst xmlo-long-p (obj)
   (declare (type xml-obj obj))
   (or (xmlo-data obj) (eq *xml-print-xml* :sgml)))
+
+(defun xmlo-name-check (obj name)
+  "Make sure that OBJ is an XML-OBJ named NAME and return it."
+  (assert (and (xml-obj-p obj) (string= name (xmlo-nm obj)))
+          (obj) "~s is not an ~s named ~s" obj 'xml-obj name)
+  obj)
 
 (defun xml-size (obj)
   "Compute the approximate size of the object.
@@ -827,6 +857,19 @@ The first character to be read is #\T."
     (if resolve-namespaces
         (xml-resolve-namespaces obj :out out)
         obj)))
+
+(defun xml-purge-data (obj)
+  "Delete all non-XML objects from all data.
+Useful when the data was in a pretty-printed format -
+just kill whitespace strings."
+  (typecase obj
+    (xml-obj (setf (xmlo-data obj) (xml-purge-data (xmlo-data obj)))
+             obj)
+    (list (delete-if (lambda (oo)
+                       (typecase oo
+                         (xml-obj (xml-purge-data oo) nil) ; keep it
+                         (string (every #'whitespace-char-p oo))))
+                     obj))))
 
 ;;;
 ;;; XHTML

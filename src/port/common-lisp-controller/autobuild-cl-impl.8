@@ -1,0 +1,27 @@
+.\" 	-*- Mode: Nroff -*-
+.TH "autobuild-cl-impl" "8" "" "" ""
+
+.SH "NAME"
+autobuild-cl-impl \- Sets autobuild default for Common Lisp implementation
+
+.SH "SYNOPSIS"
+.B autobuild-cl-impl impl value [OPTIONS]
+
+.SH "DESCRIPTION"
+This command sets the autobuild default for a Common Lisp implementation.
+The valid autobuild values are "yes", "no", and "inherit".
+When the autobuild valus is "inherit", then the implementation inherits
+the autobuild value of the global default.
+
+.SH "OPTIONS"
+.TP 16
+.B \-h
+Print short help message
+
+.SH "BUGS"
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH "AUTHOR"
+Kevin M. Rosenberg <kmr@debian.org>, Sep 2002

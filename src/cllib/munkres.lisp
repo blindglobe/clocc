@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.2 2004/06/07 21:39:08 sds Exp $
+;;; $Id: munkres.lisp,v 2.3 2004/06/08 13:31:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
 (defpackage :cllib)
@@ -51,17 +51,18 @@ Returns the total cost and two assignment vectors: X->Y and Y->X."
         (unless (zerop (sbit s-x i)) ; in Sx
           (let ((dx (svref x-tlv i)))
             (dotimes (j y-count)     ; for all Y
-              (let ((dy (svref y-tlv j))
-                    (ndy (+ dx (aref cost-mx i j))))
-                (when (or (null dy) (< ndy dy))
-                  (setf (svref y-tlv j) ndy
-                        (sbit s-y j) 1
-                        (svref y-next j) i)))))))
+              (unless (eql j (svref x-matching i)) ; (x,y) not in M
+                (let ((dy (svref y-tlv j))
+                      (ndy (+ dx (aref cost-mx i j))))
+                  (when (or (null dy) (< ndy dy))
+                    (setf (svref y-tlv j) ndy
+                          (sbit s-y j) 1
+                          (svref y-next j) i))))))))
       (fill s-x 0)
       (dotimes (j y-count)           ; for all Y
         (unless (zerop (sbit s-y j)) ; in Sy
           (let ((i (svref y-matching j)))
-            (when i
+            (when i             ; (x,y) in M
               (let ((dx (svref x-tlv i))
                     (ndx (- (svref y-tlv j) (aref cost-mx i j))))
                 (when (or (null dx) (< ndx dx))

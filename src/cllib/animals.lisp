@@ -1,4 +1,4 @@
-;;; File: <animals.lisp - 1997-12-08 Mon 16:54:02 EST - sds@wintermute.eagle>
+;;; File: <animals.lisp - 1998-05-22 Fri 12:32:09 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Guess an Animal - CL implementation.
 ;;;
@@ -9,23 +9,28 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: animals.lisp,v 1.1 1997/12/08 21:54:03 sds Exp $
+;;; $Id: animals.lisp,v 1.2 1998/05/22 16:34:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 ;;; $Log: animals.lisp,v $
+;;; Revision 1.2  1998/05/22 16:34:19  sds
+;;; Added `anml-add-article'.
+;;;
 ;;; Revision 1.1  1997/12/08 21:54:03  sds
 ;;; Initial revision
 ;;;
 ;;;
 
-(proclaim '(optimize (speed 3) (space 3) (safety 0) (debug 0)))
+(in-package :cl-user)
+
+(eval-when (load compile eval) (sds-require "base"))
 
 (defvar animals-debug-output nil "Print more debugging info.")
 (defvar animals-debug-use-built-in-data nil "Do not read the file.")
 (defvar animals-default-data '("Is it an insect" ("Can it sting" "a bee" .
-			       "an roach") "Can it fly" "a duck" . "a penguin")
+			       "a roach") "Can it fly" "a duck" . "a penguin")
   "The built-in to be used if `animals-debug-use-built-in-data' is non-nil.")
 (defvar animals-data nil "The actual data tree.")
-(defvar animals-file-name nil "The data file. Defaults to ~/animals.")
+(defvar animals-file-name nil "The data file. Defaults to ~/.animals.")
 
 (defvar animals-data-modified nil "Has the data been modified?")
 
@@ -43,46 +48,58 @@ The question will contain `it'."
   (apply #'format stream fmt args)
   (read-line stream))
 
+(defun anml-add-article (str)
+  "Add an article in the beginning of the string."
+  (declare (simple-string str))
+  (setq str (string-trim +whitespace+ str))
+  (if (or (string-equal "a " str :start 0 :end 2)
+	  (string-equal "an " str :start 0 :end 3)
+	  (string-equal "the " str :start 0 :end 4))
+      str
+      (concatenate 'string (if (member (schar str 0) #(#\a #\e #\i #\o #\u))
+                               "an " "a ") str)))
 (defun anml-finish (tail)
   "Endgame."
   (cond ((y-or-n-p "Is it ~a? " tail)
 	 (format t "I won!~%") tail)
-	(t
-	 (let ((new (get-string t "I lost...~%What was your animal?..."))
+	((do* ((new (anml-add-article
+                     (get-string t "I lost...~%What was your animal?...")))
 	       quest res)
-	   (do () (quest)
-	     (setq quest
-		   (get-string
-		    t "What Yes/No question distinguishes between ~a and ~a?
+              (quest
+               (setq animals-data-modified t)
+               (when animals-debug-output
+                 (format t "~%question: `~a'~%tail: ~a~%new: ~a~%"
+                         quest tail new))
+               (cons quest
+                     (if (y-or-n-p "~a~a~a? " (subseq quest 0 res) tail
+                                   (subseq quest (+ res 2)))
+                         (cons tail new) (cons new tail))))
+           (setq quest
+                 (get-string
+                  t "What Yes/No question distinguishes between ~a and ~a?
  ==> " tail new)
-		   res (search "it" quest))
-	     (unless res
-	       (setq quest nil)
-	       (format t "The question must contain `it'.~%")))
-	   (setq animals-data-modified t)
-	   (when animals-debug-output
-	     (format t "~%question: `~a'~%tail: ~a~%new: ~a~%" quest tail new))
-	   (cons quest
-		 (if (y-or-n-p "~a~a~a? " (subseq quest 0 res) tail
-			       (subseq quest (+ res 2)))
-		     (cons tail new) (cons new tail)))))))
+                 res (search "it" quest))
+           (unless res
+             (setq quest nil)
+             (format t "The question must contain `it'.~%"))))))
 
-(defun play-animals()
-  "Play the famous game!."
+(defun play-animals ()
+  "Play the famous game!"
   (setq animals-data-modified nil)
   ;; read the initial data
   (cond (animals-debug-use-built-in-data
 	 (setq animals-data animals-default-data))
 	(t
 	 (setq animals-file-name
-	       (or (system::getenv "animals")
-		   (concatenate 'string (namestring (user-homedir-pathname))
-				"animals")))
-	 (format t "Using animals file: `~a'...~%" animals-file-name)
+	       (or (system::getenv "ANIMALS")
+		   (merge-pathnames (make-pathname :name ".animals")
+				    (user-homedir-pathname))))
+	 (format t "~&Using animals file: `~a'...~%" animals-file-name)
 	 (setq animals-data
 	       (with-open-file (anfl animals-file-name :direction :input
 				     :if-does-not-exist nil)
-		 (prog1 (read anfl) (format t "File read.~%"))))
+		 (if anfl (prog1 (read anfl) (format t "File read.~%"))
+		     (format t "Cannot read `~a'.~%" animals-file-name))))
 	 (unless (consp animals-data)
 	   (format t "Invalid data: ~a~%Using the dafault.~%" animals-data)
 	   (setq animals-data animals-default-data))))
@@ -112,6 +129,7 @@ The question will contain `it'."
 	     (print animals-data anfl) (terpri anfl)))
 	 (format t "Wrote file `~a'~%" animals-file-name))
 	(t (format t "You taught me no new animals this time...~%")))
-  (get-string t "Press <Enter> to leave lisp...")
-  (exit))
+  (when (y-or-n-p "Exit lisp?") (exit)))
 
+(provide "animals")
+;;; animals.lisp ends here

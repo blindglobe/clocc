@@ -32,15 +32,16 @@
 
 ;;; Tags for CL implementations
 ;;; CMUCL	:cmucl
-;;; ACL		:acl
+;;; ACL		:allegro
+;;; CLISP       :clisp
 ;;; LW		:lispworks
 ;;; Corman Lisp	:corman-lisp
 ;;; etc etc
-;;; Adde them!!!
+;;; Add them!!!
 
 (defclass cmucl (generic-common-lisp-implementation)
   ()
-  (:default-initargs :feature-tag :cmucl))
+  (:default-initargs :feature-tag :cmu))
 
 (defclass sbcl (cmucl)
   ()
@@ -48,7 +49,7 @@
 
 (defclass allegro (generic-common-lisp-implementation)
   ()
-  (:default-initargs :feature-tag :acl))
+  (:default-initargs :feature-tag :allegro))
 
 (defclass lispworks (generic-common-lisp-implementation)
   ()

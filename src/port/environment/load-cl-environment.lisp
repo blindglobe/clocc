@@ -38,7 +38,7 @@
 		   (load output-truename :verbose load-verbose))
 		 (load file :verbose load-verbose)))
 	   )
-      
+
       (setf (logical-pathname-translations "CL-ENV-LIBRARY")
 	    `(("**;*.*.*"
 	       ,(make-pathname
@@ -58,7 +58,7 @@
       (load-and-or-compile "CL-ENV-LIBRARY:init-environment.lisp")
 
       ;; Implementation dependencies (in alphabetical order).
-      #+acl
+      #+allegro
       (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;allegro.lisp")
 
       #+clisp

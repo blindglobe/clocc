@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.1 2001/11/09 19:15:21 sds Exp $
+;;; $Id: path.lisp,v 1.2 2001/11/09 21:22:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,8 @@
 (in-package :port)
 
 (export
- '(pathname-ensure-name probe-directory default-directory chdir mkdir rmdir))
+ '(pathname-ensure-name probe-directory default-directory chdir mkdir rmdir
+   *logical-hosts-definitions* load-logical-host))
 
 ;;;
 ;;; utilities
@@ -108,6 +109,52 @@ but there is a TYPE slot, move TYPE into NAME."
       (lw::delete-directory dir)
       (delete-file dir))
   #-(or allegro clisp cmu lispworks) (delete-file dir))
+
+;;;
+;;; logical pathnames
+;;;
+
+(defun load-logical-host-def (host file &key style (verbose *load-verbose*))
+  "Load the logical HOST definition from FILE.
+STYLE can be either :CMU or :ALLEGRO."
+  (ecase style
+    (:allegro
+     (with-open-file (fi file :if-does-not-exist nil)
+       (unless fi (return-from load-logical-host-def nil))
+       (when verbose (format t ";; Loading logical hosts from ~s~%" file))
+       (do ((done nil) (ho (read fi nil +eof+) (read fi nil +eof+)))
+           ((eq ho +eof+)
+            (when verbose (format t ";; Done with ~s~%" file))
+            done)
+         (unless done (setq done (string-equal ho host)))
+         (when verbose (format t ";;   host ~s~%" ho))
+         (setf (logical-pathname-translations ho) (eval (read fi))))))
+    (:cmucl
+     (with-open-file (fi file :if-does-not-exist nil)
+       (unless fi (return-from load-logical-host-def nil))
+       (when verbose
+         (format t ";; Loading host ~s from ~s..." host file)
+         (force-output))
+       (prog1 (setf (logical-pathname-translations host) (read fi))
+         (when verbose (format t "done~%")))))))
+
+(defcustom *logical-hosts-definitions* list nil
+  "*The list of files or directories to load logical host definitions from.")
+
+(defun load-logical-host (host &key (verbose *load-verbose*))
+  "Load the definition of the logical HOST from `*logical-hosts-definitions*'."
+  (handler-case (load-logical-pathname-translations host)
+    (error (err)
+      (dolist (path *logical-hosts-definitions* (error err))
+        (setq path (pathname path))
+        (if (pathname-name path)
+            (when (load-logical-host-def host path :style :allegro
+                                         :verbose verbose)
+              (return-from load-logical-host t))
+            (when (load-logical-host-def
+                   host (merge-pathnames (string-downcase host) path)
+                   :style :cmucl :verbose verbose)
+              (return-from load-logical-host t)))))))
 
 (provide :port-path)
 ;;; file path.lisp ends here

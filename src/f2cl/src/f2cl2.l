@@ -146,11 +146,11 @@ Tag being parsed:| (cadr x))))
 
 ;-----------------------------------------------------------------------------
 (defun id-factor1 (l)
- (prog (x)
-     (setq x (list-split-bin '^ l))
-     (setq x (list x (extract '(^) l)))
+  (prog (x)
+     (setq x (list-split-multi-string '(^ //) l))
+     (setq x (list x (extract '(^ //) l)))
      (return (list-itp (mapcar #'id-factor (car x)) 
-                      (subst 'expt  '^ (cadr x))))))
+		       (subst 'expt  '^ (cadr x))))))
 
 ;------------------------------------------------------------------------------
 (defun lookup-array-bounds (v)
@@ -281,6 +281,19 @@ Tag being parsed:| (cadr x))))
 					 (= x 1))
 				     blist))
 		   (list (mapcar #'car bounds)))))))
+    ;; string (character array) reference 
+    ((and (symbolp (car l))
+	  (listp (cadr l))
+	  (eq 'character
+	      (let ((type (lookup-vble-type (car l))))
+		(if (listp type)
+		    (first type)
+		    type))))
+     (let* ((vname (check-t-and-pi (car l)))
+	    (indices (mapcar #'id-expression
+			     (list-split '|:| (cadr l)))))
+
+     `(fref-string ,vname ,indices)))
     
     ;; function call:
     ((and (symbolp (car l))

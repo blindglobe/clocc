@@ -1,3 +1,9 @@
+common-lisp-controller (3.43+patches) unstable; urgency=low
+
+  * Fix spelling error in clc-build-daemon.c
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 19 Oct 2002 13:24:25 -0600
+
 common-lisp-controller (3.43) unstable; urgency=low
 
   * Strange bugfix needed to get asdf to play nice with the fix for

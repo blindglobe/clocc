@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
   if (setvbuf(stderr, (char *) NULL, _IOLBF, BUFSIZ) != 0)
     reporterror("Could not make stderr line buffered");
 
-  printf("100 common-lisp-controller build daemon version 1.0 at you service\n");
+  printf("100 common-lisp-controller build daemon version 1.0 at your service\n");
 
   /* main loop */
   for(;;)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.22 2000/11/16 18:31:46 sds Exp $
+;;; $Id: sys.lisp,v 1.23 2001/03/07 20:39:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -172,7 +172,7 @@ but there is a TYPE slot, move TYPE into NAME."
   #+allegro (excl::probe-directory filename)
   #+clisp (lisp:probe-directory filename)
   #+cmu (eq :directory (unix:unix-file-kind filename))
-  #+lispworks (not (sys::probe-file-not-directory-p filename))
+  #+lispworks (lw:file-directory-p filename)
   #-(or allegro clisp cmu lispworks)
   ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
   ;; Date: Wed, 5 May 1999 11:51:19 -0500
@@ -204,6 +204,21 @@ but there is a TYPE slot, move TYPE into NAME."
   (error 'not-implemented :proc (list 'chdir dir)))
 
 (defsetf default-directory chdir "Change the current directory.")
+
+(defun mkdir (dir)
+  #+allegro (excl:make-directory path)
+  #+clisp (lisp:make-dir path)
+  #+cmu (unix:unix-mkdir (directory-namestring path) #o777)
+  #+lispworks (system:make-directory path)
+  #-(or allegro clisp cmu lispworks)
+  (error 'not-implemented :proc (list 'mkdir dir)))
+
+(defun rmdir (dir)
+  #+allegro (excl:delete-directory dir)
+  #+clisp (lisp:delete-dir dir)
+  #+cmu (unix:unix-rmdir dir)
+  #+lispworks (lw:delete-directory dir)
+  #-(or allegro clisp cmu lispworks) (delete-file dir))
 
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."

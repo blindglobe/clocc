@@ -56,28 +56,28 @@
 
 (defparameter *mk-defsystem-lp-filenames*
   '(
-    "MAKE-DEFSYSTEM:adjoin-dirs"
+    "MAKE-DEFSYSTEM:;adjoin-dirs"
     
-    "MAKE-DEFSYSTEM:defsystem-pkg"
-    ;; "MAKE-DEFSYSTEM:conditions"
+    "MAKE-DEFSYSTEM:;defsystem-pkg"
+    ;; "MAKE-DEFSYSTEM:;conditions"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler-pkg"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler"
-    ;; "MAKE-DEFSYSTEM:directory-processing"
+    ;; "MAKE-DEFSYSTEM:;directory-processing"
     "MAKE-DEFSYSTEM:utilities;user-interaction"
     "MAKE-DEFSYSTEM:utilities;y-or-n-p-wait"
     "MAKE-DEFSYSTEM:utilities;run-os-program"
     "MAKE-DEFSYSTEM:utilities;save-image"
 
-    "MAKE-DEFSYSTEM:language-support"
+    "MAKE-DEFSYSTEM:;language-support"
     "MAKE-DEFSYSTEM:languages;c;c"
     "MAKE-DEFSYSTEM:languages;fortran;fortran"
     ;; "MAKE-DEFSYSTEM:languages;ada;ada"
     ;; "MAKE-DEFSYSTEM:languages;scheme;scheme"
 
-    "MAKE-DEFSYSTEM:versions"
-    "MAKE-DEFSYSTEM:base-components"
-    "MAKE-DEFSYSTEM:predefined-components"
-    "MAKE-DEFSYSTEM:predefined-specialized-components"
+    "MAKE-DEFSYSTEM:;versions"
+    "MAKE-DEFSYSTEM:;base-components"
+    "MAKE-DEFSYSTEM:;predefined-components"
+    "MAKE-DEFSYSTEM:;predefined-specialized-components"
 
     "MAKE-DEFSYSTEM:impl-dependent;common"
     #+cmu "MAKE-DEFSYSTEM:impl-dependent;cmucl"
@@ -91,13 +91,13 @@
     #+poplog "MAKE-DEFSYSTEM:impl-dependent;poplog"
     #+(or kcl ibcl akcl ecl gcl) "MAKE-DEFSYSTEM:impl-dependent;kcl-derivates"
 
-    "MAKE-DEFSYSTEM:defsystem"
-    "MAKE-DEFSYSTEM:registry"
-    "MAKE-DEFSYSTEM:defsystem-protocol"
-    "MAKE-DEFSYSTEM:actions"
-    ;; "MAKE-DEFSYSTEM:provide-require"
+    "MAKE-DEFSYSTEM:;defsystem"
+    "MAKE-DEFSYSTEM:;registry"
+    "MAKE-DEFSYSTEM:;defsystem-protocol"
+    "MAKE-DEFSYSTEM:;actions"
+    ;; "MAKE-DEFSYSTEM:;provide-require"
 
-    "MAKE-DEFSYSTEM:syntax"
+    "MAKE-DEFSYSTEM:;syntax"
     ))
 
 
@@ -151,8 +151,8 @@
 				 *mk-defsystem-absolute-directory-pathname*)
 				'("cl-environment")))
 	   )
-	  ("*.*.*" ,*mk-defsystem-absolute-directory-pathname*)
-	  ("*.*" ,*mk-defsystem-absolute-directory-pathname*)
+	  (";*.*.*" ,*mk-defsystem-absolute-directory-pathname*)
+	  (";*.*" ,*mk-defsystem-absolute-directory-pathname*)
 	  ))
 
   (flet ((load-compiling-if-needed (lp-string-filename-sans-extension)

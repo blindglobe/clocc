@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.4 Interim 2.
+;;; DEFSYSTEM 3.4 Interim 3.
 
 ;;; defsystem.lisp --
 
@@ -28,7 +28,7 @@
 ;;; Originally written by Mark Kantrowitz, School of Computer Science,
 ;;; Carnegie Mellon University, October 1989.
 
-;;; MK:DEFSYSTEM 3.4 Interim 2
+;;; MK:DEFSYSTEM 3.4 Interim 3
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
 ;;;               1999 - 2004 Mark Kantrowitz and Marco Antoniotti. All
@@ -1186,7 +1186,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.4 Interim 2, 2004-05-31"
+(defparameter *defsystem-version* "3.4 Interim 3, 2004-06-10"
   "Current version number/date for MK:DEFSYSTEM.")
 
 ;;; ********************************
@@ -2655,7 +2655,7 @@ the system definition, if provided."
                     ~@[~&   Package: ~A~]~
                     ~&   Source: ~@[~A~] ~@[~A~] ~@[~A~]~
                     ~&   Binary: ~@[~A~] ~@[~A~] ~@[~A~]~
-                    ~@[~&   Depends On: ~A ~]~&   Components: ~{~15T~A~&~}"
+                    ~@[~&   Depends On: ~A ~]~&   Components:~{~15T~A~&~}"
 	    (component-type system)
 	    (component-name system)
 	    (component-host system)
@@ -2852,7 +2852,8 @@ the system definition, if provided."
 ;;;  (merge-pathnames "" "LP:foo;bar;") ==> "LP:"
 ;;;
 ;;; Which is incorrect.
-;;; The change here ensures that the result of TRANSLATE-VERSION is appropropriate.
+;;; The change here ensures that the result of TRANSLATE-VERSION is
+;;; appropriate.
 
 #+lispworks
 (defun translate-version (version)
@@ -3602,7 +3603,8 @@ the system definition, if provided."
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (if (and (component-p name)
-                                 (member (component-type name) '(:system :defsystem :subsystem)))
+                                 (member (component-type name)
+					 '(:system :defsystem :subsystem)))
                             name
                             (find-system name :load))))
 	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp scl)
@@ -3710,6 +3712,58 @@ the system definition, if provided."
    :verbose verbose
    :dribble dribble))
 
+
+;;; ensure-external-system-def-loaded component --
+;;; Let's treat definition clauses of the form
+;;;
+;;; 	(:system "name")
+;;; i.e.
+;;;
+;;;	(:system "name" :components nil)
+;;;
+;;; in a special way.
+;;; When encountered, MK:DEFSYSTEM tries to FIND-SYSTEM
+;;; the system named "name" (by forcing a reload from disk).
+;;; This may be more "natural".
+
+(defun ensure-external-system-def-loaded (component)
+  (assert (member (component-type component)
+		  '(:subsystem :system)))
+  (when (null (component-components component))
+    (let ((cname (component-name component)))
+      ;; First we ensure that we reload the system definition.
+      (undefsystem cname)
+      (let* ((*reload-systems-from-disk* t)
+	     (system-component
+	      (find-system (component-name component)
+			   :load
+
+			   ;; Let's not supply the def-pname
+			   ;; yet.
+			   #+not-yet
+			   (merge-pathname
+			    (make-pathname :name cname
+					   :type "system"
+					   :directory ())
+			    (component-full-pathname component
+						     :source))
+
+
+			   ))
+	     )
+	;; Now we have a problem.
+	;; We have just ensured that a system definition is
+	;; loaded, however, the COMPONENT at hand is different
+	;; from SYSTEM-COMPONENT.
+	;; To fix this problem we just use the following
+	;; kludge.  This should prevent re-entering in this
+	;; code branch, while actually preparing the COMPONENT
+	;; for operation.
+	(setf (component-components component)
+	      (list system-component))
+	))))
+
+
 (defun operate-on-component (component operation force &aux changed)
   ;; Returns T if something changed and had to be compiled.
   (let ((type (component-type component))
@@ -3742,9 +3796,16 @@ the system definition, if provided."
 	      (let ((package (find-package (component-package component))))
 		(when package
 		  (setf *package* package)))))
-	  #+mk-original
-	  (when (eq type :defsystem)	; maybe :system too?
-	    (operate-on-system-dependencies component operation force))
+	  
+	  ;; Marco Antoniotti 20040609
+	  ;; New feature.  Try to FIND-SYSTEM :system components if
+	  ;; they have no local :components definition.
+	  ;; OPERATE-ON-SYSTEM-DEPENDENCIES should still work as
+	  ;; advertised, given the small change made there.
+
+	  (when (or (eq type :system) (eq type :subsystem))
+	    (ensure-external-system-def-loaded component))
+
 	  (when (or (eq type :defsystem) (eq type :system))
 	    (operate-on-system-dependencies component operation force))
 
@@ -3833,46 +3894,59 @@ the system definition, if provided."
 	;; to load it (needed since we may be depending on a lisp
 	;; dependent package).
 	;; Explores the system tree in a DFS manner.
-	(cond ((and *operations-propagate-to-subsystems*
-		    (not (listp system))
-		    ;; The subsystem is a defined system.
-		    (find-system system :load-or-nil))
-	       ;; Call OOS on it. Since *system-dependencies-delayed* is
-	       ;; T, the :depends-on slot is filled with the names of
-	       ;; systems, not defstructs.
-	       ;; Aside from system, operation, force, for everything else
-	       ;; we rely on the globals.
-	       (unless (and *providing-blocks-load-propagation*
-			    ;; If *providing-blocks-load-propagation* is T,
-			    ;; the system dependency must not exist in the
-			    ;; *modules* for it to be loaded. Note that
-			    ;; the dependencies are implicitly systems.
-			    (find operation '(load :load))
-			    ;; (or (eq force :all) (eq force t))
-			    (find (canonicalize-system-name system)
-				  *modules* :test #'string-equal))
+	
+	;; Do not try to do anything with non system components.
+        (cond ((and *operations-propagate-to-subsystems*
+                    (not (listp system))
+		    (or (stringp system) (symbolp system))
+                    ;; The subsystem is a defined system.
+                    (find-system system :load-or-nil))
+               ;; Call OOS on it. Since *system-dependencies-delayed* is
+               ;; T, the :depends-on slot is filled with the names of
+               ;; systems, not defstructs.
+               ;; Aside from system, operation, force, for everything else
+               ;; we rely on the globals.
+               (unless (and *providing-blocks-load-propagation*
+                            ;; If *providing-blocks-load-propagation* is T,
+                            ;; the system dependency must not exist in the
+                            ;; *modules* for it to be loaded. Note that
+                            ;; the dependencies are implicitly systems.
+                            (find operation '(load :load))
+                            ;; (or (eq force :all) (eq force t))
+                            (find (canonicalize-system-name system)
+                                  *modules* :test #'string-equal))
 
-		 (operate-on-system system operation :force force)))
+                 (operate-on-system system operation :force force)))
 
-	      ((listp system)
+              ((listp system)
                ;; If the SYSTEM is a list then its contents are as follows.
                ;;
-               ;;    (<name> <definition-pathname> <action> <version>)
+               ;;    (<name> <definition-pathname> <action> &optional <version>)
                ;;
-	       (tell-user-require-system
-		(cond ((and (null (first system)) (null (second system)))
-		       (third system))
-		      (t system))
-		component)
-	       (or *oos-test* (new-require (first system)
-                                           nil
-					   (eval (second system))
-					   (third system)
-					   (or (fourth system)
-					       *version*))))
-	      (t
-	       (tell-user-require-system system component)
-	       (or *oos-test* (new-require system))))))))
+
+               (destructuring-bind (system-name definition-pathname action
+                                                &optional version)
+                   system
+                 (tell-user-require-system
+                  (if (and (null system-name)
+                           (null definition-pathname))
+                      action
+                      system)
+                  component)
+                 (or *oos-test* (new-require system-name
+                                             nil
+                                             (eval definition-pathname)
+                                             action
+                                             (or version *version*)))))
+              ((and (component-p system)
+                    (not (member (component-type system)
+                                 '(:defsystem :subsystem :system))))
+               ;; Do nothing for non system components.
+               )
+              (t
+               (tell-user-require-system system component)
+               (or *oos-test* (new-require system))))
+        ))))
 
 ;;; Modules can depend only on siblings. If a module should depend
 ;;; on an uncle, then the parent module should depend on that uncle
@@ -4932,36 +5006,36 @@ the system definition, if provided."
 
 ;;; Should this conditionalization be (or :mcl (and :CCL (not :lispworks)))?
 #|
-#+:ccl
-(defun edit-operation (component force)
-  "Always returns nil, i.e. component not changed."
-  (declare (ignore force))
-  ;;
-  (let* ((full-pathname (make::component-full-pathname component :source))
-         (already-editing\? #+:mcl (dolist (w (CCL:windows :class
-							   'fred-window))
-                                    (when (equal (CCL:window-filename w)
-                                                 full-pathname)
-                                      (return w)))
-                           #-:mcl nil))
-    (if already-editing\?
-      #+:mcl (CCL:window-select already-editing\?) #-:mcl nil
-      (ed full-pathname)))
-  nil)
+				     #+:ccl
+				     (defun edit-operation (component force)
+"Always returns nil, i.e. component not changed."
+(declare (ignore force))
+;;
+(let* ((full-pathname (make::component-full-pathname component :source))
+(already-editing\? #+:mcl (dolist (w (CCL:windows :class
+'fred-window))
+(when (equal (CCL:window-filename w)
+full-pathname)
+(return w)))
+#-:mcl nil))
+(if already-editing\?
+#+:mcl (CCL:window-select already-editing\?) #-:mcl nil
+(ed full-pathname)))
+nil)
 
-#+:allegro
-(defun edit-operation (component force)
-  "Edit a component - always returns nil, i.e. component not changed."
-  (declare (ignore force))
-  (let ((full-pathname (component-full-pathname component :source)))
-    (ed full-pathname))
-  nil)
+				     #+:allegro
+				     (defun edit-operation (component force)
+"Edit a component - always returns nil, i.e. component not changed."
+(declare (ignore force))
+(let ((full-pathname (component-full-pathname component :source)))
+(ed full-pathname))
+nil)
 
-#+(or :ccl :allegro)
-(make::component-operation :edit 'edit-operation)
-#+(or :ccl :allegro)
-(make::component-operation 'edit 'edit-operation)
-|#
+				     #+(or :ccl :allegro)
+				     (make::component-operation :edit 'edit-operation)
+				     #+(or :ccl :allegro)
+				     (make::component-operation 'edit 'edit-operation)
+				     |#
 
 ;;; *** Hardcopy System ***
 (defparameter *print-command* "enscript -2Gr" ; "lpr"

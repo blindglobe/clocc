@@ -1,4 +1,4 @@
-(in-package :user)
+(in-package :cl-user)
 
 ;;; From: "Fernando D. Mato Mira" <matomira@iname.com>
 

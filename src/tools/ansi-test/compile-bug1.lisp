@@ -1,4 +1,4 @@
-(in-package  :user)
+(in-package  :cl-user)
 
 ;; from Douglas Thomas Crosher <dtc@seagull.cons.org> 
 

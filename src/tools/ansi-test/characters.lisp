@@ -885,7 +885,7 @@
 
 (my-assert
  (char-name #\Newline)
- #-(or sbcl cmu)
+ #-cmu
  "Newline"
- #+(or sbcl cmu)
+ #+cmu
  "Linefeed")

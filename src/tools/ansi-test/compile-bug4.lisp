@@ -1,4 +1,4 @@
-(in-package "USER")
+(in-package "CL-USER")
 
 (defun equal-terms (termx termy)
   (labels

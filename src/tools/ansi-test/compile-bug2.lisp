@@ -1,4 +1,4 @@
-(in-package :user)
+(in-package :cl-user)
 ;;; From: Fred Gilham <gilham@snapdragon.csl.sri.com>
 
 (let* ((original-read-table *readtable*)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.9 2000/11/08 23:54:53 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.10 2000/11/09 18:44:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -94,26 +94,42 @@ Both print a tag but the second one does not do a `terpri' afterwards."
                              (princ *user-mail-address* ,var)))
                          (with-tagl (:strong) (current-time ,var))))))))))))
 
-(defmacro with-http-output ((var socket &rest opts &key keep-alive
+(defun crlf (sock)
+  "Write CR/LF into the socket SOCK."
+  (write-char (code-char 13) sock)
+  (write-char (code-char 10) sock))
+
+(defmacro with-http-output ((var raw &rest opts &key keep-alive (debug 0)
                              &allow-other-keys)
                             &body body)
-  "Write some HTML to an http client on SOCKET.
-Supplies some HTTP/1.0 headers and calls `with-html-output'.
-Returns the lines flushed from the socket."
-  (with-gensyms ("HTTP-" string stream sock)
-    (remf opts :keep-alive)
-    `(let ((,sock ,socket)
-           (,string (with-output-to-string (,stream)
-                      (with-html-output (,var ,stream ,@opts) ,@body))))
-      (format ,sock "HTTP/1.0 200 OK~%Content-type: text/html
-Content-length: %d~%Connection: ~:[Close~;Keep-Alive~]~2%"
-       (length ,string) ,keep-alive)
+  "Write some HTML to an http client on socket stream RAW.
+Supplies some HTTP/1.0 headers and calls `with-html-output'."
+  (with-gensyms ("HTTP-" string stream sock header line)
+    (remf opts :keep-alive) (remf opts :debug)
+    `(let* ((,sock ,raw)
+            (,string (with-output-to-string (,stream)
+                       (with-html-output (,var ,stream ,@opts) ,@body)))
+            (,header (list "HTTP/1.0 200 OK" "Content-type: text/html"
+                           (format nil "Content-length: ~d" (length ,string))
+                           (format nil "Connection: ~:[Close~;Keep-Alive~]"
+                                   ,keep-alive))))
+      (dolist (,line ,header)
+        (write-string ,line ,sock)
+        (when (and ,debug (> ,debug 0))
+          (format t "<- ~a~%" ,line))
+        (crlf ,sock))
+      (crlf ,sock)
       (write-string ,string ,sock)
-      (unless ,keep-alive (close ,sock)))))
+      (when (and ,debug (> ,debug 3))
+        (format t "<- ~s~%" ,string))
+      (unless ,keep-alive
+        (when (and ,debug (> ,debug 0))
+          (format t "~s: closing ~s~%" 'with-http-output ,sock))
+        (close ,sock)))))
 
-(defun flush-http (socket)
-  "Read everything from the HTTP socket, until a blank line."
-  (loop :for line = (read-line socket nil nil)
+(defun flush-http (sock)
+  "Read everything from the HTTP socket SOCK, until a blank line."
+  (loop :for line = (read-line sock nil nil)
         :while (and line (plusp (length line)))
         :collect line))
 

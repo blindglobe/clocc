@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.20 2000/11/08 23:56:03 sds Exp $
+;;; $Id: inspect.lisp,v 1.21 2000/11/09 18:44:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -269,19 +269,22 @@ See `browse-url' and `*browsers*'.")
 ;;; frontends - common
 ;;;
 
-(defgeneric print-inspection (insp out frontend)
+(defgeneric print-inspection (insp out frontend &rest opts)
   (:documentation "This function prints inspection objects for the user.
 It should be appropriate for your frontend (use `eql' specifiers).
 The default method signals an error, so you must define a method
 for your frontend.")
-  (:method ((insp inspection) (out stream) (frontend t))
-    (error "~s: unknown inspect front end: ~s" 'print-inspection frontend)))
+  (:method ((insp inspection) (out stream) (frontend t) &rest opts)
+    (error "~s: unknown inspect front end: ~s [~s ~s]"
+           'print-inspection frontend out opts)))
+
 (defgeneric inspect-frontend (insp frontend)
   (:documentation "This generic function implements the inspect loop.
 The default method signals an error, so you must define a method
 for your frontend.")
   (:method ((insp inspection) (frontend t))
     (error "~s: unknown inspect front end: ~s" 'inspect-frontend frontend)))
+
 (defgeneric inspect-finalize (frontend)
   (:documentation "This should clean after an inspect session.
 The default methods cleans up the `*inspect-all*' vector, which is
@@ -318,7 +321,8 @@ This is useful for frontends which provide an eval/modify facility."
 ;;;
 
 (defmethod print-inspection ((insp inspection) (out stream)
-                             (backend (eql :tty)))
+                             (backend (eql :tty)) &rest opts)
+  (declare (ignore opts))
   (format out "~&~s:  ~a~%~{ ~a~%~}" (insp-self insp) (insp-title insp)
           (insp-blurb insp))
   (when (insp-nth-slot insp)
@@ -373,9 +377,10 @@ This is useful for frontends which provide an eval/modify facility."
 ;;;
 
 (defmethod print-inspection ((insp inspection) (raw stream)
-                             (backend (eql :http)))
+                             (backend (eql :http)) &key keep-alive)
   (flet ((href (com) (format nil "/~d/~s" (insp-id insp) com)))
-    (with-http-output (out raw :title (insp-title insp) :footer nil)
+    (with-http-output (out raw :keep-alive keep-alive :debug *inspect-debug*
+                       :title (insp-title insp) :footer nil)
       (with-tag (:h1) (princ (insp-title insp) out))
       (with-tag (:ul)
         (dolist (item (insp-blurb insp))
@@ -411,30 +416,40 @@ This is useful for frontends which provide an eval/modify facility."
           (with-tag (:td :align "right")
             (with-tag (:a :href (href :s)) (princ "self" out))))))))
 
-(defun http-command (server &key (debug *inspect-debug*))
+(defun http-command (server &key (debug *inspect-debug*) socket)
   "Accept a connection from the server, return the GET command and the socket."
-  (when (> debug 1) (format t "~s: server: ~s~%" 'http-command server))
-  (let ((socket (socket-accept server)))
-    (when (> debug 1) (format t "~s: socket: ~s~%" 'http-command socket))
-    (let ((response (flush-http socket)))
-      (when (> debug 1)
-        (dolist (line response)
-          (format t "-> ~a~%" line)))
+  (when (> debug 1)
+    (format t "~s: server: ~s; socket: ~s~%" 'http-command server socket))
+  (unless (and socket (open-stream-p socket))
+    (setq socket (socket-accept server))
+    (when (> debug 1) 
+      (format t "~s: new socket: ~s~%" 'http-command socket)))
+  (let ((response (flush-http socket)) id com keep-alive)
+    (unless response (error "~s: no response" 'http-command))
+    (when (> debug 1)
       (dolist (line response)
-        (when (string-beg-with "GET /" line)
-          (let* ((pos (position #\/ line :test #'char= :start 5))
-                 (id (parse-integer line :start 5 :end pos))
-                 (com (read-from-string line nil nil :start (1+ pos))))
-            (when (> debug 0)
-              (format t "~s: ~d ~s~%" 'http-command id com))
-            (return (values socket id com))))))))
+        (format t "-> ~a~%" line)))
+    (dolist (line response)
+      (when (string-beg-with "Connection: " line)
+        (setq keep-alive (string= line "Keep-Alive" :start1 12))
+        (when (> debug 0)
+          (format t "~s: connection: ~s (keep-alive: ~s)~%"
+                  'http-command (subseq line 12) keep-alive)))
+      (when (string-beg-with "GET /" line)
+        (let ((pos (position #\/ line :test #'char= :start 5)))
+          (setq id (parse-integer line :start 5 :end pos)
+                com (read-from-string line nil nil :start (1+ pos)))
+          (when (> debug 0)
+            (format t "~s: command: id=~d com=~s~%" 'http-command id com)))))
+    (values socket id com keep-alive)))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
   (do ((server
         (let* ((server (open-socket-server))
                (port (nth-value 1 (socket-server-host/port server))))
           (when (> *inspect-debug* 0)
-            (format t "~&~s: server: ~s~%" 'inspect-frontend server))
+            (format t "~&~s [~s]: server: ~s~%"
+                    'inspect-frontend frontend server))
           (if *inspect-browser*
               (browse-url (format nil "http://127.0.0.1:~d/0/:s" port)
                           :browser *inspect-browser*)
@@ -442,21 +457,31 @@ This is useful for frontends which provide an eval/modify facility."
                t "~& * please point your browser at <http://~a:~d/0/:s>~%"
                *mail-host-address* port))
           server))
-       sock id com)
-      ((eq com :q) (socket-server-close server))
-    (setf (values sock id com) (http-command server))
+       sock id com keep-alive)
+      ((eq com :q) (socket-server-close server)
+       (when (open-stream-p sock)
+         (do () ((null (read-char-no-hang sock))))
+         (close sock)))
+    (setf (values sock id com keep-alive) (http-command server :socket sock))
+    (when (> *inspect-debug* 0)
+      (format t "~s [~s]: socket: ~s; id: ~s; com: ~s; keep-alive: ~s~%"
+              'inspect-frontend frontend sock id com keep-alive))
     (if (eq com :q)
-        (with-http-output (out sock :title "inspect" :footer nil)
+        (with-http-output (out sock :keep-alive keep-alive 
+                           :debug *inspect-debug*
+                           :title "inspect" :footer nil)
           (with-tag (:h1) (princ "thanks for using inspect" out))
           (with-tag (:p) (princ "you may close this window now" out)))
-        (if (setq insp (get-insp id com)) (print-inspection insp sock frontend)
-            (with-http-output (out sock :title "inspect" :footer nil)
+        (if (setq insp (get-insp id com))
+            (print-inspection insp sock frontend :keep-alive keep-alive)
+            (with-http-output (out sock :keep-alive keep-alive
+                               :debug *inspect-debug*
+                               :title "inspect" :footer nil)
               (with-tag (:h1)
                 (format out "error: wrong command: ~:d/~s" id com))
               (with-tag (:p)
                 (princ "either this is an old inspect session, or a " out))
                 (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (print "bug" out)))))
-    (close sock)
     (when (> *inspect-debug* 0)
       (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend frontend
                 id com (insp-id insp)))))

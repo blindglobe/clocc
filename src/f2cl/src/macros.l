@@ -895,7 +895,7 @@ causing all pending operations to be flushed"
 	       (when (and (streamp val) (not (member key '(5 6 t))))
 		 (format t "Closing unit ~A: ~A~%" key val)
 		 (close val)))
-	       *lun-hash*)))
+	       *lun-hash*))
 
 (declaim (ftype (function (t) stream) lun->stream))
 
@@ -1197,8 +1197,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.49 2002/05/05 23:38:47 rtoy Exp $
+;;; $Id: macros.l,v 1.50 2002/05/05 23:41:17 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.50  2002/05/05 23:41:17  rtoy
+;;; Typo: extra paren.
+;;;
 ;;; Revision 1.49  2002/05/05 23:38:47  rtoy
 ;;; The int-sub macro didn't handle things like (- 3 m m) correctly.  It
 ;;; was returning (- 3 (- m m)) instead of (- (- 3 m) m)!

@@ -87,10 +87,6 @@ INPUT-FILE               File containing Fortran code
     (fortran-to-lisp (preprocess input-file) output-file)
     (values output-file)))
 ;---------------------------------------------------------------------------
-#+xxxx 
-(defun comment (x) 
-     (declare (ignore x)) nil)
-;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)
    (fortran-to-lisp 
@@ -255,7 +251,7 @@ main-loop
 	  ;; read newline character
 	  (read-char inport nil 'EOF t) 
 
-	  ;;   (format t "~% input-list: ~A" input-list)
+	  ;;(format t "~% input-list: ~S" input-list)
 	  )
      (setlispread))
    ; read the next margin
@@ -503,7 +499,7 @@ main-loop
      (when (eq (car x) 'stop)
        (return nil))			; 
      ;;fall out the bottom:
-     (when (eq (car x) 'comment)
+     (when (eq (car x) 'fortran_comment)
        (return (list x)))
      ;; (return (list '----> (check_new_vbles x)))
 
@@ -1374,20 +1370,19 @@ Senac syntax:... | op '| ...|)))
 
 (defun setlispread nil (setq *readtable* (copy-readtable nil)))
 ;-----------------------------------------------------------------------------
-(defun lineread 
-      (stream)
-      (prog (ans rans next-char)
+(defun lineread (stream)
+  (prog (ans rans next-char)
 loop1 
-       (setq ans (cons 
-             (read-preserving-whitespace stream nil 'EOF nil) ans))
+    (setq ans (cons 
+	       (read-preserving-whitespace stream nil 'EOF nil) ans))
 loop2  
-       (setq next-char (peek-char nil stream nil 'EOF nil)) 
-       (cond ((eql next-char #\Space)
-              (read-char stream nil 'EOF t) (go loop2)))
-       (cond ((member next-char '(#\Newline EOF) :test #'eql)
-              (setq rans (nreverse ans))
-              (return rans)))
-       (go loop1)))
+    (setq next-char (peek-char nil stream nil 'EOF nil)) 
+    (cond ((eql next-char #\Space)
+	   (read-char stream nil 'EOF t) (go loop2)))
+    (cond ((member next-char '(#\Newline EOF) :test #'eql)
+	   (setq rans (nreverse ans))
+	   (return rans)))
+    (go loop1)))
 ;------------------------------------------------------------------------------
 (defun read-six-chars (stream)
 ; (make-array '(6) :element-type 'string-char :initial-contents

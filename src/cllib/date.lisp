@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.7 2000/08/16 21:04:55 sds Exp $
+;;; $Id: date.lisp,v 2.8 2000/08/21 22:17:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -48,8 +48,8 @@
 ;; Of course, a class would be more appropriate here, especially since
 ;; this would allow us to use an :after `initialize-instance' method to
 ;; properly init DD.  Unfortunately, this would mean that we will have
-;; to use our own print/read procedures.  Both are in-place already (see
-;; `read-object' and (print-object standard-object) in print.lisp), but
+;; to use our own i/o procedures.  Both are in-place already (see
+;; `read-object' and (print-object standard-object) in closio.lisp), but
 ;; they should be awfully slow (each printing of an object requires a
 ;; call to `class-slot-list').  Another option is to have a
 ;; class-allocated slot `printable-slots', thus avoiding calling
@@ -57,7 +57,8 @@
 ;; than the current implementation, especially in CLISP, which doesn't
 ;; have native compilation and thus executes user-supplied functions
 ;; like `read-object' and `print-object' much slower than the system
-;; functions (like `structure-object' i/o).  E.g.:
+;; functions (like `structure-object' i/o).
+;; E.g.:
 #|
 (defclass date ()
   ((ye :type days-t :initform 0 :initarg year :initarg ye

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.3 2000/03/09 20:28:04 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.4 2000/03/13 21:53:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (in-package :cllib)
 
-(export '(with-html-output directory-index html-stream-out))
+(export '(with-html-output with-tag directory-index html-stream-out))
 
 ;;;
 ;;; preparation
@@ -88,8 +88,7 @@
                        (with-tag (:address)
                          (with-tag (:a :href ,mailto)
                            (princ *user-mail-address* ,var)))
-                       (with-tagl (:strong)
-                         (princ (current-time nil) ,var)))))))
+                       (with-tagl (:strong) (current-time ,var)))))))
           (when ,raw (close ,raw)))))))
 
 ;;;

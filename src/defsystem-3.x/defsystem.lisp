@@ -4238,7 +4238,7 @@ D
    <system-name>."
   (let* ((file-list (files-in-system system-name force :source))
          (total-size (file-list-size file-list)))
-    (format t "~&~a/~a (~:d files) totals ~:d bytes (~:d kB)"
+    (format t "~&~a/~a (~:d file~:p) totals ~:d byte~:p (~:d kB)"
             system-name force (length file-list)
             total-size (round total-size 1024))
     total-size))

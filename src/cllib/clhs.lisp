@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.0 2002/04/08 13:43:35 sds Exp $
+;;; $Id: clhs.lisp,v 3.1 2002/04/21 20:07:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -111,6 +111,9 @@
                 (setq pos2 (position #\" line :test #'char= :start pos1))
                 :collect (subseq line pos1 pos2))))
      (mesg :log err "~s~%" rec)))
+
+(defcustom *clhs-hashtable* (or null hash-table) nil
+  "The hashtable for the CL symbols.")
 
 (defun clhs-init (&key (root *clhs-root*) (err *error-output*))
   "Set `*clhs-alist*', `*clhs-hashtable*' and `*clhs-version*' from ROOT."
@@ -224,9 +227,6 @@
             (clhs-write-entity (car el) html str)))
         (format t "done [~:d entit~:@p] [~:d byte~:p]"
                 count (file-length str))))))
-
-(defcustom *clhs-hashtable* (or null hash-table) nil
-  "The hashtable for the CL symbols.")
 
 (defun clhs-doc (symb &key (out *standard-output*) (root *clhs-root*))
   "Dump the CLHS doc for the symbol."

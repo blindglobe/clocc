@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.9 2000/05/01 20:13:43 sds Exp $
+;;; $Id: fileio.lisp,v 1.10 2000/05/02 15:30:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,9 +17,6 @@
   (require :log (translate-logical-pathname "cllib:log")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(file-size-t file-size rename-files save-restore
           count-sexps code-complexity
@@ -34,6 +31,7 @@
 
 (deftype file-size-t () '(unsigned-byte 32))
 
+(declaim (ftype (function (t) file-size-t) file-size))
 ;;;###autoload
 (defun file-size (fn)
   "Return the size of file named FN."
@@ -98,7 +96,8 @@ file:/usr/doc/lisp/HyperSpec/Body/fun_translate-pathname.html"
 ;;; }}}{{{ Read/Write list
 ;;;
 
-;; (declaim (ftype (function (??) (values fixnum)) write-list-to-stream))
+(declaim (ftype (function (list stream &optional function) (values fixnum))
+                write-list-to-stream))
 (defun write-list-to-stream (lst stream &optional (print-function #'prin1))
   "Write the list into the stream, printing the elements one per line.
 PRINT-FUNCTION should take (at least) 2 arguments: a record and a stream.
@@ -110,17 +109,22 @@ PRIN1 is the default. Returns the length of the list."
     (funcall print-function (car ll) stream)
     (terpri stream)))
 
+(declaim (ftype (function (list t &optional function)
+                          (values fixnum file-size-t))
+                write-list-to-file))
 (defun write-list-to-file (lst fout &optional (print-function #'prin1))
   "Write the list into the file, printing the elements one per line.
-Calls `write-list-to-stream', which see. Returns nil."
+Calls `write-list-to-stream', which see.
+Returns the number of records and the file size."
   (declare (list lst) (type (function (t stream) t) print-function))
   (with-timing ()
     (format t "~&Writing `~a'..." fout) (force-output)
-    (format t "done [~:d record~:p (~:d byte~:p)]"
-            (with-open-file
-                (stout fout :direction :output :if-exists :supersede)
-              (write-list-to-stream lst stout print-function))
-            (file-size fout))))
+    (with-open-file (stout fout :direction :output :if-exists :supersede)
+      (let ((len (write-list-to-stream lst stout print-function))
+            (size (file-length stout)))
+        (declare (fixnum len) (type file-size-t size))
+        (format t "done [~:d record~:p] [~:d byte~:p]" len size)
+        (values len size)))))
 
 (defun read-list-from-stream (stream read-function &optional (eof +eof+)
                               &rest args)
@@ -177,7 +181,8 @@ NICE (default T).  Uses `with-standard-io-syntax'."
 ;;;###autoload
 (defun write-to-file (obj file &optional (nice t) &rest comments)
   "Write the object to the file, readably.
-The optional third argument is passed to `pr'."
+The optional third argument is passed to `pr'.
+Return the size of the file."
   (declare (type (or simple-string pathname) file))
   (format t "Writing `~a'..." file) (force-output)
   (with-timing ()
@@ -191,7 +196,8 @@ The optional third argument is passed to `pr'."
       (pr obj str nice)
       (format str "~2%;; file written [") (current-time str)
       (format str "]~%")
-      (format t "done [~:d byte~:p]" (file-length str)))))
+      (format t "done [~:d byte~:p]" (file-length str))
+      (file-length str))))
 
 ;;;###autoload
 (defun read-from-file (file &key (readtable *readtable*) repeat
@@ -235,28 +241,6 @@ if T, read until end of file and return a list of objects read."
   (declare (type stream stream))
   (string-trim +whitespace+ (read-line stream nil ".")))
 
-(defun skip-to-line (st ln &optional out)
-  "Read from stream ST until a line starting with LN.
-The optional third argument specifies where the message should go.
-By default nothing is printed."
-  (declare (stream st) (simple-string ln))
-  (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
-  (do ((len (length ln)) (rr (read-line st) (read-line st)))
-      ((and (>= (length rr) len) (string-equal ln rr :end2 len))
-       (subseq rr (length ln)))
-    (declare (fixnum len) (simple-string rr))))
-
-(declaim (ftype (function (stream simple-string)
-                          (values (or null simple-string)))
-                skip-search))
-(defun skip-search (stream string &optional out)
-  "Read from STREAM until STRING is found by `search.'"
-  (declare (stream stream) (simple-string string))
-  (mesg :head out " +++ `skip-search' --> `~a'~%" string)
-  (do ((st (read-line stream nil nil) (read-line stream nil nil)))
-      ((or (null st) (search string st :test #'char-equal)) st)
-    (declare (type (or null simple-string) st))))
-
 (defun skip-blanks (stream)
   "Read from STREAM first non-blank string is found."
   (declare (type stream stream))
@@ -272,11 +256,34 @@ By default nothing is printed."
        ((zerop (length st)) res)
     (declare (simple-string st res))))
 
+(declaim (ftype (function (stream simple-string &optional t)
+                          (values (or null simple-string)))
+                skip-to-line skip-search))
+(defun skip-to-line (st ln &optional out)
+  "Read from stream ST until a line starting with LN.
+The optional third argument specifies where the message should go.
+By default nothing is printed."
+  (declare (stream st) (simple-string ln))
+  (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
+  (do ((len (length ln)) (rr (read-line st) (read-line st)))
+      ((and (>= (length rr) len) (string-equal ln rr :end2 len))
+       (subseq rr (length ln)))
+    (declare (fixnum len) (simple-string rr))))
+
+(defun skip-search (stream string &optional out)
+  "Read from STREAM until STRING is found by `search.'"
+  (declare (stream stream) (simple-string string))
+  (mesg :head out " +++ `skip-search' --> `~a'~%" string)
+  (do ((st (read-line stream nil nil) (read-line stream nil nil)))
+      ((or (null st) (search string st :test #'char-equal)) st)
+    (declare (type (or null simple-string) st))))
+
 ;;;
 ;;; }}}{{{ `save-restore'
 ;;;
 
-(declaim (ftype (function (integer) (values simple-string)) timestamp))
+(declaim (ftype (function (&optional integer) (values simple-string))
+                timestamp))
 (defun timestamp (&optional (time (get-universal-time)))
   "Return the current time as a string without blanks."
   (declare (integer time))

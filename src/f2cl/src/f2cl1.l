@@ -897,6 +897,9 @@ FILENAME                 File containing Fortran code
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
+			    (when (member (first v) *intrinsic-function-names*)
+			      (warn "~A is being declared but is also the name of an intrinsic function"
+				    (first v)))
 			    (check-reserved-lisp-names (car v)))
 			(list-split '|,|
 			 (if (eq (cadr x) '*)
@@ -905,6 +908,12 @@ FILENAME                 File containing Fortran code
 		*declared_vbles*))
   ;; If we declared an intrinsic function name, remove that from the
   ;; list of declared variables.
+
+  ;; I don't think this is right.  Let the user declare the variable
+  ;; and let us hope that the declaration wasn't for the intrinsic
+  ;; function.  I'll need to check the Fortran 77 standard to see what
+  ;; is supposed to happen here.
+  #+nil
   (setf *declared_vbles*
 	(set-difference *declared_vbles* *intrinsic-function-names*))
   (let ((type (find (first x) '((integer integer4)
@@ -1956,8 +1965,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.81 2002/01/06 23:28:16 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.82 2002/01/07 03:09:05 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.82  2002/01/07 03:09:05  rtoy
+;;; Print out a warning if a variable is declared that has the same name
+;;; as a Fortran intrinsic.  Not sure what the spec says, but as long as
+;;; it's a variable and not a redeclaration of the function, then I think
+;;; it's ok.  If not, the warning tells you something might not be right.
+;;;
 ;;; Revision 1.81  2002/01/06 23:28:16  rtoy
 ;;; Missed a few renamings of *intrinsic_function_names* and
 ;;; *external_function_names*.

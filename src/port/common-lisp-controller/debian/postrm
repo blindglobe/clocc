@@ -20,8 +20,8 @@ set -e
 
 case "$1" in
        purge|remove|abort-install|abort-upgrade|disappear)
-        deluser cl-builder  || true
-        delgroup cl-builder  || true
+        deluser --quiet cl-builder 2>&1 > /dev/null  || true
+        delgroup --quiet cl-builder 2>&1 > /dev/null || true
 
         ;;
        upgrade|failed-upgrade)

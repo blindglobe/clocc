@@ -1,3 +1,14 @@
+common-lisp-controller (3.65) unstable; urgency=low
+
+  * Implement a work-round for the user-adduser-in-postrm
+    problem. Thanks to Thomas Viehmann. Closes: #192297
+  * Improves error reporting script again.
+  * Fixed declaration of system-directory in add-project-directory.
+    Closes: #193611
+  * We fixed lisp-config in version 3.62. Closes: #195420
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 13 Jun 2003 06:27:09 +0200
+
 common-lisp-controller (3.64) unstable; urgency=low
 
   * add check for possible errors from asdf::resolve-symlinks
@@ -28,7 +39,7 @@ common-lisp-controller (3.61) unstable; urgency=low
   * Check that comp-dir is at least as long as root dir in 
   beneath-source-root?
   * Minor typo correction in templates
-  
+ 1G 
  -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 24 Apr 2003 22:26:23 -0600
 
 common-lisp-controller (3.60) unstable; urgency=low

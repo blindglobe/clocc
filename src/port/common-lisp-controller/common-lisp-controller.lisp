@@ -232,7 +232,8 @@ Returns nothing"
 project for all PROJECTS.
 Optionally you can also register SYSTEM-DIRECTORY.
 Returns nothing"
-  (declare (type pathname source-root fasl-root system-directory))
+  (declare (type pathname source-root fasl-root)
+  	   (type (or null pathname) system-directory))
   (loop for project in projects
         do
         (let ((project project))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.26 2001/11/02 22:31:15 sds Exp $
+;;; $Id: inspect.lisp,v 1.27 2002/01/16 22:41:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -378,7 +378,7 @@ This is useful for frontends which provide an eval/modify facility."
                   (setq insp (get-insp id :s))))))))
 
 ;;;
-;;; HTTP backend
+;;; HTTP frontend
 ;;;
 
 (defmethod print-inspection ((insp inspection) (raw stream)
@@ -425,27 +425,49 @@ This is useful for frontends which provide an eval/modify facility."
   "Accept a connection from the server, return the GET command and the socket."
   (when (> debug 1)
     (format t "~s: server: ~s; socket: ~s~%" 'http-command server socket))
-  (unless (and socket (open-stream-p socket))
-    (setq socket (socket-accept server))
-    (when (> debug 1)
-      (format t "~s: new socket: ~s~%" 'http-command socket)))
-  (let ((response (flush-http socket)) id com keep-alive)
-    (unless response (error "~s: no response" 'http-command))
+  (let (response id com keep-alive)
+    (loop (unless (and socket (open-stream-p socket))
+            (setq socket (socket-accept server :external-format :dos))
+            (when (> debug 1)
+              (format t "~s: new socket: ~s~%" 'http-command socket)))
+          (setq response (flush-http socket))
+          (when response (return))
+          ;; connection timed out?
+          (close socket))
     (when (> debug 1)
       (dolist (line response)
         (format t "-> ~a~%" line)))
     (dolist (line response)
       (when (string-beg-with "Connection: " line)
-        (setq keep-alive (string= line "Keep-Alive" :start1 12))
+        (setq keep-alive (string-equal line "keep-alive" :start1 12))
         (when (> debug 0)
           (format t "~s: connection: ~s (keep-alive: ~s)~%"
-                  'http-command (subseq line 12) keep-alive)))
+                  'http-command (subseq line 12) keep-alive))
+        (when keep-alive
+          (setq keep-alive nil)
+          (when (> debug 0)
+            (format t "~s: overriding keep-alive to NIL~%" 'http-command))))
       (when (string-beg-with "GET /" line)
         (let ((pos (position #\/ line :test #'char= :start 5)))
-          (setq id (parse-integer line :start 5 :end pos)
-                com (read-from-string line nil nil :start (1+ pos)))
-          (when (> debug 0)
-            (format t "~s: command: id=~d com=~s~%" 'http-command id com)))))
+          (setq id (parse-integer line :start 5 :end pos :junk-allowed t))
+          (cond (id
+                 (setq com
+                       (if (char= #\% (aref line (1+ pos))) ; %xx hex
+                           (progn ; "%3a" --> ":"
+                             (setf (aref line (+ 3 pos))
+                                   (code-char (parse-integer
+                                               line :radix 16 :start (+ 2 pos)
+                                               :end (+ 4 pos))))
+                             (read-from-string line nil nil :start (+ 3 pos)))
+                           (read-from-string line nil nil :start (1+ pos))))
+                 (when (> debug 0)
+                   (format t "~s: command: id=~d com=~s~%"
+                           'http-command id com)))
+                (t
+                 (http-error socket line :debug debug :keep-alive keep-alive)
+                 (when (> debug 0)
+                   (format t "~s: invalid request: ~s~%"
+                           'http-command line)))))))
     (values socket id com keep-alive)))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
@@ -470,25 +492,26 @@ This is useful for frontends which provide an eval/modify facility."
     (when (> *inspect-debug* 0)
       (format t "~s [~s]: socket: ~s; id: ~s; com: ~s; keep-alive: ~s~%"
               'inspect-frontend frontend sock id com keep-alive))
-    (if (eq com :q)
-        (with-http-output (out sock :keep-alive keep-alive
-                               :debug *inspect-debug*
-                               :title "inspect" :footer nil)
-          (with-tag (:h1) (princ "thanks for using inspect" out))
-          (with-tag (:p) (princ "you may close this window now" out)))
-        (if (setq insp (get-insp id com))
-            (print-inspection insp sock frontend :keep-alive keep-alive)
-            (with-http-output (out sock :keep-alive keep-alive
-                                   :debug *inspect-debug*
-                                   :title "inspect" :footer nil)
-              (with-tag (:h1)
-                (format out "error: wrong command: ~:d/~s" id com))
-              (with-tag (:p)
-                (princ "either this is an old inspect session, or a " out)
-                (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (princ "bug" out))))))
-    (when (> *inspect-debug* 0)
-      (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend frontend
-              id com (insp-id insp)))))
+    (when id
+      (if (eq com :q)
+          (with-http-output (out sock :keep-alive keep-alive
+                                 :debug *inspect-debug*
+                                 :title "inspect" :footer nil)
+            (with-tag (:h1) (princ "thanks for using inspect" out))
+            (with-tag (:p) (princ "you may close this window now" out)))
+          (if (setq insp (get-insp id com))
+              (print-inspection insp sock frontend :keep-alive keep-alive)
+              (with-http-output (out sock :keep-alive keep-alive
+                                     :debug *inspect-debug*
+                                     :title "inspect" :footer nil)
+                (with-tag (:h1)
+                  (format out "error: wrong command: ~:d/~s" id com))
+                (with-tag (:p)
+                  (princ "either this is an old inspect session, or a " out)
+                  (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (princ "bug" out))))))
+      (when (> *inspect-debug* 0)
+        (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend frontend
+                id com (insp-id insp))))))
 
 ;;;
 ;;; the juice

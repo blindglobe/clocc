@@ -1,10 +1,10 @@
-;;; Gnuplot interface
+;;; Gnuplot (http://www.gnuplot.org/) interface
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.4 2000/05/02 15:39:14 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.5 2000/06/23 18:42:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)

@@ -8,10 +8,10 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.13 2001/02/06 19:58:11 sds Exp $
+;;; $Id: ext.lisp,v 1.14 2001/02/06 20:09:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
-(defpackage :port
+(defpackage "PORT"
   (:use "COMMON-LISP")
   (:nicknames "ORG.CONS.CLOCC/SDS/PORT")
   (:export

@@ -1,17 +1,21 @@
-;;; File: <date.lisp - 1999-04-05 Mon 14:16:31 EDT sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-04-21 Wed 16:44:58 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997, 1998 by Sam Steingold.
+;;; Copyright (C) 1997-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.34 1999/04/05 18:17:02 sds Exp $
+;;; $Id: date.lisp,v 1.35 1999/04/21 20:35:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.35  1999/04/21 20:35:00  sds
+;;; (dttm->string): print the (zero) offset.
+;;; (date): added a sample (commented out) CLOS implementation.
+;;;
 ;;; Revision 1.34  1999/04/05 18:17:02  sds
 ;;; Added `date-next-year', `date-next-month', `date-next-all'.
 ;;;
@@ -147,12 +151,49 @@
 (eval-when (load compile eval)
 (deftype days-t () '(signed-byte 20))
 
-;; of course, a class would be more appropriate here, especially since
+;; Of course, a class would be more appropriate here, especially since
 ;; this would allow us to use an :after `initialize-instance' method to
-;; properly init DD.
-;; Unfortunately, this would mean that we will have to define our own
-;; print/read procedures.  While the former is doable, the latter would
-;; apparently require `make-load-form', which is missing from CLISP.
+;; properly init DD.  Unfortunately, this would mean that we will have
+;; to use our own print/read procedures.  Both are in-place already (see
+;; `read-object' and (print-object standard-object) in print.lisp), but
+;; they should be awfully slow (each printing of an object requires a
+;; call to `class-slot-list').  Another option is to have a
+;; class-allocated slot `printable-slots', thus avoiding calling
+;; `class-slot-list' for each output.  Still this would be much slower
+;; than the current implementation, especially in CLISP, which doesn't
+;; have native compilation and thus executes user-supplied functions
+;; like `read-object' and `print-object', much slower than the system
+;; functions (like `structure-object' i/o).  E.g.:
+#|
+(defclass date ()
+  ((ye :type days-t :initform 0 :initarg year :initarg ye
+       :accessor date-ye :documentation "year")
+   (mo :type (integer 1 12) :initform 1 :initarg month :initarg mo
+       :accessor date-mo :documentation "month")
+   (da :type (integer 1 31) :initform 1 :initarg day :initarg da
+       :accessor date-da :documentation "day")
+   (dd :type days-t :initarg dd :accessor date-dd
+       :documentation "the number of days since the epoch - 1900-1-1")
+   (nn :type index-t :initform 0 :allocation :class
+       :documentation "The number of instances already allocated.")
+   (printable-slots :type list :initform '(ye mo da dd) :allocation :class
+                    :documentation "The list of slots for readable printing."))
+  (:documentation "The DATE class."))
+
+(defmethod initialize-instance :after ((dt date-c) &rest junk)
+  (declare (ignore junk))
+  (incf (slot-value dt 'nn))
+  (unless (slot-boundp dt 'dd)
+    (let ((tm (encode-universal-time
+               0 0 0 (date-da dt) (date-mo dt) (date-ye dt) 0)))
+      (declare (integer tm))
+      (setf (dadd dt) (floor tm +day-sec+)
+            (daye dt) (nth-value 5 (decode-universal-time tm 0))))))
+
+(defun make-date (&key (ye 1) (mo 1) (da 1) (dd nil dd-p))
+  (if dd-p (make-instance 'date 'ye ye 'mo mo 'da da 'dd dd)
+      (make-instance 'date 'ye ye 'mo mo 'da da)))
+|#
 
 (defstruct (date #+cmu (:print-function print-struct-object))
   "The date structure -- year, month, and day."
@@ -268,10 +309,10 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (declare (type (integer 0) dttm))
   (multiple-value-bind (se mi ho da mo ye dd) (decode-universal-time dttm 0)
     (if old
-        (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d GMT"
+        (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
                 (aref +week-days+ dd) da (aref +month-names+ (1- mo))
                 ye ho mi se)
-        (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d GMT"
+        (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
                 ye mo da (aref +week-days+ dd) ho mi se))))
 
 (defun string->dttm (xx)
@@ -341,18 +382,18 @@ The argument can be:
    - NIL - an error is signalled.")
   (:method ((xx date)) xx)
   (:method ((xx string))
-           ;; The following formats are accepted:
-           ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
-           (multiple-value-bind (ye mo da)
-               (values-list (string-tokens (purge-string xx) :max 3))
-             (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
-                 (mk-date :ye da :mo (infer-month ye) :da mo))))
+    ;; The following formats are accepted:
+    ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
+    (multiple-value-bind (ye mo da)
+        (values-list (string-tokens (purge-string xx) :max 3))
+      (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
+          (mk-date :ye da :mo (infer-month ye) :da mo))))
   (:method ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
   (:method ((xx symbol)) (unintern xx) (date (symbol-name xx)))
   (:method ((xx integer)) (days2date xx))
   (:method ((xx real)) (time2date xx))
   (:method ((xx stream))        ; Read date in format MONTH DAY YEAR
-           (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
+    (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
   (:method ((xx cons)) (date (car xx))))
 (declaim (ftype date-f-t date))
 ;;;

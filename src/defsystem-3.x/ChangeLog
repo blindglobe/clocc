@@ -1,3 +1,26 @@
+2002-02-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added patches by Kevin Rosenberg and Arthur Lemmens.
+	ACL case-sensitivity should not cause any problems now
+	and LW warning should disappear.
+	Also, support for the newer compilers and binaries for
+	ACL 6.1 and LW 4.2 is in (thanks again to Kevin Rosenberg).
+
+2002-01-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog: ChangeLog updated.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Addeed `with-compilation-unit' patch to `operate-on-system', as
+	suggested by Bob Rogers.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog: ChangeLog updated.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Modified some definitions to accommodate ACL case sensitivity according
+	to suggestions by Kevin Rosenberg.
+
 2002-01-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:

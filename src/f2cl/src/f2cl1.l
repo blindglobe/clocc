@@ -331,7 +331,6 @@ FILENAME                 File containing Fortran code
 		      year month date hour minute second))
 	    (let ((*print-case* :downcase)))
 	      ;; Insert in-package and declaim, if needed
-	      #-clisp
 	      (when options
 		(pprint-logical-block (outport options :per-line-prefix ";;; ")
 		  (format outport "~&Options: ~S" options))
@@ -531,7 +530,13 @@ FILENAME                 File containing Fortran code
 
 ;=============================================================================
 (defun special-print (x o)
-   (write x :escape t :stream o :pretty t :readably t :case :downcase))
+  (with-standard-io-syntax
+    (let ((*package* (find-package :f2cl))
+	  (*print-pretty* t)
+	  (*print-case* :downcase)
+	  (*print-circle* nil)
+	  (*print-readably* t))
+      (write x :stream o))))
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y ""))
   (print x)
@@ -1951,8 +1956,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.77 2001/09/11 14:29:14 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.78 2002/01/05 18:30:35 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.78  2002/01/05 18:30:35  rtoy
+;;; o Clisp's pretty-printer seems to work well enough now, so use it.
+;;; o Use with-standard-io-syntax in SPECIAL-PRINT when printing out the
+;;;   code (with a few minor changes).
+;;;
 ;;; Revision 1.77  2001/09/11 14:29:14  rtoy
 ;;; Try to do a better job of figuring out the extension for the output
 ;;; file.

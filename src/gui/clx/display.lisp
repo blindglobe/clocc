@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.6 2003/02/28 20:23:10 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.7 2003/03/10 08:58:26 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -44,7 +44,7 @@
 ;;; string, and DISPLAY is a number. The PROTOCOL argument determines
 ;;; whether the server connection is using an Internet protocol
 ;;; (values of :tcp or :internet) or a non-network protocol such as
-;;; Unix domain sockets (value of :unix). GET-BEST-AUTHORITY returns
+;;; Unix domain sockets (value of :local). GET-BEST-AUTHORITY returns
 ;;; two strings: an authorization name (very likely the string
 ;;; "MIT-MAGIC-COOKIE-1") and an authorization key, represented as
 ;;; fixnums in a vector. If the function fails to find an appropriate
@@ -104,7 +104,8 @@
 	(when stream
 	  (let* ((host-address (and (eql protocol :internet)
 				    (rest (host-address host protocol))))
-		 (best-name nil) (best-pos nil)
+		 (best-name nil)
+		 (best-pos nil)
 		 (best-data nil))
 	    ;; Check for the localhost address, in which case we're
 	    ;; really FamilyLocal.
@@ -333,9 +334,6 @@
 		      ,@(and timeout `(:timeout ,timeout)))
 	 ,@body))))
 
-;;; XXX add open-clx-display from cmucl
-;;; PVE
-
 (defun open-default-display ()
   "Opens the default display"
   (destructuring-bind (host display screen protocol)
@@ -356,14 +354,14 @@
   (declare (clx-values display))
   ;; Get the authorization mechanism from the environment.  Handle the
   ;; special case of a host name of "" and "unix" which means the
-  ;; protocol is :unix
+  ;; protocol is :local
+  (when (member host '("" "unix") :test #'equal)
+    (setf protocol :local))
   (when (null authorization-name)
     (multiple-value-setq (authorization-name authorization-data)
       (get-best-authorization host
 			      display
-			      (if (member host '("" "unix") :test #'equal)
-				  :unix
-				  protocol))))
+			      protocol)))
   ;; PROTOCOL is the network protocol now _alwas_ :TCP
   (let* ((stream (open-x-stream host display protocol))
 	 (disp (make-buffer *output-buffer-size* #'make-display-internal

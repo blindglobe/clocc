@@ -853,8 +853,10 @@
 
 #-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks :clisp
       (and allegro-version>= (version>= 4 1)))
-(eval-when #-(or :lucid :cmu17) (:compile-toplevel :load-toplevel :execute)
-	   #+(or :lucid :cmu17) (compile load eval)
+(eval-when #-(or :lucid :cmu17 :cmu18)
+           (:compile-toplevel :load-toplevel :execute)
+	   #+(or :lucid :cmu17 :cmu18)
+           (compile load eval)
   (unless (or (fboundp 'lisp::require) (fboundp 'user::require)
 	      #+(and :excl (and allegro-version>= (version>= 4 0)))
 	      (fboundp 'cltl1::require)
@@ -1724,9 +1726,11 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
     (namestring
      (make-pathname :host host
 		    :device device
-		    :directory
-		    #-(and :cmu (not :cmu17)) directory
-		    #+(and :cmu (not :cmu17)) (coerce directory 'simple-vector)
+                    :directory
+		    #-(and :cmu (not (or :cmu17 :cmu18)))
+                    directory
+		    #+(and :cmu (not (or :cmu17 :cmu18)))
+                    (coerce directory 'simple-vector)
 		    :name rel-file))))
 
 (defun directory-to-list (directory)
@@ -2024,7 +2028,7 @@ D
 
 (defstruct (component (:include topological-sort-node)
                       (:print-function print-component))
-  (type nil
+  (type :file     ; to pacify the CMUCL compiler (:type is alway supplied)
 	:type (member :defsystem
 		      :system
 		      :subsystem
@@ -2133,7 +2137,7 @@ D
 	    (when path
 	      (gethash path *file-load-time-table*)))))))))
 
-#-:CMU17
+#-(or :cmu17 :cmu18)
 (defsetf component-load-time (component) (value)
   `(when ,component
     (etypecase ,component
@@ -2158,7 +2162,7 @@ D
 		    ,value)))))))
     ,value))
 
-#+:CMU17
+#+(or :cmu17 :cmu18)
 (defun (setf component-load-time) (value component)
   (declare
    (type (or null string pathname component) component)
@@ -2458,9 +2462,9 @@ D
 			   :name (pathname-name pathname)
 			   :type (component-extension component type)
 			   :device
-			   #+(and :CMU (not :cmu17))
+			   #+(and :CMU (not (or :cmu17 :cmu18)))
 			   :absolute
-			   #-(and :CMU (not :cmu17))
+			   #-(and :CMU (not (or :cmu17 :cmu18)))
 			   (let ((dev (component-device component)))
 			     (when dev
 			       (pathname-device dev)))
@@ -3519,8 +3523,8 @@ D
 ;;; if anybody does a funcall on #'require.
 
 ;;; Redefine old require to call the new require.
-(eval-when #-(or :lucid :cmu17) (:load-toplevel :execute)
-	   #+(or :lucid :cmu17) (load eval)
+(eval-when #-(or :lucid :cmu17 :cmu18) (:load-toplevel :execute)
+	   #+(or :lucid :cmu17 :cmu18) (load eval)
 (unless *old-require*
   (setf *old-require*
 	(symbol-function

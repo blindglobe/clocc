@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.15 2003/04/16 13:50:45 sds Exp $
+;;; $Id: clocc.lisp,v 1.16 2003/04/16 21:50:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -105,8 +105,12 @@
 (setf (logical-pathname-translations "clocc")
       `(("src;defsystem;*"
          ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*"))
+        ("src;defsystem;*.*"
+         ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*.*"))
         ("src;defsystem-3-x;*"
          ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*"))
+        ("src;defsystem-3-x;*.*"
+         ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*.*"))
         ("**;*" ,(concatenate 'string *clocc-root* "**/*"))
         ("**;*.*" ,(concatenate 'string *clocc-root* "**/*.*"))))
 

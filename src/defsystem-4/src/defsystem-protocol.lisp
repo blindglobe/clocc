@@ -318,7 +318,9 @@ component."
 
 (defmethod describe-object ((c component) (stream stream))
   (let ((csp (get-component-source-pathname c))
+	(cse (get-component-source-extension c))
 	(cbp (get-component-binary-pathname c))
+	(cbe (get-component-binary-extension c))
 	)
     (format stream "~&MK4: `~A' is a system component ~A: ~
                     ~@[~&   Part of: ~A~]~
@@ -326,8 +328,8 @@ component."
                     ~@[~&   Host: ~A~]~
                     ~@[~&   Device: ~A~]~
                     ~@[~&   Package: ~A~]~
-                    ~&   Source: ~@[~A~] ~@[~A~] ~@[~A~]~
-                    ~&   Binary: ~@[~A~] ~@[~A~] ~@[~A~]~
+                    ~&   Source: ~@[~A~] ~@[~A~] ~@[(~A)~]~
+                    ~&   Binary: ~@[~A~] ~@[~A~] ~@[(~A)~]~
                     ~@[~{~&   Depends On: ~A ~}~]"
 	    (component-name c)
 	    (class-name (class-of c))	; (component-type c)
@@ -339,11 +341,11 @@ component."
 
 	    nil				; (component-root-dir c :source)
 	    csp
-	    nil				; (component-extension c :source)
+	    cse				; (component-extension c :source)
 
 	    nil				; (component-root-dir c :binary)
 	    cbp
-	    nil				; (component-extension c :binary)
+	    cbe				; (component-extension c :binary)
 	    (component-depends-on c)
 	    )
     c))
@@ -351,7 +353,9 @@ component."
 
 (defmethod describe-object ((c library) (stream stream))
   (let ((csd (get-component-source-directory c))
+	(cse (get-component-source-extension c))
 	(cbp (get-component-binary-pathname c))
+	(cbe (get-component-binary-extension c))
 	)
     (format stream "~&MK4: `~A' is a system component ~A: ~
                     ~@[~&   Part of: ~A~]~
@@ -359,8 +363,8 @@ component."
                     ~@[~&   Host: ~A~]~
                     ~@[~&   Device: ~A~]~
                     ~@[~&   Package: ~A~]~
-                    ~&   Source Directory: ~@[~A~] ~@[~A~] ~@[~A~]~
-                    ~&   Binary Pathname:  ~@[~A~] ~@[~A~] ~@[~A~]~
+                    ~&   Source Directory: ~@[~A~] ~@[~A~] ~@[(~A)~]~
+                    ~&   Binary Pathname:  ~@[~A~] ~@[~A~] ~@[(~A)~]~
                     ~@[~{~&   Depends On: ~A ~}~]"
 	    (component-name c)
 	    (class-name (class-of c))	; (component-type c)
@@ -372,11 +376,11 @@ component."
 
 	    nil				; (component-root-dir c :source)
 	    csd
-	    nil				; (component-extension c :source)
+	    cse				; (component-extension c :source)
 
 	    nil				; (component-root-dir c :binary)
 	    cbp
-	    nil				; (component-extension c :binary)
+	    cbe				; (component-extension c :binary)
 	    (component-depends-on c)
 	    )
     c))
@@ -620,6 +624,19 @@ component."
   (link-component-depends-on components))
 
 
+;;; initialize-instance -- :after on stored-component.
+;;; Make sure that the computed extensions are in place.
+
+(defmethod initialize-instance :after ((sc stored-component)
+				       &key
+				       (binary-extension nil bext-supplied-p)
+				       (source-extension nil sext-supplied-p)
+				       &allow-other-keys)
+  (when (and bext-supplied-p binary-extension)
+    (setf (computed-binary-extension sc) binary-extension))
+  (when (and sext-supplied-p source-extension)
+    (setf (computed-source-extension sc) source-extension)))
+
 
 
 ;;; add-sub-component --
@@ -640,13 +657,16 @@ component."
           Only FILE components can be added to SIMPLE-SYSTEMs."
 	 (class-name (class-of c))
 	 ss))
-  
+
+#+skipped
 (defmethod add-sub-component :after ((shc standard-hierarchical-component)
 				     (sc stored-component))
   (unless (component-source-extension sc)
-    (setf (component-source-extension sc) (component-source-extension shc)))
+    (setf (component-source-extension sc) (component-source-extension shc)
+	  (source-extension-inherited-p sc) t))
   (unless (component-binary-extension sc)
-    (setf (component-binary-extension sc) (component-binary-extension shc))))
+    (setf (component-binary-extension sc) (component-binary-extension shc)
+	  (binary-extension-inherited-p sc) t)))
 
 
 ;;;---------------------------------------------------------------------------
@@ -686,6 +706,30 @@ component."
 (defgeneric set-binary-pathname-dirty-bit (component))
 
 
+;;; update-pathname-components-from-container --
+
+(defun update-source-pathname-components-from-container (component container)
+  (with-accessors ((source-pathname component-source-pathname)
+		   (computed-source-pathname computed-source-pathname)
+		   (source-extension component-source-extension)
+		   (computed-source-extension computed-source-extension)
+		   (container component-part-of)
+		   )
+    component
+    (if container
+	(let ((container-source-directory
+	       (get-component-source-directory container)))
+	  (setf computed-source-pathname
+		(adjoin-directories container-source-directory
+				    source-pathname))
+	  (if source-extension
+	      (setf computed-source-extension
+		    source-extension)
+	      (setf computed-source-extension
+		    (get-component-source-extension container))))
+	  )))
+
+
 ;;; get-component-source-pathname --
 
 (defmethod get-component-source-pathname ((sc stored-component))
@@ -696,9 +740,11 @@ component."
   (with-accessors ((source-pathname component-source-pathname)
 		   (computed-source-pathname computed-source-pathname)
 		   (source-extension component-source-extension)
+		   (computed-source-extension computed-source-extension)
 		   (container component-part-of)
 		   )
     sc
+
     ;; First of all we must see whether we need to recompute the pathname.
     (if (source-pathname-computations-dirty-bit sc)
 
@@ -707,12 +753,17 @@ component."
 	;; computations on components that have not been installed
 	;; in a system tree.
 	
-	(if (not (null container))
+	(if container
 	    (let ((container-source-directory
-		   (get-component-source-directory container))) ; Was get-component-source-pathname.
+		   (get-component-source-directory container)))
+	      (if source-extension
+		  (setf computed-source-extension source-extension)
+		  (setf computed-source-extension
+			(get-component-source-extension container)))
 	      (setf computed-source-pathname
 		    (adjoin-directories container-source-directory
 					source-pathname)))
+
 	    (etypecase source-pathname
 	      (string
 	       (setf computed-source-pathname
@@ -734,7 +785,7 @@ component."
 (defmethod get-component-source-pathname ((f file))
   (if (source-pathname-computations-dirty-bit f)
       (let ((source-extension-pathname
-	     (make-pathname :type (component-source-extension f))))
+	     (make-pathname :type (get-component-source-extension f))))
 	(setf (computed-source-pathname f)
 	      (merge-pathnames source-extension-pathname (call-next-method))))
       (computed-source-pathname f)))
@@ -758,8 +809,9 @@ component."
   ;; :type NIL (or :UNSPECIFIC) and that the directory components is
   ;; meaningful.
   (with-accessors ((binary-pathname component-binary-pathname)
-		   (binary-extension component-binary-extension)
 		   (computed-binary-pathname computed-binary-pathname)
+		   (binary-extension component-binary-extension)
+		   (computed-binary-extension computed-binary-extension)
 		   (container component-part-of)
 		   )
     sc
@@ -771,12 +823,18 @@ component."
 	;; computations on components that have not been installed
 	;; in a system tree.
 
-	(if (not (null container))
+	(if container
 	    (let ((container-binary-directory
-		   (get-component-binary-directory container)))	; Was get-component-binary-pathname
+		   (get-component-binary-directory container)))
+	      (if binary-extension
+		  (setf computed-binary-extension binary-extension)
+		  (setf computed-binary-extension
+			(get-component-binary-extension container)))
+
 	      (setf computed-binary-pathname
 		    (adjoin-directories container-binary-directory
 					binary-pathname)))
+
 	    (etypecase binary-pathname
 	      (string
 	       (setf computed-binary-pathname
@@ -799,7 +857,7 @@ component."
 (defmethod get-component-binary-pathname ((f file))
   (if (binary-pathname-computations-dirty-bit f)
       (let ((binary-extension-pathname
-	     (make-pathname :type (component-binary-extension f))))
+	     (make-pathname :type (get-component-binary-extension f))))
 	(setf (computed-binary-pathname f)
 	      (merge-pathnames binary-extension-pathname (call-next-method))))
       (computed-binary-pathname f)))
@@ -808,7 +866,7 @@ component."
 (defmethod get-component-binary-pathname ((l library))
   (if (binary-pathname-computations-dirty-bit l)
       (let ((binary-extension-pathname
-	     (make-pathname :type (component-binary-extension l))))
+	     (make-pathname :type (get-component-binary-extension l))))
 	(setf (computed-binary-pathname l)
 	      (merge-pathnames binary-extension-pathname (call-next-method))))
       (computed-binary-pathname l)))
@@ -858,7 +916,7 @@ component."
   (setf (source-pathname-computations-dirty-bit c) t))
 
 (defmethod set-source-pathname-dirty-bit ((c standard-hierarchical-component))
-  (setf (source-pathname-computations-dirty-bit ssc) t)
+  (setf (source-pathname-computations-dirty-bit c) t)
   (dolist (subc (component-components c) t)
     (set-source-pathname-dirty-bit subc)))
 
@@ -867,21 +925,132 @@ component."
   (setf (binary-pathname-computations-dirty-bit c) t))
 
 (defmethod set-binary-pathname-dirty-bit ((c standard-hierarchical-component))
-  (setf (binary-pathname-computations-dirty-bit ssc) t)
+  (setf (binary-pathname-computations-dirty-bit c) t)
   (dolist (subc (component-components c) t)
     (set-binary-pathname-dirty-bit subc)))
 
-(defmethod (setf source-pathname) :after (v (c stored-component))
+(defmethod (setf component-source-pathname) :after (v (c stored-component))
+  (declare (ignorable v))
   (set-source-pathname-dirty-bit c))
 
-(defmethod (setf binary-pathname) :after (v (c stored-component))
+(defmethod (setf component-binary-pathname) :after (v (c stored-component))
+  (declare (ignorable v))
   (set-binary-pathname-dirty-bit c))
 
-(defmethod (setf source-extension) :after (v (c stored-component))
+(defmethod (setf component-source-extension) :after (v (c stored-component))
+  (declare (ignorable v))
   (set-source-pathname-dirty-bit c))
 
-(defmethod (setf binary-extension) :after (v (c stored-component))
+(defmethod (setf component-binary-extension) :after (v (c stored-component))
+  (declare (ignorable v))
   (set-binary-pathname-dirty-bit c))
+
+(defmethod get-component-binary-extension ((sc stored-component))
+  (with-accessors ((binary-extension component-binary-extension)
+		   (computed-binary-extension computed-binary-extension)
+		   (container component-part-of)
+		   )
+    sc
+    ;; First of all we must see whether we need to recompute the pathname.
+    (if (binary-pathname-computations-dirty-bit sc)
+	
+	;; 'container' will almost always be non NULL except for
+	;; SYSTEM components, the check allows for on-the-fly
+	;; computations on components that have not been installed
+	;; in a system tree.
+
+	(if (and (not (null container)) (null binary-extension))
+	    (let ((container-binary-extension
+		   (get-component-binary-extension container)))
+	      (setf computed-binary-extension container-binary-extension))
+	    (setf computed-binary-extension binary-extension))
+	;; Otherwise just return the previously stored
+	;; 'computed-binary-extension'.
+	computed-binary-extension)))
+
+(defmethod get-component-source-extension ((sc stored-component))
+  (with-accessors ((source-extension component-source-extension)
+		   (computed-source-extension computed-source-extension)
+		   (container component-part-of)
+		   )
+    sc
+    ;; First of all we must see whether we need to recompute the pathname.
+    (if (source-pathname-computations-dirty-bit sc)
+	
+	;; 'container' will almost always be non NULL except for
+	;; SYSTEM components, the check allows for on-the-fly
+	;; computations on components that have not been installed
+	;; in a system tree.
+
+	(if (and (not (null container)) (null source-extension))
+	    (let ((container-source-extension
+		   (get-component-source-extension container)))
+	      (setf computed-source-extension container-source-extension))
+	    (setf computed-source-extension source-extension))
+	;; Otherwise just return the previously stored
+	;; 'computed-source-extension'.
+	computed-source-extension)))
+  
+#+wrong
+(defmethod (setf component-source-extension)
+    :after (v (c standard-hierarchical-component))
+
+  #+wrong
+  (unless v
+    ;; If V is NIL we need to inherit the value from the container.
+    (let ((container (component-part-of c)))
+      (when container
+	(setf (component-source-extension c)
+	      (component-source-extension container)
+	      (source-extension-inherited-p c)
+	      t))))
+
+  ;; Propagate the value.
+  (dolist (subc (component-components c))
+    (unless (component-source-extension subc)
+      (setf (component-source-extension subc) v
+	    (source-extension-inherited-p subc) t))))
+
+
+#+wrong
+(defmethod (setf component-binary-extension)
+    :after (v (c standard-hierarchical-component))
+
+  #+wrong
+  (unless v
+    ;; If V is NIL we need to inherit the value from the container.
+    (let ((container (component-part-of c)))
+      (when container
+	(setf (component-binary-extension c)
+	      (component-binary-extension container)
+	      (binary-extension-inherited-p c)
+	      t))))
+
+  ;; Propagate the value.
+  (dolist (subc (component-components c))
+    (unless (component-binary-extension subc)
+      (setf (component-binary-extension subc) v
+	    (binary-extension-inherited-p subc) t))))
+
+#+wrong
+(defmethod component-source-extension :before ((c stored-component))
+  (unless (component-source-extension c)
+    (let ((container (component-part-of c)))
+      (when container
+	(setf (component-source-extension c)
+	      (component-source-extension container)
+	      (source-extension-inherited-p c)
+	      t)))))
+
+#+wrong
+(defmethod component-binary-extension :before ((c stored-component))
+  (unless (component-binary-extension c)
+    (let ((container (component-part-of c)))
+      (when container
+	(setf (component-binary-extension c)
+	      (component-binary-extension container)
+	      (binary-extension-inherited-p c)
+	      t)))))
 
 
 ;;;---------------------------------------------------------------------------

@@ -5,13 +5,14 @@ set -e
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.2 $'
+pversion='$Revision: 1.3 $'
 
 usage()
 {
         cat >&2 <<END
-Usage: $progname implentation-name package-name [OPTIONS]
-$progname checks if a package should be auto-built for a 
+Usage: $progname impl library [OPTIONS]
+
+$progname checks if a library should be auto-built for a 
 particular implementation. It returns a status code of 0 for "yes"
 and 1 for "no". Returns 2 for a usage error.
 
@@ -20,26 +21,29 @@ Options:
 END
 }
 
-# return 1 status if ab_file exists and contains yes as the first line
-ab_file_yes()
+# returns in $ab the canonical value of ab file
+ab_file()
 {
     file=$1
     # file exists and is empty, equivalent to yes
-    if [ -f $file ] && [ ! -s $file ]; then
-	true
+    if [ -e $file ] && [ ! -s $file ]; then
+	ab="yes"
 	return
     fi
     if [ -r $file ]; then
 	first_line="$(cat $file | head -1)"
 	if [ "$first_line" ]; then
-	    first_line =  "$(echo "$first_line" | tr "[A-Z]" "[a-z]")"
+	    first_line="$(echo "$first_line" | tr "[A-Z]" "[a-z]")"
 	    if [ "$(expr "$first_line" : ".*\(yes\).*")" ]; then
-		true
+		ab="yes"
+		return
+	    elif [ "$(expr "$first_line" : ".*\(no\).*")" ]; then
+		ab="no"
 		return
 	    fi
 	fi
     fi
-    false
+    ab="inherit"
 }
 
 clc_bin_dir=/usr/lib/common-lisp/bin
@@ -93,27 +97,26 @@ global_db=$ab_dir/autobuild
 
 if [ -r $source_ab ]; then
     # package's autobuild readable
-    ab_file_yes $source_ab
-    if [ $? = 0 ]; then
+    ab_file $source_ab
+    if [ "$ab" = "yes" ]; then
 	exit 0
-    else
+    elif [ "$ab" = "no" ]; then
 	exit 1
     fi
 fi
 # use impl default
 if [ -r $impl_ab ]; then
-    ab_file_yes $impl_ab
-    if [ $? = 0 ]; then
+    ab_file $impl_ab
+    if [ "$ab" = "yes" ]; then
 	exit 0
-    else
+    elif [ "$ab" = "no" ]; then
 	exit 1
-    
     fi
 fi
 # Use global default
 if [ -r $global_ab ]; then
-    ab_file_yes $global_ab
-    if [ $? = 0 ]; then
+    ab_file $global_ab
+    if [ "$ab" = "yes" ]; then
 	exit 0
     else
 	exit 1

@@ -580,8 +580,8 @@
       (let ((host (or (special-translation-host translation)
 		      logical-host-string)))
 	(setf (gethash host hosts-table)
-	      (nconc (gethash host hosts-table)
-		     (special-translation-translations translation)))))
+	      (nconc (special-translation-translations translation)
+		     (gethash host hosts-table)))))
 
     ;; The main host must be treated specially
     ;; (setf (gethash logical-host-string hosts-table)
@@ -591,16 +591,19 @@
     (loop for host in hosts
 	  ;; do (format t ">>>> building translation form for host ~S~%" host)
 	  if (string-equal host logical-host-string)
-	  collect `(setf (logical-pathname-translations ,host)
-			 (list ,@(append main-translations
-					 (build-translation-form
-					  host
-					  (gethash host hosts-table)))))
+	    ;; The special translations must be first, since the "regular"
+   	    ;; translations function as catch-alls.
+
+	    collect `(setf (logical-pathname-translations ,host)
+			   (list ,@(append (build-translation-form
+					    host
+					    (gethash host hosts-table))
+					   main-translations)))
 	  else
-	  collect `(setf (logical-pathname-translations , host)
-			 (list ,@(build-translation-form
-				  host
-				  (gethash host hosts-table)))))))
+	    collect `(setf (logical-pathname-translations , host)
+			   (list ,@(build-translation-form
+				    host
+				    (gethash host hosts-table)))))))
 
 
 (defun build-translation-form (host translations)

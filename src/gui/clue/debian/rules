@@ -39,7 +39,7 @@ binary-arch: build
 	dh_installdirs
 
 	# Add here commands to install the files into debian/tmp
-	$(MAKE) install DESTDIR=`pwd`/debian/
+	$(MAKE) install DESTDIR=`pwd`/debian/tmp
 
 	dh_installdocs
 	dh_installexamples
@@ -49,7 +49,7 @@ binary-arch: build
 	dh_installmanpages
 #	dh_undocumented
 	dh_installchangelogs
-	dh_link
+	dh_link --verbose
 	dh_strip
 	dh_compress
 	dh_fixperms

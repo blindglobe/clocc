@@ -26,7 +26,6 @@ case "$1" in
     configure)
 	/usr/sbin/register-common-lisp-source clue
 	/usr/sbin/register-common-lisp-source clio
-	/usr/sbin/register-common-lisp-source clio-examples
 	/usr/sbin/register-common-lisp-source pictures
     ;;
 

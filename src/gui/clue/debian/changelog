@@ -1,16 +1,10 @@
-cl-clue (20021112) unstable; urgency=low
+cl-clue (20030911) unstable; urgency=low
 
-  * Now uses asdf
   * Now follow CL package naming standard.
-
- -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 18 Nov 2002 07:29:30 +0100
-
-clue (20021111) unstable; urgency=low
-
+  * Works again with cmucl. Closes: #210273
   * Now uses asdf.
-  * and cl-foo naming style for packages. 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 11 Nov 2002 15:13:18 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 16 Sep 2003 10:06:39 +0200
 
 clue (20011231) unstable; urgency=low
 

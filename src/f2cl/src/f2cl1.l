@@ -352,7 +352,7 @@ FILENAME                 File containing Fortran code
 	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
 	     outport)))
         ))
-    t))
+    t)
 ;-----------------------------------------------------------------------------
 (defun readsubprog-extract-format-stmts (inport)
   (let (input-list output-list margin *current_label*)
@@ -1633,7 +1633,6 @@ FILENAME                 File containing Fortran code
                  ,@(list-split sym (head-chop sym lis))) ops))))))
 
 
-#+cmu
 (defun concat (&rest syms)
   (cond ((null syms)
 	 "")
@@ -1969,8 +1968,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.71 2001/04/30 15:37:34 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.72 2001/06/01 20:08:21 liam Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.72  2001/06/01 20:08:21  liam
+;;; Remove conditionalization #+cmu on concat.  Removed extra parenthesis.
+;;;
 ;;; Revision 1.71  2001/04/30 15:37:34  rtoy
 ;;; Add in-package statement, just like the comments say instead of trying
 ;;; to compile everything in the given package.

@@ -1177,9 +1177,9 @@
        ;; First make sure the entry points are consistent in name and
        ;; number of arguments.  We don't support anything else (yet?)
        (unless (every #'(lambda (f)
-			  (let ((result (equalp (second f) arglist)))
+			  (let ((result (equal (second f) arglist)))
 			    (unless result
-			      (warn "ENTRY ~A doesn't match the expected arg list: ~A~%" f arglist))
+			      (warn "ENTRY ~A doesn't match the expected arg list: ~A~%" (second f) arglist))
 			    result))
 		      *entry-points*)
 	 (warn "Some ENTRY points don't match the expected signature ~A~%"
@@ -2770,8 +2770,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.110 2003/07/13 18:54:51 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.111 2003/11/12 05:32:49 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.111  2003/11/12 05:32:49  rtoy
+;;; The test for matching arglist for ENTRY points was wrong.  Fix it.
+;;;
 ;;; Revision 1.110  2003/07/13 18:54:51  rtoy
 ;;; Add mod to +allowed-lisp-names+.
 ;;;

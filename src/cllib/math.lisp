@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.15 2000/11/01 17:01:12 sds Exp $
+;;; $Id: math.lisp,v 2.16 2001/01/23 23:13:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -454,12 +454,13 @@ so that (poly1 10 1 2 3 4 5) ==> 12345."
 
 (defun poly (var coeffs)
   "Compute the polynomial with the given coefficients. Use the Horner scheme.
-COEFFS are #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
-so that (poly 10 1 2 3 4 5) ==> 12345."
-  (declare (double-float var) (type simple-vector coeffs))
-  (loop :with res :of-type double-float = 0d0
-        :for cc :of-type double-float :across coeffs
-        :do (setq res (+ cc (* var res))) :finally (return res)))
+COEFFS is a sequence #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
+so that (poly 10 '(1 2 3 4 5)) ==> 12345."
+  (declare (double-float var) (type sequence coeffs))
+  (reduce (lambda (res coeff)
+            (declare (double-float res coeff))
+            (+ (* res var) coeff))
+          coeffs :initial-value 0d0))
 
 (defun erf (xx)
   "Compute the error function, accurate to 1e-6. See Hull p. 243.

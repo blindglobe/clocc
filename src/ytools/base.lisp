@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.9 2004/06/24 20:54:45 airfoyle Exp $
+;;;$Id: base.lisp,v 1.10 2004/06/30 20:47:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -409,8 +409,8 @@
 		     ,(cond ((eq initial^ 'false) 'false)
 			    (t `(\\ () ,initial^)))))
 
-(defun alist-entry-def (x a initializer =test)
-   (let ((p (assoc x a :test =test)))
+(defun alist-entry-def (x a initializer)
+   (let ((p (assoc x a :test #'eq)))
       (cond (p (second p))
 	    (t (and initializer (funcall initializer))))))
 
@@ -477,7 +477,7 @@
 				(let ((,store-var (cons ,entry-var ,alist-var)))
 				   ,alist-set)))
 			 (setf ,acc-form ,new-var))
-		    `(cond (,entry-var ,accform)
+		    `(cond (,entry-var ,acc-form)
 			   (t ,default^)))))))
 
 ;;; Most common special case.

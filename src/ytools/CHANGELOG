@@ -3,6 +3,10 @@
 	    for var notation (v e0 :then e1) so it's the same as (v =
 	    e0 :then e1).  Got 'fload-recheck' working correctly.
 	
+2004-06-24: Improved definition of 'alref.' so it allows specification
+            of equality test, access method, and new-entry builder.
+	    Allow package names to occur inside YTools logical pathnames.
+	
 2004-04-20: Added 'val-or-initialize' and its notational variant,
             'memoize-val', to misc.  Tightened definitions of 'alref' and
 	    'alref.' .

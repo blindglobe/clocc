@@ -29,6 +29,14 @@
   "This is the type of compiled lisp files.")
 
 
+(defun namestring-wild-version (path)
+  "Returns a namestring that has a wild version appended"
+  (concatenate 'string
+		(namestring (make-pathname :defaults path :version nil))
+;;		".*"
+		".NEWEST"
+		))
+		
 (defun add-translation (for new-root new-part)
   "Adds a translation to the logical pathname named by FOR (:cl-library or :cl-systems)
 NEW-ROOT is the new root for this translation, NEW-PART is the part below the
@@ -59,7 +67,7 @@ This function returns nothing."
     
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
-           (namestring (make-pathname :defaults new-part
+           (namestring-wild-version (make-pathname :defaults new-part
 				      :name :wild
 				      :host lp-host)))
           ;; construct the destination, based on all this
@@ -76,7 +84,7 @@ This function returns nothing."
     ;; also support the old way
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
-           (namestring (make-pathname :defaults new-part
+           (namestring-wild-version (make-pathname :defaults new-part
 				      :directory (cons :absolute
 						       (rest
 							(pathname-directory new-part)))

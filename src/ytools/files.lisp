@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.9 2004/06/24 14:13:52 airfoyle Exp $
+;;;$Id: files.lisp,v 1.10 2004/08/09 21:35:49 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -383,7 +383,9 @@
 	 ;; If supporter out of date, "don't recompile" means "load object if
 	 ;; possible"; if file itself out of date, "don't recompile" requires
 	 ;; further questioning.
-	 (cond ((eq why ':supporter-out-of-date)
+	 (cond ((eq why ':no-object)
+		':source)
+	       ((eq why ':supporter-out-of-date)
 		(setf (Load-progress-rec-when-reached lprec)
 		      (let ((time (Load-progress-rec-when-reached lprec)))
 			 (dolist (cs changed-supporters)

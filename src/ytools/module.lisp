@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.7 2004/06/02 17:50:56 airfoyle Exp $
+;;;$Id: module.lisp,v 1.8 2004/08/09 21:35:49 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -334,14 +334,16 @@
 	(t
 	 (let ((rpn (cond ((is-Pathname pn) pn)
 			  (t (pathname-resolve pn false)))))
-	    (cond ((member (Pathname-type rpn)
-			   source-suffixes*
-			   :test #'equal)
-		   rpn)
-		  (t
-		   (or (get-pathname-with-suffixes
-		           rpn source-suffixes*)
-		       (and (probe-file rpn) rpn))))))))
+	    (let ((pn-type (Pathname-type rpn)))
+	       (cond (pn-type
+		      (cond ((equal pn-type obj-suffix*)
+			     (get-pathname-with-suffixes
+				rpn source-suffixes*))
+			    ((probe-file rpn)
+			     rpn)
+			    (t false)))
+		     ((probe-file rpn) rpn)
+		     (t (get-pathname-with-suffixes rpn source-suffixes*))))))))
 
 (defun pathname-object-version (pn only-if-exists)
    (let ((ob-pn

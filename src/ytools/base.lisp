@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.12 2004/07/26 04:41:40 airfoyle Exp $
+;;;$Id: base.lisp,v 1.13 2004/08/09 21:35:49 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -112,9 +112,37 @@
 
 ;;; Each entry is of form (char global-handler -local-handlers-)
 ;;; The current readtable is looked up in the local-handlers (itself an
-;;; alist).  If no entry, use global.  If no global, '!' should be taken
+;;; alist).  If no entry, use global (the value of ytools-readtable*).  
+;;; If no global, '!' should be taken
 ;;; as an ordinary character.
 (defvar excl-handlers* '())
+
+;;; The following two procedures return an access function and a set function
+;;; for the place in
+;;; an entry where the excl-reader procedure is stored.
+;;; Note that if no special handler is associated with the readtable,
+;;; we return the handler, if any, associated with ytools-readtable*.
+;;; Specifying false as the value for rt is the same as specifying
+;;; ytools-readtable*.
+(defun readtable-excl-acc (rt)
+   (cond ((or (not rt) (eq rt ytools-readtable*))
+	  (\\ (entry) (cadr entry)))
+	 (t
+	  (\\ (entry)
+	     (let ((rte (assoc rt (cddr entry) :test #'eq)))
+		(cond (rte (cadr rte))
+		      (t (cadr entry))))))))
+
+(defun readtable-excl-set (rt)
+   (cond ((or (not rt) (eq rt ytools-readtable*))
+	  (\\ (entry fcn) (setf (cadr entry) fcn)))
+	 (t
+	  (\\ (entry fcn)
+	     (let ((rte (assoc rt (cddr entry) :test #'eq)))
+		(cond ((not rte)
+		       (setq rte (tuple rt nil))
+		       (setf (cddr entry) (cons rte (cddr entry)))))
+		(setf (cadr rte) fcn))))))
 
 (defun excl-reader (srm ch)
    (setq ch (peek-char nil srm nil nil))
@@ -134,14 +162,13 @@
 					    "!" (string (read srm t nil t)))))))))
 	     (let ((e (assoc ch excl-handlers* :test #'eq)))
 		(cond (e
-		       (let ((r (assq *readtable* (cddr e))))
-			  (cond (r
+		       (let ((handler
+			        (funcall (readtable-excl-acc *readtable*) e)))
+			  (cond (handler
 				 (read-char srm)
-				 (funcall (cadr r) srm ch))
-				((cadr e)
-				 (read-char srm)
-				 (funcall (cadr e) srm ch))
-				(t (nonmacro)))))
+				 (funcall handler srm ch))
+				(t
+				 (nonmacro)))))
 		      (t (nonmacro))))))))
 
 (set-macro-character #\! #'excl-reader ytools-readtable*)
@@ -181,7 +208,7 @@
 	  `(cond (,tst (list ,@stuff)) (t '())   ))))
 )
 
-(cl:defmacro subr-synonym (syn subr &optional setf-able)
+(cl:defmacro subr-synonym (syn subr &optional setf-able (numargs 1))
    (cond ((eq syn subr)
 	  ;; If they're eq, the only reason to declare them synonyms
 	  ;; is that they looked different when input, as:
@@ -197,10 +224,16 @@
 	      ,@(include-if setf-able
 		   (let ((setf-name (intern (concatenate 'string
 					        (symbol-name syn)
-						"-" (symbol-name :setf)))))
+						"-" (symbol-name :setf))))
+			 (setf-args '()))
+		      (dotimes (i numargs)
+			 (setq setf-args
+			       (cons (intern
+				      (format nil "x~s" (- numargs i)))
+				     setf-args)))
 		      `(progn
-			  (defun ,setf-name (x v)
-			     (setf (,subr x) v))
+			  (defun ,setf-name (,@setf-args v)
+			     (setf (,subr ,@setf-args) v))
 			  (defsetf ,syn ,setf-name))))))))
 
 ;;;; This doesn't work due to a bug in Allegro
@@ -295,7 +328,7 @@
 (subr-synonym left car t)
 (subr-synonym right cdr t)
 
-(subr-synonym nthrest nthcdr t)
+(subr-synonym nthrest nthcdr nil)
 
 ;;;;(subr-synonym one first)
 ;;;;(subr-synonym two second t)
@@ -423,7 +456,7 @@
 	    (xvar (gensym)) (newvar (gensym)) (lvar (gensym))
             (storevar (car lstores)))
          (values `(,xvar ,@ltemps ,lvar ,entry-var)
-                 `(,x ,@lvals ,lacc (assq ,xvar ,lvar))
+                 `(,x ,@lvals ,lacc (assoc ,xvar ,lvar :test #'eq))
                  `(,newvar)
                  `(progn
                      (cond ((not ,entry-var)
@@ -525,23 +558,25 @@
 				  (values `(,@(ldiff b tl) ,@(cddr tl))
 					  (cadr tl)))
 				 (t
-				  (values b nil))))
+				  (values b '*readtable*))))
       (let ((fun-name (intern (format nil "excl-handler-~a" char))))
 	 `(progn
 	     (defun ,fun-name ,args
 		,@b)
-	     (let ((e (assq ',char excl-handlers*)))
+	     (let ((e (assoc ',char excl-handlers* :test #'eq)))
 		(cond ((not e)
 		       (setq e (tuple ',char nil))
 		       (setq excl-handlers* (cons e excl-handlers*))))
-		,(cond (rt
-			`(let ((rte (assq ,rt (cddr e))))
-			    (cond ((not rte)
-				   (setq rte (tuple ,rt nil))
-				   (setf (cddr e) (cons rte (cddr e)))))
-			    (setf (cadr rte) #',fun-name)))
-		       (t
-			`(setf (cadr e) #',fun-name))))))))
+		(funcall (readtable-excl-set ,rt) e #',fun-name))))))
+
+;;;;                  (cond (rt
+;;;;			`(let ((rte (assoc ,rt (cddr e) :test #'eq)))
+;;;;			    (cond ((not rte)
+;;;;				   (setq rte (tuple ,rt nil))
+;;;;				   (setf (cddr e) (cons rte (cddr e)))))
+;;;;			    (setf (cadr rte) #',fun-name)))
+;;;;		       (t
+;;;;			`(setf (cadr e) #',fun-name)))
 
 (def-excl-dispatch #\( (srm ch)
    (setq ch (peek-char t srm))

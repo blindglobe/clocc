@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: bq.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: bq.lisp,v 1.3 2004/08/09 21:35:49 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -160,6 +160,9 @@
 (set-macro-character #\, #'bq-comma-reader nil ytools-readtable*)
 
 (def-excl-dispatch #\` (srm _)
+   (backquote-read srm (\\ (lev read-res) `(bq-backquote ,lev ,read-res))))
+
+(defun backquote-read (srm builder)
   (let ((lev (or (bq-read-lev srm)
 		 (cond ((null bq-levs*) 1)
 		       (t false)))))
@@ -177,7 +180,7 @@
 		  (signal-problem bq-reader
 				  "Unnumbered internal backquote !`" a
 		     (:continue "I'll assign it a number "))))
-	   `(bq-backquote ,lev ,a)))))
+	   (funcall builder lev a)))))
 
 ;;;;(set-dispatch-macro-character #\! #\` #'bq-reader ytools-readtable*)
 

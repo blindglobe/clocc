@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 1.6 2004/07/12 22:28:02 airfoyle Exp $
+;;;$Id: setter.lisp,v 1.7 2004/08/09 21:35:49 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -394,6 +394,8 @@
 			   dat-name)))
 	       (t
 		(multi-match-codes 'or items dat-name))))))
+
+(datafun match-code :|| :\|)
 
 ;;;;(datafun match-code \?or \|)
 

@@ -8,16 +8,18 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.4 2000/05/01 20:20:09 sds Exp $
+;;; $Id: clocc.lisp,v 1.5 2000/05/12 18:12:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
 
 ;; fix some bugs
 (eval-when (load compile eval)
-  #+(or clisp gcl) (declaim (declaration values))
   #+allegro
   (progn
+    ;; All code here is supposed to be ANSI CL compliant,
+    ;; so there is no use in this annoying warning
+    (setq comp:*cltl1-compile-file-toplevel-compatibility-p* nil)
     ;; Duane Rettig <duane@franz.com>:
     ;; TIME reports 32 other bytes too many CL unless tuned with
     (setq excl::time-other-base 32)
@@ -43,7 +45,6 @@
                          stream "Meaningless character name ~A"
                          (string-upcase charstring)))))))
              readtable))))
-  #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
   #+allegro-v4.3                ; From Erik Naggum <erik@naggum.no>
   (unless (member :key (excl:arglist #'reduce) :test #'string=)
     (setq excl:*compile-advice* t)
@@ -53,6 +54,12 @@
           (remf (cddr excl:arglist) :key)
           (setf (second excl:arglist)
                 (map 'vector key (second excl:arglist)))))))
+  #+clisp (setq clos::*warn-if-gf-already-called* nil)
+  #+cmu (progn
+          (pushnew 'compile pcl::*defclass-times*)
+          (pushnew 'compile pcl::*defgeneric-times*)
+          (pushnew 'compile pcl::*defmethod-times*))
+  #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
   #-(or allegro clisp mcl)
   (define-setf-expander values (&rest places &environment env)
     (loop :for pl :in places :with te :and va :and ne :and se :and ge :do

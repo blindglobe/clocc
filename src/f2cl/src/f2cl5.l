@@ -633,7 +633,8 @@
        (format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
        (format t "*functions used* = ~S~%" *functions-used*)
        (format t "external func    = ~S~%" *external_function_names*)
-       (format t "*subprog_common_vars* = ~a~%" *subprog_common_vars*)
+       (format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
+       (format t "*common_array_dims*   = ~S~%" *common_array_dims*)
        (format t "*explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
        (maphash #'(lambda (key val)
 		    (format t "~A => ~A~%" key val))
@@ -1254,9 +1255,9 @@
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
-			 `(declare (type (,*array-type* (member t nil) ,(f2cl-array-total-size (cadar decl)))
+			 `(declare (type (,*array-type* logical ,(f2cl-array-total-size (cadar decl)))
 				    ,vble_name))
-			 `(declare (type (member t nil) ,vble))))))
+			 `(declare (type logical ,vble))))))
 	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return 
 		       (if (cdar decl) 
@@ -1401,14 +1402,14 @@
 
 ; declare a special (common) variable
 (defun make-special-var-decl (v)
-   (prog (dim)
-    (return
-     (cond ; check if v is an array 
-           ((setq dim (member v *common_array_dims*))
-            `(declare (type (,*array-type* ,(get_array_type v nil) ',(cadr dim)) 
-                            ,(check-reserved-lisp-names v))))
-           ; else make ordinary declaration
-           (t (make-declaration v))))))
+  (let ((dim (member v *common_array_dims*)))
+    (cond				; check if v is an array 
+      (dim
+       `(declare (type (,*array-type* ,(get_array_type v nil)
+			,(f2cl-array-total-size (cadr dim))) 
+		  ,(check-reserved-lisp-names v))))
+					; else make ordinary declaration
+      (t (make-declaration v)))))
 
 (defparameter +reserved-lisp-names+
   '(t pi nil funcall prog prog1 progn mapcar map mapc))
@@ -2075,24 +2076,34 @@
 				 :key #'third))
 		     (var-type (if decl (second decl) nil))
 		     (dims (cond ((and (listp var-type)
-				       (subtypep (first var-type) 'array)
+				       (subtypep var-type 'array)
 				       (not (subtypep var-type 'string)))
-				  (format t "array var-type = ~A~%" var-type)
-				  (mapcar #'(lambda (x)
-					      (declare (ignore x))
-					      0)
-					  (lookup-array-bounds var)))
+				  ;;(format t "array var-type = ~A ~A~%" var var-type)
+				  ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+
+				  ;; If the dimension of the array is
+				  ;; a number, use the actual
+				  ;; dimension.  Otherwise use 0.
+				  (if (every #'numberp (third var-type))
+				      (third var-type)
+				      0)
+				  )
 				 (t nil)))
 		     (var-init (cond ((and (listp var-type)
 					   (subtypep (first var-type) 'array))
-				      `(make-array ',dims :element-type ',(second var-type)))
+				      `(make-array ',dims :element-type ',(second var-type)
+					:initial-element ,(if (subtypep (second var-type) 'logical)
+							      nil
+							      (coerce 0 (second var-type)))))
+				     ((subtypep var-type 'logical)
+				      nil)
 				     (t
 				      (coerce 0 var-type)))))
 		;; Initialize the slot with a 0 of the appropriate
 		;; type (for scalars) or a zero element array of the
 		;; appropriate dimensions for array slots.
 		(if dims
-		    `(,var ,var-init :type (,*array-type* ,(second var-type) ,(subst '* 0 dims)))
+		    `(,var ,var-init :type (,*array-type* ,(second var-type) (,(subst '* 0 dims))))
 		    `(,var ,var-init :type ,var-type))))
 	  varlist))
 
@@ -2101,6 +2112,12 @@
 (defun make-common-block-structure (common_var_decls)
   (let ((res '()))
     (maphash #'(lambda (key varlist)
+		 ;;(format t "key varlist = ~S ~S~%" key varlist)
+		 ;;(format t "res = ~S~%" res)
+		 ;; The varlist looks something like (v1 v2 v3
+		 ;; (v3-dims) v4 (v4-dims)).  That is if the variable
+		 ;; is an array, the following tiem in varlist gives
+		 ;; the dimensions of the array.
 		 (push `(defstruct (,key (:predicate ,(intern (concatenate 'string
 									   "IS-"
 									   (symbol-name key)
@@ -2114,8 +2131,8 @@
   (flet ((fixup-bounds (bounds)
 	   (mapcar #'(lambda (bound)
 		       (if (every #'numberp bound)
-			   (- (second bound) (first bound))
-			   `(- ,(second bound) ,(first bound))))
+			   (1+ (- (second bound) (first bound)))
+			   `(1+ (- ,(second bound) ,(first bound)))))
 		   bounds)))
     (let ((initializer '()))
       (dolist (var varlist)
@@ -2129,10 +2146,20 @@
 			   (t nil)))
 	       (var-init (cond ((and (listp var-type)
 				     (subtypep (first var-type) 'array))
-				`(make-array (list ,@dims) :element-type ',(second var-type)))
+				;; If the dimensions are numbers,
+				;; we've already initialized the array
+				;; in the structure definition.
+				(unless (every #'numberp dims)
+				  `(make-array (list ,@dims) :element-type ',(second var-type)
+				  :initial-element ,(cond ((subtypep (second var-type) 'logical)
+							   nil)
+							  (t
+							   (coerce 0 (second var-type)))))))
+			       ((subtypep var-type 'logical)
+				nil)
 			       (t
 				(coerce 0 var-type)))))
-	  (when dims
+	  (when (and dims var-init)
 	    (setf initializer (append initializer
 				      `(,(intern (symbol-name var) "KEYWORD") ,var-init))))))
       initializer)))
@@ -2166,8 +2193,20 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.61 2000/08/07 18:55:03 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.62 2000/08/09 22:45:17 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.62  2000/08/09 22:45:17  rtoy
+;;; o In MAKE-DECLARATION, use the LOGICAL type instead of (MEMBER T NIL)
+;;;   in declaring arrays.
+;;; o MAKE-SPECIAL-VAR-DECL was not returning the right dimensions.
+;;;   (After the conversion to 1-D arrays.)
+;;; o In MAKE-COMMON-BLOCK-VARS, try to initialize arrays to the right
+;;;   size and values.  (Particularly for logical arrays.)
+;;; o In MAKE-COMMON-BLOCK-VAR-INIT, we didn't compute the array bounds
+;;;   correctly.  Also, if we know the initializer for the common block
+;;;   structure element initialized the array (because the dimension was a
+;;;   number), don't do it when creating the structure.
+;;;
 ;;; Revision 1.61  2000/08/07 18:55:03  rtoy
 ;;; GET-ARG-DECL was confused by arrays of strings.  We return the type
 ;;; ARRAY-STRINGS now.  (Need better names for these types or need to fix

@@ -608,9 +608,12 @@
 ;;;       Harlequin LispWorks
 ;;;       CLISP (CLISP3 [SPARC])
 ;;;       Symbolics XL12000 (Genera 8.3)
+;;;       Scieneer Common Lisp (SCL) 1.1
+;;;       Macintosh Common Lisp
+;;;       ECL
 ;;;
 ;;;    DEFSYSTEM needs to be tested in the following lisps:
-;;;       Macintosh Common Lisp
+;;;       OpenMCL
 ;;;       Symbolics Common Lisp (8.0)
 ;;;       KCL (June 3, 1987 or later)
 ;;;       AKCL (1.86, June 30, 1987 or later)
@@ -861,6 +864,7 @@
       :clisp
       :sbcl
       :cormanlisp
+      :scl
       (and allegro-version>= (version>= 4 1)))
 (eval-when #-(or :lucid :cmu17 :cmu18)
            (:compile-toplevel :load-toplevel :execute)
@@ -989,7 +993,7 @@
 #+cormanlisp
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
-#-(or :sbcl :cltl2 :lispworks :ecl)
+#-(or :sbcl :cltl2 :lispworks :ecl :scl)
 (in-package "MAKE" :nicknames '("MK"))
 
 ;;; For CLtL2 compatible lisps...
@@ -1037,7 +1041,11 @@
 (defpackage "MAKE" (:use "COMMON-LISP")
   (:nicknames "MK"))
 
-#+(or :cltl2 :lispworks)
+#+:scl
+(defpackage :make (:use :common-lisp)
+  (:nicknames :mk))
+
+#+(or :cltl2 :lispworks :scl)
 (eval-when (compile load eval)
   (in-package "MAKE"))
 
@@ -1158,7 +1166,7 @@
 		    #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
 |#
 
-#-(or :PCL :CLOS)
+#-(or :PCL :CLOS :scl)
 (when (find-package "PCL")
   (pushnew :pcl *modules*)
   (pushnew :pcl *features*))
@@ -1195,10 +1203,12 @@
 #-cormanlisp
 (defun home-subdirectory (directory)
   (concatenate 'string
-	#+(or :sbcl :cmu) "home:"
-	#-(or :sbcl :cmu) (let ((homedir (user-homedir-pathname)))
-		 (or (when homedir (namestring homedir))
-		     "~/"))
+	#+(or :sbcl :cmu :scl)
+	"home:"
+	#-(or :sbcl :cmu :scl)
+	(let ((homedir (user-homedir-pathname)))
+	  (or (and homedir (namestring homedir))
+	      "~/"))
 	directory))
 
 #+cormanlisp
@@ -1233,7 +1243,7 @@
     #+ACLPC      (current-directory)
     #+:allegro   (excl:current-directory)
     #+:sbcl      (progn *default-pathname-defaults*)
-    #+:CMU       (ext:default-directory)
+    #+(or :cmu :scl)       (ext:default-directory)
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>
     ;; Somehow it is better to qualify default-directory in CMU with
     ;; the appropriate package (i.e. "EXTENSIONS".)
@@ -1360,7 +1370,7 @@
 	 ;; PA is Precision Architecture, HP's 9000/800 RISC cpu
 	 #+(and Lucid PA)		      ("lisp" . "hbin")
          #+excl ("cl"   . ,(pathname-type (compile-file-pathname "foo.cl")))
-         #+CMU  ("lisp" . ,(or (c:backend-fasl-file-type c:*backend*) "fasl"))
+         #+(or :cmu :scl)  ("lisp" . ,(or (c:backend-fasl-file-type c:*backend*) "fasl"))
 ;	 #+(and :CMU (not (or :sgi :sparc)))  ("lisp" . "fasl")
 ;        #+(and :CMU :sgi)                    ("lisp" . "sgif")
 ;        #+(and :CMU :sparc)                  ("lisp" . "sparcf")
@@ -1503,6 +1513,9 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 			   "sbcl" " " (lisp-implementation-version))
   #+cmu       (concatenate 'string
 		"cmu" " " (lisp-implementation-version))
+  #+scl       (concatenate 'string
+		"scl" " " (lisp-implementation-version))
+
   #+kcl       "kcl"
   #+IBCL      "ibcl"
   #+akcl      "akcl"
@@ -1529,10 +1542,10 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 		  #+(and :sgi :allegro-version>= (version>= 4 2))
 		  (machine-version)))
 	(software (software-type-translation
-		   #-(and :sgi (or :cmu :sbcl
+		   #-(and :sgi (or :cmu :sbcl :scl
 				   (and :allegro-version>= (version>= 4 2))))
 		   (software-type)
-		   #+(and :sgi (or :cmu :sbcl
+		   #+(and :sgi (or :cmu :sbcl :scl
 				   (and :allegro-version>= (version>= 4 2))))
 		   (operating-system-version)))
 	(lisp (compiler-type-translation (compiler-version))))
@@ -2156,9 +2169,10 @@ D
 
 ||#
 
+;;; The following is a change proposed by DTC for SCL.
+;;; Maybe it could be used all the time.
 
-
-
+#-scl
 (defun new-file-type (pathname type)
   ;; why not (make-pathname :type type :defaults pathname)?
   (make-pathname
@@ -2168,6 +2182,18 @@ D
    :name (pathname-name pathname)
    :type type
    :version (pathname-version pathname)))
+
+
+#+scl
+(defun new-file-type (pathname type)
+  ;; why not (make-pathname :type type :defaults pathname)?
+  (make-pathname
+   :host (pathname-host pathname :case :common)
+   :device (pathname-device pathname :case :common)
+   :directory (pathname-directory pathname :case :common)
+   :name (pathname-name pathname :case :common)
+   :type (string-upcase type)
+   :version (pathname-version pathname :case :common)))
 
 
 
@@ -2620,11 +2646,19 @@ D
 	    (make-pathname :host (when (component-host component)
 				   ;; MCL2.0b1 and ACLPC cause an error on
 				   ;; (pathname-host nil)
-				   (pathname-host (component-host component)))
-			   :directory (pathname-directory pathname)
+				   (pathname-host (component-host component)
+						  #+scl :case #+scl :common
+						  ))
+			   :directory (pathname-directory pathname
+						  #+scl :case #+scl :common
+						  )
 			   ;; Use :directory instead of :defaults
-			   :name (pathname-name pathname)
-			   :type (component-extension component type)
+			   :name (pathname-name pathname
+						  #+scl :case #+scl :common
+						  )
+			   :type #-scl (component-extension component type)
+			         #+scl (string-upcase
+					(component-extension component type))
 			   :device
 			   #+(and :CMU (not (or :cmu17 :cmu18)))
 			   :absolute
@@ -2633,8 +2667,12 @@ D
 			   #-(or :sbcl (and :CMU (not (or :cmu17 :cmu18))))
 			   (let ((dev (component-device component)))
 			     (if dev
-                                 (pathname-device dev)
-                                 (pathname-device pathname)))
+                                 (pathname-device dev
+						  #+scl :case #+scl :common
+						  )
+                                 (pathname-device pathname
+						  #+scl :case #+scl :common
+						  )))
 			   ;; :version :newest
 			   ))))))
 
@@ -3321,7 +3359,7 @@ D
 	  ;; CL implementations may uniformly default this to nil
 	  (let ((*load-verbose* #-common-lisp-controller t
 				#+common-lisp-controller nil) ; nil
-		#-(or MCL CMU CLISP ECL :sbcl lispworks)
+		#-(or MCL CMU CLISP ECL :sbcl lispworks scl)
 		(*compile-file-verbose* t) ; nil
 		#+common-lisp-controller
 		(*compile-print* nil)
@@ -3343,7 +3381,7 @@ D
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (find-system name :load)))
-	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp)
+	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp scl)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
 		     (ignore *compile-verbose* #-MCL *compile-file-verbose*)
 		     (optimize (inhibit-warnings 3)))
@@ -3528,7 +3566,7 @@ D
 		(eval (component-finally-do component))))
 
 	  ;; add the banner if needed
-	  #+cmu
+	  #+(or cmu scl)
 	  (when (component-banner component)
 	    (unless (stringp (component-banner component))
 	      (error "The banner should be a string, it is: ~S"
@@ -3853,12 +3891,12 @@ D
 
 ;;; *** PseudoScheme Language Definition
 (defun scheme-compile-file (filename &rest args)
-  (let ((scheme-package (find-package "SCHEME")))
-    (apply (symbol-function (find-symbol "COMPILE-FILE"
-					       scheme-package))
+  (let ((scheme-package (find-package '#:scheme)))
+    (apply (symbol-function (find-symbol (symbol-name 'compile-file)
+					 scheme-package))
 	   filename
 	   (funcall (symbol-function
-		     (find-symbol "INTERACTION-ENVIRONMENT"
+		     (find-symbol '#:interaction-environment
 				     scheme-package)))
 	   args)))
 
@@ -3885,7 +3923,7 @@ D
 	      (format nil "~A~@[ ~{~A~^ ~}~]"
 		      program arguments))
   #+(or :kcl :ecl) (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
-  #+:cmu (extensions:run-program program arguments)
+  #+(or :cmu :scl) (extensions:run-program program arguments)
   #+:sbcl (sb-ext:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
 		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
@@ -3937,13 +3975,13 @@ D
 		     error-file
 		     error-output
 		     verbose)
-  #-cmu (declare (ignore error-file error-output))
+  #-(or cmu scl) (declare (ignore error-file error-output))
 
   (flet ((make-useable-stream (&rest streams)
 	   (apply #'make-broadcast-stream (delete nil streams)))
 	 )
-    (let (#+cmu (error-file error-file)
-	  #+cmu (error-file-stream nil)
+    (let (#+(or cmu scl) (error-file error-file)
+	  #+(or cmu scl) (error-file-stream nil)
 	  (verbose-stream nil)
 	  (old-timestamp (file-write-date output-file))
 	  (fatal-error nil)
@@ -3951,7 +3989,7 @@ D
 	  )
       (unwind-protect
 	   (progn
-	     #+cmu
+	     #+(or cmu scl)
 	     (setf error-file
 		   (when error-file
 		     (default-output-pathname error-file
@@ -3974,9 +4012,9 @@ D
 		     arguments)
 
 	     (setf fatal-error
-		   #-cmu
+		   #-(or cmu scl)
 		   (and (run-unix-program program arguments) nil) ; Incomplete.
-		   #+cmu
+		   #+(or cmu scl)
 		   (let* ((error-output
 			   (make-useable-stream error-file-stream
 						(if (eq error-output t)
@@ -4001,7 +4039,7 @@ D
 		     fatal-error
 		     fatal-error))
 
-	#+cmu
+	#+(or cmu scl)
 	(when error-file
 	  (close error-file-stream)
 	  (unless (or fatal-error (not output-file-written))
@@ -4069,7 +4107,7 @@ D
   :compiler #'c-compile-file
   :loader #+:lucid #'load-foreign-files
           #+:allegro #'load
-          #+:cmu #'alien:load-foreign
+          #+(or :cmu :scl) #'alien:load-foreign
           #+:sbcl #'sb-alien:load-foreign
 	  #+(and :lispworks :unix (not :linux)) #'link-load:read-foreign-modules
 	  #+(and :lispworks (or (not :unix) :linux)) #'fli:register-module
@@ -4078,6 +4116,7 @@ D
 		:allegro
 		:cmu
 		:sbcl
+		:scl
 		:lispworks
 		:ecl :gcl :kcl)
 	  (lambda (&rest args)
@@ -4181,10 +4220,10 @@ D
 			  source-pname
 			  :output-file
 			  output-file
-			  #+CMU :error-file
-			  #+CMU (and *cmu-errors-to-file*
-				     (component-full-pathname component
-							      :error))
+			  #+(or :cmu :scl) :error-file
+			  #+(or :cmu :scl) (and *cmu-errors-to-file*
+						(component-full-pathname component
+									 :error))
 			  #+(and CMU (not :new-compiler))
 			  :errors-to-terminal
 			  #+(and CMU (not :new-compiler))

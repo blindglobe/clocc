@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-04-16 Fri 11:54:05 EDT sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-04-19 Mon 11:55:02 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.23 1999/04/16 16:01:18 sds Exp $
+;;; $Id: url.lisp,v 1.24 1999/04/19 15:56:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.24  1999/04/19 15:56:12  sds
+;;; (*url-default-max-retry*): new user variable, the
+;;; default for the `max-retry' key.
+;;;
 ;;; Revision 1.23  1999/04/16 16:01:18  sds
 ;;; (with-tag): added `value' key; better default for `terpri'.
 ;;; (with-open-html): added `head', `comment' and `footer' keys;
@@ -498,6 +502,9 @@ The argument can be:
   "*The number of seconds to sleep when necessary.")
 (defcustom *url-default-timeout* (real 0) 86400
   "*The default timeout, in seconds.")
+(defcustom *url-default-max-retry* (or null index-t) nil
+  "*The default value of max-retry.
+If nil, retry ad infinitum, otherwise a positive fixnum.")
 
 (defun sleep-mesg (sleep out mesg)
   "Sleep for a random period of up to SLEEP seconds.
@@ -530,7 +537,8 @@ and evaluate TIMEOUT-FORMS."
   (eq prot :time))
 
 (defun open-socket-retry (host port &key (err *standard-output*) bin
-                          (sleep *url-default-sleep*) max-retry
+                          (sleep *url-default-sleep*)
+                          (max-retry *url-default-max-retry*)
                           (timeout *url-default-timeout*))
   "Open a socket connection, retrying until success."
   (declare (simple-string host) (fixnum port) (type (or null stream) err)
@@ -552,14 +560,15 @@ and evaluate TIMEOUT-FORMS."
             (mesg :log err "~%Error connecting: ~a~%" co)))
         :when (and err sock) :do (mesg :log err "done: ~a~%" sock)
         :when (and sock (open-stream-p sock)) :return sock
-        :when (and max-retry (> ii max-retry)) :return err-cond
+        :when (and max-retry (>= ii max-retry)) :return err-cond
         :when (>= (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-socket-retry :host host :port port
                    :time timeout)
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
 (defun open-url (url &key (err *standard-output*) (sleep *url-default-sleep*)
-                 (timeout *url-default-timeout*) max-retry)
+                 (timeout *url-default-timeout*)
+                 (max-retry *url-default-max-retry*))
   "Open a socket connection to the URL.
 Issue the appropriate initial commands:
  if this is an HTTP URL, also issue the GET command;
@@ -621,7 +630,8 @@ the error `timeout' is signaled."
   "The time when the current connection was open.")
 (makunbound '*url-opening-time*)
 
-(defmacro with-open-url ((socket url &key (rt '*readtable*) err max-retry
+(defmacro with-open-url ((socket url &key (rt '*readtable*) err
+                                 (max-retry '*url-default-max-retry*)
                                  (timeout '*url-default-timeout*))
                          &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
@@ -789,9 +799,9 @@ Retry (+ 1 RETRY) times if the file length doesn't match the expected."
           ((error "Wrong file length: ~:d (expected: ~:d [~@:d])"
                   tot len (- tot len))))))
 
-(defun url-ftp-get (url loc &rest opts &key (out *standard-output*) max-retry
-                    (timeout *url-default-timeout*) (err *error-output*)
-                    &allow-other-keys)
+(defun url-ftp-get (url loc &rest opts &key (out *standard-output*)
+                    (err *error-output*) (max-retry *url-default-max-retry*)
+                    (timeout *url-default-timeout*) &allow-other-keys)
   "Get the file specified by the URL, writing it into a local file.
 The local file is located in directory LOC and has the same name
 as the remote one."
@@ -888,8 +898,8 @@ This is initialized based on `mail-host-address'.")
                :when collect :collect st)
       (unless (streamp out) (close str)))))
 
-(defun url-get-news (url loc &key (out *standard-output*) re max-retry
-                     (err *error-output*))
+(defun url-get-news (url loc &key (out *standard-output*) (err *error-output*)
+                     (max-retry *url-default-max-retry*) re)
   "Get the news article to the OUT stream.
 When RE is supplied, articles whose subject match it are retrieved."
   (declare (type url url) (stream out))
@@ -1087,7 +1097,7 @@ By default nothing is printed."
 
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)
                  (err *error-output*) (timeout *url-default-timeout*)
-                 (proc #'identity) max-retry)
+                 (proc #'identity) (max-retry *url-default-max-retry*))
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
 itself. FMT defaults to \"~3d: ~a~%\".
@@ -1101,7 +1111,8 @@ This is mostly a debugging function, to be called interactively."
           :do (format out fmt ii
                       (funcall proc (string-right-trim +whitespace+ rr))))))
 
-(defun url-get (url loc &key (timeout *url-default-timeout*) max-retry
+(defun url-get (url loc &key (timeout *url-default-timeout*)
+                (max-retry *url-default-max-retry*)
                 (err *error-output*) (out *standard-output*))
   "Get the URL.
 This is the function to be called in programs.
@@ -1145,8 +1156,9 @@ Keywords: `timeout', `max-retry', `out', `err'."
                                         (subseq str-address 0 pos)))
            :fmt "~*~a~%" keys)))
 
-(defun dump-url-tokens (url &key (fmt "~3d: ~a~%") (out *standard-output*)
-                        (err *error-output*) max-retry)
+(defun dump-url-tokens (url &key (fmt "~3d: ~a~%")
+                        (out *standard-output*) (err *error-output*)
+                        (max-retry *url-default-max-retry*))
   "Dump the URL token by token.
 See `dump-url' about the optional parameters.
 This is mostly a debugging function, to be called interactively."

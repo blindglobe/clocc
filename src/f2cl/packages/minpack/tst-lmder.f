@@ -46,7 +46,7 @@ C
 c
 c     Describe the possible functions
 c
-      print *, 'Enter prob no, dimensions m, n, and the number of 
+      print *, 'Enter prob no, dimensions n, m, and the number of 
      $     tries'
       print *, ' 1: linear function, full rank. m >= n'
       print *, ' 2: linear function, rank 1. m >= n'

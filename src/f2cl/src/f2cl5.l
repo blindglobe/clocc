@@ -635,7 +635,46 @@
 	       varlist))
      *common-blocks*)
     sym-lets))
-  
+
+(defun coerce-parameter-assign (lhs rhs)
+  (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+	 (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+    ;;(format t "~&")
+    ;;(format t "lhs = ~A, type ~A~%" lhs lhs-type)
+    ;;(format t "rhs = ~A, type ~A~%" rhs rhs-type)
+    (cond ((subtypep lhs-type 'string)
+	   (warn "Assignment of string in parameter statements may not be right.")
+	   rhs)
+	  (t
+	   (let ((new-rhs
+		  (cond ((find *coerce-assignments* '(t :always))
+			 `(coerce ,rhs (type-of ,lhs)))
+			((find *coerce-assignments* '(nil :never))
+			 rhs)
+			(t
+			 ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+			 ;; RHS.  Otherwise, coerce the RHS to the
+			 ;; type of the LHS.  However, we can't coerce
+			 ;; something to an integer.  Use truncate for
+			 ;; that.
+			 (cond ((or (eq t rhs-type)
+				    (eq t lhs-type)
+				    (subtypep rhs-type lhs-type))
+				;; No coercion is needed if the types
+				;; match, or if we can't determine the
+				;; type of the LHS or RHS.
+				rhs)
+			       ((and (subtypep lhs-type 'integer)
+				     (not (subtypep rhs-type 'integer)))
+				;; We're trying to set a integer
+				;; variable to non-integer value.  Use
+				;; truncate.
+				`(truncate ,rhs))
+			       (t
+				;; Haven't a clue, so coerce
+				`(coerce ,rhs ',lhs-type)))))))
+	     new-rhs)))))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -803,10 +842,17 @@
      ;;(format t "*key_params* = ~S~%" *key_params*)
      ;;(format t "key-params = ~S~%" key-params)
 
-     ;; Convert reserved names in parameter statements 
-     (setq key-params (mapcar #'(lambda (x) 
-                                  (list (check-reserved-lisp-names (car x)) (cadr x))) 
-			      *key_params*))
+     ;; Convert reserved names in parameter statements.  Coerce the
+     ;; bindings to the right type as well.
+     (setq key-params
+	   (mapcar #'(lambda (x)
+		       (let ((maybe-new-name (check-reserved-lisp-names (car x))))
+				    
+			 (list maybe-new-name
+			       (coerce-parameter-assign maybe-new-name (cadr x)))))
+		   *key_params*))
+     ;;(format t "key-params = ~S~%" key-params)
+     
      (setq key-params-decls (mapcar #'(lambda (param)
 				       (make-declaration (car param)))
 				   key-params))
@@ -2463,8 +2509,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.87 2002/03/06 23:04:10 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.88 2002/03/10 16:19:03 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.88  2002/03/10 16:19:03  rtoy
+;;; Assignments in PARAMETER statements need to have them coerced to the
+;;; right type.
+;;;
 ;;; Revision 1.87  2002/03/06 23:04:10  rtoy
 ;;; Actually handle Iw.m as Fortran would.
 ;;;

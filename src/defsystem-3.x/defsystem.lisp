@@ -3699,7 +3699,7 @@ D
 
 (defun c-compile-file (filename &rest args &key output-file error-file)
   ;; gcc -c foo.c -o foo.o
-  (declare (ignore args))
+  (declare (ignore args error-file))
   (run-unix-program *c-compiler*
 		    `("-c" ,filename ,@(if output-file `("-o" ,output-file)))))
 

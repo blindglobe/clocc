@@ -1,4 +1,4 @@
-# $Id: Makefile,v 2.12 2000/05/04 18:13:48 sds Exp $
+# $Id: Makefile,v 2.13 2000/05/11 17:07:34 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
@@ -14,12 +14,19 @@ ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \
 	$(TOP)/etc/GNU-GPL
 DOCFILES = $(SYSTEM).html entities.xml
 include $(TOP)/clocc.mk
+DUMPEXT := $(shell $(RUNLISP) -dumpext)
 
-image:		$(addsuffix .$(FASLEXT),$(BASE))
+ifneq ($(DUMPEXT),)
+image:		image$(DUMPEXT)
+image-net:	image-net$(DUMPEXT)
+image-script:	image-script$(DUMPEXT)
+endif
+
+image$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(BASE))
 	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image
 
-image-net:	$(addsuffix .$(FASLEXT),$(NET))
+image-net$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(NET))
 	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image-net
 
-image-script:	$(addsuffix .$(FASLEXT),$(SCRIPT))
+image-script$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(SCRIPT))
 	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image-script

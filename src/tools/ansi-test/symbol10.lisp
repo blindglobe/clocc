@@ -39,8 +39,7 @@ this is or a character, a symbol or a string.")
          (and (fboundp var) t)		; funktion. eigenschaft
          (and (fboundp var) (macro-function var) t) ; macro?
          (and (fboundp var)
-	      (#-(or cmu sbcl) lisp:special-form-p
-		 #+(or cmu sbcl) special-operator-p var)
+	      (special-operator-p var)
 	      t)			; spezialform?
          #-clisp
 	 (and (symbol-plist var) t)	; p-liste?

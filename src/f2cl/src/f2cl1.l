@@ -423,8 +423,7 @@ FILENAME                 File containing Fortran code
 	      )
 	    (translate-and-write-subprog 
 	     (introduce-continue
-	      (handle-extended-do
-	       (readsubprog-extract-format-stmts inport)))
+	      (readsubprog-extract-format-stmts inport))
 	     outport)))
         ))
     t)
@@ -2205,8 +2204,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.97 2002/03/07 19:00:39 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.98 2002/03/10 15:45:06 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.98  2002/03/10 15:45:06  rtoy
+;;; Oops.  A call to HANDLE-EXTENDED-DO was inadvertently left in.
+;;;
 ;;; Revision 1.97  2002/03/07 19:00:39  rtoy
 ;;; o Merge the extended DO handling with the
 ;;;   write-statement-with-format-string handling into one place.

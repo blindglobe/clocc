@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.15 2005/01/03 14:22:59 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.16 2005/01/07 16:45:15 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -71,6 +71,7 @@
 	     :type list)
    ;; -- back pointers to chunks this one is a member of the basis of
                     ;;;;; >>>> Bases-derivees
+		    ;;;;; <<<< update-basis
    (update-basis :accessor Chunk-update-basis
 		 :initarg :update-basis
 		 :initform !()
@@ -85,6 +86,7 @@
    (update-derivees :accessor Chunk-update-derivees
 		    :initform !()
 		    :type list)
+		    ;;;;; >>>> update-basis
    ;; -- back pointers to chunks this one is a member of the
    ;; update basis of
    (update-mark :accessor Chunk-update-mark
@@ -108,12 +110,14 @@
 ;;; disjuncts to be managed, except its default.
 ;;; This class is handled specially by 'chunk-manage', 'chunk-terminate-mgt',
 ;;; and 'chunks-update'. --
+;;;;; <<<< Or-chunk
 (defclass Or-chunk (Chunk)
    ((disjuncts :accessor Or-chunk-disjuncts
 	       :initarg :disjuncts)
     (default :accessor Or-chunk-default
 	     :initarg :default
 	     :initform false)))
+;;;;; >>>> Or-chunk
 
 ;;; We use the 'update-basis' slot for this now --
 ;;;;    ;; This is the disjunct from which 'chunk' is currently derived --
@@ -149,11 +153,13 @@
 	  (format srm "|~s|" (len (Or-chunk-disjuncts orch))))
 	 (t (format srm "<no disjuncts>"))))
 
+;;;;; <<<< derive
 (defgeneric derive (chunk))
 ;;; Recomputes chunk
 ;;;   and returns time when it changed (usually current universal time)
 ;;;   or false if it's up to date.
 ;;;   If it returns t, that's equivalent to returning (get-universal-time).
+;;;;; >>>> derive
 ;;; Important: 'derive' works purely locally, and in particular
 ;;; never calls 'chunk-update'; someone else is assumed
 ;;; to have done that.
@@ -177,42 +183,47 @@
    (cond ((and (null (Chunk-basis ch))
 	       (Chunk-managed ch))
 	  (leaf-chunk-update ch)))
+;;;;; <<<< _
 ;;; There is no point in doing this, because 'ch' has no derivees
 ;;; immediately after being created.   
 ;;;;   (set-latest-support-date ch)
+;;;;; >>>> _
    )
 
 (defmethod initialize-instance :after ((orch Or-chunk) &rest _)
    (cond ((slot-boundp orch 'disjuncts)
 	  (or-chunk-set-update-basis orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
-	     (pushnew orch (Chunk-derivees b)))
-	  (or-chunk-set-height orch)))
+	     (pushnew orch (Chunk-derivees b)))))
+   (cond ((slot-boundp orch 'default)
+	  (or-chunk-modify-height orch (Or-chunk-default orch))))
    orch)
 
 (defmethod (setf Or-chunk-disjuncts) :before (_ (orch Or-chunk))
    (cond ((slot-boundp orch 'disjuncts)
 	  (dolist (d (Or-chunk-disjuncts orch))
 	     (setf (Chunk-derivees d)
-		    (remove orch (Chunk-derivees d))))
-	  (or-chunk-set-height orch)))
+		    (remove orch (Chunk-derivees d))))))
    (setf (Chunk-update-basis orch) !())
    orch)
-
-(defun or-chunk-set-height (orch)
-	  (setf (Chunk-height orch)
-	        (+ 1 (max (chunks-max-height (Chunk-basis orch))
-			  (chunks-max-height (Or-chunk-disjuncts orch))))))
 
 ;;; All of this is mainly to make the internals of Or-chunks
 ;;; look reasonably consistent.  The final decision about
 ;;; the default and update-basis are actually made in 'chunk-manage'.
-(defmethod (setf Or-chunk-disjuncts) :after (_ (orch Or-chunk))
-   (dolist (d (Or-chunk-disjuncts orch))
+(defmethod (setf Or-chunk-disjuncts) :after (disjuncts (orch Or-chunk))
+   (dolist (d disjuncts)
       (setf (Chunk-derivees d)
 	    (adjoin orch (Chunk-derivees d))))
    (or-chunk-set-update-basis orch)
    orch)
+
+(defmethod (setf Or-chunk-default) :after (d (orch Or-chunk))
+   (or-chunk-modify-height orch d))
+
+(defun or-chunk-modify-height (orch default)
+   (let ((h-from-d (+ (Chunk-height default) 1)))
+      (cond ((> h-from-d (Chunk-height orch))
+	     (setf (Chunk-height orch) h-from-d)))))
 
 (defun chunk-is-leaf (ch)
    (null (Chunk-basis ch)))
@@ -272,6 +283,7 @@
       (setf (Chunk-update-derivees b)
 	    (adjoin ch (Chunk-update-derivees b)))))
 
+;;;;; <<<< chunk-requesters
 ;;; Returns management state of 'c' (normally true after this runs).
 (defun chunk-request-mgt (c)
    (cond ((or (not (Chunk-manage-request c))
@@ -279,57 +291,6 @@
 	  (setf (Chunk-manage-request c) true)
 	  (chunk-manage c))
 	 (t true)))
-
-;;; This doesn't call chunk-update, but presumably everyone who calls
-;;; this will call chunk-update immediately thereafter.
-(defun chunk-manage (chunk)
-   (cond ((Chunk-managed chunk)
-	  (cond ((eq (Chunk-managed chunk)
-		     ':in-transition)
-		 (error
-		    !"Chunk basis cycle detected at ~S" chunk 
-                     "~%     [-- chunk-manage]")))
-	  true)
-	 (t
-	  (let ((its-an-or (typep chunk 'Or-chunk)))
-	     (unwind-protect
-		(progn
-		   (setf (Chunk-managed chunk) ':in-transition)
-		   (dolist (b (Chunk-basis chunk))
-		      (chunk-manage b))
-		   (cond (its-an-or
-			  (or-chunk-set-update-basis chunk)
-			  (chunk-manage (first (Chunk-update-basis chunk)))))
-		   ;; If 'chunk' is a non-default disjunct
-		   ;; of an Or-chunk, then the default disjunct no
-		   ;; longer gets a reason to be managed from the Or.
-		   (dolist (d (Chunk-derivees chunk))
-		      (cond ((and (Chunk-managed d)
-				  (typep d 'Or-chunk))
-			     (let ((d-disjuncts (Or-chunk-disjuncts d))
-				   (d-default (Or-chunk-default d)))
-				(cond ((and (not (eq chunk d-default))
-					    (memq chunk d-disjuncts)
-					    (not (reason-to-manage d-default)))
-				       (setf (Chunk-update-basis d)
-					     (list chunk))
-				       (chunk-unmanage d-default))))))))
-	        ;; Normally this just sets (chunk-managed chunk)
-	        ;; to true, but not if an interrupt occurred --
-		(progn
-		    (setf (Chunk-managed chunk)
-			  (and (every #'Chunk-managed
-				      (Chunk-basis chunk))
-			       (or (not its-an-or)
-				   (some #'Chunk-managed
-					 (Or-chunk-disjuncts chunk)))))
-;;;;		    (format t "chunk-managed? ~s : ~s~%"
-;;;;			    chunk (Chunk-managed chunk))
-;;;;		    (cond ((not (Chunk-managed chunk))
-;;;;			   (setq ch* chunk)
-;;;;			   (break "Bogosity for ~s" ch*)))
-		 ))
-	     (Chunk-managed chunk)))))
 
 ;;; This terminates the explicit request for management.
 ;;; If 'propagate' is false, then the chunk will remain managed unless
@@ -401,17 +362,78 @@
 		       (setq found-one true)
 		       (return))))))
       (not found-one)))
+;;;;; >>>> chunk-requesters
+
+;;; This doesn't call chunk-update, but presumably everyone who calls
+;;; this will call chunk-update immediately thereafter.
+;;;;; <<<< chunk-managers
+;;; Returns management state of 'chunk' --
+(defun chunk-manage (chunk)
+   (cond ((Chunk-managed chunk)
+	  ;;;;; <<<< _ 
+	  ;; Omitted because in the paper we prove the check unnecessary!
+	  (cond ((eq (Chunk-managed chunk)
+		     ':in-transition)
+		 (error
+		    !"Chunk basis cycle detected at ~S" chunk 
+                     "~%     [-- chunk-manage]")))
+	  ;;;;; >>>> _
+	  true)
+	 (t
+	  (let ((its-an-or (typep chunk 'Or-chunk)))
+	     (unwind-protect
+		(progn
+		   ;;;;; <<<< temporarily-in-transition
+		   (setf (Chunk-managed chunk) ':in-transition)
+		   ;;;;; >>>> temporarily-in-transition
+		   (dolist (b (Chunk-basis chunk))
+		      (chunk-manage b))
+		   (cond (its-an-or
+			  (or-chunk-set-update-basis chunk)
+			  (chunk-manage (first (Chunk-update-basis chunk)))))
+		   ;; If 'chunk' is a non-default disjunct
+		   ;; of an Or-chunk, then the default disjunct no
+		   ;; longer gets a reason to be managed from the Or.
+		   (dolist (d (Chunk-derivees chunk))
+		      (cond ((and (Chunk-managed d)
+				  (typep d 'Or-chunk))
+			     (let ((d-disjuncts (Or-chunk-disjuncts d))
+				   (d-default (Or-chunk-default d)))
+				(cond ((and (not (eq chunk d-default))
+					    (memq chunk d-disjuncts)
+					    (not (reason-to-manage d-default)))
+				       (setf (Chunk-update-basis d)
+					     (list chunk))
+				       (chunk-unmanage d-default))))))))
+	        ;; Normally this just sets (chunk-managed chunk)
+	        ;; to true, but not if an interrupt occurred --
+		(progn
+		    (setf (Chunk-managed chunk)
+			  (and (every #'Chunk-managed
+				      (Chunk-basis chunk))
+			       (or (not its-an-or)
+				   (some #'Chunk-managed
+					 (Or-chunk-disjuncts chunk)))))
+;;;;		    (format t "chunk-managed? ~s : ~s~%"
+;;;;			    chunk (Chunk-managed chunk))
+;;;;		    (cond ((not (Chunk-managed chunk))
+;;;;			   (setq ch* chunk)
+;;;;			   (break "Bogosity for ~s" ch*)))
+		 ))
+	     (Chunk-managed chunk)))))
 
 ;;; Returns management state of 'c' --
 (defun chunk-unmanage (c)
    ;; This is called only by 'chunk-terminate-mgt' and 'chunk-manage',
    ;; and only after verifying that 'c' has no managed derivees --
    (cond ((Chunk-managed c)
+	  ;;;;; <<<< cycle-check
 	  (cond ((eq (Chunk-managed c)
 		     ':in-transition)
 		 (error
 		    "Chunk basis cycle detected at ~S" c
 		    "~%     [-- chunk-unmanage]")))
+	  ;;;;; >>>> cycle-check
 	  (unwind-protect
 	     (progn
 		(setf (Chunk-managed c)
@@ -458,10 +480,12 @@
 	       (setf (Chunk-managed c)
 		     (reason-to-manage c))))
 	 (t false)))
+;;;; >>>> chunk-managers
 
 ;;; Returns "the" chunk that gives a reason for 'ch' to be managed, either
 ;;; 'ch' itself if there's a request to manage it, or an appropriate
 ;;; derivee.  Returns false if there's no reason for it to be managed. --
+;;;;; <<<< reason-to-manage
 (defun reason-to-manage (ch)
    (cond ((Chunk-manage-request ch) ch)
 	 (t
@@ -485,6 +509,7 @@
 		  (or (eq j ch)
 		      (not (Chunk-managed j))))
 	       (Or-chunk-disjuncts orch))))
+;;;;; >>>> reason-to-manage
 
 (defvar update-no* 0)
 
@@ -661,28 +686,25 @@
 
 ;;; Run 'derive', update ch's date, and return t if date has moved 
 ;;; forward -- 
+;;;;; <<<< Or-chunk/derive
 (defmethod derive ((orch Or-chunk))
    (cond ((slot-is-empty orch 'disjuncts)
 	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
 		 orch))
 	 ((slot-is-empty orch 'default)
-	  (cerror "I will set it to the last disjunct"
-		  "Deriving Or-chunk with no default disjunct: ~s"
-		  orch)
-	  (setf (Or-chunk-default orch)
-	        (lastelt (Or-chunk-disjuncts orch)))))
-
-   (dolist (d (Or-chunk-disjuncts orch)
-	      (Chunk-date (Or-chunk-default orch)))
-;;; Alarmist --
-;;;;	      (error "Attempt to derive Or-chunk with no managed disjunct: ~s"
-;;;;		     orch)
-;;;   -- It's perfectly okay to update an unmanaged chunk, and an unmanaged
-;;;   Or-chunk can have unmanaged disjuncts.     
-      (cond ((and (Chunk-managed d)
-		  (or (chunk-is-leaf d)
-		      (chunk-up-to-date d)))
-	     (return-from derive (Chunk-date d))))))
+	  (error "Deriving Or-chunk with no default disjunct: ~s"
+		  orch)))
+   (let ((date nil))
+      (dolist (d (Or-chunk-disjuncts orch)
+		(or date
+		    (error "No disjunct of or-chunk ~s is managed" orch)))
+	 (cond ((and (Chunk-managed d)
+		     (or (chunk-is-leaf d)
+			 (chunk-up-to-date d)))
+		(cond ((or (not date)
+			   (> date (Chunk-date d)))
+		       (setq date (Chunk-date d)))))))))
+;;;;; >>>> Or-chunk/derive
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.

@@ -1,8 +1,8 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.7 2004/12/17 21:49:01 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.8 2005/01/07 16:45:16 airfoyle Exp $
 
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.

@@ -1,6 +1,6 @@
 /* clc-send-command  -*- Mode:C -*-
  
-   written by Peter Van Eynde, copyright 2002
+   written by Peter Van Eynde, copyright 2002,2003
 
    license: GPL v2
 
@@ -10,10 +10,13 @@
 #define _GNU_SOURCE
 #include <ftw.h>
 #include <stdio.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <grp.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -204,12 +207,51 @@ int main(int argc, char *argv[])
 
   hostinfo = gethostbyname( "localhost" );
   if (hostinfo == NULL)
-    reportsystemerror("could not gethostbyname");
+    reportsystemerror("could not gethostbyname, as I ask for localhost this is not possible, please check /etc/hosts");
 
   addr.sin_addr = *(struct in_addr *) hostinfo->h_addr;
 
   if (connect( socketfd, &addr, sizeof(addr)) != 0)
-    reportsystemerror("Could not connect!");
+    {
+      /* This cannot be. but I've seen error messages during a from-scratch reinstall,
+	 so we add logging to this to provoke bugreports */
+      /* fork yourself and drop priv. to send email */
+      if ( (fork())  == 0)
+	{
+	  FILE *mail_pipe;
+	  char command[4097];
+	  
+	  snprintf(command,4096,
+		   "/usr/bin/mail -s \"clc system failure during rebuilding\" root -e");
+	  command[4096]=(char) 0;
+	  
+	  mail_pipe = popen(command,"w");
+	  
+	  if (mail_pipe == NULL)
+	    reportsystemerror("Could not open a pipe to /usr/bin/mail");
+	  else
+	    {
+	      fprintf(mail_pipe,"
+Hello
+
+This is the clc-send-command reporting a system failure.
+
+I tried to contact  the clc-build-daemon that should be listed
+in /etc/inetd.conf as a daemon for port 8990/tcp, but this failed.
+
+This indicates a general system failure of the clc build system,
+could you please report this as a bug against common-lisp-controller
+and include your /etc/inetd.conf file and the output of the 
+command \"netstat -nvlpt |  grep 8990\" run as root.
+
+Thanks in advance, the clc maintainers.\n");
+	      fflush(mail_pipe);
+	      pclose(mail_pipe);
+	      exit(0);
+	    }
+	}
+      reportsystemerror("Could not connect!");
+    }
 
   stream = fdopen(socketfd, "r+");
 

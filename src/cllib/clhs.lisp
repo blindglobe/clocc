@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.1 2002/04/21 20:07:37 sds Exp $
+;;; $Id: clhs.lisp,v 3.2 2002/05/31 19:04:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -214,6 +214,7 @@
 
 (defun clhs-write-entities (file)
   "Write the CLHS entities into the file."
+  (unless *clhs-alist* (clhs-init))
   (with-timing ()
     (with-open-file (str file :direction :output :if-exists :supersede)
       (format t "~s: writing ~s..." 'clhs-write-entities file)

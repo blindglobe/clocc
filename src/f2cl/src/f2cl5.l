@@ -607,7 +607,27 @@
 	 `(,@(mapcar #'merge-ops expr)))))
 	 
  
-
+(defun insert-sym-macro (prog-bit)
+  (let ((sym-lets '()))
+    (maphash
+     #'(lambda (key varlist)
+	 (mapc #'(lambda (var)
+		   (let ((accessor-name
+			  (concatenate 'string
+				       (symbol-name key)
+				       "-"
+				       (symbol-name var)))
+			 (name
+			  (concatenate 'string
+				       "*"
+				       (symbol-name key)
+				       "-COMMON-BLOCK*")))
+		     (push `(,var (,(intern accessor-name) ,(intern name)))
+			   sym-lets)))
+	       varlist))
+     *common-blocks*)
+    `(symbol-macrolet ,sym-lets ,prog-bit)))
+  
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body special-proclamation
@@ -941,29 +961,15 @@
 				    (mapcar #'first key-params)))))
 
 
-     ;; Add symbol-macrolets to access the common block variables
+     ;; Add symbol-macrolets to access the common block
+     ;; variables. Also need to add symbol-macrolets to the
+     ;; *data-init* part if this is a Fortran block data subroutine.
      (when *subprog_common_vars*
-       (let ((sym-lets '()))
-	 (maphash
-	  #'(lambda (key varlist)
-	      (mapc #'(lambda (var)
-			(let ((accessor-name
-			       (concatenate 'string
-					    (symbol-name key)
-					    "-"
-					    (symbol-name var)))
-			      (name
-			       (concatenate 'string
-					    "*"
-					    (symbol-name key)
-					    "-COMMON-BLOCK*")))
-			  (push `(,var (,(intern accessor-name) ,(intern name)))
-				sym-lets)))
-		    varlist))
-	  *common-blocks*)
-	 (setf prog-bit `(symbol-macrolet ,sym-lets ,prog-bit))))
+       (setf prog-bit (insert-sym-macro prog-bit))
+       (when (and *data-init*
+		  (eq (cadr defun-bit) '/blockdata/))
+	 (setf *data-init* (list (insert-sym-macro *data-init*)))))
 
-     
      ;; Return 3 pieces: Any proclamations for special variables, the
      ;; declarations for the special variables, and, finally, the
      ;; function itself.
@@ -2163,8 +2169,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.79 2002/02/07 23:21:58 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.80 2002/02/08 04:27:31 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.80  2002/02/08 04:27:31  rtoy
+;;; To support BLOCK DATA subprograms, we need to have the data
+;;; initialization part of the code wrapped by symbol-macrolets.  Make it
+;;; so.  Move the common code to its own routine.
+;;;
 ;;; Revision 1.79  2002/02/07 23:21:58  rtoy
 ;;; MAKE-DECLARATION
 ;;; o For some reason when we were checking for implicitly declared

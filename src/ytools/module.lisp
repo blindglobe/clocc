@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.20 2005/03/18 15:19:33 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.21 2005/03/18 15:44:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -357,13 +357,30 @@ Not needed, because it's essentially identical to scan-depends-on
       (
 
 
+(def-slurp-task module-compile
+   :default (\\ (_ _) false))
+
 (defmethod derive ((comp-mod Compiled-module-chunk))
    (let ((module
 	    (Compiled-module-chunk-module comp-mod)))
       (dolist (c (YT-module-contents module))
 	 (cond ((not (equal (first c) '(:expansion)))
+		(forms-slurp (rest c)
+			     (list module-compile*)
+			     (list false)))))))
+
 		(dolist (e (rest c))
 		   (eval e)))))))
+
+(defmacro module-elements (specs)
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate specs filespecs-load-flags*)
+	 `(filespecs-do-load ',files ',flags ',readtab)))
+
+(datafun module-compile filespecs-load
+   (defun :^ (form _)
+      (
+
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))

@@ -1894,27 +1894,15 @@ ABS: NIL          REL: NIL               Result: ""
 (defun logical-pathname-p (thing)
   (typep (parse-namestring thing) 'logical-pathname))
 
-#-clisp
 (defun pathname-logical-p (thing)
   (typecase thing
     (logical-pathname t)
+    #+clisp ; CLisp has non conformant Logical Pathnames.
+    (pathname (pathname-logical-p (namestring thing)))
     (string (and (= 1 (count #\: thing)) ; Shortcut.
 		 (ignore-errors (translate-logical-pathname thing))
 		 t))
     (t nil)))
-
-#+clisp ; CLisp has non conformant Logical Pathnames.
-(defun pathname-logical-p (thing)
-  (typecase thing
-    (logical-pathname t)
-    (pathname (let ((pns (namestring thing)))
-		(and (= 1 (count #\: pns)) ; Shortcut.
-		     (logical-pathname-p pns))))
-    (string (and (= 1 (count #\: thing))	; Shortcut.
-		 (ignore-errors (translate-logical-pathname thing))
-		 t))
-    (t nil)))
-
 
 ;;; This affects only one thing.
 ;;; 19990707 Marco Antoniotti

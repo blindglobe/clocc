@@ -1,3 +1,11 @@
+common-lisp-controller (3.28) unstable; urgency=low
+
+  * NMU
+  * Rename some autobuild functions
+  * Move autobuild functions into /usr/bin
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 08:37:05 -0600
+
 common-lisp-controller (3.27) unstable; urgency=low
 
   * NMU

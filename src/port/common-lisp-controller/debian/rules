@@ -10,19 +10,22 @@ CLC_BIN		:= usr/bin/
 CLC_SRC 	:= usr/share/common-lisp/source/common-lisp-controller/
 
 SBIN_PROGS 	:= register-common-lisp-source unregister-common-lisp-source \
-		register-common-lisp-implementation unregister-common-lisp-implementation \
-		clc-reregister-all-impl clc-check-autobuild clc-only-compatible clc-not-compatible \
-		clc-autobuild-impl clc-build-daemon
+		register-common-lisp-implementation \
+		unregister-common-lisp-implementation \
+		clc-reregister-all-impl	clc-build-daemon
 
-BIN_PROGS	:= clc-send-command clc-autobuild-library
+BIN_PROGS	:= clc-send-command clc-autobuild-library clc-check-autobuild \
+		clc-autobuild-impl clc-only-autobuild
 
-CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp post-sysdef-install.lisp
+CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp \
+		 post-sysdef-install.lisp
 
-MAN_FILES := clc-send-command.1 clc-autobuild-library.1 \
-	clc-build-daemon.8 register-common-lisp-implementation.8 \
+MAN_FILES := clc-send-command.1 clc-build-daemon.8 \
+	register-common-lisp-implementation.8 \
 	register-common-lisp-source.8 unregister-common-lisp-implementation.8 \
-	unregister-common-lisp-source.8 clc-reregister-all-impl.8 clc-only-compatible.8 \
-	clc-not-compatible.8 clc-check-autobuild.8 clc-autobuild-impl.8
+	unregister-common-lisp-source.8 clc-reregister-all-impl.8 \
+	clc-only-autobuild.1 clc-check-autobuild.1 clc-autobuild-impl.1 \
+	clc-autobuild-library.1
 
 configure: configure-stamp
 configure-stamp:

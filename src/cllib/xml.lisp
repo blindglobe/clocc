@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.47 2004/07/16 15:34:54 sds Exp $
+;;; $Id: xml.lisp,v 2.48 2004/07/16 16:32:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,6 +19,8 @@
   (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `read-from-stream'
   (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `open-url'
+  (require :cllib-url (translate-logical-pathname "cllib:url"))
   ;; `required-argument'
   (require :port-ext (translate-logical-pathname "port:ext"))
   ;; `socket'
@@ -74,13 +76,16 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
              (lambda (&optional junk)
                (declare (ignore junk))
                (let ((str (handler-case
-                              (open (merge-pathnames data (xml-path stream))
-                                    :direction :input)
+                              (if (url-string-p data)
+                                (open-url (url data))
+                                (open (merge-pathnames data (xml-path stream))
+                                      :direction :input))
                             (error (err)
                               (mesg :err t "~s: cannot open file [~s]/[~s]~%"
                                     'xml-read-entity data (xml-path stream t))
                               (error err)))))
-                 (mesg :log t "~& * [~a ~:d bytes]..." data (file-length str))
+                 (mesg :log t "~& * [~a ~:d bytes]..."
+                       data (stream-length str))
                  str)))
             ((eq type 'xml-tags::cdata)
              (lambda (&optional string)
@@ -470,7 +475,7 @@ The third value is the number of sub-elements"
   (:documentation "The input stream for reading XML."))
 
 (defun stream-length (st)
-  "A wrap around for `file-stream'."
+  "A wrap around for `file-length'."
   (etypecase st
     ((or file-stream #+allegro-v6.0 excl:file-simple-stream)
      (file-length st))

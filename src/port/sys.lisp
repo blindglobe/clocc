@@ -8,31 +8,8 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.7 2000/03/23 04:06:59 sds Exp $
+;;; $Id: sys.lisp,v 1.8 2000/04/03 21:09:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
-;;; $Log: sys.lisp,v $
-;;; Revision 1.7  2000/03/23 04:06:59  sds
-;;; (+whitespace+): moved to cllib/withtype
-;;;
-;;; Revision 1.6  2000/03/22 23:54:05  sds
-;;; use package prefixes for CMU CL and GCL
-;;;
-;;; Revision 1.5  2000/03/03 22:01:03  sds
-;;; fixed provide statements
-;;;
-;;; Revision 1.4  2000/03/01 20:01:36  sds
-;;; (arglist, class-slot-list): new functions
-;;;
-;;; Revision 1.3  2000/03/01 16:02:03  sds
-;;; (variable-special-p): new function
-;;;
-;;; Revision 1.2  2000/02/18 21:16:45  sds
-;;; in-package :port now; make system works
-;;;
-;;; Revision 1.1  1999/11/24 17:07:09  sds
-;;; Cross-implementation Portability System
-;;;
-;;;
 
 (eval-when (compile load eval)
   (require :ext (translate-logical-pathname "clocc:src;port;ext")))
@@ -50,9 +27,10 @@
 
 (defun getenv (var)
   "Return the value of the environment variable."
+  #+allegro (system::getenv (string var))
   #+cmu (cdr (assoc (string var) ext:*environment-list* :test #'equalp
                     :key #'string)) ; xlib::getenv
-  #+(or allegro clisp) (system::getenv (string var))
+  #+clisp (system::getenv (string var))
   #+lispworks (lw:environment-variable (string var))
   #+lucid (lcl:environment-variable (string var))
   #+gcl (si:getenv (string var))
@@ -74,7 +52,7 @@
 
 (defun arglist (fn)
   "Return the signature of the function."
-  #+allegro (ext:arglist fn)
+  #+allegro (excl:arglist fn)
   #+clisp (sys::arglist fn)
   #+cmu (values (let ((st (kernel:%function-arglist fn)))
                   (if (stringp st) (read-from-string st)
@@ -152,7 +130,7 @@ all slots are returned, otherwise only the slots with
   #-(or allegro clisp cmucl lispworks lucid) (truename "."))
 
 (defun chdir (dir)
-  #+allegro (ext:chdir dir)
+  #+allegro (excl:chdir dir)
   #+clisp (lisp:cd dir)
   #+cmu (setf (ext:default-directory) dir)
   #+gcl (si:chdir dir)

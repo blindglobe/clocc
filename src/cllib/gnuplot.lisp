@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1999-05-18 Tue 19:00:40 EDT sds@goems.com>
+;;; File: <gnuplot.lisp - 1999-10-25 Mon 13:43:06 EDT sds@ksp.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,103 +9,105 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.27 1999/05/24 21:42:07 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.28 1999/10/25 17:43:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
-;;; Revision 1.27  1999/05/24 21:42:07  sds
-;;; (plot-dated-lists, plot-lists, plot-lists-arg):
-;;; `ylabel' default depends on `rel'.
+;;; Revision 1.28  1999/10/25 17:43:23  sds
+;;; ditched the eagle-specific stuff
 ;;;
-;;; Revision 1.26  1999/05/12 14:23:14  sds
-;;; (plot-header): new options `xfmt' and `yfmt'.
-;;;
-;;; Revision 1.25  1999/04/09 19:20:41  sds
-;;; `+gnuplot-epoch+' is now an integer, not a date.
-;;;
-;;; Revision 1.24  1999/01/26 22:45:28  sds
-;;; Added `plot-msg'.
-;;;
-;;; Revision 1.23  1999/01/07 03:59:28  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;; Use `close-pipe'.
-;;;
-;;; Revision 1.22  1998/11/17 21:20:01  sds
-;;; Reset output with "set output" after printing to flush the buffers, so
-;;; that the printing takes effect immediately.
-;;;
-;;; Revision 1.21  1998/11/13 21:38:06  sds
-;;; Added option `lines' to `plot-dated-lists'.
-;;;
-;;; Revision 1.20  1998/10/21 20:01:25  sds
-;;; Switched to keys in `plot-header'.  Now, to add a gnuplot option, one
-;;; needs to modify only `plot-header', not `plot-lists-arg' &c.
-;;;
-;;; Revision 1.19  1998/10/19 19:41:32  sds
-;;; Added `term' (terminal) gnuplot option, allowing for multiple plot
-;;; windows being displayed simultaneously.
-;;;
-;;; Revision 1.18  1998/10/09 14:07:33  sds
-;;; Added `force-output' to `with-plot-stream', which fixes the CMUCL delay
-;;; problem.
-;;;
-;;; Revision 1.17  1998/10/06 23:41:57  sds
-;;; Added `xtics', `ytics' and `grid' gnuplot options.
-;;;
-;;; Revision 1.16  1998/08/03 19:15:07  sds
-;;; Use (getenv "SDSPRT") to get the printer name.
-;;;
-;;; Revision 1.15  1998/06/19 21:42:50  sds
-;;; Switch from `compose-m' to `compose'.
-;;;
-;;; Revision 1.14  1998/06/09 15:23:00  sds
-;;; After printing, reset terminal and output back to screen - for flushing.
-;;;
-;;; Revision 1.13  1998/06/08 23:49:44  sds
-;;; In function `plot-lists-arg', fixed :key boundaries.
-;;;
-;;; Revision 1.12  1998/06/03 17:20:35  sds
-;;; Added a plot-key key, for placement of the gnuplot legend.
-;;;
-;;; Revision 1.11  1998/04/29 22:36:32  sds
-;;; Made `*gnuplot-epoch*' into a constant `+gnuplot-epoch+'.
-;;; Added function `plot-sec-to-epoch'.
-;;;
-;;; Revision 1.10  1998/03/23 15:53:41  sds
-;;; Fixed to work with ACL and CMU CL.
-;;;
-;;; Revision 1.9  1998/02/19 22:49:42  sds
-;;; Switched to automatic guessing of data-style via `plot-data-style'.
-;;;
-;;; Revision 1.8  1998/02/12 21:38:19  sds
-;;; Switched to `defgeneric' and `require'.
-;;;
-;;; Revision 1.7  1997/12/04 20:10:08  sds
-;;; Made `with-plot-stream' and `plot-header' plot and print,
-;;; not just write the file.
-;;;
-;;; Revision 1.6  1997/10/29 21:52:08  sds
-;;; Added `plot-functions'.
-;;;
-;;; Revision 1.5  1997/10/17 20:34:51  sds
-;;; Added `plot-lists-arg'.
-;;;
-;;; Revision 1.4  1997/10/15 15:44:17  sds
-;;; Added plot-lists.
-;;; Made `plot-dated-lists' plot exponential moving averages.
-;;;
-;;; Revision 1.3  1997/10/01 20:48:12  sds
-;;; Added `plot-dated-lists'.
-;;;
-;;; Revision 1.2  1997/10/01 15:34:55  sds
-;;; Cosmetic fixes.
-;;;
-;;;
+;; Revision 1.27  1999/05/24 21:42:07  sds
+;; (plot-dated-lists, plot-lists, plot-lists-arg):
+;; `ylabel' default depends on `rel'.
+;;
+;; Revision 1.26  1999/05/12 14:23:14  sds
+;; (plot-header): new options `xfmt' and `yfmt'.
+;;
+;; Revision 1.25  1999/04/09 19:20:41  sds
+;; `+gnuplot-epoch+' is now an integer, not a date.
+;;
+;; Revision 1.24  1999/01/26 22:45:28  sds
+;; Added `plot-msg'.
+;;
+;; Revision 1.23  1999/01/07 03:59:28  sds
+;; Use `index-t' instead of (unsigned-byte 20).
+;; Use `close-pipe'.
+;;
+;; Revision 1.22  1998/11/17 21:20:01  sds
+;; Reset output with "set output" after printing to flush the buffers, so
+;; that the printing takes effect immediately.
+;;
+;; Revision 1.21  1998/11/13 21:38:06  sds
+;; Added option `lines' to `plot-dated-lists'.
+;;
+;; Revision 1.20  1998/10/21 20:01:25  sds
+;; Switched to keys in `plot-header'.  Now, to add a gnuplot option, one
+;; needs to modify only `plot-header', not `plot-lists-arg' &c.
+;;
+;; Revision 1.19  1998/10/19 19:41:32  sds
+;; Added `term' (terminal) gnuplot option, allowing for multiple plot
+;; windows being displayed simultaneously.
+;;
+;; Revision 1.18  1998/10/09 14:07:33  sds
+;; Added `force-output' to `with-plot-stream', which fixes the CMUCL delay
+;; problem.
+;;
+;; Revision 1.17  1998/10/06 23:41:57  sds
+;; Added `xtics', `ytics' and `grid' gnuplot options.
+;;
+;; Revision 1.16  1998/08/03 19:15:07  sds
+;; Use (getenv "SDSPRT") to get the printer name.
+;;
+;; Revision 1.15  1998/06/19 21:42:50  sds
+;; Switch from `compose-m' to `compose'.
+;;
+;; Revision 1.14  1998/06/09 15:23:00  sds
+;; After printing, reset terminal and output back to screen - for flushing.
+;;
+;; Revision 1.13  1998/06/08 23:49:44  sds
+;; In function `plot-lists-arg', fixed :key boundaries.
+;;
+;; Revision 1.12  1998/06/03 17:20:35  sds
+;; Added a plot-key key, for placement of the gnuplot legend.
+;;
+;; Revision 1.11  1998/04/29 22:36:32  sds
+;; Made `*gnuplot-epoch*' into a constant `+gnuplot-epoch+'.
+;; Added function `plot-sec-to-epoch'.
+;;
+;; Revision 1.10  1998/03/23 15:53:41  sds
+;; Fixed to work with ACL and CMU CL.
+;;
+;; Revision 1.9  1998/02/19 22:49:42  sds
+;; Switched to automatic guessing of data-style via `plot-data-style'.
+;;
+;; Revision 1.8  1998/02/12 21:38:19  sds
+;; Switched to `defgeneric' and `require'.
+;;
+;; Revision 1.7  1997/12/04 20:10:08  sds
+;; Made `with-plot-stream' and `plot-header' plot and print,
+;; not just write the file.
+;;
+;; Revision 1.6  1997/10/29 21:52:08  sds
+;; Added `plot-functions'.
+;;
+;; Revision 1.5  1997/10/17 20:34:51  sds
+;; Added `plot-lists-arg'.
+;;
+;; Revision 1.4  1997/10/15 15:44:17  sds
+;; Added plot-lists.
+;; Made `plot-dated-lists' plot exponential moving averages.
+;;
+;; Revision 1.3  1997/10/01 20:48:12  sds
+;; Added `plot-dated-lists'.
+;;
+;; Revision 1.2  1997/10/01 15:34:55  sds
+;; Cosmetic fixes.
+;;
+;;
 
 (in-package :cl-user)
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "date")
-  (sds-require "channel") (sds-require "signal")
   ;; the only way to have a good optimization here is to ditch
   ;; flexibility and stick to floats.
   (declaim (optimize (speed 1) (space 0) (safety 3) (debug 3))))
@@ -116,7 +118,8 @@
 
 (defcustom *gnuplot-path* simple-string
   #+win32 "c:/bin/gnuplot/wgnuplot.exe"
-  #+unix "/usr/bin/gnuplot"
+  #+unix (if (string-equal (machine-type) "linux")
+             "/usr/bin/gnuplot" "/usr/local/bin/gnuplot")
   "*The path to the windows gnuplot executable.")
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
   "*The gnuplot epoch - 2000-1-1.")
@@ -231,20 +234,6 @@ set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
             title legend)
     (tt "xtics" xtics) (tt "ytics" ytics) (tt "grid" grid)))
 
-(defun plot-dl-channels (dls chs &rest opts)
-  "Plot the dated lists and the channels.
-This is the simple UI to `plot-dated-lists'.
-The first argument is the list of dated lists,
-the second is the list of channels.
-The rest is passed to `plot-dated-lists'."
-  (let ((begd (apply #'min (mapcar (compose date2days channel-begd) chs)))
-        (endd (apply #'max (mapcar (compose date2days channel-endd) chs))))
-    (incf endd (floor (- endd begd) 4))
-    (setq begd (date begd) endd (date endd))
-    (plot-msg "Plotting ~d channel~:p and ~d dated list~:p in [~a -- ~a].~%"
-              (length chs) (length dls) begd endd)
-    (apply #'plot-dated-lists begd endd dls :channels chs opts)))
-
 (defun plot-data-style (num-ls)
   "Decide upon the appropriate data style for the number of points."
   (when (listp num-ls)
@@ -254,23 +243,20 @@ The rest is passed to `plot-dated-lists'."
   (if (> num-ls 30) "lines" "linespoints"))
 
 (defun plot-dated-lists (begd endd dls &rest opts &key (title "Dated Plot")
-                         (xlabel "time") rel data-style lines
+                         (xlabel "time") rel data-style
                          (ylabel (if rel "relative value" "value"))
-                         (timefmt "%Y-%m-%d") ema (slot 'val) channels
-                         posl (plot t) &allow-other-keys)
+                         (timefmt "%Y-%m-%d") ema (slot 'val)
+                         (plot t) &allow-other-keys)
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
 REL means plot everything relative to the first value.
-EMA is the list of parameters for Exponential Moving Averages.
-CHANNELS id the list of channels to plot.
-LINES and POSL are lists of positions,
-lines are drawn without position channels."
+EMA is the list of parameters for Exponential Moving Averages."
   (assert dls () "Nothing to plot for `~a'~%" title)
   (setq begd (if begd (date begd) (dl-nth-date (car dls)))
         endd (if endd (date endd) (dl-nth-date (car dls) -1)))
-  (remf opts :ema) (remf opts :rel) (remf opts :channels) (remf opts :posl)
-  (remf opts :slot) (remf opts :plot) (remf opts :lines)
+  (remf opts :ema) (remf opts :rel)
+  (remf opts :slot) (remf opts :plot)
   (with-plot-stream (str plot :xlabel xlabel :ylabel ylabel :title title
                      :data-style (or data-style (plot-data-style
                                                  (days-between begd endd)))
@@ -285,12 +271,6 @@ lines are drawn without position channels."
                                               (dated-list-name dl) ee))
                                     ema)))
                     dls))
-    (let ((lt 2))
-      (dolist (ch channels) (plot-channel-str ch str "" (incf lt))))
-    (dolist (pos posl)
-      (when (pos-hit-interval-p pos begd endd) (plot-pos-str pos str)))
-    (dolist (ln lines)
-      (when (pos-hit-interval-p ln begd endd) (plot-pos-str ln str t)))
     (terpri str)                ; the command line is over!
     (let* ((emal (make-list (length ema))) bv
            (val (if rel (lambda (dl) (/ (dl-nth-slot dl slot) bv))
@@ -463,38 +443,6 @@ from BEG to END.  This is not a complete plotting function (not a UI)!"
   (declare (type (simple-array double-float (3)) qu) (real beg end))
   (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title \"~a\" ~
 with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
-
-(defun plot-pos-str (pos str &optional light)
-  "Write the string to plot stream STR for plotting the position POS.
-If the optional third argument LIGHT is non-NIL, the position channel
-is not drawn and the line is not mentioned in the legend.
-This is not a complete plotting function (not a UI)!"
-  (declare (type pos pos) (stream str))
-  (let ((beg (plot-sec-to-epoch (pos-begd pos)))
-        (end (plot-sec-to-epoch (pos-endd pos))))
-    (plot-line-str (line-day2sec (pos2line pos) beg) beg end str
-                   (if light ""
-                       (format nil "~4f [~a/~a] ~a/~a" (pos-size pos)
-                               (pos-ores pos) (pos-eres pos) (pos-begd pos)
-                               (pos-endd pos)))
-                   -1))
-  (unless light (plot-channel-str (pos-poch pos) str "" -1)))
-
-(defun plot-channel-str (ch str ttl lt)
-  "Write the string to plot stream STR for plotting the channel.
-Omit zero lines. This is not a complete plotting function (not a UI)!"
-  (declare (type channel ch) (stream str))
-  (let ((beg (plot-sec-to-epoch (channel-begd ch)))
-        (end (plot-sec-to-epoch (channel-endd ch))))
-    (unless (and (zerop (line-sl (channel-top ch)))
-                 (zerop (line-sl (channel-top ch))))
-      (plot-line-str (line-day2sec (channel-top ch) beg) beg end str ttl lt))
-    (unless (and (zerop (line-sl (channel-bot ch)))
-                 (zerop (line-sl (channel-bot ch))))
-      (plot-line-str (line-day2sec (channel-bot ch) beg) beg end str ttl lt))
-    (unless (and (zerop (line-sl (channel-reg ch)))
-                 (zerop (line-sl (channel-reg ch))))
-      (plot-line-str (line-day2sec (channel-reg ch) beg) beg end str ttl lt))))
 
 (provide "gnuplot")
 ;;; gnuplot.lisp ends here

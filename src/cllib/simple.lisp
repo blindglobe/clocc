@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.14 2005/01/28 16:37:53 sds Exp $
+;;; $Id: simple.lisp,v 1.15 2005/01/28 16:55:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -187,6 +187,7 @@ The second value is the last atom (i.e., `dotted-p')."
 (defun count-all (seq &key (test 'eql) (key #'value) append (weight 1)
                   &aux (ht (or append (make-hash-table :test test))))
   "Return the hash table with counts for values of the sequence."
+  (unless weight (setq weight 1))
   (map nil (etypecase weight
              (function
               (lambda (el)

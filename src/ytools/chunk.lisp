@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.12 2004/12/26 06:38:08 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.13 2004/12/29 06:41:57 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -222,6 +222,9 @@
    (dolist (b (Chunk-basis ch))
       (setf (Chunk-derivees b)
 	    (adjoin ch (Chunk-derivees b))))
+   (cond ((Chunk-managed ch)
+	  (dolist (b (Chunk-basis ch))
+	     (chunk-request-mgt b))))
    (set-latest-support-date ch))
 
 ;;; Returns a list of all chunks whose 'latest-supporter-date' get
@@ -236,6 +239,14 @@
       (cond ((or (> latest-supporter-date
 		    (Chunk-latest-supporter-date ch))
 		 (= latest-supporter-date +no-supporters-date+))
+	     (cond ((and (>= (Chunk-date ch) 0)
+			 (>= latest-supporter-date 0)
+			 (>= (Chunk-date ch)
+			     latest-supporter-date))
+		    (setq ch* ch)
+		    (break !"Chunk ~s up to date in unlikely circumstances ~
+                             ~%  date = ~s latest-supporter-date = ~s"
+			   ch (Chunk-date ch) latest-supporter-date)))
 	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)
 	     (cons ch
 		   (mapcan (\\ (d) (set-latest-support-date d))
@@ -290,10 +301,15 @@
 			     (let ((d-disjuncts (Or-chunk-disjuncts d))
 				   (d-default (Or-chunk-default d)))
 				(cond ((and (not (eq chunk d-default))
-					    (memq chunk d-disjuncts))
+					    (memq chunk d-disjuncts)
+					    (not (reason-to-manage d-default)))
 				       (setf (Chunk-update-basis d)
 					     (list chunk))
-				       (chunk-terminate-mgt d-default false))))))))
+				       (cond ((eq d-default
+						  loaded-file-chunk-c*)
+					      (break "About to terminate")))
+				       (chunk-terminate-mgt
+					  d-default false))))))))
 	        ;; Normally this just sets (chunk-managed chunk)
 	        ;; to true, but not if an interrupt occurred --
 		(progn
@@ -500,8 +516,11 @@
 	       (temporarily-manage (update-chunks)
 		  (dolist (ud-ch update-chunks)
 		     (cond ((not (Chunk-managed ud-ch))
+			    (format t "Temporarily managing ~s~%"
+				    ud-ch)
 			    (on-list ud-ch temporarily-managed)
-			    (chunk-request-mgt ud-ch)))))
+			    (chunk-request-mgt ud-ch)))
+		    (loaded-c-check)))
 
 	       (derivees-update (ch in-progress)
 ;;;;		  (format t "Considering ~s~%" ch)
@@ -573,6 +592,7 @@
 			 (dolist (d (Chunk-derivees leaf))
 			    (derivees-update d !()))))
 		  (dolist (ud-ch temporarily-managed)
+		     (format t "No longer managing ~s~%" ud-ch)
 		     (chunk-terminate-mgt ud-ch false))))))))
 
 (defun or-chunk-set-update-basis (orch)

@@ -1,8 +1,8 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.13 2004/12/26 06:38:08 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.14 2004/12/29 06:41:57 airfoyle Exp $
 	     
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
@@ -77,7 +77,8 @@
 		    (chunk-derive-and-record lpchunk)
 		    (chunks-update (Chunk-derivees lpchunk)))))
 	    (t
-	     (chunk-request-mgt lpchunk)))))
+	     (chunk-request-mgt lpchunk)
+	     (chunk-update lpchunk)))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -233,7 +234,7 @@
     (object :reader Loaded-chunk-object
 	    :initarg :object)))
 
-(defmethod initialize-instance :after ((lc Loaded-chunk)
+(defmethod initialize-instance :after ((lc Loaded-chunk )
 				       &key &allow-other-keys)
    (setf (Chunk-basis lc)
          (list (Loaded-chunk-file lc))))
@@ -309,13 +310,15 @@
 			   new-lc))))
 		:initializer
 		   (\\ (new-lc)
-		      (cond ((or (not (slot-boundp new-lc 'controller))
-				 (not (Loaded-chunk-controller new-lc)))
+		      (cond ((not (slot-truly-filled new-lc 'controller))
 			     (setf (Loaded-chunk-controller new-lc)
 				   (create-loaded-controller
 				      file-chunk new-lc))))))))
       (cond ((eq file-manip ':noload)
-	     (chunk-terminate-mgt lc ':ask)))
+	     (chunk-terminate-mgt lc ':ask))
+	    ((and file-manip
+		  (not (eq file-manip (Loaded-chunk-manip lc))))
+	     (setf (Loaded-chunk-manip lc) file-manip)))
       lc))
 
 (defmethod derive ((lc Loaded-chunk))
@@ -343,7 +346,6 @@
 				     file-ch)
 				 (File-chunk-pathname file-ch)
 				 "...")
-
 	       (load (File-chunk-pathname file-ch))
 	       (file-op-message "...loaded"
 				 (File-chunk-pn
@@ -362,6 +364,19 @@
 ;;; :ask-ask -- ask, then ask the user whether to keep asking
 (defvar fload-compile-flag* ':ask)
 
+;;; A class with just one instance, representing the fload-compile-flag*'s
+;;; being set to the user's desired value --
+(defclass Fload-compile-flag-set (Chunk)
+   ((value :accessor Fload-compile-flag-value
+	   :initform fload-compile-flag*)))
+
+(defmethod derive ((fcf Fload-compile-flag-set))
+   (cond ((eq (Fload-compile-flag-value fcf) fload-compile-flag*)
+	  false)
+	 (t
+	  (setf (Fload-compile-flag-value fcf) fload-compile-flag*)
+	  true)))
+
 (defun default-fload-manip () fload-compile-flag*)
 
 (defun (setf default-fload-manip) (v)
@@ -377,6 +392,8 @@
 
 (define-symbol-macro fload-compile* (default-fload-manip))
 
+(defvar fload-compile-flag-chunk* (make-instance 'Fload-compile-flag-set))
+
 (defun loadeds-check-bases ()
    (let ((loadeds-needing-checking !())
 	 (loadeds-needing-update !()))
@@ -385,11 +402,11 @@
 		      '(:defer :follow))
 		(on-list lc loadeds-needing-checking))))
       (dolist (lc loadeds-needing-checking)
-	 (loaded-chunk-manip-set lc)
 	 (monitor-file-basis lc)
 	 (cond ((not (chunk-up-to-date lc))
 		(on-list lc loadeds-needing-update))))
-      (chunks-update loadeds-needing-update)))
+      (chunks-update (cons fload-compile-flag-chunk*
+			   loadeds-needing-update))))
 
 ;;; This must be called whenever the 'manip' field changes.
 ;;; It is called :after deriving any Loadable-chunk (see above).
@@ -748,8 +765,9 @@
 		(chunk-with-name
 		    `(:loaded (,',sym ,pn))
 		    (\\ (name-exp)
-		       (format t "Creating new loaded chunk for file chunk of ~s~%"
-			       pn)
+		       (format t !"Creating new loaded chunk for ~
+                                   ~s subfile chunk of ~s~%"
+			       ',sym pn)
 		       (let ()
 			  (make-instance ',loaded-sym-class-name
 			      :name name-exp
@@ -996,8 +1014,9 @@
 	    (t
 	     (let ((comp-date
 		      (Chunk-date compiled-chunk)))
-	        (monitor-file-basis lpchunk)
+;;;;	        (monitor-file-basis lpchunk)
 		(chunk-request-mgt compiled-chunk)
+		(chunk-update compiled-chunk)
 		(cond ((and force-compile
 			    (= (Chunk-date compiled-chunk)
 			       comp-date))
@@ -1005,9 +1024,10 @@
 		       (chunk-derive-and-record compiled-chunk))))))
       (cond ((or load
 		 (load-after-compile))
+	     (setf (Loaded-chunk-manip lpchunk) ':compiled)
 	     (monitor-file-basis lpchunk)
-	     (chunk-request-mgt
-		(place-loaded-chunk file-chunk ':compiled))))))
+	     (chunk-request-mgt lpchunk)
+	     (chunk-update lpchunk)))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve
@@ -1089,6 +1109,10 @@
 	       (memq (keyword-if-sym
 			(read *query-io* false false))
 		     '(:y :yes :t))))))				
+
+(defun slot-truly-filled (ob sl)
+   (and (slot-boundp ob sl)
+	(slot-value ob sl)))
 
 (defun compilable (pathname)
    (member (Pathname-type pathname) source-suffixes* :test #'equal))

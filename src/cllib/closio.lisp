@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.14 2000/08/19 21:51:17 sds Exp $
+;;; $Id: closio.lisp,v 1.15 2001/01/08 20:48:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,8 +56,8 @@ otherwise you will probably get an error.")
           ((endp tail) res)
        (setf (slot-value res (car tail)) (cadr tail))))
     (:initarg (apply #'make-instance (read-delimited-list #\] st t)))
-    (nil (error 'code :proc 'read-object :args '(*closio-method* nil)
-                :mesg "~s is ~s"))
+    ((nil) (error 'code :proc 'read-object :args '(*closio-method* nil)
+                  :mesg "~s is ~s"))
     (t (error 'case-error :proc 'read-object :args
               (list '*closio-method* *closio-method*
                     :initarg :slot-name nil)))))

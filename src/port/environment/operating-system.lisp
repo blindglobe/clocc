@@ -240,17 +240,23 @@ The string is usually one character long."))
 
 (defmethod os-file-system-directory-separator ((os unix)) "/")
 
-(defmethod os-file-system-directory-separator ((os Mac-OS)) ":")
+(defmethod os-file-system-directory-separator ((os mac-os)) ":")
+
+(defmethod os-file-system-directory-separator ((os mac-os-x))
+  (warn "The directory separator returned is \":\".~@
+         This may not be right for ~S."
+	os)
+  ":")
 
 (defmethod os-file-system-directory-separator ((os genera)) ">")
 
 (defmethod os-file-system-directory-separator ((os amiga)) "\\") ; Check this!!
 
-(defmethod os-file-system-directory-separator ((os OS/2)) "\\")
+(defmethod os-file-system-directory-separator ((os os/2)) "\\")
 
-(defmethod os-file-system-directory-separator ((os MS-DOS)) "\\")
+(defmethod os-file-system-directory-separator ((os ms-dos)) "\\")
 
-(defmethod os-file-system-directory-separator ((os MS-Windows)) "\\")
+(defmethod os-file-system-directory-separator ((os ms-windows)) "\\")
 
 
 ;;; end of file -- operating-system.lisp

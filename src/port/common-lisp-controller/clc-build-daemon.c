@@ -632,23 +632,23 @@ int main(int argc, char *argv[])
                                 {
                                   int line_offset;
 
-                                  fprintf(mail_pipe,"
-Hello
-
-This is the clc-build-daemon reporting a build failure.
-
-
-While recompiling package %s for compiler %s I got the error code %i
-If you want to retry the compilation and possibly report this as a bug
-then please read /usr/share/doc/common-lisp-controller/REPORTING-BUGS
-
-The command to retry the recompilation is:
-clc-send-command --verbose remove %s %s ; echo returns: $?
-clc-send-command --verbose recompile %s %s ; echo returns: $?
-
-After this message I will append the last few lines of output.
-
-Thanks for your attention\n",
+                                  fprintf(mail_pipe,"\n"
+"Hello\n"
+"\n"
+"This is the clc-build-daemon reporting a build failure.\n"
+"\n"
+"\n"
+"While recompiling package %s for compiler %s I got the error code %i\n"
+"If you want to retry the compilation and possibly report this as a bug\n"
+"then please read /usr/share/doc/common-lisp-controller/REPORTING-BUGS\n"
+"\n"
+"The command to retry the recompilation is:\n"
+"clc-send-command --verbose remove %s %s ; echo returns: $?\n"
+"clc-send-command --verbose recompile %s %s ; echo returns: $?\n"
+"\n"
+"After this message I will append the last few lines of output.\n"
+"\n"
+"Thanks for your attention\n",
                                           package,compiler,WEXITSTATUS(status),
                                           package,compiler,
                                           package,compiler);

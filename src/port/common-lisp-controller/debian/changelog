@@ -2,7 +2,8 @@ common-lisp-controller (3.63) unstable; urgency=low
 
   * Improve user packages support: add symbolic links to ~/.clc/systems;
   add this directory to ASDF's search function list
-
+  * Remove multiline strings for gcc-3.3
+  
  -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 23 May 2003 17:40:30 -0600
 
 common-lisp-controller (3.62) unstable; urgency=low

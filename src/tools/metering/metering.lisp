@@ -1284,7 +1284,7 @@ of an empty function many times."
 (defvar *no-calls* nil
   "A list of monitored functions which weren't called.")
 (defvar *estimated-total-overhead* 0)
-(proclaim '(type time-type *estimated-total-overhead*))
+;; (proclaim '(type time-type *estimated-total-overhead*))
 
 (defstruct (monitoring-info
             (:conc-name m-info-)

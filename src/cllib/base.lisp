@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-04-12 Mon 17:33:09 EDT sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-04-15 Thu 15:53:01 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.15 1999/04/12 21:34:26 sds Exp $
+;;; $Id: base.lisp,v 1.16 1999/04/15 19:53:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.16  1999/04/15 19:53:35  sds
+;;; (current-time): print `tz->string' with ~a.
+;;;
 ;;; Revision 1.15  1999/04/12 21:34:26  sds
 ;;; (tz->string): new function: print the TimeZone to a string like "-0400"
 ;;; (current-time): use it.
@@ -484,7 +487,7 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   "Print the current time to the stream (defaults to t)."
   (multiple-value-bind (se mi ho da mo ye dw dst tz) (get-decoded-time)
     (declare (fixnum se mi ho da mo ye dw tz))
-    (format stream "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~@d (~a)"
+    (format stream "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a (~a)"
             ye mo da (aref +week-days+ dw) ho mi se
             (tz->string (- (if dst 1 0) tz))
             (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)))))

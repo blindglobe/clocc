@@ -535,6 +535,6 @@ So class-of should return a function. Not?")
       (delete-file compiled-file)
       (delete-file lisp-file)
       #+clisp
-      (delete-file (merge-pathnames ".lib" lisp-file))
+      (delete-file (make-pathname :type "lib" :defaults lisp-file))
       (mapcar #'foo *t-list*)))
   (100 200))

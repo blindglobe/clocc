@@ -51,6 +51,7 @@
 	   #:find-system
 	   #:compile-system
 	   #:load-system
+	   #:clean-system
 	   #:undefsystem
 	   #:defined-systems
 	   #:describe-system

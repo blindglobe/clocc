@@ -8,30 +8,8 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.3 2000/04/05 15:30:09 marcoxa Exp $
+;;; $Id: clocc.lisp,v 1.4 2000/05/01 20:20:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
-;;; $Log: clocc.lisp,v $
-;;; Revision 1.3  2000/04/05 15:30:09  marcoxa
-;;; Added special translations for defsystem.
-;;; Unfortunately, the directory name chosen (defsystem-3.x) is not valid
-;;; wrt logical pathname syntax.  I.e.
-;;;
-;;;     (translate-logical-pathname "CLOCC:src;defsystem-3.x;defsystem.lisp")
-;;;
-;;; yields and error because of the dot in the directory part.
-;;;
-;;; Therefore I added two new translations for defsystem.  You can now
-;;; specify "CLOCC:src;defsystem;defsystem.lisp" or
-;;; "CLOCC:src;defsystem-3-x;defsystem.lisp" to get the 'right'
-;;; translation.
-;;;
-;;; Revision 1.2  2000/03/07 11:15:41  haible
-;;; Add comment about recommended CLISP version.
-;;;
-;;; Revision 1.1  2000/02/18 21:26:00  sds
-;;; renamed; removed defsystem for port
-;;;
-;;;
 
 (in-package :cl-user)
 
@@ -75,14 +53,16 @@
           (remf (cddr excl:arglist) :key)
           (setf (second excl:arglist)
                 (map 'vector key (second excl:arglist)))))))
-  #-(or clisp allegro)
+  #-(or allegro clisp mcl)
   (define-setf-expander values (&rest places &environment env)
     (loop :for pl :in places :with te :and va :and ne :and se :and ge :do
           (multiple-value-setq (te va ne se ge) (get-setf-expansion pl env))
           :append te :into te1 :append va :into va1 :append ne :into ne1
           :collect se :into se1 :collect ge :into ge1
           :finally (return (values te1 va1 ne1 (cons 'values se1)
-                                   (cons 'values ge1))))))
+                                   (cons 'values ge1)))))
+  #+mcl
+  (import '(ccl:provide) :common-lisp))
 
 
 ;;;
@@ -95,7 +75,6 @@
 (setf (logical-pathname-translations "clocc")
       '(("src;defsystem;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
 	("src;defsystem-3-x;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
-	("**;*" "/usr/local/src/clocc/**/*")
-	))
+	("**;*" "/usr/local/src/clocc/**/*")))
 
 ;;; clocc.lisp ends here

@@ -18,9 +18,9 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *cl-environment-directory*
-    (make-pathname :host (pathname-host *load-pathname*)
-		   :device (pathname-device *load-pathname*)
-		   :directory (pathname-directory *load-pathname*)
+    (make-pathname :host (pathname-host *load-truename*)
+		   :device (pathname-device *load-truename*)
+		   :directory (pathname-directory *load-truename*)
 		   ;; :case :common ; Do we need this?
 		   )))
 
@@ -102,6 +102,11 @@
   ;; To clean a minimum (and to make things difficult to debug)...
   ;; (delete-package "CL-ENVIRONMENT-LOADER")
   )
+
+;;; Automatically load the library.
+
+(eval-when (:load-toplevel :execute)
+  (cl-user::load-cl-environment-library))
 
 
 ;;; end of file -- load-cl-environment.lisp --

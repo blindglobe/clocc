@@ -43,12 +43,12 @@
 (defgeneric resize (c w h bw))
 (defgeneric inside-contact-p (c x y))
 
-(defgeneric perform-callback (c name &rest))
-(defgeneric describe-action (c &rest))
-(defgeneric eval-action (c &rest))
-(defgeneric apply-action (c function &rest))
+(defgeneric perform-callback (c name &rest rest))
+(defgeneric describe-action (c &rest rest))
+(defgeneric eval-action (c &rest rest))
+(defgeneric apply-action (c function &rest rest))
 (defgeneric throw-action (c tag &optional value))
-(defgeneric trace-action (c &rest))
+(defgeneric trace-action (c &rest rest))
 (defgeneric ignore-action (c))
 
 (defgeneric handle-event (c e))

@@ -22,12 +22,14 @@ set -e
 #     installation fails and the `postinst' is called with `abort-upgrade',
 #     `abort-remove' or `abort-deconfigure'.
 
-. /usr/share/debconf/confmodule
 
 case "$1" in
     configure)
     update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
 
+    # move after update-inetd because of bug #183960
+    . /usr/share/debconf/confmodule 
+                                     
     db_get common-lisp-controller/long-site-name
     long=$(printf "%s" "$RET" | sed -e 's/[\"]/\\&/g')
     db_get common-lisp-controller/short-site-name

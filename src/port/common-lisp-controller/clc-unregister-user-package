@@ -17,7 +17,7 @@ if [ ! -d "$CLC_USER_DIR" ]; then
   exit 3
 fi
 
-CLC_USER_DB=$HOME/.clc/user-packages
+CLC_USER_DB=$HOME/.clc/user-packages.db
 
 if [ ! -f "$CLC_USER_DB" ]; then
   "No user packages are currently registered."

@@ -101,7 +101,6 @@ than the maximum file-write-date of output-files, return T."
 		orig)
       orig)))
 
-
 (defun beneath-source-root? (c)
   "Returns T if component's directory below *source-root*"
   (let ((root-dir (pathname-directory (asdf::resolve-symlinks *source-root*))))
@@ -284,3 +283,53 @@ than the maximum file-write-date of output-files, return T."
    (setf (symbol-function 'lisp:require)
 	 (symbol-function 'clc-require))))
 
+
+;; Take from CLOCC's GPL'd Port package
+(defun getenv (var)
+  "Return the value of the environment variable."
+  #+allegro (sys::getenv (string var))
+  #+clisp (sys::getenv (string var))
+  #+(or cmu scl) (cdr (assoc (string var) ext:*environment-list* :test #'equalp
+                    :key #'string))
+  #+gcl (si:getenv (string var))
+  #+lispworks (lw:environment-variable (string var))
+  #+lucid (lcl:environment-variable (string var))
+  #+mcl (ccl::getenv var)
+  #+sbcl (sb-ext:posix-getenv var)
+  #-(or allegro clisp cmu scl gcl lispworks lucid mcl sbcl) "")
+
+(defun append-dir-terminator-if-needed (path)
+  (check-type path string)
+  (unless (char= #\/ (char path (1- (length path))))
+    (concatenate 'string path "/")))
+
+(defun user-clc-path ()
+  "Returns the path of the user's local clc directory, NIL if directory does not exist."
+  (let* ((home-dir (getenv "HOME"))
+	 (len (when (stringp home-dir)
+		(length home-dir))))
+    (when (and len (plusp len))
+      (setq home-dir (append-dir-terminator-if-needed home-dir))
+      (setq home-dir (parse-namestring home-dir))
+      (merge-pathnames
+       (make-pathname :directory '(:relative ".clc"))
+       home-dir))))
+
+(defun user-package-list ()
+  "Return list of user packages (which is a list of pathname'd directories)"
+  (let* ((dir (user-clc-path))
+	 (pkgs-path (when dir
+		      (make-pathname :defaults dir
+				     :name "user-packages"
+				     :type "db"))))
+    (when (probe-file pkgs-path)
+      (let ((pkgs '()))
+	(with-open-file (strm pkgs-path :direction :input :if-not-exists nil)
+  	  (when strm
+	    (do ((line (read-line strm nil 'eof) (read-line strm nil 'eof)))
+		((eq line 'eof))
+	      (setq line (append-dir-terminator-if-needed line))
+	      (let ((path (ignore-errors (parse-namestring line))))
+		(when path
+		  (push path pkgs))))))
+	pkgs))))

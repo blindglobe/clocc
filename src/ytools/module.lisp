@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9 2004/09/12 14:40:05 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.1 2004/11/10 14:17:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -56,23 +56,7 @@
 ;;;;	  (note-module-def-time mod)
 	  )))
 
-(defstruct (Module-pseudo-pn (:include Pseudo-pathname)
-	       (:print-object
-		   (lambda (mod-pspn srm)
-		      (format srm "#<Module-pseudo-pn ~s>"
-			      (Module-pseudo-pn-module mod-pspn)))))
-   module)
-
-(defmethod make-load-form ((module-pspn Module-pseudo-pn) &optional env)
-   (declare (ignore env))
-   `(make-Module-pseudo-pn
-        :control ',(Pseudo-pathname-control module-pspn)
-	:opvec false
-	:module ',(Module-pseudo-pn-module module-pspn)))
-
-(defmethod pn-equal ((pn1 Module-pseudo-pn) (pn2 Module-pseudo-pn))
-   (eq (Module-pseudo-pn-module pn1)
-       (Module-pseudo-pn-module pn2)))
+(def-ytools-pathname-control module)
 
 (defun place-YT-module (name)
    (let ((p (assq name ytools-modules*)))

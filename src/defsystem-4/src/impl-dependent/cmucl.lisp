@@ -5,19 +5,6 @@
 
 (in-package "MK4")
 
-(defun compile-file-internal (input-file
-			      &rest keys
-			      &key
-			      output-file
-			      error-file
-			      (print *compile-print*)
-			      (verbose *compile-verbose*)
-			      (external-format :default)
-			      &allow-other-keys)
-  (declare (ignore output-file error-file print verbose external-format))
-
-  (apply #'compile-file input-file :load nil keys))
-
 
 ;;; run-program --
 
@@ -59,11 +46,11 @@
 			     )
   (declare (ignore print))
   (when verbose
-    (format *trace-output* ";;; MK4: Loading Foreign File ~A."
-	    loadable-c-pathname))
+    (user-message *trace-output* "Loading Foreign File ~A."
+		  loadable-object-pathname))
   (alien:load-foreign (list loadable-object-pathname)
 		      :libraries (mapcar #'(lambda (l)
-					     (format nil "-l~A"))
+					     (format nil "-l~A" l))
 					 libraries))
   )
 
@@ -75,14 +62,13 @@
 				      (purify t)
 				      (root-structures nil)
 				      (environment-name "auxiliary")
-				      (init-function #'%top-level)
+				      (init-function #'cl::%top-level)
 				      (load-init-file t)
 				      (site-init "library:site-init")
 				      (print-herald t)
 				      (process-command-line t))
-  (format *standard-output*
-	  "~%;;; MK:DEFSYSTEM: Saving image in file '~A'.~%"
-	  image-name)
+  (declare (ignore arguments))
+  (user-message *standard-output* "Saving image in file '~A'.~%" image-name)
   (let ((mk-defsystem-herald (second (member :MK-DEFSYSTEM ext:*herald-items*
 					     :test #'eq))))
     (when (or (not mk-defsystem-herald)
@@ -90,7 +76,16 @@
       (setf ext:*herald-items*
 	    (append ext:*herald-items*
 		    (list :MK-DEFSYSTEM '("    MK:DEFSYSTEM " "4.0")))))
-    (ext:save-lisp image-name)
+    (ext:save-lisp image-name
+		   :purify purify
+		   :root-structures root-structures
+		   :environment-name environment-name
+		   :init-function init-function
+		   :load-init-file load-init-file
+		   :site-init site-init
+		   :print-herald print-herald
+		   :process-command-line process-command-line
+		   )
     ))
 
 

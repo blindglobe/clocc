@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: geo.lisp,v 2.3 2000/04/27 15:45:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,8 +13,6 @@
   (require :withtype (translate-logical-pathname "cllib:withtype"))
   ;; `kwd'
   (require :symb (translate-logical-pathname "cllib:symb"))
-  ;; `get-float-time'
-  (require :log (translate-logical-pathname "cllib:log"))
   ;; `save-restore', `skip-search', `skip-blanks', `skip-to-line',
   ;; `read-non-blanks'
   (require :fileio (translate-logical-pathname "cllib:fileio"))

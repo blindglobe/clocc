@@ -1,3 +1,17 @@
+cl-defsystem3 (3.4i+cvs.2005.03.03.1) unstable; urgency=low
+
+  * New upstream release.  
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu,  3 Mar 2005 13:22:19 +0100
+
+cl-defsystem3 (3.3i+cvs.2004.07.18.2) unstable; urgency=low
+
+  * New maintainer. (Closes: #297353: O: cl-defsystem3 -- Make system
+    for Common Lisp Packages)
+  * Adopted by Peter Van Eynde
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  1 Mar 2005 10:11:57 +0100
+
 cl-defsystem3 (3.3i+cvs.2004.07.18.1) unstable; urgency=low
 
   * New upstream (closes:259991)

@@ -62,8 +62,3 @@ clue (19970309-1) unstable; urgency=low
   * Initial Release.
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 25 Apr 1998 09:57:36 +0200
-
-Local variables:
-mode: debian-changelog
-add-log-mailing-address: "pvaneynd@debian.org"
-End:

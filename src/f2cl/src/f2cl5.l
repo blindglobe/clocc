@@ -805,11 +805,18 @@
      ;; Do the same for intrinsic function names, but be sure to
      ;; remove any variables whose name might match an intrinsic
      ;; function name.
+
+     ;;(format t "key-params            = ~A~%" key-params)
+     ;;(format t "*declared_vbles*      = ~A~%" *declared_vbles*)
+     ;;(format t "*undeclared_vbles*    = ~A~%" *undeclared_vbles*)
+     ;;(format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*)
      (setf prog-bit
-	   (fixup-external-function-refs prog-bit
-					 (set-difference *intrinsic_function_names*
-							 (append *declared_vbles*
-								 *undeclared_vbles*))))
+	   (fixup-external-function-refs
+	    prog-bit
+	    (set-difference *intrinsic_function_names*
+			    (append *declared_vbles*
+				    *undeclared_vbles*
+				    (mapcar #'first key-params)))))
 
 
      ;; Add symbol-macrolets to access the common block variables
@@ -1909,7 +1916,9 @@
 				 :key #'third))
 		     (var-type (if decl (second decl) nil))
 		     (dims (cond ((and (listp var-type)
-				       (subtypep (first var-type) 'array))
+				       (subtypep (first var-type) 'array)
+				       (not (subtypep var-type 'string)))
+				  (format t "array var-type = ~A~%" var-type)
 				  (mapcar #'(lambda (x)
 					      (declare (ignore x))
 					      0)
@@ -1955,7 +1964,8 @@
 			   :key #'third))
 	       (var-type (if decl (second decl) nil))
 	       (dims (cond ((and (listp var-type)
-				 (subtypep (first var-type) 'array))
+				 (subtypep (first var-type) 'array)
+				 (not (subtypep var-type 'string)))
 			    (fixup-bounds (lookup-array-bounds var)))
 			   (t nil)))
 	       (var-init (cond ((and (listp var-type)

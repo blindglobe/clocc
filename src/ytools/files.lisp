@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.2 2004/11/21 05:12:38 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.3 2004/11/24 04:24:00 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -145,6 +145,11 @@
 		      (cond (v (place-file-chunk v))
 			    (t false))))))))
 
+(defclass Compiled-file-chunk (File-chunk)
+  ((source-file :initarg :source-file
+		:reader Compiled-file-chunk-source-file
+		:type File-chunk)))
+
 ;;; Represents the version to be loaded, source, object, or alternative
 ;;; version of file.
 (defclass Loadable-chunk (Chunk)
@@ -180,7 +185,7 @@
 (defun place-loaded-chunk (file-chunk file-manip)
    (let ((file-choice
 	    (place-loadable-chunk file-chunk file-manip)))
-      (chunk-with-name `(:loaded ,(file-chunk-key-pathname file-chunk))
+      (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
 	   (\\ (name-exp)
 	      (make-instance 'Loaded-chunk
 		 :name name-exp
@@ -207,6 +212,38 @@
 				    ""))))
 	 (get-universal-time))))
 
+;;; Possible values: 
+;;;  Just like values of Load-progress-rec-whether-compile, except that
+;;;  the latter can be :unknown.
+;;;  The local whether-compile for an lprec dominates the global flag,
+;;;  unless it's :unknown.
+
+;;; :compile -- always compile when object file is missing or out of date)
+;;; :object, :source -- always load object or source without compiling
+;;;     Even if :object, if object doesn't exist source will be loaded
+;;;     with no questions asked.
+;;;     (Unlikely you would ever want one of these globally; they can be
+;;;     useful in a Load-progress-rec.)
+;;; :ask -- ask user what to do
+(defvar fload-compile-flag* ':ask)
+
+(defun default-fload-manip () fload-compile-flag*)
+
+(defun (setf default-fload-manip) (v)
+   (cond ((memq v '(:ask :source :object :compile
+		    :ask-ask :ask-once :ask-every))
+	  (cond ((not (eq v fload-compile-flag*))
+		 (setq fload-compile-flag* v)
+		 (loadables-check-bases))))
+	 (t
+	  (cerror "I will leave the value unchanged"
+		  !"Illegal value ~s for fload-compile*"
+		  v))))
+
+(define-symbol-macro fload-compile* (default-fload-manip))
+
+(defvar all-loadable-chunks* !())
+
 ;;; Whoever changes the alt-version of a Loadable-chunk (e.g.,
 ;;; 'fload-versions') must change its basis accordingly and
 ;;; update it if it's managed.      
@@ -214,9 +251,9 @@
 ;;; once the basis is determined, you're done.  The derivees
 ;;; of the Loadable-chunk just load its basis.
 (defun place-loadable-chunk (file-chunk manip)
-   (let ((new-chunk
+   (let ((ld-chunk
 	    (chunk-with-name
-	       `(:loadable ,(file-chunk-key-pathname file-chunk))
+	       `(:loadable ,(File-chunk-pathname file-chunk))
 	       (\\ (name)
 		  (let ((is-source (member (Pathname-type
 					      (File-chunk-pathname file-chunk))
@@ -227,77 +264,103 @@
 		     (let ((compiled-chunk
 			    (and is-source
 				 (place-compiled-chunk file-chunk))))
-			(make-Loadable-chunk
-			   :name name
-			   :file file-chunk
-			   :manip manip
-			   :object (cond (is-source compiled-chunk)
-					 (t file-chunk))
-			   :source (cond (is-source file-chunk)
-					 (t false)))))))))
-      (cond ((and manip
-		  (not (Loadable-chunk-manip new-chunk)))
-	     (setf (Loadable-chunk-manip new-chunk)
-	           manip)))
-      (loadable-chunk-compute-basis new-chunk)
-      new-chunk))
+			(let ((new-lc
+				 (make-Loadable-chunk
+				    :name name
+				    :file file-chunk
+				    :manip (or manip ':follow)
+				    :object (cond (is-source compiled-chunk)
+						  (t file-chunk))
+				    :source (cond (is-source file-chunk)
+						  (t false)))))
+			   (push new-lc all-loadable-chunks*)
+			   new-lc)))))))
+      (cond (manip
+	     (cond ((not (eq (Loadable-chunk-manip ld-chunk)
+			     manip))
+		    (format *error-output*
+			    "Changing manip of ~s from ~s to ~s"
+			    ld-chunk (Loadable-chunk-manip ld-chunk) manip))
+		   (setf (Loadable-chunk-manip ld-chunk)
+			 manip))))
+      (loadable-chunk-compute-basis ld-chunk)
+      ld-chunk))
 
+(defun loadables-check-bases ()
+   (let ((loadables-needing-checking !())
+	 (loadables-needing-update !()))
+      (dolist (lc all-loadable-chunks*)
+	 (cond ((memq (Loadable-chunk-manip lc)
+		      '(:defer :follow))
+		(push lc loadables-needing-checking))))
+      (dolist (lc loadables-needing-checking)
+	 (loadable-chunk-compute-basis lc)
+	 (cond ((not (chunk-up-to-date lc))
+		(push lc loadables-needing-update))))
+      (chunks-update loadables-needing-update)))
+
+;;; This must be called whenever the 'manip' field changes.
+;;; Bug: If the manip field = :defer or :follow, then this must
+;;; called whenever fload-compile* changes.
 (defun loadable-chunk-compute-basis (loadable-ch)
-   (setf (Chunk-basis loadable-ch)
-	 (let ((file-ch (Loadable-chunk-file loadable-ch))
-	       (manip (Loadable-chunk-manip loadable-ch))
-	       (source-exists (File-chunk-source file-ch))
-	       (object-exists
-		  (probe-file
-		     (File-chunk-pathname
-			(Loadable-chunk-object loadable-ch)))))
-	    (cond ((not (and source-exists object-exists))
-		   (error "No source or object file can be found for ~s"
-			  loadable-ch)))
-	    (cond ((File-chunk-alt-version file-ch)
+   (let* ((file-ch (Loadable-chunk-file loadable-ch))
+	  (manip (Loadable-chunk-manip loadable-ch))
+	  (source-exists (File-chunk-source file-ch))
+	  (object-exists
+	     (probe-file
+		(File-chunk-pathname
+		   (Loadable-chunk-object loadable-ch)))))
+      (cond ((not (and source-exists object-exists))
+	     (error "No source or object file can be found for ~s"
+		    loadable-ch)))
+      (cond ((File-chunk-alt-version file-ch)
+	     (setf (Chunk-basis loadable-ch)
 		   (list (place-loadable-chunk
-			    (File-chunk-alt-version file-ch))))
-		  ((not source-exists)
-		   (setq manip ':object))
-		  ((memq manip '(:defer :follow))
-		   (setq manip fload-compile*)
-		   (cond ((eq manip ':follow)
-			  (setf (Loadable-chunk-manip loadable-ch)
-			        manip))))
-		  ((memq manip '(:ask-once :ask-every :ask-ask))
-		   (cond (source-exists
-			  (setq manip
-			        (ask-user-for-manip loadable-ch
-						    object-exists)))
-			 (t
-			  (setq manip ':object)))))
-	    ;; At this point manip is either :object, :source, or
-	    ;; :compile
-	    (ecase
-	       (:source
-		(list (Loadable-chunk-source loadable-ch)))
-	       (:object
-		(cond (object-exists
-		       (list (Loadable-chunk-object loadable-ch)))
-		      (t
-		       (cerror "I will compile the source file"
-			       "Request to load nonexistent object file for ~s"
-			       (File-chunk-l-pathname file-ch))
-		       (list (place-compiled-chunk
-				(Loadable-chunk-source loadable-ch))))))
-	       (:compile
-		(cond ((Loadable-chunk-source loadable-ch)
-		       (list (place-compiled-chunk
-				(Loadable-chunk-source loadable-ch))))
-		      (t
-		       (source-file-missing loadable-ch))))))))
+			    (File-chunk-alt-version file-ch)
+			    false))))
+	    (t
+	     (cond ((not source-exists)
+		    (setq manip ':object))
+		   ((memq manip '(:defer :follow))
+		    (let ((prev-manip manip))
+		       (setq manip fload-compile*)
+		       (cond ((eq manip ':ask)
+			      ;; Old style doesn't make enough distinctions
+			      (setq manip ':ask-ask)))
+		       (cond ((eq prev-manip ':follow)
+			      (setf (Loadable-chunk-manip loadable-ch)
+				    manip))))))
+	     (cond ((memq manip '(:ask-once :ask-every :ask-ask))
+		    (setq manip
+		          (ask-user-for-manip loadable-ch
+					      object-exists))))
+	     ;; At this point manip is either :object, :source, or
+	     ;; :compile
+	     (setf (Chunk-basis loadable-ch)
+		   (ecase manip
+		      (:source
+		       (list (Loadable-chunk-source loadable-ch)))
+		      ((:object :compile)
+		       (cond ((and (not object-exists)
+				   (eq manip ':object))
+			      (cerror "I will compile the source file"
+				      !"Request to load nonexistent ~
+					object file for ~s"
+				      (File-chunk-l-pathname file-ch))
+			      (setq manip ':compile)))
+		       (cond ((eq manip ':object)
+			      (list (Loadable-chunk-object loadable-ch)))
+			     (t
+			      (list (place-compiled-chunk
+				       (Loadable-chunk-source
+					   loadable-ch))))))))))))
 
 (defun ask-user-for-manip (loadable-ch obj-exists)
    (let ()
       (loop 
 	 (format *query-io*
 	    !"Do you want to use the freshly compiled, ~
-              ~a version ~% of ~s (~a, \\\\ to abort) ?"
+              ~a version ~% of ~s (~a/+/-, \\\\ to abort) ?"
 	    (cond (obj-exists
 		   "source, or object")
 		  (t "or source"))
@@ -305,7 +368,7 @@
 	    (cond (obj-exists
 		   "c/s/o")
 		  (t
-		   "c/o")))
+		   "c/s")))
 	 (let ((manip 
 		  (case (keyword-if-sym (read *query-io*))
 		     ((:c :compile)
@@ -313,11 +376,26 @@
 		     ((:s :source)
 		      ':source)
 		     ((:o :object)
-		      ':object)
+		      (cond (obj-exists
+			     ':object)
+			    (t false)))
+		     (:+
+		      (setq fload-compile* ':compile)
+		      ':defer)
+		     (:-
+		      (setq fload-compile* ':object)
+		      ':defer)
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
 		     (t
-		      (format *query-io* "???~%")
+		      (format *query-io*
+			 !"Type 'c' to compile, then load object file;~%~
+			   type 's' to load source file without compiling;~%~
+			   ~atype '+' to make compiling be the default for this ~
+			   and subsequent files;~%~
+			   type '-' to make object versions be the default for ~
+			   this and subsequent files.~%"
+			 !"type 'o' to load existing object file ;~%")
 		      false))))
 	    (cond (manip
 		   (manip-maybe-remember manip loadable-ch)
@@ -355,11 +433,11 @@
 				 (throw 'fload-abort 'fload-aborted))
 				(t
 				 (format *query-io*
-				    "Type 'y' so that every question about ~
-                                     what to load will be followed by a~%  ~
-				     question about whether to record;~%~
-			             type 'n' to suppress that second ~
-                                     annoying question.~%"))))))
+				    !"Type 'y' so that every question about ~
+				      what to load will be followed by a~%  ~
+				      question about whether to record;~%~
+				      type 'n' to suppress that second ~
+				      annoying question.~%"))))))
 		      ((:d :defer)
 		       (setf (Loadable-chunk-manip loadable-ch)
 			     ':defer)
@@ -410,7 +488,7 @@
 (datafun :compute-file-basis end-header
    (defun :^ (form file-ch) ;; -- of file being slurped
       (cond ((memq ':no-compile (cdr form))
-	     (place-loadable-chunk file-ch ':source)))
+	     (place-Loadable-chunk file-ch ':source)))
    ;;;;      (cond ((and (memq ':continue-slurping (cdr form))
    ;;;;		  (eq slurping-how-much* ':at-least-header))
       (cond (end-header-dbg*
@@ -713,45 +791,29 @@
 	     (values file-version which)))))
 
 (defun place-compiled-chunk (source-file-chunk)
-   (let ((filename (File-chunk-filename source-file-chunk)))
+   (let ((filename (File-chunk-pathname source-file-chunk)))
       (let ((compiled-chunk
 	       (chunk-with-name
 		   `(:compiled ,filename)
 		   (\\ (exp)
 		      (let ((new-chunk
-			       (make-File-chunk
+			       (make-instance 'Compiled-file-chunk
+				  :source-file source-file-chunk
 				  :pathname (pathname-object-version
-					       (pathname-resolve
-						   filename)
+					       filename
 					       false)
 				  :name exp
 				  :height (+ (File-chunk-height
 						source-file-chunk)
 					     1)
-				  :basis (list source-file-chunk)
-				  :deriver #'chunk-compile)))
+				  :basis (list source-file-chunk))))
 			 new-chunk)))))
-	 (let ((compiled-basis-chunk (place-compiled-basis-chunk
-					source-file-chunk compiled-chunk)))
-	    (setf (Chunk-basis compiled-chunk)
-	          (list source-file-chunk compiled-basis-chunk))
-	    ;; -- It's important that these two chunks be at the
-	    ;; front of the basis list, and remain so even
-	    ;; as other items are added to it.
-	    (pushnew compiled-chunk (Chunk-derivees source-file-chunk))
-	    (pushnew compiled-chunk (Chunk-derivees compiled-basis-chunk))
-	    compiled-chunk))))
+	 (setf (Chunk-basis compiled-chunk)
+	       (list source-file-chunk))
+	 compiled-chunk)))
 	    
-;;; We manipulate the tail of the tail to preserve the basis-list
-;;; structure mentioned above.
-;;; Whoever calls this must ultimately make sure that if the compiled
-;;; file is managed it gets updated.
-(defun compiled-file-base-adjoin (cfc new-bases)
-   (let ((basis (File-chunk-basis cfc)))
-      (dolist (b new-bases)
-	 (cond ((not (memq b (tail (tail basis))))
-		(on-list b (tail (tail basis)))
-		(on-list cfc (Chunk-derivees b)))))))
+(defmethod derive ((cf-ch Compiled-file-chunk))
+   (
 
 
 

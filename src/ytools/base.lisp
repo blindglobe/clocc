@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.1 2004/11/21 05:12:38 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.2 2004/11/24 04:24:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -618,8 +618,8 @@
 
 (def-excl-dispatch #\" (srm _)
    (unread-char #\" srm)
-   (let ((fstr (read srm))
-	 (slen (length fstr)))
+   (let* ((fstr (read srm))
+	  (slen (length fstr)))
       (do ((squig (position #\~ fstr)
 		  (position #\~ fstr :start postskip))
 	   (prev 0 postskip)

@@ -1,9 +1,12 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.2 2004/11/18 04:46:05 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.3 2004/11/24 04:24:00 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
+
+;;; The date assigned to chunks with no basis, i.e., leaves.
+(defconstant +no-supporters-date+ -1000)
 
 ;;; A Chunk represents a piece of information, or a form of a piece of
 ;;; information, or perhaps merely a piece of information copied to a
@@ -12,10 +15,9 @@
 ;;; needs it has a pointer to the Chunk so it can tell whether the
 ;;; information is up to date and if not recompute it.
 (defclass Chunk ()
-  ((name :reader Chunk-name
+  ((name :reader Chunk-name  ; -- An S-expression
 	  :initarg :name
-	  :initform ""
-	  :type string)
+	  :initform "")
    (manage-request :accessor Chunk-manage-request
 		   :initform false
 		   :type boolean)
@@ -36,6 +38,17 @@
 	 :initform -1
 	 :type number)
    ;; -- date when updated or -1 if unknown
+   (latest-supporter-date
+         :accessor Chunk-latest-supporter-date
+	 :initform +no-supporters-date+
+	 :type number)
+   ;; -- date of latest element of basis, or basis of some element of basis,
+   ;;  or .....  Value = -1 if unknown
+   ;; More precisely, this is the latest value any supporter has ever had.
+   ;; If the basis of a chunk changes, that will not ever cause its
+   ;; 'latest-supporter-date' to decrease.  In particular, a chunk can
+   ;; go from begin out of date to being up to date only by a call
+   ;; to 'chunks-update'.
    (basis :accessor Chunk-basis
 	  :initarg :basis
 	  :initform !()
@@ -73,11 +86,26 @@
 ;;; of a subset of the basis, so if we updated it it wouldn't change the
 ;;; the output of 'derive'.
 
+(defgeneric print-innards (x srm)
+  (:method ((x t) srm)
+     (declare (ignore srm))
+     (values)))
+
 (defmethod print-object ((c Chunk) srm)
-   (format srm "#<Chunk~a~s>"
+   (format srm "#<Chunk~a~s"
 	   (cond ((Chunk-managed c) "=")
 		 (t "_"))
-	   (Chunk-name c)))
+	   (Chunk-name c))
+   (print-innards c srm)
+   (format srm "~a>"
+	   (cond ((Chunk-is-leaf c)
+		  "*")
+		 ((and (slot-boundp c 'date)
+		       (slot-boundp c 'latest-supporter-date)
+		       (>= (Chunk-date c)
+			   (Chunk-latest-supporter-date c)))
+		  "!")
+		 (t "?"))))
 
 (defgeneric derive (chunk))
 ;;; Recomputes chunk
@@ -98,7 +126,59 @@
    (dolist (b (Chunk-basis ch))
       (pushnew ch (Chunk-derivees b) :test #'eq))
    (dolist (b (Chunk-update-basis ch))
-      (pushnew ch (Chunk-update-derivees b) :test #'eq)))
+      (pushnew ch (Chunk-update-derivees b) :test #'eq))
+   (cond ((null (Chunk-basis ch))
+	  (leaf-chunk-update ch)))
+;;; There is no point in doing this, because 'ch' has no derivees
+;;; immediately after being created.   
+;;;;   (set-latest-support-date ch)
+   )
+
+(defun Chunk-is-leaf (ch) (null (Chunk-basis ch)))
+
+(defmethod (setf Chunk-basis) :before (new-basis ch)
+                                     (declare (ignore new-basis))
+   (dolist (b (Chunk-basis ch))
+      (setf (Chunk-derivees b)
+	    (remove ch (Chunk-derivees b)))))
+
+(defmethod (setf Chunk-basis) :after (new-basis ch)
+                                     (declare (ignore new-basis))
+   (dolist (b (Chunk-basis ch))
+      (setf (Chunk-derivees b)
+	    (adjoin ch (Chunk-derivees b))))
+   (set-latest-support-date ch))
+
+;;; Returns a list of all chunks whose 'latest-supporter-date' get
+;;; updated.
+(defun set-latest-support-date (ch)
+   (let ((latest-supporter-date +no-supporters-date+))
+      (dolist (b (Chunk-basis ch))
+	 (let ((late (max (Chunk-date b)
+			  (Chunk-latest-supporter-date b))))
+	    (cond ((> late latest-supporter-date)
+		   (setf latest-supporter-date late)))))
+      (cond ((or (> latest-supporter-date
+		    (Chunk-latest-supporter-date ch))
+		 (= latest-supporter-date +no-supporters-date+))
+	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)
+	     (cons ch
+		   (mapcan (\\ (d) (set-latest-support-date d))
+			   (Chunk-derivees ch))))
+	    (t !()))))
+
+(defmethod (setf Chunk-update-basis) :before (new-update-basis ch)
+                                     (declare (ignore new-update-basis))
+
+   (dolist (b (Chunk-update-basis ch))
+      (setf (Chunk-update-derivees b)
+	    (remove ch (Chunk-update-derivees b)))))
+
+(defmethod (setf Chunk-update-basis) :after (new-update-basis ch)
+                                     (declare (ignore new-update-basis))
+   (dolist (b (Chunk-update-basis ch))
+      (setf (Chunk-update-derivees b)
+	    (adjoin ch (Chunk-update-derivees b)))))
 
 (defun chunk-request-mgt (c)
    (cond ((not (Chunk-manage-request c))
@@ -139,11 +219,13 @@
 			    (t dvl))))
 	     (cond (propagate
 		    (let ((all-derivees
-			     (chunk-gather-derivees c)))
+			     (chunk-gather-derivees c !())))
 		       (cond ((or (not (eq propagate ':ask))
 				  (< (length all-derivees) 2)
 				  (yes-or-no-p
-				     "Should I really stop managing (keeping up to date) all of the following chunks? --~%  ~S?"
+				     !"Should I really stop managing (keeping ~
+                                       up to date) all of the following chunks?~
+                                       --~%  ~s?"
 				     all-derivees))
 			      (dolist (d all-derivees)
 				 (setf (Chunk-manage-request d) false)
@@ -163,78 +245,200 @@
 (defun chunks-update (chunks)
    ;; We have two mechanisms for keeping track of updates in progress.
    ;; The 'in-progress' stack is used to detect a situation where a
-   ;; chunk is its own input, which would cause an infinite recursion
-   ;; if undetected (and may indicate an impossible update goal).  The
-   ;; mark mechanism is used to avoid updating a chunk which has
-   ;; already been updated during this call to 'chunk-update'.  This
+   ;; chunk feeds its own input, which would cause an infinite recursion
+   ;; if undetected (and may indicate an impossible update goal).  
+   ;; The mark mechanism is used to avoid processing a chunk which has
+   ;; already been processed. during this call to 'chunk-update'.  This
    ;; is "merely" for efficiency, but it's not a case of premature
    ;; optimization, because it's very easy for the derivation graph to
    ;; have exponentially many occurrences of a chunk if the graph is
    ;; expanded to a tree (which is what eliminating this optimization
    ;; would amount to).
-   (let (chunk)
-      (labels ((update-recursively (ch starter in-progress)
-		  (format t "updating ~s~%" ch)
+   ;; The algorithm is hairy because of the need to handle "update bases,"
+   ;; the chunks needed to run a chunk's deriver, but not to test whether
+   ;; it is up to date.  We first propagate down to leaves ('check-leaves-
+   ;; up-to-date'), then back up resetting the 'latest-supporter-date'
+   ;; of all the chunks we passed.  If that allows us to detect that a chunk
+   ;; is out of date, we must go down and up again through its update-basis.
+   ;; The process stops when no further updates can be found.
+   ;; Now we call 'derivees-update' to call 'derive' on all out-of-date 
+   ;; chunks that can be reached from the marked leaves.
+   ;; Note: The procedure calls the deriver of a chunk at most once.
+   ;; Derivers of leaves are called in 'check-leaves-up-to-date'; other
+   ;; derivers are called in 'derivees-update'.
+   (let ((down-mark (+ update-no* 1))
+	 (up-mark (+ update-no* 2)))
+      (setq update-no* (+ update-no* 2))
+      (labels ((check-leaves-up-to-date (ch in-progress)
+		  ;; Returns list of leaf chunks supporting ch.
+		  ;; Also marks all derivees* of those leaves with proper
+		  ;; latest-supporter-date.
+		  (cond ((= (Chunk-update-mark ch) down-mark)
+			 !())
+			((member ch in-progress)
+			 (error
+			     !"Path to leaf chunks from ~s apparently goes ~
+                               through itself"))
+			(t
+			 (let ((in-progress (cons ch in-progress)))
+;;;;			    (format t "Setting down-mark of ~s~%" ch)
+			    (setf (Chunk-update-mark ch) down-mark)
+			    (cond ((null (Chunk-basis ch))
+				   ;; Reached a leaf
+				   (derive ch)
+;;;;				   (format t "Leaf derived: ~s~%" ch)
+				   (cons ch
+					 (check-from-new-starting-points
+					    (set-latest-support-date ch)
+					    in-progress)))
+				  (t
+				   (flet ((recur (b)
+					     (check-leaves-up-to-date
+						b in-progress)))
+				      (nconc
+					 (mapcan #'recur
+						 (Chunk-basis ch))
+					 ;; The call to 'chunk-up-to-date'
+					 ;; works because the leaves supporting
+					 ;; ch have passed their dates up
+					 ;; via 'set-latest-support-date' --
+					 (cond ((not (chunk-up-to-date ch))
+						(mapcan #'recur
+							(Chunk-update-basis ch)))
+					       (t !()))))))))))
+
+	       (check-from-new-starting-points (updatees in-progress)
+		  ;; Sweep up from leaves may have found new chunks that
+		  ;; to be checked.
+		  (let ((nsp (mapcan (\\ (ch)
+					(check-leaves-up-to-date
+					   ch in-progress))
+				     (remove-if-not  ; = keep-if
+					(\\ (c)
+					   (and (not (chunk-up-to-date c))
+						(or (Chunk-managed c)
+						    (= (Chunk-update-mark c) down-mark))))
+					(set-difference updatees in-progress)))))
+;;;;		     (format t "New starting points from ~s~%   = ~s~%"
+;;;;			       updatees nsp)
+		     nsp))
+
+	       (derivees-update (ch in-progress)
+;;;;		  (format t "Considering ~s~%" ch)
 		  (cond ((member ch in-progress)
 			 (error
-			    "Attempt to update ~s in order to update itself~%"
+			    !"Cycle in derivation links from ~s"
 			    ch))
-			((not (= (Chunk-update-mark ch) update-no*))
+			((and (not (= (Chunk-update-mark ch) up-mark))
+			      ;; Run the deriver when and only when
+			      ;; its basis is up to date --
+			      (every (\\ (b)
+					(or (Chunk-is-leaf b)
+					    (chunk-up-to-date b)))
+				     (Chunk-basis ch))
+			      ;; Ditto for update-basis --
+			      (every (\\ (b)
+					(or (Chunk-is-leaf b)
+					    (chunk-up-to-date b)))
+				     (Chunk-update-basis ch)))
 			 (let ((in-progress
-				     (cons ch in-progress)))
-			    (cond ((or starter
-				       (not (chunk-up-to-date ch)))
-				   (dolist (ub (Chunk-update-basis ch))
-				      (update-recursively
-				         ub false in-progress))
-				   ;; The deriver has not yet been called if
-				   ;; 'chunk-up-to-date' returns false
+				     (cons ch in-progress))
+			       (down-marked (= (Chunk-update-mark ch)
+					       down-mark)))
+			    (setf (Chunk-update-mark ch) up-mark)
+			    (cond ((and (or down-marked
+					    (Chunk-managed ch))
+					(not (chunk-up-to-date ch)))
 				   (let ((new-date (derive ch)))
-				      (cond ((or starter
-						 (and new-date
-						      (> new-date
-							 (Chunk-date ch))))
+;;;;				      (format t "Derived ~s~%" ch)
+				      (cond ((and new-date
+						  (> new-date
+						     (Chunk-date ch)))
+;;;;					     (setq ch* ch)
+;;;;					     (break
+;;;;					        "[A]About to set date of ~s, old = ~s, new = ~s~%"
+;;;;						ch (Chunk-date ch) new-date)
 					     (setf (Chunk-date ch)
-					           (or new-date
-						       (get-universal-time)))
+					           new-date)
 					     (dolist (d (Chunk-derivees ch))
-						(cond ((Chunk-managed d)
-						       (update-recursively
-							  d false in-progress)))
-					     )))))))
-			 (setf (Chunk-update-mark ch) update-no*)))))
+						(derivees-update d in-progress))
+					     (dolist (d (Chunk-update-derivees ch))
+					        (derivees-update d in-progress)
+					     ))
+					    (t
+					     (cond ((or (not new-date)
+							(< new-date
+							   (Chunk-date ch)))
+;;;;						    (setq ch* ch)
+;;;;						    (break
+;;;;						       "[B]About to set date of ~s, old = ~s, new = ~s~%"
+;;;;						       ch (Chunk-date ch)
+;;;;						       (Chunk-latest-supporter-date
+;;;;							   ch))
+						    (setf (Chunk-date ch)
+							  (Chunk-latest-supporter-date
+							     ch))))
+;;;;					     (format t "new-date ~s falls to ~s~%"
+;;;;						     new-date (Chunk-date ch))
+					     ))))
+				  (t
+;;;;				   (format t "Skipping ~s, because ~a~%"
+;;;;					   ch (cond ((or down-marked
+;;;;							 (Chunk-managed ch))
+;;;;						     "already up to date")
+;;;;						    (t
+;;;;						     "not managed or marked")))
+				  ))))
+			(t
+;;;;			 (format t "Rejecting ~s, because ~a~%"
+;;;;				 ch (cond ((= (Chunk-update-mark ch) up-mark)
+;;;;					   "already done")
+;;;;					  (t
+;;;;					   "bases not ready")))
+			))))
 	 (cond ((some #'Chunk-managed chunks)
-		(setf update-no* (+ update-no* 1))
-		(format t "update-no* = ~s~%" update-no*)
-		(dolist (ch chunks)
-		   (cond ((Chunk-managed ch)
-			  (setq chunk ch)
-			  (update-recursively chunk true '())))))))))
+;;;;		(setf update-no* (+ update-no* 1))
+;;;;		(format t "update-no* = ~s~%" update-no*)
+		(let ((leaves
+		         (mapcan (\\ (ch)
+				    (cond ((Chunk-managed ch)
+					   (check-leaves-up-to-date ch !()))
+					  (t !())))
+				 chunks)))
+;;;;		   (format t "Deriving from ~s~%" leaves)
+;;;;		   (break "Ready to rederive")
+		   (dolist (leaf leaves)
+		      (dolist (d (Chunk-derivees leaf))
+			 (derivees-update d !())))))))))
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.
 ;;; -- If 'basis' is !(), then you have to call 'derive' for every
 ;;; inquiry, but the deriver makes it up to date.
 (defun chunk-up-to-date (ch)
-   (let ((ch-date (Chunk-date ch)))
+   (let ()
       (cond ((null (Chunk-basis ch))
-	     (let ((d (derive ch)))
+	     (leaf-chunk-update ch))
+	    (t
+	     (>= (Chunk-date ch)
+		 (Chunk-latest-supporter-date ch))))))
+
+(defun leaf-chunk-update (leaf-ch)
+	     (let ((d (derive leaf-ch)))
 		(cond (d
-		       (cond ((< d ch-date)
+		       (cond ((< d (Chunk-date leaf-ch))
 			      (cerror "I will ignore the new date"
-				      "Chunk-deriver returned date ~s, which is before current date ~s"
-				      d (Chunk-date ch))
+				      !"Chunk-deriver returned date ~s, ~
+					which is before current date ~s"
+				      d (Chunk-date leaf-ch))
 			      true)
 			     (t
-			      (setf (Chunk-date ch) d)
+;;;;			      (setf lch* leaf-ch)
+;;;;			      (format t "[C]Setting date of ~s; old = ~s; new = ~s~%"
+;;;;				      leaf-ch (Chunk-date leaf-ch) d)
+			      (setf (Chunk-date leaf-ch) d)
 			      true)))
 		      (t true))))
-	    (t
-	     ;; We're assuming here that the basis chunks have been
-	     ;; updated.  Keep an eye on this assumption.
-	     (every (\\ (b)
-		       (=< (Chunk-date b) ch-date))
-		    (Chunk-basis ch))))))
 
 (defvar chunk-table* (make-hash-table :test #'equal :size 300))
 
@@ -279,3 +483,15 @@
 				  new-chunk))
 			      (t false)))
 		       (t c))))))))
+
+;;; For debugging --
+(defun chunk-zap-dates (c)
+;; Zap all chunks supporting c, except inputs.
+;; Doesn't check whether already zapped, so it's sure of getting
+;; them all.
+   (cond ((not (null (Chunk-basis c)))
+	  (setf (Chunk-date c) 0)
+	  (dolist (b (Chunk-basis c))
+	     (chunk-zap-dates b))
+	  (dolist (u (Chunk-update-basis c))
+	     (chunk-zap-dates u)))))

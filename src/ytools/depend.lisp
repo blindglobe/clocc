@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.1 2004/11/21 05:12:38 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.2 2004/11/24 04:24:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -32,66 +32,25 @@
 
 (defmacro depends-on (&rest stuff)
    (let ((dgroups (depends-on-args-group stuff)))
-;;;;   (let ((c-recorder-var (gensym))
-;;;;	 (r-recorder-var (gensym))
-;;;;	 (pnl-var (gensym)))
-      (let ((some-run (some (\\ (g) 
-			       (memq ':run-time (car g)))
-			    dgroups))
-	    (some-comp (some (\\ (g)
-				  (memq ':compile-time (car g)))
-			       dgroups)))
-	 (cond ((or some-run some-comp)
-		`(cond (depends-on-enabled*
-			(let (,@(include-if some-comp
-				   '(c-recorder (and now-loading-lprec*
-						     (lpr-comp-tdo-recorder
-							 now-loading-lprec*))))
-			      ,@(include-if some-run
-				   '(r-recorder (and now-loading-lprec*
-						     (lpr-run-tdo-recorder
-							 now-loading-lprec*)))))
-			   (cond ((not (and ,@(include-if some-comp 'c-recorder)
-					    ,@(include-if some-run 'r-recorder)))
-				  (format *error-output* 
-					  "Warning: depends-on form in file being loaded without fload: ~% ~s~%"
-					  '(depends-on ,@stuff))))
-			   ,@(mapcan
-				(lambda (g)
-				   (let ((at-run-time (memq ':run-time (car g)))
-					 (at-compile-time (memq ':compile-time
-								(car g))))
-				      (cond ((or at-run-time at-compile-time)
-					     (let ((pnl
-						      (filespecs->ytools-pathnames
-							 (cdr g))))
-					        (depends-on-expansion
-						   pnl at-run-time
-						   at-compile-time)))
-					    (t !()))))
-				dgroups)))))
-	       (t '(values))))))
-
-(defun depends-on-expansion (pnl at-run-time at-compile-time)
-   (nconc (cond (at-compile-time
-		 (list `(cond (c-recorder
-			       (dolist (pn ',pnl)
-				  (funcall c-recorder pn))))))
-		(t !()))
-	  (cond (at-run-time
-		 (cons `(cond (r-recorder
-			       (dolist (pn ',pnl)
-				 (funcall r-recorder pn)
-				 (pathname-fload pn false false false))))
-		       (mapcan (\\ (pn)
-				   (cond ((is-Pseudo-pathname pn)
-					  (list-copy
-					     (pseudo-pathname-insertables pn)))
-					 (t !())))
-			       pnl)))
-		(t !()))))
-
-;;; 2/3 of these lambdas can be alpha-reduced.
+      (let ((read-time-deps
+	       (mapcan (\\ (g)
+			  (cond ((memq ':read-time (first g))
+				 (list-copy (rest g)))
+				(t !())))
+		       dgroups))
+	    (run-time-deps
+	       (mapcan (\\ (g)
+			  (cond ((memq ':run-time (first g))
+				 (list-copy (rest g)))
+				(t !())))
+		       dgroups)))
+      `(cond (depends-on-enabled*
+	      ,@(include-if (not (null read-time-deps))
+		   `(eval-when (:compile-toplevel :execute)
+		       (fload ,@read-time-deps)))
+	      ,@(include-if (not (null run-time-deps))
+		   `(eval-when (:load-toplevel :execute)
+		       (fload ,@run-time-deps))))))))
 
 (datafun :compute-file-basis depends-on
   (defun :^ (e file-ch)
@@ -108,10 +67,10 @@
 			(let ((files (<# place-file-chunk
 					 (filespecs->ytools-pathnames (cdr g)))))
 			   (cond ((memq ':compile-time (first g))
-				  (setf (File-chunk-basis compiled-ch)
+				  (setf (Chunk-basis compiled-ch)
 					(union
 					   files
-					   (File-chunk-basis compiled-ch)))
+					   (Chunk-basis compiled-ch)))
 				  (setf (File-chunk-update-basis compiled-ch)
 				        (union (<# place-loaded-chunk
 						   files)
@@ -123,60 +82,23 @@
 					       (File-chunk-callees file-ch)))))
 			   (cond ((or (memq ':slurp-time (first g))
 				      (memq ':read-time (first g)))
-				  (dolist (s-f-ch files)
-				     (setf (File-chunk-read-basis file-ch)
-				           (adjoin s-f-ch
-						   (File-chunk-read-basis
-						      file-ch)))
+				  (setf (File-chunk-read-basis file-ch)
+					(union files
+					       (File-chunk-read-basis
+						   file-ch)))
+				  (
 				     (cond ((not (memq s-f-ch
 						       (Chunk-basis compiled-ch)))
-					    (setf (Chunk-basis compiled-ch)
-					          (append (Chunk-basis
-							     compiled-ch)
-							  (list s-f-ch))))))))
-				     (
-					   
-
-			       
-
-
-			   (pathname-handlers
-
-
-
-
-
-			      (mapcar (\\ (m)
-					 (ecase m
-					     (:compile-time
-					      #'(lambda (pn)
-						   (pathname-fload pn false false false)
-						   (funcall (lpr-comp-tdo-recorder
-							       slurping-lprec*)
-							    pn)))
-					     (:run-time
-					      #'(lambda (pn)
-						   (recursive-slurp pn)
-						   (funcall (lpr-run-tdo-recorder 
-								slurping-lprec*)
-							    pn)))
-					     (:slurp-time
-					      #'(lambda (pn)
-;;;;	  					   (format *error-output*
-;;;;	  					      "Loading pathname ~s~%" pn)
-						   (pathname-fload pn false false false)
-						   ;;;;(pathname-slurp pn false ':whole-file)
-						   ))))
-				      (car g))))
-			(dolist (pn pnl)
-;;;;	  		   (format *error-output* "Processing ~s howmuch = ~s~%"
-;;;;				   pn slurping-how-much*)
-			   (dolist (h pathname-handlers)
-			      (funcall h pn))
-			   (cond ((is-Pseudo-pathname pn)
-				  (dolist (e (pseudo-pathname-insertables pn))
-				     (form-slurp e slurp-if-substantive)))))))))))
-     false))
+					    ;; blech --
+					    (setf (tail
+						     (tail
+							(Chunk-basis
+							   compiled-ch)))
+					          (cons s-f-ch
+							(tail
+							   (tail
+							      (Chunk-basis
+								 compiled-ch)))))))
 
 (defun lpr-comp-tdo-recorder (lpr)
    #'(lambda (pn)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.2 2004/11/19 15:31:48 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.3 2004/11/24 04:24:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -139,20 +139,6 @@
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
 
-;;; Possible values: 
-;;;  Just like values of Load-progress-rec-whether-compile, except that
-;;;  the latter can be :unknown.
-;;;  The local whether-compile for an lprec dominates the global flag,
-;;;  unless it's :unknown.
-
-;;; :compile -- always compile when object file is missing or out of date)
-;;; :object, :source -- always load object or source without compiling
-;;;     Even if :object, if object doesn't exist source will be loaded
-;;;     with no questions asked.
-;;;     (Unlikely you would ever want one of these globally; they can be
-;;;     useful in a Load-progress-rec.)
-;;; :ask -- ask user what to do
-(defvar fload-compile* ':ask) 
 
 (defun ytools-module-load (name force-flag)
 ;;;;  (breakpoint ytools-module-load

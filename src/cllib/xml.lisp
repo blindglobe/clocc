@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.46 2003/09/26 15:28:57 sds Exp $
+;;; $Id: xml.lisp,v 2.47 2004/07/16 15:34:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -745,23 +745,36 @@ The first character to be read is #\T."
                         'read-xml stream last)
                 (make-xml-decl :name name :args (nbutlast atts))))
          (#\!
-          (if (char= #\- (peek-char nil stream))
-              (let ((ch (progn (read-char stream) (read-char stream t nil t))))
-                (assert (char= #\- ch) (ch)
-                        "~s: cannot handle: <!-~c" 'read-xml ch)
-                (make-xml-comment :data (xml-read-comment stream)))
-              (let ((obj (read stream t nil t)))
-                (case obj
-                  (xml-tags::entity (make-xml-comment
-                                     :data (xml-read-entity stream)))
-                  ((xml-tags::doctype xml-tags::element xml-tags::attlist
-                    xml-tags::notation)
-                   (make-xml-misc :type obj :data
-                                  (read-delimited-list #\> stream t)))
-                  (t (warn "~s: what is `~s'? proceed, with fingers crossed..."
-                           'read-xml obj)
-                     (cons obj (xml-list-to-alist
-                                (read-delimited-list #\> stream t))))))))
+          (case (peek-char nil stream)
+            (#\-                ; comment <!-- ... -->
+             (let ((ch (progn (read-char stream) (read-char stream t nil t))))
+               (assert (char= #\- ch) (ch)
+                       "~s: cannot handle: <!-~c" 'read-xml ch)
+               (make-xml-comment :data (xml-read-comment stream))))
+            (#\[                ; character data <![CDATA[ ... ]]>
+             (let ((res (make-array 20 :adjustable t :element-type 'character
+                                    :fill-pointer #.(length "[CDATA["))))
+               (assert (and (= (read-sequence res stream) 7)
+                            (string= res "[CDATA["))
+                       (res) "~s: cannot handle: <!~a" 'read-xml res)
+               (setf (fill-pointer res) 0)
+               (loop :for len = (vector-push-extend
+                                 (read-char stream t nil t) res)
+                 :until (and (>= len 3) (string= "]]>" res :start2 (- len 2)))
+                 :finally (setf (fill-pointer res) (- len 2)))
+               res))
+            (t (let ((obj (read stream t nil t)))
+                 (case obj
+                   (xml-tags::entity (make-xml-comment
+                                      :data (xml-read-entity stream)))
+                   ((xml-tags::doctype xml-tags::element xml-tags::attlist
+                                       xml-tags::notation)
+                    (make-xml-misc :type obj :data
+                                   (read-delimited-list #\> stream t)))
+                   (t (warn "~s: what is `~s'? proceed, with fingers crossed..."
+                            'read-xml obj)
+                      (cons obj (xml-list-to-alist
+                                 (read-delimited-list #\> stream t)))))))))
          (t (unread-char ch stream)
             (xml-read-tag stream)))))
     ;; do not need `xml-list-to-alist' in <!DOCTYPE foo [...]>

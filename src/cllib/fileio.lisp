@@ -1,10 +1,8 @@
-;;; File: <fileio.lisp - 2000-02-18 Fri 12:59:39 EST sds@ksp.com>
-;;;
-;;; Read to/Write from files
+;;; Read from/Write to files
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: fileio.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: fileio.lisp,v 1.2 2000/03/21 20:29:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,9 +12,7 @@
   ;; `+kwd+'
   (require :symb (translate-logical-pathname "cllib:symb"))
   ;; `get-float-time', `elapsed-1', `mesg'
-  (require :log (translate-logical-pathname "cllib:log"))
-  ;; `*clos-readtable*'
-  (require :closio (translate-logical-pathname "cllib:closio")))
+  (require :log (translate-logical-pathname "cllib:log")))
 
 (in-package :cllib)
 
@@ -185,18 +181,24 @@ The optional third argument is passed to `pr'."
               (setq el1 (elapsed-1 bt1 nil)))
       (format t "done [~:d bytes, ~a/~a]~%" (file-length str) el el1))))
 
-(defun read-from-file (file &optional clos)
+;;;###autoload
+(defun read-from-file (file &key (readtable *readtable*) repeat)
   "Read an object from a file.
-If the second (optional) parameter is non-nil the CLOS object will
-be read with the #[] syntax (see `make-clos-readtable')."
+The READTABLE keyword argument (default `*readtable*') specifies
+the readtable to use.
+The REPEAT keyword argument tells how many objects to read.
+If NIL, read once and return the object read;
+if a number, read that many times and return a list of objects read."
   (declare (type (or simple-string pathname) file))
   (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
     (prog1 (with-open-file (str file :direction :input)
              (format t "~&Reading `~a' [~:d bytes]..." file (file-length str))
              (force-output)
              (with-standard-io-syntax
-               (let ((*readtable* (if clos *clos-readtable* *readtable*)))
-                 (read str))))
+               (let ((*readtable* readtable))
+                 (if repeat
+                     (loop :repeat repeat :collect (read str))
+                     (read str)))))
       (format t "done [~a/~a]~%" (elapsed-1 bt t) (elapsed-1 bt1 nil)))))
 
 (defun append-to-file (file fmt &rest fmt-args)
@@ -281,7 +283,8 @@ Non-existent files are assumed to be VERY old."
           (nth nth (sort ll #'> :key #'file-write-date))))))
 
 (defun save-restore (what &key (name "~a") pre-save post-read var
-                     (voidp #'null) (basedir *datadir*) clos)
+                     (voidp #'null) (basedir *datadir*)
+                     (readtable *readtable*))
   "Save or read VAR into/from file.
 NAME is the name template, and should contain one `~a' format instruction
  if you want the filename to contain the timestamp;
@@ -290,7 +293,7 @@ VOIDP is a predicate called on value of VAR (default - NULL);
 PRE-SAVE and POST-READ are functions called before save and after reading,
  they should be non-destructive and return the value to be written to the
  file and assigned to the variable respectively;
-CLOS is passed to `read-from-file'.
+READTABLE is passed to `read-from-file'.
 BASEDIR is the pathname relative to which NAME is expanded (`*datadir*')."
   (declare (simple-string name) (symbol var) (pathname basedir)
            (type (or function null) pre-save post-read) (function voidp))
@@ -302,7 +305,7 @@ BASEDIR is the pathname relative to which NAME is expanded (`*datadir*')."
                           (if (or (stringp what) (pathnamep what)) what
                               (merge-pathnames (format nil name "*") basedir))
                           (if (numberp what) what 0))
-                         clos)))
+                         :readtable readtable)))
                 (if post-read (funcall post-read vv) vv)))
         (write-to-file
          (if pre-save (funcall pre-save val) val)

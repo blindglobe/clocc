@@ -1,10 +1,10 @@
 ;;; HTML generation
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.19 2004/11/10 18:00:39 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.20 2005/01/27 23:02:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)

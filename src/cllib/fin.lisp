@@ -1,10 +1,10 @@
 ;;; Financial functions
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2002 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.8 2002/11/07 22:44:06 sds Exp $
+;;; $Id: fin.lisp,v 2.9 2005/01/27 23:02:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)

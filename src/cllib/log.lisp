@@ -1,10 +1,10 @@
 ;;; logging and progress reporting
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.28 2004/11/09 20:43:17 sds Exp $
+;;; $Id: log.lisp,v 1.29 2005/01/27 23:02:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)

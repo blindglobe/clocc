@@ -1,10 +1,10 @@
 ;;; RPM updates
 ;;;
-;;; Copyright (C) 1998-2003 by Sam Steingold
+;;; Copyright (C) 1998-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.20 2004/11/12 19:00:43 sds Exp $
+;;; $Id: rpm.lisp,v 2.21 2005/01/27 23:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)

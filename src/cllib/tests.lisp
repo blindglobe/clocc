@@ -1,10 +1,10 @@
 ;;; Regression Testing
 ;;;
-;;; Copyright (C) 1999-2002 by Sam Steingold
+;;; Copyright (C) 1999-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.32 2004/12/23 15:31:16 sds Exp $
+;;; $Id: tests.lisp,v 2.33 2005/01/27 23:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)

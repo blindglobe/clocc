@@ -1,10 +1,10 @@
 ;;; stuff for working with sorted (and not so sorted) sequences
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold
+;;; Copyright (C) 1997-2003 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.9 2003/06/07 21:44:45 sds Exp $
+;;; $Id: sorted.lisp,v 1.10 2005/01/27 23:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)

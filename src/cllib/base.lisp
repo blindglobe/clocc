@@ -1,10 +1,10 @@
 ;;; Basis functionality, required everywhere
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2004 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.18 2004/12/23 15:06:14 sds Exp $
+;;; $Id: base.lisp,v 2.19 2005/01/27 23:03:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)

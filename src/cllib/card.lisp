@@ -5,11 +5,11 @@
 ;;;  http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html
 ;;;  http://www.imc.org/pdi
 ;;;
-;;; Copyright (C) 1999-2000 by Sam Steingold
+;;; Copyright (C) 1999-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.14 2004/11/12 19:00:45 sds Exp $
+;;; $Id: card.lisp,v 2.15 2005/01/27 23:02:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)

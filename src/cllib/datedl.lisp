@@ -1,10 +1,10 @@
 ;;; Dated Lists - extracted from date.lisp
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.13 2004/11/12 19:00:44 sds Exp $
+;;; $Id: datedl.lisp,v 1.14 2005/01/27 23:02:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)

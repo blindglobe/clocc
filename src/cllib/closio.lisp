@@ -2,11 +2,11 @@
 ;;; Load this file and you will be able to print CLOS objects with #[] format,
 ;;; bind `*readtable*' to `+clos-readtable+' and `read' will read #[]
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.19 2004/03/29 20:11:59 sds Exp $
+;;; $Id: closio.lisp,v 1.20 2005/01/27 23:02:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)

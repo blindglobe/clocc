@@ -1,10 +1,10 @@
 ;;; Guess an Animal - CL implementation.
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2001 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.10 2001/11/02 22:31:15 sds Exp $
+;;; $Id: animals.lisp,v 2.11 2005/01/27 23:03:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)

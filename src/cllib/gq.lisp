@@ -2,11 +2,11 @@
 ;;; get stock/mutual fund quotes from the Internet
 ;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold.
+;;; Copyright (C) 1997-2004 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.33 2004/11/12 19:00:44 sds Exp $
+;;; $Id: gq.lisp,v 2.34 2005/01/27 23:02:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)

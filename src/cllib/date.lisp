@@ -1,10 +1,10 @@
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold.
+;;; Copyright (C) 1997-2005 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.28 2005/01/27 18:15:58 sds Exp $
+;;; $Id: date.lisp,v 2.29 2005/01/27 23:02:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)

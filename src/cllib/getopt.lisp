@@ -1,11 +1,11 @@
 ;;; parse command line options
 ;;; this is useful for lisp scripting
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2001 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: getopt.lisp,v 2.3 2001/11/02 22:31:15 sds Exp $
+;;; $Id: getopt.lisp,v 2.4 2005/01/27 23:02:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/getopt.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,10 +1,10 @@
 ;;; Additional List Operations
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2002 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: list.lisp,v 2.6 2002/11/30 22:47:39 sds Exp $
+;;; $Id: list.lisp,v 2.7 2005/01/27 23:02:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 
 (eval-when (compile load eval)

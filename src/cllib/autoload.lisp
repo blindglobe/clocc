@@ -1,10 +1,10 @@
 ;;; generate and use autoloads
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2003 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.11 2003/07/01 19:26:39 sds Exp $
+;;; $Id: autoload.lisp,v 1.12 2005/01/27 23:03:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,10 +1,10 @@
 ;;; hardcopy printing
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2001 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: laser.lisp,v 1.4 2001/11/02 22:31:15 sds Exp $
+;;; $Id: laser.lisp,v 1.5 2005/01/27 23:02:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/laser.lisp,v $
 
 (eval-when (compile load eval)

@@ -3,11 +3,11 @@
 ;;; http://www.sourcegear.com/CVS
 ;;;
 ;;; Copyright (C) 1996 by Bruno Haible
-;;; Copyright (C) 1998-2000 by Sam Steingold
+;;; Copyright (C) 1998-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.25 2004/11/12 19:00:45 sds Exp $
+;;; $Id: cvs.lisp,v 2.26 2005/01/27 23:02:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)

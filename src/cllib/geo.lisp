@@ -1,10 +1,10 @@
 ;;; geo - geographical data processing
 ;;;
-;;; Copyright (C) 1998-2000 by Sam Steingold.
+;;; Copyright (C) 1998-2004 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.16 2004/11/12 19:00:44 sds Exp $
+;;; $Id: geo.lisp,v 2.17 2005/01/27 23:02:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)

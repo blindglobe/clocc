@@ -1,10 +1,10 @@
 ;;; CL server - not yet fully implemented
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: server.lisp,v 1.7 2002/03/27 23:33:11 sds Exp $
+;;; $Id: server.lisp,v 1.8 2005/01/27 23:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/server.lisp,v $
 
 (eval-when (compile load eval)

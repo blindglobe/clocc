@@ -1,10 +1,10 @@
 ;;; read/write comma-separated values
 ;;;
-;;; Copyright (C) 2003 by Sam Steingold
+;;; Copyright (C) 2003-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.13 2004/10/03 19:11:27 sds Exp $
+;;; $Id: csv.lisp,v 2.14 2005/01/27 23:02:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)

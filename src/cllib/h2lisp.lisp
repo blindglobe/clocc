@@ -2,11 +2,11 @@
 ;;;
 ;;; Convert *.c to CLISP's ffi
 ;;;
-;;; Copyright (C) 1999-2000 by Sam Steingold
+;;; Copyright (C) 1999-2001 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.7 2001/11/02 22:31:15 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.8 2005/01/27 23:02:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)

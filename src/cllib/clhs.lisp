@@ -1,10 +1,10 @@
 ;;; HyperSpec handling
 ;;;
-;;; Copyright (C) 1999-2002 by Sam Steingold
+;;; Copyright (C) 1999-2005 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.6 2005/01/27 18:02:55 sds Exp $
+;;; $Id: clhs.lisp,v 3.7 2005/01/27 23:02:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)

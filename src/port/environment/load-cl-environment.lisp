@@ -14,7 +14,7 @@
     (make-pathname :host (pathname-host *load-pathname*)
 		   :device (pathname-device *load-pathname*)
 		   :directory (pathname-directory *load-pathname*)
-		   :case :common ; Do we need this?
+		   ;; :case :common ; Do we need this?
 		   )))
 
 (defun load-cl-environment-library (&key

@@ -1,3 +1,11 @@
+common-lisp-controller (3.29) unstable; urgency=low
+
+  * NMU
+  * Add README.packaging file
+  * Further simplify autobuild names
+  
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 09:02:08 -0600
+
 common-lisp-controller (3.28) unstable; urgency=low
 
   * NMU

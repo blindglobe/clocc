@@ -14,18 +14,18 @@ SBIN_PROGS 	:= register-common-lisp-source unregister-common-lisp-source \
 		unregister-common-lisp-implementation \
 		clc-reregister-all-impl	clc-build-daemon
 
-BIN_PROGS	:= clc-send-command clc-autobuild-library clc-check-autobuild \
-		clc-autobuild-impl clc-only-autobuild
+BIN_PROGS	:= clc-send-command clc-autobuild-library clc-autobuild-check \
+		clc-autobuild-impl clc-autobuild-only
 
 CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp \
 		 post-sysdef-install.lisp
 
-MAN_FILES := clc-send-command.1 clc-build-daemon.8 \
-	register-common-lisp-implementation.8 \
-	register-common-lisp-source.8 unregister-common-lisp-implementation.8 \
-	unregister-common-lisp-source.8 clc-reregister-all-impl.8 \
-	clc-only-autobuild.1 clc-check-autobuild.1 clc-autobuild-impl.1 \
-	clc-autobuild-library.1
+MAN_FILES := man/clc-send-command.1 man/clc-build-daemon.8 \
+	man/register-common-lisp-implementation.8 \
+	man/register-common-lisp-source.8 man/unregister-common-lisp-implementation.8 \
+	man/unregister-common-lisp-source.8 man/clc-reregister-all-impl.8 \
+	man/clc-autobuild-only.1 man/clc-autobuild-check.1 man/clc-autobuild-impl.1 \
+	man/clc-autobuild-library.1
 
 configure: configure-stamp
 configure-stamp:

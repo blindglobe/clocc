@@ -1,6 +1,0 @@
-clc-build-daemon.8
-clc-send-command.1
-register-common-lisp-implementation.8
-register-common-lisp-source.8
-unregister-common-lisp-source.8
-unregister-common-lisp-implementation.8

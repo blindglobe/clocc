@@ -1,15 +1,21 @@
 ;;; Munkres' Assignment Algorithm (AKA "Hungarian Algorithm")
-;;; <http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html>
-;;; <http://216.249.163.93/bob.pilgrim/445/munkres.html>
-;;; <http://www.math.uwo.ca/~mdawes/courses/344/kuhn-munkres.html>
-;;; <http://netlib.bell-labs.com/netlib/toms/548.gz>
-;;; Handbook Of Graph Theory, Algorithm 11.3.2, p. 1110
+;;;
+;;; Completely incomprehensible (star, prime...):
+;;;  <http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html>
+;;;  <http://216.249.163.93/bob.pilgrim/445/munkres.html>
+;;; Much better, but uses cryptic notation (J_G_l):
+;;;  <http://www.math.uwo.ca/~mdawes/courses/344/kuhn-munkres.html>
+;;; Fortran implementation (unreadable):
+;;;  <http://netlib.bell-labs.com/netlib/toms/548.gz>
+;;; Clear & precise:
+;;;  Handbook Of Graph Theory, CRC Press, 2004, ISBN 1-58488-090-2
+;;;  Algorithm 11.3.2, p. 1110
 ;;;
 ;;; Copyright (C) 2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.3 2004/06/08 13:31:20 sds Exp $
+;;; $Id: munkres.lisp,v 2.4 2004/06/08 14:55:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
 (defpackage :cllib)
@@ -23,8 +29,8 @@
 Returns the total cost and two assignment vectors: X->Y and Y->X."
   (loop :with x-count = (array-dimension cost-mx 0)
     :and y-count = (array-dimension cost-mx 1)
-    :with x-tlv = (make-array x-count) ; tentative least weight
-    :and y-tlv = (make-array y-count) ; tentative least weight
+    :with x-tlv = (make-array x-count) ; tentative least weight ("D label")
+    :and y-tlv = (make-array y-count) ; ditto
     :and x-matching = (make-array x-count)
     :and y-matching = (make-array y-count)
     :and s-x = (make-array x-count :element-type 'bit)
@@ -90,8 +96,7 @@ Returns the total cost and two assignment vectors: X->Y and Y->X."
               "~S: bug: min label=~S  /=  augmenting path weight=~S"
               'assignment min weight)
       (when out
-        (format out "   => augmenting path: len=~:D weight=~S~%"
-                len weight))
+        (format out "   => augmenting path: len=~:D weight=~S~%" len weight))
       (incf cost weight))))
 
 (provide :cllib-munkres)

@@ -11,7 +11,8 @@
 	     #:make-clc-send-command-string
 	     #:*clc-send-command-filename*
              #:compile-library
-	     #:clc-require)
+	     #:clc-require
+	     #:source-root-path-to-fasl-path)
     (:nicknames :c-l-c))
 
 (in-package :common-lisp-controller)

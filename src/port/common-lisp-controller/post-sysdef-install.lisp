@@ -112,16 +112,18 @@ than the maximum file-write-date of output-files, return T."
      (make-pathname :directory (list :relative system-name))
      (user-lib-path))))
 
+(defun source-root-path-to-fasl-path (source)
+  "Converts a path in the source root into the equivalent path in the fasl root"
+  (merge-pathnames 
+   (enough-namestring source (asdf::resolve-symlinks *source-root*))
+   *fasl-root*))
+
 (defmethod asdf:output-files :around ((op asdf:operation) (c asdf:component))
   "Method to rewrite output files to fasl-root"
   (let ((orig (call-next-method)))
     (cond
      ((beneath-source-root? c)
-      (mapcar #'(lambda (y)
-		  (merge-pathnames 
-		   (enough-namestring y (asdf::resolve-symlinks *source-root*))
-		   *fasl-root*))
-	      orig))
+      (mapcar #'source-root-path-to-fasl-path orig))
      ((in-user-package c)
       (let ((user-package-root (user-package-root c)))
 	(mapcar #'(lambda (y)

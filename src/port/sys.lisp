@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.34 2001/09/26 15:10:44 sds Exp $
+;;; $Id: sys.lisp,v 1.35 2001/09/26 15:51:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,7 +25,8 @@
  '(getenv finalize variable-special-p arglist
    class-slot-list class-slot-initargs
    pathname-ensure-name probe-directory default-directory chdir mkdir rmdir
-   +month-names+ +week-days+ +time-zones+ tz->string current-time sysinfo))
+   +month-names+ +week-days+ +time-zones+ tz->string string->tz
+   current-time sysinfo))
 
 ;;;
 ;;; System
@@ -348,24 +349,31 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
 
 (defconst +time-zones+ list
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
-    (0 "GMT" . "BST") (-2 "MET" . "MET DST"))
+    (0 "BST" . "GMT") (-2 "MET DST" . "MET"))
   "*The string representations of the time zones.")
 
-(defun tz->string (tz)
+(defun tz->string (tz dst)
   "Convert the CL timezone (rational [-24;24], multiple of 3600) to a string."
   (declare (type rational tz))
-  (multiple-value-bind (hr mm) (floor (abs tz))
-    (let ((mi (floor (* 60 mm))))
-      (format nil "~:[+~;-~]~2,'0d~2,'0d" (minusp tz) hr mi))))
+  (multiple-value-bind (hr mm) (floor (abs (- (if dst 1 0) tz)))
+    (let ((mi (floor (* 60 mm)))
+          (zo (assoc tz +time-zones+)))
+      (format nil "~:[+~;-~]~2,'0d~2,'0d~@[ (~a)~]" (minusp tz) hr mi
+              (if dst (cadr zo) (cddr zo))))))
+
+(defun string->tz (obj)
+  "Find the OBJ (symbol or string) in +TIME-ZONES+."
+  (find obj +time-zones+ :test
+        (lambda (st el) (or (string-equal st (cadr el))
+                            (string-equal st (cddr el))))))
 
 (defun current-time (&optional (out t))
   "Print the current time to the stream (defaults to t)."
   (multiple-value-bind (se mi ho da mo ye dw dst tz) (get-decoded-time)
     (declare (fixnum se mi ho da mo ye dw tz))
-    (format out "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a (~a)"
+    (format out "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a"
             ye mo da (aref +week-days+ dw) ho mi se
-            (tz->string (- (if dst 1 0) tz))
-            (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)))))
+            (tz->string tz dst))))
 
 (provide :sys)
 ;;; file sys.lisp ends here

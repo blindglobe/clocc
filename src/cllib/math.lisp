@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.18 2001/04/27 14:27:01 sds Exp $
+;;; $Id: math.lisp,v 2.19 2001/06/24 23:48:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -467,6 +467,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 The same as
   (+ 0.5d0 (/ (integrate-simpson (lambda (tt) (exp (* tt tt -0.5d0))) 0 xx)
               (sqrt (* 2 pi))))
+i.e., the comulative normal distribution function.
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx))
   (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (dfloat (sqrt (* 2 pi)))))

@@ -23,7 +23,7 @@
 	      *save_vbles* *program-flag* *subprog_name*
 	      *subprog_common_vars*  *common_array_dims*
 	      *format_stmts* *current_label*
-	      *subprog_stmt_fns* *subprog_stmt_fns_bodies*
+	      *subprog_stmt_fns* *subprog_stmt_fns_bodies* *prune_labels*
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*)))

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-05-27 Wed 17:20:59 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-06-19 Fri 14:44:47 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.12 1998/05/27 21:24:20 sds Exp $
+;;; $Id: date.lisp,v 1.13 1998/06/19 20:18:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.13  1998/06/19 20:18:31  sds
+;;; Made `fix-date' not inline.  Added some declarations for CMUCL.
+;;;
 ;;; Revision 1.12  1998/05/27 21:24:20  sds
 ;;; Moved sorted stuff from here to list.lisp.
 ;;;
@@ -104,7 +107,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (declare (ignore se mi ho))
     (make-date :ye ye :mo mo :da da :dd (floor num +day-sec+))))
 
-(defsubst fix-date (dt)
+(defun fix-date (dt)
   "Make sure the date is correct."
   (declare (type date dt) (values date))
   (let ((tm (date2time dt)))
@@ -129,9 +132,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
 
 (defun num2date (num)
   "Get the date from the number."
-  (declare (number num) (values date))
-  (mk-date :ye (floor (/ num 10000)) :mo (mod (floor (/ num 100)) 100)
-	   :da (mod num 100)))
+  (declare (integer num) (values date))
+  (mk-date :ye (floor num 10000) :mo (mod (floor num 100) 100)
+           :da (mod num 100)))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."
@@ -283,7 +286,7 @@ I.e., (tomorrow (today) -1) is yesterday."
   "Return the tail of LST starting with DT.
 If LAST is non-nil, make sure that the next date is different.
 *Important*: assumes that the list is ordered according to `date>'."
-  (declare (list lst) (type (function (t) date) key))
+  (declare (list lst) (type (function (t) date) key) (values list))
   (let ((ll (binary-member (date dt) lst :key key :test (complement #'date>))))
     (if (and last ll (cdr ll)) (skip-to-new ll :key key :test #'date=) ll)))
 
@@ -296,7 +299,7 @@ If you need to check more than one value for jumps, you can resort
 to `check-list-values'.
 Return T if any errors are detected."
   (declare (type (function (t) date) date) (stream stream)
-	   (type (or null fixnum) gap jump)
+	   (type (or null fixnum) gap) (type (or null number) jump)
 	   (type (function (t) double-float) val))
   (format stream "~&Checking the list~:[~; `~:*~a'~] for:~%~5t~?.~%"
 	  (if (dated-list-p lst) (dated-list-name lst) nil)
@@ -469,7 +472,7 @@ so that -1 corresponds to the last record."
 (defun date-in-dated-list (dt dl &optional last)
   "Call `date-in-list' on the dated list.
 If  LAST is non-nil, make sure that the next date is different."
-  (declare (type dated-list dl))
+  (declare (type dated-list dl) (values list))
   (if dt (date-in-list dt (dated-list-ll dl) (dl-date dl) last)
       (dated-list-ll dl)))
 
@@ -531,7 +534,7 @@ roll-over dates."
 (defsubst dl-count-jumps (dl &optional (key #'date-ye))
   "Return the number of years in the dated list."
   (declare (type dated-list dl) (type (function (date) t) key) (values fixnum))
-  (count-jumps (dated-list-ll dl) :key (compose key (dl-date dl))))
+  (count-jumps (dated-list-ll dl) :key (compose 'key (dl-date dl))))
 
 (defun dl-jumps (dl)
   "Return a cons of 2 lists - the up and down moves in the dated list."
@@ -583,7 +586,7 @@ Return: the change in misc."
 Return nil if at the end already, or the change in value."
   (declare (type dated-list dl))
   (unless (cdr (dated-list-ll dl)) (return-from skip-dl-to-extremum nil))
-  (do ((ll (dated-list-ll dl) (dated-list-ll dl)) ch (mv 0.0))
+  (do ((ll (dated-list-ll dl) (dated-list-ll dl)) ch (mv 0.0d0))
       ((null (setq ch (dl-next-chg dl))) mv)
     (declare (double-float mv))
     (cond ((minusp (* ch mv)) (setf (dated-list-ll dl) ll)
@@ -606,7 +609,7 @@ Return nil if at the end already, or the change in value."
   "Apply `volatility' to the dated list.
 Key defaults to VAL; split defaults to `date-ye'."
   (declare (type dated-list dl) (function split) (symbol slot))
-  (volatility (dated-list-ll dl) (compose split (dl-date dl))
+  (volatility (dated-list-ll dl) (compose 'split (dl-date dl))
 	      :key (slot-value dl slot)))
 
 (defun print-volatilities (ls &key (out t) (dl #'identity) (head #'identity))
@@ -707,9 +710,9 @@ Must not assume that the list is properly ordered!"
 (defstruct (change (:print-function print-change))
   "Change structure - for computing difference derivatives."
   (date +bad-date+ :type date)
-  (val 0.0 :type double-float)	; value
-  (chf 0.0 :type double-float)	; change forward
-  (chb 0.0 :type double-float)) ; change backward
+  (val 0.0d0 :type double-float) ; value
+  (chf 0.0d0 :type double-float) ; change forward
+  (chb 0.0d0 :type double-float)) ; change backward
 )
 
 (defmethod date ((xx change)) (change-date xx))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.23 2000/08/10 20:53:59 sds Exp $
+;;; $Id: xml.lisp,v 2.24 2000/12/03 06:37:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -82,7 +82,7 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
              (error 'code :proc 'xml-read-entity :mesg
                     "[~a]: not implemented: type: ~s data: ~s"
                     :args (list stream type data)))
-            ((setq data (nsubstitute #\" #\' data))
+            ((setq data (substitute #\" #\' data)) ; `nsubstitute'?
              (lambda (&optional string)
                (if string data (make-string-input-stream data))))))
     ;; finish reading - till #\>
@@ -135,7 +135,7 @@ If this is `:sgml', use maximum SGML compatibility.
 If this is `:readably', print for Lisp reader.")
 
 (defsubst xml-print-readably-p ()
-  `(or *print-readably* (eq :readably *xml-print-xml*)))
+  (or *print-readably* (eq :readably *xml-print-xml*)))
 
 (defmethod print-object ((xm xml-misc) (out stream))
   (if (xml-print-readably-p) (call-next-method)
@@ -175,9 +175,9 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
       (mesg :log t "~& * added XML namespace: ~s~@[ [prefix ~s]~]~%"
             ns pre-tmp))
     (setf (gethash (xmlns-uri ns) *xml-uri-namespaces*) ns)
-    (push ns (gethash (xmlns-pre ns) *xml-pre-namespaces*))
+    (pushnew ns (gethash (xmlns-pre ns) *xml-pre-namespaces*))
     (when pre-tmp
-      (push ns (gethash pre-tmp *xml-pre-namespaces*)))
+      (pushnew ns (gethash pre-tmp *xml-pre-namespaces*)))
     ns))
 )
 
@@ -253,7 +253,7 @@ If such a name already exists, re-use it."
 
 (defmethod print-object ((xmln xml-name) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
-        ((null (xmln-ns xmln)) (princ (xmln-ln xmln) out))
+        ((null (xmln-ns xmln)) (write (xmln-ln xmln) :stream out))
         (*xml-print-xml*
          (format out "~@[~a:~]~a" (xmln-prefix xmln) (xmln-ln xmln)))
         ((format out "~:[~a:~;~*~]~a" (eq +xml-namespace-none+ (xmln-ns xmln))
@@ -406,10 +406,10 @@ the second is `file size' (including tags)."
 
 (defmethod initialize-instance :after ((str xml-stream-in) &rest junk)
   (declare (ignore junk))
-  (cond ((typep (xmlis-st str) 'concatenated-stream)
-         (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str))))
-        ((setf (xmlis-all str) (list (xmlis-st str))
-               (xmlis-st str) (make-concatenated-stream (xmlis-st str)))))
+  (if (typep (xmlis-st str) 'concatenated-stream)
+      (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str)))
+      (setf (xmlis-all str) (list (xmlis-st str))
+            (xmlis-st str) (make-concatenated-stream (xmlis-st str))))
   (setf (xmlis-size str) (stream-length (xmlis-st str))))
 
 (defmethod stream-read-char ((in xml-stream-in))
@@ -440,6 +440,23 @@ the second is `file size' (including tags)."
     (when (typep st 'file-stream)
       (when debug-p (format t " == ~s -> ~s~%" st (truename st)))
       (return (truename st)))))
+
+(defun xmlis-push (newstr stream)
+  "Push the stream NEWSTR into the beginning of STREAM
+so that it is the first stream from which we will read."
+  (flet ((dead-stream-p (str)
+           (and (typep str 'string-stream)
+                (or (not (open-stream-p str))
+                    (and (eof-p str)
+                         (close str))))))
+    (setf (xmlis-st stream)
+          (apply #'make-concatenated-stream newstr
+                 (delete-if #'dead-stream-p
+                            (concatenated-stream-streams (xmlis-st stream))))
+          (xmlis-all stream)
+          (cons newstr (delete-if #'dead-stream-p (xmlis-all stream))))
+    (incf (xmlis-size stream) (stream-length newstr))
+    stream))
 
 ;;;
 ;;; Reading
@@ -507,33 +524,42 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
                       (symbol (symbol-name xx)) (string xx)
                       (number (prin1-to-string xx)) ; for malformed border=1
                       (cons xx))))
-    (do ((ll list))
-        ((null (cddr ll)) (setf (car list) (tost (car list))) list)
-      (if (or (eql (cadr ll) #\:) (eql (cadr ll) #\=))
-          (setf (cadr ll) (tost (car ll)) (car ll) (cdr ll) (cdr ll) (cdddr ll)
-                (cadar ll) (tost (cadar ll)) (cddar ll) nil)
-          (setf (car ll) (tost (car ll)) ll (cdr ll))))))
+    (when (setq list (delete-if #'xml-comment-p list))
+      (do ((ll list))
+          ((null (cddr ll)) (setf (car list) (tost (car list))) list)
+        (if (or (eql (cadr ll) #\:) (eql (cadr ll) #\=))
+            (setf (cadr ll) (tost (car ll))
+                  (car ll) (cdr ll) (cdr ll) (cdddr ll)
+                  (cadar ll) (tost (cadar ll)) (cddar ll) nil)
+            (setf (car ll) (tost (car ll)) ll (cdr ll)))))))
 
-(defun xml-resolve-namespaces (obj &key recursive-p)
+(defun xml-resolve-namespaces (obj &key (recursion-depth 0)
+                               (out *standard-output*))
   "Resolve all names in the XML object.
 Resolution is done according to `*xml-default-namespace*'
 and `*xml-pre-namespaces*'."
   (etypecase obj
     (xml-comment obj) (xml-decl obj) (xml-misc obj) (string obj)
-    (sequence (map-in #'xml-resolve-namespaces obj))
+    (sequence (map-in (lambda (o) (xml-resolve-namespaces
+                                   o :recursion-depth (1+ recursion-depth)
+                                   :out out))
+                      obj))
     (xml-obj
-     (unless recursive-p
-       (mesg :log t "~&~s: cleared ~s: ~s~%" 'xml-resolve-namespaces
+     (when (zerop recursion-depth)
+       (mesg :xml-log out "~&~s [~s]: cleared ~s: ~s~%"
+             'xml-resolve-namespaces (xmlt-name obj)
              '*xml-pre-namespaces* *xml-pre-namespaces*)
        (clrhash *xml-pre-namespaces*))
-     (let (pref-list dns)
-       ;; 1st pass: define the new namespaces
+     (let ((pref (format nil "~s [~s/~:d]" 'xml-resolve-namespaces
+                         (xmlt-name obj) recursion-depth))
+           pref-list dns)
+       (mesg :xml-log out "~a: defining the new namespaces~%" pref)
        (setf (xmlt-args obj)
              (delete-if
               (lambda (att)
                 (if (consp (car att))
                     (when (string= "xmlns" (caar att))
-                      (mesg :xml t "ns: ~s~%" att)
+                      (mesg :xml-log out "~a: ns: ~s~%" pref att)
                       (when (member (cdar att) pref-list :test #'eq)
                         (error 'code :proc 'xml-resolve-namespaces
                                :mesg "duplicate namespace ~s: ~s"
@@ -542,7 +568,7 @@ and `*xml-pre-namespaces*'."
                         (push pref pref-list)
                         (xmlns-get (cadr att) :pre-tmp pref)))
                     (when (string= "xmlns" (car att))
-                      (mesg :xml t "dns: ~s~%" att)
+                      (mesg :xml-log out "~a: dns: ~s~%" pref att)
                       (when dns
                         (error 'code :proc 'xml-resolve-namespaces
                                :mesg "duplicate default namespace: ~s"
@@ -550,12 +576,11 @@ and `*xml-pre-namespaces*'."
                       (setq dns (xmlns-get (cadr att))))))
               (xmlt-args obj)))
        (let ((*xml-default-namespace* (or dns *xml-default-namespace*)))
-         ;; 2nd pass: resolve the names
+         (mesg :xml-log out "~a: resolving the names~%" pref)
          (flet ((xmln-cons (obj default-ns)
                   (if (consp obj)
                       (xmln-get (cadr obj) (car obj))
                       (xmln-get obj default-ns))))
-           (mesg :xml t "name: ~s~%" (xmlt-name obj))
            (setf (xmlt-name obj) ; name
                  (xmln-cons (xmlt-name obj) *xml-default-namespace*))
            (do ((attr (xmlt-args obj) (cdr attr))) ; attributes
@@ -563,25 +588,27 @@ and `*xml-pre-namespaces*'."
              ;; http://www.w3.org/TR/REC-xml-names/#defaulting
              ;; "Namespaces in XML": 5.2 "Namespace Defaulting"
              ;; "default namespaces do not apply directly to attributes"
-             (mesg :xml t "attr: ~s~%" (car attr))
+             (mesg :xml-log out "~a: attr: ~s~%" pref (car attr))
              (setf (caar attr) (xmln-cons (caar attr) +xml-namespace-none+))))
-         ;; 3rd pass: check for identical attributes
+         (mesg :xml-log out "~a: checking for identical attributes~%" pref)
          (do ((ll (xmlt-args obj) (cdr ll))) ((null ll))
            (do ((mm (cdr ll) (cdr mm))) ((null mm))
              (when (eq (caar mm) (caar ll))
                (error 'code :proc 'xml-resolve-namespaces
                       :mesg "duplicate attribute ~s: ~s"
                       :args (list (caar ll) (xmlt-args obj))))))
-         ;; process data
+         (mesg :xml-log out "~a: processing the data~%" pref)
          (unwind-protect
               (dolist (oo (xmlo-data obj) obj)
                 (typecase oo
-                  (xml-obj (xml-resolve-namespaces oo :recursive-p t))))
+                  (xml-obj (xml-resolve-namespaces
+                            oo :recursion-depth (1+ recursion-depth)
+                            :out out))))
            (dolist (pref pref-list)
              (pop (gethash pref *xml-pre-namespaces*)))))))))
 
 (defcustom *xml-read-balanced* boolean t
-  "*Require balanced tags. Bind to NIL when reasing HTML.
+  "*Require balanced tags. Bind to NIL when reading HTML.
 When NIL, `xml-read-tag' is not recursive.")
 (defcustom *xml-read-entities* boolean t
   "*Parse the entities.")
@@ -675,19 +702,7 @@ The first character to be read is #\T."
        (read-char stream)       ; #\;
        (etypecase str
          (string str)           ; "??" for undefined entities and &#nnnn;
-         (stream
-          (setf (xmlis-st stream) ; push
-                (apply #'make-concatenated-stream str
-                       (concatenated-stream-streams (xmlis-st stream)))
-                (xmlis-all stream)
-                (cons str
-                      (delete-if (lambda (st) ; clean up
-                                   (when (and (typep st 'string-stream)
-                                              (eof-p st))
-                                     (close st)))
-                                 (xmlis-all stream))))
-          (incf (xmlis-size stream) (stream-length str))
-          (read stream t nil t)))))
+         (stream (read (xmlis-push str stream) t nil t)))))
     ((#\: #\=) char)))
 
 ;;;
@@ -753,7 +768,7 @@ The first character to be read is #\T."
   (let ((obj (with-xml-file (str file :reset-ent reset-ent :out out)
                (read-from-stream str :repeat repeat))))
     (if resolve-namespaces
-        (xml-resolve-namespaces obj)
+        (xml-resolve-namespaces obj :out out)
         obj)))
 
 (provide :xml)

@@ -68,7 +68,7 @@ only when needed. ")
 			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file
-			(array-type 'simple-array)
+			(array-type :simple-array array-type-p)
 			(array-slicing t)
 			package
 			declaim)
@@ -93,8 +93,8 @@ INPUT-FILE               File containing Fortran code
 :EXTENSION               The extension to use for the output file, if needed.  Defaults to
                          *DEFAULT-LISP-EXTENSION* or \"lisp\"
 :KEEP-TEMP-FILE          If T, the temporary file is not deleted.  Default = NIL.
-:ARRAY-TYPE              The type of array f2cl should use.  Should be 'simple-array or
-                         'array.
+:ARRAY-TYPE              The type of array f2cl should use.  Should be :simple-array or
+                         :array.
 :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an array reference
                          in a call to a subroutine or function, we are really passing a
                          subarray to the routine instead of just the single value.
@@ -111,7 +111,10 @@ INPUT-FILE               File containing Fortran code
   ;; Check (some) parameters for validity
   (assert (or (null coerce-assigns)
 	      (member coerce-assigns '(:always :never :as-needed t))))
-  (assert (member array-type '(simple-array array)))
+  (assert (member array-type '(:simple-array :array)))
+  (when (and array-slicing array-type-p
+	     (eq array-type :simple-array))
+    (warn ":array-slicing is T, so specified :array-type of :simple-array is overridden"))
   (let ((*verbose* verbose)
 	(*prune_labels* prune-labels)
 	(*comments* include-comments)
@@ -120,7 +123,8 @@ INPUT-FILE               File containing Fortran code
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns)
 	(*array-type* (if array-slicing 'array
-			  array-type))
+			  (cdr (assoc array-type '((:simple-array . lisp:simple-array)
+						   (:array . lisp:array))))))
 	(*array-slicing* array-slicing)
 	(*apply-array-slice* nil))
 
@@ -163,7 +167,7 @@ INPUT-FILE               File containing Fortran code
 			      (auto-save t) (relaxed-array-decls t)
 			      (coerce-assigns :as-needed)
 			      (keep-lisp-file t)
-			      (array-type 'simple-array)
+			      (array-type :simple-array)
 			      (array-slicing t)
 			      package
 			      declaim)
@@ -333,7 +337,8 @@ FILENAME                 File containing Fortran code
 	      ;; Insert in-package and declaim, if needed
 	      (when options
 		(pprint-logical-block (outport options :per-line-prefix ";;; ")
-		  (format outport "~&Options: ~S" options))
+		  (format outport "~&Options: ")
+		  (write options :stream outport :case :downcase))
 		(format outport "~2%"))
 	      (when package
 		(format outport "~&(in-package ~S)~%" (cond ((keywordp package)
@@ -345,7 +350,7 @@ FILENAME                 File containing Fortran code
 							    (t
 							     package))))
 	      (when declaim
-		(format outport "(declaim ~S)~%" declaim))
+		(write (list 'declaim declaim) :stream outport :case :downcase))
 	      (when (or package declaim)
 		(format outport "~2%"))
 	      (format outport "~2&(use-package :f2cl)~2%"))
@@ -676,8 +681,14 @@ FILENAME                 File containing Fortran code
 
      ;; Handle Fortran comments that were converted by the
      ;; preprocessor to be (fortran_comment "comment string").
+     ;;
+     ;; Convert it to just a quoted string possible.  Otherwise just
+     ;; leave it as is.
      (when (eq (car x) 'fortran_comment)
-       (return (list x)))
+       (return (if (cddr x)
+		   (list x)
+		   (list (list 'quote (second x))))))
+     
      ;; (return (list '----> (check_new_vbles x)))
 
      ;;fall out the bottom:
@@ -1965,8 +1976,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.82 2002/01/07 03:09:05 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.83 2002/01/07 18:16:15 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.83  2002/01/07 18:16:15  rtoy
+;;; o Change the :array-type parameter to take a keyword instead of a
+;;;   symbol.
+;;; o Print a warning if :array-type is specified and inconsistent with
+;;;   :array-slicing option.  :array-slicing takes precedence.
+;;; o If possible convert a fortran_comment into a quoted string.  (Makes
+;;;   it easier to read the embedded comment.)
+;;; o Print the options in lower case.
+;;;
 ;;; Revision 1.82  2002/01/07 03:09:05  rtoy
 ;;; Print out a warning if a variable is declared that has the same name
 ;;; as a Fortran intrinsic.  Not sure what the spec says, but as long as

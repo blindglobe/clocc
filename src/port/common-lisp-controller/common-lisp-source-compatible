@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.1 $'
+pversion='$Revision: 1.2 $'
 
 # This is a list of all known CLC-compatible implementation
 known_impl="cmucl-normal cmucl-safe cmucl-small sbcl clisp acl alisp alisp8 mlisp mlisp8 lispworks openmcl"
@@ -17,6 +17,10 @@ $progname sets compatibility for a Common Lisp source package.
 This function will set the package's autobuild to "no" for
 all known implementations except for the implementations supplied
 on the command line.
+
+This command also accepts these "virtual" implementation names
+  cmucl    (equivalent to "cmucl-normal cmucl-safe cmucl-safe")
+  allegro  (equivalent to "acl alisp alisp8 mlisp mlisp8")
 
 Options: 
   -h                  Print this short help message
@@ -46,6 +50,8 @@ while [ $# != 0 ]; do
 	    arg=$1
 	    if [ "$arg" = "cmucl" ]; then
 		$arg="cmucl-normal lcmucl-safe cmucl-small"
+	    elif [ "$arg" = "allegro" ]; then
+		$arg="acl alisp alisp8 mlisp mlisp8"
 	    fi
 	    compatible_impl="$arg $compatible_impl"
 	    ;;

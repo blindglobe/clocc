@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.11 2004/04/08 21:33:58 sds Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.12 2004/04/23 15:11:55 sds Exp $")
 
 (in-package :xlib)
 
@@ -472,6 +472,7 @@
 ;;; MAKE-PROCESS-LOCK: Creating a process lock.
 
 (defun make-process-lock (name)
+  #+(or sbcl clisp) (declare (ignore name))
   #-(or sbcl clisp)
   (port::make-lock :name name))
 

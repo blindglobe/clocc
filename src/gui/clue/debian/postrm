@@ -18,9 +18,6 @@ set -e
 
 case "$1" in
        purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-	if [ -f /usr/share/common-lisp/source/clue ] ; then rm /usr/share/common-lisp/source/clue ; fi
-	if [ -f /usr/share/common-lisp/source/clio ] ; then rm /usr/share/common-lisp/source/clio ; fi
-	if [ -f /usr/share/common-lisp/source/pictures ] ; then rm /usr/share/common-lisp/source/pictures ; fi
         ;;
 
     *)

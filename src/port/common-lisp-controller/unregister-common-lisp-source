@@ -24,16 +24,20 @@ if [ ! -h "$SOURCENAME" ] ; then
 $0: synlink $SOURCENAME does not exist.
 
 This is where I expected package $1 to be.
+
+Maybe you already uninstalled it?
 EOF
-    exit 2
+    exit 0
 fi
 
 if [ ! -e "$FILE" -a ! -h "$FILE" ] ; then                                                                                                                   
     cat <<EOF
 $0: $FILE does not exist.  This is needed to  
 unregister the $1 package.
+
+Maybe you already uninstalled it?
 EOF
-    exit 3
+    exit 0
 fi
 # now recompile the stuff
 chown -R nobody /usr/lib/common-lisp/

@@ -50,6 +50,7 @@ binary-arch: build
 	dh_installmanpages
 #	dh_undocumented
 	dh_installchangelogs
+	dh_link
 	dh_strip
 	dh_compress
 	dh_fixperms

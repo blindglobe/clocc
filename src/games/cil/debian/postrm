@@ -18,7 +18,6 @@ set -e
 
 case "$1" in
        purge|remove|upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
-        if [ -f /usr/share/common-lisp/source/cil ] ; then  rm /usr/share/common-lisp/source/cil ; fi
         ;;
 
     *)

@@ -1,8 +1,9 @@
 cil (200100227-2) unstable; urgency=low
 
-  * Now for 'all' architectures 
+  * Now for 'all' architectures
+  * Now uses dh_link 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 12 Jun 2001 20:40:56 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 27 Jun 2001 12:48:39 +0200
 
 cil (200100227-1) unstable; urgency=low
 

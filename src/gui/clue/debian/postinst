@@ -24,20 +24,12 @@ set -e
 
 case "$1" in
     configure)
-	ln -sf /usr/share/common-lisp/repositories/clue/clue \
-               /usr/share/common-lisp/repositories/clue/clio \
-               /usr/share/common-lisp/repositories/clue/pictures \
-			/usr/share/common-lisp/source
 	/usr/sbin/register-common-lisp-source clue
 	/usr/sbin/register-common-lisp-source clio
 	/usr/sbin/register-common-lisp-source pictures
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-	if [ -f /usr/share/common-lisp/source/clue ] ; then rm /usr/share/common-lisp/source/clue ; fi
-	if [ -f /usr/share/common-lisp/source/clio ] ; then rm /usr/share/common-lisp/source/clio ; fi
-	if [ -f /usr/share/common-lisp/source/pictures ] ; then rm /usr/share/common-lisp/source/pictures ; fi
-
     ;;
 
     *)

@@ -4,9 +4,10 @@ common-lisp-controller (2.0) unstable; urgency=low
   * Now allows normal file targets, fixes: #97257
   * Now knows about .c files. Fixes: #97258
   * Note that -noinit should be used. Fixes: #99255
-  * Fixed sbcl buglet. Fixes: #99403 
+  * Fixed sbcl buglet. Fixes: #99403
+  * Made the de-registering idempotent. Thanks for the idea Dan!
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 31 May 2001 21:06:54 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 27 Jun 2001 13:43:24 +0200
 
 common-lisp-controller (1.6) unstable; urgency=low
 

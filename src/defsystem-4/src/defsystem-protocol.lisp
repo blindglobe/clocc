@@ -641,6 +641,12 @@ component."
 	 (class-name (class-of c))
 	 ss))
   
+(defmethod add-sub-component :after ((shc standard-hierarchical-component)
+				     (sc stored-component))
+  (unless (component-source-extension sc)
+    (setf (component-source-extension sc) (component-source-extension shc)))
+  (unless (component-binary-extension sc)
+    (setf (component-binary-extension sc) (component-binary-extension shc))))
 
 
 ;;;---------------------------------------------------------------------------

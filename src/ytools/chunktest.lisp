@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.4 2004/12/13 03:26:36 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.5 2004/12/20 18:04:00 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -243,12 +243,13 @@
 		 d)))))
 	   
 ;;; Build net before starting this --
-(defun net-direct-compare (which-input start-val)
+(defun net-direct-compare (which-input start-val &optional (num-iters 1000))
    (chunk-request-mgt recip-chunk*)
    (do ((i start-val (+ i 1))
 	(j which-input (+ j 1))
 	(k (length ivec*)))
-       ()
+       ((>= (- i start-val) num-iters)
+	true)
       (cond ((>= j k)
 	     (setq j 0)))
       (setf (aref ivec* j) i)
@@ -270,7 +271,7 @@
 		   i direct via-chunks)
 	 (cond ((not (= direct via-chunks))
 		(format t "Oops! i = ~s j = ~s ~%" i j)
-		(return))
+		(return false))
 	       (t
 		(let ((denom-mg (Chunk-managed denom*))
 		      (quo-mg (Chunk-managed quo-chunk*)))
@@ -278,7 +279,11 @@
 				(t (not quo-mg)))
 			  (format t "Bummer: denom-mg = ~s quo-mg = ~s~%"
 				  denom-mg quo-mg)
-			  (return)))))))))
+			  (return false)))))))))
+
+(defun chunk-test ()
+   (build-test-net 10)
+   (net-direct-compare 2 4 100))
 
 ;;; Everything else is not currently needed --
 #|

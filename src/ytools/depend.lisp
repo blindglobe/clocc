@@ -1,6 +1,6 @@
 !;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.6 2004/12/17 21:49:01 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.7 2004/12/20 18:04:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -44,13 +44,15 @@
 				 (list-copy (rest g)))
 				(t !())))
 		       dgroups)))
-      `(cond (depends-on-enabled*
+	 `(progn
 	      ,@(include-if (not (null read-time-deps))
 		   `(eval-when (:compile-toplevel :execute)
-		       (fload ,@read-time-deps)))
+		       (cond (depends-on-enabled*
+			      (fload ,@read-time-deps)))))
 	      ,@(include-if (not (null run-time-deps))
 		   `(eval-when (:load-toplevel :execute)
-		       (fload ,@run-time-deps))))))))
+		       (cond (depends-on-enabled*
+			      (fload ,@run-time-deps)))))))))
 
 (datafun compute-file-basis depends-on
   (defun :^ (e file-ch)
@@ -58,11 +60,7 @@
 	    (let ((groups (depends-on-args-group (cdr e)))
 		  (compiled-ch (place-compiled-chunk file-ch))
 		  (loaded-file-ch (place-loaded-chunk file-ch false)))
-	       (labels ((recursive-slurp (pn)
-			   (cond ((not (eq slurping-how-much*
-				     ':header-only))
-			    (pathname-slurp
-			       pn false ':at-least-header)))))
+	       (labels ()
 		  (dolist (g groups)
 		     (let* ((file-chunks (<# place-file-chunk
 					     (filespecs->ytools-pathnames
@@ -83,9 +81,24 @@
 			       (setf (File-chunk-callees file-ch)
 				     (union file-chunks
 					    (File-chunk-callees file-ch)))
-			       (setf (Chunk-basis loaded-file-ch)
-				     (union loaded-file-chunks
-					    (Chunk-basis loaded-file-ch)))))
+			       (dolist (ssfty standard-sub-file-types*)
+				  (dolist (fc file-chunks)
+				     (pushnew (funcall
+					         (Sub-file-type-chunker ssfty)
+						 (File-chunk-pathname fc))
+					      (Chunk-basis compiled-ch))
+				     (pushnew (funcall
+					         (Sub-file-type-load-chunker
+						    ssfty)
+						 (File-chunk-pathname fc))
+					      (Chunk-update-basis
+					           compiled-ch))))))
+			       ;; This would seem to be redundant,
+			       ;; because the file will be loaded
+			       ;; by what 'depends-on' expands into --
+;;;;			       (setf (Chunk-basis loaded-file-ch)
+;;;;				     (union loaded-file-chunks
+;;;;					    (Chunk-basis loaded-file-ch)))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
 			       (setf (File-chunk-read-basis file-ch)
@@ -144,19 +157,6 @@
 			     (setq this-group '())))))
 	     (end-group)
 	     (reverse groups))))))
-
-(defun pseudo-pathname-insertables (pn)
-   (let ((expandfn (Pseudo-pathname-expander pn)))
-      (cond (expandfn
-	     (funcall expandfn pn))
-	    (t !()))))
-
-(defun module-name-sym (x)
-   (and (is-Symbol x)
-	(not (char= (elt (Symbol-name x) 0)
-		    #\%))))
-
-(declaim (special slurping-lprec*))
 
 (defun module-slurp (mpn _ howmuch)
    (let ((modname (Module-pseudo-pn-module mpn)))
@@ -226,27 +226,7 @@
 	       (t
 		(error "Undefined YTools module ~s" modname))))))
 
-THIS IS OLD-FASHIONED --
 
-(def-ytools-pathname-control module
-     :parser 'module-parse
-     :slurper 'module-slurp
-     :loader 'module-load
-     :compiler 'module-compile
-     :expander 'module-expansion)
-
-(defun pathname-sym (pn)
-   (intern (file-name-as-symbol-name (Pathname-name pn))))
-
-(defun file-name-as-symbol-name (name)
-   (let ((an (string-case-analyze name)))
-      (cond ((or (eq an ':mixed)
-		 (eq lisp-preferred-case* an))
-	     name)
-	    ((eq lisp-preferred-case* ':lower)
-	     (string-downcase name))
-	    (t
-	     (string-upcase name)))))
 
 (defvar patch-files* '())
 

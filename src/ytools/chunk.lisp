@@ -1,9 +1,16 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.8 2004/12/17 21:49:01 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.9 2004/12/20 18:04:00 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
+
+(eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
+   (export '(Chunk Or-chunk Chunk-basis derive print-innards
+	     chunk-with-name chunk-destroy
+	     chunk-request-mgt chunk-terminate-mgt
+	     chunk-up-to-date chunk-update chunks-update)))
+
 
 ;;; The date assigned to chunks with no basis, i.e., leaves.
 (defconstant +no-supporters-date+ -1000)
@@ -85,6 +92,10 @@
 ;;; in the update-basis.  Every chunk in the update basis is a function
 ;;; of a subset of the basis, so if we updated it it wouldn't change the
 ;;; the output of 'derive'.
+
+;;; These are used purely temporarily, during chunk construction.
+;;; Finding one is an error.
+(defclass Transient-chunk (Chunk) ())
 
 ;;; Key fact about an Or-chunk is that it supplies no reason for any of its
 ;;; disjuncts to be managed, except its default.
@@ -177,14 +188,22 @@
 
 (defun Chunk-is-leaf (ch) (null (Chunk-basis ch)))
 
+(defvar basis-inverters-dbg* false)
+
 (defmethod (setf Chunk-basis) :before (new-basis ch)
-                                     (declare (ignore new-basis))
+                                     ;;;;(declare (ignore new-basis))
+   (cond (basis-inverters-dbg*
+	  (format t "Before setting basis of ~s to ~s~%"
+		  ch new-basis)))
    (dolist (b (Chunk-basis ch))
       (setf (Chunk-derivees b)
 	    (remove ch (Chunk-derivees b)))))
 
 (defmethod (setf Chunk-basis) :after (new-basis ch)
-                                     (declare (ignore new-basis))
+                                     ;;;;(declare (ignore new-basis))
+   (cond (basis-inverters-dbg*
+	  (format t "After setting basis of ~s to ~s~%"
+		  ch new-basis)))
    (dolist (b (Chunk-basis ch))
       (setf (Chunk-derivees b)
 	    (adjoin ch (Chunk-derivees b))))
@@ -567,7 +586,10 @@
 (defun leaf-chunk-update (leaf-ch)
 	     (let ((d (derive leaf-ch)))
 		(cond (d
-		       (cond ((< d (Chunk-date leaf-ch))
+		       (cond ((eq d true)
+			      (setf (Chunk-date leaf-ch) (get-universal-time))
+			      true)
+			     ((< d (Chunk-date leaf-ch))
 			      (cerror "I will ignore the new date"
 				      !"Chunk-deriver returned date ~s, ~
 					which is before current date ~s"
@@ -594,7 +616,7 @@
 ;;; Index chunks by first pathname in their names, if any
 ;;; If 'creator' is non-false, it's a function that creates
 ;;; a new chunk, which is placed in the table.
-(defun chunk-with-name (exp creator)
+(defun chunk-with-name (exp creator &key initializer)
        ;; The kernel is the first atom in a non-car position,
        ;; which is often a pathname, but need not be.
    (labels ((chunk-name-kernel (e)
@@ -616,14 +638,45 @@
 			    exp))
 		 (cond ((null bl)
 			(cond (creator
-			       (let ((new-chunk (funcall creator exp)))
-				  (on-list new-chunk
-				           (href chunk-table* name-kernel))
-				  (cond ((Chunk-managed new-chunk)
-					 (chunk-update new-chunk)))
-				  new-chunk))
+			       (let ((temp-chunk
+				        (make-instance 'Transient-chunk
+					   :name exp)))
+				  (on-list temp-chunk
+					   (href chunk-table* name-kernel))
+				  (let ((new-chunk (funcall creator exp)))
+				     (setf (href chunk-table* name-kernel)
+					   (cons new-chunk
+						 (delete temp-chunk
+							 (href chunk-table*
+							       name-kernel))))
+				     (cond (initializer
+					    (funcall initializer
+						     new-chunk)))
+				     (cond ((Chunk-managed new-chunk)
+					    (chunk-update new-chunk)))
+				     new-chunk)))
 			      (t false)))
+		       ((typep c 'Transient-chunk)
+			(error !"Circularity during chunk construction detected at ~
+                                 ~s"
+			       c))
 		       (t c))))))))
+
+(defun chunk-destroy (ch)
+   (walk-table
+      (\\ (k ch1)
+	 (cond ((eq ch1 ch)
+		(remhash k chunk-table*))))
+      chunk-table*)
+  (dolist (b (Chunk-basis ch))
+     (setf (Chunk-derivees b) (delete ch (Chunk-derivees b))))
+  (dolist (d (Chunk-derivees ch))
+     (setf (Chunk-basis d) (delete ch (Chunk-basis d))))
+  (dolist (b (Chunk-update-basis ch))
+     (setf (Chunk-update-derivees b) (delete ch (Chunk-update-derivees b))))
+  (dolist (d (Chunk-update-derivees ch))
+     (setf (Chunk-update-basis d) (delete ch (Chunk-update-basis d)))))	  
+
 
 ;;; For debugging --
 (defun chunk-zap-dates (c)

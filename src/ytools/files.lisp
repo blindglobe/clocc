@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.10 2004/12/17 21:49:01 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.11 2004/12/20 18:04:01 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -74,8 +74,7 @@
 	 (cond ((Chunk-managed lpchunk)
 		(cond (force-load
 		       ;; Already managed, so forcing makes sense
-		       (setf (Chunk-date lpchunk)
-			     (derive lpchunk))
+		       (chunk-derive-and-record lpchunk)
 		       (chunks-update (Chunk-derivees lpchunk)))))
 	       (t
 		(chunk-request-mgt lpchunk))))))
@@ -94,6 +93,9 @@
 		:initform false)
    ;;  -- Either false or a YTools pathname, in which case
    ;; 'pathname' is its resolution
+   (kind :reader File-chunk-kind
+	 :initarg :kind)
+   ;; -- :source, :object, :data
    (readtable :accessor File-chunk-readtable
 	      :initarg :readtable
 	      :initform false)
@@ -130,29 +132,46 @@
 (defmethod derive ((fc File-chunk))
    (let ((v (File-chunk-alt-version fc)))
       (cond (v (derive v))
-	    (t (file-write-date (File-chunk-pathname fc))))))
+	    (t
+	     (let ((pn (File-chunk-pathname fc)))
+	        (cond ((probe-file pn)
+		       (file-write-date pn))
+		      (t
+		       (error "File-chunk corresponds to nonexistent file: ~s"
+			      fc))))))))
 
 (defun File-chunk-pn (file-ch)
    (or (File-chunk-yt-pathname file-ch)
        (File-chunk-pathname file-ch)))
 
 (defun file-chunk-is-source (file-ch)
-   (pathname-is-source (File-chunk-pathname file-ch)))
+   (eq (File-chunk-kind file-ch) ':source))
+
+;;;;   (pathname-is-source (File-chunk-pathname file-ch))
 
 (defvar final-load* false)
 ; When building systems, bind to true to minimize soul-searching later.
 
-(defun place-file-chunk (pn)
+(defun place-file-chunk (pn &key kind)
    (multiple-value-bind (yt-pathname l-pathname)
 			(cond ((is-YTools-pathname pn)
 			       (values pn (pathname-resolve pn true)))
 			      (t
-			       (values false pn)))
+			       (values false (pathname pn))))
+      (cond ((not kind)
+	     (setq kind
+	       (cond ((pathname-is-source l-pathname)
+		      ':source)
+		     ((pathname-is-object l-pathname)
+		      ':object)
+		     (t
+		      ':data)))))
       (chunk-with-name
 	 l-pathname
 	 (\\ (_)
 	    (make-instance 'File-chunk
 	       :name `(:file ,(or yt-pathname l-pathname))
+	       :kind kind
 	       :yt-pathname yt-pathname
 	       :pathname l-pathname
 	       :alt-version false)))))
@@ -172,7 +191,8 @@
    ((file :reader Loadable-chunk-file
 	  :initarg :file
 	  :type File-chunk)
-    ;; The variant currently selected --
+    ;; The variant currently selected, either a File-chunk, or
+    ;; a Loaded-chunk if we're indirecting through an alt-version --
     (selection :accessor Loadable-chunk-selection
 	  :initform false)
     ;; The criterion (supplied by user) for how to make the selection --
@@ -192,7 +212,7 @@
 
     (source :reader Loadable-chunk-source
 	    :initarg :source)
-    (compiled :reader Loadble-chunk-compiled
+    (compiled :reader Loadable-chunk-compiled
 	      :initarg :compiled)
     (object :reader Loadable-chunk-object
 	    :initarg :object)))
@@ -206,8 +226,14 @@
     ;; -- loadable is false (typically) if this is an object file
     ;; that we don't want to consider compiling.
     ;; The File-chunk this one governs --
-    (file :accessor Loaded-chunk-basis-chunk
+    (file :accessor Loaded-chunk-file
+	  :initarg :file
 	  :type File-chunk)))
+
+(defmethod initialize-instance :after ((lc Loaded-chunk)
+				       &key &allow-other-keys)
+   (setf (Chunk-basis lc)
+         (list (Loaded-chunk-file lc))))
 
 ;;; Corresponds to information gleaned from file header about what
 ;;; other files (and modules, ...) are necessary in order to load or
@@ -225,6 +251,8 @@
 				       &rest initargs)
   (setf (Chunk-basis fb-ch) !()))
 
+(eval-when (:compile-toplevel :load-toplevel)
+
 ;;; State for task is a file chunk, whose basis (and callees)
 ;;; we are computing.
 (def-slurp-task compute-file-basis
@@ -233,6 +261,7 @@
 ;;; out of the header.
    :file->state-fcn (\\ (pn) 
 		       (place-file-chunk pn)))
+)
 
 (defun place-loaded-basis-chunk (fc)
    (chunk-with-name `(:loaded-basis ,(File-chunk-pathname fc))
@@ -249,35 +278,50 @@
 ;;; chunks whose basis it might affect.  That's because 'chunks-update'
 ;;; is based on the assumption that the bases it sees are not in the
 ;;; process of changing.  This comment applies to 
-;;; 'loaded-chunk-compute-basis' as well.
+;;; 'loadable-chunk-compute-basis' as well.
+
+(defgeneric file-chunk-find-basis (fc))
 
 (defmethod derive ((fb Loaded-basis-chunk))
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
-	  (let ((file-ch (Loaded-basis-chunk-file fb)))
-	     (setf (File-chunk-callees fb) !())
-	     (setf (Chunk-basis
-		      (place-compiled-chunk file-ch))
+	  (let* ((file-ch (Loaded-basis-chunk-file fb))
+		 (comp-ch (place-compiled-chunk file-ch)))
+	     (setf (File-chunk-callees file-ch) !())
+	     (setf (Chunk-basis comp-ch)
 		   (list file-ch))
+	     (file-chunk-find-basis file-ch)
+;;;;	     (dolist (b (tail (Chunk-basis comp-ch)))
+;;;;	        (...))
+	     file-op-count*))))
+
+;;; Stores callees in fc and its related chunks.
+;;; By subclassing File-chunk, you can alter the way the basis is 
+;;; found.
+(defmethod file-chunk-find-basis ((file-ch File-chunk))
 	     (file-slurp (File-chunk-pathname file-ch)
 			 (list compute-file-basis*)
 			 (\\ (srm)
-			    (let ((c (peek-char false srm false eof*)))
-			       (cond ((and (not (eq c eof*))
-					   (char= #\;))
-				      ;; Got comment.  Try to parse as
-				      ;; mode line with readtable spec
-				      (let ((line (read-line srm)))
-					 (let ((readtab
-						  (extract-readtab line)))
-					    (cond (readtab
-						   (setf (File-chunk-readtable
-							    file-ch)
-						         readtab))))))))))
-	     file-op-count*))))
+			    (let ((readtab
+				     (modeline-extract-readtab srm)))
+			       (cond (readtab
+				      (setf (File-chunk-readtable
+					       file-ch)
+					    readtab)))))))
 
-(defun extract-readtab (str)
+;;; 'srm' is stream of freshly opened file.  Try to get readtable name
+;;; from first line, returning false if it can't be found.
+(defun modeline-extract-readtab (srm)
+   (let ((c (peek-char false srm false eof*)))
+      (cond ((and (not (eq c eof*))
+		  (char= #\;))
+	     ;; Got comment.  Try to parse as
+	     ;; mode line with readtable spec
+	     (string-extract-readtab (read-line srm)))
+	    (t false))))
+
+(defun string-extract-readtab (str)
    (let ((rpos (search "Readtable: " str))
 	 (strlen (length str)))
       (cond (rpos
@@ -333,34 +377,48 @@
 			 :loadable file-choice
 			 :file file-chunk)))))
 	 (cond ((eq file-manip ':noload)
-		(chunk-terminate-mgt lc)))
+		(chunk-terminate-mgt lc ':ask)))
 	 lc)))
 
 (defmethod derive ((lc Loaded-chunk))
-   (let ((loadable (Loaded-chunk-loadable lc)))
-      (let ((chunk-of-file-to-load
-	       (cond (loadable
-		      (Loadable-chunk-selection loadable))
-		     (t
-		      (Loaded-chunk-file lc)))))
-	 (with-post-file-transduction-hooks
-	    (cleanup-after-file-transduction
-	       (let ((*package* *package*)
-		     (*readtable* *readtable*)
-		     (fload-indent* (+ 3 fload-indent*)))
-		  (fload-op-message "Loading"
-				    (File-chunk-yt-pathname
-				        chunk-of-file-to-load)
-				    (File-chunk-pathname chunk-of-file-to-load)
-				    "...")
+   (let ((chunk-of-file-to-load lc))
+      (loop 
+	 (let ((loadable (Loaded-chunk-loadable
+			     chunk-of-file-to-load)))
+	    (setq chunk-of-file-to-load
+		  (cond (loadable
+			 (Loadable-chunk-selection loadable))
+			(t
+			 (Loaded-chunk-file lc))))
+	    (cond ((not (typep chunk-of-file-to-load
+			       'Loaded-chunk))
+		   (return)))
+	    ;; Indirection; go around again looking
+	    ;; for an actual file.
+	  ))
+      (cond ((not (typep chunk-of-file-to-load 'File-chunk))
+	     (error "Can't extract file to load from ~s"
+		    lc)))
+      (with-post-file-transduction-hooks
+	 (cleanup-after-file-transduction
+	    (let ((*package* *package*)
+		  (*readtable* *readtable*)
+		  (fload-indent* (+ 3 fload-indent*)))
+	       (fload-op-message "Loading"
+				 (File-chunk-pn
+				     chunk-of-file-to-load)
+				 (File-chunk-pathname chunk-of-file-to-load)
+				 "...")
 
-		  (load (File-chunk-pathname chunk-of-file-to-load))
-		  (fload-op-message "...loaded"
-				    (File-chunk-yt-pathname
-				        chunk-of-file-to-load)
-				    false
-				    ""))))
-	 (get-universal-time))))
+	       (load (File-chunk-pathname chunk-of-file-to-load))
+	       (fload-op-message "...loaded"
+				 (File-chunk-pn
+				     chunk-of-file-to-load)
+				 false
+				 ""))))
+      true))
+
+(defvar all-loadable-chunks* !())
 
 ;;; Whoever changes the alt-version of a Loadable-chunk (e.g.,
 ;;; 'fload-versions') must change its basis accordingly and
@@ -374,9 +432,10 @@
 	       `(:loadable ,(File-chunk-pathname file-chunk))
 	       (\\ (name)
 		  (let ((is-source (file-chunk-is-source file-chunk))
-			(alt-version
-			   (let ((v (File-chunk-alt-version file-chunk)))
-			      (and v (place-loadable-chunk v)))))
+;;;;			(alt-version
+;;;;			   (let ((v (File-chunk-alt-version file-chunk)))
+;;;;			      (and v (place-loadable-chunk v manip))))
+		        )
 		     (let ((compiled-chunk
 			    (and is-source
 				 (place-compiled-chunk file-chunk))))
@@ -395,7 +454,9 @@
 							 compiled-chunk)))
 						  (t file-chunk)))))
 			   (push new-lc all-loadable-chunks*)
-			   new-lc)))))))
+			   new-lc))))
+	       :initializer
+	          #'loadable-chunk-compute-basis)))
       (cond (manip
 	     (cond ((not (eq (Loadable-chunk-manip ld-chunk)
 			     manip))
@@ -403,8 +464,8 @@
 			    "Changing manip of ~s from ~s to ~s~%"
 			    ld-chunk (Loadable-chunk-manip ld-chunk) manip)
 		    (setf (Loadable-chunk-manip ld-chunk)
-		          manip)))))
-      (loaded-chunk-compute-basis ld-chunk)
+		          manip)
+		    (loadable-chunk-compute-basis ld-chunk)))))
       ld-chunk))
 
 ;;; Possible values: 
@@ -432,8 +493,6 @@
 
 (define-symbol-macro fload-compile* (default-fload-manip))
 
-(defvar all-loadable-chunks* !())
-
 (defun loadables-check-bases ()
    (let ((loadables-needing-checking !())
 	 (loadables-needing-update !()))
@@ -442,7 +501,7 @@
 		      '(:defer :follow))
 		(push lc loadables-needing-checking))))
       (dolist (lc loadables-needing-checking)
-	 (loaded-chunk-compute-basis lc)
+	 (loadable-chunk-compute-basis lc)
 	 (cond ((not (chunk-up-to-date lc))
 		(push lc loadables-needing-update))))
       (chunks-update loadables-needing-update)))
@@ -451,19 +510,20 @@
 ;;; The field is changed only by functions defined in this file.
 ;;; Make sure that that remains the case, and that changes in the
 ;;; 'manip' field are carefully synchronized with calls to this function. --
-(defun loaded-chunk-compute-basis (loadable-ch)
+(defun loadable-chunk-compute-basis (loadable-ch)
    (let* ((file-ch (Loadable-chunk-file loadable-ch))
 	  (manip (Loadable-chunk-manip loadable-ch))
-	  (source-exists (Loadable-chunk-source file-ch))
+	  (source-exists (Loadable-chunk-source loadable-ch))
 	  (object-exists
 	     (probe-file
 		(File-chunk-pathname
 		   (Loadable-chunk-object loadable-ch)))))
+      (format t "At start, manip = ~s~%" manip)
       (cond ((not (or source-exists object-exists))
 	     (error "No source or object file can be found for ~s"
 		    loadable-ch)))
       (cond ((File-chunk-alt-version file-ch)
-	     (setf (Chunk-basis loaded-ch)
+	     (setf (Chunk-basis loadable-ch)
 		   (list (place-loaded-chunk
 			    (File-chunk-alt-version file-ch)
 			    ':nochoice))))
@@ -472,8 +532,9 @@
 		    (let ((lb (place-loaded-basis-chunk file-ch)))
 		       (chunk-request-mgt lb)
 		       (chunk-update lb)))
-		   (t
-		    (setq manip ':object)))
+;;;;		   (t
+;;;;		    (setq manip ':object))
+		   )
 	     (cond ((memq manip '(:defer :follow))
 		    (let ((prev-manip manip))
 		       (setq manip fload-compile*)
@@ -496,7 +557,9 @@
 		    (setq manip ':compile)))
 	     ;; At this point manip is either :object, :source, or
 	     ;; :compile
-	     (setf (Chunk-basis loaded-ch)
+	     (format t "manip = ~s loadable-ch = ~s~%"
+		     manip loadable-ch)
+	     (setf (Chunk-basis loadable-ch)
 		   (list (ecase manip
 			    (:source
 			     (Loadable-chunk-source loadable-ch))
@@ -504,14 +567,15 @@
 			     (place-compiled-chunk
 				(Loadable-chunk-source loadable-ch)))
 			    (:object
-			     (Loadable-chunk-object loadable-ch)))))
-	     (setf (Loadable-chunk-selection loadable-ch)
-		   (cond ((eq manip ':compile)
-			  (place-file-chunk
-			     (Compiled-file-chunk-pathname
-				(head (Chunk-basis loaded-ch)))))
-			 (t
-			  (head (Chunk-basis loaded-ch)))))))))
+			     (Loadable-chunk-object loadable-ch)))))))
+;;;;      (format t "Ready to set selection~%")
+      (setf (Loadable-chunk-selection loadable-ch)
+	    (cond ((eq manip ':compile)
+		   (place-file-chunk
+		      (File-chunk-pathname
+			 (head (Chunk-basis loadable-ch)))))
+		  (t
+		   (head (Chunk-basis loadable-ch)))))))
 
 (defun ask-user-for-manip (loadable-ch obj-exists)
    (let ()
@@ -522,7 +586,7 @@
 	    (cond (obj-exists
 		   "source, or object")
 		  (t "or source"))
-	    (File-chunk-pn file-ch)
+	    (File-chunk-pn (Loadable-chunk-file loadable-ch))
 	    (cond (obj-exists
 		   "c/s/o")
 		  (t
@@ -635,11 +699,13 @@
 				  ;; it must always include the
 				  ;; source-file chunk --
 				  :basis (list source-file-chunk))))
+			 (setf (Chunk-basis new-chunk)
+			       (list source-file-chunk))
 			 new-chunk)))))
-	 (setf (Chunk-basis compiled-chunk)
-	       (list source-file-chunk))
 	 compiled-chunk)))
 	    
+(defvar debuggability* 1)
+
 (defmethod derive ((cf-ch Compiled-file-chunk))
    (let ((pn (File-chunk-pn
 		(Compiled-file-chunk-source-file cf-ch))))
@@ -652,7 +718,6 @@
 		   (now-compiling*    pn)
 		   (now-loading* false)
 		   (now-slurping* false)
-		   (now-loading-lprec* nil)
 		   (debuggability* debuggability*)
 		   (fload-indent* (+ 3 fload-indent*)))
 	       (fload-op-message "Beginning compilation on" pn real-pn "...")
@@ -660,11 +725,11 @@
 		  (cleanup-after-file-transduction
 		     (let ((*compile-verbose* false))
 			(cond (real-ov
-			       (compile-file real-pn :output-file real-ov)
+			       (compile-file real-pn :output-file real-ov))
 			      (t
 			       (compile-file real-pn)
 			       (setq real-ov (pathname-object-version
-					         real-pn true)))))
+					         real-pn true))))
 			(let* ((success
 				  (and real-ov
 				       (or (not old-obj-write-time)
@@ -682,41 +747,51 @@
 ;;; where S is the kind of subfile.  (S is :macros, :nisp-type-decls, or
 ;;; the like.)
 ;;; We need 3 Chunk subclasses for sub-file-type N:
-;;; Class name: N-class         Chunk name: (N f)            - the contents 
+;;; Class name: N-chunk         Chunk name: (N f)            - the contents 
 ;;;                                                            of the sub-file
-;;;             Slurped-N-class             (:slurped (N f)) - as slurped
-;;;             Loaded-N-class              (:loaded (N f))  - Or-chunk
+;;;             Slurped-N-chunk             (slurped (N f)) - as slurped
+;;;             Loaded-N-chunk              (loaded (N f))  - Or-chunk
 ;;;							       (see below)
-;;; Plus one or more existing classes L, typically (:loaded f), that trump
-;;; (:slurped (N f))
-;;; The Or-chunk has disjuncts (union L {(:slurped (N f))}), default
-;;; (:slurped (N f)).
+;;; Plus one or more existing classes L, typically (loaded f), that trump
+;;; (slurped (N f))
+;;; The Or-chunk has disjuncts (union L {(slurped (N f))}), default
+;;; (slurped (N f)).
+
+(defstruct (Sub-file-type)
+   name
+   chunker
+   ;; -- Function to produce chunk (N F) for file F (N= name of Sub-file-type)
+   load-chunker
+   ;; -- Function to produce chunk (:loaded (N F)) 
+)
+
 (defmacro def-sub-file-type (sym
 			     &key
 			     ((:default default-handler^)
 			      'nil)
 			     ((:file->state-fcn file->state-fcn^)
 			      '(\\ (_) nil)))
-   (let  ((sym-name (Symbol-name name)))
+   (let  ((sym-name (Symbol-name sym)))
       (let ((subfile-class-name (build-symbol (:< (string-capitalize sym-name))
 					      -chunk))
-	    (slurped-class-name
+	    (slurped-sym-class-name
 	       (build-symbol Slurped- (:< sym-name) -chunk))
 	    (loaded-sym-class-name
 	       (build-symbol Loaded- (:< sym-name) -chunk)))
       (let* ((sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
 						  -pathname))
-	     (slurped-subfile-read-fcn (build-symbol (:< slurped-class-name)
+	     (slurped-subfile-read-fcn (build-symbol (:< slurped-sym-class-name)
 						     -subfile))
+	     (subfile-placer-fcn (build-symbol place- (:< sym-name) -chunk))
 	     (slurped-subfile-placer-fcn
-		(build-symbol place-
-			      (:< slurped-subfile-read-fcn)
-			      -chunk))
+		(build-symbol place-slurped- (:< sym-name) -chunk))
 	     (ld-pathname-read-fcn (build-symbol (:< loaded-sym-class-name)
 						 -pathname))
 	     (loaded-class-loaded-file-acc
 		(build-symbol (:< loaded-sym-class-name)
 			      -loaded-file))
+	     (loaded-subfile-placer-fcn
+	        (build-symbol place-loaded- (:< sym-name) -chunk))
 	     (slurp-task-name (build-symbol (:package :keyword)
 				 slurp- (:< sym-name))))
          `(progn
@@ -731,64 +806,83 @@
 		(setf (Chunk-basis ch)
 		      (list (place-file-chunk (,sub-pathname-read-fcn ch)))))
 
-	     (defclass ,slurped-class-name (Chunk)
+	     (defclass ,slurped-sym-class-name (Chunk)
 	       ((subfile :reader ,slurped-subfile-read-fcn
 			 :initarg :subfile
 			 :type Chunk)))
 
 	     (defmethod initialize-instance :after
-					    ((ch ,slurped-class-name)
+					    ((ch ,slurped-sym-class-name)
 					     &rest _)
 		(setf (Chunk-basis ch)
 		      (list (,slurped-subfile-read-fcn ch))))
 
+	     (defun ,subfile-placer-fcn (pn)
+		(chunk-with-name
+		   `(,',sym ,pn)
+		   (\\ (sub-name-exp)
+		      (make-instance
+			 ',subfile-class-name
+			:name sub-name-exp
+			:pathname pn))))
+
 	     (defun ,slurped-subfile-placer-fcn (pn)
 		(chunk-with-name
-		   `(:slurped (,',sub-file-type pn))
+		   `(:slurped (,',sym pn))
 		   (\\ (name-exp)
-		      (make-instance ',slurped-class-name
+		      (make-instance ',slurped-sym-class-name
 			 :name name-exp
-			 :subfile (chunk-with-name
-				     (cadr exp)
-				     (\\ (sub-name-exp)
-					(make-instance
-					      ',sub-file-class-name
-					   :name sub-name-exp
-					   :pathname pn)))))))
+			 :subfile (,subfile-placer-fcn pn)))))
 
 	     (defclass ,loaded-sym-class-name (Or-chunk)
-		((pathname :reader
-			      (build-symbol (:< loaded-sym-class-name)
-					    -pathname)
+		((pathname :reader ,ld-pathname-read-fcn
 			   :initarg :pathname
 			   :type pathname)
 		 (loaded-file :accessor ,loaded-class-loaded-file-acc
 			      :type Loaded-chunk)))
 
-	     (defmethod initialize-instance :after
-					    ((ch ,loaded-sym-class-name)
-					     &key sub-file-type file
-						  &allow-other-keys)
-		(setq file (pathname file))
-		(let ((file-chunk (place-loaded-chunk file false))
-		      (slurped-chunk 
-			 (,slurped-subfile-placer-fcn file)))
-		   (setf (Chunk-basis ch)
-			 (list file-chunk))
-		   (setf (Or-chunk-disjuncts ch)
-			 (list file-chunk slurped-chunk))))
+	     (defun ,loaded-subfile-placer-fcn (pn)
+		(format t "Placing new loaded chunk for file chunk of ~s~%"
+			pn)
+		(chunk-with-name
+		    `(:loaded (,',sym pn))
+		    (\\ (name-exp)
+		       (format t "Creating new loaded chunk for file chunk of ~s~%"
+			       pn)
+		       (let ()
+			  (make-instance ',loaded-sym-class-name
+			      :name name-exp
+			      :pathname pn)))
+		    :initializer
+		       (\\ (new-ch)
+			  (setf (,loaded-class-loaded-file-acc new-ch)
+				(place-loaded-chunk
+				   (place-file-chunk pn)
+				   false))
+			  (setf (Or-chunk-disjuncts new-ch)
+			        (list new-ch
+				      (,slurped-subfile-placer-fcn pn))))))
 
 	     (def-slurp-task ,slurp-task-name
 		:default ,default-handler^
 		:file->state-fcn ,file->state-fcn^)
 
-	     (defmethod derive ((x ,subfile-class-name))
-		(let ((file (,sub-pathname-read-fcn x)))
+	     (defmethod derive ((x ,slurped-sym-class-name))
+		(let ((file (,sub-pathname-read-fcn
+			       (,slurped-subfile-read-fcn
+				  x))))
 		   (file-slurp file
 			       (list ,(build-symbol (:< slurp-task-name)
 						    *))
 			       false)
-		   (get-universal-time))))))))
+		   (get-universal-time)))
+
+	     (defparameter ,(build-symbol (:< sym-name)
+					  -sub-file-type*)
+		(make-Sub-file-type
+		   :name ',sym-name
+		   :chunker #',subfile-placer-fcn
+		   :load-chunker #',loaded-subfile-placer-fcn)))))))
 
 (defvar fload-version-suffix* ':-new)
 
@@ -857,6 +951,8 @@
 
 (def-sub-file-type :macros)
 
+(defvar standard-sub-file-types* (list macros-sub-file-type*))
+
 (defun macros-slurp-eval (e _) (eval e) false)
 
 (datafun :slurp-macros defmacro #'macros-slurp-eval)
@@ -892,20 +988,34 @@
 	   (eval e)))
     false))
 
-(defvar standard-slurp-tasks* (list slurp-macros*))
+(defvar end-header-dbg* false)
+
+(datafun compute-file-basis in-readtable
+   (defun :^ (form file-ch)
+      (let ((readtab (name->readtable (cadr form)))
+	    (prev-readtab (File-chunk-readtable file-ch)))
+	 (cond ((not (eq readtab prev-readtab))
+		(format *error-output*
+		   "Changing readtable of ~s from ~s to ~s = ~s~%"
+		   file-ch prev-readtab (cadr form) readtab)))
+		(setf (File-chunk-readtable file-ch)
+		      readtab)
+		;; for the duration of the slurp --
+		(setq *readtable* readtab))))
 
 (datafun compute-file-basis end-header
    (defun :^ (form file-ch) ;; -- of file being slurped
       (cond ((memq ':no-compile (cdr form))
 	     (place-loadable-chunk file-ch ':source)))
-      (cond ((memq ':continue-slurping (cdr form))
-	     (dolist (sty standard-slurp-tasks*)
-	        (chunk-request-mgt
-		   (macros-subfile-chunk (File-chunk-pathname file-ch))))))
       (cond (end-header-dbg*
 	     (format *error-output*
 		     "Executing ~s~% "
 		     form)))
+      (cond ((memq ':continue-slurping (cdr form))
+	     (format *error-output*
+		!"Warning -- ':continue-slurping' encountered in file ~
+                  ~s; this declaration is~
+                  ~%  no longer needed~%")))
       true))
 
 (defvar fcompl-flags* '(- -f -x -l))
@@ -954,17 +1064,18 @@
 				 cease-mgt)
    (let* ((file-chunk
 	     (place-file-chunk pn))
-	  (comp-chunk
+	  (compiled-chunk
 	     (place-compiled-chunk file-chunk))
-	  (comp-date
-	     (pathname-write-time
-	        (File-chunk-pathname comp-chunk))))
+;;;;	  (comp-date
+;;;;	     (pathname-write-time
+;;;;	        (File-chunk-pathname compiled-chunk)))
+	  )
       (monitor-file-basis file-chunk)
       (cond (cease-mgt
 	     (cond (force-compile
 		    ;; One last fling --
-		    (derive comp-chunk)))
-	     (chunk-terminate-mgt comp-chunk ':ask)
+		    (derive compiled-chunk)))
+	     (chunk-terminate-mgt compiled-chunk ':ask)
 	     (cond (load
 		    (cerror "I will ignore the load request"
 			    !"Request to load ~s contradicts request to ~
@@ -972,12 +1083,12 @@
 	    (t
 	     (let ((comp-date
 		      (Chunk-date compiled-chunk)))
-		(chunk-request-mgt comp-chunk)
+		(chunk-request-mgt compiled-chunk)
 		(cond ((and force-compile
 			    (= (Chunk-date compiled-chunk)
 			       comp-date))
 		       ;; Hasn't been compiled yet
-		       (derive comp-chunk)))
+		       (derive compiled-chunk)))
 		(cond ((or load
 			   (load-after-compile))
 		       (chunk-request-mgt
@@ -1051,17 +1162,6 @@
 
 (defun compilable (pathname)
    (member (Pathname-type pathname) source-suffixes* :test #'equal))
-
-(defun needs-recompile (lprec)
-  (and (not (eq (Load-progress-rec-whether-compile lprec)
-		':source))
-       (let ((lprec-pn (pathname-resolve (Load-progress-rec-pathname lprec)
-					 false)))
-	  (let ((obj-version (pathname-object-version lprec-pn true)))
-	     (and obj-version
-		  (>= (pathname-write-time obj-version)
-		      (pathname-write-time
-			 (pathname-source-version lprec-pn))))))))
 
 (defun keyword-if-sym (x)
    (cond ((is-Symbol x)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.3 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.4 2004/12/20 18:04:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -683,6 +683,7 @@
 			 ;; inelegant to avoid trouble
 			 (setq postskip slen))))
 		 (t
+		  (setq seg "~")
 		  (setq postskip (+ squig 1))))))))
 	 
 ;;;;(format nil fstr)))

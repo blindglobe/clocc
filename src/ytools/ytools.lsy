@@ -44,7 +44,9 @@
 (setf (named-readtable ':ytools) ytools-readtable*)
 
 (defparameter ytools-core-files*
-    '("base" "datafun" "pathname" "module" "slurp" "files" "depend"))
+    '("base" "datafun" "pathname" "chunk" "slurp" "files" "module" "depend"))
+;;; -- chunk & slurp can be loaded in either order; they're independent
+;;; of each other.
 
 (defparameter bin-idio-dir*
    (cond ((equal bin-idio* "")

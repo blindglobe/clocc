@@ -1,3 +1,46 @@
+2005-01-04  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added small patch to the computation of COMPONENT-HOST to accommodate
+	a recent change in CMUCL.  The patch ensures that eventually the
+	default host is taken from *DEFAULT-PATHNAME-DEFAULTS*.
+	Thanks to Raymond Toy for this patch.
+
+2004-12-06  sds  <sds@vault>
+
+	* defsystem.lisp: (*dont-redefine-require*) [CLISP]: set to T
+
+2004-11-30  sds  <sds@vault>
+
+	* defsystem.lisp: (compiled-file-p) [CLISP]: use PEEK-CHAR+READ
+	instead of READ-FROM-STRING+READ-LINE
+
+	* defsystem.lisp: (compiled-file-p) [CLISP]: fixed for CLISP 2.34
+
+	* defsystem.lisp (compiled-file-p): when PORT is already present,
+	use it, otherwise redefine it
+	(needs-compilation): use COMPILED-FILE-P
+
+	* defsystem.lisp:
+	(*filename-extensions*) [CLISP]: source type is "lisp"
+
+2004-07-19  kevinrosenberg  <kevinrosenberg@vault>
+
+	* debian/changelog, defsystem.lisp: fix for sbcl
+
+2004-07-13  kevinrosenberg  <kevinrosenberg@vault>
+
+	* defsystem.lisp: add missing paren
+
+	* ChangeLog, debian/changelog, defsystem.lisp:
+	fix mk-sbcl-module-provider
+
+	* debian/control, ChangeLog, debian/changelog, defsystem.lisp:
+	2004-07-12 23:37  kevinrosenberg
+
+	        * defsystem.lisp: o Avoid checks for symbol in EXT package
+	        unless EXT package exists. Fixes compilation on AllegroCL and SBCL.
+
 2004-07-12 23:37  kevinrosenberg
 
 	* defsystem.lisp: o Avoid checks for symbol in "EXT" package

@@ -1,4 +1,4 @@
-;;; -*- Mode:Common-Lisp; Package:XLIB; Syntax:COMMON-LISP; Base:10; Lowercase:T -*-
+;;; -*- Mode: LISP; Package:XLIB; Syntax:COMMON-LISP; Base:10; Lowercase:T -*-
 
 ;; RESOURCE - Lisp version of XLIB's Xrm resource manager
 
@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/resource.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/resource.lisp,v 1.2 2001/07/13 04:52:19 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -354,6 +354,7 @@
 (defun get-tables-lookup (dbase name names classes)
   (declare (type list dbase names classes)
 	   (type stringable name))
+  #-clx-debugging
   (declare (optimize speed))
   (dolist (entry dbase)
     (declare (type resource-database entry))

@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/macros.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/macros.lisp,v 1.2 2001/07/13 04:52:19 pvaneynd Exp $")
 
 ;;; CLX basicly implements a very low overhead remote procedure call
 ;;; to the server.  This file contains macros which generate the code
@@ -948,6 +948,7 @@
        (loop
 	 (let ((,y ,list))
 	   (declare (type (or null ,type) ,y)
+                    #-clx-debugging
 		    (optimize (speed 3) (safety 0)))
 	   (setf (,next ,x) ,y)
 	   (when (conditional-store ,list ,y ,x)
@@ -958,6 +959,7 @@
     `(loop
        (let ((,y ,list))
 	 (declare (type (or null ,type) ,y)
+                  #-clx-debugging
 		  (optimize (speed 3) (safety 0)))
 	 (if (null ,y)
 	     (return nil)
@@ -974,6 +976,7 @@
 	   (,first ,list))
        (declare (type ,type ,z)
 		(type (or null ,type) ,first)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (if (null ,first)
 	   (setf ,list ,z)
@@ -989,6 +992,7 @@
   (let ((x (gensym)))
     `(let ((,x ,item))
        (declare (type ,type ,x)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (shiftf (,next ,x) ,list ,x)
        ,x)))
@@ -997,6 +1001,7 @@
   (let ((x (gensym)))
     `(let ((,x ,list))
        (declare (type (or null ,type) ,x)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (when ,x
 	 (shiftf ,list (,next (the ,type ,x)) nil))
@@ -1006,6 +1011,7 @@
   (let ((x (gensym)))
     `(let ((,x ,item))
        (declare (type ,type ,x)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (if (null ,tail)
 	   (threaded-nconc ,x ,head ,next ,type)
@@ -1016,6 +1022,7 @@
   (let ((x (gensym)))
     `(let ((,x ,head))
        (declare (type (or null ,type) ,x)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (when ,x
 	 (when (eq ,x ,tail)
@@ -1027,6 +1034,7 @@
   (let ((x (gensym)))
     `(let ((,x ,item))
        (declare (type ,type ,x)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (if (null ,tail)
 	   (setf ,tail (setf ,head ,x))
@@ -1049,6 +1057,7 @@
 	   (,first ,list))
        (declare (type ,type ,x)
 		(type (or null ,type) ,first)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0)))
        (when ,first
 	 (if (eq ,first ,x)
@@ -1072,5 +1081,6 @@
 	  ,count)
        (declare (type (or null ,type) ,x)
 		(type array-index ,count)
+                #-clx-debugging
 		(optimize (speed 3) (safety 0))))))
 

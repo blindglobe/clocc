@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.34 2004/11/12 19:00:44 sds Exp $
+;;; $Id: inspect.lisp,v 1.35 2005/01/13 17:10:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -354,13 +354,15 @@ This is useful for frontends which provide an eval/modify facility."
        (force-output))
       (:d (describe (insp-self insp)))
       ((:p :a) (print-inspection insp *terminal-io* frontend))
-      (:e (handler-case (print (inspect-read-clean-eval insp *terminal-io*))
-            (error (err) (format t " *** error: ~s" err))))
+      (:e (handler-case (let ((v (inspect-read-clean-eval insp *terminal-io*)))
+                          (format t "~&~S~%" v))
+            (error (err) (format t " *** error: ~A" err))))
       (:m (handler-case
-              (print (funcall (insp-set-slot insp)
-                              (inspect-read-clean-eval insp *terminal-io*)
-                              (inspect-read-clean-eval insp *terminal-io*)))
-            (error (err) (format t " *** error: ~s" err))))
+              (let ((v (funcall (insp-set-slot insp)
+                                (inspect-read-clean-eval insp *terminal-io*)
+                                (inspect-read-clean-eval insp *terminal-io*))))
+                (format t "~&~S~%" v))
+            (error (err) (format t " *** error: ~A" err))))
       (t (cond ((setq insp (get-insp id com))
                 (print-inspection insp *terminal-io* frontend)
                 (setq id (insp-id insp)))

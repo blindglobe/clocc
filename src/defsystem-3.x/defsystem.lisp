@@ -4064,15 +4064,14 @@ D
           #+:allegro #'load
           #+:cmu #'alien:load-foreign
           #+:sbcl #'sb-alien:load-foreign
-	  #+(and :lispworks4.2 :unix (not :unix)) #'link-load:read-foreign-modules
-	  #+(and :lispworks4.2 :linux) #'fli:register-module
-	  #+(and :lispworks4.2 :win32) #'fli:register-modules
+	  #+(and :lispworks :unix (not :linux)) #'link-load:read-foreign-modules
+	  #+(and :lispworks (or (not :unix) :linux)) #'fli:register-module
           #+(or :ecl :gcl :kcl) #'load ; should be enough.
           #-(or :lucid
 		:allegro
 		:cmu
 		:sbcl
-		(and :lispworks (or :unix :win32))
+		:lispworks
 		:ecl :gcl :kcl)
 	  (lambda (&rest args)
 	    (declare (ignore args))

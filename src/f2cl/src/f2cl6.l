@@ -264,6 +264,13 @@
 	      (write (get-output-stream-string str) :stream outport :escape nil)
 	      (write-char '#\space outport)
 	      (return t)))))) 
-;-----------------------------------------------------------------------------
-; end of f2cl6.l
- 
+;;;-----------------------------------------------------------------------------
+;;; end of f2cl6.l
+;;;
+;;; $Id: f2cl6.l,v 1.12 2000/07/13 16:55:34 rtoy Exp $
+;;; $Log: f2cl6.l,v $
+;;; Revision 1.12  2000/07/13 16:55:34  rtoy
+;;; To satisfy the Copyright statement, we have placed the RCS logs in
+;;; each source file in f2cl.  (Hope this satisfies the copyright.)
+;;;
+;;;-----------------------------------------------------------------------------

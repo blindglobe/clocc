@@ -387,6 +387,13 @@ definition.| l) ))
   (setq rest (cddr rest))
   (go loop)))
 
-;------------------------------------------------------------------------------
-; end of f2cl2.l
-
+;;;-----------------------------------------------------------------------------
+;;; end of f2cl2.l
+;;;
+;;; $Id: f2cl2.l,v 1.18 2000/07/13 16:55:34 rtoy Exp $
+;;; $Log: f2cl2.l,v $
+;;; Revision 1.18  2000/07/13 16:55:34  rtoy
+;;; To satisfy the Copyright statement, we have placed the RCS logs in
+;;; each source file in f2cl.  (Hope this satisfies the copyright.)
+;;;
+;;;-----------------------------------------------------------------------------

@@ -724,3 +724,14 @@
 	   ;; String is too short, so append some spaces
 	   (concatenate 'string string (make-string (- len slen) :initial-element #\Space))))))
   
+
+;;;-------------------------------------------------------------------------
+;;; end of macros.l
+;;;
+;;; $Id: macros.l,v 1.19 2000/07/13 16:55:34 rtoy Exp $
+;;; $Log: macros.l,v $
+;;; Revision 1.19  2000/07/13 16:55:34  rtoy
+;;; To satisfy the Copyright statement, we have placed the RCS logs in
+;;; each source file in f2cl.  (Hope this satisfies the copyright.)
+;;;
+;;;-----------------------------------------------------------------------------

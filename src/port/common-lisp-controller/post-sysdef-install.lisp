@@ -283,7 +283,7 @@
   #+sbcl
   (progn
     (push 'clc-require sb-ext:*module-provider-functions*)
-    ;; Overcome the effect of mk-defsystem3's overridge of 'cl:require
+    ;; Overcome the effect of mk-defsystem3's override of 'cl:require
     (setf (symbol-function 'cl:require) *original-require-function*))
   )
 

@@ -26,8 +26,8 @@
 
   (proclaim '(special f-store arg-store exp-store var-store init-store
 	      next-user-function-address lis-store end-store step-store 
-	      body-store intrinsic_function_names external_function_names
-	      subprog_name subprog_stmt_fns
+	      body-store *intrinsic_function_names* *external_function_names*
+	      *subprog_name* *subprog_stmt_fns*
 	      *functions-used*)))
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -161,7 +161,7 @@ Tag being parsed:| (cadr x))))
 		 (let ((res (find v (rest e) :key #'car)))
 		   (when res
 		     (setf bound res))))
-	 explicit_vble_decls)
+	 *explicit_vble_decls*)
     (rest bound)))
 
 (defun update-called-functions-list (name args)
@@ -240,7 +240,7 @@ Tag being parsed:| (cadr x))))
 					; intrinsic function call:
     ((and (symbolp (car l)) 
 	  (listp (cadr l))
-	  (member (car l) intrinsic_function_names))
+	  (member (car l) *intrinsic_function_names*))
      (cond ((not (null (cddr l)))
 	    (princ-reset
 	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
@@ -294,8 +294,8 @@ Tag being parsed:| (cadr x))))
        (pushnew (list fname (length args) args) *functions-used*
 		:key #'car)
        (update-called-functions-list fname args)
-       (cond ((and (member fname external_function_names)
-		   (member fname subprog-arglist))
+       (cond ((and (member fname *external_function_names*)
+		   (member fname *subprog-arglist*))
 	      ;; We want to use funcall only if the external function
 	      ;; was passed in as a parameter.  If not, then we don't
 	      ;; need to funcall it.  The user was just telling us that

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.30 2005/03/09 13:49:27 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.31 2005/03/13 00:30:43 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -182,13 +182,24 @@
 	    (t
 	     (call-next-method or-ch)))))
 
+(defvar height-cycle*)
+
 (defun chunk-propagate-height (ch)
-   (let* ((current-height (Chunk-height ch))
-	  (new-height (chunk-calculate-height ch)))
-      (cond ((not (= new-height current-height))
-	     (setf (Chunk-height ch) new-height)
-	     (dolist (d (Chunk-derivees ch))
-	        (chunk-propagate-height d))))))
+   (labels ((propagate (ch sofar)
+	       (cond ((memq ch sofar)
+		      (setq height-cycle* sofar)
+		      (error 
+			 "Derivee cycle at ~s~% during height computation"
+			 ch))
+		     (t
+		      (let* ((current-height (Chunk-height ch))
+			     (new-height (chunk-calculate-height ch)))
+			 (cond ((not (= new-height current-height))
+				(setf (Chunk-height ch) new-height)
+				(dolist (d (Chunk-derivees ch))
+				   (propagate
+				      d (cons ch sofar))))))))))
+      (propagate ch !())))
 
 ;;; Report  the last time the chunk became derived or
 ;;; false if it has never been derived. 
@@ -367,6 +378,11 @@
 ;;;;     evnum active-chunk-events*)
 ;;;;   (cond ((= evnum 5)
 ;;;;	  (break "Discarding event 5")))
+   (cond ((= evnum chunk-event-num*)
+	  ;; This can happen only if (e.g.) 'chunk-request-mgt' is
+	  ;; interrupted just before 'chunk-event-num*' is
+	  ;; incremented; so let's increment it.
+	  (setq chunk-event-num* (+ chunk-event-num* 1))))
    (cond ((< evnum (first active-chunk-events*))
 	  (error "Discarding ~s when chunk-event-num* = ~s"
 		 evnum chunk-event-num*))
@@ -430,6 +446,26 @@
 		   (t
 		    (setf (Chunk-update-marks ch)
 			  (rest marks))))))))
+
+;;; Is there a cycle from 'ch' through its accessor 'acc' and back to
+;;; itself?  ('acc' takes a chunk and returns a  list of chunks.)
+(defun chunk-in-cycle (ch acc)
+   (let ((cl (funcall acc ch)))
+      (cond ((not (null cl))
+	     (let ((evnum chunk-event-num*))
+		(unwind-protect
+		   (progn
+		      (setq chunk-event-num* (+ evnum 1))
+		      (labels ((pursue (ch trail)
+				  (cond ((memq ch trail)
+					 (error "Cycle in chunk links detected at ~s [acc=~s]"
+						ch acc))
+					((not (chunk-is-marked ch evnum))
+					 (chunk-mark ch evnum)
+					 (dolist (a (funcall acc ch))
+					    (pursue a (cons ch sofar)))))))
+			(pursue ch !())))
+		   (chunk-event-discard evnum)))))))
 
 ;;;;; <<<< chunk-requesters
 ;;; Returns management state of 'c' (normally true after this runs).
@@ -734,6 +770,8 @@
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
 (defun chunks-update (chunks force postpone-derivees)
+;;;;   (dbg-save (cl1 chunks))
+;;;;   (breakpoint "boing")
    (let* (derive-mark down-mark up-mark
 	  max-here temporarily-managed
 	  (must-derive (cond (force (list-copy chunks))

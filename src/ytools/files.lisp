@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.30 2005/03/09 13:49:27 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.31 2005/03/13 00:30:44 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,7 +11,7 @@
    (export '(fload fcompl fload-compile* bind-fload-compile* fcompl-reload*
 	     fload-versions postponed-files-update
 	     always-slurp end-header
-	     debuggable debuggability*)))
+	     debuggable debuggability* def-sub-file-type)))
 
 (defvar file-op-count* 0)
 
@@ -159,7 +159,8 @@
    ;; Inverse of 'callees' --
    (callers :accessor File-chunk-callers
 	    :initform !())
-   ;; Files that must be loaded when this one is read --
+   ;; Files that must be loaded when this one is read
+   ;;  (not currently used) --
    (read-basis :accessor File-chunk-read-basis
 	       :initform false))
 )
@@ -677,7 +678,7 @@
       (loop 
 	 (format *query-io*
 	    !"Do you want to load the object or source version of ~
-              ~% of ~s (o/s, \\\\ to abort)? "
+              ~% of ~s~% (o[bject]/s[ource]/+/-, \\\\ to abort)? "
 	      (File-chunk-pn (Loaded-chunk-loadee loaded-ch)))
 	 (multiple-value-bind
 	          (manip general)
@@ -1049,8 +1050,8 @@
 				 :type Loaded-chunk)))
 
 		(defun ,loaded-subfile-placer-fcn (pn)
-   ;;;;		(format t "Placing new loaded chunk for ~s subfile chunk of ~s~%"
-   ;;;;			',sym pn)
+      ;;;;		(format t "Placing new loaded chunk for ~s subfile
+      ;;;;		chunk of ~s~%" ',sym pn)
 		   (chunk-with-name
 		       `(:loaded (,',sym ,pn))
 		       (\\ (name-exp)

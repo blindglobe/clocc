@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.15 2005/03/09 13:49:27 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.16 2005/03/13 00:30:43 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(depends-on module funktion)))
+   (export '(depends-on module funktion scan-depends-on)))
 
 (eval-when (:compile-toplevel :load-toplevel)
 
@@ -18,22 +18,17 @@
 ;; -- A list of sub-file types L such that all supportive children found
 ;; after this will be slurped with respect to every element of L.
 
-;;;;   slurp-trawlers
-;;;; -- trawlers are objects (functions?) that interact with file
-;;;; dependencies to produce slurp tasks for files this one depends on
-
-;;; State for task is a file chunk, whose basis (and callees)
-;;; we are computing.
+;;; State for task is an Sdo-state for the file chunk we're scanning.
+;;; We're scanning it to figure out its basis (and callees)
 (def-slurp-task scan-depends-on
    :default (\\ (_ _) true)
 ;;; -- The idea is that anything we didn't anticipate takes us
 ;;; out of the header.
-   :file->state-fcn     ;;;; #'place-file-chunk
+   :file->state-fcn     
 		    (\\ (pn)
 		       (make-Scan-depends-on-state
 			  :file-chunk (place-File-chunk pn)
 			  :sub-file-types (list macros-sub-file-type*)
-;;;;			  :slurp-trawlers !())
 		        )))
  )
    
@@ -231,6 +226,8 @@
 				  (Sds-sub-file-types sdo-state))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
+			       (pathnames-note-slurp-support
+				   pnl file-ch sdo-state)
 			       (setf (File-chunk-read-basis file-ch)
 				     (union (mapcar #'pathname-denotation-chunk
 						    pnl)
@@ -329,6 +326,18 @@
 		      (compiled-ch-sub-file-link
 			 compiled-ch callee-ch sfty true))))))))
 
+(defun pathnames-note-slurp-support (pnl file-ch sdo-state)
+   (dolist (pn pnl)
+      (let* ((dep-ch (pathname-denotation-chunk pn))
+	     (loaded-dep-ch (place-Loaded-chunk dep-ch false)))
+	 (dolist (sfty (Sds-sub-file-types sdo-state))
+	    (let ((slurped-sub-file-ch
+		     (funcall (Sub-file-type-slurp-chunker sfty)
+			      (File-chunk-pathname file-ch))))
+	       (setf (Chunk-basis slurped-sub-file-ch)
+		     (adjoin loaded-dep-ch
+			     (Chunk-basis slurped-sub-file-ch))))))))
+
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).
 (defgeneric pathname-compile-support (xpn))
@@ -371,24 +380,27 @@
 		         compiled-ch file-ch sftype false))))))
      false))
 
+;;; We have to adapt this to the chunkified universe
 (datafun scan-depends-on end-header
-   (defun :^ (form sdo-state) 
-      (cond ((memq ':no-compile (cdr form))
-	     (place-Loaded-chunk (Sds-file-chunk sdo-state)
-				 ':source)))
-      (cond (end-header-dbg*
-	     (format *error-output*
-		     "Executing ~s~% "
-		     form)))
-      (cond ((memq ':continue-slurping (cdr form))
-	     (self-compile-dep-scan-depends-on form sdo-state)
-;;;;	     (format *error-output*
-;;;;		!"Warning -- ':continue-slurping' encountered in file ~
-;;;;                  ~s; this declaration is~
-;;;;                  ~%  no longer needed~%"
-;;;;		(Sds-file-chunk sdo-state))
-	     ))
-      true))
+   (defun :^ (form sdo-state)
+      (let ((flags (cdr form)))
+	 (cond ((memq ':no-compile flags)
+		(place-Loaded-chunk (Sds-file-chunk sdo-state)
+				    ':source)
+		(setq flags (remove ':no-compile flags))))
+	 (cond (end-header-dbg*
+		(format *error-output*
+			"Executing ~s~% "
+			form)))
+	 (cond ((memq ':continue-slurping flags)
+		(let* ((file-ch (Sds-file-chunk sdo-state))
+		       (compiled-ch (place-compiled-chunk file-ch)))
+		   (dolist (sfty (Sds-sub-file-types sdo-state))
+		      (compiled-ch-sub-file-link
+		         compiled-ch file-ch sfty false)))
+;;;;            (self-compile-dep-scan-depends-on form sdo-state)
+		))
+	 true)))
 
 (def-excl-dispatch #\' (srm _)
    (list 'funktion (read srm true nil true)))

@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.5 2005/03/06 22:51:16 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.6 2005/03/13 00:30:43 airfoyle Exp $
 	
+2005-03-12: Better cycle detection in chunk network.  Implemented
+            'at-slurp-time' dependencies.
+
 2005-03-06: Further debugging of flags to fload and fcompl.  (Version 1.5.1)
 
 2005-03-05: One more retune of derive-date/derive ritual.  

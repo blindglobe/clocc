@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.18 2005/03/09 13:49:28 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.19 2005/03/13 00:30:44 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -12,7 +12,7 @@
 	     with-post-file-transduction-hooks after-file-transduction
 	     during-file-transduction setf-during-file-transduction 
 	     fload-verbose* eval-when-slurping
-	     make-Printable printable-as-string eof*)))
+	     make-Printable printable-as-string eof* slurp-eval)))
 
 (defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
 (defvar obj-suffix* lisp-object-extn*)
@@ -274,9 +274,7 @@ after YTools file transducers finish.")
 
 (defvar hidden-slurp-tasks* !())
 
-;;; 'states' is a list of data structures, the same length as
-;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
-;;; for the corresponding task.  'stream-init', if not false, is
+;;; 'stream-init', if not false, is
 ;;; a function to apply to the stream when it is opened.
 ;;; The order of the slurp-tasks is irrelevant, and may change
 ;;; as the process progresses.
@@ -301,6 +299,11 @@ after YTools file transducers finish.")
 						   slurp-task)
 					   pn))
 			       slurp-tasks))
+			 ;;; -- 'slurp-states' is a list of data
+			 ;;; structures, the same length as
+			 ;;; 'slurp-tasks'.  Each element of
+			 ;;; 'slurp-states' serves as a blackboard for
+			 ;;; the corresponding task.
 			 (vis-tasks
 			       (remove-if (\\ (k)
 					     (memq (Slurp-task-label
@@ -437,23 +440,81 @@ after YTools file transducers finish.")
 (datafun general-slurper prog1 progn)
 (datafun general-slurper prog2 progn)
 
+(defvar eval-slurp-task* false)
+(defvar eval-slurp-state* false)
+
 (datafun general-slurper eval-when-slurping
    (defun :^ (forms tasks states)
-      (dolist (e (cdr forms))
-	 (eval e))
-      (values tasks states)))
+      (eval-forms-for-slurp-tasks (cdr forms) tasks states)))
 
 (datafun general-slurper eval-when
    (defun :^ (form tasks states)
       (cond ((memq ':slurp-toplevel (cadr form))
-	     (dolist (e (cddr form))
-	        (eval e))))
-     (values tasks states)))
+	     (eval-forms-for-slurp-tasks (cddr form) tasks states))
+	    (t
+	     (values tasks states)))))
+
+(defun eval-forms-for-slurp-tasks (forms tasks states)
+   (do ((fl forms (cdr fl))
+	(filter-forms !())
+	(eval-forms !()))
+       ((null fl)
+	(setq eval-forms (nreverse eval-forms))
+	(multiple-value-bind
+	          (selected-tasks their-states)
+		  (cond ((null filter-forms)
+			 (values tasks states))
+			(t
+			 (let ((selected-names
+				  (mapcan (\\ (ff) (list-copy (cdr ff)))
+					  filter-forms)))
+			    (let ((select-zip
+				     (mapcan
+				        (\\ (task state)
+					   (cond ((memq (Slurp-task-label task)
+							selected-names)
+						  (list (tuple task state)))
+						 (t !())))
+					tasks states)))
+			      (values (mapcar #'first select-zip)
+				      (mapcar #'second select-zip))))))
+	   ;; Now we do something a little odd, which is to
+	   ;; evaluate exactly the same code for each task.
+	   ;; To keep this from being meaningless, the variables
+	   ;; eval-slurp-task* and eval-slurp-state* are bound to the
+	   ;; current task and state.
+	   (do ((stskl selected-tasks (rest stskl))
+		(stl their-states (rest stl))
+		(continuing-tasks !())
+		(continuing-states !()))
+	       ((null stskl)
+		(values continuing-tasks continuing-states))
+	     (let ((eval-slurp-task* (car stskl))
+		   (eval-slurp-state* (car stl)))
+		(dolist (ev-form eval-forms)
+		   (cond ((not (eval ev-form))
+			  ;; If the form returns true, the task is done
+			  ;; Otherwise,we keep it on 'continuing-tasks'.
+			  (on-list eval-slurp-task* continuing-tasks)
+			  (on-list eval-slurp-state* continuing-states))))))
+	 ))
+     (cond ((car-eq (car fl) ':slurp-filter)
+	    (on-list (car fl) filter-forms))
+	   (t
+	    (on-list (car fl) eval-forms)))))
+
+;;; This has no effect when evaluated.  I
+(defmacro :slurp-filter (&whole e)
+   `',e)
 
 (datafun general-slurper with-packages-unlocked
    (defun :^ (form tasks states)
       (with-packages-unlocked
 	 (forms-slurp (cdr form) tasks states))))
+
+(defun slurp-eval (e _)
+   (eval e)
+   false)
 
 (defconstant can-get-write-times*
     #.(not (not (file-write-date

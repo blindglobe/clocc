@@ -445,9 +445,9 @@ Estimated total monitoring overhead: 0.88 seconds
 
 (eval-when (compile load eval)
   #+(and :cmu :new-compiler)
-  (deftype time-type () '(unsigned-byte 29))
+  (deftype time-type () '(unsigned-byte 32))
   #+(and :cmu :new-compiler)
-  (deftype consing-type () '(unsigned-byte 29))
+  (deftype consing-type () '(unsigned-byte 32))
   #-(and :cmu :new-compiler)
   (deftype time-type () 'unsigned-byte)
   #-(and :cmu :new-compiler)
@@ -1206,9 +1206,9 @@ adjusted for overhead."
 
 (defun MONITOR-ALL (&optional (package *package*))
   "Monitor all functions in the specified package."
-  (let ((package (if (symbolp package)
-                     (find-package package)
-                     package)))
+  (let ((package (if (packagep package)
+		     package
+		     (find-package package))))
     (do-symbols (symbol package)
       (when (eq (symbol-package symbol) package)
         (monitoring-encapsulate symbol)))))
@@ -1302,17 +1302,30 @@ of an empty function many times."
   time-per-call
   cons-per-call)
 
-(defun REPORT-MONITORING (&optional names
-                                    (nested :exclusive)
-                                    (threshold 0.01)
-                                    (key :percent-time)
-                                    ignore-no-calls)
+(defun REPORT (&key (names :all)
+		    (nested :exclusive)
+		    (threshold 0.01)
+		    (sort-key :percent-time)
+		    (ignore-no-calls nil))
+  "Same as REPORT-MONITORING but with a nicer keyword interface"
+  (declare (type (member :function :percent-time :time :percent-cons
+			 :cons :calls :time-per-call :cons-per-call)
+		 sort-key)
+	   (type (member :inclusive :exclusive) nested))
+  (report-monitoring names nested threshold sort-key ignore-no-calls))
+
+(defun REPORT-MONITORING (&optional names 
+				    (nested :exclusive) 
+				    (threshold 0.01)
+				    (key :percent-time)
+				    ignore-no-calls)
   "Report the current monitoring state.
 The percentage of the total time spent executing unmonitored code
 in each function (:exclusive mode), or total time (:inclusive mode)
 will be printed together with the number of calls and
 the unmonitored time per call.  Functions that have been executed
-below THRESHOLD % of the time will not be reported."
+below THRESHOLD % of the time will not be reported.  To report on all
+functions set NAMES to be either NIL or :ALL."
   (when (or (null names) (eq names :all)) (setq names *monitored-functions*))
 
   (let ((total-time 0)

@@ -18,7 +18,11 @@
   (:documentation "The CL.ENVIRONMENT Operating System Class."))
 	   
 
+;;;===========================================================================
 ;;; Known Operating Systems.
+
+;;; NOTE: the tag must match the class name. See FIND-OS-CLASS below
+;;; for an explanation.
 
 (defclass unix (operating-system)
   ()
@@ -26,7 +30,7 @@
   (:default-initargs :type "UNIX" :version "" :feature-tag :unix))
 
 
-(defclass SunOS (unix)
+(defclass Sun-OS (unix)
   ()
   (:documentation "The CL.ENVIRONMENT SunOS Operating System Class.")
   (:default-initargs :type "SunOS" :version "4.1.1" :feature-tag :sun-os))
@@ -53,7 +57,7 @@
   (:default-initargs :type "Linux" :version "" :feature-tag :linux))
 
 
-(defclass MacOS (operating-system)
+(defclass Mac-OS (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT MacOS Operating System Class.")
   (:default-initargs :type "MacOS" :version "8.x" :feature-tag :mac-os))
@@ -68,7 +72,7 @@
   (:documentation "The CL.ENVIRONMENT MS-DOS Operating System Class.")
   (:default-initargs :type "MS-DOS" :version "" :feature-tag :ms-dos))
 
-(defclass Windows (operating-system)	; Maybe (MS-DOS) would be better!
+(defclass MS-Windows (operating-system)	; Maybe (MS-DOS) would be better!
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows Operating System Class.")
   (:default-initargs :type "Windows (generic)"
@@ -76,7 +80,7 @@
 		     :feature-tag :ms-windows))
 
 
-(defclass W32 (windows)	; Maybe (MS-DOS) would be better!
+(defclass MS-Windows-32 (ms-windows)	; Maybe (MS-DOS) would be better!
   ()
   (:documentation
    "The CL.ENVIRONMENT Generic MS Windows (32 bits) Operating System Class.")
@@ -85,40 +89,107 @@
 		     :feature-tag :ms-windows-32))
 
 
-(defclass Windows-95 (W32)
+(defclass MS-Windows-95 (ms-windows-32)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows 95 Operating System Class.")
   (:default-initargs :type "Windows 95"
                      :version ""
-		     :feature-tag :windows-95))
+		     :feature-tag :ms-windows-95))
 
-(defclass Windows-98 (Windows-95)
+(defclass MS-Windows-98 (MS-Windows-95)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows 95 Operating System Class.")
-  (:default-initargs :type "Windows 98" :version "" :feature-tag :windows-98))
+  (:default-initargs :type "Windows 98"
+                     :version ""
+		     :feature-tag :ms-windows-98))
 
-(defclass WNT (W32)
+(defclass MS-Windows-NT (MS-Windows-32)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows NT Operating System Class.")
   (:default-initargs :type "Windows NT"
                      :version "4.1"
-		     :feature-tag :windows-nt))
+		     :feature-tag :ms-windows-nt))
 
-(defclass WNT-TSE (WNT)
+(defclass MS-Windows-NT-TSE (MS-Windows-NT)
   ()
   (:documentation
    "The CL.ENVIRONMENT MS Windows NT Terminal Server Operating System Class.")
   (:default-initargs :type "Windows NT"
                      :version "4.1"
-		     :feature-tag :windows-nt-tse))
+		     :feature-tag :ms-windows-nt-tse))
 
-(defclass Windows-2000 (WNT Windows-98)
+(defclass MS-Windows-2000 (MS-Windows-NT MS-Windows-98)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows NT Operating System Class.")
   (:default-initargs :type "Windows 2000"
-                     :version "4.1"
-		     :feature-tag :windows-2000))
+                     :version ""
+		     :feature-tag :ms-windows-2000))
 
 
+;;; Special operating system related functionalities.
+
+(declaim (inline find-os-class find-operating-system-class))
+
+(defun find-os-class (tag)
+  (declare (type symbol tag))
+  (find-class (intern (symbol-name tag) "CL.ENVIRONMENT") nil))
+
+(defun find-operating-system-class (tag) (find-os-class tag))
+
+
+;;; os-tag-compatible-p
+
+(defgeneric os-tag-compatible-p (os tag))
+
+(declaim (inline operating-system-tag-compatible-p))
+
+(defun operating-system-tag-compatible-p (os tag)
+  (declare (type operating-system os)
+	   (type symbol tag))
+  (os-tag-compatible-p os tag))
+
+(defmethod os-tag-compatible-p ((os cl.env:operating-system) (tag symbol))
+  (eq tag (cl.env:os-feature-tag os)))
+
+;;; UNIX
+(defmethod os-tag-compatible-p ((os cl.env:unix) (tag (eql :unix))) t)
+
+(defmethod os-tag-compatible-p ((os cl.env:unix) (tag (eql :solaris))) t)
+
+(defmethod os-tag-compatible-p ((os cl.env:unix) (tag (eql :sun-os))) t)
+
+(defmethod os-tag-compatible-p ((os cl.env:unix) (tag (eql :linux))) t)
+
+(defmethod os-tag-compatible-p ((os cl.env:unix) (tag (eql :irix))) t)
+
+
+;;; MS-WINDOWS
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-32)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-nt)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-nt-tse)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-95)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-98)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-2000)))
+  t)
 
 ;;; end of file -- operating-system.lisp

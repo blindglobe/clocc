@@ -20,6 +20,9 @@
 (defclass generic-common-lisp-implementation (software)
   ((type :reader common-lisp-implementation-type)
    (version :reader common-lisp-implementation-version)
+   (tag :reader common-lisp-implementation-feature-tag
+	:reader cl-feature-tag
+	:type symbol)
    )
   (:documentation "The CL.ENVIRONMENT Common Lisp Implementation Class.")
   (:default-initargs :type (lisp-implementation-type)

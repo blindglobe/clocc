@@ -39,6 +39,12 @@
 	   "OS-VERSION"		; Abbreviation.
 	   "OS-FEATURE-TAG"     ; Abbreviation.
 
+	   "FIND-OPERATING-SYSTEM-CLASS"
+	   "FIND-OS-CLASS"	; Abbreviation.
+
+	   "OPERATING-SYSTEM-TAG-COMPATIBLE-P"
+	   "OS-TAG-COMPATIBLE-P"	; Abbreviation
+	   
 	   "COMMON-LISP-IMPLEMENTATION-TYPE"
 	   "COMMON-LISP-IMPLEMENTATION-VERSION"
 
@@ -94,7 +100,7 @@
   (:export "UNIX")
 
   ;; SunOS and Solaris.
-  (:export "SUNOS" "SOLARIS")
+  (:export "SUN-OS" "SOLARIS")
 
   ;; HP-UX.
   (:export "HP-UX")
@@ -107,17 +113,17 @@
 
   ;; MS-DOS and Windows.
   (:export "MS-DOS"
-	   "WINDOWS"
-	   "W32"
-	   "WINDOWS-95"
-	   "WINDOWS-98"
-	   "WNT"
-	   "WNT-TSE"
-	   "WINDOWS-2000"
+	   "MS-WINDOWS"
+	   "MS-WINDOWS-32"
+	   "MS-WINDOWS-95"
+	   "MS-WINDOWS-98"
+	   "MS-WINDOWS-NT"
+	   "MS-WINDOWS-NT-TSE"
+	   "MS-WINDOWS-2000"
 	   )
 
   ;; Mac.
-  (:export "MACOS")
+  (:export "MAC-OS")
 
   ;; Genera.
   (:export "GENERA")

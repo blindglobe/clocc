@@ -1193,7 +1193,10 @@
 ;;; Customizable System Parameters *
 ;;; ********************************
 
-(defvar *dont-redefine-require* nil
+(defvar *dont-redefine-require*
+  #+cmu (if (find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") t nil)
+  #+sbcl t
+  #-(or cmu sbcl) nil
   "If T, prevents the redefinition of REQUIRE. This is useful for
    lisps that treat REQUIRE specially in the compiler.")
 
@@ -4162,7 +4165,15 @@ the system definition, if provided."
 (pushnew 'sbcl-mk-defsystem-module-provider sb-ext:*module-provider-functions*)
 )
 
+#+#.(cl:if (cl:find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") '(and) '(or))
+(progn
+  (defun cmucl-mk-defsystem-module-provider (name)
+    (mk:load-system (string-downcase (string name))
+		    :compile-during-load t
+		    :verbose nil))
 
+  (pushnew 'cmucl-mk-defsystem-module-provider ext:*module-provider-functions*)
+  )
 
 
 

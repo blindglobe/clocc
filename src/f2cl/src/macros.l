@@ -527,9 +527,9 @@
   (let ((xval (gensym)))
     `(let ((,xval ,x))
       (cond ((typep ,xval 'single-float)
-	     (log (the (single-float 0.0f0)) ,xval 10.0))
+	     (log (the (single-float 0.0f0) ,xval) 10.0))
 	    ((typep ,xval 'double-float)
-	     (log (the (double-float 0.0d0)) ,xval 10d0))
+	     (log (the (double-float 0.0d0) ,xval) 10d0))
 	    (t
 	     (/ (log ,xval)
 		(float 10 (type-of (realpart ,xval)))))))))

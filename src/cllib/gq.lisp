@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.10 2000/06/29 19:54:19 sds Exp $
+;;; $Id: gq.lisp,v 2.11 2000/07/11 19:46:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -393,8 +393,8 @@ Suitable for `read-list-from-stream'."
 (defun hist-totl-comp (hold navs)
   "Compute the correct total from the hist records and holdings list."
   (declare (list hold navs))
-  (loop for ho of-type pfl in hold for vl of-type double-float in navs
-        sum (* vl (pfl-nums ho)) double-float))
+  (loop :for ho :of-type pfl :in hold :for vl :of-type double-float :in navs
+        :sum (* vl (pfl-nums ho)) double-float))
 
 (defun read-data-file (file)
   "Return 2 values: the list of holdings and the history list."
@@ -431,6 +431,11 @@ only the data after `*hist-data-file-sep*' is changed."
   (format t "~d record~:p about ~r holding~:p written.~%"
           (length hist) (length hold)))
 
+(defun navs= (nav1 nav2)
+  "Test that the two NAV lists are the same within $0.01."
+  (let ((*num-tolerance* 5d-3))
+    (every #'approx=-abs nav1 nav2)))
+
 (defun gq-fix-hist (hold hist hhh)
   "Fix the values in the history. Return T if something was fixed."
   (declare (list hist hold hhh))
@@ -442,7 +447,7 @@ only the data after `*hist-data-file-sep*' is changed."
              (lambda (hi hs)
                (when hs
                  (cond (hi
-                        (unless (equal (hist-navs hi) (hist-navs hs))
+                        (unless (navs= (hist-navs hi) (hist-navs hs))
                           (format t "Incorrect NAVs on ~a:
 ~5tOriginal:~15t~{~7,2f~}~%~5tActual:~15t~{~7,2f~}~%"
                                   (hist-date hi) (hist-navs hi) (hist-navs hs))
@@ -524,12 +529,10 @@ YEA is the list of 1, 3, 5, and 10-year returns."
     (setf (values pers apy) (percent-change otot ctot db))
     (pr-res out " * " ctot otot pers apy ptot)
     (cond ((date> (car res) (hist-date (cadr lh)))
-           (unless (or ;; who cares whether this is the next day or not?!
-                    ;; (date= (tomorrow (hist-date (cadr lh))) (car res))
-                    (some #'zerop pnavs)
-                    (equal (hist-navs (cadr lh)) pnavs)
-                    (and (equal (hist-navs (car lh)) pnavs)
-                         (equal (hist-navs (cadr lh)) nnavs)))
+           (unless (or (some #'zerop pnavs)
+                       (navs= (hist-navs (cadr lh)) pnavs)
+                       (and (navs= (hist-navs (car lh)) pnavs)
+                            (navs= (hist-navs (cadr lh)) nnavs)))
              (format out "A discrepancy found:~% last record:~15t~{~7,2f~}~% ~
 previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                      (hist-navs (cadr lh)) pnavs
@@ -539,7 +542,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                                             :navs pnavs :totl
                                             (hist-totl-comp hold pnavs)))))
              (setq lh (cdr lh)))
-           (cond ((equal nnavs (hist-navs (cadr lh)))
+           (cond ((navs= nnavs (hist-navs (cadr lh)))
                   (format out "Same NAVs as on ~a, no record added.~%"
                           (hist-date (cadr lh))))
                  (t (format out "A record for date ~a added:~%~5t~{~a~}~%"

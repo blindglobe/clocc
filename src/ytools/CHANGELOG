@@ -1,10 +1,10 @@
-$Id: CHANGELOG,v 1.18 2004/09/16 13:22:36 airfoyle Exp $
+$Id: CHANGELOG,v 1.19 2004/09/16 14:05:02 airfoyle Exp $
 	
 2004-09-16: Added field :initbind e to (x :in l) clause of
             'repeat'. The expression e is evaluated and bound to x
             initially.  This is purely to satisfy some compilers that
             complain if x is declared to be of some type incompatible
-            with an initial value of nil.
+            with an initial value of nil.  (Version 1.4.4)
 
 2004-09-11: Change 'ytools-module-load' in module.lisp so that
             expansion of module is evalualated when module is loaded.

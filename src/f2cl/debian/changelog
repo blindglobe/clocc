@@ -1,3 +1,9 @@
+cl-f2cl (1.0+cvs.2004.07.08) unstable; urgency=low
+
+  * New upstream (closes:258125)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu,  8 Jul 2004 11:48:35 -0600
+
 cl-f2cl (1.0+cvs.2003.01.11) unstable; urgency=low
 
   * New upstream

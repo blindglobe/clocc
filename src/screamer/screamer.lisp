@@ -519,6 +519,9 @@
 ;;;  (<= (VARIABLE-LOWER-BOUND Y) (VARIABLE-UPPER-BOUND Y)) in SHARE! as per
 ;;;  swhite@csd.abdn.ac.uk
 ;;;  Version 3.24
+;;; F11Jul03 Kevin Rosenberg
+;;;  Add gensyms to avoid variable capture in a number of macros
+;;;  Version 3.24.1
 
 ;;; A kludge to get Screamer to run under Lucid 4.0.2 without CLIM 1.1 loaded
 ;;; or Poplog or AKCL.
@@ -3375,32 +3378,39 @@
  `(one-value (let ((value (progn ,@forms))) (unless value (fail)) value) nil))
 
 (defmacro-compile-time necessarily? (&body forms)
- `(let ((result t))
-   (one-value
-    (let ((value (progn ,@forms)))
-     (when value (setf result value) (fail))
-     value)
-    result)))
+  (let ((result (gensym "RESULT-"))
+	(value (gensym "VALUE-")))
+    `(let ((,result t))
+      (one-value
+       (let ((,value (progn ,@forms)))
+	 (when ,value (setf ,result ,value) (fail))
+	 ,value)
+       ,result))))
 
 (defmacro-compile-time all-values (&body forms)
- `(let ((values '())
-	(last-value-cons nil))
-   (for-effects
-    (let ((value (progn ,@forms)))
-     (global (cond ((null values)
-		    (setf last-value-cons (list value))
-		    (setf values last-value-cons))
-		   (t (setf (rest last-value-cons) (list value))
-		      (setf last-value-cons (rest last-value-cons)))))))
-   values))
+  (let ((values (gensym "VALUES-"))
+	(last-value-cons  (gensym "LAST-VALUE-CONS-"))
+	(value (gensym "VALUE-")))
+    `(let ((,values '())
+	   (,last-value-cons nil))
+      (for-effects
+       (let ((,value (progn ,@forms)))
+	 (global (cond ((null ,values)
+			(setf ,last-value-cons (list ,value))
+			(setf ,values ,last-value-cons))
+		       (t (setf (rest ,last-value-cons) (list ,value))
+			  (setf ,last-value-cons (rest ,last-value-cons)))))))
+      ,values)))
 
 (defmacro-compile-time ith-value (i form1 &optional (form2 nil form2?))
- `(block ith-value
-   (let ((i (value-of ,i)))
-    (for-effects (let ((value ,form1))
-		  (if (zerop i) (return-from ith-value value))
-		  (decf i)))
-    ,(if form2? form2 '(fail)))))
+  (let ((iv (gensym "IV-"))
+	(value (gensym "VALUE-")))
+    `(block ith-value
+      (let ((,iv (value-of ,i)))
+	(for-effects (let ((,value ,form1))
+		       (if (zerop ,iv) (return-from ith-value ,value))
+		       (decf ,iv)))
+	,(if form2? form2 '(fail))))))
 
 (defun trail (function)
  ;; note: Is it really better to use VECTOR-PUSH-EXTEND than CONS for the
@@ -3436,12 +3446,13 @@
   (t (cl:y-or-n-p))))
 
 (defmacro-compile-time print-values (&body forms)
- `(catch 'succeed
-    (for-effects
-     (let ((value (progn ,@forms)))
-      (print value)
-      (unless (y-or-n-p "Do you want another solution?")
-       (throw 'succeed value))))))
+  (let ((value (gensym "VALUE-")))
+    `(catch 'succeed
+      (for-effects
+       (let ((,value (progn ,@forms)))
+	 (print ,value)
+	 (unless (y-or-n-p "Do you want another solution?")
+	   (throw 'succeed ,value)))))))
 
 ;;; note: Should have way of having a stream of values.
 

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.49 2004/05/18 21:20:59 sds Exp $
+;;; $Id: sys.lisp,v 1.50 2004/11/30 18:14:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,6 +25,7 @@
 
 (export
  '(getenv finalize variable-special-p arglist
+   compiled-file-p
    class-slot-list class-slot-initargs
    +month-names+ +week-days+ +time-zones+ tz->string string->tz
    current-time sysinfo))
@@ -74,6 +75,22 @@
   #+sbcl (sb-ext:finalize obj func)
   #-(or allegro clisp cmu cormanlisp sbcl scl)
   (error 'not-implemented :proc (list 'finalize obj func)))
+
+(defun compiled-file-p (file-name)
+  "Return T if the FILE-NAME is a filename designator for a valid compiled.
+Signal an error when it is not a filename designator.
+Return NIL when the file does not exist, or is not readable,
+or does not contain valid compiled code."
+  #+clisp
+  (with-open-file (in file-name :direction :input :if-does-not-exist nil)
+    (and in
+         (let ((line (read-line in nil nil)))
+           (and line
+                (string= line "(SYSTEM::VERSION " :start1 0
+                         :end1 #.(length "(SYSTEM::VERSION "))
+                (null (nth-value 1 (ignore-errors
+                                     (eval (read-from-string line)))))))))
+  #-clisp t)
 
 ;;;
 ;;; Introspection
@@ -176,31 +193,36 @@
              #+sbcl `(sb-pcl::slot-definition-allocation ,slot)
              #+scl `(clos:slot-definition-allocation ,slot)))
 
-  (defun class-slot-list (class &optional (all t))
-    "Return the list of slots of a CLASS.
+(defun class-slot-list (class &optional (all t))
+  "Return the list of slots of a CLASS.
 CLASS can be a symbol, a class object (as returned by `class-of')
 or an instance of a class.
 If the second optional argument ALL is non-NIL (default),
 all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
-    (mapcan (if all (compose list slot-name)
-                (lambda (slot)
-                  (when (eq (slot-alloc slot) :instance)
-                    (list (slot-name slot)))))
-            (class-slots1 class)))
+  (mapcan (if all (compose list slot-name)
+              (lambda (slot)
+                (when (eq (slot-alloc slot) :instance)
+                  (list (slot-name slot)))))
+          (class-slots1 class)))
 
-  (defun class-slot-initargs (class &optional (all t))
-    "Return the list of initargs of a CLASS.
+(defun class-slot-initargs (class &optional (all t))
+  "Return the list of initargs of a CLASS.
 CLASS can be a symbol, a class object (as returned by `class-of')
 or an instance of a class.
 If the second optional argument ALL is non-NIL (default),
 initargs for all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
-    (mapcan (if all (compose list slot-one-initarg)
-                (lambda (slot)
-                  (when (eq (slot-alloc slot) :instance)
-                    (list (slot-one-initarg slot)))))
-            (class-slots1 class))))
+  (mapcan (if all (compose list slot-one-initarg)
+              (lambda (slot)
+                (when (eq (slot-alloc slot) :instance)
+                  (list (slot-one-initarg slot)))))
+          (class-slots1 class)))
+) ; macrolet
+
+#+cmu ; permit #S(struct) in source code
+(defmethod make-load-form ((self structure-object) &optional environment)
+  (make-load-form-saving-slots self :environment environment))
 
 ;;;
 ;;; Environment

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.26 2004/09/09 22:21:09 sds Exp $
+;;; $Id: tests.lisp,v 2.27 2004/11/11 22:17:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -260,9 +260,40 @@
     (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-munkres num-err)
     num-err))
 
+(defun test-base64 (&key (out *standard-output*))
+  (let ((num-err 0))
+    (flet ((test (vec str)
+             (mesg :test out "~S: ~S<->~S~%" 'test-base64 vec str)
+             (unless (equal str (base64-encode vec))
+               (mesg :test out " ** ~S: ERROR: ~S~%"
+                     'base64-encode (base64-encode vec))
+               (incf num-err))
+             (unless (equalp vec (base64-decode str))
+               (mesg :test out " ** ~S: ERROR: ~S~%"
+                     'base64-decode (base64-decode str))
+               (incf num-err))))
+      (test #(97) "YQ==")
+      (test #(97 98) "YWI=")
+      (test #(97 98 99) "YWJj")
+      (test #(108 105 115 112 32 115 116 114 105 110 103) "bGlzcCBzdHJpbmc=")
+      (test #(108 105 115 112 32 115 116 114 105 110 103 115)
+            "bGlzcCBzdHJpbmdz")
+      (test #(99 108 105 115 112 32 115 116 114 105 110 103 115)
+            "Y2xpc3Agc3RyaW5ncw==")
+      (mesg :test out "~S (random)" 'test-base64)
+      (loop :with str :repeat 1000 :for vec = (make-array (random 300))
+        :do (mesg :test out ".")
+        (loop :for i :from 0 :below (length vec)
+          :do (setf (aref vec i) (random 256)))
+        (setq str (base64-encode vec))
+        (unless (equalp vec (base64-decode str))
+          (mesg :test out "<~S -> ~S -> ~S>" vec str (base64-decode str))
+          (incf num-err)))
+      num-err)))
+
 (defun test-all (&key (out *standard-output*)
-                 (disable-network-dependent-tests t)
-                 (what '(string math date rpm url elisp xml munkres cvs)))
+                 (what '(string math date rpm url elisp xml munkres cvs base64))
+                 (disable-network-dependent-tests t))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)
          (num-err (reduce #'+ what :key

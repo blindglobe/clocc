@@ -1,3 +1,9 @@
+common-lisp-controller (3.17+3.18.pre1) unstable; urgency=low
+
+  * Add preliminary asdf support. Needs testing
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 26 Aug 2002 02:32:31 -0600
+
 common-lisp-controller (3.17) unstable; urgency=low
 
   * Include the name of the implementation/library in the email.

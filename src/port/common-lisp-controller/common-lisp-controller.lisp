@@ -150,12 +150,20 @@ Returns nothing"
     (setf (logical-pathname-translations "cl-systems")
 	  `(("cl-systems:;**;*.system" ,(make-pathname :directory (append (pathname-directory system-root)
 									  (list :wild-inferiors))
-						       :type "system"
-						       :name :wild))
+						       :name :wild
+						       :type "system"))
 	    ("cl-systems:**;*.system" ,(make-pathname :directory (append (pathname-directory system-root)
 									 (list :wild-inferiors))
 						      :name :wild
-						      :type "system"))))
+						      :type "system"))
+	    ("cl-systems:;**;*.asd" ,(make-pathname :directory (append (pathname-directory system-root)
+									  (list :wild-inferiors))
+						       :name :wild
+						       :type "asd"))
+	    ("cl-systems:**;*.asd" ,(make-pathname :directory (append (pathname-directory system-root)
+									 (list :wild-inferiors))
+						      :name :wild
+						      :type "asd"))))
     (when (>= version 3)
       (flet ((compile-and-load (file)
                ;; first make the target directory:
@@ -175,13 +183,19 @@ Returns nothing"
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
         ;; then defsystem:
         (compile-and-load  "cl-library:defsystem;defsystem.lisp")
+        (compile-and-load  "cl-library:asdf;asdf.lisp")
+        (compile-and-load  "cl-library:asdf;wild-modules.lisp")
         ;; then the patches:
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller-post-defsystem.lisp")
         ;; register ourselves:
         (push (make-pathname :directory (pathname-directory 
 					 (translate-logical-pathname "cl-systems:dummy.system")))
               (symbol-value (intern (symbol-name :*central-registry*)
-                                    (find-package :make))))))
+                                    (find-package :make))))
+	(push (make-pathname :directory (pathname-directory 
+					 (translate-logical-pathname "cl-systems:dummy.asd")))
+              (symbol-value (intern (symbol-name :*central-registry*)
+                                    (find-package :asdf))))))
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)
@@ -246,5 +260,3 @@ with command either :recompile or :remove"
 Please run /usr/bin/clc-send-command --quiet ~A ~A <implementation-name>
 and continue"
           command package))
-
-

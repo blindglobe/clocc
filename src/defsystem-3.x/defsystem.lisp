@@ -4487,8 +4487,9 @@ the system definition, if provided."
           #+:allegro #'load
           #+(or :cmu :scl) #'alien:load-foreign
           #+:sbcl #'sb-alien:load-foreign
-	  #+(and :lispworks :unix (not :linux)) #'link-load:read-foreign-modules
-	  #+(and :lispworks (or (not :unix) :linux)) #'fli:register-module
+	  #+(and :lispworks :unix (not :linux) (not :macosx)) #'link-load:read-foreign-modules
+	  #+(and :lispworks :unix (or :linux :macosx)) #'fli:register-module
+	  #+(and :lispworks :win32) #'fli:register-module
           #+(or :ecl :gcl :kcl) #'load ; should be enough.
           #-(or :lucid
 		:allegro

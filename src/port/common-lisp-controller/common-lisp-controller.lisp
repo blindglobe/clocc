@@ -5,6 +5,7 @@
 (defpackage "COMMON-LISP-CONTROLLER" 
     (:use "COMMON-LISP")
   (:export "INIT-COMMON-LISP-CONTROLLER"
+           "ADD-PROJECT-DIRECTORY"
   	   "ADD-TRANSLATION")
   (:nicknames "C-L-C"))
 
@@ -12,6 +13,10 @@
 
 ;; Some general utilities to make the
 ;; descriptions shorter
+
+(defvar *source-extentions* (list "CL" "LISP"
+                                  "L" "LSP"
+                                  "C" "H"))
 
 (defun add-translation (for new-root new-part)                           
   "Adds a translation to the logical pathname named by FOR (:cl-library or :cl-systems)
@@ -144,9 +149,7 @@ Returns nothing"
                                     :type "TEXT"
                                     :case :common))    
     ;;; add common source extentions:
-    (loop for extention in '("CL" "LISP"
-                             "L" "LSP"
-			     "C" "H")
+    (loop for extention in *source-extentions*
           do
           (add-translation :cl-library
                            source-root
@@ -184,6 +187,33 @@ Returns nothing"
                                 :case :common
                                 :defaults system-root))))
     (values)))
+
+(defun add-project-directory (source-root fasl-root projects &optional system-directory)
+  "This registers a SOURCE-ROOT and FASL-ROOT translation for the subdirectory project for all PROJECTS.
+Optionally you can also register SYSTEM-DIRECTORY.
+Returns nothing"
+  (declare (type pathname source-root fasl-root system-directory))
+  (loop for project in projects
+        do
+        (let ((project (string-upcase project)))
+          (add-translation 
+           :cl-library fasl-root
+           (make-pathname :directory (list :relative project :wild-inferiors)
+                          :type :wild
+                          :case :common))
+          (loop for extention in *source-extentions* do
+                (add-translation 
+                 :cl-library source-root
+                 (make-pathname :directory (list :relative project :wild-inferiors)
+                                :type extention
+                                :case :common)))))
+  (when system-directory
+    (pushnew  "/home/pvaneynd/common-lisp/systems/"
+              (symbol-value
+               (intern "*CENTRAL-REGISTRY*"
+                       (find-package :make)))
+              :test #'equalp))
+  (values))
 
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (pushnew :common-lisp-controller *features*))

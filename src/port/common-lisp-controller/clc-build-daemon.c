@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
     }
 
   opt=1;
-  if (setsockopt(inputfd, 6, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
+  if (setsockopt(inputfd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
     reporterror("Could not set option for inputfd");
 
   if (setvbuf(stdout, (char *) NULL, _IOLBF, BUFSIZ) != 0)

@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
     reportsystemerror("Could not convert to a stream");
 
   opt=1;
-  if (setsockopt(socketfd, 6, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
+  if (setsockopt(socketfd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
     reportsystemerror("Could not set option for socket");
 
   if (setvbuf(stream, (char *) NULL, _IOLBF, BUFSIZ) != 0)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.48 2004/07/16 16:32:16 sds Exp $
+;;; $Id: xml.lisp,v 2.49 2004/11/12 19:00:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -133,12 +133,10 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 ;;; XML objects
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-misc)
   ;; XML object from the preamble which we cannot handle just yet
   (type nil :type symbol)
   (data nil :type list))        ; contents
-)
 
 (defcustom *xml-print-xml* symbol nil
   "*Set to non-NIL to print XML-OBJ for future parsing.
@@ -179,7 +177,6 @@ If this is `:readably', print for the Lisp reader
   "The mapping from URIs to namespaces.")
 )
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-comment)
   (data "" :type string))
 
@@ -207,7 +204,6 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
     (when pre-tmp
       (pushnew ns (gethash pre-tmp *xml-pre-namespaces*)))
     ns))
-)
 
 (defconst +xml-namespace-xml+ xml-namespace
   (xmlns-get "http://www.w3.org/XML/1998/" :pre "xml" :out nil)
@@ -219,11 +215,9 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
 (defcustom *xml-default-namespace* xml-namespace +xml-namespace-none+
   "The default namespace.")
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-name (:conc-name xmln-))
   (ln "" :type string)          ; local name
   (ns +xml-namespace-none+ :type xml-namespace))
-)
 
 (defgeneric xmln= (xn1 xn2)
   (:documentation "Check whether the two names are the same.")
@@ -302,13 +296,11 @@ If such a name already exists, re-use it."
          (format out ":~a:" (xmln-ln xmln)))
         ((format out "~a:~a" (xmln-ns xmln) (xmln-ln xmln)))))
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-tag (:conc-name xmlt-))
   ;; `string' and `cons' are replaced with `xml-name' during
   ;; `xml-resolve-namespaces'
   (name (required-argument) :type (or string cons xml-name))
   (args nil :type list))        ; alist of arg/value
-)
 
 (defmethod print-object ((xmlt xml-tag) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
@@ -317,12 +309,10 @@ If such a name already exists, re-use it."
         ((format out "~a [~:{~a=~s~:^ ~}]"
                  (xmlt-name xmlt) (xmlt-args xmlt)))))
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-decl (:include xml-tag)))
 
 (defstruct (xml-obj (:include xml-tag) (:conc-name xmlo-))
   (data nil :type list))        ; list of objects in the tag
-)
 
 (defun xmlo-nm (tag)
   "Return the string name of the XML tag."

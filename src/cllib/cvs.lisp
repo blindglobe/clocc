@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.24 2004/11/09 20:20:28 sds Exp $
+;;; $Id: cvs.lisp,v 2.25 2004/11/12 19:00:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -194,13 +194,11 @@ Suitable for `read-list-from-stream'."
 ;;; stat by the author
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (author)
   (name "" :type string)
   (owns nil :type list)         ; list of files owned
   (mods nil :type list)         ; list of files modified
   (revs nil :type list))        ; list of revisions
-)
 
 (defun author-lines (au)
   (reduce #'+ (author-revs au) :key #'rev-lines))
@@ -312,13 +310,12 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
 ;; (read-all-changelogs "/usr/local/src/clisp/current/")
 ;; (sort *known-developers* #'> :key #'developer-hit)
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (developer)
   (nick "" :type string)
   (hit 1 :type integer)
   (names nil :type list)
   (emails nil :type list))
-)
+
 (defconst +bad-developer+ developer (make-developer)
   "*The convenient constant for init.")
 
@@ -336,14 +333,12 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
                     (lambda (x y) (search x y :test #'char-equal
                                           :end2 (position #\@ y))))))))
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (changelog-entry (:conc-name chlen-))
   (date +bad-date+ :type date)
   (id "" :type string)
   (name "" :type string)
   (email "" :type string)
   (developer +bad-developer+ :type developer))
-)
 
 (defun string->chlen (str)
   "Parse a string like \"2002-05-29  John D. Doe  <jdd@foo.org>\"

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.21 2004/11/09 20:00:43 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.22 2004/11/12 19:00:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -104,14 +104,13 @@ according to the given backend")
            :mesg "unknown backend: ~s")))
 
 ;; this specifies the plot output terminal
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-term (:conc-name pltm-))
   (terminal nil :type (or null string))
   (terminal-options nil :type list)
   (orientation :landscape :type (member :landscape :portrait))
   (font-family "Helvetica" :type string)
   (font-size 9 :type (integer 1 100))
-  (target nil :type (or null string pathname symbol))))
+  (target nil :type (or null string pathname symbol)))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
   (format out "set terminal ~a~{ ~a~} "
@@ -156,11 +155,10 @@ according to the given backend")
   (:method ((directive string)) (ps-terminal directive))
   (:method ((directive pathname)) (ps-terminal directive)))
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-timestamp (:conc-name plts-))
   (fmt "%Y-%m-%d %a %H:%M:%S %Z" :type string)
   (pos '(0 . 0) :type cons)
-  (font "Helvetica" :type string)))
+  (font "Helvetica" :type string))
 
 (defmethod plot-output ((pt plot-timestamp) (out stream)
                         (backend (eql :gnuplot)))
@@ -170,7 +168,6 @@ according to the given backend")
 (defconst +plot-timestamp+ plot-timestamp (make-plot-timestamp)
   "The standard timestamp.")
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-axis (:conc-name plax-))
   (name "" :type string)        ; gnuplot name: [xyz]{2}
   (label "" :type string)       ; label: "value", "time"...
@@ -205,7 +202,7 @@ according to the given backend")
   (grid nil :type boolean)
   (arrows nil :type list)
   (multiplot nil :type boolean)
-  (data nil :type (or list function))))
+  (data nil :type (or list function)))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable pt out)))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.15 2002/12/01 18:03:57 sds Exp $
+;;; $Id: geo.lisp,v 2.16 2004/11/12 19:00:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -71,13 +71,11 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
 ;;; }}}{{{ Geo-Data
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0))	; population
   (crd #C(0d0 0d0) :type (complex double-float)) ; coordinates
   (zip nil :type list))		; list of zip codes.
-)
 
 (defmethod print-object ((gd geo-data) (out stream))
   "Print the geo-data."
@@ -157,7 +155,6 @@ and return a list of geo-data."
 ;;; Countries
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (country)
   "The country structure - all the data about a country you can think of."
   (name "" :type simple-string)	; name
@@ -189,7 +186,7 @@ and return a list of geo-data."
   (ethn nil :type (or null simple-string)) ; ethnic divisions
   (lang nil :type (or null simple-string)) ; languages
   (rlgn nil :type (or null simple-string)) ; religions
-  ))
+  )
 
 (defmethod print-object ((ntn country) (out stream))
   (when *print-readably* (return-from print-object (call-next-method)))

@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.13 2003/07/07 13:51:13 sds Exp $
+;;; $Id: card.lisp,v 2.14 2004/11/12 19:00:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -141,13 +141,11 @@
 ;;; }}}{{{ output
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct card-output
   (card nil :type symbol)
   (name nil :type symbol)
   (phone nil :type symbol)
   (address nil :type symbol))
-)
 
 (defcustom *card-output-type* (or null card-output) nil
   "The type of output for CARD.

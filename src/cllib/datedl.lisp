@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.12 2002/11/30 22:33:14 sds Exp $
+;;; $Id: datedl.lisp,v 1.13 2004/11/12 19:00:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -30,7 +30,6 @@
 ;;; Dated List
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (dated-list)
   "A dated list of records."
   (code nil :type symbol)       ; the code (usually, a 2 letter symbol)
@@ -42,7 +41,6 @@
   (fl nil :type list)           ; the full list (list of lists)
   (cl nil :type list)           ; the current list (sublist of fl)
   (cp nil :type list))          ; the current position (sublist of (cdar cl))
-)
 
 (defmethod code ((dl dated-list)) (dated-list-code dl))
 
@@ -576,14 +574,12 @@ Must not assume that the list is properly ordered!"
 ;;; Change
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (change)
   "Change structure - for computing difference derivatives."
   (date +bad-date+ :type date)
   (val 0d0 :type double-float)  ; value
   (chf 0d0 :type double-float)  ; change forward
   (chb 0d0 :type double-float)) ; change backward
-)
 
 (defmethod date ((xx change)) (change-date xx))
 (defmethod value ((xx change)) (change-val xx))
@@ -639,13 +635,11 @@ ch[bf], and dl-extrema will not be idempotent."
 ;;; Diff
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (defstruct (diff)
   "A dated diff."
   (date +bad-date+ :type date)
   (di 0d0 :type real)           ; difference
   (ra 1d0 :type real))          ; ratio
-)
 
 (defmethod date ((xx diff)) (diff-date xx))
 (defmethod value ((xx diff)) (diff-di xx))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.25 2002/08/13 22:02:46 sds Exp $
+;;; $Id: date.lisp,v 2.26 2004/11/12 19:00:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -40,7 +40,6 @@
 ;;; Date
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
 (deftype days-t () '(signed-byte 20))
 
 ;; Of course, a class would be more appropriate here, especially since
@@ -95,7 +94,6 @@
   (da 1 :type (integer 1 31))
   (dd nil :type (or null days-t))) ; days since the epoch (1900-1-1 == 0)
 (deftype date-f-t () '(function (t) date))
-)
 
 (defmethod print-object ((dt date) (out stream))
   (if *print-readably* (call-next-method)

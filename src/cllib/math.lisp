@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-02-25 Thu 12:33:23 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-03-17 Wed 16:37:18 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.16 1999/02/25 17:33:51 sds Exp $
+;;; $Id: math.lisp,v 1.17 1999/03/17 21:37:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.17  1999/03/17 21:37:32  sds
+;;; Added `eval-cont-fract' and `fract-approx'.
+;;;
 ;;; Revision 1.16  1999/02/25 17:33:51  sds
 ;;; Moved `lincom' here from date.lisp.
 ;;;
@@ -192,6 +195,41 @@ The optional second argument specifies the list of primes."
     (write-to-file *primes* *primes-file* nil ";; Computed in " st
                    (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
                            limit (length *primes*)))))
+
+;;;
+;;; Ratios
+;;;
+
+(defun eval-cont-fract (fract)
+  "Evaluate a continuous fraction, returning 2 values."
+  (loop :for nn :of-type fixnum :in (reverse fract)
+        :for v0 :of-type rational = nn :then (+ nn (/ v0))
+        :for v1 :of-type rational = (1+ nn) :then (+ nn (/ v1))
+        :finally (return (values v0 v1))))
+  ;; (if (cdr fract)               ; recursive
+  ;;     (multiple-value-bind (v0 v1) (eval-cont-fract (cdr fract))
+  ;;       (values (+ (car fract) (/ v0)) (+ (car fract) (/ v1))))
+  ;;     (values (car fract) (1+ (car fract)))))
+
+(defun fract-approx (xx &optional (eps *num-tolerance*))
+  "Find an approximation via continous fractions."
+  (declare (real xx eps))
+  (loop :with val = xx :and num :of-type fixnum
+        :and app0 :and app1 :and err0 :and err1
+        :for ii :upfrom 0
+        :do (setf (values num val) (floor val))
+        :collect num :into fract
+        :when (zerop val) :do (return (values (eval-cont-fract fract) fract 0))
+        :do (setf (values app0 app1) (eval-cont-fract fract)
+                  err0 (- xx app0) err1 (- xx app1) val (/ val))
+        (format t "~4d [~15a ~15a] [~12,8f ~12,8f] ~12,9f ~12,9f~%"
+                num app0 app1 (dfloat app0) (dfloat app1) err0 err1)
+        :while (if (integerp eps) (> eps ii)
+                   (or (< eps (abs err0)) (< eps (abs err1))))
+        :finally
+        (return
+          (if (<= (abs err0) (abs err1)) (values app0 fract err0)
+              (values app1 (progn (incf (car (last fract))) fract) err1)))))
 
 ;;;
 ;;; Floats

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.25 2005/02/28 13:55:52 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.26 2005/03/01 14:09:23 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -784,13 +784,13 @@
 				  (nconc new-points postponed))
 			    !())
 			   (t
+			    (cond (chunk-update-dbg*
+				   (format *error-output*
+					   "New starting points from ~s~%   = ~s~%"
+					   updatees new-points)))
 			    ;; Otherwise, start from those chunks as if new-- 
 			    (let ((nsp (chunks-leaves-up-to-date
 					  new-points !())))
-			       (cond (chunk-update-dbg*
-				      (format *error-output*
-					      "New starting points from ~s~%   = ~s~%"
-					      updatees nsp)))
 			       nsp)))))
 
 	       (temporarily-manage (update-chunks)
@@ -827,7 +827,7 @@
 				     (Chunk-update-basis ch)))
 			 (cond ((and postpone-derivees
 				     (not (chunk-is-marked ch down-mark)))
-				;; We're about to go to far; put it on the
+				;; We're about to go too far; put it on the
 				;; postponed list.
 				(cond (chunk-update-dbg*
 				       (format *error-output*
@@ -840,6 +840,9 @@
 					      (format *error-output*
 						      " ...Deriving!~%")))
 				       (chunk-mark ch derive-mark)
+;;;;				       (setq l-ch* ch)
+;;;;				       (break "About to derive ~s"
+;;;;					      ch)
 				       (chunk-derive-and-record ch)))
 				(cond ((not (update-interrupted))
 				       (let ((in-progress

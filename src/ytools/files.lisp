@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.24 2005/02/28 13:55:52 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.25 2005/03/01 14:09:24 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -757,45 +757,57 @@
 			     (pathname-resolve ov false)))
 	       (prev-time (Compiled-file-chunk-last-compile-time cf-ch)))
 	    (let  ((old-obj-write-time
-		      (and real-ov (pathname-write-time real-ov)))
-		   (now-compiling*    pn)
-		   (now-loading* false)
-		   (now-slurping* false)
-		   (debuggability* debuggability*)
-		   (fload-indent* (+ 3 fload-indent*)))
+		      (and real-ov
+			   (probe-file real-ov)
+			   (pathname-write-time real-ov))))
 	       (cond ((and (> prev-time 0)
 			   (< prev-time old-obj-write-time))
 		      (format *error-output*
 			 !"Warning -- file ~s apparently compiled outside ~
                            control of ~s~%"
 			 real-ov cf-ch)))
-	       (file-op-message "Beginning compilation on" pn real-pn "...")
-	       (with-post-file-transduction-hooks
-		  (cleanup-after-file-transduction
-		     (let ((*compile-verbose* false))
-			(cond (real-ov
-			       (compile-file real-pn :output-file real-ov))
-			      (t
-			       (compile-file real-pn)
-			       (setq real-ov (pathname-object-version
-					         real-pn true))))
-			(let* ((new-compile-time
-				  (and real-ov
-				       (pathname-write-time real-ov)))
-			       (success
-				  (and real-ov
-				       (or (not old-obj-write-time)
-					   (> new-compile-time
-					      old-obj-write-time)))))
-			   (fcompl-log
-			      real-pn
-			      (and success real-ov))
-			   (cond (success
-				  (setf (Compiled-file-chunk-last-compile-time
-					   cf-ch)
-				        new-compile-time)))))))
-	       (file-op-message "...compiled to" real-ov false "")
-	       (get-universal-time))))))
+	       (cond ((or (not old-obj-write-time)
+			  (< old-obj-write-time
+			     (Chunk-latest-supporter-date cf-ch)))
+		      (let ((now-compiling*    pn)
+			    (now-loading* false)
+			    (now-slurping* false)
+			    (debuggability* debuggability*)
+			    (fload-indent* (+ 3 fload-indent*)))
+			 (compile-and-record pn real-pn real-ov
+					     cf-ch old-obj-write-time)))
+		     (t
+		      old-obj-write-time)))))))
+
+(defun compile-and-record (pn real-pn object-file cf-ch old-obj-write-time)
+   (prog2
+      (file-op-message "Beginning compilation on" pn real-pn "...")
+      (with-post-file-transduction-hooks
+	 (cleanup-after-file-transduction
+	    (let ((*compile-verbose* false))
+	       (cond (object-file
+		      (compile-file real-pn :output-file object-file))
+		     (t
+		      (compile-file real-pn)
+		      (setq object-file (pathname-object-version
+					   real-pn true))))
+	       (let* ((new-compile-time
+			 (and object-file
+			      (probe-file object-file)
+			      (pathname-write-time object-file)))
+		      (success
+			 (and new-compile-time
+			      (or (not old-obj-write-time)
+				  (> new-compile-time
+				     old-obj-write-time)))))
+		  (fcompl-log real-pn (and success object-file))
+		  (cond (success
+			 (setf (Compiled-file-chunk-last-compile-time
+				  cf-ch)
+			       new-compile-time)
+			 new-compile-time)
+			(t (get-universal-time)))))))
+      (file-op-message "...compiled to" object-file false "")))
 
 (eval-when (:compile-toplevel :load-toplevel)
 

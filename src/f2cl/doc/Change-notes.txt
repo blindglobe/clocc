@@ -221,9 +221,24 @@ has length 2 will produce something like
   1.000+300
 
 However, Lisp will just produce ******* because it isn't allowed to
-drop the exponent marker.
+drop the exponent marker.  (We could make this work the way we want.) 
 
 This area still needs much work.
+
+We also support the format Iw.m.
+
+Section 5
+
+We now support some simple cases of ENTRY statements.  This is done by
+creating a main function (via LABELS) with the desired body and a new
+function for each entry point.  The main function takes an extra
+parameter indicating which entry point we want to use.  The additional
+functions just call this main function with the desired first
+parameter and returns the expected number of values.
+
+Block data subprograms are also supported.  We basically treat them as
+subroutines with the special name /blockdata/ for the unnamed block
+data or /blockdata-name/ for the block data named "name".
 
 
 

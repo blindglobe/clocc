@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; operating-system.lisp --
 ;;;
@@ -243,10 +243,10 @@ The string is usually one character long."))
 (defmethod os-file-system-directory-separator ((os mac-os)) ":")
 
 (defmethod os-file-system-directory-separator ((os mac-os-x))
-  (warn "The directory separator returned is \":\".~@
-         This may not be right for ~S."
+  (warn "The directory separator returned is \"/\".~@
+         This may not be right for some CL implementations on Mac OS X."
 	os)
-  ":")
+  "/")
 
 (defmethod os-file-system-directory-separator ((os genera)) ">")
 

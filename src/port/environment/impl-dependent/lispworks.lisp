@@ -3,7 +3,7 @@
 ;;; lispworks.lisp --
 ;;; Xanalisys/Harlequin Ltd.Lispworks implementation dependencies.
 
-;;; Copyright (c) 2000, 2001 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYING for details).
 
@@ -12,9 +12,11 @@
 ;;; Directory utilities
 
 (defmethod current-directory-pathname ((cl-implementation cl.env:lispworks))
-  (pathname lw:*current-working-directory*)) ; This should be correct
-					     ; for newer Lispworks
-					     ; versions (> 4.0).
+  ;; (pathname lw:*current-working-directory*) ; This should be correct
+					       ; for newer Lispworks
+					       ; versions (> 4.0).
+  (pathname (hcl:get-working-directory))) ; This is correct for Lispworks 4.2
+ 
 
 ;;; DEFSYSTEM utilities
 

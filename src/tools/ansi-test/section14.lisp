@@ -1593,8 +1593,8 @@
   (1 1 4 B C "B"))
 
 (check-for-bug :section14-legacy-1595
-  (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" "B" "C" "d"))
-        (list2 (list 1 4 5 'b 'c 'd "a" "B" "c" "D")))
+  (let ((list1 (list 1 1 2 3 4 'a 'b 'c (string "A") (string "B") (string "C") (string "d")))
+        (list2 (list 1 4 5 'b 'c 'd (string "a") (string "B") (string "c") (string "D"))))
     (intersection list1 list2 :test #'equalp))
   #-clisp
   ("d" "C" "B" "A" C B 4 1 1)
@@ -1602,11 +1602,11 @@
   (1 1 4 B C "A" "B" "C" "d"))
 
 (check-for-bug :section14-legacy-1604
-  (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" "B" "C" "d"))
-        (list2 (list 1 4 5 'b 'c 'd "a" "B" "c" "D")))
+  (let ((list1 (list 1 1 2 3 4 'a 'b 'c (string "A") (string "B") (string "C") (string "d")))
+        (list2 (list 1 4 5 'b 'c 'd (string "a") (string "B") (string "c") (string "D"))))
     (nintersection list1 list2))
   #-clisp
-  (C B 4 1 1)
+  ("B" C B 4 1 1)
   #+clisp
   (1 1 4 B C))
 					;(1 1 4 B C))

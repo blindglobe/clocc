@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-04-20 Tue 13:37:29 EDT sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-05-05 Wed 15:22:15 EDT sds@goems.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -7,11 +7,20 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.19 1999/04/20 17:38:15 sds Exp $
+;;; $Id: base.lisp,v 1.20 1999/05/05 20:58:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.20  1999/05/05 20:58:27  sds
+;;; LispWorks & GCL compatibility:
+;;; (*fas-ext*): added LispWorks extension.
+;;; (code, case-error): moved the conditions here.
+;;; (not-implemented): new `code' condition.
+;;; (run-prog, pipe-output, pipe-input): works with LispWorks.
+;;; (probe-directory): added LispWorks and generic code.
+;;; (chdir, setf default-directory): base the latter on the former.
+;;;
 ;;; Revision 1.19  1999/04/20 17:38:15  sds
 ;;; (*current-project*): card now requires `elisp' (for reading BBDB).
 ;;;
@@ -93,6 +102,9 @@
               *efficiency-note-cost-threshold* 20
               (alien:extern-alien "pointer_filter_verbose" alien:unsigned) 0
               (alien:extern-alien "gencgc_verbose" alien:unsigned) 0)
+  #+cmu (pushnew 'compile pcl::*defclass-times*)
+  ;; #+cmu (pushnew 'compile pcl::*defgeneric-times*)
+  ;; #+cmu (pushnew 'compile pcl::*defmethod-times*)
   ;; (lisp::fd-stream-buffering system:*stdout*) :none
   ;; (lisp::fd-stream-buffering system:*tty*) :none)
   ;; #+cmu (pushnew "x86f" make::*standard-binary-file-types* :test #'equal)
@@ -152,7 +164,8 @@
                 (map 'vector key (second excl:arglist))))))))
 
 (defvar *fas-ext*
-  #+gcl ".o" #+clisp ".fas" #+allegro ".fasl" #+cmu ".x86f"
+  #+gcl ".o" #+clisp ".fas" #+allegro ".fasl" #+cmu ".x86f" ; lw: ".ufsl"
+  #+lispworks (concatenate 'string "." (car system::*binary-file-types*))
   #-(or new-compiler compiler) ".lisp"
   "The extension for the compiled file.")
 
@@ -173,25 +186,63 @@
   (unless (fboundp 'defconst)
     (defmacro defconst (name type init doc)
       "Define a typed constant."
-      `(eval-when (load compile eval)
+      `(eval-when (load compile eval) ; kill compile warnings
         (unless (boundp ',name) (declaim (type ,type ,name))
                 (defconstant ,name (the ,type ,init) ,doc)))))
 
   (unless (fboundp 'dfloat)
     (defmacro dfloat (num)
       "Coerce to double float."
-      `(float ,num 1.0d0)))
+      `(float ,num 1.0d0))))
 
-  (unless (fboundp 'getenv)
-    (defun getenv (var)
-      "Return the value of the environment variable."
-      #+cmu (cdr (assoc (string var) *environment-list* :test #'equalp
-                        :key #'string)) ; xlib::getenv
-      #-cmu
-      (#+(or allegro clisp) system::getenv #+lispworks lw:environment-variable
-       #+lucid lcl:environment-variable #+gcl si:getenv (string var)))))
+;;;
+;;; System
+;;;
+
+(defun getenv (var)
+  "Return the value of the environment variable."
+  #+cmu (cdr (assoc (string var) *environment-list* :test #'equalp
+                    :key #'string)) ; xlib::getenv
+  #-cmu
+  (#+(or allegro clisp) system::getenv #+lispworks lw:environment-variable
+   #+lucid lcl:environment-variable #+gcl si:getenv (string var)))
+
+(unless (fboundp 'gc)           ; #+cmu (gc)
+  (defun gc ()
+    "Invoke the garbage collector."
+    #+clisp (lisp:gc) #+allegro (excl:gc) #+gcl (si::gbc)
+    #+lispworks (normal-gc)))
 
 (deftype index-t () '(unsigned-byte 20)) ; for arithmetics
+
+;;;
+;;; Conditions
+;;;
+
+
+(define-condition code (error)
+  ((proc :type symbol :reader code-proc :initarg :proc)
+   (mesg :type simple-string :reader code-mesg :initarg :mesg)
+   (args :type list :reader code-args :initarg :args))
+  (:report (lambda (cc out)
+             (declare (stream out))
+             (format out "[~s]~@[ ~?~]" (code-proc cc)
+                     (and (slot-boundp cc 'mesg) (code-mesg cc))
+                     (and (slot-boundp cc 'args) (code-args cc))))))
+
+(define-condition case-error (code)
+  ((mesg :type simple-string :reader code-mesg :initform
+         "`~s' evaluated to `~s', not one of [~@{`~s'~^ ~}]")))
+
+(define-condition not-implemented (code)
+  ((mesg :type simple-string :reader code-mesg :initform
+         "not implemented for ~a [~a]")
+   (args :type list :reader code-args :initform
+         (list (lisp-implementation-type) (lisp-implementation-version)))))
+
+;;;
+;;; Prompt
+;;;
 
 #+cmu
 (defun sys::package-short-name (pkg)
@@ -223,34 +274,51 @@
                   (sys::package-short-name *package*)
                   ee bb (incf sys::*command-index*) ee))))
 
+;;;
+;;; Shell interface
+;;;
+
 (defun run-prog (prog &rest opts &key args wait &allow-other-keys)
   "Common interface to shell. Doesn't return anything useful."
-  #+(or clisp gcl) (declare (ignore wait))
+  #+(or clisp gcl lispworks) (declare (ignore wait))
   (remf opts :args) (remf opts :wait)
-  #+excl (apply #'excl:run-shell-command (apply #'vector prog prog args)
-                :wait wait opts)
+  #+allegro (apply #'excl:run-shell-command (apply #'vector prog prog args)
+                   :wait wait opts)
+  #+clisp (apply #'lisp:run-program prog :arguments args opts)
   #+cmu (run-program prog args :wait wait)
   #+gcl (apply #'run-process prog args)
-  #+clisp (apply #'lisp:run-program prog :arguments args opts))
+  #+lispworks (sys::call-system (format nil "~a~{ ~a~}" prog args))
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'run-prog prog opts)))
 
 #+gcl (defun quit () (bye))
 #+allegro (defun quit () (exit))
 
 (defun pipe-output (prog &rest args)
   "Return an output stream which will go to the command."
-  #+excl (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
-                                 :input :stream :wait nil)
-  #+gcl (si::fp-input-stream (apply #'run-process prog args)) #+cmu
+  #+allegro (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
+                                    :input :stream :wait nil)
+  #+clisp (lisp:make-pipe-output-stream (format nil "~a~{ ~a~}" prog args))
+  #+cmu
   (process-input (run-program prog args :input :stream :output t :wait nil))
-  #+clisp (lisp:make-pipe-output-stream (format nil "~a~{ ~a~}" prog args)))
+  #+gcl (si::fp-input-stream (apply #'run-process prog args))
+  #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
+                              :directory :output)
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'pipe-output prog args)))
 
 (defun pipe-input (prog &rest args)
   "Return an input stream from which the command output will be read."
-  #+excl (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
-                                 :output :stream :wait nil)
-  #+gcl (si::fp-output-stream (apply #'run-process prog args)) #+cmu
+  #+allegro (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
+                                    :output :stream :wait nil)
+  #+clisp (lisp:make-pipe-input-stream (format nil "~a~{ ~a~}" prog args))
+  #+cmu
   (process-output (run-program prog args :output :stream :input t :wait nil))
-  #+clisp (lisp:make-pipe-input-stream (format nil "~a~{ ~a~}" prog args)))
+  #+gcl (si::fp-output-stream (apply #'run-process prog args))
+  #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
+                              :directory :input)
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'pipe-input prog args)))
 
 (defun close-pipe (stream)
   "Close the pipe stream.
@@ -372,7 +440,7 @@ This function takes care of that."
     ("work" "base" "date" "channel" "futures" "signal" "gnuplot" "rules")
     ("report" "base" "date" "print" "math" ) ("currency" "base" "date")
     ("fx" "base" "util" "date" "currency" "futures" "report")
-    #+clisp ("octave" "base" "date" "currency")
+    #+nil ("octave" "base" "date" "currency")
     ("url" "base" "util" "date") ("geo" "base" "url")
     ("gq" "base" "url" "date") ("rpm" "base" "url" "date")
     ("h2lisp" "base" "url") #+nil ("clhs" "base" "url")
@@ -386,28 +454,38 @@ Key: name for `sds-require', value - the list of dependencies.")
 ;;;
 
 (defun probe-directory (filename)
-  "Check whether the file name names an existsing directory."
+  "Check whether the file name names an existing directory."
   #+allegro (excl::probe-directory filename)
   #+clisp (lisp:probe-directory filename)
-  #+cmu (eq :directory (unix:unix-file-kind filename)))
+  #+cmu (eq :directory (unix:unix-file-kind filename))
+  #+lispworks (not (system::probe-file-not-directory-p filename))
+  #-(or allegro clisp cmu lispworks)
+  ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
+  ;; Date: Wed, 5 May 1999 11:51:19 -0500
+  (let* ((path (pathname fn))
+         (dir (pathname-directory path))
+         (name (pathname-name path)))
+    (when name (setq dir (append dir (list name))))
+    (probe-file (make-pathname :directory dir))))
 
 #-cmu
 (defun default-directory ()
   "The default directory."
   #+allegro (excl:current-directory)
   #+clisp (lisp:default-directory)
+  #+lispworks (hcl:get-working-directory)
   #+lucid (working-directory)
-  #+lispworks lw:*current-working-directory*
-  #-(or allegro clisp lucid lispworks) (truename "."))
-#-cmu
-(defsetf default-directory
-  #+allegro excl:chdir
-  #+clisp lisp:cd
-  #+gcl si:chdir
-  #+lucid working-directory
-  #+lispworks lw:change-directory
-  "Change the current directory.")
-#-allegro (defun chdir (dir) (setf (default-directory) dir))
+  #-(or allegro clisp lispworks lucid) (truename "."))
+#-allegro
+(defun chdir (dir)
+  #+clisp (lisp:cd dir)
+  #+cmu (setf (default-directory) dir)
+  #+gcl (si:chdir dir)
+  #+lispworks (hcl:change-directory dir)
+  #+lucid (working-directory dir)
+  #-(or allegro clisp cmu gcl lispworks lucid)
+  (error 'not-implemented :proc (list 'chdir dir)))
+#-cmu (defsetf default-directory chdir "Change the current directory.")
 
 (defun sysinfo ()
   "Print the current environment to a stream."

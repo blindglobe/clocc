@@ -28,9 +28,9 @@ EOF
   exit 2
 fi
 
-#install the defsystem into the lisp
+#install CLC into the lisp
 
-sh "$FILE" install-defsystem || (echo Installation defsystem failed ; exit 3) 
+sh "$FILE" install-defsystem || (echo "Installation of CLC failed" >&2 ; exit 3) 
 
 # now recompile the stuff
 for i  in /usr/share/common-lisp/systems/*.system  ; do

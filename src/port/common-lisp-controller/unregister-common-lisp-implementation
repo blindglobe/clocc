@@ -37,8 +37,8 @@ EOF
   exit 0
 fi
 
-#uninstall the defsystem
-sh "$FILE" remove-defsystem || echo De-installation defsystem failed  
+#uninstall CLC
+sh "$FILE" remove-defsystem || echo "De-installation of CLC failed" >&2  
 
 # Just remove the damn subtree
 

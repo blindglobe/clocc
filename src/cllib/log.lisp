@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.11 2000/05/19 19:21:28 sds Exp $
+;;; $Id: log.lisp,v 1.12 2000/06/29 19:27:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -67,7 +67,7 @@ If FMT is non-NIL, return the corresponding string too."
 ;;;
 
 (defcustom *print-log* (simple-array symbol (*))
-  (mk-arr 'symbol '(:log :logv :date :plot :head :res :opt :err :test))
+  (mk-arr 'symbol '(:log :logv :date :plot :head :res :opt :err :test :xml))
   "The list of message types which are being printed.")
 
 (defmacro mesg (type str &rest args)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.35 2001/09/05 18:06:05 sds Exp $
+;;; $Id: xml.lisp,v 2.36 2001/09/06 14:35:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -779,8 +779,15 @@ The first character to be read is #\T."
                   (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
                   (xmlis-size ,var))))))))
 
+(defun xml-default-reset-entities ()
+  "Check whether the entities need to be initialized."
+  (and *xml-read-entities*
+       (zerop (hash-table-count *xml-per*))
+       (zerop (hash-table-count *xml-amp*))))
+
 ;;;###autoload
-(defun xml-read-from-file (file &key (repeat t) (reset-ent *xml-read-entities*)
+(defun xml-read-from-file (file &key (repeat t)
+                           (reset-ent (xml-default-reset-entities))
                            (resolve-namespaces *xml-read-balanced*)
                            (out *standard-output*))
   "Read all XML objects from the file."

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.6 2000/05/02 15:39:14 sds Exp $
+;;; $Id: log.lisp,v 1.7 2000/05/04 18:10:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -47,7 +47,7 @@ If FMT is non-NIL, return the corresponding string too."
               (/ (- (get-float-time run) bt)
                  (dfloat internal-time-units-per-second)))))
     (declare (double-float nn))
-    (if fmt (values nn (format nil "~:/pr-secs/" nn)) nn)))
+    (if fmt (values nn (format nil "~/pr-secs/" nn)) nn)))
 
 (defmacro with-timing ((&key (terpri t) (done nil) (run t) (real t))
                        &body body)
@@ -55,11 +55,10 @@ If FMT is non-NIL, return the corresponding string too."
   (with-gensyms ("TIMING-" bt bt1)
     `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)))
       (unwind-protect (progn ,@body)
-        (when ,done (princ "done")) (princ " [")
-        (when ,run (format t "run: ~:/pr-secs/" (elapsed ,bt t)))
-        (when (and ,run ,real) (princ "/"))
-        (when ,real (format t "real: ~:/pr-secs/" (elapsed ,bt1 nil)))
-        (princ "]") (when ,terpri (terpri))))))
+        (when ,done (princ "done"))
+        (when ,run (format t " [run: ~/pr-secs/]" (elapsed ,bt t)))
+        (when ,real (format t " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+        (when ,terpri (terpri))))))
 
 ;;;
 ;;; }}}{{{ logging

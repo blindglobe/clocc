@@ -861,7 +861,7 @@
 ;;; Now that ANSI CL includes PROVIDE and REQUIRE again, is this code
 ;;; necessary?
 
-#-(or (and :CMU (not :new-compiler))
+#-(or (and :CMU :new-compiler)
       :vms
       :mcl
       :lispworks
@@ -975,7 +975,8 @@
 		  (setf pathname nil))))
 	  ;; Now that we've got the list of pathnames, let's load them.
 	  (dolist (pname pathname t)
-	    (load pname :verbose nil)))))))
+	    (load pname :verbose nil))))))
+  ) ; eval-when
 
 ;;; ********************************
 ;;; Set up Package *****************
@@ -3927,8 +3928,8 @@ D
 					 scheme-package))
 	   filename
 	   (funcall (symbol-function
-		     (find-symbol '#:interaction-environment
-				     scheme-package)))
+		     (find-symbol (symbol-name '#:interaction-environment)
+				  scheme-package)))
 	   args)))
 
 (define-language :scheme

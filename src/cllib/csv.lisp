@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.1 2003/06/30 19:12:35 sds Exp $
+;;; $Id: csv.lisp,v 2.2 2003/06/30 20:04:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -86,5 +86,5 @@
               (setq len (with-csv (vec inf) (coll vec))))
             len)))
 
-(provide :csv)
+(provide :cllib-csv)
 ;;; file csv.lisp ends here

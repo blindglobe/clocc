@@ -1,6 +1,6 @@
 ;;; Personal Database - Rolodex (BBDB, VCARD)
 ;;; Relevant URLs:
-;;;  http://pweb.netcom.com/~simmonmt/bbdb/index.html
+;;;  http://bbdb.sourceforge.net/
 ;;;  http://www.jwz.org/bbdb/
 ;;;  http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html
 ;;;  http://www.imc.org/pdi
@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
+;;; $Id: card.lisp,v 2.3 2000/05/02 14:41:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,11 +23,11 @@
   ;; `substitute-subseq', `string-beg-with', `string-end-with', `split-string'
   (require :string (translate-logical-pathname "cllib:string"))
   ;; `date2time'
-  (require :date (translate-logical-pathname "cllib:date")))
-(in-package :cllib)
+  (require :date (translate-logical-pathname "cllib:date"))
+  ;; `url'
+  (require :url (translate-logical-pathname "cllib:url")))
 
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+(in-package :cllib)
 
 ;; what should I export? (export '())
 
@@ -35,6 +35,7 @@
 ;;; {{{ definitions
 ;;;
 
+(eval-when (compile load eval)
 (defclass name ()
   ((first :type simple-string :initarg first :accessor name-first
           :documentation "the first name")
@@ -109,6 +110,7 @@
    (timestamp :type (integer 0) :initarg timestamp :accessor card-timestamp
               :documentation "The last modification time."))
   (:documentation "The personal information record."))
+)
 
 (defun slot-val (obj slot &optional default)
   (or (when (slot-boundp obj slot) (slot-value obj slot)) default))
@@ -161,7 +163,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   (merge-pathnames (make-pathname :directory '(:relative ".gnome")
                                   :name "GnomeCard.gcrd")
                    (user-homedir-pathname))
-  "*The path to the user's BBDB file.")
+  "*The path to the user's VCARD file.")
 
 (defcustom *user-native-file* pathname
   (merge-pathnames (make-pathname :name ".rolodex")
@@ -307,7 +309,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   `(defmethod print-object ((cc ,cs) (out stream))
     (cond ((or *print-readably* (null *card-output-type*)) (call-next-method))
           ((card-output-p *card-output-type*)
-           (funcall (slot-value *card-output-type* ',cs) cc out))
+           (funcall (,(symbol-concat 'card-output- cs) *card-output-type*)
+                    cc out))
           (t (error 'code :proc 'print-object :args (list *card-output-type*)
                     :mesg "Illegal value of `*card-output-type*': `~s'")))))
 

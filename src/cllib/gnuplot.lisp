@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.13 2001/05/16 20:46:26 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.14 2001/05/17 17:07:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -28,6 +28,8 @@
 
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
           #+(or win32 mswindows) *gnuplot-path-console*
+          plot-output +plot-term-screen+ +plot-term-printer+ +plot-term-file+
+          +plot-timestamp+ directive-term make-plot-stream
           with-plot-stream plot-dated-lists plot-dated-lists-depth
           plot-lists plot-lists-arg plot-error-bars plot-functions))
 
@@ -35,6 +37,8 @@
 ;;; variables
 ;;;
 
+(defcustom *plot-default-backend* symbol :gnuplot
+  "The default plot backend designator.")
 (defcustom *gnuplot-path* simple-string
   #+(or win32 mswindows)
   "c:/gnu/gp371w32/wgnupl32.exe"
@@ -45,7 +49,7 @@
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
   "*The gnuplot epoch - 2000-1-1.")
 #+(or win32 mswindows)
-(defcustom *gnuplot-path-console* simple-string "c:/bin/cgnuplot.exe"
+(defcustom *gnuplot-path-console* simple-string "c:/gnu/gp371w32/pgnuplot.exe"
   "*The path to the console gnuplot executable.")
 (defcustom *gnuplot-printer* simple-string
   (format nil
@@ -100,80 +104,189 @@ PLOT means:
            `(apply #'internal-with-plot-stream #',body-function ,@options)
            `(internal-with-plot-stream #',body-function ,@options)))))
 
-(defun internal-with-plot-stream (body-function
+(defgeneric plot-output (plot stream backend)
+  (:documentation "Ourput a plot-related object to the plot stream
+according to the given backend")
+  (:method ((plot t) (stream stream) (backend t))
+    (declare (ignore plot))
+    (unless (and (output-stream-p stream) (open-stream-p stream))
+      (error 'code :proc 'plot-output :args (list stream)
+             :mesg "2nd argument must be an open output stream, got: ~s"))
+    (error 'code :proc 'plot-output :args (list backend)
+           :mesg "unknown backend: ~s")))
+
+;; this specifies the plot output terminal
+(defstruct (plot-term (:conc-name pltm-))
+  (terminal nil :type symbol)
+  (terminal-options nil :type string)
+  (target nil :type (or null string pathname)))
+
+(defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
+  (declare (ignore backend))
+  (format out "set terminal ~a~@[ ~a~]~%set output~@[ '~a'~]~%"
+          (pltm-terminal pt) (pltm-terminal-options pt) (pltm-target pt)))
+
+(defconst +plot-term-screen+ plot-term
+  (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows")
+  "The `plot-term' object sending the plot to the screen.")
+(defconst +plot-term-printer+ plot-term
+  (make-plot-term :terminal "postscript"
+                  :terminal-options "landscape 'Helvetica' 9"
+                  :target *gnuplot-printer*)
+  "The `plot-term' object sending the plot to the printer.")
+(defconst +plot-term-file+ plot-term
+  (make-plot-term :terminal "postscript"
+                  :terminal-options "landscape 'Helvetica' 9"
+                  :target *gnuplot-file*)
+  "The `plot-term' object sending the plot to the printer.")
+
+(defgeneric directive-term (directive)
+  (:documentation "Return the PLOT-TERM object appropriate for this directive")
+  (:method ((directive t))
+    (error 'code :proc 'directive-term :args (list directive)
+           :mesg "unknown directive: ~s"))
+  (:method ((directive (eql :plot))) +plot-term-screen+)
+  (:method ((directive (eql :wait))) +plot-term-screen+)
+  (:method ((directive (eql :print))) +plot-term-printer+)
+  (:method ((directive (eql :file))) +plot-term-file+)
+  (:method ((directive string))
+    (make-plot-term :terminal "postscript"
+                    :terminal-options "landscape 'Helvetica' 9"
+                    :target directive))
+  (:method ((directive pathname))
+    (make-plot-term :terminal "postscript"
+                    :terminal-options "landscape 'Helvetica' 9"
+                    :target directive)))
+
+(defstruct (plot-timestamp (:conc-name plts-))
+  (fmt "%Y-%m-%d %a %H:%M:%S %Z" :type string)
+  (pos '(0 . 0) :type cons)
+  (font "Helvetica" :type string))
+
+(defmethod plot-output ((pt plot-timestamp) (out stream)
+                        (backend (eql :gnuplot)))
+  (declare (ignore backend))
+  (format out "set timestamp \"~a\" ~d,~d '~a'~%" (plts-fmt pt)
+          (car (plts-pos pt)) (cdr (plts-pos pt)) (plts-font pt)))
+
+(defconst +plot-timestamp+ plot-timestamp (make-plot-timestamp)
+  "The standard timestamp.")
+
+(defstruct (plot-axis (:conc-name plax-))
+  (label "" :type string)
+  (tics t :type boolean)
+  (fmt "%g" :type string)
+  (time-p nil :type boolean)
+  (range nil :type (or null cons)))
+
+(defstruct (plot-spec (:conc-name plsp-))
+  (term +plot-term-screen+ :type plot-term)
+  (timestamp +plot-timestamp+ :type (or null plot-timestamp))
+  (x-axis (make-plot-axis :label "x") :type plot-axis)
+  (y-axis (make-plot-axis :label "y") :type plot-axis)
+  (data-style :lines :type symbol)
+  (border t :type boolean)
+  (timefmt nil :type (or null string))
+  (title "" :type string)
+  (legend nil :type list)
+  (grid nil :type boolean)
+  (data nil :type (or list function)))
+
+(defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
+  (declare (ignore pt out backend)))
+
+(flet ((pp (xx)
+         (typecase xx
+           (number (format nil "~g" xx))
+           (symbol (string-downcase (symbol-name xx)))
+           (list (format nil "~{ ~(~a~)~}" xx))
+           (t (format nil "'~a'" xx)))))
+  (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
+    (declare (ignore backend))
+    (format out "set format ~a \"~a\"~%"
+            (plax-label pa) (plax-fmt pa))
+    (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-label pa))
+    (format out "set ~adata~:[~; time~]~%" (plax-label pa) (plax-time-p pa))
+    (let ((range (plax-range pa)))
+      (when range
+        (format out "set ~arange [~a:~a]~%" (plax-label pa)
+                (pp (car range)) (pp (cdr range))))))
+  (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
+    (plot-output (plsp-term ps) out backend)
+    (plot-output (plsp-timestamp ps) out backend)
+    (plot-output (plsp-x-axis ps) out backend)
+    (plot-output (plsp-y-axis ps) out backend)
+    (flet ((set-opt (nm par)
+             (case par
+               ((t) (format out "set ~a~%" nm))
+               ((nil) (format out "set no~a~%" nm))
+               (t (format out "set ~a ~a~%" nm (pp par))))))
+      (set-opt "border" (plsp-border ps))
+      (set-opt "data style" (plsp-data-style ps))
+      (set-opt "title" (plsp-title ps))
+      (set-opt "key" (plsp-legend ps))
+      (set-opt "grid" (plsp-grid ps))
+      (if (functionp (plsp-data ps))
+          (funcall (plsp-data ps) out)
+          (dolist (set (plsp-data ps))
+            (dolist (datum set (format out "e~%"))
+              (format out "~{~a~^ ~}~%" datum)))))))
+
+(defun make-plot (&key data (plot *gnuplot-default-directive*)
+                  (xlabel "x") (ylabel "y")
+                  (data-style :lines) (border t)
+                  timefmt xb xe (title "plot") legend
+                  (xtics t) (ytics t) grid
+                  (xfmt (or timefmt "%g")) (yfmt "%g"))
+  (make-plot-spec
+   :data data :term (directive-term plot) :data-style data-style
+   :x-axis (make-plot-axis :label xlabel :tics xtics :fmt xfmt
+                           :range (when (and xb xe) (cons xb xe))
+                           :time-p (not (null timefmt)))
+   :y-axis (make-plot-axis :label ylabel :tics ytics :fmt yfmt)
+   :grid grid :legend legend :title title :border border))
+
+(defgeneric make-plot-stream (directive)
+  (:documentation "Create the stream appropriate for the directive.")
+  (:method ((directive t))
+    (error 'code :proc 'make-plot-stream :args (list directive)
+           :mesg "unknown plot directive: ~s"))
+  (:method ((directive stream)) directive)
+  (:method ((directive (eql :file))) (make-plot-stream *gnuplot-file*))
+  (:method ((directive (eql :wait))) (make-plot-stream :plot))
+  (:method ((directive string)) (open directive :direction :output))
+  (:method ((directive pathname)) (open directive :direction :output))
+  #+(or win32 mswindows)
+  (:method ((directive (eql :print))) (pipe-output *gnuplot-path-console*))
+  #+(or win32 mswindows)
+  (:method ((directive (eql :plot))) (make-plot-stream *gnuplot-file*))
+  #+unix
+  (:method ((directive (eql :print))) (make-plot-stream :plot))
+  #+unix
+  (:method ((directive (eql :plot)))
+    (setq *gnuplot-stream*
+          (or (if (and *gnuplot-stream* (open-stream-p *gnuplot-stream*))
+                  *gnuplot-stream*)
+              (pipe-output *gnuplot-path*)))))
+
+(defun internal-with-plot-stream (body-function &rest opts
                                   &key (plot *gnuplot-default-directive*)
-                                  (xlabel "x") (ylabel "y")
-                                  (data-style :lines) (border t)
-                                  timefmt xb xe (title "plot") legend
-                                  (xtics t) (ytics t) grid term
-                                  (xfmt (or timefmt "%g")) (yfmt "%g"))
+                                  (backend *plot-default-backend*)
+                                  &allow-other-keys)
   "The gist of `with-plot-stream' is here.
 Should not be called directly but only through `with-plot-stream'."
   (when (eq plot t)
     (plot-msg "~s: plot directive ~s is deprecated; use ~s~%"
               'internal-with-plot-stream t :plot)
     (setq plot :plot))
-  (let* ((plot-file
-          (if (or (stringp plot) (pathnamep plot))
-              (prog1 plot (setq plot :file))
-              *gnuplot-file*))
-         (plot-stream
-          (cond ((streamp plot) plot)
-                ((or (eq plot :file)
-                     #+(or win32 mswindows)
-                     (eq plot :plot))
-                 (open plot-file :direction :output))
-                #+(or win32 mswindows)
-                ((eq plot :print) (pipe-output *gnuplot-path-console*))
-                #+(or win32 mswindows)
-                (t (error 'code :proc 'internall-with-plot-stream
-                          :args (list plot)
-                          :mesg "invalid plot directive: ~s"))
-                #+unix
-                (t (setq *gnuplot-stream*
-                         (or (if (and *gnuplot-stream*
-                                      (open-stream-p *gnuplot-stream*))
-                                 *gnuplot-stream*)
-                             (pipe-output *gnuplot-path*)))))))
+  (let ((plot-file (if (or (stringp plot) (pathnamep plot))
+                       (prog1 plot (setq plot :file))
+                       *gnuplot-file*))
+        (plot-stream (make-plot-stream plot))
+        (plot-spec (apply #'make-plot :data body-function opts)))
     (declare (stream plot-stream))
     (unwind-protect
-         (progn
-           ;; output the header information
-           (labels ((pp (xx)
-                      (typecase xx
-                        (number (format nil "~g" xx))
-                        (symbol (format nil "~a" (string-downcase xx)))
-                        (list (format nil "~{ ~a~}" xx))
-                        (t (format nil "'~a'" xx))))
-                    (plot-set (nm par)
-                      (case par
-                        ((t) (format plot-stream "set ~a~%" nm))
-                        ((nil) (format plot-stream "set no~a~%" nm))
-                        (t (format plot-stream "set ~a ~a~%" nm (pp par))))))
-             (if (eq plot :print)
-                 (format plot-stream
-                         "set terminal postscript landscape 'Helvetica' 9
-set output '~a'~%" *gnuplot-printer*)
-                 (format plot-stream "set terminal ~a~@[ ~a~]~%set output~%"
-                         #+unix "x11" #+(or win32 mswindows) "windows" term))
-             (format plot-stream
-                     "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
-set xdata~@[ time~%set timefmt '~a'~]~%" timefmt)
-             (plot-set "format x" xfmt)
-             (plot-set "format y" yfmt)
-             (when (and xb xe)
-               (format plot-stream "set xrange [~a:~a]~%" (pp xb) (pp xe)))
-             (plot-set "border" border)
-             (plot-set "xlabel" xlabel)
-             (plot-set "ylabel" ylabel)
-             (plot-set "data style" data-style)
-             (plot-set "title" title)
-             (plot-set "key" legend)
-             (plot-set "xtics" xtics)
-             (plot-set "ytics" ytics)
-             (plot-set "grid" grid))
-           ;; the body is here!
-           (funcall body-function plot-stream))
+         (plot-output plot-spec plot-stream backend)
       ;; clean up
       (fresh-line plot-stream)
       (force-output plot-stream)
@@ -363,7 +476,7 @@ Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 FNL is a list of (name . function).
 E.g.:
   (plot-functions (list (cons 'sine #'sin) (cons 'cosine #'cos)) 0 pi 100
-                  :legend '(:bot :left :box) :grid t)"
+                  :legend '(:bot :left :box) :grid t :plot :wait)"
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (with-plot-stream (str :xb xmin :xe xmax :title title
                      :data-style (or data-style (plot-data-style numpts)) opts)

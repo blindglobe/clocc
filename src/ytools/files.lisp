@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.45 2005/03/28 14:13:24 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.46 2005/04/06 16:43:37 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -57,6 +57,10 @@
 		   (remove code-ch (Code-chunk-alt-version-of
 				      current-version)))))))
 
+(defgeneric Code-chunk-pathname (cp)
+   (:method ((x Code-chunk))
+       false))
+
 (defmethod (setf Code-chunk-alt-version) :after (new-v code-ch)
       (setf (Code-chunk-alt-version-of new-v)
 	    (adjoin code-ch (Code-chunk-alt-version-of new-v))))
@@ -112,6 +116,9 @@
 (defun Code-file-chunk-pn (file-ch)
    (or (Code-file-chunk-yt-pathname file-ch)
        (Code-file-chunk-pathname file-ch)))
+
+(defmethod Code-chunk-pathname ((file-ch Code-file-chunk))
+   (Code-file-chunk-pathname file-ch))
 
 (defun file-chunk-is-source (file-ch)
    (eq (Code-file-chunk-kind file-ch) ':source))
@@ -852,13 +859,13 @@
 			       (get-universal-time)))))
 		 (cond ((not success)
 			(format *error-output*
-			    "Error(s) during compilation: ~s"
+			    "Error(s) during compilation: ~s~%"
 			    errors-during-compilation)))
 		 (cond ((and success
 			     old-obj-write-time
 			     (< new-compile-time old-obj-write-time))
 			(format *error-output*
-			   "Object-file write-time anomaly ~s"
+			   "Object-file write-time anomaly ~s~%"
 			   object-file)
 			(setq success false)
 			(setq new-compile-time (get-universal-time))))

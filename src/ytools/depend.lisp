@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.24 2005/03/28 14:13:24 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.25 2005/04/06 16:43:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -246,15 +246,16 @@
 			   (cond (slurp-dep
 				  (pathnames-note-slurp-support
 					  pnl file-ch which-slurp-types)
-				  (setf (Code-file-chunk-read-basis file-ch)
-					(union
-					  (mapcar
-					     (\\ (pn)
-						(pathname-denotation-chunk
-						   pn true))
-					     pnl)
-					  (Code-file-chunk-read-basis
-					     file-ch))))))
+				  (cond ((typep file-ch 'Code-file-chunk)
+					 (setf (Code-file-chunk-read-basis file-ch)
+					       (union
+						 (mapcar
+						    (\\ (pn)
+						       (pathname-denotation-chunk
+							  pn true))
+						    pnl)
+						 (Code-file-chunk-read-basis
+						    file-ch))))))))
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn true))
 				  (lpchunk (place-Loaded-chunk pchunk false)))
@@ -393,28 +394,27 @@
 			       compiled-ch callee-ch sfty true))))))))))
 
 (defun pathnames-note-slurp-support (pnl file-ch sub-file-type-names)
-   (dolist (pn pnl)
-      (let* ((dep-ch (pathname-denotation-chunk pn true))
-	     (loaded-dep-ch (place-Loaded-chunk dep-ch false))
-	     (filename (Code-file-chunk-pathname file-ch)))
-	 (dolist (sfty (cond ((null sub-file-type-names)
-			      ;; Use 'em all
-			      sub-file-types*)
-			     (t
-			      (mapcar #'lookup-sub-file-type
-				      sub-file-type-names))))
-	    (let* ((slurped-sub-file-ch
-		     (funcall (Sub-file-type-slurp-chunker sfty)
-			      filename)))
-;;;;	       (out "Introducing dependency: "
-;;;;		    :% 2 slurped-sub-file-ch
-;;;;		    :% 2 "has basis augmented with"
-;;;;		    :% 2 loaded-dep-ch :%)
-	       (cond ((not (memq loaded-dep-ch
-				 (Chunk-basis slurped-sub-file-ch)))
-		      (setf (Chunk-basis slurped-sub-file-ch)
-			    (cons loaded-dep-ch
-				  (Chunk-basis slurped-sub-file-ch))))))))))
+   (let ((filename (Code-chunk-pathname file-ch)))
+      (cond (filename
+	     ;; If no filename, no slurped subfile to note support of.
+	     (dolist (pn pnl)
+		(let* ((dep-ch (pathname-denotation-chunk pn true))
+		       (loaded-dep-ch (place-Loaded-chunk dep-ch false)))
+		   (dolist (sfty (cond ((null sub-file-type-names)
+					;; Use 'em all
+					sub-file-types*)
+				       (t
+					(mapcar #'lookup-sub-file-type
+						sub-file-type-names))))
+		      (let* ((slurped-sub-file-ch
+				(funcall (Sub-file-type-slurp-chunker sfty)
+					 filename)))
+			 (cond ((not (memq loaded-dep-ch
+					   (Chunk-basis slurped-sub-file-ch)))
+				(setf (Chunk-basis slurped-sub-file-ch)
+				      (cons loaded-dep-ch
+					    (Chunk-basis
+					       slurped-sub-file-ch)))))))))))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).

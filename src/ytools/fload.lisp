@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.7 2005/03/28 14:13:25 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.8 2005/04/06 16:43:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -682,7 +682,7 @@ funktion
 		      (cond ((and (Chunk-managed old-cfc)
 				  (not (Chunk-manage-request new-cfc))
 				  (y-or-n-p !"Begin management of ~s ~
-                                              [probably yes]?"
+                                              ~%     [probably yes]? "
 					    old-cfc))
 			     (on-list new-cfc changing-chunks)))))))
 	 (do ((oldl (filespecs->ytools-pathnames reset-olds)

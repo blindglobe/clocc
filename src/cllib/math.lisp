@@ -1,17 +1,20 @@
-;;; File: <math.lisp - 1998-09-02 Wed 16:50:38 EDT sds@eho.eaglets.com>
+;;; File: <math.lisp - 1998-10-29 Thu 16:43:52 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997 by Sam Steingold.
+;;; Copyright (C) 1997, 1998 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.8 1998/09/03 13:54:08 sds Exp $
+;;; $Id: math.lisp,v 1.9 1998/10/29 21:57:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.9  1998/10/29 21:57:17  sds
+;;; Fixed `standard-deviation-relative' to compute the actual volatility.
+;;;
 ;;; Revision 1.8  1998/09/03 13:54:08  sds
 ;;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
 ;;; `make-primes-list', `*primes*', `*primes-file*'.
@@ -52,6 +55,10 @@
 
 (define-modify-macro mulf (mult) * "Multiply the arg by a number.")
 (define-modify-macro divf (mult) / "Divide the arg by a number.")
+(defmacro sqr (xx)
+  "Compute the square of a number, taking care to eval only once."
+  (if (atom xx) `(* ,xx ,xx)
+      (let ((var (gensym "SQR"))) `(let ((,var ,xx)) (* ,var ,var)))))
 
 ;;;
 ;;; Integers
@@ -85,6 +92,10 @@
                           (* (ff aa mm) (ff mm bb)))))))
           (if (> nn 1) (ff 1 nn) 1)))))
 
+(defun stirling (xx)
+  "Compute the approximate factorial using the Stirling formula."
+  (* (sqrt (* 2 pi xx)) (expt (/ xx (exp 1)) xx)))
+
 (defun fibonacci (nn)
   "Return 2 consecutive Fibonacci numbers."
   (declare (integer nn) (values integer integer))
@@ -94,13 +105,14 @@
          (declare (integer mm) (type (integer 0 1) rr))
          (multiple-value-bind (f0 f1) (fibonacci mm)
            (declare (integer f0 f1))
-           (ecase rr
+           (case rr
              (0 (values (* f0 (+ (* f1 2) f0))
                         (+ (* f0 f0) (* f1 f1))))
              (1 (values (+ (* f0 f0) (expt (+ f0 f1) 2))
                         (* f0 (+ (* f1 2) f0))))))))))
 
-(defcustom *primes* list nil "The list of primes.")
+(defcustom *primes* list nil "The list of primes.
+The first element is the upper bound.")
 (defcustom *primes-file* pathname (merge-pathnames "primes" *datadir*)
   "The file for keeping the list of primes.")
 
@@ -109,13 +121,15 @@
 The optional second argument, if non-nil, is a double float
 specifying the interval for progress reports."
   (declare (fixnum nn) (type (or null double-float) int))
-  (when (and *primes* (>= (car (last *primes*)) nn))
-    (return-from primes-to *primes*))
+  (when (and (null *primes*) (probe-file *primes-file*))
+    (setq *primes* (read-from-file *primes-file*)))
+  (when (and *primes* (>= (car *primes*) nn))
+    (return-from primes-to (cdr *primes*)))
   (do* ((ii 3 (+ 2 ii)) (res (if (> nn 2) (list 2))) (end res)
         (rt (isqrt ii) (isqrt ii)) (bt (get-float-time)))
-       ((>= ii nn) (setq *primes* res))
+       ((>= ii nn) (setq *primes* (cons nn res)) res)
     (declare (fixnum ii))
-    (when (and int (> (elapsed bt) int))
+    (when (and int (= 1 (mod ii 1000)) (> (elapsed bt) int))
       (format t "~:d..." ii) (force-output)
       (setq bt (get-float-time)))
     (do ((mm res (cdr mm)))
@@ -126,27 +140,32 @@ specifying the interval for progress reports."
 (defun divisors (nn &optional (primes-list (primes-to (1+ (isqrt nn)))))
   "Return the list of prime divisors of the given number.
 The optional second argument specifies the list of primes."
-  (declare (integer nn))
-  (do ((pp primes-list (cdr pp)) (rt (isqrt nn)))
-      ((or (null pp) (> (car pp) rt)) (list nn))
-    (declare (fixnum rt))
-    (multiple-value-bind (dd rr) (floor nn (car pp))
-      (declare (fixnum rr) (integer dd))
-      (when (zerop rr) (return (cons (car pp) (divisors dd primes-list)))))))
+  (declare (integer nn) (list primes-list))
+  (labels ((ddd (n1 ds)
+             (do ((pp primes-list (cdr pp)) (rt (isqrt n1)))
+                 ((or (null pp) (> (car pp) rt)) (cons n1 ds))
+               (declare (fixnum rt))
+               (multiple-value-bind (dd rr) (floor n1 (car pp))
+                 (declare (fixnum rr) (integer dd))
+                 (when (zerop rr) (return (ddd dd (cons (car pp) ds))))))))
+    (nreverse (ddd nn nil))))
 
-(defsubst primep (nn)
+(defsubst primep (nn &optional (primes-list (primes-to (1+ (isqrt nn)))))
   "Check whether the number is prime."
-  (declare (integer nn))
-  (= 1 (length (divisors nn))))
+  (declare (integer nn) (list primes-list))
+  (do ((pp primes-list (cdr pp)) (rt (isqrt nn)))
+      ((or (null pp) (> (car pp) rt)) t)
+    (declare (fixnum rt))
+    (when (zerop (mod nn (car pp))) (return nil))))
 
 (defun make-primes-list (&optional (limit most-positive-fixnum))
   "Initialize `*primes*' and write `*primes-file*'."
   (declare (fixnum limit))
   (let ((bt (get-float-time)) st)
     (format t "Computing primes up to ~:d..." limit) (force-output)
-    (setq *primes* (primes-to limit 10.0d0) st (elapsed-1 bt))
-    (format t "done [~a]~%" st)
-    (write-to-file *primes* *primes-file* ";; Computed in " st
+    (primes-to limit 10.0d0)
+    (format t "done [~a]~%" (setq st (elapsed-1 bt)))
+    (write-to-file *primes* *primes-file* nil ";; Computed in " st
                    (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
                            limit (length *primes*)))))
 
@@ -191,9 +210,12 @@ so that (poly 10 1 2 3 4 5) ==> 12345."
 
 (defun erf (xx)
   "Compute the error function, accurate to 1e-6. See Hull p. 243.
+The same as
+  (+ 0.5 (/ (integrate-simpson (lambda (tt) (exp (* tt tt -0.5))) 0 xx)
+            (sqrt (* 2 pi))))
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx) (values double-float double-float))
-  (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (double-float (sqrt (* 2 pi)))))
+  (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (dfloat (sqrt (* 2 pi)))))
 	 (val (- 1 (* der (poly (/ (1+ (* (abs xx) 0.2316419d0)))
 				1.330274429d0 -1.821255978d0 1.781477937d0
 				-0.356563782d0 0.319381530d0 0.0d0)))))
@@ -209,7 +231,7 @@ Return the value and the derivative, suitable for `newton'."
     (2 (sqrt (reduce #'+ seq :key (lambda (xx) (expt (funcall key xx) 2)))))
     (t (expt (reduce #'+ seq :key
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
-	     (/ (double-float order))))))
+	     (/ order)))))
 
 (defun normalize (seq &optional (norm #'norm))
   "Make the SEQ have unit norm. Drop nils."
@@ -311,15 +333,22 @@ The mean and the length can be pre-computed for speed."
     (complex mean stdd)))
 
 (defun standard-deviation-relative (seq &key (key #'value))
-  "Compute the relative standard deviation (StD/mean).
-Meaningful only if all the numbers are of the same sign."
+  "Compute the relative standard deviation (StD(log(x[i+1]/x[i]))).
+Meaningful only if all the numbers are of the same sign,
+if this is not the case, the result will be a complex number."
   (declare (sequence seq) (type (function (t) double-float) key)
-	   (values double-float))
-  (multiple-value-bind (mean len) (mean seq :key key)
-    (declare (fixnum len) (double-float mean))
-    (if (or (<= len 1) (zerop mean)) 0.0d0
-	(/ (standard-deviation seq :len len :key key :mean mean)
-	   (abs mean)))))
+           (values double-float))
+  (let (pr (sq 0.0) (su 0.0) (nn 0))
+    (declare (double-float sq su) (type (or null double-float) pr)
+             (type (unsigned-byte 20) nn))
+    (map nil (lambda (rr)
+               (let* ((cc (funcall key rr))
+                      (vv (when pr (log (/ cc pr)))))
+                 (declare (double-float cc) (type (or null double-float) vv))
+                 (setq pr cc)
+                 (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
+         seq)
+    (sqrt (max 0.0 (/ (- sq (/ (sqr su) nn)) (1- nn))))))
 
 (defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
   "Compute the covariation between the data in the two sequences.
@@ -341,7 +370,7 @@ without pre-computing the means."
 		 (incf xyb (* xx yy)) (incf x2b (expt xx 2))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq c0 (/ (double-float nn)) c1 (/ (double-float (1- nn))))
+    (setq c0 (/ (dfloat nn)) c1 (/ (dfloat (1- nn))))
     (values (with-type double-float (* (- xyb (* xb yb c0)) c1))
             (with-type double-float (* xb c0))
             (with-type double-float (* yb c0))
@@ -357,8 +386,8 @@ Uses the numerically stable algorithm with pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
 	   (values double-float double-float double-float double-float
 		   double-float fixnum))
-  (let ((m0 (double-float (mean seq0 :key key0)))
-        (m1 (double-float (mean seq1 :key key1)))
+  (let ((m0 (dfloat (mean seq0 :key key0)))
+        (m1 (dfloat (mean seq1 :key key1)))
         (nn 0) (d0 0.0d0) (d1 0.0d0) (rr 0.0d0) (co 0.0d0))
     (declare (fixnum nn) (double-float m0 m1 d0 d1 rr co))
     (map nil (lambda (r0 r1)
@@ -369,7 +398,7 @@ Uses the numerically stable algorithm with pre-computing the means."
 		 (incf rr (* xx yy))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq co (/ (double-float (1- nn))))
+    (setq co (/ (dfloat (1- nn))))
     (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
@@ -490,7 +519,7 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 If the optional DAYS is given, return the annualized change too."
   (declare (number v0 v1) (type (or null number) days)
            (values double-float (or null double-float)))
-  (let ((pers (double-float (/ v1 v0))))
+  (let ((pers (dfloat (/ v1 v0))))
     (if days
 	(values (to-percent pers) (to-percent (expt pers (/ 365.25d0 days))))
 	(to-percent pers))))
@@ -544,6 +573,31 @@ and the number of iterations made."
     (declare (fixnum it))
     (setf (values f0 f1) (funcall ff xx))
     (incf xx (setq del (/ (- val f0) (if (zerop f1) tol f1))))))
+
+(defun integrate-simpson (ff x0 xm &optional (eps *num-tolerance*))
+  "Compute an integral of a real-valued function with a given precision.
+Returns the integral, the last approximation, and the number of points."
+  (declare (double-float x0 xm)
+           (type (function (double-float) double-float) ff))
+  (do* ((f0 (funcall ff x0)) (f1 (funcall ff (* 0.5 (+ x0 xm))))
+        (fm (funcall ff xm)) (hh (* 0.5 (- xm x0)) (* hh 0.5))
+        (mm 2 (* mm 2))
+        (sum-even 0.0 (+ sum-odd sum-even))
+        (sum-odd f1
+                 (loop for ii of-type (unsigned-byte 20) from 1 below mm by 2
+                       and step of-type double-float from 1.0d0 by 2.0d0
+                       sum (funcall ff (+ x0 (* hh step))) double-float))
+        (int-last 0.0 int)
+        (int (* (/ hh 3.0) (+ f0 (* 4.0 f1) fm))
+             (* (/ hh 3.0) (+ f0 (* 4.0 sum-odd) (* 2.0 sum-even) fm))))
+       ((< (abs (- int int-last)) eps) (values int int-last mm))
+    (declare (double-float sum-odd sum-even hh f0 f1 fm int int-last)
+             (type (unsigned-byte 20) mm))))
+
+(defun add-probabilities (&rest pp)
+  "Add probabilities.
+Returns the probability of at least one event happening."
+  (- 1 (reduce #'* pp :key (lambda (xx) (- 1 xx)))))
 
 ;;;
 ;;; Line
@@ -680,7 +734,8 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
         (ff 0.0d0))
     (declare (type (simple-array double-float (* *)) mx) (fixnum len)
              (type (simple-array double-float (*)) cfs rhs mms)
-             (double-float yyb yys free rr ff))
+             (double-float yyb yys free) (type (double-float 0.0) ff)
+             (type (double-float 0.0 1.0) rr))
     (loop for kk of-type (unsigned-byte 20) upfrom 0 and yk across yy do
           (incf yys (expt (- yk yyb) 2))
           (dotimes (ii nx)          ; compute X

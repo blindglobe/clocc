@@ -2,6 +2,20 @@
 
 Changes:
 
+Jul 12, 2000
+------------
+
+Lot's of changes to enhance character handling.  Many (all?) possible
+declarations of character strings and arrays of character strings are
+handled.  We should also be initialize such arrays to spaces, just
+like Fortran seems to.  Assigning values to character strings should
+now work like Fortran:  either by appending spaces to fill out the
+string or truncating the string if it's too long.
+
+Some problems with common blocks were fixed.  However, common block
+handling is still somewhat broken.
+
+
 Jun 29, 2000
 ------------
 

@@ -1058,7 +1058,9 @@ causing all pending operations to be flushed"
 ;;
 (defun d1mach (i)
   (ecase i
-    (1 least-positive-normalized-double-float)
+    (1
+     #-gcl least-positive-normalized-double-float
+     #+gcl least-positive-double-float)
     (2 most-positive-double-float)
     (3 double-float-epsilon)
     (4 (scale-float double-float-epsilon 1))
@@ -1066,7 +1068,9 @@ causing all pending operations to be flushed"
 
 (defun r1mach (i)
   (ecase i
-    (1 least-positive-normalized-single-float)
+    (1
+     #-gcl least-positive-normalized-single-float
+     #+gcl least-positive-single-float)
     (2 most-positive-single-float)
     (3 single-float-epsilon)
     (4 (scale-float single-float-epsilon 1))
@@ -1184,8 +1188,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.47 2002/05/03 17:44:36 rtoy Exp $
+;;; $Id: macros.l,v 1.48 2002/05/03 17:48:06 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.48  2002/05/03 17:48:06  rtoy
+;;; GCL doesn't have least-positive-normalized-{single/double}-float, so
+;;; use just least-positive-{single/double}-float.
+;;;
 ;;; Revision 1.47  2002/05/03 17:44:36  rtoy
 ;;; Replace row-major-aref with just aref because we don't need it and
 ;;; because gcl doesn't have it.

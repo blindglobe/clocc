@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-01-13 Wed 18:21:50 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-02-22 Mon 17:54:09 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.13 1999/01/13 23:37:56 sds Exp $
+;;; $Id: math.lisp,v 1.14 1999/02/22 22:56:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.14  1999/02/22 22:56:10  sds
+;;; Use `:min-len' key in the `call-on-split' call in `volatility'.
+;;;
 ;;; Revision 1.13  1999/01/13 23:37:56  sds
 ;;; Replaced CMUCL-specific print functions with a call to
 ;;; `print-struct-object'.
@@ -248,9 +251,11 @@ Return the value and the derivative, suitable for `newton'."
 
 (defun normalize (seq &optional (norm #'norm))
   "Make the SEQ have unit norm. Drop nils."
-  (declare (sequence seq) (type (function (t) double-float) norm))
+  (declare (sequence seq) (type (or real (function (t) double-float)) norm))
   (setq seq (delete nil seq))
-  (let ((nn (funcall norm seq)))
+  (let ((nn (etypecase norm
+              (real (norm seq :order norm))
+              (function (funcall norm seq)))))
     (declare (double-float nn))
     (assert (> nn 0) (seq) "Zero norm vector: ~a" seq)
     (map-in (lambda (rr) (declare (double-float rr)) (/ rr nn)) seq)))
@@ -274,14 +279,14 @@ Return the value and the derivative, suitable for `newton'."
 ;;; Statistics
 ;;;
 
-(defsubst mean (seq &key (key #'value) (len (length seq)))
+(defun mean (seq &key (key #'value) (len (length seq)))
   "Compute the mean of the sequence of real numbers.
 Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (type (function (t) double-float) key)
            (fixnum len) (values double-float fixnum))
   (values (/ (reduce #'+ seq :key key) len) len))
 
-(defsubst mean-cx (seq &key (key #'value) (len (length seq)))
+(defun mean-cx (seq &key (key #'value) (len (length seq)))
   "Compute the mean of the sequence of complex numbers.
 Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (type (function (t) (complex double-float)) key)
@@ -447,7 +452,7 @@ and the average annual volatility for US Dollar Index."
   (declare (type (or function fixnum) split-key) (list lst)
            (type (function (t) double-float) key))
   (let ((vols (call-on-split lst #'standard-deviation-relative
-                             :split-key split-key :key key)))
+                             :split-key split-key :key key :min-len 2)))
     (values vols (mean vols :key #'cdr))))
 
 ;;; Mean / Deviation / Length

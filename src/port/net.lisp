@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.47 2003/01/21 17:43:35 sds Exp $
+;;; $Id: net.lisp,v 1.48 2003/02/17 22:53:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -450,25 +450,24 @@ Kind can be :stream or :datagram."
 
 (defun report-network-condition (cc out)
   (declare (stream out))
-  (format out "[~s] ~s:~d~@[ ~?~]"
-          (net-proc cc) (net-host cc) (net-port cc)
-          (and (slot-boundp cc 'mesg) (net-mesg cc))
-          (and (slot-boundp cc 'args) (net-args cc))))
+  (format out "[~s] ~s:~d~@[ ~?~]" (net-proc cc) (net-host cc)
+          (net-port cc) (net-mesg cc) (net-args cc)))
 
 (define-condition network (error)
-  ((proc :type symbol :reader net-proc :initarg :proc)
-   (host :type simple-string :reader net-host :initarg :host)
-   (port :type (unsigned-byte 16) :reader net-port :initarg :port)
-   (mesg :type simple-string :reader net-mesg :initarg :mesg)
-   (args :type list :reader net-args :initarg :args))
+  ((proc :type symbol :reader net-proc :initarg :proc :initform nil)
+   (host :type simple-string :reader net-host :initarg :host :initform "")
+   (port :type (unsigned-byte 16) :reader net-port :initarg :port :initform 0)
+   (mesg :type (or null simple-string) :reader net-mesg
+         :initarg :mesg :initform nil)
+   (args :type list :reader net-args :initarg :args :initform nil))
   (:report report-network-condition))
 
 (define-condition timeout (network)
-  ((time :type (real 0) :reader timeout-time :initarg :time))
+  ((time :type (real 0) :reader timeout-time :initarg :time :initform 0))
   (:report (lambda (cc out)
              (declare (stream out))
              (report-network-condition cc out)
-             (when (slot-boundp cc 'time)
+             (when (plusp (timeout-time cc))
                (format out " [timeout ~a sec]" (timeout-time cc))))))
 
 (define-condition login (network) ())

@@ -11,7 +11,6 @@
 	     #:make-clc-send-command-string
 	     #:*clc-send-command-filename*
              #:compile-library
-	     #:original-require
 	     #:clc-require)
     (:nicknames :c-l-c))
 

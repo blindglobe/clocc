@@ -28,3 +28,5 @@
   (if *original-require-function*
       (apply *original-require-function* args)
     (format t "~&;; Original require function not found~%")))
+
+(export 'original-require)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.2 2004/11/24 04:24:00 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.3 2004/11/27 20:03:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -25,7 +25,7 @@
 ;;; Let C be the file containing the 'depends-on' form, F be a file
 ;;; mentioned in the 'depends-on'.
 ;;; 
-;;; Note that :slurp-time means that F will be loaded as soon
+;;; Note that :read-time (= :slurp-time) means that F will be loaded as soon
 ;;; as the 'depends-on' form is seen.  :run-time means that F will be
 ;;; loaded when C or its compiled form is loaded.
 ;;; :compile-time means that F will be loaded when C is compiled.
@@ -65,7 +65,8 @@
 				  pn false ':at-least-header)))))
 		     (dolist (g groups)
 			(let ((files (<# place-file-chunk
-					 (filespecs->ytools-pathnames (cdr g)))))
+					 (filespecs->ytools-pathnames
+					    (cdr g)))))
 			   (cond ((memq ':compile-time (first g))
 				  (setf (Chunk-basis compiled-ch)
 					(union
@@ -80,60 +81,24 @@
 				  (setf (File-chunk-callees file-ch)
 					(union files
 					       (File-chunk-callees file-ch)))))
-			   (cond ((or (memq ':slurp-time (first g))
-				      (memq ':read-time (first g)))
+			   (cond ((or (memq ':read-time (first g))
+				      (memq ':slurp-time (first g)))
 				  (setf (File-chunk-read-basis file-ch)
 					(union files
 					       (File-chunk-read-basis
-						   file-ch)))
-				  (
-				     (cond ((not (memq s-f-ch
-						       (Chunk-basis compiled-ch)))
-					    ;; blech --
-					    (setf (tail
-						     (tail
-							(Chunk-basis
-							   compiled-ch)))
-					          (cons s-f-ch
-							(tail
-							   (tail
-							      (Chunk-basis
-								 compiled-ch)))))))
-
-(defun lpr-comp-tdo-recorder (lpr)
-   #'(lambda (pn)
-;;;;	(dbg-save lpr pn)
-;;;;	(breakpoint lpr-comp-tdo-recorder-res
-;;;;	   "lpr = " lpr :% "pn = " pn)
-	(let ((compile-deps
-		 (Load-progress-rec-compile-time-depends-on
-		    lpr)))
-	   (setq pn (pathname-resolve pn false))
-	   (cond ((not (member pn compile-deps :test #'pn-equal))
-		  (setf (Load-progress-rec-compile-time-depends-on lpr)
-		    (nconc compile-deps (list pn))))))))
-
-(defun lpr-run-tdo-recorder (lpr)
-   #'(lambda (pn)
-	(let ((run-deps
-		 (Load-progress-rec-run-time-depends-on
-		    lpr)))
-	   (setq pn (pathname-resolve pn false))
-	   (cond ((not (member pn run-deps :test #'pn-equal))
-		  (setf (Load-progress-rec-run-time-depends-on lpr)
-		    (nconc run-deps (list pn))))))))
+						   file-ch))))))))))))))
 
 ;;; Return a list of groups, each of the form
 ;;; ((<time>*)
 ;;;  --filespecs--)
-;;; where each <time> is either :run-time, :compile-time, :slurp-time
+;;; where each <time> is either :run-time, :compile-time, :read-time
 (defun depends-on-args-group (args)
    (cond ((and (= (len args) 1)
 	       (is-Symbol (car args)))
 	  ;;; Compatibility with old Nisp
 	  (list `((:run-time :compile-time) %module/ ,(car args))))
 	 (t
-	  (let ((this-mode '(:run-time :compile-time :slurp-time))
+	  (let ((this-mode '(:run-time :compile-time :read-time :slurp-time))
 		(this-group '())
 		(groups '()))
 	     (labels ((end-group ()
@@ -144,22 +109,23 @@
 					    groups))))))
 		(dolist (arg args)
 		   (let ((next-mode
-			    (cond ((memq arg '(at-run-time :at-run-time
-					       at-compile-time :at-compile-time
-					       :at-slurp-time
+			    (cond ((memq arg '(:at-run-time at-run-time
+					       :at-compile-time at-compile-time
+					       :at-read-time :at-slurp-time
 					       :always :at-run-and-compile-time))
 				   (case arg
 				      ((:at-run-time at-run-time)
 				       '(:run-time))
 				      ((:at-compile-time at-compile-time)
 				       '(:compile-time))
-				      ((:at-slurp-time)
-				       '(:slurp-time))
+				      ((:at-read-time :at-slurp-time)
+				       '(:read-time))
 				      (t
-				       '(:compile-time :run-time :slurp-time))))
+				       '(:compile-time :run-time :read-time))))
 				  ((car-eq arg ':at)
 				   (cond ((null (cdr arg))
-					  (cerror "The next block will be ignored"
+					  (cerror !"The next block ~
+                                                    will be ignored"
 						  "depends-on with (:at): ~s"
 						  `(depends-on ,@args))))
 				   (cdr arg))

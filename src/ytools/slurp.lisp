@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.2 2004/11/21 05:12:38 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.3 2004/11/27 20:03:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -15,6 +15,11 @@
 	     make-Printable printable-as-string eof*)))
 
 (defvar object-suffixes* `(,lisp-object-extn*))
+
+(defun pathname-is-source (pn)
+   (member (Pathname-type pn)
+	   source-suffixes*))
+
 
 (eval-when (:compile-toplevel :load-toplevel)
 

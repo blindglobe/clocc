@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fileutils.lisp,v 1.4 2004/06/25 20:19:03 airfoyle Exp $
+;;;$Id: fileutils.lisp,v 1.4.2.1 2004/11/27 20:03:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -38,68 +38,6 @@
 				       (nth-value
 					  1 (lprec-find-version-modtimes r)))))))))))))
       pathname-prop-table*))
-
-(defvar fload-version-suffix* ':-new)
-
-(defmacro fload-versions (&rest specs)
-   (let ((olds (mapcar (lambda (x) 
-			  (cond ((consp x) (car x))
-				(t x)))
-		       specs))
-	 (news (mapcar (lambda (x)
-			  (cond ((consp x)
-                                 (cond ((null (cdr x))
-                                        (build-symbol
-					   (:< (car x))
-					   (:< fload-version-suffix*)))
-                                       ((or (is-String (cadr x))
-					    (is-Keyword (cadr x)))
-                                        (build-symbol
-					   (:< (car x)) (:< (cadr x))))
-                                       (t (cadr x))))
-				(t x)))
-		       specs)))
-      `(fload-versions-massage ',olds ',news)))
-
-;;;;(defvar save* nil)
-
-(defun fload-versions-massage (olds news)
-   (multiple-value-bind (set-olds set-news reset-olds)
-                       (labels ((segregate (olds news)
-                                    (cond ((null news)
-                                           (values !() !() !()))
-                                          (t
-                                           (multiple-value-bind
-                                                   (so sn rso)
-                                                   (segregate (cdr olds)
-                                                              (cdr news))
-                                              (cond ((eq (car news) '-)
-                                                     (values so sn
-                                                             (cons (car olds)
-                                                                   rso)))
-                                                    ((eq (car news)
-							 (car olds))
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        (cons (car olds) rso)))
-                                                    (t
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        rso))))))))
-                            (segregate olds news))
-       (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
-	    (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
-	   ((null oldl))
-;;;;	  (setq save* (cons (tuple (car oldl) (car newl)) save*))
-          (setf (pathname-prop 'version (car oldl))
-                (car newl)))
-       (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
-	   ((null oldl))
-          (setf (pathname-prop 'version (car oldl))
-                false))
-       (nconc reset-olds (mapcar #'list set-olds set-news))))
 
 (defun files-run-time-deps (filespecs)
    (let ((checked !((Load-progress-rec))))

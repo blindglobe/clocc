@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.3 2004/11/24 04:24:00 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.4 2004/11/27 20:03:02 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -304,7 +304,8 @@
 					 ;; via 'set-latest-support-date' --
 					 (cond ((not (chunk-up-to-date ch))
 						(mapcan #'recur
-							(Chunk-update-basis ch)))
+							(Chunk-update-basis
+							    ch)))
 					       (t !()))))))))))
 
 	       (check-from-new-starting-points (updatees in-progress)
@@ -317,8 +318,10 @@
 					(\\ (c)
 					   (and (not (chunk-up-to-date c))
 						(or (Chunk-managed c)
-						    (= (Chunk-update-mark c) down-mark))))
-					(set-difference updatees in-progress)))))
+						    (= (Chunk-update-mark c)
+						       down-mark))))
+					(set-difference updatees
+							in-progress)))))
 ;;;;		     (format t "New starting points from ~s~%   = ~s~%"
 ;;;;			       updatees nsp)
 		     nsp))

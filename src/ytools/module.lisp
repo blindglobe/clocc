@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.3 2004/11/24 04:24:01 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.4 2004/11/27 20:03:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -19,8 +19,7 @@
    contents     
    expansion
    rec    ; Load-progress-rec
-   loaded
-   postponed) 
+   loaded) 
 
 ;;; An alist of <name, yt-module> pairs.
 (defvar ytools-modules* !())
@@ -89,6 +88,7 @@
 (defconstant can-get-write-times*
     #.(not (not (file-write-date
 		    (concatenate 'string ytools-home-dir* "files.lisp")))))
+
 (defun pathname-source-version (pn)
   (cond ((is-Pseudo-pathname pn) false)
 	(t
@@ -103,11 +103,13 @@
 			     rpn)
 			    (t false)))
 		     ((probe-file rpn) rpn)
-		     (t (get-pathname-with-suffixes rpn source-suffixes*))))))))
+		     (t (get-pathname-with-suffixes
+			   rpn source-suffixes*))))))))
 
 (defun pathname-object-version (pn only-if-exists)
    (let ((ob-pn
-	    (pathname-find-associate pn 'obj-version obj-suffix* only-if-exists)))
+	    (pathname-find-associate pn 'obj-version obj-suffix*
+				     only-if-exists)))
       (cond ((and (not only-if-exists)
 		  (not ob-pn))
 	     (cerror "I will treat it as :unknown"
@@ -139,6 +141,8 @@
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
 
+
+;;; THIS IS USED by .lmd files, so don't just delete it!
 
 (defun ytools-module-load (name force-flag)
 ;;;;  (breakpoint ytools-module-load
@@ -173,38 +177,6 @@
 	     (cerror "The non-module will be ignored"
 		     "Attempt to load nonexistent module ~s"
 		     name)))))
-
-(defun note-ytools-module (ytm)
-   (let ((name (YT-module-name ytm)))
-     (cond ((not (null (YT-module-postponed ytm)))
-	    (note-module-postponement
-	       `(check-module-postponed ',name))))
-     (setq loaded-ytools-modules*
-           (adjoin name loaded-ytools-modules* :test #'eq))))
-
-(defun check-module-postponed (name)
-  (let ((ytm (place-YT-module name)))
-    (let ((p (YT-module-postponed ytm)))
-     (cond ((not (null p))
-	    (setf (YT-module-postponed ytm) !())
-	    (let ((module-now-loading* name))
-	       (dolist (e (reverse p))
-		  (eval e)))
-	    (cond ((null (YT-module-postponed ytm))
-		   `("Finished loading module" ,name))
-		  (t
-		   (note-module-postponement
-		      `(check-module-postponed ',name))
-		   `("Module postponed" ,name))))
-	 (t
-	  `("Already loaded module" ,name))))))
-
-(defun note-module-postponement (vl)
-   (cond (module-now-loading*
-	  (let ((ytm (place-YT-module module-now-loading*)))
-	     (setf (YT-module-postponed ytm)
-	           (adjoin vl (YT-module-postponed ytm)
-			   :test #'equal))))))
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))

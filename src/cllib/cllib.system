@@ -2,13 +2,15 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.13 2000/05/04 18:13:48 sds Exp $
+;;; $Id: cllib.system,v 1.14 2000/05/11 15:08:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
-
+;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
 ;;; 1. cllib.system (defsystem)
 ;;; 2. Makefile ($(SOURCES))
 ;;; 3. cllib.html (file list)
+
+(let (tbc)                      ; To Be Compiled
 
 (mk:defsystem cllib
     :source-pathname (translate-logical-pathname "clocc:src;cllib;")
@@ -64,8 +66,15 @@
                                "log" "simple" "tilsla" "date"))
      (:file "withtype" :depends-on ("base"))
      (:file "xml" :depends-on ("base" "string" "withtype" "closio" "log")))
+    :initially-do
+    (progn (mk:system-source-size :cllib :all)
+           (setq tbc (mk:system-source-size
+                      :cllib :new-source-and-dependents)))
     :finally-do
-    (progn (in-package :cllib)
-           (funcall (intern "AUTOLOAD-GENERATE" :cllib)
-                    (mk:files-in-system :cllib) "auto.lisp")
-           (compile-file "auto.lisp")))
+    (unless (zerop tbc)
+      (in-package :cllib)
+      (funcall (intern "AUTOLOAD-GENERATE" :cllib)
+               (mk:files-in-system :cllib) "auto.lisp")
+      (compile-file "auto.lisp")))
+
+)                               ; tbc

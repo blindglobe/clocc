@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.4 2002/06/05 14:08:03 sds Exp $
+;;; $Id: path.lisp,v 1.5 2002/06/17 21:38:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -65,7 +65,7 @@ but there is a TYPE slot, move TYPE into NAME."
     #+lispworks (lw:file-directory-p path)
     #+sbcl (eq :directory (sb-unix:unix-file-kind (namestring path)))
     #-(or allegro clisp cmu lispworks sbcl)
-    (probe-file (make-pathname :directory dir))))
+    (probe-file path)))
 
 (defun default-directory ()
   "The default directory."

@@ -806,12 +806,19 @@ main-loop
 (defun parse_dimension_specs (specs)
   (if (null specs) nil
       (mapcar #'parse_upper_and_lower_bounds (list-split '|,| specs))))
-; bounds will be either (l:u) or (u)
+
+;; Array bounds can be either (l:u) or (u).  However, U can also be
+;; "*" to mean unbounded or unknown.
 (defun parse_upper_and_lower_bounds (bds)
-   (setq bds (list-split '|:| bds))
-   (if (null (cdr bds)) (list 1 (id-expression (car bds))) 
-                        (list (id-expression (car bds)) 
-                              (id-expression (cdr bds)))))
+  (setq bds (list-split '|:| bds))
+  ;; If a bound is "*", just return T instead.
+  (if (null (cdr bds))
+      (list 1 (or (eq (caar bds) '*)
+		  (id-expression (car bds))))
+      (list (or (eq (caar bds) '*)
+		(id-expression (car bds)))
+	    (or (eq (caadr bds) '*)
+		(id-expression (cdr bds))))))
 
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:

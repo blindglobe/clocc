@@ -1,10 +1,10 @@
-;;; File: <simple.lisp - 2000-02-18 Fri 13:11:42 EST sds@ksp.com>
+;;; File: <simple.lisp - 2000-03-02 Thu 21:01:41 EST sds@ksp.com>
 ;;;
 ;;; simple operations
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;;
-;;; $Id: simple.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: simple.lisp,v 1.2 2000/03/03 02:09:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,7 +13,7 @@
 (in-package :cllib)
 
 (export '(ppprint-list nsublist fix-list to-list from-list zero-len-p paste
-          skip-to-new flatten with-collect filter))
+          skip-to-new flatten with-collect filter list-length-dotted))
 
 (eval-when (load compile eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
@@ -124,6 +124,17 @@ from the previous one."
       ((or (null (cdr lst))
            (not (funcall test k0 (setq k1 (funcall key (second ll))))))
        ll)))
+
+(defun list-length-dotted (list)
+  "Return the length of the list or nil if it is circular.
+The second value is the last atom (i.e., `dotted-p')."
+  (do ((nn 0 (+ nn 2))
+       (fast list (cddr fast))
+       (slow list (cdr slow)))
+      (nil)
+    (when (atom fast) (return (values nn fast)))
+    (when (atom (cdr fast)) (return (values (1+ nn) (cdr fast))))
+    (when (eq (cdr fast) slow) (return nil))))
 
 ;;;
 ;;; }}}{{{ use with-collect

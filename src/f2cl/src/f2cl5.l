@@ -974,7 +974,9 @@
 			   common_var_decls)))
 
      ;;(format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
+     ;;(format t "*common_array_dims* = ~S~%" *common_array_dims*)
      ;;(format t "declared = ~S~%" common_var_decls)
+     
      (setf common-block-structs (make-common-block-structure common_var_decls))
      (when (member :insert-declaration *f2cl-trace*)
        (format t "struct = ~S~%" common-block-structs))
@@ -2019,13 +2021,26 @@
      (return (caar decls)))))
 
 
+#+nil
 (defun get_array_type (decl vble-is-formal-arg) 
-   (prog (type)
+  (prog (type)
       (return
        (cond ((and (member decl *common_array_dims*)
                    (setq type (car (member decl *explicit_vble_decls* :key #'caadr)))
                    (not (eq (car type) 'array)))
               (car type))
+             ((setq type (get-implicit-type decl))
+              type)
+             ((default-int-p decl)
+	      'integer4)
+             (t
+	      'single-float)))))
+
+(defun get_array_type (decl vble-is-formal-arg) 
+  (prog (type)
+      (return
+       (cond ((member decl *common_array_dims*)
+	      (lookup-vble-type decl))
              ((setq type (get-implicit-type decl))
               type)
              ((default-int-p decl)
@@ -2843,23 +2858,23 @@
 			 (t nil))))
 	(unless prev-type
 	  (setf prev-type el-type))
-	(cond ((eq prev-type el-type)
-	       ;; Keep accumulating
-	       (incf total-len (if (subtypep var-type 'array)
-				   (first (third var-type))
-				   1)))
-	      (t
-	       ;; Different type.  Stop accumulating
-	       ;;(format t "Part ~A:  Len ~A, type ~A ~%" part total-len prev-type)
-	       (push `(,(intern (format nil "PART-~D" part))
-		       (make-array ,total-len :element-type ',prev-type)
-		       :type (simple-array ,prev-type (,total-len)))
-		     slots)
-	       (setf prev-type nil)
-	       (incf part)
-	       (setf total-len 0)))
-	#+nil
-	(format t "var = ~A :type ~A :el-type ~A :dims ~A~%" v var-type el-type dims)
+	(let ((len (if (subtypep var-type 'array)
+			      (first (third var-type))
+			      1)))
+	  (cond ((eq prev-type el-type)
+		 ;; Keep accumulating
+		 (incf total-len len))
+		(t
+		 ;; Different type.  Stop accumulating
+		 ;;(format t "Part ~A:  Len ~A, type ~A ~%" part total-len prev-type)
+		 (push `(,(intern (format nil "PART-~D" part))
+			  (make-array ,total-len :element-type ',prev-type)
+			  :type (simple-array ,prev-type (,total-len)))
+		       slots)
+		 (setf prev-type el-type)
+		 (incf part)
+		 (setf total-len len))))
+	;;(format t "var = ~A :type ~A :el-type ~A :dims ~A~%" v var-type el-type dims)
 	))
     (when prev-type
       ;;(format t "Part ~A:  Len ~A, type ~A~%" part total-len prev-type)
@@ -2954,8 +2969,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.117 2004/08/13 21:16:28 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.118 2004/08/14 04:15:56 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.118  2004/08/14 04:15:56  rtoy
+;;; o GET_ARRAY_TYPE was not computing the array type in some situations.
+;;;   (I hope this is the right fix.)
+;;; o Was not counting the array lengths correctly.
+;;;
 ;;; Revision 1.117  2004/08/13 21:16:28  rtoy
 ;;; First pass at creating common blocks as arrays.  Intent is to allow
 ;;; odepack to be converted via f2cl.

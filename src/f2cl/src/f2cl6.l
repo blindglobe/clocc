@@ -589,7 +589,9 @@
 		 ;; was read.  Because of skip-spaces above, this CHAR
 		 ;; is not necessarily the last character read anymore.
 		 ;; We have to modify the stream directly now.
-		 (let ((p (peek-char nil *inp* nil 'eof t)))
+		 ;;
+		 ;; Do we want recursive-p to be T here or not?
+		 (let ((p (peek-char nil *inp* nil 'eof #+nil t)))
 		   (if (equal p 'eof)
 		       (setq *inp* (make-string-input-stream (string char)))
 		       (setq *inp* 
@@ -603,8 +605,26 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.37 2003/09/20 13:56:55 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.38 2004/08/11 15:53:31 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.38  2004/08/11 15:53:31  rtoy
+;;; This bit of Fortran code
+;;;
+;;;       COMMON /DLS001/ ROWNS(209),
+;;;      1   CCMAX, EL0, H, HMIN, HMXI, HU, RC, TN, UROUND,
+;;;      2   INIT, MXSTEP, MXHNIL, NHNIL, NSLAST, NYH, IOWNS(6),
+;;;      3   ICF, IERPJ, IERSL, JCUR, JSTART, KFLAG, L,
+;;;      4   LYH, LEWT, LACOR, LSAVF, LWM, LIWM, METH, MITER,
+;;;      5   MAXORD, MAXCOR, MSBP, MXNCF, N, NQ, NST, NFE, NJE, NQU
+;;; C
+;;;       DATA  MORD(1),MORD(2)/12,5/, MXSTP0/500/, MXHNL0/10/
+;;;       IF (ISTATE .LT. 1 .OR. ISTATE .GT. 3) GO TO 601
+;;;       end
+;;;
+;;; causes an end-of-file error because RECURSIVE-P is T (on CMUCL).  I'm
+;;; going to make RECURSIVE-P NIL here.  Don't know if that's right or
+;;; not.
+;;;
 ;;; Revision 1.37  2003/09/20 13:56:55  rtoy
 ;;; [ 807859 ] translate-pathname strangeness in f2cl6.l
 ;;;

@@ -1186,7 +1186,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.4 Interim 2, 2004-05-31" 
+(defparameter *defsystem-version* "3.4 Interim 2, 2004-05-31"
   "Current version number/date for MK:DEFSYSTEM.")
 
 ;;; ********************************
@@ -2492,7 +2492,7 @@ D
          (file-pathname
 	  (make-pathname :name module-string-name
 			 :type *system-extension*))
-         
+
          (lib-file-pathname
 	  (make-pathname :directory (list :relative module-string-name)
                          :name module-string-name
@@ -2542,8 +2542,8 @@ D
           (values system-def-pathname
                   (probe-file system-def-pathname)))
         (values nil nil))))
-         
-         
+
+
 
 
 #|
@@ -3851,7 +3851,7 @@ the system definition, if provided."
 			    ;; (or (eq force :all) (eq force t))
 			    (find (canonicalize-system-name system)
 				  *modules* :test #'string-equal))
-                 
+
 		 (operate-on-system system operation :force force)))
 
 	      ((listp system)
@@ -4407,7 +4407,7 @@ the system definition, if provided."
 (defun fortran-compile-file (filename &rest args
 				      &key output-file error-file
 				      &allow-other-keys)
-  (declare (ignore error-file))
+  (declare (ignore error-file args))
   (let ((arg-list
 	 (append *fortran-options*
 		 `("-c" ,filename ,@(if output-file `("-o" ,output-file))))))

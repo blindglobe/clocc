@@ -18,13 +18,13 @@ Description: how to control autobuilding
  The rules are:
  .
  If the file /etc/common-lisp/autobuild exists all
- packages for all compilers will be build.
+ packages for all compilers will be built.
  .
- If for a implementation foo the file 
+ If for an implementation foo the file 
  /etc/common-lisp/foo/autobuild exists all packages
  for that implementation will be build.
  .
- If for a implementation foo and a package bar the
+ If for an implementation foo and a package bar the
  file /etc/common-lisp/foo/bar/autobuild exists this
  package will be autobuild for that implementation.
 

@@ -4,15 +4,15 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.1 $'
+pversion='$Revision: 1.2 $'
 
 usage()
 {
         cat >&2 <<END
 Usage: $progname implentation-name package-name [OPTIONS]
 $progname checks if a package should be auto-built for a 
-particular implementation. It returns a status code of 1 for "yes"
-and 0 for "no". Returns 255 for a usage error.
+particular implementation. It returns a status code of 0 for "yes"
+and 1 for "no". Returns 2 for a usage error.
 
 Options: 
   -h                  Print this short help message
@@ -23,14 +23,19 @@ END
 ab_file_yes()
 {
     file=$1
-    echo $file
+    # file exists and is empty, equivalent to yes
+    if [ -f $file -a ! -s $file ]; then
+	true
+	return
+    fi
     if [ -r $file ]; then
 	first_line=$(cat $file | head -1 | tr "[A-Z]" "[a-z]")
-	if [ $(expr "yes" : "$first_line") ]; then
-	    exit 1
+	if [ "$(expr "$first_line" : ".*\(yes\).*")" ]; then
+	    true
+	    return
 	fi
     fi
-    exit 0
+    false
 }
 
 clc_bin_dir=/usr/lib/common-lisp/bin
@@ -38,7 +43,7 @@ clc_bin_dir=/usr/lib/common-lisp/bin
 if [ $(($# < 2)) = 1 ]; then 
   echo "Error: too few arguments" >&2
   usage
-  exit 255
+  exit 2
 fi
 
 # make sure that first two arguments are not an option switch
@@ -65,15 +70,15 @@ impl_bin=/usr/lib/common-lisp/bin/$impl.sh
 while [ $# != 0 ]; do
     case "$1" in
         -h) usage; exit 0;              ;;
-	-*) usage; exit 255;            ;;
-	*)  echo "Error: extra arguments"; usage; exit 255;            ;;
+	-*) usage; exit 2;            ;;
+	*)  echo "Error: extra arguments"; usage; exit 2;            ;;
     esac
     shift
 done
 
 if [ ! -x $impl_bin ]; then
   echo "$progname: can't find executable implementation script $impl_bin" >& 2
-  exit 255
+  exit 2
 fi
 
 # Check autobuilding by check for the most specific first
@@ -85,7 +90,7 @@ global_db=$ab_dir/autobuild
 if [ -r $source_ab ]; then
     # package's autobuild readable
     ab_file_yes $source_ab
-    if [ $? ]; then
+    if [ $? = 0 ]; then
 	exit 0
     else
 	exit 1
@@ -94,7 +99,7 @@ fi
 # use impl default
 if [ -r $impl_ab ]; then
     ab_file_yes $impl_ab
-    if [ $? ]; then
+    if [ $? = 0 ]; then
 	exit 0
     else
 	exit 1
@@ -104,7 +109,7 @@ fi
 # Use global default
 if [ -r $global_ab ]; then
     ab_file_yes $global_ab
-    if [ $? ]; then
+    if [ $? = 0 ]; then
 	exit 0
     else
 	exit 1

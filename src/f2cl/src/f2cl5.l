@@ -252,6 +252,13 @@
 		  ;; Complex conjugate
 		  (fortran-contagion (get-fun-arg-type (second arg))
 				     'complex8))
+		 ((member fun '(cmplx))
+		  ;; Complex.  Figure out the type of complex we
+		  ;; should return.
+		  (fortran-contagion
+		   (fortran-contagion (get-fun-arg-type (second arg))
+				      (get-fun-arg-type (third arg)))
+		   'complex8))
 		 ((member fun '(sin cos tan
 				asin acos atan atan2
 				exp flog alog10

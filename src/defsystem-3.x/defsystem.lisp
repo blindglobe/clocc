@@ -1351,10 +1351,9 @@
          #+(and Lucid SPARC)                  ("lisp" . "sbin")
          #+(and Lucid :IBM-RT-PC)             ("lisp" . "bbin")
 	 ;; PA is Precision Architecture, HP's 9000/800 RISC cpu
-	 #+(and Lucid PA)                    ("lisp" . "hbin")
-         #+excl                               ("cl"   . "fasl")
-         #+CMU           ("lisp" . ,(or (c:backend-fasl-file-type c:*backend*)
-					"fasl"))
+	 #+(and Lucid PA)		      ("lisp" . "hbin")
+         #+excl ("cl"   . ,(pathname-type (compile-file-pathname "foo.cl")))
+         #+CMU  ("lisp" . ,(or (c:backend-fasl-file-type c:*backend*) "fasl"))
 ;	 #+(and :CMU (not (or :sgi :sparc)))  ("lisp" . "fasl")
 ;        #+(and :CMU :sgi)                    ("lisp" . "sgif")
 ;        #+(and :CMU :sparc)                  ("lisp" . "sparcf")

@@ -252,7 +252,7 @@ INPUT-FILE               File containing Fortran code
 					  :name (pathname-name input-path)
 					  )
 			   (make-pathname :type extension)))))
-    (format t ";; ~S -> ~S~%" input-file output-file)
+    (format t "~&;; ~S -> ~S~%" input-file output-file)
     (let ((processed-file (preprocess input-file)))
       (fortran-to-lisp processed-file output-file
 		       :declaim declaim
@@ -2377,8 +2377,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.117 2002/06/30 13:09:58 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.118 2002/07/02 21:33:24 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.118  2002/07/02 21:33:24  rtoy
+;;; Always start output on a newline when printing the name of the source
+;;; and output files.
+;;;
 ;;; Revision 1.117  2002/06/30 13:09:58  rtoy
 ;;; Let f2cl also keep track of a list of functions that a function
 ;;; calls.  (Useful for generating dependencies.)

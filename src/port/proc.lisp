@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.12 2001/11/09 21:43:07 sds Exp $
+;;; $Id: proc.lisp,v 1.13 2003/02/14 17:23:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -229,9 +229,9 @@ and allows other processes to run."
   #+Allegro    (mp:process-allow-schedule)
   #+CMU        (mp:process-yield)
   #+CormanLisp FIXME
-  #+Genera     FIXME
+  #+Genera     (scl:process-allow-schedule)
   #+LispWorks  (mp:process-allow-scheduling)
-  #+Lucid      FIXME
+  #+Lucid      (lcl:process-allow-schedule)
   #+MCL        (ccl:process-yield)
   #-threads    (error 'not-implemented :proc (list 'process-yield)))
 

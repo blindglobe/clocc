@@ -118,8 +118,8 @@
 							    pn)))
 					     (:slurp-time
 					      #'(lambda (pn)
-	  					   (format *error-output*
-	  					      "Loading pathname ~s~%" pn)
+;;;;	  					   (format *error-output*
+;;;;	  					      "Loading pathname ~s~%" pn)
 						   (pathname-fload pn false false false)
 						   ;;;;(pathname-slurp pn false ':whole-file)
 						   ))))

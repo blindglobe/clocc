@@ -41,7 +41,7 @@ Contents
 	
 %page
 
-What?
+What is c-l-c?
 
 common-lisp-controller: standard of
 	installation source packages
@@ -128,15 +128,21 @@ perl Makefile.pl ; make ; make install
 
 How about lisp libraries in distributions?
 
-Some people released Lisp libraries into distributions like debian. 
+%center
+Some people released Lisp libraries 
+into distributions like debian. 
 
+%leftfill
 Problems:
 	all depend on one version of a lisp implementation
 	lisp implementations do incompatible changes to themselves without changing version
 	need to coordinate lisp and lisp library releases
 
 %pause
-Solution: common-lisp-controller
+%center
+Solution: 
+
+common-lisp-controller
 
 %page
 
@@ -175,7 +181,9 @@ Essential things have been overlooked:
 
 Right?
 
-No: 
+%pause
+%center
+No!
 
 %page
 
@@ -237,7 +245,6 @@ location and people are used to looking for documentation there
 		Adapt post-installation and pre-removal scripts
 		Test recompilation for new dialect
 		Upload
-
 %page
 
 How is common-lisp-controller implemented?
@@ -434,7 +441,29 @@ cmucl-safe.sh highlights
 
 How about normal hackers?
 
-XXX
+I am hacking McClim at the moment. 
+In my ~/.cmucl-init.lisp I've got:
+
+%font "typewriter", fore "green", size 3, leftfill
+(load "/var/lib/cmucl/site-init.lisp")
+
+(common-lisp-controller:add-translation 
+   :cl-library
+   "/home/pvaneynd/common-lisp/fasl/"
+   (make-pathname :directory '(:relative "MCCLIM" :wild-inferiors)
+                     :type :wild
+                     :case :common))
+
+(common-lisp-controller:add-translation 
+   :cl-library
+   "/home/pvaneynd/common-lisp/src/"
+   (make-pathname :directory '(:relative "MCCLIM" :wild-inferiors)
+                     :type "LISP"
+                     :case :common))
+
+(push "/home/pvaneynd/common-lisp/systems/"
+      mk:*central-registry*)
+%font "standard", fore "white", size 5, leftfill
 
 %page
 

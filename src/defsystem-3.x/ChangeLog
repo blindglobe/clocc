@@ -1,3 +1,24 @@
+2004-02-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed initialization of extensions in presence (or not) of language
+	definition.  (Thanks to Raymond Toy for finding this out.)
+
+2004-02-01  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp: Release number upped to 3.4i.
+
+	* README: README file updated.
+
+2004-01-31  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Made changes to FIND-SYSTEM to accommodate foreign systems.  Also made
+	FIND-SYSTEM signal a MISSING-SYSTEM condition instead of using the
+	simple condition machinery.
+
 2004-01-31  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

@@ -15,7 +15,7 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
-;;;$Id: ytload.lisp,v 1.6 2004/03/10 04:43:23 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7 2004/03/13 04:06:06 airfoyle Exp $
 
 (defvar tools-version* "1.3")
 
@@ -187,7 +187,7 @@
 		      (merge-pathnames 
 			 (make-pathname
 			     :name module
-			     :type "lmd")  ;;':unspecific
+			     :type (if (eq filename-case* ':upper) "LMD" "lmd"))
 			 (pathname ytload-directory* ))))))
 	 (cond ((probe-file mod-file)
 		(load mod-file))
@@ -242,7 +242,7 @@
       (cond ((and config-directory* (is-set directory-delimiter*))
 	     (return)))
       (cond ((not config-directory*)
-	     (format t "Directory containing yt-config.lisp (end with slash or other directory delimiter): ")
+	     (format t "Directory containing ytconfig.lisp (end with slash or other directory delimiter): ")
 	     (setq config-directory* (clear-read-line)))
 	    (t
 	     (format t "Assuming ytconfig.lisp is in ~a~%"

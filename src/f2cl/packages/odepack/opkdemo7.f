@@ -41,6 +41,7 @@ c-----------------------------------------------------------------------
      2   t, tout, tlast, tinit, errfac,
      3   atol, rtol, rwork, y, ydoti, elkup
       double precision eodsq, r4d
+      dimension n(1)
       dimension y(99), ydoti(99), tout(4), atol(2), rtol(2)
       dimension rwork(2002), iwork(125)
 c Pass problem parameters in the Common block test1.
@@ -74,8 +75,8 @@ c Compute the mesh width delta and other parameters.
       n14p1 = n14m1 + 2
       n34m1 = n34 - 1
       n34p1 = n34m1 + 2
-      n = nptsm1
-      nm1 = n - 1
+      n(1) = nptsm1
+      nm1 = n(1) - 1
 c
 c Set the initial profile (for output purposes only).
 c
@@ -90,8 +91,8 @@ c
 c
       if (npts .gt. 10) write (lout,1010)
       write (lout,1000)
-      write (lout,1100) eta,a,b,tinit,tlast,ml,mu,n
-      write (lout,1200) zero, (y(i), i=1,n), zero
+      write (lout,1100) eta,a,b,tinit,tlast,ml,mu,n(1)
+      write (lout,1200) zero, (y(i), i=1,n(1)), zero
 c
 c The j loop is over error tolerances.
 c
@@ -133,7 +134,7 @@ c         call DLSODI
           if (miter .ge. 4) call dlsodi (res, addabd, jacbd, n, y,
      1                      ydoti, t, tout(io), itol, rtol(j), atol(j),
      2                      1, istate, 0, rwork, lrw, iwork, liw, mf)
-          write (lout,2000) t, rwork(11), iwork(14),(y(i), i=1,n)
+          write (lout,2000) t, rwork(11), iwork(14),(y(i), i=1,n(1))
 c
 c If istate is not 2 on return, print message and loop.
           if (istate .ne. 2) then
@@ -148,7 +149,8 @@ c
      1                iwork(17), iwork(18)
 c
 c Estimate final error and print result.
-        errfac = elkup( n, y, rwork(21), itol, rtol(j), atol(j) )
+        itemp = n(1)
+        errfac = elkup( itemp, y, rwork(21), itol, rtol(j), atol(j) )
         if (errfac .gt. hun) then
           write (lout,5001)  errfac
           nerr = nerr + 1
@@ -196,33 +198,6 @@ c
 c end of main program for the DLSODI demonstration problem.
       end
 
-      subroutine res (n, t, y, v, r, ires)
-c This subroutine computes the residual vector
-c   r = g(t,y) - A(t,y)*v .
-c It uses nm1 = n - 1 from Common.
-c If ires = -1, only g(t,y) is returned in r, since A(t,y) does
-c not depend on y.
-c
-      integer i, ires, n, nm1
-      double precision t, y, v, r, r4d, eodsq, one, four, six,
-     1   fact1, fact4
-      dimension y(n), v(n), r(n)
-      common /test1/ r4d, eodsq, nm1
-      data one /1.0d0/, four /4.0d0/, six /6.0d0/
-c
-      call gfun (n, t, y, r)
-      if (ires .eq. -1) return
-c
-      fact1 = one/six
-      fact4 = four/six
-      r(1) = r(1) - (fact4*v(1) + fact1*v(2))
-      do 10 i = 2, nm1
-  10   r(i) = r(i) - (fact1*v(i-1) + fact4*v(i) + fact1*v(i+1))
-      r(n) = r(n) - (fact1*v(nm1) + fact4*v(n))
-      return
-c end of subroutine res for the DLSODI demonstration problem.
-      end
-
       subroutine gfun (n, t, y, g)
 c This subroutine computes the right-hand side function g(y,t).
 c It uses r4d = 1/(4*delta), eodsq = eta/delta**2, and nm1 = n - 1
@@ -247,6 +222,36 @@ c
 c end of subroutine gfun for the DLSODI demonstration problem.
       end
 
+      subroutine res (n, t, y, v, r, ires)
+c This subroutine computes the residual vector
+c   r = g(t,y) - A(t,y)*v .
+c It uses nm1 = n - 1 from Common.
+c If ires = -1, only g(t,y) is returned in r, since A(t,y) does
+c not depend on y.
+c
+      integer i, ires, n, nm1
+      double precision t, y, v, r, r4d, eodsq, one, four, six,
+     1   fact1, fact4
+      dimension y(*), v(*), r(*)
+      dimension n(*)
+      integer itemp
+      common /test1/ r4d, eodsq, nm1
+      data one /1.0d0/, four /4.0d0/, six /6.0d0/
+c
+      itemp = n(1)
+      call gfun (itemp, t, y, r)
+      if (ires .eq. -1) return
+c
+      fact1 = one/six
+      fact4 = four/six
+      r(1) = r(1) - (fact4*v(1) + fact1*v(2))
+      do 10 i = 2, nm1
+  10   r(i) = r(i) - (fact1*v(i-1) + fact4*v(i) + fact1*v(i+1))
+      r(n(1)) = r(n(1)) - (fact1*v(nm1) + fact4*v(n(1)))
+      return
+c end of subroutine res for the DLSODI demonstration problem.
+      end
+
       subroutine addabd (n, t, y, ml, mu, pa, m0)
 c This subroutine computes the matrix A in band form, adds it to pa,
 c and returns the sum in pa.   The matrix A is tridiagonal, of order n,
@@ -254,7 +259,8 @@ c with nonzero elements (reading across) of  1/6, 4/6, 1/6.
 c
       integer i, n, m0, ml, mu, mup1, mup2
       double precision t, y, pa, fact1, fact4, one, four, six
-      dimension y(n), pa(m0,n)
+      dimension y(*), pa(m0,*)
+      dimension n(*)
       data one/1.0d0/, four/4.0d0/, six/6.0d0/
 c
 c Set the pointers.
@@ -264,7 +270,7 @@ c Compute the elements of A.
       fact1 = one/six
       fact4 = four/six
 c Add the matrix A to the matrix pa (banded).
-      do 10 i = 1,n
+      do 10 i = 1,n(1)
         pa(mu,i) = pa(mu,i) + fact1
         pa(mup1,i) = pa(mup1,i) + fact4
         pa(mup2,i) = pa(mup2,i) + fact1
@@ -283,7 +289,8 @@ c
       integer i, n, m0, ml, mu, nm1
       double precision t, y, pa, r4d, eodsq, one, four, six,
      1   fact1, fact4
-      dimension y(n), pa(m0,n)
+      dimension y(*), pa(m0,8)
+      dimension n(1)
       common /test1/ r4d, eodsq, nm1
       data one/1.0d0/, four/4.0d0/, six/6.0d0/
 c
@@ -300,8 +307,8 @@ c
   110    continue
       pa(1,2) = pa(1,2) + fact1
       pa(1,1) = pa(1,1) + fact4
-      pa(n,n) = pa(n,n) + fact4
-      pa(n,nm1) = pa(n,nm1) + fact1
+      pa(n(1),n(1)) = pa(n(1),n(1)) + fact4
+      pa(n(1),nm1) = pa(n(1),nm1) + fact1
       return
 c end of subroutine addafl for the DLSODI demonstration problem.
       end
@@ -316,7 +323,8 @@ c from the Common block test1.
 c
       integer i, n, m0, ml, mu, mup1, mup2, nm1
       double precision t, y, s, pa, diag, r4d, eodsq, two, r2d
-      dimension y(n), s(n), pa(m0,n)
+      dimension y(*), s(*), pa(m0,*)
+      dimension n(*)
       common /test1/ r4d, eodsq, nm1
       data two/2.0d0/
 c
@@ -353,7 +361,7 @@ c Compute and store dg /dy
 c
 c                     n   n
 c Compute and store dg /dy
-      pa(mup1,n) = diag
+      pa(mup1,n(1)) = diag
 c
       return
 c end of subroutine jacbd for the DLSODI demonstration problem.
@@ -369,7 +377,8 @@ c from the Common block test1.
 c
       integer i, n, m0, ml, mu, nm1
       double precision t, y, s, pa, diag, r4d, eodsq, two, r2d
-      dimension y(n), s(n), pa(m0,n)
+      dimension y(*), s(8), pa(m0,*)
+      dimension n(*)
       common /test1/ r4d, eodsq, nm1
       data two/2.0d0/
 c
@@ -401,11 +410,11 @@ c Compute and store dg /dy
 c
 c                     n   n-1
 c Compute and store dg /dy
-      pa(n,nm1) = r2d*y(nm1) + eodsq
+      pa(n(1),nm1) = r2d*y(nm1) + eodsq
 c
 c                     n   n
 c Compute and store dg /dy
-      pa(n,n) = diag
+      pa(n(1),n(1)) = diag
 c
       return
 c end of subroutine jacfl for the DLSODI demonstration problem.
@@ -419,49 +428,46 @@ c The returned value is
 c elkup  =  norm of  ( y - ytrue ) / ( rtol*abs(ytrue) + atol ).
 c
       integer n, itol, i
-      double precision y, ewt, rtol, atol, y9, y99, y99a, y99b, y99c,
-     1   y99d, y99e, y99f, y99g, dvnorm
+      double precision y, ewt, rtol, atol, y9, y99,
+c      double precision y99a, y99b, y99c,
+c     1   y99d, y99e, y99f, y99g, dvnorm
       dimension y(n), ewt(n), y9(9), y99(99)
-      dimension y99a(16), y99b(16), y99c(16), y99d(16), y99e(16),
-     1          y99f(16), y99g(3)
-      equivalence (y99a(1),y99(1)), (y99b(1),y99(17)),
-     1      (y99c(1),y99(33)), (y99d(1),y99(49)), (y99e(1),y99(65)),
-     1      (y99f(1),y99(81)), (y99g(1),y99(97))
+      dimension rtol(*), atol(*)
+c      dimension y99a(16), y99b(16), y99c(16), y99d(16), y99e(16),
+c     1          y99f(16), y99g(3)
+c      equivalence (y99a(1),y99(1)), (y99b(1),y99(17)),
+c     1      (y99c(1),y99(33)), (y99d(1),y99(49)), (y99e(1),y99(65)),
+c     1      (y99f(1),y99(81)), (y99g(1),y99(97))
       data y9 /
      1 1.07001457d-01, 2.77432492d-01, 5.02444616d-01, 7.21037157d-01,
      1 9.01670441d-01, 8.88832048d-01, 4.96572850d-01, 9.46924362d-02,
      1-6.90855199d-03 /
-      data y99a /
+      data y99 /
      1 2.05114384d-03, 4.19527452d-03, 6.52533872d-03, 9.13412751d-03,
      1 1.21140191d-02, 1.55565301d-02, 1.95516488d-02, 2.41869487d-02,
      1 2.95465081d-02, 3.57096839d-02, 4.27498067d-02, 5.07328729d-02,
-     1 5.97163151d-02, 6.97479236d-02, 8.08649804d-02, 9.30936515d-02 /
-      data y99b /
+     1 5.97163151d-02, 6.97479236d-02, 8.08649804d-02, 9.30936515d-02,
      1 1.06448659d-01, 1.20933239d-01, 1.36539367d-01, 1.53248227d-01,
      1 1.71030869d-01, 1.89849031d-01, 2.09656044d-01, 2.30397804d-01,
      1 2.52013749d-01, 2.74437805d-01, 2.97599285d-01, 3.21423708d-01,
-     1 3.45833531d-01, 3.70748792d-01, 3.96087655d-01, 4.21766871d-01 /
-      data y99c /
+     1 3.45833531d-01, 3.70748792d-01, 3.96087655d-01, 4.21766871d-01,
      1 4.47702161d-01, 4.73808532d-01, 5.00000546d-01, 5.26192549d-01,
      1 5.52298887d-01, 5.78234121d-01, 6.03913258d-01, 6.29252015d-01,
      1 6.54167141d-01, 6.78576790d-01, 7.02400987d-01, 7.25562165d-01,
-     1 7.47985803d-01, 7.69601151d-01, 7.90342031d-01, 8.10147715d-01 /
-      data y99d /
+     1 7.47985803d-01, 7.69601151d-01, 7.90342031d-01, 8.10147715d-01,
      1 8.28963844d-01, 8.46743353d-01, 8.63447369d-01, 8.79046021d-01,
      1 8.93519106d-01, 9.06856541d-01, 9.19058529d-01, 9.30135374d-01,
      1 9.40106872d-01, 9.49001208d-01, 9.56853318d-01, 9.63702661d-01,
-     1 9.69590361d-01, 9.74555682d-01, 9.78631814d-01, 9.81840924d-01 /
-      data y99e /
+     1 9.69590361d-01, 9.74555682d-01, 9.78631814d-01, 9.81840924d-01,
      1 9.84188430d-01, 9.85656465d-01, 9.86196496d-01, 9.85721098d-01,
      1 9.84094964d-01, 9.81125395d-01, 9.76552747d-01, 9.70041743d-01,
      1 9.61175143d-01, 9.49452051d-01, 9.34294085d-01, 9.15063568d-01,
-     1 8.91098383d-01, 8.61767660d-01, 8.26550038d-01, 7.85131249d-01 /
-      data y99f /
+     1 8.91098383d-01, 8.61767660d-01, 8.26550038d-01, 7.85131249d-01,
      1 7.37510044d-01, 6.84092540d-01, 6.25748369d-01, 5.63802368d-01,
      1 4.99946558d-01, 4.36077986d-01, 3.74091566d-01, 3.15672765d-01,
      1 2.62134958d-01, 2.14330497d-01, 1.72640946d-01, 1.37031155d-01,
-     1 1.07140815d-01, 8.23867920d-02, 6.20562432d-02, 4.53794321d-02 /
-      data y99g / 3.15789227d-02, 1.98968820d-02, 9.60472135d-03 /
+     1 1.07140815d-01, 8.23867920d-02, 6.20562432d-02, 4.53794321d-02,
+     1 3.15789227d-02, 1.98968820d-02, 9.60472135d-03 /
 c
       if (n .eq. 99) go to 99
 c

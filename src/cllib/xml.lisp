@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.29 2001/03/20 23:54:15 sds Exp $
+;;; $Id: xml.lisp,v 2.30 2001/03/29 22:14:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,7 @@
 
 (export
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
-   with-xml-input with-xml-file xml-read-from-file))
+   with-xml-input with-xml-file xml-read-from-file read-standalone-char))
 
 ;;;
 ;;; Entities
@@ -712,12 +712,15 @@ The first character to be read is #\T."
           (xmlis-push str stream)
           (if (find (peek-char t stream t nil t) "&%<>" :test #'char=)
               (read stream t nil t)
-              (values (xml-read-text stream "<&")))))))
-    ((#\: #\=) char)))
+              (values (xml-read-text stream "<&")))))))))
 
 ;;;
 ;;; UI
 ;;;
+
+(defun read-standalone-char (stream char)
+  (declare (ignore stream))
+  char)
 
 (defun make-xml-readtable (&optional (rt (copy-readtable)))
   "Return a readtable for reading XML."
@@ -736,10 +739,10 @@ The first character to be read is #\T."
   (set-macro-character #\' (get-macro-character #\") nil rt)
   ;; handle namespaces
   (set-syntax-from-char #\: #\Space rt)
-  (set-macro-character #\: #'read-xml nil rt)
+  (set-macro-character #\: #'read-standalone-char nil rt)
   ;; attribute="value"
   (set-syntax-from-char #\= #\Space rt)
-  (set-macro-character #\= #'read-xml nil rt)
+  (set-macro-character #\= #'read-standalone-char nil rt)
   (set-syntax-from-char #\; #\Space rt) ; for HTML documents
   (set-syntax-from-char #\, #\Space rt) ; for HTML documents
   (set-syntax-from-char #\# #\Space rt) ; for HTML documents

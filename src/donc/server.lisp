@@ -334,15 +334,20 @@ code.
 (defun input-possible (socket-stream) 
   ;; should return t if input functions will not block, i.e. 
   ;; if they will return either eof or a character/byte 
+  #+clisp ;; note the stream is in binary mode here
+  #.(if (fboundp (find-symbol "READ-BYTE-WILL-HANG-P" :lisp))
+	;; added 2000/09/12 &&&
+	`(not (,(find-symbol "READ-BYTE-WILL-HANG-P" :lisp) socket-stream))
+      ;; above = (lisp:read-byte-look-ahead socket-stream)
+      '(let ((s-e-t (stream-element-type socket-stream))) 
+	(unwind-protect 
+	    (progn (setf (stream-element-type socket-stream) 'character) 
+		   ;; for binary stream gives wrong answer!@#$% 
+		   (not (lisp:read-char-will-hang-p socket-stream))) 
+	  (setf (stream-element-type socket-stream) s-e-t)))) 
   #+allegro ;; [***] see above 
   (excl::filesys-fn-will-not-block-p  
-   (- -1 (excl:stream-input-fn socket-stream))) 
-  #+clisp  ;; doesn't complain for binary stream but gives wrong answer!@#$% 
-  (let ((s-e-t (stream-element-type socket-stream))) 
-    (unwind-protect 
-        (progn (setf (stream-element-type socket-stream) 'character) 
-               (not (lisp:read-char-will-hang-p socket-stream))) 
-      (setf (stream-element-type socket-stream) s-e-t))) 
+   (- -1 (excl:stream-input-fn socket-stream)))
   #-(or allegro clisp) (error "no implementation for input-possible")) 
 
 ;; These are mostly for use by evalers and printers.
@@ -453,9 +458,13 @@ code.
   ;; also we want :eof or nil if there is no character available,
   ;; depending on whether the stream is closed
   #+clisp ;; note the stream is in binary mode here
-  (if (input-possible stream)
-      (let ((ans (read-byte stream nil :eof)))
-	(if (eq ans :eof) ans (code-char ans))))
+  #.(if (fboundp (find-symbol "READ-BYTE-NO-HANG" :lisp))
+	;; added 2000/09/12 &&&
+	`(let ((ans (,(find-symbol "READ-BYTE-NO-HANG" :lisp) stream nil :eof)))
+	  (if (symbolp ans) ans (code-char ans)))
+      '(if (input-possible stream)
+	(let ((ans (read-byte stream nil :eof)))
+	  (if (eq ans :eof) ans (code-char ans)))))
   #+allegro ;; already does the right thing
   (read-char-no-hang stream nil :eof)
   #-(or allegro clisp) (error "not yet implemented"))
@@ -584,6 +593,9 @@ function is also error protected.
   ;; (if his reader succeeds).
   (process-output c) ;; write whatever pending output we can
   (when (and (slot-value c 'done) (null (output c)))
+    ;; redhat 6.2 closes with rst instead of fin if there's unread input !
+    ;; this process-input just reduces the chance that this will happen
+    (process-input c)
     (disconnect-connection c))
   (unless (slot-value c 'done)
     (process-input c)) ;; read whatever characters are waiting

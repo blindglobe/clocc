@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.17 2001/03/13 23:09:07 sds Exp $
+;;; $Id: ext.lisp,v 1.18 2001/04/03 18:49:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -36,6 +36,7 @@
   ((proc :reader code-proc :initarg :proc)
    (mesg :type simple-string :reader code-mesg :initarg :mesg)
    (args :type list :reader code-args :initarg :args))
+  (:documentation "An error in the user code.")
   (:report (lambda (cc out)
              (declare (stream out))
              (format out "[~s]~@[ ~?~]" (code-proc cc)
@@ -44,13 +45,16 @@
 
 (define-condition case-error (code)
   ((mesg :type simple-string :reader code-mesg :initform
-         "`~s' evaluated to `~s', not one of [~@{`~s'~^ ~}]")))
+         "`~s' evaluated to `~s', not one of [~@{`~s'~^ ~}]"))
+  (:documentation "An error in a case statement.
+This carries the function name which makes the error message more useful."))
 
 (define-condition not-implemented (code)
   ((mesg :type simple-string :reader code-mesg :initform
          "not implemented for ~a [~a]")
    (args :type list :reader code-args :initform
-         (list (lisp-implementation-type) (lisp-implementation-version)))))
+         (list (lisp-implementation-type) (lisp-implementation-version))))
+  (:documentation "Your implementation does not support this functionality."))
 
 ;;;
 ;;; Extensions

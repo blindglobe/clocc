@@ -130,7 +130,8 @@
 
 (defun lookup-vble-type (vble &optional (decls *explicit_vble_decls*))
   ;;(format t "lookup-vble: ~a~%" vble)
-  (cond ((member vble *declared_vbles*)
+  (cond ((or (member vble *declared_vbles*)
+	     (member vble *subprog-arglist*))
 	 ;;(format t "  is declared var~%")
 	 ;;(format t "  explicit_vbld_decls = ~A~%" *explicit_vble_decls*)
 	 
@@ -180,7 +181,7 @@
 ;;
 ;; Coerce 0 to the types T1 and T2 and add the result.  The type of
 ;; the sum is the desired type.  However, we convert some of the types
-;; to one's that f2cl understands.
+;; to ones that f2cl understands.
 (defun fortran-contagion (t1 t2)
   (let ((sum (+ (coerce 0 t1) (coerce 0 t2))))
     (typecase sum
@@ -227,7 +228,14 @@
 		  ;; Look up array references.
 		  (let ((result (get-fun-arg-type (second arg))))
 		    (values (get-fun-arg-type (second arg)) nil)))
-		 ((member fun '(+ - * f2cl/ expt))
+		 ((member fun '(+ -))
+		  ;; Basic arithmetic operations that might be unary
+		  ;; operators.
+		  (if (third arg)
+		      (fortran-contagion (get-fun-arg-type (second arg))
+					 (get-fun-arg-type (third arg)))
+		      (get-fun-arg-type (second arg))))
+		 ((member fun '(* f2cl/ expt))
 		  ;; Basic arithmetic operations.
 		  (fortran-contagion (get-fun-arg-type (second arg))
 				     (get-fun-arg-type (third arg))))
@@ -2102,8 +2110,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.73 2002/01/08 03:24:44 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.74 2002/01/09 15:31:08 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.74  2002/01/09 15:31:08  rtoy
+;;; o In GET-FUN-ARG-TYPE, we weren't correctly handling the case of unary
+;;;   + and -.
+;;; o When looking up the type of a variable, we need to check for the
+;;;   variable in *subprog-arglist* as well as *declared_vbles*!
+;;;
+;;; Thanks to Mike Koerber for sending sample code where this fails.
+;;;
 ;;; Revision 1.73  2002/01/08 03:24:44  rtoy
 ;;; o Correct the previous change about looking up the type of array
 ;;;   references.  If we have an fref, it can't be an array slice because

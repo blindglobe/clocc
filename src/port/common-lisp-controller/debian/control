@@ -14,6 +14,3 @@ Description: This is a common lisp source and compiler manager.
  With this package you can install and manage 
  common lisp sources and compilers and have
  a working defsystem system.
-Description-it: Questo è un gestore di compilatore e sorgenti common lisp
- Con questo pacchetto è possibile installare e gestire sorgenti common
- lisp e compilatori che abbiano un sistema defsystem funzionante.

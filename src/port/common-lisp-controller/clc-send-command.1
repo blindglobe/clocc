@@ -1,0 +1,52 @@
+.\" 	-*- Mode: Nroff -*-
+.TH clc-send-command "June 5, 2002"
+.AT 3
+.SH NAME
+clc-send-command \- sends commands to the clc-build-daemon
+.SH SYNOPSIS
+.B clc-send-command
+.RB [command]
+.RB [package]
+.RB [implementation]
+.RB [options]
+.SH DESCRIPTION
+.I clc-send-command
+Sends commands to the local clc-build-daemon(8) which will then
+try to execute this command.
+
+The 
+.B command
+given can be either 
+.I recompile
+or
+.I remove.
+
+.SH OPTIONS
+.TP
+.B --verbose
+Show the output of the actions.
+.TP 
+.B --quiet
+Don't show output.
+.TP
+.B --debug
+Show all replies and requests to and from the daemon.
+
+.SH FILES
+
+.TP 10n
+.BR /usr/bin/clc-send-command
+The executable.
+
+.SH SEE ALSO
+clc-build-daemon(8)
+
+.SH BUGS
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH AUTHOR
+Peter Van Eynde (pvaneynd@debian.org), 2002
+
+.PP

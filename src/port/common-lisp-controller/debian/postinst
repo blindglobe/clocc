@@ -22,8 +22,19 @@ set -e
 #     installation fails and the `postinst' is called with `abort-upgrade',
 #     `abort-remove' or `abort-deconfigure'.
 
+. /usr/share/debconf/confmodule
+
 case "$1" in
     configure)
+    update-inetd --add "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
+
+    db_get common-lisp-controller/auto-build
+    if [ "$RET" = "true" ]; then
+      touch /etc/common-lisp/autobuild
+    else
+      rm -f /etc/common-lisp/autobuild 
+    fi
+    # in any case we rebuild with defsystem loaded...
     for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	if [ -f "$compiler" -a -r "$compiler" ] ; then
 	 i=${compiler##.*/}
@@ -40,6 +51,7 @@ case "$1" in
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
+        update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	    if [ -f "$compiler" -a -r "$compiler" ] ; then
 	     i=${compiler##.*/}

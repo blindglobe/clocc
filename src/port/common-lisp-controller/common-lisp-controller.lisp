@@ -2,63 +2,12 @@
 
 (in-package :cl-user)
 
-(defpackage "COMMON-LISP-CONTROLLER" 
+(defpackage "COMMON-LISP-CONTROLLER"
     (:use "COMMON-LISP")
   (:export "INIT-COMMON-LISP-CONTROLLER"
            "ADD-PROJECT-DIRECTORY"
   	   "ADD-TRANSLATION")
   (:nicknames "C-L-C"))
-
-(in-package :make)
-
-;; we need to hack the require to
-;; call clc-send-command on load failure...
-
-(defun new-require (module-name &optional pathname definition-pname
-				default-action (version *version*))
-  ;; If the pathname is present, this behaves like the old require.
-  (unless (and module-name
-	       (find #-CMU (string module-name)
-		     #+CMU (string-downcase (string module-name))
-		     *modules* :test #'string=))
-    (cond (pathname
-	   (funcall *old-require* module-name pathname))
-	  ;; If the system is defined, load it.
-	  ((find-system module-name :load-or-nil definition-pname)
-           (or
-            ;; try to load the binary first
-            (operate-on-system module-name :load
-                               :force *force*
-                               :version version
-                               :test *oos-test*
-                               :verbose *oos-verbose*
-                               :load-source-if-no-binary nil
-                               :bother-user-if-no-binary nil
-                               :compile-during-load nil
-                               :load-source-instead-of-binary nil
-                               :minimal-load *minimal-load*)
-           (operate-on-system module-name :load
-	     :force *force*
-	     :version version
-	     :test *oos-test*
-	     :verbose *oos-verbose*
-	     :load-source-if-no-binary *load-source-if-no-binary*
-	     :bother-user-if-no-binary *bother-user-if-no-binary*
-	     :compile-during-load *compile-during-load*
-	     :load-source-instead-of-binary *load-source-instead-of-binary*
-	     :minimal-load *minimal-load*)
-           )
-	  ;; If there's a default action, do it. This could be a progn which
-	  ;; loads a file that does everything.
-	  ((and default-action
-		(eval default-action)))
-	  ;; If no system definition file, try regular require.
-	  ;; had last arg  PATHNAME, but this wasn't really necessary.
-	  ((funcall *old-require* module-name))
-	  ;; If no default action, print a warning or error message.
-	  (t
-	   (format t "~&Warning: System ~A doesn't seem to be defined..."
-		   module-name)))))
 
 (in-package :common-lisp-controller)
 
@@ -72,15 +21,15 @@
                                   #+openmcl "l" #+openmcl "lsp"
                                   #+openmcl "c" #+openmcl "h"))
 
-(defvar *fasl-type* 
-  (load-time-value 
+(defvar *fasl-type*
+  (load-time-value
    (pathname-type
     (compile-file-pathname "foo.lisp")
     :case :common))
   "This is the type of compiled lisp files.")
 
 
-(defun add-translation (for new-root new-part)                           
+(defun add-translation (for new-root new-part)
   "Adds a translation to the logical pathname named by FOR (:cl-library or :cl-systems)
 NEW-ROOT is the new root for this translation, NEW-PART is the part below the
 root that should be added.
@@ -101,13 +50,13 @@ This function returns nothing."
         ;; force to pathnames
         (new-root (pathname new-root))
         (new-part (pathname new-part)))
-    
+
     (assert (eq (first (pathname-directory new-part))
                 :relative)
             (new-part)
             "The NEW-PART parameter ~S is not relative to something, it has to be"
             new-part)
-    
+
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
            (make-pathname :defaults new-part
@@ -150,8 +99,8 @@ This function returns nothing."
                   new-dest)
             (logical-pathname-translations lp-host)))
     (values)))
-      
-                           
+
+
 (defun init-common-lisp-controller (fasl-root
                                     &key (source-root "/usr/share/common-lisp/"))
   "configures FASL-ROOT as the base of the fasl tree and optionally
@@ -186,7 +135,7 @@ Returns nothing"
                                 :host (pathname-host (logical-pathname "CL-LIBRARY:"))
                                 :case :common)
                  ;; ;**;*.*.*
-                 ;; to                 
+                 ;; to
                  (make-pathname :directory (append (pathname-directory fasl-root)
                                                    (list :wild-inferiors))
                                 :defaults fasl-root))
@@ -194,7 +143,7 @@ Returns nothing"
                                 :host (pathname-host (logical-pathname "CL-LIBRARY:"))
                                 :case :common)
                  ;; ;**;*.*.*
-                 ;; to                 
+                 ;; to
                  (make-pathname :directory (append (pathname-directory fasl-root)
                                                    (list :wild-inferiors))
                                 :defaults fasl-root))))
@@ -215,7 +164,7 @@ Returns nothing"
                                 :type "SYSTEM"
                                 :case :common)
                  ;; ;**;*.*.*
-                 ;; to                 
+                 ;; to
                  (make-pathname :directory (append (pathname-directory system-root
                                                                        :case :common)
                                                    (list :wild-inferiors))
@@ -227,7 +176,7 @@ Returns nothing"
                                 :type "SYSTEM"
                                 :case :common)
                  ;; ;**;*.*.*
-                 ;; to                 
+                 ;; to
                  (make-pathname :directory (append (pathname-directory system-root
                                                                        :case :common)
                                                    (list :wild-inferiors))
@@ -237,7 +186,7 @@ Returns nothing"
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)
-  "This registers a SOURCE-ROOT and FASL-ROOT translation for the subdirectory 
+  "This registers a SOURCE-ROOT and FASL-ROOT translation for the subdirectory
 project for all PROJECTS.
 Optionally you can also register SYSTEM-DIRECTORY.
 Returns nothing"
@@ -245,13 +194,13 @@ Returns nothing"
   (loop for project in projects
         do
         (let ((project (string-upcase project)))
-          (add-translation 
+          (add-translation
            :cl-library fasl-root
            (make-pathname :directory (list :relative project :wild-inferiors)
                           :type :wild
                           :case :common))
           (loop for extention in *source-extentions* do
-                (add-translation 
+                (add-translation
                  :cl-library source-root
                  (make-pathname :directory (list :relative project :wild-inferiors)
                                 :type extention

@@ -1,0 +1,36 @@
+.\" 	-*- Mode: Nroff -*-
+.TH register-common-lisp-implementation "June 5, 2002"
+.AT 3
+.SH NAME
+(un)register-common-lisp-{implementation|source) \- internal clc commans
+.SH SYNOPSIS
+.B register-common-lisp-implementation 
+.I implementation
+
+.B unregister-common-lisp-implementation 
+.I implementation
+
+.B register-common-lisp-source 
+.I source-package
+
+.B unregister-common-lisp-source 
+.I source-package
+
+.SH DESCRIPTION
+These are internal 
+.I common lisp controller
+commands that the common lisp source and implementation packages
+can use to register themselves to clc.
+
+.SH SEE ALSO
+clc-build-daemon(8)
+
+.SH BUGS
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH AUTHOR
+Peter Van Eynde (pvaneynd@debian.org), 2002
+
+.PP

@@ -1,5 +1,10 @@
 PVE 15-MAY-2002
     Created version 3 with a build daemon!
+    Changes:
+        - depricated the repositories
+        - build daemon
+        - minial debconf interface
+        - man pages
 
 PVE 10-MAY-2001
     Added the install-defsystem support.

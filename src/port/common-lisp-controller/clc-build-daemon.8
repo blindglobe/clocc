@@ -1,0 +1,41 @@
+.\" 	-*- Mode: Nroff -*-
+.\" Man page for clc-build-daemon
+.TH cmuclconfig 8 "June 5, 2002"
+.AT 3
+.SH NAME
+clc-build-daemon \- common lisp on-the fly package builder
+.SH SYNOPSIS
+.B clc-build-daemon
+.SH DESCRIPTION
+.B clc-build-daemon
+This is a daemon, invoked by inetd that rebuilds installed
+.I common lisp packages 
+for specified 
+.I common lisp implementations.
+
+.SH FILES
+
+.TP 10n
+.BR /usr/sbin/clc-build-daemon
+The executable
+.TP
+.BR /usr/share/common-lisp/source/<package>
+Location of source package
+.TP
+.BR /usr/lib/common-lisp/<implementation>/<package>
+Location of compiled code
+.PP
+
+.SH SEE ALSO
+clc-send-command(1)
+
+.SH BUGS
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH AUTHOR
+Peter Van Eynde (pvaneynd@debian.org), 2002
+
+
+.PP

@@ -35,19 +35,9 @@ The main idea is the following:
 Put the source trees under:
 /usr/share/common-lisp/source/<package-name>
 
-This can, and in most cases will be a symbolic link to
-a directory in
-/usr/share/common-lisp/repositories/...
-
-Here there is a place to put for example sourceforge-hosted
-libraries. These can then be automaticly updated with cvs
-commands. Note too that <package-name> has to be a portable pathname,
+ Note too that <package-name> has to be a portable pathname,
 so can only contain A-Z0-9- (a-z also seems to work most of the
-time). Placing the true files in the repository directory and making
-only a confirming symbolic link can help in getting a valid logical
-pathname (for example we link /usr/share/common-lisp/source/defsystem
-to
-/usr/share/common-lisp/repositories/sourceforge/clocc/clocc/src/defsystem-3.x).
+time). 
 
 The system definitions in
 /usr/share/common-lisp/systems/<package-name>.system
@@ -96,39 +86,48 @@ The script should be a shell script or binary accepting the following
 commands:
 
 	<name>.sh rebuild <package-name>+
-The should load and recompile the given packages. It should
-load and use mk-defsystem automagicly. It should also if possible
-create the libraries for that implementation.
-<run as nobody>
+The should load and recompile the given packages.  It should also if
+possible create the libraries for that implementation.  <run as nobody>
 
 	<name>.sh remove <package-name>*
-This should remove all fasl, log and other files belonging
-to the package
-<run as nobody>
+This should remove all fasl, log and other files belonging to the
+package <run as nobody>
 	
 	<name>.sh install-defsystem
 This should compile and install defsystem in the default image.
+It should first load 
+/usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller.lisp
+then call common-lisp-controller:init-common-lisp-controller with the
+correct parameters, then it should compile the common-lisp-controller file
+and load it again, then load and compile
+cl-library:;defsystem;defsystem.lisp
+and to finish it should load and compile
+/usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller-post-defsystem.lisp
+After all that it should 
+(push "cl-systems:"
+  	(symbol-value (intern "*CENTRAL-REGISTRY*"
+			      (find-package :make))))
+and dump a new core.
 <run as root>
 
 	<name>.sh remove-defsystem
 This should remove the compiled defsystem and support in the default
-images.
-<run as root>
+images.  <run as root>
 
 	<name>.sh make-user-image <file> 
-This should load and evalute the <file> and then dump a lisp image into
-the users home directory.
-<run as the user>
+This should load and evalute the <file> and then dump a lisp image
+into the users home directory.  <run as the user>
 
 Notice that there are subtle security problems here: we don't want
 something as powerful as a common lisp compiler running as root, but
 we need to have root as the owner of the fasl's for obvious
-reasons. The solution is to re-chown the /usr/lib/common-lisp hierarchy
-to the user "nobody", compile the stuff as user "nobody" and then
-re-chown the hierarchy back to root. In this was we run the compiler
-as a user who can do little harm, and at the same time the resulting
-files will be safe. Notice that we should change the umask to 077 to
-avoid generating writable files. 
+reasons. The solution is to re-chown the
+/usr/lib/common-lisp/<implementation>/<package> hierarchy to the user
+"nobody", compile the stuff as user "nobody" and then re-chown the
+hierarchy back to root. In this was we run the compiler as a user who
+can do little harm, and at the same time the resulting files will be
+safe. Notice that we should change the umask to 077 to avoid
+generating writable files.
 
 All of these commands are run as 'nobody', except install-defsystem
 and remove-defsystem because they modify files outside of the

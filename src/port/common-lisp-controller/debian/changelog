@@ -1,3 +1,12 @@
+common-lisp-controller (2.99) unstable; urgency=low
+
+  * Now with clc-build-daemon: build lisp packages when you need them!
+  * Now with debconf configuration system 
+  * repositories is depricated!
+  * man pages
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat,  8 Jun 2002 22:58:26 +0200
+
 common-lisp-controller (2.15) unstable; urgency=low
 
   * Small fix from  Frederic Dumont <frederic.dumont@easynet.be> for

@@ -1,0 +1,17 @@
+How to control autobuilding
+
+ Autobuilding packages is controlled with placing files in certain
+ places. You can create those files yourself with "touch".
+
+ The rules are:
+
+ - If the file /etc/common-lisp/autobuild exists all
+ packages for all compilers will be build.
+
+ - If for a implementation foo the file
+ /etc/common-lisp/foo/autobuild exists all packages
+ for that implementation will be build.
+
+ - If for a implementation foo and a package bar the
+ file /etc/common-lisp/foo/bar/autobuild exists this
+ package will be autobuild for that implementation.

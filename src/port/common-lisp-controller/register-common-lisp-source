@@ -45,7 +45,11 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
      i=${compiler##.*/}
      i=${i%.sh}
-     /usr/sbin/clc-send-command --quiet recompile $0 $i
+     if [ -f /etc/common-lisp/autobuild -o \
+          -f "/etc/common-lisp/$i/autobuild" -o \
+          -f "/etc/common-lisp/$i/$0/autobuild" ] ; then
+       /usr/sbin/clc-send-command --quiet recompile $0 $i
+     fi
     fi
 done
 

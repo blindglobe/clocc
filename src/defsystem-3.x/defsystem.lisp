@@ -4156,11 +4156,13 @@ the system definition, if provided."
 #+sbcl
 (eval-when (:load-toplevel :execute)
 
-(defun sbcl-mk-defsystem-module-provider (module-name)
+(defun sbcl-mk-defsystem-module-provider (name)
   ;; Let's hope things go smoothly.
-  (mk:load-system module-name :load-or-nil
-                  :compile-during-load t
-                  :verbose nil))
+    (let ((module-name (string-downcase (string name))))
+      (when (mk:find-system module-name :load-or-nil)
+	(mk:load-system module-name
+			:compile-during-load t
+			:verbose nil)))
 
 (pushnew 'sbcl-mk-defsystem-module-provider sb-ext:*module-provider-functions*)
 )

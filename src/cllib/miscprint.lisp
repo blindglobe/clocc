@@ -4,18 +4,19 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.17 2004/12/24 19:12:57 sds Exp $
+;;; $Id: miscprint.lisp,v 1.18 2004/12/24 19:30:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `with-collect'
+  ;; `with-collect', `count-all'
   (require :cllib-simple (translate-logical-pathname "cllib:simple")))
 
 (in-package :cllib)
 
 (export
  '(hash-table-keys hash-table->alist alist->hash-table make-ht-readtable pophash
+   print-counts
    print-all-ascii print-all-packages plist->alist alist->plist plist= alist=))
 
 ;;;
@@ -125,6 +126,19 @@ The inverse is `hash-table->alist'."
   (multiple-value-bind (value present-p) (gethash object ht)
     (when present-p (remhash object ht))
     (values value present-p)))
+
+(defun print-counts (seq &key (out *standard-output*) (key #'value)
+                     (key-numeric-p nil)
+                     (format (if key-numeric-p
+                                 (formatter ";; ~5:D --> ~5:D~%")
+                                 (formatter ";; ~5A --> ~5:D~%"))))
+  "Print counts of elements in the sequence, sorted by frequency.
+If KEY-NUMERIC-P is non-NIL, sort by KEY instead."
+  (when out
+    (loop :for (object . count)
+      :in (sort (cdr (hash-table->alist (count-all seq :key key)))
+                #'< :key (if key-numeric-p #'car #'cdr))
+      :do (format out format object count))))
 
 ;;;###autoload
 (defun make-ht-readtable (&optional (rt (copy-readtable)))

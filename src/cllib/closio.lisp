@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.13 2000/08/14 19:31:46 sds Exp $
+;;; $Id: closio.lisp,v 1.14 2000/08/19 21:51:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,7 +16,8 @@
 
 (in-package :cllib)
 
-(export '(+clos-readtable+ make-clos-readtable macroexpand-r))
+(export
+ '(*closio-method* +clos-readtable+ make-clos-readtable macroexpand-r))
 
 ;;;
 ;;; {{{ print structure in CMUCL via `print-object'
@@ -34,11 +35,32 @@
 ;;; }}}{{{ read CLOS objects
 ;;;
 
+(defcustom *closio-method* symbol nil
+  "The technique used for CLOS i/o.
+Acceptable values are:
+  nil         -- use the default (unreadable) technique - #<>.
+  :slot-name  -- output each (bound) slot, by name (really readable: `read'
+                 will return an `equal' object when `*print-readably*' is T)
+  :initarg    -- output only the slots which have an initarg (user-controlled)
+This variable should have the same value when reading and writing,
+otherwise you will probably get an error.")
+
 (eval-when (compile load eval)  ; CMUCL for `+clos-readtable+'
 (defun read-object (st char arg)
   "Read an instance of a CLOS class printed as #[name{ slot val}]"
   (declare (ignore char arg))
-  (apply #'make-instance (read-delimited-list #\] st t)))
+  (case *closio-method*
+    (:slot-name
+     (do* ((all (read-delimited-list #\] st t)) (res (make-instance (car all)))
+           (tail (cdr all) (cddr tail)))
+          ((endp tail) res)
+       (setf (slot-value res (car tail)) (cadr tail))))
+    (:initarg (apply #'make-instance (read-delimited-list #\] st t)))
+    (nil (error 'code :proc 'read-object :args '(*closio-method* nil)
+                :mesg "~s is ~s"))
+    (t (error 'case-error :proc 'read-object :args
+              (list '*closio-method* *closio-method*
+                    :initarg :slot-name nil)))))
 
 (defun make-clos-readtable (&optional (rt (copy-readtable)))
   "Return the readtable for reading #[]."
@@ -63,15 +85,23 @@
   (setf (excl:package-definition-lock (find-package :common-lisp)) nil))
 
 (defmethod print-object ((obj standard-object) (out stream))
-  (if *print-readably*
-      (loop :with cl = (class-of obj)
-            :initially (format out "#[~s" (class-name cl))
-            :for slot :in (class-slot-list cl nil)
-            :and init :in (class-slot-initargs cl nil)
-            :when (slot-boundp obj slot)
-            :do (format out " ~s ~s" init (slot-value obj slot))
-            :finally (write-string "]" out))
-      (call-next-method)))
+  (case *closio-method*
+    (:slot-name
+     (loop :with cl = (class-of obj)
+           :initially (format out "#[~w" (class-name cl))
+           :for slot :in (class-slot-list cl nil)
+           :when (slot-boundp obj slot)
+           :do (format out " ~w ~w" slot (slot-value obj slot))
+           :finally (write-string "]" out) (return obj)))
+    (:initarg
+     (loop :with cl = (class-of obj)
+           :initially (format out "#[~w" (class-name cl))
+           :for slot :in (class-slot-list cl nil)
+           :and init :in (class-slot-initargs cl nil)
+           :when (and init (slot-boundp obj slot))
+           :do (format out " ~w ~w" init (slot-value obj slot))
+           :finally (write-string "]" out) (return obj)))
+    (t (call-next-method))))
 
 #+allegro
 (eval-when (compile)

@@ -8,55 +8,26 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.1 1999/11/24 17:07:09 sds Exp $
+;;; $Id: net.lisp,v 1.2 2000/02/10 17:55:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.2  2000/02/10 17:55:50  sds
+;;; (hostent): new defstruct
+;;; (resolve-host-ipaddr): return a `hostent' instance
+;;; instead of multiple values.
+;;;
 ;;; Revision 1.1  1999/11/24 17:07:09  sds
 ;;; Cross-implementation Portability System
 ;;;
 ;;;
 
 (in-package :cl-user)
+(require "ext")
+
 
 ;;;
 ;;; name resulution
 ;;;
-
-(defun resolve-host-ipaddr (host)
-  "Call gethostbyname(3) or gethostbyaddr()."
-  #+allegro
-  (etypecase host
-    (string
-     (if (every (lambda (ch) (or (char= ch #\.) (digit-char-p ch))) host)
-         (resolve-host-ipaddr (dotted-to-ipaddr host))
-         (values host nil (socket:lookup-hostname host) 2)))
-    (integer (values (socket:ipaddr-to-hostname host) nil
-                     (ipaddr-to-dotted host) 2)))
-  ;; #+clisp (lisp:resolve-host-ipaddr host)
-  #+cmu (let ((he (ext:lookup-host-entry host)))
-          (values (ext:host-entry-name he)
-                  (ext:host-entry-aliases he)
-                  (mapcar #'ipaddr-to-dotted (ext:host-entry-addr-list he))
-                  (ext::host-entry-addr-type he)))
-  #+lispworks
-  (let ((he (fli:dereference (comm::gethostbyname host))))
-    (values (fli:convert-from-foreign-string
-             (fli:foreign-slot-value he 'comm::h_name))
-            (loop :with pp = (fli:foreign-slot-value he 'comm::h_aliases)
-                  :for cp = (fli:dereference pp)
-                  :until (fli:null-pointer-p cp)
-                  :collect (fli:convert-from-foreign-string cp)
-                  :do (fli:incf-pointer pp))
-            (loop :with pp = (fli:foreign-slot-value he 'comm::h_addr_list)
-                  :for cp = (fli:dereference pp :type '(:unsigned :long))
-                  :until (zerop cp) ; broken !!!
-                  :collect (ipaddr-to-dotted cp)
-                  :do (fli:incf-pointer pp))
-            (fli:foreign-slot-value he 'comm::h_addrtype)
-            (fli:foreign-slot-value he 'comm::h_length)))
-  ;; #+gcl
-  #-(or allegro cmu lispworks)
-  (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 (defun ipaddr-to-dotted (ipaddr)
   "Number --> string."
@@ -76,6 +47,61 @@
     (+ (ash (first ll) 24) (ash (second ll) 16)
        (ash (third ll) 8) (fourth ll))))
 
+(defstruct hostent
+  "see gethostbyname(3) for details"
+  (name "" :type simple-string)
+  (aliases nil :type list)
+  (addr-list nil :type list)
+  (addr-type 2 :type fixnum))
+
+(defun resolve-host-ipaddr (host)
+  "Call gethostbyname(3) or gethostbyaddr(3)."
+  #+allegro
+  (let* ((ipaddr
+          (etypecase host
+            (string
+             (if (every (lambda (ch) (or (char= ch #\.) (digit-char-p ch)))
+                        host)
+                 (socket:dotted-to-ipaddr host) (socket:lookup-hostname host)))
+            (integer host)))
+         (name (socket:ipaddr-to-hostname ipaddr)))
+    (make-hostent :name name :addr-list
+                  (list (socket:ipaddr-to-dotted ipaddr))))
+  #+(and clisp syscalls)
+  (let ((he (posix:resolve-host-ipaddr host)))
+    (make-hostent :name (posix::hostent-name he)
+                  :aliases (posix::hostent-aliases he)
+                  :addr-list (posix::hostent-addr-list he)
+                  :addr-type (posix::hostent-addr-type he)))
+  #+cmu
+  (let ((he (ext:lookup-host-entry host)))
+    (make-hostent :name (ext:host-entry-name he)
+                  :aliases (ext:host-entry-aliases he)
+                  :addr-list (mapcar #'ipaddr-to-dotted
+                                     (ext:host-entry-addr-list he))
+                  :addr-type (ext:host-entry-addr-type he)))
+  #+lispworks
+  (let ((he (fli:dereference (comm::gethostbyname host))))
+    (make-hostent :name (fli:convert-from-foreign-string
+                         (fli:foreign-slot-value he 'comm::h_name))
+                  :aliases
+                  (loop :with pp = (fli:foreign-slot-value he 'comm::h_aliases)
+                        :for cp = (fli:dereference pp)
+                        :until (fli:null-pointer-p cp)
+                        :collect (fli:convert-from-foreign-string cp)
+                        :do (fli:incf-pointer pp))
+                  :addr-list
+                  (loop :with pp =
+                        (fli:foreign-slot-value he 'comm::h_addr_list)
+                        :for cp = (fli:dereference pp :type '(:unsigned :long))
+                        :until (zerop cp) ; broken !!!
+                        :collect (ipaddr-to-dotted cp)
+                        :do (fli:incf-pointer pp))
+                  :addr-type (fli:foreign-slot-value he 'comm::h_addrtype)))
+  ;; #+gcl
+  #-(or allegro cmu lispworks (and clisp syscalls))
+  (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
+
 ;;;
 ;;; Sockets
 ;;;
@@ -91,7 +117,8 @@
   "Open a socket connection to HOST at PORT."
   (declare (type (or integer string) host) (fixnum port) (type boolean bin))
   (let ((host (etypecase host
-                (string host) (integer (resolve-host-ipaddr host)))))
+                (string host)
+                (integer (hostent-name (resolve-host-ipaddr host))))))
     #+allegro (socket:make-socket :remote-host host :remote-port port
                                   :format (if bin :binary :text))
     #+clisp (lisp:socket-connect port host :element-type

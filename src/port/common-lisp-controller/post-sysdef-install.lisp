@@ -13,6 +13,39 @@
 ;; Remove the :cltl2 that mk-defsystem3 pushes onto features
 (setq cl:*features* (delete :cltl2 *features*))
 
+;; Take from CLOCC's GPL'd Port package
+(defun getenv (var)
+  "Return the value of the environment variable."
+  #+allegro (sys::getenv (string var))
+  #+clisp (sys::getenv (string var))
+  #+(or cmu scl) (cdr (assoc (string var) ext:*environment-list* :test #'equalp
+                    :key #'string))
+  #+gcl (si:getenv (string var))
+  #+lispworks (lw:environment-variable (string var))
+  #+lucid (lcl:environment-variable (string var))
+  #+mcl (ccl::getenv var)
+  #+sbcl (sb-ext:posix-getenv var)
+  #-(or allegro clisp cmu scl gcl lispworks lucid mcl sbcl) "")
+
+(defun append-dir-terminator-if-needed (path)
+  (check-type path string)
+  (if (char= #\/ (char path (1- (length path))))
+      path
+      (concatenate 'string path "/")))
+
+(defun user-clc-path ()
+  "Returns the path of the user's local clc directory, NIL if directory does not exist."
+  (let* ((home-dir (getenv "HOME"))
+	 (len (when (stringp home-dir)
+		(length home-dir))))
+    (when (and len (plusp len))
+      (setq home-dir (append-dir-terminator-if-needed home-dir))
+      (setq home-dir (parse-namestring home-dir))
+      (merge-pathnames
+       (make-pathname :directory '(:relative ".clc"))
+       home-dir))))
+
+
 ;; Function
 (defun is-user-package-system (system)
   "Return pathname of system file if this is a user package"
@@ -32,6 +65,47 @@
 			      (not (asdf:operation-done-p (car op) (cdr op)))))
 	  (asdf::traverse (make-instance 'asdf:compile-op) system)))
 
+(defun user-packages-path ()
+  (make-pathname :defaults (user-clc-path)
+		 :name "user-packages"
+		 :type "db"))
+
+(defvar *cached-user-packages* nil
+  "Cache list of user packages")
+(defvar *cached-user-packages-date* nil
+  "Cached file-write-date of user packages")
+
+(defun load-user-package-list ()
+  "Return list of user packages (pathnames)"
+  (let ((pkgs-path (user-packages-path)))
+    (when (probe-file pkgs-path)
+      (let ((pkgs '()))
+	(with-open-file (strm pkgs-path :direction :input :if-does-not-exist nil)
+  	  (when strm
+	    (do ((line (read-line strm nil 'eof) (read-line strm nil 'eof)))
+		((eq line 'eof))
+	      (let ((path (ignore-errors (parse-namestring line))))
+		(when path
+		  (push path pkgs))))))
+	pkgs))))
+
+
+(defun user-package-list ()
+  "Returns user package list from cache, updates cached version if needed."
+  (let* ((path (user-packages-path))
+	 (exists (probe-file path))
+	 (file-date (when exists
+		      (file-write-date path))))
+    (when exists
+      (if file-date
+	  (if (or (null *cached-user-packages-date*)
+		  (> file-date *cached-user-packages-date*))
+	      (progn
+		(setq *cached-user-packages-date* file-date)
+		(setq *cached-user-packages* (load-user-package-list)))
+	      *cached-user-packages*)
+	  (load-user-packages-list)))))
+
 (defun in-user-package (c)
   "Returns T if the ADSF component is in a component of a registered user package."
   (check-type c asdf:component)
@@ -43,7 +117,7 @@
 					   :name system-name
 					   :type "asd"))))
     (dolist (pkg (user-package-list))
-      (when (string= asdf-path-string (namestring (asdf::resolve-symlinks pkg)))
+      (when (string= asdf-path-string (namestring pkg))
 	(return-from in-user-package t)))
     nil))
 
@@ -291,80 +365,11 @@
   )
 
 
-;; Take from CLOCC's GPL'd Port package
-(defun getenv (var)
-  "Return the value of the environment variable."
-  #+allegro (sys::getenv (string var))
-  #+clisp (sys::getenv (string var))
-  #+(or cmu scl) (cdr (assoc (string var) ext:*environment-list* :test #'equalp
-                    :key #'string))
-  #+gcl (si:getenv (string var))
-  #+lispworks (lw:environment-variable (string var))
-  #+lucid (lcl:environment-variable (string var))
-  #+mcl (ccl::getenv var)
-  #+sbcl (sb-ext:posix-getenv var)
-  #-(or allegro clisp cmu scl gcl lispworks lucid mcl sbcl) "")
-
-(defun append-dir-terminator-if-needed (path)
-  (check-type path string)
-  (if (char= #\/ (char path (1- (length path))))
-      path
-      (concatenate 'string path "/")))
-
-(defun user-clc-path ()
-  "Returns the path of the user's local clc directory, NIL if directory does not exist."
-  (let* ((home-dir (getenv "HOME"))
-	 (len (when (stringp home-dir)
-		(length home-dir))))
-    (when (and len (plusp len))
-      (setq home-dir (append-dir-terminator-if-needed home-dir))
-      (setq home-dir (parse-namestring home-dir))
-      (merge-pathnames
-       (make-pathname :directory '(:relative ".clc"))
-       home-dir))))
-
-(defun user-packages-path ()
-  (make-pathname :defaults (user-clc-path)
-		 :name "user-packages"
-		 :type "db"))
-
 (defun user-lib-path ()
   (merge-pathnames
    (make-pathname :directory
 		  (list :relative "bin" (car (last (pathname-directory *fasl-root*)))))
    (user-clc-path)))
 
-(defvar *cached-user-packages* nil
-  "Cache list of user packages")
-(defvar *cached-user-packages-date* nil
-  "Cached file-write-date of user packages")
   
-(defun load-user-package-list ()
-  "Return list of user packages (pathnames)"
-  (let ((pkgs-path (user-packages-path)))
-    (when (probe-file pkgs-path)
-      (let ((pkgs '()))
-	(with-open-file (strm pkgs-path :direction :input :if-does-not-exist nil)
-  	  (when strm
-	    (do ((line (read-line strm nil 'eof) (read-line strm nil 'eof)))
-		((eq line 'eof))
-	      (let ((path (ignore-errors (parse-namestring line))))
-		(when path
-		  (push path pkgs))))))
-	pkgs))))
 
-(defun user-package-list ()
-  "Returns user package list from cache, updates cached version if needed."
-  (let* ((path (user-packages-path))
-	 (exists (probe-file path))
-	 (file-date (when exists
-		      (file-write-date path))))
-    (when exists
-      (if file-date
-	  (if (or (null *cached-user-packages-date*)
-		  (> file-date *cached-user-packages-date*))
-	      (progn
-		(setq *cached-user-packages-date* file-date)
-		(setq *cached-user-packages* (load-user-package-list)))
-	      *cached-user-packages*)
-	  (load-user-packages-list)))))

@@ -1,17 +1,21 @@
-;;; File: <math.lisp - 1999-03-17 Wed 16:37:18 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-04-17 Sat 18:33:36 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997, 1998 by Sam Steingold.
+;;; Copyright (C) 1997-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.17 1999/03/17 21:37:32 sds Exp $
+;;; $Id: math.lisp,v 1.18 1999/04/17 22:34:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.18  1999/04/17 22:34:17  sds
+;;; (safe-fun): use `values-list'.
+;;; (safe-fun1): new macro.
+;;;
 ;;; Revision 1.17  1999/03/17 21:37:32  sds
 ;;; Added `eval-cont-fract' and `fract-approx'.
 ;;;
@@ -210,6 +214,13 @@ The optional second argument specifies the list of primes."
   ;;     (multiple-value-bind (v0 v1) (eval-cont-fract (cdr fract))
   ;;       (values (+ (car fract) (/ v0)) (+ (car fract) (/ v1))))
   ;;     (values (car fract) (1+ (car fract)))))
+
+(defcustom *relative-tolerance* double-float 1.0e-3
+  "*The default relative tolerance for `approx='.")
+(defcustom *absolute-tolerance* double-float 1.0d0
+  "*The default absolute tolerance for `approx='.")
+(defcustom *num-tolerance* double-float 1.0e-6
+  "*The default numerical tolerance for `approx=-[abs|rel]'.")
 
 (defun fract-approx (xx &optional (eps *num-tolerance*))
   "Find an approximation via continous fractions."
@@ -539,6 +550,22 @@ and the average annual volatility for US Dollar Index."
   (with-type double-float
     (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0))))
 
+(defmacro safe-fun (func pred &optional default)
+  "Return a function that will run FUNC when the PRED is non-NIL.
+If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
+  (if default
+      `(lambda (&rest xx) (if (apply ,pred xx) (apply ,func xx) ,default))
+      `(lambda (&rest xx) (if (apply ,pred xx) (apply ,func xx)
+                              (values-list xx)))))
+
+(defmacro safe-fun1 (func pred &optional default)
+  "Return a function that will run FUNC when the PRED is non-NIL.
+Just like `safe-fun', but the returned function takes just 1 argument.
+If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
+  (if default
+      `(lambda (xx) (if (,pred xx) (,func xx) ,default))
+      `(lambda (xx) (if (,pred xx) (,func xx) xx))))
+
 (defun safe-/ (aa &rest bb)
   "Safe division."
   (declare (number aa) (list bb) (values number))
@@ -604,14 +631,6 @@ Return the modified LST. 20% faster than `convex-hull1'."
             (setq csl (funcall sl (car l1)))
             (when (funcall ts csl tsl) (setq tsl csl top l1))))))
 
-(defmacro safe-fun (func pred &optional default)
-  "Return a function that will run FUNC when the PRED is non-NIL.
-If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
-  (if default
-      `(lambda (&rest xx) (if (apply ,pred xx) (apply ,func xx) ,default))
-      `(lambda (&rest xx) (if (apply ,pred xx) (apply ,func xx)
-                              (apply #'values xx)))))
-
 (defun sharpe-ratio (seq &key (key #'value))
   "Compute the Sharpe ratio (mean/StD) of the sequence SEQ."
   (declare (sequence seq))
@@ -638,13 +657,6 @@ This function is commutative, and puts the smallest number into the
 denominator.  Sign is ignored."
   (declare (double-float v0 v1) (values double-float))
   (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
-
-(defcustom *relative-tolerance* double-float 1.0e-3
-  "*The default relative tolerance for `approx='.")
-(defcustom *absolute-tolerance* double-float 1.0d0
-  "*The default absolute tolerance for `approx='.")
-(defcustom *num-tolerance* double-float 1.0e-6
-  "*The default numerical tolerance for `approx=-[abs|rel]'.")
 
 (defsubst approx=-abs (f0 f1 &optional (tol *num-tolerance*))
   "Return T if the args are the same within TOL,

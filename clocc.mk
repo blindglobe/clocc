@@ -3,7 +3,7 @@
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
 # This file requires GNU Make
 #
-# $Id: clocc.mk,v 1.9 2000/04/19 17:00:09 sds Exp $
+# $Id: clocc.mk,v 1.10 2000/05/02 15:46:15 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
@@ -22,8 +22,8 @@ ZIP = /usr/local/bin/zip -9uD
 
 default: force
 	@echo " * you must specify a target, such as..."
-	@echo " + all - compile all files in SOURCES ($(SOURCES)) one by one"
 	@echo " + system - run mk:compile-file on SYSTEM ($(SYSTEM))"
+	@echo " + all - compile all files in SOURCES ($(SOURCES)) one by one"
 	@echo " + ChangeLog - create the ChangeLog file using rcs2log"
 	@echo " + $(SYSTEM).list - the list of all functons and variables defined by this system"
 	@echo " + TAGS - Emacs tags"
@@ -57,6 +57,6 @@ $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
 	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA));
 
 clean: force
-	rm -f $(FASLFILES)
+	rm -f $(FASLFILES) core *.core *.mem *.dxl
 
 force:

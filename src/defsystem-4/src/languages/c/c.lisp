@@ -10,6 +10,40 @@
 
 (in-package "MK4")
 
+;;; loader --
+;;; #+:lucid #'load-foreign-files 
+;;; #+:allegro #'load
+;;; #-(or :lucid :allegro) #'load
+
+(defgeneric load-c-file (loadable-c-pahtname
+			 &key
+			 (print *load-print*)
+			 (verbose *load-verbose*)
+			 (libraries '("c"))
+			 )
+  (:documentation
+   "Loads a C object file (or similar) into the CL environment."))
+
+
+;;; compiler --
+
+(defgeneric c-compile-file (compiler file-pathname
+				     &rest args
+				     &key output-file
+				     &allow-other-keys)
+  (:documentation
+   "Compiles a C file using a spcific compiler."))
+
+
+;;; C language definition.
+
+(define-language :c
+  :compiler #'c-compile-file
+  :loader #'load-c-file
+  :source-extension "c"
+  :binary-extension "o")
+
+
 
 (defstruct (c-language-compiler (:include language-compiler))
   (command-line "cc" :type string))
@@ -72,11 +106,6 @@
 
 ;;; Generic interface to the C Compiler.
 ;;; Add other compilers as appropriate.
-
-(defgeneric c-compile-file (compiler file-pathname
-				     &rest args
-				     &key output-file
-				     &allow-other-keys))
 
 (defmethod c-compile-file ((c-compiler gcc-language-compiler)
 			   (file pathname)
@@ -213,21 +242,10 @@
 
 
 
-;;; loader --
-
-(defgeneric load-c-file (loadable-c-pahtname
-			 &key
-			 (print *load-print*)
-			 (verbose *load-verbose*)
-			 (libraries '("c"))
-			 )
-  (:documentation
-   "Loads a C object file (or similar) into the CL environment."))
-
+;;; Loader.
 
 (defmethod no-applicable-method ((lcf (eql #'load-c-file)) &rest arguments)
   (error "MK4: LOAD-C-FILE undefined for arguments ~S." arguments))
-  
 
 
 ;;; DEFINE-LANGUAGE and the mixin really provide the same
@@ -235,13 +253,7 @@
 ;;; Probably the mixin is better and DEFINE-LANGUAGE and stuff will
 ;;; just go away.
 
-(define-language :c
-  :compiler #'c-compile-file
-  :loader #+:lucid #'load-foreign-files 
-          #+:allegro #'load
-          #-(or :lucid :allegro) #'load
-  :source-extension "c"
-  :binary-extension "o")
+
 
 
 (defclass c-language-mixin (component-language-mixin)

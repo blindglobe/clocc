@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.34 2004/03/17 23:36:37 sds Exp $
+;;; $Id: math.lisp,v 2.35 2004/03/29 20:10:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -993,8 +993,8 @@ occurs, i.e., the normalized sequence should be the probability distribution."
                                (if (zerop num) 0 (* num (log num 2))))))))
     (- (log tot 2) (/ sum tot))))
 
-(defun count-all (seq &key (test 'eql) (key #'value)
-                  &aux (ht (make-hash-table :test test)))
+(defun count-all (seq &key (test 'eql) (key #'value) append
+                  &aux (ht (or append (make-hash-table :test test))))
   "Return the hash table with counts for values of the sequence."
   (map nil (lambda (el) (incf (gethash (funcall key el) ht 0))) seq)
   ht)

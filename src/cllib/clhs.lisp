@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.2 2000/03/27 20:17:02 sds Exp $
+;;; $Id: clhs.lisp,v 2.3 2000/03/30 20:16:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,7 +20,7 @@
 
 (in-package :cllib)
 
-(export '(*clhs-root* +clhs-hashtable+ clhs-doc))
+(export '(*clhs-root* +clhs-hashtable+ clhs-doc clhs-write-entities))
 
 #+nil
 (setq gtki::*gtkd-executable* "/usr/src/clisp/cl-gtk/bin/gtkd")
@@ -1052,14 +1052,17 @@
           ((or (string-equal type "fun") (string-equal type "speope")
                (string-equal type "mac") (string-equal type "stagenfun")
                (string-equal type "acc") (string-equal type "locmac")
-               (string-equal type "sym") (string-equal type "locfun")
-               (string-equal type "spefor"))
+               (string-equal type "locfun") (string-equal type "spefor"))
            (when (char= #\* (char ent (1- (length ent))))
              (setq ent (concatenate 'string (subseq ent 0 (1- (length ent)))
                                     "-star")))
            (when (and (string= html "stagenfun_doc_umentationcp.html")
                       (not (eq symb 'documentation)))
              (setq ent (concatenate 'string ent "-doc"))))
+          ((string-equal type "sym")
+           (setq font "literal")
+           (when (eq symb 'lambda)
+             (setq ent (concatenate 'string ent "-sym"))))
           ((or (string-equal type "cla") (string-equal type "syscla"))
            (setq font "classname")
            (unless (string-end-with "class" ent)

@@ -1,4 +1,4 @@
-;;; based on v1.3 -*- mode: lisp -*-
+;;; based on v1.7 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;; ****************************************************************************
@@ -7,7 +7,7 @@
 
 #+xcl
 (check-for-bug :iofkts-legacy-9
-  (progn (in-package (quote sys)) t)
+  (progn (in-package "SYS") t)
   t)
 
 ;; --- let test ---------------------------------------------------------------

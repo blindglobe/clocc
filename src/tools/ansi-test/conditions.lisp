@@ -1,4 +1,4 @@
-;;; based on v1.6 -*- mode: lisp -*-
+;;; based on v1.12 -*- mode: lisp -*-
 ;;;; Test suite for the Common Lisp condition system
 ;;;; Written by David Gadbois <gadbois@cs.utexas.edu> 30.11.1993
 (in-package :cl-user)
@@ -31,17 +31,15 @@
 (check-for-bug :conditions-legacy-31
   (defun check-superclasses (class expected)
     (let ((expected (list* class 't
-                           #+CLISP 'clos:standard-object
-                           #+ALLEGRO 'standard-object
+                           #+(or CLISP ALLEGRO) 'standard-object
                            #+(or cmu sbcl) 'instance
                            'condition expected))
-          (super (mapcar #' #+CLISP clos:class-name
-                            #+ALLEGRO class-name
+          (super (mapcar #' #+(or CLISP ALLEGRO) class-name
                             #+cmu pcl:class-name
                             #+sbcl sb-pcl:class-name
                             (my-cpl class))))
-      (and (null (set-difference super expected))
-           (null (set-difference expected super)))))
+      (list (set-difference super expected)
+            (set-difference expected super))))
   CHECK-SUPERCLASSES)
 
 ;;;
@@ -68,122 +66,123 @@
 ;;;
 
 (check-for-bug :conditions-legacy-70
-  (check-superclasses 'warning '()) T)
+  (check-superclasses 'warning '())
+  (nil nil))
 
 
 (check-for-bug :conditions-legacy-74
   (check-superclasses 'style-warning '(warning))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-78
   (check-superclasses 'serious-condition '())
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-82
   (check-superclasses 'error '(serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-86
   (check-superclasses 'cell-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-90
   (check-superclasses 'parse-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-94
   (check-superclasses 'storage-condition '(serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-98
   (check-superclasses 'simple-error '(simple-condition error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-102
   (check-superclasses 'simple-condition '())
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-106
   (check-superclasses 'simple-warning '(simple-condition warning))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-110
   (check-superclasses 'file-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-114
   (check-superclasses 'control-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-118
   (check-superclasses 'program-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-122
   (check-superclasses 'undefined-function '(cell-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-126
   (check-superclasses 'arithmetic-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-130
   (check-superclasses 'division-by-zero '(arithmetic-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-134
   (check-superclasses 'floating-point-invalid-operation '(arithmetic-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-138
   (check-superclasses 'floating-point-inexact '(arithmetic-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-142
   (check-superclasses 'floating-point-overflow '(arithmetic-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-146
   (check-superclasses 'floating-point-underflow '(arithmetic-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-150
   (check-superclasses 'unbound-slot '(cell-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-154
   (check-superclasses 'package-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-158
   (check-superclasses 'print-not-readable '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-162
   (check-superclasses 'reader-error '(parse-error stream-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-166
   (check-superclasses 'stream-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-170
   (check-superclasses 'end-of-file '(stream-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-174
   (check-superclasses 'unbound-variable '(cell-error error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-178
   (check-superclasses 'type-error '(error serious-condition))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-182
   (check-superclasses 'simple-type-error
                       '(simple-condition
                         type-error error serious-condition))
-  T
+  (nil nil)
   "Condition Type SIMPLE-TYPE-ERROR
 
 Class Precedence List:
@@ -200,7 +199,7 @@ simple-type-error, simple-condition, type-error, error, serious-condition, condi
 
 (check-for-bug :conditions-legacy-201
   (check-superclasses  'test '())
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-205
   (progn (define-condition test2 (test) ()) t)
@@ -208,7 +207,7 @@ simple-type-error, simple-condition, type-error, error, serious-condition, condi
 
 (check-for-bug :conditions-legacy-209
   (check-superclasses 'test2 '(test))
-  T)
+  (nil nil))
 
 (check-for-bug :conditions-legacy-213
   (progn (define-condition test3 (test2 simple-condition) ()) t)
@@ -216,7 +215,7 @@ simple-type-error, simple-condition, type-error, error, serious-condition, condi
 
 (check-for-bug :conditions-legacy-217
   (check-superclasses 'test3 '(test2 test simple-condition))
-  T)
+  (nil nil))
 
 ;;;
 ;;; Making conditions
@@ -493,7 +492,7 @@ supplied to make-condition, nil is used as a default. "
   (:no-error (&rest args) (declare (ignore args)) 42))
  23)
 
-;;; Or if it is not the last clause.
+;;; It does not have to be the last clause.
 (check-for-bug :conditions-legacy-497
   (handler-case
   23

@@ -55,8 +55,8 @@
 
 (check-for-bug :type-legacy-56
   (typep 3.2 (quote (short-float 0.0s0 3.2s0)))
-  #+(or allegro cmu sbcl) t
-  #-(or allegro cmu sbcl) nil)
+  #+(or allegro cmu sbcl ecl) t
+  #-(or allegro cmu sbcl ecl) nil)
 
 (check-for-bug :type-legacy-61
   (typep 3.2 (quote (single-float 0.0f0 3.2f0)))
@@ -194,7 +194,7 @@
 
 #|                                      ;
 ;;
-;; hängt von (upgraded-array-element-type 'symbol) ab!
+;; depends on (upgraded-array-element-type 'symbol) !
 (typep '#(a b c d) (quote (vector symbol 4)))
 nil
 |#
@@ -513,3 +513,29 @@ nil
 
 (check-for-bug :type-legacy-515
  (subtypep 'signed-byte 'integer) t)
+
+(check-for-bug :type-added-1
+  (type-of (coerce (list 1 2 3 4) '(simple-array (unsigned-byte 8))))
+  (simple-array (unsigned-byte 8) (4)))
+
+(check-for-bug :type-added-2
+  (type-of (coerce (list 1 2 3 4) '(simple-array *)))
+  (simple-vector 4))
+
+(check-for-bug :type-added-3
+  (type-of (coerce (list 1 2 3 4) '(simple-array * (4))))
+  (simple-vector 4))
+
+;; these must be recognized correctly (see clhs subtype and figure 4-2)
+(check-for-bug :type-added-4
+  (multiple-value-list (subtypep 'atom 'cons))
+  (nil t))
+
+(check-for-bug :type-added-5
+  (multiple-value-list (subtypep 'atom 'list))
+  (nil t))
+
+(check-for-bug :type-added-6
+  (multiple-value-list (subtypep nil nil))
+  (t t))
+

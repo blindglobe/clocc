@@ -1,4 +1,4 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;;erzeuge ein feld mit doppeltgenauen zahlen
@@ -979,23 +979,55 @@
 (check-for-bug :array-legacy-979
  (vector-push-extend 5.0d0 vmfad)   5)
 
-(check-for-bug :array-legacy-982
- (vector-pop vmfad)   5.0d0)
+(check-for-bug :array-added-1
+  (setf (fill-pointer vmfad) 3)
+  3)
 
-(check-for-bug :array-legacy-985
- (vector-pop vmfad)   4.0d0)
+(check-for-bug :array-added-2
+  (aref vmfad 5)
+  5.0D0)
 
-(check-for-bug :array-legacy-988
- (vector-pop vmfad)   3.0d0)
+(check-for-bug :array-added-3
+  (elt  vmfad 5)
+  error)
+  
+(check-for-bug :array-added-4
+  (setf (fill-pointer vmfad) 6)
+  6)
 
-(check-for-bug :array-legacy-991
- (vector-pop vmfad)   2.0d0)
+(check-for-bug :array-added-5
+  VMFAD
+  #(0d0 1d0 2d0 3d0 4d0 5d0))
+
+(check-for-bug :array-added-6
+  (REVERSE VMFAD)
+  #(5d0 4d0 3d0 2d0 1d0 0d0))
+
+(check-for-bug :array-added-7
+  (NREVERSE VMFAD)
+  #(5d0 4d0 3d0 2d0 1d0 0d0))
+
+(check-for-bug :array-added-8
+  VMFAD
+  #(5d0 4d0 3d0 2d0 1d0 0d0))
+
+(check-for-bug :array-legacy-997
+ (vector-pop vmfad)   0.0d0)
 
 (check-for-bug :array-legacy-994
  (vector-pop vmfad)   1.0d0)
 
-(check-for-bug :array-legacy-997
- (vector-pop vmfad)   0.0d0)
+(check-for-bug :array-legacy-991
+ (vector-pop vmfad)   2.0d0)
+
+(check-for-bug :array-legacy-988
+ (vector-pop vmfad)   3.0d0)
+
+(check-for-bug :array-legacy-985
+ (vector-pop vmfad)   4.0d0)
+
+(check-for-bug :array-legacy-982
+ (vector-pop vmfad)   5.0d0)
 
 (check-for-bug :array-legacy-1000
  (vector-push-extend 5.0s0 vmfad)

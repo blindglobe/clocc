@@ -1,4 +1,4 @@
-;;; based on 1.6 -*- mode: lisp -*-
+;;; based clisp version 1.10 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;;; Test "Exceptional situations" as specified by CLHS
@@ -324,7 +324,6 @@ an error of type error is signaled. ")
   (concatenate '(string 3) "ab" "cd")
   type-error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-328
   (copy-pprint-dispatch 'x)
   type-error)
@@ -798,10 +797,7 @@ program-error is signaled.")
   type-error)
 
 (check-for-bug :excepsit-legacy-800
-  #-CLISP
   (in-package "FOO39")
-  #+CLISP
-  (common-lisp:in-package "FOO39")
   package-error)
 
 (check-for-bug :excepsit-legacy-807
@@ -1121,39 +1117,32 @@ end-of-file
  (plusp #c(0 4.2))
  type-error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1125
  (pprint-dispatch nil t)
  type-error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1130
  (pprint-exit-if-list-exhausted)
  error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1135
  (pprint-indent nil 2)
  error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1140
  (let ((x (make-string-output-stream)))
    (pprint-logical-block (x nil :prefix 24)))
  type-error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1146
  (let ((x (make-string-output-stream)))
    (pprint-logical-block (x nil :prefix "a" :per-line-prefix "b")))
  error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1152
  (pprint-newline :fresh)
  type-error)
 
-#-CLISP
 (check-for-bug :excepsit-legacy-1157
  (pprint-pop)
  error)

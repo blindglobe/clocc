@@ -2,7 +2,8 @@
 (in-package :cl-user)
 
 (check-for-bug :hash-legacy-4
-  (progn (in-package (quote sys)) t)      t)
+  (progn (in-package "SYS") t)
+  t)
 
 (check-for-bug :hash-legacy-7
   (make-hash-table :test (quote eq) :size 20)

@@ -1,4 +1,4 @@
-;;; based on 1.1.1.1 -*- mode: lisp -*-
+;;; based on 1.2 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :lambda-legacy-4
@@ -276,4 +276,39 @@
 (check-for-bug :lambda-legacy-276
   ((lambda))
   error)
+
+;; CLHS 3.4.1.4.1.1
+
+(check-for-bug :lambda-added-1
+  ((lambda (&key x) x) :x 1 :y 2 :allow-other-keys t)
+  1)
+
+(check-for-bug :lambda-added-2
+  ((lambda (&key x) x) :x 1 :y 2 :allow-other-keys t :allow-other-keys nil)
+  1)
+
+(check-for-bug :lambda-added-3
+  ((lambda (&key x) x) :x 1 :y 2 :allow-other-keys nil :allow-other-keys t)
+  error)
+
+(check-for-bug :lambda-added-4
+  ((lambda (&key x &allow-other-keys) x) :x 1 :y 2)
+  1)
+
+(check-for-bug :lambda-added-5
+  ((lambda (&key x &allow-other-keys) x) :x 1 :y 2 :allow-other-keys t :allow-other-keys nil)
+  1)
+
+(check-for-bug :lambda-added-6
+  ((lambda (&key x &allow-other-keys) x) :x 1 :y 2 :allow-other-keys nil :allow-other-keys t)
+  1)
+
+(check-for-bug :lambda-added-7
+  ((lambda (&key x) x) :x 1 :allow-other-keys nil)
+  1)
+
+(check-for-bug :lambda-added-8
+  ((lambda (&key x) x) :x 1 :allow-other-keys nil :allow-other-keys nil)
+  1)
+
 

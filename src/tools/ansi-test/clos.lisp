@@ -1,4 +1,4 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.7 -*- mode: lisp -*-
 (in-package :cl-user)
 
 
@@ -34,6 +34,7 @@
 (check-for-bug :clos-legacy-34
   (defparameter a (make-instance (find-class '<C1>) :x 10))
   A)
+
 
 (check-for-bug :clos-legacy-38
   (x-val a)
@@ -305,16 +306,31 @@ null, symbol, list, sequence, t")
   (x-val (make-instance (find-class '<C1>) :x 10 :y 20))
   10)
 
+
+(check-for-bug :clos-added-1
+ (progn
+   (defmethod initialize-instance ((inst <C1>) &rest ignore)
+       (call-next-method)
+     123)
+   nil)
+ nil)
+
+(check-for-bug :clos-added-2
+  (x-val (make-instance (find-class '<C1>) :x 101 :y 120))
+  101)
+
 (check-for-bug :clos-legacy-308
   (unintern '<C1>)
   T)
 
 (check-for-bug :clos-legacy-312
-  (subtypep (class-of ())               (find-class 'null))
+  (subtypep (class-of ())
+            (find-class 'null))
   T)
 
 (check-for-bug :clos-legacy-316
-  (subtypep (class-of t)                (find-class 'symbol))
+  (subtypep (class-of t)
+            (find-class 'symbol))
   T)
 
 (check-for-bug :clos-legacy-320
@@ -461,3 +477,38 @@ So class-of should return a function. Not?")
   (subclassp (find-class 'float)
              (find-class 'number))
   T)
+
+
+;; make-load-form
+;; from kmp
+
+(check-for-bug :clos-make-load-form-test
+  (progn
+    (defclass test-class1 ()
+              ((foo :initarg :foo :accessor foo :initform 0)))
+    (defclass test-class2 ()
+              ((foo :initarg :foo :accessor foo :initform 0)))
+    (defmethod make-load-form ((obj test-class1) &optional environment)
+        `(make-instance 'test-class1 :foo ',(foo obj)))
+    (defparameter *t-list*
+      (list (make-instance 'test-class1 :foo 100)
+            (make-instance 'test-class2 :foo 200)))
+    (let*
+        ((lisp-file "make-load-form-demo.lisp")
+         (compiled-file
+          (compile-file
+           (with-open-file (stream lisp-file
+                                   :direction :output
+                                   :if-exists :supersede)
+             (format stream "(in-package \"CL-USER\")~
+                                ~%(defparameter *t-list* '#.*t-list*)~%")
+             (truename stream)))))
+      (setq *t-list* '())
+      (load compiled-file)
+      (delete-file compiled-file)
+      (delete-file lisp-file)
+      #+clisp
+      (delete-file (merge-pathnames ".lib" lisp-file))
+      (mapcar #'foo *t-list*)))
+  (100 200))
+

@@ -1,4 +1,4 @@
-;;; based on v1.7 -*- mode: lisp -*-
+;;; based on v1.10 -*- mode: lisp -*-
 ;; ****************************************************************************
 ;; *                      kurztest        xcl                                 *
 ;; ****************************************************************************
@@ -2808,6 +2808,11 @@
          'e)
   (a b c d))
 
+(check-for-bug :alltest-ldiff-1
+  (ldiff (cons 1 2)
+         3)
+  (1 . 2))
+
 (check-for-bug :alltest-legacy-2811
   (let ((lists '#((a b c) (a b c . d)))
         (ld-res #(#(nil (a b) (a b c) (a b c) (a b c) (a b c) (a b c))
@@ -3183,9 +3188,11 @@
                                     (subseq (append local-flavors
                                                     '(vanilla chocolate strawberry pistachio
                                                       maple-walnut peppermint))
-                                            0 capacity)))))
+                                            0 capacity))
+                                   ((:own owner)))))
     (capacity 3)
-    (flavors '(vanilla chocolate strawberry mango)))
+    (flavors '(vanilla chocolate strawberry mango))
+    (owner 'me))
   ice-cream-factory)
 
 (check-for-bug :alltest-legacy-3181

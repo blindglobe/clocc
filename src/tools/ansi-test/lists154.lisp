@@ -1,4 +1,4 @@
-;;; based on v1.1.1.1 -*- mode: lisp -*-
+;;; based on v1.2 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :lists154-legacy-4

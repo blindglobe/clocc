@@ -1,4 +1,4 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :strings-legacy-4
@@ -1432,8 +1432,9 @@
   "34a 5bc")
 
 (check-for-bug :strings-legacy-1434
-  (string  1)
-  error)
+  (string  65)
+  #+ecl "A"
+  #-ecl error)
 
 (check-for-bug :strings-legacy-1438
   (string  (quote a))
@@ -1598,3 +1599,64 @@
     x)
   "abcdef")
 
+
+(check-for-bug :strings-added-1
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    x)
+  "abcde")
+
+
+(check-for-bug :strings-added-2
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (char x 7))
+  #\h)
+
+(check-for-bug :strings-added-3
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (elt x 7))
+  error)
+
+(check-for-bug :strings-added-4
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (reverse x))
+  "edcba")
+
+(check-for-bug :strings-added-5
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (reverse x)
+    x)
+  "abcde")
+
+(check-for-bug :strings-added-6
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    
+    (nreverse x))
+  "edcba")
+
+(check-for-bug :strings-added-7
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    
+    (nreverse x)
+    x)
+  "edcba")

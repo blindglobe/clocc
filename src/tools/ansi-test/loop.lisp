@@ -1,4 +1,4 @@
-;;; based on v1.5 -*- mode: lisp -*-
+;;; based on v1.6 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :loop-legacy-4
@@ -917,8 +917,18 @@ it is legal to have by first:
 arithmetic-up::= [[{from | upfrom} form1 |   {to | upto | below} form2 |   by form3]]+ ")
 
 (check-for-bug :loop-legacy-920
- (loop for i from 1 to 5 collect i into c collect (copy-list c))
+ (loop for i from 1 to 5
+       collect i
+       into c collect (copy-list c))
  ((1) (1 2) (1 2 3) (1 2 3 4) (1 2 3 4 5)))
+
+(check-for-bug :loop-added-1
+ (let ((rem 55))
+   (loop for i below 3
+         with num = (* 10 rem)
+           and rem
+           collect rem))
+ (nil nil nil))
 
 ;; Clean up.
 (check-for-bug :loop-legacy-925

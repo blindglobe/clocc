@@ -1,4 +1,4 @@
-;;; based on v1.4 -*- mode: lisp -*-
+;;; based on v1.6 -*- mode: lisp -*-
 (in-package :cl-user)
 
 
@@ -892,3 +892,13 @@
   "Newline"
   #+cmu
   "Linefeed")
+
+(check-for-bug :characters-without-good-names
+  (let ((wrong-codes nil))
+    (dotimes
+        (code char-code-limit)
+      (let ((c (code-char code)))
+        (unless (eql c (name-char (char-name c)))
+          (push code wrong-codes))))
+    wrong-codes)
+  NIL)

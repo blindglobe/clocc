@@ -1,9 +1,9 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
 #+xcl
 (check-for-bug :streams-legacy-5
-  (progn (in-package 'sys) t)
+  (progn (in-package :sys) t)
   t)
 
 #-(or akcl allegro)

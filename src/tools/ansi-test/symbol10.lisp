@@ -1,4 +1,4 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :symbol10-legacy-4
@@ -33,6 +33,7 @@ this is or a character, a symbol or a string.")
           #+cmu
           (eq (ext:info variable kind var)
               ':special);; like clisp
+          #+ECL (and (sys::specialp var) (not (constantp var))) ; specvar
           #+ecls
           (si::specialp var)
           #+sbcl
@@ -43,9 +44,9 @@ this is or a character, a symbol or a string.")
           (and (fboundp var)
                (special-operator-p var)
                t)			; spezialform?
-          #-clisp
+          #-(or clisp ecl)
           (and (symbol-plist var) t)	; p-liste?
-          #+clisp
+          #+(or clisp ecl)
           (and (or (get var 'i1)
                    (get var 'i2)
                    (get var 'i3))
@@ -367,7 +368,8 @@ this is or a character, a symbol or a string.")
 (check-for-bug :symbol10-legacy-367
   (makunbound 'v3)
   #+(or xcl allegro cmu sbcl) v3
-  #+(or clisp ecls) error)
+  #+(or clisp ecls) error
+  #-(or xcl allegro cmu sbcl clisp ecls) unknown)
 
 (check-for-bug :symbol10-legacy-372
   (fmakunbound 'v3)
@@ -611,7 +613,8 @@ this is or a character, a symbol or a string.")
 (check-for-bug :symbol10-legacy-611
   (makunbound 'v5)
   #+(or xcl allegro cmu sbcl) v5
-  #+(or clisp ecls) error)
+  #+(or clisp ecls) error  
+  #-(or xcl allegro cmu sbcl clisp ecls) unknown)
 
 (check-for-bug :symbol10-legacy-616
   (not (null (remprop 'v5 'i2)))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.23 2001/11/02 22:31:15 sds Exp $
+;;; $Id: fileio.lisp,v 1.24 2002/01/26 19:30:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -129,6 +129,7 @@ Returns the number of records and the file size."
         (values len size)))))
 
 (defun read-list-from-stream (stream read-function &key args (package +kwd+)
+                              (read-ahead-function #'read)
                               (eof +eof+) (readtable *readtable*))
   "Read the input STREAM into the list, each line becomes a list element.
 READ-FUNCTION should take a stream and a read-ahead object as its arguments
@@ -139,6 +140,8 @@ Return three values - the list read, its length, and the last element.
 `*package*' is bound to PACKAGE, which defaults to the KEYWORD package.
 If PACKAGE is not a package, a package with a generated name is created
 and deleted at the end of the reading.
+The first read-ahead object is read with READ-AHEAD-FUNCTION, which
+defaults to `read' and is called with 3 arguments - STREAM, NIL and EOF.
 `*readtable*' is bound to READTABLE (defaults to `*readtable*')."
   (declare (stream stream) (readtable readtable)
            (type (function (stream t t) (values t t)) read-function))
@@ -146,7 +149,8 @@ and deleted at the end of the reading.
                   (make-package (gensym "RLFS-PACK-")))))
     (unwind-protect
          (do* ((*package* pack) (*readtable* readtable)
-               (ra (read stream nil eof)) new lst (len 0 (1+ len)))
+               (ra (funcall read-ahead-function stream nil eof))
+               new lst (len 0 (1+ len)))
               ((eq ra eof) (values (nreverse lst) len new))
            (declare (type index-t len))
            (setf (values new ra) (apply read-function stream ra args))

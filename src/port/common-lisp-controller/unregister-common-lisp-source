@@ -59,4 +59,4 @@ done
 # Remove all autobuild directories for this package
 rm -rf /etc/common-lisp/*/$PKG_NAME
 
-echo "$PROGNAME: Package $$PKG_NAME uninstalled" >&2
+echo "$PROGNAME: Package $PKG_NAME uninstalled" >&2

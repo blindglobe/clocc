@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-05-26 Tue 18:36:56 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-05-27 Wed 17:20:59 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.11 1998/05/27 20:42:03 sds Exp $
+;;; $Id: date.lisp,v 1.12 1998/05/27 21:24:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.12  1998/05/27 21:24:20  sds
+;;; Moved sorted stuff from here to list.lisp.
+;;;
 ;;; Revision 1.11  1998/05/27 20:42:03  sds
 ;;; Expanded `date' string recognition to include word months.
 ;;;
@@ -369,85 +372,6 @@ previous record when SKIP is non-nil and nil otherwise.
   `(sync-dates ,lists :lables ,lables :key (lambda (rr) (slot-value rr ,key))
     :cpy ,cpy :stream ,stream  :op ,op :skip ,skip
     :set (lambda (rr dd) (setf (slot-value rr ,key) dd))))
-
-(defmacro process-and-shift (pred akey ckey t0 e0 k0 t1 e1 k1)
-  "Used in *-sorted."
-  `(cond ((or (null k1) (and k0 (funcall ,pred ,k0 ,k1)))
-	  (multiple-value-prog1 (values (funcall ,akey ,e0) nil)
-	    (setq ,t0 (cdr ,t0) ,e0 (car ,t0)
-		  ,k0 (and ,t0 (funcall ,ckey ,e0)))))
-    ((or (null k0) (and k1 (funcall ,pred ,k1 ,k0)))
-     (multiple-value-prog1 (values nil (funcall ,akey ,e1))
-       (setq ,t1 (cdr ,t1) ,e1 (car ,t1) ,k1 (and ,t1 (funcall ckey ,e1)))))
-    (t (multiple-value-prog1 (values (funcall ,akey ,e0) (funcall ,akey ,e1))
-	 (setq ,t0 (cdr ,t0) ,e0 (car ,t0) ,k0 (and ,t0 (funcall ,ckey ,e0))
-	       ,t1 (cdr ,t1) ,e1 (car ,t1)
-	       ,k1 (and ,t1 (funcall ,ckey ,e1)))))))
-
-(defun map-sorted (type func pred l0 l1
-		   &key (ckey #'identity) (akey #'identity))
-  "Operate on two sorted lists. Call FUNC on the elements of the lists
-that are `same' according to PRED. If TYPE is 'LIST, return the list
-of whatever FUNC returns."
-  (declare (function func pred ckey akey) (list l0 l1) (symbol type))
-  (do ((t0 l0) (t1 l1) (e0 (car l0)) (e1 (car l1)) el res
-       (k0 (and l0 (funcall ckey (car l0))))
-       (k1 (and l1 (funcall ckey (car l1)))))
-      ((and (null t0) (null t1)) (nreverse res))
-    (setq el (multiple-value-call func
-	       (process-and-shift pred akey ckey t0 e0 k0 t1 e1 k1)))
-    (when type (push el res))))
-
-(defun reduce-sorted (rfunc func2 pred l0 l1
-		      &key (ckey #'identity) (akey #'identity) initial-value)
-  "Reduce a pair of sorted sequences."
-  (declare (function rfunc func2 pred ckey akey) (list l0 l1))
-  (let ((res initial-value) (t0 l0) (t1 l1) (e0 (car l0)) (e1 (car l1))
-	(k0 (and l0 (funcall ckey (car l0))))
-	(k1 (and l1 (funcall ckey (car l1)))))
-    (unless res
-      (setq res
-	    (if (or l0 l1)
-		(multiple-value-call func2
-		  (process-and-shift pred akey ckey t0 e0 k0 t1 e1 k1))
-		(funcall rfunc))))
-    (do () ((and (null t0) (null t1)) res)
-      (setq res (funcall rfunc res
-			 (multiple-value-call func2
-			   (process-and-shift pred akey ckey
-					      t0 e0 k0 t1 e1 k1)))))))
-
-(defun sorted-map (type func pred missing ckey akey &rest lists)
-  "Operate on the corresponding elements of the sorted lists.  Each list
-in LISTS is assumed to be sorted according to the predicate PRED applied
-to keys CKEY.  Apply function FUNC to the AKEYs of the elements of the
-lists with the same CKEYs.  When a list doesn't have an element with the
-particular CKEY, function gets nil (if MISSING is nil) or the previous
-AKEY (if MISSING is non-nil).
-CKEY and AKEY values of nil are the same as #'identity.
-  (sorted-map type func pred missing ckey akey &rest lists)"
-  (declare (function func pred) (symbol type))
-  (unless ckey (setq ckey #'identity))
-  (unless akey (setq akey #'identity))
-  (do ((sec (copy-list lists)) (akeys (make-list (length lists)))
-       begck ck fnn res)
-      ((every #'null sec) (nreverse res))
-    ;; get the current ckey
-    (setq fnn (member nil sec :test-not #'eq)
-	  begck (funcall ckey (caar fnn)))
-    (dolist (ls (rest fnn))
-      (when ls (setq ck (funcall ckey (car ls)))
-	    (when (funcall pred ck begck) (setq begck ck))))
-    ;; shift and operate
-    (mapl (lambda (ls ak)
-	    (cond ((and (car ls)
-			(not (funcall pred begck (funcall ckey (caar ls)))))
-		   (setf (car ak) (funcall akey (caar ls)))
-		   (pop (car ls)))
-		  (t (if missing nil (setf (car ak) nil)))))
-	  sec akeys)
-    (cond ((eq type 'list) (push (apply func akeys) res))
-	  (t (apply func akeys)))))
 
 ;;;
 ;;; Dated List

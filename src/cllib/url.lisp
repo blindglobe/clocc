@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.28 2001/12/04 22:22:42 sds Exp $
+;;; $Id: url.lisp,v 2.29 2002/03/09 07:28:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -224,8 +224,9 @@ The argument can be:
                               :end end)
               slashp (/= (1+ idx) start)))
       (setq idx
-            (and slashp
-                 (position #\@ string :start start :test #'char= :end end)))
+            (case (url-prot url)
+              ((:nntp :news) nil)
+              (t (position #\@ string :start start :test #'char= :end end))))
       (when idx
         (setq idx0 (position #\# string :start start :test #'char= :end end))
         (if idx0 (setf (url-pass url) (subseq string (1+ idx0) idx)
@@ -457,7 +458,7 @@ otherwise return the first line."
                   ((:pasv) 227) ((:allo :site) 200 202) ((:rest :rnfr) 350)
                   ((:stor :list :stou :retr) 125 150 226 250) ((:xover) 224)
                   ((:group) 211) ((:article) 220) ((:nntp-quit) 205)
-                  ((:nntp-list) 215) ((:smtp-data) 250 354)
+                  ((:nntp-list) 215) ((:smtp-data) 250 354) ((:conn) 220)
                   ((:smtp-helo :mail-from :rcpt-to) 250))
              ht)
       (dolist (re (car cc)) (setf (gethash re ht) (cdr cc)))))
@@ -480,8 +481,10 @@ See RFC959 (FTP) &c.")
     (mesg :log out "~&url-ask[~s]: `~?'~%" end (car req) (cdr req)))
   (loop :with endl :of-type list =
         (typecase end
-          (integer (to-list end)) (list end)
-          (symbol (gethash end *url-replies*))
+          (integer (list end)) (list end)
+          (symbol (or (gethash end *url-replies*)
+                      (error 'code :proc 'url-ask :args (list end)
+                             :mesg "invalid response id: ~s")))
           (t (error 'case-error :proc 'url-ask
                     :args (list 'end end 'integer 'list 'symbol))))
         :for ln :of-type simple-string =

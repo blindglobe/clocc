@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1998-06-30 Tue 09:47:50 EDT sds@mute.eaglets.com>
+;;; File: <url.lisp - 1998-07-31 Fri 12:37:42 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.3 1998/06/30 13:48:08 sds Exp $
+;;; $Id: url.lisp,v 1.4 1998/07/31 16:53:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.4  1998/07/31 16:53:21  sds
+;;; Declared `stream' as a stream in `print-*'.
+;;;
 ;;; Revision 1.3  1998/06/30 13:48:08  sds
 ;;; Switched to `print-object'.
 ;;;
@@ -77,14 +80,14 @@
 ;;; }}}{{{ URL handling
 ;;;
 
-(defstruct (url #+cmu (:print-function print-url))
+(defstruct (url)
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
-  (prot "" :type string)		; protocol
-  (user "" :type string)		; username
-  (pass "" :type string)		; password
-  (host "" :type string)		; hostname
+  (prot "" :type simple-string)		; protocol
+  (user "" :type simple-string)		; username
+  (pass "" :type simple-string)		; password
+  (host "" :type simple-string)		; hostname
   (port 0  :type fixnum)		; port number
-  (path "/" :type string))		; pathname
+  (path "/" :type simple-string)) ; pathname
 
 (eval-when (load compile eval)
 (unless (fboundp 'socket-service-port)
@@ -121,55 +124,25 @@ guess from the protocol."
   (setq url (url url))
   (subseq (url-path url) (1+ (position #\/ (url-path url) :from-end t))))
 
-#-cmu
-(defmethod print-object ((url url) stream)
+(defmethod print-object ((url url) (stream stream))
   "Print the URL in the standard form."
-  (if *print-readably* (call-next-method)
-      (let ((str (case stream ((nil) (make-string-output-stream))
-                       ((t) *standard-output*) (t stream))))
-        (declare (stream str))
-        (when *print-escape* (write #\" :stream str))
-        (let ((*print-escape* nil))
-          (write (url-prot url) :stream str) (write-string "://" str)
-          (unless (string= "" (url-user url))
-            (write (url-user url) :stream str)
-            (unless (string= "" (url-pass url))
-              (write-string "#" str) (write (url-pass url) :stream str))
-            (write-string "@" str))
-          (write (url-host url) :stream str)
-          (unless (zerop (url-port url))
-            (write-string ":" str) (write (url-port url) :stream str))
-          (unless (or (zerop (length (url-path url)))
-                      (eq #\/ (aref (url-path url) 0)))
-            (write-string "/" str))
-          (write (url-path url) :stream str))
-        (when *print-escape* (write #\" :stream str))
-        (unless stream (get-output-stream-string str)))))
-
-#+cmu
-(defun print-url (url &optional (stream t) depth)
-  "Print the URL in the standard form."
-  (declare (ignore depth) (type url url))
-  (let ((str (case stream ((nil) (make-string-output-stream))
-                   ((t) *standard-output*) (t stream))))
-    (declare (stream str))
-    (when *print-escape* (write #\" :stream str))
-    (let ((*print-escape* nil))
-      (write (url-prot url) :stream str) (write-string "://" str)
-      (unless (equal "" (url-user url))
-        (write (url-user url) :stream str)
-        (unless (equal "" (url-pass url))
-          (write-string "#" str) (write (url-pass url) :stream str))
-        (write-string "@" str))
-      (write (url-host url) :stream str)
-      (unless (zerop (url-port url))
-        (write-string ":" str) (write (url-port url) :stream str))
-      (unless (or (zerop (length (url-path url)))
-                  (eq #\/ (aref (url-path url) 0)))
-        (write-string "/" str))
-      (write (url-path url) :stream str))
-    (when *print-escape* (write #\" :stream str))
-    (unless stream (get-output-stream-string str))))
+  (when *print-readably* (return-from print-object (call-next-method)))
+  (when *print-escape* (write-string "\"" stream))
+  (let ((*print-escape* nil))
+    (write (url-prot url) :stream stream) (write-string "://" stream)
+    (unless (string= "" (url-user url))
+      (write (url-user url) :stream stream)
+      (unless (string= "" (url-pass url))
+        (write-string "#" stream) (write (url-pass url) :stream stream))
+      (write-string "@" stream))
+    (write (url-host url) :stream stream)
+    (unless (zerop (url-port url))
+      (write-string ":" stream) (write (url-port url) :stream stream))
+    (unless (or (zerop (length (url-path url)))
+                (eq #\/ (aref (url-path url) 0)))
+      (write-string "/" stream))
+    (write (url-path url) :stream stream))
+  (when *print-escape* (write-string "\"" stream)))
 
 (defcustom *url-special-chars* simple-string "#%&*+,-./:=?@_~"
   "*The string consisting of non-alphanumeric characters allowed in a URL.")
@@ -190,10 +163,11 @@ guess from the protocol."
 
 (defun parse-url (string &key (start 0) end)
   "Parse a string into a new URL."
-  (declare (string string))
-  (setq string (string-trim +whitespace+ string))
-  (let ((idx (search "://" string :start2 start :end2 end :test #'char=))
-	idx0 (url (make-url)))
+  (declare (string string) (fixnum start))
+  (let* ((string (coerce (string-trim +whitespace+ string) 'simple-string))
+         (idx (search "://" string :start2 start :end2 end :test #'char=))
+         idx0 (url (make-url)))
+    (declare (simple-string string))
     (when idx
       (setf (url-prot url) (subseq string start idx))
       (setq start (+ idx 3)))
@@ -278,6 +252,7 @@ ERR is the stream for information messages."
   (setq sock (or sock (open-socket url)))
   (format sock "GET ~a HTTP/1.0~%~%" (url-path url))
   (do ((sk sock) (stat 302) sym res) ((not (eql stat 302)) sk)
+    (declare (fixnum stat))
     (setq sym (read sk) stat (read sk))
     (when (string-equal sym "http/1.1")
       (when (>= stat 400) (error "~d: ~a~%" res (read-line sk))) ; error
@@ -298,7 +273,7 @@ ERR is the stream for information messages."
   (do (str tok pos) (nil)
     (when (or (typep pos 'error) (>= (ts-posn ts) (length (ts-buff ts))))
       (unless (typep pos 'error) (setf (ts-posn ts) 0))
-      (setf str (read-line (ts-sock ts) nil +eof+))
+      (setq str (read-line (ts-sock ts) nil +eof+))
       (when (eq str +eof+)
 	(if (typep pos 'error) (error pos)
 	    (if errorp (error "EOF on ~a" ts) (return-from read-next +eof+))))
@@ -309,9 +284,10 @@ ERR is the stream for information messages."
       (do ((beg -1) (len (1- (length str))))
 	  ((or (= beg len)
 	       (null (setq beg (position #\. str :start (1+ beg))))))
-	(if (or (digit-char-p (elt str (1- beg)))
-		(and (< beg len) (digit-char-p (elt str (1+ beg)))))
-	    (incf beg) (setf (elt str beg) #\Space)))
+        (declare (type (signed-byte 20) beg len))
+	(if (or (digit-char-p (schar str (1- beg)))
+		(and (< beg len) (digit-char-p (schar str (1+ beg)))))
+	    (incf beg) (setf (schar str beg) #\Space)))
       (setf (ts-buff ts) (if (typep pos 'error)
 			     (concatenate 'string (ts-buff ts) str) str)))
     (setf (values tok pos)
@@ -403,6 +379,7 @@ OUT is the output stream and defaults to T."
   (with-open-url (sock url *readtable* t)
     (do (rr (ii 0 (1+ ii)))
 	((eq +eof+ (setq rr (read-line sock nil +eof+))))
+      (declare (type (unsigned-byte 20) ii))
       (format out fmt ii rr))))
 
 (defun whois (host)
@@ -418,6 +395,7 @@ See `dump-url' about the optional parameters."
   (with-open-url (sock url *html-readtable* t)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))
 	((eq +eof+ (setq rr (read-next ts))))
+      (declare (type (unsigned-byte 20) ii))
       (format out fmt ii rr))))
 
 (provide "url")

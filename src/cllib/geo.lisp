@@ -1,4 +1,4 @@
-;;; File: <geo.lisp - 1998-06-30 Tue 09:45:56 EDT sds@mute.eaglets.com>
+;;; File: <geo.lisp - 1998-07-31 Fri 12:37:41 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: geo.lisp,v 1.3 1998/06/30 13:46:58 sds Exp $
+;;; $Id: geo.lisp,v 1.4 1998/07/31 16:54:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 ;;; $Log: geo.lisp,v $
+;;; Revision 1.4  1998/07/31 16:54:23  sds
+;;; Declared `stream' as a stream in `print-*'.
+;;;
 ;;; Revision 1.3  1998/06/30 13:46:58  sds
 ;;; Switched to `print-object'.
 ;;;
@@ -33,18 +36,18 @@
   "Return the number parsed from latitude or longitude (dd:mm:ss[NSEW])
 read from the stream."
   (declare (stream st))
-  (let* ((sig 1) (cc (+ (read st) (/ (read st) 60.)))
+  (let* ((sig 1) (cc (+ (read st) (/ (read st) 60.0d0)))
 	 (lt (read st)) se nn)
     (if (numberp lt) (setq se lt nn 0 lt (string (read st)))
 	(setf (values se nn)
 	      (parse-integer (setq lt (string lt)) :junk-allowed t)))
     (unless se (setq se 0))
-    (setq sig (cond ((or (char-equal (elt lt nn) #\n)
-			 (char-equal (elt lt nn) #\e)) 1)
-		    ((or (char-equal (elt lt nn) #\s)
-			 (char-equal (elt lt nn) #\w)) -1)
+    (setq sig (cond ((or (char-equal (schar lt nn) #\n)
+			 (char-equal (schar lt nn) #\e)) 1)
+		    ((or (char-equal (schar lt nn) #\s)
+			 (char-equal (schar lt nn) #\w)) -1)
 		    (t (error "Wrong sign designation: `~a'. ~
-Must be one of [N]orth, [S]outh, [E]ast or [W]est." (elt lt nn)))))
+Must be one of [N]orth, [S]outh, [E]ast or [W]est." (schar lt nn)))))
     (double-float (* sig (+ cc (/ se 3600d0))))))
 
 (defun geo-location (str &key (start 0))
@@ -71,41 +74,23 @@ second argument."
 ;;; }}}{{{ Geo-Data
 ;;;
 
-(defstruct (geo-data #+cmu (:print-function print-geod) (:conc-name geod-))
+(eval-when (load compile eval)
+(defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0 *))	; population
   (lat 0.0d0 :type double-float) ; latitude
   (lon 0.0d0 :type double-float) ; longitude
   (zip nil :type list))		; list of zip codes.
+)
 
-#-cmu
-(defmethod print-object ((gd geo-data) stream)
+(defmethod print-object ((gd geo-data) (stream stream))
   "Print the geo-data."
-  (if *print-readably* (call-next-method)
-      (let ((str (case stream ((nil) (make-string-output-stream))
-                       ((t) *standard-output*) (t stream))))
-        (declare (stream str))
-	(format str "Place: ~a~%Population: ~12:d;~30tLocation: "
-		(geod-name gd) (geod-pop gd))
-	(print-geo-coords gd str)
-	(format str "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd))
-		(geod-zip gd))
-	(unless stream (get-output-stream-string str)))))
-
-#+cmu
-(defun print-geod (gd &optional stream depth)
-  "Print the geo-data."
-  (declare (type geo-data gd) (ignore depth))
-  (if *print-readably* (funcall (print-readably geo-data) gd stream)
-      (let ((str (case stream ((nil) (make-string-output-stream))
-                       ((t) *standard-output*) (t stream))))
-        (declare (stream str))
-	(format str "Place: ~a~%Population: ~12:d;~30tLocation: "
-		(geod-name gd) (geod-pop gd))
-	(print-geo-coords gd str)
-	(format str "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd))
-		(geod-zip gd))
-	(unless stream (get-output-stream-string str)))))
+  (when *print-readably* (return-from print-object (call-next-method)))
+  (format stream "Place: ~a~%Population: ~12:d;~30tLocation: "
+          (geod-name gd) (geod-pop gd))
+  (print-geo-coords gd stream)
+  (format stream "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd))
+          (geod-zip gd)))
 
 (defcustom *census-gazetteer-url* url
   (make-url :prot "http" :host "www.census.gov" :path "/cgi-bin/gazetteer?")
@@ -128,6 +113,7 @@ and return a list of geo-data."
 	((or (search "</ul>" str)
 	     (search "</ul>" (setq str (read-line sock))))
 	 (nreverse res))
+      (declare (type (unsigned-byte 20) ii) (simple-string str))
       ;; name
       (setq gd (make-geo-data :name (strip-html-markup str))
 	    str (read-line sock))
@@ -171,7 +157,8 @@ and return a list of geo-data."
 ;;; Countries
 ;;;
 
-(defstruct (country #+cmu (:print-function print-country))
+(eval-when (load compile eval)
+(defstruct (country)
   "The country structure - all the data about a country you can think of."
   (name "" :type simple-string)	; name
   (fips nil :type symbol)	; FIPS PUB 10-4 code (US Dept of State)
@@ -203,69 +190,31 @@ and return a list of geo-data."
   (ethn nil :type (or null simple-string)) ; ethnic divisions
   (lang nil :type (or null simple-string)) ; languages
   (rlgn nil :type (or null simple-string)) ; religions
-  )
+  ))
 
-#-cmu
-(defmethod print-object ((ntn country) stream)
-  (if *print-readably* (call-next-method)
-      (let ((str (case stream ((nil) (make-string-output-stream))
-                       ((t) *standard-output*) (t stream))))
-        (declare (stream str))
-	(format str "~a~@[ (~a)~] [~a ~a] [ISO: ~a ~a ~d]~@[ part of ~a~]
+(defmethod print-object ((ntn country) (stream stream))
+  (when *print-readably* (return-from print-object (call-next-method)))
+  (format stream "~a~@[ (~a)~] [~a ~a] [ISO: ~a ~a ~d]~@[ part of ~a~]
 Location: "
-		(country-name ntn) (country-captl ntn) (country-fips ntn)
-		(country-inet ntn) (country-iso2 ntn) (country-iso3 ntn)
-		(country-isod ntn) (and (country-incl ntn)
-					(country-name (country-incl ntn))))
-	(print-geo-coords ntn str)
-	(format str "~%Population: ~15:d  B: ~5f  D: ~5f  M: ~5f  Net: ~5f
+          (country-name ntn) (country-captl ntn) (country-fips ntn)
+          (country-inet ntn) (country-iso2 ntn) (country-iso3 ntn)
+          (country-isod ntn) (and (country-incl ntn)
+                                  (country-name (country-incl ntn))))
+  (print-geo-coords ntn stream)
+  (format stream "~%Population: ~15:d  B: ~5f  D: ~5f  M: ~5f  Net: ~5f
 Fertility: ~5f births/woman   Life expectancy at birth: ~5f years
 Area: ~1/comma/ sq km  Frontiers: ~1/comma/ km  Coastline: ~1/comma/ km
 GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])
 ~@[ * Location: ~a~%~]~@[ * Disputes: ~a~%~]~
 ~@[ * Climate: ~a~%~]~@[ * Resources: ~a~%~]~@[ * Ethnic divisions: ~a~%~]~
 ~@[ * Languages: ~a~%~]~@[ * Religions: ~a~%~]~@[[~a]~%~]"
-                (country-pop ntn) (country-birth ntn) (country-death ntn)
-		(country-mgrtn ntn) (country-pop-chg ntn) (country-fert ntn)
-		(country-life ntn) (country-area ntn) (country-frnt ntn)
-                (country-cstl ntn) (country-gdp ntn) (country-gdppc ntn)
-		(country-gdpgr ntn) (country-lctn ntn) (country-dspt ntn)
-                (country-clmt ntn) (country-rsrc ntn) (country-ethn ntn)
-                (country-lang ntn) (country-rlgn ntn) (country-note ntn))
-	(unless stream (get-output-stream-string str)))))
-
-#+cmu
-(defun print-country (ntn &optional (stream t) depth)
-  "Print the COUNTRY structure."
-  (declare (type country ntn) (fixnum depth))
-  (if *print-readably* (funcall (print-readably country) ntn str)
-      (let ((str (case stream ((nil) (make-string-output-stream))
-                       ((t) *standard-output*) (t stream))))
-        (declare (stream str))
-	(format str "~a~@[ (~a)~] [~a ~a] [ISO: ~a ~a ~d]~@[ part of ~a~]
-Location: "
-		(country-name ntn) (country-captl ntn) (country-fips ntn)
-		(country-inet ntn) (country-iso2 ntn) (country-iso3 ntn)
-		(country-isod ntn) (and (country-incl ntn)
-					(country-name (country-incl ntn))))
-	(print-geo-coords ntn str)
-	(format str "~%Population: ~15:d  B: ~5f  D: ~5f  M: ~5f  Net: ~5f
-Fertility: ~5f births/woman   Life expectancy at birth: ~5f years
-Area: ~1/comma/ sq km  Frontiers: ~1/comma/ km  Coastline: ~1/comma/ km
-GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])~%"
-                (country-pop ntn) (country-birth ntn) (country-death ntn)
-		(country-mgrtn ntn) (country-pop-chg ntn) (country-fert ntn)
-		(country-life ntn) (country-area ntn) (country-frnt ntn)
-                (country-cstl ntn) (country-gdp ntn) (country-gdppc ntn)
-		(country-gdpgr ntn))
-        (when (<= depth 1)
-          (format str "~@[ * Location: ~a~%~]~@[ * Disputes: ~a~%~]~
-~@[ * Climate: ~a~%~]~@[ * Resources: ~a~%~]~@[ * Ethnic divisions: ~a~%~]~
-~@[ * Languages: ~a~%~]~@[ * Religions: ~a~%~]~@[[~a]~%~]"
-                  (country-lctn ntn) (country-dspt ntn) (country-clmt ntn)
-                  (country-rsrc ntn) (country-ethn ntn) (country-lang ntn)
-                  (country-rlgn ntn) (country-note ntn)))
-	(unless stream (get-output-stream-string str)))))
+          (country-pop ntn) (country-birth ntn) (country-death ntn)
+          (country-mgrtn ntn) (country-pop-chg ntn) (country-fert ntn)
+          (country-life ntn) (country-area ntn) (country-frnt ntn)
+          (country-cstl ntn) (country-gdp ntn) (country-gdppc ntn)
+          (country-gdpgr ntn) (country-lctn ntn) (country-dspt ntn)
+          (country-clmt ntn) (country-rsrc ntn) (country-ethn ntn)
+          (country-lang ntn) (country-rlgn ntn) (country-note ntn)))
 
 (defsubst country-pop-chg (ntn)
   "Return the net population change, per 1000."
@@ -320,7 +269,8 @@ is a float, such as the GDP, VALUE is a cons with the range.
 	(cp (position #\< rr :from-end t :start 2) (position #\< rr))
 	(cc (subseq rr (1+ (position #\> rr)) cp)
 	    (concatenate 'string cc " " (subseq rr 0 cp))))
-       (cp (if (char= #\& (schar cc 0)) nil (string-trim +whitespace+ cc)))))
+       (cp (if (char= #\& (schar cc 0)) nil (string-trim +whitespace+ cc)))
+    (declare (simple-string rr cc))))
 
 (defun fetch-country-list ()
   "Initialize `*country-list*' from `*geo-code-url*'."
@@ -332,7 +282,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
     (do (res)
 	((search "</TABLE>" (skip-blanks st) :test #'char=)
 	 (setq *country-list* (nreverse res)))
-      (princ ".")
+      (princ ".") (force-output)
       (push (make-country
 	     :name (read-some-lines st)
 	     :fips (kwd (str-core (read-line st)))
@@ -410,7 +360,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 	    (country-mgrtn cc)
 	    (next-info st "<BR><B>Net migration rate:</B>" 'float)
 	    (country-life cc)
-	    (next-info st "<BR><B>Life expectancy at birth:</B>" 'float 1)
+	    (next-info st "<BR><B>Life expectancy at birth:</B>" 'float)
 	    (country-fert cc)
 	    (next-info st "<BR><B>Total fertility rate:</B>"'float)
 	    (country-ethn cc) (next-info st "<BR><B>Ethnic groups:</B>")
@@ -428,13 +378,13 @@ is a float, such as the GDP, VALUE is a cons with the range.
   (declare (stream str) (simple-string skip) (symbol type))
   (let ((ln (skip-to-line str skip)))
     (case type (float (double-float (parse-num ln))) (number (parse-num ln))
-	  (t (concatenate 'string ln (read-non-blanks))))))
+	  (t (concatenate 'string ln (read-non-blanks str))))))
 
 (defun add-note (cc &rest news)
   "Append a note."
-  (declare (list new))
-  (setf (slot-value cc 'note)
-	(apply #'concatenate 'string (slot-value cc 'note)
+  (declare (type country cc) (list news))
+  (setf (country-note cc)
+	(apply #'concatenate 'string (country-note cc)
 	       #.(string #\Newline) news)))
 
 ;(defun true (&rest zz) (declare (ignore zz)) t)

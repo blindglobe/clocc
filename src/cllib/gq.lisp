@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1998-06-30 Tue 09:47:14 EDT sds@mute.eaglets.com>
+;;; File: <gq.lisp - 1998-07-31 Fri 12:37:41 EDT sds@mute.eaglets.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.5 1998/06/30 13:47:42 sds Exp $
+;;; $Id: gq.lisp,v 1.6 1998/07/31 16:53:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.6  1998/07/31 16:53:57  sds
+;;; Declared `stream' as a stream in `print-*'.
+;;;
 ;;; Revision 1.5  1998/06/30 13:47:42  sds
 ;;; Switched to `print-object'.
 ;;;
@@ -54,7 +57,7 @@
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (daily-data #+cmu (:print-function print-dd) (:conc-name dd-))
+(defstruct (daily-data (:conc-name dd-))
   (nav 0.0d0 :type double-float)
   (chg 0.0d0 :type double-float)
   (prc 0.0d0 :type double-float)
@@ -74,8 +77,7 @@
       (when (zerop (dd-pre dd)) (setf (dd-pre dd) (- nav chg))))
     dd))
 
-#-cmu
-(defmethod print-object ((dd daily-data) stream)
+(defmethod print-object ((dd daily-data) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "price:~15t~7,2f~35tbid:~45t~7,2f
 previous:~15t~7,2f~35task:~45t~7,2f
@@ -84,25 +86,13 @@ change:~15t~7,2f~35thigh:~45t~7,2f
 	      (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
 	      (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
 
-#+cmu
-(defun print-dd (dd &optional stream depth)
-  "Print the daily datum."
-  (declare (ignore depth) (type daily-data dd))
-  (if *print-readably* (funcall (print-readably daily-data) dd stream)
-      (format stream
-	      "price:~15t~7,2f~35tbid:~45t~7,2f
-previous:~15t~7,2f~35task:~45t~7,2f
-change:~15t~7,2f~35thigh:~45t~7,2f
-%:~15t~7,2f~35tlow:~45t~7,2f~%"
-	      (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
-	      (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
-
 (defun gq-fix-date (dt)
   "Fix the date to be the last date when the quote could be available."
+  (declare (type (or null date) dt) (values date))
   (multiple-value-bind (se mi ho da mo ye wd) (get-decoded-time)
     (declare (ignore se mi) (fixnum ho da mo ye wd))
     (let ((td (mk-date :ye ye :mo mo :da da)))
-      (declare (type date dt))
+      (declare (type date td))
       (if (and (or (null dt) (date= dt td)) (< ho 17))
           (yesterday td (case wd (0 3) (6 2) (t 1))) (or dt td)))))
 
@@ -158,7 +148,8 @@ change:~15t~7,2f~35thigh:~45t~7,2f
       (do ((st (read-line sock) (read-line sock))
 	   (sy (format nil "( ~a)" (car ti))))
 	  ((string-equal st sy :end1 (min (length st) (length sy)))
-	   (format t "found `~a'~%" st)))
+	   (format t "found `~a'~%" st))
+        (declare (simple-string st sy)))
       (setq ts (make-text-stream :sock sock))
       ;; (skip-tokens ts (car ti) :key (safe-fun #'car #'consp))
       (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)) res)
@@ -195,7 +186,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
   "Get the quotes from one of `*get-quote-url-list*'.
 The first arg, SERVER, when non-nil, specifies which server to use."
   (if server
-      (let ((qq (if (numberp server) (elt *get-quote-url-list* server)
+      (let ((qq (if (numberp server) (nth server *get-quote-url-list*)
 		    (find server *get-quote-url-list* :key #'third
 			  :test #'string-equal))))
 	(unless qq (error "Unknown server `~a'.~%" server))
@@ -205,6 +196,7 @@ The first arg, SERVER, when non-nil, specifies which server to use."
       (do ((ql *get-quote-url-list* (cdr ql)) res name)
 	  ((or (endp ql) (car res)) (values-list (cons name res)))
 	(format t "~&Trying ~a..." (setq name (caddar ql)))
+        (force-output)
 	(setq res (multiple-value-list
 		   (ignore-errors (apply (cadar ql) (caar ql) ticks))))
 	(format t "~:[failed...~;success!~]~%" (car res)))))
@@ -243,7 +235,7 @@ Return the most recent date with these month and day."
   "The history, to be read from `*hist-data-file*'.")
 
 (eval-when (load compile eval)
-(defstruct (pfl #+cmu (:print-function print-pfl))
+(defstruct (pfl)
   (tick nil :type symbol)
   (nums 0.0d0 :type double-float)
   (bprc 0.0d0 :type double-float)
@@ -257,17 +249,8 @@ Suitable for `read-list-from-stream'."
   (values (make-pfl :tick ra :nums (read stream) :bprc (read stream)
 		    :name (read stream)) (read stream nil +eof+)))
 
-#-cmu
-(defmethod print-object ((pfl pfl) stream)
+(defmethod print-object ((pfl pfl) (stream stream))
   (if *print-readably* (call-next-method)
-      (format stream "~:@(~a~) ~8,3f ~7,2f ~a" (pfl-tick pfl) (pfl-nums pfl)
-	      (pfl-bprc pfl) (pfl-name pfl))))
-
-#+cmu
-(defun print-pfl (pfl &optional stream depth)
-  "Print the PFL struct."
-  (declare (type pfl pfl) (ignore depth))
-  (if *print-readably* (funcall (print-readably pfl) pfl stream)
       (format stream "~:@(~a~) ~8,3f ~7,2f ~a" (pfl-tick pfl) (pfl-nums pfl)
 	      (pfl-bprc pfl) (pfl-name pfl))))
 
@@ -276,7 +259,7 @@ Suitable for `read-list-from-stream'."
   (declare (symbol sy)) (find sy *holdings* :key #'pfl-tick :test #'eq))
 
 (eval-when (load compile eval)
-(defstruct (hist #+cmu (:print-function print-hist))
+(defstruct (hist)
   (date +bad-date+ :type date)
   (totl 0.0d0 :type double-float)
   (navs nil :type list))
@@ -292,26 +275,16 @@ Suitable for `read-list-from-stream'."
        (values hist vl))
     (push vl rr)))
 
-#-cmu
-(defmethod print-object ((hist hist) stream)
+(defmethod print-object ((hist hist) (stream stream))
   (if *print-readably* (call-next-method)
-      (format stream "~a ~15,5f~{ ~7,2f~}" (hist-date hist)
-	      (hist-totl hist) (hist-navs hist))))
-
-#+cmu
-(defun print-hist (hist &optional stream depth)
-  "Print the HIST struct."
-  (declare (type hist hist) (ignore depth))
-  (if *print-readably* (funcall (print-readably hist) hist stream)
       (format stream "~a ~15,5f~{ ~7,2f~}" (hist-date hist)
 	      (hist-totl hist) (hist-navs hist))))
 
 (defun hist-totl-comp (hold navs)
   "Compute the correct total from the hist records and holdings list."
   (declare (list hold navs))
-  (let ((tot 0))
-    (map nil (lambda (ho vl) (incf tot (* vl (pfl-nums ho)))) hold navs)
-    tot))
+  (loop for ho of-type pfl in hold for vl of-type double-float in navs
+        sum (* vl (pfl-nums ho)) double-float))
 
 (defun read-data-file (file)
   "Return 2 values: the list of holdings and the history list."
@@ -326,6 +299,7 @@ Suitable for `read-list-from-stream'."
   "Save the history into the file.
 If the file doesn't exist, it is created. If it exists,
 only the data after `*hist-data-file-sep*' is changed."
+  (declare (list hold hist))
   (with-open-file (outst file :direction :io :if-exists :overwrite)
     (cond ((read outst nil nil)		; file existed
 	   (format t "File `~a' exists.  Appending...~%" file)
@@ -421,9 +395,9 @@ YEA is the list of 1, 3, 5, and 10-year returns."
 			 (cond ((not (zerop (dd-pre dd))) (dd-pre dd))
 			       ((not (zerop (dd-chg dd)))
 				(- (dd-nav dd) (dd-chg dd)))
-			       (t (elt (hist-navs (cadr lh))
-				       (position (pfl-tick hl) hold :test #'eq
-						 :key #'pfl-tick))))))
+			       (t (nth (position (pfl-tick hl) hold :test #'eq
+						 :key #'pfl-tick)
+				       (hist-navs (cadr lh)))))))
 	     (incf ctot cv) (incf otot ov) (incf ptot pv)
 	     (setf (values pers apy) (percent-change ov cv db))
 	     (pr-res str "   " cv ov pers apy pv))
@@ -461,7 +435,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 (defun plot-portfolio (hold hist plot)
   "Plot the portfolio."
   (declare (list hold hist))
-  (do ((i 0 (1+ i)) (hl hold (cdr hl)) res)
+  (do ((ii 0 (1+ ii)) (hl hold (cdr hl)) res)
       ((null hl)
        (plot-dated-lists
 	(hist-date (car hist)) (hist-date (car (last hist)))
@@ -470,10 +444,12 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 	      (nreverse res)) :rel t :slot 'misc
 	:title "Portfolio History" :data-style "linespoints"
 	:ylabel "Relative Value" :plot plot :plot-key "top left box"))
-    (push (make-dated-list
-	   :ll hist :date 'hist-date :name (pfl-name (car hl))
-	   :code (pfl-tick (car hl)) :misc
-	   (let ((i i)) (lambda (hs) (elt (hist-navs hs) i)))) res)))
+    (declare (fixnum ii))
+    (push (make-dated-list :ll hist :date 'hist-date :name (pfl-name (car hl))
+                           :code (pfl-tick (car hl)) :misc
+                           (let ((ii ii))
+                             (declare (fixnum ii))
+                             (lambda (hs) (nth ii (hist-navs hs))))) res)))
 
 ;;;
 ;;; }}}{{{ Run the thing

@@ -885,24 +885,66 @@ main-loop
    `((error ,(cadr x))))
 
 ;------------------------------------------------------------------------------
-(defun parse-subroutine-call (x) 
- (prog (arglist)
-    (setq arglist 
-          (if (third x)
-              (mapcar  #'id-expression 
-                       (list-split '|,| (check_new_vbles (third x))))
-              nil))
-    (return
-     (if arglist
-        `((multiple-value-setq 
-                ,(mapcar #'(lambda (x)
-                             (cond ((not (symbolp x)) '*dummy_var*)
-                                   ((vble-is-array-p x) '*dummy_var*)
-                                   (t x)))
-                           arglist)
-                (,(second x) ,@arglist)))
-        `((,(second x))))
-)))
+(defun parse-subroutine-call (x)
+  ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
+  (let ((arglist (if (third x)
+		     (mapcar  #'id-expression 
+			      (list-split '|,| (check_new_vbles (third x))))
+		     nil)))
+    (cond ((null arglist)
+	   ;; No args to the subroutine
+	   `((,(second x))))
+	  ((every #'symbolp arglist)
+	   ;; If every argument is a simple variable (or array), use m-v-setq to
+	   ;; set the simple variables to the correct values.
+	   `((multiple-value-setq 
+		 ,(mapcar #'(lambda (x)
+			      (cond ((not (symbolp x)) '*dummy_var*)
+				    ((vble-is-array-p x) '*dummy_var*)
+				    (t x)))
+			  arglist)
+	       (,(second x) ,@arglist))))	   
+	  (t
+	   ;; This is the more complicated case where we need to be
+	   ;; more careful.  M-v-bind is used to get all of the return
+	   ;; values.  Then we go and set the parameters according to
+	   ;; the returned values.  If the parameter is a simple
+	   ;; variable or an array reference, set the value.
+	   ;; Otherwise, we do nothing.
+	   ;;
+	   ;; The user will have to check to make sure this is right.
+	   ;; Array references can also be a slice of an array that is
+	   ;; passed to the subroutine, and that isn't handled here!
+	   ;;
+	   (let* ((vnames (let ((v '()))
+			    ;; Make up some variable names
+			    (dotimes (k (length arglist))
+			      (push (intern (format nil "VAR-~D" k)) v))
+			    (nreverse v)))
+		  ;; Figure out if and how to set the parameters to the returned values.
+		  (setters (do ((v nil)
+				(vars vnames (rest vars))
+				(args arglist (rest args)))
+			       ((null args) (remove nil (nreverse v)))
+			     (let ((var (first vars))
+				   (arg (first args)))
+			       (push (cond ((vble-is-array-p arg)
+					    nil)
+					   ((symbolp arg)
+					    `(setf ,arg ,var))
+					   ((and (listp arg)
+						 (eq (first arg) 'fref))
+					    `(fset ,arg ,var))
+					   (t
+					    nil))
+				     v)))))
+	     (if setters
+		 `((multiple-value-bind ,vnames
+		       (,(second x) ,@arglist)
+		     (declare (ignorable ,@vnames))
+		     ,@setters))
+		 `((,(second x) ,@arglist))))))))
+
 ;------------------------------------------------------------------------------
 (defun parse-do-loop (x)
  (let* ((limits (list-split '|,| (cddddr x))) (step (third limits)))

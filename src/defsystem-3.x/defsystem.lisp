@@ -542,6 +542,11 @@
 ;;; 19991211  ma    Merged in changes requested by T. Russ of
 ;;;                 ISI. Please refer to the special "ISI" comments to
 ;;;                 understand these changes
+;;; 20000228 ma     The symbols FIND-SYSTEM, LOAD-SYSTEM, DEFSYSTEM,
+;;;                 COMPILE-SYSTEM and HARDCOPY-SYSTEM are no longer
+;;;                 imported in the COMMON-LISP-USER package.
+;;;                 Cfr. the definitions of *EXPORTS* and
+;;;                 *SPECIAL-EXPORTS*.
 ;;;
 
 ;;;---------------------------------------------------------------------------
@@ -1042,14 +1047,18 @@
    (export (setq *exports*
 		 '(operate-on-system
 		   oos
-		   find-system
 		   afs-binary-directory afs-source-directory
 		   files-in-system)))
    (export (setq *special-exports*
-		 '(defsystem compile-system load-system hardcopy-system)))
+		 '()))
    (export (setq *other-exports*
 		 '(*central-registry*
 		   *bin-subdir*
+
+		   find-system
+		   defsystem compile-system load-system hardcopy-system
+
+
 		   machine-type-translation
 		   software-type-translation
 		   compiler-type-translation

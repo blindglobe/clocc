@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.21 2001/08/31 14:55:53 rtoy Exp $
+;;; $Id: math.lisp,v 2.22 2001/09/06 16:58:58 rtoy Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -757,12 +757,22 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 			 (* p0 x))
 		      (+ (* q1 y)
 			 (* q0 x)))
-	    (let ((v2 (/ p2 q2)))
+	    (let ((v2 (/ p2 q2))
+		  (scale (max (abs p2) (abs q2))))
 	      ;; Stop when the relative change is less than some
 	      ;; multiple of epsilon
 	      (when (<= (abs (/ (- v2 v1) (+ v2 v1))) (* 2 long-float-epsilon))
+		;; (format t ";; Iterations required: ~A~%" k)
 		(return v2))
 	      ;; (format t "~4D ~A ~A ~A~%" k p2 q2 v2)
+	      (when (> scale (sqrt most-positive-long-float))
+		;; Rescale the numbers if we are in danger of overflowing.
+		(let ((power-of-2 (- (nth-value 1 (decode-float scale)))))
+		  (setf p1 (* p1 (scale-float 1L0 power-of-2)))
+		  (setf p2 (* p2 (scale-float 1L0 power-of-2)))
+		  (setf q1 (* q1 (scale-float 1L0 power-of-2)))
+		  (setf q2 (* q2 (scale-float 1L0 power-of-2)))))
+		
 	      (psetf p0 p1
 		     p1 p2)
 	      (psetf q0 q1
@@ -779,7 +789,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
   ;; To preserve accuracy, we want threshold such that erf(x) =
   ;; erfc(x) = 1/2. erf(0.5) is 0.52, so that's close enough. However,
   ;; the continued fraction for erfc is quite slow for x < 4, so you
-  ;; may want to a larger threshold, but don't make is any larger than
+  ;; may want to a larger threshold, but don't make it any larger than
   ;; 1 where you lose 2-3 bits of accuracy.
   (defun erf-cf (z)
     (flet ((num (k)

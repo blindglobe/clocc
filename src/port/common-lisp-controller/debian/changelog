@@ -1,3 +1,9 @@
+common-lisp-controller (3.42) unstable; urgency=low
+
+  * Add SCL reader conditional for /etc/lisp-config.lisp
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 18 Oct 2002 00:10:47 -0600
+
 common-lisp-controller (3.41) unstable; urgency=low
 
   * Fixes faulty loaded system detection. Closes: #164666

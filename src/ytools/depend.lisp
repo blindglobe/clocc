@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.9 2005/02/01 12:30:35 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.10 2005/02/03 05:18:44 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -204,36 +204,22 @@
 		   )
 	       (labels ()
 		  (dolist (g groups)
-		     (let* ((dependee-chunks (mapcar #'pathname-denotation-chunk
-						     (filespecs->ytools-pathnames
-							(cdr g))))
-			    (loaded-dependee-chunks
-			       (mapcar (\\ (fc) (place-Loaded-chunk fc false))
-				       dependee-chunks)))
+		     (let* ((pnl (filespecs->ytools-pathnames (cdr g))))
 			(cond ((memq ':compile-time (first g))
-			       (setf (Chunk-basis compiled-ch)
-				     (union
-					dependee-chunks
-					(Chunk-basis compiled-ch)))
-			       (setf (Chunk-update-basis compiled-ch)
-				     (union loaded-dependee-chunks
-					    (Chunk-update-basis
-					       compiled-ch)))))
+			       (pathnames-note-compile-support
+				  pnl compiled-ch)))
 			(cond ((memq ':run-time (first g))
-			       (setf (File-chunk-callees file-ch)
-				     (union dependee-chunks
-					    (File-chunk-callees file-ch)))
-			       (loaded-chunk-augment-basis
-				  loaded-file-ch loaded-dependee-chunks)
-			       (dolist (called-dependee-ch dependee-chunks)
-				  (dolist (sfty (Sds-sub-file-types sdo-state))
-				     (compiled-ch-sub-file-link
-					compiled-ch called-dependee-ch
-					sfty true)))))
+			       (pathnames-note-run-support
+				  pnl file-ch
+				  loaded-file-ch)
+			       (pathnames-note-sub-file-deps
+				  pnl compiled-ch
+				  (Sds-sub-file-types sdo-state))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
 			       (setf (File-chunk-read-basis file-ch)
-				     (union dependee-chunks
+				     (union (mapcar #'pathname-denotation-chunk
+						    pnl)
 					    (File-chunk-read-basis
 						file-ch)))))))))))
     false))
@@ -288,6 +274,54 @@
 			     (setq this-group '())))))
 	     (end-group)
 	     (reverse groups))))))
+
+(defun pathnames-note-compile-support (pnl compiled-ch)
+   (dolist (pn pnl)
+      (multiple-value-bind (bl ubl)
+			   (pathname-compile-support pn)
+	 (setf (Chunk-basis compiled-ch)
+	       (union bl (Chunk-basis compiled-ch)))
+	 (setf (Chunk-update-basis compiled-ch)
+	       (union ubl (Chunk-update-basis compiled-ch))))))
+
+(defun pathnames-note-run-support (pnl file-ch loaded-file-ch)
+   (dolist (pn pnl)
+      (multiple-value-bind (bl lbl)
+			   (pathname-run-support pn)
+	 (cond (file-ch
+		(setf (File-chunk-callees file-ch)
+		      (union bl
+			     (File-chunk-callees file-ch)))))
+	 (loaded-chunk-augment-basis loaded-file-ch lbl))))
+
+(defun pathnames-note-sub-file-deps (pnl compiled-ch sub-file-types)
+   (dolist (pn pnl)
+      (multiple-value-bind (bl lbl)
+			   (pathname-run-support pn)
+			   (declare (ignore lbl))
+	 (dolist (callee-ch bl)
+	    (dolist (sfty (Sds-sub-file-types sdo-state)))
+            (compiled-ch-sub-file-link
+	       compiled-ch callee-ch sfty true)))))
+
+;;; Returns two lists of chunks that should be part of the 
+;;; basis and update-basis [respectively] for (:compiled ...).
+(defgeneric pathname-compile-support (xpn))
+
+;;; Analogously, returns two lists of chunks that should be part of the 
+;;; basis for the filoid denoted by xpn, and of the basis for
+;;; (:loaded <filoid>).	   
+(defgeneric pathname-run-support (xpn))
+
+;;; For files, you get the same two lists for compile-support as
+;;; for run-support, although with slightly different meanings.
+(defmethod pathname-compile-support ((pn pathname))
+   (pathname-run-support pn))
+
+(defmethod pathname-run-support ((pn pathname))
+   (let ((file-ch (pathname-denotation-chunk pn)))
+      (values (list file-ch)
+	      (list (place-Loaded-chunk file-ch false)))))
 
 (defmacro self-compile-dep (&rest sorts)
    `("self-dependency for compilation " ',sorts))

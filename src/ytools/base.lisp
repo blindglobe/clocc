@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.4 2004/12/20 18:04:00 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.5 2005/02/03 05:18:43 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -21,7 +21,7 @@
 	     make-Array make-Symbol
 	     Array-dimension Array-dimensions
 	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
-	     is-Keyword is-String memq assq nodup =<
+	     is-Keyword is-String memq assq nodup =< retain-if
 	     is-Pair is-cons list-copy is-list
 	     tuple pair head tail nthrest nthtail left right
 	     ;;;; one two three four five six seven eight nine ten
@@ -340,6 +340,8 @@
 (defun nodup (l &key (test #'eql))
    (declare (type list l))
    (remove-duplicates l :test test))
+
+(subr-synonym retain-if remove-if-not)
 
 ;;;;   (do ((tl (reverse l) (cdr tl))
 ;;;;	(res '()))

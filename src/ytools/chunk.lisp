@@ -1,12 +1,12 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.19 2005/02/01 12:30:26 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.20 2005/02/03 05:18:43 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-   (export '(Chunk Or-chunk Chunk-basis derive print-innards
+   (export '(Chunk Or-chunk Form-chunk Chunk-basis derive print-innards
 	     chunk-with-name chunk-destroy
 	     chunk-request-mgt chunk-terminate-mgt
 	     chunk-up-to-date chunk-update chunks-update)))
@@ -853,35 +853,46 @@
 ;;;;	    (cond ((is-Pathname exp)
 ;;;;		   (break "Chunk with pathname exp")))
 	    (do ((bl bucket (cdr bl))
-		 (c nil))
+		 (c false))
 		((or (null bl)
 		     (equal (Chunk-name (setq c (car bl)))
 			    exp))
-		 (cond ((null bl)
-			(cond (creator
-			       (let ((temp-chunk
-				        (make-instance 'Transient-chunk
-					   :name exp)))
-				  (on-list temp-chunk
-					   (href chunk-table* name-kernel))
-				  (let ((new-chunk (create exp)))
-				     (setf (href chunk-table* name-kernel)
-					   (cons new-chunk
-						 (delete temp-chunk
-							 (href chunk-table*
-							       name-kernel))))
-				     (cond (initializer
-					    (funcall initializer new-chunk)))
-				     (cond ((Chunk-managed new-chunk)
-					    (chunk-update new-chunk)))
-				     new-chunk)))
-			      (t false)))
-		       ((typep c 'Transient-chunk)
-			(error !"Circularity during chunk construction detected at ~
-                                 ~s"
-			       c))
-		       (t c)))
-;;;;	      (format t "Skipped ~s~%" c)
+		 (let ((found-chunk (and (not (null bl))
+					 c)))
+		    (cond ((and found-chunk
+				(not (typep found-chunk 'Transient-chunk)))
+			   found-chunk)
+			  ((not creator)
+			   false)
+			  (t
+			   ;; 'found-chunk' is either false or transient
+			   ;; 'creator' has been supplied
+			   (cond (found-chunk
+				  (cerror !"I will delete evidence of ~
+					    circularity and proceed"
+					  !"Circularity during chunk ~
+					    construction detected at ~
+					    ~s"
+					  found-chunk)))
+			   (let ((temp-chunk
+				    (or found-chunk
+					(make-instance 'Transient-chunk
+					   :name exp))))
+			      (cond ((not found-chunk)
+				     (on-list temp-chunk
+					      (href chunk-table*
+						    name-kernel))))
+			      (let ((new-chunk (create exp)))
+				 (setf (href chunk-table* name-kernel)
+				       (cons new-chunk
+					     (delete temp-chunk
+						     (href chunk-table*
+							   name-kernel))))
+				 (cond (initializer
+					(funcall initializer new-chunk)))
+				 (cond ((Chunk-managed new-chunk)
+					(chunk-update new-chunk)))
+				 new-chunk))))))
 	      )))))
 
 (defun chunk-destroy (ch)
@@ -909,6 +920,21 @@
    (and (slot-boundp ob sl)
 	(slot-value ob sl)))
 
+;;; A chunk the derivation of which consists of evaluating 'form' --
+(defclass Form-chunk (Chunk)
+   ((form :reader Form-chunk-form
+	  :initarg :form)))
+
+(defun place-Form-chunk (form)
+   (chunk-with-name `(:form ,form)
+      (\\ (name)
+	 (make-instance 'Chunk
+	    :name name
+	    :form form))))
+
+(defmethod derive ((fc Form-chunk))
+   (eval (Form-chunk-form fc))
+   true)
 
 ;;; For debugging --
 (defun chunk-zap-dates (c)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.18 2005/02/01 12:30:35 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.19 2005/02/03 05:18:44 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -33,7 +33,7 @@
 				   (lambda () default-fload-args*)
 				   (lambda (a)
 				      (setq default-fload-args* a)))
-	    (apply #'filespecs-fload default-fload-args*)))))
+	    (apply #'filespecs-fload (coerce default-fload-args* 'list))))))
 
 (defun filespecs-fload (specs &optional (flags !()) (*readtable* *readtable*))
    (let ((*load-verbose* false))
@@ -61,24 +61,31 @@
 				 false))))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
   	   (filoid-fload pn :force-load force-flag
-			    :file-manip file-manip)
+			    :manip file-manip)
 	  ))))
 
-(defgeneric filoid-fload (pn &key force-load file-manip))
+(defgeneric filoid-fload (pn &key force-load manip))
+
+(defmethod filoid-fload ((ytpn YTools-pathname) &key force-load manip)
+   (filoid-fload (pathname-resolve ytpn false)
+		 :force-load force-load :manip manip))
 
 (defmethod filoid-fload ((pn pathname)
-			 &key force-load file-manip)
-   (let* ((pchunk (place-File-chunk pn))
-	  (lpchunk (place-Loaded-chunk pchunk file-manip)))
-      (monitor-filoid-basis lpchunk)
-      (cond ((Chunk-managed lpchunk)
+			 &key force-load manip)
+   (let* ((pchunk (pathname-denotation-chunk pn))
+	  (lpchunk (place-Loaded-chunk pchunk manip)))
+      (loaded-chunk-fload lpchunk force-load)))
+
+(defun loaded-chunk-fload (loaded-chunk force-load)
+      (monitor-filoid-basis loaded-chunk)
+      (chunk-request-mgt loaded-chunk)
+      (cond ((chunk-up-to-date loaded-chunk)
 	     (cond (force-load
 		    ;; Already managed, so forcing makes sense
-		    (chunk-derive-and-record lpchunk)
-		    (chunks-update (Chunk-derivees lpchunk)))))
+		    (chunk-derive-and-record loaded-chunk)
+		    (chunks-update (Chunk-derivees loaded-chunk)))))
 	    (t
-	     (chunk-request-mgt lpchunk)
-	     (chunk-update lpchunk)))))
+	     (chunk-update loaded-chunk))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -159,6 +166,8 @@
 (defgeneric pathname-denotation-chunk (pn))
 
 (defmethod pathname-denotation-chunk ((pn pathname))
+   (cond ((null (Pathname-type pn))
+	  (setq pn (pathname-source-version pn))))
    (place-File-chunk pn))
 
 (defun place-File-chunk (pn &key kind)
@@ -356,6 +365,7 @@
 						      (File-chunk-pathname
 							 compiled-chunk)))
 						  (t file-chunk)))))
+;;;;			   (setq cc* compiled-chunk)
 			   (loaded-file-chunk-set-basis new-lc)
 			   (push new-lc all-loaded-file-chunks*)
 			   new-lc))))
@@ -564,8 +574,8 @@
    (let ()
       (loop 
 	 (format *query-io*
-	    !"Do you want to use the freshly compiled, ~a version ~
-              ~% of ~s (~a/+/-, \\\\ to abort) ?"
+	    !"Do you want to use the (freshly) compiled, ~a version ~
+              ~% of ~s (~a/+/-, \\\\ to abort)? "
 	    (cond (obj-exists
 		   "source, or object")
 		  (t "or source"))

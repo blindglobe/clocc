@@ -88,48 +88,86 @@
               (parse-namestring ytools-home-dir*))
 
 (defparameter ytools-bin-dir-pathname*
-(let ((dirs (pathname-directory (pathname ytools-bin-path*))))
-   (cond ((null dirs)
-	  ytools-dir-pathname*)
-	 ((eq (car dirs) ':relative)
-	  (setq dirs (cdr dirs))
-	  (let ((down-layers '())
-		(yt-dirs (reverse (pathname-directory ytools-dir-pathname*))))
-	     (loop
-		(cond ((or (null yt-dirs)
-			   (member (car yt-dirs) '(:relative :absolute)))
-		       (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
-			      ytools-dir-pathname* (pathname ytools-bin-path*))))
-;;;;		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
-;;;;			    down-layers yt-dirs dirs)
-		(cond ((or (null dirs)
-			   (not (member (car dirs) '(:up :back))))
-		       (let ((final-dirs
-				(append (reverse yt-dirs)
-					dirs
-					(cond ((string= bin-idio* "")
-					       '())
-					      (t (cdr (pathname-directory
-							 (parse-namestring
-							    bin-idio*)))))
-					down-layers)))
-			  (format t "YTools bin dir = ~S~%" final-dirs)
-			  (return
-			     (ensure-directories-exist
-				(merge-pathnames
-				   (make-pathname
-				      :directory final-dirs)
-				   ytools-dir-pathname*))))))
-	       (cond ((not (equal (car yt-dirs) "src"))
-		      (setq down-layers 
-			    (cons (car yt-dirs) down-layers))))
-	       (setq yt-dirs (cdr yt-dirs))
-	       (setq dirs (cdr dirs)))))
-	 ((eq (car dirs) ':absolute)
-	  ytools-bin-path*)
-	 (t
-	  (error "Can't build ytools-bin-dir-pathname* from ~s"
-		 (pathname ytools-bin-path*))))))
+   (let ((dir-list (pathname-directory (pathname ytools-bin-path*)))
+	 (pn (pathname ytools-dir-pathname*)))
+      ;; This mimic code in ytools/pathname.lisp --
+      (cond ((not (listp dir-list))
+	     (error "Unexpected non-list directory for ~s"
+		    ytools-bin-path*)))
+      (cond ((eq (car dir-list) ':relative)
+	     (setq dir-list (cdr dir-list))))
+      (let ((start (pathname-directory pn)))
+	 (cond ((and (consp start) (eq (car start) ':absolute))
+		(let ((above-dirs (reverse (cdr start)))
+		      (below-dirs '())
+		      (from-dir-list '()))
+		   ;; We use 'dir-list' as a set of instructions for arriving
+		   ;; at a relative directory.
+		   ;; As we go, the three variables above represent the
+		   ;; directories traversed so far, leaving us in the "current
+		   ;; directory."
+		   ;; 'above-dirs' is list (in ascending order) of directories
+		   ;; above (and including) the current dir.
+		   ;; 'below-dirs' is list (in descending order)
+		   ;; of directories we passed on the way up to current dir.
+		   ;; 'from-dir-list' is a list (in ascending order) of
+		   ;; directories copied from 'dir-list'.
+		   (dolist (d dir-list)
+		      (cond ((or (member d '(:back :up)) (equal d ".."))
+			     (cond ((null from-dir-list)
+				    ;; Go up one layer, recording in
+				    ;; 'below-dirs' the directory
+				    ;; passed.--
+				    (cond ((null above-dirs)
+					   (error "Relative directory ~s undefined wrt ~s"
+						  dir-list pn))
+					  (t
+					   (push (pop above-dirs) below-dirs))))
+				 ;; But once we've started recording
+				 ;; directories in 'from-dir-list', a
+				 ;; ".." directory is a puzzle. --
+				   ((null above-dirs)
+				    ;; We either go up and leave
+				    ;; 'from-dir-list' alone, or, if we
+				    ;; can't go up, we interpret ".." as
+				    ;; perversely instructing us to undo
+				    ;; the last addition to
+				    ;; 'from-dir-list' --
+				    (pop from-dir-list))
+				   (t
+				    ;; This is the case where we can 
+				    ;; go up (pop 'above-dirs') and leave
+				    ;; 'from-dir-list' and 'below-dirs'
+				    ;; alone --
+				    (pop above-dirs))))
+			    ((member d '(-- "--") :test #'equal)
+			     ;; Special flag that means *don't* record in
+			     ;; 'below-dirs' the last layer we passed.
+			     ;; This makes sense only if this layer does
+			     ;; not help discriminate subdirectories.
+			     ;; Useful for purging "src" layers from "bin"
+			     ;; directories (assuming *all* "bin"
+			     ;; subdirectories come from "src"
+			     ;; subdirectories).--
+			     (pop below-dirs))
+			    (t
+			     ;; A normal directory gets copied to
+			     ;; 'from-dir-list' --
+			     (push d from-dir-list))))
+		(format t "above-dirs = ~s~%from-dir-list = ~s~%below-dirs = ~s~%"
+			above-dirs from-dir-list below-dirs)
+		   (let ((res-pn
+			     (make-pathname
+				 :directory
+				    `(:absolute ,@(reverse above-dirs)
+						,@(reverse from-dir-list)
+						,@below-dirs)
+				 :type lisp-object-extn*)))
+		      (ensure-directories-exist res-pn)
+		      res-pn)))
+	       (t
+		(error "Can't take relative directory with respect to relative directory ~s"
+		       pn))))))
 
 (setq *features* (adjoin ':ytools *features*))
 

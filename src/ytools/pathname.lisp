@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.7 2005/01/28 13:24:37 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.8 2005/02/03 05:18:45 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -472,7 +472,7 @@
          (set-ytools-logical-pathname
 	     ',sym
 	     ':pathname-parse-controller) ;;;;(make-Pseudo-pathname ',sym)
-	 (datafun :pn-parse
+	 (datafun :pn-parse ,sym
 	    ,parser-defn)))
 
 (datafun-alist pn-parsers* :pn-parse)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.1 2004/12/06 15:09:55 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.2 2005/02/03 05:18:45 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -13,7 +13,10 @@
 
 (load "ytools.lsy")
 
+(setq *readtable* ytools-readtable*)
+
 (defun yt-comp (fname)
+   (setq *readtable* ytools-readtable*)
    (compile-file fname
 		 :output-file (merge-pathnames
 			         (make-pathname :name fname :type lisp-object-extn*)

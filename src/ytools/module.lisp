@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.11 2005/02/01 12:30:36 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.12 2005/02/03 05:18:44 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -55,9 +55,9 @@
 	    (mapcan (\\ (a)
 		       (cond ((atom a)
 			      (format *error-output*
-				 !"Ignoring meaningless actspec in ~
+				 !"Ignoring meaningless actspec ~s in ~
 				   'def-ytools-module': ~s"
-				 a)
+				 a dym-exp)
 			      (list))
 			     ((listp (car a))
 			      (cond ((every #'is-timespec (car a))
@@ -73,7 +73,7 @@
 		    actions))
       `(let ((mod (place-YT-module ',name)))
 	  (setf (YT-module-contents mod)
-		actions))))
+		',actions))))
 
 (defun place-YT-module (name)
    (or (lookup-YT-module name)
@@ -92,7 +92,11 @@
 	    :type YT-module)))
 
 ;;; loadee is a YT-module
-(defclass Loaded-module-chunk (Loaded-chunk))
+(defclass Loaded-module-chunk (Loaded-chunk)
+   ())
+
+;;; List of names of modules we're interested in --
+(defvar module-trace* !())
 
 (def-ytools-pathname-control module
    (defun :^ (operands _)
@@ -118,57 +122,85 @@
    (chunk-with-name `(:YT-module ,(YT-module-name mod))
       (\\ (name)
 	 (make-instance 'YT-module-chunk
+	    :name name
 	    :module mod))))
+
+;;; The key hack in the following two items is that a YT-module's
+;;; dependencies are a subset of the files it will load, possibly
+;;; an empty subset.
+;;; But if there's some other reason to reload or recompile,
+;;; all the relevant forms from its contents must be updated,
+;;; and in general they will load several files-- 
+
+(defmethod pathname-compile-support ((pspn Module-pseudo-pn))
+   (let ((mod (Module-pseudo-pn-module pspn)))
+      (monitor-filoid-basis
+	 (place-Loaded-module-chunk
+	    (place-YT-module-chunk mod)
+	    false))
+      (values (
+	   (let ((cforms
+		    (retain-if
+		       (\\ (e) (memq ':compile-support (first e)))
+		       (YT-module-contents
+			  (Module-pseudo-pathname-module pspn)))))
+	      (cond ((null cforms)
+		     !())
+		    (t
+		     (list (place-Form-chunk
+			      `(progn ,@cforms))))))))      
+
+(defmethod pathname-run-support ((pspn Module-pseudo-pn))
+   (values !()
+	   (let ((rforms
+		    (retain-if
+		       (\\ (e) (memq ':run-support (first e)))
+		       (YT-module-contents
+			  (Module-pseudo-pathname-module pspn)))))
+	      (cond ((null rforms)
+		     !())
+		    (t
+		     (list (place-Form-chun
+			      `(progn ,@rforms))))))))
 
 (defvar loaded-ytools-modules* !())
 
-;;; This is isomorphic to the method for pathnames, so perhaps they
-;;; should be a shared procedure they both call.
-(defmethod filoid-fload ((yt-mod YT-module)
-			 &key force-load file-manip)
-   (let* ((mod-chunk (place-YT-module-chunk yt-mod))
-	  (lmod-chunk (place-Loaded-module-chunk mod-chunk)))
-      (monitor-filoid-basis lmod-chunk)
-      (cond ((Chunk-managed lmod-chunk)
-	     (cond (force-load
-		    (chunk-derive-and-record lmod-chunk)
-		    (chunks-update (Chunk-derivees lmod-chunk)))))
-	    (t
-	     (chunk-request-mgt lmod-chunk)
-	     (chunk-update lmod-chunk)))))
+(defmethod filoid-fload ((yt-mod Module-pseudo-pn)
+			 &key force-load manip)
+   (let* ((module (Module-pseudo-pn-module yt-mod))
+	  (mod-chunk (place-YT-module-chunk module))
+	  (lmod-chunk (place-Loaded-module-chunk
+		         mod-chunk manip)))
+      (loaded-chunk-fload lmod-chunk force-load)))
 
-;;; Second arg is apparently not useful (as of now) --
-(defmethod place-Loaded-chunk ((mod-ch YT-module-chunk) _)
-   (place-Loaded-module-chunk mod-ch))
+(defmethod place-Loaded-chunk ((mod-ch YT-module-chunk) mod-manip)
+   (place-Loaded-module-chunk mod-ch mod-manip))
 
-(defun place-Loaded-module-chunk (mod-chunk)
+(defun place-Loaded-module-chunk (mod-chunk mod-manip)
    (let ((lc (chunk-with-name `(:loaded ,(YT-module-chunk-module mod-chunk))
 		(\\ (name)
-		  (let ((is-source (file-chunk-is-source file-chunk)))
-		     (let ((compiled-chunk
-			      (and is-source
-				   (place-compiled-chunk file-chunk))))
-			(let ((new-lc
-				 (make-instance 'Loaded-module-chunk
-				    :name name
-				    :loadee mod-chunk)))
-			   new-lc))))
+		   (let ((new-lc
+			    (make-instance 'Loaded-module-chunk
+			       :name name
+			       :loadee mod-chunk)))
+		      new-lc))
 		:initializer
 		   (\\ (new-lc)
 		      (cond ((not (slot-truly-filled new-lc 'controller))
 			     (setf (Loaded-chunk-controller new-lc)
 				   (create-loaded-controller
 				      mod-chunk new-lc))))))))
-      (cond ((eq file-manip ':noload)
+      (cond ((eq mod-manip ':noload)
 	     (chunk-terminate-mgt lc ':ask))
-	    ((and file-manip
-		  (not (eq file-manip (Loaded-chunk-manip lc))))
-	     (setf (Loaded-chunk-manip lc) file-manip)))
+	    ((and mod-manip
+		  (not (eq mod-manip (Loaded-chunk-manip lc))))
+	     (setf (Loaded-chunk-manip lc) mod-manip)))
       lc))
 
-(defclass Loadable-module-chunk (Loadable-chunk))
+(defclass Loadable-module-chunk (Loadable-chunk)
+   ())
 
-(defmethod create-loaded-controller ((mod-ch Module-chunk)
+(defmethod create-loaded-controller ((mod-ch YT-module-chunk)
 				     (loaded-ch Loaded-module-chunk))
    (chunk-with-name `(:loadable ,(Chunk-name mod-ch))
       (\\ (name)
@@ -200,36 +232,37 @@
 ;;;;			 (setq a (macroexpand-1 a)))
 ;;;;			(t
 ;;;;			 (return))))
-	      (cond ((car-eq a 'depends-on)
-		     (let ((groups (depends-on-args-group (cdr a))))
-		        ;; What 'depends-on-args-group' returns is not
-		        ;; really tailored to this context, where
-		        ;; :run-time, :compile-time, etc. don't mean
-		        ;; anything.
-		        (dolist (g groups)
-			   (cond ((not (memq ':run-time (first g)))
-				  (format *error-output*
-				     !"Warning: Meaningless to have ~
-                                       ':compile-time' dependency in module ~s"
-				     (Module-name module))))
-			   (let* ((dependee-chunks
-				     (mapcar #'pathname-denotation-chunk
-					     (filespecs->ytools-pathnames
-						(cdr g))))
-				  (loaded-dependee-chunks
-				     (mapcar (\\ (fc)
-						(place-Loaded-chunk fc false))
-					     dependee-chunks)))
-			      (loaded-chunk-augment-basis
-			          loaded-mod-chunk dependee-chunks)))))))))))
+	       (cond ((car-eq a 'depends-on)
+		      (let ((groups (depends-on-args-group (cdr a))))
+			 ;; What 'depends-on-args-group' returns is not
+			 ;; really tailored to this context, where
+			 ;; :run-time, :compile-time, etc. don't mean
+			 ;; anything.
+			 (dolist (g groups)
+			    (cond ((memq ':run-time (first g))
+				   (let ((pnl (filespecs->ytools-pathnames
+					         (cdr g))))
+				      (pathnames-note-run-support
+					  pnl false
+					  loaded-mod-chunk)))
+				  (t
+				   (format *error-output*
+				      !"Warning: Meaningless to have ~
+					':compile-time' dependency in ~
+                                        module ~s"
+				      (Module-name module))))))))))))
+   true)
 
 (defvar module-now-loading* false)
 
+(defmethod derive ((lmod-ch Loaded-module-chunk))
+   (let ((module (Loaded-chunk-loadee lmod-ch)))
+      (dolist (c (YT-module-contents module))
+	 (cond ((memq ':run-support (first c))
+		(dolist (e (rest c))
+		   (eval e)))))))
 
-;;; List of names of modules we're interested in --
-(defvar module-trace* !())
-
-;;; THIS IS USED by .lmd files, so don't just delete it!
+;;; THIS IS USED by ytools.lmd, so don't just delete it!
 
 (defun ytools-module-load (name force-flag)
 ;;;;  (breakpoint ytools-module-load
@@ -251,6 +284,9 @@
 					    (t
 					     "Maybe")))))
 		       (with-compilation-unit ()
+			  (dolist 
+
+
 			  (eval (YT-module-contents ytm))
 			  (dolist (e (YT-module-expansion ytm))
 			     (eval e)))
@@ -301,75 +337,6 @@
 	  (error "~s does not designate a package"
 		 exporting-pkg-desig)))))
 
-(defun module-slurp (mpn _ howmuch)
-   (let ((modname (Module-pseudo-pn-module mpn)))
-      (let ((module (find-YT-module modname)))
-	 (cond (module
-		(let ((slurping-lprec*
-		         (YT-module-rec module)))
-		   (cond ((memq modname module-trace*)
-			  (format *error-output*
-			      "Considering slurping module ~s... ~%" modname)))
-		   (cond ((achieved-load-status
-			     slurping-lprec* ':slurped-all)
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Module ~s already slurped~%" modname))))
-			 ((eq howmuch ':header-only)
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Not looking inside module ~s for supporters"
-				    modname))))
-			 (t
-			  (setf (Load-progress-rec-run-time-depends-on
-				   slurping-lprec*)
-				!())
-			  (setf (Load-progress-rec-compile-time-depends-on
-				   slurping-lprec*)
-				!())
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Slurping module ~s, ~% form = ~s"
-				    modname (YT-module-contents module))))
-			  (form-slurp (YT-module-contents module)
-				      (eq howmuch ':whole-file))
-;;;;			  (format t "Doing dependents of ~s~%"
-;;;;				  slurping-lprec*)
-			  ;; The following two forms were lifted from
-			  ;; 'lprec-compile'
-			  (dolist (rtsupp
-				      (Load-progress-rec-run-time-depends-on
-					 slurping-lprec*))
-			     (pathname-slurp rtsupp false ':at-least-header))
-			  (dolist (ctsupp
-				    (Load-progress-rec-compile-time-depends-on
-					 slurping-lprec*))
-			     (pathname-fload ctsupp false false false))
-			  (note-load-status slurping-lprec* ':slurped-all)))))
-	       (t
-		(error "Attempt to slurp non-module ~s"
-		       modname))))))
-
-(defun module-load (mod-pspn force-flag force-compile always-ask)
-                   (ignore always-ask)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (bind-fload-compile* (or force-compile fload-compile*)
-	 (ytools-module-load modname force-flag))))
-
-(defun module-compile (mod-pspn force-flag)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (bind-fload-compile* ':compile
-	 (ytools-module-load modname force-flag))))
-
-(defun module-expansion (mod-pspn)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (let ((mod (find-YT-module modname)))
-	 (cond (mod
-		(YT-module-expansion mod))
-	       (t
-		(error "Undefined YTools module ~s" modname))))))
-
-
 #|
 ;;; Example: 
 (def-ytools-module nisp
@@ -394,52 +361,11 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
 
 |#
 
-(defvar patch-files* '())
-
-(defun load-patch-file-spec (pf)
-       (let ((files (filespecs->pathnames (cdr pf))))
-	  (dolist (file files)
-	     (cond ((probe-file file)
-		    (pathname-fload file false false false))))))
-
-(defmacro load-patch-file (filename^ label^)
-   `(probe-and-load-patch-file ,filename^ ,label^))
-
-(defun probe-and-load-patch-file (name label)
-   (let ((pname (->pathname
-		    (concatenate 'string
-		        name "-"
-			(substitute #\- #\. label)))))
-      (let ((rname (or (get-pathname-with-suffixes pname object-suffixes*)
-		       (get-pathname-with-suffixes pname source-suffixes*))))
-	 (cond (rname
-		(lprec-load (place-load-progress-rec rname)
-			    false false false))))))
-
-(declaim (special final-load*))
-
-(defun note-patch-files (module-name files)
-   (let ((p (assq module-name patch-files*)))
-      (cond ((not p)
-	     (setf p (list module-name))
-	     (setf patch-files* (cons p patch-files*)))   )
-      (setf (cdr p) files)
-      (cond ((not final-load*)
-             (load-patch-file-spec p)))))
-
 (def-ytools-module ytools
-   (:run-support
-	 (eval-when (:execute :compile-toplevel :load-toplevel)
-	    (setq *readtable* ytools-readtable*))
-;;;;         #+allegro
-;;;;	 (depends-on :at-run-time %ytools/ prompthack)
-	 (depends-on %ytools/ multilet)
-	 (depends-on :at-run-time %ytools/ signal misc)
-	 (depends-on (:at :slurp-time :compile-time) %ytools/ setter)
-	 (depends-on :at-compile-time 
-		     %ytools/ object mapper)
-	 (note-patch-files 'all-ytools '(%ytools/ "ytools-patches.nsp"))))
+   (let ((*readtable* ytools-readtable*))
+      (fload %ytools/ multilet)
+      (fload %ytools/ signal misc)
+      (fload %ytools/ setter)
+      (fload %ytools/ object mapper)
+    ))
 
-(defun pn-ur-version (pn)
-   (or (pathname-source-version pn)
-       (pathname-object-version pn true)))

@@ -67,7 +67,7 @@ It is keyed by keywords.")
   (declare (type symbol kwd))		; Maybe `keyword' would do.
   (gethash kwd *language-processors*))
 
-(defun (setf find-language-processor) (kwd lp)
+(defun (setf find-language-processor) (lp kwd)
   (declare (type symbol kwd)
 	   (type language-processor lp))
   (setf (gethash kwd *language-processors*) lp))
@@ -120,7 +120,7 @@ object file into a running CL."))
 (defmethod initialize-instance :after ((lp language-processor)
 				       &key tag
 				       &allow-other-keys)
-  (setf (find-language-processor tag) lp))
+  (when tag (setf (find-language-processor tag) lp)))
 
 
 
@@ -178,7 +178,13 @@ object file into a running CL."))
 	   :type (or null
 		     function
 		     language-linker)
-	   :initarg :loader)
+	   :initarg :linker)
+
+   (interpreter :accessor language-interpreter	; As above.
+		:type (or null
+			  function
+			  language-interpreter)
+		:initarg :interpreter)
 
    (source-extension
     :accessor language-source-extension
@@ -191,9 +197,13 @@ object file into a running CL."))
     :initarg :binary-extension)		; Filename extensions for
 					; binary files.
    )
-  (:default-initargs :compiler nil :loader nil :processor nil
-		     :source-extension nil
-		     :binary-extension nil)
+  (:default-initargs :compiler nil
+     :interpreter nil
+     :loader nil
+     :linker nil
+     :processor nil
+     :source-extension nil
+     :binary-extension nil)
   )
 
 
@@ -257,6 +267,7 @@ A 'mixin' class used to specify the (progamming) `language' of the content."))
 
 (defclass loadable-component-mixin (component-language-mixin)
   ((loader :accessor component-loader
+	   :writer set-component-loader	; This is needed for initializations.
 	   :initarg :loader
 	   :type (or null function language-loader))
    (loader-options :accessor component-compiler-options
@@ -274,8 +285,9 @@ options that are passed to it when invoked."))
 
 (defclass compilable-component-mixin (component-language-mixin)
   ((compiler :accessor component-compiler
-	   :initarg :compiler
-	   :type (or null function language-compiler))
+	     :writer set-component-compiler ; This is needed for initializations.
+	     :initarg :compiler
+	     :type (or null function language-compiler))
    (compiler-options :accessor component-compiler-options
 		     :initarg :compiler-options
 		     :type list)
@@ -291,13 +303,17 @@ options that are passed to it when invoked."))
 
 (defclass linkable-component-mixin (component-language-mixin)
   ((linker :accessor component-linker
+	   :writer set-component-linker ; This is needed for initializations.
 	   :initarg :linker
 	   :type (or null function language-linker))
    (linker-options :accessor component-linker-options
 		   :initarg :linker-options
 		   :type list)
+   (libraries :accessor linkable-component-libraries
+	      :initargs :libraries
+	      :type list)
    )
-  (:default-initargs :compiler nil :linker-options ())
+  (:default-initargs :compiler nil :linker-options () :libraries ())
   (:documentation
    "A `mixin' class used to specify that a component is `linkable'.
 The `linker' slot contains a function or an instance of the specific
@@ -305,9 +321,14 @@ The `linker' slot contains a function or an instance of the specific
 The `linker-options' slots contains a plist of compiler dependent
 options that are passed to it when invoked."))
 
+(defgeneric linkable-component-p (x)
+  (:method ((x linkable-component-mixin)) t)
+  (:method ((x t)) nil))
+
 
 (defclass interpretable-component-mixin (component-language-mixin)
   ((interpreter :accessor component-interpreter
+		:writer set-component-interpreter ; This is needed for initializations.
 		:initarg :interpreter
 		:type (or null function language-interpreter))
    )
@@ -329,52 +350,51 @@ options that are passed to it when invoked."))
 
 (defmethod component-language :before ((c component-language-mixin))
   (unless (languagep (slot-value c 'language))
-    (let ((language (find-language language)))
+    (let ((language (find-language (slot-value c 'language))))
       (when language (setf (component-language c) language)))))
 
 
-(defun update-language-slot (c language-slot-reader)
-  (declare (type loadable-component-mixin c)
-	   (type symbol slot))
-  (with-accessors (l component-language)
+;;; THIS NEEDS TO BE FIXED!
+
+(defun update-language-slot (c language-slot-reader processor-slot-writer)
+  (with-accessors ((l component-language))
     c
     (when (and (languagep l) (funcall language-slot-reader l))
-      (setf (component-loader c)
-	    (funcall language-slot-reader slot-value l)))))
+      (funcall processor-slot-writer (funcall language-slot-reader l) c))))
 
 
 (defmethod initialize-instance :after ((c loadable-component-mixin)
 				       &key)
-  (update-language-slot c #'language-loader))
+  (update-language-slot c #'language-loader #'set-component-loader))
 
 (defmethod component-loader :before ((c loadable-component-mixin))
-  (update-language-slot c #'language-loader))
+  (update-language-slot c #'language-loader #'set-component-loader))
 
 
 
 (defmethod initialize-instance :after ((c compilable-component-mixin)
 				       &key)
-  (update-language-slot c #'language-compiler))
+  (update-language-slot c #'language-compiler #'set-component-compiler))
 
 (defmethod component-compiler :before ((c compilable-component-mixin))
-  (update-language-slot c #'language-compiler))
+  (update-language-slot c #'language-compiler #'set-component-compiler))
 
 
 
 (defmethod initialize-instance :after ((c linkable-component-mixin) &key)
-  (update-language-slot c #'language-linker))
+  (update-language-slot c #'language-linker #'set-component-linker))
 
 (defmethod component-linker :before ((c linkable-component-mixin))
-  (update-language-slot c #'language-linker))
+  (update-language-slot c #'language-linker #'set-component-linker))
 
 
 
 (defmethod initialize-instance :after ((c interpretable-component-mixin)
 				       &key)
-  (update-language-slot c #'language-interpreter))
+  (update-language-slot c #'language-interpreter #'set-component-interpreter))
 
 (defmethod component-interpreter :before ((c interpretable-component-mixin))
-  (update-language-slot c #'language-interpreter))
+  (update-language-slot c #'language-interpreter #'set-component-interpreter))
 
 
 ;;; Predefined instances.
@@ -393,6 +413,9 @@ options that are passed to it when invoked."))
   (:documentation "The Language Processor Error Condition.
 A class of conditions generated by the invokation of various language
 dependent processors."))
+
+
+(defvar *compile-error-file-type* "err")
 
 
 ;;; output-file-pathname --
@@ -491,6 +514,9 @@ The result is a list of keywords."))
 ;;;---------------------------------------------------------------------------
 ;;; Predefined methods and functions.
 
+(defun file-default-error-pathname ()
+  (make-pathname :type *compile-error-file-type*))
+
 
 ;;; run-processor-command --
 ;;; The main driver that sets up a few output streams (regular and
@@ -512,8 +538,8 @@ The result is a list of keywords."))
 			      &optional
 			      (error-file
 			       (compile-file-pathname
-				file
-				:output-file (c-file-default-error-pathanme)))
+				output-file
+				:output-file (file-default-error-pathname)))
 			      (error-output *error-output*)
 			      (verbose nil))
   (declare (type string program)
@@ -528,17 +554,15 @@ The result is a list of keywords."))
 	 )
     (let ((error-output (if (eq t error-output) *error-output* error-output))
 	  (error-file-stream nil)
-	  (verbose-stream nil)
 	  (old-timestamp (file-write-date output-file))
 	  (fatal-error nil)
-	  (output-file-written nil)
+	  (output-file-written-p nil)
 	  )
       (declare (type (or null stream)
 		     error-output
-		     error-file-stream
-		     verbose-stream)
+		     error-file-stream)
 	       (type integer old-timestamp)
-	       (type boolean fatal-error output-file-written))
+	       (type boolean fatal-error output-file-written-p))
       (handler-case
        (progn
 	 (when error-file
@@ -568,7 +592,7 @@ The result is a list of keywords."))
 		      (/= old-timestamp
 			      (file-write-date output-file))))
 
-	   (when output-file-written
+	   (when output-file-written-p
 	     (user-message verbose-stream "~A written."
 			   output-file))
 	     
@@ -582,9 +606,10 @@ The result is a list of keywords."))
 		   fatal-error)))
 	   
 	   (error (e)
+		  (format *error-output* "~S" e)
 		  (when error-file
 		    (close error-file-stream)
-		    (unless (or fatal-error (not output-file-written))
+		    (unless (or fatal-error (not output-file-written-p))
 		      (delete-file error-file)))
 		  (values (and output-file-written-p (pathname output-file))
 			  fatal-error
@@ -593,11 +618,11 @@ The result is a list of keywords."))
 	   (:no-error (output-file-result warnings-p fatal-errors-p)
 		      (when error-file
 			(close error-file-stream)
-			(unless (or fatal-errors-p (not output-file-written))
+			(unless (or fatal-errors-p (not output-file-written-p))
 			  (delete-file error-file)))
 		      (values output-file-result
-			      wanrings-p
-			      fatal-errors))
+			      warnings-p
+			      fatal-errors-p))
 	   ))
     ))
 
@@ -629,11 +654,11 @@ The result is a list of keywords."))
 	       (list* :output-file (namestring output-pathname) options)
 	       ))
 	 )
-    (let ((arguments (process-options e-proc (add-ouput-option options))))
+    (let ((arguments (process-options e-proc (add-output-option options))))
       (multiple-value-bind (output-file warnings fatal-errors)
 	  (run-processor-command (external-command e-proc)
 				 arguments
-				 output-file
+				 output-pathname
 				 error-log-file
 				 error-output
 				 verbose)

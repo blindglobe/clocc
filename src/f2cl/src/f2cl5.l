@@ -76,7 +76,8 @@
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
 				    FREF FREF-STRING F2CL/
-				    FLOG FSQRT FFLOAT EXPT
+				    FLOG FSQRT FFLOAT FREAL
+				    EXPT
 				    %FALSE% %TRUE%
 				    FUNCALL))
 		    (member exprs *fortran-keywords*)
@@ -282,6 +283,8 @@
 		 ((member fun '(and or not > >= equal <= < logeqv logxor))
 		  ;; Logical operations
 		  'logical)
+		 ((eq fun 'multiple-value-bind)
+		  (get-fun-arg-type (third arg)))
 		 (t
 		  (get-fun-arg-type fun)))))
 	(t
@@ -2701,8 +2704,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.101 2002/03/20 15:50:41 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.102 2002/04/19 18:40:26 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.102  2002/04/19 18:40:26  rtoy
+;;; o Forgot to add FREAL as one of the intrinsics functions we skip over
+;;;   when checking for new variables.
+;;; o GET-FUN-ARG-TYPE:  was incorrectly handling MULTIPLE-VALUE-BIND
+;;;   forms and erroneously returning INTEGER as the type.  We really need
+;;;   to look at the function that is being called to get the type instead
+;;;   of just looking at MULTIPLE-VALUE-BIND as function name!
+;;;
 ;;; Revision 1.101  2002/03/20 15:50:41  rtoy
 ;;; Fix typo in getting the argument type in optimize-integer-arithmetic.
 ;;;

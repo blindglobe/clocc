@@ -2112,6 +2112,9 @@ ABS: NIL          REL: NIL               Result: ""
   (pathname-logical-p namestring))
 ||#
 
+
+#|| This is incorrect, as it strives to keep strings around, when it
+    shouldn't.  MERGE-PATHNAMES already DTRT.
 (defun append-logical-pnames (absolute relative)
   (declare (type (or null string pathname) absolute relative))
   (let ((abs (if absolute
@@ -2128,6 +2131,26 @@ ABS: NIL          REL: NIL               Result: ""
       (setq abs (concatenate 'string abs ";")))
     ;; Return the concatenate pathnames
     (concatenate 'string abs rel)))
+||#
+
+
+(defun append-logical-pnames (absolute relative)
+  (declare (type (or null string pathname) absolute relative))
+  (let ((abs (if absolute
+                 (pathname absolute)
+                 (make-pathname :directory (list :absolute)
+                                :name nil
+                                :type nil)
+                 ))
+	(rel (if relative
+                 (pathname relative)
+                 (make-pathname :directory (list :relative)
+                                :name nil
+                                :type nil)
+                 ))
+	)
+    (namestring (merge-pathnames rel abs))
+    ))
 
 #||
 ;;; This was a try at appending a subdirectory onto a directory.
@@ -2716,6 +2739,7 @@ the system definition, if provided."
       (multiple-value-setq (version-dir version-replace)
 	(translate-version version))
       (setq version-dir *version-dir* version-replace *version-replace*))
+  ;; (format *trace-output* "~&>>>> VERSION COMPUTED ~S ~S~%" version-dir version-replace)
   (let ((pathname
 	 (append-directories
 	  (if version-replace
@@ -2741,6 +2765,7 @@ the system definition, if provided."
     ;; :name argument to the MAKE-PATHNAME in the MERGE-PATHNAMES
     ;; beacuse of possible null names (e.g. :defsystem components)
     ;; causing problems with the subsequenct call to NAMESTRING.
+    ;; (format *trace-output* "~&>>>> PATHNAME is ~S~%" pathname)
     (cond ((pathname-logical-p pathname) ; See definition of test above.
 	   (setf pathname
 		 (merge-pathnames pathname
@@ -2785,6 +2810,7 @@ the system definition, if provided."
 
 ;;; What about CMU17 :device :unspecific in the above?
 
+#-lispworks
 (defun translate-version (version)
   ;; Value returns the version directory and whether it replaces
   ;; the entire root (t) or is a subdirectory.
@@ -2803,6 +2829,37 @@ the system definition, if provided."
 	((stringp version)
 	 (values version t))
 	(t (error "~&; Illegal version ~S" version))))
+
+
+;;; Looks like LW has a bug in MERGE-PATHNAMES.
+;;;
+;;;  (merge-pathnames "" "LP:foo;bar;") ==> "LP:"
+;;;
+;;; Which is incorrect.
+;;; The change here ensures that the result of TRANSLATE-VERSION is appropropriate.
+
+#+lispworks
+(defun translate-version (version)
+  ;; Value returns the version directory and whether it replaces
+  ;; the entire root (t) or is a subdirectory.
+  ;; Version may be nil to signify no subdirectory,
+  ;; a symbol, such as alpha, beta, omega, :alpha, mark, which
+  ;; specifies a subdirectory of the root, or
+  ;; a string, which replaces the root.
+  (cond ((null version)
+	 (values (pathname "") nil))
+	((symbolp version)
+	 (values (let ((sversion (string version)))
+		   (if (find-if #'lower-case-p sversion)
+		       (pathname sversion)
+		       (pathname (string-downcase sversion))))
+		 nil))
+	((stringp version)
+	 (values (pathname version) t))
+	(t (error "~&; Illegal version ~S" version))))
+
+
+
 
 (defun component-extension (component type &key local)
   (ecase type

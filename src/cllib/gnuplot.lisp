@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.7 2002/07/18 14:10:36 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.8 2002/08/19 13:14:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -295,7 +295,8 @@ Should not be called directly but only through `with-plot-stream'."
     (setq plot :plot))
   (let* ((plot-stream (make-plot-stream plot))
          (plot-spec (apply #'make-plot :data body-function :plot plot opts))
-         (plot-file (pltm-target (plsp-term plot-spec))))
+         (plot-file (typecase plot-stream
+                      (file-stream (namestring plot-stream)))))
     (declare (stream plot-stream))
     (when (or (stringp plot) (pathnamep plot)) (setq plot :file))
     (unwind-protect

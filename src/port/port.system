@@ -2,7 +2,7 @@
 ;;;
 ;;; Cross-implementation Portability System
 ;;;
-;;; $Id: port.system,v 1.5 2001/11/09 19:15:21 sds Exp $
+;;; $Id: port.system,v 1.6 2001/11/09 19:24:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/port.system,v $
 
 (mk:defsystem port
@@ -15,7 +15,7 @@
      (:file "path" :depends-on ("ext"))
      (:file "proc" :depends-on ("ext"))
      (:file "shell" :depends-on ("ext"))
-     (:file "sys" :depends-on ("ext")))
+     (:file "sys" :depends-on ("ext" "path")))
     :initially-do
     (progn (mk:system-source-size :port :all)
            (mk:system-source-size :port :new-source-and-dependents)))

@@ -8,11 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.38 2001/11/09 19:15:21 sds Exp $
+;;; $Id: sys.lisp,v 1.39 2001/11/09 19:24:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-path (translate-logical-pathname "port:path"))
   #+(and allegro mswindows)
   (require :ole))
 

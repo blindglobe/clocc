@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -15,29 +15,31 @@
 ;;; take effect immediately -- they shouldn't have to reload the
 ;;; system definition file for the changes to take effect. 
 
-(defvar *language-table* (make-hash-table :test #'equal)
-  "Hash table that maps from languages to language structures.")
+
+
+
+;;; Notes.
+;;;
+;;; 2002-05-22 Marco Antoniotti
+;;; Let's bite the bullet.  CLOS is easier to deal with.
+
+(defclass language-processor ()
+  ((tag :reader language-processor-tag
+	:initarg :tag
+	:type symbol)
+   (name :reader language-processor-name
+	 :initarg :name
+	 :type string))
+  (:default-initargs :name "" :tag nil))
+
+
+(defgeneric language-processor-p (x)
+  (:method ((x language-processor)) t)
+  (:method ((x t)) nil))
 
 (defvar *language-processors* (make-hash-table)
   "Table containing language processor instances.
 It is keyed by keywords.")
-
-(defun find-language (name)
-  (gethash name *language-table* nil))
-
-
-(defstruct (language-processor)
-  (key nil :type symbol)
-  (name "" :type string))
-
-(defstruct (language-compiler (:include language-processor))
-  )
-
-(defstruct (language-loader (:include language-processor))
-  )
-
-(defstruct (language-interpreter (:include language-processor))
-  )
 
 
 (defun find-language-processor (kwd)
@@ -46,47 +48,95 @@ It is keyed by keywords.")
 
 (defun (setf find-language-processor) (kwd lp)
   (declare (type symbol kwd)
-	   (type language-processor))
+	   (type language-processor lp))
   (setf (gethash kwd *language-processors*) lp))
 
 
-;;; defmacro define-language-processor would be helpful.
+(defclass language-compiler (language-processor))
+
+(defclass language-loader (language-processor))
+
+(defclass language-interpreter (language-processor))
 
 
+;;; Language Processors initialization methods.
+
+(defmethod initialize-instance :after ((lp language-processor)
+				       &key tag
+				       &allow-other-keys)
+  (setf (find-language-processor tag) lp))
+
+
+
+;;; define-language-processor --
+;;; This is essentially a "singleton" class definition form.
+;;; The implementation is incorrect since I am not really using a
+;;; SINGLETON :METACLASS.  Will fix this later.
+
+(defmacro define-language-processor (name (&optional
+					   (superclass 'language-processor))
+					  slots
+					  &rest
+					  options)
+  (let ((language-tag (or (find :tag options :key #'first)
+			  (intern (symbol-name name)
+				  (find-package "KEYWORD"))))
+	)
+    `(progn
+       (defclass ,name (,superclass) ,slots ,@options)
+       (setf ,name (make-instance ',name :tag ',language-tag)))))
+
+
+;;; language class.
   
-(defstruct (language (:print-function print-language))
-  (name nil :type symbol)		; The name of the language (a
+(defclass language ()
+  ((name :reader language-name
+	 :type symbol
+	 :initarg :name)		; The name of the language (a
 					; keyword).
-  (compiler nil				; Either a function or an
-	    :type (or null		; instance of type
-		      function		; `language-processor',
-		      language-compiler))
-  (processor nil			; As above.
-	     :type (or null
-		       function
-		       language-processor))
+   (compiler :accessor language-compiler ; Either a function or an
+	     :type (or null		 ; instance of type
+		       function		 ; `language-processor',
+		       language-compiler)
+	     :initarg :compiler)
+   (processor :accessor language-processor ; As above.
+	      :type (or null
+			function
+			language-processor)
+	      :initarg :processor)
 	     
-  (loader nil				; As above.
-	  :type (or null
-		    function
-		    language-loader))
-  (traditional-source-extension "" :type string)	; Filename
-							; extensions
-							; for source
-							; files. 
-  (traditional-binary-extension "" :type string)	; Filename
-							; extensions
-							; for binary
-							; files.
+   (loader :accessor language-loader	; As above.
+	   :type (or null
+		     function
+		     language-loader)
+	   :initarg :loader)
+
+   (source-extension
+    :accessor language-source-extension
+    :type (or null string)
+    :initarg :source-extension) ; Filename extensions for
+					    ; source files. 
+   (binary-extension
+    :accessor language-binary-extension
+    :type (or null string)
+    :initarg :binary-extension) ; Filename extensions for
+					    ; binary files.
+   )
+  (:default-initargs :compiler nil :loader nil :processor nil
+		     :source-extension nil
+		     :binary-extension nil)
   )
 
-(defun print-language (language stream depth)
-  (declare (ignore depth))
-  (print-unreadable-object (language stream)
-     (format stream "~:@(~A~) ~A ~A"
-	     (language-name language)
-	     (language-source-extension language)
-	     (language-binary-extension language))))
+
+(defmethod print-object ((l language) stream)
+  (print-unreadable-object (l stream)
+     (format stream "MK4:LANGUAGE ~:@(~A~)~@[:~*~]~@[ source ext. ~S~]~
+                     ~@[ binary ext. ~S~]"
+	     (language-name l)
+	     (or (language-source-extension l)
+		 (language-binary-extension l))
+	     (language-source-extension l)
+	     (language-binary-extension l))))
 
 
 (defclass component-language-mixin ()
@@ -103,6 +153,21 @@ It is keyed by keywords.")
   (:default-initargs :language :common-lisp)
   (:documentation
    "A 'mixin' class used to specify a component language other than CL."))
+
+
+(defvar *language-table* (make-hash-table :test #'equal)
+  "Hash table that maps from languages to language instances.")
+
+(defun find-language (name)
+  (gethash name *language-table* nil))
+
+(defun (setf find-language) (language-instance name)
+  (declare (type symbol name)
+	   (type language language-instance))
+  (setf (gethash name *language-table*) language-instance))
+
+
+
 
 
 (defun compile-function (component)
@@ -123,15 +188,20 @@ It is keyed by keywords.")
 
 (defmacro define-language (name &key compiler loader processor
 				source-extension binary-extension)
-  (let ((language (gensym "LANGUAGE")))
-    `(let ((,language (make-language :name ,name 
+  (assert (symbolp name))
+  (let ((language (gensym "LANGUAGE"))
+	(language-tag (intern (symbol-name name) (find-package "KEYWORD")))
+	)
+    `(let ((,language (make-instance 'language
+				     :name ,language-tag
 				     :compiler ,compiler
 				     :loader ,loader
 				     :processor ,processor
-				     :traditional-source-extension ,source-extension
-				     :traditional-binary-extension ,binary-extension)))
-       (setf (gethash ,name *language-table*) ,language)
-       ,name)))
+				     :source-extension ,source-extension
+				     :binary-extension ,binary-extension)))
+       (setf (find-language ',language-tag) ,language)
+       ,language)))
+
 
 ;;; Common Lisp Language Definition (really useless, here for completenenss).
 
@@ -140,6 +210,10 @@ It is keyed by keywords.")
   :loader #'load
   :source-extension "lisp"
   :binary-extension (cl.env:compiled-file-extension))
+
+(define-language scheme
+  :source-extension "scm"
+  )
 
 
 #||

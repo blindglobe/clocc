@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.12 2001/12/07 18:30:45 sds Exp $
+;;; $Id: base.lisp,v 2.13 2002/07/22 14:13:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,7 +39,8 @@ otherwise `*default-pathname-defaults*' will get in the way."
   (let ((st (machine-instance))) (subseq st 0 (position #\Space st)))
   "*Name of this machine, for purposes of naming users.")
 (defcustom *user-mail-address* simple-string
-  (concatenate 'string (getenv "USER") "@" *mail-host-address*)
+  (concatenate 'string (or (getenv "USER") (getenv "USERNAME") "nobody")
+               "@" *mail-host-address*)
   "*Full mailing address of this user.
 This is initialized based on `mail-host-address'.")
 

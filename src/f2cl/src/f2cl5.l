@@ -80,7 +80,6 @@
 				    %FALSE% %TRUE%
 				    FUNCALL))
 		    (member exprs *fortran-keywords*)
-		    (member exprs *intrinsic_function_names*)
 		    (member exprs *key_params* :key #'car)
 		    (member exprs *external_function_names*)
 		    (member exprs *declared_vbles*)
@@ -354,6 +353,12 @@
 	 (if (member p externs)
 	     `(function ,p)
 	     p))
+	((eq (first p) 'declare)
+	 ;; Skip over declarations
+	 p)
+	((eq (first p) 'function)
+	 ;; Skip over functions that we have already done
+	 p)
 	((eq (first p) 'funcall)
 	 ;; Skip over funcalls!
 	 `(,(first p) ,(second p) ,@(mapcar #'(lambda (pp)
@@ -519,9 +524,11 @@
 	   body (cdddr fort-fun))
      (setq *undeclared_vbles* 
 	   (set-difference *undeclared_vbles* *subprog_common_vars*))
+     ;;(format t "~&")
      ;;(format t "declared_vbles   = ~S~%" *declared_vbles*)
      ;;(format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
-     ;;(format t "*functions used  = ~S~%" *functions-used*)
+     ;;(format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
+     ;;(format t "*functions used* = ~S~%" *functions-used*)
      ;;(format t "external func    = ~S~%" *external_function_names*)
      ;;(format t "*subprog_common_vars* = ~a~%" *subprog_common_vars*)
      (setq special-proclamation
@@ -628,21 +635,19 @@
 				(mapcar #'extract-var-name
 					*data-init*)))))))
 
-     ;; If a variable names a function used or an external function or
-     ;; an intrinsic function, delete the variable
+     ;; If a variable names a function used or an external function,
+     ;; delete the variable.
      (setf *declared_vbles*
 	   (remove-if #'(lambda (v)
 			  (or (member v *functions-used* :key #'car)
-			      (member v *external_function_names*)
-			      (member v *intrinsic_function_names*)))
+			      (member v *external_function_names*)))
 		      *declared_vbles*))
      ;; If a variable names a function used or an external function or
-     ;; an intrinsic function, delete the variable
+     ;; delete the variable.
      (setf *undeclared_vbles*
 	   (remove-if #'(lambda (v)
 			  (or (member v *functions-used* :key #'car)
-			      (member v *external_function_names*)
-			      (member v *intrinsic_function_names*)))
+			      (member v *external_function_names*)))
 		      *undeclared_vbles*))
 
      ;; Initialize local variables
@@ -797,10 +802,14 @@
 
      ;; Replace all references to external functions with #'
      (setf prog-bit (fixup-external-function-refs prog-bit *external_function_names*))
+     ;; Do the same for intrinsic function names, but be sure to
+     ;; remove any variables whose name might match an intrinsic
+     ;; function name.
      (setf prog-bit
 	   (fixup-external-function-refs prog-bit
 					 (set-difference *intrinsic_function_names*
-							 *external_function_names*)))
+							 (append *declared_vbles*
+								 *undeclared_vbles*))))
 
 
      ;; Add symbol-macrolets to access the common block variables

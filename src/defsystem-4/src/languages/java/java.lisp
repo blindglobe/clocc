@@ -108,7 +108,7 @@
 
   (flet ((process-option (option-kwd option)
 	   (case option-kwd
-	     (:output-file (list (format nil "-o ~A" option)))
+	     (:output-file ()) ; Ignore it.
 	     (:debug (cond ((and option (listp option))
 			    (list (format nil "-g:~A~{,~A~}"
 					  (first option)
@@ -127,16 +127,16 @@
 	 )
     (loop for (option-kwd option) on options by #'cddr
 	  nconc (process-option option-kwd option) into result
-	  finally (values (remove-duplicates result :test #'string-equal)
-			  (list :output-file
-				:classpath
-				:sourcepath
-				:debug
-				:deprecation
-				:directory
-				:verbose
-				:nowarn
-				:other-options))
+	  finally (return (values (remove-duplicates result :test #'string-equal)
+				  (list :output-file
+					:classpath
+					:sourcepath
+					:debug
+					:deprecation
+					:directory
+					:verbose
+					:nowarn
+					:other-options)))
 	  )))
 
 (defmethod list-known-processor-options ((javac sun-java-language-compiler))
@@ -175,8 +175,8 @@
 (define-language :java
   :compiler *java-compiler*
   ;; :loader *java-loader*
-  :source-extension "f"
-  :binary-extension "o")
+  :source-extension "java"
+  :binary-extension "class")
 
 
 ;;; end of file -- java.lisp --

@@ -1,8 +1,9 @@
 common-lisp-controller (3.7) unstable; urgency=low
 
-  * added REPORTING-BUGS file 
+  * added REPORTING-BUGS file
+  * Fixed typo. Closes: #153082 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 18 Jul 2002 21:09:08 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 19 Jul 2002 14:04:15 +0200
 
 common-lisp-controller (3.6) unstable; urgency=low
 

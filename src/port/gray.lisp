@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gray.lisp,v 1.7 2001/11/02 22:30:39 sds Exp $
+;;; $Id: gray.lisp,v 1.8 2002/02/06 19:01:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/gray.lisp,v $
 
 (eval-when (compile load eval)
@@ -26,7 +26,7 @@
             #+lispworks :stream
             #+sbcl :sb-gray)
 
-(let ((gray-symbols
+(let ((cl-user::gray-symbols
        '(;; Classes
          FUNDAMENTAL-STREAM FUNDAMENTAL-INPUT-STREAM FUNDAMENTAL-OUTPUT-STREAM
          FUNDAMENTAL-CHARACTER-STREAM FUNDAMENTAL-BINARY-STREAM
@@ -42,8 +42,8 @@
          STREAM-ADVANCE-TO-COLUMN
          ;; Binary streams
          STREAM-READ-BYTE STREAM-WRITE-BYTE)))
-  (import gray-symbols :port)
-  (export gray-symbols :port))
+  (import cl-user::gray-symbols :port)
+  (export cl-user::gray-symbols :port))
 
 (provide :port-gray)
 ;;; file gray.lisp ends here

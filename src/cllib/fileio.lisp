@@ -2,7 +2,7 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: fileio.lisp,v 1.2 2000/03/21 20:29:06 sds Exp $
+;;; $Id: fileio.lisp,v 1.3 2000/03/24 20:37:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -182,24 +182,30 @@ The optional third argument is passed to `pr'."
       (format t "done [~:d bytes, ~a/~a]~%" (file-length str) el el1))))
 
 ;;;###autoload
-(defun read-from-file (file &key (readtable *readtable*) repeat)
+(defun read-from-file (file &key (readtable *readtable*) repeat
+                       (out *standard-output*))
   "Read an object from a file.
 The READTABLE keyword argument (default `*readtable*') specifies
 the readtable to use.
 The REPEAT keyword argument tells how many objects to read.
 If NIL, read once and return the object read;
-if a number, read that many times and return a list of objects read."
+if a number, read that many times and return a list of objects read,
+if T, read until end of file and return a list of objects read."
   (declare (type (or simple-string pathname) file))
   (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
     (prog1 (with-open-file (str file :direction :input)
-             (format t "~&Reading `~a' [~:d bytes]..." file (file-length str))
+             (format out "~&Reading `~a' [~:d bytes]..."
+                     file (file-length str))
              (force-output)
              (with-standard-io-syntax
                (let ((*readtable* readtable))
-                 (if repeat
-                     (loop :repeat repeat :collect (read str))
-                     (read str)))))
-      (format t "done [~a/~a]~%" (elapsed-1 bt t) (elapsed-1 bt1 nil)))))
+                 (cond ((null repeat) (read str))
+                       ((numberp repeat)
+                        (loop :repeat repeat :collect (read str)))
+                       ((loop :for obj = (read str nil +eof+)
+                              :while (not (eq obj +eof+))
+                              :collect obj))))))
+      (format out "done [~a/~a]~%" (elapsed-1 bt t) (elapsed-1 bt1 nil)))))
 
 (defun append-to-file (file fmt &rest fmt-args)
   "Append to the file the formatted output."

@@ -887,23 +887,19 @@ XXX ")
     (with-output-to-string (s a)
       (princ 890 s))
     (with-output-to-string (s a)
-      (princ (quote a) s)))
-  error
-  "All 10 characters are up. This should fail")
-
-(check-for-bug :iofkts-legacy-894
-  (let ((a (make-array 10
-                       :element-type 'character
-                       :fill-pointer 0)))
-    (with-output-to-string (s a) (princ 123 s))
-    (with-output-to-string (s a) (princ 4567 s))
-    (with-output-to-string (s a)
-      (princ 890 s))
-    (ignore-errors
-      (with-output-to-string (s a)
-        (princ (quote a) s)))
+      (princ (quote a) s))
     a)
-  "1234567890")
+  "1234567890A"
+  "All 10 characters are up. But:
+Body/m_w_out_.htm#with-output-to-string
+...
+If string is supplied, element-type is ignored, and the output is
+incrementally appended to string as if by use of vector-push-extend.
+...
+
+See also Issues/iss365_w.htm
+
+so it should work!")
 
 (check-for-bug :iofkts-legacy-908
   (setq a

@@ -1,8 +1,11 @@
 ;;;
 ;;; Some simple tests of the Quadpack routines, taken from the Quadpack book.
 ;;;
-;;; $Id: quadpack-tests.lisp,v 1.2 2000/07/21 21:18:32 rtoy Exp $
+;;; $Id: quadpack-tests.lisp,v 1.3 2000/09/01 16:31:46 rtoy Exp $
 ;;; $Log: quadpack-tests.lisp,v $
+;;; Revision 1.3  2000/09/01 16:31:46  rtoy
+;;; Add DO-TESTS to run all tests.
+;;;
 ;;; Revision 1.2  2000/07/21 21:18:32  rtoy
 ;;; If besj0 and dgamma functions exist, use them in the solutions so we
 ;;; can compute the absolute error.
@@ -1581,3 +1584,8 @@ Expect no non-zero error codes
       (do ((alpha 0.0d0 (+ alpha 1d0)))
 	  ((> alpha 10d0))
 	(quad alpha)))))
+
+(defun do-tests ()
+  (loop for k from 1 upto 17
+	do
+	(funcall (intern (format nil "TST~D" k)))))

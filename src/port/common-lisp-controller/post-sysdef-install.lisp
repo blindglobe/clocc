@@ -13,6 +13,18 @@
 ;; Remove the :cltl2 that mk-defsystem3 pushes onto features
 (setq cl:*features* (delete :cltl2 *features*))
 
+;; Function
+(defun is-user-package-system (system)
+  "Return pathname of system file if this is a user package"
+  (let ((path (make-pathname :name (asdf::coerce-name system)
+			     :type "asd"
+			     :directory (append
+					 (pathname-directory (user-clc-path))
+					 '("systems")))))
+    (when (probe-file path)
+      path)))
+
+(push #' is-user-package-system asdf::*system-definition-search-functions*)
 
 (defun asdf-system-compiled-p (system)
   "Returns T is an ASDF system is already compiled" 

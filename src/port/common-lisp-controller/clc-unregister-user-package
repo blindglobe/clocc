@@ -12,6 +12,7 @@ if [ ! -d "$HOME" ]; then
 fi
 
 clc_user_dir=$HOME/.clc
+clc_user_systems=$clc_user_dir/systems
 
 if [ ! -d "$clc_user_dir" ]; then
   echo "User CLC directory $clc_user_dir does not exist."
@@ -35,12 +36,14 @@ EOF
 fi
 
 asdf_file=$(realpath "$1" 2>/dev/null || true)
+asdf_file_base=`basename $asdf_file`
 
 if [ -f "$asdf_file" ]; then
     found=$(grep "^${asdf_file}\$" $clc_user_db || true)
     if [ "$found" ]; then
 	grep -v "^${asdf_file}\$" $clc_user_db > ${clc_user_db}.new || true
 	mv ${clc_user_db}.new $clc_user_db
+	rm -f $clc_user_systems/$asdf_file_base
 	echo "User package $asdf_file unregistered."
     else
 	echo "User package $asdf_file was not registered."

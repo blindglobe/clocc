@@ -1,17 +1,22 @@
-;;; File: <url.lisp - 1999-04-06 Tue 17:57:12 EDT sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-04-11 Sun 15:56:35 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
-;;; Copyright (C) 1998 by Sam Steingold.
+;;; Copyright (C) 1998-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.21 1999/04/06 21:57:33 sds Exp $
+;;; $Id: url.lisp,v 1.22 1999/04/11 19:58:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.22  1999/04/11 19:58:00  sds
+;;; Added `*html-output*' and `with-tag'.
+;;; (with-open-html): bind `*html-output*'.  use `with-tag'.
+;;; (directory-index): use `with-tag'.
+;;;
 ;;; Revision 1.21  1999/04/06 21:57:33  sds
 ;;; Added `directory-index' and `with-open-html'.
 ;;;
@@ -322,11 +327,11 @@ The argument can be:
   (:method ((xx url)) xx)
   (:method ((xx symbol)) (unintern xx) (url (symbol-name xx)))
   (:method ((xx stream))
-           (url (with-output-to-string (st)
-                  (peek-char t xx) ; skip whitespace
-                  (loop :for zz :of-type character = (read-char xx)
-                        :while (url-constituent-p zz)
-                        :do (write zz :stream st)))))
+    (url (with-output-to-string (st)
+           (peek-char t xx) ; skip whitespace
+           (loop :for zz :of-type character = (read-char xx)
+                 :while (url-constituent-p zz)
+                 :do (write zz :stream st)))))
   (:method ((xx pathname)) (make-url :prot :file :path (namestring xx))))
 (declaim (ftype (function (t) url) url))
 (defcustom *url-guess-protocol* list
@@ -1147,31 +1152,66 @@ This is mostly a debugging function, to be called interactively."
 ;;; }}}{{{ HTML generation
 ;;;
 
-(defmacro with-open-html ((str (&rest open-pars)
-                               (&key (doctype "html public \"-//W3C//DTD HTML 3.2//EN\"")
-                                     (meta "http-equiv=\"Content-Type\" content=\"text/html\"")
-                                     base (title "untitled")))
+(defcustom *html-output* stream *standard-output*
+  "The stream where the HTML is printed by `with-tag' and `with-open-html'.
+It is bound only by `with-open-html'.")
+(makunbound '*html-output*)
+
+(defmacro with-tag ((tag &rest options &key (close t) (terpri t)
+                         &allow-other-keys)
+                    &body forms)
+  (remf options :close) (remf options :terpri)
+  `(progn
+    (when ,terpri (fresh-line *html-output*))
+    (format *html-output* "<~a~@{ ~a=~s~}>" ,tag ,@options)
+    (when ,terpri (terpri *html-output*))
+    ,@forms
+    (when ,close (format *html-output* "~@[~&~*~]</~a>" ,terpri ,tag))))
+
+(defmacro with-open-html (((&rest open-pars)
+                           (&key (doctype '(html public
+                                            "-//W3C//DTD HTML 3.2//EN"))
+                                 (meta '(:http-equiv "Content-Type"
+                                         :content "text/html"))
+                                 base (title "untitled")))
                           &body body)
   "Output HTML to a file."
-  `(with-open-file (,str ,@open-pars)
-    (format ,str "<!doctype ~a>~%<meta ~a>~%" ,doctype ,meta)
-    (when ,base (format ,str "<base href=~s>~%" ,base))
-    (format ,str "<html>~2%<head><title>~a</title></head>~2%" ,title)
-    ,@body
-    (format ,str "~2%</body>~%</html>~%")))
+  `(with-open-file (*html-output* ,@open-pars)
+    (format *html-output* "<!doctype~{ ~s~}>~%" ',doctype)
+    (with-tag (:meta :close nil ,@meta)
+      (terpri *html-output*))
+    (when ,base
+      (with-tag (:base :close nil :href ,base)
+        (terpri *html-output*)))
+    (with-tag (:html)
+      (terpri *html-output*)
+      (with-tag (:head)
+        (with-tag (:title :terpri nil)
+          (format *html-output* "~a" ,title)))
+      (terpri *html-output*) (terpri *html-output*)
+      (with-tag (:body)
+        ,@body))))
 
 (defun directory-index (dir file &key (title (format nil "Index of ~a" dir)))
   "Output the index for a directory."
-  (with-open-html (ff (file :direction :output)
-                      (:title title))
-    (format ff "<h1>Index of ~a</h1>~2%<table border=1>~%" dir)
-    (dolist (fi (directory dir))
-      (format
-       ff " <tr><th align=left><a href=\"~a\">~a</a>
-<td align=right>~:d<td align=right>~a~%"
-       fi fi (ignore-errors (file-size fi))
-       (ignore-errors (dttm->string (file-write-date fi)))))
-    (format ff "</table>~%")))
+  ;; (directory-index "/etc/*" "/tmp/z.html")
+  (with-open-html ((file :direction :output)
+                   (:title title))
+    (with-tag (:h1 :terpri nil) (format *html-output* "Index of ~a" dir))
+    (terpri *html-output*) (terpri *html-output*)
+    (with-tag (:table :border 1)
+      (dolist (fi (sort (directory dir) #'string< :key #'namestring))
+        (with-tag (:tr)
+          (with-tag (:th :align "left" :terpri nil)
+            (with-tag (:a :terpri nil :href (namestring fi))
+              (format *html-output* "~a" fi)))
+          (terpri *html-output*)
+          (with-tag (:td :align "right" :terpri nil)
+            (format *html-output* "~:d" (ignore-errors (file-size fi))))
+          (terpri *html-output*)
+          (with-tag (:td :align "right" :terpri nil)
+            (format *html-output* "~a"
+                    (ignore-errors (dttm->string (file-write-date fi))))))))))
 
 (provide "url")
 ;;; }}} url.lisp ends here

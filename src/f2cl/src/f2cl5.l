@@ -2937,25 +2937,27 @@
   (let ((var-inits '()))
     (maphash
      #'(lambda (key val)
-	 (push `(eval-when (:compile-toplevel :load-toplevel :execute)
-		  (let* ,key-params
-		    ,@key-param-decls
-		    (defparameter ,(intern (concatenate 'string
-							"*"
-							(symbol-name key)
-							(symbol-name '#:-common-block*)))
-		      (,(intern (concatenate 'string
-					     (symbol-name '#:make-)
-					     (symbol-name key)))
-			,@(make-common-block-var-init val comm-decls)))))
+	 (push `(let* ,key-params
+		  ,@key-param-decls
+		  (defparameter ,(intern (concatenate 'string
+						      "*"
+						      (symbol-name key)
+						      (symbol-name '#:-common-block*)))
+		    (,(intern (concatenate 'string
+					   (symbol-name '#:make-)
+					   (symbol-name key)))
+		      ,@(make-common-block-var-init val comm-decls))))
 	       var-inits))
      comm-blocks)
     (nreverse var-inits)))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.120 2004/08/14 19:27:41 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.121 2004/08/15 11:16:14 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.121  2004/08/15 11:16:14  rtoy
+;;; Don't want that eval-when there.
+;;;
 ;;; Revision 1.120  2004/08/14 19:27:41  rtoy
 ;;; Try to clean up code a little.
 ;;;

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.10 2004/12/18 18:20:35 sds Exp $
+;;; $Id: matrix.lisp,v 2.11 2004/12/19 05:01:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -77,23 +77,15 @@ By default prints the contents.
     :for ii :from 0 :below nn :do (setf (aref matrix ii ii) 1)
     :finally (return matrix)))
 
-(defun displace-to (array &optional (size (array-total-size array))
-                    (element-type (array-element-type array)))
-  (make-array size :displaced-to array :element-type element-type))
-
 (defun array-copy (aa &optional bb)
   "Copy an arbitrary array."
   (declare (type array aa))
   (case (array-rank aa)
     (1 (if bb (replace bb aa) (copy-seq aa)))
-    (t (let* ((el (array-element-type aa))
-              (res (or bb (make-array (array-dimensions aa) :element-type el)))
-              (tot (array-total-size aa))
-              (v0 (displace-to aa tot el))
-              (v1 (displace-to res tot el)))
-         (declare (dynamic-extent v0 v1))
-         (replace v1 v0)
-         res))))
+    (t (let ((res (or bb (make-array (array-dimensions aa)
+                                     :element-type (array-element-type aa)))))
+         (dotimes (ii (array-total-size aa) res)
+           (setf (row-major-aref res ii) (row-major-aref aa ii)))))))
 
 (defun matrix-symmetric-p (mx)
   "Check for the matrix being symmetric."
@@ -135,9 +127,8 @@ By default prints the contents.
   "Make the value to be returned."
   (if arr
       (if (equal (array-dimensions arr) dims)
-          (progn
-            (fill (displace-to arr) 0)
-            arr)
+          (dotimes (ii (array-total-size arr) arr)
+            (setf (row-major-aref arr ii) 0))
           (error 'dimension :proc 'array-check-return :args
                  (list (array-dimensions arr) dims)))
       (make-array dims :initial-element 0)))
@@ -149,14 +140,11 @@ By default prints the contents.
     (unless (equal dims (array-dimensions a1))
       (error 'dimension :proc 'array-check-return
              :args (list dims (array-dimensions a1))))
-    (let* ((ret (array-check-return res dims))
-           (tot (array-total-size ret))
-           (v0 (displace-to a0 tot))
-           (v1 (displace-to a1 tot))
-           (v2 (displace-to ret tot)))
-      (declare (dynamic-extent v0 v1 v2))
-      (dotimes (ii tot ret)
-        (setf (aref v2 ii) (+ (* l0 (aref v0 ii)) (* l1 (aref v1 ii))))))))
+    (let ((ret (array-check-return res dims)))
+      (dotimes (ii (array-total-size ret) ret)
+        (setf (row-major-aref ret ii)
+              (+ (* l0 (row-major-aref a0 ii))
+                 (* l1 (row-major-aref a1 ii))))))))
 
 ;;;
 ;;; Bilinear form
@@ -184,11 +172,9 @@ By default prints the contents.
 The optional third argument is the place where to put the return value."
   (flet ((num-arr (num input dim)   ; scalar X any array
            (loop :with res :of-type array = (array-check-return re dim)
-             :with tot :of-type index-t = (array-total-size res)
-             :with to = (displace-to res tot)
-             :with fr = (displace-to input tot)
-             :for ii :of-type index-t :from 0 :below tot
-             :do (setf (aref to ii) (* num (aref fr ii)))
+             :for ii :of-type index-t :from 0 :below (array-total-size res)
+             :do (setf (row-major-aref res ii)
+                       (* num (row-major-aref input ii)))
              :finally (return res))))
     (cond ((numberp aa) (num-arr aa bb (array-dimensions bb)))
           ((numberp bb) (num-arr bb aa (array-dimensions aa)))

@@ -697,25 +697,30 @@
 	 
  
 (defun create-sym-macros ()
-  (let ((sym-lets '()))
+  (let ((sym-mlets '())
+	(sym-lets ()))
     (maphash
      #'(lambda (key varlist)
 	 (mapc #'(lambda (var)
 		   (let ((accessor-name
-			  (concatenate 'string
-				       (symbol-name key)
-				       "-"
-				       (symbol-name var)))
+			  (intern (concatenate 'string
+					       (symbol-name key)
+					       "-"
+					       (symbol-name var))))
 			 (name
-			  (concatenate 'string
-				       "*"
-				       (symbol-name key)
-				       "-COMMON-BLOCK*")))
-		     (push `(,var (,(intern accessor-name) ,(intern name)))
-			   sym-lets)))
+			  (intern (concatenate 'string
+					       "*"
+					       (symbol-name key)
+					       "-COMMON-BLOCK*"))))
+		     (if (vble-is-array-p var)
+			 (progn
+			   (push `(,accessor-name (,accessor-name ,name)) sym-lets)
+			   (push `(,var ,accessor-name) sym-mlets))
+			 (push `(,var (,accessor-name ,name)) sym-mlets))
+		     ))
 	       varlist))
      *common-blocks*)
-    sym-lets))
+    (values sym-mlets sym-lets)))
 
 (defun coerce-parameter-assign (lhs rhs)
   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
@@ -1309,7 +1314,8 @@
 	;; Block data subprograms need to be handled specially.  The
 	;; data-init part needs to be moved inside the body and
 	;; massaged to initialize the data.  
-	(let ((sym-macs (create-sym-macros)))
+	(multiple-value-bind (sym-macs sym-lets)
+	    (create-sym-macros)
 	  #+nil
 	  (format t "save-inits = ~A~%" (mapcar #'(lambda (x)
 						    `(setf ,@x))
@@ -1325,7 +1331,8 @@
 	  ;; save-inits and *data-init* might both initiliaze the
 	  ;; variable.  (Why is that?)
 	  (setf prog-bit
-		`(symbol-macrolet ,sym-macs
+		`(let ,sym-lets
+		  (symbol-macrolet ,sym-macs
 		  ,@(append (mapcar #'(lambda (x)
 					`(setf ,@x))
 				    save-inits)
@@ -1333,7 +1340,7 @@
 					(if (eq (first x) 'setq)
 					    `(setf ,@(rest x))
 					    x))
-				    *data-init*)))))
+				    *data-init*))))))
 	(let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
 			      ,prog-bit))
 	       (param-stuff (if key-params
@@ -1354,8 +1361,13 @@
 	;; declarations for the special variables, and, finally, the
 	;; function itself.
 	(when *subprog_common_vars*
-	  (let ((sym-macs (create-sym-macros)))
-	    (setf prog-bit `(symbol-macrolet ,sym-macs ,prog-bit))))
+	  (Format t "subprog_common_vars = ~A~%" *subprog_common_vars*)
+	  (multiple-value-bind (sym-macs sym-lets)
+	      (create-sym-macros)
+	    (format t "sym-macs = ~A~%" sym-macs)
+	    (Format t "sym-lets = ~A~%" sym-lets)
+	    (setf prog-bit `(let ,sym-lets
+			     (symbol-macrolet ,sym-macs ,prog-bit)))))
 
 	(let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
 			      ;; Remove empty declaration
@@ -2595,8 +2607,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.90 2002/03/13 04:01:37 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.91 2002/03/15 04:04:01 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.91  2002/03/15 04:04:01  rtoy
+;;; When creating the symbol macros for accessing common block vars, we
+;;; can get some speed gain by treating arrays specially so that we don't
+;;; have to access the array through the structure accessor for every
+;;; array access.  For an array, bind a new var to the array, and have the
+;;; symbol macro reference the new var.
+;;;
 ;;; Revision 1.90  2002/03/13 04:01:37  rtoy
 ;;; o Use INT instead of TRUNCATE when coercing parameter assignments.
 ;;; o Update OPTIMIZE-INTEGER-ARITHMETIC to handle min/max because CMUCL

@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1998-06-19 Fri 17:02:57 EDT sds@mute.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-08-03 Mon 15:14:44 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.15 1998/06/19 21:42:50 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.16 1998/08/03 19:15:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.16  1998/08/03 19:15:07  sds
+;;; Use (getenv "SDSPRT") to get the printer name.
+;;;
 ;;; Revision 1.15  1998/06/19 21:42:50  sds
 ;;; Switch from `compose-m' to `compose'.
 ;;;
@@ -63,7 +66,14 @@
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "date")
-  (sds-require "channel") (sds-require "signal"))
+  (sds-require "channel") (sds-require "signal")
+  ;; the only way to have a good optimization here is to ditch
+  ;; flexibility and stick to floats.
+  (declaim (optimize (speed 1) (space 0) (safety 3) (debug 3))))
+
+#+cmu
+(eval-when (compile)
+  (format t " *** `optimize' compile quality is set to 1.~%"))
 
 ;(run-shell-command "ls")
 ;(shell)
@@ -81,12 +91,16 @@
 (defcustom *gnuplot-path-console* simple-string "c:/bin/cgnuplot.exe"
   "*The path to the console gnuplot executable.")
 (defcustom *gnuplot-printer* simple-string
-  #+win32 "\\\\server1\\ddslaser" #+unix "|lpr -Pddslaser"
+  (format nil #+win32 "\\\\server1\\~a" #+unix "|lpr -P~a"
+          (getenv "SDSPRT"))
   "*The printer to print the plots.")
-#+unix (defvar *gnuplot-stream* nil "The current gnuplot output stream.")
-(defcustom *gnuplot-file* pathname (merge-pathnames "plot.tmp" *fin-dir*)
+#+unix
+(defcustom *gnuplot-stream* (or null stream) nil
+  "The current gnuplot output stream.")
+(defcustom *gnuplot-file* pathname (merge-pathnames "plot.tmp" *datadir*)
   "*The tmp file for gnuplot.")
-(defvar *gnuplot-msg-stream* t "*The message stream of gnuplot functions.")
+(defcustom *gnuplot-msg-stream* (or stream null t) *standard-output*
+  "*The message stream of gnuplot functions.")
 
 (defsubst plot-sec-to-epoch (dt)
   "Return the number of seconds from date DT to `+gnuplot-epoch+'."
@@ -116,31 +130,36 @@ other => write `*gnuplot-file*' and print a message."
 				     *gnuplot-stream*)
 				 (pipe-output *gnuplot-path*)))))
       (unwind-protect
-	   (progn (plot-header ,str ,plot ,@header) ,@body)
+	   (locally (declare (stream ,str))
+             (plot-header ,str ,plot ,@header) ,@body)
 	#+win32 (when ,str (close ,str))
 	#+win32
 	(cond ((or (eq ,plot t) (eq ,plot :plot))
-	       (format *gnuplot-msg-stream* "~&Starting gnuplot...")
+               (fresh-line *gnuplot-msg-stream*)
+	       (princ "Starting gnuplot..." *gnuplot-msg-stream*)
+               (force-output *gnuplot-msg-stream*)
 	       (close (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
 	       (format *gnuplot-msg-stream* "done.~%"))
 	      ((eq ,plot :wait)
-	       (format *gnuplot-msg-stream*
-		       "~&Waiting for gnuplot to terminate...")
+               (fresh-line *gnuplot-msg-stream*)
+	       (princ "Waiting for gnuplot to terminate..."
+                      *gnuplot-msg-stream*)
+               (force-output *gnuplot-msg-stream*)
 	       (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
 		       (run-prog *gnuplot-path* :args
 				 (list "/noend" *gnuplot-file*))))
 	      ((eq ,plot :print)
 	       (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
-		       *gnuplot-printer*)
-               (format *gnuplot-stream* "set terminal windows~%set output~%"))
+		       *gnuplot-printer*))
 	      ((format *gnuplot-msg-stream* "~&Prepared file `~a'.
 Type \"load '~a'\" at the gnuplot prompt.~%"
 		       *gnuplot-file* *gnuplot-file*)))
 	#+unix
 	(cond ((or (eq ,plot t) (eq ,plot :plot))
 	       (format *gnuplot-msg-stream* "Done plotting.~%"))
-	      ((eq ,plot :wait) (format t "Press <enter> to continue...")
-	       (read-line *terminal-io* nil nil))
+	      ((eq ,plot :wait)
+               (princ "Press <enter> to continue..." *terminal-io*)
+               (force-output *terminal-io*) (read-line *terminal-io* nil nil))
 	      ((eq ,plot :file) (close ,str)
 	       (format *gnuplot-msg-stream* "Wrote `~a'.~%" *gnuplot-file*))
 	      ((eq ,plot :print)
@@ -153,6 +172,7 @@ Type \"load '~a'\" at the gnuplot prompt.~%"
 This is called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
 XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND KEY"
+  (declare (stream str))
   (flet ((pp (x) (if (numberp x) x (format nil "'~a'" x))))
     (if (eq plot :print)
 	(format str "set terminal postscript landscape~%set output '~a'~%"
@@ -162,7 +182,7 @@ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND KEY"
     (format str "set time '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
 set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'
-set data style ~a~%set xrange [~f:~f]~%set title \"~a\"~%~@[set key ~a~%~]"
+set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
 	    timefmt xlabel ylabel data-style (pp xb) (pp xe) title key)))
 
 (defun plot-dl-channels (dls chs &rest opts)
@@ -209,14 +229,13 @@ CHANNELS id the list of channels to plot."
 	    (mapcan (lambda (dl)
 		      (cons (dated-list-name dl)
 			    (mapcar (lambda (ee)
-				      (format nil "~a - EMA [~f]"
+				      (format nil "~a - EMA [~a]"
 					      (dated-list-name dl) ee))
 				    ema)))
 		    dls))
-    (dolist (ch channels) (plot-channel-str ch str))
-    (dolist (pos posl)
-      (plot-pos-str pos str)
-      (plot-channel-str (pos-poch pos) str))
+    (let ((lt 2))
+      (dolist (ch channels) (plot-channel-str ch str "" (incf lt))))
+    (dolist (pos posl) (plot-pos-str pos str))
     (terpri str)		; the command line is over!
     (let* ((emal (make-list (length ema))) bv
 	   (val (if rel (lambda (dl) (/ (dl-nth-slot dl slot) bv))
@@ -246,7 +265,7 @@ CHANNELS id the list of channels to plot."
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the numbers."
-  (declare (list lss))
+  (declare (list lss) (type (or null fixnum) depth))
   (setq depth (or depth (1- (apply #'min (mapcar #'length lss))))
 	data-style (or data-style (plot-data-style depth)))
   (with-plot-stream (str plot xlabel ylabel data-style nil 0 (1- depth) title
@@ -259,6 +278,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
 	(setq bv (funcall key (cadr ls)))
 	(do ((ll (cdr ls) (cdr ll)) (ix 0 (1+ ix)))
 	    ((= ix depth) (format str "e~%"))
+          (declare (fixnum ix))
 	  (format str "~f~20t~f~%" ix (funcall val ll)))))))
 
 (defun plot-lists-arg (lss &key (key #'identity) (title "Plot") (xlabel "nums")
@@ -277,8 +297,8 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
 				   :ykey (compose cdr 'key))) lss)))
   (when (eq quads t)
     (setq quads (mapcar (lambda (ls)
-			  (regress2 (cdr ls) :xkey (compose car 'key)
-				    :ykey (compose cdr 'key))) lss)))
+			  (regress-poly (cdr ls) 2 :xkey (compose car 'key)
+                                        :ykey (compose cdr 'key))) lss)))
   (setq xbeg (or xbeg (apply #'min (mapcar (compose car 'key cadr) lss)))
 	xend (or xend (apply #'max (mapcar (compose car 'key car last) lss))))
   (with-plot-stream (str plot xlabel ylabel data-style nil xbeg xend title
@@ -328,16 +348,19 @@ get x, y and ydelta with xkey, ykey and ydkey."
   "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
-FNL is a list of (name . function)."
-  (declare (list fnl) (real xmin xmax) (fixnum numpts))
+FNL is a list of (name . function).
+E.g.: (plot-functions  (list (cons 'sine #'sin)) 0 pi 100)"
+  (declare (list fnl) (real xmin xmax) (type (unsigned-byte 20) numpts))
   (setq data-style (or data-style (plot-data-style numpts)))
   (with-plot-stream (str plot xlabel ylabel data-style nil xmin xmax title
                      plot-key)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
-    (do ((fn fnl (cdr fn))) ((null fn) (format str "e~%"))
+    (dolist (fn fnl (format str "e~%"))
       (dotimes (ii (1+ numpts))
-	(let ((xx (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts)))
-	  (format str "~f~20t~f~%" xx (funcall (cdar fn) xx)))))))
+        (declare (type (unsigned-byte 20) ii))
+	(let ((xx (/ (+ (* ii (double-float xmax))
+                        (* (- numpts ii) (double-float xmin))) numpts)))
+	  (format str "~f~20t~f~%" xx (funcall (cdr fn) xx)))))))
 
 (defun plot-dated-lists-depth (depth dls slot &rest opts)
   "Plot the dated lists, DEPTH *days* from the beginning.
@@ -357,30 +380,29 @@ DEPTH out of the dated list."
   (do ((bd (dl-nth-date dl)) (ll (dated-list-ll dl) (cdr ll))
        (ii 0 (1+ ii)) rr)
       ((or (null ll) (= ii depth)) (nreverse rr))
+    (declare (fixnum ii) (type date bd) (list rr ll))
     (push (cons (days-between bd (funcall (dl-date dl) (car ll)))
 		(slot-value (car ll) slot)) rr)))
 
 (defun line-day2sec (ln begd)
   "Make a new line, converting from days to seconds."
-  (declare (type line ln))
-  (unless (realp begd) (setq begd (plot-sec-to-epoch (date begd))))
-  (let ((dd (/ 1 60 60 24)))
-    (make-line :sl (* (line-sl ln) dd) :co
-	       (- (line-co ln) (* (line-sl ln) dd begd)))))
+  (declare (type line ln) (type integer begd) (values line))
+  (make-line :sl (/ (line-sl ln) +day-sec+) :co
+             (- (line-co ln) (* (line-sl ln) (/ begd +day-sec+)))))
 
-(defun plot-line-str (ln beg end str &optional (title ""))
+(defun plot-line-str (ln beg end str &optional (title "") lt)
   "Write the string to plot stream STR for plotting the line from BEG to END.
 This is not a complete plotting function (not a UI)!"
   (declare (type line ln) (real beg end))
-  (format str ", ((x>~f)?((x<~f)?(~f*x+~f):1/0):1/0) title \"~a\" with lines"
-	  beg end (line-sl ln) (line-co ln) title))
+  (format str ", ((x>~a)?((x<~a)?(~a*x+~a):1/0):1/0) title \"~a\" with lines~
+~@[ ~d~]" beg end (line-sl ln) (line-co ln) title lt))
 
-(defun plot-quad-str (qu beg end str &optional (title ""))
+(defun plot-quad-str (qu beg end str &optional (title "") lt)
   "Write the string to plot stream STR for plotting the parabola
 from BEG to END.  This is not a complete plotting function (not a UI)!"
   (declare (type (simple-array double-float (3)) qu) (real beg end))
-  (format str ", ((x>~f)?((x<~f)?(~f*x*x+~f*x+~f):1/0):1/0) title \"~a\" ~
-with lines" beg end (aref qu 0) (aref qu 1) (aref qu 2) title))
+  (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title \"~a\" ~
+with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
 
 (defun plot-pos-str (pos str)
   "Write the string to plot stream STR for plotting the position POS.
@@ -390,9 +412,10 @@ This is not a complete plotting function (not a UI)!"
 	(end (plot-sec-to-epoch (pos-endd pos))))
     (plot-line-str (line-day2sec (pos2line pos) beg) beg end str
 		   (format nil "~4f ~a/~a" (pos-size pos) (pos-begd pos)
-			   (pos-endd pos)))))
+			   (pos-endd pos)) -1)
+    (plot-channel-str (pos-poch pos) str "" -1)))
 
-(defun plot-channel-str (ch str)
+(defun plot-channel-str (ch str ttl lt)
   "Write the string to plot stream STR for plotting the channel.
 Omit zero lines. This is not a complete plotting function (not a UI)!"
   (declare (type channel ch) (type stream str))
@@ -400,13 +423,13 @@ Omit zero lines. This is not a complete plotting function (not a UI)!"
 	(end (plot-sec-to-epoch (channel-endd ch))))
     (unless (and (zerop (line-sl (channel-top ch)))
 		 (zerop (line-sl (channel-top ch))))
-      (plot-line-str (line-day2sec (channel-top ch) beg) beg end str))
+      (plot-line-str (line-day2sec (channel-top ch) beg) beg end str ttl lt))
     (unless (and (zerop (line-sl (channel-bot ch)))
 		 (zerop (line-sl (channel-bot ch))))
-      (plot-line-str (line-day2sec (channel-bot ch) beg) beg end str))
+      (plot-line-str (line-day2sec (channel-bot ch) beg) beg end str ttl lt))
     (unless (and (zerop (line-sl (channel-reg ch)))
 		 (zerop (line-sl (channel-reg ch))))
-      (plot-line-str (line-day2sec (channel-reg ch) beg) beg end str))))
+      (plot-line-str (line-day2sec (channel-reg ch) beg) beg end str ttl lt))))
 
 (provide "gnuplot")
 ;;; gnuplot.lisp ends here

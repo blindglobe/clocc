@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.9 2004/10/07 04:19:00 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.10 2004/10/26 22:16:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -51,19 +51,20 @@
    (cond ((Out-stream-p srm)
 	  srm)
 	 ((is-Stream srm)
-	  #+openmcl
 	  (cond ((typep srm 'ccl::xp-stream)
 		 (dbg-save srm)
 		 (breakpoint stream-outify
 		    "Got odd stream: " srm)))
-	  (cond (out-stream-cleanup*
-		 (cond ((some #'(lambda (p) (not (open-stream-p (car p))))
-			      out-streams*)
-			;; clean up table
-			(setq out-streams*
-			      (delete-if #'(lambda (p)
-					      (not (open-stream-p (car p))))
-					 out-streams*))))))
+	  (cond ((some #'(lambda (p)
+			    (or (not (streamp (car p)))
+				(not (open-stream-p (car p)))))
+		       out-streams*)
+		 ;; clean up table
+		 (setq out-streams*
+		       (delete-if #'(lambda (p)
+				       (or (not (streamp (car p)))
+					   (not (open-stream-p (car p)))))
+				  out-streams*))))
 	  (let ((p (assq srm out-streams*)))
 	     (cond (p (cadr p))
 		   (t

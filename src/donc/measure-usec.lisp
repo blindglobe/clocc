@@ -10,13 +10,13 @@
 Measure-usec returns the time it takes to do something in microseconds,
 e.g., (measure-usec '(length *features*))
 will do (length *features*) enough times (compiled) to estimate with
-reasonable accuracy how long it takes.  
+reasonable accuracy how long it takes.
 
 The bindings argument allows you to time things that use local variables:
 (measure-usec '(+ x y) :bindings '((x 1) (y 2)))
 
 The precision argument describes the desired accuracy, e.g., .1 means
-within 10%.  Of course, a much smaller value, e.g., .01, may never 
+within 10%.  Of course, a much smaller value, e.g., .01, may never
 converge.  (However the max-time argument will override that.)
 
 Other keyword arguments are a maximum time (seconds) allowed to do the
@@ -35,7 +35,7 @@ difference between the results for similar forms does seem pretty
 reliable.  Note, however, that the time for accessing variables may
 depend on where they're bound and how.  So it's really only fair to
 compare forms that access the same variables in the same way the same
-number of times. 
+number of times.
 
 The return values are:
 - the number of microseconds per iteration
@@ -45,8 +45,8 @@ The return values are:
 
 (provide :measure-usec)
 
-(defun measure-usec (code &key &allow-other-keys (precision .05)
-                               bindings (max-time 10) (min-n 0) optimize)
+(defun measure-usec (code &key (precision .05) bindings (max-time 10)
+                     (min-n 0) optimize &allow-other-keys)
   (funcall
    (compile
     nil

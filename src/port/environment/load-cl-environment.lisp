@@ -1,10 +1,17 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; load-cl-environment.lisp --
 ;;;
-;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (find-package "CL-ENVIRONMENT-LOADER")
+    (make-package "CL-ENVIRONMENT-LOADER" :use '("COMMON-LISP"))))
+
+(in-package "CL-ENVIRONMENT-LOADER")
+
 
 ;;; Thanks to Kevin Rosemberg for his suggestions to make the loading
 ;;; of this file more portable.
@@ -17,12 +24,13 @@
 		   ;; :case :common ; Do we need this?
 		   )))
 
-(defun load-cl-environment-library (&key
-				    (directory *cl-environment-directory*)
-				    (compile-first-p nil)
-				    (load-verbose *load-verbose*)
-				    (print-herald t)
-				    )
+(defun cl-user::load-cl-environment-library
+  (&key
+   (directory *cl-environment-directory*)
+   (compile-first-p nil)
+   (load-verbose *load-verbose*)
+   (print-herald t)
+   )
   (when print-herald
     (format *standard-output*
 	    "~&;;; CL.ENV: Loading CL.ENVIRONMENT package from directory~@
@@ -41,7 +49,7 @@
 			     output-truename
 			     warnings-p
 			     failure-p)
-		     (return-from load-cl-environment-library nil)
+		     (return-from cl-user::load-cl-environment-library nil)
 		     )
 		   (load output-truename :verbose load-verbose))
 		 (load file :verbose load-verbose)))
@@ -76,7 +84,7 @@
       #+clisp
       (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;clisp.lisp")
 
-      #+cmu
+      #+(or cmu sbcl) ; They are still very similar.
       (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;cmucl.lisp")
 
       #+lcl
@@ -89,7 +97,11 @@
       (load-and-or-compile "CL-ENV-LIBRARY:utilities.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:system-info.lisp")
       ))
-  (pushnew :cl-environment *features*))
+  (pushnew :cl-environment *features*)
+
+  ;; To clean a minimum (and to make things difficult to debug)...
+  ;; (delete-package "CL-ENVIRONMENT-LOADER")
+  )
 
 
-;;; end of file -- env.system --
+;;; end of file -- load-cl-environment.lisp --

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.7 2001/11/02 22:31:15 sds Exp $
+;;; $Id: fin.lisp,v 2.8 2002/11/07 22:44:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (in-package :cllib)
 
-(export '(mgg-monthly mgg-compare mgg-prepay mgg-interest
+(export '(mgg-monthly mgg-compare mgg-prepay mgg-payoff mgg-interest
           black-scholes-call black-scholes-eput
           solow solow-next-year
           lognormal luhn))
@@ -91,9 +91,25 @@ years, as opposed to 13.75 years for the 6.75%/3points mortgage."
   (let* ((mm (mgg-monthly principal term apr monthly)) (tot (+ prepay mm))
          (trm (/ (mgg-term (/ tot principal) apr monthly) 12)))
     (format
-     t "Principal: ~2:/comma/  APR: ~7f  --> ~2,9:/comma/ --> ~5,2f years
+     t "Principal: ~2,8:/comma/  APR: ~7f  --> ~2,9:/comma/ --> ~5,2f years
 Prepay: ~2:/comma/~36t  --> ~2,9:/comma/ --> ~5,2f years~%"
             principal apr mm term prepay tot trm)))
+
+;;;###autoload
+(defun mgg-payoff (principal payment apr &optional monthly)
+  "Print the payoff time for when the payment is given."
+  (loop :with rate = (mgg-rate apr monthly) :with r1 = (/ rate (- 1 rate))
+    :for month :upfrom 0
+    :for debt = principal :then (max 0 (- debt (- payment interest)))
+    :for interest = (max 0 (* (- debt payment) r1))
+    :while (plusp debt)
+    :sum interest :into total-int
+    :sum (min debt payment) :into total-pay
+    :do (format t "~3d  debt:~2,8:/comma/  int=~2,6:/comma/  pr=~2,6:/comma/~%"
+                month debt interest (min debt (- payment interest)))
+    :finally (format t "total payments: ~2:/comma/~%interest: ~2:/comma/~%"
+                     total-pay total-int)
+    (return (values total-pay total-int))))
 
 (defun mgg-interest (principal term apr &optional monthly)
   "Calculate the total interest that will ever be paid on the mortgage."

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-07-31 Fri 12:37:44 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-09-02 Wed 16:50:38 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,15 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.7 1998/07/31 16:41:24 sds Exp $
+;;; $Id: math.lisp,v 1.8 1998/09/03 13:54:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.8  1998/09/03 13:54:08  sds
+;;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
+;;; `make-primes-list', `*primes*', `*primes-file*'.
+;;; Special case 2 point regression in `regress'; don't signal error on
+;;; negative error, just print a message and assume 0.
+;;;
 ;;; Revision 1.7  1998/07/31 16:41:24  sds
 ;;; Declare `stream' as a stream in `print-*'.
 ;;; Take `sqrt' of the correlation in `regress-n'.
@@ -47,15 +53,9 @@
 (define-modify-macro mulf (mult) * "Multiply the arg by a number.")
 (define-modify-macro divf (mult) / "Divide the arg by a number.")
 
-;;(defmacro sqr (xx)
-;;  "Compute the square of a number, taking care to eval only once."
-;;  (if (atom xx) `(* ,xx ,xx)
-;;      (let ((var (gensym "SQR"))) `(let ((,var ,xx)) (* ,var ,var)))))
-
-(defsubst sqr (xx)
-  "Compute the square of a number."
-  (declare (double-float xx) (values double-float))
-  (the double-float (* xx xx)))
+;;;
+;;; Integers
+;;;
 
 (defun ! (nn)
   "Compute the factorial: n! = n * (n-1) * (n-2) * ..."
@@ -84,6 +84,75 @@
                      (t (let ((mm (1+ (ash (ash (+ aa bb) -2) 1))))
                           (* (ff aa mm) (ff mm bb)))))))
           (if (> nn 1) (ff 1 nn) 1)))))
+
+(defun fibonacci (nn)
+  "Return 2 consecutive Fibonacci numbers."
+  (declare (integer nn) (values integer integer))
+  (case nn
+    (0 (values 0 0)) (1 (values 1 0)) (2 (values 1 1)) (3 (values 2 1))
+    (t (multiple-value-bind (mm rr) (floor nn 2)
+         (declare (integer mm) (type (integer 0 1) rr))
+         (multiple-value-bind (f0 f1) (fibonacci mm)
+           (declare (integer f0 f1))
+           (ecase rr
+             (0 (values (* f0 (+ (* f1 2) f0))
+                        (+ (* f0 f0) (* f1 f1))))
+             (1 (values (+ (* f0 f0) (expt (+ f0 f1) 2))
+                        (* f0 (+ (* f1 2) f0))))))))))
+
+(defcustom *primes* list nil "The list of primes.")
+(defcustom *primes-file* pathname (merge-pathnames "primes" *datadir*)
+  "The file for keeping the list of primes.")
+
+(defun primes-to (nn &optional int)
+  "Return the list of primes up to N, exclusively.
+The optional second argument, if non-nil, is a double float
+specifying the interval for progress reports."
+  (declare (fixnum nn) (type (or null double-float) int))
+  (when (and *primes* (>= (car (last *primes*)) nn))
+    (return-from primes-to *primes*))
+  (do* ((ii 3 (+ 2 ii)) (res (if (> nn 2) (list 2))) (end res)
+        (rt (isqrt ii) (isqrt ii)) (bt (get-float-time)))
+       ((>= ii nn) (setq *primes* res))
+    (declare (fixnum ii))
+    (when (and int (> (elapsed bt) int))
+      (format t "~:d..." ii) (force-output)
+      (setq bt (get-float-time)))
+    (do ((mm res (cdr mm)))
+        ((or (null mm) (> (car mm) rt))
+         (setq end (cdr (nconc end (list ii)))))
+      (if (zerop (mod ii (car mm))) (return nil)))))
+
+(defun divisors (nn &optional (primes-list (primes-to (1+ (isqrt nn)))))
+  "Return the list of prime divisors of the given number.
+The optional second argument specifies the list of primes."
+  (declare (integer nn))
+  (do ((pp primes-list (cdr pp)) (rt (isqrt nn)))
+      ((or (null pp) (> (car pp) rt)) (list nn))
+    (declare (fixnum rt))
+    (multiple-value-bind (dd rr) (floor nn (car pp))
+      (declare (fixnum rr) (integer dd))
+      (when (zerop rr) (return (cons (car pp) (divisors dd primes-list)))))))
+
+(defsubst primep (nn)
+  "Check whether the number is prime."
+  (declare (integer nn))
+  (= 1 (length (divisors nn))))
+
+(defun make-primes-list (&optional (limit most-positive-fixnum))
+  "Initialize `*primes*' and write `*primes-file*'."
+  (declare (fixnum limit))
+  (let ((bt (get-float-time)) st)
+    (format t "Computing primes up to ~:d..." limit) (force-output)
+    (setq *primes* (primes-to limit 10.0d0) st (elapsed-1 bt))
+    (format t "done [~a]~%" st)
+    (write-to-file *primes* *primes-file* ";; Computed in " st
+                   (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
+                           limit (length *primes*)))))
+
+;;;
+;;; Floats
+;;;
 
 (defun dot (l0 l1 &key (key #'value) (key0 key) (key1 key))
   "Compute the dot-product of the two sequences,
@@ -124,7 +193,7 @@ so that (poly 10 1 2 3 4 5) ==> 12345."
   "Compute the error function, accurate to 1e-6. See Hull p. 243.
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx) (values double-float double-float))
-  (let* ((der (/ (exp (* -0.5d0 (sqr xx))) (double-float (sqrt (* 2 pi)))))
+  (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (double-float (sqrt (* 2 pi)))))
 	 (val (- 1 (* der (poly (/ (1+ (* (abs xx) 0.2316419d0)))
 				1.330274429d0 -1.821255978d0 1.781477937d0
 				-0.356563782d0 0.319381530d0 0.0d0)))))
@@ -137,7 +206,7 @@ Return the value and the derivative, suitable for `newton'."
   (case order
     (0 (reduce #'max seq :key (compose abs 'key)))
     (1 (reduce #'+ seq :key (compose abs 'key)))
-    (2 (sqrt (reduce #'+ seq :key (compose sqr 'key))))
+    (2 (sqrt (reduce #'+ seq :key (lambda (xx) (expt (funcall key xx) 2)))))
     (t (expt (reduce #'+ seq :key
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
 	     (/ (double-float order))))))
@@ -163,7 +232,7 @@ Return the value and the derivative, suitable for `newton'."
     (mismatch seq1 seq2 :key key :start1 (1+ start1) :start2 (1+ start2)
 	      :end1 (+ start1 depth) :end2 (+ start2 depth) :test
 	      (lambda (k1 k2) (declare (double-float k1 k2))
-		      (incf dist (sqr (- (/ k1 b1) (/ k2 b2))))))
+		      (incf dist (expt (- (/ k1 b1) (/ k2 b2)) 2))))
     dist))
 
 (defsubst mean (seq &key (key #'value) (len (length seq)))
@@ -231,7 +300,8 @@ The mean and the length can be pre-computed for speed."
 	   (values double-float double-float fixnum))
   (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
   (values
-   (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
+   (sqrt (/ (reduce #'+ seq :key
+                    (lambda (yy) (expt (- (funcall key yy) mean) 2)))
 	    (1- len))) mean len))
 
 (defsubst standard-deviation-cx (&rest args)
@@ -267,16 +337,16 @@ without pre-computing the means."
     (map nil (lambda (r0 r1)
 	       (let ((xx (funcall key0 r0)) (yy (funcall key1 r1)))
 		 (declare (double-float xx yy))
-		 (incf nn) (incf xb xx) (incf yb yy) (incf y2b (sqr yy))
-		 (incf xyb (* xx yy)) (incf x2b (sqr xx))))
+		 (incf nn) (incf xb xx) (incf yb yy) (incf y2b (expt yy 2))
+		 (incf xyb (* xx yy)) (incf x2b (expt xx 2))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
     (setq c0 (/ (double-float nn)) c1 (/ (double-float (1- nn))))
     (values (with-type double-float (* (- xyb (* xb yb c0)) c1))
             (with-type double-float (* xb c0))
             (with-type double-float (* yb c0))
-            (with-type double-float (* (- x2b (* (sqr xb) c0)) c1))
-            (with-type double-float (* (- y2b (* (sqr yb) c0)) c1))
+            (with-type double-float (* (- x2b (* xb xb c0)) c1))
+            (with-type double-float (* (- y2b (* yb yb c0)) c1))
             nn)))
 
 (defun covariation1 (seq0 seq1 &key (key0 #'value) (key1 #'value))
@@ -295,7 +365,7 @@ Uses the numerically stable algorithm with pre-computing the means."
 	       (let ((xx (- (funcall key0 r0) m0))
                      (yy (- (funcall key1 r1) m1)))
 		 (declare (double-float xx yy))
-		 (incf nn) (incf d0 (sqr xx)) (incf d1 (sqr yy))
+		 (incf nn) (incf d0 (expt xx 2)) (incf d1 (expt yy 2))
 		 (incf rr (* xx yy))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
@@ -433,27 +503,27 @@ denominator.  Sign is ignored."
   (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
 
 (defcustom *relative-tolerance* double-float 1.0e-3
-  "*The default relative tolerance for `same-num-p'.")
+  "*The default relative tolerance for `approx='.")
 (defcustom *absolute-tolerance* double-float 1.0d0
-  "*The default absolute tolerance for `same-num-p'.")
+  "*The default absolute tolerance for `approx='.")
 (defcustom *num-tolerance* double-float 1.0e-6
-  "*The default numerical tolerance for `same-num-[abs|rel]-p'.")
+  "*The default numerical tolerance for `approx=-[abs|rel]'.")
 
-(defsubst same-num-abs-p (f0 f1 &optional (tol *num-tolerance*))
+(defsubst approx=-abs (f0 f1 &optional (tol *num-tolerance*))
   "Return T if the args are the same within TOL,
 which defaults to *num-tolerance*."
   (declare (number f0 f1 tol))
   (< (abs (- f0 f1)) tol))
 
-(defsubst same-num-rel-p (f0 f1 &optional (tol *num-tolerance*))
+(defsubst approx=-rel (f0 f1 &optional (tol *num-tolerance*))
   "Return T if the args are the same relatively within TOL,
 which defaults to *num-tolerance*. The first number goes to the
 denominator."
   (declare (number f0 f1 tol))
   (< (abs (- f0 f1)) (abs (* f0 tol))))
 
-(defsubst same-num-p (v0 v1 &optional (rt *relative-tolerance*)
-		      (at *absolute-tolerance*))
+(defsubst approx= (v0 v1 &optional (rt *relative-tolerance*)
+                   (at *absolute-tolerance*))
   "Check whether the two numbers are the same within the relative and
 absolute tolerances (which default to *relative-tolerance* and
 *absolute-tolerance*)."
@@ -571,14 +641,25 @@ The second value returned is the deviation from the line.
 The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   (declare (sequence seq) (type (function (t) double-float) xkey ykey)
 	   (values line (double-float 0.0d0 *)))
-  (multiple-value-bind (co xm ym xd yd nn)
-      (cov seq :xkey xkey :ykey ykey)
-    (declare (double-float co xm ym xd yd) (fixnum nn))
-    (let* ((sl (/ co xd)) (err (if (= nn 2) 0.0d0 (d/ (- yd (* sl co)) yd))))
-      (declare (double-float sl err))
-      (assert (>= err 0) (err) "REGRESS: error is negative: ~f~%" err)
-      (values (make-line :sl sl :co (with-type double-float (- ym (* xm sl))))
-              (sqrt err)))))
+  (case (length seq)
+    ((0 1) (error "regress: too few points: ~s~%" seq))
+    (2 (values (line-thru-points (funcall xkey (elt seq 0))
+                                 (funcall ykey (elt seq 0))
+                                 (funcall xkey (elt seq 1))
+                                 (funcall ykey (elt seq 1)))
+               0.0d0))
+    (t (multiple-value-bind (co xm ym xd yd nn)
+           (cov seq :xkey xkey :ykey ykey)
+         (declare (double-float co xm ym xd yd) (fixnum nn))
+         (let* ((sl (/ co xd)) (err (d/ (- yd (* sl co)) yd)))
+           (declare (double-float sl err))
+           (when (minusp err)
+             (mesg :err t "REGRESS: error is negative: ~f (assumed 0) [len: ~d]
+~s~%" err nn seq)
+             (setq err 0.0d0))
+           (values (make-line :sl sl :co
+                              (with-type double-float (- ym (* xm sl))))
+                   (sqrt err)))))))
 
 (defun regress-n (yy xx nx &key (func #'aref))
   "Returns: vector [b1 ... bn], free term, Rmult, Ftest."
@@ -601,7 +682,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
              (type (simple-array double-float (*)) cfs rhs mms)
              (double-float yyb yys free rr ff))
     (loop for kk of-type (unsigned-byte 20) upfrom 0 and yk across yy do
-          (incf yys (sqr (- yk yyb)))
+          (incf yys (expt (- yk yyb) 2))
           (dotimes (ii nx)          ; compute X
             (declare (fixnum ii))
             (setf (aref cfs ii) (funcall func xx kk ii))
@@ -625,8 +706,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
         (format t "regress-n: `matrix-solve' failed on:~%~/matrix-print/~a"
                 mx co)
         (let ((det (matrix-inverse mx)))
-          (assert (not (zerop det)) (mx)
-                  "the matrix is degenerate (det = 0)~%")
+          (assert (/= 0 det) (mx) "the matrix is degenerate (det = 0)~%")
           (format t "det == ~f; using `matrix-inverse'.~%" det)
           (matrix-multiply-mat-col mx rhs cfs))))
     (setq free (- yyb (dot cfs mms))

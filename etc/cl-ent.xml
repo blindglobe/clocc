@@ -7,6 +7,7 @@
 
 <!-- *** general references about Common Lisp *** -->
 <!ENTITY clhs "http://www.lisp.org/HyperSpec">
+<!ENTITY mop "http://www.lisp.org/mop">
 <!ENTITY cl "<ulink url='http://www.lisp.org'><command>Common Lisp</command></ulink>">
 <!ENTITY clos "<command>CLOS</command>">
 

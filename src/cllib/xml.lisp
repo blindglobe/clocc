@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.38 2001/11/02 22:31:14 sds Exp $
+;;; $Id: xml.lisp,v 2.39 2001/11/07 15:37:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -561,6 +561,7 @@ TERM can be a predicate, a character or a sequence of characters."
   (flet ((tost (xx) (etypecase xx
                       (symbol (symbol-name xx)) (string xx)
                       (number (prin1-to-string xx)) ; for malformed border=1
+                      (character (string xx)) ; for malformed href=http://
                       (cons xx))))
     (when (setq list (delete-if #'xml-comment-p list))
       (do ((ll list))

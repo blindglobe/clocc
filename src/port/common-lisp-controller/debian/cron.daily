@@ -4,6 +4,14 @@
 
 LOCATION=/var/spool/common-lisp-controller
 
+# did we get removed?
+
+if [ ! -x /usr/bin/clc-send-command ] ; then 
+ # we got removed. Clean the directory:
+ find $LOCATION -xdev -type f -print0 | xargs --null rm --force
+ exit 0
+fi
+
 # do not trust anything in that directory!
 
 # first remove files with strange characters:
@@ -26,8 +34,8 @@ while true ; do
  OLDFILE="$FILE"
  # carefully execute the command:
  /usr/bin/clc-send-command --quiet --force-connect recompile \
-   "`head -n 1 $FILE | cut -d ' ' -f 1 | sed 's/[^-a-zA-Z0-9]*//g'`" \
-   "`head -n 1 $FILE | cut -d ' ' -f 2 | sed 's/[^-a-zA-Z0-9]*//g'`" 
+  "`head -n 1 $FILE | cut -d ' ' -f 1 | sed 's/[^-a-zA-Z0-9]*//g'`" \
+  "`head -n 1 $FILE | cut -d ' ' -f 2 | sed 's/[^-a-zA-Z0-9]*//g'`" 
  # delete the duplicates, regardless if we could build:
  grep --recursive --fixed-strings --files-with-matches --null \
    "`head -n 1 $FILE | cut -d ' ' -f 1,2 | sed 's/[^-a-zA-Z0-9 ]*//g'`" ${LOCATION}/* | \

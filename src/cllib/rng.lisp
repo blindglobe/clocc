@@ -1,9 +1,16 @@
-;;;; $Id: rng.lisp,v 1.4 2001/03/21 03:25:50 rtoy Exp $
+;;;; $Id: rng.lisp,v 1.5 2001/03/29 21:21:56 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.5  2001/03/29 21:21:56  sds
+;;;;  (gen-exponential-variate-sa, gen-exponential-variate-algorithm-ma,
+;;;;  gen-exponential-variate-ea, gen-exponential-variate-ea-2):
+;;;;   added ignore declaration to avoid warnings
+;;;;  (gen-std-laplacian-variate): use `gen-exponential-variate' (typo)
+;;;;  (gen-gaussian-variate-box-trig): avoid CLISP floating contagion warning
+;;;;
 ;;;;  Revision 1.4  2001/03/21 03:25:50  rtoy
 ;;;;  o Verify algorithms and add comments about which ones work and which
 ;;;;    ones don't
@@ -156,7 +163,7 @@ mean of mu:
 ;;
 ;; Note that Q[k] -> 1 as k -> infinity.  Thus, we might get more
 ;; accurate results for large k if we compute
-;;             
+;;
 ;;            infty
 ;; Q[k] = 1 -  sum  (ln 2)^m/m!
 ;;            m=k+1
@@ -221,7 +228,7 @@ mean of 1:
 "
     (declare (type (double-float (0d0)) mu)
 	     (random-state state))
-  
+
     (multiple-value-bind (u j)
 	;; Step S1.  Find the first zero bit by comparing against 1/2.
 	;; If more than 1/2, the leading bit is 1.  In this case,
@@ -250,7 +257,7 @@ mean of 1:
 		 (declare (type (double-float 0d0 (1d0)) v)
 			  (optimize (speed 3) (safety 0)))
 		 ))))))
-  
+
   ;; Ahrens Algorithm SA
   ;;
   ;; See Ahrens, CACM, vol 15, no. 10, 1972.
@@ -287,8 +294,9 @@ mean of 1:
   ;; steps 1-4.  Step S2 is step 5.  Step S3-S4 are steps 6-9.  This
   ;; also shows a typo.  In Knuth: Step S4 reads m*(j + V)*ln(2).
   ;; Step 9 here should read "deliever (a + umin)*ln(2)".
-  
+
   (defun gen-exponential-variate-sa (mu state)
+    (declare (ignore mu))
     (let ((a 0d0)
 	  (u (random 1d0 state)))
       (declare (double-float a u))
@@ -312,7 +320,7 @@ mean of 1:
 	       (declare (fixnum i)
 			(type (double-float 0d0 1d0) u* umin))
 	       (loop
-		   (tagbody 
+		   (tagbody
 		    step-7
 		      (setf umin (min umin (random 1d0 state)))
 		      (if (> u (aref std-exponential-variate-table i))
@@ -398,6 +406,7 @@ mean of 1:
   (declare (type (simple-array double-float (39)) p)
 	   (type (simple-array double-float (17)) q))
   (defun gen-exponential-variate-algorithm-ma (mu state)
+    (declare (ignore mu))
     ;; Find i such that u <= p[i+1].
     (let* ((u (random 1d0 state))
 	   (i (do ((k 1 (+ 1 k)))
@@ -457,8 +466,9 @@ mean of 1:
        (big-h 0.0026106723602095d0)
        (big-d (/ (* b b))))
   (declare (type double-float ln-2 a b c p big-a big-b big-h big-d))
-  
+
   (defun gen-exponential-variate-ea (mu state)
+    (declare (ignore mu))
     (declare (type random-state state)
 	     (type (double-float (0d0)) mu)
 	     (optimize (speed 3)))
@@ -493,6 +503,7 @@ mean of 1:
 	     (return-from gen-exponential-variate-ea (+ g y))))))
 
   (defun gen-exponential-variate-ea-2 (mu state)
+    (declare (ignore mu))
     (let ((u (random 1d0 state))
 	  (g c))
       (declare (double-float u g))
@@ -563,8 +574,8 @@ mean of 1:
   ;; we generate an exponential and flip its sign with probability
   ;; 1/2.
   (if (zerop (random 2 state))
-      (gen-std-exponential-variate 1d0 state)
-      (- (gen-std-exponential-variate 1d0 state))))
+      (gen-exponential-variate 1d0 state)
+      (- (gen-exponential-variate 1d0 state))))
 
 ;;;;-------------------------------------------------------------------------
 ;;;; Cauchy random variate.
@@ -579,7 +590,7 @@ mean of 1:
 ;; Use the inverse of the CDF to generate the desired Cauchy variate.
 
 (defun gen-cauchy-variate-tan (state)
-  (tan (* #.(float pi 1d0)
+  (tan (* #.(dfloat pi)
 	  (- (random 1d0 state) 0.5d0))))
 
 (declaim (inline gen-cauchy-variate-algorithm-ca-aux))
@@ -678,7 +689,7 @@ mean of 1:
 		 (w (+ (* u1 u1) (* u2 u2))
 		    (+ (* u1 u1) (* u2 u2))))
 		((<= w 1)
-		 (locally 
+		 (locally
 		   (declare (type (non-negative-float double-float 1d0) w))
 		   (let ((s (sqrt (/ (* -2 (log w)) w))))
 		     (setf (gaussian-generator-cache-cached-value cache) (* u2 s))
@@ -703,7 +714,7 @@ mean of 1:
 ;; 6.  If B = 0, return X.  Otherwise return -X.
 ;;
 ;; On the next call, return Y
-  
+
 #+nil
 (let ((save 0d0)
       (gen -1))
@@ -785,8 +796,8 @@ of zero and a variance of 1.  The PDF is
 	   (setf (gaussian-generator-cache-cache-valid cache) nil)
 	   (gaussian-generator-cache-cached-value cache))
 	  (t
-	   (let ((r1 (sqrt (* -2.0d0 (log (random 1.0d0 state)))))
-		 (r2 (random #.(float (* pi 2.0d0) 1d0) state)))
+	   (let ((r1 (sqrt (* -2d0 (log (random 1.0d0 state)))))
+		 (r2 (random #.(* (dfloat pi) 2d0) state)))
 	     ;;(declare (double-float r1 r2))
 	     (setf (gaussian-generator-cache-cached-value cache)
 		   (* r1 (sin r2)))

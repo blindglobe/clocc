@@ -4,7 +4,7 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: miscprint.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: miscprint.lisp,v 1.2 2000/03/13 21:55:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -118,6 +118,7 @@ This is the inverse of `hash-table->alist'."
     (dolist (co (cdr alist) ht)
       (setf (gethash (car co) ht) (cdr co)))))
 
+;;;###autoload
 (defun print-hash-table (ht &optional (out t))
   "Print the hash table with contents."
   (declare (hash-table ht))

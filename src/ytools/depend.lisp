@@ -1,8 +1,8 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.8 2004/12/26 06:38:08 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.9 2005/02/01 12:30:35 airfoyle Exp $
 
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
@@ -12,30 +12,46 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
 
+(defstruct (Scan-depends-on-state (:conc-name Sds-))
+   file-chunk  ; or the symbol *, meaning the whose basis is being found
+   sub-file-types)
+;; -- A list of sub-file types L such that all supportive children found
+;; after this will be slurped with respect to every element of L.
+
+;;;;   slurp-trawlers
+;;;; -- trawlers are objects (functions?) that interact with file
+;;;; dependencies to produce slurp tasks for files this one depends on
+
 ;;; State for task is a file chunk, whose basis (and callees)
 ;;; we are computing.
-(def-slurp-task compute-file-basis
+(def-slurp-task scan-depends-on
    :default (\\ (_ _) true)
 ;;; -- The idea is that anything we didn't anticipate takes us
 ;;; out of the header.
-   :file->state-fcn (\\ (pn) 
-		       (place-file-chunk pn)))
-)
+   :file->state-fcn     ;;;; #'place-file-chunk
+		    (\\ (pn)
+		       (make-Scan-depends-on-state
+			  :file-chunk (place-File-chunk pn)
+			  :sub-file-types (list macros-sub-file-type*)
+;;;;			  :slurp-trawlers !())
+		        )))
+ )
    
-(defclass Slurped-loadable-chunk (Loadable-chunk) ())
+(defclass Loadable-file-chunk-from-scan (Loadable-chunk) ())
 
-(defmethod derive ((fb Slurped-loadable-chunk))
+(defmethod derive ((fb Loadable-file-chunk-from-scan))
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
 	  (let* ((loaded-ch (Loadable-chunk-controllee fb))
-		 (file-ch (Loaded-chunk-file loaded-ch))
-		 (comp-ch (place-compiled-chunk file-ch)))
+		 (file-ch (Loaded-chunk-loadee loaded-ch))
+;;;;		 (comp-ch (place-compiled-chunk file-ch))
+		 )
 	     (setf (File-chunk-callees file-ch) !())
-	     (setf (Chunk-basis comp-ch)
-		   (list file-ch))
+;;;;	     (setf (File-chunk-self-compile-dep file-ch)
+;;;;		   false)
 	     (file-slurp (File-chunk-pathname file-ch)
-			 (list compute-file-basis*)
+			 (list scan-depends-on*)
 			 (\\ (srm)
 			    (let ((readtab
 				     (modeline-extract-readtab srm)))
@@ -43,10 +59,6 @@
 				      (setf (File-chunk-readtable
 					       file-ch)
 					    readtab))))))
-;;;;	     (dolist (b (tail (Chunk-basis comp-ch)))
-;;;;	        (...))
-;;; Now called automatically in :after method for Loadable-chunk/derive --
-;;;;	     (loaded-chunk-basis-set loaded-ch)
 	     file-op-count*))))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
@@ -97,11 +109,12 @@
 			  (subseq str rpos))))))
 	    (t false))))
 
-(defmethod create-loaded-controller ((file-ch File-chunk) (loaded-ch Loaded-chunk))
+(defmethod create-loaded-controller ((file-ch File-chunk)
+				     (loaded-ch Loaded-file-chunk))
    (chunk-with-name
        `(:loadable ,(Chunk-name file-ch))
        (\\ (name)
-	  (make-instance 'Slurped-loadable-chunk
+	  (make-instance 'Loadable-file-chunk-from-scan
 	     :name name
 	     :controllee loaded-ch))))
 
@@ -151,10 +164,11 @@
 
 (defvar end-header-dbg* false)
 
-(datafun compute-file-basis in-readtable
-   (defun :^ (form file-ch)
-      (let ((readtab (name->readtable (cadr form)))
-	    (prev-readtab (File-chunk-readtable file-ch)))
+(datafun scan-depends-on in-readtable
+   (defun :^ (form sdo-state)
+      (let* ((readtab (name->readtable (cadr form)))
+	     (file-ch (Sds-file-chunk sdo-state))
+	     (prev-readtab (File-chunk-readtable file-ch)))
 	 (cond ((not (eq readtab prev-readtab))
 		(format *error-output*
 		   "Changing readtable of ~s from ~s to ~s = ~s~%"
@@ -164,10 +178,11 @@
 		;; for the duration of the slurp --
 		(setq *readtable* readtab))))
 
-(datafun compute-file-basis end-header
-   (defun :^ (form file-ch) ;; -- of file being slurped
+(datafun scan-depends-on end-header
+   (defun :^ (form sdo-state) 
       (cond ((memq ':no-compile (cdr form))
-	     (place-loaded-chunk file-ch ':source)))
+	     (place-Loaded-chunk (Sds-file-chunk sdo-state)
+				 ':source)))
       (cond (end-header-dbg*
 	     (format *error-output*
 		     "Executing ~s~% "
@@ -179,49 +194,46 @@
                   ~%  no longer needed~%")))
       true))
 
-(datafun compute-file-basis depends-on
-  (defun :^ (e file-ch)
+(datafun scan-depends-on depends-on
+  (defun :^ (e sdo-state)
      (cond (depends-on-enabled*
-	    (let ((groups (depends-on-args-group (cdr e)))
-		  (compiled-ch (place-compiled-chunk file-ch))
-		  (loaded-file-ch (place-loaded-chunk file-ch false)))
+	    (let* ((file-ch (Sds-file-chunk sdo-state))
+		   (groups (depends-on-args-group (cdr e)))
+		   (compiled-ch (place-compiled-chunk file-ch))
+		   (loaded-file-ch (place-Loaded-chunk file-ch false))
+		   )
 	       (labels ()
 		  (dolist (g groups)
-		     (let* ((file-chunks (<# place-file-chunk
-					     (filespecs->ytools-pathnames
-						(cdr g))))
-			    (loaded-file-chunks
-			       (<# (\\ (fc) (place-loaded-chunk fc false))
-				   file-chunks)))
+		     (let* ((dependee-chunks (mapcar #'pathname-denotation-chunk
+						     (filespecs->ytools-pathnames
+							(cdr g))))
+			    (loaded-dependee-chunks
+			       (mapcar (\\ (fc) (place-Loaded-chunk fc false))
+				       dependee-chunks)))
 			(cond ((memq ':compile-time (first g))
 			       (setf (Chunk-basis compiled-ch)
 				     (union
-					file-chunks
+					dependee-chunks
 					(Chunk-basis compiled-ch)))
 			       (setf (Chunk-update-basis compiled-ch)
-				     (union loaded-file-chunks
+				     (union loaded-dependee-chunks
 					    (Chunk-update-basis
 					       compiled-ch)))))
 			(cond ((memq ':run-time (first g))
 			       (setf (File-chunk-callees file-ch)
-				     (union file-chunks
+				     (union dependee-chunks
 					    (File-chunk-callees file-ch)))
-			       (dolist (fc file-chunks)
-				  (compiled-chunk-note-sub-file-bases
-				     compiled-ch fc))
-			       ;; This would seem to be redundant,
-			       ;; because the file will be loaded by
-			       ;; what 'depends-on' expands into.
-			       ;; But the redundancy is harmless, because
-			       ;; the chunk system will avoid loading files
-			       ;; twice. --
-			       (setf (Chunk-basis loaded-file-ch)
-				     (union loaded-file-chunks
-					    (Chunk-basis loaded-file-ch)))))
+			       (loaded-chunk-augment-basis
+				  loaded-file-ch loaded-dependee-chunks)
+			       (dolist (called-dependee-ch dependee-chunks)
+				  (dolist (sfty (Sds-sub-file-types sdo-state))
+				     (compiled-ch-sub-file-link
+					compiled-ch called-dependee-ch
+					sfty true)))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
 			       (setf (File-chunk-read-basis file-ch)
-				     (union file-chunks
+				     (union dependee-chunks
 					    (File-chunk-read-basis
 						file-ch)))))))))))
     false))
@@ -277,120 +289,23 @@
 	     (end-group)
 	     (reverse groups))))))
 
-(defun module-slurp (mpn _ howmuch)
-   (let ((modname (Module-pseudo-pn-module mpn)))
-      (let ((module (find-YT-module modname)))
-	 (cond (module
-		(let ((slurping-lprec*
-		         (YT-module-rec module)))
-		   (cond ((memq modname module-trace*)
-			  (format *error-output*
-			      "Considering slurping module ~s... ~%" modname)))
-		   (cond ((achieved-load-status
-			     slurping-lprec* ':slurped-all)
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Module ~s already slurped~%" modname))))
-			 ((eq howmuch ':header-only)
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Not looking inside module ~s for supporters"
-				    modname))))
-			 (t
-			  (setf (Load-progress-rec-run-time-depends-on
-				   slurping-lprec*)
-				!())
-			  (setf (Load-progress-rec-compile-time-depends-on
-				   slurping-lprec*)
-				!())
-			  (cond ((memq modname module-trace*)
-				 (format *error-output*
-				    "Slurping module ~s, ~% form = ~s"
-				    modname (YT-module-contents module))))
-			  (form-slurp (YT-module-contents module)
-				      (eq howmuch ':whole-file))
-;;;;			  (format t "Doing dependents of ~s~%"
-;;;;				  slurping-lprec*)
-			  ;; The following two forms were lifted from
-			  ;; 'lprec-compile'
-			  (dolist (rtsupp
-				      (Load-progress-rec-run-time-depends-on
-					 slurping-lprec*))
-			     (pathname-slurp rtsupp false ':at-least-header))
-			  (dolist (ctsupp
-				    (Load-progress-rec-compile-time-depends-on
-					 slurping-lprec*))
-			     (pathname-fload ctsupp false false false))
-			  (note-load-status slurping-lprec* ':slurped-all)))))
+(defmacro self-compile-dep (&rest sorts)
+   `("self-dependency for compilation " ',sorts))
+
+(datafun scan-depends-on self-compile-dep
+   (defun :^ (e sdo-state)
+      (let* ((file-ch (Sds-file-chunk sdo-state))
+	     (compiled-ch (place-compiled-chunk file-ch)))
+	 (cond ((eq (cadr e) ':load-source)
+		(pushnew (place-Loaded-source-chunk file-ch)
+			 (Chunk-update-basis compiled-ch)))
 	       (t
-		(error "Attempt to slurp non-module ~s"
-		       modname))))))
+		(dolist (sub-file-type-name (cdr e))
+		   (let ((sftype (lookup-sub-file-type sub-file-type-name)))
+		      (compiled-ch-sub-file-link
+		         compiled-ch file-ch sftype false))))))
+     false))
 
-(defun module-load (mod-pspn force-flag force-compile always-ask)
-                   (ignore always-ask)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (let ((fload-compile* (or force-compile fload-compile*)))
-	 (ytools-module-load modname force-flag))))
-
-(defun module-compile (mod-pspn force-flag)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (let ((fload-compile* ':compile))
-	 (ytools-module-load modname force-flag))))
-
-(defun module-expansion (mod-pspn)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (let ((mod (find-YT-module modname)))
-	 (cond (mod
-		(YT-module-expansion mod))
-	       (t
-		(error "Undefined YTools module ~s" modname))))))
-
-
-
-(defvar patch-files* '())
-
-(defun load-patch-file-spec (pf)
-       (let ((files (filespecs->pathnames (cdr pf))))
-	  (dolist (file files)
-	     (cond ((probe-file file)
-		    (pathname-fload file false false false))))))
-
-(defmacro load-patch-file (filename^ label^)
-   `(probe-and-load-patch-file ,filename^ ,label^))
-
-(defun probe-and-load-patch-file (name label)
-   (let ((pname (->pathname
-		    (concatenate 'string
-		        name "-"
-			(substitute #\- #\. label)))))
-      (let ((rname (or (get-pathname-with-suffixes pname object-suffixes*)
-		       (get-pathname-with-suffixes pname source-suffixes*))))
-	 (cond (rname
-		(lprec-load (place-load-progress-rec rname)
-			    false false false))))))
-
-(declaim (special final-load*))
-
-(defun note-patch-files (module-name files)
-   (let ((p (assq module-name patch-files*)))
-      (cond ((not p)
-	     (setf p (list module-name))
-	     (setf patch-files* (cons p patch-files*)))   )
-      (setf (cdr p) files)
-      (cond ((not final-load*)
-             (load-patch-file-spec p)))))
-
-(def-ytools-module ytools
-	 (eval-when (:execute :compile-toplevel :load-toplevel)
-	    (setq *readtable* ytools-readtable*))
-;;;;         #+allegro
-;;;;	 (depends-on :at-run-time %ytools/ prompthack)
-	 (depends-on %ytools/ multilet)
-	 (depends-on :at-run-time %ytools/ signal misc)
-	 (depends-on (:at :slurp-time :compile-time) %ytools/ setter)
-	 (depends-on :at-compile-time 
-		     %ytools/ object mapper)
-	 (note-patch-files 'all-ytools '(%ytools/ "ytools-patches.nsp")))
 
 (def-excl-dispatch #\' (srm _)
    (list 'funktion (read srm true nil true)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.18 2005/01/31 14:00:28 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.19 2005/02/01 12:30:26 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -243,6 +243,9 @@
    (null (Chunk-basis ch)))
 
 (defvar basis-inverters-dbg* false)
+
+;;; Don't ever, ever modify the basis destructively.  Always setf the 
+;;; whole basis, so that these demons run --
 
 (defmethod (setf Chunk-basis) :before (new-basis ch)
                                      ;;;;(declare (ignore new-basis))
@@ -655,6 +658,7 @@
 					(or (chunk-is-leaf b)
 					    (chunk-up-to-date b)))
 				     (Chunk-update-basis ch)))
+;;;;			 (format t " ...Deriving!~%")
 			 (let ((in-progress
 				     (cons ch in-progress)))
 			    (setf (Chunk-update-mark ch) up-mark)
@@ -663,7 +667,39 @@
 				      (derivees-update d in-progress))
 				   (dolist (d (Chunk-update-derivees
 						 ch))
-				      (derivees-update d in-progress)))))))))
+				      (derivees-update d in-progress))))))
+;;;;			(nil
+;;;;			 (format t " ...Skipping because ~s~%"
+;;;;				 (cond ((not (Chunk-managed ch))
+;;;;					"not managed")
+;;;;				       ((= (Chunk-update-mark ch) up-mark)
+;;;;					"marked")
+;;;;				       ((chunk-date-up-to-date ch)
+;;;;					"up to date")
+;;;;				       ((not
+;;;;					    (every (\\ (b)
+;;;;						      (or (chunk-is-leaf b)
+;;;;							  (chunk-up-to-date b)))
+;;;;						   (Chunk-basis ch)))
+;;;;					(format nil
+;;;;					   "Out of date bases")
+;;;;					(setq bad-bases*
+;;;;					   (remove-if
+;;;;					       (\\ (b)
+;;;;						   (or (chunk-is-leaf b)
+;;;;						       (chunk-up-to-date b)))
+;;;;					       (Chunk-basis ch)))
+;;;;					(setq bad-ch* ch)
+;;;;					(break "bases not up to date: ~s for chunk ~s"
+;;;;					       bad-bases* bad-ch*))
+;;;;				       ((not
+;;;;					   (every (\\ (b)
+;;;;						     (or (chunk-is-leaf b)
+;;;;							 (chunk-up-to-date b)))
+;;;;						  (Chunk-update-basis ch)))
+;;;;					"update-basis not up to date")
+;;;;				       (t "of a mystery"))))
+			)))
 	 (cond ((some #'Chunk-managed chunks)
 		(setq update-no* up-mark)
 		(unwind-protect
@@ -763,6 +799,9 @@
 	     true))))
 
 (defvar chunk-table* (make-hash-table :test #'equal :size 300))
+
+(defun chunk-table-clear ()
+   (clrhash chunk-table*))
 
 (defgeneric chunk-name->list-structure (name)
 

@@ -10,7 +10,8 @@
 (defclass Test-loadable-chunk (Loadable-chunk)
    ())
 
-(defmethod create-loaded-controller ((tfc Test-file-chunk) (lc Loaded-chunk))
+(defmethod create-loaded-controller ((tfc Test-file-chunk)
+				     (lc Loaded-file-chunk))
    (chunk-with-name `(:loadable ,tfc)
       (\\ (name)
 	 (make-instance 'Test-loadable-chunk
@@ -19,18 +20,26 @@
 
 (defmethod derive ((tlc Test-loadable-chunk))
    (let* ((loaded-ch (Loadable-chunk-controllee tlc))
-	  (file-ch (Loaded-chunk-file loaded-ch))
+	  (file-ch (Loaded-chunk-loadee loaded-ch))
 	  (compiled-ch (place-compiled-chunk file-ch))
 	  (c (Test-file-chunk-callee file-ch))
 	  (s (Test-file-chunk-slurpee file-ch)))
       (cond (c
-	     (setf (File-chunk-callees file-ch) (list (tuple c !())))
-	     (compiled-chunk-note-sub-file-bases compiled-ch c)))
+	     (setf (File-chunk-callees file-ch) (list c))
+	     (loaded-chunk-change-basis
+	        loaded-ch (list (place-Loaded-file-chunk c false)))
+	     (compiled-ch-sub-file-link compiled-ch c macros-sub-file-type*
+					true)))
       (cond (s
-	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
-;;;;      (format t "Checking after noting sub-file bases of ~s~%"
-;;;;	      compiled-ch)
-;;;;      (loaded-c-check)
+;;;;	     (setq cch* compiled-ch s* s)
+;;;;	     (break "About to link ~s from ~s" compiled-ch s)
+	     ;; This kind of link corresponds to nothing that
+	     ;; occurs "in nature," namely a slurpee that isnt'
+	     ;; a callee.--
+	     (compiled-ch-sub-file-link
+	         compiled-ch
+		 s macros-sub-file-type* true)))
+;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
       file-op-count*))
 
 (defvar file-chunk-l*)
@@ -278,7 +287,12 @@
 
 (defvar sms-ch*)
 
+;;; Note that the following function clears the chunk table, so it
+;;; should not be used except in situations where it's okay to 
+;;; start everything from scratch. --
+
 (defun file-test (&optional (num-iters (length correct-file-test-result*)))
+   (chunk-table-clear)
    (setq file-op-count* (+ file-op-count* 1))
    ;; Set up the chunk network --
    (setq file-l-status* ':initial)
@@ -287,12 +301,14 @@
    (setq file-d-status* ':initial)
    (fmakunbound 'set-file-c-status)
    (fmakunbound 'set-file-d-status)
+   (fmakunbound 'stat-c)
+   (fmakunbound 'stat-d)
    (setq file-chunk-l* false)
    (setq file-chunk-s* false)
    (setq file-chunk-c* false)
    (labels ((set-em-up (name-chars callee slurpee manip)
 	       (let ((file-ch
-		        (place-file-chunk
+		        (place-File-chunk
 			   (merge-pathnames
 			       (concatenate 'string
 				  "tezt-" name-chars ".lisp")
@@ -300,7 +316,7 @@
 		  (change-class file-ch 'Test-file-chunk
 				:callee callee :slurpee slurpee)
 		  (let ((loaded-ch
-			   (place-loaded-chunk file-ch manip)))
+			   (place-Loaded-chunk file-ch manip)))
 		     (values file-ch loaded-ch)))))
       (multiple-value-setq
 	  (file-chunk-l* loaded-file-chunk-l*)
@@ -317,6 +333,11 @@
       (setq file-chunk-d* false)
       (setq loaded-file-chunk-d* false)
       (chunk-request-mgt loaded-file-chunk-c*)
+;;;;      (break "loaded-file-chunk-c* basis = ~s"
+;;;;	     (mapcar (\\ (b) (tuple (Chunk-manage-request b)
+;;;;				    (Chunk-managed b)
+;;;;				    b))
+;;;;		     (Chunk-basis loaded-file-chunk-c*)))
 ;;;;      (loaded-c-check)
       (let ((res (mapcar
 		    (\\ (i files-cont)
@@ -334,12 +355,8 @@
 		       (dolist (ch (list loaded-file-chunk-l*
 					 loaded-file-chunk-s*
 					 loaded-file-chunk-c*))
-;;;;			  (loaded-c-check)
-;;;;			  (format t "Check passed before monitoring ~s~%"
-;;;;				  ch)
-			  (monitor-file-basis ch))
-;;;;		       (sml-check)
-;;;;		       (loaded-c-check)
+			  (monitor-filoid-basis ch))
+;;;;		       (break "Filoid bases monitored")
 		       (case i
 			  (0 (chunk-update loaded-file-chunk-c*))
 			  (1 (chunk-update file-chunk-l*))
@@ -355,7 +372,7 @@
 				(file-chunk-d* loaded-file-chunk-d*)
 				(set-em-up "d" file-chunk-s* false ':compile))
 			     (sms-check "before monitoring d")
-			     (monitor-file-basis loaded-file-chunk-d*)
+			     (monitor-filoid-basis loaded-file-chunk-d*)
 			     (sms-check "after monitoring d")
 			     (chunk-request-mgt loaded-file-chunk-d*)
 			     (sms-check "after d mgt request")
@@ -410,4 +427,24 @@
 		      (memq ch (Chunk-basis loaded-file-chunk-c*)))
 		 (setq oops-ch* ch)
 		 (break "About to clobber ~s" ch))))))
+
+;;; Refactored out of existence--
+(defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
+;;;;   (format t "Setting up subfiles that ~s depends on...~%"
+;;;;	   compiled-ch)
+   (dolist (ssfty standard-sub-file-types*)
+;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
+;;;;	      (Sub-file-type-name ssfty)
+;;;;	      (File-chunk-pathname file-ch))
+      (pushnew (funcall
+		  (Sub-file-type-chunker ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-basis compiled-ch))
+      (pushnew (funcall
+		  (Sub-file-type-load-chunker
+		     ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-update-basis
+		    compiled-ch))))
+
 |#

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.17 2005/01/31 14:00:40 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.18 2005/02/01 12:30:35 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(fload fcompl fload-compile* fcompl-reload*
+   (export '(fload fcompl fload-compile* bind-fload-compile* fcompl-reload*
 	     fload-versions
 	     always-slurp end-header
 	     debuggable debuggability*)))
@@ -60,17 +60,17 @@
 					 "Illegal flag to 'fload': ~s" flag)
 				 false))))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
-  	   (pathname-fload pn :force-load force-flag
-			      :file-manip file-manip)
+  	   (filoid-fload pn :force-load force-flag
+			    :file-manip file-manip)
 	  ))))
 
-(defgeneric pathname-fload (pn &key force-load file-manip))
+(defgeneric filoid-fload (pn &key force-load file-manip))
 
-(defmethod pathname-fload ((pn pathname)
-			   &key force-load file-manip)
-   (let* ((pchunk (place-file-chunk pn))
-	  (lpchunk (place-loaded-chunk pchunk file-manip)))
-      (monitor-file-basis lpchunk)
+(defmethod filoid-fload ((pn pathname)
+			 &key force-load file-manip)
+   (let* ((pchunk (place-File-chunk pn))
+	  (lpchunk (place-Loaded-chunk pchunk file-manip)))
+      (monitor-filoid-basis lpchunk)
       (cond ((Chunk-managed lpchunk)
 	     (cond (force-load
 		    ;; Already managed, so forcing makes sense
@@ -155,7 +155,13 @@
 (defvar final-load* false)
 ; When building systems, bind to true to minimize soul-searching later.
 
-(defun place-file-chunk (pn &key kind)
+;;; 'pn' could be a Pseudo-pathname (see module.lisp)
+(defgeneric pathname-denotation-chunk (pn))
+
+(defmethod pathname-denotation-chunk ((pn pathname))
+   (place-File-chunk pn))
+
+(defun place-File-chunk (pn &key kind)
    (multiple-value-bind (yt-pathname l-pathname)
 			(cond ((is-YTools-pathname pn)
 			       (values pn (pathname-resolve pn true)))
@@ -198,22 +204,32 @@
 ;;; 'fload'/'fcompl' should be able to decipher dependencies declared by
 ;;; some version of 'defsystem.'  That's where Loadable-chunks come in (qv).
 
-;;; A file as having the appropriate variant loaded into primary
+;;; An entity as (having the appropriate variant) loaded into primary
 ;;; memory --
 (defclass Loaded-chunk (Chunk)
-   (;; The File-chunk this one governs --
-    (file :accessor Loaded-chunk-file
-	  :initarg :file
-	  :type File-chunk)
+   (;; The entity this one governs --
+    (loadee :accessor Loaded-chunk-loadee
+	    :initarg :loadee)
+    ;; The final basis is these plus those obtained by scanning
+    ;; dependencies from whatever places are appropriate --
+    (principal-bases :accessor Loaded-chunk-principal-bases
+		     :initform !())
     ;; The Loadable-chunk that controls the features of this one --
     (controller :accessor Loaded-chunk-controller
-		:initarg :controller)
-    ;; The variant currently selected, either a File-chunk, or
-    ;; a Loaded-chunk if we're indirecting through an alt-version --
-    (selection :accessor Loaded-chunk-selection
+		:initarg :controller)))
+
+(defgeneric place-Loaded-chunk (ch variant)
+   (:method ((ch t) variant)
+	    (declare (ignore variant))
+      (error "No way to make a Loaded-chunk for ~s" ch)))
+
+(defclass Loaded-file-chunk (Loaded-chunk)
+   (;; The variant currently selected, either a File-chunk, or
+    ;; a Loaded-file-chunk if we're indirecting through an alt-version --
+    (selection :accessor Loaded-file-chunk-selection
 	  :initform false)
     ;; The criterion (supplied by user) for how to make the selection --
-    (manip :accessor Loaded-chunk-manip
+    (manip :accessor Loaded-file-chunk-manip
 	   :initarg :manip
 	   :type (member :compile :source :object
 			 :ask-once :ask-every :ask-ask :defer))
@@ -227,17 +243,48 @@
     ;;   :defer -> refer to value of fload-compile*;
     ;;   :follow -> replace 'manip' value with value of fload-compile*
 
-    (source :reader Loaded-chunk-source
+    (source :reader Loaded-file-chunk-source
 	    :initarg :source)
-    (compiled :reader Loaded-chunk-compiled
+    (compiled :reader Loaded-file-chunk-compiled
 	      :initarg :compiled)
-    (object :reader Loaded-chunk-object
+    (object :reader Loaded-file-chunk-object
 	    :initarg :object)))
 
 (defmethod initialize-instance :after ((lc Loaded-chunk )
 				       &key &allow-other-keys)
    (setf (Chunk-basis lc)
-         (list (Loaded-chunk-file lc))))
+         (list (Loaded-chunk-loadee lc))))
+
+(defun loaded-chunk-augment-basis (loaded-ch added-bases)
+  (let ((non-prin-bases (loaded-chunk-verify-basis loaded-ch)))
+     (setf (Chunk-basis loaded-ch)
+	   (append (Loaded-chunk-principal-bases loaded-ch)
+		   (union non-prin-bases
+			  added-bases)))))
+
+;;; The first elements of the basis are always the principal-bases.  Use this to
+;;; change the rest --
+(defun loaded-chunk-change-basis (loaded-ch revised-basis)
+  (loaded-chunk-verify-basis loaded-ch)
+  (setf (Chunk-basis loaded-ch)
+	(append (Loaded-chunk-principal-bases loaded-ch)
+		revised-basis)))
+
+;;; Returns excess basis elements beyond the principal ones --
+(defun loaded-chunk-verify-basis (loaded-ch)
+   (let ((loaded-basis (Chunk-basis loaded-ch)))
+      (do ((pl (Loaded-chunk-principal-bases loaded-ch)
+	       (cdr pl))
+	   (bl loaded-basis (cdr bl)))
+	  ((or (null pl)
+	       (null bl)
+	       (not (eq (car bl) (car pl))))
+	   (cond ((null pl) bl)
+		 (t
+		  (error !"Chunk for loaded entity ~s~%~
+                           has bogus basis ~s~%~
+                           which differs from principal basis ~s"
+			 loaded-ch loaded-basis)))))))
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
@@ -269,44 +316,48 @@
      (error "No way supplied to create controllers for objects of type ~s~%"
 	    (type-of x))))
 
-(defvar all-loaded-chunks* !())
+(defvar all-loaded-file-chunks* !())
 
 (defmethod derive ((lc Loadable-chunk))
-   (error "No method supplied for figuring out what files ~s depends on"
-	  (File-chunk-pathname
-	     (Loaded-chunk-file 
-		(Loadable-chunk-controllee lc)))))
+   (error "No method supplied for figuring out what entities ~s depends on"
+	  (Loadable-chunk-controllee lc)))
 ;;; -- We must subclass Loadable-chunk to supply methods for figuring
 ;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
-(defmethod derive :after ((lc Loadable-chunk))
-   (loaded-chunk-basis-set (Loadable-chunk-controllee lc)))
+;;;;(defmethod derive :after ((lc Loadable-chunk))
+;;;;   (loaded-chunk-set-basis (Loadable-chunk-controllee lc))
+;;;;;;;;   (compiled-chunk-basis-set (Loadable-chunk-controllee lc))
+;;;;   )
 
 (defmacro end-header (&rest _)
    '(values))
 
-(defun place-loaded-chunk (file-chunk file-manip)
+(defmethod place-Loaded-chunk ((file-ch File-chunk) manip)
+   (place-Loaded-file-chunk file-ch manip))
+
+(defun place-Loaded-file-chunk (file-chunk file-manip)
    (let ((lc (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
 		(\\ (name)
 		  (let ((is-source (file-chunk-is-source file-chunk)))
 		     (let ((compiled-chunk
-			   (and is-source
-				(place-compiled-chunk file-chunk))))
+			      (and is-source
+				   (place-compiled-chunk file-chunk))))
 			(let ((new-lc
-				 (make-instance 'Loaded-chunk
+				 (make-instance 'Loaded-file-chunk
 				    :name name
-				    :file file-chunk
+				    :loadee file-chunk
 				    :manip (or file-manip ':follow)
 				    :source (cond (is-source file-chunk)
 						  (t false))
 				    :compiled (cond (is-source compiled-chunk)
 						    (t file-chunk))
 				    :object (cond (is-source
-						   (place-file-chunk
+						   (place-File-chunk
 						      (File-chunk-pathname
 							 compiled-chunk)))
 						  (t file-chunk)))))
-			   (push new-lc all-loaded-chunks*)
+			   (loaded-file-chunk-set-basis new-lc)
+			   (push new-lc all-loaded-file-chunks*)
 			   new-lc))))
 		:initializer
 		   (\\ (new-lc)
@@ -317,16 +368,16 @@
       (cond ((eq file-manip ':noload)
 	     (chunk-terminate-mgt lc ':ask))
 	    ((and file-manip
-		  (not (eq file-manip (Loaded-chunk-manip lc))))
-	     (setf (Loaded-chunk-manip lc) file-manip)))
+		  (not (eq file-manip (Loaded-file-chunk-manip lc))))
+	     (setf (Loaded-file-chunk-manip lc) file-manip)))
       lc))
 
-(defmethod derive ((lc Loaded-chunk))
+(defmethod derive ((lc Loaded-file-chunk))
    (let ((loaded-ch lc) file-ch)
       (loop 
 	 (setq file-ch
-	       (Loaded-chunk-selection loaded-ch))
-	 (cond ((typep file-ch 'Loaded-chunk)
+	       (Loaded-file-chunk-selection loaded-ch))
+	 (cond ((typep file-ch 'Loaded-file-chunk)
 		(setq loaded-ch file-ch)
 		;; Indirection; go around again looking
 		;; for an actual file.
@@ -342,7 +393,7 @@
    ((file-ch :accessor Loaded-source-chunk-file
 	     :initarg :file)))
 	  
-(defun place-loaded-source-chunk (file-ch)
+(defun place-Loaded-source-chunk (file-ch)
    (chunk-with-name `(:loaded ,(Chunk-name file-ch))
       (\\ (name)
 	 (make-instance 'Loaded-source-chunk
@@ -409,17 +460,23 @@
 
 (define-symbol-macro fload-compile* (default-fload-manip))
 
+;; Must use this to "bind" fload-compile* --
+(defmacro bind-fload-compile* (newval &body b)
+   `(let ((fload-compile-flag* fload-compile-flag*))
+       (setf fload-compile* ,newval)
+       ,@b))
+
 (defvar fload-compile-flag-chunk* (make-instance 'Fload-compile-flag-set))
 
 (defun loadeds-check-bases ()
    (let ((loadeds-needing-checking !())
 	 (loadeds-needing-update !()))
-      (dolist (lc all-loaded-chunks*)
-	 (cond ((memq (Loaded-chunk-manip lc)
+      (dolist (lc all-loaded-file-chunks*)
+	 (cond ((memq (Loaded-file-chunk-manip lc)
 		      '(:defer :follow))
 		(on-list lc loadeds-needing-checking))))
       (dolist (lc loadeds-needing-checking)
-	 (monitor-file-basis lc)
+	 (monitor-filoid-basis lc)
 	 (cond ((not (chunk-up-to-date lc))
 		(on-list lc loadeds-needing-update))))
       (chunks-update (cons fload-compile-flag-chunk*
@@ -428,15 +485,14 @@
 (defvar loaded-manip-dbg* false)
 
 ;;; This must be called whenever the 'manip' field changes.
-;;; It is also called :after deriving any Loadable-chunk (see above).
-(defun loaded-chunk-basis-set (loaded-ch)
-   (let* ((file-ch (Loaded-chunk-file loaded-ch))
-	  (manip (Loaded-chunk-manip loaded-ch))
-	  (source-exists (Loaded-chunk-source loaded-ch))
+(defun loaded-file-chunk-set-basis (loaded-ch)
+   (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
+	  (manip (Loaded-file-chunk-manip loaded-ch))
+	  (source-exists (Loaded-file-chunk-source loaded-ch))
 	  (object-exists
 	     (probe-file
 		(File-chunk-pathname
-		   (Loaded-chunk-object loaded-ch)))))
+		   (Loaded-file-chunk-object loaded-ch)))))
       (cond (loaded-manip-dbg*
 	     (format t !"Setting loaded chunk basis, ~
                          manip initially = ~s~%" manip)))
@@ -445,7 +501,7 @@
 		    loaded-ch)))
       (cond ((File-chunk-alt-version file-ch)
 	     (setf (Chunk-basis loaded-ch)
-		   (list (place-loaded-chunk
+		   (list (place-Loaded-file-chunk
 			    (File-chunk-alt-version file-ch)
 			    ':nochoice))))
 	    (t
@@ -456,7 +512,7 @@
 			      ;; Old style doesn't make enough distinctions
 			      (setq manip ':ask-ask)))
 		       (cond ((eq prev-manip ':follow)
-			      (setf (Loaded-chunk-manip loaded-ch)
+			      (setf (Loaded-file-chunk-manip loaded-ch)
 				    manip))))))
 	     (cond ((memq manip '(:ask-once :ask-every :ask-ask))
 		    (setq manip
@@ -476,21 +532,23 @@
                                 [should be :object, :source, or :compile]~
                                 ~%  loaded-ch = ~s~%"
 			    manip loaded-ch)))
-	     (setf (Chunk-basis loaded-ch)
-	           (cons (ecase manip
+	     (setf (Loaded-chunk-principal-bases loaded-ch)
+		   (list (ecase manip
 			    (:source
-			     (Loaded-chunk-source loaded-ch))
+			     (Loaded-file-chunk-source loaded-ch))
 			    (:compile
 			     (place-compiled-chunk
-				(Loaded-chunk-source loaded-ch)))
+				(Loaded-file-chunk-source loaded-ch)))
 			    (:object
-			     (Loaded-chunk-object loaded-ch)))
-			 (mapcar (\\ (callee)
-				    (place-loaded-chunk callee false))
-				 (File-chunk-callees file-ch))))))
+			     (Loaded-file-chunk-object loaded-ch)))))
+	     (setf (Chunk-basis loaded-ch)
+	           (append (Loaded-chunk-principal-bases loaded-ch)
+			   (mapcar (\\ (callee)
+				      (place-Loaded-chunk callee false))
+				   (File-chunk-callees file-ch))))))
       (let ((selection 
 	       (cond ((eq manip ':compile)
-		      (place-file-chunk
+		      (place-File-chunk
 			 (File-chunk-pathname
 			    (head (Chunk-basis loaded-ch)))))
 		     (t
@@ -498,9 +556,10 @@
 	 (cond (loaded-manip-dbg*
 		(format t "Setting selection of ~s~% to ~s~%"
 			loaded-ch selection)))
-	 (setf (Loaded-chunk-selection loaded-ch)
+	 (setf (Loaded-file-chunk-selection loaded-ch)
 	       selection))))
 
+;;; 'loaded-ch' is a Loaded-file-chunk
 (defun ask-user-for-manip (loaded-ch obj-exists)
    (let ()
       (loop 
@@ -510,7 +569,7 @@
 	    (cond (obj-exists
 		   "source, or object")
 		  (t "or source"))
-	    (File-chunk-pn (Loaded-chunk-file loaded-ch))
+	    (File-chunk-pn (Loaded-chunk-loadee loaded-ch))
 	    (cond (obj-exists
 		   "c/s/o")
 		  (t
@@ -552,9 +611,9 @@
 
 (defun manip-maybe-remember (manip loaded-ch)
    (block dialogue
-      (let ((old-manip (Loaded-chunk-manip loaded-ch)))
+      (let ((old-manip (Loaded-file-chunk-manip loaded-ch)))
 	 (cond ((eq old-manip ':ask-once)
-		(setf (Loaded-chunk-manip loaded-ch)
+		(setf (Loaded-file-chunk-manip loaded-ch)
 		       manip))
 	       ((eq old-manip ':ask-ask)
 		(loop
@@ -563,7 +622,7 @@
                              with this file (y/n/d, \\\\ to abort)? ")
 		   (case (keyword-if-sym (read *query-io*))
 		      ((:y :yes :t)
-		       (setf (Loaded-chunk-manip loaded-ch)
+		       (setf (Loaded-file-chunk-manip loaded-ch)
 			     manip)
 		       (return-from dialogue))
 		      ((:n :no)
@@ -574,7 +633,7 @@
 			  (let ((q (keyword-if-sym (read *query-io*))))
 			     (case q
 			        ((:n :no)
-				 (setf (Loaded-chunk-manip loaded-ch)
+				 (setf (Loaded-file-chunk-manip loaded-ch)
 				       ':ask-every)
 				 (return-from dialogue))
 				((:y :yes))
@@ -588,7 +647,7 @@
 				      type 'n' to suppress that second ~
 				      annoying question.~%"))))))
 		      ((:d :defer)
-		       (setf (Loaded-chunk-manip loaded-ch)
+		       (setf (Loaded-file-chunk-manip loaded-ch)
 			     ':defer)
 		       (return-from dialogue))
 		      ((:\\)
@@ -701,6 +760,8 @@
    name
    chunker
    ;; -- Function to produce chunk (N F) for file F (N= name of Sub-file-type)
+   slurp-chunker
+   ;; -- Function to produce chunk (:slurped (N F))
    load-chunker
    ;; -- Function to produce chunk (:loaded (N F)) 
 )
@@ -718,215 +779,152 @@
 	       (build-symbol Slurped- (:< sym-name) -chunk))
 	    (loaded-sym-class-name
 	       (build-symbol Loaded- (:< sym-name) -chunk)))
-      (let* ((sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
-						  -pathname))
-	     (slurped-subfile-read-fcn (build-symbol (:< slurped-sym-class-name)
-						     -subfile))
-	     (subfile-placer-fcn (build-symbol place- (:< sym-name) -chunk))
-	     (slurped-subfile-placer-fcn
-		(build-symbol place-slurped- (:< sym-name) -chunk))
-	     (ld-pathname-read-fcn (build-symbol (:< loaded-sym-class-name)
-						 -pathname))
-	     (loaded-class-loaded-file-acc
-		(build-symbol (:< loaded-sym-class-name)
-			      -loaded-file))
-	     (loaded-subfile-placer-fcn
-	        (build-symbol place-loaded- (:< sym-name) -chunk))
-	     (slurp-task-name (build-symbol (:package :keyword)
-				 slurp- (:< sym-name)))
-	     (sub-file-type-name (build-symbol (:< sym-name)
-					  -sub-file-type*)))
-         `(progn
-	     (defclass ,subfile-class-name (Chunk)
-		((pathname :reader ,sub-pathname-read-fcn
-			   :initarg :pathname
-			   :type pathname)))
+	 (let* ((sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
+						     -pathname))
+		(slurped-subfile-read-fcn
+		   (build-symbol (:< slurped-sym-class-name)
+				 -subfile))
+		(subfile-placer-fcn (build-symbol place- (:< sym-name) -chunk))
+		(slurped-subfile-placer-fcn
+		   (build-symbol place-slurped- (:< sym-name) -chunk))
+		(ld-pathname-read-fcn (build-symbol (:< loaded-sym-class-name)
+						    -pathname))
+		(loaded-class-loaded-file-acc
+		   (build-symbol (:< loaded-sym-class-name)
+				 -loaded-file))
+		(loaded-subfile-placer-fcn
+		   (build-symbol place-loaded- (:< sym-name) -chunk))
+		(slurp-task-name (build-symbol (:package :keyword)
+				    slurp- (:< sym-name)))
+		(sub-file-type-name (build-symbol (:< sym-name)
+					     -sub-file-type*)))
+	    `(progn
+		(defclass ,subfile-class-name (Chunk)
+		   ((pathname :reader ,sub-pathname-read-fcn
+			      :initarg :pathname
+			      :type pathname)))
 
-	     ;; There's nothing to derive for the subfile; as long as the
-	     ;; underlying file is up to date, so is the subfile.	     
-	     (defmethod derive ((ch ,subfile-class-name))
-	        true)
+		;; There's nothing to derive for the subfile; as long as the
+		;; underlying file is up to date, so is the subfile.	     
+		(defmethod derive ((ch ,subfile-class-name))
+		   true)
 
-	     (defmethod initialize-instance :after
-				  ((ch ,subfile-class-name)
-				   &rest _)
-		(setf (Chunk-basis ch)
-		      (list (place-file-chunk (,sub-pathname-read-fcn ch)))))
+		(defmethod initialize-instance :after
+				     ((ch ,subfile-class-name)
+				      &rest _)
+		   (setf (Chunk-basis ch)
+			 (list (place-File-chunk (,sub-pathname-read-fcn ch)))))
 
-	     (defclass ,slurped-sym-class-name (Chunk)
-	       ((subfile :reader ,slurped-subfile-read-fcn
-			 :initarg :subfile
-			 :type Chunk)))
+		(defclass ,slurped-sym-class-name (Chunk)
+		  ((subfile :reader ,slurped-subfile-read-fcn
+			    :initarg :subfile
+			    :type Chunk)))
 
-	     (defmethod initialize-instance :after
-					    ((ch ,slurped-sym-class-name)
-					     &rest _)
-		(setf (Chunk-basis ch)
-		      (list (,slurped-subfile-read-fcn ch))))
+		(defmethod initialize-instance :after
+					       ((ch ,slurped-sym-class-name)
+						&rest _)
+		   (setf (Chunk-basis ch)
+			 (list (,slurped-subfile-read-fcn ch))))
 
-	     (defun ,subfile-placer-fcn (pn)
-		(chunk-with-name
-		   `(,',sym ,pn)
-		   (\\ (sub-name-exp)
-		      (make-instance
-			 ',subfile-class-name
-			:name sub-name-exp
-			:pathname pn))))
+		(defun ,subfile-placer-fcn (pn)
+		   (chunk-with-name
+		      `(,',sym ,pn)
+		      (\\ (sub-name-exp)
+			 (make-instance
+			    ',subfile-class-name
+			   :name sub-name-exp
+			   :pathname pn))))
 
-	     (defun ,slurped-subfile-placer-fcn (pn)
-		(chunk-with-name
-		   `(:slurped (,',sym ,pn))
-		   (\\ (name-exp)
-		      (make-instance ',slurped-sym-class-name
-			 :name name-exp
-			 :subfile (,subfile-placer-fcn pn)))))
+		(defun ,slurped-subfile-placer-fcn (pn)
+		   (chunk-with-name
+		      `(:slurped (,',sym ,pn))
+		      (\\ (name-exp)
+			 (make-instance ',slurped-sym-class-name
+			    :name name-exp
+			    :subfile (,subfile-placer-fcn pn)))))
 
-	     (defclass ,loaded-sym-class-name (Or-chunk)
-		((pathname :reader ,ld-pathname-read-fcn
-			   :initarg :pathname
-			   :type pathname)
-		 (loaded-file :accessor ,loaded-class-loaded-file-acc
-			      :type Loaded-chunk)))
+		(defclass ,loaded-sym-class-name (Or-chunk)
+		   ((pathname :reader ,ld-pathname-read-fcn
+			      :initarg :pathname
+			      :type pathname)
+		    (loaded-file :accessor ,loaded-class-loaded-file-acc
+				 :type Loaded-chunk)))
 
-	     (defun ,loaded-subfile-placer-fcn (pn)
-;;;;		(format t "Placing new loaded chunk for ~s subfile chunk of ~s~%"
-;;;;			',sym pn)
-		(chunk-with-name
-		    `(:loaded (,',sym ,pn))
-		    (\\ (name-exp)
-;;;;		       (format t !"Creating new loaded chunk for ~
-;;;;                                   ~s subfile chunk of ~s~%"
-;;;;			       ',sym pn)
-		       (let ()
-			  (make-instance ',loaded-sym-class-name
-			      :name name-exp
-			      :pathname pn)))
-		    :initializer
-		       (\\ (new-ch)
-			  (let* ((file-ch (place-file-chunk pn))
-				 (loaded-file-chunk
-				    (place-loaded-chunk file-ch false)))
-			     (setf (,loaded-class-loaded-file-acc new-ch)
-				   loaded-file-chunk)
-			     (setf (Chunk-basis new-ch)
-			           (list file-ch))
-			     (setf (Or-chunk-disjuncts new-ch)
-				   (list loaded-file-chunk
-					 (,slurped-subfile-placer-fcn pn)))))))
+		(defun ,loaded-subfile-placer-fcn (pn)
+   ;;;;		(format t "Placing new loaded chunk for ~s subfile chunk of ~s~%"
+   ;;;;			',sym pn)
+		   (chunk-with-name
+		       `(:loaded (,',sym ,pn))
+		       (\\ (name-exp)
+   ;;;;		       (format t !"Creating new loaded chunk for ~
+   ;;;;                                   ~s subfile chunk of ~s~%"
+   ;;;;			       ',sym pn)
+			  (let ()
+			     (make-instance ',loaded-sym-class-name
+				 :name name-exp
+				 :pathname pn)))
+		       :initializer
+			  (\\ (new-ch)
+			     (let* ((file-ch (place-File-chunk pn))
+				    (loaded-file-chunk
+				       (place-Loaded-chunk file-ch false)))
+				(setf (,loaded-class-loaded-file-acc new-ch)
+				      loaded-file-chunk)
+				(setf (Chunk-basis new-ch)
+				      (list file-ch))
+				(setf (Or-chunk-disjuncts new-ch)
+				      (list loaded-file-chunk
+					    (,slurped-subfile-placer-fcn
+					        pn)))))))
 
-	     (def-slurp-task ,slurp-task-name
-		:default ,default-handler^
-		:file->state-fcn ,file->state-fcn^)
+		(def-slurp-task ,slurp-task-name
+		   :default ,default-handler^
+		   :file->state-fcn ,file->state-fcn^)
 
-	     (defmethod derive ((x ,slurped-sym-class-name))
-		(let ((file (,sub-pathname-read-fcn
-			       (,slurped-subfile-read-fcn
-				  x))))
-;;;;		   (setq slurp-ch* x)
-;;;;		   (break "About to slurp ~s~%" file)
-		   (file-slurp file
-			       (list ,(build-symbol (:< slurp-task-name)
-						    *))
-			       false)
-		   (get-universal-time)))
+		(defmethod derive ((x ,slurped-sym-class-name))
+		   (let ((file (,sub-pathname-read-fcn
+				  (,slurped-subfile-read-fcn
+				     x))))
+   ;;;;		   (setq slurp-ch* x)
+   ;;;;		   (break "About to slurp ~s~%" file)
+		      (file-slurp file
+				  (list ,(build-symbol (:< slurp-task-name)
+						       *))
+				  false)
+		      (get-universal-time)))
 
-	     (defparameter ,sub-file-type-name
-		(make-Sub-file-type
-		   :name ',sym-name
-		   :chunker #',subfile-placer-fcn
-		   :load-chunker #',loaded-subfile-placer-fcn))
+		(defparameter ,sub-file-type-name
+		   (make-Sub-file-type
+		      :name ',sym-name
+		      :chunker #',subfile-placer-fcn
+		      :slurp-chunker #',slurped-subfile-placer-fcn
+		      :load-chunker #',loaded-subfile-placer-fcn))
 
-	     (pushnew ,sub-file-type-name
-		      sub-file-types*))))))
+		(pushnew ,sub-file-type-name
+			 sub-file-types*))))))
 )
 
 (defun lookup-sub-file-type (name)
-   (dolist (sfty sub-file-types* nil)
+   (dolist (sfty
+	    sub-file-types*
+	    (error "Undefined sub-file-type ~s" name))
       (cond ((eq (Sub-file-type-name sfty) name)
 	     (return sfty)))))
 
-(defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
-;;;;   (format t "Setting up subfiles that ~s depends on...~%"
-;;;;	   compiled-ch)
-   (dolist (ssfty standard-sub-file-types*)
-;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
-;;;;	      (Sub-file-type-name ssfty)
-;;;;	      (File-chunk-pathname file-ch))
+(defun compiled-ch-sub-file-link (compiled-ch callee-ch sub-file-type load)
       (pushnew (funcall
-		  (Sub-file-type-chunker ssfty)
-		  (File-chunk-pathname file-ch))
+		  (Sub-file-type-chunker sub-file-type)
+		  (File-chunk-pathname callee-ch))
 	       (Chunk-basis compiled-ch))
-      (pushnew (funcall
-		  (Sub-file-type-load-chunker
-		     ssfty)
-		  (File-chunk-pathname file-ch))
+      (pushnew (funcall (cond (load
+			       (Sub-file-type-load-chunker
+				  sub-file-type))
+			      (t
+			       (Sub-file-type-slurp-chunker
+				  sub-file-type)))
+			 (File-chunk-pathname callee-ch))
 	       (Chunk-update-basis
-		    compiled-ch))))
-
-(defvar fload-version-suffix* ':-new)
-
-(defmacro fload-versions (&rest specs)
-   (let ((olds (mapcar (lambda (x) 
-			  (cond ((consp x) (car x))
-				(t x)))
-		       specs))
-	 (news (mapcar (lambda (x)
-			  (cond ((consp x)
-                                 (cond ((null (cdr x))
-                                        (build-symbol
-					   (:< (car x))
-					   (:< fload-version-suffix*)))
-                                       ((or (is-String (cadr x))
-					    (is-Keyword (cadr x)))
-                                        (build-symbol
-					   (:< (car x)) (:< (cadr x))))
-                                       (t (cadr x))))
-				(t x)))
-		       specs)))
-      `(fload-versions-setup ',olds ',news)))
-
-(defun fload-versions-setup (olds news)
-   (multiple-value-bind (set-olds set-news reset-olds)
-                        (labels ((segregate (olds news)
-                                    (cond ((null news)
-                                           (values !() !() !()))
-                                          (t
-                                           (multiple-value-bind
-                                                   (so sn rso)
-                                                   (segregate (cdr olds)
-                                                              (cdr news))
-                                              (cond ((eq (car news) '-)
-                                                     (values so sn
-                                                             (cons (car olds)
-                                                                   rso)))
-                                                    ((eq (car news)
-							 (car olds))
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        (cons (car olds) rso)))
-                                                    (t
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        rso))))))))
-                            (segregate olds news))
-      (let ((changing-chunks !()))
-	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
-	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
-	     ((null oldl))
-	    (let ((fc (place-file-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
-		     (place-file-chunk (car newl)))
-	       (on-list fc changing-chunks)))
-	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
-	     ((null oldl))
-	    (let ((fc (place-file-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
-		     false)
-	       (on-list fc changing-chunks)))
-	 (chunks-update changing-chunks)
-	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
+			   compiled-ch)))
 
 (eval-when (:compile-toplevel :load-toplevel)
    (def-sub-file-type :macros)
@@ -1031,8 +1029,8 @@
 				 load
 				 cease-mgt)
    (let* ((file-chunk
-	     (place-file-chunk pn))
-	  (lpchunk (place-loaded-chunk
+	     (place-File-chunk pn))
+	  (lpchunk (place-Loaded-chunk
 		      file-chunk
 		      false))
 	  (compiled-chunk
@@ -1044,13 +1042,13 @@
       (cond (cease-mgt
 	     (cond (force-compile
 		    ;; One last fling --
-		    (monitor-file-basis lpchunk)
+		    (monitor-filoid-basis lpchunk)
 		    (chunk-derive-and-record compiled-chunk)))
 	     (chunk-terminate-mgt compiled-chunk ':ask))
 	    (t
 	     (let ((comp-date
 		      (Chunk-date compiled-chunk)))
-;;;;	        (monitor-file-basis lpchunk)
+;;;;	        (monitor-filoid-basis lpchunk)
 		(chunk-request-mgt compiled-chunk)
 		(chunk-update compiled-chunk)
 		(cond ((and force-compile
@@ -1060,8 +1058,8 @@
 		       (chunk-derive-and-record compiled-chunk))))))
       (cond ((or load
 		 (load-after-compile))
-	     (setf (Loaded-chunk-manip lpchunk) ':compiled)
-	     (monitor-file-basis lpchunk)
+	     (setf (Loaded-file-chunk-manip lpchunk) ':compiled)
+	     (monitor-filoid-basis lpchunk)
 	     (chunk-request-mgt lpchunk)
 	     (chunk-update lpchunk)))))
 
@@ -1104,25 +1102,25 @@
 
 ;;;;(defun compile-opt-lev () `((compile-opt ,compile-opt*)))
 
-(defvar loaded-files-to-be-monitored* ':global)
+(defvar loaded-filoids-to-be-monitored* ':global)
 
-(defun monitor-file-basis (loaded-file-ch)
-   (cond ((eq loaded-files-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-file-ch)))
-		(loaded-files-to-be-monitored* !()))
+(defun monitor-filoid-basis (loaded-filoid-ch)
+   (cond ((eq loaded-filoids-to-be-monitored* ':global)
+	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
+		(loaded-filoids-to-be-monitored* !()))
 	     (loop
 	        (dolist (loadable-ch controllers)
 		   (chunk-request-mgt loadable-ch))
 	        (chunks-update controllers)
-	        (cond ((null loaded-files-to-be-monitored*)
+	        (cond ((null loaded-filoids-to-be-monitored*)
 		       (return))
 		      (t
 		       (setq controllers 
 			     (mapcar #'Loaded-chunk-controller
-				     loaded-files-to-be-monitored*))
-		       (setq loaded-files-to-be-monitored* !()))))))
+				     loaded-filoids-to-be-monitored*))
+		       (setq loaded-filoids-to-be-monitored* !()))))))
 	 (t
-	  (on-list loaded-file-ch loaded-files-to-be-monitored*))))
+	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 
 (defun current-time-string ()
    (multiple-value-bind (sec mnt hr day mo yr wkday dst tz)
@@ -1146,9 +1144,70 @@
 			(read *query-io* false false))
 		     '(:y :yes :t))))))				
 
-(defun slot-truly-filled (ob sl)
-   (and (slot-boundp ob sl)
-	(slot-value ob sl)))
+(defvar fload-version-suffix* ':-new)
+
+(defmacro fload-versions (&rest specs)
+   (let ((olds (mapcar (lambda (x) 
+			  (cond ((consp x) (car x))
+				(t x)))
+		       specs))
+	 (news (mapcar (lambda (x)
+			  (cond ((consp x)
+                                 (cond ((null (cdr x))
+                                        (build-symbol
+					   (:< (car x))
+					   (:< fload-version-suffix*)))
+                                       ((or (is-String (cadr x))
+					    (is-Keyword (cadr x)))
+                                        (build-symbol
+					   (:< (car x)) (:< (cadr x))))
+                                       (t (cadr x))))
+				(t x)))
+		       specs)))
+      `(fload-versions-setup ',olds ',news)))
+
+(defun fload-versions-setup (olds news)
+   (multiple-value-bind (set-olds set-news reset-olds)
+                        (labels ((segregate (olds news)
+                                    (cond ((null news)
+                                           (values !() !() !()))
+                                          (t
+                                           (multiple-value-bind
+                                                   (so sn rso)
+                                                   (segregate (cdr olds)
+                                                              (cdr news))
+                                              (cond ((eq (car news) '-)
+                                                     (values so sn
+                                                             (cons (car olds)
+                                                                   rso)))
+                                                    ((eq (car news)
+							 (car olds))
+                                                     (values
+                                                        (cons (car olds) so)
+                                                        (cons (car news) sn)
+                                                        (cons (car olds) rso)))
+                                                    (t
+                                                     (values
+                                                        (cons (car olds) so)
+                                                        (cons (car news) sn)
+                                                        rso))))))))
+                            (segregate olds news))
+      (let ((changing-chunks !()))
+	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
+	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
+	     ((null oldl))
+	    (let ((fc (place-File-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     (place-File-chunk (car newl)))
+	       (on-list fc changing-chunks)))
+	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
+	     ((null oldl))
+	    (let ((fc (place-File-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     false)
+	       (on-list fc changing-chunks)))
+	 (chunks-update changing-chunks)
+	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 
 (defun compilable (pathname)
    (member (Pathname-type pathname) source-suffixes* :test #'equal))

@@ -376,7 +376,7 @@ Estimated total monitoring overhead: 0.88 seconds
 (eval-when (compile load eval)
   #+(or (and :excl (or :allegro-v4.0 (and :allegro-version>= (version>= 4 1))))
         :mcl
-        (and :cmu :new-compiler))
+        :cmu)
   (pushnew :cltl2 *features*))
 
 ;;; ********************************
@@ -394,7 +394,7 @@ Estimated total monitoring overhead: 0.88 seconds
 #+:mcl
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from ccl provide require))
-#+(or :clisp :lispworks (and :cmu :new-compiler))
+#+(or :clisp :lispworks :cmu)
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:export "*MONITORED-FUNCTIONS*"
 	   "MONITOR" "MONITOR-ALL" "UNMONITOR" "MONITOR-FORM"
@@ -409,7 +409,7 @@ Estimated total monitoring overhead: 0.88 seconds
        (not (or (and :excl (or :allegro-v4.0 (and :allegro-version>=
                                                   (version>= 4 1))))
                 :mcl :clisp :lispworks
-                (and :cmu :new-compiler))))
+                :cmu)))
 (unless (find-package "MONITOR")
   (make-package "MONITOR" :nicknames '("MON") :use '("COMMON-LISP")))
 
@@ -427,7 +427,7 @@ Estimated total monitoring overhead: 0.88 seconds
        (not (or (and :excl (or :allegro-v4.0 (and :allegro-version>=
                                                   (version>= 4 1))))
                 :mcl
-                (and :cmu :new-compiler))))
+                :cmu)))
 (provide "monitor")
 #-:cltl2
 (provide "monitor")
@@ -464,15 +464,10 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; ********************************
 
 (eval-when (compile load eval)
-  #+(and :cmu :new-compiler)
+  #+cmu
   (deftype time-type () '(unsigned-byte 32))
-  #+(and :cmu :new-compiler)
+  #+cmu
   (deftype consing-type () '(unsigned-byte 32))
-  #-(and :cmu :new-compiler)
-  (deftype time-type () 'unsigned-byte)
-  #-(and :cmu :new-compiler)
-  (deftype consing-type () 'unsigned-byte)
-
   )
 
 ;;; ********************************
@@ -737,7 +732,7 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; non-required arguments (e.g. &optional, &rest, &key).
 #+cmu
 (progn
-  #-new-compiler
+  #| #-new-compiler
   (defun required-arguments (name)
     (let ((function (symbol-function name)))
       (if (eql (system:%primitive get-type function) system:%function-type)
@@ -756,7 +751,7 @@ Estimated total monitoring overhead: 0.88 seconds
                            system:%function-keyword-arg-slot))))
             (values min (or (/= min max) (/= rest 0) (/= key 0))))
           (values 0 t))))
-
+  |#
   #| #+new-compiler
   (defun required-arguments (name)
     (let* ((function (symbol-function name))
@@ -778,7 +773,6 @@ Estimated total monitoring overhead: 0.88 seconds
                 (values (length args) nil)))
           (values 0 t)))))|#
 
-  #+new-compiler
   (defun required-arguments (name)
     (let ((type (ext:info function type name)))
       (cond ((not (kernel:function-type-p type))
@@ -865,23 +859,6 @@ Estimated total monitoring overhead: 0.88 seconds
 (required-arguments 'test) => 2 t
 (required-arguments 'test2) => 2 t
 |#
-
-;;; ********************************
-;;; Fdefinition ********************
-;;; ********************************
-;;; fdefinition is a CLtL2 addition.
-#+(and :cmu (not (or new-compiler :new-compiler)))
-(eval-when (compile eval)
-  ;; Need to worry about extensions:encapsulate in CMU CL
-  ;; Note: We should really be defining fdefinition as a function
-  ;; in the "LISP" package and export it. But this will do for now,
-  ;; especially since we only define it while compiling this code.
-  ;; The use of (fboundp 'fdefinition) later in this file works
-  ;; because (fboundp <macro>) returns t.
-  ;; (export 'lisp::fdefinition "LISP")
-  (defmacro fdefinition (x)
-    `(lisp::careful-symbol-function ,x))
-  (defsetf fdefinition lisp::set-symbol-function-carefully))
 
 
 ;;; ****************************************************************
@@ -979,20 +956,20 @@ variables/arrays/structures."
 ;;;
 (defstruct metering-functions
   (name nil)
-  (old-definition #-(and :cmu :new-compiler) nil
-                  #+(and :cmu :new-compiler)
+  (old-definition #-cmu nil
+                  #+cmu
                   (error "Missing required keyword argument :old-definition")
                   :type function)
-  (new-definition #-(and :cmu :new-compiler) nil
-                  #+(and :cmu :new-compiler)
+  (new-definition #-cmu nil
+                  #+cmu
                   (error "Missing required keyword argument :new-definition")
                   :type function)
-  (read-metering #-(and :cmu :new-compiler) nil
-                  #+(and :cmu :new-compiler)
+  (read-metering  #-cmu nil
+                  #+cmu
                   (error "Missing required keyword argument :read-metering")
                   :type function)
-  (reset-metering #-(and :cmu :new-compiler) nil
-                  #+(and :cmu :new-compiler)
+  (reset-metering #-cmu nil
+                  #+cmu
                   (error "Missing required keyword argument :reset-metering")
                   :type function))
 

@@ -6,17 +6,19 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.2 2000/03/09 19:02:59 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.3 2000/03/09 20:28:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
-;; `dttm->string' - needed only for `directory-index'
-;; (require :date (translate-logical-pathname "cllib:date"))
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `dttm->string' - needed only for `directory-index'
+  ;; (require :date (translate-logical-pathname "cllib:date"))
+  ;; "Gray streams"
+  (require :gray (translate-logical-pathname "port:gray")))
 
 (in-package :cllib)
 
-(export '(with-html-output directory-index html-stream))
+(export '(with-html-output directory-index html-stream-out))
 
 ;;;
 ;;; preparation
@@ -25,19 +27,19 @@
 (defcustom *html-chars* list '((#\< . "&lt;") (#\> . "&gt;") (#\& . "&amp;"))
   "The characters which must be replaced before putting a string into HTML.")
 
-(defclass html-stream (lisp:fundamental-character-output-stream)
+(defclass html-stream-out (fundamental-character-output-stream)
   ((target-stream :initarg :stream :type stream)))
-(defmethod lisp:stream-write-char ((stream html-stream) ch)
+(defmethod stream-write-char ((stream html-stream-out) ch)
   (with-slots (target-stream) stream
     (let ((char-cons (assoc ch *html-chars* :test #'char=)))
       (if char-cons (write-string (cdr char-cons) target-stream)
           (write-char ch target-stream)))))
-(defmethod lisp:stream-line-column ((stream html-stream)) nil)
-(defmethod lisp:stream-finish-output ((stream html-stream))
+(defmethod stream-line-column ((stream html-stream-out)) nil)
+(defmethod stream-finish-output ((stream html-stream-out))
   (with-slots (target-stream) stream (finish-output target-stream)))
-(defmethod lisp:stream-force-output ((stream html-stream))
+(defmethod stream-force-output ((stream html-stream-out))
   (with-slots (target-stream) stream (force-output target-stream)))
-(defmethod lisp:stream-clear-output ((stream html-stream))
+(defmethod stream-clear-output ((stream html-stream-out))
   (with-slots (target-stream) stream (clear-output target-stream)))
 
 ;;;
@@ -53,7 +55,7 @@
                                   head)
                             &body body)
   (with-gensyms ("HTML-" raw mailto)
-    `(let* ((,raw ,stream) (,var (make-instance 'html-stream :stream ,raw))
+    `(let* ((,raw ,stream) (,var (make-instance 'html-stream-out :stream ,raw))
             (,mailto (concatenate 'string "mailto:" *user-mail-address*)))
       (macrolet ((with-tag ((tag &rest options) &body forms)
                    `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)

@@ -4,11 +4,13 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: html.lisp,v 1.3 2000/03/09 19:00:01 sds Exp $
+;;; $Id: html.lisp,v 1.4 2000/03/09 20:28:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; "Gray streams"
+  (require :gray (translate-logical-pathname "port:gray"))
   ;; `with-open-url' in `dump-url-tokens'
   (require :url (translate-logical-pathname "cllib:url")))
 
@@ -122,9 +124,7 @@ optional argument SPACE is non-nil."
 
 #+(or clisp acl cmu) (progn
 
-(defclass html-stream (#+acl excl:fundamental-character-input-stream
-                       #+clisp lisp:fundamental-character-input-stream
-                       #+cmu ext:fundamental-character-input-stream)
+(defclass html-stream-in (fundamental-character-input-stream)
   ((input :initarg :stream :initarg :input :type stream :reader html-in))
   (:documentation "The input stream for reading HTML."))
 
@@ -135,14 +135,20 @@ optional argument SPACE is non-nil."
   (if (member tag *html-unterminated-tags* :test #'eq) tag
       (keyword-concat "/" tag)))
 
-(defmethod stream-read-char ((in html-stream)) (read-char (html-in in)))
-(defmethod stream-unread-char ((in html-stream)) (unread-char (html-in in)))
-(defmethod stream-read-char-no-hang ((in html-stream))
+(defmethod stream-read-char ((in html-stream-in))
+  (read-char (html-in in)))
+(defmethod stream-unread-char ((in html-stream-in) (char character))
+  (unread-char (html-in in) char))
+(defmethod stream-read-char-no-hang ((in html-stream-in))
   (read-char-no-hang (html-in in)))
-;; (defmethod stream-peak-char ((in html-stream)) (peak-char (html-in in)))
-(defmethod stream-listen ((in html-stream)) (listen (html-in in)))
-(defmethod stream-read-line ((in html-stream)) (read-line (html-in in)))
-(defmethod stream-clear-output ((in html-stream)) (clear-input (html-in in)))
+(defmethod stream-peek-char ((in html-stream-in))
+  (peek-char (html-in in)))
+(defmethod stream-listen ((in html-stream-in))
+  (listen (html-in in)))
+(defmethod stream-read-line ((in html-stream-in))
+  (read-line (html-in in)))
+(defmethod stream-clear-output ((in html-stream-in))
+  (clear-input (html-in in)))
 
 )
 

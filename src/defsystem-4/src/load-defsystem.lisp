@@ -156,7 +156,9 @@
 
   (flet ((load-compiling-if-needed (lp-string-filename-sans-extension)
 	   (declare (type string lp-string-filename-sans-extension))
-	   (let* ((compiled-file-type
+	   (let* ((*load-print* nil)
+		  (*load-verbose* nil)
+		  (compiled-file-type
 		   (pathname-type
 		    (compile-file-pathname *default-pathname-defaults*)))
 

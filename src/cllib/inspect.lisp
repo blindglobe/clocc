@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.18 2000/07/20 18:18:03 sds Exp $
+;;; $Id: inspect.lisp,v 1.19 2000/11/08 22:41:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -375,7 +375,7 @@ This is useful for frontends which provide an eval/modify facility."
 (defmethod print-inspection ((insp inspection) (raw stream)
                              (backend (eql :http)))
   (flet ((href (com) (format nil "/~d/~s" (insp-id insp) com)))
-    (with-html-output (out raw :title (insp-title insp) :footer nil)
+    (with-http-output (out raw :title (insp-title insp) :footer nil)
       (with-tag (:h1) (princ (insp-title insp) out))
       (with-tag (:ul)
         (dolist (item (insp-blurb insp))
@@ -446,11 +446,11 @@ This is useful for frontends which provide an eval/modify facility."
       ((eq com :q) (socket-server-close server))
     (setf (values sock id com) (http-command server))
     (if (eq com :q)
-        (with-html-output (out sock :title "inspect" :footer nil)
+        (with-http-output (out sock :title "inspect" :footer nil)
           (with-tag (:h1) (princ "thanks for using inspect" out))
           (with-tag (:p) (princ "you may close this window now" out)))
         (if (setq insp (get-insp id com)) (print-inspection insp sock frontend)
-            (with-html-output (out sock :title "inspect" :footer nil)
+            (with-http-output (out sock :title "inspect" :footer nil)
               (with-tag (:h1)
                 (format out "error: wrong command: ~:d/~s" id com))
               (with-tag (:p)

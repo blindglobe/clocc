@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.24 2004/10/20 22:54:49 sds Exp $
+;;; $Id: log.lisp,v 1.25 2004/10/27 22:24:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,7 +42,12 @@ Taken from CLtL2 p602."
 
 (defun time-diff (end beg)
   "Compute the time (in seconds) between the two given internal timestamps."
-  (dfloat (/ (- end beg) internal-time-units-per-second)))
+  (declare (type integer end beg))
+  (/ (- end beg)
+     ;; CLISP compiled files are cross-platform,
+     ;; so this value must be fixed at load time, not at read time
+     #+clisp #,(dfloat internal-time-units-per-second)
+     #-clisp #.(dfloat internal-time-units-per-second)))
 
 (defun elapsed (bt run &optional fmt)
   "Return the time in seconds elapsed since BT,

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-05-03 Mon 14:20:35 EDT sds@goems.com>
+;;; File: <url.lisp - 1999-05-05 Wed 15:22:13 EDT sds@goems.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -7,11 +7,18 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.28 1999/05/03 18:20:40 sds Exp $
+;;; $Id: url.lisp,v 1.29 1999/05/05 21:04:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.29  1999/05/05 21:04:22  sds
+;;; LispWorks compatibility:
+;;; (open-socket, resolve-host-ipaddr, open-socket-server):
+;;; work with LispWorks; added the `not-implemented' condition.
+;;; (socket-host, socket-port): added the `not-implemented' condition.
+;;; (code, case-error): moved to base.lisp.
+;;;
 ;;; Revision 1.28  1999/05/03 18:20:40  sds
 ;;; (login): new `network' condition.
 ;;; (open-socket-retry): return a socket or signal an error.
@@ -137,6 +144,7 @@
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "print")
   (sds-require "util") (sds-require "date")
+  #+lispworks (require "comm")
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
@@ -419,9 +427,11 @@ The argument can be:
 ;;; }}}{{{ Sockets
 ;;;
 
-#+allegro (deftype socket () 'excl::socket-stream)
-#+clisp (deftype socket () 'stream)
-#+cmu (deftype socket () 'system:fd-stream)
+(deftype socket ()
+  #+allegro 'excl::socket-stream
+  #+cmu 'system:fd-stream
+  #+lispworks 'comm:socket-stream
+  #-(or cmucl allegro lispworks) 'stream)
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
@@ -434,7 +444,12 @@ The argument can be:
                                  (if bin '(unsigned-byte 8) 'character))
     #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
                                  :input t :output t :element-type
-                                 (if bin '(unsigned-byte 8) 'character))))
+                                 (if bin '(unsigned-byte 8) 'character))
+    #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
+                                      (if bin 'unsigned-byte 'base-char))
+    ;; #+gcl
+    #-(or allegro clisp cmu lispworks)
+    (error 'not-implemented :proc (list 'open-socket host port bin))))
 
 (defun resolve-host-ipaddr (host)
   "Call gethostbyname(3) or gethostbyaddr()."
@@ -446,13 +461,31 @@ The argument can be:
          (values host nil (socket:lookup-hostname host) 2)))
     (integer (values (socket:ipaddr-to-hostname host) nil
                      (ipaddr-to-dotted host) 2)))
-  #+clisp (error "resolve-host-ipaddr [~s] not implemented" host)
-                                ; (lisp:resolve-host-ipaddr host)
+  ;; #+clisp (lisp:resolve-host-ipaddr host)
   #+cmu (let ((he (ext:lookup-host-entry host)))
           (values (ext:host-entry-name he)
                   (ext:host-entry-aliases he)
                   (mapcar #'ipaddr-to-dotted (ext:host-entry-addr-list he))
-                  (ext::host-entry-addr-type he))))
+                  (ext::host-entry-addr-type he)))
+  #+lispworks
+  (let ((he (fli:dereference (comm::gethostbyname host))))
+    (values (fli:convert-from-foreign-string
+             (fli:foreign-slot-value he 'comm::h_name))
+            (loop :with pp = (fli:foreign-slot-value he 'comm::h_aliases)
+                  :for cp = (fli:dereference pp)
+                  :until (fli:null-pointer-p cp)
+                  :collect (fli:convert-from-foreign-string cp)
+                  :do (fli:incf-pointer pp))
+            (loop :with pp = (fli:foreign-slot-value he 'comm::h_addr_list)
+                  :for cp = (fli:dereference pp :type '(:unsigned :long))
+                  :until (zerop cp) ; broken !!!
+                  :collect (ipaddr-to-dotted cp)
+                  :do (fli:incf-pointer pp))
+            (fli:foreign-slot-value he 'comm::h_addrtype)
+            (fli:foreign-slot-value he 'comm::h_length)))
+  ;; #+gcl
+  #-(or allegro cmu lispworks)
+  (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 (defun ipaddr-to-dotted (ipaddr)
   "Number --> string."
@@ -477,21 +510,31 @@ The argument can be:
   (declare (type socket sock))
   #+clisp (lisp:socket-stream-host sock)
   #+allegro (socket:ipaddr-to-dotted (socket:remote-host sock))
-  #+cmu (extensions::gethostbyaddr (ext:get-socket-host-and-port sock)))
+  #+cmu (extensions::gethostbyaddr (ext:get-socket-host-and-port sock))
+  ;; #+gcl #+lispworks
+  #-(or allegro clisp cmu)
+  (error 'not-implemented :proc (list 'socket-host sock)))
 
 (defun socket-port (sock)
   "Return the remote port number."
   (declare (type socket sock))
   #+clisp (lisp:socket-stream-port sock)
   #+allegro (socket:remote-port sock)
-  #+cmu (nth-value 1 (ext:get-socket-host-and-port sock)))
+  #+cmu (nth-value 1 (ext:get-socket-host-and-port sock))
+  ;; #+gcl #+lispworks
+  #-(or allegro clisp cmu)
+  (error 'not-implemented :proc (list 'socket-port sock)))
 
 (defun open-socket-server (sock)
   "Open a `generic' socket server."
   (declare (ignorable sock) (type socket sock))
   #+allegro (socket:make-socket :connect :passive)
   #+clisp (lisp:socket-server sock)
-  #+cmu (ext:create-inet-socket))
+  #+cmu (ext:create-inet-socket)
+  #+lispworks (comm:start-up-server)
+  ;; #+gcl
+  #-(or allegro clisp cmu lispworks)
+  (error 'not-implemented :proc (list 'open-socket-server sock)))
 
 (define-condition network (error)
   ((proc :type symbol :reader net-proc :initarg :proc)
@@ -514,12 +557,7 @@ The argument can be:
              (when (slot-boundp cc 'time)
                (format out " [timeout ~a sec]" (timeout-time cc))))))
 
-(define-condition login (network)
-  ((network :type network :reader login-net :initarg :network))
-  (:report (lambda (cc out)
-             (declare (stream out))
-             (if (slot-boundp cc 'network) (write (login-net cc) :stream out)
-                 (call-next-method)))))
+(define-condition login (network) ())
 
 ;; (defun upgrade (obj class)
 ;;   (let ((slots (nintersection (class-slot-list obj nil)
@@ -528,20 +566,6 @@ The argument can be:
 ;;     (dolist (sl slots nobj)
 ;;       (when (slot-boundp obj sl)
 ;;         (setf (slot-value nobj sl) (slot-value obj sl))))))
-
-(define-condition code (error)
-  ((proc :type symbol :reader code-proc :initarg :proc)
-   (mesg :type simple-string :reader code-mesg :initarg :mesg)
-   (args :type list :reader code-args :initarg :args))
-  (:report (lambda (cc out)
-             (declare (stream out))
-             (format out "[~s]~@[ ~?~]" (code-proc cc)
-                     (and (slot-boundp cc 'mesg) (code-mesg cc))
-                     (and (slot-boundp cc 'args) (code-args cc))))))
-
-(define-condition case-error (code)
-  ((mesg :type simple-string :reader code-mesg :initform
-         "`~s' evaluated to `~s', not one of [~@{`~s'~^ ~}]")))
 
 (defcustom *url-default-sleep* (real 0) 30
   "*The number of seconds to sleep when necessary.")
@@ -567,7 +591,7 @@ Print the appropriate message MESG to OUT."
 and evaluate TIMEOUT-FORMS."
   (declare (ignorable seconds timeout-forms))
   #+(or allegro cmu) `(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
-  #+clisp `(progn ,@body))
+  #-(or mp multiprocessing) `(progn ,@body))
 
 (defun y-or-n-p-timeout (seconds default &rest args)
   "`y-or-n-p' with timeout."
@@ -604,7 +628,7 @@ and evaluate TIMEOUT-FORMS."
           (error (co)
             (setq err-cond co)
             (mesg :log err "~%Error connecting: ~a~%" co)))
-        :when sock :do (mesg :log err "done: ~a~%" sock)
+        :when sock :do (mesg :log err "done:~% [~a]~%" sock)
         :when (and sock (open-stream-p sock)) :return sock
         :when (and max-retry (>= ii max-retry))
         :do (error 'network :proc 'open-socket-retry :host host :port port
@@ -660,7 +684,7 @@ the error `timeout' is signaled."
                 (t (error 'code :proc 'open-url :args (list (url-prot url))
                           :mesg "Cannot handle protocol ~s"))))
           (code (co) (error co))
-          (network (co) (error co))
+          (login (co) (error co))
           (error (co)
             (mesg :err err "Connection to <~a> dropped:~% * ~a~%" url co)))
         :return sock
@@ -781,7 +805,10 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
     (ignore-errors (url-ask sock err 215 "syst"))
     ;; (url-ask sock err 200 "type i")
     (ignore-errors (url-ask sock err 211 "stat"))
-    (handler-bind ((network (lambda (co) (error 'login :network co))))
+    (handler-bind ((network (lambda (co)
+                              (error 'login :proc 'url-login-ftp :host host
+                                     :port port :mesg "CWD error: ~a"
+                                     :args (list (net-mesg co))))))
       (url-ask sock err 250 "cwd ~a" (url-path-dir url)))))
 
 (defcustom *buffer* (simple-array (unsigned-byte 8) (10240))

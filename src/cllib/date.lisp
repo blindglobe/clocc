@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.26 2004/11/12 19:00:44 sds Exp $
+;;; $Id: date.lisp,v 2.27 2005/01/27 18:09:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
 
 (export '(string->dttm dttm->string date-formatter +day-sec+ print-date-month
           date date2time date2num date2days time2date days2date mk-date
-          unix-date infer-timezone infer-month
+          date-da date-mo date-ye unix-date infer-timezone infer-month
           days-week-day date-week-day black-days working-day-p
           days-to-next-working-day next-working-day previous-working-day
           days-since days-since-f *y2k-cut*

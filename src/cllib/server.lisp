@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: server.lisp,v 1.6 2001/11/02 22:31:15 sds Exp $
+;;; $Id: server.lisp,v 1.7 2002/03/27 23:33:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/server.lisp,v $
 
 (eval-when (compile load eval)
@@ -85,7 +85,7 @@ Set to NIL to disable.")
   "Create a Lisp connection listener, listening on a TCP port for new
 connections and starting a new top-level loop for each. If a password
 is not given then one will be generated and reported."
-  (labels (;; The session top level read eval. loop.
+  (labels (;; The session top level read eval loop.
 	   (start-top-level (stream)
              (unwind-protect
                   (let* ((*terminal-io* stream)
@@ -116,22 +116,20 @@ is not given then one will be generated and reported."
 	     (let ((serv (open-socket-server port)))
 	       (unwind-protect
 		    (progn
-		      (setf (process-name mp::*current-process*)
-			    (format nil "Lisp connection listener on port ~d"
-				    port))
 		      (format t "~&;;; Started lisp connection listener on ~
  				  port ~d with password ~d~%"
 			      port password)
 		      (loop
 		       ;; Wait for new connections.
                        (let ((sock (socket-accept serv)))
-                         (make-process #'(lambda () (start-top-level sock))
-                                       :name (format nil "Lisp session from ~a"
-                                                     (socket-string sock))))))
+                         (make-process (format nil "Lisp session from ~a"
+                                               (socket-string sock))
+                                       #'(lambda () (start-top-level sock))))))
 		 ;; Close the listener stream.
 		 (when serv (socket-server-close serv))))))
     ;; Make the listening thread.
-    (make-process #'listener)))
+    (make-process (format nil "Lisp connection listener on port ~d" port)
+                  #'listener)))
 
 #|
 In Linux 2.2.X with the binmisc module, any .x86f file is a binary file.

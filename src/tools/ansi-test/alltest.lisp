@@ -94,6 +94,7 @@
     (or #+xcl (equal s "128")
         #+clisp (equal s "65536")
         #+clisp (equal s "4294967296")
+        #+clisp (equal s "4096")
         #+akcl (equal s "64")
         #+allegro (equal s "16384")
         #+(or cmu sbcl sbcl) (equal s "536870911")
@@ -1771,7 +1772,7 @@
 (check-for-bug :alltest-legacy-1706
   (prin1-to-string most-positive-long-float )
   #+xcl "1.701411834604692D38"
-  #+clisp "8.808065258272562574L646456992"
+  #+clisp "8.8080652584198167656L646456992"
   #+allegro "4.494232837155787d+307"
   #+(or cmu sbcl) "1.7976931348623157d+308"
   #+ecls "1.797693134862316d308"
@@ -1780,7 +1781,7 @@
 (check-for-bug :alltest-legacy-1715
   (prin1-to-string least-positive-long-float )
   #+xcl "2.938735877055719D-39"
-  #+clisp "5.676615526325511814L-646456994"
+  #+clisp "5.676615526003731344L-646456994"
   #+allegro "4.9406564584124657d-324"
   #+(or cmu sbcl ecls) "4.940656458412465d-324"
   #-(or xcl clisp allegro cmu sbcl ecls) unknown)
@@ -1788,7 +1789,7 @@
 (check-for-bug :alltest-legacy-1723
   (prin1-to-string least-negative-long-float )
   #+xcl "-2.938735877055719D-39"
-  #+clisp "-5.676615526325511814L-646456994"
+  #+clisp "-5.676615526003731344L-646456994"
   #+allegro "-4.9406564584124657d-324"
   #+(or cmu sbcl ecls) "-4.940656458412465d-324"
   #-(or xcl clisp allegro cmu sbcl ecls) unknown)
@@ -1796,7 +1797,7 @@
 (check-for-bug :alltest-legacy-1731
   (prin1-to-string most-negative-long-float )
   #+xcl "-1.701411834604692D38"
-  #+clisp "-8.808065258272562574L646456992"
+  #+clisp "-8.8080652584198167656L646456992"
   #+allegro "-4.494232837155787d+307"
   #+(or cmu sbcl) "-1.7976931348623157d+308"
   #+ecls "-1.797693134862316d308"
@@ -1868,7 +1869,7 @@
 (check-for-bug :alltest-legacy-1801
   (prin1-to-string long-float-negative-epsilon )
   #+xcl "1.387778780781446D-17"
-  #+clisp "2.710505431213761092L-20"
+  #+clisp "2.7105054312137610853L-20"
   #+allegro "2.220446049250313d-16"
   #+(or cmu sbcl) "5.551115123125784d-17"
   #+ecls "5.828670879282072d-17"

@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1998-05-21 Thu 14:21:57 EDT sds@mute.eaglets.com>
+;;; File: <base.lisp - 1998-06-12 Fri 14:17:11 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.2 1998/05/21 18:22:15 sds Exp $
+;;; $Id: base.lisp,v 1.3 1998/06/12 18:54:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.3  1998/06/12 18:54:05  sds
+;;; Made `compose-m' more flexible, renamed it `compose', renamed the
+;;; function `compose' into `compose-f'.
+;;; Changed most variables into constants.
+;;;
 ;;; Revision 1.2  1998/05/21 18:22:15  sds
 ;;; Adopted to work with ACL 5.
 ;;;
@@ -156,7 +161,7 @@
 		  "util" "work"))
       (setf (gethash mo *require-table*)
 	    (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-    (dolist (mo '("gq" "url" "geo"))
+    (dolist (mo '("gq" "url" "geo" "animals"))
       (setf (gethash mo *require-table*)
 	    (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
     (setf (gethash "monitor" *require-table*)
@@ -251,24 +256,27 @@ Current time:~35t"
   (current-time stream)
   (format stream "~%~70~~%"))
 
-(defcustom *month-names* simple-vector
-  '#("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+(defconst +month-names+ (simple-array simple-string (12))
+  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
   "*The names of the months.")
-(defcustom *week-days* simple-vector
-  '#("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
+(defconst +week-days+ (simple-array simple-string (7))
+  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
   "*The names of the days of the week.")
-(defcustom *time-zones* list
+(defconst +time-zones+ list
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
     (0 "GMT" . "GDT"))
   "*The string representations of the time zones.")
+(defconst +whitespace+ simple-vector
+  #(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page)
+  "*The whitespace characters.")
 
 (defun current-time (&optional (stream t))
   "Print the current time to the stream (defaults to t)."
   (multiple-value-bind (se mi ho da mo ye dw dst tz) (get-decoded-time)
     (declare (fixnum se mi ho da mo ye dw tz))
     (format stream "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a(~@d)"
-	    ye mo da (aref *week-days* dw) ho mi se
-	    (funcall (if dst #'cadr #'cddr) (assoc tz *time-zones*)) tz)))
+	    ye mo da (aref +week-days+ dw) ho mi se
+	    (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)) tz)))
 
 #+win32
 (defun win95-sysinfo (&optional (stream t))
@@ -296,14 +304,19 @@ Current time:~35t"
 ;;; }}}{{{ Function Compositions
 ;;;
 
-(defmacro compose-m (&rest functions)
-  "Macro: compose functions or macros of 1 argument into a lambda."
+(defmacro compose (&rest functions)
+  "Macro: compose functions or macros of 1 argument into a lambda.
+E.g., (compose abs (dl-val zz) 'key) ==>
+  (lambda (yy) (abs (funcall (dl-val zz) (funcall key yy))))"
   (labels ((zz (xx yy)
 	     (let ((rr (list (car xx) (if (cdr xx) (zz (cdr xx) yy) yy))))
-	       (if (consp (car xx)) (cons 'funcall rr) rr))))
+	       (if (consp (car xx))
+                   (cons 'funcall (if (eq (caar xx) 'quote)
+                                      (cons (cadar xx) (cdr rr)) rr))
+                   rr))))
     (let ((ff (zz functions 'yy))) `(lambda (yy) ,ff))))
 
-(defun compose (&rest functions)
+(defun compose-f (&rest functions)
   "Return the composition of all the arguments.
 All FUNCTIONS should take one argument, except for
 the last one, which can take several."
@@ -350,6 +363,8 @@ All the values from nth function are fed to the n-1th."
 (autoload 'best-pars "work" "Get the best parameters.")
 (autoload 'pr "print" "Print readably, through `with-standard-io-syntax'.")
 (autoload 'all-docs "print" "Print all docs for a symbol.")
+(autoload 'play-animals "animals" "Play the game of animals.")
+(autoload 'load-all-currencies "currency" "Load all the currencies.")
 
 (provide "base")
 ;;; }}} base.lisp ends here

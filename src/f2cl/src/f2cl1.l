@@ -349,7 +349,9 @@ FILENAME                 File containing Fortran code
 		(format outport "~2%"))
 	      (format outport "~2&(use-package :f2cl)~2%"))
 	    (translate-and-write-subprog 
-	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
+	     (introduce-continue
+	      (handle-extended-do
+	       (readsubprog-extract-format-stmts inport)))
 	     outport)))
         ))
     t)
@@ -406,91 +408,58 @@ FILENAME                 File containing Fortran code
  (go loop)))
 
 (defun find-do (margin-line)
-  (if (eq (caadr margin-line) 'do) (cadadr margin-line) nil))
+  (if (eq (caadr margin-line) 'do)
+      (cadadr margin-line)
+      nil))
+
+;; Routines to handle extended DO statements.  These are DO statements
+;; that do not have a line number.  The DO statement is ended with an
+;; END-DO statement.
+;;
+;; We handle these by faking it. We create a standard DO statement
+;; with a new label.  The matching ENDDO statement is converted into a
+;; corresponding CONTINUE statement with the correct label.  The label
+;; is just an integer bigger than any allowable Fortran label (99999),
+;; since Fortran labels are limited to 5 digits.
+
+(defun id-extended-do (line)
+  (and (eq (first line) 'do)
+       (not (numberp (second line)))))
+
+(defun rewrite-extended-do (label line)
+  `(,(first line) ,label ,@(rest line)))
+
+(defun id-end-do (x)
+  (or (eq (car x) 'enddo)
+      (and (eq (car x) 'end)
+	   (eq (cadr x) 'do))))
+
+(defun handle-extended-do (prog-list)
+  ;; prog-list is ((margin line) (margin line) ...)
+  (let* ((extended-do-label-stack '())
+	 (current-extended-do-label 100000)
+	 (result (mapcar
+		  #'(lambda (full-line)
+		      (destructuring-bind (margin line)
+			  full-line
+			(cond ((id-extended-do line)
+			       (push current-extended-do-label extended-do-label-stack)
+			       (prog1
+				   `(,margin ,(rewrite-extended-do current-extended-do-label line))
+				 (incf current-extended-do-label)))
+			      ((id-end-do line)
+			       `(,(pop extended-do-label-stack) (continue)))
+			      (t
+			       full-line))
+			))
+		  prog-list)))
+    (unless (null extended-do-label-stack)
+      (warn "Extended DO statement without matching ENDDO statement?"))
+    result))
+  
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
-#+nil
-(defun translate-and-write-subprog (prog-list outport)
-  (prog (fort-fun *external_function_names*
-		  *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
-		  *save_vbles* *key_params* *subprog_common_vars* 
-		  *subprog_stmt_fns* *subprog_stmt_fns_bodies* *subprog_name*
-		  *function-flag* *program-flag*
-		  labels)		; labels is the do integers
-     (setq labels (remove nil (mapcar #'find-do prog-list)))
 
-     (setq *external_function_names* nil
-	   *undeclared_vbles* nil
-	   *declared_vbles* nil
-	   *implicit_vble_decls* nil
-	   *explicit_vble_decls* nil
-	   *save_vbles* nil
-	   *key_params* nil
-	   *subprog_common_vars* nil
-	   *subprog_stmt_fns* nil
-	   *subprog_stmt_fns_bodies* nil
-	   *function-flag* nil
-	   *program-flag* nil
-	   *subprog-arglist* nil
-	   *data-init* nil
-	   *functions-used* nil
-	   *vble-declaration-done* nil)
-
-     (clrhash *common-blocks*)
-     (setq fort-fun
-	   (do ((lines prog-list (cdr lines)) 
-		(fort-fun nil (append fort-fun
-				      (append (translate-label (caar lines))
-					      (translate-line 
-					       (brackets-check (concat-operators
-								(cadar lines))))))))
-	       ((null (cdr lines))
-		(append fort-fun
-			(cond (*function-flag*
-			       ;; A function.  Return the value of the
-			       ;; function, the value of the variable
-			       ;; with the same name as the function.
-			       `(end_label (return (values ,(cadr fort-fun)
-							   ,@(caddr fort-fun)))))
-			      ((or *program-flag*
-				   (not (eq (car fort-fun) 'defun)))
-			       ;; Return nil if this is the main
-			       ;; program, indicated by either having
-			       ;; a PROGRAM statement (*program-flag*
-			       ;; set) or no DEFUN in FORT-FUN.
-			       `(end_label (return nil)))
-			      (t
-			       ;; A subroutine definition.  Return the
-			       ;; arguments of the subroutine.
-			       `(end_label (return (values 
-						    ,@(caddr fort-fun))))))))))
-     ;; check for missing PROGRAM stmt
-     (if (not (eq (car fort-fun) 'defun))
-         (setq fort-fun (append '(defun *main* nil) fort-fun)))
-     ;;     (format t "~%after translation : ~A" fort-fun)
-
-     (multiple-value-bind (spec-proc spec-decl fun)
-	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
-       ;;(format t "spec-proc = ~S~%" spec-proc)
-       ;;(format t "spec-decl = ~S~%" spec-decl)
-       (when spec-proc
-	 (mapc #'(lambda (s-proc s-decl)
-		   (unless (find (caadr s-proc) *common-block-initialized*)
-		     (special-print s-proc outport)
-		     (terpri outport)
-		     (format outport "~%~%")
-		     (special-print s-decl outport)
-		     (terpri outport)
-		     (format outport "~%~%")
-		     (pushnew (caadr s-proc) *common-block-initialized*)))
-	       spec-proc
-	       spec-decl)
-	 (terpri outport))
-       (special-print fun outport))
-     (print (cadr fort-fun))		;indicate which subprogram is being translated
-     (write-char '#\newline outport)
-     (write-char '#\newline outport)
-     ))
 (defun translate-and-write-subprog (prog-list outport)
   (clrhash *common-blocks*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
@@ -634,6 +603,7 @@ FILENAME                 File containing Fortran code
      ;;do loop
      (when (id-do-loop x)
        (return (parse-do-loop (check_new_vbles x))))
+
      ;; if-then
      (when (id-if-then x)
        (return (parse-if-then (check_new_vbles x))))
@@ -1252,15 +1222,15 @@ FILENAME                 File containing Fortran code
 
 ;------------------------------------------------------------------------------
 (defun parse-do-loop (x)
- (let* ((limits (list-split '|,| (cddddr x))) (step (third limits)))
-     `((fdo (,(third x)
-        ,(id-expression (first limits))
-        (+ ,(third x) ,(if (null step) 1 (id-expression step))))
-      ((> ,(third x) ,(id-expression (second limits))) nil)
-      ,(read-from-string 
-            (concatenate 'string "fdo_body_label" 
-                 (princ-to-string (second x))) nil)
-))))
+  (let* ((limits (list-split '|,| (cddddr x))) (step (third limits)))
+    `((fdo (,(third x)
+	    ,(id-expression (first limits))
+	    (+ ,(third x) ,(if (null step) 1 (id-expression step))))
+       ((> ,(third x) ,(id-expression (second limits))) nil)
+       ,(read-from-string 
+	 (concatenate 'string "fdo_body_label" 
+		      (princ-to-string (second x))) nil)
+       ))))
 
 ; (let* ((limits (list-split '|,| (cddddr x)))
 ;        (init-val (id-expression (first limits)))
@@ -1968,8 +1938,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.72 2001/06/01 20:08:21 liam Exp $
+;;; $Id: f2cl1.l,v 1.73 2001/06/03 20:49:00 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.73  2001/06/03 20:49:00  rtoy
+;;; o Removed an old unused version of TRANSLATE-AND-WRITE-SUBPROG.
+;;; o Gratuitously re-indented PARSE-DO-LOOP.
+;;; o Key change is adding code to handle extended DO loops, i.e., DO
+;;;   loops that don't have statement numbers and are ended with an ENDDO
+;;;   statement.
+;;;
 ;;; Revision 1.72  2001/06/01 20:08:21  liam
 ;;; Remove conditionalization #+cmu on concat.  Removed extra parenthesis.
 ;;;

@@ -1041,38 +1041,38 @@ MAIN-LOOP
 ;; If RETURN is T, we are generating a call to a function which
 ;; returns the value of the function in addition to the parameters.
 (defun generate-call-to-routine (routine arglist &optional return)
-  (let* ((vnames (let ((v '()))
-		   ;; Make up some variable names.  These contain
-		   ;; dashes, which cannot be valid Fortran names, so
-		   ;; we don't have to worry about variable capture.
-		   (dotimes (k (length arglist))
-		     (push (intern (format nil "VAR-~D" k)) v))
-		   (nreverse v)))
-	 ;; Figure out if and how to set the parameters to the returned values.
-	 (all-setters (do ((v nil)
-			   (vars vnames (rest vars))
-			   (args arglist (rest args)))
-			  ((null args) (nreverse v))
-			(let ((var (first vars))
-			      (arg (first args)))
-			  (push (cond ((or (vble-is-array-p arg)
-					   (member arg *external_function_names*))
-				       ;; Fortran can't return
-				       ;; whole arrays or
-				       ;; functions, so don't try
-				       ;; to assign the value to
-				       ;; arrays or functions.
-				       nil)
-				      ((symbolp arg)
-				       `(setf ,arg ,var))
-				      ((and (listp arg)
-					    (eq (first arg) 'fref))
-				       `(fset ,arg ,var))
-				      (t
-				       nil))
-				v))))
-	 ;; A variable is ignored if no setter for it is given.
-	 (ignored-vars (remove nil (mapcar #'(lambda (varname setter)
+  (let* ((vnames
+	  ;; Make up some variable names.  These contain dashes, which
+	  ;; cannot be valid Fortran names, so we don't have to worry
+	  ;; about variable capture.
+	  (mapcar #'(lambda (v)
+		      (intern (concatenate 'string "NEW-" (symbol-name v))))
+		  arglist))
+	 (all-setters
+	  ;; Figure out if and how to set the parameters to the returned values.
+	  (do ((v nil)
+	       (vars vnames (rest vars))
+	       (args arglist (rest args)))
+	      ((null args) (nreverse v))
+	    (let ((var (first vars))
+		  (arg (first args)))
+	      (push (cond ((or (vble-is-array-p arg)
+			       (member arg *external_function_names*))
+			   ;; Fortran can't return whole arrays or
+			   ;; functions, so don't try to assign the
+			   ;; value to arrays or functions.
+			   nil)
+			  ((symbolp arg)
+			   `(setf ,arg ,var))
+			  ((and (listp arg)
+				(eq (first arg) 'fref))
+			   `(fset ,arg ,var))
+			  (t
+			   nil))
+		    v))))
+	 (ignored-vars
+	  ;; A variable is ignored if no setter for it is given.
+	  (remove nil (mapcar #'(lambda (varname setter)
 					       (if (not setter)
 						   varname))
 					   vnames all-setters)))
@@ -1098,17 +1098,6 @@ MAIN-LOOP
     (cond ((null arglist)
 	   ;; No args to the subroutine
 	   `((,(second x))))
-	  #+nil
-	  ((every #'symbolp arglist)
-	   ;; If every argument is a simple variable (or array), use m-v-setq to
-	   ;; set the simple variables to the correct values.
-	   `((multiple-value-setq 
-		 ,(mapcar #'(lambda (x)
-			      (cond ((not (symbolp x)) '*dummy_var*)
-				    ((vble-is-array-p x) '*dummy_var*)
-				    (t x)))
-			  arglist)
-	       (,(second x) ,@arglist))))	   
 	  (t
 	   ;; This is the more complicated case where we need to be
 	   ;; more careful.  M-v-bind is used to get all of the return
@@ -1121,7 +1110,17 @@ MAIN-LOOP
 	   ;; Array references can also be a slice of an array that is
 	   ;; passed to the subroutine, and that isn't handled here!
 	   ;;
-	   (generate-call-to-routine (list (second x)) arglist)))))
+	   (let ((fname (second x)))
+	     (generate-call-to-routine
+	      (cond ((member fname *subprog-arglist*)
+		     ;; We want to use funcall only if the external function
+		     ;; was passed in as a parameter.  If not, then we don't
+		     ;; need to funcall it.  The user was just telling us that
+		     ;; it was external function instead an intrinsic.
+		     `(funcall ,fname)) 
+		    (t 
+		     `(,fname)))
+	      arglist))))))
 
 (defun parse-function-call (x)
   ;; X is (FUNCTION-CALL FNAME ARG1 ARG2 ARG3 ...)
@@ -1872,8 +1871,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.53 2000/07/30 05:54:06 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.54 2000/07/30 06:12:23 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.54  2000/07/30 06:12:23  rtoy
+;;; o In GENERATE-CALL-TO-ROUTINE, don't use VAR-n for the variable names;
+;;;   prepend NEW- to the actual variable names.  Some gratuitous
+;;;   re-indenting.
+;;;
+;;; o In PARSE-SUBROUTINE-CALL, subroutines can be passed in so we need to
+;;;   funcall them, just like we do for functions.
+;;;
 ;;; Revision 1.53  2000/07/30 05:54:06  rtoy
 ;;; Create new function GENERATE-CALL-TO-ROUTINE that takes the heart of
 ;;; the multiple-value-bind stuff needed for getting the return values of

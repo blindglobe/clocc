@@ -44,7 +44,8 @@
 (setf (named-readtable ':ytools) ytools-readtable*)
 
 (defparameter ytools-core-files*
-    '("base" "datafun" "pathname" "chunk" "slurp" "files" "depend" "module"))
+    '("base" "datafun" "pathname" "chunk" "slurp"
+      "files" "fload" "depend" "module"))
 ;;; -- chunk & slurp can be loaded in either order; they're independent
 ;;; of each other.
 

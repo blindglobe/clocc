@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.21 2005/03/17 13:07:11 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.22 2005/03/18 15:19:33 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -211,29 +211,50 @@ after YTools file transducers finish.")
 	     (setq readtab (cadr readtab)))
 	    (t (setq readtab ':missing)))
       (do ((al args (cond (flags-done al) (t (cdr al))))
-	   (flags-done false)
-	   fname interned-flag)
+	   (flags-done false))
+;;;;	   fname interned-flag
 	  ((or flags-done (null al))
-	   (values al (reverse flags) readtab))
+	   (values al
+		   (flags-check (reverse flags) possible-flags)
+		   readtab))
          (cond ((is-Symbol (car al))
-		(setq fname
-		      (symbol-name (car al)))
+;;;;		(setq fname
+;;;;		      (symbol-name (car al)))
 		(setq flags-done (not (char= (elt fname 0) #\-))))
 	       (t
 		(setq flags-done true)))
 	 (cond ((not flags-done)
-		(setq interned-flag
-		      (intern fname ytools-package*))
-		(cond ((memq interned-flag possible-flags)
-		       (setq flags (cons interned-flag flags)))
-		      (t
-		       (cerror "I'll ignore it"
+		(setq flags (cons flag flags)))))))
+
+;;;;		(setq interned-flag
+;;;;		      (intern fname ytools-package*))
+;;;;		(cond ((memq interned-flag possible-flags)
+;;;;		       (setq flags (cons interned-flag flags)))
+;;;;		      (t
+;;;;		       (cerror "I'll ignore it"
+;;;;			   "Unexpected flag ~s; expected one of ~a"
+;;;;			      (car al)
+;;;;			      (mapcar (lambda (flag)
+;;;;					 (intern (symbol-name flag)
+;;;;						 *package*))
+;;;;				      possible-flags)))))))))
+
+;;; Intern in ytools package and reject if unexpected
+(defun flags-check (flags expected)
+   (mapcan (\\ (flag)
+	      (let ((flag (intern (Symbol-name flag) ytools-package*)))
+		 (cond ((memq flag expected)
+			(list flag))
+		       (t
+			(cerror "I'll ignore it"
 			   "Unexpected flag ~s; expected one of ~a"
 			      (car al)
 			      (mapcar (lambda (flag)
 					 (intern (symbol-name flag)
 						 *package*))
-				      possible-flags)))))))))
+				      possible-flags))
+			!()))))
+	   flags))
 
 (defvar fload-show-actual-pathnames* true)
 

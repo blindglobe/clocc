@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.19 2005/03/17 13:07:11 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.20 2005/03/18 15:19:33 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -22,8 +22,8 @@
    ;; A list of lists, each of the form
    ;;    ((-time-specs-) -acts-)
    ;; meaning, insert or execute the -acts- at times matching one of
-   ;; the time-specs.  A time-spec is :at-run-time, :at-compile-time,
-   ;; :expansion, etc. -- 
+   ;; the time-specs.  A time-spec is :run-support, :compile-support,
+   ;; or :expansion. -- 
    contents     
    chunk
    loaded-chunk)
@@ -114,6 +114,10 @@
 ;;; loadee is a YT-module
 (defclass Loaded-module-chunk (Loaded-chunk)
    ())
+
+(defclass Compiled-module-chunk (Chunk)
+   ((module :reader Compiled-module-chunk-module
+	    :initarg :module)))
 
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
@@ -255,7 +259,8 @@
 			     new-lc))
 		       :initializer
 			  (\\ (new-lc)
-			     (cond ((not (slot-truly-filled new-lc 'controller))
+			      (cond ((not (slot-truly-filled
+					      new-lc 'controller))
 				    (setf (Loaded-chunk-controller new-lc)
 					  (create-loaded-controller
 					     mod-chunk new-lc))))))))
@@ -280,6 +285,8 @@
 	    :controllee loaded-ch
 	    :name name))))
 
+#|
+Not needed, because it's essentially identical to scan-depends-on
 (def-slurp-task module-scan
    :default (\\ (form state)
 	       (let ((dos-handler
@@ -299,6 +306,7 @@
 			     (t
 			      (error "Attempt to scan non-module ~s"
 				     mod)))))
+|#
 
 (defmethod derive ((mod-controller Loadable-module-chunk))
    (let* ((loaded-mod-chunk
@@ -308,12 +316,15 @@
 	  (module (YT-module-chunk-module mod-chunk))
 	  (clal (YT-module-contents module)))
       (dolist (al clal)
-	 (let ((acts (rest al)))
-	    (forms-slurp
-	       acts
-	       (list module-scan*)
-	       (list (funcall (Slurp-task-file->state-fcn module-scan*)
-			      module))))))
+	 (cond ((not (equal (car al)
+			    '(:expansion)))
+		(let ((acts (rest al)))
+		   (forms-slurp
+		      acts
+		      (list scan-depends-on*)     ;;;;module-scan*
+		      (list (make-Scan-depends-on-state
+			       :file-ch mod-chunk
+			       :sub-file-types !()))))))))
    file-op-count*)
 
 (defvar module-now-loading* false)
@@ -330,6 +341,29 @@
 (defmethod loaded-chunk-set-basis ((mod-loaded-ch Loaded-module-chunk))
    !())
 
+(defmethod loaded-chunk-force ((loaded-chunk Loaded-module-chunk)
+			       force postpone-derivees)
+   (
+
+
+(defmethod filoid-fcompl ((mod-pspn Module-pseudo-pn)
+			  &key force-compile
+			       load
+			       cease-mgt
+			       postpone-derivees)
+   (let* ((mod-ch (pathname-denotation-chunk mod-pspn))
+	  (loaded-mod-ch (place-Loaded-chunk mod-ch false)))
+      (monitor-filoid-basis loaded-mod-ch)
+      (
+
+
+(defmethod derive ((comp-mod Compiled-module-chunk))
+   (let ((module
+	    (Compiled-module-chunk-module comp-mod)))
+      (dolist (c (YT-module-contents module))
+	 (cond ((not (equal (first c) '(:expansion)))
+		(dolist (e (rest c))
+		   (eval e)))))))
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))

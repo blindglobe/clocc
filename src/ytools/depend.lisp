@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.18 2005/03/17 13:07:11 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.19 2005/03/18 15:19:31 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,8 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(depends-on module funktion scan-depends-on self-compile-dep)))
+   (export '(depends-on module funktion scan-depends-on self-compile-dep
+	     end-header)))
 
 (eval-when (:compile-toplevel :load-toplevel)
 
@@ -161,12 +162,12 @@
 	 `(progn
 	     ,@(mapcan (\\ (pn) (list-copy (pathname-expansion pn)))
 		       run-time-deps)
-	     ;; This is a kludge to avoid the calls to 'fload' here
-	     ;; changing the real default-fload-args* --
 	     ,@(include-if (not (null run-time-deps))
 		  `(cond (depends-on-enabled*
-			  (let ((default-fload-args* (vector !() !() nil)))
-			     (fload ,@run-time-deps)))))))))
+			  (filespecs-load ',run-time-deps)
+;;;;			  (let ((default-fload-args* (vector !() !() nil)))
+;;;;			     (fload ,@run-time-deps))
+			  )))))))
 
 (defvar end-header-dbg* false)
 
@@ -412,6 +413,17 @@
 		      (compiled-ch-sub-file-link
 		         compiled-ch file-ch sftype false))))))
      false))
+
+(defmacro end-header (&rest _)
+   '(values))
+
+(datafun scan-depends-on filespecs-load 
+;; If scanning 
+
+   (defun :^ (form sdo-state)
+      ()))
+
+
 
 ;;; We have to adapt this to the chunkified universe
 (datafun scan-depends-on end-header

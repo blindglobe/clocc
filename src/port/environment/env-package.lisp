@@ -106,46 +106,47 @@
   ;; Exports related to known Operating Systems.
 
   ;; UNIX (generic).
-  (:export #:Unix)
+  (:export #:unix)
 
   ;; SunOS and Solaris.
-  (:export #:Sun-OS #:Solaris)
+  (:export #:sun-os #:solaris)
 
   ;; HP-UX.
-  (:export #:HP-UX)
+  (:export #:hp-ux)
 
   ;; IRIX.
-  (:export #:Irix)
+  (:export #:irix)
 
-  ;; Linux.
-  (:export #:Linux)
+  ;; linux.
+  (:export #:linux)
 
   ;; MS-DOS and Windows.
-  (:export #:MS-DOS
-	   #:MS-Windows
-	   #:MS-Windows-32
-	   #:MS-Windows-95
-	   #:MS-Windows-98
-	   #:MS-Windows-ME
-	   #:MS-Windows-NT
-	   #:MS-Windows-NT-TSE
-	   #:MS-Windows-2000
-	   #:MS-Windows-XP
+  (:export #:ms-dos
+	   #:ms-windows
+	   #:ms-windows-32
+	   #:ms-windows-95
+	   #:ms-windows-98
+	   #:ms-windows-me
+	   #:ms-windows-nt
+	   #:ms-windows-nt-tse
+	   #:ms-windows-2000
+	   #:ms-windows-xp
 	   )
 
   ;; Mac.
-  (:export #:Mac-OS #:Mac-OS-X)
+  (:export #:mac-os #:mac-os-x)
 
   ;; Genera.
-  (:export #:Genera)
+  (:export #:genera)
 
   ;; Amiga.
-  (:export #:Amiga)
+  (:export #:amiga)
 
   ;;--------------------------------------------
   ;; Exports related to known Machine Architectures.
   (:export #:intel-x86-machine
 	   #:sparc-machine
+	   #:sparc-v9-machine
 	   #:ppc-machine
 	   #:mips-machine
 	   #:alpha-machine)

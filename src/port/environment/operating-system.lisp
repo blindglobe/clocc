@@ -23,72 +23,72 @@
 ;;; NOTE: the tag must match the class name. See FIND-OS-CLASS below
 ;;; for an explanation.
 
-(defclass Unix (operating-system)
+(defclass unix (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT Unix Operating System Class.")
   (:default-initargs :type "UNIX" :version "" :feature-tag :unix))
 
 
-(defclass Sun-OS (unix)
+(defclass sun-os (unix)
   ()
   (:documentation "The CL.ENVIRONMENT SunOS Operating System Class.")
   (:default-initargs :type "SunOS" :version "4.1.1" :feature-tag :sun-os))
 
 
-(defclass Solaris (unix)
+(defclass solaris (unix)
   ()
   (:documentation "The CL.ENVIRONMENT Solaris Operating System Class.")
   (:default-initargs :type "Solaris" :version "7.x" :feature-tag :solaris))
 
-(defclass HP-UX (unix)
+(defclass hp-ux (unix)
   ()
   (:documentation "The CL.ENVIRONMENT HP-UX Operating System Class.")
   (:default-initargs :type "HP-UX" :version "10.x" :feature-tag :hp-ux))
 
-(defclass Irix (unix)
+(defclass irix (unix)
   ()
   (:documentation "The CL.ENVIRONMENT Irix Operating System Class.")
   (:default-initargs :type "Irix" :version "" :feature-tag :irix))
 
-(defclass Linux (unix)
+(defclass linux (unix)
   ()
   (:documentation "The CL.ENVIRONMENT Linux Operating System Class.")
   (:default-initargs :type "Linux" :version "" :feature-tag :linux))
 
 
-(defclass Mac-OS (operating-system)
+(defclass mac-os (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT MacOS Operating System Class.")
   (:default-initargs :type "MacOS" :version "9.x" :feature-tag :mac-os))
 
-(defclass Mac-OS-X (mac-os unix)
+(defclass mac-os-x (mac-os unix)
   ()
   (:documentation "The CL.ENVIRONMENT MacOS X Operating System Class.")
   (:default-initargs :type "MacOS-X" :version "10.x" :feature-tag :mac-os-x))
 
 
-(defclass Genera (operating-system)
+(defclass genera (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT Genera Operating System Class.")
   (:default-initargs :type "Genera" :version "8.x" :feature-tag :genera))
 
-(defclass Amiga (operating-system)
+(defclass amiga (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT Amiga Operating System Class.")
   (:default-initargs :type "Amiga" :version "" :feature-tag :amiga))
 
-(defclass OS/2 (operating-system)
+(defclass os/2 (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT OS/2 Operating System Class.")
   (:default-initargs :type "OS/2" :version "" :feature-tag :os/2))
 
 
-(defclass MS-DOS (operating-system)
+(defclass ms-dos (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT MS-DOS Operating System Class.")
   (:default-initargs :type "MS-DOS" :version "" :feature-tag :ms-dos))
 
-(defclass MS-Windows (operating-system)	; Maybe (MS-DOS) would be better!
+(defclass ms-windows (operating-system)	; Maybe (MS-DOS) would be better!
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows Operating System Class.")
   (:default-initargs :type "Windows (generic)"
@@ -96,7 +96,7 @@
 		     :feature-tag :ms-windows))
 
 
-(defclass MS-Windows-32 (ms-windows)	; Maybe (MS-DOS) would be better!
+(defclass ms-windows-32 (ms-windows)	; Maybe (MS-DOS) would be better!
   ()
   (:documentation
    "The CL.ENVIRONMENT Generic MS Windows (32 bits) Operating System Class.")
@@ -105,50 +105,50 @@
 		     :feature-tag :ms-windows-32))
 
 
-(defclass MS-Windows-95 (ms-windows-32)
+(defclass ms-windows-95 (ms-windows-32)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows 95 Operating System Class.")
   (:default-initargs :type "Windows 95"
                      :version ""
 		     :feature-tag :ms-windows-95))
 
-(defclass MS-Windows-98 (MS-Windows-95)
+(defclass ms-windows-98 (ms-windows-95)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows 95 Operating System Class.")
   (:default-initargs :type "Windows 98"
                      :version ""
 		     :feature-tag :ms-windows-98))
 
-(defclass MS-Windows-NT (MS-Windows-32)
+(defclass ms-windows-nt (ms-windows-32)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows NT Operating System Class.")
   (:default-initargs :type "Windows NT"
                      :version "4.1"
 		     :feature-tag :ms-windows-nt))
 
-(defclass MS-Windows-NT-TSE (MS-Windows-NT)
+(defclass ms-windows-nt-tse (ms-windows-nt)
   ()
   (:documentation
    "The CL.ENVIRONMENT MS Windows NT Terminal Server Operating System Class.")
-  (:default-initargs :type "Windows NT"
+  (:default-initargs :type "Windows NT TSE"
                      :version "4.1"
 		     :feature-tag :ms-windows-nt-tse))
 
-(defclass MS-Windows-2000 (MS-Windows-NT MS-Windows-98)
+(defclass ms-windows-2000 (ms-windows-nt ms-windows-98)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows 2000 Operating System Class.")
   (:default-initargs :type "Windows 2000"
                      :version ""
 		     :feature-tag :ms-windows-2000))
 
-(defclass MS-Windows-ME (MS-Windows-NT MS-Windows-98)
+(defclass ms-windows-me (ms-windows-nt ms-windows-98)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows ME Operating System Class.")
   (:default-initargs :type "Windows ME"
                      :version ""
 		     :feature-tag :ms-windows-me))
 
-(defclass MS-Windows-XP (MS-Windows-2000)
+(defclass ms-windows-xp (ms-windows-2000)
   ()
   (:documentation "The CL.ENVIRONMENT MS Windows XP Operating System Class.")
   (:default-initargs :type "Windows XP"

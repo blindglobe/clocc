@@ -572,7 +572,7 @@
 (my-assert
  (progn
    (setf (logical-pathname-translations "clocc")
-	 '(("**;*" "c:/usr/local/src/clocc/**/*")))
+	 '(("**;*" "/usr/local/src/clocc/**/*")))
    nil)
  nil)
 

@@ -90,7 +90,7 @@ char delim[]=" \t\n\r";
 void reporterror(const char *where)
 {
   int old_errno;
-
+  
   old_errno=errno;
   syslog(LOG_ERR,"error: %s: %s",
          where,
@@ -120,7 +120,7 @@ void readaline (void)
     reporterror("eof on read");
 
   if (max_length != 4096)
-      reporterror("Line read was too long, possible attack?");
+    reporterror("Line read was too long, possible attack?");
 
   return;
 }
@@ -193,6 +193,18 @@ int probe_directory(char *pathname)
         reporterror("Could not close directory stream!?");
       return 1;
     }
+}
+
+void  nuke_package(char *package,char *compiler)
+{
+  char command[4097];
+
+
+  snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
+           compiler,package);
+  command[4096]=(char)0;
+  ftw(command, &delete_stuff, 150);
+  ftw(command, &delete_directories, 150);
 }
 
 int main(int argc, char *argv[])
@@ -277,7 +289,7 @@ int main(int argc, char *argv[])
         {
           printf("220 BYE\n");
           fflush(stdout);
-
+          
           shutdown(inputfd,SHUT_WR);
           close(inputfd);
           close(outputfd);
@@ -319,7 +331,6 @@ int main(int argc, char *argv[])
             {
               char command[4097];
 
-
               snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
                        compiler,package);
               command[4096]=(char)0;
@@ -333,8 +344,7 @@ int main(int argc, char *argv[])
                   printf("250 removing package %s for compiler %s\n", package, compiler);
                   syslog(LOG_NOTICE,"Removing package %s for compiler %s",package,compiler);
 
-                  ftw(command, &delete_stuff, 150);
-                  ftw(command, &delete_directories, 150);
+                  nuke_package(package,compiler);
                 }
 
               printf("252 DONE\n");
@@ -446,36 +456,37 @@ int main(int argc, char *argv[])
 
                       if (setsid() == -1)
                         reporterror("could not create a session");
+                      else
+                        {
+                          char command[4097];
+                          char script[4097];
+                          char *argv[4];
+                          char *env[5];
 
-                      {
-                        char command[4097];
-                        char script[4097];
-                        char *argv[4];
-                        char *env[5];
+                          snprintf(command,4096,
+                                   "/usr/lib/common-lisp/bin/%s.sh",
+                                   compiler);
+                          snprintf(script,4096,
+                                   "%s.sh",
+                                   compiler);
+                          argv[0] = script;
+                          argv[1] = "rebuild";
+                          argv[2] = package;
+                          argv[3] = (char *) NULL;
 
-                        snprintf(command,4096,
-                               "/usr/lib/common-lisp/bin/%s.sh",
-                               compiler);
-                        snprintf(script,4096,
-                                 "%s.sh",
-                                 compiler);
-                        argv[0] = script;
-                        argv[1] = "rebuild";
-                        argv[2] = package;
-                        argv[3] = (char *) NULL;
+                          env[0] = "PATH=/bin:/usr/bin:/usr/local/bin:";
+                          env[1] = "HOME=/tmp";
+                          env[2] = "USER=nobody";
+                          env[3] = "TERM=vt100";
+                          env[4] = (char *) NULL;
 
-                        env[0] = "PATH=/bin:/usr/bin:/usr/local/bin:";
-                        env[1] = "HOME=/tmp";
-                        env[2] = "USER=nobody";
-                        env[3] = "TERM=vt100";
-                        env[4] = (char *) NULL;
-
-                        if (execve(command,argv,env) == -1)
-                          reporterror("execve failed");
-                        else
-                          reporterror("cannot return from exec!");
-                      }
-                      }
+                          if (execve(command,argv,env) == -1)
+                            reporterror("execve failed");
+                          else
+                            reporterror("cannot return from exec!");
+                          exit(255);
+                        }
+                    }
                   else
                     {
                       int status;
@@ -515,17 +526,56 @@ int main(int argc, char *argv[])
 
                       if ( WEXITSTATUS(status) != 0)
                         {
-                          char command[4097];
+                          FILE *mail_pipe;
 
-                          snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
-                                   compiler,package);
-                          command[4096]=(char)0;
-                          ftw(command, &delete_stuff, 150);
-                          ftw(command, &delete_directories, 150);
+                          nuke_package(package,compiler);
 
                           printf("501 Compilation failed with code %i\n",
                                  WEXITSTATUS(status));
+			  syslog(LOG_NOTICE,"Recompilation of package %s for compiler %s failed",package,compiler);
+                          /* fork yourself and drop priv. to send email */
+                          if ( (fork())  == 0)
+                            {
+                              struct passwd *login_data;
+
+                              login_data = getpwnam("nobody");
+                              
+                              if (login_data == NULL)
+                                reporterror("Could not know who is nobody");
+                              
+                              if (setgid(login_data->pw_gid) != 0)
+                                reporterror("could not become nogroup");
+                              
+                              if (setgroups(0,NULL) != 0)
+                                reporterror("Could not give up groups");
+                              
+                              if (setuid(login_data->pw_uid) != 0)
+                                reporterror("could not become nobody");
+
+                              if (setsid() == -1)
+                                reporterror("could not create a session");
+
+                               mail_pipe = popen("/usr/bin/mail -s \"clc build failure\" root -e ","w");
+
+                              if (mail_pipe == NULL)
+                                reporterror("Could not open a pipe to /usr/bin/mail");
+                              else
+                                {
+                                  fprintf(mail_pipe,"Hello\nThis is the clc-build-daemon reporting a build failure.\n\n");
+                                  fprintf(mail_pipe,"While recompiling package %s for compiler %s I got the error code %i\n",
+                                          package,compiler,WEXITSTATUS(status));
+                                  fprintf(mail_pipe,"If you want to retry the compilation and possibly report this as a bug\n");
+                                  fprintf(mail_pipe,"then please read /usr/share/doc/common-lisp-controller/REPORTING-BUGS\n");
+                                  fprintf(mail_pipe,"\nThanks for your attention\n");
+                                  fflush(mail_pipe);
+                                  pclose(mail_pipe);
+                                }
+                              exit(0);
+                            }
+                          else
+                            printf("251 DONE\n");
                         }
+                      else
                       if ( WIFEXITED(status) != 0)
                         {
                           char command[4097];

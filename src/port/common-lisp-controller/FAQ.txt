@@ -20,8 +20,10 @@ script. Like:
 Q2: This sucks: register-common-lisp-source foo worked, but now
 (require :foo) doesn't!
 
-A2: Maybe the build failed. Make your lisp stop on errors. For cmucl
-comment the "-batch -quiet" parameters out in
-/usr/lib/common-lisp/bin/cmucl-*.sh. Then you'll be droped in the
-debugger.
+A2: Maybe the build failed. Please see REPORTING-ERRORS
+
+Q3: What systems are available?
+
+A3: Have a look in /usr/share/common-lisp/systems/
+
 

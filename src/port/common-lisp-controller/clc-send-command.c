@@ -59,7 +59,7 @@ void reportsystemerror(const char *where)
 int showdaemonoutput = 0;
 
 /* reads line from stream */
-void readaline (FILE *stream)
+void readaline (FILE *stream,int closing_connection)
 {
   ssize_t length;
   size_t max_length;
@@ -72,17 +72,23 @@ void readaline (FILE *stream)
         reporterror("Could not allocate space for the line");
     }
 
+  line[0]=(char) 0;
   length = getline( &line, &max_length, stream );
 
-  if (length == -1)
-    reportsystemerror("eof on read");
 
-  if (max_length != 4096)
-      reporterror("Line read was too long, possible attack?");
-
-  if (showdaemonoutput)
-    printf("\ndaemon: %s",line);
-  
+  if ((length == -1) && ((line == NULL) ||
+                         (line[0] == (char) 0)))
+    {
+      reportsystemerror("eof on read");
+    }
+  else
+    {
+      if (max_length != 4096)
+        reporterror("Line read was too long, possible attack?");
+      
+      if (showdaemonoutput)
+        printf("\ndaemon: %s",line);
+    }
   return;
 }
 
@@ -169,6 +175,7 @@ int main(int argc, char *argv[])
   int removep;
   int succesp;
   int opt;
+  int closing_connection=0;
 
   /* Default values. */
   arguments.verbose = 1;
@@ -220,13 +227,13 @@ int main(int argc, char *argv[])
         reporterror("internal error icecream");
     }
 
-  for(succesp=0;;)
+  for(succesp=1;;)
     {
       char code[4];
-      
+
       /* get input */
       fflush(stream);
-      readaline(stream);
+      readaline(stream,closing_connection);
 
       strncpy(code,line,3);
       code[3]=(char) 0;
@@ -272,35 +279,49 @@ int main(int argc, char *argv[])
           (strcmp("252",code) == 0)) {
         /* ok finished */
         fprintf(stream,"QUIT\n");
+        closing_connection=1;
         if (arguments.debug)
           {
             printf("Sending: QUIT\n");
           }
-        succesp = 1;
         continue; 
       }
       if (strcmp("540",code) == 0) {
         printf("\nCannot remove: not yet compiled library for implementation\n");
         succesp = 0;
         fprintf(stream,"QUIT\n");
+        closing_connection=1;
+        if (arguments.debug)
+          {
+            printf("Sending: QUIT\n");
+          }
         continue; 
       }
       if (strcmp("550",code) == 0) {
         printf("\nCannot compile: library for implementation already compiled\n");
         succesp = 0;
         fprintf(stream,"QUIT\n");
+        closing_connection=1;
+        if (arguments.debug)
+          {
+            printf("Sending: QUIT\n");
+          }
         continue; 
       }
       if (strcmp("501",code) == 0) {
         printf("\nCannot compile: compilation error\n");
         succesp = 0;
-        fprintf(stream,"QUIT\n");
         continue; 
       }
       if (strcmp("500",code) == 0) {
         printf("\nParameter problem?\n");
         succesp = 0;
         fprintf(stream,"QUIT\n");
+        closing_connection=1;
+        if (arguments.debug)
+          {
+            printf("Sending: QUIT\n");
+          }
         continue; 
       }
       if ((strcmp("300",code) == 0) ||

@@ -300,6 +300,8 @@
 				     (intern (concatenate 'string "ARRAY-" (string type)))))
 				((subtypep type 'string)
 				 'string)
+				((subtypep type 'integer4)
+				 'integer4)
 				(t
 				 type))))
 		    arglist)
@@ -1563,14 +1565,14 @@
 ;; just want to read data into the variables.  Implied do loops are
 ;; not supported.
 (defun parse-read (x)
-  (append (list "***WARNING:  READ statement may not be translated correctly!")
+  (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
 	  (mapcar #'(lambda (var)
 		      `(setf ,(if (rest var)
 				  var
 				  (first var))
 			(read)))
 		  (remove nil (list-split '|,| (cddr x))))
-	  (list "***WARNING: Preceding READ statements may not be correct!")))
+	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
   
      
 ;; Handle things like FMT = number
@@ -2065,8 +2067,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.65 2000/08/29 14:41:41 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.66 2000/08/29 15:55:04 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.66  2000/08/29 15:55:04  rtoy
+;;; o In GET-ARG-DECL, return type INTEGER4 if the arg is a subtype of
+;;;   INTEGER4. (So fixnum args are treated as INTEGER4 args for
+;;;   declaration purposes instead of a union of fixnum and integer4
+;;;   types.)
+;;; o In PARSE-READ, don't use literal strings; make them FORTRAN_COMMENT's.
+;;;
 ;;; Revision 1.65  2000/08/29 14:41:41  rtoy
 ;;; o Remove lots of unused code
 ;;; o Fix a typo in the Fortra D format parser: the equivalent Lisp format

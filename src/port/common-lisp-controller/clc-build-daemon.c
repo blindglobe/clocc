@@ -110,20 +110,15 @@ void readaline (void)
   ssize_t length;
   size_t max_length;
 
-  current_line++;
-  if (current_line > MAX_LINES)
-    current_line = 0;
-
-  
   max_length = 4096;
-  if (lines[current_line] == (char *) NULL)
+  if (line == (char *) NULL)
     {
-      lines[current_line] = (char *) malloc( sizeof(char)*4097);
-      if (lines[current_line] == (char *) NULL)
+      line = (char *) malloc( sizeof(char)*4097);
+      if (line == (char *) NULL)
         reporterror("Could not allocate space for the line");
     }
 
-  length = getline( &(lines[current_line]), &max_length, stdin );
+  length = getline( &line, &max_length, stdin );
 
   if (length == -1)
     reporterror("eof on read");
@@ -131,7 +126,6 @@ void readaline (void)
   if (max_length != 4096)
     reporterror("Line read was too long, possible attack?");
 
-  line=lines[current_line];
   return;
 }
 
@@ -245,6 +239,10 @@ int main(int argc, char *argv[])
     if (fcntl(fd, F_SETLKW, &flock) == -1)
       reporterror("Cannot lock /etc/lisp-config.lisp!");
   }
+
+
+  for(inputfd=0;inputfd <= MAX_LINES;inputfd++)
+    lines[inputfd]=NULL;
 
   /* timeout after 30 seconds */
   signal(SIGALRM, timeout);
@@ -524,13 +522,8 @@ int main(int argc, char *argv[])
 
                       if (showoutput == 1)
                         {
-                          char *line;
-                          size_t length;
-                          ssize_t read;
                           FILE *child;
 
-                          length = 0;
-                          line = (char *) NULL;
                           close(descriptors[1]);
 
                           child = fdopen(descriptors[0], "r");
@@ -539,16 +532,29 @@ int main(int argc, char *argv[])
 
                           for(;;)
                             {
-                              read = getline(&line, &length, child);
+                              size_t length;
+                              ssize_t read;
+                              
+                              length = 0;
+                              
+                              current_line++;
+                              if (current_line > MAX_LINES)
+                                current_line = 0;
+
+                              read = getline(&(lines[current_line]), &length, child);
 
                               if (read <= 0)
                                 {
                                   if (feof(child))
-                                    break;
+                                    {
+                                      free(lines[current_line]);
+                                      lines[current_line] = NULL;
+                                      break;
+                                    }
                                   else
                                     reporterror("while reading from the child pipe");
                                 }
-                              printf("310 %s",line);
+                              printf("310 %s",lines[current_line]);
                             }
                         }
 
@@ -619,9 +625,9 @@ Thanks for your attention\n",
 				      char *line;
 
 				      line=lines[(current_line+1+line_offset) % MAX_LINES];
-
+                                      
 				      if (line != (char *) NULL)
-                                        fprintf(mail_pipe,"%s\n", line);
+                                        fprintf(mail_pipe,"%s", line);
                                     }
                                   fflush(mail_pipe);
                                   pclose(mail_pipe);

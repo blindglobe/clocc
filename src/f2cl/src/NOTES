@@ -1,0 +1,431 @@
+-*- Mode: text -*-
+
+Changes:
+
+Aug 5, 1999
+-------------
+
+* f2cl1:  fixed some bugs where we coerced things when we didn't have
+  to.
+
+* f2cl5:  didn't recognize the type of the Fortan functions conjg and
+  cmplx.
+
+* macros:  modified the int and aint macros to handle a full integer4
+  type for CMUCL.
+
+July 9, 1999
+-------------
+* Fortran integers (integer*4) aren't necessarily fixnum's anymore.
+  They can also be (signed-byte 32).  Do this only if your compiler
+  has good support for (signed-byte 32).  If not, use fixnum instead.
+  CMUCL supports (signed-byte 32) pretty well.
+
+* The parser recognizes integer*4, integer*2, integer*1, real*8,
+  complex*8, and complex*16 now and uses the appropriate Lisp types
+  for them.  This also fixes a bug wherein complex wasn't recognized
+  before.  (Note:  Unless your Lisp supports (complex single-float)
+  and/or (complex double-float), you'll probably cons to death running 
+  the translation.)
+
+July 8, 1999
+-------------
+* Fixed an annoying bug in calling subroutines.  If an element of an
+  array was passed to a subroutine and the subroutine modified the
+  value, this modified value wasn't getting back to the array.
+  Something like:
+
+	real x(10)
+        ...
+        call sub(x(5))
+	...
+
+	subroutine sub(z)
+	...
+	z = 37
+	return
+	end
+
+  In this case, x(5) wasn't set to 37 as expected.  These cases are
+  handled now.
+
+  Note that we don't handle the case where sub really wanted z as
+  array.  However, a run time error should occur so you can do the
+  right thing: This usually means changing the type of z from
+  simple-array to just array, and changing (fref x (5)) to be
+  something like (make-array ... :displaced-to x ...).
+
+* Fixed a bug in how relational operators dealt with strings.  Strings
+  should be handled better, but this still needs work.
+
+* We try to beautify some code by converting things like (+ (+ (+ x y) 
+  z) w) to (+ x y z w).
+
+* Common blocks now handle arrays dimensioned via PARAMETER
+  statements.  
+
+* Fixed a small problem where relational ops weren't recognized as
+  such.
+
+July 7, 1999
+-------------
+* Corrected some bugs in the common block structure stuff.  Also made
+  it handle PARAMETER values used to dimension common block arrays.
+
+* NOTE: PARAMETER values can refer to other PARAMETER values in
+  Fortran.  I don't think order is important, but order is important
+  in the translated Lisp.  Currently, you might need to tweak the
+  order of the PARAMETER variables so things are ordered correctly.
+
+* Corrected some bugs in string processing.  Not fully tested yet.
+
+July 6, 1999
+-------------
+* Major change:  Fortran PARAMETER variables are no longer made into
+  keyword arguments to the function.  This change is needed because of 
+  the way SAVE'd variables are now implemented.  If a SAVE'd array was 
+  dimensioned using a PARAMETER, the value of the PARAMETER must be
+  made available BEFORE the function call.
+
+* When assigning values to character variables, we can't just use
+  setf.  We need to copy the string from the RHS to the variable.
+
+  Right now we do a "(setf var (copy-seq rhs))".  Should this be
+  changed to something like "(replace var rhs)"?  
+
+July 5, 1999
+-------------
+* Support for Fortran strings has been added.  Hurray!  Probably Still
+  needs some work, but at least string references and concatenation
+  appear to work.
+
+* Fixed a bug wherein undeclared variables were never found, and,
+  therefore, the lisp output never initialized or declared them.
+
+* f2cl tries to make the output look a little bit more natural:
+
+  o  Calls to f2cl/ are replaced with / or truncate when possible.
+  o  Some expressions are replaced with equivalent ones which look
+     more like the original Fortran, and reduces some unnecessary
+     operations. 
+
+June 30, 1999
+-------------
+* Renamed many special variables to include *'s around their names (so 
+  I can more easily tell they're special).
+
+* f2cl now computes an output file based on the input file.  The
+  default extension is "lisp", but is user selectable.
+
+* Comment handling is better now (at least the result compiles), but
+  comments containing quotes are still mangled somewhat.
+
+* Assignment statements can now be automatically coerced.  That is "X
+  = 5" will get translated to "(setf x (coerce 5 'single-float))",
+  which is what Fortran 77 wants.  Before, this was just (setf x 5),
+  which is wrong since X is a single-float.  This is controlled by
+  *coerce-assignments* and :coerce-assigns.
+
+June 29, 1999
+-------------
+* Common blocks are now placed in structures instead of making them
+  all special variables.  They are now appropriately initialized too.
+  (Changes in f2cl1.l and f2cl5.l)
+
+* Put in a few more checks for t and pi that were missed (common block
+  variables and function parameter lists).
+
+* The array sizes are now placed in the declarations.  For formal
+  array parameters, *relaxed-array-decls* controls whether the
+  dimensions are used or not.  If *relaxed-array-decls* is T, the
+  dimensions are not used.
+
+* Added support for the float intrinsic, which was missed.
+
+* The f2cl/ macro should have tested for 'integer, not 'fixnum.
+
+* Logical variables are declared to be of type (member t nil) instead
+  of just T.  Gives some error checking.
+
+July 25, 1997
+-------------
+
+* Needed to move a few more routines from f2cl5.l to macros.l so that
+  apps only need to load macros.l instead of all of f2cl.
+
+* NOTE:  the fformat really should be a function instead of a macro
+  because in general we need to interpret the format string at run
+  time instead of compile time.  (Example, write (*, fmt=svar).) 
+  Haven't done it yet.
+
+July 22, 1997
+-------------
+
+* Ok, let's get this straight:  
+	o functions in the arg list should be a "type (function ..."
+	  declaration.
+	o statement functions which turn into labels forms should be a
+	  "ftype (function ..." declaration. 
+	o other (declared) external functions should also get a "ftype 
+	  (function ..." declaration.
+
+July 21, 1997
+-------------
+
+* The declarations for functions were wrong.  It should be "type", not
+  "ftype"!  Some general cleanup of the function declaration code in
+  f2cl5.l was done too.
+
+* Moved the fformat macro and helpers from f2cl5.l to macros.l because 
+  we need them there when we're using f2cl as opposed to translating
+  with f2cl.
+
+July 20, 1997
+-------------
+
+* Computed gotos were broken because computed gotos should be checked
+  for assigned gotos (f2cl1.l).  The macro to handle the computed goto 
+  forms was also severely broken.
+
+* When labels are pruned, the pruner missed labels used in computed
+  gotos. 
+
+* Fixed type in idfix and log10 macros.
+
+* f2cl/ should use truncate instead of floor because Fortran integer
+  division is supposed to truncate to zero.
+
+
+July 19, 1997
+-------------
+
+* Changes for handling data statements:
+	* Fixed bug in data statements: Initializing an array element
+	  whose lower bound was not 1, was broken.
+
+	* Added support for initializing an element of a
+	  multidimensional array.
+
+	* Added support for implied do loops in data statements.
+	  (Hurray!)
+
+	* Warning: results may be broken when :auto-save (or
+	  *auto-save-data*) is nil.  Things look right if :auto-save
+	  is non-nil.
+
+* Fixed bug in handling elseif statements:  they can be written as
+  "ELSE IF" or "ELSEIF".
+
+* Fixed a long-standing bug where junk variables like 0.1d%5 were
+  created.  This was caused by a bug in check_new_vbles which didn't
+  recognize this the number 0.1d-5 that f2cl had hacked to 0.1d%5.
+
+* Minor cosmetic change:  Don't wrap the defun with a let when there
+  are no SAVE'd variables or data statements.
+
+July 1997
+---------
+
+* amin1 and dmin1 were not listed as intrinsic functions
+
+* log10 was not implemented
+
+* Common variables (which are treated as Lisp special variables) were
+  proclaimed in the wrong place which produced bad Lisp code.  The
+  declarations for these variables were also broken.  Fixed
+  in insert-declarations in f2cl5.l, which now returns 3 pieces of
+  information:  the proclamation of the special variables, the types
+  of the variables, and the function itself.  Required change in
+  f2cl1.l too.
+
+* Sometimes save_vbles contains duplicates, so remove them.  Fixes a
+  bug in failing to initialize saved variables with the correct
+  values.  Fixed in f2cl5.l.
+
+* Moved initialization for data statements from within the function to 
+  the containing let when *auto-save-data* is T.  Thus, we only init
+  the variables once, just like Fortran usually does.
+
+* Oops.  In the previous change, we botched the case of initializing
+  one array element at a time in a data statement.  This required a
+  fix in f2cl5.l and f2cl1.l.
+
+Previous changes:
+
+* Fixed bug in initializing variables with data statements: negative
+  numbers were hosed. 
+
+* Extended parsing of data statements so things like this work: 
+	
+	data var1, var2, var3 / val1, val2, val3/
+
+
+* fixed bug in prog and labels:  the prog should go inside the labels
+  form, if any. 
+
+* merge declarations into one statement, with variables of the same
+  type merged into one type declaration. 
+
+* don't initialize statement functions and declared (external)
+  functions.  However, should do something about declaring them as
+  functions. 
+
+* functions declared external should not be called with funcall unless
+  they are also parameters.  External functions are usually just
+  declarations. 
+
+* Fixed bug in E format descriptor being interpreted as a string.
+
+* Fixed bug in E, F, and G descriptor conversion:  The format for
+  filling the output with *'s was wrong.  Still a bug: Lisp fills with
+  *'s when Fortran might not?  
+
+* Added special variable "subprog-arglist" to hold the arglist of the
+  subprogram.  Needed to distinguish declared external functions and
+  functions passed in as a parameter. 
+
+* Fixed bug in processing variables named T and PI.  They weren't
+  converted to T_ and PI_ in all of the right places so that T_ and
+  PI_ were sometimes declared and initialized twice.  
+
+* Make array init a little better.  If dimensions are known and are
+  numbers, don't cons up a list at run time---put them in correctly. 
+
+* Added special variable DATA-INIT to hold variables that are
+  initialized with data statements. 
+
+* If variables are initialized with a data statement, put the initial
+  value in the initialization part instead of initializing them later.
+  NOTE: there may be some problems with initializing an array in a
+  data statement that doesn't actually fill up the array with enough
+  values. 
+
+* Fixed a bug.  Now handles this correctly:
+
+		data x(2) / 3.3 /
+
+* When initializing multi-dimensional arrays in DATA statements, the
+  values are rearranged in the correct order. This is needed because
+  Fortran is column-major order, but Lisp is row-major order.  
+
+* Fixed up more places where check-t-and-pi needed to be called:  data
+  statements. 
+
+* Handle logical .FALSE. and .TRUE. better.  We replace them with
+  %false% and %true% in the code, and have constants %false% and
+  %true% which have the right value.  
+
+* aint is an intrinsic function which should return a float of the
+  same type as the argument.  
+
+* Variables that are explicitly saved are now initialized and declared
+  correctly.  
+
+* The Fortran 77 standard says int, ifix, idint, etc. are all supposed
+  to truncate.  
+
+* amax0 returns a real.
+
+* real, sngl, dble are supposed to return the real parts if the
+  argument is complex.  
+
+* If *auto-save-data* is non-nil, all variables initialized with DATA
+  statements are automatically saved.  This is usually a win if those
+  variables are really constants.  Then we don't have to initialize
+  them at runtime on every entry.
+
+* Can now properly handle arrays where the lower bound is not one.
+  (f2cl understood such declarations, but didn't know how to access
+  correctly such arrays.
+
+* Found the last (I hope) place where a variable T was not converted
+  to T_.
+
+* aint seems to be both the generic and specific name for rounding in
+  Fortran.  We need to make aint return a number of the same type as
+  the argument.  Same for anint.
+
+* For sign and dsign, replace with float-sign.
+
+* Fixed bug in alog10 and dlog10:  make sure the the second argument
+  to log has the correct type, since the default is to convert 10 to a
+  single precision 10, which loses for dlog10.
+
+* Can now properly declare the types of all functions used in a
+  subprogram.  Note that the first use of the function determines the
+  types of the arguments to the function.  Of course, for proper
+  Fortran, the types should be the same for all calls, unless you're
+  playing games like some old code does.  We should be smarter about
+  this by gathering up all calls, saving the type of the arguments in
+  each call, and using the union or superset of them.
+
+* Added macros flog and fsqrt that tells lisp that the argument is
+  non-negative.  For smart compilers like CMUCL, there is no overhead
+  for doing this, and it helps the code alot since the compiler can
+  call the C version instead of the generic versions.
+
+* Modified alog, dlog, dsqrt, etc. to declare the argument type as
+  non-negative.  This should be OK, since Fortran says the arguments
+  MUST be non-negative.
+
+* Changed default to auto-save.  This is usually a win in speed for
+  lisp because the variables are initialized at run-time for every
+  call. 
+
+* Changed calls to int and friends to wrap the argument with something
+  like
+
+	(the (float #.most-negative-fixnum #.most-positive-fixnum) x)?
+
+  This helps CMUCL call the built-in truncate operator which is much
+  faster than the generic one.  This doesn't help for int because
+  future operations on the integer will probably force use of generic
+  integer arithmetic because the compiler can't prove the result is a
+  fixnum.  However, it's a win if the result is a float, like aint.
+
+* Make fformat smarter.  The macro now expands into just the necessary
+  set of format statements to print out the data.  It used to expand
+  into code that runs over the list of formats.  This can be done at
+  compile-time.
+
+* Added preliminary support for print statements.
+
+* We keep track of the parameters in function calls.  We later use
+  them to figure out the type of the argument.  However, since the
+  argument can be an expression in general, we currently just say the
+  parameter has type T in most cases.  However, this leaves open the
+  possibility of one day parsing the expression to determine it's type
+  and selecting the correct type for the function call.  We could even
+  use this to determine if we need to coerce an expression to the
+  correct type before assigning it to a variable.
+
+* Fixed bug in declaring array types:  Sometimes the declaration of
+  the array incorrectly included the dimensions of the array.  This
+  happened when the array was declared by type and by a DIMENSION
+  statement.  This is handled correctly now.
+
+To Do:
+
+Bugs:
+
+* Hollerith formats are broken.  The parser never even sees them!
+  Hmm. just did some more testing.  It seems to work, as intended, but
+  Holleriths are not parsed correctly.
+
+* Handling of comments is partially broken, especially when the
+  comment contains quotes.
+
+* PARAMETER variables may not be arranged correctly.  This may require 
+  some hand-tweaking of the output lisp file.
+
+* The parser incorrectly parses things like
+
+      v = x .le. y*z
+
+  This gets parsed as (* (<= X Y) Z) and eventually shows up as an error.
+
+  I think the problem is that the parser doesn't have the correct
+  precedence when parsing this.  I think id-term needs to be changed.
+
+  A simple work-around is to put parentheses around the lhs and rhs of 
+  the relational operator:  v = x .le. (y*z).

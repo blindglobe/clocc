@@ -1,0 +1,21 @@
+;;; -*- Mode: lisp -*-
+
+;; A sample defsystem.
+(defsystem f2cl
+    :source-extension "l"
+    :depends-on nil
+    :components
+    ((:module src
+	      :source-pathname "src;"
+	      :binary-pathname "src;"
+	      :components
+	      (
+	       ;;(:file "f2cl0")
+	       (:file "f2cl1")
+	       (:file "f2cl2")
+	       (:file "f2cl3")
+	       (:file "f2cl4")
+	       (:file "f2cl5")
+	       (:file "f2cl6")
+	       (:file "f2cl7")
+	       (:file "macros")))))

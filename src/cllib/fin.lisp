@@ -1,4 +1,4 @@
-;;; File: <fin.lisp - 1999-10-06 Wed 16:13:36 EDT sds@ksp.com>
+;;; File: <fin.lisp - 1999-10-29 Fri 17:34:52 EDT sds@ksp.com>
 ;;;
 ;;; Financial functions
 ;;;
@@ -9,12 +9,16 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: fin.lisp,v 1.1 1999/10/06 20:13:54 sds Exp $
+;;; $Id: fin.lisp,v 1.2 1999/10/29 21:35:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 ;;; $Log: fin.lisp,v $
-;;; Revision 1.1  1999/10/06 20:13:54  sds
-;;; Initial revision
+;;; Revision 1.2  1999/10/29 21:35:56  sds
+;;; (solow-next-year): renamed from `next-year'.
+;;; (mgg-prepay): better output formatting.
 ;;;
+;; Revision 1.1  1999/10/06  20:13:54  sds
+;; Initial revision
+;;
 
 (in-package :cl-user)
 
@@ -75,9 +79,9 @@ APR of 7% should be given as 0.07, not as 7."
   "Print the information about prepaying the loan."
   (let* ((mm (mgg-monthly principal term apr monthly)) (tot (+ prepay mm))
          (trm (/ (mgg-term (/ tot principal) apr monthly) 12)))
-    (format t "Principal: ~2:/comma/  APR: ~f  --> ~2:/comma/
-Prepay: ~2:/comma/  --> ~2:/comma/  -->  ~4f years~%"
-            principal apr mm prepay tot trm)))
+    (format t "Principal: ~2:/comma/  APR: ~f  --> ~2,9:/comma/ --> ~5,2f years
+Prepay: ~2:/comma/~35t  --> ~2,9:/comma/ --> ~5,2f years~%"
+            principal apr mm term prepay tot trm)))
 
 (defun mgg-interest (principal term apr &optional monthly)
   "Calculate the total interest that will ever be paid on the mortgage."
@@ -119,7 +123,7 @@ See `black-scholes-call' for details."
 ;;; Solow Economic Growth Model
 ;;;
 
-(defun next-year (kap k-y sav dgn alpha)
+(defun solow-next-year (kap k-y sav dgn alpha)
   "Return the next year's data from this year.
 KAP - capital/productivity unit; K-Y - capital/total income;
 SAV - saving rate; DGN = delta + g + n - depreciation of the
@@ -147,7 +151,7 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
     (format t "    ~8,3f~8,3f~8,3f~8,3f~%" kk0 yy0 k-y-0 cc0)
     (do ((del 1.0) yy cc (nn 1 (1+ nn)) (kk kk0) (ky k-y-0))
 	((or (< del *num-tolerance*) (> nn 100)))
-      (multiple-value-setq (kk ky) (next-year kk ky alpha dng alpha))
+      (multiple-value-setq (kk ky) (solow-next-year kk ky alpha dng alpha))
       (setq yy (/ kk ky) cc (* (- 1 alpha) yy))
       (format t "~4:d~8,3f~8,3f~8,3f~8,3f" nn kk yy ky cc)
       (when (and cc0 (> cc cc0)) (setq cc0 nil) (format t " <---!!!!"))

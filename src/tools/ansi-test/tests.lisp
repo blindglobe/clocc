@@ -209,8 +209,6 @@ the returnvalues or the type of the condition used."
 	  "strings"
 	  #-akcl "symbol10"
 	  "symbols"
-	  #+xcl "tprint"
-	  #+xcl "tread"
 	  "type"
 	  #+(or sbcl cmu)
 	  "unix-tests"

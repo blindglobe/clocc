@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.6 2000/05/22 17:20:56 sds Exp $
+;;; $Id: animals.lisp,v 2.7 2000/05/22 19:28:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,6 +19,7 @@
   (require :closio (translate-logical-pathname "cllib:closio"))
   ;; `symbol-concat'
   (require :symb (translate-logical-pathname "cllib:symb")))
+
 (in-package :cllib)
 
 (export '(play-animals play-game))

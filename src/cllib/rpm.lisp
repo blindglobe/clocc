@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.6 2000/05/12 18:36:16 sds Exp $
+;;; $Id: rpm.lisp,v 2.7 2000/05/22 19:28:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,6 +13,7 @@
   (require :url (translate-logical-pathname "cllib:url"))
   ;; `with-open-pipe', `pipe-input'
   (require :shell (translate-logical-pathname "port:shell")))
+
 (in-package :cllib)
 
 (export '(*rpm-locations* rpm show-rpms rpm-to-be-installed rpm-get-list

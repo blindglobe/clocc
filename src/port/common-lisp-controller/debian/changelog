@@ -1,6 +1,7 @@
 common-lisp-controller (3.42) unstable; urgency=low
 
-  * Add SCL reader conditional for /etc/lisp-config.lisp
+  * Add SCL reader conditional to /etc/lisp-config.lisp
+  * clc-autobuild-only, clc-autobuild-library: Add SCL to known implementations
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 18 Oct 2002 00:10:47 -0600
 

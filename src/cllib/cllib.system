@@ -1,8 +1,8 @@
 ;;; -*- Lisp -*-
 ;;;
-;;; CLLIB - a Library of useful utilities
+;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.8 2000/04/03 21:15:01 sds Exp $
+;;; $Id: cllib.system,v 1.9 2000/04/10 21:01:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 
 (mk:defsystem cllib
@@ -11,7 +11,7 @@
     :source-extension "lisp"
     :components
     ((:file "animals" :depends-on
-            ("base" "string" "miscprint" "fileio" "symb"))
+            ("base" "string" "miscprint" "fileio" "closio" "symb"))
      (:file "autoload" :depends-on ("base" "fileio"))
      (:file "base")
      (:file "card" :depends-on

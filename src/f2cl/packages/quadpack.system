@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.3 2000/07/21 22:12:35 rtoy Exp $
+;;; $Id: quadpack.system,v 1.4 2000/08/07 17:02:29 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.4  2000/08/07 17:02:29  rtoy
+;;; Comment out unused functions, make it more palatable to Clisp logical
+;;; pathnames, add some dependencies.
+;;;
 ;;; Revision 1.3  2000/07/21 22:12:35  rtoy
 ;;; :ARRAY-SLICING should default to NIL.
 ;;;
@@ -18,33 +22,39 @@
 
 ;;; Change this as appropriate.
 
-(push '("**;fortran;*.*.*" "home:apps/clocc/**/Fortran/*.*")
+(push '("**;fortran;*.*.*" "/home/unix/toy/apps/clocc/**/Fortran/*.*")
       (logical-pathname-translations "clocc"))
 
 
 ;; Defsystem for d1mach and i1mach
 (mk:defsystem mach-par
-    :source-pathname (logical-pathname "clocc:src;f2cl;packages;")
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;")
+    :source-extension "lisp"
     :components
     ((:file "d1mach")
      (:file "i1mach")))
 
 
+#||
 ;; Convert a Fortran file to Lisp and compile the Lisp file.
 (defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
-  (compile-file (f2cl filename :array-slicing array-slicing
+  (compile-file (f2cl:f2cl filename :array-slicing array-slicing
 		      :array-type array-type)
-		:output-file output-file :error-file error-file))
+		:output-file output-file))
 
 ;; Used only if your defsystem doesn't support :compiler-options 
 (defun f2cl-compile-no-slice (filename &key output-file error-file)
-  (compile-file (f2cl filename :array-slicing nil :array-type 'array)
+  (compile-file (f2cl:f2cl filename :array-slicing nil :array-type 'array)
 		:output-file output-file :error-file error-file))
 
+||#
+
+
 (mk:define-language :f2cl
-    :compiler #'f2cl-compile
+    :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+#+nil
 (mk:define-language :f2cl-no-slice
     :compiler #'f2cl-compile-no-slice
     :source-extension "f")
@@ -52,12 +62,12 @@
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
-    :source-pathname (logical-pathname "clocc:src;f2cl;packages;quadpack;")
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;quadpack;Fortran;")
     :depends-on ("mach-par")
     :components
     ((:module Fortran
-	      :source-pathname "Fortran;"
-	      :binary-pathname "lib;"
+	      :source-pathname ""
+	      :binary-pathname "lib/"
 	      :source-extension "f"
 	      :language :f2cl
 	      :components

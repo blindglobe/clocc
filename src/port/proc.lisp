@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.4 2000/04/05 23:56:45 sds Exp $
+;;; $Id: proc.lisp,v 1.5 2000/04/06 14:42:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -392,7 +392,7 @@ and reapply its initial function to its arguments."
 (defun giveup-lock (lock)
   "Gives up possession of a lock."
   #+Allegro   (mp:process-unlock lock)
-  #+CMU       FIXME
+  #+CMU       (setf (mp::lock-process lock) nil)
   #+Genera    FIXME
   #+LispWorks (mp:release-lock lock)
   #+Lucid     FIXME

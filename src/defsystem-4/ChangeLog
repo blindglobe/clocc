@@ -1,4 +1,13 @@
 2002-11-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+	* src
+	Complete subtree tagged ALPHA-4.
+	This is the used tag before the redesign of the
+	COMPONENT-LANGUAGE-MIXIN hierarchy.
+	Compilation of Java and C files is woriking, but the current class
+	hierarchy makes the programming too complex.  The simpler main
+	design of MK3 was simpler and more flexible although less precise.
+	
+2002-11-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* src/defsystem-protocol.lisp:
 	Fixed component class determination algorithm (an infinite loop was

@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-05-20 Thu 13:29:20 EDT sds@goems.com>
+;;; File: <list.lisp - 1999-10-13 Wed 14:42:53 EDT sds@ksp.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,45 +9,48 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.11 1999/05/24 20:51:44 sds Exp $
+;;; $Id: list.lisp,v 1.12 1999/10/13 18:43:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
-;;; Revision 1.11  1999/05/24 20:51:44  sds
-;;; (flatten, filter): new functions.
-;;; (call-on-split): use filter.
+;;; Revision 1.12  1999/10/13 18:43:54  sds
+;;; (with-sublist): cosmetic gensym rename.
 ;;;
-;;; Revision 1.10  1999/05/05 20:59:40  sds
-;;; (nsplit-list): use the `case-error' condition.
-;;;
-;;; Revision 1.9  1999/04/09 21:45:06  sds
-;;; Replaced `collecting' with `with-collect' (multiple collection).
-;;;
-;;; Revision 1.8  1999/04/09 18:48:18  sds
-;;; Added `collecting'.
-;;;
-;;; Revision 1.7  1999/02/22 22:56:53  sds
-;;; `call-on-split': new key `:min-len'.
-;;;
-;;; Revision 1.6  1999/01/12 22:09:36  sds
-;;; Fixed the previous feature.
-;;;
-;;; Revision 1.5  1999/01/12 18:52:19  sds
-;;; Added key `obj' to `nsplit-list'.
-;;;
-;;; Revision 1.4  1999/01/07 04:06:30  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;;
-;;; Revision 1.3  1998/05/27 21:23:41  sds
-;;; Moved the sorted stuff from date.lisp here.
-;;; Moved `freqs' from math.lisp here.
-;;; Added `zero-len-p'.
-;;;
-;;; Revision 1.2  1998/04/21 23:31:40  sds
-;;; Added `with-nsplit' and `call-on-split'.
-;;;
-;;; Revision 1.1  1998/03/23 16:31:44  sds
-;;; Initial revision
-;;;
+;; Revision 1.11  1999/05/24 20:51:44  sds
+;; (flatten, filter): new functions.
+;; (call-on-split): use filter.
+;;
+;; Revision 1.10  1999/05/05 20:59:40  sds
+;; (nsplit-list): use the `case-error' condition.
+;;
+;; Revision 1.9  1999/04/09 21:45:06  sds
+;; Replaced `collecting' with `with-collect' (multiple collection).
+;;
+;; Revision 1.8  1999/04/09 18:48:18  sds
+;; Added `collecting'.
+;;
+;; Revision 1.7  1999/02/22 22:56:53  sds
+;; `call-on-split': new key `:min-len'.
+;;
+;; Revision 1.6  1999/01/12 22:09:36  sds
+;; Fixed the previous feature.
+;;
+;; Revision 1.5  1999/01/12 18:52:19  sds
+;; Added key `obj' to `nsplit-list'.
+;;
+;; Revision 1.4  1999/01/07 04:06:30  sds
+;; Use `index-t' instead of (unsigned-byte 20).
+;;
+;; Revision 1.3  1998/05/27 21:23:41  sds
+;; Moved the sorted stuff from date.lisp here.
+;; Moved `freqs' from math.lisp here.
+;; Added `zero-len-p'.
+;;
+;; Revision 1.2  1998/04/21 23:31:40  sds
+;; Added `with-nsplit' and `call-on-split'.
+;;
+;; Revision 1.1  1998/03/23 16:31:44  sds
+;; Initial revision
+;;
 
 (in-package :cl-user)
 
@@ -362,7 +365,7 @@ When OBJ is given, it serves as separator and is omitted from the list."
 inclusively. KEY and TEST have the usual meaning and default.
 BODY may not modify the list structure of NEWL, or else!
 Also, do NOT try to return a cons from NEWL.  You'd be surprised!"
-  (let ((tt (gensym "WSL")) (kk (gensym "WSL")))
+  (with-gensyms ("WSL-" tt kk)
     `(let* (,kk (,newl (member-if (lambda (el) (setq ,kk (funcall ,key el))
                                           (or (funcall ,test ,kk ,e0)
                                               (funcall ,test ,kk ,e1))) ,oldl))

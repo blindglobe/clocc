@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.9 2000/08/16 20:38:21 sds Exp $
+;;; $Id: cvs.lisp,v 2.10 2000/09/07 14:55:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,6 +32,9 @@
 ;;;
 ;;; CVS diff ---> patch
 ;;;
+;; Bruno Haible originally wrote this in 1996 as a filter.
+;; Sam Steingold fixed some bugs in 1998 and
+;; converted to the generic function in 2000.
 
 (eval-when (compile load eval) (fmakunbound 'cvs-diff2patch))
 ;;;###autoload

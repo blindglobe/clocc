@@ -8,11 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.19 2000/05/15 20:58:12 sds Exp $
+;;; $Id: net.lisp,v 1.20 2000/05/18 15:57:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
   (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  #+cormanlisp (require :winsock)
   #+lispworks (require "comm"))
 
 (in-package :port)
@@ -155,10 +156,13 @@
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 
+(defun host/port-string (ho po)
+  (format nil "~s:~d" (if (string= ho "0.0.0.0") "127.0.0.1" ho) po))
+
 (defun socket-string (sock)
   "Print the socket host and port to a string."
   (multiple-value-bind (ho po) (socket-host/port sock)
-    (format nil "~s:~d" ho po)))
+    (host/port-string ho po)))
 
 #+lispworks (defstruct socket-server proc mbox port)
 #-lispworks
@@ -251,7 +255,7 @@ Returns a socket stream or NIL."
 (defun socket-server-string (server)
   "Print the socket server host and port to a string."
   (multiple-value-bind (ho po) (socket-server-host/port server)
-    (format nil "~s:~d" ho po)))
+    (host/port-string ho po)))
 
 ;;;
 ;;; }}}{{{ conditions

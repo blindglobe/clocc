@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.5 2000/05/31 20:18:22 sds Exp $
+;;; $Id: cvs.lisp,v 2.6 2000/06/02 20:03:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -127,8 +127,10 @@
 (defun cvs-read-file (in ra)
   "Read a CVS-FILE from a stream.  Suitable for `read-list-from-stream'."
   (declare (stream in) (symbol ra))
+  (loop :while (eq ra :cvs) :do (read-line in) (setq ra (read in)))
   (unless (eq ra :rcs)
-    (error "~s: read-ahead is `~s' (`~s' expected)" 'cvs-read-file ra :rcs))
+    (error "~s: read-ahead is `~s' (`~s' or `~s' expected)"
+           'cvs-read-file ra :rcs :cvs))
   (flet ((from-colon (line)
            (subseq line (+ 2 (position #\: line :test #'char=)))))
     (let* ((rcs (from-colon (read-line in)))

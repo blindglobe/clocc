@@ -4,23 +4,24 @@
 ;;; Copyright (C) 1988, 1992 Bruno Haible
 ;;; This is Free Software, published under the GNU General Public License v2.
 
-; AVL-Bäume, implementiert in COMMON LISP, als Sequences
+; AVL-trees, implemented in COMMON LISP, as sequences
 ; Bruno Haible, 22.09.1988
 ; CLISP-Version 29.12.1988
-; Version mit vielen Deklarationen,
-;             Buchführung über die Länge jedes Teilbaums,
-;             Definition eines Sequence-Untertyps AVL-TREE.
+; Version with many declarations,
+;             bookkeeping over the length of each subtree,
+;             definition of a sequence-subtype AVL-TREE.
+; Stefan Kain, 01.09.2004: translation of comments
 
-; Ein AVL-Baum ist ein Binärbaum, bei dem in jedem Knoten ein Datum
-; (value) sitzt. Der Baum ist stets balanciert, in der Weise, daß die Höhen
-; zweier linker und rechter Teilbäume sich um höchstens 1 unterscheiden.
-; Die Ordnungsrelation auf den values ist durch eine Vergleichsfunktion comp
-; festgelegt, die feststellt, wann x<y ist (eine fest gewählte
-; Ordnungsrelation). Bei (not (or (comp x y) (comp y x))) gelten x und y als
-; gleich.
-; Der Baum kann wie eine Sequence von links nach rechts oder von rechts nach
-; links durchlaufen werden, alle Sequence-Funktionen operieren somit auch auf
-; AVL-Bäumen.
+; An AVL-tree is a binary tree, where in each node a datum
+; (value) is located. The tree is always balanced, in a way, that the depths
+; of two left and right subtrees differ at most by 1.
+; The order relation on the values is set by a comparison function
+; comp, that determines, when x<y (a fixed chosen order relation).
+; If (not (or (comp x y) (comp y x))) is true, both x and y are
+; considered equal.
+; The tree can be traversed like a sequence from left to right or from
+; right to left. Thus, all sequence-functions operate also on
+; AVL-trees.
 
 (provide 'avlseq)
 (in-package 'avl)
@@ -29,7 +30,7 @@
 (require 'sequences)
 (import '(seq::avl-tree seq::seq))
 
-; Datenstruktur eines Baumes: leerer Baum=nil, sonst Knoten ("node")
+; data structure of a tree: empty tree=nil, else node
 
 (deftype tree ()
   '(or null node))
@@ -43,21 +44,21 @@
 )
 (proclaim '(inline node-level node-left node-right node-value node-length))
 
-; (level tree) ergibt die Höhe eines Baumes
+; (level tree) returns the depth of a tree
 (proclaim '(function level (node) fixnum))
 (proclaim '(inline level))
 (defun level (tr)
   (if tr (locally (declare (type node tr)) (node-level tr)) 0)
 )
 
-; (length tree) ergibt die Breite (= Anzahl der Nodes) eines Baumes
+; (length tree) returns the number of nodes of a tree
 (proclaim '(function length (tree) integer))
 (proclaim '(inline length))
 (defun length (tr)
   (if tr (locally (declare (type node tr)) (node-length tr)) 0)
 )
 
-; (recalc-length node) berechnet (node-length node) neu
+; (recalc-length node) recalculates (node-length node)
 (proclaim '(function recalc-length (node) integer))
 (proclaim '(inline recalc-length))
 (defun recalc-length (tr)
@@ -65,9 +66,9 @@
   (setf (node-length tr) (+ (length (node-left tr)) 1 (length (node-right tr))))
 )
 
-; (deftype avl-tree (comp) ...) funktioniert nicht.
+; (deftype avl-tree (comp) ...) does not work.
 
-; (treep tr comp) stellt fest, ob ein AVL-Baum vorliegt.
+; (treep tr comp) determines, if the tree tr is an AVL-tree.
 (proclaim '(function treep (tree function &optional t) symbol))
 (defun treep (tr comp &optional (el-type t))
   (or (null tr)
@@ -104,25 +105,25 @@
 ) )   ) ) ) ) )
 
 
-; (ganzrechts tr) liefert das "größte" Element eines nichtleeren Baumes
+; (ganzrechts tr) returns the "right-most" element of a non-empty tree
 (proclaim '(function ganzrechts (node) node))
 (defun ganzrechts (tr)
   (declare (type node tr))
   (if (node-right tr) (ganzrechts (node-right tr)) (node-value tr)))
 
 (proclaim '(function ganzlinks (node) node))
-; (ganzlinks tr) liefert das "kleinste" Element eines nichtleeren Baumes
+; (ganzlinks tr) returns the "left-most" element of a non-empty tree
 (defun ganzlinks (tr)
   (declare (type node tr))
   (if (node-left tr) (ganzlinks (node-left tr)) (node-value tr)))
 
 
-; (member item tree comp) testet, ob item ein Element des Baumes tree ist.
-; Durch Angabe eines Gleichheitstests eq-test kann geprüft werden, ob die
-; beiden Werte (item und der Wert im Baum) in einem engeren Sinne gleich sind.
-; Trick: Falls man im Baum keine values mit dem Wert NIL abspeichert, kann man
-; sich durch eq-test = #'(lambda (it val) (and ("=" it val) val)) den im Baum
-; stehenden Wert val zurückgeben lassen.
+; (member item tree comp) tests, if item is an element of the Tree tree.
+; By supplying an equality test eq-test, one can check if
+; both values (item and the value in the tree) are equal in a closer sense.
+; Trick: If NIL is not stored as a value in the tree, one can use
+; eq-test = #'(lambda (it val) (and ("=" it val) val)) in order to
+; get the value val from the tree.
 (proclaim '(function member (t tree function &optional function) t))
 (defun member (item tr comp &optional (eq-test #'equal))
   (if (null tr) nil
@@ -132,12 +133,12 @@
              (member item (node-left tr) comp eq-test))
             ((funcall comp (node-value tr) item)
              (member item (node-right tr) comp eq-test))
-) ) ) ) ; sonst NIL
+) ) ) ) ; else NIL
 
 
-; (balance tree) balanciert einen nichtleeren Baum tree aus. Voraussetzung
-; ist, daß höchstens ein Element den Baum aus der Balance gebracht hat.
-; tree selbst wird verändert!
+; (balance tree) balances an non-empty Tree tree. prerequisite
+; is, that at most one element has brought the tree out of balance.
+; tree itself will be modified!
 (proclaim '(function balance (node) node))
 (defun balance (b)
   (let ((l (level (node-left b)))
@@ -205,13 +206,13 @@
 ) ) )
 
 
-; (insert item tree comp) fügt item zusätzlich in tree ein.
-; Das Ergebnis ist ebenfalls ein AVL-Baum. Falls item bereits vorkommt,
-; wird item an dessen Stelle eingesetzt.
-; Durch Angabe eines Gleichheitstest eq-test kann angegeben werden, was
-; für Elemente als gleich zu gelten haben. (Das muß diejenigen Elemente
-; umfassen, die nicht vergleichbar sind: stets x<y oder y<x oder (eq-test x y).)
-; tree selbst wird verändert!
+; (insert item tree comp) inserts item into the tree.
+; The result is again an AVL-tree. If an element that compares 
+; equal to item is already there, item will replace it.
+; By specifying an equality test eq-test, it can be determined which elements
+; are considered as equal. (This has to comprise those element pairs,
+; that are not comparable: for any x and y, you must have: x<y or y<x or (eq-test x y).)
+; tree itself will be modified!
 (proclaim '(function insert (t tree function &optional function) node))
 (defun insert (item tr comp &optional (eq-test #'equal))
   (if (null tr) (make-node :level 1 :value item)
@@ -226,14 +227,14 @@
               (setf (node-left tr) (insert item (node-left tr) comp eq-test)))
              ((funcall comp (node-value tr) item)
               (setf (node-right tr) (insert item (node-right tr) comp eq-test)))
-             (t (error "Element paßt nicht in AVL-Baum-Ordnung!"))
+             (t (error "element does not fit into the AVL-tree-sorting!"))
            )
            (balance tr)
 ) ) ) ) )
 
 
-; (delete item tree comp) entfernt item aus tree und liefert das
-; verkleinerte tree zurück.
+; (delete item tree comp) removes item from tree and returns the
+; reduced tree.
 (proclaim '(function delete (t tree function &optional function) tree))
 (defun delete (item tr comp &optional (eq-test #'equal))
   (if (null tr) tr
@@ -256,12 +257,12 @@
         ((funcall comp (node-value tr) item)
          (setf (node-right tr) (delete item (node-right tr) comp eq-test))
          (balance tr))
-        (t (error "Element paßt nicht in AVL-Baum-Ordnung!"))
+        (t (error "element does not fit into the AVL-tree-sorting!"))
 ) ) ) )
 
-; (delete-ganzlinks tree) entfernt aus dem nichtleeren tree das "kleinste"
-; Element und gibt den Restbaum zurück. Das entfernte Element erscheint als
-; zweiter Wert (als Knoten, zur Vermeidung von Garbage Produktion).
+; (delete-ganzlinks tree) removes the "smallest" element from a non-empty
+; tree and returns the remaining tree. The removed element appears as
+; second value (as node, in order to avoid creation of garbage).
 (proclaim '(function delete-ganzlinks (node) tree))
 (defun delete-ganzlinks (tr)
   (declare (type node tr))
@@ -275,8 +276,8 @@
 
 
 ; (do-avl (var treeform [resultform]) {declaration}* {tag|statement}* )
-; ist ein Macro wie dolist: Für alle var aus dem AVL-Baum, der bei
-; treeform herauskommt, wird der Rest ausgeführt.
+; is a macro like dolist: for all var from the AVL-tree, that is issued
+; by treeform, the rest will be executed.
 (defmacro do-avl (varform &rest body)
   `(progn
      (traverse ,(second varform)
@@ -289,10 +290,10 @@
 )  )
 
 (defmacro do-avl-1 ((var treeform &optional resultform) &body body)
-  (let ((abstieg (gensym)) ; Labels
+  (let ((abstieg (gensym)) ; labels
         (aufstieg (gensym))
         (ende (gensym))
-        (stack (gensym)) ; (cons ,top ,stack) ist ein "Stack"
+        (stack (gensym)) ; (cons ,top ,stack) is a "stack"
         (top (gensym)))
     `(prog ((,stack nil) (,top ,treeform))
         ,abstieg
@@ -321,9 +322,9 @@
 ) )   )
 
 
-; (avl-to-seq tree) ergibt eine sortierte Liste aller values des Baumes tree.
-; (avl-to-seq tree seq-type) ergibt eine sortierte Sequence des angegebenen
-; Typs aus allen Werten des Baumes tree.
+; (avl-to-seq tree) yields a sorted list of all values of the tree.
+; (avl-to-seq tree seq-type) yields a sorted sequence of specified
+; type of all values of the tree.
 (proclaim '(function avl-to-seq (tree &optional t) sequence))
 (defun avl-to-seq (tr &optional (result-type 'list))
   (if (null tr)
@@ -335,8 +336,8 @@
           (avl-to-seq (node-right tr))
 ) )   ) )
 
-; (seq-to-avl l comp) ergibt aus einer (unsortierten) sequence l von Elementen
-; einen AVL-Baum.
+; (seq-to-avl l comp) creates an AVL-tree from a (unsorted) sequence l
+; of elements.
 (proclaim '(function seq-to-avl (sequence function &optional function) tree))
 (defun seq-to-avl (l comp &optional (eq-test #'equal))
   (reduce #'(lambda (tr item) (insert item tr comp eq-test))
@@ -344,10 +345,10 @@
 ) )
 
 
-; (copy tree) ergibt eine Kopie des AVL-Baumes tree.
-; Nur die Baumstruktur wird kopiert, die Werte werden übernommen.
-; insert und delete sind jetzt auf dem Original und auf der Kopie unabhängig
-; voneinander durchführbar.
+; (copy tree) creats a copy of the AVL-tree tree.
+; Only the tree structure is copied, the values are taken over.
+; insert and delete can now be performed on the original and the
+; copy independently.
 (proclaim '(function copy (tree) tree))
 (defun copy (tr)
   (if (null tr) nil
@@ -359,23 +360,23 @@
 ) )   ) )
 
 
-; (merge tree1 tree2 comp) ergibt einen neuen AVL-Baum, der aus den Elementen
-; der Bäume tree1 und tree2 besteht.
-; Durch Angabe eines Gleichheitstests kann spezifiert werden, was für
-; Elemente (weil gleich) nicht doppelt in den neuen AVL-Baum übernommen zu
-; werden brauchen. (Je zwei nicht vergleichbare Elemente müssen in diesem
-; Sinne gleich sein.)
+; (merge tree1 tree2 comp) creates a new AVL-tree, that consists of
+; the elements of the trees tree1 and tree2.
+; By specifying an equality test, it can be determind which elements
+; do not have to be taken over twice into the new AVL-tree (because they are equal)
+; (Any two elements x,y that are neither x<y nor x>y have to be
+; equal in this sense (according to comp).)
 (proclaim '(function merge (tree tree function &optional function) tree))
 (defun merge (tr1 tr2 comp &optional (eq-test #'equal))
   (if (< (the fixnum (level tr1)) (the fixnum (level tr2))) (rotatef tr1 tr2))
-  ; jetzt ist tr1 der größere der Bäume
+  ; now, tr1 is the bigger of the trees
   (let ((tr (copy tr1)))
     (do-avl (x tr2 tr) (setq tr (insert x tr comp eq-test)))
 ) )
 
-; AVL-Bäume als Sequences:
+; AVL-trees as sequences:
 
-; Ausgabefunktion:
+; output function:
 (defun print-avl-tree (seq stream depth)
   (declare (ignore depth))
   (format stream #+VAX "~@!#S(~;~S ~:_~S ~:_~S ~:_~S ~:_~S~;)~."
@@ -383,14 +384,14 @@
     'avl-tree ':contents (seq:coerce seq 'list) ':length (seq:length seq)
 ) )
 
-; als solcher erkennbarer AVL-Baum:
+; AVL-tree recognizable as such:
 (defstruct (avl-tree (:constructor box-tree (tree))
                      (:print-function print-avl-tree))
   (tree nil)
 )
 (proclaim '(inline box-tree avl-tree-tree))
 
-; neue Konstruktorfunktion (für den Reader):
+; new constructor function (for the reader):
 (defun new-avl-tree-constructor (&key contents &allow-other-keys)
   (seq:coerce contents 'avl-tree)
 )
@@ -401,7 +402,7 @@
 
 (defmacro unbox (seq) `(avl-tree-tree ,seq))
 
-; (make-tree size) kreiert einen leeren AVL-Baum mit size Knoten.
+; (make-tree size) creates an empty AVL-tree with size nodes.
 (defun make-tree (size)
   (if (zerop size)
     nil
@@ -414,11 +415,11 @@
   (box-tree (make-tree size))
 )
 
-; AVL-Baum als Sequence vom Typ AVL-TREE :
-; Pointer ist ein Vektor mit Fill-Pointer.
-; Fill-Pointer=0 -> am Ende angelangt.
-; Fill-Pointer=2*k+1 -> Der Vektor enthält den Pfad zum nächsten NODE,
-;   abwechselnd ein NODE und ein Richtungsindikator (LEFT, RIGHT).
+; AVL-tree as sequence of type AVL-TREE :
+; pointer is a vector with fill-pointer.
+; fill-pointer=0 -> end reached.
+; fill-pointer=2*k+1 -> the vector contains the path to the next NODE,
+;   alternating a NODE and a direction indicator (LEFT, RIGHT).
 (seq:define-sequence AVL-TREE
   :init        #'(lambda ()
                    (let* ((tr (unbox seq))
@@ -436,7 +437,7 @@
                  ) )
   :upd         #'(lambda (pointer)
                    (if (zerop (fill-pointer pointer))
-                     (error "Am rechten Ende eines ~S angelangt." 'avl-tree)
+                     (error "Reached the right end of a ~S." 'avl-tree)
                      (let ((tr (aref pointer (1- (fill-pointer pointer)))))
                        (declare (type node tr))
                        (if (node-right tr)
@@ -473,7 +474,7 @@
                  ) )
   :fe-upd      #'(lambda (pointer)
                    (if (zerop (fill-pointer pointer))
-                     (error "Am linken Ende eines ~S angelangt." 'avl-tree)
+                     (error "Reached the left end of a ~S." 'avl-tree)
                      (let ((tr (aref pointer (1- (fill-pointer pointer)))))
                        (declare (type node tr))
                        (if (node-left tr)
@@ -496,12 +497,12 @@
   :fe-endtest  #'(lambda (pointer) (zerop (fill-pointer pointer)))
   :access      #'(lambda (pointer)
                    (if (zerop (fill-pointer pointer))
-                     (error "Am Ende eines ~S angelangt." 'avl-tree)
+                     (error "Reached the end of a ~S." 'avl-tree)
                      (node-value (aref pointer (1- (fill-pointer pointer))))
                  ) )
   :access-set  #'(lambda (pointer value)
                    (if (zerop (fill-pointer pointer))
-                     (error "Am Ende eines ~S angelangt." 'avl-tree)
+                     (error "Reached the end of a ~S." 'avl-tree)
                      (setf (node-value (aref pointer (1- (fill-pointer pointer))))
                            value
                  ) ) )
@@ -519,7 +520,7 @@
                    (let ((tr (unbox seq)))
                      (if (and tr (< index (node-length tr)))
                        (locally (declare (type node tr))
-                         (loop ; Hier ist 0 <= index < (node-length tr)
+                         (loop ; here is 0 <= index < (node-length tr)
                            (let ((lleft (length (node-left tr))))
                              (cond ((< index lleft)
                                     (setq tr (node-left tr))
@@ -529,13 +530,13 @@
                                     (setq index (- index (+ lleft 1)))
                                     (setq tr (node-right tr))
                        ) ) ) )     )
-                       (error "Unzulässiger Index: ~S" index)
+                       (error "Invalid index: ~S" index)
                  ) ) )
   :set-elt     #'(lambda (index value)
                    (let ((tr (unbox seq)))
                      (if (and tr (< index (node-length tr)))
                        (locally (declare (type node tr))
-                         (loop ; Hier ist 0 <= index < (node-length tr)
+                         (loop ; here is 0 <= index < (node-length tr)
                            (let ((lleft (length (node-left tr))))
                              (cond ((< index lleft)
                                     (setq tr (node-left tr))
@@ -547,7 +548,7 @@
                                     (setq index (- index (+ lleft 1)))
                                     (setq tr (node-right tr))
                        ) ) ) )     )
-                       (error "Unzulässiger Index: ~S" index)
+                       (error "Invalid index: ~S" index)
                  ) ) )
   :init-start  #'(lambda (index)
                    (let* ((tr (unbox seq))
@@ -556,7 +557,7 @@
                      (if (<= 0 index (length tr))
                        (if (and tr (< index (node-length tr)))
                          (locally (declare (type node tr))
-                           (loop ; Hier ist 0 <= index < (node-length tr)
+                           (loop ; here is 0 <= index < (node-length tr)
                              (vector-push tr pointer)
                              (let ((lleft (length (node-left tr))))
                                (cond ((< index lleft)
@@ -569,7 +570,7 @@
                                       (setq index (- index (+ lleft 1)))
                                       (setq tr (node-right tr))
                        ) ) ) ) )     )
-                       (error "Unzulässiger Index: ~S" index)
+                       (error "Invalid index: ~S" index)
                      )
                      pointer
                  ) )
@@ -580,7 +581,7 @@
                      (if (<= 0 index (length tr))
                        (if (and tr (plusp index))
                          (locally (declare (type node tr))
-                           (loop ; Hier ist 0 < index <= (node-length tr)
+                           (loop ; here is 0 < index <= (node-length tr)
                              (vector-push tr pointer)
                              (let ((lleft (length (node-left tr))))
                                (cond ((<= index lleft)
@@ -594,7 +595,7 @@
                                      (t ; (= index (1+ lleft))
                                       (return)
                        ) ) ) ) )     )
-                       (error "Unzulässiger Index: ~S" index)
+                       (error "Invalid index: ~S" index)
                      )
                      pointer
                  ) )

@@ -76,6 +76,9 @@
     ;; "MAKE-DEFSYSTEM:languages;scheme;scheme"
 
     "MAKE-DEFSYSTEM:;versions"
+
+    "MAKE-DEFSYSTEM:;actions"
+
     "MAKE-DEFSYSTEM:;base-components"
     "MAKE-DEFSYSTEM:;predefined-components"
     "MAKE-DEFSYSTEM:;predefined-specialized-components"
@@ -95,7 +98,6 @@
     "MAKE-DEFSYSTEM:;defsystem"
     "MAKE-DEFSYSTEM:;registry"
     "MAKE-DEFSYSTEM:;defsystem-protocol"
-    "MAKE-DEFSYSTEM:;actions"
     ;; "MAKE-DEFSYSTEM:;provide-require"
 
     "MAKE-DEFSYSTEM:;syntax"

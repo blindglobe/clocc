@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.36 2001/09/06 14:35:10 sds Exp $
+;;; $Id: xml.lisp,v 2.37 2001/10/05 19:50:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,6 +29,7 @@
 
 (export
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
+   xml-xhtml-tidy
    with-xml-input with-xml-file xml-read-from-file read-standalone-char
    xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data
    xml-name xml-name-p xmln-ln xmln-ns
@@ -143,10 +144,18 @@ If this is `:readably', print for Lisp reader.")
   (or *print-readably* (eq :readably *xml-print-xml*)))
 
 (defmethod print-object ((xm xml-misc) (out stream))
-  (if (xml-print-readably-p) (call-next-method)
-      (print-unreadable-object (xm out :type t :identity t)
-        (format out "~s [~:d object~:p]"
-                (xml-misc-type xm) (length (xml-misc-data xm))))))
+  (cond ((xml-print-readably-p) (call-next-method))
+        (*xml-print-xml*
+         (format out "<!~a" (symbol-name (xml-misc-type xm)))
+         (dolist (dat (xml-misc-data xm))
+           (write-char #\Space out)
+           (typecase dat
+             (symbol (write-string (symbol-name dat) out))
+             (t (write dat :stream out :escape t))))
+         (write-char #\> out))
+        ((print-unreadable-object (xm out :type t :identity t)
+           (format out "~s [~:d object~:p]"
+                   (xml-misc-type xm) (length (xml-misc-data xm)))))))
 
 (eval-when (compile load eval)  ; ACL
 (defcustom *xml-pre-namespaces* hash-table (make-hash-table :test 'equal)
@@ -303,7 +312,8 @@ If such a name already exists, re-use it."
 (defun xml-size (obj)
   "Compute the approximate size of the object.
 The first number returned is `text sise' (no tags)
-the second is `file size' (including tags)."
+the second is `file size' (including tags).
+The third value is the number of sub-elements"
   (flet ((xmlt-size (oo)
            (reduce #'+ (xmlt-args oo)
                    :key (lambda (att)
@@ -311,29 +321,31 @@ the second is `file size' (including tags)."
                              (length (cadr att))))
                    :initial-value (xml-size (xmlt-name oo)))))
     (typecase obj
-      (string (let ((ll (length obj))) (values ll ll)))
-      (symbol (xml-size (symbol-name obj)))
+      (string (let ((ll (length obj))) (values ll ll 1)))
       (sequence
-       (let ((ts 0) (fs 0))
+       (let ((ts 0) (fs 0) (ne 0))
          (map nil (lambda (oo)
-                    (multiple-value-bind (aa bb) (xml-size oo)
-                      (incf ts aa) (incf fs bb)))
+                    (multiple-value-bind (aa bb cc) (xml-size oo)
+                      (incf ts aa) (incf fs bb) (incf ne cc)))
               obj)
-         (values ts fs)))
+         (values ts fs ne)))
+      (symbol (xml-size (symbol-name obj)))
       (xml-name (values 0 (+ (length (xmln-ln obj))
                              (if (eq +xml-namespace-none+ (xmln-ns obj)) 0
-                                 (+ 1 (length (xmln-prefix obj)))))))
+                                 (+ 1 (length (xmln-prefix obj)))))
+                        1))
       (xml-obj
-       (multiple-value-bind (ts fs) (xml-size (xmlo-data obj))
+       (multiple-value-bind (ts fs ne) (xml-size (xmlo-data obj))
          (values ts (+ fs (xmlt-size obj)
                        (if (xmlo-long-p obj) ; <tag></tag> vs <tag/>
-                           (+ 5 (xml-size (xmlt-name obj))) 3)))))
-      (xml-decl (values 0 (+ 4 (xmlt-size obj)))) ; <??>
+                           (+ 5 (xml-size (xmlt-name obj))) 3))
+                (1+ ne))))
+      (xml-decl (values 0 (+ 4 (xmlt-size obj)) 1)) ; <??>
       (xml-tag (warn "~s: standalone tag: ~s~%" 'xml-size obj)
-               (values 0 (xmlt-size obj)))
-      (xml-misc (values 0 0))
+               (values 0 (xmlt-size obj) 1))
+      (xml-misc (values 0 0 1))
       (xml-comment (let ((vv (+ 10 (length (xml-comment-data obj)))))
-                     (values vv vv))) ; <!--  -->#\Newline
+                     (values vv vv 1))) ; <!--  -->#\Newline
       (t (error 'case-error :proc 'xml-size :args
                 (list 'obj obj 'string 'symbol 'sequence 'xml-name 'xml-obj
                       'xml-decl 'xml-tag 'xml-misc 'xml-comment))))))
@@ -351,6 +363,22 @@ the second is `file size' (including tags)."
      (declare (ignore end type))
      (format nil "&#~d;" (char-code (char str beg))))))
 
+(defun xmlo-terpri-p (xo)
+  "Check whether the XML object wants a newline."
+  (declare (type xml-obj xo))
+  (let ((name (xmln-ln (xmlo-name xo))))
+    (or
+     ;; (X)HTML
+     (string= name "p") (string= name "br") (string= name "dt")
+     (string= name "dd") (string= name "li") (string= name "td")
+     (string= name "table") (string= name "tr") (string= name "div")
+     (and (= 2 (length name)) (char= (aref name 0) #\h) ; header
+          (digit-char-p (aref name 1)))
+     ;; DocBook/XML
+     (search "para" name) (search "list" name)
+     (string= name "title") (string= name "section") (string= name "chapter")
+     (string= name "row") (string= name "entry"))))
+
 (defmethod print-object ((xml xml-obj) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
         (*xml-print-xml*
@@ -361,12 +389,14 @@ the second is `file size' (including tags)."
                   (princ (typecase dd (string (xml-de-unicode dd)) (t dd))
                          out))
                 (format out "</~a>" (xmlt-name xml)))
-               (t (princ "/>" out))))
+               (t (princ "/>" out)))
+         (when (xmlo-terpri-p xml)
+           (terpri out)))
         ((print-unreadable-object (xml out :type t :identity t)
-           (multiple-value-bind (ts fs) (xml-size xml)
+           (multiple-value-bind (ts fs ne) (xml-size xml)
              (call-next-method)
-             (format out " ~:d object~:p ~:d/~:d chars"
-                     (length (xmlo-data xml)) ts fs))))))
+             (format out " ~:d/~:d object~:p ~:d/~:d chars"
+                     ne (length (xmlo-data xml)) ts fs))))))
 
 (declaim (ftype (function (t xml-obj) (values xml-obj)) xml-push))
 (defun xml-push (new xml)
@@ -674,7 +704,7 @@ The first character to be read is #\T."
                 (assert (eq 'xml-tags::? last) ()
                         "~s[~a]: <? was terminated by ~s"
                         'read-xml stream last)
-                (make-xml-decl :name name :args atts)))
+                (make-xml-decl :name name :args (nbutlast atts))))
          (#\!
           (if (char= #\- (peek-char nil stream))
               (let ((ch (progn (read-char stream) (read-char stream t nil t))))
@@ -796,6 +826,80 @@ The first character to be read is #\T."
     (if resolve-namespaces
         (xml-resolve-namespaces obj :out out)
         obj)))
+
+;;;
+;;; XHTML
+;;;
+
+(defun xml-xhtml-remove-unused-ids (xo &key (out *standard-output*))
+  "Remove unused IDs and NAMEs."
+  (declare (type xml-obj xo))
+  (let ((ids-def (make-hash-table :test 'equalp))
+        (num-proc 0) (num-rem 0) (num-redef 0))
+    ;; id --> (def . (uses list))
+    (labels ((tag-name (tag) (xmln-ln (car tag)))
+             (name-tag-p (tag) (or (string= tag "id") (string= tag "name")))
+             (id-add (name ob defp)
+               (let ((val (gethash name ids-def)))
+                 (when (and defp (car val))
+                   (incf num-redef)
+                   (mesg :logv out "id ~s redefined in ~s, was defined in ~s"
+                         name ob (car val)))
+                 (if val
+                     (if defp (push ob (car val)) (push ob (cdr val)))
+                     (setf (gethash name ids-def)
+                           (if defp
+                               (cons (list ob) nil) (cons nil (list ob)))))))
+             (handle-one (ob)
+               (declare (type xml-obj ob))
+               (incf num-proc)
+               (dolist (tag (xmlo-args ob))
+                 (let ((tag-name (tag-name tag)) (tag-val (cadr tag)))
+                   (cond ((name-tag-p tag-name) ; definition
+                          (id-add tag-val ob t))
+                         ((and (string= (xmln-ln (xmlo-name ob)) "a") ; use
+                               (string= tag-name "href")
+                               (char= (aref tag-val 0) #\#))
+                          (id-add (subseq tag-val 1) ob nil)))))
+               (dolist (elt (xmlo-data ob))
+                 (when (xml-obj-p elt)
+                   (handle-one elt)))))
+      (with-timing (:out out :type :xml)
+        (mesg :xml out "scanning ~s..." xo)
+        (handle-one xo)
+        (mesg :xml out "done [~:d XML objects, ~:d IDs, ~:d redefined]"
+              num-proc (hash-table-count ids-def) num-redef))
+      (with-timing (:out out :type :xml)
+        (mesg :xml out "removing unused IDs...")
+        (with-hash-table-iterator (iter ids-def)
+          (loop (multiple-value-bind (re kk vv) (iter)
+                  (unless re (return))
+                  (unless (cdr vv)  ; unused
+                    (incf num-rem)
+                    (mesg :logv out "~s: unused, removing~%" kk)
+                    (dolist (def (car vv))
+                      (setf (xmlo-args def)
+                            (delete-if #'name-tag-p (xmlo-args def)
+                                       :key #'tag-name)))))))
+        (mesg :xml out "done [~:d removed]" num-rem))
+    (values num-proc num-rem num-redef (hash-table-count ids-def)))))
+
+;;;###autoload
+(defun xml-xhtml-tidy (file &key (out *standard-output*) (output file)
+                       (verbose nil))
+  "Tidy up the XHTML file."
+  (let ((all (xml-read-from-file file :out out))
+        (*print-log* (if verbose *print-log* (remove :logv *print-log*))))
+    (with-open-file (str output :direction :output)
+      (dolist (obj all)
+        (when (and (xml-obj-p obj)
+                   (string= "html" (xmln-ln (xmlo-name obj))))
+          (xml-xhtml-remove-unused-ids obj :out out))
+        (with-timing (:out out :type :xml)
+          (mesg :xml out "Writing ~s into ~s..." obj output)
+          (let ((*xml-print-xml* t)) (write obj :stream str))
+          (mesg :xml out "done [~:d bytes total]" (stream-length str)))
+        (terpri str)))))
 
 (provide :xml)
 ;;; file xml.lisp ends here

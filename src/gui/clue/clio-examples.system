@@ -1,0 +1,8 @@
+;;; -*- Mode: LISP; Syntax: Common-Lisp; Package: User; Base: 10 -*-
+
+(in-package :common-lisp-user)
+
+(mk:defsystem clio-examples
+ :depends-on ( clue clio )
+ :source-pathname "cl-library:clio;examples;"
+ :components ("package" "cmd-frame" "sketchpad" "sketch"))

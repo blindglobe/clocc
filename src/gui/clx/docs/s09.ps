@@ -1,0 +1,4182 @@
+%!PS-Adobe-2.0
+%%Title: s09.ps
+%%Pages: 10
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 9 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps10b /ILtimsb 10 map
+	/timsps18 /ILtims 18 map
+	/timsps12b /ILtimsb 12 map
+	/symbb8 /ILsymbb 8 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 9 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(9\03699) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 7 declareFont
+7 sf
+20410.0 39376.0 m
+94420.0 39466.0 m
+(COLORS) 115868  0.00 -1 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+270.0 sw
+0.0 sw
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+270.0 sw
+/drawmode PL_SET def
+142101 32833 av
+137082 32833 as
+134344 30545 as
+134344 25588 as
+137082 23300 as
+143470 23300 as
+143470 23300 as
+142101 26351 as
+142101 26351 as
+138451 26351 as
+138451 29783 as
+142101 29783 as
+142101 29783 as
+142101 32833 as
+fp
+newpath
+142101 32833 av
+137082 32833 as
+134344 30545 as
+134344 25588 as
+137082 23300 as
+143470 23300 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+143470 23300 av
+142101 26351 as
+newpath
+270.0 sw
+142101 26351 av
+138451 26351 as
+138451 29783 as
+142101 29783 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+142101 29783 av
+142101 32833 as
+270.0 sw
+0.0 sw
+270.0 sw
+0.0 sw
+270.0 sw
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+143470 39315 av
+137082 39315 as
+134344 37028 as
+134344 34740 as
+138451 34740 as
+138451 36265 as
+142101 36265 as
+142101 32833 as
+142101 32833 as
+142101 29783 as
+142101 29783 as
+142101 26351 as
+142101 26351 as
+143470 23300 as
+143470 23300 as
+146208 25588 as
+146208 37028 as
+143470 39315 as
+fp
+newpath
+143470 39315 av
+137082 39315 as
+134344 37028 as
+134344 34740 as
+138451 34740 as
+138451 36265 as
+142101 36265 as
+142101 32833 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+142101 32833 av
+142101 29783 as
+newpath
+270.0 sw
+142101 29783 av
+142101 26351 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+142101 26351 av
+143470 23300 as
+newpath
+270.0 sw
+143470 23300 av
+146208 25588 as
+146208 37028 as
+143470 39315 as
+[] 0 setdash
+dp
+0.0 sw
+newpath
+132975 23300 av
+132975 23300 as
+newpath
+132975 43891 av
+132975 43891 as
+newpath
+147577 43891 av
+147577 43891 as
+newpath
+147577 23300 av
+147577 23300 as
+149351.0 39376.0 m
+7 sf
+/timsps10 4 declareFont
+4 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 46871.0 m
+(Colormaps ) 37163  8.00 32 s
+52832.0 h
+2 sf
+(9.1) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(In) 60905  0.00 -1 s
+( X, a ) 70184  1055.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(color) 76141  0.00 -1 s
+4 sf
+( is defined by a set of three numeric values, representing) 149352  949.80 32 s
+6 sf
+20320.0 50258.0 m
+(and) 25779  0.00 -1 s
+( Colors) 36215  -3.00 32 s
+52832.0 h
+4 sf
+(intensities) 64276  0.00 -1 s
+( of red, green, and blue. Red, green, and blue are ) 119848  -6.36 32 s
+( referred to as the ) 140260  -7.60 32 s
+5 sf
+(primary) 149352  0.00 -1 s
+4 sf
+52832.0 53419.0 m
+(hues.) 58711  0.00 -1 s
+( A ) 61594  -283.00 32 s
+5 sf
+(colormap) 72410  0.00 -1 s
+4 sf
+( is a list of  colors, each indexed by an integer ) 121725  -259.92 32 s
+5 sf
+(pixel) 127210  0.00 -1 s
+4 sf
+( value. Each entry in) 149352  -283.50 32 s
+52832.0 56580.0 m
+(a ) 54791  0.00 32 s
+( colormap is called a color ) 83963  -232.00 32 s
+5 sf
+(cell) 88037  0.00 -1 s
+4 sf
+(. Raster graphics) 106460  -232.00 32 s
+( displays store  pixel values in a special) 149352  -203.50 32 s
+52832.0 59741.0 m
+(screen) 60039  0.00 -1 s
+( hardware memory. As the screen hardware scans this memory, it reads each pixel) 149352  -260.92 32 s
+52832.0 62902.0 m
+(value,) 59650  0.00 -1 s
+( looks up the color in the  corresponding cell of a colormap, and displays the color) 149352  -198.38 32 s
+52832.0 66063.0 m
+(on) 55654  0.00 -1 s
+( its screen. ) 68298  -17.67 32 s
+52832.0 72339.0 m
+(The) 57220  0.00 -1 s
+( colormap abstraction applies to all classes of visual types supported by X, including) 149352  -256.38 32 s
+52832.0 75500.0 m
+(those) 58789  0.00 -1 s
+( for screens which are actually monochrome. For example,) 122846  -280.00 32 s
+( ) 123271  -281.00 32 s
+2 sf
+(:gray\036scale) 136434  0.00 -1 s
+4 sf
+( screens use) 149352  -280.50 32 s
+52832.0 78661.0 m
+(colormaps) 64587  0.00 -1 s
+( in which colors actually specify the monochrome intensity. A typical black\036) 149352  -145.64 32 s
+52832.0 81822.0 m
+(and\036white) 64115  0.00 -1 s
+( monochrome display has a ) 95547  -31.00 32 s
+2 sf
+(:static\036gray) 109335  0.00 -1 s
+4 sf
+( screen with a two\036cell colormap.) 146756  -38.60 32 s
+52832.0 88098.0 m
+(The) 57220  0.00 -1 s
+( following list describes how pixel values and colormaps are handled for each visual) 149352  -237.62 32 s
+52832.0 91259.0 m
+(class.) 59024  0.00 -1 s
+/symbb8 8 declareFont
+8 sf
+52832.0 97807.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:direct\036color) 72953  0.00 -1 s
+4 sf
+( \037 A pixel value is decomposed into separate red,) 130960  123.00 32 s
+( green, and blue) 149352  122.33 32 s
+57912.0 100968.0 m
+(subfields.) 68807  0.00 -1 s
+( Each subfield indexes a) 95833  -101.00 32 s
+( separate colormap. Entries in all colormaps can) 149352  -101.57 32 s
+57912.0 104129.0 m
+(be) 60576  0.00 -1 s
+( changed.) 71332  -59.00 32 s
+( ) 71978  -60.00 32 s
+8 sf
+52832.0 110676.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:gray\036scale) 71075  0.00 -1 s
+4 sf
+( \037 A pixel value indexes a single colormap that contains monochrome) 149352  -172.91 32 s
+57912.0 113837.0 m
+(intensities.) 70062  0.00 -1 s
+( Colormap entries can be changed. ) 109570  -37.67 32 s
+8 sf
+52832.0 120385.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:pseudo\036color) 74371  0.00 -1 s
+4 sf
+( \037 A pixel value indexes a single colormap that contains color inten\036) 149352  -282.83 32 s
+57912.0 123546.0 m
+(sities.) 64419  0.00 -1 s
+( Colormap entries can be changed.) 103277  -34.00 32 s
+( ) 103948  -35.00 32 s
+8 sf
+52832.0 130093.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:static\036color) 72326  0.00 -1 s
+4 sf
+( \037 Same as ) 88469  469.00 32 s
+2 sf
+(:pseudo\036color) 104928  0.00 -1 s
+4 sf
+(, except that the colormap entries) 144733  469.00 32 s
+( are) 149352  468.00 32 s
+57912.0 133254.0 m
+(predefined) 69977  0.00 -1 s
+( by the hardware and cannot be changed. ) 116388  -46.75 32 s
+8 sf
+52832.0 139802.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:static\036gray) 71700  0.00 -1 s
+4 sf
+( \037 Same as ) 89411  861.00 32 s
+2 sf
+(:gray\036scale) 102574  0.00 -1 s
+4 sf
+(, except that the colormap entries are) 149352  861.17 32 s
+57912.0 142962.0 m
+(predefined) 69977  0.00 -1 s
+( by the hardware and cannot be changed. ) 116388  -46.75 32 s
+8 sf
+52832.0 149510.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+2 sf
+(:true\036color) 70916  0.00 -1 s
+4 sf
+( \037 Same as ) 88191  752.00 32 s
+2 sf
+(:direct\036color) 103232  0.00 -1 s
+4 sf
+(, except) 112761  752.00 32 s
+( that the colormap entries are) 149352  751.40 32 s
+57912.0 152671.0 m
+(predefined) 69977  0.00 -1 s
+( by the hardware and cannot be changed. Typically, each of the red,) 149352  247.33 32 s
+57912.0 155832.0 m
+(green,) 64885  0.00 -1 s
+( and blue colormaps provides a \(near\) linear ramp of intensity. ) 135738  -27.73 32 s
+52832.0 162108.0 m
+(CLX) 58475  0.00 -1 s
+( provides functions to create colormaps, access and modify colors and  color) 142935  -152.17 32 s
+( cells,) 149352  -167.00 32 s
+52832.0 165269.0 m
+(and) 56907  0.00 -1 s
+( install) 64482  -29.00 32 s
+( colormaps in screen hardware. ) 100223  -29.60 32 s
+20320.0 172268.0 m
+0.0 0.0 m
+newpath
+20455 170644 av
+148878 170642 as
+[] 0 setdash
+dp
+149352.0 172268.0 m
+6 sf
+20320.0 175655.0 m
+(Color) 28595  0.00 -1 s
+( Functions) 43756  15.00 32 s
+52832.0 h
+2 sf
+(9.2) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(A) 60592  0.00 -1 s
+( color is represented by a CLX color object, in which each of the red, green, and) 149352  -109.69 32 s
+52832.0 178816.0 m
+(blue) 57691  0.00 -1 s
+( values is specified by an ) 86271  -70.00 32 s
+2 sf
+(rgb\036val) 95049  0.00 -1 s
+4 sf
+( \037 a floating) 109809  -70.00 32 s
+( point number between 0.0 and 1.0.) 149352  -58.83 32 s
+52832.0 181977.0 m
+(\(see) 57375  0.00 -1 s
+( paragraph 1.6, Data Types\). The value 0.0 represents the minimum intensity, while) 149352  -205.33 32 s
+52832.0 185138.0 m
+(1.0) 56360  0.00 -1 s
+( represents the maximum intensity. CLX automatically converts) 127446  -168.00 32 s
+( ) 127955  -197.00 32 s
+2 sf
+(rgb\036val) 136733  0.00 -1 s
+4 sf
+( values into) 149352  -196.50 32 s
+52832.0 188299.0 m
+(16\036bit) 59572  0.00 -1 s
+( integers when sending colors to an X server. The X server, in turn, scales 16\036bit ) 149352  -105.00 32 s
+52832.0 191460.0 m
+(color) 58630  0.00 -1 s
+( values to match the actual intensity range supported by the) 125233  -33.00 32 s
+( screen.) 133818  -34.00 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Colors) 26480  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(9\036100) 26903  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(Colors used on ) 69741  -243.00 32 s
+2 sf
+(:gray\036scale) 82904  0.00 -1 s
+4 sf
+( screens must have the same value for each of red, green, and) 149352  -222.50 32 s
+52832.0 25739.0 m
+(blue.) 58397  0.00 -1 s
+( Only one of these values is used by screen hardware to determine intensity;) 142954  -96.92 32 s
+( how\036) 149352  -106.00 32 s
+52832.0 28900.0 m
+(ever,) 58394  0.00 -1 s
+( CLX does not define which of red, green, or blue is actually used.) 133096  -29.23 32 s
+52832.0 35176.0 m
+(The) 57220  0.00 -1 s
+( following paragraphs describe the CLX functions used to create, access, and modify) 149352  -302.92 32 s
+52832.0 38337.0 m
+(colors.) 60434  0.00 -1 s
+2 sf
+34544.0 44614.0 m
+(make\036color) 48178  0.00 -1 s
+( ) 48845  -39.00 32 s
+4 sf
+(&key \() 56721  -39.00 32 s
+2 sf
+(:blue) 62835  0.00 -1 s
+4 sf
+( 1.0\)) 67969  -39.00 32 s
+( \() 69574  -40.00 32 s
+2 sf
+(:green) 77252  0.00 -1 s
+4 sf
+( 1.0\) \() 83991  -39.50 32 s
+2 sf
+(:red) 89005  0.00 -1 s
+4 sf
+( 1.0\) &allow\036other\036keys) 116118  -39.50 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 47775.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+/timsps10i 5 declareFont
+5 sf
+52832.0 50935.0 m
+(  color ) 60826  -27.00 32 s
+4 sf
+(\037 Type) 70126  -27.00 32 s
+( ) 70804  -28.00 32 s
+2 sf
+(color) 76916  0.00 -1 s
+4 sf
+(.) 77622  0.00 -1 s
+52832.0 55654.0 m
+(Creates,) 62000  0.00 -1 s
+( initializes, and returns a) 90333  167.00 32 s
+( new ) 96779  166.50 32 s
+2 sf
+(color) 102891  0.00 -1 s
+4 sf
+( object with the specified values for red,) 149352  166.43 32 s
+52832.0 58815.0 m
+(green,) 59805  0.00 -1 s
+( and) 64526  -60.00 32 s
+( blue.) 70736  -61.00 32 s
+2 sf
+52832.0 65092.0 m
+(:blue) 58946  0.00 -1 s
+4 sf
+(,) 59652  0.00 -1 s
+( ) 60327  -31.00 32 s
+2 sf
+(:green) 68005  0.00 -1 s
+4 sf
+(, ) 69386  -31.00 32 s
+2 sf
+(:red ) 75075  -31.00 32 s
+4 sf
+(\037 ) 78572  -31.00 32 s
+2 sf
+(rgb\036val) 87350  0.00 -1 s
+4 sf
+( values that specify the saturation for each primary.) 145017  -30.63 32 s
+2 sf
+34544.0 71368.0 m
+(color\036blue) 46770  0.00 -1 s
+( ) 47394  -82.00 32 s
+5 sf
+(color) 53351  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 74529.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 77690.0 m
+(  blue\036intensity ) 70233  -25.67 32 s
+4 sf
+(\037 Type ) 80215  -25.50 32 s
+2 sf
+(rgb\036val) 88993  0.00 -1 s
+4 sf
+(. ) 90379  -26.00 32 s
+52832.0 82409.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73704  -18.00 32 s
+2 sf
+(setf) 77933  0.00 -1 s
+4 sf
+(\) sets the value for blue in the ) 111961  -17.88 32 s
+5 sf
+(color) 117918  0.00 -1 s
+4 sf
+(.) 118624  0.00 -1 s
+5 sf
+52832.0 88686.0 m
+(color) 58789  0.00 -1 s
+( ) 59464  -31.00 32 s
+4 sf
+(\037 A ) 65673  -31.00 32 s
+2 sf
+(color) 71785  0.00 -1 s
+4 sf
+( object.) 80061  -32.00 32 s
+2 sf
+34544.0 93472.0 m
+(color\036green) 48334  0.00 -1 s
+( ) 48930  -110.00 32 s
+5 sf
+(color) 54887  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 96633.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 99794.0 m
+(  green\036intensity) 71109  -31.00 32 s
+( ) 71783  -32.00 32 s
+4 sf
+(\037 Type ) 81753  -31.50 32 s
+2 sf
+(rgb\036val) 90531  0.00 -1 s
+4 sf
+(.) 91237  0.00 -1 s
+52832.0 104513.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73701  -19.00 32 s
+2 sf
+(setf) 77930  0.00 -1 s
+4 sf
+(\) sets the value for green in the ) 113360  -18.63 32 s
+5 sf
+(color) 119317  0.00 -1 s
+4 sf
+(.) 120023  0.00 -1 s
+5 sf
+52832.0 110789.0 m
+(color) 58789  0.00 -1 s
+( ) 59464  -31.00 32 s
+4 sf
+(\037 A ) 65673  -31.00 32 s
+2 sf
+(color) 71785  0.00 -1 s
+4 sf
+( object.) 80061  -32.00 32 s
+2 sf
+34544.0 115576.0 m
+(color\036p) 43164  0.00 -1 s
+( ) 43804  -66.00 32 s
+5 sf
+(color) 49761  0.00 -1 s
+2 sf
+52832.0 h
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 118737.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 121897.0 m
+(  color\036p ) 63174  -27.67 32 s
+4 sf
+(\037 Type ) 73152  -27.50 32 s
+2 sf
+(boolean) 82560  0.00 -1 s
+4 sf
+(. ) 83944  -28.00 32 s
+52832.0 126616.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67463  -25.00 32 s
+2 sf
+(nil) 70600  0.00 -1 s
+4 sf
+( if) 73004  -25.00 32 s
+( the argument is a ) 93646  -25.60 32 s
+2 sf
+(color) 99758  0.00 -1 s
+4 sf
+( object and ) 112771  -25.33 32 s
+2 sf
+(nil) 115908  0.00 -1 s
+4 sf
+( otherwise.) 128264  -26.00 32 s
+2 sf
+34544.0 132893.0 m
+(color\036red) 45670  0.00 -1 s
+( ) 46288  -88.00 32 s
+5 sf
+(color) 52245  0.00 -1 s
+2 sf
+52832.0 h
+4 sf
+(Function) 62866  0.00 -1 s
+2 sf
+34544.0 136054.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 139215.0 m
+(  red\036intensity ) 69132  -27.00 32 s
+4 sf
+(\037 Type ) 79111  -27.00 32 s
+2 sf
+(rgb\036val) 87889  0.00 -1 s
+4 sf
+(.) 88595  0.00 -1 s
+52832.0 143933.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73707  -17.00 32 s
+2 sf
+(setf) 77936  0.00 -1 s
+4 sf
+(\) sets the value for red in the ) 110719  -16.50 32 s
+5 sf
+(color) 116676  0.00 -1 s
+4 sf
+(.) 117382  0.00 -1 s
+5 sf
+52832.0 150210.0 m
+(color) 58789  0.00 -1 s
+( ) 59464  -31.00 32 s
+4 sf
+(\037 A ) 65673  -31.00 32 s
+2 sf
+(color) 71785  0.00 -1 s
+4 sf
+( object.) 80061  -32.00 32 s
+2 sf
+34544.0 154996.0 m
+(color\036rgb) 45828  0.00 -1 s
+( ) 46446  -88.00 32 s
+5 sf
+(color) 52403  0.00 -1 s
+2 sf
+52832.0 h
+4 sf
+(Function) 62866  0.00 -1 s
+2 sf
+34544.0 158157.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 161318.0 m
+(  red) 57943  -31.50 32 s
+4 sf
+(,) 58649  0.00 -1 s
+5 sf
+( green) 65749  -32.00 32 s
+4 sf
+(,) 66455  0.00 -1 s
+5 sf
+( blue ) 72663  -31.50 32 s
+4 sf
+(\037 Type ) 82633  -31.50 32 s
+2 sf
+(rgb\036val) 91411  0.00 -1 s
+4 sf
+(.) 92117  0.00 -1 s
+52832.0 166037.0 m
+(Returns) 61610  0.00 -1 s
+( the values for red, green, and blue in the ) 108190  -28.60 32 s
+5 sf
+(color) 114147  0.00 -1 s
+4 sf
+(.) 114853  0.00 -1 s
+5 sf
+52832.0 172314.0 m
+(color) 58789  0.00 -1 s
+( ) 59464  -31.00 32 s
+4 sf
+(\037 A ) 65673  -31.00 32 s
+2 sf
+(color) 71785  0.00 -1 s
+4 sf
+( object.) 80061  -32.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+118398.0 8195.0 m
+(      ) 121788  -1.00 32 s
+(                     Colors) 139802  -1.52 32 s
+/timsps10b 2 declareFont
+2 sf
+142430.0 208619.0 m
+(9\036101) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+20320.0 23300.0 m
+0.0 0.0 m
+newpath
+20455 21676 av
+148878 21674 as
+[] 0 setdash
+dp
+149352.0 23300.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 26687.0 m
+(Colormap) 34991  0.00 -1 s
+( ) 35854  16.00 32 s
+52832.0 h
+2 sf
+(9.3) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(A) 60592  0.00 -1 s
+( colormap is represented in CLX by a ) 115925  1528.50 32 s
+2 sf
+(colormap) 127367  0.00 -1 s
+4 sf
+( object. A CLX) 149352  1528.33 32 s
+6 sf
+20320.0 30074.0 m
+(Functions) 34619  0.00 -1 s
+52832.0 h
+4 sf
+(program) 62391  0.00 -1 s
+( can create and manipulate several ) 100318  -261.00 32 s
+2 sf
+(colormap) 111760  0.00 -1 s
+4 sf
+( objects. However, the colors con\036) 149352  -208.60 32 s
+52832.0 33234.0 m
+(tained) 59728  0.00 -1 s
+( in a) 64378  -105.00 32 s
+( ) 64978  -106.00 32 s
+2 sf
+(colormap) 76420  0.00 -1 s
+4 sf
+( are made visible only when the ) 112283  -105.43 32 s
+2 sf
+(colormap) 123725  0.00 -1 s
+4 sf
+( is ) 126913  -53.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(installed) 136633  0.00 -1 s
+4 sf
+(. Each win\036) 149352  -105.50 32 s
+52832.0 36395.0 m
+(dow) 57691  0.00 -1 s
+( is associated with a ) 80870  -20.00 32 s
+2 sf
+(colormap) 92312  0.00 -1 s
+4 sf
+( that is used  to translate window pixels into colors) 149352  -17.90 32 s
+52832.0 39556.0 m
+(\(see) 57375  0.00 -1 s
+( ) 58124  43.00 32 s
+2 sf
+(window\036colormap) 79912  0.00 -1 s
+4 sf
+(\). However, a window will appear in its true colors only if its) 149352  39.42 32 s
+52832.0 42717.0 m
+(associated) 64430  0.00 -1 s
+( ) 65102  -34.00 32 s
+2 sf
+(colormap) 76544  0.00 -1 s
+4 sf
+( is  installed. ) 91417  -25.25 32 s
+52832.0 48994.0 m
+(The) 57220  0.00 -1 s
+( total number of colormaps that can be installed depends on the) 129456  76.00 32 s
+( screen hardware.) 149352  37.50 32 s
+52832.0 52155.0 m
+(Most) 58634  0.00 -1 s
+( hardware devices allow exactly one ) 99129  -198.83 32 s
+2 sf
+(colormap) 110571  0.00 -1 s
+4 sf
+( to be installed  at any time. That is,) 149352  -176.44 32 s
+52832.0 55316.0 m
+2 sf
+(screen\036min\036installed\036maps) 84650  0.00 -1 s
+4 sf
+( and  ) 90795  -16.00 32 s
+2 sf
+(screen\036max\036installed\036maps) 123082  0.00 -1 s
+4 sf
+( are both equal to 1. In\036) 149352  -23.50 32 s
+52832.0 58476.0 m
+(stalling) 61141  0.00 -1 s
+( a new ) 68499  -238.00 32 s
+2 sf
+(colormap) 79941  0.00 -1 s
+4 sf
+(  can cause a previously installed ) 116368  -204.00 32 s
+2 sf
+(colormap) 127810  0.00 -1 s
+4 sf
+( to) 130473  -238.00 32 s
+( be uninstalled. It) 149352  -238.67 32 s
+52832.0 61637.0 m
+(is ) 55420  0.00 32 s
+( important to remember that the set of installed ) 110376  141.11 32 s
+2 sf
+(colormaps) 122916  0.00 -1 s
+4 sf
+( is a hardware resource) 149352  106.00 32 s
+52832.0 64798.0 m
+(shared) 60197  0.00 -1 s
+( cooperatively among all client programs connected to) 121294  -38.00 32 s
+( an X  server.) 136302  -29.00 32 s
+52832.0 71075.0 m
+(A) 54869  0.00 -1 s
+( CLX program can control the contents of ) 101944  -111.00 32 s
+2 sf
+(colormaps) 114484  0.00 -1 s
+4 sf
+( by allocating color cells in one) 149352  -93.00 32 s
+52832.0 74236.0 m
+(of) 55182  0.00 -1 s
+( two ways: read\036only or read\036write.) 95567  116.00 32 s
+( Allocating a read\036only  color cell establishes a) 149352  101.00 32 s
+52832.0 77397.0 m
+(color) 58630  0.00 -1 s
+( value for a specified pixel value that cannot ) 106910  -269.33 32 s
+( be changed. However, read\036only color) 149352  -303.60 32 s
+52832.0 80558.0 m
+(cells) 58004  0.00 -1 s
+( can be shared among all client  programs. Read\036only allocation is the best strategy) 149352  -164.86 32 s
+52832.0 83718.0 m
+(for) 56121  0.00 -1 s
+( making use of limited ) 82087  -27.20 32 s
+2 sf
+(colormap) 93529  0.00 -1 s
+4 sf
+( hardware in) 107564  -34.00 32 s
+( a multi\036client environment.) 138966  -34.67 32 s
+52832.0 89995.0 m
+(Alternatively,) 68426  0.00 -1 s
+( allocating a read\036write color cell allows a client the exclusive right to set) 149352  -134.69 32 s
+52832.0 93156.0 m
+(the) 56280  0.00 -1 s
+( color value stored in the cell. A cell allocated read\036write by one client cannot be allo\036) 149352  -241.63 32 s
+52832.0 96317.0 m
+(cated) 58786  0.00 -1 s
+( by another client, not even as  a) 94867  -45.50 32 s
+( read\036only cell. Note that read\036write allocation is) 149352  -52.57 32 s
+52832.0 99478.0 m
+(not) 56438  0.00 -1 s
+( allowed for  screens whose visual type belongs to one of) 120980  3.64 32 s
+( the ) 125847  3.50 32 s
+2 sf
+(:static\036gray) 139635  0.00 -1 s
+4 sf
+(, ) 141050  3.00 32 s
+2 sf
+(:static\036) 149352  0.00 -1 s
+52832.0 102639.0 m
+(color) 58944  0.00 -1 s
+4 sf
+(,) 59650  0.00 -1 s
+( or ) 63911  249.50 32 s
+2 sf
+(:true\036color) 76915  0.00 -1 s
+4 sf
+( classes. For) 91787  499.00 32 s
+( screens of these classes, ) 122806  498.40 32 s
+2 sf
+(colormap) 134248  0.00 -1 s
+4 sf
+( cells cannot) 149352  498.50 32 s
+52832.0 105799.0 m
+(be modified.) 67096  0.00 32 s
+52832.0 112076.0 m
+(Two) 58004  0.00 -1 s
+( entries of) 68814  -237.00 32 s
+( the default colormap, typically containing the colors black and white, are) 149352  -237.55 32 s
+52832.0 115237.0 m
+(automatically) 68192  0.00 -1 s
+( allocated read\036only. The pixel values for these) 120194  -139.00 32 s
+( entries can be returned by) 149352  -139.60 32 s
+52832.0 118398.0 m
+(the) 56280  0.00 -1 s
+( functions ) 68008  -93.00 32 s
+2 sf
+(screen\036black\036pixel) 89952  0.00 -1 s
+4 sf
+( and ) 95254  -92.50 32 s
+2 sf
+(screen\036white\036pixel) 117194  0.00 -1 s
+4 sf
+(. Applications that need only) 149352  -92.50 32 s
+52832.0 121559.0 m
+(two) 57064  0.00 -1 s
+( colors and also need to operate on both monochrome and color screens should al\036) 149352  -24.93 32 s
+52832.0 124720.0 m
+(ways) 58631  0.00 -1 s
+( use these pixel values. The names ) 97689  -86.00 32 s
+5 sf
+(black) 103801  0.00 -1 s
+4 sf
+( and ) 109116  -86.00 32 s
+5 sf
+(white) 115230  0.00 -1 s
+4 sf
+( are intended) 129633  -86.00 32 s
+( to reflect relative) 149352  -86.67 32 s
+52832.0 127881.0 m
+(intensity) 62552  0.00 -1 s
+( levels and need not reflect the actual colors displayed for these pixel values.) 148697  -28.85 32 s
+52832.0 134157.0 m
+(Each) 58473  0.00 -1 s
+( screen has a default ) 80670  -278.00 32 s
+2 sf
+(colormap) 92112  0.00 -1 s
+4 sf
+(, which is initially installed. By  conventions, clients) 149352  -242.88 32 s
+52832.0 137318.0 m
+(should) 60358  0.00 -1 s
+( allocate) 69802  -37.00 32 s
+( only read\036only cells from the default  ) 112955  -32.88 32 s
+2 sf
+(colormap) 124397  0.00 -1 s
+4 sf
+(.) 125103  0.00 -1 s
+52832.0 144249.0 m
+0.0 0.0 m
+newpath
+149013 142690 av
+52967 142692 as
+[] 0 setdash
+dp
+149352.0 144249.0 m
+20320.0 147072.0 m
+38766.0 h
+2 sf
+(Creating) 49423  0.00 -1 s
+52832.0 h
+(9.3.1) 58477  0.00 -1 s
+4 sf
+() 58477  0.00 -1 s
+60672.0 h
+(CLX) 66315  0.00 -1 s
+( provides functions for creating and freeing new ) 137910  2073.00 32 s
+2 sf
+(colormap) 149352  0.00 -1 s
+4 sf
+20320.0 150233.0 m
+36102.0 h
+2 sf
+(Colormaps) 49426  0.00 -1 s
+52832.0 h
+4 sf
+(objects.) 61532  0.00 -1 s
+2 sf
+34544.0 156509.0 m
+(create\036colormap) 54287  0.00 -1 s
+( ) 54932  -61.00 32 s
+5 sf
+(visual) 61673  0.00 -1 s
+( window ) 71743  -61.50 32 s
+4 sf
+(&optional) 83187  0.00 -1 s
+5 sf
+( alloc\036p) 91824  -62.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 159670.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 162831.0 m
+(  colormap) 64986  -37.00 32 s
+( ) 65654  -38.00 32 s
+4 sf
+(\037 Type ) 75612  -37.50 32 s
+2 sf
+(colormap) 87054  0.00 -1 s
+4 sf
+(.) 87760  0.00 -1 s
+52832.0 167550.0 m
+(Creates) 61294  0.00 -1 s
+( and returns a ) 76453  -207.00 32 s
+5 sf
+(colormap) 87269  0.00 -1 s
+4 sf
+( of the specified ) 105249  -207.00 32 s
+5 sf
+(visual) 111990  0.00 -1 s
+4 sf
+( type for the screen containing the) 149352  -173.00 32 s
+52832.0 170711.0 m
+5 sf
+(window) 61613  0.00 -1 s
+4 sf
+(.) 62319  0.00 -1 s
+( The ) 68055  -32.00 32 s
+5 sf
+(visual) 74796  0.00 -1 s
+4 sf
+( type must be one of) 97602  -32.00 32 s
+( those supported by the screen.) 132238  -32.60 32 s
+52832.0 176987.0 m
+(Initial) 59571  0.00 -1 s
+( color cell values are undefined for visual types belonging to the  ) 135483  154.31 32 s
+2 sf
+(:gray\036scale) 148646  0.00 -1 s
+4 sf
+(,) 149352  0.00 -1 s
+52832.0 180148.0 m
+2 sf
+(:pseudo\036color) 69291  0.00 -1 s
+4 sf
+(,) 69997  0.00 -1 s
+( and ) 75406  -39.00 32 s
+2 sf
+(:direct\036color) 90447  0.00 -1 s
+4 sf
+( classes. Color cell values for visual types belonging) 149352  -33.88 32 s
+52832.0 183309.0 m
+(to) 55027  0.00 -1 s
+( the) 58999  -182.00 32 s
+( ) 59522  -183.00 32 s
+2 sf
+(:static\036gray) 73310  0.00 -1 s
+4 sf
+(, ) 74540  -182.00 32 s
+2 sf
+(:static\036color) 88954  0.00 -1 s
+4 sf
+(, and ) 94964  -91.50 32 s
+2 sf
+(:true\036color) 107968  0.00 -1 s
+4 sf
+( classes have initial values defined by) 149352  -182.50 32 s
+52832.0 186470.0 m
+(the) 56280  0.00 -1 s
+( visual type. However, X does not define) 102052  -55.71 32 s
+( the set of possible visual types or their in\036) 149352  -65.56 32 s
+52832.0 189631.0 m
+(itial) 57221  0.00 -1 s
+( color cell values.) 77058  -23.00 32 s
+52832.0 195907.0 m
+(If) 54710  0.00 -1 s
+( ) 55271  -145.00 32 s
+5 sf
+(alloc\036p) 63264  0.00 -1 s
+4 sf
+( is true, all colormap) 85961  -145.00 32 s
+( cells are permanently allocated read\036write and cannot be) 149352  -127.38 32 s
+52832.0 199068.0 m
+(freed) 58627  0.00 -1 s
+( by ) 62535  -163.00 32 s
+2 sf
+(free\036colors) 75382  0.00 -1 s
+4 sf
+(. It is an error for ) 94385  -163.00 32 s
+5 sf
+(alloc\036p) 102378  0.00 -1 s
+4 sf
+(  to be true when the visual type belongs to) 149352  -146.60 32 s
+52832.0 202229.0 m
+(the) 56280  0.00 -1 s
+( ) 56951  -35.00 32 s
+2 sf
+(:static\036gray) 70739  0.00 -1 s
+4 sf
+(, ) 72116  -35.00 32 s
+2 sf
+(:static\036color) 86530  0.00 -1 s
+4 sf
+(, or ) 90964  -17.00 32 s
+2 sf
+(:true\036color ) 104639  -35.00 32 s
+4 sf
+(classes.) 113182  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Colors) 26480  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(9\036102) 26903  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10i 5 declareFont
+5 sf
+52832.0 22578.0 m
+(visual ) 60261  -18.00 32 s
+/timsps10 4 declareFont
+4 sf
+(\037 A ) 66496  -18.00 32 s
+2 sf
+(visual) 73553  0.00 -1 s
+4 sf
+( type ID.) 83470  -18.00 32 s
+5 sf
+52832.0 27364.0 m
+(window) 61613  0.00 -1 s
+4 sf
+( \037 A ) 68480  -36.67 32 s
+2 sf
+(window) 77887  0.00 -1 s
+4 sf
+(.) 78593  0.00 -1 s
+5 sf
+52832.0 32151.0 m
+(alloc\036p) 60825  0.00 -1 s
+4 sf
+( \037 Specifies whether ) 85732  -42.75 32 s
+2 sf
+(colormap) 97174  0.00 -1 s
+4 sf
+( cells are permanently allocated read\036write.) 145740  -34.00 32 s
+2 sf
+34544.0 36937.0 m
+(copy\036colormap\036and\036free) 63694  0.00 -1 s
+( ) 64210  -190.00 32 s
+5 sf
+(colormap) 75026  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 40098.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 43259.0 m
+(  new\036colormap ) 71126  -41.67 32 s
+4 sf
+(\037 Type ) 81076  -41.50 32 s
+2 sf
+(colormap) 92518  0.00 -1 s
+4 sf
+(.) 93224  0.00 -1 s
+52832.0 47978.0 m
+(Creates) 61294  0.00 -1 s
+( and returns a new ) 82318  -74.00 32 s
+2 sf
+(colormap) 93760  0.00 -1 s
+4 sf
+( by copying,) 107644  -74.00 32 s
+( then freeing, allocated cells from the) 149352  -62.17 32 s
+52832.0 51139.0 m
+(specified) 63018  0.00 -1 s
+( ) 63639  -85.00 32 s
+5 sf
+(colormap) 74455  0.00 -1 s
+4 sf
+(.) 75161  0.00 -1 s
+52832.0 56738.0 m
+(All) 56437  0.00 -1 s
+( color) 62724  -217.00 32 s
+( cells allocated read\036only or read\036write in the original ) 121652  -217.56 32 s
+2 sf
+(colormap) 133094  0.00 -1 s
+4 sf
+( have the same) 149352  -145.00 32 s
+52832.0 59899.0 m
+(color) 58630  0.00 -1 s
+( values and the same allocation status) 100432  -87.00 32 s
+( in the ) 107930  -87.67 32 s
+5 sf
+(new\036colormap) 124231  0.00 -1 s
+4 sf
+(. The values of unallo\036) 149352  -87.50 32 s
+52832.0 63060.0 m
+(cated) 58786  0.00 -1 s
+( color cells in the ) 78560  -73.80 32 s
+5 sf
+(new\036colormap) 94861  0.00 -1 s
+4 sf
+( are undefined. After copying, all allocated color) 149352  -63.00 32 s
+52832.0 66221.0 m
+(cells) 58004  0.00 -1 s
+( in the original ) 75302  13.50 32 s
+2 sf
+(colormap) 86744  0.00 -1 s
+4 sf
+( are freed, as if) 103660  18.00 32 s
+( ) 104383  17.00 32 s
+2 sf
+(free\036colors) 117230  0.00 -1 s
+4 sf
+( was called. The unallocated) 149352  17.50 32 s
+52832.0 69382.0 m
+(cells) 58004  0.00 -1 s
+( of  the original ) 75986  -24.60 32 s
+2 sf
+(colormap) 87428  0.00 -1 s
+4 sf
+( are not affected.) 106296  -30.67 32 s
+52832.0 74981.0 m
+(If) 54710  0.00 -1 s
+5 sf
+( alloc\036p) 63396  -13.00 32 s
+4 sf
+( was true when the original ) 94666  -13.00 32 s
+2 sf
+(colormap) 106108  0.00 -1 s
+4 sf
+( was created, then all color cells of) 145212  -11.14 32 s
+( the) 149352  -14.00 32 s
+52832.0 78142.0 m
+5 sf
+(new\036colormap) 69133  0.00 -1 s
+4 sf
+( are permanently allocated read\036write, and all the  color cells of the origi\036) 149352  -182.54 32 s
+52832.0 81303.0 m
+(nal) 56280  0.00 -1 s
+( ) 56942  -44.00 32 s
+2 sf
+(colormap) 68384  0.00 -1 s
+4 sf
+( are freed.) 79654  -44.00 32 s
+5 sf
+52832.0 86902.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+2 sf
+34544.0 91688.0 m
+(free\036colormap) 51623  0.00 -1 s
+( ) 52199  -130.00 32 s
+5 sf
+(colormap) 63015  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 96407.0 m
+(Destroys) 62863  0.00 -1 s
+( the ) 67911  94.00 32 s
+5 sf
+(colormap) 78727  0.00 -1 s
+4 sf
+( and frees its server resource. If the ) 119832  94.00 32 s
+5 sf
+(colormap) 130648  0.00 -1 s
+4 sf
+( is installed, it is) 149352  70.00 32 s
+52832.0 99568.0 m
+(uninstalled.) 65922  0.00 -1 s
+( For any window associated with the ) 106292  -245.57 32 s
+5 sf
+(colormap) 117108  0.00 -1 s
+4 sf
+(, the window is assigned a ) 146215  -204.67 32 s
+2 sf
+(nil) 149352  0.00 -1 s
+4 sf
+52832.0 102729.0 m
+2 sf
+(colormap) 64274  0.00 -1 s
+4 sf
+(,) 64980  0.00 -1 s
+( and a ) 71928  -166.00 32 s
+2 sf
+(:colormap\036notify) 92301  0.00 -1 s
+4 sf
+( event is  generated. The colors displayed for a win\036) 149352  -149.00 32 s
+52832.0 105890.0 m
+(dow) 57691  0.00 -1 s
+( with a) 65284  -44.00 32 s
+( ) 65945  -45.00 32 s
+2 sf
+(nil) 69082  0.00 -1 s
+4 sf
+( ) 69744  -44.00 32 s
+2 sf
+(colormap) 81186  0.00 -1 s
+4 sf
+( are undefined.) 97988  -22.50 32 s
+52832.0 112166.0 m
+(However,) 63879  0.00 -1 s
+( this function) 78716  -28.00 32 s
+( has no effect if the ) 100957  -28.50 32 s
+5 sf
+(colormap) 111773  0.00 -1 s
+4 sf
+( is a screen default  ) 134043  -23.83 32 s
+2 sf
+(colormap) 145485  0.00 -1 s
+4 sf
+(.) 146191  0.00 -1 s
+5 sf
+52832.0 118443.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+52832.0 123884.0 m
+0.0 0.0 m
+newpath
+149013 122325 av
+52967 122327 as
+[] 0 setdash
+dp
+149352.0 123884.0 m
+20320.0 126706.0 m
+37931.0 h
+2 sf
+(Installing) 49378  0.00 -1 s
+52832.0 h
+(9.3.2) 58477  0.00 -1 s
+4 sf
+() 58477  0.00 -1 s
+60672.0 h
+(The) 65060  0.00 -1 s
+( following paragraphs describe the CLX functions to install and) 149352  1380.44 32 s
+20320.0 129867.0 m
+36102.0 h
+2 sf
+(Colormaps) 49426  0.00 -1 s
+52832.0 h
+4 sf
+(uninstall) 62552  0.00 -1 s
+( colormaps and) 79746  -24.00 32 s
+( to return the set of installed colormaps.) 124404  -24.57 32 s
+52832.0 136144.0 m
+(Initially,) 62472  0.00 -1 s
+( the default ) 75822  -17.00 32 s
+2 sf
+(colormap) 87264  0.00 -1 s
+4 sf
+( for a screen is installed \(but is not in the required list\).) 148900  -16.75 32 s
+2 sf
+34544.0 142421.0 m
+(install\036colormap) 54294  0.00 -1 s
+( ) 54908  -92.00 32 s
+5 sf
+(colormap) 65724  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 147139.0 m
+(Installs) 60983  0.00 -1 s
+( the ) 65599  -122.00 32 s
+5 sf
+(colormap.) 77121  0.00 -1 s
+4 sf
+( All windows associated with this ) 115110  -122.00 32 s
+5 sf
+(colormap) 125926  0.00 -1 s
+4 sf
+( immediately) 140617  -122.00 32 s
+( display) 149352  -123.00 32 s
+52832.0 150300.0 m
+(with) 57848  0.00 -1 s
+( true colors. As a side\036effect, additional colormaps might be implicitly uninstalled) 149352  -81.73 32 s
+52832.0 153461.0 m
+(by) 55654  0.00 -1 s
+( the server.) 68067  -23.00 32 s
+( ) 68749  -24.00 32 s
+52832.0 159738.0 m
+(If) 54710  0.00 -1 s
+( the specified ) 69730  -244.00 32 s
+5 sf
+(colormap) 80546  0.00 -1 s
+4 sf
+( is not already installed, a ) 108631  -244.00 32 s
+2 sf
+(:colormap\036notify) 129004  0.00 -1 s
+4 sf
+( event is generated) 149352  -244.00 32 s
+52832.0 162899.0 m
+(on) 55654  0.00 -1 s
+( every window associated with this ) 95609  -55.00 32 s
+5 sf
+(colormap) 106425  0.00 -1 s
+4 sf
+(. In addition, for every other) 138045  -55.00 32 s
+( colormap) 149352  -56.00 32 s
+52832.0 166060.0 m
+(that) 57064  0.00 -1 s
+( is implicitly uninstalled, a) 86107  -245.00 32 s
+( ) 86567  -246.00 32 s
+2 sf
+(:colormap\036notify) 106940  0.00 -1 s
+4 sf
+( event is generated on every associated) 149352  -245.50 32 s
+52832.0 169220.0 m
+(window.) 62629  0.00 -1 s
+5 sf
+52832.0 175497.0 m
+(colormap) 63648  0.00 -1 s
+( ) 64308  -46.00 32 s
+4 sf
+(\037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+2 sf
+34544.0 180284.0 m
+(installed\036colormaps) 58214  0.00 -1 s
+( ) 58891  -29.00 32 s
+5 sf
+(window) 67672  0.00 -1 s
+4 sf
+( &key \() 76234  -29.50 32 s
+2 sf
+(:result\036type) 90180  0.00 -1 s
+4 sf
+( ) 90856  -30.00 32 s
+2 sf
+('list) 95400  0.00 -1 s
+4 sf
+(\)) 96339  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 183444.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 186605.0 m
+(  colormap ) 65662  -34.67 32 s
+4 sf
+(\037 Type ) 75626  -34.50 32 s
+2 sf
+(sequence) 86443  0.00 -1 s
+4 sf
+( of ) 90136  -34.50 32 s
+2 sf
+(colormap) 101578  0.00 -1 s
+4 sf
+(. ) 102955  -35.00 32 s
+52832.0 191324.0 m
+(Returns) 61610  0.00 -1 s
+( a sequence containing) 87309  24.00 32 s
+( the installed ) 102507  23.33 32 s
+2 sf
+(colormaps) 115047  0.00 -1 s
+4 sf
+( for the screen of the specified) 149352  23.50 32 s
+52832.0 194485.0 m
+5 sf
+(window) 61613  0.00 -1 s
+4 sf
+(.) 62319  0.00 -1 s
+( The) 67386  -27.00 32 s
+( order of the colormaps is not significant.) 113747  -27.57 32 s
+5 sf
+52832.0 200762.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+4 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+4 sf
+(.) 78593  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+118398.0 8195.0 m
+(      ) 121788  -1.00 32 s
+(                     Colors) 139802  -1.52 32 s
+/timsps10b 2 declareFont
+2 sf
+142430.0 208619.0 m
+(9\036103) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+52832.0 22578.0 m
+(:result\036type) 66778  0.00 -1 s
+( ) 67455  -29.00 32 s
+/timsps10 4 declareFont
+4 sf
+(\037 A sub\036type of ) 87090  -29.00 32 s
+2 sf
+(sequence ) 98584  -29.00 32 s
+4 sf
+(that) 102816  0.00 -1 s
+2 sf
+( ) 103493  -29.00 32 s
+4 sf
+(indicates the type of sequence to) 140104  -29.00 32 s
+( return.) 148223  -30.00 32 s
+2 sf
+34544.0 28854.0 m
+(uninstall\036colormap) 57432  0.00 -1 s
+( ) 58024  -114.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(colormap) 68840  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 33573.0 m
+(Uninstalls) 64276  0.00 -1 s
+( the ) 70020  442.00 32 s
+5 sf
+(colormap) 80836  0.00 -1 s
+4 sf
+(. However, the ) 99483  442.67 32 s
+5 sf
+(colormap) 110299  0.00 -1 s
+4 sf
+( is not actually uninstalled if this) 149352  368.67 32 s
+52832.0 36734.0 m
+(would) 59886  0.00 -1 s
+( reduce the set of) 78811  -88.00 32 s
+( installed colormaps below the value of  ) 123962  -77.50 32 s
+2 sf
+(screen\036min\036installed\036) 149352  0.00 -1 s
+52832.0 39895.0 m
+(maps) 59260  0.00 -1 s
+4 sf
+(.) 59966  0.00 -1 s
+( If the ) 66717  -231.00 32 s
+5 sf
+(colormap) 77533  0.00 -1 s
+4 sf
+( is actually uninstalled, a ) 105297  -184.80 32 s
+2 sf
+(:colormap\036notify) 125670  0.00 -1 s
+4 sf
+( event) 132257  -231.00 32 s
+( is generated on) 149352  -231.67 32 s
+52832.0 43056.0 m
+(every) 59099  0.00 -1 s
+( associated) 71339  -64.00 32 s
+( window.) 81777  -65.00 32 s
+5 sf
+52832.0 49332.0 m
+(colormap) 63648  0.00 -1 s
+( ) 64308  -46.00 32 s
+4 sf
+(\037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+52832.0 54774.0 m
+0.0 0.0 m
+newpath
+149013 53215 av
+52967 53217 as
+[] 0 setdash
+dp
+149352.0 54774.0 m
+20320.0 57596.0 m
+28358.0 h
+2 sf
+(Allocating) 40741  0.00 -1 s
+( Colors) 49378  -63.00 32 s
+52832.0 h
+(9.3.3) 58477  0.00 -1 s
+60827.0 h
+() 60827  0.00 -1 s
+4 sf
+(The) 65215  0.00 -1 s
+( following paragraphs describe the functions for allocating read\036only and) 149352  197.33 32 s
+52832.0 60757.0 m
+(read\036write) 64424  0.00 -1 s
+( color cells, allocating color planes, and freeing color cells.) 130770  -29.67 32 s
+2 sf
+34544.0 67033.0 m
+(alloc\036color) 47238  0.00 -1 s
+( ) 47880  -64.00 32 s
+5 sf
+(colormap color) 65295  -64.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 70194.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 73355.0 m
+(  pixel) 59681  -24.00 32 s
+4 sf
+( \037 Type ) 70348  -24.00 32 s
+2 sf
+(pixel) 76149  0.00 -1 s
+4 sf
+(.) 76855  0.00 -1 s
+52832.0 76516.0 m
+(  ) 54172  -36.00 32 s
+5 sf
+(screen\036color) 68434  0.00 -1 s
+4 sf
+(,) 69140  0.00 -1 s
+5 sf
+( exact\036color ) 83330  -36.00 32 s
+4 sf
+(\037 Type ) 93292  -35.50 32 s
+2 sf
+(color) 99404  0.00 -1 s
+4 sf
+(.) 100110  0.00 -1 s
+52832.0 81235.0 m
+(Returns) 61610  0.00 -1 s
+( a ) 63929  -173.00 32 s
+5 sf
+(pixel) 69414  0.00 -1 s
+4 sf
+( for a read\036only color cell in the) 104014  -173.00 32 s
+( ) 104546  -174.00 32 s
+5 sf
+(colormap) 115362  0.00 -1 s
+4 sf
+(. The color in the allocated cell) 149352  -173.50 32 s
+52832.0 84396.0 m
+(is) 54714  0.00 -1 s
+( the closest approximation to the requested ) 102037  -237.43 32 s
+5 sf
+(color) 107994  0.00 -1 s
+4 sf
+( possible for the screen hardware. The) 149352  -277.00 32 s
+52832.0 87557.0 m
+(other values) 66546  0.00 32 s
+( returned give both the approximate color stored in the cell and the exact) 149352  70.00 32 s
+52832.0 90718.0 m
+(color) 58630  0.00 -1 s
+( requested.) 70781  -74.00 32 s
+52832.0 96994.0 m
+(The) 57220  0.00 -1 s
+( requested ) 68881  -282.00 32 s
+5 sf
+(color) 74838  0.00 -1 s
+4 sf
+( can be either a ) 91216  -282.00 32 s
+2 sf
+(color) 97328  0.00 -1 s
+4 sf
+( object or a ) 109523  -282.00 32 s
+2 sf
+(stringable) 121594  0.00 -1 s
+4 sf
+( containing) 134213  0.00 32 s
+( a color name.) 149352  -282.67 32 s
+52832.0 100155.0 m
+(If) 54710  0.00 -1 s
+( a color name is given, a corresponding color value is looked up \(see ) 133049  14.29 32 s
+2 sf
+(lookup\036color) 148413  0.00 -1 s
+4 sf
+(\)) 149352  0.00 -1 s
+52832.0 103316.0 m
+(and) 56907  0.00 -1 s
+( used.) 63339  -153.00 32 s
+( Color name strings must contain only ISO Latin\0361 characters; case is not sig\036) 149352  -129.92 32 s
+52832.0 106477.0 m
+(nificant.) 62157  0.00 -1 s
+5 sf
+52832.0 112753.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 117540.0 m
+(color) 58789  0.00 -1 s
+4 sf
+( \037 A) 64998  -31.00 32 s
+( ) 65672  -32.00 32 s
+2 sf
+(color) 71784  0.00 -1 s
+4 sf
+( object or a ) 84981  -31.50 32 s
+2 sf
+(stringable) 97052  0.00 -1 s
+4 sf
+( containing a color name.) 125532  -31.50 32 s
+2 sf
+34544.0 122326.0 m
+(alloc\036color\036cells) 53349  0.00 -1 s
+( ) 54020  -35.00 32 s
+5 sf
+(colormap colors) 72563  -34.00 32 s
+4 sf
+( &key \() 81115  -34.50 32 s
+2 sf
+(:planes) 89738  0.00 -1 s
+4 sf
+( 0\) ) 93431  -34.50 32 s
+2 sf
+(:contiguous\036p) 109892  0.00 -1 s
+4 sf
+( ) 110563  -35.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 125487.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(:result\036type) 67717  0.00 -1 s
+4 sf
+( ) 68459  36.00 32 s
+2 sf
+('list) 73003  0.00 -1 s
+4 sf
+(\)) 73942  0.00 -1 s
+2 sf
+34544.0 128648.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 131809.0 m
+(  pixels, mask) 67957  -27.00 32 s
+( ) 68635  -28.00 32 s
+4 sf
+(\037 Type ) 78613  -27.50 32 s
+2 sf
+(sequence) 89430  0.00 -1 s
+4 sf
+( of ) 93137  -27.50 32 s
+2 sf
+(pixels) 100036  0.00 -1 s
+4 sf
+(.) 100742  0.00 -1 s
+52832.0 136528.0 m
+(Returns) 61610  0.00 -1 s
+( a ) 64162  -56.50 32 s
+2 sf
+(sequence) 74979  0.00 -1 s
+4 sf
+( of ) 78628  -56.50 32 s
+5 sf
+(pixels) 85211  0.00 -1 s
+4 sf
+( for read\036write color cells in the ) 121251  -56.57 32 s
+5 sf
+(colormap) 132067  0.00 -1 s
+4 sf
+(.  The allocated) 149352  -37.67 32 s
+52832.0 139689.0 m
+(cells) 58004  0.00 -1 s
+( contain undefined color) 86012  167.00 32 s
+( values. The visual type class of the ) 128013  145.63 32 s
+2 sf
+(colormap) 139455  0.00 -1 s
+4 sf
+( must be) 149352  166.50 32 s
+52832.0 142850.0 m
+(either) 59256  0.00 -1 s
+( ) 59889  -73.00 32 s
+2 sf
+(:gray\036scale) 73052  0.00 -1 s
+4 sf
+(, ) 74391  -73.00 32 s
+2 sf
+(:pseudo\036color) 90850  0.00 -1 s
+4 sf
+(, or ) 95245  -36.50 32 s
+2 sf
+(:direct\036color) 110286  0.00 -1 s
+4 sf
+(.) 110992  0.00 -1 s
+52832.0 149126.0 m
+(The) 57220  0.00 -1 s
+( ) 57622  -304.00 32 s
+5 sf
+(colors) 64677  0.00 -1 s
+4 sf
+( argument and the ) 84465  -304.00 32 s
+2 sf
+(:planes) 93088  0.00 -1 s
+4 sf
+( argument) 104147  -304.00 32 s
+( define the number of pixels and the num\036) 149352  -266.50 32 s
+52832.0 152287.0 m
+(ber) 56435  0.00 -1 s
+( of masks returned, respectively. The number of colors must be positive, and the) 149352  178.15 32 s
+52832.0 155448.0 m
+(number) 61452  0.00 -1 s
+( of planes must) 78108  -170.00 32 s
+( be non\036negative. A total of \(* ) 111882  -146.14 32 s
+5 sf
+(colors) 118937  0.00 -1 s
+4 sf
+( \() 120411  -171.00 32 s
+2 sf
+(expt) 125583  0.00 -1 s
+4 sf
+( 2 ) 128065  -170.50 32 s
+5 sf
+(planes) 135433  0.00 -1 s
+4 sf
+(\)\) color cells) 149352  -170.50 32 s
+52832.0 158609.0 m
+(are) 56277  0.00 -1 s
+( allocated. The pixel values for the allocated cells can be computed by combining the) 149352  -220.57 32 s
+52832.0 161770.0 m
+(returned pixels) 69680  0.00 32 s
+( and) 74405  -56.00 32 s
+( masks.) 82815  -57.00 32 s
+52832.0 168046.0 m
+(The) 57220  0.00 -1 s
+( length of the returned masks sequence is equal to ) 115440  132.00 32 s
+2 sf
+(:planes) 124063  0.00 -1 s
+4 sf
+(. Each) 131248  132.00 32 s
+( mask of the re\036) 149352  98.50 32 s
+52832.0 171207.0 m
+(turned) 60041  0.00 -1 s
+( masks sequence defines a single bitplane. None of the  masks have any 1 bits in) 149352  -85.88 32 s
+52832.0 174368.0 m
+(common.) 63414  0.00 -1 s
+( Thus, by selectively combining masks with ) 114272  76.29 32 s
+2 sf
+(logior) 121326  0.00 -1 s
+4 sf
+(, \() 123767  90.00 32 s
+2 sf
+(expt) 128939  0.00 -1 s
+4 sf
+( 2 ) 131941  89.50 32 s
+5 sf
+(planes) 139309  0.00 -1 s
+4 sf
+(\) distinct) 149352  89.00 32 s
+52832.0 177529.0 m
+(combined) 63961  0.00 -1 s
+( plane masks can be  computed.) 99500  -46.67 32 s
+52832.0 183806.0 m
+(The) 57220  0.00 -1 s
+( length of the returned ) 82913  -18.00 32 s
+5 sf
+(pixels) 89496  0.00 -1 s
+4 sf
+( sequence is equal to ) 113468  -18.00 32 s
+5 sf
+(colors) 120523  0.00 -1 s
+4 sf
+(. None of ) 131773  -12.00 32 s
+( the pixels have) 149352  -18.67 32 s
+52832.0 186967.0 m
+(any) 56907  0.00 -1 s
+( 1 bits in common with each other or with any of the returned masks. By combining) 149352  -134.94 32 s
+52832.0 190127.0 m
+(pixels) 59573  0.00 -1 s
+( and plane masks with ) 84831  -106.00 32 s
+2 sf
+(logior) 91885  0.00 -1 s
+4 sf
+(, \(* ) 96247  -53.00 32 s
+5 sf
+(colors) 103302  0.00 -1 s
+4 sf
+( \() 104841  -106.00 32 s
+2 sf
+(expt) 110013  0.00 -1 s
+4 sf
+( 2 ) 112625  -105.50 32 s
+5 sf
+(planes) 119993  0.00 -1 s
+4 sf
+(\)\) distinct pixel values can) 149352  -105.50 32 s
+52832.0 193288.0 m
+(be) 55496  0.00 -1 s
+( produced.) 67304  -104.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Colors) 26480  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(9\036104) 26903  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(If the ) 59278  -146.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(colormap) 70094  0.00 -1 s
+4 sf
+( class is ) 79142  -146.00 32 s
+2 sf
+(:gray\036scale) 92305  0.00 -1 s
+4 sf
+( or ) 95774  -146.50 32 s
+2 sf
+(:pseudo\036color) 112233  0.00 -1 s
+4 sf
+(, each ) 119228  -146.50 32 s
+5 sf
+(mask) 125027  0.00 -1 s
+4 sf
+( will have exactly one) 149352  -110.00 32 s
+52832.0 25739.0 m
+(bit) 55811  0.00 -1 s
+( set. If the ) 66898  -226.00 32 s
+2 sf
+(colormap) 78340  0.00 -1 s
+4 sf
+( class is ) 87148  -226.00 32 s
+2 sf
+(:direct\036color) 102189  0.00 -1 s
+4 sf
+(, each ) 109251  -113.00 32 s
+5 sf
+(mask) 115050  0.00 -1 s
+4 sf
+( will have exactly) 134356  -226.00 32 s
+( three bits set.) 149352  -226.67 32 s
+52832.0 28900.0 m
+(If) 54710  0.00 -1 s
+( ) 55369  -47.00 32 s
+2 sf
+(:contiguous\036p) 71830  0.00 -1 s
+4 sf
+( is true, combining all masks with ) 110429  -40.14 32 s
+2 sf
+(logior) 117483  0.00 -1 s
+4 sf
+( produces a plane mask with) 149352  -37.20 32 s
+52832.0 32060.0 m
+(either) 59256  0.00 -1 s
+( one set of) 71300  122.00 32 s
+( contiguous bits \(for ) 95300  121.50 32 s
+2 sf
+(:gray\036scale) 108463  0.00 -1 s
+4 sf
+( and ) 114071  60.50 32 s
+2 sf
+(:pseudo\036color) 130530  0.00 -1 s
+4 sf
+(\) or three sets of) 149352  121.50 32 s
+52832.0 35221.0 m
+(contiguous) 65217  0.00 -1 s
+( bits \(for ) 75544  -32.00 32 s
+2 sf
+(:direct\036color) 90585  0.00 -1 s
+4 sf
+(\).) 92230  0.00 -1 s
+5 sf
+52832.0 41498.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 46284.0 m
+(colors) 59887  0.00 -1 s
+4 sf
+( \037 A) 66092  -33.00 32 s
+( positive number defining the length of the pixels sequence returned.) 143301  -30.20 32 s
+2 sf
+52832.0 51071.0 m
+(:planes) 61455  0.00 -1 s
+4 sf
+( \037 A non\036negative number) 91766  -181.00 32 s
+( defining the length of the masks sequence returned.) 149352  -158.88 32 s
+2 sf
+52832.0 55857.0 m
+(:contiguous\036p) 69293  0.00 -1 s
+4 sf
+( \037 If true, the masks form contiguous sets of) 120242  -17.00 32 s
+( bits.) 125713  -18.00 32 s
+2 sf
+52832.0 60644.0 m
+(:result\036type) 66778  0.00 -1 s
+4 sf
+( \037 A) 72979  -35.00 32 s
+( subtype of ) 86119  -35.67 32 s
+2 sf
+(sequence) 96936  0.00 -1 s
+4 sf
+( that indicates the type of sequences returned.) 148133  -30.43 32 s
+2 sf
+34544.0 65430.0 m
+(alloc\036color\036planes) 55861  0.00 -1 s
+( ) 56540  -27.00 32 s
+5 sf
+(colormap colors ) 75769  -27.00 32 s
+4 sf
+(&key \() 83657  -27.00 32 s
+2 sf
+(:reds) 89769  0.00 -1 s
+4 sf
+( 0\) \() 94416  -27.00 32 s
+2 sf
+(:greens) 103192  0.00 -1 s
+4 sf
+( 0\) \() 107839  -27.00 32 s
+2 sf
+(:blues) 115051  0.00 -1 s
+4 sf
+( 0\) ) 118759  -27.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 68591.0 m
+2 sf
+(:contiguous\036p) 69293  0.00 -1 s
+4 sf
+( \(:) 71712  -10.00 32 s
+2 sf
+(result\036type) 84719  0.00 -1 s
+4 sf
+( ) 85415  -10.00 32 s
+2 sf
+('list) 89959  0.00 -1 s
+4 sf
+(\)) 90898  0.00 -1 s
+2 sf
+34544.0 71752.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+52832.0 74913.0 m
+(  ) 54194  -25.00 32 s
+5 sf
+(pixels ) 61458  -25.00 32 s
+4 sf
+(\037 Type ) 71441  -25.00 32 s
+2 sf
+(sequence) 82258  0.00 -1 s
+4 sf
+( of ) 85969  -25.50 32 s
+2 sf
+(pixel) 91770  0.00 -1 s
+4 sf
+(. ) 93156  -26.00 32 s
+52832.0 78074.0 m
+(  ) 54178  -33.00 32 s
+5 sf
+(red\036mask) 64678  0.00 -1 s
+4 sf
+(, ) 66057  -33.00 32 s
+5 sf
+(green\036mask) 79221  0.00 -1 s
+4 sf
+(, ) 80600  -33.00 32 s
+5 sf
+(blue\036mask ) 92870  -33.00 32 s
+4 sf
+(\037 Type ) 102837  -33.00 32 s
+2 sf
+(pixel) 108638  0.00 -1 s
+4 sf
+(.) 109344  0.00 -1 s
+52832.0 82793.0 m
+(Returns) 61610  0.00 -1 s
+( a ) 64162  -56.50 32 s
+2 sf
+(sequence) 74979  0.00 -1 s
+4 sf
+( of ) 78628  -56.50 32 s
+5 sf
+(pixels) 85211  0.00 -1 s
+4 sf
+( for read\036write color cells in the ) 121251  -56.57 32 s
+5 sf
+(colormap) 132067  0.00 -1 s
+4 sf
+(.  The allocated) 149352  -37.67 32 s
+52832.0 85954.0 m
+(cells) 58004  0.00 -1 s
+( contain undefined color values. The visual type class) 119964  191.63 32 s
+( of the ) 128535  218.33 32 s
+5 sf
+(colormap) 139351  0.00 -1 s
+4 sf
+( must be) 149352  218.50 32 s
+52832.0 89114.0 m
+(either) 59256  0.00 -1 s
+( ) 59889  -73.00 32 s
+2 sf
+(:gray\036scale) 73052  0.00 -1 s
+4 sf
+(, ) 74391  -73.00 32 s
+2 sf
+(:pseudo\036color) 90850  0.00 -1 s
+4 sf
+(, or ) 95245  -36.50 32 s
+2 sf
+(:direct\036color) 110286  0.00 -1 s
+4 sf
+(.) 110992  0.00 -1 s
+52832.0 95391.0 m
+(The) 57220  0.00 -1 s
+( ) 58087  161.00 32 s
+5 sf
+(colors) 65142  0.00 -1 s
+4 sf
+( argument defines the number of pixels returned. The ) 127405  161.00 32 s
+2 sf
+(:reds) 133517  0.00 -1 s
+4 sf
+(, ) 134929  0.00 32 s
+2 sf
+(:greens) 143705  0.00 -1 s
+4 sf
+(,) 144411  0.00 -1 s
+( and) 149352  160.00 32 s
+52832.0 98552.0 m
+2 sf
+(:blues) 60044  0.00 -1 s
+4 sf
+( arguments define the number of bits set in) 110619  287.00 32 s
+( the returned red, green, and blue) 149352  238.67 32 s
+52832.0 101713.0 m
+(masks,) 60593  0.00 -1 s
+( respectively. The number of colors must be positive, and the number of bits for) 149352  -98.00 32 s
+52832.0 104874.0 m
+(each) 58002  0.00 -1 s
+( mask must be non\036negative. A total of \(* ) 112224  729.78 32 s
+5 sf
+(colors) 119279  0.00 -1 s
+4 sf
+( \() 121745  821.00 32 s
+2 sf
+(expt) 126917  0.00 -1 s
+4 sf
+( 2 \(+ ) 135441  821.33 32 s
+5 sf
+(reds greens) 149352  821.00 32 s
+52832.0 108035.0 m
+(blues) 58789  0.00 -1 s
+4 sf
+(\)\)\) color) 68110  0.00 32 s
+( cells are allocated. The pixel values for the allocated cells can be com\036) 149352  64.62 32 s
+52832.0 111196.0 m
+(puted) 59102  0.00 -1 s
+( by combining the returned ) 90179  -39.00 32 s
+5 sf
+(pixels) 96762  0.00 -1 s
+4 sf
+( and) 101504  -39.00 32 s
+( masks.) 109931  -40.00 32 s
+52832.0 117472.0 m
+(Each) 58473  0.00 -1 s
+( mask of the returned) 81481  -243.00 32 s
+( masks defines a pixel subfield for the corresponding primary.) 149352  -243.56 32 s
+52832.0 120633.0 m
+(None) 58944  0.00 -1 s
+( of the masks have any 1 bits in common. By selectively combining subsets of the) 149352  -139.07 32 s
+52832.0 123794.0 m
+(red,) 57141  0.00 -1 s
+( green, and blue masks with ) 120285  5155.00 32 s
+2 sf
+(logior) 127339  0.00 -1 s
+4 sf
+(, \() 135877  6187.00 32 s
+2 sf
+(expt) 141049  0.00 -1 s
+4 sf
+( 2) 149352  6186.00 32 s
+52832.0 126955.0 m
+(\(+) 55363  0.00 -1 s
+( ) 56033  -36.00 32 s
+5 sf
+(reds greens) 69087  -36.00 32 s
+( blues) 75713  -37.00 32 s
+4 sf
+(\) distinct combined plane masks can be computed.) 132396  -31.29 32 s
+52832.0 133231.0 m
+(The) 57220  0.00 -1 s
+( length of the returned ) 82988  -3.00 32 s
+5 sf
+(pixels) 89571  0.00 -1 s
+2 sf
+( sequence) 101091  -3.00 32 s
+4 sf
+( is equal to ) 114092  -3.00 32 s
+5 sf
+(colors) 121147  0.00 -1 s
+4 sf
+(. None of the pixels have) 149352  -2.00 32 s
+52832.0 136392.0 m
+(any) 56907  0.00 -1 s
+( 1 bits in common with each other or with any of the returned masks. By combining) 149352  -134.94 32 s
+52832.0 139553.0 m
+(pixels) 59573  0.00 -1 s
+( and plane masks with ) 84161  -240.00 32 s
+2 sf
+(logior) 91215  0.00 -1 s
+4 sf
+(, \(* ) 95443  -120.00 32 s
+5 sf
+(colors) 102498  0.00 -1 s
+4 sf
+( \() 103903  -240.00 32 s
+2 sf
+(expt) 109075  0.00 -1 s
+4 sf
+( 2 \(+ ) 114415  -240.00 32 s
+5 sf
+(reds greens blues) 133688  -240.00 32 s
+4 sf
+(\)\) distinct pix\036) 149352  -240.00 32 s
+52832.0 142714.0 m
+(el) 54869  0.00 -1 s
+( values can be produced.) 82499  -47.75 32 s
+52832.0 148991.0 m
+(If) 54710  0.00 -1 s
+( ) 55385  -31.00 32 s
+2 sf
+(:contiguous\036p) 71846  0.00 -1 s
+4 sf
+( is true, each of returned masks consists of a set of contiguous bits. If) 149352  -28.57 32 s
+52832.0 152152.0 m
+(the) 56280  0.00 -1 s
+( ) 57004  18.00 32 s
+2 sf
+(colormap) 68446  0.00 -1 s
+4 sf
+( class is ) 77988  18.67 32 s
+2 sf
+(:direct\036color) 93029  0.00 -1 s
+4 sf
+(, each returned mask lies within the pixel subfield) 149352  16.13 32 s
+52832.0 155313.0 m
+(for) 56121  0.00 -1 s
+( its primary.) 69833  -2.00 32 s
+5 sf
+52832.0 161589.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 166376.0 m
+(colors) 59887  0.00 -1 s
+( ) 60560  -33.00 32 s
+4 sf
+(\037 A) 66092  -33.00 32 s
+( positive number defining the length of the pixels sequence returned.) 143301  -30.20 32 s
+2 sf
+52832.0 171162.0 m
+(:planes) 61455  0.00 -1 s
+4 sf
+( \037 A non\036negative number defining the length of the masks  sequence) 138765  -206.25 32 s
+( returned.) 149352  -226.00 32 s
+2 sf
+52832.0 175949.0 m
+(:contiguous\036p) 69293  0.00 -1 s
+4 sf
+( \037 If true, then the masks form contiguous sets of bits.) 131245  -18.55 32 s
+2 sf
+52832.0 180735.0 m
+(:result\036type) 66778  0.00 -1 s
+4 sf
+( \037 A subtype of ) 85801  -99.00 32 s
+2 sf
+(sequence) 96618  0.00 -1 s
+4 sf
+( that indicates the type of ) 125279  -82.50 32 s
+( sequences returned. ) 148746  -66.33 32 s
+5 sf
+( ) 149352  -100.00 32 s
+2 sf
+34544.0 185522.0 m
+(free\036colors) 47391  0.00 -1 s
+( ) 48053  -44.00 32 s
+5 sf
+(colormap pixels ) 66777  -43.50 32 s
+4 sf
+(&optional \() 79823  -43.00 32 s
+5 sf
+(plane\036mask) 92831  0.00 -1 s
+4 sf
+( 0\)) 95843  -44.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 190240.0 m
+(Frees) 58944  0.00 -1 s
+( a set of allocated color cells from the ) 99614  -278.89 32 s
+5 sf
+(colormap) 110430  0.00 -1 s
+4 sf
+(. The pixel values for the freed cells) 149352  -238.71 32 s
+52832.0 193401.0 m
+(are) 56277  0.00 -1 s
+( computed by) 71078  -281.00 32 s
+( combining the given ) 94565  -281.50 32 s
+5 sf
+(pixels) 101148  0.00 -1 s
+4 sf
+( sequence and ) 117121  -187.67 32 s
+2 sf
+(:plane\036mask) 132013  0.00 -1 s
+4 sf
+(. The total num\036) 149352  -281.67 32 s
+52832.0 196562.0 m
+(ber) 56435  0.00 -1 s
+( of cells) 65353  -8.00 32 s
+( freed is: ) 75906  -8.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+118398.0 8195.0 m
+(      ) 121788  -1.00 32 s
+(                     Colors) 139802  -1.52 32 s
+/timsps10b 2 declareFont
+2 sf
+142430.0 208619.0 m
+(9\036105) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(\(*) 55182  0.00 -1 s
+( \() 56801  -26.00 32 s
+2 sf
+(length) 64326  0.00 -1 s
+/timsps10i 5 declareFont
+5 sf
+(  pixels) 72295  -13.00 32 s
+4 sf
+(\) \() 74853  -26.00 32 s
+2 sf
+(expt) 80025  0.00 -1 s
+4 sf
+( 2 \() 83735  -26.00 32 s
+2 sf
+(logcount) 94082  0.00 -1 s
+4 sf
+( ) 94761  -27.00 32 s
+5 sf
+(plane\036mask) 107769  0.00 -1 s
+4 sf
+(\)\)\)) 110586  0.00 -1 s
+52832.0 28854.0 m
+(The) 57220  0.00 -1 s
+( ) 57867  -59.00 32 s
+2 sf
+(:plane\036mask) 72759  0.00 -1 s
+4 sf
+( must not have any) 93844  -59.00 32 s
+( bits in common with any of the given ) 137029  -52.89 32 s
+5 sf
+(pixels) 143612  0.00 -1 s
+4 sf
+(. The) 149352  -60.00 32 s
+52832.0 32015.0 m
+(pixel) 58475  0.00 -1 s
+( values for the freed cells are produced by using ) 110678  -265.30 32 s
+2 sf
+(logior) 117732  0.00 -1 s
+4 sf
+( to combine each of the given) 149352  -294.50 32 s
+52832.0 35176.0 m
+(pixels) 59573  0.00 -1 s
+( with all subsets of the ) 85483  -19.00 32 s
+2 sf
+(:plane\036mask) 100375  0.00 -1 s
+4 sf
+(.) 101081  0.00 -1 s
+52832.0 41453.0 m
+(Note) 58317  0.00 -1 s
+( that freeing an individual pixel allocated by ) 106986  -245.00 32 s
+2 sf
+(alloc\036color\036planes) 128303  0.00 -1 s
+4 sf
+( may not allow it to) 149352  -195.60 32 s
+52832.0 44614.0 m
+(be) 55496  0.00 -1 s
+( reused until all related pixels computed from the same plane mask are also freed.) 147207  -26.57 32 s
+52832.0 50890.0 m
+(A) 54869  0.00 -1 s
+( single error is generated if any computed pixel is invalid or if its color cell is not) 143644  -158.12 32 s
+( allo\036) 149352  -169.00 32 s
+52832.0 54051.0 m
+(cated) 58786  0.00 -1 s
+( by the client. Even if an error is generated, all valid pixel values are) 135536  -26.00 32 s
+( freed.) 142714  -29.00 32 s
+5 sf
+52832.0 60328.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 65114.0 m
+(pixels) 59415  0.00 -1 s
+4 sf
+( \037 A ) 66300  -30.67 32 s
+2 sf
+(sequence) 77117  0.00 -1 s
+4 sf
+( of pixel values.) 95052  -30.67 32 s
+5 sf
+52832.0 69901.0 m
+(plane\036mask) 65840  0.00 -1 s
+4 sf
+( \037 A pixel value with no bits in common with any of the ) 130864  -24.93 32 s
+5 sf
+(pixels) 137447  0.00 -1 s
+4 sf
+(.) 138153  0.00 -1 s
+52832.0 75342.0 m
+0.0 0.0 m
+newpath
+149013 73783 av
+52967 73785 as
+[] 0 setdash
+dp
+149352.0 75342.0 m
+20320.0 78164.0 m
+31338.0 h
+2 sf
+(Finding) 40748  0.00 -1 s
+( Colors) 49378  -70.00 32 s
+52832.0 h
+(9.3.4) 58477  0.00 -1 s
+60827.0 h
+() 60827  0.00 -1 s
+4 sf
+(A) 62864  0.00 -1 s
+( CLX program can ask the X server to return the colors) 122250  -265.00 32 s
+( stored in allocated color) 149352  -199.25 32 s
+52832.0 81325.0 m
+(cells.) 58710  0.00 -1 s
+( The) 63802  -2.00 32 s
+( server also maintains a dictionary of color names and their associated color) 149352  -2.33 32 s
+52832.0 84486.0 m
+(values.) 60748  0.00 -1 s
+( CLX) 67184  87.00 32 s
+( provides a function to  look up the values for common colors by names) 149352  80.29 32 s
+52832.0 87647.0 m
+(such) 58005  0.00 -1 s
+( as \177red", \177purple", and so forth. The following paragraphs describe the CLX) 142892  -181.50 32 s
+( func\036) 149352  -199.00 32 s
+52832.0 90808.0 m
+(tions) 58320  0.00 -1 s
+( for returning the color values associated with color cells or with color names.) 145965  -21.92 32 s
+2 sf
+34544.0 97084.0 m
+(lookup\036color) 49908  0.00 -1 s
+( ) 50526  -88.00 32 s
+5 sf
+(colormap name) 68072  -88.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 100245.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 103406.0 m
+(  screen\036color) 68434  -36.00 32 s
+4 sf
+(,) 69140  0.00 -1 s
+5 sf
+( exact\036color ) 83330  -36.00 32 s
+4 sf
+(\037 Type ) 93292  -35.50 32 s
+2 sf
+(color) 99404  0.00 -1 s
+4 sf
+(.) 100110  0.00 -1 s
+52832.0 108125.0 m
+(Returns) 61610  0.00 -1 s
+( the color associated by the X server with the given color ) 124309  -195.75 32 s
+5 sf
+(name) 130421  0.00 -1 s
+4 sf
+(.  The ) 137242  -130.33 32 s
+5 sf
+(name) 143354  0.00 -1 s
+4 sf
+( must) 149352  -196.00 32 s
+52832.0 111286.0 m
+(contain) 61139  0.00 -1 s
+( only ISO Latin\0361 characters; case is not significant. The first value returned is) 149352  -26.38 32 s
+52832.0 114447.0 m
+(the) 56280  0.00 -1 s
+( closest approximation to the requested color possible on the screen hardware. The) 149352  -9.17 32 s
+52832.0 117608.0 m
+(second) 60669  0.00 -1 s
+( value returned is the true color value for the requested color.) 129303  -29.64 32 s
+5 sf
+52832.0 123884.0 m
+(colormap) 63648  0.00 -1 s
+( ) 64308  -46.00 32 s
+4 sf
+(\037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 128671.0 m
+(name) 58944  0.00 -1 s
+( ) 59615  -35.00 32 s
+4 sf
+(\037 A ) 65816  -35.00 32 s
+2 sf
+(stringable) 77887  0.00 -1 s
+4 sf
+( color name.) 91846  -34.50 32 s
+2 sf
+34544.0 133457.0 m
+(query\036colors) 49748  0.00 -1 s
+( ) 50421  -33.00 32 s
+5 sf
+(colormap pixels) 68494  -32.00 32 s
+4 sf
+( &key \() 77050  -32.50 32 s
+2 sf
+(:result\036type) 90996  0.00 -1 s
+4 sf
+( ) 91669  -33.00 32 s
+2 sf
+('list) 96213  0.00 -1 s
+4 sf
+(\)) 97152  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 136618.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 139779.0 m
+(  colors ) 61924  -27.00 32 s
+4 sf
+(\037 Type ) 71903  -27.00 32 s
+2 sf
+(sequence) 82720  0.00 -1 s
+4 sf
+( of ) 86428  -27.00 32 s
+2 sf
+(color) 92540  0.00 -1 s
+4 sf
+(.) 93246  0.00 -1 s
+( ) 93924  -28.00 32 s
+52832.0 144498.0 m
+(Returns) 61610  0.00 -1 s
+( a ) 63932  -171.50 32 s
+2 sf
+(sequence) 74749  0.00 -1 s
+4 sf
+( of the colors contained in the allocated cells of the ) 131264  -155.91 32 s
+5 sf
+(colormap) 142080  0.00 -1 s
+4 sf
+( speci\036) 149352  -172.00 32 s
+52832.0 147659.0 m
+(fied) 57219  0.00 -1 s
+( by the given ) 72431  -38.00 32 s
+5 sf
+(pixels) 79014  0.00 -1 s
+4 sf
+(. The values returned for unallocated cells are undefined.) 143008  -32.88 32 s
+5 sf
+52832.0 153935.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 158722.0 m
+(pixels) 59415  0.00 -1 s
+4 sf
+( \037 A ) 66300  -30.67 32 s
+2 sf
+(sequence) 77117  0.00 -1 s
+4 sf
+( of ) 80818  -30.50 32 s
+2 sf
+(pixel) 86619  0.00 -1 s
+4 sf
+( values.) 95210  -31.00 32 s
+2 sf
+52832.0 163508.0 m
+(:result\036type) 66778  0.00 -1 s
+4 sf
+( \037 A subtype of ) 86131  -33.00 32 s
+2 sf
+(sequence) 96948  0.00 -1 s
+4 sf
+( that indicates the type of  sequences returned.) 148833  -28.88 32 s
+52832.0 168950.0 m
+0.0 0.0 m
+newpath
+149013 167391 av
+52967 167393 as
+[] 0 setdash
+dp
+149352.0 168950.0 m
+20320.0 171772.0 m
+29012.0 h
+2 sf
+(Changing) 40773  0.00 -1 s
+( Colors) 49378  -95.00 32 s
+52832.0 h
+(9.3.5) 58477  0.00 -1 s
+60827.0 h
+() 60827  0.00 -1 s
+4 sf
+(The) 65215  0.00 -1 s
+( following paragraphs describe the CLX functions to change the colors) 145692  54.00 32 s
+( in ) 149352  26.50 32 s
+52832.0 174933.0 m
+(colormap) 63489  0.00 -1 s
+( cells.) 70014  -59.00 32 s
+2 sf
+34544.0 181209.0 m
+(store\036color) 47549  0.00 -1 s
+( ) 48231  -24.00 32 s
+5 sf
+(colormap pixel color) 71853  -24.00 32 s
+4 sf
+( &key \() 80426  -24.00 32 s
+2 sf
+(:red\036p) 87948  0.00 -1 s
+4 sf
+( ) 88629  -25.00 32 s
+2 sf
+(t) 89568  0.00 -1 s
+4 sf
+(\) \() 92128  -24.00 32 s
+2 sf
+(:green\036p) 102314  0.00 -1 s
+4 sf
+( ) 102995  -25.00 32 s
+2 sf
+(t) 103934  0.00 -1 s
+4 sf
+(\) \() 106494  -24.00 32 s
+2 sf
+(:blue\036p) 115116  0.00 -1 s
+4 sf
+( ) 115797  -25.00 32 s
+2 sf
+(t) 116736  0.00 -1 s
+4 sf
+(\)) 117675  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 185928.0 m
+(Changes) 62551  0.00 -1 s
+( the contents of the ) 85742  202.00 32 s
+5 sf
+(colormap) 96558  0.00 -1 s
+4 sf
+( cell) 101540  202.00 32 s
+( indexed by the ) 120374  201.50 32 s
+5 sf
+(pixel) 125859  0.00 -1 s
+4 sf
+(. Components of the) 149352  201.33 32 s
+52832.0 189089.0 m
+(given) 59102  0.00 -1 s
+( ) 59612  -196.00 32 s
+5 sf
+(color) 65569  0.00 -1 s
+4 sf
+( are stored in the cell. The ) 94295  -195.43 32 s
+2 sf
+(:red\036p) 101817  0.00 -1 s
+4 sf
+(, ) 103033  -196.00 32 s
+2 sf
+(:green\036p) 113219  0.00 -1 s
+4 sf
+(, and ) 119021  -195.50 32 s
+2 sf
+(:blue\036p) 127643  0.00 -1 s
+4 sf
+( arguments indicate) 149352  -195.50 32 s
+52832.0 192250.0 m
+(which) 59728  0.00 -1 s
+( components of the) 81159  -41.00 32 s
+( given ) 88799  -21.00 32 s
+5 sf
+(color) 94756  0.00 -1 s
+4 sf
+( are stored.) 107132  -41.50 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Colors) 26480  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(9\036106) 26903  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(The ) 57709  -217.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(color) 63666  0.00 -1 s
+4 sf
+( can be either a) 79880  -217.00 32 s
+( ) 80368  -218.00 32 s
+2 sf
+(color) 86480  0.00 -1 s
+4 sf
+( object or a ) 98933  -217.50 32 s
+2 sf
+(stringable) 111004  0.00 -1 s
+4 sf
+( containing a color name. If a color) 149352  -186.43 32 s
+52832.0 25739.0 m
+(name) 58944  0.00 -1 s
+( is given, a corresponding color value is looked up \(see ) 121702  -9.09 32 s
+2 sf
+(lookup\036color) 137066  0.00 -1 s
+4 sf
+(\) and used.) 149352  -9.50 32 s
+52832.0 28900.0 m
+(Color) 59259  0.00 -1 s
+( name strings must contain  only ISO Latin\0361 characters; case) 128480  -21.60 32 s
+( is not significant.) 148630  -24.67 32 s
+5 sf
+52832.0 35176.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 39963.0 m
+(pixel) 58317  0.00 -1 s
+4 sf
+( \037 A ) 65223  -23.67 32 s
+2 sf
+(pixel) 71024  0.00 -1 s
+4 sf
+(.) 71730  0.00 -1 s
+5 sf
+52832.0 44749.0 m
+(color) 58789  0.00 -1 s
+4 sf
+( \037 A color ) 72162  -27.00 32 s
+2 sf
+(object) 79526  0.00 -1 s
+4 sf
+( or a ) 85166  -27.00 32 s
+2 sf
+(stringable) 97237  0.00 -1 s
+4 sf
+( containing a color name.) 125735  -27.00 32 s
+( ) 126413  -28.00 32 s
+2 sf
+52832.0 49536.0 m
+(:red\036p) 60354  0.00 -1 s
+4 sf
+(,) 61060  0.00 -1 s
+( ) 62040  274.00 32 s
+2 sf
+(:green\036p) 72226  0.00 -1 s
+4 sf
+(, ) 73912  274.00 32 s
+2 sf
+(:blue\036p) 82534  0.00 -1 s
+4 sf
+( \037 ) 87042  137.00 32 s
+2 sf
+(boolean) 96450  0.00 -1 s
+4 sf
+( values indicating which color components) 146178  274.00 32 s
+( to) 149352  273.00 32 s
+57912.0 52697.0 m
+(store.) 64103  0.00 -1 s
+2 sf
+34544.0 57483.0 m
+(store\036colors) 48647  0.00 -1 s
+( ) 49330  -23.00 32 s
+5 sf
+(colormap pixel\036colors) 74308  -23.00 32 s
+( ) 74990  -24.00 32 s
+4 sf
+(&key \() 82882  -23.00 32 s
+2 sf
+(:red\036p) 90404  0.00 -1 s
+4 sf
+( ) 91086  -24.00 32 s
+2 sf
+(t) 92025  0.00 -1 s
+4 sf
+(\) \() 94586  -23.00 32 s
+2 sf
+(:green\036p) 104772  0.00 -1 s
+4 sf
+( ) 105454  -24.00 32 s
+2 sf
+(t) 106393  0.00 -1 s
+4 sf
+(\) \() 108954  -23.00 32 s
+2 sf
+(:blue\036p) 117576  0.00 -1 s
+4 sf
+( ) 118258  -24.00 32 s
+2 sf
+(t) 119197  0.00 -1 s
+4 sf
+(\)) 120136  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 62202.0 m
+(Changes) 62551  0.00 -1 s
+( the contents of multiple ) 89575  -223.00 32 s
+5 sf
+(colormap) 100391  0.00 -1 s
+4 sf
+( cells. ) 107235  -223.00 32 s
+5 sf
+(pixel\036colors) 120714  0.00 -1 s
+4 sf
+( is a list  of the form \({) 144965  -194.75 32 s
+5 sf
+(pix\036) 149352  0.00 -1 s
+52832.0 65363.0 m
+(el) 54869  0.00 -1 s
+( color) 61450  -82.00 32 s
+4 sf
+(}*\), indicating) 77771  -82.00 32 s
+( a set of pixel values and the colors to store in the corresponding) 149352  -82.54 32 s
+52832.0 68524.0 m
+(cells.) 58710  0.00 -1 s
+( The ) 64440  -35.00 32 s
+2 sf
+(:red\036p) 71962  0.00 -1 s
+4 sf
+(, ) 73339  -35.00 32 s
+2 sf
+(:green\036p) 83525  0.00 -1 s
+4 sf
+(, and ) 89683  -17.50 32 s
+2 sf
+(:blue\036p) 98305  0.00 -1 s
+4 sf
+( arguments indicate which components of the) 149352  -34.83 32 s
+52832.0 71684.0 m
+(given) 59102  0.00 -1 s
+( colors are stored.) 79067  -32.00 32 s
+52832.0 77961.0 m
+(Each) 58473  0.00 -1 s
+( color can be either a ) 81049  -286.00 32 s
+2 sf
+(color) 87161  0.00 -1 s
+4 sf
+( object or a ) 99341  -285.75 32 s
+2 sf
+(stringable) 111412  0.00 -1 s
+4 sf
+( containing a color name. If a color) 149352  -244.71 32 s
+52832.0 81122.0 m
+(name) 58944  0.00 -1 s
+( is given, a corresponding color value is looked up \(see ) 121702  -9.09 32 s
+2 sf
+(lookup\036color) 137066  0.00 -1 s
+4 sf
+(\) and used.) 149352  -9.50 32 s
+52832.0 84283.0 m
+(Color) 59259  0.00 -1 s
+( name strings must contain only ISO Latin\0361 characters; case is not significant.) 147930  -23.67 32 s
+5 sf
+52832.0 90559.0 m
+(colormap) 63648  0.00 -1 s
+4 sf
+( \037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+5 sf
+52832.0 95346.0 m
+(pixel\036colors) 66311  0.00 -1 s
+( ) 67004  -13.00 32 s
+4 sf
+(\037 A list of the form \({) 93047  -13.00 32 s
+5 sf
+(pixel color) 105182  -13.00 32 s
+4 sf
+(}*\).) 109593  0.00 -1 s
+2 sf
+52832.0 100132.0 m
+(:red\036p) 60354  0.00 -1 s
+4 sf
+(,) 61060  0.00 -1 s
+( ) 62040  274.00 32 s
+2 sf
+(:green\036p) 72226  0.00 -1 s
+4 sf
+(, ) 73912  274.00 32 s
+2 sf
+(:blue\036p) 82534  0.00 -1 s
+4 sf
+( \037 ) 87042  137.00 32 s
+2 sf
+(boolean) 96450  0.00 -1 s
+4 sf
+( values indicating which color components) 146178  274.00 32 s
+( to) 149352  273.00 32 s
+57912.0 103293.0 m
+(store.) 64103  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 9
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+118398.0 8195.0 m
+(      ) 121788  -1.00 32 s
+(                     Colors) 139802  -1.52 32 s
+/timsps10b 2 declareFont
+2 sf
+142430.0 208619.0 m
+(9\036107) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 23233.0 m
+0.0 0.0 m
+newpath
+149013 21674 av
+52967 21676 as
+[] 0 setdash
+dp
+149352.0 23233.0 m
+20320.0 26055.0 m
+37208.0 h
+2 sf
+(Colormap) 49434  0.00 -1 s
+52832.0 h
+(9.3.6) 58477  0.00 -1 s
+60827.0 h
+() 60827  0.00 -1 s
+4 sf
+(The) 65215  0.00 -1 s
+( complete set of) 86396  1078.00 32 s
+( colormap attributes is discussed in the following) 149352  1077.43 32 s
+20320.0 29216.0 m
+37005.0 h
+2 sf
+(Attributes) 49385  0.00 -1 s
+52832.0 h
+4 sf
+(paragraphs.) 65917  0.00 -1 s
+2 sf
+34544.0 35492.0 m
+(colormap\036display) 55551  0.00 -1 s
+4 sf
+( ) 56127  -130.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(colormap) 66943  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 38653.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 41814.0 m
+(  display ) 63036  -22.00 32 s
+4 sf
+(\037 Type ) 73025  -22.00 32 s
+2 sf
+(display) 81651  0.00 -1 s
+4 sf
+(. ) 83041  -22.00 32 s
+52832.0 46533.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66408  -31.00 32 s
+2 sf
+(display) 75034  0.00 -1 s
+4 sf
+( object associated) 94878  -31.00 32 s
+( with the specified ) 116226  -31.50 32 s
+5 sf
+(colormap) 127042  0.00 -1 s
+4 sf
+(. ) 128422  -32.00 32 s
+5 sf
+52832.0 52809.0 m
+(colormap) 63648  0.00 -1 s
+( \037 ) 67495  -37.00 32 s
+4 sf
+(A ) 70201  -37.00 32 s
+2 sf
+(colormap) 81643  0.00 -1 s
+4 sf
+(. ) 83018  -37.00 32 s
+2 sf
+34544.0 57596.0 m
+(colormap\036equal) 53511  0.00 -1 s
+( ) 54117  -100.00 32 s
+5 sf
+(colormap\0361) 67283  0.00 -1 s
+4 sf
+( ) 67888  -101.00 32 s
+5 sf
+(colormap\0362) 81054  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 62315.0 m
+(Returns) 61610  0.00 -1 s
+( true if the two arguments refer to the same server) 115553  -232.00 32 s
+( resource and ) 130605  -232.67 32 s
+2 sf
+(nil) 133742  0.00 -1 s
+4 sf
+( if they do not.) 149352  -232.50 32 s
+5 sf
+52832.0 68591.0 m
+(colormap\0361) 65998  0.00 -1 s
+4 sf
+(,) 66704  0.00 -1 s
+( ) 67360  -50.00 32 s
+5 sf
+(colormap\0362 ) 81182  -50.00 32 s
+4 sf
+(\037 A) 86697  -50.00 32 s
+( ) 87352  -51.00 32 s
+2 sf
+(colormap) 98794  0.00 -1 s
+4 sf
+(.) 99500  0.00 -1 s
+2 sf
+34544.0 73378.0 m
+(colormap\036id) 49278  0.00 -1 s
+( ) 49873  -111.00 32 s
+5 sf
+(colormap) 60689  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 76539.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 79700.0 m
+(  id ) 57055  -30.00 32 s
+4 sf
+(\037 Type ) 67029  -29.50 32 s
+2 sf
+(resource\036id) 80664  0.00 -1 s
+4 sf
+(.) 81370  0.00 -1 s
+52832.0 84418.0 m
+(Returns) 61610  0.00 -1 s
+( the unique ID assigned to the specified ) 106650  -32.63 32 s
+5 sf
+(colormap) 117466  0.00 -1 s
+4 sf
+(.) 118172  0.00 -1 s
+5 sf
+52832.0 90695.0 m
+(colormap) 63648  0.00 -1 s
+( ) 64308  -46.00 32 s
+4 sf
+(\037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+2 sf
+34544.0 95481.0 m
+(colormap\036p) 48494  0.00 -1 s
+( ) 49083  -117.00 32 s
+5 sf
+(colormap) 59899  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 98642.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 101803.0 m
+(  map\036p ) 62058  -33.67 32 s
+4 sf
+(\037 Type ) 72024  -33.50 32 s
+2 sf
+(boolean) 81432  0.00 -1 s
+4 sf
+(.) 82138  0.00 -1 s
+52832.0 106522.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67462  -26.00 32 s
+2 sf
+(nil) 70599  0.00 -1 s
+4 sf
+( if the argument is a ) 93639  -26.50 32 s
+2 sf
+(colormap) 105081  0.00 -1 s
+4 sf
+( and ) 110515  -26.50 32 s
+2 sf
+(nil) 113652  0.00 -1 s
+4 sf
+( otherwise.) 126007  -27.00 32 s
+2 sf
+34544.0 112799.0 m
+(colormap\036plist) 52099  0.00 -1 s
+( ) 52718  -87.00 32 s
+5 sf
+(colormap) 63534  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 115959.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+5 sf
+52832.0 119120.0 m
+(  colormap\036p ) 68020  -32.00 32 s
+4 sf
+(\037 Type ) 77989  -32.00 32 s
+2 sf
+(boolean) 87397  0.00 -1 s
+4 sf
+(.) 88103  0.00 -1 s
+5 sf
+( ) 88776  -33.00 32 s
+4 sf
+52832.0 123839.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73713  -15.00 32 s
+2 sf
+(setf) 77942  0.00 -1 s
+4 sf
+(\) sets the property list for the specified ) 122026  -14.50 32 s
+5 sf
+(colormap) 132842  0.00 -1 s
+4 sf
+(. This function) 149352  -14.50 32 s
+52832.0 127000.0 m
+(provides) 62550  0.00 -1 s
+( a hook where extensions can add data.) 106296  -42.71 32 s
+5 sf
+52832.0 133277.0 m
+(colormap) 63648  0.00 -1 s
+( ) 64308  -46.00 32 s
+4 sf
+(\037 A ) 70487  -46.00 32 s
+2 sf
+(colormap) 81929  0.00 -1 s
+4 sf
+(.) 82635  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 10
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Colors) 26480  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(9\036108) 26903  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18 3 declareFont
+3 sf
+20320.0 24271.0 m
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

@@ -1,0 +1,45 @@
+This directory contains the CLX Programmer's Reference Manual, in
+Postscript format (roughly 230 pages).
+
+
+For convenience, the sections can be printed separately as follows:
+
+ contents.ps       ; Cover, table of contents
+ s01.ps            ; Introduction to CLX
+ s02.ps            ; Displays 
+ s03.ps            ; Screens
+ s04.ps            ; Windows and pixmaps
+ s05.ps            ; Graphics contexts
+ s06.ps            ; Graphic operations
+ s07.ps            ; Images
+ s08.ps            ; Fonts and characters
+ s09.ps            ; Colors
+ s10.ps            ; Cursors
+ s11.ps            ; Atoms, properties, and selections
+ s12.ps            ; Events and input
+ s13.ps            ; Resources
+ s14.ps            ; Control functions
+ s15.ps            ; Extensions
+ s16.ps            ; Errors
+ appa.ps           ; Protocol vs CLX function cross-ref
+ glossary.ps       ; Glossary
+ general.ps        ; Index - general
+ condition.ps      ;         conditions
+ functions.ps      ;         functions
+ types.ps          ;         types
+
+
+--------------------------------------------------------------------
+
+ I originally got these files with CMU-CL.  They had no document
+structuring (page number) comments in them, and `gv' wouldn't let me
+page around in them.  Additionally, they had been printed back to
+front, making it very difficult to read them on-screen, the way I
+prefer.
+
+ I've added the page numbers.  These are all numbered; the .el file is
+the XEmacs lisp program I used to number them, in case anyone wants it
+for an example. :-) The `Makefile' is set up to create a DEC SRC
+Lectern file from the postscript.
+
+Karl M. Hegbloom <karlheg@inetarena.com>  1997

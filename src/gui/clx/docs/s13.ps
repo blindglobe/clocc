@@ -1,0 +1,2967 @@
+%!PS-Adobe-2.0
+%%Title: s13.ps
+%%Pages: 8
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 10 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps10b /ILtimsb 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps18 /ILtims 18 map
+	/timsps12b /ILtimsb 12 map
+	/courps8 /ILcourps 8 map
+	/symbb8 /ILsymbb 8 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Courier /ILcourps ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 10 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+141019.0 208619.0 m
+(13\036161) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 9 declareFont
+9 sf
+20410.0 39376.0 m
+84847.0 39466.0 m
+(RESOURCES) 115890  0.00 -1 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+144715 39315 av
+146918 37028 as
+146918 32833 as
+145082 30927 as
+146918 29020 as
+146918 25588 as
+144715 23300 as
+139574 23300 as
+137371 25588 as
+137371 27876 as
+140675 27876 as
+140675 26351 as
+143613 26351 as
+143613 29401 as
+141043 29401 as
+141043 32452 as
+143613 32452 as
+143613 36265 as
+140675 36265 as
+140675 34740 as
+137371 34740 as
+137371 37028 as
+139574 39315 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+newpath
+136636 23300 av
+136636 23300 as
+newpath
+136636 43891 av
+136636 43891 as
+newpath
+148019 43891 av
+148019 43891 as
+newpath
+148019 23300 av
+148019 23300 as
+270.0 sw
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+135442 39315 av
+135442 23300 as
+132505 23300 as
+129567 26351 as
+129567 27876 as
+132138 27876 as
+132138 39315 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+newpath
+129200 23300 av
+129200 23300 as
+newpath
+129200 43891 av
+129200 43891 as
+newpath
+136911 43891 av
+136911 43891 as
+newpath
+136911 23300 av
+136911 23300 as
+149351.0 39376.0 m
+9 sf
+/timsps10 4 declareFont
+4 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 46871.0 m
+(Introduction) 38756  0.00 -1 s
+52832.0 h
+2 sf
+(13.1) 57771  0.00 -1 s
+4 sf
+() 57771  0.00 -1 s
+59966.0 h
+(Users need a way to specify preferences for various user interface values \(for ex\036) 149352  -157.85 32 s
+52832.0 50032.0 m
+(ample,) 60434  0.00 -1 s
+( colors, fonts, title strings, and so forth\). Applications need a consistent method) 149352  -49.33 32 s
+52832.0 53193.0 m
+(for) 56121  0.00 -1 s
+( determining the default interface values that are specific to them.) 129455  -72.00 32 s
+( It is also useful if) 149352  -80.60 32 s
+52832.0 56354.0 m
+(application) 65371  0.00 -1 s
+( interface) 75957  11.00 32 s
+( values can be modified by users without changes to the program) 149352  10.45 32 s
+52832.0 59515.0 m
+(code.) 58866  0.00 -1 s
+( For example, this capability can make it easy to change the color scheme of a user) 149352  -188.25 32 s
+52832.0 62676.0 m
+(interface.) 63407  0.00 -1 s
+( In CLX, such) 78767  -210.00 32 s
+( interface values are referred to as ) 116442  -180.43 32 s
+/timsps10i 5 declareFont
+5 sf
+(resources) 127415  0.00 -1 s
+4 sf
+(. CLX defines func\036) 149352  -210.67 32 s
+52832.0 65837.0 m
+(tions) 58320  0.00 -1 s
+( for storing and retrieving interface resources) 108331  -153.33 32 s
+( from a resource database. A user can) 149352  -184.57 32 s
+52832.0 68998.0 m
+(store various) 67330  0.00 32 s
+( user interface values as resources in a resource database; a CLX applica\036) 149352  -60.42 32 s
+52832.0 72159.0 m
+(tion) 57222  0.00 -1 s
+( can then read these resource values and modify) 111014  -35.00 32 s
+( its user interface accordingly.) 144994  -26.75 32 s
+52832.0 81483.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+4 17 fillpatset
+newpath
+52832 80658 av
+149352 80658 as
+149352 80776 as
+52832 80776 as
+closepath
+fp
+/drawmode PL_SET def
+52832.0 84644.0 m
+2 sf
+(NOTE:) 61767  0.00 -1 s
+( ) 62343  -130.00 32 s
+4 sf
+(The general term ) 81934  -130.00 32 s
+5 sf
+(resource) 91809  0.00 -1 s
+4 sf
+( refers to) 101577  -130.00 32 s
+( any application user interface value stored) 149352  -108.83 32 s
+52832.0 87805.0 m
+(in) 55027  0.00 -1 s
+( a resource database. The term ) 88765  -214.83 32 s
+5 sf
+(server resource) 106185  -214.00 32 s
+4 sf
+( is used more specifically to refer to the) 149352  -187.75 32 s
+52832.0 90966.0 m
+(types) 58789  0.00 -1 s
+( of objects allocated by an X server and referenced by clients \(for example, win\036) 149352  -7.14 32 s
+52832.0 94127.0 m
+(dows,) 59495  0.00 -1 s
+( fonts,) 66522  -28.00 32 s
+( graphics contexts, and so forth\).) 103293  -28.60 32 s
+52832.0 97288.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+52832 96463 av
+149352 96463 as
+149352 96581 as
+52832 96581 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 105845.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 104221 av
+148878 104219 as
+[] 0 setdash
+dp
+149352.0 105845.0 m
+7 sf
+20320.0 109231.0 m
+(Resource) 33670  0.00 -1 s
+( ) 34544  27.00 32 s
+52832.0 h
+2 sf
+(13.2) 57771  0.00 -1 s
+4 sf
+() 57771  0.00 -1 s
+59966.0 h
+(Conceptually,) 75720  0.00 -1 s
+( a resource database is a set of resource name\036value) 149352  1712.44 32 s
+2 sf
+7 sf
+20320.0 112618.0 m
+(Bindings) 33120  0.00 -1 s
+52832.0 h
+4 sf
+(pairs) 58317  0.00 -1 s
+( \(or ) 62831  -93.50 32 s
+5 sf
+(resource bindings) 82946  -187.00 32 s
+4 sf
+(\). The name in) 98843  -187.00 32 s
+( a resource binding is a list that is the concate\036) 149352  -168.80 32 s
+52832.0 115779.0 m
+(nation) 59886  0.00 -1 s
+( of a ) 65529  -26.00 32 s
+5 sf
+(path list) 74676  -26.00 32 s
+4 sf
+( and an ) 83456  -25.67 32 s
+5 sf
+(attribute name) 99968  -26.00 32 s
+4 sf
+(.) 100674  0.00 -1 s
+52832.0 122055.0 m
+(A) 54869  0.00 -1 s
+( path list is a list of symbols \(or strings\) that corresponds to a path through a tree\036struc\036) 149352  -218.88 32 s
+52832.0 125216.0 m
+(tured) 58630  0.00 -1 s
+( hierarchy. For example, the path: ) 97288  -35.67 32 s
+/courps8 6 declareFont
+6 sf
+52832.0 131493.0 m
+('\(top) 59617  0.00 -1 s
+( middle) 69090  -26.00 32 s
+( bottom\)) 79919  -27.00 32 s
+4 sf
+( ) 80625  0.00 32 s
+52832.0 137770.0 m
+(corresponds) 66467  0.00 -1 s
+( to a three\036level hierarchy in which ) 105014  -236.00 32 s
+6 sf
+(middle) 113156  0.00 -1 s
+4 sf
+( is the child of ) 128829  -236.00 32 s
+6 sf
+(top) 132900  0.00 -1 s
+4 sf
+(, and ) 138858  -117.50 32 s
+6 sf
+(bottom) 147000  0.00 -1 s
+4 sf
+( is) 149352  -236.00 32 s
+52832.0 140930.0 m
+(the) 56280  0.00 -1 s
+( child of ) 66328  -21.00 32 s
+6 sf
+(middle) 74470  0.00 -1 s
+4 sf
+(. ) 75861  -21.00 32 s
+52832.0 147207.0 m
+(Typically,) 64353  0.00 -1 s
+( the path of a resource name corresponds to a path in a hierarchy of windows,) 149352  -163.93 32 s
+52832.0 150368.0 m
+(and) 56907  0.00 -1 s
+( each symbol/string names a window in the hierarchy. However, the first element of) 149352  -177.15 32 s
+52832.0 153529.0 m
+(the) 56280  0.00 -1 s
+( path can also represent the overall name of the entire program, and subsequent path) 149352  -130.86 32 s
+52832.0 156690.0 m
+(elements can) 67486  0.00 32 s
+( refer to an application\036specific hierarchy of resource names not strictly re\036) 149352  -243.64 32 s
+52832.0 159851.0 m
+(lated) 58317  0.00 -1 s
+( to windows. In addition, a resource name can contain a partially\036specified path list.) 149352  -267.69 32 s
+52832.0 163012.0 m
+(The) 57220  0.00 -1 s
+( asterisk symbol \(*\) is a wildcard) 92978  -284.00 32 s
+( that can correspond to any sequence of levels in the) 149352  -256.10 32 s
+52832.0 166172.0 m
+(hierarchy) 63486  0.00 -1 s
+( \(including the null sequence\). For example, the path: ) 124200  -37.89 32 s
+6 sf
+52832.0 172449.0 m
+('\(top) 59617  0.00 -1 s
+( * bottom\)) 73155  -16.00 32 s
+4 sf
+( ) 73852  -9.00 32 s
+52832.0 178726.0 m
+(corresponds) 66467  0.00 -1 s
+( to a hierarchy of two or more levels in which ) 116174  -233.18 32 s
+6 sf
+(top) 120245  0.00 -1 s
+4 sf
+( is at the top level and ) 143924  -256.57 32 s
+6 sf
+(bot\036) 149352  0.00 -1 s
+52832.0 181887.0 m
+(tom) 56903  0.00 -1 s
+4 sf
+( is at the bottom level. An element of a path list can be the name of an individual win\036) 149352  -241.16 32 s
+52832.0 185047.0 m
+(dow) 57691  0.00 -1 s
+( or the name of a class of windows.) 97401  -22.75 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Resources) 29616  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(13\036162) 28314  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(The final element of a resource) 88004  -2.00 32 s
+( name list is an attribute name. This symbol \(or string\)) 149352  -2.30 32 s
+52832.0 25739.0 m
+(identifies) 63333  0.00 -1 s
+( a specific attribute of the object\(s\)) 102550  -20.00 32 s
+( named by the preceding path list. The at\036) 149352  -18.00 32 s
+52832.0 28900.0 m
+(tribute) 60198  0.00 -1 s
+( name can also be the symbol * or the string \177*", in which case the resource) 142733  -185.63 32 s
+( name) 149352  -199.00 32 s
+52832.0 32060.0 m
+(refers) 59253  0.00 -1 s
+( to all attributes of the path object\(s\). However, this form of resource name is) 149352  211.00 32 s
+52832.0 35221.0 m
+(rarely) 59411  0.00 -1 s
+( useful.) 67688  -31.00 32 s
+52832.0 41024.0 m
+(Some) 59260  0.00 -1 s
+( examples) 70530  -94.00 32 s
+( of resource bindings are shown below. In these examples, assume that) 149352  -94.55 32 s
+52832.0 44185.0 m
+/courps8 6 declareFont
+6 sf
+(mail) 58260  0.00 -1 s
+4 sf
+( is the resource name of a mail reading application. ) 114348  -229.70 32 s
+6 sf
+(mail) 119776  0.00 -1 s
+4 sf
+( uses a window of the class) 149352  -191.33 32 s
+52832.0 47346.0 m
+6 sf
+(button) 60974  0.00 -1 s
+4 sf
+( whose) 68863  -27.00 32 s
+( name is ) 78892  -27.67 32 s
+6 sf
+(reply) 85677  0.00 -1 s
+4 sf
+(.) 86383  0.00 -1 s
+2 sf
+52832.0 53148.0 m
+(Resource) 63959  0.00 -1 s
+( Name) 71617  -99.00 32 s
+105664.0 h
+(Resource) 116791  0.00 -1 s
+( Value ) 125149  -54.00 32 s
+6 sf
+52832.0 59357.0 m
+(\(mail) 59617  0.00 -1 s
+( screen\0361 reply background\)) 96181  -25.00 32 s
+105664.0 h
+('green) 113806  0.00 -1 s
+( ) 115147  -16.00 32 s
+52832.0 62518.0 m
+(\(mail) 59617  0.00 -1 s
+( * background\)) 78571  -22.00 32 s
+105664.0 h
+('red) 111092  0.00 -1 s
+( ) 112437  -12.00 32 s
+52832.0 65679.0 m
+(\(*) 55546  0.00 -1 s
+( button) 65021  -24.00 32 s
+( background\)) 81280  -25.00 32 s
+105664.0 h
+('blue) 112449  0.00 -1 s
+( ) 113792  -14.00 32 s
+105664.0 68840.0 m
+4 sf
+52832.0 72001.0 m
+(These) 59571  0.00 -1 s
+( resource bindings specify the) 93126  -36.00 32 s
+( following:) 105551  -37.00 32 s
+/symbb8 8 declareFont
+8 sf
+52832.0 78548.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(The) 62300  0.00 -1 s
+( ) 62714  -292.00 32 s
+6 sf
+(background) 76284  0.00 -1 s
+4 sf
+( attribute resource of ) 99251  -291.75 32 s
+6 sf
+(mail) 104679  0.00 -1 s
+/timsps10i 5 declareFont
+5 sf
+( ) 105093  -292.00 32 s
+4 sf
+(application) 117632  0.00 -1 s
+5 sf
+(') 118571  0.00 -1 s
+4 sf
+(s ) 120375  0.00 32 s
+6 sf
+(reply) 127160  0.00 -1 s
+4 sf
+( button has the value) 149352  -291.50 32 s
+57912.0 81709.0 m
+(of) 60262  0.00 -1 s
+( ) 60942  -26.00 32 s
+6 sf
+(green) 67727  0.00 -1 s
+4 sf
+( on) 71229  -26.00 32 s
+( ) 71908  -27.00 32 s
+6 sf
+(screen\0361) 82764  0.00 -1 s
+4 sf
+(.) 83470  0.00 -1 s
+8 sf
+52832.0 88257.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(The) 62300  0.00 -1 s
+( ) 63020  14.00 32 s
+6 sf
+(background) 76590  0.00 -1 s
+4 sf
+( attribute for the rest of the ) 107630  12.29 32 s
+6 sf
+(mail) 113058  0.00 -1 s
+4 sf
+( application is always ) 138197  14.50 32 s
+6 sf
+(red) 142268  0.00 -1 s
+4 sf
+( on all) 149352  14.50 32 s
+57912.0 91417.0 m
+(screens.) 66923  0.00 -1 s
+8 sf
+52832.0 97965.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(In general,) 69978  0.00 32 s
+( the ) 74794  -22.00 32 s
+6 sf
+(background) 88364  0.00 -1 s
+4 sf
+( attribute for all ) 106615  -21.50 32 s
+6 sf
+(button) 114757  0.00 -1 s
+4 sf
+( windows is ) 128881  -21.67 32 s
+6 sf
+(blue) 134309  0.00 -1 s
+4 sf
+(.) 135015  0.00 -1 s
+20320.0 104964.0 m
+0.0 0.0 m
+newpath
+20455 103340 av
+148878 103338 as
+[] 0 setdash
+dp
+149352.0 104964.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 108351.0 m
+(Basic) 28033  0.00 -1 s
+( Resource) 42266  36.00 32 s
+52832.0 h
+2 sf
+(13.3) 57771  0.00 -1 s
+4 sf
+() 57771  0.00 -1 s
+59966.0 h
+(A) 62003  0.00 -1 s
+( ) 63983  1274.00 32 s
+2 sf
+(resource\036database) 85926  0.00 -1 s
+4 sf
+( structure is a CLX object that represents a set) 149352  1274.11 32 s
+7 sf
+20320.0 111737.0 m
+(Database) 33674  0.00 -1 s
+2 sf
+52832.0 h
+4 sf
+(of) 55182  0.00 -1 s
+( resource bindings. The following paragraphs describe the CLX functions) 149352  1233.11 32 s
+7 sf
+20320.0 115124.0 m
+(Functions) 34619  0.00 -1 s
+52832.0 h
+4 sf
+(used) 58005  0.00 -1 s
+( to:) 61681  -9.00 32 s
+7 sf
+( ) 62518  -10.00 32 s
+8 sf
+52832.0 121198.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Create) 65276  0.00 -1 s
+( a resource database) 87782  -46.00 32 s
+8 sf
+52832.0 127271.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Add) 62771  0.00 -1 s
+( a resource binding) 84193  -43.00 32 s
+8 sf
+52832.0 133344.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Remove) 67317  0.00 -1 s
+( a resource) 79433  -53.00 32 s
+( binding) 88708  -54.00 32 s
+8 sf
+52832.0 139418.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Merge) 65277  0.00 -1 s
+( two resource databases) 91869  -43.00 32 s
+8 sf
+52832.0 145491.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Map) 63085  0.00 -1 s
+( a function over the contents of a resource database) 120543  -32.89 32 s
+2 sf
+34544.0 151768.0 m
+(make\036resource\036database) 64009  0.00 -1 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 154929.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 158090.0 m
+( ) 53474  -64.00 32 s
+5 sf
+(resource\036database) 74478  0.00 -1 s
+4 sf
+( \037 Type) 84383  -64.00 32 s
+( ) 85024  -65.00 32 s
+2 sf
+(resource\036database) 106967  0.00 -1 s
+4 sf
+(.) 107673  0.00 -1 s
+52832.0 162808.0 m
+(Returns) 61610  0.00 -1 s
+( an empty resource) 82865  -46.00 32 s
+( database.) 93946  -47.00 32 s
+2 sf
+34544.0 169085.0 m
+(add\036resource) 50375  0.00 -1 s
+4 sf
+( ) 51012  -69.00 32 s
+5 sf
+(database name\036list value) 79090  -68.50 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+52832.0 173804.0 m
+(Adds) 58789  0.00 -1 s
+( the resource binding specified by ) 96467  -199.00 32 s
+5 sf
+(name\036list) 106968  0.00 -1 s
+4 sf
+( and) 111550  -199.00 32 s
+( ) 112056  -200.00 32 s
+5 sf
+(value) 118168  0.00 -1 s
+4 sf
+( to the given ) 132307  -149.50 32 s
+5 sf
+(database) 142497  0.00 -1 s
+4 sf
+(. Only) 149352  -200.00 32 s
+52832.0 176965.0 m
+(one) 56907  0.00 -1 s
+( value can be associated with the ) 94492  -16.00 32 s
+5 sf
+(name\036list) 104993  0.00 -1 s
+4 sf
+( in the ) 112722  -10.67 32 s
+5 sf
+(database) 122912  0.00 -1 s
+4 sf
+(. This function) 139419  -16.00 32 s
+( replaces) 149352  -17.00 32 s
+52832.0 180126.0 m
+(any) 56907  0.00 -1 s
+( value previously) 76260  -42.00 32 s
+( associated with the ) 99018  -32.00 32 s
+5 sf
+(name\036list) 109519  0.00 -1 s
+4 sf
+(.) 110225  0.00 -1 s
+5 sf
+52832.0 186402.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 The ) 72216  -44.67 32 s
+2 sf
+(resource\036database) 94159  0.00 -1 s
+4 sf
+( for the new resource binding.) 127790  -44.60 32 s
+5 sf
+52832.0 191189.0 m
+(name\036list) 63333  0.00 -1 s
+4 sf
+( \037 A list containing strings or symbols specifying the name for the resource) 149352  -21.00 32 s
+57912.0 194350.0 m
+(binding.) 67241  0.00 -1 s
+5 sf
+52832.0 199136.0 m
+(value) 58944  0.00 -1 s
+4 sf
+( \037 The value associated with the ) 95842  -204.00 32 s
+5 sf
+(name\036list) 106343  0.00 -1 s
+4 sf
+( in the resource binding.) 132880  -204.00 32 s
+( This can be an) 149352  -153.50 32 s
+57912.0 202297.0 m
+(object) 64808  0.00 -1 s
+( of any type.) 78796  -40.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+139756.0 8195.0 m
+(Resources) 149052  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+141019.0 208619.0 m
+(13\036163) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(delete\036resource) 52877  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( ) 53505  -78.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(database) 63695  0.00 -1 s
+( name\036list) 74823  -79.00 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+52832.0 27297.0 m
+(Removes) 63335  0.00 -1 s
+( the resource binding specified by ) 101991  -36.00 32 s
+5 sf
+(name\036list) 112492  0.00 -1 s
+4 sf
+( from the given) 129704  -36.00 32 s
+( ) 130373  -37.00 32 s
+5 sf
+(database) 140563  0.00 -1 s
+4 sf
+(.) 141269  0.00 -1 s
+5 sf
+52832.0 33573.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 The ) 72182  -56.00 32 s
+2 sf
+(resource\036database) 94125  0.00 -1 s
+4 sf
+( containing the resource binding.) 130974  -55.50 32 s
+5 sf
+52832.0 38360.0 m
+(name\036list) 63333  0.00 -1 s
+4 sf
+( \037 A list containing strings or symbols specifying the name for the deleted re\036) 149352  -193.00 32 s
+57912.0 41521.0 m
+(source) 65277  0.00 -1 s
+( binding.) 75229  -83.00 32 s
+2 sf
+34544.0 46307.0 m
+(map\036resource) 51156  0.00 -1 s
+4 sf
+( ) 51813  -49.00 32 s
+5 sf
+(database function) 71909  -49.00 32 s
+4 sf
+( &rest) 78835  -49.00 32 s
+( ) 79491  -50.00 32 s
+5 sf
+(args) 84509  0.00 -1 s
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 51026.0 m
+(Calls) 58633  0.00 -1 s
+( the) 62641  -146.00 32 s
+( function for each resource binding in the ) 108803  -146.50 32 s
+5 sf
+(database) 118993  0.00 -1 s
+4 sf
+(. For each resource binding) 149352  -110.00 32 s
+52832.0 54187.0 m
+(consisting) 64277  0.00 -1 s
+( of a ) 86591  5531.00 32 s
+5 sf
+(name\036list) 97092  0.00 -1 s
+4 sf
+( and a ) 121129  5530.33 32 s
+5 sf
+(value) 127241  0.00 -1 s
+4 sf
+(, the form) 149352  5530.50 32 s
+52832.0 57348.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(apply) 60515  0.00 -1 s
+4 sf
+( ) 61186  -35.00 32 s
+5 sf
+(function name\036list value args) 94079  -35.00 32 s
+4 sf
+(\) is executed. ) 109683  -23.33 32 s
+5 sf
+52832.0 63624.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 A ) 69807  -64.00 32 s
+2 sf
+(resource\036database) 91750  0.00 -1 s
+4 sf
+(.) 92456  0.00 -1 s
+5 sf
+52832.0 68411.0 m
+(function) 62081  0.00 -1 s
+4 sf
+( \037 A ) 68966  -30.67 32 s
+2 sf
+(function) 78999  0.00 -1 s
+4 sf
+( object or function symbol.) 109367  -30.50 32 s
+5 sf
+52832.0 73197.0 m
+(args) 57850  0.00 -1 s
+4 sf
+( \037 A list of arguments to the ) 91419  -17.00 32 s
+5 sf
+(function) 100668  0.00 -1 s
+4 sf
+(.) 101374  0.00 -1 s
+2 sf
+34544.0 77984.0 m
+(merge\036resources) 54444  0.00 -1 s
+4 sf
+( ) 55048  -102.00 32 s
+5 sf
+(from\036database) 71507  0.00 -1 s
+( to\036database) 85434  -103.00 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 81145.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 84305.0 m
+( ) 53463  -75.00 32 s
+5 sf
+(to\036database) 66787  0.00 -1 s
+4 sf
+( \037Type ) 76671  -74.50 32 s
+2 sf
+(resource\036database) 98614  0.00 -1 s
+4 sf
+(.) 99320  0.00 -1 s
+52832.0 89024.0 m
+(Merges) 61295  0.00 -1 s
+( the contents of the ) 82366  -222.00 32 s
+5 sf
+(from\036database) 98825  0.00 -1 s
+4 sf
+( with the ) 108741  -222.00 32 s
+5 sf
+(to\036database) 122065  0.00 -1 s
+4 sf
+(. ) 123255  -222.00 32 s
+2 sf
+(map\036resource) 139867  0.00 -1 s
+4 sf
+( invokes) 149352  0.00 32 s
+52832.0 92185.0 m
+2 sf
+(add\036resource) 68663  0.00 -1 s
+4 sf
+( in order to add each resource binding in the ) 116815  -231.90 32 s
+5 sf
+(from\036database) 133274  0.00 -1 s
+4 sf
+( to the ) 140262  -257.67 32 s
+5 sf
+(to\036data\036) 149352  0.00 -1 s
+52832.0 95346.0 m
+(base) 58005  0.00 -1 s
+4 sf
+(.) 58711  0.00 -1 s
+( The updated ) 74016  -45.00 32 s
+5 sf
+(to\036database) 87340  0.00 -1 s
+4 sf
+( is returned.) 100652  -44.50 32 s
+5 sf
+52832.0 101623.0 m
+(from\036database) 69291  0.00 -1 s
+4 sf
+( \037 The ) 78493  -42.00 32 s
+2 sf
+(resource\036database) 100436  0.00 -1 s
+4 sf
+( from which resource bindings are read.) 145085  -42.00 32 s
+5 sf
+52832.0 106409.0 m
+(to\036database) 66156  0.00 -1 s
+4 sf
+( \037 The ) 75343  -47.00 32 s
+2 sf
+(resource\036database) 97286  0.00 -1 s
+4 sf
+( to which resource bindings are added.) 140502  -46.50 32 s
+20320.0 111918.0 m
+0.0 0.0 m
+newpath
+20455 110294 av
+148878 110292 as
+[] 0 setdash
+dp
+149352.0 111918.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 115305.0 m
+(Accessing) 34425  0.00 -1 s
+52832.0 h
+2 sf
+(13.4) 57771  0.00 -1 s
+4 sf
+() 57771  0.00 -1 s
+59966.0 h
+(The) 64354  0.00 -1 s
+( power and flexibility of resource management is the result of the) 149352  1023.09 32 s
+2 sf
+7 sf
+20320.0 118691.0 m
+(Resource) 33670  0.00 -1 s
+( ) 34544  27.00 32 s
+2 sf
+52832.0 h
+4 sf
+(way resource) 67796  0.00 32 s
+( values in a resource database are accessed. A resource binding) 138628  -39.90 32 s
+7 sf
+20320.0 122078.0 m
+(Values) 30102  0.00 -1 s
+52832.0 h
+4 sf
+(binding) 61455  0.00 -1 s
+( stored in the database generally) 96531  -241.60 32 s
+( contains only a partial resource name consisting) 149352  -302.57 32 s
+52832.0 125239.0 m
+(of) 55182  0.00 -1 s
+( a mixture of name and class identifiers and wildcard elements \(that is, *\). To look up a) 149352  -255.59 32 s
+52832.0 128400.0 m
+(resource) 62389  0.00 -1 s
+( value, an application program starts with two resource name lists of the same) 149352  -62.54 32 s
+52832.0 131561.0 m
+(length) 59886  0.00 -1 s
+( containing no wildcard elements \037 a ) 103919  54.00 32 s
+5 sf
+(complete resource name) 131558  27.00 32 s
+4 sf
+( and a ) 139166  54.00 32 s
+5 sf
+(complete) 149352  0.00 -1 s
+52832.0 134722.0 m
+(resource) 62707  0.00 -1 s
+( class) 68975  -82.00 32 s
+4 sf
+(. The lookup algorithm returns the value for the resource binding whose) 149352  -74.18 32 s
+52832.0 137882.0 m
+(resource) 62389  0.00 -1 s
+( name is the closest match to the complete name and class given. The definition) 149352  -209.71 32 s
+52832.0 141043.0 m
+(of) 55182  0.00 -1 s
+( ) 56058  170.00 32 s
+5 sf
+(closest match) 71511  170.00 32 s
+4 sf
+( takes into account the top\036down, parent\036child hierarchy of) 138920  148.75 32 s
+( resource) 149352  169.00 32 s
+52832.0 144204.0 m
+(names) 60042  0.00 -1 s
+( and also the distinction between individual names) 116784  -34.29 32 s
+( and class names.) 136257  -40.67 32 s
+52832.0 151136.0 m
+0.0 0.0 m
+newpath
+149013 149577 av
+52967 149579 as
+[] 0 setdash
+dp
+149352.0 151136.0 m
+20320.0 153958.0 m
+28990.0 h
+2 sf
+(Complete) 40586  0.00 -1 s
+( Names) 49378  -63.00 32 s
+52832.0 h
+(13.4.1) 59888  0.00 -1 s
+4 sf
+() 59888  0.00 -1 s
+62083.0 h
+(A) 64120  0.00 -1 s
+( resource) 74346  -37.00 32 s
+( binding contains a resource name list that can contain) 135218  -37.56 32 s
+20320.0 157119.0 m
+35379.0 h
+2 sf
+(and) 39928  0.00 -1 s
+( Classes) 49378  -35.00 32 s
+52832.0 h
+4 sf
+(names, class) 66940  0.00 32 s
+( names, or a mixture) 89508  -138.00 32 s
+( of both. A class name is a symbol or string that repre\036) 149352  -127.00 32 s
+52832.0 160280.0 m
+(sents) 58476  0.00 -1 s
+( a group of related objects. The set of names used as class names are not specified) 149352  -95.19 32 s
+52832.0 163441.0 m
+(by) 55654  0.00 -1 s
+( CLX. Instead, class names are defined by agreement between those who use class) 149352  51.77 32 s
+52832.0 166601.0 m
+(names) 60042  0.00 -1 s
+( when creating resource bindings \(that is, users\) and those who use class names) 149352  -14.77 32 s
+52832.0 169762.0 m
+(when) 58944  0.00 -1 s
+( accessing resource values \(that is, application programmers\).) 128224  -32.86 32 s
+2 sf
+( ) 128897  -33.00 32 s
+4 sf
+52832.0 176039.0 m
+(In) 55182  0.00 -1 s
+( order to access a value in a resource database, an application uses a key consisting of) 149352  -153.75 32 s
+52832.0 179200.0 m
+(two) 57064  0.00 -1 s
+( items: a ) 67717  128.00 32 s
+5 sf
+(complete resource name) 95558  128.00 32 s
+4 sf
+( and a ) 103388  128.00 32 s
+5 sf
+(complete resource class) 130633  64.00 32 s
+4 sf
+(. A complete) 145388  128.00 32 s
+( re\036) 149352  127.00 32 s
+52832.0 182361.0 m
+(source) 60197  0.00 -1 s
+( name is a resource name list containing no wildcard elements. A complete) 145453  57.75 32 s
+( re\036) 149352  62.00 32 s
+52832.0 185522.0 m
+(source) 60197  0.00 -1 s
+( class is a list of exactly the same) 100102  305.00 32 s
+( form. The distinction between a complete) 149352  253.67 32 s
+52832.0 188682.0 m
+(resource) 62389  0.00 -1 s
+( name and a complete resource class lies in how they are used to access resource) 149352  -257.60 32 s
+52832.0 191843.0 m
+(bindings.) 63259  0.00 -1 s
+( The elements of a complete resource name are interpreted as names of individ\036) 149352  -279.46 32 s
+52832.0 195004.0 m
+(ual) 56280  0.00 -1 s
+( objects; the elements of a complete resource class are interpreted as names of object) 149352  -180.93 32 s
+52832.0 198165.0 m
+(classes.) 61375  0.00 -1 s
+( The complete resource name and class lists used in a resource database access) 149352  -62.54 32 s
+52832.0 201326.0 m
+(must have) 64354  0.00 32 s
+( the same length.) 83335  -48.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Resources) 29616  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(13\036164) 28314  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(Like any resource name list, a complete resource name consists of a path list and an at\036) 149352  -104.88 32 s
+52832.0 25739.0 m
+(tribute) 60198  0.00 -1 s
+( name. The first path list element is typically a symbol \(or string\) identifying the) 149352  -109.14 32 s
+52832.0 28900.0 m
+(application) 65371  0.00 -1 s
+( as a whole. The second element can be a screen root identifier. Subsequent) 149352  -92.85 32 s
+52832.0 32060.0 m
+(elements) 62863  0.00 -1 s
+( can be identifiers for each ancestor window of an application window. Thus, a) 149352  -201.15 32 s
+52832.0 35221.0 m
+(path) 57691  0.00 -1 s
+( list typically identifies a specific window by tracing a path to it through the applica\036) 149352  -248.00 32 s
+52832.0 38382.0 m
+(tion window) 67019  0.00 32 s
+( hierarchy. The final element of a complete resource name \(its attribute) 149352  190.09 32 s
+52832.0 41543.0 m
+(name\)) 59883  0.00 -1 s
+( is typically the name of a specific attribute of the) 115399  -44.00 32 s
+( window given by the path list) 149352  -37.17 32 s
+52832.0 44704.0 m
+(\(for) 57060  0.00 -1 s
+( example, ) 68194  -272.00 32 s
+/courps8 6 declareFont
+6 sf
+('background) 83121  0.00 -1 s
+4 sf
+(\). An) 88648  -272.00 32 s
+( attribute name can refer to a feature associated with the) 149352  -245.30 32 s
+52832.0 47865.0 m
+(window) 61923  0.00 -1 s
+( by the application) 82223  -209.00 32 s
+( but not by the X server \(for example, a font identifier\). Simi\036) 149352  -192.08 32 s
+52832.0 51026.0 m
+(larly,) 58709  0.00 -1 s
+( a complete resource class typically) 98578  -35.20 32 s
+( represents a path to a window in the applica\036) 149352  -44.56 32 s
+52832.0 54187.0 m
+(tion) 57222  0.00 -1 s
+( window) 66931  -88.00 32 s
+( hierarchy and a specific window attribute. However, a complete resource) 149352  -79.70 32 s
+52832.0 57348.0 m
+(class) 58318  0.00 -1 s
+( contains the class name for each) 95324  -23.33 32 s
+( window and for the window attribute. ) 139169  -28.57 32 s
+52832.0 63624.0 m
+(For) 56751  0.00 -1 s
+( instance, in the previous example, the ) 100644  -11.00 32 s
+6 sf
+(mail) 106072  0.00 -1 s
+4 sf
+( application can attempt to look up the) 149352  -9.14 32 s
+52832.0 66785.0 m
+(value) 58944  0.00 -1 s
+( of the ) 66290  -190.00 32 s
+6 sf
+(background) 79860  0.00 -1 s
+4 sf
+( resource for the ) 98218  -190.00 32 s
+6 sf
+(reply) 105003  0.00 -1 s
+( button) 114136  -366.00 32 s
+4 sf
+( window) 123743  -190.00 32 s
+( by using the following) 149352  -143.00 32 s
+52832.0 69946.0 m
+(complete) 63176  0.00 -1 s
+( resource name:) 80919  -61.00 32 s
+6 sf
+52832.0 76223.0 m
+(\(mail) 59617  0.00 -1 s
+( screen\0361 reply background\)) 96181  -25.00 32 s
+4 sf
+52832.0 82431.0 m
+(and) 56907  0.00 -1 s
+( the following complete resource class:) 100855  -34.60 32 s
+6 sf
+52832.0 88708.0 m
+(\(application) 69116  0.00 -1 s
+( root button) 85354  -23.00 32 s
+( fill\)) 93472  -24.00 32 s
+4 sf
+52832.0 94917.0 m
+(This) 57849  0.00 -1 s
+( complete resource name contains a path list identifying the reply button window) 146109  -260.33 32 s
+( \037) 149352  -285.00 32 s
+52832.0 98078.0 m
+6 sf
+(\(mail) 59617  0.00 -1 s
+( screen\0361 reply\)) 80328  -500.50 32 s
+4 sf
+( \037 and an) 91227  -260.00 32 s
+( attribute name for the window background. The cor\036) 149352  -228.00 32 s
+52832.0 101239.0 m
+(responding) 65372  0.00 -1 s
+( resource class contains) 91989  17.00 32 s
+( the class names for the same path list and window) 149352  14.80 32 s
+52832.0 104400.0 m
+(attribute.) 62941  0.00 -1 s
+52832.0 111331.0 m
+0.0 0.0 m
+newpath
+149013 109772 av
+52967 109774 as
+[] 0 setdash
+dp
+149352.0 111331.0 m
+20320.0 114153.0 m
+37818.0 h
+2 sf
+(Matching) 49418  0.00 -1 s
+52832.0 h
+(13.4.2) 59888  0.00 -1 s
+4 sf
+() 59888  0.00 -1 s
+62083.0 h
+(The) 66471  0.00 -1 s
+( resource lookup algorithm searches a specified resource data) 149352  1701.25 32 s
+2 sf
+20320.0 117314.0 m
+( ) 21020  -6.00 32 s
+29487.0 h
+(Resource) 40614  0.00 -1 s
+( Names) 49378  -91.00 32 s
+52832.0 h
+4 sf
+(base) 57847  0.00 -1 s
+( and returns the) 75223  -33.33 32 s
+( value for the resource binding whose resource name is the closest) 149352  -50.55 32 s
+52832.0 120475.0 m
+(match) 59728  0.00 -1 s
+( to a given complete resource) 92361  -103.20 32 s
+( name and class. The intent of the lookup algorithm) 149352  -129.56 32 s
+52832.0 123636.0 m
+(is to) 57615  0.00 32 s
+( formalize an intuitive notion of the closest) 105961  -24.00 32 s
+( match.) 114244  -25.00 32 s
+52832.0 129913.0 m
+(Precedence) 65680  0.00 -1 s
+( is given to a match which begins ) 103704  -48.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(higher) 111072  0.00 -1 s
+4 sf
+( in the parent\036child) 132322  -48.00 32 s
+( contact hierar\036) 149352  -24.50 32 s
+52832.0 133073.0 m
+(chy.) 57613  0.00 -1 s
+( This allows a resource binding with a partial name to define a resource value shared) 149352  -252.67 32 s
+52832.0 136234.0 m
+(by) 55654  0.00 -1 s
+( all members of a window subtree. For example, suppose the resource database con\036) 149352  -92.85 32 s
+52832.0 139395.0 m
+(tained) 59728  0.00 -1 s
+( the following resource) 85709  -38.00 32 s
+( bindings:) 96881  -39.00 32 s
+2 sf
+52832.0 145672.0 m
+(Resource) 63959  0.00 -1 s
+( Name) 71617  -99.00 32 s
+105664.0 h
+(Resource) 116791  0.00 -1 s
+( Value) 124449  -102.00 32 s
+6 sf
+52832.0 151881.0 m
+(\(mail) 59617  0.00 -1 s
+( * background\)) 78571  -22.00 32 s
+105664.0 h
+('red) 111092  0.00 -1 s
+52832.0 155042.0 m
+(\(*) 55546  0.00 -1 s
+( reply) 63665  -23.00 32 s
+( background\)) 79925  -24.00 32 s
+105664.0 h
+('blue) 112449  0.00 -1 s
+4 sf
+52832.0 161250.0 m
+(Suppose) 62396  0.00 -1 s
+( an) 65967  201.00 32 s
+( application program searched by using the following complete resource) 149352  200.44 32 s
+52832.0 164411.0 m
+(name:) 59728  0.00 -1 s
+6 sf
+52832.0 170214.0 m
+(\(mail) 59617  0.00 -1 s
+( screen\0361 reply background\)) 96181  -25.00 32 s
+4 sf
+52832.0 176423.0 m
+(then) 57691  0.00 -1 s
+( the closest matching value returned would be ) 109916  -35.63 32 s
+6 sf
+('red) 115344  0.00 -1 s
+4 sf
+(.) 116050  0.00 -1 s
+52832.0 182225.0 m
+(Precedence is given to the more specific match. A name match is more specific than a) 149352  -33.33 32 s
+52832.0 185386.0 m
+(class) 58318  0.00 -1 s
+( match. Either a name or class match is more specific than a wildcard match. For) 149352  -7.33 32 s
+52832.0 188547.0 m
+(example,) 63098  0.00 -1 s
+( suppose the resource database contained the following resource bindings:) 146304  -46.11 32 s
+2 sf
+52832.0 194350.0 m
+(Resource) 63959  0.00 -1 s
+( Name) 71617  -99.00 32 s
+105664.0 h
+(Resource) 116791  0.00 -1 s
+( Value) 124449  -102.00 32 s
+6 sf
+52832.0 200558.0 m
+(\(mail) 59617  0.00 -1 s
+( * background\)) 78571  -22.00 32 s
+105664.0 h
+('red) 111092  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+139756.0 8195.0 m
+(Resources) 149052  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+141019.0 208619.0 m
+(13\036165) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 6 declareFont
+6 sf
+52832.0 22578.0 m
+(\(mail * fill\)) 70443  -15.00 32 s
+105664.0 h
+('blue) 112449  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+52832.0 28787.0 m
+(Suppose) 62396  0.00 -1 s
+( an) 65967  201.00 32 s
+( application program searched by using the following complete resource) 149352  200.44 32 s
+52832.0 31948.0 m
+(name and) 63725  0.00 32 s
+( complete resource class:) 91846  -56.00 32 s
+6 sf
+52832.0 37750.0 m
+(\(mail) 59617  0.00 -1 s
+( screen\0361 reply background\)) 96181  -25.00 32 s
+52832.0 40911.0 m
+(\(application) 69116  0.00 -1 s
+( root button) 85354  -23.00 32 s
+( fill\)) 93472  -24.00 32 s
+4 sf
+52832.0 47120.0 m
+(then) 57691  0.00 -1 s
+( the closest matching value) 87186  -268.00 32 s
+( returned would be ) 108055  -268.50 32 s
+6 sf
+('red) 113483  0.00 -1 s
+4 sf
+(. However, suppose the resource) 149352  -201.50 32 s
+52832.0 50281.0 m
+(database) 62548  0.00 -1 s
+( contained the following resource bindings:) 111286  -49.00 32 s
+2 sf
+52832.0 56083.0 m
+(Resource) 63959  0.00 -1 s
+( Name) 71617  -99.00 32 s
+105664.0 h
+(Resource) 116791  0.00 -1 s
+( Value) 124449  -102.00 32 s
+6 sf
+52832.0 62292.0 m
+(\(mail) 59617  0.00 -1 s
+( * background\)) 78571  -22.00 32 s
+105664.0 h
+('red) 111092  0.00 -1 s
+52832.0 65453.0 m
+(\(mail) 59617  0.00 -1 s
+( * button) 71790  -20.00 32 s
+( background\)) 88053  -21.00 32 s
+105664.0 h
+('blue) 112449  0.00 -1 s
+4 sf
+52832.0 71662.0 m
+(then) 57691  0.00 -1 s
+( the closest matching value returned would be ) 109913  -36.00 32 s
+6 sf
+('blue) 116698  0.00 -1 s
+4 sf
+(.) 117404  0.00 -1 s
+52832.0 78593.0 m
+0.0 0.0 m
+newpath
+149013 77034 av
+52967 77036 as
+[] 0 setdash
+dp
+149352.0 78593.0 m
+20320.0 81415.0 m
+38314.0 h
+2 sf
+(Resource) 49441  0.00 -1 s
+52832.0 h
+(13.4.3) 59888  0.00 -1 s
+4 sf
+() 59888  0.00 -1 s
+62083.0 h
+(The) 66471  0.00 -1 s
+( following paragraphs) 91156  -39.00 32 s
+( describe the CLX functions used to return) 138921  -39.57 32 s
+20320.0 84576.0 m
+28832.0 h
+2 sf
+(Access) 36824  0.00 -1 s
+( Functions) 49378  -68.00 32 s
+52832.0 h
+4 sf
+(a) 54085  0.00 -1 s
+( value from a) 68920  -44.00 32 s
+( resource database.) 90266  -22.50 32 s
+2 sf
+34544.0 90853.0 m
+(get\036resource) 49429  0.00 -1 s
+4 sf
+( ) 50080  -55.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(database attribute\036name attribute\036class path\036name path\036class) 119617  -54.75 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 94014.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 97175.0 m
+(  ) 54202  -21.00 32 s
+5 sf
+(value) 60314  0.00 -1 s
+( ) 60998  -22.00 32 s
+4 sf
+(\037 Type ) 70988  -21.50 32 s
+2 sf
+(t) 71927  0.00 -1 s
+4 sf
+(.) 72633  0.00 -1 s
+52832.0 101894.0 m
+(Returns) 61610  0.00 -1 s
+( the value of the resource binding in the ) 107766  69.00 32 s
+5 sf
+(database) 117956  0.00 -1 s
+4 sf
+( whose resource name most) 149352  51.25 32 s
+52832.0 105054.0 m
+(closely) 60826  0.00 -1 s
+( matches the complete resource name/class given by the ) 123692  -111.78 32 s
+5 sf
+(path\036name) 135760  0.00 -1 s
+4 sf
+(, ) 137046  -126.00 32 s
+5 sf
+(path\036class) 148646  0.00 -1 s
+4 sf
+(,) 149352  0.00 -1 s
+52832.0 108215.0 m
+5 sf
+(attribute\036name) 69603  0.00 -1 s
+4 sf
+(,) 70309  0.00 -1 s
+( and ) 75740  -28.00 32 s
+5 sf
+(attribute\036class) 92043  0.00 -1 s
+4 sf
+(. The lookup algorithm implements the precedence) 149352  -23.00 32 s
+52832.0 111376.0 m
+(rules) 58317  0.00 -1 s
+( described previously to determine) 97102  -60.75 32 s
+( the closest match. When comparing name ele\036) 149352  -81.57 32 s
+52832.0 114537.0 m
+(ments,) 60279  0.00 -1 s
+( case is significant only if both elements) 105642  -2.57 32 s
+( are strings; otherwise, element match\036) 149352  -3.60 32 s
+52832.0 117698.0 m
+(ing is) 59026  0.00 32 s
+( case\036insensitive.) 78255  -50.00 32 s
+5 sf
+52832.0 123500.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 A ) 69807  -64.00 32 s
+2 sf
+(resource\036database) 91750  0.00 -1 s
+4 sf
+(.) 92456  0.00 -1 s
+5 sf
+52832.0 128287.0 m
+(attribute\036name) 69603  0.00 -1 s
+4 sf
+( \037 A string or symbol giving an attribute name from a complete resource) 149352  -261.85 32 s
+57912.0 131448.0 m
+(name.) 64730  0.00 -1 s
+5 sf
+52832.0 136234.0 m
+(attribute\036class) 69135  0.00 -1 s
+4 sf
+( \037 A string or symbol giving an attribute class name from a complete re\036) 149352  -193.00 32 s
+57912.0 139395.0 m
+(source) 65277  0.00 -1 s
+( class.) 72136  -39.00 32 s
+5 sf
+52832.0 144182.0 m
+(path\036name) 64900  0.00 -1 s
+( ) 66015  409.00 32 s
+4 sf
+(\037 The path list from a complete resource name.) 123910  409.00 32 s
+( ) 125024  408.00 32 s
+5 sf
+(path\036name) 137092  0.00 -1 s
+4 sf
+( and) 142282  409.00 32 s
+5 sf
+( path\036) 149352  408.00 32 s
+57912.0 147343.0 m
+(class) 63556  0.00 -1 s
+4 sf
+( must) 69750  0.00 32 s
+( have) 75747  -37.00 32 s
+( the same length.) 94759  -37.67 32 s
+5 sf
+52832.0 152129.0 m
+(path\036class) 64432  0.00 -1 s
+4 sf
+( \037 The path list from a complete resource class. ) 124841  500.00 32 s
+5 sf
+(path\036name ) 138115  500.00 32 s
+4 sf
+(and) 142190  0.00 -1 s
+5 sf
+( path\036) 149352  500.00 32 s
+57912.0 155290.0 m
+(clas) 62458  0.00 -1 s
+4 sf
+(s must) 69750  0.00 32 s
+( have) 75747  -37.00 32 s
+( the same length.) 94759  -37.67 32 s
+2 sf
+34544.0 160076.0 m
+(get\036search\036table) 53818  0.00 -1 s
+4 sf
+( ) 54456  -68.00 32 s
+5 sf
+(database path\036name) 77352  -68.00 32 s
+( path\036class) 89589  -69.00 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 163237.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 166398.0 m
+(  ) 54209  -17.50 32 s
+5 sf
+(search\036table) 68315  0.00 -1 s
+4 sf
+( \037 Type ) 79001  -17.67 32 s
+2 sf
+(list) 82606  0.00 -1 s
+4 sf
+(.) 83312  0.00 -1 s
+52832.0 171117.0 m
+(Returns) 61610  0.00 -1 s
+( a table containing the subset of the ) 102444  29.25 32 s
+5 sf
+(database) 112634  0.00 -1 s
+4 sf
+( that matches the ) 132474  22.25 32 s
+5 sf
+(path\036name) 144542  0.00 -1 s
+4 sf
+( and) 149352  29.00 32 s
+52832.0 174278.0 m
+5 sf
+(path\036class) 64432  0.00 -1 s
+4 sf
+(.) 65138  0.00 -1 s
+( Resources using the same ) 95138  -98.00 32 s
+5 sf
+(path\036name) 107206  0.00 -1 s
+4 sf
+( and ) 112498  -97.50 32 s
+5 sf
+(path\036class) 124098  0.00 -1 s
+4 sf
+( can be accessed much) 149352  -73.25 32 s
+52832.0 177439.0 m
+(more) 58630  0.00 -1 s
+( efficiently by using this table as an argument to ) 113312  -33.90 32 s
+2 sf
+(get\036search\036resource) 136973  0.00 -1 s
+4 sf
+(.) 137679  0.00 -1 s
+5 sf
+52832.0 183715.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 A ) 69807  -64.00 32 s
+2 sf
+(resource\036database) 91750  0.00 -1 s
+4 sf
+(.) 92456  0.00 -1 s
+5 sf
+52832.0 188502.0 m
+(path\036name) 64900  0.00 -1 s
+( ) 66015  409.00 32 s
+4 sf
+(\037 The path list from a complete resource name.) 123910  409.00 32 s
+5 sf
+( path\036name) 137092  408.00 32 s
+4 sf
+( and) 142282  409.00 32 s
+5 sf
+( path\036) 149352  408.00 32 s
+57912.0 191663.0 m
+(class ) 64262  0.00 32 s
+4 sf
+(must) 69750  0.00 -1 s
+( have) 75747  -37.00 32 s
+( the same length.) 94759  -37.67 32 s
+5 sf
+52832.0 196449.0 m
+(path\036class) 64432  0.00 -1 s
+4 sf
+( \037 The path list from a complete resource class. ) 124841  500.00 32 s
+5 sf
+(path\036name) 136909  0.00 -1 s
+4 sf
+( and) 142190  500.00 32 s
+5 sf
+( path\036) 149352  500.00 32 s
+57912.0 199610.0 m
+(class) 63556  0.00 -1 s
+4 sf
+( must) 69750  0.00 32 s
+( have) 75747  -37.00 32 s
+( the same length.) 94759  -37.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Resources) 29616  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(13\036166) 28314  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(get\036search\036resource) 58205  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( ) 58846  -65.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(table attribute\036name attribute\036class) 98846  -64.50 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 28900.0 m
+( ) 53517  -21.00 32 s
+5 sf
+( value) 60314  -21.00 32 s
+4 sf
+( \037 Type ) 70988  -21.67 32 s
+2 sf
+(t) 71927  0.00 -1 s
+4 sf
+(.) 72633  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( the value of the resource binding in the search ) 114248  -81.00 32 s
+5 sf
+(table) 119891  0.00 -1 s
+4 sf
+( that most closely matches) 149352  -81.00 32 s
+52832.0 36779.0 m
+(the) 56280  0.00 -1 s
+( ) 56869  -117.00 32 s
+5 sf
+(attribute\036name) 73640  0.00 -1 s
+4 sf
+( and ) 78893  -117.00 32 s
+5 sf
+(attribute\036class) 95196  0.00 -1 s
+4 sf
+(. The) 100879  -117.00 32 s
+( ) 101467  -118.00 32 s
+5 sf
+(table) 107110  0.00 -1 s
+4 sf
+( is computed by ) 125415  -88.00 32 s
+2 sf
+(get\036search\036table) 144689  0.00 -1 s
+4 sf
+( and) 149352  -118.00 32 s
+52832.0 39940.0 m
+(represents) 64271  0.00 -1 s
+( a set of resource bindings. The closest match is determined by the same algo\036) 149352  -209.50 32 s
+52832.0 43101.0 m
+(rithm) 58945  0.00 -1 s
+( used) 64763  -61.00 32 s
+( in ) 68308  -31.00 32 s
+2 sf
+(get\036resource) 83193  0.00 -1 s
+4 sf
+(.) 83899  0.00 -1 s
+52832.0 49378.0 m
+(The) 57220  0.00 -1 s
+( following two forms are functionally) 99452  -33.00 32 s
+( equivalent:) 112663  -34.00 32 s
+52832.0 57077.0 m
+54864.0 h
+/courps8 6 declareFont
+6 sf
+(\(get\036resource) 72505  0.00 -1 s
+52832.0 60192.0 m
+54864.0 h
+( ) 56197  -24.00 32 s
+( database attribute\036name attribute\036class path\036name path\036class\)) 140208  -24.60 32 s
+4 sf
+52832.0 66153.0 m
+54864.0 h
+6 sf
+(\(get\036search\036resource) 82004  0.00 -1 s
+52832.0 69269.0 m
+54864.0 h
+( \(get\036search\036table) 79262  -28.00 32 s
+( database path\036name path\036class\)) 121243  -28.67 32 s
+52832.0 72384.0 m
+54864.0 h
+( attribute\036name) 75182  -37.00 32 s
+( attribute\036class\)) 98213  -38.00 32 s
+4 sf
+52832.0 78548.0 m
+(However,) 63879  0.00 -1 s
+( the hard part of the search) 92439  -255.00 32 s
+( is done by ) 104431  -255.50 32 s
+2 sf
+(get\036search\036table) 123705  0.00 -1 s
+4 sf
+(. Looking up values for) 149352  -191.75 32 s
+52832.0 81709.0 m
+(several) 60823  0.00 -1 s
+( resource attributes that share the same path list can) 120038  127.11 32 s
+( be done much more effi\036) 149352  142.40 32 s
+52832.0 84870.0 m
+(ciently) 60512  0.00 -1 s
+( with calls to ) 75540  -44.75 32 s
+2 sf
+(get\036search\036resource) 99201  0.00 -1 s
+4 sf
+(.) 99907  0.00 -1 s
+5 sf
+52832.0 91146.0 m
+(table) 58475  0.00 -1 s
+4 sf
+( \037 A search table returned by ) 92954  -33.86 32 s
+2 sf
+(get\036search\036table) 112228  0.00 -1 s
+4 sf
+(.) 112934  0.00 -1 s
+5 sf
+52832.0 95933.0 m
+(attribute\036name) 69603  0.00 -1 s
+4 sf
+( \037 A string or symbol giving an attribute name from a complete resource) 149352  -261.85 32 s
+57912.0 99094.0 m
+(name.) 64730  0.00 -1 s
+5 sf
+52832.0 103880.0 m
+(attribute\036class) 69135  0.00 -1 s
+4 sf
+( \037 A string or symbol giving an attribute class name from a complete re\036) 149352  -193.00 32 s
+57912.0 107041.0 m
+(source) 65277  0.00 -1 s
+( class.) 72136  -39.00 32 s
+20320.0 112550.0 m
+0.0 0.0 m
+newpath
+20455 110926 av
+148878 110924 as
+[] 0 setdash
+dp
+149352.0 112550.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 115937.0 m
+(Resource) 33670  0.00 -1 s
+( ) 34544  27.00 32 s
+52832.0 h
+2 sf
+(13.5) 57771  0.00 -1 s
+4 sf
+() 57771  0.00 -1 s
+59966.0 h
+(X) 62003  0.00 -1 s
+( users and application programs can save resource bindings in a file,) 149352  944.45 32 s
+7 sf
+20320.0 119324.0 m
+(Database) 33674  0.00 -1 s
+( Files) 41317  25.00 32 s
+52832.0 h
+4 sf
+(using) 58947  0.00 -1 s
+( a standard file format shared by all X clients. The following paragraphs describe) 149352  -86.62 32 s
+52832.0 122484.0 m
+(the) 56280  0.00 -1 s
+( CLX functions used to convert between the standard external format of resource) 149352  141.58 32 s
+52832.0 125645.0 m
+(files and) 62471  0.00 32 s
+( the) 66587  -38.00 32 s
+( internal resource\036database format used by application programs.) 139508  -38.57 32 s
+2 sf
+34544.0 131922.0 m
+(read\036resources) 52410  0.00 -1 s
+4 sf
+( ) 53071  -45.00 32 s
+5 sf
+(database pathname) 75051  -45.00 32 s
+4 sf
+( &key ) 82643  -45.00 32 s
+2 sf
+(:key :test :test\036not) 104332  -44.50 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 135083.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 138244.0 m
+(  ) 54148  -48.00 32 s
+5 sf
+(database) 64338  0.00 -1 s
+4 sf
+( \037 Type) 74275  -48.00 32 s
+( ) 74932  -49.00 32 s
+2 sf
+(resource\036database) 96875  0.00 -1 s
+4 sf
+(.) 97581  0.00 -1 s
+52832.0 142962.0 m
+(Reads) 59729  0.00 -1 s
+( resource bindings from a resource file in standard X11 format and merges) 143078  -67.83 32 s
+( them) 149352  -75.00 32 s
+52832.0 146123.0 m
+(with) 57848  0.00 -1 s
+( the given resource ) 79527  -105.00 32 s
+5 sf
+(database) 89717  0.00 -1 s
+4 sf
+(. The ) 96013  -105.00 32 s
+2 sf
+(:key) 101185  0.00 -1 s
+4 sf
+( function is called to convert a file resource) 149352  -91.50 32 s
+52832.0 149284.0 m
+(value) 58944  0.00 -1 s
+( into the value stored in the ) 89179  -170.86 32 s
+5 sf
+(database) 99369  0.00 -1 s
+4 sf
+(. By default, ) 113686  -113.67 32 s
+2 sf
+(:key) 118858  0.00 -1 s
+4 sf
+( is ) 121811  -170.50 32 s
+2 sf
+(#'identity) 133409  0.00 -1 s
+4 sf
+(. The ) 139574  -170.50 32 s
+2 sf
+(:test) 144742  0.00 -1 s
+4 sf
+( and) 149352  -171.00 32 s
+52832.0 152445.0 m
+2 sf
+(:test\036not) 62858  0.00 -1 s
+4 sf
+( functions are predicates that select resource bindings to merge,) 134525  4.44 32 s
+( based on the) 149352  4.33 32 s
+52832.0 155606.0 m
+(result) 59101  0.00 -1 s
+( of the ) 66469  -182.67 32 s
+2 sf
+(:key) 71641  0.00 -1 s
+4 sf
+( function. For each file resource binding consisting of a ) 132426  -246.20 32 s
+5 sf
+(resource\036name) 149352  0.00 -1 s
+4 sf
+52832.0 158767.0 m
+(and) 56907  0.00 -1 s
+( a ) 59568  -2.00 32 s
+5 sf
+(resource\036value) 76494  0.00 -1 s
+4 sf
+(, the ) 82056  -2.00 32 s
+2 sf
+(:test) 87224  0.00 -1 s
+4 sf
+( \(or ) 91921  -2.00 32 s
+2 sf
+(:test\036not) 101947  0.00 -1 s
+4 sf
+(\) function is called with the arguments ) 146062  -1.29 32 s
+5 sf
+(re\036) 149352  0.00 -1 s
+52832.0 161928.0 m
+(source\036name) 67407  0.00 -1 s
+4 sf
+( and \() 73723  -55.00 32 s
+2 sf
+(funcall) 82032  0.00 -1 s
+4 sf
+( ) 82683  -55.00 32 s
+5 sf
+(key resource\036value) 104019  -55.00 32 s
+4 sf
+(\).) 105664  0.00 -1 s
+5 sf
+52832.0 168204.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 The ) 72191  -53.00 32 s
+2 sf
+(resource\036database) 94134  0.00 -1 s
+4 sf
+( to merge.) 105393  -52.50 32 s
+5 sf
+52832.0 172991.0 m
+(pathname) 63961  0.00 -1 s
+4 sf
+( \037 A pathname for the resource) 100153  -28.00 32 s
+( file to read.) 113702  -28.67 32 s
+2 sf
+52832.0 177777.0 m
+(:key) 58004  0.00 -1 s
+4 sf
+( \037 A function used to convert a value from the resource file into a resource binding) 149352  -217.38 32 s
+57912.0 180938.0 m
+(value.) 64730  0.00 -1 s
+2 sf
+52832.0 185725.0 m
+(:test) 58000  0.00 -1 s
+4 sf
+(,) 58706  0.00 -1 s
+( ) 59390  -22.00 32 s
+2 sf
+(:test\036not) 69416  0.00 -1 s
+4 sf
+( \037 Functions used to select which resource bindings from the resource) 149352  -21.82 32 s
+57912.0 188886.0 m
+(file are) 65823  0.00 32 s
+( merged with the ) 85421  -38.00 32 s
+5 sf
+(database) 95611  0.00 -1 s
+4 sf
+(.) 96317  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+139756.0 8195.0 m
+(Resources) 149052  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+141019.0 208619.0 m
+(13\036167) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(write\036resources) 53190  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( ) 53860  -36.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(database pathname) 75849  -36.00 32 s
+4 sf
+( &key ) 83459  -36.00 32 s
+2 sf
+(:write :test :test\036not) 107199  -35.50 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+52832.0 27297.0 m
+(Writes) 60354  0.00 -1 s
+( resource bindings found in) 91006  -57.00 32 s
+( the ) 95751  -57.50 32 s
+5 sf
+(database) 105941  0.00 -1 s
+4 sf
+( to the file given by the ) 132481  -49.29 32 s
+5 sf
+(pathname) 143610  0.00 -1 s
+4 sf
+(. The) 149352  -58.00 32 s
+52832.0 30457.0 m
+(output) 60044  0.00 -1 s
+( file is written in the standard X11 format. The ) 111682  -173.30 32 s
+2 sf
+(:write) 118887  0.00 -1 s
+4 sf
+( function is used for writing) 149352  -192.60 32 s
+52832.0 33618.0 m
+(resource) 62389  0.00 -1 s
+( values; the default is ) 86543  -107.00 32 s
+2 sf
+(#'princ) 95321  0.00 -1 s
+4 sf
+(. The ) 101720  -53.50 32 s
+2 sf
+(:write) 108925  0.00 -1 s
+4 sf
+( function is passed two arguments:) 147501  -107.00 32 s
+( a) 149352  -108.00 32 s
+52832.0 36779.0 m
+5 sf
+(resource\036value) 69758  0.00 -1 s
+4 sf
+( and a ) 76748  -152.00 32 s
+5 sf
+(stream) 84429  0.00 -1 s
+4 sf
+(. The ) 90631  -152.00 32 s
+2 sf
+(:test) 95799  0.00 -1 s
+4 sf
+( and ) 100982  -152.00 32 s
+2 sf
+(:test\036not) 111008  0.00 -1 s
+4 sf
+( functions are predicates which se\036) 149352  -151.60 32 s
+52832.0 39940.0 m
+(lect) 56906  0.00 -1 s
+( resource bindings to write. For) 93375  208.80 32 s
+( each resource binding consisting of a ) 138538  260.43 32 s
+5 sf
+(resource\036) 149352  0.00 -1 s
+52832.0 43101.0 m
+(name) 58944  0.00 -1 s
+4 sf
+( and) 63725  0.00 32 s
+( a ) 65874  -258.00 32 s
+5 sf
+(resource\036value) 82800  0.00 -1 s
+4 sf
+(,) 83506  0.00 -1 s
+( the ) 87849  -258.50 32 s
+2 sf
+(:test) 93017  0.00 -1 s
+4 sf
+( \(or ) 97201  -258.50 32 s
+2 sf
+(:test\036not) 107227  0.00 -1 s
+4 sf
+(\) function is called with the arguments) 149352  -215.50 32 s
+52832.0 46262.0 m
+5 sf
+(resource\036name) 69758  0.00 -1 s
+4 sf
+( and) 74453  -86.00 32 s
+( ) 75072  -87.00 32 s
+5 sf
+(resource\036value) 91998  0.00 -1 s
+4 sf
+(.) 92704  0.00 -1 s
+5 sf
+52832.0 52538.0 m
+(database) 63022  0.00 -1 s
+4 sf
+( \037 The ) 72212  -46.00 32 s
+2 sf
+(resource\036database) 94155  0.00 -1 s
+4 sf
+( to write.) 104174  -45.50 32 s
+5 sf
+52832.0 57325.0 m
+(pathname) 63961  0.00 -1 s
+4 sf
+( \037 A pathname of the file to write.) 103497  -24.75 32 s
+2 sf
+52832.0 62111.0 m
+(:write) 60037  0.00 -1 s
+4 sf
+( \037 A function for) 80333  -20.00 32 s
+( writing resource values.) 108012  -20.67 32 s
+2 sf
+52832.0 66898.0 m
+(:test) 58000  0.00 -1 s
+4 sf
+(,) 58706  0.00 -1 s
+( ) 59390  -22.00 32 s
+2 sf
+(:test\036not) 69416  0.00 -1 s
+4 sf
+( \037 Functions used to select which resource bindings from the resource) 149352  -21.82 32 s
+57912.0 70059.0 m
+(file are) 65823  0.00 32 s
+( merged with the ) 85421  -38.00 32 s
+5 sf
+(database) 95611  0.00 -1 s
+4 sf
+(.) 96317  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Resources) 29616  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(13\036168) 28314  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18 3 declareFont
+3 sf
+20320.0 24271.0 m
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

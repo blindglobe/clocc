@@ -1,0 +1,2642 @@
+%!PS-Adobe-2.0
+%%Title: general.ps
+%%Pages: 7
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 7 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/helvps18b /ILhelvpsb 18 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps10b /ILtimsb 10 map
+	/timsps10i /ILtimsi 10 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Times-Italic /ILhelvpsb ILEncoding ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 7 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10 3 declareFont
+3 sf
+149321.0 8984.0 m
+/timsps8i 1 declareFont
+1 sf
+135467.0 8737.0 m
+(General ) 143413  -32.00 32 s
+( Index) 148969  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 207264 av
+149013 207262 as
+[] 0 setdash
+dp
+20320.0 211327.0 m
+(CLX Programmer's Reference) 47961  0.00 32 s
+/timsps10b 2 declareFont
+2 sf
+136941.0 h
+(Index\036213) 149013  0.00 -1 s
+3 sf
+20320.0 23300.0 m
+0.0 0.0 m
+newpath
+20455 21676 av
+149013 21674 as
+[] 0 setdash
+dp
+149352.0 23300.0 m
+/helvps18b 4 declareFont
+4 sf
+20320.0 29193.0 m
+(General) 37811  0.00 -1 s
+20320.0 43553.0 m
+(A) 23987  0.00 -1 s
+3 sf
+20320.0 50258.0 m
+(access) 27528  0.00 -1 s
+( control list, 14\036179) 49694  -31.67 32 s
+20320.0 55383.0 m
+(arc\036mode) 30974  0.00 -1 s
+( attribute of) 44063  -38.00 32 s
+( graphics context, 5\03655) 69810  -38.67 32 s
+20320.0 60508.0 m
+(arcs,) 25569  0.00 -1 s
+( drawing, 6\03674\0376\03675) 49987  -56.00 32 s
+20320.0 65634.0 m
+(area) 25018  0.00 -1 s
+( of) 28036  -38.00 32 s
+( a window, 6\03669\0376\03671) 54254  -38.67 32 s
+20320.0 70759.0 m
+(atom,) 26669  0.00 -1 s
+( 11\036111\03711\036112) 46059  -126.00 32 s
+20320.0 75884.0 m
+(attribute) 29723  0.00 -1 s
+( name, 13\036161) 45833  -57.00 32 s
+20320.0 81009.0 m
+(authorization) 35209  0.00 -1 s
+22871.0 84396.0 m
+(data) 27572  0.00 -1 s
+( of display, 2\03624) 45968  -34.00 32 s
+22871.0 87782.0 m
+(name) 28983  0.00 -1 s
+( of display, 2\03624) 47368  -37.67 32 s
+20320.0 92908.0 m
+(auto\036repeat) 33011  0.00 -1 s
+( keys, 14\036170\03714\036173) 58928  -92.00 32 s
+4 sf
+20320.0 105664.0 m
+(B) 23708  0.00 -1 s
+3 sf
+20320.0 112370.0 m
+(background) 33642  0.00 -1 s
+( attribute) 43643  -108.00 32 s
+22871.0 115756.0 m
+(graphics) 32431  0.00 -1 s
+( context, 5\03656) 47910  -59.00 32 s
+22871.0 119143.0 m
+(window,) 32668  0.00 -1 s
+( 4\03638) 38473  -73.00 32 s
+20320.0 124268.0 m
+(backing\036pixel) 35836  0.00 -1 s
+( attribute of window,) 59372  -44.00 32 s
+( 4\03639) 65205  -45.00 32 s
+20320.0 129393.0 m
+(backing\036planes) 37403  0.00 -1 s
+( attribute of window, 4\03639) 66762  -46.75 32 s
+20320.0 134518.0 m
+(backing\036store) 35678  0.00 -1 s
+( attribute of window, 4\03639) 65069  -38.75 32 s
+20320.0 139644.0 m
+(backing\036stores) 36776  0.00 -1 s
+( attribute of screen, 3\03632) 64302  -34.00 32 s
+20320.0 144769.0 m
+(bell,) 25258  0.00 -1 s
+( 14\036170\03714\036173) 44659  -115.00 32 s
+20320.0 149894.0 m
+(bit\036gravity) 32231  0.00 -1 s
+( attribute of window,) 55812  -29.00 32 s
+( 4\03639) 61660  -30.00 32 s
+20320.0 155019.0 m
+(bit) 23299  0.00 -1 s
+( vector, keyboard, 14\036170\03714\036173) 62969  -73.67 32 s
+20320.0 160144.0 m
+(bitmap,) 28864  0.00 -1 s
+( 1\0362) 33280  -51.00 32 s
+22871.0 163531.0 m
+(format) 30392  0.00 -1 s
+( of display, 2\03624) 48813  -25.67 32 s
+20320.0 168656.0 m
+(black\036pixel) 33014  0.00 -1 s
+( attribute of screen,) 54690  -36.00 32 s
+( 3\03632) 60531  -37.00 32 s
+20320.0 173781.0 m
+(border) 27684  0.00 -1 s
+( attribute of window, 4\03640) 57099  -32.75 32 s
+20320.0 178906.0 m
+(border\036width) 35050  0.00 -1 s
+( attribute of window, 4\03637) 64460  -34.00 32 s
+20320.0 184032.0 m
+(button,) 28238  0.00 -1 s
+( grabbing,) 39581  -100.00 32 s
+( 12\036132\03712\036133) 58996  -101.00 32 s
+20320.0 189157.0 m
+(:button\036press) 35054  0.00 -1 s
+( event,) 42520  -58.00 32 s
+( 12\036136) 51161  -59.00 32 s
+20320.0 194282.0 m
+(:button\036release) 37088  0.00 -1 s
+( event,) 44542  -70.00 32 s
+( 12\036136) 53171  -71.00 32 s
+22871.0 197668.0 m
+(example,) 33137  0.00 -1 s
+( 1\0369) 37524  -80.00 32 s
+20320.0 202794.0 m
+(byte) 25179  0.00 -1 s
+( order of display, 2\03624) 50213  -30.75 32 s
+4 sf
+88234.0 29193.0 m
+41092.0 v
+(C) 91901  0.00 -1 s
+3 sf
+88234.0 46917.0 m
+(cap\036style) 98420  0.00 -1 s
+( attribute of graphics context, 5\03656) 137273  -35.00 32 s
+88234.0 51500.0 m
+(character,) 99278  0.00 -1 s
+( 8\03689\0378\03698) 113047  -103.00 32 s
+90785.0 54819.0 m
+(attributes,) 101992  0.00 -1 s
+( 8\03689,) 108527  -49.00 32 s
+( 8\03696\0378\03697) 122349  -50.00 32 s
+88234.0 59402.0 m
+(:circulate\036notify) 106411  0.00 -1 s
+( event, 12\036147) 122507  -64.00 32 s
+88234.0 62518.0 m
+68162.0 v
+(:circulate\036request) 107820  0.00 -1 s
+( event,) 115276  -68.00 32 s
+( 12\036152) 123907  -69.00 32 s
+88234.0 72746.0 m
+(class,) 94426  0.00 -1 s
+( window, 4\03640) 110721  -43.00 32 s
+88234.0 77329.0 m
+(classes) 96071  0.00 -1 s
+( of visual types supported, 3\03631) 131516  -28.00 32 s
+88234.0 81912.0 m
+(client,) 95209  0.00 -1 s
+( 1\0362) 99636  -40.00 32 s
+90785.0 85231.0 m
+(communications) 109439  0.00 -1 s
+( events, 12\036155\03712\036157) 137363  -107.00 32 s
+90785.0 88550.0 m
+(termination,) 104500  0.00 -1 s
+( 14\036176\03714\036178) 123884  -132.00 32 s
+88234.0 93133.0 m
+(:client\036message) 105787  0.00 -1 s
+( event, 12\036155) 121875  -68.00 32 s
+88234.0 97717.0 m
+(clip\036mask) 99362  0.00 -1 s
+( attribute of graphics context, 5\03657) 138221  -33.80 32 s
+88234.0 102300.0 m
+(clip\036x) 94816  0.00 -1 s
+( attribute of graphics context,) 127838  -32.00 32 s
+( 5\03658) 133683  -33.00 32 s
+88234.0 106883.0 m
+(clip\036y attribute of graphics context, 5\03658) 133683  -32.20 32 s
+88234.0 111467.0 m
+(CLX) 93877  0.00 -1 s
+90785.0 114785.0 m
+(error) 96266  0.00 -1 s
+( conditions, 16\036185\03716\036190) 128806  -73.00 32 s
+90785.0 118104.0 m
+(examples,) 102149  0.00 -1 s
+( 1\0363\0371\03611) 114515  -95.00 32 s
+93314.0 121423.0 m
+(calculating) 105695  0.00 -1 s
+( menu size, 1\0366) 122801  -45.67 32 s
+93314.0 124742.0 m
+(creating) 102402  0.00 -1 s
+( menu window,) 119783  -49.00 32 s
+( 1\0365) 124200  -50.00 32 s
+93314.0 128061.0 m
+(creating) 102402  0.00 -1 s
+( subwindows,) 117869  -54.00 32 s
+( 1\0365) 122281  -55.00 32 s
+93314.0 131380.0 m
+(definition) 104286  0.00 -1 s
+( of menu structure, 1\0363) 129958  -27.75 32 s
+93314.0 134699.0 m
+(drawing/redrawing) 114782  0.00 -1 s
+( menus, 1\0367) 127903  -63.00 32 s
+93314.0 138018.0 m
+(main) 98957  0.00 -1 s
+( client program, 1\03610) 122665  -38.67 32 s
+93314.0 141337.0 m
+(menu) 99584  0.00 -1 s
+( processing of user input,) 127915  -30.00 32 s
+( 1\0368) 132351  -31.00 32 s
+90785.0 144656.0 m
+(overview,) 101990  0.00 -1 s
+( 1\0361\0371\03622) 114356  -95.00 32 s
+90785.0 147975.0 m
+(xatom) 97839  0.00 -1 s
+( objects,) 107185  -60.00 32 s
+( 11\036111) 115824  -61.00 32 s
+88234.0 152558.0 m
+(color,) 94738  0.00 -1 s
+( 9\03699\0379\036108) 109931  -90.00 32 s
+90785.0 155877.0 m
+(allocating,) 102619  0.00 -1 s
+( 9\036103\0379\036105) 119188  -125.00 32 s
+90785.0 159196.0 m
+(changing,) 101836  0.00 -1 s
+( 9\03699,) 108325  -95.00 32 s
+( 9\036105\0379\036106) 124923  -96.00 32 s
+90785.0 162515.0 m
+(creating,) 100579  0.00 -1 s
+( 9\03699) 106387  -70.00 32 s
+90785.0 165834.0 m
+(finding, 9\036105) 106861  -70.00 32 s
+88234.0 170417.0 m
+(colormap,) 99597  0.00 -1 s
+( 9\03699\0379\036108) 114763  -117.00 32 s
+90785.0 173736.0 m
+(accessors,) 102147  0.00 -1 s
+( 9\036107) 109367  -69.00 32 s
+90785.0 177055.0 m
+(attribute) 100188  0.00 -1 s
+( of window, 4\03640) 119527  -32.67 32 s
+90785.0 180374.0 m
+(creating,) 100579  0.00 -1 s
+( 9\036101\0379\036102) 117156  -117.00 32 s
+90785.0 183693.0 m
+(installing,) 101995  0.00 -1 s
+( 9\036102\0379\036103) 118601  -88.00 32 s
+90785.0 187012.0 m
+(maximum) 102229  0.00 -1 s
+( number for screen,) 124052  -39.00 32 s
+( 3\03633) 129890  -40.00 32 s
+90785.0 190331.0 m
+(minimum) 101760  0.00 -1 s
+( number for screen, 3\03633) 129438  -35.00 32 s
+90785.0 193650.0 m
+(screen) 97992  0.00 -1 s
+( default,) 107193  -46.00 32 s
+( 3\03632) 113024  -47.00 32 s
+88234.0 198233.0 m
+(:colormap\036notify) 107354  0.00 -1 s
+( event,) 114806  -72.00 32 s
+( 12\036153) 123433  -73.00 32 s
+88234.0 202816.0 m
+(complete) 98578  0.00 -1 s
+( resource class,) 115641  -49.00 32 s
+( 13\036163) 124291  -50.00 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8737.0 m
+(General ) 28266  -32.00 32 s
+( Index) 33822  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+148474 207264 av
+21709 207262 as
+[] 0 setdash
+dp
+121920.0 211598.0 m
+(CLX) 126069  0.00 -1 s
+( Programmer's Reference) 149465  -48.00 32 s
+/timsps10b 2 declareFont
+2 sf
+19898.0 211327.0 m
+(Index\036214) 31970  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+20320.0 22578.0 m
+(complete) 30664  0.00 -1 s
+( resource name,) 48327  -62.00 32 s
+( 13\036163) 56964  -63.00 32 s
+20320.0 27297.0 m
+(conditions,) 32784  0.00 -1 s
+( CLX, 16\036185) 48407  -66.00 32 s
+20320.0 32015.0 m
+(:configure\036notify) 39595  0.00 -1 s
+( event, 12\036148) 55677  -71.00 32 s
+20320.0 36734.0 m
+(:configure\036request) 41004  0.00 -1 s
+( event,) 48453  -75.00 32 s
+( 12\036153) 57077  -76.00 32 s
+20320.0 41453.0 m
+(control,) 29019  0.00 -1 s
+( 14\036169\03714\036182) 48407  -128.00 32 s
+22871.0 44772.0 m
+(client) 29140  0.00 -1 s
+( termination,) 43485  -76.00 32 s
+( 14\036176\03714\036178) 62924  -77.00 32 s
+22871.0 48091.0 m
+(grabbing) 32902  0.00 -1 s
+( the server,) 45265  -48.00 32 s
+( 14\036169) 53916  -49.00 32 s
+22871.0 51410.0 m
+(host) 27575  0.00 -1 s
+( access,) 36122  -73.00 32 s
+( 14\036179\03714\036180) 55564  -74.00 32 s
+22871.0 54729.0 m
+(keyboard,) 34077  0.00 -1 s
+( 14\036170\03714\036173) 53419  -174.00 32 s
+22871.0 58047.0 m
+(pointer,) 31570  0.00 -1 s
+( 14\036169\03714\036170) 50958  -128.00 32 s
+22871.0 61366.0 m
+(screen) 30078  0.00 -1 s
+( saver, 14\036180\03714\036182) 56806  -77.00 32 s
+20320.0 66085.0 m
+(:create\036notify) 35518  0.00 -1 s
+( event,) 42978  -64.00 32 s
+( 12\036149) 51613  -65.00 32 s
+20320.0 70804.0 m
+(cursor,) 28077  0.00 -1 s
+( 10\036107\03710\036110) 47481  -112.00 32 s
+22871.0 74123.0 m
+(attribute) 32274  0.00 -1 s
+( of window, 4\03641) 51613  -32.67 32 s
+/helvps18b 4 declareFont
+4 sf
+20320.0 85344.0 m
+(D) 23987  0.00 -1 s
+3 sf
+20320.0 91417.0 m
+(dash\036offset) 32856  0.00 -1 s
+( attribute of graphics context, 5\03658) 71730  -30.80 32 s
+20320.0 96136.0 m
+(dashes) 27844  0.00 -1 s
+( attribute of) 40939  -35.00 32 s
+( graphics context, 5\03658) 66695  -35.67 32 s
+20320.0 100855.0 m
+(default) 28155  0.00 -1 s
+( colormap of screen, 3\03632) 56919  -38.00 32 s
+20320.0 105574.0 m
+(depth) 26590  0.00 -1 s
+( attribute of window, 4\03637) 55993  -35.75 32 s
+20320.0 110292.0 m
+(depths of screen, 3\03632) 45133  -36.00 32 s
+20320.0 115011.0 m
+(:destroy\036notify) 37090  0.00 -1 s
+( event,) 44554  -60.00 32 s
+( 12\036149) 53193  -61.00 32 s
+20320.0 119730.0 m
+(destroying) 32233  0.00 -1 s
+( windows,) 43780  -54.00 32 s
+( 4\03649) 49603  -55.00 32 s
+20320.0 124449.0 m
+(device) 27685  0.00 -1 s
+( events,) 36235  -72.00 32 s
+( 12\036119) 44862  -73.00 32 s
+22871.0 127768.0 m
+(events) 30081  0.00 -1 s
+( returned, 12\036119) 49468  -63.00 32 s
+20320.0 132486.0 m
+(display,) 29178  0.00 -1 s
+( 1\0362, 2\03623\0372\03630) 48113  -55.00 32 s
+22871.0 135805.0 m
+(attributes,) 34078  0.00 -1 s
+( 2\03624\0372\03629) 47887  -63.00 32 s
+22871.0 139124.0 m
+(authorization) 37760  0.00 -1 s
+25400.0 142443.0 m
+(data,) 30807  0.00 -1 s
+( 2\03624) 36621  -64.00 32 s
+25400.0 145762.0 m
+(name,) 32218  0.00 -1 s
+( 2\03624) 38021  -75.00 32 s
+22871.0 149081.0 m
+(bitmap) 30709  0.00 -1 s
+( format,) 39607  -35.00 32 s
+( 2\03624) 45449  -36.00 32 s
+22871.0 152400.0 m
+(byte) 27730  0.00 -1 s
+( order,) 35053  -42.00 32 s
+( 2\03624) 40888  -43.00 32 s
+22871.0 155719.0 m
+(closing,) 31729  0.00 -1 s
+( 2\03629) 37547  -60.00 32 s
+22871.0 159038.0 m
+(error) 28352  0.00 -1 s
+( handler,) 38188  -38.00 32 s
+( 2\03625) 44027  -39.00 32 s
+22871.0 162357.0 m
+(image) 29767  0.00 -1 s
+( leftmost bit, 2\03625) 49919  -23.67 32 s
+22871.0 165676.0 m
+(keycode) 32274  0.00 -1 s
+25400.0 168995.0 m
+(maximum) 36844  0.00 -1 s
+( value,) 44307  -61.00 32 s
+( 2\03626) 50123  -62.00 32 s
+25400.0 172314.0 m
+(minimum) 36375  0.00 -1 s
+( value, 2\03626) 49671  -53.00 32 s
+25400.0 175633.0 m
+(range,) 32373  0.00 -1 s
+( 2\03625) 38179  -72.00 32 s
+22871.0 178951.0 m
+(motion) 30867  0.00 -1 s
+( buffer size,) 44207  -29.00 32 s
+( 2\03626) 50055  -30.00 32 s
+22871.0 182270.0 m
+(number,) 32197  0.00 -1 s
+( 2\03624) 37998  -77.00 32 s
+22871.0 185589.0 m
+(opening,) 32669  0.00 -1 s
+( 2\03623) 38450  -97.00 32 s
+22871.0 188908.0 m
+(output) 30083  0.00 -1 s
+( buffer management, 2\03629) 59222  -56.00 32 s
+22871.0 192227.0 m
+(pixmap) 31336  0.00 -1 s
+( formats, 2\03626) 47165  -40.00 32 s
+22871.0 195546.0 m
+(property) 32430  0.00 -1 s
+( list, 2\03627) 43124  -23.00 32 s
+22871.0 198865.0 m
+(protocol) 32275  0.00 -1 s
+25400.0 202184.0 m
+(major) 31982  0.00 -1 s
+( version,) 41664  -37.00 32 s
+( 2\03627) 47504  -38.00 32 s
+93314.0 22578.0 m
+(minor version, 2\03627) 115576  -37.50 32 s
+93314.0 25897.0 m
+(version,) 102327  0.00 -1 s
+( 2\03627) 108148  -57.00 32 s
+90785.0 29216.0 m
+(request) 98934  0.00 -1 s
+( maximum length, 2\03626) 125284  -48.00 32 s
+90785.0 32535.0 m
+(resource\036id) 103476  0.00 -1 s
+93314.0 35854.0 m
+(base,) 99035  0.00 -1 s
+( 2\03627) 104851  -62.00 32 s
+93314.0 39172.0 m
+(mask,) 99977  0.00 -1 s
+( 2\03628) 105800  -55.00 32 s
+90785.0 42491.0 m
+(roots,) 97134  0.00 -1 s
+( 2\03628) 102977  -35.00 32 s
+90785.0 45810.0 m
+(server) 97678  0.00 -1 s
+( resource ID, 2\03628) 118127  -26.67 32 s
+90785.0 49129.0 m
+(vendor,) 99327  0.00 -1 s
+( 2\03628) 105122  -83.00 32 s
+93314.0 52448.0 m
+(name,) 100132  0.00 -1 s
+( 2\03628) 105935  -75.00 32 s
+90785.0 55767.0 m
+(version) 99092  0.00 -1 s
+( number, 2\03628) 114898  -52.00 32 s
+90785.0 59086.0 m
+(window) 99876  0.00 -1 s
+( object, 4\03641) 113950  -56.00 32 s
+88234.0 63692.0 m
+(do\036not\036propagate\036mask) 114562  0.00 -1 s
+( attribute of window,) 138083  -49.00 32 s
+( 4\03641) 143911  -50.00 32 s
+88234.0 68298.0 m
+(drawable,) 99281  0.00 -1 s
+( 1\0362,) 104389  -65.00 32 s
+( 4\03635\0374\03652) 118195  -66.00 32 s
+90785.0 71617.0 m
+(geometry) 101442  0.00 -1 s
+93314.0 74936.0 m
+(reader) 100362  0.00 -1 s
+( and setf functions, 4\03645) 127587  -32.00 32 s
+93314.0 78255.0 m
+(values,) 101230  0.00 -1 s
+( batching, 4\03643) 118104  -67.00 32 s
+88234.0 82860.0 m
+(drawing) 97480  0.00 -1 s
+90785.0 86179.0 m
+(arcs,) 96034  0.00 -1 s
+( 6\03674) 101871  -41.00 32 s
+90785.0 89498.0 m
+(glyphs,) 99017  0.00 -1 s
+( 6\03675\0376\03680) 112799  -90.00 32 s
+90785.0 92817.0 m
+(lines,) 96821  0.00 -1 s
+( 6\03671\0376\03673) 110631  -62.00 32 s
+90785.0 96136.0 m
+(points,) 98390  0.00 -1 s
+( 6\03671) 104219  -49.00 32 s
+90785.0 99455.0 m
+(rectangles,) 102930  0.00 -1 s
+( 6\03673) 108735  -73.00 32 s
+90785.0 102774.0 m
+(text,) 95723  0.00 -1 s
+( 6\03675) 101555  -46.00 32 s
+4 sf
+88234.0 113498.0 m
+(E) 91622  0.00 -1 s
+3 sf
+88234.0 119369.0 m
+(:enter\036notify) 102337  0.00 -1 s
+( event, 12\036138) 118443  -59.00 32 s
+90785.0 122688.0 m
+(example,) 101051  0.00 -1 s
+( 1\0369) 105438  -80.00 32 s
+88234.0 127294.0 m
+(error) 93715  0.00 -1 s
+( conditions, CLX, 16\036185\03716\036190) 133277  -59.67 32 s
+88234.0 131899.0 m
+(error) 93715  0.00 -1 s
+( handler of display, 2\03625) 121265  -29.00 32 s
+88234.0 136505.0 m
+(event,) 95052  0.00 -1 s
+( 1\0362,) 100141  -84.00 32 s
+( 12\036119\03712\036160) 119572  -85.00 32 s
+90785.0 139824.0 m
+(:button\036press,) 106225  0.00 -1 s
+( 12\036136) 114853  -72.00 32 s
+90785.0 143143.0 m
+(:button\036release,) 108259  0.00 -1 s
+( 12\036136) 116863  -96.00 32 s
+93314.0 146462.0 m
+(example,) 103580  0.00 -1 s
+( 1\0369) 107967  -80.00 32 s
+90785.0 149781.0 m
+(:circulate\036notify,) 109668  0.00 -1 s
+( 12\036147) 118285  -83.00 32 s
+90785.0 153100.0 m
+(:circulate\036request,) 111077  0.00 -1 s
+( 12\036152) 119685  -92.00 32 s
+90785.0 156419.0 m
+(client) 97054  0.00 -1 s
+( communications, 12\036155\03712\036157) 136438  -99.00 32 s
+90785.0 159738.0 m
+(:client\036message,) 109044  0.00 -1 s
+( 12\036155) 117653  -91.00 32 s
+90785.0 163057.0 m
+(:colormap\036notify,) 110611  0.00 -1 s
+( 12\036153) 119211  -100.00 32 s
+90785.0 166376.0 m
+(:configure\036notify,) 110766  0.00 -1 s
+( 12\036148) 119369  -97.00 32 s
+90785.0 169695.0 m
+(:configure\036request,) 112175  0.00 -1 s
+( 12\036153) 120769  -106.00 32 s
+90785.0 173014.0 m
+(:create\036notify,) 106689  0.00 -1 s
+( 12\036149) 115305  -84.00 32 s
+90785.0 176332.0 m
+(:destroy\036notify,) 108261  0.00 -1 s
+( 12\036149) 116885  -76.00 32 s
+90785.0 179651.0 m
+(device,) 98856  0.00 -1 s
+( 12\036119) 107448  -108.00 32 s
+93314.0 182970.0 m
+(events) 100524  0.00 -1 s
+( returned, 12\036119) 119911  -63.00 32 s
+90785.0 186289.0 m
+(:enter\036notify,) 105594  0.00 -1 s
+( 12\036138) 114221  -73.00 32 s
+93314.0 189608.0 m
+(example,) 103580  0.00 -1 s
+( 1\0369) 107967  -80.00 32 s
+90785.0 192927.0 m
+(:exposure,) 102462  0.00 -1 s
+( 12\036145) 111060  -102.00 32 s
+93314.0 196246.0 m
+(example,) 103580  0.00 -1 s
+( 1\0369) 107967  -80.00 32 s
+90785.0 199565.0 m
+(exposure,) 101678  0.00 -1 s
+( 12\036145\03712\036147) 121040  -154.00 32 s
+90785.0 202884.0 m
+(:focus\036in,) 101521  0.00 -1 s
+( 12\036140) 110157  -64.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+135467.0 8737.0 m
+(General ) 143413  -32.00 32 s
+( Index) 148969  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 207264 av
+149013 207262 as
+[] 0 setdash
+dp
+20320.0 211327.0 m
+(CLX Programmer's Reference) 47961  0.00 32 s
+/timsps10b 2 declareFont
+2 sf
+136941.0 h
+(Index\036215) 149013  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+22871.0 22578.0 m
+(:focus\036out,) 35018  0.00 -1 s
+( 12\036140) 43643  -75.00 32 s
+22871.0 25964.0 m
+(grabbing) 32902  0.00 -1 s
+25400.0 29351.0 m
+(button,) 33318  0.00 -1 s
+( 12\036132\03712\036133) 52697  -137.00 32 s
+25400.0 32738.0 m
+(key,) 30181  0.00 -1 s
+( 12\036134\03712\036160) 49558  -139.00 32 s
+25400.0 36124.0 m
+(keyboard,) 36606  0.00 -1 s
+( 12\036133\03712\036134) 55948  -174.00 32 s
+25400.0 39511.0 m
+(pointer,) 34099  0.00 -1 s
+( 12\036130\03712\036131) 53487  -128.00 32 s
+22871.0 42898.0 m
+(:graphics\036exposure,) 45047  0.00 -1 s
+( 12\036146) 53622  -125.00 32 s
+22871.0 46284.0 m
+(:gravity\036notify,) 40033  0.00 -1 s
+( 12\036150) 48655  -78.00 32 s
+22871.0 49671.0 m
+(input,) 29378  0.00 -1 s
+( 1\0362) 33799  -46.00 32 s
+22871.0 53058.0 m
+(input) 28672  0.00 -1 s
+( focus, 12\036140\03712\036143) 55564  -74.00 32 s
+22871.0 56444.0 m
+(:key\036press, 12\036136) 43801  -73.00 32 s
+22871.0 59831.0 m
+(:key\036release,) 37208  0.00 -1 s
+( 12\036136) 45810  -98.00 32 s
+22871.0 63218.0 m
+(keyboard,) 34077  0.00 -1 s
+( 12\036136\03712\036140) 53419  -174.00 32 s
+25400.0 66604.0 m
+(state,) 31278  0.00 -1 s
+( 12\036144) 39918  -60.00 32 s
+22871.0 69991.0 m
+(:keymap\036notify,) 40974  0.00 -1 s
+( 12\036144) 49558  -116.00 32 s
+22871.0 73378.0 m
+(:leave\036notify,) 37994  0.00 -1 s
+( 12\036138) 46601  -93.00 32 s
+25400.0 76764.0 m
+(example,) 35666  0.00 -1 s
+( 1\0369) 40053  -80.00 32 s
+22871.0 80151.0 m
+(managing) 34000  0.00 -1 s
+25400.0 83538.0 m
+(event) 31512  0.00 -1 s
+( queue, 12\036124\03712\036125) 58973  -103.00 32 s
+25400.0 86924.0 m
+(input) 31201  0.00 -1 s
+( focus, 12\036128\03712\036129) 58093  -74.00 32 s
+22871.0 90311.0 m
+(:map\036notify,) 36899  0.00 -1 s
+( 12\036150) 45517  -82.00 32 s
+22871.0 93698.0 m
+(:map\036request,) 38308  0.00 -1 s
+( 12\036154) 46917  -91.00 32 s
+22871.0 97084.0 m
+(:mapping\036notify,) 41916  0.00 -1 s
+( 12\036144) 50506  -110.00 32 s
+22871.0 100471.0 m
+(:motion\036notify,) 40036  0.00 -1 s
+( 12\036137) 48655  -81.00 32 s
+22871.0 103858.0 m
+(:no\036exposure,) 38309  0.00 -1 s
+( 12\036146) 46894  -115.00 32 s
+22871.0 107244.0 m
+(pointer,) 31570  0.00 -1 s
+( 12\036136\03712\036140) 50958  -128.00 32 s
+25400.0 110631.0 m
+(position,) 35200  0.00 -1 s
+( 12\036126\03712\036128) 54593  -123.00 32 s
+25400.0 114018.0 m
+(state,) 31278  0.00 -1 s
+( 12\036144) 39918  -60.00 32 s
+22871.0 117404.0 m
+(processing,) 35646  0.00 -1 s
+( 12\036122\03712\036124) 55022  -140.00 32 s
+22871.0 120791.0 m
+(:property\036notify,) 41599  0.00 -1 s
+( 12\036155) 50213  -86.00 32 s
+22871.0 124178.0 m
+(:reparent\036notify, 12\036151) 49897  -86.00 32 s
+22871.0 127564.0 m
+(:resize\036request,) 40029  0.00 -1 s
+( 12\036154) 48655  -74.00 32 s
+22871.0 130951.0 m
+(selecting,) 33608  0.00 -1 s
+( 12\036120\03712\036121) 52990  -134.00 32 s
+22871.0 134338.0 m
+(:selection\036clear,) 40813  0.00 -1 s
+( 12\036155) 49423  -90.00 32 s
+22871.0 137724.0 m
+(:selection\036notify,) 42071  0.00 -1 s
+( 12\036156) 50687  -84.00 32 s
+22871.0 141111.0 m
+(:selection\036request,) 43480  0.00 -1 s
+( 12\036156) 52087  -93.00 32 s
+22871.0 144498.0 m
+(sending,) 32356  0.00 -1 s
+( 12\036125\03712\036126) 51726  -146.00 32 s
+22871.0 147884.0 m
+(side\036effect,) 35483  0.00 -1 s
+( 12\036119) 44117  -66.00 32 s
+25400.0 151271.0 m
+(events) 32610  0.00 -1 s
+( returned, 12\036119) 51997  -63.00 32 s
+22871.0 154658.0 m
+(structure) 32743  0.00 -1 s
+( control, 12\036152\03712\036154) 61524  -70.00 32 s
+22871.0 158044.0 m
+(types,) 29534  0.00 -1 s
+( 12\036135\03712\036158) 48926  -124.00 32 s
+25400.0 161431.0 m
+(declaring,) 36605  0.00 -1 s
+( 12\036157) 45201  -104.00 32 s
+22871.0 164818.0 m
+(:unmap\036notify,) 39721  0.00 -1 s
+( 12\036151) 48316  -105.00 32 s
+22871.0 168204.0 m
+(:visibility\036notify,) 42075  0.00 -1 s
+( 12\036152) 50732  -43.00 32 s
+22871.0 171591.0 m
+(window) 31962  0.00 -1 s
+( state, 12\036147\03712\036152) 57912  -75.00 32 s
+20320.0 176784.0 m
+(event) 26432  0.00 -1 s
+( mask) 33031  -64.00 32 s
+22871.0 180171.0 m
+(keywords,) 34548  0.00 -1 s
+( 12\036121) 43146  -102.00 32 s
+25400.0 183557.0 m
+(event) 31512  0.00 -1 s
+( types selected, 12\036121) 57212  -54.67 32 s
+22871.0 186944.0 m
+(root) 27416  0.00 -1 s
+( of screen, 3\03632) 44885  -28.00 32 s
+20320.0 192137.0 m
+(event\036mask,) 34034  0.00 -1 s
+( attribute of window, 4\03641) 63421  -39.75 32 s
+20320.0 197330.0 m
+(event) 26432  0.00 -1 s
+( masks, window, 4\03638) 51139  -47.00 32 s
+20320.0 202523.0 m
+(examples,) 31684  0.00 -1 s
+( CLX. ) 39343  -51.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(See ) 43915  -51.00 32 s
+3 sf
+(CLX) 49558  0.00 -1 s
+( examples) 60870  -52.00 32 s
+88234.0 22578.0 m
+(:exposure) 99205  0.00 -1 s
+( event,) 106656  -73.00 32 s
+( 12\036145) 115282  -74.00 32 s
+90785.0 25897.0 m
+(example,) 101051  0.00 -1 s
+( 1\0369) 105438  -80.00 32 s
+88234.0 30525.0 m
+(exposure) 98421  0.00 -1 s
+( events,) 106948  -95.00 32 s
+( 12\036145\03712\036147) 126368  -96.00 32 s
+88234.0 35154.0 m
+(exposures) 99519  0.00 -1 s
+( attribute of graphics context, 5\03659) 138357  -38.00 32 s
+88234.0 39782.0 m
+(extensions,) 100854  0.00 -1 s
+( 15\036183\03715\036184) 120227  -143.00 32 s
+/helvps18b 4 declareFont
+4 sf
+88234.0 50642.0 m
+(F) 91337  0.00 -1 s
+3 sf
+88234.0 56557.0 m
+(fill\036rule) 96851  0.00 -1 s
+( attribute of graphics context, 5\03659) 135760  -23.80 32 s
+88234.0 61186.0 m
+(fill\036style attribute of graphics) 121156  -23.00 32 s
+( context,) 130853  -22.00 32 s
+( 5\03660) 136708  -23.00 32 s
+88234.0 65814.0 m
+(:focus\036in) 98264  0.00 -1 s
+( event,) 105734  -54.00 32 s
+( 12\036140) 114379  -55.00 32 s
+88234.0 70443.0 m
+(:focus\036out) 99675  0.00 -1 s
+( event, 12\036140) 115779  -60.00 32 s
+88234.0 75071.0 m
+(font,) 93485  0.00 -1 s
+( 8\03689\0378\03698) 107290  -67.00 32 s
+90785.0 78390.0 m
+(attribute) 100188  0.00 -1 s
+( of graphics context, 5\03661) 128964  -35.75 32 s
+90785.0 81709.0 m
+(attributes,) 101992  0.00 -1 s
+( 8\03691\0378\03695) 115801  -63.00 32 s
+90785.0 85028.0 m
+(character) 101123  0.00 -1 s
+( attributes, 8\03689,) 119538  -41.00 32 s
+( 8\03696) 125374  -42.00 32 s
+90785.0 88347.0 m
+(closing,) 99643  0.00 -1 s
+( 8\03689) 105461  -60.00 32 s
+90785.0 91666.0 m
+(listing,) 98547  0.00 -1 s
+( 8\03690\0378\03691) 112370  -49.00 32 s
+90785.0 94985.0 m
+(opening,) 100583  0.00 -1 s
+( 8\03689\0378\03690) 114334  -121.00 32 s
+90785.0 98304.0 m
+(querying) 100816  0.00 -1 s
+( text size,) 111460  -47.00 32 s
+( 8\03697\0378\03698) 125284  -48.00 32 s
+88234.0 102932.0 m
+(foreground) 100770  0.00 -1 s
+( attribute of graphics context, 5\03661) 139598  -40.00 32 s
+88234.0 107561.0 m
+(function) 97638  0.00 -1 s
+( attribute of graphics context, 5\03661) 136483  -36.60 32 s
+90785.0 110879.0 m
+(logical) 98465  0.00 -1 s
+( operation codes, 5\03662) 123388  -52.00 32 s
+4 sf
+88234.0 121739.0 m
+(G) 92185  0.00 -1 s
+3 sf
+88234.0 127655.0 m
+(glyphs,) 96466  0.00 -1 s
+( 8\03689) 102277  -67.00 32 s
+90785.0 130974.0 m
+(drawing,) 100737  0.00 -1 s
+( 6\03675\0376\03680) 114515  -94.00 32 s
+88234.0 135602.0 m
+(grab) 93248  0.00 -1 s
+( types, 12\036120) 109209  -54.00 32 s
+88234.0 140231.0 m
+(grabbing) 98265  0.00 -1 s
+90785.0 143550.0 m
+(button,) 98703  0.00 -1 s
+( 12\036132\03712\036133) 118082  -137.00 32 s
+90785.0 146868.0 m
+(key,) 95566  0.00 -1 s
+( 12\036134\03712\036160) 114944  -138.00 32 s
+90785.0 150187.0 m
+(keyboard,) 101991  0.00 -1 s
+( 12\036133\03712\036134) 121333  -174.00 32 s
+90785.0 153506.0 m
+(pointer,) 99484  0.00 -1 s
+( 12\036130\03712\036131) 118872  -128.00 32 s
+90785.0 156825.0 m
+(server,) 98384  0.00 -1 s
+( 14\036169) 107019  -65.00 32 s
+88234.0 161454.0 m
+(graphics,) 98500  0.00 -1 s
+( 6\03669\0376\03680) 112279  -93.00 32 s
+90785.0 164773.0 m
+(area,) 96189  0.00 -1 s
+( 6\03669\0376\03671) 109976  -85.00 32 s
+90785.0 168092.0 m
+(drawing) 100031  0.00 -1 s
+93314.0 171410.0 m
+(arcs,) 98563  0.00 -1 s
+( 6\03674\0376\03675) 112370  -65.00 32 s
+93314.0 174729.0 m
+(glyphs,) 101546  0.00 -1 s
+( 6\03675\0376\03680) 115327  -91.00 32 s
+93314.0 178048.0 m
+(lines,) 99350  0.00 -1 s
+( 6\03671\0376\03673) 113160  -62.00 32 s
+93314.0 181367.0 m
+(points,) 100919  0.00 -1 s
+( 6\03671) 106748  -49.00 32 s
+93314.0 184686.0 m
+(rectangles,) 105459  0.00 -1 s
+( 6\03673) 111263  -74.00 32 s
+93314.0 188005.0 m
+(text,) 98252  0.00 -1 s
+( 6\03675\0376\03680) 112054  -70.00 32 s
+90785.0 191324.0 m
+(plane,) 97603  0.00 -1 s
+( 6\03669\0376\03671) 111376  -99.00 32 s
+88234.0 195953.0 m
+(graphics) 97794  0.00 -1 s
+( context, 5\03653\0375\03668) 121243  -71.00 32 s
+90785.0 199271.0 m
+(attribute) 100188  0.00 -1 s
+93314.0 202590.0 m
+(arc\036mode,) 104674  0.00 -1 s
+( 5\03655) 110473  -79.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8737.0 m
+(General ) 28266  -32.00 32 s
+( Index) 33822  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+148474 207264 av
+21709 207262 as
+[] 0 setdash
+dp
+121920.0 211598.0 m
+(CLX) 126069  0.00 -1 s
+( Programmer's Reference) 149465  -48.00 32 s
+/timsps10b 2 declareFont
+2 sf
+19898.0 211327.0 m
+(Index\036216) 31970  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+25400.0 22578.0 m
+(background,) 39428  0.00 -1 s
+( 5\03656) 45178  -128.00 32 s
+25400.0 25942.0 m
+(cap\036style,) 36292  0.00 -1 s
+( 5\03656) 42108  -62.00 32 s
+25400.0 29306.0 m
+(clip\036mask,) 37234  0.00 -1 s
+( 5\03657) 43056  -56.00 32 s
+25400.0 32670.0 m
+(clip\036x,) 32688  0.00 -1 s
+( 5\03658) 38518  -48.00 32 s
+25400.0 36034.0 m
+(clip\036y, 5\03658) 38518  -48.00 32 s
+25400.0 39398.0 m
+(dash\036offset,) 38642  0.00 -1 s
+( 5\03658) 44478  -42.00 32 s
+25400.0 42762.0 m
+(dashes,) 33630  0.00 -1 s
+( 5\03658) 39443  -65.00 32 s
+25400.0 46126.0 m
+(exposures,) 37391  0.00 -1 s
+( 5\03659) 43191  -78.00 32 s
+25400.0 49490.0 m
+(fill\036rule,) 34723  0.00 -1 s
+( 5\03659) 40595  -6.00 32 s
+25400.0 52855.0 m
+(fill\036style,) 35666  0.00 -1 s
+( 5\03660) 41543  -1.00 32 s
+25400.0 56219.0 m
+(font,) 30651  0.00 -1 s
+( 5\03661) 36486  -43.00 32 s
+25400.0 59583.0 m
+(foreground,) 38642  0.00 -1 s
+( 5\03661) 44433  -87.00 32 s
+25400.0 62947.0 m
+(function,) 35510  0.00 -1 s
+( 5\03661) 41317  -71.00 32 s
+27951.0 66311.0 m
+(logical) 35631  0.00 -1 s
+( operation codes, 5\03662) 60554  -52.00 32 s
+25400.0 69675.0 m
+(join\036style,) 36765  0.00 -1 s
+( 5\03662) 42604  -39.00 32 s
+25400.0 73039.0 m
+(line\036style, 5\03663) 42446  -39.00 32 s
+25400.0 76403.0 m
+(line\036width,) 37704  0.00 -1 s
+( 5\03663) 43530  -52.00 32 s
+25400.0 79767.0 m
+(plane\036mask,) 39114  0.00 -1 s
+( 5\03664) 44907  -85.00 32 s
+25400.0 83131.0 m
+(stipple,) 33631  0.00 -1 s
+( 5\03665) 39466  -43.00 32 s
+27951.0 86495.0 m
+(best,) 33203  0.00 -1 s
+( 5\03667) 39037  -44.00 32 s
+25400.0 89860.0 m
+(subwindow\036mode,) 46326  0.00 -1 s
+( 5\03666) 52087  -117.00 32 s
+25400.0 93224.0 m
+(tile,) 29711  0.00 -1 s
+( 5\03666) 35560  -29.00 32 s
+27951.0 96588.0 m
+(best,) 33203  0.00 -1 s
+( 5\03667) 39037  -44.00 32 s
+25400.0 99952.0 m
+(ts\036x,) 30338  0.00 -1 s
+( 5\03667) 36192  -24.00 32 s
+25400.0 103316.0 m
+(ts\036y, 5\03667) 36192  -24.00 32 s
+22871.0 106680.0 m
+(attributes,) 34078  0.00 -1 s
+( 5\03655\0375\03667) 47887  -63.00 32 s
+22871.0 110044.0 m
+(cache,) 30000  0.00 -1 s
+( 5\03668) 35786  -92.00 32 s
+22871.0 113408.0 m
+(components,) 37215  0.00 -1 s
+( default values, 5\03655) 60079  -59.00 32 s
+22871.0 116772.0 m
+(copying,) 32669  0.00 -1 s
+( 5\03667) 38450  -97.00 32 s
+22871.0 120136.0 m
+(creating,) 32665  0.00 -1 s
+( 5\03654\0375\03655) 46442  -95.00 32 s
+22871.0 123500.0 m
+(destroying,) 35490  0.00 -1 s
+( 5\03668) 41295  -73.00 32 s
+22871.0 126865.0 m
+(local) 28356  0.00 -1 s
+( cache mode, 5\03656) 48881  -54.67 32 s
+20320.0 131854.0 m
+(:graphics\036exposure) 41790  0.00 -1 s
+( event, 12\036146) 57844  -85.00 32 s
+20320.0 136844.0 m
+(gravity) 28313  0.00 -1 s
+( attribute of window, 4\03641) 57731  -32.00 32 s
+20320.0 141834.0 m
+(:gravity\036notify) 36776  0.00 -1 s
+( event,) 44239  -61.00 32 s
+( 12\036150) 52877  -62.00 32 s
+/helvps18b 4 declareFont
+4 sf
+20320.0 154071.0 m
+(H) 24271  0.00 -1 s
+3 sf
+20320.0 160551.0 m
+(height) 27374  0.00 -1 s
+22871.0 163915.0 m
+(attribute) 32274  0.00 -1 s
+( of window, 4\03637) 51613  -32.67 32 s
+22871.0 167279.0 m
+(screen,) 30784  0.00 -1 s
+( 3\03633) 36599  -63.00 32 s
+22871.0 170643.0 m
+(screen) 30078  0.00 -1 s
+( in millimeters,) 47202  -21.00 32 s
+( 3\03633) 53058  -22.00 32 s
+20320.0 175633.0 m
+(host,) 25730  0.00 -1 s
+( managing access, 14\036179\03714\036180) 65476  -75.00 32 s
+4 sf
+20320.0 187870.0 m
+(I) 22296  0.00 -1 s
+3 sf
+20320.0 194350.0 m
+(ID,) 24002  0.00 -1 s
+( window, 4\03642) 40301  -41.00 32 s
+20320.0 199339.0 m
+(image,) 27922  0.00 -1 s
+( 7\03681\0377\03688) 41701  -93.00 32 s
+22871.0 202703.0 m
+(leftmost) 32119  0.00 -1 s
+( bit) 35787  -17.00 32 s
+( of display, 2\03625) 54232  -17.67 32 s
+88234.0 22578.0 m
+(input) 94035  0.00 -1 s
+90785.0 25897.0 m
+(event,) 97603  0.00 -1 s
+( 1\0362) 102006  -64.00 32 s
+90785.0 29216.0 m
+(focus) 96897  0.00 -1 s
+( events,) 105441  -78.00 32 s
+( 12\036140\03712\036143) 124878  -79.00 32 s
+4 sf
+88234.0 39963.0 m
+(J) 90774  0.00 -1 s
+3 sf
+88234.0 45833.0 m
+(join\036style) 98893  0.00 -1 s
+( attribute of graphics context,) 131923  -30.00 32 s
+( 5\03662) 137770  -31.00 32 s
+4 sf
+88234.0 56580.0 m
+(K) 92185  0.00 -1 s
+3 sf
+88234.0 62450.0 m
+(key) 92309  0.00 -1 s
+90785.0 65769.0 m
+(auto\036repeat,) 104182  0.00 -1 s
+( 14\036170\03714\036173) 123546  -152.00 32 s
+90785.0 69088.0 m
+(click,) 96976  0.00 -1 s
+( 14\036170\03714\036173) 116366  -126.00 32 s
+90785.0 72407.0 m
+(grabbing,) 101522  0.00 -1 s
+( 12\036134\03712\036160) 120881  -157.00 32 s
+88234.0 77013.0 m
+(:key\036press) 99831  0.00 -1 s
+( event, 12\036136) 115937  -59.00 32 s
+88234.0 81619.0 m
+(:key\036release) 101865  0.00 -1 s
+( event,) 109318  -71.00 32 s
+( 12\036136) 117946  -72.00 32 s
+88234.0 86225.0 m
+(keyboard) 98734  0.00 -1 s
+90785.0 89543.0 m
+(bell,) 95723  0.00 -1 s
+( 14\036170) 104355  -68.00 32 s
+90785.0 92862.0 m
+(bit) 93764  0.00 -1 s
+( vector,) 102158  -69.00 32 s
+( 14\036170\03714\036173) 121604  -70.00 32 s
+90785.0 96181.0 m
+(control,) 99484  0.00 -1 s
+( 14\036170\03714\036173) 118872  -128.00 32 s
+90785.0 99500.0 m
+(encodings,) 102934  0.00 -1 s
+( 14\036173\03714\036176) 122281  -169.00 32 s
+90785.0 102819.0 m
+(events,) 98701  0.00 -1 s
+( 12\036136\03712\036140) 118082  -135.00 32 s
+90785.0 106138.0 m
+(grabbing,) 101522  0.00 -1 s
+( 12\036133\03712\036134) 120881  -157.00 32 s
+90785.0 109457.0 m
+(mapping,) 101367  0.00 -1 s
+( 14\036170\03714\036173,) 121457  -132.00 32 s
+( 14\036174\03714\036175) 140840  -133.00 32 s
+90785.0 112776.0 m
+(state) 95957  0.00 -1 s
+( event,) 103429  -52.00 32 s
+( 12\036144) 112076  -53.00 32 s
+88234.0 117382.0 m
+(keycode) 97637  0.00 -1 s
+90785.0 120701.0 m
+(maximum) 102229  0.00 -1 s
+( value of display,) 121547  -40.00 32 s
+( 2\03626) 127384  -41.00 32 s
+90785.0 124020.0 m
+(minimum) 101760  0.00 -1 s
+( value of display, 2\03626) 126932  -36.00 32 s
+90785.0 127339.0 m
+(range) 97052  0.00 -1 s
+( of display, 2\03625) 115440  -36.67 32 s
+88234.0 131945.0 m
+(keycodes,) 99441  0.00 -1 s
+( 14\036173\03714\036174) 118782  -175.00 32 s
+90785.0 135263.0 m
+(usage,) 97917  0.00 -1 s
+( 14\036175\03714\036176) 117292  -141.00 32 s
+88234.0 139869.0 m
+(:keymap\036notify) 105631  0.00 -1 s
+( event,) 113075  -80.00 32 s
+( 12\036144) 121694  -81.00 32 s
+88234.0 144475.0 m
+(keysyms,) 98817  0.00 -1 s
+( 14\036173\03714\036174) 118195  -138.00 32 s
+90785.0 147794.0 m
+(usage,) 97917  0.00 -1 s
+( 14\036175\03714\036176) 117292  -141.00 32 s
+4 sf
+88234.0 158541.0 m
+(L) 91622  0.00 -1 s
+3 sf
+88234.0 164411.0 m
+(:leave\036notify) 102651  0.00 -1 s
+( event, 12\036138) 118737  -69.00 32 s
+90785.0 167730.0 m
+(example,) 101051  0.00 -1 s
+( 1\0369) 105438  -80.00 32 s
+88234.0 172336.0 m
+(line\036style) 98735  0.00 -1 s
+( attribute of graphics context,) 131765  -30.00 32 s
+( 5\03663) 137612  -31.00 32 s
+88234.0 176942.0 m
+(line\036width) 99832  0.00 -1 s
+( attribute of graphics context, 5\03663) 138695  -33.00 32 s
+88234.0 181548.0 m
+(lines,) 94270  0.00 -1 s
+( drawing,) 104874  -54.00 32 s
+( 6\03671\0376\03673) 118691  -55.00 32 s
+4 sf
+88234.0 192295.0 m
+(M) 93029  0.00 -1 s
+3 sf
+88234.0 198165.0 m
+(:map\036notify) 101556  0.00 -1 s
+( event,) 109017  -63.00 32 s
+( 12\036150) 117653  -64.00 32 s
+88234.0 202771.0 m
+(:map\036request) 102965  0.00 -1 s
+( event, 12\036154) 119053  -68.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+135467.0 8737.0 m
+(General ) 143413  -32.00 32 s
+( Index) 148969  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 207264 av
+149013 207262 as
+[] 0 setdash
+dp
+20320.0 211327.0 m
+(CLX Programmer's Reference) 47961  0.00 32 s
+/timsps10b 2 declareFont
+2 sf
+136941.0 h
+(Index\036217) 149013  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+20320.0 22578.0 m
+(map) 25179  0.00 -1 s
+( state of window, 4\03642) 50371  -30.75 32 s
+20320.0 27251.0 m
+(:mapping\036notify) 38659  0.00 -1 s
+( event, 12\036144) 54729  -77.00 32 s
+20320.0 31925.0 m
+(mapping) 30196  0.00 -1 s
+( windows, 4\03647\0374\03649) 55519  -75.00 32 s
+20320.0 36599.0 m
+(motion) 28316  0.00 -1 s
+( buffer size of display,) 53528  -25.00 32 s
+( 2\03626) 59380  -26.00 32 s
+20320.0 41272.0 m
+(:motion\036notify) 36779  0.00 -1 s
+( event, 12\036137) 52877  -63.00 32 s
+20320.0 45946.0 m
+(mouse,) 28394  0.00 -1 s
+( behavior,) 39580  -99.00 32 s
+( 14\036170\03714\036173) 58996  -100.00 32 s
+/helvps18b 4 declareFont
+4 sf
+20320.0 56919.0 m
+(N) 23987  0.00 -1 s
+3 sf
+20320.0 62879.0 m
+(:no\036exposure) 35052  0.00 -1 s
+( event, 12\036146) 51116  -80.00 32 s
+20320.0 67553.0 m
+(number) 28940  0.00 -1 s
+( of display,) 41484  -38.00 32 s
+( 2\03624) 47323  -39.00 32 s
+4 sf
+20320.0 78526.0 m
+(O) 24271  0.00 -1 s
+3 sf
+20320.0 84486.0 m
+(obscuring) 31449  0.00 -1 s
+( window, 1\0362) 46307  -56.00 32 s
+20320.0 89160.0 m
+(output buffer management,) 50849  -56.00 32 s
+( 2\03629) 56670  -57.00 32 s
+20320.0 93833.0 m
+(override\036redirect) 39276  0.00 -1 s
+( attribute of window, 4\03642) 68682  -35.00 32 s
+4 sf
+20320.0 104806.0 m
+(P) 23423  0.00 -1 s
+3 sf
+20320.0 110767.0 m
+(path) 25179  0.00 -1 s
+( list,) 30009  -32.00 32 s
+( 13\036161) 38676  -33.00 32 s
+20320.0 115440.0 m
+(pixmap,) 29491  0.00 -1 s
+( 1\0362,) 34600  -64.00 32 s
+( 4\03635\0374\03652) 48407  -65.00 32 s
+22871.0 118759.0 m
+(formats) 31490  0.00 -1 s
+( of display, 2\03626) 49919  -23.00 32 s
+20320.0 123433.0 m
+(plane,) 27138  0.00 -1 s
+( 6\03669\0376\03671) 40911  -99.00 32 s
+20320.0 128106.0 m
+(plane\036mask) 33328  0.00 -1 s
+( attribute of) 46415  -39.00 32 s
+( graphics context, 5\03664) 72159  -39.67 32 s
+20320.0 132780.0 m
+(pointer) 28313  0.00 -1 s
+22871.0 136099.0 m
+(button) 30083  0.00 -1 s
+25400.0 139418.0 m
+(obtaining,) 36766  0.00 -1 s
+( 14\036170\03714\036173) 56128  -154.00 32 s
+25400.0 142737.0 m
+(setting,) 33631  0.00 -1 s
+( 14\036170\03714\036173) 53035  -112.00 32 s
+22871.0 146056.0 m
+(control,) 31570  0.00 -1 s
+( 14\036169\03714\036170) 50958  -128.00 32 s
+22871.0 149375.0 m
+(events,) 30787  0.00 -1 s
+( 12\036136\03712\036140) 50168  -135.00 32 s
+22871.0 152694.0 m
+(grabbing,) 33608  0.00 -1 s
+( 12\036130\03712\036131) 52967  -157.00 32 s
+22871.0 156012.0 m
+(position,) 32671  0.00 -1 s
+( 12\036126\03712\036128) 52064  -123.00 32 s
+22871.0 159331.0 m
+(state) 28043  0.00 -1 s
+( event,) 35515  -52.00 32 s
+( 12\036144) 44162  -53.00 32 s
+20320.0 164005.0 m
+(points,) 27925  0.00 -1 s
+( drawing, 6\03671) 44365  -48.00 32 s
+20320.0 168679.0 m
+(property,) 30585  0.00 -1 s
+( 11\036112\03711\036115) 49965  -136.00 32 s
+20320.0 173352.0 m
+(property) 29879  0.00 -1 s
+( list) 34025  -10.00 32 s
+22871.0 176671.0 m
+(display,) 31729  0.00 -1 s
+( 2\03627) 37547  -60.00 32 s
+22871.0 179990.0 m
+(screen,) 30784  0.00 -1 s
+( 3\03633) 36599  -63.00 32 s
+22871.0 183309.0 m
+(window,) 32668  0.00 -1 s
+( 4\03643) 38473  -73.00 32 s
+20320.0 187983.0 m
+(:property\036notify) 38342  0.00 -1 s
+( event,) 45801  -65.00 32 s
+( 12\036155) 54435  -66.00 32 s
+20320.0 192656.0 m
+(protocol) 29724  0.00 -1 s
+22871.0 195975.0 m
+(major) 29453  0.00 -1 s
+( version of display,) 51002  -28.00 32 s
+( 2\03627) 56851  -29.00 32 s
+22871.0 199294.0 m
+(minor version of display, 2\03627) 57009  -28.25 32 s
+22871.0 202613.0 m
+(version) 31178  0.00 -1 s
+( of display, 2\03627) 49581  -31.67 32 s
+4 sf
+88234.0 24271.0 m
+(R) 91901  0.00 -1 s
+3 sf
+88234.0 30164.0 m
+(rectangles,) 100379  0.00 -1 s
+( drawing, 6\03673) 116795  -60.00 32 s
+88234.0 34792.0 m
+(:reparent\036notify) 105940  0.00 -1 s
+( event,) 113399  -65.00 32 s
+( 12\036151) 122033  -66.00 32 s
+88234.0 39421.0 m
+(reply,) 94738  0.00 -1 s
+( 1\0362) 99162  -43.00 32 s
+88234.0 44049.0 m
+(representation) 104218  0.00 -1 s
+( type, standard conversions, 4\03645) 141314  -52.75 32 s
+88234.0 48678.0 m
+(request) 96383  0.00 -1 s
+( maximum length) 116221  -36.00 32 s
+( of display, 2\03626) 134609  -36.67 32 s
+88234.0 53306.0 m
+(:resize\036request) 104686  0.00 -1 s
+( event,) 112151  -59.00 32 s
+( 12\036154) 120791  -60.00 32 s
+88234.0 57935.0 m
+(resource,) 98497  0.00 -1 s
+( 13\036161\03713\036168) 117879  -134.00 32 s
+90785.0 61254.0 m
+(accessing,) 102305  0.00 -1 s
+( 13\036163\03713\036166) 121672  -149.00 32 s
+90785.0 64572.0 m
+(binding, 13\036161\03713\036162) 119482  -148.00 32 s
+93314.0 67891.0 m
+(examples,) 104678  0.00 -1 s
+( 13\036162) 113273  -105.00 32 s
+90785.0 71210.0 m
+(complete) 101129  0.00 -1 s
+( class,) 107971  -56.00 32 s
+( 13\036163) 116614  -57.00 32 s
+90785.0 74529.0 m
+(complete) 101129  0.00 -1 s
+( name, 13\036163) 117201  -76.00 32 s
+90785.0 77848.0 m
+(database,) 101207  0.00 -1 s
+( 13\036161, 13\036162\03713\036163) 129913  -108.00 32 s
+93314.0 81167.0 m
+(files,) 98878  0.00 -1 s
+( 13\036166) 107538  -40.00 32 s
+90785.0 84486.0 m
+(matching,) 101993  0.00 -1 s
+( 13\036164) 110586  -107.00 32 s
+90785.0 87805.0 m
+(name,) 97603  0.00 -1 s
+( 13\036161) 106206  -97.00 32 s
+90785.0 91124.0 m
+(search) 97992  0.00 -1 s
+( table,) 104833  -56.00 32 s
+( 13\036165) 113476  -57.00 32 s
+90785.0 94443.0 m
+(server,) 98384  0.00 -1 s
+( 13\036161) 107019  -65.00 32 s
+88234.0 99071.0 m
+(resource\036id) 100925  0.00 -1 s
+90785.0 102390.0 m
+(base) 95800  0.00 -1 s
+( of display,) 108354  -33.00 32 s
+( 2\03627) 114198  -34.00 32 s
+90785.0 105709.0 m
+(mask) 96742  0.00 -1 s
+( of display, 2\03628) 115147  -31.00 32 s
+88234.0 110338.0 m
+(root,) 93485  0.00 -1 s
+( 1\0362) 97920  -32.00 32 s
+90785.0 113657.0 m
+(depth) 97055  0.00 -1 s
+( of screen, 3\03634) 114492  -38.67 32 s
+90785.0 116975.0 m
+(display,) 99643  0.00 -1 s
+( 2\03628) 105461  -60.00 32 s
+90785.0 120294.0 m
+(event) 96897  0.00 -1 s
+( mask of screen,) 115130  -35.00 32 s
+( 3\03632) 120972  -36.00 32 s
+90785.0 123613.0 m
+(visual) 97526  0.00 -1 s
+( type of screen, 3\03634) 120520  -31.00 32 s
+90785.0 126932.0 m
+(window) 99876  0.00 -1 s
+( of screen,) 111475  -38.00 32 s
+( 3\03633) 117314  -39.00 32 s
+4 sf
+88234.0 137747.0 m
+(S) 91058  0.00 -1 s
+3 sf
+88234.0 143640.0 m
+(save\036under attribute of window, 4\03643) 130003  -39.00 32 s
+88234.0 148268.0 m
+(save\036unders\036p) 104061  0.00 -1 s
+( attribute of screen, 3\03634) 131583  -35.00 32 s
+88234.0 152897.0 m
+(screen,) 96147  0.00 -1 s
+( 1\0362,) 101264  -56.00 32 s
+( 3\03631\0373\03634) 115079  -57.00 32 s
+90785.0 156216.0 m
+(attributes,) 101992  0.00 -1 s
+( 3\03631\0373\03634) 115801  -63.00 32 s
+90785.0 159535.0 m
+(backing\036stores) 107241  0.00 -1 s
+( attribute,) 118009  -47.00 32 s
+( 3\03632) 123839  -48.00 32 s
+90785.0 162854.0 m
+(black\036pixel) 103479  0.00 -1 s
+( attribute,) 114243  -51.00 32 s
+( 3\03632) 120069  -52.00 32 s
+90785.0 166172.0 m
+(colormap,) 102148  0.00 -1 s
+( default,) 111337  -58.00 32 s
+( 3\03632) 117156  -59.00 32 s
+90785.0 169491.0 m
+(colormaps) 102540  0.00 -1 s
+( maximum number, 3\03633) 130432  -56.00 32 s
+90785.0 172810.0 m
+(colormaps) 102540  0.00 -1 s
+( minimum number,) 124153  -50.00 32 s
+( 3\03633) 129980  -51.00 32 s
+90785.0 176129.0 m
+(depths,) 98859  0.00 -1 s
+( 3\03632) 104671  -66.00 32 s
+90785.0 179448.0 m
+(event) 96897  0.00 -1 s
+( mask root, 3\03632) 115282  -37.67 32 s
+90785.0 182767.0 m
+(height,) 98545  0.00 -1 s
+( 3\03633) 104355  -68.00 32 s
+90785.0 186086.0 m
+(height) 97839  0.00 -1 s
+( in millimeters, 3\03633) 120814  -23.00 32 s
+90785.0 189405.0 m
+(property list, 3\03633) 111038  -23.00 32 s
+90785.0 192724.0 m
+(root) 95330  0.00 -1 s
+( depth, 3\03634) 108802  -44.00 32 s
+90785.0 196043.0 m
+(root) 95330  0.00 -1 s
+( visual type, 3\03634) 114831  -31.67 32 s
+90785.0 199362.0 m
+(root) 95330  0.00 -1 s
+( window, 3\03633) 111625  -43.00 32 s
+90785.0 202681.0 m
+(save\036unders\036p) 106612  0.00 -1 s
+( attribute, 3\03634) 123207  -49.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8737.0 m
+(General ) 28266  -32.00 32 s
+( Index) 33822  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+148474 207264 av
+21709 207262 as
+[] 0 setdash
+dp
+121920.0 211598.0 m
+(CLX) 126069  0.00 -1 s
+( Programmer's Reference) 149465  -48.00 32 s
+/timsps10b 2 declareFont
+2 sf
+19898.0 211327.0 m
+(Index\036218) 31970  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+22871.0 22578.0 m
+(saver,) 29531  0.00 -1 s
+( 14\036180\03714\036182) 48926  -121.00 32 s
+22871.0 25897.0 m
+(white) 29140  0.00 -1 s
+( pixel, 3\03634) 41995  -39.00 32 s
+22871.0 29216.0 m
+(width,) 30004  0.00 -1 s
+( 3\03634) 35831  -51.00 32 s
+22871.0 32535.0 m
+(width) 29298  0.00 -1 s
+( in millimeters,) 46430  -17.00 32 s
+( 3\03634) 52290  -18.00 32 s
+20320.0 37253.0 m
+(selection,) 31057  0.00 -1 s
+( 11\036115\03711\036118) 50439  -134.00 32 s
+20320.0 41972.0 m
+(:selection\036clear) 37556  0.00 -1 s
+( event,) 45013  -67.00 32 s
+( 12\036155) 53645  -68.00 32 s
+20320.0 46691.0 m
+(:selection\036notify) 38814  0.00 -1 s
+( event,) 46274  -64.00 32 s
+( 12\036156) 54909  -65.00 32 s
+20320.0 51410.0 m
+(:selection\036request) 40223  0.00 -1 s
+( event, 12\036156) 56309  -69.00 32 s
+20320.0 56128.0 m
+(server) 27213  0.00 -1 s
+22871.0 59447.0 m
+(grabbing,) 33608  0.00 -1 s
+( 14\036169) 42198  -110.00 32 s
+22871.0 62766.0 m
+(resource,) 33134  0.00 -1 s
+( 13\036161) 41746  -88.00 32 s
+22871.0 66085.0 m
+(resource) 32428  0.00 -1 s
+( ID of display,) 48652  -26.00 32 s
+( 2\03628) 54503  -27.00 32 s
+20320.0 70804.0 m
+(shell) 25650  0.00 -1 s
+22871.0 74123.0 m
+(popping) 32121  0.00 -1 s
+( down,) 39728  -75.00 32 s
+( 208) 44591  -76.00 32 s
+22871.0 77442.0 m
+(popping) 32121  0.00 -1 s
+( up,) 36288  -67.00 32 s
+( 208) 41159  -68.00 32 s
+20320.0 82161.0 m
+(side\036effect) 32226  0.00 -1 s
+( events,) 40797  -51.00 32 s
+( 12\036119) 49445  -52.00 32 s
+22871.0 85479.0 m
+(events) 30081  0.00 -1 s
+( returned, 12\036119) 49468  -63.00 32 s
+20320.0 90198.0 m
+(stacking) 29725  0.00 -1 s
+( order of window, 4\03645\0374\03646) 63647  -42.00 32 s
+20320.0 94917.0 m
+(stacking) 29725  0.00 -1 s
+( priority of window,) 52360  -31.00 32 s
+( 4\03643) 58206  -32.00 32 s
+20320.0 99636.0 m
+(stipple) 27845  0.00 -1 s
+22871.0 102955.0 m
+(attribute) 32274  0.00 -1 s
+( of graphics context, 5\03665) 61050  -35.75 32 s
+22871.0 106274.0 m
+(best,) 28123  0.00 -1 s
+( graphics context, 5\03667) 53848  -46.00 32 s
+20320.0 110992.0 m
+(structure) 30192  0.00 -1 s
+( control events, 12\036152\03712\036154) 66853  -58.67 32 s
+20320.0 115711.0 m
+(subwindow\036mode) 40540  0.00 -1 s
+( attribute of graphics context, 5\03666) 79338  -46.00 32 s
+/helvps18b 4 declareFont
+4 sf
+20320.0 126842.0 m
+(T) 23708  0.00 -1 s
+3 sf
+20320.0 132870.0 m
+(text) 24552  0.00 -1 s
+22871.0 136189.0 m
+(drawing,) 32823  0.00 -1 s
+( 6\03675\0376\03680) 46601  -94.00 32 s
+22871.0 139508.0 m
+(size) 27259  0.00 -1 s
+( querying, 8\03697\0378\03698) 52448  -63.00 32 s
+20320.0 144227.0 m
+(tile,) 24631  0.00 -1 s
+( 1\0362) 29080  -18.00 32 s
+22871.0 147546.0 m
+(attribute) 32274  0.00 -1 s
+( of graphics context, 5\03666) 61050  -35.75 32 s
+22871.0 150865.0 m
+(best,) 28123  0.00 -1 s
+( graphics context, 5\03667) 53848  -46.00 32 s
+20320.0 155583.0 m
+(ts\036x) 24552  0.00 -1 s
+( attribute of graphics context,) 57594  -27.00 32 s
+( 5\03667) 63444  -28.00 32 s
+20320.0 160302.0 m
+(ts\036y attribute of graphics context, 5\03667) 63444  -27.20 32 s
+4 sf
+20320.0 171433.0 m
+(U) 23987  0.00 -1 s
+3 sf
+20320.0 177461.0 m
+(:unmap\036notify) 36464  0.00 -1 s
+( event, 12\036151) 52538  -75.00 32 s
+20320.0 182180.0 m
+(unmapping) 33018  0.00 -1 s
+( windows,) 44533  -86.00 32 s
+( 4\03647\0374\03649) 58318  -87.00 32 s
+4 sf
+20320.0 193311.0 m
+(V) 23987  0.00 -1 s
+3 sf
+20320.0 199339.0 m
+(vendor) 28156  0.00 -1 s
+22871.0 202658.0 m
+(display,) 31729  0.00 -1 s
+( 2\03628) 37547  -60.00 32 s
+90785.0 22578.0 m
+(name) 96897  0.00 -1 s
+( of display, 2\03628) 115282  -37.67 32 s
+88234.0 27116.0 m
+(version) 96541  0.00 -1 s
+( number) 105832  -35.00 32 s
+( of display, 2\03628) 124223  -35.67 32 s
+88234.0 31654.0 m
+(:visibility\036notify) 106732  0.00 -1 s
+( event, 12\036152) 122868  -44.00 32 s
+88234.0 36192.0 m
+(visual) 94975  0.00 -1 s
+( type) 100507  -33.00 32 s
+( of window, 4\03643) 119843  -33.67 32 s
+88234.0 40730.0 m
+(visual types,) 102310  -34.00 32 s
+( classes supported, 3\03631) 129168  -34.67 32 s
+88234.0 45268.0 m
+(visuals,) 96779  0.00 -1 s
+( 3\03631) 102616  -41.00 32 s
+4 sf
+88234.0 55699.0 m
+(W) 93314  0.00 -1 s
+3 sf
+88234.0 61434.0 m
+(white) 94503  0.00 -1 s
+( pixel of screen, 3\03634) 118285  -30.00 32 s
+88234.0 65972.0 m
+(width) 94661  0.00 -1 s
+90785.0 69269.0 m
+(attribute) 100188  0.00 -1 s
+( of window, 4\03637) 119527  -32.67 32 s
+90785.0 72565.0 m
+(screen,) 98698  0.00 -1 s
+( 3\03634) 104513  -63.00 32 s
+90785.0 75861.0 m
+(screen) 97992  0.00 -1 s
+( in millimeters,) 115116  -21.00 32 s
+( 3\03634) 120972  -22.00 32 s
+88234.0 80399.0 m
+(window,) 98031  0.00 -1 s
+( 4\03635\0374\03652) 111805  -98.00 32 s
+90785.0 83696.0 m
+(attribute) 100188  0.00 -1 s
+93314.0 86992.0 m
+(background,) 107342  0.00 -1 s
+( 4\03638) 113092  -128.00 32 s
+93314.0 90289.0 m
+(backing\036pixel,) 109536  0.00 -1 s
+( 4\03639) 115305  -109.00 32 s
+93314.0 93585.0 m
+(backing\036planes,) 111103  0.00 -1 s
+( 4\03639) 116863  -118.00 32 s
+93314.0 96881.0 m
+(backing\036store,) 109378  0.00 -1 s
+( 4\03639) 115169  -87.00 32 s
+93314.0 100178.0 m
+(bit\036gravity,) 105931  0.00 -1 s
+( 4\03639) 111760  -49.00 32 s
+93314.0 103474.0 m
+(border,) 101384  0.00 -1 s
+( 4\03640) 107199  -63.00 32 s
+93314.0 106770.0 m
+(border\036width,) 108750  0.00 -1 s
+( 4\03637) 114560  -68.00 32 s
+93314.0 110067.0 m
+(colormap,) 104677  0.00 -1 s
+( 4\03640) 110473  -82.00 32 s
+93314.0 113363.0 m
+(cursor,) 101071  0.00 -1 s
+( 4\03641) 106906  -43.00 32 s
+93314.0 116659.0 m
+(depth,) 100290  0.00 -1 s
+( 4\03637) 106093  -75.00 32 s
+93314.0 119956.0 m
+(do\036not\036propagate\036mask,) 120348  0.00 -1 s
+( 4\03641) 126097  -129.00 32 s
+93314.0 123252.0 m
+(event\036mask,) 107028  0.00 -1 s
+( 4\03641) 112821  -85.00 32 s
+93314.0 126548.0 m
+(gravity,) 102013  0.00 -1 s
+( 4\03641) 107832  -59.00 32 s
+93314.0 129845.0 m
+(height,) 101074  0.00 -1 s
+( 4\03637) 106883  -69.00 32 s
+93314.0 133141.0 m
+(override\036redirect,) 112976  0.00 -1 s
+( 4\03642) 118782  -72.00 32 s
+93314.0 136438.0 m
+(save\036under,) 106399  0.00 -1 s
+( 4\03643) 112189  -88.00 32 s
+93314.0 139734.0 m
+(width,) 100447  0.00 -1 s
+( 4\03637) 106274  -51.00 32 s
+90785.0 143030.0 m
+(attributes,) 101992  0.00 -1 s
+( 4\03637) 107832  -38.00 32 s
+93314.0 146327.0 m
+(batching,) 103738  0.00 -1 s
+( 2\03629, 4\03643) 116072  -64.00 32 s
+93314.0 149623.0 m
+(reader) 100362  0.00 -1 s
+( and setf functions, 4\03645) 127587  -32.00 32 s
+90785.0 152919.0 m
+(class,) 96977  0.00 -1 s
+( 4\03640) 102819  -36.00 32 s
+90785.0 156216.0 m
+(creating,) 100579  0.00 -1 s
+( 4\03635) 106387  -70.00 32 s
+90785.0 159512.0 m
+(destroying,) 103404  0.00 -1 s
+( 4\03649) 109209  -73.00 32 s
+90785.0 162808.0 m
+(display) 98937  0.00 -1 s
+( object,) 107196  -49.00 32 s
+( 4\03641) 113024  -50.00 32 s
+90785.0 166105.0 m
+(event) 96897  0.00 -1 s
+( masks, 4\03638) 111150  -46.00 32 s
+90785.0 169401.0 m
+(hierarchy,) 102145  0.00 -1 s
+( 4\03646\0374\03647) 115914  -103.00 32 s
+90785.0 172697.0 m
+(ID,) 94467  0.00 -1 s
+( 4\03642) 100313  -32.00 32 s
+90785.0 175994.0 m
+(map) 95644  0.00 -1 s
+( state,) 102193  -35.00 32 s
+( 4\03642) 108035  -36.00 32 s
+90785.0 179290.0 m
+(mapping,) 101367  0.00 -1 s
+( 4\03647\0374\03649) 115124  -115.00 32 s
+90785.0 182586.0 m
+(obscure,) 100267  0.00 -1 s
+( 1\0362) 104671  -63.00 32 s
+90785.0 185883.0 m
+(property) 100344  0.00 -1 s
+( list, 4\03643) 111038  -23.00 32 s
+90785.0 189179.0 m
+(stacking) 100190  0.00 -1 s
+( order,) 107497  -58.00 32 s
+( 4\03645\0374\03646) 121310  -59.00 32 s
+90785.0 192476.0 m
+(stacking) 100190  0.00 -1 s
+( priority, 4\03643) 115869  -37.00 32 s
+90785.0 195772.0 m
+(state) 95957  0.00 -1 s
+( events,) 104508  -71.00 32 s
+( 12\036147\03712\036152) 123952  -72.00 32 s
+90785.0 199068.0 m
+(unmapping,) 104189  0.00 -1 s
+( 4\03647\0374\03649) 117924  -137.00 32 s
+90785.0 202365.0 m
+(visual) 97526  0.00 -1 s
+( type, 4\03643) 109593  -41.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+135467.0 8737.0 m
+(General ) 143413  -32.00 32 s
+( Index) 148969  -33.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 207264 av
+149013 207262 as
+[] 0 setdash
+dp
+20320.0 211327.0 m
+(CLX Programmer's Reference) 47961  0.00 32 s
+/timsps10b 2 declareFont
+2 sf
+136941.0 h
+(Index\036219) 149013  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+22871.0 22578.0 m
+(x) 24282  0.00 -1 s
+( coordinate, 4\03638) 43372  -55.00 32 s
+22871.0 25784.0 m
+(y coordinate, 4\03638) 43372  -55.00 32 s
+/helvps18b 4 declareFont
+4 sf
+20320.0 33641.0 m
+(X) 23987  0.00 -1 s
+3 sf
+20320.0 38292.0 m
+(X) 22357  0.00 -1 s
+( server, reset operations, 14\036177) 58431  -32.75 32 s
+88234.0 22578.0 m
+(X) 90271  0.00 -1 s
+( Window System, overview,) 122202  -42.00 32 s
+( 1\0361\0371\0363) 133209  -43.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

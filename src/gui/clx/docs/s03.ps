@@ -1,0 +1,2082 @@
+%!PS-Adobe-2.0
+%%Title: s03.ps
+%%Pages: 4
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 8 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps12b /ILtimsb 12 map
+	/timsps10b /ILtimsb 10 map
+	/symbb8 /ILsymbb 8 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 8 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(3\03631) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 5 declareFont
+5 sf
+20410.0 39376.0 m
+92455.0 39466.0 m
+(SCREENS) 115880  0.00 -1 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+143371 39315 av
+146108 37028 as
+146108 32833 as
+143827 30926 as
+146108 29020 as
+146108 25588 as
+143371 23300 as
+136982 23300 as
+134244 25588 as
+134244 27876 as
+138351 27876 as
+138351 26351 as
+142002 26351 as
+142002 29401 as
+138807 29401 as
+138807 32452 as
+142002 32452 as
+142002 36265 as
+138351 36265 as
+138351 34740 as
+134244 34740 as
+134244 37028 as
+136982 39315 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+newpath
+133332 23300 av
+133332 23300 as
+newpath
+133332 43891 av
+133332 43891 as
+newpath
+147477 43891 av
+147477 43891 as
+newpath
+147477 23300 av
+147477 23300 as
+149351.0 39376.0 m
+5 sf
+/timsps10 4 declareFont
+4 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 46871.0 m
+(Screens and) 37727  6.00 32 s
+52832.0 h
+2 sf
+(3.1) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(An) 62003  0.00 -1 s
+( X display supports graphical output to one or more ) 120615  -32.90 32 s
+/timsps10i 3 declareFont
+3 sf
+(screens) 129079  0.00 -1 s
+4 sf
+(. Each) 136099  -33.00 32 s
+6 sf
+20320.0 50258.0 m
+(Visuals) 30857  0.00 -1 s
+52832.0 h
+4 sf
+(screen) 60039  0.00 -1 s
+( has its own root window and window hierarchy. Each window belongs to exactly) 149352  -243.77 32 s
+52832.0 53419.0 m
+(one) 56907  0.00 -1 s
+( screen and cannot simultaneously appear) 103615  -47.00 32 s
+( on another screen.) 124787  -47.67 32 s
+52832.0 59696.0 m
+(The) 57220  0.00 -1 s
+( kinds of graphics hardware used by X screens can vary greatly in) 130551  -80.00 32 s
+( their support for) 149352  -80.67 32 s
+52832.0 62857.0 m
+(color) 58630  0.00 -1 s
+( and in their methods) 82242  -54.00 32 s
+( for accessing raster memory. X uses the concept of a ) 142611  -54.55 32 s
+3 sf
+(visual) 149352  0.00 -1 s
+52832.0 66017.0 m
+(type) 57533  0.00 -1 s
+4 sf
+( \(usually referred to simply as a ) 91895  -297.00 32 s
+3 sf
+(visual) 98636  0.00 -1 s
+4 sf
+(\) which) 106880  -297.00 32 s
+( uniquely identifies the hardware capa\036) 149352  -297.60 32 s
+52832.0 69178.0 m
+(bilities) 60514  0.00 -1 s
+( of a display screen. Fundamentally, a visual is represented by) 130011  -57.00 32 s
+( a ) 132561  -57.50 32 s
+2 sf
+(card29) 140869  0.00 -1 s
+4 sf
+( integer) 149352  -58.00 32 s
+52832.0 72339.0 m
+(ID,) 56514  0.00 -1 s
+( which uniquely identifies the visual type relative) 110341  -271.00 32 s
+( to a single display. CLX also repre\036) 149352  -271.57 32 s
+52832.0 75500.0 m
+(sents) 58476  0.00 -1 s
+( a visual with a ) 75139  -226.00 32 s
+2 sf
+(visual\036info) 87838  0.00 -1 s
+4 sf
+( structure that contains other attributes associated with) 147620  -226.00 32 s
+( a) 149352  -227.00 32 s
+52832.0 78661.0 m
+(visual) 59573  0.00 -1 s
+( \(see paragraph 1.6, Data Types\). A screen can support more than one depth \(that) 149352  -130.79 32 s
+52832.0 81822.0 m
+(is,) 55420  0.00 -1 s
+( pixel size\), and for each supported depth, a screen may support more than one visual.) 149352  -195.73 32 s
+52832.0 84983.0 m
+(However,) 63879  0.00 -1 s
+( it is more typical for a screen to have only) 111676  -48.00 32 s
+( a single depth and a single visual) 149352  -48.57 32 s
+52832.0 88144.0 m
+(type.) 58397  0.00 -1 s
+52832.0 94420.0 m
+(A) 54869  0.00 -1 s
+( visual represents various) 83408  -22.00 32 s
+( aspects of the screen hardware, as follows:) 132148  -22.57 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 100968.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(A) 59949  0.00 -1 s
+( screen can be color) 82251  -27.00 32 s
+( or gray\036scale. ) 98936  -27.67 32 s
+7 sf
+52832.0 107515.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(A screen can have a colormap that is either writable or read\036only.) 131425  -27.55 32 s
+7 sf
+52832.0 114063.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(A) 59949  0.00 -1 s
+( screen can have a single) 88820  179.00 32 s
+( colormap or separate colormaps for each of the red,) 149352  178.44 32 s
+57912.0 117224.0 m
+(green,) 64885  0.00 -1 s
+( and blue components. With separate colormaps, a pixel value is decomposed) 149352  -265.64 32 s
+57912.0 120385.0 m
+(into) 62302  0.00 -1 s
+( three parts to determine indexes) 97596  -292.00 32 s
+( into each of the red, green, and blue colormaps.) 149352  -292.56 32 s
+52832.0 126661.0 m
+(CLX) 58475  0.00 -1 s
+( supports the following classes of visual types: ) 118224  806.13 32 s
+2 sf
+(:direct\036color) 133265  0.00 -1 s
+4 sf
+(, ) 135483  806.00 32 s
+2 sf
+(:gray\036scale) 148646  0.00 -1 s
+4 sf
+(,) 149352  0.00 -1 s
+52832.0 129822.0 m
+2 sf
+(:pseudo\036color) 69291  0.00 -1 s
+4 sf
+(,) 69997  0.00 -1 s
+( ) 70504  -199.00 32 s
+2 sf
+(:static\036color) 84918  0.00 -1 s
+4 sf
+(, ) 86131  -199.00 32 s
+2 sf
+(:static\036gray) 99919  0.00 -1 s
+4 sf
+(, and ) 105714  -199.00 32 s
+2 sf
+(:true\036color) 118718  0.00 -1 s
+4 sf
+(. The following tables show) 149352  -199.00 32 s
+52832.0 132983.0 m
+(how) 57691  0.00 -1 s
+( the) 61824  -21.00 32 s
+( characteristics of a screen determine the class of its visual type.) 133841  -21.55 32 s
+52832.0 139260.0 m
+(For) 56751  0.00 -1 s
+( screens with a single colormap:) 92908  -25.80 32 s
+52832.0 145536.0 m
+68072.0 h
+( ) 68765  -13.00 32 s
+( Color) 75884  -14.00 32 s
+83312.0 h
+98552.0 h
+(Gray\036Scale) 111243  0.00 -1 s
+52832.0 151813.0 m
+(  Read\036only) 65927  -36.00 32 s
+68072.0 h
+(  ) 69462  -11.00 32 s
+2 sf
+(:static\036color) 83876  0.00 -1 s
+4 sf
+98552.0 h
+2 sf
+(:static\036gray) 112340  0.00 -1 s
+4 sf
+52832.0 154974.0 m
+(  Writable) 64098  -9.00 32 s
+68072.0 h
+(  ) 69404  -40.00 32 s
+2 sf
+(:pseudo\036color) 85863  0.00 -1 s
+4 sf
+98552.0 h
+2 sf
+(:gray\036scale) 111715  0.00 -1 s
+4 sf
+52832.0 161250.0 m
+(For) 56751  0.00 -1 s
+( screens with red, green, and blue colormaps:) 107538  -33.00 32 s
+52832.0 167527.0 m
+(  Read\036only) 65927  -36.00 32 s
+68072.0 h
+( ) 68750  -28.00 32 s
+( ) 69427  -29.00 32 s
+2 sf
+(:true\036color) 82431  0.00 -1 s
+4 sf
+83312.0 h
+52832.0 170688.0 m
+(  Writable) 64098  -9.00 32 s
+68072.0 h
+(  ) 69422  -31.00 32 s
+2 sf
+(:direct\036color) 84463  0.00 -1 s
+4 sf
+98552.0 h
+2 sf
+(:gray\036scale) 111715  0.00 -1 s
+4 sf
+52832.0 176965.0 m
+(The) 57220  0.00 -1 s
+( visual class also indicates how screen colormaps are handled. See paragraph 9.1,) 149352  30.00 32 s
+52832.0 180126.0 m
+(Colormaps) 65216  0.00 -1 s
+( and Colors.) 78842  -46.00 32 s
+20320.0 187125.0 m
+0.0 0.0 m
+newpath
+20455 185501 av
+148878 185499 as
+[] 0 setdash
+dp
+149352.0 187125.0 m
+6 sf
+20320.0 190511.0 m
+(Screen) 30098  0.00 -1 s
+( ) 30967  22.00 32 s
+( ) 31835  21.00 32 s
+52832.0 h
+2 sf
+(3.2) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(In) 60905  0.00 -1 s
+( CLX, each display screen is represented by a ) 112788  -34.56 32 s
+2 sf
+(screen) 120467  0.00 -1 s
+4 sf
+( structure. The) 136776  -34.50 32 s
+6 sf
+20320.0 193898.0 m
+(Attributes) 35176  0.00 -1 s
+52832.0 h
+2 sf
+(display\036roots) 68509  0.00 -1 s
+4 sf
+( function returns the list of ) 98704  -88.00 32 s
+2 sf
+(screen) 106383  0.00 -1 s
+4 sf
+( structures for the display. The follow\036) 149352  -87.50 32 s
+52832.0 197059.0 m
+(ing) 56438  0.00 -1 s
+( paragraphs discuss the) 82458  -26.00 32 s
+( attributes of CLX ) 103670  -26.50 32 s
+2 sf
+(screen) 111349  0.00 -1 s
+4 sf
+( structures.) 123704  -27.00 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8195.0 m
+(Screens) 27625  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(3\03632) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(screen\036backing\036stores ) 61293  -132.00 32 s
+/timsps10i 3 declareFont
+3 sf
+(screen) 68659  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 4 declareFont
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 28900.0 m
+(  backing\036stores\036type ) 77103  -34.00 32 s
+4 sf
+(\037 One of ) 88993  -33.67 32 s
+2 sf
+(:always) 98084  0.00 -1 s
+4 sf
+(, ) 99462  -34.00 32 s
+2 sf
+(:never) 107140  0.00 -1 s
+4 sf
+(, or ) 111541  -33.50 32 s
+2 sf
+(:when\036mapped) 129568  0.00 -1 s
+4 sf
+(.) 130274  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( a value indicating when the ) 93241  -136.00 32 s
+3 sf
+(screen) 100607  0.00 -1 s
+4 sf
+( supports backing stores, although it may be) 149352  -135.71 32 s
+52832.0 36779.0 m
+(storage) 60981  0.00 -1 s
+( limited in the number of windows) 98874  -190.00 32 s
+( it can support at once. The value returned can) 149352  -190.56 32 s
+52832.0 39940.0 m
+(be) 55496  0.00 -1 s
+( one of ) 63928  -37.00 32 s
+2 sf
+(:always) 73019  0.00 -1 s
+4 sf
+(, ) 74394  -37.00 32 s
+2 sf
+(:never) 82072  0.00 -1 s
+4 sf
+(, or ) 86466  -37.00 32 s
+2 sf
+(:when\036mapped) 104493  0.00 -1 s
+4 sf
+(.) 105199  0.00 -1 s
+( ) 105867  -38.00 32 s
+3 sf
+52832.0 46217.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 51003.0 m
+(screen\036black\036pixel) 56488  0.00 -1 s
+( ) 57071  -123.00 32 s
+3 sf
+(screen) 64437  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 54164.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 57325.0 m
+(  black\036pixel ) 67396  -30.00 32 s
+4 sf
+(\037 Type ) 77369  -30.00 32 s
+2 sf
+(pixel) 83170  0.00 -1 s
+4 sf
+(.) 83876  0.00 -1 s
+52832.0 62044.0 m
+(Returns) 61610  0.00 -1 s
+( the black) 72526  -28.00 32 s
+( pixel value for the specified ) 105269  -28.50 32 s
+3 sf
+(screen) 112635  0.00 -1 s
+4 sf
+(. ) 114018  -29.00 32 s
+3 sf
+52832.0 68320.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 73107.0 m
+(screen\036default\036colormap) 64007  0.00 -1 s
+( ) 64567  -146.00 32 s
+3 sf
+(screen) 71933  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 76268.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 79429.0 m
+(  default\036colormap ) 74438  -35.00 32 s
+4 sf
+(\037 Type ) 84401  -35.00 32 s
+2 sf
+(colormap) 95843  0.00 -1 s
+4 sf
+(. ) 97220  -35.00 32 s
+52832.0 84147.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66070  -200.00 32 s
+3 sf
+(default\036colormap) 85663  0.00 -1 s
+4 sf
+( for the specified ) 104612  -199.50 32 s
+3 sf
+(screen) 111978  0.00 -1 s
+4 sf
+(. The ) 118085  -199.50 32 s
+3 sf
+(default\036colormap) 137678  0.00 -1 s
+4 sf
+( is initially) 149352  -199.50 32 s
+52832.0 87308.0 m
+(associated) 64430  0.00 -1 s
+( with the root window. Clients with minimal color requirements creating win\036) 149352  -259.64 32 s
+52832.0 90469.0 m
+(dows) 58789  0.00 -1 s
+( of the same depth as the root may want to allocate from this map by default. Most) 149352  -149.94 32 s
+52832.0 93630.0 m
+(routine) 60825  0.00 -1 s
+( allocations of color should be made out of this colormap.) 125668  -28.90 32 s
+3 sf
+52832.0 99907.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 104693.0 m
+(screen\036depths) 51159  0.00 -1 s
+( ) 51765  -100.00 32 s
+3 sf
+(screen) 59131  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 107854.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 111015.0 m
+(  depths ) 62264  -18.00 32 s
+4 sf
+(\037 Type ) 72262  -17.50 32 s
+2 sf
+(alist) 77278  0.00 -1 s
+4 sf
+(.) 77984  0.00 -1 s
+52832.0 115734.0 m
+(Returns) 61610  0.00 -1 s
+( an association list that specifies what drawable depths are supported on the) 149352  206.08 32 s
+52832.0 118895.0 m
+(specified) 63018  0.00 -1 s
+( ) 63460  -264.00 32 s
+3 sf
+(screen) 70826  0.00 -1 s
+4 sf
+(. Elements of the returned association list have the form \(depth ) 139555  -263.91 32 s
+3 sf
+(visual) 146296  0.00 -1 s
+4 sf
+(*\),) 149352  0.00 -1 s
+52832.0 122055.0 m
+(where) 59725  0.00 -1 s
+( each ) 65735  -286.00 32 s
+3 sf
+(visual) 72476  0.00 -1 s
+4 sf
+( is a ) 76871  -286.00 32 s
+2 sf
+(visual\036info) 89570  0.00 -1 s
+4 sf
+( structure. Pixmaps are supported for each depth listed,) 149352  -286.00 32 s
+52832.0 125216.0 m
+(and) 56907  0.00 -1 s
+( windows of that depth are supported if at least one visual type) 125141  -205.00 32 s
+( is listed for the depth.) 149352  -205.60 32 s
+52832.0 128377.0 m
+(A) 54869  0.00 -1 s
+( pixmap depth of one is always supported and listed, but windows of depth one might) 149352  -138.93 32 s
+52832.0 131538.0 m
+(not) 56438  0.00 -1 s
+( be supported. A depth of zero is never) 99887  -45.00 32 s
+( listed, but zero\036depth ) 125020  -45.50 32 s
+2 sf
+(:input\036only) 138503  0.00 -1 s
+4 sf
+( windows) 149352  -46.00 32 s
+52832.0 134699.0 m
+(are) 56277  0.00 -1 s
+( always) 64770  -49.00 32 s
+( supported.) 77261  -50.00 32 s
+3 sf
+52832.0 140976.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 145762.0 m
+(screen\036event\036mask\036at\036open) 66984  0.00 -1 s
+( ) 67547  -143.00 32 s
+3 sf
+(screen) 74913  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 148923.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 152084.0 m
+(  event\036mask\036at\036open ) 77084  -39.00 32 s
+4 sf
+(\037 Type) 86372  -39.00 32 s
+( ) 87038  -40.00 32 s
+2 sf
+(mask32) 96288  0.00 -1 s
+4 sf
+(.) 96994  0.00 -1 s
+52832.0 156803.0 m
+(Returns) 61610  0.00 -1 s
+( the initial root event mask for the specified ) 111319  -23.78 32 s
+3 sf
+(screen) 118685  0.00 -1 s
+4 sf
+(.) 119391  0.00 -1 s
+3 sf
+52832.0 163079.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+142014.0 8737.0 m
+(Screens) 149048  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(3\03633) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(screen\036height ) 51291  -102.00 32 s
+/timsps10i 3 declareFont
+3 sf
+(screen) 58657  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 4 declareFont
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 28900.0 m
+(  height) 61228  -35.00 32 s
+( ) 61898  -36.00 32 s
+4 sf
+(\037 Type ) 71860  -35.50 32 s
+2 sf
+(card16) 80168  0.00 -1 s
+4 sf
+(.) 80874  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66420  -25.00 32 s
+3 sf
+(height) 73474  0.00 -1 s
+4 sf
+( of the specified ) 92182  -25.00 32 s
+3 sf
+(screen) 99548  0.00 -1 s
+4 sf
+( in pixel units.) 115621  -25.67 32 s
+3 sf
+52832.0 39895.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 44681.0 m
+(screen\036height\036in\036millimeters) 68550  0.00 -1 s
+( ) 69173  -83.00 32 s
+3 sf
+(screen) 76539  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 47842.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 51003.0 m
+(  height\036in\036millimeters ) 78683  -30.00 32 s
+4 sf
+(\037 Type ) 88657  -29.50 32 s
+2 sf
+(card16) 96965  0.00 -1 s
+4 sf
+(.) 97671  0.00 -1 s
+52832.0 55722.0 m
+(Returns) 61610  0.00 -1 s
+( the height of the specified ) 93040  118.00 32 s
+3 sf
+(screen) 100406  0.00 -1 s
+4 sf
+( in millimeters. The returned height can be) 149352  118.00 32 s
+52832.0 58883.0 m
+(used) 58005  0.00 -1 s
+( with the width in millimeters to determine the physical size and the) 133062  -133.00 32 s
+( aspect ratio of) 149352  -133.67 32 s
+52832.0 62044.0 m
+(the) 56280  0.00 -1 s
+( screen.) 64843  -56.00 32 s
+3 sf
+52832.0 68320.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 73107.0 m
+(screen\036max\036installed\036maps) 66831  0.00 -1 s
+4 sf
+( ) 67434  -103.00 32 s
+3 sf
+(screen) 74800  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 76268.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 79429.0 m
+(  max\036installed\036colormaps ) 83040  -41.00 32 s
+4 sf
+(\037 Type ) 92992  -40.50 32 s
+2 sf
+(card16) 101300  0.00 -1 s
+4 sf
+(.) 102006  0.00 -1 s
+52832.0 84147.0 m
+(Returns) 61610  0.00 -1 s
+( the maximum number of colormaps that can be installed simultaneously with) 149352  -10.91 32 s
+52832.0 87308.0 m
+2 sf
+(install\036colormap) 72582  0.00 -1 s
+4 sf
+(.) 73288  0.00 -1 s
+3 sf
+52832.0 93585.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 98371.0 m
+(screen\036min\036installed\036maps) 66362  0.00 -1 s
+( ) 66983  -85.00 32 s
+3 sf
+(screen) 74349  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 101532.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 104693.0 m
+(  min\036installed\036colormaps ) 82583  -37.00 32 s
+4 sf
+(\037 Type) 91873  -37.00 32 s
+( ) 92541  -38.00 32 s
+2 sf
+(card16) 100849  0.00 -1 s
+4 sf
+(.) 101555  0.00 -1 s
+52832.0 109412.0 m
+(Returns) 61610  0.00 -1 s
+( the minimum number of colormaps that can be guaranteed to) 128585  -262.00 32 s
+( be installed simul\036) 149352  -262.67 32 s
+52832.0 112573.0 m
+(taneously.) 64354  0.00 -1 s
+3 sf
+52832.0 118849.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 123636.0 m
+(screen\036p) 44731  0.00 -1 s
+( ) 45353  -84.00 32 s
+3 sf
+(screen) 52719  0.00 -1 s
+2 sf
+52832.0 h
+4 sf
+(Function) 62866  0.00 -1 s
+2 sf
+34544.0 126797.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 129958.0 m
+(  screen\036p ) 64564  -34.00 32 s
+4 sf
+(\037 Type ) 74530  -33.50 32 s
+2 sf
+(boolean) 83938  0.00 -1 s
+4 sf
+(.) 84644  0.00 -1 s
+52832.0 134676.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67466  -22.00 32 s
+2 sf
+(nil) 70603  0.00 -1 s
+4 sf
+( if the ) 77826  -22.00 32 s
+3 sf
+(screen) 85192  0.00 -1 s
+4 sf
+( argument is a ) 101720  -22.00 32 s
+2 sf
+(screen) 109399  0.00 -1 s
+4 sf
+( structure; otherwise, returns ) 142303  -21.75 32 s
+2 sf
+(nil) 145440  0.00 -1 s
+4 sf
+(.) 146146  0.00 -1 s
+2 sf
+34544.0 140953.0 m
+(screen\036plist) 48336  0.00 -1 s
+( ) 48988  -54.00 32 s
+3 sf
+(screen) 56354  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 144114.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 147275.0 m
+(  plist ) 59793  -6.00 32 s
+4 sf
+(\037) 62615  0.00 -1 s
+( Type ) 69813  -6.50 32 s
+2 sf
+(list) 73418  0.00 -1 s
+4 sf
+(. ) 74823  -7.00 32 s
+52832.0 151994.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73299  -153.00 32 s
+2 sf
+(setf) 77528  0.00 -1 s
+4 sf
+(\) sets the property list) 101369  -153.00 32 s
+( for the specified ) 120502  -153.50 32 s
+3 sf
+(screen) 127868  0.00 -1 s
+4 sf
+(. This function pro\036) 149352  -153.67 32 s
+52832.0 155154.0 m
+(vides) 58789  0.00 -1 s
+( a hook where extensions can add data.) 102548  -40.86 32 s
+3 sf
+52832.0 161431.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 166218.0 m
+(screen\036root) 48176  0.00 -1 s
+( ) 48785  -97.00 32 s
+3 sf
+(screen) 56151  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 169378.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 172539.0 m
+(  root\036window ) 69296  -26.00 32 s
+4 sf
+(\037 Type ) 79277  -26.00 32 s
+2 sf
+(window ) 89365  -25.00 32 s
+4 sf
+(or ) 92395  -26.00 32 s
+2 sf
+(null) 97101  0.00 -1 s
+4 sf
+(.) 97807  0.00 -1 s
+52832.0 177258.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66084  -193.00 32 s
+3 sf
+(root\036window) 80508  0.00 -1 s
+4 sf
+( for the specified ) 99483  -193.00 32 s
+3 sf
+(screen) 106849  0.00 -1 s
+4 sf
+(. This function is useful with functions) 149352  -192.67 32 s
+52832.0 180419.0 m
+(that) 57064  0.00 -1 s
+( take a parent window as an argument. The class of the) 118470  -46.00 32 s
+( root window is always ) 145121  -46.60 32 s
+2 sf
+(:in\036) 149352  0.00 -1 s
+52832.0 183580.0 m
+(put\036output) 65844  0.00 -1 s
+4 sf
+(.) 66550  0.00 -1 s
+3 sf
+52832.0 189857.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8195.0 m
+(Screens) 27625  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(3\03634) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(screen\036root\036depth ) 56597  -123.00 32 s
+/timsps10i 3 declareFont
+3 sf
+(screen) 63963  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 4 declareFont
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 28900.0 m
+(  root\036window\036depth ) 76460  -41.00 32 s
+4 sf
+(\037 Type ) 86411  -41.00 32 s
+2 sf
+(image\036depth) 101458  0.00 -1 s
+4 sf
+(.) 102164  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( the depth of the root window for the specified ) 113469  -127.60 32 s
+3 sf
+(screen) 120835  0.00 -1 s
+4 sf
+(. Other depths can also be) 149352  -127.60 32 s
+52832.0 36779.0 m
+(supported) 63961  0.00 -1 s
+( on this) 72200  -36.00 32 s
+( ) 72869  -37.00 32 s
+3 sf
+(screen) 80235  0.00 -1 s
+4 sf
+(.) 80941  0.00 -1 s
+3 sf
+52832.0 43056.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 47842.0 m
+(screen\036root\036visual) 56172  0.00 -1 s
+( ) 56777  -101.00 32 s
+3 sf
+(screen) 64143  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 51003.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 54164.0 m
+(  root\036window\036visual ) 76940  -38.00 32 s
+4 sf
+(\037 Type) 86229  -38.00 32 s
+( ) 86896  -39.00 32 s
+2 sf
+(card29) 95204  0.00 -1 s
+4 sf
+(.) 95910  0.00 -1 s
+52832.0 58883.0 m
+(Returns) 61610  0.00 -1 s
+( the default visual type for) 91192  -24.00 32 s
+( the root window for the specified ) 129969  -24.57 32 s
+3 sf
+(screen) 137335  0.00 -1 s
+4 sf
+(.) 138041  0.00 -1 s
+3 sf
+52832.0 65159.0 m
+(screen) 60198  0.00 -1 s
+( ) 60869  -35.00 32 s
+4 sf
+(\037 A ) 67070  -35.00 32 s
+2 sf
+(screen) 74749  0.00 -1 s
+4 sf
+(.) 75455  0.00 -1 s
+2 sf
+34544.0 69946.0 m
+(screen\036save\036unders\036p) 60093  0.00 -1 s
+( ) 60661  -138.00 32 s
+3 sf
+(screen) 68027  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 73107.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 76268.0 m
+(  save\036unders\036p ) 70825  -37.00 32 s
+4 sf
+(\037 Type ) 80784  -37.00 32 s
+2 sf
+(boolean) 90192  0.00 -1 s
+4 sf
+(.) 90898  0.00 -1 s
+52832.0 80986.0 m
+(If) 54710  0.00 -1 s
+( true, the server can) 76589  -74.00 32 s
+( support the save\036under mode in ) 113135  -74.50 32 s
+2 sf
+(create\036window) 130843  0.00 -1 s
+4 sf
+( and in changing) 149352  -74.67 32 s
+52832.0 84147.0 m
+(window) 61923  0.00 -1 s
+( attributes.) 73784  -52.00 32 s
+3 sf
+52832.0 90424.0 m
+(screen) 60198  0.00 -1 s
+( ) 60876  -28.00 32 s
+4 sf
+(\037 A) 66413  -28.00 32 s
+( screen.) 75003  -29.00 32 s
+2 sf
+34544.0 95210.0 m
+(screen\036white\036pixel) 56484  0.00 -1 s
+( ) 57094  -96.00 32 s
+3 sf
+(screen) 64460  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 98371.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 101532.0 m
+(  white\036pixel ) 67410  -26.00 32 s
+4 sf
+(\037 Type ) 77392  -25.50 32 s
+2 sf
+(pixel) 83193  0.00 -1 s
+4 sf
+(.) 83899  0.00 -1 s
+52832.0 106251.0 m
+(Returns the white pixel value for the specified ) 105446  -25.88 32 s
+3 sf
+(screen) 112812  0.00 -1 s
+4 sf
+(. ) 114198  -26.00 32 s
+3 sf
+52832.0 112528.0 m
+(screen) 60198  0.00 -1 s
+( ) 60876  -28.00 32 s
+4 sf
+(\037 A) 66413  -28.00 32 s
+( screen.) 75003  -29.00 32 s
+2 sf
+34544.0 117314.0 m
+(screen\036width) 50060  0.00 -1 s
+( ) 50681  -85.00 32 s
+3 sf
+(screen) 58047  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 120475.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 123636.0 m
+(  width ) 61124  -32.67 32 s
+4 sf
+(\037 Type ) 71092  -32.50 32 s
+2 sf
+(card16) 79400  0.00 -1 s
+4 sf
+(.) 80106  0.00 -1 s
+52832.0 128355.0 m
+(Returns) 61610  0.00 -1 s
+( the width of the) 80015  -23.00 32 s
+( specified ) 91566  -23.50 32 s
+3 sf
+(screen ) 99614  -24.00 32 s
+4 sf
+(in pixel units.) 115011  -23.50 32 s
+3 sf
+52832.0 134631.0 m
+(screen) 60198  0.00 -1 s
+( ) 60876  -28.00 32 s
+4 sf
+(\037 A) 66413  -28.00 32 s
+( screen.) 75003  -29.00 32 s
+2 sf
+34544.0 139418.0 m
+(screen\036width\036in\036millimeters) 67923  0.00 -1 s
+( ) 68563  -66.00 32 s
+3 sf
+(screen) 75929  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 142579.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+3 sf
+52832.0 145740.0 m
+(  width\036in\036millimeters ) 77910  -27.00 32 s
+4 sf
+(\037 Type ) 87890  -26.50 32 s
+2 sf
+(card16) 96198  0.00 -1 s
+4 sf
+(.) 96904  0.00 -1 s
+52832.0 150458.0 m
+(Returns) 61610  0.00 -1 s
+( the width of the specified ) 90379  -221.00 32 s
+3 sf
+(screen) 97745  0.00 -1 s
+4 sf
+( in millimeters. The returned width can be used) 149352  -220.63 32 s
+52832.0 153619.0 m
+(with) 57848  0.00 -1 s
+( the height in millimeters to determine the physical size and the aspect ratio of the) 149352  -59.93 32 s
+52832.0 156780.0 m
+(screen.) 60745  0.00 -1 s
+3 sf
+52832.0 163057.0 m
+(screen) 60198  0.00 -1 s
+( ) 60876  -28.00 32 s
+4 sf
+(\037 A) 66413  -28.00 32 s
+( screen.) 75003  -29.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

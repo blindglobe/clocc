@@ -1,0 +1,5034 @@
+%!PS-Adobe-2.0
+%%Title: s06.ps
+%%Pages: 12
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 9 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps10b /ILtimsb 10 map
+	/timsps18 /ILtims 18 map
+	/timsps12b /ILtimsb 12 map
+	/symbb8 /ILsymbb 8 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 9 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03669) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 8 declareFont
+8 sf
+20410.0 39376.0 m
+57076.0 39466.0 m
+(GRAPHIC OPERATIONS) 115846  -64.00 32 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+270.0 sw
+0.0 sw
+270.0 sw
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+0.0 sw
+/drawmode PL_SET def
+136954 39315 av
+138323 36265 as
+138323 36265 as
+138323 32833 as
+138323 32833 as
+138323 29783 as
+138323 29783 as
+138323 26351 as
+141973 26351 as
+141973 27876 as
+146080 27876 as
+146080 25588 as
+143342 23300 as
+136954 23300 as
+134216 25588 as
+134216 37028 as
+136954 39315 as
+fp
+newpath
+136954 39315 av
+138323 36265 as
+newpath
+270.0 sw
+138323 36265 av
+138323 32833 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+138323 32833 av
+138323 29783 as
+newpath
+270.0 sw
+138323 29783 av
+138323 26351 as
+141973 26351 as
+141973 27876 as
+146080 27876 as
+146080 25588 as
+143342 23300 as
+136954 23300 as
+134216 25588 as
+134216 37028 as
+136954 39315 as
+[] 0 setdash
+dp
+0.0 sw
+270.0 sw
+0.0 sw
+270.0 sw
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+143342 39315 av
+136954 39315 as
+136954 39315 as
+138323 36265 as
+138323 36265 as
+141973 36265 as
+141973 32833 as
+138323 32833 as
+138323 32833 as
+138323 29783 as
+138323 29783 as
+143342 29783 as
+146080 32070 as
+146080 37028 as
+143342 39315 as
+fp
+newpath
+143342 39315 av
+136954 39315 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+136954 39315 av
+138323 36265 as
+newpath
+270.0 sw
+138323 36265 av
+141973 36265 as
+141973 32833 as
+138323 32833 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+138323 32833 av
+138323 29783 as
+newpath
+270.0 sw
+138323 29783 av
+143342 29783 as
+146080 32070 as
+146080 37028 as
+143342 39315 as
+[] 0 setdash
+dp
+0.0 sw
+newpath
+132847 23300 av
+132847 23300 as
+newpath
+132847 43891 av
+132847 43891 as
+newpath
+147449 43891 av
+147449 43891 as
+newpath
+147449 23300 av
+147449 23300 as
+149351.0 39376.0 m
+8 sf
+/timsps10 4 declareFont
+4 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 46871.0 m
+(Introduction) 38756  0.00 -1 s
+52832.0 h
+2 sf
+(6.1) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(Once) 64509  0.00 -1 s
+( connected to an X server, a client can use CLX functions to perform graphic) 149352  -147.57 32 s
+52832.0 50032.0 m
+(operations) 64587  0.00 -1 s
+( on drawables.) 80886  -40.00 32 s
+( ) 81551  -41.00 32 s
+52832.0 56309.0 m
+(This) 57849  0.00 -1 s
+( section) 66527  -22.00 32 s
+( describes CLX functions to: ) 99568  -22.60 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 62857.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Operate) 66842  0.00 -1 s
+( on areas) 76806  -33.00 32 s
+( and planes ) 90108  -33.67 32 s
+7 sf
+52832.0 69404.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Draw) 64178  0.00 -1 s
+( points) 71765  -18.00 32 s
+( ) 72452  -19.00 32 s
+7 sf
+52832.0 75952.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Draw) 64178  0.00 -1 s
+( lines ) 70894  -13.00 32 s
+7 sf
+52832.0 82499.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Draw) 64178  0.00 -1 s
+( rectangles) 76293  -30.00 32 s
+( ) 76968  -31.00 32 s
+7 sf
+52832.0 89047.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Draw) 64178  0.00 -1 s
+( arcs) 69413  -14.00 32 s
+( ) 70104  -15.00 32 s
+7 sf
+52832.0 95594.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(Draw) 64178  0.00 -1 s
+( text ) 69788  -17.00 32 s
+20320.0 101916.0 m
+0.0 0.0 m
+newpath
+20455 100292 av
+148878 100290 as
+[] 0 setdash
+dp
+149352.0 101916.0 m
+6 sf
+20320.0 105303.0 m
+(Area) 27464  0.00 -1 s
+( and Plane) 42740  17.00 32 s
+52832.0 h
+2 sf
+(6.2) 56360  0.00 -1 s
+58710.0 h
+(clear\036area) 70931  0.00 -1 s
+4 sf
+( clears an area or an entire window to the) 132897  1722.00 32 s
+( background.) 149352  1721.00 32 s
+2 sf
+6 sf
+20320.0 108689.0 m
+(Operations) 36497  0.00 -1 s
+52832.0 h
+4 sf
+(Since) 59102  0.00 -1 s
+( pixmaps do not have backgrounds, they cannot be filled by) 127000  57.00 32 s
+( using the functions) 149352  56.33 32 s
+52832.0 111850.0 m
+(described) 63645  0.00 -1 s
+( in the following paragraphs. Instead, you should use ) 122846  -136.56 32 s
+2 sf
+(draw\036rectangle) 141181  0.00 -1 s
+4 sf
+(, which) 149352  -137.00 32 s
+52832.0 115011.0 m
+(sets) 57065  0.00 -1 s
+( the pixmap to a known value.) 90027  -189.00 32 s
+( See paragraph 6.5, Drawing Rectangles, for informa\036) 149352  -189.57 32 s
+52832.0 118172.0 m
+(tion) 57222  0.00 -1 s
+( on ) 61357  -49.50 32 s
+2 sf
+(draw\036rectangle) 79692  0.00 -1 s
+4 sf
+(. ) 81054  -50.00 32 s
+2 sf
+34544.0 123771.0 m
+(clear\036area) 46765  0.00 -1 s
+( ) 47440  -31.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(window) 56221  0.00 -1 s
+4 sf
+( &key \() 64780  -31.00 32 s
+2 sf
+(:x) 67130  0.00 -1 s
+4 sf
+( 0\) \() 71769  -31.00 32 s
+2 sf
+(:y) 74119  0.00 -1 s
+4 sf
+( 0\) ) 77820  -30.50 32 s
+2 sf
+(:width) 85657  0.00 -1 s
+4 sf
+( ) 86333  -30.00 32 s
+2 sf
+(:height) 94797  0.00 -1 s
+4 sf
+( ) 95472  -31.00 32 s
+2 sf
+(:exposures\036p) 110834  0.00 -1 s
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 128490.0 m
+(Draws) 60196  0.00 -1 s
+( a rectangular area in the specified ) 98790  -117.00 32 s
+5 sf
+(window) 107571  0.00 -1 s
+4 sf
+( with the background pixel or pixmap) 149352  -116.50 32 s
+52832.0 131651.0 m
+(of) 55182  0.00 -1 s
+( the ) 59838  -102.00 32 s
+5 sf
+(window) 68619  0.00 -1 s
+4 sf
+(. The ) 74921  -102.00 32 s
+2 sf
+(:x) 77271  0.00 -1 s
+4 sf
+( and ) 82554  -102.00 32 s
+2 sf
+(:y) 84904  0.00 -1 s
+4 sf
+( coordinates are relative to the) 118483  -101.60 32 s
+5 sf
+( window) 127869  -101.00 32 s
+4 sf
+( origin, and specify) 149352  -101.67 32 s
+52832.0 134812.0 m
+(the) 56280  0.00 -1 s
+( upper\036left corner of the rectangular area that is to be cleared. A ) 127266  -120.85 32 s
+2 sf
+(nil) 130403  0.00 -1 s
+4 sf
+( or zero value for) 149352  -120.50 32 s
+52832.0 137973.0 m
+2 sf
+(:height) 61296  0.00 -1 s
+4 sf
+( or ) 64592  -233.00 32 s
+2 sf
+(:width) 72429  0.00 -1 s
+4 sf
+( clears the remaining area \(height - y or width - x\). If the ) 134609  -232.57 32 s
+5 sf
+(window) 143390  0.00 -1 s
+4 sf
+( has a) 149352  -232.50 32 s
+52832.0 141134.0 m
+(defined) 61294  0.00 -1 s
+( background tile,) 80377  19.00 32 s
+( the rectangle is tiled by using a plane\036mask of all ones and a) 149352  18.46 32 s
+52832.0 144295.0 m
+(function) 62236  0.00 -1 s
+( of ) 65724  -137.00 32 s
+2 sf
+(:copy) 72307  0.00 -1 s
+4 sf
+(. If the ) 80046  -137.00 32 s
+5 sf
+(window) 88827  0.00 -1 s
+4 sf
+( has background) 107049  -137.00 32 s
+( ) 107617  -138.00 32 s
+2 sf
+(:none) 114358  0.00 -1 s
+4 sf
+(, the contents of the ) 136558  -137.40 32 s
+5 sf
+(window) 145339  0.00 -1 s
+4 sf
+( are) 149352  -138.00 32 s
+52832.0 147455.0 m
+(not) 56438  0.00 -1 s
+( changed. In either case, if ) 87983  190.00 32 s
+2 sf
+(:exposures\036p) 103345  0.00 -1 s
+4 sf
+( is non\036) 112191  190.00 32 s
+2 sf
+(nil) 115328  0.00 -1 s
+4 sf
+(, then one or more ) 137596  190.00 32 s
+2 sf
+(:exposure) 149352  0.00 -1 s
+4 sf
+52832.0 150616.0 m
+(events) 60042  0.00 -1 s
+( are generated for regions of the rectangle that are either visible or are being re\036) 149352  -16.67 32 s
+52832.0 153777.0 m
+(tained) 59728  0.00 -1 s
+( in a backing store.) 80986  -34.75 32 s
+52832.0 159377.0 m
+(To) 55967  0.00 -1 s
+( clear the) 66243  -33.00 32 s
+( entire area in a specified ) 95034  -33.50 32 s
+5 sf
+(window) 103815  0.00 -1 s
+4 sf
+(, use \() 110567  -33.50 32 s
+2 sf
+(clear\036area) 122788  0.00 -1 s
+4 sf
+( ) 123460  -34.00 32 s
+5 sf
+(window) 132241  0.00 -1 s
+4 sf
+(\).) 133886  0.00 -1 s
+5 sf
+52832.0 165653.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+4 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+4 sf
+(.) 78593  0.00 -1 s
+2 sf
+52832.0 170440.0 m
+(:x) 55182  0.00 -1 s
+4 sf
+(,) 55888  0.00 -1 s
+( ) 56378  -216.00 32 s
+2 sf
+(:y ) 59218  -216.00 32 s
+4 sf
+(\037 Upper\036left) 74280  -216.00 32 s
+( corner of the area to be cleared. These coordinates are relative to the) 149352  -216.54 32 s
+57912.0 173601.0 m
+5 sf
+(window) 66693  0.00 -1 s
+4 sf
+( origin. Type is) 83836  -34.00 32 s
+( ) 84507  -35.00 32 s
+2 sf
+(int16) 90621  0.00 -1 s
+4 sf
+(.) 91327  0.00 -1 s
+2 sf
+52832.0 179877.0 m
+(:width) 60669  0.00 -1 s
+( ) 61155  -220.00 32 s
+4 sf
+(\037 The width of the area to clear or ) 99689  -220.00 32 s
+2 sf
+(nil) 102826  0.00 -1 s
+4 sf
+( to clear to the remaining width of the win\036) 149352  -220.56 32 s
+57912.0 183038.0 m
+(dow.) 63477  0.00 -1 s
+( Type is ) 73171  -35.00 32 s
+2 sf
+(card16) 81479  0.00 -1 s
+4 sf
+( or) 84500  -35.00 32 s
+( ) 85170  -36.00 32 s
+2 sf
+(null) 89876  0.00 -1 s
+4 sf
+(.) 90582  0.00 -1 s
+2 sf
+52832.0 189315.0 m
+(:height) 61296  0.00 -1 s
+( ) 61992  -10.00 32 s
+4 sf
+(\037) 64814  0.00 -1 s
+( The height of the area to clear or ) 103038  -10.56 32 s
+2 sf
+(nil) 106175  0.00 -1 s
+4 sf
+( to clear to the remaining height of the) 149352  -10.50 32 s
+57912.0 192476.0 m
+(window.) 67709  0.00 -1 s
+( Type is ) 77397  -37.00 32 s
+2 sf
+(card16) 85705  0.00 -1 s
+4 sf
+( or) 88724  -37.00 32 s
+( ) 89392  -38.00 32 s
+2 sf
+(null) 94098  0.00 -1 s
+4 sf
+(.) 94804  0.00 -1 s
+2 sf
+52832.0 198752.0 m
+(:exposures\036p) 68194  0.00 -1 s
+( ) 68793  -107.00 32 s
+4 sf
+(\037 Specifies if ) 85479  -107.00 32 s
+2 sf
+(:exposure) 97235  0.00 -1 s
+4 sf
+( events should be generated for the affected ar\036) 149352  -106.50 32 s
+57912.0 201913.0 m
+(eas.) 62222  0.00 -1 s
+( Type) 68657  -70.00 32 s
+( ) 69292  -71.00 32 s
+2 sf
+(boolean) 78700  0.00 -1 s
+4 sf
+(.) 79406  0.00 -1 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03670) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(copy\036area) 46455  0.00 -1 s
+( ) 47116  -45.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(source gcontext source\036x source\036y width height) 100263  -45.00 32 s
+( ) 100923  -46.00 32 s
+2 sf
+139373.0 h
+/timsps10 4 declareFont
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 25739.0 m
+5 sf
+(destination) 65374  0.00 -1 s
+( destination\036x destination\036y) 96136  -59.00 32 s
+4 sf
+52832.0 30457.0 m
+(Copies) 60671  0.00 -1 s
+( the specified rectangular area from the ) 104273  -185.00 32 s
+5 sf
+(source) 111797  0.00 -1 s
+4 sf
+( ) 112318  -185.00 32 s
+2 sf
+(drawable) 123605  0.00 -1 s
+4 sf
+( to the specified rectan\036) 149352  -184.50 32 s
+52832.0 33618.0 m
+(gular) 58630  0.00 -1 s
+( area of the ) 72538  147.00 32 s
+5 sf
+(destination) 85080  0.00 -1 s
+4 sf
+( ) 85933  147.00 32 s
+2 sf
+(drawable) 97220  0.00 -1 s
+4 sf
+(, combining them as specified) 131589  147.00 32 s
+( in the supplied) 149352  146.33 32 s
+52832.0 36779.0 m
+(graphics) 62392  0.00 -1 s
+( context \() 72444  -303.00 32 s
+5 sf
+(gcontext) 82004  0.00 -1 s
+4 sf
+(\). The ) 88843  -303.00 32 s
+5 sf
+(x) 90096  0.00 -1 s
+4 sf
+( and ) 94977  -303.00 32 s
+5 sf
+(y) 96230  0.00 -1 s
+4 sf
+( coordinates are relative to their respective draw\036) 149352  -302.57 32 s
+52832.0 39940.0 m
+(able) 57533  0.00 -1 s
+( origin, with each pair specifying the upper) 105933  -27.00 32 s
+( left corner of the area.) 131493  -27.60 32 s
+52832.0 46217.0 m
+(If) 54710  0.00 -1 s
+( either regions of the ) 78474  -59.00 32 s
+5 sf
+(source) 85998  0.00 -1 s
+4 sf
+( area are obscured and have not been retained in backing) 149352  -59.00 32 s
+52832.0 49378.0 m
+(store,) 59023  0.00 -1 s
+( or regions outside the boundaries of the ) 104172  -117.00 32 s
+5 sf
+(source) 111696  0.00 -1 s
+4 sf
+( ) 112285  -117.00 32 s
+2 sf
+(drawable) 123572  0.00 -1 s
+4 sf
+( are specified, those) 145633  -117.00 32 s
+( re\036) 149352  -118.00 32 s
+52832.0 52538.0 m
+(gions) 58947  0.00 -1 s
+( are) 62978  -120.00 32 s
+( not copied. Instead, the following occurs on all corresponding ) 133094  -120.50 32 s
+5 sf
+(destination) 145636  0.00 -1 s
+4 sf
+( re\036) 149352  -121.00 32 s
+52832.0 55699.0 m
+(gions) 58947  0.00 -1 s
+( that are either visible or are retained in backing store: ) 120400  -20.00 32 s
+( ) 121085  -21.00 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 62247.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(If) 59790  0.00 -1 s
+( the ) 64394  -128.00 32 s
+5 sf
+(destination) 76936  0.00 -1 s
+4 sf
+( rectangle is a window with a) 109240  -128.00 32 s
+( background other than ) 135529  -128.50 32 s
+2 sf
+(:none) 142270  0.00 -1 s
+4 sf
+(, these) 149352  -129.00 32 s
+57912.0 65408.0 m
+(corresponding) 74055  0.00 -1 s
+( regions of the ) 90140  -211.00 32 s
+5 sf
+(destination) 102682  0.00 -1 s
+4 sf
+( are tiled, using plane\036mask of all ones and) 149352  -210.88 32 s
+57912.0 68569.0 m
+(function) 67316  0.00 -1 s
+( of ) 71004  -37.00 32 s
+2 sf
+(boole\0361) 79782  0.00 -1 s
+4 sf
+( \(copy source\), with that background. ) 122507  -37.00 32 s
+7 sf
+52832.0 75116.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(If) 59790  0.00 -1 s
+( the exposures attribute of the graphics context is ) 115488  -37.67 32 s
+2 sf
+(:on) 119407  0.00 -1 s
+4 sf
+(, then ) 126309  -37.50 32 s
+2 sf
+(:graphics\036exposure) 149352  0.00 -1 s
+4 sf
+57912.0 78277.0 m
+(events) 65122  0.00 -1 s
+( for all corresponding ) 89787  -103.00 32 s
+5 sf
+(destination) 102329  0.00 -1 s
+4 sf
+( regions are generated \(regardless of) 142792  -103.00 32 s
+( tiling) 149352  -104.00 32 s
+57912.0 81438.0 m
+(or) 60262  0.00 -1 s
+( whether the) 74160  -25.00 32 s
+( ) 74840  -26.00 32 s
+5 sf
+(destination) 87382  0.00 -1 s
+4 sf
+( is a window or a pixmap\).) 117404  -25.50 32 s
+7 sf
+52832.0 87986.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+4 sf
+(If) 59790  0.00 -1 s
+( exposures is ) 74745  -110.00 32 s
+2 sf
+(:on) 78664  0.00 -1 s
+4 sf
+( but no regions are exposed, a ) 112223  -110.00 32 s
+2 sf
+(:no\036exposure) 127898  0.00 -1 s
+4 sf
+( event is generated.) 149352  -110.67 32 s
+57912.0 91146.0 m
+(Note) 63397  0.00 -1 s
+( that by default, exposures is ) 97217  137.00 32 s
+2 sf
+(:on) 101136  0.00 -1 s
+4 sf
+( for new) 110812  137.00 32 s
+( graphics contexts. See Section 5,) 149352  136.40 32 s
+57912.0 94307.0 m
+(Graphics) 68098  0.00 -1 s
+( Contexts,) 79517  -27.00 32 s
+( for further information.) 106545  -27.67 32 s
+5 sf
+52832.0 100584.0 m
+(source) 60356  0.00 -1 s
+( ) 61007  -55.00 32 s
+4 sf
+(\037 Source ) 72967  -55.00 32 s
+2 sf
+(drawable) 84254  0.00 -1 s
+4 sf
+(.) 84960  0.00 -1 s
+5 sf
+52832.0 105370.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63060  -38.00 32 s
+4 sf
+(\037 The graphics context to use during) 105469  -38.00 32 s
+( the copy operation.) 127768  -38.67 32 s
+5 sf
+52832.0 110157.0 m
+(source\036x) 62548  0.00 -1 s
+4 sf
+(,) 63254  0.00 -1 s
+( ) 63817  -143.00 32 s
+5 sf
+(source\036y) 73533  0.00 -1 s
+( ) 74095  -144.00 32 s
+4 sf
+(\037) 76917  0.00 -1 s
+5 sf
+( ) 77480  -143.00 32 s
+4 sf
+(The x and y coordinates of the upper\036left corner of the area in the) 149352  -143.54 32 s
+57912.0 113318.0 m
+5 sf
+(source) 65436  0.00 -1 s
+4 sf
+( ) 66273  131.00 32 s
+2 sf
+(drawable) 77560  0.00 -1 s
+4 sf
+(. These coordinates are relative to the ) 121421  131.00 32 s
+5 sf
+(source) 128945  0.00 -1 s
+4 sf
+( ) 129782  131.00 32 s
+2 sf
+(drawable) 141069  0.00 -1 s
+4 sf
+( origin.) 149352  131.00 32 s
+57912.0 116479.0 m
+(Type) 63711  0.00 -1 s
+( is) 66268  -31.00 32 s
+( ) 66942  -32.00 32 s
+2 sf
+(int16) 73056  0.00 -1 s
+4 sf
+(.) 73762  0.00 -1 s
+5 sf
+52832.0 121265.0 m
+(width) 59104  0.00 -1 s
+4 sf
+(,) 59810  0.00 -1 s
+( ) 60376  -140.00 32 s
+5 sf
+(height ) 67996  -140.00 32 s
+4 sf
+(\037) 70818  0.00 -1 s
+5 sf
+( ) 71384  -140.00 32 s
+4 sf
+(The width and height of the area being copied. These apply to both the) 149352  -139.85 32 s
+57912.0 124426.0 m
+5 sf
+(source) 65436  0.00 -1 s
+4 sf
+( and) 70175  -42.00 32 s
+( ) 70838  -43.00 32 s
+5 sf
+(destination) 83380  0.00 -1 s
+4 sf
+( areas. Type is ) 100217  -42.50 32 s
+2 sf
+(card16) 108525  0.00 -1 s
+4 sf
+(.) 109231  0.00 -1 s
+5 sf
+52832.0 129213.0 m
+(destination) 65374  0.00 -1 s
+( ) 66032  -48.00 32 s
+4 sf
+(\037) 68854  0.00 -1 s
+( The destination ) 87598  -48.67 32 s
+2 sf
+(drawable) 98885  0.00 -1 s
+4 sf
+(.) 99591  0.00 -1 s
+5 sf
+52832.0 133999.0 m
+(destination\036x) 67566  0.00 -1 s
+4 sf
+(,) 68272  0.00 -1 s
+( ) 69004  26.00 32 s
+5 sf
+(destination\036y ) 84470  26.00 32 s
+4 sf
+(\037) 87292  0.00 -1 s
+5 sf
+( ) 88024  26.00 32 s
+4 sf
+(The x and y coordinates) 115245  26.00 32 s
+( of the upper left corner of the) 149352  25.43 32 s
+57912.0 137160.0 m
+(area) 62610  0.00 -1 s
+( in the ) 70087  -94.67 32 s
+5 sf
+(destination) 82629  0.00 -1 s
+4 sf
+( ) 83241  -94.00 32 s
+2 sf
+(drawable) 94528  0.00 -1 s
+4 sf
+(. These coordinates are relative to the ) 136810  -94.57 32 s
+5 sf
+(destination) 149352  0.00 -1 s
+4 sf
+57912.0 140321.0 m
+2 sf
+(drawable) 69199  0.00 -1 s
+4 sf
+( origin. Type is ) 86991  -39.75 32 s
+2 sf
+(int16) 93105  0.00 -1 s
+4 sf
+(.) 93811  0.00 -1 s
+2 sf
+34544.0 145107.0 m
+(copy\036plane) 47713  0.00 -1 s
+( ) 48375  -44.00 32 s
+5 sf
+(source gcontext plane) 73053  -44.00 32 s
+( source\036x source\036y width height ) 109118  -44.60 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 148268.0 m
+5 sf
+(destination) 65374  0.00 -1 s
+( destination\036x destination\036y) 96136  -59.00 32 s
+4 sf
+52832.0 152987.0 m
+(Uses) 58318  0.00 -1 s
+( a single bit plane of) 81218  -13.00 32 s
+( the specified rectangular area of the ) 122886  -13.57 32 s
+5 sf
+(source) 130410  0.00 -1 s
+4 sf
+( ) 131103  -13.00 32 s
+2 sf
+(drawable) 142390  0.00 -1 s
+4 sf
+( along) 149352  -14.00 32 s
+52832.0 156148.0 m
+(with) 57848  0.00 -1 s
+( the specified graphics context \() 93288  -106.00 32 s
+5 sf
+(gcontext) 102848  0.00 -1 s
+4 sf
+(\)) 103787  0.00 -1 s
+( to modify the specified rectangle area of) 149352  -106.57 32 s
+52832.0 159309.0 m
+(the) 56280  0.00 -1 s
+( ) 56840  -146.00 32 s
+5 sf
+(destination) 69382  0.00 -1 s
+4 sf
+( ) 69942  -146.00 32 s
+2 sf
+(drawabl) 79976  0.00 -1 s
+4 sf
+(e. The drawables specified by the ) 117578  -146.00 32 s
+5 sf
+(source) 125102  0.00 -1 s
+4 sf
+( and ) 130297  -146.00 32 s
+5 sf
+(destination) 142839  0.00 -1 s
+4 sf
+( argu\036) 149352  -146.00 32 s
+52832.0 162470.0 m
+(ments) 59573  0.00 -1 s
+( must have the same root) 87556  -31.00 32 s
+( but need not have the same depth.) 126368  -31.57 32 s
+52832.0 168746.0 m
+(Effectively,) 66073  0.00 -1 s
+( this operation forms a pixmap of the same depth as ) 124508  -53.00 32 s
+5 sf
+(destination) 137050  0.00 -1 s
+4 sf
+( and with) 147447  -53.00 32 s
+( a) 149352  -54.00 32 s
+52832.0 171907.0 m
+(size) 57220  0.00 -1 s
+( specified by the ) 76244  -64.00 32 s
+5 sf
+(source) 83768  0.00 -1 s
+4 sf
+( area. It then uses the foreground and background from the) 149352  -63.50 32 s
+52832.0 175068.0 m
+(graphics) 62392  0.00 -1 s
+( context \(foreground where the bit\036plane in ) 112809  161.00 32 s
+5 sf
+(source) 120333  0.00 -1 s
+4 sf
+( contains a one bit,) 142219  161.00 32 s
+( back\036) 149352  160.00 32 s
+52832.0 178229.0 m
+(ground) 60826  0.00 -1 s
+( where the bit\036plane in ) 86337  -117.00 32 s
+5 sf
+(source) 93861  0.00 -1 s
+4 sf
+( contains a zero bit\), and the equivalent of a) 142181  -117.00 32 s
+( ) 142769  -118.00 32 s
+2 sf
+(copy\036) 149352  0.00 -1 s
+52832.0 181390.0 m
+(area) 58160  0.00 -1 s
+4 sf
+( operation is performed with all the same exposure semantics. This can also be) 149352  190.31 32 s
+52832.0 184551.0 m
+(thought) 61455  0.00 -1 s
+( of as using the specified) 89425  -2.00 32 s
+( region of the ) 105246  -2.50 32 s
+5 sf
+(source) 112770  0.00 -1 s
+4 sf
+( bit\036plane as a stipple with a fill\036) 149352  -2.57 32 s
+52832.0 187712.0 m
+(style) 58162  0.00 -1 s
+( of ) 61874  -25.00 32 s
+2 sf
+(:opaque\036stippled) 82099  0.00 -1 s
+4 sf
+( for filling a rectangular area of the ) 122174  -24.88 32 s
+5 sf
+(destination) 134716  0.00 -1 s
+4 sf
+(.) 135422  0.00 -1 s
+5 sf
+52832.0 193988.0 m
+(source) 60356  0.00 -1 s
+( ) 61017  -45.00 32 s
+4 sf
+(\037) 63839  0.00 -1 s
+( The source ) 77573  -45.67 32 s
+2 sf
+(drawable) 88860  0.00 -1 s
+4 sf
+(.) 89566  0.00 -1 s
+5 sf
+52832.0 198775.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63060  -38.00 32 s
+4 sf
+(\037 The graphics context to use during) 105469  -38.00 32 s
+( the copy operation.) 127768  -38.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+130770.0 7925.0 m
+(Graphic Operations) 149013  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03671) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10i 5 declareFont
+5 sf
+52832.0 22578.0 m
+(plane) 59102  0.00 -1 s
+( ) 59861  53.00 32 s
+/timsps10 4 declareFont
+4 sf
+(\037 Specifies the bit\036plane of the ) 96857  53.00 32 s
+5 sf
+(source) 104381  0.00 -1 s
+4 sf
+( ) 105140  53.00 32 s
+2 sf
+(drawable) 116427  0.00 -1 s
+4 sf
+(. Exactly one bit) 135084  53.00 32 s
+( must be set.) 149352  52.33 32 s
+57912.0 25739.0 m
+(Type) 63711  0.00 -1 s
+( is ) 66939  -33.00 32 s
+2 sf
+(pixel) 72740  0.00 -1 s
+4 sf
+(.) 73446  0.00 -1 s
+5 sf
+52832.0 30525.0 m
+(source\036x) 62548  0.00 -1 s
+4 sf
+(,) 63254  0.00 -1 s
+( ) 63836  -124.00 32 s
+5 sf
+(source\036y) 73552  0.00 -1 s
+2 sf
+( ) 74134  -124.00 32 s
+4 sf
+(\037 The ) 82508  -124.00 32 s
+5 sf
+(x) 83761  0.00 -1 s
+4 sf
+( and ) 89000  -124.00 32 s
+5 sf
+(y) 90253  0.00 -1 s
+4 sf
+( coordinates of the upper\036left corner of the area in the) 149352  -123.60 32 s
+57912.0 33686.0 m
+5 sf
+(source) 65436  0.00 -1 s
+4 sf
+( ) 66273  131.00 32 s
+2 sf
+(drawable) 77560  0.00 -1 s
+4 sf
+(. These coordinates are relative to the ) 121421  131.00 32 s
+5 sf
+(source) 128945  0.00 -1 s
+4 sf
+( ) 129782  131.00 32 s
+2 sf
+(drawable) 141069  0.00 -1 s
+4 sf
+( origin.) 149352  131.00 32 s
+57912.0 36847.0 m
+(Type) 63711  0.00 -1 s
+( is) 66268  -31.00 32 s
+( ) 66942  -32.00 32 s
+2 sf
+(int16) 73056  0.00 -1 s
+4 sf
+(.) 73762  0.00 -1 s
+5 sf
+52832.0 41633.0 m
+(width) 59104  0.00 -1 s
+4 sf
+(,) 59810  0.00 -1 s
+( ) 60376  -140.00 32 s
+5 sf
+(height) 67430  0.00 -1 s
+2 sf
+( ) 67996  -140.00 32 s
+4 sf
+(\037 The width and height of the area being copied. These apply to both the) 149352  -139.86 32 s
+57912.0 44794.0 m
+5 sf
+(source) 65436  0.00 -1 s
+4 sf
+( and) 70175  -42.00 32 s
+( ) 70838  -43.00 32 s
+5 sf
+(destination) 83380  0.00 -1 s
+4 sf
+( areas. Type is ) 100217  -42.50 32 s
+2 sf
+(card16) 108525  0.00 -1 s
+4 sf
+(.) 109231  0.00 -1 s
+5 sf
+52832.0 49581.0 m
+(destination) 65374  0.00 -1 s
+( ) 66032  -48.00 32 s
+4 sf
+(\037) 68854  0.00 -1 s
+( The destination ) 87598  -48.67 32 s
+2 sf
+(drawable) 98885  0.00 -1 s
+4 sf
+(.) 99591  0.00 -1 s
+5 sf
+52832.0 54367.0 m
+(destination\036x) 67566  0.00 -1 s
+4 sf
+(,) 68272  0.00 -1 s
+( ) 68988  10.00 32 s
+5 sf
+(destination\036y ) 84438  10.00 32 s
+4 sf
+(\037 The x and y coordinates of) 118199  10.00 32 s
+( the upper\036left corner of the) 149352  9.40 32 s
+57912.0 57528.0 m
+(destination) 70296  0.00 -1 s
+( area in the ) 83141  -80.00 32 s
+5 sf
+(destination) 95683  0.00 -1 s
+4 sf
+( ) 96309  -80.00 32 s
+2 sf
+(drawable) 107596  0.00 -1 s
+4 sf
+(. These coordinates are) 133372  -80.00 32 s
+( relative to the) 149352  -80.67 32 s
+57912.0 60689.0 m
+5 sf
+(destination) 70454  0.00 -1 s
+4 sf
+( ) 71120  -40.00 32 s
+2 sf
+(drawable) 82407  0.00 -1 s
+4 sf
+( origin. Type is ) 100199  -39.75 32 s
+2 sf
+(int16) 106313  0.00 -1 s
+4 sf
+(.) 107019  0.00 -1 s
+20320.0 66198.0 m
+0.0 0.0 m
+newpath
+20455 64574 av
+148878 64572 as
+[] 0 setdash
+dp
+149352.0 66198.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 69585.0 m
+(Drawing) 32923  0.00 -1 s
+( Points) 42807  7.00 32 s
+52832.0 h
+2 sf
+(6.3) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( ) 63700  51.00 32 s
+2 sf
+(draw\036point) 77181  0.00 -1 s
+4 sf
+( and ) 82770  51.00 32 s
+2 sf
+(draw\036points) 97349  0.00 -1 s
+4 sf
+( functions make use of) 123103  51.00 32 s
+( the following graphics) 149352  50.33 32 s
+52832.0 72746.0 m
+(context) 61139  0.00 -1 s
+( components:) 76980  713.00 32 s
+( function, plane\036mask, foreground, subwindow\036mode, clip\036x,) 149352  712.40 32 s
+52832.0 75906.0 m
+(clip\036y,) 60120  0.00 -1 s
+( clip\036ordering, clip\036region and clip\036mask.) 106529  -35.00 32 s
+( ) 107199  -36.00 32 s
+52832.0 82183.0 m
+(The) 57220  0.00 -1 s
+( ) 58115  189.00 32 s
+2 sf
+(draw\036point) 71596  0.00 -1 s
+4 sf
+( function uses the foreground pixel and function components of the) 149352  189.00 32 s
+52832.0 85344.0 m
+(graphics) 62392  0.00 -1 s
+( context to draw a single point into the specified drawable, while ) 134773  -114.00 32 s
+2 sf
+(draw\036points) 149352  0.00 -1 s
+4 sf
+52832.0 88505.0 m
+(draws) 59570  0.00 -1 s
+( multiple points into the specified drawable. These functions are not affected) 145847  -22.00 32 s
+( by) 149352  -23.00 32 s
+52832.0 91666.0 m
+(the tile or stipple in) 74687  -23.00 32 s
+( the graphics context.) 98755  -23.67 32 s
+2 sf
+34544.0 97942.0 m
+(draw\036point) 48025  0.00 -1 s
+( ) 48682  -49.00 32 s
+5 sf
+(drawable) 59343  0.00 -1 s
+( gcontext x y) 73378  -49.67 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 102661.0 m
+(Combines) 64277  0.00 -1 s
+( the foreground pixel in the ) 95076  -117.83 32 s
+5 sf
+(gcontext) 104636  0.00 -1 s
+4 sf
+( with the pixel in the ) 127917  -117.50 32 s
+5 sf
+(drawable) 138578  0.00 -1 s
+4 sf
+( specified) 149352  -118.00 32 s
+52832.0 105822.0 m
+(by) 55654  0.00 -1 s
+( the ) 60442  -36.00 32 s
+5 sf
+(x) 61695  0.00 -1 s
+4 sf
+( and ) 67111  -35.50 32 s
+5 sf
+(y) 68364  0.00 -1 s
+4 sf
+( coordinates.) 82748  -36.00 32 s
+5 sf
+52832.0 112099.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 116885.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63063  -35.00 32 s
+4 sf
+(\037 The graphics context for drawing the point.) 115327  -35.00 32 s
+5 sf
+52832.0 121672.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55470  -27.00 32 s
+5 sf
+(y ) 57402  -27.00 32 s
+4 sf
+(\037 The ) 65970  -27.00 32 s
+5 sf
+(x) 67223  0.00 -1 s
+4 sf
+( and ) 72656  -27.00 32 s
+5 sf
+(y) 73909  0.00 -1 s
+4 sf
+( coordinates of the point drawn. Type is ) 119390  -26.50 32 s
+2 sf
+(int16) 125504  0.00 -1 s
+4 sf
+(.) 126210  0.00 -1 s
+2 sf
+34544.0 126458.0 m
+(draw\036points) 49123  0.00 -1 s
+( ) 49779  -50.00 32 s
+5 sf
+(drawable gcontext points ) 78869  -49.33 32 s
+4 sf
+(&optional) 90313  0.00 -1 s
+5 sf
+( relative\036p) 101939  -50.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 131177.0 m
+(Combines) 64277  0.00 -1 s
+( the foreground pixels in the graphics context with the pixels at each point in) 149352  -103.71 32 s
+52832.0 134338.0 m
+(the) 56280  0.00 -1 s
+( ) 56958  -28.00 32 s
+5 sf
+(drawable) 67619  0.00 -1 s
+4 sf
+(. The points are drawn in the order listed.) 113950  -27.75 32 s
+2 sf
+52832.0 140614.0 m
+(draw\036points) 67411  0.00 -1 s
+4 sf
+( requires a mode argument, ) 98045  -174.00 32 s
+5 sf
+(relative\036p) 109015  0.00 -1 s
+4 sf
+( that indicates whether the points are) 149352  -173.67 32 s
+52832.0 143775.0 m
+(relative) 61293  0.00 -1 s
+( to the destination origin or to the previous point. In either case, the first point is) 149352  -139.63 32 s
+52832.0 146936.0 m
+(always) 60668  0.00 -1 s
+( relative to the destination origin. The rest of the points are relative either to the) 149352  -64.80 32 s
+52832.0 150097.0 m
+5 sf
+(drawable) 63493  0.00 -1 s
+4 sf
+('s) 65530  0.00 -1 s
+( origin or to the previous point, depending) 112962  -32.00 32 s
+( on the value of ) 131061  -32.60 32 s
+5 sf
+(relative\036p) 142031  0.00 -1 s
+4 sf
+(.) 142737  0.00 -1 s
+5 sf
+52832.0 156374.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 161160.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63064  -34.00 32 s
+4 sf
+(\037 The graphics context for drawing the points.) 116434  -33.86 32 s
+5 sf
+52832.0 165947.0 m
+(points) 59731  0.00 -1 s
+( ) 60221  -216.00 32 s
+4 sf
+(\037 A list of points to be drawn in the order listed. The first point is always relative) 149352  -215.71 32 s
+57912.0 169108.0 m
+(to the ) 64536  -215.50 32 s
+5 sf
+(drawable) 75197  0.00 -1 s
+4 sf
+('s origin; if ) 87952  -215.67 32 s
+5 sf
+(relative\036p) 98922  0.00 -1 s
+4 sf
+(, the rest of the points are drawn relative to the) 149352  -215.50 32 s
+57912.0 172268.0 m
+(previous) 67630  0.00 -1 s
+( point, else they are drawn relative to the ) 112367  -219.00 32 s
+5 sf
+(drawable) 123028  0.00 -1 s
+4 sf
+('s origin. Type is ) 142141  -218.75 32 s
+2 sf
+(point\036) 149352  0.00 -1 s
+57912.0 175429.0 m
+(seq) 61832  0.00 -1 s
+4 sf
+(.) 62538  0.00 -1 s
+5 sf
+52832.0 180216.0 m
+(relative\036p) 63802  0.00 -1 s
+( ) 64247  -261.00 32 s
+4 sf
+(\037 Specifies) 77858  -261.00 32 s
+( the coordinate mode used for drawing the pixels either relative to) 149352  -261.55 32 s
+57912.0 183377.0 m
+(the) 61360  0.00 -1 s
+( origin) 68773  -33.00 32 s
+( or to the previous point. Type ) 103497  -33.57 32 s
+2 sf
+(boolean) 112905  0.00 -1 s
+4 sf
+(.) 113611  0.00 -1 s
+20320.0 188886.0 m
+0.0 0.0 m
+newpath
+20455 187262 av
+148878 187260 as
+[] 0 setdash
+dp
+149352.0 188886.0 m
+6 sf
+20320.0 192272.0 m
+(Drawing) 32923  0.00 -1 s
+( Lines) 41679  6.00 32 s
+52832.0 h
+2 sf
+(6.4) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( ) 64163  514.00 32 s
+2 sf
+(draw\036line) 75762  0.00 -1 s
+4 sf
+(, ) 77688  514.00 32 s
+2 sf
+(draw\036lines) 90385  0.00 -1 s
+4 sf
+(, and ) 97606  514.00 32 s
+2 sf
+(draw\036segments) 115786  0.00 -1 s
+4 sf
+( functions use the following) 149352  514.50 32 s
+52832.0 195433.0 m
+(graphics) 62392  0.00 -1 s
+( context components: background, cap\036style, clip\036x\036origin, clip\036y\036origin,) 143581  -105.00 32 s
+( clip\036) 149352  -106.00 32 s
+52832.0 198594.0 m
+(mask,) 59495  0.00 -1 s
+( dash\036list, dash\036offset, fill\036style, foreground,) 110349  253.00 32 s
+( function, plane\036mask, line\036width,) 149352  252.33 32 s
+52832.0 201755.0 m
+(line\036style,) 64039  0.00 -1 s
+( stipple, subwindow\036mode, tile, ts\036x\036origin, and) 117589  -28.00 32 s
+( ts\036y\036origin.) 130883  -29.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03672) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(The) 57220  0.00 -1 s
+( ) 57891  -35.00 32 s
+2 sf
+(draw\036lines ) 71259  -35.00 32 s
+4 sf
+(function also uses the join\036style graphics context component. ) 140660  -34.63 32 s
+2 sf
+34544.0 28854.0 m
+(draw\036line) 46143  0.00 -1 s
+( ) 46806  -43.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext x1 y1 x2 y2 ) 81661  -43.00 32 s
+4 sf
+(&optional) 93105  0.00 -1 s
+5 sf
+( relative\036p) 104738  -43.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 33573.0 m
+(Draws) 60196  0.00 -1 s
+( a line from the point ) 84932  47.00 32 s
+5 sf
+(x1) 87596  0.00 -1 s
+4 sf
+(,) 88302  0.00 -1 s
+5 sf
+(y1) 90966  0.00 -1 s
+4 sf
+( to the point) 104669  47.00 32 s
+( ) 105421  46.00 32 s
+5 sf
+(x2) 108085  0.00 -1 s
+4 sf
+(,) 108791  0.00 -1 s
+5 sf
+(y2) 111455  0.00 -1 s
+4 sf
+(. When ) 120405  46.50 32 s
+5 sf
+(relative\036p) 131375  0.00 -1 s
+4 sf
+( is true, the first) 149352  46.50 32 s
+52832.0 36734.0 m
+(point) 58633  0.00 -1 s
+( is) 61008  -213.00 32 s
+( relative to the destination origin but the second point is relative to the first point.) 149352  -213.53 32 s
+52832.0 39895.0 m
+(When) 59571  0.00 -1 s
+( ) 60254  -23.00 32 s
+5 sf
+(relative\036p) 71224  0.00 -1 s
+4 sf
+( is ) 74472  -23.00 32 s
+2 sf
+(nil) 77609  0.00 -1 s
+4 sf
+(, both points are relative to the destination) 124945  -23.00 32 s
+( origin.) 133073  -24.00 32 s
+5 sf
+52832.0 46172.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 50958.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63064  -34.00 32 s
+4 sf
+(\037 The graphics context for drawing the line.) 113769  -33.57 32 s
+5 sf
+52832.0 55745.0 m
+(x1) 55496  0.00 -1 s
+4 sf
+(,) 56202  0.00 -1 s
+( ) 56882  -26.00 32 s
+5 sf
+(y1) 59546  0.00 -1 s
+4 sf
+(, ) 60932  -26.00 32 s
+5 sf
+(x2) 63596  0.00 -1 s
+4 sf
+(, ) 64982  -26.00 32 s
+5 sf
+(y2 ) 68326  -26.00 32 s
+4 sf
+(\037 The end points of the line. ) 102006  -26.00 32 s
+5 sf
+52832.0 60531.0 m
+(relative\036p) 63802  0.00 -1 s
+( ) 64440  -68.00 32 s
+4 sf
+(\037 Specifies) 78244  -68.00 32 s
+( the coordinate mode used for drawing the line either relative to) 149352  -68.55 32 s
+57912.0 63692.0 m
+(the) 61360  0.00 -1 s
+( origin or the previous point. In either case, the first) 118562  -95.00 32 s
+( point is always drawn rela\036) 149352  -95.60 32 s
+57912.0 66853.0 m
+(tive) 62144  0.00 -1 s
+( to the ) 69827  -26.00 32 s
+5 sf
+(drawable) 80488  0.00 -1 s
+4 sf
+('s) 82525  0.00 -1 s
+( origin.) 90650  -27.00 32 s
+2 sf
+34544.0 71639.0 m
+(draw\036lines) 47241  0.00 -1 s
+( ) 47915  -32.00 32 s
+5 sf
+(drawable gcontext points ) 77059  -31.33 32 s
+4 sf
+(&key) 83329  0.00 -1 s
+2 sf
+( :relative\036p :fill\036p) 103951  -31.50 32 s
+4 sf
+( ) 104625  -32.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 74800.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(:shape) 61610  0.00 -1 s
+( :complex) 73229  -57.00 32 s
+4 sf
+(\)) 74168  0.00 -1 s
+52832.0 79519.0 m
+(Draws) 60196  0.00 -1 s
+( a line between each pair of ) 92303  53.00 32 s
+5 sf
+(points) 99202  0.00 -1 s
+4 sf
+( in the points list. The lines are drawn in the) 149352  53.50 32 s
+52832.0 82680.0 m
+(order) 58785  0.00 -1 s
+( listed and join correctly at all intermediate points. The join\036style graphics context) 149352  -166.00 32 s
+52832.0 85841.0 m
+(component) 65372  0.00 -1 s
+( defines the type of) 86846  -39.00 32 s
+( joint to use. When the first and last points coincide, the) 149352  -39.55 32 s
+52832.0 89002.0 m
+(first) 57376  0.00 -1 s
+( and last lines also join correctly to produce a hollow polygon.) 127497  -23.91 32 s
+52832.0 95278.0 m
+(When) 59571  0.00 -1 s
+( ) 60230  -47.00 32 s
+2 sf
+(:relative\036p) 72765  0.00 -1 s
+4 sf
+( is true,) 81058  -47.00 32 s
+( the first point is always relative to the destination origin, but) 149352  -47.55 32 s
+52832.0 98439.0 m
+(the) 56280  0.00 -1 s
+( rest are relative to the previous point. When ) 106495  -80.67 32 s
+2 sf
+(:relative\036p) 119030  0.00 -1 s
+4 sf
+( is ) 122163  -80.50 32 s
+2 sf
+(nil) 125300  0.00 -1 s
+4 sf
+(, the rest of the points) 149352  -80.60 32 s
+52832.0 101600.0 m
+(are) 56277  0.00 -1 s
+( drawn relative to the destination) 93206  -28.00 32 s
+( origin.) 101329  -29.00 32 s
+52832.0 107877.0 m
+(When) 59571  0.00 -1 s
+( ) 60081  -196.00 32 s
+2 sf
+(:fill\036p) 66819  0.00 -1 s
+4 sf
+( is true, the polygon defined by the) 104794  -196.00 32 s
+( ) 105303  -197.00 32 s
+5 sf
+(points) 112202  0.00 -1 s
+4 sf
+( list is filled. The ) 131131  -196.40 32 s
+2 sf
+(:shape) 138970  0.00 -1 s
+4 sf
+( keyword) 149352  -197.00 32 s
+52832.0 111038.0 m
+(provides) 62550  0.00 -1 s
+( the server with a hint about how to fill the polygon. ) 119605  -203.00 32 s
+2 sf
+(:shape) 127444  0.00 -1 s
+4 sf
+( can be either) 141958  -203.00 32 s
+( ) 142460  -204.00 32 s
+2 sf
+(:com\036) 149352  0.00 -1 s
+52832.0 114198.0 m
+(plex) 57849  0.00 -1 s
+4 sf
+( \(by default\), ) 73082  -42.00 32 s
+2 sf
+(:convex) 82329  0.00 -1 s
+4 sf
+(, or ) 86714  -41.50 32 s
+2 sf
+(:non\036convex) 101449  0.00 -1 s
+4 sf
+(. ) 102819  -42.00 32 s
+52832.0 120475.0 m
+(The) 57220  0.00 -1 s
+( ) 57737  -189.00 32 s
+2 sf
+(:convex) 66984  0.00 -1 s
+4 sf
+( operand is the simplest type of area and the fastest to fill. A fill area is con\036) 149352  -189.00 32 s
+52832.0 123636.0 m
+(vex) 56907  0.00 -1 s
+( if every straight line connecting any two interior points is entirely inside the area.) 149352  -8.00 32 s
+52832.0 126797.0 m
+(For) 56751  0.00 -1 s
+( example, triangles and rectangles are convex polygons.) 119504  -47.86 32 s
+52832.0 133073.0 m
+(The) 57220  0.00 -1 s
+( ) 57767  -159.00 32 s
+2 sf
+(:non\036convex) 72502  0.00 -1 s
+4 sf
+( operand is for filling an area that is not convex and is also not self\036in\036) 149352  -159.00 32 s
+52832.0 136234.0 m
+(tersecting.) 64508  0.00 -1 s
+( Filling this type of area is harder than filling a convex area, but easier than) 149352  3.13 32 s
+52832.0 139395.0 m
+(filling) 59729  0.00 -1 s
+( one that is self\036intersecting. For example, the shape of the letter \177T" is non\036con\036) 149352  -91.86 32 s
+52832.0 142556.0 m
+(vex) 56907  0.00 -1 s
+( and) 61632  -56.00 32 s
+( non\036self\036intersecting.) 86337  -57.00 32 s
+52832.0 148833.0 m
+(The) 57220  0.00 -1 s
+( ) 57705  -221.00 32 s
+2 sf
+(:complex) 68675  0.00 -1 s
+4 sf
+( operand is the most general \(and therefore the hardest\) type of fill area. A) 149352  -220.79 32 s
+52832.0 151994.0 m
+(complex) 62550  0.00 -1 s
+( fill area can be non\036convex and self\036intersecting. For example, draw the outline) 149352  -302.67 32 s
+52832.0 155154.0 m
+(of) 55182  0.00 -1 s
+( a bow tie, without lifting your pencil or tracing over an edge twice. This shape is non\036) 149352  -209.59 32 s
+52832.0 158315.0 m
+(convex) 60982  0.00 -1 s
+( and intersects itself at the knot in the middle. ) 112866  -23.90 32 s
+52832.0 167640.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+4 17 fillpatset
+newpath
+52832 166815 av
+149352 166815 as
+149352 166933 as
+52832 166933 as
+closepath
+fp
+/drawmode PL_SET def
+52832.0 170801.0 m
+2 sf
+(NOTE:) 61767  0.00 -1 s
+( ) 62240  -233.00 32 s
+4 sf
+(Unless you are sure that a shape is ) 99879  -232.75 32 s
+2 sf
+(:convex) 109126  0.00 -1 s
+4 sf
+( or ) 112423  -232.50 32 s
+2 sf
+(:non\036convex) 127158  0.00 -1 s
+4 sf
+(, it should always be) 149352  -232.50 32 s
+52832.0 173962.0 m
+(drawn) 59883  0.00 -1 s
+( as a ) 66265  220.00 32 s
+2 sf
+(:complex) 77235  0.00 -1 s
+4 sf
+( shape. If ) 89023  220.00 32 s
+2 sf
+(:convex) 98270  0.00 -1 s
+4 sf
+( or) 101546  220.00 32 s
+( ) 102471  219.00 32 s
+2 sf
+(:non\036convex) 117206  0.00 -1 s
+4 sf
+( is specified incorrectly, the) 149352  219.50 32 s
+52832.0 177123.0 m
+(graphics) 62392  0.00 -1 s
+( result is) 71891  -32.00 32 s
+( undefined.) 84554  -33.00 32 s
+52832.0 180284.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+52832 179459 av
+149352 179459 as
+149352 179577 as
+52832 179577 as
+closepath
+fp
+/drawmode PL_SET def
+5 sf
+52832.0 186492.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 191279.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63066  -32.00 32 s
+4 sf
+(\037) 65888  0.00 -1 s
+( The graphics context for drawing the lines.) 114876  -32.57 32 s
+5 sf
+52832.0 196065.0 m
+(points) 59731  0.00 -1 s
+( ) 60421  -16.00 32 s
+4 sf
+(\037 A list) 70110  -16.00 32 s
+( of points that define the lines. Type is ) 114012  -16.56 32 s
+2 sf
+(point\036seq) 125143  0.00 -1 s
+4 sf
+(.) 125849  0.00 -1 s
+2 sf
+52832.0 200852.0 m
+(:relative\036p) 65367  0.00 -1 s
+( ) 66043  -30.00 32 s
+4 sf
+(\037 The coordinate mode of the points. ) 109570  -29.71 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+130770.0 7925.0 m
+(Graphic Operations) 149013  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03673) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+52832.0 22578.0 m
+(:fill\036p) 59570  0.00 -1 s
+( ) 60256  -20.00 32 s
+/timsps10 4 declareFont
+4 sf
+(\037) 63078  0.00 -1 s
+( When true, a filled polygon is drawn instead of a polyline.) 129393  -20.55 32 s
+2 sf
+52832.0 28854.0 m
+(:shape) 60671  0.00 -1 s
+( ) 61573  196.00 32 s
+4 sf
+(\037 A hint that allows the server to use the most efficient area fill algorithm.) 149352  196.14 32 s
+57912.0 32015.0 m
+(Either) 64807  0.00 -1 s
+( ) 65454  -59.00 32 s
+2 sf
+(:convex) 74701  0.00 -1 s
+4 sf
+(,) 75407  0.00 -1 s
+2 sf
+( :non\036convex) 90789  -59.00 32 s
+4 sf
+(, or ) 95139  -59.00 32 s
+2 sf
+(:complex) 106109  0.00 -1 s
+4 sf
+(.) 106815  0.00 -1 s
+2 sf
+34544.0 38292.0 m
+(draw\036segments) 52724  0.00 -1 s
+( ) 53364  -66.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext) 74225  -66.00 32 s
+( segments) 85209  -67.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 43011.0 m
+(Draws) 60196  0.00 -1 s
+( multiple lines,) 76584  -233.00 32 s
+( not necessarily connected. ) 106763  -233.50 32 s
+5 sf
+(segments) 117108  0.00 -1 s
+4 sf
+( is a sequence of the form {x1) 149352  -233.57 32 s
+52832.0 46172.0 m
+(y1) 55654  0.00 -1 s
+( x2 y2}*, in which each subsequence specifies the end points of a line segment. Line) 149352  -129.67 32 s
+52832.0 49332.0 m
+(segments) 63335  0.00 -1 s
+( are drawn in the order given by ) 100646  59.88 32 s
+5 sf
+(segments) 110991  0.00 -1 s
+4 sf
+(. Unlike ) 120926  68.50 32 s
+2 sf
+(draw\036lines) 133623  0.00 -1 s
+4 sf
+(, no joining is) 149352  68.33 32 s
+52832.0 52493.0 m
+(performed) 64583  0.00 -1 s
+( at coincident) 79671  -58.00 32 s
+( end points.) 92704  -29.50 32 s
+5 sf
+52832.0 58770.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64161  -38.00 32 s
+4 sf
+(\037 The destination ) 85760  -37.67 32 s
+2 sf
+(drawable) 97047  0.00 -1 s
+4 sf
+( to receive the line segments.) 129619  -37.60 32 s
+5 sf
+52832.0 63556.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63067  -31.00 32 s
+4 sf
+(\037 Specifies the graphics context for drawing the lines.) 124968  -30.88 32 s
+5 sf
+52832.0 68343.0 m
+(segments) 63177  0.00 -1 s
+( ) 63864  -19.00 32 s
+4 sf
+(\037 The points list for the segments to draw. Type is ) 122442  -19.00 32 s
+2 sf
+(seq) 126362  0.00 -1 s
+4 sf
+(.) 127068  0.00 -1 s
+20320.0 73852.0 m
+0.0 0.0 m
+newpath
+20455 72228 av
+148878 72226 as
+[] 0 setdash
+dp
+149352.0 73852.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 77239.0 m
+(Drawing) 32923  0.00 -1 s
+( ) 33776  6.00 32 s
+52832.0 h
+2 sf
+(6.5) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( ) 65548  1899.00 32 s
+2 sf
+(draw\036rectangle) 83883  0.00 -1 s
+4 sf
+( and ) 93168  1899.00 32 s
+2 sf
+(draw\036rectangles ) 115206  1899.00 32 s
+4 sf
+(functions draw hollow or) 149352  1899.33 32 s
+2 sf
+6 sf
+20320.0 80625.0 m
+(Rectangles) 35928  0.00 -1 s
+52832.0 h
+4 sf
+(filled) 58787  0.00 -1 s
+( outlines of the specified) 86887  89.00 32 s
+( rectangle or rectangles as if a five\036point polyline were) 149352  88.44 32 s
+52832.0 83786.0 m
+(specified) 63018  0.00 -1 s
+( for each rectangle, as follows:) 97513  -28.00 32 s
+52832.0 90063.0 m
+([x,y,] [x+width,y] [x+width,y+height] [x,y+height] [x,y] ) 117292  -27.20 32 s
+2 sf
+52832.0 96339.0 m
+(draw\036rectangle) 71167  0.00 -1 s
+4 sf
+( and ) 76294  -180.00 32 s
+2 sf
+(draw\036rectangles) 95727  0.00 -1 s
+4 sf
+( use the following) 115487  -180.00 32 s
+( graphics context components:) 149352  -180.67 32 s
+52832.0 99500.0 m
+(background,) 66860  0.00 -1 s
+( function, plane\036mask, foreground, subwindow\036mode, cap\036style, clip\036x,) 149352  347.33 32 s
+52832.0 102661.0 m
+(clip\036y,) 60120  0.00 -1 s
+( clip\036ordering, clip\036region and clip\036mask, dash\036list, dash\036offset, fill\036style, join\036) 149352  94.25 32 s
+52832.0 105822.0 m
+(style,) 58868  0.00 -1 s
+( line\036width, line\036style, stipple, tile, ts\036x\036origin, and ts\036y\036origin.) 129055  -16.71 32 s
+2 sf
+34544.0 112099.0 m
+(draw\036rectangle) 52879  0.00 -1 s
+( ) 53543  -42.00 32 s
+5 sf
+(drawable gcontext x y width height ) 93580  -42.00 32 s
+4 sf
+(&optional) 105024  0.00 -1 s
+5 sf
+( fill\036p) 111173  -43.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 116817.0 m
+(Draws) 60196  0.00 -1 s
+( a rectangle defined by the ) 90554  -34.00 32 s
+5 sf
+(x) 91807  0.00 -1 s
+4 sf
+(, ) 93185  -34.00 32 s
+5 sf
+(y) 94438  0.00 -1 s
+4 sf
+(, ) 95816  -34.00 32 s
+5 sf
+(width) 102088  0.00 -1 s
+4 sf
+(, and ) 108213  -34.00 32 s
+5 sf
+(height) 115267  0.00 -1 s
+4 sf
+( arguments.) 128400  -34.00 32 s
+5 sf
+52832.0 123094.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 127881.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63060  -38.00 32 s
+4 sf
+(\037 The graphics context for drawing the rectangle.) 119843  -38.00 32 s
+5 sf
+52832.0 132667.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55546  49.00 32 s
+5 sf
+(y ) 57554  49.00 32 s
+4 sf
+(\037 The x and y coordinates that define the upper left corner of the rectangle. The) 149352  49.20 32 s
+57912.0 135828.0 m
+(coordinates) 70920  0.00 -1 s
+( are relative to the destination origin. Type is ) 122077  -28.56 32 s
+2 sf
+(int16) 128191  0.00 -1 s
+4 sf
+(.) 128897  0.00 -1 s
+5 sf
+52832.0 140614.0 m
+(width) 59104  0.00 -1 s
+4 sf
+(,) 59810  0.00 -1 s
+( ) 60446  -70.00 32 s
+5 sf
+(height ) 68136  -70.00 32 s
+4 sf
+(\037 Specifies the width and height that define the outline of the rectangle.) 149352  -70.00 32 s
+57912.0 143775.0 m
+(Type) 63711  0.00 -1 s
+( is) 66243  -56.00 32 s
+( ) 66892  -57.00 32 s
+2 sf
+(card16) 75200  0.00 -1 s
+4 sf
+(.) 75906  0.00 -1 s
+5 sf
+52832.0 148562.0 m
+(fill\036p) 58318  0.00 -1 s
+( ) 58999  -25.00 32 s
+4 sf
+(\037 Specifies whether the rectangle is) 100329  -25.00 32 s
+( filled or not. Type ) 122147  -25.60 32 s
+2 sf
+(boolean) 131555  0.00 -1 s
+4 sf
+(.) 132261  0.00 -1 s
+2 sf
+34544.0 153348.0 m
+(draw\036rectangles) 53977  0.00 -1 s
+( ) 54628  -55.00 32 s
+5 sf
+(drawable gcontext rectangles ) 88558  -55.00 32 s
+4 sf
+(&optional) 100002  0.00 -1 s
+5 sf
+( fill\036p) 106138  -56.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 158067.0 m
+(Draws) 60196  0.00 -1 s
+( the rectangles in) 78736  -220.00 32 s
+( the order listed in) 98388  -220.50 32 s
+5 sf
+( rectangles) 110629  -221.00 32 s
+4 sf
+(. For the specified ) 130830  -220.50 32 s
+5 sf
+(rectangle) 141488  0.00 -1 s
+4 sf
+( or ) 144809  -220.50 32 s
+5 sf
+(rec\036) 149352  0.00 -1 s
+52832.0 161228.0 m
+(tangles) 60984  0.00 -1 s
+4 sf
+(,) 61690  0.00 -1 s
+( no pixel is drawn more than once. The x and y coordinates of each rectangle are) 149352  -207.63 32 s
+52832.0 164389.0 m
+(relative) 61293  0.00 -1 s
+( to the destination origin and define the upper left corner of the rectangle. If rec\036) 149352  -158.00 32 s
+52832.0 167550.0 m
+(tangles) 60826  0.00 -1 s
+( intersect, the intersecting pixels are drawn multiple times.) 126616  -24.88 32 s
+5 sf
+52832.0 173826.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 178613.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63050  -48.00 32 s
+4 sf
+(\037 The graphics context.) 90808  -47.67 32 s
+5 sf
+52832.0 183399.0 m
+(rectangles) 64588  0.00 -1 s
+( ) 65089  -205.00 32 s
+4 sf
+(\037 A list specifying the upper left corner x and y, width and height of the rec\036) 149352  -204.81 32 s
+57912.0 186560.0 m
+(tangles.) 66612  0.00 -1 s
+( Type is ) 76300  -37.00 32 s
+2 sf
+(rect\036seq) 85857  0.00 -1 s
+4 sf
+(.) 86563  0.00 -1 s
+5 sf
+52832.0 191347.0 m
+(fill\036p) 58318  0.00 -1 s
+( ) 59002  -22.00 32 s
+4 sf
+(\037 Specified if the rectangles are filled or not. Type is ) 120363  -21.55 32 s
+2 sf
+(boolean) 129771  0.00 -1 s
+4 sf
+(.) 130477  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03674) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+20320.0 23300.0 m
+0.0 0.0 m
+newpath
+20455 21676 av
+148878 21674 as
+[] 0 setdash
+dp
+149352.0 23300.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 26687.0 m
+(Drawing) 32923  0.00 -1 s
+( Arcs) 40550  12.00 32 s
+52832.0 h
+2 sf
+(6.6) 56360  0.00 -1 s
+58710.0 h
+() 58710  0.00 -1 s
+4 sf
+( ) 59215  -201.00 32 s
+2 sf
+(draw\036arc) 70341  0.00 -1 s
+4 sf
+( draws a single circular or an elliptical arc, while ) 124050  -200.70 32 s
+2 sf
+(draw\036arcs) 136274  0.00 -1 s
+4 sf
+( draws mul\036) 149352  -200.50 32 s
+52832.0 29848.0 m
+(tiple) 57848  0.00 -1 s
+( circular or elliptical arcs. ) 86117  -270.00 32 s
+2 sf
+(draw\036arc) 97243  0.00 -1 s
+4 sf
+( and ) 102190  -270.00 32 s
+2 sf
+(draw\036arcs) 114414  0.00 -1 s
+4 sf
+( use the following graphics con\036) 149352  -269.60 32 s
+52832.0 33009.0 m
+(text) 57064  0.00 -1 s
+( components:) 72100  -92.00 32 s
+( arc\036mode, background, cap\036style, clip\036x, clip\036y, clip\036mask, dash\036list,) 149352  -92.57 32 s
+52832.0 36170.0 m
+(dash\036offset,) 66074  0.00 -1 s
+( fill\036style, foreground, join\036style, function, plane\036mask, line\036width, line\036) 149352  309.14 32 s
+52832.0 39330.0 m
+(style,) 58868  0.00 -1 s
+( stipple, subwindow\036mode, tile, ts\036x\036origin, and ts\036y\036origin.) 125713  -28.00 32 s
+2 sf
+34544.0 45607.0 m
+(draw\036arc) 45670  0.00 -1 s
+( ) 46334  -42.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext x y width height angle1 angle2 ) 103062  -41.88 32 s
+4 sf
+(&optional ) 115170  -42.00 32 s
+5 sf
+(fill\036p) 120656  0.00 -1 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 50326.0 m
+(Draws) 60196  0.00 -1 s
+( either a circular or an elliptical arc. Also, outlined or filled arcs) 132745  51.00 32 s
+( can be drawn.) 149352  50.33 32 s
+52832.0 53487.0 m
+(Each) 58473  0.00 -1 s
+( arc is specified by a rectangle \() 93205  -154.00 32 s
+5 sf
+(x) 94458  0.00 -1 s
+4 sf
+(,) 95164  0.00 -1 s
+5 sf
+( y) 96969  -154.00 32 s
+4 sf
+(,) 97675  0.00 -1 s
+5 sf
+( width) 104499  -154.00 32 s
+4 sf
+(,) 105205  0.00 -1 s
+5 sf
+( ) 105757  -154.00 32 s
+4 sf
+(and ) 110385  -153.00 32 s
+5 sf
+(height) 117439  0.00 -1 s
+4 sf
+(\) and two angles \() 137044  -153.50 32 s
+5 sf
+(angle1 ) 145277  -154.00 32 s
+4 sf
+(and) 149352  0.00 -1 s
+52832.0 56648.0 m
+5 sf
+(angle2) 60513  0.00 -1 s
+4 sf
+(\).) 62158  0.00 -1 s
+( The angles are signed integers in) 101241  218.00 32 s
+( radians, with positive indicating counter\036) 149352  217.40 32 s
+52832.0 59809.0 m
+(clockwise) 64116  0.00 -1 s
+( motion and negative indicating clockwise motion. The start of) 137588  291.00 32 s
+( the arc is) 149352  290.33 32 s
+52832.0 62969.0 m
+(specified) 63018  0.00 -1 s
+( by ) 67002  -125.00 32 s
+5 sf
+(angle1) 74683  0.00 -1 s
+4 sf
+(, and the path and extent of the arc is specified by ) 129852  -124.58 32 s
+5 sf
+(angle2) 137533  0.00 -1 s
+4 sf
+( relative to) 149352  -124.50 32 s
+52832.0 66130.0 m
+(the) 56280  0.00 -1 s
+( start of the arc. If the magnitude of ) 95396  -181.56 32 s
+5 sf
+(angle2) 103077  0.00 -1 s
+4 sf
+( is greater than 360 degrees, it is truncated) 149352  -181.50 32 s
+52832.0 69291.0 m
+(to) 55027  0.00 -1 s
+( 360 degrees. The ) 75748  -12.00 32 s
+5 sf
+(x) 77001  0.00 -1 s
+4 sf
+( and ) 82464  -12.00 32 s
+5 sf
+(y) 83717  0.00 -1 s
+4 sf
+( coordinates of the rectangle are relative to the ) 136654  -12.56 32 s
+5 sf
+(drawable) 147315  0.00 -1 s
+4 sf
+('s) 149352  0.00 -1 s
+52832.0 72452.0 m
+(origin.) 60278  0.00 -1 s
+( ) 60960  -24.00 32 s
+52832.0 78729.0 m
+(For) 56751  0.00 -1 s
+( example, an arc specified as [) 90604  -39.00 32 s
+5 sf
+(x) 91857  0.00 -1 s
+4 sf
+(,) 92563  0.00 -1 s
+5 sf
+(y) 93816  0.00 -1 s
+4 sf
+(,) 94522  0.00 -1 s
+5 sf
+(width) 100794  0.00 -1 s
+4 sf
+(,) 101500  0.00 -1 s
+5 sf
+(height) 108554  0.00 -1 s
+4 sf
+(,) 109260  0.00 -1 s
+5 sf
+(angle1) 116941  0.00 -1 s
+4 sf
+(,) 117647  0.00 -1 s
+5 sf
+(angle2) 125328  0.00 -1 s
+4 sf
+(] has the origin of the) 149352  -38.60 32 s
+52832.0 81890.0 m
+(major) 59414  0.00 -1 s
+( and) 64169  -26.00 32 s
+( minor axes at:) 80783  -26.67 32 s
+52832.0 88166.0 m
+([) 53771  0.00 -1 s
+5 sf
+(x) 55024  0.00 -1 s
+4 sf
+(+\() 57555  0.00 -1 s
+5 sf
+(width) 63827  0.00 -1 s
+4 sf
+(/2\),) 67667  0.00 -1 s
+5 sf
+(y) 68920  0.00 -1 s
+4 sf
+(+\() 71451  0.00 -1 s
+5 sf
+(height) 78505  0.00 -1 s
+4 sf
+(/2\)]) 82578  0.00 -1 s
+52832.0 94443.0 m
+(The) 57220  0.00 -1 s
+( infinitely thin path describing the entire circle/ellipse intersects the horizontal axis) 149352  -124.00 32 s
+52832.0 97604.0 m
+(at:) 55653  0.00 -1 s
+52832.0 103880.0 m
+([) 53771  0.00 -1 s
+5 sf
+(x) 55024  0.00 -1 s
+4 sf
+(,) 55730  0.00 -1 s
+5 sf
+(y) 56983  0.00 -1 s
+4 sf
+(+\() 59514  0.00 -1 s
+5 sf
+(height) 66568  0.00 -1 s
+4 sf
+(/2\)]) 70641  0.00 -1 s
+( and [) 77005  -31.00 32 s
+5 sf
+(x) 78258  0.00 -1 s
+4 sf
+(+) 79850  0.00 -1 s
+5 sf
+(width) 86122  0.00 -1 s
+4 sf
+(,) 86828  0.00 -1 s
+5 sf
+(y) 88081  0.00 -1 s
+4 sf
+(+\() 90612  0.00 -1 s
+5 sf
+(height) 97666  0.00 -1 s
+4 sf
+(/2\)]) 101739  0.00 -1 s
+( ) 102413  -32.00 32 s
+52832.0 110157.0 m
+(The) 57220  0.00 -1 s
+( intersection of the vertical axis is at:) 98710  -17.86 32 s
+52832.0 116434.0 m
+([) 53771  0.00 -1 s
+5 sf
+(x) 55024  0.00 -1 s
+4 sf
+(+\() 57555  0.00 -1 s
+5 sf
+(width) 63827  0.00 -1 s
+4 sf
+(/2\),) 67667  0.00 -1 s
+5 sf
+(y) 68920  0.00 -1 s
+4 sf
+(]) 69859  0.00 -1 s
+( and [) 76211  -37.00 32 s
+5 sf
+(x) 77464  0.00 -1 s
+4 sf
+(+\() 79995  0.00 -1 s
+5 sf
+(width) 86267  0.00 -1 s
+4 sf
+(/2\),) 90107  0.00 -1 s
+5 sf
+(y) 91360  0.00 -1 s
+4 sf
+(+) 92952  0.00 -1 s
+5 sf
+(height) 100006  0.00 -1 s
+4 sf
+(]) 100945  0.00 -1 s
+52832.0 122710.0 m
+(These) 59571  0.00 -1 s
+( coordinates can be fractional; that is, they are not truncated to discrete coordi\036) 149352  82.46 32 s
+52832.0 125871.0 m
+(nates.) 59337  0.00 -1 s
+( Note that the angle values are slightly different in CLX than in the X protocol) 149352  102.13 32 s
+52832.0 129032.0 m
+(specification.) 67956  0.00 -1 s
+52832.0 135309.0 m
+(If) 54710  0.00 -1 s
+( ) 55248  -168.00 32 s
+5 sf
+(fill\036p) 60734  0.00 -1 s
+4 sf
+( is ) 63693  -167.50 32 s
+2 sf
+(nil) 66830  0.00 -1 s
+4 sf
+(, then only the outline of the arc is drawn. Otherwise, if ) 128067  -167.50 32 s
+5 sf
+(fill\036p) 133553  0.00 -1 s
+4 sf
+( is true, ) 142143  -167.67 32 s
+2 sf
+(draw\036) 149352  0.00 -1 s
+52832.0 138470.0 m
+(arc) 56749  0.00 -1 s
+4 sf
+( fills the area bounded by the arc outline and one or) 112589  -203.00 32 s
+( two line segments, depending on) 149352  -203.60 32 s
+52832.0 141630.0 m
+(the) 56280  0.00 -1 s
+( arc\036mode. If the arc\036mode is ) 88436  -217.00 32 s
+2 sf
+(:chord) 96430  0.00 -1 s
+4 sf
+(, the filled area) 112704  -217.00 32 s
+( is bounded by the arc outline and) 149352  -217.57 32 s
+52832.0 144791.0 m
+(the) 56280  0.00 -1 s
+( line segment joining the arc end points.) 99839  -227.00 32 s
+( If the arc\036mode is ) 120093  -227.60 32 s
+2 sf
+(:pie\036slice) 130749  0.00 -1 s
+4 sf
+(, the filled area is) 149352  -227.50 32 s
+52832.0 147952.0 m
+(bounded) 62551  0.00 -1 s
+( by the arc outline and the two line segments joining each arc end point with) 145417  -218.00 32 s
+( the) 149352  -219.00 32 s
+52832.0 151113.0 m
+(center) 59725  0.00 -1 s
+( point.) 66875  -63.00 32 s
+5 sf
+52832.0 157390.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64147  -52.00 32 s
+4 sf
+(\037) 66969  0.00 -1 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 162176.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63064  -34.00 32 s
+4 sf
+(\037 The graphics context for drawing the arc.) 112979  -34.00 32 s
+5 sf
+52832.0 166963.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55269  -228.00 32 s
+5 sf
+(y ) 57000  -228.00 32 s
+4 sf
+(\037 The x and y coordinates of the arc rectangle) 108001  -228.00 32 s
+( relative to the origin of the ) 137985  -228.57 32 s
+5 sf
+(drawable) 148646  0.00 -1 s
+4 sf
+(.) 149352  0.00 -1 s
+57912.0 170124.0 m
+(Type) 63711  0.00 -1 s
+( is) 66268  -31.00 32 s
+( ) 66942  -32.00 32 s
+2 sf
+(int16) 73056  0.00 -1 s
+4 sf
+(.) 73762  0.00 -1 s
+5 sf
+52832.0 174910.0 m
+(width) 59104  0.00 -1 s
+4 sf
+(,) 59810  0.00 -1 s
+( ) 60289  -227.00 32 s
+5 sf
+(height ) 67822  -227.00 32 s
+4 sf
+(\037 Specifies the width and height of the rectangle. These are the major) 144799  -227.00 32 s
+( and) 149352  -228.00 32 s
+57912.0 178071.0 m
+(minor) 64652  0.00 -1 s
+( axes of the arc. Type is ) 92022  -31.00 32 s
+2 sf
+(card16) 100330  0.00 -1 s
+4 sf
+(.) 101036  0.00 -1 s
+5 sf
+52832.0 182857.0 m
+(angle1) 60513  0.00 -1 s
+( ) 61196  -23.00 32 s
+4 sf
+(\037 Specifies the) 79176  -23.00 32 s
+( start of the arc in radians. Type is ) 118150  -23.56 32 s
+2 sf
+(angle) 124578  0.00 -1 s
+4 sf
+(.) 125284  0.00 -1 s
+5 sf
+52832.0 187644.0 m
+(angle2) 60513  0.00 -1 s
+( ) 61189  -30.00 32 s
+4 sf
+(\037 Specifies) 75031  -30.00 32 s
+( the direction and end point of the arc. Type is ) 127520  -30.55 32 s
+2 sf
+(angle) 133948  0.00 -1 s
+4 sf
+(.) 134654  0.00 -1 s
+5 sf
+52832.0 192430.0 m
+(fill\036p) 58318  0.00 -1 s
+( ) 59002  -22.00 32 s
+4 sf
+(\037 Specifies whether the) 86756  -22.00 32 s
+( arc is filled or not. Type ) 115283  -22.57 32 s
+2 sf
+(boolean) 124691  0.00 -1 s
+4 sf
+(.) 125397  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+130770.0 7925.0 m
+(Graphic Operations) 149013  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03675) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(draw\036arcs) 46768  0.00 -1 s
+( ) 47431  -43.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext arcs ) 74502  -42.67 32 s
+/timsps10 4 declareFont
+4 sf
+(&optional) 85946  0.00 -1 s
+5 sf
+( fill\036p) 92095  -43.00 32 s
+2 sf
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 27297.0 m
+(Draws) 60196  0.00 -1 s
+( circular or elliptical, outlined or filled arcs. Each arc) 119571  -46.00 32 s
+( is specified by a rectangle) 149352  -46.60 32 s
+52832.0 30457.0 m
+(and) 56907  0.00 -1 s
+( two angles. For a more detailed) 92972  -37.00 32 s
+( description, see ) 111826  -37.67 32 s
+2 sf
+(draw\036arc) 122952  0.00 -1 s
+4 sf
+(.) 123658  0.00 -1 s
+52832.0 36734.0 m
+(The) 57220  0.00 -1 s
+( arcs are) 66774  77.00 32 s
+( filled in the order listed. For any given arc, no pixel is drawn more than) 149352  76.47 32 s
+52832.0 39895.0 m
+(once.) 58866  0.00 -1 s
+( If regions intersect, the intersecting pixels are drawn multiple times.) 136212  -24.00 32 s
+5 sf
+52832.0 46172.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64163  -36.00 32 s
+4 sf
+(\037 Specifies the ) 82787  -36.00 32 s
+2 sf
+(drawable) 94074  0.00 -1 s
+4 sf
+( where you want the arcs drawn.) 130454  -35.83 32 s
+5 sf
+52832.0 50958.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63066  -32.00 32 s
+4 sf
+(\037 Specifies the graphics context for) 104206  -32.00 32 s
+( drawing the arc.) 123071  -32.67 32 s
+5 sf
+52832.0 55745.0 m
+(arcs) 57692  0.00 -1 s
+( ) 58127  -271.00 32 s
+4 sf
+(\037 A sequence containing the width, height, angle1, and) 119367  -271.00 32 s
+( angle2 arguments defining) 149352  -271.67 32 s
+57912.0 58905.0 m
+(the) 61360  0.00 -1 s
+( arcs. See ) 72709  -31.00 32 s
+2 sf
+(draw\036arc) 83835  0.00 -1 s
+4 sf
+( for) 87799  -31.00 32 s
+( more detail. Type is ) 111625  -31.60 32 s
+2 sf
+(arc\036seq) 120401  0.00 -1 s
+4 sf
+(.) 121107  0.00 -1 s
+5 sf
+52832.0 63692.0 m
+(fill\036p) 58318  0.00 -1 s
+( ) 59003  -21.00 32 s
+4 sf
+(\037 Specifies whether) 82627  -21.00 32 s
+( the arcs are filled or not. Type is ) 120521  -21.56 32 s
+2 sf
+(boolean) 129929  0.00 -1 s
+4 sf
+(.) 130635  0.00 -1 s
+20320.0 69201.0 m
+0.0 0.0 m
+newpath
+20455 67577 av
+148878 67575 as
+[] 0 setdash
+dp
+149352.0 69201.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 72588.0 m
+(Drawing) 32923  0.00 -1 s
+( Text) 40369  17.00 32 s
+52832.0 h
+2 sf
+(6.7) 56360  0.00 -1 s
+4 sf
+() 56360  0.00 -1 s
+58555.0 h
+(CLX) 64198  0.00 -1 s
+( provides functions for drawing text using text fonts provided by the X server.) 149352  -226.00 32 s
+52832.0 75748.0 m
+(An) 56280  0.00 -1 s
+( X font is array of character bit maps indexed by integer codes. See Section 8 for a) 149352  -1.71 32 s
+52832.0 78909.0 m
+(complete) 63176  0.00 -1 s
+( discussion of the CLX functions used to manage fonts and characters.) 142311  -30.64 32 s
+2 sf
+() 142311  0.00 -1 s
+144661.0 h
+() 144661  0.00 -1 s
+4 sf
+( ) 145333  -34.00 32 s
+52832.0 85186.0 m
+(Since) 59102  0.00 -1 s
+( Common Lisp programs typically represent text as sequences of characters) 143557  -81.00 32 s
+( \(that) 149352  -82.00 32 s
+52832.0 88347.0 m
+(is,) 55420  0.00 -1 s
+( strings\), CLX text functions must be prepared to convert a Common Lisp character) 149352  -45.00 32 s
+52832.0 91508.0 m
+(into) 57222  0.00 -1 s
+( the integer code used to) 83826  -181.00 32 s
+( index the appropriate character bitmap in a given font. The) 149352  -163.40 32 s
+52832.0 94669.0 m
+2 sf
+(:translate) 64428  0.00 -1 s
+4 sf
+( argument to a text function is a function which performs this conversion. The) 149352  -243.69 32 s
+52832.0 97830.0 m
+(default) 60667  0.00 -1 s
+( ) 61387  14.00 32 s
+2 sf
+(:translate) 72983  0.00 -1 s
+4 sf
+( function handles all characters that satisfy ) 121892  12.29 32 s
+2 sf
+(graphic\036char\036p) 140075  0.00 -1 s
+4 sf
+( by con\036) 149352  14.50 32 s
+52832.0 100990.0 m
+(verting) 60825  0.00 -1 s
+( each character into its ASCII code. Note that the assumption made by the default) 149352  -254.21 32 s
+52832.0 104151.0 m
+2 sf
+(:translate) 64428  0.00 -1 s
+4 sf
+( function\037that is, that an X font indexes bitmaps by ASCII codes\037is often) 149352  -62.08 32 s
+52832.0 107312.0 m
+(valid,) 59181  0.00 -1 s
+( but other encodings are possible. In general, a ) 113004  67.56 32 s
+2 sf
+(:translate) 124600  0.00 -1 s
+4 sf
+( function can perform) 149352  75.33 32 s
+52832.0 110473.0 m
+(complex) 62550  0.00 -1 s
+( transformations. It) 83897  -102.00 32 s
+( can be used to convert non\036character input, to handle non\036) 149352  -92.30 32 s
+52832.0 113634.0 m
+(ASCII) 60198  0.00 -1 s
+( character encodings, and to change the fonts used to) 119976  24.00 32 s
+( access character bitmaps.) 149352  23.33 32 s
+52832.0 116795.0 m
+(The) 57220  0.00 -1 s
+( complete behavior of a ) 84720  30.00 32 s
+2 sf
+(:translate) 96316  0.00 -1 s
+4 sf
+( function is given below by describing a proto\036) 149352  26.38 32 s
+52832.0 119956.0 m
+(typical) 60512  0.00 -1 s
+( ) 61135  -83.00 32 s
+2 sf
+(translate\036function) 82764  0.00 -1 s
+4 sf
+(.) 83470  0.00 -1 s
+52832.0 126232.0 m
+(CLX) 58475  0.00 -1 s
+( offers two different ways to draw text\037filled text and block text. The ) 135399  -255.69 32 s
+2 sf
+(draw\036glyph) 149352  0.00 -1 s
+4 sf
+52832.0 129393.0 m
+(and ) 57358  -255.00 32 s
+2 sf
+(draw\036glyphs) 72409  0.00 -1 s
+4 sf
+( functions create filled text, in which each character image is treated as) 149352  -255.33 32 s
+52832.0 132554.0 m
+(an) 55496  0.00 -1 s
+( area to be filled according to the fill\036style of the given graphics context, without oth\036) 149352  -158.87 32 s
+52832.0 135715.0 m
+(erwise) 60196  0.00 -1 s
+( disturbing the surrounding background. In addition, filled text sends a) 139019  -81.00 32 s
+( complex) 149352  -91.00 32 s
+52832.0 138876.0 m
+(type) 57691  0.00 -1 s
+( of server request which) 83879  -231.00 32 s
+( allows a series of font indices, font changes, and horizontal) 149352  -208.40 32 s
+52832.0 142037.0 m
+(position) 61926  0.00 -1 s
+( changes to be compiled into a single request. Filled text functions) 144141  676.36 32 s
+( use) 149352  743.00 32 s
+52832.0 145198.0 m
+(the) 56280  0.00 -1 s
+( following graphics context attributes: background, clip\036mask, clip\036x\036origin, clip\036y\036) 149352  -131.25 32 s
+52832.0 148359.0 m
+(origin, fill\036style,) 71250  0.00 32 s
+( font, foreground, function, plane\036mask, stipple, subwindow\036mode,) 149352  398.67 32 s
+52832.0 151519.0 m
+(tile,) 57143  0.00 -1 s
+( ts\036x\036origin,) 70465  -1.00 32 s
+( ts\036y\036origin.) 83786  -2.00 32 s
+52832.0 157796.0 m
+(Block) 59573  0.00 -1 s
+( text) 64240  -271.00 32 s
+( is a rendering style commonly used by display terminals, in  which each char\036) 149352  -252.14 32 s
+52832.0 160957.0 m
+(acter) 58314  0.00 -1 s
+( image appears in the foreground pixel inside a rectangular character cell drawn in) 149352  -139.92 32 s
+52832.0 164118.0 m
+(the) 56280  0.00 -1 s
+( graphics context background pixel. The ) 105274  472.00 32 s
+2 sf
+(draw\036image\036glyph) 127375  0.00 -1 s
+4 sf
+( and ) 133995  566.50 32 s
+2 sf
+(draw\036image\036) 149352  0.00 -1 s
+52832.0 167279.0 m
+(glyphs) 60674  0.00 -1 s
+4 sf
+( functions create block text. Block text functions use the following graphics con\036) 149352  -205.83 32 s
+52832.0 170440.0 m
+(text ) 57770  0.00 32 s
+( attributes: background, clip\036mask,) 97569  178.00 32 s
+( clip\036x\036origin, clip\036y\036origin, font, foreground,) 149352  133.00 32 s
+52832.0 173601.0 m
+(plane\036mask,) 66546  0.00 -1 s
+( stipple, subwindow\036mode, tile, ts\036x\036origin, ts\036y\036origin.) 128603  -35.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03676) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(draw\036glyph) 48497  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( ) 49161  -42.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext x y element) 83319  -42.00 32 s
+4 sf
+( &key ) 90918  -41.50 32 s
+2 sf
+(:translate :width) 111015  -42.00 32 s
+4 sf
+138673.0 h
+(Function) 148707  0.00 -1 s
+( ) 149352  -61.00 32 s
+52832.0 25739.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(:size) 59098  0.00 -1 s
+( :default) 69206  -1.00 32 s
+4 sf
+(\)) 70145  0.00 -1 s
+( ) 70849  -2.00 32 s
+2 sf
+34544.0 28900.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 32060.0 m
+(  ) 54175  -34.50 32 s
+5 sf
+(output\036p) 63737  0.00 -1 s
+4 sf
+( \037 Type ) 74372  -34.67 32 s
+2 sf
+(boolean) 83780  0.00 -1 s
+4 sf
+(.) 84486  0.00 -1 s
+52832.0 35221.0 m
+(  ) 54204  -20.00 32 s
+5 sf
+(width) 60476  0.00 -1 s
+4 sf
+( \037 Type ) 71156  -19.67 32 s
+2 sf
+(int32) 77270  0.00 -1 s
+4 sf
+( or ) 80993  -19.50 32 s
+2 sf
+(null) 85699  0.00 -1 s
+4 sf
+(.) 86405  0.00 -1 s
+52832.0 39940.0 m
+(Draws) 60196  0.00 -1 s
+( a single character of filled text represented by the given ) 121771  -236.82 32 s
+5 sf
+(element) 130546  0.00 -1 s
+4 sf
+(. The given ) 143555  -157.67 32 s
+5 sf
+(x) 144808  0.00 -1 s
+4 sf
+( and) 149352  -237.00 32 s
+52832.0 43101.0 m
+5 sf
+(y) 54085  0.00 -1 s
+4 sf
+( specify the left baseline position for the character. The first return value is true if the) 149352  -45.56 32 s
+52832.0 46262.0 m
+(character) 63170  0.00 -1 s
+( is successfully translated and drawn, or ) 111105  309.43 32 s
+2 sf
+(nil) 114242  0.00 -1 s
+4 sf
+( if the) 121547  361.00 32 s
+( ) 122613  360.00 32 s
+2 sf
+(:translate) 134209  0.00 -1 s
+4 sf
+( function did) 149352  360.50 32 s
+52832.0 49423.0 m
+(not translate) 66703  0.00 32 s
+( it. The second return value gives the total pixel width of the character actu\036) 149352  -203.57 32 s
+52832.0 52584.0 m
+(ally) 57064  0.00 -1 s
+( drawn, if known.) 76945  -34.67 32 s
+52832.0 58860.0 m
+(Specifying) 65058  0.00 -1 s
+( a ) 67509  -107.00 32 s
+2 sf
+(:width) 75346  0.00 -1 s
+4 sf
+( is a hint to improve performance. The ) 118613  -107.00 32 s
+2 sf
+(:width) 126450  0.00 -1 s
+4 sf
+( is assumed to be) 145306  -107.00 32 s
+( the) 149352  -108.00 32 s
+52832.0 62021.0 m
+(total) 57848  0.00 -1 s
+( pixel width of the character actually drawn. Specifying ) 120172  -128.00 32 s
+2 sf
+(:width) 128009  0.00 -1 s
+4 sf
+( permits) 137035  -144.00 32 s
+( appending) 149352  -145.00 32 s
+52832.0 65182.0 m
+(the) 56280  0.00 -1 s
+( output of subsequent) 80492  -3.00 32 s
+( calls to the same protocol request, provided ) 131019  -3.13 32 s
+5 sf
+(gcontext) 140579  0.00 -1 s
+4 sf
+( has not) 149352  -3.50 32 s
+52832.0 68343.0 m
+(been) 58160  0.00 -1 s
+( modified in the interim. If ) 87571  -231.67 32 s
+2 sf
+(:width) 95408  0.00 -1 s
+4 sf
+( is not specified, appending of subsequent  output) 149352  -242.88 32 s
+52832.0 71504.0 m
+(might) 59417  0.00 -1 s
+( not occur \(unless ) 80008  -25.00 32 s
+2 sf
+(:translate) 91604  0.00 -1 s
+4 sf
+( returns the character) 115268  -25.00 32 s
+( width\).) 124020  -26.00 32 s
+52832.0 77780.0 m
+(The) 57220  0.00 -1 s
+( ) 57810  -116.00 32 s
+2 sf
+(:size) 63137  0.00 -1 s
+4 sf
+( specifies the element) 87161  -116.00 32 s
+( size of the destination buffer given to ) 129804  -116.50 32 s
+2 sf
+(:translate) 141400  0.00 -1 s
+4 sf
+( \(either) 149352  -117.00 32 s
+52832.0 80941.0 m
+(8,) 54949  0.00 -1 s
+( 16, or ) 62117  -276.00 32 s
+2 sf
+(:default) 71520  0.00 -1 s
+4 sf
+(\).) 73165  0.00 -1 s
+( If ) 75902  -276.50 32 s
+2 sf
+(:default) 85305  0.00 -1 s
+4 sf
+( is specified, the size is based on the current font, if known;) 149352  -253.50 32 s
+52832.0 84102.0 m
+(otherwise,) 64508  0.00 -1 s
+( 16 is used.) 77126  -27.67 32 s
+5 sf
+52832.0 90379.0 m
+(drawable) 63493  0.00 -1 s
+4 sf
+( \037) 66969  -52.00 32 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 95165.0 m
+(gcontext ) 63098  0.00 32 s
+4 sf
+(\037) 65920  0.00 -1 s
+( The graphics context for drawing text.) 109638  -41.00 32 s
+5 sf
+52832.0 99952.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55472  -25.00 32 s
+5 sf
+(y) 56725  0.00 -1 s
+4 sf
+( \037 The left baseline position for the character drawn. ) 117698  -23.00 32 s
+5 sf
+52832.0 104738.0 m
+(element) 61607  0.00 -1 s
+4 sf
+( \037) 65135  0.00 32 s
+( A) 67850  -28.00 32 s
+( character or other object to be translated into a font index. ) 134383  -26.17 32 s
+2 sf
+52832.0 109525.0 m
+(:translate) 64428  0.00 -1 s
+4 sf
+( \037 A function to translate text to font indexes. Default is ) 126236  -276.92 32 s
+2 sf
+(#'translate\036default) 148646  0.00 -1 s
+4 sf
+(.) 149352  0.00 -1 s
+2 sf
+52832.0 114311.0 m
+(:width) 60669  0.00 -1 s
+4 sf
+( \037 The total pixel width of the character actually drawn, if known.) 136054  -26.58 32 s
+2 sf
+52832.0 119098.0 m
+(:size) 58159  0.00 -1 s
+4 sf
+( \037 Specifies the element size of the destination buffer given to ) 127384  -226.75 32 s
+2 sf
+(:translate) 138980  0.00 -1 s
+4 sf
+( \(8, 16, or) 149352  -226.67 32 s
+57912.0 122259.0 m
+2 sf
+(:default) 67315  0.00 -1 s
+4 sf
+(\).) 68960  0.00 -1 s
+2 sf
+34544.0 127045.0 m
+(draw\036glyphs) 49595  0.00 -1 s
+4 sf
+( ) 50264  -37.00 32 s
+5 sf
+(drawable gcontext x y sequence) 86010  -37.00 32 s
+4 sf
+( &key \() 94557  -37.00 32 s
+2 sf
+(:start) 101136  0.00 -1 s
+4 sf
+( 0\) ) 104823  -37.50 32 s
+2 sf
+(:end :translate) 122417  -38.00 32 s
+4 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+52832.0 130206.0 m
+2 sf
+(:width) 60669  0.00 -1 s
+4 sf
+( \() 62312  -2.00 32 s
+2 sf
+(:size) 67639  0.00 -1 s
+( :default) 77745  -3.00 32 s
+4 sf
+(\)) 78684  0.00 -1 s
+2 sf
+34544.0 133367.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 136528.0 m
+(  ) 54188  -28.00 32 s
+5 sf
+(new\036start ) 65526  -28.00 32 s
+4 sf
+(\037 Type ) 75503  -28.00 32 s
+2 sf
+(array\036index) 89767  0.00 -1 s
+4 sf
+( or ) 93473  -28.00 32 s
+2 sf
+(null) 98179  0.00 -1 s
+4 sf
+(. ) 99591  0.00 32 s
+52832.0 139689.0 m
+(  ) 54204  -20.00 32 s
+5 sf
+(width) 60476  0.00 -1 s
+4 sf
+( \037 Type ) 71156  -19.67 32 s
+2 sf
+(int32) 77270  0.00 -1 s
+4 sf
+( or ) 80993  -19.50 32 s
+2 sf
+(null) 85699  0.00 -1 s
+4 sf
+(.) 86405  0.00 -1 s
+52832.0 144407.0 m
+(Draws) 60196  0.00 -1 s
+( the filled text characters represented by the given sequence. ) 127967  -95.40 32 s
+2 sf
+(:start) 134546  0.00 -1 s
+4 sf
+( and ) 139820  -106.50 32 s
+2 sf
+(:end) 145150  0.00 -1 s
+4 sf
+( de\036) 149352  -107.00 32 s
+52832.0 147568.0 m
+(fine) 57219  0.00 -1 s
+( the elements of the sequence which are drawn. The given ) 123711  31.82 32 s
+5 sf
+(x) 124964  0.00 -1 s
+4 sf
+( and ) 130521  35.00 32 s
+5 sf
+(y) 131774  0.00 -1 s
+4 sf
+( specify the left) 149352  34.33 32 s
+52832.0 150729.0 m
+(baseline) 62079  0.00 -1 s
+( position for the first  character. The first return value is ) 127585  162.67 32 s
+2 sf
+(nil) 130722  0.00 -1 s
+4 sf
+( if all characters) 149352  177.33 32 s
+52832.0 153890.0 m
+(are successfully) 70776  0.00 32 s
+( translated and drawn; otherwise, the index of the first untranslated se\036) 149352  -80.73 32 s
+52832.0 157051.0 m
+(quence) 60824  0.00 -1 s
+( element is returned. The) 89070  28.00 32 s
+( second return value gives the total pixel width of the) 149352  24.70 32 s
+52832.0 160212.0 m
+(characters) 64268  0.00 -1 s
+( actually drawn, if known.) 93720  -43.00 32 s
+52832.0 166489.0 m
+(Specifying) 65058  0.00 -1 s
+( a ) 67509  -107.00 32 s
+2 sf
+(:width) 75346  0.00 -1 s
+4 sf
+( is a hint to improve performance. The) 118014  -107.00 32 s
+2 sf
+( :width) 126450  -107.00 32 s
+4 sf
+( is assumed to be) 145306  -107.00 32 s
+( the) 149352  -108.00 32 s
+52832.0 169649.0 m
+(total) 57848  0.00 -1 s
+( pixel width of the character sequence actually drawn. Specifying ) 132348  -2.50 32 s
+2 sf
+(:width) 140185  0.00 -1 s
+4 sf
+( permits) 149352  -3.00 32 s
+52832.0 172810.0 m
+(appending) 64588  0.00 -1 s
+( the output) 76554  -53.00 32 s
+( of subsequent calls to the same protocol request, provided ) 142927  -48.20 32 s
+5 sf
+(gcon\036) 149352  0.00 -1 s
+52832.0 175971.0 m
+(text) 56906  0.00 -1 s
+4 sf
+( has not been modified in the interim. If ) 100713  -200.89 32 s
+2 sf
+(:width) 108550  0.00 -1 s
+4 sf
+( is not specified, appending of subse\036) 149352  -188.33 32 s
+52832.0 179132.0 m
+(quent) 59102  0.00 -1 s
+( output might not occur \(unless ) 94813  -31.50 32 s
+2 sf
+(:translate) 106409  0.00 -1 s
+4 sf
+( returns the character width\).) 138831  -23.75 32 s
+52832.0 185409.0 m
+(The) 57220  0.00 -1 s
+( ) 57800  -126.00 32 s
+2 sf
+(:size) 63127  0.00 -1 s
+4 sf
+( specifies the element size of the destination buffer given to) 129108  -126.00 32 s
+2 sf
+( :translate) 141410  0.00 32 s
+4 sf
+( \(either) 149352  -127.00 32 s
+52832.0 188570.0 m
+(8,) 54949  0.00 -1 s
+( 16, or ) 62192  -251.00 32 s
+2 sf
+(:default) 71595  0.00 -1 s
+4 sf
+(\). If :) 76812  -251.00 32 s
+2 sf
+(default) 85276  0.00 -1 s
+4 sf
+( is specified, the size is based on the current font, if) 140433  -251.00 32 s
+( known;) 149352  -252.00 32 s
+52832.0 191730.0 m
+(otherwise,) 64508  0.00 -1 s
+( 16 is used.) 77126  -27.67 32 s
+5 sf
+52832.0 198007.0 m
+(drawable) 63493  0.00 -1 s
+4 sf
+( \037) 66969  -52.00 32 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 9
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+130770.0 7925.0 m
+(Graphic Operations) 149013  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03677) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10i 5 declareFont
+5 sf
+52832.0 22578.0 m
+(gcontext) 62392  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( \037 The graphics context for drawing) 104030  -35.00 32 s
+( text.) 109638  -36.00 32 s
+5 sf
+52832.0 27364.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55472  -25.00 32 s
+5 sf
+(y) 56725  0.00 -1 s
+4 sf
+( \037 The left baseline position for the character drawn.) 116998  -24.89 32 s
+5 sf
+52832.0 32151.0 m
+(sequence) 63175  0.00 -1 s
+4 sf
+( \037 A sequence of characters or other objects to be translated) 129601  -209.00 32 s
+( into font indexes.) 149352  -209.67 32 s
+2 sf
+52832.0 36937.0 m
+(:start) 59411  0.00 -1 s
+4 sf
+(,) 60117  0.00 -1 s
+( ) 60795  -28.00 32 s
+2 sf
+(:end) 66125  0.00 -1 s
+4 sf
+( \037 Start and end indexes defining the elements to draw. ) 129958  -25.36 32 s
+2 sf
+52832.0 41724.0 m
+(:translate) 64428  0.00 -1 s
+4 sf
+( \037 A function to) 84470  190.00 32 s
+( translate text to font indexes. Default is ) 131645  165.75 32 s
+2 sf
+(#'translate\036de\036) 149352  0.00 -1 s
+57912.0 44885.0 m
+(fault) 63554  0.00 -1 s
+4 sf
+(.) 64260  0.00 -1 s
+2 sf
+52832.0 49671.0 m
+(:width) 60669  0.00 -1 s
+4 sf
+( \037 The total total pixel width of the character actually drawn, if  known.) 142466  -23.93 32 s
+2 sf
+52832.0 54458.0 m
+(:size) 58159  0.00 -1 s
+4 sf
+( \037 The element size of the destination buffer given to ) 121018  93.00 32 s
+2 sf
+(:translate) 132614  0.00 -1 s
+4 sf
+( \(8, 16, or ) 144652  70.00 32 s
+2 sf
+(:de\036) 149352  0.00 -1 s
+57912.0 57618.0 m
+(fault) 63554  0.00 -1 s
+4 sf
+(\).) 65199  0.00 -1 s
+2 sf
+34544.0 62405.0 m
+(draw\036image\036glyph) 56645  0.00 -1 s
+4 sf
+( ) 57307  -44.00 32 s
+5 sf
+(drawable gcontext x) 80105  -44.00 32 s
+( y element) 91456  -44.50 32 s
+4 sf
+( &key ) 99049  -44.50 32 s
+2 sf
+(:translate) 110645  0.00 -1 s
+4 sf
+( ) 111306  -45.00 32 s
+2 sf
+(:width) 119143  0.00 -1 s
+138673.0 h
+4 sf
+(Function) 148707  0.00 -1 s
+( ) 149352  -61.00 32 s
+52832.0 65566.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(:size) 59098  0.00 -1 s
+( :default) 69206  -1.00 32 s
+4 sf
+(\)) 70145  0.00 -1 s
+( ) 70849  -2.00 32 s
+2 sf
+34544.0 68727.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 71888.0 m
+(  ) 54175  -34.50 32 s
+5 sf
+(output\036p) 63737  0.00 -1 s
+4 sf
+( \037 Type ) 74372  -34.67 32 s
+2 sf
+(boolean) 83780  0.00 -1 s
+4 sf
+(.) 84486  0.00 -1 s
+2 sf
+52832.0 75049.0 m
+(  ) 54204  -20.00 32 s
+5 sf
+(width) 60476  0.00 -1 s
+4 sf
+( \037 Type ) 71156  -19.67 32 s
+2 sf
+(int32) 77270  0.00 -1 s
+4 sf
+( or ) 80993  -19.50 32 s
+2 sf
+(null) 85699  0.00 -1 s
+4 sf
+(.) 86405  0.00 -1 s
+52832.0 79767.0 m
+(Draws) 60196  0.00 -1 s
+( a single character of block text represented) 107514  -259.00 32 s
+( by the given ) 121840  -259.50 32 s
+5 sf
+(element) 130615  0.00 -1 s
+4 sf
+(. The given ) 143578  -173.00 32 s
+5 sf
+(x) 144831  0.00 -1 s
+4 sf
+( and) 149352  -260.00 32 s
+52832.0 82928.0 m
+5 sf
+(y) 54085  0.00 -1 s
+4 sf
+( specify the left baseline position for the character. The first return value is true if the) 149352  -45.56 32 s
+52832.0 86089.0 m
+(character) 63170  0.00 -1 s
+( is successfully translated and drawn, or ) 111105  309.43 32 s
+2 sf
+(nil) 114242  0.00 -1 s
+4 sf
+( if the) 121547  361.00 32 s
+( ) 122613  360.00 32 s
+2 sf
+(:translate) 134209  0.00 -1 s
+4 sf
+( function did) 149352  360.50 32 s
+52832.0 89250.0 m
+(not translate) 66703  0.00 32 s
+( it. The ) 75279  -68.00 32 s
+2 sf
+(:translate) 86875  0.00 -1 s
+4 sf
+( function is allowed to return an initial font change.) 144327  -60.44 32 s
+( The) 149352  -69.00 32 s
+52832.0 92411.0 m
+(second) 60669  0.00 -1 s
+( return value) 74396  -267.00 32 s
+( gives the total pixel width of the character actually drawn, if known.) 149352  -245.25 32 s
+52832.0 98687.0 m
+(The) 57220  0.00 -1 s
+( ) 57986  60.00 32 s
+2 sf
+(:translate) 69582  0.00 -1 s
+4 sf
+( function may not return) 97252  60.00 32 s
+( a horizontal position change, since ) 138070  49.50 32 s
+2 sf
+(draw\036im\036) 149352  0.00 -1 s
+52832.0 101848.0 m
+(age\036glyph) 64590  0.00 -1 s
+4 sf
+( does not generate complex output requests.) 113747  -49.67 32 s
+52832.0 108125.0 m
+(Specifying) 65058  0.00 -1 s
+( a ) 67493  -115.00 32 s
+2 sf
+(:width) 75330  0.00 -1 s
+4 sf
+( is a hint to improve performance. The ) 118535  -114.75 32 s
+2 sf
+(:width) 126372  0.00 -1 s
+4 sf
+( is assumed to be the) 149352  -91.60 32 s
+52832.0 111286.0 m
+(total) 57848  0.00 -1 s
+( pixel width of the character actually drawn. Specifying ) 120172  -128.00 32 s
+2 sf
+(:width) 128009  0.00 -1 s
+4 sf
+( permits) 137035  -144.00 32 s
+( appending) 149352  -145.00 32 s
+52832.0 114447.0 m
+(the) 56280  0.00 -1 s
+( output of subsequent) 80492  -3.00 32 s
+( calls to the same protocol request, provided ) 131019  -3.13 32 s
+5 sf
+(gcontext) 140579  0.00 -1 s
+4 sf
+( has not) 149352  -3.50 32 s
+52832.0 117608.0 m
+(been) 58160  0.00 -1 s
+( modified in  the interim. If ) 89034  -90.43 32 s
+2 sf
+(:width) 96871  0.00 -1 s
+4 sf
+( is not specified, appending of subsequent  out\036) 149352  -92.38 32 s
+52832.0 120769.0 m
+(put) 56438  0.00 -1 s
+( might not occur \(unless ) 84295  -25.00 32 s
+2 sf
+(:translate) 95891  0.00 -1 s
+4 sf
+( returns the character width\).) 128310  -24.50 32 s
+52832.0 127045.0 m
+(The) 57220  0.00 -1 s
+( ) 57810  -116.00 32 s
+2 sf
+(:size) 63137  0.00 -1 s
+4 sf
+( specifies the element) 87161  -116.00 32 s
+( size of the destination buffer given to ) 129804  -116.50 32 s
+2 sf
+(:translate) 141400  0.00 -1 s
+4 sf
+( \(either) 149352  -117.00 32 s
+52832.0 130206.0 m
+(8,) 54949  0.00 -1 s
+( 16, or ) 62165  -260.00 32 s
+2 sf
+(:default) 71568  0.00 -1 s
+4 sf
+(\). If ) 75983  -260.00 32 s
+2 sf
+(:default) 85386  0.00 -1 s
+4 sf
+( is specified, the size is based on) 120248  -260.00 32 s
+( the current font, if known;) 149352  -260.60 32 s
+52832.0 133367.0 m
+(otherwise,) 64508  0.00 -1 s
+( 16 is used.) 77126  -27.67 32 s
+5 sf
+52832.0 139644.0 m
+(drawable) 63493  0.00 -1 s
+4 sf
+( \037) 66969  -52.00 32 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 144430.0 m
+(gcontext) 62392  0.00 -1 s
+( ) 63063  -35.00 32 s
+4 sf
+(\037 The graphics context for drawing) 104030  -35.00 32 s
+( text.) 109638  -36.00 32 s
+5 sf
+52832.0 149217.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55472  -25.00 32 s
+5 sf
+(y) 56725  0.00 -1 s
+4 sf
+( \037 The left baseline position for the character drawn.) 116998  -24.89 32 s
+5 sf
+52832.0 154003.0 m
+(element) 61607  0.00 -1 s
+4 sf
+( \037 A character or other object) 95928  -26.00 32 s
+( to be translated into a font index. ) 134383  -23.25 32 s
+2 sf
+52832.0 158790.0 m
+(:translate) 64428  0.00 -1 s
+4 sf
+( \037 A function to translate text to font indexes. Default is  ) 131645  106.15 32 s
+2 sf
+(#'translate\036de\036) 149352  0.00 -1 s
+57912.0 161950.0 m
+(fault) 63554  0.00 -1 s
+4 sf
+(. ) 64966  0.00 32 s
+2 sf
+52832.0 166737.0 m
+(:width) 60669  0.00 -1 s
+4 sf
+( \037 The total pixel width of the character actually drawn, if known.) 136054  -26.58 32 s
+2 sf
+52832.0 171523.0 m
+(:size) 58159  0.00 -1 s
+4 sf
+( \037 Specifies the element size of the destination buffer given to ) 127432  -222.75 32 s
+2 sf
+(:translate) 139028  0.00 -1 s
+4 sf
+( \(8, 16, or) 149352  -242.67 32 s
+57912.0 174684.0 m
+2 sf
+(:default) 67315  0.00 -1 s
+4 sf
+(\).) 68960  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 10
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03678) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(draw\036image\036glyphs) 57743  0.00 -1 s
+/timsps10 4 declareFont
+4 sf
+( ) 58411  -38.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawable gcontext x y sequence) 94153  -38.00 32 s
+4 sf
+( &key \() 102698  -38.00 32 s
+2 sf
+(:start) 109277  0.00 -1 s
+4 sf
+( 0\) ) 112964  -37.50 32 s
+2 sf
+(:end ) 118962  -38.00 32 s
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 25739.0 m
+2 sf
+(:translate) 64428  0.00 -1 s
+4 sf
+( ) 65126  -8.00 32 s
+2 sf
+(:width) 72963  0.00 -1 s
+4 sf
+( \() 74600  -8.00 32 s
+2 sf
+(:size) 79927  0.00 -1 s
+( :default) 90027  -9.00 32 s
+4 sf
+(\)) 90966  0.00 -1 s
+2 sf
+34544.0 28900.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 32060.0 m
+(  ) 54190  -27.00 32 s
+5 sf
+(new\036start) 64850  0.00 -1 s
+4 sf
+( \037 Type ) 75508  -27.00 32 s
+2 sf
+(array\036index) 89772  0.00 -1 s
+4 sf
+( or) 92801  -27.00 32 s
+( ) 93479  -28.00 32 s
+2 sf
+(null) 98185  0.00 -1 s
+4 sf
+(.) 98891  0.00 -1 s
+52832.0 35221.0 m
+(  ) 54204  -20.00 32 s
+5 sf
+(width) 60476  0.00 -1 s
+4 sf
+( \037 Type ) 71156  -19.67 32 s
+2 sf
+(int32) 77270  0.00 -1 s
+4 sf
+( or ) 80993  -19.50 32 s
+2 sf
+(null) 85699  0.00 -1 s
+4 sf
+(.) 86405  0.00 -1 s
+52832.0 39940.0 m
+(Draws) 60196  0.00 -1 s
+( the block text characters represented by the given ) 116052  -158.78 32 s
+2 sf
+(sequence) 126869  0.00 -1 s
+4 sf
+(. ) 128123  -158.00 32 s
+2 sf
+(:start) 134702  0.00 -1 s
+4 sf
+( and ) 139872  -158.50 32 s
+2 sf
+(:end) 145202  0.00 -1 s
+4 sf
+( de\036) 149352  -159.00 32 s
+52832.0 43101.0 m
+(fine) 57219  0.00 -1 s
+( the elements of the ) 80201  35.00 32 s
+5 sf
+(sequence) 90544  0.00 -1 s
+4 sf
+( which are drawn. The given ) 123711  29.17 32 s
+5 sf
+(x) 124964  0.00 -1 s
+4 sf
+( and ) 130521  35.00 32 s
+5 sf
+(y) 131774  0.00 -1 s
+4 sf
+( specify the left) 149352  34.33 32 s
+52832.0 46262.0 m
+(baseline) 62079  0.00 -1 s
+( position for the first character. The first return value is ) 127381  223.09 32 s
+2 sf
+(nil) 130518  0.00 -1 s
+4 sf
+( if all characters) 149352  245.33 32 s
+52832.0 49423.0 m
+(are successfully) 70776  0.00 32 s
+( translated and drawn; otherwise, the index of the first untranslated se\036) 149352  -80.73 32 s
+52832.0 52584.0 m
+(quence) 60824  0.00 -1 s
+( element is returned. The ) 89455  -41.80 32 s
+2 sf
+(:translate) 101051  0.00 -1 s
+4 sf
+( function is allowed to return an initial font) 149352  -36.38 32 s
+52832.0 55745.0 m
+(change.) 61530  0.00 -1 s
+( The second return value gives the total pixel width of the characters actually) 149352  70.15 32 s
+52832.0 58905.0 m
+(drawn,) 60589  0.00 -1 s
+( if known.) 72023  -44.00 32 s
+52832.0 65182.0 m
+(The) 57220  0.00 -1 s
+( ) 57986  60.00 32 s
+2 sf
+(:translate) 69582  0.00 -1 s
+4 sf
+( function may not return) 97252  60.00 32 s
+( a horizontal position change, since ) 138070  49.50 32 s
+2 sf
+(draw\036im\036) 149352  0.00 -1 s
+52832.0 68343.0 m
+(age\036glyphs) 65688  0.00 -1 s
+4 sf
+( does not generate) 85998  -48.00 32 s
+( complex output requests.) 114853  -48.67 32 s
+52832.0 74620.0 m
+(Specifying) 65058  0.00 -1 s
+( a ) 67493  -115.00 32 s
+2 sf
+(:width) 75330  0.00 -1 s
+4 sf
+( is a hint to improve performance. The ) 118535  -114.75 32 s
+2 sf
+(:width) 126372  0.00 -1 s
+4 sf
+( is assumed to be the) 149352  -91.60 32 s
+52832.0 77780.0 m
+(total) 57848  0.00 -1 s
+( pixel width of the character sequence actually drawn. Specifying ) 132348  -2.50 32 s
+2 sf
+(:width) 140185  0.00 -1 s
+4 sf
+( permits) 149352  -3.00 32 s
+52832.0 80941.0 m
+(appending) 64588  0.00 -1 s
+( the output) 76554  -53.00 32 s
+( of subsequent calls to the same protocol request, provided ) 142927  -48.20 32 s
+5 sf
+(gcon\036) 149352  0.00 -1 s
+52832.0 84102.0 m
+(text) 56906  0.00 -1 s
+4 sf
+( has not been modified in the interim. If ) 100757  -196.00 32 s
+2 sf
+(:width) 108594  0.00 -1 s
+4 sf
+( is not specified, appending of subse\036) 149352  -195.67 32 s
+52832.0 87263.0 m
+(quent) 59102  0.00 -1 s
+( output might not occur \(unless ) 94813  -31.50 32 s
+2 sf
+(:translate) 106409  0.00 -1 s
+4 sf
+( returns the character width\).) 138831  -23.75 32 s
+52832.0 93540.0 m
+(The) 57220  0.00 -1 s
+( ) 57800  -126.00 32 s
+2 sf
+(:size) 63127  0.00 -1 s
+4 sf
+( specifies the element size of the destination buffer given to ) 129814  -114.55 32 s
+2 sf
+(:translate) 141410  0.00 -1 s
+4 sf
+( \(either) 149352  -127.00 32 s
+52832.0 96701.0 m
+(8,) 54949  0.00 -1 s
+( 16, or ) 62733  -70.67 32 s
+2 sf
+(:default) 72136  0.00 -1 s
+4 sf
+(\). If ) 76930  -70.50 32 s
+2 sf
+(:default) 86333  0.00 -1 s
+4 sf
+( is specified, the size will be based on the current font, if) 149352  -64.67 32 s
+52832.0 99862.0 m
+(known;) 61297  0.00 -1 s
+( otherwise, 16 is) 79696  -33.00 32 s
+( used.) 86247  -34.00 32 s
+5 sf
+52832.0 106138.0 m
+(drawable) 63493  0.00 -1 s
+4 sf
+( \037) 66969  -52.00 32 s
+( The destination ) 85701  -52.67 32 s
+2 sf
+(drawable) 96988  0.00 -1 s
+4 sf
+(.) 97694  0.00 -1 s
+5 sf
+52832.0 110925.0 m
+(x) 54085  0.00 -1 s
+4 sf
+(,) 54791  0.00 -1 s
+( ) 55472  -25.00 32 s
+5 sf
+(y) 56725  0.00 -1 s
+4 sf
+( \037 The left baseline position for the character drawn.) 116998  -24.89 32 s
+5 sf
+52832.0 115711.0 m
+(gcontext) 62392  0.00 -1 s
+4 sf
+( \037 The graphics context for drawing) 104030  -35.00 32 s
+( text.) 109638  -36.00 32 s
+5 sf
+52832.0 120498.0 m
+(sequence) 63175  0.00 -1 s
+4 sf
+( \037) 66703  0.00 32 s
+( A sequence of characters or other objects to) 115054  -225.00 32 s
+( be translated into font indexes.) 149352  -225.60 32 s
+2 sf
+52832.0 125284.0 m
+(:start) 59411  0.00 -1 s
+4 sf
+(,) 60117  0.00 -1 s
+( ) 60793  -30.00 32 s
+2 sf
+(:end) 66123  0.00 -1 s
+4 sf
+( \037 Start and end indexes defining the elements to) 122237  -26.67 32 s
+( draw.) 129258  -31.00 32 s
+2 sf
+52832.0 130071.0 m
+(:translate) 64428  0.00 -1 s
+4 sf
+( \037 A function to translate text to font indexes. Default is  ) 131645  106.15 32 s
+2 sf
+(#'translate\036de\036) 149352  0.00 -1 s
+57912.0 133231.0 m
+(fault) 63554  0.00 -1 s
+4 sf
+(.) 64260  0.00 -1 s
+2 sf
+52832.0 138018.0 m
+(:width) 60669  0.00 -1 s
+4 sf
+( \037 The total) 74932  -27.00 32 s
+( total pixel width of the character actually drawn, if known.) 141766  -24.80 32 s
+2 sf
+52832.0 142804.0 m
+(:size) 58159  0.00 -1 s
+4 sf
+( \037 The element size of the destination buffer given to ) 121018  93.00 32 s
+2 sf
+(:translate) 132614  0.00 -1 s
+4 sf
+( \(8, 16, or ) 144652  70.00 32 s
+2 sf
+(:de\036) 149352  0.00 -1 s
+57912.0 145965.0 m
+(fault) 63554  0.00 -1 s
+4 sf
+(\).) 65199  0.00 -1 s
+2 sf
+34544.0 150752.0 m
+(translate\036function) 56173  0.00 -1 s
+4 sf
+( ) 56839  -40.00 32 s
+5 sf
+(source source\036start source\036end font) 96927  -40.00 32 s
+( destination) 110134  -41.00 32 s
+139373.0 h
+4 sf
+(Function) 149407  0.00 -1 s
+52832.0 153913.0 m
+5 sf
+(destination\036start) 71488  0.00 -1 s
+( ) 72181  -13.00 32 s
+2 sf
+34544.0 157074.0 m
+52832.0 h
+4 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 160234.0 m
+( ) 53504  -34.00 32 s
+5 sf
+( first\036not\036done) 69694  -34.00 32 s
+4 sf
+( \037 Type ) 80331  -34.00 32 s
+2 sf
+(array\036index) 94595  0.00 -1 s
+4 sf
+(.) 95301  0.00 -1 s
+52832.0 163395.0 m
+(  ) 54196  -24.00 32 s
+5 sf
+(to\036continue) 67048  0.00 -1 s
+4 sf
+( \037 Type ) 77715  -24.00 32 s
+2 sf
+(int16) 83829  0.00 -1 s
+4 sf
+(, ) 85217  -24.00 32 s
+2 sf
+(font) 90075  0.00 -1 s
+4 sf
+(, or ) 94495  -24.00 32 s
+2 sf
+(null) 99201  0.00 -1 s
+4 sf
+(.) 99907  0.00 -1 s
+52832.0 166556.0 m
+(  ) 54201  -21.50 32 s
+5 sf
+(current\036width) 69720  0.00 -1 s
+4 sf
+( \037 Type ) 80394  -21.67 32 s
+2 sf
+(int32) 86508  0.00 -1 s
+4 sf
+( or ) 90227  -21.50 32 s
+2 sf
+(null) 94933  0.00 -1 s
+4 sf
+(.) 95639  0.00 -1 s
+52832.0 171275.0 m
+(A) 54869  0.00 -1 s
+( function used as the ) 77980  -159.00 32 s
+2 sf
+(:translate) 89576  0.00 -1 s
+4 sf
+( argument) 100780  -159.00 32 s
+( for text functions. Converts elements of the) 149352  -159.57 32 s
+52832.0 174436.0 m
+5 sf
+(source) 60356  0.00 -1 s
+4 sf
+( \(sub\)sequence into font indexes for the given ) 111341  -170.88 32 s
+5 sf
+(font) 115731  0.00 -1 s
+4 sf
+( and stores them into the ) 143083  -170.50 32 s
+5 sf
+(desti\036) 149352  0.00 -1 s
+52832.0 177597.0 m
+(nation) 60044  0.00 -1 s
+4 sf
+( vector.) 68433  -74.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 11
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+130770.0 7925.0 m
+(Graphic Operations) 149013  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(6\03679) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 4 declareFont
+4 sf
+52832.0 22578.0 m
+(The) 57220  0.00 -1 s
+( ) 58037  111.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(destination) 70579  0.00 -1 s
+4 sf
+( vector) 78447  111.00 32 s
+( is created automatically by CLX. ) 117905  110.50 32 s
+5 sf
+(destination) 130447  0.00 -1 s
+4 sf
+( is guaranteed to) 149352  110.33 32 s
+52832.0 25739.0 m
+(have) 58160  0.00 -1 s
+( room for \(- ) 73727  287.00 32 s
+5 sf
+(source\036end source\036star) 100112  287.00 32 s
+4 sf
+(t\) integer elements,) 122393  287.00 32 s
+( starting at ) 135871  286.33 32 s
+5 sf
+(destination\036) 149352  0.00 -1 s
+52832.0 28900.0 m
+(start) 58007  0.00 -1 s
+4 sf
+(.) 58713  0.00 -1 s
+( Elements of ) 73143  -180.00 32 s
+5 sf
+(destination) 85685  0.00 -1 s
+4 sf
+( can be either ) 100794  -180.00 32 s
+2 sf
+(card8) 107691  0.00 -1 s
+4 sf
+( or ) 111273  -90.00 32 s
+2 sf
+(card16) 119581  0.00 -1 s
+4 sf
+( integers, depending on the) 149352  -179.50 32 s
+52832.0 32060.0 m
+(context.) 61845  0.00 -1 s
+( ) 62439  -112.00 32 s
+5 sf
+(font) 66829  0.00 -1 s
+4 sf
+( is the current) 81931  -112.00 32 s
+( font, if known, or ) 102609  -112.60 32 s
+2 sf
+(nil) 105746  0.00 -1 s
+4 sf
+( otherwise. Starting with the element at) 149352  -112.50 32 s
+52832.0 35221.0 m
+5 sf
+(source\036start) 66470  0.00 -1 s
+4 sf
+(, ) 67882  0.00 32 s
+2 sf
+(translate\036function) 89511  0.00 -1 s
+4 sf
+( should translate as many elements of ) 131595  -135.00 32 s
+5 sf
+(source) 139119  0.00 -1 s
+4 sf
+( as) 142041  -135.00 32 s
+( possi\036) 149352  -136.00 32 s
+52832.0 38382.0 m
+(ble \(up) 60747  0.00 32 s
+( to the ) 68355  -51.00 32 s
+5 sf
+(source\036end) 80893  0.00 -1 s
+4 sf
+( element\) into indexes in the current ) 121994  -51.00 32 s
+5 sf
+(font) 126384  0.00 -1 s
+4 sf
+(,) 127090  0.00 -1 s
+( and store them into) 149352  -38.75 32 s
+52832.0 41543.0 m
+5 sf
+(destination) 65374  0.00 -1 s
+4 sf
+(.) 66080  0.00 -1 s
+( The) 71250  76.00 32 s
+( first return value should be the source index of the first untranslated) 149352  69.17 32 s
+52832.0 44704.0 m
+(element.) 62471  0.00 -1 s
+52832.0 50981.0 m
+(The) 57220  0.00 -1 s
+( second return value indicates the changes which should be made to the current text) 149352  -147.86 32 s
+52832.0 54142.0 m
+(output) 60044  0.00 -1 s
+( request before translating the remaining ) 105668  -128.00 32 s
+5 sf
+(source) 113192  0.00 -1 s
+4 sf
+( elements. If) 127091  -64.00 32 s
+( no further elements) 149352  -128.67 32 s
+52832.0 57302.0 m
+(need) 58160  0.00 -1 s
+( to be translated, the second return value should be ) 114648  -143.10 32 s
+2 sf
+(nil) 117785  0.00 -1 s
+4 sf
+(. If a horizontal) 134704  -159.00 32 s
+( motion is re\036) 149352  -159.67 32 s
+52832.0 60463.0 m
+(quired) 60041  0.00 -1 s
+( before further translation, the second) 101408  -189.60 32 s
+( return value should be the change in x posi\036) 149352  -237.56 32 s
+52832.0 63624.0 m
+(tion.) 57928  0.00 -1 s
+( If a) 62417  -27.00 32 s
+( font change is required for further translation, the second return value should) 149352  -50.00 32 s
+52832.0 66785.0 m
+(be) 55496  0.00 -1 s
+( the new) 64993  -32.00 32 s
+( font.) 70917  -33.00 32 s
+52832.0 73062.0 m
+(If) 54710  0.00 -1 s
+( known, the pixel width of the translated text can be returned as the third value; this can) 149352  -250.88 32 s
+52832.0 76223.0 m
+(allow) 59101  0.00 -1 s
+( for appending of subsequent output) 100549  154.00 32 s
+( to the same protocol request, if no overall) 149352  134.25 32 s
+52832.0 79383.0 m
+(width) 59259  0.00 -1 s
+( has been specified at the) 87410  -28.00 32 s
+( higher level. ) 102842  -28.67 32 s
+5 sf
+52832.0 85660.0 m
+(source) 60356  0.00 -1 s
+4 sf
+( \037 A sequence of characters or other objects to be translated. ) 130183  -25.83 32 s
+5 sf
+52832.0 90447.0 m
+(source\036start) 66470  0.00 -1 s
+4 sf
+( \037 An array\036index specifying the first ) 110266  -23.86 32 s
+5 sf
+(source) 117790  0.00 -1 s
+4 sf
+( element to be translated.) 145988  -23.50 32 s
+5 sf
+52832.0 95233.0 m
+(source\036end) 65370  0.00 -1 s
+4 sf
+( \037 An array\036index specifying the end of the) 113760  -201.00 32 s
+( ) 114264  -202.00 32 s
+5 sf
+(source) 121788  0.00 -1 s
+4 sf
+( subsequence to be trans\036) 149352  -201.50 32 s
+57912.0 98394.0 m
+(lated.) 64103  0.00 -1 s
+5 sf
+52832.0 103180.0 m
+(font) 57222  0.00 -1 s
+4 sf
+( \037 The font indexed by translated ) 96416  -32.71 32 s
+5 sf
+(source) 103940  0.00 -1 s
+4 sf
+( elements.) 115350  -33.00 32 s
+5 sf
+52832.0 107967.0 m
+(destination) 65374  0.00 -1 s
+4 sf
+( \037 A vector where translated ) 99211  -28.67 32 s
+5 sf
+(source) 106735  0.00 -1 s
+4 sf
+( elements are stored.) 129845  -28.67 32 s
+5 sf
+52832.0 112753.0 m
+(destination\036start) 71488  0.00 -1 s
+4 sf
+( \037 An array\036index) 94233  451.00 32 s
+( specifying the position to begin storing trans\036) 149352  450.43 32 s
+57912.0 115914.0 m
+(lated ) 64103  0.00 32 s
+5 sf
+(source) 71627  0.00 -1 s
+4 sf
+( elements.) 82973  -97.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 12
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8195.0 m
+(Graphic Operations) 38563  -41.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(6\03680) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18 3 declareFont
+3 sf
+20320.0 24271.0 m
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

@@ -1,0 +1,6843 @@
+%!PS-Adobe-2.0
+%%Title: s04.ps
+%%Pages: 18
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 12 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/timsps10b /ILtimsb 10 map
+	/timsps18 /ILtims 18 map
+	/timsps12b /ILtimsb 12 map
+	/courps8 /ILcourps 8 map
+	/timsps8 /ILtims 8 map
+	/symbb8 /ILsymbb 8 map
+	/timsps6 /ILtims 6 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Courier /ILcourps ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 12 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03635) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 10 declareFont
+10 sf
+20410.0 39376.0 m
+53012.0 39466.0 m
+(WINDOWS AND) 91485  -43.00 32 s
+( PIXMAPS) 115846  -44.00 32 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+270.0 sw
+0.0 sw
+270.0 sw
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+145823 39315 av
+141716 39315 as
+141716 36265 as
+141716 36265 as
+141716 33596 as
+141716 33596 as
+141716 27495 as
+141716 27495 as
+141260 23300 as
+141260 23300 as
+145823 23300 as
+145823 33596 as
+148105 33596 as
+148105 36265 as
+145823 36265 as
+145823 39315 as
+fp
+newpath
+145823 39315 av
+141716 39315 as
+141716 36265 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+141716 36265 av
+141716 33596 as
+newpath
+270.0 sw
+141716 33596 av
+141716 27495 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+141716 27495 av
+141260 23300 as
+newpath
+270.0 sw
+141260 23300 av
+145823 23300 as
+145823 33596 as
+148105 33596 as
+148105 36265 as
+145823 36265 as
+145823 39315 as
+[] 0 setdash
+dp
+0.0 sw
+270.0 sw
+0.0 sw
+270.0 sw
+/drawmode PL_REPLACE def
+newpath
+0.0 sw
+/drawmode PL_SET def
+141716 36265 av
+141716 33596 as
+141716 33596 as
+136697 33596 as
+141716 27495 as
+141716 27495 as
+141260 23300 as
+141260 23300 as
+133047 32833 as
+133047 36265 as
+141716 36265 as
+fp
+newpath
+141716 36265 av
+141716 33596 as
+newpath
+270.0 sw
+141716 33596 av
+136697 33596 as
+141716 27495 as
+[] 0 setdash
+dp
+newpath
+0.0 sw
+141716 27495 av
+141260 23300 as
+newpath
+270.0 sw
+141260 23300 av
+133047 32833 as
+133047 36265 as
+141716 36265 as
+[] 0 setdash
+dp
+0.0 sw
+newpath
+132590 23300 av
+132590 23300 as
+newpath
+132590 43891 av
+132590 43891 as
+newpath
+148561 43891 av
+148561 43891 as
+newpath
+148561 23300 av
+148561 23300 as
+149351.0 39376.0 m
+10 sf
+/timsps10 5 declareFont
+5 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 46871.0 m
+(Drawables) 35743  0.00 -1 s
+52832.0 h
+2 sf
+(4.1) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(Both) 64043  0.00 -1 s
+( windows and pixmaps can be used as sources and destinations in graphics op\036) 149352  -256.69 32 s
+52832.0 50032.0 m
+(erations.) 62471  0.00 -1 s
+( These are collectively known as ) 99512  -96.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(drawables) 111271  0.00 -1 s
+5 sf
+(. The following) 128557  -96.00 32 s
+( functions apply to) 149352  -96.67 32 s
+52832.0 53193.0 m
+(both) 57849  0.00 -1 s
+( windows and pixmaps.) 84351  -49.67 32 s
+2 sf
+34544.0 59470.0 m
+(drawable\036display) 55396  0.00 -1 s
+5 sf
+( ) 55966  -136.00 32 s
+4 sf
+(drawable) 66627  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 64189.0 m
+(Returns) 61610  0.00 -1 s
+( the display for the specified ) 94184  -30.83 32 s
+4 sf
+(drawable) 104845  0.00 -1 s
+5 sf
+(.) 105551  0.00 -1 s
+4 sf
+52832.0 70465.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64153  -46.00 32 s
+5 sf
+(\037 A ) 70333  -45.50 32 s
+2 sf
+(drawable) 81620  0.00 -1 s
+5 sf
+( object.) 89882  -46.00 32 s
+2 sf
+34544.0 75252.0 m
+(drawable\036equal) 53356  0.00 -1 s
+5 sf
+( ) 53957  -105.00 32 s
+4 sf
+(drawable\0361) 66968  0.00 -1 s
+2 sf
+( ) 67569  -105.00 32 s
+4 sf
+(drawable\0362) 80580  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 79970.0 m
+(Returns) 61610  0.00 -1 s
+( true if the two arguments refer to the same server resource, and ) 130769  -273.85 32 s
+2 sf
+(nil) 133906  0.00 -1 s
+5 sf
+( if they do not.) 149352  -273.50 32 s
+4 sf
+52832.0 86247.0 m
+(drawable\0361) 65843  0.00 -1 s
+5 sf
+(,) 66549  0.00 -1 s
+2 sf
+( ) 67198  -57.00 32 s
+4 sf
+(drawable\0362 ) 80858  -57.00 32 s
+5 sf
+(\037 ) 84329  -57.00 32 s
+2 sf
+(drawable) 95616  0.00 -1 s
+5 sf
+( objects.) 104964  -58.00 32 s
+2 sf
+34544.0 91034.0 m
+(drawable\036id) 49123  0.00 -1 s
+5 sf
+( ) 49712  -117.00 32 s
+4 sf
+(drawable) 60373  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 94194.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 97355.0 m
+(  id ) 57055  -30.00 32 s
+5 sf
+(\037 Type ) 67029  -29.50 32 s
+2 sf
+(resource\036id) 80664  0.00 -1 s
+5 sf
+(.) 81370  0.00 -1 s
+52832.0 102074.0 m
+(Returns) 61610  0.00 -1 s
+( the unique resource ID assigned to) 101224  -33.00 32 s
+( the specified ) 116875  -33.67 32 s
+4 sf
+(drawable) 127536  0.00 -1 s
+5 sf
+(.) 128242  0.00 -1 s
+4 sf
+52832.0 108351.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64153  -46.00 32 s
+5 sf
+(\037 A ) 70333  -45.50 32 s
+2 sf
+(drawable) 81620  0.00 -1 s
+5 sf
+( object.) 89882  -46.00 32 s
+2 sf
+34544.0 113137.0 m
+(drawable\036p) 48339  0.00 -1 s
+5 sf
+( ) 48922  -123.00 32 s
+4 sf
+(drawable) 59583  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 116298.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 119459.0 m
+(  boole) 60444  -35.00 32 s
+( ) 61114  -36.00 32 s
+5 sf
+(\037 Type ) 71076  -35.50 32 s
+2 sf
+(boolean) 80484  0.00 -1 s
+5 sf
+(.) 81190  0.00 -1 s
+52832.0 124178.0 m
+(Returns) 61610  0.00 -1 s
+( true if the argument is a ) 89727  -25.00 32 s
+2 sf
+(drawable) 101014  0.00 -1 s
+5 sf
+( and ) 106450  -25.50 32 s
+2 sf
+(nil) 109587  0.00 -1 s
+5 sf
+( otherwise.) 121943  -26.00 32 s
+2 sf
+34544.0 130454.0 m
+(drawable\036plist) 51944  0.00 -1 s
+5 sf
+( ) 52557  -93.00 32 s
+4 sf
+(drawable) 63218  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 133615.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 136776.0 m
+(  plist ) 59793  -6.00 32 s
+5 sf
+(\037 A property list.) 80467  -6.00 32 s
+52832.0 141495.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73749  -3.00 32 s
+2 sf
+(setf) 77978  0.00 -1 s
+5 sf
+(\) sets the property list for the specified ) 122157  -2.63 32 s
+4 sf
+(drawable) 132818  0.00 -1 s
+5 sf
+(. This function) 149352  -2.50 32 s
+52832.0 144656.0 m
+(provides) 62550  0.00 -1 s
+( a hook where extensions can add data.) 106296  -42.71 32 s
+20320.0 151655.0 m
+0.0 0.0 m
+newpath
+20455 150031 av
+148878 150029 as
+[] 0 setdash
+dp
+149352.0 151655.0 m
+6 sf
+20320.0 155042.0 m
+(Creating) 33108  0.00 -1 s
+( ) 33980  25.00 32 s
+52832.0 h
+2 sf
+(4.2) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(A) 60592  0.00 -1 s
+( window is a ) 81926  1571.00 32 s
+2 sf
+(drawable) 93213  0.00 -1 s
+5 sf
+( that can also receive input events.) 141433  1571.00 32 s
+( CLX) 149352  1570.00 32 s
+6 sf
+20320.0 158428.0 m
+(Windows) 33869  0.00 -1 s
+52832.0 h
+5 sf
+(represents) 64271  0.00 -1 s
+( a window with a ) 83455  -191.80 32 s
+2 sf
+(window ) 93376  -192.00 32 s
+5 sf
+(object. The ) 106395  -191.50 32 s
+2 sf
+(create\036window) 124103  0.00 -1 s
+5 sf
+( function creates a new) 149352  -191.50 32 s
+52832.0 161589.0 m
+2 sf
+(window) 62239  0.00 -1 s
+5 sf
+( object.) 70465  -82.00 32 s
+2 sf
+34544.0 167866.0 m
+(create\036window) 52252  0.00 -1 s
+5 sf
+( &key) 59198  -30.00 32 s
+( ) 59873  -31.00 32 s
+2 sf
+(:parent :x :y :width :height) 92509  -30.50 32 s
+5 sf
+( \() 94124  -30.00 32 s
+2 sf
+(:depth) 101962  0.00 -1 s
+5 sf
+( 0\)) 104987  -31.00 32 s
+139373.0 h
+(Function) 149407  0.00 -1 s
+52832.0 171027.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(:border\036width) 70855  0.00 -1 s
+5 sf
+( 0\) \() 75492  -32.00 32 s
+2 sf
+(:class) 82075  0.00 -1 s
+5 sf
+( ) 82749  -32.00 32 s
+2 sf
+(:copy) 89332  0.00 -1 s
+5 sf
+(\) \() 91884  -32.00 32 s
+2 sf
+(:visual) 99880  0.00 -1 s
+( :copy) 107136  -33.00 32 s
+5 sf
+(\) ) 108749  -32.00 32 s
+2 sf
+(:background ) 124945  -33.00 32 s
+52832.0 174188.0 m
+(:border) 62079  0.00 -1 s
+( :gravity :bit\036gravity :backing\036store :backing\036planes ) 125244  -48.00 32 s
+/courps8 8 declareFont
+8 sf
+( ) 126508  -93.00 32 s
+2 sf
+(:backing\036pixel) 143753  0.00 -1 s
+52832.0 177348.0 m
+(:save\036under) 67096  0.00 -1 s
+( :event\036mask :do\036not\036propagate\036mask  :override\036redirect :colormap) 148291  -75.80 32 s
+52832.0 180509.0 m
+(:cursor) 61608  0.00 -1 s
+34544.0 183670.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 186831.0 m
+(  window) 62961  -32.00 32 s
+5 sf
+( \037 Type ) 73605  -31.67 32 s
+2 sf
+(window) 83012  0.00 -1 s
+5 sf
+(.) 83718  0.00 -1 s
+52832.0 191550.0 m
+(Creates) 61294  0.00 -1 s
+( and returns a window. A ) 90367  -26.67 32 s
+2 sf
+(:parent) 99300  0.00 -1 s
+5 sf
+( window must be specified; the first window) 149352  -26.57 32 s
+52832.0 194711.0 m
+(created) 60978  0.00 -1 s
+( by a client will have a root window as its ) 107770  -85.55 32 s
+2 sf
+(:parent) 116703  0.00 -1 s
+5 sf
+(. The new window is initially) 149352  -85.60 32 s
+52832.0 197872.0 m
+(unmapped) 64588  0.00 -1 s
+( and is placed) 80307  93.00 32 s
+( on top of its siblings in the stacking order. A ) 133059  92.45 32 s
+2 sf
+(:create\036notify) 149352  0.00 -1 s
+5 sf
+52832.0 201033.0 m
+(event) 58944  0.00 -1 s
+( is generated by the server.) 89024  -33.80 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03636) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(The) 57220  0.00 -1 s
+( ) 57718  -208.00 32 s
+2 sf
+(:class) 64301  0.00 -1 s
+5 sf
+( of a window can be ) 86564  -208.00 32 s
+2 sf
+(:input\036output ) 103366  -208.00 32 s
+5 sf
+(or) 105716  0.00 -1 s
+( ) 106213  -209.00 32 s
+2 sf
+(:input\036only) 119696  0.00 -1 s
+5 sf
+(. Windows of class ) 141044  -208.50 32 s
+2 sf
+(:input\036) 149352  0.00 -1 s
+52832.0 25739.0 m
+(only) 58007  0.00 -1 s
+5 sf
+( cannot be used as the destination drawable for graphics output and can never re\036) 149352  9.00 32 s
+52832.0 28900.0 m
+(ceive) 58786  0.00 -1 s
+( ) 59225  -267.00 32 s
+2 sf
+(:exposure) 70981  0.00 -1 s
+5 sf
+( events, but otherwise operate the same as ) 116887  -267.00 32 s
+2 sf
+(:input\036output) 133191  0.00 -1 s
+5 sf
+( windows. The) 149352  -267.00 32 s
+52832.0 32060.0 m
+2 sf
+(:class) 59415  0.00 -1 s
+5 sf
+( can also be ) 72232  -283.50 32 s
+2 sf
+(:copy) 78815  0.00 -1 s
+5 sf
+(, in which case the new window has the same class as its ) 139713  -283.54 32 s
+2 sf
+(:parent) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+52832.0 35221.0 m
+41498.0 v
+(For) 56751  0.00 -1 s
+( an ) 60348  -239.50 32 s
+2 sf
+(:input\036output) 76652  0.00 -1 s
+5 sf
+( window, the ) 91296  -239.67 32 s
+2 sf
+(:visual) 99292  0.00 -1 s
+5 sf
+( and ) 104300  -239.50 32 s
+2 sf
+(:depth) 112138  0.00 -1 s
+5 sf
+( must be a combination supported) 149352  -191.60 32 s
+52832.0 44659.0 m
+(by) 55654  0.00 -1 s
+( the) 59581  -227.00 32 s
+( ) 60059  -228.00 32 s
+2 sf
+(:parent) 68992  0.00 -1 s
+5 sf
+('s screen, but the ) 87910  -227.50 32 s
+2 sf
+(:depth) 95748  0.00 -1 s
+5 sf
+( need not be the same as the ) 126220  -227.50 32 s
+2 sf
+(:parent) 135153  0.00 -1 s
+5 sf
+('s. The ) 143241  -227.50 32 s
+2 sf
+(:par\036) 149352  0.00 -1 s
+52832.0 47820.0 m
+(ent) 56593  0.00 -1 s
+5 sf
+( of an ) 63227  -166.00 32 s
+2 sf
+(:input\036output) 79531  0.00 -1 s
+5 sf
+( window must also be ) 104021  -165.80 32 s
+2 sf
+(:input\036output) 120325  0.00 -1 s
+5 sf
+(. A ) 124149  -165.50 32 s
+2 sf
+(:depth) 131987  0.00 -1 s
+5 sf
+( of 0 means that) 149352  -165.50 32 s
+52832.0 50981.0 m
+(the) 56280  0.00 -1 s
+( depth of the) 70385  -27.00 32 s
+( ) 71063  -28.00 32 s
+2 sf
+(:parent) 79996  0.00 -1 s
+5 sf
+( is used.) 89114  -27.50 32 s
+52832.0 57257.0 m
+(For) 56751  0.00 -1 s
+( an ) 60361  -233.00 32 s
+2 sf
+(:input\036only) 73844  0.00 -1 s
+5 sf
+( window, the ) 88508  -233.00 32 s
+2 sf
+(:depth) 96346  0.00 -1 s
+5 sf
+( must be zero, and the ) 120422  -232.83 32 s
+2 sf
+(:visual) 128418  0.00 -1 s
+5 sf
+( must be supported) 149352  -155.00 32 s
+52832.0 60418.0 m
+(by) 55654  0.00 -1 s
+( the ) 59982  -266.00 32 s
+2 sf
+(:parent) 68915  0.00 -1 s
+5 sf
+('s screen. The ) 84575  -265.33 32 s
+2 sf
+(:parent) 93508  0.00 -1 s
+5 sf
+( of an ) 99843  -265.67 32 s
+2 sf
+(:input\036only) 113326  0.00 -1 s
+5 sf
+( window can be of any class. The) 149352  -227.57 32 s
+52832.0 63579.0 m
+(only) 57849  0.00 -1 s
+( attributes that can be given for an ) 100146  389.00 32 s
+2 sf
+(:input\036only) 113629  0.00 -1 s
+5 sf
+( window) 123426  0.00 32 s
+( are ) 129060  388.50 32 s
+2 sf
+(:cursor) 137836  0.00 -1 s
+5 sf
+(, ) 139636  388.00 32 s
+2 sf
+(:do\036not\036) 149352  0.00 -1 s
+52832.0 66740.0 m
+(propagate\036mask) 72426  0.00 -1 s
+5 sf
+(,) 73132  0.00 -1 s
+( ) 73725  -113.00 32 s
+2 sf
+(:event\036mask) 88456  0.00 -1 s
+5 sf
+(, ) 89755  -113.00 32 s
+2 sf
+(:gravity) 99314  0.00 -1 s
+5 sf
+(, and ) 105394  -56.50 32 s
+2 sf
+(:override\036redirect) 127016  0.00 -1 s
+5 sf
+(.) 127722  0.00 -1 s
+2 sf
+52832.0 73017.0 m
+(:parent) 61765  0.00 -1 s
+5 sf
+( \037 The parent window. This argument is required.) 118872  -32.75 32 s
+2 sf
+52832.0 77803.0 m
+(:x) 55182  0.00 -1 s
+5 sf
+(,) 55888  0.00 -1 s
+( ) 56436  -158.00 32 s
+2 sf
+(:y) 58786  0.00 -1 s
+5 sf
+( \037 ) 62704  -158.00 32 s
+2 sf
+(int16) 68818  0.00 -1 s
+5 sf
+( coordinates) 82374  -158.00 32 s
+( for the outside upper\036left corner of the new window with re\036) 149352  -158.55 32 s
+57912.0 80964.0 m
+(spect) 63711  0.00 -1 s
+( to the origin \(inside upper\036left corner\) of the ) 115541  38.44 32 s
+2 sf
+(:parent) 124474  0.00 -1 s
+5 sf
+(. These arguments are) 149352  38.33 32 s
+57912.0 84125.0 m
+(required.) 68019  0.00 -1 s
+2 sf
+52832.0 88911.0 m
+(:width) 60669  0.00 -1 s
+5 sf
+(,) 61375  0.00 -1 s
+( ) 61933  -148.00 32 s
+2 sf
+(:height) 70397  0.00 -1 s
+5 sf
+( \037 ) 74335  -148.00 32 s
+2 sf
+(card16) 82643  0.00 -1 s
+5 sf
+( values for the size of the new window. These arguments are) 149352  -147.91 32 s
+57912.0 92072.0 m
+(required.) 68019  0.00 -1 s
+( ) 68682  -43.00 32 s
+2 sf
+52832.0 96859.0 m
+(:depth) 60670  0.00 -1 s
+5 sf
+( \037 A ) 67545  -34.00 32 s
+2 sf
+(card16) 75853  0.00 -1 s
+5 sf
+( specifying the depth of the new window.) 122326  -34.00 32 s
+2 sf
+52832.0 101645.0 m
+(:class) 59415  0.00 -1 s
+5 sf
+( \037 One of ) 72013  -24.75 32 s
+2 sf
+(:input\036outpu) 87378  0.00 -1 s
+5 sf
+(t, ) 89549  -25.00 32 s
+2 sf
+(:input\036only) 103032  0.00 -1 s
+5 sf
+(, or) 106770  -24.00 32 s
+2 sf
+( :copy) 114034  -25.00 32 s
+5 sf
+(.) 114740  0.00 -1 s
+2 sf
+52832.0 106432.0 m
+(:visual) 60828  0.00 -1 s
+5 sf
+( \037 A ) 67724  -27.00 32 s
+2 sf
+(card29) 76032  0.00 -1 s
+5 sf
+( ID specifying the visual) 103668  -27.00 32 s
+( type of the new window.) 132215  -27.60 32 s
+2 sf
+52832.0 111218.0 m
+(:background) 68355  0.00 -1 s
+5 sf
+(,) 69061  0.00 -1 s
+( ) 69820  53.00 32 s
+2 sf
+(:backing\036pixel) 87065  0.00 -1 s
+5 sf
+(, ) 88530  53.00 32 s
+2 sf
+(:backing\036planes) 107658  0.00 -1 s
+5 sf
+(, ) 109123  53.00 32 s
+2 sf
+(:backing\036store) 126521  0.00 -1 s
+5 sf
+(, ) 127986  53.00 32 s
+2 sf
+(:bit\036gravity) 141776  0.00 -1 s
+5 sf
+(, ) 143241  53.00 32 s
+2 sf
+(:bor\036) 149352  0.00 -1 s
+57912.0 114379.0 m
+(der) 61987  0.00 -1 s
+5 sf
+(,) 62693  0.00 -1 s
+( ) 64289  890.00 32 s
+2 sf
+(:border\036width) 81373  0.00 -1 s
+5 sf
+(, ) 83675  890.00 32 s
+2 sf
+(:colormap) 96056  0.00 -1 s
+5 sf
+(, ) 98358  890.00 32 s
+2 sf
+(:cursor) 107134  0.00 -1 s
+5 sf
+(, ) 109437  891.00 32 s
+2 sf
+(:do\036not\036propagate\036mask) 138747  0.00 -1 s
+5 sf
+(, ) 141049  890.00 32 s
+2 sf
+(:event\036) 149352  0.00 -1 s
+57912.0 117540.0 m
+(mask) 64340  0.00 -1 s
+5 sf
+(,) 65046  0.00 -1 s
+( ) 65550  -202.00 32 s
+2 sf
+(:gravity) 75109  0.00 -1 s
+5 sf
+(, ) 76319  -202.00 32 s
+2 sf
+(:override\036redirect) 97941  0.00 -1 s
+5 sf
+(, ) 99151  -202.00 32 s
+2 sf
+(:save\036under) 113415  0.00 -1 s
+5 sf
+( \037 Initial attribute values for the) 149352  -201.67 32 s
+57912.0 120701.0 m
+(new) 62613  0.00 -1 s
+( window.) 73104  -12.00 32 s
+( If ) 76369  -12.50 32 s
+2 sf
+(nil) 79506  0.00 -1 s
+5 sf
+(, the default value is defined by the X protocol. See paragraph) 149352  -12.55 32 s
+57912.0 123862.0 m
+(4.3,) 62146  0.00 -1 s
+( Window) 72530  -40.00 32 s
+( Attributes.) 85186  -41.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03637) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+20320.0 23300.0 m
+0.0 0.0 m
+newpath
+20455 21676 av
+148878 21674 as
+[] 0 setdash
+dp
+149352.0 23300.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 26687.0 m
+(Window) 32552  0.00 -1 s
+( ) 33393  -6.00 32 s
+52832.0 h
+2 sf
+(4.3) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( following paragraphs describe the CLX functions used) 132789  1055.00 32 s
+( to return or) 149352  1054.33 32 s
+6 sf
+20320.0 30074.0 m
+(Attributes) 35176  0.00 -1 s
+52832.0 h
+5 sf
+(change) 60824  0.00 -1 s
+( window attributes. Using the ) 93833  -201.60 32 s
+2 sf
+(with\036state) 105741  0.00 -1 s
+5 sf
+( macro improves the performance of at\036) 149352  -201.50 32 s
+52832.0 33234.0 m
+(tribute) 60198  0.00 -1 s
+( access by batching related accesses) 100407  -61.00 32 s
+( in the minimum number of server requests.) 149352  -61.57 32 s
+2 sf
+34544.0 39511.0 m
+(drawable\036border\036width) 62915  0.00 -1 s
+/courps8 8 declareFont
+8 sf
+( ) 64094  -178.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(drawable) 74755  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 42672.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 45833.0 m
+(  border\036width) 69065  -36.00 32 s
+( ) 69734  -37.00 32 s
+5 sf
+(\037 Type ) 79694  -36.50 32 s
+2 sf
+(card16) 88002  0.00 -1 s
+5 sf
+(.) 88708  0.00 -1 s
+52832.0 50552.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66364  -53.00 32 s
+4 sf
+(border\036width) 81257  0.00 -1 s
+5 sf
+( of the ) 89014  -53.00 32 s
+4 sf
+(drawable) 99675  0.00 -1 s
+5 sf
+( in pixels.) 110623  -53.00 32 s
+( It always returns zero if the ) 142611  -53.57 32 s
+4 sf
+(draw\036) 149352  0.00 -1 s
+52832.0 53713.0 m
+(able) 57691  0.00 -1 s
+5 sf
+( is a pixmap or an ) 78121  -70.00 32 s
+2 sf
+(:input\036only) 91604  0.00 -1 s
+5 sf
+( window.) 102037  -70.00 32 s
+( Used with ) 114758  -70.67 32 s
+2 sf
+(setf) 118987  0.00 -1 s
+5 sf
+(, this function also changes) 149352  -70.50 32 s
+52832.0 56873.0 m
+(the) 56280  0.00 -1 s
+( border width of the ) 78294  -221.00 32 s
+2 sf
+(:input\036only) 91777  0.00 -1 s
+5 sf
+( window. The default border width of a new window) 149352  -220.56 32 s
+52832.0 60034.0 m
+(is) 54714  0.00 -1 s
+( zero.) 60960  -22.00 32 s
+52832.0 66311.0 m
+(Changing) 63806  0.00 -1 s
+( just the border width leaves the outer left corner of a window in a fixed posi\036) 149352  -119.56 32 s
+52832.0 69472.0 m
+(tion) 57222  0.00 -1 s
+( but moves the absolute position of the window's origin. It is an error to make the) 149352  2.25 32 s
+52832.0 72633.0 m
+(border) 60196  0.00 -1 s
+( width of an) 73641  -38.00 32 s
+( ) 74308  -39.00 32 s
+2 sf
+(:input\036only) 87791  0.00 -1 s
+5 sf
+( window nonzero.) 108012  -38.50 32 s
+52832.0 78909.0 m
+(When) 59571  0.00 -1 s
+( changing the border\036width of a window, if the override\036redirect) 132020  5.00 32 s
+( attribute of the) 149352  4.33 32 s
+52832.0 82070.0 m
+(window) 61923  0.00 -1 s
+( is ) 64729  -244.00 32 s
+2 sf
+(:off) 68957  0.00 -1 s
+5 sf
+( and some other client has selected ) 107141  -244.00 32 s
+2 sf
+(:substructure\036redirect) 133938  0.00 -1 s
+5 sf
+( on the parent,) 149352  -243.67 32 s
+52832.0 85231.0 m
+(a) 54085  0.00 -1 s
+( ) 54540  -251.00 32 s
+2 sf
+(:configure\036request) 76794  0.00 -1 s
+5 sf
+( event is generated,) 97827  -251.00 32 s
+( and no further processing is performed. Other\036) 149352  -251.57 32 s
+52832.0 88392.0 m
+(wise,) 58710  0.00 -1 s
+( the) 62827  -37.00 32 s
+( border\036width is changed.) 91553  -37.67 32 s
+4 sf
+52832.0 94669.0 m
+(drawable) 63493  0.00 -1 s
+8 sf
+( ) 64780  -70.00 32 s
+5 sf
+(\037) 67602  0.00 -1 s
+( A ) 70979  -36.00 32 s
+2 sf
+(drawable) 82266  0.00 -1 s
+5 sf
+( object.) 90537  -37.00 32 s
+2 sf
+34544.0 99455.0 m
+(drawable\036depth) 53669  0.00 -1 s
+( ) 54228  -147.00 32 s
+4 sf
+(drawable) 64889  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 102616.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 105777.0 m
+(  depth) 60446  -34.00 32 s
+( ) 61117  -35.00 32 s
+5 sf
+(\037 Type ) 71081  -34.50 32 s
+2 sf
+(card8) 77978  0.00 -1 s
+5 sf
+(.) 78684  0.00 -1 s
+52832.0 110496.0 m
+(Returns) 61610  0.00 -1 s
+( the depth of the specified ) 91392  -26.00 32 s
+4 sf
+(drawable) 102053  0.00 -1 s
+5 sf
+( \(bits per pixel\).) 120001  -25.67 32 s
+4 sf
+52832.0 116772.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64153  -46.00 32 s
+5 sf
+(\037 A ) 70333  -45.50 32 s
+2 sf
+(drawable) 81620  0.00 -1 s
+5 sf
+( object.) 89882  -46.00 32 s
+2 sf
+34544.0 121559.0 m
+(drawable\036height) 54295  0.00 -1 s
+( ) 54860  -141.00 32 s
+4 sf
+(drawable) 65521  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 124720.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 127881.0 m
+(  inside\036height ) 69576  -36.00 32 s
+5 sf
+(\037 Type) 78867  -36.00 32 s
+( ) 79536  -37.00 32 s
+2 sf
+(card16) 87844  0.00 -1 s
+5 sf
+(.) 88550  0.00 -1 s
+2 sf
+34544.0 132599.0 m
+(drawable\036width) 53668  0.00 -1 s
+( ) 54250  -124.00 32 s
+4 sf
+(drawable) 64911  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 135760.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 138921.0 m
+(  inside\036width) 68130  -33.00 32 s
+( ) 68802  -34.00 32 s
+5 sf
+(\037 Type ) 78768  -33.50 32 s
+2 sf
+(card16) 87076  0.00 -1 s
+5 sf
+(.) 87782  0.00 -1 s
+52832.0 143640.0 m
+(These) 59571  0.00 -1 s
+( functions return the height or width of the ) 105937  -256.00 32 s
+4 sf
+(drawable) 116598  0.00 -1 s
+5 sf
+(. These coordinates define the) 149352  -255.50 32 s
+52832.0 146801.0 m
+(inside) 59573  0.00 -1 s
+( size of the ) 72771  47.00 32 s
+4 sf
+(drawable) 83432  0.00 -1 s
+5 sf
+(, in pixels. Used with ) 108363  47.60 32 s
+2 sf
+(setf) 112592  0.00 -1 s
+5 sf
+(, these functions also change the) 149352  47.40 32 s
+52832.0 149962.0 m
+(inside) 59573  0.00 -1 s
+( height or width of a window. However, the height or width of a pixmap cannot) 146191  -208.00 32 s
+( be) 149352  -209.00 32 s
+52832.0 153122.0 m
+(changed.) 62941  0.00 -1 s
+( ) 63556  -91.00 32 s
+52832.0 159399.0 m
+(Changing) 63806  0.00 -1 s
+( the width and height resizes a window without) 115582  -190.00 32 s
+( changing its position or stack\036) 149352  -190.60 32 s
+52832.0 162560.0 m
+(ing) 56438  0.00 -1 s
+( priority.) 66298  -15.00 32 s
+( ) 66988  -16.00 32 s
+52832.0 168837.0 m
+(Changing) 63806  0.00 -1 s
+( the size of a mapped window may cause the window to lose its contents and) 149352  -70.73 32 s
+52832.0 171998.0 m
+(generate) 62389  0.00 -1 s
+( an ) 66485  10.00 32 s
+2 sf
+(:exposure) 78241  0.00 -1 s
+5 sf
+( event. If a mapped window is made smaller, ) 129670  10.56 32 s
+2 sf
+(:exposure) 141426  0.00 -1 s
+5 sf
+( events) 149352  10.00 32 s
+52832.0 175158.0 m
+(are) 56277  0.00 -1 s
+( generated on windows that it formerly obscured.) 111534  -32.57 32 s
+52832.0 181435.0 m
+(When) 59571  0.00 -1 s
+( changing the size of a window, if the override\036redirect attribute of the window is) 149352  -141.79 32 s
+52832.0 184596.0 m
+2 sf
+(:off) 57060  0.00 -1 s
+5 sf
+( and some other client has) 85431  -204.00 32 s
+( selected ) 95523  -204.50 32 s
+2 sf
+(:substructure\036redirect) 122320  0.00 -1 s
+5 sf
+( on the parent, a ) 140107  -204.60 32 s
+2 sf
+(:config\036) 149352  0.00 -1 s
+52832.0 187757.0 m
+(ure\036request) 66780  0.00 -1 s
+5 sf
+( event is generated, and no further processing is performed. Otherwise, if) 149352  12.00 32 s
+52832.0 190918.0 m
+(another) 61294  0.00 -1 s
+( client has selected ) 83174  -16.00 32 s
+2 sf
+(:resize\036redirect) 101503  0.00 -1 s
+5 sf
+( on the window, a ) 122273  -16.00 32 s
+2 sf
+(:resize\036request) 139979  0.00 -1 s
+5 sf
+( event) 146781  -16.00 32 s
+( is) 149352  -17.00 32 s
+52832.0 194079.0 m
+(generated,) 64506  0.00 -1 s
+( and the current inside width and height are maintained. Note) 133591  4.00 32 s
+( that the over\036) 149352  3.33 32 s
+52832.0 197239.0 m
+(ride\036redirect) 66774  0.00 -1 s
+( attribute of the window has no effect on ) 114174  103.00 32 s
+2 sf
+(:resize\036redirect) 132503  0.00 -1 s
+5 sf
+( and that ) 143238  103.33 32 s
+2 sf
+(:sub\036) 149352  0.00 -1 s
+52832.0 200400.0 m
+(structure\036redirect) 74454  0.00 -1 s
+5 sf
+( on) 77848  -134.00 32 s
+( the parent has precedence over ) 113242  -134.50 32 s
+2 sf
+(:resize\036redirect) 131571  0.00 -1 s
+5 sf
+( on the window.) 149352  -134.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03638) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(When) 59571  0.00 -1 s
+( the inside size of) 79314  -2.00 32 s
+( the window is changed, the children of the window can move) 149352  -2.55 32 s
+52832.0 25739.0 m
+(according) 63958  0.00 -1 s
+( to their window gravity. Depending on the window's bit gravity, the) 139454  -212.00 32 s
+( contents) 149352  -213.00 32 s
+52832.0 28900.0 m
+(of) 55182  0.00 -1 s
+( the window can also be moved.) 91285  -31.00 32 s
+( ) 91959  -32.00 32 s
+/timsps10i 4 declareFont
+4 sf
+52832.0 35176.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64153  -46.00 32 s
+5 sf
+(\037 A ) 70333  -45.50 32 s
+2 sf
+(drawable) 81620  0.00 -1 s
+5 sf
+( object.) 89882  -46.00 32 s
+2 sf
+34544.0 39963.0 m
+(drawable\036x) 48181  0.00 -1 s
+( ) 48764  -123.00 32 s
+4 sf
+(drawable) 59425  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 43124.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 46284.0 m
+(  outside\036left ) 67584  -20.67 32 s
+5 sf
+(\037 Type ) 77576  -20.50 32 s
+2 sf
+(int16) 83690  0.00 -1 s
+5 sf
+(.) 84396  0.00 -1 s
+2 sf
+34544.0 51003.0 m
+(drawable\036y) 48181  0.00 -1 s
+( ) 48764  -123.00 32 s
+4 sf
+(drawable) 59425  0.00 -1 s
+5 sf
+139373.0 h
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 54164.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 57325.0 m
+(  outside\036top) 66891  -25.00 32 s
+( ) 67571  -26.00 32 s
+5 sf
+(\037 Type ) 77553  -25.50 32 s
+2 sf
+(int16) 83667  0.00 -1 s
+5 sf
+(.) 84373  0.00 -1 s
+52832.0 62044.0 m
+(These) 59571  0.00 -1 s
+( functions return the x or y coordinate of the specified ) 119528  -142.00 32 s
+4 sf
+(drawable) 130189  0.00 -1 s
+5 sf
+(. They always) 145658  -142.00 32 s
+( re\036) 149352  -143.00 32 s
+52832.0 65205.0 m
+(turn) 57377  0.00 -1 s
+( zero if the ) 70136  -23.00 32 s
+4 sf
+(drawable) 80797  0.00 -1 s
+5 sf
+( is a) 85298  -23.00 32 s
+( pixmap. These coordinates define the location of the top) 149352  -23.56 32 s
+52832.0 68366.0 m
+(left) 56592  0.00 -1 s
+( pixel of the window's border or of the window, if it has no border. Used with ) 144417  -47.94 32 s
+2 sf
+(setf) 148646  0.00 -1 s
+5 sf
+(,) 149352  0.00 -1 s
+52832.0 71526.0 m
+(these) 58631  0.00 -1 s
+( functions also change the x or y coordinate of a window. However, the x or y coor\036) 149352  -227.71 32 s
+52832.0 74687.0 m
+(dinate) 59728  0.00 -1 s
+( of a pixmap cannot be changed.) 96046  -47.00 32 s
+52832.0 80964.0 m
+(Changing) 63806  0.00 -1 s
+( the x and y coordinates moves a window without changing its size or) 139469  -227.00 32 s
+( stacking) 149352  -228.00 32 s
+52832.0 84125.0 m
+(priority.) 62001  0.00 -1 s
+( Moving a mapped window generates ) 105773  111.00 32 s
+2 sf
+(:exposure) 117529  0.00 -1 s
+5 sf
+( events on any formerly) 144775  111.00 32 s
+( ob\036) 149352  110.00 32 s
+52832.0 87286.0 m
+(scured) 60197  0.00 -1 s
+( windows.) 71730  -68.00 32 s
+52832.0 93562.0 m
+(When) 59571  0.00 -1 s
+( changing the position of a window, if the override\036redirect attribute of the) 143490  -14.00 32 s
+( win\036) 149352  -15.00 32 s
+52832.0 96723.0 m
+(dow) 57691  0.00 -1 s
+( is ) 60885  -50.00 32 s
+2 sf
+(:off) 65113  0.00 -1 s
+5 sf
+( and some other client) 89836  -50.00 32 s
+( has selected) 103998  -50.50 32 s
+2 sf
+( :substructure\036redirect) 131450  -51.00 32 s
+5 sf
+( on the parent, a) 149352  -50.50 32 s
+52832.0 99884.0 m
+2 sf
+(:configure\036request) 75086  0.00 -1 s
+5 sf
+( event is generated, and no further processing is performed. Other\036) 149352  -80.60 32 s
+52832.0 103045.0 m
+(wise,) 58710  0.00 -1 s
+( the window is moved.) 84215  -31.75 32 s
+4 sf
+52832.0 109322.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64153  -46.00 32 s
+5 sf
+(\037 A ) 70333  -45.50 32 s
+2 sf
+(drawable) 81620  0.00 -1 s
+5 sf
+( object.) 89882  -46.00 32 s
+2 sf
+34544.0 114108.0 m
+(window\036all\036event\036masks) 63698  0.00 -1 s
+( ) 64303  -101.00 32 s
+4 sf
+(window) 73084  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 117269.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 120430.0 m
+(  all\036event\036masks ) 72571  -29.00 32 s
+5 sf
+(\037 Type) 81869  -29.00 32 s
+( ) 82545  -30.00 32 s
+2 sf
+(mask32) 91795  0.00 -1 s
+5 sf
+(.) 92501  0.00 -1 s
+52832.0 125149.0 m
+(Returns) 61610  0.00 -1 s
+( the inclusive\036or of the event masks selected on the specified ) 129427  -125.91 32 s
+4 sf
+(window) 138208  0.00 -1 s
+5 sf
+( by all cli\036) 149352  -125.67 32 s
+52832.0 128310.0 m
+(ents.) 58084  0.00 -1 s
+4 sf
+52832.0 134586.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A) 67811  -36.00 32 s
+2 sf
+( window) 77887  -37.00 32 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 139373.0 m
+(setf) 38773  0.00 -1 s
+( ) 39393  -86.00 32 s
+5 sf
+(\() 40332  0.00 -1 s
+2 sf
+(window\036background) 65262  0.00 -1 s
+5 sf
+(\)) 66201  0.00 -1 s
+2 sf
+( ) 66821  -86.00 32 s
+4 sf
+(window) 75602  0.00 -1 s
+( background) 89702  -87.00 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 142534.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 145694.0 m
+(  background ) 68329  -34.00 32 s
+5 sf
+(\037 Either a ) 81315  -34.00 32 s
+2 sf
+(pixel) 87116  0.00 -1 s
+5 sf
+(, a ) 90419  -34.00 32 s
+2 sf
+(pixmap) 99513  0.00 -1 s
+5 sf
+(,) 100219  0.00 -1 s
+( ) 100890  -35.00 32 s
+2 sf
+(:none) 107631  0.00 -1 s
+5 sf
+(, or ) 112030  -34.50 32 s
+2 sf
+(:parent\036relative) 130990  0.00 -1 s
+5 sf
+(.) 131696  0.00 -1 s
+52832.0 150413.0 m
+(Changes) 62551  0.00 -1 s
+( the ) 66874  -268.50 32 s
+4 sf
+(background) 80355  0.00 -1 s
+5 sf
+( attribute of the ) 97306  -268.50 32 s
+4 sf
+(window) 106087  0.00 -1 s
+5 sf
+( to the specified value. This operation is) 149352  -268.57 32 s
+52832.0 153574.0 m
+(not) 56438  0.00 -1 s
+( allowed on an ) 73849  42.00 32 s
+2 sf
+(:input\036only) 87332  0.00 -1 s
+5 sf
+( window. Changing the background does not cause the) 149352  42.00 32 s
+52832.0 156735.0 m
+(window) 61923  0.00 -1 s
+( contents to be changed. Note that the background of a window cannot be re\036) 149352  48.07 32 s
+52832.0 159896.0 m
+(turned) 60041  0.00 -1 s
+( from the X server. The default background of a new window is ) 132219  -30.00 32 s
+2 sf
+(:none) 138960  0.00 -1 s
+5 sf
+(.) 139666  0.00 -1 s
+52832.0 166172.0 m
+(In) 55182  0.00 -1 s
+( general, the server automatically fills in exposed areas of the window when they are) 149352  -97.00 32 s
+52832.0 169333.0 m
+(first) 57376  0.00 -1 s
+( made visible. A background pixmap is tiled to) 109100  -148.00 32 s
+( fill each area. However, if the back\036) 149352  -148.57 32 s
+52832.0 172494.0 m
+(ground) 60826  0.00 -1 s
+( is ) 63544  -288.00 32 s
+2 sf
+(:none) 70285  0.00 -1 s
+5 sf
+(, the server will not modify  exposed areas. If the background is ) 139480  -265.85 32 s
+2 sf
+(:parent\036) 149352  0.00 -1 s
+52832.0 175655.0 m
+(relative) 61920  0.00 -1 s
+5 sf
+(,) 62626  0.00 -1 s
+( the window and its parent must have the same depth. In this case, the window) 149352  -117.53 32 s
+52832.0 178816.0 m
+(shares) 59884  0.00 -1 s
+( the same background as its parent. The parent's background is not copied and is) 149352  -108.93 32 s
+52832.0 181977.0 m
+(reexamined) 65995  0.00 -1 s
+( whenever the window's background is required. If the) 126440  -173.00 32 s
+( background is ) 143241  -173.67 32 s
+2 sf
+(:par\036) 149352  0.00 -1 s
+52832.0 185138.0 m
+(ent\036relative) 66620  0.00 -1 s
+5 sf
+(,) 67326  0.00 -1 s
+( the background pixmap tile origin is the same as the parent's; otherwise,) 149352  -41.83 32 s
+52832.0 188299.0 m
+(the) 56280  0.00 -1 s
+( tile origin is the window origin.) 92614  -19.00 32 s
+4 sf
+52832.0 194575.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+4 sf
+52832.0 199362.0 m
+(background) 66313  0.00 -1 s
+( ) 66979  -40.00 32 s
+5 sf
+(\037 Either) 77362  -40.00 32 s
+( a ) 79946  -40.50 32 s
+2 sf
+(pixel) 85747  0.00 -1 s
+5 sf
+(, a ) 89037  -40.50 32 s
+2 sf
+(pixmap) 98131  0.00 -1 s
+5 sf
+(, ) 99502  -41.00 32 s
+2 sf
+(:none) 106243  0.00 -1 s
+5 sf
+(, or ) 110630  -40.50 32 s
+2 sf
+(:parent\036relative) 129590  0.00 -1 s
+5 sf
+(.) 130296  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03639) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(window\036backing\036pixel) 61196  0.00 -1 s
+/courps8 8 declareFont
+8 sf
+( ) 62407  -146.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(window) 71188  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 5 declareFont
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 28900.0 m
+(  backing\036pixel) 69534  -34.00 32 s
+( ) 70205  -35.00 32 s
+5 sf
+(\037 Type ) 80169  -34.50 32 s
+2 sf
+(pixel) 85970  0.00 -1 s
+5 sf
+(.) 86676  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73083  -225.00 32 s
+2 sf
+(setf) 77312  0.00 -1 s
+5 sf
+(\) changes the value of the backing\036pixel attribute for the specified) 149352  -224.90 32 s
+52832.0 36779.0 m
+4 sf
+(window) 61613  0.00 -1 s
+5 sf
+(.) 62319  0.00 -1 s
+( Changing the backing\036pixel attribute of a mapped window may have no imme\036) 149352  -231.92 32 s
+52832.0 39940.0 m
+(diate) 58317  0.00 -1 s
+( effect. The default backing\036pixel of a new window is zero.) 124765  -31.70 32 s
+4 sf
+52832.0 46217.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 51003.0 m
+(window\036backing\036planes) 63079  0.00 -1 s
+8 sf
+( ) 64281  -155.00 32 s
+4 sf
+(window) 73062  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 54164.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 57325.0 m
+(  backing\036planes ) 72083  -36.00 32 s
+5 sf
+(\037 Type) 81374  -36.00 32 s
+( ) 82043  -37.00 32 s
+2 sf
+(pixel) 87844  0.00 -1 s
+5 sf
+(.) 88550  0.00 -1 s
+52832.0 62044.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73518  -80.00 32 s
+2 sf
+(setf) 77747  0.00 -1 s
+5 sf
+(\) changes the value of the) 106264  -80.00 32 s
+( backing\036planes attribute for the speci\036) 149352  -80.60 32 s
+52832.0 65205.0 m
+(fied) 57219  0.00 -1 s
+( ) 57811  -114.00 32 s
+4 sf
+(window) 66592  0.00 -1 s
+5 sf
+(. Changing the backing\036planes attribute of a) 115361  -114.00 32 s
+( mapped window may have no) 149352  -114.60 32 s
+52832.0 68366.0 m
+(immediate) 64744  0.00 -1 s
+( effect. The default backing\036planes of a new window is all one's.) 137521  -30.73 32 s
+4 sf
+52832.0 74642.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 79429.0 m
+(window\036backing\036store) 61349  0.00 -1 s
+( ) 61910  -145.00 32 s
+4 sf
+(window) 70691  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 82590.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 85750.0 m
+(  backing\036store\036type ) 76017  -30.00 32 s
+5 sf
+(\037 One of ) 87918  -30.00 32 s
+2 sf
+(:always) 97009  0.00 -1 s
+5 sf
+(, ) 98391  -30.00 32 s
+2 sf
+(:not\036useful) 111400  0.00 -1 s
+5 sf
+(, or ) 115808  -30.00 32 s
+2 sf
+(:when\036mapped) 133835  0.00 -1 s
+5 sf
+(.) 134541  0.00 -1 s
+52832.0 90469.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73119  -213.00 32 s
+2 sf
+(setf) 77348  0.00 -1 s
+5 sf
+(\) changes the value of the backing\036store attribute for the specified) 149352  -212.70 32 s
+52832.0 93630.0 m
+4 sf
+(window) 61613  0.00 -1 s
+5 sf
+(.) 62319  0.00 -1 s
+( Changing the backing\036store attribute of) 110382  600.00 32 s
+( an obscured window to ) 141046  599.40 32 s
+2 sf
+(:when\036) 149352  0.00 -1 s
+52832.0 96791.0 m
+(mapped) 62553  0.00 -1 s
+5 sf
+( or ) 66045  -135.00 32 s
+2 sf
+(:always) 75136  0.00 -1 s
+5 sf
+( may have no immediate effect. The default backing\036store of a new) 149352  -134.82 32 s
+52832.0 99952.0 m
+(window) 61923  0.00 -1 s
+( is) 64489  -22.00 32 s
+( ) 65172  -23.00 32 s
+2 sf
+(:not\036useful) 78181  0.00 -1 s
+5 sf
+(.) 78887  0.00 -1 s
+4 sf
+52832.0 106228.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 111015.0 m
+(window\036bit\036gravity) 57741  0.00 -1 s
+( ) 58343  -104.00 32 s
+4 sf
+(window) 67124  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 114176.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 117337.0 m
+4 sf
+(  bit\036gravity ) 66791  -23.67 32 s
+5 sf
+(\037 Type ) 76777  -23.50 32 s
+2 sf
+(bit\036gravity) 89628  0.00 -1 s
+5 sf
+(.) 90334  0.00 -1 s
+52832.0 122055.0 m
+(Returns) 61610  0.00 -1 s
+( and) 66350  -41.00 32 s
+( \(with ) 73634  -41.50 32 s
+2 sf
+(setf) 77863  0.00 -1 s
+5 sf
+(\) changes the bit\036gravity attribute of the ) 123103  -41.57 32 s
+4 sf
+(window) 131884  0.00 -1 s
+5 sf
+(. If a window is) 149352  -41.50 32 s
+52832.0 125216.0 m
+(reconfigured) 67247  0.00 -1 s
+( without changing its inside width) 105988  82.00 32 s
+( or height, the contents of the window) 149352  81.43 32 s
+52832.0 128377.0 m
+(move) 59102  0.00 -1 s
+( with the window and are not lost. Otherwise, the contents of the resized window) 149352  -80.93 32 s
+52832.0 131538.0 m
+(are) 56277  0.00 -1 s
+( either moved or lost, depending on its bit\036gravity attribute. The default bit\036gravity of) 149352  -237.62 32 s
+52832.0 134699.0 m
+(a) 54085  0.00 -1 s
+( new window is) 71796  -27.00 32 s
+( ) 72474  -28.00 32 s
+2 sf
+(:forget) 80619  0.00 -1 s
+5 sf
+(.) 81325  0.00 -1 s
+52832.0 140976.0 m
+(For) 56751  0.00 -1 s
+( example, suppose a window's size is changed by ) 112388  -105.78 32 s
+4 sf
+(W) 114738  0.00 -1 s
+5 sf
+( pixels in width and ) 137178  -105.60 32 s
+4 sf
+(H) 139215  0.00 -1 s
+5 sf
+( pixels in) 149352  -105.50 32 s
+52832.0 144137.0 m
+(height.) 60592  0.00 -1 s
+( The following table shows, for each bit\036gravity value, the change in position) 149352  147.08 32 s
+52832.0 147297.0 m
+(\(relative) 62232  0.00 -1 s
+( to the window origin\) that results for each pixel of the window contents.) 144227  -22.85 32 s
+2 sf
+52832.0 153574.0 m
+(Bit\036Gravity) 66780  0.00 -1 s
+83312.0 h
+(X) 85349  0.00 -1 s
+( Change) 95233  -72.00 32 s
+98552.0 h
+113792.0 h
+(Y Change) 125713  -72.00 32 s
+5 sf
+52832.0 156712.0 m
+83312.0 h
+98552.0 h
+113792.0 h
+129032.0 h
+144272.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+5 17 fillpatset
+newpath
+52832 155887 av
+149352 155887 as
+149352 156005 as
+52832 156005 as
+closepath
+fp
+/drawmode PL_SET def
+2 sf
+52832.0 159851.0 m
+(:center) 61291  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+4 sf
+(H/) 116613  0.00 -1 s
+5 sf
+(2) 118024  0.00 -1 s
+( ) 118714  -16.00 32 s
+2 sf
+52832.0 162989.0 m
+(:east) 58472  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W) 85662  0.00 -1 s
+5 sf
+98552.0 h
+113792.0 h
+4 sf
+(H/) 116613  0.00 -1 s
+5 sf
+(2) 118024  0.00 -1 s
+2 sf
+52832.0 166127.0 m
+(:north) 60512  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+(0) 115203  0.00 -1 s
+( ) 115892  -17.00 32 s
+2 sf
+52832.0 169266.0 m
+(:north\036east) 66152  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W) 85662  0.00 -1 s
+5 sf
+98552.0 h
+113792.0 h
+(0 ) 115892  -17.00 32 s
+2 sf
+52832.0 172404.0 m
+(:north\036west) 66778  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(0 ) 115892  -17.00 32 s
+2 sf
+52832.0 175542.0 m
+(:south) 60357  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+4 sf
+(H) 115829  0.00 -1 s
+5 sf
+( ) 116524  -11.00 32 s
+2 sf
+52832.0 178681.0 m
+(:south\036east) 65997  0.00 -1 s
+5 sf
+83312.0 h
+(W) 85976  0.00 -1 s
+98552.0 h
+113792.0 h
+(H) 115829  0.00 -1 s
+2 sf
+52832.0 181819.0 m
+(:south\036west) 66623  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(H ) 116524  -11.00 32 s
+2 sf
+52832.0 184957.0 m
+(:west) 59098  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(H/2) 118024  0.00 -1 s
+52832.0 188095.0 m
+( ) 53532  -6.00 32 s
+52832.0 191234.0 m
+(A) 54869  0.00 -1 s
+( ) 55590  15.00 32 s
+2 sf
+(:static) 62953  0.00 -1 s
+5 sf
+( bit\036gravity indicates the contents or window should not move relative to the) 149352  15.42 32 s
+52832.0 194395.0 m
+(origin) 59572  0.00 -1 s
+( of the root window.) 82448  -22.00 32 s
+( ) 83131  -23.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03640) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(A) 54869  0.00 -1 s
+( server can choose to ignore the specified bit\036gravity attribute and use ) 131984  -182.75 32 s
+2 sf
+(:forget) 140129  0.00 -1 s
+5 sf
+( instead.) 149352  -183.00 32 s
+52832.0 25739.0 m
+(A) 54869  0.00 -1 s
+( ) 55480  -95.00 32 s
+2 sf
+(:forget) 63625  0.00 -1 s
+5 sf
+( bit\036gravity attribute indicates that the window contents are always discarded) 149352  -94.80 32 s
+52832.0 28900.0 m
+(after) 58000  0.00 -1 s
+( a size change, even if backing\036store or save\036under attributes are ) 128320  -260.82 32 s
+2 sf
+(:on) 132239  0.00 -1 s
+5 sf
+(. The window's) 149352  -260.50 32 s
+52832.0 32060.0 m
+(background) 66154  0.00 -1 s
+( is displayed \(unless it is ) 92938  -265.67 32 s
+2 sf
+(:none) 99679  0.00 -1 s
+5 sf
+(\), and zero or more ) 120606  -265.40 32 s
+2 sf
+(:exposure) 132362  0.00 -1 s
+5 sf
+( events are gen\036) 149352  -265.67 32 s
+52832.0 35221.0 m
+(erated.) 60431  0.00 -1 s
+/timsps10i 4 declareFont
+4 sf
+52832.0 41498.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 46284.0 m
+(setf) 38773  0.00 -1 s
+( ) 39429  -50.00 32 s
+5 sf
+(\() 40368  0.00 -1 s
+2 sf
+(window\036border) 59022  0.00 -1 s
+5 sf
+(\) ) 60617  -50.00 32 s
+4 sf
+(window) 69398  0.00 -1 s
+( border) 77735  -51.00 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 49445.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 52606.0 m
+(  border ) 62560  -24.00 32 s
+5 sf
+(\037 Either a ) 75577  -23.67 32 s
+2 sf
+(pixel) 81378  0.00 -1 s
+5 sf
+(, a ) 84702  -23.50 32 s
+2 sf
+(pixmap) 93796  0.00 -1 s
+5 sf
+(, or ) 98217  -23.50 32 s
+2 sf
+(:copy) 104800  0.00 -1 s
+5 sf
+(.) 105506  0.00 -1 s
+52832.0 57325.0 m
+(Changes) 62551  0.00 -1 s
+( the ) 67125  -143.00 32 s
+4 sf
+(border ) 75370  -143.00 32 s
+5 sf
+(attribute of the ) 92260  -143.00 32 s
+4 sf
+(window) 101041  0.00 -1 s
+5 sf
+( to the specified value. This) 131520  -143.00 32 s
+( operation is not) 149352  -143.67 32 s
+52832.0 60486.0 m
+(allowed) 61765  0.00 -1 s
+( on an ) 69027  -114.00 32 s
+2 sf
+(:input\036only) 82510  0.00 -1 s
+5 sf
+( window. Changing the border) 116461  -114.00 32 s
+( attribute also causes the win\036) 149352  -114.60 32 s
+52832.0 63647.0 m
+(dow) 57691  0.00 -1 s
+( border to be repainted. Note) 88634  -300.00 32 s
+( that the border of a window cannot be returned from the) 149352  -300.55 32 s
+52832.0 66808.0 m
+(X) 54869  0.00 -1 s
+( server. The default border of) 87805  -26.00 32 s
+( a new window is ) 108129  -26.60 32 s
+2 sf
+(:copy) 114712  0.00 -1 s
+5 sf
+(.) 115418  0.00 -1 s
+52832.0 73084.0 m
+(A) 54869  0.00 -1 s
+( border pixmap is tiled to fill the border. The border pixmap tile origin is the same as) 149352  -76.00 32 s
+52832.0 76245.0 m
+(the) 56280  0.00 -1 s
+( background tile origin. A border pixmap and the window must have the same root) 149352  -19.50 32 s
+52832.0 79406.0 m
+(and) 56907  0.00 -1 s
+( depth. If the border is ) 83543  142.00 32 s
+2 sf
+(:copy) 90126  0.00 -1 s
+5 sf
+(, the parent's border is copied and used; subsequent) 149352  124.25 32 s
+52832.0 82567.0 m
+(changes) 61922  0.00 -1 s
+( to the parent's border do not affect the window border.) 124223  -31.20 32 s
+4 sf
+52832.0 88844.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+4 sf
+52832.0 93630.0 m
+(border) 60514  0.00 -1 s
+( ) 61192  -28.00 32 s
+5 sf
+(\037 Either a ) 74196  -28.00 32 s
+2 sf
+(pixel) 79997  0.00 -1 s
+5 sf
+(, a ) 83312  -28.00 32 s
+2 sf
+(pixmap) 92406  0.00 -1 s
+5 sf
+(, or) 96140  -28.00 32 s
+( ) 96817  -29.00 32 s
+2 sf
+(:copy) 103400  0.00 -1 s
+5 sf
+(.) 104106  0.00 -1 s
+2 sf
+34544.0 98417.0 m
+(window\036class) 50534  0.00 -1 s
+( ) 51163  -77.00 32 s
+4 sf
+(window) 59944  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 101577.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 104738.0 m
+(  class ) 60546  -16.00 32 s
+5 sf
+(\037 Either ) 71643  -16.00 32 s
+2 sf
+(:input\036output) 87947  0.00 -1 s
+5 sf
+( or ) 91678  -15.50 32 s
+2 sf
+(:input\036only) 105161  0.00 -1 s
+5 sf
+(.) 105867  0.00 -1 s
+52832.0 109457.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66422  -24.00 32 s
+4 sf
+(class) 72066  0.00 -1 s
+5 sf
+( of the) 79228  -24.00 32 s
+( specified ) 90777  -24.50 32 s
+4 sf
+(window) 99558  0.00 -1 s
+5 sf
+(. ) 100945  -25.00 32 s
+4 sf
+52832.0 115734.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 120520.0 m
+(window\036colormap) 56332  0.00 -1 s
+5 sf
+( ) 56898  -140.00 32 s
+4 sf
+(window) 65679  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 123681.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 126842.0 m
+(  colormap ) 65685  -27.00 32 s
+5 sf
+(\037 Type) 74985  -27.00 32 s
+2 sf
+( colormap) 87106  -27.00 32 s
+5 sf
+( or ) 90814  -27.00 32 s
+2 sf
+(null) 95520  0.00 -1 s
+5 sf
+(.) 96226  0.00 -1 s
+( ) 96904  -28.00 32 s
+52832.0 131561.0 m
+(Returns) 61610  0.00 -1 s
+( and) 66121  -270.00 32 s
+( \(with ) 72947  -270.50 32 s
+2 sf
+(setf) 77176  0.00 -1 s
+5 sf
+(\) changes the value of the colormap attribute for the specified ) 144336  -270.55 32 s
+4 sf
+(win\036) 149352  0.00 -1 s
+52832.0 134722.0 m
+(dow) 57536  0.00 -1 s
+5 sf
+(.) 58242  0.00 -1 s
+( A value of ) 70617  -237.00 32 s
+2 sf
+(:copy) 77200  0.00 -1 s
+5 sf
+( is never returned,) 96863  -237.00 32 s
+( since the parent's colormap attribute is actually) 149352  -237.57 32 s
+52832.0 137882.0 m
+(copied,) 61061  0.00 -1 s
+( but the attribute can be set to ) 94509  -71.00 32 s
+2 sf
+(:copy) 101092  0.00 -1 s
+5 sf
+( in a) 105810  -71.00 32 s
+( ) 106444  -72.00 32 s
+2 sf
+(setf) 110673  0.00 -1 s
+5 sf
+( form. Changing the colormap of a) 149352  -71.50 32 s
+52832.0 141043.0 m
+(window) 61923  0.00 -1 s
+( \(defining a new map, not) 89651  -254.00 32 s
+( changing the contents of the existing map\) generates a) 149352  -254.56 32 s
+52832.0 144204.0 m
+2 sf
+(:colormap\036notify) 73205  0.00 -1 s
+5 sf
+( event. Changing the colormap of a visible window may have no im\036) 149352  -114.00 32 s
+52832.0 147365.0 m
+(mediate) 61765  0.00 -1 s
+( effect on the screen \(see ) 88696  -291.00 32 s
+2 sf
+(install\036colormap) 108446  0.00 -1 s
+5 sf
+(\). The default colormap of a new win\036) 149352  -290.86 32 s
+52832.0 150526.0 m
+(dow) 57691  0.00 -1 s
+( is) 60246  -33.00 32 s
+( ) 60918  -34.00 32 s
+2 sf
+(:copy) 67501  0.00 -1 s
+5 sf
+(.) 68207  0.00 -1 s
+4 sf
+52832.0 156803.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 161589.0 m
+(window\036colormap\036installed\036p) 69970  0.00 -1 s
+( ) 70535  -141.00 32 s
+4 sf
+(window) 79316  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 164750.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 167911.0 m
+( ) 53506  -32.00 32 s
+( colormap\036installed\036p ) 78678  -32.50 32 s
+5 sf
+(\037 Type ) 88646  -32.50 32 s
+2 sf
+(boolean) 98054  0.00 -1 s
+5 sf
+(. ) 99433  -33.00 32 s
+52832.0 172630.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67249  -239.00 32 s
+2 sf
+(nil) 70386  0.00 -1 s
+5 sf
+( if the colormap associated with this ) 110174  -239.00 32 s
+4 sf
+(window) 118955  0.00 -1 s
+5 sf
+( is installed. Otherwise, this) 149352  -239.00 32 s
+52832.0 175791.0 m
+(function) 62236  0.00 -1 s
+( returns ) 71431  -26.00 32 s
+2 sf
+(nil) 74568  0.00 -1 s
+5 sf
+(.) 75274  0.00 -1 s
+4 sf
+52832.0 182067.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03641) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(setf) 38773  0.00 -1 s
+( ) 39442  -37.00 32 s
+/timsps10 5 declareFont
+5 sf
+(\() 40381  0.00 -1 s
+2 sf
+(window\036cursor) 58564  0.00 -1 s
+5 sf
+(\) ) 60172  -37.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(window) 68953  0.00 -1 s
+( cursor) 76990  -38.00 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 28900.0 m
+(  cursor ) 62247  -24.00 32 s
+5 sf
+(\037 Type ) 72233  -23.50 32 s
+2 sf
+(cursor ) 80752  -24.00 32 s
+5 sf
+(or) 83102  0.00 -1 s
+2 sf
+( :none) 90526  -23.00 32 s
+5 sf
+(. ) 91914  -24.00 32 s
+52832.0 33618.0 m
+(Changes) 62551  0.00 -1 s
+( the ) 67211  -100.00 32 s
+4 sf
+(cursor) 74580  0.00 -1 s
+5 sf
+( attribute of the ) 92206  -99.75 32 s
+4 sf
+(window) 100987  0.00 -1 s
+5 sf
+( to the specified value. Changing the cursor) 149352  -99.57 32 s
+52832.0 36779.0 m
+(of) 55182  0.00 -1 s
+( a root window to ) 75891  19.00 32 s
+2 sf
+(:none) 82632  0.00 -1 s
+5 sf
+( restores the default cursor. Note that the) 128687  19.00 32 s
+( cursor of window) 149352  18.33 32 s
+52832.0 39940.0 m
+(cannot) 60355  0.00 -1 s
+( be returned from the X server. The default cursor of a new window is) 139059  -26.00 32 s
+( ) 139738  -27.00 32 s
+2 sf
+(:none) 146479  0.00 -1 s
+5 sf
+(.) 147185  0.00 -1 s
+4 sf
+52832.0 46217.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+4 sf
+52832.0 51003.0 m
+(cursor) 60201  0.00 -1 s
+( ) 60879  -28.00 32 s
+5 sf
+(\037 Either ) 71952  -28.00 32 s
+2 sf
+(cursor) 79789  0.00 -1 s
+5 sf
+( or ) 83496  -27.50 32 s
+2 sf
+(:none) 90237  0.00 -1 s
+5 sf
+(.) 90943  0.00 -1 s
+2 sf
+34544.0 55790.0 m
+(window\036display) 53516  0.00 -1 s
+5 sf
+( ) 54121  -101.00 32 s
+4 sf
+(window) 62902  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 58951.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 62111.0 m
+(  display ) 63036  -22.00 32 s
+5 sf
+(\037 Type ) 73025  -22.00 32 s
+2 sf
+(display) 81651  0.00 -1 s
+5 sf
+(. ) 83041  -22.00 32 s
+52832.0 66830.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66408  -31.00 32 s
+2 sf
+(display) 75034  0.00 -1 s
+5 sf
+( object associated with the specified ) 116228  -31.00 32 s
+4 sf
+(window) 125009  0.00 -1 s
+5 sf
+(. ) 126390  -31.00 32 s
+4 sf
+52832.0 73107.0 m
+(window) 61613  0.00 -1 s
+( \037 ) 65459  -37.50 32 s
+5 sf
+(A ) 68164  -38.00 32 s
+2 sf
+(window) 77571  0.00 -1 s
+5 sf
+(.) 78277  0.00 -1 s
+2 sf
+34544.0 77893.0 m
+(window\036do\036not\036propagate\036mask) 73261  0.00 -1 s
+( ) 73786  -181.00 32 s
+4 sf
+(window) 82567  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 81054.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 84215.0 m
+(  do\036not\036propagate\036mask ) 81469  -42.00 32 s
+5 sf
+(\037 Type ) 91418  -42.00 32 s
+2 sf
+(mask32) 100668  0.00 -1 s
+5 sf
+(.) 101374  0.00 -1 s
+52832.0 88934.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73986  76.00 32 s
+2 sf
+(setf) 78215  0.00 -1 s
+5 sf
+(\) changes) 89026  76.00 32 s
+( the do\036not\036propagate\036mask attribute for the window.) 149352  62.83 32 s
+52832.0 92095.0 m
+(The) 57220  0.00 -1 s
+( default do\036not\036propagate\036mask of a new window is) 115350  -36.00 32 s
+( zero.) 121581  -37.00 32 s
+52832.0 98371.0 m
+(If) 54710  0.00 -1 s
+( a window receives an event from one of the user input devices, and if no client has) 149352  35.12 32 s
+52832.0 101532.0 m
+(selected) 61921  0.00 -1 s
+( to receive the event, the event can instead be propagated up the window hierar\036) 149352  -186.50 32 s
+52832.0 104693.0 m
+(chy) 56907  0.00 -1 s
+( to the first ancestor for) 82830  -97.00 32 s
+( which some client has selected it. However, any event type) 149352  -87.80 32 s
+52832.0 107854.0 m
+(selected) 61921  0.00 -1 s
+( by the do\036not\036propagate\036mask is not be propagated. The types of events that) 149352  69.08 32 s
+52832.0 111015.0 m
+(can) 56749  0.00 -1 s
+( be selected by the do\036not\036propagate\036mask are those of type ) 126159  138.80 32 s
+2 sf
+(device\036event\036mask\036) 149352  0.00 -1 s
+52832.0 114176.0 m
+(class) 58476  0.00 -1 s
+5 sf
+(.) 59182  0.00 -1 s
+( See paragraph 12.2, Selecting) 93317  -48.00 32 s
+( Events.) 102345  -65.00 32 s
+4 sf
+52832.0 120452.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 125239.0 m
+(window\036equal) 51476  0.00 -1 s
+( ) 52098  -84.00 32 s
+4 sf
+(window\0361) 63229  0.00 -1 s
+5 sf
+( ) 63850  -85.00 32 s
+4 sf
+(window\0362) 74981  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 128400.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 131561.0 m
+( ) 53499  -39.00 32 s
+( ) 54165  -40.00 32 s
+2 sf
+(boolean) 63573  0.00 -1 s
+5 sf
+(.) 64279  0.00 -1 s
+52832.0 136279.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67465  -23.00 32 s
+2 sf
+(nil) 70602  0.00 -1 s
+5 sf
+( if the two) 82054  -23.00 32 s
+( arguments are the same window, and ) 125150  -23.57 32 s
+2 sf
+(nil) 128287  0.00 -1 s
+5 sf
+( if they are not.) 145356  -23.50 32 s
+4 sf
+52832.0 142556.0 m
+(window\0361) 63963  0.00 -1 s
+5 sf
+(,) 64669  0.00 -1 s
+( ) 65338  -37.00 32 s
+4 sf
+(window\0362 ) 77138  -37.00 32 s
+5 sf
+(\037 The windows to compare for) 113081  -37.00 32 s
+( equality.) 123546  -38.00 32 s
+2 sf
+34544.0 147343.0 m
+(window\036event\036mask) 58682  0.00 -1 s
+5 sf
+( ) 59268  -120.00 32 s
+4 sf
+(window) 68049  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 150503.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 153664.0 m
+( ) 53510  -28.00 32 s
+( event\036mask ) 67557  -28.50 32 s
+5 sf
+(\037 Type ) 77533  -28.50 32 s
+2 sf
+(mask32) 86783  0.00 -1 s
+5 sf
+(.) 87489  0.00 -1 s
+4 sf
+( ) 88166  -29.00 32 s
+5 sf
+52832.0 158383.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73824  22.00 32 s
+2 sf
+(setf) 78053  0.00 -1 s
+5 sf
+(\) changes the value of the) 107080  22.00 32 s
+( event\036mask attribute for the ) 139865  21.40 32 s
+4 sf
+(window) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+52832.0 161544.0 m
+(The) 57220  0.00 -1 s
+( default) 65731  -30.00 32 s
+( event\036mask of a new window is zero.) 108306  -30.57 32 s
+4 sf
+52832.0 167821.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 172607.0 m
+(window\036gravity) 53510  0.00 -1 s
+( ) 54098  -118.00 32 s
+4 sf
+(window) 62879  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 175768.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+52832.0 178929.0 m
+( ) 53509  -29.00 32 s
+4 sf
+( gravity ) 62858  -28.50 32 s
+5 sf
+(\037 Type ) 72834  -28.50 32 s
+2 sf
+(win\036gravity) 86783  0.00 -1 s
+5 sf
+(.) 87489  0.00 -1 s
+52832.0 183648.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73365  -131.00 32 s
+2 sf
+(setf) 77594  0.00 -1 s
+5 sf
+(\) changes the gravity attribute of the ) 118290  -131.00 32 s
+4 sf
+(window) 127071  0.00 -1 s
+5 sf
+(. If a parent window) 149352  -130.50 32 s
+52832.0 186809.0 m
+(is) 54714  0.00 -1 s
+( reconfigured without changing its inside width or height, then all child windows move) 149352  -280.62 32 s
+52832.0 189969.0 m
+(with) 57848  0.00 -1 s
+( the parent and are not changed. Otherwise, each child of the resized parent is) 149352  289.21 32 s
+52832.0 193130.0 m
+(moved,) 61219  0.00 -1 s
+( depending on the child's gravity attribute. The default gravity of a new window) 149352  -189.54 32 s
+52832.0 196291.0 m
+(is) 54714  0.00 -1 s
+( ) 55407  -13.00 32 s
+2 sf
+(:north\036west) 69353  0.00 -1 s
+5 sf
+(.) 70059  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03642) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(For) 56751  0.00 -1 s
+( example, suppose the size) 86510  -65.00 32 s
+( of the window's parent is changed by ) 129718  -65.50 32 s
+/timsps10i 4 declareFont
+4 sf
+(W) 132068  0.00 -1 s
+5 sf
+( pixels in width) 149352  -65.67 32 s
+52832.0 25739.0 m
+(and) 56907  0.00 -1 s
+( ) 57560  -53.00 32 s
+4 sf
+(H) 59597  0.00 -1 s
+5 sf
+( pixels in height. The following table) 101056  -53.00 32 s
+( shows, for each possible gravity value, the) 149352  -53.57 32 s
+52832.0 28900.0 m
+(resulting) 62707  0.00 -1 s
+( change in the window's) 89802  -123.00 32 s
+( position relative to its parent's origin. When the win\036) 149352  -123.56 32 s
+52832.0 32060.0 m
+(dow) 57691  0.00 -1 s
+( is moved, two events are generated\037a ) 104808  282.29 32 s
+2 sf
+(:configure\036notify) 125181  0.00 -1 s
+5 sf
+( event followed by a) 149352  282.50 32 s
+52832.0 35221.0 m
+2 sf
+(:gravity\036notify) 70383  0.00 -1 s
+5 sf
+( event.) 77826  -81.00 32 s
+2 sf
+52832.0 41498.0 m
+(Gravity) 62236  0.00 -1 s
+83312.0 h
+(X) 85349  0.00 -1 s
+( Change) 95233  -72.00 32 s
+98552.0 h
+113792.0 h
+(Y Change) 125713  -72.00 32 s
+5 sf
+52832.0 44636.0 m
+83312.0 h
+98552.0 h
+113792.0 h
+129032.0 h
+144272.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+5 17 fillpatset
+newpath
+52832 43811 av
+149352 43811 as
+149352 43929 as
+52832 43929 as
+closepath
+fp
+/drawmode PL_SET def
+2 sf
+52832.0 47775.0 m
+(:center) 61291  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+4 sf
+(H/) 116613  0.00 -1 s
+5 sf
+(2) 118024  0.00 -1 s
+( ) 118714  -16.00 32 s
+2 sf
+52832.0 50913.0 m
+(:east) 58472  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W) 85662  0.00 -1 s
+5 sf
+98552.0 h
+113792.0 h
+4 sf
+(H/) 116613  0.00 -1 s
+5 sf
+(2) 118024  0.00 -1 s
+2 sf
+52832.0 54051.0 m
+(:north) 60512  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+(0) 115203  0.00 -1 s
+( ) 115892  -17.00 32 s
+2 sf
+52832.0 57190.0 m
+(:north\036east) 66152  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W) 85662  0.00 -1 s
+5 sf
+98552.0 h
+113792.0 h
+(0 ) 115892  -17.00 32 s
+2 sf
+52832.0 60328.0 m
+(:north\036west) 66778  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(0 ) 115892  -17.00 32 s
+2 sf
+52832.0 63466.0 m
+(:south) 60357  0.00 -1 s
+5 sf
+83312.0 h
+4 sf
+(W/) 86446  0.00 -1 s
+5 sf
+(2) 87857  0.00 -1 s
+98552.0 h
+113792.0 h
+4 sf
+(H) 115829  0.00 -1 s
+5 sf
+( ) 116524  -11.00 32 s
+2 sf
+52832.0 66604.0 m
+(:south\036east) 65997  0.00 -1 s
+5 sf
+83312.0 h
+(W) 85976  0.00 -1 s
+98552.0 h
+113792.0 h
+(H) 115829  0.00 -1 s
+2 sf
+52832.0 69743.0 m
+(:south\036west) 66623  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(H ) 116524  -11.00 32 s
+2 sf
+52832.0 72881.0 m
+(:west) 59098  0.00 -1 s
+5 sf
+83312.0 h
+(0) 84723  0.00 -1 s
+98552.0 h
+113792.0 h
+(H/2) 118024  0.00 -1 s
+52832.0 76019.0 m
+( ) 53532  -6.00 32 s
+52832.0 79158.0 m
+(A) 54869  0.00 -1 s
+( ) 55539  -36.00 32 s
+2 sf
+(:static) 62902  0.00 -1 s
+5 sf
+( gravity indicates that the) 91286  -36.00 32 s
+( position of the window should not move relative to) 149352  -36.56 32 s
+52832.0 82319.0 m
+(the) 56280  0.00 -1 s
+( origin of the root window.) 86580  -22.00 32 s
+( ) 87263  -23.00 32 s
+52832.0 88595.0 m
+(An) 56280  0.00 -1 s
+( ) 57055  69.00 32 s
+2 sf
+(:unmap) 66462  0.00 -1 s
+5 sf
+( gravity is like ) 83669  69.00 32 s
+2 sf
+(:north\036west) 97615  0.00 -1 s
+5 sf
+(, except the window is also unmapped and an) 149352  69.50 32 s
+52832.0 91756.0 m
+2 sf
+(:unmap\036notify) 70231  0.00 -1 s
+5 sf
+( event is generated. This ) 99646  240.00 32 s
+2 sf
+(:unmap\036notify) 117045  0.00 -1 s
+5 sf
+( event is generated after) 144959  240.00 32 s
+( the) 149352  239.00 32 s
+52832.0 94917.0 m
+2 sf
+(:configure\036notify) 73205  0.00 -1 s
+5 sf
+( event is generated for the parent.) 110676  -36.83 32 s
+4 sf
+52832.0 101194.0 m
+(window ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 105980.0 m
+(window\036id) 47243  0.00 -1 s
+( ) 47867  -82.00 32 s
+4 sf
+(window) 56648  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 109141.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 112302.0 m
+(  ) 54180  -32.00 32 s
+5 sf
+(The ) 59242  -32.00 32 s
+2 sf
+(resource\036id) 72877  0.00 -1 s
+5 sf
+( of the window.) 90492  -32.67 32 s
+52832.0 117021.0 m
+(Returns) 61610  0.00 -1 s
+( the unique ID assigned to ) 91661  -34.00 32 s
+4 sf
+(window) 100442  0.00 -1 s
+5 sf
+(.) 101148  0.00 -1 s
+4 sf
+52832.0 123297.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 128084.0 m
+(window\036map\036state) 56799  0.00 -1 s
+( ) 57417  -88.00 32 s
+4 sf
+(window) 66198  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 131245.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 134406.0 m
+(  map\036state ) 65979  -33.00 32 s
+5 sf
+(\037 One of ) 77872  -32.67 32 s
+2 sf
+(:unmapped) 91670  0.00 -1 s
+5 sf
+(,) 92376  0.00 -1 s
+2 sf
+( :unviewable) 107628  -33.00 32 s
+5 sf
+(,) 108334  0.00 -1 s
+2 sf
+( ) 109008  -32.00 32 s
+5 sf
+(or) 111358  0.00 -1 s
+2 sf
+( :viewable) 123472  -33.00 32 s
+5 sf
+(.) 124178  0.00 -1 s
+52832.0 139124.0 m
+(Returns) 61610  0.00 -1 s
+( the map state of ) 81161  38.40 32 s
+4 sf
+(window) 89942  0.00 -1 s
+5 sf
+(. A window is ) 106636  38.50 32 s
+2 sf
+(:unviewable) 121215  0.00 -1 s
+5 sf
+( if it is mapped but some) 149352  38.50 32 s
+52832.0 142285.0 m
+(ancestor) 62234  0.00 -1 s
+( is) 64763  -59.00 32 s
+( unmapped.) 77871  -60.00 32 s
+4 sf
+52832.0 148562.0 m
+(window) 61613  0.00 -1 s
+( ) 62290  -29.00 32 s
+5 sf
+(\037 A ) 68503  -29.00 32 s
+2 sf
+(window) 77910  0.00 -1 s
+5 sf
+(.) 78616  0.00 -1 s
+/timsps8 9 declareFont
+9 sf
+( ) 79158  -24.00 32 s
+2 sf
+34544.0 153348.0 m
+(window\036override\036redirect) 65573  0.00 -1 s
+( ) 66087  -192.00 32 s
+4 sf
+(window) 74868  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 156509.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 159670.0 m
+(  override\036redirect ) 74343  -13.67 32 s
+5 sf
+(\037 Either ) 85445  -13.50 32 s
+2 sf
+(:on) 89364  0.00 -1 s
+5 sf
+( or ) 93099  -13.50 32 s
+2 sf
+(:off) 97327  0.00 -1 s
+5 sf
+(.) 98033  0.00 -1 s
+52832.0 164389.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73380  -126.00 32 s
+2 sf
+(setf) 77609  0.00 -1 s
+5 sf
+(\) changes the value of the override\036redirect attribute for ) 139865  -125.89 32 s
+4 sf
+(window) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+52832.0 167550.0 m
+(The) 57220  0.00 -1 s
+( default override\036redirect of a new window is ) 108745  -23.88 32 s
+2 sf
+(:off) 112973  0.00 -1 s
+5 sf
+(.) 113679  0.00 -1 s
+52832.0 173826.0 m
+(The) 57220  0.00 -1 s
+( override\036redirect attribute determines whether or not) 117540  50.00 32 s
+( attempts to change window) 149352  37.00 32 s
+52832.0 176987.0 m
+(geometry) 63489  0.00 -1 s
+( or parent hierarchy can be ) 92975  -231.00 32 s
+4 sf
+(redirected) 104573  0.00 -1 s
+5 sf
+( by a window manager or some other cli\036) 149352  -201.88 32 s
+52832.0 180148.0 m
+(ent.) 56986  0.00 -1 s
+( The functions) 72730  -279.00 32 s
+( that might be affected by the override\036redirect attribute are ) 137914  -251.60 32 s
+2 sf
+(circulate\036) 149352  0.00 -1 s
+52832.0 183309.0 m
+(window\036down) 69764  0.00 -1 s
+5 sf
+(,) 70470  0.00 -1 s
+( ) 71977  801.00 32 s
+2 sf
+(circulate\036window\036up) 96899  0.00 -1 s
+5 sf
+(, ) 98311  0.00 32 s
+2 sf
+(drawable\036border\036width) 126682  0.00 -1 s
+5 sf
+(, ) 128895  801.00 32 s
+2 sf
+(drawable\036height) 148646  0.00 -1 s
+5 sf
+(,) 149352  0.00 -1 s
+52832.0 186470.0 m
+2 sf
+(drawable\036width) 71956  0.00 -1 s
+5 sf
+(,) 72662  0.00 -1 s
+( ) 73265  -103.00 32 s
+2 sf
+(drawable\036x) 86902  0.00 -1 s
+5 sf
+(, ) 88314  0.00 32 s
+2 sf
+(drawable\036y) 101951  0.00 -1 s
+5 sf
+(, ) 103260  -103.00 32 s
+2 sf
+(map\036window) 118936  0.00 -1 s
+5 sf
+(, and) 124320  -103.00 32 s
+( ) 124922  -104.00 32 s
+2 sf
+(window\036priority) 144672  0.00 -1 s
+5 sf
+(.) 145378  0.00 -1 s
+4 sf
+52832.0 192746.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 9
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03643) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(window\036p) 46459  0.00 -1 s
+( ) 47087  -78.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(object) 53983  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 5 declareFont
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 28900.0 m
+(  window\036p ) 65970  -37.00 32 s
+5 sf
+(\037 Type ) 75930  -36.50 32 s
+2 sf
+(boolean) 85338  0.00 -1 s
+5 sf
+(.) 86044  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( non\036) 67468  -20.00 32 s
+2 sf
+(nil ) 71291  -20.00 32 s
+5 sf
+(if the ) 77834  -20.00 32 s
+4 sf
+(object) 84730  0.00 -1 s
+5 sf
+( argument is a window; otherwise, it returns ) 134965  -19.88 32 s
+2 sf
+(nil) 138102  0.00 -1 s
+5 sf
+(.) 138808  0.00 -1 s
+2 sf
+34544.0 39895.0 m
+(window\036plist) 50064  0.00 -1 s
+( ) 50711  -59.00 32 s
+4 sf
+(window) 59492  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 43056.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 46217.0 m
+(  plist ) 59793  -6.00 32 s
+5 sf
+(\037 A property list.) 80467  -6.00 32 s
+52832.0 50935.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 72996  -254.00 32 s
+2 sf
+(setf) 77225  0.00 -1 s
+5 sf
+(\) sets the) 86749  -254.00 32 s
+( property list for the specified ) 119390  -254.50 32 s
+4 sf
+(window) 128171  0.00 -1 s
+5 sf
+(. This function pro\036) 149352  -254.67 32 s
+52832.0 54096.0 m
+(vides) 58789  0.00 -1 s
+( a hook) 67014  -42.00 32 s
+( where extensions can hang data.) 103948  -42.60 32 s
+4 sf
+52832.0 60373.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 65159.0 m
+(setf) 38773  0.00 -1 s
+( ) 39445  -34.00 32 s
+5 sf
+(\() 40384  0.00 -1 s
+2 sf
+(window\036priority) 60134  0.00 -1 s
+5 sf
+( ) 60806  -34.00 32 s
+4 sf
+(window) 69587  0.00 -1 s
+5 sf
+(\) \(&optional ) 84253  -34.00 32 s
+4 sf
+(sibling) 91936  0.00 -1 s
+5 sf
+(\)) 92875  0.00 -1 s
+( ) 93546  -35.00 32 s
+4 sf
+(mode) 99658  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 68320.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 71481.0 m
+(  mode ) 61002  -20.00 32 s
+5 sf
+(\037 One of ) 72933  -20.00 32 s
+2 sf
+(:above) 80927  0.00 -1 s
+5 sf
+(, ) 82319  -20.00 32 s
+2 sf
+(:below) 90312  0.00 -1 s
+5 sf
+(, ) 91704  -20.00 32 s
+2 sf
+(:bottom\036if) 103924  0.00 -1 s
+5 sf
+(,) 104630  0.00 -1 s
+2 sf
+( :opposite) 116289  -20.00 32 s
+5 sf
+(,) 116995  0.00 -1 s
+2 sf
+( ) 117681  -20.00 32 s
+5 sf
+(or) 120031  0.00 -1 s
+( ) 120716  -21.00 32 s
+2 sf
+(:top\036if) 128236  0.00 -1 s
+5 sf
+(.) 128942  0.00 -1 s
+52832.0 76200.0 m
+(Changes) 62551  0.00 -1 s
+( the stacking priority element of the ) 102133  -201.00 32 s
+4 sf
+(window) 110914  0.00 -1 s
+5 sf
+( to the specified value. It is an error) 149352  -200.88 32 s
+52832.0 79361.0 m
+(if) 54555  0.00 -1 s
+( the ) 59027  -194.00 32 s
+4 sf
+(sibling) 66710  0.00 -1 s
+5 sf
+( argument is specified and is not actually a sibling of the window. Note that) 149352  -193.64 32 s
+52832.0 82522.0 m
+(the) 56280  0.00 -1 s
+( priority of an existing window cannot be returned from the X server.) 134112  -25.00 32 s
+52832.0 88798.0 m
+(When) 59571  0.00 -1 s
+( changing the priority of a) 87515  -289.00 32 s
+( window, if the override\036redirect attribute of the window) 149352  -253.38 32 s
+52832.0 91959.0 m
+(is) 54714  0.00 -1 s
+( ) 55248  -172.00 32 s
+2 sf
+(:off) 59476  0.00 -1 s
+5 sf
+( and some other client has selected :substructure\036redirect on the parent, a :config\036) 149352  -157.42 32 s
+52832.0 95120.0 m
+(ure\036request) 65523  0.00 -1 s
+( event is generated, and no further processing is performed. Otherwise, the) 149352  -30.55 32 s
+52832.0 98281.0 m
+(priority is) 63883  0.00 32 s
+( changed.) 74620  -78.00 32 s
+4 sf
+52832.0 104558.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+4 sf
+52832.0 109344.0 m
+(sibling) 60515  0.00 -1 s
+( ) 60927  -294.00 32 s
+5 sf
+(\037 An optional argument specifying that ) 105562  -294.00 32 s
+4 sf
+(window) 114343  0.00 -1 s
+5 sf
+( is to be restacked relative to this) 149352  -294.57 32 s
+57912.0 112505.0 m
+(sibling) 65595  0.00 -1 s
+( ) 66245  -56.00 32 s
+2 sf
+(window) 75652  0.00 -1 s
+5 sf
+(.) 76358  0.00 -1 s
+4 sf
+52832.0 117292.0 m
+(mode) 58944  0.00 -1 s
+( ) 59627  -23.00 32 s
+5 sf
+(\037 One of ) 71549  -23.00 32 s
+2 sf
+(:above) 79543  0.00 -1 s
+5 sf
+(, ) 80932  -23.00 32 s
+2 sf
+(:below) 88925  0.00 -1 s
+5 sf
+(, ) 90314  -23.00 32 s
+2 sf
+(:bottom\036if) 102534  0.00 -1 s
+5 sf
+(,) 103240  0.00 -1 s
+2 sf
+( :opposite) 114895  -24.00 32 s
+5 sf
+(,) 115601  0.00 -1 s
+2 sf
+( ) 116284  -23.00 32 s
+5 sf
+(or ) 119316  -24.00 32 s
+2 sf
+(:top\036if) 126836  0.00 -1 s
+5 sf
+(.) 127542  0.00 -1 s
+2 sf
+34544.0 122078.0 m
+(window\036save\036under) 58215  0.00 -1 s
+/courps8 8 declareFont
+8 sf
+( ) 59426  -146.00 32 s
+4 sf
+(window) 68207  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 125239.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+4 sf
+( ) 63082  -18.00 32 s
+52832.0 128400.0 m
+(  save\036under) 66752  -15.00 32 s
+( ) 67442  -16.00 32 s
+5 sf
+(\037 Either ) 78540  -15.50 32 s
+2 sf
+(:on ) 83150  -15.00 32 s
+5 sf
+(or ) 86190  -16.00 32 s
+2 sf
+(:off) 90418  0.00 -1 s
+5 sf
+(.) 91124  0.00 -1 s
+52832.0 133119.0 m
+(Returns) 61610  0.00 -1 s
+( and \(with ) 73806  16.00 32 s
+2 sf
+(setf) 78035  0.00 -1 s
+5 sf
+(\) changes the value of the save\036under attribute for the specified) 149352  16.50 32 s
+52832.0 136279.0 m
+4 sf
+(window) 61613  0.00 -1 s
+5 sf
+(.) 62319  0.00 -1 s
+( Changing the save\036under) 90779  -153.00 32 s
+( attribute of a mapped window may have no immedi\036) 149352  -153.56 32 s
+52832.0 139440.0 m
+(ate) 56122  0.00 -1 s
+( effect.) 63918  -37.00 32 s
+4 sf
+52832.0 145717.0 m
+(window ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 150503.0 m
+(window\036visual) 51947  0.00 -1 s
+( ) 52563  -90.00 32 s
+4 sf
+(window) 61344  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 153664.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 156825.0 m
+(  visual\036type ) 67226  -35.00 32 s
+5 sf
+(\037 Type) 76518  -35.00 32 s
+( ) 77188  -36.00 32 s
+2 sf
+(card29) 85496  0.00 -1 s
+5 sf
+(.) 86202  0.00 -1 s
+52832.0 161544.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66402  -34.00 32 s
+4 sf
+(visual\036type) 78783  0.00 -1 s
+5 sf
+( associated with the specified ) 112388  -34.60 32 s
+4 sf
+(window) 121169  0.00 -1 s
+5 sf
+(.) 121875  0.00 -1 s
+4 sf
+52832.0 167821.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 172607.0 m
+(with\036state) 46452  0.00 -1 s
+( ) 47108  -50.00 32 s
+4 sf
+(drawable ) 58426  -49.00 32 s
+5 sf
+(&body) 66265  0.00 -1 s
+4 sf
+( body) 72407  -50.00 32 s
+2 sf
+142014.0 h
+5 sf
+(Macro) 149379  0.00 -1 s
+2 sf
+5 sf
+52832.0 178816.0 m
+(Batches) 61766  0.00 -1 s
+( successive read and write accesses to window attributes and drawable geome\036) 149352  -94.91 32 s
+52832.0 181977.0 m
+(try,) 56672  0.00 -1 s
+( in order to minimize the number of requests sent to the server. Batching occurs auto\036) 149352  -247.80 32 s
+52832.0 185138.0 m
+(matically) 63333  0.00 -1 s
+( within the dynamic extent of the ) 102970  232.00 32 s
+4 sf
+(body) 108456  0.00 -1 s
+5 sf
+(. The ) 115194  116.00 32 s
+4 sf
+(body) 120680  0.00 -1 s
+5 sf
+( is not executed within a) 149352  232.20 32 s
+52832.0 188299.0 m
+2 sf
+(with\036display) 67726  0.00 -1 s
+5 sf
+( form.) 74597  -25.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 10
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03644) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(All) 56437  0.00 -1 s
+( window attributes can be returned or changed in a single request. Similarly, all) 149352  256.62 32 s
+52832.0 25739.0 m
+(drawable) 63173  0.00 -1 s
+( geometry values can be returned or changed in a single request. ) 137444  96.08 32 s
+2 sf
+(with\036state) 149352  0.00 -1 s
+5 sf
+52832.0 28900.0 m
+(combines) 63648  0.00 -1 s
+( accesses to these values into the minimum number of server requests) 141495  -55.00 32 s
+( neces\036) 149352  -56.00 32 s
+52832.0 32060.0 m
+(sary) 57533  0.00 -1 s
+( to guarantee that each read access returns the current server state of the) 137372  -84.92 32 s
+( ) 137985  -93.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(drawable) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+52832.0 35221.0 m
+(The) 57220  0.00 -1 s
+( number of server requests sent depends on the sequence of calls to reader and) 149352  277.93 32 s
+52832.0 38382.0 m
+2 sf
+(setf) 57061  0.00 -1 s
+5 sf
+( functions) 68269  0.00 32 s
+( within the dynamic extent of the) 103974  -267.00 32 s
+( ) 104412  -268.00 32 s
+4 sf
+(body) 109898  0.00 -1 s
+5 sf
+(. There are two groups of reader and) 149352  -229.29 32 s
+52832.0 41543.0 m
+2 sf
+(setf) 57061  0.00 -1 s
+5 sf
+( functions\037the Window) 84975  6.00 32 s
+( Attributes group and the Drawable Geometry group\037as) 149352  5.43 32 s
+52832.0 44704.0 m
+(shown) 60200  0.00 -1 s
+( in Table 4\0361.) 75297  -36.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 11
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03645) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+20320.0 22578.0 m
+52832.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+/timsps10 5 declareFont
+5 17 fillpatset
+newpath
+53008 21753 av
+149352 21753 as
+149352 21988 as
+53008 21988 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 25400.0 m
+(Table) 27219  0.00 -1 s
+( 4\0361) 31631  -55.00 32 s
+52832.0 h
+(Groups) 61927  0.00 -1 s
+( of Reader and Setf Functions) 97536  -42.40 32 s
+20320.0 28222.0 m
+52832.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+53008 27397 av
+149352 27397 as
+149352 27632 as
+53008 27632 as
+closepath
+fp
+/drawmode PL_SET def
+52832.0 31044.0 m
+(Group) 60829  0.00 -1 s
+69088.0 h
+(Reader) 77864  0.00 -1 s
+( Functions) 90379  -107.00 32 s
+105664.0 h
+(Setf) 110364  0.00 -1 s
+( Functions) 122936  -50.00 32 s
+52832.0 34205.0 m
+69088.0 h
+105664.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+52832 33380 av
+149352 33380 as
+149352 33615 as
+52832 33615 as
+closepath
+fp
+/drawmode PL_SET def
+5 sf
+52832.0 37366.0 m
+(Window) 62550  0.00 -1 s
+( ) 63218  -38.00 32 s
+2 sf
+69088.0 h
+(window\036all\036event\036masks) 98242  0.00 -1 s
+105664.0 h
+(window\036background) 130594  0.00 -1 s
+5 sf
+52832.0 40527.0 m
+(Attributes) 64117  0.00 -1 s
+2 sf
+69088.0 h
+(window\036backing\036pixel) 95740  0.00 -1 s
+105664.0 h
+(window\036backing\036pixel) 132316  0.00 -1 s
+52832.0 43688.0 m
+69088.0 h
+(window\036backing\036planes) 97623  0.00 -1 s
+105664.0 h
+(window\036backing\036planes) 134199  0.00 -1 s
+52832.0 46849.0 m
+69088.0 h
+(window\036backing\036store) 95893  0.00 -1 s
+105664.0 h
+(window\036backing\036store) 132469  0.00 -1 s
+52832.0 50010.0 m
+69088.0 h
+(window\036bit\036gravity) 92285  0.00 -1 s
+105664.0 h
+(window\036bit\036gravity) 128861  0.00 -1 s
+52832.0 53171.0 m
+69088.0 h
+(window\036class) 85078  0.00 -1 s
+105664.0 h
+(window\036border) 124318  0.00 -1 s
+52832.0 56332.0 m
+69088.0 h
+(window\036colormap) 90876  0.00 -1 s
+105664.0 h
+(window\036colormap) 127452  0.00 -1 s
+52832.0 59492.0 m
+69088.0 h
+(window\036colormap\036) 91815  0.00 -1 s
+105664.0 h
+(window\036cursor) 123847  0.00 -1 s
+52832.0 62653.0 m
+69088.0 h
+( installed\036p) 82477  -16.00 32 s
+105664.0 h
+(window\036do\036not\036propagate\036mask) 144381  0.00 -1 s
+149352.0 h
+52832.0 65814.0 m
+69088.0 h
+(window\036do\036not\036) 88211  0.00 -1 s
+105664.0 h
+(window\036event\036mask) 129802  0.00 -1 s
+52832.0 68975.0 m
+69088.0 h
+( propagate\036mask) 89295  -93.00 32 s
+105664.0 h
+(window\036gravity) 124630  0.00 -1 s
+52832.0 72136.0 m
+69088.0 h
+(window\036event\036mask) 93226  0.00 -1 s
+105664.0 h
+(window\036override\036redirect) 136693  0.00 -1 s
+52832.0 75297.0 m
+69088.0 h
+(window\036gravity) 88054  0.00 -1 s
+105664.0 h
+(window\036save\036under) 129335  0.00 -1 s
+52832.0 78458.0 m
+69088.0 h
+(window\036map\036state) 91343  0.00 -1 s
+105664.0 h
+52832.0 81619.0 m
+69088.0 h
+(window\036override\036redirect) 100117  0.00 -1 s
+105664.0 h
+52832.0 84780.0 m
+69088.0 h
+(window\036save\036under) 92759  0.00 -1 s
+52832.0 87940.0 m
+69088.0 h
+(window\036visual) 86491  0.00 -1 s
+( ) 87171  -26.00 32 s
+( ) 87850  -27.00 32 s
+52832.0 91101.0 m
+69088.0 h
+5 sf
+52832.0 94262.0 m
+(Drawable) 63799  0.00 -1 s
+2 sf
+69088.0 h
+(drawable\036border\036width) 97459  0.00 -1 s
+105664.0 h
+(drawable\036border\036width) 134035  0.00 -1 s
+5 sf
+52832.0 97423.0 m
+(Geometry) 64115  0.00 -1 s
+2 sf
+69088.0 h
+(drawable\036depth) 88213  0.00 -1 s
+105664.0 h
+(drawable\036height) 125415  0.00 -1 s
+52832.0 100584.0 m
+69088.0 h
+(drawable\036height) 88839  0.00 -1 s
+105664.0 h
+(drawable\036width) 124788  0.00 -1 s
+52832.0 103745.0 m
+69088.0 h
+(drawable\036root) 86328  0.00 -1 s
+105664.0 h
+(drawable\036x) 119301  0.00 -1 s
+52832.0 106906.0 m
+69088.0 h
+(drawable\036width) 88212  0.00 -1 s
+105664.0 h
+(drawable\036y) 119301  0.00 -1 s
+52832.0 110067.0 m
+69088.0 h
+(drawable\036x) 82725  0.00 -1 s
+105664.0 h
+(window\036priority) 125414  0.00 -1 s
+52832.0 113228.0 m
+69088.0 h
+(drawable\036y) 82725  0.00 -1 s
+5 sf
+52832.0 116388.0 m
+88392.0 h
+99568.0 h
+123952.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+52832 115563 av
+149352 115563 as
+149352 115681 as
+52832 115681 as
+closepath
+fp
+/drawmode PL_SET def
+52832.0 122597.0 m
+(The) 57220  0.00 -1 s
+( results from a sequence of calls to ) 94696  -292.00 32 s
+2 sf
+(setf) 98925  0.00 -1 s
+5 sf
+( functions in a given group are) 131657  -292.00 32 s
+( cached and sent) 149352  -292.67 32 s
+52832.0 125758.0 m
+(in) 55027  0.00 -1 s
+( a single server request, either upon exit from the ) 109134  -192.70 32 s
+/timsps10i 4 declareFont
+4 sf
+(body) 114620  0.00 -1 s
+5 sf
+( or when a reader function from) 149352  -192.50 32 s
+52832.0 128919.0 m
+(the) 56280  0.00 -1 s
+( corresponding group is called.) 90988  -42.00 32 s
+2 sf
+52832.0 135196.0 m
+(with\036state) 64740  0.00 -1 s
+5 sf
+( sends a single request to) 91974  -181.00 32 s
+( update all its cached values for the ) 130961  -181.50 32 s
+4 sf
+(drawable) 141622  0.00 -1 s
+5 sf
+( before) 149352  -182.00 32 s
+52832.0 138357.0 m
+(the) 56280  0.00 -1 s
+( first call to a reader function within the ) 100389  -158.00 32 s
+4 sf
+(body) 105875  0.00 -1 s
+5 sf
+( and also before the first call) 137214  -131.67 32 s
+( to a reader) 149352  -158.67 32 s
+52832.0 141518.0 m
+(function) 62236  0.00 -1 s
+( following a sequence of calls to ) 98686  -111.00 32 s
+2 sf
+(setf) 102915  0.00 -1 s
+5 sf
+( functions from the corresponding group. ) 149352  -110.83 32 s
+4 sf
+52832.0 147794.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64165  -34.00 32 s
+5 sf
+(\037 A ) 70368  -34.00 32 s
+2 sf
+(display) 78994  0.00 -1 s
+5 sf
+(.) 79700  0.00 -1 s
+4 sf
+52832.0 152581.0 m
+(body) 58318  0.00 -1 s
+( ) 58994  -30.00 32 s
+5 sf
+(\037 The forms in which attributes accesses are batched.) 120272  -30.00 32 s
+20320.0 158090.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 156466 av
+148878 156464 as
+[] 0 setdash
+dp
+149352.0 158090.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 161476.0 m
+(Stacking) 32926  0.00 -1 s
+( Order) 42830  31.00 32 s
+52832.0 h
+2 sf
+(4.4) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(Sibling) 66709  0.00 -1 s
+( windows can ) 83014  27.00 32 s
+4 sf
+(stack) 88813  0.00 -1 s
+5 sf
+( on top of each other. Windows above can ) 137334  27.00 32 s
+4 sf
+(obscure) 146269  0.00 -1 s
+5 sf
+( or) 149352  27.00 32 s
+52832.0 164637.0 m
+4 sf
+(occlude) 61608  0.00 -1 s
+5 sf
+( lower windows. This relationship between sibling windows is known as the) 149352  153.00 32 s
+52832.0 167798.0 m
+(stacking) 62237  0.00 -1 s
+( order. The ) 74826  -192.00 32 s
+2 sf
+(window\036priority) 94576  0.00 -1 s
+5 sf
+( function can be used to change the stacking) 142886  -192.00 32 s
+( order) 149352  -193.00 32 s
+52832.0 170959.0 m
+(of) 55182  0.00 -1 s
+( a single) 64114  -237.00 32 s
+( window. CLX also provides functions to raise or lower children of a window.) 149352  -237.54 32 s
+52832.0 174120.0 m
+(Raising) 61455  0.00 -1 s
+( a mapped window can generate ) 100309  311.00 32 s
+2 sf
+(:exposure) 112065  0.00 -1 s
+5 sf
+( events) 120292  311.00 32 s
+( for the window and any) 149352  310.40 32 s
+52832.0 177281.0 m
+(mapped) 61766  0.00 -1 s
+( subwindows that were formerly obscured. Lowering a mapped window can) 149352  177.40 32 s
+52832.0 180442.0 m
+(generate) 62389  0.00 -1 s
+( ) 63055  -40.00 32 s
+2 sf
+(:exposure) 74811  0.00 -1 s
+5 sf
+( events on any windows it formerly obscured.) 126097  -40.57 32 s
+2 sf
+34544.0 186718.0 m
+(circulate\036window\036down) 62914  0.00 -1 s
+( ) 63468  -152.00 32 s
+4 sf
+(window) 72249  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 191437.0 m
+(Lowers) 61294  0.00 -1 s
+( the highest mapped child of the specified ) 109183  10.00 32 s
+4 sf
+(window) 117964  0.00 -1 s
+5 sf
+( that partially or completely) 149352  10.00 32 s
+52832.0 194598.0 m
+(occludes) 62706  0.00 -1 s
+( another child to the bottom of the stack. Completely unobscured children are) 149352  -61.75 32 s
+52832.0 197759.0 m
+(unaffected.) 65445  0.00 -1 s
+( Exposure processing is performed on formerly obscured windows.) 140908  -40.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 12
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03646) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(If) 54710  0.00 -1 s
+( some other client has selected ) 89721  -16.67 32 s
+2 sf
+(:substructure\036redirect) 116518  0.00 -1 s
+5 sf
+( on the ) 124856  -16.67 32 s
+/timsps10i 4 declareFont
+4 sf
+(window) 133637  0.00 -1 s
+5 sf
+(, a ) 136975  -16.50 32 s
+2 sf
+(:circulate\036) 149352  0.00 -1 s
+52832.0 25739.0 m
+(request) 61766  0.00 -1 s
+5 sf
+( event is generated, and no further processing is performed. Otherwise, the child) 149352  -244.00 32 s
+52832.0 28900.0 m
+(window) 61923  0.00 -1 s
+( is lowered and a ) 81286  -93.00 32 s
+2 sf
+(:circulate\036notify) 100716  0.00 -1 s
+5 sf
+( event is generated if the ) 128529  -92.67 32 s
+4 sf
+(window) 137310  0.00 -1 s
+5 sf
+( is actually) 149352  -92.50 32 s
+52832.0 32060.0 m
+(restacked.) 64193  0.00 -1 s
+4 sf
+52832.0 38337.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 43124.0 m
+(circulate\036window\036up) 59466  0.00 -1 s
+( ) 60036  -136.00 32 s
+4 sf
+(window) 68817  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 47842.0 m
+(Raises) 60200  0.00 -1 s
+( the lowest mapped child of the) 95356  -45.00 32 s
+( specified ) 106863  -45.50 32 s
+4 sf
+(window) 115644  0.00 -1 s
+5 sf
+( that is partially or completely) 149352  -45.60 32 s
+52832.0 51003.0 m
+(occluded) 63019  0.00 -1 s
+( by another child to the top of the stack. Completely unobscured children are) 149352  -14.77 32 s
+52832.0 54164.0 m
+(unaffected.) 65445  0.00 -1 s
+( Exposure processing is performed on formerly obscured windows.) 140908  -40.00 32 s
+52832.0 60441.0 m
+(If) 54710  0.00 -1 s
+( another client has selected ) 86007  37.00 32 s
+2 sf
+(:substructure\036redirect) 112804  0.00 -1 s
+5 sf
+( on the ) 121303  37.00 32 s
+4 sf
+(window) 130084  0.00 -1 s
+5 sf
+(, a ) 133530  37.50 32 s
+2 sf
+(:circulate\036re\036) 149352  0.00 -1 s
+52832.0 63602.0 m
+(quest) 59260  0.00 -1 s
+5 sf
+( event is generated, and no further processing is performed.) 125948  -35.00 32 s
+( Otherwise, the child) 149352  -35.67 32 s
+52832.0 66762.0 m
+(window) 61923  0.00 -1 s
+( is raised and a ) 78046  -271.00 32 s
+2 sf
+(:circulate\036notify) 97476  0.00 -1 s
+5 sf
+( event is generated if the ) 124221  -270.67 32 s
+4 sf
+(window) 133002  0.00 -1 s
+5 sf
+( is actually res\036) 149352  -270.67 32 s
+52832.0 69923.0 m
+(tacked.) 60903  0.00 -1 s
+4 sf
+52832.0 76200.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+20320.0 81709.0 m
+0.0 0.0 m
+newpath
+20455 80085 av
+148878 80083 as
+[] 0 setdash
+dp
+149352.0 81709.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 85096.0 m
+(Window) 32552  0.00 -1 s
+( ) 33393  -6.00 32 s
+52832.0 h
+2 sf
+(4.5) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(All) 62160  0.00 -1 s
+( the windows in X are) 91809  961.00 32 s
+( arranged in a strict hierarchy. At the top of) 149352  960.44 32 s
+2 sf
+6 sf
+20320.0 88482.0 m
+(Hierarchy) 35176  0.00 -1 s
+52832.0 h
+5 sf
+(the) 56280  0.00 -1 s
+( hierarchy are the root windows, which cover the display screens. Each root window) 149352  -164.92 32 s
+52832.0 91643.0 m
+(is) 54714  0.00 -1 s
+( partially or completely covered by its child windows. All windows, except for root) 149352  39.38 32 s
+52832.0 94804.0 m
+(windows,) 63727  0.00 -1 s
+( have parents. Child windows can have their own children. In this way,) 140304  -300.00 32 s
+( a tree of) 149352  -300.67 32 s
+52832.0 97965.0 m
+(arbitrary) 62545  0.00 -1 s
+( depth on each screen can be created. CLX provides several functions for exam\036) 149352  -266.69 32 s
+52832.0 101126.0 m
+(ining) 58633  0.00 -1 s
+( and modifying the window) 89648  -45.00 32 s
+( hierarchy.) 101668  -46.00 32 s
+2 sf
+34544.0 107402.0 m
+(drawable\036root) 51784  0.00 -1 s
+( ) 52354  -136.00 32 s
+4 sf
+(drawable) 63015  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 110563.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 113724.0 m
+(  root\036window ) 69293  -27.00 32 s
+5 sf
+(\037 Type ) 79272  -27.00 32 s
+2 sf
+(window) 88679  0.00 -1 s
+5 sf
+(.) 89385  0.00 -1 s
+4 sf
+( ) 90063  -28.00 32 s
+5 sf
+52832.0 118443.0 m
+(Returns) 61610  0.00 -1 s
+( the root) 70953  -31.00 32 s
+( window of the specified ) 99400  -31.60 32 s
+4 sf
+(drawable) 110061  0.00 -1 s
+5 sf
+(.) 110767  0.00 -1 s
+4 sf
+52832.0 124720.0 m
+(drawable) 63493  0.00 -1 s
+( ) 64151  -48.00 32 s
+5 sf
+(\037 A ) 70326  -48.00 32 s
+2 sf
+(drawable) 81613  0.00 -1 s
+5 sf
+(.) 82319  0.00 -1 s
+2 sf
+34544.0 129506.0 m
+(query\036tree) 47236  0.00 -1 s
+( ) 47908  -34.00 32 s
+4 sf
+(window ) 57361  -34.00 32 s
+5 sf
+(&key \() 65243  -33.00 32 s
+2 sf
+(:result\036type) 79189  0.00 -1 s
+5 sf
+( ) 79861  -34.00 32 s
+2 sf
+(`list) 84405  0.00 -1 s
+5 sf
+(\)) 85344  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 132667.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 135828.0 m
+54864.0 h
+(children) 64269  0.00 -1 s
+( ) 64931  -44.00 32 s
+5 sf
+(\037 Type) 74214  -44.00 32 s
+( ) 74875  -45.00 32 s
+2 sf
+(sequence) 85692  0.00 -1 s
+5 sf
+( of ) 89365  -44.50 32 s
+2 sf
+(window) 98772  0.00 -1 s
+5 sf
+(.) 99478  0.00 -1 s
+4 sf
+52832.0 138989.0 m
+54864.0 h
+(parent) 62232  0.00 -1 s
+( \037 ) 66089  -32.00 32 s
+5 sf
+(Type ) 72562  -32.00 32 s
+2 sf
+(window) 81969  0.00 -1 s
+5 sf
+( or ) 85667  -32.00 32 s
+2 sf
+(null) 90373  0.00 -1 s
+5 sf
+(.) 91079  0.00 -1 s
+4 sf
+52832.0 142150.0 m
+54864.0 h
+(root) 59568  0.00 -1 s
+( ) 60245  -29.00 32 s
+5 sf
+(\037 Type ) 70220  -29.00 32 s
+2 sf
+(window) 79627  0.00 -1 s
+5 sf
+(.) 80333  0.00 -1 s
+4 sf
+( ) 81009  -30.00 32 s
+5 sf
+52832.0 146868.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66380  -45.00 32 s
+4 sf
+(children) 75785  0.00 -1 s
+5 sf
+( windows, the) 91450  -45.00 32 s
+( ) 92110  -46.00 32 s
+4 sf
+(parent) 99478  0.00 -1 s
+5 sf
+( window, and the ) 119440  -45.50 32 s
+4 sf
+(root) 124144  0.00 -1 s
+5 sf
+( window for the speci\036) 149352  -45.50 32 s
+52832.0 150029.0 m
+(fied) 57219  0.00 -1 s
+( ) 57705  -220.00 32 s
+4 sf
+(window) 66486  0.00 -1 s
+5 sf
+(. The children are returned as a sequence of) 113857  -220.00 32 s
+( windows in current stacking or\036) 149352  -220.60 32 s
+52832.0 153190.0 m
+(der,) 57141  0.00 -1 s
+( from bottom\036most \(first\)) 85543  -15.00 32 s
+( to top\036most \(last\). The ) 112114  -15.60 32 s
+2 sf
+(:result\036type) 126060  0.00 -1 s
+5 sf
+( specifies the type of) 149352  -15.50 32 s
+52832.0 156351.0 m
+(children) 62078  0.00 -1 s
+( sequence returned.) 83786  -77.00 32 s
+4 sf
+52832.0 162628.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+52832.0 167414.0 m
+(:result\036type) 66778  0.00 -1 s
+( ) 67424  -60.00 32 s
+5 sf
+(\037 A valid type specifier for a sub\036type of ) 114928  -59.44 32 s
+2 sf
+(sequence) 125745  0.00 -1 s
+5 sf
+(. The default is a ) 145041  -59.60 32 s
+2 sf
+(list) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+2 sf
+34544.0 173691.0 m
+(reparent\036window) 55390  0.00 -1 s
+( ) 56042  -54.00 32 s
+4 sf
+(window parent x) 74748  -54.00 32 s
+5 sf
+( ) 75399  -55.00 32 s
+4 sf
+(y) 76652  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 178410.0 m
+(Changes) 62551  0.00 -1 s
+( a ) 65064  -76.00 32 s
+4 sf
+(window) 73845  0.00 -1 s
+5 sf
+('s ) 76512  -76.00 32 s
+4 sf
+(parent) 83880  0.00 -1 s
+5 sf
+( within a single screen. There is no way to move a window) 149352  -76.00 32 s
+52832.0 181570.0 m
+(between) 62234  0.00 -1 s
+( screens.) 71865  -86.00 32 s
+52832.0 187847.0 m
+(The) 57220  0.00 -1 s
+( specified ) 68730  -44.00 32 s
+4 sf
+(window) 77511  0.00 -1 s
+5 sf
+( is reparented by inserting it as a child of the) 127230  -44.00 32 s
+( specified ) 138739  -44.50 32 s
+4 sf
+(parent) 146107  0.00 -1 s
+5 sf
+(. If) 149352  -45.00 32 s
+52832.0 191008.0 m
+(the) 56280  0.00 -1 s
+( ) 56768  -218.00 32 s
+4 sf
+(window) 65549  0.00 -1 s
+5 sf
+( is mapped, an ) 81687  -218.00 32 s
+2 sf
+(unmap\036window) 100501  0.00 -1 s
+5 sf
+( operation is automatically performed on the) 149352  -217.50 32 s
+52832.0 194169.0 m
+(specified) 63018  0.00 -1 s
+( ) 63444  -280.00 32 s
+4 sf
+(window) 72225  0.00 -1 s
+5 sf
+(. The ) 78171  -280.00 32 s
+4 sf
+(window) 86952  0.00 -1 s
+5 sf
+( is) 89260  -280.00 32 s
+( then removed from its current position in the hierarchy) 149352  -280.56 32 s
+52832.0 197330.0 m
+(and) 56907  0.00 -1 s
+( inserted as the child of the specified ) 100027  139.13 32 s
+4 sf
+(parent) 107395  0.00 -1 s
+5 sf
+(. The ) 114180  139.50 32 s
+4 sf
+(window) 122961  0.00 -1 s
+5 sf
+( is placed on top in the) 149352  139.50 32 s
+52832.0 200491.0 m
+(stacking) 62237  0.00 -1 s
+( order with respect) 83237  -26.00 32 s
+( to sibling windows.) 106048  -26.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 13
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03647) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(After) 58784  0.00 -1 s
+( reparenting the specified ) 89211  280.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(window,) 98698  0.00 -1 s
+5 sf
+( a ) 101923  280.00 32 s
+2 sf
+(:reparent\036notify) 121354  0.00 -1 s
+5 sf
+( event) 128452  280.00 32 s
+( is generated. The) 149352  279.33 32 s
+52832.0 25739.0 m
+(override\036redirect) 71788  0.00 -1 s
+( attribute of the ) 89933  30.00 32 s
+4 sf
+(window) 98714  0.00 -1 s
+5 sf
+( is passed on in this event. Window) 138902  30.00 32 s
+( manager) 149352  29.00 32 s
+52832.0 28900.0 m
+(clients) 60199  0.00 -1 s
+( normally should ignore this event if this attribute is ) 118526  -93.00 32 s
+2 sf
+(:on) 122445  0.00 -1 s
+5 sf
+(. See Section 12, Events) 149352  -93.00 32 s
+52832.0 32060.0 m
+(and) 56907  0.00 -1 s
+( Input, for more information on ) 93360  54.00 32 s
+2 sf
+(:reparent\036notify) 112791  0.00 -1 s
+5 sf
+( event processing. Finally, if the) 149352  54.20 32 s
+52832.0 35221.0 m
+(specified) 63018  0.00 -1 s
+( ) 63876  152.00 32 s
+4 sf
+(window) 72657  0.00 -1 s
+5 sf
+( was originally mapped, a ) 103202  152.40 32 s
+2 sf
+(map\036window) 118878  0.00 -1 s
+5 sf
+( operation is automatically) 149352  152.33 32 s
+52832.0 38382.0 m
+(performed) 64583  0.00 -1 s
+( on) 68081  -30.00 32 s
+( it.) 71030  -31.00 32 s
+52832.0 44659.0 m
+(The) 57220  0.00 -1 s
+( X server performs normal exposure processing on formerly obscured windows.) 146969  -45.00 32 s
+( It) 149352  -46.00 32 s
+52832.0 47820.0 m
+(might) 59417  0.00 -1 s
+( not generate ) 73855  -281.00 32 s
+2 sf
+(:exposure) 85611  0.00 -1 s
+5 sf
+( events for regions from the initial ) 122908  -281.00 32 s
+2 sf
+(unmap\036window) 141722  0.00 -1 s
+5 sf
+( opera\036) 149352  -282.00 32 s
+52832.0 50981.0 m
+(tion) 57222  0.00 -1 s
+( if they are immediately obscured by the final ) 109042  -32.89 32 s
+2 sf
+(map\036window) 124718  0.00 -1 s
+5 sf
+( operation.) 136754  -33.00 32 s
+52832.0 57257.0 m
+(It) 54555  0.00 -1 s
+( is an) 60491  -11.00 32 s
+( error if any of the following are true: ) 103406  -11.56 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 63805.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(The) 62300  0.00 -1 s
+( new ) 68355  -29.00 32 s
+4 sf
+(parent) 75723  0.00 -1 s
+5 sf
+( window is not on the same screen as the old parent window.) 143956  -28.92 32 s
+7 sf
+52832.0 70352.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(The) 62300  0.00 -1 s
+( new ) 68019  -197.00 32 s
+4 sf
+(parent) 75387  0.00 -1 s
+5 sf
+( window is the) 91335  -197.00 32 s
+( specified ) 102538  -197.50 32 s
+4 sf
+(window) 111319  0.00 -1 s
+5 sf
+( or an inferior of the specified ) 144336  -197.57 32 s
+4 sf
+(win\036) 149352  0.00 -1 s
+57912.0 73513.0 m
+(dow) 62616  0.00 -1 s
+5 sf
+(.) 63322  0.00 -1 s
+7 sf
+52832.0 80061.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(The) 62300  0.00 -1 s
+( specified ) 74318  210.00 32 s
+4 sf
+(window) 83099  0.00 -1 s
+5 sf
+( has a ) 90862  210.00 32 s
+2 sf
+(:parent\036relative) 109822  0.00 -1 s
+5 sf
+( background attribute and the new) 149352  210.20 32 s
+57912.0 83222.0 m
+4 sf
+(parent) 65280  0.00 -1 s
+5 sf
+( window is not the same depth as the specified ) 118123  -29.80 32 s
+4 sf
+(window) 126904  0.00 -1 s
+5 sf
+(.) 127610  0.00 -1 s
+4 sf
+52832.0 89498.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+4 sf
+52832.0 94285.0 m
+(parent) 60200  0.00 -1 s
+( ) 60868  -38.00 32 s
+5 sf
+(\037 The new parent) 81834  -38.00 32 s
+( ) 82501  -39.00 32 s
+2 sf
+(window) 91908  0.00 -1 s
+5 sf
+(.) 92614  0.00 -1 s
+4 sf
+52832.0 99071.0 m
+(x) 54085  0.00 -1 s
+5 sf
+(,) 54791  0.00 -1 s
+( ) 55338  -159.00 32 s
+4 sf
+(y ) 57138  -159.00 32 s
+5 sf
+(\037 The position \(type) 80881  -159.00 32 s
+( ) 81427  -160.00 32 s
+2 sf
+(int16) 87541  0.00 -1 s
+5 sf
+(\) of the ) 95918  -159.33 32 s
+4 sf
+(window) 104699  0.00 -1 s
+5 sf
+( in its new ) 116447  -159.50 32 s
+4 sf
+(parent) 123815  0.00 -1 s
+5 sf
+(. These coordinates are) 149352  -159.67 32 s
+57912.0 102232.0 m
+(relative) 66373  0.00 -1 s
+( to the ) 73693  -147.00 32 s
+4 sf
+(parent) 81061  0.00 -1 s
+5 sf
+('s origin, and specify the new position of the upper, left,) 142996  -147.00 32 s
+( outer) 149352  -148.00 32 s
+57912.0 105393.0 m
+(corner) 65118  0.00 -1 s
+( of the) 72254  -37.00 32 s
+( ) 72922  -38.00 32 s
+4 sf
+(window) 81703  0.00 -1 s
+5 sf
+(.) 82409  0.00 -1 s
+2 sf
+34544.0 110180.0 m
+(translate\036coordinates) 60091  0.00 -1 s
+( ) 60741  -56.00 32 s
+4 sf
+(source) 68265  0.00 -1 s
+( source\036x source\036y destination) 102187  -56.67 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 113340.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 116501.0 m
+54864.0 h
+(destination\036x) 69598  0.00 -1 s
+( ) 70279  -25.00 32 s
+5 sf
+(\037 Type ) 80262  -25.00 32 s
+2 sf
+(int16) 86376  0.00 -1 s
+5 sf
+( or ) 90088  -25.00 32 s
+2 sf
+(null) 94794  0.00 -1 s
+5 sf
+(.) 95500  0.00 -1 s
+4 sf
+( ) 96181  -25.00 32 s
+52832.0 119662.0 m
+54864.0 h
+(destination\036y) 69598  0.00 -1 s
+5 sf
+( \037 Type ) 80262  -25.00 32 s
+2 sf
+(int16) 86376  0.00 -1 s
+5 sf
+( or ) 90088  -25.00 32 s
+2 sf
+(null) 94794  0.00 -1 s
+5 sf
+(.) 95500  0.00 -1 s
+4 sf
+( ) 96181  -25.00 32 s
+52832.0 122823.0 m
+54864.0 h
+(destination\036child) 73988  0.00 -1 s
+( ) 74664  -30.00 32 s
+5 sf
+(\037 Type ) 84637  -30.00 32 s
+2 sf
+(window) 94044  0.00 -1 s
+5 sf
+( or ) 97747  -29.50 32 s
+2 sf
+(null) 102453  0.00 -1 s
+5 sf
+(.) 103159  0.00 -1 s
+4 sf
+( ) 103835  -30.00 32 s
+5 sf
+52832.0 127542.0 m
+(Returns) 61610  0.00 -1 s
+( the position defined by ) 90371  281.00 32 s
+4 sf
+(source\036x) 100087  0.00 -1 s
+5 sf
+( and ) 106136  281.00 32 s
+4 sf
+(source\036y) 115852  0.00 -1 s
+5 sf
+( \(relative) 126239  281.00 32 s
+( to the origin of the) 149352  280.40 32 s
+52832.0 130703.0 m
+4 sf
+(source) 60356  0.00 -1 s
+5 sf
+( window\), expressed as coordinates relative to the origin of the ) 131021  -87.73 32 s
+4 sf
+(destination) 143563  0.00 -1 s
+5 sf
+( win\036) 149352  -88.00 32 s
+52832.0 133864.0 m
+(dow.) 58397  0.00 -1 s
+4 sf
+52832.0 140140.0 m
+(source) 60356  0.00 -1 s
+( ) 61029  -33.00 32 s
+5 sf
+(\037 A ) 67234  -33.00 32 s
+2 sf
+(window) 76641  0.00 -1 s
+5 sf
+( defining the source coordinate system.) 120678  -33.00 32 s
+4 sf
+52832.0 144927.0 m
+(source\036x) 62548  0.00 -1 s
+5 sf
+(,) 63254  0.00 -1 s
+( ) 63892  -68.00 32 s
+4 sf
+(source\036y ) 74246  -68.00 32 s
+5 sf
+(\037 Coordinates \() 92920  -68.00 32 s
+2 sf
+(int16) 99034  0.00 -1 s
+5 sf
+(\) relative) 109072  -68.00 32 s
+( to the origin of the ) 131078  -68.50 32 s
+4 sf
+(source) 138602  0.00 -1 s
+5 sf
+( ) 139239  -69.00 32 s
+2 sf
+(window) 148646  0.00 -1 s
+5 sf
+(.) 149352  0.00 -1 s
+4 sf
+52832.0 149713.0 m
+(destination) 65374  0.00 -1 s
+( ) 66046  -34.00 32 s
+5 sf
+(\037) 68868  0.00 -1 s
+( A ) 72248  -34.50 32 s
+2 sf
+(window) 81655  0.00 -1 s
+5 sf
+( defining the destination coordinate system.) 130703  -34.60 32 s
+20320.0 155222.0 m
+0.0 0.0 m
+newpath
+20455 153598 av
+148878 153596 as
+[] 0 setdash
+dp
+149352.0 155222.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 158609.0 m
+(Mapping) 33492  0.00 -1 s
+( ) 34341  2.00 32 s
+52832.0 h
+2 sf
+(4.6) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(A) 60592  0.00 -1 s
+( window is considered mapped if a) 99719  -36.00 32 s
+( ) 100388  -37.00 32 s
+2 sf
+(map\036window) 116064  0.00 -1 s
+5 sf
+( call has been made) 138018  -36.50 32 s
+6 sf
+20320.0 161996.0 m
+(Windows) 33869  0.00 -1 s
+52832.0 h
+5 sf
+(on) 55654  0.00 -1 s
+( it. When windows are first created, they are not mapped because an application may) 149352  -147.64 32 s
+52832.0 165156.0 m
+(wish) 58162  0.00 -1 s
+( to create a window long before it is mapped to the screen. A mapped window may) 149352  -154.00 32 s
+52832.0 168317.0 m
+(not) 56438  0.00 -1 s
+( be visible on the) 75629  -23.00 32 s
+( screen for one of the following reasons:) 120994  -23.57 32 s
+7 sf
+52832.0 174865.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(It) 59635  0.00 -1 s
+( is obscured by another opaque sibling window.) 113318  -34.57 32 s
+7 sf
+52832.0 181412.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(One) 62613  0.00 -1 s
+( of its ancestors is not mapped.) 97355  -23.00 32 s
+7 sf
+52832.0 187960.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(It) 59635  0.00 -1 s
+( is entirely clipped by an ancestor.) 98123  -25.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 14
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03648) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+52832.0 22578.0 m
+(A) 54869  0.00 -1 s
+( subwindow will appear on the screen as long as all of its) 116450  -237.00 32 s
+( ancestors are mapped and not) 149352  -237.60 32 s
+52832.0 25739.0 m
+(obscured) 63019  0.00 -1 s
+( by a sibling or clipped by an ancestor. Mapping a window that has an un\036) 149352  185.40 32 s
+52832.0 28900.0 m
+(mapped) 61766  0.00 -1 s
+( ancestor does not display the window, but) 108737  -165.00 32 s
+( marks it as eligible for display when) 149352  -165.57 32 s
+52832.0 32060.0 m
+(the) 56280  0.00 -1 s
+( ancestor becomes mapped. Such a window is called unviewable. When all its ances\036) 149352  -213.62 32 s
+52832.0 35221.0 m
+(tors) 57064  0.00 -1 s
+( are mapped, the window becomes viewable and remains visible on the screen if) 145228  -187.00 32 s
+( not) 149352  -188.00 32 s
+52832.0 38382.0 m
+(obscured) 63019  0.00 -1 s
+( by) 66516  -31.00 32 s
+( any sibling or ancestor. ) 94104  -31.60 32 s
+52832.0 44659.0 m
+(Any) 57691  0.00 -1 s
+( output to a window not visible on the) 98299  -274.00 32 s
+( screen is discarded. ) 120633  -274.50 32 s
+2 sf
+(:exposure) 132389  0.00 -1 s
+5 sf
+( events are gen\036) 149352  -274.67 32 s
+52832.0 47820.0 m
+(erated) 59725  0.00 -1 s
+( for the window when part or all of it becomes visible on the screen. A client only) 149352  -158.59 32 s
+52832.0 50981.0 m
+(receives) 62076  0.00 -1 s
+( the ) 66568  -184.00 32 s
+2 sf
+(:exposure) 78324  0.00 -1 s
+5 sf
+( events if it has selected them. Mapping or unmapping a window) 149352  -183.73 32 s
+52832.0 54142.0 m
+(does) 58005  0.00 -1 s
+( not) 62288  -29.00 32 s
+( change its stacking order priority.) 100855  -29.60 32 s
+2 sf
+34544.0 60418.0 m
+(map\036window) 50220  0.00 -1 s
+( ) 50824  -102.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(window) 59605  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 65137.0 m
+(Maps) 59103  0.00 -1 s
+( the ) 63895  -34.00 32 s
+4 sf
+(window) 72676  0.00 -1 s
+5 sf
+(. This function has no effect when the ) 115748  -33.50 32 s
+4 sf
+(window) 124529  0.00 -1 s
+5 sf
+( is already mapped.) 146372  -33.67 32 s
+52832.0 71414.0 m
+(If) 54710  0.00 -1 s
+( the override\036redirect attribute of the ) 97157  101.00 32 s
+4 sf
+(window) 105938  0.00 -1 s
+5 sf
+( is ) 109434  101.00 32 s
+2 sf
+(:off) 113662  0.00 -1 s
+5 sf
+( and another) 127813  101.00 32 s
+( client has selected) 149352  100.33 32 s
+52832.0 74574.0 m
+2 sf
+(:substructure\036redirect) 79629  0.00 -1 s
+5 sf
+( on the parent window, the) 109285  -88.00 32 s
+( X server generates a ) 133210  -88.60 32 s
+2 sf
+(:map\036request) 149352  0.00 -1 s
+5 sf
+52832.0 77735.0 m
+(event) 58944  0.00 -1 s
+( and the ) 68142  -147.67 32 s
+2 sf
+(map\036window) 83818  0.00 -1 s
+5 sf
+( function does not map the ) 113659  -147.50 32 s
+4 sf
+(window) 122440  0.00 -1 s
+5 sf
+(. Otherwise, the ) 140571  -147.67 32 s
+4 sf
+(window) 149352  0.00 -1 s
+5 sf
+52832.0 80896.0 m
+(is) 54714  0.00 -1 s
+( mapped, and) 69779  -31.00 32 s
+( the X server generates a ) 98112  -31.50 32 s
+2 sf
+(:map\036notify) 112373  0.00 -1 s
+5 sf
+( event.) 119865  -32.00 32 s
+52832.0 87173.0 m
+(If) 54710  0.00 -1 s
+( the ) 59204  -183.00 32 s
+4 sf
+(window) 67985  0.00 -1 s
+5 sf
+( becomes visible and no earlier contents for it are remembered, ) 137754  -183.00 32 s
+2 sf
+(map\036win\036) 149352  0.00 -1 s
+52832.0 90334.0 m
+(dow) 57849  0.00 -1 s
+5 sf
+( tiles the window with its background. If no background was defined for the) 143484  -8.00 32 s
+( win\036) 149352  -9.00 32 s
+52832.0 93495.0 m
+(dow,) 58397  0.00 -1 s
+( the existing screen contents) 89313  -226.00 32 s
+( are not altered, and the X server generates one or more) 149352  -226.55 32 s
+52832.0 96655.0 m
+2 sf
+(:exposure) 64588  0.00 -1 s
+5 sf
+( events. If a backing\036store was maintained while the window was) 136366  -181.00 32 s
+( unmapped,) 149352  -182.00 32 s
+52832.0 99816.0 m
+(no) 55654  0.00 -1 s
+( ) 56484  124.00 32 s
+2 sf
+(:exposure) 68240  0.00 -1 s
+5 sf
+( events are generated. If a backing\036store will now be maintained, a full) 149352  124.50 32 s
+52832.0 102977.0 m
+(window) 61923  0.00 -1 s
+( exposure is always generated. Otherwise, only visible regions) 130341  -245.00 32 s
+( may be reported.) 149352  -245.67 32 s
+52832.0 106138.0 m
+(Similar) 61140  0.00 -1 s
+( tiling) 67774  -30.00 32 s
+( and exposure take place for any newly viewable inferiors.) 133480  -30.56 32 s
+2 sf
+52832.0 112415.0 m
+(map\036window) 68508  0.00 -1 s
+5 sf
+( generates ) 80097  -239.00 32 s
+2 sf
+(:exposure) 91853  0.00 -1 s
+5 sf
+( events on each ) 108923  -239.00 32 s
+2 sf
+(:input\036output) 125227  0.00 -1 s
+5 sf
+( window that it causes) 149352  -239.00 32 s
+52832.0 115576.0 m
+(to) 55027  0.00 -1 s
+( become visible.) 73382  -32.00 32 s
+( ) 74055  -33.00 32 s
+4 sf
+52832.0 121852.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 15
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03649) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(map\036subwindows) 55554  0.00 -1 s
+( ) 56153  -107.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(window) 64934  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 5 declareFont
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 27297.0 m
+(Maps) 59103  0.00 -1 s
+( all child windows for a specified ) 96645  -111.57 32 s
+4 sf
+(window) 105426  0.00 -1 s
+5 sf
+( in top\036to\036bottom stacking order. The X) 149352  -111.50 32 s
+52832.0 30457.0 m
+(server) 59725  0.00 -1 s
+( generates an ) 75525  121.00 32 s
+2 sf
+(:exposure) 87281  0.00 -1 s
+5 sf
+( event on each newly visible window. This function is) 149352  121.33 32 s
+52832.0 33618.0 m
+(much) 59102  0.00 -1 s
+( more efficient than mapping each child individually.) 118827  -44.00 32 s
+4 sf
+52832.0 39895.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 44681.0 m
+(unmap\036window) 53358  0.00 -1 s
+( ) 53940  -124.00 32 s
+4 sf
+(window) 62721  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 49400.0 m
+(Unmaps) 62237  0.00 -1 s
+( the) 66441  50.00 32 s
+( specified ) 78138  49.50 32 s
+4 sf
+(window) 86919  0.00 -1 s
+5 sf
+( and causes the X server to generate an ) 131953  49.44 32 s
+2 sf
+(:unmap\036notify) 149352  0.00 -1 s
+5 sf
+52832.0 52561.0 m
+(event.) 59650  0.00 -1 s
+( If the specified ) 76798  -297.00 32 s
+4 sf
+(window) 85579  0.00 -1 s
+5 sf
+( is already unmapped, ) 109863  -297.00 32 s
+2 sf
+(unmap\036window) 128677  0.00 -1 s
+5 sf
+( has no effect. Nor\036) 149352  -296.50 32 s
+52832.0 55722.0 m
+(mal) 57064  0.00 -1 s
+( exposure processing on formerly obscured windows is performed. Any child) 143550  -74.00 32 s
+( win\036) 149352  -75.00 32 s
+52832.0 58883.0 m
+(dow) 57691  0.00 -1 s
+( is no longer viewable. Unmapping the ) 104178  281.14 32 s
+4 sf
+(window) 112959  0.00 -1 s
+5 sf
+( generates ) 125589  281.50 32 s
+2 sf
+(:exposure) 137345  0.00 -1 s
+5 sf
+( events on) 149352  281.50 32 s
+52832.0 62044.0 m
+(windows) 63021  0.00 -1 s
+( that were formerly obscured by ) 99661  -31.67 32 s
+4 sf
+(window) 108442  0.00 -1 s
+5 sf
+( and its children.) 127158  -31.67 32 s
+4 sf
+52832.0 68320.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 73107.0 m
+(unmap\036subwindows) 58692  0.00 -1 s
+( ) 59268  -130.00 32 s
+4 sf
+(window) 68049  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 77826.0 m
+(Unmaps) 62237  0.00 -1 s
+( all child windows for the specified ) 100970  -255.00 32 s
+4 sf
+(window) 109751  0.00 -1 s
+5 sf
+( in bottom to top stacking order. The) 149352  -255.00 32 s
+52832.0 80986.0 m
+(X) 54869  0.00 -1 s
+( server generates an ) 77245  -165.00 32 s
+2 sf
+(:unmap\036notify) 94644  0.00 -1 s
+5 sf
+( event on each child and ) 121712  -165.00 32 s
+2 sf
+(:exposure) 133468  0.00 -1 s
+5 sf
+( events on for\036) 149352  -164.67 32 s
+52832.0 84147.0 m
+(merly) 59414  0.00 -1 s
+( obscured windows. Using this function is much more efficient than unmapping) 149352  -3.55 32 s
+52832.0 87308.0 m
+(child) 58475  0.00 -1 s
+( windows individually.) 84305  -58.00 32 s
+4 sf
+52832.0 93585.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+20320.0 99094.0 m
+0.0 0.0 m
+newpath
+20455 97470 av
+148878 97468 as
+[] 0 setdash
+dp
+149352.0 99094.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 102481.0 m
+(Destroying) 36118  0.00 -1 s
+( ) 36982  17.00 32 s
+52832.0 h
+2 sf
+(4.7) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(CLX) 64198  0.00 -1 s
+( provides functions to destroy) 97632  -28.00 32 s
+( a window or destroy all children of) 137792  -28.57 32 s
+6 sf
+20320.0 105867.0 m
+(Windows) 33869  0.00 -1 s
+52832.0 h
+5 sf
+(a) 54085  0.00 -1 s
+( window.) 64334  -254.00 32 s
+2 sf
+( ) 64785  -255.00 32 s
+5 sf
+(Note that by default, windows are destroyed when a connection is closed. For) 149352  -254.50 32 s
+52832.0 109028.0 m
+(further) 60508  0.00 -1 s
+( information, see paragraph 2.4, Closing the Display, and paragraph 12.4, Client) 149352  -152.82 32 s
+52832.0 112189.0 m
+(Termination.) 67487  0.00 -1 s
+( ) 68140  -53.00 32 s
+2 sf
+34544.0 118466.0 m
+(destroy\036window) 53824  0.00 -1 s
+( ) 54414  -116.00 32 s
+4 sf
+(window) 63195  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 123184.0 m
+(Destroys) 62863  0.00 -1 s
+( the) 66886  -131.00 32 s
+( specified ) 78221  -131.50 32 s
+4 sf
+(window) 87002  0.00 -1 s
+5 sf
+( as well as all of its inferiors. The windows should never) 149352  -131.55 32 s
+52832.0 126345.0 m
+(again) 58944  0.00 -1 s
+( be referenced. If) 78109  -35.00 32 s
+( the specified ) 93754  -35.67 32 s
+4 sf
+(window) 102535  0.00 -1 s
+5 sf
+( is mapped, it is automatically unmapped.) 149352  -35.50 32 s
+52832.0 129506.0 m
+(The) 57220  0.00 -1 s
+( window and all of its inferiors are then destroyed, and a ) 122006  37.00 32 s
+2 sf
+(:destroy\036notify) 139871  0.00 -1 s
+5 sf
+( event is) 149352  37.50 32 s
+52832.0 132667.0 m
+(generated) 63800  0.00 -1 s
+( for each window. The ordering of) 102001  -98.00 32 s
+( the ) 106664  -98.50 32 s
+2 sf
+(:destroy\036notify) 124529  0.00 -1 s
+5 sf
+( events is such that for) 149352  -98.60 32 s
+52832.0 135828.0 m
+(any) 56907  0.00 -1 s
+( given window being destroyed, ) 92805  -188.00 32 s
+2 sf
+(:destroy\036notify) 110670  0.00 -1 s
+5 sf
+( is generated on the window's infe\036) 149352  -188.00 32 s
+52832.0 138989.0 m
+(riors) 58003  0.00 -1 s
+( before being generated on the window. The ordering among siblings and across) 149352  69.17 32 s
+52832.0 142150.0 m
+(sub\036hierarchies) 70069  0.00 -1 s
+( is not otherwise constrained. If the ) 110700  27.29 32 s
+4 sf
+(window) 119481  0.00 -1 s
+5 sf
+( is a root window, no win\036) 149352  27.50 32 s
+52832.0 145311.0 m
+(dows) 58789  0.00 -1 s
+( are destroyed. Destroying a mapped window generates ) 120298  -216.63 32 s
+2 sf
+(:exposure) 132054  0.00 -1 s
+5 sf
+( events on other) 149352  -216.67 32 s
+52832.0 148471.0 m
+(windows) 63021  0.00 -1 s
+( that the mapped window obscured.) 102910  -47.80 32 s
+4 sf
+52832.0 154748.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+2 sf
+34544.0 159535.0 m
+(destroy\036subwindows) 59158  0.00 -1 s
+4 sf
+( window ) 69223  -64.00 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 164253.0 m
+(Destroys) 62863  0.00 -1 s
+( all inferiors of) 79770  20.00 32 s
+( the specified ) 95580  19.33 32 s
+4 sf
+(window) 104361  0.00 -1 s
+5 sf
+(, in bottom to top stacking order. The X) 149352  19.50 32 s
+52832.0 167414.0 m
+(server) 59725  0.00 -1 s
+( generates a ) 73412  -113.00 32 s
+2 sf
+(:destroy\036notify) 91277  0.00 -1 s
+5 sf
+( event for each window. This is much more efficient) 149352  -112.67 32 s
+52832.0 170575.0 m
+(than) 57691  0.00 -1 s
+( deleting many windows individually. The inferiors should never be) 136503  240.00 32 s
+( referenced) 149352  239.00 32 s
+52832.0 173736.0 m
+(again.) 59650  0.00 -1 s
+( ) 60305  -51.00 32 s
+4 sf
+52832.0 180013.0 m
+(window) 61613  0.00 -1 s
+( ) 62282  -37.00 32 s
+5 sf
+(\037 A ) 68480  -36.50 32 s
+2 sf
+(window) 77887  0.00 -1 s
+5 sf
+(.) 78593  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 16
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03650) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 5 declareFont
+5 sf
+20320.0 23300.0 m
+0.0 0.0 m
+newpath
+20455 21676 av
+148878 21674 as
+[] 0 setdash
+dp
+149352.0 23300.0 m
+/timsps12b 6 declareFont
+6 sf
+20320.0 26687.0 m
+(Pixmaps) 32736  0.00 -1 s
+( ) 33596  13.00 32 s
+52832.0 h
+2 sf
+(4.8) 56360  0.00 -1 s
+5 sf
+() 56360  0.00 -1 s
+58555.0 h
+(A) 60592  0.00 -1 s
+( ) 62541  1243.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(pixmap) 70848  0.00 -1 s
+5 sf
+( is a three\036dimensional array of bits. A pixmap is normally) 149352  1243.50 32 s
+6 sf
+20320.0 30074.0 m
+52832.0 h
+5 sf
+(thought) 61455  0.00 -1 s
+( of as a two\036dimensional array of pixels, where each pixel can be a value from 0) 149352  -153.63 32 s
+52832.0 33618.0 m
+(to) 55027  0.00 -1 s
+( ) 55534  -199.00 32 s
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+55534.0 33707.0 m
+(2) 56945  0.00 -1 s
+1 sf
+56944.0 32644.0 m
+(n) 58075  0.00 -1 s
+5 sf
+58702.0 33707.0 m
+(-) 60113  0.00 -1 s
+60732.0 h
+(1) 62143  0.00 -1 s
+62646.0 33618.0 m
+(, where ) 71259  -199.00 32 s
+4 sf
+(n) 72670  0.00 -1 s
+5 sf
+( is the depth of the pixmap. A pixmap can) 118221  -199.00 32 s
+( also be thought of as a stack) 149352  -199.57 32 s
+52832.0 36779.0 m
+(of) 55182  0.00 -1 s
+( ) 55867  -21.00 32 s
+4 sf
+(n) 57278  0.00 -1 s
+5 sf
+( bitmaps. A ) 71012  -21.00 32 s
+4 sf
+(bitmap) 78850  0.00 -1 s
+5 sf
+( is a single bit pixmap of depth 1. CLX provides) 133118  -21.00 32 s
+( functions to: ) 148652  -21.67 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 43327.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(Create) 65276  0.00 -1 s
+( or free) 73376  -23.00 32 s
+( a pixmap ) 85141  -23.67 32 s
+7 sf
+52832.0 49874.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(Test) 62771  0.00 -1 s
+( if an object is a pixmap) 89782  -18.00 32 s
+( ) 90469  -19.00 32 s
+7 sf
+52832.0 56422.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(Test) 62771  0.00 -1 s
+( if two pixmap objects are equal ) 99523  -23.00 32 s
+7 sf
+52832.0 62969.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+5 sf
+(Return) 65592  0.00 -1 s
+( the pixmap) 78863  -27.00 32 s
+( resource ID from a ) 101525  -27.60 32 s
+2 sf
+(pixmap) 110619  0.00 -1 s
+5 sf
+( object ) 118872  -27.50 32 s
+52832.0 69246.0 m
+(Note) 58317  0.00 -1 s
+( that pixmaps can only be used on the screen where they were created. Pixmaps are) 149352  -190.00 32 s
+52832.0 72407.0 m
+(off\036screen) 64267  0.00 -1 s
+( server resources that are used for a number of operations. These include de\036) 149352  -85.62 32 s
+52832.0 75568.0 m
+(fining) 59572  0.00 -1 s
+( patterns for cursors or as the source for certain raster operations. ) 133435  -15.58 32 s
+2 sf
+34544.0 81844.0 m
+(create\036pixmap) 51939  0.00 -1 s
+5 sf
+( &key ) 59521  -50.00 32 s
+2 sf
+(:width) 67358  0.00 -1 s
+5 sf
+( ) 68013  -51.00 32 s
+2 sf
+(:height) 76477  0.00 -1 s
+5 sf
+( ) 77133  -50.00 32 s
+2 sf
+(:depth) 84971  0.00 -1 s
+5 sf
+( ) 85626  -51.00 32 s
+2 sf
+(:drawable) 97852  0.00 -1 s
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 85005.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 88166.0 m
+(  pixmap) 62487  -32.00 32 s
+( ) 63160  -33.00 32 s
+5 sf
+(\037 Type ) 73128  -32.50 32 s
+2 sf
+(pixmap) 82222  0.00 -1 s
+5 sf
+(.) 82928  0.00 -1 s
+52832.0 92885.0 m
+(Creates) 61294  0.00 -1 s
+( a pixmap of the specified ) 90482  -125.00 32 s
+2 sf
+(:width) 98319  0.00 -1 s
+5 sf
+(, ) 99606  -125.00 32 s
+2 sf
+(:height) 108070  0.00 -1 s
+5 sf
+(, and ) 114013  -125.00 32 s
+2 sf
+(:depth) 121851  0.00 -1 s
+5 sf
+(. It is valid to pass a win\036) 149352  -124.86 32 s
+52832.0 96046.0 m
+(dow) 57691  0.00 -1 s
+( whose class is ) 74213  -220.00 32 s
+2 sf
+(:input\036only) 87696  0.00 -1 s
+5 sf
+( as the ) 94953  -220.00 32 s
+2 sf
+(:drawable) 107179  0.00 -1 s
+5 sf
+( argument. The ) 124388  -220.00 32 s
+2 sf
+(:width) 132225  0.00 -1 s
+5 sf
+( and ) 137272  -220.00 32 s
+2 sf
+(:height) 145736  0.00 -1 s
+5 sf
+( ar\036) 149352  -221.00 32 s
+52832.0 99207.0 m
+(guments) 62395  0.00 -1 s
+( must be nonzero. The ) 87602  -131.60 32 s
+2 sf
+(:depth) 95440  0.00 -1 s
+5 sf
+( must be supported by the screen of the specified) 149352  -131.56 32 s
+52832.0 102368.0 m
+2 sf
+(:drawable) 65058  0.00 -1 s
+5 sf
+(.) 65764  0.00 -1 s
+2 sf
+52832.0 108644.0 m
+(:width) 60669  0.00 -1 s
+5 sf
+(,) 61375  0.00 -1 s
+2 sf
+( :height ) 71183  -34.00 32 s
+5 sf
+(\037 The nonzero width and height \(type ) 115540  -34.00 32 s
+2 sf
+(card16) 123848  0.00 -1 s
+5 sf
+(\). ) 126165  -34.00 32 s
+2 sf
+52832.0 114921.0 m
+(:depth) 60670  0.00 -1 s
+( ) 61345  -31.00 32 s
+5 sf
+(\037 The depth \(type) 82648  -31.00 32 s
+( ) 83322  -32.00 32 s
+2 sf
+(card8) 90219  0.00 -1 s
+5 sf
+(\) of the pixmap. ) 108825  -31.50 32 s
+2 sf
+52832.0 121198.0 m
+(:drawable) 65058  0.00 -1 s
+( ) 65556  -208.00 32 s
+5 sf
+(\037 A ) 71411  -208.00 32 s
+2 sf
+(drawable) 82698  0.00 -1 s
+5 sf
+( which determines the screen where the pixmap will be used.) 149352  -207.60 32 s
+2 sf
+34544.0 127474.0 m
+(free\036pixmap) 49275  0.00 -1 s
+5 sf
+( ) 49876  -105.00 32 s
+4 sf
+(pixmap) 58183  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 132193.0 m
+(Allows) 60983  0.00 -1 s
+( the X server to free the pixmap storage when) 110344  -236.00 32 s
+( no other server resources reference) 149352  -236.60 32 s
+52832.0 135354.0 m
+(it.) 55106  0.00 -1 s
+( The) 60163  -37.00 32 s
+( pixmap should never be referenced again. ) 108486  -37.57 32 s
+4 sf
+52832.0 141630.0 m
+(pixmap ) 61807  -38.00 32 s
+5 sf
+(\037 A ) 68003  -37.50 32 s
+2 sf
+(pixmap) 77097  0.00 -1 s
+5 sf
+(.) 77803  0.00 -1 s
+2 sf
+34544.0 146417.0 m
+(pixmap\036display) 53203  0.00 -1 s
+5 sf
+( ) 53804  -105.00 32 s
+4 sf
+(pixmap) 62111  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 149578.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 152739.0 m
+(  display ) 63036  -22.00 32 s
+5 sf
+(\037 Type ) 73025  -22.00 32 s
+2 sf
+(display) 81651  0.00 -1 s
+5 sf
+(. ) 83041  -22.00 32 s
+52832.0 157457.0 m
+(Returns) 61610  0.00 -1 s
+( the ) 66408  -31.00 32 s
+2 sf
+(display) 75034  0.00 -1 s
+5 sf
+( object associated with the specified ) 116228  -31.00 32 s
+4 sf
+(pixmap) 124535  0.00 -1 s
+5 sf
+(. ) 125916  -31.00 32 s
+4 sf
+52832.0 163734.0 m
+(pixmap) 61139  0.00 -1 s
+( \037 ) 64983  -38.50 32 s
+5 sf
+(A ) 67687  -39.00 32 s
+2 sf
+(pixmap) 76781  0.00 -1 s
+5 sf
+(.) 77487  0.00 -1 s
+2 sf
+34544.0 168521.0 m
+(pixmap\036equal) 51163  0.00 -1 s
+( ) 51783  -86.00 32 s
+4 sf
+(pixmap\0361) 62440  0.00 -1 s
+( pixmap\0362) 73716  -87.00 32 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+52832.0 173239.0 m
+(Returns) 61610  0.00 -1 s
+( true if the two arguments refer to the same server resource, and ) 130769  -273.85 32 s
+2 sf
+(nil) 133906  0.00 -1 s
+5 sf
+( if they do not.) 149352  -273.50 32 s
+4 sf
+52832.0 179516.0 m
+(pixmap\0361) 63489  0.00 -1 s
+5 sf
+(,) 64195  0.00 -1 s
+4 sf
+( pixmap\0362 ) 76210  -27.00 32 s
+5 sf
+(\037 A three\036dimensional array of bits to be tested.) 131245  -27.00 32 s
+2 sf
+34544.0 184302.0 m
+(pixmap\036id) 46930  0.00 -1 s
+( ) 47550  -86.00 32 s
+4 sf
+(pixmap) 55857  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 187463.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 190624.0 m
+(  id ) 57055  -30.00 32 s
+5 sf
+(\037 Type ) 67029  -29.50 32 s
+2 sf
+(resource\036id) 80664  0.00 -1 s
+5 sf
+(.) 81370  0.00 -1 s
+52832.0 195343.0 m
+(Returns) 61610  0.00 -1 s
+( the unique resource ID that has been assigned to the specified ) 132234  -31.67 32 s
+4 sf
+(pixmap) 140541  0.00 -1 s
+5 sf
+(.) 141247  0.00 -1 s
+4 sf
+52832.0 201620.0 m
+(pixmap) 61139  0.00 -1 s
+( ) 61807  -38.00 32 s
+5 sf
+(\037 A ) 68003  -37.50 32 s
+2 sf
+(pixmap) 77097  0.00 -1 s
+5 sf
+(.) 77803  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 17
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+127971.0 8737.0 m
+(Windows and Pixmaps) 148539  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(4\03651) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(pixmap\036p) 46146  0.00 -1 s
+( ) 46771  -81.00 32 s
+/timsps10i 4 declareFont
+4 sf
+(object) 53667  0.00 -1 s
+2 sf
+139373.0 h
+/timsps10 5 declareFont
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 25739.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 28900.0 m
+(  pixmap) 62479  -36.00 32 s
+( ) 63148  -37.00 32 s
+5 sf
+(\037 Type ) 73108  -36.50 32 s
+2 sf
+(boolean) 82516  0.00 -1 s
+5 sf
+(.) 83222  0.00 -1 s
+52832.0 33618.0 m
+(Returns) 61610  0.00 -1 s
+( true if the argument is a ) 89734  -24.00 32 s
+2 sf
+(pixmap) 98828  0.00 -1 s
+5 sf
+( object and ) 111845  -24.00 32 s
+2 sf
+(nil) 114982  0.00 -1 s
+5 sf
+( otherwise.) 127339  -25.00 32 s
+2 sf
+34544.0 39895.0 m
+(pixmap\036plist) 49751  0.00 -1 s
+( ) 50395  -62.00 32 s
+4 sf
+(pixmap) 58702  0.00 -1 s
+2 sf
+139373.0 h
+5 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 43056.0 m
+52832.0 h
+5 sf
+(Returns:) 62394  0.00 -1 s
+( ) 63082  -18.00 32 s
+4 sf
+52832.0 46217.0 m
+(  plist ) 59793  -6.00 32 s
+5 sf
+(\037 A property list.) 80467  -6.00 32 s
+52832.0 50935.0 m
+(Returns) 61610  0.00 -1 s
+( and) 66171  -220.00 32 s
+( \(with ) 73097  -220.50 32 s
+2 sf
+(setf) 77326  0.00 -1 s
+5 sf
+(\) sets the property list for the specified ) 119762  -220.50 32 s
+4 sf
+(pixmap) 128069  0.00 -1 s
+5 sf
+(. This function pro\036) 149352  -220.67 32 s
+52832.0 54096.0 m
+(vides) 58789  0.00 -1 s
+( a hook where extensions can add data.) 102548  -40.86 32 s
+4 sf
+52832.0 60373.0 m
+(pixmap) 61139  0.00 -1 s
+( ) 61807  -38.00 32 s
+5 sf
+(\037 A ) 68003  -37.50 32 s
+2 sf
+(pixmap) 77097  0.00 -1 s
+5 sf
+(.) 77803  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 18
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 8399.0 m
+(Windows and Pixmaps) 40888  -21.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(4\03652) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18 3 declareFont
+3 sf
+20320.0 24271.0 m
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

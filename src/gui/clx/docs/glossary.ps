@@ -1,0 +1,3845 @@
+%!PS-Adobe-2.0
+%%Title: glossary.ps
+%%Pages: 12
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 11 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps12b /ILtimsb 12 map
+	/timsps18b /ILtimsb 18 map
+	/timsps10b /ILtimsb 10 map
+	/timsps14b /ILtimsb 14 map
+	/timsps10i /ILtimsi 10 map
+	/symbb8 /ILsymbb 8 map
+	/symba8 /ILsymba 8 map
+	/timsps6 /ILtims 6 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+/Symbol /ILsymba -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 11 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036201) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps8i 1 declareFont
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+/timsps18b 8 declareFont
+8 sf
+121446.0 24271.0 m
+(GLOSSARY) 149385  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+20320.0 28380.0 m
+0.0 0.0 m
+newpath
+20455 26756 av
+149013 26754 as
+[] 0 setdash
+dp
+149352.0 28380.0 m
+/timsps14b 4 declareFont
+4 sf
+20320.0 33460.0 m
+(a) 22296  0.00 -1 s
+2 sf
+20320.0 40098.0 m
+(access) 27686  0.00 -1 s
+( control) 36987  -25.00 32 s
+( list) 41272  -26.00 32 s
+3 sf
+52832.0 h
+(X) 54869  0.00 -1 s
+( maintains a list of hosts from which client programs can be run. By) 129455  -159.00 32 s
+( default, only pro\036) 149352  -159.67 32 s
+52832.0 43259.0 m
+(grams) 59728  0.00 -1 s
+( on the local host can use) 86926  -196.00 32 s
+( the display, plus any hosts specified in an initial list read) 149352  -196.55 32 s
+52832.0 46420.0 m
+(by) 55654  0.00 -1 s
+( the server. This ) 73942  -150.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(access control list) 94022  -150.00 32 s
+3 sf
+( can be changed by clients on the local host. Some) 149352  -149.60 32 s
+52832.0 49581.0 m
+(server) 59725  0.00 -1 s
+( implementations can also implement other authorization) 122558  -239.00 32 s
+( mechanisms in addition) 149352  -239.67 32 s
+52832.0 52742.0 m
+(to) 55027  0.00 -1 s
+( or in place of this mechanism. The action of this) 108273  -201.00 32 s
+( mechanism can be conditional based) 149352  -201.60 32 s
+52832.0 55903.0 m
+(on) 55654  0.00 -1 s
+( the authorization protocol name and data received by the server at connection setup. ) 149352  -186.93 32 s
+2 sf
+20320.0 62179.0 m
+(action) 27687  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( function that is designed to handle an input event. CLUE input processing consists of) 149352  -176.86 32 s
+52832.0 65340.0 m
+(matching) 63334  0.00 -1 s
+( an event with an event specification found in a contact's ) 127722  -52.82 32 s
+2 sf
+(event\036translations) 149352  0.00 -1 s
+3 sf
+52832.0 68501.0 m
+(slot) 56909  0.00 -1 s
+( and then calling actions associated with the matching event specification.) 140027  -35.00 32 s
+2 sf
+20320.0 74778.0 m
+(active) 27371  0.00 -1 s
+( grab) 33641  -80.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( grab is ) 63577  -102.00 32 s
+5 sf
+(active) 70315  0.00 -1 s
+3 sf
+( when the pointer or keyboard is actually owned by the single grabbing) 149352  -101.50 32 s
+52832.0 77938.0 m
+(client.) 59807  0.00 -1 s
+( ) 60486  -27.00 32 s
+2 sf
+20320.0 84215.0 m
+(ancestors) 31605  0.00 -1 s
+3 sf
+52832.0 h
+(If) 54710  0.00 -1 s
+( W is an inferior of A, then A is an ) 94554  -11.55 32 s
+5 sf
+(ancestor) 104273  0.00 -1 s
+3 sf
+( of W. ) 112076  -11.67 32 s
+2 sf
+20320.0 90492.0 m
+(atom) 26431  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( unique ID corresponding to a string name. Atoms are used to identify properties,) 149352  208.31 32 s
+52832.0 93653.0 m
+(types,) 59495  0.00 -1 s
+( and selections. ) 77419  -34.67 32 s
+2 sf
+20320.0 99929.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 99104 av
+149352 99104 as
+149352 99339 as
+20320 99339 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 106025.0 m
+(b) 22516  0.00 -1 s
+2 sf
+20320.0 112663.0 m
+(backing) 29886  0.00 -1 s
+( store) 36463  -83.00 32 s
+3 sf
+52832.0 h
+(When) 59571  0.00 -1 s
+( a server maintains the contents of a window, the off\036screen saved pixels are) 149352  287.38 32 s
+52832.0 115824.0 m
+(known) 60513  0.00 -1 s
+( as a ) 66139  -32.00 32 s
+5 sf
+(backing store) 81391  -32.00 32 s
+3 sf
+(.) 82097  0.00 -1 s
+( ) 82770  -33.00 32 s
+2 sf
+20320.0 122101.0 m
+(before) 27998  0.00 -1 s
+( action) 35989  -82.00 32 s
+52832.0 h
+3 sf
+(An) 56280  0.00 -1 s
+( action of a) 68024  -291.00 32 s
+( ) 68438  -292.00 32 s
+2 sf
+(contact\036display) 86778  0.00 -1 s
+3 sf
+( that is called when an event is dispatched to a contact, but) 149352  -291.50 32 s
+52832.0 125262.0 m
+(before) 60038  0.00 -1 s
+( any other contact input processing is performed.) 114966  -35.00 32 s
+2 sf
+20320.0 131538.0 m
+(bit) 23612  0.00 -1 s
+( gravity) 32896  -42.00 32 s
+3 sf
+52832.0 h
+(When) 59571  0.00 -1 s
+( a window is resized, the contents of the window are not necessarily discarded. It) 147044  -279.00 32 s
+( is) 149352  -280.00 32 s
+52832.0 134699.0 m
+(possible) 62082  0.00 -1 s
+( to request the server to relocate the previous contents to some region of the win\036) 149352  -268.73 32 s
+52832.0 137860.0 m
+(dow.) 58397  0.00 -1 s
+( This attraction of window contents for some location of a window is known as ) 146373  -138.53 32 s
+5 sf
+(bit) 149352  0.00 -1 s
+52832.0 141021.0 m
+(gravity) 60826  0.00 -1 s
+3 sf
+(.) 61532  0.00 -1 s
+2 sf
+20320.0 147297.0 m
+(bitmap) 28942  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( pixmap of depth one. ) 80106  -31.80 32 s
+2 sf
+20320.0 153574.0 m
+(button) 28316  0.00 -1 s
+( grabbing) 39895  -104.00 32 s
+3 sf
+52832.0 h
+(Buttons) 61613  0.00 -1 s
+( on the pointer can be passively ) 96453  -207.00 32 s
+5 sf
+(grabbed) 105859  0.00 -1 s
+3 sf
+( by a client. When the button is pressed,) 149352  -206.88 32 s
+52832.0 156735.0 m
+(the) 56280  0.00 -1 s
+( pointer is then actively grabbed by the client.) 107697  -29.00 32 s
+( ) 108373  -30.00 32 s
+2 sf
+20320.0 163012.0 m
+(byte) 25492  0.00 -1 s
+3 sf
+( ) 26112  -86.00 32 s
+2 sf
+(order) 32851  0.00 -1 s
+3 sf
+52832.0 h
+(For) 56751  0.00 -1 s
+( image \(pixmap/bitmap\) data, byte order is) 105261  52.00 32 s
+( defined by the server, and clients with) 149352  51.43 32 s
+52832.0 166172.0 m
+(different) 62545  0.00 -1 s
+( native byte ordering must swap bytes as necessary. For all other parts of the) 149352  37.00 32 s
+52832.0 169333.0 m
+(protocol,) 62942  0.00 -1 s
+( the byte order is defined by the client, and the server swaps bytes as necessary. ) 149352  -251.94 32 s
+2 sf
+20320.0 175610.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 174785 av
+149352 174785 as
+149352 175020 as
+20320 175020 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 181706.0 m
+(c) 22074  0.00 -1 s
+2 sf
+20320.0 188344.0 m
+(callback) 30354  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( function) 64832  -147.00 32 s
+( that represents a connection between a contact and the rest of an application) 149352  -147.54 32 s
+52832.0 191505.0 m
+(program.) 63097  0.00 -1 s
+( A contact calls a callback function in order to report the results of) 136325  -124.00 32 s
+( the user in\036) 149352  -124.67 32 s
+52832.0 194666.0 m
+(terface) 60506  0.00 -1 s
+( component that it represents.) 93675  -35.00 32 s
+2 sf
+20320.0 200942.0 m
+(children) 30354  0.00 -1 s
+3 sf
+52832.0 h
+(First\036level) 64430  0.00 -1 s
+( subwindows of a window. ) 95346  -24.60 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036202) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+(class) 25964  0.00 -1 s
+( event) 33054  -41.00 32 s
+52832.0 h
+/timsps10 3 declareFont
+3 sf
+(Event) 59415  0.00 -1 s
+( translations that belong to all instances) 103791  -24.00 32 s
+( of a contact class. A class event) 140140  -24.57 32 s
+2 sf
+20320.0 25739.0 m
+(translations) 34586  0.00 -1 s
+3 sf
+52832.0 h
+(translation) 64744  0.00 -1 s
+( is created by the ) 84407  -33.00 32 s
+2 sf
+(defevent) 94593  0.00 -1 s
+3 sf
+( macro.) 103022  -34.00 32 s
+2 sf
+20320.0 32015.0 m
+(class) 25964  0.00 -1 s
+( resources) 38044  -67.00 32 s
+52832.0 h
+3 sf
+(Resources) 64430  0.00 -1 s
+( defined for each instance of a contact class. Also see constraint) 136051  -29.00 32 s
+( resources.) 148088  -30.00 32 s
+2 sf
+20320.0 38292.0 m
+(click) 25963  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( ) 55522  -53.00 32 s
+2 sf
+(:button\036press) 71667  0.00 -1 s
+3 sf
+( event followed immediately by a ) 109911  -52.67 32 s
+2 sf
+(:button\036release) 128090  0.00 -1 s
+3 sf
+( event for the same) 149352  -52.50 32 s
+52832.0 41453.0 m
+(button,) 60750  0.00 -1 s
+( with no) 69938  -31.00 32 s
+( intervening change in pointer position or modifier key state.) 138153  -31.56 32 s
+2 sf
+20320.0 47729.0 m
+(client) 26902  0.00 -1 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( application program connects to the window system server by some interprocess) 149352  132.27 32 s
+52832.0 50890.0 m
+(communication) 70388  0.00 -1 s
+( \(IPC\) path, such as a TCP connection or) 115713  -105.00 32 s
+( a shared memory buffer. This) 149352  -105.60 32 s
+52832.0 54051.0 m
+(program) 62391  0.00 -1 s
+( is referred to as a ) 81812  -237.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(client) 88081  0.00 -1 s
+3 sf
+( of the window system server. More precisely, the client) 149352  -236.78 32 s
+52832.0 57212.0 m
+(is) 54714  0.00 -1 s
+( the IPC path itself. A program with multiple paths open to the) 122431  -242.00 32 s
+( server is viewed as mul\036) 149352  -242.60 32 s
+52832.0 60373.0 m
+(tiple) 57848  0.00 -1 s
+( clients by the protocol. Resource lifetimes are controlled by connection lifetimes,) 149352  -95.73 32 s
+52832.0 63534.0 m
+(not) 56438  0.00 -1 s
+( by program lifetimes.) 81454  -21.00 32 s
+( ) 82138  -22.00 32 s
+2 sf
+20320.0 69810.0 m
+(clipping) 30043  0.00 -1 s
+( regions) 39443  -85.00 32 s
+3 sf
+52832.0 h
+(In) 55182  0.00 -1 s
+( a graphics context, a bitmap or list of rectangles can be specified) 126251  -223.00 32 s
+( to restrict output to a) 149352  -223.60 32 s
+52832.0 72971.0 m
+(particular) 63643  0.00 -1 s
+( region of the window. The image defined by the bitmap or rectangles is called) 149352  -231.57 32 s
+52832.0 76132.0 m
+(a) 54085  0.00 -1 s
+( ) 54757  -34.00 32 s
+5 sf
+(clipping region) 72046  -34.00 32 s
+3 sf
+(.) 72752  0.00 -1 s
+( ) 73423  -35.00 32 s
+2 sf
+20320.0 82409.0 m
+(colormap) 31762  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( set of entries defining color values.) 93838  -232.00 32 s
+( The colormap associated with a window is used to) 149352  -232.56 32 s
+52832.0 85570.0 m
+(display) 60984  0.00 -1 s
+( the contents of the window. Each pixel value indexes the colormap to) 139609  -51.00 32 s
+( produce) 149352  -52.00 32 s
+52832.0 88731.0 m
+(RGB) 58633  0.00 -1 s
+( values that drive the guns of a monitor. Depending on hardware limitations, one or) 149352  -237.93 32 s
+52832.0 91892.0 m
+(more) 58630  0.00 -1 s
+( colormaps can be installed at one time, such that windows) 124746  -27.00 32 s
+( associated with those) 149352  -27.67 32 s
+52832.0 95052.0 m
+(maps) 58789  0.00 -1 s
+( display with correct colors. ) 90808  -22.60 32 s
+2 sf
+20320.0 101329.0 m
+(composite) 32388  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( subclass of ) 69244  167.00 32 s
+2 sf
+(contact) 78019  0.00 -1 s
+3 sf
+( representing contacts that are the) 116703  167.00 32 s
+( parents of other contacts. A) 149352  166.40 32 s
+52832.0 104490.0 m
+(composite) 64432  0.00 -1 s
+( provides geometry management and) 106565  110.00 32 s
+( input focus management services for) 149352  109.40 32 s
+52832.0 107651.0 m
+(the) 56280  0.00 -1 s
+( contacts that are its children.) 89227  -25.00 32 s
+2 sf
+20320.0 113927.0 m
+(complete) 31132  0.00 -1 s
+( resource) 42062  -119.00 32 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( list of symbols containing the class of the contact, the class of the) 137820  641.00 32 s
+( contact's) 149352  640.00 32 s
+2 sf
+20320.0 117088.0 m
+(class) 25964  0.00 -1 s
+52832.0 h
+(parent) 60826  0.00 -1 s
+( ) 61484  -48.00 32 s
+3 sf
+(\(and so on\), and the class) 89773  -48.00 32 s
+2 sf
+( ) 90432  -47.00 32 s
+3 sf
+(of the ) 97547  -47.50 32 s
+2 sf
+(contact\036display) 115887  0.00 -1 s
+3 sf
+( to which the contact belongs.) 149352  -47.60 32 s
+52832.0 120249.0 m
+(The) 57220  0.00 -1 s
+( complete resource class is one of the two items used as a key by a CLUE application) 149352  -246.53 32 s
+52832.0 123410.0 m
+(in) 55027  0.00 -1 s
+( order to access a contact resource value in a resource database.) 126300  -31.55 32 s
+2 sf
+20320.0 129687.0 m
+(complete) 31132  0.00 -1 s
+( resource) 42062  -119.00 32 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( list of symbols containing the ) 97829  1359.17 32 s
+2 sf
+(name) 104412  0.00 -1 s
+3 sf
+( of the contact, the ) 132840  1359.40 32 s
+2 sf
+(name) 139423  0.00 -1 s
+3 sf
+( of the) 149352  1359.50 32 s
+2 sf
+20320.0 132848.0 m
+(name) 26903  0.00 -1 s
+52832.0 h
+3 sf
+(contact's) 63018  0.00 -1 s
+( ) 63582  -142.00 32 s
+2 sf
+(parent) 71576  0.00 -1 s
+( ) 72139  -143.00 32 s
+3 sf
+(\(and so on\), and the name of the ) 108070  -142.50 32 s
+2 sf
+(contact\036display) 126410  0.00 -1 s
+3 sf
+( to which the contact) 149352  -142.50 32 s
+52832.0 136009.0 m
+(belongs.) 62317  0.00 -1 s
+( The complete resource name is one of the two items used as a key by a CLUE) 149352  -103.71 32 s
+52832.0 139169.0 m
+(application) 65371  0.00 -1 s
+( in order to access a contact resource value in a resource database.) 139486  -33.83 32 s
+2 sf
+20320.0 145446.0 m
+(connection) 33331  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( IPC path between the server and client) 100035  -209.00 32 s
+( program. A client program typically has one) 149352  -209.57 32 s
+52832.0 148607.0 m
+(connection) 65214  0.00 -1 s
+( to the server over which requests and events) 115600  -30.00 32 s
+( are sent. ) 126323  -30.67 32 s
+2 sf
+20320.0 154884.0 m
+(constraint) 32546  0.00 -1 s
+( resources) 44591  -102.00 32 s
+52832.0 h
+3 sf
+(Resources) 64430  0.00 -1 s
+( defined for each child belonging to a member of a composite class. Con\036) 149352  166.23 32 s
+52832.0 158044.0 m
+(straint) 59885  0.00 -1 s
+( resources are typically used) 90765  -273.00 32 s
+( to control the parent's geometry management policy.) 149352  -273.57 32 s
+52832.0 161205.0 m
+(Also) 58162  0.00 -1 s
+( see class) 68624  -20.00 32 s
+( resources.) 80670  -21.00 32 s
+2 sf
+20320.0 167482.0 m
+(contact) 29095  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( basic) 63694  -31.00 32 s
+( CLUE object for programming a user interface.) 117856  -31.57 32 s
+2 sf
+20320.0 173759.0 m
+(contact\036display) 38660  0.00 -1 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( CLUE object type that represents a) 97018  -80.67 32 s
+2 sf
+( ) 97643  -81.00 32 s
+3 sf
+(connection to an X server and that supports an) 149352  -80.50 32 s
+52832.0 176919.0 m
+(event) 58944  0.00 -1 s
+( loop for application) 81805  -34.00 32 s
+2 sf
+( ) 82477  -34.00 32 s
+3 sf
+(input. ) 89656  -34.00 32 s
+2 sf
+20320.0 183196.0 m
+(contact) 29095  0.00 -1 s
+( initialization) 44952  -55.00 32 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( process of collecting initial values for all contact attributes. No server) 137870  122.00 32 s
+( resources) 149352  121.00 32 s
+52832.0 186357.0 m
+(\(windows) 63960  0.00 -1 s
+( and so) 71888  -34.00 32 s
+( on\) are actually allocated until contact realization.) 128851  -34.57 32 s
+2 sf
+20320.0 192634.0 m
+(contact) 29095  0.00 -1 s
+( realization) 42559  -94.00 32 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( process of allocating contact resources.) 102016  -37.00 32 s
+( This process completes contact creation.) 148223  -37.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+141134.0 8331.0 m
+(Glossary) 149302  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036203) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+(containment) 35367  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window contains the pointer if the window is viewable and the hot spot of the cursor is) 149352  -255.88 32 s
+52832.0 25739.0 m
+(within) 60043  0.00 -1 s
+( a visible region of the window or a visible region of one of its inferiors. The bor\036) 149352  -158.76 32 s
+52832.0 28900.0 m
+(der) 56435  0.00 -1 s
+( of the window is included as part of the window for containment. The pointer is in) 147562  -168.00 32 s
+( a) 149352  -169.00 32 s
+52832.0 32060.0 m
+(window) 61923  0.00 -1 s
+( if the window contains the pointer but no) 108899  -26.00 32 s
+( inferior contains the pointer. ) 142308  -26.60 32 s
+2 sf
+20320.0 38337.0 m
+(content) 29253  0.00 -1 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( single child of a shell. The basic geometry management policy implemented by the) 149352  -183.85 32 s
+52832.0 41498.0 m
+2 sf
+(shell) 58320  0.00 -1 s
+3 sf
+( class constrains a shell and its content to have the same width and height; size) 149352  159.00 32 s
+52832.0 44659.0 m
+(changes) 61922  0.00 -1 s
+( to) 64786  -37.00 32 s
+( one are automatically applied to the other.) 112799  -37.57 32 s
+2 sf
+20320.0 50935.0 m
+(coordinate) 33173  0.00 -1 s
+( system) 41950  -78.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( coordinate system has x horizontal and y vertical, with the origin [0, 0] at the upper) 149352  -168.75 32 s
+52832.0 54096.0 m
+(left.) 57298  0.00 -1 s
+( Coordinates are discrete and are in terms of) 105073  -258.00 32 s
+( pixels. Each window and pixmap has its) 149352  -258.57 32 s
+52832.0 57257.0 m
+(own) 57691  0.00 -1 s
+( coordinate system. For a window, the origin is at the inside upper left, inside the) 149352  18.07 32 s
+52832.0 60418.0 m
+(border.) 60902  0.00 -1 s
+( ) 61570  -38.00 32 s
+2 sf
+20320.0 66695.0 m
+(cursor) 28157  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( visible shape of the pointer on) 91234  -131.00 32 s
+( a screen. It consists of a hot\036spot, a source bitmap, a) 149352  -131.55 32 s
+52832.0 69856.0 m
+(shape) 59258  0.00 -1 s
+( bitmap, and a pair of colors. The cursor defined for a window controls the visible) 149352  -153.67 32 s
+52832.0 73017.0 m
+(appearance) 65522  0.00 -1 s
+( when the pointer is in that window. ) 106567  -32.75 32 s
+2 sf
+20320.0 79293.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 78468 av
+149352 78468 as
+149352 78703 as
+20320 78703 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 85389.0 m
+(d) 22516  0.00 -1 s
+2 sf
+20320.0 92027.0 m
+(depth) 27219  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( depth of a window or pixmap is number of bits per pixel it has. The depth of a graph\036) 149352  -257.74 32 s
+52832.0 95188.0 m
+(ics) 55967  0.00 -1 s
+( context is the depth of the drawables it can be used in conjunction with for) 139197  -110.00 32 s
+( graphics) 149352  -111.00 32 s
+52832.0 98349.0 m
+(output.) 60750  0.00 -1 s
+( ) 61412  -44.00 32 s
+2 sf
+20320.0 104625.0 m
+(descendant) 33803  0.00 -1 s
+3 sf
+52832.0 h
+(If) 54710  0.00 -1 s
+( W is an inferior) 73148  -14.00 32 s
+( of A, then W is a ) 93739  -14.57 32 s
+/timsps10i 5 declareFont
+5 sf
+(descendant) 106435  0.00 -1 s
+3 sf
+( of A.) 112911  -14.50 32 s
+2 sf
+20320.0 110902.0 m
+(device) 27843  0.00 -1 s
+3 sf
+52832.0 h
+(Keyboards,) 65762  0.00 -1 s
+( mice, tablets, track\036balls, button boxes, and so forth, are all collectively) 149352  203.45 32 s
+52832.0 114063.0 m
+(known) 60513  0.00 -1 s
+( as input ) 69886  -299.00 32 s
+5 sf
+(devices) 78191  0.00 -1 s
+3 sf
+(. The core protocol only) 104190  -299.00 32 s
+( deals with two devices: the keyboard and) 149352  -299.57 32 s
+52832.0 117224.0 m
+(the) 56280  0.00 -1 s
+( pointer.) 65634  -51.00 32 s
+2 sf
+20320.0 123500.0 m
+(direct) 27371  0.00 -1 s
+( color) 34115  -74.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( class of colormap in which a pixel value is) 102770  -103.00 32 s
+( decomposed into three separate subfields) 149352  -103.60 32 s
+52832.0 126661.0 m
+(for) 56121  0.00 -1 s
+( indexing. One subfield indexes an array to produce red intensity values, the second) 149352  -93.00 32 s
+52832.0 129822.0 m
+(subfield) 61923  0.00 -1 s
+( indexes a second array to produce blue intensity values, and) 129593  -75.00 32 s
+( the third subfield) 149352  -75.67 32 s
+52832.0 132983.0 m
+(indexes) 61453  0.00 -1 s
+( a third array) 75321  -209.00 32 s
+( to produce green intensity values. The RGB values can be changed) 149352  -209.55 32 s
+52832.0 136144.0 m
+(dynamically.) 67488  0.00 -1 s
+( ) 68117  -77.00 32 s
+2 sf
+20320.0 142421.0 m
+(dispatching) 34276  0.00 -1 s
+( an event) 44975  -59.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( process of finding the appropriate contact and its actions.) 122146  -31.00 32 s
+2 sf
+20320.0 148697.0 m
+(double\036click) 35057  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( sequence of two clicks) 81093  -27.00 32 s
+( of the same button in rapid succession.) 125420  -27.57 32 s
+2 sf
+20320.0 154974.0 m
+(drawable) 31607  0.00 -1 s
+3 sf
+52832.0 h
+(Both) 58320  0.00 -1 s
+( windows and) 73834  -81.00 32 s
+( pixmaps can be used as sources and destinations in graphics opera\036) 149352  -81.55 32 s
+52832.0 158135.0 m
+(tions.) 59026  0.00 -1 s
+( These) 66585  114.00 32 s
+( are collectively known as ) 97324  113.40 32 s
+5 sf
+(drawables) 109083  0.00 -1 s
+3 sf
+(. However, an ) 125959  113.67 32 s
+2 sf
+(:input\036only) 139442  0.00 -1 s
+3 sf
+( window) 149352  113.00 32 s
+52832.0 161296.0 m
+(cannot) 60355  0.00 -1 s
+( be used as a source or destination in a graphics operation. ) 126390  -29.00 32 s
+2 sf
+20320.0 167572.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 166747 av
+149352 166747 as
+149352 166982 as
+20320 166982 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 173668.0 m
+(e) 22074  0.00 -1 s
+2 sf
+20320.0 180306.0 m
+(event) 26745  0.00 -1 s
+3 sf
+52832.0 h
+(Clients) 60828  0.00 -1 s
+( receive information asynchronously via ) 109048  412.20 32 s
+5 sf
+(events) 116100  0.00 -1 s
+3 sf
+(. These events can be either) 149352  412.40 32 s
+52832.0 183467.0 m
+(asynchronously) 70545  0.00 -1 s
+( generated from devices, or generated as side effects of client requests.) 149352  -80.55 32 s
+52832.0 186628.0 m
+(Events) 60513  0.00 -1 s
+( are grouped into types; events are never sent to a client by the server unless the) 149352  -70.69 32 s
+52832.0 189789.0 m
+(client) 59101  0.00 -1 s
+( has specifically asked to be informed of that type of event, but clients can force) 149352  -2.00 32 s
+52832.0 192950.0 m
+(events) 60042  0.00 -1 s
+( to be sent to other clients. Events are typically reported relative to a window. ) 147839  -24.80 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036204) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+(event) 26745  0.00 -1 s
+( compression) 42401  -99.00 32 s
+52832.0 h
+/timsps10 3 declareFont
+3 sf
+(Ignoring) 62549  0.00 -1 s
+( \(or compressing\)) 82621  84.00 32 s
+( certain redundant input events. Compression of redundant) 149352  83.43 32 s
+52832.0 25739.0 m
+(events) 60042  0.00 -1 s
+( is controlled by the class slots) 96596  344.00 32 s
+( ) 97645  343.00 32 s
+2 sf
+(compress\036exposures) 121784  0.00 -1 s
+3 sf
+( and ) 127958  343.50 32 s
+2 sf
+(compress\036motion) 148646  0.00 -1 s
+3 sf
+(,) 149352  0.00 -1 s
+52832.0 28900.0 m
+(which) 59728  0.00 -1 s
+( are shared) 71898  -26.00 32 s
+( by all instances of a contact class.) 110586  -26.57 32 s
+2 sf
+20320.0 35176.0 m
+(event) 26745  0.00 -1 s
+( loop) 32557  -69.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( fundamental application control structure: wait for an event, figure out how to han\036) 149352  -183.00 32 s
+52832.0 38337.0 m
+(dle) 56280  0.00 -1 s
+( it, process the event, then go back and wait for the next one. In CLUE, the event loop) 149352  -219.89 32 s
+52832.0 41498.0 m
+(is) 54714  0.00 -1 s
+( implemented using the ) 81651  -46.00 32 s
+2 sf
+(process\036next\036event) 104061  0.00 -1 s
+3 sf
+( function.) 114831  -46.00 32 s
+2 sf
+20320.0 47775.0 m
+(event) 26745  0.00 -1 s
+( mask) 33822  -57.00 32 s
+3 sf
+52832.0 h
+(Events) 60513  0.00 -1 s
+( are requested relative to a window. The set) 108800  -106.00 32 s
+( of event types a client requests rela\036) 149352  -106.57 32 s
+52832.0 50935.0 m
+(tive) 57064  0.00 -1 s
+( to a window are described using an ) 98059  -28.63 32 s
+/timsps10i 5 declareFont
+5 sf
+(event mask) 110490  -28.00 32 s
+3 sf
+(. ) 111873  -29.00 32 s
+2 sf
+20320.0 57212.0 m
+(event) 26745  0.00 -1 s
+( propagation) 42062  -127.00 32 s
+3 sf
+52832.0 h
+(Device\036related) 69439  0.00 -1 s
+( events ) 78399  169.00 32 s
+5 sf
+(propagate) 90000  0.00 -1 s
+3 sf
+( from the source window to ancestor windows until) 149352  169.50 32 s
+52832.0 60373.0 m
+(some) 58789  0.00 -1 s
+( client has expressed interest in handling that type of event, or until the event is dis\036) 149352  -232.81 32 s
+52832.0 63534.0 m
+(carded) 60352  0.00 -1 s
+( explicitly. ) 73039  -45.00 32 s
+2 sf
+20320.0 69810.0 m
+(event) 26745  0.00 -1 s
+( specification) 42424  -74.00 32 s
+5 sf
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( notation for describing a certain sort of event. CLUE input processing consists of) 149352  166.00 32 s
+52832.0 72971.0 m
+(matching) 63334  0.00 -1 s
+( an event with an event specification found in a contact's ) 127722  -52.82 32 s
+2 sf
+(event\036translations) 149352  0.00 -1 s
+3 sf
+52832.0 76132.0 m
+(slot) 56909  0.00 -1 s
+( and then calling actions associated with the matching event specification.) 140027  -35.00 32 s
+2 sf
+20320.0 82409.0 m
+(event) 26745  0.00 -1 s
+( synchronization) 46601  -134.00 32 s
+3 sf
+52832.0 h
+(Certain) 61138  0.00 -1 s
+( race conditions are possible when demultiplexing device events to clients \(in) 149352  75.18 32 s
+52832.0 85570.0 m
+(particular) 63643  0.00 -1 s
+( deciding where pointer and keyboard events should be sent when in the) 143447  -129.00 32 s
+( mid\036) 149352  -130.00 32 s
+52832.0 88731.0 m
+(dle) 56280  0.00 -1 s
+( of window management operations\). The event synchronization mechanism allows) 149352  -143.00 32 s
+52832.0 91892.0 m
+(synchronous) 67097  0.00 -1 s
+( processing of) 82842  -43.00 32 s
+( device events. ) 100110  -43.67 32 s
+2 sf
+20320.0 98168.0 m
+(event) 26745  0.00 -1 s
+( source) 35199  -89.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( smallest window containing the pointer is the ) 109660  -29.00 32 s
+5 sf
+(source) 117184  0.00 -1 s
+3 sf
+( of a device related event. ) 146710  -28.83 32 s
+2 sf
+20320.0 104445.0 m
+(event) 26745  0.00 -1 s
+( translation) 40550  -69.00 32 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( process of determining which contact) 100004  -48.00 32 s
+( action) 107557  -49.00 32 s
+5 sf
+( ) 108215  -48.00 32 s
+3 sf
+(functions will be executed. An event) 149352  -48.60 32 s
+52832.0 107606.0 m
+(translation) 64744  0.00 -1 s
+( is a list) 74026  193.00 32 s
+( found in a contact's ) 98735  192.40 32 s
+2 sf
+(event\036translations) 120365  0.00 -1 s
+3 sf
+( slot associating an event) 149352  192.50 32 s
+52832.0 110767.0 m
+(specification) 67250  0.00 -1 s
+( with one or more action) 94780  -27.00 32 s
+5 sf
+( ) 95460  -26.00 32 s
+3 sf
+(names. Also see class event translations.) 141021  -26.60 32 s
+2 sf
+20320.0 117043.0 m
+(exposure) 31137  0.00 -1 s
+( event) 38156  -112.00 32 s
+3 sf
+52832.0 h
+(Servers) 61294  0.00 -1 s
+( do not guarantee to preserve the contents of windows when windows are ob\036) 149352  64.08 32 s
+52832.0 120204.0 m
+(scured) 60197  0.00 -1 s
+( or reconfigured. ) 79888  34.00 32 s
+5 sf
+(Exposure) 90547  0.00 -1 s
+3 sf
+( events are sent to clients to inform them when) 143599  34.00 32 s
+( con\036) 149352  33.00 32 s
+52832.0 123365.0 m
+(tents) 58162  0.00 -1 s
+( of regions of windows have been lost. ) 102255  -23.75 32 s
+2 sf
+20320.0 129642.0 m
+(extension) 31607  0.00 -1 s
+3 sf
+52832.0 h
+(Named) 60981  0.00 -1 s
+( ) 61444  -243.00 32 s
+5 sf
+(extensions) 73200  0.00 -1 s
+3 sf
+( to the) 79769  -243.00 32 s
+( core protocol can be defined to extend the system. Extension to) 149352  -243.55 32 s
+52832.0 132802.0 m
+(output) 60044  0.00 -1 s
+( requests, resources, and event types are all possible, and expected. ) 135918  -34.73 32 s
+2 sf
+20320.0 139079.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 138254 av
+149352 138254 as
+149352 138489 as
+20320 138489 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 145175.0 m
+(f) 21635  0.00 -1 s
+2 sf
+20320.0 151813.0 m
+(focus) 26590  0.00 -1 s
+( window) 36644  -59.00 32 s
+3 sf
+52832.0 h
+(Another) 62078  0.00 -1 s
+( term) 67935  -20.00 32 s
+( for the input focus. ) 90718  -20.60 32 s
+2 sf
+20320.0 158090.0 m
+(font) 25178  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( matrix of glyphs \(typically characters\). The protocol does no translation or interpreta\036) 149352  -243.75 32 s
+52832.0 161250.0 m
+(tion) 57222  0.00 -1 s
+( of character sets. The client simply indicates values used to index the glyph array. A) 149352  -248.00 32 s
+52832.0 164411.0 m
+(font) 57377  0.00 -1 s
+( contains additional metric information to) 102978  -269.00 32 s
+( determine inter\036glyph and inter\036line spac\036) 149352  -269.60 32 s
+52832.0 167572.0 m
+(ing.) 57144  0.00 -1 s
+( ) 57822  -28.00 32 s
+2 sf
+20320.0 173849.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 173024 av
+149352 173024 as
+149352 173259 as
+20320 173259 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 179945.0 m
+(g) 22296  0.00 -1 s
+2 sf
+20320.0 186583.0 m
+(geometry) 31601  0.00 -1 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( process whereby a composite controls the geometrical properties of its) 149352  1188.30 32 s
+2 sf
+20320.0 189744.0 m
+(management) 35836  0.00 -1 s
+52832.0 h
+3 sf
+(child) 58475  0.00 -1 s
+( contacts; the composite is referred to as the) 107773  -28.88 32 s
+5 sf
+( ) 108451  -28.00 32 s
+3 sf
+(geometry manager.) 130206  -29.00 32 s
+2 sf
+20320.0 196020.0 m
+(glyph) 27064  0.00 -1 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( image, typically of a character, in a font. ) 103226  -25.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+141134.0 8331.0 m
+(Glossary) 149302  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036205) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+(grab) 25964  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+52832.0 h
+(Keyboard) 63958  0.00 -1 s
+( keys, the keyboard, pointer buttons, the pointer, and the server) 132143  -298.00 32 s
+( can be ) 139946  -298.67 32 s
+/timsps10i 5 declareFont
+5 sf
+(grabbed) 149352  0.00 -1 s
+3 sf
+52832.0 25739.0 m
+(for) 56121  0.00 -1 s
+( exclusive use by a client. In general, these facilities are not intended to be used) 145827  -2.00 32 s
+( by) 149352  -3.00 32 s
+52832.0 28900.0 m
+(normal) 60825  0.00 -1 s
+( applications but are intended for) 97515  -107.00 32 s
+( various input and window managers to imple\036) 149352  -107.57 32 s
+52832.0 32060.0 m
+(ment) 58475  0.00 -1 s
+( various styles of user interfaces. ) 96068  -17.00 32 s
+2 sf
+20320.0 38337.0 m
+(gcontext) 30506  0.00 -1 s
+3 sf
+52832.0 h
+(Shorthand) 64432  0.00 -1 s
+( for) 68387  -40.00 32 s
+( graphics context. ) 88956  -40.67 32 s
+2 sf
+20320.0 44614.0 m
+(graphics) 30668  0.00 -1 s
+( context) 40053  -96.00 32 s
+3 sf
+52832.0 h
+(Various) 61765  0.00 -1 s
+( information for graphics output is stored in a ) 114349  69.00 32 s
+5 sf
+(graphics context) 133150  69.00 32 s
+3 sf
+( \(or gcontext\),) 149352  69.00 32 s
+52832.0 47775.0 m
+(such) 58005  0.00 -1 s
+( as foreground pixel, background pixel, line width, clipping region, and so forth. A) 149352  -159.85 32 s
+52832.0 50935.0 m
+(graphics) 62392  0.00 -1 s
+( context can) 75784  -122.00 32 s
+( only be used with drawables that have the same root and the same) 149352  -122.54 32 s
+52832.0 54096.0 m
+(depth) 59102  0.00 -1 s
+( as the graphics context. ) 86834  -34.00 32 s
+2 sf
+20320.0 60373.0 m
+(gray) 25806  0.00 -1 s
+( scale) 32241  -70.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( degenerate case of pseudo color, in which the red, green, and blue values in any given) 149352  -202.81 32 s
+52832.0 63534.0 m
+(colormap) 63489  0.00 -1 s
+( entry are equal, thus producing shades of gray.) 120442  438.00 32 s
+( The gray values can be) 149352  437.40 32 s
+52832.0 66695.0 m
+(changed) 62235  0.00 -1 s
+( dynamically.) 77517  -80.00 32 s
+( ) 78142  -81.00 32 s
+2 sf
+20320.0 72971.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 72146 av
+149352 72146 as
+149352 72381 as
+20320 72381 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 79067.0 m
+(h) 22516  0.00 -1 s
+2 sf
+20320.0 85705.0 m
+(hot) 24239  0.00 -1 s
+( spot) 29938  -24.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( cursor has an associated ) 82729  -149.00 32 s
+5 sf
+(hot spot) 91596  -149.00 32 s
+3 sf
+( that) 96385  -149.00 32 s
+( defines a point in the cursor that corresponds to) 149352  -149.56 32 s
+52832.0 88866.0 m
+(the) 56280  0.00 -1 s
+( coordinates reported for) 84012  -28.00 32 s
+( the pointer. ) 98191  -28.67 32 s
+2 sf
+20320.0 95143.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 94318 av
+149352 94318 as
+149352 94553 as
+20320 94553 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 101239.0 m
+(i) 21418  0.00 -1 s
+2 sf
+20320.0 107877.0 m
+(identifier) 31447  0.00 -1 s
+3 sf
+52832.0 h
+(Each) 58473  0.00 -1 s
+( resource has an ) 76308  -243.00 32 s
+5 sf
+(identifier) 86654  0.00 -1 s
+3 sf
+(, a unique value associated with it that clients use to name) 149352  -242.73 32 s
+52832.0 111038.0 m
+(the) 56280  0.00 -1 s
+( resource. An identifier can be used over) 101812  -33.00 32 s
+( any connection to name the resource. ) 144994  -33.57 32 s
+2 sf
+20320.0 117314.0 m
+(inferiors) 30664  0.00 -1 s
+3 sf
+52832.0 h
+(All) 56437  0.00 -1 s
+( of the subwindows nested below a window: the children, the children's children, and) 149352  -274.00 32 s
+52832.0 120475.0 m
+(so) 55341  0.00 -1 s
+( on.) 59554  -21.00 32 s
+( ) 60238  -22.00 32 s
+2 sf
+20320.0 126752.0 m
+(initialization) 35526  0.00 -1 s
+3 sf
+52832.0 h
+(See) 56907  0.00 -1 s
+( contact) 65706  -56.00 32 s
+( initialization.) 81325  -57.00 32 s
+2 sf
+20320.0 133028.0 m
+(input) 26750  0.00 -1 s
+( event) 33822  -59.00 32 s
+52832.0 h
+3 sf
+(See) 56907  0.00 -1 s
+( event.) 64347  -84.00 32 s
+2 sf
+20320.0 139305.0 m
+(input) 26750  0.00 -1 s
+( focus) 33686  -40.00 32 s
+3 sf
+52832.0 h
+(Normally) 63646  0.00 -1 s
+( a window defining the scope for processing of keyboard input. If a generated) 149352  -146.77 32 s
+52832.0 142466.0 m
+(keyboard) 63332  0.00 -1 s
+( event would normally be reported to this window or one of its inferiors, the) 149352  14.36 32 s
+52832.0 145627.0 m
+(event) 58944  0.00 -1 s
+( is reported normally; otherwise, the event is reported with respect to the focus) 149352  130.31 32 s
+52832.0 148788.0 m
+(window.) 62629  0.00 -1 s
+( The input focus also can be set such that all keyboard events are discarded and) 149352  -179.93 32 s
+52832.0 151948.0 m
+(that) 57064  0.00 -1 s
+( the focus window is dynamically taken to be the root window of whatever screen) 145478  -279.00 32 s
+( the) 149352  -280.00 32 s
+52832.0 155109.0 m
+(pointer) 60825  0.00 -1 s
+( is on at each keyboard event. ) 94759  -33.86 32 s
+2 sf
+20320.0 161386.0 m
+(input\036only) 32864  0.00 -1 s
+( window) 42898  -79.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window that cannot) 77551  -94.00 32 s
+( be used for graphics requests. ) 111859  -94.50 32 s
+5 sf
+(input\036only) 123458  0.00 -1 s
+3 sf
+( windows are invisible,) 149352  -94.67 32 s
+52832.0 164547.0 m
+(and) 56907  0.00 -1 s
+( can be used to control such things as cursors, input event generation, and grabbing.) 149352  -142.86 32 s
+52832.0 167708.0 m
+5 sf
+(input\036only) 64431  0.00 -1 s
+3 sf
+( windows cannot have ) 90155  -35.00 32 s
+5 sf
+(input/output) 103952  0.00 -1 s
+3 sf
+( windows) 114812  -35.00 32 s
+( as inferiors. ) 129438  -35.67 32 s
+2 sf
+20320.0 173984.0 m
+(input/output) 35530  0.00 -1 s
+( window) 45562  -81.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( normal kind of opaque window, used for both input and output. Input/output win\036) 149352  -57.62 32 s
+52832.0 177145.0 m
+(dows) 58789  0.00 -1 s
+( can have both ) 75743  -33.00 32 s
+5 sf
+(input/output) 89540  0.00 -1 s
+3 sf
+( and input\036only windows as inferiors. ) 132215  -32.83 32 s
+2 sf
+20320.0 183422.0 m
+(insensitivity) 34743  0.00 -1 s
+3 sf
+52832.0 h
+(See) 56907  0.00 -1 s
+( sensitivity.) 69878  -43.00 32 s
+2 sf
+20320.0 189698.0 m
+(interactive\036stream) 42412  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( contact subclass designed to integrate CLUE with the conventional stream\036based) 145068  -181.00 32 s
+( I/O) 149352  -182.00 32 s
+52832.0 192859.0 m
+(of) 55182  0.00 -1 s
+( Common Lisp.) 72746  -38.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036206) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+/timsps10 3 declareFont
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21988 as
+20320 21988 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 28674.0 m
+(k) 22516  0.00 -1 s
+2 sf
+20320.0 35312.0 m
+(key) 24553  0.00 -1 s
+( grabbing) 36124  -112.00 32 s
+3 sf
+52832.0 h
+(Keys) 58631  0.00 -1 s
+( on the keyboard can be passively ) 95831  -228.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(grabbed) 105237  0.00 -1 s
+3 sf
+( by a client. When the key is pressed, the) 149352  -227.78 32 s
+52832.0 38473.0 m
+(keyboard) 63332  0.00 -1 s
+( is then actively grabbed by the client. ) 106703  -35.63 32 s
+2 sf
+20320.0 44749.0 m
+(keyboard) 31766  0.00 -1 s
+( grabbing) 43282  -167.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( client can actively ) 76900  22.00 32 s
+5 sf
+(grab) 82231  0.00 -1 s
+3 sf
+( control of the keyboard, and key events will be sent to that) 149352  22.17 32 s
+52832.0 47910.0 m
+(client) 59101  0.00 -1 s
+( rather than the client to which the events would normally have been sent. ) 142624  -29.64 32 s
+2 sf
+20320.0 54187.0 m
+(keysym) 29412  0.00 -1 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( encoding of a symbol on a keycap on a keyboard. ) 113250  -36.55 32 s
+2 sf
+20320.0 60463.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 59638 av
+149352 59638 as
+149352 59873 as
+20320 59873 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 66559.0 m
+(m) 23610  0.00 -1 s
+2 sf
+20320.0 73197.0 m
+(managed) 31294  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( contact under geometry management) 97127  -54.00 32 s
+( control.) 106477  -55.00 32 s
+2 sf
+20320.0 79474.0 m
+(mapped) 30041  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window is said to be ) 78697  -131.00 32 s
+5 sf
+(mapped) 87631  0.00 -1 s
+3 sf
+( if a map call has been) 112080  -131.00 32 s
+( performed on it. Unmapped win\036) 149352  -131.60 32 s
+52832.0 82635.0 m
+(dows) 58789  0.00 -1 s
+( and their inferiors are never viewable or visible. ) 114221  -22.78 32 s
+2 sf
+20320.0 88911.0 m
+(modifier) 30663  0.00 -1 s
+( keys) 36644  -56.00 32 s
+3 sf
+52832.0 h
+(SHIFT,) 61376  0.00 -1 s
+( CONTROL, META, SUPER, HYPER, ALT, Compose, Apple, CAPS LOCK,) 149352  -128.00 32 s
+52832.0 92072.0 m
+(Shift) 58319  0.00 -1 s
+( Lock, and similar keys are called ) 96854  -25.71 32 s
+5 sf
+(modifier keys) 111954  -25.00 32 s
+3 sf
+(. ) 113340  -26.00 32 s
+2 sf
+20320.0 98349.0 m
+(monochrome) 36150  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( special case of) 71961  -23.00 32 s
+( static gray, in which there are only two colormap entries. ) 137454  -23.55 32 s
+2 sf
+20320.0 104625.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 103800 av
+149352 103800 as
+149352 104035 as
+20320 104035 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 110721.0 m
+(o) 22296  0.00 -1 s
+2 sf
+20320.0 117359.0 m
+(obscure) 29726  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window) 64630  -36.00 32 s
+( is ) 67851  -36.50 32 s
+5 sf
+(obscured) 78197  0.00 -1 s
+3 sf
+( if some other window obscures it. For example, window A ob\036) 149352  -36.55 32 s
+52832.0 120520.0 m
+(scures) 59884  0.00 -1 s
+( window B if: ) 76132  -14.00 32 s
+/symbb8 7 declareFont
+7 sf
+52832.0 127068.0 m
+(\267) 53872  0.00 -1 s
+/symba8 6 declareFont
+6 sf
+57912.0 h
+3 sf
+(Both) 63400  0.00 -1 s
+( windows are viewable ) 89884  -40.00 32 s
+2 sf
+(:input\036output) 106188  0.00 -1 s
+3 sf
+( windows) 117043  -40.00 32 s
+7 sf
+52832.0 133615.0 m
+(\267) 53872  0.00 -1 s
+6 sf
+57912.0 h
+3 sf
+(Window) 67630  0.00 -1 s
+( A is higher in the global stacking order than window B) 130116  -26.82 32 s
+7 sf
+52832.0 140163.0 m
+(\267) 53872  0.00 -1 s
+6 sf
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( rectangle defined by the outside edges of window A intersects) 130606  -254.00 32 s
+( the rectangle de\036) 149352  -254.67 32 s
+57912.0 143324.0 m
+(fined) 63710  0.00 -1 s
+( by the outside edges of window B) 102616  -29.57 32 s
+52832.0 149600.0 m
+(Notice) 60354  0.00 -1 s
+( that window borders) 84302  15.00 32 s
+( are included in the calculation, and that a window can be) 149352  14.45 32 s
+52832.0 152761.0 m
+(obscured) 63019  0.00 -1 s
+( and yet still have visible regions. See occlude \(there is a fine distinction be\036) 149352  25.43 32 s
+52832.0 155922.0 m
+(tween) 59570  0.00 -1 s
+( obscure and occlude\).) 84780  -60.00 32 s
+2 sf
+20320.0 162199.0 m
+(occlude) 29412  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window is ) 67918  -14.00 32 s
+5 sf
+(occluded) 78105  0.00 -1 s
+3 sf
+( if some other window occludes it. For example, window A oc\036) 149352  -13.82 32 s
+52832.0 165360.0 m
+(cludes) 60042  0.00 -1 s
+( window B if:  ) 76968  -16.80 32 s
+7 sf
+52832.0 171907.0 m
+(\267) 53872  0.00 -1 s
+6 sf
+57912.0 h
+3 sf
+(Both) 63400  0.00 -1 s
+( windows are mapped) 87940  -48.67 32 s
+7 sf
+52832.0 178455.0 m
+(\267) 53872  0.00 -1 s
+6 sf
+57912.0 h
+3 sf
+(Window) 67630  0.00 -1 s
+( A is higher in the global stacking order than window B) 130116  -26.82 32 s
+7 sf
+52832.0 185002.0 m
+(\267) 53872  0.00 -1 s
+6 sf
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( rectangle defined by the outside edges of window A intersects) 130606  -254.00 32 s
+( the rectangle de\036) 149352  -254.67 32 s
+57912.0 188163.0 m
+(fined) 63710  0.00 -1 s
+( by the outside edges of window B) 102616  -29.57 32 s
+52832.0 194440.0 m
+(Notice) 60354  0.00 -1 s
+( that window borders are included in the) 105131  -108.00 32 s
+( calculation. See obscure \(there is a fine) 149352  -108.57 32 s
+52832.0 197601.0 m
+(distinction) 64747  0.00 -1 s
+( between occlude and) 88950  -56.00 32 s
+( obscure\).) 100020  -57.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+141134.0 8331.0 m
+(Glossary) 149302  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036207) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+2 sf
+20320.0 22849.0 m
+(override\036shell) 36934  0.00 -1 s
+/symba8 6 declareFont
+6 sf
+52832.0 h
+/timsps10 3 declareFont
+3 sf
+(A) 54869  0.00 -1 s
+( subclass of) 67501  -268.00 32 s
+( ) 67938  -269.00 32 s
+2 sf
+(shell ) 73864  -268.00 32 s
+3 sf
+(used to override the window manager. This subclass contains pop\036up) 149352  -268.56 32 s
+52832.0 26010.0 m
+(menus) 60200  0.00 -1 s
+( and other) 71425  -30.00 32 s
+( temporary objects that the user can never resize and so on.) 137702  -30.55 32 s
+2 sf
+20320.0 32286.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 31461 av
+149352 31461 as
+149352 31696 as
+20320 31696 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 38382.0 m
+(p) 22516  0.00 -1 s
+2 sf
+20320.0 45020.0 m
+(padding) 30202  0.00 -1 s
+3 sf
+52832.0 h
+(Some) 59260  0.00 -1 s
+( padding bytes are inserted in the data stream to) 110762  -260.00 32 s
+( maintain alignment of the protocol) 149352  -260.60 32 s
+52832.0 48181.0 m
+(requests) 62079  0.00 -1 s
+( on natural boundaries.) 87054  -296.00 32 s
+( This increases ease of portability to some machine archi\036) 149352  -296.56 32 s
+52832.0 51342.0 m
+(tectures.) 62313  0.00 -1 s
+( ) 62992  -27.00 32 s
+2 sf
+20320.0 57618.0 m
+(parent) 28314  0.00 -1 s
+( window) 38337  -90.00 32 s
+3 sf
+52832.0 h
+(If) 54710  0.00 -1 s
+( C is a child of P, then P is the ) 89365  -14.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(parent) 96733  0.00 -1 s
+3 sf
+( of C. ) 103745  -14.67 32 s
+2 sf
+20320.0 63895.0 m
+(passive) 28944  0.00 -1 s
+( grab) 35221  -73.00 32 s
+3 sf
+52832.0 h
+(Grabbing) 63489  0.00 -1 s
+( a key or button) 80531  -168.00 32 s
+( is a ) 85278  -168.67 32 s
+5 sf
+(passive grab) 99455  -168.00 32 s
+3 sf
+(. The grab activates when the key or button is) 149352  -168.56 32 s
+52832.0 67056.0 m
+(actually) 61765  0.00 -1 s
+( pressed.) 71603  -37.00 32 s
+( ) 72271  -38.00 32 s
+2 sf
+20320.0 73333.0 m
+(pixel) 26121  0.00 -1 s
+( value) 33189  -66.00 32 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( ) 56700  -286.00 32 s
+5 sf
+(n) 58111  0.00 -1 s
+3 sf
+(\036bit value,) 69267  -286.00 32 s
+( where ) 76999  -286.50 32 s
+5 sf
+(n) 78410  0.00 -1 s
+3 sf
+( is the number of bit planes used in \(that is, the depth of\) a particu\036) 149352  -286.53 32 s
+52832.0 76494.0 m
+(lar) 55808  0.00 -1 s
+( window or pixmap. For a window, a pixel value indexes a) 120508  -139.00 32 s
+( colormap to derive an ac\036) 149352  -139.60 32 s
+52832.0 79654.0 m
+(tual) 57064  0.00 -1 s
+( color to be displayed. ) 82635  -27.60 32 s
+2 sf
+20320.0 85931.0 m
+(pixmap) 29414  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( three dimensional array of bits. A pixmap is normally thought of as a two) 135095  -243.00 32 s
+( dimensional) 149352  -244.00 32 s
+52832.0 89882.0 m
+(array) 58627  0.00 -1 s
+( of pixels, where each pixel can be a) 97436  -272.00 32 s
+( value from 0 to ) 114805  -272.60 32 s
+0 0 fillpatset
+114805.0 89565.0 m
+(\() 115744  0.00 -1 s
+115760.0 h
+(2) 117171  0.00 -1 s
+1 sf
+117171.0 88502.0 m
+(n) 118302  0.00 -1 s
+3 sf
+118308.0 89565.0 m
+(\)) 119247  0.00 -1 s
+119884.0 h
+(-) 121295  0.00 -1 s
+121914.0 h
+(1) 123325  0.00 -1 s
+123949.0 89882.0 m
+(, where ) 132415  -272.50 32 s
+5 sf
+(n) 133826  0.00 -1 s
+3 sf
+( is the depth \(z) 149352  -272.50 32 s
+52832.0 93088.0 m
+(axis\)) 58317  0.00 -1 s
+( of the pixmap. A) 78055  -23.00 32 s
+( pixmap can also be thought of as a stack of ) 127880  -23.55 32 s
+5 sf
+(n) 129291  0.00 -1 s
+3 sf
+( bitmaps. ) 140298  -23.50 32 s
+2 sf
+20320.0 99365.0 m
+(plane) 26906  0.00 -1 s
+3 sf
+52832.0 h
+(When) 59571  0.00 -1 s
+( a pixmap or window is thought of as a stack of bitmaps, each bitmap is called) 147424  -30.00 32 s
+( a) 149352  -31.00 32 s
+52832.0 102526.0 m
+5 sf
+(plane) 59102  0.00 -1 s
+3 sf
+( or ) 62796  -34.00 32 s
+5 sf
+(bit plane) 72717  -34.00 32 s
+3 sf
+(.) 73423  0.00 -1 s
+2 sf
+20320.0 108802.0 m
+(plane) 26906  0.00 -1 s
+( mask) 33980  -60.00 32 s
+3 sf
+52832.0 h
+(Graphics) 63018  0.00 -1 s
+( operations can be restricted to only affect a subset of) 120363  -284.00 32 s
+( bit planes of a destination.) 149352  -284.60 32 s
+52832.0 111963.0 m
+(A) 54869  0.00 -1 s
+( ) 55351  -224.00 32 s
+5 sf
+(plane mask) 67902  -224.00 32 s
+3 sf
+( is) 70266  -224.00 32 s
+( a bit mask describing which planes are to be modified, and it is stored in) 149352  -224.53 32 s
+52832.0 115124.0 m
+(a) 54085  0.00 -1 s
+( graphics context. ) 74665  -37.00 32 s
+2 sf
+20320.0 121401.0 m
+(pointer) 29098  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( pointing device attached to the cursor and) 104867  -34.00 32 s
+( tracked on the screens. ) 131809  -34.60 32 s
+2 sf
+20320.0 127677.0 m
+(pointer) 29098  0.00 -1 s
+( grabbing) 40663  -118.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( client can actively ) 76634  -44.50 32 s
+5 sf
+(grab) 81965  0.00 -1 s
+3 sf
+( control of the pointer, and button and motion events will be) 149352  -44.55 32 s
+52832.0 130838.0 m
+(sent) 57378  0.00 -1 s
+( to that client rather than the client to which the events would normally have been) 149352  -7.60 32 s
+52832.0 133999.0 m
+(sent.) 58084  0.00 -1 s
+( ) 58770  -20.00 32 s
+2 sf
+20320.0 140276.0 m
+(pointing) 30356  0.00 -1 s
+( device) 38495  -90.00 32 s
+3 sf
+52832.0 h
+(Typically) 63647  0.00 -1 s
+( a mouse or tablet, or some other device with effective dimensional motion.) 149352  36.25 32 s
+52832.0 143437.0 m
+(There) 59412  0.00 -1 s
+( is only one visible cursor defined by the core protocol, and it tracks whatever) 149352  149.00 32 s
+52832.0 146598.0 m
+(pointing) 62239  0.00 -1 s
+( device is attached as the pointer.) 99436  -31.00 32 s
+( ) 100110  -32.00 32 s
+2 sf
+20320.0 152874.0 m
+(pop\036up) 28946  0.00 -1 s
+3 sf
+52832.0 h
+(One) 57533  0.00 -1 s
+( of the uses of a top\036level shell \(for example, a menu that pops up when a command) 149352  -158.82 32 s
+52832.0 156035.0 m
+(button) 60044  0.00 -1 s
+( contact is activated\). Setting the ) 98276  115.00 32 s
+2 sf
+(state) 103916  0.00 -1 s
+3 sf
+( of) 107087  115.00 32 s
+( a shell to ) 119147  114.50 32 s
+2 sf
+(:mapped) 129807  0.00 -1 s
+3 sf
+( is sometimes re\036) 149352  114.33 32 s
+52832.0 159196.0 m
+(ferred) 59566  0.00 -1 s
+( to as ) 65825  -135.00 32 s
+5 sf
+(mapping) 75701  0.00 -1 s
+3 sf
+( or ) 79193  -135.00 32 s
+5 sf
+(popping up) 91836  -135.00 32 s
+3 sf
+( the shell. Setting the ) 115620  -134.80 32 s
+2 sf
+(state) 121260  0.00 -1 s
+3 sf
+( of a shell to ) 135245  -134.60 32 s
+2 sf
+(:withdrawn) 149352  0.00 -1 s
+3 sf
+52832.0 162357.0 m
+(or) 55182  0.00 -1 s
+( ) 55861  -27.00 32 s
+2 sf
+(:iconic) 63854  0.00 -1 s
+3 sf
+( is sometimes referred to as ) 95356  -26.50 32 s
+5 sf
+(unmapping) 108054  0.00 -1 s
+3 sf
+( or ) 111763  -26.50 32 s
+5 sf
+(popping down) 127807  -27.00 32 s
+3 sf
+( the shell.) 138650  -26.50 32 s
+2 sf
+20320.0 168633.0 m
+(property) 30978  0.00 -1 s
+3 sf
+52832.0 h
+(Windows) 63648  0.00 -1 s
+( can have associated ) 87471  39.00 32 s
+5 sf
+(properties) 99072  0.00 -1 s
+3 sf
+(, consisting of a name, a type, a data format,) 149352  39.44 32 s
+52832.0 171794.0 m
+(and) 56907  0.00 -1 s
+( some data. The protocol places no interpretation on properties; they are intended as a) 149352  -298.93 32 s
+52832.0 174955.0 m
+(general\036purpose) 71009  0.00 -1 s
+( naming mechanism for clients. For example, clients might share) 142415  -191.00 32 s
+( infor\036) 149352  -192.00 32 s
+52832.0 178116.0 m
+(mation) 60670  0.00 -1 s
+( such as resize hints, program names, and icon formats with a window manager) 149352  -69.00 32 s
+52832.0 181277.0 m
+(via) 56280  0.00 -1 s
+( properties.) 68950  -25.00 32 s
+( ) 69630  -26.00 32 s
+2 sf
+20320.0 187554.0 m
+(property) 30978  0.00 -1 s
+( list) 35244  -45.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( list of properties that have been defined for a window.) 118802  -25.00 32 s
+( ) 119482  -26.00 32 s
+2 sf
+20320.0 193830.0 m
+(pseudo) 28789  0.00 -1 s
+( color) 35515  -92.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( class of colormap in which a pixel value indexes the colormap) 122972  -271.00 32 s
+( to produce independent) 149352  -271.67 32 s
+52832.0 196991.0 m
+(red,) 57141  0.00 -1 s
+( green, and blue values. That is, the colormap is viewed as an array of triples \(RGB) 149352  -109.81 32 s
+52832.0 200152.0 m
+(values\).) 61687  0.00 -1 s
+( The RGB values) 81069  -45.00 32 s
+( can be changed dynamically. ) 115011  -45.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036208) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+/timsps10 3 declareFont
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21988 as
+20320 21988 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 28674.0 m
+(r) 22074  0.00 -1 s
+2 sf
+20320.0 35312.0 m
+(realization) 33172  0.00 -1 s
+52832.0 h
+3 sf
+(See) 56907  0.00 -1 s
+( contact) 65698  -64.00 32 s
+( realization.) 78954  -65.00 32 s
+2 sf
+20320.0 41588.0 m
+(redirecting) 33641  0.00 -1 s
+( control) 42853  -114.00 32 s
+3 sf
+52832.0 h
+(Window) 62550  0.00 -1 s
+( managers \(or client) 84445  -198.00 32 s
+( programs\) may choose to enforce window layout policy in) 149352  -198.56 32 s
+52832.0 44749.0 m
+(various) 61139  0.00 -1 s
+( ways. When a client attempts to change the size or position of a window, the) 149352  65.33 32 s
+52832.0 47910.0 m
+(operation) 63489  0.00 -1 s
+( can be ) 71531  -219.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(redirected) 83129  0.00 -1 s
+3 sf
+( to a specified client, rather than the) 122033  -219.00 32 s
+( operation actually being) 149352  -219.67 32 s
+52832.0 51071.0 m
+(performed.) 65289  0.00 -1 s
+( ) 65950  -45.00 32 s
+2 sf
+20320.0 57348.0 m
+(reply) 26590  0.00 -1 s
+3 sf
+52832.0 h
+(Information) 66309  0.00 -1 s
+( requested by a client program is sent back to the client with a ) 136666  -12.86 32 s
+5 sf
+(reply) 142465  0.00 -1 s
+3 sf
+(. Both) 149352  -13.00 32 s
+52832.0 60508.0 m
+(events) 60042  0.00 -1 s
+( and replies are multiplexed on the same connection. Most requests do not gener\036) 149352  -171.62 32 s
+52832.0 63669.0 m
+(ate) 56122  0.00 -1 s
+( replies. However, some requests generate multiple replies.) 122531  -29.00 32 s
+( ) 123207  -30.00 32 s
+2 sf
+20320.0 69946.0 m
+(representation) 37874  0.00 -1 s
+( type) 43643  -109.00 32 s
+52832.0 h
+3 sf
+(The) 57220  0.00 -1 s
+( type of representation of a resource value. For example, a color value might be rep\036) 149352  -184.53 32 s
+52832.0 73107.0 m
+(resented) 62234  0.00 -1 s
+( either as a namestring \(\177red"\), a pixel value, an RGB triplet, an HSV triplet, and) 149352  -278.87 32 s
+52832.0 76268.0 m
+(so) 55341  0.00 -1 s
+( on.) 59538  -37.00 32 s
+2 sf
+20320.0 82544.0 m
+(request) 29254  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( command to the server is called) 90688  -117.00 32 s
+( a ) 93118  -117.50 32 s
+5 sf
+(request) 101426  0.00 -1 s
+3 sf
+(. It is a single block of data sent over a con\036) 149352  -117.55 32 s
+52832.0 85705.0 m
+(nection.) 61845  0.00 -1 s
+( ) 62495  -56.00 32 s
+2 sf
+20320.0 91982.0 m
+(resource) 30663  0.00 -1 s
+3 sf
+52832.0 h
+( A) 55461  -114.00 32 s
+( value of the user interface that can be changed by the user in a resource database via) 149352  -114.53 32 s
+52832.0 95143.0 m
+(CLX) 58475  0.00 -1 s
+( functions ) 70301  -44.00 32 s
+2 sf
+(add\036resource) 86132  0.00 -1 s
+3 sf
+(, ) 87500  -44.00 32 s
+2 sf
+(get\036resource) 102385  0.00 -1 s
+3 sf
+(, and so forth.) 117851  -44.00 32 s
+( See server resource.) 141066  -44.67 32 s
+2 sf
+20320.0 101419.0 m
+(resource) 30663  0.00 -1 s
+( class,) 37637  -82.00 32 s
+3 sf
+52832.0 h
+(See) 56907  0.00 -1 s
+( complete resource class.) 84983  -45.00 32 s
+2 sf
+20320.0 104580.0 m
+(complete) 31132  0.00 -1 s
+20320.0 110857.0 m
+(resource) 30663  0.00 -1 s
+( database) 41904  -126.00 32 s
+52832.0 h
+3 sf
+(Conceptually,) 68586  0.00 -1 s
+( a set of resource name/value pairs \(or resource bindings\). CLX) 140479  19.00 32 s
+( defines) 149352  18.00 32 s
+52832.0 114018.0 m
+(functions) 63334  0.00 -1 s
+( for storing and retrieving interface resources from a resource database.) 143527  -27.80 32 s
+2 sf
+20320.0 120294.0 m
+(resource) 30663  0.00 -1 s
+( name,) 38540  -118.00 32 s
+3 sf
+52832.0 h
+(See) 56907  0.00 -1 s
+( complete resource name.) 85570  -58.00 32 s
+2 sf
+20320.0 123455.0 m
+(complete) 31132  0.00 -1 s
+20320.0 129732.0 m
+(RGB) 26434  0.00 -1 s
+( values) 34612  -54.00 32 s
+3 sf
+52832.0 h
+5 sf
+(Red) 57220  0.00 -1 s
+3 sf
+(,) 57926  0.00 -1 s
+( ) 58479  -153.00 32 s
+5 sf
+(green) 64905  0.00 -1 s
+3 sf
+(,) 65611  0.00 -1 s
+( and ) 70791  -153.50 32 s
+5 sf
+(blue) 75650  0.00 -1 s
+3 sf
+( intensity values used to define color. These values are always rep\036) 149352  -153.55 32 s
+52832.0 132893.0 m
+(resented) 62234  0.00 -1 s
+( as 16\036bit unsigned numbers, with zero being the minimum) 127004  -206.00 32 s
+( intensity and 65535) 149352  -206.67 32 s
+52832.0 136054.0 m
+(being) 59102  0.00 -1 s
+( the maximum intensity. The values) 99228  -64.00 32 s
+( are scaled by the server to match the display) 149352  -64.56 32 s
+52832.0 139215.0 m
+(hardware.) 64034  0.00 -1 s
+( ) 64685  -55.00 32 s
+2 sf
+20320.0 145491.0 m
+(root) 25334  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( special composite contact used to represent an entire display screen.) 132057  -31.90 32 s
+2 sf
+20320.0 151768.0 m
+(root) 25334  0.00 -1 s
+( window) 35379  -68.00 32 s
+3 sf
+52832.0 h
+(Each) 58473  0.00 -1 s
+( screen has a) 72471  -114.00 32 s
+( ) 73062  -115.00 32 s
+5 sf
+(root window) 87139  -114.00 32 s
+3 sf
+( covering it. It cannot be reconfigured or unmapped, but) 149352  -114.56 32 s
+52832.0 154929.0 m
+(otherwise) 63802  0.00 -1 s
+( acts as a full\036fledged window. A root window has no parent. ) 133096  -25.00 32 s
+2 sf
+20320.0 161205.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 160380 av
+149352 160380 as
+149352 160615 as
+20320 160615 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 167301.0 m
+(s) 21857  0.00 -1 s
+2 sf
+20320.0 173939.0 m
+(save set) 29464  -25.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( ) 57743  -183.00 32 s
+5 sf
+(save set) 66416  -183.00 32 s
+3 sf
+( of a client is a list of other client's windows that, if) 122453  -183.00 32 s
+( they are inferiors of one) 149352  -183.60 32 s
+52832.0 177100.0 m
+(of) 55182  0.00 -1 s
+( the client's windows at connection close, should not be destroyed and that should be) 149352  -131.79 32 s
+52832.0 180261.0 m
+(remapped) 63958  0.00 -1 s
+( if it is unmapped. Save sets are typically used by window) 128285  -109.00 32 s
+( managers to avoid) 149352  -109.67 32 s
+52832.0 183422.0 m
+(lost) 56909  0.00 -1 s
+( windows if the manager should terminate abnormally. ) 119143  -28.63 32 s
+2 sf
+20320.0 189698.0 m
+(scanline) 30041  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( list of pixel or bit values viewed as a horizontal row \(all values having the same y coor\036) 149352  -280.56 32 s
+52832.0 192859.0 m
+(dinate\)) 60667  0.00 -1 s
+( of an image, with the values ordered by increasing x coordinate. ) 134112  -31.67 32 s
+2 sf
+20320.0 199136.0 m
+(scanline) 30041  0.00 -1 s
+( order) 37389  -97.00 32 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( image represented in ) 80092  -277.00 32 s
+5 sf
+(scanline order) 96197  -277.00 32 s
+3 sf
+( contains scanlines ordered by increasing y coor\036) 149352  -276.71 32 s
+52832.0 202297.0 m
+(dinate.) 60434  0.00 -1 s
+( ) 61095  -45.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 9
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+141134.0 8331.0 m
+(Glossary) 149302  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036209) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+(screen) 27999  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( server can provide several independent ) 98593  -287.67 32 s
+/timsps10i 5 declareFont
+5 sf
+(screens) 107057  0.00 -1 s
+3 sf
+(, which typically have physically inde\036) 149352  -287.60 32 s
+52832.0 25739.0 m
+(pendent) 61766  0.00 -1 s
+( monitors. This would be the expected configuration when there is only a single) 149352  -183.85 32 s
+52832.0 28900.0 m
+(keyboard) 63332  0.00 -1 s
+( and pointer shared among the screens. ) 107561  -40.86 32 s
+2 sf
+20320.0 35176.0 m
+(selection) 30664  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( ) 55473  -102.00 32 s
+5 sf
+(selection) 65504  0.00 -1 s
+3 sf
+( can be thought of as an indirect property with dynamic type. That is, rather) 149352  -101.50 32 s
+52832.0 38337.0 m
+(than) 57691  0.00 -1 s
+( having the property stored in the server, it is maintained by some client \(the ) 140652  -258.60 32 s
+5 sf
+(owner) 147707  0.00 -1 s
+3 sf
+(\).) 149352  0.00 -1 s
+52832.0 41498.0 m
+(A) 54869  0.00 -1 s
+( selection is global in nature, being) 92962  -222.00 32 s
+( thought of as belonging to the user \(but maintained) 149352  -222.56 32 s
+52832.0 44659.0 m
+(by) 55654  0.00 -1 s
+( clients\), rather than being private to a particular window subhierarchy or a particular) 149352  -182.54 32 s
+52832.0 47820.0 m
+(set) 55967  0.00 -1 s
+( of clients. When a client) 83976  -41.00 32 s
+( asks for the contents of a selection, it specifies a selection) 149352  -41.55 32 s
+52832.0 50981.0 m
+5 sf
+(target) 59573  0.00 -1 s
+( type) 64860  -120.00 32 s
+3 sf
+(. This target type can be used to control the transmitted representation of the) 149352  -120.00 32 s
+52832.0 54142.0 m
+(contents.) 62943  0.00 -1 s
+( ) 63602  -47.00 32 s
+52832.0 60418.0 m
+(For) 56751  0.00 -1 s
+( example, if the selection is \177the last thing the user clicked on" and that is currently an) 149352  -269.59 32 s
+52832.0 63579.0 m
+(image,) 60434  0.00 -1 s
+( then the target type might specify whether the contents) 122981  -8.00 32 s
+( of the image should be) 149352  -8.60 32 s
+52832.0 66740.0 m
+(sent) 57378  0.00 -1 s
+( in XY Format or Z Format. The target type can also be used to control the class of) 149352  -84.89 32 s
+52832.0 69901.0 m
+(contents) 62237  0.00 -1 s
+( transmitted; that is, asking for the looks \(fonts, line spacing, indentation, and so) 149352  -262.85 32 s
+52832.0 73062.0 m
+(forth\)) 59255  0.00 -1 s
+( of a paragraph selection, rather than the text of the paragraph. The target type can) 149352  -173.67 32 s
+52832.0 76223.0 m
+(also) 57378  0.00 -1 s
+( be used for other purposes;) 88528  -24.00 32 s
+( the semantics is not constrained by the protocol. ) 144114  -24.56 32 s
+2 sf
+20320.0 82499.0 m
+(sensitivity) 32390  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( condition in which a user interface component of an application will accept input.) 149352  118.08 32 s
+52832.0 85660.0 m
+(Conversely,) 66391  0.00 -1 s
+( when a contact is insensitive,) 99624  -94.00 32 s
+( events of particular types are not dispatched) 149352  -94.57 32 s
+52832.0 88821.0 m
+(to) 55027  0.00 -1 s
+( the contact and are ignored.) 86812  -37.60 32 s
+2 sf
+20320.0 95098.0 m
+(server) 27841  0.00 -1 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( ) 57780  -146.00 32 s
+5 sf
+(server) 64833  0.00 -1 s
+3 sf
+( provides the basic windowing mechanism. It handles IPC connections from) 149352  -146.00 32 s
+52832.0 98258.0 m
+(clients,) 60905  0.00 -1 s
+( demultiplexes graphics requests onto the screens, and multiplexes input back to) 149352  -181.91 32 s
+52832.0 101419.0 m
+(the) 56280  0.00 -1 s
+( appropriate clients.) 78526  -44.00 32 s
+2 sf
+20320.0 107696.0 m
+(server) 27841  0.00 -1 s
+( grabbing) 39398  -126.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( server can be) 72218  -198.00 32 s
+( ) 72725  -199.00 32 s
+5 sf
+(grabbed) 82131  0.00 -1 s
+3 sf
+( by a single client for exclusive use. This prevents processing) 149352  -198.50 32 s
+52832.0 110857.0 m
+(of) 55182  0.00 -1 s
+( any) 59720  -243.00 32 s
+( requests from other client connections until the grab is complete. This is typically) 149352  -243.54 32 s
+52832.0 114018.0 m
+(only) 57849  0.00 -1 s
+( a transient state for such things as rubber\036banding and pop\036up menus, or to execute) 149352  -209.71 32 s
+52832.0 117179.0 m
+(requests) 62079  0.00 -1 s
+( indivisibly.) 75541  -23.00 32 s
+( ) 76223  -24.00 32 s
+2 sf
+20320.0 123455.0 m
+(server) 27841  0.00 -1 s
+( resource) 38766  -124.00 32 s
+3 sf
+52832.0 h
+(Windows,) 64354  0.00 -1 s
+( pixmaps,) 75357  28.00 32 s
+( cursors, fonts, gcontexts, and colormaps are known as resources.) 149352  27.44 32 s
+52832.0 126616.0 m
+(They) 58631  0.00 -1 s
+( all) 61914  -244.00 32 s
+( have unique identifiers associated with them for naming purposes. The lifetime) 149352  -244.55 32 s
+52832.0 129777.0 m
+(of) 55182  0.00 -1 s
+( a resource is bounded by the lifetime of the connection over which the resource was) 149352  -90.67 32 s
+52832.0 132938.0 m
+(created.) 61684  0.00 -1 s
+( See resource.) 77306  -64.00 32 s
+2 sf
+20320.0 139215.0 m
+(shell) 25808  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( composite that handles the duties required by standard conventions for top\036level X) 149352  49.33 32 s
+52832.0 142375.0 m
+(windows.) 63727  0.00 -1 s
+2 sf
+20320.0 148652.0 m
+(sibling) 28319  0.00 -1 s
+3 sf
+52832.0 h
+(Children) 62707  0.00 -1 s
+( of the same parent window are known as ) 110025  -28.00 32 s
+5 sf
+(sibling) 117708  0.00 -1 s
+3 sf
+( windows.) 129281  -28.00 32 s
+( ) 129958  -29.00 32 s
+2 sf
+20320.0 154929.0 m
+(static) 26744  0.00 -1 s
+( color) 33528  -34.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( degenerate case of pseudo color in which the RGB values are predefined and read\036) 149352  32.00 32 s
+52832.0 158090.0 m
+(only.) 58555  0.00 -1 s
+( ) 59222  -39.00 32 s
+2 sf
+20320.0 164366.0 m
+(static) 26744  0.00 -1 s
+( gray) 32896  -40.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( degenerate case of) 76127  -96.00 32 s
+( gray scale in which the gray values are predefined and read\036only.) 149352  -96.55 32 s
+52832.0 167527.0 m
+(The) 57220  0.00 -1 s
+( values are typically \(near\036\)linear increasing ramps. ) 115779  -29.86 32 s
+2 sf
+20320.0 173804.0 m
+(stacking) 30354  0.00 -1 s
+( order) 37705  -94.00 32 s
+3 sf
+52832.0 h
+(Sibling) 60986  0.00 -1 s
+( windows can ) 77018  -64.00 32 s
+5 sf
+(stack) 82817  0.00 -1 s
+3 sf
+( on top) 90529  -64.00 32 s
+( of each other. Windows above both obscure and oc\036) 149352  -64.56 32 s
+52832.0 176965.0 m
+(clude) 58944  0.00 -1 s
+( lower windows. This is similar to paper) 103759  -92.00 32 s
+( on a desk. The relationship between sib\036) 149352  -92.57 32 s
+52832.0 180126.0 m
+(ling) 57222  0.00 -1 s
+( windows is known as the ) 86859  -25.00 32 s
+5 sf
+(stacking order) 103216  -25.00 32 s
+3 sf
+(. ) 104603  -25.00 32 s
+2 sf
+20320.0 186402.0 m
+(state) 25960  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( slot of ) 63351  -21.00 32 s
+2 sf
+(contact) 72126  0.00 -1 s
+3 sf
+( that controls the visual effect of the) 112652  -21.00 32 s
+( contact.) 122191  -22.00 32 s
+2 sf
+20320.0 192679.0 m
+(stipple) 28316  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( bitmap that is used to tile a region to serve as an additional clip mask for a fill operation) 149352  -286.68 32 s
+52832.0 195840.0 m
+(with) 57848  0.00 -1 s
+( the foreground color. ) 83041  -29.75 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 10
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036210) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+/timsps10 3 declareFont
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21988 as
+20320 21988 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 28674.0 m
+(t) 21635  0.00 -1 s
+2 sf
+20320.0 35312.0 m
+(tile) 24080  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( pixmap can be replicated in two dimensions to ) 107657  -135.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(tile) 111262  0.00 -1 s
+3 sf
+( a region. The pixmap itself is also) 149352  -134.71 32 s
+52832.0 38473.0 m
+(known) 60513  0.00 -1 s
+( as a tile.) 70465  -27.00 32 s
+2 sf
+20320.0 44749.0 m
+(timer) 26899  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( CLUE object that provides support for animation and other types of time\036sensitive) 149352  62.25 32 s
+52832.0 47910.0 m
+(user) 57533  0.00 -1 s
+( interfaces.) 69883  -29.00 32 s
+( A timer causes ) 87947  -29.50 32 s
+2 sf
+(:timer) 95465  0.00 -1 s
+3 sf
+( events to be dispatched to a specific contact for) 149352  -29.56 32 s
+52832.0 51071.0 m
+(processing.) 65607  0.00 -1 s
+2 sf
+20320.0 57348.0 m
+(timestamp) 33013  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( time value, expressed in milliseconds, typically since the last server reset. Timestamp) 149352  -231.75 32 s
+52832.0 60508.0 m
+(values) 60042  0.00 -1 s
+( wrap around \(after about 49.7 days\). The server, given its current time is) 141965  -52.00 32 s
+( repre\036) 149352  -53.00 32 s
+52832.0 63669.0 m
+(sented) 60042  0.00 -1 s
+( by timestamp T, always interprets timestamps from clients by treating half of the) 149352  -207.77 32 s
+52832.0 66830.0 m
+(timestamp space as being earlier in time than T and half of the timestamp space as being) 149352  -207.94 32 s
+52832.0 69991.0 m
+(later) 57845  0.00 -1 s
+( in time) 66368  -50.00 32 s
+( than T. One timestamp value \(named CurrentTime\) is never generated by) 149352  -50.55 32 s
+52832.0 73152.0 m
+(the) 56280  0.00 -1 s
+( server; this value is reserved for use in requests to represent) 122587  -163.00 32 s
+( the current server time. ) 149352  -163.60 32 s
+2 sf
+20320.0 79429.0 m
+(top\036level) 30663  0.00 -1 s
+( contact) 40076  -68.00 32 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( contact whose parent is a root. A top\036level contact is usually a composite at the top of a) 149352  -267.67 32 s
+52832.0 82590.0 m
+(hierarchy) 63486  0.00 -1 s
+( of other contacts) 82879  -40.00 32 s
+( created by an application program.) 122642  -40.60 32 s
+2 sf
+20320.0 88866.0 m
+(top\036level\036session) 39913  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( subclass of ) 68674  -23.00 32 s
+2 sf
+(shell ) 74845  -23.00 32 s
+3 sf
+(that is used to communicate with a session manager.) 133841  -22.50 32 s
+2 sf
+20320.0 95143.0 m
+(top\036level\036shell) 37090  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( subclass of ) 68665  -26.00 32 s
+2 sf
+(shell ) 74833  -26.00 32 s
+3 sf
+(that) 79065  0.00 -1 s
+( provides full window manager interaction.) 127677  -26.60 32 s
+2 sf
+20320.0 101419.0 m
+(transient\036shell) 37562  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( subclass) 65102  121.00 32 s
+( of ) 69105  120.50 32 s
+2 sf
+(shell ) 75419  120.00 32 s
+3 sf
+(that a window manager typically will unmap when its owner be\036) 149352  120.50 32 s
+52832.0 104580.0 m
+(comes) 60042  0.00 -1 s
+( unmapped or iconified and will not allow to be individually iconified.) 139147  -33.64 32 s
+2 sf
+20320.0 110857.0 m
+(true) 25334  0.00 -1 s
+( color) 32083  -69.00 32 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( degenerate case of direct color in which the subfields in the pixel value directly encode) 149352  -299.60 32 s
+52832.0 114018.0 m
+(the) 56280  0.00 -1 s
+( corresponding RGB values. That is, the) 102208  104.00 32 s
+( colormap has predefined read\036only RGB) 149352  103.40 32 s
+52832.0 117179.0 m
+(values.) 60748  0.00 -1 s
+( The) 65811  -31.00 32 s
+( values are typically \(near\036\)linear increasing ramps. ) 124358  -31.57 32 s
+2 sf
+20320.0 123455.0 m
+(type) 25492  0.00 -1 s
+3 sf
+52832.0 h
+(An) 56280  0.00 -1 s
+( arbitrary atom used to identify the interpretation of property data. Types are com\036) 149352  22.15 32 s
+52832.0 126616.0 m
+(pletely) 60512  0.00 -1 s
+( uninterpreted by the server; they are solely for the benefit of clients. ) 138424  -22.85 32 s
+2 sf
+20320.0 132893.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 132068 av
+149352 132068 as
+149352 132303 as
+20320 132303 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 138989.0 m
+(u) 22516  0.00 -1 s
+2 sf
+20320.0 145559.0 m
+(unmanaged) 34432  0.00 -1 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( contact that is not under geometry management control.) 118285  -37.63 32 s
+2 sf
+20320.0 151836.0 m
+(user) 25493  0.00 -1 s
+( interface) 36779  -74.00 32 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( set of abstract interface objects used to control the dialog between an application and) 149352  -147.64 32 s
+52832.0 154996.0 m
+(its) 55498  0.00 -1 s
+( human user.) 69946  -26.00 32 s
+2 sf
+20320.0 161273.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 160448 av
+149352 160448 as
+149352 160683 as
+20320 160683 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 167369.0 m
+(v) 22296  0.00 -1 s
+2 sf
+20320.0 174007.0 m
+(viewable) 30822  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( window is ) 67621  -113.00 32 s
+5 sf
+(viewable) 77652  0.00 -1 s
+3 sf
+( if it and all of its ancestors are mapped.) 121777  -113.00 32 s
+( This does not imply that) 149352  -113.60 32 s
+52832.0 177168.0 m
+(any) 56907  0.00 -1 s
+( portion) 65667  -97.00 32 s
+( of the window is actually visible. Graphics requests can be performed on a) 149352  -97.54 32 s
+52832.0 180329.0 m
+(window) 61923  0.00 -1 s
+( when it is not viewable, but output will not be retained unless the server is main\036) 149352  -272.00 32 s
+52832.0 183490.0 m
+(taining) 60670  0.00 -1 s
+( backing store. ) 77803  -36.67 32 s
+2 sf
+20320.0 189766.0 m
+(visible) 28003  0.00 -1 s
+3 sf
+52832.0 h
+(A) 54869  0.00 -1 s
+( region of) 65514  -163.00 32 s
+( a window is ) 79910  -163.50 32 s
+5 sf
+(visible) 87277  0.00 -1 s
+3 sf
+( if someone looking at the screen can actually see it; that) 149352  -163.55 32 s
+52832.0 192927.0 m
+(is,) 55420  0.00 -1 s
+( the window is viewable) 82735  -29.00 32 s
+( and the region is not occluded by any other window. ) 143075  -29.55 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 11
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+141134.0 8331.0 m
+(Glossary) 149302  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+133180.0 208619.0 m
+(Glossary\036211) 149013  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+1 sf
+20320.0 208889.0 m
+(CLX Programmer's Reference) 47865  -48.00 32 s
+2 sf
+20320.0 22578.0 m
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+/timsps10 3 declareFont
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21988 as
+20320 21988 as
+closepath
+fp
+/drawmode PL_SET def
+/timsps14b 4 declareFont
+4 sf
+20320.0 28674.0 m
+(w) 23172  0.00 -1 s
+2 sf
+20320.0 35312.0 m
+(window) 29727  0.00 -1 s
+( gravity) 38969  -84.00 32 s
+3 sf
+52832.0 h
+(When) 59571  0.00 -1 s
+( windows are resized, subwindows can be repositioned automatically relative to) 149352  -26.60 32 s
+52832.0 38473.0 m
+(some) 58789  0.00 -1 s
+( position in the window. This attraction of a subwindow to some part of its parent is) 149352  -252.63 32 s
+52832.0 41633.0 m
+(known) 60513  0.00 -1 s
+( as ) 64200  -38.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(window gravity) 81644  -37.00 32 s
+3 sf
+(. ) 83018  -38.00 32 s
+2 sf
+20320.0 47910.0 m
+(window) 29727  0.00 -1 s
+( manager) 40979  -112.00 32 s
+3 sf
+52832.0 h
+(Manipulation) 68038  0.00 -1 s
+( of windows on) 85058  -153.00 32 s
+( the screen, and much of the user interface \(policy\) is typi\036) 149352  -153.55 32 s
+52832.0 51071.0 m
+(cally) 58317  0.00 -1 s
+( provided by a ) 75095  -38.00 32 s
+5 sf
+(window manager) 94576  -38.00 32 s
+3 sf
+( client. ) 102887  -38.00 32 s
+2 sf
+20320.0 57348.0 m
+(window) 29727  0.00 -1 s
+( manager shell) 47165  -60.00 32 s
+52832.0 h
+3 sf
+(A) 54869  0.00 -1 s
+( subclass of ) 68674  -23.00 32 s
+2 sf
+(shell) 74162  0.00 -1 s
+3 sf
+( called ) 82266  -23.00 32 s
+2 sf
+(wm\036shell ) 93763  -23.00 32 s
+3 sf
+(that interacts with the window) 127841  -23.00 32 s
+( manager.) 138944  -24.00 32 s
+2 sf
+20320.0 63624.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 62799 av
+149352 62799 as
+149352 63034 as
+20320 63034 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 69720.0 m
+(x) 22296  0.00 -1 s
+2 sf
+20320.0 76358.0 m
+(XY) 24394  0.00 -1 s
+( Format) 34138  -50.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( data for a pixmap is said to be in ) 95840  37.00 32 s
+5 sf
+(XY Format) 108341  37.00 32 s
+3 sf
+( if it is organized as a set of bitmaps) 149352  37.00 32 s
+52832.0 79519.0 m
+(representing) 66779  0.00 -1 s
+( individual bit planes, with the planes appearing) 119971  -127.00 32 s
+( from most to least signifi\036) 149352  -127.60 32 s
+52832.0 82680.0 m
+(cant) 57533  0.00 -1 s
+( in bit order.) 71427  -19.00 32 s
+( ) 72113  -20.00 32 s
+2 sf
+20320.0 88956.0 m
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 88131 av
+149352 88131 as
+149352 88366 as
+20320 88366 as
+closepath
+fp
+/drawmode PL_SET def
+4 sf
+20320.0 95052.0 m
+(z) 22074  0.00 -1 s
+2 sf
+20320.0 101690.0 m
+(Z) 22202  0.00 -1 s
+( Format) 31948  -48.00 32 s
+3 sf
+52832.0 h
+(The) 57220  0.00 -1 s
+( data for a pixmap is said to be in ) 93170  -230.00 32 s
+5 sf
+(Z Format) 103680  -230.00 32 s
+3 sf
+( if it is organized as a set of pixel values in) 149352  -230.00 32 s
+52832.0 104851.0 m
+(scanline) 62079  0.00 -1 s
+( order.) 69382  -62.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 12
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20591.0 8331.0 m
+(Glossary) 28759  0.00 -1 s
+/timsps10b 2 declareFont
+2 sf
+20591.0 208890.0 m
+(Glossary\036212) 36424  0.00 -1 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204826 av
+149013 204823 as
+[] 0 setdash
+dp
+1 sf
+121536.0 209160.0 m
+(CLX Programmer's Reference) 149081  -48.00 32 s
+/timsps10 3 declareFont
+3 sf
+52832.0 22578.0 m
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

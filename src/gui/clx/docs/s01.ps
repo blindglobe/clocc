@@ -1,0 +1,7551 @@
+%!PS-Adobe-2.0
+%%Title: s01.ps
+%%Pages: 22
+%%PageOrder: Ascend
+%%EndComments
+%%%%% %!
+
+userdict /letter known not {/letter {} def} if
+/bdf {bind def} bind def
+/xdf {exch def} bdf
+/ldd {load def} bdf
+/PL_SET 	0 def
+/PL_CLEAR	1 def
+/PL_XOR		2 def
+/PL_REPLACE	3 def
+/drawmode	PL_SET def
+/useNativeFonts	false def	
+/numtextures	21 def
+/whitefill	13 def
+/docutmark	false def
+/invertmatrix [1 0 0 -1 0 0] def
+/MAXFONT 1024 def
+/MAXFONT1 MAXFONT 1 sub def
+/MAXCHARS 128 def
+/MAXCHARS1 MAXCHARS 1 sub def
+/VMHEADROOM 1000 def
+/BOGUSWIDTH -1 def
+/mesg 64 string def
+/charname 12 string def
+/istr 3 string def
+/ILEncoding 256 array def
+/ILSymEncoding 256 array def
+/trashheap 1024 string def
+/emsg1 256 string def
+/emsg2 256 string def
+/inch {72 mul} bdf
+/sw /setlinewidth ldd
+/m { /vpos xdf /hpos xdf } bdf
+/v { /vpos xdf } bdf
+/h { /hpos xdf } bdf
+/pm /moveto ldd
+/as /lineto ldd
+/av /moveto ldd
+/el { 0 begin	
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad  scale
+  0 0 1 startangle  endangle  arc
+  savematrix setmatrix
+  end
+} bdf
+/el load 0 8 dict put
+/addconic { 0 begin
+  /clockwise xdf
+  /endangle xdf /startangle xdf 
+  /rotation xdf
+  /yrad xdf /xrad xdf
+  /yc xdf /xc xdf
+	
+  /savematrix matrix currentmatrix def
+  xc yc translate
+  rotation rotate
+  xrad yrad scale
+  0 0 1 startangle  endangle  
+  clockwise 1 eq {arc} {arcn} ifelse
+  savematrix setmatrix
+  end
+} bdf
+/addconic load 0 9 dict put
+/dp {
+  gsave  
+  1 setlinejoin
+  1 setlinecap
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  stroke 
+  grestore  
+} bdf 
+/ALIGN_NONE 0 def
+/ALIGN_OPEN 1 def
+/ALIGN_CLOSE 2 def
+/PENPATWIDTHADJ [0 0 4 8 12 16 20] def
+/MINSCALE .1 def
+/pathlength { 0 begin
+    flattenpath
+    /dist 0 def
+    { /yfirst xdf /xfirst xdf
+      /ymoveto yfirst def /xmoveto xfirst def}
+    { /ynext xdf /xnext xdf
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    {}
+    { /ynext ymoveto def /xnext xmoveto def
+      /dist dist ynext yfirst sub dup mul
+	xnext xfirst sub dup mul add sqrt add def
+      /yfirst ynext def /xfirst xnext def}
+    pathforall
+    dist
+    end
+} bdf
+/pathlength load 0 7 dict put
+/setpenpat { 0 begin
+    /style xdf
+    /width xdf
+    /pattern xdf
+    /scaleup DPIx 300 div def
+    /indx width 1 add scaleup div 4 div cvi def
+    indx 1 gt indx 7 lt and {
+	/adj PENPATWIDTHADJ indx get def
+	/adj adj scaleup mul def
+	/indx 0 def
+	pattern {
+	    /iszero indx 2 mod def
+	    iszero 0 ne
+		{adj add /val xdf}
+		{/val xdf}
+	    ifelse
+	    pattern indx val put
+	    /indx indx 1 add def
+	} forall
+    } if
+    /offset 0 def
+    /patternlen 0 def
+    /pathlen pathlength def
+    pattern
+	{patternlen add /patternlen xdf
+	} forall
+    style ALIGN_NONE eq {
+    } if
+    style ALIGN_CLOSE eq {
+	/n pathlen patternlen div cvi def
+	/extralen pathlen cvi patternlen cvi mod def
+	/halfpatlen patternlen 2 div def
+	extralen halfpatlen gt {/n n 1 add def} if
+	n 0 eq {/n 1 def} if
+	/scale1 pathlen n patternlen mul div def
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	} if
+	/offset pattern 0 get 2 div round def
+    } if
+    style ALIGN_OPEN eq {
+	/firstdash pattern 0 get def
+	/dashpct firstdash patternlen div def
+	/n pathlen patternlen div dashpct sub cvi def
+	/scale1 pathlen n dashpct add patternlen mul div def
+	/scale2 pathlen n dashpct add 1 add patternlen mul div def
+	/x scale2 1 sub abs def
+	/y scale1 1 sub abs def
+	x y lt {/scale1 scale2 def} if
+	scale1 MINSCALE gt {
+	    /indx 0 def
+	    pattern {
+		scale1 mul /val xdf
+		val 0 eq {/val 1 def} if
+		pattern indx val round put
+		/indx indx 1 add def
+	    } forall
+	    /offset 0 def
+	} if 
+    } if
+    pattern offset setdash
+    end
+} bdf
+/setpenpat load 0 50 dict put
+/s {
+  /mappedsp xdf
+  /spAdj xdf
+  /stEnd xdf
+  /fstring xdf
+  hpos vpos moveto
+  drawmode PL_CLEAR eq {1} {0} ifelse setgray
+  spAdj 0 ne mappedsp -1 ne and {
+    spAdj 0 mappedsp fstring widthshow
+  } {
+    fstring show
+  } ifelse
+  /hpos stEnd def
+} bdf
+/PL_bitmap { 0 begin
+  gsave
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  nbytes 8 mul vpix false [1 0 0 1 0 0 ] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop}
+    imagemask
+  grestore
+  end
+} bdf
+/PL_bitmap load 0 4 dict put
+/PL_contone { 0 begin
+   gsave
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /nbytes hpix nbits mul 15 add 16 idiv 2 mul def
+  /picstr nbytes string def
+  hpos vpos translate
+  hpix vpix nbits [1 0 0 1 0 0] 
+  {currentfile picstr 0 nbytes getinterval readhexstring pop }
+    image
+  grestore
+  end
+} bdf
+/PL_contone load 0 5 dict put
+/PL_image { 0 begin
+  gsave
+  /ho xdf
+  /vo xdf
+  /hh xdf
+  /vh xdf
+  /hv xdf
+  /vv xdf
+  /nbits xdf
+  /vpix xdf
+  /hpix xdf
+  /mapsz xdf
+  /map xdf
+  mapsz 0 ne
+  {
+    /mapsz mapsz 1 sub def
+    {map exch mapsz mul round cvi get mapsz div} settransfer
+  } if 
+  /picstr hpix nbits mul 7 add 8 idiv string def
+  ho vo translate
+  [hh vh hv vv 0 0] concat
+  nbits 1 eq mapsz 0 eq and{
+    hpix vpix false [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      imagemask
+  } {
+    hpix vpix nbits [hpix 0 0 vpix 0 0]
+    {currentfile picstr readhexstring pop }
+      image
+  } ifelse
+  grestore
+  end
+} bdf
+/PL_image load 0 12 dict put
+/reencodesubdict 12 dict def
+/ReEncode {
+  reencodesubdict begin
+  /newencoding xdf
+  /newfontname xdf
+  /basefontname xdf
+	
+  /basefontdict basefontname findfont def
+  /newfont basefontdict maxlength 2 add dict def
+  basefontdict {
+    exch dup /FID ne {
+      exch newfont 3 1 roll put
+    } {
+      pop pop
+    } ifelse
+  } forall
+  newfont /FontName newfontname put
+  newencoding -1 ne {
+    newfont /Encoding newencoding put
+  } if
+  newfontname newfont definefont pop
+  end
+} bdf
+/insertcharnum { 0 begin
+  /encoding xdf
+  /i xdf
+  (char) charname copy pop
+  i istr cvs pop
+  charname 4 istr  putinterval
+  encoding i charname cvn  put
+  end
+} bdf
+/insertcharnum load 0 2 dict put
+StandardEncoding   ILEncoding copy
+  dup 5	/florin put
+  dup 7	/fraction put
+  dup 12 /sterling put
+  dup 27 /section put
+  dup 28 /periodcentered put
+  dup 29 /cent put
+  dup 30 /hyphen put
+  dup 31 /emdash put
+  dup 34 /quotedblright put
+  dup 45 /endash put
+      127 /quotedblleft put
+  0 1 4 { ILEncoding insertcharnum } for 
+  6 1 6 { ILEncoding insertcharnum } for 
+  8 1 11 { ILEncoding insertcharnum } for 
+  13 1 26 { ILEncoding insertcharnum } for 
+/map { 0 begin
+  
+  /PSsize xdf
+  /PSname xdf
+  /PLname xdf
+  /psd 2 dict def
+  psd /pssize PSsize put
+  psd /psname PSname put 
+  fontmap PLname psd put
+  end
+} bdf
+/map load 0 4 dict put
+ILSymEncoding 32
+[
+/space /logicalor /arrowright /arrowdblleft /arrowdblup 
+/arrowdblright /lozenge /arrowhorizex /angleleft /registersans
+/Upsilon1 /plusminus /second /angle /greaterequal
+/radical /ellipsis /Ifraktur /spade /lessequal
+/minute /degree /fraction /florin /infinity
+/approxequal /integral /propersuperset /parenrightbt /arrowup
+/bracketrighttp /aleph /arrowdblboth /bracerightbt /integralbt
+/notsubset /bracketleftbt /trademarksans /bracelefttp /braceleftmid
+/braceleftbt /bracketlefttp /braceex /apple /angleright
+/parenrightex /parenrighttp /arrowdown /divide /element
+/summation /bracketleftex /parenlefttp /parenleftbt /dotmath
+/copyrightsans /integralex /parenleftex /integraltp /registerserif 
+/intersection /trademarkserif /arrowdbldown /gradient /logicalnot
+/reflexsubset /equivalence /propersubset /partialdiff /arrowboth
+/circlemultiply /heart /bracketrightex /bracerightmid /emptyset
+/bracketrightbt /Rfraktur /proportional /reflexsuperset /carriagereturn
+/notequal /notelement /diamond /club /bracerighttp
+/arrowleft /weierstrass /bullet /circleplus /multiply
+/arrowvertex /copyrightserif /union /product /logicaland
+] putinterval
+0 1 32 {ILSymEncoding insertcharnum } for
+127 1 255 {ILSymEncoding insertcharnum } for
+/declareFont {
+    /PLnum xdf
+    /PLname xdf 
+    useNativeFonts  {
+    	PSfontobj PLnum
+           fontmap PLname get dup 
+	    /psname get findfont 
+	    invertmatrix makefont exch
+	    /pssize get DPIx 72 div mul scalefont 
+	put
+    } {
+	PSfontobj PLnum
+	10 dict dup begin
+	    /FontType 3 def
+	    /FontMatrix [DPIx 300 div 0 0 DPIy 300 div 0 0] def
+	    /FontBBox [0 0 0 0] def
+	    /Encoding ILEncoding def
+	    /BuildChar { 0 begin
+		/char xdf
+		/fontdict xdf
+		/charname fontdict /Encoding get char get def
+		/charinfo fontdict /CharData get charname get def
+		/wx charinfo 0 get def
+		charinfo 0 get BOGUSWIDTH eq 
+		{puterrchar} 
+		{ /charbbox charinfo 1 4 getinterval def
+		  wx 0 charbbox aload pop setcachedevice	
+		  charinfo 5 get charinfo 6 get true
+		  fontdict /imagemaskmatrix get
+		    dup 5 charinfo 8 get put
+		    dup 4 charinfo 7 get  put
+		  charinfo 9  get
+		  imagemask
+		}ifelse
+	    end
+	    }def
+	    /BuildChar load 0 7 dict put
+	    /imagemaskmatrix [1 0 0 1 0 0] def
+	    /CharData MAXCHARS dict def
+	end
+	PLname exch definefont  put
+	PSfontobj PLnum get /CharData get 
+		/space [16 0 0 1 1 16 1 0 0 [<00>] cvx ] put
+    } ifelse
+} def
+/numLoadEmptyGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/w xdf
+	w fontno PSfontobj fontno get /Encoding get charno get
+	LoadEmptyGlyph
+	end
+} bdf
+/numLoadEmptyGlyph load 0 3 dict put
+/LoadEmptyGlyph { 0 begin
+	
+	/charname xdf
+	/fontno xdf
+	/w xdf
+	PSfontobj fontno get  /CharData get
+	    charname [w 0 0 1 1 w 1 0 0 [<00>] cvx ] put
+	end
+} bdf
+/LoadEmptyGlyph load 0 3 dict put
+/puterrchar {
+	PSfontobj errfontno  get dup 
+	/BuildChar get  errcharno exch exec 
+	(\tInterleaf::out of VM loading bitmap (?). Try breaking up document\n) 
+		dup print flush
+	emsg1 copy pop
+} bdf
+/timeToQuit {
+	(\tInterleaf::completely out of memory. \n\tTry breaking up the document \n) 
+		dup print flush
+	emsg2 copy pop
+	stop
+} bdf
+/LoadGlyph { 0 begin
+	/charno xdf
+	/fontno xdf
+	/height xdf
+	/vadj xdf
+	/width xdf
+	/hsize xdf
+	/lsb xdf
+	/noVMHEADROOM vmstatus exch sub exch pop dup
+		VMHEADROOM 2 idiv lt {timeToQuit} if
+		VMHEADROOM lt 
+		{true } {false} ifelse def
+	/nbytes hsize 15 add 16 idiv 2 mul height mul def	
+	noVMHEADROOM not  {/glyph nbytes string def } if
+	currentfile noVMHEADROOM 
+		{trashheap 0 nbytes getinterval } {glyph} ifelse 
+		readhexstring pop pop
+	
+	/hsize hsize 15 add 16 idiv 16 mul def
+	
+	/thefont PSfontobj fontno get	def
+	/charname thefont /Encoding get charno get def
+	
+		
+	/tx lsb  neg def
+	/ty vadj neg def
+	/lly  height vadj add def
+	/llx  lsb def
+	/urx hsize lsb add def
+	/ury vadj def
+	thefont /CharData get charname 
+	    noVMHEADROOM
+	    { [BOGUSWIDTH] }
+	    {[width llx lly urx ury hsize height tx ty [glyph] cvx ]} ifelse
+	put
+	end
+} bdf
+/LoadGlyph load 0 20 dict put
+/sf { PSfontobj exch get setfont } bdf
+/stdsizex	32 def
+/stdsizey	32 def
+/patternstring	1 string def
+/grayArray [
+	-1	-1	-1	-1	-1	-1	-1	-1
+	-1	-1	-1	-1	-1	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/patgrayArray [
+	0	.12	.22	.32	.42	.52	.62	.72
+	.82	.92	.17	.27	.37	1	.92	.8	
+	.65	0	.5	.35	.2	] def
+/fillpatset {
+    /patchar xdf
+    /pfindex xdf
+    patgraylevel dup 0 ge {
+	/patIsGray true def
+	/patgray xdf
+    } {
+	pop /patIsGray false def
+    } ifelse
+} bdf
+/fp {
+    gsave
+    pfindex 0 eq patchar 0 eq and {
+	/patIsGray true def
+	/patgray 0 def
+    } if
+    patIsGray {
+	/oldgray currentgray def
+	patgray setgray
+	eofill
+	oldgray setgray
+    } {
+	useNativeFonts {
+	    patchar 0 showpattern
+	} {
+	    currentfont 
+	    PSfontobj pfindex get setfont
+	    pfill
+	    dup null ne {setfont} {pop} ifelse
+	} ifelse
+    } ifelse
+    grestore
+} bdf
+/pfill {
+  gsave 1 setgray eofill grestore
+  gsave setupfactors setupregion blastchars grestore
+  newpath
+} bdf
+/setupfactors {
+  0 setgray
+  [] 0 setdash
+  patternstring 0 patchar put
+  /patx stdsizex def /paty stdsizey def
+} bdf
+/setupregion {
+  eoclip	
+  pathbbox
+    /ry exch ceiling  def
+    /rx exch ceiling  def
+    /ly exch floor cvi
+      dup 0 lt{paty sub}if
+      dup paty mod  sub  def
+    /lx exch floor cvi
+      dup 0 lt{patx sub}if
+      dup patx mod  sub  def
+    /ry ry paty add def
+    /ly ly paty sub def
+  newpath
+} bdf
+/blastchars {
+  /#chars  rx lx sub  patx div ceiling cvi  def
+  ly paty ry  {
+    lx exch moveto
+    #chars{ patternstring show} repeat
+  }for
+} bdf
+/patgraylevel {
+  patchar grayArray length ge {
+    -1
+  } {
+    grayArray patchar get
+  } ifelse
+} bdf
+/setuserscreendict 22 dict def
+setuserscreendict begin
+ /tempctm matrix def
+ /temprot matrix def
+ /tempscale matrix def
+ /concatprocs
+  {/proc2 exch cvlit def
+   /proc1 exch cvlit def
+   /newproc proc1 length proc2 length add
+    array def
+   newproc 0 proc1 putinterval
+   newproc proc1 length proc2 putinterval
+   newproc cvx
+  } bdf
+  /resmatrix matrix def
+  /findresolution
+   {72 0 resmatrix defaultmatrix dtransform
+    /yres xdf /xres xdf
+    xres dup mul yres dup mul add sqrt
+   } bdf
+end
+/setuserscreen
+{setuserscreendict begin
+   /spotfunction xdf
+   /screenangle xdf
+   /cellsize xdf
+   /m tempctm currentmatrix def
+   /rm screenangle temprot rotate def
+   /sm cellsize dup tempscale scale def
+   sm rm m m concatmatrix m concatmatrix pop
+   1 0 m dtransform /y1 xdf /x1 xdf
+   /veclength x1 dup mul y1 dup mul add sqrt def
+   /veclength veclength DPIx 72 div mul def
+   /frequency findresolution veclength div def
+   /newscreenangle y1 x1 atan def
+   m 2 get m 1 get mul m 0 get m 3 get mul sub 0 gt
+   {{neg}
+    /spotfunction load concatprocs
+    /spotfunction xdf
+   } if
+   frequency newscreenangle /spotfunction load setscreen
+  end
+} bdf
+/setpatterndict 18 dict def
+setpatterndict begin
+ /bitison
+ {/ybit xdf /xbit xdf
+  /bytevalue bstring ybit bwidth mul xbit 8 idiv add get def
+  /mask 1 7 xbit 8 mod sub bitshift def
+  bytevalue mask and 0 ne
+ } bdf
+end
+/bitpatternspotfunction
+{setpatterndict begin
+  /y xdf /x xdf
+  /xindex x 1 add 2 div bpside mul cvi def
+  /yindex y 1 add 2 div bpside mul cvi def
+  xindex yindex bitison
+  {/onbits onbits 1 add def 1 }
+  {/offbits offbits 1 add def 0 }
+  ifelse
+  end
+} bdf
+ 
+/setpattern
+ {setpatterndict begin
+  /cellsz xdf
+  /angle  xdf
+  /bwidth xdf
+  /bpside xdf
+  /bstring xdf
+  /onbits 0 def /offbits 0 def
+  cellsz angle /bitpatternspotfunction load setuserscreen
+  {} settransfer
+  offbits offbits onbits add div setgray
+  end
+ } bdf
+   
+/showpattern
+{/ang xdf
+ /patnum xdf
+ patternarray patnum get 32 4 ang 72 300 32 div div setpattern
+ eofill
+} bdf
+/patternarray [
+<>
+<
+00000000 60c00030 60c00030 00000000 00000000 060c0003 060c0003 00000000
+00000000 3060c000 3060c000 00000000 00000000 03060c00 03060c00 00000000
+00000000 003060c0 003060c0 00000000 00000000 0003060c 0003060c 00000000
+00000000 c0003060 c0003060 00000000 00000000 0c000306 0c000306 00000000
+>
+<
+00000000 0c000306 0c000306 00000000 00000000 c0003060 c0003060 00000000
+00000000 0003060c 0003060c 00000000 00000000 003060c0 003060c0 00000000
+00000000 03060c00 03060c00 00000000 00000000 3060c000 3060c000 00000000
+00000000 060c0003 060c0003 00000000 00000000 60c00030 60c00030 00000000
+>
+<
+00030c00 00030c00 00000000 00000000 000030c0 000030c0 00000000 00000000
+0000030c 0000030c 00000000 00000000 c0000030 c0000030 00000000 00000000
+0c000003 0c000003 00000000 00000000 30c00000 30c00000 00000000 00000000
+030c0000 030c0000 00000000 00000000 0030c000 0030c000 00000000 00000000
+>
+<
+0030c000 0030c000 00000000 00000000 030c0000 030c0000 00000000 00000000
+30c00000 30c00000 00000000 00000000 0c000003 0c000003 00000000 00000000
+c0000030 c0000030 00000000 00000000 0000030c 0000030c 00000000 00000000
+000030c0 000030c0 00000000 00000000 00030c00 00030c00 00000000 00000000
+>
+<
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+00000000 00000707 00000707 00000707 00000000 00007070 00007070 00007070
+>
+<
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+00000000 0e0e0e0e 0e0e0e0e 0e0e0e0e 00000000 e0e0e0e0 e0e0e0e0 e0e0e0e0
+>
+<
+cccc0ccc cccc0ccc 00000000 00000000 cccc0ccc cccc0ccc 00000000 00000000
+cccc0ccc cccc0ccc 00000000 00000000 00000000 00000000 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 0ccccccc 0ccccccc 00000000 00000000
+0ccccccc 0ccccccc 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+88880888 88880888 00000000 00000000 88880888 88880888 00000000 00000000
+88880888 88880888 00000000 00000000 00000000 00000000 00000000 00000000
+08888888 08888888 00000000 00000000 08888888 08888888 00000000 00000000
+08888888 08888888 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000308 00000308 00040308 00040398 000c01d0 007e01f8 01cb80fc 0309803e
+0618802f 06108027 06108063 07100843 03b01843 03e01046 01f018c6 00781c9c
+007c07f0 005e0080 004e0180 00c60100 10860100 30860000 208c0000 318c0000
+39380002 0fe00002 01000006 0300003f c20000e5 c2000184 40000304 4000030c
+>
+<
+00007618 00003c70 00003fe0 00000f80 00000800 00040800 00041800 000c1000
+00081000 007e0000 01db0000 03138000 06138000 06310000 0c200000 0c200010
+18600010 18400030 18400020 18c001f8 1880076c 1c810c4e 1d86184e 0f1c18c4
+0ff83080 03e03080 02006180 02006100 06006100 04006300 04006200 00007204
+>
+<
+00000180 00000180 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 00000198 00000198 00000000 00000000
+00000198 00000198 00000000 00000000 19999998 19999998 00000000 00000000
+01999998 01999998 00000000 00000000 00000000 00000000 00000000 00000000
+>
+<
+00000400 00000000 00000100 00000180 00000000 00000000 00000190 00000198
+00000000 00000000 00000198 00000198 00000000 00000000 00000998 00000998
+00000000 00000000 00001998 00019990 40000000 00000000 19999980 09999980
+00000000 00000000 01999800 00999000 00000000 00000000 00000000 00000000
+>
+] def
+/bop  {/pagestate save def  } bdf
+/eop  {docutmark {cutmark} if showpage pagestate restore } def
+/clp {initclip newpath av as as as closepath clip } bdf
+/cutmark { 0 begin
+  /pw DPIx 40 div def
+  /pw2 pw 2 div def
+  /lnx DPIx 4 div def
+  /lny DPIy 4 div def
+  initclip
+  pw sw
+  [] 0 setdash
+  newpath
+  pw2 neg pw2 neg translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  0 PSpagelength pw add translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  PSpagewidth pw add neg 0 translate
+  lnx neg 0 av lnx 0 as
+  0 lny neg av 0 lny as
+  dp
+  end
+} bdf
+/cutmark load 0 4 dict put
+/fontmap 11 dict def
+	/Ops8 /ILtims 8 map
+	/timsps10 /ILtims 10 map
+	/timsps10i /ILtimsi 10 map
+	/timsps8i /ILtimsi 8 map
+	/timsps18b /ILtimsb 18 map
+	/courps8 /ILcourps 8 map
+	/timsps12b /ILtimsb 12 map
+	/timsps10b /ILtimsb 10 map
+	/symbb8 /ILsymbb 8 map
+	/symbb10 /ILsymbb 10 map
+	/symba10 /ILsymba 10 map
+/Times-Roman /ILtims ILEncoding ReEncode
+/Times-Italic /ILtimsi ILEncoding ReEncode
+/Times-Bold /ILtimsb ILEncoding ReEncode
+/Courier /ILcourps ILEncoding ReEncode
+/Symbol /ILsymbb -1 ReEncode
+/Symbol /ILsymba -1 ReEncode
+letter
+/initialstate save def
+/PSpagelength 223519 def
+/PSpagewidth 172720 def
+/DPIx 20320 def /DPIy 20320 def
+72 DPIx div 72 DPIy div neg scale
+0 223520 neg translate
+/PSfontobj 11 array def
+/useNativeFonts true def
+/drawmode PL_SET def
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+%%EndProlog
+%%Page: 1
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps10b 2 declareFont
+2 sf
+145252.0 208619.0 m
+(1\0361) 149013  0.00 -1 s
+/timsps8i 1 declareFont
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps18b 10 declareFont
+10 sf
+20410.0 39376.0 m
+54683.0 39466.0 m
+(INTRODUCTION TO CLX) 115846  -35.00 32 s
+116320.0 39376.0 m
+117675.0 29893.0 m
+2 sf
+116862.0 37479.0 m
+117675.0 34770.0 m
+270.0 sw
+0.0 0.0 m
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 19 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+121739 20320 av
+148832 20320 as
+148832 39285 as
+121739 39285 as
+closepath
+fp
+[] 0 setdash
+dp
+0 13 fillpatset
+/drawmode PL_REPLACE def
+newpath
+/drawmode PL_SET def
+146213 39165 av
+146213 23571 as
+142601 23571 as
+138988 26541 as
+138988 28026 as
+142149 28026 as
+142149 39165 as
+closepath
+fp
+[] 0 setdash
+dp
+0.0 sw
+newpath
+138537 23571 av
+138537 23571 as
+newpath
+138537 43620 av
+138537 43620 as
+newpath
+148019 43620 av
+148019 43620 as
+newpath
+148019 23571 av
+148019 23571 as
+149351.0 39376.0 m
+10 sf
+/timsps10 3 declareFont
+3 sf
+20320.0 43485.0 m
+541.0 sw
+0.0 0.0 m
+newpath
+20455 41861 av
+149013 41859 as
+[] 0 setdash
+dp
+149352.0 43485.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 46871.0 m
+(Introduction) 38756  0.00 -1 s
+52832.0 h
+2 sf
+(1.1) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(This) 63572  0.00 -1 s
+( manual assumes a basic understanding of window systems and the) 138246  -104.00 32 s
+( Common) 149352  -105.00 32 s
+52832.0 50032.0 m
+(Lisp) 57849  0.00 -1 s
+( programming language. To provide an introduction to the Common) 134142  -75.00 32 s
+( Lisp X Inter\036) 149352  -75.67 32 s
+52832.0 53193.0 m
+(face) 57530  0.00 -1 s
+( \(CLX\) programming, this section) 95908  -26.00 32 s
+( discusses the following:) 123654  -26.67 32 s
+125849.0 h
+() 125849  0.00 -1 s
+/symbb8 6 declareFont
+6 sf
+52832.0 59741.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Overview of the X Window) 89310  -26.00 32 s
+( System) 98301  -25.00 32 s
+( ) 98981  -26.00 32 s
+6 sf
+52832.0 66288.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Naming) 67003  0.00 -1 s
+( and argument conventions) 97335  -52.00 32 s
+( ) 97988  -53.00 32 s
+6 sf
+52832.0 72836.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Programming) 73430  0.00 -1 s
+( considerations) 90383  -54.00 32 s
+( ) 91034  -55.00 32 s
+20320.0 79835.0 m
+270.0 sw
+/drawmode PL_CLEAR def
+0.0 0.0 m
+newpath
+24384 78210 av
+149013 78210 as
+[] 0 setdash
+dp
+541.0 sw
+/drawmode PL_SET def
+newpath
+148878 78210 av
+20455 78210 as
+[] 0 setdash
+dp
+149352.0 79835.0 m
+7 sf
+20320.0 83222.0 m
+(The) 25965  0.00 -1 s
+( X) 29256  -1.00 32 s
+( Window) 42333  -2.00 32 s
+52832.0 h
+2 sf
+(1.2) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( X Window System was developed at the Massachusetts Institute of) 139124  -31.60 32 s
+7 sf
+20320.0 86608.0 m
+(System) 30663  0.00 -1 s
+52832.0 h
+3 sf
+(Technology) 66312  0.00 -1 s
+( \(MIT\) and first released in) 95875  -215.00 32 s
+( 1985. Since then, the X Window System has be\036) 149352  -215.56 32 s
+52832.0 89769.0 m
+(come) 58944  0.00 -1 s
+( an industry\036standard product available on virtually every type of) 135453  342.00 32 s
+( bit\036mapped) 149352  341.00 32 s
+52832.0 92930.0 m
+(workstation.) 66861  0.00 -1 s
+( The current version of X, Version 11, has been implemented for several) 149352  56.33 32 s
+52832.0 96091.0 m
+(different) 62545  0.00 -1 s
+( computer architectures, for a wide variety of display hardware, and also for) 149352  90.08 32 s
+52832.0 99252.0 m
+(many) 59102  0.00 -1 s
+( different operating systems. X Version) 103180  -87.00 32 s
+( 11 represents the fulfillment of the origi\036) 149352  -87.57 32 s
+52832.0 102413.0 m
+(nal) 56280  0.00 -1 s
+( design goals proposed by MIT, as follows:) 105004  -26.71 32 s
+107199.0 h
+() 107199  0.00 -1 s
+6 sf
+52832.0 108960.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Portable) 67316  0.00 -1 s
+( \037 Support virtually any bitmap display and any interactive input device) 149352  -30.82 32 s
+57912.0 112121.0 m
+(\(including) 69511  0.00 -1 s
+( keyboards, mice, tablets, joysticks, and touch screens\). Make it easy to) 149352  -66.55 32 s
+57912.0 115282.0 m
+(implement) 69982  0.00 -1 s
+( the window system on different operating) 117608  -30.00 32 s
+( systems.) 127926  -31.00 32 s
+6 sf
+52832.0 121830.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Device\036Independent) 80790  0.00 -1 s
+( Applications) 95671  -246.00 32 s
+( \037 Avoid rewriting, recompiling, or even relink\036) 149352  -246.57 32 s
+57912.0 124991.0 m
+(ing) 61518  0.00 -1 s
+( in order to use different display/input hardware. Make it easy) 129344  -200.00 32 s
+( for an application) 149352  -200.67 32 s
+57912.0 128151.0 m
+(to) 60107  0.00 -1 s
+( work on both monochrome and color) 102491  -42.00 32 s
+( hardware.) 114356  -43.00 32 s
+6 sf
+52832.0 134699.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Network) 67784  0.00 -1 s
+( Transparent \037 Let an application run on one computer while using an\036) 149352  44.33 32 s
+57912.0 137860.0 m
+(other) 63710  0.00 -1 s
+( computer's display, even if the other computer has a different operating sys\036) 149352  -105.58 32 s
+57912.0 141021.0 m
+(tem) 62144  0.00 -1 s
+( or hardware architecture.) 91011  -40.00 32 s
+6 sf
+52832.0 147568.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Multitasking) 72336  0.00 -1 s
+( \037 Support multiple applications being displayed simultaneously.) 146665  -42.00 32 s
+6 sf
+52832.0 154116.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(No) 61360  0.00 -1 s
+( User Interface Policy \037 Since no one agrees on what constitutes the best user) 149352  -51.71 32 s
+57912.0 157277.0 m
+(interface,) 68487  0.00 -1 s
+( make it possible for a broad range of user interface styles \(or policies\) to) 149352  -123.71 32 s
+57912.0 160438.0 m
+(be) 60576  0.00 -1 s
+( implemented, external to the window system) 111703  -35.00 32 s
+( and to the application programs.) 148675  -35.60 32 s
+6 sf
+52832.0 166985.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Cheap) 65122  0.00 -1 s
+( Windows \037 Windows should be) 103321  5.00 32 s
+( abundant, and ubiquitous. Provide over\036) 149352  4.40 32 s
+57912.0 170146.0 m
+(lapping) 66377  0.00 -1 s
+( windows and a simple mechanism for window hierarchy.) 131358  -37.75 32 s
+6 sf
+52832.0 176694.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(High\036Performance) 78909  0.00 -1 s
+( Graphics \037 Provide powerful interfaces for synthesizing 2\036D) 149352  9.00 32 s
+57912.0 179855.0 m
+(images) 65906  0.00 -1 s
+( \(geometric primitives, high\036quality text with multiple typefaces,) 143879  693.00 32 s
+( and) 149352  692.00 32 s
+57912.0 183015.0 m
+(scanned) 67002  0.00 -1 s
+( images\).) 77261  -86.00 32 s
+6 sf
+52832.0 189563.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Extensible) 69825  0.00 -1 s
+( \037 Include a mechanism for adding new capabilities. Allow separate) 149352  155.10 32 s
+57912.0 192724.0 m
+(sites) 62929  0.00 -1 s
+( to develop independent extensions without becoming) 124154  67.00 32 s
+( incompatible with re\036) 149352  66.33 32 s
+57912.0 195885.0 m
+(mote) 63555  0.00 -1 s
+( applications.) 78526  -78.00 32 s
+eop
+%%Page: 2
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\0362) 24081  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+52832.0 22578.0 m
+(Some) 59260  0.00 -1 s
+( of these goals lead directly to the basic X) 105142  -153.00 32 s
+( architecture \037 the client\036server model.) 149352  -153.60 32 s
+52832.0 25739.0 m
+(The) 57220  0.00 -1 s
+( basic window system is implemented by the X ) 109354  -208.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(server) 116407  0.00 -1 s
+3 sf
+( program. An application pro\036) 149352  -207.75 32 s
+52832.0 28900.0 m
+(gram) 58630  0.00 -1 s
+( \(the ) 64201  -114.00 32 s
+5 sf
+(client) 70470  0.00 -1 s
+3 sf
+(\) sends window system ) 96978  -114.00 32 s
+5 sf
+(requests) 106384  0.00 -1 s
+3 sf
+( to) 109171  -114.00 32 s
+( the X server through a reliable two\036) 149352  -114.57 32 s
+52832.0 32060.0 m
+(way) 57533  0.00 -1 s
+( byte\036stream.) 72232  -33.00 32 s
+( ) 72904  -34.00 32 s
+52832.0 38337.0 m
+(In) 55182  0.00 -1 s
+( general, the server and the) 86361  155.00 32 s
+( client can be executing on separate host computers, in) 149352  154.44 32 s
+52832.0 41498.0 m
+(which) 59728  0.00 -1 s
+( case the byte\036stream is implemented via some network protocol \(TCP, DEC\036) 149352  196.36 32 s
+52832.0 44930.0 m
+(net) 56280  0.00 -1 s
+/symbb10 9 declareFont
+9 sf
+(\324) 58791  0.00 -1 s
+3 sf
+(,) 59497  0.00 -1 s
+( Chaosnet, and so forth\). The X server, which is connected to several client pro\036) 149352  -24.86 32 s
+52832.0 48091.0 m
+(grams) 59728  0.00 -1 s
+( running concurrently, executes client requests in round\036robin fashion. The server) 149352  -237.90 32 s
+52832.0 51252.0 m
+(is) 54714  0.00 -1 s
+( responsible for drawing client graphics on the display screen and for making sure that) 149352  -203.86 32 s
+52832.0 54412.0 m
+(graphics) 62392  0.00 -1 s
+( output to a window stays inside its) 101933  -29.00 32 s
+( boundary.) 113973  -30.00 32 s
+52832.0 60689.0 m
+(The) 57220  0.00 -1 s
+( other primary job of the X server is to channel input from the) 123967  -237.00 32 s
+( keyboard, pointer, and) 149352  -237.67 32 s
+52832.0 63850.0 m
+(other) 58630  0.00 -1 s
+( input devices back to the appropriate client programs. Input arrives at the) 142344  34.00 32 s
+( client) 149352  33.00 32 s
+52832.0 67011.0 m
+(asynchronously) 70545  0.00 -1 s
+( in the form of input ) 93334  -120.83 32 s
+5 sf
+(events) 100386  0.00 -1 s
+3 sf
+( representing up/down transitions of keys or) 149352  -120.50 32 s
+52832.0 70172.0 m
+(pointer) 60825  0.00 -1 s
+( buttons, changes in the pointer position, and so on. In some cases, a request gen\036) 149352  -206.73 32 s
+52832.0 73333.0 m
+(erates) 59412  0.00 -1 s
+( a return value \(or ) 79248  -217.00 32 s
+5 sf
+(reply) 85047  0.00 -1 s
+3 sf
+(\) from the server, which is another kind of client input.) 144790  -217.00 32 s
+( Re\036) 149352  -218.00 32 s
+52832.0 76494.0 m
+(plies) 58162  0.00 -1 s
+( and input events are received via the same byte\036stream connecting the client with) 149352  -92.77 32 s
+52832.0 79654.0 m
+(the) 56280  0.00 -1 s
+( server.) 64550  -35.00 32 s
+52832.0 86586.0 m
+0.0 0.0 m
+newpath
+149013 85027 av
+52967 85029 as
+[] 0 setdash
+dp
+149352.0 86586.0 m
+20320.0 89408.0 m
+38111.0 h
+2 sf
+(Windows) 49401  0.00 -1 s
+52832.0 h
+(1.2.1) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(The) 65060  0.00 -1 s
+( X Window System supports one or more screens containing overlapping) 149352  168.40 32 s
+52832.0 92569.0 m
+(windows) 63021  0.00 -1 s
+( and subwindows. A ) 86352  -105.00 32 s
+5 sf
+(screen) 93718  0.00 -1 s
+3 sf
+( is a) 98055  -105.00 32 s
+( physical monitor and hardware, which can be) 149352  -105.57 32 s
+52832.0 95730.0 m
+(either) 59256  0.00 -1 s
+( color or black and white. There can be multiple screens per display workstation. A) 149352  -270.79 32 s
+52832.0 98891.0 m
+(single) 59573  0.00 -1 s
+( server can provide display services for any number of screens. A set of screens for) 149352  -262.87 32 s
+52832.0 102052.0 m
+(a) 54085  0.00 -1 s
+( single user with) 72571  -30.00 32 s
+( one keyboard and one mouse is called a ) 118616  -30.56 32 s
+5 sf
+(display) 126768  0.00 -1 s
+3 sf
+(.) 127474  0.00 -1 s
+52832.0 108328.0 m
+(All) 56437  0.00 -1 s
+( windows in an X server are arranged in a strict hierarchy. At the top of the hierarchy) 149352  -185.71 32 s
+52832.0 111489.0 m
+(are) 56277  0.00 -1 s
+( the ) 61423  143.00 32 s
+5 sf
+(root windows) 76855  143.00 32 s
+3 sf
+(, which cover each of the display screens. Each root window) 146622  143.00 32 s
+( is) 149352  142.00 32 s
+52832.0 114650.0 m
+(either) 59256  0.00 -1 s
+( partially or completely covered by child windows. All windows, except for root) 149352  -54.83 32 s
+52832.0 117811.0 m
+(windows,) 63727  0.00 -1 s
+( have parents. Any window can in turn have its own children. In this way, an) 149352  -70.53 32 s
+52832.0 120972.0 m
+(application) 65371  0.00 -1 s
+( program can create a window tree of arbitrary depth) 124527  -35.00 32 s
+( on each screen.) 142443  -35.67 32 s
+52832.0 127248.0 m
+(A) 54869  0.00 -1 s
+( child window can be larger than its parent. That is, part or all of the child window can) 149352  -176.00 32 s
+52832.0 130409.0 m
+(extend) 60355  0.00 -1 s
+( beyond the boundaries of the parent. However, all output to a window is clipped) 149352  -170.57 32 s
+52832.0 133570.0 m
+(by) 55654  0.00 -1 s
+( the boundaries of its parent window. If several children of a window have overlap\036) 149352  -29.86 32 s
+52832.0 136731.0 m
+(ping) 57849  0.00 -1 s
+( locations, one of the children is considered to be on top of/or raised over the others,) 149352  -217.88 32 s
+52832.0 139892.0 m
+5 sf
+(obscuring) 64120  0.00 -1 s
+3 sf
+( them. Window output to areas that are covered by other windows is sup\036) 149352  202.00 32 s
+52832.0 143053.0 m
+(pressed.) 62001  0.00 -1 s
+( ) 62676  -31.00 32 s
+52832.0 149329.0 m
+(A) 54869  0.00 -1 s
+( window has a border that is zero or more pixels in width and can be any pattern \(pix\036) 149352  -123.67 32 s
+52832.0 152490.0 m
+(map\)) 58630  0.00 -1 s
+( or solid color. A window usually has a background pattern that is drawn by the X) 149352  -115.00 32 s
+52832.0 155651.0 m
+(server.) 60431  0.00 -1 s
+( Each window has its own coordinate system.) 111280  -81.00 32 s
+( Child windows obscure their par\036) 149352  -81.60 32 s
+52832.0 158812.0 m
+(ents) 57378  0.00 -1 s
+( unless) 65169  30.00 32 s
+( the child windows have no background. Graphics operations in the parent) 149352  29.45 32 s
+52832.0 161973.0 m
+(window) 61923  0.00 -1 s
+( are usually clipped by the children.) 102052  -38.83 32 s
+52832.0 168250.0 m
+(X) 54869  0.00 -1 s
+( also provides objects called ) 86742  -130.60 32 s
+5 sf
+(pixmaps) 96147  0.00 -1 s
+3 sf
+( for off\036screen storage of graphics. Single\036plane) 149352  -130.50 32 s
+52832.0 171410.0 m
+(pixmaps) 62395  0.00 -1 s
+( \(that is, of depth 1\) are sometimes referred to as ) 118340  42.00 32 s
+5 sf
+(bitmaps) 127276  0.00 -1 s
+3 sf
+(. Both pixmaps and) 149352  42.00 32 s
+52832.0 174571.0 m
+(windows) 63021  0.00 -1 s
+( can be used interchangeably in most graphics functions. Pixmaps are also) 143745  -271.00 32 s
+( used) 149352  -272.00 32 s
+52832.0 177732.0 m
+(in) 55027  0.00 -1 s
+( various graphics operations) 87268  167.00 32 s
+( to define patterns, or ) 112865  166.40 32 s
+5 sf
+(tiles) 117568  0.00 -1 s
+3 sf
+(. Windows and pixmaps to\036) 149352  166.50 32 s
+52832.0 180893.0 m
+(gether) 59883  0.00 -1 s
+( are referred to as) 79516  -27.00 32 s
+( ) 80194  -28.00 32 s
+5 sf
+(drawables) 91953  0.00 -1 s
+3 sf
+(.) 92659  0.00 -1 s
+52832.0 187825.0 m
+0.0 0.0 m
+newpath
+149013 186266 av
+52967 186268 as
+[] 0 setdash
+dp
+149352.0 187825.0 m
+20320.0 190647.0 m
+33822.0 h
+2 sf
+(Input) 40566  0.00 -1 s
+( Events) 49378  -46.00 32 s
+52832.0 h
+(1.2.2) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(The) 65060  0.00 -1 s
+( X input mechanism is conceptually simple yet quite powerful. Most events) 149352  -89.55 32 s
+52832.0 193808.0 m
+(are) 56277  0.00 -1 s
+( attached to a particular window \(that is, contain an identifier for the window receiv\036) 149352  -163.79 32 s
+52832.0 196969.0 m
+(ing) 56438  0.00 -1 s
+( the event\). A client program can receive multiple window input streams, all multi\036) 149352  -56.85 32 s
+52832.0 200129.0 m
+(plexed) 60355  0.00 -1 s
+( over the single byte\036stream connection to the server.) 119865  -35.63 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 3
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+145252.0 208619.0 m
+(1\0363) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+52832.0 22578.0 m
+(Clients) 60828  0.00 -1 s
+( can tailor their input by expressing interest in only certain event types. The) 149352  250.23 32 s
+52832.0 25739.0 m
+(server) 59725  0.00 -1 s
+( uses special event types to send important messages to the client. For) 138390  -9.00 32 s
+( example,) 149352  -10.00 32 s
+52832.0 28900.0 m
+(the) 56280  0.00 -1 s
+( client can elect) 73269  -214.00 32 s
+( to receive an ) 88240  -214.50 32 s
+2 sf
+(:enter\036notify) 103438  0.00 -1 s
+3 sf
+( event when the pointer cursor moves into) 149352  -214.57 32 s
+52832.0 32060.0 m
+(a) 54085  0.00 -1 s
+( certain window. Another vital message from the server is an ) 120792  -247.91 32 s
+2 sf
+(:exposure) 132548  0.00 -1 s
+3 sf
+( event. This is a) 149352  -247.50 32 s
+52832.0 35221.0 m
+(signal) 59573  0.00 -1 s
+( to the) 66362  -133.00 32 s
+( client indicating that at least some portion of the window has suddenly be\036) 149352  -133.54 32 s
+52832.0 38382.0 m
+(come) 58944  0.00 -1 s
+( visible \(perhaps the user moved another window which had been overlapping it\).) 149352  -139.83 32 s
+52832.0 41543.0 m
+(The) 57220  0.00 -1 s
+( client is then responsible for doing what is necessary to redisplay the window's im\036) 149352  -192.93 32 s
+52832.0 44704.0 m
+(age.) 57455  0.00 -1 s
+( Client programs must be prepared to regenerate the contents of windows in this way) 149352  -276.64 32 s
+52832.0 47865.0 m
+(on) 55654  0.00 -1 s
+( demand.) 65905  -95.00 32 s
+52832.0 54142.0 m
+(Input) 58788  0.00 -1 s
+( is also subject to policy) 85844  -29.00 32 s
+( decisions about which client window receives keyboard) 149352  -29.57 32 s
+52832.0 57302.0 m
+(and) 56907  0.00 -1 s
+( pointer events. Since the pointer is free to roam between windows, just clicking on a) 149352  -237.60 32 s
+52832.0 60463.0 m
+(window) 61923  0.00 -1 s
+( is) 64352  -159.00 32 s
+( often enough to send a pointer event to that window. Keyboard events, how\036) 149352  -159.54 32 s
+52832.0 63624.0 m
+(ever,) 58394  0.00 -1 s
+( must go to a keyboard) 82702  -296.00 32 s
+( focus window which has to be designated in some other way.) 149352  -296.55 32 s
+52832.0 66785.0 m
+(Usually,) 62316  0.00 -1 s
+( the arbiter of such input management policy is a program called the ) 140571  45.31 32 s
+/timsps10i 5 declareFont
+5 sf
+(window) 149352  0.00 -1 s
+52832.0 69946.0 m
+(manager) 62864  0.00 -1 s
+3 sf
+(.) 63570  0.00 -1 s
+( The window manager gives) 94785  -190.00 32 s
+( the human user a way to make a window the key\036) 149352  -190.55 32 s
+52832.0 73107.0 m
+(board) 59257  0.00 -1 s
+( focus, to manage the layout of windows on the screen, to represent windows with) 149352  -181.64 32 s
+52832.0 76268.0 m
+(icons,) 59495  0.00 -1 s
+( and so forth. In fact, the window manager client determines most of the so\036called) 149352  -175.86 32 s
+52832.0 79429.0 m
+(look) 57849  0.00 -1 s
+( and feel of the X Window System.) 97468  -28.00 32 s
+20320.0 86428.0 m
+270.0 sw
+/drawmode PL_CLEAR def
+0.0 0.0 m
+newpath
+24384 84803 av
+149013 84803 as
+[] 0 setdash
+dp
+541.0 sw
+/drawmode PL_SET def
+newpath
+148878 84803 av
+20455 84803 as
+[] 0 setdash
+dp
+149352.0 86428.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 89814.0 m
+(A) 22765  0.00 -1 s
+( Quick Tour) 40663  11.00 32 s
+52832.0 h
+2 sf
+(1.3) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( X Window) 78354  1122.00 32 s
+( System is defined by the X Window System Protocol) 149352  1121.44 32 s
+7 sf
+20320.0 93201.0 m
+(of) 23140  0.00 -1 s
+( CLX) 31135  -1.00 32 s
+52832.0 h
+3 sf
+(Specification,) 68427  0.00 -1 s
+( a detailed description of the encoding and the meaning of requests and) 149352  56.00 32 s
+52832.0 96362.0 m
+(events) 60042  0.00 -1 s
+( sent between a client and a server. This) 103248  -232.00 32 s
+( standard protocol does not depend on any) 149352  -232.57 32 s
+52832.0 99523.0 m
+(particular) 63643  0.00 -1 s
+( programming language. As a result,) 103679  -222.00 32 s
+( each programming language must define) 149352  -222.60 32 s
+52832.0 102684.0 m
+(its) 55498  0.00 -1 s
+( own functional interface for using the X protocol. The standard X interface used by) 149352  -74.79 32 s
+52832.0 105845.0 m
+(Common) 63337  0.00 -1 s
+( Lisp programmers is called CLX.) 101967  14.00 32 s
+( CLX is a set of data types, functions, and) 149352  13.44 32 s
+52832.0 109006.0 m
+(macros) 60981  0.00 -1 s
+( which allow a Common Lisp client program to interact with an X server to send) 149352  -174.73 32 s
+52832.0 112166.0 m
+(requests) 62079  0.00 -1 s
+( and to receive input events and replies.) 106520  -33.00 32 s
+2 sf
+() 106520  0.00 -1 s
+108870.0 h
+() 108870  0.00 -1 s
+3 sf
+52832.0 118443.0 m
+(For) 56751  0.00 -1 s
+( the most part, CLX functions are closely tied to) 108877  -252.00 32 s
+( the underlying requests in the X pro\036) 149352  -252.57 32 s
+52832.0 121604.0 m
+(tocol.) 59181  0.00 -1 s
+( Many CLX functions simply add requests to an) 111326  -262.00 32 s
+( output buffer. These requests later) 149352  -262.60 32 s
+52832.0 124765.0 m
+(execute) 61450  0.00 -1 s
+( asynchronously on the X display server. However, some functions of CLX) 145881  -55.00 32 s
+( lie) 149352  -56.00 32 s
+52832.0 127926.0 m
+(outside) 60984  0.00 -1 s
+( the) 65064  -74.00 32 s
+( scope of the protocol\037for example, reading events and managing a client\036) 149352  -74.55 32 s
+52832.0 131087.0 m
+(side) 57378  0.00 -1 s
+( event queue. CLX is also responsible for important batching and caching tasks that) 149352  -183.92 32 s
+52832.0 134247.0 m
+(minimize) 63491  0.00 -1 s
+( network communication.) 92253  -79.00 32 s
+52832.0 140524.0 m
+(The) 57220  0.00 -1 s
+( following paragraphs show an example of a CLX client program. All CLX) 142660  34.00 32 s
+( func\036) 149352  33.00 32 s
+52832.0 143685.0 m
+(tions) 58320  0.00 -1 s
+( and macros are shown in upper case. Note) 104593  -260.00 32 s
+( that some of the terms used are unique to) 149352  -260.56 32 s
+52832.0 146846.0 m
+(X,) 55575  0.00 -1 s
+( while other terms that are common to other window systems have different meanings) 149352  -243.69 32 s
+52832.0 150007.0 m
+(in) 55027  0.00 -1 s
+( X. It may be helpful to refer to the glossary when) 109572  -171.00 32 s
+( you are uncertain of a term's mean\036) 149352  -171.57 32 s
+52832.0 153168.0 m
+(ing) 56438  0.00 -1 s
+( in the context of the X Window System.) 102390  -26.88 32 s
+52832.0 160099.0 m
+0.0 0.0 m
+newpath
+149013 158540 av
+52967 158542 as
+[] 0 setdash
+dp
+149352.0 160099.0 m
+20320.0 162921.0 m
+30638.0 h
+2 sf
+(A) 32675  0.00 -1 s
+( Simple) 41654  -36.00 32 s
+( Menu) 49378  -37.00 32 s
+52832.0 h
+(1.3.1) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(The) 65060  0.00 -1 s
+( example client program creates and displays) 114840  -167.00 32 s
+( a simple pop\036up menu consist\036) 149352  -167.60 32 s
+52832.0 166082.0 m
+(ing) 56438  0.00 -1 s
+( of) 59374  -120.00 32 s
+( a column of strings\037a title string followed by selectable menu item strings. The) 149352  -120.54 32 s
+52832.0 169243.0 m
+(implementation) 70545  0.00 -1 s
+( uses one window to represent the) 109571  130.00 32 s
+( entire menu, plus a set of subwin\036) 149352  129.43 32 s
+52832.0 172404.0 m
+(dows,) 59495  0.00 -1 s
+( one for each menu) 80051  -268.00 32 s
+( item. Here is the definition of a structure which represents such) 149352  -268.55 32 s
+52832.0 175565.0 m
+(a) 54085  0.00 -1 s
+( menu.) 61705  -62.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 4
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\0364) 24081  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 4 declareFont
+4 sf
+52832.0 22284.0 m
+(\(defstruct) 66402  0.00 -1 s
+( \(menu\)) 75861  -40.00 32 s
+52832.0 24858.0 m
+55880.0 h
+(\177A) 58594  0.00 -1 s
+( simple menu of text strings.") 99229  -15.00 32 s
+52832.0 27432.0 m
+55880.0 h
+(\(title) 64022  0.00 -1 s
+( \177Choose an) 78911  -19.00 32 s
+( item:"\)) 89747  -20.00 32 s
+52832.0 30006.0 m
+55880.0 h
+(item-alist) 69450  0.00 -1 s
+(              ;\(\(item-window) 107334  -8.00 32 s
+( item-string\)\)) 126323  -9.00 32 s
+52832.0 32580.0 m
+55880.0 h
+(window) 64022  0.00 -1 s
+52832.0 35154.0 m
+55880.0 h
+(gcontext) 66736  0.00 -1 s
+52832.0 37727.0 m
+55880.0 h
+(width) 62665  0.00 -1 s
+52832.0 40301.0 m
+55880.0 h
+(title-width) 70807  0.00 -1 s
+52832.0 42875.0 m
+55880.0 h
+(item-width) 69450  0.00 -1 s
+52832.0 45449.0 m
+55880.0 h
+(item-height) 70807  0.00 -1 s
+52832.0 48023.0 m
+55880.0 h
+(\(geometry-changed-p) 81663  0.00 -1 s
+( t\)\) ;nil if unchanged) 111441  -19.00 32 s
+( since displayed ) 134451  -19.67 32 s
+/timsps10 3 declareFont
+3 sf
+52832.0 54006.0 m
+(The) 57220  0.00 -1 s
+( ) 58004  78.00 32 s
+4 sf
+(window) 66146  0.00 -1 s
+3 sf
+( slot will contain the ) 90290  78.60 32 s
+2 sf
+(window) 99697  0.00 -1 s
+3 sf
+( object that represents the menu. The ) 142567  78.43 32 s
+4 sf
+(item\036) 149352  0.00 -1 s
+52832.0 57167.0 m
+(alist) 59617  0.00 -1 s
+3 sf
+( represents the relationship between the menu items and) 121760  -128.00 32 s
+( their associated subwin\036) 149352  -128.67 32 s
+52832.0 60328.0 m
+(dows.) 59495  0.00 -1 s
+( Each entry in ) 74833  -280.00 32 s
+4 sf
+(item\036alist) 88403  0.00 -1 s
+3 sf
+( is a list whose) 103902  -280.00 32 s
+( first element is a \(sub\)window object and) 149352  -280.57 32 s
+52832.0 63489.0 m
+(whose) 60042  0.00 -1 s
+( second element is the corresponding item string. A ) 117169  -184.00 32 s
+2 sf
+(window) 126576  0.00 -1 s
+3 sf
+( object is an) 139584  -184.00 32 s
+( instance) 149352  -185.00 32 s
+52832.0 66650.0 m
+(of) 55182  0.00 -1 s
+( a CLX\036defined) 72309  -291.00 32 s
+( data type which represents X windows. A ) 118489  -291.50 32 s
+2 sf
+(window) 127896  0.00 -1 s
+3 sf
+( object actually car\036) 149352  -291.67 32 s
+52832.0 69810.0 m
+(ries) 56906  0.00 -1 s
+( two pieces of information:) 86750  -180.00 32 s
+( an X window ID integer and a ) 120885  -180.50 32 s
+2 sf
+(display) 129511  0.00 -1 s
+3 sf
+( object. A ) 140726  -180.67 32 s
+2 sf
+(display) 149352  0.00 -1 s
+3 sf
+52832.0 72971.0 m
+(is) 54714  0.00 -1 s
+( another CLX\036defined data type that represents a connection to a specific X display) 149352  52.00 32 s
+52832.0 76132.0 m
+(server.) 60431  0.00 -1 s
+( The ) 65927  -152.00 32 s
+4 sf
+(gcontext) 76783  0.00 -1 s
+3 sf
+( slot contains an instance of a CLX data type known as a ) 139475  -151.54 32 s
+/timsps10i 5 declareFont
+5 sf
+(graphics) 149352  0.00 -1 s
+52832.0 79293.0 m
+(context) 60981  0.00 -1 s
+3 sf
+(.) 61687  0.00 -1 s
+( A graphics context) 83115  -198.00 32 s
+( is a set of display attribute values, such as foreground color,) 149352  -198.55 32 s
+52832.0 82454.0 m
+(fill) 56123  0.00 -1 s
+( style, line style,) 73717  -276.00 32 s
+( text font, and so forth. Each X graphics request \(and hence each CLX) 149352  -276.54 32 s
+52832.0 85615.0 m
+(graphics) 62392  0.00 -1 s
+( function call\) must supply a graphics context to use in displaying the request.) 149352  -75.54 32 s
+52832.0 88776.0 m
+(The) 57220  0.00 -1 s
+( menu's ) 66379  -280.00 32 s
+4 sf
+(gcontext) 77235  0.00 -1 s
+3 sf
+( will thus hold) 92623  -280.00 32 s
+( all of the attribute values used during menu display.) 149352  -280.56 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 5
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+145252.0 208619.0 m
+(1\0365) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+52832.0 22578.0 m
+(The) 57220  0.00 -1 s
+( first thing to do is make an) 88042  -20.00 32 s
+( instance of a ) 103634  -20.50 32 s
+/courps8 4 declareFont
+4 sf
+(menu) 109062  0.00 -1 s
+3 sf
+( object:) 117427  -21.00 32 s
+4 sf
+30480.0 28561.0 m
+(\(defun) 38622  0.00 -1 s
+( create-menu) 54871  -35.00 32 s
+( \(parent-window text-color background-color) 113115  -35.67 32 s
+30480.0 31135.0 m
+() 30480  0.00 -1 s
+31837.0 h
+(text-font\)) 45407  0.00 -1 s
+30480.0 33709.0 m
+33528.0 h
+(\(make-menu) 47098  0.00 -1 s
+30480.0 36282.0 m
+33528.0 h
+36170.0 h
+(;;) 38884  0.00 -1 s
+( Create menu graphics) 67327  -18.00 32 s
+( context) 78164  -19.00 32 s
+30480.0 38856.0 m
+33528.0 h
+36170.0 h
+(:gcontext) 48383  0.00 -1 s
+( \(CREATE-GCONTEXT :drawable) 84974  -24.00 32 s
+(   parent-window) 106612  -24.67 32 s
+30480.0 41430.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+54864.0 h
+58928.0 h
+62992.0 h
+67056.0 h
+72746.0 h
+(:foreground) 87673  0.00 -1 s
+( text-color) 102548  -52.00 32 s
+30480.0 44004.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+54864.0 h
+58928.0 h
+62992.0 h
+67056.0 h
+72746.0 h
+(:background) 87673  0.00 -1 s
+( background-color) 110676  -66.00 32 s
+30480.0 46578.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+54864.0 h
+58928.0 h
+62992.0 h
+67056.0 h
+72746.0 h
+(:font) 79531  0.00 -1 s
+(  ) 82231  -7.00 32 s
+(     text-font\)) 102548  -7.60 32 s
+30480.0 49152.0 m
+51726.0 v
+33528.0 h
+36170.0 h
+(;;) 38884  0.00 -1 s
+( Create menu) 55136  -16.00 32 s
+( window) 64618  -17.00 32 s
+30480.0 54300.0 m
+33528.0 h
+36170.0 h
+(:window) 45669  0.00 -1 s
+(   \(CREATE-WINDOW) 68682  -18.67 32 s
+30480.0 56873.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:parent) 60299  0.00 -1 s
+(       parent-window) 87376  -9.00 32 s
+30480.0 59447.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:class      ) 67036  -8.00 32 s
+( ) 68386  -7.00 32 s
+( :input-output) 87376  -8.00 32 s
+30480.0 62021.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:x) 53514  0.00 -1 s
+(            0                 ;temporary value) 115824  -3.73 32 s
+30480.0 64595.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:y            0                 ;temporary value) 115824  -3.73 32 s
+30480.0 67169.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:width  ) 61648  -4.00 32 s
+(      16                ;temporary value) 115824  -4.52 32 s
+30480.0 69743.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:height       16                ;temporary value  ) 118533  -4.50 32 s
+30480.0 72317.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:border-width) 68441  0.00 -1 s
+( 2) 71120  -35.00 32 s
+30480.0 74890.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:border) 60299  0.00 -1 s
+(       text-color) 83312  -8.00 32 s
+30480.0 77464.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:background) 65727  0.00 -1 s
+(  ) 68395  -23.00 32 s
+( background-color) 91440  -24.00 32 s
+30480.0 80038.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:save-under) 65727  0.00 -1 s
+(  ) 68415  -13.00 32 s
+( :on) 73829  -14.00 32 s
+30480.0 82612.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:override-redirect) 75226  0.00 -1 s
+( :on          ;override window mgr when positioning) 144272  -10.73 32 s
+30480.0 85186.0 m
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+(:event-mask) 65727  0.00 -1 s
+(   \(MAKE-EVENT-MASK :leave-window  ) 113115  -17.83 32 s
+30480.0 87760.0 m
+90334.0 v
+33528.0 h
+36170.0 h
+42672.0 h
+46736.0 h
+50800.0 h
+54864.0 h
+58928.0 h
+62992.0 h
+67056.0 h
+72746.0 h
+79248.0 h
+83312.0 h
+87376.0 h
+91440.0 h
+( :exposure\)\)\)\)) 110405  -33.00 32 s
+2 sf
+52832.0 96317.0 m
+(create\036window) 70540  0.00 -1 s
+3 sf
+( is one of the most important CLX functions, since it creates and returns) 149352  -195.54 32 s
+52832.0 99478.0 m
+(a) 54085  0.00 -1 s
+( ) 54564  -227.00 32 s
+2 sf
+(window) 63971  0.00 -1 s
+3 sf
+( object. Several of its options are shown here. The) 118435  -227.00 32 s
+( default window class is ) 145121  -227.60 32 s
+2 sf
+(:in\036) 149352  0.00 -1 s
+52832.0 102639.0 m
+(put\036output) 65844  0.00 -1 s
+3 sf
+(,) 66550  0.00 -1 s
+( but X provides for ) 88351  -75.80 32 s
+2 sf
+(:input\036only) 101834  0.00 -1 s
+3 sf
+( windows, too. Every window must have a) 149352  -75.57 32 s
+52832.0 105799.0 m
+(parent) 59883  0.00 -1 s
+( window, except for a system\036defined ) 103687  104.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(root window) 117982  104.00 32 s
+3 sf
+(, which represents an entire) 149352  104.25 32 s
+52832.0 108960.0 m
+(display) 60984  0.00 -1 s
+( screen. The ) 75694  97.00 32 s
+2 sf
+(:event\036mask) 90425  0.00 -1 s
+3 sf
+( keyword value, a CLX ) 118027  97.00 32 s
+2 sf
+(event\036mask) 131819  0.00 -1 s
+3 sf
+( data type, says) 149352  96.33 32 s
+52832.0 112121.0 m
+(that) 57064  0.00 -1 s
+( an input event will be received for the menu window) 116499  -91.00 32 s
+( when the window is exposed) 149352  -91.60 32 s
+52832.0 115282.0 m
+(and) 56907  0.00 -1 s
+( also when the pointer cursor leaves the window. The window border) 135249  26.00 32 s
+( is a pattern\036) 149352  25.33 32 s
+52832.0 118443.0 m
+(filled) 58787  0.00 -1 s
+( or \(as in this case\) a solid\036colored boundary which is maintained automatically by) 149352  -201.54 32 s
+52832.0 121604.0 m
+(the) 56280  0.00 -1 s
+( X server; a client cannot draw in a window's border, since all graphics requests are) 149352  -95.67 32 s
+52832.0 124765.0 m
+(relative) 61293  0.00 -1 s
+( to the origin \(upper\036left corner\) of the window's interior and are clipped by the) 149352  -124.57 32 s
+52832.0 127926.0 m
+(server) 59725  0.00 -1 s
+( to this inside region. Turning on the ) 100894  -96.00 32 s
+2 sf
+(:save\036under) 115158  0.00 -1 s
+3 sf
+( option is a hint to the X server) 149352  -95.50 32 s
+52832.0 131087.0 m
+(that,) 57770  0.00 -1 s
+( when this window is made visible, it may be more efficient to save the pixels it) 145059  -173.00 32 s
+( ob\036) 149352  -174.00 32 s
+52832.0 134247.0 m
+(scures,) 60590  0.00 -1 s
+( rather than require several client programs to refresh their windows when the) 149352  83.17 32 s
+52832.0 137408.0 m
+(pop\036up) 60826  0.00 -1 s
+( menu disappears. This is a way to work around X's client\036managed refresh pol\036) 149352  -159.00 32 s
+52832.0 140569.0 m
+(icy) 56280  0.00 -1 s
+( when only a) 70693  -29.00 32 s
+( small amount of screen space is needed temporarily. ) 130929  -29.56 32 s
+52832.0 146846.0 m
+(Why) 58318  0.00 -1 s
+( is ) 61362  -125.00 32 s
+2 sf
+(:override\036redirect) 82984  0.00 -1 s
+3 sf
+( turned on for) 98047  -125.00 32 s
+( the menu window? This is actually a little un\036) 149352  -125.56 32 s
+52832.0 150007.0 m
+(usual,) 59495  0.00 -1 s
+( because it prevents any window manager client from ) 119987  -61.78 32 s
+5 sf
+(redirecting) 132527  0.00 -1 s
+3 sf
+( the position of) 149352  -61.67 32 s
+52832.0 153168.0 m
+(the) 56280  0.00 -1 s
+( menu when it is popped up. Remember that the window manager) 129261  -120.00 32 s
+( represents the us\036) 149352  -120.67 32 s
+52832.0 156329.0 m
+(er's) 57061  0.00 -1 s
+( policy for controlling the positions of his windows, so this kind of redirection is or\036) 149352  -169.93 32 s
+52832.0 159489.0 m
+(dinarily) 61609  0.00 -1 s
+( correct. However, in this case, as a favor to the user, the menu avoids redirection) 149352  -278.80 32 s
+52832.0 162650.0 m
+(in) 55027  0.00 -1 s
+( order to pop up the menu) 83482  -117.00 32 s
+( at a very specific location; that is, under the pointer cursor.) 149352  -117.55 32 s
+52832.0 168927.0 m
+(What) 58944  0.00 -1 s
+( about the item subwindows? The ) 96716  -158.00 32 s
+4 sf
+(menu\036set\036item\036list) 121142  0.00 -1 s
+3 sf
+( function in the) 137833  -158.00 32 s
+( following) 149352  -159.00 32 s
+52832.0 172088.0 m
+(example) 62392  0.00 -1 s
+( creates them whenever the menu's item list is changed. The upper\036left x and) 147378  -142.00 32 s
+( y) 149352  -143.00 32 s
+52832.0 175249.0 m
+(coordinates) 65840  0.00 -1 s
+( and the width and height are not important yet, because they are computed) 149352  -99.00 32 s
+52832.0 178410.0 m
+(just) 56909  0.00 -1 s
+( before the menu is displayed. This function also calls ) 116907  -152.90 32 s
+2 sf
+(create\036window) 134615  0.00 -1 s
+3 sf
+(, demonstrat\036) 149352  -153.00 32 s
+52832.0 181570.0 m
+(ing) 56438  0.00 -1 s
+( the equal treatment of parent and children windows in the X window hierarchy.) 146462  -31.69 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 6
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\0366) 24081  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 4 declareFont
+4 sf
+40640.0 22284.0 m
+(\(defun) 48782  0.00 -1 s
+( menu-set-item-list \(menu &rest item-strings\)) 109728  -29.75 32 s
+40640.0 24858.0 m
+43688.0 h
+(;;) 46402  0.00 -1 s
+( Assume the new items) 74847  -13.00 32 s
+( will change the menu's width and height) 129032  -13.57 32 s
+40640.0 27432.0 m
+43688.0 h
+(\(setf) 50473  0.00 -1 s
+( \(menu-geometry-changed-p menu\)) 92480  -30.00 32 s
+( t\)) 96520  -31.00 32 s
+40640.0 30006.0 m
+32580.0 v
+43688.0 h
+(;;) 46402  0.00 -1 s
+( Destroy any existing item windows) 92456  -16.80 32 s
+40640.0 35154.0 m
+43688.0 h
+(\(dolist) 53187  0.00 -1 s
+( \(item \(menu-item-alist menu\)\)) 93811  -28.67 32 s
+40640.0 37727.0 m
+43688.0 h
+(  \(DESTROY-WINDOW \(first item\)\)\)) 87037  -18.75 32 s
+40640.0 40301.0 m
+42875.0 v
+43688.0 h
+(;;) 46402  0.00 -1 s
+( Add \(item-window item-string\)) 87049  -21.00 32 s
+( elements to item-alist) 118195  -21.67 32 s
+40640.0 45449.0 m
+43688.0 h
+(\(setf) 50473  0.00 -1 s
+( \(menu-item-alist) 73510  -32.00 32 s
+( menu\)) 81619  -33.00 32 s
+40640.0 48023.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+(\(let) 56838  0.00 -1 s
+( \(alist\)) 67666  -28.00 32 s
+40640.0 50597.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+(  \(dolist \(item item-strings \(nreverse alist\)\)) 113724  -18.00 32 s
+40640.0 53171.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+(    \(push \(list \(CREATE-WINDOW) 92050  -11.67 32 s
+40640.0 55745.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :parent ) 86695  -9.00 32 s
+(    \(menu-window menu\)) 116501  -9.60 32 s
+40640.0 58318.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :x          0 ) 94812  -4.00 32 s
+(        ;temporary value) 127339  -4.56 32 s
+40640.0 60892.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :y          0         ;temporary value) 127339  -4.23 32 s
+40640.0 63466.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :width) 83998  -5.00 32 s
+(      16        ;temporary value) 127339  -5.53 32 s
+40640.0 66040.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :height     16        ;temporary value) 127339  -5.81 32 s
+40640.0 68614.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :background \(GCONTEXT-BACKGROUND \(menu-gcontext) 139541  -26.00 32 s
+( menu\)\)) 149013  -27.00 32 s
+40640.0 71188.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(  :event-mask) 90741  -26.00 32 s
+( \(MAKE-EVENT-MASK) 113785  -25.00 32 s
+( :enter-window) 132757  -26.00 32 s
+40640.0 73762.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+77216.0 h
+81280.0 h
+85344.0 h
+89408.0 h
+93472.0 h
+97536.0 h
+101600.0 h
+105664.0 h
+109728.0 h
+(    :leave-window) 132757  -10.00 32 s
+40640.0 76335.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+77216.0 h
+81280.0 h
+85344.0 h
+89408.0 h
+93472.0 h
+97536.0 h
+101600.0 h
+105664.0 h
+109728.0 h
+(    :button-press) 132757  -10.00 32 s
+40640.0 78909.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+77216.0 h
+81280.0 h
+85344.0 h
+89408.0 h
+93472.0 h
+97536.0 h
+101600.0 h
+105664.0 h
+109728.0 h
+(   ) 113763  -12.00 32 s
+( :button-release\)\)) 138176  -13.00 32 s
+40640.0 81483.0 m
+43688.0 h
+48768.0 h
+51410.0 h
+60960.0 h
+65024.0 h
+69088.0 h
+73152.0 h
+(item\)) 79937  0.00 -1 s
+40640.0 84057.0 m
+43688.0 h
+48768.0 h
+( ) 50123  -2.00 32 s
+51410.0 h
+60960.0 h
+65024.0 h
+(alist\)\)\)\)\)) 78594  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+52832.0 90695.0 m
+0.0 0.0 m
+newpath
+149013 89136 av
+52967 89138 as
+[] 0 setdash
+dp
+149352.0 90695.0 m
+20320.0 93517.0 m
+36553.0 h
+2 sf
+(Displaying) 49411  0.00 -1 s
+52832.0 h
+(1.3.2) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(The) 65060  0.00 -1 s
+( ) 68186  2420.00 32 s
+4 sf
+(menu\036recompute\036geometry) 99397  0.00 -1 s
+3 sf
+( function \(shown in the) 135255  2420.00 32 s
+( following) 149352  2419.00 32 s
+2 sf
+3 sf
+20320.0 96678.0 m
+37908.0 h
+2 sf
+(the) 41669  0.00 -1 s
+( Menu) 49378  -52.00 32 s
+52832.0 h
+3 sf
+(example\)) 63331  0.00 -1 s
+( handles the job of calculating the size) 104478  -291.00 32 s
+( of the menu, based on its current item list) 149352  -291.56 32 s
+52832.0 99839.0 m
+(and) 56907  0.00 -1 s
+( its current text font. CLX provides a way to inquire the geometrical properties of) 147490  -96.00 32 s
+( a) 149352  -97.00 32 s
+52832.0 103000.0 m
+(font) 57377  0.00 -1 s
+( object \(for example, its ascent and descent from the baseline\) and also a ) 140268  26.36 32 s
+2 sf
+(text\036ex\036) 149352  0.00 -1 s
+52832.0 106161.0 m
+(tents) 58630  0.00 -1 s
+3 sf
+( function. ) 70558  203.00 32 s
+2 sf
+(text\036extents) 84501  0.00 -1 s
+3 sf
+( returns the geometry of a given) 121768  203.00 32 s
+( string as displayed in a) 149352  202.40 32 s
+52832.0 109322.0 m
+(given) 59102  0.00 -1 s
+( font. Notice the use) 81805  -26.00 32 s
+( of the ) 89641  -26.67 32 s
+2 sf
+(with\036state) 101549  0.00 -1 s
+3 sf
+( macro when setting a window's geometry) 149352  -26.50 32 s
+52832.0 112482.0 m
+(attributes.) 64039  0.00 -1 s
+( CLX strives to preserve the familiar ) 106332  30.00 32 s
+2 sf
+(setf) 110561  0.00 -1 s
+3 sf
+( style of accessing individual win\036) 149352  30.40 32 s
+52832.0 115643.0 m
+(dow) 57691  0.00 -1 s
+( attributes, even though an attribute access) 104982  -99.00 32 s
+( actually involves sending a request to a) 149352  -99.57 32 s
+52832.0 118804.0 m
+(\(possibly) 63179  0.00 -1 s
+( remote\) server and/or waiting for a reply. ) 111775  70.25 32 s
+2 sf
+(with\036state) 123683  0.00 -1 s
+3 sf
+( tells CLX to batch to\036) 149352  70.40 32 s
+52832.0 121965.0 m
+(gether) 59883  0.00 -1 s
+( all read and write accesses to a given window, using a local cache to minimize the) 149352  -251.75 32 s
+52832.0 125126.0 m
+(number) 61452  0.00 -1 s
+( of server requests. This CLX feature can result in a dramatic improvement in) 149352  22.00 32 s
+52832.0 128287.0 m
+(client) 59101  0.00 -1 s
+( performance without burdening the programmer) 114116  -46.00 32 s
+( interface.) 125350  -47.00 32 s
+2 sf
+() 125350  0.00 -1 s
+127700.0 h
+() 127700  0.00 -1 s
+4 sf
+52832.0 134564.0 m
+(menu\036recompute\036geometry) 84043  0.00 -1 s
+3 sf
+( causes all the item subwindows to become ) 132953  -58.63 32 s
+/timsps10i 5 declareFont
+5 sf
+(mapped) 141887  0.00 -1 s
+3 sf
+(. Map\036) 149352  -59.00 32 s
+52832.0 137724.0 m
+(ping) 57849  0.00 -1 s
+( a window means attempting to make it visible on the screen. However, a subwin\036) 149352  -69.93 32 s
+52832.0 140885.0 m
+(dow) 57691  0.00 -1 s
+( will not actually be ) 80753  -12.00 32 s
+5 sf
+(visible) 88120  0.00 -1 s
+3 sf
+( until it) 96250  -12.00 32 s
+( and all of its ancestors are mapped. Even then,) 149352  -12.56 32 s
+52832.0 144046.0 m
+(another) 61294  0.00 -1 s
+( window might be covering up the subwindow.) 114131  -43.57 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 7
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+145252.0 208619.0 m
+(1\0367) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 4 declareFont
+4 sf
+30480.0 22284.0 m
+(\(defun) 38622  0.00 -1 s
+( menu-recompute-geometry \(menu\)) 80603  -43.00 32 s
+30480.0 24858.0 m
+(  \(when \(menu-geometry-changed-p) 73838  -22.00 32 s
+( menu\)) 81957  -23.00 32 s
+30480.0 27432.0 m
+(    \(let* \(\(menu-font  ) 61593  -14.00 32 s
+( \(GCONTEXT-FONT \(menu-gcontext menu\)\)\)) 113115  -14.67 32 s
+30480.0 30006.0 m
+(          \(title-width \(TEXT-EXTENTS menu-font \(menu-title menu\)\)\)) 119888  -11.00 32 s
+30480.0 32580.0 m
+(          \(item-height \(+ \(FONT-ASCENT menu-font\)) 96859  -8.77 32 s
+30480.0 35154.0 m
+(          ) 44010  -4.00 32 s
+(                \(FONT-DESCENT menu-font\)) 98213  -4.53 32 s
+30480.0 37727.0 m
+(                          *menu-item-margin*\)\)) 92795  -4.12 32 s
+30480.0 40301.0 m
+(          \(item-width  0\)) 64347  -4.83 32 s
+30480.0 42875.0 m
+(          \(items       \(menu-item-alist menu\)\)) 92795  -5.94 32 s
+30480.0 45449.0 m
+(        ) 41296  -5.00 32 s
+( ) 42649  -4.00 32 s
+( menu-width\)) 58928  -5.00 32 s
+30480.0 48023.0 m
+50597.0 v
+(     ;; Find max item string width) 76539  -7.90 32 s
+30480.0 53171.0 m
+(     \(setf) 44010  -8.00 32 s
+( item-width) 58928  -9.00 32 s
+30480.0 55745.0 m
+(       ) 39937  -6.00 32 s
+(    \(+ *menu-item-margin*) 73829  -6.60 32 s
+30480.0 58318.0 m
+(              \(dolist \(next-item items item-width\)) 98213  -6.88 32 s
+30480.0 60892.0 m
+(        ) 41288  -6.00 32 s
+( ) 42640  -5.00 32 s
+(       \(setf item-width \(max item-width ) 96859  -5.55 32 s
+30480.0 63466.0 m
+(                                 ) 75096  -5.00 32 s
+( ) 76449  -4.00 32 s
+(    \(TEXT-EXTENTS menu-font \(second next-item\)\)\)\)\)\)\)) 146981  -4.57 32 s
+30480.0 66040.0 m
+68614.0 v
+(     ;; Compute final menu width, taking margins into account) 113115  -10.92 32 s
+30480.0 71188.0 m
+(     \(setf menu-width \(max title-width \(+ item-width *menu-item-margin*\)\)\)) 130725  -15.73 32 s
+30480.0 73762.0 m
+(    ) 35868  -10.00 32 s
+( \(let \(\(window  \(menu-window menu\)\)\)) 84667  -10.60 32 s
+30480.0 76335.0 m
+( ) 31835  -2.00 32 s
+30480.0 78909.0 m
+33528.0 h
+(   ;; Update width and height of menu window ) 94488  -9.55 32 s
+30480.0 81483.0 m
+(     \(WITH-STATE \(window\)) 64347  -9.67 32 s
+30480.0 84057.0 m
+(       \(setf \(DRAWABLE-WIDTH) 68396  -10.00 32 s
+(  window\) menu-width) 95504  -10.67 32 s
+30480.0 86631.0 m
+(            ) 46656  -9.00 32 s
+( \(DRAWABLE-HEIGHT window\) \(* \(1+ \(length items\)\) item-height\)\)\)) 132080  -9.57 32 s
+30480.0 89205.0 m
+91779.0 v
+33528.0 h
+(   ;; Update width, height, position of item) 93128  -12.00 32 s
+( windows) 103971  -13.00 32 s
+30480.0 94353.0 m
+33528.0 h
+(   \(let \(\(item-left     \(round \(- menu-width item-width\) 2\)\)) 114808  -10.77 32 s
+30480.0 96926.0 m
+(           \(next-item-top \(- item-height \(round *menu-item-margin* 2\)\)\)\)) 128016  -10.50 32 s
+30480.0 99500.0 m
+(    ) 35876  -8.00 32 s
+(   \(dolist \(next-item items\)) 73829  -8.60 32 s
+30480.0 102074.0 m
+(         \(let \(\(window \(first next-item\)\)\)) 87376  -8.17 32 s
+30480.0 104648.0 m
+(           \(WITH-STATE \(window\)) 72475  -6.00 32 s
+30480.0 107222.0 m
+(             \(setf \(DRAWABLE-HEIGHT window\) item-height) 104987  -8.00 32 s
+30480.0 109796.0 m
+(                   \(DRAWABLE-WIDTH  window\) item-width) 103632  -5.73 32 s
+30480.0 112370.0 m
+(              ) 49408  -5.00 32 s
+( ) 50761  -4.00 32 s
+(    \(DRAWABLE-X      window\) item-left) 102277  -4.55 32 s
+30480.0 114943.0 m
+(       ) 39944  -5.00 32 s
+(            \(DRAWABLE-Y      window\) next-item-top\)\)\)) 111760  -5.53 32 s
+30480.0 117517.0 m
+(    ) 35872  -9.00 32 s
+(     \(incf next-item-top item-height\)\)\)\)) 90085  -9.57 32 s
+30480.0 120091.0 m
+122665.0 v
+(     ;; Map) 45365  -7.00 32 s
+( all item windows) 68411  -7.67 32 s
+30480.0 125239.0 m
+(    ) 35856  -13.00 32 s
+( \(MAP-SUBWINDOWS \(menu-window menu\)\)) 84667  -13.67 32 s
+30480.0 127813.0 m
+130387.0 v
+(     ;; Save item geometry) 65701  -7.63 32 s
+30480.0 132961.0 m
+(     \(setf \(menu-item-width menu\)         item-width) 100923  -7.56 32 s
+30480.0 135534.0 m
+(           \(menu-item-height menu\) ) 77897  -6.00 32 s
+(       item-height) 102277  -6.57 32 s
+30480.0 138108.0 m
+(           \(menu-width menu\)              menu-width) 100923  -4.65 32 s
+30480.0 140682.0 m
+(           \(menu-title-width menu\) ) 77897  -6.00 32 s
+(       title-width) 102277  -6.57 32 s
+30480.0 143256.0 m
+(           \(menu-geometry-changed-p menu\) nil\)\)\)\)) 96859  -8.77 32 s
+/timsps10 3 declareFont
+3 sf
+52832.0 149239.0 m
+(Of) 55808  0.00 -1 s
+( course, the sample client must know how to) 105154  -112.00 32 s
+( draw/redraw the menu and its items, so) 149352  -112.57 32 s
+52832.0 152400.0 m
+(the) 56280  0.00 -1 s
+( function ) 67032  -32.00 32 s
+4 sf
+(menu\036refresh) 83316  0.00 -1 s
+3 sf
+( is defined next to handle that task \(shown in the following) 149352  -31.91 32 s
+52832.0 155561.0 m
+(example\).) 64037  0.00 -1 s
+( Note that the location of window output is given relative to) 130816  -64.00 32 s
+( the window ori\036) 149352  -64.67 32 s
+52832.0 158722.0 m
+(gin.) 57144  0.00 -1 s
+( Windows and subwindows have different coordinate systems. The location of the) 149352  -39.00 32 s
+52832.0 161883.0 m
+(origin) 59572  0.00 -1 s
+( \(upper\036left) 72287  -54.00 32 s
+( corner\) of a subwindow's coordinate system is given with respect to) 149352  -54.55 32 s
+52832.0 165044.0 m
+(its) 55498  0.00 -1 s
+( parent window's coordinate system. Negative coordinates are valid, although) 143602  28.00 32 s
+( only) 149352  27.00 32 s
+52832.0 168204.0 m
+(output) 60044  0.00 -1 s
+( to the) 67051  -24.00 32 s
+( +x/+y quadrant of a window's coordinate system will ever be visible.) 145830  -24.55 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 8
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\0368) 24081  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 4 declareFont
+4 sf
+52832.0 22284.0 m
+(\(defun) 60974  0.00 -1 s
+( menu-refresh) 78585  -30.00 32 s
+( \(menu\)) 88053  -31.00 32 s
+52832.0 24858.0 m
+( \(let* \(\(gcontext   \(menu-gcontext menu\)\)) 108373  -16.00 32 s
+52832.0 27432.0 m
+(        \(baseline-y \(FONT-ASCENT \(GCONTEXT-FONT gcontext\)\)\)\)) 134112  -12.73 32 s
+52832.0 30006.0 m
+(   ;; Show title centered in \177reverse-video") 112437  -12.88 32 s
+52832.0 32580.0 m
+(   \(let \(\(fg \(GCONTEXT-BACKGROUND) 97528  -17.00 32 s
+( gcontext\)\)) 112437  -18.00 32 s
+52832.0 35154.0 m
+(         \(bg \(GCONTEXT-FOREGROUND gcontext\)\)\)) 113792  -9.55 32 s
+52832.0 37727.0 m
+(     \(WITH-GCONTEXT \(gcontext :foreground fg :background bg\)) 134112  -14.00 32 s
+52832.0 40301.0 m
+(    ) 58228  -8.00 32 s
+(   \(DRAW-IMAGE-GLYPHS) 86699  -8.67 32 s
+52832.0 42875.0 m
+(     ) 59587  -6.00 32 s
+(    \(menu-window menu\)) 89408  -6.60 32 s
+52832.0 45449.0 m
+(  ) 55538  -4.00 32 s
+(       gcontext) 75861  -4.57 32 s
+52832.0 48023.0 m
+(         \(round \(- \(menu-width menu\)) 101600  -7.00 32 s
+52832.0 50597.0 m
+(   ) 56888  -5.00 32 s
+(                \(menu-title-width menu\)\) 2\)  ;start x) 128693  -5.52 32 s
+52832.0 53171.0 m
+(         baseline-y   ) 82650  -3.00 32 s
+(                          ;start y) 128693  -3.52 32 s
+52832.0 55745.0 m
+(         \(menu-title menu\)\)\)\)) 92117  -6.80 32 s
+52832.0 58318.0 m
+60892.0 v
+(   ;; Show each menu) 79906  -11.00 32 s
+( item \(position is relative to item window\)) 138176  -11.57 32 s
+52832.0 63466.0 m
+(   \(let \(\(box-margin \(round *menu-item-margin* ) 116506  -15.00 32 s
+( 2\)\)\)) 123275  -16.00 32 s
+52832.0 66040.0 m
+(     \(dolist) 69056  -12.00 32 s
+( \(item \(menu-item-alist menu\)\)) 109728  -12.67 32 s
+52832.0 68614.0 m
+(    ) 58228  -8.00 32 s
+(   \(DRAW-IMAGE-GLYPHS) 86699  -8.67 32 s
+52832.0 71188.0 m
+(    ) 58236  -6.00 32 s
+(     \(first item\) gcontext) 93472  -6.57 32 s
+52832.0 73762.0 m
+(         box-margin   ) 82650  -3.00 32 s
+(                          ;start x) 128693  -3.52 32 s
+52832.0 76335.0 m
+(         \(+ baseline-y box-margin\)              ;start) 125985  -5.00 32 s
+( y) 128693  -6.00 32 s
+52832.0 78909.0 m
+(     ) 59587  -6.00 32 s
+(    \(second item\)\)\)\)\)\)) 89408  -6.60 32 s
+2 sf
+52832.0 84892.0 m
+(with\036gcontext) 69286  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+( is a CLX macro that allows you temporarily to modify a graphics context) 149352  -261.77 32 s
+52832.0 88053.0 m
+(within) 60043  0.00 -1 s
+( the dynamic scope of) 84365  -111.00 32 s
+( the macro body. ) 103592  -111.50 32 s
+2 sf
+(draw\036image\036glyphs) 126791  0.00 -1 s
+3 sf
+( is a CLX text draw\036) 149352  -111.60 32 s
+52832.0 91214.0 m
+(ing) 56438  0.00 -1 s
+( function which produces a terminal\036like rendering: foreground character on a back\036) 149352  -179.82 32 s
+52832.0 94375.0 m
+(ground) 60826  0.00 -1 s
+( block. \(More sophisticated text rendering functions are) 125586  295.00 32 s
+( also available.\) The) 149352  294.33 32 s
+52832.0 97536.0 m
+(strange) 60981  0.00 -1 s
+( use of ) 68833  -126.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(glyphs) 76201  0.00 -1 s
+3 sf
+( instead of ) 88285  -126.00 32 s
+5 sf
+(string) 94871  0.00 -1 s
+3 sf
+( here actually highlights an important fact: X and) 149352  -125.75 32 s
+52832.0 100697.0 m
+(Common) 63337  0.00 -1 s
+( Lisp have totally different concepts of a character. A Common Lisp character) 149352  -178.67 32 s
+52832.0 103858.0 m
+(is) 54714  0.00 -1 s
+( an object whose implementation can comprehend a vast universe of text complexities) 149352  -212.00 32 s
+52832.0 107019.0 m
+(\(typefaces,) 65132  0.00 -1 s
+( type styles, international character sets, symbols, and so) 127450  -195.00 32 s
+( forth\). However, to) 149352  -195.67 32 s
+52832.0 110180.0 m
+(X,) 55575  0.00 -1 s
+( a string is just a sequence of integer indexes into the array of bitmaps represented by a) 149352  -250.88 32 s
+52832.0 113340.0 m
+(CLX) 58475  0.00 -1 s
+( font object. In general, ) 86517  201.00 32 s
+2 sf
+(draw\036image\036glyphs) 109716  0.00 -1 s
+3 sf
+(, ) 111329  201.00 32 s
+2 sf
+(text\036extents) 125272  0.00 -1 s
+3 sf
+(, and) 130960  201.00 32 s
+( other CLX text) 149352  200.33 32 s
+52832.0 116501.0 m
+(functions) 63334  0.00 -1 s
+( accept a ) 73219  -231.00 32 s
+2 sf
+(:translate) 84815  0.00 -1 s
+3 sf
+( keyword argument. Its value is a function which translates) 149352  -230.89 32 s
+52832.0 119662.0 m
+(the) 56280  0.00 -1 s
+( characters of a) 73119  -106.00 32 s
+( string argument into the appropriate font\036and\036index pairs needed by) 149352  -106.56 32 s
+52832.0 122823.0 m
+(CLX.) 59181  0.00 -1 s
+( This example relies upon) 89549  303.00 32 s
+( the default translation function, which simply uses) 149352  302.43 32 s
+52832.0 125984.0 m
+2 sf
+(char\036code) 64743  0.00 -1 s
+3 sf
+( to compute an index into the current font.) 112008  -38.63 32 s
+52832.0 132915.0 m
+0.0 0.0 m
+newpath
+149013 131356 av
+52967 131358 as
+[] 0 setdash
+dp
+149352.0 132915.0 m
+20320.0 135738.0 m
+34928.0 h
+2 sf
+(Menu) 41983  0.00 -1 s
+( Input) 49378  -55.00 32 s
+52832.0 h
+(1.3.3) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(Now) 66157  0.00 -1 s
+( that a menu can be displayed, the sample client program) 129955  -39.00 32 s
+( must define how) 149352  -39.67 32 s
+52832.0 138898.0 m
+(the) 56280  0.00 -1 s
+( menu will process user input. The ) 96307  52.43 32 s
+4 sf
+(menu\036choose) 111234  0.00 -1 s
+3 sf
+( function \(shown in the following) 149352  52.40 32 s
+52832.0 142059.0 m
+(example\)) 63331  0.00 -1 s
+( has the classic structure of an X client program. First, do some initialization) 149352  -20.77 32 s
+52832.0 145220.0 m
+(\(for) 57060  0.00 -1 s
+( example, present the) 81371  110.00 32 s
+( menu at a given location\). Then, enter an input event loop.) 149352  109.45 32 s
+52832.0 148381.0 m
+(Read) 58631  0.00 -1 s
+( an input event, process it, and repeat the loop until a termination event is received.) 149352  -201.00 32 s
+52832.0 151542.0 m
+(The) 57220  0.00 -1 s
+( ) 57754  -172.00 32 s
+2 sf
+(event\036case) 70133  0.00 -1 s
+3 sf
+( macro continues reading an event from) 113926  -172.00 32 s
+( the menu window's display ob\036) 149352  -172.60 32 s
+52832.0 154703.0 m
+(ject) 56906  0.00 -1 s
+( until one) 67333  -117.00 32 s
+( of its clauses returns non\036) 96448  -117.60 32 s
+2 sf
+(nil) 99585  0.00 -1 s
+3 sf
+(. These clauses specify the action to be taken) 149352  -117.50 32 s
+52832.0 157864.0 m
+(for) 56121  0.00 -1 s
+( each event type and also bind values from the event report) 120644  -183.00 32 s
+( to local variables, such as) 149352  -183.60 32 s
+52832.0 161025.0 m
+(the) 56280  0.00 -1 s
+( ) 57111  125.00 32 s
+2 sf
+(event\036window) 73882  0.00 -1 s
+3 sf
+( receiving the event. Notice that the ) 115670  125.57 32 s
+2 sf
+(:force\036output\036p) 134161  0.00 -1 s
+3 sf
+( option is en\036) 149352  125.33 32 s
+52832.0 164186.0 m
+(abled,) 59650  0.00 -1 s
+( causing ) 69083  -300.00 32 s
+2 sf
+(event\036case) 81462  0.00 -1 s
+3 sf
+( to begin by sending any client requests which CLX has not yet) 149352  -299.50 32 s
+52832.0 167346.0 m
+(output) 60044  0.00 -1 s
+( to the server. To improve performance, CLX quietly queues up requests and peri\036) 149352  -261.69 32 s
+52832.0 170507.0 m
+(odically) 61923  0.00 -1 s
+( sends them off in a batch. However, in an interactive feedback loop such as this,) 149352  -263.53 32 s
+52832.0 173668.0 m
+(it) 54400  0.00 -1 s
+( is important to) 71501  -22.00 32 s
+( keep the display crisply up\036to\036date.) 111828  -22.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 9
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+145252.0 208619.0 m
+(1\0369) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/courps8 4 declareFont
+4 sf
+45720.0 22578.0 m
+2 sf
+4 sf
+(\(defun) 53862  0.00 -1 s
+( menu-choose \(menu x y\)) 85005  -17.00 32 s
+45720.0 25423.0 m
+(  ;; Display the menu so that first item is at x,y.) 114808  -9.92 32 s
+45720.0 27996.0 m
+(  \(menu-present menu x y\)) 79587  -11.60 32 s
+45720.0 30570.0 m
+33144.0 v
+(   \(let \(\(items \(menu-item-alist) 89069  -15.00 32 s
+( menu\)\)) 98552  -16.00 32 s
+45720.0 35718.0 m
+(         \(mw    \(menu-window menu\)\)) 93133  -5.86 32 s
+45720.0 38292.0 m
+(         selected-item\)) 76877  -6.00 32 s
+45720.0 40866.0 m
+(  ) 48430  -2.00 32 s
+( ) 49784  -3.00 32 s
+45720.0 43440.0 m
+(    ;;) 53826  -9.00 32 s
+( Event processing loop) 83651  -9.67 32 s
+45720.0 46014.0 m
+(    \(do \(\)) 59240  -10.00 32 s
+( \(selected-item\)) 80941  -11.00 32 s
+45720.0 48587.0 m
+(      \(EVENT-CASE \(\(DRAWABLE-DISPLAY mw\) :force-output-p t\)) 125645  -13.80 32 s
+45720.0 51161.0 m
+(     ) 52480  -5.00 32 s
+(   \(:exposure) 70104  -5.67 32 s
+45720.0 53735.0 m
+(          \(count\)) 68749  -4.00 32 s
+45720.0 56309.0 m
+(          ;; Discard all but final :exposure then) 112085  -8.00 32 s
+( display the menu) 135128  -8.67 32 s
+45720.0 58883.0 m
+(          \(when \(zerop count\) \(menu-refresh menu\)\)) 113453  -8.36 32 s
+45720.0 61457.0 m
+(          t\)) 61976  -2.80 32 s
+45720.0 64031.0 m
+66604.0 v
+(        \(:button-release) 78232  -7.00 32 s
+45720.0 69178.0 m
+(  ) 48422  -6.00 32 s
+( ) 49774  -5.00 32 s
+(       \(event-window\)) 78232  -5.57 32 s
+45720.0 71752.0 m
+(          ;;Select an item) 80941  -5.08 32 s
+45720.0 74326.0 m
+(        ) 56496  -10.00 32 s
+(  \(setf selected-item \(second \(assoc event-window items\)\)\)) 135128  -10.57 32 s
+45720.0 76900.0 m
+(          t\)) 61976  -2.80 32 s
+45720.0 79474.0 m
+82048.0 v
+(   ) 49773  -6.00 32 s
+(     \(:enter-notify) 75523  -6.60 32 s
+45720.0 84622.0 m
+(       ) 55191  -4.00 32 s
+(   \(window\)) 70104  -4.67 32 s
+45720.0 87195.0 m
+(          ;;Highlight an item) 85005  -5.67 32 s
+45720.0 89769.0 m
+(          \(menu-highlight-item menu \(find window items :key) 125633  -10.00 32 s
+( #'first\)\)) 139192  -11.00 32 s
+45720.0 92343.0 m
+(          t\)) 61976  -2.80 32 s
+45720.0 94917.0 m
+97491.0 v
+(   ) 49773  -6.00 32 s
+(     \(:leave-notify) 75523  -6.60 32 s
+45720.0 100065.0 m
+(          \(window kind\)) 76877  -4.91 32 s
+45720.0 102639.0 m
+(        ) 56536  -5.00 32 s
+(  \(if \(eql mw window\)) 85005  -5.60 32 s
+45720.0 105212.0 m
+(          ) 59230  -6.00 32 s
+(    ;; Quit if pointer moved out of main menu window) 129709  -6.54 32 s
+45720.0 107786.0 m
+(              \(setf selected-item \(when \(eq kind :ancestor\) :none\)\)) 136483  -7.80 32 s
+45720.0 110360.0 m
+(              ;; Otherwise, unhighlight the item window left) 127000  -7.00 32 s
+45720.0 112934.0 m
+(              \(menu-unhighlight-item menu \(find window items :key #'first\)\)\)) 148675  -8.85 32 s
+45720.0 115508.0 m
+(            t\) ) 66040  -2.69 32 s
+45720.0 118082.0 m
+120656.0 v
+(          \(otherwise) 72813  -4.70 32 s
+45720.0 123230.0 m
+(            \(\)) 64685  -2.75 32 s
+45720.0 125803.0 m
+(            ;;Ignore and discard any other event) 110744  -6.59 32 s
+45720.0 128377.0 m
+(           ) 60614  -3.00 32 s
+( t\)\)\)) 67395  -4.00 32 s
+45720.0 130951.0 m
+133525.0 v
+(      ) 53832  -5.00 32 s
+(  ;; Erase the menu) 79587  -5.60 32 s
+45720.0 136099.0 m
+(  ) 48422  -6.00 32 s
+(      \(UNMAP-WINDOW mw\)) 79587  -6.57 32 s
+45720.0 138673.0 m
+141247.0 v
+(        ;; Return selected item string, if any) 108035  -7.64 32 s
+45720.0 143820.0 m
+(        \(unless \(eq selected-item :none\) selected-item\)\)\)    ) 128355  -8.88 32 s
+/timsps10 3 declareFont
+3 sf
+52832.0 149804.0 m
+(The) 57220  0.00 -1 s
+( event loop in ) 72720  -162.00 32 s
+4 sf
+(menu\036choose) 87647  0.00 -1 s
+3 sf
+( demonstrates an idiom used in) 121874  -162.00 32 s
+( all X programs: the con\036) 149352  -162.60 32 s
+52832.0 152964.0 m
+(tents) 58162  0.00 -1 s
+( of a window are displayed \(in this case, by calling ) 116205  4.18 32 s
+4 sf
+(menu\036refresh) 132489  0.00 -1 s
+3 sf
+(\) only when an) 149352  4.33 32 s
+52832.0 156125.0 m
+2 sf
+(:exposure) 64588  0.00 -1 s
+3 sf
+( event) 71553  147.00 32 s
+2 sf
+( ) 72406  147.00 32 s
+3 sf
+(is received, signaling that the server has actually made the window) 149352  147.50 32 s
+52832.0 159286.0 m
+/timsps10i 5 declareFont
+5 sf
+(viewable) 62863  0.00 -1 s
+3 sf
+(.) 63569  0.00 -1 s
+( The handling of ) 82747  -65.00 32 s
+2 sf
+(:exposure) 94503  0.00 -1 s
+3 sf
+( in ) 97980  -65.00 32 s
+4 sf
+(menu\036choose) 112907  0.00 -1 s
+3 sf
+( also implements a little trick) 145423  -65.00 32 s
+( for) 149352  -66.00 32 s
+52832.0 162447.0 m
+(improving) 64589  0.00 -1 s
+( efficiency. In general, when a window is exposed after being previously) 145032  -146.00 32 s
+( ob\036) 149352  -147.00 32 s
+52832.0 165608.0 m
+(scured) 60197  0.00 -1 s
+( \(perhaps only partially\), the server is free to send several ) 124426  -116.64 32 s
+2 sf
+(:exposure) 136182  0.00 -1 s
+3 sf
+( events, one) 149352  -116.50 32 s
+52832.0 168769.0 m
+(for) 56121  0.00 -1 s
+( each rectangular tile of the exposed region. For small windows like this menu, it is) 149352  -49.53 32 s
+52832.0 171930.0 m
+(not) 56438  0.00 -1 s
+( worth the trouble to redraw the image one tile at a time. So the code above just ig\036) 149352  -32.56 32 s
+52832.0 175091.0 m
+(nores) 58944  0.00 -1 s
+( all but the last tile exposure and redraws everything in one call to ) 132362  -118.86 32 s
+4 sf
+(menu\036refresh) 148646  0.00 -1 s
+3 sf
+(.) 149352  0.00 -1 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 10
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03610) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+52832.0 23233.0 m
+0.0 0.0 m
+newpath
+149013 21674 av
+52967 21676 as
+[] 0 setdash
+dp
+149352.0 23233.0 m
+20320.0 26055.0 m
+37592.0 h
+2 sf
+(The) 42296  0.00 -1 s
+( Main) 49378  -52.00 32 s
+52832.0 h
+(1.3.4) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(After) 66624  0.00 -1 s
+( all the preceding build\036up and the other functions referenced) 149352  1521.11 32 s
+2 sf
+3 sf
+20320.0 29216.0 m
+37931.0 h
+2 sf
+( Program) 49378  -72.00 32 s
+52832.0 h
+3 sf
+(\(but) 57377  0.00 -1 s
+( not shown here\) have been implemented, the) 108814  26.00 32 s
+( code for the main client program is) 149352  25.43 32 s
+52832.0 32377.0 m
+(very) 57846  0.00 -1 s
+( small.) 65340  -32.00 32 s
+/courps8 4 declareFont
+4 sf
+49784.0 38360.0 m
+(\(defun) 57926  0.00 -1 s
+( just-say-lisp \(host &optional \(font-name \177fg-16"\)\)) 127000  -26.60 32 s
+49784.0 40934.0 m
+(  \(let* \(\(display ) 74158  -13.00 32 s
+(  \(OPEN-DISPLAY host\)\)) 103971  -13.67 32 s
+49784.0 43507.0 m
+(         \(screen    \(first \(DISPLAY-ROOTS) 105309  -8.00 32 s
+( display\)\)\)) 120227  -9.00 32 s
+49784.0 46081.0 m
+(     ) 56524  -9.00 32 s
+(    \(fg-color  \(SCREEN-BLACK-PIXEL screen\)\)) 114808  -9.57 32 s
+49784.0 48655.0 m
+(         \(bg-color  \(SCREEN-WHITE-PIXEL screen\)\)) 114808  -9.33 32 s
+49784.0 51229.0 m
+(         \(nice-font \(OPEN-FONT display font-name\)\)) 117517  -9.75 32 s
+49784.0 53803.0 m
+56377.0 v
+(         ;; Create a menu as a child of the root window.) 125645  -6.89 32 s
+49784.0 58951.0 m
+(        ) 60576  -8.00 32 s
+( \(a-menu    \(create-menu \(SCREEN-ROOT screen\)) 121581  -8.57 32 s
+49784.0 61524.0 m
+(                      ) 79550  -4.00 32 s
+(           fg-color bg-color nice-font\)\)\)) 135128  -4.54 32 s
+49784.0 64098.0 m
+66672.0 v
+(  ) 52470  -14.00 32 s
+(  \(setf \(menu-title a-menu\) \177Please pick your favorite language:"\)) 141901  -14.56 32 s
+49784.0 69246.0 m
+(    \(menu-set-item-list a-menu \177Fortran" \177APL" \177Forth") 122934  -16.00 32 s
+( \177Lisp"\)) 133773  -17.00 32 s
+49784.0 71820.0 m
+74394.0 v
+(    ;; Bedevil the user until he picks a nice programming language) 139192  -11.00 32 s
+49784.0 76968.0 m
+(    \(unwind-protect) 75523  -11.00 32 s
+49784.0 79542.0 m
+(        \(loop) 67395  -3.75 32 s
+49784.0 82115.0 m
+(          ;; Determine the current root window position of the pointer) 144611  -8.58 32 s
+49784.0 84689.0 m
+(      ) 57860  -11.00 32 s
+(    \(multiple-value-bind \(x y\) \(QUERY-POINTER \(SCREEN-ROOT screen\)\)) 148675  -11.56 32 s
+49784.0 87263.0 m
+89837.0 v
+(   ) 53834  -7.00 32 s
+(        \(let \(\(choice \(menu-choose a-menu x y\)\)\)) 118872  -7.54 32 s
+49784.0 92411.0 m
+(            ) 65984  -7.00 32 s
+( \(when) 74120  -6.00 32 s
+( \(string-equal \177Lisp" choice\)) 113453  -6.67 32 s
+49784.0 94985.0 m
+(               \(return\)\)\)\)\)) 86363  -4.00 32 s
+( ) 87715  -5.00 32 s
+49784.0 97559.0 m
+100132.0 v
+102706.0 v
+(     \(CLOSE-DISPLAY display\)\)\)\)) 91779  -12.00 32 s
+3 sf
+52832.0 108689.0 m
+(Note) 58317  0.00 -1 s
+( that the main program event loop lies in the body of an ) 118567  -243.00 32 s
+2 sf
+(unwind\036protect) 137220  0.00 -1 s
+3 sf
+( form.) 143873  -243.00 32 s
+( This) 149352  -244.00 32 s
+52832.0 111850.0 m
+(is) 54714  0.00 -1 s
+( a good programming technique because, without this protection, an unexpected error) 149352  -166.91 32 s
+52832.0 115011.0 m
+(could) 59102  0.00 -1 s
+( cause the program to terminate without freeing the ) 115342  -255.56 32 s
+/timsps10i 5 declareFont
+5 sf
+(server resources) 133819  -255.00 32 s
+3 sf
+( it has created.) 149352  -255.67 32 s
+52832.0 118172.0 m
+(Server) 60196  0.00 -1 s
+( resources are CLX objects which refer to) 105987  -186.00 32 s
+( objects actually stored on the X server.) 149352  -186.57 32 s
+52832.0 121333.0 m
+(Examples) 63961  0.00 -1 s
+( of these are ) 77252  -281.75 32 s
+2 sf
+(window) 86659  0.00 -1 s
+3 sf
+(,) 87365  0.00 -1 s
+2 sf
+( font) 92647  -282.00 32 s
+3 sf
+(,) 93353  0.00 -1 s
+2 sf
+( pixmap) 102872  -281.00 32 s
+3 sf
+(,) 103578  0.00 -1 s
+2 sf
+( cursor) 111839  -282.00 32 s
+3 sf
+(,) 112545  0.00 -1 s
+2 sf
+( colormap) 124412  -281.00 32 s
+3 sf
+(, and ) 130042  -281.50 32 s
+2 sf
+(gcontext ) 140652  -282.00 32 s
+3 sf
+(objects.) 149352  0.00 -1 s
+52832.0 124494.0 m
+(These) 59571  0.00 -1 s
+( server resources are created and destroyed by user requests. Server resources cre\036) 149352  -229.58 32 s
+52832.0 127655.0 m
+(ated) 57533  0.00 -1 s
+( by a client are also destroyed when its display connection is closed. If client re\036) 149352  102.33 32 s
+52832.0 130816.0 m
+(sources) 61295  0.00 -1 s
+( are repeatedly created without being destroyed, then the server will eventually) 149352  -87.73 32 s
+52832.0 133977.0 m
+(run) 56593  0.00 -1 s
+( out of memory and fail.) 83899  -25.00 32 s
+52832.0 140253.0 m
+(Most) 58634  0.00 -1 s
+( server resources are potentially sharable between applications. In fact, windows) 149352  -2.60 32 s
+52832.0 143414.0 m
+(are) 56277  0.00 -1 s
+( manipulated explicitly by window manager programs. Fonts and) 130193  40.00 32 s
+( cursors are typi\036) 149352  39.33 32 s
+52832.0 146575.0 m
+(cally) 58317  0.00 -1 s
+( shared automatically since the X server loads and unloads font storage as needed.) 149352  -123.00 32 s
+52832.0 149736.0 m
+2 sf
+(gcontext) 63018  0.00 -1 s
+3 sf
+( objects are not ordinarily shared between client applications.) 131899  -39.75 32 s
+52832.0 156667.0 m
+0.0 0.0 m
+newpath
+149013 155108 av
+52967 155110 as
+[] 0 setdash
+dp
+149352.0 156667.0 m
+20320.0 159489.0 m
+36441.0 h
+2 sf
+(Debugging) 49455  0.00 -1 s
+52832.0 h
+(1.3.5) 58477  0.00 -1 s
+3 sf
+() 58477  0.00 -1 s
+60672.0 h
+(Typically,) 72193  0.00 -1 s
+( most CLX programs do not need to control the buffering) 149352  1242.10 32 s
+2 sf
+3 sf
+20320.0 162650.0 m
+36621.0 h
+2 sf
+(With) 42735  0.00 -1 s
+( CLX) 49378  -19.00 32 s
+52832.0 h
+3 sf
+(of) 55182  0.00 -1 s
+( output requests) 72845  -104.00 32 s
+( directly. However, CLX programmers need to be aware of the asyn\036) 149352  -104.55 32 s
+52832.0 165811.0 m
+(chronous) 63177  0.00 -1 s
+( nature of) 74242  126.00 32 s
+( client\036server communication. It may be convenient to control the) 149352  125.44 32 s
+52832.0 168972.0 m
+(CLX) 58475  0.00 -1 s
+( output buffer more directly, especially during) 110331  -43.00 32 s
+( debugging.) 123613  -44.00 32 s
+52832.0 175249.0 m
+(A) 54869  0.00 -1 s
+( client that wants a request to execute immediately) 110603  -165.00 32 s
+( instead of asynchronously can fol\036) 149352  -165.60 32 s
+52832.0 178410.0 m
+(low) 57064  0.00 -1 s
+( it with a call to) 73260  -288.00 32 s
+( ) 73677  -289.00 32 s
+2 sf
+(display\036force\036output) 98286  0.00 -1 s
+3 sf
+(. This function ) 114666  -288.33 32 s
+5 sf
+(blocks) 121876  0.00 -1 s
+3 sf
+( \(does not return\) until all) 149352  -288.60 32 s
+52832.0 181570.0 m
+(previously) 64745  0.00 -1 s
+( buffered output requests have been sent. Otherwise, the output buffer is al\036) 149352  -41.67 32 s
+52832.0 184731.0 m
+(ways) 58631  0.00 -1 s
+( flushed by a call to any function which returns a value from the server or which) 149352  8.00 32 s
+52832.0 187892.0 m
+(waits) 58788  0.00 -1 s
+( for input \(for example, ) 86637  147.00 32 s
+2 sf
+(get\036property) 101837  0.00 -1 s
+3 sf
+(\). Certain output requests can cause input) 149352  147.17 32 s
+52832.0 191053.0 m
+(events) 60042  0.00 -1 s
+( to be sent. For example, ) 88988  69.00 32 s
+2 sf
+(map\036window) 104664  0.00 -1 s
+3 sf
+( can cause ) 117174  69.00 32 s
+2 sf
+(:exposure) 128930  0.00 -1 s
+3 sf
+( events to be sent.) 149352  69.25 32 s
+52832.0 194214.0 m
+(Synchronizing) 69291  0.00 -1 s
+( output with the resulting input can be done with the ) 127247  -153.91 32 s
+2 sf
+(display\036finish\036out\036) 149352  0.00 -1 s
+52832.0 197375.0 m
+(put) 56909  0.00 -1 s
+3 sf
+( function. This function blocks) 90704  -232.00 32 s
+( until all previously buffered output has been sent and) 149352  -232.56 32 s
+52832.0 200536.0 m
+(all) 55653  0.00 -1 s
+( resulting) 66194  -40.00 32 s
+( input events have been received.) 103451  -40.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 11
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03611) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+52832.0 22578.0 m
+(Functions) 63964  0.00 -1 s
+( that return information from the server block until an explicit reply is received) 149352  -285.77 32 s
+52832.0 25739.0 m
+(or) 55182  0.00 -1 s
+( an error occurs. If a nonblocking call results in an error, the) 121761  -107.00 32 s
+( error is generally not re\036) 149352  -107.60 32 s
+52832.0 28900.0 m
+(ported) 60041  0.00 -1 s
+( until later. All errors \(synchronous and asynchronous\) are processed by) 140998  -31.00 32 s
+( calling) 149352  -32.00 32 s
+52832.0 32060.0 m
+(an) 55496  0.00 -1 s
+( error handler defined for the display. If the handler is a sequence) 126342  -241.00 32 s
+( it is expected to con\036) 149352  -241.60 32 s
+52832.0 35221.0 m
+(tain) 57064  0.00 -1 s
+( handler functions specific to each error. The error code is) 124464  197.00 32 s
+( used to index the se\036) 149352  196.40 32 s
+52832.0 38382.0 m
+(quence,) 61530  0.00 -1 s
+( fetching the appropriate handler. Any results) 115727  504.00 32 s
+( returned by the handler are) 149352  503.40 32 s
+52832.0 41543.0 m
+(ignored) 61452  0.00 -1 s
+( since it is assumed that the) 91700  -106.00 32 s
+( handler either takes care of the error completely, or) 149352  -106.56 32 s
+52832.0 44704.0 m
+(else) 57220  0.00 -1 s
+( signals.) 66446  -25.00 32 s
+20320.0 51703.0 m
+270.0 sw
+/drawmode PL_CLEAR def
+0.0 0.0 m
+newpath
+24384 50078 av
+149013 50078 as
+[] 0 setdash
+dp
+541.0 sw
+/drawmode PL_SET def
+newpath
+148878 50078 av
+20455 50078 as
+[] 0 setdash
+dp
+149352.0 51703.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 55090.0 m
+(Naming) 31795  0.00 -1 s
+( and) 38089  -12.00 32 s
+52832.0 h
+2 sf
+(1.4) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(Throughout) 71879  0.00 -1 s
+( CLX, a number) 94017  1266.00 32 s
+( of conventions for naming and syntax of) 149352  1265.43 32 s
+7 sf
+20320.0 58476.0 m
+(Argument) 35177  0.00 -1 s
+2 sf
+52832.0 h
+3 sf
+(the) 56280  0.00 -1 s
+( CLX functions have been followed. These conventions are intended to) 149352  1274.00 32 s
+7 sf
+20320.0 61863.0 m
+(Conventions) 38381  0.00 -1 s
+52832.0 h
+3 sf
+(make) 58944  0.00 -1 s
+( the syntax of the functions more predictable. ) 110494  -31.75 32 s
+2 sf
+() 110494  0.00 -1 s
+112844.0 h
+() 112844  0.00 -1 s
+3 sf
+52832.0 68140.0 m
+(The) 57220  0.00 -1 s
+( major naming conventions are as follows:) 105011  -29.00 32 s
+( ) 105687  -30.00 32 s
+/symbb8 6 declareFont
+6 sf
+52832.0 74687.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(To) 61047  0.00 -1 s
+( better differentiate the CLX symbols from other symbols, they have all) 143203  116.00 32 s
+( been) 149352  115.00 32 s
+57912.0 77848.0 m
+(placed) 65277  0.00 -1 s
+( in the package XLIB. External symbols have been) 122396  -41.00 32 s
+( explicitly exported. ) 145627  -41.67 32 s
+6 sf
+52832.0 84396.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( ) 62985  -21.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(display) 71137  0.00 -1 s
+3 sf
+( argument, where used, is) 99894  -21.00 32 s
+( always first in the argument list. ) 137521  -21.57 32 s
+6 sf
+52832.0 90943.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(All) 61517  0.00 -1 s
+( server resource objects, where used, occur at the) 115047  -224.00 32 s
+( beginning of the argument list,) 149352  -224.60 32 s
+57912.0 94104.0 m
+(immediately) 72019  0.00 -1 s
+( after the display variable. ) 101961  -30.00 32 s
+6 sf
+52832.0 100652.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(When) 64651  0.00 -1 s
+( a graphics context \() 87138  -99.00 32 s
+5 sf
+(gcontext) 96698  0.00 -1 s
+3 sf
+(\) is present together with another type of server) 149352  -98.75 32 s
+57912.0 103813.0 m
+(resource) 67469  0.00 -1 s
+( \(most commonly, a ) 91142  98.00 32 s
+5 sf
+(drawable) 101803  0.00 -1 s
+3 sf
+(\), the graphics context occurs in the argu\036) 149352  98.00 32 s
+57912.0 106974.0 m
+(ment) 63555  0.00 -1 s
+( list after the other server resource.) 103861  175.00 32 s
+( Drawables out rank all other server re\036) 149352  174.43 32 s
+57912.0 110134.0 m
+(sources.) 67081  0.00 -1 s
+6 sf
+52832.0 116682.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Source) 65748  0.00 -1 s
+( arguments always precede the destination arguments in the argument list. ) 149352  -51.73 32 s
+6 sf
+52832.0 123230.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( ) 62977  -29.00 32 s
+5 sf
+(x) 64230  0.00 -1 s
+3 sf
+( argument always) 84077  -29.00 32 s
+( precedes the ) 99425  -29.67 32 s
+5 sf
+(y) 100678  0.00 -1 s
+3 sf
+( argument in the argument list. ) 135850  -29.50 32 s
+6 sf
+52832.0 129777.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( ) 62974  -32.00 32 s
+5 sf
+(width) 69246  0.00 -1 s
+3 sf
+( argument always precedes the ) 104429  -31.80 32 s
+5 sf
+(height) 111483  0.00 -1 s
+3 sf
+( argument in the argument list. ) 146643  -31.50 32 s
+6 sf
+52832.0 136325.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Where) 65432  0.00 -1 s
+( the ) 69820  -236.00 32 s
+5 sf
+(x) 71073  0.00 -1 s
+3 sf
+(, ) 72249  -236.00 32 s
+5 sf
+(y) 73502  0.00 -1 s
+3 sf
+(, ) 74678  -236.00 32 s
+5 sf
+(width) 80950  0.00 -1 s
+3 sf
+( and ) 85964  -236.50 32 s
+5 sf
+(height) 93018  0.00 -1 s
+3 sf
+( arguments are used together, the ) 129608  -236.50 32 s
+5 sf
+(x) 130861  0.00 -1 s
+3 sf
+( and ) 135875  -236.50 32 s
+5 sf
+(y) 137128  0.00 -1 s
+3 sf
+( arguments) 149352  -237.00 32 s
+57912.0 139486.0 m
+(always) 65748  0.00 -1 s
+( precede the ) 79973  -38.00 32 s
+5 sf
+(width) 86245  0.00 -1 s
+3 sf
+( and) 90988  -38.00 32 s
+( ) 91655  -39.00 32 s
+5 sf
+(height) 98709  0.00 -1 s
+3 sf
+( arguments. ) 112505  -38.50 32 s
+6 sf
+52832.0 145762.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Where) 65432  0.00 -1 s
+( a ) 67601  -248.00 32 s
+5 sf
+(mask) 73400  0.00 -1 s
+3 sf
+( is accompanied) 91086  -248.00 32 s
+( with a ) 98727  -248.67 32 s
+5 sf
+(structure) 108917  0.00 -1 s
+3 sf
+(, the mask always precedes the struc\036) 149352  -248.50 32 s
+57912.0 148923.0 m
+(ture) 62299  0.00 -1 s
+( in the argument list. ) 86202  -16.60 32 s
+20320.0 155651.0 m
+270.0 sw
+/drawmode PL_CLEAR def
+0.0 0.0 m
+newpath
+24384 154026 av
+149013 154026 as
+[] 0 setdash
+dp
+541.0 sw
+/drawmode PL_SET def
+newpath
+148878 154026 av
+20455 154026 as
+[] 0 setdash
+dp
+149352.0 155651.0 m
+7 sf
+20320.0 159038.0 m
+(Programming) 40631  0.00 -1 s
+52832.0 h
+2 sf
+(1.5) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( major programming considerations are as follows:) 120274  -32.00 32 s
+( ) 120947  -33.00 32 s
+2 sf
+() 120947  0.00 -1 s
+123297.0 h
+() 123297  0.00 -1 s
+7 sf
+20320.0 162425.0 m
+(Considerations) 42142  0.00 -1 s
+52832.0 h
+6 sf
+165856.0 v
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Keyboards) 70136  0.00 -1 s
+( are the greatest variable between different manufacturer's worksta\036) 149352  343.38 32 s
+57912.0 169017.0 m
+(tions.) 64106  0.00 -1 s
+( If you want your program to be portable, you should be particularly conserva\036) 149352  -266.69 32 s
+57912.0 172178.0 m
+(tive) 62144  0.00 -1 s
+( here.) 68386  -26.00 32 s
+( ) 69065  -27.00 32 s
+6 sf
+52832.0 178455.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(Many) 64496  0.00 -1 s
+( display systems have) 88419  -204.00 32 s
+( limited amounts of off\036screen memory. If you can, you) 149352  -204.56 32 s
+57912.0 181616.0 m
+(should) 65438  0.00 -1 s
+( minimize use of pixmaps and backing store. ) 116366  -31.75 32 s
+6 sf
+52832.0 187892.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( user should have control of his screen real\036estate. Therefore, you should) 142975  -125.00 32 s
+( write) 149352  -126.00 32 s
+57912.0 191053.0 m
+(your) 63084  0.00 -1 s
+( applications to react to window management,) 114739  -51.00 32 s
+( rather than presume control of) 149352  -51.60 32 s
+57912.0 194214.0 m
+(the) 61360  0.00 -1 s
+( entire screen. What you do inside of your top level) 118898  -38.00 32 s
+( window, however, is up to) 149352  -38.60 32 s
+57912.0 197375.0 m
+(your) 63084  0.00 -1 s
+( application. ) 77645  -48.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 12
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03612) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/symbb8 6 declareFont
+6 sf
+52832.0 22849.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+/timsps10 3 declareFont
+3 sf
+(Coordinates) 71549  0.00 -1 s
+( and sizes in X are) 91397  -184.00 32 s
+( actually 16\036bit quantities. They usually are declared) 149352  -184.57 32 s
+57912.0 26010.0 m
+(as) 60263  0.00 -1 s
+( an ) 64525  93.00 32 s
+2 sf
+(int16) 70639  0.00 -1 s
+3 sf
+( in the functions. Values larger than 16 bits can be truncated silently.) 149352  93.50 32 s
+57912.0 29170.0 m
+(Sizes) 63869  0.00 -1 s
+( \(width and height\) are) 89448  -31.00 32 s
+( unsigned quantities. ) 113340  -31.67 32 s
+6 sf
+52832.0 35447.0 m
+(\267) 53872  0.00 -1 s
+57912.0 h
+3 sf
+(The) 62300  0.00 -1 s
+( types ) 69365  -152.00 32 s
+2 sf
+(color) 75477  0.00 -1 s
+3 sf
+(, ) 76737  -152.00 32 s
+2 sf
+(colormap) 88179  0.00 -1 s
+3 sf
+(, ) 89439  -152.00 32 s
+2 sf
+(cursor) 97276  0.00 -1 s
+3 sf
+(, ) 98536  -152.00 32 s
+2 sf
+(display) 107162  0.00 -1 s
+3 sf
+(, ) 108422  -152.00 32 s
+2 sf
+(font) 113280  0.00 -1 s
+3 sf
+(, ) 114540  -152.00 32 s
+2 sf
+(gcontext) 124726  0.00 -1 s
+3 sf
+(,) 125432  0.00 -1 s
+( ) 125985  -153.00 32 s
+2 sf
+(pixmap) 135079  0.00 -1 s
+3 sf
+(, ) 136339  -152.00 32 s
+2 sf
+(screen) 144018  0.00 -1 s
+3 sf
+(, and) 149352  -153.00 32 s
+57912.0 38608.0 m
+2 sf
+(window) 67319  0.00 -1 s
+3 sf
+( are defined solely) 87887  -66.00 32 s
+( by a functional interface. Even though they are treated) 149352  -66.56 32 s
+57912.0 41769.0 m
+(like) 62144  0.00 -1 s
+( structures in this document, it is not specified whether they are implemented as) 149352  -212.77 32 s
+57912.0 44930.0 m
+(structures) 68882  0.00 -1 s
+( or classes. Although some interfaces are described as) 128240  -172.00 32 s
+( functions, they are) 149352  -172.67 32 s
+57912.0 48091.0 m
+(not) 61518  0.00 -1 s
+( required to be defined using ) 93295  -216.00 32 s
+2 sf
+(defun.) 100900  0.00 -1 s
+3 sf
+( \(It is a requirement that they be functions as) 149352  -215.56 32 s
+57912.0 51252.0 m
+(opposed) 67318  0.00 -1 s
+( to macros or special forms.\)) 99495  -22.00 32 s
+( ) 100178  -23.00 32 s
+20320.0 57980.0 m
+270.0 sw
+/drawmode PL_CLEAR def
+0.0 0.0 m
+newpath
+24384 56355 av
+149013 56355 as
+[] 0 setdash
+dp
+541.0 sw
+/drawmode PL_SET def
+newpath
+148878 56355 av
+20455 56355 as
+[] 0 setdash
+dp
+149352.0 57980.0 m
+/timsps12b 7 declareFont
+7 sf
+20320.0 61366.0 m
+(Data) 27278  0.00 -1 s
+( Types) 36779  -1.00 32 s
+52832.0 h
+2 sf
+(1.6) 56360  0.00 -1 s
+3 sf
+() 56360  0.00 -1 s
+58555.0 h
+(The) 62943  0.00 -1 s
+( following are some data type definitions) 108985  -33.00 32 s
+( that are commonly used in) 139463  -33.60 32 s
+7 sf
+20320.0 64753.0 m
+52832.0 h
+3 sf
+(CLX) 58475  0.00 -1 s
+( function) 68542  -43.00 32 s
+( definitions.) 81980  -44.00 32 s
+2 sf
+34544.0 71030.0 m
+(alist) 39560  0.00 -1 s
+( ) 40216  -50.00 32 s
+3 sf
+(\() 41155  0.00 -1 s
+/timsps10i 5 declareFont
+5 sf
+(key\036type\036and\036name datum\036type\036and\036name) 88350  -50.00 32 s
+3 sf
+(\)) 89289  0.00 -1 s
+( ) 89944  -51.00 32 s
+2 sf
+('list) 94488  0.00 -1 s
+3 sf
+143595.0 h
+(Type) 149394  0.00 -1 s
+2 sf
+52832.0 75748.0 m
+(alist) 57848  0.00 -1 s
+3 sf
+( defines an association list. An association) 106541  160.00 32 s
+( list is a sequence, containing zero or) 149352  159.43 32 s
+52832.0 78909.0 m
+(more) 58630  0.00 -1 s
+( repetitions of the given) 86174  185.00 32 s
+( elements with each of the elements expressed as \() 144651  184.44 32 s
+5 sf
+(type) 149352  0.00 -1 s
+52832.0 82070.0 m
+(name) 58944  0.00 -1 s
+3 sf
+(\).) 60589  0.00 -1 s
+( ) 61254  -41.00 32 s
+2 sf
+34544.0 88347.0 m
+(angle) 40972  0.00 -1 s
+( ) 41650  -28.00 32 s
+3 sf
+(`\() 43528  0.00 -1 s
+2 sf
+(number) 53091  0.00 -1 s
+3 sf
+( ,\(* -2pi\) ,\(* 2pi\)\)) 73355  -28.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+2 sf
+52832.0 93337.0 m
+(angle) 59260  0.00 -1 s
+3 sf
+( defines an angle in units of radians and is bounded) 114523  -258.00 32 s
+( by \(-2) 122001  -258.50 32 s
+/symba10 8 declareFont
+8 sf
+(p) 123550  0.00 -1 s
+3 sf
+(\) and \(2) 131809  -258.50 32 s
+8 sf
+(p) 133358  0.00 -1 s
+3 sf
+(\). Note that we) 149352  -258.67 32 s
+52832.0 96497.0 m
+(are) 56277  0.00 -1 s
+( explicitly using a different angle representation than what is actually transmitted in) 149352  -106.92 32 s
+52832.0 99658.0 m
+(the) 56280  0.00 -1 s
+( protocol.) 67062  -34.00 32 s
+( ) 67733  -35.00 32 s
+2 sf
+34544.0 105935.0 m
+(arc\036seq) 43320  0.00 -1 s
+( ) 43996  -30.00 32 s
+3 sf
+('\() 45874  0.00 -1 s
+2 sf
+(repeat\036seq) 58411  0.00 -1 s
+3 sf
+( \() 60026  -30.00 32 s
+2 sf
+(int16) 66140  0.00 -1 s
+3 sf
+( ) 66816  -30.00 32 s
+5 sf
+(x) 68069  0.00 -1 s
+3 sf
+(\) \() 70623  -30.00 32 s
+2 sf
+(int16) 76737  0.00 -1 s
+3 sf
+( ) 77413  -30.00 32 s
+5 sf
+(y) 78666  0.00 -1 s
+3 sf
+(\) \() 81220  -30.00 32 s
+2 sf
+(card16) 89528  0.00 -1 s
+3 sf
+( ) 90204  -30.00 32 s
+5 sf
+(width) 96476  0.00 -1 s
+3 sf
+(\) \() 99030  -30.00 32 s
+2 sf
+(card16) 107338  0.00 -1 s
+3 sf
+( ) 108014  -30.00 32 s
+5 sf
+(height) 115068  0.00 -1 s
+3 sf
+(\)) 116007  0.00 -1 s
+( ) 116682  -31.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 109096.0 m
+(\() 53771  0.00 -1 s
+2 sf
+(angle) 60199  0.00 -1 s
+3 sf
+( ) 60856  -49.00 32 s
+5 sf
+(angle1) 68537  0.00 -1 s
+3 sf
+(\) \() 71072  -49.00 32 s
+2 sf
+(angle) 77500  0.00 -1 s
+3 sf
+( ) 78156  -50.00 32 s
+5 sf
+(angle2) 85837  0.00 -1 s
+3 sf
+(\)\)) 87715  0.00 -1 s
+2 sf
+52832.0 113815.0 m
+(arc\036seq) 61608  0.00 -1 s
+3 sf
+( defines a six\036tuple sequence of the form \() 109316  27.38 32 s
+5 sf
+(x) 110569  0.00 -1 s
+3 sf
+(, ) 112008  27.00 32 s
+5 sf
+(y) 113261  0.00 -1 s
+3 sf
+(, ) 114701  28.00 32 s
+5 sf
+(width) 120973  0.00 -1 s
+3 sf
+(, ) 122412  27.00 32 s
+5 sf
+(height) 129466  0.00 -1 s
+3 sf
+(, ) 130906  28.00 32 s
+5 sf
+(angle1) 138587  0.00 -1 s
+3 sf
+(, ) 140026  27.00 32 s
+5 sf
+(angle2) 147707  0.00 -1 s
+3 sf
+(\).) 149352  0.00 -1 s
+52832.0 116975.0 m
+(The) 57220  0.00 -1 s
+( points ) 65017  -257.00 32 s
+5 sf
+(x) 66270  0.00 -1 s
+3 sf
+( and ) 71243  -257.00 32 s
+5 sf
+(y) 72496  0.00 -1 s
+3 sf
+( are) 76390  -257.00 32 s
+( signed, 16\036bit quantities with a range from -32,768 to 32,767. The) 149352  -257.55 32 s
+52832.0 120136.0 m
+5 sf
+(width) 59104  0.00 -1 s
+3 sf
+( and ) 64349  -121.00 32 s
+5 sf
+(height) 71403  0.00 -1 s
+3 sf
+( values are unsigned, 16\036bit quantities and range from 0 to 65,535. ) 145591  -120.58 32 s
+5 sf
+(an\036) 149352  0.00 -1 s
+52832.0 123568.0 m
+(gle1) 57691  0.00 -1 s
+3 sf
+( and ) 63122  -28.00 32 s
+5 sf
+(angle2) 70803  0.00 -1 s
+3 sf
+( are in units) 83965  -28.00 32 s
+( of radians, and bounded by \(-2) 119612  -28.50 32 s
+8 sf
+(p) 121161  0.00 -1 s
+3 sf
+(\) and \(2) 129880  -28.50 32 s
+8 sf
+(p) 131429  0.00 -1 s
+3 sf
+(\). ) 133751  -29.00 32 s
+2 sf
+34544.0 129845.0 m
+(array\036index) 48808  0.00 -1 s
+( ) 49463  -51.00 32 s
+3 sf
+(`\() 51341  0.00 -1 s
+2 sf
+(integer) 59803  0.00 -1 s
+3 sf
+( 0 ,) 63231  -50.50 32 s
+5 sf
+(array\036dimension\036limit) 88153  0.00 -1 s
+3 sf
+(\)) 89092  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+2 sf
+52832.0 134564.0 m
+(array\036index) 67096  0.00 -1 s
+3 sf
+( defines a type which is a subtype of the integers and can be used to describe) 149352  -266.75 32 s
+52832.0 137724.0 m
+(all) 55653  0.00 -1 s
+( variables that can be array indices. The range is inclusive because start and end array) 149352  -189.73 32 s
+52832.0 140885.0 m
+(index) 59102  0.00 -1 s
+( specifiers can be one) 83290  -26.00 32 s
+( \(1\) past the end. ) 102751  -26.60 32 s
+2 sf
+34544.0 147162.0 m
+(bit\036gravity) 47395  0.00 -1 s
+( ) 48048  -53.00 32 s
+3 sf
+(') 48987  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+(\() 50344  0.00 -1 s
+2 sf
+(member) 60372  0.00 -1 s
+( ) 61024  -54.00 32 s
+5 sf
+(gravity*) 70429  0.00 -1 s
+3 sf
+(\)) 71368  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 151948.0 m
+(A) 54869  0.00 -1 s
+( keyword that specifies which region) 95017  -293.00 32 s
+( of a window should be retained when the window) 149352  -293.56 32 s
+52832.0 155109.0 m
+(is) 54714  0.00 -1 s
+( resized.) 64098  -19.00 32 s
+5 sf
+52832.0 161386.0 m
+( gravity ) 62198  -20.00 32 s
+3 sf
+(\037 One of the) 77577  -20.00 32 s
+( following:) 90018  -21.00 32 s
+2 sf
+52832.0 166172.0 m
+(:center) 61291  0.00 -1 s
+69088.0 h
+(:north) 76768  0.00 -1 s
+89408.0 h
+(:south) 96933  0.00 -1 s
+103632.0 h
+109728.0 h
+(:static) 117091  0.00 -1 s
+3 sf
+52832.0 169333.0 m
+2 sf
+(:east) 58472  0.00 -1 s
+69088.0 h
+(:north\036east) 82408  0.00 -1 s
+89408.0 h
+(:south\036east) 102573  0.00 -1 s
+103632.0 h
+(:west) 109898  0.00 -1 s
+3 sf
+52832.0 172494.0 m
+2 sf
+(:forget) 60977  0.00 -1 s
+69088.0 h
+(:north\036west) 83034  0.00 -1 s
+89408.0 h
+(:south\036west) 103199  0.00 -1 s
+3 sf
+52832.0 178771.0 m
+(If) 54710  0.00 -1 s
+( a window is reconfigured without changing its inside width) 122434  -8.00 32 s
+( or height, then the con\036) 149352  -8.60 32 s
+52832.0 181932.0 m
+(tents) 58162  0.00 -1 s
+( of the window moves with the window and are not lost. Otherwise, the contents of a) 149352  -286.56 32 s
+52832.0 185093.0 m
+(resized) 60823  0.00 -1 s
+( window are either moved or lost, depending on its bit\036gravity attribute. See ) 144023  -237.77 32 s
+2 sf
+(win\036) 149352  0.00 -1 s
+52832.0 188254.0 m
+(dow\036bit\036gravity) 71639  0.00 -1 s
+3 sf
+(,) 72345  0.00 -1 s
+( in paragraph 4.3, Window Attributes,) 115109  -37.00 32 s
+( for additional information.) 145717  -37.67 32 s
+2 sf
+34544.0 194530.0 m
+(bitmap) 43166  0.00 -1 s
+( ) 43854  -18.00 32 s
+3 sf
+('\() 45732  0.00 -1 s
+2 sf
+(array bit) 56451  -18.00 32 s
+3 sf
+( \(* *\)\)) 63466  -18.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 199249.0 m
+(Specifies) 63176  0.00 -1 s
+( a two\036dimensional) 84757  -25.00 32 s
+( array of bits.) 99726  -25.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 13
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03613) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+20320.0 22578.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21871 as
+20320 21871 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 25400.0 m
+2 sf
+34544.0 28222.0 m
+(bitmap\036format) 52408  0.00 -1 s
+52832.0 h
+3 sf
+(Structure) 63175  0.00 -1 s
+52832.0 32941.0 m
+(A) 54869  0.00 -1 s
+( structure that) 70345  -20.00 32 s
+( describes the storage format of a bitmap.) 116908  -20.57 32 s
+52832.0 39218.0 m
+(The) 57220  0.00 -1 s
+( ) 58108  182.00 32 s
+2 sf
+(bitmap\036format) 75972  0.00 -1 s
+3 sf
+( structure contains slots) 103088  182.00 32 s
+( for ) 108152  181.50 32 s
+2 sf
+(unit) 113013  0.00 -1 s
+3 sf
+(, ) 114606  181.00 32 s
+2 sf
+(pad) 119155  0.00 -1 s
+3 sf
+(, and ) 125711  181.50 32 s
+2 sf
+(lsb\036first\036p) 137622  0.00 -1 s
+3 sf
+(. The ) 144491  181.50 32 s
+2 sf
+(unit) 149352  0.00 -1 s
+3 sf
+52832.0 42378.0 m
+(member) 62078  0.00 -1 s
+( indicates the) 77229  130.00 32 s
+( unit of increments used to maintain the bitmap data. The units) 149352  129.45 32 s
+52832.0 45539.0 m
+(available for use are 8, 16, or 32 bits. The ) 101862  130.00 32 s
+2 sf
+(pad) 106411  0.00 -1 s
+3 sf
+( member indicates how many bits are) 149352  129.50 32 s
+52832.0 48700.0 m
+(needed) 60824  0.00 -1 s
+( to pad the left edge of the scan\036line. The ) 105451  -231.70 32 s
+2 sf
+(lsb\036first\036p) 117362  0.00 -1 s
+3 sf
+( member is a predicate which) 149352  -231.60 32 s
+52832.0 51861.0 m
+(indicates) 62863  0.00 -1 s
+( the ordering of) 80272  -22.00 32 s
+( bits with the bitmap unit.) 109164  -22.60 32 s
+2 sf
+34544.0 58138.0 m
+(unit) 39405  0.00 -1 s
+52832.0 h
+3 sf
+123230.0 h
+(Slot) 127778  0.00 -1 s
+( of ) 131488  -26.00 32 s
+2 sf
+(bitmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 62857.0 m
+(Type:) 59415  0.00 -1 s
+( \() 61022  -38.00 32 s
+2 sf
+(member ) 71718  -38.00 32 s
+3 sf
+(8 16 32\).) 81754  -38.00 32 s
+52832.0 69133.0 m
+(The) 57220  0.00 -1 s
+( size of a contiguous grouping of bits, which can be 8, 16, or) 125217  -27.00 32 s
+( 32. The default is 8.) 148359  -27.60 32 s
+2 sf
+34544.0 75410.0 m
+(pad) 39093  0.00 -1 s
+52832.0 h
+3 sf
+123230.0 h
+(Slot) 127778  0.00 -1 s
+( of ) 131488  -26.00 32 s
+2 sf
+(bitmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 80129.0 m
+(Type:) 59415  0.00 -1 s
+( \() 61022  -38.00 32 s
+2 sf
+(member ) 71718  -38.00 32 s
+3 sf
+(8 16 32\).) 81754  -38.00 32 s
+52832.0 86405.0 m
+(The) 57220  0.00 -1 s
+( number of bits to left\036pad the scan\036line, which can be 8, 16, or 32. The default is 8.) 149352  -119.67 32 s
+2 sf
+34544.0 92682.0 m
+(lsb\036first\036p) 46455  0.00 -1 s
+52832.0 h
+3 sf
+123230.0 h
+(Slot) 127778  0.00 -1 s
+( of ) 131488  -26.00 32 s
+2 sf
+(bitmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 97401.0 m
+(Type:) 59415  0.00 -1 s
+( ) 60013  -108.00 32 s
+2 sf
+(boolean) 69421  0.00 -1 s
+3 sf
+(.) 70127  0.00 -1 s
+52832.0 103677.0 m
+(A) 54869  0.00 -1 s
+( predicate indicating whether the least significant bit comes) 121809  -18.00 32 s
+( first \() 128667  -18.50 32 s
+2 sf
+(true) 133681  0.00 -1 s
+3 sf
+(\) or not \() 143577  -18.67 32 s
+2 sf
+(nil) 146714  0.00 -1 s
+3 sf
+(\).) 148359  0.00 -1 s
+20320.0 109954.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 109129 av
+149352 109129 as
+149352 109247 as
+20320 109247 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 112776.0 m
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 14
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03614) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(boolean) 43952  0.00 -1 s
+( ) 44640  -18.00 32 s
+/timsps10 3 declareFont
+3 sf
+('\() 46518  0.00 -1 s
+2 sf
+(or) 49182  0.00 -1 s
+3 sf
+( ) 49870  -18.00 32 s
+2 sf
+(nil) 53007  0.00 -1 s
+3 sf
+( \() 54634  -18.00 32 s
+2 sf
+(not) 58553  0.00 -1 s
+3 sf
+( ) 59241  -18.00 32 s
+2 sf
+(nil) 62378  0.00 -1 s
+3 sf
+(\)\)) 64256  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+2 sf
+52832.0 27297.0 m
+(boolean) 62240  0.00 -1 s
+3 sf
+( defines a type which) 86029  -48.00 32 s
+( is all inclusive. It is used for variables that can take on a) 149352  -48.54 32 s
+52832.0 30457.0 m
+(true) 57219  0.00 -1 s
+( \(non\036) 64024  -12.00 32 s
+2 sf
+(nil) 67161  0.00 -1 s
+3 sf
+(\) or false \() 78798  -12.00 32 s
+2 sf
+(nil) 81935  0.00 -1 s
+3 sf
+(\) value.) 90386  -12.00 32 s
+( ) 91079  -13.00 32 s
+2 sf
+34544.0 36734.0 m
+(boole\036constant) 52100  0.00 -1 s
+( ) 52736  -70.00 32 s
+3 sf
+(`\() 54614  0.00 -1 s
+2 sf
+(member) 64642  0.00 -1 s
+3 sf
+( ) 65277  -71.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(value) 71389  0.00 -1 s
+3 sf
+(*\)) 73739  0.00 -1 s
+142895.0 h
+( Type) 149352  -48.00 32 s
+2 sf
+52832.0 41453.0 m
+(boole-constant) 70860  0.00 -1 s
+3 sf
+( defines a) 81450  -112.00 32 s
+( type that is a set of the values associated with the 16 boolean) 149352  -112.54 32 s
+52832.0 44614.0 m
+(operation\036code) 69756  0.00 -1 s
+( constants for the Common Lisp language. It is used for the set of allowed) 149352  -276.86 32 s
+52832.0 47775.0 m
+(source) 60197  0.00 -1 s
+( and destination combination functions in a graphics context. ) 129303  -37.56 32 s
+5 sf
+52832.0 54051.0 m
+(value) 58944  0.00 -1 s
+( \037 ) 62812  -26.50 32 s
+3 sf
+(One of the following:) 87105  -26.67 32 s
+2 sf
+52832.0 60328.0 m
+(boole\0361) 61610  0.00 -1 s
+65024.0 h
+75184.0 h
+(boole\036c1) 85215  0.00 -1 s
+95504.0 h
+(boole\036nand) 108989  0.00 -1 s
+115824.0 h
+(boole\036xor) 127266  0.00 -1 s
+52832.0 63489.0 m
+(boole\0362) 61610  0.00 -1 s
+65024.0 h
+75184.0 h
+(boole\036c2) 85215  0.00 -1 s
+95504.0 h
+(boole\036nor) 107104  0.00 -1 s
+115824.0 h
+52832.0 66650.0 m
+(boole\036and) 64748  0.00 -1 s
+65024.0 h
+(boole\036clr) 75681  0.00 -1 s
+83312.0 h
+(boole\036orc1) 96007  0.00 -1 s
+105664.0 h
+52832.0 69810.0 m
+(boole\036andc1) 67412  0.00 -1 s
+75184.0 h
+(boole\036eqv) 86784  0.00 -1 s
+95504.0 h
+(boole\036orc2) 108199  0.00 -1 s
+115824.0 h
+52832.0 72971.0 m
+(boole\036andc2) 67412  0.00 -1 s
+75184.0 h
+(boole\036ior) 85999  0.00 -1 s
+95504.0 h
+(boole\036set) 106161  0.00 -1 s
+3 sf
+115824.0 h
+2 sf
+34544.0 79248.0 m
+(card8) 41441  0.00 -1 s
+( ) 42088  -59.00 32 s
+3 sf
+('\() 43966  0.00 -1 s
+2 sf
+(unsigned\036byte) 60899  0.00 -1 s
+3 sf
+( 8\)) 63895  -60.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 83967.0 m
+(An) 56280  0.00 -1 s
+( unsigned integer value that is a maximum of eight bits long. This gives) 135418  -135.00 32 s
+( a number of) 149352  -135.67 32 s
+52832.0 87128.0 m
+(this) 56909  0.00 -1 s
+( type a range from 0 to 255. ) 88798  -20.88 32 s
+2 sf
+34544.0 93404.0 m
+(card16) 42852  0.00 -1 s
+( ) 43488  -70.00 32 s
+3 sf
+('\() 45366  0.00 -1 s
+2 sf
+(unsigned\036byte) 62299  0.00 -1 s
+3 sf
+( 16\)) 66695  -71.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 98123.0 m
+(An) 56280  0.00 -1 s
+( unsigned integer value that is a maximum of 16 bits long. This gives a number of this) 149352  -242.59 32 s
+52832.0 101284.0 m
+(type) 57691  0.00 -1 s
+( a range) 66567  -28.00 32 s
+( from 0 to 65,535. ) 87511  -28.60 32 s
+2 sf
+34544.0 107561.0 m
+(card29) 42852  0.00 -1 s
+( ) 43488  -70.00 32 s
+3 sf
+('\() 45366  0.00 -1 s
+2 sf
+(unsigned\036byte) 62299  0.00 -1 s
+3 sf
+( 29\)) 66695  -71.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 112279.0 m
+(An) 56280  0.00 -1 s
+( unsigned integer value that is a maximum of 29 bits long. This gives a number of this) 149352  -242.59 32 s
+52832.0 115440.0 m
+(type) 57691  0.00 -1 s
+( a range from 0 to 536,870,911. ) 93811  -35.57 32 s
+2 sf
+34544.0 121717.0 m
+(card32) 42852  0.00 -1 s
+( ) 43488  -70.00 32 s
+3 sf
+('\() 45366  0.00 -1 s
+2 sf
+(unsigned\036byte) 62299  0.00 -1 s
+3 sf
+( 32\)) 66695  -71.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 126436.0 m
+(An) 56280  0.00 -1 s
+( unsigned integer value that is a maximum of 32 bits long. This gives a number of this) 149352  -242.59 32 s
+52832.0 129596.0 m
+(type) 57691  0.00 -1 s
+( a range from 0 to 4,294,967,295.) 95243  -38.00 32 s
+( ) 95910  -39.00 32 s
+2 sf
+34544.0 135873.0 m
+(color) 40656  0.00 -1 s
+( ) 41347  -15.00 32 s
+3 sf
+('\() 43225  0.00 -1 s
+2 sf
+(satisfies) 52629  0.00 -1 s
+3 sf
+( ) 53320  -15.00 32 s
+2 sf
+(color\036p) 61940  0.00 -1 s
+3 sf
+(\)) 62879  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 140592.0 m
+(A) 54869  0.00 -1 s
+( ) 55535  -40.00 32 s
+2 sf
+(color) 61647  0.00 -1 s
+3 sf
+(. See) 67094  -40.00 32 s
+( paragraph 9.2, Color Functions, for additional information.) 134135  -40.57 32 s
+2 sf
+34544.0 146868.0 m
+(colormap) 45986  0.00 -1 s
+( ) 46653  -39.00 32 s
+3 sf
+('\() 48531  0.00 -1 s
+2 sf
+(satisfies) 57935  0.00 -1 s
+3 sf
+( ) 58602  -39.00 32 s
+2 sf
+(colormap\036p) 72552  0.00 -1 s
+3 sf
+(\)) 73491  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 151587.0 m
+(A) 54869  0.00 -1 s
+( ) 55529  -46.00 32 s
+2 sf
+(colormap) 66971  0.00 -1 s
+3 sf
+(. See paragraph 9.3, Colormap Functions,) 113691  -46.00 32 s
+( for additional information.) 144272  -46.67 32 s
+2 sf
+34544.0 157864.0 m
+(cursor) 42381  0.00 -1 s
+( ) 43063  -24.00 32 s
+3 sf
+('\() 44941  0.00 -1 s
+2 sf
+(satisfies) 54345  0.00 -1 s
+3 sf
+( ) 55027  -24.00 32 s
+2 sf
+(cursor\036p) 65372  0.00 -1 s
+3 sf
+(\)) 66311  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 162583.0 m
+(A) 54869  0.00 -1 s
+( ) 55543  -32.00 32 s
+2 sf
+(cursor) 63380  0.00 -1 s
+3 sf
+(. See Section 10, Cursors, for additional information. ) 123636  -31.63 32 s
+2 sf
+34544.0 168859.0 m
+(device\036event\036mask) 56798  0.00 -1 s
+( ) 57463  -41.00 32 s
+3 sf
+('\() 59341  0.00 -1 s
+2 sf
+(or mask32) 71920  -41.00 32 s
+3 sf
+( \() 73524  -41.00 32 s
+2 sf
+(list device\036event\036mask\036class) 106631  -41.00 32 s
+3 sf
+(\)\)) 108509  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 173578.0 m
+(Provides) 62708  0.00 -1 s
+( a way to specify a set of bits for an event bitmask. Two ways of specifying the) 149352  -158.94 32 s
+52832.0 176739.0 m
+(bits) 56909  0.00 -1 s
+( are allowed: by setting the event bits in a 32 bit mask, or by) 126535  108.00 32 s
+( listing the keyword) 149352  107.33 32 s
+52832.0 179900.0 m
+(names) 60042  0.00 -1 s
+( of the device related event bits) 95175  -22.00 32 s
+( in a list.) 104829  -22.67 32 s
+2 sf
+34544.0 186176.0 m
+(device\036event\036mask\036class) 63381  0.00 -1 s
+( ) 64004  -83.00 32 s
+3 sf
+(') 64943  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+(\() 66300  0.00 -1 s
+2 sf
+(member) 76328  0.00 -1 s
+( ) 76950  -84.00 32 s
+5 sf
+(event*) 84315  0.00 -1 s
+3 sf
+(\)) 85254  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 190895.0 m
+(A) 54869  0.00 -1 s
+( keyword name, for a device related event, that) 108290  56.00 32 s
+( corresponds to a particular bit in an) 149352  55.43 32 s
+52832.0 194056.0 m
+(event) 58944  0.00 -1 s
+( bitmask. The set of names is a subset of the names in the type ) 128271  -112.53 32 s
+2 sf
+(event\036mask\036class) 148646  0.00 -1 s
+3 sf
+(.) 149352  0.00 -1 s
+5 sf
+52832.0 200333.0 m
+(event) 58786  0.00 -1 s
+( \037 ) 62654  -26.50 32 s
+3 sf
+(One of the following:) 86947  -26.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 15
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03615) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+52832.0 22578.0 m
+(:button\0361\036motion) 73520  0.00 -1 s
+80264.0 h
+(:button\036motion) 98602  0.00 -1 s
+103632.0 h
+109728.0 h
+52832.0 25739.0 m
+(:button\0362\036motion) 73520  0.00 -1 s
+80264.0 h
+(:button\036press) 96409  0.00 -1 s
+103632.0 h
+109728.0 h
+52832.0 28900.0 m
+(:button\0363\036motion) 73520  0.00 -1 s
+80264.0 h
+(:key\036press) 92646  0.00 -1 s
+103632.0 h
+109728.0 h
+52832.0 32060.0 m
+(:button\0364\036motion) 73520  0.00 -1 s
+80264.0 h
+(:key\036release) 94680  0.00 -1 s
+103632.0 h
+109728.0 h
+52832.0 35221.0 m
+(:button\0365\036motion) 73520  0.00 -1 s
+80264.0 h
+(:pointer\036motion) 99384  0.00 -1 s
+103632.0 h
+109728.0 h
+34544.0 41498.0 m
+(display) 43170  0.00 -1 s
+( ) 43876  0.00 32 s
+/timsps10 3 declareFont
+3 sf
+('\() 45754  0.00 -1 s
+2 sf
+(satisfies) 55158  0.00 -1 s
+3 sf
+( ) 55864  0.00 32 s
+2 sf
+(display\036p) 66998  0.00 -1 s
+3 sf
+(\)) 67937  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 46217.0 m
+(A) 54869  0.00 -1 s
+( connection to an X server. See Section) 99011  -31.00 32 s
+( 2, Displays, for additional information.) 143685  -31.60 32 s
+2 sf
+34544.0 52493.0 m
+(drawable) 45831  0.00 -1 s
+( ) 46485  -52.00 32 s
+3 sf
+('\() 48363  0.00 -1 s
+2 sf
+(or window pixmap) 70836  -52.00 32 s
+3 sf
+(\)) 71775  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 57212.0 m
+(Both) 58320  0.00 -1 s
+( ) 58872  -154.00 32 s
+2 sf
+(windows) 69377  0.00 -1 s
+3 sf
+( and ) 74556  -154.00 32 s
+2 sf
+(pixmaps) 84748  0.00 -1 s
+3 sf
+( can be used as sources and destinations) 128737  -154.00 32 s
+( in graphics opera\036) 149352  -154.67 32 s
+52832.0 60373.0 m
+(tions.) 59026  0.00 -1 s
+( ) 59785  53.00 32 s
+2 sf
+(windows) 70290  0.00 -1 s
+3 sf
+( and ) 75883  53.00 32 s
+2 sf
+(pixmaps) 86075  0.00 -1 s
+3 sf
+( together are known as ) 112593  53.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(drawables) 124352  0.00 -1 s
+3 sf
+(.) 125058  0.00 -1 s
+( However, an ) 141044  52.33 32 s
+2 sf
+(:input\036) 149352  0.00 -1 s
+52832.0 63534.0 m
+(only) 58007  0.00 -1 s
+3 sf
+( window cannot be used as a source) 98159  -30.00 32 s
+( or destination in a graphics operation. ) 141992  -30.57 32 s
+2 sf
+34544.0 69810.0 m
+(draw\036direction) 52568  0.00 -1 s
+( ) 53250  -24.00 32 s
+3 sf
+('\() 55128  0.00 -1 s
+2 sf
+(member) 65156  0.00 -1 s
+3 sf
+( ) 65839  -23.00 32 s
+2 sf
+(:left\036to\036right) 80877  0.00 -1 s
+3 sf
+( ) 81559  -24.00 32 s
+2 sf
+(:right\036to\036left) 96597  0.00 -1 s
+3 sf
+(\)) 97536  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 74529.0 m
+(Defines) 61607  0.00 -1 s
+( a list of rotation directions for drawing arcs) 109347  -243.00 32 s
+( and fonts. ) 121158  -243.67 32 s
+2 sf
+(draw\036direction) 139182  0.00 -1 s
+3 sf
+( can have) 149352  -243.50 32 s
+52832.0 77690.0 m
+(the) 56280  0.00 -1 s
+( values of ) 67934  -8.00 32 s
+2 sf
+(:left\036to\036right) 82972  0.00 -1 s
+3 sf
+( or ) 86717  -8.50 32 s
+2 sf
+(:right\036to\036left) 101755  0.00 -1 s
+3 sf
+(. ) 103158  -9.00 32 s
+2 sf
+34544.0 83967.0 m
+(error\036key) 46139  0.00 -1 s
+( ) 46784  -61.00 32 s
+3 sf
+('\() 48662  0.00 -1 s
+2 sf
+(member) 58690  0.00 -1 s
+3 sf
+( ) 59335  -61.00 32 s
+5 sf
+(error) 65293  0.00 -1 s
+3 sf
+(*\)) 67643  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 88686.0 m
+(Defines) 61607  0.00 -1 s
+( a list of all predefined errors. All errors \(synchronous and asynchronous\) are) 149352  57.00 32 s
+52832.0 91846.0 m
+(processed) 63959  0.00 -1 s
+( by calling an error handler in the display. The handler is called with the dis\036) 149352  -64.87 32 s
+52832.0 95007.0 m
+(play) 57691  0.00 -1 s
+( as the first argument and the error\036key as its second argument. ) 129122  -23.00 32 s
+5 sf
+52832.0 101013.0 m
+(error) 58790  0.00 -1 s
+3 sf
+( \037 One of the following:) 87308  -17.80 32 s
+2 sf
+52832.0 107290.0 m
+(:access) 61137  0.00 -1 s
+3 sf
+70104.0 h
+2 sf
+(:drawable) 82330  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:implementation) 113376  0.00 -1 s
+117856.0 h
+(:value) 125223  0.00 -1 s
+3 sf
+52832.0 110450.0 m
+2 sf
+(:alloc) 59414  0.00 -1 s
+3 sf
+70104.0 h
+2 sf
+(:font) 75901  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:length) 101936  0.00 -1 s
+3 sf
+117856.0 h
+2 sf
+(:window) 128202  0.00 -1 s
+3 sf
+52832.0 113611.0 m
+2 sf
+(:atom) 59882  0.00 -1 s
+3 sf
+70104.0 h
+2 sf
+(:gcontext) 81229  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:match) 101933  0.00 -1 s
+3 sf
+117856.0 h
+52832.0 116772.0 m
+2 sf
+(:colormap) 65213  0.00 -1 s
+3 sf
+70104.0 h
+2 sf
+(:id\036choice) 81858  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:name) 100994  0.00 -1 s
+3 sf
+117856.0 h
+52832.0 119933.0 m
+2 sf
+(:cursor) 61608  0.00 -1 s
+3 sf
+70104.0 h
+2 sf
+(:illegal\036request) 88127  0.00 -1 s
+93472.0 h
+(:pixmap) 103505  0.00 -1 s
+3 sf
+117856.0 h
+2 sf
+34544.0 126210.0 m
+(event\036key) 46141  0.00 -1 s
+( ) 46791  -56.00 32 s
+3 sf
+('\() 48669  0.00 -1 s
+2 sf
+(member) 58697  0.00 -1 s
+3 sf
+( ) 59348  -55.00 32 s
+5 sf
+(event\036type) 70942  0.00 -1 s
+3 sf
+(*\) ) 73942  -56.00 32 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 130929.0 m
+(Defines) 61607  0.00 -1 s
+( a list that specifies all) 85876  -178.00 32 s
+( predefined event\036types. Clients are informed of informa\036) 149352  -178.57 32 s
+52832.0 134089.0 m
+(tion) 57222  0.00 -1 s
+( asynchronously by means of events. These events can be either asynchronously) 149352  153.27 32 s
+52832.0 137250.0 m
+(generated) 63800  0.00 -1 s
+( from devices or generated as side effects of client requests. ) 131538  -25.55 32 s
+5 sf
+52832.0 143256.0 m
+(event\036type) 64426  0.00 -1 s
+3 sf
+( \037 One of the following:) 92885  -29.60 32 s
+2 sf
+52832.0 149533.0 m
+(:button\036press) 68977  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:exposure) 93036  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:motion\036notify) 129155  0.00 -1 s
+3 sf
+52832.0 152694.0 m
+2 sf
+(:button\036release) 71011  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:focus\036in) 91781  0.00 -1 s
+( ) 92479  -8.00 32 s
+3 sf
+111760.0 h
+2 sf
+(:no\036exposure) 127435  0.00 -1 s
+( ) 128061  -80.00 32 s
+3 sf
+52832.0 155854.0 m
+2 sf
+(:circulate\036notify) 72262  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:focus\036out) 93347  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:property\036notify) 131349  0.00 -1 s
+3 sf
+52832.0 159015.0 m
+2 sf
+(:circulate\036request) 74143  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:graphics\036exposure) 104323  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:reparent\036notify) 131191  0.00 -1 s
+3 sf
+52832.0 162176.0 m
+2 sf
+(:client\036message) 71166  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:gravity\036notify) 98831  0.00 -1 s
+111760.0 h
+(:resize\036request) 129466  0.00 -1 s
+3 sf
+52832.0 165337.0 m
+2 sf
+(:colormap\036notify) 73205  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:keymap\036notify) 99774  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:selection\036clear) 129936  0.00 -1 s
+3 sf
+52832.0 168498.0 m
+2 sf
+(:configure\036notify) 73205  0.00 -1 s
+( ) 73852  -59.00 32 s
+3 sf
+81280.0 h
+2 sf
+(:key\036press) 93662  0.00 -1 s
+( ) 94330  -38.00 32 s
+3 sf
+111760.0 h
+2 sf
+(:selection\036notify) 131035  0.00 -1 s
+3 sf
+52832.0 171659.0 m
+2 sf
+(:configure\036request) 75086  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:key\036release) 95696  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:selection\036request) 132916  0.00 -1 s
+( ) 133570  -52.00 32 s
+3 sf
+52832.0 174820.0 m
+2 sf
+(:create\036notify) 69125  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:leave\036notify) 96323  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:unmap\036notify) 129159  0.00 -1 s
+3 sf
+52832.0 177981.0 m
+2 sf
+(:destroy\036notify) 70697  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:map\036notify) 95541  0.00 -1 s
+3 sf
+111760.0 h
+2 sf
+(:visibility\036notify) 131039  0.00 -1 s
+3 sf
+52832.0 181142.0 m
+2 sf
+(:enter\036notify) 68030  0.00 -1 s
+3 sf
+81280.0 h
+2 sf
+(:map\036request) 97422  0.00 -1 s
+( ) 98078  -50.00 32 s
+3 sf
+111760.0 h
+2 sf
+34544.0 187418.0 m
+(event\036mask) 48336  0.00 -1 s
+( ) 49021  -21.00 32 s
+3 sf
+('\() 50899  0.00 -1 s
+2 sf
+(or mask32) 63498  -21.00 32 s
+3 sf
+( \() 65123  -20.00 32 s
+2 sf
+(list) 68728  0.00 -1 s
+3 sf
+( ) 69413  -21.00 32 s
+2 sf
+(event\036mask\036class) 89788  0.00 -1 s
+3 sf
+(\)\)) 91666  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 192137.0 m
+(Provides) 62708  0.00 -1 s
+( a way to specify a set of bits for an event bitmask. Two ways of specifying the) 149352  -158.94 32 s
+52832.0 195298.0 m
+(bits) 56909  0.00 -1 s
+( are allowed: by setting the event bits in a 32 bit mask, or by) 126535  108.00 32 s
+( listing the keyword) 149352  107.33 32 s
+52832.0 198459.0 m
+(names) 60042  0.00 -1 s
+( of the) 67220  -16.00 32 s
+( event bits in a list.) 88460  -16.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 16
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03616) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+/timsps10 3 declareFont
+3 sf
+20320.0 22578.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 21753 av
+149352 21753 as
+149352 21871 as
+20320 21871 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 25400.0 m
+2 sf
+34544.0 28222.0 m
+(event\036mask\036class) 54919  0.00 -1 s
+( ) 55562  -63.00 32 s
+3 sf
+(') 56501  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+(\() 57858  0.00 -1 s
+2 sf
+(member) 67886  0.00 -1 s
+( ) 68528  -64.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(event*) 75893  0.00 -1 s
+3 sf
+(\)) 76832  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 32941.0 m
+(The) 57220  0.00 -1 s
+( elements of the type) 79688  -261.00 32 s
+2 sf
+( event\036mask\036class) 100508  -261.00 32 s
+3 sf
+( are keyword names) 122371  -261.00 32 s
+( that correspond to a par\036) 149352  -261.60 32 s
+52832.0 36102.0 m
+(ticular) 60040  0.00 -1 s
+( bit in an event bitmask.) 87037  -25.00 32 s
+5 sf
+52832.0 42378.0 m
+(event) 58786  0.00 -1 s
+( \037 ) 62654  -26.50 32 s
+3 sf
+(One of the following:) 86947  -26.67 32 s
+2 sf
+52832.0 47165.0 m
+(:button\0361\036motion) 73520  0.00 -1 s
+80264.0 h
+(:enter\036window) 97816  0.00 -1 s
+103632.0 h
+109728.0 h
+(:pointer\036motion\036hint) 134648  0.00 -1 s
+52832.0 50326.0 m
+(:button\0362\036motion) 73520  0.00 -1 s
+80264.0 h
+(:exposure) 92020  0.00 -1 s
+103632.0 h
+109728.0 h
+(:property\036change) 130730  0.00 -1 s
+52832.0 53487.0 m
+(:button\0363\036motion) 73520  0.00 -1 s
+80264.0 h
+(:focus\036change) 96878  0.00 -1 s
+103632.0 h
+109728.0 h
+(:resize\036redirect) 128057  0.00 -1 s
+52832.0 56648.0 m
+(:button\0364\036motion) 73520  0.00 -1 s
+80264.0 h
+(:key\036press) 92646  0.00 -1 s
+103632.0 h
+109728.0 h
+(:structure\036notify) 129785  0.00 -1 s
+52832.0 59809.0 m
+(:button\0365\036motion) 73520  0.00 -1 s
+80264.0 h
+(:key\036release) 94680  0.00 -1 s
+103632.0 h
+109728.0 h
+(:substructure\036notify) 134021  0.00 -1 s
+52832.0 62969.0 m
+(:button\036motion) 71170  0.00 -1 s
+80264.0 h
+(:keymap\036state) 97345  0.00 -1 s
+103632.0 h
+109728.0 h
+(:substructure\036redirect) 136525  0.00 -1 s
+52832.0 66130.0 m
+(:button\036press) 68977  0.00 -1 s
+80264.0 h
+(:leave\036window) 97661  0.00 -1 s
+103632.0 h
+109728.0 h
+(:visibility\036change) 130420  0.00 -1 s
+52832.0 69291.0 m
+(:button\036release) 71011  0.00 -1 s
+80264.0 h
+(:owner\036grab\036button) 104244  0.00 -1 s
+109728.0 h
+52832.0 72452.0 m
+(:colormap\036change) 74618  0.00 -1 s
+80264.0 h
+(:pointer\036motion) 99384  0.00 -1 s
+103632.0 h
+109728.0 h
+34544.0 78729.0 m
+(make\036event\036keys) 54761  0.00 -1 s
+( ) 55335  -132.00 32 s
+5 sf
+(event\036mask) 68027  0.00 -1 s
+2 sf
+139373.0 h
+3 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 81890.0 m
+52832.0 h
+3 sf
+(Returns:) 62394  0.00 -1 s
+5 sf
+( event\036keywords) 80620  -32.00 32 s
+( ) 81293  -33.00 32 s
+3 sf
+(\037 Type ) 91261  -32.50 32 s
+2 sf
+(list) 94866  0.00 -1 s
+3 sf
+(.) 95572  0.00 -1 s
+52832.0 86608.0 m
+(Returns) 61610  0.00 -1 s
+( a list of ) 71291  -49.00 32 s
+2 sf
+(event\036mask\036class) 91666  0.00 -1 s
+3 sf
+( keyword names) 110063  -49.00 32 s
+( for the event bits that are set in the) 149352  -49.56 32 s
+52832.0 89769.0 m
+(specified) 63018  0.00 -1 s
+( event mask. ) 77803  -36.00 32 s
+5 sf
+52832.0 96046.0 m
+(event\036mask ) 66195  -35.00 32 s
+3 sf
+(\037 An event mask \(type ) 93685  -35.40 32 s
+2 sf
+(mask32) 102935  0.00 -1 s
+3 sf
+(\).) 104580  0.00 -1 s
+2 sf
+34544.0 100832.0 m
+(make\036event\036mask) 55858  0.00 -1 s
+3 sf
+( &rest ) 63441  -49.00 32 s
+5 sf
+(keys) 68298  0.00 -1 s
+2 sf
+139373.0 h
+3 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 103993.0 m
+52832.0 h
+3 sf
+(Returns:) 62394  0.00 -1 s
+5 sf
+( ) 63082  -18.00 32 s
+52832.0 107154.0 m
+(  event\036mask ) 67543  -33.00 32 s
+3 sf
+(\037 Type ) 77510  -33.00 32 s
+2 sf
+(mask32) 86760  0.00 -1 s
+3 sf
+(.) 87466  0.00 -1 s
+52832.0 111873.0 m
+(Constructs) 64903  0.00 -1 s
+( an event mask from a) 89763  -28.00 32 s
+( set of ) 97280  -28.67 32 s
+2 sf
+(event\036mask\036class) 117655  0.00 -1 s
+3 sf
+( keyword names.) 136799  -28.50 32 s
+5 sf
+52832.0 118150.0 m
+(keys) 57689  0.00 -1 s
+( ) 58353  -42.00 32 s
+3 sf
+(\037 ) 61840  -41.00 32 s
+2 sf
+(event\036mask\036class) 82215  0.00 -1 s
+3 sf
+( keywords.) 94556  -42.00 32 s
+20320.0 122936.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 122111 av
+149352 122111 as
+149352 122229 as
+20320 122229 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 125758.0 m
+2 sf
+34544.0 128580.0 m
+(font) 39402  0.00 -1 s
+( ) 40128  20.00 32 s
+3 sf
+('\() 42006  0.00 -1 s
+2 sf
+(satisfies) 51410  0.00 -1 s
+3 sf
+( ) 52136  20.00 32 s
+2 sf
+(font\036p) 59502  0.00 -1 s
+3 sf
+(\)) 60441  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 133299.0 m
+(A) 54869  0.00 -1 s
+( text font. See Section 8, Fonts and Characters, for) 111510  -29.00 32 s
+( additional information. ) 138853  -29.67 32 s
+2 sf
+34544.0 139576.0 m
+(fontable) 44419  0.00 -1 s
+( ) 45097  -28.00 32 s
+3 sf
+('\() 46975  0.00 -1 s
+2 sf
+(or stringable) 62388  -28.00 32 s
+( font) 67923  -29.00 32 s
+3 sf
+(\)) 68862  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 144295.0 m
+(A) 54869  0.00 -1 s
+( ) 55548  -27.00 32 s
+2 sf
+(fontable) 65423  0.00 -1 s
+3 sf
+( is either a ) 77699  -26.75 32 s
+2 sf
+(font) 82557  0.00 -1 s
+3 sf
+( object or the name of one of the fonts in the font database. ) 149352  -26.50 32 s
+2 sf
+34544.0 150300.0 m
+(font\036props) 47241  0.00 -1 s
+( ) 47949  2.00 32 s
+3 sf
+(') 48888  0.00 -1 s
+2 sf
+(list) 52493  0.00 -1 s
+52832.0 h
+3 sf
+(Type) 58631  0.00 -1 s
+52832.0 155019.0 m
+(A) 54869  0.00 -1 s
+( ) 55550  -25.00 32 s
+2 sf
+(list) 59155  0.00 -1 s
+3 sf
+( that contains alternating keywords and integers. ) 114311  -25.00 32 s
+2 sf
+34544.0 161025.0 m
+(gcontext ) 45411  -25.00 32 s
+3 sf
+('\() 47289  0.00 -1 s
+2 sf
+(satisfies) 56693  0.00 -1 s
+3 sf
+( ) 57374  -25.00 32 s
+2 sf
+(gcontext\036p) 70068  0.00 -1 s
+3 sf
+(\)) 71007  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 165743.0 m
+(A) 54869  0.00 -1 s
+( graphics context. See Section 5, Graphics Contexts, for additional) 129621  -37.00 32 s
+( information.) 144317  -38.00 32 s
+2 sf
+34544.0 172020.0 m
+(gcontext\036key) 49902  0.00 -1 s
+( ) 50536  -72.00 32 s
+3 sf
+('\() 52414  0.00 -1 s
+2 sf
+(member) 62442  0.00 -1 s
+3 sf
+( ) 63076  -72.00 32 s
+5 sf
+(type) 67777  0.00 -1 s
+3 sf
+(*\)) 70127  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 176739.0 m
+(A) 54869  0.00 -1 s
+( list of predefined types) 80399  -279.00 32 s
+( for use in ) 91351  -279.50 32 s
+2 sf
+(gcontext) 101537  0.00 -1 s
+3 sf
+( processing. Various information for graph\036) 149352  -279.60 32 s
+52832.0 179900.0 m
+(ics) 55967  0.00 -1 s
+( output is stored in a graphics context \(GC or GContext\), such as foreground pixel,) 149352  -2.79 32 s
+52832.0 183061.0 m
+(background) 66154  0.00 -1 s
+( pixel, line width, clipping region, and) 109133  -35.00 32 s
+( so forth. ) 119843  -35.67 32 s
+5 sf
+52832.0 189066.0 m
+(type) 57533  0.00 -1 s
+3 sf
+( \037 One of the following:) 86021  -23.80 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 17
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03617) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+52832.0 22578.0 m
+(:arc\036mode) 65210  0.00 -1 s
+/timsps10 3 declareFont
+3 sf
+73152.0 h
+2 sf
+(:exposures) 86006  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:line\036width) 106638  0.00 -1 s
+( ) 107335  -9.00 32 s
+3 sf
+109728.0 h
+52832.0 25739.0 m
+2 sf
+(:background) 68355  0.00 -1 s
+3 sf
+73152.0 h
+2 sf
+(:fill\036rule) 83180  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:plane-mask) 108836  0.00 -1 s
+52832.0 28900.0 m
+(:cap\036style) 64428  0.00 -1 s
+3 sf
+65024.0 h
+2 sf
+(:fill\036style) 75678  0.00 -1 s
+( ) 76426  42.00 32 s
+3 sf
+93472.0 h
+2 sf
+(:stipple) 102407  0.00 -1 s
+52832.0 32060.0 m
+(:clip\036mask) 65528  0.00 -1 s
+( ) 66221  -13.00 32 s
+3 sf
+73152.0 h
+2 sf
+(:font) 78949  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:subwindow\036mode) 115576  0.00 -1 s
+3 sf
+52832.0 35221.0 m
+2 sf
+(:clip\036x) 60511  0.00 -1 s
+3 sf
+65024.0 h
+2 sf
+73152.0 h
+(:foreground) 87729  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:tile) 98171  0.00 -1 s
+3 sf
+52832.0 38382.0 m
+2 sf
+(:clip\036y) 60511  0.00 -1 s
+3 sf
+65024.0 h
+2 sf
+73152.0 h
+(:function) 84124  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:ts\036x) 98798  0.00 -1 s
+3 sf
+52832.0 41543.0 m
+2 sf
+(:dash\036offset) 66936  0.00 -1 s
+( ) 67640  -2.00 32 s
+( ) 68343  -3.00 32 s
+3 sf
+73152.0 h
+2 sf
+(:join\036style) 85218  0.00 -1 s
+3 sf
+93472.0 h
+2 sf
+(:ts\036y) 98798  0.00 -1 s
+3 sf
+52832.0 44704.0 m
+2 sf
+(:dashes) 61769  0.00 -1 s
+3 sf
+65024.0 h
+2 sf
+73152.0 h
+(:line\036style) 84905  0.00 -1 s
+34544.0 50981.0 m
+(grab\036status) 48181  0.00 -1 s
+( ) 48832  -55.00 32 s
+3 sf
+('\() 50710  0.00 -1 s
+2 sf
+(member) 60738  0.00 -1 s
+3 sf
+( ) 61389  -55.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(grab\036type) 72360  0.00 -1 s
+3 sf
+(*\)) 74710  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 55699.0 m
+(There) 59412  0.00 -1 s
+( are two kinds of grabs: active and passive. An ) 112450  -33.50 32 s
+5 sf
+(active grab ) 125864  -33.50 32 s
+3 sf
+(occurs when a single) 149352  -33.67 32 s
+52832.0 58860.0 m
+(client) 59101  0.00 -1 s
+( grabs the keyboard) 81684  135.00 32 s
+( and/or pointer explicitly. Clients can also grab a particular) 149352  134.44 32 s
+52832.0 62021.0 m
+(keyboard) 63332  0.00 -1 s
+( key or pointer button in a window. The grab activates when the key or button is) 149352  -281.56 32 s
+52832.0 65182.0 m
+(actually) 61765  0.00 -1 s
+( pressed,) 71526  -114.00 32 s
+( and is called a ) 88431  -114.60 32 s
+5 sf
+(passive grab) 102662  -114.00 32 s
+3 sf
+(. Passive grabs can be very convenient for) 149352  -114.57 32 s
+52832.0 68343.0 m
+(implementing) 68508  0.00 -1 s
+( reliable pop\036up menus. ) 95685  -44.00 32 s
+52832.0 74349.0 m
+( ) 53515  -23.00 32 s
+5 sf
+(grab\036type) 64486  0.00 -1 s
+3 sf
+( \037 One of the following:) 92975  -23.60 32 s
+2 sf
+52832.0 80625.0 m
+(:already\036grabbed) 73837  0.00 -1 s
+3 sf
+52832.0 83786.0 m
+2 sf
+(:frozen) 61449  0.00 -1 s
+3 sf
+65024.0 h
+52832.0 86947.0 m
+2 sf
+(:invalid\036time) 68348  0.00 -1 s
+3 sf
+52832.0 90108.0 m
+2 sf
+(:not\036viewable) 69131  0.00 -1 s
+3 sf
+52832.0 93269.0 m
+2 sf
+(:success) 62393  0.00 -1 s
+3 sf
+65024.0 h
+2 sf
+34544.0 99545.0 m
+(image\036depth) 49591  0.00 -1 s
+( ) 50257  -40.00 32 s
+3 sf
+('\() 52135  0.00 -1 s
+2 sf
+(integer) 60597  0.00 -1 s
+3 sf
+( 0 32\)) 67101  -40.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 104264.0 m
+(Used) 58631  0.00 -1 s
+( in determining the) 79803  -75.00 32 s
+( depth of a pixmap, window, or image. The value specifies the) 149352  -75.55 32 s
+52832.0 107425.0 m
+(number) 61452  0.00 -1 s
+( of bits deep) 75238  -29.00 32 s
+5 sf
+( ) 75915  -29.00 32 s
+3 sf
+(that a given pixel has within a given pixmap, window, or image. ) 148855  -28.83 32 s
+2 sf
+34544.0 113431.0 m
+(index\036size) 46457  0.00 -1 s
+( ) 47132  -31.00 32 s
+3 sf
+('\() 49010  0.00 -1 s
+2 sf
+(member) 59038  0.00 -1 s
+( :default) 69115  -32.00 32 s
+3 sf
+( 8 16\)) 75636  -31.50 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 118150.0 m
+(Used) 58631  0.00 -1 s
+( to control the element size of the destination buffer given to the translate function) 149352  -147.86 32 s
+52832.0 121310.0 m
+(when) 58944  0.00 -1 s
+( drawing glyphs. If ) 81366  60.50 32 s
+2 sf
+(:default) 90769  0.00 -1 s
+3 sf
+( is specified, the size is based on the current font, if) 149352  60.45 32 s
+52832.0 124471.0 m
+(known;) 61297  0.00 -1 s
+( otherwise, 16 is) 79696  -33.00 32 s
+( used.) 86247  -34.00 32 s
+2 sf
+34544.0 130748.0 m
+(int8) 39247  0.00 -1 s
+( ) 39929  -24.00 32 s
+3 sf
+('\() 41807  0.00 -1 s
+2 sf
+(signed\036byte) 55602  0.00 -1 s
+3 sf
+( 8\)) 58634  -24.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 135467.0 m
+(A) 54869  0.00 -1 s
+( signed integer value that is a) 87331  -76.00 32 s
+( maximum of eight bits long. A number of this type can) 149352  -76.55 32 s
+52832.0 138628.0 m
+(have) 58160  0.00 -1 s
+( a range from -128 to 127. ) 88663  -31.57 32 s
+2 sf
+34544.0 144633.0 m
+(int16) 40658  0.00 -1 s
+( ) 41329  -35.00 32 s
+3 sf
+('\() 43207  0.00 -1 s
+2 sf
+(signed\036byte) 57002  0.00 -1 s
+3 sf
+( 16\)) 61434  -35.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 149352.0 m
+(A) 54869  0.00 -1 s
+( signed integer value that is a maximum of 16 bits long. A number of this type can have) 149352  -250.61 32 s
+52832.0 152513.0 m
+(a) 54085  0.00 -1 s
+( range from -32,768 to 32,767. ) 89679  -37.83 32 s
+2 sf
+34544.0 158790.0 m
+(int32) 40658  0.00 -1 s
+( ) 41329  -35.00 32 s
+3 sf
+('\() 43207  0.00 -1 s
+2 sf
+(signed\036byte) 57002  0.00 -1 s
+3 sf
+( 32\)) 61434  -35.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 163508.0 m
+(A) 54869  0.00 -1 s
+( signed integer value that is a maximum of 32 bits long. A number of this type can have) 149352  -250.61 32 s
+52832.0 166669.0 m
+(a) 54085  0.00 -1 s
+( range) 60998  -60.00 32 s
+( from -2,147,483,648 to 2,147,483,647. ) 106477  -60.60 32 s
+2 sf
+34544.0 172946.0 m
+(keysym) 43636  0.00 -1 s
+( ) 44240  -102.00 32 s
+3 sf
+(') 45179  0.00 -1 s
+2 sf
+(card32) 53487  0.00 -1 s
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 177665.0 m
+(Used) 58631  0.00 -1 s
+( as an encoding of a symbol on a keycap on a keyboard. It is an unsigned integer) 149352  -11.53 32 s
+52832.0 180825.0 m
+(value) 58944  0.00 -1 s
+( represented in a maximum of 32 bits long. A ) 108490  -242.00 32 s
+2 sf
+(keysym) 117582  0.00 -1 s
+3 sf
+( type can have a range from 0) 149352  -241.57 32 s
+52832.0 183986.0 m
+(to) 55027  0.00 -1 s
+( 4,294,967,295.) 72591  -76.00 32 s
+( ) 73220  -77.00 32 s
+2 sf
+34544.0 190263.0 m
+(mask16) 43794  0.00 -1 s
+( ) 44446  -54.00 32 s
+3 sf
+(' ) 46037  -54.00 32 s
+2 sf
+(card16) 54345  0.00 -1 s
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 194982.0 m
+(A) 54869  0.00 -1 s
+( positional bitmask that) 81202  -28.00 32 s
+( contains 16 boolean flags. ) 111941  -28.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+%%Page: 18
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03618) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(mask32) 43794  0.00 -1 s
+( ) 44446  -54.00 32 s
+/timsps10 3 declareFont
+3 sf
+(' ) 46037  -54.00 32 s
+2 sf
+(card32) 54345  0.00 -1 s
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 27297.0 m
+(A) 54869  0.00 -1 s
+( positional bitmask that) 81202  -28.00 32 s
+( contains 32 boolean flags. ) 111941  -28.60 32 s
+2 sf
+34544.0 33573.0 m
+(modifier\036key) 50059  0.00 -1 s
+( ) 50713  -52.00 32 s
+3 sf
+('\() 52591  0.00 -1 s
+2 sf
+(member) 62619  0.00 -1 s
+( ) 63272  -53.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(modifier) 72834  0.00 -1 s
+2 sf
+(*) 74245  0.00 -1 s
+3 sf
+(\)) 75184  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 38292.0 m
+(A) 54869  0.00 -1 s
+( keyword identifying one of the modifier keys on the keyboard device.) 134089  -36.82 32 s
+5 sf
+52832.0 44569.0 m
+(modifier) 62394  0.00 -1 s
+( ) 63079  -21.00 32 s
+3 sf
+(\037 One of the following:) 90898  -20.50 32 s
+2 sf
+52832.0 49355.0 m
+(:shift) 59100  0.00 -1 s
+71120.0 h
+(:mod\0362) 79739  0.00 -1 s
+3 sf
+52832.0 52516.0 m
+2 sf
+(:lock) 58788  0.00 -1 s
+71120.0 h
+(:mod\0363) 79739  0.00 -1 s
+3 sf
+52832.0 55677.0 m
+2 sf
+(:control) 62391  0.00 -1 s
+71120.0 h
+(:mod\0364) 79739  0.00 -1 s
+3 sf
+52832.0 58838.0 m
+2 sf
+(:mod\0361) 61451  0.00 -1 s
+71120.0 h
+(:mod\0365) 79739  0.00 -1 s
+34544.0 65114.0 m
+(modifier\036mask) 52254  0.00 -1 s
+( ) 52934  -26.00 32 s
+3 sf
+('\() 54812  0.00 -1 s
+2 sf
+(or ) 58156  -26.00 32 s
+3 sf
+(\() 59095  0.00 -1 s
+2 sf
+(member :any) 75133  -26.00 32 s
+3 sf
+(\)) 76072  0.00 -1 s
+2 sf
+( mask16 ) 86682  -26.00 32 s
+3 sf
+(\() 87621  0.00 -1 s
+2 sf
+(list modifier\036key) 107421  -26.00 32 s
+3 sf
+(\)\)) 109299  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 69833.0 m
+(A) 54869  0.00 -1 s
+( bitmask or list of keywords that specifies a set of modifier keys. The keyword ) 141608  -173.80 32 s
+2 sf
+(:any) 146938  0.00 -1 s
+3 sf
+( is) 149352  -174.00 32 s
+52832.0 72994.0 m
+(equivalent) 64587  0.00 -1 s
+( to) 67456  -32.00 32 s
+( any subset of modifier key.) 98800  -32.60 32 s
+2 sf
+34544.0 79271.0 m
+(pixarray) 45047  0.00 -1 s
+( ) 45719  -34.00 32 s
+3 sf
+('\() 47597  0.00 -1 s
+2 sf
+(or) 50261  0.00 -1 s
+3 sf
+( \() 51872  -34.00 32 s
+2 sf
+(array pixel) 65084  -34.00 32 s
+3 sf
+( \(* *\)\)) 72068  -33.50 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 82431.0 m
+(        \() 59291  -16.00 32 s
+2 sf
+(array card16) 75028  -16.00 32 s
+3 sf
+( \(* *\)\)) 82048  -15.50 32 s
+52832.0 85592.0 m
+(        \() 59299  -15.00 32 s
+2 sf
+(array card8) 73626  -15.00 32 s
+3 sf
+( \(*) 76668  -14.00 32 s
+( *\)\)) 80648  -15.00 32 s
+52832.0 88753.0 m
+(        \() 59303  -14.50 32 s
+2 sf
+(array) 66042  0.00 -1 s
+3 sf
+( \() 67673  -14.00 32 s
+2 sf
+(unsigned\036byte 4) 86708  -15.00 32 s
+3 sf
+(\) \(* *\)\)) 94669  -14.50 32 s
+52832.0 91914.0 m
+(        \() 59350  -8.63 32 s
+2 sf
+(array bit) 70078  -9.00 32 s
+3 sf
+( \(* *\)\)\)) 78051  -8.50 32 s
+52832.0 96633.0 m
+(Specifies) 63176  0.00 -1 s
+( a two\036dimensional array of pixels. ) 103085  -23.00 32 s
+( ) 103767  -24.00 32 s
+2 sf
+34544.0 102910.0 m
+(pixel) 40345  0.00 -1 s
+( ) 41004  -47.00 32 s
+3 sf
+('\() 42882  0.00 -1 s
+2 sf
+(unsigned\036byte) 59815  0.00 -1 s
+3 sf
+( 32\)) 64234  -48.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 107628.0 m
+(An) 56280  0.00 -1 s
+( unsigned integer value that is a maximum of 32 bits long. This gives a pixel type a) 149352  -48.94 32 s
+52832.0 110789.0 m
+(value) 58944  0.00 -1 s
+( range from 0 to 4,294,967,295.) 93915  -170.00 32 s
+( Useful values are dependent on the class of color\036) 149352  -170.56 32 s
+52832.0 113950.0 m
+(map) 57691  0.00 -1 s
+( being used. ) 71842  -38.67 32 s
+2 sf
+34544.0 120227.0 m
+(pixmap) 43638  0.00 -1 s
+( ) 44328  -16.00 32 s
+3 sf
+('\() 46206  0.00 -1 s
+2 sf
+(satisfies) 55610  0.00 -1 s
+3 sf
+( ) 56299  -17.00 32 s
+2 sf
+(pixmap\036p) 67901  0.00 -1 s
+3 sf
+(\)) 68840  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 124945.0 m
+(A) 54869  0.00 -1 s
+( ) 55537  -38.00 32 s
+2 sf
+(pixmap) 64631  0.00 -1 s
+3 sf
+(. See paragraph 4.8, Pixmaps, for additional information. ) 129303  -37.75 32 s
+20320.0 131222.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 130397 av
+149352 130397 as
+149352 130515 as
+20320 130515 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 134044.0 m
+2 sf
+34544.0 136866.0 m
+(pixmap\036format) 52880  0.00 -1 s
+139034.0 h
+3 sf
+(Structure) 149377  0.00 -1 s
+52832.0 141585.0 m
+(A) 54869  0.00 -1 s
+( structure that describes the storage format of a pixmap. ) 118217  -20.80 32 s
+52832.0 147862.0 m
+(The) 57220  0.00 -1 s
+( ) 57983  57.00 32 s
+2 sf
+(pixmap\036format) 76319  0.00 -1 s
+3 sf
+( structure contains slots for ) 107875  57.00 32 s
+2 sf
+(depth) 114774  0.00 -1 s
+3 sf
+(,) 115480  0.00 -1 s
+( ) 116242  56.00 32 s
+2 sf
+(bits\036per\036pixel) 132386  0.00 -1 s
+3 sf
+(, and ) 138692  56.50 32 s
+2 sf
+(scanline\036) 149352  0.00 -1 s
+52832.0 151023.0 m
+(pad) 57381  0.00 -1 s
+3 sf
+(.) 58087  0.00 -1 s
+( The ) 63411  -238.00 32 s
+2 sf
+(depth) 70310  0.00 -1 s
+3 sf
+( member indicates the number of bit planes) 117470  -238.00 32 s
+( in the pixmap. The ) 139009  -238.60 32 s
+2 sf
+(bits\036per\036) 149352  0.00 -1 s
+52832.0 154184.0 m
+(pixel) 58633  0.00 -1 s
+3 sf
+( member indicates the) 82735  -247.00 32 s
+( number of bits used to represent a single pixel. For X, a pixel) 149352  -247.54 32 s
+52832.0 157345.0 m
+(can) 56749  0.00 -1 s
+( be 1, 4, 8, 16, 24, or 32 bits wide. As for ) 101342  -193.85 32 s
+2 sf
+(bitmap\036format) 119206  0.00 -1 s
+3 sf
+(, the ) 124385  -193.50 32 s
+2 sf
+(scanline\036pad) 139594  0.00 -1 s
+3 sf
+( member) 149352  -194.00 32 s
+52832.0 160505.0 m
+(indicates) 62863  0.00 -1 s
+( how many pixels are needed to pad the) 107288  -31.00 32 s
+( left edge of the scan\036line.) 136438  -31.60 32 s
+2 sf
+34544.0 166782.0 m
+(depth) 41443  0.00 -1 s
+52832.0 h
+3 sf
+122778.0 h
+(Slot) 127326  0.00 -1 s
+( of ) 131016  -36.00 32 s
+2 sf
+(pixmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 171501.0 m
+(Type:) 59415  0.00 -1 s
+( ) 60018  -103.00 32 s
+2 sf
+(image\036depth) 75065  0.00 -1 s
+3 sf
+(.) 75771  0.00 -1 s
+52832.0 177777.0 m
+(The) 57220  0.00 -1 s
+( number of bit planes in the pixmap.) 97920  -30.71 32 s
+2 sf
+34544.0 184054.0 m
+(bits\036per\036pixel) 50688  0.00 -1 s
+52832.0 h
+3 sf
+122778.0 h
+(Slot) 127326  0.00 -1 s
+( of ) 131016  -36.00 32 s
+2 sf
+(pixmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 188773.0 m
+(Type:) 59415  0.00 -1 s
+( \() 61029  -31.00 32 s
+2 sf
+(member ) 71732  -31.00 32 s
+3 sf
+(1 4 8 16 24 32\).) 89453  -30.60 32 s
+52832.0 195049.0 m
+(The) 57220  0.00 -1 s
+( number of consecutive bits used to encode) 113689  1114.00 32 s
+( a single pixel. The default) 149352  1113.40 32 s
+52832.0 198210.0 m
+(is) 54714  0.00 -1 s
+( 8.) 57528  -9.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 19
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03619) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(scanline\036pad) 49753  0.00 -1 s
+52832.0 h
+/timsps10 3 declareFont
+3 sf
+122778.0 h
+(Slot) 127326  0.00 -1 s
+( of ) 131016  -36.00 32 s
+2 sf
+(pixmap\036format) 149352  0.00 -1 s
+3 sf
+52832.0 27297.0 m
+(Type:) 59415  0.00 -1 s
+( \() 61022  -38.00 32 s
+2 sf
+(member ) 71718  -38.00 32 s
+3 sf
+(8 16 32\).) 81754  -38.00 32 s
+52832.0 33573.0 m
+(The) 57220  0.00 -1 s
+( number of bits to left\036pad the scan\036line, which can be 8, 16, or 32. The default is 8.) 149352  -119.67 32 s
+20320.0 39850.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 39025 av
+149352 39025 as
+149352 39143 as
+20320 39143 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 42672.0 m
+2 sf
+34544.0 45494.0 m
+(point\036seq) 45675  0.00 -1 s
+( ) 46361  -20.00 32 s
+3 sf
+('\() 48239  0.00 -1 s
+2 sf
+(repeat\036seq) 60776  0.00 -1 s
+3 sf
+( \() 62402  -19.00 32 s
+2 sf
+(int16) 68516  0.00 -1 s
+3 sf
+( ) 69202  -20.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(x) 70455  0.00 -1 s
+3 sf
+(\) \() 73020  -19.00 32 s
+2 sf
+(int16) 79134  0.00 -1 s
+3 sf
+( ) 79820  -20.00 32 s
+5 sf
+(y) 81073  0.00 -1 s
+3 sf
+(\)\)) 82951  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 50213.0 m
+(The) 57220  0.00 -1 s
+( ) 57678  -248.00 32 s
+2 sf
+(point\036seq) 68809  0.00 -1 s
+3 sf
+( type is used to define sequences of \() 108363  -248.00 32 s
+5 sf
+(x) 109616  0.00 -1 s
+3 sf
+(,) 110322  0.00 -1 s
+5 sf
+(y) 111575  0.00 -1 s
+3 sf
+(\) pairs of points. The paired values) 149352  -247.83 32 s
+52832.0 53374.0 m
+(are) 56277  0.00 -1 s
+( 16\036bit, signed integer quantities. This gives the points in this type a range from) 149352  243.36 32 s
+52832.0 56535.0 m
+(-32,768) 62004  0.00 -1 s
+( to 32,767. ) 74620  -54.67 32 s
+2 sf
+34544.0 62811.0 m
+(pointer\036event\036mask) 58053  0.00 -1 s
+( ) 58723  -36.00 32 s
+3 sf
+('\() 60601  0.00 -1 s
+2 sf
+(or mask32) 73185  -36.00 32 s
+3 sf
+( \() 74794  -36.00 32 s
+2 sf
+(list) 78399  0.00 -1 s
+( pointer\036event\036mask\036class) 109160  -37.00 32 s
+3 sf
+(\)\)) 111038  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 67530.0 m
+(Provides) 62708  0.00 -1 s
+( a way to specify a set of bits for an event bitmask. Two ways of specifying the) 149352  -158.94 32 s
+52832.0 70691.0 m
+(bits) 56909  0.00 -1 s
+( are allowed: by setting the event bits in a 32 bit mask, or by) 126535  108.00 32 s
+( listing the keyword) 149352  107.33 32 s
+52832.0 73852.0 m
+(names) 60042  0.00 -1 s
+( of the pointer related) 84258  -19.00 32 s
+( event bits in a list.) 105483  -19.60 32 s
+2 sf
+34544.0 80129.0 m
+(pointer\036event\036mask\036class) 64636  0.00 -1 s
+( ) 65263  -79.00 32 s
+3 sf
+(') 66202  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+(\() 67559  0.00 -1 s
+2 sf
+(member ) 78214  -79.00 32 s
+5 sf
+(event*) 85579  0.00 -1 s
+3 sf
+(\)) 86518  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 84847.0 m
+(A) 54869  0.00 -1 s
+( keyword name, for a pointer related event, that corresponds to a particular) 139356  14.00 32 s
+( bit in an) 149352  13.33 32 s
+52832.0 88008.0 m
+(event) 58944  0.00 -1 s
+( bitmask. The set of names is a subset of the names in the type ) 128271  -112.53 32 s
+2 sf
+(event\036mask\036class) 148646  0.00 -1 s
+3 sf
+(.) 149352  0.00 -1 s
+5 sf
+52832.0 94285.0 m
+(event) 58786  0.00 -1 s
+( \037 ) 62654  -26.50 32 s
+3 sf
+(One of the following:) 86947  -26.67 32 s
+2 sf
+52832.0 99071.0 m
+(:button\0361\036motion) 73520  0.00 -1 s
+80264.0 h
+(:button\036motion) 98602  0.00 -1 s
+103632.0 h
+109728.0 h
+(:leave\036window) 127125  0.00 -1 s
+52832.0 102232.0 m
+(:button\0362\036motion) 73520  0.00 -1 s
+80264.0 h
+(:button\036press) 96409  0.00 -1 s
+103632.0 h
+109728.0 h
+(:pointer\036motion) 128848  0.00 -1 s
+52832.0 105393.0 m
+(:button\0363\036motion) 73520  0.00 -1 s
+80264.0 h
+(:button\036release) 98443  0.00 -1 s
+103632.0 h
+109728.0 h
+(:pointer\036motion\036hint) 134648  0.00 -1 s
+52832.0 108554.0 m
+(:button\0364\036motion) 73520  0.00 -1 s
+80264.0 h
+(:enter\036window) 97816  0.00 -1 s
+103632.0 h
+109728.0 h
+52832.0 111715.0 m
+(:button\0365\036motion) 73520  0.00 -1 s
+80264.0 h
+(:keymap\036state) 97345  0.00 -1 s
+103632.0 h
+109728.0 h
+34544.0 117991.0 m
+(rect\036seq) 44101  0.00 -1 s
+( ) 44776  -31.00 32 s
+3 sf
+('\() 46654  0.00 -1 s
+2 sf
+(repeat\036seq) 59191  0.00 -1 s
+3 sf
+( \() 60805  -31.00 32 s
+2 sf
+(int16) 66919  0.00 -1 s
+3 sf
+( ) 67594  -31.00 32 s
+5 sf
+(x) 68847  0.00 -1 s
+3 sf
+(\) \() 71401  -30.00 32 s
+2 sf
+(int16) 77515  0.00 -1 s
+3 sf
+( ) 78190  -31.00 32 s
+5 sf
+(y) 79443  0.00 -1 s
+3 sf
+(\) \() 81997  -30.00 32 s
+2 sf
+(card16) 90305  0.00 -1 s
+3 sf
+( ) 90980  -31.00 32 s
+5 sf
+(width) 97252  0.00 -1 s
+3 sf
+(\) \() 99806  -30.00 32 s
+2 sf
+(card16) 108114  0.00 -1 s
+3 sf
+( ) 108789  -31.00 32 s
+5 sf
+(height) 115843  0.00 -1 s
+3 sf
+(\)\)) 117721  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+2 sf
+52832.0 122710.0 m
+(rect\036seq) 62389  0.00 -1 s
+3 sf
+( defines a four\036tuple sequence of the form \() 109639  -205.75 32 s
+5 sf
+(x) 110892  0.00 -1 s
+3 sf
+(,) 111598  0.00 -1 s
+5 sf
+( y) 113351  -206.00 32 s
+3 sf
+(, ) 114558  -205.00 32 s
+5 sf
+(width) 120830  0.00 -1 s
+3 sf
+(, ) 122036  -206.00 32 s
+5 sf
+(height) 129090  0.00 -1 s
+3 sf
+(\). The points ) 143524  -205.33 32 s
+5 sf
+(x) 144777  0.00 -1 s
+3 sf
+( and) 149352  -206.00 32 s
+52832.0 125871.0 m
+5 sf
+(y) 54085  0.00 -1 s
+3 sf
+( are signed, 16\036bit quantities with a range from -32,768 to 32,767. The ) 131098  -279.92 32 s
+5 sf
+(width) 137370  0.00 -1 s
+3 sf
+( and ) 142298  -279.50 32 s
+5 sf
+(height) 149352  0.00 -1 s
+3 sf
+52832.0 129032.0 m
+(values) 60042  0.00 -1 s
+( are unsigned, 16\036bit quantities and range) 106482  -32.00 32 s
+( from 0 to 65,535. ) 127406  -32.60 32 s
+2 sf
+34544.0 135309.0 m
+(repeat\036seq ) 47755  -32.00 32 s
+3 sf
+(\(&rest) 54963  0.00 -1 s
+( ) 55638  -31.00 32 s
+5 sf
+(elts) 59557  0.00 -1 s
+3 sf
+(\)) 60496  0.00 -1 s
+( ') 62109  -32.00 32 s
+2 sf
+(sequence) 72926  0.00 -1 s
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 140027.0 m
+(A) 54869  0.00 -1 s
+( subtype used) 70159  -37.00 32 s
+( to define repeating sequences. ) 105393  -37.60 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 20
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03620) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(resource\036id) 48179  0.00 -1 s
+( ) 48755  -130.00 32 s
+/timsps10 3 declareFont
+3 sf
+(') 49694  0.00 -1 s
+2 sf
+(card29) 58002  0.00 -1 s
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 27297.0 m
+(A) 54869  0.00 -1 s
+( numeric identifier that is assigned by the server to a server resource object.) 139847  -21.85 32 s
+2 sf
+34544.0 33573.0 m
+(rgb\036val) 43322  0.00 -1 s
+( ) 44000  -28.00 32 s
+3 sf
+('\() 45878  0.00 -1 s
+2 sf
+(float) 51362  0.00 -1 s
+3 sf
+( 0.0) 55568  -28.00 32 s
+( 1.0\)) 60712  -29.00 32 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 38292.0 m
+(An) 56280  0.00 -1 s
+( ) 56773  -213.00 32 s
+2 sf
+(rgb\036val) 65551  0.00 -1 s
+3 sf
+( is a floating\036point value between 0 and 1 that specifies a saturation for a red,) 149352  -212.60 32 s
+52832.0 41453.0 m
+(green,) 59805  0.00 -1 s
+( or blue additive) 77881  -114.00 32 s
+( primary. The 0 value indicates no saturation and 1 indicates full) 149352  -114.55 32 s
+52832.0 44614.0 m
+(saturation.) 64666  0.00 -1 s
+( ) 65340  -32.00 32 s
+2 sf
+34544.0 50890.0 m
+(screen) 42223  0.00 -1 s
+( ) 42905  -24.00 32 s
+3 sf
+('\() 44783  0.00 -1 s
+2 sf
+(satisfies) 54187  0.00 -1 s
+3 sf
+( ) 54869  -24.00 32 s
+2 sf
+(screen\036p) 65056  0.00 -1 s
+3 sf
+(\)) 65995  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 55609.0 m
+(A) 54869  0.00 -1 s
+( display screen. See) 77043  -28.00 32 s
+( Section 3, Screens, for further information. ) 126842  -28.57 32 s
+2 sf
+34544.0 61886.0 m
+(seg\036seq) 43165  0.00 -1 s
+( ) 43850  -21.00 32 s
+3 sf
+('\() 45728  0.00 -1 s
+2 sf
+(repeat\036seq) 58265  0.00 -1 s
+3 sf
+( \() 59890  -20.00 32 s
+2 sf
+(int16) 66004  0.00 -1 s
+3 sf
+( ) 66689  -21.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(x1) 69353  0.00 -1 s
+3 sf
+(\) \() 71917  -20.00 32 s
+2 sf
+(int16) 78031  0.00 -1 s
+5 sf
+( y1) 81380  -21.00 32 s
+3 sf
+(\) \() 83944  -20.00 32 s
+2 sf
+(int16) 90058  0.00 -1 s
+5 sf
+( x2) 93407  -21.00 32 s
+3 sf
+(\) \() 95971  -20.00 32 s
+2 sf
+(int16) 102085  0.00 -1 s
+5 sf
+( y2) 105434  -21.00 32 s
+3 sf
+(\)\)) 107312  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 66604.0 m
+(Defines) 61607  0.00 -1 s
+( sequences of \() 78227  -76.00 32 s
+5 sf
+(x1) 80891  0.00 -1 s
+3 sf
+(, ) 82228  -75.00 32 s
+5 sf
+(y1) 84892  0.00 -1 s
+3 sf
+(, ) 86228  -76.00 32 s
+5 sf
+(x2) 88892  0.00 -1 s
+3 sf
+(, ) 90229  -75.00 32 s
+5 sf
+(y2) 92893  0.00 -1 s
+3 sf
+(\) sets of points. The point values are 16\036bit, signed) 149352  -75.56 32 s
+52832.0 69765.0 m
+(integer) 60667  0.00 -1 s
+( quantities. This gives the points in this type) 110230  -27.00 32 s
+( a range from -32,768 to 32,767. ) 147817  -27.57 32 s
+20320.0 76042.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 75217 av
+149352 75217 as
+149352 75335 as
+20320 75335 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 78864.0 m
+2 sf
+34544.0 81686.0 m
+(state\036mask\036key) 52723  0.00 -1 s
+( ) 53385  -44.00 32 s
+3 sf
+('\() 55263  0.00 -1 s
+2 sf
+(or modifier\036key) 74104  -44.00 32 s
+3 sf
+( \() 75705  -44.00 32 s
+2 sf
+(member) 85733  0.00 -1 s
+3 sf
+( ) 86394  -45.00 32 s
+5 sf
+(button) 93606  0.00 -1 s
+3 sf
+(*\)) 95956  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 86405.0 m
+(A) 54869  0.00 -1 s
+( keyword identifying one of the display modifier keys or pointer buttons) 133719  -249.00 32 s
+( whose state is) 149352  -249.67 32 s
+52832.0 89566.0 m
+(reported) 62233  0.00 -1 s
+( in device events.) 81686  -47.00 32 s
+5 sf
+52832.0 95843.0 m
+(button) 60044  0.00 -1 s
+( ) 60725  -25.00 32 s
+3 sf
+(\037 One of the following:) 88527  -24.75 32 s
+2 sf
+52832.0 100629.0 m
+(:button\0361) 64117  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:button\0364) 82405  0.00 -1 s
+3 sf
+52832.0 103790.0 m
+2 sf
+(:button\0362) 64117  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:button\0365) 82405  0.00 -1 s
+3 sf
+52832.0 106951.0 m
+2 sf
+(:button\0363) 64117  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+34544.0 113228.0 m
+(make\036state\036keys) 53976  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+( ) 55282  -51.00 32 s
+5 sf
+(state\036mask) 67350  0.00 -1 s
+2 sf
+139373.0 h
+3 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 116388.0 m
+52832.0 h
+3 sf
+(Returns:) 62394  0.00 -1 s
+5 sf
+( ) 63082  -18.00 32 s
+52832.0 119549.0 m
+(  state\036keywords ) 71825  -17.67 32 s
+3 sf
+(\037 Type ) 81823  -17.50 32 s
+2 sf
+(list) 85428  0.00 -1 s
+3 sf
+(.) 86134  0.00 -1 s
+52832.0 124268.0 m
+(Returns) 61610  0.00 -1 s
+( a list of ) 71643  39.00 32 s
+2 sf
+(state\036mask\036key) 89822  0.00 -1 s
+3 sf
+( symbols corresponding to the ) 124741  39.00 32 s
+5 sf
+(state\036mask) 136809  0.00 -1 s
+3 sf
+(. A symbol) 149352  39.00 32 s
+52832.0 127429.0 m
+(belongs) 61611  0.00 -1 s
+( to the returned list if, and only if, the corresponding ) 121183  -20.82 32 s
+5 sf
+(state\036mask) 133251  0.00 -1 s
+3 sf
+( bit is 1.) 142285  -20.67 32 s
+5 sf
+52832.0 133706.0 m
+(state\036mask) 64900  0.00 -1 s
+( ) 65583  -23.00 32 s
+3 sf
+(\037 A 16\036bit mask) 85188  -23.00 32 s
+( of type ) 94444  -23.67 32 s
+2 sf
+(mask16) 103694  0.00 -1 s
+3 sf
+(.) 104400  0.00 -1 s
+2 sf
+34544.0 138492.0 m
+(make\036state\036mask) 55073  0.00 -1 s
+4 sf
+( ) 56394  -36.00 32 s
+3 sf
+(&rest) 62663  0.00 -1 s
+( ) 63350  -19.00 32 s
+5 sf
+(keys) 68207  0.00 -1 s
+2 sf
+139373.0 h
+3 sf
+(Function) 149407  0.00 -1 s
+2 sf
+34544.0 141653.0 m
+52832.0 h
+3 sf
+(Returns:) 62394  0.00 -1 s
+5 sf
+( ) 63082  -18.00 32 s
+52832.0 144814.0 m
+(  mask ) 60668  -27.00 32 s
+3 sf
+(\037 Type ) 70647  -27.00 32 s
+2 sf
+(mask16) 79897  0.00 -1 s
+3 sf
+(.) 80603  0.00 -1 s
+52832.0 149533.0 m
+(Returns) 61610  0.00 -1 s
+( a 16\036bit ) 72063  114.00 32 s
+5 sf
+(mask) 77862  0.00 -1 s
+3 sf
+( representing the given ) 104809  114.50 32 s
+2 sf
+(state\036mask\036key) 122988  0.00 -1 s
+3 sf
+( symbols. The returned) 149352  114.33 32 s
+52832.0 152694.0 m
+5 sf
+(mask) 58631  0.00 -1 s
+3 sf
+( contains a) 70641  -30.00 32 s
+( 1 bit for each keyword.) 97446  -30.60 32 s
+5 sf
+52832.0 158970.0 m
+(keys) 57689  0.00 -1 s
+( ) 58380  -15.00 32 s
+3 sf
+(\037 A list of ) 71803  -15.00 32 s
+2 sf
+(state\036mask\036key) 89982  0.00 -1 s
+3 sf
+( symbols.) 100787  -15.00 32 s
+20320.0 163757.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 162932 av
+149352 162932 as
+149352 163050 as
+20320 163050 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 166579.0 m
+2 sf
+34544.0 169401.0 m
+(stringable) 46615  0.00 -1 s
+( ) 47294  -27.00 32 s
+3 sf
+('\() 49172  0.00 -1 s
+2 sf
+(or string symbol) 68871  -27.00 32 s
+3 sf
+(\)) 69810  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 174120.0 m
+(Used) 58631  0.00 -1 s
+( for naming something. This type can be either a string or a ) 123032  -243.00 32 s
+2 sf
+(symbol) 131655  0.00 -1 s
+3 sf
+( whose) 139328  -243.00 32 s
+( ) 139790  -244.00 32 s
+2 sf
+(symbol\036) 149352  0.00 -1 s
+52832.0 177281.0 m
+(name) 59415  0.00 -1 s
+3 sf
+( is used as the string containing the name. The case of the characters in the string is) 149352  -232.71 32 s
+52832.0 180442.0 m
+(ignored) 61452  0.00 -1 s
+( when) 68226  -44.00 32 s
+( comparing stringables. ) 95210  -44.67 32 s
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 21
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+126797.0 7925.0 m
+(Introduction to CLX) 145130  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+143841.0 208619.0 m
+(1\03621) 149013  0.00 -1 s
+1 sf
+20455.0 h
+(CLX Programmer's Reference) 48096  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20320 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(timestamp) 47237  0.00 -1 s
+( ) 47912  -31.00 32 s
+/timsps10 3 declareFont
+3 sf
+('\() 49790  0.00 -1 s
+2 sf
+(or null) 57835  -31.00 32 s
+3 sf
+( ) 58509  -32.00 32 s
+2 sf
+(card32) 66817  0.00 -1 s
+3 sf
+(\)) 67756  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 27297.0 m
+(An) 56280  0.00 -1 s
+( encoding of a time. ) 79377  -20.60 32 s
+2 sf
+(nil) 82514  0.00 -1 s
+3 sf
+( stands for the current time. ) 114131  -20.50 32 s
+20320.0 33573.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+0.0 sw
+/drawmode PL_REPLACE def
+0.0 0.0 m
+3 17 fillpatset
+newpath
+20320 32748 av
+149352 32748 as
+149352 32866 as
+20320 32866 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 36395.0 m
+2 sf
+34544.0 39218.0 m
+(visual\036info) 47243  0.00 -1 s
+52832.0 h
+139034.0 h
+3 sf
+(Structure) 149377  0.00 -1 s
+52832.0 43936.0 m
+(A) 54869  0.00 -1 s
+( structure that represents a visual type. The elements of this structure are ) 134023  -253.00 32 s
+2 sf
+(id) 136376  0.00 -1 s
+3 sf
+(, ) 137535  -253.00 32 s
+2 sf
+(class) 143179  0.00 -1 s
+3 sf
+(, ) 144338  -253.00 32 s
+2 sf
+(red\036) 149352  0.00 -1 s
+52832.0 47097.0 m
+(mask) 59260  0.00 -1 s
+3 sf
+(,) 59966  0.00 -1 s
+2 sf
+( green\036mask) 74715  -63.00 32 s
+3 sf
+(, ) 76064  -63.00 32 s
+2 sf
+(blue\036mask) 88606  0.00 -1 s
+3 sf
+(,) 89312  0.00 -1 s
+( ) 89954  -64.00 32 s
+2 sf
+(bits\036per\036rgb) 104530  0.00 -1 s
+3 sf
+(, and ) 110596  -63.50 32 s
+2 sf
+(colormap\036entries) 131126  0.00 -1 s
+3 sf
+(.) 131832  0.00 -1 s
+2 sf
+34544.0 53374.0 m
+(id) 36897  0.00 -1 s
+52832.0 h
+128377.0 h
+3 sf
+(Slot) 132925  0.00 -1 s
+( of ) 136653  -17.00 32 s
+2 sf
+(visual\036info) 149352  0.00 -1 s
+3 sf
+52832.0 58093.0 m
+(Type:) 59415  0.00 -1 s
+( ) 60006  -115.00 32 s
+2 sf
+(card29) 68314  0.00 -1 s
+3 sf
+(.) 69020  0.00 -1 s
+52832.0 64369.0 m
+(A) 54869  0.00 -1 s
+( unique identification) 78908  -50.00 32 s
+( number.) 88889  -51.00 32 s
+2 sf
+34544.0 70646.0 m
+(class) 40188  0.00 -1 s
+52832.0 h
+128377.0 h
+3 sf
+(Slot) 132925  0.00 -1 s
+( of ) 136653  -17.00 32 s
+2 sf
+(visual\036info) 149352  0.00 -1 s
+3 sf
+52832.0 75365.0 m
+(Type:) 59415  0.00 -1 s
+( \() 61005  -55.00 32 s
+2 sf
+(member) 71033  0.00 -1 s
+3 sf
+( ) 71684  -55.00 32 s
+2 sf
+(:direct\036color) 86725  0.00 -1 s
+3 sf
+( ) 87375  -56.00 32 s
+2 sf
+(:gray\036scale) 100538  0.00 -1 s
+3 sf
+( ) 101189  -55.00 32 s
+2 sf
+(:pseudo\036color) 117648  0.00 -1 s
+3 sf
+( ) 118298  -56.00 32 s
+2 sf
+(:static\036color) 132712  0.00 -1 s
+52832.0 78526.0 m
+(  ) 54220  -12.00 32 s
+(    ) 56994  -12.50 32 s
+3 sf
+( ) 57687  -13.00 32 s
+2 sf
+( :static\036gray) 72169  -12.00 32 s
+3 sf
+( ) 72862  -13.00 32 s
+2 sf
+(:true\036color) 85866  0.00 -1 s
+3 sf
+(\).) 87511  0.00 -1 s
+52832.0 84802.0 m
+(The) 57220  0.00 -1 s
+( class of the visual type.) 84215  -25.00 32 s
+2 sf
+34544.0 89589.0 m
+(red\036mask) 45986  0.00 -1 s
+3 sf
+(,) 46692  0.00 -1 s
+2 sf
+( green\036mask) 61424  -80.00 32 s
+3 sf
+(,) 62130  0.00 -1 s
+2 sf
+( blue\036mask) 75297  -81.00 32 s
+127271.0 h
+3 sf
+(Slots) 132917  0.00 -1 s
+( of ) 136653  -13.00 32 s
+2 sf
+(visual\036info) 149352  0.00 -1 s
+3 sf
+52832.0 94307.0 m
+(Type:) 59415  0.00 -1 s
+2 sf
+( pixel) 65853  -69.00 32 s
+3 sf
+(.) 66559  0.00 -1 s
+52832.0 100584.0 m
+(The) 57220  0.00 -1 s
+( ) 57787  -139.00 32 s
+2 sf
+(red\036mask) 69229  0.00 -1 s
+3 sf
+(, ) 70503  -138.00 32 s
+2 sf
+(green\036mask) 84609  0.00 -1 s
+3 sf
+(, and ) 90525  -138.50 32 s
+2 sf
+(blue\036mask) 103067  0.00 -1 s
+3 sf
+( elements are only meaningful for the ) 145121  -138.57 32 s
+2 sf
+(:di\036) 149352  0.00 -1 s
+52832.0 103745.0 m
+(rect\036color) 64581  0.00 -1 s
+3 sf
+( and ) 70184  58.00 32 s
+2 sf
+(:true\036color) 83188  0.00 -1 s
+3 sf
+( classes. Each mask has one contiguous) 128135  58.00 32 s
+( set of bits with no) 149352  57.40 32 s
+52832.0 106906.0 m
+(intersections.) 67801  0.00 -1 s
+2 sf
+34544.0 113182.0 m
+(bits\036per\036rgb) 49120  0.00 -1 s
+52832.0 h
+128377.0 h
+3 sf
+(Slot) 132925  0.00 -1 s
+( of ) 136653  -17.00 32 s
+2 sf
+(visual\036info) 149352  0.00 -1 s
+3 sf
+52832.0 117901.0 m
+(Type:) 59415  0.00 -1 s
+( ) 60017  -104.00 32 s
+2 sf
+(card8) 66914  0.00 -1 s
+3 sf
+(.) 67620  0.00 -1 s
+52832.0 124178.0 m
+(Specifies) 63176  0.00 -1 s
+( the log base 2 of the approximate number of distinct color values \(individu\036) 149352  3.31 32 s
+52832.0 127339.0 m
+(ally\)) 58003  0.00 -1 s
+( of red, green, and blue. Actual RGB values are unsigned 16\036bit) 129586  -33.00 32 s
+( numbers.) 140682  -34.00 32 s
+2 sf
+34544.0 133615.0 m
+(colormap\036entries) 55074  0.00 -1 s
+128377.0 h
+3 sf
+(Slot) 132925  0.00 -1 s
+( of ) 136653  -17.00 32 s
+2 sf
+(visual\036info) 149352  0.00 -1 s
+3 sf
+52832.0 138334.0 m
+(Type:) 59415  0.00 -1 s
+( ) 60006  -115.00 32 s
+2 sf
+(card16) 68314  0.00 -1 s
+3 sf
+(.) 69020  0.00 -1 s
+52832.0 144611.0 m
+(Defines) 61607  0.00 -1 s
+( the number of available colormap entries in a newly created colormap. For ) 145121  -170.69 32 s
+2 sf
+(:di\036) 149352  0.00 -1 s
+52832.0 147772.0 m
+(rect\036color) 64581  0.00 -1 s
+3 sf
+( and ) 70012  -28.00 32 s
+2 sf
+(:true\036color) 83016  0.00 -1 s
+3 sf
+(,) 83722  0.00 -1 s
+( this is the size of an individual pixel subfield.) 135512  -28.56 32 s
+20320.0 154048.0 m
+35560.0 h
+50800.0 h
+66040.0 h
+81280.0 h
+96520.0 h
+111760.0 h
+127000.0 h
+142240.0 h
+149352.0 h
+/drawmode PL_REPLACE def
+0.0 0.0 m
+newpath
+20320 153223 av
+149352 153223 as
+149352 153341 as
+20320 153341 as
+closepath
+fp
+/drawmode PL_SET def
+20320.0 156870.0 m
+eop
+0.0 0.0 m
+270.0 sw
+/useNativeFonts false def
+/Ops8_icon 0 declareFont
+/useNativeFonts true def
+0 0 fillpatset
+
+%%Page: 22
+bop
+0 223519 172720 223519 172720 0 0 0 clp
+/timsps8i 1 declareFont
+1 sf
+20320.0 7925.0 m
+(Introduction to CLX) 38653  -9.00 32 s
+/timsps10b 2 declareFont
+2 sf
+20320.0 208619.0 m
+(1\03622) 25492  0.00 -1 s
+1 sf
+121372.0 h
+(CLX Programmer's Reference) 149013  0.00 32 s
+541.0 sw
+0.0 0.0 m
+newpath
+20862 204555 av
+149013 204552 as
+[] 0 setdash
+dp
+2 sf
+34544.0 22578.0 m
+(win\036gravity) 48493  0.00 -1 s
+( ) 49139  -60.00 32 s
+/timsps10 3 declareFont
+3 sf
+(') 50078  0.00 -1 s
+/courps8 4 declareFont
+4 sf
+(\() 51435  0.00 -1 s
+2 sf
+(member) 61463  0.00 -1 s
+( ) 62108  -61.00 32 s
+/timsps10i 5 declareFont
+5 sf
+(gravity*) 71513  0.00 -1 s
+3 sf
+(\)) 72452  0.00 -1 s
+143595.0 h
+(Type) 149394  0.00 -1 s
+52832.0 27364.0 m
+(A) 54869  0.00 -1 s
+( keyword that specifies how to reposition a window when its parent is) 133426  -24.00 32 s
+( resized.) 142804  -25.00 32 s
+5 sf
+52832.0 33641.0 m
+(gravity) 60826  0.00 -1 s
+( ) 61509  -23.00 32 s
+3 sf
+(\037 One of the following:) 89318  -23.00 32 s
+2 sf
+52832.0 38427.0 m
+(:center) 61291  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:north\036west) 85066  0.00 -1 s
+89408.0 h
+(:static) 96771  0.00 -1 s
+103632.0 h
+3 sf
+52832.0 41588.0 m
+2 sf
+(:east) 58472  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:south) 78645  0.00 -1 s
+3 sf
+89408.0 h
+2 sf
+(:unmap) 98815  0.00 -1 s
+3 sf
+103632.0 h
+52832.0 44749.0 m
+2 sf
+(:north) 60512  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:south\036east) 84285  0.00 -1 s
+3 sf
+89408.0 h
+2 sf
+(:west) 95674  0.00 -1 s
+3 sf
+103632.0 h
+52832.0 47910.0 m
+2 sf
+(:north\036east) 66152  0.00 -1 s
+3 sf
+71120.0 h
+2 sf
+(:south\036west) 84911  0.00 -1 s
+3 sf
+89408.0 h
+52832.0 54187.0 m
+(If) 54710  0.00 -1 s
+( a parent window is reconfigured without changing its inside width or height, then all) 149352  -108.93 32 s
+52832.0 57348.0 m
+(child) 58475  0.00 -1 s
+( windows move with the parent and are not changed. Otherwise, each child of the) 149352  -80.64 32 s
+52832.0 60508.0 m
+(resized) 60823  0.00 -1 s
+( parent is moved, depending on the child's gravity attribute. See) 131986  -110.00 32 s
+( ) 132581  -111.00 32 s
+2 sf
+(window\036grav\036) 149352  0.00 -1 s
+52832.0 63669.0 m
+(ity) 55966  0.00 -1 s
+3 sf
+(,) 56672  0.00 -1 s
+( in paragraph 4.3, Window Attributes, for additional) 115391  -31.00 32 s
+( information.) 130093  -32.00 32 s
+2 sf
+34544.0 69946.0 m
+(window) 43951  0.00 -1 s
+( ) 44644  -13.00 32 s
+3 sf
+('\() 46522  0.00 -1 s
+2 sf
+(satisfies) 55926  0.00 -1 s
+3 sf
+( ) 56618  -14.00 32 s
+2 sf
+(window\036p) 68533  0.00 -1 s
+3 sf
+(\)) 69472  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 74665.0 m
+(A) 54869  0.00 -1 s
+( window. See Section 4, Windows and Pixmaps, for additional information.) 139937  -36.70 32 s
+2 sf
+34544.0 80941.0 m
+(xatom) 42066  0.00 -1 s
+( ) 42749  -23.00 32 s
+3 sf
+('\() 44627  0.00 -1 s
+2 sf
+(or string) 55028  -23.00 32 s
+( symbol) 64333  -24.00 32 s
+3 sf
+(\)) 65272  0.00 -1 s
+2 sf
+143595.0 h
+3 sf
+(Type) 149394  0.00 -1 s
+52832.0 85660.0 m
+(A) 54869  0.00 -1 s
+( name that has been assigned a corresponding unique ID by the server. ) 131291  -294.69 32 s
+2 sf
+(xatoms) 139911  0.00 -1 s
+3 sf
+( are used) 149352  -294.50 32 s
+52832.0 88821.0 m
+(to) 55027  0.00 -1 s
+( identify properties, selections, and types defined in the X server. An) 133022  37.00 32 s
+( ) 133764  36.00 32 s
+2 sf
+(xatom) 141286  0.00 -1 s
+3 sf
+( can be) 149352  36.50 32 s
+52832.0 91982.0 m
+(either) 59256  0.00 -1 s
+( a ) 61665  -128.00 32 s
+2 sf
+(string) 68719  0.00 -1 s
+3 sf
+( or ) 72225  -128.00 32 s
+2 sf
+(symbol) 80848  0.00 -1 s
+3 sf
+( whose ) 89214  -128.00 32 s
+2 sf
+(symbol\036name) 105359  0.00 -1 s
+3 sf
+( is used as the ) 121103  -128.00 32 s
+2 sf
+(xatom) 128625  0.00 -1 s
+3 sf
+( name. The case of) 149352  -127.50 32 s
+52832.0 95143.0 m
+(the) 56280  0.00 -1 s
+( characters in the string are significant when comparing ) 119434  -27.00 32 s
+2 sf
+(xatoms) 128054  0.00 -1 s
+3 sf
+(.) 128760  0.00 -1 s
+( ) 129438  -28.00 32 s
+eop
+0.0 0.0 m
+270.0 sw
+
+
+%%Trailer
+initialstate restore
+
+%%EOF

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.36 2004/04/05 20:01:08 sds Exp $
+;;; $Id: math.lisp,v 2.37 2004/04/09 14:08:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -35,6 +35,7 @@
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl
    count-all entropy-sequence entropy-distribution
+   information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
@@ -1151,6 +1152,59 @@ When the distribution is not discreet, entropy is not available."
           (make-mdl :sd std :mn mean :le len :mi min :ma max
                     :en (when discreet
                           (entropy-sequence seq :key key :weight weight)))))))
+
+;;;
+;;; information-theoretic and statistical measures of prediction performance
+;;;
+
+(defun check-probabilities (p12 p1 p2 N caller)
+  "check that the arguments are valid probabilities"
+  (assert (and (>= N p12 0) (>= N p1 0) (>= N p2 0)
+               (>= p1 p12) (>= p2 p12) (>= p12 (- (+ p1 p2) N)))
+          (p12 p1 p2)
+          "~s: invalid probabilities: ~s ~s ~s" caller p12 p1 p2))
+
+(defsubst info-component (p12 p1 p2)
+  "one component of information computation"
+  (if (zerop p12) 0 (* p12 (log (/ p12 p1 p2) 2))))
+
+(defun information (p &optional (N 1) &aux (q (- N p)))
+  "information of distribution P(0)=p/N, P(1)=1-p/N"
+  ;; == (mutual-information p p p)
+  (+ (/ (+ (info-component q q q)
+           (info-component p p p))
+        N)
+     (log N 2)))
+
+(defun mutual-information (p12 p1 p2 &optional (N 1)
+                           &aux (q1 (- N p1)) (q2 (- N p2)))
+  "Mutual information of two distributions:
+p1=p(x=1), p2=p(y=1), p12=p(x=1 & y=1)"
+  (check-probabilities p12 p1 p2 N 'mutual-information)
+  (+ (/ (+ (info-component p12 p1 p2)                  ; x=1 y=1
+           (info-component (- p2 p12) q1 p2)           ; x=0 y=1
+           (info-component (- p1 p12) p1 q2)           ; x=1 y=0
+           (info-component (- (+ N p12) p1 p2) q1 q2)) ; x=0 y=0
+        N)
+     (log N 2)))
+
+(defun dependency (p12 p1 p2 &optional (N 1))
+  "Mutual information normalized by total entropy"
+  (let ((mi (mutual-information p12 p1 p2 N)))
+    (/ mi (- (+ (information p1 N) (information p2 N)) mi))))
+
+(defun proficiency (p12 p1 p2 &optional (N 1))
+  "information-theoretic predictive power of the first relative to the second"
+  (/ (mutual-information p12 p1 p2 N) (information p1 N)))
+
+(defun correlation (p12 p1 p2 &optional (N 1) &aux (q1 (- N p1)) (q2 (- N p2)))
+  "correlation of two binary distributions"
+  (check-probabilities p12 p1 p2 N 'correlation)
+  (/ (+ (* p12 q1 q2)                          ; x=1 y=1
+        (* (- p1 p12) q1 (- p2))               ; x=0 y=1
+        (* (- p2 p12) (- p1) q2)               ; x=1 y=0
+        (* (- (+ N p12) p1 p2) (- p1) (- p2))) ; x=0 y=0
+     (sqrt (* p1 q1 p2 q2)) N))
 
 ;;;
 ;;; Misc

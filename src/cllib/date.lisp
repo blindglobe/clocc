@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.5 2000/06/07 13:57:14 sds Exp $
+;;; $Id: date.lisp,v 2.6 2000/08/16 20:31:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,12 +27,13 @@
 (export '(string->dttm dttm->string +day-sec+ print-date-month
           date date2time date2num date2days time2date days2date mk-date
           unix-date infer-timezone infer-month
-          days-week-day date-week-day previous-working-day next-bad-day
+          days-week-day date-week-day black-days
+          days-to-next-working-day next-working-day previous-working-day
           days-since days-since-f
           date= date/= date< date> date<= date<=3 date<3 date>= date>=3 date>3
           date=*1 date=* date-max date-min date-earliest date-latest
           next-month-p date-month= next-quarter-p date-quarter days-between
-          tomorrow yesterday date-next-year date-next-year date-next-all
+          today tomorrow yesterday date-next-year date-next-all
           date-in-list sync-dates sync-dates-ui))
 
 (defconst +day-sec+ fixnum (* 24 60 60) "The number of seconds per day.")
@@ -261,27 +262,6 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (declare (type date date))
   (days-week-day (date-dd date)))
 
-(defun previous-working-day (&optional (dd (today)))
-  "Return the previous working day."
-  (declare (type date dd))
-  (case (date-week-day dd)
-    ((1 2 3 4 5) (yesterday dd))
-    (6 (yesterday dd 2))
-    (0 (yesterday dd 3))))
-
-(declaim (ftype (function (&optional date (member 1 -1)) (values date))
-                next-bad-day))
-(defun next-bad-day (&optional (date (today)) (dir 1))
-  "Return the next Friday the 13th after (before) DATE.
-The second optional argument can be 1 (default) for `after' and
--1 for `before'."
-  (declare (type date date) (type (member 1 -1) dir))
-  (do* ((dd (date-dd date)) (step (* dir 7))
-        (fri (+ dd (mod (- 4 (days-week-day dd)) step)) (+ fri step))
-        (dt (days2date fri) (days2date fri)))
-      ((= 13 (date-da dt)) dt)
-    (declare (type date dt) (type (member 7 -7) step) (type days-t dd fri))))
-
 ;;;
 ;;; generic
 ;;;
@@ -492,6 +472,57 @@ I.e., (tomorrow (today) -1) is yesterday."
   "Increment (non-destructively) year, month and day."
   (declare (type date dd) (type days-t skip))
   (date-next-year (date-next-month (tomorrow dd skip) skip) skip))
+
+(declaim (ftype (function (&optional date days-t) (values days-t))
+                days-to-next-working-day))
+(defun days-to-next-working-day (&optional (date (today)) (skip 1))
+  "Return the number of days until the next working day."
+  (multiple-value-bind (ww rr) (floor skip 5)
+    (+ (* 7 ww)
+       (if (> (+ rr (min 4 (date-week-day date))) 4)
+           (+ rr 2)
+           rr))))
+
+(declaim (ftype (function (&optional date days-t) (values date))
+                next-working-day previous-working-day))
+(defsubst next-working-day (&optional (date (today)) (skip 1))
+  "Return the Nth next working day, ignoring holidays."
+  (declare (type date date) (type days-t skip))
+  (tomorrow date (days-to-next-working-day date skip)))
+
+(defsubst previous-working-day (&optional (date (today)) (skip -1))
+  "Return the previous working day, ignoring holidays."
+  (declare (type date date) (type days-t skip))
+  (tomorrow date (days-to-next-working-day date (- skip))))
+
+(defcustom *black-day-week* (mod 7) 4 "*Friday.")
+(defcustom *black-day-date* (mod 32) 13 "*13th.")
+(defun black-days (&key (start (today)) (end 1)
+                   (week-day *black-day-week*)
+                   (month-day *black-day-date*))
+  "Return the list of Fridays the 13th from START to END.
+START is a date, END is either a date (later than START)
+or an integer - the number of `black days' to return.
+If it is negative, search backwards.
+The second value returned is the number of black days found."
+  (declare (type date start) (type (or days-t date) end)
+           (type (mod 32) week-day month-day))
+  (when (date-p end)
+    (assert (date<= start end) (end)
+            "~s: END (~s) should be after START (~s)" 'black-days end start))
+  (do* ((dd (date-dd start)) res (numf 0)
+        (step (* 7 (if (and (numberp end) (minusp end)) -1 1)))
+        (fri (+ dd (mod (- week-day (days-week-day dd)) step)) (+ fri step))
+        (dt (days2date fri) (days2date fri)))
+       ((if (date-p end) (date> dt end) (= numf (abs end)))
+        (values (nreverse res) numf))
+    (when (= month-day (date-da dt))
+      (push dt res)
+      (incf numf))))
+
+;;;
+;;; dates and lists
+;;;
 
 (declaim (ftype (function (t list &optional date-f-t t) (values list))
                 date-in-list))

@@ -24,7 +24,9 @@
 ;; right to left. Thus, all sequence-functions operate also on
 ;; AVL-trees.
 
-(require 'sequences)
+(eval-when (load compile eval)
+  (require 'sequences "sequences"))
+
 (defpackage #:avl
   (:shadow #:length #:member #:delete #:copy #:merge)
   (:export #:treep #:member #:insert #:delete #:do-avl #:avl-to-seq

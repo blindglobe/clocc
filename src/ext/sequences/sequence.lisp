@@ -342,7 +342,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                      (1- index)
                      (error "Invalid :END - index : ~S" index))))
 
-(require 'avlseq) ; (define-sequence avl-tree ...)
+(require 'avlseq "avlseq") ; (define-sequence avl-tree ...)
 
 
 ;; (valid-sequence name) returns

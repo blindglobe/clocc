@@ -5,9 +5,20 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (in-package :user)
 (eval-when (compile load eval)
-   (export '(do1 do! map-defvar double-cdr double-mapcar push 
-             fexport fproclaim fuse-package fin-package fdo arithmetic-if
-             computed-goto assigned-goto)))
+  (export '(do1 do! map-defvar double-cdr double-mapcar push 
+	    fexport fproclaim fuse-package fin-package fdo arithmetic-if
+	    computed-goto assigned-goto
+	    fref fset f2cl/
+	    int ifix idint real float sngl dble cmplx ichar char aint dint
+	    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
+	    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
+	    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt fsqrt csqrt 
+	    exp dexp cexp log alog dlog flog clog log10 alog10 dlog10 sin dsin csin
+	    cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
+	    sinh dsinh cosh dcosh tanh dtanh
+	    data-implied-do
+	    %false% %true%
+	    fformat)))
 
 ; macros:
 ;	rexpt
@@ -45,6 +56,9 @@
 ;----------------------------------------------------------------------------
 #+aclpc (defmacro rexpt (x y) `(realpart (expt ,x ,y)))
 #-aclpc (defmacro rexpt (x y) `(expt ,x ,y))
+
+(defconstant %false% nil)
+(defconstant %true% t)
 
 (defmacro fexport (x) `(eval-when (compile load eval) (export ,x)))
 
@@ -94,8 +108,20 @@
   `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
 ;-----------------------------------------------------------------------------
 
+#+nil
 (defmacro fref (arr &rest indices)
   `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices)))
+
+(defmacro fref (arr indices &optional low-bnds)
+  (if low-bnds
+      `(aref ,arr ,@(mapcar #'(lambda (k lim)
+				`(- ,k ,lim))
+			    indices low-bnds))
+      `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices))))
+
+#+nil
+(defmacro fset (a b) 
+  `(setf (fref ,(second a) ,@(cddr a)) ,b))
 
 (defmacro fset (a b) 
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
@@ -122,6 +148,7 @@
           ,(second pred-clause)))
 
 ; fdo has similar syntax as do except there will only be one do_vble
+#+nil
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
    `(prog* ((step ,(third (third do_vble_clause)))
             (iteration_count 
@@ -142,6 +169,34 @@
                                      iteration_count 
                                             (1- iteration_count))))
                          '((go loop))))))))
+
+(defmacro fdo (do_vble_clause predicate_clause &rest body)
+  (let ((step (gensym))
+	(iteration_count (gensym)))
+    `(prog* ((,step ,(third (third do_vble_clause)))
+	     (,iteration_count 
+	      (max 0 (truncate (+ (- ,(third (first predicate_clause))
+				     ,(second do_vble_clause))
+				  ,step)
+			       ,step)
+		   )))
+      (declare (fixnum ,step ,iteration_count))
+      ;; initialise loop variable
+      (setq ,(first do_vble_clause) ,(second do_vble_clause))
+      loop
+      (return
+	(cond				; all iterations done
+	  ((zerop ,iteration_count) nil)
+	  ;; execute loop, in/de-crement loop vble and decrement cntr
+	  ,(cons 't 
+		 (append 
+		  (append body
+			  `((setq ,(first do_vble_clause) 
+			     ,(third do_vble_clause)
+			     ,iteration_count 
+			     (1- ,iteration_count))))
+		  '((go loop)))))))))
+
 ;(defmacro fdo (do-vbles predicate-clause &rest body)
 ;   `(prog nil
 ;          (setq ,(caar do-vbles) ,(cadar do-vbles)) 
@@ -183,22 +238,52 @@
 
 ;----------------------------------------------------------------------------
 ;; macro for division 
+#+nil
 (defmacro f2cl/ (x y)
    `(if (and (typep ,x 'fixnum) (typep ,y 'fixnum))
         (floor ,x ,y)
         (/ ,x ,y)))
 
+(defmacro f2cl/ (x y)
+  (let ((top (gensym))
+	(bot (gensym)))
+    `(let ((,top ,x)
+	  (,bot ,y))
+      (if (and (typep ,top 'fixnum)
+	       (typep ,bot 'fixnum))
+	  (values (truncate ,top ,bot))
+	  (/ ,top ,bot)))))
 
 ;; macro for a lisp equivalent of Fortran arithmetic IFs
+#+nil
 (defmacro arithmetic-if (pred s1 s2 s3)
    `(cond ((< ,pred 0) ,s1)
           ((= ,pred 0) ,s2)
           (t ,s3)))
 
+(defmacro arithmetic-if (pred s1 s2 s3)
+  (let ((tst (gensym)))
+    `(let ((,tst ,pred))
+      (cond ((< ,tst 0) ,s1)
+	    ((= ,tst 0) ,s2)
+	    (t ,s3)))))
+
 ;; macro for a lisp equivalent of Fortran computed GOTOs
+#+nil
 (defmacro computed-goto (tag-lst i)
    `(let ((tag ,(nth (1- (eval i)) tag-lst)))
        (if tag (go tag) nil)))
+
+(defun computed-goto-aux (tags)
+  (let ((idx 0)
+	(result '()))
+    (dolist (tag tags (nreverse result))
+      (incf idx)
+      (push `(,idx (go ,tag)) result))))
+
+(defmacro computed-goto (tag-lst i)
+  `(case ,i
+    ,@(computed-goto-aux tag-lst)))
 
 ;; macro for a lisp equivalent of Fortran assigned GOTOs
 (defmacro assigned-goto (i &optional tag-lst)
@@ -214,25 +299,80 @@
 (defvar intrinsic_function_names
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
-    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amini dmini
-    amini min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
+    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
+    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
     exp dexp cexp log alog dlog clog log10 alog10 dlog10 sin dsin csin
     cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
     sinh dsinh cosh dcosh tanh dtanh))
 
 ; some macros for intrinsic functions
+#+nil
 (defmacro int (x)
-   `(floor ,x))
+   `(values (truncate ,x)))
+(defmacro int (x)
+  (let ((xval (gensym)))
+    ;; We use fixnum here because f2cl thinks Fortran integers are
+    ;; fixnums.  If this should change, we need to change the ranges
+    ;; here as well.
+    `(let ((,xval ,x))
+      (etypecase ,xval
+	(integer
+	 ,xval)
+	(single-float
+	 (truncate (the (single-float #.(float most-negative-fixnum)
+				       #.(float most-positive-fixnum))
+		      ,xval)))
+	(double-float
+	 (truncate (the (double-float #.(float most-negative-fixnum 1d0)
+				       #.(float most-positive-fixnum 1d0))
+		      ,xval)))))))
+  
 (defmacro ifix (x)
-   `(floor ,x))
+  `(int ,x))
 (defmacro idfix (x)
-   `(floor ,x))
+  `(int ,x))
+
+#+nil
+(defmacro aint (x)
+   `(values (ftruncate ,x)))
+#+nil
+(defmacro dint (x)
+   `(values (ftruncate ,x)))
+(defmacro aint (x)
+  (let ((xval (gensym)))
+    `(let ((,xval ,x))
+      (etypecase ,xval
+	(single-float
+	 (ftruncate (the (single-float #.(float most-negative-fixnum)
+				       #.(float most-positive-fixnum))
+		      ,xval)))
+	(double-float
+	 (ftruncate (the (double-float #.(float most-negative-fixnum 1d0)
+				       #.(float most-positive-fixnum 1d0))
+		      ,xval)))))))
+
+(defmacro dint (x)
+  `(aint ,x))
+
+(defmacro anint (x)
+  (let ((xval (gensym)))
+    `(let ((,xval ,x))
+      (coerce (round ,xval) (type-of ,xval)))))
+(defmacro dnint (x)
+   `(values (fround ,x)))
+(defmacro nint (x)
+   `(values (round ,x)))
+(defmacro idnint (x)
+   `(values (round ,x)))
 
 (defmacro real_ (x)
-   `(coerce ,x 'single-float))
+   `(coerce (realpart ,x) 'single-float))
 
 (defmacro sngl (x)
-   `(coerce ,x 'single-float))
+   `(coerce (realpart ,x) 'single-float))
+
+(defmacro dble (x)
+  `(coerce (realpart ,x) 'double-float))
 
 (defmacro cmplx (x &optional y)
    `(complex ,x ,(if y y 0)))
@@ -242,20 +382,9 @@
 (defmacro fchar (i)  ;intrinsic function char
    `(char-int ,i))
 
-(defmacro aint (x)
-   `(float (truncate ,x)))
-(defmacro dint (x)
-   `(coerce (truncate ,x) 'double-float))
-(defmacro anint (x)
-   `(float (round ,x)))
-(defmacro dnint (x)
-   `(coerce (round ,x) 'double-float))
-(defmacro nint (x)
-   `(round ,x))
-(defmacro idnint (x)
-   `(round ,x))
-
-#-aclpc (defmacro iabs (x) `(abs ,x))
+#-aclpc
+(defmacro iabs (x)
+  `(abs ,x))
 (defmacro dabs (x)
    `(abs ,x))
 (defmacro cabs (x)
@@ -266,12 +395,14 @@
 (defmacro dmod (x y)
   `(mod ,x ,y))
 
-(defmacro sign (x y)
-  `(if (>= ,y 0) (abs ,x) (- (abs ,x))))
+
 (defmacro isign (x y)
   `(if (>= ,y 0) (abs ,x) (- (abs ,x))))
+(defmacro sign (x y)
+  `(float-sign ,y ,x))
 (defmacro dsign (x y)
-  `(if (>= ,y 0) (abs ,x) (- (abs ,x))))
+  `(float-sign ,y ,x))
+
 
 (defmacro idim (x y)
   `(abs (- ,x ,y)))
@@ -284,26 +415,26 @@
   `(coerce (* ,x ,y) `double-float))
 
 (defmacro max0 (&rest x)
-  `(funcall #'max ,@x))
+  `(max ,@x))
 (defmacro amax1 (&rest x)
-  `(funcall #'max ,@x))
+  `(max ,@x))
 (defmacro dmax1 (&rest x)
-  `(funcall #'max ,@x))
+  `(max ,@x))
 (defmacro amax0 (&rest x)
-  `(round (funcall #'max ,@x)))
+  `(values (float (max ,@x))))
 (defmacro max1 (&rest x)
-  `(float (funcall #'max ,@x)))
+  `(values (float (max ,@x))))
 
 (defmacro min0 (&rest x)
-  `(funcall #'min ,@x))
+  `(min ,@x))
 (defmacro amin1 (&rest x)
-  `(funcall #'min ,@x))
+  `(min ,@x))
 (defmacro dmin1 (&rest x)
-  `(funcall #'min ,@x))
+  `(min ,@x))
 (defmacro amin0 (&rest x)
-  `(round (funcall #'min ,@x)))
+  `(values (float (min ,@x))))
 (defmacro min1 (&rest x)
-  `(float (funcall #'min ,@x)))
+  `(values (float (min ,@x))))
 
 (defmacro len (s)
    `(length ,s))
@@ -326,26 +457,61 @@
 (defmacro conjg (c)
    `(conjugate ,c))
 
+;; This creates macros for fsqrt and flog.  These macros essentially
+;; tell Lisp that the arguments are always non-negative so that the
+;; results are always real numbers.  Thus, for smart compilers (like
+;; CMUCL), we don't have to use the generic function.  Also, for smart
+;; compilers, the COND expression can be collapsed into just the
+;; correct function call.  CMUCL can do this because it knows the type
+;; of the argument at compile time.  Other compilers may not be this
+;; smart.
+
+(macrolet ((frob (ftn lsp)
+	     `(defmacro ,ftn (x)
+	       (let ((xval (gensym)))
+		 `(let ((,xval ,x))
+		   (cond ((typep ,xval 'single-float)
+			  (,',lsp (the (single-float 0.0f0) ,xval)))
+			 ((typep ,xval 'double-float)
+			  (,',lsp (the (double-float 0.0d0) ,xval)))
+			 (t
+			  (,',lsp ,xval))))))))
+  (frob fsqrt sqrt)
+  (frob flog log))
+
+;; Tell Lisp that the arguments always have the correct range.  If
+;; this is not true, the original Fortran code was broken anyway, so
+;; GIGO (garbage in, garbage out).
+
 (defmacro dsqrt (x)
-   `(sqrt ,x))
+   `(sqrt (the (double-float 0d0) ,x)))
 (defmacro csqrt (x)
    `(sqrt ,x))
+(defmacro alog (x)
+   `(log (the (single-float 0f0) ,x)))
+(defmacro dlog (x)
+   `(log (the (double-float 0d0) ,x)))
+(defmacro clog (x)
+   `(log ,x))
+(defmacro alog10 (x)
+   `(log (the (single-float 0f0),x) 10.0))
+(defmacro dlog10 (x)
+   `(log (the (double-float 0d0) ,x) 10.0d0))
+(defmacro log10 (x)
+  (let ((xval (gensym)))
+    `(let ((,xval ,x))
+      (cond ((typep ,xval 'single-float)
+	     (log (the (single-float 0.0f0)) ,xval 10.0))
+	    ((typep ,xval 'double-float)
+	     (log (the (double-float 0.0d0)) ,xval 10d0))
+	    (t
+	     (/ (log ,xval)
+		(float 10 (type-of (realpart ,xval)))))))))
 
 (defmacro dexp (x)
    `(exp ,x))
 (defmacro cexp (x)
    `(exp ,x))
-
-(defmacro alog (x)
-   `(log ,x))
-(defmacro dlog (x)
-   `(log ,x))
-(defmacro clog (x)
-   `(log ,x))
-(defmacro alog10 (x)
-   `(log ,x 10))
-(defmacro dlog10 (x)
-   `(log ,x 10))
 
 (defmacro dsin (x)
    `(sin ,x))
@@ -368,10 +534,17 @@
    `(acos ,x))
 (defmacro datan (x)
    `(atan ,x))
+#+nil
 (defmacro atan2 (x y)
    `(atan (/ ,x ,y)))
+#+nil
 (defmacro datan2 (x y)
    `(atan (/ ,x ,y)))
+
+(defmacro atan2 (x y)
+  `(atan ,x ,y))
+(defmacro datan2 (x y)
+  `(atan ,x ,y))
 
 (defmacro dsinh (x)
    `(sinh ,x))
@@ -380,5 +553,81 @@
 (defmacro dtanh (x)
    `(tanh ,x))
 
+(defun process-implied-do (ido low-bnds init)
+  (let* ((implied-do (remove '|,| ido))
+	 (array (first implied-do))
+	 (do-var (elt implied-do (1- (position '= implied-do))))
+	 (limits (rest (member '= implied-do)))
+	 (start (first limits))
+	 (end (second limits))
+	 (step (if (>= (length limits) 3)
+		   (third limits)
+		   1)))
+    (cond ((atom array)
+	   `(do ((,do-var ,start (+ ,do-var ,step)))
+	     ((> ,do-var ,end))
+	     (fset (fref ,array ,(remove '|,| (second implied-do)) ,low-bnds) (pop ,init))))
+	  (t
+	   `(do ((,do-var ,start (+ ,do-var ,step)))
+	     ((> ,do-var ,end))
+	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
+
+
+;; Process implied do loops for data statements
+(defmacro data-implied-do (implied-do low-bnds vals)
+  (let ((v (gensym)))
+    `(let ((,v ',vals))
+      ,(process-implied-do implied-do low-bnds v))))
 ;-----------------------------------------------------------------------------  ; end of macros.l
    
+;; Map Fortran logical unit numbers to Lisp streams
+
+(defvar *lun-hash*
+  (let ((table (make-hash-table)))
+    (setf (gethash 6 table) *standard-output*)
+    (setf (gethash t table) *standard-output*)
+    table))
+
+(defun lun->stream (lun)
+  (let ((stream (gethash lun *lun-hash*)))
+    (if stream
+	stream
+	(setf (gethash lun *lun-hash*)
+	      (open (format nil "fort~d.dat" lun)
+		    :direction :output
+		    :if-exists :rename)))))
+
+(declaim (ftype (function (t) stream) lun->stream))
+
+(defmacro fformat (dest-lun format-cilist &rest args)
+  (let ((stream (gensym)))
+    `(let ((,stream (lun->stream ,dest-lun)))
+      ,@(expand-format stream format-cilist args))))
+
+(defmacro fformat1 (dest directive arg)
+  (let ((val (gensym)))
+    `(let ((,val ,arg))
+      (if (arrayp ,val)
+	  (print ,val)
+	  (format ,dest ,directive ,val)))))
+
+(defun expand-format (dest cilist args)
+  (if (equal cilist '("~A~%"))
+      (append (mapcar #'(lambda (arg) `(fformat1 ,dest "~A " ,arg)) args)
+	   `((format ,dest "~%")))
+
+      (do ((res '())
+	   (directives cilist (cdr directives))
+	   (arglist args arglist))
+	  ((null directives)
+	   (nreverse res))
+	(cond ((stringp (first directives))
+	       ;;(format t "~a~%" (first directives))
+	       (push `(format ,dest ,(first directives))
+		     res))
+	      (t
+	       (push `(fformat1 ,dest
+		       ,(car (first directives)) 
+		       ,(first arglist))
+		     res)
+	       (setq arglist (cdr arglist)))))))

@@ -1113,11 +1113,18 @@ FILENAME                 File containing Fortran code
 	 `((fset-string ,lhs ,rhs)))
 	(t
 	 ;;statement_function
-	 (progn
+	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list (car lhs))))))
+		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
+		(rhs-expr (if (subtypep rhs-type lhs-type)
+			      rhs
+			      `(coerce ,rhs ',lhs-type))))
+	   ;; Look up type of statement function and coerce the RHS to the desired type.
+	   ;;(format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
+	   ;;(format t "type = ~A, ~A~%" lhs-type rhs-type)
 	   (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs)))
 		 *subprog_stmt_fns_bodies*
 		 (append *subprog_stmt_fns_bodies* 
-			 `((,(car lhs) ,(cdr lhs) ,rhs))))
+			 `((,(car lhs) ,(cdr lhs) ,rhs-expr))))
 	   nil))))
 ;       (and (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs))))
 ;            `((defun ,(read-from-string 
@@ -1948,8 +1955,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.65 2000/08/18 15:08:49 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.66 2000/08/29 15:52:35 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.66  2000/08/29 15:52:35  rtoy
+;;; Need to coerce the RHS of statement functions to the type of the
+;;; statement function itself.
+;;;
 ;;; Revision 1.65  2000/08/18 15:08:49  rtoy
 ;;; Gratuitous change from prog to let in TRANSLATE-AND-WRITE-SUBPROG.
 ;;;

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.21 2000/11/15 17:56:12 sds Exp $
+;;; $Id: sys.lisp,v 1.22 2000/11/16 18:31:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -210,26 +210,37 @@ but there is a TYPE slot, move TYPE into NAME."
   (declare (stream out))
   (format out "~&~%~75~~%~75,,,'-:@<<{[ The current environment ]}>~>~%~
 Implementation:~20t~a~%~7tversion:~20t~a~%Machine:  type:~20t~a
-~7tversion:~20t~a~%~6tinstance:~20t~a~%System:~19t"
+~7tversion:~20t~a~%~6tinstance:~20t~a~%Opeating System:~19t"
           (lisp-implementation-type) (lisp-implementation-version)
           (machine-type) (machine-version) (machine-instance))
-  #+win32
-  (if (sys::registry
-       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" "ProductName")
-      (flet ((env (str)
-               (sys::registry
-                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" str)))
-        (format out " ~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
-                (env "ProductName") (env "Version") (env "VersionNumber")
-                (env "BootCount") (env "RegisteredOwner")
-                (env "RegisteredOrganization") (env "ProductId")))
-      (flet ((env (str)
-               (sys::registry
-                "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" str)))
-        (format out " WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
-                (env "CurrentVersion") (env "CurrentBuildNUmber")
-                (env "CSDVersion") (env "CurrentType") (env "RegisteredOwner")
-                (env "RegisteredOrganization") (env "ProductId"))))
+  #+(or (and clisp win32) (and allegro mswindows))
+  (let* ((root-nt "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion")
+         (root-9x "SOFTWARE\\Microsoft\\Windows\\CurrentVersion")
+         (key-nt #+(and clisp win32) root-nt
+                 #+(and allegro mswindows)
+                 (ole:open-registry-key ole:rkey-local-machine root-nt))
+         (key-9x #+(and clisp win32) root-9x
+                 #+(and allegro mswindows)
+                 (ole:open-registry-key ole:rkey-local-machine root-9x)))
+    (labels ((9x-p ()
+               #+(and clisp win32) (sys::registry key-9x "ProductName")
+               #+(and allegro mswindows)
+               (ole:registry-value key-9x "ProductName"))
+             (env (str)
+               #+(and clisp win32)
+               (sys::registry (if (9x-p) key-9x key-nt) str)
+               #+(and allegro mswindows)
+               (ole:registry-value (if (9x-p) key-9x key-nt) str)))
+      (if (9x-p)
+          (format out " ~a (~a - ~a; boot: ~a)~%~5tRegistered to: ~a, ~a [~a]"
+                  (env "ProductName") (env "Version") (env "VersionNumber")
+                  (env "BootCount") (env "RegisteredOwner")
+                  (env "RegisteredOrganization") (env "ProductId"))
+          (format
+           out " WinNT ~a (build ~a: ~a) ~a~%~5tRegistered to: ~a, ~a [~a]"
+           (env "CurrentVersion") (env "CurrentBuildNUmber") (env "CSDVersion")
+           (env "CurrentType") (env "RegisteredOwner")
+           (env "RegisteredOrganization") (env "ProductId")))))
   #+os/2 (princ " OS/2")
   #+unix (princ " Unix")
   #+dos (princ " DOS")

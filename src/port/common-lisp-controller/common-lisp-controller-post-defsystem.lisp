@@ -196,7 +196,6 @@ than the maximum file-write-date of output-files, return T."
 		      (if (stringp module-name)
 			  module-name
 			(string-downcase (symbol-name module-name)))))
-		 (common-lisp-controller:send-clc-command :remove module-name-str)
 		 (common-lisp-controller:send-clc-command :recompile module-name-str))
 	       (terpri)
 	       (asdf:oos 'asdf:load-compiled-op module-name) 

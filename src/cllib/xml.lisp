@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.40 2002/02/12 19:34:19 sds Exp $
+;;; $Id: xml.lisp,v 2.41 2002/03/14 16:09:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -176,7 +176,8 @@ If this is `:readably', print for Lisp reader.")
   (pre (princ-to-string (gensym "NS")) :type string)
   (nht (make-hash-table :test 'equal) :type hash-table)) ; names
 
-(defun xmlns-get (uri &rest opts &key pre-tmp &allow-other-keys)
+(defun xmlns-get (uri &rest opts &key pre-tmp (out *standard-output*)
+                  &allow-other-keys)
   "Get the XML namespace or create a new one.
 Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
   (multiple-value-bind (ns oldp)
@@ -184,10 +185,10 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
         (xml-namespace (values uri t))
         (string (gethash uri *xml-uri-namespaces*)))
     (unless oldp
-      (remf opts :pre-tmp)
+      (remf opts :pre-tmp) (remf opts :out)
       (setq ns (apply #'make-xml-namespace :uri uri opts))
       ;; only newly created namespaces have to be reported to the user
-      (mesg :log t "~& * added XML namespace: ~s~@[ [prefix ~s]~]~%"
+      (mesg :xml out "~& * added XML namespace: ~s~@[ [prefix ~s]~]~%"
             ns pre-tmp))
     (setf (gethash (xmlns-uri ns) *xml-uri-namespaces*) ns)
     (pushnew ns (gethash (xmlns-pre ns) *xml-pre-namespaces*))
@@ -197,10 +198,11 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
 )
 
 (defconst +xml-namespace-xml+ xml-namespace
-  (xmlns-get "http://www.w3.org/XML/1998/" :pre "xml")
+  (xmlns-get "http://www.w3.org/XML/1998/" :pre "xml" :out nil)
   "The XML namespace, as per 'Namespaces in XML' '4: Using Qualified Names'.
 <URL:http://www.w3.org/TR/REC-xml-names/#ns-using>.")
-(defconst +xml-namespace-none+ xml-namespace (xmlns-get "" :pre "")
+(defconst +xml-namespace-none+ xml-namespace
+  (xmlns-get "" :pre "" :out nil)
   "The namespace for unqualified names.")
 (defcustom *xml-default-namespace* xml-namespace +xml-namespace-none+
   "The default namespace.")

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.4 2000/05/15 18:43:26 sds Exp $
+;;; $Id: fin.lisp,v 2.5 2000/05/15 23:45:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -51,7 +51,19 @@ APR of 7% should be given as 0.07, not as 7."
 
 ;;;###autoload
 (defun mgg-compare (principal term apr apr-pts &optional monthly)
-  "Compare two APRs by their present values."
+  "Compare several APRs by their present values.
+If you have to decide between several mortgages of the same PRINCIPAL and TERM,
+you should consider the present value at the 'no points/no closing cost' APR
+of the points which you will have to pay for the lower rate.
+Suppose you are have a choice of 15-year $100,000 mortgage at
+   7.25  % with no points
+   6.875 % with 1 point
+   6.75  % with 3 points.
+The following call:
+ (mgg-compare 100000 15 0.0725 '((0.06875 . 1) (0.0675 . 3)))
+will tell you that you should choose the 6.875%/1point mortgage because the
+1 point you will pay for the lower rate will be justified after only 4.645
+years, as opposed to 13.75 years for the 6.75%/3points mortgage."
   (let* ((tt (* 12 term)) (di (mgg-discount tt apr monthly))
          (mm (* principal di))
          (res (sort
@@ -65,11 +77,11 @@ APR of 7% should be given as 0.07, not as 7."
                            (list (* 100 apr1) mm1 dd amt pts pnt-amt term)))
                        apr-pts)
                #'< :key #'seventh)))
-    (format t "Principal: ~2:/comma/   term: ~d years
+    (format t "~&Principal: ~2:/comma/   term: ~d years
 ~5,3f% -> ~2,6:/comma/~%" principal term (* 100 apr) mm)
     (dolist (ll res)
       (apply #'format t "~5,3f% -> ~2,6:/comma/ [~2:/comma/ -> ~
-~2:/comma/] pts: ~5,3f% (~2:/comma/) -> ~5fyrs~%" ll))
+~2:/comma/] pts: ~5,3f% (~2:/comma/) -> ~5f yrs~%" ll))
     ;; (values mm res)
     (values)))
 
@@ -78,8 +90,9 @@ APR of 7% should be given as 0.07, not as 7."
   "Print the information about prepaying the loan."
   (let* ((mm (mgg-monthly principal term apr monthly)) (tot (+ prepay mm))
          (trm (/ (mgg-term (/ tot principal) apr monthly) 12)))
-    (format t "Principal: ~2:/comma/  APR: ~f  --> ~2,9:/comma/ --> ~5,2f years
-Prepay: ~2:/comma/~35t  --> ~2,9:/comma/ --> ~5,2f years~%"
+    (format
+     t "Principal: ~2:/comma/  APR: ~7f  --> ~2,9:/comma/ --> ~5,2f years
+Prepay: ~2:/comma/~36t  --> ~2,9:/comma/ --> ~5,2f years~%"
             principal apr mm term prepay tot trm)))
 
 (defun mgg-interest (principal term apr &optional monthly)

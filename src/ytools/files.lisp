@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.38 2005/03/23 14:36:35 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.39 2005/03/23 20:07:07 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -549,7 +549,9 @@
    ;; -- values :compile-succeeded or :compile-failed
    ;; once compilation has been attempted
    (last-compile-time :accessor Compiled-file-chunk-last-compile-time
-		      :initform -1)))
+		      :initform -1)
+   (result :accessor Compiled-file-chunk-result
+	   :initform '!())))
 
 (defgeneric place-compiled-chunk (ch))
 

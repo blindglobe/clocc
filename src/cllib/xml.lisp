@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.12 2000/05/24 23:02:52 sds Exp $
+;;; $Id: xml.lisp,v 2.13 2000/06/02 15:44:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,7 +34,8 @@
   "The `&' entities")
 (defcustom *xml-per* hash-table (make-hash-table :test 'equal)
   "The `%' entities")
-(defcustom *xml-ent-file* string "entities.xml"
+(defcustom *xml-ent-file* pathname
+  (translate-logical-pathname "cllib:entities.xml")
   "*The file with the default entities, like &gt; and &amp;.
 See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 (defcustom *xml-keep-comments* boolean nil
@@ -154,7 +155,7 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
 
 (defun xml-ascii-p (char) (> 256 (char-code char)))
 
-(defun xml-de-uunicode (string)
+(defun xml-de-unicode (string)
   "Replace the unicode characters with &#NNNN;"
   (substitute-subseq-if
    string
@@ -169,7 +170,7 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
   (cond (*xml-print-xml*
          (format out "<~a~:{ ~a=~s~}>" (xmlo-name xml) (xmlo-attribs xml))
          (dolist (dd (xmlo-data xml))
-           (princ (typecase dd (string (xml-de-uunicode dd)) (t dd)) out))
+           (princ (typecase dd (string (xml-de-unicode dd)) (t dd)) out))
          (format out "</~a>" (xmlo-name xml)))
         (*print-readably* (call-next-method))
         ((print-unreadable-object (xml out :type t :identity t)
@@ -207,28 +208,30 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
             "nil - outside comment, t - inside, 1 - inside, one `-' read"))
   (:documentation "The input stream for reading XML."))
 
-(defsubst stream-length (st)
-  "A safe wrap around for `file-stream'."
-  (typecase st (file-stream (file-length st)) (t 0)))
+(defun stream-length (st)
+  "A wrap around for `file-stream'."
+  (etypecase st
+    (file-stream (file-length st))
+    (list (reduce #'+ st :key #'stream-length))
+    (concatenated-stream (stream-length (concatenated-stream-streams st)))
+    (string-stream 0)))         ; can we do any better than this?
 
 (defmethod initialize-instance :after ((str xml-stream-in) &rest junk)
   (declare (ignore junk))
   (cond ((typep (xmlis-st str) 'concatenated-stream)
-         (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str))
-               (xmlis-size str)
-               (reduce #'+ (concatenated-stream-streams (xmlis-st str))
-                       :key #'stream-length)))
+         (setf (xmlis-all str) (concatenated-stream-streams (xmlis-st str))))
         ((setf (xmlis-all str) (list (xmlis-st str))
-               (xmlis-st str) (make-concatenated-stream (xmlis-st str))
-               (xmlis-size str) (stream-length (xmlis-st str))))))
+               (xmlis-st str) (make-concatenated-stream (xmlis-st str)))))
+  (setf (xmlis-size str) (stream-length (xmlis-st str))))
 
 (defmethod stream-read-char ((in xml-stream-in))
   (read-char (xmlis-st in) nil :eof))
 (defmethod stream-unread-char ((in xml-stream-in) (char character))
   (unread-char char (xmlis-st in)))
-;; the default method is good enough
-;;(defmethod stream-read-char-no-hang ((in xml-stream-in))
-;;  (read-char-no-hang (xmlis-st in) nil :eof))
+;; the default method is good enough,
+;; but in Allegro CL it is not defined
+(defmethod stream-read-char-no-hang ((in xml-stream-in))
+  (read-char-no-hang (xmlis-st in) nil :eof))
 (defmethod stream-peek-char ((in xml-stream-in))
   (peek-char nil (xmlis-st in) nil :eof))
 (defmethod stream-listen ((in xml-stream-in))
@@ -303,7 +306,7 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
                (return (values (coerce list 'string) ch)))))
 
 (defun xml-read-comment (str)
-  "we are inside a comment; read it and return as a string"
+  "We are inside a comment; read it and return as a string."
   (loop :with ch :for data = (xml-read-text str '#\- :clean nil)
         :collect data :into all :do (read-char str t nil t)
         :if (char= #\- (setq ch (read-char str t nil t))) :do
@@ -406,7 +409,7 @@ the first character to be read is #\T"
 (defmacro with-xml-input ((var stream) &body body)
   "Open the XML stream, evaluate the forms, make sure the stream is closed."
   `(with-open-stream (,var (make-instance 'xml-stream-in :input ,stream))
-    (let ((*readtable* (make-xml-readtable))) ,@body)))
+    (let ((*readtable* *xml-readtable*)) ,@body)))
 
 (defmacro with-xml-file ((var file &key reset-ent (out '*standard-output*))
                          &body body)
@@ -418,13 +421,13 @@ the first character to be read is #\T"
         (format ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
                 file (file-length (car (xmlis-all ,var))))
         (force-output ,out))
-      (let ((*readtable* (make-xml-readtable)))
-        (prog1 (progn ,@body)
-          (when ,out
-            (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
-                    (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
-                    (xmlis-size ,var))))))))
+      (unwind-protect (progn ,@body)
+        (when ,out
+          (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
+                  (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
+                  (xmlis-size ,var)))))))
 
+;;;###autoload
 (defun xml-read-from-file (file &key (reset-ent t))
   "Read all XML objects from the file."
   (with-xml-file (str file :reset-ent reset-ent)

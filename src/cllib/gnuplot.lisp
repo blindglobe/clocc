@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.7 2001/04/26 19:01:42 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.8 2001/04/26 21:13:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -71,88 +71,109 @@
   (apply #'format *gnuplot-msg-stream* args)
   (force-output *gnuplot-msg-stream*))
 
-(defmacro with-plot-stream ((str plot &rest header) &body body)
+(defmacro with-plot-stream ((str plot &rest options) &body body)
   "Execute body, with STR bound to the gnuplot stream.
-Usage: (with-plot-stream (stream PLOT &rest HEADER) body).
-HEADERs are passed to `plot-header', which see.
+Usage: (with-plot-stream (stream PLOT &rest OPTIONS) body).
+OPTIONS are gnuplot(1) options, the following are accepted:
+ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND LEGEND GRID TERM
 PLOT means:
   T, :plot => plot;
   :print   => print;
   :wait    => plot and wait for gnuplot to terminate.
   :file    => write `*gnuplot-file*' and print a message.
   NIL      => do nothing, print nothing, return NIL."
-  `(when ,plot
-    (let ((,str
-           #+(or win32 mswindows)
-           (if (eq ,plot :print) (pipe-output *gnuplot-path-console*)
-               (open *gnuplot-file* :direction :output
-                     :if-exists :supersede))
-           #+unix (if (eq ,plot :file)
-                      (open *gnuplot-file* :direction :output
-                            :if-exists :supersede)
-                      (setq *gnuplot-stream*
-                            (or (if (and *gnuplot-stream*
-                                         (open-stream-p *gnuplot-stream*))
-                                    *gnuplot-stream*)
-                                (pipe-output *gnuplot-path*))))))
-      (declare (stream ,str))
-      (unwind-protect (progn (plot-header ,str ,plot ,@header) ,@body)
-        #+(or win32 mswindows) (close-pipe ,str)
-        #+(or win32 mswindows)
-        (ecase ,plot
-          ((t :plot)
-           (plot-msg "Starting gnuplot...")
-           (close-pipe (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
-           (format *gnuplot-msg-stream* "done.~%"))
-          (:wait
-           (plot-msg "Waiting for gnuplot to terminate...")
-           (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
-                   (run-prog *gnuplot-path* :args
-                             (list "/noend" *gnuplot-file*))))
-          (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*))
-          (:file (plot-msg
-                  "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
-                  *gnuplot-file* *gnuplot-file*)))
-        #+unix
-        (ecase ,plot
-          ((t :plot) (plot-msg "Done plotting.~%"))
-          (:wait
-           (fresh-line *terminal-io*)
-           (princ "Press <enter> to continue..." *terminal-io*)
-           (force-output *terminal-io*) (read-line *terminal-io* nil nil))
-          (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*)
-                  (format ,str "set output~%"))
-          (:file (plot-msg
-                  "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
-                  *gnuplot-file* *gnuplot-file*)))
-        #+unix (force-output ,str)))))
+  (with-gensyms ("WPS-" body-function)
+    `(flet ((,body-function (,str) ,@body))
+      ;; this cannot be replaced with a simple inline funcall since
+      ;; OPTIONS are not necessarily known at compile time
+      (apply #'internal-with-plot-stream ,plot #',body-function ,@options))))
 
-(defun plot-header (str plot &key (xlabel "x") (ylabel "y") data-style
-                    timefmt xb xe (title "plot") legend (xtics t) (ytics t)
-                    grid term (xfmt (or timefmt "%g")) (yfmt "%g"))
-  "Print the header stuff into the stream.
-This may be called ONLY by `with-plot-stream'.
-The following gnuplot options are accepted:
- XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND LEGEND GRID TERM"
-  (declare (stream str))
-  (flet ((pp (xx) (format nil (if (numberp xx) "~g" "'~a'") xx))
-         (tt (nm par)
-           (case par
-             ((t) (format str "set ~a~%" nm))
-             ((nil) (format str "set no~a~%" nm))
-             (t (format str "set ~a ~a~%" nm par)))))
-    (if (eq plot :print)
-        (format str "set terminal postscript landscape 'Helvetica' 9
+(defun internal-with-plot-stream (plot body-function
+                                  &key (xlabel "x") (ylabel "y") data-style
+                                  timefmt xb xe (title "plot") legend
+                                  (xtics t) (ytics t) grid term
+                                  (xfmt (or timefmt "%g")) (yfmt "%g"))
+  "The gist of `with-plot-stream' is here.
+Should not be called directly but only through `with-plot-stream'."
+  (let ((plot-str
+         #+(or win32 mswindows)
+         (if (eq plot :print) (pipe-output *gnuplot-path-console*)
+             (open *gnuplot-file* :direction :output
+                   :if-exists :supersede))
+         #+unix (if (eq plot :file)
+                    (open *gnuplot-file* :direction :output
+                          :if-exists :supersede)
+                    (setq *gnuplot-stream*
+                          (or (if (and *gnuplot-stream*
+                                       (open-stream-p *gnuplot-stream*))
+                                  *gnuplot-stream*)
+                              (pipe-output *gnuplot-path*))))))
+    (declare (stream plot-str))
+    (unwind-protect
+         (progn
+           ;; output the header information
+           (labels ((pp (xx)
+                      (typecase xx
+                        (number (format nil "~g" xx))
+                        (symbol (format nil "~a" xx))
+                        (list (format nil "~{ ~a~}" xx))
+                        (t (format nil "'~a'" xx))))
+                    (plot-set (nm par)
+                      (case par
+                        ((t) (format plot-str "set ~a~%" nm))
+                        ((nil) (format plot-str "set no~a~%" nm))
+                        (t (format plot-str "set ~a ~a~%" nm (pp par))))))
+             (if (eq plot :print)
+                 (format plot-str
+                         "set terminal postscript landscape 'Helvetica' 9
 set output '~a'~%" *gnuplot-printer*)
-        (format str "set terminal ~a~@[ ~a~]~%set output~%" #+unix "x11"
-                #+(or win32 mswindows) "windows" term))
-    (format str "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
+                 (format plot-str "set terminal ~a~@[ ~a~]~%set output~%"
+                         #+unix "x11" #+(or win32 mswindows) "windows" term))
+             (format plot-str
+                     "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~@[ time~%set timefmt '~a'~]~%set format x '~a'
-~@[set format y '~a'~%~]set xlabel '~a'~%set ylabel '~a'~%set border
-set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
-            timefmt xfmt yfmt xlabel ylabel data-style (pp xb) (pp xe)
-            title legend)
-    (tt "xtics" xtics) (tt "ytics" ytics) (tt "grid" grid)))
+~@[set format y '~a'~%~]~%set border~%set xrange [~a:~a]~%"
+                     timefmt xfmt yfmt (pp xb) (pp xe))
+             (plot-set "xlabel" xlabel)
+             (plot-set "ylabel" ylabel)
+             (plot-set "data style" data-style)
+             (plot-set "title" title)
+             (plot-set "key" legend)
+             (plot-set "xtics" xtics)
+             (plot-set "ytics" ytics)
+             (plot-set "grid" grid))
+           ;; the body is here!
+           (funcall body-function plot-str))
+      ;; clean up
+      #+(or win32 mswindows) (close-pipe plot-str)
+      #+(or win32 mswindows)
+      (ecase plot
+        ((t :plot)
+         (plot-msg "Starting gnuplot...")
+         (close-pipe (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
+         (format *gnuplot-msg-stream* "done.~%"))
+        (:wait
+         (plot-msg "Waiting for gnuplot to terminate...")
+         (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
+                 (run-prog *gnuplot-path* :args
+                           (list "/noend" *gnuplot-file*))))
+        (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*))
+        (:file (plot-msg
+                "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
+                *gnuplot-file* *gnuplot-file*)))
+      #+unix
+      (ecase plot
+        ((t :plot) (plot-msg "Done plotting.~%"))
+        (:wait
+         (fresh-line *terminal-io*)
+         (princ "Press <enter> to continue..." *terminal-io*)
+         (force-output *terminal-io*) (read-line *terminal-io* nil nil))
+        (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*)
+                (format plot-str "set output~%"))
+        (:file (plot-msg
+                "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
+                *gnuplot-file* *gnuplot-file*)))
+      #+unix (force-output plot-str))))
 
 (defun plot-data-style (num-ls)
   "Decide upon the appropriate data style for the number of points."
@@ -160,7 +181,7 @@ set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
     (setq num-ls (1- (apply #'min (mapcar #'length num-ls)))))
   (assert (realp num-ls) (num-ls)
           "~s got neither number nor list: ~s" 'plot-data-style num-ls)
-  (if (> num-ls 30) "lines" "linespoints"))
+  (if (> num-ls 30) :lines :linespoints))
 
 ;;;###autoload
 (defun plot-dated-lists (begd endd dls &rest opts &key (title "Dated Plot")
@@ -169,8 +190,7 @@ set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
                          (timefmt "%Y-%m-%d") ema (slot 'val)
                          (plot t) &allow-other-keys)
   "Plot the dated lists from BEGD to ENDD.
-Most of the keys are the gnuplot options (see the documentation
-for `plot-header' and `with-plot-stream' for details.)
+Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 REL means plot everything relative to the first value.
 EMA is the list of parameters for Exponential Moving Averages."
   (assert dls () "Nothing to plot for `~a'~%" title)
@@ -222,8 +242,7 @@ EMA is the list of parameters for Exponential Moving Averages."
                    (depth (1- (apply #'min (mapcar #'length lss))))
                    (data-style (plot-data-style depth)) &allow-other-keys)
   "Plot the given lists of numbers.
-Most of the keys are the gnuplot options (see the documentation
-for `plot-header' and `with-plot-stream' for details.)
+Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (declare (list lss) (type fixnum depth))
   (remf opts :depth) (remf opts :rel) (remf opts :key) (remf opts :plot)
@@ -246,8 +265,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
                        (ylabel (if rel "relative value" "value"))
                        data-style quads (plot t) xbeg xend &allow-other-keys)
   "Plot the given lists of numbers.
-Most of the keys are the gnuplot options (see the documentation
-for `plot-header' and `with-plot-stream' for details.)
+Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the list
 of conses of abscissas and ordinates. KEY is used to extract the cons."
   (declare (list lss))
@@ -285,8 +303,7 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
                         (xkey #'first) (ykey #'second) (ydkey #'third)
                         &allow-other-keys)
   "Plot the list with errorbars.
-Most of the keys are the gnuplot options (see the documentation
-for `plot-header' and `with-plot-stream' for details.)
+Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 The first element is the title, all other are records from which we
 get x, y and ydelta with xkey, ykey and ydkey."
   (declare (list ll))
@@ -313,10 +330,11 @@ get x, y and ydelta with xkey, ykey and ydkey."
 (defun plot-functions (fnl xmin xmax numpts &rest opts &key data-style (plot t)
                        (title "Function Plot") &allow-other-keys)
   "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
-Most of the keys are the gnuplot options (see the documentation
-for `plot-header' and `with-plot-stream' for details.)
+Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 FNL is a list of (name . function).
-E.g.: (plot-functions  (list (cons 'sine #'sin)) 0 pi 100)"
+E.g.:
+  (plot-functions (list (cons 'sine #'sin) (cons 'cosine #'cos)) 0 pi 100
+                  :legend '(:bot :left :box) :grid t)"
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (remf opts :plot)
   (with-plot-stream (str plot :xb xmin :xe xmax :title title

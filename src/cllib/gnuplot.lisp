@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.13 2004/07/14 20:27:47 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.14 2004/07/14 20:28:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -494,6 +494,33 @@ OPTS is passed to `plot-lists-arg'."
                   (dated-list-to-day-list dl :slot slot :depth depth)))
           dls)
          opts))
+
+;;;###autoload
+(defun plot-histogram (list nbins &rest opts &key (title "histogram")
+                       (key #'value) &allow-other-keys)
+  "Plot the data in the list as a histogram"
+  (multiple-value-bind (min max count)
+      (loop :for x :in list :for v = (funcall key x) :for c :upfrom 1
+        :minimize v :into i :maximize v :into a
+        :finally (return (values i a c)))
+    (mesg :plot *gnuplot-msg-stream*
+          "~&~S: ~:D point~:P from ~S to ~S~%" 'plot-histogram count min max)
+    (assert (/= min max) (min max) "~S: min=max=~A" 'plot-histogram min)
+    (let ((scale (/ nbins (- max min))) (last (1- nbins))
+          (vec (make-array nbins :initial-element 0)))
+      (loop :for x :in list :for v = (floor (* scale (- (funcall key x) min)))
+        :do (incf (aref vec (min v last))))
+      (loop :for s :across vec :minimize s :into i :maximize s :into a
+        :finally (mesg :plot *gnuplot-msg-stream*
+                       "~S: bin size from ~:D to ~:D~%"
+                       'plot-histogram i a))
+      (with-plot-stream (str :title title :data-style :histeps
+                             (remove-plist opts :key))
+        (format str "plot '-' using 1:2~%")
+        (dotimes (i nbins)
+          (format str "~F~20T~F~%" (+ min (/ (1+ (* 2 i)) scale 2))
+                  (aref vec i)))
+        (format str "e~%")))))
 
 (defun dated-list-to-day-list (dl &key (slot 'val) (depth (dl-len dl)))
   "Make a list of conses (days-from-beg . value) of length

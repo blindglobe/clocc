@@ -47,7 +47,7 @@
 ;      fix-slashes
 
 ;;-----------------------------------------------------------------------------
-(in-package :cl-user)
+(in-package :f2cl)
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -1964,18 +1964,31 @@
               (ret nil (append ret '("~A"))))
              ((> i (car x)) ret))))
 
-; given a list containing /'s put commas on either side
-; e.g. (x / y) -> ( |,| / |,| y) 
-;      (/ x) -> (/ |,| x)
+;; given a list containing /'s put commas on either side
+;; e.g. (x / y) -> ( |,| / |,| y) 
+;;      (/ x) -> (/ |,| x)
+;;
+;; Note that f2cl will convert // to f2cl-//, so if we find that, we
+;; need to insert the appropriate number of commas and slashes.
 (defun fix-slashes (x)
-   (do ((lis x (cdr lis))
-        (ret nil 
-             (append ret (if (eq (car lis) '/) 
-                             (cond ((and ret (cdr lis)) '(|,| / |,|))
-                                   ((cdr lis) '(/ |,|))
-                                   (t '(|,| /)))
-                             (list (car lis))))))
-       ((null lis) ret)))
+  (do ((lis x (cdr lis))
+       (ret nil 
+	    (append ret (cond ((eq (car lis) 'f2cl-//)
+			       (cond ((and ret (cdr lis))
+				      '(|,| / |,| / |,|))
+				     ((cdr lis)
+				      '(/ |,| / |,|))
+				     (t
+				      '(|,| / |,| /))))
+			      ((eq (car lis) '/) 
+			       (cond ((and ret (cdr lis))
+				      '(|,| / |,|))
+				     ((cdr lis)
+				      '(/ |,|))
+				     (t '(|,| /))))
+			      (t
+			       (list (car lis)))))))
+      ((null lis) ret)))
 
 
 ;; Creates the slots for the common block.  Each variable in the
@@ -2084,8 +2097,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.53 2000/07/27 16:42:01 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.54 2000/07/28 17:05:01 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.54  2000/07/28 17:05:01  rtoy
+;;; o We are in the f2cl package now.
+;;; o We convert // to f2cl-//, even in format statements so fix
+;;;   FIX-SLASHES to handle this case by replacing f2cl-// with 2 slashes,
+;;;   as appropriate.
+;;;
 ;;; Revision 1.53  2000/07/27 16:42:01  rtoy
 ;;; o We want to be in the CL-USER package, not the USER package.
 ;;; o Use (typep x 'integer) instead of (fixnump x) in GET-FUN-ARG-TYPE.

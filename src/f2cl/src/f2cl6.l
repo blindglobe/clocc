@@ -184,7 +184,7 @@
 	   (and (characterp char1)
 		(characterp char2)
 		(char= char1 char2))))
-    (declare (inline my-digit-char-p my-char=))
+    #-clisp(declare (inline my-digit-char-p my-char=))
     (prog (str nxt-char)
        ;; first check prev-char suitable to precede a number
        (if (not (member prev-char 
@@ -212,7 +212,8 @@
        (setq char (read-char *inp* nil 'EOF t)
 	     nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
        (if (eql nxt-char 'EOF) (setq nxt-char `#\space))
-       (cond ((eql char 'EOF) 
+       (cond ((eql char 'EOF)
+	      ;; Assume number is complete.
 	      (write (get-output-stream-string str) :stream outport :escape nil)
 	      (write-char '#\space outport)
 	      (return t))
@@ -223,16 +224,18 @@
 		   (not (or (my-digit-char-p nxt-char)
 			    (my-char= nxt-char '#\D)
 			    (my-char= nxt-char '#\E))))
+	      ;; Convert "0." to "0.0"
 	      (write-char '#\. str) (write-char '#\0 str)
-	      (write (get-output-stream-string str) :stream outport :escape nil)
-	      (write-char '#\space outport)
-	      (return t))
+	      (go loop))
 	     ((and (my-char= char '#\.)
 		   (my-digit-char-p nxt-char))
+	      ;; We have "n.n"
 	      (write-char '#\. str) 
 	      (go loop))
 	     ((and (my-char= char '#\.)
 		   (not (my-digit-char-p nxt-char)))
+	      ;; We have "." followed by some non digit.  Append a 0
+	      ;; to the number.
 	      (write-char '#\. str) (write-char '#\0 str)
 	      (go loop))
 	     ((char-equal char '#\E)

@@ -1,3 +1,9 @@
+2004-07-10: Simplified Qvar as type	
+	
+2004-07-09: Added gen-var
+	
+2004-07-06: Tiny bug fix in setter
+	
 2004-06-25: Further enhancements to alref. .  Made packages work in
 	    names of YTools logical pathnames.  Fixed bug in 'repeat'
 	    for var notation (v e0 :then e1) so it's the same as (v =

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 1.5 2004/04/24 23:01:24 airfoyle Exp $
+;;;$Id: setter.lisp,v 1.6 2004/07/12 22:28:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -20,7 +20,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq match-cond match-let
-	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes)))
+	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar)))
 
 ;;;;(declaim (special *-*))
 
@@ -179,19 +179,25 @@
        true
        ytools-readtable*))
 
+;;; Qvars are a subspecies, but are distinguished only by their constructor.
+
 (defun make-Qvar (x notes) (make-Qvaroid false false x notes))
 
 (defun \? (x) (make-Qvar x !()))
 
-(defun is-Qvar (x) (and (is-Qvaroid x)
-			(not (Qvaroid-atsign x))
-			(not (Qvaroid-comma x))))
+;;; 
+(deftype Qvar () 'Qvaroid)
+
+(defun is-Qvar (x) (is-Qvaroid x))
+;;; 
+;;;;			(not (Qvaroid-atsign x))
+;;;;			(not (Qvaroid-comma x))))
 
 (defun Qvar-sym (x) (Qvaroid-sym x))
 (defun Qvar-notes (x) (Qvaroid-notes x))
 
-(defun is-matchpat (x) (is-Qvar x))
-(defun matchpat-items (x) (cons (Qvar-sym x) (Qvar-notes x)))
+;;;;(defun is-matchpat (x) (is-Qvar x))
+;;;;(defun matchpat-items (x) (cons (Qvar-sym x) (Qvar-notes x)))
 
 ; MATCHQ does unification between FORM, the first argument and FMLA, the
 ; second argument. A proper call to MATCHQ looks like
@@ -227,9 +233,9 @@
 	 ((eq (car pat) 'quote)
 	  (cond ((not (eq dat 'match-datum))
 		 (out (to *error-output*)
-		      "Warning: matchq pattern is quoted: '" pat
+		      "Warning: matchq pattern is quoted: " pat
 		      :% " To avoid seeing this warning, substitute (("
-		      ':quote 'quote ")" (cadr pat) ")" :%)))))
+		      ':quote 1 'quote ") " (cadr pat) ")" :%)))))
    (match-code-cleanup
       `(let ((\ dat ,dat))
 	  ,(match-code pat '\ dat))))

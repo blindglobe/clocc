@@ -37,6 +37,10 @@
   ()
   (:default-initargs :feature-tag :sparc))
 
+(defclass sparc-v9-machine (sparc-machine)
+  ()
+  (:default-initargs :feature-tag :sparc-v9))
+
 (defclass alpha-machine (machine)
   ()
   (:default-initargs :feature-tag :alpha))

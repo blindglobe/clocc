@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.14 2004/09/23 12:33:05 haible Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.15 2004/12/18 14:03:53 haible Exp $")
 
 (in-package :xlib)
 
@@ -974,7 +974,7 @@
   #+clisp (let ((s (machine-instance))) (subseq s 0 (position #\Space s)))
   ;; resources-pathname was using short-site-name for this purpose
   #+excl (short-site-name)
-  #-(or excl cmu sbcl) (error "get-host-name not implemented"))
+  #-(or cmu sbcl clisp excl) (error "get-host-name not implemented"))
 
 (defun homedir-file-pathname (name)
   (and #-(or unix mach) (search "Unix" (software-type) :test #'char-equal)

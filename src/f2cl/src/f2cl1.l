@@ -140,7 +140,8 @@ only when needed. ")
 			package
 			declaim
 			declare-common
-			(float-format *read-default-float-format*))
+			(float-format *read-default-float-format*)
+			&allow-other-keys)
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -251,7 +252,8 @@ INPUT-FILE               File containing Fortran code
 			      package
 			      declaim
 			      declare-common
-			      (float-format *read-default-float-format*))
+			      (float-format *read-default-float-format*)
+			      &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
 FILENAME                 File containing Fortran code
@@ -2274,8 +2276,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.107 2002/04/18 13:05:19 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.108 2002/05/03 17:42:13 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.108  2002/05/03 17:42:13  rtoy
+;;; Allow other keys for f2cl and f2cl-compile.
+;;;
 ;;; Revision 1.107  2002/04/18 13:05:19  rtoy
 ;;; Added :FLOAT-FORMAT option to F2CL and F2CL-COMPILE so that the user
 ;;; can specify how to print out numbers in case the user is going to

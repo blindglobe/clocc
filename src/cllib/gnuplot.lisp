@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.9 2001/04/26 22:56:32 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.10 2001/04/30 18:53:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -156,6 +156,7 @@ set xdata~@[ time~%set timefmt '~a'~]~%" timefmt)
            ;; the body is here!
            (funcall body-function plot-str))
       ;; clean up
+      (fresh-line plot-str)
       #+(or win32 mswindows) (close-pipe plot-str)
       #+(or win32 mswindows)
       (ecase plot

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.28 2003/10/19 20:47:45 sds Exp $
+;;; $Id: fileio.lisp,v 1.29 2004/02/27 17:40:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -198,7 +198,7 @@ The optional third argument is passed to `pr'.
 Return the size of the file."
   (declare (type (or simple-string pathname) file))
   (format t "Writing `~a'..." file) (force-output)
-  (with-timing ()
+  (with-timing (:count file-length)
     (with-open-file (str file :direction :output :if-exists :supersede)
       (declare (stream str))
       (format str ";; File: <~a - " file) (current-time str)
@@ -208,9 +208,9 @@ Return the size of the file."
               (lisp-implementation-version) nice comments)
       (pr obj str nice)
       (format str "~2%;; file written [") (current-time str)
-      (format str "]~%")
-      (format t "done [~:d byte~:p]" (file-length str))
-      (file-length str))))
+      (format str "]~%") (setq file-length (file-length str))
+      (format t "done [~:d byte~:p]" file-length)
+      file-length)))
 
 ;;;###autoload
 (defun read-from-stream (str &key (repeat t))
@@ -227,19 +227,20 @@ The REPEAT keyword argument tells how many objects to read.
 
 ;;;###autoload
 (defun read-from-file (file &key (readtable *readtable*) repeat
-                       (out *standard-output*))
+                       (package *package*) (out *standard-output*))
   "Read an object or several objects from a file.
 The READTABLE keyword argument (default `*readtable*') specifies
 the readtable to use.
 Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
   (declare (type (or simple-string pathname) file))
-  (with-timing (:done t :out out)
+  (with-timing (:done t :out out :count file-length)
     (with-open-file (str file :direction :input)
       (when out
-        (format out "~&Reading `~a' [~:d bytes]..." file (file-length str))
+        (setq file-length (file-length str))
+        (format out "~&Reading `~a' [~:d bytes]..." file file-length)
         (force-output out))
       (with-standard-io-syntax
-        (let ((*readtable* readtable))
+        (let ((*readtable* readtable) (*package* package))
           (read-from-stream str :repeat repeat))))))
 
 (defun append-to-file (file fmt &rest fmt-args)

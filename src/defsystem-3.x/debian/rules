@@ -3,9 +3,11 @@
 # This is the debhelper compatibility version to use.
 export DH_COMPAT=4
 
+pkg=cl-defsystem3
 clc-base=usr/share/common-lisp
 clc-src=$(clc-base)/source
-files=$(clc-src)/defsystem3
+file-dir=$(clc-src)/defsystem3
+doc-dir=usr/share/doc/$(pkg)
 
 configure: configure-stamp
 configure-stamp:
@@ -31,8 +33,11 @@ install: build
 	dh_clean -k
 	dh_installdirs
 	# Add here commands to install the package into debian/asdf.
-	dh_installdirs $(files)
-	dh_install defsystem.lisp $(files)
+	dh_installdirs $(file-dir) $(doc-dir)
+	dh_install defsystem.lisp $(file-dir)
+	cp ChangeLog changelog
+	dh_install README changelog $(doc-dir)
+	rm changelog
 
 # Build architecture-independent files here.
 binary-indep: build install

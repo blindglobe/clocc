@@ -1,4 +1,4 @@
-;;; File: <rpm.lisp - 1999-05-14 Fri 21:46:26 EDT sds@goems.com>
+;;; File: <rpm.lisp - 1999-06-03 Thu 16:23:33 EDT sds@goems.com>
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
@@ -9,9 +9,18 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 1.14 1999/05/15 01:49:46 sds Exp $
+;;; $Id: rpm.lisp,v 1.15 1999/06/03 20:48:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 ;;; $Log: rpm.lisp,v $
+;;; Revision 1.15  1999/06/03 20:48:40  sds
+;;; (download-data): do not include `url', use a alot instead.
+;;; (dld-reset): set `dld-all' too.
+;;; (rpm-list-size): new function.
+;;; (*rpm-locations*): use `macrolet' to init.
+;;; (rpm-prune-list): use `remove-if-not' instead of `mapcan'.
+;;; (rpm-get-available): replaced `&optional' with `&key';
+;;; new argument: `err'.
+;;;
 ;;; Revision 1.14  1999/05/15 01:49:46  sds
 ;;; (download-data): new slot - `all'.
 ;;; (*rpm-locations-timeout*): new user variable.
@@ -82,58 +91,62 @@
 
 (defstruct (download-data (:conc-name dld-)
                           #+cmu (:print-function print-struct-object))
-(defstruct (download-data (:conc-name dld-) (:include url)
-                           #+cmu (:print-function print-struct-object))
+  (url +bad-url+ :type url)     ; location
+  (err nil :type (or null error)) ; was there an error?
+  (all nil :type list)          ; all files at the location
   (fls nil :type list))         ; files found at the location
 
 (defmethod url ((dld download-data)) (dld-url dld))
 
+(defun rpm-list-size (rpms)
+  "Sum the sizes of the RPMs in the list."
+  (reduce #'+ rpms :key (safe-fun1 rpm-size rpm-p 0)))
+
+(defmethod print-object ((dld download-data) (out stream))
+  (when *print-readably* (return-from print-object (call-next-method)))
   (write (dld-url dld) :stream out)
   (cond ((dld-err dld) (format out "~% - ~a" (dld-err dld)))
-  (call-next-method)
+        ((dld-all dld)
          (format out " [~:d RPMs, ~:d bytes]" (length (dld-all dld))
-        ((dld-fls dld)
-         (let ((sz (reduce #'+ (dld-fls dld) :key
-                           (safe-fun1 rpm-size rpm-p 0))))
-           (declare (type file-size-t sz))
-           (format out "~:[~*~; [~:d bytes]~]: ~{~<~%~10t ~1,74:; ~a~>~^,~}."
-                   (zerop sz) sz (dld-fls dld))))))
+                 (rpm-list-size (dld-all dld)))))
+  (when (dld-fls dld)
+    (format out " [~:d RPMs, ~:d bytes]: ~{~<~%~10t ~1,74:; ~a~>~^,~}."
+            (length (dld-fls dld)) (rpm-list-size (dld-fls dld))
+            (dld-fls dld))))
+
+(defun dld-reset (dld)
   "Reset ERR and FLS to NIL."
   (declare (type download-data dld))
   (setf (dld-err dld) nil (dld-fls dld) nil (dld-all dld) nil))
 
-  (setf (dld-err dld) nil (dld-fls dld) nil))
+(defcustom *rpm-present* simple-vector (make-array 0)
   "The list of the present packages.")
 (defcustom *rpm-locations* list
   (macrolet ((mk (&rest args) `(make-download-data :url (make-url ,@args))))
     (list (mk :prot :ftp :host "rawhide.redhat.com"
-  (list (make-download-data :prot :ftp :host "rawhide.redhat.com"
-                            :path "/i386/RedHat/RPMS/")
-        (make-download-data
-         :prot :ftp :host "ftp.rge.com"
-         :path "/pub/systems/linux/redhat/rawhide/i386/RedHat/RPMS/")
-        (make-download-data :prot :ftp :host "ftp.redhat.com"
-                            :path "/pub/redhat/current/i386/RedHat/RPMS/")
-        (make-download-data :prot :ftp :host "updates.redhat.com"
-                            :path "/current/i386/")
-        (make-download-data :prot :ftp :host "updates.redhat.com"
-                            :path "/current/noarch/")
-        (make-download-data :prot :ftp :host "contrib.redhat.com"
-                            :path "/libc6/i386/")
-        (make-download-data :prot :ftp :host "contrib.redhat.com"
-                            :path "/noarch/noarch/")
-        (make-download-data :prot :ftp :host "developer.redhat.com"
-                            :path "/pub/rhcn/RPMS/i386/")
-        (make-download-data :prot :ftp :host "developer.redhat.com"
-                            :path "/pub/rhcn/RPMS/noarch/"))
-  ;; (make-download-data :prot :ftp :host "ftp.suse.com" :path;Xserver
-  ;;                 "/pub/suse_update/XFree86-3.3.3.1-SuSE/glibc2/")
-  ;; (make-download-data :prot :ftp :host "ftp.cc.gatech.edu" :path
+              :path "/pub/rawhide/i386/RedHat/RPMS/")
+    (list (mk :prot :ftp :host "rawhide.redhat.com" :path "/i386/RedHat/RPMS/")
+          (mk :prot :ftp :host "ftp.redhat.com"
+              :path "/pub/redhat/current/i386/RedHat/RPMS/")
+          (mk :prot :ftp :host "updates.redhat.com"
+              :path "/current/i386/")
+          (mk :prot :ftp :host "updates.redhat.com" :path "/current/i386/")
+          (mk :prot :ftp :host "updates.redhat.com" :path "/current/noarch/")
+          (mk :prot :ftp :host "contrib.redhat.com" :path "/libc6/i386/")
+          (mk :prot :ftp :host "contrib.redhat.com" :path "/noarch/noarch/")
+          (mk :prot :ftp :host "developer.redhat.com"
+              :path "/pub/rhcn/RPMS/i386/")
+          (mk :prot :ftp :host "developer.redhat.com"
+              :path "/pub/rhcn/RPMS/noarch/")
+          (mk :prot :ftp :host "ftp.inconnect.com" ; gnome
+              :path "/pub/unix/linux/redhat-6.0/contrib-updates/")))
+  ;; (mk :prot :ftp :host "ftp.cc.gatech.edu" :path
+  ;; "/pub/linux/distributions/suse/suse_update/XFree86-3.3.3.1-SuSE/glibc2/")
+  ;; (mk :prot :ftp :host "ftp.dosemu.org" :path "/dosemu/")
   "*The list of `download-data' structs where to look for RPMs.")
-  ;; (make-download-data :prot :ftp :host "ftp.dosemu.org" ; dosemu
-  ;;                 :path "/dosemu/"))
-  "The list of `download-data' structs where to look for RPMs.")
-(defcustom *rpm-locations-timeout* integer +day-sec+
+(defcustom *rpm-locations-timeout* integer (* 3600 6)
+  "*The number of seconds after which `*rpm-locations*' is updated.")
+(defcustom *rpm-local-paths* list '(#p"/var/tmp/RPMS/")
   "The paths to the local RPMs.")
 (defcustom *rpm-local-paths* list
   (case (read-from-string (machine-instance))
@@ -176,9 +189,9 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
 
 (defmethod print-object ((rpm rpm) (out stream))
   (if *print-readably* (call-next-method)
-(defmethod print-object ((rpm rpm) (stream stream))
+      (format out "~:[~;\"~]~a-~a-~a.~a~:[~;\"~]" *print-escape*
               (rpm-name rpm) (rpm-vers rpm) (rpm-rels rpm) (rpm-arch rpm)
-      (format stream "~:[~;\"~]~a-~a-~a.~a~:[~;\"~]" *print-escape*
+              *print-escape*)))
 
 (defsubst rpm-pos (name)
   "Find the position of the RPM in `*rpm-present*'."
@@ -356,13 +369,13 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
                            :max-retry *rpm-max-retry*)
         (let ((data (ftp-get-passive-socket sock err nil *rpm-timeout*)))
           (when (ignore-errors (url-ask sock err :list "list *.rpm")) ; 150
-        (let ((data (ftp-get-passive-socket sock t nil *rpm-timeout*)))
-          (when (ignore-errors (url-ask sock err 150 "list")) ; nlst
+            (prog1 (map-in (lambda (rr) (setf (rpm-note rr) (list url)) rr)
+                           (rpm-read data))
               (url-ask sock err :list))))) ; 226
     (login (co)
-              (url-ask sock err 226)))))
+      (mesg :log err " * rpm-available [~a]: Cannot login:~% - ~a~%" url co)
       (error co))
-      (mesg :log err " * rpm-available [~a]: Cannon login:~% - ~a~%" url co)
+    (network (co)
       (mesg :log err " * rpm-available [~a]:~% - ~a~%" url co)
       (cond ((plusp retry)
              (mesg :err err " * rpm-available: ~r more attempt~:p~%" retry)
@@ -375,19 +388,18 @@ The elements matching `*rpm-skip*' are removed, too."
   (declare (list rpms))
   (remove-if-not
    (lambda (rpm)
-  (mapcan
+     (let ((pos (rpm-pos (rpm-name rpm))))
        (and pos (rpm< (svref *rpm-present* pos) rpm)
             (not (typecase *rpm-skip*
-       (when (and pos (rpm< (svref *rpm-present* pos) rpm)
-                  (not (typecase *rpm-skip*
-                         (string (search *rpm-skip* (rpm-name rpm)
-                                         :test #'char=))
-                         (function (funcall *rpm-skip* rpm))
-                         (null nil)
-                         (t (error 'case-error :proc 'rpm-prune-list
-                                   :args (list '*rpm-skip* *rpm-skip*
-                                               'function 'string nil))))))
-         (list rpm))))
+                   (string (search *rpm-skip* (rpm-name rpm)
+                                   :test #'char=))
+                   (function (funcall *rpm-skip* rpm))
+                   (null nil)
+                   (t (error 'case-error :proc 'rpm-prune-list
+                             :args (list '*rpm-skip* *rpm-skip*
+                                         'function 'string nil))))))))
+   rpms))
+
 (defun rpm-print (rpm &optional idx (out *standard-output*))
   "Print RPM in a full form."
   (declare (type rpm rpm) (stream out))
@@ -400,15 +412,16 @@ The elements matching `*rpm-skip*' are removed, too."
 
 (defun rpm-get-available (&key force (out *standard-output*)
                           (err *error-output*))
-(defun rpm-get-available (&optional force (out *standard-output*))
+  "Get the list of all RPMs in `*rpm-locations*' and put it there.
+Then generate the list to download."
   (declare (type (or null stream) out err))
   (when (or force (notany #'dld-all *rpm-locations*)
-  (declare (type (or null stream) out))
+            (null (get '*rpm-locations* 'updated))
             (> (- (get-universal-time) (get '*rpm-locations* 'updated))
                *rpm-locations-timeout*))
     (format out " *** Getting the list of new packages...~%")
     (let ((bt (get-float-time nil)) (na 0) (le 0) (bt0 0.0d0)
-    (format t " *** Getting the list of new packages...~%")
+          #+clisp (lisp:*pprint-first-newline* nil)
           (*url-default-timeout* *rpm-timeout*)
           (*url-default-max-retry* *rpm-max-retry*))
       (declare (double-float bt bt0) (type index-t na le))
@@ -417,25 +430,26 @@ The elements matching `*rpm-skip*' are removed, too."
         (dld-reset dld)
         (format out " *** processing `~a'...~%" dld)
         (handler-case
-        (format t " *** processing `~a'...~%" dld)
+            (progn
               (setq bt0 (get-float-time nil))
               (setf (dld-all dld) (rpm-available (dld-url dld)
                                                  :out out :err err)
-              (setf (dld-all dld) (rpm-available dld :out out)
+                    (dld-fls dld) (rpm-prune-list (dld-all dld))
+                    le (length (dld-fls dld)))
               (incf na le)
               (format out " *** ~d new RPM~:p (out of ~d) [~a]:~% --> ~a~%"
                       le (length (dld-all dld)) (elapsed-1 bt0 nil) dld))
-              (format t " *** ~d new RPM~:p (out of ~d) [~a]:~% --> ~a~%"
+          (error (co)
             (setf (dld-err dld) co)
             (format out " *** failed [~a]:~% - ~a~%" (elapsed-1 bt0 nil) co))))
       (format out " *** ~d new RPM~:p in ~r URL~:p [~a]~%" na
-            (format t " *** failed [~a]:~% - ~a~%" (elapsed-1 bt0 nil) co))))
-      (format t " *** ~d new RPM~:p in ~r URL~:p [~a]~%" na
+              (length *rpm-locations*) (elapsed-1 bt nil))
+      (setf (get '*rpm-locations* 'updated) (get-universal-time))
       (dolist (dld *rpm-locations*)
         (when (dld-fls dld)
           (format out " * ~a~%" dld))))))
 
-          (format t " * ~a~%" dld))))))
+;;;###autoload
 (defun show-rpms (&optional (what "") (local t))
   (declare (simple-string what))
   (if local (rpm-get-present) (rpm-get-available))
@@ -466,11 +480,10 @@ The elements matching `*rpm-skip*' are removed, too."
   (declare (simple-string what))
   (flet ((killrpm (what where)
            (delete what where :key #'rpm-name
-  (show-rpms what)
                    :test (lambda (wh nm) (search wh nm :test #'char-equal)))))
     (when (and (/= 0 (show-rpms what)) (yes-or-no-p "Delete all these? "))
       (setq *rpm-present* (killrpm what *rpm-present*))
-    (when (yes-or-no-p "Delete all these? ")
+      (dolist (dld *rpm-locations*)
         (setf (dld-fls dld) (killrpm what (dld-fls dld)))
         (format t " -> ~a~%" dld))
       (show-rpms what))))
@@ -509,14 +522,14 @@ The elements matching `*rpm-skip*' are removed, too."
                            :max-retry *rpm-max-retry*)
         (url-ask sock err :type "type i") ; 200
         (loop :for rpm :in rpms
-        (url-ask sock err 200 "type i")
+              :and ii :of-type index-t :upfrom 1
               :for pos = (rpm-pos (rpm-name rpm))
               :and all :of-type file-size-t = (reduce #'+ rpms :key #'rpm-size)
               :then (- all (rpm-size rpm))
               :with got :of-type file-size-t = 0
               :do (format out " *** [~d/~d] ~a~@[ [~:d bytes~@[, ~/pr-secs/~]~
 ~@[/~/pr-secs/~]]~]~%"
-              :do (format t " *** [~d/~d] ~a~@[ [~:d bytes~@[, ~/pr-secs/~]~
+                          ii len rpm (rpm-size rpm) (url-eta (rpm-size rpm))
                           (url-eta all))
               :if (rpm< (svref *rpm-present* pos) rpm) :do
               (multiple-value-bind (tot el st path)
@@ -528,16 +541,16 @@ The elements matching `*rpm-skip*' are removed, too."
                        (incf got tot)
                        (format out " *** done [~:d bytes, ~a, ~:d bytes/sec]
  *** replacing ~a with ~a in `*rpm-present*'~%"
-                       (format t " *** done [~:d bytes, ~a, ~:d bytes/sec]
+                               tot st (round tot el)
                                (svref *rpm-present* pos) rpm)
                        (setf (svref *rpm-present* pos)
                              (rpm-merge-notes rpm (svref *rpm-present* pos))))
                       (t (format out " *** file `~a' is corrupted:~%" path)
                          (with-open-pipe (st (pipe-input "rpm -K" path)))
-                      (t (format t " *** file `~a' is corrupted:~%" path)
+                         (delete-file path))))
               :else :do (format out " *** already have~25t`~a'.~%" rpm)
               :end :finally (return got)))
-              :else :do (format t " *** already have~25t`~a'.~%" rpm)
+    (network (co)
       (mesg :log err "rpm-get-list [~a]:~% - ~a~%" url co)
       (cond ((plusp retry)
              (mesg :err err "rpm-get-list: ~r more attempt~:p~%" retry)
@@ -552,10 +565,10 @@ The elements matching `*rpm-skip*' are removed, too."
   (declare (type (or null stream) err out))
   (format out "~& *** [~a] `rpm-get-new-rpms' started.~%" (current-time nil))
   (rpm-get-present force out)
-  (format t "~& *** [~a] `rpm-get-new-rpms' started.~%" (current-time nil))
+  (format out " *** ~d package~:p present~%" (length *rpm-present*))
   (rpm-get-available :force force :out out :err err)
-  (format t " *** ~d package~:p present~%" (length *rpm-present*))
-  (rpm-get-available force out)
+  (let ((bt (get-float-time nil)) (glob 0)
+        #+clisp (lisp:*pprint-first-newline* nil)
         (*url-default-timeout* *rpm-timeout*)
         (*url-default-max-retry* *rpm-max-retry*))
     (declare (double-float bt) (type file-size-t glob))
@@ -565,18 +578,18 @@ The elements matching `*rpm-skip*' are removed, too."
              (let ((len (length (dld-fls dld))))
                (format out " *** getting ~d file~:p: ~a~%" len dld)
                (incf glob (rpm-get-list (dld-url dld) (dld-fls dld) :out out
-               (format t " *** getting ~d file~:p: ~a~%" len dld)
-               (incf glob (rpm-get-list dld (dld-fls dld) :out out :err err
-                                        :len len))
-               (format t " *** Pruning [~d]..." len) (force-output)
+                                        :err err :len len))
+               (format out " *** Pruning [~d]..." len) (force-output)
+               (setf (dld-fls dld) (rpm-prune-list (dld-fls dld)))
+               (format out "done [~d left]~%" (length (dld-fls dld)))))
             ((dld-err dld) (format out " *** ~a~%" dld))
-               (format t "done [~d left]~%" (length (dld-fls dld)))))
-            ((dld-err dld) (format t " *** ~a~%" dld))
-            (t (format t " *** ~a:~60tno new packages~%" dld))))
-    (format t " *** [~a] done" (current-time nil))
-    (if (zerop glob) (format t ".~%")
+            (t (format out " *** ~a:~60tno new packages~%" dld))))
+    (format out " *** [~a] done" (current-time nil))
+    (if (zerop glob) (format out ".~%")
+        (multiple-value-bind (el st) (elapsed bt nil t)
+          (format out " [~:d bytes, ~a, ~:d bytes/sec]~%"
                   glob st (round glob el))))
-          (format t " [~:d bytes, ~a, ~:d bytes/sec]~%"
+    glob))
 
 ;;;###autoload
 (defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*)
@@ -584,7 +597,7 @@ The elements matching `*rpm-skip*' are removed, too."
   "Look for the RPM on all sites."
         (loop :initially (format out " *** ~a:~%" dld)
     (ignore-errors
-      (with-open-url (sock dld :err err :timeout *rpm-timeout*
+      (with-open-url (sock (dld-url dld) :err err :timeout *rpm-timeout*
                            :max-retry *rpm-max-retry*)
         (format out " *** ~a:~%" dld)
         (ftp-list sock :name name :err err :out out)))))
@@ -656,7 +669,7 @@ The elements matching `*rpm-skip*' are removed, too."
     (declare (type index-t port))
     (url-ask sock out :port "port ~a,~d,~d" ; 200
              (substitute #\, #\. (local-host sock))
-    (url-ask sock out 200 "port ~a,~d,~d"
+             (logand #xff (ash port -8)) (logand #xff port))))
 )
 
 #+nil
@@ -687,10 +700,10 @@ The elements matching `*rpm-skip*' are removed, too."
 (ftp-list sock)
 (url-ask sock *standard-output* :pwd "pwd") ; 257
 (url-ask sock *standard-output* :help "help ~a" "type") ; 214
-(url-ask sock *standard-output* 257 "pwd")
-(url-ask sock *standard-output* 214 "help ~a" "type")
-(url-ask sock *standard-output* 214 "help")
-(url-ask sock *standard-output* 250 "cwd gnu")
+(url-ask sock *standard-output* :help "help") ; 214
+(url-ask sock *standard-output* :cwd "cwd gnu") ; 250
+(ftp-list sock)
+(show-rpms "print")
 
 (setq serv (lisp:socket-server 0))
 (lisp:socket-server-close serv)

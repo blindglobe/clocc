@@ -2304,6 +2304,30 @@ D
   (documentation nil :type (or null string)) ; Optional documentation slot
   )
 
+
+(define-condition missing-component (simple-condition)
+  ((name :reader missing-component-name :initarg :name))
+  (:report (lambda (mmc stream)
+	     (format stream "MK:DEFSYSTEM: missing component ~S."
+                     (missing-component-name mmc))))
+  )
+
+(define-condition missing-module (missing-component)
+  ()
+  (:report (lambda (mmc stream)
+	     (format stream "MK:DEFSYSTEM: missing module ~S."
+                     (missing-component-name mmc))))
+  )
+
+(define-condition missing-system (missing-module)
+  ()
+  (:report (lambda (msc stream)
+	     (format stream "MK:DEFSYSTEM: missing system ~S."
+                     (missing-component-name msc))))
+  )
+
+
+
 (defvar *file-load-time-table* (make-hash-table :test #'equal)
   "Hash table of file-write-dates for the system definitions and
    files in the system definitions.")
@@ -3704,42 +3728,67 @@ D
 ;;; ********************************
 ;;; New Require ********************
 ;;; ********************************
+
+;;; This needs cleaning.  Obviously the code is a left over from the
+;;; time people did not know how to use packages in a proper way or
+;;; CLs were shaky in their implementation.
+
+;;; First of all we need this. (Commented out for the time being)
+;;; (shadow '(cl:require))
+
+
 (defvar *old-require* nil)
 
 ;;; All calls to require in this file have been replaced with calls
 ;;; to new-require to avoid compiler warnings and make this less of
 ;;; a tangled mess.
-(defun new-require (module-name &optional pathname definition-pname
-				default-action (version *version*))
+
+(defun new-require (module-name
+		    &optional
+		    pathname
+		    definition-pname
+		    default-action
+		    (version *version*))
   ;; If the pathname is present, this behaves like the old require.
   (unless (and module-name
 	       (find (string module-name)
 		     *modules* :test #'string=))
-    (cond (pathname
-	   (funcall *old-require* module-name pathname))
-	  ;; If the system is defined, load it.
-	  ((find-system module-name :load-or-nil definition-pname)
-	   (operate-on-system module-name :load
-	     :force *force*
-	     :version version
-	     :test *oos-test*
-	     :verbose *oos-verbose*
-	     :load-source-if-no-binary *load-source-if-no-binary*
-	     :bother-user-if-no-binary *bother-user-if-no-binary*
-	     :compile-during-load *compile-during-load*
-	     :load-source-instead-of-binary *load-source-instead-of-binary*
-	     :minimal-load *minimal-load*))
-	  ;; If there's a default action, do it. This could be a progn which
-	  ;; loads a file that does everything.
-	  ((and default-action
-		(eval default-action)))
-	  ;; If no system definition file, try regular require.
-	  ;; had last arg  PATHNAME, but this wasn't really necessary.
-	  ((funcall *old-require* module-name))
-	  ;; If no default action, print a warning or error message.
-	  (t
-	   (format t "~&Warning: System ~A doesn't seem to be defined..."
-		   module-name)))))
+    (handler-case
+        (cond (pathname
+	       (funcall *old-require* module-name pathname))
+	      ;; If the system is defined, load it.
+	      ((find-system module-name :load-or-nil definition-pname)
+	       (operate-on-system
+	        module-name :load
+	        :force *force*
+	        :version version
+	        :test *oos-test*
+	        :verbose *oos-verbose*
+	        :load-source-if-no-binary *load-source-if-no-binary*
+	        :bother-user-if-no-binary *bother-user-if-no-binary*
+	        :compile-during-load *compile-during-load*
+	        :load-source-instead-of-binary *load-source-instead-of-binary*
+	        :minimal-load *minimal-load*))
+	      ;; If there's a default action, do it. This could be a progn which
+	      ;; loads a file that does everything.
+	      ((and default-action
+		    (eval default-action)))
+	      ;; If no system definition file, try regular require.
+	      ;; had last arg  PATHNAME, but this wasn't really necessary.
+	      ((funcall *old-require* module-name))
+	      ;; If no default action, print a warning or error message.
+	      (t
+	       #||
+	       (format t "~&Warning: System ~A doesn't seem to be defined..."
+	               module-name)
+	       ||#
+	       (error 'missing-system :name module-name)))
+      (missing-module (mmc) (signal mmc)) ; Resignal.
+      (error (e)
+	     ;; Signal a (maybe wrong) MISSING-SYSTEM.
+	     (error 'missing-system :name module-name)))
+    ))
+
 
 ;;; Note that in some lisps, when the compiler sees a REQUIRE form at
 ;;; top level it immediately executes it. This is as if an

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.17 2003/04/16 18:28:40 sds Exp $
+;;; $Id: tests.lisp,v 2.18 2003/04/16 18:41:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -160,7 +160,8 @@
 
 (defun test-elisp (&key (out *standard-output*))
   (mesg :test out " ** ~s...~%" 'test-elisp)
-  (let ((*readtable* +elisp-readtable+) (num-err 0))
+  (let ((*readtable* +elisp-readtable+) (num-err 0)
+        (*package* (find-package "CLLIB")))
     (flet ((ts (str obj)
              (mesg :test out " * ~s --> ~s~%" str obj)
              (handler-case

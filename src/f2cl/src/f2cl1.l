@@ -16,9 +16,63 @@
 (defvar *comments* nil)
 (defvar *f2cl-version* "2.0 beta")
 
+(defvar *intrinsic-function-names*
+  '(int ifix idint real float sngl dble cmplx ichar char aint dint
+    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
+    idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
+    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
+    exp dexp cexp log alog dlog clog log10 alog10 dlog10 sin dsin csin
+    cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
+    sinh dsinh cosh dcosh tanh dtanh)
+  "A list of all the intrinsic functions in Fortran 77")
+
+;;------------------------------------------------------------------------------
+;; Define the Fortran types that we need.  This MUST match the types
+;; given in macros.l, so be sure to keep this in sync!
+(deftype logical ()
+  `(member t nil))
+
+;; Decide what you want integer*4 to be.  Good choices are fixnum or
+;; (signed-byte 32).  The latter is good only if your compiler does a
+;; good job with this type.  If you aren't sure, use fixnum.  CMUCL
+;; does a good job with (signed-byte 32).
+;;
+;; If you change this, you may need to change some of the macros
+;; below, such as INT and AINT!
+
+#+cmu
+(deftype integer4 ()
+  `(signed-byte 32))
+#-cmu
+(deftype integer4 ()
+  'fixnum)
+
+(deftype integer2 ()
+  `(signed-byte 16))
+(deftype integer1 ()
+  `(signed-byte 8))
+(deftype real8 ()
+  'double-float)
+(deftype real4 ()
+  'single-float)
+(deftype complex8 ()
+  `(complex single-float))
+(deftype complex16 ()
+  `(complex double-float))
+
+(deftype array-double-float ()
+    `(array double-float (*)))
+(deftype array-integer4 ()
+    `(array integer4 (*)))
+(deftype array-single-float ()
+    `(array single-float (*)))
+(deftype array-strings ()
+  `(array string (*)))
+;;------------------------------------------------------------------------------
+
 (eval-when (compile load eval)
   (proclaim '(special *readtable* *sentable*))
-  (proclaim '(special *intrinsic-function-names* *external-function-names*
+  (proclaim '(special *external-function-names*
 	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
 	      *subprog-arglist* *data-init*
 	      *explicit_vble_decls* *function-flag* *key_params*
@@ -353,7 +407,8 @@ FILENAME                 File containing Fortran code
 		(write (list 'declaim declaim) :stream outport :case :downcase))
 	      (when (or package declaim)
 		(format outport "~2%"))
-	      (format outport "~2&(use-package :f2cl)~2%"))
+	      ;;(format outport "~2&(use-package :f2cl)~2%")
+	      )
 	    (translate-and-write-subprog 
 	     (introduce-continue
 	      (handle-extended-do
@@ -527,6 +582,21 @@ FILENAME                 File containing Fortran code
 	       spec-proc
 	       spec-decl)
 	 (terpri outport))
+
+       ;; Now look through the tree of code and replace every symbol
+       ;; in the f2cl library with the symbol actually from the
+       ;; library.  (This is currently quite expensive because we look
+       ;; through the entire tree for every symbol.  We should
+       ;; traverse the tree just once and look at each symbol to see
+       ;; if it needs replacing.  Should profile this to see if this
+       ;; really matters.)
+       (do-external-symbols (lib-sym "F2CL-LIB")
+	 (setf fun (subst lib-sym lib-sym fun
+			  :test #'(lambda (a b)
+				    (and (symbolp a)
+					 (symbolp b)
+					 (string-equal a b))))))
+
        (special-print fun outport))
      (print (cadr fort-fun))		;indicate which subprogram is being translated
      (write-char '#\newline outport)
@@ -1980,8 +2050,19 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.84 2002/01/08 20:53:48 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.85 2002/01/13 16:27:56 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.85  2002/01/13 16:27:56  rtoy
+;;; o Move the intrinsic function names from macros.l to here.  Include a
+;;;   copy of the deftypes in macros.l here as well.  (Be sure to keep
+;;;   them in sync!  I wish I knew a better way....)
+;;; o Do not print out (use-package :f2cl) in the output file anymore.
+;;; o In the generated code, we know look through the code and any symbol
+;;;   that is string-= to a exported symbol in f2cl-lib is replaced by the
+;;;   corresponding symbol from f2cl-lib.  That we the generated code can
+;;;   reference the f2cl-lib without clashing with whatever other packages
+;;;   the code might be used in.
+;;;
 ;;; Revision 1.84  2002/01/08 20:53:48  rtoy
 ;;; PARSE-PARAMETER was incorrectly parsing parameter statements like
 ;;; parameter (k2prim = K2 - K1*MW/MD) because it never expected the rhs

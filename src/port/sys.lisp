@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.18 2000/08/14 16:24:03 sds Exp $
+;;; $Id: sys.lisp,v 1.19 2000/08/14 19:25:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -144,7 +144,7 @@ initargs for all slots are returned, otherwise only the slots with
     (mapcan (if all (compose list slot-one-initarg)
                 (lambda (slot)
                   (when (eq (slot-alloc slot) :instance)
-                    (list (car (slot-one-initarg slot))))))
+                    (list (slot-one-initarg slot)))))
             (class-slots1 class))))
 
 ;;;

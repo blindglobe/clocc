@@ -1,3 +1,27 @@
+2004-06-03  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added preliminary Fortran support.  Taken from Matlisp.
+
+2004-06-02  kevinrosenberg  <kevinrosenberg@vault>
+
+	* debian/changelog:
+	Automated commit for debian_version_3_3i+cvs_2004_06_02
+
+2004-05-26  sds  <sds@vault>
+
+	* defsystem.lisp: whitespace changes for the sake of Emacs
+
+2004-04-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Fixed a problem with APPEND_LOGICAL_PNAMES that caused Matlisp not to
+	compile properly.  The problem stemmed from the different settings of
+	PATHNAME-HOST on CMUCL and LW.  The fix should be transparent across
+	implementations.
+
 2004-04-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

@@ -43,20 +43,11 @@ It is entirely up to you what path to take.
 (load *)
 
 ;; * compile some systems
-(setq mk::*central-registry*
-      (nconc
-       (list
-        ;; select the systems you want to use
-        (translate-logical-pathname "clocc:src;cllib;")
-        (translate-logical-pathname "clocc:src;ext;queues;")
-        (translate-logical-pathname "clocc:src;ext;union-find;")
-        (translate-logical-pathname "clocc:src;f2cl;packages;")
-        (translate-logical-pathname "clocc:src;f2cl;")
-        (translate-logical-pathname "clocc:src;port;")
-        (translate-logical-pathname "clocc:src;port;configuration;")
-        (translate-logical-pathname "clocc:src;port;environment;")
-        (translate-logical-pathname "clocc:src;tools;metering;"))
-       mk::*central-registry*))
+(dolist (l '("clocc:src;port;" "clocc:src;cllib;" "clocc:src;ext;queues;"
+             "clocc:src;port;configuration;" "clocc:src;port;environment;"
+             "clocc:src;ext;union-find;" "clocc:src;tools;metering;"
+             "clocc:src;f2cl;" "clocc:src;f2cl;packages;"))
+  (mk:add-registry-location (translate-logical-pathname l)))
 (mk:oos "cllib" :compile)
 (mk:oos "f2cl" :compile)
 ...

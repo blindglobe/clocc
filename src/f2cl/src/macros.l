@@ -4,22 +4,6 @@
 ;;;;;;;;Hamilton, New Zeland 1992-95 - all rights reserved;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (in-package :f2cl)
-#+nil
-(eval-when (compile load eval)
-  (export '(do1 do! map-defvar double-cdr double-mapcar push 
-	    fexport fproclaim fuse-package fin-package fdo arithmetic-if
-	    computed-goto assigned-goto
-	    fref fset f2cl/
-	    int ifix idint real ffloat sngl dble cmplx ichar char aint dint
-	    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
-	    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
-	    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt fsqrt csqrt 
-	    exp dexp cexp log alog dlog flog clog log10 alog10 dlog10 sin dsin csin
-	    cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
-	    sinh dsinh cosh dcosh tanh dtanh
-	    data-implied-do
-	    %false% %true%
-	    fformat)))
 
 ; macros:
 ;	rexpt
@@ -144,14 +128,6 @@
 (defmacro store-cl (name-indices val)
   `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
 ;-----------------------------------------------------------------------------
-
-#+nil
-(defmacro fref (arr indices &optional low-bnds)
-  (if low-bnds
-      `(aref ,arr ,@(mapcar #'(lambda (k lim)
-				`(- ,k ,lim))
-			    indices low-bnds))
-      `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices))))
 
 ;; Array dimensions are (d1, d2, d3, ...)
 ;;
@@ -812,12 +788,6 @@
 
 (declaim (ftype (function (t) stream) lun->stream))
 
-#+nil
-(defmacro fformat (dest-lun format-cilist &rest args)
-  (let ((stream (gensym)))
-    `(let ((,stream (lun->stream ,dest-lun)))
-      ,@(expand-format stream format-cilist args))))
-
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
     `(let ((,stream (lun->stream ,dest-lun)))
@@ -843,13 +813,21 @@
     (cond ((listp (first formats))
 	   (format stream (caar formats) (pop arg-list)))
 	  ((numberp (first formats))
-	     (dotimes (k (first formats))
-	       ;;(format t "k = ~A, format = ~S~%" k (second formats))
-	       (setf arg-list
-		     (execute-format nil stream (second formats) arg-list)))
+	   ;; Repeat a group some fixed number of times
+	   (dotimes (k (first formats))
+	     ;;(format t "k = ~A, format = ~S~%" k (second formats))
+	     (setf arg-list
+		   (execute-format nil stream (second formats) arg-list)))
 	   (setf formats (rest formats))
 	   ;;(format t "  cont with format = ~S~%" formats)
 	   )
+	   ((eq (first formats) t)
+	    ;; Repeat "forever" (until we run out of data)
+	    (loop while arg-list do
+		  (setf arg-list
+			(execute-format nil stream (second formats) arg-list))
+		  ;; Output a newline after the repeat (I think Fortran says this)
+		  (format stream "~%")))
 	  (t
 	   (format stream (car formats))))))
 	   
@@ -867,15 +845,7 @@
     (execute-format t stream format-list arg-list)))
 
 
-#+nil
-(defmacro fformat1 (dest directive arg)
-  (let ((val (gensym)))
-    `(let ((,val ,arg))
-      (if (and (arrayp ,val)
-	       (not (stringp ,val)))
-	  (print ,val)
-	  (format ,dest ,directive ,val)))))
-
+#||
 (defmacro fformat1 (dest directive arg)
   (let ((val (gensym)))
     `(let ((,val ,arg))
@@ -912,6 +882,7 @@
 		       ,(first arglist))
 		     res)
 	       (setq arglist (cdr arglist)))))))
+||#
 
 ;; Initialize a multi-dimensional array of character strings. I think
 ;; we need to do it this way to appease some picky compilers (like
@@ -972,8 +943,13 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.29 2000/08/27 16:36:07 rtoy Exp $
+;;; $Id: macros.l,v 1.30 2000/08/30 17:00:42 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.30  2000/08/30 17:00:42  rtoy
+;;; o In EXECUTE-FORMAT, handle the case where the group is supposed to be
+;;;   repeated "forever" (as indicated by a repetition factor of T).
+;;; o Remove some more unused code.
+;;;
 ;;; Revision 1.29  2000/08/27 16:36:07  rtoy
 ;;; Clean up handling of format statements.  Should handle many more
 ;;; formats correctly now.

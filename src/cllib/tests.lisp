@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.22 2004/05/20 21:35:29 sds Exp $
+;;; $Id: tests.lisp,v 2.23 2004/06/07 21:07:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -19,6 +19,7 @@
   (require :cllib-rpm (translate-logical-pathname "cllib:rpm"))
   (require :cllib-elisp (translate-logical-pathname "cllib:elisp"))
   (require :cllib-xml (translate-logical-pathname "cllib:xml"))
+  (require :cllib-munkres (translate-logical-pathname "cllib:munkres"))
   (require :cllib-cvs (translate-logical-pathname "cllib:cvs")))
 
 (in-package :cllib)
@@ -210,8 +211,55 @@
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-cvs num-err)
     num-err))
 
+(defun test-munkres (&key (out *standard-output*))
+  (let ((num-err 0)
+        (assignment-list
+         '((#2A((69 64 23 53 94 85 16 7 77)
+                (12 6 22 43 73 17 15 39 91)
+                (74 38 43 86 40 89 22 69 81)
+                (33 83 10 34 30 20 94 100 58)
+                (15 14 60 3 97 70 8 8 0)
+                (53 23 23 32 26 32 37 3 13)
+                (73 54 60 93 98 53 75 76 94)
+                (44 51 26 73 14 66 71 73 79)
+                (77 88 69 86 94 49 50 93 68)
+                (19 43 7 5 22 42 29 55 62))
+            141 #(7 1 6 2 0 8 NIL 4 5 3) #(4 1 3 9 7 8 2 0 5))
+           (#2A((150 69 64 23 53 94 85 16 7 77)
+                (150 12 6 22 43 73 17 15 39 91)
+                (150 74 38 43 86 40 89 22 69 81)
+                (150 33 83 10 34 30 20 94 100 58)
+                (150 15 14 60 3 97 70 8 8 0)
+                (150 53 23 23 32 26 32 37 3 13)
+                (150 73 54 60 93 98 53 75 76 94)
+                (150 44 51 26 73 14 66 71 73 79)
+                (150 77 88 69 86 94 49 50 93 68)
+                (150 19 43 7 5 22 42 29 55 62))
+            291 #(8 2 7 3 1 9 0 5 6 4) #(6 4 1 3 9 7 8 2 0 5))
+           (#2A((150 69 64 23 53 94 85 16 7 77 12)
+                (150 12 6 22 43 73 17 15 39 91 32)
+                (150 74 38 43 86 40 89 22 69 81 11)
+                (150 33 83 10 34 30 20 94 100 58 102)
+                (150 15 14 60 3 97 70 8 8 0 99)
+                (150 53 23 23 32 26 32 37 3 13 5)
+                (150 73 54 60 93 98 53 75 76 94 17)
+                (150 44 51 26 73 14 66 71 73 79 33)
+                (150 77 88 69 86 94 49 50 93 68 6)
+                (150 19 43 7 5 22 42 29 55 62 188))
+            151 #(8 2 7 3 1 9 6 5 10 4) #(NIL 4 1 3 9 7 6 2 0 5 8)))))
+    (dolist (li assignment-list)
+      (mesg :test out " ** ~S: ~S~2%"
+            'test-munkres (car li))
+      (unless (equalp (multiple-value-list (funcall #'assignment (car li)))
+                      (cdr li))
+        (mesg :test out " ** ~S: ERROR! Expected answer: ~S~2%"
+              'test-munkres (cdr li))
+        (incf num-err)))
+    (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-munkres num-err)
+    num-err))
+
 (defun test-all (&key (out *standard-output*)
-                 (what '(string math date rpm url elisp xml))) ; cvs
+                 (what '(string math date rpm url elisp xml munkres cvs)))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)
          (num-err (reduce #'+ what :key

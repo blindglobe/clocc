@@ -15,7 +15,16 @@
                  define-setf-expander defmacro define-modify-macro
                  deftype defstruct defclass define-condition
                  define-method-combination))
-  (:export . #1#))
+  (:export . #1#)
+  #+(or CLISP CMU SBCL OpenMCL ALLEGRO LISPWORKS)
+  (:import-from #+CLISP "CLOS"
+                #+CMU "PCL" ; or "MOP"?
+                #+SBCL "SB-PCL" ; or "SB-MOP"?
+                #+OpenMCL "CLOS"
+                #+ALLEGRO "CLOS"
+                #+LISPWORKS "CLOS"
+                slot-definition-readers slot-definition-writers
+                class-direct-slots))
 
 (in-package "EXPORTING")
 
@@ -160,14 +169,14 @@
 
 (cl:defun slot-definition-accessor-symbols (slot)
   (mapcar #'function-block-name
-          (append (clos:slot-definition-readers slot)
-                  (clos:slot-definition-writers slot))))
+          (append (slot-definition-readers slot)
+                  (slot-definition-writers slot))))
 
 (cl:defun all-accessor-symbols (direct-slot-list)
   (mapcan #'slot-definition-accessor-symbols direct-slot-list))
 
 (cl:defun class-accessor-symbols (class)
-  (all-accessor-symbols (clos:class-direct-slots class)))
+  (all-accessor-symbols (class-direct-slots class)))
 
 (cl:defmacro defclass (name superclasses slot-specs &rest options)
   `(PROGN

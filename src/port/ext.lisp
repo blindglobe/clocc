@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.14 2001/02/06 20:09:24 sds Exp $
+;;; $Id: ext.lisp,v 1.15 2001/02/07 20:27:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -125,15 +125,18 @@ Return the list of objects read and the final index in STRING.
 Binds `*package*' to the keyword package,
 so that the bare symbols are read as keywords."
   (declare (type (or null fixnum) max) (type fixnum start))
-  (do ((beg start) obj res (num 0 (1+ num))
-       (*package* (find-package "KEYWORD")))
-      ((and max (= max num)) (values (nreverse res) beg))
-    (declare (fixnum beg num))
-    (setf (values obj beg)
-          (read-from-string string nil +eof+ :start beg))
-    (if (eq obj +eof+)
-        (return (values (nreverse res) beg))
-        (push obj res))))
+  (let ((*package* (find-package "KEYWORD")))
+    (if max
+        (do ((beg start) obj res (num 0 (1+ num)))
+            ((= max num) (values (nreverse res) beg))
+          (declare (fixnum beg num))
+          (setf (values obj beg)
+                (read-from-string string nil +eof+ :start beg))
+          (if (eq obj +eof+)
+              (return (values (nreverse res) beg))
+              (push obj res)))
+        (read-from-string (concatenate 'string "(" string ")")
+                          t nil :start start))))
 
 #+cmu (progn
         (import '(ext:required-argument) :port)

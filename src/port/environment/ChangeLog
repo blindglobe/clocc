@@ -1,3 +1,60 @@
+2004-01-21  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* README: Updated slightly.
+
+	* load-cl-environment.lisp:
+	Changed the installation procedure.  Now CL-ENVIRONMENT loads just by
+	loading the `loader' file.
+
+	* INSTALLATION: Changed the INSTALLATION instructions.
+
+	* env.system:
+	Cleaned up the definition to reflect the newest MK:DEFSYSTEM features.
+	Also changed the copyright notice.
+
+2004-01-08  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* impl-dependent/lcl.lisp: Updated copyright.
+
+	* impl-dependent/cmucl.lisp: Aligned content with SBCL and LW.
+
+	* impl-dependent/sbcl.lisp: Updated copyright.
+
+	* ChangeLog: ChangeLog updated.
+
+	* environment.lisp: Copyright updated.
+
+	* env-package.lisp: Copyright updated.  New symbols exported.
+
+	* feature-tagged-type-class.lisp: Copyright updated.
+
+	* init-environment.lisp: Fixed copyright and added some SBCL support.
+
+	* load-cl-environment.lisp:
+	Changed copyright and fixed some typos.  Introduced the
+	CL-ENVIRONMENT-LOADER package to hide loading and compiling details.
+
+	* machine.lisp: Fixed wrong file name.
+
+	* machine.lisp, system-info.lisp: Copyright updated.
+
+	* impl-dependent/lispworks.lisp:
+	Fixed some problems with directory changes and modified copyright etc etc.
+
+	* impl-dependent/cmucl.lisp, impl-dependent/clisp.lisp:
+	Minor changes to the file (copyright fixes etc etc)
+
+	* impl-dependent/allegro.lisp:
+	Minor changes to the file (fixed copyright, etc etc)
+
+	* utilities.lisp: Added some simple functions like CD etc etc.
+
+	* software.lisp: Made minor updates to the file.
+
+	* operating-system.lisp: Updated file for Mac OS X.
+
 2004-01-08  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* impl-dependent/lcl.lisp: Updated copyright.

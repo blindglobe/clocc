@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.31 2004/12/23 15:05:15 sds Exp $
+;;; $Id: tests.lisp,v 2.32 2004/12/23 15:31:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -216,6 +216,7 @@
 
 (defun test-matrix (&key (out *standard-output*) (num-test 10)
                     (dim 10) (max 10))
+  (mesg :test out "~& ** ~S...~%" 'test-matrix)
   (loop :repeat num-test :with det :with i1 = (make-array (list dim dim))
     :with error-count = 0 :for err = 0
     :for mx = (random-matrix dim dim max) :for m1 = (array-copy mx) :do
@@ -233,6 +234,7 @@
     (if (> err 0.001)
         (warn " ###~:D### ERROR: ~F~%~S~%==>~%~S" (incf error-count) err mx m1)
         (mesg :test out "    err = ~S~%" err))
+    :finally (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count)
     :finally (return error-count)))
 
 (defun test-munkres (&key (out *standard-output*))

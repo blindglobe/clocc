@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.23 2001/12/07 18:31:32 sds Exp $
+;;; $Id: gq.lisp,v 2.24 2002/01/07 19:42:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
 
 (in-package :cllib)
 
-(export '(update-quotes))
+(export '(update-quotes *hist-data-file*))
 
 ;;;
 ;;;

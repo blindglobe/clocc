@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.12 2000/04/19 16:34:45 sds Exp $
+;;; $Id: sys.lisp,v 1.13 2000/05/09 18:51:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -74,7 +74,7 @@ If the second optional argument ALL is non-NIL (default),
 all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
   #-(or allegro clisp cmu cormanlisp lispworks)
-  (error 'not-implemented :proc 'class-slot-list)
+  (error 'not-implemented :proc (list 'class-slot-list class))
   #+(or allegro clisp cmu cormanlisp lispworks)
   (macrolet ((class-slots* (class)
                #+allegro `(clos:class-slots ,class)

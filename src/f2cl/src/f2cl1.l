@@ -770,8 +770,8 @@ FILENAME                 File containing Fortran code
      ;; Handle Fortran comments that were converted by the
      ;; preprocessor to be (fortran_comment "comment string").
      ;;
-     ;; Convert it to just a quoted string possible.  Otherwise just
-     ;; leave it as is.
+     ;; Convert it to just a quoted string if possible.  Otherwise
+     ;; just leave it as is.
      (when (eq (car x) 'fortran_comment)
        (return (if (cddr x)
 		   (list x)
@@ -782,9 +782,13 @@ FILENAME                 File containing Fortran code
      (when (or (eq (car x) 'block)
 	       (eq (car x) 'blockdata))
        ;; A block data subprogram.  We cheat and pretend it's a
-       ;; subroutine with the special name /blockdata/
-       (setq bindings (id-definition-sub '(subroutine /blockdata/)))
-       (return (parse-subr-definition bindings)))
+       ;; subroutine with a special name. If a name is given, use that
+       ;; as part of the special name.
+       (let ((name (if (second x)
+		       (intern (concatenate 'string "/BLOCKDATA-" (string (second x)) "/"))
+		       '/blockdata/)))
+	 (setq bindings (id-definition-sub `(subroutine ,name)))
+	 (return (parse-subr-definition bindings))))
 
      ;;fall out the bottom:
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
@@ -2120,8 +2124,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.92 2002/03/01 02:41:54 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.93 2002/03/06 02:49:07 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.93  2002/03/06 02:49:07  rtoy
+;;; o Correct some comments.
+;;; o BLOCKDATA subprograms can have names, so make that part of the
+;;;   translated blockdata subprogram name.
+;;;
 ;;; Revision 1.92  2002/03/01 02:41:54  rtoy
 ;;; Add some pretty-printers so the resulting code looks a bit neater.
 ;;;

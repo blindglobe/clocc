@@ -1053,13 +1053,15 @@
   (signum 4)
   1)
 
+;; sin(8*pi/2) = sin(4*pi) = 0.  Assume that our pi is a bit off.  Say
+;; pi*(1+eps).  Then sin(8*pi*(1+eps)/2) = sin(4*pi + 4*pi*eps) =
+;; sin(4*pi*eps) ~= 4*pi*eps.  Test for this, but allow a fudge factor
+;; of 2.
 (check-for-bug :alltest-legacy-1045
-  (prin1-to-string (sin (* 8 (/ pi 2))) )
-  #+xcl "-4.576950980887866D-17"
-  #+clisp "2.0066230454737344098L-19"
-  #+akcl "-4.898425415289509E-16"
-  #+(or allegro cmu sbcl sbcl ecls) "-4.898425415289509d-16"
-  #-(or xcl clisp akcl allegro cmu sbcl  ecls) unknown)
+  (let ((y (sin (* 8 (/ pi 2))))
+	(fudge 2))
+    (< (abs y) (* fudge (* 4 pi long-float-epsilon))))
+  t)
 
 (check-for-bug :alltest-legacy-1053
   (prin1-to-string (sin (expt 10 3)) )
@@ -1069,13 +1071,13 @@
   (cos 0)
   1.0)
 
+;; As in 1045, cos(pi*(1+eps)/2) = cos(pi/2+pi*eps/2) = -sin(pi*eps/2)
+;; ~= -pi*eps/2.  Check that we are close enough.
 (check-for-bug :alltest-legacy-1061
-  (prin1-to-string (cos (/ pi 2)) )
-  #+xcl "5.721188726109832D-18"
-  #+clisp "-2.5082788076048218878L-20"
-  #+akcl "6.1230317691118863E-17"
-  #+(or allegro cmu sbcl sbcl ecls) "6.123031769111886d-17"
-  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
+  (let ((y (cos (/ pi 2)))
+	(fudge 2))
+    (< (abs y) (* fudge (* pi long-float-epsilon 1/2))))
+  t)
 
 
 ;; http://www.lisp.org/HyperSpec/Body/convar_short-_tive-epsilon.html
@@ -1125,14 +1127,18 @@
   (prin1-to-string (tan 1) )
   "1.5574077")				; "1.557408"
 
+;; As in 1045, tan(x) = sin(x)/cos(x).  When x = pi/2+pi*eps/2, sin(x)
+;; is essentially 1, but cos(x) is about pi/2*eps.  So tan(x) =
+;; 1/cos(x).  So we have 1/tan(x) = cos(x).  But from 1061, we know
+;; that cos(x) ~= -pi*eps/2.  So our check is |1/tan(x) - cos(x)| is
+;; close enough to zero.
 (check-for-bug :alltest-legacy-1073
-  (prin1-to-string (tan (/ pi 2)) )
-  #+xcl "1.747888503373944D17"
-  #+clisp "-3.986797629004264116L19"
-  #+akcl "1.6331778728383844E16"
-  #+ecls "1.6331778728383844d16"
-  #+(or allegro cmu sbcl sbcl) "1.6331778728383844d+16"
-  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
+  (let* ((fudge 2)
+	 (val (tan (/ pi 2)))
+	 (ref (cos (/ pi 2)))
+	 (rel-err (abs (/ (- (/ val) ref) ref))))
+    (< rel-err (* fudge long-float-epsilon)))
+  t)
 
 (check-for-bug :alltest-legacy-1082
   (prin1-to-string (cis -1) )
@@ -3197,6 +3203,9 @@
   t)
 
 
+;; This uses the Clisp specific, non ANSI, :initial-contents keyword
+;; to make-hash-table.  Run this test only for Clisp.
+#+clisp
 (check-for-bug :alltest-equalp-string-hash
   (gethash "foo" (read-from-string
                   (prin1-to-string

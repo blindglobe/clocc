@@ -357,7 +357,7 @@ main-loop
 
 ;=============================================================================
 (defun special-print (x o)
-   (write x :escape t :stream o :pretty t :case :downcase))
+   (write x :escape t :stream o :pretty t :readably t :case :downcase))
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y ""))
   (print x)
@@ -554,8 +554,10 @@ main-loop
 
 ;integer x,y,z,...
 (defun id-declaration (x) 
-       (member (first x) 
-               '(integer double real character complex logical dimension) :test #'eq))
+  (member (first x) '(integer integer1 integer2 integer4
+		      double real real8 character
+		      complex complex8 complex16
+		      logical dimension) :test #'eq))
 ;------------------------------------------------------------------------------
 (defun id-if-then (x) (and (eq (car x) 'if) (member 'then x :test #'eq))) 
 (defun id-if-goto (x) (unify x '(if %pred goto %label) nil)) 
@@ -697,6 +699,7 @@ main-loop
 ;------------------------------------------------------------------------------
 
 ;declaration
+#+nil
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
@@ -729,6 +732,39 @@ main-loop
 	(t nil))
   nil)
 
+(defun parse-declaration (x)		; x is the line
+  (setq *declared_vbles*
+	(append (mapcar #'(lambda (v)
+			    (check-t-and-pi (car v)))
+			(list-split '|,|
+			 (if (eq (cadr x) '*)
+			     (cdddr x)
+			     (cdr x))))
+		*declared_vbles*))
+  (let ((type (find (first x) '((integer integer4)
+				(integer4 integer4)
+				(integer2 integer2)
+				(integer1 integer1)
+				(double double-float)
+				(real single-float)
+				(real8 double-float)
+				(character #'parse-char-decl)
+				(complex complex8)
+				(complex8 complex8)
+				(complex16 complex16)
+				(logical logical)
+				(dimension array))
+		    :key #'car)))
+    (when type
+      (cond ((symbolp (second type))
+	     (setq *explicit_vble_decls* 
+		   (build_decl_list *explicit_vble_decls* (second type) (cdr x))))
+	    ((functionp (second type))
+	     (funcall (second type) x))
+	    (t
+	     (error "Failed to parse a declaration!")))))
+  nil)
+	
 (defun parse-implicit-decl (x)
    (if (eq (third x) '*) (setq x `(,(first x) 
                                    (,(second x) ,(third x) ,(fourth x))
@@ -1304,6 +1340,7 @@ Senac syntax:... | op '| ...|)))
    (setq  next (car rest) rest (cdr rest))
    (go loop)))
 
+#+nil
 (defun convert-data-type (x)
    (cond ((not (listp x)) 
           (car (convert-data-type (list x))))
@@ -1330,6 +1367,42 @@ Senac syntax:... | op '| ...|)))
           (append t (cdr x)))
          (t x)))
 
+(defun convert-data-type (x)
+  (cond ((not (listp x)) 
+	 (car (convert-data-type (list x))))
+	((equalp (subsequence x 0 2) '(double precision))
+	 (remove 'precision x))
+	((equalp (subsequence x 0 3) '(real * 8))
+	 (append '(double-float) (subsequence x 3)))
+	((equalp (subsequence x 0 3) '(integer * 1))
+	 (append '(integer1) (subsequence x 3)))
+	((equalp (subsequence x 0 3) '(integer * 2))
+	 (append '(integer2) (subsequence x 3)))
+	((equalp (subsequence x 0 3) '(integer * 4))
+	 (append '(integer4) (subsequence x 3)))
+	((eq (car x) 'real)   
+	 (append '(single-float) (cdr x)))
+	((eq (car x) 'integer)
+	 (append '(fixnum) (cdr x)))
+	((equalp (subsequence x 0 3) '(complex * 8))
+	 (append '(complex8) (subsequence x 3)))
+	((equalp (subsequence x 0 3) '(complex * 16))
+	 (append '(complex16) (subsequence x 3)))
+	((and (listp (car x)) (eq (caar x) 'complex))
+	 (append '(complex8) (cdr x)))
+	((and (listp (car x)) (eq (caar x) 'character))
+	 (append `(character ,(third (car x))) (cdr x)))
+	((and (listp (car x)) (eq (caar x) 'real))
+	 (append '(single-float) (cdr x)))
+	((and (listp (car x)) (eq (caar x) 'integer))
+	 (append '(fixnum) (cdr x)))
+	((eq (car x) 'double) 
+	 (append '(double-float) (cdr x)))
+	((eq (car x) 'logical) 
+	 (append t (cdr x)))
+	(t x)))
+
+#+nil
 (defun reduce-data-type (x)
    (cond ((equalp (subsequence x 0 2) '(double precision))
           (remove 'precision x))
@@ -1341,6 +1414,22 @@ Senac syntax:... | op '| ...|)))
               (equalp (subsequence x 0 3) '(integer * 4)))
           (append '(integer) (subsequence x 3)))
          (t x)))
+(defun reduce-data-type (x)
+  (let ((subseq3 (subsequence x 0 3)))
+    (cond ((equalp (subsequence x 0 2) '(double precision))
+	   (remove 'precision x))
+	  ((equalp subseq3 '(real * 8))
+	   (append '(double) (subsequence x 3)))
+	  ((equalp subseq3 '(complex * 16))
+	   (append '(complex16) (subsequence x 3)))
+	  ((equalp subseq3 '(integer * 4))
+	   (append '(integer) (subsequence x 3)))
+	  ((equalp subseq3 '(integer * 2))
+	   (append '(integer2) (subsequence x 3)))
+	  ((equalp subseq3 '(integer * 1))
+	   (append '(integer1) (subsequence x 3)))
+	  (t x))))
+  
 
 ;=============================================================================
 

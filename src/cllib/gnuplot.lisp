@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.6 2002/04/30 03:02:31 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.7 2002/07/18 14:10:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -205,7 +205,10 @@ according to the given backend")
     (number (format nil "~g" xx))
     (symbol (string-downcase (symbol-name xx)))
     (list (format nil "~{ ~(~a~)~}" xx))
-    (t (format nil "'~a'" xx))))
+    (t (concatenate 'string "\""
+                    ;; quote #\":
+                    (substitute-subseq (princ-to-string xx) "\"" "\\\"")
+                    "\""))))
 
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable backend))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.4 2000/04/27 15:39:06 sds Exp $
+;;; $Id: clhs.lisp,v 2.5 2000/05/02 14:57:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,10 +31,15 @@
 ;;;
 ;;;
 
-(defcustom *clhs-root* url (url "/usr/doc/lisp/HyperSpec/")
+(defcustom *clhs-root* url (url "http://www.lisp.org/HyperSpec/")
   "The root of the HyperSpec tree.")
 
-(defun clhs-snarf-examples (&key (root *clhs-root*) (out *standard-output*))
+(defcustom *clhs-root-local* pathname
+  (parse-namestring "/usr/doc/lisp/HyperSpec/")
+  "The root of the local HyperSpec tree.")
+
+(defun clhs-snarf-examples (&key (root *clhs-root-local*)
+                            (out *standard-output*))
   "Get the examples from the HyperSpec."
   (declare (pathname root) (stream out))
   (format t " *** processing `~a'~%" root)

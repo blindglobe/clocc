@@ -77,8 +77,10 @@
   101)
 
 (check-for-bug :section21-legacy-79
-  (with-open-file (s "/tmp/temp-bytes" :element-type 'unsigned-byte)
-    (list (read-byte s) (read-byte s nil 'eof)))
+  (unwind-protect
+       (with-open-file (s "/tmp/temp-bytes" :element-type 'unsigned-byte)
+         (list (read-byte s) (read-byte s nil 'eof)))
+    (delete-file "/tmp/temp-bytes"))
   (101 EOF))
 
 ;;; peek-char

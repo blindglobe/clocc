@@ -235,16 +235,18 @@
 
 
 (check-for-bug :cmucl-bugs-legacy-237
-  (with-open-file
-      (foo "/tmp/foocl"
-           :direction :input
-           :element-type
-           (list 'signed-byte (1+ (integer-length
-                                   most-positive-fixnum))))
-    (list (read-byte foo)
-          (read-byte foo)
-          (read-byte foo)
-          (read-byte foo)))
+  (unwind-protect
+       (with-open-file
+           (foo "/tmp/foocl"
+                :direction :input
+                :element-type
+                (list 'signed-byte (1+ (integer-length
+                                        most-positive-fixnum))))
+         (list (read-byte foo)
+               (read-byte foo)
+               (read-byte foo)
+               (read-byte foo)))
+    (delete-file "/tmp/foocl"))
   (17 -17 4517 -1217))
 
 
@@ -616,11 +618,13 @@ these are not rationals, so we get a complex number back.
 			:direction :output
 			:if-exists :supersede)
 		  (princ #\F file))
-  (with-open-file (file "/tmp/foobar"
-			:direction :input)
-		  (let ((c (peek-char nil file nil 'eof t)))
-		    (list c (read file)
-			  (peek-char nil file nil 'eof t)))))
+  (unwind-protect
+       (with-open-file (file "/tmp/foobar"
+                             :direction :input)
+         (let ((c (peek-char nil file nil 'eof t)))
+           (list c (read file)
+                 (peek-char nil file nil 'eof t))))
+    (delete-file "/tmp/foobar")))
  (#\F F EOF))
 
 ;;; From Barry Margolin:
@@ -664,14 +668,15 @@ these are not rationals, so we get a complex number back.
                           :direction :output
                           :if-exists :new-version)
       (write-string "xy" sink))
-    (with-open-file (input "/tmp/tmp"
-                           :direction :input)
-      (let* ((concat (make-concatenated-stream input))
-             (x (read-char concat))
-             (unread-x (unread-char x concat))
-             (x2 (read-char concat))
-             (y (read-char concat nil :EOF)))
-        (list x unread-x x2 y))))
+  (unwind-protect
+       (with-open-file (input "/tmp/tmp" :direction :input)
+         (let* ((concat (make-concatenated-stream input))
+                (x (read-char concat))
+                (unread-x (unread-char x concat))
+                (x2 (read-char concat))
+                (y (read-char concat nil :EOF)))
+           (list x unread-x x2 y)))
+    (delete-file "/tmp/tmp")))
   (#\x NIL #\x #\y)
   "From Gilbert Baumann")
 

@@ -19,7 +19,7 @@
 ;      sym-is-fun-name
 ;      make-special-proclamation
 ;      make-special-var-decl
-;      check-t-and-pi
+;      check-reserved-lisp-names
 ; structured stmt fix
 ;      fix-structure
 ;      fix-ifthen
@@ -77,7 +77,8 @@
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
 				    FREF FREF-STRING F2CL/
 				    FLOG FSQRT FFLOAT EXPT
-				    %FALSE% %TRUE%))
+				    %FALSE% %TRUE%
+				    FUNCALL))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *intrinsic_function_names*)
 		    (member exprs *key_params* :key #'car)
@@ -90,7 +91,7 @@
 	       ((eq exprs 'PAUSE)
 		)
 	       (t
-		(pushnew (check-t-and-pi exprs) *undeclared_vbles*))))
+		(pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
 	((listp exprs)
 	 (mapc #'check_new_vbles exprs)
 	 )
@@ -340,7 +341,28 @@
 	(t
 	 `(,(first p) ,@(mapcar #'optimize-f2cl/ (rest p))))))
 
-
+;; Given the program list P, look through it and try to convert all
+;; occurrences of external functions with #'<func>.  Do this only if
+;; the function is not first element of a list.
+;;
+;; A new tree with the (possibly) modified code is returned.
+;;
+(defun fixup-external-function-refs (p externs)
+  (cond ((null p)
+	 p)
+	((atom p)
+	 (if (member p externs)
+	     `(function ,p)
+	     p))
+	((eq (first p) 'funcall)
+	 ;; Skip over funcalls!
+	 `(,(first p) ,(second p) ,@(mapcar #'(lambda (pp)
+						(fixup-external-function-refs pp externs))
+					    (cddr p))))
+	(t
+	 `(,(first p) ,@(mapcar #'(lambda (pp)
+				    (fixup-external-function-refs pp externs))
+				(rest p))))))
 
 ;; In the following functions, we are trying to simplify some of the
 ;; expressions produced by f2cl.  We should probably use some real
@@ -529,7 +551,7 @@
      (setq formal-arg-decls
 	   (pretty-decls
 	    (append
-	     ;; Declare the any function arguments
+	     ;; Declare any function arguments
 	     (if (equalp arg-fcn-decls '((declare)))
 		 nil
 		 arg-fcn-decls)
@@ -566,9 +588,6 @@
 				(t
 				 decl)))
 		      (first formal-arg-decls)))))
-
-
-			    
 
      ;; Clean up other-fcn-decls.  If there weren't any, make it so,
      ;; instead of leaving it as an empty declare.
@@ -609,11 +628,23 @@
 				(mapcar #'extract-var-name
 					*data-init*)))))))
 
-     ;; If a variable names an function used, delete the variable
+     ;; If a variable names a function used or an external function or
+     ;; an intrinsic function, delete the variable
      (setf *declared_vbles*
 	   (remove-if #'(lambda (v)
-			  (member v *functions-used* :key #'car))
+			  (or (member v *functions-used* :key #'car)
+			      (member v *external_function_names*)
+			      (member v *intrinsic_function_names*)))
 		      *declared_vbles*))
+     ;; If a variable names a function used or an external function or
+     ;; an intrinsic function, delete the variable
+     (setf *undeclared_vbles*
+	   (remove-if #'(lambda (v)
+			  (or (member v *functions-used* :key #'car)
+			      (member v *external_function_names*)
+			      (member v *intrinsic_function_names*)))
+		      *undeclared_vbles*))
+
      ;; Initialize local variables
      (setq local-vbles
 	   (remove-duplicates
@@ -714,12 +745,12 @@
 		   *data-init*))
      ;;(format t "*data-init* after : ~S~%" *data-init*)
      
-     (setq arglist (mapcar #'check-t-and-pi arglist))
+     (setq arglist (mapcar #'check-reserved-lisp-names arglist))
 
      ;;(format t "*key_params* = ~S~%" *key_params*)
      ;;(format t "key-params = ~S~%" key-params)
      (setq key-params (mapcar #'(lambda (x) 
-                                  (list (check-t-and-pi (car x)) (cadr x))) 
+                                  (list (check-reserved-lisp-names (car x)) (cadr x))) 
 			      *key_params*))
      (setq key-params-decls (mapcar #'(lambda (param)
 				       (make-declaration (car param)))
@@ -763,6 +794,14 @@
      ;;(format t "*data-init*  = ~a~%" *data-init*)
      ;;(format t "save-inits = ~a~%" save-inits)
      ;;(format t "prog-bit = ~a~%" prog-bit)
+
+     ;; Replace all references to external functions with #'
+     (setf prog-bit (fixup-external-function-refs prog-bit *external_function_names*))
+     (setf prog-bit
+	   (fixup-external-function-refs prog-bit
+					 (set-difference *intrinsic_function_names*
+							 *external_function_names*)))
+
 
      ;; Add symbol-macrolets to access the common block variables
      (when *subprog_common_vars*
@@ -845,7 +884,7 @@
 		      (third val))
 		     ((eq 'replace (first val))
 		      (third val)))))))
-    (let* ((vble_name (check-t-and-pi vble))
+    (let* ((vble_name (check-reserved-lisp-names vble))
 	   (init-val (lookup-data-init vble))
 	   type decl1)
       ;;(format t "*data-init* = ~A~%" *data-init*)
@@ -1028,7 +1067,7 @@
 
 (defun make-declaration (vble &key vble-is-formal-arg)
  (prog (vble_name type decl1)
-   (setq vble_name (check-t-and-pi vble))
+   (setq vble_name (check-reserved-lisp-names vble))
   (return
    (cond				;check for vble with two declarations i.e. an array
      ((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
@@ -1270,15 +1309,21 @@
      (cond ; check if v is an array 
            ((setq dim (member v *common_array_dims*))
             `(declare (type (simple-array ,(get_array_type v nil) ',(cadr dim)) 
-                            ,(check-t-and-pi v))))
+                            ,(check-reserved-lisp-names v))))
            ; else make ordinary declaration
            (t (make-declaration v))))))
 
-(defun check-t-and-pi (x)
-   (cond ((eq x 'T) 't_)
-         ((eq x 'PI) 'pi_)
-         ((eq x 'NIL) 'nil_)
-         (t x)))
+(defparameter +reserved-lisp-names+
+  '(t pi nil funcall prog prog1 progn mapcar map mapc))
+
+;; Check if the Fortran name would collide with Lisp names like T, PI,
+;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name with a
+;; trailing underscore.
+
+(defun check-reserved-lisp-names (x)
+  (if (member x +reserved-lisp-names+)
+      (intern (concatenate 'string (string x) "_"))
+      x))
 
 ;-----------------------------------------------------------------------------     
 ; functions for fixing DO and IF structures

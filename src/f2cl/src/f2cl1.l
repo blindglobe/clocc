@@ -304,74 +304,39 @@ INPUT-FILE               File containing Fortran code
     t))
 ;-----------------------------------------------------------------------------
 (defun readsubprog-extract-format-stmts (inport)
-  (prog (input-list output-list (margin nil) (multiple-line-flag nil)
-        current-line *current_label*)
-     (if *verbose* (format t "~&extracting format statements ...~%"))
+  (let (input-list output-list margin *current_label*)
+    (when *verbose*
+      (format t "~&extracting format statements ...~%"))
 
-MAIN-LOOP 
+    (loop
+	;; Get the left margin (contains line number)
+	(setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
+		       (read-six-chars inport)))
+	;; Set the label (line number), if any
+	(setq *current_label*
+	      (let ((label (read-from-string (coerce margin 'string) nil)))
+		(if (integerp label)
+		    label)))
+        ;; Make sure we aren't hosed if we break out of this!
+	(unwind-protect
+	     (progn
+	       (set-fortran-read)
+	       ;; read body of a line
+	       (setq input-list (lineread inport))
+	       ;; read newline character
+	       (read-char inport nil 'EOF t)
 
-    (cond ((not (eq (peek-char nil inport nil 'EOF) 'EOF))
-	   (setq margin (read-six-chars inport))
-	   ;; Don't need this anymore because preprocess handles line
-	   ;; continuations.
-	   #+nil
-	   (when (not (char-equal (nth 5 margin) #\space)) ;line continuation
-	     (setq multiple-line-flag t)
-	     (go main-loop)))
-	  (t (setq margin nil)))   
-   ;; Check for a label on the line
-   (when (not multiple-line-flag)
-     (setq *current_label* 
-	   (if (integerp (read-from-string (coerce margin 'string) nil))
-	       (read-from-string (coerce margin 'string) nil)
-	       nil)))
-
-   ;; Make sure we aren't hosed if we break out of this!
-   (unwind-protect
-	(progn
-	  (set-fortran-read)
-	  ;; read body of a line
-	  (setq input-list 
-		(if multiple-line-flag 
-		    (progn (setq multiple-line-flag nil)
-			   (setq current-line (lineread inport))
-			   (append input-list current-line))
-		    (lineread inport)))
-	  ;; read newline character
-	  (read-char inport nil 'EOF t) 
-
-	  ;;(format t "~% input-list: ~S" input-list)
-	  )
-     (setlispread))
-   ;; read the next margin
-   ;;(format t "read next margin~%")
-   #+nil
-   (cond ((not (eq (peek-char nil inport nil 'EOF) 'EOF))
-          (setq margin (read-six-chars inport))
-          (when (not (char-equal (nth 5 margin) #\space)) ;line continuation
-                (setq multiple-line-flag t)
-                (go main-loop)))
-         (t (setq margin nil)))
-
-   ;; extract format-stmts
-   ;;(format t "extract format-stmts~%")
-   (cond ((eq (car input-list) 'FORMAT)
-          (parse-format (brackets-check (concat-operators input-list))))
-         (t (setq output-list (cons (list *current_label* input-list) 
-                                    output-list))))
-
-   ; check for end of subprogram
-   #+nil
-   (let ((*print-readably* t)
-	 (*package* (find-package "UNIX")))
-     (format t "check for end of subprogram~%")
-     (format t "(car input-list) = ")
-     (write (car input-list))
-     (Format t "(eq (car input-list) 'end) = ")
-     (write (eq (car input-list) 'end)))
-   (if (and (eq (car input-list) 'end) (null (cdr input-list)))
-          (return (nreverse output-list)))
-  (go main-loop)))
+	       ;;(format t "~% input-list: ~S" input-list)
+	       )
+	  (setlispread))
+        ;; extract format-stmts
+        ;;(format t "extract format-stmts~%")
+	(if (eq (car input-list) 'FORMAT)
+	    (parse-format (brackets-check (concat-operators input-list)))
+	    (push (list *current_label* input-list) output-list))
+	;; Check for end of subprogram
+	(if (and (eq (car input-list) 'end) (null (cdr input-list)))
+	    (return (nreverse output-list))))))
 ;------------------------------------------------------------------------------
 (defun introduce-continue (prog-list) ; ((margin line) (margin line) ...)
  (prog (ret labels next rest)
@@ -1536,60 +1501,42 @@ Senac syntax:... | op '| ...|)))
 Senac syntax:... | op '| ...|)))
           (t (return  (car ret))))))
 
-(defun concat-operators (x) 
- (prog (next rest done)
-  (setq next (car x) rest (cdr x)) 
-  loop
-  (cond ((null rest) (return (reverse (cons next done)))))
-  (cond 
-      ((and (eq next '*) (eq (car rest) '*))
-       (setq rest (cdr rest)
-	     done (cons '^ done))) 
-      ((and (eq next '>) (eq (car rest) '=))
-       (setq rest (cdr rest)
-	     done (cons '>= done))) 
-      ((and (eq next '<) (eq (car rest) '=))
-       (setq rest (cdr rest)
-	     done (cons '<= done))) 
-      ((and (eq next '>) (eq (car rest) '<))
-       (setq rest (cdr rest)
-	     done (cons '>< done))) ; needs to be defined
-      ((and (eq next '/) (eq (car rest) '/))
-       ;; Fortran string concat operator
-       (setq rest (cdr rest)
-	     done (cons 'f2cl-// done)))
-;---->
-      (t 
-       (setq done (cons next done))))
-   (setq  next (car rest) rest (cdr rest))
-   (go loop)))
-
-#+nil
-(defun convert-data-type (x)
-   (cond ((not (listp x)) 
-          (car (convert-data-type (list x))))
-         ((equalp (subsequence x 0 2) '(double precision))
-          (remove 'precision x))
-         ((equalp (subsequence x 0 3) '(real * 8))
-          (append '(single-float) (subsequence x 3)))
-         ((or (equalp (subsequence x 0 3) '(integer * 2))
-              (equalp (subsequence x 0 3) '(integer * 4)))
-          (append '(fixnum) (subsequence x 3)))
-         ((eq (car x) 'real)   
-          (append '(single-float) (cdr x)))
-         ((eq (car x) 'integer)
-          (append '(fixnum) (cdr x)))
-         ((and (listp (car x)) (eq (caar x) 'character))
-          (append `(character ,(third (car x))) (cdr x)))
-         ((and (listp (car x)) (eq (caar x) 'real))
-          (append '(single-float) (cdr x)))
-         ((and (listp (car x)) (eq (caar x) 'integer))
-          (append '(fixnum) (cdr x)))
-         ((eq (car x) 'double) 
-          (append '(double-float) (cdr x)))
-         ((eq (car x) 'logical) 
-          (append t (cdr x)))
-         (t x)))
+(defun concat-operators (x)
+  ;; Look through the elements of the list X for Fortran operators
+  ;; that were split up but really should be one.
+  (let (done)
+    (do* ((this (car x) (first rest))
+	  (rest (cdr x) (cdr rest)))
+	 ((null rest)
+	  (return (nreverse (push this done))))
+      (let ((next (car rest)))
+	(cond ((and (eq this '*)
+		    (eq next '*))
+	       ;; Exponentiation operator
+	       (pop rest)
+	       (push '^ done))
+	      ((and (eq this '>)
+		    (eq next '=))
+	       ;; >=
+	       (pop rest)
+	       (push '>= done))
+	      ((and (eq this '>)
+		    (eq next '<))
+	       ;; >< (not equal)
+	       (pop rest)
+	       (push '>< done))
+	      ((and (eq this '<)
+		    (eq next '=))
+	       ;; <=
+	       (pop rest)
+	       (push '<= done))
+	      ((and (eq this '/)
+		    (eq next '/))
+	       ;; Fortran string concat operator
+	       (pop rest)
+	       (push 'f2cl-// done))
+	      (t
+	       (push this done)))))))
 
 (defun convert-data-type (x)
   (cond ((not (listp x)) 
@@ -1626,18 +1573,6 @@ Senac syntax:... | op '| ...|)))
 	 (append t (cdr x)))
 	(t x)))
 
-#+nil
-(defun reduce-data-type (x)
-   (cond ((equalp (subsequence x 0 2) '(double precision))
-          (remove 'precision x))
-         ((equalp (subsequence x 0 3) '(real * 8))
-          (append '(real) (subsequence x 3)))
-         ((equalp (subsequence x 0 3) '(complex * 16))
-          (append '(complex) (subsequence x 3)))
-         ((or (equalp (subsequence x 0 3) '(integer * 2))
-              (equalp (subsequence x 0 3) '(integer * 4)))
-          (append '(integer) (subsequence x 3)))
-         (t x)))
 (defun reduce-data-type (x)
   (let ((subseq3 (subsequence x 0 3)))
     (cond ((equalp (subsequence x 0 2) '(double precision))
@@ -1745,7 +1680,8 @@ Senac syntax:... | op '| ...|)))
      (setsyntax #\\ vcs)
      (return t)))
 
-(defun setlispread nil (setq *readtable* (copy-readtable nil)))
+(defun setlispread ()
+  (setq *readtable* (copy-readtable nil)))
 ;-----------------------------------------------------------------------------
 (defun lineread (stream)
   (prog (ans rans next-char)
@@ -1773,13 +1709,6 @@ loop2
 
 ;------------------------------------------------------------------------------	
 
-#+nil
-(defun const (x n)
-  (prog (lis)
-     (setq lis ())
-     (do ((i 1 (1+ i))) ((> i n)) (setq lis (cons x lis)))
-     (return lis)
-     ))
 (defun const (x n)
   (make-list n :initial-element x))
 ;------------------------------------------------------------------------------	
@@ -1871,8 +1800,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.54 2000/07/30 06:12:23 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.55 2000/07/31 03:00:20 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.55  2000/07/31 03:00:20  rtoy
+;;; o Remove the support for continuation lines in
+;;;   READSUBPROG-EXTRACT-FORMAT-STMTS since the preprocessing handles
+;;;   that now.  Make this routine easier to read too(?).
+;;; o Make CONCAT-OPERATORS more lispy.
+;;; o Remove unused code that was replaced with new versions.
+;;;
 ;;; Revision 1.54  2000/07/30 06:12:23  rtoy
 ;;; o In GENERATE-CALL-TO-ROUTINE, don't use VAR-n for the variable names;
 ;;;   prepend NEW- to the actual variable names.  Some gratuitous

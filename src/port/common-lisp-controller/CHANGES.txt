@@ -1,3 +1,8 @@
+KMR 26-AUG-2002 (Kevin M. Rosenberg)
+    - Added support for asdf definition files
+    - Add call to original REQUIRE function if system file
+      isn't found with CLC-REQUIRE
+
 PVE 05-AUG-2002 (Peter Van Eynde)
     Introduced cl-builder user to solve build problems.
 

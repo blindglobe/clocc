@@ -783,7 +783,11 @@
 	     (nreverse v)))
 	 (select-vars (k n vlist)
 	   (append (list (elt vlist k))
-		   (subseq vlist n))))
+		   (subseq vlist n)))
+	 (make-ignore (k n vlist)
+	   (append (subseq vlist 0 k)
+		   (subseq vlist (1+ k) n)))
+	   )
     (let* ((count 0)
 	   (n-entries (1+ (length *entry-points*)))
 	   (n-returns (+ n-entries (length args)))
@@ -791,6 +795,7 @@
       (cons `(defun ,main ,args
 	      (multiple-value-bind ,vlist
 		  (,entry ',main ,@args)
+		(declare (ignore ,@(make-ignore 0 n-entries vlist)))
 		(values ,@(select-vars 0 n-entries vlist))))
 	    (mapcar #'(lambda (x)
 			(let ((vlist (make-vars n-returns)))
@@ -798,6 +803,7 @@
 			  `(defun ,(first x) ,@(rest x)
 			    (multiple-value-bind ,vlist
 				(,entry ',(first x) ,@(second x))
+			      (declare (ignore ,@(make-ignore count n-entries vlist)))
 			      (values ,@(select-vars count n-entries vlist))))
 			  ))
 		    *entry-points*)))))
@@ -1123,12 +1129,22 @@
      ;;(format t "all-decls = ~A~%" all-decls)
 
      (when *entry-points*
+       ;; First make sure the entry points are consistent in name and
+       ;; number of arguments.  We don't support anything else (yet?)
+       (unless (every #'(lambda (f)
+			  (let ((result (equalp (second f) arglist)))
+			    (unless result
+			      (warn "ENTRY ~A doesn't match the expected arg list: ~A~%" f arglist))
+			    result))
+		      *entry-points*)
+	 (warn "Some ENTRY points don't match the expected signature ~A~%"
+	       arglist))
        (setf entry-points
 	     (mapcar #'(lambda (x)
 			 (let ((name (first x)))
 			 `(if (eq %name% ',name) (go ,name))))
 		     *entry-points*)))
-     (format t "entry-points = ~A~%" entry-points)
+     ;;(format t "entry-points = ~A~%" entry-points)
        
      (setq prog-bit
 	   (if (or *save_vbles* *auto-save-data*)
@@ -2679,8 +2695,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.97 2002/03/19 06:03:14 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.98 2002/03/19 17:28:07 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.98  2002/03/19 17:28:07  rtoy
+;;; o Declare some vars as ignored when creating the entry point
+;;;   functions.
+;;; o Add a check to make sure the entry point functions have exactly the
+;;;   same names for the parameters and number of parameters.  That's all
+;;;   we support right now.
+;;; o Remove a debugging print statement.
+;;;
 ;;; Revision 1.97  2002/03/19 06:03:14  rtoy
 ;;; First pass at adding support for ENTRY statements (multiple entry
 ;;; points into a routine).  See NOTES for description of technique.

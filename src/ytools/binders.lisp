@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: binders.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: binders.lisp,v 1.3 2004/10/03 15:32:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 Drew McDermott and Yale University. 
 ;;; This software is released under the terms of the Modified BSD
@@ -22,7 +22,7 @@
   `(let ,vars-n-vals
      ;; if bindings, declare variables to be special
      ,@(if (not (null vars-n-vals))
-         `((lisp:declare (special
+         `((cl:declare (special
                           ,@(mapcar #'(lambda (var-n-val)
                                         (if (consp var-n-val)
                                             (car var-n-val)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.7 2004/09/11 15:29:21 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.8 2004/10/03 15:32:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -106,7 +106,7 @@
      (let ((code `(let ((,stream (stream-outify ,stream-form)))
 		     (out-indent ,stream 0
 			(let ((out-vals* '()))
-			   (lisp:declare (special out-vals*))
+			   (cl:declare (special out-vals*))
 			   ,@(expand-out-body exps stream)
 			   ,@(include-if (not string-output)
 					'(list->values out-vals*)))))))

@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.23 2004/10/01 13:29:57 airfoyle Exp $
+$Id: CHANGELOG,v 1.24 2004/10/03 15:32:08 airfoyle Exp $
 	
+2004-10-02: Replaced 'lisp:' with 'cl:' in a couple of files.
+            Stopped 'fload' from trying to compile files with types
+            other than Lisp source. (Version 1.4.8)
+
 2004-10-01: Define 'ytools-logical-pathname-def' to make it easy to
             find the definition of a YTools logical pathname. (Version 1.4.7)
 

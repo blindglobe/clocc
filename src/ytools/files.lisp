@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.10 2004/08/09 21:35:49 airfoyle Exp $
+;;;$Id: files.lisp,v 1.11 2004/10/03 15:32:08 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -310,17 +310,22 @@
 			    why changed-supporters must-ask)
    (let ((whether-compile (Load-progress-rec-whether-compile
 			     lprec))
+	 (compilable (compilable src-version))
 	 (obj-version-exists (probe-file obj-version)))
       (let ((action
 	       (cond (src-version
 		      (cond ((and (not must-ask)
 				  (or (memq why '(:just-do-it :no-reason))
-				      (cond ((or (not whether-compile)
-						 (eq whether-compile ':ask))
-					     false)
-					    ((eq whether-compile ':unknown)
-					     (not (eq fload-compile* ':ask)))
-					    (t true))))
+				      (and compilable
+					   (cond ((or (not whether-compile)
+						      (eq whether-compile
+							  ':ask))
+						  false)
+						 ((eq whether-compile
+						      ':unknown)
+						  (not (eq fload-compile*
+							   ':ask)))
+						 (t true)))))
 			     ;; No need to ask
 			     (cond ((eq why ':no-reason)
 				    (cond (obj-version-exists
@@ -336,11 +341,12 @@
 				          fload-compile*)
 				    fload-compile*)
 				   (t whether-compile)))
-			    (t
+			    (compilable
 			     ;; Ask
 			     (ask-whether-compile
 			        lprec src-version obj-version-exists
-				why changed-supporters))))
+				why changed-supporters))
+			    (t ':source)))
 		     (t ':object))))
 	 (multiple-value-bind (file-version which)
 			      (ecase action
@@ -560,15 +566,16 @@
       (let ((src-version (lprec-find-source-pathname lprec)))
 	 (multiple-value-bind (ur-time ldble-time)
 			      (lprec-find-version-modtimes lprec)
-	    (cond ((or force-flag
-		       (or (not ur-time)
-			   (not ldble-time)
-			   (> ur-time ldble-time))
-		       (not (null changed-supporters))
-		       (not (achieved-load-status lprec ':maybe-compiled)))
-		   (cond ((null src-version)
-			  (error "Fcompl couldn't find file ~s" pn))
-			 (t
+	    (cond ((null src-version)
+		   (error "Fcompl couldn't find file ~s" pn))
+		  ((or force-flag
+		       (and (compilable src-version)
+			    (or (not ur-time)
+				(not ldble-time)
+				(> ur-time ldble-time)
+				(not (null changed-supporters))
+				(not (achieved-load-status
+					 lprec ':maybe-compiled)))))
 			  (pathname-slurp pn false ':at-least-header)
 			  ;; Make sure slurping didn't encounter
 			  ;; a :no-compile
@@ -591,7 +598,7 @@
 						lprec))
 				    (pathname-fload ctsupp false false false))
 				 (pathname-with-suffix-fcompl
-				    src-version lprec))))))
+				    src-version lprec))))
 		   (t
 		    (format *query-io* "~s~% up to date, not compiling~%"
 				       (Load-progress-rec-pathname lprec))
@@ -744,6 +751,9 @@
 		   (Load-progress-rec-when-reached lprec))))
 	    (t false))))
 |#
+
+(defun compilable (pathname)
+   (member (Pathname-type pathname) source-suffixes* :test #'equal))
 
 (defun needs-recompile (lprec)
   (and (not (eq (Load-progress-rec-whether-compile lprec)

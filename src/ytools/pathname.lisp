@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.7 2004/06/24 14:13:52 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.8 2004/10/01 13:29:16 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,8 +12,9 @@
 	     Pathname-host Pathname-device Pathname-directory
 	     Pathname-name Pathname-type Pathname-version
 	     pathname->string pathname-equal pathname-get
-	     ->pathname def-ytools-logical-pathname ytools
-	     filespecs->pathnames filespecs->ytools-pathnames)))
+	     ->pathname filespecs->pathnames filespecs->ytools-pathnames
+	     def-ytools-logical-pathname ytools-logical-pathname-def
+	     ytools)))
 
 ;;; Some logical names really name special modes of "file" handling.
 
@@ -398,6 +399,9 @@
 			obj-version pn)
 		     true))))
    name)
+
+(defun ytools-logical-pathname-def (name)
+   (href ytools-logical-names-table* name))
 
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
 (defun place-relative-pathname (pn dir-list suff ensure-existence)

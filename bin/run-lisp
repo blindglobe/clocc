@@ -1,4 +1,4 @@
-c#! /bin/sh
+#! /bin/sh
 # -----------------------------------------------------------------------------
 #     Title: A script to invoke the various CL implementations in a uniform way
 #   Created: 1999-01-16 16:41
@@ -6,7 +6,7 @@ c#! /bin/sh
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.11 2000/05/15 21:12:38 sds Exp $
+# $Id: run-lisp,v 1.12 2000/05/16 13:47:08 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to

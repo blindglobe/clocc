@@ -516,9 +516,11 @@
 			(lprec-find-version-modtimes lprec)
 			(declare (ignore ign))
       (lprec-compile lprec force-flag
-	 (files-changed-since
-		(lprec-find-supporters lprec)
-		ldble-mod-time))))
+	 (cond (ldble-mod-time
+		(files-changed-since
+		       (lprec-find-supporters lprec)
+		       ldble-mod-time))
+	       (t !())))))
 
 ;;; Returns object version if object version is now up to date.
 (defun lprec-compile (lprec force-flag changed-supporters)
@@ -527,7 +529,9 @@
 	 (multiple-value-bind (ur-time ldble-time)
 			      (lprec-find-version-modtimes lprec)
 	    (cond ((or force-flag
-		       (> ur-time ldble-time)
+		       (or (not ur-time)
+			   (not ldble-time)
+			   (> ur-time ldble-time))
 		       (not (null changed-supporters))
 		       (not (achieved-load-status lprec ':maybe-compiled)))
 		   (cond ((null src-version)

@@ -207,7 +207,8 @@
 	       (Load-progress-rec-when-reached lprec)))
 	 (cond ((> ur-mod-time stat-time)
 		':unseen)
-	       ((and (> ldble-mod-time stat-time)
+	       ((and ldble-mod-time
+		     (> ldble-mod-time stat-time)
 		     (eq (Load-progress-rec-status lprec)
 			 ':loaded))
 		':maybe-compiled)
@@ -272,7 +273,7 @@
 		      (cond ((and (not (eq src-version ':none))
 				  (not (eq whether-compile ':object)))
 			     src-version)
-			    ((and (not (eq obj-version':none))
+			    ((and (not (eq obj-version ':none))
 				  (probe-file obj-version))
 			     obj-version)
 			    (t

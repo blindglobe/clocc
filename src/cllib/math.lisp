@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.42 2004/05/09 02:54:10 sds Exp $
+;;; $Id: math.lisp,v 2.43 2004/05/10 02:24:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1016,7 +1016,7 @@ The values are counted and the result is used as a probability distribution.
          (tot 0) (sum 0))
     (loop :for num :being :each :hash-value :of ht :do
       (incf tot num)
-      (incf sum (* num (log num 2)))) ; we know num>0
+      (incf sum (* num (log (dfloat num) 2)))) ; we know num>0
     (values (- (log tot 2) (/ sum tot)) ht)))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)

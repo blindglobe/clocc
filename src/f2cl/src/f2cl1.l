@@ -1525,6 +1525,16 @@ loop2
 
 ;------------------------------------------------------------------------------	
 
+#+nil
+(defun const (x n)
+  (prog (lis)
+     (setq lis ())
+     (do ((i 1 (1+ i))) ((> i n)) (setq lis (cons x lis)))
+     (return lis)
+     ))
+(defun const (x n)
+  (make-list n :initial-element x))
+;------------------------------------------------------------------------------	
 (defun brackets-check (x)
   (prog (path-stack ce check-list ret-list)
  

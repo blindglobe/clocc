@@ -4064,7 +4064,8 @@ D
           #+:allegro #'load
           #+:cmu #'alien:load-foreign
           #+:sbcl #'sb-alien:load-foreign
-	  #+(and :lispworks4.2 :unix) #'link-load:read-foreign-modules
+	  #+(and :lispworks4.2 :unix (not :unix)) #'link-load:read-foreign-modules
+	  #+(and :lispworks4.2 :linux) #'fli:register-module
 	  #+(and :lispworks4.2 :win32) #'fli:register-modules
           #+(or :ecl :gcl :kcl) #'load ; should be enough.
           #-(or :lucid

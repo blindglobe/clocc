@@ -2049,10 +2049,7 @@ D
 					; with "/"), directory or file
 					; (ends with "/").
   (source-pathname *source-pathname-default*)
-  (source-extension (car *filename-extensions*) :type string)
-                                ; A string, e.g., "lisp". If
-                                ; NIL, uses default for
-                                ; machine-type.
+  source-extension              ; A string, e.g., "lisp"; if NIL, inherit
   (binary-pathname *binary-pathname-default*)
   binary-root-dir
   (binary-extension (cdr *filename-extensions*) :type string)

@@ -270,7 +270,7 @@ is not included")
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
   (let ((step (gensym (symbol-name '#:step-)))
 	(iteration_count (gensym (symbol-name '#:cnt-)))
-	(loop-var (f2cl::check-reserved-lisp-names (first do_vble_clause))))
+	(loop-var (first do_vble_clause)))
     `(prog* ((,step ,(third (third do_vble_clause)))
 	     (,iteration_count 
 	      (max 0 (the integer4
@@ -1300,8 +1300,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.56 2003/11/13 05:37:11 rtoy Exp $
+;;; $Id: macros.l,v 1.57 2003/11/23 14:10:11 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.57  2003/11/23 14:10:11  rtoy
+;;; FDO should not call function that are not in the F2CL-LIB package.
+;;; Macros.l should be self-contained.
+;;;
 ;;; Revision 1.56  2003/11/13 05:37:11  rtoy
 ;;; Add macro WITH-MULTI-ARRAY-DATA.  Basically like WITH-ARRAY-DATA, but
 ;;; takes a list of array info so we don't get deeply nested code when

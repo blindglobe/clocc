@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.1 2004/11/10 14:17:58 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.2 2004/11/19 15:31:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -83,236 +83,12 @@
 
 (defvar loaded-ytools-modules* !())
 
-;;; Number of "fload episodes," that is, top-level calls to 'fload' (or 'fcompl')
-(defvar file-op-count* 0)
-;;; 'fload' won't be defined until files.lisp .
-
-(defstruct (Load-progress-rec
-	      (:print-function
-	         (lambda (lpr srm lev)
-		    (declare (ignore lev))
-		    (let ((pn (Load-progress-rec-pathname lpr)))
-		       (format srm "#<Load-progress-rec ~a: ~s~a>"
-			       (Load-progress-rec-status lpr)
-			       pn
-			       (cond ((= (Load-progress-rec-status-timestamp lpr)
-					 file-op-count*)
-				      "*")
-				     (t ""))))))
-	    (:predicate is-Load-progress-rec))
-   pathname ; Pathname, some with artificial directory names like "%module"
-   (source-pathname ':unknown)  ; :none, :undef, or source pathanme
-   (object-pathname ':unknown)  ; ditto
-
-   (status ':unseen) ; See parameter +load-progress-progression+ below
-   (when-reached -1 :type integer) ; date when status was reached
-   (status-timestamp 0 :type integer)
-   ;; -- Value of file-op-count* the last time the status of this
-   ;; Load-progress-rec was set or checked.
-
-   ;; The "ur-version" is the source, or the object if there is no
-   ;; source.  The "loadable version" is the object, or the source if
-   ;; the file is not to be compiled.
-   ;; These are the last times the files in question were modified --
-   (ur-mod-time -1 :type integer)
-   (loadable-mod-time -1 :type integer)
-   ;; The number of the last file-op-episode where these
-   ;; mod times were calculated --
-   (file-mod-timestamp 0 :type integer)
-
-   (run-time-depends-on !())
-   (compile-time-depends-on !())
-   ;; -- lists of pathnames, one per entity this one
-   (supporters !())
-   ;; -- transitive closure of run-time- and compile-time-depends-on's,
-   ;; EXCEPT that supporters includes only real pn's not Pseudo's.
-   ;; depends on
-   (supp-timestamp 0 :type integer)
-   ;; -- Value of file-op-count* the last time the supporters
-   ;; were computed.
-
-   ;; Answers question: If this were to be reloaded, should we recompile-reload
-   ;; or do something else? -- 
-   (whether-compile ':unknown)
-   ;; -- :unknown, :compile, :object, :source, :ask
-   ;; See comment before defvar of fload-compile*, below
-
-)
-;;; Timestamp schemes assume that no one but us writes files during a
-;;; "file-op episode," that is, during a top-level call to fload,
-;;; fcompl, or fslurp.  E.g., you don't save a file buffer for a file
-;;; that might get loaded.  Of course, if you do save such a buffer,
-;;; you don't know which version will actually get loaded, so the
-;;; assumption is reasonable.  Another reason it's reasonable is that
-;;; fload episodes are short (a few seconds).
-
 (defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
 (defvar obj-suffix* lisp-object-extn*)
-
-(defconstant +load-progress-progression+
-    '(:unseen :header-checked :slurped :slurped-all
-      :maybe-compiled :loaded :frozen))
-;;; -- :maybe-compiled usually means "compiled," but if a file is not
-;;; supposed to be compiled, it means we checked whether it was supposed to
-;;; be and noted that it wasn't.  
-;;; :frozen means that the file was loaded as part of building a core image
-;;; Any attempt to change it should cause alarms to go off.
 
 (defconstant can-get-write-times*
     #.(not (not (file-write-date
 		    (concatenate 'string ytools-home-dir* "files.lisp")))))
-
-;;;;(defvar write-time-calls* 0)
-;;;;(defvar redundant-write-time-calls* 0)
-
-(defun achieved-load-status (lprec status)
-;;;;   (out "status = " (Load-progress-rec-status lprec)
-;;;;	" timestamp = " (Load-progress-rec-status-timestamp lprec)
-;;;;	" file-op-count* = " file-op-count* :%)
-   (let ((tl (memq (lprec-get-load-status lprec)
-		   +load-progress-progression+)))
-      (cond (tl
-	     (not (memq status (cdr tl))))
-	    (t
-	     (error "Illegal Load-progress-rec status ~s"
-		    (Load-progress-rec-status lprec))))))
-
-(defun lprec-get-load-status (lprec)
-   (let ((stat-time (Load-progress-rec-status-timestamp lprec)))
-      (cond ((not (= stat-time file-op-count*))
-	     (cond ((not (eq (Load-progress-rec-status lprec)
-			     ':unseen))
-		    (setf (Load-progress-rec-status lprec)
-			  (recompute-load-status lprec))))
-	     (setf (Load-progress-rec-status-timestamp lprec)
-	           file-op-count*)))
-;;;;      (out " timestamp = " (Load-progress-rec-status-timestamp lprec)
-;;;;	   :%)
-      (Load-progress-rec-status lprec)))
-
-(defun recompute-load-status (lprec)
-   (multiple-value-bind (ur-mod-time ldble-mod-time)
-                        (lprec-find-version-modtimes lprec)
-      (let ((stat-time
-	       (Load-progress-rec-when-reached lprec)))
-	 (cond ((> ur-mod-time stat-time)
-		':unseen)
-	       ((and ldble-mod-time
-		     (> ldble-mod-time stat-time)
-		     (eq (Load-progress-rec-status lprec)
-			 ':loaded))
-		':maybe-compiled)
-	       (t (Load-progress-rec-status lprec))))))
-
-(defun note-load-status (lprec status)
-   (cond ((not (achieved-load-status lprec status))
-	  (cond ((and (eq (Load-progress-rec-status lprec)
-			  ':frozen)
-		      (not (eq status ':frozen)))
-		 (cerror "I'll continue, but please don't try to save a core image"
-			 "Attempt to change status of frozen Load-progress-rec to ~s"
-			 status)))
-
-	  (setf (Load-progress-rec-status lprec)
-		status)
-	  (setf (Load-progress-rec-when-reached lprec)
-		(get-universal-time))
-	  (setf (Load-progress-rec-status-timestamp lprec)
-		 file-op-count*))))
-
-;;;;   (let ((tl (memq (Load-progress-rec-status lprec)
-;;;;		   +load-progress-progression+)))
-;;;;      (cond (tl
-;;;;	     (cond ((memq status (cdr tl))
-;;;;		    (setf (Load-progress-rec-status lprec)
-;;;;			  status)
-;;;;		    (setf (Load-progress-rec-when-reached lprec)
-;;;;			  (get-universal-time))))
-;;;;	     (setf (Load-progress-rec-status-timestamp lprec)
-;;;;		   file-op-count*))
-;;;;	    (t
-;;;;	     (error "Illegal Load-progress-rec status ~s"
-;;;;		    status)))))
-
-;;; Principle: You ask whether to compile a file only if a "yes" answer
-;;; will cause it to be compiled.  On other occasions, you guess.
-(defun lprec-guess-whether-compile (lprec)
-   (let ((wc (Load-progress-rec-whether-compile lprec)))
-      (cond ((eq wc ':unknown)
-	     (cond ((not (memq (lprec-find-source-pathname lprec)
-			       '(:none :undef)))
-		    ':compile)
-		   (t
-		    (let ((obj-pn
-			     (lprec-find-object-pathname lprec)))
-		       (cond ((and (not (member obj-pn '(:undef :none)))
-				   (probe-file obj-pn))
-			      ':object)
-			     (t
-			      (error "Load-progress-rec ~s~% corresponds to neither source nor object file"
-				     lprec)))))))
-	    (t wc))))
-
-;;; Returns < ur-mod-time, loadable-mod-time >
-(defun lprec-find-version-modtimes (lprec)
-   (cond ((and (not (is-Pseudo-pathname (Load-progress-rec-pathname lprec)))
-	       (not (= (Load-progress-rec-file-mod-timestamp lprec)
-		       file-op-count*)))
-	  (lprec-recompute-version-modtimes lprec)))
-   (values (Load-progress-rec-ur-mod-time lprec)
-	   (Load-progress-rec-loadable-mod-time lprec)))
-
-
-(defun lprec-recompute-version-modtimes (lprec)
-	  (let ((src-version (lprec-find-source-pathname lprec))
-		(obj-version (lprec-find-object-pathname lprec))
-		(whether-compile (lprec-guess-whether-compile lprec)))
-	     (let ((ur-version
-		      (cond ((and (not (eq src-version ':none))
-				  (not (eq whether-compile ':object)))
-			     src-version)
-			    ((and (not (eq obj-version ':none))
-				  (probe-file obj-version))
-			     obj-version)
-			    (t
-			     (cerror "I will assume it is to be compiled"
-				"Inconsistent instructions regarding whether to compile ~s"
-				lprec)
-			     (setf (Load-progress-rec-whether-compile lprec)
-			           ':compile)
-			     src-version)))
-		   (loadable-version
-		      (cond ((and src-version
-				  (or (eq whether-compile ':source)
-				      (eq obj-version ':none)
-				      (not (probe-file obj-version))))
-			     src-version)
-			    (t
-			     obj-version))))
-		(setf (Load-progress-rec-ur-mod-time lprec)
-		      (file-write-date ur-version))
-		(setf (Load-progress-rec-loadable-mod-time lprec)
-		      (file-write-date loadable-version))
-		(setf (Load-progress-rec-file-mod-timestamp lprec)
-		      file-op-count*))))
-
-(defun lprec-find-source-pathname (lprec)
-   (let ((spn (Load-progress-rec-source-pathname lprec)))
-      (cond ((or (not spn) (eq spn ':unknown))
-	     (let ((src (pathname-source-version (Load-progress-rec-pathname lprec))))
-		(setf (Load-progress-rec-source-pathname lprec)
-		      (or src ':none))))
-	    (t spn))))
-
-(defun lprec-find-object-pathname (lprec)
-   (let ((opn (Load-progress-rec-object-pathname lprec)))
-      (cond ((or (not opn) (eq opn ':unknown))
-	     (let ((obj (pathname-object-version (Load-progress-rec-pathname lprec)
-						 false)))
-		(setf (Load-progress-rec-object-pathname lprec)
-		      (or obj ':none))))
-	    (t opn))))
-
 (defun pathname-source-version (pn)
   (cond ((is-Pseudo-pathname pn) false)
 	(t
@@ -359,10 +135,6 @@
 	     (setq found true)))))
 
 (defvar module-now-loading* false)
-
-(defvar now-loading-lprec* false)
-   ;; -- Load-progress-rec for file being loaded (usually the
-   ;; value of now-loading*, or for its ytools version).
 
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
@@ -448,19 +220,8 @@
 	           (adjoin vl (YT-module-postponed ytm)
 			   :test #'equal))))))
 
-;;;; Returns the insertable actions associated with the named module.
-;;;;(defun module-insert (mod-pspn)
-;;;;   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-;;;;      (let ((module (find-YT-module modname)))
-;;;;	 (cond (module
-;;;;		(YT-module-expansion module))
-;;;;	       (t
-;;;;		(cerror "I will ignore it"
-;;;;		   "Undefined module ~s" modname))))))
-
-;;;;(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
-
-(defun import-export (from-pkg-desig strings &optional (exporting-pkg-desig *package*))
+(defun import-export (from-pkg-desig strings
+		      &optional (exporting-pkg-desig *package*))
    (let ((from-pkg 
 	    (cond ((or (is-Symbol from-pkg-desig)
 		       (is-String from-pkg-desig))

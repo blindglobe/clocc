@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8 2004/11/01 14:01:08 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.1 2004/11/19 15:31:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -118,37 +118,32 @@
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
 
-;;; Why the hell is this a macro?
-(defmacro file-op-defaults-update (specs possible-flags
-				   acc-defaults set-defaults)
-   (let ((default-var (gensym)))
-      `(let ((,default-var (,acc-defaults)))
-	  (multiple-value-bind (files flags readtab)
-	                       (flags-separate ,specs ,possible-flags)
-	     (,set-defaults
-		 (tuple (cond ((null files)
-			       (car ,default-var))
-			      (t files))
-			(cond ((and (null flags) (null files))
-			       (cadr ,default-var))
-			      (t flags))
-			(decipher-readtable readtab ,default-var)))))))
+(defun file-op-defaults-update (specs possible-flags
+				acc-defaults set-defaults)
+   (let ((defaults (funcall acc-defaults)))
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate specs possible-flags)
+	     (funcall set-defaults
+		 (vector (or files ':nochange)
+			 (cond ((and (null flags) (null files))
+				':nochange)
+			       (t flags))
+			 (decipher-readtable readtab))))))
 
-(defun decipher-readtable (readtab defaults)
-			(cond ((eq readtab '*missing)
-			       (let ((default-readtab (caddr defaults)))
-				  (cond ((and default-readtab
-					      (not (eq default-readtab
-						       *readtable*)))
-					 (format *error-output*
-						 "Readtable ~s will be used for this file operation~%"
-						 default-readtab)
-					 default-readtab)
-					(t
-					 *readtable*))))
-			      (t
-			       (name->readtable readtab))))
-
+(defun decipher-readtable (readtab)
+   (cond ((eq readtab ':missing)
+	  (let ((default-readtab (caddr defaults)))
+	     (cond ((and default-readtab
+			 (not (eq default-readtab
+				  *readtable*)))
+		    (format *error-output*
+			    "Readtable ~s will be used for this file operation~%"
+			    default-readtab)
+		    default-readtab)
+		   (t
+		    *readtable*))))
+	 (t
+	  (name->readtable readtab))))
 
 (defmacro fslurp (&rest specs)
   `(do-fslurp ',specs))
@@ -349,36 +344,8 @@
 
 (defvar fload-show-actual-pathnames* false)
 
-#|
-NOT USED BY ANYONE (oddly enough)
-(defun ytools-module-slurp (name force-flag)
-   (cond ((or force-flag (not (memq name loaded-ytools-modules*)))
-	  (let ((ytm (find-YT-module name)))
-	     (cond (ytm
-		    (form-slurp (YT-module-action ytm) false))
-		   (t
-		    (cerror "I will ignore it"
-			    "Attempt to slurp nonexistent module '~s'"
-			    name)))))
-	 (t
-	  (let ((ytm (place-YT-module name)))
-	     (let ((p (YT-module-postponed ytm)))
-	        (cond ((not (null p))
-		       (setf (YT-module-postponed ytm) !())
-		       (let ((module-now-loading* name))
-			  (dolist (e (reverse p))
-			     (form-slurp e false)))
-		       (cond ((null (YT-module-postponed ytm))
-			      `("Finished slurping module" ,name))
-			     (t
-			      (note-module-postponement
-				 `(check-module-postponed ',name))
-			      `("Postponed slurping module " ,name))))
-		      (t `("Load blocks slurp" ,name))))))))
-|#
-
 ;;; Returns three values: filespecs, flags, and readtable
-;;; If readtable is missing, the value is *missing.
+;;; If readtable is missing, the value is :missing.
 (defun flags-separate (args possible-flags)
    (let ((flags !())
 	 (readtab (memq ':readtable args)))
@@ -386,7 +353,7 @@ NOT USED BY ANYONE (oddly enough)
 	     (setq args (nconc (ldiff args readtab)
 			       (cddr readtab)))
 	     (setq readtab (cadr readtab)))
-	    (t (setq readtab '*missing)))
+	    (t (setq readtab ':missing)))
       (do ((al args (cond (flags-done al) (t (cdr al))))
 	   (flags-done false)
 	   fname interned-flag)

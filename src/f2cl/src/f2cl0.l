@@ -32,6 +32,7 @@
   (:export
    ;; Main routines
    "F2CL"
+   "F2CL-COMPILE"
    ;; Constants
    "%FALSE%" "%TRUE%"
    ;; Types
@@ -65,8 +66,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.4 2000/07/28 22:07:44 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.5 2000/08/05 19:06:34 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.5  2000/08/05 19:06:34  rtoy
+;;; Export F2CL-COMPILE.
+;;;
 ;;; Revision 1.4  2000/07/28 22:07:44  rtoy
 ;;; It's FORTRAN, not FORTAN!
 ;;;

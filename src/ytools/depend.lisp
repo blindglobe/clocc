@@ -355,8 +355,8 @@
 (def-ytools-module ytools
 	 (eval-when (:execute :compile-toplevel :load-toplevel)
 	    (setq *readtable* ytools-readtable*))
-         #+allegro
-	 (depends-on :at-run-time %ytools/ prompthack)
+;;;;         #+allegro
+;;;;	 (depends-on :at-run-time %ytools/ prompthack)
 	 (depends-on %ytools/ multilet)
 	 (depends-on :at-run-time %ytools/ signal misc)
 	 (depends-on (:at :slurp-time :compile-time) %ytools/ setter)

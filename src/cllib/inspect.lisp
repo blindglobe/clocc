@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.31 2002/04/25 12:31:29 sds Exp $
+;;; $Id: inspect.lisp,v 1.32 2002/07/22 14:23:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -437,6 +437,8 @@ This is useful for frontends which provide an eval/modify facility."
           (format t "~s: connection: ~s (keep-alive: ~s)~%"
                   'http-command (subseq line 12) keep-alive))
         (when keep-alive
+          ;; we override `keep-alive' because it makes it impossible to
+          ;; switch browsers in the middle of an inspection session
           (setq keep-alive nil)
           (when (> debug 0)
             (format t "~s: overriding keep-alive to NIL~%" 'http-command))))

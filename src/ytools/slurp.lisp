@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.6 2004/12/15 22:37:20 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.7 2004/12/16 16:34:23 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -80,12 +80,12 @@
 				'(\\ (_) nil)))
    (let ((task-var (build-symbol (:< name) *)))
       `(progn
-	  (defvar ,task-var
-	      (make-Slurp-task ',name
+	  (defparameter ,task-var
+	      (make-Slurp-task :label ',name
 			       :default-handler ,default-handler^
 			       :file->state-fcn ,file->state-fcn^))
 	  (datafun attach-datafun ,name
-	     (defun :^ (ind sym fname)
+	     (defun :^ (_ sym fname)
 	        (setf (href (Slurp-task-handler-table ,task-var)
 			    sym)
 		      (symbol-function fname)))))))
@@ -105,7 +105,7 @@ after YTools file transducers finish.")
 
 (defmacro after-file-transduction (&body b)
    `(cond ((check-file-transduction ',b)
-	   (push (\\ () ,@b) post-file-transduce-hooks*))))
+	   (on-list (\\ () ,@b) post-file-transduce-hooks*))))
 
 (defun during-file-transduction ()
    (not (eq post-file-transduce-hooks* '*not-transducing)))
@@ -204,6 +204,8 @@ after YTools file transducers finish.")
 						 *package*))
 				      possible-flags)))))))))
 
+(defvar fload-show-actual-pathnames* true)
+
 (defun fload-op-message (beg-message pn real-pn end-message)
    (if fload-verbose*
        (progn
@@ -246,32 +248,43 @@ after YTools file transducers finish.")
 ;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
 ;;; for the corresponding task.  'stream-init', if not false, is
 ;;; a function to apply to the stream when it is opened.
+;;; The order of the slurp-tasks is irrelevant, and may change
+;;; as the process progresses.
 (defun file-slurp (pn slurp-tasks stream-init)   ;;;; states
-   (let ((post-file-transduce-hooks* !()))
-      (with-open-file (s pn :direction ':input)
-	 (cleanup-after-file-transduction
-	    (let ((fload-indent*  0)
-		  (now-loading*  false)
-		  (now-compiling* false)
-		  (now-slurping*   pn)
-		  (slurping-stack* (cons pn slurping-stack*))
-		  #+:excl (excl:*source-pathname* pn)
-		  #+:excl (excl:*record-source-file-info* nil)
-		  (*package* *package*)
-		  (*readtable* *readtable*))
-	       (cond (stream-init
-		      (funcall stream-init s)))
-	       (do ((form (read s false eof*) (read s false eof*))
-		    (states (mapcar (\\ (slurp-task)
-				       (funcall (Slurp-task-file->state-fcn
+   (cond ((not (null slurp-tasks))
+	  (let ((post-file-transduce-hooks* !()))
+	     (with-open-file (s pn :direction ':input)
+		(cleanup-after-file-transduction
+		   (let ((fload-indent*  0)
+			 (now-loading*  false)
+			 (now-compiling* false)
+			 (now-slurping*   pn)
+			 (slurping-stack* (cons pn slurping-stack*))
+			 #+:excl (excl:*source-pathname* pn)
+			 #+:excl (excl:*record-source-file-info* nil)
+			 (*package* *package*)
+			 (*readtable* *readtable*)
+			 (slurp-states
+			    (mapcar
+			       (\\ (slurp-task)
+				  (funcall (Slurp-task-file->state-fcn
 						   slurp-task)
-						pn))
-				    slurp-tasks)))
-		   ((or (eq form eof*)
-			(null slurp-tasks)
-			(multiple-value-setq
-			      (slurp-tasks states)
-			      (form-slurp form slurp-tasks states))))))))))
+					   pn))
+			       slurp-tasks)))
+		      (cond (stream-init
+			     (funcall stream-init s)))
+		      (do ((form (read s false eof*) (read s false eof*))
+			   (tasks slurp-tasks)
+			   (states slurp-states))
+			  ((or (eq form eof*)
+			       (progn
+				  (multiple-value-setq
+					(tasks states)
+					(form-slurp form tasks states))
+				  (null tasks)))
+			   slurp-states)
+			(format t "Slurped form ~s~%" form)))))))
+	 (t !())))
 
 (defun forms-slurp (forms tasks states)
       (do ((l forms (cdr l)))
@@ -281,7 +294,6 @@ after YTools file transducers finish.")
 	 (multiple-value-setq (tasks states)
 	                      (form-slurp (car l) tasks states))))
 
-
 ;;; General slurpers take 3 args: the form, the task, and the slurp state
 ;;; They return two values: the remaining tasks, and their states.
 (datafun-table general-slurp-handlers* general-slurper :size 50)
@@ -290,60 +302,75 @@ after YTools file transducers finish.")
 ;;; Handler returns t if the task should stop.  So 'form-slurp'
 ;;; returns the tasks that should continue, plus their corresponding
 ;;; states.
-(defun form-slurp (r slurp-tasks states)
+(defun form-slurp (r slurp-tasks slurp-states)
    (flet ((form-fcn-sym (e)
 	     (cond ((and (consp e)
 			(is-Symbol (car e)))
 		   (car e))
 		  (t false))))
-      (let ((a (form-fcn-sym r)))
-	 (cond (a
-		(let ((continuing-tasks '())
-		      (continuing-states '())
-		      (handled-by-any-task false))
-		   (do ((tasks slurp-tasks (cdr tasks))
-			(states states (cdr states)))
-		       ((null tasks))
-		      ;; Try to run handler, macro-expanding
-		      ;; if you haven't found one --
-		      (let ((task (first tasks)) (state (first states))
-			    (form r) (asym a) (task-done false)
-			    (handled-by-task false) h)
-			 (loop
-			    ;; -- through macro-expansions
-			    (setq h (href (Slurp-task-handler-table task)
-					  asym ':missing))
-			    (cond ((not (eq h ':missing))
-				   (return))
-				  ((macro-function asym)
-				   (setq form (macroexpand-1 form))
-				   (setq asym (form-fcn-sym form)))
-				  (t
-				   (return))))
-			 (cond (h
-				(setq handled-by-task true)
-				(setq task-done (funcall h form state)))
-			       ((setq h (Slurp-task-default-handler
-					      task))
-				(setq handled-by-task true)
-				(setq task-done (funcall h form state))))
-			 (cond (handled-by-task
-				(setq handled-by-any-task true)))
-			 (cond ((or (not handled-by-task)
-				    (not task-done))
-				(on-list task continuing-tasks)
-				(on-list state continuing-states)))))
-		   (cond (handled-by-any-task
-			  (values (nreverse continuing-tasks)
-				  (nreverse continuing-states)))
-			 (t
-			  (let ((h (href general-slurp-handlers*
-					 a)))
-			     (cond (h
-				    (funcall h r slurp-tasks states))
-				   (t
-				    (values slurp-tasks states))))))))
-	       (t (values slurp-tasks states))))))
+      (let ((continuing-tasks !())
+	    (continuing-states !())
+	    (asym (form-fcn-sym r))
+	    (form r))
+	 (loop
+	   ;; Macro-expand until handled generally or
+	   ;; handled by all
+	   (cond
+	     ((null slurp-tasks)
+	      (return (values continuing-tasks continuing-states)))
+	     (asym
+	      (let ((h (href general-slurp-handlers*
+			     asym)))
+		 (cond (h
+			(multiple-value-bind
+				      (tl sl)
+				      (funcall h form slurp-tasks slurp-states)
+			   ;; Odd situation: Some specific
+			   ;; handler may have run before
+			   ;; the general one was found.
+			   (return
+			      (values (nconc continuing-tasks tl)
+				      (nconc continuing-states sl)))))
+		       (t
+			(do ((tasks slurp-tasks (cdr tasks))
+			     (states slurp-states (cdr states))
+			     (unclear-tasks !())
+			     (unclear-states !()))
+			    ((null tasks)
+			     ;; We will try again after
+			     ;; macro-expansion --
+			     (setq slurp-tasks unclear-tasks)
+			     (setq slurp-states unclear-states))
+			   ;; Try to run handler --
+			   (let ((task (first tasks))
+				 (state (first states))
+				 (task-done false)
+				 (handled-by-task false) h)
+			      (setq h (href (Slurp-task-handler-table task)
+					    asym ':missing))
+			      (cond (h
+				     (setq handled-by-task true)
+				     (setq task-done (funcall h form state)))
+				    ((setq h (Slurp-task-default-handler
+						   task))
+				     (setq handled-by-task true)
+				     (setq task-done (funcall h form state))))
+			      (cond (handled-by-task
+				     (cond ((not task-done)
+					    (on-list task continuing-tasks)
+					    (on-list state continuing-states))))
+				    (t
+				     (on-list task unclear-tasks)
+				     (on-list state unclear-states)))))
+			(cond ((and (not (null slurp-tasks))
+				    (macro-function asym))
+			       (setq form (macroexpand-1 form))
+			       (setq asym (form-fcn-sym form)))
+			      (t
+			       (return (values (nconc continuing-tasks
+						      slurp-tasks)
+					       (nconc continuing-states
+						      slurp-states))))))))))))))
 
 ;;; The idea is that almost every slurp task will treat 'progn'
 ;;; the same way, so we shouldn't have to create many replicas of

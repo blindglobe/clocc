@@ -925,16 +925,24 @@ FILENAME                 File containing Fortran code
   nil)
 	
 (defun parse-implicit-decl (x)
-   (if (eq (third x) '*) (setq x `(,(first x) 
-                                   (,(second x) ,(third x) ,(fourth x))
-                                   ,@(cddddr x))))
-   (setq *implicit_vble_decls* 
-         (append (mapcar #'(lambda (y)
-                               `(,(car (convert-data-type y))
-                                 ,@(list-split '|,| (remove '- (car (last y))))))
-                         (list-split '|,| (cdr x)))
-                 *implicit_vble_decls*))
-   nil)
+  (cond ((eq (second x) 'none)
+	 ;; implicit none
+	 (setq *implicit_vble_decls* nil))
+	(t
+	 (when (eq (third x) '*)
+	   ;; Handle implicit <type> * <length> by rewriting x with
+	   ;; the appropriate type.
+	   (setq x `(,(first x) 
+		     (,(second x) ,(third x) ,(fourth x))
+		     ,@(cddddr x))))
+	 (setq *implicit_vble_decls* 
+	       (append (mapcar #'(lambda (y)
+				   `(,(car (convert-data-type y))
+				     ,@(list-split '|,|
+						   (remove '- (car (last y))))))
+			       (list-split '|,| (cdr x)))
+		       *implicit_vble_decls*))))
+  (values))
 
 (defun build_decl_list (decl_list type decl)
   (cons `(,type 
@@ -1938,8 +1946,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.73 2001/06/03 20:49:00 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.74 2001/06/04 14:31:20 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.74  2001/06/04 14:31:20  rtoy
+;;; Recognize IMPLICIT NONE, but the semantics are NOT currently
+;;; implemented:  undeclared variables will still be declared with default
+;;; implicit rules even when implicit none is given.  This is probably ok,
+;;; because this would be invalid Fortran anyway, and f2cl is only
+;;; expected to process valid Fortran.
+;;;
 ;;; Revision 1.73  2001/06/03 20:49:00  rtoy
 ;;; o Removed an old unused version of TRANSLATE-AND-WRITE-SUBPROG.
 ;;; o Gratuitously re-indented PARSE-DO-LOOP.

@@ -1,9 +1,15 @@
-;;;; $Id: rng.lisp,v 1.2 2001/03/15 00:04:01 sds Exp $
+;;;; $Id: rng.lisp,v 1.3 2001/03/19 15:17:25 rtoy Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.3  2001/03/19 15:17:25  rtoy
+;;;;  o Updated with several new generators for exponential.
+;;;;  o Added and updated (but commented out) timing routines.
+;;;;  o Added simple histogram routines used for testing whether the
+;;;;    generators work or not.  (Commented out).
+;;;;
 ;;;;  Revision 1.2  2001/03/15 00:04:01  sds
 ;;;;  added provide, in-package and use `dfloat'
 ;;;;
@@ -72,25 +78,36 @@
 
 ;;;;-------------------------------------------------------------------------
 ;;;;
-;;;; Define the routines for the actual generators here.  If you know
-;;;; what you are doing, you can use these routines directly instead
-;;;; of encapsulating them within the classes.
-;;;;
-;;;;-------------------------------------------------------------------------
-
-;;(eval-when (compile)
-;;  (proclaim '(inline gen-std-exponential-variate-log-method)))
-
-;;;;-------------------------------------------------------------------------
-;;;;
-;;;; Standard exponential random variate.
+;;;; Standard exponential random variate with mean m.
 ;;;;
 ;;;; f(x) = 1/m*e^{-x/m}, x >= 0
 ;;;; F(x) = 1 - e^{-x/m}, x >= 0
 ;;;;
 ;;;;-------------------------------------------------------------------------
 
-(defun gen-std-exponential-variate-log-method (mu state)
+;;; NOTE: Currently, some of methods for generating exponential
+;;; variates seem to generate exponential variates that AREN'T
+;;; actually exponential.  (Based on just looking at the histograms of
+;;; some variates.)
+;;;
+;;; Here is a list of the ones that seem to work:
+;;;
+;;;    gen-exponential-variate-log-method
+;;;    gen-exponential-variate-algo-s
+;;;    gen-exponential-variate-ea
+;;;    gen-exponential-variate-ea-2
+;;;    gen-exponential-variate-ratio
+
+;; GEN-EXPONENTIAL-VARIATE-LOG-METHOD
+;;
+;; Since the CDF is y = F(x) = 1 - e^(x/m), the inverse function is
+;; -m*ln(1-y).  If y is a uniform random variate on [0,1), then
+;; -m*ln(1-y) is exponential.  Note that if y is uniform, then 1-y is
+;; also uniform, so we just use -m*ln(y).
+;;
+;; See Knuth, The Art of Computer Programming, Volume 2.
+
+(defun gen-exponential-variate-log-method (mu state)
   "Generate a pseudo-random number drawn from an exponential PDF with a
 mean of mu:
                 - X/MU
@@ -103,6 +120,8 @@ mean of mu:
   (declare (random-state state)
 	   (type (double-float (0d0)) mu))
   (* mu (- (log (random 1d0 state)))))
+
+
 
 ;; This table is Knuth's Q[k] in Algorithm S.
 ;;
@@ -122,15 +141,20 @@ mean of mu:
 ;;     ((or (> sum (- 1 (scale-float 1l0 (- nbits))))
 ;;          (> k 20)))
 ;;  (format t "~3D ~50,45F ~25G ~%" k sum term))
+;;
+;; Note that Q[k] -> 1 as k -> infinity.  Thus, we might get more
+;; accurate results for large k if we compute
+;;             
+;;            infty
+;; Q[k] = 1 -  sum  (ln 2)^m/m!
+;;            m=k+1
+;;
 
 (declaim (ftype (function ((double-float (0d0))
 			   random-state)
 			  (non-negative-float double-float))
 		gen-std-exponential-variate-algo-s))
 
-;;; Plotting a histogram of the outputs of this function shows that
-;;; the pdf doesn't seem quite right.  I think I've implemented
-;;; Knuth's Algorithm S correctly.
 (let ((std-exponential-variate-table
        (make-array 16
 		   :element-type 'double-float
@@ -153,9 +177,25 @@ mean of mu:
 		     0.999999999999996726106647776972279059926d0
 		     0.999999999999999858543354865400900694870d0
 		     ))))
-  (declare (type (simple-array double-float (*))
-                 std-exponential-variate-table))
-  (defun gen-std-exponential-variate-algo-s (mu state)
+  (declare (type (simple-array double-float (16)) std-exponential-variate-table))
+
+  ;; GEN-EXPONENTIAL-VARIATE-ALGO-S
+  ;;
+  ;; Knuth's Algorithm S for generating exponential random variates.
+  ;;
+  ;; 1.  Generate a (t+1)-bit uniform random binary fraction. U =
+  ;; (0.b0 b1 b2...).  Locate the first zero bit b(j) and shift off
+  ;; the leading j+1 bits, setting U = (0.b(j+1) b(j+2)...).
+  ;;
+  ;; 2.  If U < ln(2), set X = m*(j*ln(2) + U) and terminate
+  ;;
+  ;; 3.  Find the least k >= 2 such that U < Q[k].  Generate k new
+  ;; uniform deviates U1, U2, ... U[k] and set V = min(U1, U2,...,
+  ;; U[k]).
+  ;;
+  ;; 4.  Set X = m*(j + V)*ln(2)
+
+  (defun gen-exponential-variate-algo-s (mu state)
     "Generate a pseudo-random number drawn from an exponential PDF with a
 mean of 1:
 
@@ -164,66 +204,309 @@ mean of 1:
 
  for X >= 0.
 
- STATE is the random state to use.  Knuth's Algorithm F is used to
+ STATE is the random state to use.  Knuth's Algorithm S is used to
  generate the variate.
 "
     (declare (type (double-float (0d0)) mu)
 	     (random-state state))
-
-    (multiple-value-bind (new-u j)
+  
+    (multiple-value-bind (u j)
 	;; Step S1.  Find the first zero bit by comparing against 1/2.
 	;; If more than 1/2, the leading bit is 1.  In this case,
 	;; multiply by 2, and take the fractional part.  This drops the
 	;; leading 1 bit.
-	(do ((u-tst (random 1d0 state)
-		    (if (>= u-tst 0.5d0)
-			(- (+ u-tst u-tst) 1)
-			(+ u-tst u-tst)))
-	     (cnt 0 (1+ cnt)))
-	    ((or (< u-tst 0.5d0)
-		 (> cnt (float-digits 1d0)))
-	     ;; We found the first zero bit.  Shift that out too.
-	     (values (+ u-tst u-tst) cnt))
-	  (declare (type (non-negative-float double-float (2d0)) u-tst)
-		   (type (integer 0 #.(1+ (float-digits 1d0))) cnt))
-	  #+nil
-	  (multiple-value-bind (f e s)
-	      (integer-decode-float u-tst)
-	    (format t "u-tst = ~S~% -> <0.~53,'0,' ,4b> 2^~S~%"
-		    u-tst (ash f (+ e (float-digits 1d0)))
-		    (+ e (float-digits 1d0)))
-	    (format t "cnt   = ~S~%" cnt))
-	  )
-      (declare (fixnum j))
+	(let ((j 0)
+	      (u (random 1d0 state)))
+	  (declare (type (integer 0 100) j)
+		   (type (double-float 0d0 1d0) u)
+		   (optimize (speed 3) (safety 0)))
+	  (loop while (> u 0.5d0) do
+		(incf j)
+		(setf u (- (+ u u) 1)))
+	  (values (+ u u) j))
 
-      #+nil
-      (multiple-value-bind (f e s)
-	  (integer-decode-float new-u)
-	(format t "j = ~S~%" j)
-	(format t "new-u = ~S~%   <0.~53,'0,' ,4b> x 2^~S~%"
-		new-u (ash f (+ e (float-digits 1d0)))
-                (+ e (float-digits 1d0))))
-      (cond ((< new-u (aref std-exponential-variate-table 1))
-	     (* mu (+ new-u
-		      (* j (aref std-exponential-variate-table 1)))))
-	    (t
-	     ;;(format t "u = ~S~%" new-u)
-	     (do ((k 2 (1+ k))
-		  (u-seq (min (random 1d0 state)
-			      (random 1d0 state))
-			 (min u-seq (random 1d0 state))))
-		 ((< new-u (aref std-exponential-variate-table k))
-		  (* mu
-		     (aref std-exponential-variate-table k)
-		     (+ j u-seq)
-		     ))
-	       (declare (type (non-negative-float double-float (1d0)) u-seq))
-	       ;;(format t "Q[~S] = ~S~%" k (aref std-exponential-variate-table k))
-	       ))))))
+      (declare (type (integer 0 100) j))
+      (let ((ln2 (aref std-exponential-variate-table 1)))
+	(cond ((< u ln2)
+	       (values (* mu (+ u (* j ln2)))))
+	      (t
+	       (do ((k 2 (+ k 1))
+		    (v (min (random 1d0 state) (random 1d0 state))
+		       (min v (random 1d0 state))))
+		   ((<= u (aref std-exponential-variate-table k))
+		    (values (* mu ln2 (+ j v))))
+		 (declare (type (double-float 0d0 (1d0)) v)
+			  (optimize (speed 3) (safety 0)))
+		 ))))))
+  
+  ;; Ahrens Algorithm SA
+  ;;
+  ;; See Ahrens, CACM, vol 15, no. 10, 1972.
+  ;;
+  ;; 1.  Initialize a = 0 and generate a uniform variate u.  Let b be
+  ;; the first bit of u after the binary point.
+  ;;
+  ;; 2.  If b = 1 (u >= 0.5) goto 4.
+  ;;
+  ;; 3.  If b = 0 (u < 0.5) set a = a + ln(2) and shift u to the left
+  ;; by one bit (u = u + u).  This produces a new first bit b.  Go to
+  ;; 2.
+  ;;
+  ;; 4.  Shift u to the left by one bit (u = u + u - 1).  If u >
+  ;; ln(2), go to 6.
+  ;;
+  ;; 5.  If u <= ln(2), deliver x = a + u.
+  ;;
+  ;; 6.  Initialize i = 2 and generate u*.  umin = u*.
+  ;;
+  ;; 7.  Generate a new u*.  umin = min(umin, u*).
+  ;;
+  ;; 8.  If u > q[i], i = i + 1 and go to 7.
+  ;;
+  ;; 9.  If u <= q[k], deliver a + umin*ln(2).
+  ;;
+  ;; Notes:
+  ;;
+  ;; 1.  In the original paper, step 9 has a small typo where an
+  ;; extraneous "x" is added.
+  ;;
+  ;; 2.  This appears to be exactly the same as Knuth's algorithm S,
+  ;; but written in a floating point fashion.  Step S1 is the same as
+  ;; steps 1-4.  Step S2 is step 5.  Step S3-S4 are steps 6-9.  This
+  ;; also shows a typo.  In Knuth: Step S4 reads m*(j + V)*ln(2).
+  ;; Step 9 here should read "deliever (a + umin)*ln(2)".
+  
+  (defun gen-exponential-variate-sa (mu state)
+    (let ((a 0d0)
+	  (u (random 1d0 state)))
+      (declare (double-float a u))
+      (loop
+	  (tagbody
+	   step-2
+	     (when (>= u 0.5d0)
+	       (go step-4))
+	   step-3
+	     (incf a (aref std-exponential-variate-table 1))
+	     (setf u (+ u u))
+	     (go step-2)
+	   step-4
+	     (setf u (+ u u -1))
+	     (when (<= u (aref std-exponential-variate-table 1))
+	       (return-from gen-exponential-variate-sa (+ a u)))
+	   step-6
+	     (let* ((i 2)
+		    (u* (random 1d0 state))
+		    (umin u*))
+	       (declare (fixnum i)
+			(type (double-float 0d0 1d0) u* umin))
+	       (loop
+		   (tagbody 
+		    step-7
+		      (setf umin (min umin (random 1d0 state)))
+		      (if (> u (aref std-exponential-variate-table i))
+			  (progn
+			    (incf i)
+			    (go step-7))
+			  (return-from gen-exponential-variate-sa (* (+ a umin (aref std-exponential-variate-table 1))))))))))))
+  )
+
+;; GEN-EXPONENTIAL-VARIATE-ALGORITHM-MA
+;;
+;; This is Algorithm MA given in Ahrens, but proposed by Marsaglia.
+;;
+;; See Ahrens, CACM, vol. 15, no. 10, 1972.
+;;
+;; p[k] = 1 - exp(-k)
+;; q[k] = (1/1! + 1/2! + ... + 1/k!)/(e - 1)
+;;
+;; 1.  Initialize i = 0 and generate uniform variate u.
+;;
+;; 2.  If u <= p[i+1], go to 4.
+;;
+;; 3.  If u > p[i+1], i = i + 1, and go to 2.
+;;
+;; 4.  Initialize k = 1 and generate u and u*.  Set umin = u*.
+;;
+;; 5.  If u <= q[k], go to 8.
+;;
+;; 6.  If u > q[k], k = k + 1.
+;;
+;; 7.  Generate a new u*, and set umin=min(umin, u*).  Go to 5.
+;;
+;; 8.  Deliver x = i + umin.
+;;
+;; Here's how to compute the constants p[k] and q[k].  kernel:%expm1
+;; is the function exp(x)-1, but done carefully to preserve accuracy.
+;;
+;; (do* ((k 0 (+ 1 k))
+;; 	       (pk 0d0 (- (float (kernel:%expm1 (float (- k) 1L0)) 1d0)))
+;; 	       (init (list pk) (cons pk init)))
+;; 	     ((>= pk 1d0)
+;; 	      (make-array (length init)
+;; 			  :element-type 'double-float
+;; 			  :initial-contents (nreverse init))))
+;; (do* ((k 1 (+ 1 k))
+;; 	       (term 1 (/ term k))
+;; 	       (sum 1 (+ sum term))
+;; 	       (init (list 0) (cons sum init)))
+;; 	      ((>= (/ sum #.(- (exp 1d0) 1))
+;; 		   1)
+;; 	       (make-array (length init)
+;; 			   :element-type 'double-float
+;; 			   :initial-contents (mapcar #'(lambda (x)
+;; 							 (/ x #.(- (exp 1d0) 1)))
+;; 						     (nreverse init)))))
+
+(let ((p
+       (make-array 39
+		   :element-type 'double-float
+		   :initial-contents
+		   '(0.0d0 0.6321205588285577d0 0.8646647167633873d0 0.950212931632136d0
+		     0.9816843611112658d0 0.9932620530009145d0 0.9975212478233336d0
+		     0.9990881180344455d0 0.9996645373720975d0 0.9998765901959134d0
+		     0.9999546000702375d0 0.9999832982992097d0 0.9999938557876467d0
+		     0.999997739670593d0 0.9999991684712809d0 0.9999996940976795d0
+		     0.9999998874648253d0 0.9999999586006229d0 0.9999999847700203d0
+		     0.9999999943972036d0 0.9999999979388464d0 0.999999999241744d0
+		     0.9999999997210532d0 0.9999999998973812d0 0.9999999999622486d0
+		     0.9999999999861121d0 0.9999999999948909d0 0.9999999999981205d0
+		     0.9999999999993086d0 0.9999999999997456d0 0.9999999999999064d0
+		     0.9999999999999656d0 0.9999999999999873d0 0.9999999999999953d0
+		     0.9999999999999983d0 0.9999999999999993d0 0.9999999999999998d0
+		     0.9999999999999999d0 1.0d0)))
+      (q
+       (make-array 17
+		   :element-type 'double-float
+		   :initial-contents
+		   '(0.0d0 0.8729650603039897d0 0.9699611781155442d0 0.9942102075684327d0
+		     0.9990600134590104d0 0.9998683144407733d0 0.9999837860095966d0
+		     0.9999982199556996d0 0.9999998237274889d0 0.9999999841046677d0
+		     0.9999999986844113d0 0.9999999998993898d0 0.9999999999928497d0
+		     0.9999999999995255d0 0.9999999999999706d0 0.9999999999999983d0 1.0d0))))
+  (declare (type (simple-array double-float (39)) p)
+	   (type (simple-array double-float (17)) q))
+  (defun gen-exponential-variate-algorithm-ma (mu state)
+    ;; Find i such that u <= p[i+1].
+    (let* ((u (random 1d0 state))
+	   (i (do ((k 1 (+ 1 k)))
+		  ((<= u (aref p k))
+		   (- k 1)))))
+      ;; Find k such that min(u1, u2,...,uk) <= q[k].  Then return i +
+      ;; min(u1,...,uk)
+      (do* ((new-u (random 1d0 state))
+	    (k 1 (+ 1 k))
+	    (umin (random 1d0 state) (min umin (random 1d0 state))))
+	  ((<= new-u (aref q k))
+	   (+ i umin))
+	(declare (type (double-float 0d0 1d0) umin))))))
+
+;; GEN-EXPONENTIAL-VARIATE-EA
+;;
+;; Ahrens Algorithm EA for generating exponential random variates. The
+;; description given by Ahrens contains several typos which were
+;; corrected by Kenneth G. Hamilton.  We describe the algorithm here,
+;; with corrections made by Hamilton.
+;;
+;; See Ahrens, CACM, vol. 31, no. 11, 1988.
+;; See Hamilton, ACM Trans on Math. Software, vol. 24, no. 1, 1998.
+;;
+;; 0.  Constants:
+;;       a (* (log 2d0) (+ 4 (* 3 (sqrt 2d0))))
+;;       b (+ 2 (sqrt 2d0)))
+;;       c (- (* (log 2d0) (+ 1 (sqrt 2d0))))
+;;       p (* (sqrt 2d0) (log 2d0))
+;;       A (* a p))
+;;       B (* b p))
+;;       H 0.0026106723602095d0
+;;       D (/ (* b b))))
+;; 1.  Generate uniform variate U and set G = c.
+;;
+;; 2.  Set U = U + U.  If U >= 1 go to 4.
+;;
+;; 3.  Set G = G + ln(2) and go to 2.
+;;
+;; 4.  Set U = U - 1.  If U > p go to 6.
+;;
+;; 5.  Return X = G + A/(B - U).
+;;
+;; 6.  Generate U and set Y = a / (b - U).
+;;
+;; 7.  Generate U'.  If (U'*H + D)*(b - U)^2 > exp(-(Y + c), go to 6.
+;;
+;; 8.  Return X = G + Y.
+;;
+(let* ((ln-2 #.(log 2d0))
+       (a #.(* (log 2d0) (+ 4 (* 3 (sqrt 2d0)))))
+       (b #.(+ 2 (sqrt 2d0)))
+       (c #.(- (* (log 2d0) (+ 1 (sqrt 2d0)))))
+       (p #.(* (sqrt 2d0) (log 2d0)))
+       (big-a (* a p))
+       (big-b (* b p))
+       (big-h 0.0026106723602095d0)
+       (big-d (/ (* b b))))
+  (declare (type double-float ln-2 a b c p big-a big-b big-h big-d))
+  
+  (defun gen-exponential-variate-ea (mu state)
+    (declare (type random-state state)
+	     (type (double-float (0d0)) mu)
+	     (optimize (speed 3)))
+    (let ((u (random 1d0 state))
+	  (u1 0d0)
+	  (y 0d0)
+	  (g c))
+      (declare (type (double-float 0d0) u u1)
+	       (type double-float g)
+	       (type double-float y))
+      (loop
+	  (tagbody
+	   step-2
+	     (setf u (+ u u))
+	     (when (>= u 1)
+	       (go step-4))
+	     (setf g (+ g ln-2))
+	     (go step-2)
+	   step-4
+	     (setf u (- u 1))
+	     (when (> u p)
+	       (go step-6))
+	     (return-from gen-exponential-variate-ea (+ g (/ big-a (- big-b u))))
+	   step-6
+	     (setf u (random 1d0 state))
+	     (setf y (/ a (- b u)))
+	     (setf u1 (random 1d0 state))
+	     (when (> (* (+ (* u1 big-h) big-d)
+			 (expt (- b u) 2))
+		      (exp (- (+ y c))))
+	       (go step-6))
+	     (return-from gen-exponential-variate-ea (+ g y))))))
+
+  (defun gen-exponential-variate-ea-2 (mu state)
+    (let ((u (random 1d0 state))
+	  (g c))
+      (declare (double-float u g))
+      (setf u (+ u u))
+      (do ()
+	  ((>= u 1))
+	(incf g ln-2)
+	(incf u u))
+
+      (decf u 1)
+      (when (<= u p)
+	(return-from gen-exponential-variate-ea-2 (+ g (/ big-a (- big-b u)))))
+      (loop
+	  (let* ((u (random 1d0 state))
+		 (y (/ a (- b u)))
+		 (up (random 1d0 state)))
+	    (declare (double-float u y up))
+	    (when (<= (* (+ (* up big-h) big-d)
+			 (expt (- b u) 2))
+		      (exp (- (+ y c))))
+	      (return-from gen-exponential-variate-ea-2 (+ g y)))))))
+    )
 
 ;; Use the ratio-of-uniforms method to generate exponential variates.
 ;; This could probably be optimized further.
-(defun gen-std-exponential-variate-ratio (mu state)
+(defun gen-exponential-variate-ratio (mu state)
   (declare (random-state state)
 	   (type (double-float (0d0)) mu))
   (let ((max-v (* mu #.(* 2 (exp -1d0)))))
@@ -241,8 +524,10 @@ mean of 1:
 ;;; U-30 300  500000   0.69     0.85     1.6
 ;;;                    8M       8M       8M
 
-(defmacro gen-std-exponential-variate (mu state)
-  `(gen-std-exponential-variate-log-method ,mu ,state))
+
+(defmacro gen-exponential-variate (mu state)
+  `(gen-exponential-variate-log-method ,mu ,state))
+
 
 ;;;;-------------------------------------------------------------------------
 ;;;;
@@ -270,6 +555,86 @@ mean of 1:
       (- (gen-std-exponential-variate 1d0 state))))
 
 ;;;;-------------------------------------------------------------------------
+;;;; Cauchy random variate.
+;;;;
+;;;; f(x) = 1/pi/(1 + x^2)
+;;;; F(x) = 1/2 - 1/pi*atan(x)
+;;;;
+;;;;-------------------------------------------------------------------------
+
+;; GEN-CAUCHY-VARIATE-TAN
+;;
+;; Use the inverse of the CDF to generate the desired Cauchy variate.
+
+(defun gen-cauchy-variate-tan (state)
+  (tan (* #.(float pi 1d0)
+	  (- (random 1d0 state) 0.5d0))))
+
+(declaim (inline gen-cauchy-variate-algorithm-ca-aux))
+
+;; GEN-CAUCHY-VARIATE-ALGORITHM-CA
+;;
+;; Ahrens (1988), Algorithm CA for generating Cauchy variates.
+;;
+;; 0.  Constants
+;;      a 0.6380631366077803d0
+;;      b 0.5959486060529070d0
+;;      q 0.9339962957603656d0
+;;      W 0.2488702280083841d0
+;;      A 0.6366197723675813d0
+;;      B 0.5972997593539963d0
+;;      H 0.0214949004570452d0
+;;      P 4.9125013953033204d0
+;;
+;; 1.  Generate U.  Set T = U - 1/2 and S = W - T^2.  If S <= 0, go to
+;; 3.
+;;
+;; 2.  Return X = T*(A/S+B).
+;;
+;; 3.  Generate U.  Set T = U - 1/2 and s = 1/4 - T^2 and X = T*(a/s +
+;; b).
+;;
+;; 4.  Generate U'.  If s^2*((1 + X^2)*(H*U' + P) - q) + s > 1/2, go
+;; to 3.
+;;
+;; 5.  Return X.
+;;
+
+(let ((a 0.6380631366077803d0)
+      (b 0.5959486060529070d0)
+      (q 0.9339962957603656d0)
+      (ww 0.2488702280083841d0)
+      (aa 0.6366197723675813d0)
+      (bb 0.5972997593539963d0)
+      (hh 0.0214949004570452d0)
+      (pp 4.9125013953033204d0))
+  (declare (double-float a b q ww aa bb hh pp))
+  (defun gen-cauchy-variate-algorithm-ca-aux (u state)
+    (declare (type (non-negative-float double-float (1d0)) u)
+	     (type random-state state)
+	     (optimize (speed 3) (safety 0) (space 0)))
+    (let* ((tt (- u 0.5d0))
+	   (s (- ww (* tt tt))))
+      (when (> s 0)
+	(return-from gen-cauchy-variate-algorithm-ca-aux (* tt (+ (/ aa s) bb))))
+
+      (do ((u (random 1d0 state) (random 1d0 state))
+	   (u1 (random 1d0 state) (random 1d0 state)))
+	  (nil)
+	(let* ((tt (- u 0.5d0))
+	       (s (- 1/4 (* tt tt)))
+	       (x (* tt (+ (/ a s) b))))
+	  (when (<= (+ s (* s s
+			    (- (* (+ 1 (* x x))
+				  (+ (* hh u1) pp))
+			       q)))
+		    1/2)
+	    (return-from gen-cauchy-variate-algorithm-ca-aux x))))))
+  (defun gen-cauchy-variate-algorithm-ca (state)
+    (gen-cauchy-variate-algorithm-ca-aux (random 1d0 state) state))
+  )
+
+;;;;-------------------------------------------------------------------------
 ;;;;
 ;;;; Gaussian random variate
 ;;;;
@@ -277,81 +642,108 @@ mean of 1:
 ;;;;
 ;;;;-------------------------------------------------------------------------
 
-;;; Pick the best Gaussian generator.  Here are some numbers to help
-;;; you decide.
-;;;
-;;; 50000 numbers generated.  Time is elapsed real time in seconds,
-;;; Second number is bytes consed.
-;;;
-;;; CPU	          N    Box     Box trig    Ratio
-;;; 486-66     50000   1.32     1.22       1.84
-;;;                    1239k     825k       825k
-;;; Sparc-20  100000   1.22     0.77       0.91
-;;;                    2.4M     1.6M       1.6M
-;;; U-30 300  500000   0.82     1.42       1.03
-;;;                    8M       8M         8M
+(defstruct gaussian-generator-cache
+  (cached-value 0d0 :type double-float)
+  (cache-valid nil :type (member t nil) ))
 
-;;; We have three different generators for Gaussians.  Pick the one
-;;; that works best for you.
-
-
-#+x86
-(defmacro gen-std-gaussian-variate (state)
-  `(gen-std-gaussian-variate-box-trig ,state))
-
-#-x86
-(defmacro gen-std-gaussian-variate (state)
-  `(gen-std-gaussian-variate-box-trig ,state))
-
-(let ((use-prev-gauss nil)
-      (prev-gauss 0d0))
-  (declare (double-float prev-gauss))
-
-  (defun gen-std-gaussian-variate-box (state)
-    "Generate a pseudo-random number drawn from a Gaussian PDF with a mean
-of zero and a variance of 1.
-
-                    2
-                   X
-                 - --
-                   2
-               %E
-          ----------------
-          SQRT(2) SQRT(PI)
-
-  STATE is the random state to use.
-
- The Box-Mueller method is used.  See Knuth, Seminumerical Algorithms,
- Algorithm P.
-"
-    (declare (random-state state))
-    (cond (use-prev-gauss
-	   ;; Use cached value if we have it.
-	   (setf use-prev-gauss nil)
-	   prev-gauss)
+(let ((cache (make-gaussian-generator-cache)))
+  (defun gen-gaussian-variate-polar (state)
+    (cond ((gaussian-generator-cache-cache-valid cache)
+	   (setf (gaussian-generator-cache-cache-valid cache) nil)
+	   (gaussian-generator-cache-cached-value cache))
 	  (t
-	   ;; Compute new values via Box-Muller method
-	   (do* ((u (- (random 2.0d0 state) 1.0d0)
-		    (- (random 2.0d0 state) 1.0d0))
-		 (v (- (random 2.0d0 state) 1.0d0)
-		    (- (random 2.0d0 state) 1.0d0))
-		 (s (+ (* u u) (* v v))
-		    (+ (* u u) (* v v)))
-		 )
-		((< s 1.0d0)
-		 (locally
-		     (declare (type (non-negative-float double-float (1d0)) s))
+	   (do* ((u1 (- (* 2 (random 1d0 state)) 1)
+		     (- (* 2 (random 1d0 state)) 1))
+		 (u2 (- (* 2 (random 1d0 state)) 1)
+		     (- (* 2 (random 1d0 state)) 1))
+		 (w (+ (* u1 u1) (* u2 u2))
+		    (+ (* u1 u1) (* u2 u2))))
+		((<= w 1)
+		 (locally 
+		   (declare (type (non-negative-float double-float 1d0) w))
+		   (let ((s (sqrt (/ (* -2 (log w)) w))))
+		     (setf (gaussian-generator-cache-cached-value cache) (* u2 s))
+		     (setf (gaussian-generator-cache-cache-valid cache) t)
+		     (* u1 s)))))))))
 
-		   (let ((z (sqrt (/ (* -2.0d0 (log s))
-				     s))))
-		     (setf prev-gauss (* v z))
-		     (setf use-prev-gauss t)
-		     (* u z)))))))))
+;; GEN-GAUSSIAN-VARIATE-ALGORITHM-NA
+;;
+;; Ahrens Algorithm NA for normal variates.
+;;
+;; 2.  Generate U.  Save the first bit B of U.  (B = 0 if U < 1/2.
+;; Otherwise B = 1).
+;;
+;; 3.  Generate E, a standard exponential deviate and set S = E + E.
+;;
+;; 4.  Generate C, a standard Cauchy deviate.  Use algorithm CA but
+;; instead of "Generate U" in Step 1 of CA, reuse the remaining bits
+;; of U from Step 2.
+;;
+;; 5.  Set X = sqrt(S/(1+C^C)) and save Y = C*X.
+;;
+;; 6.  If B = 0, return X.  Otherwise return -X.
+;;
+;; On the next call, return Y
+  
+#+nil
+(let ((save 0d0)
+      (gen -1))
+  (declare (double-float save)
+	   (fixnum gen))
+  (defun gen-gaussian-variate-algorithm-na (state)
+    (declare (type random-state state)
+	     (optimize (speed 3) (safety 0)))
+    (setf gen (- gen))
+    (cond ((= gen 1)
+	   (let* ((u (random 1d0 state))
+		  (e (gen-exponential-variate-log-method 1d0 state))
+		  (s (+ e e))
+		  (b 0))
+	     (declare (type (non-negative-float double-float) u))
+	     (cond ((< u 1/2)
+		    (setf u (+ u u)))
+		   (t
+		    (setf b 1)
+		    (setf u (+ u u -1))))
+	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u state))
+		    (x (sqrt (/ s (+ 1 (* c c)))))
+		    (y (* c x)))
+	       (setf save y)
+	       (if (zerop b)
+		   x
+		   (- x)))))
+	  (t
+	   save))))
 
-(let ((use-prev-gauss nil)
-      (prev-gauss 0d0))
-  (declare (double-float prev-gauss))
-  (defun gen-std-gaussian-variate-box-trig (state)
+(let ((cache (make-gaussian-generator-cache)))
+  (defun gen-gaussian-variate-algorithm-na (state)
+    (declare (type random-state state)
+	     (optimize (speed 3) (safety 0)))
+    (cond ((gaussian-generator-cache-cache-valid cache)
+	   (setf (gaussian-generator-cache-cache-valid cache) nil)
+	   (gaussian-generator-cache-cached-value cache))
+	  (t
+	   (let* ((u (random 1d0 state))
+		  (e (gen-exponential-variate-log-method 1d0 state))
+		  (s (+ e e))
+		  (b 0))
+	     (declare (type (non-negative-float double-float) u))
+	     (cond ((< u 1/2)
+		    (setf u (+ u u)))
+		   (t
+		    (setf b 1)
+		    (setf u (+ u u -1))))
+	     (let* ((c (gen-cauchy-variate-algorithm-ca-aux u state))
+		    (x (sqrt (/ s (+ 1 (* c c)))))
+		    (y (* c x)))
+	       (setf (gaussian-generator-cache-cached-value cache) y)
+	       (setf (gaussian-generator-cache-cache-valid cache) t)
+	       (if (zerop b)
+		   x
+		   (- x))))))))
+
+(let ((cache (make-gaussian-generator-cache)))
+  (defun gen-gaussian-variate-box-trig (state)
     "Generate a pseudo-random number drawn from a Gaussian PDF with a mean
 of zero and a variance of 1.  The PDF is
 
@@ -370,23 +762,23 @@ of zero and a variance of 1.  The PDF is
  Knuth, Seminumerical Algorithms.
 "
     (declare (random-state state))
-    (cond (use-prev-gauss
-	   ;; Use cached value if we have it.
-	   (setf use-prev-gauss nil)
-	   prev-gauss)
+    (cond ((gaussian-generator-cache-cache-valid cache)
+	   (setf (gaussian-generator-cache-cache-valid cache) nil)
+	   (gaussian-generator-cache-cached-value cache))
 	  (t
 	   (let ((r1 (sqrt (* -2.0d0 (log (random 1.0d0 state)))))
-		 (r2 (random #.(dfloat (* (dfloat pi) 2.0d0)) state)))
+		 (r2 (random #.(float (* pi 2.0d0) 1d0) state)))
 	     ;;(declare (double-float r1 r2))
-	     (setf prev-gauss (* r1 (sin r2)))
-	     (setf use-prev-gauss t)
+	     (setf (gaussian-generator-cache-cached-value cache)
+		   (* r1 (sin r2)))
+	     (setf (gaussian-generator-cache-cache-valid cache) t)
 	     (* r1 (cos r2)))))))
 
 (let ((+sqrt-8/e+ #.(sqrt (/ 8.0d0 (exp 1.0d0))))
       (+4-exp-1/4+ #.(* 4.0d0 (exp 0.25d0)))
       (+4-exp-minus-1.35+ #.(* 4.0d0 (exp (- 1.35d0)))))
   (declare (double-float +sqrt-8/e+ +4-exp-1/4+ +4-exp-minus-1.35+))
-  (defun gen-std-gaussian-variate-ratio (state)
+  (defun gen-gaussian-variate-ratio (state)
     "Generate a pseudo-random number drawn from a Gaussian PDF with a mean
 of zero and a variance of 1.
 
@@ -415,7 +807,7 @@ of zero and a variance of 1.
 	(if (or (<= xs (- 5.0d0 (* u +4-exp-1/4+)))
 		(and (<= xs (+ 1.4d0 (/ +4-exp-minus-1.35+ u)))
 		     (<= xs (- (* 4.0d0 (log u))))))
-	    (return-from gen-std-gaussian-variate-ratio x))))))
+	    (return-from gen-gaussian-variate-ratio x))))))
 
 ;;;;-------------------------------------------------------------------------
 ;;;;
@@ -689,8 +1081,8 @@ order ORDER.
 	   (if (> (log u)
 		  (- (+ (* mu
 			   (+ 1d0
-			      (log (/ (the (non-negative-float double-float) x)
-				      mu))))
+			      (log (the (non-negative-float double-float)
+				     (/ x mu)))))
 			(* 0.5d0 s s))
 		     x))
 	       (go step-2)
@@ -702,7 +1094,7 @@ order ORDER.
 	   (if (> (log u)
 		  (- (+ (* mu
 			   (- (+ 2d0
-				 (log (/ (the (non-negative-float double-float) x) mu)))
+				 (log (the (non-negative-float double-float) (/ x mu))))
 			      (/ x b)))
 			3.7203284924588704d0
 			(log (the (non-negative-float double-float) (/ (* sigma d) b))))
@@ -877,10 +1269,10 @@ order ORDER.
 	     (log x))))))
 
 (eval-when (compile eval)
-(defconstant +beta-algo-go+ 0.009572265238289d0)
-(declaim (type (double-float 0.009572265238289d0 0.009572265238289d0)
-	       +beta-algo-go+))
-)
+  (defconstant +beta-algo-go+ 0.009572265238289d0)
+  (declaim (type (double-float 0.009572265238289d0 0.009572265238289d0)
+		 +beta-algo-go+))
+  )
 
 ;; Ahrens and Dieter's Algorithm GO.
 #+nil
@@ -1119,6 +1511,7 @@ with parameters a and b:
 
 ;;; Binomial random variate
 
+#+nil
 (eval-when (compile eval)
 (declaim (ftype (function ((and (integer 0) fixnum)
 			   (non-negative-float double-float 1d0)
@@ -1175,6 +1568,7 @@ with parameters N and p:
 
 ;;; Poisson random variate
 
+#+nil
 (eval-when (compile)
   (declaim (ftype (function ((double-float 0d0) random-state)
 			    (and (integer 0) fixnum))
@@ -1219,120 +1613,171 @@ with mean M:
 				       (/ mean x)
 				       state)))))))
 
+#||
+(defun time-expo (n)
+  (declare (fixnum n))
+  (flet ((timer (f)
+	   (let ((func (coerce f 'function)))
+	     (gc)
+	     (format t "~A~%" f)
+	     (system:without-gcing
+	      (time (dotimes (k n)
+		      (declare (fixnum k))
+		      (funcall func 1d0 *random-state*)))))))
+    (declaim (inline timer))
+    (dolist (f (list #'gen-exponential-variate-log-method
+		     #'gen-exponential-variate-algo-s
+		     #'gen-exponential-variate-sa
+		     #'gen-exponential-variate-ea
+		     #'gen-exponential-variate-ea-2
+		     #'gen-exponential-variate-ratio))
+      (timer f))))
 
-#+want-to-time-everything-that-moves (progn
+(defun time-gaussian (n)
+  (declare (fixnum n))
+  (flet ((timer (f)
+	   (let ((func (coerce f 'function)))
+	     (gc)
+	     (format t "~A~%" f)
+	     (system:without-gcing
+	      (time (dotimes (k n)
+		      (declare (fixnum k))
+		      (funcall func *random-state*)))))))
+    (declare (inline timer))
+    (dolist (f (list #'gen-gaussian-variate-polar
+		     #'gen-gaussian-variate-algorithm-na
+		     #'gen-gaussian-variate-box-trig
+		     #'gen-gaussian-variate-ratio))
+      (timer f))))
 
-(defun time-exponential (&optional (n 100000))
+(defun time-cauchy (n)
+  (declare (fixnum n))
+  (gc)
+  (format t "gen-cauchy-variate-tan~%")
   (system:without-gcing
    (time (dotimes (k n)
 	   (declare (fixnum k))
-	   (gen-std-exponential-variate-log-method 1d0 *random-state*)))
+	   (gen-cauchy-variate-tan *random-state*))))
+
+  (gc)
+  (format t "gen-cauchy-variate-algorithm-ca~%")
+  (system:without-gcing
    (time (dotimes (k n)
 	   (declare (fixnum k))
-	   (gen-std-exponential-variate-algo-s 1d0 *random-state*)))
-   (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-std-exponential-variate-ratio 1d0 *random-state*)))))
-
-(defun time-gaussian (&optional (n 50000))
-  (declare (fixnum n))
-  (format t "gen-std-gaussian-variate-box~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-std-gaussian-variate-box *random-state*)))
-
-  (format t "gen-std-gaussian-variate-trig~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-std-gaussian-variate-box-trig *random-state*)))
-
-  (format t "gen-std-gaussian-variate-ratio~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-std-gaussian-variate-ratio *random-state*)))
+	   (gen-cauchy-variate-algorithm-ca *random-state*))))
   )
 
-(defun time-gamma (&optional (order 10d0) (n 10000))
+(defun time-gamma (n a)
   (declare (fixnum n))
-  (format t "gen-gamma-variate-squeeze~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-gamma-variate-squeeze order *random-state*)))
-  (format t "gen-gamma-variate-gn~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-gamma-variate-gn order *random-state*)))
-  (format t "gen-gamma-variate-algo-go~%")
-  (gc)
-  (time (dotimes (k n)
-	  (declare (fixnum k))
-	  (gen-gamma-variate-algo-go order *random-state*)))
-  (format t "gen-gamma-variate-algo-a~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-gamma-variate-algo-a order *random-state*)))
-  (format t "gen-gamma-variate-algo-a-2~%")
-  (gc)
-  (time (dotimes (k n)
-	   (declare (fixnum k))
-	   (gen-gamma-variate-algo-a-2 order *random-state*)))
-  (format t "gen-gamma-variate-direct~%")
-  (gc)
-  (time (dotimes (k n)
-	  (declare (fixnum k))
-	  (gen-gamma-variate-direct order *random-state*)))
-  )
+  (flet ((timer (f)
+	   (let ((func (coerce f 'function)))
+	     (gc)
+	     (format t "~A~%" f)
+	     (system:without-gcing
+	      (time (dotimes (k n)
+		      (declare (fixnum k))
+		      (funcall func a *random-state*)))))))
+    (declare (inline timer))
+    (dolist (f (list #'gen-gamma-variate-squeeze
+		     #'gen-gamma-variate-gn
+		     #'gen-gamma-variate-algo-a
+		     #'gen-gamma-variate-algo-a-2
+		     #'gen-gamma-variate-algo-go
+		     ))
+      (timer f))))
 
-(defun test-gamma (&optional (order 10d0) (n 10000))
-  (dolist (f '(gen-gamma-variate-squeeze
-	       gen-gamma-variate-algo-a
-	       gen-gamma-variate-gn
-	       gen-gamma-variate-algo-go
-	       ))
-    (let ((sum 0d0)
-	  (ssqr 0d0))
-      (dotimes (k n)
-	(declare (fixnum k))
-	(let ((x (funcall f order *random-state*)))
-	  (incf sum x)
-	  (incf ssqr (* x x))))
-      (format t "~s:  ~s  ~s~%"
-	      f (/ sum n) (- (/ ssqr n) (expt (/ sum n) 2))))))
+;;;
+;;; Some simple routines for plotting histograms.  This is meant to be
+;;; used as a simple means of testing the generators above.
 
-(defun test-binomial (&optional (p 0.5d0) (ntrials 100) (n 10000))
-  (let ((sum 0d0)
-	(ssqr 0d0))
+(defun make-hist-centers (lo hi intervals)
+  (let ((center (make-array intervals))
+	(step (/ (- hi lo) intervals)))
+    (dotimes (k intervals)
+      (setf (aref center k) (+ lo (* k step) (/ step 2))))
+    center))
+
+(defun make-hist (x &key lo hi (intervals 10))
+  (let* ((lo-limit (or lo (reduce #'min x)))
+	 (hi-limit (or hi (reduce #'max x)))
+	 (hist (make-array intervals :initial-element 0))
+	 (step (/ (- hi-limit lo-limit) intervals)))
+    (dotimes (k (length x))
+      (let ((posn (truncate (/ (- (aref x k) lo-limit) step))))
+	(cond ((minusp posn)
+	       (incf (aref hist 0)))
+	      ((>= posn intervals)
+	       (incf (aref hist (- intervals 1))))
+	      (t
+	       (incf (aref hist posn))))))
+    (values step hist (make-hist-centers lo-limit hi-limit intervals))))
+
+
+(defun plot-hist (x &key (intervals 10) lo hi)
+  (multiple-value-bind (step count center)
+      (make-hist x :intervals intervals :lo lo :hi hi)
+    (format t "step = ~A~%" step)
+    (with-open-file (s "/tmp/out" :direction :output)
+      (let ((n (reduce #'+ count)))
+	(dotimes (k (length count))
+	  (format s "~A ~A~%"
+		  (float (aref center k) 1.0)
+		  (float (/ (aref count k) n step))))
+	(format s "~%")
+	(dotimes (k (length count))
+	  (format s "~A ~A~%"
+		  (float (aref center k) 1.0)
+		  (exp (- (float (aref center k) 1.0)))))))))
+
+
+(defun plot-hist-pdf (x pdf &key (intervals 10) lo hi)
+  (multiple-value-bind (step count center)
+      (make-hist x :intervals intervals :lo lo :hi hi)
+    (format t "step = ~A~%" step)
+    (with-open-file (s "/tmp/out" :direction :output)
+      (let ((n (reduce #'+ count)))
+	(dotimes (k (length count))
+	  (format s "~A ~A~%"
+		  (float (aref center k) 1.0)
+		  (float (/ (aref count k) n step))))
+	(format s "~%")
+	(dotimes (k (length count))
+	  (format s "~A ~A~%"
+		  (float (aref center k) 1.0)
+		  (float (funcall pdf (aref center k)))))))))
+
+(defun rng-expo-histogram (n gen)
+  (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (declare (fixnum k))
-      (let ((x (gen-binomial-variate ntrials p *random-state*)))
-	(incf sum x)
-	(incf ssqr (* x x))))
-    (format t "Mean and variance:  ~s  ~s (should be ~s and ~s)~%"
-	    (/ sum n)
-	    (- (/ ssqr n) (expt (/ sum n) 2))
-	    (* ntrials p)
-	    (* ntrials p (- 1d0 p)))))
+      (setf (aref r k) (funcall gen 1d0 *random-state*)))
+    (plot-hist r :intervals 50 :lo 0 :hi 10)))
 
-(defun test-poisson (&optional (mean 10d0) (n 10000))
-  (let ((sum 0d0)
-	(ssqr 0d0))
+(defun rng-gaussian-histogram (n gen)
+  (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
-      (declare (fixnum k))
-      (let ((x (gen-poisson-variate mean *random-state*)))
-	(incf sum x)
-	(incf ssqr (* x x))))
-    (format t "Mean and variance:  ~s  ~s (should be ~s and ~s)~%"
-	    (/ sum n)
-	    (- (/ ssqr n) (expt (/ sum n) 2))
-	    mean
-	    mean)))
-)
+      (setf (aref r k) (funcall gen *random-state*)))
+    (plot-hist-pdf r #'(lambda (x)
+			 (* (/ (sqrt (* 2 pi))) (exp (* -0.5d0 x x))))
+		   :intervals 50 :lo -5 :hi 5)))
+
+(defun rng-cauchy-histogram (n gen &key (limit 100))
+  (let ((r (make-array n :element-type 'double-float)))
+    (dotimes (k n)
+      (setf (aref r k) (funcall gen *random-state*)))
+    (plot-hist-pdf r #'(lambda (x)
+			 (/ (* pi (+ 1 (* x x)))))
+		   :intervals 500 :lo (- limit) :hi limit)))
+
+(defun rng-gamma-histogram (n a gamma gen)
+  (let ((r (make-array n :element-type 'double-float)))
+    (dotimes (k n)
+      (setf (aref r k) (funcall gen a *random-state*)))
+    (plot-hist-pdf r #'(lambda (x)
+			 (/ (* (expt x (- a 1)) (exp (- x)))
+			    gamma))
+		   :intervals 50 :lo 0 :hi (* 5 a))))
+
+||#
 
 (provide :rng)
 ;;; file rng.lisp ends here

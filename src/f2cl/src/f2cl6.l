@@ -30,6 +30,7 @@
 ; global stream input for parse-number:
 (defvar *inp* nil)
 ;---------------------------------------------------------------------------
+		 
 (defun preprocess (file &key (outfile-name "prep.tmp"))
   (when *verbose*
     (format t "~&preprocessing begins ...~%"))
@@ -37,10 +38,17 @@
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (do ((line (read-line inport nil 'eof)
+      (do ((prev-line nil)
+	   (line (read-line inport nil 'eof)
 		 (read-line inport nil 'eof)))
 	  ((eq line 'eof)
+	   (when prev-line
+	     (write-line prev-line outport))
 	   outfile-name)
+	;; Hmm, technically it might not be right to trim spaces from
+	;; the end of the line.  Consider what happens we are trying
+	;; to continue a string with trailing spaces.  The resulting
+	;; string is wrong.
 	(let ((line (string-right-trim '(#\Space) line)))
 	  (cond 
 	    ((string= line "") nil)	; we leave out blank lines
@@ -50,12 +58,25 @@
 	    (t
 	     (when *verbose* (princ line) (terpri))
 	     ;; Handle tabs.  If the line begins with a tab, replace it with 6
-	     ;; spaces.  Then replace all tabs with a single space.
+	     ;; spaces.
 	     (when (char-equal (aref line 0) #\Tab)
 	       (setf line (concatenate 'string "      " (subseq line 1))))
+	     ;; Do we really want to do this?  What if the tab is in a
+	     ;; string?  I think tabs are illegal in Fortran, though.
 	     (setf line (substitute #\Space #\Tab line))
-
-	     (write-line (adjust_nrs (replace_logl_ops line)) outport))))))))
+	     ;; If line is a continuation line, append it.  If not,
+	     ;; print out our buffered line.
+	     (cond ((or (< (length line) 6)
+			(char-equal (aref line 5) #\Space))
+		    ;; Not continuation.  Print out the buffered line, if
+		    ;; any, and save this line for later.
+		    (when prev-line
+		      (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+		    (setf prev-line (copy-seq line)))
+		   (t
+		    ;; A continuation line!  Append the line to our buffer
+		    (setf prev-line (concatenate 'string prev-line
+						 (subseq line 6))))))))))))
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)

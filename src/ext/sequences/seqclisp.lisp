@@ -6,6 +6,8 @@
 ;; dummy-package for sequences in CLISP
 ;; Bruno Haible 24.04.1992
 
+;; Sam Steingold 2004-09-05 - updated for ANSI CL and modern CLISP
+
 (provide 'sequences)
 
 (defpackage "SEQUENCES" (:nicknames "SEQ"))
@@ -56,8 +58,8 @@
                  functions))))
 
 (defmacro define-sequence
-  (name &key init upd endtest fe-init fe-upd fe-endtest access access-set
-             copy length make elt set-elt init-start fe-init-end)
+    (name &key init upd endtest fe-init fe-upd fe-endtest access access-set
+     copy length make elt set-elt init-start fe-init-end)
   (unless upd (error ":UPD must be specified."))
   (unless fe-upd (error ":FE-UPD must be specified."))
   (unless access (error ":ACCESS must be specified."))

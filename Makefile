@@ -21,3 +21,9 @@ clocc-top.$(FASLEXT): $(TOP_DEP)
 	$(RUNLISP) -cat $^ > $@
 
 endif
+
+ChangeLog:
+	@rcs2log > ChangeLog 2>/dev/null
+	@egrep "^[a-zA-Z0-9]" ChangeLog | cut -d'<' -f2 | cut -d@ -f1 | \
+		sort | uniq -c | sort | sed 's/^/    /';
+	@egrep "^[a-zA-Z0-9]" ChangeLog | wc -l;

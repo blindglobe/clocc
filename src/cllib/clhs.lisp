@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.5 2000/05/02 14:57:27 sds Exp $
+;;; $Id: clhs.lisp,v 2.6 2000/12/06 20:14:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -1050,7 +1050,7 @@
         (ent-tab '((">=" . "-geq") ("<=" . "-leq") ("/=" . "-neq")
                    ("=" . "-eq") (">" . "-grt") ("<" . "-lst")))
         (smb-tab'((">=" . "&gt;=") ("<=" . "&lt;=")
-                  (">" . "&gt") ("<" . "&lt"))))
+                  (">" . "&gt;") ("<" . "&lt;"))))
     (dolist (re ent-tab)
       (setq ent (substitute-subseq ent (car re) (cdr re) :test #'char=)))
     (dolist (re smb-tab)

@@ -1,6 +1,7 @@
 common-lisp-controller (3.19) unstable; urgency=low
 
-  * Nothing yet... 
+  * NMU
+  * Add cl-defsystem3 as a Depends
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 11 Sep 2002 11:23:36 +0200
 

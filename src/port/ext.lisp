@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.19 2001/04/11 14:40:21 sds Exp $
+;;; $Id: ext.lisp,v 1.20 2001/06/08 21:43:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -65,14 +65,17 @@ This carries the function name which makes the error message more useful."))
   `(progn (declaim (inline ,name)) (defun ,name ,arglist ,@body)))
 
 (defmacro defcustom (name type init doc)
-  "Define a typed variable."
+  "Define a typed global variable."
   `(progn (declaim (type ,type ,name))
     (defvar ,name (the ,type ,init) ,doc)))
 
 (defmacro defconst (name type init doc)
   "Define a typed constant."
   `(progn (declaim (type ,type ,name))
-    (defconstant ,name (the ,type ,init) ,doc)))
+    ;; since constant redefinition must be the same under EQL, there
+    ;; can be no constants other than symbols, numbers and characters
+    (,(if (subtypep type '(or symbol number character)) 'defconstant 'defvar)
+     ,name (the ,type ,init) ,doc)))
 
 (defmacro mk-arr (type init &optional len)
   "Make array with elements of TYPE, initializing."

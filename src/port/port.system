@@ -2,13 +2,11 @@
 ;;;
 ;;; Cross-implementation Portability System
 ;;;
-;;; $Id: port.system,v 1.8 2002/10/27 17:01:33 kevinrosenberg Exp $
+;;; $Id: port.system,v 1.9 2002/10/27 17:03:00 kevinrosenberg Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/port.system,v $
 
 (mk:defsystem port
     :source-pathname (translate-logical-pathname "clocc:src;port;")
-    :binary-pathname (mk:afs-binary-directory
-		      (translate-logical-pathname "clocc:src;port;"))
     :source-extension "lisp"
     :components
     ((:file "ext")

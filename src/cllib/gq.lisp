@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.28 2002/02/13 15:02:22 sds Exp $
+;;; $Id: gq.lisp,v 2.29 2002/04/21 20:01:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -89,7 +89,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
           (yesterday td (if (= wd 5) 1 2))))))
 
 (defmacro with-url-xml ((var url &key (err '*error-output*)
-                             (max-retry '*url-default-max-retry*)
+                             (max-retry '*url-max-retry*)
                              (timeout '*gq-timeout*))
                         &body body)
   "Open the URL as an XML stream."

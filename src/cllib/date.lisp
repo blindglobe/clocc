@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-06-19 Fri 14:44:47 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-06-19 Fri 16:58:33 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.13 1998/06/19 20:18:31 sds Exp $
+;;; $Id: date.lisp,v 1.14 1998/06/19 21:41:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.14  1998/06/19 21:41:16  sds
+;;; Use `defmethod' to print structures.
+;;;
 ;;; Revision 1.13  1998/06/19 20:18:31  sds
 ;;; Made `fix-date' not inline.  Added some declarations for CMUCL.
 ;;;
@@ -65,20 +68,28 @@
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (date (:print-function print-date))
+(defstruct (date #+cmu (:print-function print-date))
   "The date structure -- year, month, and day."
   (ye 1 :type fixnum)
   (mo 1 :type (integer 1 12))
   (da 1 :type (integer 1 31))
   (dd nil :type (or null fixnum))) ; number of days since the epoch (1900-1-1)
+)
 
-(defun print-date (dt &optional (str t) (depth 1))
+#+cmu
+(defun print-date (dt &optional (stream t) (depth 1))
   "Print the date to the STREAM, using `*print-date-format*'."
   (declare (type date dt) (fixnum depth))
-  (if *print-readably* (funcall (print-readably date) dt str)
-      (format str "~4,'0d-~2,'0d-~2,'0d~:[~; [~:d]~]" (date-ye dt)
+  (if *print-readably* (funcall (print-readably date) dt stream)
+      (format stream "~4,'0d-~2,'0d-~2,'0d~:[~; [~:d]~]" (date-ye dt)
 	      (date-mo dt) (date-da dt) (minusp depth) (date-dd dt))))
-)
+
+#-cmu
+(defmethod print-object ((dt date) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~4,'0d-~2,'0d-~2,'0d" (date-ye dt)
+	      (date-mo dt) (date-da dt))))
+
 
 (defconst +bad-date+ date (make-date) "*The convenient constant for init.")
 
@@ -381,7 +392,7 @@ previous record when SKIP is non-nil and nil otherwise.
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (dated-list (:print-function print-dlist))
+(defstruct (dated-list #+cmu (:print-function print-dlist))
   "A dated list of records."
   (ll nil :type list)		; the actual list
   (code nil :type symbol)	; the code (2 letter symbol)
@@ -457,6 +468,7 @@ so that -1 corresponds to the last record."
   (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (slot-value dl slot) bb))))
 
+#+cmu
 (defun print-dlist (dl &optional (stream t) (depth 1))
   "Print the dated list record."
   (declare (type dated-list dl) (fixnum depth))
@@ -467,6 +479,13 @@ so that -1 corresponds to the last record."
   (if *print-readably* (funcall (print-readably dated-list) dl stream)
       (format stream "~:d~:[ ~a~;~*~] [~:@(~a~)] [~a -- ~a]"
               (dl-len dl) (> depth 1) (dated-list-name dl) (dated-list-code dl)
+              (dl-nth-date dl) (dl-nth-date dl -1))))
+
+#-cmu
+(defmethod print-object ((dl dated-list) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~:d ~a [~:@(~a~)] [~a -- ~a]"
+              (dl-len dl) (dated-list-name dl) (dated-list-code dl)
               (dl-nth-date dl) (dl-nth-date dl -1))))
 
 (defun date-in-dated-list (dt dl &optional last)
@@ -707,7 +726,7 @@ Must not assume that the list is properly ordered!"
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (change (:print-function print-change))
+(defstruct (change #+cmu (:print-function print-change))
   "Change structure - for computing difference derivatives."
   (date +bad-date+ :type date)
   (val 0.0d0 :type double-float) ; value
@@ -738,6 +757,7 @@ Must not assume that the list is properly ordered!"
   (declare (type change ch1 ch2))
   (eq (change-type ch1) (change-type ch2)))
 
+#+cmu
 (defun print-change (chg &optional (stream t) (depth 1))
   "Print the change structure."
   (declare (type change chg) (fixnum depth))
@@ -748,6 +768,12 @@ Must not assume that the list is properly ordered!"
 			  (t "~* ~8,3f"))
 		(change-chb chg) (change-val chg) (change-chf chg))
 	(unless stream (get-output-stream-string str)))))
+
+#-cmu
+(defmethod print-object ((chg change) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
+              (change-chb chg) (change-val chg) (change-chf chg))))
 
 (defsubst change-list-to-dated-list (chl &rest args)
   "Make a dated list containing this change list."
@@ -776,7 +802,7 @@ ch[bf], and dl-extrema will not be idempotent."
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (diff (:print-function print-diff))
+(defstruct (diff #+cmu (:print-function print-diff))
   "A dated diff."
   (date +bad-date+ :type date)
   (di 0.0 :type real)		; difference
@@ -791,6 +817,7 @@ ch[bf], and dl-extrema will not be idempotent."
 Sets ll, date, val, and passes the rest directly to make-dated-list."
   (apply #'make-dated-list :ll dl :date 'diff-date :val 'diff-di args))
 
+#+cmu
 (defun print-diff (df &optional (stream t) depth)
   "Print the diff record."
   (declare (type diff df) (ignore depth))
@@ -799,6 +826,12 @@ Sets ll, date, val, and passes the rest directly to make-dated-list."
 	(write (diff-date df) :stream str)
 	(format str " ~15,6f ~15,6f" (diff-di df) (diff-ra df))
 	(unless stream (get-output-stream-string str)))))
+
+#-cmu
+(defmethod print-object ((df diff) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
+              (diff-ra df))))
 
 (defun diff-lists (ls0 ls1 &key date0 date1 val0 val1)
   "Generate a list of diff's from the given 2 lists.

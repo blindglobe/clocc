@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-06-18 Thu 14:49:59 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-06-19 Fri 16:29:46 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.4 1998/06/19 20:10:38 sds Exp $
+;;; $Id: math.lisp,v 1.5 1998/06/19 21:41:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.5  1998/06/19 21:41:40  sds
+;;; Use `defmethod' to print structures.
+;;;
 ;;; Revision 1.4  1998/06/19 20:10:38  sds
 ;;; Made `normalize' work with arbitrary sequences.
 ;;; Many minor declarations for CMUCL added.
@@ -514,7 +517,7 @@ and the number of iterations made."
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (line (:print-function print-line))
+(defstruct (line #+cmu (:print-function print-line))
   "A straight line."
   (sl 0.0d0 :type double-float)	; slope
   (co 0.0d0 :type double-float)) ; constant
@@ -522,12 +525,18 @@ and the number of iterations made."
 
 (defconst +bad-line+ line (make-line) "*The convenient constant for init.")
 
+#+cmu
 (defun print-line (ln &optional (stream t) (depth 1))
   "Print the line."
   (declare (type line ln))	; "#S(LINE :SL ~g :CO ~g)"
   (if *print-readably* (funcall (print-readably line) ln stream)
       (format stream (case depth (1 "Slope: ~,3f; Constant: ~,3f")
 			   (t "{~,3f ~,3f}")) (line-sl ln) (line-co ln))))
+
+#-cmu
+(defmethod print-object ((ln line) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "{~,3f ~,3f}" (line-sl ln) (line-co ln))))
 
 (defsubst line-val (ln par)
   "Evaluate the line at point."

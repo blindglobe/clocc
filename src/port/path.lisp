@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.3 2002/01/22 18:37:45 stig Exp $
+;;; $Id: path.lisp,v 1.4 2002/06/05 14:08:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -129,7 +129,7 @@ STYLE can be either :CMU or :ALLEGRO."
          (unless done (setq done (string-equal ho host)))
          (when verbose (format t ";;   host ~s~%" ho))
          (setf (logical-pathname-translations ho) (eval (read fi))))))
-    (:cmucl
+    (:cmu
      (with-open-file (fi file :if-does-not-exist nil)
        (unless fi (return-from load-logical-host-def nil))
        (when verbose

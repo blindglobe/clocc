@@ -1063,7 +1063,10 @@
 #+(and :excl :allegro-v4.0 :cltl2)
 (provide 'make)
 
-#+:mcl
+#+:openmcl
+(cl:provide 'make)
+
+#+(and :mcl (not :openmcl))
 (ccl:provide 'make)
 
 #+(and :cltl2 (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1)) :mcl)))
@@ -3802,7 +3805,9 @@ D
 	 #+:sbcl 'cl:require
 	 #+:lispworks3.1 'common-lisp::require
 	 #+(and :lispworks (not :lispworks3.1)) 'system::require
-	 #+:mcl 'ccl:require))
+	 #+:openmcl 'cl:require
+	 #+(and :mcl (not :openmcl)) 'ccl:require
+	 ))
 
   (unless *dont-redefine-require*
     (let (#+(or :mcl (and :CCL (not :lispworks)))
@@ -3814,7 +3819,9 @@ D
 	     #+:lispworks3.1 'common-lisp::require
 	     #+:sbcl 'cl:require
 	     #+(and :lispworks (not :lispworks3.1)) 'system::require
-	     #+:mcl 'ccl:require)
+	     #+:openmcl 'cl:require
+	     #+(and :mcl (not :openmcl)) 'ccl:require
+	     )
 	    (symbol-function 'new-require))
       #+:lispworks
       (let ((warn-packs system::*packages-for-warn-on-redefinition*))

@@ -1,3 +1,9 @@
+cl-defsystem3 (3.3i+cvs.2003.02.02) unstable; urgency=low
+
+  * New upstream: Rename package for REQUIRE/PROVIDE for OpenMCL
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  2 Feb 2003 23:01:37 -0700
+
 cl-defsystem3 (3.3i+cvs.2002.11.24) unstable; urgency=low
 
   * New upstream version

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.52 2004/11/12 19:00:38 sds Exp $
+;;; $Id: url.lisp,v 2.53 2004/11/30 18:15:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -67,7 +67,7 @@ When NIL, just the RFC numbers are returned.")
 (defun protocol-rfc (protocol)
   "Return the RFC url for the given protocol.
 See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
-<http://www.faqs.org/rfcs/> and `*RFC-BASE*'."
+<http://rfc.net/>, <http://www.faqs.org/rfcs/> and `*RFC-BASE*'."
   (let* ((prot (typecase protocol
                  (symbol (if (keywordp protocol) protocol (kwd protocol)))
                  (string (kwd protocol))

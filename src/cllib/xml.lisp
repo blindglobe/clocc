@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.45 2002/11/30 22:51:56 sds Exp $
+;;; $Id: xml.lisp,v 2.46 2003/09/26 15:28:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -227,6 +227,10 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
   (:method ((xn1 xml-name) (xn2 xml-name))
     (and (string= (xmln-ln xn1) (xmln-ln xn2))
          (eq (xmln-ns xn1) (xmln-ns xn2))))
+  (:method ((xn1 string) (xn2 xml-name))
+    (and (eq +xml-namespace-none+ (xmln-ns xn2))
+         (string= xn1 (xmln-ln xn2))))
+  (:method ((xn1 xml-name) (xn2 string)) (xmln= xn2 xn1))
   (:method ((xn1 cons) (xn2 cons))
     (and (string= (car xn1) (car xn2))
          (string= (cadr xn1) (cadr xn2)))))
@@ -287,12 +291,11 @@ If such a name already exists, re-use it."
 
 (defmethod print-object ((xmln xml-name) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
-        ((eq (xmln-ns xmln) +xml-namespace-none+)
-         (write (xmln-ln xmln) :stream out))
         (*xml-print-xml*
          (format out "~@[~a:~]~a" (xmln-prefix xmln) (xmln-ln xmln)))
-        ((format out "~:[~a:~;~*~]~a" (eq +xml-namespace-none+ (xmln-ns xmln))
-                 (xmln-ns xmln) (xmln-ln xmln)))))
+        ((eq +xml-namespace-none+ (xmln-ns xmln))
+         (format out ":~a:" (xmln-ln xmln)))
+        ((format out "~a:~a" (xmln-ns xmln) (xmln-ln xmln)))))
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-tag (:conc-name xmlt-))

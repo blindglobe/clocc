@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.13 2000/05/12 18:31:28 sds Exp $
+;;; $Id: fileio.lisp,v 1.14 2000/05/23 20:03:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -270,7 +270,7 @@ By default nothing is printed."
   (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
   (do ((len (length ln)) (rr (read-line st) (read-line st)))
       ((and (>= (length rr) len) (string-equal ln rr :end2 len))
-       (subseq rr (length ln)))
+       (subseq rr len))
     (declare (fixnum len) (simple-string rr))))
 
 (defun skip-search (stream string &optional out)

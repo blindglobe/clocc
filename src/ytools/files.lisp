@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.41 2005/03/25 14:37:59 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.42 2005/03/26 14:30:05 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -100,10 +100,10 @@
 (defmethod pathname-denotation-chunk ((pn pathname))
    (cond ((null (Pathname-type pn))
 	  (let ((source-pn (pathname-source-version pn)))
-	  (cond ((not source-pn)
-		 (error "No source file corresponding to ~s"
-			pn)))
-	  (setq pn source-pn))))
+	     (cond ((not source-pn)
+		    (error "No source file corresponding to ~s"
+			   pn)))
+	     (setq pn source-pn))))
    (place-Code-file-chunk pn))
 
 (defun place-Code-file-chunk (pn &key kind)
@@ -239,22 +239,13 @@
    false)
 
 (defmethod derive ((lc Loaded-file-chunk))
-   (let ((loaded-ch lc) file-ch)
-      (loop 
-	 (setq file-ch
-	       (Loaded-file-chunk-selection loaded-ch))
-	 (cond ((not file-ch)
-		(loaded-chunk-set-basis loaded-ch)
-		(setq file-ch
-		      (Loaded-file-chunk-selection loaded-ch))))
-	 (cond ((typep file-ch 'Loaded-file-chunk)
-		(setq loaded-ch file-ch)
-		;; Indirection; go around again looking
-		;; for an actual file.
-	        )
-	       (t
-		(return))))
-      (cond ((typep file-ch 'Compiled-file-chunk)
+   (multiple-value-bind (file-ch loaded-ch)
+                        (loaded-file-chunk-current-version lc)
+      (cond ((and (not (eq loaded-ch lc))
+		  (chunk-up-to-date loaded-ch))
+	     ;; Up to date, nothing to do
+	     false)
+	    ((typep file-ch 'Compiled-file-chunk)
 	     (cond ((and (not (eq (Compiled-file-chunk-status file-ch)
 				  ':compile-failed))
 			 (probe-file
@@ -278,9 +269,24 @@
 	     (error "Can't extract file to load from ~s"
 		    lc)))))
 
-;;;;      (dbg-save lc file-ch)
-;;;;      (breakpoint file-chunk-load
-;;;;	 "About to load " lc)))
+;;; Follow 'alt-version' links to Loaded-file-chunk 
+;;;   and the contents of its 'selection' field
+;;; Returns both of them (selection first).
+(defun loaded-file-chunk-current-version (lf-ch)
+   (let (file-ch)
+      (loop 
+	 (setq file-ch
+	       (Loaded-file-chunk-selection lf-ch))
+	 (cond ((not file-ch)
+		(loaded-chunk-set-basis lf-ch)
+		(setq file-ch
+		      (Loaded-file-chunk-selection lf-ch))))
+	 (cond ((typep file-ch 'Loaded-file-chunk)
+		(setq lf-ch file-ch))
+		       ;; -- Indirection; go around again looking
+		       ;; for an actual file.
+	       (t
+		(return (values file-ch lf-ch)))))))
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
@@ -400,6 +406,9 @@
 				     file-ch)
 				 (Code-file-chunk-pathname file-ch)
 				 "...")
+;;;;	       (dbg-save file-ch)
+;;;;	       (breakpoint file-chunk-load
+;;;;		  "Ready to load " file-ch)
 	       (unwind-protect
 		  (handler-bind ((error
 				    (\\ (e)
@@ -440,6 +449,7 @@
 (defmethod loaded-chunk-set-basis ((loaded-ch Loaded-file-chunk))
    (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
 	  (manip (Loaded-file-chunk-manip loaded-ch))
+	  (alt-chunk (Code-file-chunk-alt-version file-ch))
 	  (source-exists (Loaded-file-chunk-source loaded-ch))
 	  (obj-file-chunk (Loaded-file-chunk-object loaded-ch))
 	  (object-exists
@@ -448,14 +458,15 @@
       (cond (loaded-manip-dbg*
 	     (format t !"Setting loaded chunk basis, ~
                          manip initially = ~s~%" manip)))
-      (cond ((not (or source-exists object-exists))
+      (cond ((not (or source-exists object-exists alt-chunk))
 	     (error "No source or object file can be found for ~s"
 		    loaded-ch)))
-      (cond ((Code-file-chunk-alt-version file-ch)
+      (cond (alt-chunk
 	     (setf (Chunk-basis loaded-ch)
-		   (list (place-Loaded-file-chunk
-			    (Code-file-chunk-alt-version file-ch)
-			    ':nochoice))))
+		   (setf (Loaded-chunk-principal-bases loaded-ch)
+			 (list (place-Loaded-file-chunk
+				  (Code-file-chunk-alt-version file-ch)
+				  false)))))
 	    ((not source-exists)
 	     (setq manip ':object))
 	    (t
@@ -492,6 +503,15 @@
                                 [should be :object, :source, or :compile]~
                                 ~%  loaded-ch = ~s~%"
 			    manip loaded-ch)))
+	     (setf (Loaded-chunk-principal-bases loaded-ch)
+		   (list (ecase manip
+			    (:source
+			     (Loaded-file-chunk-source loaded-ch))
+			    (:compile
+			     (place-compiled-chunk
+				(Loaded-file-chunk-source loaded-ch)))
+			    (:object
+			     (Loaded-file-chunk-object loaded-ch)))))
 	     (cond ((loaded-chunk-bases-in-harmony loaded-ch)
 		    (loaded-chunk-change-basis
 			loaded-ch 
@@ -499,15 +519,6 @@
 				   (place-Loaded-chunk callee false))
 				(Code-chunk-callees file-ch))))
 		   (t
-		    (setf (Loaded-chunk-principal-bases loaded-ch)
-			  (list (ecase manip
-				   (:source
-				    (Loaded-file-chunk-source loaded-ch))
-				   (:compile
-				    (place-compiled-chunk
-				       (Loaded-file-chunk-source loaded-ch)))
-				   (:object
-				    (Loaded-file-chunk-object loaded-ch)))))
 		    (setf (Chunk-basis loaded-ch)
 			  (append (Loaded-chunk-principal-bases loaded-ch)
 				  (mapcar
@@ -720,27 +731,6 @@
 (eval-when (:compile-toplevel :load-toplevel)
 
 (defvar loaded-filoids-to-be-monitored* ':global)
-
-(defun monitor-filoid-basis (loaded-filoid-ch)
-   (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
-	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
-		 loaded-filoid-ch)))
-   (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
-		(loaded-filoids-to-be-monitored* !()))
-	     (loop
-	        (dolist (loadable-ch controllers)
-		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false false)
-	        (cond ((null loaded-filoids-to-be-monitored*)
-		       (return))
-		      (t
-		       (setq controllers 
-			     (mapcar #'Loaded-chunk-controller
-				     loaded-filoids-to-be-monitored*))
-		       (setq loaded-filoids-to-be-monitored* !()))))))
-	 (t
-	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 
 (defvar sub-file-types* !())
 

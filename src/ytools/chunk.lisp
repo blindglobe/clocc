@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.34 2005/03/25 14:37:59 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.35 2005/03/26 14:30:05 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -478,8 +478,8 @@
 		      !"Incrementing chunk-event-num* to ~s in ~
                         derivee-cycle-check~%"
 		      chunk-event-num*)
-		   (setq bad-ch* ch)
-		   (break "Cycle check for ~s" ch)
+;;;;		   (setq bad-ch* ch)
+;;;;		   (break "Cycle check for ~s" ch)
 		   ))
 	    (labels ((pursue (trail)
 		        (let ((derivee (first trail)))

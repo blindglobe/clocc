@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.21 2005/03/24 12:58:53 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.22 2005/03/26 14:30:05 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -56,10 +56,12 @@
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
-	  (let* ((loaded-ch (Loadable-chunk-controllee fb))
-		 (file-ch (Loaded-chunk-loadee loaded-ch))
-;;;;		 (comp-ch (place-compiled-chunk file-ch))
-		 )
+	  (multiple-value-bind (file-ch loaded-ch)
+	                       (loaded-file-chunk-current-version
+				   (Loadable-chunk-controllee fb))
+	                       (declare (ignore loaded-ch))
+	     (cond ((typep file-ch 'Compiled-file-chunk)
+		    (setq file-ch (Compiled-file-chunk-source-file file-ch))))
 	     (setf (Code-chunk-callees file-ch) !())
 ;;;;	     (setf (File-chunk-self-compile-dep file-ch)
 ;;;;		   false)
@@ -132,6 +134,7 @@
 	     :controllee loaded-ch))))
 
 (defvar depends-on-enabled* true)
+(defvar depends-on-loads-files* false)
 
 (defun cl-user::depends-on-disable () (setq depends-on-enabled* false))
 
@@ -163,7 +166,8 @@
 	     ,@(mapcan (\\ (pn) (list-copy (pathname-expansion pn)))
 		       run-time-deps)
 	     ,@(include-if (not (null run-time-deps))
-		  `(cond (depends-on-enabled*
+		  `(cond ((and depends-on-enabled*
+			       depends-on-loads-files*)
 			  ,@(mapcar (\\ (pn)
 				       `(filoid-fload
 				           ',pn

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.3 2005/03/24 12:58:58 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.4 2005/03/26 14:30:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -207,6 +207,19 @@ funktion
       (let ((d (Chunk-date loaded-chunk)))
 ;;;;	 (format t "Updating ~s~%"
 ;;;;		 loaded-chunk)
+	 (cond ((eq force-load ':compile)
+		(let ((src-file-chunk
+		         (Loaded-file-chunk-source loaded-chunk)))
+		   (cond (src-file-chunk
+			  (filoid-fcompl
+			     (Code-file-chunk-pathname src-file-chunk)
+			     :force-compile true
+			     :load false
+			     :postpone-derivees postpone-derivees))
+			 (t
+			  (format *error-output*
+			     "Ignoring request to compile ~s;~% there is no source file"
+			     loaded-chunk))))))
 	 (file-ops-maybe-postpone
 	    (chunk-update loaded-chunk false postpone-derivees))
 	 (cond ((and force-load
@@ -530,6 +543,27 @@ funktion
 			  (chunk-derive-and-record compiled-chunk)))
 		   (consider-loading)))))))
 
+(defun monitor-filoid-basis (loaded-filoid-ch)
+   (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
+	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
+		 loaded-filoid-ch)))
+   (cond ((eq loaded-filoids-to-be-monitored* ':global)
+	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
+		(loaded-filoids-to-be-monitored* !()))
+	     (loop
+	        (dolist (loadable-ch controllers)
+		   (chunk-request-mgt loadable-ch))
+	        (chunks-update controllers false false)
+	        (cond ((null loaded-filoids-to-be-monitored*)
+		       (return))
+		      (t
+		       (setq controllers 
+			     (mapcar #'Loaded-chunk-controller
+				     loaded-filoids-to-be-monitored*))
+		       (setq loaded-filoids-to-be-monitored* !()))))))
+	 (t
+	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
+
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve
 		   (make-Pathname :host (Pathname-host src-pn)
@@ -645,16 +679,17 @@ funktion
 	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
 	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
 	     ((null oldl))
-	    (let ((fc (place-Code-file-chunk (car oldl))))
-	       (setf (Code-file-chunk-alt-version fc)
-		     (place-Code-file-chunk (car newl)))
-	       (on-list fc changing-chunks)))
+	    (let ((old-cfc (pathname-denotation-chunk (car oldl)))
+		  (new-cfc (pathname-denotation-chunk (car newl))))
+	       (setf (Code-file-chunk-alt-version old-cfc)
+		     new-cfc)
+	       (on-list old-cfc changing-chunks)))
 	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
 	     ((null oldl))
-	    (let ((fc (place-Code-file-chunk (car oldl))))
-	       (setf (Code-file-chunk-alt-version fc)
+	    (let ((rfc (pathname-denotation-chunk (car oldl))))
+	       (setf (Code-file-chunk-alt-version rfc)
 		     false)
-	       (on-list fc changing-chunks)))
+	       (on-list rfc changing-chunks)))
 	 (chunks-update changing-chunks false false)
 	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 

@@ -126,8 +126,8 @@
 (my-assert
  (ecase 'otherwise
    (otherwise 4))
- error
- "No otherwise clause is allowed in an ecase!")
+ 4
+ "This is bad style, but perfectly legal!!")
 
 ;; Issue MACRO-FUNCTION-ENVIRONMENT:YES
 (my-assert

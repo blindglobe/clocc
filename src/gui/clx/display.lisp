@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.3 2002/08/06 07:59:38 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.4 2002/08/29 07:34:00 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -139,8 +139,10 @@ returns best-name and best-data it could find"
             ;; what are we looking for?
 	    (let* ((host-family (ecase protocol
 				  ((:tcp :internet nil) 0)
+                                  ;; the remaining protocol are legacy and not supported
 				  ((:dna :DECnet) 1)
 				  ((:chaos) 2)
+                                  ;; except unix of course
 				  ((:unix) 256)))
                    ;; the unix protocol is always the correct host: the localhost!
 		   (host-address (unless (eq protocol :unix)
@@ -152,15 +154,21 @@ returns best-name and best-data it could find"
 	      (loop
 	       (let ((family (read-short stream nil)))
 		 (when (null family)
-		   (return))
+                   ;; nothing usefull found
+		   (return (values "" "")))
 		 (let* ((address (read-short-length-vector stream))
 			(number (parse-integer (read-short-length-string stream)))
 			(name (read-short-length-string stream))
 			(data (read-short-length-vector stream)))
 		   (when (and (= family host-family)
+                              ;; it is the family we were looking for
+                              ;; is it also the host?
                               (or (= family 256)
+                                  ;; unix: alway correct host...
                                   (equal host-address (coerce address 'list)))
+                              ;; is is the correct display?
 			      (= number display)
+                              ;; do we know this authorization?
 			      (let ((pos1 (position name *known-authorizations* :test #'string=)))
 				(and pos1
 				     (or (null best-name)

@@ -22,8 +22,9 @@
              (equalp
               (pathname-host
                (funcall (intern "COMPONENT-SOURCE-ROOT-DIR" :MK)
-                (funcall (intern "FIND-SYSTEM MODULE-NAME" :MK)
-                         :load-or-nil)))
+                        (funcall (intern "FIND-SYSTEM" :MK)
+                                 module-name
+                                 :load-or-nil)))
               ;; the clc root:
               (pathname-host
                (pathname
@@ -38,6 +39,20 @@
                :load-source-if-no-binary nil
                :bother-user-if-no-binary nil
                :compile-during-load nil)
+       ;; if not: try to compile it
+       (progn
+         (common-lisp-controller:send-clc-command "compile"
+                                                  (if (stringp module-name)
+                                                      module-name
+                                                      (format nil "~A"
+                                                              module-name)))
+         (funcall (intern "OOS" :MK)
+                module-name
+               :load
+               :load-source-instead-of-binary nil
+               :load-source-if-no-binary nil
+               :bother-user-if-no-binary nil
+               :compile-during-load nil))
        ;; otherwise fail with a meaningful message:
        (error "I could not load the common-lisp-controller package ~A, please report a bug to the debian BTS"
               module-name))

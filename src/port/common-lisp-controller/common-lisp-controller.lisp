@@ -4,10 +4,11 @@
 
 (defpackage "COMMON-LISP-CONTROLLER"
     (:use "COMMON-LISP")
-  (:export "INIT-COMMON-LISP-CONTROLLER"
-           "ADD-PROJECT-DIRECTORY"
-  	   "ADD-TRANSLATION")
-  (:nicknames "C-L-C"))
+    (:export "INIT-COMMON-LISP-CONTROLLER"
+             "ADD-PROJECT-DIRECTORY"
+             "ADD-TRANSLATION"
+             "SEND-CLC-COMMAND")
+    (:nicknames "C-L-C"))
 
 (in-package :common-lisp-controller)
 
@@ -36,7 +37,7 @@ root that should be added.
 For example
  (add-translation :cl-library \"/home/pvaneynd/junk-pile/\"
                   (make-pathname :directory '(:RELATIVE \"HEMLOCK\" :wild-inferiors)
-                                 :type *fasl-type*
+                             :type *fasl-type*
                                  :case :common))
 should add a translation (in CMUCL) that
 cl-library:;hemlock;**;*.x86f.* -> /home/pvaneynd/junk-pile/hemlock/**/*.x86f
@@ -102,10 +103,16 @@ This function returns nothing."
 
 
 (defun init-common-lisp-controller (fasl-root
-                                    &key (source-root "/usr/share/common-lisp/"))
+                                    &key
+                                    (source-root "/usr/share/common-lisp/")
+                                    (version 2))
   "configures FASL-ROOT as the base of the fasl tree and optionally
 SOURCE-ROOT as the root of the source tree.
 NOTE: NUKES the cl-library and cl-systems LOGICAL PATHNAMES
+
+The version argument selects which behaviour the implementation requires:
+if (>= version 3): load defsystem and patch require.
+                   implementation needs to do nothing else.
 
 Returns nothing"
   ;; force both parameters to directories...
@@ -158,7 +165,7 @@ Returns nothing"
     ;; now cl-systems:
     ;; by default everything is in the fasl tree...
     (setf (logical-pathname-translations "CL-SYSTEMS")
-          (list
+         (list
            (list (make-pathname :directory '(:relative :wild-inferiors)
                                 :host (pathname-host (logical-pathname "CL-SYSTEMS:"))
                                 :type "SYSTEM"
@@ -183,6 +190,31 @@ Returns nothing"
                                 :type "SYSTEM"
                                 :case :common
                                 :defaults system-root))))
+    (when (>= version 3)
+      (flet ((compile-and-load (file)
+               ;; first make the target directory:
+               (ensure-directories-exist 
+                (make-pathname 
+                 :directory
+                 (pathname-directory    
+                  (translate-logical-pathname 
+                   (compile-file-pathname file)))))
+               ;; now compile it:
+               (compile-file file
+                             :print nil
+                             :verbose nil)
+               ;; then load it:
+               (load (compile-file-pathname file))))
+        ;; first ourselves:
+        (compile-and-load  "cl-library:;common-lisp-controller;common-lisp-controller.lisp")
+        ;; then defsystem:
+        (compile-and-load  "cl-library:;defsystem;defsystem.lisp")
+        ;; then the patches:
+        (compile-and-load  "cl-library:;common-lisp-controller;common-lisp-controller-post-defsystem.lisp")
+        ;; register ourselves:
+        (push "cl-systems:"
+              (symbol-value (intern "*CENTRAL-REGISTRY*"
+                                    (find-package :make))))))
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)

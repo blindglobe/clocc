@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.8 2000/08/21 22:17:18 sds Exp $
+;;; $Id: date.lisp,v 2.9 2000/11/15 16:59:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -499,7 +499,7 @@ I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date date) (type days-t skip))
   (tomorrow date (days-to-next-working-day date skip)))
 
-(defsubst previous-working-day (&optional (date (today)) (skip -1))
+(defsubst previous-working-day (&optional (date (today)) (skip 1))
   "Return the previous working day, ignoring holidays."
   (declare (type date date) (type days-t skip))
   (tomorrow date (days-to-next-working-day date (- skip))))

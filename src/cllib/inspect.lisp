@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.6 2000/03/17 23:04:10 sds Exp $
+;;; $Id: inspect.lisp,v 1.7 2000/03/21 22:32:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,6 +32,7 @@
 ;;;
 
 (defvar *inspect-frontend* :tty) ; the default frontend
+(defvar *inspect-browser* :netscape) ; the default browser
 (defvar *inspect-print-lines* 5) ; default for `*print-lines*'
 (defvar *inspect-print-level* 5) ; default for `*print-level*'
 (defvar *inspect-print-length* 10) ; default for `*print-length*'
@@ -46,15 +47,29 @@
 ;;;
 
 (defstruct (inspection (:conc-name insp-))
-  self
-  (id (fill-pointer *inspect-all*) :type fixnum)
-  (title "" :type string)
-  (blurb nil :type list)
-  (up nil :type (or null inspection))
-  (num-slots 0 :type fixnum)
+  self                          ; the object being inspected
+  (id (fill-pointer *inspect-all*) :type fixnum) ; unique in a session
+  (title "" :type string)       ; the short description of the object
+  (blurb nil :type list)        ; list of strings with general information
+  (up nil :type (or null inspection)) ; parent
+  (num-slots 0 :type fixnum)    ; the number of slots
   (pos nil :type (or null fixnum)) ; pos in parent
   (nth-slot nil :type (or null (function (integer) (t t)))) ; value & name
-  (set-slot nil :type (or null (function (integer t) t))))
+  (set-slot nil :type (or null (function (integer t) t)))) ; set Nth slot
+
+(defun insp-check (insp)
+  ;; this should always be okay
+  (let ((up (insp-up insp)) (pos (insp-pos insp)) (id (insp-id insp)))
+    (assert (eq insp (aref *inspect-all* id)) (insp)
+            "~s: ~s is corrupted (~d->~d):~%~s~%~s~%"
+            'get-insp '*inspect-all* id (insp-id (aref *inspect-all* id))
+            insp (aref *inspect-all* id))
+    (when up
+      (assert (< -1 pos (insp-num-slots up)) (insp)
+              "~s: pos out of range: ~d ~d" 'insp-check pos
+              (insp-num-slots up))
+      (assert (eq (funcall (insp-nth-slot up) pos) (insp-self insp)) (insp)
+              "~s: wrong pos [~d]:~%~s~%~s" 'insp-check pos insp up))))
 
 (defun insp-last-slot (insp)
   (1- (insp-num-slots insp)))
@@ -209,15 +224,11 @@
   (let ((insp (etypecase id-or-insp
                 (inspection id-or-insp)
                 (fixnum (aref *inspect-all* id-or-insp)))))
-    (unless (eq insp (aref *inspect-all* (insp-id insp)))
-      (error "~s: ~s is corrupted (~d->~d):~%~s~%~s~%"
-             'get-insp '*inspect-all* (insp-id insp)
-             (insp-id (aref *inspect-all* (insp-id insp))) insp
-             (aref *inspect-all* (insp-id insp))))
+    (insp-check insp)
     (when insp
       (case com
         (:q :q)
-        (:s ;; re-inspect Self
+        (:s                     ; re-inspect Self
          (inspect-backend (insp-self insp) :up (insp-up insp)
                           :pos (insp-pos insp) :id (insp-id insp)))
         (:u (insp-up insp))
@@ -232,6 +243,7 @@
 ;;;
 ;;; To define a frontend, one has to define methods for
 ;;;  `print-inspection' and `inspect-frontend'
+;;;
 
 (defgeneric print-inspection (insp out frontend)
   (:method ((insp inspection) (out stream) (frontend t))
@@ -246,6 +258,9 @@
     (setf (fill-pointer *inspect-all*) 0)))
 
 (defun inspect-read-clean-eval (insp stream)
+  ;; `read' a form, destructively replace `:self' with INSP and `:slot'
+  ;; with the appropriate `funcall', then `eval'
+  ;; this is useful for frontends which provide an eval/modify facility
   (labels ((clean (form)
              (cond ((eq (car form) :self)
                     (setf (car form) (list 'quote (insp-self insp)))
@@ -380,7 +395,8 @@
   (do ((server (let ((server (open-socket-server 17356)))
                  (browse-url (format nil "http://~a:~d/0/:s"
                                      (socket-server-host server)
-                                     (socket-server-port server)))
+                                     (socket-server-port server))
+                             :browser *inspect-browser*)
                  server))
        sock id com)
       ((eq com :q) (socket-server-close server))
@@ -406,14 +422,16 @@
 ;;;
 
 ;;;###autoload
-(defun inspect (object &key (frontend *inspect-frontend*))
+(defun inspect (object &key (frontend *inspect-frontend*)
+                (browser *inspect-browser*))
   (let ((*print-array* nil) (*print-pretty* t)
         (*print-circle* t) (*print-escape* t)
         #-clisp (*print-lines* *inspect-print-lines*)
         (*print-level* *inspect-print-level*)
         (*print-length* *inspect-print-length*)
         (*package* (make-package (gensym "INSPECT-TNP-PACKAGE-"))) ; for `read'
-        (*inspect-frontend* frontend))
+        (*inspect-frontend* frontend)
+        (*inspect-browser* browser))
     (unwind-protect
          (inspect-frontend (inspect-backend object) frontend)
       (inspect-finalize frontend)

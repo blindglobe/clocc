@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.11 2000/04/10 18:48:10 sds Exp $
+;;; $Id: sys.lisp,v 1.12 2000/04/19 16:34:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -47,7 +47,7 @@
   #+clisp (sys::special-variable-p symbol)
   #+cmu (walker:variable-globally-special-p symbol)
   #+gcl (si:specialp symbol)
-  #+lispworks (walker:variable-special-p symbol nil)
+  #+lispworks (eq :special (hcl:variable-information symbol))
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
 
@@ -73,24 +73,27 @@ or an instance of a class.
 If the second optional argument ALL is non-NIL (default),
 all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
-  #-(or allegro clisp cmu lispworks)
+  #-(or allegro clisp cmu cormanlisp lispworks)
   (error 'not-implemented :proc 'class-slot-list)
-  #+(or allegro clisp cmu lispworks)
+  #+(or allegro clisp cmu cormanlisp lispworks)
   (macrolet ((class-slots* (class)
-               `(#+allegro clos:class-slots
-                 #+clisp clos::class-slots
-                 #+cmu pcl::class-slots
-                 #+lispworks hcl::class-slots ,class))
+               #+allegro `(clos:class-slots ,class)
+               #+clisp `(clos::class-slots ,class)
+               #+cmu `(pcl::class-slots ,class)
+               #+cormanlisp `(cl:class-slots ,class)
+               #+lispworks `(hcl::class-slots ,class))
              (slot-name (slot)
                #+allegro `(slot-value ,slot 'clos::name)
                #+clisp `(clos::slotdef-name ,slot)
                #+cmu `(slot-value ,slot 'pcl::name)
+               #+cormanlisp `(getf ,slot :name)
                #+lispworks `(hcl::slot-definition-name ,slot))
              (slot-alloc (slot)
-               `(#+allegro clos::slotd-allocation
-                 #+clisp clos::slotdef-allocation
-                 #+cmu pcl::slot-definition-allocation
-                 #+lispworks hcl::slot-definition-allocation ,slot)))
+               #+allegro `(clos::slotd-allocation ,slot)
+               #+clisp `(clos::slotdef-allocation ,slot)
+               #+cmu `(pcl::slot-definition-allocation ,slot)
+               #+cormanlisp `(getf ,slot :allocation)
+               #+lispworks `(hcl::slot-definition-allocation ,slot)))
     (mapcan (if all (compose list slot-name)
                 (lambda (slot)
                   (when (eq (slot-alloc slot) :instance)
@@ -127,18 +130,20 @@ all slots are returned, otherwise only the slots with
   #+allegro (excl:current-directory)
   #+clisp (lisp:default-directory)
   #+cmucl (ext:default-directory)
+  #+cormanlisp (ccl:get-current-directory)
   #+lispworks (hcl:get-working-directory)
-  #+lucid (working-directory)
-  #-(or allegro clisp cmucl lispworks lucid) (truename "."))
+  #+lucid (lcl:working-directory)
+  #-(or allegro clisp cmucl cormanlisp lispworks lucid) (truename "."))
 
 (defun chdir (dir)
   #+allegro (excl:chdir dir)
   #+clisp (lisp:cd dir)
   #+cmu (setf (ext:default-directory) dir)
+  #+cormanlisp (ccl:set-current-directory dir)
   #+gcl (si:chdir dir)
   #+lispworks (hcl:change-directory dir)
-  #+lucid (working-directory dir)
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #+lucid (lcl:working-directory dir)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
   (error 'not-implemented :proc (list 'chdir dir)))
 
 (defsetf default-directory chdir "Change the current directory.")

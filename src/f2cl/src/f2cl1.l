@@ -105,8 +105,8 @@ INPUT-FILE               File containing Fortran code
 "
 
 
-  (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
-  (format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
+  ;;(format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
+  ;;(format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
 
   ;; Check (some) parameters for validity
   (assert (or (null coerce-assigns)
@@ -1956,8 +1956,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.78 2002/01/05 18:30:35 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.79 2002/01/05 19:01:21 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.79  2002/01/05 19:01:21  rtoy
+;;; Don't print out the copyright messages when running f2cl.
+;;;
 ;;; Revision 1.78  2002/01/05 18:30:35  rtoy
 ;;; o Clisp's pretty-printer seems to work well enough now, so use it.
 ;;; o Use with-standard-io-syntax in SPECIAL-PRINT when printing out the

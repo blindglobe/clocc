@@ -36,6 +36,70 @@
 (defvar *comment-line-characters* '(#\c #\C #\* #\!)
   "A list of Fortran comment line characters")
 
+;; Find the next quote
+(defun find-quote (k line out)
+  ;; LINE is the line we're looking at.  K is where the initial
+  ;; single-quote character is.  OUT is an output string stream where
+  ;; we copy the characters inside the quote.
+  ;;
+  ;; Return the position of the character after the matching end quote.
+  ;;
+  ;; We need to be smarter here and handle Fortran's quoting mechanism
+  ;; for embedding quotes inside quoted strings.
+  (let ((len (length line)))
+    (incf k)
+    (loop while (and (not (char-equal (aref line k) #\'))
+		     (< k len)) do
+		     (write-char (aref line k) out)
+		     (incf k))
+    (write-char (aref line k) out)
+    (1+ k)))
+
+(defun process-format-line (line)
+  ;; We have a Fortran format line.  Go through and convert all
+  ;; Hollerith strings to regular strings.  Hollerith strings look
+  ;; like a number followed by H (or h).  Skip over any strings that
+  ;; might be there.
+  (let ((k 0)
+	(line-len (length line))
+	(out (make-string-output-stream)))
+    (loop
+	;; Done if there's no data left!
+	(when (>= k line-len)
+	  (return (get-output-stream-string out)))
+	(let ((ch (aref line k)))
+	  (cond ((char-equal ch #\')
+		 ;; Find the next quote
+		 (write-char ch out)
+		 (setf k (find-quote k line out)))
+		((digit-char-p ch)
+		 ;; Got a digit.  Look for the next non-digit.
+		 (let ((posn (1+ k)))
+		   (loop while (digit-char-p (aref line posn)) do
+			 (incf posn))
+		   (if (char-equal (aref line posn) #\H)
+
+		       ;; A Hollerith!  Compute the length of the
+		       ;; Hollerith string and where the number ends.
+		       
+		       (multiple-value-bind (len stop)
+			   (parse-integer line :start k :junk-allowed t)
+			 ;; Copy this many characters to the output
+			 (incf posn)
+			 (write-char #\" out)
+			 (dotimes (n len)
+			   (write-char (aref line posn) out)
+			   (incf posn))
+			 (write-char #\" out)
+			 (setf k posn))
+		       ;; Not a hollerith.  Copy the digits out
+		       (loop while (< k posn) do
+			     (write-char (aref line k) out)
+			     (incf k)))))
+		(t
+		 (write-char ch out)
+		 (incf k)))))))
+  
 (defun preprocess (file &key (outfile-name "prep.tmp"))
   (when *verbose*
     (format t "~&preprocessing begins ...~%"))
@@ -56,7 +120,7 @@
 	  ;; the end of the line.  Consider what happens we are trying
 	  ;; to continue a string with trailing spaces.  The resulting
 	  ;; string is wrong.
-	  (let ((line (string-right-trim '(#\Space) line)))
+	  (let ((line (string-right-trim '(#\Space) (subseq line 0 (min 72 (length line))))))
 	    (cond 
 	      ((string= line "") nil)	; we leave out blank lines
 	      ((member (char line 0) *comment-line-characters*)
@@ -85,7 +149,14 @@
 		      ;; any, and save this line for later.
 		      (when prev-line
 			;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
-			(write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+			;; (format t "prev-line = ~S~%" prev-line)
+
+			;; Handle FORMAT statements carefully.  If we
+			;; have a format statement, to replace any
+			;; Hollerith strings in it with real strings.
+			(if (string-equal prev-line "format" :start1 6 :end1 (min (+ 6 6) (length prev-line)))
+			    (write-line (process-format-line prev-line) outport)
+			    (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))
 		      (setf prev-line (copy-seq line))
 		      ;; Print out the collected comments, if any
 		      (when collected-comments
@@ -109,6 +180,7 @@
 					       ""
 					       " ")
 					   new-line)))))))))))))
+
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
@@ -491,8 +563,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.23 2001/09/08 21:41:37 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.24 2001/09/09 04:34:07 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.24  2001/09/09 04:34:07  rtoy
+;;; An attempt at handling Fortran Hollerith strings in FORMAT
+;;; statements.  During preprocessing, look for a FORMAT statement and
+;;; replace any Hollerith strings with real quoted strings.  (Can't do
+;;; this for Hollerith in code because we don't have a real Fortran
+;;; parser.)
+;;;
+;;; (FIND-QUOTE needs work to get Fortran string quoting correct.)
+;;;
 ;;; Revision 1.23  2001/09/08 21:41:37  rtoy
 ;;; parse-number was mangling
 ;;;

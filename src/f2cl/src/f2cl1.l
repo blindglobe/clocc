@@ -14,7 +14,7 @@
 (in-package :f2cl)
 (defvar *verbose* nil)
 (defvar *comments* nil)
-(defvar *f2cl-version* "2.0 beta")
+(defparameter *f2cl-version* "2.0 beta 2002-05-06")
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -446,11 +446,8 @@ FILENAME                 File containing Fortran code
 	    ;; Print a header to the file indicating when this was
 	    ;; compiled and the version of f2cl used to compile it.
 	    ;; Include the options used to compile the file.
-	    (multiple-value-bind (second minute hour date month year)
-		(decode-universal-time (get-universal-time))
-	      (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
-		      *f2cl-version*
-		      year month date hour minute second))
+	    (format outport ";;; Compiled by f2cl version ~A~%"
+		    *f2cl-version*)
 	    (let ((*print-case* :downcase)))
 	      ;; Insert in-package and declaim, if needed
 	      (when options
@@ -2417,8 +2414,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.113 2002/05/06 18:05:15 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.114 2002/05/07 03:06:17 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.114  2002/05/07 03:06:17  rtoy
+;;; o Include a date on the version string.
+;;; o Don't print out the date in the generated file.
+;;;
 ;;; Revision 1.113  2002/05/06 18:05:15  rtoy
 ;;; o We need to have d1mach and i1mach as known functions, so initialize
 ;;;   and clear the hash table appropriately.

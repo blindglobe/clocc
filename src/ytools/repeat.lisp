@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 1.5 2004/06/16 17:36:18 airfoyle Exp $
+;;;$Id: repeat.lisp,v 1.6 2004/06/24 14:13:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -14,7 +14,7 @@
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(repeat forall exists 
 	     one-collect list-collect empty-Collector Collector-elements
-	     collector-clear)))
+	     collector-clear keyword-args->alist)))
 
 (defmacro forall (&rest stuff)
    (multiple-value-let (vars lists body) (for-analyze stuff)

@@ -14,11 +14,11 @@ The inspiration for this work is in the Sonya Keene's book on CLOS.
 The system has been tested on
 
     CMUCL 18c
-    Allegro CL Lite 5.01, ACL Enterprise 6.0, 6.1 Windows
-    Lispworks Personal Edition 4.1 Windows
+    Allegro CL Lite 5.01, ACL Enterprise 6.x Windows
+    Lispworks Personal Edition 4.2.x Windows and Linux and 4.3 Mac OS X
 
 Please see the files INSTALLATION and COPYING for more information.
 The package is currently released under the LGPL and all the files
 should be considered to include such Copyright notice.
 
-2002-02-19 Marco Antoniotti
+2004-01-21 Marco Antoniotti

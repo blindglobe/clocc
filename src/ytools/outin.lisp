@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.8 2004/10/03 15:32:08 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.9 2004/10/07 04:19:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -45,17 +45,25 @@
 ;; Out-streams
 (defvar out-streams* '())
 
+(defvar out-stream-cleanup* #+openmcl false #-openmcl true)
+
 (defun stream-outify (srm)
    (cond ((Out-stream-p srm)
 	  srm)
 	 ((is-Stream srm)
-	  (cond ((some #'(lambda (p) (not (open-stream-p (car p))))
-		       out-streams*)
-		 ;; clean up table
-		 (setq out-streams*
-		       (delete-if #'(lambda (p)
-				       (not (open-stream-p (car p))))
-				  out-streams*))))
+	  #+openmcl
+	  (cond ((typep srm 'ccl::xp-stream)
+		 (dbg-save srm)
+		 (breakpoint stream-outify
+		    "Got odd stream: " srm)))
+	  (cond (out-stream-cleanup*
+		 (cond ((some #'(lambda (p) (not (open-stream-p (car p))))
+			      out-streams*)
+			;; clean up table
+			(setq out-streams*
+			      (delete-if #'(lambda (p)
+					      (not (open-stream-p (car p))))
+					 out-streams*))))))
 	  (let ((p (assq srm out-streams*)))
 	     (cond (p (cadr p))
 		   (t
@@ -289,8 +297,8 @@
    (multiple-value-bind (prefix cmd suffix)
                         (pp-block-analyze cmd)
 	 (let (
-	       (pp-srmvar (gensym))
-	       (outified-pp-srmvar (gensym))
+;;;;	       (pp-srmvar (gensym))
+;;;;	       (outified-pp-srmvar (gensym))
 ;;;;	       (srmvar (gensym))
 ;;;;	       (realsrmvar default-out-stream-var*)  ;;;;(gensym)
               )

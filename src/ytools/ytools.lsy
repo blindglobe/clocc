@@ -157,6 +157,8 @@
 
 (setq *features* (adjoin ':ytools *features*))
 
+(shadowing-import 'ytools :cl-user)
+
 (defun in-ytools ()
    (setq *readtable* ytools-readtable*)
    (in-package :ytools))

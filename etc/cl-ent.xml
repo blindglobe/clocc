@@ -2,7 +2,7 @@
 
 <!-- *** Entities for docbook/xml, related to Common Lisp *** -->
 <!--
- Copyright (C) 2000-2003 by Sam Steingold
+ Copyright (C) 2000-2004 by Sam Steingold
  This is Free Software, covered by the GNU GPL (v2 or later)
  See http://www.gnu.org/copyleft/gpl.html
  -->
@@ -12,6 +12,7 @@
 <!ENTITY mop "http://www.lisp.org/mop">
 <!ENTITY cl "<ulink url='http://www.lisp.org'><command>Common Lisp</command></ulink>">
 <!ENTITY clos "<command>CLOS</command>">
+<!ENTITY clx "<ulink url='http://www.cliki.net/CLX'><command>CLX</command></ulink>">
 
 <!ENTITY ansi-cl "<citation><link linkend='ansi-cl'>ANSI CL standard</link></citation>">
 <!ENTITY ansi-cl-bib
@@ -113,6 +114,7 @@
 <!ENTITY dos "<ulink url='http://www.freedos.org/'><emphasis role='strong'>DOS</emphasis></ulink>">
 <!ENTITY hurd "<ulink url='http://www.gnu.org/software/hurd/'><emphasis role='strong'>Hurd</emphasis></ulink>">
 <!ENTITY linux "<ulink url='http://www.linux.org/'><emphasis role='strong'>Linux</emphasis></ulink>">
+<!ENTITY mingw "<ulink url='http://www.mingw.org/'><emphasis role='strong'>MinGW</emphasis></ulink>">
 <!ENTITY nextstep "<ulink url='http://www.next.com/'><emphasis role='strong'>NeXTstep</emphasis></ulink>">
 <!ENTITY os2 "<ulink url='http://www.os2.org/'><emphasis role='strong'>OS/2</emphasis></ulink>">
 <!ENTITY unicode "<ulink url='http://www.unicode.org/'><emphasis role='strong'>UNICODE</emphasis></ulink>">
@@ -120,26 +122,37 @@
 
 <!-- *** etc *** -->
 <!ENTITY http "<ulink url='http://www.w3.org/Protocols/'><command>HTTP</command></ulink>">
+<!ENTITY gcc "<ulink url='http://gcc.gnu.org/'><command>gcc</command></ulink>">
+<!ENTITY gdb "<ulink url='http://sources.redhat.com/gdb/'><command>gdb</command></ulink>">
+<!ENTITY apache "<ulink url='http://www.apache.org/'>Apache</ulink>">
+<!ENTITY gzip "<ulink url='http://www.gzip.org/'><command>gzip</command></ulink>">
 
 <!-- *** CLHS - Common Lisp HyperSpec *** -->
 
 <!-- *** misc *** -->
 <!ENTITY lambda-expr "<ulink url='&clhs;/Body/glo_l.html#lambda_expression'>lambda expression</ulink>">
 <!ENTITY repl "<ulink url='&clhs;/Body/sec_25-1-1.html'>read-eval-print loop</ulink>">
-<!ENTITY iter-forms "<ulink url='&clhs;/Body/glo_i.html#iteration_form'><quote>iteration forms</quote></ulink>">
+<!ENTITY iter-form "<ulink url='&clhs;/Body/glo_i.html#iteration_form'>iteration form</ulink>">
 <!ENTITY alist "<ulink url='&clhs;/Body/glo_a.html#association_list'>alist</ulink>">
 <!ENTITY type-eq "<ulink url='&clhs;/Body/glo_t.html#type_equivalent'>type equivalent</ulink>">
 <!ENTITY symbol-macro "<ulink url='&clhs;/Body/mac_define-symbol-macro.html'><classname>SYMBOL-MACRO</classname></ulink>">
 <!ENTITY eos "<ulink url='&clhs;/Body/glo_e.html#end_of_file'><literal>end-of-stream</literal></ulink>">
-<!ENTITY in-s "<ulink url='&clhs;/Body/glo_i.html#input'>input</ulink> &stream-t;">
-<!ENTITY out-s "<ulink url='&clhs;/Body/glo_o.html#output'>output</ulink> &stream-t;">
+<!ENTITY input-s "<ulink url='&clhs;/Body/glo_i.html#input'>input</ulink>">
+<!ENTITY in-s "&input-s; &stream-t;">
+<!ENTITY output-s "<ulink url='&clhs;/Body/glo_o.html#output'>output</ulink>">
+<!ENTITY out-s "&output-s; &stream-t;">
 <!ENTITY bidi-s "<ulink url='&clhs;/Body/glo_b.html#bidirectional'>bidirectional</ulink> &stream-t;">
 <!ENTITY fresh "<ulink url='&clhs;/Body/glo_f.html#fresh'>fresh</ulink>">
+<!ENTITY constant "<ulink url='&clhs;/Body/glo_c.html#constant_variable'>constant variable</ulink>">
+<!ENTITY variable "<ulink url='&clhs;/Body/glo_v.html#variable'>variable</ulink>">
+<!ENTITY recog-subt "<ulink url='&clhs;/Body/glo_r.html#recognizable_subtype'>recognizable subtype</ulink>">
+<!ENTITY place "<ulink url='&clhs;/Body/glo_p.html#place'>place</ulink>">
+<!ENTITY mul-val "<ulink url='&clhs;/Body/glo_m.html#multiple_values'>multiple values</ulink>">
 
 <!-- *** packages *** -->
-<!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote>COMMON-LISP</quote></ulink>">
-<!ENTITY clu-pac "<ulink url='&clhs;/Body/sec_11-1-2-2.html'><quote>COMMON-LISP-USER</quote></ulink>">
-<!ENTITY kwd-pac "<ulink url='&clhs;/Body/sec_11-1-2-3.html'><quote>KEYWORD</quote></ulink>">
+<!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote role='package'>COMMON-LISP</quote></ulink>">
+<!ENTITY clu-pac "<ulink url='&clhs;/Body/sec_11-1-2-2.html'><quote role='package'>COMMON-LISP-USER</quote></ulink>">
+<!ENTITY kwd-pac "<ulink url='&clhs;/Body/sec_11-1-2-3.html'><quote role='package'>KEYWORD</quote></ulink>">
 
 
 <!-- *** format instructions *** -->

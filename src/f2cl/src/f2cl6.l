@@ -30,7 +30,12 @@
 ; global stream input for parse-number:
 (defvar *inp* nil)
 ;---------------------------------------------------------------------------
-		 
+
+;; Fortran comment line characters are "c", "C", or "*".  "!" is an
+;; extension.
+(defvar *comment-line-characters* '(#\c #\C #\* #\!)
+  "A list of Fortran comment line characters")
+
 (defun preprocess (file &key (outfile-name "prep.tmp"))
   (when *verbose*
     (format t "~&preprocessing begins ...~%"))
@@ -54,8 +59,7 @@
 	  (let ((line (string-right-trim '(#\Space) line)))
 	    (cond 
 	      ((string= line "") nil)	; we leave out blank lines
-	      ((or (char-equal (char line 0) #\C)
-		   (char-equal (char line 0) #\*))
+	      ((member (char line 0) *comment-line-characters*)
 	       (when *comments*
 		 ;; If we don't have anything buffered, we can print
 		 ;; out the comment now.  Otherwise, we need to save
@@ -470,8 +474,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.21 2000/09/01 14:07:37 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.22 2001/06/04 14:06:03 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.22  2001/06/04 14:06:03  rtoy
+;;; Add *comment-line-characters* to hold a list of valid comment line
+;;; characters.
+;;;
 ;;; Revision 1.21  2000/09/01 14:07:37  rtoy
 ;;; In PARSE-NUMBER, we want to unread CHAR, but, according to the CLHS
 ;;; (and Clisp checks for this), unread-char must push back the last

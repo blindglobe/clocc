@@ -123,7 +123,7 @@
 
 (defun parse-logl-op (inport outport)
    (prog (str nxt-char logl-op)
-      (setq nxt-char (peek-char nil inport nil 'EOF t))
+      (setq nxt-char (peek-char nil inport nil 'EOF))
       (if (or (member nxt-char `(EOF #\space #\' #\.)) 
               (digit-char-p nxt-char))
           (and (write-char '#\. outport)
@@ -131,7 +131,7 @@
       (setq str (make-string-output-stream))
       loop
         (write-char (read-char inport nil 'EOF t) str)
-        (setq nxt-char (peek-char nil inport nil 'EOF t))
+        (setq nxt-char (peek-char nil inport nil 'EOF))
         (if (and (not (eql nxt-char 'EOF)) 
                       (char/= nxt-char `#\.)) (go loop))
       (cond ((setq str (get-output-stream-string str)
@@ -179,7 +179,7 @@
 	   (return nil))
        (setq str (make-string-output-stream))
 					; examine first char and peek at second to ascertain this is a number
-       (setq nxt-char (peek-char nil *inp* nil 'EOF t))
+       (setq nxt-char (peek-char nil *inp* nil 'EOF))
        (cond ((and (my-digit-char-p char) 
 		   (or (and (not (eql nxt-char 'EOF)) 
 			    (my-digit-char-p nxt-char))
@@ -197,7 +197,7 @@
 					; parse rest of number;EOF
        loop
        (setq char (read-char *inp* nil 'EOF t)
-	     nxt-char (peek-char nil *inp* nil 'EOF t))
+	     nxt-char (peek-char nil *inp* nil 'EOF))
        (if (eql nxt-char 'EOF) (setq nxt-char `#\space))
        (cond ((eql char 'EOF) 
 	      (write (get-output-stream-string str) :stream outport :escape nil)

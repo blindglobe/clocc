@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-04-09 Fri 17:44:30 EDT sds@eho.eaglets.com>
+;;; File: <list.lisp - 1999-05-05 Wed 10:53:34 EDT sds@goems.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -7,11 +7,14 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.9 1999/04/09 21:45:06 sds Exp $
+;;; $Id: list.lisp,v 1.10 1999/05/05 20:59:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.10  1999/05/05 20:59:40  sds
+;;; (nsplit-list): use the `case-error' condition.
+;;;
 ;;; Revision 1.9  1999/04/09 21:45:06  sds
 ;;; Replaced `collecting' with `with-collect' (multiple collection).
 ;;;
@@ -94,6 +97,42 @@ from the previous one."
            (not (funcall test k0 (setq k1 (funcall key (second ll))))))
        ll)))
 
+(defmacro with-collect ((&rest collectors) &body forms)
+  "Evaluate forms, collecting objects into lists.
+Within the FORMS, you can use local macros listed among collectors,
+they are returned as multiple values.
+E.g., (with-collect (c1 c2) (dotimes (i 10) (if (oddp i) (c1 i) (c2 i))))
+ ==> (1 3 5 7 9); (0 2 4 6 8) [2 values]
+In CLISP, push/nreverse is about 1.25 times as fast as pushing into the
+tail, so this macro uses push/nreverse on CLISP and push into the tail
+on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
+  #+clisp
+  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-RET-" cc)))
+                     collectors)))
+    `(let (,@ret)
+      (declare (list ,@ret))
+      (macrolet ,(mapcar (lambda (co re) `(,co (form) `(push ,form ,',re)))
+                         collectors ret)
+        ,@forms
+        (values ,@(mapcar (lambda (re) `(sys::list-nreverse ,re)) ret)))))
+  #-clisp
+  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-RET-" cc)))
+                     collectors))
+        (tail (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-TAIL-" cc)))
+                      collectors))
+        (tmp (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-TMP-" cc)))
+                     collectors)))
+    `(let (,@ret ,@tail)
+      (declare (list ,@ret ,@tail))
+      (macrolet ,(mapcar (lambda (co re ta tm)
+                           `(,co (form)
+                             `(let ((,',tm (list ,form)))
+                               (if ,',re (setf (cdr ,',ta) (setf ,',ta ,',tm))
+                                   (setf ,',re (setf ,',ta ,',tm))))))
+                         collectors ret tail tmp)
+        ,@forms
+        (values ,@ret)))))
+
 (defun jumps (seq &key (pred #'eql) (key #'value) args (what :next))
   "Return the list of elements of the sequence SEQ whose KEY differs
 from that of the previous element according to the predicate PRED.
@@ -103,18 +142,17 @@ WHAT can be :BOTH (list of conses of the previous and the next records,
 the jump). Default is :NEXT."
   (declare (sequence seq) (type (function (t t) t) pred)
            (type (function (t) t) key))
-  (let (pkey res prec)
-    (declare (list res))
-    (map nil (lambda (rec)
-               (let ((ckey (funcall key rec)))
-                 (unless (apply pred pkey ckey args)
-                   (push (cond ((eq what :both) (cons prec rec))
-                               ((eq what :prev) prec)
-                               (t rec)) res)
-                   (setq pkey ckey))
-                 (setq prec rec)))
-         seq)
-    (nreverse res)))
+  (with-collect (collect)
+    (let (pkey prec)
+      (map nil (lambda (rec)
+                 (let ((ckey (funcall key rec)))
+                   (unless (apply pred pkey ckey args)
+                     (collect (cond ((eq what :both) (cons prec rec))
+                                    ((eq what :prev) prec)
+                                    (t rec)))
+                     (setq pkey ckey))
+                   (setq prec rec)))
+           seq))))
 
 (defun count-jumps (seq &key (pred #'eql) (key #'value) args)
   "Like `jumps', but only count the jumps.
@@ -142,33 +180,6 @@ The alist is sorted by decreasing frequencies. TEST defaults to `eql'."
                  (cond (fi (incf (cdr fi)) res) ((acons el 1 res)))))
              seq :key key :initial-value nil)
      #'> :key #'cdr)))
-
-(defmacro with-collect ((&rest collectors) &body forms)
-  "Evaluate forms, collecting objects into lists.
-Within the FORMS, you can use local macros listed among collectors,
-they are returned as multiple values.
-E.g., (with-collect (c1 c2) (dotimes (i 10) (if (oddp i) (c1 i) (c2 i))))
- ==> (1 3 5 7 9); (0 2 4 6 8) [2 values]
-In CLISP, push/nreverse is about 1.25 times as fast as pushing into the
-tail, so this macro uses push/nreverse on CLISP and push into the tail
-on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
-  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-RET-" cc)))
-                     collectors))
-        #-clisp
-        (tail (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-TAIL-" cc)))
-                      collectors)))
-    `(let (,@ret #-clisp ,@tail)
-      (macrolet ,(mapcar (lambda (co re #-clisp ta)
-                           `(,co (form)
-                             #+clisp `(push ,form ,',re)
-                             #-clisp
-                             `(if ,',re
-                               (setf (cdr ,',ta) (setf ,',ta (list ,form)))
-                               (setf ,',re (setf ,',ta (list ,form))))))
-                         collectors ret #-clisp tail)
-        ,@forms
-        (values #+clisp ,@(mapcar (lambda (re) `(nreverse ,re)) ret)
-                #-clisp ,@ret)))))
 
 ;;;
 ;;; Sorted
@@ -307,7 +318,7 @@ When OBJ is given, it serves as separator and is omitted from the list."
         (if (funcall pred (funcall key (cadr ll)) obj)
             (setf res (cons bb res) bb (cddr ll) (cdr ll) nil ll bb)
             (setq ll (cdr ll))))
-      (etypecase key
+      (typecase key
         (function
          (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))
              ((endp (cdr ll)) (nreverse res))
@@ -321,7 +332,9 @@ When OBJ is given, it serves as separator and is omitted from the list."
          (decf key)
          (do* ((ll lst) ta res) ((endp ll) (nreverse res))
            (push ll res) (setq ta (nthcdr key ll) ll (cdr ta))
-           (when ta (setf (cdr ta) nil)))))))
+           (when ta (setf (cdr ta) nil))))
+        (t (error 'case-error :proc 'nsplit-list :args
+                  (list 'key key 'function 'fixnum))))))
 
 (defmacro with-sublist ((newl oldl e0 e1 &key (key '#'identity) (test '#'eql))
                         &body body)

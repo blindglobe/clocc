@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-07-06 Mon 17:57:16 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-07-31 Fri 12:37:40 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.16 1998/07/06 21:58:10 sds Exp $
+;;; $Id: date.lisp,v 1.17 1998/07/31 16:43:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.17  1998/07/31 16:43:25  sds
+;;; Added `exp-mov-avg-append' and `lincom'.
+;;; Declared `stream' as a stream in `print-*'.
+;;;
 ;;; Revision 1.16  1998/07/06 21:58:10  sds
 ;;; Combined the two &key arguments of `dl-copy-shift' into one optional
 ;;; argument, branching on its type.
@@ -86,15 +90,15 @@
 )
 
 #+cmu
-(defun print-date (dt &optional (stream t) (depth 1))
+(defun print-date (dt stream depth)
   "Print the date to the STREAM, using `*print-date-format*'."
-  (declare (type date dt) (fixnum depth))
+  (declare (type date dt) (stream stream) (fixnum depth))
   (if *print-readably* (funcall (print-readably date) dt stream)
       (format stream "~4,'0d-~2,'0d-~2,'0d~:[~; [~:d]~]" (date-ye dt)
 	      (date-mo dt) (date-da dt) (minusp depth) (date-dd dt))))
 
 #-cmu
-(defmethod print-object ((dt date) stream)
+(defmethod print-object ((dt date) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~4,'0d-~2,'0d-~2,'0d" (date-ye dt)
 	      (date-mo dt) (date-da dt))))
@@ -413,34 +417,34 @@ previous record when SKIP is non-nil and nil otherwise.
   (date 'identity :type symbol)	; the date accessor
   (val 'identity :type symbol)	; the value accessor
   (chg 'identity :type symbol)	; the change accessor
-  (misc 'identity :type (or symbol function))) ; the miscellaneous accessor
+  (misc nil :type (or symbol function))) ; the miscellaneous accessor
 )
 
 (defsubst dl-date (dl)
   "Return the DATE function of the dated list DL."
   (declare (type dated-list dl) (values (function (t) date)))
-  (symbol-function (dated-list-date dl)))
+  (fdefinition (dated-list-date dl)))
 
 (defsubst dl-val (dl)
   "Return the VAL function of the dated list DL."
   (declare (type dated-list dl) (values (function (t) double-float)))
-  (symbol-function (dated-list-val dl)))
+  (fdefinition (dated-list-val dl)))
 
 (defsubst dl-chg (dl)
   "Return the CHG function of the dated list DL."
   (declare (type dated-list dl) (values (function (t) double-float)))
-  (symbol-function (dated-list-chg dl)))
+  (fdefinition (dated-list-chg dl)))
 
 (defsubst dl-misc (dl)
   "Return the MISC function of the dated list DL."
   (declare (type dated-list dl) (values function))
-  (symbol-function (dated-list-misc dl)))
+  (fdefinition (dated-list-misc dl)))
 
 (defsubst dl-slot (dl slot)
   "Return the SLOT function of the dated list DL."
   (declare (type dated-list dl) (type (member val chg) slot)
            (values (function (t) double-float)))
-  (symbol-function (slot-value dl slot)))
+  (fdefinition (slot-value dl slot)))
 
 (defsubst dl-len (dl)
   "Return the length of the dated list."
@@ -488,9 +492,9 @@ so that -1 corresponds to the last record."
   (let ((bb (dl-nth dl nn))) (and bb (funcall (slot-value dl slot) bb))))
 
 #+cmu
-(defun print-dlist (dl &optional (stream t) (depth 1))
+(defun print-dlist (dl stream depth)
   "Print the dated list record."
-  (declare (type dated-list dl) (fixnum depth))
+  (declare (type dated-list dl) (stream stream) (fixnum depth))
   (when (minusp depth)
     (format t "~%date:~10t~a~%val:~10t~a~%chg:~10t~a~%misc:~10t~a~%"
 	    (dated-list-date dl) (dated-list-val dl) (dated-list-chg dl)
@@ -501,7 +505,7 @@ so that -1 corresponds to the last record."
               (dl-nth-date dl) (dl-nth-date dl -1))))
 
 #-cmu
-(defmethod print-object ((dl dated-list) stream)
+(defmethod print-object ((dl dated-list) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~:d ~a [~:@(~a~)] [~a -- ~a]"
               (dl-len dl) (dated-list-name dl) (dated-list-code dl)
@@ -666,24 +670,27 @@ it should return a short symbol or string."
 	(dolist (yv lv) (format out " ~5,3f" (cdr yv)))
 	(terpri out)))))
 
+(defsubst lincom (c0 x0 c1 x1)
+  "Compute c0*x0+c1*x1."
+  (declare (double-float c0 x0 c1 x1) (values double-float))
+  (with-type double-float (+ (* c0 x0) (* c1 x1))))
+
 (defun exp-mov-avg (coeff seq &rest args &key (key #'value) date
 		    &allow-other-keys)
   "Return the list of the exponential moving averages with the given
 coefficient for the given sequence. If :date is not given, no dated
 list object is created and just the list of numbers is returned."
-  (declare (sequence seq) (double-float coeff)
+  (declare (double-float coeff) (sequence seq)
 	   (type (function (t) double-float) key))
   (let* ((ema (funcall key (elt seq 0))) (c1 (- 1.0d0 coeff))
 	 (ll
 	  (map 'list
 	       (if date
 		   (lambda (el) (cons (funcall date el)
-                                      (with-type double-float
-                                        (setq ema (+ (* coeff (funcall key el))
-                                                     (* c1 ema))))))
-		   (lambda (el) (setq ema (with-type double-float
-                                            (+ (* coeff (funcall key el))
-                                               (* c1 ema))))))
+                                      (setq ema (lincom coeff (funcall key el)
+                                                        c1 ema))))
+		   (lambda (el) (setq ema (lincom coeff (funcall key el)
+                                                  c1 ema))))
 	       seq)))
     (declare (double-float ema c1))
     (cond (date
@@ -691,12 +698,35 @@ list object is created and just the list of numbers is returned."
 	   (apply #'make-dated-list :ll ll :date 'car :val 'cdr args))
 	  (t ll))))
 
-(defun exp-mov-avg-dl (coeff dl &optional (slot 'val))
-  "UI for `exp-mov-avg' when the argument is a dated list itself."
-  (exp-mov-avg coeff (dated-list-ll dl) :date (dl-date dl) :name
-               (format nil "EMA [~3,2f] `~a'" coeff (dated-list-name dl))
-               :key (dl-slot dl slot)
-               :code (keyword-concat (dated-list-code dl) :-ema)))
+(defun exp-mov-avg-append (coeff seq)
+  "Put the exponential moving average of SEQ into it.
+The SEQ is a sequence of conses with (cdr (last ELT)) being a double-float X.
+Its is replaced by (X . EMA)."
+  (declare (double-float coeff) (sequence seq))
+  (let ((ema (cdr (last (elt seq 0)))) (c1 (- 1.0d0 coeff)))
+    (declare (double-float ema c1))
+    (map-in (lambda (el)
+              (let* ((ee (last el)) (nn (cdr ee)))
+                (declare (double-float nn))
+                (setf (cdr ee) (cons nn (setq ema (lincom coeff nn c1 ema))))
+                el))
+            seq)))
+
+(defun exp-mov-avg-dl (coeff dl &optional double (slot 'val))
+  "UI for `exp-mov-avg' when the argument is a dated list itself.
+When DOUBLE is given, compute 2 averages, with COEFF and COEFF/2,
+and make the latter accessible through MISC."
+  (let* ((c2 (/ coeff 2.0d0))
+         (dl (exp-mov-avg coeff (dated-list-ll dl) :date (dl-date dl) :name
+                          (format nil "EMA [~3,2f~:[~;/~4,3f~]] `~a'" coeff
+                                  double c2 (dated-list-name dl))
+                          :key (dl-slot dl slot) :code
+                          (keyword-concat (dated-list-code dl) :-ema))))
+    (when double
+      (setf (dated-list-val dl) 'cadr
+            (dated-list-misc dl) 'cddr)
+      (exp-mov-avg-append c2 (dated-list-ll dl)))
+    dl))
 
 (defun regress-dl (dl &optional begd endd)
   "Regress the dated list in the given interval.
@@ -778,15 +808,15 @@ Must not assume that the list is properly ordered!"
   (eq (change-type ch1) (change-type ch2)))
 
 #+cmu
-(defun print-change (chg &optional (stream t) depth)
+(defun print-change (chg stream depth)
   "Print the change structure."
-  (declare (type change chg) (ignore depth))
+  (declare (type change chg) (stream stream) (ignore depth))
   (if *print-readably* (funcall (print-readably change) chg stream)
       (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
               (change-chb chg) (change-val chg) (change-chf chg))))
 
 #-cmu
-(defmethod print-object ((chg change) stream)
+(defmethod print-object ((chg change) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
               (change-chb chg) (change-val chg) (change-chf chg))))
@@ -834,15 +864,15 @@ Sets ll, date, val, and passes the rest directly to make-dated-list."
   (apply #'make-dated-list :ll dl :date 'diff-date :val 'diff-di args))
 
 #+cmu
-(defun print-diff (df &optional (stream t) depth)
+(defun print-diff (df stream depth)
   "Print the diff record."
-  (declare (type diff df) (ignore depth))
+  (declare (type diff df) (stream stream) (ignore depth))
   (if *print-readably* (funcall (print-readably diff) df stream)
       (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
               (diff-ra df))))
 
 #-cmu
-(defmethod print-object ((df diff) stream)
+(defmethod print-object ((df diff) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
               (diff-ra df))))

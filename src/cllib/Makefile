@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.22 2003/06/30 19:12:36 sds Exp $
+# $Id: Makefile,v 2.23 2003/07/03 15:41:58 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -16,6 +16,9 @@ SCRIPT = $(TOP)/clocc base getopt
 SYSTEM := cllib
 ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \
 	$(TOP)/etc/GNU-GPL $(TOP)/bin/run-lisp
+ZIPEXTRANOLINK = cllib/port/Makefile cllib/port/Changelog \
+	cllib/port/port.system cllib/port/port.html cllib/port/*.lisp
+ZIPEXTRALINK = ../port
 DOCFILES = $(SYSTEM).html entities.xml
 include $(TOP)/clocc.mk
 

@@ -1,3 +1,15 @@
+common-lisp-controller (3.17+3.18.pre3) unstable; urgency=low
+
+  * Move grabbing of original implementation REQUIRE function to pre-defsystem file.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 28 Aug 2002 10:42:16 -0600
+
+common-lisp-controller (3.17+3.18.pre2) unstable; urgency=low
+
+  * Bug fixes for Lispworks.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 28 Aug 2002 10:29:04 -0600
+
 common-lisp-controller (3.17+3.18.pre1) unstable; urgency=low
 
   * Add preliminary asdf support.

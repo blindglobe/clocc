@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.65 2005/01/28 16:46:05 sds Exp $
+;;; $Id: math.lisp,v 2.66 2005/03/08 20:40:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,7 @@
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
    with-permutations-swap with-permutations-lex permutations-list subsets pick
-   eval-cont-fract fract-approx
+   sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
    dot poly1 poly erf cndf norm normalize rel-dist
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
@@ -423,6 +423,28 @@ The order in which the permutations are listed is either
       (0 (error "~S: no elements in the empty sequence ~S" 'pick seq))
       (1 (elt seq 0))
       (t (elt seq (random len))))))
+
+(defun sample (seq count &key complement)
+  "Return a random subset of size COUNT from sequence SEQ.
+When :COMPLEMENT is non-NIL, the second value is the complement of the sample."
+  (let* ((good '()) (drop '()) (len (length seq)) (leeway (- len count))
+         (prob (float (/ count len) 0s0)))
+    (cond ((minusp leeway)
+           (error "~S(~S ~S): too few elements: ~:D"
+                  'pick-subset seq count len))
+          ((zerop leeway) (values (coerce seq 'list) '()))
+          ((zerop count) (values '() (and complement (coerce seq 'list))))
+          (t
+           (map nil (lambda (elt)
+                      (cond ((and (plusp count)
+                                  (or (zerop leeway)
+                                      (> prob (random 1s0))))
+                             (push elt good)
+                             (decf count))
+                            (t (when complement (push elt drop))
+                               (decf leeway))))
+                seq)
+           (values (nreverse good) (nreverse drop))))))
 
 ;;;
 ;;; Ratios

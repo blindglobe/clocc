@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.0 2001/05/17 17:07:51 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.1 2001/06/08 18:06:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -51,17 +51,19 @@
 #+(or win32 mswindows)
 (defcustom *gnuplot-path-console* simple-string "c:/gnu/gp371w32/pgnuplot.exe"
   "*The path to the console gnuplot executable.")
+(eval-when (compile load eval)  ; CMUCL
 (defcustom *gnuplot-printer* simple-string
   (format nil
           #+(or win32 mswindows) "\\\\server1\\~a"
           #+unix "|lpr -h~@[ -P~a~]"
           (getenv "SDSPRT"))
-  "*The printer to print the plots.")
+  "*The printer to print the plots."))
 #+unix
 (defcustom *gnuplot-stream* (or null stream) nil
   "The current gnuplot output stream.")
+(eval-when (compile load eval)  ; CMUCL
 (defcustom *gnuplot-file* pathname (merge-pathnames "plot.tmp" *datadir*)
-  "*The tmp file for gnuplot.")
+  "*The tmp file for gnuplot."))
 (defcustom *gnuplot-msg-stream* (or stream null t) *standard-output*
   "*The message stream of gnuplot functions.")
 (defcustom *gnuplot-default-directive* t :plot
@@ -104,25 +106,26 @@ PLOT means:
            `(apply #'internal-with-plot-stream #',body-function ,@options)
            `(internal-with-plot-stream #',body-function ,@options)))))
 
-(defgeneric plot-output (plot stream backend)
+(defgeneric plot-output (plot out backend)
   (:documentation "Ourput a plot-related object to the plot stream
 according to the given backend")
-  (:method ((plot t) (stream stream) (backend t))
-    (declare (ignore plot))
-    (unless (and (output-stream-p stream) (open-stream-p stream))
-      (error 'code :proc 'plot-output :args (list stream)
+  (:method ((plot t) (out stream) (backend t))
+    (declare (ignorable plot))
+    (unless (and (output-stream-p out) (open-stream-p out))
+      (error 'code :proc 'plot-output :args (list out)
              :mesg "2nd argument must be an open output stream, got: ~s"))
     (error 'code :proc 'plot-output :args (list backend)
            :mesg "unknown backend: ~s")))
 
 ;; this specifies the plot output terminal
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-term (:conc-name pltm-))
-  (terminal nil :type symbol)
-  (terminal-options nil :type string)
-  (target nil :type (or null string pathname)))
+  (terminal nil :type (or null string))
+  (terminal-options nil :type (or null string))
+  (target nil :type (or null string pathname))))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
-  (declare (ignore backend))
+  (declare (ignorable backend))
   (format out "set terminal ~a~@[ ~a~]~%set output~@[ '~a'~]~%"
           (pltm-terminal pt) (pltm-terminal-options pt) (pltm-target pt)))
 
@@ -158,20 +161,22 @@ according to the given backend")
                     :terminal-options "landscape 'Helvetica' 9"
                     :target directive)))
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-timestamp (:conc-name plts-))
   (fmt "%Y-%m-%d %a %H:%M:%S %Z" :type string)
   (pos '(0 . 0) :type cons)
-  (font "Helvetica" :type string))
+  (font "Helvetica" :type string)))
 
 (defmethod plot-output ((pt plot-timestamp) (out stream)
                         (backend (eql :gnuplot)))
-  (declare (ignore backend))
+  (declare (ignorable backend))
   (format out "set timestamp \"~a\" ~d,~d '~a'~%" (plts-fmt pt)
           (car (plts-pos pt)) (cdr (plts-pos pt)) (plts-font pt)))
 
 (defconst +plot-timestamp+ plot-timestamp (make-plot-timestamp)
   "The standard timestamp.")
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-axis (:conc-name plax-))
   (label "" :type string)
   (tics t :type boolean)
@@ -190,47 +195,49 @@ according to the given backend")
   (title "" :type string)
   (legend nil :type list)
   (grid nil :type boolean)
-  (data nil :type (or list function)))
+  (data nil :type (or list function))))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
-  (declare (ignore pt out backend)))
+  (declare (ignorable pt out backend)))
 
-(flet ((pp (xx)
-         (typecase xx
-           (number (format nil "~g" xx))
-           (symbol (string-downcase (symbol-name xx)))
-           (list (format nil "~{ ~(~a~)~}" xx))
-           (t (format nil "'~a'" xx)))))
-  (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
-    (declare (ignore backend))
-    (format out "set format ~a \"~a\"~%"
-            (plax-label pa) (plax-fmt pa))
-    (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-label pa))
-    (format out "set ~adata~:[~; time~]~%" (plax-label pa) (plax-time-p pa))
-    (let ((range (plax-range pa)))
-      (when range
-        (format out "set ~arange [~a:~a]~%" (plax-label pa)
-                (pp (car range)) (pp (cdr range))))))
-  (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
-    (plot-output (plsp-term ps) out backend)
-    (plot-output (plsp-timestamp ps) out backend)
-    (plot-output (plsp-x-axis ps) out backend)
-    (plot-output (plsp-y-axis ps) out backend)
-    (flet ((set-opt (nm par)
-             (case par
-               ((t) (format out "set ~a~%" nm))
-               ((nil) (format out "set no~a~%" nm))
-               (t (format out "set ~a ~a~%" nm (pp par))))))
-      (set-opt "border" (plsp-border ps))
-      (set-opt "data style" (plsp-data-style ps))
-      (set-opt "title" (plsp-title ps))
-      (set-opt "key" (plsp-legend ps))
-      (set-opt "grid" (plsp-grid ps))
-      (if (functionp (plsp-data ps))
-          (funcall (plsp-data ps) out)
-          (dolist (set (plsp-data ps))
-            (dolist (datum set (format out "e~%"))
-              (format out "~{~a~^ ~}~%" datum)))))))
+(defun %plotout (xx)
+  (typecase xx
+    (number (format nil "~g" xx))
+    (symbol (string-downcase (symbol-name xx)))
+    (list (format nil "~{ ~(~a~)~}" xx))
+    (t (format nil "'~a'" xx))))
+
+(defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
+  (declare (ignorable backend))
+  (format out "set format ~a \"~a\"~%"
+          (plax-label pa) (plax-fmt pa))
+  (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-label pa))
+  (format out "set ~adata~:[~; time~]~%" (plax-label pa) (plax-time-p pa))
+  (let ((range (plax-range pa)))
+    (when range
+      (format out "set ~arange [~a:~a]~%" (plax-label pa)
+              (%plotout (car range)) (%plotout (cdr range))))))
+
+(defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
+  (plot-output (plsp-term ps) out backend)
+  (plot-output (plsp-timestamp ps) out backend)
+  (plot-output (plsp-x-axis ps) out backend)
+  (plot-output (plsp-y-axis ps) out backend)
+  (flet ((set-opt (nm par)
+           (case par
+             ((t) (format out "set ~a~%" nm))
+             ((nil) (format out "set no~a~%" nm))
+             (t (format out "set ~a ~a~%" nm (%plotout par))))))
+    (set-opt "border" (plsp-border ps))
+    (set-opt "data style" (plsp-data-style ps))
+    (set-opt "title" (plsp-title ps))
+    (set-opt "key" (plsp-legend ps))
+    (set-opt "grid" (plsp-grid ps))
+    (if (functionp (plsp-data ps))
+        (funcall (plsp-data ps) out)
+        (dolist (set (plsp-data ps))
+          (dolist (datum set (format out "e~%"))
+            (format out "~{~a~^ ~}~%" datum))))))
 
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y")

@@ -77,9 +77,14 @@ first saw code to act as a web server.
 
 (defpackage "HTTP" (:use "COMMON-LISP")
 	    (:export
-	     "*SERVER-ROOT*"
+	     "*SERVER-ROOT*"  ;; set these
+	     "*LOG*"
+
 	     "STATUS"  ;; useful in replies
 	     "CRLF"
+
+	     "GET-METHOD"  ;; define methods of these
+	     "POST-METHOD"
 	     ))
 
 (in-package :http)
@@ -340,7 +345,8 @@ At this point the method is executed and then, finally, we're done.
 		       (args (parse-form-contents
 			      (body c)
 			      ;; see rfc 1521
-			      (concatenate 'string "--" (boundary c)))))
+			      (when (boundary c)
+				(concatenate 'string "--" (boundary c))))))
   (logform (list :http (print-current-time nil)
 		 (dotted (sss:connection-ipaddr c)) :post uri args))
   (sss:dbg "http: post uri=~A args=~A" uri args)

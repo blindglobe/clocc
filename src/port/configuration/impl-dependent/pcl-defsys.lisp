@@ -14,12 +14,13 @@
     (error "CL.EXT.CONFIGURATION: the PCL package is required.")))
 
 ;;; DEFSYSTEM utilities
-;;; PCL defsys unfortunatedly seems to be defined in the "USER" package.
+;;; PCL defsys interface functions unfortunatedly seem to be defined
+;;; unexported in the "PCL" package.
 
 (defmethod find-system ((sys symbol)
 			(cl cl.env:generic-common-lisp-implementation)
 			(defsys-tag (eql :pcl)))
-  (user:get-system sys))
+  (pcl::get-system sys))
 
 (defmethod load-system ((sys symbol)
 			(cl cl.env:generic-common-lisp-implementation)
@@ -30,7 +31,7 @@
 			arguments
 			print-only)
   (declare (ignore keys))
-  (user:operate-on-system sys :load arguments print-only))
+  (pcl::operate-on-system sys :load arguments print-only))
 
 
 ;;; end of file -- pcl-defsys.lisp --

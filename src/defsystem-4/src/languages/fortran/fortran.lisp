@@ -92,7 +92,11 @@
 			      :output-file
 			      (fortran-file-default-object-pathanme)))
 			    &allow-other-keys)
-  (apply #'invoke-processor-external fortran-compiler file args))
+  (apply #'invoke-processor-external
+	 fortran-compiler
+	 file
+	 :output-pathname output-pathname
+	 args))
 
 
 ;;; Language definition.

@@ -39,7 +39,7 @@ block; the value is a list of all variables in the common block.")
   "If T, all assignments statemnts are wrapped with a coerce to the appropriate type.  Fortran 77 does this automatically.")
 ;----------------------------------------------------------------------------
 
-(defun f2cl (input-file output-file &key verbose prune-labels include-comments
+(defun f2cl (input-file &key output-file verbose prune-labels include-comments
 			(auto-save t) (relaxed-array-decls t)
 			(coerce-assigns t))
   "Fortran to Common Lisp converter
@@ -65,26 +65,14 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 	(*common-block-initialized* nil)
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns))
-    #+nil
-    (when *verbose*
-      (format t "~%  - compiles for VAX LISP, LUCID, ALLEGRO, CLISP + simpletest~%")
-      (format t "  - with-open-file now encapsulates fortran-to-lisp calls~%")
-      (format t "  - all f2cl code is now explicitly in the :USER package~%")
-      (format t "  - excess labels are removed, else set *prune_labels* to nil.~%")
-      (format t "  - do loops have been fixed: these are very tricky so check!~%")
-      (format t "  - f2cl has the keyword outfile with default value \"temp\"~%")
-      (format t "  - set *print-right-margin* to 100 for deep expressions.~%")
-      (format t "  - to include Fortran comments set *comments* to t~%")
-      (format t "  - the EOF bug has now been fixed so bottoms can be ragged~%~%"))
 
-    (unless (stringp input-file)
-      (error "Error in f2cl: the first argument should be a string."))
-    (unless (stringp output-file)
-      (error "Error in f2cl: the second argument should be a string."))
-    (unless (probe-file input-file)
-      (error "Error in f2cl: the file represented by the first argument
-   does not appear to exist."))
-      
+    (unless output-file
+      (let ((input-path (pathname input-file)))
+	(setf output-file (make-pathname :host (pathname-host input-path)
+					 :device (pathname-device input-path)
+					 :directory (pathname-directory input-path)
+					 :name (pathname-name input-path)
+					 :type "lisp"))))
 
     (fortran-to-lisp (preprocess input-file) output-file)
     (values output-file)))
@@ -212,7 +200,8 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 
 (defun fortran-to-lisp (file ofile)
   (let (*common_array_dims* *format_stmts*)
-    (if *verbose* (format t "beginning the main translation ...~%"))
+    (when *verbose*
+      (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
       (with-open-file (outport ofile :direction :output 
 			       :if-exists :rename-and-delete)
@@ -345,9 +334,6 @@ main-loop
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
      ;;     (format t "~%after translation : ~A" fort-fun)
-     #+nil
-     (special-print 
-      (insert-declarations (prune-labels (fix-structure fort-fun labels))) outport)
      (multiple-value-bind (spec-proc spec-decl fun)
 	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
        (when spec-proc

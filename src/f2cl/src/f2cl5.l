@@ -337,7 +337,11 @@
 			(multiple-value-bind (type arrayp)
 			    (get-fun-arg-type arg)
 			  (cond (arrayp
-				 (intern (concatenate 'string "ARRAY-" (string type))))
+				 (if (subtypep type 'string)
+				     ;; An array of strings
+				     (intern (concatenate 'string "ARRAY-STRINGS"))
+				     ;; Some other type of array
+				     (intern (concatenate 'string "ARRAY-" (string type)))))
 				((subtypep type 'string)
 				 'string)
 				(t
@@ -2162,8 +2166,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.60 2000/08/05 19:23:16 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.61 2000/08/07 18:55:03 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.61  2000/08/07 18:55:03  rtoy
+;;; GET-ARG-DECL was confused by arrays of strings.  We return the type
+;;; ARRAY-STRINGS now.  (Need better names for these types or need to fix
+;;; the code so it handles these better!)
+;;;
 ;;; Revision 1.60  2000/08/05 19:23:16  rtoy
 ;;; Comment out some unreachable code.
 ;;;

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.11 2000/04/04 22:14:57 sds Exp $
+;;; $Id: net.lisp,v 1.12 2000/04/10 18:42:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
 
 (export
  '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr hostent
-   socket open-socket socket-host socket-port socket-server
+   socket open-socket socket-host/port socket-server
    socket-accept open-socket-server socket-server-close
    socket-service-port socket-server-host socket-server-port
    network timeout login))
@@ -79,26 +79,13 @@
                   :addr-list (mapcar #'ipaddr-to-dotted
                                      (ext:host-entry-addr-list he))
                   :addr-type (ext::host-entry-addr-type he)))
+  #+gcl (make-hostent :name (or (si:hostid-to-hostname host) host)
+                      :addr-list (list (si:hostname-to-hostid host)))
   #+lispworks
-  (let ((he (fli:dereference (comm::gethostbyname host))))
-    (make-hostent :name (fli:convert-from-foreign-string
-                         (fli:foreign-slot-value he 'comm::h_name))
-                  :aliases
-                  (loop :with pp = (fli:foreign-slot-value he 'comm::h_aliases)
-                        :for cp = (fli:dereference pp)
-                        :until (fli:null-pointer-p cp)
-                        :collect (fli:convert-from-foreign-string cp)
-                        :do (fli:incf-pointer pp))
-                  :addr-list
-                  (loop :with pp =
-                        (fli:foreign-slot-value he 'comm::h_addr_list)
-                        :for cp = (fli:dereference pp :type '(:unsigned :long))
-                        :until (zerop cp) ; FIXME broken !!!
-                        :collect (ipaddr-to-dotted cp)
-                        :do (fli:incf-pointer pp))
-                  :addr-type (fli:foreign-slot-value he 'comm::h_addrtype)))
-  ;; #+gcl
-  #-(or allegro cmu lispworks (and clisp syscalls))
+  (multiple-value-bind (name addr aliases) (comm:get-host-entry host)
+    (make-hostent :name name :addr-list (list (ipaddr-to-dotted addr))
+                  :aliases aliases))
+  #-(or allegro (and clisp syscalls) cmu gcl lispworks)
   (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 ;;;
@@ -108,9 +95,10 @@
 (deftype socket ()
   #+allegro 'excl::socket-stream
   #+clisp 'stream
-  #+cmu 'system:fd-stream
+  #+cmu 'sys:fd-stream
+  #+gcl 'si:socket-stream
   #+lispworks 'comm:socket-stream
-  #-(or allegro clisp cmucl lispworks) 'stream)
+  #-(or allegro clisp cmucl gcl lispworks) 'stream)
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
@@ -122,61 +110,46 @@
                                   :format (if bin :binary :text))
     #+clisp (lisp:socket-connect port host :element-type
                                  (if bin '(unsigned-byte 8) 'character))
-    #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
-                                 :input t :output t :element-type
-                                 (if bin '(unsigned-byte 8) 'character))
+    #+cmu (sys:make-fd-stream (ext:connect-to-inet-socket host port)
+                              :input t :output t :element-type
+                              (if bin '(unsigned-byte 8) 'character))
+    #+gcl (si:make-socket-stream host port bin) ; FIXME
     #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
                                       (if bin 'unsigned-byte 'base-char))
-    ;; #+gcl
-    #-(or allegro clisp cmu lispworks)
+    #-(or allegro clisp cmu gcl lispworks)
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 
-(defun socket-host (sock)
-  "Return the remote host name."
+(defun socket-host/port (sock)
+  "Return the remote host&port, as 2 values."
   (declare (type socket sock))
-  #+allegro (socket:ipaddr-to-dotted (socket:remote-host sock))
-  #+clisp (lisp:socket-stream-host sock)
-  #+cmu (ipaddr-to-dotted (ext:get-socket-host-and-port
-                           (system:fd-stream-fd sock)))
-  ;; #+gcl #+lispworks
-  #-(or allegro clisp cmu)
-  (error 'not-implemented :proc (list 'socket-host sock)))
+  #+allegro (values (socket:ipaddr-to-dotted (socket:remote-host sock))
+                    (socket:remote-port sock))
+  #+clisp (values (lisp:socket-stream-host sock)
+                  (lisp:socket-stream-port sock))
+  #+cmu (multiple-value-bind (ho po)
+            (ext:get-socket-host-and-port (sys:fd-stream-fd sock))
+          (values (ipaddr-to-dotted ho) po))
+  #+gcl (let ((peer (si:getpeername sock)))
+          (values (car peer) (caddr peer)))
+  #+lispworks (multiple-value-bind (ho po)
+                  (comm:socket-stream-peer-address sock)
+                (values (ipaddr-to-dotted ho) po))
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'socket-host/port sock)))
 
-(defun socket-port (sock)
-  "Return the remote port number."
-  (declare (type socket sock))
-  #+allegro (socket:remote-port sock)
-  #+clisp (lisp:socket-stream-port sock)
-  #+cmu (nth-value 1 (ext:get-socket-host-and-port sock))
-  ;; #+gcl #+lispworks
-  #-(or allegro clisp cmu)
-  (error 'not-implemented :proc (list 'socket-port sock)))
+(defun socket-string (sock)
+  "Print the socket host and port to a string."
+  (multiple-value-bind (ho po) (socket-host/port sock)
+    (format nil "~s:~d" ho po)))
 
+#+lispworks (defstruct socket-server proc mbox)
+#-lispworks
 (deftype socket-server ()
   #+allegro 'acl-socket::socket-stream-internet-passive
   #+clisp 'lisp:socket-server
   #+cmu 'integer
-  #+lispworks 'comm:socket-stream ; FIXME
-  #-(or allegro clisp cmucl lispworks) t)
-
-(defun socket-accept (serv &optional bin)
-  "Accept a connection on a socket server (passive socket)."
-  (declare (type socket-server serv) (values socket))
-  #+allegro (let ((sock (socket:accept-connection serv :wait t)))
-              (socket:set-socket-format sock
-                                        (if bin :binary :text))
-              sock)
-  #+clisp (lisp:socket-accept serv :element-type
-                              (if bin '(unsigned-byte 8) 'character))
-  #+cmu (progn
-          (system:wait-until-fd-usable serv :input)
-          (system:make-fd-stream (ext:accept-tcp-connection serv)
-                                 :input t :output t :element-type
-                                 (if bin '(unsigned-byte 8) 'character)))
-  #+lispworks (comm:-something serv) ; FIXME
-  ;; #+gcl
-  #-(or allegro clisp cmu lispworks)
-  (error 'not-implemented :proc (list 'socket-accept serv bin)))
+  #+gcl 'si:socket-stream
+  #-(or allegro clisp cmucl gcl) t)
 
 (defun open-socket-server (&optional port)
   "Open a `generic' socket server."
@@ -185,17 +158,47 @@
                                 (when (integerp port) port))
   #+clisp (lisp:socket-server port)
   #+cmu (ext:create-inet-listener port)
-  #+lispworks (comm:start-up-server port) ; FIXME
-  ;; #+gcl
-  #-(or allegro clisp cmu lispworks)
+  #+gcl (si:make-socket-pair port) ; FIXME
+  #+lispworks (let ((mbox (mp:make-mailbox :size 1)))
+                (make-socket-server
+                 :mbox mbox
+                 :proc (comm:start-up-server-and-mp
+                        :function (lambda (sock) (mp:mailbox-send mbox sock))
+                        :service port)))
+  #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'open-socket-server port)))
+
+(defun socket-accept (serv &optional bin)
+  "Accept a connection on a socket server (passive socket)."
+  (declare (type socket-server serv) (values socket))
+  #+allegro (let ((sock (socket:accept-connection serv :wait t)))
+              (socket:set-socket-format sock (if bin :binary :text))
+              sock)
+  #+clisp (lisp:socket-accept serv :element-type
+                              (if bin '(unsigned-byte 8) 'character))
+  #+cmu (progn
+          (sys:wait-until-fd-usable serv :input)
+          (sys:make-fd-stream (ext:accept-tcp-connection serv)
+                              :input t :output t :element-type
+                              (if bin '(unsigned-byte 8) 'character)))
+  #+gcl (si:accept-socket-connection serv bin) ; FIXME
+  #+lispworks (make-instance
+               'comm:socket-stream :direction :io
+               :socket (mp:mailbox-read (socket-server-mbox serv))
+               :element-type (if bin 'unsigned-byte 'base-char))
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'socket-accept serv bin)))
 
 (defun socket-server-close (server)
   "Close the server."
   (declare (type socket-server server))
+  #+allegro (close server)
   #+clisp (lisp:socket-server-close server)
   #+cmu (unix:unix-close server)
-  #-(or clisp cmu) (close server))
+  #+lispworks (mp:process-kill (socket-server-proc server))
+  #+gcl (close server)
+  #-(or allegro clisp cmu gcl lispworks)
+  (error 'not-implemented :proc (list 'socket-server-close server)))
 
 (defun socket-server-host (server)
   "Return the host on which the server is running."
@@ -204,7 +207,9 @@
   #+clisp (lisp:socket-server-host server)
   #+cmu (ipaddr-to-dotted (car (ext:host-entry-addr-list
                                 (ext:lookup-host-entry "localhost"))))
-  #-(or allegro clisp cmu)
+  #+gcl (car (si:getsockname sock))
+  #+lispworks FIXME
+  #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-server-host server)))
 
 (defun socket-server-port (server)
@@ -212,7 +217,9 @@
   #+allegro (socket:local-port server)
   #+clisp (lisp:socket-server-port server)
   #+cmu server
-  #-(or allegro clisp cmu)
+  #+gcl (caddr (si:getsockname sock))
+  #+lispworks FIXME
+  #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-server-port server)))
 
 ;;;

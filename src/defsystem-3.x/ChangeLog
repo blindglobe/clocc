@@ -1,3 +1,78 @@
+2004-01-24  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added and exported some specialized contidions for missing system
+	components.
+	Added and exported SYSTEM-DEFINITION-PATHNAME.
+	Changed slightly (in a backward compatible way) the way a system is
+	looked up in a directory tree.  Now (MK:FIND-SYSTEM "foo") will also
+	find 'foo/foo.system' -- provided that the directory 'foo' is visible
+	from the registry.
+
+2004-01-23  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added three conditions to improve support for NEW-REQUIRE.
+
+2004-01-12  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp: Updated copyright.
+
+2003-09-26  rtoy  <rtoy@vault>
+
+	* defsystem.lisp:
+	Drop support for versions of CMUCL older than cmu17.  Thus, assume
+	the feature :cmu means cmu17 and later.  This will make defsystem a
+	little more robust against changes in CMUCL's version features.
+
+2003-09-26  sds  <sds@vault>
+
+	* defsystem.lisp: a half-hearted attempt at starting to support GCL
+
+2003-04-29  rtoy  <rtoy@vault>
+
+	* defsystem.lisp:
+	Remove the :new-compiler conditionalization for CMUCL.  All CMUCL
+	versions from 18a and later used the new compiler, and versions after
+	18e will have the :new-compiler feature removed.
+
+2003-04-28  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Changed some of the condizionalizations to take care of
+	PROVIDE/REQUIRE hacking for various CL (especially MCL/OpenMCL).
+	The new CMUCL version - 18e - may have some glitches due to the
+	unclear status of the :NEW-COMPILER feature.  Please be patient about
+	it.
+
+2003-03-21  sds  <sds@vault>
+
+	* defsystem.lisp: fixed a typo in the last patch
+
+2003-03-11  sds  <sds@vault>
+
+	* defsystem.lisp (add-registry-location): use PUSHNEW instead of PUSH
+
+2003-02-03  kevinrosenberg  <kevinrosenberg@vault>
+
+	* defsystem.lisp:
+	Rename package for PROVIDE/REQUIRE with OpenMCL 0.13.4
+
+2002-11-24  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+2002-11-22  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Changed licensing terms to make them more DFSG compliant.
+
+	Also added first cut code to achieve "pathname less" operation of MK3,
+	following the ideas in ASDF.  If the DEFSYSTEM form is loaded from a
+	file, then the location of the file (intended as a directory) is
+	computed from *LOAD-PATHNAME* and stored as the :SOURCE-PATHNAME of
+	the system.
+
 2002-11-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* defsystem.lisp:

@@ -88,6 +88,13 @@
 (deftype complex16 ()
   `(complex double-float))
 
+(deftype array-double-float ()
+    `(array double-float (*)))
+(deftype array-integer4 ()
+    `(array integer4 (*)))
+(deftype array-single-float ()
+    `(array single-float (*)))
+
 (defconstant %false% nil)
 (defconstant %true% t)
 
@@ -135,12 +142,67 @@
   `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
 ;-----------------------------------------------------------------------------
 
+#+nil
 (defmacro fref (arr indices &optional low-bnds)
   (if low-bnds
       `(aref ,arr ,@(mapcar #'(lambda (k lim)
 				`(- ,k ,lim))
 			    indices low-bnds))
       `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices))))
+
+;; Array dimensions are (d1, d2, d3, ...)
+;;
+;; Then x(n1, n2, n3, ...) means index is
+;;
+;; n1 + d1*(n2 + d2*(n3 + d3*(n4 + d4*(n5))))
+
+;; Return an expression that computes the column major index given the
+;; indices and the bounds on each dimension.  The bounds are a list of
+;; the upper and lower bounds for each dimension.
+(defun col-major-index (indices dims)
+  (flet ((get-offset (n bound)
+	   (let ((lo (first bound)))
+	     (if (and (numberp lo) (zerop lo))
+		 n
+		 `(- ,n ,lo))))
+	 (get-size (bound)
+	   (destructuring-bind (lo hi)
+	       bound
+	     (cond ((numberp lo)
+		    (cond ((numberp hi)
+			   (1+ (- hi lo)))
+			  ((= lo 1)
+			   hi)
+			  (t
+			   `(- ,hi ,(- lo 1)))))
+		   (t
+		    `(- ,hi (- ,lo 1)))))))
+    (let* ((rev-idx (reverse indices))
+	   (rev-dim (reverse dims))
+	   (idx (get-offset (first rev-idx) (first rev-dim))))
+      (do ((d (rest rev-dim) (rest d))
+	   (n (rest rev-idx) (rest n)))
+	  ((endp d)
+	   idx)
+	(setf idx `(+ ,(get-offset (first n) (first d))
+		    (* ,(get-size (first d)) ,idx)))))))
+
+(defun check-array-bounds (indices bounds)
+  `(and ,@(mapcar #'(lambda (idx dim)
+		     `(<= ,(first dim) ,idx ,(second dim)))
+		 indices bounds)))
+
+#+nil
+(defmacro fref (arr indices bounds)
+  `(aref ,arr ,(col-major-index indices bounds)))
+
+(defmacro fref (arr indices bounds)
+  (if *check-array-bounds*
+      `(aref ,arr (if ,(check-array-bounds indices bounds)
+		      ,(col-major-index indices bounds)
+		      (error "Out of bounds index for array ~S"
+			     ',arr)))
+      `(aref ,arr ,(col-major-index indices bounds))))
 
 (defmacro fset (a b) 
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
@@ -153,6 +215,21 @@
 
 (defmacro // (a b)
   `(concatenate 'string ,a ,b))
+
+(defmacro array-slice (vname type indices bounds)
+  (let ((dims `(* ,@(mapcar #'(lambda (idx bnd)
+				(if (and (numberp idx)
+					 (numberp (second bnd)))
+				    (+ (- (second bnd) idx) 1)
+				    `(+ (- ,(second bnd) ,idx) 1)))
+			    indices bounds)))
+	(offset (mapcar #'(lambda (idx bnd)
+			    `(- ,idx ,(first bnd)))
+			indices bounds)))
+    `(make-array ,dims
+      :element-type ',type
+      :displaced-to ,vname
+      :displaced-index-offset ,(col-major-index indices bounds))))  
 ;----------------------------------------------------------------------------
 
 #-aclpc (defmacro while (con &rest body)
@@ -441,8 +518,16 @@
   (apply #'min x))
 (defun amin1 (&rest x)
   (apply #'min x))
+#+nil
 (defun dmin1 (&rest x)
-  (apply #'min x))
+  (the double-float (reduce #'min x)))
+(defun dmin1 (&rest x)
+  (let ((result (first x)))
+    (declare (double-float result))
+    (dolist (val (rest x))
+      (declare (double-float val))
+      (setf result (min result val)))
+    result))
 (defun amin0 (&rest x)
   (values (float (apply #'min x))))
 (defun min1 (&rest x)
@@ -725,8 +810,20 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.20 2000/07/14 15:50:59 rtoy Exp $
+;;; $Id: macros.l,v 1.21 2000/07/19 13:54:27 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.21  2000/07/19 13:54:27  rtoy
+;;; o Add the types ARRAY-DOUBLE-FLOAT, ARRAY-SINGLE-FLOAT, and
+;;;   ARRAY-INTEGER4.
+;;; o All arrays are 1-D now to support slicing of Fortran arrays
+;;;   correctly.
+;;; o All arrays are in column-major order just like Fortran (and the
+;;;   opposite of Lisp).  This is to support slicing of arrays.  Modified
+;;;   FREF to support this by taking an extra arg for the dimensions of
+;;;   the array.
+;;; o Added macro ARRAY-SLICE to slice the array properly.
+;;; o Optimized routine DMIN1 a bit.   (Need to do that for more routines.)
+;;;
 ;;; Revision 1.20  2000/07/14 15:50:59  rtoy
 ;;; Get rid of *dummy_var*.  It's not used anymore.
 ;;;

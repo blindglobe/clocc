@@ -1662,8 +1662,15 @@ FILENAME                 File containing Fortran code
 	 ;; don't modify it, just use the array element.  Otherwise,
 	 ;; we want a slice.
 	 (let ((n-args (length arg-list))
-	       (finfo (gethash fun-name *f2cl-function-info*))
+	       (finfo (if (member fun-name *external-function-names*)
+			  nil
+			  (gethash fun-name *f2cl-function-info*)))
 	       arg-info ret-info)
+	   #+nil
+	   (when *external-function-names*
+	     (format t "external = ~A~%" *external-function-names*)
+	     (format t "finfo = ~A~%" finfo)
+	     (format t "fun-name = ~A~%" fun-name))
 	   (cond (finfo
 		  (setf arg-info (f2cl-finfo-arg-types finfo))
 		  (setf ret-info (f2cl-finfo-return-values finfo)))
@@ -2511,8 +2518,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.128 2003/11/13 22:37:08 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.129 2003/11/14 02:55:54 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.129  2003/11/14 02:55:54  rtoy
+;;; 	* src/f2cl1.l (maybe-convert-array-ref-to-slice): When looking up
+;;; 	the function name to get the argument types, we need to be
+;;; 	careful.  If the function is an EXTERNAL function (i.e., a
+;;; 	parameter to the function we're compiling), it doesn't necessarily
+;;; 	have the same types as a global function with the same name.
+;;;
 ;;; Revision 1.128  2003/11/13 22:37:08  rtoy
 ;;; Oops.  We want subtypep, not typep!
 ;;;

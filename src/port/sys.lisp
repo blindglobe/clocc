@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.17 2000/08/07 19:00:52 sds Exp $
+;;; $Id: sys.lisp,v 1.18 2000/08/14 16:24:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,8 @@
 (in-package :port)
 
 (export
- '(getenv finalize variable-special-p arglist class-slot-list
+ '(getenv finalize variable-special-p arglist
+   class-slot-list class-slot-initargs
    pathname-ensure-name probe-directory default-directory chdir sysinfo
    +month-names+ +week-days+ +time-zones+ tz->string current-time))
 
@@ -79,46 +80,72 @@
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
   (error 'not-implemented :proc (list 'arglist fn)))
 
-(defun class-slot-list (class &optional (all t))
-  "Return the list of slots of a CLASS.
+;; implementations with MOP-ish CLOS
+#+(or allegro clisp cmu cormanlisp lispworks lucid)
+;; we use `macrolet' for speed - so please be careful about double evaluations
+;; and mapping (you cannot map or funcall a macro, you know)
+(macrolet ((class-slots* (class)
+             #+allegro `(clos:class-slots ,class)
+             #+clisp `(clos::class-slots ,class)
+             #+cmu `(pcl::class-slots ,class)
+             #+cormanlisp `(cl:class-slots ,class)
+             #+lispworks `(hcl::class-slots ,class)
+             #+lucid `(clos:class-slots ,class))
+           (class-slots1 (obj)
+             `(class-slots*
+               (typecase ,obj
+                 (class ,obj)
+                 (symbol (find-class ,obj))
+                 (t (class-of ,obj)))))
+           (slot-name (slot)
+             #+allegro `(clos::slotd-name ,slot)
+             #+clisp `(clos::slotdef-name ,slot)
+             #+cmu `(slot-value ,slot 'pcl::name)
+             #+cormanlisp `(getf ,slot :name)
+             #+lispworks `(hcl::slot-definition-name ,slot)
+             #+lucid `(clos:slot-definition-name ,slot))
+           (slot-initargs (slot)
+             #+allegro `(clos::slotd-initargs ,slot)
+             #+clisp `(clos::slotdef-initargs ,slot)
+             #+cmu `(slot-value ,slot 'pcl::initargs)
+             #+cormanlisp `(getf ,slot :initargs)
+             #+lispworks `(hcl::slot-definition-initargs ,slot)
+             #+lucid `(clos:slot-definition-initargs ,slot))
+           (slot-one-initarg (slot)
+             `(or (car (slot-initargs ,slot)) (slot-name ,slot)))
+           (slot-alloc (slot)
+             #+allegro `(clos::slotd-allocation ,slot)
+             #+clisp `(clos::slotdef-allocation ,slot)
+             #+cmu `(pcl::slot-definition-allocation ,slot)
+             #+cormanlisp `(getf ,slot :allocation)
+             #+lispworks `(hcl::slot-definition-allocation ,slot)
+             #+lucid `(clos:slot-definition-allocation ,slot)))
+
+  (defun class-slot-list (class &optional (all t))
+    "Return the list of slots of a CLASS.
 CLASS can be a symbol, a class object (as returned by `class-of')
 or an instance of a class.
 If the second optional argument ALL is non-NIL (default),
 all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
-  #-(or allegro clisp cmu cormanlisp lispworks lucid)
-  (error 'not-implemented :proc (list 'class-slot-list class))
-  #+(or allegro clisp cmu cormanlisp lispworks lucid)
-  (macrolet ((class-slots* (class)
-               #+allegro `(clos:class-slots ,class)
-               #+clisp `(clos::class-slots ,class)
-               #+cmu `(pcl::class-slots ,class)
-               #+cormanlisp `(cl:class-slots ,class)
-               #+lispworks `(hcl::class-slots ,class)
-               #+lucid `(clos:class-slots ,class))
-             (slot-name (slot)
-               #+allegro `(slot-value ,slot 'clos::name)
-               #+clisp `(clos::slotdef-name ,slot)
-               #+cmu `(slot-value ,slot 'pcl::name)
-               #+cormanlisp `(getf ,slot :name)
-               #+lispworks `(hcl::slot-definition-name ,slot)
-               #+lucid `(clos:slot-definition-name ,slot))
-             (slot-alloc (slot)
-               #+allegro `(clos::slotd-allocation ,slot)
-               #+clisp `(clos::slotdef-allocation ,slot)
-               #+cmu `(pcl::slot-definition-allocation ,slot)
-               #+cormanlisp `(getf ,slot :allocation)
-               #+lispworks `(hcl::slot-definition-allocation ,slot)
-               #+lucid `(clos:slot-definition-allocation ,slot)))
     (mapcan (if all (compose list slot-name)
                 (lambda (slot)
                   (when (eq (slot-alloc slot) :instance)
                     (list (slot-name slot)))))
-            (class-slots*
-             (typecase class
-               (class class)
-               (symbol (find-class class))
-               (t (class-of class)))))))
+            (class-slots1 class)))
+
+  (defun class-slot-initargs (class &optional (all t))
+    "Return the list of initargs of a CLASS.
+CLASS can be a symbol, a class object (as returned by `class-of')
+or an instance of a class.
+If the second optional argument ALL is non-NIL (default),
+initargs for all slots are returned, otherwise only the slots with
+:allocation type :instance are returned."
+    (mapcan (if all (compose list slot-one-initarg)
+                (lambda (slot)
+                  (when (eq (slot-alloc slot) :instance)
+                    (list (car (slot-one-initarg slot))))))
+            (class-slots1 class))))
 
 ;;;
 ;;; Environment

@@ -1992,10 +1992,18 @@
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name with a
 ;; trailing underscore.
 
+#+nil
 (defun check-reserved-lisp-names (x)
   (if (member x +reserved-lisp-names+)
       (intern (concatenate 'string (string x) "_"))
       x))
+
+(defun check-reserved-lisp-names (x)
+  (multiple-value-bind (found-it access)
+      (find-symbol (string x) :common-lisp)
+    (if (and found-it (eq access :external))
+	(intern (concatenate 'string (string x) "$"))
+	x)))
 
 ;-----------------------------------------------------------------------------     
 ; functions for fixing DO and IF structures
@@ -2749,8 +2757,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.106 2002/09/13 17:50:19 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.107 2003/01/08 18:37:58 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.107  2003/01/08 18:37:58  rtoy
+;;; Checking of reserved lisp names was rather weak.  Now check to see if
+;;; the symbol is an external symbol in the common-lisp package.  If so,
+;;; mangle the name.  (Append with $ instead of _.  Should I really do
+;;; that?)
+;;;
 ;;; Revision 1.106  2002/09/13 17:50:19  rtoy
 ;;; From Douglas Crosher:
 ;;;

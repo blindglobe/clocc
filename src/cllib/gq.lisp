@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.3 2000/03/27 20:02:54 sds Exp $
+;;; $Id: gq.lisp,v 2.4 2000/04/27 22:37:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,6 +19,7 @@
   (require :url (translate-logical-pathname "cllib:url"))
   ;; `plot-dated-lists'
   (require :gnuplot (translate-logical-pathname "cllib:gnuplot")))
+
 (in-package :cllib)
 
 (eval-when (compile load eval)
@@ -102,7 +103,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                :pre (next-number ts)
                :low (next-number ts)
                :hgh (next-number ts)) res)
-        (setq dt (infer-date (date (next-token ts :num 3))))
+        (setq dt (infer-date (ignore-errors (date (next-token ts :num 3)))))
         (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
               dt (car res))))))
 
@@ -120,7 +121,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
         (pop ticks)
         (setq dt (infer-date (next-token ts) (next-token ts)))
         (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)
-                             :prc (/ (next-number ts) 100.0))
+                             :prc (/ (next-number ts) 100.0d0))
               res)
         (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
               dt (car res))))))
@@ -173,9 +174,9 @@ change:~15t~7,2f~35thigh:~45t~7,2f
             res)
       (mesg :log *gq-error-stream* "~a~%" (car res))
       (push (list (next-number ts :num 5)
-                  (next-token ts :type 'number :dflt 0.0)
-                  (next-token ts :type 'number :dflt 0.0)
-                  (next-token ts :type 'number :dflt 0.0)) ar)
+                  (next-token ts :type 'number :dflt 0.0d0)
+                  (next-token ts :type 'number :dflt 0.0d0)
+                  (next-token ts :type 'number :dflt 0.0d0)) ar)
       (push (mapcar
              #'cons
              (dotimes (ii 10 (nreverse ds))
@@ -190,7 +191,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
               'get-quotes-apl "APL")
         (list (make-url :prot :http :port 80 :host "quote.yahoo.com"
                         :path "/q?s=")
-              'get-quotes-yahoo "yahoo")
+              'get-quotes-yahoo "Yahoo")
         (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
                         :path "/wc/form/P1?template=sm/chart&Symbol=")
               'get-quotes-sm "StockMaster")
@@ -385,7 +386,7 @@ only the data after `*hist-data-file-sep*' is changed."
     (let (ntot)
       (dolist (hr hist)
         (setq ntot (hist-totl-comp hold (hist-navs hr)))
-        (unless (approx= ntot (hist-totl hr) 0.01d0 0.00001d0)
+        (unless (approx= ntot (hist-totl hr) 1d-2 1d-5)
           (format t "Incorrect total (~a): ~15,5f; correct: ~15,5f~%"
                   (hist-date hr) (hist-totl hr) ntot)
           (setf (hist-totl hr) ntot fixed t))))

@@ -2,7 +2,6 @@
 
 (in-package "MK4")
 
-#+unix
 (defmethod run-os-program ((program string)
 			   &key
 			   (arguments ())
@@ -14,9 +13,8 @@
   (system:call-system-showing-output (format nil "~A~@[~{ ~A~}~]"
 					     program arguments)))
 
-#+unix
 (defun run-program (program &rest arguments)
-  (foreign:call-system-showing-output (format nil "~A~@[~{ ~A~}~]"
+  (system:call-system-showing-output (format nil "~A~@[~{ ~A~}~]"
 					      program arguments)))
   
 

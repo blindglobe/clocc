@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.33 2003/02/17 22:52:36 sds Exp $
+;;; $Id: ext.lisp,v 1.34 2003/06/07 21:59:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -16,6 +16,7 @@
   (:nicknames "ORG.CONS.CLOCC/SDS/PORT")
   (:export
    "CODE" "CASE-ERROR" "NOT-IMPLEMENTED" ; conditions
+   "CODE-PROC" "CODE-MESG" "CODE-ARGS"   ; slot accessors
    "DEFSUBST" "DEFCUSTOM" "DEFCONST"
    "MK-ARR" "MAP-IN" "WITH-GENSYMS"
    "GC" "QUIT"

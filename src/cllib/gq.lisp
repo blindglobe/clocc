@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1998-12-23 Wed 13:40:40 EST sds@eho.eaglets.com>
+;;; File: <gq.lisp - 1999-01-08 Fri 12:09:35 EST sds@eho.eaglets.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.7 1998/12/23 18:42:20 sds Exp $
+;;; $Id: gq.lisp,v 1.8 1999/01/08 17:12:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.8  1999/01/08 17:12:16  sds
+;;; Fixed `get-quotes-sm'.
+;;;
 ;;; Revision 1.7  1998/12/23 18:42:20  sds
 ;;; Added `*gq-error-stream*'.
 ;;;
@@ -49,11 +52,13 @@
     (sds-require "url") (sds-require "gnuplot"))
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
+(defcustom *gq-error-stream* (or null stream) nil
+  "The error stream for `with-open-url'.")
 
 (defun gq-complete-url (url &rest ticks)
   "Complete URL to get the quotes for TICKS."
   (setq url (if (url-p url) (copy-url url) (url url)))
-  (setf (url-path url) (format nil "~a~{+~:@(~a~)~}" (url-path url) ticks))
+  (setf (url-path url) (format nil "~a~{~:@(~a~)~^+~}" (url-path url) ticks))
   url)
 
 ;;;
@@ -112,11 +117,11 @@ change:~15t~7,2f~35thigh:~45t~7,2f
         (mesg :log t "Found: ~a~%" (pop ticks))
         (push (mk-daily-data
                :nav (next-token ts) :chg (next-token ts) :prc (next-token ts)
-               :bid (next-token ts 3 'float 0.0d0)
-               :ask (next-token ts 1 'float 0.0d0)
-               :pre (next-token ts 3 'float 0.0d0)
-               :low (next-token ts 2 'float 0.0d0)
-               :hgh (next-token ts 1 'float 0.0d0)) res)
+               :bid (next-token ts :type 'float :dflt 0.0d0 :num 3)
+               :ask (next-token ts :type 'float :dflt 0.0d0)
+               :pre (next-token ts :type 'float :dflt 0.0d0 :num 3)
+               :low (next-token ts :type 'float :dflt 0.0d0 :num 2)
+               :hgh (next-token ts :type 'float :dflt 0.0d0)) res)
         ;; (setq dt (infer-date (next-token ts 3) (next-token ts)))
         ))))
 
@@ -130,14 +135,14 @@ change:~15t~7,2f~35thigh:~45t~7,2f
       (if dt
           (when (eq (car ticks) zz)
             (pop ticks)
-            (push (mk-daily-data :nav (next-number ts 6)) res))
+            (push (mk-daily-data :nav (next-number ts :num 6)) res))
           (when (and (eq zz 'latest) (eq (next-token ts) 'prices))
             (setq dt (infer-date (next-token ts) (next-token ts))))))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
-  (do ((ti ticks (cdr ti)) ds vs hh ar res dt ts
-       (*gq-error-stream* *standard-output*))
+  (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res dt ts
+       (*ts-kill* '(#\%)))
       ((null ti)
        (values (cons dt (nreverse res))
                (apply #'mapcar
@@ -152,24 +157,25 @@ change:~15t~7,2f~35thigh:~45t~7,2f
     (with-open-url (sock (gq-complete-url url (car ti)) :timeout 600
                          :rt *html-readtable* :err *gq-error-stream*)
       (do ((st (read-line sock) (read-line sock))
-           (sy (format nil "( ~a)" (car ti))))
+           (sy (format nil "(~a)" (car ti))))
           ((string-equal st sy :end1 (min (length st) (length sy)))
-           (mesg :log t "found `~a'~%" st))
+           (mesg :log *gq-error-stream* "found `~a'~%" st))
         (declare (simple-string st sy)))
       (setq ts (make-text-stream :sock sock))
-      (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)) res)
+      (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)
+                           :prc (next-number ts))
+            res)
       (setq dt (gq-fix-date nil))
-      (mesg :log t "~a: ~a~%" dt (car res))
-      (push (list (next-number ts 5) (next-number ts)
+      (mesg :log *gq-error-stream* " ~a:~%~a~%" dt (car res))
+      (push (list (next-number ts :num 5) (next-number ts)
                   (next-number ts) (next-number ts)) ar)
-      (next-token ts)
-      (setq ds nil vs nil)
       (push (mapcar
              #'cons
              (dotimes (ii 10 (nreverse ds))
                (push (infer-date (next-token ts) (next-token ts)) ds))
              (dotimes (ii 10 (nreverse vs))
-               (push (next-number ts) vs))) hh))))
+               (push (next-number ts) vs)))
+            hh))))
 
 (defcustom *get-quote-url-list* list
   (list (list (make-url :prot :http :host "qs.secapl.com"
@@ -186,16 +192,14 @@ change:~15t~7,2f~35thigh:~45t~7,2f
               'get-quotes-sm-old "old StockMaster"))
   "*The list of known URL templates for getting quotes.")
 
-(defcustom *gq-error-stream* (or null stream) nil
-  "The error stream for `with-open-url'.")
-
 (defun get-quotes (server &rest ticks)
   "Get the quotes from one of `*get-quote-url-list*'.
 The first arg, SERVER, when non-nil, specifies which server to use."
   (if server
       (let ((qq (if (numberp server) (nth server *get-quote-url-list*)
                     (find server *get-quote-url-list* :key #'third
-                          :test #'string-equal))))
+                          :test (lambda (se na)
+                                  (search se na :test #'char-equal))))))
         (assert qq (server) "Unknown server `~a'.~%" server)
         (multiple-value-call #'values (third qq)
                              (apply (second qq) (first qq) ticks)))

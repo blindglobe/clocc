@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/attributes.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/attributes.lisp,v 1.2 2003/02/28 20:23:08 pvaneynd Exp $")
 
 ;;;	The special variable *window-attributes* is an alist containg:
 ;;;	(drawable attributes attribute-changes geometry geometry-changes)
@@ -45,10 +45,10 @@
 
 (in-package :xlib)
 
-(eval-when (compile load eval)			;needed by Franz Lisp
-(defconstant *attribute-size* 44)
-(defconstant *geometry-size* 24)
-(defconstant *context-size* (max *attribute-size* *geometry-size* (* 16 4))))
+(eval-when (:compile-toplevel :load-toplevel :execute)			;needed by Franz Lisp
+(defconstant +attribute-size+ 44)
+(defconstant +geometry-size+ 24)
+(defconstant +context-size+ (max +attribute-size+ +geometry-size+ (* 16 4))))
 
 (defvar *window-attributes* nil) ;; Bound to an alist of (drawable . state) within WITH-STATE
 
@@ -57,7 +57,7 @@
 
 (defun allocate-context ()
   (or (threaded-atomic-pop *context-free-list* reply-next reply-buffer)
-      (make-reply-buffer *context-size*)))
+      (make-reply-buffer +context-size+)))
 
 (defun deallocate-context (context)
   (declare (type reply-buffer context))
@@ -158,7 +158,7 @@
 	  (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
 	  (setf (aref changes (1+ number)) value))	;; save value
 						; Send change to the server
-      (with-buffer-request ((window-display window) *x-changewindowattributes*)
+      (with-buffer-request ((window-display window) +x-changewindowattributes+)
 	(window window)
 	(card32 (ash 1 number) value)))))
 ;;
@@ -185,7 +185,7 @@
 	  (setf (aref changes 0) (logior (aref changes 0) (ash 1 number))) ;; set mask bit
 	  (setf (aref changes (1+ number)) value))	;; save value
 						; Send change to the server
-      (with-buffer-request ((drawable-display drawable) *x-configurewindow*)
+      (with-buffer-request ((drawable-display drawable) +x-configurewindow+)
 	(drawable drawable)
 	(card16 (ash 1 number))
 	(card29 value)))))
@@ -207,7 +207,7 @@
 	      (deallocate-gcontext-state (state-attribute-changes state-entry))
 	      (setf (state-attribute-changes state-entry) nil))
 	    ;; Get window attributes
-	    (with-buffer-request-and-reply (display *x-getwindowattributes* size :sizes (8))
+	    (with-buffer-request-and-reply (display +x-getwindowattributes+ size :sizes (8))
 		 ((window window))
 	      (let ((repbuf (or (state-attributes state-entry) (allocate-context))))
 		(declare (type reply-buffer repbuf))
@@ -237,7 +237,7 @@
 	      (deallocate-gcontext-state (state-geometry-changes state-entry))
 	      (setf (state-geometry-changes state-entry) nil))
 	    ;; Get drawable attributes
-	    (with-buffer-request-and-reply (display *x-getgeometry* size :sizes (8))
+	    (with-buffer-request-and-reply (display +x-getgeometry+ size :sizes (8))
 		 ((drawable drawable))
 	      (let ((repbuf (or (state-geometry state-entry) (allocate-context))))
 		(declare (type reply-buffer repbuf))
@@ -255,7 +255,7 @@
 	 (mask (aref changes 0)))
     (declare (type display display)
 	     (type mask32 mask))
-    (with-buffer-request (display *x-changewindowattributes*)
+    (with-buffer-request (display +x-changewindowattributes+)
       (window window)
       (card32 mask)
       (progn ;; Insert a word in the request for each one bit in the mask
@@ -282,7 +282,7 @@
 	 (mask (aref changes 0)))
     (declare (type display display)
 	     (type mask16 mask))
-    (with-buffer-request (display *x-configurewindow*)
+    (with-buffer-request (display +x-configurewindow+)
       (window window)
       (card16 mask)
       (progn ;; Insert a word in the request for each one bit in the mask

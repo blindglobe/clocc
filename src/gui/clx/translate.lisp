@@ -48,7 +48,7 @@
       (when (<= first keysym last)
 	(return (first set))))))
 
-(eval-when (compile eval load) ;; Required for Vaxlisp ...
+(eval-when (:compile-toplevel :execute :load-toplevel) ;; Required for Vaxlisp ...
 (defmacro keysym (keysym &rest bytes)
   ;; Build a keysym.
   ;; If KEYSYM is an integer, it is used as the most significant bits of
@@ -245,7 +245,7 @@
 	     *keysym->character-map*)
     result))
 
-(eval-when (compile eval load) ;; Required for Symbolics...
+(eval-when (:compile-toplevel :execute :load-toplevel) ;; Required for Symbolics...
 (defparameter character-set-switch-keysym (keysym 255 126))
 (defparameter left-shift-keysym (keysym 255 225))
 (defparameter right-shift-keysym (keysym 255 226))

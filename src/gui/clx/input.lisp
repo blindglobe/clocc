@@ -26,32 +26,32 @@
 ;;; 12/10/87	LGO	Created
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/input.lisp,v 1.3 2003/02/24 09:17:02 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/input.lisp,v 1.4 2003/02/28 20:23:12 pvaneynd Exp $")
 
 (in-package :xlib)
 
 ;; Event Resource
 (defvar *event-free-list* nil) ;; List of unused (processed) events
 
-(eval-when (eval compile load)
-(defconstant *max-events* 64) ;; Maximum number of events supported (the X11 alpha release only has 34)
-(defvar *event-key-vector* (make-array *max-events* :initial-element nil)
+(eval-when (:execute :compile-toplevel :load-toplevel)
+(defconstant +max-events+ 64) ;; Maximum number of events supported (the X11 alpha release only has 34)
+(defvar *event-key-vector* (make-array +max-events+ :initial-element nil)
   "Vector of event keys - See define-event")
 )
-(defvar *event-macro-vector* (make-array *max-events* :initial-element nil)
+(defvar *event-macro-vector* (make-array +max-events+ :initial-element nil)
   "Vector of event handler functions - See declare-event")
-(defvar *event-handler-vector* (make-array *max-events* :initial-element nil)
+(defvar *event-handler-vector* (make-array +max-events+ :initial-element nil)
   "Vector of event handler functions - See declare-event")
-(defvar *event-send-vector* (make-array *max-events* :initial-element nil)
+(defvar *event-send-vector* (make-array +max-events+ :initial-element nil)
   "Vector of event sending functions - See declare-event")
 
 (defun allocate-event ()
   (or (threaded-atomic-pop *event-free-list* reply-next reply-buffer)
-      (make-reply-buffer *replysize*)))
+      (make-reply-buffer +replysize+)))
 
 (defun deallocate-event (reply-buffer)
   (declare (type reply-buffer reply-buffer))
-  (setf (reply-size reply-buffer) *replysize*)
+  (setf (reply-size reply-buffer) +replysize+)
   (threaded-atomic-push reply-buffer *event-free-list* reply-next reply-buffer))
 
 ;; Extensions are handled as follows:
@@ -97,11 +97,11 @@
 	   (type list events errors))
   (let ((name-symbol (kintern name)) ;; Intern name in the keyword package
 	(event-list (mapcar #'canonicalize-event-name events)))
-    `(eval-when (compile load eval)
+    `(eval-when (:compile-toplevel :load-toplevel :execute)
        (setq *extensions* (cons (list ',name-symbol ',event-list ',errors)
 				(delete ',name-symbol *extensions* :key #'car))))))
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
 (defun canonicalize-event-name (event)
   ;; Returns the event name keyword given an event name stringable
   (declare (type stringable event))
@@ -109,7 +109,7 @@
   (kintern event))
 ) ;; end eval-when
 
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
 (defun allocate-extension-event-code (name)
   ;; Allocate an event-code for an extension
   ;; This is executed at COMPILE and LOAD time from DECLARE-EVENT.
@@ -263,7 +263,7 @@
 
 (defun allocate-reply-buffer (size)
   (declare (type array-index size))
-  (if (index<= size *replysize*)
+  (if (index<= size +replysize+)
       (allocate-event)
     (let ((index (integer-length (index1- size))))
       (declare (type array-index index))
@@ -275,7 +275,7 @@
   (declare (type reply-buffer reply-buffer))
   (let ((size (reply-size reply-buffer)))
     (declare (type array-index size))
-    (if (index<= size *replysize*)
+    (if (index<= size +replysize+)
 	(deallocate-event reply-buffer)
       (let ((index (integer-length (index1- size))))
 	(declare (type array-index index))
@@ -324,18 +324,18 @@
 	   (type array-index length))
   (unwind-protect 
       (progn
-	(when (index< *replysize* length)
+	(when (index< +replysize+ length)
 	  (let ((repbuf nil))
 	    (declare (type (or null reply-buffer) repbuf))
 	    (unwind-protect
 		(progn
 		  (setq repbuf (allocate-reply-buffer length))
 		  (buffer-replace (reply-ibuf8 repbuf) (reply-ibuf8 reply-buffer)
-				  0 *replysize*)
+				  0 +replysize+)
 		  (deallocate-event (shiftf reply-buffer repbuf nil)))
 	      (when repbuf
 		(deallocate-reply-buffer repbuf))))
-	  (when (buffer-input display (reply-ibuf8 reply-buffer) *replysize* length)
+	  (when (buffer-input display (reply-ibuf8 reply-buffer) +replysize+ length)
 	    (return-from read-reply-input t))
 	  (setf (reply-data-size reply-buffer) length))
 	(with-event-queue-internal (display)
@@ -411,6 +411,9 @@
 			 (conditional-store (display-input-in-progress display) nil token))
 	       (if (eql timeout 0)
 		   (return-from read-input :timeout)
+		 ;;; XXX [pve]: this is the only location that has
+		 ;;; process-block. I think we can rewrite this into something
+		 ;;; more appropriate
 		 (apply #'process-block "CLX Input Lock"
 			#'(lambda (display predicate &rest predicate-args)
 			    (declare (type display display)
@@ -432,7 +435,7 @@
 		   (let ((eof-p (buffer-input-wait display timeout)))
 		     (when eof-p (return-from read-input eof-p))))
 		 (without-aborts
-		   (let ((eof-p (buffer-input display buffer-bbuf 0 *replysize*
+		   (let ((eof-p (buffer-input display buffer-bbuf 0 +replysize+
 					      (if force-output-p 0 timeout))))
 		     (when eof-p
 		       (when (eq eof-p :timeout)
@@ -441,14 +444,14 @@
 			   (return-from read-input :timeout)))
 		       (setf (display-dead display) t)
 		       (return-from read-input eof-p)))
-		   (setf (reply-data-size reply-buffer) *replysize*)
+		   (setf (reply-data-size reply-buffer) +replysize+)
 		   (when (= (the card8 (setq type (read-card8 0))) 1)
-		     ;; Normal replies can be longer than *replysize*, so we
+		     ;; Normal replies can be longer than +replysize+, so we
 		     ;; have to handle them while aborts are still disallowed.
 		     (let ((value
 			     (read-reply-input
 			       display (read-card16 2)
-			       (index+ *replysize* (index* (read-card32 4) 4))
+			       (index+ +replysize+ (index* (read-card32 4) 4))
 			       (shiftf reply-buffer nil))))
 		       (when value
 			 (return-from read-input value))
@@ -606,7 +609,7 @@
       (buffer-replace buffer
 		      (display-obuf8 display)
 		      0
-		      *replysize*
+		      +replysize+
 		      (index+ 12 (buffer-boffset display)))
       (setf (aref buffer 0) (if send-event-p (logior event-code #x80) event-code)
 	    (aref buffer 2) 0
@@ -643,7 +646,7 @@
 
 
 (defmacro define-event (name code)
-  `(eval-when (eval compile load)
+  `(eval-when (:execute :compile-toplevel :load-toplevel)
      (setf (svref *event-key-vector* ,code) ',name)
      (setf (get ',name 'event-code) ,code)))
 
@@ -1199,7 +1202,7 @@
 	   (type (or null function) default)
 	   (clx-values sequence))			;Default handler for initial content
   ;; Makes a handler sequence suitable for process-event
-  (make-sequence type *max-events* :initial-element default))
+  (make-sequence type +max-events+ :initial-element default))
    
 (defun event-handler (handlers event-key)
   (declare (type sequence handlers)
@@ -1323,7 +1326,7 @@
   ;; CLAUSES are of the form:
   ;; (event-or-events binding-list test-form . body-forms)
   (let ((event-key (gensym))
-	(all-events (make-array *max-events* :element-type 'bit :initial-element 0)))
+	(all-events (make-array +max-events+ :element-type 'bit :initial-element 0)))
     `(reading-event (,event)
        (let ((,event-key (svref *event-key-vector* (event-code ,event))))
 	 (case ,event-key
@@ -1351,7 +1354,7 @@
 			   (let ((keys (do ((i 0 (1+ i))
 					    (key nil)
 					    (result nil))
-					   ((>= i *max-events*) result)
+					   ((>= i +max-events+) result)
 					 (setq key (svref *event-key-vector* i))
 					 (when (and key (zerop (aref all-events i)))
 					   (push key result)))))
@@ -1445,7 +1448,7 @@
 ;;; Error Handling
 ;;;-----------------------------------------------------------------------------
 
-(eval-when (eval compile load)
+(eval-when (:execute :compile-toplevel :load-toplevel)
 (defparameter
   *xerror-vector*
   '#(unknown-error

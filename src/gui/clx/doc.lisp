@@ -16,7 +16,7 @@
 ;;; express or implied warranty.
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/doc.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/doc.lisp,v 1.2 2003/02/28 20:23:10 pvaneynd Exp $")
 
 ;; Version 4
 
@@ -2796,7 +2796,7 @@ If there are no regions given, return a very large region."
 (deftype bitmap () '(array bit (* *)))
 (deftype pixarray () '(array pixel (* *)))
 
-(defconstant *lisp-byte-lsb-first-p* #+lispm t #-lispm nil
+(defconstant +lisp-byte-lsb-first-p+ #+lispm t #-lispm nil
 	     "Byte order in pixel arrays")
 
 (defstruct image

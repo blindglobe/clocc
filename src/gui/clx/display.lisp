@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.5 2003/02/24 09:17:37 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.6 2003/02/28 20:23:10 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -203,12 +203,12 @@
 						      :display display :id id))
 					 (save-id display id ,type))
 					;; Found.  Check the type
-					,(cond ((null *type-check?*)
+					,(cond ((null +type-check?+)
 						`(t ,type))
 					       ((member type '(window pixmap))
 						`((type? ,type 'drawable) ,type))
 					       (t `((type? ,type ',type) ,type)))
-					,@(when *type-check?*
+					,@(when +type-check?+
 					    `((t (x-error 'lookup-error
 							  :id id
 							  :display display
@@ -604,7 +604,7 @@
   ;; Forces output, then causes a round-trip to ensure that all possible
   ;; errors and events have been received.
   (declare (type display display))
-  (with-buffer-request-and-reply (display *x-getinputfocus* 16 :sizes (8 32))
+  (with-buffer-request-and-reply (display +x-getinputfocus+ 16 :sizes (8 32))
        ()
     )
   ;; Report asynchronous errors here if the user wants us to.

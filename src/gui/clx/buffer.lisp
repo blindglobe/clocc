@@ -20,7 +20,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/buffer.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/buffer.lisp,v 1.2 2003/02/28 20:23:09 pvaneynd Exp $")
 
 ;; A few notes:
 ;;
@@ -54,7 +54,7 @@
 
 (in-package :xlib)
 
-(defconstant *requestsize* 160) ;; Max request size (excluding variable length requests)
+(defconstant +requestsize+ 160) ;; Max request size (excluding variable length requests)
 
 ;;; This is here instead of in bufmac so that with-display can be
 ;;; compiled without macros and bufmac being loaded.

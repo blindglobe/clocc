@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.5 2003/02/24 09:17:24 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.6 2003/02/28 20:23:09 pvaneynd Exp $")
 
 ;; Primary Interface Author:
 ;;	Robert W. Scheifler
@@ -94,7 +94,7 @@
 (defparameter *protocol-major-version* 11.)
 (defparameter *protocol-minor-version* 0)
 
-(defparameter *x-tcp-port* 6000) ;; add display number
+(defparameter *x-tcp-port*+ 6000) ;; add display number
 
 (defparameter *protocol-families*
   '(;; X11/X.h, Family*

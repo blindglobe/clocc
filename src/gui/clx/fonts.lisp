@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/fonts.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/fonts.lisp,v 1.2 2003/02/28 20:23:11 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -159,7 +159,7 @@
       (setq font (make-font :display display :name name-string))
       (setq font-id (allocate-resource-id display font 'font))
       (setf (font-id-internal font) font-id)
-      (with-buffer-request (display *x-openfont*)
+      (with-buffer-request (display +x-openfont+)
 	(resource-id font-id)
 	(card16 (length name-string))
 	(pad16 nil)
@@ -176,7 +176,7 @@
 	 (display (font-display font))
 	 (id (allocate-resource-id display font 'font)))
     (setf (font-id-internal font) id)
-    (with-buffer-request (display *x-openfont*)
+    (with-buffer-request (display +x-openfont+)
       (resource-id id)
       (card16 (length name-string))
       (pad16 nil)
@@ -201,7 +201,7 @@
 	font-info
 	props)
     (setq font-id (font-id font)) ;; May issue an open-font request
-    (with-buffer-request-and-reply (display *x-queryfont* 60)
+    (with-buffer-request-and-reply (display +x-queryfont+ 60)
 	 ((resource-id font-id))
       (let* ((min-byte2 (card16-get 40))
 	     (max-byte2 (card16-get 42))
@@ -252,7 +252,7 @@
       ;; Remove font from cache
       (setf (display-font-cache display) (delete font (display-font-cache display)))
       ;; Close the font
-      (with-buffer-request (display *x-closefont*)
+      (with-buffer-request (display +x-closefont+)
 	(resource-id id)))))
 
 (defun list-font-names (display pattern &key (max-fonts 65535) (result-type 'list))
@@ -262,12 +262,12 @@
 	   (type t result-type)) ;; CL type
   (declare (clx-values (clx-sequence string)))
   (let ((string (string pattern)))
-    (with-buffer-request-and-reply (display *x-listfonts* size :sizes (8 16))
+    (with-buffer-request-and-reply (display +x-listfonts+ size :sizes (8 16))
 	 ((card16 max-fonts (length string))
 	  (string string))
       (values
 	(read-sequence-string
-	  buffer-bbuf (index- size *replysize*) (card16-get 8) result-type *replysize*)))))
+	  buffer-bbuf (index- size +replysize+) (card16-get 8) result-type +replysize+)))))
 
 (defun list-fonts (display pattern &key (max-fonts 65535) (result-type 'list))
   ;; Note: Was called list-fonts-with-info.
@@ -283,7 +283,7 @@
   (declare (clx-values (clx-sequence font)))
   (let ((string (string pattern))
 	(result nil))
-    (with-buffer-request-and-reply (display *x-listfontswithinfo* 60
+    (with-buffer-request-and-reply (display +x-listfontswithinfo+ 60
 					    :sizes (8 16) :multiple-reply t)
 	 ((card16 max-fonts (length string))
 	  (string string))
@@ -334,11 +334,11 @@
   (declare (type display display)
 	   (type t result-type)) ;; CL type
   (declare (clx-values (clx-sequence (or string pathname))))
-  (with-buffer-request-and-reply (display *x-getfontpath* size :sizes (8 16))
+  (with-buffer-request-and-reply (display +x-getfontpath+ size :sizes (8 16))
        ()
     (values
       (read-sequence-string
-	buffer-bbuf (index- size *replysize*) (card16-get 8) result-type *replysize*))))
+	buffer-bbuf (index- size +replysize+) (card16-get 8) result-type +replysize+))))
 
 (defun set-font-path (display paths)
   (declare (type display display)
@@ -350,7 +350,7 @@
       (let* ((string (string (elt paths i)))
 	     (len (length string)))
 	(incf request-length (1+ len))))
-    (with-buffer-request (display *x-setfontpath* :length request-length)
+    (with-buffer-request (display +x-setfontpath+ :length request-length)
       (length (ceiling request-length 4))
       (card16 path-length)
       (pad16 nil)

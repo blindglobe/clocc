@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.3 2003/02/28 20:23:10 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -95,7 +95,7 @@
 ;;; overlapping array and image code.
 
 #+cmu
-(eval-when (compile eval load)
+(eval-when (:compile-toplevel :execute :load-toplevel)
   (ecase #.(c:backend-byte-order c:*backend*)
     (:big-endian)
     (:little-endian (pushnew :clx-little-endian *features*))))
@@ -183,7 +183,7 @@
 
 ;;;; Stuff for BUFFER definition
 
-(defconstant *replysize* 32.)
+(defconstant +replysize+ 32.)
 
 ;; used in defstruct initializations to avoid compiler warnings
 (defvar *empty-bytes* (make-sequence 'buffer-bytes 0))
@@ -199,8 +199,8 @@
   (data-size 0 :type array-index)
   )
 
-(defconstant *buffer-text16-size* 256)
-(deftype buffer-text16 () `(simple-array (unsigned-byte 16) (,*buffer-text16-size*)))
+(defconstant +buffer-text16-size+ 256)
+(deftype buffer-text16 () `(simple-array (unsigned-byte 16) (,+buffer-text16-size+)))
 
 ;; These are here because.
 
@@ -216,7 +216,7 @@
 
 ;;; Pseudo-class mechanism.
 
-(eval-when (eval compile load)
+(eval-when (:execute :compile-toplevel :load-toplevel)
 (defvar *def-clx-class-use-defclass*
   #+(and cmu pcl) '(XLIB:DRAWABLE XLIB:WINDOW XLIB:PIXMAP)
   #+(and cmu (not pcl)) nil
@@ -278,7 +278,7 @@
 		(setf (elt slot-types i) (getf slot :type t))))
 	    `(progn
 
-	       (eval-when (compile load eval)
+	       (eval-when (:compile-toplevel :load-toplevel :execute)
 		 (setf (get ',name 'def-clx-class) ',slots))
 
 	       ;; From here down are the system-specific expansions:
@@ -351,7 +351,7 @@
   ;; Byte (8 bit) output buffer
   (obuf8 *empty-bytes* :type buffer-bytes)
   ;; Holding buffer for 16-bit text
-  (tbuf16 (make-sequence 'buffer-text16 *buffer-text16-size* :initial-element 0))
+  (tbuf16 (make-sequence 'buffer-text16 +buffer-text16-size+ :initial-element 0))
   ;; Probably EQ to Output-Stream
   (input-stream nil :type (or null stream))
 
@@ -380,15 +380,15 @@
 ;; Image stuff
 ;;-----------------------------------------------------------------------------
 
-(defconstant *image-bit-lsb-first-p*
+(defconstant +image-bit-lsb-first-p+
 	     #+clx-little-endian t
 	     #-clx-little-endian nil)
 
-(defconstant *image-byte-lsb-first-p*
+(defconstant +image-byte-lsb-first-p+
 	     #+clx-little-endian t
 	     #-clx-little-endian nil)
 
-(defconstant *image-unit* 32)
+(defconstant +image-unit+ 32)
 
-(defconstant *image-pad* 32)
+(defconstant +image-pad+ 32)
 

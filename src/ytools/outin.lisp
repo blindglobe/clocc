@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.10 2004/10/26 22:16:01 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.11 2004/10/29 15:33:51 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -51,6 +51,7 @@
    (cond ((Out-stream-p srm)
 	  srm)
 	 ((is-Stream srm)
+	  #+openmcl
 	  (cond ((typep srm 'ccl::xp-stream)
 		 (dbg-save srm)
 		 (breakpoint stream-outify

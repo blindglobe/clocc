@@ -1239,92 +1239,97 @@ FILENAME                 File containing Fortran code
                 (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x)))))
    nil) 
   
-(defun parse-common (x)
-  (when (member 'f2cl-// x)
-    ;; In preprocessing '//' got converted to f2cl-//.  We undo that
-    ;; here by converting f2cl-// to '(/ /).
-    (let ((result '()))
-      (mapc #'(lambda (item)
-		(cond ((eq item 'f2cl-//)
-		       (push '/ result)
-		       (push '/ result))
-		      (t
-		       (push item result))))
-	    x)
-      (setf x (nreverse result))))
+(defun parse-common (common-statement)
+  (let ((x (if (member 'f2cl-// common-statement)
+	       ;; In preprocessing '//' got converted to f2cl-//.  We undo that
+	       ;; here by converting f2cl-// to '(/ /).
+	       (let ((result '()))
+		 (dolist (item common-statement)
+		   (cond ((eq item 'f2cl-//)
+			  (push '/ result)
+			  (push '/ result))
+			 (t
+			  (push item result))))
+		 (nreverse result))
+	       common-statement)))
 	  
-   (setq x (mapcar #'(lambda (l) (remove '|,| l))
-                   (list-split '|/| (cdr x))))
-   (setq x (if (null (car x)) (cdr x) (cons nil x)))
-   ;; x now in form (cb nlist cb nlist ... )
+    (setq x (mapcar #'(lambda (l)
+			(remove '|,| l))
+		    (list-split '|/| (cdr x))))
+    (setq x (if (null (car x))
+		(cdr x)
+		(cons nil x)))
+    ;; x now in form (cb nlist cb nlist ... )
 
-   ;; Pick out the common blocks and variables and put them in a hash
-   ;; table for later use.  We want to associate the variables with
-   ;; the common block.
-   (do ((list x (cddr list)))
-       ((endp list))
-     (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
-	   (block-name (or (caar list)
-			   '%BLANK%)))
-       ;; Check to see if this is another instance.  If so, Fortran
-       ;; says these elements are a member of the common block.
-       (multiple-value-bind (val found)
-	   (gethash block-name *common-blocks*)
-	 (declare (ignore found))
-	 ;;(format t "block = ~S~%" block-name)
-	 ;;(format t "  val = ~S~%" val)
-	 ;;(format t "  vars = ~S~%" varlist)
-	 ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
-	 (setf (gethash block-name *common-blocks*)
-	       (append val (remove-if-not #'symbolp varlist)))
-	 )))
+    ;; Pick out the common blocks and variables and put them in a hash
+    ;; table for later use.  We want to associate the variables with
+    ;; the common block.
+    (do ((list x (cddr list)))
+	((endp list))
+      (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
+	    (block-name (or (caar list) '%BLANK%)))
+	;; Check to see if this is another instance.  If so, Fortran
+	;; says these elements are a member of the common block.
+	(multiple-value-bind (val found)
+	    (gethash block-name *common-blocks*)
+	  (declare (ignore found))
+	  ;;(format t "block = ~S~%" block-name)
+	  ;;(format t "  val = ~S~%" val)
+	  ;;(format t "  vars = ~S~%" varlist)
+	  ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
+	  (setf (gethash block-name *common-blocks*)
+		(append val (remove-if-not #'symbolp varlist))))))
 
    
-   ;; pick out lists of vblenames and add to *subprog_common_vars*
-   (setq *subprog_common_vars* 
-         (append *subprog_common_vars*
-                 (do ((list x (cddr list))
-                      (ret nil (append (extract-atoms (cadr list)) ret)))
-                     ((endp list)
-		      (mapcar #'check-reserved-lisp-names ret))
-		   ;; look for common arrays and store dimensions of
-		   ;; new common vars
-		   (do ((nlist (cadr list) (cdr nlist)))
-		       ((endp nlist))
-		     (cond ((and (cdr nlist) (listp (cadr nlist)))
-			    ;; array dimensioned in COMMON stmt
-			    (update_cm_array_dims (car nlist) 
-						  #+nil
-						  (remove '|,| (cadr nlist))
-						  (cadr nlist))
-			    (setq nlist (cdr nlist)))
-			   ;; check if array dimensioned elsewhere
-			   ((member (car nlist) *declared_vbles*)
-			    (do ((decls *explicit_vble_decls* (cdr decls)))
-				((null decls) nil)
-			      (do ((vbles (cdar decls) (cdr vbles)))
-				  ((null vbles) nil)
-				(if (and (eq (car nlist) (caar vbles))
-					 (cdar vbles))
-				    (update_cm_array_dims (car nlist)
-							  (cdar vbles))))))
-			   )))))
-   ;;(format t "*common_array_dims* = ~A~%" *common_array_dims*)
-   nil)
+    ;; pick out lists of vblenames and add to *subprog_common_vars*
+    (setq *subprog_common_vars* 
+	  (append *subprog_common_vars*
+		  (do ((list x (cddr list))
+		       (ret nil (append (extract-atoms (cadr list))
+					ret)))
+		      ((endp list)
+		       (mapcar #'check-reserved-lisp-names ret))
+		    ;; look for common arrays and store dimensions of
+		    ;; new common vars
+		    (do ((nlist (cadr list) (cdr nlist)))
+			((endp nlist))
+		      (cond ((and (cdr nlist)
+				  (listp (cadr nlist)))
+			     ;; array dimensioned in COMMON stmt
+			     (update_cm_array_dims (car nlist)
+						   (cadr nlist))
+			     (setq nlist (cdr nlist)))
+			    ;; check if array dimensioned elsewhere
+			    ((member (car nlist) *declared_vbles*)
+			     (do ((decls *explicit_vble_decls* (cdr decls)))
+				 ((null decls) nil)
+			       (do ((vbles (cdar decls) (cdr vbles)))
+				   ((null vbles) nil)
+				 (if (and (eq (car nlist) (caar vbles))
+					  (cdar vbles))
+				     (update_cm_array_dims (car nlist)
+							   (cdar vbles))))))
+			    )))))
+    ;;(format t "*common_array_dims* = ~A~%" *common_array_dims*)
+    nil))
 
 ; append list of vble and dims to *common_array_dims* if vble not already in list
 ; when vble in list check dims match with that stored
 (defun update_cm_array_dims (vble dims)
-   (let ((stored-dims (member vble *common_array_dims*)))
-      (if stored-dims
-          (if (not (equal (cadr stored-dims) dims))
-              (error "common array ~A dimensions not equivalent between subprograms" vble))
-          (setq *common_array_dims*
-		(append (list vble (parse_dimension_specs dims)) *common_array_dims*)))))
+  (let ((stored-dims (member vble *common_array_dims*))
+	(parsed-dims (parse_dimension_specs dims)))
+    (if stored-dims
+	(when (not (equal (cadr stored-dims) parsed-dims))
+	  (error "common array ~A dimensions not equivalent between subprograms" vble))
+	(setq *common_array_dims*
+	      (append (list vble parsed-dims)
+		      *common_array_dims*)))))
 
 (defun extract-atoms (x)
    (do ((l x (cdr l))
-        (ret nil (if (atom (car l)) (cons (car l) ret) ret)))
+        (ret nil (if (atom (car l))
+		     (cons (car l) ret)
+		     ret)))
        ((endp l) ret)))
 
 ;; Parse Fortran character declarations. These are rather complicated
@@ -1539,6 +1544,7 @@ FILENAME                 File containing Fortran code
               (return (list `(,(tail-chop sym lis)
                  ,@(list-split sym (head-chop sym lis))) ops))))))
 
+#||
 #+cmu
 (defun concat (&rest syms)
   (cond ((null syms)
@@ -1546,6 +1552,7 @@ FILENAME                 File containing Fortran code
 	(t
 	 (concatenate 'string (symbol-name (first syms))
 		      (apply #'concat (rest syms))))))
+||#
 
 (defun list-split-multi (op lis)
   (prog (ret)
@@ -1874,8 +1881,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.62 2000/08/09 22:33:27 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.63 2000/08/10 13:50:42 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.63  2000/08/10 13:50:42  rtoy
+;;; o UPDATE_CM_ARRAY_DIMS was not handling the new method of storing
+;;;   dimensions.  Fix it.
+;;; o Removed unused CONCAT function.
+;;; o Gratuitous mods to PARSE-COMMON.
+;;;
 ;;; Revision 1.62  2000/08/09 22:33:27  rtoy
 ;;; The preprocessor converted // to f2cl-//.  We need to undo that
 ;;; because // in a COMMON statement really means the blank common block.

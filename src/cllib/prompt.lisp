@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.5 2000/05/22 20:40:30 sds Exp $
+;;; $Id: prompt.lisp,v 2.6 2000/06/02 16:58:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,8 +42,10 @@
                       (string-equal term "dumb")
                       (string-equal term "emacs"))))
          (beg-bold (if fontp "" "[1m"))
-         #-allegro (beg-it   (if fontp "" "[7m"))
+         #-allegro
+         (beg-it   (if fontp "" "[7m"))
          (end-all  (if fontp "" "[m")))
+    #+allegro (declare (ignore cmd-idx))
     #+(or cmu clisp)
     (setq lisp::*prompt*
           (lambda ()

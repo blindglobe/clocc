@@ -51,20 +51,20 @@ will also run compile-file on the Lisp file so you can load it
 directly into your lisp.
 
 
-For those anxious to use the translator without studying the documentation 
+For those anxious to use the translator without studying the documentation
 here is a short list of restrictions that may result in obscure errors:
  - input code is assumed to be valid Fortran 77
- - no tabs are permitted in the source, 
+ - no tabs are permitted in the source,
  - $comments should only be turned on if the Fortran code has comments
    exclusively within subroutines,
  - linebreaks must occur within whitespace,
- - spaces are required to seperate symbols.
+ - spaces are required to separate symbols.
 Note also that an intermediate file called "prep.tmp" is produced by the
 preprocessing stage of the translation.
 
 
 
-Acknowledgements:
+Acknowledgments:
 
 The translator was written by Kevin Broughan and Diane Koorey Willcock
 at the University of Waikato. Reports should be sent to

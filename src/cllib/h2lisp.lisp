@@ -1,29 +1,24 @@
 ;#!/usr/bin/clisp -M ~sds/bin/clisp.mem -C
-;;; File: <h2lisp.lisp - 1999-11-24 Wed 12:28:09 EST sds@ksp.com>
+;;; File: <h2lisp.lisp - 2000-02-18 Fri 14:08:59 EST sds@ksp.com>
 ;;;
 ;;; Convert *.c to CLISP's ffi
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2000 by Sam Steingold
 ;;;
-;;; $Id: h2lisp.lisp,v 1.3 1999/11/24 17:49:55 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
-;;; $Log: h2lisp.lisp,v $
-;;; Revision 1.3  1999/11/24 17:49:55  sds
-;;; bring up to date (long overdue checkin)
-;;;
-;;; Revision 1.2  1999/01/13 20:42:55  sds
-;;; Replaced top-level `*c-readtable*' creation forms with a functions
-;;; `make-c-readtable'.
-;;;
-;;; Revision 1.1  1999/01/12 23:12:16  sds
-;;; Initial revision
-;;;
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `text-stream'
+  (require :html (translate-logical-pathname "cllib:html")))
+(in-package :cllib)
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "url") ; for `text-stream'
+(export '(h2lisp))
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
@@ -175,10 +170,10 @@
 (defgeneric h2lisp (in out)
   (:documentation "Convert C header to lisp.
 Return the number of forms processed.")
-  (:method ((in string) (out t)) (h2lisp (merge-pathnames in) out))
+  (:method ((in string) (out t)) (h2lisp (pathname in) out))
   (:method ((in cons) (out t))
     (reduce #'+ in :key (lambda (in0) (h2lisp in0 out))))
-  (:method ((in t) (out string)) (h2lisp in (merge-pathnames out)))
+  (:method ((in t) (out string)) (h2lisp in (pathname out)))
   (:method ((in t) (out pathname))
     (with-open-file (fout out :direction :output :if-exists :supersede
                           :if-does-not-exist :create)
@@ -296,5 +291,5 @@ Return the number of forms processed.")
 ;(LET ((*readtable* (copy-readtable)))
 ;  (eval (read-from-string "(read-next ts :skip #'c-cmt-p)")))
 
-(provide "h2lisp")
+(provide :h2lisp)
 ;;; file h2lisp.lisp ends here

@@ -1,32 +1,34 @@
-;;; File: <fin.lisp - 1999-11-01 Mon 16:56:02 EST sds@ksp.com>
+;;; File: <fin.lisp - 2000-02-18 Fri 12:59:40 EST sds@ksp.com>
 ;;;
 ;;; Financial functions
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is free software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: fin.lisp,v 1.3 1999/11/12 22:54:55 sds Exp $
+;;; $Id: fin.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
-;;; $Log: fin.lisp,v $
-;;; Revision 1.3  1999/11/12 22:54:55  sds
-;;; (mgg-term, mgg-discount): doc fixes.
-;;;
-;; Revision 1.2  1999/10/29  21:35:56  sds
-;; (solow-next-year): renamed from `next-year'.
-;; (mgg-prepay): better output formatting.
-;;
-;; Revision 1.1  1999/10/06  20:13:54  sds
-;; Initial revision
-;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `*num-tolerance*', `sqr', `erf'
+  (require :math (translate-logical-pathname "cllib:math"))
+  ;; `comma'
+  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  ;; `dfloat'
+  (require :withtype (translate-logical-pathname "cllib:withtype")))
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "math") (sds-require "print")
+(in-package :cllib)
+
+(export '(mgg-monthly mgg-compare mgg-prepay mgg-interest
+          black-scholes-call black-scholes-eput
+          solow solow-next-year
+          lognormal luhn))
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
@@ -55,6 +57,7 @@ APR of 7% should be given as 0.07, not as 7."
   (let ((rate (mgg-rate apr monthly)))
     (- (log (- 1 (/ rate discount)) (1+ rate)))))
 
+;;;###autoload
 (defun mgg-compare (principal term apr apr-pts &optional monthly)
   "Compare two APRs by their present values."
   (let* ((tt (* 12 term)) (di (mgg-discount tt apr monthly))
@@ -78,6 +81,7 @@ APR of 7% should be given as 0.07, not as 7."
     ;; (values mm res)
     (values)))
 
+;;;###autoload
 (defun mgg-prepay (principal term apr prepay &optional monthly)
   "Print the information about prepaying the loan."
   (let* ((mm (mgg-monthly principal term apr monthly)) (tot (+ prepay mm))
@@ -103,6 +107,7 @@ Prepay: ~2:/comma/~35t  --> ~2,9:/comma/ --> ~5,2f years~%"
 	 (d1 (/ (+ (log cu-str) (* time (+ intrst (/ (sqr vltlt) 2)))) de)))
     (values d1 (- d1 de))))
 
+;;;###autoload
 (defun black-scholes-call (strike curr intrst time vltlt)
   "Compute the Black-Scholes value of a call option (American or European).
 Arguments are: option strike price, current stock price, risk-free
@@ -113,6 +118,7 @@ interest rate for the term, time to expiration, stock volatility."
     (- (* curr (erf d1))
        (* strike (erf d2) (exp (- (* intrst time)))))))
 
+;;;###autoload
 (defun black-scholes-eput (strike curr intrst time vltlt)
   "Compute the Black-Scholes value of a European put option.
 See `black-scholes-call' for details."
@@ -144,6 +150,7 @@ the ratio K_{n+1}/K_n from K_n/K_{n-1}."
   (lambda (zz) (values (- zz (- 1 dng) (* sav (expt zz (- 1 alpha))))
 		       (- 1 (* sav (- 1 alpha) (expt zz (- alpha)))))))
 
+;;;###autoload
 (defun solow (k-y-0 dng alpha)
   "Show the economy evolution from the steady state with saving rate SAV
 and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
@@ -177,6 +184,7 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
 ;;; http://www-personal.engin.umich.edu/~jgotts/hack-faq/hack-faq-f.html
 ;;;
 
+;;;###autoload
 (defun luhn (cn &optional (out *standard-output*))
   "Check whether the card number CN is valid.
 For a card with an even number of digits, double every odd numbered

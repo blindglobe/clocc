@@ -1,27 +1,26 @@
-;;; File: <clhs.lisp - 1999-11-24 Wed 12:28:21 EST sds@ksp.com>
+;;; File: <clhs.lisp - 2000-02-18 Fri 11:06:57 EST sds@ksp.com>
 ;;;
 ;;; HyperSpec handling
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2000 by Sam Steingold
 ;;;
-;;; $Id: clhs.lisp,v 1.2 1999/11/24 17:49:55 sds Exp $
+;;; $Id: clhs.lisp,v 2.0 2000/02/18 20:21:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
-;;; $Log: clhs.lisp,v $
-;;; Revision 1.2  1999/11/24 17:49:55  sds
-;;; bring up to date (long overdue checkin)
-;;;
-;;; Revision 1.1  1999/01/15 20:41:34  sds
-;;; Initial revision
-;;;
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `skip-search'
+  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `html-translate-specials'
+  (require :html (translate-logical-pathname "cllib:html")))
+(in-package :cllib)
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "url")
-  #+nil(unless (find-package "GTK")
-    (load "/usr/src/clisp/cl-gtk/bin/gtk.fas"))
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+
+(export '(*clhs-root* +clhs-hashtable+ clhs-doc))
 
 #+nil
 (setq gtki::*gtkd-executable* "/usr/src/clisp/cl-gtk/bin/gtkd")
@@ -29,30 +28,6 @@
 ;;;
 ;;;
 ;;;
-
-(defun html-translate-specials (str &optional space)
-  "Replace (non-destructively) HTML specals with their interpretations.
-HTML tags, surrounded by `<>', are removed or replaced with a space, if
-optional argument SPACE is non-nil."
-  (declare (string str))
-  (do ((beg 0 (1+ beg)) res (len (length str)))
-      ((>= beg len) (coerce (nreverse res) 'string))
-    (declare (type index-t beg len))
-    (case (char str beg)
-      (#\< (setq beg (or (position #\> str :start beg) len))
-           (when space (push #\Space res)))
-      (#\&
-       (let ((pa (assoc str *html-specials* :test
-                        (lambda (str tag)
-                          (let ((end (+ beg (length tag))))
-                            (and (>= len end)
-                                 (string= str tag :start1 beg
-                                          :end1 end)))))))
-         (cond (pa (incf beg (1- (length (car pa))))
-                   (push (cdr pa) res))
-               (t (when space (push #\Space res))
-                  (setq beg (or (position #\; str :start beg) len))))))
-      (t (push (char str beg) res)))))
 
 (defcustom *clhs-root* url (url "/usr/doc/lisp/HyperSpec/")
   "The root of the HyperSpec tree.")
@@ -1095,7 +1070,7 @@ optional argument SPACE is non-nil."
       (print (gtk:widget-style w))
       (gtk:event-loop))))
 
-(eval-when (load compile eval) (export '(gtk::signal-connect) :gtk))
+(eval-when (compile load eval) (export '(gtk::signal-connect) :gtk))
 
 (defun gtk:signal-connect (widget signal-name fun &optional (bla 0) (blu 0))
   (gtk:signal-connect-full
@@ -1343,5 +1318,5 @@ optional argument SPACE is non-nil."
       (mapc #'gtk:widget-show (list window sw canvas)))
     (gtk:event-loop)))
 |#
-(provide "clhs")
+(provide :clhs)
 ;;; file clhs.lisp ends here

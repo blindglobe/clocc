@@ -1,4 +1,4 @@
-;;; File: <card.lisp - 1999-10-19 Tue 14:45:35 EDT sds@ksp.com>
+;;; File: <card.lisp - 2000-02-18 Fri 11:05:47 EST sds@ksp.com>
 ;;;
 ;;; Personal Database - Rolodex (BBDB, VCARD)
 ;;; Relevant URLs:
@@ -7,55 +7,39 @@
 ;;;  http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html
 ;;;  http://www.imc.org/pdi
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2000 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: card.lisp,v 1.4 1999/10/19 18:47:03 sds Exp $
+;;; $Id: card.lisp,v 2.0 2000/02/18 20:21:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
-;;; $Log: card.lisp,v $
-;;; Revision 1.4  1999/10/19 18:47:03  sds
-;;; (define-print-method): do not call `fdefinition'.
-;;;
-;; Revision 1.3  1999/04/22 22:38:09  sds
-;; Added relevant URLs.
-;; (card-print-as-vcard): fixed `tz' printing.
-;; (name-print-as-vcard): fixed slot order.
-;; (address-print-as-vcard): fixed `street3'.
-;; (card-read-vcard): new function; can read vCard files now.
-;;
-;; Revision 1.2  1999/04/20 23:39:58  sds
-;; BBDB input and all output methods work now.
-;; (card-output): slots contain symbols, not functions.
-;; (set-reading-braces): removed; use `el::make-elisp-readtable'.
-;; (init-sans-null-args): new function for `initialize-instance'.
-;; (initialize-instance card): primary method now.
-;; (*card-apellations*, *card-suffixes*): new variables.
-;; (initialize-instance name): new method.
-;; (card-org/title, time2string): new functions for printing.
-;; Searching:
-;; (*user-cards*): new variable.
-;; (object-match-p, find-card): new functions.
-;;
-;; Revision 1.1  1999/04/19 23:35:05  sds
-;; Initial revision
-;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `class-slot-list'
+  (require :closio (translate-logical-pathname "cllib:closio"))
+  ;; `pr-secs'
+  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  ;; `substitute-subseq', `string-beg-with', `string-end-with', `split-string'
+  (require :string (translate-logical-pathname "cllib:string"))
+  ;; `date2time'
+  (require :date (translate-logical-pathname "cllib:date")))
+(in-package :cllib)
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "print")
-  (sds-require "date") (sds-require "url")
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
+;; what should I export? (export '())
+
 ;;;
-;;; {{{Definitions
+;;; {{{ definitions
 ;;;
 
-(eval-when (load compile eval)
 (defclass name ()
   ((first :type simple-string :initarg first :accessor name-first
           :documentation "the first name")
@@ -130,13 +114,12 @@
    (timestamp :type (integer 0) :initarg timestamp :accessor card-timestamp
               :documentation "The last modification time."))
   (:documentation "The personal information record."))
-)
 
 (defun slot-val (obj slot &optional default)
   (or (when (slot-boundp obj slot) (slot-value obj slot)) default))
 
 ;;;
-;;; }}}{{{Search
+;;; }}}{{{ search
 ;;;
 
 (defcustom *user-cards* list nil "*The user database of records.")
@@ -158,10 +141,10 @@
         :when (object-match-p cc nm) :collect cc))
 
 ;;;
-;;; }}}{{{Output
+;;; }}}{{{ output
 ;;;
 
-(eval-when (load compile eval)
+(eval-when (compile load eval)
 (defstruct card-output
   (card nil :type symbol)
   (name nil :type symbol)
@@ -417,7 +400,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   nn)
 
 ;;;
-;;; }}}{{{Input
+;;; }}}{{{ input
 ;;;
 
 (defun vector-to-phone (vec)
@@ -558,10 +541,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 ;;; vCard i/o
 (let ((*card-output-type* +card-output-vcard+))
   (write-list-to-file *user-cards* *user-vcard-file*))
-(make-package :begin)
-(export '(begin::vcard) :begin)
 (setq *user-cards* (read-list-from-file *user-vcard-file* #'card-read-vcard))
-(delete-package :begin)
 
 ;;; native i/o
 (let ((*card-output-type* nil))
@@ -579,5 +559,6 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 
 )
 
-(provide "card")
-;;; }}}file card.lisp ends here
+;;; }}}
+(provide :card)
+;;; file card.lisp ends here

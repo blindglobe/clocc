@@ -1,38 +1,30 @@
-;;; File: <octave.lisp - 1999-10-14 Thu 10:23:05 EDT sds@ksp.com>
+;;; File: <octave.lisp - 2000-02-18 Fri 13:03:30 EST sds@ksp.com>
 ;;;
 ;;; Octave interface
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: octave.lisp,v 1.6 1999/10/14 14:23:52 sds Exp $
+;;; $Id: octave.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
-;;; $Log: octave.lisp,v $
-;;; Revision 1.6  1999/10/14 14:23:52  sds
-;;; removed eagle-related junk
-;;;
-;; Revision 1.5  1998/04/21 18:27:32  sds
-;; Replaced `get-currency' with `find-currency'.
-;;
-;; Revision 1.4  1998/02/12 21:43:09  sds
-;; Switched to `defgeneric' and `require'.
-;;
-;; Revision 1.3  1997/10/08 15:46:16  sds
-;; Moved make-dx-mx here.
-;;
-;; Revision 1.2  1997/09/12 20:58:24  sds
-;; flush-stream is not used anymore.
-;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "date") ;; (sds-require "currency")
+(in-package :cllib)
+
+(export '(*octave-program* solve-lin))
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+
+;;;
+;;;
+;;;
 
 (defun dot0 (l0 l1 &key (key #'value) key0 key1)
   "Compute the dot-product of the two sequences,
@@ -92,5 +84,5 @@ output_precision = 20~%AA=[")
     (close oc-io)
     ans))
 
-(provide "octave")
+(provide :octave)
 ;;; octave.lisp ends here

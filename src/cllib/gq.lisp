@@ -1,93 +1,39 @@
-;;; File: <gq.lisp - 2000-01-24 Mon 19:01:14 EST sds@ksp.com>
+;;; File: <gq.lisp - 2000-02-18 Fri 12:59:38 EST sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
 ;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.16 2000/01/25 00:09:54 sds Exp $
+;;; $Id: gq.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
-;;; $Log: gq.lisp,v $
-;;; Revision 1.16  2000/01/25 00:09:54  sds
-;;; (gq-complete-url): print to `*gq-error-stream*' here
-;;; (get-quotes-apl, get-quotes-pf, get-quotes-sm, get-quotes-sm):
-;;;  modified accordingly
-;;; (get-quotes-yahoo): new function
-;;; (*get-quote-url-list*): added yahoo
-;;;
-;;; Revision 1.15  2000/01/19 18:07:01  sds
-;;; (get-quotes-sm): expanded debug
-;;;
-;;; Revision 1.14  2000/01/06 00:28:20  sds
-;;; fewer #+/#-
-;;; (get-quotes-apl): call `infer-date'
-;;; (infer-date): first arg can be a date
-;;; (process-results): better output formatting
-;;; (update-quotes): new key `log'
-;;;
-;;; Revision 1.13  1999/11/02 18:25:59  sds
-;;; (pr-res): use `formatter'; 8th optional arg.
-;;; (process-results): adapt to new `pr-res'; `out' must be a stream.
-;;; (update-quotes): dump the `ia' business.
-;;;
-;;; Revision 1.12  1999/10/19  18:50:08  sds
-;;; (get-quotes-pf): updated.
-;;; (infer-date): work with no args.
-;;; (process-results): better date inference.
-;;; (update-quotes): new `:debug' keyword argument.
-;;;
-;;; Revision 1.11  1999/10/13  15:43:19  sds
-;;; (get-quotes-apl): updated.
-;;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
-;;; (code): added a method for PFL.
-;;; (update-quotes): bind `*gq-error-stream*' to nil.
-;;;
-;;; Revision 1.10  1999/02/25 23:38:18  sds
-;;; Updated for the new `dated-list'.
-;;;
-;;; Revision 1.9  1999/01/10 02:37:25  sds
-;;; Replaced `gq-fix-date' with `gq-guess-date'.
-;;;
-;;; Revision 1.8  1999/01/08 17:12:16  sds
-;;; Fixed `get-quotes-sm'.
-;;;
-;;; Revision 1.7  1998/12/23 18:42:20  sds
-;;; Added `*gq-error-stream*'.
-;;;
-;;; Revision 1.6  1998/07/31 16:53:57  sds
-;;; Declared `stream' as a stream in `print-*'.
-;;;
-;;; Revision 1.5  1998/06/30 13:47:42  sds
-;;; Switched to `print-object'.
-;;;
-;;; Revision 1.4  1998/06/15 21:48:32  sds
-;;; Made `gq-fix-date' return the last trading date (skip weekend).
-;;;
-;;; Revision 1.3  1998/03/10 18:29:20  sds
-;;; Replaced `multiple-value-set*' with `(setf (values ))'.
-;;;
-;;; Revision 1.2  1997/10/31 21:59:41  sds
-;;; Added `cite-info' and `strip-html-markup'.
-;;;
-;;; Revision 1.1  1997/10/15 15:49:26  sds
-;;; Initial revision
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `*html-readtable*'
+  (require :html (translate-logical-pathname "cllib:html"))
+  ;; `make-url'
+  (require :url (translate-logical-pathname "cllib:url"))
+  ;; `plot-dated-lists'
+  (require :gnuplot (translate-logical-pathname "cllib:gnuplot")))
+(in-package :cllib)
 
-(eval-when (load compile eval)
-  (let ((dir (merge-pathnames "lisp" (user-homedir-pathname)))
-        (*load-verbose* nil) (*load-print* nil))
-    (unless (boundp '*require-table*) (load (concatenate 'string dir "base")))
-    (sds-require "base") (sds-require "date")
-    (sds-require "url") (sds-require "gnuplot"))
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+
+(export '(update-quotes))
+
+;;;
+;;;
+;;;
 
 (defcustom *gq-error-stream* (or null stream) *error-output*
   "The error stream for `with-open-url'.")
@@ -316,7 +262,7 @@ If the first argument is a date, fix the year."
 ; - all the lines after that are history of this portfolio, in the format
 ;     <date> <total value> [<price>]*
 " "The header of the data file.")
-(defcustom *hist-data-file-sep* symbol '~
+(defcustom *hist-data-file-sep* symbol :~
   "*The separator between the portfolio and its history")
 (defcustom *holdings* list nil
   "The holdings, to be read from `*hist-data-file*'.")
@@ -562,6 +508,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
   (merge-pathnames "text/getquote.log" (user-homedir-pathname))
   "The log file for the batch processing.")
 
+;;;###autoload
 (defun update-quotes (&key (plot nil plotp) server debug
                       (log #+win32 *gq-log* #-win32 nil))
   "Read the history. Update quotes. Plot (optionally),
@@ -588,5 +535,5 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
           (when log (close out) (format t "Wrote log to ~s~%" log))))))
   (when plot (plot-portfolio *holdings* *history* :plot)))
 
-(provide "gq")
+(provide :gq)
 ;;; }}} gq.lisp ends here

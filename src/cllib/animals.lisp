@@ -1,48 +1,34 @@
-;;; File: <animals.lisp - 1999-10-25 Mon 13:35:46 EDT sds@ksp.com>
+;;; File: <animals.lisp - 2000-02-18 Fri 14:09:00 EST sds@ksp.com>
 ;;;
 ;;; Guess an Animal - CL implementation.
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is free software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: animals.lisp,v 1.5 1999/10/25 17:39:09 sds Exp $
+;;; $Id: animals.lisp,v 2.0 2000/02/18 20:21:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
-;;; $Log: animals.lisp,v $
-;;; Revision 1.5  1999/10/25 17:39:09  sds
-;;; Surround some variable names with a `*'.
-;;; (anml-chop-article): new function.
-;;; (save-restore-animals): new function.
-;;; (print-object node): new method.
-;;; (save-restore-network): new function.
+
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `string-beg-with'
+  (require :string (translate-logical-pathname "cllib:string"))
+  ;; `alist->hash-table', `hash-table->alist'
+  (require :miscprint (translate-logical-pathname "cllib:miscprint"))
+  ;; `write-to-file', `save-restore'
+  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `symbol-concat'
+  (require :symb (translate-logical-pathname "cllib:symb")))
+(in-package :cllib)
+
+(export '(play-animals play-game))
+
 ;;;
-;; Revision 1.4  1999/05/24 02:13:11  sds
-;; (node): new class; this begins a network implementation.
-;; (*network*, *root-node*): new variables.
-;; (symbol->node, resolve, mknode, get-symbol, add-node, play-game):
-;; new functions.
-;; (get-string): doesn't take a `stream' argument anymore.
-;; (fix-question, get-question): new functions.
-;; (anml-finish): use `get-question'.
-;;
-;; Revision 1.3  1999/04/09 19:17:49  sds
-;; Use `string-beg-with' in `anml-add-article'.
-;;
-;; Revision 1.2  1998/05/22 16:34:19  sds
-;; Added `anml-add-article'.
-;;
-;; Revision 1.1  1997/12/08 21:54:03  sds
-;; Initial revision
-;;
-;;
-
-(in-package :cl-user)
-
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "util"))
+;;;
+;;;
 
 (defvar *animals-debug-output* nil "Print more debugging info.")
 (defvar *animals-debug-use-built-in-data* nil "Do not read the file.")
@@ -121,8 +107,9 @@ Returnes a fresh string."
              (cons quest (cons 1st 2nd)))))))
 
 (defun save-restore-animals (&optional what)
-  (save-restore what :var '*animals-data* :name "animals" :basedir *lisp-dir*))
+  (save-restore what :var '*animals-data* :name "animals" :basedir *datadir*))
 
+;;;###autoload
 (defun play-animals ()
   "Play the famous game!"
   ;; read the initial data
@@ -160,14 +147,12 @@ Returnes a fresh string."
 ;;; Network implementation
 ;;;
 
-(eval-when (load compile eval)
 (defclass node ()
   ((name :type symbol :accessor node-name :initarg name)
    (info :type simple-string :accessor node-info :initarg info)
    (yes :type symbol :accessor node-yes :initarg yes)
    (no :type symbol :accessor node-no :initarg no))
   (:documentation "The information node."))
-)
 
 (defmethod print-object ((nd node) (out stream))
   (if *print-readably* (call-next-method)
@@ -208,7 +193,7 @@ Returnes a fresh string."
   "*The root node, from which the search starts by default.")
 
 (defun save-restore-network (&optional file)
-  (save-restore file :name "network.dat" :var '*network* :basedir *lisp-dir*
+  (save-restore file :name "network.dat" :var '*network* :basedir *datadir*
                 :voidp (lambda (ht) (>= 1 (hash-table-count ht))) :clos t
                 :pre-save #'hash-table->alist :post-read #'alist->hash-table))
 
@@ -310,5 +295,5 @@ Returnes a fresh string."
                   (add-node name node)))
         :while (y-or-n-p "One more game?")))
 
-(provide "animals")
+(provide :animals)
 ;;; animals.lisp ends here

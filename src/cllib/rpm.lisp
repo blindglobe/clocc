@@ -1,99 +1,29 @@
-;;; File: <rpm.lisp - 2000-01-19 Wed 13:08:13 EST sds@ksp.com>
+;;; File: <rpm.lisp - 2000-02-18 Fri 13:08:09 EST sds@ksp.com>
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
-;;; Copyright (C) 1998-1999 by Sam Steingold
+;;; See http://www.gnu.org/copyleft/gpl.html
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 1.17 2000/01/19 18:10:55 sds Exp $
-;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Log: rpm.lisp,v $
-;;; Revision 1.17  2000/01/19 18:10:55  sds
-;;; (*rpm-locations*): fixed some paths
-;;; (rpm-read): close the stream
-;;;
-;;; Revision 1.16  1999/10/25 17:53:55  sds
-;;; (*rpm-local-paths*): removed eagle-specifics.
-;;; (rpm-downloaded): look in both `*rpm-local-target*' and
-;;; `*rpm-local-paths*'.
-;;; (rpm-list-rpm): new keyword argument `local'.
-;;;
-;;; Revision 1.15  1999/06/03 20:48:40  sds
-;;; (download-data): do not include `url', use a alot instead.
-;;; (dld-reset): set `dld-all' too.
-;;; (rpm-list-size): new function.
-;;; (*rpm-locations*): use `macrolet' to init.
-;;; (rpm-prune-list): use `remove-if-not' instead of `mapcan'.
-;;; (rpm-get-available): replaced `&optional' with `&key';
-;;; new argument: `err'.
-;;;
-;;; Revision 1.14  1999/05/15 01:49:46  sds
-;;; (download-data): new slot - `all'.
-;;; (*rpm-locations-timeout*): new user variable.
-;;; (rpm-new-packages): renamed `rpm-get-available'.  use
-;;; `*rpm-locations-timeout*' to decide whether to get again.
-;;; (show-rpms): new `local' optional argument.
-;;;
-;;; Revision 1.13  1999/05/03 18:14:30  sds
-;;; (*rpm-max-retry*): new variable.  Replaced the ubiquitous use of
-;;; `timeout' keyword argument with `*rpm-timeout*'.
-;;; (rpm-pos): new function.
-;;; (rpm-skip-p): skip "pre" releases.
-;;;
-;;; Revision 1.12  1999/04/17 23:22:31  sds
-;;; (download-data): new structure (AKA dld).
-;;; (*rpm-locations*): a list of `download-data', replaces `*rpm-urls*'.
-;;; (rpm-print-rpm-url): removed (replaced with `download-data').
-;;; (rpm-new-packages, rpm-list-rpm, rpm-get-new-rpms &c): use `dld'.
-;;;
-;;; Revision 1.11  1999/04/09 19:19:14  sds
-;;; Added `short-string-to-rpm'.  Cleaned up the `rpm' generic function.
-;;;
-;;; Revision 1.10  1999/03/24 17:04:24  sds
-;;; 4 new fields in the RPM structure: `btime', `itime', `ftime' and `size'.
-;;; Removed `+unix-epoch+'.
-;;; Handle long `ls' output in (rpm string) method.
-;;; Added `rpm-list-rpm'.
-;;;
-;;; Revision 1.9  1999/02/19 14:29:53  sds
-;;; `rpm-get-new-rpms': fix for timeout condition.
-;;;
-;;; Revision 1.8  1999/02/09 23:21:26  sds
-;;; Removed `catch timeout'.
-;;;
-;;; Revision 1.7  1999/01/24 20:30:38  sds
-;;; Added `rpm-skip-p', `*rpm-skip*', `rpm-print-rpm-url'.
-;;; Use `with-open-pipe'.
-;;;
-;;; Revision 1.6  1999/01/07 03:56:34  sds
-;;; Use `close-pipe', `index-t' instead of (unsigned-byte 20).
-;;; Added `version<' and a test suite for it.
-;;;
-;;; Revision 1.5  1998/12/03 15:56:33  sds
-;;; Added a `note' field to the `rpm' structure.
-;;; Added `rpm-get-present', `show-rpms', `rpm-current'.
-;;;
-;;; Revision 1.4  1998/11/21 21:00:44  sds
-;;; Added `timeout' catch/throw.
-;;;
-;;; Revision 1.3  1998/11/19 19:37:41  sds
-;;; Replaced `*rpm-local-path*' with a list - `*rpm-local-paths*'.
-;;;
-;;; Revision 1.2  1998/11/19 17:02:52  sds
-;;; Moved `binary-pos' to util.lisp.
-;;;
-;;; Revision 1.1  1998/11/18 01:01:56  sds
-;;; Initial revision
-;;;
+;;; $Id: rpm.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `url' - generic function
+  (require :url (translate-logical-pathname "cllib:url"))
+  ;; `with-open-pipe', `pipe-input'
+  (require :shell (translate-logical-pathname "port:shell")))
+(in-package :cllib)
+
+(export '(*rpm-locations* rpm show-rpms rpm-to-be-installed rpm-get-list
           rpm-get-new-rpms rpm-list-rpm rpm-clean-up))
-(in-package :cl-user)
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "url") (sds-require "date")
+
 ;;;
 ;;; download data
 ;;;
@@ -180,7 +110,7 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
 
 (eval-when (compile load eval)
 (defstruct (rpm #+cmu (:print-function print-struct-object))
-(eval-when (load compile eval)
+  (name "name?" :type simple-string)
   (vers "vers?" :type simple-string)
   (rels "rels?" :type simple-string)
   (arch "arch?" :type simple-string)
@@ -229,7 +159,7 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
 
 (eval-when (compile load eval) (fmakunbound 'rpm))
 (defgeneric rpm (obj)
-(eval-when (load compile eval) (fmakunbound 'rpm))
+  (:documentation "Convert to RPM.")
   (:method ((obj rpm)) obj)
   (:method ((obj symbol))
     (unintern obj)
@@ -458,6 +388,7 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun show-rpms (&optional (what "") (local t))
+  "Print some RPMs."
   (declare (simple-string what))
   (if local (rpm-get-present) (rpm-get-available))
   (let ((nrpm (if local (length *rpm-present*)
@@ -521,6 +452,7 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-get-list (url rpms &key (out *standard-output*) (err *error-output*)
+                     (len (length rpms)) (retry 2))
   "Get the list of RPMS from URL."
   (declare (type url url) (list rpms) (type (or null stream) out err)
            (type index-t len retry))
@@ -567,6 +499,7 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-get-new-rpms (&key force (out *standard-output*)
+                         (err *error-output*))
   ;; (rpm-get-new-rpms)
   "Download the RPMs from `*rpm-locations*'."
   (declare (type (or null stream) err out))
@@ -600,6 +533,7 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*)
+                     local)
   "Look for the RPM on all sites.
 If `local' keyword argument is non-nil, use only the data already
 available in `*rpm-locations*'."
@@ -622,6 +556,8 @@ available in `*rpm-locations*'."
 ;; (rpm-clean-up "/var/tmp/o/")
 
 ;;;###autoload
+(defun rpm-clean-up (&optional
+                     (dirs (remove *rpm-local-target* *rpm-local-paths*
                                    :test #'equalp))
                      (out *standard-output*))
   "Remove old RPM files."
@@ -732,5 +668,5 @@ available in `*rpm-locations*'."
 
 )
 
-(provide "rpm")
+(provide :rpm)
 ;;; file rpm.lisp ends here

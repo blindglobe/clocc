@@ -1,96 +1,54 @@
-;;; File: <math.lisp - 2000-01-19 Wed 13:10:05 EST sds@ksp.com>
+;;; File: <math.lisp - 2000-02-18 Fri 12:59:35 EST sds@ksp.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.21 2000/01/19 18:12:25 sds Exp $
+;;; $Id: math.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
-;;; $Log: math.lisp,v $
-;;; Revision 1.21  2000/01/19 18:12:25  sds
-;;; (number-sum-split, all-num-split): new functions
-;;;
-;;; Revision 1.20  1999/10/13 15:40:47  sds
-;;; (percent-change): handle 0 arguments.
-;;;
-;;; Revision 1.19  1999/05/24 21:06:04  sds
-;;; (volatility): `dev-fn' keyword argument.
-;;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
-;;;
-;;; Revision 1.18  1999/04/17 22:34:17  sds
-;;; (safe-fun): use `values-list'.
-;;; (safe-fun1): new macro.
-;;;
-;;; Revision 1.17  1999/03/17 21:37:32  sds
-;;; Added `eval-cont-fract' and `fract-approx'.
-;;;
-;;; Revision 1.16  1999/02/25 17:33:51  sds
-;;; Moved `lincom' here from date.lisp.
-;;;
-;;; Revision 1.15  1999/02/25 04:40:36  sds
-;;; `volatility': swapped return values.
-;;;
-;;; Revision 1.14  1999/02/22 22:56:10  sds
-;;; Use `:min-len' key in the `call-on-split' call in `volatility'.
-;;;
-;;; Revision 1.13  1999/01/13 23:37:56  sds
-;;; Replaced CMUCL-specific print functions with a call to
-;;; `print-struct-object'.
-;;;
-;;; Revision 1.12  1999/01/07 04:07:34  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;;
-;;; Revision 1.11  1998/11/23 21:22:13  sds
-;;; Added MDL structure.
-;;;
-;;; Revision 1.10  1998/11/13 20:16:58  sds
-;;; Added `mean-some'.
-;;;
-;;; Revision 1.9  1998/10/29 21:57:17  sds
-;;; Fixed `standard-deviation-relative' to compute the actual volatility.
-;;;
-;;; Revision 1.8  1998/09/03 13:54:08  sds
-;;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
-;;; `make-primes-list', `*primes*', `*primes-file*'.
-;;; Special case 2 point regression in `regress'; don't signal error on
-;;; negative error, just print a message and assume 0.
-;;;
-;;; Revision 1.7  1998/07/31 16:41:24  sds
-;;; Declare `stream' as a stream in `print-*'.
-;;; Take `sqrt' of the correlation in `regress-n'.
-;;;
-;;; Revision 1.6  1998/07/10 21:11:35  sds
-;;; Added `regress-n' and `regress-poly'.
-;;; Ditched `regress2' and `det3'.
-;;;
-;;; Revision 1.5  1998/06/19 21:41:40  sds
-;;; Use `defmethod' to print structures.
-;;;
-;;; Revision 1.4  1998/06/19 20:10:38  sds
-;;; Made `normalize' work with arbitrary sequences.
-;;; Many minor declarations for CMUCL added.
-;;;
-;;; Revision 1.3  1998/06/16 14:38:30  sds
-;;; Replaced division with recursion in `!!'.
-;;;
-;;; Revision 1.2  1998/05/27 21:24:47  sds
-;;; Added :key to `freqs' and moved it to list.lisp.
-;;;
-;;; Revision 1.1  1998/03/23 16:33:17  sds
-;;; Initial revision
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `mesg', `get-float-time', `elapsed', `elapsed-1'
+  (require :log (translate-logical-pathname "cllib:log"))
+  ;; `read-from-file', `write-to-file'
+  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `call-on-split'
+  (require :list (translate-logical-pathname "cllib:list")))
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "list")
-  (sds-require "print") (sds-require "matrix")
+(in-package :cllib)
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+
+(export '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
+          make-primes-list number-sum-split all-num-split
+          eval-cont-fract fract-approx
+          *num-tolerance* *relative-tolerance* *absolute-tolerance*
+          dot poly1 poly erf norm normalize rel-dist
+          mean mean-cx weighted-mean weighted-mean-cons
+          geometric-mean weighted-geometric-mean weighted-geometric-mean-cons
+          mean-some standard-deviation standard-deviation-cx
+          standard-deviation-relative standard-deviation-mdl mdl
+          covariation covariation1 cov volatility
+          below-p linear safe-fun safe-fun1 safe-/ s/ d/
+          convex-hull1 convex-hull sharpe-ratio to-percent percent-change
+          rel-diff approx=-abs approx=-rel approx=
+          newton integrate-simpson add-probabilities
+          line line-val line-rsl line-below-p line-above-p intersect
+          with-line line-adjust line-adjust-dir line-adjust-list
+          line-thru-points regress lincom))
+
+;;;
+;;;
+;;;
 
 (define-modify-macro mulf (mult) * "Multiply the arg by a number.")
 (define-modify-macro divf (mult) / "Divide the arg by a number.")
@@ -258,11 +216,11 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
   ;;       (values (+ (car fract) (/ v0)) (+ (car fract) (/ v1))))
   ;;     (values (car fract) (1+ (car fract)))))
 
-(defcustom *relative-tolerance* double-float 1.0e-3
+(defcustom *relative-tolerance* double-float 1.0d-3
   "*The default relative tolerance for `approx='.")
 (defcustom *absolute-tolerance* double-float 1.0d0
   "*The default absolute tolerance for `approx='.")
-(defcustom *num-tolerance* double-float 1.0e-6
+(defcustom *num-tolerance* double-float 1.0d-6
   "*The default numerical tolerance for `approx=-[abs|rel]'.")
 
 (defun fract-approx (xx &optional (eps *num-tolerance*))
@@ -318,7 +276,7 @@ COEFFS are #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly 10 1 2 3 4 5) ==> 12345."
   (declare (double-float var) (type simple-vector coeffs)
            (values double-float))
-  (loop :with res :of-type double-float = 0.0
+  (loop :with res :of-type double-float = 0.0d0
         :for cc :of-type double-float :across coeffs
         :do (setq res (+ cc (* var res))) :finally (return res)))
 
@@ -444,7 +402,7 @@ Return 2 values: the mean and the length of the sequence."
     (values (s/ (reduce #'+ seq :key (lambda (rr)
                                        (let ((val (funcall key rr)))
                                          (cond (val (incf len) val)
-                                               (0.0)))))
+                                               (0.0d0)))))
                 len)
             len)))
 
@@ -473,7 +431,7 @@ Meaningful only if all the numbers are of the same sign,
 if this is not the case, the result will be a complex number."
   (declare (sequence seq) (type (function (t) double-float) key)
            (values double-float))
-  (let (pr (sq 0.0) (su 0.0) (nn 0))
+  (let (pr (sq 0.0d0) (su 0.0d0) (nn 0))
     (declare (double-float sq su) (type (or null double-float) pr)
              (type index-t nn))
     (map nil (lambda (rr)
@@ -483,7 +441,7 @@ if this is not the case, the result will be a complex number."
                  (setq pr cc)
                  (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
          seq)
-    (values (sqrt (max 0.0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
+    (values (sqrt (max 0.0d0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
 
 (defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
   "Compute the covariation between the data in the two sequences.
@@ -492,8 +450,8 @@ dispersion1, number of elements considered.
 Uses the fast but numerically unstable algorithm
 without pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
-           (values double-float double-float double-float (double-float 0.0)
-                   (double-float 0.0) fixnum))
+           (values double-float double-float double-float (double-float 0.0d0)
+                   (double-float 0.0d0) fixnum))
   (let ((xb 0.0d0) (yb 0.0d0) (x2b 0.0d0) (xyb 0.0d0) (y2b 0.0d0)
         (nn 0) (c0 0.0d0) (c1 0.0d0))
     (declare (double-float xb yb x2b xyb y2b c0 c1) (type index-t nn))
@@ -557,10 +515,10 @@ and the list of the volatilities for each year."
 
 ;;; Mean / Deviation / Length
 
-(eval-when (load compile eval)
+(eval-when (compile load eval)
 (defstruct (mdl #+cmu (:print-function print-struct-object))
-  (mn 0.0 :type double-float)   ; Mean
-  (sd 0.0 :type (double-float 0.0)) ; Deviation
+  (mn 0.0d0 :type double-float)   ; Mean
+  (sd 0.0d0 :type (double-float 0.0d0)) ; Deviation
   (le 0 :type index-t))         ; Length
 )
 
@@ -691,11 +649,11 @@ Return the modified LST. 20% faster than `convex-hull1'."
 If the optional DAYS is given, return the annualized change too."
   (declare (number v0 v1) (type (or null number) days)
            (values double-float (or null double-float)))
-  (if (zerop v0) (values 0.0 0.0)
+  (if (zerop v0) (values 0.0d0 0.0d0)
       (let ((pers (dfloat (/ v1 v0))))
         (if (and days (not (zerop days)))
             (values (to-percent pers)
-                    (if (zerop days) 0.0
+                    (if (zerop days) 0.0d0
                         (to-percent (expt pers (/ 365.25d0 days)))))
             (to-percent pers)))))
 
@@ -750,12 +708,12 @@ Returns the integral, the last approximation, and the number of points."
   (do* ((f0 (funcall ff x0)) (f1 (funcall ff (* 0.5 (+ x0 xm))))
         (fm (funcall ff xm)) (hh (* 0.5 (- xm x0)) (* hh 0.5))
         (mm 2 (* mm 2))
-        (sum-even 0.0 (+ sum-odd sum-even))
+        (sum-even 0.0d0 (+ sum-odd sum-even))
         (sum-odd
          f1 (loop :for ii :of-type index-t :from 1 :below mm :by 2
                   :and step :of-type double-float :from 1.0d0 :by 2.0d0
                   :sum (funcall ff (+ x0 (* hh step))) :of-type double-float))
-        (int-last 0.0 int)
+        (int-last 0.0d0 int)
         (int (* (/ hh 3.0) (+ f0 (* 4.0 f1) fm))
              (* (/ hh 3.0) (+ f0 (* 4.0 sum-odd) (* 2.0 sum-even) fm))))
        ((< (abs (- int int-last)) eps) (values int int-last mm))
@@ -771,7 +729,7 @@ Returns the probability of at least one event happening."
 ;;; Line
 ;;;
 
-(eval-when (load compile eval)
+(eval-when (compile load eval)
 (defstruct (line #+cmu (:print-function print-struct-object))
   "A straight line."
   (sl 0.0d0 :type double-float) ; slope
@@ -854,7 +812,7 @@ If (= x0 x1), an error will be signaled."
 The second value returned is the deviation from the line.
 The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   (declare (sequence seq) (type (function (t) double-float) xkey ykey)
-           (values line (double-float 0.0)))
+           (values line (double-float 0.0d0)))
   (case (length seq)
     ((0 1) (error "regress: too few points: ~s~%" seq))
     (2 (values (line-thru-points (funcall xkey (elt seq 0))
@@ -875,82 +833,10 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
                               (with-type double-float (- ym (* xm sl))))
                    (sqrt err)))))))
 
-(defun regress-n (yy xx nx &key (func #'aref))
-  "Returns: vector [b1 ... bn], free term, Rmult, Ftest."
-  (declare (type (simple-array double-float (*)) yy)
-           (type simple-array xx) (fixnum nx)
-           (type (function (array fixnum fixnum) double-float) func)
-           (values (simple-array double-float (*)) double-float
-                   (double-float 0.0 1.0) (double-float 0.0)))
-  (let ((mx (make-array (list nx nx) :element-type 'double-float
-                        :initial-element 0.0d0))
-        (cfs (make-array nx :element-type 'double-float ; coeffs
-                         :initial-element 0.0d0))
-        (rhs (make-array nx :element-type 'double-float ; right hand sides
-                         :initial-element 0.0d0))
-        (mms (make-array nx :element-type 'double-float ; means
-                         :initial-element 0.0d0))
-        (len (length yy)) (yyb (mean yy)) (yys 0.0d0) (free 0.0d0) (rr 0.0d0)
-        (ff 0.0d0))
-    (declare (type (simple-array double-float (* *)) mx) (type index-t len)
-             (type (simple-array double-float (*)) cfs rhs mms)
-             (double-float yyb yys free ff rr))
-    (loop :for kk :of-type index-t :upfrom 0 :and yk :across yy :do
-          (incf yys (expt (- yk yyb) 2))
-          (dotimes (ii nx)          ; compute X
-            (declare (type index-t ii))
-            (setf (aref cfs ii) (funcall func xx kk ii))
-            (incf (aref mms ii) (aref cfs ii)))
-          (dotimes (ii nx)
-            (declare (type index-t ii))
-            (incf (aref rhs ii) (* yk (aref cfs ii)))
-            (loop :for jj :of-type index-t :from 0 :to ii :do
-                  (incf (aref mx ii jj) (* (aref cfs ii) (aref cfs jj))))))
-    (dotimes (ii nx)            ; subtract the means
-      (declare (type index-t ii))
-      (decf (aref rhs ii) (* (aref mms ii) yyb))
-      (divf (aref mms ii) len))
-    (dotimes (ii nx)
-      (declare (type index-t ii))
-      (loop :for jj :of-type index-t :from 0 :to ii :do
-            (decf (aref mx ii jj) (* len (aref mms ii) (aref mms jj)))
-            (setf (aref mx jj ii) (aref mx ii jj))))
-    (handler-case (matrix-solve mx (replace cfs rhs))
-      (division-by-zero (co)
-        (format t "regress-n: `matrix-solve' failed on:~%~/matrix-print/~a"
-                mx co)
-        (let ((det (matrix-inverse mx)))
-          (assert (/= 0 det) (mx) "the matrix is degenerate (det = 0)~%")
-          (format t "det == ~f; using `matrix-inverse'.~%" det)
-          (matrix-multiply-mat-col mx rhs cfs))))
-    (setq free (- yyb (dot cfs mms))
-          rr (/ (dot cfs rhs) yys)
-          ff (d/ (* rr (- len nx 1)) (* (- 1 rr) nx)))
-    (assert (<= 0.0d0 rr 1.0d0) (rr) "Rmult (~f) outside [0.0; 1.0]" rr)
-    (assert (<= 0.0d0 ff) (ff) "Ftest (~f) is negative" ff)
-    (values cfs free (sqrt rr) ff)))
-
-(defun regress-poly (seq deg &key (xkey #'car) (ykey #'cdr))
-  "Polynomial regression."
-  (declare (sequence seq) (fixnum deg)
-           (type (function (t) double-float) xkey ykey))
-  (let* ((len (length seq)) (ii 0) (yy (map-vec 'double-float len ykey seq))
-         (xx (make-array (list len 1) :element-type 'double-float)))
-    (declare (type index-t len ii))
-    (map nil (lambda (el) (setf (aref xx ii 0) (funcall xkey el)) (incf ii))
-         seq)
-    (multiple-value-bind (vec free)
-        (regress-n yy xx deg :func
-                   (lambda (xx ii jj)
-                     (declare (type index-t ii jj)
-                              (type (simple-array double-float (* *)) xx))
-                     (expt (aref xx ii 0) (1+ jj))))
-      (concatenate 'simple-vector (nreverse vec) (list free)))))
-
 (defsubst lincom (c0 x0 c1 x1)
   "Compute c0*x0+c1*x1."
   (declare (double-float c0 x0 c1 x1) (values double-float))
   (with-type double-float (+ (* c0 x0) (* c1 x1))))
 
-(provide "math")
+(provide :math)
 ;;; math.lisp ends here

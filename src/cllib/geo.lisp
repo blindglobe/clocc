@@ -1,41 +1,41 @@
-;;; File: <geo.lisp - 1999-05-24 Mon 17:36:06 EDT sds@goems.com>
+;;; File: <geo.lisp - 2000-02-18 Fri 14:21:50 EST sds@ksp.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
 ;;;
-;;; Copyright (C) 1998-1999 by Sam Steingold.
+;;; Copyright (C) 1998-2000 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: geo.lisp,v 1.6 1999/05/24 21:39:35 sds Exp $
+;;; $Id: geo.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
-;;; $Log: geo.lisp,v $
-;;; Revision 1.6  1999/05/24 21:39:35  sds
-;;; (geo-data): complex `crd' instead of `lat'/`lon'.
-;;; (print-geo-coords): the `coordinates' are always a complex number.
-;;; (*country-file*): removed.
-;;; (save-restore-country-list): use `save-restore'.
-;;; (find-country): use `remove-if-not'.
-;;;
-;;; Revision 1.5  1999/01/07 03:57:16  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;;
-;;; Revision 1.4  1998/07/31 16:54:23  sds
-;;; Declared `stream' as a stream in `print-*'.
-;;;
-;;; Revision 1.3  1998/06/30 13:46:58  sds
-;;; Switched to `print-object'.
-;;;
-;;; Revision 1.2  1998/03/10 18:31:03  sds
-;;; Replaced `multiple-value-set*' with `(setf (values ))'.
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `index-t'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `kwd'
+  (require :symb (translate-logical-pathname "cllib:symb"))
+  ;; `get-float-time'
+  (require :log (translate-logical-pathname "cllib:log"))
+  ;; `save-restore', `skip-search', `skip-blanks', `skip-to-line',
+  ;; `read-non-blanks'
+  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `strip-html-markup'
+  (require :html (translate-logical-pathname "cllib:html"))
+  ;; `comma'
+  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  ;; `make-url'
+  (require :url (translate-logical-pathname "cllib:url")))
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "url")
+(in-package :cllib)
+
+(export '(cite-info *weather-url* weather-report
+          find-country *country-list* fetch-country-list))
+
+(eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
@@ -99,6 +99,7 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
   (make-url :prot :http :host "www.census.gov" :path "/cgi-bin/gazetteer?")
   "*The URL to use to get the cite information.")
 
+;;;###autoload
 (defun cite-info (&key (url *census-gazetteer-url*) city state zip
                   (out *standard-output*))
   "Get the cite info from the U.S. Gazetteer.
@@ -149,6 +150,7 @@ and return a list of geo-data."
   (make-url :prot :telnet :port 3000 :host "mammatus.sprl.umich.edu")
   "*The url for the weather information.")
 
+;;;###autoload
 (defun weather-report (code &key (out t) (url *weather-url*))
   "Print the weather report for CODE to OUT."
   (setq url (if (url-p url) (copy-url url) (url url)))
@@ -233,6 +235,7 @@ GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])
   "*The string for generating the URL for getting information on a country.")
 (defcustom *country-list* list nil "*The list of known countries.")
 
+;;;###autoload
 (defsubst find-country (slot value &optional (ls *country-list*)
 			(test (cond ((member slot '(name cap note)) #'search)
 				    ((member slot '(isod pop)) #'=)
@@ -250,7 +253,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 (defun save-restore-country-list (&optional (save t))
   "Save or restore `*country-list*'."
   (save-restore save :var '*country-list* :name "country.dat"
-                :basedir *lisp-dir*))
+                :basedir *datadir*))
 
 (defun str-core (rr)
   "Get the substring of the string from the first `>' to the last `<'."
@@ -261,7 +264,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 	  ((string-trim +whitespace+ cc)))))
 
 (defun read-some-lines (st)
-  "Read some lined from tag to tag."
+  "Read some lines from tag to tag."
   (declare (stream st) (values (or null simple-string)))
   (do* ((rr (read-line st) (read-line st))
 	(cp (position #\< rr :from-end t :start 2) (position #\< rr))
@@ -270,6 +273,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
        (cp (if (char= #\& (schar cc 0)) nil (string-trim +whitespace+ cc)))
     (declare (simple-string rr cc))))
 
+;;;###autoload
 (defun fetch-country-list ()
   "Initialize `*country-list*' from `*geo-code-url*'."
   (format t "~&Reading `~a'" *geo-code-url*)
@@ -409,9 +413,9 @@ is a float, such as the GDP, VALUE is a cons with the range.
     (declare (type (or null index-t) pos next))
     (push (subseq st pos (setq next (position #\, st :start pos))) res)))
 
-#+sds-ignore
+#+nil
 (progn
-  (load "lisp/geo")
+  (load "geo")
   (fetch-country-list)
   (dolist (cc *country-list*)
     ;(update-country cc)
@@ -421,5 +425,5 @@ is a float, such as the GDP, VALUE is a cons with the range.
       (format t " *** ~a~2%" cc)))
   (save-restore-country-list))
 
-(provide "geo")
+(provide :geo)
 ;;; geo.lisp ends here

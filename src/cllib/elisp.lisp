@@ -1,76 +1,55 @@
-;;; File: <elisp.lisp - 2000-01-19 Wed 13:14:15 EST sds@ksp.com>
+;;; File: <elisp.lisp - 2000-02-17 Thu 19:35:20 EST sds@ksp.com>
 ;;;
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2000 by Sam Steingold
 ;;;
-;;; $Id: elisp.lisp,v 1.6 2000/01/19 18:15:59 sds Exp $
+;;; $Id: elisp.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
-;;; $Log: elisp.lisp,v $
-;;; Revision 1.6  2000/01/19 18:15:59  sds
-;;; require print for `make-clos-readtable'
-;;;
-;;; Revision 1.5  1999/10/25 17:41:14  sds
-;;; Support LispWorks and GCL.
-;;;
-;;; Revision 1.4  1999/04/22 19:25:31  sds
-;;; (el::make-elisp-readtable): call `make-object-readtable'.
-;;; (*elisp-readtable*): a constant now.
-;;;
-;;; Revision 1.3  1999/04/20 17:34:46  sds
-;;; (el::make-elisp-readtable): redefine macro #\".
-;;; (el::read-elisp-special): handle #\": \n, \r, \f, \t, \v.
-;;;
-;;; Revision 1.2  1999/02/22 18:20:12  sds
-;;; Works now.
-;;;
-;;; Revision 1.1  1999/02/20 19:15:30  sds
-;;; Initial revision
-;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `make-clos-readtable'
+  (require :closio (translate-logical-pathname "cllib:closio"))
+  ;; `from-list'
+  (require :list (translate-logical-pathname "cllib:list")))
+(in-package :cllib)
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "list") (sds-require "print")
-  (export '(cl-user::defsubst) :cl-user)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3)))
+(eval-when (compile load eval)
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
-  (defpackage emacs-lisp
-    #-allegro
-    (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
-    (:nicknames elisp el) (:use cl cl-user)
-    (:shadow let let* if member delete load require defcustom defconst provide
-             ignore format /)))
+(defpackage emacs-lisp
+  #-allegro
+  (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
+  (:nicknames elisp el) (:use cl cl-user)
+  (:shadow let let* if member delete load require defcustom defconst provide
+           ignore format /))
 
 ;;;
 ;;; Emacs-Lisp-specific special forms
 ;;;
 
 (defmacro el::if (ii tt &rest ee)
-  "Emacs-Lisp version of `if'."
-  ;; (macroexpand '(el::if t (print "then")))
-  ;; (macroexpand '(el::if t (print "th") (print "e1") (print "e2")))
+  "Emacs-Lisp version of `if' (multiple `else' clauses)."
   (if ee `(if ,ii ,tt (progn ,@ee)) `(if ,ii ,tt)))
 
 (defmacro el::let ((&rest vars) &rest forms)
-  ;; (macroexpand '(el::let (v1 (v2 t) v3) (f0) (f1)))
-  "Emacs-Lisp version of `let'."
+  "Emacs-Lisp version of `let' (everything special)."
   `(let ,vars (declare (special ,@(mapcar #'from-list vars))) ,@forms))
 
 (defmacro el::let* ((&rest vars) &rest forms)
-  "Emacs-Lisp version of `let*'."
+  "Emacs-Lisp version of `let*' (everything special)."
   `(let* ,vars (declare (special ,@(mapcar #'from-list vars))) ,@forms))
 
 (defmacro el::while (cc &body forms)
   "Emacs-Lisp `while'."
-  ;; (macroexpand '(el::while x (print z)))
   `(do () ((not ,cc)) ,@forms))
 
 ;;;
 ;;; Read Emacs-Lisp objects
 ;;;
 
-(eval-when (load compile eval)  ; for `*elisp-readtable*'
+(eval-when (compile load eval)  ; for `*elisp-readtable*'
 (defun el::read-elisp-special (stream char)
   (declare (stream stream) (character char))
   (ecase char
@@ -318,7 +297,7 @@
         (when (and (ignore-errors (probe-file ff)) (not (probe-directory ff)))
           (return-from locate-file ff)))
       (unless source-only
-        (let ((ff (merge-pathnames (concatenate 'string file *fas-ext*) dir)))
+        (let ((ff (merge-pathnames (compile-file-pathname file) dir)))
           (when (probe-file ff) (return-from locate-file ff))))
       (let ((ff (merge-pathnames (concatenate 'string file ".el") dir)))
         (when (probe-file ff) (return-from locate-file ff))))))
@@ -361,5 +340,5 @@ The suffix stuff is ignored."
 ;; (cl-user::compile-el-file "cal-hebrew")
 ;; (calendar-hebrew-date-string)
 
-(provide "elisp")
+(provide :elisp)
 ;;; file elisp.lisp ends here

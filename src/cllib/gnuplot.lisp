@@ -1,113 +1,34 @@
-;;; File: <gnuplot.lisp - 1999-10-25 Mon 13:43:06 EDT sds@ksp.com>
+;;; File: <gnuplot.lisp - 2000-02-18 Fri 12:59:39 EST sds@ksp.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
-;;; Copyright (C) 1997-1999 by Sam Steingold.
+;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.28 1999/10/25 17:43:23 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
-;;; $Log: gnuplot.lisp,v $
-;;; Revision 1.28  1999/10/25 17:43:23  sds
-;;; ditched the eagle-specific stuff
-;;;
-;; Revision 1.27  1999/05/24 21:42:07  sds
-;; (plot-dated-lists, plot-lists, plot-lists-arg):
-;; `ylabel' default depends on `rel'.
-;;
-;; Revision 1.26  1999/05/12 14:23:14  sds
-;; (plot-header): new options `xfmt' and `yfmt'.
-;;
-;; Revision 1.25  1999/04/09 19:20:41  sds
-;; `+gnuplot-epoch+' is now an integer, not a date.
-;;
-;; Revision 1.24  1999/01/26 22:45:28  sds
-;; Added `plot-msg'.
-;;
-;; Revision 1.23  1999/01/07 03:59:28  sds
-;; Use `index-t' instead of (unsigned-byte 20).
-;; Use `close-pipe'.
-;;
-;; Revision 1.22  1998/11/17 21:20:01  sds
-;; Reset output with "set output" after printing to flush the buffers, so
-;; that the printing takes effect immediately.
-;;
-;; Revision 1.21  1998/11/13 21:38:06  sds
-;; Added option `lines' to `plot-dated-lists'.
-;;
-;; Revision 1.20  1998/10/21 20:01:25  sds
-;; Switched to keys in `plot-header'.  Now, to add a gnuplot option, one
-;; needs to modify only `plot-header', not `plot-lists-arg' &c.
-;;
-;; Revision 1.19  1998/10/19 19:41:32  sds
-;; Added `term' (terminal) gnuplot option, allowing for multiple plot
-;; windows being displayed simultaneously.
-;;
-;; Revision 1.18  1998/10/09 14:07:33  sds
-;; Added `force-output' to `with-plot-stream', which fixes the CMUCL delay
-;; problem.
-;;
-;; Revision 1.17  1998/10/06 23:41:57  sds
-;; Added `xtics', `ytics' and `grid' gnuplot options.
-;;
-;; Revision 1.16  1998/08/03 19:15:07  sds
-;; Use (getenv "SDSPRT") to get the printer name.
-;;
-;; Revision 1.15  1998/06/19 21:42:50  sds
-;; Switch from `compose-m' to `compose'.
-;;
-;; Revision 1.14  1998/06/09 15:23:00  sds
-;; After printing, reset terminal and output back to screen - for flushing.
-;;
-;; Revision 1.13  1998/06/08 23:49:44  sds
-;; In function `plot-lists-arg', fixed :key boundaries.
-;;
-;; Revision 1.12  1998/06/03 17:20:35  sds
-;; Added a plot-key key, for placement of the gnuplot legend.
-;;
-;; Revision 1.11  1998/04/29 22:36:32  sds
-;; Made `*gnuplot-epoch*' into a constant `+gnuplot-epoch+'.
-;; Added function `plot-sec-to-epoch'.
-;;
-;; Revision 1.10  1998/03/23 15:53:41  sds
-;; Fixed to work with ACL and CMU CL.
-;;
-;; Revision 1.9  1998/02/19 22:49:42  sds
-;; Switched to automatic guessing of data-style via `plot-data-style'.
-;;
-;; Revision 1.8  1998/02/12 21:38:19  sds
-;; Switched to `defgeneric' and `require'.
-;;
-;; Revision 1.7  1997/12/04 20:10:08  sds
-;; Made `with-plot-stream' and `plot-header' plot and print,
-;; not just write the file.
-;;
-;; Revision 1.6  1997/10/29 21:52:08  sds
-;; Added `plot-functions'.
-;;
-;; Revision 1.5  1997/10/17 20:34:51  sds
-;; Added `plot-lists-arg'.
-;;
-;; Revision 1.4  1997/10/15 15:44:17  sds
-;; Added plot-lists.
-;; Made `plot-dated-lists' plot exponential moving averages.
-;;
-;; Revision 1.3  1997/10/01 20:48:12  sds
-;; Added `plot-dated-lists'.
-;;
-;; Revision 1.2  1997/10/01 15:34:55  sds
-;; Cosmetic fixes.
-;;
-;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `date2time', `+day-sec+', `days-between', `date>'
+  (require :date (translate-logical-pathname "cllib:date"))
+  ;; `dl-nth-date', `dated-list-name', `dl-nth-slot', `dl-shift',
+  ;; `copy-dated-list', `dl-endp', `dl-len', `dl-ll', `dl-date'
+  (require :datedl (translate-logical-pathname "cllib:datedl"))
+  ;; `regress', `make-line', `line-sl', `line-co'
+  (require :math (translate-logical-pathname "cllib:math"))
+  ;; `regress-poly'
+  (require :statn (translate-logical-pathname "cllib:stat"))
+  ;; `pipe-output', `close-pipe', `run-prog'
+  (require :shell (translate-logical-pathname "port:shell")))
 
-(eval-when (load compile eval)
-  (sds-require "base") (sds-require "date")
+(in-package :cllib)
+
+(eval-when (compile load eval)
   ;; the only way to have a good optimization here is to ditch
   ;; flexibility and stick to floats.
   (declaim (optimize (speed 1) (space 0) (safety 3) (debug 3))))
@@ -115,6 +36,14 @@
 #+cmu
 (eval-when (compile)
   (format t " *** `optimize' compile quality is set to 1.~%"))
+
+(export '(*gnuplot-path* #+win32 *gnuplot-path-console* *gnuplot-printer*
+          with-plot-stream plot-dated-lists plot-dated-lists-depth
+          plot-lists plot-lists-arg plot-error-bars plot-functions))
+
+;;;
+;;; variables
+;;;
 
 (defcustom *gnuplot-path* simple-string
   #+win32 "c:/bin/gnuplot/wgnuplot.exe"
@@ -242,6 +171,7 @@ set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
           "plot-data-style got neither number nor list: ~s" num-ls)
   (if (> num-ls 30) "lines" "linespoints"))
 
+;;;###autoload
 (defun plot-dated-lists (begd endd dls &rest opts &key (title "Dated Plot")
                          (xlabel "time") rel data-style
                          (ylabel (if rel "relative value" "value"))
@@ -294,6 +224,7 @@ EMA is the list of parameters for Exponential Moving Averages."
         ;; clean EMAL for the next pass
         (do ((ee emal (cdr ee))) ((null ee)) (setf (car ee) nil))))))
 
+;;;###autoload
 (defun plot-lists (lss &rest opts &key (key #'value) (title "List Plot")
                    (plot t) rel (xlabel "nums")
                    (ylabel (if rel "relative value" "value"))
@@ -318,6 +249,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
           (declare (fixnum ix))
           (format str "~f~20t~f~%" ix (funcall val ll)))))))
 
+;;;###autoload
 (defun plot-lists-arg (lss &rest opts &key (key #'identity) rel lines
                        (title "Arg List Plot") (xlabel "nums")
                        (ylabel (if rel "relative value" "value"))
@@ -355,6 +287,7 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
           (setq kk (funcall key (car ll)))
           (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk))))))))
 
+;;;###autoload
 (defun plot-error-bars (ll &rest opts &key (title "Error Bar Plot")
                         (xlabel "nums") (ylabel "value") (plot t)
                         (data-style (plot-data-style (list ll)))
@@ -385,6 +318,7 @@ get x, y and ydelta with xkey, ykey and ydkey."
       (format str "~a ~a~%" (funcall xkey rr)
               (+ (funcall ykey rr) (funcall ydkey rr))))))
 
+;;;###autoload
 (defun plot-functions (fnl xmin xmax numpts &rest opts &key data-style (plot t)
                        (title "Function Plot") &allow-other-keys)
   "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
@@ -403,6 +337,7 @@ E.g.: (plot-functions  (list (cons 'sine #'sin)) 0 pi 100)"
         (let ((xx (dfloat (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts))))
           (format str "~f~20t~f~%" xx (funcall (cdr fn) xx)))))))
 
+;;;###autoload
 (defun plot-dated-lists-depth (depth dls slot &rest opts)
   "Plot the dated lists, DEPTH *days* from the beginning.
 OPTS is passed to `plot-lists-arg'."
@@ -444,5 +379,5 @@ from BEG to END.  This is not a complete plotting function (not a UI)!"
   (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title \"~a\" ~
 with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
 
-(provide "gnuplot")
+(provide :gnuplot)
 ;;; gnuplot.lisp ends here

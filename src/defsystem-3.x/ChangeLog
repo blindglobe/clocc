@@ -1,3 +1,19 @@
+2002-05-30  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp:
+	Minor fix to DEFINE-LANGUAGE :C (better feature discrimination in
+	place).
+
+2002-05-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp: Added PATHNAME-HOST to pathname construction in
+	ENSURE-DIRECTORIES-EXIST in COMPILE-FILE-OPERATION.
+
+	Added loader for C Libraries for SBCL and (experimental) loader for C
+	libraries for Lispworks 4.2 both under MS Windows and UNIX.
+
 2002-05-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* defsystem.lisp: Added PATHNAME-HOST to pathname construction in

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.8 2000/11/08 22:52:22 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.9 2000/11/08 23:54:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,7 @@
 (in-package :cllib)
 
 (export '(html-stream-out with-html-output with-http-output with-tag
-          directory-index))
+          flush-http directory-index))
 
 ;;;
 ;;; preparation
@@ -100,18 +100,22 @@ Both print a tag but the second one does not do a `terpri' afterwards."
   "Write some HTML to an http client on SOCKET.
 Supplies some HTTP/1.0 headers and calls `with-html-output'.
 Returns the lines flushed from the socket."
-  (with-gensyms ("HTTP-" string stream sock flush)
+  (with-gensyms ("HTTP-" string stream sock)
     (remf opts :keep-alive)
-    `(let* ((,sock ,socket)
-            (,flush (loop :while (listen ,sock) :collect (read-line ,sock)))
-            (,string (with-output-to-string (,stream)
-                       (with-html-output (,var ,stream ,@opts) ,@body))))
+    `(let ((,sock ,socket)
+           (,string (with-output-to-string (,stream)
+                      (with-html-output (,var ,stream ,@opts) ,@body))))
       (format ,sock "HTTP/1.0 200 OK~%Content-type: text/html
 Content-length: %d~%Connection: ~:[Close~;Keep-Alive~]~2%"
        (length ,string) ,keep-alive)
       (write-string ,string ,sock)
-      (unless ,keep-alive (close ,sock))
-      ,flush)))
+      (unless ,keep-alive (close ,sock)))))
+
+(defun flush-http (socket)
+  "Read everything from the HTTP socket, until a blank line."
+  (loop :for line = (read-line socket nil nil)
+        :while (and line (plusp (length line)))
+        :collect line))
 
 ;;;
 ;;; this is an example on how to use `with-open-html' and `with-tag'.

@@ -38,7 +38,6 @@
 
 (defmethod output-files ((operation load-compiled-op)
 			 (c cl-source-file))
-  (declare (ignore operation))
   (list (compile-file-pathname (component-pathname c))))
 
 (defmethod operation-done-p ((o load-compiled-op) (c source-file))
@@ -82,7 +81,8 @@ than the maximum file-write-date of output-files, return T."
 	  (maximum-file-write-date output-files))))
 
 
-(export 'load-compiled-op)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export 'load-compiled-op))
 
 (in-package :common-lisp-controller)
 

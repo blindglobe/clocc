@@ -810,7 +810,7 @@
 (defmacro defun-compile-time (function-name lambda-list &body body)
  `(eval-when (compile load eval)
    (cl:defun ,function-name ,lambda-list ,@body)
-   #-(or akcl harlequin-common-lisp)
+   #-(or akcl harlequin-common-lisp clisp)
    (eval-when (compile) (compile ',function-name))))
 
 ;;; Needed because Allegro has some bogosity whereby (MACRO-FUNCTION <m> <e>)
@@ -1300,10 +1300,10 @@
        ((valid-function-name? (second form))
 	(cond
 	 ((symbolp (second form))
-	  (if (or (#+(and (not lucid) (not ansi-90) (not allegro) (not cmu))
+	  (if (or (#+(not (or lucid ansi-90 ansi-cl allegro cmu))
 		     special-form-p
 		     #+lucid lisp:special-form-p
-		     #+(or ansi-90 allegro cmu) special-operator-p
+		     #+(or ansi-90 ansi-cl allegro cmu) special-operator-p
 		     (second form))
 		  ;; note: Allegro has some braindamage in the way it treats
 		  ;;       some macros as special forms and refuses to
@@ -2049,9 +2049,9 @@
 	 (macro-function (first form) #-(or poplog akcl) environment)))
    (walk-macro-call
     map-function reduce-function screamer? partial? nested? form environment))
-  ((#+(and (not lucid) (not ansi-90) (not allegro) (not cmu)) special-form-p
+  ((#+(not (or lucid ansi-90 ansi-cl allegro cmu)) special-form-p
       #+lucid lisp:special-form-p
-      #+(or ansi-90 allegro cmu) special-operator-p
+      #+(or ansi-90 ansi-cl allegro cmu) special-operator-p
       (first form))
    (error "Cannot (currently) handle the special form ~S" (first form)))
   (t (walk-function-call
@@ -2269,10 +2269,9 @@
      (let ((d (gensym "DUMMY-"))
 	   (dummy-argument (gensym "DUMMY-")))
       (cl:multiple-value-bind (vars vals stores store-form access-form)
-	(#+(and (not lucid) (not ansi-90) (not allegro) (not cmu))
-	   get-setf-method
+	(#+(not (or lucid ansi-90 ansi-cl allegro cmu)) get-setf-method
 	   #+lucid lisp:get-setf-method
-	   #+(or ansi-90 allegro cmu) get-setf-expansion
+	   #+(or ansi-90 ansi-cl allegro cmu) get-setf-expansion
 	   ;; note: Poplog and AKCL only support CLtL1.
 	   (first pairs) #-(or poplog akcl) environment)
        `(let* (,@(mapcar #'list vars vals)
@@ -2857,10 +2856,9 @@
 	   (dummy-argument (gensym "DUMMY-"))
 	   (other-arguments (gensym "OTHER-")))
       (cl:multiple-value-bind (vars vals stores store-form access-form)
-	(#+(and (not lucid) (not ansi-90) (not allegro) (not cmu))
-	   get-setf-method
+	(#+(not (or lucid ansi-90 ansi-cl allegro cmu)) get-setf-method
 	   #+lucid lisp:get-setf-method
-	   #+(or ansi-90 allegro cmu) get-setf-expansion
+	   #+(or ansi-90 ansi-cl allegro cmu) get-setf-expansion
 	   ;; note: Poplog and AKCL only support CLtL1.
 	   (first arguments) #-(or poplog akcl) environment)
        (cps-convert
@@ -3760,7 +3758,7 @@
 #+(or (and lucid (not bug-6920)) poplog akcl)
 (defun realp (x) (typep x 'real))
 
-#-(or allegro-v4.2 x3j13)
+#-(or allegro-v4.2 x3j13 ansi-cl)
 (deftype boolean () '(member t nil))
 
 (defun booleanp (x) (typep x 'boolean))

@@ -1,6 +1,11 @@
-;;; File: <gnuplot.lisp - 1997-08-28 Thursday 9:52:14 EDT - sds@WINTERMUTE.eagle>
-;;; $ID$
+;;; File: <gnuplot.lisp - 1997-08-28 Thursday 15:20:02 EDT - sds@WINTERMUTE.eagle>
 ;;; Gnuplot
+;;; $Id: gnuplot.lisp,v 1.2 1997/10/01 15:34:55 sds Exp $
+;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
+;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.2  1997/10/01 15:34:55  sds
+;;; Cosmetic fixes.
+;;;
 ;;;
 
 (proclaim '(optimize (speed 3) (space 0) (safety 3) (debug 3)))

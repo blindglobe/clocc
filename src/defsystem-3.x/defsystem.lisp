@@ -866,6 +866,7 @@
       :mcl
       :lispworks
       :clisp
+      :gcl
       :sbcl
       :cormanlisp
       :scl
@@ -989,13 +990,7 @@
 ;;; MAKE package. A nice side-effect is that the short nickname
 ;;; MK is my initials.
 
-#+ecl
-(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
-
-#+clisp
-(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
-
-#+cormanlisp
+#+(or clisp cormanlisp ecl (and gcl defpackage) sbcl)
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
 #-(or :sbcl :cltl2 :lispworks :ecl :scl)

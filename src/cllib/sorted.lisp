@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.8 2002/03/02 02:13:55 sds Exp $
+;;; $Id: sorted.lisp,v 1.9 2003/06/07 21:44:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)
@@ -285,6 +285,7 @@ Like member, but orders of magnitude faster when test and key
 are expensive compared with `nthcdr'."
   (declare (list ls) (type (function (t) t) key)
            (type (function (t t) t) test))
+  (unless ls (return-from binary-member ls))
   (when (funcall test el (funcall key (car ls)))
     (return-from binary-member ls))
   (unless (funcall test el (funcall key (car (last ls))))

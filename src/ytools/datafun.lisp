@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 1.6 2004/07/01 03:12:38 airfoyle Exp $
+;;;$Id: datafun.lisp,v 1.7 2004/07/01 03:13:33 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,14 +8,9 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-<<<<<<< datafun.lisp
    (export '(datafun
 	     datafun-table datafun-alist datafun-from-plist
 	     attach-datafun datafun-on-plist)))
-=======
-   (export '(datafun attach-datafun
-	     datafun-table datafun-alist datafun-from-plist)))
->>>>>>> 1.5
 
 ; (DATAFUN master sym def) defines a new procedure and puts it
 ; on the property list of sym under the indicator master.

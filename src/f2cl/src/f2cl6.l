@@ -58,8 +58,15 @@
        ((or (char-equal (char line 0) #\C)
 	    (char-equal (char line 0) #\*))
 	(if *comments* (write-comment-line line outport)))
-       (t (when *verbose* (princ line) (terpri))
-	  (write-line (adjust_nrs (replace_logl_ops line)) outport)))
+       (t
+	(when *verbose* (princ line) (terpri))
+	;; Handle tabs.  If the line begins with a tab, replace it with 6
+	;; spaces.  Then replace all tabs with a single space.
+	(when (char-equal (aref line 0) #\Tab)
+	  (setf line (concatenate 'string "      " (subseq line 1))))
+	(setf line (substitute #\Space #\Tab line))
+
+	(write-line (adjust_nrs (replace_logl_ops line)) outport)))
      (go loop)))
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)

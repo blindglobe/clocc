@@ -832,7 +832,7 @@ main-loop
 		      (t
 		       (let ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
 			     (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-			 (format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+			 ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
 			 ;; RHS.  Otherwise, coerce the RHS to the
 			 ;; type of the LHS.  However, we can't coerce
 			 ;; something to an integer.  Use truncate for

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.30 2001/03/29 22:14:51 sds Exp $
+;;; $Id: xml.lisp,v 2.31 2001/04/23 15:22:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -486,7 +486,7 @@ Return a string (with whitespace compressed with `compress-whitespace'
 if the keyword argument `clean' is non-NIL, which is the default, and
 the unicode entities &#nnnn; replaced with the appropriate characters
 base the keyword argument BASE, when it is non-NIL, default - NIL)
-TERM can be a predicate, a chacacter or a sequence of chacacters."
+TERM can be a predicate, a character or a sequence of characters."
   (loop :with endp = (etypecase term
                        (function term)
                        (character (lambda (ch) (char= ch term)))

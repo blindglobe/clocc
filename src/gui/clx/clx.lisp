@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.4 2002/08/06 07:59:38 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.5 2003/02/24 09:17:24 pvaneynd Exp $")
 
 ;; Primary Interface Author:
 ;;	Robert W. Scheifler
@@ -95,6 +95,18 @@
 (defparameter *protocol-minor-version* 0)
 
 (defparameter *x-tcp-port* 6000) ;; add display number
+
+(defparameter *protocol-families*
+  '(;; X11/X.h, Family*
+    (:internet . 0)
+    (:decnet . 1)
+    (:chaos . 2)
+    ;; X11/Xauth.h "not part of X standard"
+    (:Local . 256)
+    (:Wild . 65535)
+    (:Netname . 254)
+    (:Krb5Principal . 253)
+    (:LocalHost . 252)))
 
 ;; Note: if you have read the Version 11 protocol document or C Xlib manual, most of
 ;; the relationships should be fairly obvious.  We have no intention of writing yet

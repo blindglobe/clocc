@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.7 2002/03/29 20:44:54 pvaneynd Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.8 2003/02/24 09:17:30 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -45,7 +45,7 @@
   (defconstant *long-2* 2)
   (defconstant *long-3* 3))
 
-#-(or clx-little-endian)
+#-clx-little-endian
 (progn
   (defconstant *word-0* 1)
   (defconstant *word-1* 0)
@@ -842,7 +842,7 @@
 ;;; This controls macro expansion, and isn't changable at run-time You will
 ;;; probably want to set this to nil if you want good performance at
 ;;; production time.
-(defconstant *type-check?* #+(or CMU) nil #-(or CMU) t)
+(defconstant *type-check?* #+clx-debugging t #-clx-debugging nil)
 
 ;; TYPE? is used to allow the code to do error checking at a different level from
 ;; the declarations.  It also does some optimizations for systems that don't have
@@ -981,6 +981,15 @@
 (defun getenv (name)
   (port:getenv name))
 
+(defun get-host-name ()
+  "Return the same hostname as gethostname(3) would"
+  ;; machine-instance probably works on a lot of lisps, but clisp is not
+  ;; one of them
+  #+(or cmu sbcl) (machine-instance)
+  ;; resources-pathname was using short-site-name for this purpose
+  #+excl (short-site-name)
+  #-(or excl cmu sbcl) (error "get-host-name not implemented"))
+
 (defun homedir-file-pathname (name)
   (and #-(or unix mach) (search "Unix" (software-type) :test #'char-equal)
        (merge-pathnames
@@ -1001,7 +1010,7 @@
   (or (let ((string (getenv "XENVIRONMENT")))
 	(and string
 	     (pathname string)))
-      (homedir-file-pathname (concatenate 'string ".Xdefaults-" (machine-instance)))))
+      (homedir-file-pathname (concatenate 'string ".Xdefaults-" (get-host-name)))))
 
 ;;; AUTHORITY-PATHNAME - The pathname of the authority file.
 
@@ -1010,6 +1019,28 @@
 	(and xauthority
 	     (pathname xauthority)))
       (homedir-file-pathname ".Xauthority")))
+
+;;; this particular defaulting behaviour is typical to most Unices, I think
+;; #+unix PVE: Well, cygwin?
+
+(defun get-default-display ()
+  "Get the default X display as list of (host display-number screen protocol).
+In UNIX this is selected using the DISPLAY environment variable, and
+may use :internet or :local protocol"
+  (let* ((name (or (getenv "DISPLAY")
+		   (error "DISPLAY environment variable is not set")))
+	 (colon-i (position #\: name))
+	 (host (subseq name 0 colon-i))
+	 (dot-i (and colon-i (position #\. name :start colon-i)))
+	 (display (if colon-i
+		      (ignore-errors
+			(parse-integer name :start (1+ colon-i) :end dot-i))))
+	 (screen (if dot-i
+		     (ignore-errors (parse-integer name :start (1+ dot-i)))))
+	 (protocol (if (or (string= host "") (string-equal host "unix"))
+		       :local
+		       :internet)))
+    (list host (or display 0) (or screen 0) protocol)))
 
 
 ;;-----------------------------------------------------------------------------

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.20 2001/11/02 22:31:15 sds Exp $
+;;; $Id: date.lisp,v 2.21 2002/01/26 19:33:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -188,17 +188,19 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (string obj)
     (symbol (unintern obj) (symbol-name obj))))
 
-(defun infer-timezone (obj)
+(defun infer-timezone (obj &optional minutes)
   "Guess the timezone."
   (typecase obj
     (symbol (unintern obj) (infer-timezone (symbol-name obj)))
     (string (or (car (string->tz obj)) 0))
     (number
-     (cond ((< -24 obj 24) obj)
-           ((multiple-value-bind (ho mi) (floor obj 100)
-              ;; CL uses positive offsets to the West of Greenwich,
-              ;; while the rest of the world count positive to the East.
-              (- (+ ho (/ mi 60)))))))
+     (multiple-value-bind (ho mi)
+         (cond (minutes (values obj minutes))
+               ((< -24 obj 24) (values (- obj) 0))
+               (t (floor obj 100)))
+       ;; CL uses positive offsets to the West of Greenwich,
+       ;; while the rest of the world count positive to the East.
+       (- (+ ho (/ mi 60)))))
     (t (error 'case-error :proc 'infer-timezone :args
               (list 'obj obj 'symbol 'string 'number)))))
 
@@ -227,6 +229,8 @@ DST is Daylight Saving Time indicator."
 The supported specs are:
   function -- run it
   string   -- assume it's a format string for the other arguments
+  :date    -- \"2001-04-22\", see <http://www.w3.org/TR/NOTE-datetime>
+  :datetime -- \"2001-04-22T04:53:44\", ditto
   :short   -- \"2001-04-22 Sun 04:53:44\"
   :long    -- \"2001-04-22 Sun 04:53:44 +0000 (GMT)\"
   :mbox    -- \"Sun Apr 22 04:53:44 2001\"
@@ -238,6 +242,13 @@ The supported specs are:
   (:method ((format t) se mi ho da mo ye dd dst tz)
     (error "~s: unknown format: ~s [date: ~s]" 'date-formatter format
            (date-formatter :short se mi ho da mo ye dd dst tz)))
+  (:method ((format (eql :date)) se mi ho da mo ye dd dst tz)
+    (declare (ignore se mi ho dd dst tz))
+    (format nil "~d-~2,'0d-~2,'0d" ye mo da))
+  (:method ((format (eql :datetime)) se mi ho da mo ye dd dst tz)
+    (declare (ignore dd))
+    (format nil "~d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d~@[Z~a~]"
+            ye mo da ho mi se (and (/= 0 tz) (tz->string tz dst nil))))
   (:method ((format (eql :short)) se mi ho da mo ye dd dst tz)
     (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d~@[ ~a~]"
             ye mo da (aref +week-days+ dd) ho mi se
@@ -257,20 +268,20 @@ The supported specs are:
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6)
+  (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6 v7)
       (values-list
        (delete-if (lambda (st)
                     (and (symbolp st)
-                         (find (subseq (to-string st) 0 3) +week-days+ :test
-                               #'string-equal)))
-                  (string-tokens (purge-string xx) :max 8)))
+                         (find (subseq (to-string st) 0 3) +week-days+
+                               :test #'string-equal)))
+                  (string-tokens (purge-string xx ":-,/TZ") :max 9)))
     (if (numberp v0)
-        (encode-universal-time (or v5 0) (or v4 0) (or v3 0)
+        (encode-universal-time (round (or v5 0)) (or v4 0) (or v3 0)
                                (min v0 v2) (infer-month v1) (max v0 v2)
-                               (infer-timezone v6))
-        (encode-universal-time (or v4 0) (or v3 0) (or v2 0)
+                               (infer-timezone v6 v7))
+        (encode-universal-time (round (or v4 0)) (or v3 0) (or v2 0)
                                v1 (infer-month v0) v5
-                               (infer-timezone v6)))))
+                               (infer-timezone v6 v7)))))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."

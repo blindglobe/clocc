@@ -66,12 +66,10 @@
 					   &rest args
 					   &key output-file
 				  &allow-other-keys)
-  (:generic-function-class mk4-generic-function-class)
   )
 
-(defmethod no-applicable-method ((lcf (eql #'fortran-compile-file))
-				 &rest arguments)
-  (error "MK4: FORTRAN-COMPILE-FILE undefined for arguments ~S." arguments))
+(defmethod fortran-compilefile ((pathname t) &rest arguments)
+  (error "MK4: FORTRAN-COMPILE-FILE undefined for pathname ~S." pathname))
 
 (defmethod fortran-compile-file ((fortran-compiler g77-language-compiler)
 				 (file pathname)
@@ -216,15 +214,13 @@
 			       (verbose *load-verbose*)
 			       (libraries '("c"))
 			       )
-  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Loads a Fortran object file (or similar) into the CL environment."))
 
 
-(defmethod no-applicable-method ((lcf (eql #'load-fortran-file))
-				 &rest arguments)
-  (error "MK4: LOAD-FORTRAN-FILE undefined for arguments ~S." arguments))
-  
+(defmethod load-fortran-file ((pathname t) &rest arguments)
+  (error "MK4: LOAD-FORTRAN-FILE undefined for pathname ~S and arguments ~S."
+	 pathname arguments))
 
 
 ;;; DEFINE-LANGUAGE and the mixin really provide the same

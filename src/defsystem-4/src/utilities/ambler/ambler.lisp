@@ -32,18 +32,10 @@
 ;;;===========================================================================
 ;;; Functional interface.
 
-(defclass ambler-gf-class (standard-generic-function)
-  ()
-  (:metaclass funcallable-standard-class)
-  (:documentation "Generic function class so that EQL specializer can be
-used with NO-APPLICABLE-METHOD"))
-
-
 (defgeneric amble-expression (expression
 			      ambling-context
 			      &key environment
 			      &allow-other-keys)
-  (:generic-function-class ambler-gf-class)
   (:documentation
    "Traverses a Common Lisp `expression'.
 For the purpose of this package a `Common Lisp expression' is either
@@ -61,7 +53,6 @@ the (possibly modified) AMBLING-CONTEXT."))
 			ambling-context
 			&key environment
 			&allow-other-keys)
-  (:generic-function-class ambler-gf-class)
   (:documentation "Traverses a Common Lisp `form'.
 For the purpose of this package a `Common Lisp form' (held in
 WHOLE-FORM) is a LIST, whose FIRST element is FORM-OPERATOR.
@@ -133,19 +124,17 @@ the (possibly modified) AMBLING-CONTEXT."))
 ;;;===========================================================================
 ;;; Interface implementation.
 
-(defmethod no-applicable-method ((amble-expression (eql #'amble-expression))
-				 &rest args)
+(defmethod amble-expression ((expression t) (context t) &key env &allow-other-keys)
   (error 'no-ambler-defined
-	 :whole-form (first args)
-	 :context (second args)))
+	 :whole-form expression
+	 :context context))
 
 
-(defmethod no-applicable-method ((amble-form (eql #'amble-form))
-				 &rest args)
+(defmethod amble-form ((operator t) (form t) (context t) &key env &allow-other-keys)
   (error 'no-ambler-defined
-	 :form-operator (first args)
-	 :whole-form (second args)
-	 :context (third args)))
+	 :form-operator operator
+	 :whole-form form
+	 :context context))
 
 
 ;;;---------------------------------------------------------------------------

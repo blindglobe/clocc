@@ -27,11 +27,10 @@
 			    (output *standard-output*)
 			    (error-output *error-output*)
 			    &allow-other-keys)
-  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Runs a `command' in the underlying Operating System."))
 
-(defmethod no-applicable-method ((gf (eql #'run-os-program)) &rest args)
-  (error 'os-program-error :program (first args) :reason "Method not implemented"))
+(defmethod run-os-program ((program t) &key arguments &allow-other-keys)
+  (error "run-os-program not implementation for program ~S" program))
 
 ;;; end of file -- run-os-program.lisp --

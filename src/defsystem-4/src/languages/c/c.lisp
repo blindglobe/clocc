@@ -215,19 +215,19 @@
 
 ;;; loader --
 
-(defgeneric load-c-file (loadable-c-pahtname
+(defgeneric load-c-file (loadable-c-pathname
 			 &key
 			 (print *load-print*)
 			 (verbose *load-verbose*)
 			 (libraries '("c"))
 			 )
-  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Loads a C object file (or similar) into the CL environment."))
 
 
-(defmethod no-applicable-method ((lcf (eql #'load-c-file)) &rest arguments)
-  (error "MK4: LOAD-C-FILE undefined for arguments ~S." arguments))
+(defmethod load-c-file ((pathname t) &rest args)
+  (error "MK4: LOAD-C-FILE undefined for pathname ~S and arguments ~S."
+	 pathname args))
   
 
 

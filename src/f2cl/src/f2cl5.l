@@ -1,3 +1,4 @@
+; -*- Mode: lisp; package: CL-USER -*-
 ; f2cl5.l
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -45,269 +46,702 @@
 ;      parse-default-format-descriptor
 ;      fix-slashes
 
-;-----------------------------------------------------------------------------  (in-package :user)   
-; functions for setting up varaible declarations and initialisations
+;;-----------------------------------------------------------------------------
+;;(in-package :user)   
+
+;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
-(proclaim '(special keywords intrinsic_function_names external_function_names
-                    declared_vbles undeclared_vbles key_params save_vbles
-                    explicit_vble_decls implicit_vble_decls common_array_dims
-                    subprog_common_vars program-flag 
-                    subprog_stmt_fns subprog_stmt_fns_bodies
-)))
+  (proclaim '(special keywords intrinsic_function_names external_function_names
+	      declared_vbles undeclared_vbles key_params save_vbles
+	      explicit_vble_decls implicit_vble_decls common_array_dims
+	      subprog_common_vars program-flag 
+	      subprog_stmt_fns subprog_stmt_fns_bodies
+	      *auto-save-data*
+	      *functions-used*
+	      *vble-declaration-done*)))
+
 
 (defun check_new_vbles (prog_list)
-      (do ((exprs prog_list (cdr exprs))
-           (vble_list nil
-                      (append vble_list
-                              (cond ((listp (car exprs)) 
-                                     (check_new_vbles (car exprs)))
-                                    ((or (not (symbolp (car exprs)))
-                                         (numberp (car exprs))
-                                         (member (car exprs) 
-                                                 '(\, \' + - * / ** // ^ = EQUAL > < >= <= ><))
-                                         (member (car exprs) keywords)
-                                         (member (car exprs) intrinsic_function_names)
-                                         (member (car exprs) key_params :key #'car)
-                                         (member (car exprs) external_function_names)
-                                         (member (car exprs) declared_vbles)
-                                         (member (car exprs) undeclared_vbles)
-                                         (sym-is-fun-name exprs))
-                                      nil)
-                                    ;; special case of error messages
-                                    ((eq (car exprs) 'PAUSE) (return prog_list))
-                                    (t (setq undeclared_vbles
-                                             (cons (car exprs) undeclared_vbles)))))))
-          ((null exprs) prog_list)))
+  (do ((exprs prog_list (cdr exprs))
+       (vble_list nil
+		  (append vble_list
+			  (cond ((listp (car exprs)) 
+				 (check_new_vbles (car exprs)))
+				((or (not (symbolp (car exprs)))
+				     (numberp (car exprs))
+				     (member (car exprs) 
+					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= ><))
+				     (member (car exprs) keywords)
+				     (member (car exprs) intrinsic_function_names)
+				     (member (car exprs) key_params :key #'car)
+				     (member (car exprs) external_function_names)
+				     (member (car exprs) declared_vbles)
+				     (member (car exprs) undeclared_vbles)
+				     (sym-is-fun-name exprs)
+				     (numberp (id-expression (list (car exprs)))))
+				 nil)
+				;; special case of error messages
+				((eq (car exprs) 'PAUSE)
+				 (return prog_list))
+				(t
+				 (setq undeclared_vbles
+				       (cons (check-t-and-pi (car exprs))
+					     undeclared_vbles)))))))
+      ((null exprs) prog_list)))
 
 (setq keywords '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE RETURN
                        STOP PRINT READ WRITE BACKSPACE CLOSE ENDFILE INQUIRE
                        OPEN REWIND FORMAT AND OR NOT))
 
-(defun insert-declarations (fort-fun) 
-   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
-          local-vbles vble-decls body special-proclamation)
-      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
-            arglist (caddr fort-fun)
-            body (cdddr fort-fun))
-      (setq undeclared_vbles 
-            (set-difference undeclared_vbles subprog_common_vars))
-      (setq special-proclamation (make-special-proclamation subprog_common_vars))
-      (setq common_var_decls 
-            (mapcar #'make-special-var-decl subprog_common_vars))
-      (setq formal-arg-decls 
-            (append
-               (mapcar #'(lambda (vble) 
-                           (prog (decl)
-                             (setq decl (make-declaration vble :vble-is-formal-arg t)
-                                   declared_vbles (remove vble declared_vbles)
-                                   undeclared_vbles (remove vble undeclared_vbles))
-                             (return decl)))
-                       (set-difference arglist external_function_names))
-               (mapcar #'(lambda (param)
-                           (make-declaration (car param)))
-                       key_params)))
-      (setq local-vbles (mapcar #'make-initialisation 
-                                 (remove-if 
-                                    #'(lambda (x) (or (member x save_vbles) 
-                                                      (member x key_params :key #'car)))
-                                    (set-difference (append declared_vbles undeclared_vbles)
-                                                    subprog_common_vars))))
-      (setq vble-decls (mapcar #'(lambda (vble)
-                                      (make-declaration vble :vble-is-formal-arg nil))
-                               (set-difference (append (set-difference declared_vbles 
-                                                                       (mapcar #'car key_params)) 
-                                                       undeclared_vbles)
-                                               subprog_common_vars)))
-      (setq arglist (mapcar #'check-t-and-pi arglist)
-            key_params (mapcar #'(lambda (x) 
-                                  (list (check-t-and-pi (car x)) (cadr x))) 
-                                 key_params)
-            arglist (append arglist 
-                            (if key_params (append '(&key) key_params)))
-            prog-bit (if subprog_stmt_fns
-                         (make-labels-form local-vbles vble-decls body)
-                         `(prog ,local-vbles ,@vble-decls ,@body)))
+(defun pretty-decls (decls)
+  (let ((type-alist '()))
+    (map nil #'(lambda (d)
+		 (destructuring-bind (decl (type v-type var))
+		     d
+		   (declare (ignore decl type))
+		   (let ((known (assoc-if #'(lambda (x)
+					      (equal x v-type))
+					  type-alist)))
+		     (if known
+			 (setf (cdr known) (cons var (cdr known)))
+			 (setf type-alist (cons (list v-type var)
+						type-alist))))))
+	 decls)
+    (when type-alist
+      `((declare ,@(mapcar #'(lambda (v)
+			       `(type ,@v))
+			   type-alist))))))
 
-      ; construct the function
-      (if save_vbles
-          (return 
-             (append
-                '(defvar) 
-                (list (cadr defun-bit))
-                (if special-proclamation (list special-proclamation))
-                `((let ,(mapcar #'make-initialisation save_vbles)
-                              #'(lambda ,arglist
-                                         ,@formal-arg-decls 
-                                         ,@common_var_decls
-                                         ,prog-bit)))))
-          (return 
-             (append 
-                 defun-bit 
-                 `(,arglist)
-                  (if special-proclamation (list special-proclamation))
-                  formal-arg-decls 
-                  common_var_decls
-                  `(,prog-bit))))))
+(defun lookup-vble-type (vble)
+  ;;(format t "lookup-vble: ~a~%" vble)
+  (cond ((member vble declared_vbles)
+	 ;;(format t "  is declared var~%")
+	 ;; First for declared variables
+	 (do* ((type-clauses explicit_vble_decls
+			     (rest type-clauses))
+	       (type (member vble (cdar type-clauses) :key #'car)
+		     (member vble (cdar type-clauses) :key #'car)))
+	      ((or type
+		   (null type-clauses))
+	       (caar type-clauses))))
+	(t
+	 ;;(format t "  is not declared. Implicit type = ~a~%" (get-implicit-type vble))
+	 ;;(format t "implicit ~a~%" implicit_vble_decls)
+	 (cond ((get-implicit-type vble))
+	       ((default-int-p vble)
+		'fixnum)
+	       (t
+		'single-float)))))
+
+(defun get-fun-arg-types (args)
+  (let ((res '()))
+    (dolist (arg args res)
+      (push (if (symbolp arg)
+		(lookup-vble-type arg)
+		(type-of arg))
+	    res))))
+
+(defun get-fun-arg-type (arg)
+  (if (symbolp arg)
+      (lookup-vble-type arg)
+      (type-of arg)))
+
+(defun get-upgraded-fun-arg-type (args)
+  (let ((res '()))
+    ;;(format t "args = ~a~%" args)
+    (dolist (arg args
+	     (nreverse res))
+      ;; Run down the list and lookup the argument types of each.
+      (let ((arg-types (mapcar #'get-fun-arg-type arg)))
+	;;(format t "arg = ~A~%types = ~a~%" arg arg-types)
+	(push (cond ((every #'(lambda (x)
+				(eq x (first arg-types)))
+			    arg-types)
+		     ;; All items are the same, so that's our type,
+		     ;; almost.  We don't parse expressions to
+		     ;; determine the type, so if the type is not a
+		     ;; number, we return T.
+		     (if (subtypep (first arg-types) 'number)
+			 (first arg-types)
+			 t))
+		    (t
+		     ;; Some items are different, so we can't really say.
+		     ;; (Although I think Fortran says they should all have
+		     ;; been the same.)
+		     t))
+	 res)))))
+
+;; Create declarations for all the functions used in the subprogram.
+;; We return three items: statement functions, other functions, and
+;; functions in the parameter list of the subprogram.
+(defun make-fcn-decl (fcn-list arglist)
+  (let (stmt-fcns other-fcns arg-fcns)
+    (dolist (fcn fcn-list)
+      (let* ((fname (first fcn))
+	     (type (lookup-vble-type fname))
+	     (args (second fcn))
+	     (decl `(function ,(get-upgraded-fun-arg-type args) ,type)))
+	(cond ((member fname subprog_stmt_fns)
+	       (push `(ftype ,decl ,fname) stmt-fcns))
+	      ((member fname arglist)
+	       (push `(type ,decl ,fname) arg-fcns))
+	      (t
+	       (push `(ftype ,decl ,fname) other-fcns)))))
+    (values `((declare ,@(nreverse stmt-fcns)))
+	    `((declare ,@(nreverse other-fcns)))
+	    `((declare ,@(nreverse arg-fcns))))))
+
+
+(defun insert-declarations (fort-fun) 
+  (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
+		   local-vbles vble-decls body special-proclamation
+		   saved-decls save-inits
+		   other-fcn-decls
+		   stmt-fcn-decls
+		   arg-fcn-decls)
+
+     (setq defun-bit (list (car fort-fun) (cadr fort-fun))
+	   arglist (caddr fort-fun)
+	   body (cdddr fort-fun))
+     (setq undeclared_vbles 
+	   (set-difference undeclared_vbles subprog_common_vars))
+     ;;(format t "subprog_common_vars = ~a~%" subprog_common_vars)
+     (setq special-proclamation
+	   (make-special-proclamation subprog_common_vars))
+     ;;(format t "special-proclamation = ~a~%" special-proclamation)
+     (setq common_var_decls 
+	   (mapcar #'make-special-var-decl subprog_common_vars))
+
+     ;; Clean up the declarations by merging them into one
+     (setq common_var_decls
+	   (append '(declaim)
+		   (mapcar #'(lambda (decl)
+			       (second decl))
+			   common_var_decls)))
+
+     ;; Get the declarations for all functions
+     (multiple-value-setq (stmt-fcn-decls other-fcn-decls arg-fcn-decls)
+       (make-fcn-decl *functions-used* arglist))
+
+     (setq formal-arg-decls
+	   (pretty-decls
+	    (append
+	     ;; Declare the any function arguments
+	     (if (equalp arg-fcn-decls '((declare)))
+		 nil
+		 arg-fcn-decls)
+	     ;; Declare variables
+	     (mapcar #'(lambda (vble)
+			 (let ((decl
+				(make-declaration vble :vble-is-formal-arg t)))
+			   (setf declared_vbles
+				 (remove vble declared_vbles))
+			   (setf undeclared_vbles
+				 (remove vble undeclared_vbles))
+			   decl))
+		     (set-difference arglist external_function_names))
+	     ;; Declare parameters
+	     (mapcar #'(lambda (param)
+			 (make-declaration (car param)))
+		     key_params))))
+
+     ;; Clean up other-fcn-decls.  If there weren't any, make it so,
+     ;; instead of leaving it as an empty declare.
+     (when (equal other-fcn-decls '((declare)))
+	 (setf other-fcn-decls nil))
+     
+     ;; If we are auto-SAVE'ing variables initialized in DATA
+     ;; statements, we add all of the variables in the data-init list
+     ;; to the save_vbles list, removing duplicates.
+
+     (flet ((extract-var-name (setter)
+	      ;; From the setting form, we extract the variable name.
+	      ;; Currently setters look something like this:
+	      ;;
+	      ;; (setq var val)
+	      ;;
+	      ;; (replace array '(a b c ...))
+	      ;;
+	      ;; (fset (fref array n) v)
+	      ;;
+	      ;; (data-implied-do do-loop var val)
+
+	      ;;(format t "e-v-n:  ~S~%" setter)
+	      (when (listp setter)
+		(cond ((eq 'setq (first setter))
+		       (second setter))
+		      ((eq 'replace (first setter))
+		       (second setter))
+		      ((eq 'fset (first setter))
+		       (second (second setter)))
+		      ((eq 'data-implied-do (first setter))
+		       (third setter))))))
+       (when (and *auto-save-data* data-init)
+	 (setf save_vbles
+	       (remove-duplicates
+		(append save_vbles
+			(remove nil 
+				(mapcar #'extract-var-name
+					data-init)))))))
+
+     ;; Initialize local variables
+     (setq local-vbles
+	   (remove-duplicates
+	    (remove nil
+		    (mapcar #'make-initialisation 
+			    (remove-if 
+			     #'(lambda (x)
+				 (or (member x save_vbles) 
+				     (member x key_params :key #'car)))
+			     (set-difference (append declared_vbles
+						     undeclared_vbles)
+					     subprog_common_vars))))
+	    :test #'(lambda (a b)
+		      (eq (first a) (first b)))))
+
+     ;; Remove %false% and %true% from the initialization lists.
+     (setf local-vbles (remove-if #'(lambda (x)
+				      (member (first x) '(%false% %true%)))
+				  local-vbles))
+
+     ;; Declare local variables, but remove any variables explicitly
+     ;; declared as SAVE'd.
+     (setq vble-decls
+	   (pretty-decls
+	    (remove-if
+	     #'(lambda (x)
+		 (member (third (second x)) '(%false% %true%)))
+	     (remove-duplicates
+	      (remove nil
+		      (mapcar #'(lambda (vble)
+				  (make-declaration vble
+						    :vble-is-formal-arg nil))
+			      (remove-if
+			       #'(lambda (x)
+				   (or (member x save_vbles)))
+			       (set-difference
+				(append
+				 (set-difference declared_vbles 
+						 (mapcar #'car key_params))
+				 undeclared_vbles)
+				subprog_common_vars))))
+	      :test #'(lambda (a b)
+			(eq (third (second a))
+			    (third (second b))))))))
+
+     ;; If we have saved variables, setup their declarations too.
+     ;;(format t "save_vbles = ~S~%" save_vbles)
+     (setq saved-decls
+	   (pretty-decls
+	    (remove-if
+	     #'(lambda (x)
+		 (member (third (second x)) '(%false% %true%)))
+	     (remove-duplicates
+	      (remove nil
+		      (mapcar #'(lambda (vble)
+				  (make-declaration vble
+						    :vble-is-formal-arg nil))
+			      save_vbles))
+	      :test #'(lambda (a b)
+			(eq (third (second a))
+			    (third (second b))))))))
+
+     ;; Initialize SAVE'd variables appropriately
+     (setq save-inits
+	   (remove-duplicates
+	    (remove nil
+		    (mapcar #'make-initialisation 
+			    (remove-if 
+			     #'(lambda (x)
+				 (member x key_params :key #'car))
+			     save_vbles)))
+	    :test #'(lambda (a b)
+		      (eq (first a) (first b)))))
+
+     ;; Clean up data inits: handle the fset inits and the
+     ;; data-implied-do inits.
+
+     ;;(format t "data-init before: ~S~%" data-init)
+     (setq data-init
+	   (mapcar #'(lambda (init)
+		       (flet ((get-dims (var)
+				(mapcar #'first (lookup-array-bounds var))))
+				  
+		       (cond ((eq 'fset (first init))
+			      ;; We need to get the dimensions for this array
+			      (destructuring-bind (fset (fref var idx) val)
+				  init
+				(declare (ignore fset fref))
+				`(fset (fref ,var ,idx ,(get-dims var)) ,val)))
+			     ((eq 'data-implied-do (first init))
+			      ;; We need to get the dimensions for this array
+			      (destructuring-bind (ido loop var vals)
+				  init
+				(declare (ignore ido))
+				`(data-implied-do ,loop ,(get-dims var) ,vals)))
+			     (t
+			      init))))
+		   data-init))
+     ;;(format t "data-init after : ~S~%" data-init)
+     
+     (setq arglist (mapcar #'check-t-and-pi arglist))
+     (setq key_params (mapcar #'(lambda (x) 
+                                  (list (check-t-and-pi (car x)) (cadr x))) 
+			      key_params))
+     (setq arglist (append arglist 
+			   (if key_params (append '(&key) key_params))))
+     (setq prog-bit
+	   (if (or save_vbles *auto-save-data*)
+	       ;; If we have SAVE'd variables, don't put their inits
+	       ;; into the function.  Put them in the let outside the function
+	       ;; where they belong.
+	       (if subprog_stmt_fns
+		   `(labels ,subprog_stmt_fns_bodies ,@stmt-fcn-decls
+		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
+		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
+	       (if subprog_stmt_fns
+		   `(labels ,subprog_stmt_fns_bodies ,@stmt-fcn-decls
+		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@data-init ,@body))
+		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@data-init ,@body)))
+	       )
+
+     ;;(format t "save_vbles = ~a~%" save_vbles)
+     ;;(format t "data-init  = ~a~%" data-init)
+     ;;(format t "save-inits = ~a~%" save-inits)
+     ;;(format t "prog-bit = ~a~%" prog-bit)
+     
+     ;; Return 3 pieces: Any proclamations for special variables, the
+     ;; declarations for the special variables, and, finally, the
+     ;; function itself.
+     (return
+       (values special-proclamation
+	       (when special-proclamation
+		 common_var_decls)
+	       (if (and (or save_vbles *auto-save-data*)
+			save-inits)
+		   (append
+		    `(let ,save-inits
+		      ,@saved-decls
+		      ,@data-init
+		      (defun ,(cadr defun-bit) ,arglist
+			,@formal-arg-decls 
+			,prog-bit)))
+		   (append
+		    defun-bit 
+		    `(,arglist)
+		    formal-arg-decls 
+		    `(,prog-bit)))))))
+
+
 
 ;; given vble return (vble init-value)
 ;; for prog arglist
 
-(defun make-initialisation (vble)
- (prog (vble_name type decl1 decl2)
-   (setq vble_name (check-t-and-pi vble))
-  (return
-   (cond ;check for vble with two declarations i.e. an array
-         ((setq decl1 
-                (member vble (cdr (setq decl2 (member vble explicit_vble_decls :key #'caadr))) :key #'caadr))
-          (setq decl1 (car decl1) decl2 (car decl2))
-          (if (eq (car decl1) 'ARRAY)
-              `(,vble_name ,(make_make-array_stmt (cdadr decl1) (car decl2)))
-              `(,vble_name ,(make_make-array_stmt (cdadr decl2) (car decl1)))))
-         ; check for declared variable
-         ((member vble declared_vbles)
-          (do ((type-clauses explicit_vble_decls (cdr type-clauses))
-               (decl nil))
-              ((null type-clauses) )
-              (setq type (caar type-clauses))
-              (cond ((and (listp type) (eq (car type) 'CHARACTER))
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return `(,vble_name ,(make-char-init (car decl) type)))))
-                    ((eq type 'ARRAY)
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return 
-                            `(,vble_name 
-                              ,(make_make-array_stmt (cdar decl)
-                                          (get_array_type (caar decl) nil))))))
-                    ((eq type 'LOGICAL)
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return
-                           (if (cdar decl) 
-                               `(,vble_name ,(make_make-array_stmt (cadar decl) t))
-                               `(,vble_name nil)))))
-                    (t (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return 
-                           (if (cdar decl) 
-                               `(,vble_name ,(make_make-array_stmt (cdar decl) type))
-                               `(,vble_name ,(if (eq type 'fixnum) 0 0d0)))))))))
-          (t  
-           (if (setq type (get-implicit-type vble))
-               `(,vble_name ,(cond ((eq type 'fixnum) 0)
-                                   ((eq type 'single-float) 0d0)
-                                   ((eq type 'double-float) 0d0)
-                                   ((eq type 'complex) '(complex 0 0))
-                                   ((and (listp type) 
-                                         (eq (car type) 'character))
-                                    (make-char-init (list vble) type))
-                                   (t nil)))
-                (if (default-int-p vble) 
-                    `(,vble_name 0)
-                    `(,vble_name 0d0))))))))
+(defun vble-declared-twice-p (vble vble_decls)
+  (let ((ndecls 0)
+	v-type v-name)
+    (dolist (type-list vble_decls)
+      (let ((found (member vble (rest type-list) :key #'car)))
+	(when found
+	  (incf ndecls)
+	  (push (first type-list) v-type)
+	  (push (car found) v-name))))
+    (when (> ndecls 1)
+      (mapcar #'list v-type v-name))))
 
-(defun make_make-array_stmt (dimens type)
-   (list 'make-array 
-         (append '(list) 
-               (mapcar #'(lambda (x) 
+
+(defun make-initialisation (vble)
+  ;; Look up variable in data-init to see if it has an
+  ;; initialized value from a data statement
+  (flet ((lookup-data-init (v)
+	   (let ((val (find-if #'(lambda (name)
+				   (eq v (second name)))
+			       data-init)))
+	     ;;(format t "lookup-data-init for ~S = ~S~%" v val)
+	     (when val
+	       (cond ((eq 'fill (first val))
+		      (list 'fill (third val)))
+		     ((eq 'setq (first val))
+		      (third val))
+		     ((eq 'replace (first val))
+		      (third val)))))))
+    (let* ((vble_name (check-t-and-pi vble))
+	   (init-val (lookup-data-init vble))
+	   type decl1)
+      ;;(format t "data-init = ~A~%" data-init)
+      ;;(format t "explicit_vble_decls = ~a~%" explicit_vble_decls)
+      ;;(format t "vble = ~a~%" vble)
+      ;;(format t "init-val = ~S~%" init-val)
+      (cond
+	;;check for vble with two declarations i.e. an array
+	((setf decl1 (vble-declared-twice-p vble explicit_vble_decls))
+	 ;; If we've already processed this variable, we don't need to
+	 ;; do it again.
+	 (unless (member vble *vble-declaration-done*)
+	   (destructuring-bind (decl1 decl2)
+	       decl1
+	     ;; Remember that we have done this already
+	     (pushnew vble *vble-declaration-done*)
+	     (if (eq (car decl1) 'ARRAY)
+		 `(,vble_name ,(make_make-array_stmt (cdadr decl1)
+						     (car decl2)
+						     init-val vble_name))
+		 `(,vble_name ,(make_make-array_stmt (cdadr decl2)
+						     (car decl1)
+						     init-val vble_name))))))
+	   
+	;; Don't need any initialization for statement functions or
+	;; external functions.  (But perhaps we should put one in to
+	;; say these are actually functions?)
+	((or (member vble external_function_names)
+	     (member vble subprog_stmt_fns))
+	 nil
+	 )
+	;; check for declared variable
+	((member vble declared_vbles)
+	 ;;(format t "declared var:  ~A = ~A~%" vble init-val)
+	 (do ((type-clauses explicit_vble_decls (cdr type-clauses))
+	      (decl nil))
+	     ((null type-clauses) )
+	   (setq type (caar type-clauses))
+	   ;;(format t "type-clauses = ~S~%" type-clauses)
+	   ;;(format t "type = ~A~%" type)
+	   (cond ((and (listp type)
+		       (eq (car type) 'CHARACTER))
+		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		      (return `(,vble_name ,
+				(make-char-init (car decl) type)))))
+		 ((eq type 'ARRAY)
+		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		      (return 
+			`(,vble_name 
+			  ,(make_make-array_stmt
+			    (cdar decl)
+			    (get_array_type (caar decl) nil)
+			    init-val
+			    vble_name)))))
+		 ((eq type 'LOGICAL)
+		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		      (return
+			(if (cdar decl) 
+			    `(,vble_name
+			      ,(make_make-array_stmt (cadar decl) t))
+			    `(,vble_name nil)))))
+		 (t
+		  ;;(format t "decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
+		  ;;(format t "init-val = ~S~%" init-val)
+		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		      (return 
+			(if (cdar decl) 
+			    `(,vble_name
+			      ,(make_make-array_stmt (cdar decl) type init-val vble_name))
+			    `(,vble_name
+			      ,(cond (init-val
+				      (remove-data-init-var vble_name)
+				      init-val)
+				     (t
+				      (ecase type
+					(fixnum 0)
+					(single-float 0f0)
+					(double-float 0d0))))))))))))
+	(t
+	 (if (setq type (get-implicit-type vble))
+	     `(,vble_name ,(cond (init-val
+				  (remove-data-init-var vble_name)
+				  init-val)
+				 ((eq type 'fixnum) 0)
+				 ((eq type 'single-float) 0f0)
+				 ((eq type 'double-float) 0d0)
+				 ((eq type 'complex) '(complex 0f0 0f0))
+				 ((and (listp type) 
+				       (eq (car type) 'character))
+				  (make-char-init (list vble) type))
+				 (t nil)))
+	     (if (default-int-p vble) 
+		 `(,vble_name 0)
+		 `(,vble_name 0f0))))))))
+
+
+(defun remove-data-init-var (vble)
+  (setf data-init (remove-if #'(lambda (x)
+				 (equal vble (second x)))
+			     data-init)))
+
+;; DATA is a sequence of numbers in Fortran column-major order.
+;; Create a Lisp array (row-major order) with the data in the correct
+;; order.
+(defun fortran-transpose (dims data)
+  (if (= (length dims) 1)
+      data
+      (let* ((ndims (length dims))
+	     (limits (make-array ndims :initial-contents dims))
+	     (cnt (make-array ndims :initial-element 0))
+	     (array-result (make-array dims))
+	     result)
+	(map nil #'(lambda (x)
+		     (let ((idx (apply #'array-row-major-index
+				       array-result (coerce cnt 'list))))
+		       ;; Set the correct element
+		       (setf (row-major-aref array-result idx) x)
+		       ;; Update the indices in column major order
+		       ;; (first index varies fastest)
+		       (do ((carry 1)
+			    (k 0 (1+ k)))
+			   ((or (>= k ndims)
+				(zerop carry)))
+			 (incf (aref cnt k) carry)
+			 (if (>= (aref cnt k) (aref limits k))
+			     (setf (aref cnt k) 0)
+			     (setf carry 0)))))
+	     data)
+	;; Now we need to convert the array into a nested structure of
+	;; sequences.  We are lazy here.  This does what we want
+	(setf result (format nil "~A~%" array-result))
+	(values (read-from-string (subseq result (position #\( result))))
+	)))
+
+
+(defun make_make-array_stmt (dimens type &optional init vble)
+  (let ((dims (mapcar #'(lambda (x) 
                            (cond ((member '* x) '*)
                                  ((eq (car x) 1) (cadr x))
                                  ((not (member nil (mapcar #'numberp x)))
                                   (1+ (- (cadr x) (car x))))
                                  (t `(1+ (- ,(cadr x) ,(car x))))))
-                       dimens)) 
-         ':element-type (list 'quote type)))
+                       dimens)))
+    ;; Don't need to initialize this variable separately, so kill it.
+    (setf data-init (remove-data-init-var vble))
+    
+    (cond ((every #'numberp dims)
+	   ;; If all of the dimensions are numbers, we don't have to
+	   ;; make a list out of them.  This can speed up array
+	   ;; creation for smart compilers.
+	   (let ((init-val
+		  (when init
+		    (if (eq 'fill (first init))
+			`(:initial-element ,(second init))
+			`(:initial-contents
+			  ',(fortran-transpose dims
+					       (first (rest init))))))))
+	     (if (= (length dims) 1)
+		 `(make-array ,(first dims) :element-type ',type ,@init-val)
+		 `(make-array '(,@dims) :element-type ',type ,@init-val))))
+	  (t
+	   (list 'make-array 
+		 (append '(list) dims)
+		 ':element-type (list 'quote type))))))
 
-; create a labels form for when statement functions are present
-(defun make-labels-form (local-vbles vble-decls body)
-    `(prog ,local-vbles ,@vble-decls
-        (labels ,subprog_stmt_fns_bodies ,@body)))
+;; create a labels form for when statement functions are present
+
+(defun make-labels-form (local-vbles vble-decls data-init body)
+    `(labels ,subprog_stmt_fns_bodies
+      (prog ,local-vbles ,@vble-decls ,@data-init ,@body)))
+
 
 ;; make a declaration for vble which may or may not be a formal arg
 ;; vble_name is used to replace vbles called T with T_
 
 (defun make-declaration (vble &key vble-is-formal-arg)
- (prog (vble_name type decl1 decl2)
+ (prog (vble_name type decl1)
    (setq vble_name (check-t-and-pi vble))
   (return
-   (cond ;check for vble with two declarations i.e. an array
-         ((setq decl1 
-                (member vble (cdr (setq decl2 (member vble explicit_vble_decls :key #'caadr))) :key #'caadr))
-          (setq decl1 (car decl1) decl2 (car decl2))
-
-          (return (if (eq (car decl1) 'ARRAY)
-                      `(declare (type (simple-array ,(car decl2) ,(cdadr decl1)) ,vble_name))
-                      `(declare (type (simple-array ,(car decl1) ,(cdadr decl2)) ,vble_name)))))
-         ; check for declared variable
-         ((member vble declared_vbles)
-          (do ((type-clauses explicit_vble_decls (cdr type-clauses))
-               (decl nil))
-              ((null type-clauses) )
-              (setq type (caar type-clauses))
-              (cond ((and (listp type) (eq (car type) 'CHARACTER))
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return (make-char-decl (car decl) type))))
-                    ((eq type 'ARRAY)
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
+   (cond				;check for vble with two declarations i.e. an array
+     ((setf decl1 (vble-declared-twice-p vble explicit_vble_decls))
+      (destructuring-bind (decl1 decl2)
+	  decl1
+	(when (eq (car decl2) 'array)
+	  (rotatef decl1 decl2))
+	(return `(declare (type (simple-array
+				 ,(car decl2)
+				 ,(mapcar #'(lambda (x)
+					      (declare (ignore x))
+					      '*)
+				   (cdadr decl1)))
+				 ,vble_name)))))
+	  
+     ;; Don't need any initialization for statement functions or
+     ;; external functions
+     ((or (member vble external_function_names)
+	  (member vble subprog_stmt_fns))
+      ;;(format t "no declaration needed for ~A~%" vble)
+      ;;(format t "stmt fns = ~A~%" subprog_stmt_fns)
+      ;;(format t "ext fns  = ~A~%" external_function_names)
+      ;;(format t "arglist  = ~A~%" subprog-arglist)
+      nil
+      )
+					; check for declared variable
+     ((member vble declared_vbles)
+      (do ((type-clauses explicit_vble_decls (cdr type-clauses))
+	   (decl nil))
+	  ((null type-clauses) )
+	(setq type (caar type-clauses))
+	(cond ((and (listp type) (eq (car type) 'CHARACTER))
+	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		   (return (make-char-decl (car decl) type))))
+	      ((eq type 'ARRAY)
+	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
                          
-                         (return `(declare (type (simple-array 
-                                                  ,(get_array_type (caar decl) 
-                                                                   vble-is-formal-arg)
-                                                 ,(mapcar #'(lambda (x) 
-                                                              (declare (ignore x)) '*)
-                                                          (cdar decl))) 
-                                                 ,vble_name)))))
-                    ((eq type 'LOGICAL)
-                     (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return
-                           (if (cdar decl) 
-                               `(declare (type (simple-array t ,(cadar decl)) 
-                                               ,vble_name))
-                               `(declare (type t ,vble))))))
-                    (t (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         (return 
-                           (if (cdar decl) 
-                               `(declare (type (simple-array 
-                                                 ,type 
-                                                 ,(mapcar #'(lambda (x) 
-                                                              (declare (ignore x)) '*)
-                                                          (cdar decl))) 
-                                               ,vble_name))
-                               `(declare (type ,type ,vble_name)))))))))
-          ; check implicitly declared variable
-          ((and (not vble-is-formal-arg) (setq type (get-implicit-type vble)))
-           (if (and (listp type) (eq (car type) 'CHARACTER))
-               (make-char-decl (list vble_name) type)
-               `(declare (type ,type ,vble_name))))
-          ; otherwise use default declaration
-          (t (if (default-int-p vble)
-                 `(declare (type fixnum ,vble_name))
-                 `(declare (type single-float ,vble_name))))))))
+		   (return `(declare (type (simple-array 
+					    ,(get_array_type (caar decl) 
+							     vble-is-formal-arg)
+					    ,(mapcar #'(lambda (x) 
+							 (declare (ignore x)) '*)
+						     (cdar decl))) 
+				      ,vble_name)))))
+	      ((eq type 'LOGICAL)
+	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		   (return
+		     (if (cdar decl) 
+			 `(declare (type (simple-array t ,(cadar decl)) 
+				    ,vble_name))
+			 `(declare (type t ,vble))))))
+	      (t (if (setq decl (member vble (cdar type-clauses) :key #'car))
+		     (return 
+		       (if (cdar decl) 
+			   `(declare (type (simple-array 
+					    ,type 
+					    ,(mapcar #'(lambda (x) 
+							 (declare (ignore x)) '*)
+						     (cdar decl))) 
+				      ,vble_name))
+			   `(declare (type ,type ,vble_name)))))))))
+					; check implicitly declared variable
+     ((and (not vble-is-formal-arg) (setq type (get-implicit-type vble)))
+      (if (and (listp type) (eq (car type) 'CHARACTER))
+	  (make-char-decl (list vble_name) type)
+	  `(declare (type ,type ,vble_name))))
+					; otherwise use default declaration
+     (t (if (default-int-p vble)
+	    `(declare (type fixnum ,vble_name))
+	    `(declare (type single-float ,vble_name))))))))
 
 (defun make-char-decl (decl type)
    (cond ((null (cdr decl)) ; scalar, no length spec.
           (if (equal (cadr type) '(*))
-          `(declare (type (simple-array string-char (*)) ,(car decl)))    
-          `(declare (type (simple-array string-char (,(cadr type))) ,(car decl)))))
+          `(declare (type (simple-array base-char (*)) ,(car decl)))    
+          `(declare (type (simple-array base-char (,(cadr type))) ,(car decl)))))
          ((atom (cadr decl)) ; scalr, length spec.
-          `(declare (type (simple-array string-char (,(cadr decl))) ,(car decl))))
+          `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
          ((cddr decl) ; array with length spec
           `(declare (type (simple-array t (,(caadr decl))) ,(car decl))))
          ((equal (cadr decl) '(*)) ; unspecified length spec
-           `(declare (type (simple-array string-char (*)) ,(car decl))))
+           `(declare (type (simple-array base-char (*)) ,(car decl))))
          (t ; array, no length spec.
            `(declare (type (simple-array t (1)) ,(car decl))))))
 
 (defun make-char-init (decl type)
    (cond ((null (cdr decl)) ; scalar, no length spec.      
-          `(make-array '(,(cadr type)) :element-type 'string-char))
+          `(make-array '(,(cadr type)) :element-type 'base-char))
          ((atom (cadr decl)) ; scalr, length spec.
-          `(make-array '(,(cadr decl)) :element-type 'string-char))
+          `(make-array '(,(cadr decl)) :element-type 'base-char))
          ((cddr decl) ; array with length spec
           `(make-array ',(remove '|,| (cadr decl)) :element-type
-                                      '(simple-array string-char '(,(caddr decl)))))
+                                      '(simple-array base-char '(,(caddr decl)))))
          ((equal (cadr decl) '(*)) ; unspecified length spec
            "")
          (t ; array, no length spec.
            `(make-array ',(remove '|,| (cadr decl)) :element-type 
-                                      '(simple-array string-char ',(cdr type))))))
+                                      '(simple-array base-char ',(cdr type))))))
 
 (defun get-implicit-type (vble)
    (do ((decls implicit_vble_decls (cdr decls))
@@ -515,8 +949,8 @@
 
 ;----------------------------------------------------------------------------- 
 
-  (eval-when (compile load eval)  
-(proclaim '(special format_stmts current_label SP dlist-flag)))
+(eval-when (compile load eval)  
+  (proclaim '(special format_stmts current_label SP dlist-flag)))
 
 (defun parse-format (x)
   (prog (SP)
@@ -530,6 +964,7 @@
 ; x is of form: '(WRITE (* |,| 8000) |,| J |,| K)
 ;           or  '(WRITE (*) |,| J |,| K)
 ;           or  '(WRITE (* |,| *) |,| J |,| K)
+#+nil
 (defun parse-write (x)
    ; check for comma before arguments
    (if (and (third x) (not (eq (third x) '|,|)))
@@ -537,10 +972,53 @@
    `((fformat ,(parse_format_dest (first (second x)))
              (quote ,(if (null (second (second x))) 
                          '("~A~%")
-                         (get_format_stmt (third (second x)))))
+                         (get_format_stmt (nthcdr 2 (second x)))))
              (list ,@(mapcar #'parse-output-argument 
                              (list-split '|,| (cdddr x)))))))
+(defun parse-write (x)
+  ;; check for comma before arguments
+  (if (and (third x) (not (eq (third x) '|,|)))
+      (setq x (append (list (first x) (second x) '|,|) (cddr x))))
+  `((fformat ,(parse_format_dest (first (second x)))
+     ,(if (null (second (second x))) 
+	  '("~A~%")
+	  (get_format_stmt (nthcdr 2 (second x))))
+     ,@(mapcar #'parse-output-argument 
+	       (list-split '|,| (cdddr x))))))
 
+;; x is of the form: '(PRINT * |,| X |,| Y)
+;;               or: '(PRINT 9000 |,| X |,| Y)
+
+(defun parse-print (x)
+  `((fformat t
+     ,(get_format_stmt (list (second x)))
+     ,@(mapcar #'parse-output-argument 
+		       (list-split '|,| (cdddr x))))))
+     
+#+nil
+(progn
+;; Map Fortran logical unit numbers to Lisp streams
+
+(defvar *lun-hash*
+  (let ((table (make-hash-table)))
+    (setf (gethash 6 table) *standard-output*)
+    (setf (gethash t table) *standard-output*)
+    table))
+
+(defun lun->stream (lun)
+  (let ((stream (gethash lun *lun-hash*)))
+    (if stream
+	stream
+	(setf (gethash lun *lun-hash*)
+	      (open (format nil "fort~d.dat" lun)
+		    :direction :output
+		    :if-exists :rename)))))
+
+(declaim (ftype (function (t) stream) lun->stream))
+
+)
+
+#+nil
 (defmacro fformat (dest cilist args)
    `(if (equal ,cilist '("~A~%")) 
         (and (mapcar #'(lambda (arg) (fformat1 ,dest "~A " arg)) ,args)
@@ -557,21 +1035,99 @@
                              (first arglist))
                    (setq arglist (cdr arglist)))))))
 
+#+nil
+(progn
+(defmacro fformat (dest-lun format-cilist args)
+  (let ((dest (gensym))
+	(directives (gensym))
+	(cilist (gensym))
+	(arglist (gensym)))
+    `(let ((,dest (lun->stream ,dest-lun))
+	   (,cilist ,format-cilist))
+      (if (equal ,cilist '("~A~%")) 
+	  (and (mapcar #'(lambda (arg) (fformat1 ,dest "~A " arg)) ,args)
+	       (format ,dest "~%"))
+	  ;; loop through directives, consume arguments
+	  (do ((,directives ,cilist (cdr ,directives))
+	       (,arglist ,args ,arglist))
+	      ((null ,directives) )
+            (cond ((stringp (first ,directives))
+                   (format ,dest (first ,directives)))
+                  (t
+                   (fformat1 ,dest
+                             (car (first ,directives)) 
+                             (first ,arglist))
+                   (setq ,arglist (cdr ,arglist)))))))))
+
 (defun fformat1 (dest directive arg)
    (if (arrayp arg)
         (print arg)
         (format dest directive arg)))
+)
+
+#+nil
+(progn
+(defmacro fformat (dest-lun format-cilist &rest args)
+  (let ((stream (gensym)))
+    `(let ((,stream (lun->stream ,dest-lun)))
+      ,@(expand-format stream format-cilist args))))
+
+(defmacro fformat1 (dest directive arg)
+  (let ((val (gensym)))
+    `(let ((,val ,arg))
+      (if (arrayp ,val)
+	  (print ,val)
+	  (format ,dest ,directive ,val)))))
+
+(defun expand-format (dest cilist args)
+  (if (equal cilist '("~A~%"))
+      (append (mapcar #'(lambda (arg) `(fformat1 ,dest "~A " ,arg)) args)
+	   `((format ,dest "~%")))
+
+      (do ((res '())
+	   (directives cilist (cdr directives))
+	   (arglist args arglist))
+	  ((null directives)
+	   (nreverse res))
+	(cond ((stringp (first directives))
+	       ;;(format t "~a~%" (first directives))
+	       (push `(format ,dest ,(first directives))
+		     res))
+	      (t
+	       (push `(fformat1 ,dest
+		       ,(car (first directives)) 
+		       ,(first arglist))
+		     res)
+	       (setq arglist (cdr arglist)))))))
+)
+
 ;(defmacro fformat1 (dest directive arg)
 ;   `(if (arrayp ,arg)
 ;        (print ,arg)
 ;        (format ,dest ,directive ,(eval arg))))
 
+#+nil
 (defun get_format_stmt (label) 
   (if (or (eq label '*) (not (numberp label)))
     '("~A~%")
     (do ((lis format_stmts (cdr lis)))
         ((null lis) (error "format stmt ~A not found" label))
         (if (equal label (caar lis)) (return (cadar lis))))))
+
+;; Handle things like FMT = number
+(defun get_format_stmt (label)
+  (let ((fmt-num (first label)))
+    (cond ((eq fmt-num 'fmt)
+	   ;; We have something like "FMT = number"
+	   (get_format_stmt (list (third label))))
+	  ((or (eq fmt-num '*)
+	       (not (numberp fmt-num)))
+	   '("~A~%"))
+	  (t
+	   (do ((lis format_stmts (cdr lis)))
+	       ((null lis) (error "format stmt ~A not found" fmt-num))
+	     (if (equal fmt-num (caar lis))
+		 (return (cadar lis))))))))
           
 (defun parse_format_dest (dest) 
     (if (eq  dest '*) t dest))
@@ -626,7 +1182,7 @@
    (setq str
          (read-from-string (make-array (- dim i) :displaced-to str 
                                                  :displaced-index-offset i
-                                                 :element-type 'string-char)))
+                                                 :element-type 'base-char)))
    (setq *print-array* old-print-array
          *print-length* old-print-length
          *print-level* old-print-level)
@@ -793,16 +1349,16 @@
      (or (pattern-match-and-bind '((> w) (> d)) right)
          (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
      (setq directive 
-         (concatenate 'string
-                   "~" (fixnum-string w) ","
-                       (fixnum-string d) ","
-                       (fixnum-string e) ","
-                       (fixnum-string k) ",,'*"
-                       (if SP "@E" "E")))
+         (list (concatenate 'string
+			    "~" (fixnum-string w) ","
+			    (fixnum-string d) ","
+			    (fixnum-string e) ","
+			    (fixnum-string k) ",'*"
+			    (if SP "@E" "E"))))
     (return
-        (do ((i 1 (1+ i))
-             (ret nil (append ret (list directive))))
-            ((> i a) ret)))))
+      (do ((i 1 (1+ i))
+	   (ret nil (append ret (list directive))))
+	  ((> i a) ret)))))
 
 (defun parse-format-descriptor-G (left right)
   (prog ((k 0) (a 1) w d (e 2) directive)
@@ -817,7 +1373,7 @@
                             "~" (fixnum-string w) ","
                             (fixnum-string d) ","
                             (fixnum-string e) ","
-                            (fixnum-string k) ",,'*"
+                            (fixnum-string k) ",'*"
                             (if SP "@G" "G"))))
     (return
         (do ((i 1 (1+ i))
@@ -838,9 +1394,14 @@
    (setq SP (if (eq right #\P) t nil))
    "")
 
+#+nil
 (defun parse-format-descriptor-H (width string)
    (declare (ignore width string))
    (list "*Hollerith*"))
+
+(defun parse-format-descriptor-H (width string)
+  (format t "Hollerith:  ~a ~a~%" width string)
+  (list "*Hollerith*"))
 
 (defun parse-default-format-descriptor (x)
    (list (do ((i 1 (1+ i))

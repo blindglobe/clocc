@@ -16,12 +16,24 @@
 (defvar *prune_labels* t)
 (eval-when (compile load eval) (proclaim '(special *verbose*)))
 ;-----------------------------------------------------------------------
+#+nil
 (defun find-go-labels (x)
   (cond
      ((atom x) nil)
      ((eq (car x) 'go) (cons (cadr x) (find-go-labels (cdr x))))
      (t (append (find-go-labels (car x))
                 (find-go-labels (cdr x))))))
+
+(defun find-go-labels (x)
+  (cond ((atom x) nil)
+	((eq (car x) 'go)
+	 (cons (cadr x) (find-go-labels (cdr x))))
+	((eq (first x) 'computed-goto)
+	 (append (second x)
+		 (find-go-labels (cdr x))))
+	(t
+	 (append (find-go-labels (car x))
+		 (find-go-labels (cdr x))))))
 ;-----------------------------------------------------------------------
 (defun count-go-end (x)
   (cond

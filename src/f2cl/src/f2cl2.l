@@ -22,12 +22,13 @@
 ;------------------------------------------------------------------------------
 (in-package :user)
 (eval-when (compile load eval)
- (proclaim '(optimize (speed 3) (safety 1)))
+  (proclaim '(optimize (speed 3) (safety 1)))
 
- (proclaim '(special f-store arg-store exp-store var-store init-store
-                  next-user-function-address lis-store end-store step-store 
-                  body-store intrinsic_function_names external_function_names
-                  subprog_name subprog_stmt_fns)))
+  (proclaim '(special f-store arg-store exp-store var-store init-store
+	      next-user-function-address lis-store end-store step-store 
+	      body-store intrinsic_function_names external_function_names
+	      subprog_name subprog_stmt_fns
+	      *functions-used*)))
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
 (defun subst-splice (b a c) 
@@ -130,9 +131,8 @@ Tag being parsed:| (cadr x))))
      (setq x (list-split-multi '+ l))
      (setq x (list x (extract '(+ -) l)))
      (setq y (list-itp (mapcar #'id-term (car x)) 
-               (cadr x)))
-(return y)))
-
+		       (cadr x)))
+     (return y)))
 
 ;-----------------------------------------------------------------------------
 
@@ -155,93 +155,167 @@ Tag being parsed:| (cadr x))))
                       (subst 'expt  '^ (cadr x))))))
 
 ;------------------------------------------------------------------------------
+(defun lookup-array-bounds (v)
+  (let (bound)
+    (map nil #'(lambda (e)
+		 (let ((res (find v (rest e) :key #'car)))
+		   (when res
+		     (setf bound res))))
+	 explicit_vble_decls)
+    (rest bound)))
+
+(defun update-called-functions-list (name args)
+  (let ((fcn (member name *functions-used* :key #'car)))
+    (cond (fcn
+	   ;; Found it.  Let's add the arguments to the arg list
+	   (setf (second (first fcn))
+		 (mapcar #'cons
+			 args (second (first fcn)))))
+	  (t
+	   ;; A new function.  Let's add it and the args to the list.
+	   (push (list name (mapcar #'list args)) *functions-used*)))))
+
 (defun id-factor (l)
-   (cond 
-;         ((null l) nil)
+  (cond 
+    ;;         ((null l) nil)
 
-; number:
-         ((numberp l) l)
-; string:
-         ((stringp l) l)
-; x.xE%x (scientific notation) number - % is used to represent a minus sign:
-         ((and (symbolp l)
-               (string-equal 
-                     (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
-                                  (string l))
-                     "E%"))
-          (setq l
-          (read-from-string
-             (concatenate 'string
-                (string-right-trim 
-                        '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
-                "-"
-                (string-left-trim '(#\%)
-                   (string-left-trim 
-                        '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\E) l)))))
-          l)
+    ;; number:
+    ((numberp l) l)
+    ;; string:
+    ((stringp l) l)
+    ;; x.xE%x (scientific notation) number - % is used to represent a minus sign:
+    ((and (symbolp l)
+	  (string-equal 
+	   (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
+			(string l))
+	   "E%"))
+     (setq l
+	   (read-from-string
+	    (concatenate 'string
+			 (string-right-trim 
+			  '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
+			 "-"
+			 (string-left-trim '(#\%)
+					   (string-left-trim 
+					    '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\E) l)))))
+     l)
+    ;; x.xD%x, like above
+    ((and (symbolp l)
+	  (string-equal 
+	   (string-trim '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\.) 
+			(string l))
+	   "D%"))
+     (setq l
+	   (read-from-string
+	    (concatenate 'string
+			 (string-right-trim 
+			  '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\%) l)
+			 "-"
+			 (string-left-trim '(#\%)
+					   (string-left-trim 
+					    '(#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\. #\D) l)))))
+     l)
 
-; symbol:
-         ((symbolp l) (check-t-and-pi l))
+					; symbol:
+    ((symbolp l)
+     (check-t-and-pi l))
      
-;number: 
-         ((and (null (cdr l)) (numberp (car l))) (car l))
+					;number: 
+    ((and (null (cdr l)) (numberp (car l)))
+     (car l))
 
 
-; bracketed symbol or string:
-         ((and (null (cdr l)) (or (symbolp (car l)) (stringp (car l))))
-          (id-factor (car l)))
+					; bracketed symbol or string:
+    ((and (null (cdr l)) (or (symbolp (car l)) (stringp (car l))))
+     (id-factor (car l)))
 
-; function of no variables:
-         ((and (symbolp (car l)) (eq nil (cadr l)))
-                (list (car l)))
+					; function of no variables:
+    ((and (symbolp (car l)) (eq nil (cadr l)))
+     (list (car l)))
 
-; boolean expression:
-          ((intersection l '(NOT EQUAL AND OR < > <= >= ><))
-           (id-logical l))
+					; boolean expression:
+    ((intersection l '(NOT EQUAL AND OR < > <= >= ><))
+     (id-logical l))
 
-; intrinsic function call:
-         ((and (symbolp (car l)) 
-               (listp (cadr l))
-               (member (car l) intrinsic_function_names))
-          (cond ((not (null (cddr l))) (princ-reset
-'|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
-          (cons (if (eq (car l) 'char) 'fchar (car l)) ;special case intrinsic "char"
-                (mapcar #'id-expression
-                   (list-split '|,| (cadr l)))))
+					; intrinsic function call:
+    ((and (symbolp (car l)) 
+	  (listp (cadr l))
+	  (member (car l) intrinsic_function_names))
+     (cond ((not (null (cddr l)))
+	    (princ-reset
+	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
+     (cons (case (car l)
+	     ;; Handle some special cases for intrinsic functions
+	     (char 'fchar)
+	     (sqrt 'fsqrt)
+	     (log 'flog)
+	     (t (car l)))
+	   (mapcar #'id-expression
+		   (list-split '|,| (cadr l)))))
 
-; array reference:
-         ((and (symbolp (car l)) (listp (cadr l)) (vble-is-array-p (car l)))
-          (cond ((not (null (cddr l))) (princ-reset
-'|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
-          (append (list 'fref (car l)) 
-                (mapcar #'id-expression
-                   (list-split '|,| (cadr l)))))
+					; array reference:
+    ((and (symbolp (car l))
+	  (listp (cadr l))
+	  (vble-is-array-p (check-t-and-pi (car l))))
+     (when (cddr l)
+       (princ-reset
+	'|f2cl error: missing +, *, /, or ^ operator following a function call.| l))
 
-; function call:
-         ((and (symbolp (car l)) (listp (cadr l)))
-          (cond ((member (car l) external_function_names)
-                 `(funcall ,(car l) 
-                         ,@(mapcar #'id-expression (list-split '|,| (cadr l)))))
-;                ((member (car l) subprog_stmt_fns)
-;                 `(,(read-from-string
-;                       (concatenate 'string (princ-to-string subprog_name)
-;                                            (princ-to-string (car l))))
-;                   ,@(mapcar #'id-expression (list-split '|,| (cadr l)))))
-                (t 
-                 `(,(car l) ,@(mapcar #'id-expression (list-split '|,| (cadr l)))))))
+     ;; Given the array name and indices, look up the the bounds for
+     ;; this array and construct the appropriate expression to access
+     ;; the array correctly.
+     (let* ((vname (check-t-and-pi (car l)))
+	    (indices (mapcar #'id-expression
+			     (list-split '|,| (cadr l))))
+	    (bounds (lookup-array-bounds vname)))
 
-; expression:
-         ((and (listp (car l)) (null (cdr l)))
-          (id-expression (car l)))
+       (append (list 'fref vname)
+	       (list indices)
+	       (list (mapcar #'car bounds)))))
 
-; complex number:
-         ((and (eq (length l) 3) (eq (second l) '|,|))
-          (list 'complex (id-factor (first l)) (id-factor (third l))))
+					; function call:
+    ((and (symbolp (car l))
+	  (listp (cadr l)))
+     ;; Should we check for T and PI here?
+     (let ((fname (car l))
+	   (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
+       ;; Save the function name and number of arguments so we can
+       ;; declare the function appropriately.  We also save the
+       ;; argument list so we can determine later the types of each
+       ;; parameter, if we really want to.
 
-; error dropping out the bottom:
-         (t 
-(princ-reset '|f2cl syntax error| l))
-))
+       ;; Note: Currently the first use of the function determines the
+       ;; arguments saved for the function.  We should probably be
+       ;; more careful and, for each use, append the argument list to
+       ;; the function.  This would allow us to check the argument
+       ;; types across calls of the function within one subprogram.
+       #+nil
+       (pushnew (list fname (length args) args) *functions-used*
+		:key #'car)
+       (update-called-functions-list fname args)
+       (cond ((and (member fname external_function_names)
+		   (member fname subprog-arglist))
+	      ;; We want to use funcall only if the external function
+	      ;; was passed in as a parameter.  If not, then we don't
+	      ;; need to funcall it.  The user was just telling us that
+	      ;; it was external function instead an intrinsic.
+	      `(funcall ,fname ,@args)) 
+	     (t 
+	      `(,fname ,@args)))))
+
+					; expression:
+    ((and (listp (car l)) (null (cdr l)))
+     (id-expression (car l)))
+
+					; complex number:
+    ((and (eq (length l) 3) (eq (second l) '|,|))
+     (list 'complex (id-factor (first l)) (id-factor (third l))))
+
+					; error dropping out the bottom:
+    (t 
+     (princ-reset '|f2cl syntax error| l))
+    ))
+
 ;-------------------------------------------------------------------------------
 
 ; (a0 |,| a1 |,| a2 ..... |,| an) is checked:

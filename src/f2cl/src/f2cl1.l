@@ -15,16 +15,21 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (eval-when (compile load eval)
-(proclaim '(special *readtable* sentable))
-(proclaim '(special intrinsic_function_names external_function_names
-                    undeclared_vbles declared_vbles implicit_vble_decls
-                    explicit_vble_decls function-flag key_params
-                    save_vbles program-flag subprog_name
-                    subprog_common_vars  common_array_dims
-                    format_stmts current_label
-                    subprog_stmt_fns subprog_stmt_fns_bodies)))
+  (proclaim '(special *readtable* sentable))
+  (proclaim '(special intrinsic_function_names external_function_names
+	      undeclared_vbles declared_vbles implicit_vble_decls
+	      subprog-arglist data-init
+	      explicit_vble_decls function-flag key_params
+	      save_vbles program-flag subprog_name
+	      subprog_common_vars  common_array_dims
+	      format_stmts current_label
+	      subprog_stmt_fns subprog_stmt_fns_bodies
+	      *auto-save-data*
+	      *functions-used*
+	      *vble-declaration-done*)))
 
 ;----------------------------------------------------------------------------
+#+nil
 (defun f2cl (&rest args)
  (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
 
@@ -52,9 +57,52 @@
        (error "Error in f2cl: the file represented by the first argument
    does not appear to exist."))
       
+    (fortran-to-lisp (preprocess input-file) output-file)
+    (values output-file)))
 
- (fortran-to-lisp (preprocess infile) outfile)
- (return outfile)))
+(defun f2cl (input-file output-file &key verbose prune-labels include-comments (auto-save t))
+  "Fortran to Common Lisp converter
+
+INPUT-FILE              File containing Fortran code
+OUTPUT-FILE             File to contain Lisp code
+
+VERBOSE                 verbose output. (default is nil)
+PRUNE-LABELS            Prune unused labels. (default is nil)
+INCLUDE-COMMENTS	Include comments in the Lisp output
+AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  (default = t)
+"
+
+
+  (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
+  (format t "1997 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)")
+
+  (let ((*verbose* verbose)
+	(*prune_labels* prune-labels)
+	(*comments* include-comments)
+	(*auto-save-data* auto-save))
+    #+nil
+    (when *verbose*
+      (format t "~%  - compiles for VAX LISP, LUCID, ALLEGRO, CLISP + simpletest~%")
+      (format t "  - with-open-file now encapsulates fortran-to-lisp calls~%")
+      (format t "  - all f2cl code is now explicitly in the :USER package~%")
+      (format t "  - excess labels are removed, else set *prune_labels* to nil.~%")
+      (format t "  - do loops have been fixed: these are very tricky so check!~%")
+      (format t "  - f2cl has the keyword outfile with default value \"temp\"~%")
+      (format t "  - set *print-right-margin* to 100 for deep expressions.~%")
+      (format t "  - to include Fortran comments set *comments* to t~%")
+      (format t "  - the EOF bug has now been fixed so bottoms can be ragged~%~%"))
+
+    (unless (stringp input-file)
+      (error "Error in f2cl: the first argument should be a string."))
+    (unless (stringp output-file)
+      (error "Error in f2cl: the second argument should be a string."))
+    (unless (probe-file input-file)
+      (error "Error in f2cl: the file represented by the first argument
+   does not appear to exist."))
+      
+
+    (fortran-to-lisp (preprocess input-file) output-file)
+    (values output-file)))
 ;---------------------------------------------------------------------------
 #+xxxx 
 (defun comment (x) 
@@ -162,16 +210,16 @@
 #+xxxx
 (defun fortran-to-lisp (file ofile)
   (prog (inport outport  common_array_dims format_stmts)
-(if *verbose* (format t "beginning the main translation ...~%"))
+     (if *verbose* (format t "beginning the main translation ...~%"))
      (setq inport (infile file)
            outport (outfile ofile)
            common_array_dims nil)
      (do ((char (peek-char nil inport nil 'EOF) 
                 (peek-char nil inport nil 'EOF)))
          ((eq char 'EOF) )
-         (setq format_stmts nil)
-(translate-and-write-subprog 
-    (introduce-continue (readsubprog-extract-format-stmts inport)) outport))
+       (setq format_stmts nil)
+       (translate-and-write-subprog 
+	(introduce-continue (readsubprog-extract-format-stmts inport)) outport))
      (close inport)
      (close outport)
      (return t)))
@@ -182,15 +230,17 @@
     (if *verbose* (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
       (with-open-file (outport ofile :direction :output 
-                                     :if-exists :rename-and-delete)
+			       :if-exists :rename-and-delete)
         (setq common_array_dims nil)
         (do ((char (peek-char nil inport nil 'EOF) 
                    (peek-char nil inport nil 'EOF)))
             ((eq char 'EOF) )
           (setq format_stmts nil)
-          (translate-and-write-subprog 
-           (introduce-continue (readsubprog-extract-format-stmts inport)) 
-           outport))
+	  (let ((*print-level* nil)
+		(*print-length* nil))
+	    (translate-and-write-subprog 
+	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
+	     outport)))
         ))
     t))
 ;-----------------------------------------------------------------------------
@@ -207,19 +257,23 @@ main-loop
                 (read-from-string (coerce margin 'string) nil)
                 nil)))
 
-   (set-fortran-read)
-   ; read body of a line
-   (setq input-list 
-         (if multiple-line-flag 
-             (progn (setq multiple-line-flag nil)
-                    (setq current-line (lineread inport))
-                    (append input-list current-line))
-             (lineread inport)))
-   ; read newline character
-   (read-char inport nil 'EOF t) 
+   ;; Make sure we aren't hosed if we break out of this!
+   (unwind-protect
+	(progn
+	  (set-fortran-read)
+	  ;; read body of a line
+	  (setq input-list 
+		(if multiple-line-flag 
+		    (progn (setq multiple-line-flag nil)
+			   (setq current-line (lineread inport))
+			   (append input-list current-line))
+		    (lineread inport)))
+	  ;; read newline character
+	  (read-char inport nil 'EOF t) 
 
-;   (format t "~% input-list: ~A" input-list)
-   (setlispread)
+	  ;;   (format t "~% input-list: ~A" input-list)
+	  )
+     (setlispread))
    ; read the next margin
    (cond ((not (eq (peek-char nil inport nil 'EOF) 'EOF))
           (setq margin (read-six-chars inport))
@@ -260,56 +314,74 @@ main-loop
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
 (defun translate-and-write-subprog (prog-list outport)
- (prog (fort-fun external_function_names
-        undeclared_vbles declared_vbles implicit_vble_decls explicit_vble_decls
-        save_vbles key_params subprog_common_vars 
-        subprog_stmt_fns subprog_stmt_fns_bodies subprog_name
-        function-flag program-flag
-        labels) ; labels is the do integers
-   (setq labels (remove nil (mapcar #'find-do prog-list)))
+  (prog (fort-fun external_function_names
+		  undeclared_vbles declared_vbles implicit_vble_decls explicit_vble_decls
+		  save_vbles key_params subprog_common_vars 
+		  subprog_stmt_fns subprog_stmt_fns_bodies subprog_name
+		  function-flag program-flag
+		  labels)		; labels is the do integers
+     (setq labels (remove nil (mapcar #'find-do prog-list)))
 
-    (setq external_function_names nil
-          undeclared_vbles nil
-          declared_vbles nil
-          implicit_vble_decls nil
-          explicit_vble_decls nil
-          save_vbles nil
-          key_params nil
-          subprog_common_vars nil
-          subprog_stmt_fns nil
-          subprog_stmt_fns_bodies nil
-          function-flag nil
-          program-flag nil)
+     (setq external_function_names nil
+	   undeclared_vbles nil
+	   declared_vbles nil
+	   implicit_vble_decls nil
+	   explicit_vble_decls nil
+	   save_vbles nil
+	   key_params nil
+	   subprog_common_vars nil
+	   subprog_stmt_fns nil
+	   subprog_stmt_fns_bodies nil
+	   function-flag nil
+	   program-flag nil
+	   subprog-arglist nil
+	   data-init nil
+	   *functions-used* nil
+	   *vble-declaration-done* nil)
 
      (setq fort-fun
-        (do ((lines prog-list (cdr lines)) 
-             (fort-fun nil (append fort-fun
-                                    (append (translate-label (caar lines))
-                                       (translate-line 
-                                          (brackets-check (concat-operators
-                                                               (cadar lines))))))))
-            ((null (cdr lines)) 
-             (append fort-fun
-                (cond (function-flag 
-                       `(end_label (return ,(cadr fort-fun))))
-                      (program-flag
-                       `(end_label (return nil)))
-                      (t
-                       `(end_label (return (values 
-                                             ,@(caddr fort-fun))))))))))
-     ; check for missing PROGRAM stmt
+	   (do ((lines prog-list (cdr lines)) 
+		(fort-fun nil (append fort-fun
+				      (append (translate-label (caar lines))
+					      (translate-line 
+					       (brackets-check (concat-operators
+								(cadar lines))))))))
+	       ((null (cdr lines)) 
+		(append fort-fun
+			(cond (function-flag 
+			       `(end_label (return ,(cadr fort-fun))))
+			      (program-flag
+			       `(end_label (return nil)))
+			      (t
+			       `(end_label (return (values 
+						    ,@(caddr fort-fun))))))))))
+     ;; check for missing PROGRAM stmt
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
-;     (format t "~%after translation : ~A" fort-fun)
+     ;;     (format t "~%after translation : ~A" fort-fun)
+     #+nil
      (special-print 
-           (insert-declarations (prune-labels (fix-structure fort-fun labels))) outport)
-     (print (cadr fort-fun))  ;indicate which subprogram is being translated
+      (insert-declarations (prune-labels (fix-structure fort-fun labels))) outport)
+     (multiple-value-bind (spec-proc spec-decl fun)
+	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
+       (when spec-proc
+	 (special-print spec-proc outport)
+	 (terpri outport)
+	 (special-print spec-decl outport)
+	 (terpri outport))
+       (special-print fun outport))
+     (print (cadr fort-fun))		;indicate which subprogram is being translated
      (write-char '#\newline outport) (write-char '#\newline outport)
-))
+     ))
 
 ;=============================================================================
-(defun special-print (x o) (write x 
-                 :escape t :stream o :pretty t :case :downcase))
+(defun special-print (x o)
+  #+nil
+  (system:without-gcing
+   (write x :escape t :stream o :pretty t :case :downcase))
+  
+   (write x :escape t :stream o :pretty t :case :downcase)
+   )
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y "")) (print x) (princ  y))
 
@@ -322,88 +394,133 @@ main-loop
 
 ;------------------------------------------------------------------------------
 
-(defun translate-line (x) ; x is a list being a line body-> list of lisp
- (prog (bindings)
-; reduce any DOUBLE PRECSION, REAL*8 etc to one word data types
- (if (member (car x) '(double real integer complex)) 
-     (setq x (reduce-data-type x)))
-;return
-(if *verbose* (format t "~a~%" (string-downcase (princ-to-string x))))
+(defun translate-line (x)
+  ;; x is a list being a line body-> list of lisp
+  (prog (bindings)
+     ;; reduce any DOUBLE PRECSION, REAL*8 etc to one word data types
+     (when (member (car x) '(double real integer complex)) 
+       (setq x (reduce-data-type x)))
+     (when *verbose* (format t "~a~%" (string-downcase (princ-to-string x))))
 
-  (if (id-return x) (return '((go end_label))))
-;continue
-  (setq bindings (id-continue x))
-  (if (not (eq bindings 'fail)) (return `(continue_place_holder)))
-;definition
-  (setq bindings (id-definition-prog-name x))
-  (if (not (eq bindings 'fail)) (return (parse-prog-definition bindings)))
-  (setq bindings (id-definition-prog x))
-  (if (not (eq bindings 'fail)) (return (parse-prog-definition bindings)))
-  (setq bindings (id-definition-sub x))
-  (if (not (eq bindings 'fail)) (return (parse-subr-definition bindings)))
-  (setq bindings (id-definition-fun x))
-  (if (not (eq bindings 'fail)) (return (parse-fun-definition bindings)))
-  (setq bindings (id-definition-fun-typed x))
-  (if (not (eq bindings 'fail))
-      (return (parse-typed-fun-definition bindings)))
-;goto/go to
-  (if (id-assgn-goto x) (return (parse-assgn-goto x)))
-  (if (id-comp-goto x) (return (parse-comp-goto x)))
-  (setq bindings (id-goto x))
-  (if (not (eq bindings 'fail)) (return (parse-goto bindings)))
-  (if (id-assgn-go-to x) (return (parse-assgn-go-to x)))
-  (if (id-comp-go-to x) (return (parse-comp-go-to x)))
-  (setq bindings (id-go-to x))
-  (if (not (eq bindings 'fail)) (return (parse-goto bindings)))
-;declarations
-  (if (id-declaration x) (return (parse-declaration x))) 
-;parameters
-  (if (id-parameter x) (return (parse-parameter x)))
-;implicit declarations
-  (if (id-implicit-decl x) (return (parse-implicit-decl x)))
-;do loop
- (if (id-do-loop x) (return (parse-do-loop (check_new_vbles x))))
-; if-then
-  (if (id-if-then x) (return (parse-if-then (check_new_vbles x))))
-  (if (id-elseif x) (return `((elseif_place_holder 
-                              ,(id-logical (caddr (check_new_vbles x)))))))
-  (if (id-else x) (return '((elseif_place_holder t))))
-  (if (id-endif x) (return '(endif_place_holder)))
+     ;;return
+     (when (id-return x)
+       (return '((go end_label))))
+     ;;continue
+     (setq bindings (id-continue x))
+     (when (not (eq bindings 'fail))
+       (return `(continue_place_holder)))
+     ;;definition
+     (setq bindings (id-definition-prog-name x))
+     (when (not (eq bindings 'fail))
+       (return (parse-prog-definition bindings)))
+     (setq bindings (id-definition-prog x))
+     (when (not (eq bindings 'fail))
+       (return (parse-prog-definition bindings)))
+     (setq bindings (id-definition-sub x))
+     (when (not (eq bindings 'fail))
+       (return (parse-subr-definition bindings)))
+     (setq bindings (id-definition-fun x))
+     (when (not (eq bindings 'fail))
+       (return (parse-fun-definition bindings)))
+     (setq bindings (id-definition-fun-typed x))
+     (when (not (eq bindings 'fail))
+	
+       (return (parse-typed-fun-definition bindings)))
+     ;;goto/go to
+     (when (id-comp-goto x)
+       (return (parse-comp-goto x)))
+     (when (id-comp-go-to x)
+       (return (parse-comp-go-to x)))
+     (when (id-assgn-goto x)
+       (return (parse-assgn-goto x)))
+     (setq bindings (id-goto x))
+     (when (not (eq bindings 'fail))
+       (return (parse-goto bindings)))
+     (when (id-assgn-go-to x)
+       (return (parse-assgn-go-to x)))
+     (setq bindings (id-go-to x))
+     (when (not (eq bindings 'fail))
+       (return (parse-goto bindings)))
+     ;;declarations
+     (when (id-declaration x)
+       (return (parse-declaration x))) 
+     ;;parameters
+     (when (id-parameter x)
+       (return (parse-parameter x)))
+     ;;implicit declarations
+     (when (id-implicit-decl x)
+       (return (parse-implicit-decl x)))
+     ;;do loop
+     (when (id-do-loop x)
+       (return (parse-do-loop (check_new_vbles x))))
+     ;; if-then
+     (when (id-if-then x)
+       (return (parse-if-then (check_new_vbles x))))
+     ;; elseif (or else-if)
+     (when (id-elseif x)
+       (return `((elseif_place_holder 
+		  ,(id-logical (cadr (check_new_vbles x)))))))
+     (when (id-else-if x)
+       (return `((elseif_place_holder
+		  ,(id-logical (caddr (check_new_vbles x)))))))
+     (when (id-else x)
+       (return '((elseif_place_holder t))))
+     (when (id-endif x)
+       (return '(endif_place_holder)))
 
-;if
- (setq bindings (id-if-goto x))
- (if (not (eq bindings 'fail)) (return (parse-if-goto bindings)))
- (if (id-if x) (return (parse-if (check_new_vbles x))))
+     ;;if
+     (setq bindings (id-if-goto x))
+     (when (not (eq bindings 'fail))
+       (return (parse-if-goto bindings)))
+     (when (id-if x)
+       (return (parse-if (check_new_vbles x))))
 
-;assignments or statement functions
- (if (id-assignment x) (return (parse-assignment x)))
-;subroutine call
- (if (id-subroutine-call x) 
-     (return (parse-subroutine-call x)))
-;pause
- (if (id-pause x) (return (parse-pause x)))
-;write
- (if (eq (car x) 'write) (return (parse-write x)))
-;format
-  (if (eq (car x) 'format) (return (parse-format x)))
-;data
-  (if (eq (car x) 'data) (return (parse-data x)))
-;save
-  (if (eq (car x) 'save) (return (parse-save x)))
-;intrinsic
-  (if (eq (car x) 'intrinsic) (return nil))
-;external
-  (if (eq (car x) 'external) (return (parse-external x)))
-;common
-  (if (eq (car x) 'common) (return (parse-common x)))
-;stop
-  (if (eq (car x) 'stop) (return nil)) ; 
-;fall out the bottom:
-  (if (eq (car x) 'comment) (return (list x)))
-; (return (list '----> (check_new_vbles x)))
-  (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
-                                 (write-to-string (check_new_vbles x))))))
-  ))
+     ;;assignments or statement functions
+     (when (id-assignment x)
+       (return (parse-assignment x)))
+     ;;subroutine call
+     (when (id-subroutine-call x) 
+	
+       (return (parse-subroutine-call x)))
+     ;;pause
+     (when (id-pause x)
+       (return (parse-pause x)))
+     ;;write
+     (when (eq (car x) 'write)
+       (return (parse-write x)))
+     ;;print
+     (when (eq (car x) 'print)
+       (return (parse-print x)))
+       
+     ;;format
+     (when (eq (car x) 'format)
+       (return (parse-format x)))
+     ;;data
+     (when (eq (car x) 'data)
+       (return (parse-data x)))
+     ;;save
+     (when (eq (car x) 'save)
+       (return (parse-save x)))
+     ;;intrinsic
+     (when (eq (car x) 'intrinsic)
+       (return nil))
+     ;;external
+     (when (eq (car x) 'external)
+       (return (parse-external x)))
+     ;;common
+     (when (eq (car x) 'common)
+       (return (parse-common x)))
+     ;;stop
+     (when (eq (car x) 'stop)
+       (return nil))			; 
+     ;;fall out the bottom:
+     (when (eq (car x) 'comment)
+       (return (list x)))
+     ;; (return (list '----> (check_new_vbles x)))
+
+     (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
+					       (write-to-string (check_new_vbles x))))))
+     ))
 ;------------------------------------------------------------------------------
 ;program 
 (defun id-definition-prog-name (x) 
@@ -468,7 +585,15 @@ main-loop
 ;(defun id-if-pause (x) (and (eq (car x) 'if) (member 'pause x :test #'eq))) 
 (defun id-if (x) (eq (car x) 'if))
 (defun id-else (x) (eq (car x) 'else)) 
-(defun id-elseif (x) (and (eq (car x) 'else) (cadr x) (eq (cadr x) 'if)))
+;; elseif can be written either as "ELSE IF" or "ELSEIF"
+(defun id-else-if (x)
+  (and (eq (car x) 'else)
+       (cadr x)
+       (eq (cadr x) 'if)))
+
+(defun id-elseif (x)
+  (eq (car x) 'elseif))
+
 (defun id-endif (x) 
        (or (eq (car x) 'endif) 
            (and (eq (car x) 'end) (eq (cadr x) 'if)))) 
@@ -504,6 +629,7 @@ main-loop
   (prog (arg-list)
    (setq subprog_name (variable-value '%name bindings))
    (setq arg-list (remove '|,| (variable-value '%arg-list bindings)))
+   (setq subprog-arglist arg-list)
    (return (list 'defun subprog_name 
                     (if arg-list arg-list nil)))))
 
@@ -516,6 +642,7 @@ main-loop
          explicit_vble_decls 
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
+   (setq subprog-arglist (remove '|,| (variable-value '%arg-list bindings)))
    (return
    (list 'defun 
          fun-name 
@@ -524,6 +651,7 @@ main-loop
 ; untyped function definition
 (defun parse-fun-definition (bindings)
    (setq function-flag t)
+   (setq subprog-arglist (remove '|,| (variable-value '%arg-list bindings)))
    (list 'defun 
          (variable-value '%name bindings) 
          (remove '|,| (variable-value '%arg-list bindings))))
@@ -558,6 +686,7 @@ main-loop
 )))
 
 ;------------------------------------------------------------------------------
+#+nil
 (defun parse-comp-goto (x)
   (if (cddr x)
       `((computed-goto 
@@ -568,6 +697,28 @@ main-loop
                      (remove '|,| (cadddr x)))))
       `((computed-goto ,(cadr x)))))
 
+#+nil
+(defun parse-comp-goto (x)
+  (if (cddr x)
+      `((computed-goto 
+            ,(cadr x)
+            ',(mapcar #'(lambda (l) 
+                            (read-from-string 
+                                  (concatenate 'string "label" (princ-to-string l))))
+                     (remove '|,| (second x)))))
+      `((computed-goto ,(cadr x)))))
+
+(defun parse-comp-goto (x)
+  (if (cddr x)
+      `((computed-goto 
+	 ,(mapcar #'(lambda (l) 
+		      (read-from-string 
+		       (concatenate 'string "label" (princ-to-string l))))
+		  (remove '|,| (second x)))
+	 ,(third x)))
+      `((computed-goto ,(cadr x)))))
+
+#+nil
 (defun parse-comp-go-to (x)
   (if (cdddr x)
       `((computed-goto 
@@ -576,6 +727,16 @@ main-loop
                             (read-from-string 
                                   (concatenate 'string "label" (princ-to-string l))))
                      (remove '|,| (car (cddddr x))))))
+      `((computed-goto ,(caddr x)))))
+
+(defun parse-comp-go-to (x)
+  (if (fourth x)
+      `((computed-goto 
+	 ,(mapcar #'(lambda (l) 
+		      (read-from-string 
+		       (concatenate 'string "label" (princ-to-string l))))
+		  (remove '|,| (third x)))
+	 ,(fourth x)))
       `((computed-goto ,(caddr x)))))
 ;------------------------------------------------------------------------------
 (defun parse-assgn-go-to (x)
@@ -590,34 +751,37 @@ main-loop
 ;------------------------------------------------------------------------------
 
 ;declaration
-(defun parse-declaration (x) ; x is the line
- (setq declared_vbles (append (if (eq (cadr x) '*)
-                                  (mapcar #'car (list-split '|,| (cdddr x)))
-                                  (mapcar #'car (list-split '|,| (cdr x)))) 
-                              declared_vbles))
- (cond
-  ((eq (first x) 'integer)
-   (setq explicit_vble_decls 
-        (build_decl_list explicit_vble_decls 'fixnum (cdr x))))
-  ((eq (first x) 'double)
-   (setq explicit_vble_decls 
-        (build_decl_list explicit_vble_decls 'double-float (cdr x))))
-  ((eq (first x) 'real)
-   (setq explicit_vble_decls 
-       (build_decl_list explicit_vble_decls 'single-float (cdr x))))
-  ((eq (first x) 'character)
-   (parse-char-decl x))
-  ((eq (first x) 'complex)
-   (setq explicit_vble_decls  
-       (build_decl_list explicit_vble_decls 'complex (cdr x))))
-   ((eq (first x) 'logical)
-   (setq explicit_vble_decls  
-       (build_decl_list explicit_vble_decls 'logical (cdr x))))
-  ((eq (first x) 'dimension)
-   (setq explicit_vble_decls   
-       (build_decl_list explicit_vble_decls 'array (cdr x))))
- (t nil))
- nil)
+(defun parse-declaration (x)		; x is the line
+  (setq declared_vbles
+	(append (mapcar #'(lambda (v)
+			    (check-t-and-pi (car v)))
+			(list-split '|,|
+			 (if (eq (cadr x) '*)
+			     (cdddr x)
+			     (cdr x))))
+		declared_vbles))
+  (cond ((eq (first x) 'integer)
+	 (setq explicit_vble_decls 
+	       (build_decl_list explicit_vble_decls 'fixnum (cdr x))))
+	((eq (first x) 'double)
+	 (setq explicit_vble_decls 
+	       (build_decl_list explicit_vble_decls 'double-float (cdr x))))
+	((eq (first x) 'real)
+	 (setq explicit_vble_decls 
+	       (build_decl_list explicit_vble_decls 'single-float (cdr x))))
+	((eq (first x) 'character)
+	 (parse-char-decl x))
+	((eq (first x) 'complex)
+	 (setq explicit_vble_decls  
+	       (build_decl_list explicit_vble_decls 'complex (cdr x))))
+	((eq (first x) 'logical)
+	 (setq explicit_vble_decls  
+	       (build_decl_list explicit_vble_decls 'logical (cdr x))))
+	((eq (first x) 'dimension)
+	 (setq explicit_vble_decls   
+	       (build_decl_list explicit_vble_decls 'array (cdr x))))
+	(t nil))
+  nil)
 
 (defun parse-implicit-decl (x)
    (if (eq (third x) '*) (setq x `(,(first x) 
@@ -632,12 +796,12 @@ main-loop
    nil)
 
 (defun build_decl_list (decl_list type decl)
-   (cons `(,type 
-           ,@(mapcar #'(lambda (y)
-                         `(,(car y) ,@(parse_dimension_specs (cadr y))))
-                                    ;,@(delete '|,| (cadr y))))
-                     (list-split '|,| decl)))
-         decl_list))
+  (cons `(,type 
+	  ,@(mapcar #'(lambda (y)
+			`(,(check-t-and-pi (car y))
+			  ,@(parse_dimension_specs (cadr y))))
+		    (list-split '|,| decl)))
+	decl_list))
 
 (defun parse_dimension_specs (specs)
   (if (null specs) nil
@@ -655,20 +819,24 @@ main-loop
   (prog ((lhs (parse-expression (tail-chop '= x)))
          (rhs (parse-expression (head-chop '= x))))
      (return
-         (if (listp lhs) (parse-arrayref-or-stmtfn lhs rhs)
-                         (and (check_new_vbles (list lhs)) `((setf ,lhs ,rhs)))))))
+       (if (listp lhs)
+	   (parse-arrayref-or-stmtfn lhs rhs)
+	   (and (check_new_vbles (list lhs))
+		`((setf ,lhs ,rhs)))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
-   ;lhs is either an array ref or a statement function name
-   (if (eq (car lhs) 'fref)
-       ;array_ref 
-       `((fset ,lhs ,rhs))
-       ;statement_function 
-       (setq subprog_stmt_fns (append subprog_stmt_fns (list (car lhs)))
-             subprog_stmt_fns_bodies
-                   (append subprog_stmt_fns_bodies 
-                       `((,(car lhs) ,(cdr lhs) ,rhs)))))
-   nil)
+  ;;lhs is either an array ref or a statement function name
+  (cond ((eq (car lhs) 'fref)
+	 ;;array_ref 
+	 `((fset ,lhs ,rhs)))
+	(t
+	 ;;statement_function
+	 (progn
+	   (setq subprog_stmt_fns (append subprog_stmt_fns (list (car lhs)))
+		 subprog_stmt_fns_bodies
+		 (append subprog_stmt_fns_bodies 
+			 `((,(car lhs) ,(cdr lhs) ,rhs))))
+	   nil))))
 ;       (and (setq subprog_stmt_fns (append subprog_stmt_fns (list (car lhs))))
 ;            `((defun ,(read-from-string 
 ;                           (concatenate 'string 
@@ -846,22 +1014,125 @@ main-loop
 ;   no implied do's
 ;   clist either a alist or a repetition (not a combination of both)
 
+;; rlt:  also handles
+;;	data var1, var2, var3/val1, val2, val3/
+
+#+nil
 (defun parse-data (x)
-   (setq x (list-split '|/| (cdr x)))
-   (do ((list x (cddr list))
-        (ret nil (cons (parse-data1 (car (remove '|,| (car list)))
-                                    (list-split '|,| (cadr list))) 
-                       ret)))
-       ((null (cdr list)) ret)))
+  ;;(format t "parse-data:  ~S~%" x)
+  (setq x (list-split '|/| (cdr x)))
+  ;;(format t "parse-data:  ~S~%" x)
+  (do ((list x (cddr list))
+       (ret nil (let ((result (parse-data1 (remove '|,| (car list))
+					   (list-split '|,| (cadr list)))))
+		  (if (atom (first result))
+		      (cons result
+			    ret)
+		      (append result ret)))))
+      ((null (cdr list))
+       ;;(format t "parse-data returns:  ~S~%" ret)
+       ret)
+    ;;(format t "parse-data: list = ~S~%" list)
+    ))
+
+(defun parse-data (x)
+  ;;(format t "parse-data:  ~S~%" x)
+  (setq x (list-split '|/| (cdr x)))
+  (do ((list x (cddr list))
+       (ret nil (let* ((var (remove '|,| (car list)))
+		       (vals (list-split '|,| (cadr list)))
+		       (result (parse-data1 var vals)))
+		  ;;(format t "list = ~a~%" list)
+		  ;;(format t "var = ~a~%" var)
+		  ;;(format t "vals = ~a~%" vals)
+		  ;;(format t "result = ~a~%" result)
+		  (setf data-init (append data-init (if (consp (first result))
+							result
+							(list result))))
+		  ;;(format t "data-init:  ~A~%" data-init)
+		  )))
+      ((null (cdr list)))))
 
 ; parse a (vble_name data1 data2 ...) list
 ;    or a (vble_name n*x) list
+#+nil
 (defun parse-data1 (v l)
    (cond ((and (listp (car l)) (eq (second (car l)) '*))
           `(fill ,v ,(id-expression (cddar l)) :end ,(1- (first (car l)))))
          (t (if (vble-is-array-p v)
                 `(replace ,v ',(mapcar #'id-expression l) :end,(1- (length l)))
                 `(setq ,v ,(id-expression (first l)))))))
+
+#+nil
+(defun parse-data1 (v l)
+   (cond ((and (listp (car l)) (eq (second (car l)) '*))
+          `(fill ,v ,(id-expression (cddar l)) :end ,(1- (first (car l)))))
+         (t (if (vble-is-array-p v)
+                `(replace ,v ',(mapcar #'id-expression l))
+                `(setq ,v ,(id-expression (first l)))))))
+
+(defun parse-data1 (v l)
+  ;;(format t "parse-data1:  v = ~S~%" v)
+  ;;(format t "parse-data1:  l = ~S~%" l)
+  (labels ((fix-up-negative-number (x)
+	     (cond ((numberp x)
+		    x)
+		   (t
+		    (let ((ex (id-expression x)))
+		      (if (listp ex)
+			  (- (second ex))
+			  ex)))))
+	   (fix-up-data-reps (data)
+	     (let ((result '()))
+	       (dolist (item data (nreverse result))
+		 ;;(format t "data-reps item = ~S~%" item)
+		 (cond ((and (>= (length item) 3)
+			     (eq (second item) '*))
+			;;(format t "~a reps of ~S~%" (first item) (rest (rest item)))
+			(let ((num (fix-up-negative-number (rest (rest item)))))
+			  (dotimes (k (first item))
+			    (push num result))))
+		       (t
+			(push (fix-up-negative-number item) result))))))
+	     (data-var (v)
+	       (cond ((atom v)
+		      v)
+		     ((listp v)
+		      (data-var (first v)))
+		     (t
+		      nil))))
+    (cond ((and (listp (car l))
+		(eq (second (car l)) '*))
+	   `(fill ,(check-t-and-pi (first v))
+	          ,(fix-up-negative-number (cddar l))
+	          :end ,(1- (first (car l)))))
+	  ((and (listp v) (listp l)
+		(listp (second v))
+		(numberp (first (second v))))
+	   ;; Initializing one element of an array.  We assume the
+	   ;; lower limit on the array is 1!
+	   `(fset (fref ,(check-t-and-pi (first v))
+		        ,(remove '|,| (second v)))
+	     ,(fix-up-negative-number (first l))))
+	  ((and (listp v) (listp l)
+		(listp (first v))
+		(member '= (first v)))
+	   ;; Implied do loop.  Extract out the important parts of the
+	   ;; implied do and construct what we need from it.
+	     `(data-implied-do ,(first v) ,(data-var v) ,(fix-up-data-reps l)))
+	  ((and (listp v) (listp l)
+		(= (length v) (length l))
+		(> (length v) 1))
+	   (mapcar #'(lambda (var val)
+		       `(setq ,(check-t-and-pi var)
+			      ,(fix-up-negative-number val)))
+		   v l))
+	  (t
+	   (if (vble-is-array-p (check-t-and-pi (first v)))
+	       `(replace ,(check-t-and-pi (first v))
+		         ',(mapcar #'fix-up-negative-number l))
+	       `(setq ,(check-t-and-pi (first v))
+		      ,(fix-up-negative-number (first l))))))))
 
 ; parse EXTERNAL f1, f2, ...
 ; by adding the function names to external_function_names
@@ -900,6 +1171,14 @@ main-loop
               (setq lis (tpl-subpair (const sym (length beta)) beta lis))
               (return (list `(,(tail-chop sym lis)
                  ,@(list-split sym (head-chop sym lis))) ops))))))
+
+#+cmu
+(defun concat (&rest syms)
+  (cond ((null syms)
+	 "")
+	(t
+	 (concatenate 'string (symbol-name (first syms))
+		      (apply #'concat (rest syms))))))
 
 (defun list-split-multi (op lis)
   (prog (ret)
@@ -1038,39 +1317,39 @@ Senac syntax:... | op '| ...|)))
   (let ((x (intern (string char)))) x))
 
 (defun set-fortran-read nil
- (prog (vcs)
-      (setq vcs 'vsingle-character-symbol)
-      (setsyntax #\, vcs)
-      (setsyntax #\: vcs)
-      (setsyntax #\*  vcs)
-      (setsyntax #\=  vcs)
-      (setsyntax #\/  vcs)
-      (setsyntax #\+  vcs)
-      (setsyntax #\-  vcs)
-      (setsyntax #\^  vcs)
-      (setsyntax #\<  vcs)
-      (setsyntax #\>  vcs)
-      (setsyntax #\[  vcs)
-      (setsyntax #\]  vcs)
-      (setsyntax #\(  vcs)
-      (setsyntax #\)  vcs)
-      (setsyntax #\{  vcs)
-      (setsyntax #\}  vcs)
-      (setsyntax #\!  vcs)
-; reserved characters:
-        (setsyntax #\$  vcs)
-        (setsyntax #\@  vcs) 
-        (setsyntax #\&  vcs) 
-        (setsyntax #\~  vcs) 
-        (setsyntax #\' vcs)
-        (setsyntax #\| vcs)
-        (setsyntax #\` vcs)
-        (setsyntax #\\ vcs)
-(return t)))
+  (prog (vcs)
+     (setq vcs 'vsingle-character-symbol)
+     (setsyntax #\, vcs)
+     (setsyntax #\: vcs)
+     (setsyntax #\*  vcs)
+     (setsyntax #\=  vcs)
+     (setsyntax #\/  vcs)
+     (setsyntax #\+  vcs)
+     (setsyntax #\-  vcs)
+     (setsyntax #\^  vcs)
+     (setsyntax #\<  vcs)
+     (setsyntax #\>  vcs)
+     (setsyntax #\[  vcs)
+     (setsyntax #\]  vcs)
+     (setsyntax #\(  vcs)
+     (setsyntax #\)  vcs)
+     (setsyntax #\{  vcs)
+     (setsyntax #\}  vcs)
+     (setsyntax #\!  vcs)
+     ;; reserved characters:
+     (setsyntax #\$  vcs)
+     (setsyntax #\@  vcs) 
+     (setsyntax #\&  vcs) 
+     (setsyntax #\~  vcs) 
+     (setsyntax #\' vcs)
+     (setsyntax #\| vcs)
+     (setsyntax #\` vcs)
+     (setsyntax #\\ vcs)
+     (return t)))
 
 (defun setlispread nil (setq *readtable* (copy-readtable nil)))
 ;-----------------------------------------------------------------------------
-  (defun lineread 
+(defun lineread 
       (stream)
       (prog (ans rans next-char)
 loop1 

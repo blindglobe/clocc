@@ -1,12 +1,10 @@
-;;; File: <htmlgen.lisp - 2000-03-08 Wed 21:20:22 Eastern Standard Time sds@ksp.com>
-;;;
 ;;; HTML generation
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.4 2000/03/13 21:53:28 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.5 2000/03/24 00:17:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -41,6 +39,8 @@
   (with-slots (target-stream) stream (force-output target-stream)))
 (defmethod stream-clear-output ((stream html-stream-out))
   (with-slots (target-stream) stream (clear-output target-stream)))
+(defmethod close ((stream html-stream-out) &rest opts)
+  (with-slots (target-stream) stream (apply #'close target-stream opts)))
 
 ;;;
 ;;; HTML generation
@@ -55,41 +55,39 @@
                                   head)
                             &body body)
   (with-gensyms ("HTML-" raw mailto)
-    `(let* ((,raw ,stream) (,var (make-instance 'html-stream-out :stream ,raw))
-            (,mailto (concatenate 'string "mailto:" *user-mail-address*)))
+    `(let ((,raw ,stream)
+           (,mailto (concatenate 'string "mailto:" *user-mail-address*)))
       (macrolet ((with-tag ((tag &rest options) &body forms)
                    `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)
                      ,@forms (format ,',raw "</~a>~%" ,tag)))
                  (with-tagl ((tag &rest options) &body forms)
                    `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)
                      ,@forms (format ,',raw "</~a>" ,tag))))
-        (unwind-protect
-             (progn
-               (format ,raw "<!doctype~{ ~s~}>~%" ,doctype)
-               ;; print the comment
-               (format ,raw "<!--~% Created on ") (current-time ,raw)
-               (format ,raw "~% by ~a@~a~% using `with-open-html'
+        (with-open-stream (,var (make-instance 'html-stream-out :stream ,raw))
+          (format ,raw "<!doctype~{ ~s~}>~%" ,doctype)
+          ;; print the comment
+          (format ,raw "<!--~% Created on ") (current-time ,raw)
+          (format ,raw "~% by ~a@~a~% using `with-open-html'
  Lisp: ~a ~a~@[~%~a~]~% -->~2%"
-                       (getenv "USER") (machine-instance)
-                       (lisp-implementation-type) (lisp-implementation-version)
-                       ,comment)
-               (when ,base
-                 (with-tag (:base :href ,base)))
-               (with-tag (:html)
-                 (with-tag (:head ,@head)
-                   (with-tag (:meta ,@meta))
-                   (with-tag (:link :rev 'made :href ,mailto))
-                   (with-tag (:title) (princ ,title ,var)))
-                 (with-tag (:body)
-                   ,@body
-                   (when ,footer
-                     (with-tag (:p)
-                       (with-tag (:hr))
-                       (with-tag (:address)
-                         (with-tag (:a :href ,mailto)
-                           (princ *user-mail-address* ,var)))
-                       (with-tagl (:strong) (current-time ,var)))))))
-          (when ,raw (close ,raw)))))))
+                  (getenv "USER") (machine-instance)
+                  (lisp-implementation-type) (lisp-implementation-version)
+                  ,comment)
+          (when ,base
+            (with-tag (:base :href ,base)))
+          (with-tag (:html)
+            (with-tag (:head ,@head)
+              (with-tag (:meta ,@meta))
+              (with-tag (:link :rev 'made :href ,mailto))
+              (with-tag (:title) (princ ,title ,var)))
+            (with-tag (:body)
+              ,@body
+              (when ,footer
+                (with-tag (:p)
+                  (with-tag (:hr))
+                  (with-tag (:address)
+                    (with-tag (:a :href ,mailto)
+                      (princ *user-mail-address* ,var)))
+                  (with-tagl (:strong) (current-time ,var)))))))))))
 
 ;;;
 ;;; this is an example on how to use `with-open-html' and `with-tag'.

@@ -38,7 +38,8 @@
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (let ((*package* (find-package "F2CL")))
+      (let ((*package* (find-package "F2CL"))
+	    (collected-comments nil))
 	(do ((prev-line nil)
 	     (line (read-line inport nil 'eof)
 		   (read-line inport nil 'eof)))
@@ -55,7 +56,14 @@
 	      ((string= line "") nil)	; we leave out blank lines
 	      ((or (char-equal (char line 0) #\C)
 		   (char-equal (char line 0) #\*))
-	       (if *comments* (write-comment-line line outport)))
+	       (when *comments*
+		 ;; If we don't have anything buffered, we can print
+		 ;; out the comment now.  Otherwise, we need to save
+		 ;; the comment and print it out later, after we've
+		 ;; accumulated the continuation line, if any.
+		 (if prev-line
+		     (push line collected-comments)
+		     (write-comment-line line outport))))
 	      (t
 	       (when *verbose* (princ line) (terpri))
 	       ;; Handle tabs.  If the line begins with a tab, replace it with 6
@@ -73,7 +81,12 @@
 		      ;; any, and save this line for later.
 		      (when prev-line
 			(write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
-		      (setf prev-line (copy-seq line)))
+		      (setf prev-line (copy-seq line))
+		      ;; Print out the collected comments, if any
+		      (when collected-comments
+			(dolist (c (nreverse collected-comments))
+			  (write-comment-line c outport))
+			(setf collected-comments nil)))
 		     (t
 		      ;; A continuation line!  Append the line to our
 		      ;; buffer, carefully stripping off leading spaces.
@@ -278,8 +291,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.16 2000/07/28 17:07:11 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.17 2000/08/01 23:02:36 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.17  2000/08/01 23:02:36  rtoy
+;;; We were messing up the printing of comments after we changed
+;;; PREPROCESS to handle continuation lines.  We need to accumulate
+;;; comment lines until we know we have a complete line (with all
+;;; continuation lines).  Then we can print out the line followed by the
+;;; accumulated comment lines.  This makes the comments possible out of
+;;; sync with the generated Lisp code, but they were never really in sync
+;;; anyway.
+;;;
 ;;; Revision 1.16  2000/07/28 17:07:11  rtoy
 ;;; o We are in the f2cl package now.
 ;;; o When we preprocess the file, we want to READ using the F2CL package

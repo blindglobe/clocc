@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.14 2000/05/23 20:03:47 sds Exp $
+;;; $Id: fileio.lisp,v 1.15 2000/06/13 15:38:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,7 @@
           count-sexps code-complexity
           write-list-to-stream write-list-to-file
           read-list-from-stream read-list-from-file
-          pr write-to-file read-from-file append-to-file
+          pr write-to-file read-from-file read-from-stream append-to-file
           read-trim skip-to-line skip-search skip-blanks read-non-blanks))
 
 ;;;
@@ -202,15 +202,25 @@ Return the size of the file."
       (file-length str))))
 
 ;;;###autoload
+(defun read-from-stream (str &key (repeat t))
+  "Read from stream.
+The REPEAT keyword argument tells how many objects to read.
+ If NIL, read once and return the object read;
+ if a number, read that many times and return a list of objects read,
+ if T (default), read until end of file and return a list of objects read."
+  (declare (stream str))
+  (cond ((null repeat) (read str))
+        ((numberp repeat) (loop :repeat repeat :collect (read str)))
+        ((loop :for obj = (read str nil +eof+)
+               :until (eq obj +eof+) :collect obj))))
+
+;;;###autoload
 (defun read-from-file (file &key (readtable *readtable*) repeat
                        (out *standard-output*))
-  "Read an object from a file.
+  "Read an object or several objects from a file.
 The READTABLE keyword argument (default `*readtable*') specifies
 the readtable to use.
-The REPEAT keyword argument tells how many objects to read.
-If NIL, read once and return the object read;
-if a number, read that many times and return a list of objects read,
-if T, read until end of file and return a list of objects read."
+Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
   (declare (type (or simple-string pathname) file))
   (with-timing (:done t :out out)
     (with-open-file (str file :direction :input)
@@ -219,11 +229,7 @@ if T, read until end of file and return a list of objects read."
         (force-output out))
       (with-standard-io-syntax
         (let ((*readtable* readtable))
-          (cond ((null repeat) (read str))
-                ((numberp repeat) (loop :repeat repeat :collect (read str)))
-                ((loop :for obj = (read str nil +eof+)
-                       :while (not (eq obj +eof+))
-                       :collect obj))))))))
+          (read-from-stream str :repeat repeat))))))
 
 (defun append-to-file (file fmt &rest fmt-args)
   "Append to the file the formatted output."

@@ -1,8 +1,14 @@
+cil (200100227-2) unstable; urgency=low
+
+  * Now for 'all' architectures 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 12 Jun 2001 20:40:56 +0200
+
 cil (200100227-1) unstable; urgency=low
 
   * Now using common-lisp-controller.
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 27 Feb 2001 20:52:22 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 12 Jun 2001 20:40:52 +0200
 
 cil (19970608-4) unstable; urgency=low
 

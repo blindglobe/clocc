@@ -6,7 +6,7 @@ Maintainer: Peter Van Eynde <pvaneynd@debian.org>
 Standards-Version: 3.2.0.0
 
 Package: cil
-Architecture: i386
+Architecture: all
 Depends: common-lisp-controller
 Description: Chess In Lisp. A library for cmucl.
  This library is mainly intended as an example file.

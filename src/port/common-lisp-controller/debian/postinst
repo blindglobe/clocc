@@ -25,7 +25,7 @@ set -e
 
 case "$1" in
     configure)
-    update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
+    DEBIAN_HAS_FRONTEND= update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
 
     # move after update-inetd because of bug #183960
     . /usr/share/debconf/confmodule 
@@ -70,7 +70,7 @@ EOF
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-        update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
+        DEBIAN_HAS_FRONTEND= update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	    if [ -f "$compiler" -a -r "$compiler" ] ; then
 	     i=${compiler##*/}

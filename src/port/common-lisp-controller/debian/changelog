@@ -1,3 +1,9 @@
+common-lisp-controller (3.71) unstable; urgency=low
+
+  * Yes another attempt to work around bug #183960
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 31 Jul 2003 01:55:19 -0600
+
 common-lisp-controller (3.70) unstable; urgency=low
 
   * Move debconf initialization line in postinst to work aroung

@@ -1,15 +1,25 @@
+cl-cil (1:20050302) unstable; urgency=low
+
+  * Now native package
+  * Updated standard version
+  * Removed CVS information
+  * Updated the synopsis
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  2 Mar 2005 13:14:46 +0100
+
 cl-cil (200100227-7) unstable; urgency=low
 
-  * Also works with other systems except cmucl 
+  * oeps 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 15 Nov 2002 23:24:34 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 27 Jul 2004 12:23:47 +0200
 
 cl-cil (200100227-6) unstable; urgency=low
 
+  * Also works with other systems except cmucl
   * Now uses asdf.
-  * Rename to be in line with naming standard for CL packages 
+  * Rename to be in line with naming standard for CL packages
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 15 Nov 2002 15:07:53 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 26 Jul 2004 23:06:51 +0200
 
 cil (200100227-5) unstable; urgency=low
 

@@ -6,6 +6,14 @@
 
 (in-package "MK4")
 
+;;; Class Action -- A good idea from ASDF.
+
+(defclass action ()
+  ((action-tag :reader action-tag :initarg :tag))
+  (:default-initarg :tag :generic-action)
+  (:documentaion "The Action Class."))
+  
+
 ;;; We need to simplify a `specialized lambda list' into a `generic
 ;;; function lambda list'.
 

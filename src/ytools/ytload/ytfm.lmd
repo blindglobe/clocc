@@ -37,7 +37,7 @@
    (set-config-var  lisp-object-extn* sto
       (format t "What extension do Lisp object files have (e.g., fasl, o)? ")
       (let ((extn (read-line-trim)))
-	  (cond ((= (length lisp-object-extn*) 0)
+	  (cond ((= (length extn) 0)
 		 (format t "Assuming extension 'fasl'~%")
 		 "fasl")
 		(t extn))))

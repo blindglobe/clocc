@@ -102,9 +102,10 @@
 		  (make-pathname :name bf)
 		  ytools-dir-pathname*))
 	    (fasl-file
-	       (merge-pathnames
-		  (make-pathname :name bf :type lisp-object-extn*)
-		  ytools-bin-dir-pathname*)))
+	       (ensure-directories-exist
+		  (merge-pathnames
+		     (make-pathname :name bf :type lisp-object-extn*)
+		     ytools-bin-dir-pathname*))))
 	 (compile-file lisp-file :output-file fasl-file)
 	 (load fasl-file))))
      

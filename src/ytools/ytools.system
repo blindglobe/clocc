@@ -2,14 +2,14 @@
 ;;;
 ;;; YTools --- more than a library of useful utilities; a way of life.
 ;;;
-;;; $Id: ytools.system,v 1.2 2003/08/31 18:00:55 airfoyle Exp $
+;;; $Id: ytools.system,v 1.3 2003/10/26 21:09:13 airfoyle Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/ytools/ytools.system,v $
 ;;;
 
 (in-package :cl-user)
 
 (defmacro set-yt-global (name val)
-  `(set (intern (symbol-string ',name) (find-package :ytools))
+  `(set (intern (symbol-name ',name) (find-package :ytools))
 	,val))
 
 (mk:defsystem "YTOOLS"
@@ -20,11 +20,15 @@
     :source-extension "lisp"
 
     :initially-do
-    (progn (load (translate-logical-pathname "clocc:src;ytload;ytload.lisp"))
+    (progn (load (translate-logical-pathname
+		    "clocc:src;ytools;ytload;ytload.lisp"))
 	   (set-yt-global config-directory*
-			  (translate-logical-pathname "clocc:src;ytools;"))
+			  (namestring (translate-logical-pathname
+				         "clocc:src;ytools;")))
 	   (set-yt-global ytload-directory*
-			  (translate-logical-pathname "clocc:src;ytools;ytload;"))
+			  (namestring
+			     (translate-logical-pathname
+			        "clocc:src;ytools;ytload;")))
 	   ;;; Preset some config variables --
 	   (set-yt-global ytools-home-dir*
 			  (namestring (translate-logical-pathname
@@ -32,12 +36,11 @@
 	   (set-yt-global standard-bin-path* "../../bin/")
 	   (set-yt-global bin-idio* "")
 	   (yt-install :ytfm :if-installed nil)
-	   (yt-install :ytools :if-installed nil)
-	   (setq *readtable* (eval (intern (symbol-name ':ytools-readtable*)
-					   (find-package :ytools)))))
+	   (yt-load :ytfm :if-loaded nil)
+	   (yt-install :ytools :if-installed nil))
 
     :components
-    ((:system "YTFM"
+    ((:system "ytfm"
 	:source-pathname "clocc:src;ytools;"
 	:binary-pathname "clocc:bin;ytools;"
 	;;;;    :source-pathname (translate-logical-pathname "clocc:src;ytload;")
@@ -72,6 +75,10 @@
 	 (:file "signal" :depends-on ("object" "setter"))))
      (:file "nilscompat" :depends-on ("core-ytools"))
      (:file "fileutils" :depends-on ("core-ytools"))
-     (:file "bq" :depends-on ("core-ytools"))))
+     (:file "bq" :depends-on ("core-ytools")))
+
+    :finally-do
+    (setq *readtable* (eval (intern (symbol-name ':ytools-readtable*)
+					   (find-package :ytools)))))
 
 

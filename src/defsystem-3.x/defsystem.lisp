@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.4 Interim 3.
+;;; DEFSYSTEM 3.4 Interim 4.
 
 ;;; defsystem.lisp --
 
@@ -31,7 +31,7 @@
 ;;; MK:DEFSYSTEM 3.4 Interim 3
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
-;;;               1999 - 2004 Mark Kantrowitz and Marco Antoniotti. All
+;;;               1999 - 2005 Mark Kantrowitz and Marco Antoniotti. All
 ;;;                           rights reserved.
 
 ;;; Use, copying, modification, merging, publishing, distribution
@@ -2786,6 +2786,13 @@ the system definition, if provided."
     ;; beacuse of possible null names (e.g. :defsystem components)
     ;; causing problems with the subsequenct call to NAMESTRING.
     ;; (format *trace-output* "~&>>>> PATHNAME is ~S~%" pathname)
+
+    ;; 20050309 Marco Antoniotti
+    ;; The treatment of PATHNAME-HOST and PATHNAME-DEVICE in the call
+    ;; to MAKE-PATHNAME in the T branch is bogus.   COMPONENT-DEVICE
+    ;; and COMPONENT-HOST must respect the ANSI definition, hence,
+    ;; they cannot be PATHNAMEs.  The simplification of the code is
+    ;; useful.  SCL compatibility may be broken, but I doubt it will.
     (cond ((pathname-logical-p pathname) ; See definition of test above.
 	   (setf pathname
 		 (merge-pathnames pathname
@@ -2800,29 +2807,25 @@ the system definition, if provided."
 	    (make-pathname :host (when (component-host component)
 				   ;; MCL2.0b1 and ACLPC cause an error on
 				   ;; (pathname-host nil)
-				   (pathname-host (component-host component)
-						  #+scl :case #+scl :common
-						  ))
+				   (component-host component))
 			   :directory (pathname-directory pathname
-						  #+scl :case #+scl :common
-						  )
+							  #+scl :case #+scl :common
+							  )
 			   ;; Use :directory instead of :defaults
 			   :name (pathname-name pathname
-						  #+scl :case #+scl :common
-						  )
+						#+scl :case #+scl :common
+						)
 			   :type #-scl (component-extension component type)
-			         #+scl (string-upcase
-					(component-extension component type))
+			   #+scl (string-upcase
+				  (component-extension component type))
 			   :device
 			   #+sbcl
 			   :unspecific
 			   #-(or :sbcl)
 			   (let ((dev (component-device component)))
 			     (if dev
-                                 (pathname-device dev
-						  #+scl :case #+scl :common
-						  )
-                                 (pathname-device pathname
+				 dev
+			         (pathname-device pathname
 						  #+scl :case #+scl :common
 						  )))
 			   ;; :version :newest

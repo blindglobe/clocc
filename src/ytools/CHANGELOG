@@ -1,5 +1,15 @@
-$Id: CHANGELOG,v 1.31 2004/11/07 05:21:07 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.1 2005/02/27 16:55:19 airfoyle Exp $
 	
+2005-02-27: Yet another scheme for controlling chunk updates triggered
+            by chunk derivers: The interrupt is detected by the outer
+            update, which is then restarted.  The inner update does
+            not happen again because derivers are called only once at
+            a particular level.
+
+	    Added ability to postpone updates of derivees, to avoid
+            repeated updates of the same irrelevant downstream derivee
+            during debugging of upstream chunk. (Version 1.4.10)
+
 2004-11-07: Resurrected 'intercept' and 'pass' with improved type
             checking. (Version 1.4.8.7)
 

@@ -355,12 +355,13 @@
 		       (dolist (ch (list loaded-file-chunk-l*
 					 loaded-file-chunk-s*
 					 loaded-file-chunk-c*))
-			  (monitor-filoid-basis ch))
+			  (monitor-filoid-basis ch)
+			  (loaded-chunk-set-basis ch))
 ;;;;		       (break "Filoid bases monitored")
 		       (case i
-			  (0 (chunk-update loaded-file-chunk-c*))
-			  (1 (chunk-update file-chunk-l*))
-			  (2 (chunk-update file-chunk-s*)
+			  (0 (chunk-update loaded-file-chunk-c* false))
+			  (1 (chunk-update file-chunk-l* false))
+			  (2 (chunk-update file-chunk-s* false)
 			     (setq sms-ch*
 			           (chunk-with-name
 				      `(:slurped (:macros ,(File-chunk-pathname
@@ -373,17 +374,19 @@
 				(set-em-up "d" file-chunk-s* false ':compile))
 			     (sms-check "before monitoring d")
 			     (monitor-filoid-basis loaded-file-chunk-d*)
+			     (loaded-chunk-set-basis loaded-file-chunk-d*)
 			     (sms-check "after monitoring d")
 			     (chunk-request-mgt loaded-file-chunk-d*)
 			     (sms-check "after d mgt request")
 ;;;;			     (chunk-terminate-mgt loaded-file-chunk-c* false)
 			     (chunks-update
 			        (list ;;;; loaded-file-chunk-c*
-				      loaded-file-chunk-d*)))
+				      loaded-file-chunk-d*)
+				false))
 			  (4 (chunk-terminate-mgt loaded-file-chunk-c* false)
-			     (chunk-update loaded-file-chunk-c*)
+			     (chunk-update loaded-file-chunk-c* false)
 			     (chunk-update ;;;;loaded-file-chunk-d*
-			                   file-chunk-s*)))
+			                   file-chunk-s* false)))
 		       (format t !"After iteration ~s:~
 				   ~% File 'l' status = ~s ~
                                    File 's' status = ~s ~

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.22 2005/02/11 05:11:31 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.23 2005/02/27 16:55:19 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,13 +9,21 @@
 
 (eval-when (:load-toplevel)
    (export '(fload fcompl fload-compile* bind-fload-compile* fcompl-reload*
-	     fload-versions
+	     fload-versions postponed-files-update
 	     always-slurp end-header
 	     debuggable debuggability*)))
 
 (defvar file-op-count* 0)
 
-(defvar fload-flags* '(- -f -a -c -s -o -x))
+(defvar fload-flags* '(- -f -c -a -s -o -x -z))
+;;; -  -> "Clear sticky flags"
+;;; -f -> "Force load even if apparently up to date"
+;;; -c -> "Compile each file"
+;;; -a -> "Ask whether to compile each file"
+;;; -s -> "Load source, ignoring possibility of loading object"
+;;; -o -> "Load object, without recompiling"
+;;; -x -> "Stop managing loaded file (i.e., stop loading)"
+;;; -z -> "Postpone update of chunks for files supported by this one"
 
 (defmacro fload (&rest specs)
   `(do-fload ',specs))
@@ -38,10 +46,13 @@
 (defun filespecs-fload (specs &optional (flags !()) (*readtable* *readtable*))
    (let ((*load-verbose* false))
       (let ((force-flag false)
-	    (file-manip false))
+	    (file-manip false)
+	    (postpone-derivees false))
 	(dolist (flag flags)
 	    (cond ((memq flag '(-s -o -f -c))
-		   (setq force-flag true)))
+		   (setq force-flag true))
+		  ((eq flag '-z)
+		   (setq postpone-derivees true)))
 	    (cond ((not (eq flag '-f))
 		   (cond (file-manip
 			  (format *error-output*
@@ -61,7 +72,8 @@
 				 false))))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
   	   (filoid-fload pn :force-load force-flag
-			    :manip file-manip)
+			    :manip file-manip
+			    :postpone-derivees postpone-derivees)
 	  ))))
 
 ;;; 'filoid-fload' is the entry point to declare that a filoid
@@ -69,33 +81,46 @@
 ;;; network to load it.  
 ;;; It should never be called _by_ a filoid (Loaded-) chunk deriver, 
 ;;; because it alters the bases of such chunks. 
-(defgeneric filoid-fload (pn &key force-load manip))
+(defgeneric filoid-fload (pn &key force-load manip postpone-derivees))
 
-(defmethod filoid-fload ((ytpn YTools-pathname) &key force-load manip)
+(defmethod filoid-fload ((ytpn YTools-pathname)
+			 &key force-load manip postpone-derivees)
    (filoid-fload (pathname-resolve ytpn false)
-		 :force-load force-load :manip manip))
+		 :force-load force-load
+		 :manip manip
+		 :postpone-derivees postpone-derivees))
 
 (defmethod filoid-fload ((pn pathname)
-			 &key force-load manip)
+			 &key force-load manip postpone-derivees)
    (let* ((pchunk (pathname-denotation-chunk pn))
 	  (lpchunk (place-Loaded-chunk pchunk manip)))
-      (loaded-chunk-fload lpchunk force-load)))
+      (loaded-chunk-fload lpchunk force-load postpone-derivees)))
 
-(defun loaded-chunk-fload (loaded-chunk force-load)
+(defvar postponed-file-chunks* !())
+
+(defun loaded-chunk-fload (loaded-chunk force-load postpone-derivees)
       (monitor-filoid-basis loaded-chunk)
       (loaded-chunk-set-basis loaded-chunk)
       (chunk-request-mgt loaded-chunk)
       (let ((d (Chunk-date loaded-chunk)))
 	 (format t "Updating ~s~%"
 		 loaded-chunk)
-	 (chunk-update loaded-chunk)
+	 (setq postponed-file-chunks*
+	       (append (chunk-update loaded-chunk postpone-derivees)
+		       postponed-file-chunks*))
 	 (cond ((and force-load
 		     (= (Chunk-date loaded-chunk)
 			d))
 		;; It was apparently already up to date,
 		;; so forcing makes sense
 		(chunk-derive-and-record loaded-chunk)
-		(chunks-update (Chunk-derivees loaded-chunk))))))
+		(cond (postpone-derivees
+		       (setq postponed-file-chunks*
+			     (append (Chunk-derivees loaded-chunk)
+				     postponed-file-chunks*)))
+		      (t
+		       (chunks-update (Chunk-derivees loaded-chunk)
+				      false)))))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -511,7 +536,8 @@
 ;;;;	 (cond ((not (chunk-up-to-date lc))
 ;;;;		(on-list lc loadeds-needing-update))))
       (chunks-update (cons fload-compile-flag-chunk*
-			   loadeds-needing-checking))))
+			   loadeds-needing-checking)
+		     false)))
 
 (defvar loaded-manip-dbg* false)
 
@@ -1021,10 +1047,11 @@
 
 (datafun :slurp-macros needed-by-macros eval-when-slurping)
 
-(defvar fcompl-flags* '(- -f -x -l))
+(defvar fcompl-flags* '(- -f -x -l -z))
 ;;; -x -> "Stop managing compiled file (i.e., stop compiling)"
 ;;; -l -> "Load after compile" (from now on, unless -x)
 ;;; -f -> "Force compile even if apparently up to date"
+;;; -z -> "Postpone update of chunks for files supported by this one"
 
 (defmacro fcompl (&rest specs)
   `(do-fcompl ',specs))
@@ -1047,27 +1074,35 @@
    (let ((*load-verbose* false))
       (let ((force-flag false)
 	    (load-flag false)
-	    (cease-mgt false))
+	    (cease-mgt false)
+	    (postpone-derivees false))
 	(dolist (flag flags)
 	    (case flag
 	       (-f (setq force-flag true))
 	       (-l (setq load-flag true))
 	       (-x (setq cease-mgt true))
+	       (-z (setq postpone-derivees true))
 	       (t (cerror "I will ignore it"
 			  "Illegal flag to 'fcompl': ~s" flag))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
-	   (pathname-fcompl pn force-flag load-flag cease-mgt)))))
+	   (pathname-fcompl pn
+			    :force-compile force-flag
+			    :load load-flag
+			    :cease-mgt cease-mgt
+			    :postpone-derivees postpone-derivees)))))
 
 (defvar fcompl-reload* ':ask)
 
 (defgeneric pathname-fcompl (pn &key force-compile
 				     load
-				     cease-mgt))
+				     cease-mgt
+				     postpone-derivees))
 
 (defmethod pathname-fcompl ((pn pathname)
 			    &key force-compile
 				 load
-				 cease-mgt)
+				 cease-mgt
+				 postpone-derivees)
    (let* ((file-chunk
 	     (place-File-chunk pn))
 	  (lpchunk (place-Loaded-chunk
@@ -1090,7 +1125,9 @@
 		      (Chunk-date compiled-chunk)))
 	        (monitor-filoid-basis lpchunk)
 		(chunk-request-mgt compiled-chunk)
-		(chunk-update compiled-chunk)
+		(setq postponed-file-chunks*
+		      (append (chunk-update compiled-chunk postpone-derivees)
+			      postponed-file-chunks*))
 		(cond ((and force-compile
 			    (= (Chunk-date compiled-chunk)
 			       comp-date))
@@ -1099,11 +1136,7 @@
       (cond ((or load
 		 (load-after-compile))
 	     (setf (Loaded-file-chunk-manip lpchunk) ':compiled)
-	     (loaded-chunk-fload lpchunk false)
-;;;;	     (monitor-filoid-basis lpchunk)
-;;;;	     (chunk-request-mgt lpchunk)
-;;;;	     (chunk-update lpchunk)
-	     ))))
+	     (loaded-chunk-fload lpchunk false postpone-derivees)))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve
@@ -1153,7 +1186,7 @@
 	     (loop
 	        (dolist (loadable-ch controllers)
 		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers)
+	        (chunks-update controllers false)
 	        (cond ((null loaded-filoids-to-be-monitored*)
 		       (return))
 		      (t
@@ -1248,8 +1281,11 @@
 	       (setf (File-chunk-alt-version fc)
 		     false)
 	       (on-list fc changing-chunks)))
-	 (chunks-update changing-chunks)
+	 (chunks-update changing-chunks false)
 	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
+
+(defun postponed-files-update ()
+   (chunks-update postponed-file-chunks* false))
 
 (defun compilable (pathname)
    (member (Pathname-type pathname) source-suffixes* :test #'equal))

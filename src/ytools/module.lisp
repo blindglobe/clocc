@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.14 2005/02/06 05:46:32 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.15 2005/02/27 16:55:19 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -184,12 +184,12 @@
 (defvar loaded-ytools-modules* !())
 
 (defmethod filoid-fload ((yt-mod Module-pseudo-pn)
-			 &key force-load manip)
+			 &key force-load manip postpone-derivees)
    (let* ((module (Module-pseudo-pn-module yt-mod))
 	  (mod-chunk (place-YT-module-chunk module))
 	  (lmod-chunk (place-Loaded-module-chunk
 		         mod-chunk manip)))
-      (loaded-chunk-fload lmod-chunk force-load)))
+      (loaded-chunk-fload lmod-chunk force-load postpone-derivees)))
 
 (defmethod place-Loaded-chunk ((mod-ch YT-module-chunk) mod-manip)
    (place-Loaded-module-chunk mod-ch mod-manip))
@@ -363,6 +363,6 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
 	     (let ((chl (module-form-chunks yt-mod ':run-support)))
 	        (dolist (ch chl)
 		   (chunk-request-mgt ch))
-		(chunks-update chl)))
+		(chunks-update chl false)))
 	    (t
 	     (error "Can't load YTools module -- undefined")))))

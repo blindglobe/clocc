@@ -666,15 +666,20 @@ FILENAME                 File containing Fortran code
   ;; that means the var was never assigned, so we can return NIL
   ;; instead of the variable.
   (let ((arg-types nil)
-	(ret-vals nil))
+	(ret-vals nil)
+	(entry (gethash fcn-name *f2cl-function-info*)))
     (dolist (v arg-names)
       (push (if (member v *assigned-variables*)
 		v
 		nil)
-	    ret-vals))
+	    ret-vals)
+      )
     (setf ret-vals (nreverse ret-vals))
-    (setf (gethash fcn-name *f2cl-function-info*)
-	  (make-f2cl-finfo :return-values ret-vals))
+    (if entry
+	(setf (f2cl-finfo-return-values entry) ret-vals)
+	(setf (gethash fcn-name *f2cl-function-info*)
+	      (make-f2cl-finfo :return-values ret-vals
+			       :arg-types arg-types)))
     ret-vals))
 
 
@@ -2393,8 +2398,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.109 2002/05/04 17:00:06 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.110 2002/05/04 20:32:36 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.110  2002/05/04 20:32:36  rtoy
+;;; If the entry for the function already exists, we don't want to smash
+;;; it.  Just update the return-values for the entry.
+;;;
 ;;; Revision 1.109  2002/05/04 17:00:06  rtoy
 ;;; We now keep a hash table of all functions and their return values and
 ;;; use that, if available, for generating calls to that function.

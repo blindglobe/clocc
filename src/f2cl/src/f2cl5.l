@@ -260,8 +260,12 @@
 		 ((member fun '(sin cos tan
 				asin acos atan atan2
 				exp flog alog10
-				fsqrt))
-		  ;; Generic functions
+				fsqrt aint sign dim max min))
+		  ;; Generic functions.  Note thate SIGN and DIM are
+		  ;; intrinsics that take two args, and MAX and MIN
+		  ;; take man args.  However, Fortran says all args
+		  ;; should be of same type, so we just look at the
+		  ;; type of the first.
 		  (get-fun-arg-type (second arg)))
 		 ((member fun '(dsin dcos dtan
 				dasin dacos datan datan2
@@ -630,7 +634,7 @@
   
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
-		   local-vbles vble-decls body special-proclamation
+		   local-vbles vble-decls body common-blocks
 		   saved-decls save-inits
 		   other-fcn-decls
 		   stmt-fcn-decls
@@ -658,8 +662,8 @@
        (maphash #'(lambda (key val)
 		    (format t "~A => ~A~%" key val))
 		*common-blocks*))
-     (setq special-proclamation
-	   (make-special-proclamation *subprog_common_vars*))
+     ;;(setq special-proclamation (make-special-proclamation *subprog_common_vars*))
+     #+nil
      (when (member :insert-declaration *f2cl-trace*)
        (format t "special-proclamation = ~a~%" special-proclamation))
      (setq common_var_decls 
@@ -677,8 +681,16 @@
      (when (member :insert-declaration *f2cl-trace*)
        (format t "struct = ~S~%" common-block-structs))
 
-     (setq special-proclamation common-block-structs)
-     ;;(format t "special-proclamation = ~a~%" special-proclamation)
+     (setq common-blocks
+	   (if *declare-common-blocks*
+	       common-block-structs
+	       nil))
+
+     (when (member :insert-declaration *f2cl-trace*)
+       (format t "*declare-common-blocks* = ~S~%" *declare-common-blocks*)
+       (format t "spec-proc = ~S~%" common-blocks))
+     
+     ;;(format t "common-blocks = ~a~%" common-blocks)
 
      ;; Get the declarations for all functions
      (multiple-value-setq (stmt-fcn-decls other-fcn-decls arg-fcn-decls)
@@ -1004,8 +1016,9 @@
 				  ,defun-stuff)
 				defun-stuff)))
 	  (return
-	    (values nil
-		    nil
+	    (values common-blocks
+		    (when common-blocks
+		      (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
 		    param-stuff))
 	  )
 	)
@@ -1037,8 +1050,8 @@
 				save-stuff)))
        
 	  (return 
-	    (values special-proclamation
-		    (when special-proclamation
+	    (values common-blocks
+		    (when common-blocks
 		      (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
 		    param-stuff)))))
      ))
@@ -1290,6 +1303,7 @@
       )
      ;; check for declared variable
      ((member vble *declared_vbles*)
+      ;;(format t "~a is declared~%" vble)
       (do ((type-clauses *explicit_vble_decls* (cdr type-clauses))
 	   (decl nil))
 	  ((null type-clauses) )
@@ -1334,9 +1348,10 @@
 	      (warn "Undeclared variable `~A' with no implicit type!" vble))
 	    `(declare (type ,type ,vble_name)))))
      ;; otherwise use default declaration
-     (t (if (default-int-p vble)
-	    `(declare (type integer4 ,vble_name))
-	    `(declare (type single-float ,vble_name))))))))
+     (t
+      (if (default-int-p vble)
+	  `(declare (type integer4 ,vble_name))
+	  `(declare (type single-float ,vble_name))))))))
 
 (defun make-char-decl (decl type)
   (flet ((decl-bounds (bounds)
@@ -1417,11 +1432,12 @@
                    (setq type (car (member decl *explicit_vble_decls* :key #'caadr)))
                    (not (eq (car type) 'array)))
               (car type))
-             ((and (not vble-is-formal-arg)
-                   (setq type (get-implicit-type decl)))
+             ((setq type (get-implicit-type decl))
               type)
-             ((default-int-p decl) 'integer4)
-             (t  'single-float)))))
+             ((default-int-p decl)
+	      'integer4)
+             (t
+	      'single-float)))))
 
 (defun default-int-p (vble)
    (and (string>= (string vble) "I")
@@ -2123,8 +2139,20 @@
 		;; Initialize the slot with a 0 of the appropriate
 		;; type (for scalars) or a zero element array of the
 		;; appropriate dimensions for array slots.
+		#+nil
+		(when dims
+		  (format t "dims = ~A~%" dims)
+		  (format t "new dims = ~A~%" (subst '(*) 0 dims))
+		  (format t "relaxed  = ~A~%" (make-list (length dims) :initial-element '*)))
 		(if dims
-		    `(,var ,var-init :type (,*array-type* ,(second var-type) ,(subst '(*) 0 dims)))
+		    `(,var ,var-init
+		      :type (,*array-type* ,(second var-type)
+			     ,(if *relaxed-array-decls*
+				  (make-list (if (listp dims)
+						 (length dims)
+						 1)
+					     :initial-element '*)
+				  (subst '(*) 0 dims))))
 		    `(,var ,var-init :type ,var-type))))
 	  varlist))
 
@@ -2214,8 +2242,23 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.82 2002/02/08 23:32:51 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.83 2002/02/09 16:08:49 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.83  2002/02/09 16:08:49  rtoy
+;;; o GET-FUN-ARG-TYPE:  We forgot to handle the AINT, SIGN, DIM, MAX, and
+;;;   MIN intrinsics.
+;;; o INSERT-DECLARATIONS:
+;;;   o Rename special-proclamation to common-blocks because we don't have
+;;;     special proclamations anymore.
+;;;   o The declarations for common blocks are inserted only if
+;;;     *DECLARE-COMMON-BLOCKS* is non-NIL.
+;;; o GET-IMPLICIT-TYPE:  We don't care if the arg is a formal arg or
+;;;   not.
+;;; o MAKE-COMMON-BLOCK-VARS:  If *RELAXED-ARRAY-DECLS* is non-NIL, the
+;;;   dimensions of the array in the common block is unspecified, even if
+;;;   we already know it.  (Useful for changing the sizes of the arrays in
+;;;   common blocks at run time.  Some Fortran code uses this feature.)
+;;;
 ;;; Revision 1.82  2002/02/08 23:32:51  rtoy
 ;;; The last change to support block data was majorly broken.  Right idea,
 ;;; wrong implementation.  Initializers and stuff need to be inside the

@@ -44,8 +44,14 @@ means that no limit should be imposed on this recursion)."))
 				      error-log-file
 				      &allow-other-keys))
 
-(defgeneric needs-loading (component source-or-binary-tag &key))
 
-(defgeneric needs-compiling (component &key))
+(defgeneric needs (component operation &key &allow-other-keys)
+  (:documentation "Tests whether a COMPONENT `needs' an OPERATION."))
+
+
+(defgeneric action-applicable-p (component operation &key &allow-other-keys)
+  (:documentation "")
+  (:method ((c component) (operation symbol) &key &allow-other-keys) t))
+
 
 ;;; end of file -- defsystem.lisp --

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.24 2005/03/24 12:58:58 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.25 2005/03/25 14:38:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,8 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(def-ytools-module import-export module-trace*)))
+   (export '(def-ytools-module module-elements
+	     import-export module-trace*)))
 
 (defstruct (YT-module
 	      (:constructor make-YT-module

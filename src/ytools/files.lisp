@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.40 2005/03/24 12:58:57 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.41 2005/03/25 14:37:59 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -121,7 +121,7 @@
 		     (t
 		      ':data)))))
       (chunk-with-name
-	 `(:file ,(or yt-pathname l-pathname))
+	 `(:code-file ,(or yt-pathname l-pathname))
 	 (\\ (e)
 	    (make-instance 'Code-file-chunk
 	       :name e
@@ -149,7 +149,7 @@
     ;; dependencies from whatever places are appropriate --
     (principal-bases :accessor Loaded-chunk-principal-bases
 		     :initform !())
-    (status :initform ':not-loaded
+    (status :initform ':unknown
 	    :accessor Loaded-chunk-status)
    ;; -- values :load-succeeded or :load-failed
    ;; once load has been attempted
@@ -255,8 +255,8 @@
 	       (t
 		(return))))
       (cond ((typep file-ch 'Compiled-file-chunk)
-	     (cond ((and (eq (Compiled-file-chunk-status file-ch)
-			     ':compile-succeeded)
+	     (cond ((and (not (eq (Compiled-file-chunk-status file-ch)
+				  ':compile-failed))
 			 (probe-file
 			    (Code-file-chunk-pathname
 			       (Compiled-file-chunk-object-file
@@ -391,7 +391,8 @@
 	 (cleanup-after-file-transduction
 	    (let ((*package* *package*)
 		  (*readtable* *readtable*)
-		  (success true)
+		  (success false)
+		  (errors-during-load !())
 		  (fload-indent* ;;;;(+ 3 fload-indent*)
 		      (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
@@ -401,9 +402,10 @@
 				 "...")
 	       (unwind-protect
 		  (handler-bind ((error
-				    (\\ (_)
-				       (setq success false))))
-		     (load (Code-file-chunk-pathname file-ch)))
+				    (\\ (e)
+				       (on-list e errors-during-load))))
+		     (load (Code-file-chunk-pathname file-ch))
+		     (setq success true))
 		  (cond (success
 			 (file-op-message "...loaded"
 					   (Code-file-chunk-pn
@@ -551,7 +553,7 @@
    (object-file :initarg :object-file
 		 :accessor Compiled-file-chunk-object-file
 		 :type Code-file-chunk)
-   (status :initform ':uncompiled
+   (status :initform ':unknown
 	   :accessor Compiled-file-chunk-status)
    ;; -- values :compile-succeeded or :compile-failed
    ;; once compilation has been attempted
@@ -660,19 +662,21 @@
    (with-post-file-transduction-hooks
       (cleanup-after-file-transduction
 	 (let ((*compile-verbose* false)
-	       (error-during-compilation false))
+	       (apparent-success false)
+	       (errors-during-compilation !()))
 	    (unwind-protect
 	       (handler-bind ((error
 			         (\\ (e)
-				    (setq error-during-compilation e))))
+				    (on-list e errors-during-compilation))))
 		  (cond (object-file
 			 (compile-file real-pn :output-file object-file))
 			(t
 			 (compile-file real-pn)
 			 (setq object-file (pathname-object-version
-					      real-pn true)))))
+					      real-pn true))))
+		  (setq apparent-success true))
 	      (let* ((success
-			(and (not error-during-compilation)
+			(and apparent-success
 			     object-file
 			     (probe-file object-file)))
 		     (new-compile-time
@@ -680,6 +684,10 @@
 			       (pathname-write-time object-file))
 			      (t
 			       (get-universal-time)))))
+		 (cond ((not success)
+			(format *error-output*
+			    "Error(s) during compilation: ~s"
+			    errors-during-compilation)))
 		 (cond ((and success
 			     old-obj-write-time
 			     (< new-compile-time old-obj-write-time))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.33 2005/03/21 13:34:02 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.34 2005/03/25 14:37:59 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -213,6 +213,8 @@
 	     (t
 	      false))))
 ;;;;; >>>> derive-date
+
+(defvar bad-ch*)
 
 ;;;;; <<<< derive
 (defgeneric derive (chunk)
@@ -465,8 +467,6 @@
 		   (t
 		    (setf (Chunk-update-marks ch)
 			  (rest marks))))))))
-
-(defvar bad-ch*)
 
 (defun derivee-cycle-check (ch potential-supporters)
    (let ((evnum chunk-event-num*))
@@ -1232,7 +1232,7 @@
 	 (cond ((and (Chunk-managed d)
 		     (chunk-up-to-date d))
 		(cond ((or (not date)
-			   (and (< (Chunk-date d) d)
+			   (and (< (Chunk-date d) date)
 				(>= (Chunk-date d) 0)))
 		       (setq date (Chunk-date d)))))))))
 ;;;;; >>>> Or-chunk/derive

@@ -1,8 +1,9 @@
 common-lisp-controller (2.7) unstable; urgency=low
 
   * Includes MCL fixes. Fixes: #99882.
+  * Includes UID fix. Fixes: #107037
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 10 Jul 2001 21:44:43 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  8 Aug 2001 13:58:23 +0200
 
 common-lisp-controller (2.6) unstable; urgency=low
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ "$UID" != 0 ] ; then
+if [ `id -u` != 0 ] ; then
  echo You need to be root to run $0
  exit 1
 fi

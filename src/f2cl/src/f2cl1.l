@@ -1286,7 +1286,7 @@ FILENAME                 File containing Fortran code
 				       ;; We're trying to set a integer
 				       ;; variable to non-integer value.  Use
 				       ;; truncate.
-				       `(truncate ,rhs))
+				       `(int ,rhs))
 				      (t
 				       ;; Haven't a clue, so coerce
 				       `(coerce ,rhs ',lhs-type)))))))
@@ -2204,8 +2204,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.98 2002/03/10 15:45:06 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.99 2002/03/13 03:58:48 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.99  2002/03/13 03:58:48  rtoy
+;;; Use INT instead of TRUNCATE.
+;;;
 ;;; Revision 1.98  2002/03/10 15:45:06  rtoy
 ;;; Oops.  A call to HANDLE-EXTENDED-DO was inadvertently left in.
 ;;;

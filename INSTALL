@@ -5,6 +5,8 @@ INSTALLATION OF CLOCC
 
 2. Edit the logical hosts definitions in the file "clocc.lisp" in the
    top-level directory according to your configuration.
+   Also, make "run-lisp" executable:
+        $ chmod a+x bin/run-lisp
 
 3. Type "make clocc-image" in the top-level directory.
    This will compile "clocc.lisp" and the "defsystem" package,

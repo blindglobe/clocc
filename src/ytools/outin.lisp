@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.6 2004/07/26 04:41:40 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.7 2004/09/11 15:29:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -148,6 +148,11 @@
 	 (dotimes (n num) (terpri real-stream)))
      (setf (Out-stream-state srm) 'unindented)))
 
+;;; (define-out-operator (<op> cmdvar stream-var) ---body---)
+;;; Causes 'body' to be executed whenever a command beginning
+;;; with <op> occurs.  'cmdvar' will be bound to command, and
+;;; 'stream-var' will be bound to the variable where the current 'out' stream
+;;; lives.
 (defmacro define-out-operator (form &rest body)
    `(eval-when (:compile-toplevel :load-toplevel :slurp-toplevel)
        (datafun out-operator ,(car form)
@@ -283,21 +288,29 @@
    (setq cmd (cdr cmd))
    (multiple-value-bind (prefix cmd suffix)
                         (pp-block-analyze cmd)
-	 (let ((srmvar (gensym))
-	       (realsrmvar default-out-stream-var*)  ;;;;(gensym)
-	       (outified-srmvar (gensym)))
-	    `(let ((,srmvar ,stream))
-;;;;		   (cond (*print-pretty* ...) ...)
-		(let ((,realsrmvar (out-prepare ,srmvar)))
-		   (pprint-logical-block
-			       (,realsrmvar nil
+	 (let (
+	       (pp-srmvar (gensym))
+	       (outified-pp-srmvar (gensym))
+;;;;	       (srmvar (gensym))
+;;;;	       (realsrmvar default-out-stream-var*)  ;;;;(gensym)
+              )
+
+;;;;	        `(let (
+;;;;		   (,srmvar ,stream))
+
+	    `(let ((,stream ;;;; ,pp-srmvar
+		    (out-prepare ,stream)))
+		(pprint-logical-block
+			       (,stream nil ;;;; ,pp-srmvar nil ;;;; ,realsrmvar nil
 				,@(cond (prefix `(:prefix ,prefix))
 					(t '()))
 				,@(cond (suffix `(:suffix ,suffix))
 				  (t '())))
-		      (let ((,outified-srmvar
-			       (stream-outify ,realsrmvar)))
-			 ,@(expand-out-body cmd outified-srmvar))))))))
+		      (let ((,stream  ;;;; ,outified-pp-srmvar
+			       (stream-outify ,stream ;;;; ,pp-srmvar   ;;;; ,realsrmvar
+			       )))
+			 ,@(expand-out-body cmd stream ;;;; outified-pp-srmvar
+			   )))))))
 
 (defun pp-block-analyze (pp-block-body)
    (let ((pre (car pp-block-body)) (prefix false))

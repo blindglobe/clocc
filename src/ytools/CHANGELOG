@@ -1,3 +1,8 @@
+2004-09-02: Replace 'assoc' with 'assq' in expansion of 'alist-entry'
+            (to avoid confusing Nisp). (Version 1.4.3)
+
+2004-08-22: Interaction between 'outin' and pretty-printer streamlined.
+	
 2004-08-11: Stuff after :proceed and :prompt-for is now a list of args
             suitable for 'out'.  In the case of :prompt-for, the last
 	    element is the default, and the out-args don't include that

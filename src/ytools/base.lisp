@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.13 2004/08/09 21:35:49 airfoyle Exp $
+;;;$Id: base.lisp,v 1.14 2004/09/11 15:29:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -456,7 +456,7 @@
 	    (xvar (gensym)) (newvar (gensym)) (lvar (gensym))
             (storevar (car lstores)))
          (values `(,xvar ,@ltemps ,lvar ,entry-var)
-                 `(,x ,@lvals ,lacc (assoc ,xvar ,lvar :test #'eq))
+                 `(,x ,@lvals ,lacc (assq ,xvar ,lvar))
                  `(,newvar)
                  `(progn
                      (cond ((not ,entry-var)

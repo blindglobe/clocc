@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.7 2000/04/27 22:32:10 sds Exp $
+;;; $Id: xml.lisp,v 2.8 2000/05/02 15:40:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -194,6 +194,7 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
 ;;; XML streams
 ;;;
 
+(eval-when (compile load eval)  ; for CMUCL
 (defclass xml-stream-in (fundamental-character-input-stream)
   ((input :initarg :stream :initarg :input :type stream :accessor xmlis-st)
    (all-streams :type list :accessor xmlis-all)
@@ -202,6 +203,7 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
    (comment :accessor xmlis-comment :documentation
             "nil - outside comment, t - inside, 1 - inside, one `-' read"))
   (:documentation "The input stream for reading XML."))
+)
 
 (defsubst stream-length (st)
   "A safe wrap around for `file-stream'."

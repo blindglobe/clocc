@@ -19,7 +19,7 @@
 ;;;----------------------------------------------------------------------------------+
 
 
-(in-package "USER")
+(in-package "COMMON-LISP-USER")
 
 (assert
   (find-package "COMMON-LISP") ()

@@ -2,6 +2,7 @@
 
 (in-package :asdf)
 
+#+cmucl
 (defsystem :clio
     :depends-on ( :clue )
     :components

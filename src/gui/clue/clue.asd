@@ -2,6 +2,7 @@
 
 (in-package :asdf)
 
+#+cmucl
 (defsystem :clue
     :depends-on ( #+cmu :cmucl-clx #-cmu :clx)
     :components

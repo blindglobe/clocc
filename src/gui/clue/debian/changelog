@@ -1,10 +1,25 @@
+cl-clue (20050302) unstable; urgency=low
+
+  * Removed CVS directories.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  2 Mar 2005 13:57:32 +0100
+
+cl-clue (20040707) unstable; urgency=low
+
+  * Now uses COMMON-LISP-USER instead of the USER package.
+  * Do not build on sbcl, due to the fact that sbcl uses 
+    CLX without classes (!).
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 Jul 2004 10:40:04 +0200
+
 cl-clue (20030911) unstable; urgency=low
 
   * Now follow CL package naming standard.
   * Works again with cmucl. Closes: #210273
   * Now uses asdf.
+  * Does not conflict with the old version to give a smooth upgrade.. 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 16 Sep 2003 10:06:39 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 16 Sep 2003 18:23:21 +0200
 
 clue (20011231) unstable; urgency=low
 

@@ -9,7 +9,6 @@ Package: cl-clue
 Architecture: all
 Depends: common-lisp-controller (>= 3.45), cmucl-source
 Replaces: clio, pictures, clue
-Conflicts: clio, pictures, clue
 Description: Lisp package for clue/clio/pictures: X interfaces for lisp
  Clue is to lisp what xlib is to C. It's basic, but
  close to the metal.

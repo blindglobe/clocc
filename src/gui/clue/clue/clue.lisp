@@ -16,7 +16,7 @@
 ;;; express or implied warranty.
 ;;;
 
-(in-package "USER")
+(in-package "COMMON-LISP-USER")
 ;;
 ;; Check required packages
 ;;

@@ -46,7 +46,7 @@ binary-arch: build
 	dh_installmenu
 #	dh_installinit
 	dh_installcron
-	dh_installmanpages
+	dh_installman
 #	dh_undocumented
 	dh_installchangelogs
 	dh_link

@@ -1,3 +1,12 @@
+cl-memoization (20050302) unstable; urgency=low
+
+  * Removed CVS files
+  * Now native version
+  * Updated original location
+  * Updated standards version.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  2 Mar 2005 13:43:38 +0100
+
 cl-memoization (1.0-9) unstable; urgency=low
 
   * Don't use :USER package anymore. closes: #194831 

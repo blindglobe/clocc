@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.6 2000/03/22 23:54:05 sds Exp $
+;;; $Id: sys.lisp,v 1.7 2000/03/23 04:06:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 ;;; $Log: sys.lisp,v $
+;;; Revision 1.7  2000/03/23 04:06:59  sds
+;;; (+whitespace+): moved to cllib/withtype
+;;;
 ;;; Revision 1.6  2000/03/22 23:54:05  sds
 ;;; use package prefixes for CMU CL and GCL
 ;;;
@@ -39,8 +42,7 @@
 (export
  '(getenv variable-special-p arglist class-slot-list
    probe-directory default-directory chdir sysinfo
-   +month-names+ +week-days+ +time-zones+ +whitespace+
-   tz->string current-time))
+   +month-names+ +week-days+ +time-zones+ tz->string current-time))
 
 ;;;
 ;;; System
@@ -240,10 +242,6 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
     (0 "GMT" . "GDT") (-2 "MET" . "MET DST"))
   "*The string representations of the time zones.")
-
-(defconst +whitespace+ (simple-array character (*))
-  (mk-arr 'character '(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page))
-  "*The whitespace characters.")
 
 (defun tz->string (tz)
   "Convert the CL timezone (rational [-24;24], multiple of 3600) to a string."

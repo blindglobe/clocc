@@ -4,7 +4,7 @@
 (proclaim '(special log))
 
 ;;; function-keywords
-(my-assert
+(check-for-bug :section7-legacy-7
  (progn
    (defmethod gf1 ((a integer) &optional (b 2)
 		   &key (c 3) ((:dee d) 4) e ((eff f)))
@@ -12,34 +12,34 @@
    t)
  T)
 
-(my-assert
+(check-for-bug :section7-legacy-15
  (eq (find-method #'gf1 '() (list (find-class 'integer)))  'nil)
  nil)					; XXX
 
-(my-assert
+(check-for-bug :section7-legacy-19
  (multiple-value-list
   (function-keywords (find-method #'gf1 '()
                                   (list (find-class 'integer)))))
  ((:C :DEE :E EFF) nil))
 
-(my-assert
+(check-for-bug :section7-legacy-25
  (eq (defmethod gf2 ((a integer))
        (list a b c d e f)) 'nil)
  nil)					; XXX
 
-(my-assert
+(check-for-bug :section7-legacy-30
  (multiple-value-list
   (function-keywords (find-method #'gf2 '() (list (find-class 'integer)))))
  (() nil))
 
-(my-assert
+(check-for-bug :section7-legacy-35
  (progn
    (defmethod gf3 ((a integer) &key b c d &allow-other-keys)
      (list a b c d e f))
    t)
  t)
 
-(my-assert
+(check-for-bug :section7-legacy-42
  (multiple-value-list
   (function-keywords (find-method #'gf3 '() (list (find-class 'integer)))))
  ((:B :C :D) t))

@@ -6,63 +6,63 @@
 
 ;;  eval
 
-(my-assert
+(check-for-bug :eval20-legacy-9
  (eval (list 'cdr
 	     '(car (list (cons 'a 'b) 'c))))
  b)
 
-(my-assert
+(check-for-bug :eval20-legacy-14
  (makunbound 'x)
  x)
 
-(my-assert
+(check-for-bug :eval20-legacy-18
  (eval 'x)
  UNBOUND-VARIABLE)
 
-(my-assert
+(check-for-bug :eval20-legacy-22
  (setf x 3)
  3)
 
-(my-assert
+(check-for-bug :eval20-legacy-26
  (eval 'x)
  3)
 
 ;; constantp
 
-(my-assert
+(check-for-bug :eval20-legacy-32
  (constantp 2)
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-36
  (constantp #\r)
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-40
  (constantp "max")
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-44
  (constantp '#(110))
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-48
  (constantp :max)
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-52
  (constantp T)
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-56
  (constantp NIL)
  T)
 
-(my-assert
+(check-for-bug :eval20-legacy-60
  (constantp 'PI)
  #-CLISP T
  #+CLISP NIL)
 
-(my-assert
+(check-for-bug :eval20-legacy-65
  (constantp '(quote foo))
  T)
 

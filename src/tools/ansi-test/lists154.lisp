@@ -1,7 +1,7 @@
 ;;; based on v1.1.1.1 -*- mode: lisp -*-
 (in-package :cl-user)
 
-(my-assert
+(check-for-bug :lists154-legacy-4
  (subst 'a 'b
 	'(u b
 	    (b)
@@ -10,7 +10,7 @@
     (a)
     c))
 
-(my-assert
+(check-for-bug :lists154-legacy-13
  (subst 'a 'b
 	'(u b
 	    (b)
@@ -24,7 +24,7 @@
     (b . a)
     a . a))
 
-(my-assert
+(check-for-bug :lists154-legacy-27
  (subst 'a 'b
 	'(u b
 	    (b)
@@ -34,7 +34,7 @@
 	    (not (eql x y))))
  a)
 
-(my-assert
+(check-for-bug :lists154-legacy-37
  (subst 'a 'b
 	'(u b
 	    (b)
@@ -46,7 +46,7 @@
     (a)
     c))
 
-(my-assert
+(check-for-bug :lists154-legacy-49
  (subst 'a 'b
 	'(u b
 	    (b)
@@ -60,17 +60,17 @@
 		(car u))))
  (u . a))
 
-(my-assert
+(check-for-bug :lists154-legacy-63
  (subst-if 'nummmer 'numberp
 	   '((a (7 (v 6)))))
  ((a (nummmer (v nummmer)))))
 
-(my-assert
+(check-for-bug :lists154-legacy-68
  (subst-if-not 'nummmer 'numberp
 	       '((a (7 (v 6)))))
  nummmer)
 
-(my-assert
+(check-for-bug :lists154-legacy-73
  (subst-if-not 'nummmer
 	       #'(lambda (x)
 		   (and (listp x)
@@ -78,7 +78,7 @@
 	       '((a (7 (v 6)))))
  nummmer)
 
-(my-assert
+(check-for-bug :lists154-legacy-81
  (subst-if-not 'nummmer
 	       #'(lambda (x)
 		   (or (listp x)
@@ -86,7 +86,7 @@
 	       '((a (7 (v 6)))))
  ((nummmer (7 (nummmer 6)))))
 
-(my-assert
+(check-for-bug :lists154-legacy-89
  (nsubst 'a 'b
 	 '(u b
 	     (b)
@@ -100,7 +100,7 @@
     (b . a)
     a . a))
 
-(my-assert
+(check-for-bug :lists154-legacy-103
  (nsubst 'a 'b
 	 '(u b
 	     (b)
@@ -112,7 +112,7 @@
     (a)
     c))
 
-(my-assert
+(check-for-bug :lists154-legacy-115
  (nsubst 'a 'b
 	 '(u b
 	     (b)
@@ -122,7 +122,7 @@
 	     (not (eql x y))))
  a)
 
-(my-assert
+(check-for-bug :lists154-legacy-125
  (nsubst-if 'oo 'numberp
 	    '(a b c
 		(3 (4)
@@ -131,14 +131,14 @@
     (oo (oo)
 	oo)))
 
-(my-assert
+(check-for-bug :lists154-legacy-134
  (nsubst-if-not 'oo 'numberp
 		'(a b c
 		    (3 (4)
 		       0)))
  oo)
 
-(my-assert
+(check-for-bug :lists154-legacy-141
  (nsubst-if-not 'oo
 		#'(lambda (x)
 		    (or (atom x)
@@ -148,7 +148,7 @@
 		       0)))
  oo)
 
-(my-assert
+(check-for-bug :lists154-legacy-151
  (nsubst-if-not 'oo
 		#'(lambda (x)
 		    (and (atom x)
@@ -158,7 +158,7 @@
 		       0)))
  oo)
 
-(my-assert
+(check-for-bug :lists154-legacy-161
  (nsubst-if-not 'oo
 		#'(lambda (x)
 		    (or (list x)
@@ -170,7 +170,7 @@
     (3 (4)
        0)))
 
-(my-assert
+(check-for-bug :lists154-legacy-173
  (nsubst-if-not 'oo
 		#'(lambda (x)
 		    (or (list x)
@@ -182,13 +182,13 @@
     (3 (4)
        0)))
 
-(my-assert
+(check-for-bug :lists154-legacy-185
  (sublis '((a . a1)
 	   (b . b1))
 	 '(a b))
  (a1 b1))
 
-(my-assert
+(check-for-bug :lists154-legacy-191
  (sublis '((a . a1)
 	   (b . b1))
 	 '(a b
@@ -196,7 +196,7 @@
  (a1 b1
      (b1 . c)))
 
-(my-assert
+(check-for-bug :lists154-legacy-199
  (sublis '((a . a1)
 	   (b . b1)
 	   (nil . nil1))
@@ -206,7 +206,7 @@
      (b1 . c) .
      nil1))
 
-(my-assert
+(check-for-bug :lists154-legacy-209
  (sublis '((a . a1)
 	   (b . b1)
 	   (nil . nil1))
@@ -216,7 +216,7 @@
      (b1 c . nil1) .
      nil1))
 
-(my-assert
+(check-for-bug :lists154-legacy-219
  (sublis '((a . a1)
 	   (b . b1)
 	   (nil . nil1))
@@ -225,7 +225,7 @@
 	 :test-not 'eql)
  a1)
 
-(my-assert
+(check-for-bug :lists154-legacy-228
  (sublis '((a . a1)
 	   (b . b1)
 	   (nil . nil1))
@@ -237,7 +237,7 @@
 		 (eql x y))))
  a1)
 
-(my-assert
+(check-for-bug :lists154-legacy-240
  (sublis '(((a) .
 	    uu)
 	   (a . ii))
@@ -246,13 +246,13 @@
  (i (ii)
     ii))
 
-(my-assert
+(check-for-bug :lists154-legacy-249
  (sublis '(((a) . uu) (a . ii))
 	 '(i (a) a)
 	 :key #'(lambda (x) (if (listp x) (car x))))
  (i ii . ii))				; key wird angewandt auf: x ein blatt des baumes
 
-(my-assert
+(check-for-bug :lists154-legacy-255
  (sublis '(((a) . uu) (a . ii))
 	 '(i (a) a)
 	 :test #'(lambda (x y) (if (listp y) (eql x (car y)))))
@@ -260,25 +260,25 @@
  #+(or clisp cmu sbcl)              (i (uu) uu) ; x ein blatt, y aus der aliste
  #-(or xcl clisp akcl cmu sbcl lucid allegro ecls) unknown)
 
-(my-assert
+(check-for-bug :lists154-legacy-263
  (nsublis '(((a) . uu) (a . ii))
 	  '(i (a) a)
 	  :key #'(lambda (x) (if (listp x) (car x))))
  (i ii . ii))				; key wird angewandt auf: x ein blatt des baumes
 
-(my-assert
+(check-for-bug :lists154-legacy-269
  (nsublis '(((a) . uu) (a . ii))
 	  '(i (a) a)
 	  :test #'(lambda (x y) (if (listp x) (equal x y))))
  (i uu . uu))
 
-(my-assert
+(check-for-bug :lists154-legacy-275
  (nsublis '(((a) . uu) (a . ii))
 	  '(i (a) a)
 	  :test #'(lambda (x y) (if (listp y) (equal x y))))
  (i uu . uu))
 
-(my-assert
+(check-for-bug :lists154-legacy-281
  (nsublis '(((a) . uu) (a . ii))
 	  '(i (a) a)
 	  :test #'(lambda (x y) (if (listp y) (eql x (car y)))))

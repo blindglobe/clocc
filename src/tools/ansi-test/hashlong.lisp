@@ -18,7 +18,7 @@
 (setf (symbol-function 'setf-gethash)
       (symbol-function 'sb-impl::%puthash)) t
 
-(my-assert
+(check-for-bug :hashlong-legacy-21
  (defun symbole ()
    (let ((b 0.)
 	 (hash-table (make-hash-table :size 20.
@@ -58,6 +58,6 @@
  symbole)
 
 
-(my-assert
+(check-for-bug :hashlong-legacy-61
  (symbole) nil)
 

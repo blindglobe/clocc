@@ -19,48 +19,48 @@
 ;; lambda-listen
 (in-package :cl-user)
 
-(my-assert
+(check-for-bug :alltest-legacy-22
  ((lambda (a b)
     (+ a (* b 3)))
   4 5)
  19)
 
-(my-assert
+(check-for-bug :alltest-legacy-28
  ((lambda (a &optional (b 2))
     (+ a (* b 3)))
   4 5)
  19)
 
-(my-assert
+(check-for-bug :alltest-legacy-34
  ((lambda (&optional (a 2 b) (c 3 d) &rest x)
     (list a b c d x)))
  (2 nil 3 nil nil))
 
-(my-assert
+(check-for-bug :alltest-legacy-39
  ((lambda (a b &key c d)
     (list a b c d))
   1 2)
  (1 2 nil nil))
 
-(my-assert
+(check-for-bug :alltest-legacy-45
  ((lambda (a &optional (b 3) &rest x &key c (d a))
     (list a b c d x))
   1)
  (1 3 nil 1 nil))
 
-(my-assert
+(check-for-bug :alltest-legacy-51
  ((lambda (x &aux (a 3) (b 4))
     (+ x (* a b)))
   2)
  14)
 
-(my-assert
+(check-for-bug :alltest-legacy-57
  ((lambda (x y &optional a b &rest z &key c (d y) &aux (u 3) (v 4))
     (+ x y a (* b (car z)) c (* d u) v))
   3 4 5 2 7 :c 6 :d 8)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-63
  ((lambda (x y)
     ((lambda (a b)
        (list a b))
@@ -68,13 +68,13 @@
   5 6)
  (u v))
 
-(my-assert
+(check-for-bug :alltest-legacy-71
  ((lambda (x &allow-other-keys)
     (list x y))
   2 :y 3)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-77
  lambda-list-keywords
  #+xcl (&optional &rest &key &allow-other-keys &aux &body &whole system::&environment)
  #+clisp (&optional &rest &key &allow-other-keys &aux &body &whole &environment)
@@ -84,7 +84,7 @@
  (&optional &rest &key &aux &body &whole &allow-other-keys &environment)
  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-87
  (let ((s (prin1-to-string lambda-parameters-limit )))
    (or #+xcl (equal s "128")
        #+clisp (equal s "65536")
@@ -100,397 +100,397 @@
 ;; kap 6 praedikate
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-103
  (typep 'nil 'null)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-107
  (typep (list 'a 'b 'c) 'null)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-111
  (typep 'abc 'symbol)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-115
  (typep 4 'atom)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-119
  (typep 55 'cons)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-123
  (typep (list 'a (list 'b 'c)) 'list)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-127
  (typep 5/8 'number)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-131
  (typep -800 'integer)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-135
  (typep 5/7 'rational)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-139
  (typep 2.718 'float)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-143
  (typep #c(1.23 3.56) 'float)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-147
  (typep #\a 'character)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-151
  (typep "abc" 'string)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-155
  (typep '#(1 2 3) 'string)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-159
  (typep '#(a b c) 'bit-vector)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-163
  (typep '#(a b c) 'vector)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-167
  (typep "abc" 'vector)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-171
  (typep '#(1 2 3 4) 'simple-vector)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-175
  (typep 3 'simple-vector)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-179
  (typep "a b cd" 'simple-string)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-183
  (typep 'abc 'simple-string)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-187
  (typep #*1101 'simple-bit-vector)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-191
  (typep '#(1 0 0 1) 'simple-bit-vector)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-195
  (typep '#2a((a b)(c d)) 'array)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-199
  (setq x 7)
  7)
 
-(my-assert
+(check-for-bug :alltest-legacy-203
  (typep x 'compiled-function)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-207
  (typep x 'common)
  error)
 
 (unintern 'x)
 
-(my-assert
+(check-for-bug :alltest-legacy-213
  (subtypep 'character 'number)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-217
  (subtypep 'number 'character)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-221
  (subtypep 'string 'number)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-225
  (subtypep 'complex 'number)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-229
  (subtypep 'float 'number)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-233
  (subtypep 'fixnum 'number)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-237
  (subtypep 'rational 'number)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-241
  (subtypep 'float 'complex)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-245
  (subtypep 'integer 'rational)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-249
  (subtypep 'number 'vector)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-253
  (subtypep 'vector 'array)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-257
  (subtypep 'number 'array)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-261
  (null 'nil)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-265
  (symbolp *standard-input*)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-269
  (symbolp 'car)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-273
  (atom 'abc)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-277
  (consp (acons 'x 'y 'a))
  #+xcl error
  #+(or clisp akcl allegro cmu sbcl sbcl ecls) t
  #-(or xcl clisp akcl allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-283
  (listp (list (append (cons 'a 'b) 'c)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-287
  (listp 'a)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-291
  (listp nil)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-295
  (listp '(a b c))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-299
  (numberp #*101)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-303
  (numberp -5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-307
  (integerp 5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-311
  (integerp #\+)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-315
  (rationalp 0)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-319
  (floatp -5)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-323
  (floatp (read-from-string "1.0e30"))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-327
  (floatp 123.4)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-331
  (complexp 1/2)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-335
  (complexp #c(2 3))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-339
  (characterp #\1)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-343
  (stringp "abc")
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-347
  (stringp :+*/-)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-351
  (bit-vector-p (read-from-string "#5*01110"))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-355
  (vectorp "abc")
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-359
  (simple-vector-p #*101)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-363
  (simple-string-p "abc")
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-367
  (simple-string-p :+*/-)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-371
  (simple-bit-vector-p #*101)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-375
  (arrayp (read-from-string "#7(2 4 3)"))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-379
  (arrayp '(read-from-string "#1a 5.77"))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-383
  (packagep (read-from-string "#5*01110"))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-387
  (packagep *package*)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-391
  (functionp 'atom)
  #-(or cltl2 clisp) t
  #+(or cltl2 clisp) nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-396
  (compiled-function-p 'do)
  nil)
 
 ;; commonp
 
-(my-assert
+(check-for-bug :alltest-legacy-402
  (eq (list 1 2 3 4 5)
      (copy-list (list 1 2 3 4 5)))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-407
  (setq x (list (cons 1 'a) (cons 2 'b) (cons 3 'c)) )
  ((1 . a) (2 . b) (3 . c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-411
  (eq (cadr x) (cadr (copy-alist x)))
  nil)
 
 (unintern 'x)
 
-(my-assert
+(check-for-bug :alltest-legacy-417
  (eq #\a #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-421
  (booleanp (eq "Foo" "Foo"))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-425
  (eq "Foo" (copy-seq "Foo"))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-429
  (eql #c(3.0 -4.0) #c(3 -4))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-433
  (eql (cons 'a 'b) (cons 'a 'c))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-437
  (equal (list 1 2 3 4 5) (copy-list (list 1 2 3 4 5)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-441
  (equal x (copy-alist x))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-445
  (equal 3 3)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-449
  (equal 3 3.0)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-453
  (equal 3.0 3.0)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-457
  (equal #c(3 -4) #c(3 -4))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-461
  (equalp (list 1 2 3 4 5) (copy-list (list 1 2 3 4 5)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-465
  (equalp "            foo" "            FOO")
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-469
  (equalp "            fou" "            FOO")
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-473
  (not 1)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-477
  (not nil)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-481
  (and (eq 1 2) (eq 2 3) (eq 3 4) (eq 4 4))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-485
  (and (eq 1 2) (eq 3 3) (eq 3 4) (eq 4 4))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-489
  (or (eq 2 2) (eq 3 3) (eq 3 4) (eq 4 4))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-493
  (or (eq 1 2) (eq 2 3) (eq 3 4) (eq 4 5))
  nil)
 
@@ -500,180 +500,180 @@
 ;;  quote, function, symbol-value, symbol-function, boundp, fboundp,
 ;;  special-form-p, setq, psetq, set, makunbound, fmakunbound,
 
-(my-assert
+(check-for-bug :alltest-legacy-503
  (setq li1 (list 'a (list 'b)
 		 (list (list 'c)
 		       (list 'd))))
  (a (b) ((c) (d))))
 
-(my-assert
+(check-for-bug :alltest-legacy-509
  (setq vec1 (vector 0 1 2 3))
  #(0 1 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-513
  (setf (nth 1 li1) 'uu)
  uu)
 
-(my-assert
+(check-for-bug :alltest-legacy-517
  (eval 'li1)
  (a uu ((c) (d))))
 
-(my-assert
+(check-for-bug :alltest-legacy-521
  (setf (elt li1 1) 'oo)
  oo)
 
-(my-assert
+(check-for-bug :alltest-legacy-525
  (setf (elt vec1 1) 'oo)
  oo)
 
-(my-assert
+(check-for-bug :alltest-legacy-529
  (eval 'li1)
  (a oo ((c) (d))))
 
-(my-assert
+(check-for-bug :alltest-legacy-533
  (eval 'vec1)
  #(0 oo 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-537
  (setf (rest li1) '((ww)))
  ((ww)))
 
-(my-assert
+(check-for-bug :alltest-legacy-541
  (eval 'li1)
  (a (ww)))
 
-(my-assert
+(check-for-bug :alltest-legacy-545
  (setf (first li1) 'aa)
  aa)
 
-(my-assert
+(check-for-bug :alltest-legacy-549
  (first li1)
  aa)
 
-(my-assert
+(check-for-bug :alltest-legacy-553
  (setf (second li1) 'bb)
  bb)
 
-(my-assert
+(check-for-bug :alltest-legacy-557
  (eval 'li1)
  (aa bb))
 
-(my-assert
+(check-for-bug :alltest-legacy-561
  (setf (rest li1) (list 2 3 4 5 6 7 8 9 10))
  (2 3 4 5 6 7 8 9 10))
 
-(my-assert
+(check-for-bug :alltest-legacy-565
  (setf (second li1) 22)
  22)
 
-(my-assert
+(check-for-bug :alltest-legacy-569
  (eval 'li1)
  (aa 22 3 4 5 6 7 8 9 10))
 
-(my-assert
+(check-for-bug :alltest-legacy-573
  (setf (third li1) '33)
  33)
 
-(my-assert
+(check-for-bug :alltest-legacy-577
  (setf (fourth li1) '44)
  44)
 
-(my-assert
+(check-for-bug :alltest-legacy-581
  (setf (fifth li1) '55)
  55)
 
-(my-assert
+(check-for-bug :alltest-legacy-585
  (setf (sixth li1) '66)
  66)
 
-(my-assert
+(check-for-bug :alltest-legacy-589
  (setf (seventh li1) '77)
  77)
 
-(my-assert
+(check-for-bug :alltest-legacy-593
  (setf (eighth li1) '88)
  88)
 
-(my-assert
+(check-for-bug :alltest-legacy-597
  (setf (ninth li1) '99)
  99)
 
-(my-assert
+(check-for-bug :alltest-legacy-601
  (setf (tenth li1) '1010)
  1010)
 
-(my-assert
+(check-for-bug :alltest-legacy-605
  (eval 'li1)
  (aa 22 33 44 55 66 77 88 99 1010))
 
-(my-assert
+(check-for-bug :alltest-legacy-609
  (setf (first li1) '(((a))))
  (((a))))
 
-(my-assert
+(check-for-bug :alltest-legacy-613
  (setf (caaar li1) 'uu)
  uu)
 
-(my-assert
+(check-for-bug :alltest-legacy-617
  (caaar li1)
  uu)
 
-(my-assert
+(check-for-bug :alltest-legacy-621
  (car li1)
  ((uu)))
 
-(my-assert
+(check-for-bug :alltest-legacy-625
  (setf (caar li1) 'oo)
  oo)
 
-(my-assert
+(check-for-bug :alltest-legacy-629
  (eval 'li1)
  ((oo) 22 33 44 55 66 77 88 99 1010))
 
-(my-assert
+(check-for-bug :alltest-legacy-633
  (setf (car li1) 'ii)
  ii)
 
-(my-assert
+(check-for-bug :alltest-legacy-637
  (eval 'li1)
  (ii 22 33 44 55 66 77 88 99 1010))
 
-(my-assert
+(check-for-bug :alltest-legacy-641
  (setf (cdddr li1) 'pp)
  pp)
 
-(my-assert
+(check-for-bug :alltest-legacy-645
  (eval 'li1)
  (ii 22 33 . pp))
 
-(my-assert
+(check-for-bug :alltest-legacy-649
  (setf (caddr li1) '333)
  333)
 
-(my-assert
+(check-for-bug :alltest-legacy-653
  (eval 'li1)
  (ii 22 333 . pp))
 
-(my-assert
+(check-for-bug :alltest-legacy-657
  (setf (svref vec1 2) 'kk)
  kk)
 
-(my-assert
+(check-for-bug :alltest-legacy-661
  (eval 'vec1)
  #(0 oo kk 3))
 
 (unintern 'vec1)
 (unintern 'li1)
 
-(my-assert
+(check-for-bug :alltest-legacy-668
  (setf (get 'a 'b) 'uu)
  uu)
 
-(my-assert
+(check-for-bug :alltest-legacy-672
  (get 'a 'b)
  uu)
 
-(my-assert
+(check-for-bug :alltest-legacy-676
  (setf (getf
 	(cadr
 	 (setq xx
@@ -683,43 +683,43 @@
        'v222)
  v222)
 
-(my-assert
+(check-for-bug :alltest-legacy-686
  (eval 'xx)
  (aaa (i1 v1 i2 v222)))
 
-(my-assert
+(check-for-bug :alltest-legacy-690
  (getf (cadr xx) 'i2)
  v222)
 
-(my-assert
+(check-for-bug :alltest-legacy-694
  (getf (cadr xx) 'i1)
  v1)
 
 (unintern 'xx)
 
-(my-assert
+(check-for-bug :alltest-legacy-700
  (setf (documentation 'beispiel 'typ1) "doc 1")
  "doc 1")
 
-(my-assert
+(check-for-bug :alltest-legacy-704
  (setf (documentation 'beispiel 'typ2) "doc 2")
  "doc 2")
 
-(my-assert
+(check-for-bug :alltest-legacy-708
  (documentation 'beispiel 'typ2)
  #+xcl (typ2 . "doc 2")
  #-xcl "doc 2")
 
-(my-assert
+(check-for-bug :alltest-legacy-713
  (setf (documentation 'beispiel 'typ2) "doc 3")
  "doc 3")
 
-(my-assert
+(check-for-bug :alltest-legacy-717
  (documentation 'beispiel 'typ2)
  #+xcl (typ2 . "doc 3")
  #-xcl "doc 3")
 
-(my-assert
+(check-for-bug :alltest-legacy-722
  (symbol-plist 'beispiel)
  #+xcl (documentation ((typ2 . "doc 3") (typ1 . "doc 1")))
  #+clisp (system::documentation-strings (typ2 "doc 3" typ1 "doc 1"))
@@ -727,11 +727,11 @@
  #+(or cmu sbcl ecls) nil
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-730
  (setf (symbol-value 'xx) 'voelligneu)
  voelligneu)
 
-(my-assert
+(check-for-bug :alltest-legacy-734
  (eval 'xx)
  voelligneu)
 
@@ -741,7 +741,7 @@
 ;; get-setf-method, get-setf-method-multiple-value, apply, funcall, progn,
 ;; prog1, prog2,
 
-(my-assert
+(check-for-bug :alltest-legacy-744
  (let ((x (list 'a 'b 'c)))
    (rplacd (last x) x)
    (list-length x))
@@ -750,11 +750,11 @@
 ;; let*, compiler-let, progv, flet, labels, macrolet, if, when, unless, cond,
 ;; case, typecase, block, loop, do, do*, dolist, dotimes,
 
-(my-assert
+(check-for-bug :alltest-legacy-753
  (mapcar (function (lambda (x) (list x))) (list 'a 'b 'c))
  ((a) (b) (c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-757
  (mapc (function
 	(lambda (x y z)
 	  (list x y z)))
@@ -763,26 +763,26 @@
        (list 'u 'i 'v))
  (a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-766
  (mapl (function (lambda (x y z) (list x y z))) (list 'a 'b 'c) (list 1 2 3)
        (list 'u 'i 'v))
  (a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-771
  (maplist (lambda (x y z) (list x y z))
 	  (list 'a 'b 'c)
 	  (list 1 2 3)
 	  (list 'u 'i 'v))
  (((a b c) (1 2 3) (u i v)) ((b c) (2 3) (i v)) ((c) (3) (v))))
 
-(my-assert
+(check-for-bug :alltest-legacy-778
  (mapcon (lambda (x y z) (list x y z))
 	 (list 'a 'b)
 	 (list 1 2 3)
 	 (list 'u 'i 'v))
  ((a b) (1 2 3) (u i v) (b) (2 3) (i v)))
 
-(my-assert
+(check-for-bug :alltest-legacy-785
  (mapcan (lambda (x y z) (list x y z))
 	 (list 'a 'b 'c)
 	 (list 1 2 3)
@@ -811,11 +811,11 @@
 
 ;; make-symbol, copy-symbol, gensym, gentemp, symbol-package,
 
-(my-assert
+(check-for-bug :alltest-legacy-814
  (keywordp 36)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-818
  (keywordp :rename)
  t)
 
@@ -832,217 +832,217 @@
 ;; kap 12 zahlen
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-835
  (zerop -456)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-839
  (zerop 0)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-843
  (plusp 3)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-847
  (plusp 3453786543987565)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-851
  (minusp -456)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-855
  (oddp -1)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-859
  (oddp 0)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-863
  (evenp -456)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-867
  (evenp -345)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-871
  (= 5/2 2.5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-875
  (/= 3.0 3)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-879
  (/= 3.0 #c(3.0 1.0))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-883
  (< 3.0 3)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-887
  (< 3 3.0 3 #c(3.0 0.0))
  #+(or allegro cmu sbcl sbcl) nil
  #-(or allegro cmu sbcl sbcl) error)
 
-(my-assert
+(check-for-bug :alltest-legacy-892
  (< -5 -4 -2 0 4 5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-896
  (> 8 7 6 5 4)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-900
  (> 3 3.0 3 #c(3.0 0.0))
  #+(or allegro cmu sbcl sbcl) nil
  #-(or allegro cmu sbcl sbcl) error)
 
-(my-assert
+(check-for-bug :alltest-legacy-905
  (<= 3.0 3)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-909
  (<= 3 3)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-913
  (<= 1 3 3 2 5)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-917
  (<= 5/2 2.5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-921
  (>= -5 -4 -2 0 4 5)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-925
  (max 1 3 2 -7)
  3)
 
 ;; min,
 
-(my-assert
+(check-for-bug :alltest-legacy-931
  (+ 1 1/2 0.5 #c(3.0 5.5))
  #c(5.0 5.5))
 
-(my-assert
+(check-for-bug :alltest-legacy-935
  (- 3 0 3 5 -6)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-939
  (- #c(0 6) 1/4 0.5 7)
  #c(-7.75 6.0))
 
-(my-assert
+(check-for-bug :alltest-legacy-943
  (* 7 6 5 4 3 2 1)
  5040)
 
-(my-assert
+(check-for-bug :alltest-legacy-947
  (* 2 2 2.0 2)
  16.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-951
  (/ -8)
  -1/8)
 
-(my-assert
+(check-for-bug :alltest-legacy-955
  (/ 4 2)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-959
  (1+ 0)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-963
  (1+ #c(0 1))
  #c(1 1))
 
-(my-assert
+(check-for-bug :alltest-legacy-967
  (1- 5.0)
  4.0)
 
 ;; incf, decf,
 
-(my-assert
+(check-for-bug :alltest-legacy-973
  (conjugate #c(3/5 4/5))
  #c(3/5 -4/5))
 
-(my-assert
+(check-for-bug :alltest-legacy-977
  (gcd 91 -49)
  7)
 
-(my-assert
+(check-for-bug :alltest-legacy-981
  (lcm 14 35)
  70)
 
-(my-assert
+(check-for-bug :alltest-legacy-985
  (prin1-to-string (exp 1) )
  "2.7182817")				; "2.718282"
 
-(my-assert
+(check-for-bug :alltest-legacy-989
  (expt #c(0 1) 2)
  -1)
 
-(my-assert
+(check-for-bug :alltest-legacy-993
  (prin1-to-string (expt 2 #c(0 1)) )
  "#C(0.7692389 0.63896126)")		; "#C(0.7692389 0.6389612)"
 
-(my-assert
+(check-for-bug :alltest-legacy-997
  (prin1-to-string (log -3 10) )
  "#C(0.47712126 1.3643764)")		; "#C(0.4771213 1.364376)"
 
-(my-assert
+(check-for-bug :alltest-legacy-1001
  (log 3 0)
  #+(or xcl cmu sbcl sbcl) 0
  #+allegro 0.0
  #-(or xcl allegro cmu sbcl sbcl) error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1007
  (sqrt 9)
  3.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1011
  (sqrt -9.0)
  #c(0.0 3.0))
 
-(my-assert
+(check-for-bug :alltest-legacy-1015
  (isqrt 9)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1019
  (isqrt 26)
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-1023
  (abs 6)
  6)
 
-(my-assert
+(check-for-bug :alltest-legacy-1027
  (abs -6)
  6)
 
 ;; phase,
 
-(my-assert
+(check-for-bug :alltest-legacy-1033
  (signum 0)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1037
  (signum -4)
  -1)
 
-(my-assert
+(check-for-bug :alltest-legacy-1041
  (signum 4)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-1045
  (prin1-to-string (sin (* 8 (/ pi 2))) )
  #+xcl "-4.576950980887866D-17"
  #+clisp "2.0066230454737344098L-19"
@@ -1050,15 +1050,15 @@
  #+(or allegro cmu sbcl sbcl ecls) "-4.898425415289509d-16"
  #-(or xcl clisp akcl allegro cmu sbcl  ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1053
  (prin1-to-string (sin (expt 10 3)) )
  "0.82687956")				; "0.8268796"
 
-(my-assert
+(check-for-bug :alltest-legacy-1057
  (cos 0)
  1.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1061
  (prin1-to-string (cos (/ pi 2)) )
  #+xcl "5.721188726109832D-18"
  #+clisp "-2.5082788076048218878L-20"
@@ -1066,11 +1066,11 @@
  #+(or allegro cmu sbcl sbcl ecls) "6.123031769111886d-17"
  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1069
  (prin1-to-string (tan 1) )
  "1.5574077")				; "1.557408"
 
-(my-assert
+(check-for-bug :alltest-legacy-1073
  (prin1-to-string (tan (/ pi 2)) )
  #+xcl "1.747888503373944D17"
  #+clisp "-3.986797629004264116L19"
@@ -1079,38 +1079,38 @@
  #+(or allegro cmu sbcl sbcl) "1.6331778728383844d+16"
  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1082
  (prin1-to-string (cis -1) )
  "#C(0.5403023 -0.84147096)")		; "#C(0.5403023 -0.8414709)"
 
-(my-assert
+(check-for-bug :alltest-legacy-1086
  (cis 2.5)
  #c(-0.8011436 0.5984721))
 
-(my-assert
+(check-for-bug :alltest-legacy-1090
  (prin1-to-string (asin -1) )
  "-1.5707964")				; "-1.570796"
 
-(my-assert
+(check-for-bug :alltest-legacy-1094
  (asin 0)
  0.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1098
  (asin 2)
  #+(or cmu sbcl sbcll)
  #c(1.5707964 -1.3169578)
  #-(or cmu sbcl sbcll)
  #c(1.5707964 -1.316958))
 
-(my-assert
+(check-for-bug :alltest-legacy-1105
  (prin1-to-string (acos 0) )
  "1.5707964")				; "1.570796"
 
-(my-assert
+(check-for-bug :alltest-legacy-1109
  (prin1-to-string (acos -1) )
  "3.1415927")				; "3.141593"
 
-(my-assert
+(check-for-bug :alltest-legacy-1113
  (prin1-to-string (acos 2) )
  #+xcl
  "#C(0.0 1.316958)"
@@ -1122,7 +1122,7 @@
  "#C(0.0 1.3169578)"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1125
  (acos 1.00001)
  #+ganz-korrekt
  #c(0.0 0.0044721322)
@@ -1141,130 +1141,130 @@
  #-(or xcl clisp allegro cmu sbcl sbcl)
  #c(0.0 0.0044721322))
 
-(my-assert
+(check-for-bug :alltest-legacy-1144
  (atan 1)
  #+(or xcl allegro cmu sbcl sbcl ecls) 0.7853982
  #+clisp 0.7853981
  #-(or xcl allegro clisp cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1150
  (prin1-to-string pi )
  #+xcl "3.141592653589793D0"
  #+clisp "3.1415926535897932385L0"
  #+(or allegro cmu sbcl sbcl ecls) "3.141592653589793d0"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1157
  (sinh 0)
  0.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1161
  (prin1-to-string (sinh #c(5.0 -9.6)) )
  #+(or cmu sbcl sbcll)
  "#C(-73.06699 12.936809)"
  #-(or cmu sbcl sbcll)
  "#C(-73.06699 12.93681)")
 
-(my-assert
+(check-for-bug :alltest-legacy-1168
  (cosh 0)
  1.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1172
  (prin1-to-string (cosh 1) )
  #+(or cmu sbcl sbcll) "1.5430807"	; round-off error
  #-(or cmu sbcl sbcll) "1.5430806")	; "1.543081"
 
-(my-assert
+(check-for-bug :alltest-legacy-1177
  (tanh 50)
  1.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1181
  (prin1-to-string (tanh 0.00753) )
  #-allegro "0.0075298576"
  #+allegro "0.0075298795")		; "0.007529857"
 
-(my-assert
+(check-for-bug :alltest-legacy-1186
  (prin1-to-string (asinh 0.5) )
  #-(or allegro cmu sbcl sbcl) "0.48121184"
  #+(or allegro cmu sbcl sbcl) "0.4812118") ; "0.4812118"
 
-(my-assert
+(check-for-bug :alltest-legacy-1191
  (prin1-to-string (asinh 3/7) )
  #-(or clisp allegro cmu sbcl sbcl) "0.4164308"
  #+clisp "0.4164307"			; rundungsfehler
  #+(or allegro cmu sbcl sbcl) "0.41643077")
 
-(my-assert
+(check-for-bug :alltest-legacy-1197
  (acosh 0)
  #c(0 1.5707964))
 
-(my-assert
+(check-for-bug :alltest-legacy-1201
  (acosh 1)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1205
  (acosh -1)
  #c(0 3.1415927))
 
-(my-assert
+(check-for-bug :alltest-legacy-1209
  (prin1-to-string (atanh 0.5) )
  "0.54930615")				; "0.5493061"
 
-(my-assert
+(check-for-bug :alltest-legacy-1213
  (prin1-to-string (atanh 3/7) )
  #-(or clisp allegro cmu sbcl sbcl) "0.4581454"
  #+clisp "0.4581453"			; rundungsfehler
  #+(or allegro cmu sbcl sbcl) "0.45814538")
 
-(my-assert
+(check-for-bug :alltest-legacy-1219
  (= (sin (* #c(0 1) 5)) (* #c(0 1) (sinh 5)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1223
  (= (cos (* #c(0 1) 5)) (cosh 5))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1227
  (= (tan (* #c(0 1) 5)) (* #c(0 1) (tanh 5)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1231
  (= (sinh (* #c(0 1) 5)) (* #c(0 1) (sin 5)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1235
  (= (cosh (* #c(0 1) 5)) (cos 5))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1239
  (float 1)
  1.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1243
  (float 0.5)
  0.5)
 
-(my-assert
+(check-for-bug :alltest-legacy-1247
  (rational 2)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1251
  (rational 2.0)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1255
  (rational 2.5)
  5/2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1259
  (rationalize 2.5)
  5/2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1263
  (rationalize 7/3)
  7/3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1267
  (rationalize pi)
  #+xcl 28296953155597409/9007199254740992
  #+clisp 8717442233/2774848045
@@ -1272,190 +1272,190 @@
  #+(or allegro cmu sbcl sbcl) 245850922/78256779
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1275
  (numerator 5/2)
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-1279
  (numerator (/ 8 -6))
  -4)
 
-(my-assert
+(check-for-bug :alltest-legacy-1283
  (denominator 5/2)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1287
  (denominator (/ 8 -6))
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1291
  (gcd (numerator 7/9) (denominator 7/9))
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-1295
  (floor 2.6)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1299
  (floor 2.5)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1303
  (ceiling 2.6)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1307
  (ceiling 2.5)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1311
  (ceiling 2.4)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1315
  (truncate 2.6)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1319
  (truncate 2.5)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1323
  (truncate 2.4)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1327
  (round 2.6)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1331
  (round 2.5)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1335
  (round 2.4)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1339
  (mod 13 4)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-1343
  (mod -13 4)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1347
  (prin1-to-string (rem 13.4 1) )
  #-(or clisp allegro cmu sbcl sbcl) "0.4" ;
  #+xcl "0.3999996"
  #+(or clisp allegro cmu sbcl sbcl) "0.39999962") ; rundungsfehler
 
-(my-assert
+(check-for-bug :alltest-legacy-1353
  (ffloor 2.6)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1357
  (ffloor 2.5)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1361
  (ffloor 2.4)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1365
  (fceiling -0.3)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1369
  (fceiling -0.7)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1373
  (fceiling -2.4)
  -2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1377
  (ftruncate 2.5)
  2.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1381
  (ftruncate 2.4)
  2.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1385
  (fround -0.7)
  -1.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1389
  (fround -2.4)
  -2.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1393
  (decode-float 35.0)
  0.546875)
 
-(my-assert
+(check-for-bug :alltest-legacy-1397
  (decode-float 3.5s0)
  0.875s0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1401
  (scale-float 2.5 5)
  80.0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1405
  (scale-float 0.7541 2)
  3.0164)
 
-(my-assert
+(check-for-bug :alltest-legacy-1409
  (float-radix 2.5)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1413
  (float-radix 3.5d0)
  2)
 
 ;; float-digits, float-precision, float-sign, integer-decode-float,
 
-(my-assert
+(check-for-bug :alltest-legacy-1419
  (complex 1/4 7.3)
  #c(0.25 7.3))
 
-(my-assert
+(check-for-bug :alltest-legacy-1423
  (complex 1 0)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-1427
  (realpart 5)
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-1431
  (realpart #c(1.4 0.0))
  1.4)
 
-(my-assert
+(check-for-bug :alltest-legacy-1435
  (imagpart 5)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1439
  (imagpart #c(1.4 0.0))
  0.0)
 
 ;; logand, logandc1, logandc2, logeqv, logior, lognand, lognor, lognot,
 ;; logorc1, logorc2, logtest, logxor, logbitp, ash,
 
-(my-assert
+(check-for-bug :alltest-legacy-1446
  (logcount 13)
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-1450
  (logcount -13)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-1454
  (integer-length 0)
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1458
  (integer-length 1)
  1)
 
@@ -1464,116 +1464,116 @@
 ;; random,
 
 #+xcl
-(my-assert
+(check-for-bug :alltest-legacy-1467
  (random-state-p
   (eval (read-from-string "(sys::%set-type-pointer sys::%type-random-state 1)")))
  t)
 
 ;; make-random-state,
 
-(my-assert
+(check-for-bug :alltest-legacy-1474
  boole-clr
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-1478
  boole-set
  #+(or xcl allegro cmu sbcl sbcl) 1
  #+(or clisp ecls) 15
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1484
  boole-1
  #+(or xcl allegro cmu sbcl sbcl) 2
  #+clisp 10
  #+ecls 3
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1491
  boole-2
  #+(or xcl allegro cmu sbcl sbcl) 3
  #+clisp 12
  #+ecls 5
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1498
  boole-c1
  #+(or xcl allegro cmu sbcl sbcl) 4
  #+clisp 5
  #+ecls 12
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1505
  boole-c2
  #+(or xcl allegro cmu sbcl sbcl) 5
  #+clisp 3
  #+ecls 10
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1512
  boole-and
  #+(or xcl allegro cmu sbcl sbcl) 6
  #+clisp 8
  #+ecls 1
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1519
  boole-ior
  #+(or xcl allegro cmu sbcl sbcl) 7
  #+clisp 14
  #+ecls 7
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1526
  boole-xor
  #+(or xcl allegro cmu sbcl sbcl) 8
  #+(or clisp ecls) 6
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1532
  boole-eqv
  #+(or xcl allegro cmu sbcl sbcl) 9
  #+(or clisp ecls) 9
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1538
  boole-nand
  #+(or xcl allegro cmu sbcl sbcl) 10
  #+clisp 7
  #+ecls 14
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1545
  boole-nor
  #+(or xcl allegro cmu sbcl sbcl) 11
  #+clisp 1
  #+ecls 8
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1552
  boole-andc1
  #+(or xcl allegro cmu sbcl sbcl) 12
  #+(or clisp ecls) 4
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1558
  boole-andc2
  #+(or xcl allegro cmu sbcl sbcl) 13
  #+(or clisp ecls) 2
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1564
  boole-orc1
  #+(or xcl allegro cmu sbcl sbcl) 14
  #+(or clisp ecls) 13
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1570
  boole-orc2
  #+(or xcl allegro cmu sbcl sbcl) 15
  #+(or clisp ecls) 11
  #-(or xcl clisp allegro cmu sbcl sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1576
  (let ((s (prin1-to-string most-positive-fixnum )))
    (or #+(or xcl clisp) (equal s "16777215")
        #+clisp (equal s "33554431")
@@ -1583,7 +1583,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1586
  (let ((s (prin1-to-string most-negative-fixnum )))
    (or #+(or xcl clisp) (equal s "-16777216")
        #+clisp (equal s "-33554432")
@@ -1593,7 +1593,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1596
  (prin1-to-string most-positive-short-float )
  #+xcl "1.701S38"
  #+clisp "1.7014s38"
@@ -1602,7 +1602,7 @@
  #+ecls "3.4028235e38"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1605
  (prin1-to-string least-positive-short-float )
  #+xcl "2.939S-39"
  #+clisp "2.93874s-39"
@@ -1610,7 +1610,7 @@
  #+ecls "1.401298E-45"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1613
  (prin1-to-string least-negative-short-float )
  #+xcl "-2.939S-39"
  #+clisp "-2.93874s-39"
@@ -1618,7 +1618,7 @@
  #+ecls "-1.401298E-45"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1621
  (prin1-to-string most-negative-short-float )
  #+xcl "-1.701S38"
  #+clisp "-1.7014s38"
@@ -1627,7 +1627,7 @@
  #+ecls "-3.402823E38"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1630
  (let ((s (prin1-to-string most-positive-single-float )))
    (or #+xcl (equal s "1.701411E38")
        #+clisp (equal s "1.7014117E38")
@@ -1637,7 +1637,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1640
  (let ((s (prin1-to-string least-positive-single-float )))
    (or #+(or xcl clisp) (equal s "2.938736E-39")
        #+clisp (equal s "1.1754944E-38")
@@ -1645,7 +1645,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1648
  (let ((s (prin1-to-string least-negative-single-float )))
    (or #+(or xcl clisp) (equal s "-2.938736E-39")
        #+clisp (equal s "-1.1754944E-38")
@@ -1653,7 +1653,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1656
  (let ((s (prin1-to-string most-negative-single-float )))
    (or #+xcl (equal s "-1.701411E38")
        #+clisp (equal s "-1.7014117E38")
@@ -1663,7 +1663,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1666
  (let ((s (prin1-to-string most-positive-double-float )))
    (or #+xcl (equal s "1.701411834604692D38")
        #+clisp (equal s "8.988465674311579d307")
@@ -1673,7 +1673,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1676
  (let ((s (prin1-to-string least-positive-double-float )))
    (or #+xcl (equal s "2.938735877055719D-39")
        #+clisp (equal s "5.562684646268004d-309")
@@ -1683,7 +1683,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1686
  (let ((s (prin1-to-string least-negative-double-float )))
    (or #+xcl (equal s "-2.938735877055719D-39")
        #+clisp (equal s "-5.562684646268004d-309")
@@ -1693,7 +1693,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1696
  (let ((s (prin1-to-string most-negative-double-float )))
    (or #+xcl (equal s "-1.701411834604692D38")
        #+clisp (equal s "-8.988465674311579d307")
@@ -1703,7 +1703,7 @@
        ) )
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1706
  (prin1-to-string most-positive-long-float )
  #+xcl "1.701411834604692D38"
  #+clisp "8.8080652584198167656L646456992"
@@ -1712,7 +1712,7 @@
  #+ecls "1.797693134862316d308"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1715
  (prin1-to-string least-positive-long-float )
  #+xcl "2.938735877055719D-39"
  #+clisp "5.676615526003731344L-646456994"
@@ -1720,7 +1720,7 @@
  #+(or cmu sbcl ecls) "4.940656458412465d-324"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1723
  (prin1-to-string least-negative-long-float )
  #+xcl "-2.938735877055719D-39"
  #+clisp "-5.676615526003731344L-646456994"
@@ -1728,7 +1728,7 @@
  #+(or cmu sbcl ecls) "-4.940656458412465d-324"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1731
  (prin1-to-string most-negative-long-float )
  #+xcl "-1.701411834604692D38"
  #+clisp "-8.8080652584198167656L646456992"
@@ -1737,7 +1737,7 @@
  #+ecls "-1.797693134862316d308"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1740
  (prin1-to-string short-float-epsilon )
  #+xcl "1.526S-5"
  #+clisp "7.6295s-6"
@@ -1746,7 +1746,7 @@
  #+ecls "6.258487E-8"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1749
  (prin1-to-string single-float-epsilon )
  #+xcl "5.960464E-8"
  #+clisp "5.960465E-8"
@@ -1755,7 +1755,7 @@
  #+ecls "6.258487E-8"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1758
  (prin1-to-string double-float-epsilon )
  #+xcl "1.387778780781446D-17"
  #+(or clisp cmu sbcl sbcl) "1.1102230246251568d-16"
@@ -1763,7 +1763,7 @@
  #+ecls "1.165734175856414d-16"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1766
  (prin1-to-string long-float-epsilon )
  #+xcl "1.387778780781446D-17"
  #+clisp "5.4210108624275221706L-20"
@@ -1772,7 +1772,7 @@
  #+ecls "1.165734175856414d-16"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1775
  (prin1-to-string short-float-negative-epsilon )
  #+xcl "1.526S-5"
  #+clisp "3.81476s-6"
@@ -1781,7 +1781,7 @@
  #+ecls "3.129244E-8"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1784
  (prin1-to-string single-float-negative-epsilon )
  #+xcl "5.960464E-8"
  #+clisp "2.9802326E-8"
@@ -1790,7 +1790,7 @@
  #+ecls "3.129244E-8"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1793
  (prin1-to-string double-float-negative-epsilon )
  #+xcl "1.387778780781446D-17"
  #+(or clisp cmu sbcl sbcl) "5.551115123125784d-17"
@@ -1798,7 +1798,7 @@
  #+ecls "5.828670879282072d-17"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1801
  (prin1-to-string long-float-negative-epsilon )
  #+xcl "1.387778780781446D-17"
  #+clisp "2.7105054312137610853L-20"
@@ -1807,186 +1807,186 @@
  #+ecls "5.828670879282072d-17"
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-1810
  (/ 1 0)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1814
  (/ 1 0.0s0)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1818
  (/ 1 0.0f0)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1822
  (/ 1 0.0d0)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1826
  (/ 1 0.0l0)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1830
  (expt 10.0s0 1000)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1834
  (expt 10.0f0 1000)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1838
  (expt 10.0d0 1000)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1842
  (expt 10.0l0 1000000000)
  error)
 
 ;; kap 13 zeichen
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-1849
  (standard-char-p #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1853
  (standard-char-p 1)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1857
  (graphic-char-p #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1861
  (graphic-char-p 1)
  error)
 
-(my-assert
+(check-for-bug :alltest-legacy-1865
  (characterp
     #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1870
  (characterp
     #\1)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1875
  (alpha-char-p #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1879
  (alpha-char-p #\$)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1883
  (upper-case-p #\a)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1887
  (lower-case-p #\A)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1891
  (both-case-p #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1895
  (both-case-p #\$)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1899
  (digit-char-p #\a)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1903
  (digit-char-p #\5)
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-1907
  (alphanumericp #\a)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1911
  (alphanumericp #\$)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1915
  (char= #\d #\d)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1919
  (char/= #\d #\d)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1923
  (char< #\z #\0)
  nil)
 
 ;; char>, char>=, char<=,
 
-(my-assert
+(check-for-bug :alltest-legacy-1929
  (char-equal #\d #\d)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1933
  (char-not-equal #\d #\d)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1937
  (char-lessp #\d #\x)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1941
  (char-lessp #\d #\d)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-1945
  (char-not-greaterp #\d #\d)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1949
  (char-greaterp #\e #\d)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1953
  (char-not-lessp #\e #\d)
  t)
 
 ;; char-code, code-char, character,
 
-(my-assert
+(check-for-bug :alltest-legacy-1959
  (char-upcase #\a)
  #\a)
 
-(my-assert
+(check-for-bug :alltest-legacy-1963
  (char-upcase #\=)
  #\=)
 
-(my-assert
+(check-for-bug :alltest-legacy-1967
  (char= (char-downcase (char-upcase #\x)) #\x)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1971
  (char-downcase #\a)
  #\a)
 
-(my-assert
+(check-for-bug :alltest-legacy-1975
  (char= (char-upcase (char-downcase #\X)) #\X)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-1979
  (digit-char 7)
  #\7)
 
-(my-assert
+(check-for-bug :alltest-legacy-1983
  (digit-char 12)
  nil)
 
 ;; char-int, int-char, char-name, name-char,
 
-(my-assert
+(check-for-bug :alltest-legacy-1989
  char-code-limit
  #+xcl 128
  #+(or (and clisp (not unicode)) akcl sbcl cmu ecls) 256
@@ -1996,196 +1996,196 @@
 ;; kap 14 sequenzen
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-1999
  (elt (symbol-name 'abc) 0)
  #\a)
 
-(my-assert
+(check-for-bug :alltest-legacy-2003
  (subseq (list 'a 'b 'c 'd 'e) 2)
  (c d e))
 
-(my-assert
+(check-for-bug :alltest-legacy-2007
  (copy-seq '#(a b c))
  #(a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2011
  (copy-seq (list (list 'a 'b) 'c (list 'd 'e)))
  ((a b) c (d e)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2015
  (length #(a b c d e f))
  6)
 
-(my-assert
+(check-for-bug :alltest-legacy-2019
  (length (list 'a 'b 'c 'd 'e 'f))
  6)
 
-(my-assert
+(check-for-bug :alltest-legacy-2023
  (nreverse (list 'a
 		 (list 'b
 		       (list 'c)
 		       'd)))
  ((b (c) d) a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2030
  (reverse (list 1 2 3 4))
  (4 3 2 1))
 
-(my-assert
+(check-for-bug :alltest-legacy-2034
  (make-sequence 'vector 4 :initial-element 'o)
  #(o o o o))
 
-(my-assert
+(check-for-bug :alltest-legacy-2038
  (make-sequence 'list 4 :initial-element 'o)
  (o o o o))
 
-(my-assert
+(check-for-bug :alltest-legacy-2042
  (concatenate 'list (list 'a 'b 'c) (list 1 2))
  (a b c 1 2))
 
-(my-assert
+(check-for-bug :alltest-legacy-2046
  (map 'list 'list
       (list #\a #\b #\c)
       (list #\1 #\2 #\3))
  ((#\a #\1) (#\b #\2) (#\c #\3)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2052
  (map 'list 'list (list 'a 'b 'c) (list 1 2 3))
  ((a 1) (b 2) (c 3)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2056
  (some 'null (list 'a 'b nil 't 'e))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2060
  (every 'atom (list 'a 8 #(a b)))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2064
  (notany 'eq
 	 (list 'a 'b 'c 'd 'e 4)
 	 (list 'i 'j 'k 'l 'm 4))
  nil)					;? t
 
-(my-assert
+(check-for-bug :alltest-legacy-2070
  (notevery 'eq '#(u)
 	   (list 'a 'x 'u))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2075
  (reduce 'list '(a) :from-end nil :initial-value nil)
 
  (nil a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2080
  (reduce 'list
 	 (list 'a 'b 'c 'd)
 	 :from-end nil
 	 :initial-value 'iii)
  ((((iii a) b) c) d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2087
  (reduce 'list (list 'a 'b 'c 'd) :from-end t)
  (a (b (c d))))
 
-(my-assert
+(check-for-bug :alltest-legacy-2091
  (fill '#(a b c d) 'i :start 1 :end 3)
  #(a i i d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2095
  (replace '#(a b c d) '#(i j) :start1 1)
  #(a i j d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2099
  (remove 'numberp '#(y a 4 a c 9 a d 2 3)
 	 :count 1 :from-end t)
  #(y a 4 a c 9 a d 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-2104
  (remove 'a
 	 (list 'a 1 'b 'a '2 'a)
 	 :start 1)
  (a 1 b 2))
 
-(my-assert
+(check-for-bug :alltest-legacy-2110
  (remove-duplicates (list 'a 'b 'c 'a 'd 'a)
 		    :start 1)
  (a b c d a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2115
  (remove-if 'numberp '#(y a 4 a c 9 a d 2 3))
  #(y a a c a d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2119
  (remove-if-not 'numberp #(y a 4 a c 9 a d 2 3))
  #(4 9 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-2123
  (remove-if-not 'numberp #(y a 4 a c 9 a d 2 3)
 		:count 2 :from-end nil)
  #(4 a c 9 a d 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-2128
  (delete '(a) (list (list 'a 'b) (list 'c 'd) (list 'a))
 	 :test 'equal)
  ((a b) (c d)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2133
  (delete-if (lambda (x) (eq (car x) 'a))
 	    (list (list 'a 'b)
 		  (list 'c 'd)
 		  (list 'a)))
  ((c d)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2140
  (delete-if-not 'numberp (list 'a 3 'b 4))
  (3 4))
 
 ;; delete-duplicates,
 
-(my-assert
+(check-for-bug :alltest-legacy-2146
  (nsubstitute 'new (list 1 'old)
 	      (list (list 0 'old) (list 1 'old) (list 2 'old))
 	      :test-not 'equal
 	      :from-end t)
  (new (1 old) new))
 
-(my-assert
+(check-for-bug :alltest-legacy-2153
  (nsubstitute 'new 'old (list 0 'old 1 'old 2 'old) :end 2)
  (0 new 1 old 2 old))
 
-(my-assert
+(check-for-bug :alltest-legacy-2157
  (nsubstitute-if 'new 'numberp (list 0 'a 1 'b 2 'c 3 'd)
 		 :count 2
 		 :end 5)
  (new a new b 2 c 3 d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2163
  (nsubstitute-if-not 'new 'numberp
 		     (list 0 'a 1 'b 2 'c 3 'd)
 		     :count 2
 		     :from-end t)
  (0 a 1 b 2 new 3 new))
 
-(my-assert
+(check-for-bug :alltest-legacy-2170
  (substitute 'new (list 2 'old)
 	     (list (list 1 'old) (list 2 'old) (list 3 'old) (list 4 'old))
 	     :test 'equal
 	     :start 3)
  ((1 old) (2 old) (3 old) (4 old)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2177
  (substitute-if 'new 'numberp
 		(list 'a 1 'b 2 'd 3))
  (a new b new d new))
 
-(my-assert
+(check-for-bug :alltest-legacy-2182
  (substitute-if-not 'new 'numberp (list 'a 1 'b 2 'd 3)
 		    :count 2
 		    :from-end t)
  (a 1 new 2 new 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-2188
  (find '0 (list (list 0 'a) (list 1 'a) (list 2 'a) (list 0 'b))
        :test '=
        :from-end t
@@ -2193,7 +2193,7 @@
        :start 1)
  (0 b))
 
-(my-assert
+(check-for-bug :alltest-legacy-2196
  (find-if 'numberp (list (list 'a 0) (list 'b 1) (list 'c 2))
 	  :key 'cadr
 	  :start 3)
@@ -2201,20 +2201,20 @@
 
 ;; find-if-not,
 
-(my-assert
+(check-for-bug :alltest-legacy-2204
  (position 'a (list (list 0 'a) (list 1 'b) (list 2 'a) (list 3 'b))
 	   :test #'(lambda (x y) (eq x (cadr y)))
 	   :start 1)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-2210
  (position 'a
 	   (list (list 0 'a) (list 1 'b) (list 2 'a) (list 3 'b))
 	   :key 'cadr)
 
  0)
 
-(my-assert
+(check-for-bug :alltest-legacy-2217
  (position-if 'numberp
 	      (list (list 0 'x) (list 1 7.0) (list 2 8))
 	      :from-end t
@@ -2224,7 +2224,7 @@
 
 ;; position-if-not,
 
-(my-assert
+(check-for-bug :alltest-legacy-2227
  (count '(a)
 	(list 'a (list 'a) 'a (list 'a) 'a 'b)
 	:test-not 'equal
@@ -2233,13 +2233,13 @@
 		 (list x))))
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-2236
  (count-if-not 'numberp '#(a 3 b 5 7 c d) :start 2 :end 5)
  1)
 
 ;; count-if-not,
 
-(my-assert
+(check-for-bug :alltest-legacy-2242
  (mismatch (list 'a 'b 'c 3 4 5)
 	   (list 'a 'b 'x 3 4 'b)
 	   :start1 1
@@ -2248,14 +2248,14 @@
 	   :test-not 'eq)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-2251
  (mismatch (list 'a 'b 'c 3 4 5)
 	   (list 'u 'b 'x 3 4 5)
 	   :from-end t)
  #+xcl 2
  #-xcl 3)
 
-(my-assert
+(check-for-bug :alltest-legacy-2258
  (search "ABCD" "0ABIABJBCBC"
 	 :end1 3
 	 :start1 1
@@ -2263,7 +2263,7 @@
 	 :from-end t)
  9)
 
-(my-assert
+(check-for-bug :alltest-legacy-2266
  (search (list #\A #\B #\C #\D)
 	 "0ABIABJBCBC"
 	 :end1 2
@@ -2271,14 +2271,14 @@
 	 :from-end t)
  4)
 
-(my-assert
+(check-for-bug :alltest-legacy-2274
  (search (list 'a 'b 'c 'd)
 	 (list 0 'a 'b 'i 'a 'b 'j 'b 'c 'b 'c)
 	 :end1 2
 	 :start2 2)
  4)
 
-(my-assert
+(check-for-bug :alltest-legacy-2281
  (sort (list (list 'u 3) (list 'i 1)
 	     (list 'a 7) (list 'k 3)
 	     (list 'c 4) (list 'b 6))
@@ -2286,7 +2286,7 @@
        :key 'cadr)
  ((i 1) (u 3) (k 3) (c 4) (b 6) (a 7)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2289
  (stable-sort (list (list 'b 4) (list 'a 3)
 		    (list 'a 2) (list 'b 1)
 		    (list 'c 9) (list 'b 2))
@@ -2294,14 +2294,14 @@
 	      :key  'car)
  ((a 3) (a 2) (b 4) (b 1) (b 2) (c 9)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2297
  (merge 'list
 	(list 5 1 4 4 7)
 	(list 2 3 5 6 8 9)
 	'<)
  (2 3 5 1 4 4 5 6 7 8 9))		;? error
 
-(my-assert
+(check-for-bug :alltest-legacy-2304
  (merge 'list
 	(list 1 4 4 7)
 	(list 2 3 5 6 8 9)
@@ -2311,39 +2311,39 @@
 ;; kap 15 listen
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-2314
  (car (list 'a 'b 'c 'd 'e 'f 'g))
  a)
 
-(my-assert
+(check-for-bug :alltest-legacy-2318
  (cdr (list 'a 'b 'c 'd 'e 'f 'g))
  (b c d e f g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2322
  (cadr (list 'a 'b 'c 'd 'e 'f 'g))
  b)
 
-(my-assert
+(check-for-bug :alltest-legacy-2326
  (cddr (list 'a 'b 'c 'd 'e 'f 'g))
  (c d e f g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2330
  (caddr (list 'a 'b 'c 'd 'e 'f 'g))
  c)
 
-(my-assert
+(check-for-bug :alltest-legacy-2334
  (cdddr (list 'a 'b 'c 'd 'e 'f 'g))
  (d e f g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2338
  (cadddr (list 'a 'b 'c 'd 'e 'f 'g))
  d)
 
-(my-assert
+(check-for-bug :alltest-legacy-2342
  (cddddr (list 'a 'b 'c 'd 'e 'f 'g))
  (e f g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2346
  (caadr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2358,7 +2358,7 @@
 	'e 'f 'g))
  ((u v w) x))
 
-(my-assert
+(check-for-bug :alltest-legacy-2361
  (cadar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2373,7 +2373,7 @@
 	'e 'f 'g))
  (6 7))
 
-(my-assert
+(check-for-bug :alltest-legacy-2376
  (cdaar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2388,7 +2388,7 @@
 	'e 'f 'g))
  (5))
 
-(my-assert
+(check-for-bug :alltest-legacy-2391
  (cdadr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2403,7 +2403,7 @@
 	'e 'f 'g))
  (y))
 
-(my-assert
+(check-for-bug :alltest-legacy-2406
  (cddar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2418,7 +2418,7 @@
 	'e 'f 'g))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2421
  (caaaar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2433,7 +2433,7 @@
 	'e 'f 'g))
  (1 2 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-2436
  (caadar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2448,7 +2448,7 @@
 	'e 'f 'g))
  6)
 
-(my-assert
+(check-for-bug :alltest-legacy-2451
  (caaddr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2463,7 +2463,7 @@
 	'e 'f 'g))
  (q w e))
 
-(my-assert
+(check-for-bug :alltest-legacy-2466
  (cadaar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2478,7 +2478,7 @@
 	'e 'f 'g))
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-2481
  (cadadr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2493,7 +2493,7 @@
 	'e 'f 'g))
  y)
 
-(my-assert
+(check-for-bug :alltest-legacy-2496
  (caddar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2508,7 +2508,7 @@
 	'e 'f 'g))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2511
  (cadddr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2523,7 +2523,7 @@
 	'e 'f 'g))
  (a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2526
  (cdaaar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2538,7 +2538,7 @@
 	'e 'f 'g))
  (4))
 
-(my-assert
+(check-for-bug :alltest-legacy-2541
  (cdaadr
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2553,7 +2553,7 @@
 	'e 'f 'g))
  (x))
 
-(my-assert
+(check-for-bug :alltest-legacy-2556
  (cdadar
   (list (list (list (list (list 1 2 3)
 			  4)
@@ -2568,142 +2568,142 @@
 	'e 'f 'g))
  (7))
 
-(my-assert
+(check-for-bug :alltest-legacy-2571
  (cons 1 2)
  (1 . 2))
 
-(my-assert
+(check-for-bug :alltest-legacy-2575
  (cons 'a (cons 'b (cons 'c 'nil)))
  (a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2579
  (cons 'a (list 'b 'c 'd))
  (a b c d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2583
  (tree-equal 5 (+ 2 3) :test (function eql))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2587
  (endp 'nil)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2591
  (endp (cons 'a 'b))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2595
  (list-length (list 'a 'b 'c 'd))
  4)
 
-(my-assert
+(check-for-bug :alltest-legacy-2599
  (let ((x (list 'a 'b 'c))) (rplacd (last x) x)
 
       (list-length x))
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2605
  (nth 0 (list 'a 'b 'c 'd))
  a)
 
-(my-assert
+(check-for-bug :alltest-legacy-2609
  (first (list 1 2 3 4 5 6 7 8 9 10 11))
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-2613
  (second (list 1 2 3 4 5 6 7 8 9 10 11))
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-2617
  (third (list 1 2 3 4 5 6 7 8 9 10 11))
  3)
 
-(my-assert
+(check-for-bug :alltest-legacy-2621
  (fourth (list 1 2 3 4 5 6 7 8 9 10 11))
  4)
 
-(my-assert
+(check-for-bug :alltest-legacy-2625
  (fifth (list 1 2 3 4 5 6 7 8 9 10 11))
  5)
 
-(my-assert
+(check-for-bug :alltest-legacy-2629
  (sixth (list 1 2 3 4 5 6 7 8 9 10 11))
  6)
 
-(my-assert
+(check-for-bug :alltest-legacy-2633
  (seventh (list 1 2 3 4 5 6 7 8 9 10 11))
  7)
 
-(my-assert
+(check-for-bug :alltest-legacy-2637
  (eighth (list 1 2 3 4 5 6 7 8 9 10 11))
  8)
 
-(my-assert
+(check-for-bug :alltest-legacy-2641
  (ninth (list 1 2 3 4 5 6 7 8 9 10 11))
  9)
 
-(my-assert
+(check-for-bug :alltest-legacy-2645
  (tenth (list 1 2 3 4 5 6 7 8 9 10 11))
  10)
 
-(my-assert
+(check-for-bug :alltest-legacy-2649
  (rest (cons 'a 'b))
  b)
 
-(my-assert
+(check-for-bug :alltest-legacy-2653
  (nthcdr 1 (list 'a 'b 'c 'd))
  (b c d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2657
  (last (list 1 2 3 4 5))
  (5))
 
-(my-assert
+(check-for-bug :alltest-legacy-2661
  (last (append (list 1 2 3) 4))
  (3 . 4))
 
-(my-assert
+(check-for-bug :alltest-legacy-2665
  (list 'a 'b 'c 'd)
  (a b c d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2669
  (list* 'a 'b 'c 'd)
  (a b c . d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2673
  (make-list 4 :initial-element 'o)
  (o o o o))
 
-(my-assert
+(check-for-bug :alltest-legacy-2677
  (make-list 3 :initial-element 'rah)
  (rah rah rah))
 
-(my-assert
+(check-for-bug :alltest-legacy-2681
  (append (list 'a 'b 'c)
 	 (list 'd 'e 'f) 'nil '(g))
  (a b c d e f g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2686
  (copy-list (list 1 2 3 4 5))
  (1 2 3 4 5))
 
-(my-assert
+(check-for-bug :alltest-legacy-2690
  (copy-list (append (list 1 2 3) 4))
  (1 2 3 . 4))
 
-(my-assert
+(check-for-bug :alltest-legacy-2694
  (copy-alist (list 'a 'b))
  (a b))
 
-(my-assert
+(check-for-bug :alltest-legacy-2698
  (copy-alist (list (cons 1 'a) (cons 2 'b) (cons 3 'c)))
  ((1 . a) (2 . b) (3 . c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2702
  (copy-alist (list (list 'a 'b) 'c (list 'd 'e)))
  ((a b) c (d e)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2706
  (copy-tree (list 'a 'b
 		  (list 'c
 			(list 'd)
@@ -2711,90 +2711,90 @@
 		  'g))
  (a b (c (d) (e f)) g))
 
-(my-assert
+(check-for-bug :alltest-legacy-2714
  (revappend (list 'a 'b 'c) (list 'd 'e 'f))
  (c b a d e f))
 
-(my-assert
+(check-for-bug :alltest-legacy-2718
  (revappend (list 'a 'b 'c) 'i)
  (c b a . i))				;? error
 
-(my-assert
+(check-for-bug :alltest-legacy-2722
  (nreconc (list 'a 'b 'c) (list 'i 'j))
  (c b a i j))
 
 ;; nreconc
 
-(my-assert
+(check-for-bug :alltest-legacy-2728
  (setq aa nil)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2732
  (push '1 aa)
  (1))
 
-(my-assert
+(check-for-bug :alltest-legacy-2736
  (push '2 aa)
  (2 1))
 
-(my-assert
+(check-for-bug :alltest-legacy-2740
  (pop aa)
  2)
 
-(my-assert
+(check-for-bug :alltest-legacy-2744
  (pop aa)
  1)
 
-(my-assert
+(check-for-bug :alltest-legacy-2748
  (pop aa)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2752
  (setq aa (list 'b 'a))
  (b a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2756
  (pushnew 'a aa)
  (b a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2760
  (pushnew 'c aa)
  (c b a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2764
  (pushnew 'u (car (setq xx (list nil 'kkk))))
  (u))
 
-(my-assert
+(check-for-bug :alltest-legacy-2768
  (pushnew 'u (car xx))
  (u))
 
-(my-assert
+(check-for-bug :alltest-legacy-2772
  (pushnew 'v (car xx))
  (v u))
 
-(my-assert
+(check-for-bug :alltest-legacy-2776
  (eval 'xx)
  ((v u) kkk))
 
-(my-assert
+(check-for-bug :alltest-legacy-2780
  (butlast (list 'a 'b 'c) 2)
  (a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2784
  (nbutlast (list 'a 'b 'c 'd) 6)
  nil)
 
-(my-assert
+(check-for-bug :alltest-legacy-2788
  (nbutlast (list 'a 'b 'c 'd) 1)
  (a b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2792
  (ldiff (setq xx (list 'a 'b 'c 'd 'e))
 	(cddr xx))
  (a b))
 
-(my-assert
+(check-for-bug :alltest-legacy-2797
  (ldiff (setq xx (append (list 'a 'b 'c 'd)
 			 'e))
 	(cddr xx))
@@ -2802,13 +2802,13 @@
 
 (unintern 'xx)
 
-(my-assert
+(check-for-bug :alltest-legacy-2805
  (ldiff (append (list 'a 'b 'c 'd)
 		'e)
 	'e)
  (a b c d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2811
  (let ((lists '#((a b c) (a b c . d)))
        (ld-res #(#(nil (a b) (a b c) (a b c) (a b c) (a b c) (a b c))
                  #(nil (a b) (a b c . d) (a b c . d) (a b c . d) (a b c)
@@ -2830,20 +2830,20 @@
 
 ;; rplaca, rplacd
 
-(my-assert
+(check-for-bug :alltest-legacy-2833
  (nsubst 'a 'b
 	 (list 'u 'b (list 'b) 'c)
 	 :test-not (lambda (x y)
 		     (not (eql x y))))
  (u a (a) c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2840
  (nsubst-if 'oo
 	    'numberp
 	    (list 'a 'b 'c (list 3 (list 4) 0)))
  (a b c (oo (oo) oo)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2846
  (nsubst-if-not 'oo
 		#'(lambda (x)
 		    (or (list x)
@@ -2851,7 +2851,7 @@
 		(list 'a 'b 'c (list 3 (list 4) 0)))
  (a b c (3 (4) 0)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2854
  (subst 'a 'b (list 'u 'b (list 'b) 'c)
 	:test-not (lambda (x y)
 		    (not (eql x y)))
@@ -2860,14 +2860,14 @@
 		 (car u))))
  (u . a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2863
  (subst-if 'nummmer
 	   'numberp
 	   (list (list 'a (list 7 (list 'v 6)))))
 
  ((a (nummmer (v nummmer)))))
 
-(my-assert
+(check-for-bug :alltest-legacy-2870
  (subst-if-not 'nummmer
 	       #'(lambda (x)
 		   (or (listp x)
@@ -2875,7 +2875,7 @@
 	       (list (list 'a (list 7 (list 'v 6)))))
  ((nummmer (7 (nummmer 6)))))
 
-(my-assert
+(check-for-bug :alltest-legacy-2878
  (nsublis (list (cons (list 'a) 'uu)
 		(cons 'a 'ii))
 	  (list 'i (list 'a) 'a)
@@ -2887,7 +2887,7 @@
  #+(or clisp cmu sbcl lucid) (i (uu) uu) ; x ein blatt, y aus der aliste
  #-(or xcl clisp cmu sbcl lucid allegro ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-2890
  (SUBLIS (QUOTE (((A) . UU) (A . II)))
 	 (QUOTE (I (A) A))
 	 :TEST (LAMBDA (X Y)
@@ -2903,7 +2903,7 @@
  #+(or clisp cmu sbcl sbcl) (i (uu) uu) ; x ein blatt, y aus der aliste
  #-(or xcl clisp cmu sbcl lucid allegro ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-2906
  (member 'A
 	 (list (list 'A)
 	       (list 'B)
@@ -2913,7 +2913,7 @@
 	 'car)
  ((a) (b) (a) (c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2916
  (member-if 'numberp
 	    (list (list 'a)
 		  (list 'b)
@@ -2923,7 +2923,7 @@
 
  ((3) (c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2926
  (member-if-not 'numberp
 		(list (list 8)
 		      (list 'a)
@@ -2933,17 +2933,17 @@
 		:key 'car)
  ((a) (b) (3) (c)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2936
  (tailp (cddr (setq xx (list 'u 'i 'a 'b))) xx)
  t)
 
 (unintern 'xx)
 
-(my-assert
+(check-for-bug :alltest-legacy-2942
  (tailp 'd (append (list 'a 'b 'c) 'd))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-2946
  (adjoin 'a
 	 (list (list 'a)
 	       'b
@@ -2951,7 +2951,7 @@
 	 :test 'equal)
  (a (a) b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-2954
  (nunion (list 'a 'b 'c 'd)
 	 (list 'u 'i 'b 'a))
  #+xcl (a b c d u i)
@@ -2959,7 +2959,7 @@
  #+(or allegro cmu sbcl) (d c u i b a)
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-2962
  (union (list 'a 'b 'c 'd)
 	(list 'a 'd 'i 'v))
  #+xcl (v i a b c d)
@@ -2967,7 +2967,7 @@
  #+(or allegro cmu sbcl) (c b a d i v)
  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-2970
  (intersection (list (list 'a 1)
 		     (list 'a 2)
 		     (list 'a 3))
@@ -2978,25 +2978,25 @@
 	       :test 'equal)
  ((a 2)))
 
-(my-assert
+(check-for-bug :alltest-legacy-2981
  (nintersection (list 'a 'b 'c 'd)
 		(list 'c 'd 'e 'f 'g)
 		:test-not (quote eql))
  #-(or allegro cmu sbcl sbcl) (a b c d)
  #+(or allegro cmu sbcl sbcl) (d c b a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2988
  (nset-difference (list 'a 'b 'c 'd)
 		  (list 'i 'j 'c))
  #-(or allegro cmu sbcl sbcl) (a b d)
  #+(or allegro cmu sbcl sbcl) (d b a))
 
-(my-assert
+(check-for-bug :alltest-legacy-2994
  (nset-exclusive-or (list 'a 'b 'c)
 		    (list 'i 'a 'd 'c))
  (b i d))
 
-(my-assert
+(check-for-bug :alltest-legacy-2999
  (set-difference (list 'anton 'berta 'auto 'berlin)
 		 (list 'amerilla)
 		 :test (lambda (x y)
@@ -3006,7 +3006,7 @@
  #+(or clisp akcl ecls) (berta berlin)
  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
-(my-assert
+(check-for-bug :alltest-legacy-3009
  (set-exclusive-or (list 'anton 'anna 'emil)
 		   (list 'berta 'auto 'august)
 		   :test (lambda (x y)
@@ -3015,19 +3015,19 @@
  #-(or allegro cmu sbcl) (emil berta)
  #+(or allegro cmu sbcl) (berta emil))
 
-(my-assert
+(check-for-bug :alltest-legacy-3018
  (subsetp (list 'a 'b) (list 'b 'a 'u 'i 'c 'd))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-3022
  (acons 'a 'b (list (cons 'c 'd)))
  ((a . b) (c . d)))
 
-(my-assert
+(check-for-bug :alltest-legacy-3026
  (acons 'a 'b nil)
  ((a . b)))
 
-(my-assert
+(check-for-bug :alltest-legacy-3030
  (assoc 'a (list (list 'b 'c)
 		 'a
 		 (list (list 'a) 'u)
@@ -3038,31 +3038,31 @@
  #+allegro error
  #-allegro (b c))
 
-(my-assert
+(check-for-bug :alltest-legacy-3041
  (assoc-if 'symbolp
 	   (list (cons 'a 3)
 		 (cons 3 'a)))
  (a . 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-3047
  (assoc-if-not 'numberp (list (cons 'a 3)
 			      (cons 3 'a)))
  (a . 3))
 
-(my-assert
+(check-for-bug :alltest-legacy-3052
  (pairlis (list 'a 'b 'c) (list 1 2 3))
  ((c . 3) (b . 2) (a . 1)))
 
-(my-assert
+(check-for-bug :alltest-legacy-3056
  (rassoc 'a (list (cons 1 'b) (cons 2 'a)))
  (2 . a))
 
-(my-assert
+(check-for-bug :alltest-legacy-3060
  (rassoc-if 'symbolp
 	    (list (cons 1 3) (cons 2 'a)))
  (2 . a))
 
-(my-assert
+(check-for-bug :alltest-legacy-3065
  (rassoc-if-not 'symbolp
 		(list (cons 1 3) (cons 2 'a)))
  (1 . 3))
@@ -3070,13 +3070,13 @@
 ;; kap 16 hash-tabellen
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-3073
  (hash-table-p (make-hash-table :test #'eql
 				:rehash-size 2
 				:size 20))
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-3079
  (hash-table-p (make-hash-table :test #'eql
 				:rehash-size 1.1
 				:size 20))
@@ -3084,7 +3084,7 @@
 ;; clrhash, gethash, hash-table-count, maphash, remhash, sxhash,
 
 ;; <hs>/body/mac_with-hash_ble-iterator.html
-(my-assert
+(check-for-bug :alltest-legacy-3087
  (defun test-hash-table-iterator (hash-table)
    (let ((all-entries '())
 	 (generated-entries '())
@@ -3112,7 +3112,7 @@
      t))
  test-hash-table-iterator)
 
-(my-assert
+(check-for-bug :alltest-legacy-3115
  (let ((tab (make-hash-table :test #'equal)))
    (setf (gethash "Richard" tab) "Gabriel")
    (setf (gethash "Bruno" tab) "Haible")
@@ -3157,7 +3157,7 @@
 
 ;; defstruct,
 
-(my-assert
+(check-for-bug :alltest-legacy-3160
  (defstruct (ice-cream-factory
 	     (:constructor make-factory)
 	     (:constructor fabricate-factory
@@ -3178,32 +3178,32 @@
    (flavors '(vanilla chocolate strawberry mango)))
  ice-cream-factory)
 
-(my-assert
+(check-for-bug :alltest-legacy-3181
  (let ((houston (fabricate-factory :capacity 4 :location 'texas)))
    (ice-cream-factory-flavors houston))
  (jalapeno barbecue vanilla chocolate))
 
-(my-assert
+(check-for-bug :alltest-legacy-3186
  (let ((cambridge (fabricate-factory :location 'massachusetts)))
    (ice-cream-factory-flavors cambridge))
  (lobster baked-bean vanilla chocolate strawberry))
 
-(my-assert
+(check-for-bug :alltest-legacy-3191
  (let ((seattle (fabricate-factory :local-flavors '(salmon))))
    (ice-cream-factory-flavors seattle))
  (salmon vanilla chocolate strawberry pistachio))
 
-(my-assert
+(check-for-bug :alltest-legacy-3196
  (let ((wheaton (fabricate-factory :capacity 4 :location 'illinois)))
    (ice-cream-factory-flavors wheaton))
  (vanilla chocolate strawberry pistachio))
 
-(my-assert
+(check-for-bug :alltest-legacy-3201
  (let ((pittsburgh (fabricate-factory :capacity 4)))
    (ice-cream-factory-flavors pittsburgh))
  (vanilla chocolate strawberry pistachio))
 
-(my-assert
+(check-for-bug :alltest-legacy-3206
  (let ((cleveland (make-factory :capacity 4)))
    (ice-cream-factory-flavors cleveland))
  (vanilla chocolate strawberry mango))
@@ -3213,11 +3213,11 @@
 
 ;; eval, evalhook, *evalhook*, applyhook, *applyhook*,
 
-(my-assert
+(check-for-bug :alltest-legacy-3216
  (constantp -5)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-3220
  (constantp (read-from-string "1.0e30"))
  t)
 
@@ -3229,11 +3229,11 @@
 ;; make-string-output-stream, get-output-stream-string, with-input-from-string,
 ;; with-open-stream, with-output-to-string,
 
-(my-assert
+(check-for-bug :alltest-legacy-3232
  (streamp *standard-input*)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-3236
  (input-stream-p *terminal-io*)
  t)
 
@@ -3242,11 +3242,11 @@
 ;; kap 22 ein- und ausgabe
 ;; ----------------------------------------------------------------------------
 
-(my-assert
+(check-for-bug :alltest-legacy-3245
  (readtablep *readtable*)
  t)
 
-(my-assert
+(check-for-bug :alltest-legacy-3249
  (readtablep 'progn)
  nil)
 
@@ -3259,7 +3259,7 @@
 ;; set-dispatch-macro-character, set-macro-character, set-syntax-from-char,
 ;; make-dispatch-macro-character,
 
-(my-assert
+(check-for-bug :alltest-legacy-3262
  (get-dispatch-macro-character #\# #\0)
  nil)
 
@@ -3314,11 +3314,9 @@
 ;; ? (adjustable-vector-with-fill-pointer-p (alistp (declaration-specifier-p
 
 
-(my-assert
- #-sbcl
- (sys::fixnump 10)			;?
- #+sbcl
- (sb-kernel:fixnump 10)			;?
+#-sbcl
+(check-for-bug :alltest-legacy-3318
+ (fixnump 10)			;?
  t)					;?
 
 ;; kap ii systeminterne atome

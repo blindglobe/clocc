@@ -1,17 +1,17 @@
 ;;; based on v1.2 -*- mode: lisp -*-
 (in-package :cl-user)
 
-(my-assert
+(check-for-bug :symbols-legacy-4
  (symbol-name (quote xyz))
  "XYZ")
 
-(my-assert
+(check-for-bug :symbols-legacy-8
  (let ((*gensym-counter* 32))
    (gensym)
    (prin1-to-string (gensym "FOO-")))
  "#:FOO-33")
 
-(my-assert
+(check-for-bug :symbols-legacy-14
  (let ((*gensym-counter* 32))
    (gensym)
    (prin1-to-string (gensym "garbage-")))

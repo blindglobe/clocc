@@ -5,17 +5,17 @@
 
 ;; From: Gary Bunting <gbunting@cantor.une.edu.au>
 
-(my-assert
+(check-for-bug :new-bugs-legacy-8
  (setf xx (expt 3 32))
  1853020188851841)
 
-(my-assert
+(check-for-bug :new-bugs-legacy-12
  (* xx xx)
  3433683820292512484657849089281)
 
 ;; paul
 
-(my-assert
+(check-for-bug :new-bugs-legacy-18
  (defun bugged (x)
    (labels ((f (y &optional trouble)	;  <<< or &key or &rest ..
 	       (if y
@@ -23,7 +23,7 @@
 		     (f a)))))))
  BUGGED)
 
-(my-assert
+(check-for-bug :new-bugs-legacy-26
  (defun tst ()
    (labels
        ((eff (&key trouble)

@@ -3,7 +3,7 @@
 ;; Test some MOP-like CLOS features
 
 #+clisp
-(my-assert
+(check-for-bug :mop-legacy-6
  (progn
    (defstruct rectangle1 (x 0.0) (y 0.0))
    (defclass counted1-class (structure-class)
@@ -18,7 +18,7 @@
  1)
 
 #+clisp
-(my-assert
+(check-for-bug :mop-legacy-21
  (progn
    (defclass rectangle2 ()
      ((x :initform 0.0 :initarg x) (y :initform 0.0 :initarg y)))

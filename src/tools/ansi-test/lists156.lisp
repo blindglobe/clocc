@@ -1,17 +1,17 @@
 ;;; based on v1.2 -*- mode: lisp -*-
 (in-package :cl-user)
 
-(my-assert
+(check-for-bug :lists156-legacy-4
  (ACONS 'A 'B NIL)
  ((A . B)))
 
-(my-assert
+(check-for-bug :lists156-legacy-8
  (ACONS 'A 'B
 	'((C . D)))
  ((A . B)
   (C . D)))
 
-(my-assert
+(check-for-bug :lists156-legacy-14
  (PAIRLIS '(A B C)
 	  '(1 2))
  #+XCL
@@ -20,7 +20,7 @@
  #-XCL
  ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-23
  (PAIRLIS '(A B C)
 	  '(1 2 3))
  #+(or XCL CLISP ALLEGRO cmu sbcl ecls)
@@ -30,14 +30,14 @@
  #+AKCL ((A . 1) (B . 2) (C . 3))
  #-(or XCL CLISP AKCL ALLEGRO cmu sbcl ecls) UNKNOWN)
 
-(my-assert
+(check-for-bug :lists156-legacy-33
  (ASSOC 'A
 	'((B C)
 	  (A U)
 	  (A I)))
  (A U))
 
-(my-assert
+(check-for-bug :lists156-legacy-40
  (ASSOC 'A
 	'((B C)
 	  ((A)
@@ -45,7 +45,7 @@
 	  (A I)))
  (A I))
 
-(my-assert
+(check-for-bug :lists156-legacy-48
  (ASSOC 'A
 	'((B C)
 	  ((A)
@@ -58,7 +58,7 @@
  ((A)
   U))
 
-(my-assert
+(check-for-bug :lists156-legacy-61
  (ASSOC 'A
 	'((B C)
 	  A
@@ -74,7 +74,7 @@
  #+(or GCL ALLEGRO cmu sbcl)
  TYPE-ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-77
  (ASSOC 'A
 	'((B C)
 	  A
@@ -89,7 +89,7 @@
  #+(or GCL ALLEGRO cmu sbcl)
  TYPE-ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-92
  (ASSOC 'A
 	'((B C)
 	  A
@@ -105,7 +105,7 @@
  #+(or GCL ALLEGRO cmu sbcl)
  TYPE-ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-108
  (ASSOC 'A
 	'((B C)
 	  A
@@ -119,7 +119,7 @@
  #-(or GCL ALLEGRO cmu sbcl) (A I)
  #+(or GCL ALLEGRO cmu sbcl) ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-122
  (ASSOC 'A
 	'((B C)
 	  A
@@ -133,49 +133,49 @@
  #-ALLEGRO (B C)
  #+ALLEGRO ERROR)
 
-(my-assert
+(check-for-bug :lists156-legacy-136
  (ASSOC-IF 'NUMBERP
 	   '((A . 3)
 	     (3 . A)))
  (3 . A))
 
-(my-assert
+(check-for-bug :lists156-legacy-142
  (ASSOC-IF 'SYMBOLP
 	   '((A . 3)
 	     (3 . A)))
  (A . 3))
 
-(my-assert
+(check-for-bug :lists156-legacy-148
  (ASSOC-IF-NOT 'SYMBOLP
 	       '((A . 3)
 		 (3 . A)))
  (3 . A))
 
-(my-assert
+(check-for-bug :lists156-legacy-154
  (ASSOC-IF-NOT 'NUMBERP
 	       '((A . 3)
 		 (3 . A)))
  (A . 3))
 
-(my-assert
+(check-for-bug :lists156-legacy-160
  (RASSOC 'A
 	 '((1 . B)
 	   (2 . A)))
  (2 . A))
 
-(my-assert
+(check-for-bug :lists156-legacy-166
  (RASSOC-IF 'SYMBOLP
 	    '((1 . B)
 	      (2 . A)))
  (1 . B))
 
-(my-assert
+(check-for-bug :lists156-legacy-172
  (RASSOC-IF 'SYMBOLP
 	    '((1 . 3)
 	      (2 . A)))
  (2 . A))
 
-(my-assert
+(check-for-bug :lists156-legacy-178
  (RASSOC-IF-NOT 'SYMBOLP
 		'((1 . 3)
 		  (2 . A)))

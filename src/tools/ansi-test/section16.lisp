@@ -5,11 +5,11 @@
 
 ;;; simple-string-p
 
-(my-assert
+(check-for-bug :section16-legacy-8
  (simple-string-p "aaaaaa")
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-12
  (simple-string-p (make-array 6
 			      :element-type 'character
 			      :fill-pointer t))
@@ -17,218 +17,218 @@
 
 ;;; char
 
-(my-assert
+(check-for-bug :section16-legacy-20
  (setq my-simple-string (make-string 6 :initial-element #\A))
  "AAAAAA")
 
-(my-assert
+(check-for-bug :section16-legacy-24
  (schar my-simple-string 4)
  #\A)
 
-(my-assert
+(check-for-bug :section16-legacy-28
  (setf (schar my-simple-string 4) #\B)
  #\B)
 
-(my-assert
+(check-for-bug :section16-legacy-32
  my-simple-string
  "AAAABA")
 
-(my-assert
+(check-for-bug :section16-legacy-36
  (setq my-filled-string
        (make-array 6 :element-type 'character
 		   :fill-pointer 5
 		   :initial-contents my-simple-string))
  "AAAAB")
 
-(my-assert
+(check-for-bug :section16-legacy-43
  (char my-filled-string 4)
  #\B)
 
-(my-assert
+(check-for-bug :section16-legacy-47
  (char my-filled-string 5)
  #\A
  "char: ...
 
 char ignores fill pointers when accessing elements. ")
 
-(my-assert
+(check-for-bug :section16-legacy-54
  (setf (char my-filled-string 3) #\C)
  #\C)
 
-(my-assert
+(check-for-bug :section16-legacy-58
  (setf (char my-filled-string 5) #\D)
  #\D
  "char: ...
 
 char ignores fill pointers when accessing elements. ")
 
-(my-assert
+(check-for-bug :section16-legacy-65
  (setf (fill-pointer my-filled-string) 6)
  6)
 
-(my-assert
+(check-for-bug :section16-legacy-69
  my-filled-string
  "AAACBD")
 
 ;;; string
 
-(my-assert
+(check-for-bug :section16-legacy-75
  (string "already a string")
  "already a string")
 
-(my-assert
+(check-for-bug :section16-legacy-79
  (string 'elm)
  "ELM")
 
-(my-assert
+(check-for-bug :section16-legacy-83
  (string #\c)
  "c")
 
 ;;; string-upcase
 
-(my-assert
+(check-for-bug :section16-legacy-89
  (string-upcase "abcde")
  "ABCDE")
 
-(my-assert
+(check-for-bug :section16-legacy-93
  (string-upcase "Dr. Livingston, I presume?")
  "DR. LIVINGSTON, I PRESUME?")
 
-(my-assert
+(check-for-bug :section16-legacy-97
  (string-upcase "Dr. Livingston, I presume?" :start 6 :end 10)
  "Dr. LiVINGston, I presume?")
 
-(my-assert
+(check-for-bug :section16-legacy-101
  (string-downcase "Dr. Livingston, I presume?")
  "dr. livingston, i presume?")
 
-(my-assert
+(check-for-bug :section16-legacy-105
  (string-capitalize "elm 13c arthur;fig don't")
  "Elm 13c Arthur;Fig Don'T")
 
-(my-assert
+(check-for-bug :section16-legacy-109
  (string-capitalize " hello ")
  " Hello ")
 
-(my-assert
+(check-for-bug :section16-legacy-113
  (string-capitalize "occlUDeD cASEmenTs FOreSTAll iNADVertent DEFenestraTION")
  "Occluded Casements Forestall Inadvertent Defenestration")
 
-(my-assert
+(check-for-bug :section16-legacy-117
  (string-capitalize 'kludgy-hash-search)
  "Kludgy-Hash-Search")
 
-(my-assert
+(check-for-bug :section16-legacy-121
  (string-capitalize "DON'T!")
  "Don'T!")				;not "Don't!"
 
-(my-assert
+(check-for-bug :section16-legacy-125
  (string-capitalize "pipe 13a, foo16c")
  "Pipe 13a, Foo16c")
 
-(my-assert
+(check-for-bug :section16-legacy-129
  (setq str (copy-seq "0123ABCD890a"))
  "0123ABCD890a")
 
-(my-assert
+(check-for-bug :section16-legacy-133
  (nstring-downcase str :start 5 :end 7)
  "0123AbcD890a")
 
-(my-assert
+(check-for-bug :section16-legacy-137
  str
  "0123AbcD890a")
 
 ;;; string-trim
 
-(my-assert
+(check-for-bug :section16-legacy-143
  (string-trim "abc" "abcaakaaakabcaaa")
  "kaaak")
 
-(my-assert
+(check-for-bug :section16-legacy-147
  (string-trim '(#\Space #\Tab #\Newline) " garbanzo beans
         ")
  "garbanzo beans")
 
-(my-assert
+(check-for-bug :section16-legacy-152
  (string-trim " (*)" " ( *three (silly) words* ) ")
  "three (silly) words")
 
-(my-assert
+(check-for-bug :section16-legacy-156
  (string-left-trim "abc" "labcabcabc")
  "labcabcabc")
 
-(my-assert
+(check-for-bug :section16-legacy-160
  (string-left-trim " (*)" " ( *three (silly) words* ) ")
  "three (silly) words* ) ")
 
-(my-assert
+(check-for-bug :section16-legacy-164
  (string-right-trim " (*)" " ( *three (silly) words* ) ")
  " ( *three (silly) words")
 
 ;;; string=
 
-(my-assert
+(check-for-bug :section16-legacy-170
  (string= "foo" "foo")
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-174
  (string= "foo" "Foo")
  nil)
 
-(my-assert
+(check-for-bug :section16-legacy-178
  (string= "foo" "bar")
  nil)
 
-(my-assert
+(check-for-bug :section16-legacy-182
  (string= "together" "frog" :start1 1 :end1 3 :start2 2)
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-186
  (string-equal "foo" "Foo")
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-190
  (string= "abcd" "01234abcd9012" :start2 5 :end2 9)
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-194
  (string< "aaaa" "aaab")
  3)
 
-(my-assert
+(check-for-bug :section16-legacy-198
  (string>= "aaaaa" "aaaa")
  4)
 
-(my-assert
+(check-for-bug :section16-legacy-202
  (string-not-greaterp "Abcde" "abcdE")
  5)
 
-(my-assert
+(check-for-bug :section16-legacy-206
  (string-lessp "012AAAA789" "01aaab6" :start1 3 :end1 7
 	       :start2 2 :end2 6)
  6)
 
-(my-assert
+(check-for-bug :section16-legacy-211
  (string-not-equal "AAAA" "aaaA")
  nil)
 
 ;;; stringp
 
-(my-assert
+(check-for-bug :section16-legacy-217
  (stringp "aaaaaa")
  t)
 
-(my-assert
+(check-for-bug :section16-legacy-221
  (stringp #\a)
  nil)
 
 ;;; make-string
 
-(my-assert
+(check-for-bug :section16-legacy-227
  (make-string 10 :initial-element #\5)
  "5555555555")
 
-(my-assert
+(check-for-bug :section16-legacy-231
  (length (make-string 10))
  10)
 

@@ -3,20 +3,20 @@
 
 
 #-(OR CMU SBCL)
-(my-assert
+(check-for-bug :clos-legacy-6
  (use-package "CLOS")
  T)
 
 #+SBCL
-(my-assert
+(check-for-bug :clos-legacy-11
  (use-package "SB-PCL")
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-15
  (unintern '<C1>)
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-19
  (progn
    (defclass <C1> ()
      ((x :initform 0 :accessor x-val :reader get-x :writer set-x :initarg :x)
@@ -24,62 +24,62 @@
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-27
  (progn
    (defclass <C2> (<C1>)
      ((z :initform 0 :accessor z-val :reader get-z :writer set-z :initarg :z)))
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-34
  (defparameter a (make-instance (find-class '<C1>) :x 10))
  A)
 
-(my-assert
+(check-for-bug :clos-legacy-38
  (x-val a)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-42
  (y-val a)
  1)
 
-(my-assert
+(check-for-bug :clos-legacy-46
  (setf (x-val a) 20)
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-50
  (x-val a)
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-54
  (get-x a)
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-58
  (set-x 10 a)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-62
  (x-val a)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-66
  (defparameter b (make-instance (find-class '<C2>) :x 10 :y 20 :z 30))
  B)
 
-(my-assert
+(check-for-bug :clos-legacy-70
  (x-val b)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-74
  (y-val b)
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-78
  (z-val b)
  30)
 
-(my-assert
+(check-for-bug :clos-legacy-82
  (progn
    (defgeneric f (x y)
      (:method ((x t) (y t))
@@ -91,31 +91,31 @@
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-94
  (f t t)
  (T T))
 
-(my-assert
+(check-for-bug :clos-legacy-98
  (f 2 3)
  5)
 
-(my-assert
+(check-for-bug :clos-legacy-102
  (f 2 3.0)
  5.0)
 
-(my-assert
+(check-for-bug :clos-legacy-106
  (f 2.0 3)
  (2.0 3))
 
-(my-assert
+(check-for-bug :clos-legacy-110
  (f "ab" "cd")
  "abcd")
 
-(my-assert
+(check-for-bug :clos-legacy-114
  (f 1 "abc")
  (1 "abc"))
 
-(my-assert
+(check-for-bug :clos-legacy-118
  (progn
    (defgeneric f (x y)
      (:method ((x t) (y t))
@@ -127,23 +127,23 @@
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-130
  (f 'x 'y)
  (X Y))
 
-(my-assert
+(check-for-bug :clos-legacy-134
  (f 1 2)
  (((1 2) -1) 3))
 
-(my-assert
+(check-for-bug :clos-legacy-138
  (f 1 2.0)
  ((1 2.0) 3.0))
 
-(my-assert
+(check-for-bug :clos-legacy-142
  (f 1.0 2)
  ((1.0 2) -1.0))
 
-(my-assert
+(check-for-bug :clos-legacy-146
  (progn
    (defgeneric g (x)
      (:method ((x null))
@@ -159,26 +159,26 @@
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-162
  (g 'x)
  (SYMBOL$))
 
-(my-assert
+(check-for-bug :clos-legacy-166
  (g '(x))
  (LIST$))
 
-(my-assert
+(check-for-bug :clos-legacy-170
  (g '())
  (NULL SYMBOL LIST$)
  "Class precedence list for NULL:
 
 null, symbol, list, sequence, t")
 
-(my-assert
+(check-for-bug :clos-legacy-177
  (defvar hl)
  HL)
 
-(my-assert
+(check-for-bug :clos-legacy-181
  (progn
    (defgeneric hgen (x)
      (:method ((x integer))
@@ -212,25 +212,25 @@ null, symbol, list, sequence, t")
    )
  H)
 
-(my-assert
+(check-for-bug :clos-legacy-215
  (h 'abc)
  (INNERMOST))
 
-(my-assert
+(check-for-bug :clos-legacy-219
  (h 3.14)
  (N-AROUND-1 N-BEFORE N-PRIMARY-1 INNERMOST N-PRIMARY-2 N-AFTER N-AROUND-2))
 
-(my-assert
+(check-for-bug :clos-legacy-223
  (h 3)
  (I-AROUND-1 N-AROUND-1 I-BEFORE N-BEFORE I-PRIMARY-1 N-PRIMARY-1 INNERMOST
 	     N-PRIMARY-2 I-PRIMARY-2 N-AFTER I-AFTER N-AROUND-2 I-AROUND-2
 	     ))
 
-(my-assert
+(check-for-bug :clos-legacy-229
  (unintern '<C1>)
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-233
  (progn
    (defclass <C1> ()
      ((x :initform 0 :accessor x-val :initarg :x)
@@ -238,47 +238,47 @@ null, symbol, list, sequence, t")
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-241
  (defparameter a (make-instance (find-class '<C1>) :x 10))
  A)
 
-(my-assert
+(check-for-bug :clos-legacy-245
  (defparameter b (make-instance (find-class '<C1>) :y 20 :x 10))
  B)
 
-(my-assert
+(check-for-bug :clos-legacy-249
  (defparameter c (make-instance (find-class '<C1>)))
  C)
 
-(my-assert
+(check-for-bug :clos-legacy-253
  (x-val a)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-257
  (y-val a)
  1)
 
-(my-assert
+(check-for-bug :clos-legacy-261
  (x-val b)
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-265
  (y-val b)
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-269
  (x-val c)
  0)
 
-(my-assert
+(check-for-bug :clos-legacy-273
  (y-val c)
  1)
 
-(my-assert
+(check-for-bug :clos-legacy-277
  (unintern '<C1>)
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-281
  (progn
    (defclass <C1> ()
      ((x :initform 0 :accessor x-val :initarg :x)
@@ -289,85 +289,85 @@ null, symbol, list, sequence, t")
    ())
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-292
  (x-val (make-instance (find-class '<C1>)))
  1)
 
-(my-assert
+(check-for-bug :clos-legacy-296
  (x-val (make-instance (find-class '<C1>) :x 10))
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-300
  (x-val (make-instance (find-class '<C1>) :y 20))
  20)
 
-(my-assert
+(check-for-bug :clos-legacy-304
  (x-val (make-instance (find-class '<C1>) :x 10 :y 20))
  10)
 
-(my-assert
+(check-for-bug :clos-legacy-308
  (unintern '<C1>)
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-312
  (eq (class-of ())               (find-class 'null))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-316
  (eq (class-of t)                (find-class 'symbol))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-320
  (eq (class-of 10)
      (find-class #+(or ALLEGRO cmu sbcl) 'fixnum
 		 #-(or ALLEGRO cmu sbcl) 'integer))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-326
  (eq (class-of 10.0)
      (find-class #+(or ALLEGRO cmu sbcl) 'single-float
 		 #-(or ALLEGRO cmu sbcl) 'float))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-332
  (eq (class-of '(a b))
      (find-class 'cons))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-337
  (eq (class-of "abc")
      (find-class #+(OR CMU SBCL) 'simple-string
 		 #-(OR CMU SBCL) 'string))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-343
  (eq (class-of '#(1 2))
      (find-class #+(OR CMU SBCL) 'simple-vector
 		 #-(OR CMU SBCL) 'vector))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-349
  (eq (class-of #'car)
      (find-class 'function))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-354
  (eq (class-of #'make-instance)
      (find-class 'standard-generic-function))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-359
  (eq (class-of '#2a((a) (b)))
      (find-class #+(OR CMU SBCL) 'simple-array
 		 #-(OR CMU SBCL) 'array))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-365
  (eq (class-of *standard-input*)
      (find-class 'stream))
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-370
  (eq (class-of (lambda (x) x))
      (find-class 'function))
  T
@@ -380,57 +380,57 @@ zero or more values. 2. an object of type function.
 
 So class-of should return a function. Not?")
 
-(my-assert
+(check-for-bug :clos-legacy-383
  (eq (class-of (find-class 't))
      (find-class 'built-in-class))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-388
  (typep "abc" (find-class 't))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-392
  (typep "abc" (find-class 'array))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-396
  (typep "abc" (find-class 'vector))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-400
  (typep "abc" (find-class 'string))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-404
  (typep "abc" (find-class 'integer))
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-408
  (typep 3 (find-class 't))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-412
  (typep 3 (find-class 'number))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-416
  (typep 3 (find-class 'float))
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-420
  (typep 3 (find-class 'integer))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-424
  (typep 3 (find-class 'string))
  NIL)
 
-(my-assert
+(check-for-bug :clos-legacy-428
  (typep *standard-input* (find-class 'stream))
  T)
 
 #+(or clisp allegro cmu sbcl)
-(my-assert
+(check-for-bug :clos-legacy-433
  #+CLISP
  (defun subclassp (class1 class2)
    (clos::subclassp class1 class2)
@@ -452,17 +452,17 @@ So class-of should return a function. Not?")
 		      ) )    )     )
  #+(or CLISP ALLEGRO cmu sbcl) SUBCLASSP)
 
-(my-assert
+(check-for-bug :clos-legacy-455
  (subclassp (find-class 'number)
 	    (find-class 't))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-460
  (subclassp (find-class 'integer)
 	    (find-class 'number))
  T)
 
-(my-assert
+(check-for-bug :clos-legacy-465
  (subclassp (find-class 'float)
 	    (find-class 'number))
  T)

@@ -1,14 +1,14 @@
 ;;; based on v1.2 -*- mode: lisp -*-
 (in-package :cl-user)
 
-(my-assert
+(check-for-bug :path-legacy-4
  (setf string "test-pathname.abc" symbol 'test-pathname.abc)
  test-pathname.abc)
 
 ;;pathname -mögl. Argumenttypen: pathname,string,symbol,stream
 ;;         -resultat: pathname
 
-(my-assert
+(check-for-bug :path-legacy-11
  (SETF PATHSTRING (PATHNAME STRING))
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL
@@ -18,7 +18,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-21
  (SETF PATHSYMBOL (PATHNAME symbol))
  #+XCL
  #S(PATHNAME SYSTEM::HOST
@@ -28,7 +28,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-31
  (SETF PATHPATH (PATHNAME PATHSYMBOL))
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL
@@ -38,7 +38,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-41
  (SETF STREAM (OPEN STRING :DIRECTION :OUTPUT)
        a nil)
  nil)
@@ -46,7 +46,7 @@
 ;; (SETF PATHSTREAM (PATHNAME STREAM))
 ;; "test-pathname.lsp"
 
-(my-assert
+(check-for-bug :path-legacy-49
  (MAPCAR (FUNCTION PATHNAMEP)
 	 (LIST PATHSTRING PATHSYMBOL PATHPATH ;PATHSTREAM
 	       ))
@@ -64,7 +64,7 @@
 
 
 
-(my-assert
+(check-for-bug :path-legacy-67
  (PARSE-NAMESTRING STRING)
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL
@@ -74,7 +74,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-77
  (PARSE-NAMESTRING SYMBOL)
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL
@@ -86,20 +86,20 @@
 
 #+XCL
 
-(my-assert
+(check-for-bug :path-legacy-89
  (PARSE-NAMESTRING "bab:test-pathname.abc")
  #S(PATHNAME SYSTEM::HOST NIL
 	     SYSTEM::DEVICE "$1$DUA70" DIRECTORY "43.BABYLON.REL2" SYSTEM::NAME
 	     "TEST-PATHNAME" TYPE "ABC" SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-96
  (PARSE-NAMESTRING "bab:test-pathname.abc;3")
  #S(PATHNAME SYSTEM::HOST NIL
 	     SYSTEM::DEVICE "$1$DUA70" DIRECTORY "43.BABYLON.REL2" SYSTEM::NAME
 	     "TEST-PATHNAME" TYPE "ABC" SYSTEM::VERSION 3))
 
-(my-assert
+(check-for-bug :path-legacy-102
  (PARSE-NAMESTRING PATHSTRING)
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE
@@ -109,7 +109,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-112
  (PARSE-NAMESTRING "test-pathname.abc" NIL)
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL
@@ -120,25 +120,25 @@
 	     :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-123
  (PARSE-NAMESTRING "sirius::disk00$abt43:[heicking]test-pathname.abc")
  #S(PATHNAME
     SYSTEM::HOST "SIRIUS" SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "HEICKING"
     SYSTEM::NAME "TEST-PATHNAME" TYPE "ABC" SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-130
  (PARSE-NAMESTRING "sirius::disk00$abt43:[heicking]test-pathname.abc" "sirius")
  #S(PATHNAME
     SYSTEM::HOST "SIRIUS" SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "HEICKING"
     SYSTEM::NAME "TEST-PATHNAME" TYPE "ABC" SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-137
  (PARSE-NAMESTRING "sirius::disk00$abt43:[heicking]test-pathname.abc" "orion")
  ERROR)
 
-(my-assert
+(check-for-bug :path-legacy-141
  (PARSE-NAMESTRING "abc.123" NIL NIL :START 0 :END 5)
  #+XCL
  #S(PATHNAME SYSTEM::HOST
@@ -148,7 +148,7 @@
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME "abc" :TYPE "1" :VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-151
  (PARSE-NAMESTRING "abc.123" NIL NIL :START 2 :END 5)
  #+XCL
  #S(PATHNAME SYSTEM::HOST
@@ -159,27 +159,27 @@
 	     :NAME "c" :TYPE "1" :VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-162
  (PARSE-NAMESTRING "babylon" NIL NIL :START 0 :END 3)
  #S(PATHNAME SYSTEM::HOST
 	     NIL SYSTEM::DEVICE "$1$DUA70" DIRECTORY "43.BABYLON.REL2" SYSTEM::NAME NIL TYPE
 	     NIL SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-169
  (PARSE-NAMESTRING "babylon" NIL NIL :START 0 :END 7)
  #S(PATHNAME SYSTEM::HOST
 	     NIL SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "BABYLON"
 	     TYPE NIL SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-176
  (PARSE-NAMESTRING "babylon" NIL *DEFAULT-PATHNAME-DEFAULTS* :START 0 :END 7)
  #S(PATHNAME
     SYSTEM::HOST NIL SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME
     "BABYLON" TYPE NIL SYSTEM::VERSION NIL))
 
-(my-assert
+(check-for-bug :path-legacy-182
  *DEFAULT-PATHNAME-DEFAULTS*
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE NIL
@@ -192,7 +192,7 @@
 	     :NAME NIL :TYPE NIL :VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-195
  (PARSE-NAMESTRING "babylon" NIL *DEFAULT-PATHNAME-DEFAULTS* :START 0 :END 3)
  #S(PATHNAME
     SYSTEM::HOST NIL SYSTEM::DEVICE "$1$DUA70" DIRECTORY "43.BABYLON.REL2"
@@ -209,29 +209,29 @@
 ;; "BABYLON" TYPE NIL SYSTEM::VERSION NIL)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-212
  (PARSE-NAMESTRING "babylon;c.c" NIL NIL :JUNK-ALLOWED NIL)
  ERROR)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-217
  (PARSE-NAMESTRING "babylon.c.c" NIL NIL :JUNK-ALLOWED NIL)
  ERROR)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-222
  (PARSE-NAMESTRING "babylon.c;c" NIL NIL :JUNK-ALLOWED NIL)
  ERROR)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-227
  (PARSE-NAMESTRING "babylon.c;" NIL NIL :JUNK-ALLOWED NIL)
  #S(PATHNAME
     SYSTEM::HOST NIL SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME
     "BABYLON" TYPE "C" SYSTEM::VERSION NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-234
  (PARSE-NAMESTRING "babylon.c;5" NIL NIL :JUNK-ALLOWED NIL)
  #S(PATHNAME
     SYSTEM::HOST NIL SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME
@@ -246,35 +246,35 @@
 ;; (MERGE-PATHNAME "test$$")   ERROR
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-249
  (MERGE-PATHNAMES "test$$")
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE
 	     "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST$$" TYPE "lsp"
 	     SYSTEM::VERSION :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-256
  (MERGE-PATHNAMES "test$$" SYMBOL)
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE
 	     "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST$$" TYPE "ABC"
 	     SYSTEM::VERSION :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-263
  (MERGE-PATHNAMES "test$$" SYMBOL 2)
  #S(PATHNAME SYSTEM::HOST NIL
 	     SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST$$" TYPE
 	     "ABC" SYSTEM::VERSION 2))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-270
  (MERGE-PATHNAMES "test$$" (PATHNAME SYMBOL) 2)
  #S(PATHNAME SYSTEM::HOST NIL
 	     SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST$$" TYPE
 	     "ABC" SYSTEM::VERSION 2))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-277
  (MERGE-PATHNAMES "test$$" STREAM 2)
  #S(PATHNAME SYSTEM::HOST 16 SYSTEM::DEVICE
 	     "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST$$" TYPE :ESCAPE
@@ -284,115 +284,115 @@
 ;; (MERGE-PATHNAME STRING SYMBOL)   ERROR
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-287
  (MAKE-PATHNAME :NAME "a" :HOST (QUOTE ORION))
  #S(PATHNAME SYSTEM::HOST ORION
 	     SYSTEM::DEVICE NIL DIRECTORY NIL SYSTEM::NAME "a" TYPE NIL SYSTEM::VERSION
 	     :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-294
  (DEFMACRO TEST (&REST BODY) (\` (APPLY (FUNCTION MAKE-PATHNAME) (\,@ BODY))))
  TEST)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-299
  (setf a '(:host "sirius" :name "a"))
  (:host "sirius" :name "a"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-304
  (TEST A)
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE NIL DIRECTORY NIL
 	     SYSTEM::NAME "a" TYPE NIL SYSTEM::VERSION :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-310
  (SETF A (LIST* :DEVICE "disk00$abt43" A))
  (:DEVICE "disk00$abt43" :HOST "sirius" :NAME "a"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-315
  (TEST A)
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE "disk00$abt43"
 	     DIRECTORY NIL SYSTEM::NAME "a" TYPE NIL SYSTEM::VERSION :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-321
  (SETF A (LIST* :DIRECTORY "[heicking.comlisp]" A))
  (:DIRECTORY
   "[heicking.comlisp]" :DEVICE "disk00$abt43" :HOST "sirius" :NAME "a"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-327
  (TEST A)
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE "disk00$abt43"
 	     DIRECTORY "[heicking.comlisp]" SYSTEM::NAME "a" TYPE NIL SYSTEM::VERSION
 	     :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-334
  (SETF A (LIST* :TYPE "raf" A))
  (:TYPE "raf" :DIRECTORY "[heicking.comlisp]"
 	:DEVICE "disk00$abt43" :HOST "sirius" :NAME "a"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-340
  (TEST A)
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE "disk00$abt43"
 	     DIRECTORY "[heicking.comlisp]" SYSTEM::NAME "a" TYPE "raf" SYSTEM::VERSION
 	     :NEWEST))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-347
  (SETF A (LIST* :VERSION 3 A))
  (:VERSION 3 :TYPE "raf" :DIRECTORY
 	   "[heicking.comlisp]" :DEVICE "disk00$abt43" :HOST "sirius" :NAME "a"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-353
  (TEST A)
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE "disk00$abt43"
 	     DIRECTORY "[heicking.comlisp]" SYSTEM::NAME "a" TYPE "raf" SYSTEM::VERSION 3))
 
-(my-assert
+(check-for-bug :path-legacy-358
  (MAPCAR (FUNCTION PATHNAMEP) (LIST PATHSYMBOL PATHPATH PATHSTRING))
  (T T T))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-363
  (SETF PATH (TEST A))
  #S(PATHNAME SYSTEM::HOST "sirius" SYSTEM::DEVICE
 	     "disk00$abt43" DIRECTORY "[heicking.comlisp]" SYSTEM::NAME "a" TYPE "raf"
 	     SYSTEM::VERSION 3))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-370
  (MAPCAR (FUNCTION PATHNAME-HOST) (LIST SYMBOL STRING STREAM PATH))
  (NIL NIL NIL NIL))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-375
  (MAPCAR (FUNCTION PATHNAME-DEVICE) (LIST SYMBOL STRING STREAM PATH))
  ("DISK00$ABT43" "DISK00$ABT43" "DISK00$ABT43" "DISK00$ABT43"))
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-380
  (MAPCAR (FUNCTION PATHNAME-DIRECTORY) (LIST SYMBOL STRING STREAM PATH))
  ("XCL.MAIN" "XCL.MAIN" "XCL.MAIN" "XCL.MAIN"))
 
-(my-assert
+(check-for-bug :path-legacy-384
  (PROGN (CLOSE STREAM) T)
  T)
 
 #+XCL
-(my-assert
+(check-for-bug :path-legacy-389
  (USER-HOMEDIR-PATHNAME)
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE
 	     "DISK00$ABT43" DIRECTORY "HEICKING" SYSTEM::NAME NIL TYPE NIL SYSTEM::VERSION
 	     NIL))
 
-(my-assert
+(check-for-bug :path-legacy-395
  (PATHNAME "*.*")
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE "DISK00$ABT43"
@@ -403,7 +403,7 @@
  #-(or XCL CLISP)
  #P"*.*")
 
-(my-assert
+(check-for-bug :path-legacy-406
  (progn (setf file (open "nicht-vorhandenes-file.non"
 			 :direction :input
 			 :element-type 'character
@@ -411,26 +411,26 @@
  t
  "")
 
-(my-assert
+(check-for-bug :path-legacy-414
  (null (probe-file "nicht-vorhandenes-file.non"))
  NIL)
 
-(my-assert
+(check-for-bug :path-legacy-418
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-422
  (setf file (open "nicht-vorhandenes-file.non"
 		  :direction :io
 		  :element-type 'string-char
 		  :if-exists :error))
  error)
 
-(my-assert
+(check-for-bug :path-legacy-429
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-433
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
@@ -438,146 +438,146 @@
  nil
  "")
 
-(my-assert
+(check-for-bug :path-legacy-441
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-445
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-exists :rename)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-452
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-456
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-exists :rename-and-delete)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-463
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-467
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-exists :overwrite)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-474
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-478
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-exists :append)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-485
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-489
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-exists :supersede)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-496
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-500
  (setf file (open "nicht-vorhandenes-file.non"
 		  :direction :io
 		  :element-type 'character
 		  :if-exists nil))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-507
  (progn (close file) t)
  error)
 
-(my-assert
+(check-for-bug :path-legacy-511
  (setf file (open "nicht-vorhandenes-file.new"
 		  :direction :io
 		  :element-type 'character
 		  :if-does-not-exist :error))
  error)
 
-(my-assert
+(check-for-bug :path-legacy-518
  (progn (close file) t)
  error)
 
-(my-assert
+(check-for-bug :path-legacy-522
  (null (setf file (open "nicht-vorhandenes-file.new"
                         :direction :io
                         :element-type 'character
                         :if-does-not-exist :create)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-529
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-533
  (null (setf file (open "nicht-vorhandenes-file.non"
                         :direction :io
                         :element-type 'character
                         :if-does-not-exist nil)))
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-540
  (progn (close file) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-544
  (namestring
   (multiple-value-setq (new-name pathname truename)
     (rename-file "nicht-vorhandenes-file.non" "file.da")))
  "file.da")
 
-(my-assert
+(check-for-bug :path-legacy-550
  (namestring new-name)
  "file.da")
 
-(my-assert
+(check-for-bug :path-legacy-554
  (null pathname)
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-558
  (null truename)
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-562
  (progn (delete-file "test-pathname.abc") t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-566
  (progn (mapc #'delete-file (directory "nicht-vorhandenes-file.*")) t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-570
  (progn (delete-file "file.da") t)
  t)
 
-(my-assert
+(check-for-bug :path-legacy-574
  (progn
    (setf (logical-pathname-translations "clocc")
 	 '(("**;*" "/usr/local/src/clocc/**/*")))
    nil)
  nil)
 
-(my-assert
+(check-for-bug :path-legacy-581
  (translate-logical-pathname "clocc:src;port;")
  #P"/usr/local/src/clocc/src/port/")

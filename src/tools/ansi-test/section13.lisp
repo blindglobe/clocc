@@ -3,17 +3,17 @@
 
 (proclaim '(special log))
 
-(my-assert
+(check-for-bug :section13-legacy-6
  (subtypep 'base-char 'character)
  T)
 
 
-(my-assert
+(check-for-bug :section13-legacy-11
  (subtypep 'standard-char 'base-char)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-16
  (subtypep 'extended-char 'character)
  t
  "Type EXTENDED-CHAR
@@ -25,184 +25,184 @@ extended-char, character, t")
 ;;; char= etc
 
 
-(my-assert
+(check-for-bug :section13-legacy-28
  (char= #\d #\d)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-33
  (char= #\A #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-38
  (char= #\d #\x)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-43
  (char= #\d #\D)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-48
  (char/= #\d #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-53
  (char/= #\d #\x)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-58
  (char/= #\d #\D)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-63
  (char= #\d #\d #\d #\d)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-68
  (char/= #\d #\d #\d #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-73
  (char= #\d #\d #\x #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-78
  (char/= #\d #\d #\x #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-83
  (char= #\d #\y #\x #\c)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-88
  (char/= #\d #\y #\x #\c)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-93
  (char= #\d #\c #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-98
  (char/= #\d #\c #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-103
  (char< #\d #\x)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-108
  (char<= #\d #\x)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-113
  (char< #\d #\d)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-118
  (char<= #\d #\d)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-123
  (char< #\a #\e #\y #\z)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-128
  (char<= #\a #\e #\y #\z)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-133
  (char< #\a #\e #\e #\y)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-138
  (char<= #\a #\e #\e #\y)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-143
  (char> #\e #\d)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-148
  (char>= #\e #\d)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-153
  (char> #\d #\c #\b #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-158
  (char>= #\d #\c #\b #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-163
  (char> #\d #\d #\c #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-168
  (char>= #\d #\d #\c #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-173
  (char> #\e #\d #\b #\c #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-178
  (char>= #\e #\d #\b #\c #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-183
  (char> #\z #\A)
  #+(or cmu sbcl clisp ecls) T
  #-(or cmu sbcl clisp ecls) fill-this-in)
 
 
-(my-assert
+(check-for-bug :section13-legacy-189
  (char> #\Z #\a)
  #+(or cmu sbcl clisp ecls) nil
  #-(or cmu sbcl clisp ecls) fill-this-in)
 
 
-(my-assert
+(check-for-bug :section13-legacy-195
  (char-equal #\A #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-200
  (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char-lessp)
  (#\A #\a #\b #\B #\c #\C))
 
 
-(my-assert
+(check-for-bug :section13-legacy-205
  (stable-sort (list #\b #\A #\B #\a #\c #\C) #'char<)
  #+(or cmu sbcl clisp ecls) (#\A #\B #\C #\a #\b #\c)
  #-(or cmu sbcl clisp ecls) fill-this-in)
@@ -215,31 +215,31 @@ extended-char, character, t")
 ;;; character
 
 
-(my-assert
+(check-for-bug :section13-legacy-218
  (character #\a)
  #\a)
 
 
-(my-assert
+(check-for-bug :section13-legacy-223
  (character "a")
  #\a)
 
-(my-assert
+(check-for-bug :section13-legacy-227
  (character 'a)
  #\A)
 
 
-(my-assert
+(check-for-bug :section13-legacy-232
  (character '\a)
  #\a)
 
 
-(my-assert
+(check-for-bug :section13-legacy-237
  (character 65.0)
  TYPE-ERROR)
 
 
-(my-assert
+(check-for-bug :section13-legacy-242
  (character 'apple)
  TYPE-ERROR)
 
@@ -247,118 +247,118 @@ extended-char, character, t")
 ;;; alpha-char-p
 
 
-(my-assert
+(check-for-bug :section13-legacy-250
  (alpha-char-p #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-255
  (alpha-char-p #\5)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-260
  (alpha-char-p #\Newline)
  nil)
 
 ;;; alphanumericp
 
 
-(my-assert
+(check-for-bug :section13-legacy-267
  (alphanumericp #\Z)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-272
  (alphanumericp #\9)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-277
  (alphanumericp #\Newline)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-282
  (alphanumericp #\#)
  nil)
 
 ;;; digit-char
 
 
-(my-assert
+(check-for-bug :section13-legacy-289
  (digit-char 0)
  #\0)
 
 
-(my-assert
+(check-for-bug :section13-legacy-294
  (digit-char 10 11)
  #\A)
 
 
-(my-assert
+(check-for-bug :section13-legacy-299
  (digit-char 10 10)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-304
  (digit-char 7)
  #\7)
 
 
-(my-assert
+(check-for-bug :section13-legacy-309
  (digit-char 12)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-314
  (digit-char 12 16)
  #\C)
 
 
-(my-assert
+(check-for-bug :section13-legacy-319
  (digit-char 6 2)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-324
  (digit-char 1 2)
  #\1)
 
 ;;; digit-char-p
 
 
-(my-assert
+(check-for-bug :section13-legacy-331
  (digit-char-p #\5)
  5)
 
 
-(my-assert
+(check-for-bug :section13-legacy-336
  (digit-char-p #\5 2)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-341
  (digit-char-p #\A)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-346
  (digit-char-p #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-351
  (digit-char-p #\A 11)
  10)
 
 
-(my-assert
+(check-for-bug :section13-legacy-356
  (digit-char-p #\a 11)
  10)
 
 
-(my-assert
+(check-for-bug :section13-legacy-361
  (mapcar #'(lambda (radix)
 	     (map 'list #'(lambda (x) (digit-char-p x radix))
 		  "059AaFGZ"))
@@ -372,76 +372,76 @@ extended-char, character, t")
 ;;; graphic-char
 
 
-(my-assert
+(check-for-bug :section13-legacy-375
  (graphic-char-p #\G)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-380
  (graphic-char-p #\#)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-385
  (graphic-char-p #\Space)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-390
  (graphic-char-p #\Newline)
  nil)
 
 ;;; standard-char-p
 
 
-(my-assert
+(check-for-bug :section13-legacy-397
  (standard-char-p #\Space)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-402
  (standard-char-p #\~)
  t)
 
 ;;; char-upcase
 
 
-(my-assert
+(check-for-bug :section13-legacy-409
  (char-upcase #\a)
  #\A)
 
 
-(my-assert
+(check-for-bug :section13-legacy-414
  (char-upcase #\A)
  #\A)
 
 
-(my-assert
+(check-for-bug :section13-legacy-419
  (char-downcase #\a)
  #\a)
 
 
-(my-assert
+(check-for-bug :section13-legacy-424
  (char-downcase #\A)
  #\a)
 
 
-(my-assert
+(check-for-bug :section13-legacy-429
  (char-upcase #\9)
  #\9)
 
 
-(my-assert
+(check-for-bug :section13-legacy-434
  (char-downcase #\9)
  #\9)
 
 
-(my-assert
+(check-for-bug :section13-legacy-439
  (char-upcase #\@)
  #\@)
 
 
-(my-assert
+(check-for-bug :section13-legacy-444
  (char-downcase #\@)
  #\@)
 
@@ -449,7 +449,7 @@ extended-char, character, t")
 ;; some implementations if CHAR-CODE-LIMIT happens to be very large
 ;; for that implementation.
 
-(my-assert
+(check-for-bug :section13-legacy-452
  (dotimes (code char-code-limit)
    (let ((char (code-char code)))
      (when char
@@ -468,61 +468,61 @@ extended-char, character, t")
 
 ;;; upper-case-p
 
-(my-assert
+(check-for-bug :section13-legacy-471
  (upper-case-p #\A)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-476
  (upper-case-p #\a)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-481
  (both-case-p #\a)
  t)
 
 
-(my-assert
+(check-for-bug :section13-legacy-486
  (both-case-p #\5)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-491
  (lower-case-p #\5)
  nil)
 
 
-(my-assert
+(check-for-bug :section13-legacy-496
  (upper-case-p #\5)
  nil)
 
 ;;; char-code-limit
 
 
-(my-assert
+(check-for-bug :section13-legacy-503
  (>= char-code-limit 96)
  t)
 
 ;;; char-name
 
 
-(my-assert
+(check-for-bug :section13-legacy-510
  (char-name #\ )
  "Space")
 
 
-(my-assert
+(check-for-bug :section13-legacy-515
  (char-name #\Space)
  "Space")
 
 
-(my-assert
+(check-for-bug :section13-legacy-520
  (char-name #\Page)
  "Page")
 
 
-(my-assert
+(check-for-bug :section13-legacy-525
  (char-name #\a)
  #+(or cmu sbcl ecls) nil
  #+clisp "LATIN_SMALL_LETTER_A"
@@ -530,7 +530,7 @@ extended-char, character, t")
 ;; NIL OR "LOWERCASE-a" OR  "Small-A" OR  "LA01"
 
 
-(my-assert
+(check-for-bug :section13-legacy-533
  (char-name #\A)
  #+(or cmu sbcl ecls) nil
  #+clisp "LATIN_CAPITAL_LETTER_A"
@@ -539,30 +539,30 @@ extended-char, character, t")
 
 ;; Even though its CHAR-NAME can vary, #\A prints as #\A
 
-(my-assert
+(check-for-bug :section13-legacy-542
  (prin1-to-string (read-from-string (format nil "#\\~A" (or (char-name #\A) "A"))))
  "#\\A")
 
 ;;; name-char
 
 
-(my-assert
+(check-for-bug :section13-legacy-549
  (name-char 'space)
  #\Space)
 
 
-(my-assert
+(check-for-bug :section13-legacy-554
  (name-char "space")
  #\Space)
 
 
-(my-assert
+(check-for-bug :section13-legacy-559
  (name-char "Space")
  #\Space)
 
 
 
-(my-assert
+(check-for-bug :section13-legacy-565
  (let ((x (char-name #\a)))
    (or (not x) (eql (name-char x) #\a)))
  t)

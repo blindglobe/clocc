@@ -5,15 +5,15 @@
 
 (defvar *the-cl-package* (find-package :common-lisp))
 
-(my-assert
+(check-for-bug :symboltest-legacy-8
  (packagep *the-cl-package*)
  t)
 
-(my-assert
+(check-for-bug :symboltest-legacy-12
  (package-name *the-cl-package*)
  "COMMON-LISP")
 
-(my-assert
+(check-for-bug :symboltest-legacy-16
  (not
   (member "CL"
 	  (package-nicknames *the-cl-package*)
@@ -475,7 +475,7 @@
    "values"                               "zerop"))
 
 ;; test there aren't any symbols too much
-(my-assert
+(check-for-bug :symboltest-legacy-478
  (set-difference
   (loop for symbol being
     the external-symbols
@@ -488,7 +488,7 @@
 from the :cl package")
 
 ;; test there aren't any symbols missing
-(my-assert
+(check-for-bug :symboltest-legacy-491
  (set-difference
   *allowed-exported-symbols*
   (loop for symbol being

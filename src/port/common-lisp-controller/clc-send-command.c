@@ -123,6 +123,7 @@ struct arguments {
   char *args[3];
   int verbose, debug, forceconnect;
 };
+struct arguments arguments = { {NULL, NULL,NULL} , 1 , 0, 0};
      
 error_t parse_opt (int key, char *arg, struct argp_state *state)
 {
@@ -247,27 +248,248 @@ void  nuke_package(char *package,char *compiler)
       ftw(path, &delete_directories, 150);
    }
 }
-     
+
+/* shared variables */     
 static struct argp argp = { options, parse_opt, args_doc, doc };
+static char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+int removep;
+
+void doqueue()
+{
+  /* We could not connect to the daemon, or we have to queue only
+     Can we handle this on our own?
+     Yes we can! */
+  if (removep == 1) 
+    {
+      /* code lifted and adapted from clc-build-daemon */
+      char *package=arguments.args[1];
+      char *compiler=arguments.args[2];
+      /* characters allowed in the package and compiler names: */
+      char command[4097];
+	      
+      printf("I will try to remove the package myself...\n");
+	  
+      if ((package == (char *) NULL) ||
+	  ( strlen(package) != strspn(package,allowedcharacters)))
+	{
+	  printf("The package %s is invalid!\n", package);
+	  exit(2);
+	}
+      if ((compiler == (char *) NULL) ||
+	  ( strlen(compiler) != strspn(compiler,allowedcharacters)))
+	{
+	  printf("The compiler %s is invalid!\n", compiler);
+	  exit(2);
+	}
+
+      snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
+	       compiler,package);
+      command[4096]=(char)0;
+      if (! probe_directory(command) )
+	{
+	  printf("Cannot remove  package %s for compiler %s\n",package,compiler);
+	}
+      else
+	{
+	  nuke_package(package,compiler);
+	}
+    }
+  else
+    {
+      char *package=arguments.args[1];
+      char *compiler=arguments.args[2];
+      /* characters allowed in the package and compiler names: */
+      char filename[4097];
+      struct utsname buf;
+      FILE *f;
+	      
+      printf("I will leave a not to rebuild this package...\n");
+	  
+      if ((package == (char *) NULL) ||
+	  ( strlen(package) != strspn(package,allowedcharacters)))
+	{
+	  printf("The package %s is invalid!\n", package);
+	  exit(2);
+	}
+      if ((compiler == (char *) NULL) ||
+	  ( strlen(compiler) != strspn(compiler,allowedcharacters)))
+	{
+	  printf("The compiler %s is invalid!\n", compiler);
+	  exit(2);
+	}
+	      
+      /* Everything looks valid, so let us leave a
+	 message for the builder */
+	      
+      if (uname(&buf)  != 0)
+	{
+	  reportsystemerror("Could not get my hostname.");
+	  exit(43);
+	}
+      snprintf(filename,4096,"/var/spool/common-lisp-controller/%s-%i",
+	       buf.nodename, (int) getpid());
+      filename[4096]=(char)0;
+	      
+      if ( (f=fopen(filename,"wx")) == NULL )
+	{
+	  reportsystemerror("Could not open spool file");
+	  exit(44);
+	}
+	      
+      fprintf(f,"%s %s\n",package,compiler);
+      fclose(f);
+    }
+  exit(0);
+}
+
+int socketfd;
+
+void doconnect()
+{
+  FILE *stream;
+  int successp;
+  int opt;
+  int closing_connection=0;
+  
+  stream = fdopen(socketfd, "r+");
+
+  if (stream == NULL)
+    reportsystemerror("Could not convert to a stream");
+
+  opt=1;
+  if (setsockopt(socketfd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
+    reportsystemerror("Could not set option for socket");
+
+  if (setvbuf(stream, (char *) NULL, _IOLBF, BUFSIZ) != 0)
+    reportsystemerror("Could not make stream line buffered");
+
+  for(successp=1;;)
+    {
+      char code[4];
+
+      /* get input */
+      fflush(stream);
+      readaline(stream,closing_connection);
+
+      strncpy(code,line,3);
+      code[3]=(char) 0;
+      
+      if (strcmp("100",code) == 0) {
+	/* hello */
+	if (arguments.verbose)
+	  fprintf(stream,"SHOW-OUTPUT\n");
+	else
+	  fprintf(stream,"HIDE-OUTPUT\n");
+	if (arguments.debug)
+	  {
+	    if (arguments.verbose)
+	      printf("Sending: SHOW-OUTPUT\n");
+	    else
+	      printf("Sending HIDE-OUTPUT\n");
+	  }
+	continue; 
+      }
+      if ((strcmp("200",code) == 0) ||
+	  (strcmp("201",code) == 0)) {
+	/* we show or hide */
+	if (removep == 1)
+	  fprintf(stream,"REMOVE %s %s\n",arguments.args[1],arguments.args[2]);
+	else
+	  fprintf(stream,"RECOMPILE %s %s\n",arguments.args[1],arguments.args[2]);
+
+	if (arguments.debug)
+	  {
+	    if (removep == 1)
+	      printf("Sending: REMOVE %s %s\n",arguments.args[1],arguments.args[2]);
+	    else
+	      printf("Sending: RECOMPILE %s %s\n",arguments.args[1],arguments.args[2]);
+
+	  }
+	continue; 
+      }
+      if (strcmp("250",code) == 0) {
+	/* operation started... */
+	continue; 
+      }
+      if ((strcmp("251",code) == 0) ||
+	  (strcmp("252",code) == 0)) {
+	/* ok finished */
+	fprintf(stream,"QUIT\n");
+	closing_connection=1;
+	if (arguments.debug)
+	  {
+	    printf("Sending: QUIT\n");
+	  }
+	continue; 
+      }
+      if (strcmp("540",code) == 0) {
+	printf("\nCannot remove: not yet compiled library for implementation\n");
+	/* Change this to a success since CLC tries to remove a
+	   compiled library before recompiling. Some CLC Lisp
+	   implementations die if this returns an error status */
+	/* successp = 0; */
+	successp = 1;
+	continue; 
+      }
+      if (strcmp("550",code) == 0) {
+	printf("\nCannot compile: library for implementation already compiled\n");
+	successp = 0;
+	fprintf(stream,"QUIT\n");
+	closing_connection=1;
+	if (arguments.debug)
+	  {
+	    printf("Sending: QUIT\n");
+	  }
+	continue; 
+      }
+      if (strcmp("501",code) == 0) {
+	printf("\nCannot compile: compilation error\n");
+	successp = 0;
+	continue; 
+      }
+      if (strcmp("500",code) == 0) {
+	printf("\nParameter problem?\n");
+	successp = 0;
+	fprintf(stream,"QUIT\n");
+	closing_connection=1;
+	if (arguments.debug)
+	  {
+	    printf("Sending: QUIT\n");
+	  }
+	continue; 
+      }
+      if ((strcmp("300",code) == 0) ||
+	  /* start output */
+	  (strcmp("331",code) == 0)) {
+	/* end build output */
+	continue; 
+      }
+      if (strcmp("310",code) == 0) {
+	/* build output */
+	if (arguments.verbose)
+	  printf("%s",&(line[4]));
+	continue; 
+      }
+      if (strcmp("220",code) == 0) {
+	fclose(stream);
+	shutdown(socketfd,2);
+	if (successp)
+	  exit(0);
+	else
+	  exit(255);
+      }
+    }
+  exit(0);
+}
 
 int main(int argc, char *argv[])
 {
-  struct arguments arguments;
-  struct sockaddr_in addr;
-  struct hostent *hostinfo;
-  int socketfd;
-  FILE *stream;
-  int removep=-1;
-  int succesp;
-  int opt;
-  int closing_connection=0;
   int connected;
   int queueonly;
+  struct sockaddr_in addr;
+  struct hostent *hostinfo;
 
   /* Default values. */
-  arguments.verbose = 1;
-  arguments.debug = 0;
-  arguments.forceconnect = 0;
   arguments.args[0] = NULL;
   arguments.args[1] = NULL;
   arguments.args[2] = NULL;
@@ -303,256 +525,44 @@ int main(int argc, char *argv[])
   connected = connect(socketfd, &addr, sizeof(addr));
   queueonly = access("/etc/common-lisp/queue-only",F_OK);
   
-  /* so either we are having
-queue-only    force-connect      connected
-!=                 0                 !=        ->  ERROR *
-==                 0                 !=        ->  queue *
-!=                 1                 !=        ->  ERROR *
-==                 1                 !=        ->  ERROR *
-!=                 0                 ==        ->  go
-==                 0                 ==        ->  queue *
-!=                 1                 ==        ->  go
-==                 1                 ==        ->  go
-
-== EACCES : true                   == 0 connected
-!= EACCES : false                  != 0 not connected
-                   
-  */
-
-  if ( ((queueonly != EACCES) && (arguments.forceconnect == 0) && (connected != 0)) ||
-       ((queueonly != EACCES) && (arguments.forceconnect == 1) && (connected != 0)) ||
-       ((queueonly == EACCES) && (arguments.forceconnect == 1) && (connected != 0)))
+  if (queueonly == 0)
     {
-      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
-      exit(1);
-    }
-  if ( ((queueonly == EACCES) && (arguments.forceconnect == 0) && (connected != 0)) ||
-       ((queueonly == EACCES) && (arguments.forceconnect == 0) && (connected == 0)))
-    {
-      /* We could not connect to the daemon, or we have to queue only
-	 Can we handle this on our own?
-	 Yes we can! */
-      if (removep == 1) 
+      /* we should queue, but maybe this is overriden? */
+      if ( arguments.forceconnect ==  1)
 	{
-	  /* code lifted and adapted from clc-build-daemon */
-	  char *package=arguments.args[1];
-	  char *compiler=arguments.args[2];
-	  /* characters allowed in the package and compiler names: */
-	  char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
-	  char command[4097];
-	      
-	  printf("I cannot contact the clc-build-daemon. Possibly you are trying to upgrade it.\n");
-	  printf("I will try to remove the package myself...\n");
-	  
-	  if ((package == (char *) NULL) ||
-	      ( strlen(package) != strspn(package,allowedcharacters)))
+	  /* we should connect, could we? */
+	  if (connected == 0)
+	    doconnect();
+	  else
 	    {
-	      printf("The package %s is invalid!\n", package);
-	      exit(2);
-	    }
-	  if ((compiler == (char *) NULL) ||
-	      ( strlen(compiler) != strspn(compiler,allowedcharacters)))
+	      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
+	      exit(1);
+	    }    
+	}
+      else
+	doqueue();
+    }
+  else
+    {
+      /* we should reach the daemon */
+      if (connected == 0)
+	doconnect();
+      else
+	{
+	  /* are we not overridden? */
+	  if ( arguments.forceconnect ==  1)
 	    {
-	      printf("The compiler %s is invalid!\n", compiler);
-	      exit(2);
-	    }
-
-	  snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
-		   compiler,package);
-	  command[4096]=(char)0;
-	  if (! probe_directory(command) )
-	    {
-	      printf("Cannot remove  package %s for compiler %s\n",package,compiler);
+	      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
+	      exit(1);
 	    }
 	  else
 	    {
-	      nuke_package(package,compiler);
+      	      printf("I cannot contact the clc-build-daemon. Possibly you are trying to upgrade it.\n");
+	      doqueue();
 	    }
 	}
-      else
-	{
-	  char *package=arguments.args[1];
-	  char *compiler=arguments.args[2];
-	  /* characters allowed in the package and compiler names: */
-	  char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
-	  char filename[4097];
-	  struct utsname buf;
-	  FILE *f;
-	      
-	  printf("I cannot contact the clc-build-daemon. Possibly you are trying to upgrade it.\n");
-	  printf("I will leave a not to rebuild this package...\n");
-	  
-	  if ((package == (char *) NULL) ||
-	      ( strlen(package) != strspn(package,allowedcharacters)))
-	    {
-	      printf("The package %s is invalid!\n", package);
-	      exit(2);
-	    }
-	  if ((compiler == (char *) NULL) ||
-	      ( strlen(compiler) != strspn(compiler,allowedcharacters)))
-	    {
-	      printf("The compiler %s is invalid!\n", compiler);
-	      exit(2);
-	    }
-	      
-	  /* Everything looks valid, so let us leave a
-	     message for the builder */
-	      
-	  if (uname(&buf)  != 0)
-	    {
-	      reportsystemerror("Could not get my hostname.");
-	      exit(43);
-	    }
-	  snprintf(filename,4096,"/var/spool/common-lisp-controller/%s-%i",
-		   buf.nodename, (int) getpid());
-	  filename[4096]=(char)0;
-	      
-	  if ( (f=fopen(filename,"wx")) == NULL )
-	    {
-	      reportsystemerror("Could not open spool file");
-	      exit(44);
-	    }
-	      
-	  fprintf(f,"%s %s\n",package,compiler);
-	  fclose(f);
-	      
-	}
-      exit(0);
     }
-  if ( ((queueonly != EACCES) && (arguments.forceconnect == 0) && (connected == 0)) ||
-       ((queueonly != EACCES) && (arguments.forceconnect == 1) && (connected == 0)) ||
-       ((queueonly == EACCES) && (arguments.forceconnect == 1) && (connected == 0)))
-    {
-      stream = fdopen(socketfd, "r+");
-
-      if (stream == NULL)
-	reportsystemerror("Could not convert to a stream");
-
-      opt=1;
-      if (setsockopt(socketfd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
-	reportsystemerror("Could not set option for socket");
-
-      if (setvbuf(stream, (char *) NULL, _IOLBF, BUFSIZ) != 0)
-	reportsystemerror("Could not make stream line buffered");
-
-      for(succesp=1;;)
-	{
-	  char code[4];
-
-	  /* get input */
-	  fflush(stream);
-	  readaline(stream,closing_connection);
-
-	  strncpy(code,line,3);
-	  code[3]=(char) 0;
-      
-	  if (strcmp("100",code) == 0) {
-	    /* hello */
-	    if (arguments.verbose)
-	      fprintf(stream,"SHOW-OUTPUT\n");
-	    else
-	      fprintf(stream,"HIDE-OUTPUT\n");
-	    if (arguments.debug)
-	      {
-		if (arguments.verbose)
-		  printf("Sending: SHOW-OUTPUT\n");
-		else
-		  printf("Sending HIDE-OUTPUT\n");
-	      }
-	    continue; 
-	  }
-	  if ((strcmp("200",code) == 0) ||
-	      (strcmp("201",code) == 0)) {
-	    /* we show or hide */
-	    if (removep == 1)
-	      fprintf(stream,"REMOVE %s %s\n",arguments.args[1],arguments.args[2]);
-	    else
-	      fprintf(stream,"RECOMPILE %s %s\n",arguments.args[1],arguments.args[2]);
-
-	    if (arguments.debug)
-	      {
-		if (removep == 1)
-		  printf("Sending: REMOVE %s %s\n",arguments.args[1],arguments.args[2]);
-		else
-		  printf("Sending: RECOMPILE %s %s\n",arguments.args[1],arguments.args[2]);
-
-	      }
-	    continue; 
-	  }
-	  if (strcmp("250",code) == 0) {
-	    /* operation started... */
-	    continue; 
-	  }
-	  if ((strcmp("251",code) == 0) ||
-	      (strcmp("252",code) == 0)) {
-	    /* ok finished */
-	    fprintf(stream,"QUIT\n");
-	    closing_connection=1;
-	    if (arguments.debug)
-	      {
-		printf("Sending: QUIT\n");
-	      }
-	    continue; 
-	  }
-	  if (strcmp("540",code) == 0) {
-	    printf("\nCannot remove: not yet compiled library for implementation\n");
-	    /* Change this to a success since CLC tries to remove a
-	       compiled library before recompiling. Some CLC Lisp
-	       implementations die if this returns an error status */
-	    /* succesp = 0; */
-	    succesp = 1;
-	    continue; 
-	  }
-	  if (strcmp("550",code) == 0) {
-	    printf("\nCannot compile: library for implementation already compiled\n");
-	    succesp = 0;
-	    fprintf(stream,"QUIT\n");
-	    closing_connection=1;
-	    if (arguments.debug)
-	      {
-		printf("Sending: QUIT\n");
-	      }
-	    continue; 
-	  }
-	  if (strcmp("501",code) == 0) {
-	    printf("\nCannot compile: compilation error\n");
-	    succesp = 0;
-	    continue; 
-	  }
-	  if (strcmp("500",code) == 0) {
-	    printf("\nParameter problem?\n");
-	    succesp = 0;
-	    fprintf(stream,"QUIT\n");
-	    closing_connection=1;
-	    if (arguments.debug)
-	      {
-		printf("Sending: QUIT\n");
-	      }
-	    continue; 
-	  }
-	  if ((strcmp("300",code) == 0) ||
-	      /* start output */
-	      (strcmp("331",code) == 0)) {
-	    /* end build output */
-	    continue; 
-	  }
-	  if (strcmp("310",code) == 0) {
-	    /* build output */
-	    if (arguments.verbose)
-	      printf("%s",&(line[4]));
-	    continue; 
-	  }
-	  if (strcmp("220",code) == 0) {
-	    fclose(stream);
-	    shutdown(socketfd,2);
-	    if (succesp)
-	      exit(0);
-	    else
-	      exit(255);
-	  }
-	}
-      exit(0);
-    }
-  printf("internal error yellow submarine\n");
-  exita(23);
+  printf("internal error yellow submarine %i %i %i\n",
+	 queueonly,arguments.forceconnect,connected);
+  exit(23);
 }

@@ -1,3 +1,11 @@
+common-lisp-controller (3.81) unstable; urgency=low
+
+  * Reversed order of the tests, so no more 'Looping' messages
+    in the cronlog. Closes: #224772
+  * Refactoring of the clc-send-command code. Hopefully it still works. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 22 Dec 2003 12:29:01 +0100
+
 common-lisp-controller (3.80) unstable; urgency=low
 
   * New feature: when the daemon is not reachable we 

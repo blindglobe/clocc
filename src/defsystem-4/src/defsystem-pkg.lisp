@@ -41,7 +41,7 @@
 					; would make the system messier!
 					; 19991211 Marco Antoniotti
 
-  (:import-from "CL.EXT.FILESYSTEM" "ADJOIN-DIRECTORIES")
+  (:import-from #:cl.ext.filesystem #:adjoin-directories)
   
   (:export #:afs-binary-directory	; Do I still need these?
 	   #:afs-source-directory

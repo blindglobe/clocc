@@ -2,6 +2,14 @@
 
 Changes:
 
+Aug 11, 2004
+------------
+
+I think the parser bug with x .le. y*z is fixed now.
+The parser looks for logical operations and rewrites them with
+parentheses so the rest of the parser sees the expression (x)
+.le. (y*z) which is parsed correctly.
+
 Nov 13, 2003
 ------------
 
@@ -897,14 +905,3 @@ Bugs:
 * PARAMETER variables may not be arranged correctly.  This may require 
   some hand-tweaking of the output lisp file.
 
-* The parser incorrectly parses things like
-
-      v = x .le. y*z
-
-  This gets parsed as (* (<= X Y) Z) and eventually shows up as an error.
-
-  I think the problem is that the parser doesn't have the correct
-  precedence when parsing this.  I think id-term needs to be changed.
-
-  A simple work-around is to put parentheses around the lhs and rhs of 
-  the relational operator:  v = x .le. (y*z).

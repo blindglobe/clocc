@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.31 2003/12/10 15:38:27 sds Exp $
+;;; $Id: math.lisp,v 2.32 2003/12/10 15:39:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -142,7 +142,7 @@
 (defun ruler (n)
   "The exponent of the largest power of 2 which divides the given number.
 See <http://mathworld.wolfram.com/RulerFunction.html>.
-See also <http://www.podval.org/~sds/notes.html#ruler-runction>
+See also <http://www.podval.org/~sds/notes.html#ruler-function>
 for the explanation of the (logand n (- n)) part."
   (1- (integer-length (logand n (- n)))))
 

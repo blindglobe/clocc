@@ -1134,6 +1134,8 @@
                    missing-module
                    missing-system
 
+                   register-foreign-system
+
 		   machine-type-translation
 		   software-type-translation
 		   compiler-type-translation
@@ -2230,7 +2232,8 @@ D
 		      :subsystem
 		      :module
 		      :file
-		      :private-file))
+		      :private-file
+		      ))
   (name nil :type (or symbol string))
   (indent 0 :type (mod 1024))		; Number of characters of indent in
 					; verbose output to the user.
@@ -2312,10 +2315,31 @@ D
   )
 
 
+;;; To allow dependencies from "foreign systems" like ASDF or one of
+;;; the proprietary ones like ACL or LW.
+
+(defstruct (foreign-system (:include component (type :system)))
+  kind ; This is a keyword: (member :asdf :pcl :lispworks-common-defsystem ...)
+  object ; The actual foreign system object.
+  )
+
+
+(defun register-foreign-system (name &key representation kind)
+  (declare (type (or symbol string) name))
+  (let ((fs (make-foreign-system :name name
+                                 :kind kind
+                                 :object representation)))
+    (setf (get-system name) fs)))
+
+
+
 (define-condition missing-component (simple-condition)
-  ((name :reader missing-component-name :initarg :name)
-   (component :reader missing-component-component :initarg :component)
+  ((name :reader missing-component-name
+         :initarg :name)
+   (component :reader missing-component-component
+              :initarg :component)
    )
+  (:default-initargs :component nil)
   (:report (lambda (mmc stream)
 	     (format stream "MK:DEFSYSTEM: missing component ~S for ~S."
                      (missing-component-name mmc)
@@ -2333,7 +2357,7 @@ D
 (define-condition missing-system (missing-module)
   ()
   (:report (lambda (msc stream)
-	     (format stream "MK:DEFSYSTEM: missing system ~S for ~S."
+	     (format stream "MK:DEFSYSTEM: missing system ~S~@[ for S~]."
                      (missing-component-name msc)
                      (missing-component-component msc))))
   )
@@ -2518,10 +2542,13 @@ D
    environment.")
 
 (defun find-system (system-name &optional (mode :ask) definition-pname)
-  "Returns the system named SYSTEM-NAME. If not already loaded, loads it.
-   This allows operate-on-system to work on non-loaded as well as
-   loaded system definitions. DEFINITION-PNAME is the pathname for
-   the system definition, if provided."
+  "Returns the system named SYSTEM-NAME.
+If not already loaded, loads it, depending on the value of
+*RELOAD-SYSTEMS-FROM-DISK* and of the value of MODE. MODE can be :ASK,
+:ERROR, :LOAD-OR-NIL, or :LOAD. :ASK is the default.
+This allows OPERATE-ON-SYSTEM to work on non-loaded as well as
+loaded system definitions. DEFINITION-PNAME is the pathname for
+the system definition, if provided."
   (ecase mode
     (:ask
      (or (get-system system-name)
@@ -2532,7 +2559,7 @@ D
 	   (find-system system-name :load definition-pname))))
     (:error
      (or (get-system system-name)
-	 (error "Can't find system named ~s." system-name)))
+	 (error 'missing-system :name system-name)))
     (:load-or-nil
      (let ((system (get-system system-name)))
        (or (unless *reload-systems-from-disk* system)
@@ -2541,6 +2568,9 @@ D
 	   ;; If SYSTEM-NAME is a string, it doesn't change the case of the
 	   ;; string. So if case matters in the filename, use strings, not
 	   ;; symbols, wherever the system is named.
+           (when (foreign-system-p system)
+             (warn "Foreing system ~S cannot be reloaded by MK:DEFSYSTEM.")
+             (return-from find-system nil))
 	   (let ((path (compute-system-path system-name definition-pname)))
 	     (when (and path
 			(or (null system)
@@ -2560,14 +2590,19 @@ D
 	   system)))
     (:load
      (or (unless *reload-systems-from-disk* (get-system system-name))
+         (when (foreign-system-p (get-system system-name))
+           (warn "Foreign system ~S cannot be reloaded by MK:DEFSYSTEM.")
+           (return-from find-system nil))
 	 (or (find-system system-name :load-or-nil definition-pname)
 	     (error "Can't find system named ~s." system-name))))))
+
 
 (defun print-component (component stream depth)
   (declare (ignore depth))
   (format stream "#<~:@(~A~): ~A>"
           (component-type component)
           (component-name component)))
+
 
 (defun describe-system (name &optional (stream *standard-output*))
   "Prints a description of the system to the stream. If NAME is the
@@ -3483,6 +3518,7 @@ D
 	    (operate-on-component system operation force))))
     (when dribble (dribble))))
 
+
 (defun compile-system (name &key force
 			    (version *version*)
 			    (test *oos-test*) (verbose *oos-verbose*)
@@ -3688,6 +3724,7 @@ D
 (defvar *force* nil)
 (defvar *providing-blocks-load-propagation* t
   "If T, if a system dependency exists on *modules*, it is not loaded.")
+
 (defun operate-on-system-dependencies (component operation &optional force)
   (when *system-dependencies-delayed*
     (let ((*force* force))
@@ -3717,17 +3754,24 @@ D
 			    ;; (or (eq force :all) (eq force t))
 			    (find (canonicalize-system-name system)
 				  *modules* :test #'string-equal))
+                 
 		 (operate-on-system system operation :force force)))
+
 	      ((listp system)
+               ;; If the SYSTEM is a list then its contents are as follows.
+               ;;
+               ;;    (<name> <definition-pathname> <action> <version>)
+               ;;
 	       (tell-user-require-system
-		(cond ((and (null (car system)) (null (cadr system)))
-		       (caddr system))
+		(cond ((and (null (first system)) (null (second system)))
+		       (third system))
 		      (t system))
 		component)
-	       (or *oos-test* (new-require (car system) nil
-					   (eval (cadr system))
-					   (caddr system)
-					   (or (car (cdddr system))
+	       (or *oos-test* (new-require (first system)
+                                           nil
+					   (eval (second system))
+					   (third system)
+					   (or (fourth system)
 					       *version*))))
 	      (t
 	       (tell-user-require-system system component)
@@ -3836,6 +3880,7 @@ D
 	       (error 'missing-system :name module-name)))
       (missing-module (mmc) (signal mmc)) ; Resignal.
       (error (e)
+             (declare (ignore e))
 	     ;; Signal a (maybe wrong) MISSING-SYSTEM.
 	     (error 'missing-system :name module-name)))
     ))

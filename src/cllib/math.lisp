@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.2 2000/04/10 18:59:00 sds Exp $
+;;; $Id: math.lisp,v 2.3 2000/04/21 20:35:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,25 +56,49 @@
 ;;; Integers
 ;;;
 
+(defun product-from-to (aa bb)
+  "Compute the product of integers from AA (EXclusive) to BB (INclusive)."
+  (declare (integer aa bb) (values integer))
+  (when (> aa bb)
+    (error "~s (~:d ~:d): the first argument must be smaller"
+           'product-from-to aa bb))
+  (when (minusp (* bb aa))
+    (return-from product-from-to 0))
+  ;; this algorithm insures that we multiply bignums
+  ;; of approximately the same size
+  ;; we use `labels' since that some compilers optimize `labels' better than
+  ;; plain recursion and because this avoids doing the checks above in cycle
+  (labels ((pft (aa bb)
+             (case (- bb aa)
+               (0 1) (1 bb) (2 (* (- bb 1) bb)) (3 (* (- bb 2) (- bb 1) bb))
+               (4 (* (- bb 3) (- bb 2) (- bb 1) bb))
+               (t (let ((mm (ash (+ aa bb) -1)))
+                    (* (pft aa mm) (pft mm bb)))))))
+    (pft aa bb)))
+
+(defun binomial (nn kk)
+  "Compute the binomial coefficient for two integers."
+  (declare (integer nn kk) (values integer))
+  ;; we do not use the double recursion a la `product-from-to'
+  ;; because it would take us outside the realm of the integers
+  (loop :with res = 1
+        :for ii :from 1 :to (max kk (- nn kk))
+        :for jj :from nn :by -1
+        :do (mulf res (/ jj ii))
+        :finally (return res)))
+
 (defun ! (nn)
   "Compute the factorial: n! = n * (n-1) * (n-2) * ..."
-  (declare (fixnum nn) (values integer))
-  #+clisp (lisp:! nn)
-  #-clisp
-  (labels ((ff (aa bb)
-             (declare (fixnum aa bb) (values integer))
-             (case (- bb aa)
-               (1 bb) (2 (* (- bb 1) bb)) (3 (* (- bb 2) (- bb 1) bb))
-               (4 (* (- bb 3) (- bb 2) (- bb 1) bb))
-               (t (let ((mm (ash (+ aa bb) -1))) (* (ff aa mm) (ff mm bb)))))))
-    (if (plusp nn) (ff 0 nn) 1)))
+  (declare (integer nn) (values integer))
+  #+clisp (lisp:! nn)           ; CLISP has a built-in fast factorial
+  #-clisp (product-from-to 1 nn))
 
 (defun !! (nn)
   "Compute the double factorial: n!! = n * (n-2) * (n-4) * ..."
   (declare (fixnum nn) (values integer))
   (multiple-value-bind (kk rr) (floor nn 2)
     (declare (fixnum kk) (type (integer 0 1) rr))
-    (if (zerop rr) (* (! kk) (ash 1 kk))
+    (if (zerop rr) (ash (! kk) kk)
         (labels ((ff (aa bb)
                    (declare (fixnum aa bb) (values integer))
                    (case (- bb aa)

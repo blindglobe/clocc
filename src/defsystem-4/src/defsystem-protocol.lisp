@@ -43,18 +43,22 @@
      (format stream "MK4:~A ~S"
 	     (class-name (class-of c))
 	     (component-name c))))
+
   
 (defmethod print-object ((s system) stream)
   (print-unreadable-object (s stream :identity t)
      (format stream "MK4:SYSTEM ~S" (component-name s))))
 
+
 (defmethod print-object ((s system-reference) stream)
   (print-unreadable-object (s stream :identity t)
      (format stream "MK4:SYSTEM& ~S" (component-name s))))
 
+
 (defmethod print-object ((s standard-system) stream)
   (print-unreadable-object (s stream :identity t)
      (format stream "MK4:STANDARD-SYSTEM ~S" (component-name s))))
+
 
 (defmethod print-object ((s simple-system) stream)
   (print-unreadable-object (s stream :identity t)
@@ -79,8 +83,6 @@
 
 ;;; However, it can be generalized
 (defgeneric output-components (component operation))
-
-
 
 
 ;;;---------------------------------------------------------------------------
@@ -195,6 +197,7 @@ hash table, so the case of the string does not matter."
 
 (defvar *defined-systems* (make-hash-table :test #'equalp)
   "Hash table containing the definitions of all known systems.")
+
 
 (define-condition system-not-found (simple-error)
   ((name :reader system-not-found-system-name
@@ -319,7 +322,7 @@ No other values are allowed (with the exception of :ASK - a synonim for
     (:load
      (or (unless reload-system-definitions-from-fs (get-system system-name))
 	 (or (find-system system-name :load-or-nil system-definition-pathname)
-	     (error 'system-not-found :system-name system-name))))))
+	     (error 'system-not-found :system-name system-name)))))
 
 
 ;;;---------------------------------------------------------------------------
@@ -425,8 +428,6 @@ component."
     c))
 
 
-
-
 ;;;---------------------------------------------------------------------------
 ;;; Some components' protocol.
 
@@ -437,13 +438,13 @@ component."
   (declare (type (or null string stream pathname) binary-pathname))
   (and binary-pathname (probe-file binary-pathname)))
 
+
 (defmethod source-exists-p ((f file)
 			    &optional
 			    (source-pathname
 			     (get-component-source-pathname f)))
   (declare (type (or null string stream pathname) source-pathname))
   (and source-pathname (probe-file source-pathname)))
-
 
 
 (defun canonicalize-component-name (component)
@@ -597,24 +598,6 @@ component."
       (setf cbp csp))
     ))
 
-#|
-(defun link-component-depends-on (components)
-  (dolist (component components)
-    (unless (and *system-dependencies-delayed*
-                 (eq (component-type component) :defsystem))
-      (setf (component-depends-on component)
-            (mapcar #'(lambda (dependency)
-			(let ((parent (find (string dependency) components
-					    :key #'component-name
-					    :test #'string-equal)))
-			  (if parent
-			      parent
-			      ;; make it more intelligent about the following
-			      (warn "Dependency ~S of component ~S not found."
-				    dependency component))))
-                    (component-depends-on component))))))
-|#
-
 
 (defun link-component-depends-on (components)
   (dolist (c components)
@@ -657,7 +640,6 @@ component."
     (setf (computed-binary-extension sc) binary-extension))
   (when (and sext-supplied-p source-extension)
     (setf (computed-source-extension sc) source-extension)))
-
 
 
 ;;; add-sub-component --
@@ -793,6 +775,7 @@ component."
 (defmethod get-component-source-pathname :after ((sc storage-component-mixin))
   (setf (source-pathname-computations-dirty-bit sc) nil))
 
+
 (defmethod get-component-source-pathname ((f file))
   (if (source-pathname-computations-dirty-bit f)
       (let ((source-extension-pathname
@@ -913,10 +896,10 @@ component."
 
 (defvar *error-extension-pathname* (make-pathname :type "err"))
 
+
 (defmethod get-component-error-log-pathname ((f file))
   (merge-pathnames *error-extension-pathname*
 		   (get-component-source-pathname f)))
-		     
 
 
 ;;; Dirty bits mangement.
@@ -978,6 +961,7 @@ component."
 	;; Otherwise just return the previously stored
 	;; 'computed-binary-extension'.
 	computed-binary-extension)))
+
 
 (defmethod get-component-source-extension ((sc stored-component))
   (with-accessors ((source-extension component-source-extension)
@@ -1048,6 +1032,7 @@ component."
 			   &allow-other-keys)
   (execute-action-on-subcomponents sys operation :policy policy))
 
+
 (defmethod execute-action ((sys-ref system-reference) (operation symbol)
 			   &key
 			   (policy :always)
@@ -1087,6 +1072,7 @@ component."
     (values sys nil nil (nreverse changed-components))
     ))
 
+
 ;;;---------------------------------------------------------------------------
 ;;; Timestamps
 
@@ -1106,6 +1092,7 @@ component."
 
 (defgeneric component-action-timestamp (component action))
 
+
 (defmethod component-action-timestamp ((c component) (action symbol))
   (let* ((ts-set (component-timestamps c))
 	 (action-ts (assoc action ts-set))
@@ -1113,6 +1100,7 @@ component."
     (if action-ts
 	(cdr action-ts)
 	0)))
+
 
 (defmethod (setf component-action-timestamp) (time
 					      (c component)
@@ -1132,10 +1120,10 @@ component."
 	with last-action = nil
 	for (action . timestamp) in ts-set
 	if (< max-timestamp timestamp)
-	  (setf last-action action
-		max-timestamp timestamp)
+	   do (setf last-action action
+		    max-timestamp timestamp)
 	else if (and (= max-timestamp timestamp) (eq action :load))
-	  (setf last-action :load)
+	   do (setf last-action :load)
 	finally (when last-action (return (cons last-action max-timestamp)))))
 
 
@@ -1400,6 +1388,84 @@ component."
 	      :component f))
 
     
+    (let* (; (deps-changed-p (dependencies-changed-p f operation))
+	   (source-needs-loading-p
+	    (needs f :load
+		   :file-content :source
+		   :source-pathname source-pathname
+		   :binary-pathname binary-pathname))
+	   (binary-needs-loading-p
+	    (needs f :load
+		   :file-content :binary
+		   :source-pathname source-pathname
+		   :binary-pathname binary-pathname))
+	   (needs-compilation-p (and (not (component-load-only f))
+				     (needs f :compile
+					    :file-content :source
+					    :source-pathname source-pathname
+					    :binary-pathname binary-pathname)))
+	   (compile-and-load-p
+	    (and needs-compilation-p
+		 (compile-and-load-source-if-no-binary-p f)))
+
+	   (load-source-p
+	    (or (load-source-instead-of-binary f)
+		(and load-binary-p (component-load-only f))
+		(and check-for-new-source-p needs-compilation-p)))
+	   )
+
+      ;; 20020722 Marco Antoniotti
+      ;; Removed *minimal-load* cruft.
+      
+      #+mk4-breakpoints (break "EXECUTE-ACTION :LOAD checkpoint.")
+
+      (when (or load-source-p load-binary-p compile-and-load-p)
+	(cond (compile-and-load-p
+	       #+mk4-breakpoints
+	       (break "EXECUTE-ACTION :LOAD compile and load chekpoint.")
+
+	       (execute-action f :compile :load nil)
+	       (load-action f binary-pathname))
+	      ((and source-exists-p
+		    (or (and load-source-p ; implicit needs-comp...
+			     (or (session-load-source-instead-of-binary f)
+				 (component-load-only f)
+				 (not (session-compile-during-load f))))
+			(and load-binary-p
+			     (not binary-exists-p)
+			     (load-source-if-no-binary f))))
+	       #+mk4-breakpoints
+	       (break "EXECUTE-ACTION :LOAD load source chekpoint.")
+
+	       (load-action f source-pathname))
+	      ((and binary-exists-p load-binary-p)
+	       #+mk4-breakpoints
+	       (break "EXECUTE-ACTION :LOAD load binary chekpoint.")
+
+	       (load-action f binary-pathname))
+	      )))))
+
+
+;;; Beginning original=========================================================
+#+original
+(defmethod execute-action ((f file) (operation (eql :load))
+			   &key
+			   (policy :always)
+			   (source-pathname (get-component-source-pathname f))
+			   (binary-pathname (get-component-binary-pathname f))
+			   &allow-other-keys
+			   )
+  (let ((source-exists-p (source-exists-p f source-pathname))
+	(binary-exists-p (and (action-applicable-p f :compile)
+			      binary-pathname
+			      (binary-exists-p f binary-pathname)))
+	)
+    (unless (or binary-exists-p source-exists-p)
+      (cerror "Ignore component."
+	      'component-not-available-on-storage
+	      :component f))
+
+    
     (let* ((deps-changed-p (dependencies-changed-p f operation))
 	   (source-needs-loading-p
 	    (needs f :load
@@ -1437,7 +1503,7 @@ component."
 	   (compile-and-load-p
 	    (and needs-compilation-p
 		 (or load-binary-p check-for-new-source-p)
-		 (compile-and-load-source-if-no-binary f)))
+		 (compile-and-load-source-if-no-binary-p f)))
 
 	   (load-source-p
 	    (or *load-source-instead-of-binary*
@@ -1475,6 +1541,7 @@ component."
 
 	       (load-action f binary-pathname))
 	      )))))
+;;; End original ===========================================================
 
 
 (defmethod execute-action ((f file) (action (eql :compile))
@@ -1544,6 +1611,7 @@ component."
 		   (component-name c)
 		   result))
    (values result warnings-p failure-p other-components)))
+
 
 (defmethod execute-action-on-subcomponents :around ((hc hierarchical-component)
 						    (action symbol)
@@ -1669,32 +1737,6 @@ component."
 	maximize (component-changed-timestamp dep action)))
 
 
-
-#|| Old code
-(defmethod dependencies-changed-p ((c component))
-  (let* ((cct (component-changed-timestamp c))
-	 (the-cct (or cct 0))
-	 )
-    (< the-cct (dependencies-latest-change-time c))))
-
-
-(defmethod dependencies-latest-change-time ((c component))
-  (let* ((dependencies (component-depends-on c))
-	 (cct (component-changed-timestamp c))
-	 (the-cct (or cct 0))
-	 )
-    ;; Cfr. the CLHS if you do not understand this loop.
-    (if dependencies
-	(loop for dep in dependencies
-	      for dep-changed-timestamp = (component-changed-timestamp dep)
-	      if dep-changed-timestamp
-	        maximize dep-changed-timestamp
-	      else
-	        maximize the-cct
-	      end)
-	the-cct)))
-||#
-
 ;;; This is the LOAD-ACTION for generic files.
 ;;; Still undecided about how to treat different languages/compilers/
 
@@ -1703,7 +1745,7 @@ component."
   (load-action-by-content f pathname (find-language (component-language f))))
 ||#
 
-(defmethod load-action ((f file) (p pathname))
+(defmethod load-action ((f file) (p pathname) &key)
   (error 'no-loader :component f))
 
 
@@ -1725,7 +1767,7 @@ component."
 ;;; It is a shorthand for the generic LOAD-ACTION processing.
 
 #+make-debugging
-(defmethod load-action ((f common-lisp-file) (p pathname))
+(defmethod load-action ((f common-lisp-file) (p pathname) &key)
   (print
    `(load ,p
 	  :print ,(or (component-load-print f) *load-print*)
@@ -1734,7 +1776,7 @@ component."
   (values (truename p) nil nil))
 
 #-make-debugging
-(defmethod load-action ((f common-lisp-file) (p pathname))
+(defmethod load-action ((f common-lisp-file) (p pathname) &key)
   (values (load p
 		:print (or (component-load-print f) *load-print*)
 		:verbose (or (component-load-verbose f) *load-verbose*)
@@ -1814,6 +1856,7 @@ component."
 	      'NIL)			; Should change the interface.
 	    ))))
 
+
 (defmethod find-component ((s standard-simple-component) &rest path)
   (cond ((null path) s)
 	(t (warn "component ~S does not have any sub components ~S."
@@ -1838,18 +1881,27 @@ component."
       (:binary (mapcar #'get-component-binary-pathname file-components)))))
 
 
+(defmethod find-component-system ((c system))
+  c)
+
+(defmethod find-component-system ((c component))
+  (let ((container (component-part-of c)))
+    (when container
+      (find-component-system container))))
+
+
 ;;;---------------------------------------------------------------------------
 ;;; Interim stuff.
 
-(defun compile-and-load-source-if-no-binary (component)
+(defun compile-and-load-source-if-no-binary-p (component)
   #||(break ">>> *load-source-instead-of-binary* ~S~@
           >>> *load-source-if-no-binary* ~S~@
           >>> (binary-exists component) ~S."
 	 *load-source-instead-of-binary*
 	 *load-source-if-no-binary*
 	 (binary-exists-p component))||#
-  (when (not (or *load-source-instead-of-binary*
-		 (and *load-source-if-no-binary*
+  (when (not (or (session-load-source-instead-of-binary component)
+		 (and (session-load-source-if-no-binary component)
 		      (not (binary-exists-p component)))))
     (cond ((component-load-only component)
 	   #||
@@ -1861,7 +1913,7 @@ component."
 		     prompt))
 	   ||#
 	   nil)
-	  ((eq *compile-during-load* :query)
+	  ((eq (session-compile-during-load component) :query)
 	   (let* ((prompt (prompt-string component))
 		  (compile-source
 		   (y-or-n-p-wait
@@ -1882,7 +1934,7 @@ component."
 		      "~A- Should I compile and load or not? "
 		      prompt)))		; was compile-source, then t
 	     compile-source))
-	  (*compile-during-load*)
+	  ((session-compile-during-load component))
 	  (t nil))))
 
 
@@ -2005,7 +2057,7 @@ component."
 			   &key &allow-other-keys)
   (values (truename (get-component-source-pathname c)) nil nil))
 
-(defmethod needs ((c object-file) (action standard-compile-action))
+(defmethod needs ((c object-file) (action standard-compile-action) &key)
   nil)
 
 (defmethod execute-action ((c object-file) (action standard-load-action)
@@ -2020,9 +2072,9 @@ component."
   (invoke-loader (component-loader c) p
 		 :print  (or (component-load-print c) *load-print*)
 		 :verbose (or (component-load-verbose c) *load-verbose*)
-		 :libraries ())))
+		 :libraries ()))
 
-(defmethod needs ((c object-file) (action standard-load-action))
+(defmethod needs ((c object-file) (action standard-load-action) &key)
   (and (dependencies-changed-p c action)
        (< (component-action-timestamp c action)
 	  (file-write-date (get-component-source-pathname c)))))
@@ -2070,7 +2122,7 @@ component."
 ||#
 
 
-(defmethod load-action ((f c-file) (p pathname))
+(defmethod load-action ((f c-file) (p pathname) &key)
   (invoke-loader (component-loader f) p
 		 :print (or (component-load-print f) *load-print*)
 		 :verbose (or (component-load-verbose f) *load-verbose*)
@@ -2125,7 +2177,7 @@ component."
     (load-action c (get-component-binary-pathname c))))
 
 
-(defmethod load-action ((c statically-linked-library) (p pathname))
+(defmethod load-action ((c statically-linked-library) (p pathname) &key)
   (invoke-loader (component-loader c) p
 		 :print (or (component-load-print c) *load-print*)
 		 :verbose (or (component-load-verbose c) *load-verbose*)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.4 2003/07/01 17:15:50 sds Exp $
+;;; $Id: csv.lisp,v 2.5 2003/07/01 19:29:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -80,6 +80,7 @@
                                     (decf ,len) ,cols)
                             (return ,len))))))))
 
+;;;###autoload
 (defun csv-read-file (inf)
   "Read comma-separated values into a list of vectors."
   (let (len)

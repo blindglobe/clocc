@@ -1006,7 +1006,7 @@ causing all pending operations to be flushed"
 			      :element-type `(simple-array base-char (,',@len))
 			      :initial-element (make-string ,@len))))
        (dotimes (k (array-total-size ,init))
-	 (setf (row-major-aref ,init k)
+	 (setf (aref ,init k)
 	       (make-string ,@len :initial-element #\Space)))
        ,init)))
 
@@ -1184,8 +1184,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.46 2002/03/19 02:23:09 rtoy Exp $
+;;; $Id: macros.l,v 1.47 2002/05/03 17:44:36 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.47  2002/05/03 17:44:36  rtoy
+;;; Replace row-major-aref with just aref because we don't need it and
+;;; because gcl doesn't have it.
+;;;
 ;;; Revision 1.46  2002/03/19 02:23:09  rtoy
 ;;; According to the rules of Fortran, the initializers in a DATA
 ;;; statement are supposed to be converted to match the type of the

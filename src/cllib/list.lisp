@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-01-12 Tue 13:51:47 EST sds@eho.eaglets.com>
+;;; File: <list.lisp - 1999-01-12 Tue 17:09:23 EST sds@eho.eaglets.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.5 1999/01/12 18:52:19 sds Exp $
+;;; $Id: list.lisp,v 1.6 1999/01/12 22:09:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.6  1999/01/12 22:09:36  sds
+;;; Fixed the previous feature.
+;;;
 ;;; Revision 1.5  1999/01/12 18:52:19  sds
 ;;; Added key `obj' to `nsplit-list'.
 ;;;
@@ -263,11 +266,11 @@ When OBJ is given, it serves as separator and is omitted from the list."
   (when (symbolp key) (setq key (fdefinition key)))
   (unless lst (return-from nsplit-list nil))
   (if objp
-      (do ((ll lst (cdr ll)) (bb lst) res)
-          ((null ll) (nreverse res))
-        (when (funcall pred (funcall key (cadr ll)) obj)
-          (push bb res)
-          (setf bb (cddr ll) (cdr ll) nil ll bb)))
+      (do ((ll lst) (bb lst) res)
+          ((null ll) (nreverse (if bb (cons bb res) res)))
+        (if (funcall pred (funcall key (cadr ll)) obj)
+            (setf res (cons bb res) bb (cddr ll) (cdr ll) nil ll bb)
+            (setq ll (cdr ll))))
       (etypecase key
         (function
          (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))

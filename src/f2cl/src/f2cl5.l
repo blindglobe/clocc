@@ -524,16 +524,22 @@
 	   body (cdddr fort-fun))
      (setq *undeclared_vbles* 
 	   (set-difference *undeclared_vbles* *subprog_common_vars*))
-     ;;(format t "~&")
-     ;;(format t "declared_vbles   = ~S~%" *declared_vbles*)
-     ;;(format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
-     ;;(format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
-     ;;(format t "*functions used* = ~S~%" *functions-used*)
-     ;;(format t "external func    = ~S~%" *external_function_names*)
-     ;;(format t "*subprog_common_vars* = ~a~%" *subprog_common_vars*)
+     (when (member :insert-declaration *f2cl-trace*)
+       (format t "~&")
+       (format t "declared_vbles   = ~S~%" *declared_vbles*)
+       (format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
+       (format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
+       (format t "*functions used* = ~S~%" *functions-used*)
+       (format t "external func    = ~S~%" *external_function_names*)
+       (format t "*subprog_common_vars* = ~a~%" *subprog_common_vars*)
+       (format t "*explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
+       (maphash #'(lambda (key val)
+		    (format t "~A => ~A~%" key val))
+		*common-blocks*))
      (setq special-proclamation
 	   (make-special-proclamation *subprog_common_vars*))
-     ;;(format t "special-proclamation = ~a~%" special-proclamation)
+     (when (member :insert-declaration *f2cl-trace*)
+       (format t "special-proclamation = ~a~%" special-proclamation))
      (setq common_var_decls 
 	   (mapcar #'make-special-var-decl *subprog_common_vars*))
      ;; Clean up the declarations by merging them into one
@@ -546,7 +552,8 @@
      ;;(format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
      ;;(format t "declared = ~S~%" common_var_decls)
      (setf common-block-structs (make-common-block-structure common_var_decls))
-     ;;(format t "struct = ~S~%" common-block-structs)
+     (when (member :insert-declaration *f2cl-trace*)
+       (format t "struct = ~S~%" common-block-structs))
 
      (setq special-proclamation common-block-structs)
      ;;(format t "special-proclamation = ~a~%" special-proclamation)
@@ -806,10 +813,11 @@
      ;; remove any variables whose name might match an intrinsic
      ;; function name.
 
-     ;;(format t "key-params            = ~A~%" key-params)
-     ;;(format t "*declared_vbles*      = ~A~%" *declared_vbles*)
-     ;;(format t "*undeclared_vbles*    = ~A~%" *undeclared_vbles*)
-     ;;(format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*)
+     (when (member :insert-declaration *f2cl-trace*)
+       (format t "key-params            = ~A~%" key-params)
+       (format t "*declared_vbles*      = ~A~%" *declared_vbles*)
+       (format t "*undeclared_vbles*    = ~A~%" *undeclared_vbles*)
+       (format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*))
      (setf prog-bit
 	   (fixup-external-function-refs
 	    prog-bit
@@ -1181,16 +1189,8 @@
 	  ((atom (cadr decl))
 	   ;; scalar, length spec.
 	   ;;(format t "scalar, length spec = ~A~%" decl)
+	   (error "shouldn't happen!")
 	   `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
-	  ((cddr decl)
-	   ;; array with length spec
-	   ;;(format t "array with length spec = ~A => ~A~%" decl (cddr decl))
-	   ;;`(declare (type (simple-array t (,(caadr decl))) ,(car decl)))
-	   `(declare (type (simple-array
-			    (simple-array base-char ,(cddr decl))
-			    ,(decl-bounds (second decl)))
-		      ,(car decl)))
-	   )
 	  ((equal (cadr decl) '(*))
 	   ;; unspecified length spec
 	   (format t "unspecified length spec = ~A~%" decl)
@@ -1202,7 +1202,7 @@
 			    (simple-array base-char ,(if (second type)
 							 `(,(second type))
 							 '(*)))
-			    ,(decl-bounds (second decl))) ,(car decl)))))))
+			    ,(decl-bounds (rest decl))) ,(car decl)))))))
 
 (defun make-char-init (decl type)
   (cond ((equal (cadr type) '(*))	; unspecified length spec
@@ -1211,26 +1211,8 @@
 	((null (cdr decl))		; scalar, no length spec.      
 	 `(make-array '(,(cadr type)) :element-type 'base-char :initial-element #\Space))
 	((atom (cadr decl))		; scalar, length spec.
+	 (error "shouldn't happen!")
 	 `(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space))
-	((cddr decl)			; array with length spec
-	 ;;(format t "make-char-init array, with length spec~%")
-	 (let ((dims (mapcar #'(lambda (bounds)
-				 (destructuring-bind (lo hi)
-				     bounds
-				   (if (and (numberp lo) (numberp hi))
-				       (+ 1 (- hi lo))
-				       `(+ 1 (- ,hi ,lo)))))
-			     (remove '|,| (cadr decl)))))
-	   ;;(format t "dims = ~A~%" dims)
-	   `(f2cl-init-string ,dims ,(cddr decl))
-	   #+nil
-	   (if (every #'numberp dims)
-	       `(make-array ',dims
-		 :element-type '(simple-array base-char (,(caddr decl)))
-		 :initial-element (make-string ,(caddr decl)))
-	       `(make-array (list ,@dims)
-		 :element-type '(simple-array base-char (,(caddr decl)))
-		 :initial-element (make-string ,(caddr decl))))))
 	(t				; array, no length spec.
 	 ;;(format t "make-char-init array, no length spec~%")
 	 (let ((dims (mapcar #'(lambda (bounds)
@@ -1239,16 +1221,9 @@
 				   (if (and (numberp lo) (numberp hi))
 				       (+ 1 (- hi lo))
 				       `(+ 1 (- ,hi ,lo)))))
-			     (remove '|,| (cadr decl)))))
+			     (remove '|,| (rest decl)))))
 	   ;;(format t "dims = ~A~%" dims)
-	   `(f2cl-init-string ,dims ,(cdr type))
-	   #+nil
-	   (if (every #'numberp dims)
-	       `(make-array ',dims :element-type '(simple-array base-char ,(cdr type))
-		 :initial-element (make-string ,(cdr type)))
-	       `(make-array (list ,@dims) :element-type '(simple-array base-char ,(cdr type))
-		 :initial-element (make-string ,(cdr type))))
-	   ))))
+	   `(f2cl-init-string ,dims ,(cdr type))))))
 
 
 (defun get-implicit-type (vble)

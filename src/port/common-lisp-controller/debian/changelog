@@ -1,3 +1,9 @@
+common-lisp-controller (3.78) unstable; urgency=low
+
+  * Add ~/.clc/systems/ to asdf:central-registry*
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  7 Dec 2003 22:24:32 -0700
+
 common-lisp-controller (3.77) unstable; urgency=low
 
   * Compile our own files to the fasl dir. Closes: #221552 

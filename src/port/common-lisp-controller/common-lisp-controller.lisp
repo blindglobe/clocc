@@ -210,6 +210,11 @@ Returns nothing"
 		 (pushnew :sbcl-hooks-require cl:*features*))
         (compile-and-load  "asdf" "asdf.lisp")
         (compile-and-load  "asdf" "wild-modules.lisp")
+	;; add ~/.clc/systems/ to asdf:*central-registry*
+	(pushnew
+	 '(merge-pathnames #P".clc/systems/" (user-homedir-pathname))
+	 (symbol-value (intern (symbol-name '#:*central-registry*)
+			       (find-package :asdf))))
 	#+sbcl (pushnew
 		  '(merge-pathnames #P".sbcl/systems/" (user-homedir-pathname))
 		  (symbol-value (intern (symbol-name '#:*central-registry*)

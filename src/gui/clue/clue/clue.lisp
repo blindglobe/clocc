@@ -48,6 +48,18 @@
 (unless (find-package "CLUE")
   (make-package "CLUE" :use '(common-lisp xlib cluei)))
 
+;; generate CLOS package for pcl
+(when (find-package 'pcl)
+  (pushnew :pcl  *features*)
+  (pushnew :clos *features*)
+  (unless (find-package :clos)
+    (rename-package :pcl :pcl '(:clos))))
+
+;; Ensure *features* knows about the Common Lisp Error Handler
+(when (find-package 'conditions)
+  (pushnew :cleh *features*))
+
+
 ;;
 ;; Ensure CLUE and CLUEI use a CLOS
 ;;

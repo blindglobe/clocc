@@ -1,4 +1,3 @@
-usr/share/common-lisp/repositories/clue/clue  usr/share/common-lisp/source/clue
-usr/share/common-lisp/repositories/clue/clio  usr/share/common-lisp/source/clio
-usr/share/common-lisp/repositories/clue/pictures usr/share/common-lisp/source/pictures
-usr/share/common-lisp/repositories/clue/clio/examples usr/share/common-lisp/source/clio-examples
+usr/share/common-lisp/source/clue/clue.asf usr/share/common-lisp/systems/clue.adf
+usr/share/common-lisp/source/clue/clio.asf  usr/share/common-lisp/systems/clio.adf
+usr/share/common-lisp/source/clue/pictures.asf usr/share/common-lisp/systems/pictures.adf

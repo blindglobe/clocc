@@ -1,3 +1,9 @@
+cl-memoization (1.0-7) unstable; urgency=low
+
+  * Lintian fix: now doesn't include the CVS directory anymore. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun, 12 Jan 2003 13:11:28 +0100
+
 cl-memoization (1.0-6) unstable; urgency=low
 
   * Now uses asdf

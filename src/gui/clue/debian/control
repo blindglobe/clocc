@@ -1,15 +1,15 @@
-Source: clue
+Source: cl-clue
 Section: libs
 Priority: optional
 Build-Depends: debhelper
 Maintainer: Peter Van Eynde <pvaneynd@debian.org>
 Standards-Version: 3.5.6.0
 
-Package: clue
+Package: cl-clue
 Architecture: i386
-Depends: common-lisp-controller, cmucl-source
-Replaces: clio, pictures
-Conflicts: clio, pictures
+Depends: common-lisp-controller (>= 3.45), cl-asdf, cmucl-source
+Replaces: clio, pictures, clue
+Conflicts: clio, pictures, clue
 Description: Lisp package for clue/clio/pictures: X interfaces for lisp
  Clue is to lisp what xlib is to C. It's basic, but
  close to the metal.
@@ -19,3 +19,4 @@ Description: Lisp package for clue/clio/pictures: X interfaces for lisp
  .
  Pictures is an imaging-system for clue.
  It lets people use constraints and such to draw pictures.
+

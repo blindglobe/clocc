@@ -100,14 +100,16 @@
   ;; 23456789;123456789;123456789;123456789;123456789;123456789;123456789;12
   #-XCL
   "
-;;
+;; 
 ;;  AAAAAAA BBBBBB CCCCCCCCCCCC DDDDDDDDDDDDDD EEEE FFFFFFFFF GGGGGGGG HHHHH IIII JKK LLL MMMM NNNNNN OOOOOOOOOO PPPPPPPPPPPPPPP QQQQQQQ RRRRRRRRRRRR S TTTUUUUUUUUU VVVVVVV WWWWWWWWWW XXXXX
 ")
 
 (check-for-bug :format-legacy-107
-  (format nil "~%;; ~<~%;; ~1,50:; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~;~
+  (format nil
+	  "~%;; ~<~%;; ~1,50:; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~;~
  ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~; ~s~;~
- ~s~                                    ; ~s~; ~s~; ~s~;~>~%"                               ; 2!
+ ~s~; ~s~; ~s~; ~s~;~>~%"
+					; 2!
           'aaaaaaa 'bbbbbb 'cccccccccccc 'dddddddddddddd 'eeee 'fffffffff 'gggggggg
           'hhhhh 'iiii 'j 'kk 'lll 'mmmm 'nnnnnn 'oooooooooo 'ppppppppppppppp
           'qqqqqqq
@@ -124,7 +126,7 @@
   ;; 23456789;123456789;123456789;123456789;123456789;
   #-XCL
   "
-;;
+;; 
 ;;  AAAAAAA BBBBBB CCCCCCCCCCCC DDDDDDDDDDDDDD EEEE FFFFFFFFF GGGGGGGG HHHHH IIII JKK LLL MMMM NNNNNN OOOOOOOOOO PPPPPPPPPPPPPPP QQQQQQQ RRRRRRRRRRRR S TTTUUUUUUUUU VVVVVVV WWWWWWWWWW XXXXX
 ")
 
@@ -1004,13 +1006,13 @@ freshline:
   (FORMAT NIL "char normal:~c, as ~%# would read:~%~@c, human read:~:c-*"
           #\SPACE
           #\SPACE #\SPACE)
-  #+(or XCL cmu sbcl CLISP) "char normal: , as
+  #+(or XCL cmu sbcl CLISP) "char normal: , as 
 # would read:
 #\\Space, human read:Space-*"
-  #+(or AKCL LUCID)    "char normal:Space, as
+  #+(or AKCL LUCID)    "char normal:Space, as 
 # would read:
 #\\Space, human read:Space-*"
-  #+ALLEGRO            "char normal: , as
+  #+ALLEGRO            "char normal: , as 
 # would read:
 #\\space, human read:space-*"
   #-(or XCL cmu sbcl CLISP AKCL LUCID ALLEGRO) UNKNOWN)

@@ -3,12 +3,13 @@
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
 # This file requires GNU Make
 #
-# $Id: clocc.mk,v 1.11 2000/05/04 15:56:55 sds Exp $
+# $Id: clocc.mk,v 1.12 2000/05/11 21:21:29 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
 LISPFILE := $(TOP)/bin/lisp-file
 FASLEXT := $(shell $(RUNLISP) -faslext)
+DUMPEXT := $(shell $(RUNLISP) -dumpext)
 CLOCCIMAGE := $(TOP)/clocc-image
 FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
 	*.o *.data *.ufsl
@@ -23,9 +24,10 @@ ZIP = /usr/local/bin/zip -9uD
 default: force
 	@echo " * you must specify a target, such as..."
 	@echo " + system - run mk:compile-file on SYSTEM ($(SYSTEM))"
-	@echo " + all - compile all files in SOURCES ($(SOURCES)) one by one"
+	@echo " + all - compile all files in SOURCES ($(SOURCES)) one by one (this will work only if the files are independent)"
 	@echo " + ChangeLog - create the ChangeLog file using rcs2log"
 	@echo " + $(SYSTEM).list - the list of all functons and variables defined by this system"
+	@echo " + $(SYSTEM)-image$(DUMPEXT) - the memory image with everything ($(SOURCES))"
 	@echo " + TAGS - Emacs tags"
 	@echo " + $(SYSTEM).zip - the archive of SOURCES, DOCFILES ($(DOCFILES)), MAKEFILES ($(MAKEFILES)) and ZIPEXTRA ($(ZIPEXTRA))"
 
@@ -33,6 +35,14 @@ system: $(SYSTEM).system
 	$(RUNLISP) -I $(CLOCCIMAGE) -x '(mk:compile-system "$(SYSTEM)")'
 
 all: $(addsuffix .$(FASLEXT),$(SOURCES))
+
+ifneq ($(DUMPEXT),)
+$(SYSTEM)-image: $(SYSTEM)-image$(DUMPEXT)
+endif
+
+$(SYSTEM)-image$(DUMPEXT): $(LISPFILES)
+	$(RUNLISP) -I $(CLOCCIMAGE) -x '(mk:compile-system "$(SYSTEM)")' \
+		-d $(SYSTEM)-image
 
 %.$(FASLEXT): %.$(LISPEXT)
 	$(RUNLISP) $(patsubst %,-i %,$(filter-out $<,$^)) -c $<

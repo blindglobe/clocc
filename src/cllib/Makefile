@@ -1,4 +1,4 @@
-# $Id: Makefile,v 2.13 2000/05/11 17:07:34 sds Exp $
+# $Id: Makefile,v 2.14 2000/05/11 21:21:29 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
@@ -14,7 +14,6 @@ ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \
 	$(TOP)/etc/GNU-GPL
 DOCFILES = $(SYSTEM).html entities.xml
 include $(TOP)/clocc.mk
-DUMPEXT := $(shell $(RUNLISP) -dumpext)
 
 ifneq ($(DUMPEXT),)
 image:		image$(DUMPEXT)

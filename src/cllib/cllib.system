@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.28 2003/06/30 19:12:35 sds Exp $
+;;; $Id: cllib.system,v 1.29 2003/07/01 21:49:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -80,12 +80,14 @@
             ("base" "string" "withtype" "closio" "log" "fileio")))
     :initially-do
     (progn (mk:system-source-size :cllib :all)
-           (setq tbc (mk:system-source-size
-                      :cllib :new-source-and-dependents)))
+           (mk:system-source-size :cllib :new-source-and-dependents)
+           (setq tbc (mk:files-in-system :cllib :new-source-and-dependents
+                                         :source)))
     :finally-do
-    (unless (zerop tbc)
+    (when tbc
       (in-package :cllib)
-      (funcall (intern "TEST-ALL" :cllib))
+      (when (member "tests" tbc :test #'string= :key #'pathname-name)
+        (funcall (intern "TEST-ALL" :cllib)))
       (let ((auto (translate-logical-pathname "clocc:src;cllib;auto.lisp")))
         (funcall (intern "AUTOLOAD-GENERATE" :cllib)
                  (mk:files-in-system :cllib) auto)

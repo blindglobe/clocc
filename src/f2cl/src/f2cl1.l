@@ -1704,8 +1704,8 @@ FILENAME                 File containing Fortran code
 	    (let ((var (remove nil (list-split '|,| (car list))))
 		  (vals (list-split '|,| (cadr list))))
 	      ;;(format t "list = ~a~%" list)
-	      (format t "var = ~a~%" var)
-	      (format t "vals = ~a~%" vals)
+	      ;;(format t "var = ~a~%" var)
+	      ;;(format t "vals = ~a~%" vals)
 	      
 	      ;; Need to be careful here.  We might be doing either
 	      ;;
@@ -1763,7 +1763,6 @@ FILENAME                 File containing Fortran code
 		       (t
 			(push (fix-up-negative-number item) result))))))
 	     (data-var (v)
-	       (format t "data-var v = ~A~%" v)
 	       (cond ((atom v)
 		      v)
 		     ((listp v)
@@ -1797,27 +1796,19 @@ FILENAME                 File containing Fortran code
 		  (split (list-split '|,| (subseq (first v) 0 (- posn 2))))
 		  (loop-info
 		   `(,split ,(remove '= (remove '|,| (subseq (first v) (1- posn)))))))
-	     (format t "parse-data1 implied-do~%")
-	     (format t "  v = ~S~%" v)
-	     (format t "    = ~S~%" split)
-	     (format t "  n = ~S~%" loop-info)
-	     (format t "  l = ~S~%" l)
-	     (format t "  dvar = ~S~%" (data-var split))
-	     #+nil
-	     `(data-implied-do ,(first v) ,(data-var v) ,(fix-up-data-reps l))
 	     `(data-implied-do ,loop-info ,(data-var split) ,(fix-up-data-reps l))
 	     ))
 	  ((and (listp v) (listp l)
 		(= (length v) (length l))
 		(> (length v) 1))
-	   (format t "parse-data1 op~%")
+	   ;;(format t "parse-data1 op~%")
 	   (mapcar #'(lambda (var val)
 		       `(setq ,(check-reserved-lisp-names var)
 			      ,(fix-up-negative-number val)))
 		   v l))
 	  (t
-	   (format t "parse-data1 else: v, l = ~S ~S~%" v l)
-	   (format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
+	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
+	   ;;(format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
 	   (if (and (vble-is-array-p (check-reserved-lisp-names (first v)))
 		    (null (rest v)))
 	       `(replace ,(check-reserved-lisp-names (first v))
@@ -2244,8 +2235,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.101 2002/03/18 23:34:15 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.102 2002/03/19 01:45:20 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.102  2002/03/19 01:45:20  rtoy
+;;; Oops.  Remove the debugging print statements.
+;;;
 ;;; Revision 1.101  2002/03/18 23:34:15  rtoy
 ;;; Was not correctly handling some implied do loops containing multiple
 ;;; variables in the loop in data statements.  Fix that and clean up some

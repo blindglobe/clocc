@@ -1,4 +1,4 @@
-CL.ENVIRONMENT 1.0
+CL.ENVIRONMENT 1.2
 
 This package contains a set of definitions whose intent is to
 facilitate the management of system dependencies.
@@ -13,12 +13,14 @@ The inspiration for this work is in the Sonya Keene's book on CLOS.
 
 The system has been tested on
 
-    CMUCL 18c
-    Allegro CL Lite 5.01, ACL Enterprise 6.x Windows
-    Lispworks Personal Edition 4.2.x Windows and Linux and 4.3 Mac OS X
+    CMUCL 18e and pre 19a
+    ACL Enterprise 6.x Windows
+    Lispworks 4.2.x Windows and Linux and 4.3 Mac OS X
+    OpenMCL on Mac OS X
+    MCL 5.0 on Mac OS X
 
 Please see the files INSTALLATION and COPYING for more information.
 The package is currently released under the LGPL and all the files
 should be considered to include such Copyright notice.
 
-2004-01-21 Marco Antoniotti
+2004-06-09 Marco Antoniotti

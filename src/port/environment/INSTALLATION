@@ -1,8 +1,8 @@
-CL.ENVIRONMENT 0.1
+CL.ENVIRONMENT 1.1
 
 Installation Instructions
 
-
+===========================================================================
 1. Without MK:DEFSYSTEM (preferred).
 
 Load the file named 'load-cl-environment.lisp'.
@@ -13,25 +13,28 @@ Be careful about the directory you are in and/or the actual location
 of the aforementioned file.  The package is actually loaded from the
 directory of *LOAD-TRUENAME* as bound by the call to LOAD.
 
+You can skip the Section 1.1 and Section 2 and proceed to Section 3.
+
 1.1 Utility function.
 
-Once the file is loaded you will have the function
-CL-USER::LOAD-CL-ENVIRONMENT-LIBRARY at your disposal.  This can be
-used for debugging and other purposes.
-You can now issue.
+Once the file "load-cl-environment.lisp" is loaded you will have the
+function CL-USER::LOAD-CL-ENVIRONMENT-LIBRARY at your disposal.  This
+can be used for debugging and other purposes.  You can now issue.
 
-      (cl-user::load-cl-environment-library :directory "/where/the/env/library/is/")
+      (cl-user::load-cl-environment-library
+                :directory "/where/the/env/library/is/")
 
 This will load the library.  To actually compile it, run
 
-      (cl-user::load-cl-environment-library :directory "/where/the/env/library/is/"
-                                   :compile-first-p t)
+      (cl-user::load-cl-environment-library
+                :directory "/where/the/env/library/is/"
+                :compile-first-p t)
 
 This will compile the files first and then load them.
 
 You can skip Section 2.
 
-
+===========================================================================
 2. With MK:DEFSYSTEM.
 
 You need MK:DEFSYSTEM to do everything automatically.  Just issue the
@@ -44,7 +47,7 @@ This procedure is less tested.  The reason why the system file is not
 recommended is that I consider CL-ENVIRONMENT a "lower level"
 functionality than that provided by any "defsystem" utility.
 
-
+===========================================================================
 3. Test.
 
 You are in business.  You can check the variables

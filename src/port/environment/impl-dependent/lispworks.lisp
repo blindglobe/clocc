@@ -12,16 +12,17 @@
 ;;; Directory utilities
 
 (defmethod current-directory-pathname ((cl-implementation cl.env:lispworks))
-  ;; (pathname lw:*current-working-directory*) ; This should be correct
-					       ; for newer Lispworks
-					       ; versions (> 4.0).
-  (pathname (hcl:get-working-directory))) ; This is correct for Lispworks 4.2
+  (pathname (hcl:get-working-directory))) ; This is correct for
+					  ; Lispworks 4.2 and 4.3.x.
 
 
-(defmethod change-current-working-directory ((cl-implementation cl.env:lispworks) (new-directory string))
+(defmethod change-current-working-directory ((cl-implementation cl.env:lispworks)
+					     (new-directory string))
   (hcl:change-directory new-directory))
 
-(defmethod change-current-working-directory ((cl-implementation cl.env:lispworks) (new-directory pathname))
+
+(defmethod change-current-working-directory ((cl-implementation cl.env:lispworks)
+					     (new-directory pathname))
   (hcl:change-directory (namestring new-directory)))
 
  

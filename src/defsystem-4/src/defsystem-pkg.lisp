@@ -65,6 +65,8 @@
 	   #:execute-action
   	   )
 
+  (:export #:find-component)
+
   (:export #:operate-on-system
 	   #:oos)
 

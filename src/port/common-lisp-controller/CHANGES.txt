@@ -1,3 +1,7 @@
+KMR 06-SEP-2002 (Kevin M. Rosenberg)
+    - Remove defsystem.lisp from this package and now depend on Debian package
+      cl-defsystem3.
+
 KMR 28-AUG-2002 (Kevin M. Rosenberg)
     - Remove dependency on mk:new-require and add new ORIGNAL-REQUIRE
     functionality.

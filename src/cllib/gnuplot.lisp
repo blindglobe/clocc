@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.15 2004/07/15 00:23:49 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.16 2004/07/15 19:41:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -28,7 +28,7 @@
 
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
           *gnuplot-file*
-          plot-output +plot-term-screen+ +plot-term-printer+ +plot-term-file+
+          plot-output *plot-term-screen* *plot-term-printer* *plot-term-file*
           plot-term make-plot-term plot-histogram
           +plot-timestamp+ directive-term make-plot-stream
           with-plot-stream plot-dated-lists plot-dated-lists-depth
@@ -107,12 +107,18 @@ according to the given backend")
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-term (:conc-name pltm-))
   (terminal nil :type (or null string))
-  (terminal-options nil :type (or null string))
+  (terminal-options nil :type list)
+  (orientation :landscape :type (member :landscape :portrait))
+  (font-family "Helvetica" :type string)
+  (font-size 9 :type (integer 1 100))
   (target nil :type (or null string pathname))))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
-  (format out "set terminal ~a~@[ ~a~]~%"
+  (format out "set terminal ~a~{ ~a~} "
           (pltm-terminal pt) (pltm-terminal-options pt))
+  (write (pltm-orientation pt) :stream out :case :downcase :escape nil)
+  (format out " '~A' ~D" (pltm-font-family pt) (pltm-font-size pt))
+  (terpri out)
   (let ((target (pltm-target pt)))
     (typecase target
       (null (format out "set output~%"))
@@ -124,17 +130,15 @@ according to the given backend")
                                         "ps" (pltm-terminal pt))
                               :defaults target))))))
 
-(defconst +plot-term-screen+ plot-term
+(defcustom *plot-term-screen* plot-term
   (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows")
   "The `plot-term' object sending the plot to the screen.")
-(defconst +plot-term-printer+ plot-term
+(defcustom *plot-term-printer* plot-term
   (make-plot-term :terminal "postscript"
-                  :terminal-options "landscape 'Helvetica' 9"
                   :target '*gnuplot-printer*)
   "The `plot-term' object sending the plot to the printer.")
-(defconst +plot-term-file+ plot-term
+(defcustom *plot-term-file* plot-term
   (make-plot-term :terminal "postscript"
-                  :terminal-options "landscape 'Helvetica' 9"
                   :target *gnuplot-file*)
   "The `plot-term' object sending the plot to the printer.")
 
@@ -146,10 +150,10 @@ according to the given backend")
   (:method ((directive t))
     (error 'code :proc 'directive-term :args (list directive)
            :mesg "unknown directive: ~s"))
-  (:method ((directive (eql :plot))) +plot-term-screen+)
-  (:method ((directive (eql :wait))) +plot-term-screen+)
-  (:method ((directive (eql :print))) +plot-term-printer+)
-  (:method ((directive (eql :file))) +plot-term-file+)
+  (:method ((directive (eql :plot))) *plot-term-screen*)
+  (:method ((directive (eql :wait))) *plot-term-screen*)
+  (:method ((directive (eql :print))) *plot-term-printer*)
+  (:method ((directive (eql :file))) *plot-term-file*)
   (:method ((directive string)) (ps-terminal directive))
   (:method ((directive pathname)) (ps-terminal directive)))
 
@@ -190,7 +194,7 @@ according to the given backend")
   (width 1 :type (integer 1 10)))
 
 (defstruct (plot-spec (:conc-name plsp-))
-  (term +plot-term-screen+ :type plot-term)
+  (term *plot-term-screen* :type plot-term)
   (timestamp +plot-timestamp+ :type (or null plot-timestamp))
   (x-axis (make-plot-axis :name "x") :type plot-axis)
   (y-axis (make-plot-axis :name "y") :type plot-axis)
@@ -201,6 +205,7 @@ according to the given backend")
   (legend nil :type list)
   (grid nil :type boolean)
   (arrows nil :type list)
+  (multiplot nil :type boolean)
   (data nil :type (or list function))))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
@@ -235,7 +240,7 @@ according to the given backend")
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
   (let ((name (plax-name pa)))
     (format out "set format ~a \"~a\"~%" name (plax-fmt pa))
-    (format out "set ~alabel \"~a\"~%" name (plax-label pa))
+    (format out "set ~alabel \"~@[~a~]\"~%" name (plax-label pa))
     (format out "set ~:[no~;~]~atics~%" (plax-tics pa) name)
     (if (plax-time-p pa)
         (format out "set timefmt \"~a\"~%set ~adata time~%" (plax-fmt pa) name)
@@ -251,15 +256,17 @@ according to the given backend")
                 (%plotout (car range)) (%plotout (cdr range)))))))
 
 (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
-  (plot-output (plsp-term ps) out backend)
-  (plot-output (plsp-timestamp ps) out backend)
-  (plot-output (plsp-x-axis ps) out backend)
-  (plot-output (plsp-y-axis ps) out backend)
   (flet ((set-opt (nm par)
            (case par
              ((t) (format out "set ~a~%" nm))
              ((nil) (format out "unset ~a~%" nm))
              (t (format out "set ~a ~a~%" nm (%plotout par))))))
+    (unless (plsp-multiplot ps)
+      (set-opt "multiplot" nil)
+      (plot-output (plsp-term ps) out backend))
+    (plot-output (plsp-timestamp ps) out backend)
+    (plot-output (plsp-x-axis ps) out backend)
+    (plot-output (plsp-y-axis ps) out backend)
     (set-opt "border" (plsp-border ps))
     (set-opt "style data" (plsp-data-style ps))
     (set-opt "title" (plsp-title ps))
@@ -275,7 +282,7 @@ according to the given backend")
             (format out "~{~a~^ ~}~%" datum))))))
 
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
-                  (xlabel "x") (ylabel "y") arrows
+                  (xlabel "x") (ylabel "y") arrows multiplot timestamp
                   (data-style :lines) (border t)
                   timefmt xb xe yb ye (title "plot") legend
                   (xtics t) (ytics t) grid xlogscale ylogscale
@@ -288,6 +295,7 @@ according to the given backend")
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
                            :range (when (and yb ye) (cons yb ye))
                            :logscale ylogscale)
+   :multiplot multiplot :timestamp (unless multiplot timestamp)
    :grid grid :legend legend :title title :border border :arrows arrows))
 
 (defgeneric make-plot-stream (directive)
@@ -333,7 +341,9 @@ Should not be called directly but only through `with-plot-stream'."
         (mesg :plot *gnuplot-msg-stream*
               "~&wrote plot commands to ~s~%" plot))
       (ecase plot
-        ((t :plot) (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%"))
+        ((t :plot)
+         (unless (plsp-multiplot plot-spec)
+           (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%")))
         (:wait
          (fresh-line *terminal-io*)
          (princ "Press <enter> to continue..." *terminal-io*)
@@ -529,7 +539,8 @@ OPTS is passed to `plot-lists-arg'."
 
 ;;;###autoload
 (defun plot-histogram (list nbins &rest opts &key (title "histogram") (mean t)
-                       (key #'value) &allow-other-keys)
+                       (key #'value) (xlabel nil) (ylabel nil)
+                       &allow-other-keys)
   "Plot the data in the list as a histogram.
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation
  with vertical lines."
@@ -566,6 +577,7 @@ When :MEAN is non-NIL (default), show mean and mean+-standard deviation
             (when (<= hi max)
               (push (vertical hi 2) arrows)))))
       (with-plot-stream (str :title title :data-style :histeps :arrows arrows
+                             :xlabel xlabel :ylabel ylabel
                              (remove-plist opts :key :mean))
         (format str "plot '-' using 1:2~%")
         (dotimes (i nbins)

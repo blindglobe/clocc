@@ -26,7 +26,7 @@
 ;;; 12/10/87	LGO	Created
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/input.lisp,v 1.2 2001/07/13 04:56:48 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/input.lisp,v 1.3 2003/02/24 09:17:02 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -1196,7 +1196,7 @@
 
 (defun make-event-handlers (&key (type 'array) default)
   (declare (type t type)			;Sequence type specifier
-	   (type function default)
+	   (type (or null function) default)
 	   (clx-values sequence))			;Default handler for initial content
   ;; Makes a handler sequence suitable for process-event
   (make-sequence type *max-events* :initial-element default))

@@ -552,10 +552,11 @@ main-loop
  (and (eq (car x) 'goto)
       (listp (cadr x))))
 (defun id-comp-goto (x)
- (and (eq (car x) 'goto)
-      (or (and (not (listp (cadr x)))
-               (cddr x))
-          (not (numberp (cadr x))))))
+  ;; goto (l1, l2, l3, ...) [,] expr
+  (and (eq (first x) 'goto)
+       (or (and (not (listp (second x)))
+		(cddr x))
+	   (not (numberp (second x))))))
 ;go to label
 (defun id-go-to (x)
  (unify x '(go to %label) nil))
@@ -563,12 +564,14 @@ main-loop
  (and (eq (car x) 'go)
       (eq (cadr x) 'to)
       (listp (caddr x))))
+
 (defun id-comp-go-to (x)
- (and (eq (car x) 'go)
-      (eq (cadr x) 'to)
-      (or (and (not (listp (caddr x)))
-               (cdddr x))
-          (not (numberp (caddr x))))))
+  ;; go to (l1, l2, l3, ...) [,] expr
+  (and (eq (car x) 'go)
+       (eq (cadr x) 'to)
+       (or (and (not (listp (third x)))
+		(cdddr x))
+	   (not (numberp (third x))))))
 
 
 ;integer x,y,z,...
@@ -687,24 +690,31 @@ main-loop
 
 ;------------------------------------------------------------------------------
 (defun parse-comp-goto (x)
-  (if (cddr x)
-      `((computed-goto 
-	 ,(mapcar #'(lambda (l) 
-		      (read-from-string 
-		       (concatenate 'string "label" (princ-to-string l))))
-		  (remove '|,| (second x)))
-	 ,(third x)))
-      `((computed-goto ,(cadr x)))))
+  ;; goto (l1, l2, l3, ...) [,] expr
+  ;; Remove optional comma before the expression
+  (let ((x (remove '|,| x)))
+    (if (cddr x)
+	`((computed-goto 
+	   ,(mapcar #'(lambda (l) 
+			(read-from-string 
+			 (concatenate 'string "label" (princ-to-string l))))
+		    (remove '|,| (second x)))
+	   ,(third x)))
+	`((computed-goto ,(second x))))))
 
 (defun parse-comp-go-to (x)
-  (if (fourth x)
-      `((computed-goto 
-	 ,(mapcar #'(lambda (l) 
-		      (read-from-string 
-		       (concatenate 'string "label" (princ-to-string l))))
-		  (remove '|,| (third x)))
-	 ,(fourth x)))
-      `((computed-goto ,(caddr x)))))
+  ;; go to (l1, l2, l3, ...) [,] expr
+  ;; Remove the optional comma before the expression
+  (let ((x (remove '|,| x)))
+    (if (fourth x)
+	`((computed-goto 
+	   ,(mapcar #'(lambda (l) 
+			(read-from-string 
+			 (concatenate 'string "label" (princ-to-string l))))
+		    (remove '|,| (third x)))
+	   ,(fourth x)))
+	`((computed-goto ,(caddr x))))))
+
 ;------------------------------------------------------------------------------
 (defun parse-assgn-go-to (x)
  (prog (labels len)
@@ -968,7 +978,13 @@ main-loop
 			       ((null args) (remove nil (nreverse v)))
 			     (let ((var (first vars))
 				   (arg (first args)))
-			       (push (cond ((vble-is-array-p arg)
+			       (push (cond ((or (vble-is-array-p arg)
+						(member arg *external_function_names*))
+					    ;; Fortran can't return
+					    ;; whole arrays or
+					    ;; functions, so don't try
+					    ;; to assign the value to
+					    ;; arrays or functions.
 					    nil)
 					   ((symbolp arg)
 					    `(setf ,arg ,var))
@@ -1691,8 +1707,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.37 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.38 2000/07/14 13:30:08 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.38  2000/07/14 13:30:08  rtoy
+;;; o Computed goto apparently can have a comma before the expression, and
+;;;   we weren't handling this correctly.  (At least g77 allows it, even
+;;;   though I can't find it mentioned in the Fortran 77 standard.)
+;;;
+;;; o When doing a subroutine call, don't try to assign the return value
+;;;   to external functions.  Fortran can't return functions.
+;;;
 ;;; Revision 1.37  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

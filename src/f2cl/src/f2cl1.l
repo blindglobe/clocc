@@ -817,10 +817,11 @@ main-loop
 			  ;; that.
 			  (cond ((or (eq t rhs-type)
 				     (eq t lhs-type)
-				     (eq lhs-type rhs-type))
+				     (subtypep rhs-type lhs-type))
 				 ;; No coercion is needed if the types
-				 ;; match, or if we can't determine the
-				 ;; type of the LHS or RHS.
+				 ;; are compatible, or if we can't
+				 ;; determine the type of the LHS or
+				 ;; RHS.
 				 rhs)
 				((and (subtypep lhs-type 'integer)
 				      (not (subtypep rhs-type 'integer)))
@@ -833,6 +834,11 @@ main-loop
 				 (if (subtypep rhs-type 'string)
 				     `(copy-seq ,rhs)
 				     `(coerce ,rhs ',lhs-type))))))))
+	     #+nil
+	     (when (and (listp new-rhs)
+			(eq 'coerce (first new-rhs)))
+	       (format t "lhs, rhs types = ~A (~A) = ~A (~A) ~%      -> ~A~%"
+		       lhs lhs-type rhs rhs-type new-rhs))
 	     `((setf ,lhs ,new-rhs)))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
@@ -856,7 +862,7 @@ main-loop
 			;; that.
 			(cond ((or (eq t rhs-type)
 				   (eq t lhs-type)
-				   (eq lhs-type rhs-type))
+				   (subtypep rhs-type lhs-type))
 			       ;; No coercion is needed if the types
 			       ;; match, or if we can't determine the
 			       ;; type of the LHS or RHS.

@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.1 2003/11/14 19:08:42 rtoy Exp $
+;;; $Id: hompack.system,v 1.2 2003/11/15 04:59:32 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.2  2003/11/15 04:59:32  rtoy
+;;; Add the files and dependencies for the POLSYS stuff that we
+;;; accidentally left out.  (But files were already there.)
+;;;
 ;;; Revision 1.1  2003/11/14 19:08:42  rtoy
 ;;; Initial revision.
 ;;;
@@ -38,12 +42,16 @@
      (:file "gmfads")
      (:file "hfun1p" :depends-on ("gfunp"))
      (:file "hfunp" :depends-on ("hfun1p"))
+     (:file "initp" :depends-on ("sclgnp"))
      (:file "mfacds" :depends-on ("gmfads"))
      (:file "mulp")
      (:file "multds")
+     (:file "otputp")
      (:file "pcgds" :depends-on ("qimuds" "mfacds" "multds"))
      (:file "pcgns" :depends-on ("mfacds" "multds" "qimuds"))
      (:file "pcgqs" :depends-on ("solvds" "gmfads" "multds"))
+     (:file "polsys" :depends-on ("polyp"))
+     (:file "polyp" :depends-on ("initp" "strptp" "otputp" "fixpnf"))
      (:file "powp")
      (:file "qimuds" :depends-on ("solvds"))
      (:file "qrfaqf")
@@ -57,6 +65,7 @@
      (:file "rootns" :depends-on ("tangns"))
      (:file "rootqf" :depends-on ("upqrqf" "rho" "qrslqf" "f" "fjac"))
      (:file "rootqs" :depends-on ("rhojs" "rho" "pcgqs" "f" "fjacs"))
+     (:file "sclgnp")
      (:file "sintrp")
      (:file "solvds")
      (:file "stepds" :depends-on ("f"))
@@ -65,6 +74,8 @@
      (:file "stepqf" :depends-on ("tangqf" "upqrqf" "rho" "rhojac" "qrslqf" "f" "fjac"))
      (:file "stepqs" :depends-on ("tangqs" "rhojs" "pcgqs" "f" "fjacs"))
      (:file "steps" :depends-on ("f"))
+     (:file "strptp")
+     (:file "otputp")
      (:file "r1upqf")
      (:file "tangnf" :depends-on ("rhojac" "rho" "f" "fjac"))
      (:file "tangns" :depends-on ("rhojac" "rho" "pcgns" "rhojs" "pcgds" "f" "fjac"))

@@ -72,6 +72,8 @@
 <!ENTITY fsf "<ulink url='http://www.fsf.org'>Free Software Foundation (FSF)</ulink>">
 <!ENTITY eff "<ulink url='http://www.eff.org'>Electronic Frontier Foundation</ulink>">
 <!ENTITY gnu "<ulink url='http://www.gnu.org'>GNU</ulink>">
+<!ENTITY glibc "&gnu; <ulink url='http://www.gnu.org/software/libc/'>libc</ulink>">
+<!ENTITY libiconv "&gnu; <ulink url='http://www.gnu.org/software/libiconv/'>libiconv</ulink>">
 <!ENTITY readline "&gnu; <ulink url='http://cnswww.cns.cwru.edu/~chet/readline/rltop.html'>readline</ulink>">
 <!ENTITY gpl "<ulink url='http://www.gnu.org/copyleft/gpl.html'>GPL</ulink>">
 <!ENTITY lgpl "<ulink url='http://www.gnu.org/copyleft/lgpl.html'>LGPL</ulink>">
@@ -86,7 +88,7 @@
 <!ENTITY lispworks "<ulink url='http://www.xanalys.com/software_tools/products/index.html'><command>LispWorks</command></ulink>">
 
 <!-- *** Editors *** -->
-<!ENTITY emacs "<ulink url='http://www.gnu.org/software/emacs/emacs.html'>Emacs</ulink>">
+<!ENTITY emacs "<ulink url='http://www.gnu.org/software/emacs/'>Emacs</ulink>">
 <!ENTITY xemacs "<ulink url='http://www.xemacs.org'>XEmacs</ulink>">
 
 <!-- *** platforms *** -->

@@ -1,5 +1,5 @@
 /* clc-build-daemon  -*- Mode:C -*-
- 
+
    written by Peter Van Eynde, copyright 2002
 
    license: GPL v2
@@ -16,6 +16,7 @@
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <grp.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
@@ -25,6 +26,7 @@
 #include <errno.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <netinet/in.h>
 
 /* This daemon implements the common-lisp-controller build daemon.
 It listens (via inetd) on a port for commands. It says hello with
@@ -103,7 +105,7 @@ void readaline (void)
 {
   ssize_t length;
   size_t max_length;
-  
+
   max_length = 4096;
   if (line == (char *) NULL)
     {
@@ -197,6 +199,8 @@ int main(int argc, char *argv[])
 {
   int opt;
   int inputfd, outputfd; /* the input and output stream fd's */
+  struct sockaddr_in peer;
+  socklen_t socklen = sizeof(peer);
 
   openlog("clc-build-daemon",LOG_ODELAY,LOG_DAEMON);
 
@@ -206,13 +210,34 @@ int main(int argc, char *argv[])
 
   signal(SIGPIPE, pipeerror);
 
+  syslog(LOG_NOTICE,"started");
+
+
   inputfd = fileno( stdin );
   outputfd = fileno( stdout );
-  if (inputfd == -1) 
+  if (inputfd == -1)
     reporterror("Input stream not a stream?");
 
   /* tell us about errors */
   fcntl(inputfd,F_SETOWN);
+
+  if (getpeername(inputfd, &peer, &socklen) != 0)
+    reporterror("During getpeername");
+  else
+    {
+      int source_ip;
+
+      if (peer.sin_family != AF_INET)
+        reporterror("sa_family is not AF_INET?");
+
+      source_ip = ntohl(peer.sin_addr.s_addr);
+
+      if ( (source_ip & 0xFF000000) != (127 << 24))
+        {
+          syslog(LOG_ERR,"Source is not localhost! %x",source_ip);
+          exit(1);
+        }
+    }
 
   opt=1;
   if (setsockopt(inputfd, 6, SO_KEEPALIVE, &opt, sizeof(opt)) != 0)
@@ -224,16 +249,14 @@ int main(int argc, char *argv[])
   if (setvbuf(stderr, (char *) NULL, _IOLBF, BUFSIZ) != 0)
     reporterror("Could not make stderr line buffered");
 
-  syslog(LOG_NOTICE,"started");
-  
   printf("100 common-lisp-controller build daemon version 1.0 at you service\n");
-  
+
   /* main loop */
   for(;;)
     {
       char *command;
 
-      alarm(30);            
+      alarm(30);
       readaline();
       alarm(0);
 
@@ -250,9 +273,9 @@ int main(int argc, char *argv[])
               exit(0);
             }
         }
-      else if (strcmp("QUIT",command) == 0) 
+      else if (strcmp("QUIT",command) == 0)
         {
-          printf("220 BYE\n");          
+          printf("220 BYE\n");
           fflush(stdout);
 
           shutdown(inputfd,SHUT_WR);
@@ -278,10 +301,10 @@ int main(int argc, char *argv[])
           compiler = strtok(NULL,delim);
           check = strtok(NULL,delim);
 
-          if ((package == (char *) NULL) || 
+          if ((package == (char *) NULL) ||
               (compiler == (char *) NULL) ||
               (check != (char *) NULL) ||
-              ( strlen(package) != strspn(package,allowedcharacters)) || 
+              ( strlen(package) != strspn(package,allowedcharacters)) ||
               ( strlen(compiler) != strspn(compiler,allowedcharacters)))
             {
               printf("500 Syntax error in REMOVAL command: package: %s compiler: %s check: %s tests: %i %i %i %i %i\n",
@@ -295,8 +318,8 @@ int main(int argc, char *argv[])
           else
             {
               char command[4097];
-        
-              
+
+
               snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
                        compiler,package);
               command[4096]=(char)0;
@@ -309,7 +332,7 @@ int main(int argc, char *argv[])
                 {
                   printf("250 removing package %s for compiler %s\n", package, compiler);
                   syslog(LOG_NOTICE,"Removing package %s for compiler %s",package,compiler);
-          
+
                   ftw(command, &delete_stuff, 150);
                   ftw(command, &delete_directories, 150);
                 }
@@ -325,10 +348,10 @@ int main(int argc, char *argv[])
           compiler = strtok(NULL,delim);
           check = strtok(NULL,delim);
 
-          if ((package == (char *) NULL) || 
+          if ((package == (char *) NULL) ||
               (compiler == (char *) NULL) ||
               (check != (char *) NULL) ||
-              ( strlen(package) != strspn(package,allowedcharacters)) || 
+              ( strlen(package) != strspn(package,allowedcharacters)) ||
               ( strlen(compiler) != strspn(compiler,allowedcharacters)))
             {
               printf("500 Syntax error in RECOMPILE command: package: %s compiler: %s check: %s tests: %i %i %i %i %i\n",
@@ -344,12 +367,12 @@ int main(int argc, char *argv[])
               pid_t child;
               int descriptors[2];
               char directory[4097];
-              
-              
+
+
               snprintf(directory,4096,"/usr/lib/common-lisp/%s/%s",
                        compiler,package);
               directory[4096]=(char)0;
-              
+
               if (probe_directory(directory))
                 {
                   printf("550 package %s for compiler %s already compiled!\n", package, compiler);
@@ -358,17 +381,17 @@ int main(int argc, char *argv[])
                 {
                   printf("250 recompiling package %s for compiler %s with %i\n", package, compiler,showoutput);
                   syslog(LOG_NOTICE,"Recompiling package %s for compiler %s",package,compiler);
-          
+
                   if (showoutput != 0)
                     {
                       if (pipe(descriptors) != 0)
                         reporterror("while creating pipe");
                     }
                   /* [0] is for reading, [1] is for writing */
-                  if ( (child = fork()) == 0) 
+                  if ( (child = fork()) == 0)
                     {
                       struct passwd *login_data;
-                      
+
                       if (showoutput == 0)
                         {
                           if ( freopen("/dev/null","r+",stdout) == NULL)
@@ -383,74 +406,100 @@ int main(int argc, char *argv[])
                           dup2(descriptors[1],STDERR_FILENO);
                           close(descriptors[1]);
                         }
-                      
+
                       if (freopen("/dev/null","r+",stdin) == NULL)
                         reporterror("reopen stdin");
-                      
+
                       if ( mkdir(directory, S_IREAD | S_IWRITE | S_IEXEC | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
                         {
                           char command[4097];
 
-                          snprintf(command,4096,"while creating directory: /usr/lib/common-lisp/%s/%s", 
+                          snprintf(command,4096,"while creating directory: /usr/lib/common-lisp/%s/%s",
                                    compiler,package);
                           command[4096]=(char)0;
                           reporterror(command);
                         }
 
                       login_data = getpwnam("nobody");
-                      
+
                       if (login_data == NULL)
                         reporterror("Could not know who is nobody");
-                      
+
                       if ( chown(directory, login_data->pw_uid, login_data->pw_gid) != 0)
-                        {                          
+                        {
                           char command[4097];
-                         
+
                           snprintf(command,4096,"while changing owner of directory: /usr/lib/common-lisp/%s/%s",
                                    compiler,package);
                           command[4096]=(char)0;
                           reporterror(command);
                         }
-                      
+
                       if (setgid(login_data->pw_gid) != 0)
                         reporterror("could not become nogroup");
-                      
+
+                      if (setgroups(0,NULL) != 0)
+                        reporterror("Could not give up groups");
+
                       if (setuid(login_data->pw_uid) != 0)
                         reporterror("could not become nobody");
-                      
+
                       if (setsid() == -1)
                         reporterror("could not create a session");
 
-                      snprintf(directory,4096,"\"/usr/lib/common-lisp/bin/%s.sh\" rebuild \"%s\"",
-                               compiler,package);
-                      directory[4096]=(char)0;
-                      
-                      exit(system(directory)); 
-                    }
+                      {
+                        char command[4097];
+                        char script[4097];
+                        char *argv[4];
+                        char *env[5];
+
+                        snprintf(command,4096,
+                               "/usr/lib/common-lisp/bin/%s.sh",
+                               compiler);
+                        snprintf(script,4096,
+                                 "%s.sh",
+                                 compiler);
+                        argv[0] = script;
+                        argv[1] = "rebuild";
+                        argv[2] = package;
+                        argv[3] = (char *) NULL;
+
+                        env[0] = "PATH=/bin:/usr/bin:/usr/local/bin:";
+                        env[1] = "HOME=/tmp";
+                        env[2] = "USER=nobody";
+                        env[3] = "TERM=vt100";
+                        env[4] = (char *) NULL;
+
+                        if (execve(command,argv,env) == -1)
+                          reporterror("execve failed");
+                        else
+                          reporterror("cannot return from exec!");
+                      }
+                      }
                   else
                     {
                       int status;
                       pid_t pid;
-                      
+
                       if (showoutput == 1)
                         {
                           char *line;
                           size_t length;
                           ssize_t read;
                           FILE *child;
-                          
+
                           length = 0;
                           line = (char *) NULL;
                           close(descriptors[1]);
-                          
+
                           child = fdopen(descriptors[0], "r");
                           if (child == (FILE *) NULL)
                             reporterror("while opening child stream");
-                          
+
                           for(;;)
                             {
                               read = getline(&line, &length, child);
-                              
+
                               if (read <= 0)
                                 {
                                   if (feof(child))
@@ -461,43 +510,43 @@ int main(int argc, char *argv[])
                               printf("310 %s",line);
                             }
                         }
-                      
+
                       pid = wait(&status);
-                      
+
                       if ( WEXITSTATUS(status) != 0)
                         {
                           char command[4097];
-                          
+
                           snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
                                    compiler,package);
                           command[4096]=(char)0;
                           ftw(command, &delete_stuff, 150);
                           ftw(command, &delete_directories, 150);
-                          
+
                           printf("501 Compilation failed with code %i\n",
                                  WEXITSTATUS(status));
                         }
-                      if ( WIFEXITED(status) != 0) 
+                      if ( WIFEXITED(status) != 0)
                         {
                           char command[4097];
-                          
+
                           snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
                                    compiler,package);
                           command[4096]=(char)0;
                           ftw(command, &chown_to_root, 150);
-                          
+
                           printf("251 DONE\n");
                         }
                     }
                 }
             }
         }
-      else 
+      else
         {
           printf("500 Syntax error (unknown command)\n");
         }
     }
-  
+
   closelog();
   exit(0);
 }

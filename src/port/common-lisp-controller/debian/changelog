@@ -1,8 +1,22 @@
+common-lisp-controller (3.4) unstable; urgency=high
+
+  * Damn. #151983 was caused by having a ipv6 inetd installed :-(.
+    Fixing problem this time... for real!
+  * Put site-names in correct package! Closes: #152202.
+  * Give up groups too. (possible security problem?)
+  * drop fake dependency. Closes: #152359.
+  * add HOME to the env. so sbcl works again. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  9 Jul 2002 10:38:54 +0200
+
 common-lisp-controller (3.3) unstable; urgency=low
 
-  * 
+  * Now replaces cmucl. I hope this is the right thing to do.
+    (Closes: #151920, #152101)
+  * Added dependancy on netkit-inetd with @host support.
+    Closes: #151983.
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Fri,  5 Jul 2002 07:09:54 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun,  7 Jul 2002 20:12:13 +0200
 
 common-lisp-controller (3.2) unstable; urgency=low
 

@@ -9,6 +9,7 @@ Package: common-lisp-controller
 Architecture: any
 Depends: bash (>= 2.04-9), debianutils (>= 1.7), debconf
 Conflicts: cmucl (<< 3.0.0)
+Replaces: cmucl (<< 3.1.0)
 Suggests: cmucl, sbcl
 Description: This is a common lisp source and compiler manager.
  With this package you can install and manage 

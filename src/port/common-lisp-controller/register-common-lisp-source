@@ -48,7 +48,7 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
      if [ -f /etc/common-lisp/autobuild -o \
           -f "/etc/common-lisp/$i/autobuild" -o \
           -f "/etc/common-lisp/$i/$1/autobuild" ] ; then
-       echo recompiling packae $1 for implementation $i
+       echo recompiling package $1 for implementation $i
        /usr/bin/clc-send-command --quiet recompile $1 $i
      fi
     fi

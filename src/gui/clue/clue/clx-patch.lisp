@@ -80,18 +80,21 @@
        (if (type? background 'pixmap)
 	   (setq back-pixmap (pixmap-id background))
 	 (if (integerp background)
-	     (setq back-pixel background)
-	   (x-type-error background
-			 '(or null (member :none :parent-relative) integer pixmap))))))
+           (setq back-pixel background)
+           (error 'type-error :datum background
+                  :expected-type '(or null (member :none :parent-relative)
+                                   integer pixmap))))))
     (case border
       ((nil) nil)
       (:copy (setq border-pixmap 0))
       (otherwise
        (if (type? border 'pixmap)
-	   (setq border-pixmap (pixmap-id border))
+         (setq border-pixmap (pixmap-id border))
 	 (if (integerp border)
-	     (setq border-pixel border)
-	   (x-type-error border '(or null (member :copy) integer pixmap))))))
+	   (setq border-pixel border)
+           (error 'type-error :datum border
+                  :expected-type '(or null (member :copy)
+                                   integer pixmap))))))
     (when event-mask
       (setq event-mask (encode-event-mask event-mask)))
     (when do-not-propagate-mask
@@ -130,7 +133,7 @@
 ;;;  support. Unnecessary with R4 CLX but needed when using R3 CLX.            |
 ;;;                                                                            |
 ;;;----------------------------------------------------------------------------+
-  
+
 (unless (find-symbol "WM-SIZE-HINTS-BASE-HEIGHT" 'xlib)
   (defun wm-size-hints-base-height (hints)
     (declare (ignore hints))
@@ -142,7 +145,7 @@
     (declare (ignore hints))
     `,value)
   (export 'wm-size-hints-base-height 'xlib))
- 
+
 (unless (find-symbol "WM-SIZE-HINTS-BASE-WIDTH" 'xlib)
   (defun wm-size-hints-base-width (hints)
     (declare (ignore hints))
@@ -154,7 +157,7 @@
     (declare (ignore hints))
     `,value)
   (export 'wm-size-hints-base-width 'xlib))
- 
+
 (unless (find-symbol "WM-SIZE-HINTS-GRAVITY" 'xlib)
   (defun wm-size-hints-gravity (hints)
     (declare (ignore hints))

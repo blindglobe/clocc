@@ -61,6 +61,7 @@
    <title><ulink url='http://www.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/html/cltl/cltl2.html'>Common Lisp: the Language (2nd Edition)</ulink></title>
   </biblioentry>">
 
+<!ENTITY gray-streams "<ulink url='ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail'>STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</ulink>">
 
 <!-- *** links related to open-source software *** -->
 <!ENTITY fsf "<ulink url='http://www.fsf.org'>Free Software Foundation (FSF)</ulink>">

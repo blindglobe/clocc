@@ -278,7 +278,8 @@ Tag being parsed:| (cadr x))))
 	       (let ((blist (mapcar #'car bounds)))
 		 (unless (and blist
 			      (every #'(lambda (x)
-					 (= x 1))
+					 (and (numberp x)
+					      (= x 1)))
 				     blist))
 		   (list (mapcar #'car bounds)))))))
     ;; string (character array) reference 

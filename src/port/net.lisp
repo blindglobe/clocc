@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.42 2002/03/30 04:18:31 sds Exp $
+;;; $Id: net.lisp,v 1.43 2002/04/25 18:02:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -352,7 +352,7 @@ Returns a socket stream or NIL."
    (if bin
        'net.sbcl.sockets:binary-stream-socket
        'net.sbcl.sockets:character-stream-socket)
-   ) ; :wait wait) ; FIXME!!! it does not work now.
+   :wait wait)
   #-(or allegro clisp cmu gcl lispworks
         (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'socket-accept serv bin)))
@@ -410,15 +410,17 @@ whichever comes first. If there was a timeout, return NIL."
                        stream (and timeout sec) (round usec 1d-6)))
   #+cmu (#+mp mp:process-wait-until-fd-usable #-mp sys:wait-until-fd-usable
               (system:fd-stream-fd stream) :input timeout)
-  #+sbcl (sb-sys:wait-until-fd-usable (sb-sys:fd-stream-fd stream)
-                                      :input timeout)
+  #+(and sbcl net.sbcl.sockets)
+  (net.sbcl.sockets:wait-for-input-data stream timeout)
+  #+(and sbcl db-sockets)
+  (sb-sys:wait-until-fd-usable (sb-sys:fd-stream-fd stream) :input timeout)
   #-(or clisp cmu sbcl)
   (error 'not-implemented :proc (list 'wait-for-stream stream timeout)))
 
 (defun open-unix-socket (path &key (kind :stream) bin)
   "Opens a unix socket. Path is the location.
 Kind can be :stream or :datagram."
-  (declare (simple-string path) #-cmu (ignore kind))
+  (declare (simple-string path) #-(or cmu sbcl) (ignore kind))
   #+allegro (socket:make-socket :type :stream
                                 :address-family :file
                                 :connect :active
@@ -426,13 +428,16 @@ Kind can be :stream or :datagram."
   #+cmu (sys:make-fd-stream (ext:connect-to-unix-socket path kind)
                             :input t :output t :element-type
                             (if bin '(unsigned-byte 8) 'character))
+  #+(and sbcl net.sbcl.sockets)
+  (net.sbcl.sockets:make-socket 'net.sbcl.sockets:unix-stream-socket
+                                :buffering :full :path path :type kind)
   #+(and sbcl db-sockets)
   (let ((socket (make-instance 'sockets:unix-socket :type :stream)))
     (sockets:socket-connect socket path)
     (sockets:socket-make-stream socket :input t :output t
                                 :buffering :none
                                 :element-type '(unsigned-byte 8)))
-  #-(or cmu allegro (and sbcl db-sockets))
+  #-(or cmu allegro sbcl)
   (open path :element-type (if bin '(unsigned-byte 8) 'character)
         :direction :io))
 

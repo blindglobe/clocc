@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.15 2000/05/16 23:37:52 sds Exp $
+;;; $Id: cllib.system,v 1.16 2000/05/23 22:09:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -27,6 +27,7 @@
      (:file "clhs" :depends-on
             ("base" "withtype" "string" "fileio" "log" "html"))
      (:file "closio" :depends-on ("base"))
+     (:file "cvs" :depends-on ("base" "string" "fileio" "date" "miscprint"))
      (:file "date" :depends-on
             ("base" "simple" "string" "sorted" "log" "withtype"))
      (:file "datedl" :depends-on

@@ -34,7 +34,7 @@
 ;;; exclusively.  The first one found true one will cause the
 ;;; associated action to be performed.
 
-(defparameter *mk-defsystem-load-source-only-p* t
+(defparameter *mk-defsystem-load-source-only-p* nil
   "If T, loads only the MK:DEFSYSTEM source files.")
 
 (defparameter *mk-defsystem-load-newer-p* nil
@@ -78,7 +78,7 @@
     "MAKE-DEFSYSTEM:utilities;ambler;ambler-pkg"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler"
     ;; "MAKE-DEFSYSTEM:;directory-processing"
-    "MAKE-DEFSYSTEM:utilities;user-interaction"
+    ;; "MAKE-DEFSYSTEM:utilities;user-interaction"
     "MAKE-DEFSYSTEM:utilities;y-or-n-p-wait"
     "MAKE-DEFSYSTEM:utilities;run-os-program"
     "MAKE-DEFSYSTEM:utilities;save-image"
@@ -98,7 +98,12 @@
     "MAKE-DEFSYSTEM:;base-components"
     "MAKE-DEFSYSTEM:;predefined-components"
     "MAKE-DEFSYSTEM:;predefined-specialized-components"
+    ;; This was below.
+    "MAKE-DEFSYSTEM:;defsystem"
 
+    ;; This was above.
+    "MAKE-DEFSYSTEM:utilities;user-interaction"
+    
     "MAKE-DEFSYSTEM:impl-dependent;common"
     #+(or cmu sbcl scl) "MAKE-DEFSYSTEM:impl-dependent;cmucl" ; Hopefully correct.
     #+clisp "MAKE-DEFSYSTEM:impl-dependent;clisp"
@@ -111,7 +116,7 @@
     #+poplog "MAKE-DEFSYSTEM:impl-dependent;poplog"
     #+(or kcl ibcl akcl ecl gcl) "MAKE-DEFSYSTEM:impl-dependent;kcl-derivates"
 
-    "MAKE-DEFSYSTEM:;defsystem"
+    ;; "MAKE-DEFSYSTEM:;defsystem"
     "MAKE-DEFSYSTEM:;registry"
     "MAKE-DEFSYSTEM:;defsystem-protocol"
     ;; "MAKE-DEFSYSTEM:;provide-require"

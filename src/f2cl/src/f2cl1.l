@@ -785,34 +785,40 @@ main-loop
 	   ;; Look for undeclared variables in the lhs or rhs.
 	   (check_new_vbles (list lhs))
 	   (check_new_vbles (list rhs))
-	   (cond ((find *coerce-assignments* '(t :always))
-		  `((setf ,lhs (coerce ,rhs (type-of ,lhs)))))
-		 ((find *coerce-assignments* '(nil :never))
-		  `((setf ,lhs ,rhs)))
-		 (t
-		  (let ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-			(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-		    ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-		    ;; RHS.  Otherwise, coerce the RHS to the
-		    ;; type of the LHS.  However, we can't coerce
-		    ;; something to an integer.  Use truncate for
-		    ;; that.
-		    (cond ((or (eq t rhs-type)
-			       (eq t lhs-type)
-			       (eq lhs-type rhs-type))
-			   ;; No coercion is needed if the types
-			   ;; match, or if we can't determine the
-			   ;; type of the LHS or RHS.
-			   `((setf ,lhs ,rhs)))
-			  ((and (subtypep lhs-type 'integer)
-				(not (subtypep rhs-type 'integer)))
-			   ;; We're trying to set a integer
-			   ;; variable to non-integer value.  Use
-			   ;; truncate.
-			   `((setf ,lhs (truncate ,rhs))))
-			  (t
-			   ;; Haven't a clue, so coerce
-			   `((setf ,lhs (coerce ,rhs ',lhs-type))))))))))))
+	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
+		  (new-rhs
+		   (cond ((find *coerce-assignments* '(t :always))
+			  (if (subtypep rhs-type 'string)
+			      `(copy-seq ,rhs)
+			      `(coerce ,rhs (type-of ,lhs))))
+			 ((find *coerce-assignments* '(nil :never))
+			  `((setf ,lhs ,rhs)))
+			 (t
+			  ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+			  ;; RHS.  Otherwise, coerce the RHS to the
+			  ;; type of the LHS.  However, we can't coerce
+			  ;; something to an integer.  Use truncate for
+			  ;; that.
+			  (cond ((or (eq t rhs-type)
+				     (eq t lhs-type)
+				     (eq lhs-type rhs-type))
+				 ;; No coercion is needed if the types
+				 ;; match, or if we can't determine the
+				 ;; type of the LHS or RHS.
+				 rhs)
+				((and (subtypep lhs-type 'integer)
+				      (not (subtypep rhs-type 'integer)))
+				 ;; We're trying to set a integer
+				 ;; variable to non-integer value.  Use
+				 ;; truncate.
+				 `(truncate ,rhs))
+				(t
+				 ;; Haven't a clue, so coerce
+				 (if (subtypep rhs-type 'string)
+				     `(copy-seq ,rhs)
+				     `(coerce ,rhs ',lhs-type))))))))
+	     `((setf ,lhs ,new-rhs)))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
   ;;lhs is either an array ref or a statement function name

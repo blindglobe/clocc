@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-06-03 Thu 13:24:42 EDT sds@goems.com>
+;;; File: <base.lisp - 1999-06-03 Thu 13:30:40 EDT sds@goems.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.22 1999/06/03 17:26:37 sds Exp $
+;;; $Id: base.lisp,v 1.23 1999/06/03 17:33:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.23  1999/06/03 17:33:55  sds
+;;; (compose): partially reverted the previous patch.
+;;;
 ;;; Revision 1.22  1999/06/03 17:26:37  sds
 ;;; (with-gensyms): new macro.
 ;;; (map-in): use it.
@@ -620,7 +623,10 @@ E.g., (compose abs (dl-val zz) 'key) ==>
   (lambda (yy) (abs (funcall (dl-val zz) (funcall key yy))))"
   (labels ((rec (xx yy)
              (let ((rr (list (car xx) (if (cdr xx) (rec (cdr xx) yy) yy))))
-               (if (consp (car xx)) (cons 'funcall rr) rr))))
+               (if (consp (car xx))
+                   (cons 'funcall (if (eq (caar xx) 'quote)
+                                      (cons (cadar xx) (cdr rr)) rr))
+                   rr))))
     (with-gensyms ("COMPOSE-" arg)
       (let ((ff (rec functions arg)))
         `(lambda (,arg) ,ff)))))

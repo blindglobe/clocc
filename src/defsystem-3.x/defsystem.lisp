@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.4 Interim.
+;;; DEFSYSTEM 3.4b Interim.
 
 ;;; defsystem.lisp --
 
@@ -28,7 +28,7 @@
 ;;; Originally written by Mark Kantrowitz, School of Computer Science,
 ;;; Carnegie Mellon University, October 1989.
 
-;;; MK:DEFSYSTEM 3.3 Interim
+;;; MK:DEFSYSTEM 3.4b Interim
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
 ;;;               1999 - 2004 Mark Kantrowitz and Marco Antoniotti. All
@@ -1186,8 +1186,8 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.3 Interim, 2002-06-13"
-  "Current version number/date for Defsystem.")
+(defparameter *defsystem-version* "3.4b Interim, 2004-02-26"
+  "Current version number/date for MK:DEFSYSTEM.")
 
 ;;; ********************************
 ;;; Customizable System Parameters *
@@ -4429,10 +4429,12 @@ the system definition, if provided."
 	   nil)
 	  (t nil))))
 
+
 (defun needs-compilation (component force)
   ;; If there is no binary, or it is older than the source
   ;; file, then the component needs to be compiled.
   ;; Otherwise we only need to recompile if it depends on a file that changed.
+  (declare (ignore force))
   (let ((source-pname (component-full-pathname component :source))
 	(binary-pname (component-full-pathname component :binary)))
     (and
@@ -4440,12 +4442,13 @@ the system definition, if provided."
      (probe-file source-pname)
      (or
       ;; We force recompilation.
-      (find force '(:all :new-source-all) :test #'eq)
+      #|(find force '(:all :new-source-all) :test #'eq)|#
       ;; no binary
       (null (probe-file binary-pname))
       ;; old binary
       (< (file-write-date binary-pname)
 	 (file-write-date source-pname))))))
+
 
 (defun needs-loading (component &optional (check-source t) (check-binary t))
   ;; Compares the component's load-time against the file-write-date of
@@ -4623,7 +4626,7 @@ the system definition, if provided."
 	       (setq *compile-during-load*
 		     (y-or-n-p-wait
 		      #\y 30
-		      "~A- Should I compile and load or not? "
+		      "~A- Should I compile while loading the system? "
 		      prompt)))		; was compile-source, then t
 	     compile-source))
 	  (*compile-during-load*)

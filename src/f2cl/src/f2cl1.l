@@ -118,6 +118,9 @@ only when needed. ")
 (defvar *declare-common-blocks* nil
   "When non-NIL, the structures for any common blocks are defined in this file")
 
+(defvar *assigned-variables* nil
+  "List of variables that are assigned a value")
+
 (defvar *f2cl-trace* nil)
 ;----------------------------------------------------------------------------
 
@@ -188,7 +191,8 @@ INPUT-FILE               File containing Fortran code
 					       (:array . lisp:array)))))
 	(*array-slicing* array-slicing)
 	(*apply-array-slice* nil)
-	(*declare-common-blocks* declare-common))
+	(*declare-common-blocks* declare-common)
+	(*assigned-variables* nil))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -610,6 +614,16 @@ FILENAME                 File containing Fortran code
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
 
+(defun maybe-nullify-returns (ret-values)
+  ;; If the return values are not members of *assigned-variables*,
+  ;; that means the var was never assigned, so we can return NIL
+  ;; instead of the variable.
+  (mapcar #'(lambda (v)
+	      (if (member v *assigned-variables*)
+		  v
+		  nil))
+	  ret-values))
+
 (defun translate-and-write-subprog (prog-list outport)
   (clrhash *common-blocks*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
@@ -635,8 +649,9 @@ FILENAME                 File containing Fortran code
 			       ;; A function.  Return the value of the
 			       ;; function, the value of the variable
 			       ;; with the same name as the function.
-			       `(end_label (return (values ,(cadr fort-fun)
-							   ,@(caddr fort-fun)))))
+			       `(end_label
+				 (return (values ,(cadr fort-fun)
+						 ,@(maybe-nullify-returns (caddr fort-fun))))))
 			      ((or *program-flag*
 				   (not (eq (car fort-fun) 'defun)))
 			       ;; Return nil if this is the main
@@ -648,7 +663,7 @@ FILENAME                 File containing Fortran code
 			       ;; A subroutine definition.  Return the
 			       ;; arguments of the subroutine.
 			       `(end_label (return (values 
-						    ,@(caddr fort-fun))))))))))
+						    ,@(maybe-nullify-returns (caddr fort-fun)))))))))))
      ;; check for missing PROGRAM stmt
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
@@ -1200,6 +1215,10 @@ FILENAME                 File containing Fortran code
 	   ;; Look for undeclared variables in the lhs or rhs.
 	   (check_new_vbles (list lhs))
 	   (check_new_vbles (list rhs))
+	   (when (member lhs *subprog-arglist*)
+	     (format t "subprog-arglist = ~A~%" *subprog-arglist*)
+	     (format t "lhs = ~A~%" lhs)
+	     (pushnew lhs *assigned-variables*))
 	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
 		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
 	     ;;(format t "~&")
@@ -1355,6 +1374,7 @@ FILENAME                 File containing Fortran code
 		       nil)
 		      ((symbolp arg)
 		       ;; A simple variable
+		       (pushnew arg *assigned-variables*)
 		       `(when ,var (setf ,arg ,var)))
 		      ((and (listp arg)
 			    (eq (first arg) 'fref))
@@ -2204,8 +2224,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.99 2002/03/13 03:58:48 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.100 2002/03/16 15:21:28 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.100  2002/03/16 15:21:28  rtoy
+;;; If an argument to a subprogram is not assigned to, return NIL as the
+;;; value instead of the argument.  (See NOTES file.)
+;;;
 ;;; Revision 1.99  2002/03/13 03:58:48  rtoy
 ;;; Use INT instead of TRUNCATE.
 ;;;

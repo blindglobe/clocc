@@ -3771,9 +3771,8 @@ D
 
 (defun default-output-pathname (path1 path2 type)
   (if (eq path1 t)
-      (merge-pathnames
-       (make-pathname :type type)
-       (translate-logical-pathname (pathname path2)))
+      (translate-logical-pathname
+       (merge-pathnames (make-pathname :type type) (pathname path2)))
       (translate-logical-pathname (pathname path1))))
 
 
@@ -3813,9 +3812,11 @@ D
 	     (setf verbose-stream
 		   (make-useable-stream
 		    #+cmu error-file-stream
-		    (and verbose *standard-input*)))
+		    (and verbose *trace-output*)))
 
-	     (format verbose-stream "Running ~A~@[ ~{~A~^ ~}~]~%" program arguments)
+	     (format verbose-stream "Running ~A~@[ ~{~A~^ ~}~]~%"
+		     program
+		     arguments)
 
 	     (setf fatal-error
 		   #-cmu
@@ -3839,7 +3840,11 @@ D
 
 	     (when output-file-written
 	       (format verbose-stream "~A written~%" output-file))
-	     (format verbose-stream "Running of ~A finished~%" program))
+	     (format verbose-stream "Running of ~A finished~%"
+		     program)
+	     (values (and output-file-written output-file)
+		     fatal-error
+		     fatal-error))
 
 	#+cmu
 	(when error-file

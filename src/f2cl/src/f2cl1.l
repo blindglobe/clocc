@@ -55,6 +55,10 @@ only when needed. ")
 
 (defvar *fortran-extensions* '("f" "for")
   "A list of possible extensions for Fortran files.")
+(defvar *f2cl-trace* nil)
+(defvar *check-array-bounds* nil
+  "If non-NIL, generated code checks for array bounds.  If NIL, checking
+is not included")
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
@@ -260,6 +264,33 @@ INPUT-FILE               File containing Fortran code
           (setq *format_stmts* nil)
 	  (let ((*print-level* nil)
 		(*print-length* nil))
+	    ;; Print a header to the file indicating when this was
+	    ;; compiled and the version of f2cl used to compile it.
+	    ;; Include the options used to compile the file.
+	    (multiple-value-bind (second minute hour date month year)
+		(decode-universal-time (get-universal-time))
+	      (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
+		      *f2cl-version*
+		      year month date hour minute second))
+	    (let ((*print-case* :downcase))
+	      ;; Insert in-package and declaim, if needed
+	      (when options
+		(pprint-logical-block (outport options :per-line-prefix ";;; ")
+		  (format outport "~&Options: ~S" options))
+		(format outport "~2%"))
+	      (when package
+		(format outport "~&(in-package ~S)~%" (cond ((keywordp package)
+							     package)
+							    ((symbolp package)
+							     (string package))
+							    ((packagep package)
+							     (package-name package))
+							    (t
+							     package))))
+	      (when declaim
+		(format outport "(declaim ~S)~%" declaim))
+	      (when (or package declaim)
+		(format outport "~2%")))
 	    (translate-and-write-subprog 
 	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
 	     outport
@@ -394,12 +425,7 @@ main-loop
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
      ;;     (format t "~%after translation : ~A" fort-fun)
 
-     ;; Insert in-package and declaim, if needed
-     (multiple-value-bind (second minute hour date month year)
-	 (decode-universal-time (get-universal-time))
-       (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
-	       *f2cl-version*
-	       year month date hour minute second))
+     #+nil
      (let ((*print-case* :downcase))
        (when options
 	 (pprint-logical-block (outport options :per-line-prefix ";;; ")
@@ -1003,7 +1029,7 @@ main-loop
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
 		     (mapcar #'(lambda (expr)
-				 (let ((*apply-array-slice* t))
+				 (let ((*apply-array-slice* *array-slicing*))
 				   (id-expression expr)))
 			     (list-split '|,| (check_new_vbles (third x))))
 		     nil)))
@@ -1344,9 +1370,12 @@ main-loop
 		(numberp (first (second v))))
 	   ;; Initializing one element of an array.  We assume the
 	   ;; lower limit on the array is 1!
-	   `(fset (fref ,(check-reserved-lisp-names (first v))
-		        ,(remove '|,| (second v)))
-	     ,(fix-up-negative-number (first l))))
+	   (let* ((vname (check-reserved-lisp-names (first v)))
+		  (dims (lookup-array-bounds vname)))
+	     `(fset (fref ,vname
+		          ,(remove '|,| (second v))
+		          ,dims)
+	       ,(fix-up-negative-number (first l)))))
 	  ((and (listp v) (listp l)
 		(listp (first v))
 		(member '= (first v)))
@@ -1776,8 +1805,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.42 2000/07/18 14:07:05 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.43 2000/07/19 13:47:06 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.43  2000/07/19 13:47:06  rtoy
+;;; o Only print out one banner and version number, not one for each
+;;;   subprog!
+;;; o In PARSE-DATA1, FREF now requires the dimensions of the array as the
+;;;   third argument. (Needed to support 1-d arrays and slicing.)
+;;;
 ;;; Revision 1.42  2000/07/18 14:07:05  rtoy
 ;;; Make the appropriate code changes due to the change in usage in
 ;;; UPDATE-CALLED-FUNCTIONS-LIST since the name arg is now either a list

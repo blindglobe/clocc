@@ -394,7 +394,7 @@ Estimated total monitoring overhead: 0.88 seconds
 #+:mcl
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from ccl provide require))
-#+(or :clisp :lispworks :cmu)
+#+(or :clisp :lispworks :cmu :sbcl)
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:export "*MONITORED-FUNCTIONS*"
 	   "MONITOR" "MONITOR-ALL" "UNMONITOR" "MONITOR-FORM"
@@ -463,12 +463,10 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; Type Definitions ***************
 ;;; ********************************
 
+#+(or cmu sbcl)
 (eval-when (compile load eval)
-  #+cmu
   (deftype time-type () '(unsigned-byte 32))
-  #+cmu
-  (deftype consing-type () '(unsigned-byte 32))
-  )
+  (deftype consing-type () '(unsigned-byte 32)))
 
 ;;; ********************************
 ;;; Timing Functions ***************

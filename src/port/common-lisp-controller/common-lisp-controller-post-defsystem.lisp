@@ -173,9 +173,11 @@ file or :asdf if found asdf file"
          #+:sbcl
 	 (symbol-function 'cl:require)
          #+(and :lispworks (not :lispworks3.1))
-	 (system-function 'system::require)
+	 (symbol-function 'system::require)
+         #+(and :lispworks :lispworks3.1))
+	 (symbol-function 'common-lisp::require)
          #+:mcl
-	 (system-function 'ccl:require))
+	 (symbol-function 'ccl:require))
 	
   #-(or (and allegro-version>= (version>= 4 1)) :lispworks)
   (setf (symbol-function
@@ -186,6 +188,7 @@ file or :asdf if found asdf file"
          #+(and :lispworks (not :lispworks3.1)) 'system::require
          #+:mcl 'ccl:require)
         (symbol-function 'clc-require))
+
   #+:lispworks
   (let ((warn-packs system::*packages-for-warn-on-redefinition*))
     (declare (special system::*packages-for-warn-on-redefinition*))

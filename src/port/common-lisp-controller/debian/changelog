@@ -1,5 +1,9 @@
 common-lisp-controller (3.52) unstable; urgency=low
 
+  * Have clc-send-command return a zero status if trying to remove a
+  library that is not compiled.
+  * Don't override CL:REQUIRE for SBCL, instead use SBCL's new REQUIRE
+  hook
   * debian/control: Added Depends: ${shlibs:Depends} since linked to libc
   * debian/rules: Uncommented dh_makeshlibs
 

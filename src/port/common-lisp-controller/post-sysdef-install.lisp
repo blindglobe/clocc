@@ -210,6 +210,8 @@
 	 (require-defsystem3 module-name))
 	(:asdf
 	 (require-asdf module-name))
+	;; Don't call original-require with SBCL since we are called by that function
+	#-sbcl 
 	(otherwise
 	 (original-require module-name))))))
 
@@ -232,12 +234,11 @@
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:
 (eval-when (:load-toplevel :execute)
-  #-(or (and allegro-version>= (version>= 4 1)) :lispworks :openmcl)
+  #-(or (and allegro-version>= (version>= 4 1)) :lispworks :openmcl :sbcl)
   (setf (symbol-function
-         #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
+         #-(or (and :excl :allegro-v4.0) :mcl :lispworks) 'lisp:require
          #+(and :excl :allegro-v4.0) 'cltl1:require
          #+:lispworks3.1 'common-lisp::require
-         #+:sbcl 'cl:require
          #+(and :lispworks (not :lispworks3.1)) 'system::require
          #+:mcl 'ccl:require)
         (symbol-function 'clc-require))
@@ -256,10 +257,15 @@
            )
           (symbol-function 'clc-require))
     (setq system::*packages-for-warn-on-redefinition* warn-packs))
+  
   #+(and allegro-version>= (version>= 4 1))
   (excl:without-package-locks
    (setf (symbol-function 'lisp:require)
-	 (symbol-function 'clc-require))))
+	 (symbol-function 'clc-require)))
+
+  #+sbcl
+  (push 'clc-require sb-ext:*module-provider-functions*)
+  )
 
 
 ;; Take from CLOCC's GPL'd Port package

@@ -305,7 +305,11 @@ int main(int argc, char *argv[])
       }
       if (strcmp("540",code) == 0) {
         printf("\nCannot remove: not yet compiled library for implementation\n");
-        succesp = 0;
+	/* Change this to a success since CLC tries to remove a
+	   compiled library before recompiling. Some CLC Lisp
+	   implementations die if this returns an error status */
+	/* succesp = 0; */
+        succesp = 1;
         continue; 
       }
       if (strcmp("550",code) == 0) {

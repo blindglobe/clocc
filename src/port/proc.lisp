@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.7 2000/05/12 18:14:10 sds Exp $
+;;; $Id: proc.lisp,v 1.8 2000/05/15 14:19:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -428,6 +428,7 @@ and reapply its initial function to its arguments."
 
 (defmacro with-lock ((lock) &rest body)
   "This macro executes the body with LOCK locked."
+  #-threads (declare (ignore lock))
   #+Allegro    `(mp:with-process-lock (,lock) ,@body)
   #+CMU        `(mp:with-lock-held (,lock) ,@body)
   #+CormanLisp FIXME

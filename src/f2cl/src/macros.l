@@ -447,6 +447,74 @@ is not included")
 
 (declaim (inline aint dint anint dnint nint idnint))
 
+;; This is based on the algorithm given by Anton Ertl in
+;; comp.arch.arithmetic on Oct. 26, 2002:
+;;
+;; #define X 9007199254740992. /* 2^53 */
+;; double rint(double r)
+;; {
+;;   if (r<0.0)
+;;     return (r+X)-X;
+;;   else
+;;     return (r-X)+X;
+;; }
+;;
+;; We modified this to do truncation instead of directed rounding.
+;; This assumes that we in round-to-nearest mode (the default).
+;;
+;; These only work if you have IEEE FP arithmetic.  There are 2
+;; versions given below.  One is for non-x86, which assumes that
+;; single and double FP numbers are properly rounded after each
+;; operation.  The version for x86 stores away a value to make sure
+;; the rounding happens correctly.
+;;
+;; Finally, the last version if for platforms where none of this
+;; holds and we call ftruncate.
+;;
+;; With CMUCL pre-18e on sparc, this definition of aint reduces the
+;; cost of MPNORM (from MPFUN) from 48.89 sec to 24.88 sec (a factor
+;; of 2!) when computing pi to 29593 digits or os.
+
+#+(and cmu (not x86))
+(defun aint (x)
+  (etypecase x
+    (single-float
+     (let ((const (scale-float 1f0 24)))
+       (if (>= x 0)
+	 (+ (- (- x 0.5f0) const) const)
+	 (- (+ (+ x 0.5f0) const) const))))
+    (double-float
+     (let ((const (scale-float 1d0 53)))
+       (if (>= x 0)
+	 (+ (- (- x 0.5d0) const) const)
+	 (- (+ (+ x 0.5d0) const) const))))))
+
+#+(and cmu x86)
+(let ((junks (make-array 1 :element-type 'single-float))
+      (junkd (make-array 1 :element-type 'double-float)))
+  (defun aint (x)
+    ;; ftruncate is exactly what we want.
+    (etypecase x
+      (single-float
+       (let ((const (scale-float 1f0 24)))
+	 (if (>= x 0)
+	     (progn
+	       (setf (aref junks 0) (- x 0.5f0))
+	       (+ (- (aref junks 0) const) const))
+	     (progn
+	       (setf (aref junks 0) (+ x 0.5f0))
+	       (- (+ (aref junks 0) const) const)))))
+      (double-float
+       (let ((const (scale-float 1d0 53)))
+	 (if (>= x 0)
+	     (progn
+	       (setf (aref junkd 0) (- x 0.5d0))
+	       (+ (- (aref junkd 0) const) const))
+	     (progn
+	       (setf (aref junkd 0) (+ x 0.5d0))
+	       (- (+ (aref junkd 0) const) const))))))))
+
+#-cmu
 (defun aint (x)
   ;; ftruncate is exactly what we want.
   (etypecase x
@@ -1201,8 +1269,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.52 2002/09/13 17:50:19 rtoy Exp $
+;;; $Id: macros.l,v 1.53 2003/01/07 18:44:52 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.53  2003/01/07 18:44:52  rtoy
+;;; Add new implementations of aint.  Speeds up mpnorm by a factor of 5 on
+;;; CMUCL/sparc!
+;;;
 ;;; Revision 1.52  2002/09/13 17:50:19  rtoy
 ;;; From Douglas Crosher:
 ;;;

@@ -21,8 +21,10 @@
 	  (symbol-function 'system::require)
 	  #+(and :lispworks :lispworks3.1)
 	  (symbol-function 'common-lisp::require)
-	  #+:mcl
-	  (symbol-function 'ccl:require))))
+	  #+(and :mcl (not :openmcl))
+	  (symbol-function 'ccl:require)
+	  #+:openmcl
+	  (symbol-function 'cl:require))))
 
 (defun original-require (&rest args)
   (if *original-require-function*

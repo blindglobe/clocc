@@ -1,3 +1,9 @@
+common-lisp-controller (3.50) unstable; urgency=low
+
+  * Change package for REQUIRE with OpenMCL
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  2 Feb 2003 22:36:00 -0700
+
 common-lisp-controller (3.49) unstable; urgency=low
 
   * clc-build-daemon.c, clc-send-command.c: Change hard-coded constant in

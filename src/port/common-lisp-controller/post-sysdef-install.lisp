@@ -244,7 +244,7 @@
 
   #+:openmcl
   (let ((ccl::*warn-if-redefine-kernel* nil))
-    (setf (symbol-function 'ccl:require) (symbol-function 'clc-require)))
+    (setf (symbol-function 'cl:require) (symbol-function 'clc-require)))
   
   #+:lispworks
   (let ((warn-packs system::*packages-for-warn-on-redefinition*))

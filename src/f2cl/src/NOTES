@@ -2,6 +2,39 @@
 
 Changes:
 
+Mar 16, 2002
+------------
+Since f2cl always returns all the arguments for a subprogram, this can
+generate some small garbage consing up the arguments to be returned.
+We can reduce this if we careful, and, with a sufficiently smart
+compiler, if we compile the files in the right order, the compiler can
+do a better job of optimizing if it knows the return types of the
+functions.  (How?  Subroutine calls check the return values.  If the
+return value is NIL, we don't assign the variable with the value
+returned.  If the compiler can figure out that the subroutine always
+returns NIL for that value, it can skip the check and the assignment.)
+
+So, we look at all assignment statements and see if they are assigning
+to the any argument.  We record this fact.  We also have to look at
+calls to subprograms.  Since we don't know what the subprogram is
+doing, we conservatively assume it will modify its arg.
+
+Finally, when we are computing the return values, we look at the list
+of arguments that were assigned to.  If the argument was, we have to
+return it.  If not, we return NIL, which doesn't cons.
+
+Mar 10, 2002
+------------
+
+By the rules of Fortran, integer arithmetic that overflows is
+undefined.  So when translated to lisp, we can tell the compiler that
+integer arithmetic can't overflow.  Thus, m + n can be converted to
+(the integer4 (+ m n)).
+
+This is implemented now.  This helps mpfun generate better code when
+compiled with safety of 0 because (+ m n) can be a single add
+instruction. 
+
 Mar 6, 2002
 -----------
 

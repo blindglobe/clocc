@@ -1,8 +1,11 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.1 2000/08/29 16:10:01 rtoy Exp $
+;;; $Id: minpack.system,v 1.2 2000/08/30 17:02:38 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.2  2000/08/30 17:02:38  rtoy
+;;; Add some more of the MINPACK files.
+;;;
 ;;; Revision 1.1  2000/08/29 16:10:01  rtoy
 ;;; Initial rev.
 ;;;
@@ -39,5 +42,11 @@
 	       (:file "lmdif1")
 	       (:file "lmder")
 	       (:file "lmder1")
+	       (:file "dogleg")
+	       (:file "qform")
+	       (:file "r1mpyq")
+	       (:file "r1updt")
+	       (:file "hybrj" :depends-on ("dogleg" "qform" "r1mpyq" "r1updt"))
+	       (:file "hybrj1" :depends-on ("hybrj"))
 	       ))))
 

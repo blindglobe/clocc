@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.12 2000/05/16 17:33:37 sds Exp $
+;;; $Id: inspect.lisp,v 1.13 2000/05/18 20:35:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,12 +31,24 @@
 ;;; options
 ;;;
 
-(defvar *inspect-frontend* :tty) ; the default frontend
-(defvar *inspect-browser* :netscape) ; the default browser
-(defvar *inspect-print-lines* 5) ; default for `*print-lines*'
-(defvar *inspect-print-level* 5) ; default for `*print-level*'
-(defvar *inspect-print-length* 10) ; default for `*print-length*'
-(defvar *inspect-length* 5)     ; the number of sequence elements to print
+(defcustom *inspect-frontend* symbol :tty
+  "*The default inspect frontend.
+The possible values are
+  :tty    use the text-only interface
+  :http   use your web browser (see `*inspect-browser*')
+To define a frontend, one has to define methods for
+ `print-inspection' and `inspect-frontend'.")
+(defcustom *inspect-browser* symbol :netscape
+  "*The default browser to use with the `:http' `*inspect-frontend*'.
+See `browse-url' and `*browsers*'.")
+(defcustom *inspect-print-lines* fixnum 5
+  "*The default value for `*print-lines*'.")
+(defcustom *inspect-print-level* fixnum 5
+  "*The default value for `*print-level*'.")
+(defcustom *inspect-print-length* fixnum 10
+  "*The default value for `*print-length*'.")
+(defcustom *inspect-length* fixnum 5
+  "*The number of sequence elements to print.")
 
 ;; all `inspection' objects in this session
 (defparameter *inspect-all* (make-array 10 :fill-pointer 0 :adjustable t))
@@ -81,10 +93,12 @@
   (1- (insp-num-slots insp)))
 (defun insp-num-slots-print (insp)
   (min (insp-last-slot insp) *inspect-length*))
-(defun insp-left-p (insp) ; check for the presence of a left neighbor
+(defun insp-left-p (insp)
+  "Check for the presence of a left neighbor."
   (let ((pos (insp-pos insp)) (up (insp-up insp)))
     (and pos up (< 0 pos))))
-(defun insp-right-p (insp) ; check for the presence of a right neighbor
+(defun insp-right-p (insp)
+  "Check for the presence of a right neighbor."
   (let ((pos (insp-pos insp)) (up (insp-up insp)))
     (and pos up (< pos (insp-last-slot up)))))
 
@@ -247,26 +261,40 @@
                               :up insp :pos com)))))))
 
 ;;;
-;;; To define a frontend, one has to define methods for
-;;;  `print-inspection' and `inspect-frontend'
+;;; frontends - common
 ;;;
 
 (defgeneric print-inspection (insp out frontend)
+  (:documentation "This function prints inspection objects for the user.
+It should be appropriate for your frontend (use `eql' specifiers).
+The default method signals an error, so you must define a method
+for your frontend.")
   (:method ((insp inspection) (out stream) (frontend t))
     (error "~s: unknown inspect front end: ~s" 'print-inspection frontend)))
 (defgeneric inspect-frontend (insp frontend)
+  (:documentation "This generic function implements the inspect loop.
+The default method signals an error, so you must define a method
+for your frontend.")
   (:method ((insp inspection) (frontend t))
     (error "~s: unknown inspect front end: ~s" 'inspect-frontend frontend)))
 (defgeneric inspect-finalize (frontend)
+  (:documentation "This should clean after an inspect session.
+The default methods cleans up the `*inspect-all*' vector, which is
+a necessary operation, so one should `call-next-method' when defining
+methods for this generic function.
+You do not have to define methods for this function.")
   (:method ((frontend t))
     (dotimes (ii (length *inspect-all*))
       (setf (aref *inspect-all* ii) nil))
     (setf (fill-pointer *inspect-all*) 0)))
 
 (defun inspect-read-clean-eval (insp stream)
-  ;; `read' a form, destructively replace `:self' with INSP and `:slot'
-  ;; with the appropriate `funcall', then `eval'
-  ;; this is useful for frontends which provide an eval/modify facility
+  "Read a form, massage it, then evaluate it.
+ - `read' a form,
+ - destructively replace `:self' with INSP and
+                         `:slot' with the appropriate `funcall',
+ - `eval'
+This is useful for frontends which provide an eval/modify facility."
   (labels ((clean (form)
              (cond ((eq (car form) :self)
                     (setf (car form) (list 'quote (insp-self insp)))
@@ -426,6 +454,7 @@
 ;;;###autoload
 (defun inspect-cllib (object &key (frontend *inspect-frontend*)
                       (browser *inspect-browser*))
+  "This function implements the ANSI Common Lisp INSPECT function."
   (let ((*print-array* nil) (*print-pretty* t)
         (*print-circle* t) (*print-escape* t)
         #-clisp (*print-lines* *inspect-print-lines*)

@@ -251,6 +251,9 @@
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
 
+(defvar fload-compile* ':ask) 
+   ;; -- compile if not yet or source version newer
+
 (defun ytools-module-load (name force-flag)
 ;;;;  (breakpoint ytools-module-load
 ;;;;     "Loading module " name)

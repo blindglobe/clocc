@@ -267,6 +267,8 @@
 	 (t
 	  (qvaroid-decode-match qv dat-name))))
 
+(datafun attach-datafun match-code #'datafun-on-plist)
+
 (defun qvaroid-decode-match (qv dat-name)
 	   (let ((sym (Qvaroid-sym qv)))
 	      (cond ((is-Symbol sym)
@@ -381,7 +383,7 @@
 			 dat-name)
 		      ,(multi-match-codes
 			   'and
-			   `(,(cadr items))
+			   `(,(cadr and-stuff))
 			   dat-name)))
 	       (t
 		(multi-match-codes 'or items dat-name))))))
@@ -440,6 +442,8 @@
 		       (t `(not ,a)))))
 	     ((let)
 	      (let ((bod (match-code-cleanup (caddr code))))
+;;;;		 (out "equal? [" (cadr code) "] => "
+;;;;		      (equal (cadr code) '((\ dat \dat))) :%)
 		 (cond ((and (= (length (cadr code))
 				1)
 			     (car-eq (car (cadr code))
@@ -447,6 +451,8 @@
 			     (simple-dat-match bod))
 			(dat-subst (cadr (car (cadr code)))
 				   bod))
+		       ((equal (cadr code) '((\ dat \dat)))
+			bod)
 		       (t `(let ,(cadr code) ,bod)))))
 	     (t
 	      `(,(car code)
@@ -549,16 +555,23 @@
 			 (cond ((is-Qvar c)
 				`((matchq ,(Qvar-sym c) match-datum)
 				  ,@(Qvar-notes c)))
+			       ((car-eq c ':\?)
+				`((matchq ,(cadr c) match-datum)
+				  ,@(cddr c)))
 			       (t c)   ))
 		      clauses))))
 
 (defun match-cond-find-match-vars (clauses)
    (repeat :for ((c :in clauses)
-		 (vars '()))
+		 :collector vars)
     :result (remove-duplicates vars)
+    :within
       (cond ((is-Qvar c)
-	     (setq vars (nconc (find-matchvars (Qvar-sym c))
-			       vars))))))
+	     (:continue
+	      :nconc (find-matchvars (Qvar-sym c))))
+	    ((car-eq c ':\?)
+	     (:continue
+	      :nconc (find-matchvars (cadr c)))))))
 
 (defun find-matchvars (x)
    (cond ((is-Qvaroid x)
@@ -585,6 +598,9 @@
 		 (cond ((is-Qvaroid clause)
 			(funcall unwrap-deeper
 			   (Qvaroid-notes clause)))
+		       ((car-eq clause ':?)
+			(funcall unwrap-deeper
+			   (cadr clause)))
 		       (t
 			(mapcan unwrap-deeper clause))))
 	      (cddr exp))

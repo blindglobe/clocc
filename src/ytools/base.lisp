@@ -27,7 +27,7 @@
 	     build-symbol symno* true false keyword-package*
 	     eval-when alist-entry alist-entry-set alref. alref condense
 	     include-if series car-eq take drop occurs-in empty-list
-	     on-list off-list)))
+	     on-list off-list --)))
 
 ;;;;(eval-when (:compile-toplevel)
 ;;;;   (format t "shadow-export done"))
@@ -566,3 +566,13 @@
 (defmacro on-list (x^ l^) `(push ,x^ ,l^))
 
 (defmacro off-list (l^) `(pop ,l^))
+
+(declaim (special constant-condtests-silent*))
+
+;;; Used to turn off complaints about unreachable code.
+(cond (constant-condtests-silent*
+       (defmacro -- (x) x))
+      (t
+       (defmacro -- (x) `(rv ,x))))
+
+(defun rv (v) v)

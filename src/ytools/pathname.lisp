@@ -400,7 +400,12 @@
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
 (defun place-relative-pathname (pn dir-list suff ensure-existence)
    (cond ((stringp dir-list)
-	  (setq dir-list (Pathname-directory (parse-namestring dir-list)))))
+	  (setq dir-list (Pathname-directory (parse-namestring dir-list)))
+	  (cond ((eq (car dir-list) ':relative)
+		 (setq dir-list (cdr dir-list)))
+		(t
+		 (error "Unsuitable for specifying relative pathname: ~s"
+			dir-list)))))
    (cond ((not (listp dir-list))
 	  (error "place-relative-pathname can't handle string directory: ~s~%"
 		 dir-list)))

@@ -179,7 +179,7 @@
 ;;; :do                            expressions-to-evaluate
 ;;; :result                        result-expression
 ;;; :within                        (wrapping-expression
-;;;                                 list-of-Within-clause's)
+;;;                                 list-of-Within-clauses)
 ;;;    where a Within-clause captures a :continue --
 
 (defstruct (Within-clauses (:constructor make-Within-clauses
@@ -306,15 +306,16 @@
 		      ,@(rep-clauses->loop-body
 			    clauses standard-vars collectors
 			    test-result-map)))))
-     :where
-        (:def clauses-search-for-modes (clauses modes)
+	 ))
+
+(defun clauses-search-for-modes (clauses modes)
 	   (exists (c :in clauses)
 	      (or (memq (Rep-clause-mode c) modes)
 		  (and (eq (Rep-clause-mode c) ':within)
 		       (exists (wc :in (cadr (Rep-clause-stuff c)))
 			  (clauses-search-for-modes
 			     (Within-clauses-subclauses wc)
-			     modes))))))))
+			     modes))))))
 		      
 (datafun-alist within-unwrap-handlers* within-unwrap)
 
@@ -650,62 +651,6 @@
 		   ))
 	 (process-clauses clauses !() (list nil))
 	 (values test-result-map extra-clauses))))
-
-#|
-(defun tests-results-match (clauses collectors)
-   (let ((test-result-map !((Tup test result Symbol)))
-	 (extra-clauses !()))
-      ;; Pair each test with its result
-      (do ((cl clauses))
-	  ((null cl))
-;;;;	 (trace-around match-next-clause
-;;;;	    (:> "(match-next-clause: " cl ")")
-	 (cond ((eq (Rep-clause-mode (car cl)) ':within)
-		(dolist (continue (cadr (Rep-clause-stuff (car cl))))
-		   (multiple-value-let (sub-tab extra-sub-clauses)
-				       (tests-results-match
-					  (Within-clauses-subclauses continue)
-					  collectors)
-		      (setf (Within-clauses-subclauses continue)
-			    (nconc (Within-clauses-subclauses continue)
-				   extra-sub-clauses))
-		      (dolist (subcl sub-tab)
-			 (setf (t-r-match-context subcl)
-			       (Within-clauses-continue continue)))
-		      (setq test-result-map (nconc sub-tab test-result-map))))
-		(setq cl (cdr cl)))
-	       ((and (memq (Rep-clause-mode (car cl)) '(:while :until))
-		     (not (is-String (Rep-clause-stuff (car cl)))))
-		(let ((nextres
-			 (assoc ':result (cdr cl))))
-		   (cond ((not nextres)
-			  (setq nextres
-			        (make-Rep-clause
-				   ':result -1
-				   (cond ((= (len collectors) 1)
-					  (car collectors))
-					 (t 'nil))))
-			  (setq extra-clauses (list nextres))))
-		   (let ((prevocc
-			    (result-map-lookup
-			       nextres test-result-map)))
-		      (let ((rfun 
-			       (cond (prevocc (caddr prevocc))
-				     (t (gensym)))))
-			 (setq test-result-map
-			       (cons (make-Test-result-match
-				        :test-clause (car cl)
-					:result-clause nextres
-					:res-fun-sym rfun
-					:context false)
-				     test-result-map)))))
-		(setq cl (cdr cl)))
-	       (t
-		(setq cl (cdr cl))))
-;;;;	    (:< (&rest _) "match-next-clause: " extra-clauses))
-	 )
-      (values test-result-map extra-clauses)))
-|#
 
 (defun check-for-unused-results (clauses test-result-map)
    (do ((cl clauses (cdr cl))
@@ -1055,7 +1000,7 @@
 			`(:for (,@(standards-reassemble)
 				,@collectors))))
 	  ,@decls
-	  ,@(mapcan #'clause-reassemble clauses)
+	  ,@(mapcan #'repeat-clause-reassemble clauses)
 	  ,@(cond ((null local-fundefs)
 		   '())
 		  (t
@@ -1091,9 +1036,9 @@
 			     (t
 			      (cond (init `(,(cadr init)))
 				    (t '()))))))))
-	       standard-vars))
+	       standard-vars))))
 
-       (clause-reassemble (cl)
+(defun repeat-clause-reassemble (cl)
 	  (let ((mode (Rep-clause-mode cl))
 		(stuff (Rep-clause-stuff cl)))
 	     (case mode
@@ -1103,4 +1048,8 @@
 		   ,(cond ((car stuff) `(:into ,(car stuff) ,(cadr stuff)))
 			  (t (cadr stuff)))))
 		((:while :until :when :result)
-		 `(,mode ,stuff)))))))
+		 `(,mode ,stuff))
+		((:within)
+		 `(:within ,(car stuff)))
+		(t
+		 (error "Unhandlable clause ~s" cl)))))

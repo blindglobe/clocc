@@ -71,10 +71,11 @@
               (parse-namestring ytools-home-dir*))
 
 (defparameter ytools-bin-dir-pathname*
-              (merge-pathnames
-	         (make-pathname
-		    :directory ytools-bin-relative*)
-		 ytools-dir-pathname*))
+              (ensure-directories-exist
+		 (merge-pathnames
+		    (make-pathname
+		       :directory ytools-bin-relative*)
+		    ytools-dir-pathname*)))
 
 (setq *features* (adjoin ':ytools *features*))
 

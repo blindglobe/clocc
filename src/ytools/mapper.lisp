@@ -8,6 +8,9 @@
 
 (depends-on %ytools/ setter)
 
+(needed-by-macros
+   (datafun attach-datafun mapmac #'datafun-on-plist))
+
 (eval-when (:load-toplevel :compile-toplevel :execute :slurp-toplevel)
    (export '(<# <! <$ <& <v << </ <? mappend mapeltreduce neg mapmac)))
 
@@ -76,11 +79,6 @@
          (t `(funcall ,f . ,argl))   ))
 
 
-;; An example of a mapmac would be a pseudo-function NEG,
-;; such that (<& NEG ATOM Z) became (<& (\\ (X) (NOT (ATOM X))   ) Z).
-;; The MAPMAC property of NEG would return
-;;                ((FUNCTION (\\ (X) (NOT (ATOM X))   )) Z)
-;; in this case.
 (defun mapmacify (l)
    (let ((mapmac-expander
 	    (and (is-Symbol (car l))
@@ -93,6 +91,11 @@
 		      (t (car l)))
 	       ,@(cdr l))))))
 
+;; Prime example of a mapmac.
+;; such that (<& neg atom z) became (<& (\\ (x) (not (atom x))) z).
+;; The MAPMAC property of NEG returns
+;;                ((function (\\ (x) (not (atom x))   )) z)
+;; in this case.
 (datafun mapmac neg
  (defun :^ (l)
    (cond ((not (eq (car l) 'neg))

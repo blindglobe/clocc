@@ -7,7 +7,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(datafun datafun-table datafun-alist attach-datafun)))
+   (export '(datafun datafun-table datafun-alist attach-datafun datafun-on-plist)))
 
 ; (DATAFUN master sym def) defines a new procedure and puts it
 ; on the property list of sym under the indicator master.
@@ -68,6 +68,10 @@
 	 (cond (attachfn
 		(funcall attachfn master sym funame))
 	       (t
+		(cerror
+		   "I will place the function name on the property list of the symbol"
+		   "No attach function for symbol ~s and task ~s~%"
+		   sym  master)
 		(setf (get sym master) (symbol-function funame)))   ))))
 
 (defmacro datafun-table (name ind &key (size 100))
@@ -86,6 +90,8 @@
 	    (ignore ind)
             (setf (alref ,name sym) (symbol-function fname))))))
 
+(defun datafun-on-plist (ind sym fname)
+   (setf (get sym ind) (symbol-function fname)))
 
 ;;;;      (setf (table-entry datafun-attachers* ',ind)
 ;;;;	    (\\ (_ sym funame)

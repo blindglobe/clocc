@@ -163,7 +163,11 @@
 			      :output-file
 			      (java-file-default-object-pathanme)))
 			    &allow-other-keys)
-  (apply #'invoke-processor-external java-compiler file args))
+  (apply #'invoke-processor-external
+	 java-compiler
+	 file
+	 :output-pathname output-pathname
+	 args))
 
 
 ;;; Language definition.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.5 2000/05/16 21:41:30 sds Exp $
+;;; $Id: elisp.lisp,v 2.6 2000/05/16 22:41:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,6 +22,9 @@
   (:nicknames elisp el) (:use cl cllib)
   (:shadow let let* if member delete load require defcustom defconst provide
            ignore format /))
+
+(defconst +elisp-pack+ package (find-package :el)
+  "The Emacs-Lisp package.")
 
 ;;;
 ;;; Emacs-Lisp-specific special forms
@@ -47,7 +50,7 @@
 ;;; Read Emacs-Lisp objects
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL for `*elisp-readtable*'
+(eval-when (compile load eval)  ; CMUCL for `+elisp-readtable+'
 (defun el::read-elisp-special (stream char)
   (declare (stream stream) (character char))
   (ecase char
@@ -90,7 +93,7 @@
     rt))
 )
 
-(defconst *elisp-readtable* readtable (el::make-elisp-readtable)
+(defconst +elisp-readtable+ readtable (el::make-elisp-readtable)
   "The readtable for Emacs-Lisp parsing.")
 
 ;;; bug in ACL and CMUCL
@@ -323,8 +326,8 @@
   "Emacs-Lisp load.
 The suffix stuff is ignored."
   (declare (ignore nosuffix must-suffix))
-  ;; (in-package :emacs-lisp)
-  (let ((*readtable* *elisp-readtable*) (ff (locate-file file)))
+  (let ((*readtable* +elisp-readtable+) (*package* +elisp-pack+)
+        (ff (locate-file file)))
     (if ff (load ff :verbose (not nomessage))
         (unless noerror (error "file `~a' not found" file)))))
 
@@ -338,8 +341,8 @@ The suffix stuff is ignored."
   feature)
 
 (defun compile-el-file (file)
-  ;; (in-package :emacs-lisp)
-  (let ((*readtable* *elisp-readtable*) (ff (or (locate-file file t) file)))
+  (let ((*readtable* +elisp-readtable+) (*package* +elisp-pack+)
+        (ff (or (locate-file file t) file)))
     (compile-file ff)))
 
 (defun el::provide (feature) (pushnew feature el::features))

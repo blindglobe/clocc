@@ -1,4 +1,4 @@
-#! /bin/sh
+c#! /bin/sh
 # -----------------------------------------------------------------------------
 #     Title: A script to invoke the various CL implementations in a uniform way
 #   Created: 1999-01-16 16:41
@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.10 2000/04/19 20:08:35 haible Exp $
+# $Id: run-lisp,v 1.11 2000/05/15 21:12:38 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -98,7 +98,7 @@ case "$1" in
             # but for speed we look at the uname first.
             case `uname -m 2>/dev/null` in
                 i[3-6]86 )
-                   echo .x86f
+                   echo 'x86f'
                    ;;
                 * )
                   # Call .

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.8 2004/12/18 17:55:30 sds Exp $
+;;; $Id: matrix.lisp,v 2.9 2004/12/18 17:59:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -130,7 +130,12 @@ By default prints the contents.
 (defun array-check-return (arr dims)
   "Make the value to be returned."
   (if arr
-      (if (equal (array-dimensions arr) dims) arr
+      (if (equal (array-dimensions arr) dims)
+          (let* ((tot (array-total-size arr))
+                 (cp (make-array tot :displaced-to arr
+                                 :element-type (array-element-type arr))))
+            (fill cp 0)
+            arr)
           (error 'dimension :proc 'array-check-return :args
                  (list (array-dimensions arr) dims)))
       (make-array dims :initial-element 0)))

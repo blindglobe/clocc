@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.16 2003/04/16 21:50:03 sds Exp $
+;;; $Id: clocc.lisp,v 1.17 2003/04/17 12:05:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -22,6 +22,10 @@
  ;; All code here is supposed to be ANSI CL compliant,
  ;; so there is no use in this annoying warning
  comp:*cltl1-compile-file-toplevel-compatibility-p* nil
+ ;; this is necessary for (require "foo") to load "foo.fasl"
+ ;; <http://groups.google.com/groups?hl=en&ie=UTF-8&th=be07905ac53b210d>
+ sys:*require-search-list*
+ (append sys:*load-search-list* sys:*require-search-list*)
  ;; Duane Rettig <duane@franz.com>:
  ;; TIME reports 32 other bytes too many CL unless tuned with
  excl::time-other-base 32)

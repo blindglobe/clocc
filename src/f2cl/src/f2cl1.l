@@ -114,6 +114,10 @@ only when needed. ")
 
 (defvar *fortran-extensions* '("f" "for")
   "A list of possible extensions for Fortran files.")
+
+(defvar *declare-common-blocks* nil
+  "When non-NIL, the structures for any common blocks are defined in this file")
+
 (defvar *f2cl-trace* nil)
 ;----------------------------------------------------------------------------
 
@@ -125,7 +129,8 @@ only when needed. ")
 			(array-type :simple-array array-type-p)
 			(array-slicing t)
 			package
-			declaim)
+			declaim
+			declare-common)
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -156,6 +161,8 @@ INPUT-FILE               File containing Fortran code
                          should be in. (Basically puts a (in-package <p>) at the top.)
 :DECLAIM                 Declaim compilation options  (Basically puts a
                          (declaim <declaim>) at the top.)
+:DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
+                         Otherwise, the structures for the common blocks are not declared.
 "
 
 
@@ -180,7 +187,8 @@ INPUT-FILE               File containing Fortran code
 			  (cdr (assoc array-type '((:simple-array . lisp:simple-array)
 						   (:array . lisp:array))))))
 	(*array-slicing* array-slicing)
-	(*apply-array-slice* nil))
+	(*apply-array-slice* nil)
+	(*declare-common-blocks* declare-common))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -224,7 +232,8 @@ INPUT-FILE               File containing Fortran code
 			      (array-type :simple-array)
 			      (array-slicing t)
 			      package
-			      declaim)
+			      declaim
+			      declare-common)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
 FILENAME                 File containing Fortran code
@@ -253,6 +262,8 @@ FILENAME                 File containing Fortran code
                          should be in. (Basically puts a (in-package <p>) at the top.)
 :DECLAIM                 Declaim compilation options  (Basically puts a
                          (declaim <declaim>) at the top.)
+:DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
+                         Otherwise, the structures for the common blocks are not declared.
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -260,7 +271,8 @@ FILENAME                 File containing Fortran code
 	       :coerce-assigns coerce-assigns
 	       :array-type array-type
 	       :array-slicing array-slicing
-	       :package package :declaim declaim)))
+	       :package package :declaim declaim
+	       :declare-common declare-common)))
     (multiple-value-prog1
 	#+cmu (compile-file lisp-file :output-file output-file :error-file error-file)
 	#-cmu (compile-file lisp-file :output-file output-file)
@@ -2063,8 +2075,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.88 2002/02/08 23:28:26 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.89 2002/02/09 16:10:45 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.89  2002/02/09 16:10:45  rtoy
+;;; o Add new var *DECLARE-COMMON-BLOCKS*
+;;; o F2CL and F2CL-COMPILE take a new arg :declare-common, defaulting to
+;;;   NIL, which allows the user to specify if the structures for the
+;;;   common blocks in this file should be declared in this file.
+;;;
 ;;; Revision 1.88  2002/02/08 23:28:26  rtoy
 ;;; Off-by-one error in initializing an array with FILL.  We didn't fill
 ;;; the last element!

@@ -130,7 +130,8 @@
             `(loop (if (not ,con) (return t)) ,@body))
 ;------------------------------------------------------------------
 
-(defun comment (s) (when *verbose* (princ s) (terpri)))
+(defmacro fortran_comment (&rest args)
+  (declare (ignore args)))
 
 ;----------------------------------------------------------------------------
 (defun reset-vble (pred-clause) ; ((> i 4) nil)

@@ -1,17 +1,18 @@
 ;;; -*- Mode: lisp -*-
 
 ;; A sample defsystem.
+
 (mk:defsystem f2cl
-    :source-pathname "clocc:src;f2cl;"
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;src;")
     :source-extension "l"
     :depends-on nil
     :components
     ((:module src
-	      :source-pathname "src;"
-	      :binary-pathname "src;"
+	      :source-pathname ""
+	      :binary-pathname ""
 	      :components
 	      (
-	       ;;(:file "f2cl0")
+	       (:file "f2cl0")
 	       (:file "f2cl1")
 	       (:file "f2cl2")
 	       (:file "f2cl3")

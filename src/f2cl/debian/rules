@@ -1,7 +1,5 @@
 #!/usr/bin/make -f
 
-export DH_COMPAT=4
-
 pkg	:= f2cl
 debpkg  := cl-f2cl
 

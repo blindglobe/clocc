@@ -68,11 +68,12 @@
 
 (defun beneath-source-root? (c)
   "Returns T if component's directory below *source-root*"
-  (let ((root-dir (pathname-directory (asdf::resolve-symlinks *source-root*))))
-    (and c
-	 (equalp root-dir
-		 (subseq (pathname-directory (asdf:component-pathname c))
-			 0 (1- (length root-dir)))))))
+  (when c
+    (let ((root-dir (pathname-directory (asdf::resolve-symlinks *source-root*)))
+	  (comp-dir (pathname-directory (asdf:component-pathname c))))
+      (and (>= (length comp-dir)
+	       (length root-dir))
+	   (equalp root-dir (subseq comp-dir 0 (length root-dir)))))))
 
   
 (defun system-in-source-root? (c)

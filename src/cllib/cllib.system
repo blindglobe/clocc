@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a Library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.7 2000/03/29 17:47:50 sds Exp $
+;;; $Id: cllib.system,v 1.8 2000/04/03 21:15:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 
 (mk:defsystem cllib
@@ -45,7 +45,7 @@
      #+clisp (:file "octave" :depends-on ("base"))
      (:file "prompt" :depends-on ("base"))
      (:file "rpm" :depends-on ("base" "url"))
-     (:file "server" :depends-on ("base" "log"))
+     (:file "server" :depends-on ("base" "log" "prompt"))
      (:file "simple" :depends-on ("base"))
      (:file "sorted" :depends-on ("base" "tilsla" "math"))
      (:file "stat" :depends-on ("base" "math" "withtype"))

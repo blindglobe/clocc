@@ -10,6 +10,7 @@ c      program prog
       character*5 a1(4), a2(6)
       character*(*) zz
       character c1
+      character*1 p01rec(1)
 
       x(8) = 8.0
       y(1, 3) = 7.0
@@ -22,6 +23,8 @@ c      program prog
       write(*, 9000) ca(1,1)
       write(*, 9000) ca2(1,1)
  9000 format(1x, '|', a, '|')
+
+      call xyzzy(p01rec)
       end
 
       subroutine zz (x, y)

@@ -1553,7 +1553,7 @@ FILENAME                 File containing Fortran code
 	    (setf (gethash *subprog_name* *f2cl-function-info*)
 		  (make-f2cl-finfo)))
 	  ;; Add this function to the list of called functions
-	  (pushnew routine-name
+	  (pushnew (first routine-name)
 		   (f2cl-finfo-calls (gethash *subprog_name*
 					      *f2cl-function-info*))))
 	(warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
@@ -2535,8 +2535,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.131 2003/11/14 06:45:41 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.132 2003/11/18 19:33:47 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.132  2003/11/18 19:33:47  rtoy
+;;; Push the function name onto the calls list, not a list of the function
+;;; name.
+;;;
 ;;; Revision 1.131  2003/11/14 06:45:41  rtoy
 ;;; Actually, if the declared arg type is an array, we always want to
 ;;; slice.  Otherwise, we just want the single element.

@@ -337,7 +337,8 @@ Tag being parsed:| (cadr x))))
 	  (listp (cadr l)))
      ;; Should we check for T and PI here?
      (let ((fname (car l))
-	   (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
+	   (args (let ((*apply-array-slice* *array-slicing*))
+		   (mapcar #'id-expression (list-split '|,| (cadr l))))))
        ;; Save the function name and number of arguments so we can
        ;; declare the function appropriately.  We also save the
        ;; argument list so we can determine later the types of each
@@ -427,8 +428,12 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.26 2000/08/05 19:20:01 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.27 2000/08/29 03:20:25 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.27  2000/08/29 03:20:25  rtoy
+;;; Array slicing needs to handled in not only subroutine calls but
+;;; function calls too.  Make it so.
+;;;
 ;;; Revision 1.26  2000/08/05 19:20:01  rtoy
 ;;; o If we're parsing the LHS of an assignment, and it looks like a
 ;;;   function call, we don't want to mangle it because it's not a

@@ -31,6 +31,7 @@
      (:file "gq" :depends-on ("base""withtype" "html" "url" "gnuplot"))
      (:file "h2lisp" :depends-on ("base" "withtype" "html"))
      (:file "html" :depends-on ("base" "url"))
+     (:file "inspect" :depends-on ("base" "simple" "closio"))
      (:file "iter" :depends-on ("base" "simple" "withtype" "log" "math"))
      (:file "laser" :depends-on ("base" "log"))
      (:file "list" :depends-on ("base" "simple"))

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.10 2001/04/11 14:40:22 sds Exp $
+;;; $Id: shell.lisp,v 1.11 2001/04/25 18:57:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,24 +23,24 @@
 ;;;
 
 (defun run-prog (prog &rest opts &key args (wait t) &allow-other-keys)
-  "Common interface to shell. Doesn't return anything useful."
+  "Common interface to shell. Does not return anything useful."
   #+gcl (declare (ignore wait))
   (remf opts :args) (remf opts :wait)
   #+allegro (apply #'excl:run-shell-command (apply #'vector prog prog args)
                    :wait wait opts)
-  #+(and clisp       lisp=cl)
+  #+(and clisp      lisp=cl)
   (if wait
       (apply #'ext:run-program prog :arguments args opts)
-      (ext:shell (format nil "~a~{ ~a~} &" prog args)))
-   #+(and clisp (not lisp=cl))
-   (if wait
-       (apply #'lisp:run-program prog :arguments args opts)
-       (lisp:shell (format nil "~a~{ ~a~} &" prog args)))
+      (ext:shell (format nil "~a~{ '~a'~} &" prog args)))
+  #+(and clisp (not lisp=cl))
+  (if wait
+      (apply #'lisp:run-program prog :arguments args opts)
+      (lisp:shell (format nil "~a~{ '~a'~} &" prog args)))
   #+cmu (apply #'ext:run-program prog args :wait wait opts)
   #+gcl (apply #'si:run-process prog args)
   #+liquid (apply #'lcl:run-program prog args)
   #+lispworks (apply #'sys::call-system
-                     (format nil "~a~{ ~a~}~@[ &~]" prog args (not wait))
+                     (format nil "~a~{ '~a'~}~@[ &~]" prog args (not wait))
                      opts)
   #+lucid (apply #'lcl:run-program prog :wait wait :arguments args opts)
   #-(or allegro clisp cmu gcl liquid lispworks lucid)

@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.6 2000/03/08 20:51:40 sds Exp $
+;;; $Id: net.lisp,v 1.7 2000/03/28 18:02:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.7  2000/03/28 18:02:31  sds
+;;; (resolve-host-ipaddr): in clisp, it's `addrtype'
+;;;
 ;;; Revision 1.6  2000/03/08 20:51:40  sds
 ;;; (socket-server-host, socket-server-port): exported
 ;;;
@@ -94,7 +97,7 @@
     (make-hostent :name (posix::hostent-name he)
                   :aliases (posix::hostent-aliases he)
                   :addr-list (posix::hostent-addr-list he)
-                  :addr-type (posix::hostent-addr-type he)))
+                  :addr-type (posix::hostent-addrtype he)))
   #+cmu
   (let ((he (ext:lookup-host-entry host)))
     (make-hostent :name (ext:host-entry-name he)

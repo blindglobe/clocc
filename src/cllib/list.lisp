@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-01-06 Wed 23:06:23 EST sds@eho.eaglets.com>
+;;; File: <list.lisp - 1999-01-12 Tue 13:51:47 EST sds@eho.eaglets.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.4 1999/01/07 04:06:30 sds Exp $
+;;; $Id: list.lisp,v 1.5 1999/01/12 18:52:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.5  1999/01/12 18:52:19  sds
+;;; Added key `obj' to `nsplit-list'.
+;;;
 ;;; Revision 1.4  1999/01/07 04:06:30  sds
 ;;; Use `index-t' instead of (unsigned-byte 20).
 ;;;
@@ -250,29 +253,36 @@ Like (every lst pred), but prints a message."
 ;;; splitting, sublists
 ;;;
 
-(defun nsplit-list (lst &key (pred #'eql) (key #'value))
+(defun nsplit-list (lst &key (pred #'eql) (key #'identity) (obj nil objp))
   "Return the list of sublists of LST, separated using PRED. Destructive.
 When (funcall pred a0 a1) is nil, a1 starts another sublist,
-i.e., in all sublists KEY is the same according to PRED."
+i.e., in all sublists KEY is the same according to PRED.
+When OBJ is given, it serves as separator and is omitted from the list."
   (declare (list lst) (type (function (t t) t) pred)
            (type (or function fixnum symbol) key))
   (when (symbolp key) (setq key (fdefinition key)))
   (unless lst (return-from nsplit-list nil))
-  (ctypecase key
-    (function
-     (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))
-         ((endp (cdr ll)) (nreverse res))
-       (setq k1 (funcall key (second ll)))
-       (cond ((not (funcall pred k0 k1))
-              (push (cdr ll) res)
-              (setf (cdr ll) nil)
-              (setq ll (car res)))
-             (t (setq ll (cdr ll))))))
-    (fixnum
-     (decf key)
-     (do* ((ll lst) ta res) ((endp ll) (nreverse res))
-       (push ll res) (setq ta (nthcdr key ll) ll (cdr ta))
-       (when ta (setf (cdr ta) nil))))))
+  (if objp
+      (do ((ll lst (cdr ll)) (bb lst) res)
+          ((null ll) (nreverse res))
+        (when (funcall pred (funcall key (cadr ll)) obj)
+          (push bb res)
+          (setf bb (cddr ll) (cdr ll) nil ll bb)))
+      (etypecase key
+        (function
+         (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))
+             ((endp (cdr ll)) (nreverse res))
+           (setq k1 (funcall key (second ll)))
+           (cond ((not (funcall pred k0 k1))
+                  (push (cdr ll) res)
+                  (setf (cdr ll) nil)
+                  (setq ll (car res)))
+                 (t (setq ll (cdr ll))))))
+        (fixnum
+         (decf key)
+         (do* ((ll lst) ta res) ((endp ll) (nreverse res))
+           (push ll res) (setq ta (nthcdr key ll) ll (cdr ta))
+           (when ta (setf (cdr ta) nil)))))))
 
 (defmacro with-sublist ((newl oldl e0 e1 &key (key '#'identity) (test '#'eql))
                         &body body)

@@ -761,6 +761,15 @@
 				`(coerce ,rhs ',lhs-type)))))))
 	     new-rhs)))))
 
+(defun flatten-list (x)
+  (labels ((flatten-helper (x r);; 'r' is the stuff to the 'right'.
+	     (cond ((null x) r)
+		   ((atom x)
+		    (cons x r))
+		   (t (flatten-helper (car x)
+				      (flatten-helper (cdr x) r))))))
+    (flatten-helper x nil)))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -907,8 +916,9 @@
 	       (remove-duplicates
 		(append *save_vbles*
 			(remove nil 
-				(mapcar #'extract-var-name
-					*data-init*)))))))
+				(flatten-list
+				 (mapcar #'extract-var-name
+					 *data-init*))))))))
 
      ;; If a variable names a function used or an external function,
      ;; delete the variable.
@@ -1026,7 +1036,9 @@
      (setq *data-init*
 	   (mapcar #'(lambda (init)
 		       (flet ((get-dims (var)
-				(mapcar #'first (lookup-array-bounds var))))
+				(mapcar #'caar
+					    (mapcar #'lookup-array-bounds
+						    (if (listp var) var (list var))))))
 				  
 		       (cond #+nil
 			     ((eq 'fset (first init))
@@ -2604,8 +2616,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.92 2002/03/16 14:27:34 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.93 2002/03/18 23:34:16 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.93  2002/03/18 23:34:16  rtoy
+;;; Was not correctly handling some implied do loops containing multiple
+;;; variables in the loop in data statements.  Fix that and clean up some
+;;; of the processing.  (Should probably do this kind of work in the f2cl
+;;; compiler instead of at runtime, but it's only done once at runtime, so
+;;; it's not a big deal.)
+;;;
 ;;; Revision 1.92  2002/03/16 14:27:34  rtoy
 ;;; Remove some print statements that were left in.
 ;;;

@@ -788,6 +788,7 @@ is not included")
 (defun ffloat (x)
   (coerce x 'single-float))
 
+#+nil
 (defun process-implied-do (ido low-bnds init)
   (let* ((implied-do (remove '|,| ido))
 	 (array (first implied-do))
@@ -809,12 +810,25 @@ is not included")
 	     (declare (integer4 ,do-var))
 	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
 
+(defun process-implied-do (ido low-bnds init)
+  (destructuring-bind (data-vars (index-var start end &optional step))
+      ido
+    (flet ((map-vars (v)
+	     (mapcar #'(lambda (x b)
+			 `(fset (fref ,(first x) ,(second x) ((,b))) (pop ,init)))
+		     v low-bnds)))
+    `(do ((,index-var ,start (+ ,index-var ,(or step 1))))
+         ((> ,index-var ,end))
+       ,@(map-vars data-vars))
+    )))
+
 
 ;; Process implied do loops for data statements
 (defmacro data-implied-do (implied-do low-bnds vals)
   (let ((v (gensym)))
     `(let ((,v ',vals))
       ,(process-implied-do implied-do low-bnds v))))
+
 ;-----------------------------------------------------------------------------  ; end of macros.l
    
 ;; Map Fortran logical unit numbers to Lisp streams
@@ -1164,8 +1178,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.44 2002/03/11 16:44:00 rtoy Exp $
+;;; $Id: macros.l,v 1.45 2002/03/18 23:34:16 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.45  2002/03/18 23:34:16  rtoy
+;;; Was not correctly handling some implied do loops containing multiple
+;;; variables in the loop in data statements.  Fix that and clean up some
+;;; of the processing.  (Should probably do this kind of work in the f2cl
+;;; compiler instead of at runtime, but it's only done once at runtime, so
+;;; it's not a big deal.)
+;;;
 ;;; Revision 1.44  2002/03/11 16:44:00  rtoy
 ;;; o Remove an extra paren.
 ;;; o Indent FIND-ARRAY-DATA better.

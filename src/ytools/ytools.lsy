@@ -153,8 +153,12 @@
    (use-package :ytools pkg))
 
 (eval-when (:load-toplevel :execute)
-  (export '(use-ytools named-readtable)))
+  (export '(use-ytools named-readtable in-ytools)))
 
 (setq *features* (adjoin ':ytools *features*))
 
-(defconstant +ytools-version+ "1.4.5")
+(defun in-ytools ()
+   (setq *readtable* ytools-readtable*)
+   (in-package :ytools))
+
+(defconstant +ytools-version+ "1.4.6")

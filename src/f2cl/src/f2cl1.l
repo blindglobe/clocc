@@ -815,84 +815,90 @@ main-loop
 	   (check_new_vbles (list lhs))
 	   (check_new_vbles (list rhs))
 	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
-		  (new-rhs
-		   (cond ((find *coerce-assignments* '(t :always))
-			  (if (subtypep rhs-type 'string)
-			      `(copy-seq ,rhs)
-			      `(coerce ,rhs (type-of ,lhs))))
-			 ((find *coerce-assignments* '(nil :never))
-			  `((setf ,lhs ,rhs)))
-			 (t
-			  ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-			  ;; RHS.  Otherwise, coerce the RHS to the
-			  ;; type of the LHS.  However, we can't coerce
-			  ;; something to an integer.  Use truncate for
-			  ;; that.
-			  (cond ((or (eq t rhs-type)
-				     (eq t lhs-type)
-				     (subtypep rhs-type lhs-type))
-				 ;; No coercion is needed if the types
-				 ;; are compatible, or if we can't
-				 ;; determine the type of the LHS or
-				 ;; RHS.
-				 rhs)
-				((and (subtypep lhs-type 'integer)
-				      (not (subtypep rhs-type 'integer)))
-				 ;; We're trying to set a integer
-				 ;; variable to non-integer value.  Use
-				 ;; truncate.
-				 `(truncate ,rhs))
-				(t
-				 ;; Haven't a clue, so coerce
-				 (if (subtypep rhs-type 'string)
-				     `(copy-seq ,rhs)
-				     `(coerce ,rhs ',lhs-type))))))))
-	     #+nil
-	     (when (and (listp new-rhs)
-			(eq 'coerce (first new-rhs)))
-	       (format t "lhs, rhs types = ~A (~A) = ~A (~A) ~%      -> ~A~%"
-		       lhs lhs-type rhs rhs-type new-rhs))
-	     `((setf ,lhs ,new-rhs)))))))
+		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+	     ;;(format t "~&")
+	     ;;(format t "lhs = ~A, type ~A~%" lhs lhs-type)
+	     ;;(format t "rhs = ~A, type ~A~%" rhs rhs-type)
+	     (cond ((subtypep lhs-type 'string)
+		    ;; Strings need to be handled carefully
+		    `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
+		   (t
+		    (let ((new-rhs
+			   (cond ((find *coerce-assignments* '(t :always))
+				  `(coerce ,rhs (type-of ,lhs)))
+				 ((find *coerce-assignments* '(nil :never))
+				  rhs)
+				 (t
+				  ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+				  ;; RHS.  Otherwise, coerce the RHS to the
+				  ;; type of the LHS.  However, we can't coerce
+				  ;; something to an integer.  Use truncate for
+				  ;; that.
+				  (cond ((or (eq t rhs-type)
+					     (eq t lhs-type)
+					     (subtypep rhs-type lhs-type))
+					 ;; No coercion is needed if the types
+					 ;; are compatible, or if we can't
+					 ;; determine the type of the LHS or
+					 ;; RHS.
+					 rhs)
+					((and (subtypep lhs-type 'integer)
+					      (not (subtypep rhs-type 'integer)))
+					 ;; We're trying to set a integer
+					 ;; variable to non-integer value.  Use
+					 ;; truncate.
+					 `(truncate ,rhs))
+					(t
+					 ;; Haven't a clue, so coerce
+					 `(coerce ,rhs ',lhs-type)))))))
+		      #+nil
+		      (when (and (listp new-rhs)
+				 (eq 'coerce (first new-rhs)))
+			(format t "lhs, rhs types = ~A (~A) = ~A (~A) ~%      -> ~A~%"
+				lhs lhs-type rhs rhs-type new-rhs))
+		      `((setf ,lhs ,new-rhs))))))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
   ;;lhs is either an array ref or a statement function name
   (cond ((eq (car lhs) 'fref)
 	 ;;array_ref 
 	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
-		(new-rhs
-		 (cond ((find *coerce-assignments* '(t :always))
-			(if (subtypep rhs-type 'string)
-			    `(copy-seq ,rhs)
-			    `(coerce ,rhs (type-of ,lhs))))
-		       ((find *coerce-assignments* '(nil :never))
-			`((setf ,lhs ,rhs)))
-		       (t
-			;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-			;; RHS.  Otherwise, coerce the RHS to the
-			;; type of the LHS.  However, we can't coerce
-			;; something to an integer.  Use truncate for
-			;; that.
-			(cond ((or (eq t rhs-type)
-				   (eq t lhs-type)
-				   (subtypep rhs-type lhs-type))
-			       ;; No coercion is needed if the types
-			       ;; match, or if we can't determine the
-			       ;; type of the LHS or RHS.
-			       rhs)
-			      ((and (subtypep lhs-type 'integer)
-				    (not (subtypep rhs-type 'integer)))
-			       ;; We're trying to set a integer
-			       ;; variable to non-integer value.  Use
-			       ;; truncate.
-			       `(truncate ,rhs))
-			      (t
-			       ;; Haven't a clue, so coerce
-			       (if (subtypep rhs-type 'string)
-				   `(copy-seq ,rhs)
-				   `(coerce ,rhs ',lhs-type))))))))
-	 `((fset ,lhs ,new-rhs))))
+		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+	   ;;(format t "~&")
+	   ;;(format t "lhs = ~A, type ~A~%" lhs lhs-type)
+	   ;;(format t "rhs = ~A, type ~A~%" rhs rhs-type)
+	   (cond ((subtypep lhs-type 'string)
+		  ;; Strings need to be handled specially
+		  `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
+		 (t
+		  (let ((new-rhs
+			 (cond ((find *coerce-assignments* '(t :always))
+				`(coerce ,rhs (type-of ,lhs)))
+			       ((find *coerce-assignments* '(nil :never))
+				rhs)
+			       (t
+				;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+				;; RHS.  Otherwise, coerce the RHS to the
+				;; type of the LHS.  However, we can't coerce
+				;; something to an integer.  Use truncate for
+				;; that.
+				(cond ((or (eq t rhs-type)
+					   (eq t lhs-type)
+					   (subtypep rhs-type lhs-type))
+				       ;; No coercion is needed if the types
+				       ;; match, or if we can't determine the
+				       ;; type of the LHS or RHS.
+				       rhs)
+				      ((and (subtypep lhs-type 'integer)
+					    (not (subtypep rhs-type 'integer)))
+				       ;; We're trying to set a integer
+				       ;; variable to non-integer value.  Use
+				       ;; truncate.
+				       `(truncate ,rhs))
+				      (t
+				       ;; Haven't a clue, so coerce
+				       `(coerce ,rhs ',lhs-type)))))))
+		    `((fset ,lhs ,new-rhs)))))))
 	((eq (car lhs) 'fref-string)
 	 ;; Fortran string ref
 	 `((fset-string ,lhs ,rhs)))
@@ -1147,34 +1153,41 @@ main-loop
 
 (defun parse-char-decl (x)
   ;; x is the line.
-  (prog (first-bit decl-list)
-     (cond ((eq (second x) '*)
-	    ;; The length was given explicitly as part of the
-	    ;; character declaration.
-            (setq first-bit `(character ,(third x))
-                  decl-list (list-split '|,| (cdddr x))))
-           (t
-	    ;; The length may have been given as part of the variable.
-	    ;; Treat these as if they're a single character.
-            (setq first-bit `(character 1)
-                  decl-list (list-split '|,| (cdr x)))))
-     (setq *explicit_vble_decls* 
-           (cons
-	    `(,first-bit
-	      ,@(mapcar #'(lambda (decl)
-			    (let ((dcl (remove '* decl)))
-			      ;; (format t "  decl = ~A~%" dcl)
-			      (destructuring-bind (name &optional len-or-dim &rest len)
-				  dcl
-				(if (and len-or-dim (listp len-or-dim))
-				    ;; An array of characters
-				    `(,name ,(parse_dimension_specs len-or-dim) ,@len)
-				    ;; A simple character string
-				    dcl))))
-			decl-list))
-	    *explicit_vble_decls*))
-     ;; (format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
-     ))
+  (cond ((eq (second x) '*)
+	 ;; The length was given explicitly as part of the
+	 ;; character declaration.
+	 (push `((character ,(third x))
+		 ,@(mapcar #'(lambda (decl)
+			       (let ((dcl (remove '* decl)))
+				 ;; (format t "  decl = ~A~%" dcl)
+				 (destructuring-bind (name &optional dim-or-len &rest len)
+				     dcl
+				   (if (and dim-or-len (listp dim-or-len))
+				       ;; An array of characters
+				       `(,name ,(parse_dimension_specs dim-or-len) ,@len)
+				       ;; A simple character string
+				       dcl))))
+			   (list-split '|,| (cdddr x))))
+	       *explicit_vble_decls*))
+	(t
+	 ;; The length may have been given as part of the variable.
+	 ;; Put the length with the variable type.
+	 (mapc #'(lambda (decl)
+		   (destructuring-bind (name &optional dim-or-len &rest len)
+		       (remove '* decl)
+		     (push
+		      (if (and dim-or-len (listp dim-or-len))
+			  ;; An array
+			  `((character ,@len) (,name ,(parse_dimension_specs dim-or-len)))
+			  ;; A simple character string
+			  `((character ,(or dim-or-len 1)) (,name)))
+		      *explicit_vble_decls*)))
+	       (list-split '|,| (cdr x)))))
+     
+  ;;(format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
+  )
+
+
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
 ; restricted to 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.9 2004/07/12 15:47:49 sds Exp $
+;;; $Id: simple.lisp,v 1.10 2004/08/11 19:56:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,7 +13,7 @@
 (in-package :cllib)
 
 (export '(ppprint-list nsublist fix-list to-list from-list zero-len-p paste
-          lexicographic-comparison
+          lexicographic-comparison ensure
           skip-to-new flatten with-collect filter list-length-dotted))
 
 ;;;
@@ -90,6 +90,18 @@ determined by the FUNCTIONS"
 ;;;
 ;;; }}}{{{ misc
 ;;;
+
+(defmacro ensure (form default)
+  "Check whether FORM (which should be a single-value place)
+evaluates to non-NIL and set it to DEFAULT otherwise.
+DEFAULT is only evaluated when FORM is NIL."
+  (let* ((vars (mapcar (lambda (expr)
+                         (declare (ignore expr))
+                         (gensym "ENSURE-"))
+                       (cdr form)))
+         (new-form (cons (car form) vars)))
+    `(let* ,(mapcar #'list vars (cdr form))
+       (or ,new-form (setf ,new-form ,default)))))
 
 (defun ppprint-list (lst &optional (stream t))
   "Print a long list nicely."

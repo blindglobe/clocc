@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.15 2001/11/02 22:30:39 sds Exp $
+;;; $Id: shell.lisp,v 1.16 2002/11/30 22:31:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,7 +25,7 @@
 (defun run-prog (prog &rest opts &key args (wait t) &allow-other-keys)
   "Common interface to shell. Does not return anything useful."
   #+gcl (declare (ignore wait))
-  (remf opts :args) (remf opts :wait)
+  (setq opts (remove-plist opts :args :wait))
   #+allegro (apply #'excl:run-shell-command (apply #'vector prog prog args)
                    :wait wait opts)
   #+(and clisp      lisp=cl)

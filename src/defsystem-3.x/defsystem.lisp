@@ -1364,7 +1364,7 @@
          #+(and dec common vax (not ultrix))  ("LSP"  . "FAS")
          #+(and dec common vax ultrix)        ("lsp"  . "fas")
  	 #+ACLPC                              ("lsp"  . "fsl")
- 	 #+CLISP                              ("lsp"  . "fas")
+ 	 #+CLISP                              ("lisp" . "fas")
          #+KCL                                ("lsp"  . "o")
          #+ECL                                ("lsp"  . "so")
          #+IBCL                               ("lsp"  . "o")
@@ -3799,7 +3799,7 @@ the system definition, if provided."
 	      (let ((package (find-package (component-package component))))
 		(when package
 		  (setf *package* package)))))
-	  
+
 	  ;; Marco Antoniotti 20040609
 	  ;; New feature.  Try to FIND-SYSTEM :system components if
 	  ;; they have no local :components definition.
@@ -3897,7 +3897,7 @@ the system definition, if provided."
 	;; to load it (needed since we may be depending on a lisp
 	;; dependent package).
 	;; Explores the system tree in a DFS manner.
-	
+
 	;; Do not try to do anything with non system components.
         (cond ((and *operations-propagate-to-subsystems*
                     (not (listp system))

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.23 2001/06/09 20:07:59 sds Exp $
+;;; $Id: ext.lisp,v 1.24 2001/06/11 19:33:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -121,7 +121,7 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'quit code)))
 
-(defconst +eof+ cons (cons nil nil)
+(defconst +eof+ cons (list '+eof+)
   "*The end-of-file object.
 To be passed as the third arg to `read' and checked against using `eq'.")
 

@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.16 2001/12/07 18:31:01 sds Exp $
+;;; $Id: cvs.lisp,v 2.17 2002/03/02 02:12:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,10 +16,12 @@
   (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `skip-to-line', `read-list-from-stream', `file-size-t'
   (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
-  ;; `string->dttm'
+  ;; `string->dttm', `dttm->string'
   (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `hash-table->alist'
   (require :cllib-miscprint (translate-logical-pathname "cllib:miscprint"))
+  ;; `top-bottom-ui'
+  (require :cllib-sorted (translate-logical-pathname "cllib:sorted"))
   ;; `default-directory', `pathname-ensure-name', `probe-directory'
   (require :port-sys (translate-logical-pathname "port:sys"))
   ;; `with-open-pipe'
@@ -257,7 +259,16 @@ Suitable for `read-list-from-stream'."
                 (format t "done [~:d byte~:p]" (file-length log))))
           (setf (default-directory) old-path)))))
   (format t "~a: " path)
-  (cvs-stat-files (cvs-read-log path)))
+  (let ((logl (cvs-read-log path)))
+    (cvs-stat-files logl)
+    (format t "~& -- by the number of revisions --~%")
+    (top-bottom-ui logl 10 nil nil :key #'cvsf-tot-rev :label #'cvsf-work)
+    (top-bottom-ui logl 10 nil nil :key (compose revision-time car cvsf-revs)
+                   :label #'cvsf-work :klabel #'dttm->string)))
+
+;;;
+;;; change the repository of the current sandbox
+;;;
 
 ;;;###autoload
 (defun cvs-change-root (root substitutions &key (dry-run nil) (log t))

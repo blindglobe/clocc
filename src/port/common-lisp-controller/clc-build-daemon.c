@@ -303,7 +303,7 @@ int main(int argc, char *argv[])
         {
           printf("220 BYE\n");
           fflush(stdout);
-          
+
           shutdown(inputfd,SHUT_WR);
           close(inputfd);
           close(outputfd);
@@ -391,11 +391,16 @@ int main(int argc, char *argv[])
               pid_t child;
               int descriptors[2];
               char directory[4097];
+              char base_directory[4097];
 
 
               snprintf(directory,4096,"/usr/lib/common-lisp/%s/%s",
                        compiler,package);
               directory[4096]=(char)0;
+
+              snprintf(base_directory,4096,"/usr/lib/common-lisp/%s",
+                       compiler);
+              base_directory[4096]=(char)0;
 
               if (probe_directory(directory))
                 {
@@ -418,9 +423,23 @@ int main(int argc, char *argv[])
                       dup2(descriptors[1],STDOUT_FILENO);
                       dup2(descriptors[1],STDERR_FILENO);
                       close(descriptors[1]);
-                      
+
                       if (freopen("/dev/null","r+",stdin) == NULL)
                         reporterror("reopen stdin");
+
+		      if (! probe_directory(base_directory))
+                        {
+                          if (mkdir(base_directory, S_IREAD | S_IWRITE | S_IEXEC | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
+                            {
+                              char command[4097];
+
+                              snprintf(command,4096,"while creating directory: /usr/lib/common-lisp/%s",
+                                       compiler);
+                              command[4096]=(char)0;
+                              reporterror(command);
+
+                            }
+                        }
 
                       if ( mkdir(directory, S_IREAD | S_IWRITE | S_IEXEC | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
                         {
@@ -436,6 +455,16 @@ int main(int argc, char *argv[])
 
                       if (login_data == NULL)
                         reporterror("Could not know who is cl-builder");
+
+                      if ( chown(base_directory, login_data->pw_uid, login_data->pw_gid) != 0)
+                        {
+                          char command[4097];
+
+                          snprintf(command,4096,"while changing owner of directory: /usr/lib/common-lisp/%s",
+                                   compiler);
+                          command[4096]=(char)0;
+                          reporterror(command);
+                        }
 
                       if ( chown(directory, login_data->pw_uid, login_data->pw_gid) != 0)
                         {
@@ -496,24 +525,24 @@ int main(int argc, char *argv[])
                       FILE *child;
 
                       close(descriptors[1]);
-                      
+
                       child = fdopen(descriptors[0], "r");
                       if (child == (FILE *) NULL)
                         reporterror("while opening child stream");
-                      
+
                       for(;;)
                         {
                           size_t length;
                           ssize_t read;
-                          
+
                           length = 0;
-                          
+
                           current_line++;
                           if (current_line > MAX_LINES)
                             current_line = 0;
-                          
+
                           read = getline(&(lines[current_line]), &length, child);
-                          
+
                           if (read <= 0)
                             {
                               if (feof(child))
@@ -546,30 +575,30 @@ int main(int argc, char *argv[])
                               struct passwd *login_data;
 
                               login_data = getpwnam("cl-builder");
-                              
+
                               if (login_data == NULL)
                                 reporterror("Could not know who is cl-builder");
-                              
+
                               if (setgid(login_data->pw_gid) != 0)
                                 reporterror("could not become cl-builder group");
-                              
+
                               if (setgroups(0,NULL) != 0)
                                 reporterror("Could not give up groups");
-                              
+
                               if (setuid(login_data->pw_uid) != 0)
                                 reporterror("could not become cl-builder");
 
                               if (setsid() == -1)
                                 reporterror("could not create a session");
 
-                               mail_pipe = popen("/usr/bin/mail -s \"clc build failure\" root -e ","w");
+                              mail_pipe = popen("/usr/bin/mail -s \"clc build failure\" root -e ","w");
 
                               if (mail_pipe == NULL)
                                 reporterror("Could not open a pipe to /usr/bin/mail");
                               else
                                 {
                                   int line_offset;
-                                  
+
                                   fprintf(mail_pipe,"
 Hello
 
@@ -596,7 +625,7 @@ Thanks for your attention\n",
 				      char *line;
 
 				      line=lines[(current_line+1+line_offset) % MAX_LINES];
-                                      
+
 				      if (line != (char *) NULL)
                                         fprintf(mail_pipe,"%s", line);
                                     }
@@ -609,8 +638,8 @@ Thanks for your attention\n",
                             printf("251 DONE\n");
                         }
                       else
-                      if ( WIFEXITED(status) != 0)
-                        printf("251 DONE\n");
+                        if ( WIFEXITED(status) != 0)
+                          printf("251 DONE\n");
                     }
                 }
             }

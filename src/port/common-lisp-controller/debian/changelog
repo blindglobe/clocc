@@ -1,3 +1,22 @@
+common-lisp-controller (3.16) unstable; urgency=low
+
+  * Make certain the /usr/lib/common-lisp/<implementation> directories are
+    also owned by cl-builder.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu,  8 Aug 2002 08:10:30 +0200
+
+common-lisp-controller (3.15) unstable; urgency=low
+
+  * deluser fix. Thanks to ham[home]
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 Aug 2002 11:32:46 +0200
+
+common-lisp-controller (3.14) unstable; urgency=low
+
+  * Added adduser dependency 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 Aug 2002 10:53:19 +0200
+
 common-lisp-controller (3.13) unstable; urgency=low
 
   * added common-lisp-controller:compile-library as placeholder for future

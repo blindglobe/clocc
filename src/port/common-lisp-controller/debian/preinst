@@ -21,14 +21,14 @@ case "$1" in
 	update-inetd --remove "^8990\t.*"
 
         adduser --system --home /usr/lib/common-lisp --shell /bin/false --no-create-home \
-                --disabled-password --disabled-login --group cl-builder 
+                --disabled-password --disabled-login --group cl-builder  || true
         
         if [ "$1" = "upgrade" ] ; then
          for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	   if [ -f "$compiler" -a -r "$compiler" ] ; then
 	     i=${compiler##*/}
 	     i=${i%.sh}
-             chown -R cl-builder.cl-builder /usr/lib/common-lisp/${i}/ 2> /dev/null || true
+             chown -R cl-builder.cl-builder /usr/lib/common-lisp/${i} 2> /dev/null || true
            fi
          done
         fi

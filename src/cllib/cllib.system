@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.20 2000/08/16 20:35:40 sds Exp $
+;;; $Id: cllib.system,v 1.21 2000/09/28 20:16:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -50,7 +50,8 @@
      (:file "laser" :depends-on ("base" "log"))
      (:file "list" :depends-on ("base" "simple"))
      (:file "log" :depends-on ("base" "withtype" "tilsla"))
-     (:file "math" :depends-on ("base" "withtype" "fileio" "log" "list"))
+     (:file "math" :depends-on
+            ("base" "simple" "withtype" "fileio" "log" "list"))
      (:file "matrix" :depends-on ("base" "withtype"))
      (:file "metering" :source-pathname "../tools/metering/metering")
      (:file "miscprint" :depends-on ("base" "simple"))

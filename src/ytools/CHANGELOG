@@ -1,3 +1,8 @@
+2004-08-11: Stuff after :proceed and :prompt-for is now a list of args
+            suitable for 'out'.  In the case of :prompt-for, the last
+	    element is the default, and the out-args don't include that
+	    last element.
+	
 2004-08-09: Change in bq.lisp to allow other files to use its facilities.
 	    Invisible to users.  Changed logic in 'fload' so after asking
 	    whether to compile a previously uncompiled file it doesn't

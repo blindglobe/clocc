@@ -1,0 +1,124 @@
+;;; -*- Mode: lisp -*-
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem odepack
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
+    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t :declare-common t)
+    :components
+    (
+     (:file "adjlr"
+	    :depends-on ("nroc" "nsfc" "nnfc" "nnsc"))
+     (:file "cdrv")
+     (:file "cntnzu")
+     (:file "daigbt"
+	    :depends-on ("ddecbt" "dsolbt"))
+     (:file "dainvg"
+	    :depends-on ("dgefa" "dgesl" "dgbfa" "dgbsl"))
+     (:file "dainvgs")
+     (:file "datp"
+	    :depends-on ("dvnorm" "dcopy"))
+     (:file "datv"
+	    :depends-on ("dcopy" "dnrm2" "dcopy"))
+     (:file "daxpy")
+     (:file "dbnorm")
+     (:file "dcfode")
+     (:file "dcopy")
+     (:file "ddecbt"
+	    :depends-on ("dgefa" "dgesl" "ddot"))
+     (:file "ddot")
+     (:file "dewset")
+     (:file "dfnorm")
+     (:file "dgbfa"
+	    :depends-on ("idamax" "dscal"))
+     (:file "dgbsl")
+     (:file "dgefa"
+	    :depends-on ("idamax" "dscal"))
+     (:file "dgesl")
+     (:file "dhefa"
+	    :depends-on ("idamax"))
+     (:file "dhels")
+     (:file "dheqr")
+     (:file "dhesl")
+     (:file "dintdy"
+	    :depends-on ("xerrwd"))
+     (:file "diprep"
+	    :depends-on ("dprep"))
+     (:file "diprepi"
+	    :depends-on ("dprepi"))
+     (:file "dlhin"
+	    :depends-on ("dvnorm"))
+     (:file "dlsoda"
+	    :depends-on ("xerrwd" "dmnorm" "dstoda"))
+     (:file "dlsodar")
+     (:file "dlsode")
+     (:file "dlsodes")
+     (:file "dlsodi")
+     (:file "dlsodis")
+     (:file "dlsodkr")
+     (:file "dlsodpk")
+     (:file "dlsoibt")
+     (:file "dmnorm")
+     (:file "dnrm2")
+     (:file "dorthog")
+     (:file "dpcg")
+     (:file "dpcgs")
+     (:file "dpjibt")
+     (:file "dpkset")
+     (:file "dprep")
+     (:file "dprepi")
+     (:file "dprepj")
+     (:file "dprepji")
+     (:file "dprja")
+     (:file "dprjis")
+     (:file "dprjs")
+     (:file "drchek")
+     (:file "droots")
+     (:file "dscal")
+     (:file "dsetpk")
+     (:file "dslsbt")
+     (:file "dsolbt")
+     (:file "dsolpk")
+     (:file "dsolss")
+     (:file "dsolsy")
+     (:file "dspigmr")
+     (:file "dspiom")
+     (:file "dsrcar")
+     (:file "dsrckr")
+     (:file "dsrcma")
+     (:file "dsrcms")
+     (:file "dsrcom")
+     (:file "dsrcpk")
+     (:file "dstoda")
+     (:file "dstode")
+     (:file "dstodi")
+     (:file "dstodpk")
+     (:file "dstoka")
+     (:file "dumach")
+     (:file "dumsum")
+     (:file "dusol")
+     (:file "dvnorm")
+     (:file "idamax")
+     (:file "iumach")
+     (:file "ixsav")
+     (:file "jgroup")
+     (:file "md")
+     (:file "mdi")
+     (:file "mdm")
+     (:file "mdp")
+     (:file "mdu")
+     (:file "nnfc")
+     (:file "nnsc")
+     (:file "nntc")
+     (:file "nroc")
+     (:file "nsfc")
+     (:file "odrv")
+     (:file "sro")
+     (:file "xerrwd")
+     (:file "xsetf")
+     (:file "xsetun")))

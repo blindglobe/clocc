@@ -24,13 +24,17 @@ Copyright:
 ;;; works based upon this Software are permitted, as long as the
 ;;; following conditions are met:
 
-;;;      o this copyright notice is included intact and is prominently
-;;;        visible in the Software
-;;;      o distribution of a modification to the Software have been
-;;;        previously submitted to the maintainers; if the maintainers
-;;;        decide not to include the submitted changes, the "full
-;;;        name" of the re-distributed Software ("MK:DEFSYSTEM", or
-;;;        "MAKE:DEFSYSTEM", or "MK-DEFSYSTEM") must be changed.
+;;;    o this copyright notice is included intact and is prominently
+;;;      visible in the Software
+;;;    o if modifications have been made to the source code of the
+;;;      this package that have not been adopted for inclusion in the
+;;;      official version of the Software as maintained by the Copyright
+;;;      holders, then the modified package MUST CLEARLY identify that
+;;;      such package is a non-standard and non-official version of
+;;;      the Software.  Furthermore, it is strongly encouraged that any
+;;;      modifications made to the Software be sent via e-mail to the
+;;;      MK-DEFSYSTEM maintainers for consideration of inclusion in the
+;;;      official MK-DEFSYSTEM package.
 
 ;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 ;;; EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -45,3 +49,4 @@ Copyright:
 ;;; the sale, use or other dealings in this Software without prior written
 ;;; authorization from M. Kantrowitz and M. Antoniotti.
 
+;;; Please send bug reports, comments and suggestions to <marcoxa@cons.org>.

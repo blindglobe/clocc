@@ -806,15 +806,24 @@ main-loop
 ;; Array bounds can be either (l:u) or (u).  However, U can also be
 ;; "*" to mean unbounded or unknown.
 (defun parse_upper_and_lower_bounds (bds)
-  (setq bds (list-split '|:| bds))
-  ;; If a bound is "*", just return T instead.
-  (if (null (cdr bds))
-      (list 1 (or (eq (caar bds) '*)
-		  (id-expression (car bds))))
-      (list (or (eq (caar bds) '*)
-		(id-expression (car bds)))
-	    (or (eq (caadr bds) '*)
-		(id-expression (cdr bds))))))
+  (flet ((fixup-negative (expr)
+	   ;; If a bound is negative, f2cl separates the negative sign
+	   ;; from the expression.  This function replaces that
+	   ;; expression with the actual negative number if the
+	   ;; expression is, in fact, a number.
+	   (if (and (eq '- (first expr))
+		    (numberp (second expr)))
+	       (list (- (second expr)))
+	       expr)))
+    (let ((fixed-up-bds (mapcar #'fixup-negative (list-split '|:| bds))))
+      ;; If a bound is "*", just return T instead.
+      (if (null (cdr fixed-up-bds))
+	  (list 1 (or (eq (caar fixed-up-bds) '*)
+		      (id-expression (car fixed-up-bds))))
+	  (list (or (eq (caar fixed-up-bds) '*)
+		    (id-expression (car fixed-up-bds)))
+		(or (eq (caadr fixed-up-bds) '*)
+		    (id-expression (cdr fixed-up-bds))))))))
 
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:

@@ -1,3 +1,7 @@
+KMR 28-AUG-2002 (Kevin M. Rosenberg)
+    - Remove dependency on mk:new-require and add new ORIGNAL-REQUIRE
+    functionality.
+
 KMR 26-AUG-2002 (Kevin M. Rosenberg)
     - Added support for asdf definition files
     - Add call to original REQUIRE function if system file

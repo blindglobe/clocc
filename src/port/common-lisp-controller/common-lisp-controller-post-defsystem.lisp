@@ -141,11 +141,7 @@ file or :asdf if found asdf file"
 	  ;; no advanced stuff
 	  (require-defsystem3 module-name)
 	;; ifnot, let original require deal with it..
-	(original-require module-name
-			  pathname
-			  definition-pname
-			  default-action
-			  version)))
+	(original-require module-name pathname)))
      (:asdf
       (if (not (or pathname
 		   definition-pname
@@ -153,14 +149,10 @@ file or :asdf if found asdf file"
 	  ;; no advanced stuff
 	  (require-asdf module-name)
 	;; ifnot, let original require deal with it..
-	(original-require module-name
-			  pathname
-			  definition-pname
-			  default-action
-			  version)))
+	(original-require module-name pathname)))
      ;; Call original require if can't find system file
      (otherwise
-      (original-require module-name pathname definition-pname default-action version)))))
+      (original-require module-name pathname)))))
 
 
 ;; override the standard require with this:

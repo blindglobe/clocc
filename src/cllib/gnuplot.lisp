@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.5 2002/03/24 22:19:11 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.6 2002/04/30 03:02:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -29,6 +29,7 @@
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
           #+(or win32 mswindows) *gnuplot-path-console*
           plot-output +plot-term-screen+ +plot-term-printer+ +plot-term-file+
+          plot-term make-plot-term
           +plot-timestamp+ directive-term make-plot-stream
           with-plot-stream plot-dated-lists plot-dated-lists-depth
           plot-lists plot-lists-arg plot-error-bars plot-functions))

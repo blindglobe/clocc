@@ -474,7 +474,35 @@
            `(,fref ,data-var ,(mapcar #'optimize-integer-arithmetic indices)
                              ,(mapcar #'optimize-integer-arithmetic bounds)
                              ,@offset)))
+	((member (first p) '(min max))
+	 ;; We might need to do something here because CMUCL doesn't
+	 ;; always know how to optimize this right.
+	 (let* ((int-args-p
+		 (every #'(lambda (e)
+			    (eq e 'integer4))
+			(mapcar #'(lambda (arg)
+				    (let ((res (get-fun-arg-type (list arg))))
+				      ;;(format t "arg = type ~A: ~A~%" res arg)
+				      res))
+				(rest p))))
+		(opt-args
+		 (mapcar #'optimize-integer-arithmetic (rest p))))
+	   ;;(format t "min/max opt. int-args-p = ~A~%" int-args-p)
+	   ;;(format t "args = ~A~%" (rest p))
+	   ;;(format t "opt-args = ~A~%" opt-args)
+	   (if int-args-p
+	       `(,(first p) ,@(mapcar #'(lambda (x)
+					  `(the integer4 ,x))
+				      opt-args))
+	       `(,(first p) ,@opt-args))))
+	((eq (first p) 'truncate)
+	 ;; Hmm, make sure truncate returns a integer4
+	 `(the integer4 ,p))
 	((member (first p) '(+ - *))
+	 ;; Basic arithmetic operations.  Division has already been
+	 ;; handled by converting / to f2cl/ which is optimized
+	 ;; somewhere else.
+	 
 	 ;;(format t "expr = ~A~%" p)
 	 (let ((fun (if (every #'(lambda (e)
 				   (eq e 'integer4))
@@ -722,7 +750,7 @@
 				;; We're trying to set a integer
 				;; variable to non-integer value.  Use
 				;; truncate.
-				`(truncate ,rhs))
+				`(int ,rhs))
 			       (t
 				;; Haven't a clue, so coerce
 				`(coerce ,rhs ',lhs-type)))))))
@@ -1257,7 +1285,8 @@
 						      ,o-name
 						      ,a)
 				     (declare (type f2cl-lib:integer4 ,o-name)
-				      (type (simple-array ,d-type (*)) ,d-name))
+				              (type (simple-array ,d-type (*)) ,d-name)
+				              (ignorable ,o-name ,d-name))
 				     ,result))))
 		      result))))
 	 ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
@@ -2566,8 +2595,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.89 2002/03/11 16:45:28 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.90 2002/03/13 04:01:37 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.90  2002/03/13 04:01:37  rtoy
+;;; o Use INT instead of TRUNCATE when coercing parameter assignments.
+;;; o Update OPTIMIZE-INTEGER-ARITHMETIC to handle min/max because CMUCL
+;;;   isn't always smart enough to figure it out by itself.
+;;; o Similarly, if we find a bare TRUNCATE, add an assertion about the
+;;;   return value of TRUNCATE.
+;;;
 ;;; Revision 1.89  2002/03/11 16:45:28  rtoy
 ;;; Try to optimize integer arithmetic. Fortran says integer overflow is
 ;;; undefined, so we try to wrap all integer arithmetic with (THE INTEGER4

@@ -9,7 +9,7 @@ Package: clue
 Architecture: all
 Depends: common-lisp-controller, cmucl-source
 Replaces: clio,pictures
-Description: clue/clio/pictures: xlib/Xt like library for lisp
+Description: This is a source package for clue/clio/pictures: xlib/Xt like library for lisp
  Clue is to lisp what xlib is to C. It's basic, but
  close to the metal.
  .

@@ -24,14 +24,10 @@ set -e
 
 case "$1" in
     configure)
-	ln -sf /usr/share/common-lisp/repositories/memoization \
-			/usr/share/common-lisp/source
 	/usr/sbin/register-common-lisp-source memoization
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
-	if [ -f /usr/share/common-lisp/source/memoization ] ; then rm /usr/share/common-lisp/source/memoization ; fi
-
     ;;
 
     *)

@@ -9,11 +9,12 @@ loading and running, e.g., put in a package and exported symbols,
 removed duplicate definitions, etc. -- see the files for details.  A
 bit of work has been done on onlisp-app, but less extensively, e.g.,
 no elimination of duplicates.  With Paul Graham's permission, they are
-now distributed under the GPL; see COPYING.  I have tested onlisp-util
-and it compiles and loads without any errors/warnings/notes, etc. on
-Allegro CL 5.0.1 and CMUCL, the only two CLs I have available.  Any
-other reports are welcome.  Onlisp-app compiles and loads with many
-warnings. 
+now distributed under the GPL; see clocc/etc/GNU-GPL.
+
+I have tested onlisp-util and it compiles and loads without any
+errors/warnings/notes, etc. on Allegro CL 5.0.1 and CMUCL, the only two
+CLs I have available.  Any other reports are welcome.
+Onlisp-app compiles and loads with many warnings.
 
 Below is the original header written by Paul Graham.  Note that most
 of these concerns don't apply (at least to onlisp-util); I have
@@ -34,7 +35,7 @@ onlisp-app is loaded.  Also, as stated above, the license is now GPL.
 ; If you have questions or comments about this code, or you want
 ; something I didn't include, send mail to onlisp@das.harvard.edu.
 
-; This code is copyright 1993 by Paul Graham, but anyone who wants 
+; This code is copyright 1993 by Paul Graham, but anyone who wants
 ; to use the code in any nonprofit activity, or distribute free
 ; verbatim copies (including this notice), is encouraged to do so.
 

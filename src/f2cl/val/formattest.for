@@ -81,8 +81,12 @@ c  410 format(i3)
       subroutine subr5
       integer iunit(5)
       do 10 k = 1, 5
-         write(iunit(k), 9000) 'Unit ', k
+         iunit(k) = 5
    10 continue
+      
+      do 20 k = 1, 5
+         write(iunit(k), 9000) 'Unit ', k
+   20 continue
  9000 format(1x, a10, i4)
       end
 
@@ -94,6 +98,7 @@ C main
       CALL subr2
       CALL subr3
       CALL SUBR4
+      call subr5
       STOP
       END
 C

@@ -1,10 +1,10 @@
 ;;; Regression Testing
 ;;;
-;;; Copyright (C) 1999-2000 by Sam Steingold
+;;; Copyright (C) 1999-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.11 2001/11/07 15:10:06 sds Exp $
+;;; $Id: tests.lisp,v 2.12 2002/02/12 16:07:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -86,6 +86,14 @@
                (incf num-err)
                (warn " ### FAILED: ~s --> ~d, not ~d~2%"
                      st (string->dttm st) nn))))
+      (ts 3221942400 "2002-02-06")
+      (ts 3222004920 "2002-02-06T17:22")
+      (ts 3222004978 "2002-02-06T17:22:58")
+      (ts 3222004979 "2002-02-06T17:22:58.9")
+      (ts 3222004978 "2002-02-06T12:22:58.12Z-0500")
+      (ts 3222004978 "2002-02-06T22:22:58Z+0500")
+      (ts 3222004978 "06 Feb 2002 18:22:58 +0100")
+      (ts 3222004978 "06 Feb 2002 16:22:58 -0100")
       (ts 3126878578 "1999/02/01 17:22:58")
       (ts 3126896578 "Mon Feb  1 17:22:58 1999 EST")
       (ts 3126878578 "Feb  1 Mon 17:22:58 1999 GMT")

@@ -346,7 +346,6 @@
 		       (if (atom z)
 			   z
 			   (let ((nodup (remove-duplicates z :test #'equalp)))
-			     (format t "z = ~A~%" z)
 			     (if (rest nodup)
 				 `(or ,@nodup)
 				 (first nodup)))))
@@ -2120,8 +2119,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.49 2000/07/19 14:04:28 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.50 2000/07/19 22:17:13 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.50  2000/07/19 22:17:13  rtoy
+;;; Remove a print statement inadvertently left in.
+;;;
 ;;; Revision 1.49  2000/07/19 14:04:28  rtoy
 ;;; o GET-FUN-ARG-TYPE returns a second value to indicate if the arg is an
 ;;;   array or not.

@@ -1,10 +1,10 @@
-;;; stuff for working with sorted (and not so sorted) lists
+;;; stuff for working with sorted (and not so sorted) sequences
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.6 2001/11/02 22:31:15 sds Exp $
+;;; $Id: sorted.lisp,v 1.7 2002/03/02 01:22:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)
@@ -63,7 +63,7 @@ and corresponding IDXes. NKEY must be equal to (compose 'key car)."
 Get the :key and compare it using :lessp and :morep.
 MAXN and MINN can be nil, in which case only one top/bottom element is
 returned, *not* as a list but just itself.
-If MK-IDX is non-nil, return indeces too.
+If MK-IDX is non-nil, return indexes too.
 2 values are returned."
   (declare (sequence seq) (type (or null fixnum) maxn minn)
            (type (function (t) t) key) (type (function (t t) t) lessp morep))

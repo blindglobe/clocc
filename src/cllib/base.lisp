@@ -1,42 +1,59 @@
-;;; File: <base.lisp - 1998-03-23 Mon 11:31:05 EST sds@mute.eaglets.com>
+;;; File: <base.lisp - 1998-05-21 Thu 14:21:57 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
-;;; Copyright (C) 1997 by Sam Steingold.
-;;; This is free software.
+;;; Copyright (C) 1997, 1998 by Sam Steingold.
+;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.1 1998/03/23 16:32:23 sds Exp $
+;;; $Id: base.lisp,v 1.2 1998/05/21 18:22:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.2  1998/05/21 18:22:15  sds
+;;; Adopted to work with ACL 5.
+;;;
 ;;; Revision 1.1  1998/03/23 16:32:23  sds
 ;;; Initial revision
 ;;;
 
+;;(defpackage finance
+;;  (:size 1000) (:nicknames "EAGLE" "FIN") (:use "CL" "LISP")
+;;  (:shadowing-import-from "CL" "FLET" "MAKE-PACKAGE" "MACROLET" "LABELS"))
+(in-package :cl-user)
+
 (eval-when (compile load eval)
-  (setq *read-default-float-format* 'double-float *print-case* :downcase)
-  #+cmu (setq *gc-verbose* nil *bytes-consed-between-gcs* 32000000
-	      make::*standard-binary-file-types* '("x86f")
-	      make::*standard-source-file-types* '("lisp"))
-  #+allegro (setq sys:*source-file-types* '("lisp"))
-  #+clisp (setq *warn-on-floating-point-contagion* t
-		*default-float-format* 'double-float
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))
+	   #+clisp (declaration values))
+  (setq *read-default-float-format* 'double-float *print-case* :downcase
+	*print-array* t)
+  #+cmu (setq *gc-verbose* nil *bytes-consed-between-gcs* 32000000)
+  ;; #+cmu (push "x86f" make::*standard-binary-file-types*)
+  ;; #+cmu (push "lisp" make::*standard-source-file-types*) ; default
+  #+allegro
+  (progn (setq excl:*global-gc-behavior* :auto
+               excl::stream-buffer-size 8192)
+         (tpl:setq-default *read-default-float-format* 'double-float)
+         (tpl:setq-default *print-case* :downcase)
+         (push "lisp" sys:*source-file-types*))
+  #+clisp (setq lisp:*warn-on-floating-point-contagion* nil
+                lisp:*floating-point-contagion-ansi* t
+		lisp:*default-float-format* 'double-float
 		;; sys::*source-file-types* '(#".lisp") ; default
 		sys::*prompt-with-package* t)
   #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
-  #+allegro
-  (unless (member :key (arglist #'reduce) :test #'string=)
+  #+allegro-v4.3
+  (unless (member :key (excl:arglist #'reduce) :test #'string=)
     (setq franz:*compile-advice* t) (in-package :franz)
-    (defadvice reduce (support-key :before)
-      (let ((key (getf (cddr arglist) :key)))
+    (excl:defadvice reduce (support-key :before)
+      (let ((key (getf (cddr excl:arglist) :key)))
 	(when key
-	  (remf (cddr arglist) :key)
-	  (setf (second arglist)
-		(map 'vector key (second arglist))))))
-    (in-package :user)))
+	  (remf (cddr excl:arglist) :key)
+	  (setf (second excl:arglist)
+		(map 'vector key (second excl:arglist))))))
+    (in-package :cl-user)))
 
 ;;; {{{ Extensions
 
@@ -55,14 +72,14 @@
   (unless (fboundp 'defconst)
     (defmacro defconst (name type init doc)
       "Define a typed constant."
-      `(unless (boundp ',name) (declaim (type ,type ,name))
-	(defconstant ,name (the ,type ,init) ,doc))))
+      `(eval-when (compile load eval)
+	(unless (boundp ',name) (declaim (type ,type ,name))
+		(defconstant ,name (the ,type ,init) ,doc)))))
 
   (unless (fboundp 'double-float)
-    (declaim (ftype (function (number) double-float) double-float))
     (defsubst double-float (num)
       "Coerce to double float."
-      (declare (number num) (optimize (speed 1)))
+      (declare (number num) (optimize (speed 1)) (values double-float))
       (coerce num 'double-float)))
 
   (unless (fboundp 'getenv)
@@ -80,17 +97,22 @@
 		:wait wait opts)
   #+cmu (run-program prog args :wait wait)
   #+gcl (apply #'run-process prog args)
-  #+clisp (apply #'run-program prog :arguments args opts))
+  #+clisp (apply #'lisp:run-program prog :arguments args opts))
+
+#+gcl (defun quit () (bye))
+#+allegro (defun quit () (exit))
 
 (defun pipe-output (prog &rest args)
   "Return an output stream wich will go to the command."
-  #+excl (apply #'excl:run-shell-command (apply #'vector prog prog args)
-		:input :stream)
+  #+excl (excl:run-shell-command (apply #'vector prog prog args)
+				 :input :stream :wait nil)
   #+gcl (si::fp-input-stream (apply #'run-process prog args))
-  #+clisp (make-pipe-output-stream (format nil "~a~{ ~a~}" prog args))
+  #+clisp (lisp:make-pipe-output-stream (format nil "~a~{ ~a~}" prog args))
   #+cmu (process-output (run-program prog args :input :stream :wait nil)))
 
+;;;
 ;;; }}}{{{ Environment
+;;;
 
 (eval-when (compile load eval)
   (defcustom *source-dir* pathname
@@ -101,8 +123,6 @@
     "*The private lisp sources."))
 (defcustom *fin-dir* pathname (merge-pathnames "data/" *source-dir*)
   "*The directory with the financial data.")
-(defcustom *current-project* list nil
-  "*The list of files to work with, in the order of loading.")
 
 #-(or clisp allegro)
 (eval-when (eval load compile)
@@ -132,8 +152,8 @@
       (make-hash-table :test #'equal :size 20)
       "*The table for `sds-require'.")
     (dolist (mo '("base" "channel" "currency" "date" "futures" "fx" "gnuplot"
-		  "lisp" "math" "octave" "print" "report" "signal" "util"
-		  "work"))
+		  "list" "math" "octave" "print" "report" "rules" "signal"
+		  "util" "work"))
       (setf (gethash mo *require-table*)
 	    (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
     (dolist (mo '("gq" "url" "geo"))
@@ -156,36 +176,28 @@
     (setf (symbol-function symb)
 	  (lambda (&rest args)
 	    (setf (documentation symb 'function) nil)
-	    (fmakunbound symb) (sds-require file) (apply symb args))
+	    (fmakunbound symb)
+            (format t "; ~s is being autoloaded from `~a'~%" symb file)
+            (sds-require file) (apply symb args))
 	  (documentation symb 'function)
 	  (format nil "Autoloaded (from ~a):~%~a" file comment))))
 
-#+(or allegro gcl)
+(defmacro map-in (fn seq &rest seqs)
+  "`map-into' the first sequence, evaluating it once.
+  (map-in F S) == (map-into S F S)"
+  (let ((mi (gensym "MI")))
+    `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
+
+#+(or allegro gcl clisp)
 (defun default-directory ()
   "The default directory."
+  #+clisp (lisp:default-directory)
   #+allegro (current-directory)
   #+gcl (truename "."))
 #+allegro (defsetf default-directory chdir "Change the current directory.")
 #+gcl (defsetf default-directory si:chdir "Change the current directory.")
+#+clisp (defsetf default-directory lisp:cd "Change the current directory.")
 #-allegro (defun chdir (dir) (setf (default-directory) dir))
-
-(defun all-docs (sy &key (out *standard-output*))
-  "Print all the possible information about the symbol.
-Prints function, compiler-macro, setf, structure, type, and variable
-documentation (if any), as well as the value and the arglist (if any)."
-  (declare (stream out))
-  (format out "~& *** Symbol: `~a':" sy)
-  (describe sy out)
-  (do ((ty '(compiler-macro setf structure type variable function) (cdr ty))
-       (ar (ignore-errors (function-arglist (symbol-function sy)))) doc)
-      ((endp ty)
-       (when (fboundp sy) (format out "~& *** Args: ~s~%" ar))
-       (when (boundp sy) (format out "~& *** Value: ~s~%" (symbol-value sy)))
-       (when (symbol-plist sy)
-	 (format out "~& *** Plist: ~s~%" (symbol-plist sy)))
-       (values))
-    (when (setq doc (documentation sy (car ty)))
-      (format out "~& *** Documentation as a ~a:~%~a~%" (car ty) doc))))
 
 ;;; 1997-11-03 Mon 09:37:59 EST
 ;;; from Bruno Haible <haible@ma2s2.mathematik.uni-karlsruhe.de>
@@ -206,44 +218,10 @@ documentation (if any), as well as the value and the arglist (if any)."
 ;;; }}}{{{ Environment
 ;;;
 
-(eval-when (load compile eval)
-  (defconst *internal-time-digits* fixnum
-    (min 3 (round (/ (log internal-time-units-per-second) (log 10))))
-    "The number of digits in `internal-time-units-per-second'."))
-
-(defun print-time (sec &optional (out t) pre post)
-  "Print the seconds to the output stream."
-  (declare (real sec) (type (or null simple-string) pre post))
-  (multiple-value-bind (mi se ho da) (floor (double-float sec) 60)
-    (declare (fixnum mi) (double-float se) (type (or null fixnum) ho da))
-    (setf (values ho mi) (floor mi 60) (values da ho) (floor ho 24))
-    (format out "~@[~a~]~[~:;~:*~:d day~:p ~]~2,'0d:~2,'0d:~2,'0d~@[~a~]"
-	    pre da ho mi (round se) post)))
-;;    (format out "~@[~a~]~[~:;~:*~:d day~:p ~]~[~:;~:*~dh ~]~[~:;~:*~d' ~]~
-;; ~[~:;~:*~d\"~]~@[~a~]" pre da ho mi (round se) post)))
-
-(defun elapsed (bt &optional fmt)
-  "Return the time in seconds elapsed since BT,
-previously set using `get-internal-real-time'.
-If FMT is non-NIL, return the corresponding string too."
-  (declare (integer bt) (optimize (speed 1)))
-  (let ((nn (double-float (/ (- (get-internal-real-time) bt)
-			     internal-time-units-per-second))))
-    (declare (double-float nn))
-    (if fmt
-	(values nn (concatenate 'string (commas nn *internal-time-digits*)
-				" sec" (if (< nn 300) ""
-					   (print-time nn nil " (" ")"))))
-	nn)))
-
-(defsubst elapsed-1 (bt)
-  "Return just the string for `elapsed'."
-  (declare (integer bt)) (nth-value 1 (elapsed bt t)))
-
 (defun current-environment (&optional (stream *standard-output*))
   "Print the current environment to a stream."
   (declare (stream stream))
-  (format stream "~&~%~70~~%~70,,,'-:@<<{[ The current environment]}>~>~%~
+  (format stream "~&~%~70~~%~70,,,'-:@<<{[ The current environment ]}>~>~%~
 LISP: implementation: ~a; version: ~a~%Machine: type: ~
 ~a; version: ~a; instance: ~a~%OS: "
 	  (lisp-implementation-type) (lisp-implementation-version)
@@ -313,6 +291,65 @@ Current time:~35t"
 	    (env "CurrentVersion") (env "CurrentBuildNUmber")
 	    (env "CSDVersion") (env "CurrentType") (env "RegisteredOwner")
 	    (env "RegisteredOrganization") (env "ProductId"))))
+
+;;;
+;;; }}}{{{ Function Compositions
+;;;
+
+(defmacro compose-m (&rest functions)
+  "Macro: compose functions or macros of 1 argument into a lambda."
+  (labels ((zz (xx yy)
+	     (let ((rr (list (car xx) (if (cdr xx) (zz (cdr xx) yy) yy))))
+	       (if (consp (car xx)) (cons 'funcall rr) rr))))
+    (let ((ff (zz functions 'yy))) `(lambda (yy) ,ff))))
+
+(defun compose (&rest functions)
+  "Return the composition of all the arguments.
+All FUNCTIONS should take one argument, except for
+the last one, which can take several."
+  (reduce (lambda (f0 f1)
+	    (declare (function f0 f1))
+	    (lambda (&rest args) (funcall f0 (apply f1 args))))
+	  functions :initial-value #'identity))
+
+(defun compose-all (&rest functions)
+  "Return the composition of all the arguments.
+All the values from nth function are fed to the n-1th."
+  (reduce (lambda (f0 f1)
+	    (declare (function f0 f1))
+	    (lambda (&rest args) (multiple-value-call f0 (apply f1 args))))
+	  functions :initial-value #'identity))
+
+;;;
+;;; }}}{{{ generic
+;;;
+
+(eval-when (load compile eval)
+  (defgeneric value (xx) (:documentation "Get the value."))
+  (declaim (ftype (function (t) number) value)))
+(defmethod value ((xx number)) xx)
+(defmethod value ((xx cons)) (value (cdr xx)))
+
+;;;
+;;; }}}{{{ autoloads
+;;;
+
+(autoload 'update-quotes "gq" "Update the quote log.")
+(autoload 'dump-url "url" "Dump the contents of this URL.")
+(autoload 'view-url "url" "Launch a browser on this URL.")
+(autoload 'url "url" "Convert an object to a URL.")
+(autoload 'cite-info "geo" "Look at U.S. Gazetteer.")
+(autoload 'weather-report "geo" "Get the weather forecast.")
+(autoload 'fetch-country-list "geo" "Load the country list via the WWW.")
+(autoload 'save-restore-country-list "geo" "Load the country list from disk.")
+(autoload 'make-all-contracts "futures" "Init `*contract-list*'.")
+(autoload 'make-emas-channels "rules" "Get the EMAs and channels.")
+(autoload 'set-depth "signal" "Set the depth and load `*sig-stat*'.")
+(autoload 'make-sig-stat "work" "Generate `*sig-stat*'.")
+(autoload 'test-par "work" "Test run.")
+(autoload 'best-pars "work" "Get the best parameters.")
+(autoload 'pr "print" "Print readably, through `with-standard-io-syntax'.")
+(autoload 'all-docs "print" "Print all docs for a symbol.")
 
 (provide "base")
 ;;; }}} base.lisp ends here

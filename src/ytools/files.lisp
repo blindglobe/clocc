@@ -451,7 +451,7 @@
 			   (t ':loaded)))))))
 
 (defun filespecs->lprecs (specs)
-   (let ((pnl (filespecs->ytools-pathnames specs)))
+   (let ((pnl (filespecs->pathnames specs)))
      (mapcar (lambda (pn)
 	        (setq pn (make-Pathname
 			    :type false

@@ -1,10 +1,10 @@
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997-2001 by Sam Steingold.
+;;; Copyright (C) 1997-2002 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.21 2002/01/26 19:33:16 sds Exp $
+;;; $Id: date.lisp,v 2.22 2002/02/12 16:09:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -213,6 +213,45 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (declare (type (unsigned-byte 32) nn))
   (time2date (+ nn +unix-epoch+)))
 
+(defun string-w3-datetime (str &key (start 0) end)
+  "Check whether the string is in the W3 datatime format.
+Returns the decoded date or NIL.
+See <http://www.w3.org/TR/NOTE-datetime>."
+  (declare (type string str))
+  (unless end (setq end (length str)))
+  (let ((len (- end start)))
+    (macrolet ((num (s e)
+                 `(parse-integer str :start (+ ,s start) :end (+ ,e start)))
+               (ch= (c p) `(char= ,c (aref str (+ ,p start)))))
+      (when (and (>= len 10) (ch= #\- 4) (ch= #\- 7))
+        (if (= len 10) ; just the date
+            (values 0 0 0 (num 8 10) (num 5 7) (num 0 4))
+            (when (and (>= len 16) (ch= #\T 10) (ch= #\: 13))
+              (let ((z (position #\Z str :start (+ 14 start) :end end)))
+                (if z
+                    (values
+                     (if (>= (+ start 17) end) 0 ; sec
+                         (ignore-errors
+                           (round (read-from-string
+                                   str nil 0 :start (+ start 17) :end z))))
+                     (num 14 16) (num 11 13) ; mi ho
+                     (num 8 10) (num 5 7) (num 0 4) ; da mo ye
+                     (ignore-errors
+                       (parse-integer str :start (1+ z) :end end))) ; tz
+                    (values
+                     (if (>= (+ start 17) end) 0 ; sec
+                         (ignore-errors
+                           (round (read-from-string
+                                   str nil 0 :start (+ start 17) :end end))))
+                     (num 14 16) (num 11 13) ; mi ho da mo ye
+                     (num 8 10) (num 5 7) (num 0 4))))))))))
+
+(defun string-w3-dttm (str &key (start 0) end)
+  (multiple-value-bind (se mi ho da mo ye tz)
+      (string-w3-datetime str :start start :end end)
+    (and se (encode-universal-time se mi ho da mo ye
+                                   (infer-timezone (or tz 0))))))
+
 (defun dttm->string (dttm &key (format :long) (tz 0) (dst nil dst-p))
   "Print the date/time as returned by `encode-universal-time'.
 DTTM is the universal time (GMT).
@@ -268,20 +307,26 @@ The supported specs are:
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6 v7)
-      (values-list
-       (delete-if (lambda (st)
-                    (and (symbolp st)
-                         (find (subseq (to-string st) 0 3) +week-days+
-                               :test #'string-equal)))
-                  (string-tokens (purge-string xx ":-,/TZ") :max 9)))
-    (if (numberp v0)
-        (encode-universal-time (round (or v5 0)) (or v4 0) (or v3 0)
-                               (min v0 v2) (infer-month v1) (max v0 v2)
-                               (infer-timezone v6 v7))
-        (encode-universal-time (round (or v4 0)) (or v3 0) (or v2 0)
-                               v1 (infer-month v0) v5
-                               (infer-timezone v6 v7)))))
+  (or (string-w3-dttm xx)
+      (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6 v7)
+          (values-list
+           (delete-if (lambda (st)
+                        (and (symbolp st)
+                             (find (subseq (to-string st) 0 3) +week-days+
+                                   :test #'string-equal)))
+                      (string-tokens
+                       (purge-string (if (< (count #\- xx) 2) xx
+                                         ;; kill #\- in yyyy-mm-dd
+                                         (substitute #\Space #\- xx :count 2))
+                                     ":,/")
+                       :max 9)))
+        (if (numberp v0)
+            (encode-universal-time (round (or v5 0)) (or v4 0) (or v3 0)
+                                   (min v0 v2) (infer-month v1) (max v0 v2)
+                                   (infer-timezone v6 v7))
+            (encode-universal-time (round (or v4 0)) (or v3 0) (or v2 0)
+                                   v1 (infer-month v0) v5
+                                   (infer-timezone v6 v7))))))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."

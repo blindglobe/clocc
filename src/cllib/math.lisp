@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.39 2004/04/13 20:59:27 sds Exp $
+;;; $Id: math.lisp,v 2.40 2004/04/16 20:21:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,7 +34,7 @@
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl
-   count-all entropy-sequence entropy-distribution
+   count-all find-duplicates entropy-sequence entropy-distribution
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    kurtosis-skewness kurtosis-skewness-weighted
@@ -47,7 +47,7 @@
    with-line line-adjust line-adjust-dir line-adjust-list
    line-thru-points regress lincom
    plf make-plf plf-x plf-y plf-extend-left plf-extend-right plf-size
-   monotonic-p plf-monotonic-p plf-val plf->function plf-simplify
+   monotonic-p plf-monotonic-p plf-val plf->function plf-simplify plf-integral
    increasify *increasify-step*))
 
 ;;;
@@ -1008,6 +1008,13 @@ occurs, i.e., the normalized sequence should be the probability distribution."
        seq)
   ht)
 
+(defun find-duplicates (seq &key (test 'eql) (key #'value))
+  "Find all duplicate elements in the sequence:
+call `count-all' and remove elements with count 1."
+  (let ((ht (count-all seq :key key :test test)))
+    (maphash (lambda (key val) (when (= val 1) (remhash key ht))) ht)
+    ht))
+
 (defun entropy-sequence (seq &key (key #'value) (test 'eql) weight)
   "Compute the entropy of the given distribution.
 The values are counted and the result is used as a probability distribution.
@@ -1587,6 +1594,14 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
           "~S: invalid PLF: ~:D /= ~:D: ~S"
           'plf-size size (length (plf-y plf)) plf)
   size)
+
+(defun plf-integral (plf)
+  (loop :with xv = (plf-x plf) :and yv = (plf-y plf)
+    :for pos :from 1 :to (1- (plf-size plf))
+    :for x-next = (aref xv pos) :and y-next = (aref yv pos)
+    :and x-prev = (aref xv 0) :then x-next
+    :and y-prev = (aref yv 0) :then y-next
+    :sum (* (- x-next x-prev) (+ y-next y-prev) 1/2)))
 
 (defun remove-elements (pos-list vec)
   "remove the elements at these positions from the vector"

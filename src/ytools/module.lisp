@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.17 2005/03/06 22:51:17 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.18 2005/03/14 06:02:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -19,6 +19,11 @@
 	          (lambda (mod srm)
 		     (format srm "#<YT-module ~s>" (YT-module-name mod)))))
    name
+   ;; A list of lists, each of the form
+   ;;    ((-time-specs-) -acts-)
+   ;; meaning, insert or execute the -acts- at times matching one of
+   ;; the time-specs.  A time-spec is :at-run-time, :at-compile-time,
+   ;; :expansion, etc. -- 
    contents     
    chunk
    loaded-chunk)
@@ -32,6 +37,14 @@
 
 (defstruct (Module-pseudo-pn (:include Pseudo-pathname))
    module)
+
+(defmethod pathname-expansion ((mpspn Module-pseudo-pn))
+   (mapcan (\\ (c)
+	      (cond ((memq ':expansion (first c))
+		     (list-copy (rest c)))
+		    (t !())))
+	   (YT-module-contents
+	      (Module-pseudo-pn-module mpspn))))
 
 ;;; (def-ytools-module name 
 ;;;     -act-specs-)
@@ -267,6 +280,10 @@
 	    :controllee loaded-ch
 	    :name name))))
 
+;;; During debugging, may hold a bogus group gleaned from
+;;; a module definition.--
+(defvar bad-group*)
+
 (defmethod derive ((mod-controller Loadable-module-chunk))
    (let* ((loaded-mod-chunk
 		(Loadable-chunk-controllee mod-controller))
@@ -275,8 +292,7 @@
 	  (module (YT-module-chunk-module mod-chunk))
 	  (clal (YT-module-contents module)))
       (dolist (al clal)
-	 (let (;;;;(times (first al))
-	       ;; -- times are irrelevant in this context.
+	 (let ((times (first al))
 	       (acts (rest al)))
 	    (dolist (a acts)
 ;;; Okay, what we really want to do here is pretend we're scanning
@@ -298,21 +314,21 @@
 			 ;; :run-time, :compile-time, etc. don't mean
 			 ;; anything.
 			 (dolist (g groups)
-			    (cond ((memq ':run-time (first g))
+			    (cond ((or (memq ':expansion times)
+				       (memq ':run-time (first g)))
 				   (let ((pnl (filespecs->ytools-pathnames
 					         (cdr g))))
 				      (pathnames-note-run-support
 					  pnl false
-					  loaded-mod-chunk)
-				      (dolist (pn pnl)
-					 (monitor-filoid-basis pn))))
+					  loaded-mod-chunk)))
 				  (t
-				   (format *error-output*
+				   (setq bad-group* g)
+				   (cerror "Forge on!"
 				      !"Warning: Meaningless to have ~
 					':compile-time' dependency in ~
-                                        module ~s"
+                                        module ~s~%"
 				      (YT-module-name module))))))))))))
-   true)
+   file-op-count*)
 
 (defvar module-now-loading* false)
 

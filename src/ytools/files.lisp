@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.31 2005/03/13 00:30:44 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.32 2005/03/14 06:02:02 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -346,18 +346,27 @@
 
 (defun loaded-chunk-augment-basis (loaded-ch added-bases)
   (let ((non-prin-bases (loaded-chunk-verify-basis loaded-ch)))
-     (setf (Chunk-basis loaded-ch)
-	   (append (Loaded-chunk-principal-bases loaded-ch)
-		   (union non-prin-bases
-			  added-bases)))))
+     ;; Avoid calling the Chunk-basis setter if possible
+     ;; so as not to trigger chunks-update that might interrupt
+     ;; another already in progress.--
+     (cond ((some (\\ (ab)
+		     (not (member ab non-prin-bases)))
+		  added-bases)
+	    (setf (Chunk-basis loaded-ch)
+		  (append (Loaded-chunk-principal-bases loaded-ch)
+			  (union non-prin-bases
+				 added-bases)))))))
 
 ;;; The first elements of the basis are always the principal-bases.
 ;;; Use this to change the rest --
 (defun loaded-chunk-change-basis (loaded-ch revised-basis)
-  (loaded-chunk-verify-basis loaded-ch)
-  (setf (Chunk-basis loaded-ch)
-	(append (Loaded-chunk-principal-bases loaded-ch)
-		revised-basis)))
+  (let ((non-prin-bases (loaded-chunk-verify-basis loaded-ch)))
+     (cond ((some (\\ (rb)
+		     (not (member rb non-prin-bases)))
+		  revised-basis)
+	    (setf (Chunk-basis loaded-ch)
+		  (append (Loaded-chunk-principal-bases loaded-ch)
+			  revised-basis))))))
 
 ;;; Returns excess basis elements beyond the principal ones --
 (defun loaded-chunk-verify-basis (loaded-ch)
@@ -373,7 +382,8 @@
 		  (error !"Chunk for loaded entity ~s~%~
                            has bogus basis ~s~%~
                            which differs from principal basis ~s"
-			 loaded-ch loaded-basis)))))))
+			 loaded-ch loaded-basis
+			 (Loaded-chunk-principal-bases loaded-ch))))))))
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
@@ -472,6 +482,10 @@
       (loop 
 	 (setq file-ch
 	       (Loaded-file-chunk-selection loaded-ch))
+	 (cond ((not file-ch)
+		(loaded-chunk-set-basis loaded-ch)
+		(setq file-ch
+		      (Loaded-file-chunk-selection loaded-ch))))
 	 (cond ((typep file-ch 'Loaded-file-chunk)
 		(setq loaded-ch file-ch)
 		;; Indirection; go around again looking
@@ -645,20 +659,30 @@
                                 [should be :object, :source, or :compile]~
                                 ~%  loaded-ch = ~s~%"
 			    manip loaded-ch)))
-	     (setf (Loaded-chunk-principal-bases loaded-ch)
-		   (list (ecase manip
-			    (:source
-			     (Loaded-file-chunk-source loaded-ch))
-			    (:compile
-			     (place-compiled-chunk
-				(Loaded-file-chunk-source loaded-ch)))
-			    (:object
-			     (Loaded-file-chunk-object loaded-ch)))))
-	     (setf (Chunk-basis loaded-ch)
-	           (append (Loaded-chunk-principal-bases loaded-ch)
+	     (let ((first-time (null (Loaded-chunk-principal-bases
+				         loaded-ch))))
+		(setf (Loaded-chunk-principal-bases loaded-ch)
+		      (list (ecase manip
+			       (:source
+				(Loaded-file-chunk-source loaded-ch))
+			       (:compile
+				(place-compiled-chunk
+				   (Loaded-file-chunk-source loaded-ch)))
+			       (:object
+				(Loaded-file-chunk-object loaded-ch)))))
+		(cond (first-time
+		       (setf (Chunk-basis loaded-ch)
+			     (append (Loaded-chunk-principal-bases loaded-ch)
+				     (mapcar
+				         (\\ (callee)
+					    (place-Loaded-chunk callee false))
+					 (File-chunk-callees file-ch)))))
+		      (t
+		       (loaded-chunk-change-basis
+			   loaded-ch 
 			   (mapcar (\\ (callee)
 				      (place-Loaded-chunk callee false))
-				   (File-chunk-callees file-ch))))))
+				   (File-chunk-callees file-ch))))))))
       (let ((selection 
 	       (cond ((eq manip ':compile)
 		      (place-File-chunk
@@ -899,7 +923,7 @@
 
 (defun compile-and-record (pn real-pn object-file cf-ch old-obj-write-time)
    (prog2
-      (file-op-message "Beginning compilation on" pn real-pn "...")
+      (file-op-message "Beginning compilation of" pn real-pn "...")
       (with-post-file-transduction-hooks
 	 (cleanup-after-file-transduction
 	    (let ((*compile-verbose* false))
@@ -1343,6 +1367,9 @@
 (defvar loaded-filoids-to-be-monitored* ':global)
 
 (defun monitor-filoid-basis (loaded-filoid-ch)
+   (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
+	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
+		 loaded-filoid-ch)))
    (cond ((eq loaded-filoids-to-be-monitored* ':global)
 	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
 		(loaded-filoids-to-be-monitored* !()))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.16 2005/03/13 00:30:43 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.17 2005/03/14 06:02:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(depends-on module funktion scan-depends-on)))
+   (export '(depends-on module funktion scan-depends-on self-compile-dep)))
 
 (eval-when (:compile-toplevel :load-toplevel)
 
@@ -150,30 +150,21 @@
 
 (defmacro depends-on (&rest stuff)
    (let ((dgroups (depends-on-args-group stuff)))
-      (let ((read-time-deps
-	       (mapcan (\\ (g)
-			  (cond ((memq ':read-time (first g))
-				 (list-copy (rest g)))
-				(t !())))
-		       dgroups))
-	    (run-time-deps
+      (let ((run-time-deps
 	       (mapcan (\\ (g)
 			  (cond ((memq ':run-time (first g))
-				 (list-copy (rest g)))
+				 (filespecs->ytools-pathnames (rest g)))
 				(t !())))
 		       dgroups)))
-	 ;; This is a kludge to avoid the calls to 'fload' here
-	 ;; changing the real default-fload-args* --
-	 `(let ((default-fload-args* (vector !() !() nil)))
-	     (progn
-		,@(include-if (not (null read-time-deps))
-		     `(eval-when (:compile-toplevel :execute)
-			 (cond (depends-on-enabled*
-				(fload ,@read-time-deps)))))
-		,@(include-if (not (null run-time-deps))
-		     `(eval-when (:load-toplevel :execute)
-			 (cond (depends-on-enabled*
-				(fload ,@run-time-deps))))))))))
+	 `(progn
+	     ,@(mapcan (\\ (pn) (list-copy (pathname-expansion pn)))
+		       run-time-deps)
+	     ;; This is a kludge to avoid the calls to 'fload' here
+	     ;; changing the real default-fload-args* --
+	     ,@(include-if (not (null run-time-deps))
+		  `(cond (depends-on-enabled*
+			  (let ((default-fload-args* (vector !() !() nil)))
+			     (fload ,@run-time-deps)))))))))
 
 (defvar end-header-dbg* false)
 
@@ -223,11 +214,27 @@
 				  loaded-file-ch)
 			       (pathnames-note-sub-file-deps
 				  pnl compiled-ch
+				  ;; Not clear why _these_
+				  ;; sub-file-types should be the
+				  ;; crucial ones.--
 				  (Sds-sub-file-types sdo-state))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
+;;;;			       (cond ((and (equal (Pathname-name
+;;;;						     (File-chunk-pathname
+;;;;							file-ch))
+;;;;						  "intypes")
+;;;;					   (not (memq ydecl::nisp-types-sub-file-type*
+;;;;						      (Sds-sub-file-types
+;;;;						          sdo-state))))
+;;;;				      (dbg-save sdo-state)
+;;;;				      (breakpoint depends-on-scan-depends-on
+;;;;					 "Missing link")))
 			       (pathnames-note-slurp-support
 				   pnl file-ch sdo-state)
+;;;;			       (dbg-save pnl file-ch sdo-state)
+;;;;			       (breakpoint depends-on-scan-depends-on
+;;;;				  "Noting slurp support for " file-ch)
 			       (setf (File-chunk-read-basis file-ch)
 				     (union (mapcar #'pathname-denotation-chunk
 						    pnl)
@@ -315,6 +322,9 @@
 				(File-chunk-callees filoid-ch))))))
 	 (loaded-chunk-augment-basis loaded-filoid-ch lbl))))
 
+;;; Create link that requires sub-files of all pathnames in 'pnl'
+;;; to be loaded or slurped before file handled by 'compiled-ch'
+;;; is compiled.
 (defun pathnames-note-sub-file-deps (pnl compiled-ch sub-file-types)
    (dolist (pn pnl)
       (multiple-value-bind (bl lbl)
@@ -334,9 +344,15 @@
 	    (let ((slurped-sub-file-ch
 		     (funcall (Sub-file-type-slurp-chunker sfty)
 			      (File-chunk-pathname file-ch))))
-	       (setf (Chunk-basis slurped-sub-file-ch)
-		     (adjoin loaded-dep-ch
-			     (Chunk-basis slurped-sub-file-ch))))))))
+;;;;	       (out "Introducing dependency: "
+;;;;		    :% 2 slurped-sub-file-ch
+;;;;		    :% 2 "has basis augmented with"
+;;;;		    :% 2 loaded-dep-ch :%)
+	       (cond ((not (memq loaded-dep-ch
+				 (Chunk-basis slurped-sub-file-ch)))
+		      (setf (Chunk-basis slurped-sub-file-ch)
+			    (cons loaded-dep-ch
+				  (Chunk-basis slurped-sub-file-ch))))))))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).
@@ -370,12 +386,18 @@
    (defun :^ (e sdo-state)
       (let* ((file-ch (Sds-file-chunk sdo-state))
 	     (compiled-ch (place-compiled-chunk file-ch)))
+;;;;	 (cond ((equal (Pathname-name (File-chunk-pathname file-ch))
+;;;;		       "intypes")
+;;;;		(dbg-save e sdo-state file-ch compiled-ch)
+;;;;		(breakpoint self-compile-dep-scan-depends-on
+;;;;		   "Self-compile dependency of sort(s) " e)))
 	 (cond ((eq (cadr e) ':load-source)
 		(pushnew (place-Loaded-source-chunk file-ch)
 			 (Chunk-update-basis compiled-ch)))
 	       (t
 		(dolist (sub-file-type-name (cdr e))
 		   (let ((sftype (lookup-sub-file-type sub-file-type-name)))
+		      (pushnew sftype (Sds-sub-file-types sdo-state))
 		      (compiled-ch-sub-file-link
 		         compiled-ch file-ch sftype false))))))
      false))
@@ -413,3 +435,8 @@
    (cond ((and (atom f) (> debuggability* 0))
 	  `',f)
 	 (t `#',f)))
+
+;;; Actual pathnames don't have expansions, but some pseudo-pathnames
+;;; do.
+(defgeneric pathname-expansion (xpn)
+   (:method ((xpn t)) !()))

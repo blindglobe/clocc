@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.19 2005/03/13 00:30:44 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.20 2005/03/14 06:02:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -12,7 +12,8 @@
 	     with-post-file-transduction-hooks after-file-transduction
 	     during-file-transduction setf-during-file-transduction 
 	     fload-verbose* eval-when-slurping
-	     make-Printable printable-as-string eof* slurp-eval)))
+	     make-Printable printable-as-string eof*
+	     slurp-eval slurp-ignore)))
 
 (defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
 (defvar obj-suffix* lisp-object-extn*)
@@ -460,11 +461,16 @@ after YTools file transducers finish.")
 	(eval-forms !()))
        ((null fl)
 	(setq eval-forms (nreverse eval-forms))
-	(multiple-value-bind
-	          (selected-tasks their-states)
-		  (cond ((null filter-forms)
-			 (values tasks states))
-			(t
+	;; If the filter-forms are missing, this is just a plain-
+	;; vanilla 'eval-when', and we assume the values returned
+	;; have nothing to do with whether some slurp tasks should cease.
+	(cond ((null filter-forms)
+	       (dolist (evf eval-forms)
+		  (eval evf))
+	       (values tasks states))
+	      (t
+	       (multiple-value-bind
+			 (selected-tasks their-states)
 			 (let ((selected-names
 				  (mapcan (\\ (ff) (list-copy (cdr ff)))
 					  filter-forms)))
@@ -477,34 +483,40 @@ after YTools file transducers finish.")
 						 (t !())))
 					tasks states)))
 			      (values (mapcar #'first select-zip)
-				      (mapcar #'second select-zip))))))
-	   ;; Now we do something a little odd, which is to
-	   ;; evaluate exactly the same code for each task.
-	   ;; To keep this from being meaningless, the variables
-	   ;; eval-slurp-task* and eval-slurp-state* are bound to the
-	   ;; current task and state.
-	   (do ((stskl selected-tasks (rest stskl))
-		(stl their-states (rest stl))
-		(continuing-tasks !())
-		(continuing-states !()))
-	       ((null stskl)
-		(values continuing-tasks continuing-states))
-	     (let ((eval-slurp-task* (car stskl))
-		   (eval-slurp-state* (car stl)))
-		(dolist (ev-form eval-forms)
-		   (cond ((not (eval ev-form))
-			  ;; If the form returns true, the task is done
-			  ;; Otherwise,we keep it on 'continuing-tasks'.
-			  (on-list eval-slurp-task* continuing-tasks)
-			  (on-list eval-slurp-state* continuing-states))))))
-	 ))
+				      (mapcar #'second select-zip))))
+		  ;; Now we do something a little odd, which is to
+		  ;; evaluate exactly the same code for each task.
+		  ;; To keep this from being meaningless, the variables
+		  ;; eval-slurp-task* and eval-slurp-state* are bound to the
+		  ;; current task and state.
+		  (do ((stskl selected-tasks (rest stskl))
+		       (stl their-states (rest stl))
+		       ;; Being "selected" means a task can be eliminated.
+		       ;; The unselected ones must therefore always
+		       ;; continue. --
+		       (continuing-tasks
+			   (set-difference tasks selected-tasks))
+		       (continuing-states
+			   (set-difference states their-states)))
+		      ((null stskl)
+		       (values continuing-tasks continuing-states))
+		    (let ((eval-slurp-task* (car stskl))
+			  (eval-slurp-state* (car stl)))
+		       (dolist (ev-form eval-forms)
+			  (cond ((not (eval ev-form))
+				 ;; If the form returns true, the task is done
+				 ;; Otherwise,we keep it on 'continuing-tasks'.
+				 (on-list eval-slurp-task*
+					  continuing-tasks)
+				 (on-list eval-slurp-state*
+					  continuing-states))))))))))
      (cond ((car-eq (car fl) ':slurp-filter)
 	    (on-list (car fl) filter-forms))
 	   (t
 	    (on-list (car fl) eval-forms)))))
 
 ;;; This has no effect when evaluated.  I
-(defmacro :slurp-filter (&whole e)
+(defmacro :slurp-filter (&whole e &rest _)
    `',e)
 
 (datafun general-slurper with-packages-unlocked
@@ -515,6 +527,9 @@ after YTools file transducers finish.")
 (defun slurp-eval (e _)
    (eval e)
    false)
+
+;;; For use by slurp tasks 
+(defun slurp-ignore (_ _) false)
 
 (defconstant can-get-write-times*
     #.(not (not (file-write-date

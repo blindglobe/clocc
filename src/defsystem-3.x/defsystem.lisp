@@ -2793,6 +2793,12 @@ the system definition, if provided."
     ;; and COMPONENT-HOST must respect the ANSI definition, hence,
     ;; they cannot be PATHNAMEs.  The simplification of the code is
     ;; useful.  SCL compatibility may be broken, but I doubt it will.
+
+    ;; 20050310 Marco Antoniotti
+    ;; After a suggestion by David Tolpin, the code is simplified even
+    ;; more, and the logic should be now more clear: use the user
+    ;; supplied pieces of the pathname if non nil.
+
     (cond ((pathname-logical-p pathname) ; See definition of test above.
 	   (setf pathname
 		 (merge-pathnames pathname
@@ -2800,38 +2806,40 @@ the system definition, if provided."
 				   :name (component-name component)
 				   :type (component-extension component
 							      type))))
-	   ;;(format t "new path = ~A~%" pathname)
 	   (namestring (translate-logical-pathname pathname)))
 	  (t
 	   (namestring
-	    (make-pathname :host (when (component-host component)
-				   ;; MCL2.0b1 and ACLPC cause an error on
-				   ;; (pathname-host nil)
-				   (component-host component))
+	    (make-pathname :host (or (component-host component)
+				     (pathname-host pathname))
+
 			   :directory (pathname-directory pathname
-							  #+scl :case #+scl :common
+							  #+scl :case
+							  #+scl :common
 							  )
-			   ;; Use :directory instead of :defaults
+
 			   :name (pathname-name pathname
-						#+scl :case #+scl :common
+						#+scl :case
+						#+scl :common
 						)
-			   :type #-scl (component-extension component type)
+
+			   :type
+			   #-scl (component-extension component type)
 			   #+scl (string-upcase
 				  (component-extension component type))
+
 			   :device
 			   #+sbcl
 			   :unspecific
 			   #-(or :sbcl)
-			   (let ((dev (component-device component)))
-			     (if dev
-				 dev
-			         (pathname-device pathname
-						  #+scl :case #+scl :common
-						  )))
+			   (or (component-device component)
+			       (pathname-device pathname
+						#+scl :case
+						#+scl :common
+						))
 			   ;; :version :newest
 			   ))))))
 
-;;; What about CMU17 :device :unspecific in the above?
+
 
 #-lispworks
 (defun translate-version (version)

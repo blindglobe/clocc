@@ -44,6 +44,20 @@
   "If T, compiles and loads the MK:DEFSYSTEM files.")
 
 
+;;;  *mk-defsystem-load-verbose*, *mk-defsystem-load-print* --
+;;; The following variables are for debugging the load procedure.
+;;; They are used to override the values of *LOAD-PRINT* and
+;;; *LOAD-VERBOSE*.
+;;;
+;;; Note that it they are DEFVAR's for a good reason.  Loading the
+;;; file should not change their values; however, loading the file should
+;;; define them if they are not defined yet.
+
+(defvar *mk-defsystem-load-verbose* nil)
+
+(defvar *mk-defsystem-load-print* nil)
+
+
 ;;;===========================================================================
 ;;; Support code and actual load forms.
 ;;; You should not be required to look at anyhting beyond this point
@@ -69,9 +83,11 @@
     "MAKE-DEFSYSTEM:utilities;run-os-program"
     "MAKE-DEFSYSTEM:utilities;save-image"
 
-    "MAKE-DEFSYSTEM:;language-support"
+    "MAKE-DEFSYSTEM:language-support"
+    "MAKE-DEFSYSTEM:languages;shared;shared-functionality"
     "MAKE-DEFSYSTEM:languages;c;c"
     "MAKE-DEFSYSTEM:languages;fortran;fortran"
+    "MAKE-DEFSYSTEM:languages;java;java"
     ;; "MAKE-DEFSYSTEM:languages;ada;ada"
     ;; "MAKE-DEFSYSTEM:languages;scheme;scheme"
 
@@ -84,7 +100,7 @@
     "MAKE-DEFSYSTEM:;predefined-specialized-components"
 
     "MAKE-DEFSYSTEM:impl-dependent;common"
-    #+cmu "MAKE-DEFSYSTEM:impl-dependent;cmucl"
+    #+(or cmu sbcl scl) "MAKE-DEFSYSTEM:impl-dependent;cmucl" ; Hopefully correct.
     #+clisp "MAKE-DEFSYSTEM:impl-dependent;clisp"
     #+lispworks "MAKE-DEFSYSTEM:impl-dependent;lispworks"
     #+allegro "MAKE-DEFSYSTEM:impl-dependent;allegro"
@@ -156,12 +172,14 @@
 	   )
 	  (";*.*.*" ,*mk-defsystem-absolute-directory-pathname*)
 	  (";*.*" ,*mk-defsystem-absolute-directory-pathname*)
+	  ("*.*.*" ,*mk-defsystem-absolute-directory-pathname*)
+	  ("*.*" ,*mk-defsystem-absolute-directory-pathname*)
 	  ))
 
   (flet ((load-compiling-if-needed (lp-string-filename-sans-extension)
 	   (declare (type string lp-string-filename-sans-extension))
-	   (let* ((*load-print* nil)
-		  (*load-verbose* nil)
+	   (let* ((*load-print* *mk-defsystem-load-print*)
+		  (*load-verbose* *mk-defsystem-load-verbose*)
 		  (compiled-file-type
 		   (pathname-type
 		    (compile-file-pathname *default-pathname-defaults*)))
@@ -193,29 +211,29 @@
 			    binary-physical-filename
 			    ))
 		   (*mk-defsystem-load-source-only-p*
-		    (load source-physical-filename :print nil))
+		    (load source-physical-filename))
 
 		   (*mk-defsystem-load-newer-p*
 		    (if (and (probe-file binary-physical-filename)
 			     (> (file-write-date binary-physical-filename)
 				(file-write-date source-physical-filename)))
-			(load binary-physical-filename :print nil)
-			(load source-physical-filename :print nil)))
+			(load binary-physical-filename)
+			(load source-physical-filename)))
 
 		   (*mk-defsystem-compile-and-load-p*
 		    (cond ((and (probe-file binary-physical-filename)
 				(> (file-write-date binary-physical-filename)
 				   (file-write-date source-physical-filename)))
-			   (load binary-physical-filename :print nil))
+			   (load binary-physical-filename))
 			  (t
 			   (compile-file source-physical-filename
 					 :output-file binary-physical-filename
-					 :print nil)
-			   (load binary-physical-filename :print nil))))
+					)
+			   (load binary-physical-filename))))
 		   )))			; end of load-compiling-if-needed
 	 )
     (format *trace-output*
-	    "~&;;; MAKE: Loading MK:DEFSYSTEM package version ~A." "4.0")
+	    "~&;;; MK4: Loading MK:DEFSYSTEM package version ~A.~%" "4.0")
     (unless (member :cl-environment *features*)
       (format *trace-output*
 	      "~&;;; MAKE: Ensuring CL-ENVIRONMENT package is present.")

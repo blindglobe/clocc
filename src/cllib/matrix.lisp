@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.12 2004/12/20 22:30:21 sds Exp $
+;;; $Id: matrix.lisp,v 2.13 2004/12/23 16:40:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -25,7 +25,8 @@
   ;; `divf'
   (require :cllib-math (translate-logical-pathname "cllib:math")))
 
-(export '(matrix-print matrix-multiply array-copy array-lin-comb dimension
+(export '(matrix-print matrix-to-file matrix-from-file random-matrix
+          matrix-multiply array-copy array-lin-comb dimension
           matrix-id matrix-id-p matrix-transpose matrix-symmetric-p bilinear
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
           matrix-solve matrix-inverse))
@@ -48,8 +49,9 @@ By default prints the contents.
                ((nil) (formatter " ~S"))
                (t fmt-arg))))
     (declare (type index-t rank))
+    (fresh-line out)
     (when atp
-      (format out ";; Matrix: rank: ~d; dimension~:p: ~{~d~^x~}~%"
+      (format out ";; ~[Scalar~;Vector~;Matrix~:;Rank ~:*~:D array~]; dimension~:p: ~{~d~^x~}~%"
               rank (array-dimensions aa)))
     (unless colp
       (case rank
@@ -62,9 +64,49 @@ By default prints the contents.
                   (list 'matrix aa 1 2)))))
     aa))
 
+(defun matrix-to-file (file matrix &key (log *standard-output*))
+  "write matrix into the file, suitable for matlab/octave input"
+  (with-timing (:out log)
+    (when log
+      (format log ";; ~S: ~{~D~^x~}..." 'matrix-to-file
+              (array-dimensions matrix))
+      (force-output log))
+    (with-open-file (out file :direction :output :if-exists :rename)
+      (with-standard-io-syntax
+        (loop :for ii :from 0 :below (array-dimension matrix 0) :do
+          (loop :for jj :from 0 :below (array-dimension matrix 1) :do
+            (unless (zerop jj) (write-char #\Space out))
+            (write (aref matrix ii jj) :stream out))
+          (terpri out)))
+      (when log
+        (format log "~:D byte~:P" (file-length out))))))
+
+(defun matrix-from-file (file &key (log *standard-output*))
+  "read matrix from a file written by matlab/octave"
+  (with-timing (:out log)
+    (with-open-file (in file :direction :input)
+      (when log
+        (format log ";; ~S(~A, ~:D byte~:P)..."
+                'matrix-from-file file (file-length in))
+        (force-output log))
+      (let* ((list
+              (loop :for line = (read-line in nil nil) :while line
+                :collect (port:string-tokens line)))
+             (mx (make-array (list (length list) (length (first list)))
+                             :initial-contents list)))
+        (when log (format log "~{~D~^x~}" (array-dimensions mx)))
+        mx))))
+
 ;;;
 ;;; unity &c
 ;;;
+
+(defun random-matrix (rows cols max)
+  "return the random matrix of the given dimensions and element range"
+  (let ((mx (make-array (list rows cols))))
+    (dotimes (i rows mx)
+      (dotimes (j cols)
+        (setf (aref mx i j) (random max))))))
 
 (define-condition dimension (code)
   ((mesg :type simple-string :reader code-mesg :initform

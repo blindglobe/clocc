@@ -103,6 +103,13 @@ file or :asdf if found asdf file"
        (asdf:oos 'asdf:load-op module-name) 
        t))))
 
+(defvar *original-require-function* nil)
+(defun original-require (&rest args)
+  (if *original-require-function*
+      (apply *original-require-function* args)
+    (format *debug-io* "~&Original require function not found~%")))
+(export 'original-require)
+
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...
 (defun clc-require (module-name &optional pathname definition-pname
@@ -123,11 +130,29 @@ file or :asdf if found asdf file"
 			 default-action
 			 version)))
      (:asdf
-      (require-asdf module-name)))))
-    
+      (require-asdf module-name))
+     ;; Call original vendor's require if can't find system file
+     (otherwise
+      (original-require module-name)))))
+
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:
 (eval-when (:load-toplevel :execute)
+  ; save original require function
+  (setq *original-require-function*
+         #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks)
+	 (symbol-function 'lisp:require)
+         #+(and :excl :allegro-v4.0)
+	 (symbol-function 'cltl1:require)
+         #+:lispworks3.1
+	 (symbol-function 'common-lisp::require)
+         #+:sbcl
+	 (symbol-function 'cl:require)
+         #+(and :lispworks (not :lispworks3.1))
+	 (system-function 'system::require)
+         #+:mcl
+	 (system-function 'ccl:require))
+	
   #-(or (and allegro-version>= (version>= 4 1)) :lispworks)
   (setf (symbol-function
          #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require

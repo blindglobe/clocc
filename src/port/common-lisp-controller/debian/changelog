@@ -1,6 +1,8 @@
 common-lisp-controller (3.17+3.18.pre1) unstable; urgency=low
 
-  * Add preliminary asdf support. Needs testing
+  * Add preliminary asdf support.
+  * CLC-REQUIRE now calls original REQUIRE function if system
+  file is not found
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 26 Aug 2002 02:32:31 -0600
 

@@ -34,7 +34,7 @@ clisp:
 sbcl:
 	$(PRE_TEST)
 	time $(SBCL) --eval '(load "tests")'
-	$(RM) *.x86f ;
+	$(RM) *.x86f *.fasl ;
 	$(POST_TEST)
 
 cmucl-normal:

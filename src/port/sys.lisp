@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.44 2002/07/21 15:23:04 sds Exp $
+;;; $Id: sys.lisp,v 1.45 2002/10/27 17:01:33 kevinrosenberg Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -55,7 +55,7 @@
                            :key #'string)))
           (if cell
               (setf (cdr cell) (string val))
-              (push (cons (string var) (string val)) ext:*environment-list*)))
+              (push (cons (intern (string var) "KEYWORD") (string val)) ext:*environment-list*)))
   #+gcl (si:setenv (string var) (string val))
   #+lispworks (setf (lw:environment-variable (string var)) (string val))
   #+lucid (setf (lcl:environment-variable (string var)) (string val))

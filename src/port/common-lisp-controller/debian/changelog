@@ -1,3 +1,10 @@
+common-lisp-controller (3.58) unstable; urgency=low
+
+  * Use :: instead of : when testing for presence of
+    sb-ext::*module-provider-functions* (closes:186059)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 24 Mar 2003 09:45:36 -0700
+
 common-lisp-controller (3.57) unstable; urgency=low
 
   * Improved error reporting script :-(

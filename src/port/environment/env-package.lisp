@@ -2,156 +2,162 @@
 
 ;;; env-package.lisp --
 ;;;
-;;; Copyright (c) 2000, 2001 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
+;;; New version that placates Franz's Allegro kludgy case sensitivity modes.
+
 (defpackage "CL.ENVIRONMENT" (:use "COMMON-LISP")
   (:nicknames "CL.ENV"
-	      "ORG.CONS.CLOCC/MARCOXA/CL-ENVIRONMENT")
+	      "ORG.CONS.CLOCC/MARCOXA/CL-ENVIRONMENT"
+	      "cl.env")
 
   ;; Shadow symbols from Chapter 25 of the CLHS.
-  (:shadow "SOFTWARE-TYPE"
-	   "SOFTWARE-VERSION"
-	   "MACHINE-TYPE"
-	   "MACHINE-VERSION"
-	   "MACHINE-INSTANCE"
+  (:shadow #:software-type
+	   #:software-version
+	   #:machine-type
+	   #:machine-version
+	   #:machine-instance
 	   )
   
   ;; Basic Classes.
-  (:export "SOFTWARE"
-	   "MACHINE"
-	   "OPERATING-SYSTEM"
-	   "COMMON-LISP-IMPLEMENTATION"
+  (:export #:software
+	   #:machine
+	   #:operating-system
+	   #:common-lisp-implementation
 	   )
 
   ;; Basic Interface.
-  (:export "FEATURE-TAG"
+  (:export #:feature-tag
 
-	   "SOFTWARE-TYPE"
-	   "SOFTWARE-VERSION"
-	   "MACHINE-TYPE"
-	   "MACHINE-VERSION"
-	   "MACHINE-INSTANCE"
+	   #:software-type
+	   #:software-version
+	   #:machine-type
+	   #:machine-version
+	   #:machine-instance
 
-	   "OPERATING-SYSTEM-TYPE"
-	   "OPERATING-SYSTEM-VERSION"
-	   "OPERATING-SYSTEM-FEATURE-TAG"
-	   "OS-TYPE"		; Abbreviation.
-	   "OS-VERSION"		; Abbreviation.
-	   "OS-FEATURE-TAG"     ; Abbreviation.
+	   #:operating-system-type
+	   #:operating-system-version
+	   #:operating-system-feature-tag
+	   #:os-type		; Abbreviation.
+	   #:os-version		; Abbreviation.
+	   #:os-feature-tag     ; Abbreviation.
 
-	   "FIND-OPERATING-SYSTEM-CLASS"
-	   "FIND-OS-CLASS"	; Abbreviation.
+	   #:find-operating-system-class
+	   #:find-os-class	; Abbreviation.
 
-	   "OPERATING-SYSTEM-TAG-COMPATIBLE-P"
-	   "OS-TAG-COMPATIBLE-P"	; Abbreviation
+	   #:operating-system-tag-compatible-p
+	   #:os-tag-compatible-p	; Abbreviation
 
-	   "OS-FILE-SYSTEM-DIRECTORY-SEPARATOR"
-	   "CURRENT-DIRECTORY-PATHNAME"
+	   #:os-file-system-directory-separator
+	   #:current-directory-pathname
 
 	   
-	   "COMMON-LISP-IMPLEMENTATION-TYPE"
-	   "COMMON-LISP-IMPLEMENTATION-VERSION"
+	   #:common-lisp-implementation-type
+	   #:common-lisp-implementation-version
 
-	   "*COMMON-LISP-IMPLEMENTATION*"
-	   "*CL*"
-	   "*OPERATING-SYSTEM*"
-	   "*OS*"
-	   "*MACHINE*"
+	   #:*common-lisp-implementation*
+	   #:*cl*
+	   #:*operating-system*
+	   #:*os*
+	   #:*machine*
 
-	   "VERSION"
-	   "VERSION-CASE"
+	   #:version
+	   #:version-case
 	   )
 
   ;;---------------------------------------------
   ;; Exports related to known CL implementations.
 
-  (:export "GENERIC-COMMON-LISP-IMPLEMENTATION")
+  (:export #:generic-common-lisp-implementation)
   
   ;; Franz Inc. Allegro.
-  (:export "ALLEGRO")
+  (:export #:allegro)
 
   ;; Harlequin LispWorks.
-  (:export "LISPWORKS")
+  (:export #:lispworks)
 
   ;; MCL.
-  (:export "MCL")
+  (:export #:mcl)
 
   ;; CMUCL and SBCL.
-  (:export "CMUCL" "SBCL")
+  (:export #:cmucl #:sbcl)
 
   ;; CLisp.
-  (:export "CLISP")
+  (:export #:clisp)
 
   ;; Kcl and derivatives.
-  (:export "KCL" "IBCL" "AKCL" "GCL" "ECOLISP")
+  (:export #:kcl #:ibcl #:akcl #:gcl #:ecolisp)
 
   ;; ECLipse
-  (:export "ECLIPSE")
+  (:export #:eclipse)
 
   ;; Lucid
-  (:export "LUCID")
+  (:export #:lucid)
 
   ;; Corman
-  (:export "CORMAN")
+  (:export #:corman)
 
   ;; Genera Symbolics Common Lisp
-  (:export "SCL")
+  (:export #:scl)
 
   ;;--------------------------------------------
   ;; Exports related to known Operating Systems.
 
   ;; UNIX (generic).
-  (:export "UNIX")
+  (:export #:Unix)
 
   ;; SunOS and Solaris.
-  (:export "SUN-OS" "SOLARIS")
+  (:export #:Sun-OS #:Solaris)
 
   ;; HP-UX.
-  (:export "HP-UX")
+  (:export #:HP-UX)
 
   ;; IRIX.
-  (:export "IRIX")
+  (:export #:Irix)
 
   ;; Linux.
-  (:export "LINUX")
+  (:export #:Linux)
 
   ;; MS-DOS and Windows.
-  (:export "MS-DOS"
-	   "MS-WINDOWS"
-	   "MS-WINDOWS-32"
-	   "MS-WINDOWS-95"
-	   "MS-WINDOWS-98"
-	   "MS-WINDOWS-ME"
-	   "MS-WINDOWS-NT"
-	   "MS-WINDOWS-NT-TSE"
-	   "MS-WINDOWS-2000"
-	   "MS-WINDOWS-XP"
+  (:export #:MS-DOS
+	   #:MS-Windows
+	   #:MS-Windows-32
+	   #:MS-Windows-95
+	   #:MS-Windows-98
+	   #:MS-Windows-ME
+	   #:MS-Windows-NT
+	   #:MS-Windows-NT-TSE
+	   #:MS-Windows-2000
+	   #:MS-Windows-XP
 	   )
 
   ;; Mac.
-  (:export "MAC-OS")
+  (:export #:Mac-OS #:Mac-OS-X)
 
   ;; Genera.
-  (:export "GENERA")
+  (:export #:Genera)
+
+  ;; Amiga.
+  (:export #:Amiga)
 
   ;;--------------------------------------------
   ;; Exports related to known Machine Architectures.
-  (:export "INTEL-X86-MACHINE"
-	   "SPARC-MACHINE"
-	   "PPC-MACHINE"
-	   "MIPS-MACHINE"
-	   "ALPHA-MACHINE")
+  (:export #:intel-x86-machine
+	   #:sparc-machine
+	   #:ppc-machine
+	   #:mips-machine
+	   #:alpha-machine)
 
   ;;--------------------------------------------
   ;; Across the board utilities.
-  (:export "COMPILED-FILE-EXTENSION"
-	   "FILE-SYSTEM-DIRECTORY-SEPARATOR"
-	   "CURRENT-WORKING-DIRECTORY"
-	   "CWD"
+  (:export #:compiled-file-extension
+	   #:file-system-directory-separator
+	   #:current-working-directory
+	   #:cwd
 	   
-	   "SYSTEM-INFO")
+	   #:system-info)
 
   )
 

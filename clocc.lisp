@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.9 2000/08/19 21:23:05 sds Exp $
+;;; $Id: clocc.lisp,v 1.10 2000/11/16 18:29:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -24,29 +24,30 @@
   (setq comp:*cltl1-compile-file-toplevel-compatibility-p* nil)
   ;; Duane Rettig <duane@franz.com>:
   ;; TIME reports 32 other bytes too many CL unless tuned with
-  (setq excl::time-other-base 32)
-  ;; From Erik Naggum <erik@naggum.no> [22 Feb 1999 10:27:45 +0000]
-  ;; fixes the (read-from-string "[#\\x]") problem
-  (loop with readtables = (excl::get-objects 11)
-        for i from 1 to (aref readtables 0)
-        for readtable = (aref readtables i) do
-        (when (excl::readtable-dispatch-tables readtable)
-          ;; reader for character names immune cltl1
-          (set-dispatch-macro-character
-           #\# #\\
-           (excl::named-function
-            excl::sharp-backslash
-            (lambda (stream backslash font)
-              (declare (ignore font))
-              (unread-char backslash stream)
-              (let* ((charstring (excl::read-extended-token stream)))
-                (unless *read-suppress*
-                  (or (character charstring)
-                      (name-char charstring)
-                      (excl::internal-reader-error
-                       stream "Meaningless character name ~A"
-                       (string-upcase charstring)))))))
-           readtable))))
+  (setq excl::time-other-base 32))
+;; From Erik Naggum <erik@naggum.no> [22 Feb 1999 10:27:45 +0000]
+;; fixes the (read-from-string "[#\\x]") problem
+#+(and allegro (not (version>= 6)))
+(loop with readtables = (excl::get-objects 11)
+      for i from 1 to (aref readtables 0)
+      for readtable = (aref readtables i) do
+      (when (excl::readtable-dispatch-tables readtable)
+        ;; reader for character names immune cltl1
+        (set-dispatch-macro-character
+         #\# #\\
+         (excl::named-function
+          excl::sharp-backslash
+          (lambda (stream backslash font)
+            (declare (ignore font))
+            (unread-char backslash stream)
+            (let* ((charstring (excl::read-extended-token stream)))
+              (unless *read-suppress*
+                (or (character charstring)
+                    (name-char charstring)
+                    (excl::internal-reader-error
+                     stream "Meaningless character name ~A"
+                     (string-upcase charstring)))))))
+         readtable)))
 #+allegro-v4.3                  ; From Erik Naggum <erik@naggum.no>
 (unless (member :key (excl:arglist #'reduce) :test #'string=)
   (setq excl:*compile-advice* t)

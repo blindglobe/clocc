@@ -303,6 +303,14 @@
 ;;;         :time           same as :percent-time
 ;;;         :cons           same as :percent-cons
 ;;;
+;;; REPORT &key (names :all)                                  [Function]
+;;;             (nested :exclusive)
+;;;             (threshold 0.01)
+;;;             (sort-key :percent-time)
+;;;             (ignore-no-calls nil)
+;;;
+;;; Same as REPORT-MONITORING but we use a nicer keyword interface.
+;;;
 ;;; DISPLAY-MONITORING-RESULTS &optional (threshold 0.01)     [Function]
 ;;;                                      (key :percent-time)
 ;;; Prints a table showing for each named function:
@@ -414,13 +422,14 @@ Estimated total monitoring overhead: 0.88 seconds
 (provide "monitor")
 
 (export '(*monitored-functions*
-          monitor monitor-all unmonitor monitor-form
-          with-monitoring
-          reset-monitoring-info reset-all-monitoring
-          monitored
-          report-monitoring
-          display-monitoring-results
-          monitoring-encapsulate monitoring-unencapsulate))
+	  monitor monitor-all unmonitor monitor-form
+	  with-monitoring
+	  reset-monitoring-info reset-all-monitoring
+	  monitored
+	  report-monitoring
+	  display-monitoring-results
+	  monitoring-encapsulate monitoring-unencapsulate
+	  report))
 
 
 ;;; Warn user if they're loading the source instead of compiling it first.
@@ -1030,97 +1039,106 @@ adjusted for overhead."
     (dotimes (i min-args) (push (gensym) required-args))
     `(lambda (name)
        (let ((inclusive-time 0)
-             (inclusive-cons 0)
-             (exclusive-time 0)
-             (exclusive-cons 0)
-             (calls 0)
-             (nested-calls 0)
-             (old-definition (place-function name)))
-         (declare (type time-type inclusive-time)
-                  (type time-type exclusive-time)
-                  (type consing-type inclusive-cons)
-                  (type consing-type exclusive-cons)
-                  (fixnum calls)
-                  (fixnum nested-calls))
-         (pushnew name *monitored-functions*)
+	     (inclusive-cons 0)
+	     (exclusive-time 0)
+	     (exclusive-cons 0)
+	     (calls 0)
+	     (nested-calls 0)
+	     (old-definition (place-function name)))
+	 (declare (type time-type inclusive-time)
+		  (type time-type exclusive-time)
+		  (type consing-type inclusive-cons)
+		  (type consing-type exclusive-cons)
+		  (fixnum calls)
+		  (fixnum nested-calls))
+	 (pushnew name *monitored-functions*)
 
-         (setf (place-function name)
-               #'(lambda (,@required-args
-                          ,@(when optionals-p `(&rest optional-args)))
-                   (let ((prev-total-time *total-time*)
-                         (prev-total-cons *total-cons*)
-                         (prev-total-calls *total-calls*)
-;                        (old-time inclusive-time)
-;                        (old-cons inclusive-cons)
-;                        (old-nested-calls nested-calls)
-                         (start-time (get-time))
-                         (start-cons (get-cons)))
-                     (declare (type time-type prev-total-time)
-                              (type time-type start-time)
-                              (type consing-type prev-total-cons)
-                              (type consing-type start-cons)
-                              (fixnum prev-total-calls))
-                     (multiple-value-prog1
-                         ,(if optionals-p
-                              `(apply old-definition
-                                      ,@required-args optional-args)
-                              `(funcall old-definition ,@required-args))
-                       (let ((delta-time (- (get-time) start-time))
-                             (delta-cons (- (get-cons) start-cons)))
-                         ;; Calls
-                         (incf calls)
-                         (incf *total-calls*)
-                            ;;; nested-calls includes this call
-                         (incf nested-calls (the fixnum
-                                                 (- *total-calls*
-                                                    prev-total-calls)))
-;                        (setf nested-calls (+ old-nested-calls
-;                                              (- *total-calls*
-;                                                 prev-total-calls)))
-                         ;; Time
-                            ;;; Problem with inclusive time is that it
-                            ;;; currently doesn't add values from recursive
-                            ;;; calls to the same function. Change the
-                            ;;; setf to an incf to fix this?
-                         (incf inclusive-time (the time-type delta-time))
-;                        (setf inclusive-time (+ delta-time old-time))
-                         (incf exclusive-time (the time-type
-                                                   (+ delta-time
-                                                      (- prev-total-time
-                                                         *total-time*))))
-                         (setf *total-time* (the time-type
-                                                 (+ delta-time
-                                                    prev-total-time)))
-                         ;; Consing
-                         (incf inclusive-cons (the consing-type delta-cons))
-;                        (setf inclusive-cons (+ delta-cons old-cons))
-                         (incf exclusive-cons (the consing-type
-                                                   (+ delta-cons
-                                                      (- prev-total-cons
-                                                         *total-cons*))))
-                         (setf *total-cons*
-                               (the consing-type
-                                    (+ delta-cons prev-total-cons))))))))
-         (setf (get-monitor-info name)
-               (make-metering-functions
-                :name name
-                :old-definition old-definition
-                :new-definition (place-function name)
-                :read-metering #'(lambda ()
-                                   (values inclusive-time
-                                           inclusive-cons
-                                           exclusive-time
-                                           exclusive-cons
-                                           calls
-                                           nested-calls))
-                :reset-metering #'(lambda ()
-                                    (setq inclusive-time 0
-                                          inclusive-cons 0
-                                          exclusive-time 0
-                                          exclusive-cons 0
-                                          calls 0
-                                          nested-calls 0)
-                                    t)))))))
+	 (setf (place-function name)
+	       #'(lambda (,@required-args
+			  ,@(when optionals-p
+				  #+cmu `(c:&more arg-context arg-count)
+				  #-cmu `(&rest optional-args)))
+		   (declare (optimize (speed 3) (safety 0) (debug 0)))
+		   (let ((prev-total-time *total-time*)
+			 (prev-total-cons *total-cons*)
+			 (prev-total-calls *total-calls*)
+;			 (old-time inclusive-time)
+;			 (old-cons inclusive-cons)
+;			 (old-nested-calls nested-calls)
+			 (start-time (get-time))
+			 (start-cons (get-cons)))
+		     (declare (type time-type prev-total-time)
+			      (type time-type start-time)
+			      (type consing-type prev-total-cons)
+			      (type consing-type start-cons)
+			      (fixnum prev-total-calls))
+		     (multiple-value-prog1
+			 ,(if optionals-p
+			      #+cmu `(multiple-value-call
+					 old-definition
+				       (values ,@required-args)
+				       (c:%more-arg-values arg-context
+							   0
+							   arg-count))
+			      #-cmu `(apply old-definition 
+				      ,@required-args optional-args)
+			      `(funcall old-definition ,@required-args))
+		       (let ((delta-time (- (get-time) start-time))
+			     (delta-cons (- (get-cons) start-cons)))
+			 ;; Calls
+			 (incf calls)
+			 (incf *total-calls*)
+			    ;;; nested-calls includes this call
+			 (incf nested-calls (the fixnum 
+						 (- *total-calls*
+						    prev-total-calls)))
+;			 (setf nested-calls (+ old-nested-calls
+;					       (- *total-calls*
+;						  prev-total-calls)))
+			 ;; Time
+			    ;;; Problem with inclusive time is that it
+			    ;;; currently doesn't add values from recursive
+			    ;;; calls to the same function. Change the
+			    ;;; setf to an incf to fix this?
+			 (incf inclusive-time (the time-type delta-time))
+;			 (setf inclusive-time (+ delta-time old-time))
+			 (incf exclusive-time (the time-type
+						   (+ delta-time
+						      (- prev-total-time 
+							 *total-time*))))
+			 (setf *total-time* (the time-type
+						 (+ delta-time
+						    prev-total-time)))
+			 ;; Consing
+			 (incf inclusive-cons (the consing-type delta-cons))
+;			 (setf inclusive-cons (+ delta-cons old-cons))
+			 (incf exclusive-cons (the consing-type 
+						   (+ delta-cons
+						      (- prev-total-cons 
+							 *total-cons*))))
+			 (setf *total-cons* 
+			       (the consing-type 
+				    (+ delta-cons prev-total-cons))))))))
+	 (setf (get-monitor-info name)
+	       (make-metering-functions
+		:name name
+		:old-definition old-definition
+		:new-definition (place-function name)
+		:read-metering #'(lambda ()
+				   (values inclusive-time
+					   inclusive-cons
+					   exclusive-time
+					   exclusive-cons
+					   calls
+					   nested-calls))
+		:reset-metering #'(lambda ()
+				    (setq inclusive-time 0
+					  inclusive-cons 0
+					  exclusive-time 0 
+					  exclusive-cons 0
+					  calls 0
+					  nested-calls 0)
+				    t)))))))
 );; End of EVAL-WHEN
 
 ;;; For efficiency reasons, we precompute the encapsulation functions

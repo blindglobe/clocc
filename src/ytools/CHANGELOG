@@ -1,5 +1,13 @@
-$Id: CHANGELOG,v 1.31.2.9 2005/03/17 17:51:16 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.10 2005/03/28 03:23:56 airfoyle Exp $
 	
+2005-03-27: Rethink of alt-version hack for Code-file-chunks.
+            Reintroduced idea from old YTools of having lightweight
+            version control apply purely at the file-list-parsing
+            level (e.g., in parsing the arguments to 'fload').
+
+            Got slurp dependencies right (or more nearly right) in
+            file chunks.
+
 2005-03-16: Rethink of what it means to slurp a module definition.            
 	    Corrected bug in implementation of -x flag to 'fload'.
 

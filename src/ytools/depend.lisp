@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.22 2005/03/26 14:30:05 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.23 2005/03/28 03:23:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -231,18 +231,18 @@
 					   unexpected context ~s~%"
 					 e)))))
 			(cond ((memq ':run-time (first g))
-			       (pathnames-note-run-support
-				  pnl file-ch
-				  loaded-file-ch)
-			       (cond (compiled-ch
-				      (pathnames-note-sub-file-deps
-					 pnl compiled-ch
-					 ;; Not clear why _these_
+			       (let ((sub-file-types
+				        (Sds-sub-file-types sdo-state)))
+					 ;; -- Not clear why _these_
 					 ;; sub-file-types should be the
-					 ;; crucial ones.--
-					 (Sds-sub-file-types sdo-state))))))
+					 ;; crucial ones.
+				  (pathnames-note-run-support
+				     pnl file-ch
+				     loaded-file-ch)
+				  (pathnames-note-sub-file-deps
+				     pnl file-ch compiled-ch sub-file-types))))
 			(multiple-value-bind (slurp-dep which-slurp-types)
-			                     (extract-slurp-times (first g))
+			                     (extract-slurp-types (first g))
 			   (cond (slurp-dep
 				  (pathnames-note-slurp-support
 					  pnl file-ch which-slurp-types)
@@ -266,16 +266,18 @@
 
 ;;; Returns < read-or-slurp-dependency, slurp-types >
 ;;; If all slurp-types are involved, second val is !().
-(defun extract-slurp-times (times)
+(defun extract-slurp-types (times)
    (cond ((or (memq ':read-time times)
 	      (memq ':slurp-time times))
 	  (values true !()))
 	 (t
-	  (let ((slurp-times !()))
+	  (let ((slurp-types !())
+		(slurp-time-dependency false))
 	     (dolist (time times)
 	        (cond ((car-eq time ':slurp-time)
-		       (setq slurp-times (union (cdr time) slurp-times)))))
-	     slurp-times))))
+		       (setq slurp-time-dependency true)
+		       (setq slurp-types (union (cdr time) slurp-types)))))
+	     (values slurp-time-dependency slurp-types)))))
 
 ;;; Return a list of groups, each of the form
 ;;; ((<time>*)
@@ -352,17 +354,41 @@
 
 ;;; Create link that requires sub-files of all pathnames in 'pnl'
 ;;; to be loaded or slurped before file handled by 'compiled-ch'
-;;; is compiled.
-(defun pathnames-note-sub-file-deps (pnl compiled-ch sub-file-types)
-   (dolist (pn pnl)
-      (multiple-value-bind (bl lbl)
-			   (pathname-run-support pn)
-			   (declare (ignore lbl))
-	 (dolist (callee-ch bl)
-	    (cond ((typep callee-ch 'Code-file-chunk)
-		   (dolist (sfty sub-file-types)
-		      (compiled-ch-sub-file-link
-			 compiled-ch callee-ch sfty true))))))))
+;;; is compiled;
+;;; PLUS link that requires any sub-file of a pathname in 'pnl'
+;;; to be loaded before the corresponding sub-file of 'file-ch'.
+(defun pathnames-note-sub-file-deps (pnl file-ch compiled-ch sub-file-types)
+   (cond ((typep file-ch 'Code-file-chunk)
+	  (let ((filename (Code-file-chunk-pathname file-ch)))
+	     (dolist (pn pnl)
+	        (let ((code-chunk
+		         (pathname-denotation-chunk pn)))
+		   (cond ((typep code-chunk 'Code-file-chunk)
+			  (dolist (sfty sub-file-types)
+			     (let* ((sf-load-chunker
+				       (Sub-file-type-load-chunker sfty))
+				    (sf-slurp-chunker
+				       (Sub-file-type-slurp-chunker sfty))
+				    (slurped-sub-file-chunk
+				       (funcall sf-slurp-chunker
+					        filename))
+				    (loaded-sub-pn-chunk
+				       (funcall sf-load-chunker
+						(Code-file-chunk-pathname
+						   code-chunk))))
+			       (pushnew loaded-sub-pn-chunk
+					(Chunk-basis
+					   slurped-sub-file-chunk)))))))))))
+  (cond (compiled-ch
+	 (dolist (pn pnl)
+	    (multiple-value-bind (bl lbl)
+				 (pathname-run-support pn)
+				 (declare (ignore lbl))
+	       (dolist (callee-ch bl)
+		  (cond ((typep callee-ch 'Code-file-chunk)
+			 (dolist (sfty sub-file-types)
+			    (compiled-ch-sub-file-link
+			       compiled-ch callee-ch sfty true))))))))))
 
 (defun pathnames-note-slurp-support (pnl file-ch sub-file-type-names)
    (dolist (pn pnl)

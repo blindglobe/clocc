@@ -1,14 +1,14 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.43 2005/03/27 05:29:29 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.44 2005/03/28 03:23:56 airfoyle Exp $
 	     
-;;; Copyright (C) 1976-2004
+;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(fload-versions postponed-files-update
+   (export '(postponed-files-update
 	     always-slurp
 	     debuggable debuggability* def-sub-file-type)))
 
@@ -19,18 +19,47 @@
 	    :initform !())
    ;; Inverse of 'callees' --
    (callers :accessor Code-chunk-callers
-	    :initform !())))
+	    :initform !())
+   (alt-version :accessor Code-chunk-alt-version
+		:initarg :alt-version
+		:initform false)
+   ;; - If not nil, the Code-file-chunk for the alternative version.
+   ;; Inverse --
+   (alt-version-of :accessor Code-chunk-alt-version-of
+		   :initform !())))
 
 ;; These two methods ensure that 'callers' is the inverse of 'callees' --
-(defmethod (setf Code-chunk-callees) :before (_ file-ch)
-   (dolist (clee (Code-chunk-callees file-ch))
+(defmethod (setf Code-chunk-callees) :before (_ code-ch)
+   (dolist (clee (Code-chunk-callees code-ch))
       (setf (Code-chunk-callers clee)
-	    (remove file-ch (Code-chunk-callers clee)))))
+	    (remove code-ch (Code-chunk-callers clee)))))
 
-(defmethod (setf Code-chunk-callees) :after (_ file-ch)
-   (dolist (clee (Code-chunk-callees file-ch))
+(defmethod (setf Code-chunk-callees) :after (_ code-ch)
+   (dolist (clee (Code-chunk-callees code-ch))
       (setf (Code-chunk-callers clee)
-	    (adjoin file-ch (Code-chunk-callers clee)))))
+	    (adjoin code-ch (Code-chunk-callers clee)))))
+
+;; These two ensure that 'alt-version' is the inverse of 'alt-version-of'.
+;; The first also makes sure no cycle of 'alt-version' links is created.
+(defmethod (setf Code-chunk-alt-version) :before (new-v code-ch)
+   (labels ((check-for-cycle (ch)
+	       (cond ((eq ch code-ch)
+		      (error !"About to create a cycle of alt-version ~
+                               pointers from ~s to ~s and around"
+			     new-v code-ch))
+		     ((Code-chunk-alt-version ch)
+		      (check-for-cycle (Code-chunk-alt-version ch)))
+		     (t nil))))
+     (check-for-cycle new-v))
+   (let ((current-version (Code-chunk-alt-version code-ch)))
+      (cond (current-version
+	     (setf (Code-chunk-alt-version-of current-version)
+		   (remove code-ch (Code-chunk-alt-version-of
+				      current-version)))))))
+
+(defmethod (setf Code-chunk-alt-version) :after (new-v code-ch)
+      (setf (Code-chunk-alt-version-of new-v)
+	    (adjoin code-ch (Code-chunk-alt-version-of new-v))))
 
 ;;; The name of a Code-file-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -53,22 +82,21 @@
    (readtable :accessor Code-file-chunk-readtable
 	      :initarg :readtable
 	      :initform false)
-   (alt-version :accessor Code-file-chunk-alt-version
-		:initarg :alt-version
-		:initform false)
-   ;; - If not nil, the Code-file-chunk for the alternative version.
    ;; Files that must be loaded when this one is read
    ;;  (not currently used) --
    (read-basis :accessor Code-file-chunk-read-basis
-	       :initform false))
-)
+	       :initform false)
+   ;; Obsolete, but not yet elided --
+   (obs-alt-version :accessor Code-file-chunk-obs-alt-version
+		:initarg :obs-version
+		:initform false)))
 ;; -- Files are the finest grain we allow.  If a file is out of date,
 ;; then every chunk associated with the file is assumed to be out of
 ;; date.  More than one chunk can be associated with a file.  For now,
 ;; don't allow a chunk to be associated with more than one file.
 
 (defmethod derive-date ((fc Code-file-chunk))
-   (let ((v (Code-file-chunk-alt-version fc)))
+   (let ((v (Code-file-chunk-obs-alt-version fc)))
       (cond (v (derive-date v))
 	    (t
 	     (let ((pn (Code-file-chunk-pathname fc)))
@@ -92,12 +120,38 @@
    (eq (Code-file-chunk-kind file-ch) ':object))
 
 ;;; 'pn' could be a Pseudo-pathname (see module.lisp)
-(defgeneric pathname-denotation-chunk (pn))
+;;; If 'pursue-alt-versions', then if the pn's Code-chunk has an
+;;; 'alt-version', property, return that one instead of this one ---
+;;; or rather: keep looking until the chain of alt versions runs dry.
+(defgeneric pathname-denotation-chunk (pn pursue-alt-versions))
 
-(defmethod pathname-denotation-chunk ((ytpn YTools-pathname))
-   (pathname-denotation-chunk (pathname-resolve ytpn false)))
+(defmethod pathname-denotation-chunk :around (pn pursue-alt-versions)
+   (let ((prima-facie
+	     (call-next-method pn pursue-alt-versions)))
+      (cond (pursue-alt-versions
+	     (labels ((pursue (code-ch)
+			 (cond ((Code-chunk-alt-version code-ch)
+				(pursue (Code-chunk-alt-version code-ch)))
+			       (t
+				code-ch))))
+	        (pursue prima-facie)))
+	    (t
+	     prima-facie))))
 
-(defmethod pathname-denotation-chunk ((pn pathname))
+(defmethod pathname-denotation-chunk ((ytpn YTools-pathname)
+				      pursue-alt-versions)
+                                     (declare (ignore pursue-alt-versions))
+				     ;; -- ignorable because if true,
+				     ;; we're already in the :around
+				     ;; method that will do the pursuit
+   (pathname-denotation-chunk
+       (pathname-resolve ytpn false)
+       false)
+       ;; -- so it saves a bit of duplication to use 'false' as
+       ;; the "pursue" argument in the recursion
+ )
+
+(defmethod pathname-denotation-chunk ((pn pathname) _)
    (cond ((null (Pathname-type pn))
 	  (let ((source-pn (pathname-source-version pn)))
 	     (cond ((not source-pn)
@@ -128,7 +182,8 @@
 	       :kind kind
 	       :yt-pathname yt-pathname
 	       :pathname l-pathname
-	       :alt-version false)))))
+;;;;	       :alt-version false
+	       )))))
 
 ;;; There are two sorts of strings attached to loadable files: what files
 ;;; they depend on in order to be compiled and loaded; and what version of
@@ -164,7 +219,7 @@
 
 (defclass Loaded-file-chunk (Loaded-chunk)
    (;; The variant currently selected, either a Code-file-chunk, or
-    ;; a Loaded-file-chunk if we're indirecting through an alt-version --
+    ;; a Loaded-file-chunk if we're indirecting through an obs-alt-version --
     (selection :accessor Loaded-file-chunk-selection
 	  :initform false)
     ;; The criterion (supplied by user) for how to make the selection --
@@ -282,7 +337,7 @@
 		   (t false))))
 	 (t false)))
 
-;;; Follow 'alt-version' links to Loaded-file-chunk 
+;;; Follow 'obs-alt-version' links to Loaded-file-chunk 
 ;;;   and the contents of its 'selection' field
 ;;; Returns both of them (selection first).
 (defun loaded-file-chunk-current-version (lf-ch)
@@ -406,11 +461,18 @@
 (defmethod derive ((l-source Loaded-source-chunk))
    (file-chunk-load (Loaded-source-chunk-file l-source)))
 
+(defvar loading-stack* !())
+
 (defun file-chunk-load (file-ch)
       (with-post-file-transduction-hooks
 	 (cleanup-after-file-transduction
 	    (let ((*package* *package*)
 		  (*readtable* *readtable*)
+		  (now-loading* (Code-file-chunk-pathname file-ch))
+		  (loading-stack* (cons (Code-file-chunk-pathname file-ch)
+					loading-stack*))
+		  (now-slurping* false)
+		  (now-compiling* false)
 		  (success false)
 		  (errors-during-load !())
 		  (fload-indent* ;;;;(+ 3 fload-indent*)
@@ -441,6 +503,8 @@
 
 (defgeneric loaded-chunk-set-basis (loaded-ch)
    (:method ((lch t)) nil))
+
+(defvar loaded-filoids-to-be-monitored* ':global)
 
 (defun monitor-filoid-basis (loaded-filoid-ch)
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
@@ -486,7 +550,7 @@
 (defmethod loaded-chunk-set-basis ((loaded-ch Loaded-file-chunk))
    (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
 	  (manip (Loaded-file-chunk-manip loaded-ch))
-	  (alt-chunk (Code-file-chunk-alt-version file-ch))
+	  (alt-chunk (Code-file-chunk-obs-alt-version file-ch))
 	  (source-exists (Loaded-file-chunk-source loaded-ch))
 	  (obj-file-chunk (Loaded-file-chunk-object loaded-ch))
 	  (object-exists
@@ -501,7 +565,7 @@
       (cond (alt-chunk
 	     (let ((alt-loaded-chunk
 		       (place-Loaded-file-chunk
-				  (Code-file-chunk-alt-version file-ch)
+				  (Code-file-chunk-obs-alt-version file-ch)
 				  false)))
 		(setf (Loaded-chunk-principal-bases loaded-ch)
 		      (list alt-loaded-chunk))
@@ -727,7 +791,8 @@
 ;;;;	    "In Compiled-file-chunk/derive for ~s,~
 ;;;;             ~% manip of loaded-ch = ~s, old-date* = ~s~%"
 ;;;;	    cf-ch loaded-ch-manip old-date*)
-	 (cond ((eq loaded-ch-manip ':fresh-object)
+	 (cond ((and (eq loaded-ch-manip ':fresh-object)
+		     (not (eq fload-compile* ':compile)))
 		;; If we're about to compile, then the object file
 		;; must be non-fresh (or nonexistent); the 'manip' sez
 		;; we've got to ask the user
@@ -819,8 +884,6 @@
 					 false false "")))))))))
 
 (eval-when (:compile-toplevel :load-toplevel)
-
-(defvar loaded-filoids-to-be-monitored* ':global)
 
 (defvar sub-file-types* !())
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.5 2005/03/27 05:29:29 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.6 2005/03/28 03:23:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -145,8 +145,14 @@ funktion
    (cond ((memq v '(:ask :source :object :compile
 		    :ask-ask :ask-once :ask-every))
 	  (cond ((not (eq v fload-compile-flag*))
+		 (format *error-output*
+		    !"Change of fload-compile* from ~s to ~s triggers ~
+                      file-chunk rescan~%"
+		    fload-compile-flag* v)
 		 (setq fload-compile-flag* v)
-		 (loadeds-check-bases))))
+		 (loadeds-check-bases)
+		 (format *error-output*
+		    "File-chunk rescan complete~%"))))
 	 (t
 	  (cerror "I will leave the value unchanged"
 		  !"Illegal value ~s for fload-compile*"
@@ -168,11 +174,10 @@ funktion
       (dolist (lc all-loaded-file-chunks*)
 	 (cond ((memq (Loaded-file-chunk-manip lc)
 		      '(:defer :follow))
+		(format *error-output*
+		   "  File-chunk rescan nets ~s~%"
+		   lc)
 		(on-list lc loadeds-needing-checking))))
-;;;;      (dolist (lc loadeds-needing-checking)
-;;;;	 (monitor-filoid-basis lc)
-;;;;	 (cond ((not (chunk-up-to-date lc))
-;;;;		(on-list lc loadeds-needing-update))))
       (chunks-update (cons fload-compile-flag-chunk*
 			   loadeds-needing-checking)
 		     false false)))
@@ -193,7 +198,7 @@ funktion
 
 (defmethod filoid-fload ((pn pathname)
 			 &key force-load manip postpone-derivees)
-   (let* ((pchunk (pathname-denotation-chunk pn))
+   (let* ((pchunk (pathname-denotation-chunk pn true))
 	  (lpchunk (place-Loaded-chunk pchunk manip)))
       (cond ((not (eq manip ':noload))
 	     (loaded-chunk-fload lpchunk force-load postpone-derivees)))))
@@ -228,12 +233,12 @@ funktion
 		;; It was apparently already up to date,
 		;; so forcing makes sense
 		(loaded-chunk-force
-		   loaded-chunk force-load postpone-derivees)))))
+		   loaded-chunk force-load)))))
 
-(defgeneric loaded-chunk-force (loaded-chunk force postpone-derivees))
+(defgeneric loaded-chunk-force (loaded-chunk force))
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-file-chunk)
-			       force postpone-derivees)
+			       force)
    (let ((obj-file-chunk (Loaded-file-chunk-object loaded-chunk))
 	 (src-file-chunk (Loaded-file-chunk-source loaded-chunk)))
       ;; If force = :load, load object if it exists --
@@ -253,8 +258,9 @@ funktion
 			     src-file-chunk))))
 		  ((:compile)
 		   (Loaded-file-chunk-compiled loaded-chunk)))))
-	(file-ops-maybe-postpone
-	   (chunk-update operative-chunk true postpone-derivees)))))
+	(let ((fcompl-reload* true))
+	   (file-ops-maybe-postpone
+	      (chunk-update operative-chunk true true))))))
 
 ;;;;   (pathname-is-source (Code-file-chunk-pathname file-ch))
 
@@ -492,7 +498,7 @@ funktion
 				 cease-mgt
 				 postpone-derivees)
    (let* ((file-chunk
-	     (pathname-denotation-chunk pn))
+	     (pathname-denotation-chunk pn true))
 	  (lpchunk (place-Loaded-chunk
 		      file-chunk
 		      false))
@@ -656,20 +662,49 @@ funktion
                                                         rso))))))))
                             (segregate olds news))
       (let ((changing-chunks !()))
-	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
-	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
+	 (do ((oldl (filespecs->ytools-pathnames set-olds)
+		    (tail oldl))
+	      (newl (filespecs->ytools-pathnames set-news)
+		    (tail newl)))
 	     ((null oldl))
-	    (let ((old-cfc (pathname-denotation-chunk (car oldl)))
-		  (new-cfc (pathname-denotation-chunk (car newl))))
-	       (setf (Code-file-chunk-alt-version old-cfc)
-		     new-cfc)
-	       (on-list old-cfc changing-chunks)))
-	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
+	    (let* ((old-cfc (pathname-denotation-chunk (head oldl) false))
+		   (old-av (Code-chunk-alt-version old-cfc))
+		   (new-cfc (pathname-denotation-chunk (head newl) false)))
+	       (cond ((not (eq old-cfc new-cfc))
+		      (setf (Code-chunk-alt-version old-cfc)
+			    new-cfc)
+		      (cond ((and (chunk-manage-request old-av)
+				  (y-or-n-p !"Cancel request to manage ~s ~
+                                              [probably yes]?"
+					    old-av))
+			     (on-list old-av changing-chunks)))
+		      (cond ((and (Chunk-managed old-cfc)
+				  (not (chunk-manage-request new-cfc))
+				  (y-or-n-p !"Begin management of ~s ~
+                                              [probably yes]?"
+					    old-cfc))
+			     (on-list new-cfc changing-chunks)))))))
+	 (do ((oldl (filespecs->ytools-pathnames reset-olds)
+		    (tail oldl)))
 	     ((null oldl))
-	    (let ((rfc (pathname-denotation-chunk (car oldl))))
-	       (setf (Code-file-chunk-alt-version rfc)
-		     false)
-	       (on-list rfc changing-chunks)))
+	    (let* ((rfc (pathname-denotation-chunk (head oldl) false))
+		   (old-av (Code-chunk-alt-version rfc)))
+	       (cond (old-av
+		      (setf (Code-file-chunk-alt-version rfc)
+			    false)
+		      (cond ((and (chunk-manage-request old-av)
+				  (y-or-n-p !"Cancel request to manage ~s ~
+                                              [probably yes]?"
+					    old-av))
+			     (on-list old-av changing-chunks)))))))
+	 (do ((ccl changing-chunks (tail ccl))
+	      cc)
+	     ((null ccl))
+	    (setq cc (head ccl))
+	    (cond ((Chunk-manage-request cc)
+		   (chunk-terminate-mgt cc false))
+		  (t
+		   (chunk-request-mgt cc))))
 	 (chunks-update changing-chunks false false)
 	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.25 2005/03/27 05:29:29 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.26 2005/03/28 03:23:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -13,7 +13,8 @@
 	     during-file-transduction setf-during-file-transduction 
 	     fload-verbose* eval-when-slurping
 	     make-Printable printable-as-string eof*
-	     slurp-eval slurp-ignore)))
+	     slurp-eval slurp-ignore
+	     now-loading* now-compiling* now-slurping*)))
 
 (defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
 (defvar obj-suffix* lisp-object-extn*)
@@ -154,9 +155,15 @@ after YTools file transducers finish.")
 	     b)
 	  false)))
 
-;; --Pathname of file ...
+;; Pathname of file ...
 (defvar now-loading*     nil)  ; ... being loaded by 'fload'
 (defvar now-compiling* false)  ; ... being compiled by 'fcompl'
+;; -- we declare these here because they have to be bound to false
+;; when we're slurping.
+
+
+;; List (pathname -slurp-tasks-) if slurping, else false.
+(defvar now-slurping* false)
 
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
@@ -310,8 +317,6 @@ after YTools file transducers finish.")
    `(progn (in-package ,pkg)
 	   (in-readtable ,(or rt pkg))))
 
-(defvar now-slurping* false)
-
 (defvar hidden-slurp-tasks* !())
 
 ;;; 'stream-init', if not false, is
@@ -326,7 +331,7 @@ after YTools file transducers finish.")
 		   (let (;;;;(fload-indent*  0)
 			 (now-loading*  false)
 			 (now-compiling* false)
-			 (now-slurping*   pn)
+			 (now-slurping*  (cons pn slurp-tasks))
 			 (slurping-stack* (cons pn slurping-stack*))
 			 #+:excl (excl:*source-pathname* pn)
 			 #+:excl (excl:*record-source-file-info* nil)
@@ -372,6 +377,8 @@ after YTools file transducers finish.")
 					(form-slurp form tasks states))
 				  (null tasks)))
 			   slurp-states)
+			(setq now-slurping*
+			      (cons pn tasks))
 ;;;;			(format t "Slurped form ~s~%" form)
 			)
 		      (cond ((not (null vis-tasks))

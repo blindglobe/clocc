@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.11 2005/03/27 05:29:29 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.12 2005/03/28 03:23:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -484,13 +484,6 @@
 	    ,parser-defn)))
 
 (datafun-alist pn-parsers* :pn-parse)
-
-
-
-;;;======================================================================
-;;; turn a list of fload-style filespecs into a list of pathnames. the
-;;; file extension will be added later if necessary.
-;;;======================================================================
 
 (defun filespecs->pathnames (specs)
   (mapcar (\\ (pn) (pathname-resolve pn true))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.25 2005/03/25 14:38:00 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.26 2005/03/28 03:23:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -121,7 +121,12 @@
 	    :type YT-module)))
 
 (defmethod derive ((yt-mod YT-module-chunk))
-   false)
+   0)
+;;;;   false
+;;;    -- wrong because it makes any file dependent on a module
+;;;        out of date, because the YT-module-chunk's time will
+;;;        be set to the current universal-time, which is usually
+;;;        later than the file's write date.
 
 ;;; loadee is a YT-module
 (defclass Loaded-module-chunk (Loaded-chunk)
@@ -155,7 +160,7 @@
 		      remainder)))
          (on-list mod mods))))
 
-(defmethod pathname-denotation-chunk ((mod-pspn Module-pseudo-pn))
+(defmethod pathname-denotation-chunk ((mod-pspn Module-pseudo-pn) _)
    (place-YT-module-chunk (Module-pseudo-pn-module mod-pspn)))
 
 (defun place-YT-module-chunk (mod)
@@ -360,7 +365,7 @@ Not needed, because it's essentially identical to scan-depends-on
    !())
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-module-chunk)
-			       _ _)
+			       _)
    (cerror "Proceed without forced compilation"
 	   "Not implemented: Forcing compilation of module ~s"
 	   (Loaded-chunk-loadee loaded-chunk)))

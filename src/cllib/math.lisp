@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.47 2004/05/25 20:26:15 sds Exp $
+;;; $Id: math.lisp,v 2.48 2004/06/25 18:19:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -38,7 +38,7 @@
    count-all find-duplicates entropy-sequence entropy-distribution
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
-   mdl-normalize mdl-denormalize
+   mdl-normalize mdl-denormalize mdl-normalize-function
    kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
@@ -1158,8 +1158,12 @@ When the distribution is not discreet, entropy is not available."
                     :en (when discreet
                           (entropy-sequence seq :key key :weight weight)))))))
 
+(declaim (inline mdl-normalize mdl-denormalize mdl-normalize-function))
 (defun mdl-normalize (value mdl)   (/ (- value (mdl-mn mdl)) (mdl-sd mdl)))
 (defun mdl-denormalize (value mdl) (+ (* value (mdl-sd mdl)) (mdl-mn mdl)))
+(defun mdl-normalize-function (function mdl)
+  "return a normalized version of FUNCTION"
+  (lambda (x) (mdl-normalize (funcall function x) mdl)))
 
 ;;;
 ;;; information-theoretic and statistical measures of prediction performance

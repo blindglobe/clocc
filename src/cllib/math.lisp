@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.37 2004/04/09 14:08:54 sds Exp $
+;;; $Id: math.lisp,v 2.38 2004/04/09 20:18:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -43,7 +43,7 @@
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
    rel-diff approx=-abs approx=-rel approx=
    binary-search newton integrate-simpson add-probabilities
-   line line-val line-rsl line-below-p line-above-p intersect
+   line make-line line-val line-rsl line-below-p line-above-p intersect
    with-line line-adjust line-adjust-dir line-adjust-list
    line-thru-points regress lincom))
 

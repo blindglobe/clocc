@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.4 2000/05/02 15:39:14 sds Exp $
+;;; $Id: rpm.lisp,v 2.5 2000/05/08 17:57:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -351,7 +351,7 @@ Then generate the list to download."
             (> (- (get-universal-time) (get '*rpm-locations* 'updated))
                *rpm-locations-timeout*))
     (format out " *** Getting the list of new packages...~%")
-    (with-timing ()
+    (with-timing (:out out)
       (let ((na 0) (le 0)
             #+clisp (lisp:*pprint-first-newline* nil)
             (*url-default-timeout* *rpm-timeout*)
@@ -362,7 +362,7 @@ Then generate the list to download."
           (dld-reset dld)
           (format out " *** processing `~a'...~%" dld)
           (handler-case
-              (with-timing ()
+              (with-timing (:out out)
                 (setf (dld-all dld) (rpm-available (dld-url dld)
                                                    :out out :err err)
                       (dld-fls dld) (rpm-prune-list (dld-all dld))
@@ -437,7 +437,7 @@ Then generate the list to download."
   "Make sure `*rpm-present*' is initialized."
   (declare (type (or null stream) out))
   (when (or force (zerop (length *rpm-present*)))
-    (with-timing ()
+    (with-timing (:out out)
       (mesg t out " * Finding the RPMs...")
       (setq *rpm-present* (rpm-present))
       (mesg t out "done [~d package~:p]" (length *rpm-present*)))))

@@ -17,7 +17,7 @@
    name
    contents     
    expansion
-   rec    ; Load-progress-reco
+   rec    ; Load-progress-rec
    loaded
    postponed) 
 
@@ -110,13 +110,14 @@
 		       (format srm "#<Load-progress-rec ~a: ~s~a>"
 			       (Load-progress-rec-status lpr)
 			       pn
-			       (cond ((Load-progress-rec-when-reached lpr)
+			       (cond ((= (Load-progress-rec-status-timestamp lpr)
+					 file-op-count*)
 				      "*")
 				     (t ""))))))
 	    (:predicate is-Load-progress-rec))
    pathname ; Pathname, some with artificial directory names like "%module"
-   (source-pathname ':unknown)  ; false if there is no source file
-   (object-pathname ':unknown)  ; non-false even if there is no object file
+   (source-pathname ':unknown)  ; :none, :undef, or source pathanme
+   (object-pathname ':unknown)  ; ditto
 
    (status ':unseen) ; See parameter +load-progress-progression+ below
    (when-reached -1 :type integer) ; date when status was reached
@@ -166,6 +167,11 @@
 (defconstant +load-progress-progression+
     '(:unseen :header-checked :slurped :slurped-all
       :maybe-compiled :loaded :frozen))
+;;; -- :maybe-compiled usually means "compiled," but if a file is not
+;;; supposed to be compiled, it means we checked whether it was supposed to
+;;; be and noted that it wasn't.  
+;;; :frozen means that the file was loaded as part of building a core image
+;;; Any attempt to change it should cause alarms to go off.
 
 (defconstant can-get-write-times*
     #.(not (not (file-write-date
@@ -174,10 +180,8 @@
 ;;;;(defvar write-time-calls* 0)
 ;;;;(defvar redundant-write-time-calls* 0)
 
-;;; This function returns the "apparently correct" answer, ignoring,
-;;; for instance, whether the file has been changed since last loaded.
 (defun achieved-load-status (lprec status)
-   (let ((tl (memq (Load-progress-rec-status lprec)
+   (let ((tl (memq (lprec-get-load-status lprec)
 		   +load-progress-progression+)))
       (cond (tl
 	     (not (memq status (cdr tl))))
@@ -185,50 +189,91 @@
 	     (error "Illegal Load-progress-rec status ~s"
 		    (Load-progress-rec-status lprec))))))
 
-(defun note-load-status (lprec status)
-   (let ((tl (memq (Load-progress-rec-status lprec)
-		   +load-progress-progression+)))
-      (cond (tl
-	     (cond ((memq status (cdr tl))
+(defun lprec-get-load-status (lprec)
+   (let ((stat-time (Load-progress-rec-status-timestamp lprec)))
+      (cond ((not (= stat-time file-op-count*))
+	     (cond ((not (eq (Load-progress-rec-status lprec)
+			     ':unseen))
 		    (setf (Load-progress-rec-status lprec)
-			  status)
-		    (setf (Load-progress-rec-when-reached lprec)
-			  (get-universal-time))))
+			  (recompute-load-status lprec))))
 	     (setf (Load-progress-rec-status-timestamp lprec)
-		   file-op-count*))
-	    (t
-	     (error "Illegal Load-progress-rec status ~s"
-		    status)))))
+	           file-op-count*)))
+      (Load-progress-rec-status lprec)))
 
-;;;;(defun note-module-def-time (ytmod)
-;;;;   (note-load-status (YT-module-rec ytmod) false))
+(defun recompute-load-status (lprec)
+   (multiple-value-bind (ur-mod-time ldble-mod-time)
+                        (lprec-find-version-modtimes lprec)
+      (let ((stat-time
+	       (Load-progress-rec-when-reached lprec)))
+	 (cond ((> ur-mod-time stat-time)
+		':unseen)
+	       ((and (> ldble-mod-time stat-time)
+		     (eq (Load-progress-rec-status lprec)
+			 ':loaded))
+		':maybe-compiled)
+	       (t (Load-progress-rec-status lprec))))))
+
+(defun note-load-status (lprec status)
+   (cond ((and (eq (Load-progress-rec-status lprec)
+		   ':frozen)
+	       (not (eq status ':frozen)))
+	  (cerror "I'll continue, but please don't try to save a core image"
+		  "Attempt to change status of frozen Load-progress-rec to ~s"
+		  status)))
+   (setf (Load-progress-rec-status lprec)
+	 status)
+   (setf (Load-progress-rec-when-reached lprec)
+	 (get-universal-time))
+   (setf (Load-progress-rec-status-timestamp lprec)
+          file-op-count*))
+
+;;;;   (let ((tl (memq (Load-progress-rec-status lprec)
+;;;;		   +load-progress-progression+)))
+;;;;      (cond (tl
+;;;;	     (cond ((memq status (cdr tl))
+;;;;		    (setf (Load-progress-rec-status lprec)
+;;;;			  status)
+;;;;		    (setf (Load-progress-rec-when-reached lprec)
+;;;;			  (get-universal-time))))
+;;;;	     (setf (Load-progress-rec-status-timestamp lprec)
+;;;;		   file-op-count*))
+;;;;	    (t
+;;;;	     (error "Illegal Load-progress-rec status ~s"
+;;;;		    status)))))
 
 ;;; Principle: You ask whether to compile a file only if a "yes" answer
 ;;; will cause it to be compiled.  On other occasions, you guess.
 (defun lprec-guess-whether-compile (lprec)
    (let ((wc (Load-progress-rec-whether-compile lprec)))
       (cond ((eq wc ':unknown)
-	     (cond ((lprec-find-source-pathname lprec)
+	     (cond ((not (memq (lprec-find-source-pathname lprec)
+			       '(:none :undef)))
 		    ':compile)
-		   ((probe-file (lprec-find-object-pathname lprec))
-		    ':object)
 		   (t
-		    (error "Load-progress-rec ~s~% corresponds to neither source nor object file"
-			   lprec))))
+		    (let ((obj-pn
+			     (lprec-find-object-pathname lprec)))
+		       (cond ((and (not (member obj-pn '(:undef :none)))
+				   (probe-file obj-pn))
+			      ':object)
+			     (t
+			      (error "Load-progress-rec ~s~% corresponds to neither source nor object file"
+				     lprec)))))))
 	    (t wc))))
 
 ;;; Returns < ur-mod-time, loadable-mod-time >
 (defun lprec-find-version-modtimes (lprec)
-   (cond ((not (= (Load-progress-rec-file-mod-timestamp lprec)
-		  file-op-count*))
+   (cond ((and (not (is-Pseudo-pathname (Load-progress-rec-pathname lprec)))
+	       (not (= (Load-progress-rec-file-mod-timestamp lprec)
+		       file-op-count*)))
 	  (let ((src-version (lprec-find-source-pathname lprec))
 		(obj-version (lprec-find-object-pathname lprec))
 		(whether-compile (lprec-guess-whether-compile lprec)))
 	     (let ((ur-version
-		      (cond ((and src-version
+		      (cond ((and (not (eq src-version ':none))
 				  (not (eq whether-compile ':object)))
 			     src-version)
-			    ((probe-file obj-version) 
+			    ((and (not (eq obj-version':none))
+				  (probe-file obj-version))
 			     obj-version)
 			    (t
 			     (cerror "I will assume it is to be compiled"
@@ -256,17 +301,19 @@
 
 (defun lprec-find-source-pathname (lprec)
    (let ((spn (Load-progress-rec-source-pathname lprec)))
-      (cond ((eq spn ':unknown)
-	     (setf (Load-progress-rec-source-pathname lprec)
-	           (pathname-source-version (Load-progress-rec-pathname lprec))))
+      (cond ((or (not spn) (eq spn ':unknown))
+	     (let ((src (pathname-source-version (Load-progress-rec-pathname lprec))))
+		(setf (Load-progress-rec-source-pathname lprec)
+		      (or src ':none))))
 	    (t spn))))
 
 (defun lprec-find-object-pathname (lprec)
    (let ((opn (Load-progress-rec-object-pathname lprec)))
-      (cond ((eq opn ':unknown)
-	     (setf (Load-progress-rec-object-pathname lprec)
-	           (pathname-object-version (Load-progress-rec-pathname lprec)
-					    false)))
+      (cond ((or (not opn) (eq opn ':unknown))
+	     (let ((obj (pathname-object-version (Load-progress-rec-pathname lprec)
+						 false)))
+		(setf (Load-progress-rec-object-pathname lprec)
+		      (or obj ':none))))
 	    (t opn))))
 
 (defun pathname-source-version (pn)
@@ -284,7 +331,14 @@
 		       (and (probe-file rpn) rpn))))))))
 
 (defun pathname-object-version (pn only-if-exists)
-   (pathname-find-associate pn 'obj-version obj-suffix* only-if-exists))
+   (let ((ob-pn
+	    (pathname-find-associate pn 'obj-version obj-suffix* only-if-exists)))
+      (cond ((and (not only-if-exists)
+		  (not ob-pn))
+	     (cerror "I will treat it as :unknown"
+		     "Pathname has no object version: ~s" ob-pn)
+	     ':none)
+	    (t ob-pn))))
 
 (defun pathname-write-time (pname)
   (setq pname (pathname-resolve pname false))

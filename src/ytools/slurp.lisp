@@ -235,9 +235,7 @@
 		(*readtable* *readtable*))
 	    (let ((slurp-status 
 		     (pathname-finally-slurp real-pn lprec pn howmuch)))
-	       (cond ((not (achieved-load-status lprec slurp-status))
-		      (note-load-status   ;;;; -if-not-achieved
-		         lprec slurp-status))))))))
+	       (note-load-status lprec slurp-status))))))
 
 (defmacro cleanup-after-file-transduction (&body b)
    `(unwind-protect (progn ,@b)

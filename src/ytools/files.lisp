@@ -73,18 +73,30 @@
 (defun lprec-load (lprec force-flag force-compile must-ask)
    (let ()   ;;;;(lprec-pn (Load-progress-rec-pathname lprec))
       (let ((supporters (lprec-find-supporters lprec))
-	    (when-reached-status (Load-progress-rec-when-reached lprec)))
+	    (when-reached-status (Load-progress-rec-when-reached lprec))
+	    )
 	 (multiple-value-bind (ur-mod-time ldble-mod-time)
 			      (lprec-find-version-modtimes lprec)
 	    (let ((changed-supporters
-		     (files-changed-since supporters ldble-mod-time)))
-               (cond ((or force-flag
+		     (cond (ldble-mod-time
+			    (files-changed-since supporters ldble-mod-time))
+			   (t !()))))
+	       (cond ((or force-flag
 			  (not (achieved-load-status lprec ':loaded))
-			  (or (> ur-mod-time ldble-mod-time)
-			      (> ur-mod-time when-reached-status))
-			  (not (null changed-supporters)))
-;;;;		      (format t "For ~s,~% ur-mod-time = ~s, ldble-mod-time = ~s, when-reached-status = ~s~%"
-;;;;			      lprec ur-mod-time ldble-mod-time when-reached-status)
+		      ;;; This is not necessary, because calling 'achieved-load-status'
+		      ;;; above did the check already.--
+;;;;			  (or (> ur-mod-time ldble-mod-time)
+;;;;			      (> ur-mod-time when-reached-status))
+			  (and (not (null changed-supporters))
+			       (or (some (\\ (cs) (> (cadr cs) when-reached-status))
+					 changed-supporters)
+				   (not (memq (Load-progress-rec-whether-compile
+					       lprec)
+					      '(:object :source))))))
+;;;;		      (dbg-save ur-mod-time ldble-mod-time changed-supporters
+;;;;				(wc (Load-progress-rec-whether-compile lprec))
+;;;;				lprec)
+;;;;		      (breakpoint lprec-load "Loading!!?")
 		      ;; There's a reason to load or reload, possibly
 		      ;; after (re)compilation.
 		      (let ((src-version (lprec-find-source-pathname lprec))
@@ -107,24 +119,11 @@
 							':no-reason))
 						 changed-supporters
 						 must-ask)
-			    (cond (version-to-load
 				   (pathname-really-fload
-				      version-to-load src-or-obj lprec))
-				  (t
-				   (dolist (pn changed-supporters)
-				      (fload-if-recompile (car pn))))))))
-;;;;		      (t
-;;;;		       (let ((obj-version (lprec-find-object-pathname lprec)))
-;;;;			  (cond (obj-version
-;;;;				 (cond (force-compile
-;;;;					(cerror "I will try loading the object version"
-;;;;						"Can't compile ~s" lprec-pn
-;;;;						" -- no source file")))
-;;;;				 (pathname-really-fload obj-version ':object lprec))
-;;;;				(t
-;;;;				 (error "No source or object file for ~s"
-;;;;					lprec-pn)))
-;;;;				 true))
+				      version-to-load src-or-obj lprec))))
+		     (t
+		      (dolist (pn changed-supporters)
+			 (fload-if-recompile (car pn))))
 		      ))))))
 
 (defun lprec-find-supporters (lprec)
@@ -181,73 +180,76 @@
 	   supps))
 
 (defun fload-if-recompile (ytpn)
-   (cond ((changed-since-loaded ytpn)
-	  (let ((src-version (pathname-source-version ytpn)))
+   (let ((src-version (pathname-source-version ytpn))
+	 (lprec (place-load-progress-rec ytpn)))
+      (cond ((and (achieved-load-status lprec ':loaded)
+		  (> (lprec-find-version-modtimes lprec)
+		     (Load-progress-rec-when-reached lprec)))
 	     (loop
+
 		(format *query-io*
 		   "Source file older than loaded version of ~s~% Reload it now (recompiling if appropriate)? (y/n, \\\\ to abort) "
 		   src-version)
-		(let ((ans (keyword-if-sym (read *query-io*)))
-		      (lprec (place-load-progress-rec ytpn)))
+		(let ((ans (keyword-if-sym (read *query-io*))))
 		   (labels (
 
- ;; Indentation for local functions
- (compile-and-load ()
-    (let ((obj-version
-	     (lprec-find-supporters-and-compile lprec true)))
-       (cond (obj-version
-	      (pathname-really-fload obj-version ':object lprec)))))
+	  ;; Indentation for local functions
+	  (compile-and-load ()
+	   (let ((obj-version
+		    (lprec-find-supporters-and-compile lprec true)))
+	      (cond (obj-version
+		     (pathname-really-fload obj-version ':object lprec)))))
 
- (ask-if-compile ()
-;;;;    (trace-around ask-if-compile
-;;;;       (:> "(ask-if-compile: " ")")
-    (loop
-       (format *query-io* "Should I recompile ~s (y/n, \\\\ to abort)?"
-	       src-version)
-       (let ((ans (keyword-if-sym (read *query-io*))))
-	  (case ans
-	    ((:y :yes :t)
-	     (compile-and-load)
-	     (return ':compile))
-	    ((:n :no :nil)
-	     (pathname-really-fload src-version ':source lprec)
-	     (return ':source))
-	    (:\\
-	     (throw 'fload-abort 'fload-aborted))
-	    (t
-	     (format *query-io* "???~%")))))
-;;;;       (:< (val &rest _) "ask-if-compile: " val))
-    )
-
- (ask-what-this-means ()
-    (let ((obj-version (pathname-object-version src-version true)))
-       (cond (obj-version
-	      (loop 
-		(format *query-io*
-			"Previously the object version of ~s was loaded;~% shall I reload it, recompile and reload it, or skip? (Type l, c, or /; \\\\ to abort): "
-			src-version)
-		 (case (keyword-if-sym (read *query-io*))
-		    ((:l :load)
-		     (pathname-really-fload obj-version ':object lprec)
-		     (return))
-		    ((:c :compile)
-		     (compile-and-load)
-		     (return))
-		    ((:/ :s :skip)
-		     (return))
-		    (:\\ (throw 'fload-abort 'fload-aborted))
-		    (t (format *query-io* "???~%")))))
-	     (t
-	      (format *query-io*
-		      "The object version of has apparently been deleted~%"
+	  (ask-if-compile ()
+	  ;;;;    (trace-around ask-if-compile
+	  ;;;;       (:> "(ask-if-compile: " ")")
+	   (loop
+	      (format *query-io* "Should I recompile ~s (y/n, \\\\ to abort)?"
 		      src-version)
-	      (ask-if-compile))))))
- 
- ;; Resume normal indentation
- ;; We're in the middle of a loop here, waiting for a valid input to the question
- ;; "Reload it now?"	     
- ;; so we have to make sure to exit if we get a valid input.
-		     
+	      (let ((ans (keyword-if-sym (read *query-io*))))
+		 (case ans
+		   ((:y :yes :t)
+		    (compile-and-load)
+		    (return ':compile))
+		   ((:n :no :nil)
+		    (pathname-really-fload src-version ':source lprec)
+		    (return ':source))
+		   (:\\
+		    (throw 'fload-abort 'fload-aborted))
+		   (t
+		    (format *query-io* "???~%")))))
+	  ;;;;       (:< (val &rest _) "ask-if-compile: " val))
+	   )
+
+	  (ask-what-this-means ()
+	   (let ((obj-version (pathname-object-version src-version true)))
+	      (cond (obj-version
+		     (loop 
+		       (format *query-io*
+			       "Previously the object version of ~s was loaded;~% shall I reload it, recompile and reload it, or skip? (Type l, c, or /; \\\\ to abort): "
+			       src-version)
+			(case (keyword-if-sym (read *query-io*))
+			   ((:l :load)
+			    (pathname-really-fload obj-version ':object lprec)
+			    (return))
+			   ((:c :compile)
+			    (compile-and-load)
+			    (return))
+			   ((:/ :s :skip)
+			    (return))
+			   (:\\ (throw 'fload-abort 'fload-aborted))
+			   (t (format *query-io* "???~%")))))
+		    (t
+		     (format *query-io*
+			     "The object version of has apparently been deleted~%"
+			     src-version)
+		     (ask-if-compile))))))
+
+	  ;; Resume normal indentation
+	  ;; We're in the middle of a loop here, waiting for a valid input to the question
+	  ;; "Reload it now?"	     
+	  ;; so we have to make sure to exit if we get a valid input.
+
 		      (case ans
 			 ((:y :yes :+)
 			  (ecase (Load-progress-rec-whether-compile lprec)
@@ -255,7 +257,7 @@
 			      (compile-and-load))
 			     (:source
 			       (pathname-really-fload src-version ':source lprec))
-			     ((:ask nil)
+			     ((:ask :unknown nil)
 			      (ask-if-compile))
 			     (:object
 			      (ask-what-this-means)))
@@ -297,6 +299,7 @@
 					  (t
 					   ':source)))
 				   ((eq why ':just-do-it)
+				    (ask-next-time lprec)
 				    ':compile)
 				   ((eq whether-compile ':unknown)
 				    (setf (Load-progress-rec-whether-compile
@@ -358,8 +361,10 @@
 			       (cond ((> ptime time)
 				      (setq time ptime)))))
 			 time))
-		(cond (obj-version-exists ':object)
-		      (t ':compile)))
+		(maybe-remember-disp
+		    (cond (obj-version-exists ':object)
+			  (t ':compile))
+		    lprec))
 	       (t
 		(let ((obj-or-source (ask-obj-or-source
 				        src-version obj-version-exists lprec)))
@@ -440,11 +445,8 @@
 	           (let ((*package* *package*)
 			 (*readtable* *readtable*))
 		      (load real-pn))))
-;;;;	    (setf (Load-progress-rec-status lprec) ':loaded)
-;;;;	    (setf (Load-progress-rec-when-reached lprec)
-;;;;	          (get-universal-time))
 	    (fload-op-message "...loaded" pn false "")
-	    (note-load-status   ;;;; -if-not-achieved
+	    (note-load-status
 	       lprec (cond (final-load* ':frozen)
 			   (t ':loaded)))))))
 
@@ -568,7 +570,7 @@
 ;;;;     (cond (obj-version
 ;;;;	    (setq obj-version (maybe-delete-stale-file obj-version))))
    (pathname-really-fcompl src-version)
-   (incf file-op-count*)
+;;;;   (incf file-op-count*)   ??? What the hell was this doing here?
    (let ((obj-version (pathname-object-version src-version true)))
       (let ((success
 	        (and obj-version
@@ -576,13 +578,19 @@
 			(pathname-write-time src-version)))))
 	 (fcompl-log src-version (and success obj-version))
 	 (cond (success
-		(note-load-status   ;;;; -if-not-achieved
-		   lprec ':maybe-compiled)
+		(note-load-status lprec ':maybe-compiled)
+		(ask-next-time lprec)
 		obj-version)
 	       (t
 		(format *error-output*
 			"Recompiling failed to produce object file~%")
 		false)))))
+
+(defun ask-next-time (lprec)
+   (cond ((not (eq (Load-progress-rec-whether-compile lprec)
+		   ':compile))
+	  (setf (Load-progress-rec-whether-compile lprec)
+	        ':ask))))
 
 (defvar fcompl-log* true)
 (defvar debuggability* 0)
@@ -667,7 +675,7 @@
 			(read *query-io* false false))
 		     '(:y :yes :t))))))				
 
-
+#|
 (defun times-for-a-change (load-time ur-change-time obj-change-time must-load-source)
    (or (and load-time
 	    (> ur-change-time load-time))
@@ -686,6 +694,7 @@
                 (> ur-write-time
 		   (Load-progress-rec-when-reached lprec))))
 	    (t false))))
+|#
 
 (defun needs-recompile (lprec)
   (and (not (eq (Load-progress-rec-whether-compile lprec)

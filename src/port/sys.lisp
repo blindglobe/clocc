@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.20 2000/08/19 21:32:46 sds Exp $
+;;; $Id: sys.lisp,v 1.21 2000/11/15 17:56:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -53,7 +53,8 @@
 
 (defun variable-special-p (symbol)
   "Return T if the symbol names a global special variable."
-  #+allegro (clos::variable-special-p symbol nil)
+  #+(and allegro (not (version>= 6))) (clos::variable-special-p symbol nil)
+  #+(and allegro (version>= 6)) (excl::variable-special-p symbol nil)
   #+clisp (sys::special-variable-p symbol)
   #+cmu (walker:variable-globally-special-p symbol)
   #+gcl (si:specialp symbol)
@@ -98,14 +99,17 @@
                  (symbol (find-class ,obj))
                  (t (class-of ,obj)))))
            (slot-name (slot)
-             #+allegro `(clos::slotd-name ,slot)
+             #+(and allegro (not (version>= 6))) `(clos::slotd-name ,slot)
+             #+(and allegro (version>= 6)) `(clos:slot-definition-name ,slot)
              #+clisp `(clos::slotdef-name ,slot)
              #+cmu `(slot-value ,slot 'pcl::name)
              #+cormanlisp `(getf ,slot :name)
              #+lispworks `(hcl::slot-definition-name ,slot)
              #+lucid `(clos:slot-definition-name ,slot))
            (slot-initargs (slot)
-             #+allegro `(clos::slotd-initargs ,slot)
+             #+(and allegro (not (version>= 6))) `(clos::slotd-initargs ,slot)
+             #+(and allegro (version>= 6))
+             `(clos:slot-definition-initargs ,slot)
              #+clisp `(clos::slotdef-initargs ,slot)
              #+cmu `(slot-value ,slot 'pcl::initargs)
              #+cormanlisp `(getf ,slot :initargs)
@@ -113,7 +117,10 @@
              #+lucid `(clos:slot-definition-initargs ,slot))
            (slot-one-initarg (slot) `(car (slot-initargs ,slot)))
            (slot-alloc (slot)
-             #+allegro `(clos::slotd-allocation ,slot)
+             #+(and allegro (not (version>= 6)))
+             `(clos::slotd-allocation ,slot)
+             #+(and allegro (version>= 6))
+             `(clos:slot-definition-allocation ,slot)
              #+clisp `(clos::slotdef-allocation ,slot)
              #+cmu `(pcl::slot-definition-allocation ,slot)
              #+cormanlisp `(getf ,slot :allocation)

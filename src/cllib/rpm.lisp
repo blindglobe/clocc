@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.15 2002/09/24 17:38:18 sds Exp $
+;;; $Id: rpm.lisp,v 2.16 2003/06/07 00:25:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -555,6 +555,22 @@ available in `*rpm-locations*'."
 ;; (rpm-clean-up)
 ;; (rpm-clean-up "/var/tmp/o/")
 
+(defun rpm-clean-hdr (dir &optional (out *standard-output*))
+  (format out " ***** HDR Cleaning up `~a'~%" dir)
+  (do ((fl (directory (merge-pathnames "*.hdr" dir)) (cdr fl))
+       (nn 0) (tot 0 (1+ tot)) (fs 0) (tfs 0) (sz 0))
+      ((null fl)
+       (format out " ***** ~:d/~:d HDR file~:p (~:d/~:d byte~:p) deleted~%"
+               nn tot fs tfs)
+       (values nn fs tot tfs))
+    (setq sz (file-size (car fl)) tfs (+ sz tfs))
+    (unless (probe-file (make-pathname :type "rpm" :defaults (car fl)))
+      (format out " ~3d * removing ~a (~:d bytes) (no RPM)..."
+              (incf nn) (car fl) sz)
+      (multiple-value-bind (tt co) (ignore-errors (delete-file (car fl)))
+        (format out "~:[failed: ~a~;done~*~]~%" tt co))
+      (incf fs sz))))
+
 ;;;###autoload
 (defun rpm-clean-up (&optional
                      (dirs (remove *rpm-local-target* *rpm-local-paths*
@@ -564,15 +580,21 @@ available in `*rpm-locations*'."
   (declare (stream out))
   (etypecase dirs
     ((or string pathname)
-     (format out " ***** Cleaning up `~a'~%" dirs)
+     (format out " ***** RPM Cleaning up `~a'~%" dirs)
      (flet ((to-file (rpm) (merge-pathnames (format nil "~a.rpm" rpm) dirs)))
        (do* ((fl (sort (map-in #'rpm (directory (merge-pathnames
-                                                 "*.rpm" dirs))) #'rpm<)
+                                                 "*.rpm" dirs)))
+                       #'rpm<)
                  (cdr fl))
              (nn 0) (tot 0 (1+ tot)) (fs 0) (tfs 0) (sz 0) nfile (rm nil nil)
              (file (to-file (car fl)) nfile) (good (rpm-path-valid-p file)))
             ((null fl)
-             (format out " ***** ~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
+             (format
+              out " ***** ~:d/~:d RPM file~:p (~:d/~:d byte~:p) deleted~%"
+              nn tot fs tfs)
+             (multiple-value-bind (nn1 fs1 tot1 tfs1) (rpm-clean-hdr dirs out)
+               (incf nn nn1) (incf fs fs1) (incf tot tot1) (incf tfs tfs1))
+             (format out " ===== ~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
                      nn tot fs tfs)
              (values nn fs tot tfs))
          (declare (type index-t nn tot) (type file-size-t sz fs tfs))

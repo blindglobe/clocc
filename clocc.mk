@@ -3,13 +3,13 @@
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
 # This file requires GNU Make
 #
-# $Id: clocc.mk,v 1.8 2000/03/28 14:38:00 sds Exp $
+# $Id: clocc.mk,v 1.9 2000/04/19 17:00:09 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
 LISPFILE := $(TOP)/bin/lisp-file
 FASLEXT := $(shell $(RUNLISP) -faslext)
-CLOCCTOP := $(TOP)/clocc
+CLOCCIMAGE := $(TOP)/clocc-image
 FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
 	*.o *.data *.ufsl
 LISPFILES = $(addsuffix .$(LISPEXT),$(SOURCES))
@@ -30,7 +30,7 @@ default: force
 	@echo " + $(SYSTEM).zip - the archive of SOURCES, DOCFILES ($(DOCFILES)), MAKEFILES ($(MAKEFILES)) and ZIPEXTRA ($(ZIPEXTRA))"
 
 system: $(SYSTEM).system
-	$(RUNLISP) -i $(CLOCCTOP) -x '(mk:compile-system "$(SYSTEM)")'
+	$(RUNLISP) -I $(CLOCCIMAGE) -x '(mk:compile-system "$(SYSTEM)")'
 
 all: $(addsuffix .$(FASLEXT),$(SOURCES))
 

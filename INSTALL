@@ -1,0 +1,22 @@
+INSTALLATION OF CLOCC
+
+1. Set the environment variable LISPTYPE appropriately
+   (currently supported types: acl43, acl5, clisp, cmucl, gcl)
+
+2. Edit the logical hosts definitions in the file "clocc.lisp" in the
+   top-level directory according to your configuration.
+
+3. Type "make clocc-image" in the top-level directory.
+   This will compile "clocc.lisp" and the "defsystem" package,
+   and then dump an image with them.
+   This image will be used in compiling the rest of CLOCC.
+
+4. You should be able compile any package in CLOCC now by typing
+   "make system" in the appropriate directory.
+   E.g., if you want to compile a "port" (the cross-implementation
+   portability system), you do
+        $ cd src/port
+        $ make system
+
+5. Packages in CLOCC are documented separately.  You should look for
+   files <package>/<package>.txt or <package>/<package>.html.

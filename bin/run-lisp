@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.8 2000/03/24 00:37:34 sds Exp $
+# $Id: run-lisp,v 1.9 2000/04/19 17:00:09 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -155,7 +155,7 @@ case "$1" in
             ${CLISP-clisp} -M "$1".mem
         ;;
         cmucl )
-            ${CMUCL-lisp} -core "$1".core -eval '(run)'
+            ${CMUCL-lisp} -core "$1".core
             ;;
         acl43 )
             # Why "$1"? ACL4.3 dumps executables
@@ -280,26 +280,29 @@ case "$1" in
     case "$LISPTYPE" in
       clisp )
           todo="(setq lisp:*load-paths* '(#P\"\")) "$todo
-          ${CLISP-clisp} -norc -q ${image+"-M ${image}.mem"} -x "$todo"
+          test -z "$image" || image="-M ${image}.mem";
+          exec ${CLISP-clisp} -norc -q ${image} -x "$todo"
           ;;
       cmucl )
           # we have to convince CMUCL to return a proper exit status.
           todo="(let (.res (.cond t))
                   (unwind-protect
                     (multiple-value-setq (.res .cond)
-                       (ignore-errors (progn $todo (fresh-line) (finish-output))))
+                       (ignore-errors (progn $todo
+                                        (fresh-line) (finish-output))))
                     (unix:unix-exit (if .cond 1 0))))"
-          exec ${CMUCL-lisp} -noinit ${image+"-core ${image}.core"} \
-               -eval "$todo"
+          test -z "$image" || image="-core ${image}.core";
+          exec ${CMUCL-lisp} -noinit ${image} -eval "$todo"
           ;;
       acl43 )
-          echo "$todo" | ${image-${ACL43-cl}} -batch
+          exec echo "$todo" | ${image-${ACL43-cl}} -batch
           ;;
       acl5 )
-          echo "$todo" | ${ACL5-cl} ${image+"-I ${image}.dxl"} -batch
+          test -z "$image" || image="-I ${image}.dxl";
+          exec echo "$todo" | ${ACL5-cl} ${image+"-I ${image}.dxl"} -batch
           ;;
       gcl )
-          echo "$todo" | ${image-${GCL-gcl}} -batch
+          exec echo "$todo" | ${image-${GCL-gcl}} -batch
           ;;
       * )
           if [ -n "$LISPTYPE" ] ; then

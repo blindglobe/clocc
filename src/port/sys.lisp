@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.29 2001/05/18 16:04:07 sds Exp $
+;;; $Id: sys.lisp,v 1.30 2001/05/21 16:04:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -170,9 +170,10 @@ but there is a TYPE slot, move TYPE into NAME."
 (defun probe-directory (filename)
   "Check whether the file name names an existing directory."
   #+allegro (excl::probe-directory filename)
-  #+clisp (ignore-errors
-            (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
-                       filename))
+  #+clisp (values
+           (ignore-errors
+             (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
+                        filename)))
   #+cmu (eq :directory (unix:unix-file-kind (namestring filename)))
   #+lispworks (lw:file-directory-p filename)
   #-(or allegro clisp cmu lispworks)

@@ -90,7 +90,7 @@
   (destructuring-bind (kwd-file name
 				&rest keys
 				&key
-				(language :common-lisp)
+				(language nil)
 				(header nil)
 				&allow-other-keys)
       file-form

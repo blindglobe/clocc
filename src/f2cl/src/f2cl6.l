@@ -53,9 +53,7 @@
 	(when (char-equal (aref line k) #\')
 	  ;; End of string or quoted quote character?
 	  (if (and (< k len) (char-equal (aref line (1+ k)) #\'))
-	      (progn
-		(write-char #\' out)
-		(incf k))
+	      (incf k)
 	      (return)))
 	(when (>= k len)
 	  (return))
@@ -571,8 +569,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.26 2001/09/10 16:21:39 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.27 2001/09/10 16:37:14 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.27  2001/09/10 16:37:14  rtoy
+;;; Oops.  Forgot to strip out the extra quote when we got quoted quotes
+;;; in format strings.
+;;;
 ;;; Revision 1.26  2001/09/10 16:21:39  rtoy
 ;;; Handle Fortran-style strings better by handling quoted quotes.  (In
 ;;; Fortran 'It''s time' is the string "It's time".)

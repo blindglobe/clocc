@@ -1,5 +1,8 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
 
+(in-package :common-lisp-controller)
+
+
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (unless (find-package :mk)
     (error "You need to load the mk defsystem before loading or compiling this file!"))
@@ -9,47 +12,49 @@
 
 ;; Make specialized operator to load only binary files
 ;; Signal error if a binary component is missing
-(in-package :asdf)
 
-(defclass load-only-compiled-op (operation)
-  ((forced-p :initform t)))
-(export 'load-only-compiled-op)
+;; load-only-compiled-op is an ASDF operation that only loads
+;; compiled code
+(defclass load-only-compiled-op (asdf:operation)
+  ((asdf::forced-p :initform t)))
 
-(defclass clc-compile-op (compile-op) ())
-(export 'clc-compile-op)
+(defmethod asdf:output-files ((asdf:operation load-only-compiled-op)
+			      (c asdf:cl-source-file))
+  (list (compile-file-pathname (asdf:component-pathname c))))
 
-(defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
-  (list (compile-file-pathname (component-pathname c))))
-
-(defmethod perform ((o load-only-compiled-op) (c cl-source-file))
-  (let* ((co (make-sub-operation o 'clc-compile-op))
-	 (output-files (output-files co c)))
-    (setf (component-property c 'last-loaded)
+(defmethod asdf:perform ((o load-only-compiled-op) (c asdf:cl-source-file))
+  (let* ((co (asdf::make-sub-operation o 'clc-compile-op))
+	 (output-files (asdf:output-files co c)))
+    (setf (asdf:component-property c 'asdf::last-loaded)
 	  (if (some #'not (map 'list #'load output-files))
 	      nil
 	    (file-write-date (car output-files))))))
 
-(defmethod output-files :around ((c load-only-compiled-op) x)
+(defmethod asdf:output-files :around ((c load-only-compiled-op) x)
   (declare (ignore x))
   (let ((orig (call-next-method)))
     (mapcar #'(lambda (y)
 		(merge-pathnames 
-		 (enough-namestring y c-l-c::*source-root*) c-l-c::*fasl-root*))
+		 (enough-namestring y *source-root*) *fasl-root*))
 	    orig)))
 
-(defmethod output-files :around ((c clc-compile-op) x)
+;; clc-compile-op is an ASDF operation that compiles source code using
+;; the CLC *fasl-root* as the root of the output directories
+
+(defclass clc-compile-op (asdf:compile-op) ())
+
+(defmethod asdf:output-files :around ((c clc-compile-op) x)
   (declare (ignore x))
   (let ((orig (call-next-method)))
     (mapcar #'(lambda (y)
 		(merge-pathnames 
-		 (enough-namestring y c-l-c::*source-root*) c-l-c::*fasl-root*))
+		 (enough-namestring y *source-root*) *fasl-root*))
 	    orig)))
 
-(in-package :common-lisp-controller)
 
 (defun find-system (module-name)
-  "Looks for name of system. Returns :defsystem3 if found defsystem
-file or :asdf if found asdf file"
+  "Looks for name of system. Returns :asdf if found asdf file or
+:defsystem3 if found defsystem file."
   (cond
    ;; probing is for weenies: just do
    ;; it and ignore the errors :-)
@@ -63,7 +68,7 @@ file or :asdf if found asdf file"
 			     (make-pathname
 			      :directory (list :relative
 					       (asdf:component-name system)))
-			     c-l-c::*source-root*))))
+			     *source-root*))))
 	  :asdf))))
    ((ignore-errors
       (equalp
@@ -123,7 +128,7 @@ file or :asdf if found asdf file"
   (let ((system (asdf:find-system module-name)))
     (or
      ;; try to load it
-     (ignore-errors (asdf:oos 'asdf::load-only-compiled-op module-name))
+     (ignore-errors (asdf:oos 'load-only-compiled-op module-name))
      ;; if not: try to compile it
      (progn
        (format t "~&;;;Please wait, recompiling library...")
@@ -141,7 +146,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (asdf:oos 'asdf::load-only-compiled-op module-name) 
+       (asdf:oos 'load-only-compiled-op module-name) 
        t))))
 
 
@@ -179,7 +184,7 @@ file or :asdf if found asdf file"
       (:defsystem3
        (mk:oos library :compile :verbose nil))
       (:asdf
-       (asdf:oos 'asdf:clc-compile-op library))
+       (asdf:oos 'clc-compile-op library))
       (t
        (format t "~%Package ~S not found... ignoring~%"
 	       library))))

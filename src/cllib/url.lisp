@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.18 2001/06/11 19:44:13 sds Exp $
+;;; $Id: url.lisp,v 2.19 2001/07/03 14:07:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -99,6 +99,8 @@ guess from the protocol."
         (or (ssp (string-downcase (string (url-prot url))))
             (ssp (case (url-prot url)
                    (:mailto "smtp") (:news "nntp") (:www "http")))
+            ;; yuk!! Solaris does not have http in /etc/services
+            (and (eq (url-prot url) :http) 80)
             (error 'code :proc 'url-get-port :args (list url)
                    :mesg "Cannot guess the port for ~s")))
       (url-port url)))

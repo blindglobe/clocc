@@ -779,15 +779,28 @@ FILENAME                 File containing Fortran code
      
      ;; (return (list '----> (check_new_vbles x)))
 
-     (when (or (eq (car x) 'block)
-	       (eq (car x) 'blockdata))
+     (when (or (eq (car x) 'blockdata)
+	       (and (eq (car x) 'block)
+		    (eq (second x) 'data)))
        ;; A block data subprogram.  We cheat and pretend it's a
        ;; subroutine with a special name. If a name is given, use that
-       ;; as part of the special name.
-       (let ((name (if (second x)
-		       (intern (concatenate 'string "/BLOCKDATA-" (string (second x)) "/"))
-		       '/blockdata/)))
-	 (setq bindings (id-definition-sub `(subroutine ,name)))
+       ;; as part of the special name.  Be careful.  If we change the
+       ;; name used here, we need to modify f2cl5.l to recognize the
+       ;; new name.
+       (let* ((name (cond ((eq (car x) 'blockdata)
+			   (if (second x)
+			       (string (second x))
+			       nil))
+			  ((eq (car x) 'block)
+			   (if (third x)
+			       (string (third x))
+			       nil))
+			  (t
+			   nil)))
+	      (bdname (if name
+			  (intern (concatenate 'string "/BLOCKDATA-" name "/"))
+			  '/blockdata/)))
+	 (setq bindings (id-definition-sub `(subroutine ,bdname)))
 	 (return (parse-subr-definition bindings))))
 
      ;;fall out the bottom:
@@ -2124,8 +2137,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.93 2002/03/06 02:49:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.94 2002/03/06 03:16:37 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.94  2002/03/06 03:16:37  rtoy
+;;; Oops.  A block data subprogram looks like "blockdata <name>" or "block
+;;; data <name>" where <name> is optional.
+;;;
 ;;; Revision 1.93  2002/03/06 02:49:07  rtoy
 ;;; o Correct some comments.
 ;;; o BLOCKDATA subprograms can have names, so make that part of the

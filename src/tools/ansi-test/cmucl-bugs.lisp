@@ -579,6 +579,12 @@ these are not rationals, so we get a complex number back.
  :ok)
 
 (my-assert
+ (progn
+   (compile-file "compile-bug4nt.lisp")
+   :ok)
+ :ok)
+
+(my-assert
  (prolog-length (list (list 1 2)
 		      (list 3)))
  3)

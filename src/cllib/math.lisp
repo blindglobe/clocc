@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-04-17 Sat 18:33:36 EDT sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-05-24 Mon 15:21:13 EDT sds@goems.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -7,11 +7,15 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.18 1999/04/17 22:34:17 sds Exp $
+;;; $Id: math.lisp,v 1.19 1999/05/24 21:06:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.19  1999/05/24 21:06:04  sds
+;;; (volatility): `dev-fn' keyword argument.
+;;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
+;;;
 ;;; Revision 1.18  1999/04/17 22:34:17  sds
 ;;; (safe-fun): use `values-list'.
 ;;; (safe-fun1): new macro.
@@ -496,18 +500,22 @@ Uses the numerically stable algorithm with pre-computing the means."
   "Interface to `covariation' with one sequence."
   (covariation seq seq :key0 xkey :key1 ykey))
 
-(defun volatility (lst split-key &key (key #'value))
+(defun volatility (lst split-key &rest args
+                   &key (dev-fn #'standard-deviation-relative)
+                   &allow-other-keys)
   "Return volatilities for the terms corresponding to SPLIT-KEY.
-The second value returned is the mean of the volatilities.
+The first value returned is the mean of the volatilities,
+the second - the volatilities themselves.
 E.g., (volatility (currency-hist (find-currency 'dx))
                   (compose date-ye currency-rec-date)
                   :key #'currency-rec-avg)
-will return the list of the volatilities for each year
-and the average annual volatility for US Dollar Index."
+will return the average annual volatility for US Dollar Index
+and the list of the volatilities for each year."
   (declare (type (or function fixnum) split-key) (list lst)
-           (type (function (t) double-float) key))
-  (let ((vols (call-on-split lst #'standard-deviation-relative
-                             :split-key split-key :key key :min-len 2)))
+           (type (function (sequence) double-float) dev-fn))
+  (remf args :dev-fn)
+  (let ((vols (apply #'call-on-split lst dev-fn :split-key split-key
+                     :min-len 2 args)))
     (values (mean vols :key #'cdr) vols)))
 
 ;;; Mean / Deviation / Length
@@ -522,9 +530,9 @@ and the average annual volatility for US Dollar Index."
 (defconst +bad-mdl+ mdl (make-mdl) "The convenient constant for init.")
 (defmethod value ((mdl mdl)) (mdl-mn mdl))
 
-(defmethod print-object ((mdl mdl) (stream stream))
+(defmethod print-object ((mdl mdl) (out stream))
   (if *print-readably* (call-next-method)
-      (format stream "[~6f ~6f ~5:d]" (mdl-mn mdl) (mdl-sd mdl) (mdl-le mdl))))
+      (format out "[~6f ~6f ~5:d]" (mdl-mn mdl) (mdl-sd mdl) (mdl-le mdl))))
 
 (defun standard-deviation-mdl (seq &key (key #'value))
   "Compute an MDL from the SEQ."
@@ -706,7 +714,7 @@ Returns the integral, the last approximation, and the number of points."
         (sum-odd
          f1 (loop :for ii :of-type index-t :from 1 :below mm :by 2
                   :and step :of-type double-float :from 1.0d0 :by 2.0d0
-                  :sum (funcall ff (+ x0 (* hh step))) double-float))
+                  :sum (funcall ff (+ x0 (* hh step))) :of-type double-float))
         (int-last 0.0 int)
         (int (* (/ hh 3.0) (+ f0 (* 4.0 f1) fm))
              (* (/ hh 3.0) (+ f0 (* 4.0 sum-odd) (* 2.0 sum-even) fm))))
@@ -732,9 +740,9 @@ Returns the probability of at least one event happening."
 
 (defconst +bad-line+ line (make-line) "*The convenient constant for init.")
 
-(defmethod print-object ((ln line) (stream stream))
+(defmethod print-object ((ln line) (out stream))
   (if *print-readably* (call-next-method)
-      (format stream "{~6f ~6f}" (line-sl ln) (line-co ln))))
+      (format out "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
 (defsubst line-val (ln par)
   "Evaluate the line at point."

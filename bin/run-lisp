@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.7 2000/03/01 20:17:02 sds Exp $
+# $Id: run-lisp,v 1.8 2000/03/24 00:37:34 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -104,10 +104,9 @@ case "$1" in
                   # Call .
                   ${CMUCL-lisp} -noinit \
                          -eval "(progn \
-                                  (write-string (c:backend-fasl-file-type c:*target-backend*)) \
+                                  (write-string (c:backend-fasl-file-type c:*target-backend*))
                                   (terpri)
                                   (ext:quit 0))"
-                         -batch </dev/null
                   ;;
             esac
             ;;
@@ -290,7 +289,8 @@ case "$1" in
                     (multiple-value-setq (.res .cond)
                        (ignore-errors (progn $todo (fresh-line) (finish-output))))
                     (unix:unix-exit (if .cond 1 0))))"
-          exec ${CMUCL-lisp} ${image+"-core ${image}.core"} -eval "$todo"
+          exec ${CMUCL-lisp} -noinit ${image+"-core ${image}.core"} \
+               -eval "$todo"
           ;;
       acl43 )
           echo "$todo" | ${image-${ACL43-cl}} -batch

@@ -20,7 +20,8 @@ case "$1" in
         update-inetd --remove "^8990@localhost\t.*"
 	update-inetd --remove "^8990\t.*"
 
-        adduser --system --home /usr/lib/common-lisp --shell /bin/false --no-create-home \
+	getent passwd cl-builder > /dev/null || \
+	    adduser --system --home /usr/lib/common-lisp --shell /bin/false --no-create-home \
                 --disabled-password --disabled-login --group cl-builder  || true
         
         if [ "$1" = "upgrade" ] ; then

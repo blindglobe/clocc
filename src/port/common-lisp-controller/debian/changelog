@@ -1,3 +1,11 @@
+common-lisp-controller (3.33) unstable; urgency=low
+
+  * Fix type if clc-autobuild-check
+  * Add check in preinst to avoid adding cl-builder user if already exists
+  in passwd file.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 26 Sep 2002 00:05:33 -0600
+
 common-lisp-controller (3.32) unstable; urgency=low
 
   * Improve logic in clc-autobuild-check

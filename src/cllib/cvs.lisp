@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.4 2000/05/24 23:50:31 sds Exp $
+;;; $Id: cvs.lisp,v 2.5 2000/05/31 20:18:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,7 +20,7 @@
   (require :date (translate-logical-pathname "cllib:date"))
   ;; `hash-table->alist'
   (require :miscprint (translate-logical-pathname "cllib:miscprint"))
-  ;; `default-directory'
+  ;; `default-directory', `pathname-ensure-name'
   (require :sys (translate-logical-pathname "port:sys"))
   ;; `with-open-pipe'
   (require :shell (translate-logical-pathname "port:shell")))
@@ -123,20 +123,6 @@
                       :lines+ (or (car lines+-) 0)
                       :lines-  (abs (or (cadr lines+-) 0)))
        (if fin +eof+ (read in))))))
-
-(defun pathname-ensure-name (path)
-  (let ((path (pathname path)))
-    (if (pathname-name path) path
-        ;; this is an ugly workaround for CLISP's buggy handling of pathnames:
-        ;; first, it thinks ".foo" has no name, second,
-        ;; (make-pathname :defaults "a.b" :name "c" :type nil) => #p"c.b"
-        (make-pathname ;; :defaults path
-                       :host (pathname-host path)
-                       :device (pathname-device path)
-                       :directory (pathname-directory path)
-                       :version (pathname-version path)
-                       :name (concatenate 'string "." (pathname-type path))
-                       :type nil))))
 
 (defun cvs-read-file (in ra)
   "Read a CVS-FILE from a stream.  Suitable for `read-list-from-stream'."

@@ -14,6 +14,8 @@
 (in-package :user)
 (defvar *verbose* nil)
 (defvar *comments* nil)
+(defvar *f2cl-version* "2.0 beta")
+
 (eval-when (compile load eval)
   (proclaim '(special *readtable* *sentable*))
   (proclaim '(special *intrinsic_function_names* *external_function_names*
@@ -61,7 +63,9 @@ only when needed. ")
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file
 			(array-type 'simple-array)
-			(array-slicing t))
+			(array-slicing t)
+			package
+			declaim)
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -88,6 +92,10 @@ INPUT-FILE               File containing Fortran code
 :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an array reference
                          in a call to a subroutine or function, we are really passing a
                          subarray to the routine instead of just the single value.
+:PACKAGE                 A string or symbol specifying what package the result code
+                         should be in. (Basically puts a (in-package <p>) at the top.)
+:DECLAIM                 Declaim compilation options  (Basically puts a
+                         (declaim <declaim>) at the top.)
 "
 
 
@@ -128,7 +136,15 @@ INPUT-FILE               File containing Fortran code
 					 :type extension))))
     (format t ";; ~S -> ~S~%" input-file output-file)
     (let ((processed-file (preprocess input-file)))
-      (fortran-to-lisp processed-file output-file)
+      (fortran-to-lisp processed-file output-file
+		       :declaim declaim
+		       :package package
+		       :options `((:prune-labels ,prune-labels)
+				  (:auto-save ,auto-save)
+				  (:relaxed-array-decls ,relaxed-array-decls)
+				  (:coerce-assigns ,coerce-assigns)
+				  (:array-type ',array-type)
+				  (:array-slicing ,array-slicing)))
       (unless keep-temp-file
 	(delete-file processed-file))
       (values output-file))))
@@ -230,7 +246,7 @@ INPUT-FILE               File containing Fortran code
 ;	maybe-extend-bindings
 ;------------------------------------------------------------------------------
 
-(defun fortran-to-lisp (file ofile)
+(defun fortran-to-lisp (file ofile &key declaim package options)
   (let (*common_array_dims* *format_stmts*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
@@ -246,7 +262,8 @@ INPUT-FILE               File containing Fortran code
 		(*print-length* nil))
 	    (translate-and-write-subprog 
 	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
-	     outport)))
+	     outport
+	     :declaim declaim :package package :options options)))
         ))
     t))
 ;-----------------------------------------------------------------------------
@@ -319,7 +336,7 @@ main-loop
   (if (eq (caadr margin-line) 'do) (cadadr margin-line) nil))
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
-(defun translate-and-write-subprog (prog-list outport)
+(defun translate-and-write-subprog (prog-list outport &key declaim package options)
   (prog (fort-fun *external_function_names*
 		  *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 		  *save_vbles* *key_params* *subprog_common_vars* 
@@ -376,6 +393,31 @@ main-loop
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
      ;;     (format t "~%after translation : ~A" fort-fun)
+
+     ;; Insert in-package and declaim, if needed
+     (multiple-value-bind (second minute hour date month year)
+	 (decode-universal-time (get-universal-time))
+       (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
+	       *f2cl-version*
+	       year month date hour minute second))
+     (let ((*print-case* :downcase))
+       (when options
+	 (pprint-logical-block (outport options :per-line-prefix ";;; ")
+	   (format outport "~&Options: ~S" options))
+	 (format outport "~2%"))
+       (when package
+	 (format outport "~&(in-package ~S)~%" (cond ((keywordp package)
+						      package)
+						     ((symbolp package)
+						      (string package))
+						     ((packagep package)
+						      (package-name package))
+						     (t
+						      package))))
+       (when declaim
+	 (format outport "(declaim ~S)~%" declaim))
+       (when (or package declaim)
+	 (format outport "~2%")))
      (multiple-value-bind (spec-proc spec-decl fun)
 	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
        ;;(format t "spec-proc = ~S~%" spec-proc)
@@ -1734,8 +1776,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.40 2000/07/14 15:44:46 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.41 2000/07/14 16:45:54 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.41  2000/07/14 16:45:54  rtoy
+;;; o Allow the user to specify what package the resulting file should be
+;;;   in and any declaims he wants.
+;;; o Print out some additional information in the result like the f2cl
+;;;   version and the compilation options.
+;;; o Added *f2cl-version*
+;;;
 ;;; Revision 1.40  2000/07/14 15:44:46  rtoy
 ;;; o Added keyword :array-slicing to f2cl to support array slicing.
 ;;; o Preliminary support for array slicing.  That is,

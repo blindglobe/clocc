@@ -126,7 +126,7 @@ only when needed. ")
 			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file
-			(array-type :array array-type-p)
+			(array-type :simple-array array-type-p)
 			(array-slicing t)
 			package
 			declaim
@@ -173,6 +173,7 @@ INPUT-FILE               File containing Fortran code
   (assert (or (null coerce-assigns)
 	      (member coerce-assigns '(:always :never :as-needed t))))
   (assert (member array-type '(:simple-array :array)))
+  #+nil
   (when (and array-slicing array-type-p
 	     (eq array-type :simple-array))
     (warn ":array-slicing is T, so specified :array-type of :simple-array is overridden"))
@@ -183,9 +184,8 @@ INPUT-FILE               File containing Fortran code
 	(*common-block-initialized* nil)
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns)
-	(*array-type* (if array-slicing 'array
-			  (cdr (assoc array-type '((:simple-array . lisp:simple-array)
-						   (:array . lisp:array))))))
+	(*array-type* (cdr (assoc array-type '((:simple-array . lisp:simple-array)
+					       (:array . lisp:array)))))
 	(*array-slicing* array-slicing)
 	(*apply-array-slice* nil)
 	(*declare-common-blocks* declare-common))
@@ -229,7 +229,7 @@ INPUT-FILE               File containing Fortran code
 			      (auto-save t) (relaxed-array-decls t)
 			      (coerce-assigns :as-needed)
 			      (keep-lisp-file t)
-			      (array-type :array)
+			      (array-type :simple-array)
 			      (array-slicing t)
 			      package
 			      declaim
@@ -2075,8 +2075,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.90 2002/02/10 03:42:45 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.91 2002/02/17 15:51:19 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.91  2002/02/17 15:51:19  rtoy
+;;; With the new array-slicing method, the default array type can be
+;;; simple-array again.
+;;;
 ;;; Revision 1.90  2002/02/10 03:42:45  rtoy
 ;;; Since :array-slicing defaults to T, make :array-type default to :array
 ;;; instead of :simple-array.

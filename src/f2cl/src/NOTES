@@ -2,6 +2,20 @@
 
 Changes:
 
+Jan 13, 2002
+------------
+
+A major change, with hopefully minimal impact.
+
+All of the symbols in macros.l is now in the F2CL-LIB package.  If
+generated code needs symbols from macros.l, they are now prefixed with
+the appropriate package qualifier.
+
+This change was made so that the converted code can be used in other
+packages even if the other package happens to use the same symbols.
+
+See the change logs for other changes.
+
 Sep 9, 2001
 -----------
 

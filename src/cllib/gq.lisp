@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1999-10-13 Wed 11:33:38 EDT sds@ksp.com>
+;;; File: <gq.lisp - 1999-10-19 Tue 14:42:56 EDT sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,15 +11,21 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.11 1999/10/13 15:43:19 sds Exp $
+;;; $Id: gq.lisp,v 1.12 1999/10/19 18:50:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
-;;; Revision 1.11  1999/10/13 15:43:19  sds
-;;; (get-quotes-apl): updated.
-;;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
-;;; (code): added a method for PFL.
-;;; (update-quotes): bind `*gq-error-stream*' to nil.
+;;; Revision 1.12  1999/10/19 18:50:08  sds
+;;; (get-quotes-pf): updated.
+;;; (infer-date): work with no args.
+;;; (process-results): better date inference.
+;;; (update-quotes): new `:debug' keyword argument.
 ;;;
+;; Revision 1.11  1999/10/13  15:43:19  sds
+;; (get-quotes-apl): updated.
+;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
+;; (code): added a method for PFL.
+;; (update-quotes): bind `*gq-error-stream*' to nil.
+;;
 ;; Revision 1.10  1999/02/25 23:38:18  sds
 ;; Updated for the new `dated-list'.
 ;;
@@ -119,7 +125,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
 (defun get-quotes-apl (url &rest ticks)
   "Get the data from the APL WWW server."
   (let ((url (apply 'gq-complete-url url ticks)))
-    (mesg :log *gq-error-stream* " *** URL: `~s'~%" url)
+    (mesg :log *gq-error-stream* " *** <URL:~s>~%" url)
     (with-open-url (sock url :timeout 600 :err *gq-error-stream*
                          :rt *html-readtable*)
       (do (dt zz res (ts (make-text-stream :sock sock)))
@@ -144,18 +150,20 @@ change:~15t~7,2f~35thigh:~45t~7,2f
 
 (defun get-quotes-pf (url &rest ticks)
   "Get the data from the PathFinder WWW server."
-  (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
-                       :err *gq-error-stream* :rt *html-readtable*)
-    (let ((dt +bad-date+) (ts (make-text-stream :sock sock)))
-      (declare (type date dt) (type text-stream ts))
-      (do ((t0 (next-token ts) (next-token ts)) (t1 nil t0))
-          ((and (eq t1 'latest) (eq t0 'prices))
-           (setq dt (infer-date (next-token ts) (next-token ts)))))
-      (do ((zz (next-token ts) (next-token ts)) res)
-          ((null ticks) (cons dt (nreverse res)))
-        (when (eq (car ticks) zz)
-          (pop ticks)
-          (push (mk-daily-data :nav (next-number ts :num 6)) res))))))
+  (let ((url (apply 'gq-complete-url url ticks)))
+    (mesg :log *gq-error-stream* " *** <URL:~s>~%" url)
+    (with-open-url (sock url :timeout 600 :err *gq-error-stream*
+                         :rt *html-readtable*)
+      (let ((dt (infer-date)) (ts (make-text-stream :sock sock)))
+        (declare (type date dt) (type text-stream ts))
+        (ts-skip-scripts ts)
+        (do ((zz (next-token ts) (next-token ts)) res)
+            ((null ticks) (cons dt (nreverse res)))
+          (when (eq (car ticks) zz)
+            (mesg :log *gq-error-stream* " *** found: ~s~%" (car ticks))
+            (pop ticks)
+            (push (mk-daily-data :nav (next-number ts)) res)
+            (mesg :log *gq-error-stream* " *** saved: ~s~%" (car res))))))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
@@ -235,13 +243,16 @@ The first arg, SERVER, when non-nil, specifies which server to use."
                    (ignore-errors (apply (cadar ql) (caar ql) ticks))))
         (format t "~:[failed...[~a]~;success!~*~]~%" (car res) (cdr res)))))
 
-(defun infer-date (mon day)
+(defun infer-date (&optional mon day)
   "Guess what the date is.
 Return the most recent date with these month and day."
   (multiple-value-bind (se mm ho da mo ye) (get-decoded-time)
-    (declare (ignore se ho da) (fixnum mo ye mm))
-    (setq mm (infer-month mon))
-    (mk-date :da day :mo mm :ye (if (<= mm mo) ye (1- ye)))))
+    (declare (ignore se mm) (fixnum mo ye mm))
+    (if mon
+        (let ((mm (infer-month mon)))
+          (mk-date :da day :mo mm :ye (if (<= mm mo) ye (1- ye))))
+        (let ((dd (mk-date :da da :mo mo :ye ye)))
+          (if (< ho 18) (previous-working-day dd) dd)))))
 
 ;;;
 ;;; }}}{{{ Holdings
@@ -269,17 +280,18 @@ Return the most recent date with these month and day."
   "The history, to be read from `*hist-data-file*'.")
 
 (defstruct (pfl)
-  (tick nil :type symbol)
-  (nums 0.0d0 :type double-float)
-  (bprc 0.0d0 :type double-float)
-  (name "" :type string))
+  (tick nil :type symbol)       ; TICKer
+  (nums 0.0d0 :type double-float) ; NUMber of Shares
+  (bprc 0.0d0 :type double-float) ; Base PRiCe
+  (name "" :type string))       ; full NAME
 
 (defun read-pfl (stream ra)
   "Read a PFL from the STREAM, using the read-ahead RA.
 Suitable for `read-list-from-stream'."
   (declare (stream stream))
   (values (make-pfl :tick ra :nums (read stream) :bprc (read stream)
-                    :name (read stream)) (read stream nil +eof+)))
+                    :name (read stream))
+          (read stream nil +eof+)))
 
 (defmethod print-object ((pfl pfl) (out stream))
   (if *print-readably* (call-next-method)
@@ -433,7 +445,8 @@ YEA is the list of 1, 3, 5, and 10-year returns."
                                                  :key #'pfl-tick)
                                        (hist-navs (cadr lh)))))))
              (incf ctot cv) (incf otot ov) (incf ptot pv)
-             (setf (values pers apy) (percent-change ov cv db))
+             (setf (values pers apy)
+                   (percent-change (pfl-bprc hl) (dd-nav dd) db))
              (pr-res str "   " cv ov pers apy pv))
            hold (rest res) (if yea (list yea) nil))
     (setf (values pers apy) (percent-change otot ctot db))
@@ -449,7 +462,8 @@ YEA is the list of 1, 3, 5, and 10-year returns."
 previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                      (hist-navs (cadr lh)) pnavs
                      (setf (cddr lh)
-                           (list (make-hist :date (yesterday (car res))
+                           (list (make-hist :date (previous-working-day
+                                                   (car res))
                                             :navs pnavs :totl
                                             (hist-totl-comp hold pnavs)))))
              (setq lh (cdr lh)))
@@ -496,13 +510,16 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
   (merge-pathnames "text/getquote.log" (user-homedir-pathname))
   "The log file for the batch processing.")
 
-(defun update-quotes (&key (plot nil plotp) server)
+(defun update-quotes (&key (plot nil plotp) server debug)
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
-If PLOT is T, just plot, do not try to update quotes."
+If PLOT is T, just plot, do not try to update quotes.
+See `*get-quote-url-list*' for available SERVERs.
+If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
   ;; interactive (ia) = works with CLISP and ACL, but not with CMUCL
   (let ((ia (eq *standard-output* *standard-input*))
-        (*print-log* (mk-arr 'symbol nil 0)) (*gq-error-stream* nil))
+        (*print-log* (if debug *print-log* (mk-arr 'symbol nil 0)))
+        (*gq-error-stream* (if debug *gq-error-stream* nil)))
     #+win32 (unless ia
               (setq *hist-data-file* (pathname "c:/home/sds/text/invest.txt")))
     (setf (values *holdings* *history*) (read-data-file *hist-data-file*))

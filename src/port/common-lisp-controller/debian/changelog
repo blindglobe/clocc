@@ -1,3 +1,10 @@
+common-lisp-controller (3.51) unstable; urgency=low
+
+  * Found the root cause of a bug that seems to undo the
+    clc installation in cmucl. Now we warn for this. Closes: #174454
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu,  6 Feb 2003 20:53:21 +0100
+
 common-lisp-controller (3.50) unstable; urgency=low
 
   * Change package for REQUIRE with OpenMCL

@@ -268,14 +268,20 @@ system to execute the clc-send-command program"
 	  (ensure-lower package)
 	  (ensure-lower impl)))
 
-(defun send-clc-command (command package)
-  "Function to be overrided by the implementation.
+(unless (fboundp 'send-clc-command)
+  (defun send-clc-command (command package)
+    "Function to be overrided by the implementation.
 Should execute:
 /usr/bin/clc-send-command command package <implementation-name> --quiet
 
 with command either :recompile or :remove"
-  (cerror "Done"
-          "This implementation has not yet implemented common-lisp-controller:send-clc-command.
+    (cerror "Done"
+	    "This implementation has not yet implemented common-lisp-controller:send-clc-command.
 Please run /usr/bin/clc-send-command --quiet ~A ~A <implementation-name>
-and continue"
-          command package))
+and continue.
+
+In the case of cmucl, please check that the /etc/common-lisp/cmucl/site-init.lisp file does
+NOT load /usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller.lisp 
+file as this will undo the custom make-clc-send-command-string function that was
+installed during the core-building process"
+	    command package)))

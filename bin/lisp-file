@@ -1,0 +1,8 @@
+#!/bin/sh
+
+file=$1;
+if [ -f $file.lisp ]; then echo $file.lisp;
+elif [ -f $file.lsp ]; then echo $file.lsp;
+elif [ -f $file.l ]; then echo $file.l;
+else echo $file;
+fi

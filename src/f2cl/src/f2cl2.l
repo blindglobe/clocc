@@ -20,7 +20,7 @@
 ;	id-array-store - check args eval to integers in range at eval time
 ;	restore-negative-numbers
 ;------------------------------------------------------------------------------
-(in-package :user)
+(in-package :cl-user)
 (eval-when (compile load eval)
   (proclaim '(optimize (speed 3) (safety 1)))
 
@@ -442,8 +442,11 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.21 2000/07/19 13:50:11 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.22 2000/07/27 16:39:17 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.22  2000/07/27 16:39:17  rtoy
+;;; We want to be in the CL-USER package, not the USER package.
+;;;
 ;;; Revision 1.21  2000/07/19 13:50:11  rtoy
 ;;; o Use the macro ARRAY-SLICE to slice the array instead of inline as we
 ;;;   were doing it.

@@ -3,7 +3,7 @@
 ;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;Hamilton, New Zeland 1992-95 - all rights reserved;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(in-package :user)
+(in-package :cl-user)
 (eval-when (compile load eval)
   (export '(do1 do! map-defvar double-cdr double-mapcar push 
 	    fexport fproclaim fuse-package fin-package fdo arithmetic-if
@@ -832,8 +832,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.22 2000/07/20 13:44:38 rtoy Exp $
+;;; $Id: macros.l,v 1.23 2000/07/27 16:39:17 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.23  2000/07/27 16:39:17  rtoy
+;;; We want to be in the CL-USER package, not the USER package.
+;;;
 ;;; Revision 1.22  2000/07/20 13:44:38  rtoy
 ;;; o Remove old fref macro
 ;;; o Add some comments

@@ -24,7 +24,7 @@
 ;     parse-number
 ;	write-comment-line
 ;--------------------------------------------------------------------------
-(in-package :user)
+(in-package :cl-user)
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 ;--------------------------------------------------------------------------  
 ; global stream input for parse-number:
@@ -277,8 +277,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.14 2000/07/21 21:15:17 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.15 2000/07/27 16:39:17 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.15  2000/07/27 16:39:17  rtoy
+;;; We want to be in the CL-USER package, not the USER package.
+;;;
 ;;; Revision 1.14  2000/07/21 21:15:17  rtoy
 ;;; Fix a typo in the punctuation list and add "/" to the list.
 ;;;

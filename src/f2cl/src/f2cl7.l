@@ -13,6 +13,8 @@
 ;	prune-labels
 ;	cond-remove-end-label
 
+(in-package :cl-user)
+
 (defvar *prune_labels* t)
 (eval-when (compile load eval) (proclaim '(special *verbose*)))
 ;-----------------------------------------------------------------------
@@ -95,8 +97,11 @@
 ;;;-----------------------------------------------------------------------
 ;;; end of f2cl7.l
 ;;;
-;;; $Id: f2cl7.l,v 1.3 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl7.l,v 1.4 2000/07/27 16:39:17 rtoy Exp $
 ;;; $Log: f2cl7.l,v $
+;;; Revision 1.4  2000/07/27 16:39:17  rtoy
+;;; We want to be in the CL-USER package, not the USER package.
+;;;
 ;;; Revision 1.3  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

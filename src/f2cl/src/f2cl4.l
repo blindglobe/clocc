@@ -11,7 +11,7 @@
 ;	id-relational
 ;	memberq
 ;-----------------------------------------------------------------------------
-(in-package :user)
+(in-package :cl-user)
 (defun memberq (x l) (member x l :test #'eq))
 
 (defun id-logical (l)
@@ -110,8 +110,11 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl4.l
 ;;;
-;;; $Id: f2cl4.l,v 1.2 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl4.l,v 1.3 2000/07/27 16:39:17 rtoy Exp $
 ;;; $Log: f2cl4.l,v $
+;;; Revision 1.3  2000/07/27 16:39:17  rtoy
+;;; We want to be in the CL-USER package, not the USER package.
+;;;
 ;;; Revision 1.2  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

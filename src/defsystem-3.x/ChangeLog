@@ -1,6 +1,16 @@
+2002-05-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp: Added PATHNAME-HOST to pathname construction in
+	ENSURE-DIRECTORIES-EXIST in COMPILE-FILE-OPERATION.
+
+	Added loader for C Libraries for SBCL and (experimental) loader for C
+	libraries for Lispworks 4.2 both under MS Windows and UNIX.
+
 2002-03-26  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
-	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
 	Changed computation of the compiled file extension for ACL when the
 	source file type is "cl".
 

@@ -8,9 +8,13 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.4 2000/03/03 22:01:03 sds Exp $
+;;; $Id: net.lisp,v 1.5 2000/03/07 20:28:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.5  2000/03/07 20:28:00  sds
+;;; (socket-server-host, socket-server-port): new functions
+;;; (socket-host, socket-accept): fixed for CMUCL
+;;;
 ;;; Revision 1.4  2000/03/03 22:01:03  sds
 ;;; fixed provide statements
 ;;;
@@ -94,7 +98,7 @@
                   :aliases (ext:host-entry-aliases he)
                   :addr-list (mapcar #'ipaddr-to-dotted
                                      (ext:host-entry-addr-list he))
-                  :addr-type (ext:host-entry-addr-type he)))
+                  :addr-type (ext::host-entry-addr-type he)))
   #+lispworks
   (let ((he (fli:dereference (comm::gethostbyname host))))
     (make-hostent :name (fli:convert-from-foreign-string
@@ -150,9 +154,10 @@
 (defun socket-host (sock)
   "Return the remote host name."
   (declare (type socket sock))
-  #+clisp (lisp:socket-stream-host sock)
   #+allegro (socket:ipaddr-to-dotted (socket:remote-host sock))
-  #+cmu (ext::gethostbyaddr (ext:get-socket-host-and-port sock))
+  #+clisp (lisp:socket-stream-host sock)
+  #+cmu (ipaddr-to-dotted (ext:get-socket-host-and-port
+                           (system:fd-stream-fd sock)))
   ;; #+gcl #+lispworks
   #-(or allegro clisp cmu)
   (error 'not-implemented :proc (list 'socket-host sock)))
@@ -160,8 +165,8 @@
 (defun socket-port (sock)
   "Return the remote port number."
   (declare (type socket sock))
-  #+clisp (lisp:socket-stream-port sock)
   #+allegro (socket:remote-port sock)
+  #+clisp (lisp:socket-stream-port sock)
   #+cmu (nth-value 1 (ext:get-socket-host-and-port sock))
   ;; #+gcl #+lispworks
   #-(or allegro clisp cmu)
@@ -181,7 +186,7 @@
   #+clisp (lisp:socket-accept serv :element-type
                               (if bin '(unsigned-byte 8) 'character))
   #+cmu (progn
-          (mp:process-wait-until-fd-usable serv :input)
+          (system:wait-until-fd-usable serv :input)
           (system:make-fd-stream (ext:accept-tcp-connection serv)
                                  :input t :output t :element-type
                                  (if bin '(unsigned-byte 8) 'character)))
@@ -208,6 +213,23 @@
   #+clisp (lisp:socket-server-close server)
   #+cmu (unix:unix-close server)
   #-(or clisp cmu) (close server))
+
+(defun socket-server-host (server)
+  "Return the host on which the server is running."
+  #+cmu (declare (ignore server))
+  #+allegro (socket:ipaddr-to-dotted (socket:local-host server))
+  #+clisp (lisp:socket-server-host server)
+  #+cmu (ext::gethostbyname "localhost") ; FIXME (returns an alien, not string)
+  #-(or allegro clisp cmu)
+  (error 'not-implemented :proc (list 'socket-server-host server)))
+
+(defun socket-server-port (server)
+  "Return the local port on which the server is running."
+  #+allegro (socket:local-port server)
+  #+clisp (lisp:socket-server-host server)
+  #+cmu server
+  #-(or allegro clisp cmu)
+  (error 'not-implemented :proc (list 'socket-server-port server)))
 
 ;;;
 ;;; }}}{{{ conditions

@@ -16,7 +16,10 @@
 
 (defvar *source-extentions* (list "CL" "LISP"
                                   "L" "LSP"
-                                  "C" "H"))
+                                  "C" "H"
+             			  #+openmcl "cl" #+openmcl "lisp"
+                                  #+openmcl "l" #+openmcl "lsp"
+                                  #+openmcl "c" #+openmcl "h"))
 
 (defvar *fasl-type* 
   (load-time-value 

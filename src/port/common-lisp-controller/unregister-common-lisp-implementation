@@ -37,6 +37,9 @@ EOF
   exit 0
 fi
 
+#uninstall the defsystem
+sh "$FILE" remove-defsystem || echo De-installation defsystem failed  
+
 # Just remove the damn subtree
 
 (cd / ; rm -rf "/usr/lib/common-lisp/${1}/" ; true )

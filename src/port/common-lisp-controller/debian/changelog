@@ -1,3 +1,10 @@
+common-lisp-controller (2.11) unstable; urgency=low
+
+  * Now u-c-l-i also calls remove-defsystem. Closes: #123617
+  * OpenMCL patches. Closes: #123621
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 12 Dec 2001 21:05:43 +0100
+
 common-lisp-controller (2.10) unstable; urgency=high
 
   * Fixed major logical pathname problem.

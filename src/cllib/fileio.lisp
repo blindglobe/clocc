@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.38 2004/09/03 16:23:22 sds Exp $
+;;; $Id: fileio.lisp,v 1.39 2004/09/26 14:16:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -252,7 +252,8 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
       (with-standard-io-syntax
         (let ((*readtable* readtable) (*package* package)
               (*read-default-float-format* float))
-          (read-from-stream str :repeat repeat))))))
+          (values (read-from-stream str :repeat repeat)
+                  file-length))))))
 
 (defun append-to-file (file fmt &rest fmt-args)
   "Append to the file the formatted output."

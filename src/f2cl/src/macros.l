@@ -192,10 +192,6 @@
 		     `(<= ,(first dim) ,idx ,(second dim)))
 		 indices bounds)))
 
-#+nil
-(defmacro fref (arr indices bounds)
-  `(aref ,arr ,(col-major-index indices bounds)))
-
 (defmacro fref (arr indices bounds)
   (if *check-array-bounds*
       `(aref ,arr (if ,(check-array-bounds indices bounds)
@@ -216,6 +212,12 @@
 (defmacro // (a b)
   `(concatenate 'string ,a ,b))
 
+;; Create an array slice for the array named VNAME whose elements are
+;; of type TYPE.  The slice starts at the indices INDICES and the
+;; original array has dimensions given by BOUND.
+;;
+;; This is done by making a displaced array to VNAME with the
+;; appropriate offset.
 (defmacro array-slice (vname type indices bounds)
   (let ((dims `(* ,@(mapcar #'(lambda (idx bnd)
 				(if (and (numberp idx)
@@ -230,6 +232,26 @@
       :element-type ',type
       :displaced-to ,vname
       :displaced-index-offset ,(col-major-index indices bounds))))  
+
+;; Compute an initializer for make-array given the data in the list
+;; DATA.  The array has en element type of TYPE and has dimensions of
+;; DIMS.
+(defmacro array-initialize (type dims data)
+  (let ((data-list (gensym))
+	(data-len (length data))
+	(total-length (gensym)))
+    `(let* ((,data-list ',data)
+	    (,total-length (reduce #'* (list ,@dims))))
+       (cond ((< ,data-len ,total-length)
+	      ;; Need to append some data.
+	      (append ,data-list (make-list (- ,total-length ,data-len)
+					    :initial-element (coerce 0 ',type))))
+	     ((> ,data-len ,total-length)
+	      ;; Need to truncate some data
+	      (subseq ,data-list 0 ,total-length))
+	     (t
+	      ,data-list)))))  
+
 ;----------------------------------------------------------------------------
 
 #-aclpc (defmacro while (con &rest body)
@@ -810,8 +832,14 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.21 2000/07/19 13:54:27 rtoy Exp $
+;;; $Id: macros.l,v 1.22 2000/07/20 13:44:38 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.22  2000/07/20 13:44:38  rtoy
+;;; o Remove old fref macro
+;;; o Add some comments
+;;; o Add macro ARRAY-INITIALIZE to handle creating the appropriate for to
+;;;   give to make-array :initial-contents.
+;;;
 ;;; Revision 1.21  2000/07/19 13:54:27  rtoy
 ;;; o Add the types ARRAY-DOUBLE-FLOAT, ARRAY-SINGLE-FLOAT, and
 ;;;   ARRAY-INTEGER4.

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.42 2002/01/26 19:29:26 sds Exp $
+;;; $Id: sys.lisp,v 1.43 2002/03/30 00:51:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -84,7 +84,7 @@
   #+gcl (si:specialp symbol)
   #+lispworks (eq :special (hcl:variable-information symbol))
   #+lucid (system:proclaimed-special-p symbol)
-  #+sbcl (sb-walker:variable-globally-special-p symbol)
+  #+sbcl (sb-walker:var-globally-special-p symbol)
   #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
 
@@ -103,7 +103,7 @@
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
   #+lucid (lcl:arglist fn)
-  #+sbcl (values (let ((st (sb-kernel:%function-arglist fn)))
+  #+sbcl (values (let ((st (sb-kernel:%simple-fun-arglist fn)))
                   (if (stringp st) (read-from-string st)
                       #+ignore(eval:interpreted-function-arglist fn))))
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)

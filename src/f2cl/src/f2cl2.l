@@ -178,8 +178,9 @@ Tag being parsed:| (cadr x))))
   (error "Cannot find array bounds for ~S!" v))
 
 
+#+nil
 (defun update-called-functions-list (name args)
-  (let ((fcn (member name *functions-used* :key #'car)))
+  (let ((fcn (member name *functions-used* :key #'caar)))
     (cond (fcn
 	   ;; Found it.  Let's add the arguments to the arg list
 	   (setf (second (first fcn))
@@ -188,6 +189,58 @@ Tag being parsed:| (cadr x))))
 	  (t
 	   ;; A new function.  Let's add it and the args to the list.
 	   (push (list name (mapcar #'list args)) *functions-used*)))))
+
+;; NAME should be a list.  For functions, it's just a list of the name
+;; itself.  For subroutines, it should be a list of the name and the
+;; keyword :subroutine.
+;;
+;; The format of *functions-used* is this:
+;;
+;; (f1 f2 f3 f4 ...)
+;;
+;; where f1 is (function-type list-of-args)
+;;
+;; where function-type is (name [:subroutine])
+;;
+;; and list-of-args is (arg1 arg2 arg3 ...)
+;;
+;; where arg1 is (a1 a2 a3 ...), the list of arguments used in the
+;; call to the subprogram.
+;;
+;; For example,
+;;
+;; (((DLOG) (((DABS (F2CL/ (+ 1.0d0 (- CC)) (+ 1.0d0 CC))))))
+;;  ((DQCHEB :SUBROUTINE) ((X) (FVAL) (CHEB12) (CHEB24)))
+;;  ((F)
+;;   (((+ CENTR (- U))) ((+ U CENTR)) ((+ CENTR (- HLGTH))) (CENTR)
+;;    ((+ HLGTH CENTR))))
+;;  ((DQK15W :SUBROUTINE)
+;;   ((F) (DQWGTC) (C) (P2) (P3) (P4) (KP) (A) (B) (RESULT) (ABSERR)
+;;    (RESABS) (RESASC)))
+;;  ((DABS)
+;;   (((+ RES24 (- RES12))) ((F2CL/ (+ 1.0d0 (- CC)) (+ 1.0d0 CC)))
+;;    ((F2CL/ (+ 1.0d0 (- CC)) (+ 1.0d0 CC))) (CC))))
+;;
+;; This means DLOG is a function and was called once with the
+;; arguments (DABS (F2CL/ (+ 1.0d0 (- CC)) (+ 1.0d0 CC))).
+;;
+;; DQCHEB is a subroutine called once with the arguments ((X) (FVAL) (CHEB12) (CHEB24)).
+;;
+;; F is a function and was called 5 different times with arguments:
+;; 1. (+ CENTR (- U))
+;; 2. (+ U CENTR)
+;; 3. (+ CENTR (- HLGTH))
+;; 4. CENTR
+;; 5. (+ HLGTH CENTR)
+(defun update-called-functions-list (name args)
+  (let ((fcn (find (first name) *functions-used* :key #'caar)))
+    (cond (fcn
+	   ;; Found it.  Let's add the arguments to the arg list
+	   (push args (second fcn)))
+	  (t
+	   ;; A new function.  Let's add it and the args to the list.
+	   (push (list name (list args)) *functions-used*)))
+    *functions-used*))
 
 (defun id-factor (l)
   (cond 
@@ -245,7 +298,7 @@ Tag being parsed:| (cadr x))))
 
 					; function of no variables:
     ((and (symbolp (car l)) (eq nil (cadr l)))
-     (update-called-functions-list (car l) nil)
+     (update-called-functions-list (list (car l)) nil)
      (list (car l)))
 
 					; boolean expression:
@@ -259,7 +312,7 @@ Tag being parsed:| (cadr x))))
      (cond ((not (null (cddr l)))
 	    (princ-reset
 	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
-     (update-called-functions-list (car l)
+     (update-called-functions-list (list (car l))
 				   (mapcar #'id-expression (list-split '|,| (cadr l))))
      (cons (case (car l)
 	     ;; Handle some special cases for intrinsic functions
@@ -342,7 +395,7 @@ Tag being parsed:| (cadr x))))
        ;; argument list so we can determine later the types of each
        ;; parameter, if we really want to.
 
-       (update-called-functions-list fname args)
+       (update-called-functions-list (list fname) args)
        (cond ((member fname *subprog-arglist*)
 	      ;; We want to use funcall only if the external function
 	      ;; was passed in as a parameter.  If not, then we don't
@@ -412,8 +465,17 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.19 2000/07/14 15:48:34 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.20 2000/07/18 14:04:33 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.20  2000/07/18 14:04:33  rtoy
+;;; Changes for UPDATE-CALLED-FUNCTIONS-LIST:
+;;;
+;;; o Document the layout of *functions-list*
+;;; o Make the appropriate code changes in other parts since the name arg
+;;;   is now either a list of the name for functions or a list of the name
+;;;   and :subroutine for subroutines.  (Used for declaring functions and
+;;;   subroutines correctly.)
+;;;
 ;;; Revision 1.19  2000/07/14 15:48:34  rtoy
 ;;; Preliminary support for array slicing.  Any array reference in a
 ;;; function or subroutine call is assumed to mean a slice of the array.

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.1 2004/11/10 14:17:58 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.2 2004/11/18 04:46:05 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1023,14 +1023,15 @@
     (->pathname ytools-home-dir*)
     ytools-bin-path*)
 
-(def-ytools-pathname-control perform)
+(defun dir-pn (pn)
+   (make-Pathname :host (Pathname-host pn)
+		  :device (Pathname-device pn)
+		  :directory (Pathname-directory pn)
+		  :version #+allegro ':unspecific #-allegro ':newest))
 
-(defmethod make-load-form ((perform-pspn Perform-pseudo-pn) &optional env)
-   (declare (ignore env))
-   `(make-Perform-pseudo-pn
-        :control ',(Pseudo-pathname-control perform-pspn)
-	:opvec false
-	:actions ',(Perform-pseudo-pn-actions perform-pspn)))
+#|
+This never served any real purpose anyway --
+(def-ytools-pathname-control perform)
 
 (defun perform-pspn-parse (operands _)
    (let ((remainder (or (member-if #'atom operands)
@@ -1051,10 +1052,6 @@
    :loader #'perform-pspn-execute
    :compiler #'perform-pspn-execute
    :expander false)
+|#
 
-(defun dir-pn (pn)
-   (make-Pathname :host (Pathname-host pn)
-		  :device (Pathname-device pn)
-		  :directory (Pathname-directory pn)
-		  :version #+allegro ':unspecific #-allegro ':newest))
 		  

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.1 2004/11/10 00:00:57 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.2 2004/11/18 04:46:05 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -12,17 +12,22 @@
 ;;; needs it has a pointer to the Chunk so it can tell whether the
 ;;; information is up to date and if not recompute it.
 (defclass Chunk ()
-   ((name :reader Chunk-name
+  ((name :reader Chunk-name
 	  :initarg :name
 	  :initform ""
 	  :type string)
+   (manage-request :accessor Chunk-manage-request
+		   :initform false
+		   :type boolean)
+   ;; -- true if user has declared that this chunk should be
+   ;; managed.
    (managed :accessor Chunk-managed
 	    :initform false
 	    :type boolean)
-    ;; -- A chunk is being kept up to date if and only its 'managed'
-    ;; field is true.  It makes no sense for a managed chunk to be
-    ;; derived from an unmanaged one, so if this one is unmanaged so
-    ;; are its derivees.
+    ;; -- A chunk is being kept up to date if and only if its 'managed'
+    ;; field is true.  
+    ;; Global invariant: c is managed if and only if either its
+    ;; manage-request is t or some derivee is managed.
    (height :accessor Chunk-height
 	   :type integer)
    ;; -- 0 if not derived from anything, else 1 + max height
@@ -36,6 +41,10 @@
 	  :initform !()
 	  :type list)
    ;; -- list of Chunks this one is derived from
+   (derivees :accessor Chunk-derivees
+	     :initform !()
+	     :type list)
+   ;; -- back pointers to chunks this one is a member of the basis of
    (update-basis :accessor Chunk-update-basis
 		 :initarg :update-basis
 		 :initform false
@@ -47,11 +56,11 @@
    ;; is necessary to recompile M, then the chunk (:loaded (:macros B))
    ;; must be up to date; i.e., the macros must actually be loaded.
    ;; So this chunk is in its update-basis.
-   (derivees :accessor Chunk-derivees
-	     :initform !()
-	     :type list)
-   ;; -- back pointers to chunks this one is a member of the basis 
-   ;; or update-basis of
+   (update-derivees :accessor Chunk-update-derivees
+		    :initform !()
+		    :type list)
+   ;; -- back pointers to chunks this one is a member of the
+   ;; update basis of
    (update-mark :accessor Chunk-update-mark
 		:initform  0
 		:type fixnum)
@@ -64,6 +73,12 @@
 ;;; of a subset of the basis, so if we updated it it wouldn't change the
 ;;; the output of 'derive'.
 
+(defmethod print-object ((c Chunk) srm)
+   (format srm "#<Chunk~a~s>"
+	   (cond ((Chunk-managed c) "=")
+		 (t "_"))
+	   (Chunk-name c)))
+
 (defgeneric derive (chunk))
 ;;; Recomputes chunk
 ;;;   and returns time when it changed (usually current time)
@@ -72,7 +87,7 @@
 ;;; never calls 'chunk-update'; someone else is assumed
 ;;; to have done that.
 
-(defmethod initialize-instance :before ((ch Chunk) &rest initargs)
+(defmethod initialize-instance :after ((ch Chunk) &rest initargs)
    (declare (ignore initargs))
    (setf (Chunk-height ch)
          (cond ((null (Chunk-basis ch)) 0)
@@ -83,8 +98,15 @@
    (dolist (b (Chunk-basis ch))
       (pushnew ch (Chunk-derivees b) :test #'eq))
    (dolist (b (Chunk-update-basis ch))
-      (pushnew ch (Chunk-derivees b) :test #'eq)))
+      (pushnew ch (Chunk-update-derivees b) :test #'eq)))
 
+(defun chunk-request-mgt (c)
+   (cond ((not (Chunk-manage-request c))
+	  (setf (Chunk-manage-request c) true)
+	  (chunk-manage c))))
+
+;;; This doesn't call chunk-update, but presumably everyone who calls
+;;; this will call chunk-update immediately thereafter.
 (defun chunk-manage (chunk)
    (cond ((Chunk-managed chunk)
 	  (cond ((eq (Chunk-managed chunk)
@@ -97,25 +119,41 @@
 	     (chunk-manage b))
 	  (setf (Chunk-managed chunk) true))))
 
-(defun chunk-non-manage (chunk)
-   (labels ((chunk-gather-derivees (ch dvl)
-	       (cond ((or (not (Chunk-managed ch))
-			  (member ch dvl))
-		      dvl)
-		     (t
-		      (on-list ch dvl)
-		      (dolist (d (Chunk-derivees ch))
-			 (cond ((memq ch (Chunk-basis d))
+;;; This terminates the explicit request for management.
+;;; If 'propagate' is false, then the chunk will remain managed unless
+;;; none of its derivees are managed.
+;;; If 'propagate' is :ask, then the user will be asked if its
+;;; derivees should become unmanaged.
+;;; Any other value will cause any derivees to become unmanaged.
+(defun chunk-terminate-mgt (c propagate)
+   (cond ((Chunk-manage-request c)
+	  (setf (Chunk-manage-request c) false)
+	  (labels ((chunk-gather-derivees (ch dvl)
+		      (cond ((and (Chunk-managed ch)
+				  (not (member ch dvl)))
+			     (on-list ch dvl)
+			     (dolist (d (Chunk-derivees ch))
 				(setf dvl
-				      (chunk-gather-derivees d dvl)))))
-		      dvl))))
-      (let ((all-supported (chunk-gather-derivees chunk)))
-	 (cond ((or (< (length all-supported) 2)
-		    (yes-or-no-p
-		       "Should I really stop managing (keeping up to date) all of the following chunks? --~%  ~S?"
-		       all-supported))
-		(dolist (d (Chunk-derivees chunk))
-		   (setf (Chunk-managed chunk) false)))))))
+				      (chunk-gather-derivees d dvl)))
+			     dvl)
+			    (t dvl))))
+	     (cond (propagate
+		    (let ((all-derivees
+			     (chunk-gather-derivees c)))
+		       (cond ((or (not (eq propagate ':ask))
+				  (< (length all-derivees) 2)
+				  (yes-or-no-p
+				     "Should I really stop managing (keeping up to date) all of the following chunks? --~%  ~S?"
+				     all-derivees))
+			      (dolist (d all-derivees)
+				 (setf (Chunk-manage-request d) false)
+				 (setf (Chunk-managed d) false))))
+		       all-derivees))
+		   (t
+		    (setf (Chunk-managed c)
+		          (some #'Chunk-managed
+				(Chunk-derivees c)))))))
+	 (t false)))
 
 (defvar update-no* 0)
 
@@ -135,46 +173,43 @@
    ;; expanded to a tree (which is what eliminating this optimization
    ;; would amount to).
    (let (chunk)
-      (labels ((update-recursively (ch in-progress)
+      (labels ((update-recursively (ch starter in-progress)
+		  (format t "updating ~s~%" ch)
 		  (cond ((member ch in-progress)
-			 (format *error-output*
+			 (error
 			    "Attempt to update ~s in order to update itself~%"
 			    ch))
 			((not (= (Chunk-update-mark ch) update-no*))
 			 (let ((in-progress
 				     (cons ch in-progress)))
-;;; Fallacy -- a chunk can perfectly well be updated without being
-;;; managed.			   
-			    (dolist (b (Chunk-basis ch))
-;;;;			       (cond ((not (Chunk-managed ch))
-;;;;				      (cerror "I will try to manage it"
-;;;;					      "Unmanaged chunk ~S detected ~% as supporter of ~S"
-;;;;					      ch chunk)
-;;;;				      (chunk-manage ch)))
-			       (update-recursively
-				   b in-progress))
-			    (cond ((not (chunk-up-to-date ch))
+			    (cond ((or starter
+				       (not (chunk-up-to-date ch)))
 				   (dolist (ub (Chunk-update-basis ch))
-;;; Same fallacy --
-;;;;				      (chunk-manage ub)
 				      (update-recursively
-				         ub in-progress))
+				         ub false in-progress))
 				   ;; The deriver has not yet been called if
 				   ;; 'chunk-up-to-date' returns false
 				   (let ((new-date (derive ch)))
-				      (cond ((> new-date (Chunk-date ch))
-					     (setf (Chunk-date ch) new-date)
+				      (cond ((or starter
+						 (and new-date
+						      (> new-date
+							 (Chunk-date ch))))
+					     (setf (Chunk-date ch)
+					           (or new-date
+						       (get-universal-time)))
 					     (dolist (d (Chunk-derivees ch))
 						(cond ((Chunk-managed d)
 						       (update-recursively
-							  d))))))))))
+							  d false in-progress)))
+					     )))))))
 			 (setf (Chunk-update-mark ch) update-no*)))))
 	 (cond ((some #'Chunk-managed chunks)
 		(setf update-no* (+ update-no* 1))
+		(format t "update-no* = ~s~%" update-no*)
 		(dolist (ch chunks)
 		   (cond ((Chunk-managed ch)
 			  (setq chunk ch)
-			  (update-recursively chunk)))))))))
+			  (update-recursively chunk true '())))))))))
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.
@@ -199,7 +234,7 @@
 	     ;; updated.  Keep an eye on this assumption.
 	     (every (\\ (b)
 		       (=< (Chunk-date b) ch-date))
-		    (Chunk-basis b))))))
+		    (Chunk-basis ch))))))
 
 (defvar chunk-table* (make-hash-table :test #'equal :size 300))
 
@@ -208,8 +243,8 @@
   (:method ((x t))
      x)
 
-  (:method ((l consp))
-     (<# chunk-name->list-structure l)))
+  (:method ((l cons))
+     (mapcar #'chunk-name->list-structure l)))
 
 ;;; Index chunks by first pathname in their names, if any
 ;;; If 'creator' is non-false, it's a function that creates
@@ -238,7 +273,7 @@
 			(cond (creator
 			       (let ((new-chunk (funcall creator exp)))
 				  (on-list new-chunk
-				           (href chunk-table* pn))
+				           (href chunk-table* name-kernel))
 				  (cond ((Chunk-managed new-chunk)
 					 (chunk-update new-chunk)))
 				  new-chunk))

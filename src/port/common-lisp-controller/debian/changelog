@@ -2,13 +2,15 @@ common-lisp-controller (3.18) unstable; urgency=low
 
   * Remove calls to mk:new-require to remove an unecessary dependency on
     mk-defsystem3. Use c-l-c's orignal-require function instead.
-    (Kevin M. Rosenberg)
-  * Move grabbing of original implementation REQUIRE function to pre-defsystem file.
-    (Kevin M. Rosenberg)
-  * Bug fixes for Lispworks. (Kevin M. Rosenberg)
-  * Add preliminary asdf support. (Kevin M. Rosenberg)
+    (Kevin Rosenberg)
+  * Move grabbing of original implementation REQUIRE function to 
+    pre-defsystem file. (Kevin Rosenberg)
+  * Bug fixes for Lispworks. (Kevin Rosenberg)
+  * Add preliminary asdf support. (Kevin Rosenberg)
   * CLC-REQUIRE now calls original REQUIRE function if system
-    file is not found (Kevin M. Rosenberg)
+    file is not found (Kevin Rosenberg)
+  * Remove defsystem.lisp file from this package and now depend
+    on Debian package cl-defsystem3 (Kevin Rosenberg)
   * Upstream fix for :cltl2 symbol. Closes: #146504
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 28 Aug 2002 20:45:51 +0200

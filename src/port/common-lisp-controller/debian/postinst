@@ -1,5 +1,5 @@
-#! /bin/bash
-# postinst script for cmucl
+#!/bin/bash
+# postinst script for common-lisp-controller
 #
 # see: dh_installdeb(1)
 

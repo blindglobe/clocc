@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # preinst script for common-lisp-controller
 #
 # see: dh_installdeb(1)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.11 2000/05/08 17:53:56 sds Exp $
+;;; $Id: fileio.lisp,v 1.12 2000/05/08 19:59:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -212,8 +212,9 @@ if T, read until end of file and return a list of objects read."
   (declare (type (or simple-string pathname) file))
   (with-timing (:done t :out out)
     (with-open-file (str file :direction :input)
-      (format out "~&Reading `~a' [~:d bytes]..." file (file-length str))
-      (force-output)
+      (when out
+        (format out "~&Reading `~a' [~:d bytes]..." file (file-length str))
+        (force-output out))
       (with-standard-io-syntax
         (let ((*readtable* readtable))
           (cond ((null repeat) (read str))

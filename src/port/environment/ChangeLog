@@ -1,3 +1,50 @@
+2004-01-08  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* environment.lisp: Copyright updated.
+
+	* env-package.lisp: Copyright updated.  New symbols exported.
+
+	* feature-tagged-type-class.lisp: Copyright updated.
+
+	* init-environment.lisp: Fixed copyright and added some SBCL support.
+
+	* load-cl-environment.lisp:
+	Changed copyright and fixed some typos.  Introduced the
+	CL-ENVIRONMENT-LOADER package to hide loading and compiling details.
+
+	* machine.lisp: Fixed wrong file name.
+
+	* machine.lisp, system-info.lisp: Copyright updated.
+
+	* impl-dependent/lispworks.lisp:
+	Fixed some problems with directory changes and modified copyright etc etc.
+
+	* impl-dependent/cmucl.lisp, impl-dependent/clisp.lisp:
+	Minor changes to the file (copyright fixes etc etc)
+
+	* impl-dependent/allegro.lisp:
+	Minor changes to the file (fixed copyright, etc etc)
+
+	* utilities.lisp: Added some simple functions like CD etc etc.
+
+	* software.lisp: Made minor updates to the file.
+
+	* operating-system.lisp: Updated file for Mac OS X.
+
+2002-06-14  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* impl-dependent/lcl.lisp:
+	Fixed a few mistakes with Lucid specicication.
+
+	* impl-dependent/sbcl.lisp: File added.
+
+2002-05-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* init-environment.lisp:
+	Fixed the read time conditionals to take into account CMUCL 18d.
+
 2002-05-10  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* init-environment.lisp:

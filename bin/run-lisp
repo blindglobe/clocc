@@ -3,9 +3,9 @@
 #     Title: A script to invoke the various CL implementations in a uniform way
 #   Created: 1999-01-16 16:41
 #    Author: Gilbert Baumann <unk6@rz.uni-karlsruhe.de>
-#   License: LGPL (See file COPYING for details)
+#   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
-#  (c) copyright 1999 by Gilbert Baumann
+#  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
 
 # Prior to invocation the LISPTYPE environment variable must been set to
 # one of these:
@@ -38,33 +38,36 @@ INVOCATION
 
  run-lisp -run image
    interactively run \`image'
-   (user:run will be called upon start up).
+   (user:run) will be called upon start up.
 
 Makefile support
 
  run-lisp -faslext
    echo the fasload file extension to stdout.
    This is useful for Makefile; you could then say e.g.
-   FAS:=$(shell (export LISPTYPE=$(LISPTYPE) ; $(TOP)/bin/run-lisp -faslext))
+   FAS:=$(shell $(TOP)/bin/run-lisp -faslext)
 
  run-lisp -dumpext
    echo the memory image extension _with_ dot.
    usage: (like above)
-   DUMP:=$(shell (export LISPTYPE=$(LISPTYPE) ; $(TOP)/bin/run-lisp -dumpext))
+   DUMP:=$(shell $(TOP)/bin/run-lisp -dumpext)
 
  run-lisp -cat [fasl-file ...]
    Cat all the given fasl files together.
 
 EXAMPLE
 
-   $ bin/run-lisp -x "(print argv)" foo bar baz "Hallo Welt" foo\"bar
+   $ run-lisp -x "(print argv)" foo bar baz "Hallo Welt" foo\"bar
    ("foo" "bar" "baz" "Hallo Welt" "foo\"bar")
    $
 EOF
     exit 0;
 }
 
-fail(){ echo "$0: $*" 1>&2; exit 1; }
+fail(){
+    echo "$0: $*" 1>&2
+    exit 1
+}
 
 case "$1" in
   "--help" | "-h" | "-?" )
@@ -89,9 +92,10 @@ case "$1" in
             echo 'fas'
             ;;
         cmucl )
-            # This can be found via (c:backend-fasl-file-type c:*target-backend*),
+            # This can be found via
+            #    (c:backend-fasl-file-type c:*target-backend*),
             # but for speed we look at the uname first.
-            case $(uname -m 2>/dev/null) in
+            case `uname -m 2>/dev/null` in
                 i[3-6]86 )
                    echo .x86f
                    ;;
@@ -224,7 +228,7 @@ case "$1" in
                   todo=$todo" (lisp:saveinitmem \"${arg}.mem\")"
                   ;;
               cmucl )
-                  todo=$todo" (save-lisp \"${arg}.core\")"
+                  todo=$todo" (ext:save-lisp \"${arg}.core\")"
                   ;;
               acl43 )
                   todo=$todo" (excl:dumplisp :name \"${arg}\")"

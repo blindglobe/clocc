@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1998-07-31 Fri 12:37:42 EDT sds@mute.eaglets.com>
+;;; File: <url.lisp - 1998-10-30 Fri 15:55:02 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.4 1998/07/31 16:53:21 sds Exp $
+;;; $Id: url.lisp,v 1.5 1998/10/30 20:55:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.5  1998/10/30 20:55:40  sds
+;;; Replaced `parse-url' with a generic function.
+;;; Added `*html-specials*', `html-translate-specials',
+;;; `*hyperspec-root*' and `hyperspec-snarf-examples'.
+;;;
 ;;; Revision 1.4  1998/07/31 16:53:21  sds
 ;;; Declared `stream' as a stream in `print-*'.
 ;;;
@@ -154,22 +159,23 @@ guess from the protocol."
        (or (alphanumericp char)
 	   (find char *url-special-chars* :test #'char=))))
 
-(defun read-url (&optional (str t))
-  "Read a URL from the stream."
-  (parse-url
-   (with-output-to-string (st)
-     (do (zz) ((not (url-constituent (setq zz (read-char str)))) st)
-       (write zz :stream st)))))
-
-(defun parse-url (string &key (start 0) end)
-  "Parse a string into a new URL."
-  (declare (string string) (fixnum start))
-  (let* ((string (coerce (string-trim +whitespace+ string) 'simple-string))
-         (idx (search "://" string :start2 start :end2 end :test #'char=))
+(eval-when (load compile eval)
+  (fmakunbound 'url)
+  (defgeneric url (xx) (:documentation "Convert the object into URL.
+The argument can be:
+   - a URL - returned untouched;
+   - a string - it is non-destructively parsed;
+   - a symbol - it is uninterned and its name is non-destructively parsed;
+   - a stream - read from."))
+  (declaim (ftype (function (t) url) url)))
+(defmethod url ((xx url)) xx)
+(defmethod url ((xx string))
+  (let* ((string (coerce (string-trim +whitespace+ xx) 'simple-string))
+         (idx (search "://" string :test #'char=)) (start 0)
          idx0 (url (make-url)))
-    (declare (simple-string string))
+    (declare (simple-string string) (fixnum start))
     (when idx
-      (setf (url-prot url) (subseq string start idx))
+      (setf (url-prot url) (subseq string 0 idx))
       (setq start (+ idx 3)))
     (setq idx (position #\@ string :start start :test #'char=))
     (when idx
@@ -191,18 +197,11 @@ guess from the protocol."
 	    ((not (mismatch "ftp" (url-host url) :test #'char= :end2 3))
 	     (setf (url-prot url) "ftp"))))
     url))
-
-;(defmacro parse-url (string &rest keys)
-;  "Read a URL from the string."
-;  (let ((st (getsym "url")))
-;    `(with-input-from-string (,st ,string ,@keys)
-;      (read-url ,st))))
-
-(defun url (url)
-  "Coerce the object into URL."
-  (cond ((url-p url) url)
-	((or (stringp url) (symbolp url)) (parse-url (string url)))
-	((error "Cannot infer a URL from `~s'.~%" url))))
+(defmethod url ((xx symbol)) (unintern xx) (url (string xx)))
+(defmethod url ((xx stream))
+  (url (with-output-to-string (st)
+         (do (zz) ((not (url-constituent (setq zz (read-char xx)))) st)
+           (write zz :stream st)))))
 
 (defstruct (text-stream (:conc-name ts-))
   "Text stream - to read a tream of text - skipping `:'."
@@ -259,7 +258,7 @@ ERR is the stream for information messages."
       (when (= stat 302) ; redirection
 	(setq res (read-line sk)) (read-line sk) (read-line sk)
 	(setq sym (read-line sk)
-	      sym (parse-url (subseq sym (1+ (position #\: sym)))))
+	      sym (url (subseq sym (1+ (position #\: sym)))))
 	(when (equal "" (url-host sym)) (setf (url-host sym) (url-host url)))
 	(format err " *** redirected to `~a' [~a]~%" sym res)
 	(when *html-verbose*
@@ -330,11 +329,12 @@ By default nothing is printed."
 
 (defun skip-search (stream string &optional out)
   "Read from STREAM until STRING is found by `search.'"
-  (declare (stream stream) (simple-string string) (values simple-string))
+  (declare (stream stream) (simple-string string)
+           (values (or null simple-string)))
   (mesg :head out " +++ `skip-search' --> `~a'~%" string)
-  (do ((st (read-line stream) (read-line stream)))
-      ((search string st :test #'char-equal) st)
-    (declare (simple-string st))))
+  (do ((st (read-line stream nil nil) (read-line stream nil nil)))
+      ((or (null st) (search string st :test #'char-equal)) st)
+    (declare (type (or null simple-string) st))))
 
 (defsubst read-trim (stream)
   "Read a line from stream and trim it."
@@ -357,7 +357,8 @@ By default nothing is printed."
     (declare (simple-string st res))))
 
 (defcustom *browsers* list
-  '((netscape "/usr/local/netscape/netscape" "-remote" "openURL(~a)"))
+  '((netscape "/usr/bin/netscape" "-remote" "openURL(~a)")
+    (emacs-w3 "/usr/bin/gnudoit" "(w3-fetch \"~a\")"))
   "The ALIST of browsers.")
 
 (defun view-url (url &optional (bro 'netscape))
@@ -397,6 +398,52 @@ See `dump-url' about the optional parameters."
 	((eq +eof+ (setq rr (read-next ts))))
       (declare (type (unsigned-byte 20) ii))
       (format out fmt ii rr))))
+
+;;;
+;;; HyperSpec examples
+;;;
+
+(defcustom *html-specials* list
+  '(("&gt;" . #\>) ("&lt;" . #\<) ("&quot;" . #\") ("&amp;" . #\&))
+  "Alist of translations of HTML specials like `&*'.")
+
+(defun html-translate-specials (str)
+  "Replace (non-destructively) HTML specals with their interpretations."
+  (declare (string str))
+  (do ((beg 0 (1+ beg)) res (len (length str)))
+      ((>= beg len) (coerce (nreverse res) 'string))
+    (declare (fixnum beg))
+    (case (char str beg)
+      (#\< (setq beg (or (position #\> str :start beg) len)))
+      (#\&
+       (let ((pa (find str *html-specials* :test
+                       (lambda (str pair)
+                         (let ((end (+ beg (length (car pair)))))
+                           (and (>= len end)
+                                (string= str (car pair) :start1 beg
+                                         :end1 end)))))))
+         (incf beg (1- (length (car pa))))
+         (push (cdr pa) res)))
+      (t (push (char str beg) res)))))
+
+(defcustom *hyperspec-root* simple-string "/usr/doc/lisp/HyperSpec/"
+  "The root of the HyperSpec tree.")
+
+(defun hyperspec-snarf-examples (&key (root *hyperspec-root*)
+                                 (out *standard-output*))
+  "Get the examples from the HyperSpec."
+  (declare (pathname root) (type output-stream out))
+  (format t " *** processing `~a'~%" root)
+  (dolist (fl (directory (merge-pathnames "*.html" root)))
+    (with-open-file (ff fl)
+      (unless (or (null (skip-search ff "<P><B>Examples:</B><P>"))
+                  (null (skip-search ff "<PRE>")))
+        (format out " +++ `~a'~%" fl)
+        (do ((st (read-line ff nil +eof+) (read-line ff nil +eof+)))
+            ((or (eq st +eof+) (string= st "</PRE>")))
+          (princ (html-translate-specials st) out) (terpri out)))))
+  (dolist (dir (directory (merge-pathnames "*/" root)))
+    (hyperspec-snarf-examples :root dir :out out)))
 
 (provide "url")
 ;;; url.lisp ends here

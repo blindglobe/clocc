@@ -3192,7 +3192,7 @@ D
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (find-system name :load)))
-	    #-(or CMU CLISP :sbcl)
+	    #-(or CMU CLISP :sbcl :lispworks)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
 		     (ignore *compile-verbose* #-MCL *compile-file-verbose*)
 		     (optimize (inhibit-warnings 3)))

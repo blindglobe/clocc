@@ -4,14 +4,14 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.3 2000/04/21 20:35:59 sds Exp $
+;;; $Id: math.lisp,v 2.4 2000/04/27 15:51:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
   (require :withtype (translate-logical-pathname "cllib:withtype"))
-  ;; `mesg', `get-float-time', `elapsed', `elapsed-1'
+  ;; `mesg', `get-float-time', `elapsed', `with-timing'
   (require :log (translate-logical-pathname "cllib:log"))
   ;; `read-from-file', `write-to-file'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
@@ -23,23 +23,23 @@
 (eval-when (compile load eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
-(export '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
-          make-primes-list number-sum-split all-num-split
-          eval-cont-fract fract-approx
-          *num-tolerance* *relative-tolerance* *absolute-tolerance*
-          dot poly1 poly erf norm normalize rel-dist
-          mean mean-cx weighted-mean weighted-mean-cons
-          geometric-mean weighted-geometric-mean weighted-geometric-mean-cons
-          mean-some standard-deviation standard-deviation-cx
-          standard-deviation-relative standard-deviation-mdl mdl
-          covariation covariation1 cov volatility
-          below-p linear safe-fun safe-fun1 safe-/ s/ d/
-          convex-hull1 convex-hull sharpe-ratio to-percent percent-change
-          rel-diff approx=-abs approx=-rel approx=
-          newton integrate-simpson add-probabilities
-          line line-val line-rsl line-below-p line-above-p intersect
-          with-line line-adjust line-adjust-dir line-adjust-list
-          line-thru-points regress lincom))
+(export
+ '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
+   make-primes-list number-sum-split all-num-split
+   eval-cont-fract fract-approx
+   *num-tolerance* *relative-tolerance* *absolute-tolerance*
+   dot poly1 poly erf norm normalize rel-dist
+   mean mean-cx weighted-mean geometric-mean weighted-geometric-mean mean-some
+   standard-deviation standard-deviation-cx weighted-standard-deviation
+   standard-deviation-relative standard-deviation-mdl mdl
+   covariation covariation1 cov volatility
+   below-p linear safe-fun safe-fun1 safe-/ s/ d/
+   convex-hull1 convex-hull sharpe-ratio to-percent percent-change
+   rel-diff approx=-abs approx=-rel approx=
+   newton integrate-simpson add-probabilities
+   line line-val line-rsl line-below-p line-above-p intersect
+   with-line line-adjust line-adjust-dir line-adjust-list
+   line-thru-points regress lincom))
 
 ;;;
 ;;;
@@ -179,13 +179,12 @@ The optional second argument specifies the list of primes."
 (defun make-primes-list (&optional (limit most-positive-fixnum))
   "Initialize `*primes*' and write `*primes-file*'."
   (declare (fixnum limit))
-  (let ((bt (get-float-time)) st)
+  (with-timing (:done t)
     (format t "Computing primes up to ~:d..." limit) (force-output)
-    (primes-to limit 10.0d0)
-    (format t "done [~a]~%" (setq st (elapsed-1 bt t)))
-    (write-to-file *primes* *primes-file* nil ";; Computed in " st
-                   (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
-                           limit (length *primes*)))))
+    (primes-to limit 10.0d0))
+  (write-to-file *primes* *primes-file* nil
+                 (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
+                         limit (length *primes*))))
 
 (defun number-sum-split (num fun fun-1 &optional (out *standard-output*))
   "Print all the splittings of NUM into (+ (FUN M) (FUN K))
@@ -368,47 +367,36 @@ Returns 2 values: the mean and the length of the sequence."
            (fixnum len) (values (complex double-float) fixnum))
   (values (/ (reduce #'+ seq :key key) len) len))
 
-(defun weighted-mean (seq wts &key (key #'value))
+(defun weighted-mean (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
-  (declare (sequence seq wts) (type (function (t) double-float) key)
-           (values double-float))
-  (/ (dot seq wts :key key) (reduce #'+ wts)))
-
-(defsubst weighted-mean-cons (seq &key (key #'value))
-  "Compute the weighted mean of the sequence of conses of numbers and
-weights (not necessarily normalized)."
-  (declare (sequence seq) (type (function (t) double-float) key)
-           (values double-float))
-  (weighted-mean (map 'list #'car seq) (map 'list #'cdr seq) :key key))
+  (declare (sequence seq wts) (type (function (t) double-float) value)
+           (type (function (t) number) weight)
+           (values double-float number))
+  (let ((twt (reduce #'+ wts :key weight)))
+    (values (/ (dot seq wts :key0 value :key1 weight) twt)
+            twt)))
 
 (defun geometric-mean (seq &key (key #'value))
   "Compute the geometric mean of the sequence of numbers.
 Returns 2 values: the mean and the length of the sequence."
-  (declare (sequence seq) (values double-float)
+  (declare (sequence seq) (values double-float fixnum)
            (type (function (t) double-float) key))
   (let ((len (length seq)))
     (values (expt (reduce #'* seq :key key) (/ len)) len)))
 
-(defun weighted-geometric-mean (seq wts &key (key #'value))
+(defun weighted-geometric-mean (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted geometric mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
-  (declare (sequence seq wts) (type (function (t) double-float) key)
+  (declare (sequence seq wts) (type (function (t) double-float) value weight)
            (values double-float))
-  (let ((twt (reduce #'+ wts)) (res 1.0d0))
+  (let ((twt (reduce #'+ wts :key weight)) (res 1.0d0))
     (declare (double-float res twt))
     (map nil (lambda (rr wt)
-               (declare (double-float wt))
-               (setq res (* res (expt (funcall key rr) (/ wt twt)))))
+               (setq res (* res (expt (funcall value rr)
+                                      (/ (funcall weight wt) twt)))))
          seq wts)
     res))
-
-(defsubst weighted-geometric-mean-cons (seq &key (key #'value))
-  "Compute the weighted geometric mean of the sequence
-of conses of numbers and weights (not necessarily normalized)."
-  (declare (sequence seq) (values double-float))
-  (weighted-geometric-mean (map 'list #'car seq) (map 'list #'cdr seq)
-                           :key key))
 
 (defun mean-some (seq &key (key #'value))
   "Compute the mean of the sequence of real numbers.
@@ -434,9 +422,23 @@ The mean and the length can be pre-computed for speed."
            (values double-float double-float fixnum))
   (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
   (values
-   (sqrt (/ (reduce #'+ seq :key
-                    (lambda (yy) (expt (- (funcall key yy) mean) 2)))
+   (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
             (1- len))) mean len))
+
+(defun weighted-standard-deviation (seq wts &key
+                                    (value #'value) (weight #'value))
+  "Compute the standard deviation of the sequence with weights."
+  (declare (sequence seq wts) (type (function (t) double-float) value)
+           (type (function (t) number) weight)
+           (values double-float double-float number))
+  (multiple-value-bind (mn twt)
+      (weighted-mean seq wts :value value :weight weight)
+    (let ((sum 0.0d0))
+      (map nil (lambda (xx ww)
+                 (incf sum (* (funcall weight ww)
+                              (sqr (- (funcall value xx) mn)))))
+           seq wts)
+      (values (sqrt (/ sum (1- twt))) mn twt))))
 
 (defsubst standard-deviation-cx (&rest args)
   "Return the `standard-deviation' of SEQ as #C(mean stdd)."

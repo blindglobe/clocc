@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.9 2000/05/08 17:56:28 sds Exp $
+;;; $Id: xml.lisp,v 2.10 2000/05/08 20:01:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -412,14 +412,16 @@ the first character to be read is #\T"
   `(with-timing (:out ,out)
     (when ,reset-ent (xml-init-entities))
     (with-xml-input (,var (open ,file :direction :input))
-      (format ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
-       file (file-length (car (xmlis-all ,var))))
-      (force-output ,out)
+      (when ,out
+        (format ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
+                file (file-length (car (xmlis-all ,var))))
+        (force-output ,out))
       (let ((*readtable* (make-xml-readtable)))
         (prog1 (progn ,@body)
-          (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
-                  (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
-                  (xmlis-size ,var)))))))
+          (when ,out
+            (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
+                    (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
+                    (xmlis-size ,var))))))))
 
 (defun xml-read-from-file (file &key (reset-ent t))
   "Read all XML objects from the file."

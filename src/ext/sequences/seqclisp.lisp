@@ -24,8 +24,7 @@
 (setf (symbol-function 'list-nreverse) (symbol-function 'nreverse))
 
 ;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
-(defmacro do-sequence ((var sequenceform &optional (resultform nil))
-                       &body body &environment env)
+(defmacro do-sequence ((var sequenceform &optional (resultform nil)) &body body)
   (multiple-value-bind (body-rest declarations) (system::parse-body body)
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)))

@@ -2,33 +2,30 @@
 # Sample debian/rules that uses debhelper.
 # GNU copyright 1997 to 1999 by Joey Hess.
 
-# Uncomment this to turn on verbose mode.
-export DH_VERBOSE=1
+#export DH_VERBOSE=1  # Uncomment this to turn on verbose mode.
+export DH_COMPAT=4
 
-export DESTDIR=`pwd`/debian/common-lisp-controller/
+CLC_SBIN	:= usr/sbin/
+CLC_BIN		:= usr/bin/
+CLC_SRC 	:= usr/share/common-lisp/source/common-lisp-controller/
 
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
 	# Add here commands to configure the package.	
-
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
-
 	# Add here commands to compile the package.
-	#/usr/bin/docbook-to-man debian/common-lisp-controller.sgml > common-lisp-controller.1
 	-$(MAKE) 
-
 	touch build-stamp
 
 clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
-
 	# Add here commands to clean up after the build process.
 	-$(MAKE) clean
 	rm -f *~  || true
@@ -40,18 +37,18 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	# Add here commands to install the package into debian/tmp.
-	install --group=root --owner=root register-common-lisp-source $(DESTDIR)/usr/sbin/
-	install --group=root --owner=root register-common-lisp-implementation $(DESTDIR)/usr/sbin/
-	install --group=root --owner=root unregister-common-lisp-source $(DESTDIR)/usr/sbin/
-	install --group=root --owner=root unregister-common-lisp-implementation $(DESTDIR)/usr/sbin/
-	install --group=root --owner=root clc-build-daemon $(DESTDIR)/usr/sbin/
-	install --group=root --owner=root clc-send-command $(DESTDIR)/usr/bin/
-	install --group=root --owner=root --mode=644 common-lisp-controller.lisp $(DESTDIR)/usr/share/common-lisp/source/common-lisp-controller/
-	install --group=root --owner=root --mode=644 common-lisp-controller-pre-defsystem.lisp $(DESTDIR)/usr/share/common-lisp/source/common-lisp-controller/
-	install --group=root --owner=root --mode=644 common-lisp-controller-post-defsystem.lisp $(DESTDIR)/usr/share/common-lisp/source/common-lisp-controller/
-	install --group=root --owner=root --mode=644 lisp-config.lisp $(DESTDIR)/etc/lisp-config.lisp
-	dh_install reregister-common-lisp-implementations usr/sbin
+	# Add here commands to install the package into debian/pkg-name
+	dh_install register-common-lisp-source $(CLC_SBIN)
+	dh_install register-common-lisp-implementation $(CLC_SBIN)
+	dh_install unregister-common-lisp-source $(CLC_SBIN)
+	dh_install unregister-common-lisp-implementation $(CLC_SBIN)
+	dh_install reregister-common-lisp-implementations $(CLC_SBIN)
+	dh_install clc-build-daemon $(CLC_SBIN)
+	dh_install clc-send-command $(CLC_BIN)
+	dh_install common-lisp-controller.lisp $(CLC_SRC)
+	dh_install common-lisp-controller-pre-defsystem.lisp $(CLC_SRC)
+	dh_install common-lisp-controller-post-defsystem.lisp $(CLC_SRC)
+	dh_install lisp-config.lisp etc/
 
 # Build architecture-independent files here.
  binary-indep: build install
@@ -76,8 +73,7 @@ binary-arch: build install
 #	dh_installinfo
 #	dh_undocumented
 	dh_installman clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 register-common-lisp-source.8 \
-                unregister-common-lisp-implementation.8 unregister-common-lisp-source.8 \
-		reregister-common-lisp-implementations.8
+                unregister-common-lisp-implementation.8 unregister-common-lisp-source.8 reregister-common-lisp-implementations.8
 	dh_link
 	dh_strip
 	dh_compress

@@ -36,7 +36,7 @@ chown -R nobody /usr/lib/common-lisp/
 su --shell=/bin/sh --command="
 umask 022
 for i  in /usr/share/common-lisp/systems/*.system  ; do
-    if [[ -r \$i ]] ; then
+    if [[ -f \$i -a -r \$i ]] ; then
      i=\${i%.system}
      package=\${i##*/}
      echo Recompiling package \$package for $1

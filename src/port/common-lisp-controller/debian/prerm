@@ -18,7 +18,7 @@ set -e
 case "$1" in
     remove|upgrade|deconfigure)
     	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
-            if [[ -r "$compiler" ]] ; then
+            if [[ -f "$compiler" -a -r "$compiler" ]] ; then
              i=${compiler##.*/}
              i=${i%.sh}
              if [ -x "$compiler" ] ; then

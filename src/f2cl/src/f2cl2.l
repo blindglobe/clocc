@@ -106,12 +106,17 @@ Tag being parsed:| (cadr x))))
      (cond ((eq (car l) '+) (setq l (cdr l)))
            ((eq (car l) '-) (setq l (cons 0 l))))
 
+     ;; FIXME: This probably needs a rethink.  We need to parse
+     ;; logical operations better and I don't think this will work in
+     ;; all cases.
+     
      ;; This is a hack.  Let's try to identify some logical
      ;; operations.  If we find them we rewrite the expression with
      ;; parentheses and parse it normally.  Thus, x .le. y*z is
      ;; written as (x) .le. (y*z).
-     (dolist (log-op '(<= < >= > equal ><))
+     (dolist (log-op '(or and <= < >= > equal ><))
        (let ((split (list-split-multi log-op l)))
+	 ;;(format t "op = ~A, split = ~A~%" log-op split)
 	 (when (cdr split)
 	   ;; The expression was split into parts for the given
 	   ;; logical op.  Rewrite the expression with appropropriate
@@ -449,8 +454,12 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.33 2004/08/11 16:51:32 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.34 2004/08/14 13:45:34 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.34  2004/08/14 13:45:34  rtoy
+;;; Handle OR and AND expressions.  (Maybe.  This probably needs a lot
+;;; more work.)
+;;;
 ;;; Revision 1.33  2004/08/11 16:51:32  rtoy
 ;;; A possible fix for the parsing bug wherein x .le. y*z was parsed as (x
 ;;; .le. y) * z.

@@ -644,7 +644,8 @@
 (defmacro fformat1 (dest directive arg)
   (let ((val (gensym)))
     `(let ((,val ,arg))
-      (if (arrayp ,val)
+      (if (and (arrayp ,val)
+	       (not (stringp ,val)))
 	  (print ,val)
 	  (format ,dest ,directive ,val)))))
 

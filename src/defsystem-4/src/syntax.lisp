@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; syntax.lisp --
 ;;; Code to manipulate the DEFSYSTEM syntax.
@@ -31,14 +31,23 @@
 	     :format-control "Odd number of keyword slots in DEFSYSTEM ~S ~
                               specification."
 	     :format-control (list name)))
+    (unless (find :source-pathname keys)
+      (setf keys
+	    (list* :source-pathname
+		   '(when *load-pathname*
+		      (make-pathname :name nil
+				     :type nil
+				     :defaults *load-pathname*))
+		   keys)))
     `(construct-component :defsystem
 			   ',name
 			  ,@(ambler:amble-expression keys context))))
 
 
-(ambler:def-form-ambler :system (sytem-form defsystem-ambler-context)
+(ambler:def-form-ambler :system (system-form defsystem-ambler-context)
   (destructuring-bind (kwd-system name &rest keys)
       system-form
+    (declare (ignore kwd-system))
     (when (oddp (length keys))
       (error 'defsystem-syntax-error
 	     :format-control "Odd number of keyword slots in SYSTEM ~S ~
@@ -49,9 +58,10 @@
 			  ,@(ambler:amble-expression keys context))))
 
 
-(ambler:def-form-ambler :subsystem (subsytem-form defsystem-ambler-context)
+(ambler:def-form-ambler :subsystem (subsystem-form defsystem-ambler-context)
   (destructuring-bind (kwd-subsystem name &rest keys)
       subsystem-form
+    (declare (ignore kwd-subsystem))
     (when (oddp (length keys))
       (error 'defsystem-syntax-error
 	     :format-control "Odd number of keyword slots in SUBSYSTEM ~S ~
@@ -101,6 +111,7 @@
 				       defsystem-ambler-context)
   (destructuring-bind (kwd-private-file name &rest keys)
       private-file-form
+    (declare (ignore kwd-private-file))
     (when (oddp (length keys))
       (error 'defsystem-syntax-error
 	     :format-control "Odd number of keyword slots in PRIVATE-FILE ~S ~
@@ -144,24 +155,24 @@
 (ambler:def-form-ambler :initially (initially-form defsystem-ambler-context)
   (destructuring-bind (kwd-initially initially-expr &rest other-forms)
       initially-form
-    (list :initially `(lambda (,(intern (symbol-name '#:this-component)
-					*package*))
-			(declare (ignorable
-				  ,(intern (symbol-name '#:this-component)
-					   *package*)))
-			,initially-expr)
+    (list kwd-initially `(lambda (,(intern (symbol-name '#:this-component)
+					   *package*))
+			   (declare (ignorable
+				     ,(intern (symbol-name '#:this-component)
+					      *package*)))
+			   ,initially-expr)
 	  (ambler:amble-expression other-forms context))))
 
 
 (ambler:def-form-ambler :finally (initially-form defsystem-ambler-context)
-  (destructuring-bind (kwd-initially initially-expr &rest other-forms)
+  (destructuring-bind (kwd-finally initially-expr &rest other-forms)
       initially-form
-    (list :finally `(lambda (,(intern (symbol-name '#:this-component)
-				      *package*))
-		      (declare (ignorable
-				,(intern (symbol-name '#:this-component)
-					 *package*)))
-		      ,initially-expr)
+    (list kwd-finally `(lambda (,(intern (symbol-name '#:this-component)
+					 *package*))
+			 (declare (ignorable
+				   ,(intern (symbol-name '#:this-component)
+					    *package*)))
+			 ,initially-expr)
 	  (ambler:amble-expression other-forms context))))
 
 
@@ -289,11 +300,11 @@
 			     ,@(ambler:amble-expression keys
 							context)))))
 
-(defmacro def-syntax-for-component-keyword (kwd (var) &body form)
+(defmacro def-syntax-for-component-keyword (kwd (var) &body forms)
   `(ambler:def-form-ambler ,kwd (kwd-form defsystem-ambler-context)
      (destructuring-bind (kwd kwd-expr &rest keys)
 	 kwd-form
-       (let ((processor `(lambda (,var) ,forms)))
+       (let ((processor (lambda (,var) ,forms)))
        `(,kwd ,(funcall processor kwd-expr)
 	      ,@(ambler:amble-expression keys context))))))
 

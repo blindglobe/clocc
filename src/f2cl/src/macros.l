@@ -340,10 +340,10 @@
   (let ((top (gensym))
 	(bot (gensym)))
     `(let ((,top ,x)
-	  (,bot ,y))
+	   (,bot ,y))
       (if (and (typep ,top 'integer)
 	       (typep ,bot 'integer))
-	  (values (truncate ,top ,bot))
+	  (values (the integer4 (truncate ,top ,bot)))
 	  (/ ,top ,bot)))))
 
 ;; macro for a lisp equivalent of Fortran arithmetic IFs
@@ -386,6 +386,27 @@
     cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
     sinh dsinh cosh dcosh tanh dtanh))
 
+(declaim (inline truncate-towards-zero ftruncate-towards-zero))
+
+(defun truncate-towards-zero (x)
+  ;; Fortran 77 standard says INT functions round towards zero:
+  ;;
+  ;; int(a) is the integer whose magnitude is the largest integer that
+  ;; does not exceed the magnitude of a and whose sign is the same as
+  ;; the sign of a.
+  ;;
+  (if (minusp x)
+      (ceiling x)
+      (floor x)))
+
+(defun ftruncate-towards-zero (x)
+  ;; Floating-point version of the above.
+  (if (minusp x)
+      (fceiling x)
+      (ffloor x)))
+
+(declaim (inline int ifix idfix))
+
 ;; Define the intrinsic functions.
 #-cmu
 (defun int (x)
@@ -396,13 +417,13 @@
     (integer
      x)
     (single-float
-     (truncate (the (single-float #.(float most-negative-fixnum)
-				  #.(float most-positive-fixnum))
-		 x)))
+     (truncate-towards-zero (the (single-float #.(float most-negative-fixnum)
+					       #.(float most-positive-fixnum))
+			      x)))
     (double-float
-     (truncate (the (double-float #.(float most-negative-fixnum 1d0)
-				  #.(float most-positive-fixnum 1d0))
-		 x)))))
+     (truncate-towards-zero (the (double-float #.(float most-negative-fixnum 1d0)
+					       #.(float most-positive-fixnum 1d0))
+			      x)))))
 
 #+cmu
 (defun int (x)
@@ -413,41 +434,43 @@
     (integer
      x)
     (single-float
-     (truncate (the (single-float #.(float (- (ash 1 31)))
-				  #.(float (1- (ash 1 31))))
-		 x)))
+     (truncate-towards-zero (the (single-float #.(float (- (ash 1 31)))
+					       #.(float (1- (ash 1 31))))
+			      x)))
     (double-float
-     (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
-				  #.(float (1- (ash 1 31)) 1d0))
-		 x)))))
+     (truncate-towards-zero (the (double-float #.(float (- (ash 1 31)) 1d0)
+					       #.(float (1- (ash 1 31)) 1d0))
+			      x)))))
   
 (defun ifix (x)
   (int x))
 (defun idfix (x)
   (int x))
 
+(declaim (inline aint dint anint dnint nint idnint))
+
 #-cmu
 (defun aint (x)
   (etypecase x
     (single-float
-     (ftruncate (the (single-float #.(float most-negative-fixnum)
-				   #.(float most-positive-fixnum))
-		  x)))
+     (ftruncate-towards-zero (the (single-float #.(float most-negative-fixnum)
+						#.(float most-positive-fixnum))
+			       x)))
     (double-float
-     (ftruncate (the (double-float #.(float most-negative-fixnum 1d0)
-				   #.(float most-positive-fixnum 1d0))
-		  x)))))
+     (ftruncate-towards-zero (the (double-float #.(float most-negative-fixnum 1d0)
+						#.(float most-positive-fixnum 1d0))
+			       x)))))
 #+cmu
 (defun aint (x)
   (etypecase x
     (single-float
-     (ftruncate (the (single-float #.(float (- (ash 1 31)))
-				   #.(float (1- (ash 1 31))))
-		  x)))
+     (ftruncate-towards-zero (the (single-float #.(float (- (ash 1 31)))
+					     #.(float (1- (ash 1 31))))
+			    x)))
     (double-float
-     (ftruncate (the (double-float #.(float (- (ash 1 31)) 1d0)
-				   #.(float (1- (ash 1 31)) 1d0))
-		  x)))))
+     (ftruncate-towards-zero (the (double-float #.(float (- (ash 1 31)) 1d0)
+					     #.(float (1- (ash 1 31)) 1d0))
+			    x)))))
 
 (defun dint (x)
   (aint x))
@@ -461,6 +484,7 @@
 (defun idnint (x)
   (values (round x)))
 
+(declaim (inline freal sngl dble cmplx))
 (defun freal (x)
   (coerce (realpart x) 'single-float))
 
@@ -478,6 +502,7 @@
 (defun fchar (i)			;intrinsic function char
   (char-int i))
 
+(declaim (inline iabs dabs cabs amod dmod))
 #-aclpc
 (defun iabs (x)
   (declare (type integer4 x))
@@ -497,6 +522,8 @@
   (mod x y))
 
 
+(declaim (inline isign sign dsign))
+
 (defun isign (x y)
   (declare (type integer4 x y))
   (if (>= y 0)
@@ -509,7 +536,7 @@
   (declare (type double-float x y))
   (float-sign y x))
 
-
+(declaim (inline idim dim ddim))
 (defun idim (x y)
   (declare (type integer4 x y))
   (abs (- x y)))
@@ -529,18 +556,11 @@
   (apply #'max x))
 (defun dmax1 (&rest x)
   (apply #'max x))
-(defun amax0 (&rest x)
-  (values (float (apply #'max x))))
-(defun max1 (&rest x)
-  (values (float (apply #'max x))))
 
 (defun min0 (&rest x)
   (apply #'min x))
 (defun amin1 (&rest x)
   (apply #'min x))
-#+nil
-(defun dmin1 (&rest x)
-  (the double-float (reduce #'min x)))
 (defun dmin1 (&rest x)
   (let ((result (first x)))
     (declare (double-float result))
@@ -548,10 +568,44 @@
       (declare (double-float val))
       (setf result (min result val)))
     result))
+
+(defun amax0 (&rest x)
+  (float (apply #'max x)))
+(defun max1 (&rest x)
+  (nint (apply #'max x)))
 (defun amin0 (&rest x)
-  (values (float (apply #'min x))))
+  (float (apply #'min x)))
 (defun min1 (&rest x)
-  (values (float (apply #'min x))))
+  (nint (apply #'min x)))
+
+;; Define some compile macros for these max/min functions.
+#+cmu
+(progn
+(define-compiler-macro max0 (&rest args)
+  `(max ,@args))
+(define-compiler-macro amax1 (&rest args)
+  `(max ,@args))
+(define-compiler-macro dmax1 (&rest args)
+  `(max ,@args))
+(define-compiler-macro min0 (&rest args)
+  `(min ,@args))
+(define-compiler-macro amin1 (&rest args)
+  `(min ,@args))
+(define-compiler-macro dmin1 (&rest args)
+  `(min ,@args))
+(define-compiler-macro min1 (&rest args)
+  `(nint (min ,@args)))
+
+(define-compiler-macro amax0 (&rest args)
+  `(float (max ,@args)))
+(define-compiler-macro max1 (&rest args)
+  `(nint (max ,@args)))
+
+(define-compiler-macro amin0 (&rest args)
+  `(float (min ,@args)))
+(define-compiler-macro min1 (&rest args)
+  `(nint (min ,@args)))
+) ; end progn
 
 (defun len (s)
   (length s))
@@ -583,58 +637,74 @@
   (string<= s1 s2))
 
 
+(declaim (inline aimag conjg))
 (defun aimag (c)
   (imagpart c))
 (defun conjg (c)
   (conjugate c))
 
-;; This creates macros for fsqrt and flog.  These macros essentially
-;; tell Lisp that the arguments are always non-negative so that the
-;; results are always real numbers.  Thus, for smart compilers (like
-;; CMUCL), we don't have to use the generic function.  Also, for smart
-;; compilers, the COND expression can be collapsed into just the
-;; correct function call.  CMUCL can do this because it knows the type
-;; of the argument at compile time.  Other compilers may not be this
-;; smart.
+(declaim (inline fsqrt flog))
+(defun fsqrt (x)
+  (typecase x
+    (single-float
+     (sqrt (the (single-float 0f0) x)))
+    (double-float
+     (sqrt (the (double-float 0d0) x)))
+    (t
+     (sqrt x))))
 
-(macrolet ((frob (ftn lsp)
-	     `(defun ,ftn (x)
-	       (cond ((typep x 'single-float)
-		      (,lsp (the (single-float 0.0f0) x)))
-		     ((typep x 'double-float)
-		      (,lsp (the (double-float 0.0d0) x)))
-		     (t
-		      (,lsp x))))))
-  (frob fsqrt sqrt)
-  (frob flog log))
-
+(defun flog (x)
+  (typecase x
+    (single-float
+     (log (the (or (single-float (0f0)) (member 0f0)) x)))
+    (double-float
+     (log (the (or (double-float (0d0)) (member 0d0)) x)))
+    (t
+     (log x))))
+  
 ;; Tell Lisp that the arguments always have the correct range.  If
 ;; this is not true, the original Fortran code was broken anyway, so
 ;; GIGO (garbage in, garbage out).
 
+(declaim (inline dsqrt csqrt alog dlog clog alog10 dlog10))
 (defun dsqrt (x)
-  (sqrt (the (double-float 0d0) x)))
+  (declare (type (double-float 0d0) x))
+  (sqrt  x))
 (defun csqrt (x)
   (sqrt x))
 (defun alog (x)
-  (log (the (single-float 0f0) x)))
+  (declare (type (or (single-float (0f0)) (member 0f0)) x))
+  (log x))
 (defun dlog (x)
-  (log (the (double-float 0d0) x)))
+  (declare (type (or (double-float (0d0)) (member 0d0)) x))
+  (log x))
 (defun clog (x)
   (log x))
 (defun alog10 (x)
-  (log (the (single-float 0f0) x) 10f0))
+  (declare (type (or (single-float (0f0)) (member 0f0)) x))
+  (log x 10f0))
 (defun dlog10 (x)
-  (log (the (double-float 0d0) x) 10.0d0))
-(defun log10 (x)
-  (cond ((typep x 'single-float)
-	 (log (the (single-float 0.0f0) x) 10f0))
-	((typep x 'double-float)
-	 (log (the (double-float 0.0d0) x) 10d0))
-	(t
-	 (/ (log x)
-	    (float 10 (type-of (realpart x)))))))
+  (declare (type (or (double-float (0d0)) (member 0d0)) x))
+  (log x 10.0d0))
 
+(declaim (inline log10))
+(defun log10 (x)
+  (typecase x
+    (single-float
+     (log (the (single-float 0.0f0) x) 10f0))
+    (double-float
+     (log (the (double-float 0.0d0) x) 10d0))
+    (t
+     (/ (log x)
+	(typecase x
+	  ((complex double-float)
+	   10d0)
+	  ((complex single-float)
+	   10f0)
+	  (t
+	   (coerce 10 (type-of (realpart x)))))))))
+
+(declaim (inline dexp cexp))
 (defun dexp (x)
   (declare (type double-float x))
   (exp x))
@@ -642,6 +712,7 @@
   (declare (type complex x))
   (exp x))
 
+(declaim (inline dsin csin dcos ccos dtan ctan dasin dacos datan atan2 datan2 dsinh dcosh dtanh))
 (defun dsin (x)
   (declare (type double-float x))
   (sin x))
@@ -689,6 +760,7 @@
   (declare (type double-float x))
   (tanh x))
 
+(declaim (inline ffloat))
 (defun ffloat (x)
   (coerce x 'single-float))
 
@@ -803,6 +875,7 @@
 ;; replace the individual characters of the LHS with the appropriate
 ;; characters from the RHS.
 (defmacro f2cl-set-string (lhs rhs (string len))
+  (declare (ignore string))
   (etypecase lhs
     (symbol
      ;; Assignment to a simple string.
@@ -830,8 +903,18 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.25 2000/07/28 22:10:05 rtoy Exp $
+;;; $Id: macros.l,v 1.26 2000/08/01 22:10:41 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.26  2000/08/01 22:10:41  rtoy
+;;; o Try to make the Fortran functions to convert to integers work the
+;;;   way Fortran says they should.
+;;; o Declaim most of the intrinsics as inline so we don't have an
+;;;   additional function call for simple things.
+;;; o Add some compiler macros for Fortran max/min functions to call the
+;;;   Lisp max/min functions withouth using #'apply.
+;;; o Try to declare the args to functions with branchs appropriately,
+;;;   even in the face of signed zeroes.
+;;;
 ;;; Revision 1.25  2000/07/28 22:10:05  rtoy
 ;;; Remove unused var from ARRAY-SLICE.
 ;;;

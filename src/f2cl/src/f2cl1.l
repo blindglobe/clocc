@@ -615,7 +615,7 @@ main-loop
 ; program definition
 (defun parse-prog-definition (bindings) 
    (setq *program-flag* t)
-   (setq *subprog_name* (variable-value '%name bindings))
+   (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
    (list 'defun (if *subprog_name* *subprog_name* '*MAIN*)
 ;         (read-from-string 
 ;             (concatenate 'string "*MAIN*"
@@ -626,8 +626,8 @@ main-loop
 ; subroutine definition
 (defun parse-subr-definition (bindings) 
   (prog (arg-list)
-   (setq *subprog_name* (variable-value '%name bindings))
-   (setq arg-list (mapcar #'check-t-and-pi
+   (setq *subprog_name* (check-reserved-lisp-names (variable-value '%name bindings)))
+   (setq arg-list (mapcar #'check-reserved-lisp-names
 			  (remove '|,| (variable-value '%arg-list bindings))))
    (setq *subprog-arglist* arg-list)
    (return (list 'defun *subprog_name* 
@@ -637,7 +637,7 @@ main-loop
 (defun parse-typed-fun-definition (bindings)
   (setq *function-flag* t)
   (prog (fun-name)
-   (setq fun-name (variable-value '%name bindings)
+   (setq fun-name (check-reserved-lisp-names (variable-value '%name bindings))
          *declared_vbles* (list fun-name)
          *explicit_vble_decls* 
               (list (list (convert-data-type (variable-value '%type bindings))
@@ -653,7 +653,7 @@ main-loop
    (setq *function-flag* t)
    (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
    (list 'defun 
-         (variable-value '%name bindings) 
+         (check-reserved-lisp-names (variable-value '%name bindings))
          (remove '|,| (variable-value '%arg-list bindings))))
 
 
@@ -721,7 +721,7 @@ main-loop
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
-			    (check-t-and-pi (car v)))
+			    (check-reserved-lisp-names (car v)))
 			(list-split '|,|
 			 (if (eq (cadr x) '*)
 			     (cdddr x)
@@ -770,7 +770,7 @@ main-loop
 (defun build_decl_list (decl_list type decl)
   (cons `(,type 
 	  ,@(mapcar #'(lambda (y)
-			`(,(check-t-and-pi (car y))
+			`(,(check-reserved-lisp-names (car y))
 			  ,@(parse_dimension_specs (cadr y))))
 		    (list-split '|,| decl)))
 	decl_list))
@@ -1065,7 +1065,7 @@ main-loop
    ;; the common block.
    (do ((list x (cddr list)))
        ((endp list))
-     (let ((varlist (mapcar #'check-t-and-pi (second list)))
+     (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
 	   (block-name (or (caar list)
 			   '%BLANK%)))
        ;; Check to see if this is another instance.  If so, the elements
@@ -1089,7 +1089,7 @@ main-loop
                  (do ((list x (cddr list))
                       (ret nil (append (extract-atoms (cadr list)) ret)))
                      ((endp list)
-		      (mapcar #'check-t-and-pi ret))
+		      (mapcar #'check-reserved-lisp-names ret))
 		   ;; look for common arrays and store dimensions of
 		   ;; new common vars
 		   (do ((nlist (cadr list) (cdr nlist)))
@@ -1235,7 +1235,7 @@ main-loop
 		      nil))))
     (cond ((and (listp (car l))
 		(eq (second (car l)) '*))
-	   `(fill ,(check-t-and-pi (first v))
+	   `(fill ,(check-reserved-lisp-names (first v))
 	          ,(fix-up-negative-number (cddar l))
 	          :end ,(1- (first (car l)))))
 	  ((and (listp v) (listp l)
@@ -1243,7 +1243,7 @@ main-loop
 		(numberp (first (second v))))
 	   ;; Initializing one element of an array.  We assume the
 	   ;; lower limit on the array is 1!
-	   `(fset (fref ,(check-t-and-pi (first v))
+	   `(fset (fref ,(check-reserved-lisp-names (first v))
 		        ,(remove '|,| (second v)))
 	     ,(fix-up-negative-number (first l))))
 	  ((and (listp v) (listp l)
@@ -1256,14 +1256,14 @@ main-loop
 		(= (length v) (length l))
 		(> (length v) 1))
 	   (mapcar #'(lambda (var val)
-		       `(setq ,(check-t-and-pi var)
+		       `(setq ,(check-reserved-lisp-names var)
 			      ,(fix-up-negative-number val)))
 		   v l))
 	  (t
-	   (if (vble-is-array-p (check-t-and-pi (first v)))
-	       `(replace ,(check-t-and-pi (first v))
+	   (if (vble-is-array-p (check-reserved-lisp-names (first v)))
+	       `(replace ,(check-reserved-lisp-names (first v))
 		         ',(mapcar #'fix-up-negative-number l))
-	       `(setq ,(check-t-and-pi (first v))
+	       `(setq ,(check-reserved-lisp-names (first v))
 		      ,(fix-up-negative-number (first l))))))))
 
 ; parse EXTERNAL f1, f2, ...

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.53 2004/07/29 17:33:16 sds Exp $
+;;; $Id: math.lisp,v 2.54 2004/07/30 15:46:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -941,17 +941,21 @@ Return 2 values: the mean and the length of the sequence."
 The mean and the length can be pre-computed for speed."
   (declare (sequence seq) (fixnum len))
   (when (<= len 1)
-    (return-from standard-deviation (values 0 mean len mean mean)))
-  (let (min max)
+    (return-from standard-deviation (values 0 mean len mean 1 mean 1)))
+  (let (min max mi$ ma$)
     (values
      (sqrt (/ (reduce #'+ seq :key
                       (lambda (yy)
                         (let ((val (funcall key yy)))
-                          (when (or (null min) (< val min)) (setq min val))
-                          (when (or (null max) (> val max)) (setq max val))
+                          (cond ((or (null min) (< val min))
+                                 (setq min val mi$ 1))
+                                ((= val min) (incf mi$)))
+                          (cond ((or (null max) (> val max))
+                                 (setq max val ma$ 1))
+                                ((= val max) (incf ma$)))
                           (sqr (- val mean)))))
               (1- len)))
-     mean len min max)))
+     mean len min mi$ max ma$)))
 
 (defun standard-deviation-weighted (seq wts &key
                                     (value #'value) (weight #'value))
@@ -961,15 +965,17 @@ The mean and the length can be pre-computed for speed."
       (mean-weighted seq wts :value value :weight weight)
     (when (= twt 1)
       (return-from standard-deviation-weighted (values 0d0 mn twt mn mn)))
-    (let ((sum 0d0) min max)
+    (let ((sum 0d0) min max mi$ ma$)
       (map nil (lambda (xx ww)
                  (let ((val (funcall value xx)))
-                   (when (or (null min) (< val min)) (setq min val))
-                   (when (or (null max) (> val max)) (setq max val))
+                   (cond ((or (null min) (< val min)) (setq min val mi$ 1))
+                         ((= val min) (incf mi$)))
+                   (cond ((or (null max) (> val max)) (setq max val ma$ 1))
+                         ((= val max) (incf ma$)))
                    (incf sum (* (funcall weight ww)
                                 (sqr (- val mn))))))
            seq wts)
-      (values (sqrt (/ sum (1- twt))) mn twt min max))))
+      (values (sqrt (/ sum (1- twt))) mn twt min mi$ max ma$))))
 
 (defsubst standard-deviation-cx (&rest args)
   "Return the `standard-deviation' of SEQ as #C(mean stdd)."
@@ -1138,10 +1144,12 @@ and the list of the volatilities for each year."
   "MDL structure contains sample statistics.
 It is printed as follows: [mean standard-deviation max/min length[ entropy]]
 When the distribution is not discreet, entropy is not available."
-  (mn 0d0 :type double-float)   ; Mean
+  (mn 0d0 :type double-float)       ; Mean
   (sd 0d0 :type (double-float 0d0)) ; Deviation
-  (ma 0 :type number)       ; Max
-  (mi 0 :type number)       ; Min
+  (ma 0 :type number)               ; Max
+  (ma$ 0 :type index-t)             ; Max count
+  (mi 0 :type number)               ; Min
+  (mi$ 0 :type index-t)             ; Min count
   (en 0 :type (or null number)) ; entropy (only when discreet)
   (le 0 :type index-t))         ; Length
 )
@@ -1154,19 +1162,22 @@ When the distribution is not discreet, entropy is not available."
       (let* ((en (mdl-en mdl))
              (fo (if en (formatter "~:D") (formatter "~6F")))
              (ma (format nil fo (mdl-ma mdl)))
-             (mi (string-left-trim +whitespace+ (format nil fo (mdl-mi mdl)))))
-        (format out "[~6f ~6f ~6@A/~6A ~5:d~@[ ~6f~]]"
-                (mdl-mn mdl) (mdl-sd mdl) ma mi (mdl-le mdl) en))))
+             (mi (format nil fo (mdl-mi mdl)))
+             (ma$ (format nil "~:D" (mdl-ma$ mdl)))
+             (mi$ (format nil "~:D" (mdl-mi$ mdl))))
+        (format out "[~6f ~6f ~6@A/~5A ~6@A/~5A ~5:d~@[ ~6f~]]"
+                (mdl-mn mdl) (mdl-sd mdl) ma ma$ mi mi$ (mdl-le mdl) en))))
 
 (defun standard-deviation-mdl (seq &key (key #'value) weight discreet)
   "Compute an MDL from the SEQ."
   (let ((len (length seq)))
     (if (zerop len) +bad-mdl+
-        (multiple-value-bind (std mean len min max)
+        (multiple-value-bind (std mean len min mi$ max ma$)
             (if weight
                 (standard-deviation-weighted seq seq :value key :weight weight)
                 (standard-deviation seq :len len :key key))
-          (make-mdl :sd (dfloat std) :mn (dfloat mean) :le len :mi min :ma max
+          (make-mdl :sd (dfloat std) :mn (dfloat mean) :le len
+                    :mi min :ma max :mi$ mi$ :ma$ ma$
                     :en (when discreet
                           (entropy-sequence seq :key key :weight weight)))))))
 
@@ -1274,6 +1285,10 @@ p1=p(x=1), p2=p(y=1), p12=p(x=1 & y=1)"
         (* (- p2 p12) (- p1) q2)               ; x=1 y=0
         (* (- (+ N p12) p1 p2) (- p1) (- p2))) ; x=0 y=0
      (sqrt (* p1 q1 p2 q2)) N))
+
+(defun 1st-moment (p12 p1 p2)
+  "covariance of two binary distributions"
+  (/ p12 (sqrt (* p1 p2))))
 
 ;;;
 ;;; Misc

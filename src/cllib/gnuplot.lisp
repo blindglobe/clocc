@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1998-06-08 Mon 19:48:42 EDT sds@mute.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-06-09 Tue 11:18:16 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.13 1998/06/08 23:49:44 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.14 1998/06/09 15:23:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.14  1998/06/09 15:23:00  sds
+;;; After printing, reset terminal and output back to screen - for flushing.
+;;;
 ;;; Revision 1.13  1998/06/08 23:49:44  sds
 ;;; In function `plot-lists-arg', fixed :key boundaries.
 ;;;
@@ -125,7 +128,8 @@ other => write `*gnuplot-file*' and print a message."
 				 (list "/noend" *gnuplot-file*))))
 	      ((eq ,plot :print)
 	       (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
-		       *gnuplot-printer*))
+		       *gnuplot-printer*)
+               (format *gnuplot-stream* "set terminal windows~%set output~%"))
 	      ((format *gnuplot-msg-stream* "~&Prepared file `~a'.
 Type \"load '~a'\" at the gnuplot prompt.~%"
 		       *gnuplot-file* *gnuplot-file*)))
@@ -138,7 +142,8 @@ Type \"load '~a'\" at the gnuplot prompt.~%"
 	       (format *gnuplot-msg-stream* "Wrote `~a'.~%" *gnuplot-file*))
 	      ((eq ,plot :print)
 	       (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
-		       *gnuplot-printer*)))))))
+		       *gnuplot-printer*)
+               (format *gnuplot-stream* "set terminal x11~%set output~%")))))))
 
 (defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title key)
   "Print the header stuff into the stream.

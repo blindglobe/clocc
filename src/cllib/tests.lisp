@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.4 2000/05/31 20:19:40 sds Exp $
+;;; $Id: tests.lisp,v 2.5 2000/06/02 15:39:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -17,6 +17,7 @@
   (require :url (translate-logical-pathname "cllib:url"))
   (require :rpm (translate-logical-pathname "cllib:rpm"))
   (require :elisp (translate-logical-pathname "cllib:elisp"))
+  (require :xml (translate-logical-pathname "cllib:xml"))
   (require :cvs (translate-logical-pathname "cllib:cvs")))
 
 (in-package :cllib)
@@ -39,7 +40,7 @@
       (ts "ab123efghcda" "abcdefghcda" "cd" "123" :end 6)
       (ts "ab123efgh123a" "abcdefghcda" "cd" "123")
       (ts "abcdefghcda" "abcdefghcda" "cd" "123" :start 5 :end 6))
-    (mesg :test out " ** ~s: ~:d error~:p~%" 'test-string num-err)
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-string num-err)
     num-err))
 
 (defun test-date (&key (out *standard-output*))
@@ -67,7 +68,7 @@
       (ts 3126878578 "1999-02-01 17:22:58 GMT")
       (ts 3126878578 "1999 Feb  1 17:22:58")
       (ts 3126896578 "Feb  1 17:22:58 1999 EST"))
-    (mesg :test out " ** ~s: ~:d error~:p~%" 'test-date num-err)
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-date num-err)
     num-err))
 
 (defun test-rpm (&key (out *standard-output*))
@@ -83,7 +84,7 @@
       (av "3.3.2pl2" "3.3.3")
       (av "1.1b" "1.1.1")
       (av "3.0" "3.0.3"))
-    (mesg :test out " ** ~s: ~:d error~:p~%" 'test-rpm num-err)
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-rpm num-err)
     num-err))
 
 (defun test-url (&key (out *standard-output*))
@@ -118,7 +119,7 @@
           (make-url :prot :http :user "" :pass "" :host "www.gnu.org" :port 0
                     :path "/gpl.html")
           "http://www.gnu.org/gpl.html"))
-    (mesg :test out " ** ~s: ~:d error~:p~%" 'test-url num-err)
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-url num-err)
     num-err))
 
 (defun test-elisp (&key (out *standard-output*))
@@ -136,7 +137,26 @@
                  (incf num-err)))))
       (ts "[a ?\\C-a ?c #\\z]" #(a (:control #\a) #\c #\z))
       (ts "[?Z ?\\^M ?\\n]" #(#\Z (:control #\M) #\Newline)))
-    (mesg :test out " ** ~s: ~:d error~:p~%" 'test-elisp num-err)
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-elisp num-err)
+    num-err))
+
+(defun test-xml (&key (out *standard-output*))
+  (let ((num-err 0))
+    (flet ((ts (path num)
+             (mesg :test out " => <~a> ~:d object~:p expected~%" path num)
+             (handler-case
+                 (let ((len (length (xml-read-from-file path :reset-ent nil))))
+                   (if (= num len)
+                       (format t " * correct length: ~:d~%" len)
+                       (format t " #~d# wrong length: ~:d (should be ~:d)~%"
+                               (incf num-err) len num)))
+               (error (err)
+                 (format t " ### ERROR: ~a~%" err)
+                 (incf num-err)))))
+      (mesg :test out " ** ~s...~%" 'test-xml)
+      (ts *xml-ent-file* 283)
+      (ts (translate-logical-pathname "clocc:etc;cl-ent.xml") 1089))
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-xml num-err)
     num-err))
 
 (defun test-cvs (&key (out *standard-output*))
@@ -149,6 +169,7 @@
                  (incf num-err)))))
       (mesg :test out " ** ~s...~%" 'test-cvs)
       (ts (namestring (translate-logical-pathname "clocc:"))))
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-cvs num-err)
     num-err))
 
 (defun test-all (&key (out *standard-output*))
@@ -158,8 +179,9 @@
                     (test-rpm :out out)
                     (test-url :out out)
                     (test-elisp :out out)
+                    (test-xml :out out)
                     (test-cvs :out out))))
-    (mesg :test out " *** ~s: ~:d error~:p~%" 'test-all num-err)))
+    (mesg :test out " *** ~s: ~:d error~:p~2%" 'test-all num-err)))
 
 (provide :tests)
 ;;; file tests.lisp ends here

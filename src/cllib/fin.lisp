@@ -1,4 +1,4 @@
-;;; File: <fin.lisp - 1999-10-29 Fri 17:34:52 EDT sds@ksp.com>
+;;; File: <fin.lisp - 1999-11-01 Mon 16:56:02 EST sds@ksp.com>
 ;;;
 ;;; Financial functions
 ;;;
@@ -9,13 +9,16 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: fin.lisp,v 1.2 1999/10/29 21:35:56 sds Exp $
+;;; $Id: fin.lisp,v 1.3 1999/11/12 22:54:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 ;;; $Log: fin.lisp,v $
-;;; Revision 1.2  1999/10/29 21:35:56  sds
-;;; (solow-next-year): renamed from `next-year'.
-;;; (mgg-prepay): better output formatting.
+;;; Revision 1.3  1999/11/12 22:54:55  sds
+;;; (mgg-term, mgg-discount): doc fixes.
 ;;;
+;; Revision 1.2  1999/10/29  21:35:56  sds
+;; (solow-next-year): renamed from `next-year'.
+;; (mgg-prepay): better output formatting.
+;;
 ;; Revision 1.1  1999/10/06  20:13:54  sds
 ;; Initial revision
 ;;
@@ -35,7 +38,7 @@
   (if monthly (1- (expt (1+ apr) (/ 1.0 12))) (/ apr 12.0)))
 
 (defun mgg-discount (term apr &optional monthly)
-  "The discount for the TERM and APR."
+  "The discount (principal/periodic payment) for the TERM and APR."
   (let ((rate (mgg-rate apr monthly)))
     (/ rate (- 1 (expt (1+ rate) (- term))))))
 
@@ -48,7 +51,7 @@ APR of 7% should be given as 0.07, not as 7."
   (* principal (mgg-discount (* 12 term) apr monthly)))
 
 (defun mgg-term (discount apr &optional monthly)
-  "Compute the term for PRINCIPAL, APR and MONTHLY PAYMENT."
+  "Compute the term for the DISCOUNT and the (MONTHLY) APR."
   (let ((rate (mgg-rate apr monthly)))
     (- (log (- 1 (/ rate discount)) (1+ rate)))))
 

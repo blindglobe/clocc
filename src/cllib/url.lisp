@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-04-26 Mon 13:17:13 EDT sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-05-03 Mon 14:20:35 EDT sds@goems.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,18 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.27 1999/04/26 17:18:10 sds Exp $
+;;; $Id: url.lisp,v 1.28 1999/05/03 18:20:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.28  1999/05/03 18:20:40  sds
+;;; (login): new `network' condition.
+;;; (open-socket-retry): return a socket or signal an error.
+;;; (open-url): simplified.
+;;; (url-ask): signal an error.
+;;; (ftp-get-passive-socket): removed the loop.
+;;; (*ftp-anonymous-passwords*): new variable.
+;;; (url-login-ftp): use it; signal a `login' error on falure.
+;;;
 ;;; Revision 1.27  1999/04/26 17:18:10  sds
 ;;; (with-open-html): moved `meta' to `head'; added `link'.
 ;;;
@@ -205,6 +214,7 @@
 ;;; }}}{{{ URL handling
 ;;;
 
+(eval-when (load compile eval)  ; acl compile warning
 (defstruct (url #+cmu (:print-function print-struct-object))
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot nil :type symbol)       ; protocol
@@ -213,6 +223,7 @@
   (host "" :type simple-string) ; hostname
   (port 0  :type fixnum)        ; port number
   (path "" :type simple-string)) ; pathname
+)
 
 (defun url-rfc (protocol)
   "Return the RFC url for the given protocol.
@@ -269,7 +280,8 @@ guess from the protocol."
         (or (ssp (string-downcase (string (url-prot url))))
             (ssp (case (url-prot url)
                    (:mailto "smtp") (:news "nntp") (:www "http")))
-            (error "[url-get-port] Cannot guess the port for ~s" url)))
+            (error 'code :proc 'url-get-port :args (list url)
+                   :mesg "Cannot guess the port for ~s")))
       (url-port url)))
 
 (defcustom *nntpserver* simple-string
@@ -337,6 +349,7 @@ guess from the protocol."
        (or (alphanumericp char)
            (find char *url-special-chars* :test #'char=))))
 
+(eval-when (load compile eval) (fmakunbound 'url))
 (fmakunbound 'url)
 (defgeneric url (xx)
   (:documentation "Convert the object into URL.
@@ -484,14 +497,14 @@ The argument can be:
   ((proc :type symbol :reader net-proc :initarg :proc)
    (host :type simple-string :reader net-host :initarg :host)
    (port :type (unsigned-byte 16) :reader net-port :initarg :port)
-   (mesg :type simple-string :reader net-mesg :initarg :mesg :initform "")
-   (args :type list :reader net-args :initarg :args :initform nil))
+   (mesg :type simple-string :reader net-mesg :initarg :mesg)
+   (args :type list :reader net-args :initarg :args))
   (:report (lambda (cc out)
              (declare (stream out))
              (format out "[~s] ~s:~d~@[ ~?~]"
                      (net-proc cc) (net-host cc) (net-port cc)
-                     (when (slot-boundp cc 'mesg) (net-mesg cc))
-                     (when (slot-boundp cc 'args) (net-args cc))))))
+                     (and (slot-boundp cc 'mesg) (net-mesg cc))
+                     (and (slot-boundp cc 'args) (net-args cc))))))
 
 (define-condition timeout (network)
   ((time :type (real 0) :reader timeout-time :initarg :time))
@@ -501,14 +514,34 @@ The argument can be:
              (when (slot-boundp cc 'time)
                (format out " [timeout ~a sec]" (timeout-time cc))))))
 
-(define-condition code (error)
-  ((proc :type symbol :reader code-proc :initarg :proc)
-   (mesg :type simple-string :reader code-mesg :initarg :mesg :initform "")
-   (args :type list :reader code-args :initarg :args :initform nil))
+(define-condition login (network)
+  ((network :type network :reader login-net :initarg :network))
   (:report (lambda (cc out)
              (declare (stream out))
-             (format out "[~s] ~?" (code-proc cc) (code-mesg cc)
-                     (code-args cc)))))
+             (if (slot-boundp cc 'network) (write (login-net cc) :stream out)
+                 (call-next-method)))))
+
+;; (defun upgrade (obj class)
+;;   (let ((slots (nintersection (class-slot-list obj nil)
+;;                               (class-slot-list class nil) :test #'eq))
+;;         (nobj (make-instance class)))
+;;     (dolist (sl slots nobj)
+;;       (when (slot-boundp obj sl)
+;;         (setf (slot-value nobj sl) (slot-value obj sl))))))
+
+(define-condition code (error)
+  ((proc :type symbol :reader code-proc :initarg :proc)
+   (mesg :type simple-string :reader code-mesg :initarg :mesg)
+   (args :type list :reader code-args :initarg :args))
+  (:report (lambda (cc out)
+             (declare (stream out))
+             (format out "[~s]~@[ ~?~]" (code-proc cc)
+                     (and (slot-boundp cc 'mesg) (code-mesg cc))
+                     (and (slot-boundp cc 'args) (code-args cc))))))
+
+(define-condition case-error (code)
+  ((mesg :type simple-string :reader code-mesg :initform
+         "`~s' evaluated to `~s', not one of [~@{`~s'~^ ~}]")))
 
 (defcustom *url-default-sleep* (real 0) 30
   "*The number of seconds to sleep when necessary.")
@@ -554,10 +587,11 @@ and evaluate TIMEOUT-FORMS."
                           (timeout *url-default-timeout*))
   "Open a socket connection, retrying until success."
   (declare (simple-string host) (fixnum port) (type (or null stream) err)
-           (type (or null index-t) max-retry) (type (real 0) sleep timeout))
+           (type (or null index-t) max-retry) (type (real 0) sleep timeout)
+           (values socket))
   (loop :with begt = (get-universal-time) :and err-cond
         :for ii :of-type index-t :upfrom 1
-        :for sock =
+        :for sock :of-type (or null socket) =
         (handler-case
             (progn
               (mesg :log err
@@ -570,9 +604,12 @@ and evaluate TIMEOUT-FORMS."
           (error (co)
             (setq err-cond co)
             (mesg :log err "~%Error connecting: ~a~%" co)))
-        :when (and err sock) :do (mesg :log err "done: ~a~%" sock)
+        :when sock :do (mesg :log err "done: ~a~%" sock)
         :when (and sock (open-stream-p sock)) :return sock
-        :when (and max-retry (>= ii max-retry)) :return err-cond
+        :when (and max-retry (>= ii max-retry))
+        :do (error 'network :proc 'open-socket-retry :host host :port port
+                   :mesg "max-retry [~a] exceeded~@[~% * last error: ~a~]"
+                   :args (list max-retry err-cond))
         :when (>= (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-socket-retry :host host :port port
                    :time timeout)
@@ -595,14 +632,10 @@ the error `timeout' is signaled."
     (return-from open-url (open (url-path url) :direction :input)))
   (loop :with begt = (get-universal-time) :and host = (url-get-host url)
         :and port = (url-get-port url)
-        :for sock :of-type (or null socket error) =
+        :for sock :of-type socket =
         (open-socket-retry host port :err err :sleep sleep :timeout timeout
                            :bin (url-prot-bin (url-prot url))
                            :max-retry max-retry)
-        :when (or (null sock) (typep sock 'error))
-        :do (error 'network :proc 'open-url :host host :port port
-                   :mesg "max-retry [~a] exceeded~@[ last error: ~a]"
-                   :args (list max-retry sock))
         :when
         (handler-case
             (with-timeout (timeout nil)
@@ -627,9 +660,11 @@ the error `timeout' is signaled."
                 (t (error 'code :proc 'open-url :args (list (url-prot url))
                           :mesg "Cannot handle protocol ~s"))))
           (code (co) (error co))
+          (network (co) (error co))
           (error (co)
-            (mesg :err err "Connection to `~a' dropped: `~a'~%" url co)))
-        :return sock :when sock :do (close sock)
+            (mesg :err err "Connection to <~a> dropped:~% * ~a~%" url co)))
+        :return sock
+        :when sock :do (close sock)
         :when (> (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-url :host host :port port
                    :time timeout)
@@ -698,7 +733,9 @@ ERR is the stream for information messages or NIL for none."
                    (progn (setq code (or (parse-integer
                                           ln :end 3 :junk-allowed t) 0))
                           (and (< code 400) (/= end code))))
-        :finally (return (values ln code))))
+        :finally (if (< code 400) (return (values ln code))
+                     (error 'network :proc 'url-ask :host (socket-host sock)
+                            :port (socket-port sock) :mesg ln))))
 
 (defun ftp-parse-sextuple (line)
   "Convert a0,a1,a2,a3,b0,b1 to HOST and PORT."
@@ -716,28 +753,36 @@ ERR is the stream for information messages or NIL for none."
 (defun ftp-get-passive-socket (sock out bin timeout)
   "Get a passive socket."
   (declare (type socket sock) (values socket))
-  (loop :for sck =
-        (multiple-value-bind (st cd) (url-ask sock out 227 "pasv")
-          (when (>= cd 400)
-            (error 'timeout :proc 'ftp-get-passive-socket :mesg st :host
-                   (socket-host sock) :port (socket-port sock)))
-          (multiple-value-call #'open-socket-retry (ftp-parse-sextuple st)
-                               :err out :max-retry 5 :bin bin
-                               :timeout timeout))
-        :when sck :return sck))
+  (multiple-value-call #'open-socket-retry
+    (ftp-parse-sextuple (url-ask sock out 227 "pasv"))
+    :err out :max-retry 5 :bin bin :timeout timeout))
+
+(defcustom *ftp-anonymous-passwords* list '("abc@ftp.net" "abc@")
+  "*The list of passwords to try with anonymous ftp login.
+Some ftp servers do not like `user@host' if `host' is not what they expect.")
 
 (defun url-login-ftp (sock url err)
   "Login and cd to the FTP url."
   (declare (type socket sock) (type url url) (type (or null stream) err))
-  (and (> 400 (nth-value 1 (url-ask sock err 331 "user ~a"
-                                    (if (zerop (length (url-user url)))
-                                        "anonymous" (url-user url)))))
-       (url-ask sock err 230 "pass ~a" (if (zerop (length (url-pass url)))
-                                           "ftp@ftp.net" (url-pass url)))
-       (url-ask sock err 215 "syst")
-       ;; (url-ask sock err 200 "type i")
-       (url-ask sock err 211 "stat")
-       (url-ask sock err 250 "cwd ~a" (url-path-dir url))))
+  (let ((host (socket-host sock)) (port (socket-port sock)) co)
+    (dolist (pwd *ftp-anonymous-passwords*
+             (error 'login :proc 'url-login-ftp :host host :port port
+                    :mesg "All these passwords failed [~a]:~{ ~s~}"
+                    :args (cons co *ftp-anonymous-passwords*)))
+      (url-ask sock err 331 "user ~a" (if (zerop (length (url-user url)))
+                                          "anonymous" (url-user url)))
+      (unless (typep (setq co (nth-value
+                               1 (ignore-errors
+                                   (url-ask sock err 230 "pass ~a"
+                                            (if (zerop (length (url-pass url)))
+                                                pwd (url-pass url))))))
+                     'error)
+        (return)))
+    (ignore-errors (url-ask sock err 215 "syst"))
+    ;; (url-ask sock err 200 "type i")
+    (ignore-errors (url-ask sock err 211 "stat"))
+    (handler-bind ((network (lambda (co) (error 'login :network co))))
+      (url-ask sock err 250 "cwd ~a" (url-path-dir url)))))
 
 (defcustom *buffer* (simple-array (unsigned-byte 8) (10240))
   (make-array 10240 :element-type '(unsigned-byte 8))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.2 2002/05/31 19:04:17 sds Exp $
+;;; $Id: clhs.lisp,v 3.3 2002/09/24 16:38:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -244,7 +244,7 @@
       (dump-url url :fmt "~*~a~%" :out out :proc #'html-translate-specials))))
 
 #||
-(defun hw ()
+ (defun hw ()
   (gtk:with-connection ()
     (let ((w (gtk:window-new :toplevel))
           (b (gtk:button-new-with-label "Drueck mich.")))
@@ -260,24 +260,24 @@
       (print (gtk:widget-style w))
       (gtk:event-loop))))
 
-(eval-when (compile load eval) (export '(gtk::signal-connect) :gtk))
+ (eval-when (compile load eval) (export '(gtk::signal-connect) :gtk))
 
-(defun gtk:signal-connect (widget signal-name fun &optional (bla 0) (blu 0))
+ (defun gtk:signal-connect (widget signal-name fun &optional (bla 0) (blu 0))
   (gtk:signal-connect-full
    widget (nstring-downcase (substitute #\_ #\- (string signal-name))) fun
    bla blu))
 
-(defun text-insert (text-widget string &key (font nil) (fore nil) (back nil))
+ (defun text-insert (text-widget string &key (font nil) (fore nil) (back nil))
   (gtk:text-insert text-widget font fore back string (length string)))
 
 
-(defun set-clist-contents (clist strings)
+ (defun set-clist-contents (clist strings)
   (gtk:clist-clear clist)
   (gtk:clist-freeze clist)
   (dolist (s (reverse strings)) (gtk:clist-insert clist 0 (list s)))
   (gtk:clist-thaw clist))
 
-(defun make-menu (items)
+ (defun make-menu (items)
   (let ((menu (gtk:menu-new)))
     (dolist (x items menu)
       (if (eq x '-)
@@ -300,7 +300,7 @@
               (gtk:menu-append menu a)
               (gtk:widget-show a)))))))
 
-(defun make-menu-bar (items)
+ (defun make-menu-bar (items)
   (let ((menu-bar (gtk:menu-bar-new)))
     (dolist (x items menu-bar)
       (destructuring-bind (name menu) x
@@ -313,7 +313,7 @@
           (gtk:widget-show root-menu)
           (gtk:widget-show menu))))))
 
-(defun doc-window ()
+ (defun doc-window ()
   (gtk:with-connection ()
     (let* ((window (gtk:window-new :toplevel))
            (vbox   (gtk:vbox-new nil 0))
@@ -435,7 +435,7 @@
       (gtk:event-loop))))
 
 
-(defun hello-world ()
+ (defun hello-world ()
   (gtk:with-connection ()
     (let ((window (gtk:window-new :toplevel))
           (button (gtk:button-new-with-label "Say Hello")))
@@ -453,17 +453,17 @@
 
 # ||
 #+CMU
-(defun foo2 ()
+ (defun foo2 ()
   (mp:make-process (lambda () (foo)) :name "gtk demo")
   (loop
    (mp:process-wait "Waiting for ping" (lambda () *ping*))
    (print 'hi)
    (setq *ping* nil)))
 
-(compile 'foo2)
+ (compile 'foo2)
 || #
 
-(defun bar ()
+ (defun bar ()
   (gtk:with-connection ()
     (let ((window (gtk:window-new :toplevel))
           (sw     (gtk:scrolled-window-new nil nil))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.26 2002/11/30 22:49:00 sds Exp $
+;;; $Id: math.lisp,v 2.27 2002/11/30 22:56:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1054,7 +1054,7 @@ and the list of the volatilities for each year."
   (declare (type (or function fixnum) split-key) (list lst)
            (type (function (sequence) double-float) dev-fn))
   (let ((vols (apply #'call-on-split lst dev-fn :split-key split-key
-                     :min-len 2 (remove-plist :dev-fn))))
+                     :min-len 2 (remove-plist args :dev-fn))))
     (values (mean vols :key #'cdr) vols)))
 
 ;;; Mean / Deviation / Length

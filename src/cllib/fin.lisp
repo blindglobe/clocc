@@ -4,12 +4,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.5 2000/05/15 23:45:29 sds Exp $
+;;; $Id: fin.lisp,v 2.6 2001/06/25 16:28:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `*num-tolerance*', `sqr', `erf'
+  ;; `*num-tolerance*', `sqr', `cndf'
   (require :math (translate-logical-pathname "cllib:math"))
   ;; `comma'
   (require :tilsla (translate-logical-pathname "cllib:tilsla"))
@@ -120,8 +120,8 @@ interest rate for the term, time to expiration, stock volatility."
   (declare (number strike curr intrst time vltlt))
   (multiple-value-bind (d1 d2)
       (black-scholes-roots (/ curr strike) intrst time vltlt)
-    (- (* curr (erf d1))
-       (* strike (erf d2) (exp (- (* intrst time)))))))
+    (- (* curr (cndf d1))
+       (* strike (cndf d2) (exp (- (* intrst time)))))))
 
 ;;;###autoload
 (defun black-scholes-eput (strike curr intrst time vltlt)
@@ -130,8 +130,8 @@ See `black-scholes-call' for details."
   (declare (number strike curr intrst time vltlt))
   (multiple-value-bind (d1 d2)
       (black-scholes-roots (/ curr strike) intrst time vltlt)
-    (- (* strike (erf (- d2)) (exp (- (* intrst time))))
-       (* curr (erf (- d1))))))
+    (- (* strike (cndf (- d2)) (exp (- (* intrst time))))
+       (* curr (cndf (- d1))))))
 
 ;;;
 ;;; Solow Economic Growth Model

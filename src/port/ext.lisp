@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.35 2003/06/07 22:01:14 sds Exp $
+;;; $Id: ext.lisp,v 1.36 2004/08/02 22:44:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -103,6 +103,7 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
 
 (defun gc ()
   "Invoke the garbage collector."
+  #+abcl (ext:gc)
   #+allegro (excl:gc)
   #+clisp (#+lisp=cl ext:gc #-lisp=cl lisp:gc)
   #+cmu (ext:gc)
@@ -115,6 +116,7 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   (error 'not-implemented :proc (list 'gc)))
 
 (defun quit (&optional code)
+  #+abcl (ext:quit code)
   #+allegro (excl:exit code)
   #+clisp (#+lisp=cl ext:quit #-lisp=cl lisp:quit code)
   #+cmu (ext:quit code)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.12 2000/12/05 18:06:47 sds Exp $
+;;; $Id: clocc.lisp,v 1.13 2000/12/12 16:10:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -27,7 +27,7 @@
  excl::time-other-base 32)
 ;; From Erik Naggum <erik@naggum.no> [22 Feb 1999 10:27:45 +0000]
 ;; fixes the (read-from-string "[#\\x]") problem
-#+allegro
+#+allegro-off
 (loop with readtables = (excl::get-objects 11)
       for i from 1 to (aref readtables 0)
       for readtable = (aref readtables i) do
@@ -99,8 +99,8 @@
 ;; 1999-07-22 had serious bugs with logical pathnames.
 
 (defvar *clocc-root*
-  #-(or win32 windows) "/usr/local/src/clocc/"
-  #+(or win32 windows) "c:/gnu/clocc/"
+  #-(or win32 mswindows) "/usr/local/src/clocc/"
+  #+(or win32 mswindows) "c:/gnu/clocc/"
   "*The root CLOCC directory.")
 
 (setf (logical-pathname-translations "clocc")

@@ -1,10 +1,11 @@
 ## makefile for screamer
-# $Id: Makefile,v 1.1 2003/04/07 16:55:21 sds Exp $
+# $Id: Makefile,v 1.2 2003/04/16 15:08:13 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/screamer/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
 SOURCES := equations iterate primordial screamer screams
+SYSTEM := screamer
 include $(TOP)/clocc.mk
 
 screamer.$(FASLEXT): screamer.$(LISPEXT)

@@ -3,13 +3,21 @@ LISPEXT := lisp
 SOURCES := clocc
 include $(TOP)/clocc.mk
 
-# "make clocc-image" create a memory image for use with CLOCC under the name
-# clocc-image$(DUMPEXT).
+TOP_DEP = clocc.$(FASLEXT) src/defsystem-3.x/defsystem.$(FASLEXT)
 
+ifneq ($(DO_DUMP),)
 ifneq ($(DUMPEXT),)
-clocc-image: clocc-image$(DUMPEXT)
+clocc-top: clocc-top$(DUMPEXT)
 endif
 
-clocc-image$(DUMPEXT): clocc.$(FASLEXT) src/defsystem-3.x/defsystem.$(FASLEXT)
-	$(RUNLISP) $(patsubst %,-i %,$^) -d clocc-image
+clocc-top$(DUMPEXT): $(TOP_DEP)
+	$(RUNLISP) $(patsubst %,-i %,$^) -d clocc-top
 
+else
+
+clocc-top: clocc-top.$(FASLEXT)
+
+clocc-top.$(FASLEXT): $(TOP_DEP)
+	$(RUNLISP) -cat $^ > $@
+
+endif

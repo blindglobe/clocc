@@ -1,16 +1,23 @@
 # -*- Makefile -*-
 # Common Makefile rules.
-# The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
 # This file requires GNU Make
 #
-# $Id: clocc.mk,v 1.12 2000/05/11 21:21:29 sds Exp $
+# The following variables must already have been set:
+# CLOCC_DUMP - space-separated list of lisps for which we dump images
+# LISPEXT    - the lisp file extension (usually "lisp")
+# LISPTYPE   - your implementation type (acl5, acl43, clisp, cmucl, gcl)
+# SOURCES    - the list of source files to be compiled
+# SYSTEM     - the system name for defsystem (usually the dir name)
+# TOP        - the path to the top-level CLOCC directory
+#
+# $Id: clocc.mk,v 1.13 2000/05/16 16:56:28 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
 LISPFILE := $(TOP)/bin/lisp-file
 FASLEXT := $(shell $(RUNLISP) -faslext)
 DUMPEXT := $(shell $(RUNLISP) -dumpext)
-CLOCCIMAGE := $(TOP)/clocc-image
+DO_DUMP := $(filter $(LISPTYPE),$(CLOCC_DUMP))
 FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
 	*.o *.data *.ufsl
 LISPFILES = $(addsuffix .$(LISPEXT),$(SOURCES))
@@ -20,6 +27,12 @@ ZIPEXTRA += $(TOP)/clocc.mk $(TOP)/clocc.lisp
 RM  = /bin/rm -f
 LN  = /bin/ln
 ZIP = /usr/local/bin/zip -9uD
+
+ifneq ($(DO_DUMP),)
+CLOCC_TOP =  -I $(TOP)/clocc-top
+else
+CLOCC_TOP =  -i $(TOP)/clocc-top
+endif
 
 default: force
 	@echo " * you must specify a target, such as..."
@@ -32,7 +45,8 @@ default: force
 	@echo " + $(SYSTEM).zip - the archive of SOURCES, DOCFILES ($(DOCFILES)), MAKEFILES ($(MAKEFILES)) and ZIPEXTRA ($(ZIPEXTRA))"
 
 system: $(SYSTEM).system
-	$(RUNLISP) -I $(CLOCCIMAGE) -x '(mk:compile-system "$(SYSTEM)")'
+	$(RUNLISP) $(CLOCC_TOP) \
+		-x '(funcall (intern "COMPILE-SYSTEM" :mk) "$(SYSTEM)")'
 
 all: $(addsuffix .$(FASLEXT),$(SOURCES))
 
@@ -41,7 +55,8 @@ $(SYSTEM)-image: $(SYSTEM)-image$(DUMPEXT)
 endif
 
 $(SYSTEM)-image$(DUMPEXT): $(LISPFILES)
-	$(RUNLISP) -I $(CLOCCIMAGE) -x '(mk:compile-system "$(SYSTEM)")' \
+	$(RUNLISP) $(CLOCC_TOP) \
+		-x '(funcall (intern "COMPILE-SYSTEM" :mk) "$(SYSTEM)")' \
 		-d $(SYSTEM)-image
 
 %.$(FASLEXT): %.$(LISPEXT)

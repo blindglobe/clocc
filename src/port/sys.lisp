@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.56 2004/12/06 15:03:57 sds Exp $
+;;; $Id: sys.lisp,v 1.57 2004/12/23 14:50:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -219,9 +219,20 @@ initargs for all slots are returned, otherwise only the slots with
           (class-slots1 class)))
 ) ; macrolet
 
-#+cmu ; permit #S(struct) in source code
-(defmethod make-load-form ((self structure-object) &optional environment)
-  (make-load-form-saving-slots self :environment environment))
+;;;
+;;; CMUCL structure hack - make them externalizable
+;;;
+
+#+cmu
+(eval-when (compile load eval) (shadow 'defstruct) (export 'defstruct))
+#+cmu
+(defmacro defstruct (name &rest slots)
+  `(progn
+     (eval-when (compile load eval) (cl:defstruct ,name ,@slots))
+     ,(unless (and (consp name) (assoc :type (cdr name)))
+       `(defmethod make-load-form ((self ,(if (consp name) (first name) name))
+                                   &optional environment)
+          (make-load-form-saving-slots self :environment environment)))))
 
 ;;;
 ;;; Environment

@@ -1,6 +1,6 @@
 ;;; bugfixes
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2003 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.17 2003/04/17 12:05:00 sds Exp $
+;;; $Id: clocc.lisp,v 1.18 2003/04/17 12:07:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -23,6 +23,7 @@
  ;; so there is no use in this annoying warning
  comp:*cltl1-compile-file-toplevel-compatibility-p* nil
  ;; this is necessary for (require "foo") to load "foo.fasl"
+ ;; Kevin Layer (layer@franz.com) [2003-04-16 15:26:42 PST]
  ;; <http://groups.google.com/groups?hl=en&ie=UTF-8&th=be07905ac53b210d>
  sys:*require-search-list*
  (append sys:*load-search-list* sys:*require-search-list*)

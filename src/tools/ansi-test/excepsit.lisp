@@ -38,11 +38,15 @@
    (defgeneric foo02 (x))
    (defmethod foo02 ((x number)) t)
    (let ((m (find-method #'foo02 nil (list (find-class 'number)))))
-     (remove-method #'foo02 m)
+     ; wrong, not? (remove-method #'foo02 m)
      (defgeneric foo03 (x))
      (add-method #'foo03 m)
      ) )
- error)
+ error
+ "add-method:...
+
+If method is a method object of another generic function,
+an error of type error is signaled. ")
 
 (my-assert
  (let ((a (make-array 5 :adjustable t)))
@@ -164,15 +168,16 @@
    (defmethod foo04 ((x real)) 'ok)
    (defmethod foo04 ((x integer)) (call-next-method (sqrt x)))
    (foo04 -1))
- error)
+ error
+ "(sqrt -1) is not a real...")
 
 (my-assert
  (progn
    (defgeneric foo041 (x))
    (defmethod foo041 ((x real)) 'ok)
    (defmethod foo041 ((x integer)) (call-next-method (sqrt x)))
-   (foo04 2))
- error)
+   (foo041 2))
+ ok)
 
 (my-assert
  (ccase 'x)
@@ -251,9 +256,7 @@
  type-error)
 
 (my-assert
- #+ANSI-CL
  (character 33)
- #+ANSI-CL
  type-error)
 
 (my-assert
@@ -351,49 +354,94 @@
 
 (my-assert
  (defclass foo05 () (a b a))
- program-error)
+ program-error
+ "defclass:
+...
+If there are any duplicate slot names,
+an error of type program-error is signaled. ")
 
 (my-assert
  (defclass foo06 () (a b) (:default-initargs x a x b))
- program-error)
+ program-error
+ "defclass:
+...
+If an initialization argument name appears more
+than once in :default-initargs class option, an
+error of typeprogram-error is signaled. ")
 
 (my-assert
  (defclass foo07 () ((a :allocation :class :allocation :class)))
- program-error)
+ program-error
+ "defclass:
+...
+If any of the following slot options appears more than once in a
+single slot description, an error of type program-error is
+signaled: :allocation, :initform, :type, :documentation.")
 
 (my-assert
  (defclass foo08 () ((a :initform 42 :initform 42)))
- program-error)
+ program-error
+ "defclass:
+...
+If any of the following slot options appears more than once in a
+single slot description, an error of type program-error is
+signaled: :allocation, :initform, :type, :documentation.")
 
 (my-assert
  (defclass foo09 () ((a :type real :type real)))
- program-error)
+ program-error
+ "defclass:
+...
+If any of the following slot options appears more than once in a
+single slot description, an error of type program-error is
+signaled: :allocation, :initform, :type, :documentation.")
 
 (my-assert
  (defclass foo10 () ((a :documentation "bla" :documentation "blabla")))
- program-error)
+ program-error
+ "defclass:
+...
+If any of the following slot options appears more than once in a
+single slot description, an error of type program-error is
+signaled: :allocation, :initform, :type, :documentation.")
 
 (my-assert
  (defgeneric if (x))
- program-error)
+ program-error
+ "defgeneric:
+...
+If function-name names an ordinary function,
+a macro, or a special operator, an error of type
+program-error is signaled.")
 
 (my-assert
  (progn
    (defmacro foo11 (x) x)
    (defgeneric foo11 (x)))
- program-error)
+ program-error
+ "defgeneric:
+...
+If function-name names an ordinary function,
+a macro, or a special operator, an error of type
+program-error is signaled.")
 
 (my-assert
  (progn
    (defun foo12 (x) x)
    (defgeneric foo12 (x)))
- program-error)
+ program-error
+ "defgeneric:
+...
+If function-name names an ordinary function,
+a macro, or a special operator, an error of type
+program-error is signaled.")
 
 (my-assert
  (defgeneric foo13 (x y &rest l)
    (:method (x y))
    )
- error)
+ error
+ "")
 
 (my-assert
  (defgeneric foo14 (x)

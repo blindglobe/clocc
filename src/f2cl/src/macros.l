@@ -765,10 +765,12 @@ is not included")
     (cond ((atom array)
 	   `(do ((,do-var ,start (+ ,do-var ,step)))
 	     ((> ,do-var ,end))
+	     (declare (integer4 ,do-var))
 	     (fset (fref ,array ,(remove '|,| (second implied-do)) ,low-bnds) (pop ,init))))
 	  (t
 	   `(do ((,do-var ,start (+ ,do-var ,step)))
 	     ((> ,do-var ,end))
+	     (declare (integer4 ,do-var))
 	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
 
 
@@ -788,6 +790,7 @@ is not included")
     (setf (gethash t table) *standard-output*)
     table))
 
+#+nil
 (defun lun->stream (lun)
   (let ((stream (gethash lun *lun-hash*)))
     (if stream
@@ -796,6 +799,22 @@ is not included")
 	      (open (format nil "fort~d.dat" lun)
 		    :direction :output
 		    :if-exists :rename)))))
+
+(defun lun->stream (lun &optional readp)
+  (let ((stream (gethash lun *lun-hash*)))
+    (if stream
+	stream
+	(cond ((integerp lun)
+	       (setf (gethash lun *lun-hash*)
+		     (open (format nil "fort~d.dat" lun)
+			   :direction :output
+			   :if-exists :rename)))
+	      ((stringp lun)
+	       (setf (gethash lun *lun-hash*)
+		     (if readp
+			 (make-string-input-stream lun)
+			 (make-string-output-stream))))
+	      ))))
 
 (defun init-fortran-io ()
   "Initialize the F2CL Fortran I/O subsystem to sensible defaults"
@@ -818,7 +837,9 @@ causing all pending operations to be flushed"
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
     `(let ((,stream (lun->stream ,dest-lun)))
-      (execute-format-main ,stream ',format-cilist ,@args))))
+      (execute-format-main ,stream ',format-cilist ,@args)
+      (when (stringp ,dest-lun)
+	(replace ,dest-lun (get-output-stream-string ,stream))))))
 
 (defun execute-format (top stream format arg-list)
   (do ((formats format (if (and top (null formats))
@@ -1107,8 +1128,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.39 2002/02/09 15:59:26 rtoy Exp $
+;;; $Id: macros.l,v 1.40 2002/02/10 03:43:51 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.40  2002/02/10 03:43:51  rtoy
+;;; Partial support for WRITE statements writing to a string instead of
+;;; logical unit.
+;;;
 ;;; Revision 1.39  2002/02/09 15:59:26  rtoy
 ;;; o Add more and better comments
 ;;; o AINT was broken because it should accept any range of floats.

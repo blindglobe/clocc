@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.16 2000/07/31 17:54:31 sds Exp $
+;;; $Id: sys.lisp,v 1.17 2000/08/07 19:00:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -116,11 +116,9 @@ all slots are returned, otherwise only the slots with
                     (list (slot-name slot)))))
             (class-slots*
              (typecase class
-               (class class) (symbol (find-class class))
-               ((or structure-object standard-object) (class-of class))
-               (t (error 'case-error :proc 'class-slot-list
-                         :args (list 'class class 'class 'symbol
-                                     'structure-object 'standard-object))))))))
+               (class class)
+               (symbol (find-class class))
+               (t (class-of class)))))))
 
 ;;;
 ;;; Environment

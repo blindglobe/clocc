@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.23 2001/03/07 20:39:27 sds Exp $
+;;; $Id: sys.lisp,v 1.24 2001/03/13 23:09:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -206,10 +206,10 @@ but there is a TYPE slot, move TYPE into NAME."
 (defsetf default-directory chdir "Change the current directory.")
 
 (defun mkdir (dir)
-  #+allegro (excl:make-directory path)
-  #+clisp (lisp:make-dir path)
-  #+cmu (unix:unix-mkdir (directory-namestring path) #o777)
-  #+lispworks (system:make-directory path)
+  #+allegro (excl:make-directory dir)
+  #+clisp (lisp:make-dir dir)
+  #+cmu (unix:unix-mkdir (directory-namestring dir) #o777)
+  #+lispworks (system:make-directory dir)
   #-(or allegro clisp cmu lispworks)
   (error 'not-implemented :proc (list 'mkdir dir)))
 

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.41 2002/03/26 23:53:40 sds Exp $
+;;; $Id: net.lisp,v 1.42 2002/03/30 04:18:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,6 +56,26 @@
     (+ (ash (first ll) 24) (ash (second ll) 16)
        (ash (third ll) 8) (fourth ll))))
 
+;#+(and sbcl db-sockets)
+;(declaim (ftype (function (vector) (values (unsigned-byte 32)))
+;                vector-to-ipaddr))
+#+(and sbcl db-sockets)
+(defun vector-to-ipaddr (vector)
+  (+ (ash (aref vector 0) 24)
+     (ash (aref vector 1) 16)
+     (ash (aref vector 2) 8)
+     (aref vector 3)))
+
+;#+(and sbcl db-sockets)
+;(declaim (ftype (function (vector) (values (unsigned-byte 32)))
+;                ipaddr-to-vector))
+#+(and sbcl db-sockets)
+(defun ipaddr-to-vector (ipaddr)
+  (vector (ldb (byte 8 24) ipaddr)
+          (ldb (byte 8 16) ipaddr)
+          (ldb (byte 8 8) ipaddr)
+          (ldb (byte 8 0) ipaddr)))
+
 (defstruct hostent
   "see gethostbyname(3) for details"
   (name "" :type simple-string) ; canonical name of host
@@ -97,6 +117,28 @@
       (comm:get-host-entry host :fields '(:name :address :aliases))
     (make-hostent :name name :addr-list (list (ipaddr-to-dotted addr))
                   :aliases aliases))
+  #+(and sbcl db-sockets)
+  (let* ((ipaddr
+          (etypecase host
+            (string
+             (if (every (lambda (ch) (or (char= ch #\.) (digit-char-p ch)))
+                        host)
+                 (dotted-to-ipaddr host)
+                 (let ((hostent
+                        (sockets:get-host-by-name host)))
+                   (when hostent
+                     (vector-to-ipaddr
+                      (sockets::host-ent-address hostent))))))
+            (integer host)))
+         (name
+          (when ipaddr
+            (let ((hostent
+                   (sockets:get-host-by-address
+                    (ipaddr-to-vector ipaddr))))
+              (when (and hostent
+                         (sockets::host-ent-aliases hostent))
+                (first (sockets::host-ent-aliases hostent)))))))
+    (make-hostent :name name :addr-list (list ipaddr)))
   #+(and sbcl net.sbcl.sockets)
   (let ((he (net.sbcl.sockets:lookup-host-entry host)))
     (make-hostent :name (net.sbcl.sockets:host-entry-name he)
@@ -104,7 +146,8 @@
                   :addr-list (mapcar #'ipaddr-to-dotted
                                      (net.sbcl.sockets:host-entry-addr-list he))
                   :addr-type (net.sbcl.sockets::host-entry-addr-type he)))
-  #-(or allegro (and clisp syscalls) cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro (and clisp syscalls) cmu gcl lispworks
+        (and sbcl (or db-sockets net.sbcl.sockets)))
   (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 ;;;
@@ -117,6 +160,7 @@
   #+cmu 'sys:fd-stream
   #+gcl 'si:socket-stream
   #+lispworks 'comm:socket-stream
+  #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:stream-socket
   #-(or allegro clisp cmucl gcl lispworks) 'stream)
 
@@ -138,13 +182,24 @@
     #+gcl (si:make-socket-stream host port bin) ; FIXME
     #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
                                       (if bin 'unsigned-byte 'base-char))
+    #+(and sbcl db-sockets)
+    (let ((socket (make-instance 'sockets:inet-socket
+                                 :type :stream :protocol :tcp)))
+      (sockets:socket-connect socket
+                              (sockets::host-ent-address
+                               (sockets:get-host-by-name host))
+                              port)
+      (sockets:socket-make-stream
+       socket :input t :output t :buffering (if bin :none :line)
+       :element-type (if bin '(unsigned-byte 8) 'character)))
     #+(and sbcl net.sbcl.sockets)
     (net.sbcl.sockets:make-socket
      (if bin
          'net.sbcl.sockets:binary-stream-socket
          'net.sbcl.sockets:character-stream-socket)
      :port port :host host)
-    #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+    #-(or allegro clisp cmu gcl lispworks
+          (and sbcl (or net.sbcl.sockets db-sockets)))
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 
 (defun socket-host/port (sock)
@@ -177,9 +232,18 @@
     (multiple-value-bind (ho1 po2) (comm:socket-stream-address sock)
       (values (ipaddr-to-dotted ho1) po1
               (ipaddr-to-dotted ho2) po2)))
+  #+(and sbcl db-sockets)
+  (let ((sock (sb-sys:fd-stream-fd sock)))
+    (multiple-value-bind (remote remote-port) (sockets:socket-peername sock)
+      (multiple-value-bind (local local-port) (sockets:socket-name sock)
+        (values (ipaddr-to-dotted (vector-to-ipaddr remote))
+                remote-port
+                (ipaddr-to-dotted (vector-to-ipaddr local))
+                local-port))))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:socket-host-port sock)
-  #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro clisp cmu gcl lispworks
+        (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 
 (defun socket-string (sock)
@@ -202,12 +266,13 @@
   #+(and clisp (not lisp=cl)) 'lisp:socket-server
   #+cmu 'integer
   #+gcl 'si:socket-stream
+  #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:passive-socket
-  #-(or allegro clisp cmucl gcl (and sbcl net.sbcl.sockets)) t)
+  #-(or allegro clisp cmucl gcl (and sbcl (or net.sbcl.sockets db-sockets))) t)
 
 (defun open-socket-server (&optional port)
   "Open a `generic' socket server."
-  (declare (type (or null integer socket) port))
+  (declare (type (or null integer #-sbcl socket) port))
   #+allegro (socket:make-socket :connect :passive :local-port
                                 (when (integerp port) port))
   #+clisp (#+lisp=cl ext:socket-server #-lisp=cl lisp:socket-server port)
@@ -219,9 +284,14 @@
                  :proc (comm:start-up-server-and-mp
                         :function (lambda (sock) (mp:mailbox-send mbox sock))
                         :service port)))
+  #+(and sbcl db-sockets)
+  (let ((socket (make-instance 'sockets:inet-socket
+                               :type :stream :protocol :tcp)))
+    (sockets:socket-bind socket (vector 0 0 0 0) (or port 0)))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:make-socket 'net.sbcl.sockets:passive-socket :port port)
-  #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro clisp cmu gcl lispworks
+        (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'open-socket-server port)))
 
 (defun socket-accept (serv &key bin wait)
@@ -272,6 +342,10 @@ Returns a socket stream or NIL."
                'comm:socket-stream :direction :io
                :socket (mp:mailbox-read (socket-server-mbox serv))
                :element-type (if bin 'unsigned-byte 'base-char))
+  #+(and sbcl db-sockets)
+  (let ((new-connection (sockets:socket-accept serv)))
+    ;; who needs WAIT and BIN anyway :-S
+    new-connection)
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:accept-connection
    serv
@@ -279,7 +353,8 @@ Returns a socket stream or NIL."
        'net.sbcl.sockets:binary-stream-socket
        'net.sbcl.sockets:character-stream-socket)
    ) ; :wait wait) ; FIXME!!! it does not work now.
-  #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro clisp cmu gcl lispworks
+        (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'socket-accept serv bin)))
 
 (defun socket-server-close (server)
@@ -291,8 +366,10 @@ Returns a socket stream or NIL."
   #+cmu (unix:unix-close server)
   #+lispworks (mp:process-kill (socket-server-proc server))
   #+gcl (close server)
+  #+(and sbcl db-sockets) (sockets:socket-close server)
   #+(and sbcl net.sbcl.sockets) (close server)
-  #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro clisp cmu gcl lispworks
+        (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'socket-server-close server)))
 
 (defun socket-server-host/port (server)
@@ -312,9 +389,13 @@ Returns a socket stream or NIL."
   #+lispworks (values (ipaddr-to-dotted (comm:get-host-entry
                                          "localhost" :fields '(:address)))
                       (socket-server-port server))
+  #+(and sbcl db-sockets)
+  (multiple-value-bind (addr port) (sockets:socket-name server)
+    (values (vector-to-ipaddr addr) port))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:passive-socket-host-port server)
-  #-(or allegro clisp cmu gcl lispworks (and sbcl net.sbcl.sockets))
+  #-(or allegro clisp cmu gcl lispworks
+        (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'socket-server-host/port server)))
 
 ;;;
@@ -328,19 +409,30 @@ whichever comes first. If there was a timeout, return NIL."
             (#+lisp=cl ext:socket-status #-lisp=cl lisp:socket-status
                        stream (and timeout sec) (round usec 1d-6)))
   #+cmu (#+mp mp:process-wait-until-fd-usable #-mp sys:wait-until-fd-usable
-              (system:fd-stream-fd stream)
-              :input timeout)
-  #-(or clisp cmu)
+              (system:fd-stream-fd stream) :input timeout)
+  #+sbcl (sb-sys:wait-until-fd-usable (sb-sys:fd-stream-fd stream)
+                                      :input timeout)
+  #-(or clisp cmu sbcl)
   (error 'not-implemented :proc (list 'wait-for-stream stream timeout)))
 
 (defun open-unix-socket (path &key (kind :stream) bin)
   "Opens a unix socket. Path is the location.
 Kind can be :stream or :datagram."
   (declare (simple-string path) #-cmu (ignore kind))
+  #+allegro (socket:make-socket :type :stream
+                                :address-family :file
+                                :connect :active
+                                :remote-filename path)
   #+cmu (sys:make-fd-stream (ext:connect-to-unix-socket path kind)
                             :input t :output t :element-type
                             (if bin '(unsigned-byte 8) 'character))
-  #-cmu
+  #+(and sbcl db-sockets)
+  (let ((socket (make-instance 'sockets:unix-socket :type :stream)))
+    (sockets:socket-connect socket path)
+    (sockets:socket-make-stream socket :input t :output t
+                                :buffering :none
+                                :element-type '(unsigned-byte 8)))
+  #-(or cmu allegro (and sbcl db-sockets))
   (open path :element-type (if bin '(unsigned-byte 8) 'character)
         :direction :io))
 

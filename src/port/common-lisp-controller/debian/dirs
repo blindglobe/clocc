@@ -1,8 +1,0 @@
-etc/common-lisp
-usr/sbin
-usr/bin
-usr/share/common-lisp/systems
-usr/share/common-lisp/source/common-lisp-controller
-usr/lib/common-lisp/bin
-usr/lib/common-lisp-controller
-var/spool/common-lisp-controller

@@ -1,9 +1,0 @@
-usr/sbin/register-common-lisp-implementation usr/sbin/clc-register-impl
-usr/sbin/register-common-lisp-source usr/sbin/clc-register-library
-usr/sbin/unregister-common-lisp-implementation usr/sbin/clc-unregister-impl
-usr/sbin/unregister-common-lisp-source usr/sbin/clc-unregister-library
-usr/share/man/man8/register-common-lisp-implementation.8 usr/share/man/man8/clc-register-impl.8
-usr/share/man/man8/register-common-lisp-source.8 usr/share/man/man8/clc-register-library.8
-usr/share/man/man8/unregister-common-lisp-implementation.8 usr/share/man/man8/clc-unregister-impl.8
-usr/share/man/man8/unregister-common-lisp-source.8 usr/share/man/man8/clc-unregister-library.8
-

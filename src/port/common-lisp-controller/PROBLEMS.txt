@@ -1,2 +1,0 @@
-- Now we use cl-library:;foo uniquely. Some implementations will have
-  problems with this. File a bugreport with them :-)

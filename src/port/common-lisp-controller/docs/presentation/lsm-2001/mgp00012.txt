@@ -1,8 +1,0 @@
-
-What we need:
-
-
-Almost all existing package systems have these functions, 
-we just need to fill in a skeleton to 
-have a c-l-c package for these systems.
-

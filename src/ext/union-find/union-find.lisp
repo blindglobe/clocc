@@ -146,7 +146,7 @@ Note that this operator 'shadows' CL:UNION."
 (defgeneric collect-set (partition x)
   (:documentation
    "This function collects all the elements of the set which contains X.
-The result is a list.  Use this function with care."
+The result is a list.  Use this function with care."))
 
 (defmethod collect-set ((p partition) x)
   (collect-set p (find-set p x)))

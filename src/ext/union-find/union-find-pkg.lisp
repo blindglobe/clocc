@@ -18,7 +18,7 @@
    "This package contains an implementation of the well known
 UNION-FIND data structure (with weighted path compression).
 The data structure is very useful as a building block of many complex
-algorithms."
+algorithms.")
   (:shadow common-lisp:union)
   (:export "PARTITION"
 	   "MAKE-PARTITION"

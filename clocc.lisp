@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.1 2000/02/18 21:26:00 sds Exp $
+;;; $Id: clocc.lisp,v 1.2 2000/03/07 11:15:41 haible Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 ;;; $Log: clocc.lisp,v $
+;;; Revision 1.2  2000/03/07 11:15:41  haible
+;;; Add comment about recommended CLISP version.
+;;;
 ;;; Revision 1.1  2000/02/18 21:26:00  sds
 ;;; renamed; removed defsystem for port
 ;;;
@@ -71,6 +74,9 @@
 ;;;
 ;;; Path
 ;;;
+
+;; When using CLISP, you need version 2000-03-06 or newer. The older version
+;; 1999-07-22 had serious bugs with logical pathnames.
 
 (setf (logical-pathname-translations "clocc")
       '(("**;*" "/usr/local/src/clocc/**/*")))

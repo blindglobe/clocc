@@ -44,8 +44,8 @@ C
 c
 c     Describe the possible functions
 c
-      print *, 'Enter prob no, dimensions m, n, and the number of 
-     $     tries'
+      print *, 'Enter prob no, dimensions n, m, and the number of
+     $ tries'
       print *, ' 1: linear function, full rank. m >= n'
       print *, ' 2: linear function, rank 1. m >= n'
       print *, ' 3: linear function, rank 1, zero cols, rows. m >= n'
@@ -66,7 +66,7 @@ c
       print *, '18: Osborne 2 function, m=65, n=11'
       print *, '-1: exit'
 
-         READ (NREAD,*) NPROB,M,N,NTRIES
+         READ (NREAD,*) NPROB,N,M,NTRIES
          IF (NPROB .LE. 0) GO TO 30
          FACTOR = ONE
          DO 20 K = 1, NTRIES

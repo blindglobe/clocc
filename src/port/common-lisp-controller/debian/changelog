@@ -1,3 +1,9 @@
+common-lisp-controller (3.37) unstable; urgency=high
+
+  * Add program arguments to inetd.conf (closes: 162171)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue,  1 Oct 2002 07:33:02 -0600
+
 common-lisp-controller (3.36) unstable; urgency=low
 
   * Change 'load-compiled-op 

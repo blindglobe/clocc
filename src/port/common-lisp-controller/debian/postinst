@@ -26,7 +26,7 @@ set -e
 
 case "$1" in
     configure)
-    update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon"
+    update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
 
     db_get common-lisp-controller/long-site-name
     long=$(printf "%s" "$RET" | sed -e 's/[\"]/\\&/g')

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-01-08 Fri 12:09:27 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-01-09 Sat 16:55:13 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.13 1999/01/08 17:15:25 sds Exp $
+;;; $Id: url.lisp,v 1.14 1999/01/09 22:15:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.14  1999/01/09 22:15:42  sds
+;;; Extracted `ts-pull-next' from `read-next'.
+;;;
 ;;; Revision 1.13  1999/01/08 17:15:25  sds
 ;;; Made `read-html-markup' skip `*html-specials*'.
 ;;; Added `with-timeout' for CMUCL, `socket-to-file', `*ts-kill*' (used in
@@ -722,40 +725,50 @@ This is initialized based on `mail-host-address'.")
 
 (defcustom *ts-kill* list nil "*The list of characters to kill.")
 
+(defun ts-pull-next (ts &optional (concat-p t) (kill *ts-kill*))
+  "Read the next line from the socket, put it into the buffer.
+If CONCAT-P is non-NIL, the new line is appended,
+otherwise the buffer is replaced.
+Return the new buffer or NIL on EOF."
+  (declare (type text-stream ts))
+  (let ((str (read-line (ts-sock ts) nil nil)))
+    (declare (type (or null simple-string) str))
+    (unless str (return-from ts-pull-next nil))
+    (setq str (nsubstitute #\Space #\: str) ; packages
+          str (nsubstitute #\Space #\, str) ; comma outside backquote
+          ;; str (nsubstitute #\Space #\/ str)
+          )
+    (when kill
+      (dolist (ch (to-list kill))
+        (setq str (nsubstitute #\Space ch str))))
+    ;; (nsubstitute #\space #\. str) breaks floats, so we have to be smart
+    (do ((beg -1) (len (1- (length str))))
+        ((or (= beg len)
+             (null (setq beg (position #\. str :start (1+ beg))))))
+      (declare (type (signed-byte 21) beg len))
+      (if (or (and (plusp beg) (digit-char-p (schar str (1- beg))))
+              (and (< beg len) (digit-char-p (schar str (1+ beg)))))
+          (incf beg) (setf (schar str beg) #\Space)))
+    (if concat-p
+        (setf (ts-buff ts) (concatenate 'string (ts-buff ts) str))
+        (setf (ts-posn ts) 0 (ts-buff ts) str))))
+
 (defun read-next (ts &optional errorp (kill *ts-kill*))
   "Read the next something from TS - a text stream."
   (declare (type text-stream ts))
-  (do (str tok pos) (nil)
-    (declare (type (or null cons simple-string) str))
-    (when (or (typep pos 'error) (>= (ts-posn ts) (length (ts-buff ts))))
-      (unless (typep pos 'error) (setf (ts-posn ts) 0))
-      (setq str (read-line (ts-sock ts) nil +eof+))
-      (when (eq str +eof+)
-        (if (typep pos 'error) (error pos)
-            (if errorp (error "EOF on ~a" ts)
-                (return-from read-next +eof+))))
-      (setq str (nsubstitute #\Space #\: str)
-            str (nsubstitute #\Space #\, str)
-            str (nsubstitute #\Space #\/ str))
-      (when kill
-        (dolist (ch (to-list kill))
-          (setq str (nsubstitute #\Space ch str))))
-      ;; (nsubstitute #\space #\. str) breaks floats, so we have to be smart
-      (do ((beg -1) (len (1- (length str))))
-          ((or (= beg len)
-               (null (setq beg (position #\. str :start (1+ beg))))))
-        (declare (type (signed-byte 21) beg len))
-        (if (or (and (plusp beg) (digit-char-p (schar str (1- beg))))
-                (and (< beg len) (digit-char-p (schar str (1+ beg)))))
-            (incf beg) (setf (schar str beg) #\Space)))
-      (setf (ts-buff ts) (if (typep pos 'error)
-                             (concatenate 'string (ts-buff ts) str) str)))
-    (setf (values tok pos)
-          (ignore-errors
-            (read-from-string (ts-buff ts) nil +eof+ :start (ts-posn ts))))
-    (unless (typep pos 'error) (setf (ts-posn ts) pos))
-    (unless (or (typep pos 'error) (eq tok +eof+))
-      (return-from read-next tok))))
+  (loop :with tok :and pos
+        :when (and (or (typep pos 'error)
+                       (>= (ts-posn ts) (length (ts-buff ts))))
+                   (null (ts-pull-next ts (typep pos 'error) kill)))
+        :do (if (typep pos 'error) (error pos)
+                (if errorp (error "EOF on ~a" ts)
+                    (return-from read-next +eof+)))
+        :do (setf (values tok pos)
+                  (ignore-errors (read-from-string (ts-buff ts) nil +eof+
+                                                   :start (ts-posn ts))))
+        :unless (typep pos 'error) :do (setf (ts-posn ts) pos)
+        :unless (or (typep pos 'error) (eq tok +eof+))
+        :return tok))
 
 ;;(defun read-next (ts) (read (ts-sock ts) nil +eof+))
 

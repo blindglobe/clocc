@@ -115,10 +115,10 @@
 	(t)				; do nothing?
 	)
 
-  #+(and cmu (not :|18c|))
+  #+(and cmu (not :|18c|) (not :|18d|))
   (setf *os* *operating-system*)	; This should become a SYMBOL-MACRO.
 
-  #+(or (not cmu) (and cmu :|18c|))
+  #+(or (not cmu) (and cmu (or :|18d| :|18c|)))
   (define-symbol-macro *os* *operating-system*)
 	
   ;;---------------------------------------
@@ -183,10 +183,10 @@
   (setf *common-lisp-implementation*
 	(make-instance 'scl :feature-tag :genera))
 
-  #+(and cmu (not :|18c|))
+  #+(and cmu (not :|18c|) (not :|18d|))
   (setf *cl* *common-lisp-implementation*) ; This should become a SYMBOL-MACRO.
 
-  #+(or (not cmu) (and cmu :|18c|))
+  #+(or (not cmu) (and cmu (or :|18c| :|18d|)))
   (define-symbol-macro *cl* *common-lisp-implementation*)
 
   )

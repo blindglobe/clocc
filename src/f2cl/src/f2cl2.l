@@ -159,7 +159,16 @@ Tag being parsed:| (cadr x))))
 		 (when (and res
 			    (not (null (rest res))))
 		   ;; If this entry has dimensions, we're done!
-		   (return-from lookup-array-bounds (rest res)))))
+		   (return-from lookup-array-bounds
+		     ;; Normal arrays look something like
+		     ;; (var (lo-1 hi-1) (lo-2 hi-2) ...)
+		     ;;
+		     ;; However, character arrays look like
+		     ;;
+		     ;; (var ((lo-1 hi-1) (lo-2 hi-2) ...) len)
+		     (if (listp (first (second res)))
+			 (second res)
+			 (rest res))))))
        *explicit_vble_decls*)
   (error "Cannot find array bounds for ~S!" v))
 

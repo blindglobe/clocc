@@ -812,7 +812,7 @@
 	       (if (and (or *save_vbles* *auto-save-data*)
 			save-inits)
 		   (append
-		    `(let ,key-params
+		    `(let* ,key-params
 		      ,@key-params-decls
 		      (let ,save-inits
 			,@saved-decls
@@ -821,7 +821,7 @@
 			  ,@formal-arg-decls 
 			  ,prog-bit))))
 		   (append
-		    `(let ,key-params
+		    `(let* ,key-params
 		      ,@key-params-decls
 		      (defun ,(cadr defun-bit) ,arglist
 			,@formal-arg-decls 
@@ -1872,7 +1872,7 @@
   (let ((var-inits '()))
     (maphash
      #'(lambda (key val)
-	 (push `(let ,key-params
+	 (push `(let* ,key-params
 		 ,@key-param-decls
 		 (defparameter ,(intern (concatenate 'string
 						     "*"

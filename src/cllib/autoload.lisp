@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.8 2000/05/31 20:12:59 sds Exp $
+;;; $Id: autoload.lisp,v 1.9 2001/04/02 16:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -61,12 +61,12 @@
                           ((defun defsubst)
                            (when (stringp (fourth form)) (fourth form)))
                           (defgeneric
-                              (cadr (assoc :documentation (cdddr form))))
+                           (cadr (assoc :documentation (cdddr form))))
                           (t (error 'case-error :proc 'autoload-stream :args
                                     (list 'form (car form) 'defun 'defsubst
                                           'defgeneric))))))
-              (format out "(autoload '~s ~s ~s)~%"
-                      name (pathname-name in) doc))
+              (format out "(export '(~s))~%(autoload '~s ~s ~s)~%"
+                      name name (pathname-name in) doc))
             :finally (progn (format log "~d autoload~:p~%" total) (terpri out)
                             (return total))))))
 
@@ -75,7 +75,7 @@
   (with-open-file (outs out :direction :output :if-exists :supersede
                         :if-does-not-exist :create)
     (format outs ";;; autoloads generated on ~a~%;;; by ~a [~a]~2%~
-                  (in-package :cllib)~2%~s~2%"
+                  (in-package :cllib)~%(export '(autoload))~2%~s~2%"
             (timestamp) (lisp-implementation-type)
             (lisp-implementation-version) *autoload-defun*)
     (let ((tot (autoload-stream in outs log)))

@@ -549,8 +549,10 @@
 ;;;                 Cfr. the definitions of *EXPORTS* and
 ;;;                 *SPECIAL-EXPORTS*.
 ;;; 2000-07-21 rlt  Add COMPILER-OPTIONS to defstruct to allow user to
-;;;                 specify special compiler options for a particular component.
-;;;
+;;;                 specify special compiler options for a particular
+;;;                 component.
+;;; 2002-01-08 kmr  Changed allegro symbols to lowercase to support
+;;;                 case-sensitive images
 
 ;;;---------------------------------------------------------------------------
 ;;; ISI Comments
@@ -1094,13 +1096,13 @@
 ;;; easier to use. Since some lisps have already defined defsystem
 ;;; in the user package, we may have to shadowing-import it.
 #|
-#-(OR :sbcl :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
+#-(or :sbcl :cmu :ccl :allegro :excl :lispworks :symbolics)
 (eval-when (compile load eval)
   (import *exports* #-(or :cltl2 :lispworks) "USER"
 	            #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
   (import *special-exports* #-(or :cltl2 :lispworks) "USER"
 	                    #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
-#+(OR :sbcl :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
+#+(or :sbcl :cmu :ccl :allegro :excl :lispworks :symbolics)
 (eval-when (compile load eval)
   (import *exports* #-(or :cltl2 :lispworks) "USER"
 	            #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
@@ -1168,7 +1170,7 @@
     "./"
     #+:LUCID     (working-directory)
     #+ACLPC      (current-directory)
-    #+:ALLEGRO   (excl:current-directory)
+    #+:allegro   (excl:current-directory)
     #+:sbcl      (progn *default-pathname-defaults*)
     #+:CMU       (ext:default-directory)
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>
@@ -1496,7 +1498,11 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	   (not (null-string dir))
 	   (not (char= (char dir
 			     (1- (length dir)))
-		       #\/)))
+		       #\/))
+	   (not (char= (char dir
+			     (1- (length dir)))
+		       #\\))
+	   )
       (concatenate 'string dir "/")
       dir))
 
@@ -1538,6 +1544,15 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 (machine-type-translation "IP7"                              "sgi")
 ;;; MIPS R2000A/R3000 Processor Chip Revision: 3.0
 
+(machine-type-translation "x86"                              "x86")
+;;; ACL
+(machine-type-translation "IBM PC Compatible"                "x86")
+;;; LW
+(machine-type-translation "I686"                             "x86")
+;;; LW
+(machine-type-translation "PC/386"                           "x86")
+;;; CLisp Win32
+
 #+(and :lucid :sun :mc68000)
 (machine-type-translation "unknown"     "sun3")
 
@@ -1561,6 +1576,14 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 (software-type-translation "IRIX 5.3" "irix5")
 (software-type-translation "IRIX5.2"  "irix5")
 (software-type-translation "IRIX5.3"  "irix5")
+
+(software-type-translation "Linux" "linux") ; Lispworks for Linux
+(software-type-translation "Linux 2.x, Redhat 6.x and 7.x" "linux") ; ACL
+(software-type-translation "Microsoft Windows 9x/Me and NT/2000/XP" "win32")
+(software-type-translation "Windows NT" "win32") ; LW for Windows
+(software-type-translation "ANSI C program" "ansi-c") ; CLISP
+(software-type-translation "C compiler" "ansi-c") ; CLISP for Win32
+
 (software-type-translation nil             "")
 
 #+:lucid
@@ -1577,6 +1600,22 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 
 (compiler-type-translation "lispworks 3.2.1"         "lispworks")
 (compiler-type-translation "lispworks 3.2.60 beta 6" "lispworks")
+(compiler-type-translation "lispworks 4.2.0"         "lispworks")
+
+#+allegro
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (unless (or (find :case-sensitive common-lisp:*features*)
+	      (find :case-insensitive common-lisp:*features*))
+    (if (or (eq excl:*current-case-mode* :case-sensitive-lower)
+	    (eq excl:*current-case-mode* :case-sensitive-upper))
+	(push :case-sensitive common-lisp:*features*)
+      (push :case-insensitive common-lisp:*features*))))
+
+
+#+(and allegro case-sensitive)
+(compiler-type-translation "excl 6.1" "excl-m")
+#+(and allegro case-insensitive)
+(compiler-type-translation "excl 6.1" "excl-a")
 (compiler-type-translation "excl 4.2" "excl")
 (compiler-type-translation "excl 4.1" "excl")
 (compiler-type-translation "cmu 17f" "cmu")
@@ -3184,7 +3223,7 @@ D
 	  ;; CL implementations may uniformly default this to nil
 	  (let ((*load-verbose* #-common-lisp-controller t
 				#+common-lisp-controller nil) ; nil
-		#-(or MCL CMU CLISP :sbcl)
+		#-(or MCL CMU CLISP :sbcl lispworks)
 		(*compile-file-verbose* t) ; nil
 		#+common-lisp-controller
 		(*compile-print* nil)
@@ -3759,6 +3798,7 @@ D
 
 #+(or symbolics (and :lispworks :harlequin-pc-lisp))
 (defun run-unix-program (program arguments)
+  (declare (ignore program arguments))
   (error "MK::RUN-UNIX-PROGRAM: this does not seem to be a UN*X system.")
   )
 
@@ -4129,7 +4169,7 @@ D
 		     (funcall (load-function component) binary-pname)
 		     (setf (component-load-time component)
 			   (file-write-date binary-pname)))))
-	     T)
+	     t)
 	    ((and source-exists
 		  (or (and load-source	; implicit needs-comp...
 			   (or *load-source-instead-of-binary*
@@ -4147,7 +4187,7 @@ D
 		     (funcall (load-function component) source-pname)
 		     (setf (component-load-time component)
 			   (file-write-date source-pname)))))
-	     T)
+	     t)
 	    ((and binary-exists load-binary)
 	     (with-tell-user ("Loading binary"   component :binary)
 	       (or *oos-test*
@@ -4155,7 +4195,7 @@ D
 		     (funcall (load-function component) binary-pname)
 		     (setf (component-load-time component)
 			   (file-write-date binary-pname)))))
-	     T)
+	     t)
 	    ((and (not binary-exists) (not source-exists))
 	     (tell-user-no-files component :force)
 	     (when *files-missing-is-an-error*

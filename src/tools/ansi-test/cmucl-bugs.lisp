@@ -68,7 +68,7 @@
 ;; p 737
 
 (my-assert
- (loop with ( a b c) (float integer float)
+ (loop with (a b c) of-type (float integer float)
    return (list a b c))
  (0.0 0 0.0))
 

@@ -21,10 +21,10 @@
 			  do (print i)
 			  ) )
  "
-1 
-2 
-3 
-4 
+1
+2
+3
+4
 5 ")
 
 (my-assert
@@ -33,9 +33,9 @@
 			  do (print i)
 			  ) )
  "
-10 
-7 
-4 
+10
+7
+4
 1 ")
 
 (my-assert
@@ -44,10 +44,10 @@
 			  do (print i)
 			  ) )
  "
-0 
-1 
-2 
-3 
+0
+1
+2
+3
 4 ")
 
 (my-assert
@@ -56,10 +56,10 @@
 			  do (print item)
 			  ) )
  "
-1 
-2 
-3 
-4 
+1
+2
+3
+4
 5 ")
 
 (my-assert
@@ -68,8 +68,8 @@
 			  do (print item)
 			  ) )
  "
-1 
-3 
+1
+3
 5 ")
 
 (my-assert
@@ -90,8 +90,8 @@
 			  do (print item)
 			  ) )
  "
-1 
-2 
+1
+2
 3 ")
 
 (my-assert
@@ -100,8 +100,8 @@
 			  do (print item)
 			  ) )
  "
-1 
-2 
+1
+2
 3 ")
 
 (my-assert
@@ -388,13 +388,13 @@ February 17
  (1 7 13 1733))
 
 (my-assert
- (loop with (a b c) (float integer float)
+ (loop with (a b c) of-type (float integer float)
    return (format nil "~A ~A ~A" a b c)
    )
  "0.0 0 0.0")
 
 (my-assert
- (loop with (a b c) float
+ (loop with (a b c) of-type float
    return (format nil "~A ~A ~A" a b c)
    )
  "0.0 0.0 0.0")
@@ -415,11 +415,11 @@ February 17
     results
     ) )
  ("
-3 
+3
 
-1 
+1
 
-7 
+7
 "
   (3 1 7) (2 4 6 8)))
 
@@ -457,7 +457,7 @@ February 17
 			  ) )
  "
 0  a b c
-1 
+1
 2  a
 3 ")
 
@@ -476,7 +476,7 @@ February 17
 			  ) )
  "
 0  a b c
-1 
+1
 2  a c
 3 ")
 
@@ -486,10 +486,10 @@ February 17
 			  do (print i)
 			  ) )
  "
-1 
-2 
-3 
-4 
+1
+2
+3
+4
 5 ")
 
 (my-assert
@@ -499,36 +499,33 @@ February 17
 			  (print (* i i))
 			  ) )
  "
-1 
-1 
-2 
-4 
-3 
-9 
-4 
+1
+1
+2
+4
+3
+9
+4
 16 ")
 
 (my-assert
  (loop for item in '(1 2 3 a 4 5)
-   when (not (numberp item))
-   return (format nil "non-numeric value: ~S" item)
-   )
+       when (not (numberp item))
+       return (format nil "non-numeric value: ~S" item))
  "non-numeric value: A")
 
 (my-assert
  (loop for item in '(1 2 3 a 4 5)
-   when (not (numberp item))
-   do (return (format nil "non-numeric value: ~S" item))
-   )
+       when (not (numberp item))
+       do (return (format nil "non-numeric value: ~S" item)))
  "non-numeric value: A")
 
 (my-assert
  (loop for numlist in '((1 2 4.0) (5 6 8.3) (8 9 10.4))
-   for a integer = (first numlist)
-   for b integer = (second numlist)
-   for c float = (third numlist)
-   collect (list c b a)
-   )
+       for a of-type integer = (first numlist)
+       for b of-type integer = (second numlist)
+       for c of-type float = (third numlist)
+       collect (list c b a))
  ((4.0 2 1) (8.3 6 5) (10.4 9 8)))
 
 ;; According to the BNF syntax, "and" must not be followed by "for". But
@@ -536,60 +533,54 @@ February 17
 ;; appears in CLtL2 p. 743, we keep it.
 (my-assert
  (loop for numlist in '((1 2 4.0) (5 6 8.3) (8 9 10.4))
-   for a integer = (first numlist)
-   and for b integer = (second numlist)
-   and for c float = (third numlist)
-   collect (list c b a)
-   )
+       for a of-type integer = (first numlist)
+       and for b of-type integer = (second numlist)
+       and for c of-type float = (third numlist)
+       collect (list c b a))
  #-(OR CMU SBCL) ((4.0 2 1) (8.3 6 5) (10.4 9 8))
  #+(OR CMU SBCL) ERROR)
 
 (my-assert
  (loop for numlist in '((1 2 4.0) (5 6 8.3) (8 9 10.4))
-   for a integer = (first numlist)
-   and b integer = (second numlist)
-   and c float = (third numlist)
-   collect (list c b a)
-   )
+       for a of-type integer = (first numlist)
+       and b of-type integer = (second numlist)
+       and c of-type float = (third numlist)
+       collect (list c b a))
  ((4.0 2 1) (8.3 6 5) (10.4 9 8)))
 
 (my-assert
- (loop for (a b c) (integer integer float) in '((1 2 4.0) (5 6 8.3) (8 9 10.4))
-   collect (list c b a)
-   )
+ (loop for (a b c) of-type (integer integer float)
+       in '((1 2 4.0) (5 6 8.3) (8 9 10.4))
+       collect (list c b a))
  ((4.0 2 1) (8.3 6 5) (10.4 9 8)))
 
 (my-assert
- (loop for (a b c) float in '((1.0 2.0 4.0) (5.0 6.0 8.3) (8.0 9.0 10.4))
-   collect (list c b a)
-   )
+ (loop for (a b c) of-type float
+       in '((1.0 2.0 4.0) (5.0 6.0 8.3) (8.0 9.0 10.4))
+       collect (list c b a))
  ((4.0 2.0 1.0) (8.3 6.0 5.0) (10.4 9.0 8.0)))
 
 (my-assert
- (loop with (a b) float = '(1.0 2.0)
-   and (c d) integer = '(3 4)
-   and (e f)
-   return (list a b c d e f)
-   )
+ (loop with (a b) of-type float = '(1.0 2.0)
+       and (c d) of-type integer = '(3 4)
+       and (e f)
+       return (list a b c d e f))
  (1.0 2.0 3 4 NIL NIL))
 
 (my-assert
  (loop for (a nil b) = '(1 2 3)
-   do (return (list a b))
-   )
+       do (return (list a b)))
  (1 3))
 
 (my-assert
  (loop for (x . y) = '(1 . 2)
-   do (return y)
-   )
+       do (return y))
  2)
 
 (my-assert
  (loop for ((a . b) (c . d)) of-type ((float . float) (integer . integer))
-   in '(((1.2 . 2.4) (3 . 4)) ((3.4 . 4.6) (5 . 6)))
-   collect (list a b c d)
-   )
+       in '(((1.2 . 2.4) (3 . 4)) ((3.4 . 4.6) (5 . 6)))
+       collect (list a b c d))
  ((1.2 2.4 3 4) (3.4 4.6 5 6)))
 
 (my-assert

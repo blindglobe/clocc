@@ -4,18 +4,20 @@
 ;; Signal error if a binary component is missing
 (in-package :asdf)
 
-(defclass load-only-compiled-op (operation) ())
+(defclass load-only-compiled-op (operation)
+  ((forced-p :initform t)))
 (export 'load-only-compiled-op 'asdf)
 
 (defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
   (list (compile-file-pathname (component-pathname c))))
 
 (defmethod perform ((o load-only-compiled-op) (c cl-source-file))
-  (let* ((output-files (output-files o c)))
-        (setf (component-property c 'last-loaded)
-	      (if (some #'not (map 'list #'load output-files))
-		  nil
-		(file-write-date (car output-files))))))
+  (let* ((co (make-sub-operation o 'compile-op))
+	 (output-files (output-files co c)))
+    (setf (component-property c 'last-loaded)
+	  (if (some #'not (map 'list #'load output-files))
+	      nil
+	    (file-write-date (car output-files))))))
 
 
 (in-package :common-lisp-controller)

@@ -2,6 +2,31 @@
 
 Changes:
 
+May 04, 2002
+------------
+
+We've added an experimental feature to help f2cl generate better
+function calls.  Remember that Fortran is call-by-reference so that
+the routine can modify the value of its input parameters.  This
+doesn't work in Lisp, so what we do is have the function return all
+the parameters as the values of the function.  However, if we can
+deduce that the input parameter is never set, we return nil as the
+value instead of the input parameter.
+
+When generating the call to the function, we look at each returned
+value and, if it is non-NIL, we can immediately assign the variable
+with the desired value.  Previously, we would check at run-time for
+this.  Now we don't.
+
+For this to work correctly, the database needs to be correct.  If it's
+wrong, we will generate wrong code for the function call.
+
+Also, for this to work at its best, the functions should be compiled
+in correct order:  the functions at the bottom of the call tree should
+be compiled first.  Alternatively, you can just run f2cl twice over
+all the functions.  After the first pass, the database should have the
+correct values.
+
 Mar 18, 2002
 ------------
 

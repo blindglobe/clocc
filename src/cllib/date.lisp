@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-11-05 Thu 14:19:05 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1998-11-13 Fri 14:21:59 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.20 1998/11/05 19:19:24 sds Exp $
+;;; $Id: date.lisp,v 1.21 1998/11/13 19:22:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.21  1998/11/13 19:22:39  sds
+;;; Added `days-week-day', `date-week-day' and `next-bad-day' for Friday the
+;;; 13th handling.
+;;;
 ;;; Revision 1.20  1998/11/05 19:19:24  sds
 ;;; Added `date<=', `date>=' and `date=*'.
 ;;;
@@ -186,6 +190,27 @@ Returns the number of seconds since the epoch (1900-01-01)."
 		    (lambda (s0 s1) (string-equal s0 s1 :start1 0 :end1 3
 						  :start2 0 :end2 3))))))
 
+(defun days-week-day (days)
+  "Return the week day of the date DAYS from the epoch."
+  (declare (type days-t days) (values (integer 0 6)))
+  (nth-value 6 (decode-universal-time (* days +day-sec+) 0)))
+
+(defsubst date-week-day (date)
+  "Return the week day of the date."
+  (declare (type date date) (values (integer 0 6)))
+  (days-week-day (date2days date)))
+
+(defun next-bad-day (&optional (date (today)) (dir 1))
+  "Return the next Friday the 13th after (before) DATE.
+The second optional argument can be 1 (default) for `after' and
+-1 for `before'."
+  (declare (type date date) (type (member 1 -1) dir) (values date))
+  (do* ((dd (date2days date)) (step (* dir 7))
+        (fri (+ dd (mod (- 4 (days-week-day dd)) step)) (+ fri step))
+        (dt (days2date fri) (days2date fri)))
+      ((= 13 (date-da dt)) dt)
+    (declare (type date dt) (type (member 7 -7) step) (type days-t dd fri))))
+
 ;;;
 ;;; generic
 ;;;
@@ -280,10 +305,17 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   "Check the precedence of the two dates."
   (declare (type date d0 d1)) (>= (date2days d0) (date2days d1)))
 
-(defun date=* (&rest dates)
+(defun date=*1 (&rest dates)
   "Check any number of dates for being the same."
   (declare (dynamic-extent dates))
   (apply #'= (map-into dates #'date2days dates)))
+
+(defun date=* (date1 &rest dates)
+  "Check any number of dates for being the same."
+  (let ((d1 (date2days date1)))
+    (declare (type days-t d1))
+    (every (lambda (dd) (declare (type date dd)) (= d1 (date2days dd)))
+           dates)))
 
 (defsubst date-max (d0 d1)
   "Return the latest date."

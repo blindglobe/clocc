@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.19 2002/03/27 23:24:52 sds Exp $
+;;; $Id: cvs.lisp,v 2.20 2002/05/29 19:58:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -87,6 +87,7 @@
   (rev "" :type string)
   (time 0 :type integer)
   (author "" :type string)
+  (state "" :type string)
   (lines+ 0 :type index-t)
   (lines- 0 :type index-t)
   (log nil :type list))         ; of strings
@@ -126,6 +127,7 @@ Suitable for `read-list-from-stream'."
                       :rev rev
                       :time (string->dttm (extract id "date: "))
                       :author (extract id "author: ")
+                      :state (extract id "state: ")
                       :lines+ (or (car lines+-) 0)
                       :lines-  (abs (or (cadr lines+-) 0)))
        (if fin +eof+ (read in))))))
@@ -184,6 +186,10 @@ Suitable for `read-list-from-stream'."
   (declare (type list fl))
   (reduce #'+ fl :key #'cvsf-size))
 
+(defsubst cvsf-dead-p (ff)
+  (declare (type cvs-file ff))
+  (string= "dead" (revision-state (car (cvsf-revs ff)))))
+
 ;;;
 ;;; stat by the author
 ;;;
@@ -241,7 +247,8 @@ Suitable for `read-list-from-stream'."
 
 ;;;###autoload
 (defun cvs-stat-log (path)
-  "Generate and print some statistics of the CVS repository."
+  "Generate and print some statistics of the CVS repository.
+Careful - this will return a huge list!"
   (when (char= #\/ (char path (1- (length path))))
     (with-timing ()
       (format t "~&~s: ~a is a directory, running `cvs log`..."
@@ -265,7 +272,8 @@ Suitable for `read-list-from-stream'."
     (top-bottom-ui logl 10 nil nil :key #'cvsf-tot-rev :label #'cvsf-work)
     (format t "~2& -- the most recently modified --~%")
     (top-bottom-ui logl 10 nil nil :key (compose revision-time car cvsf-revs)
-                   :label #'cvsf-work :klabel #'dttm->string)))
+                   :label #'cvsf-work :klabel #'dttm->string)
+    logl))
 
 ;;;
 ;;; change the repository of the current sandbox

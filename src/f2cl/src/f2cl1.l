@@ -11,7 +11,7 @@
 ;	concaten
 ;	f-to-l
 ;---------------------------------------------------------------------------
-(in-package :user)
+(in-package :cl-user)
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defvar *f2cl-version* "2.0 beta")
@@ -274,6 +274,7 @@ INPUT-FILE               File containing Fortran code
 		      year month date hour minute second))
 	    (let ((*print-case* :downcase))
 	      ;; Insert in-package and declaim, if needed
+	      #-(and clisp (not xp))
 	      (when options
 		(pprint-logical-block (outport options :per-line-prefix ";;; ")
 		  (format outport "~&Options: ~S" options))
@@ -1810,8 +1811,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.48 2000/07/21 21:56:37 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.49 2000/07/27 16:40:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.49  2000/07/27 16:40:27  rtoy
+;;; o We want to be in the CL-USER package, not the USER package.
+;;; o Clisp doesn't have pprint-logical-block.
+;;;
 ;;; Revision 1.48  2000/07/21 21:56:37  rtoy
 ;;; Squash another parsing bug in initializing a single element of an
 ;;; array.

@@ -269,6 +269,7 @@
 <!-- C0 Controls and Basic Latin -->
 <!ENTITY quot    CDATA "&#34;"    -- quotation mark, =apl quote, u+0022 ISOnum -->
 <!ENTITY amp     CDATA "&#38;"    -- ampersand, u+0026 ISOnum -->
+<!ENTITY apos    CDATA "&#39;"    -- single quote -->
 <!ENTITY lt      CDATA "&#60;"    -- less-than sign, u+003C ISOnum -->
 <!ENTITY gt      CDATA "&#62;"    -- greater-than sign, u+003E ISOnum -->
 

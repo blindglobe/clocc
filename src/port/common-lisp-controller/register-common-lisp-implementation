@@ -1,10 +1,12 @@
 #!/bin/bash
 
+PROGNAME=$(basename $0)
+
 # first check if there is at least a compiler-name:
 
 if [ -z "$1"  ] ; then
  cat <<EOF
-$0 compiler-name 
+usage: $PROGNAME compiler-name 
 
 registers a Common Lisp compiler to the 
 Common-Lisp-Controller system.
@@ -12,18 +14,19 @@ EOF
     exit 1
 fi
 
-FILE="/usr/lib/common-lisp/bin/$1.sh"
+IMPL=$1
+FILE="/usr/lib/common-lisp/bin/$IMPL.sh"
 
 if [ ! -f "$FILE" ] ; then
   cat <<EOF
-$0: I cannot find the script $FILE for the implementation $1
+$PROGNAME: I cannot find the script $FILE for the implementation $IMPL
 EOF
   exit 2
 fi
 
 if [ ! -r "$FILE" ] ; then
   cat <<EOF
-$0: I cannot read the script $FILE for the implementation $1
+$PROGNAME: I cannot read the script $FILE for the implementation $IMPL
 EOF
   exit 2
 fi
@@ -37,18 +40,14 @@ for i  in /usr/share/common-lisp/systems/*.system  ; do
     if [ -f $i -a -r $i ] ; then
      i=${i%.system}
      package=${i##*/}
-     #if [ -f /etc/common-lisp/autobuild -o \
-     #     -f "/etc/common-lisp/$1/autobuild" -o \
-     #     -f "/etc/common-lisp/$1/$package/autobuild" ] ; then
-     check-common-lisp-autobuild $1 $package
+     check-cl-autobuild $IMPL $package
      if [ $? = 0 ]; then
-	 echo recompiling package $package for implementation $1
-	 /usr/bin/clc-send-command --quiet recompile $package $1
+	 echo recompiling package $package for implementation $IMPL
+	 /usr/bin/clc-send-command --quiet recompile $package $IMPL
      fi
     fi
 done
 
 
-cat <<EOF
-$0: Compiler $1 installed
-EOF
+cat "$PROGNAME: Compiler $IMPL installed"
+

@@ -1,10 +1,12 @@
 #!/bin/bash
 
+PROGNAME=$(basename $0)
+
 # first check if there is at least a package-name:
 
 if [ -z "$1" ] ; then
  cat <<EOF
-$0 package-name
+usage: $PROGNAME package-name
 
 registers a Common Lisp source tree to the 
 Common-Lisp-Controller system.
@@ -12,32 +14,32 @@ EOF
     exit 1
 fi
 
-PKGNAME="$1"
-DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$PKGNAME.system"
-ASDF_FILE="/usr/share/common-lisp/systems/$PKGNAME.asd"
-SOURCENAME="/usr/share/common-lisp/source/$PKGNAME"
+PKG_NAME="$1"
+DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$PKG_NAME.system"
+ASDF_FILE="/usr/share/common-lisp/systems/$PKG_NAME.asd"
+SOURCENAME="/usr/share/common-lisp/source/$PKG_NAME"
 
 if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then    
     cat <<EOF
-$0: directory or symlink $SOURCENAME does not exist.
+$PROGNAME: directory or symlink $SOURCENAME does not exist.
 
-This is where I expected package $PKGNAME to be.
+This is where I expected package $PKG_NAME to be.
 EOF
     exit 2
 fi
 
 if [ ! \( -f "$DEFSYSTEM3_FILE" -o -f "$ASDF_FILE" \) ] ; then
     cat <<EOF
-$0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE exists. 
-One of these files is needed to register the $PKGNAME package.
+$PROGNAME: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE exists. 
+One of these files is needed to register the $PKG_NAME package.
 EOF
     exit 3
 fi
 
 if [ ! \( -r "$DEFSYSTEM3_FILE" -o -r "$ASDF_FILE" \) ] ; then
     cat <<EOF
-$0: Neither $DEFSYSTEM3_FILE nor $ADSF_FILE is a regular file. 
-One of these files is needed to register the $1 package.
+$PROGNAME: Neither $DEFSYSTEM3_FILE nor $ADSF_FILE is a regular file. 
+One of these files is needed to register the $PKG_NAME package.
 EOF
     exit 3
 fi
@@ -48,18 +50,13 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
 	i=${compiler##*/}
 	i=${i%.sh}
-        #if [ -f /etc/common-lisp/autobuild -o \
-        #     -f "/etc/common-lisp/$i/autobuild" -o \
-        #     -f "/etc/common-lisp/$i/$1/autobuild" ] ; then
-        check-common-lisp-autobuild $i $PKGNAME
+        check-cl-autobuild $i $PKG_NAME
         if [ $? = 0 ]; then
-	    echo Recompiling package $PKGNAME for implementation $i
-	    /usr/bin/clc-send-command --quiet recompile $PKGNAME $i
+	    echo Recompiling package $PKG_NAME for implementation $i
+	    /usr/bin/clc-send-command --quiet recompile $PKG_NAME $i
 	fi
     fi
 done
 
-cat <<EOF
-$0: Package $1 installed
-EOF
+cat "$PROGNAME: Package $PKG_NAME installed"
 

@@ -1939,8 +1939,21 @@ of Digital Equipment Corporation.
     
     <p>
       The <b>open-display</b> function is used to open a connection to an X
-      server.
-      
+      server. In general you can also use the
+      <b>open-default-display</b> function that will try to guess the
+      correct parameters for <b>open-display</b> and then call it.
+
+    <defun>
+      <name>open-default-display
+      <kind> Function
+      <returns>
+        <dt><i>display</i><dd>Type <b>display</b>.
+      <desc>
+        <p>
+          Tries to guess the parameters for <b>open-display</b>, calls
+          it and returns the <b>display</b> that resulted from this
+    </defun>
+    
     <defun>
       <name> open-display
       <ll>   <i>host</i> &amp;key <b>:display :protocol</b>

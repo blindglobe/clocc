@@ -114,7 +114,8 @@
 	 nil)
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
-				    FREF FREF-STRING F2CL/ ))
+				    FREF FREF-STRING F2CL/
+				    FLOG FSQRT FFLOAT EXPT))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *intrinsic_function_names*)
 		    (member exprs *key_params* :key #'car)
@@ -470,6 +471,10 @@
 	   body (cdddr fort-fun))
      (setq *undeclared_vbles* 
 	   (set-difference *undeclared_vbles* *subprog_common_vars*))
+     ;;(format t "declared_vbles   = ~S~%" *declared_vbles*)
+     ;;(format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
+     ;;(format t "*functions used  = ~S~%" *functions-used*)
+     ;;(format t "external func    = ~S~%" *external_function_names*)
      ;;(format t "*subprog_common_vars* = ~a~%" *subprog_common_vars*)
      (setq special-proclamation
 	   (make-special-proclamation *subprog_common_vars*))
@@ -578,6 +583,11 @@
 				(mapcar #'extract-var-name
 					*data-init*)))))))
 
+     ;; If a variable names an function used, delete the variable
+     (setf *declared_vbles*
+	   (remove-if #'(lambda (v)
+			  (member v *functions-used* :key #'car))
+		      *declared_vbles*))
      ;; Initialize local variables
      (setq local-vbles
 	   (remove-duplicates

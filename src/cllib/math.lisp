@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.13 2000/09/28 20:20:30 sds Exp $
+;;; $Id: math.lisp,v 2.14 2000/09/29 17:42:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -26,7 +26,7 @@
  '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
    product-from-to binomial
    make-primes-list number-sum-split all-num-split
-   vector-shuffle
+   vector-shuffle permutation with-permutations-shuffle
    with-permutations-swap with-permutations-lex permutations-list
    eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
@@ -231,21 +231,57 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
 ;;; sequence permutations
 ;;;
 
+(defun make-vector-indexed (len)
+  "Return a simple vector #(0 1 ... (1-len))."
+  (let ((vv (make-array len)))
+    (dotimes (ii len vv)
+      (setf (aref vv ii) ii))))
+
 (defun vector-shuffle (vec)
   "Generate a random permutation of the vector in place.
-If the argument is a number, return a new random vector of this length."
+If the argument is a number, return a new random vector of this length.
+Uses the Fisher/Yates algorithm, see
+ Knuth, TAOCP vol 2 Algorithm 3.4.2P, p.145
+ R.A. Fisher & F. Yates, Statistical Tables, London 1938, Example 12
+ R. Durstenfeld, CACM 7 (1964), 420.
+This is more or less the same as
+  (permutation vec (random (! (length vec))))
+except that the factorial is likely to be far too large for `random'."
   (etypecase vec
-    ;; Knuth, TAOCP vol 2 Algorithm 3.4.2P, p.145
-    ;; R.A. Fisher & F. Yates, Statistical Tables, London 1938, Example 12
-    ;; R. Durstenfeld, CACM 7 (1964), 420
     (vector (loop :for ii :downfrom (1- (length vec)) :to 1
                   :for jj = (random (1+ ii))
                   :unless (= jj ii)
                   :do (rotatef (aref vec ii) (aref vec jj)))
             vec)
-    (number (vector-shuffle (let ((vv (make-array vec)))
-                              (dotimes (ii vec vv)
-                                (setf (aref vv ii) ii)))))))
+    (number (vector-shuffle (make-vector-indexed vec)))))
+
+(defun permutation (vec nth &optional (len (1- (length vec))) (fact (! len)))
+  "Generate the NTH permutation of the vector VEC in place.
+The algorithm is similar to the standard Fisher/Yates one, but instead
+of random numbers [a_n-1,...,a_1] it represents a number in [0;n!] as
+   x = a_n-1*(n-1)! + ... + a_1
+The original vector is returned when NTH = (1- (! (length vec)))."
+  (loop :for ff = fact :then (/ ff ii)
+        :for ii :downfrom len :to 1 :with jj
+        :do (setf (values jj nth) (floor nth ff))
+        :unless (= jj ii)
+        :do (rotatef (aref vec ii) (aref vec jj)))
+  vec)
+
+(defmacro with-permutations-shuffle ((var vec &optional ret-form) &body body)
+  "Gererate the successive shufflings of vector VEC using `permutation'.
+VEC is not modified, VAR storage is allocated only once,
+not n! times, and reused.
+The return value is RET-FORM, if given, or the number of
+permutations generated (i.e., n!).
+The original vector is the last one returned."
+  (with-gensyms ("WPU-" vv len len1 fact ii jj tot)
+   `(let* ((,vv ,vec) (,len (length ,vv))  (,len1 (1- ,len)) (,fact (! ,len1))
+            (,var (copy-seq ,vv)) (,tot (* ,len ,fact)))
+      (dotimes (,ii ,tot ,(or ret-form tot))
+        (dotimes (,jj ,len) (setf (aref ,var ,jj) (aref ,vv ,jj)))
+        (permutation ,var ,ii ,len1 ,fact)
+        ,@body))))
 
 (defun check-permutations-end (name found length)
   (let ((fact (! length)))
@@ -307,9 +343,8 @@ permutations generated (i.e., n!).
 The permutations are generated in the lexicographic order,
 according to the CACM algorithm 202 [M.K.Shen, Comm ACL 6 (Sept 1963) 517]."
   (with-gensyms ("WPL-" ll nn ww ii)
-    `(let* ((,ll ,len) (,var (make-array ,ll)) (,nn 0))
+    `(let* ((,ll ,len) (,var (make-vector-indexed ,ll)) (,nn 0))
       (declare (fixnum ,ll ,nn))
-      (dotimes (,ii ,ll) (setf (aref ,var ,ii) ,ii))
       (loop
        (unless (zerop ,nn)
          (let ((,ww (1- ,ll)))
@@ -332,9 +367,12 @@ according to the CACM algorithm 202 [M.K.Shen, Comm ACL 6 (Sept 1963) 517]."
 The order in which the permutations are listed is either
  lexicographic (when :METHOD is :LEX, which is the default),
   in which case `with-permutations-lex' is used;
+ shuffling (when :METHOD is :SHUFFLE)
+  in which case `with-permutations-shuffle' is used;
  transposing adjacent elements (when :METHOD is :SWAP),
   in which case `with-permutations-swap' is used.
-:SWAP is more than twice as fast as :LEX"
+:SWAP is more than twice as fast as :LEX
+ and more that 10 times as fast as :SHUFFLE"
   (declare (ignorable method))
   (with-collect (coll)
     (ecase method
@@ -343,8 +381,8 @@ The order in which the permutations are listed is either
                 (dotimes (ii (length vec))
                   (setf (aref tv ii) (aref vec (aref vv ii))))
                 (coll tv))))
-      (:swap (with-permutations-swap (vv vec)
-               (coll (copy-seq vv)))))))
+      (:shuffle (with-permutations-shuffle (vv vec) (coll (copy-seq vv))))
+      (:swap (with-permutations-swap (vv vec) (coll (copy-seq vv)))))))
 
 ;;;
 ;;; Ratios

@@ -13,13 +13,9 @@
 			      (print *compile-print*)
 			      (verbose *compile-verbose*)
 			      (external-format :default)
-			      ;; old 18c did not have :external format
 			      &allow-other-keys)
   (declare (ignore output-file error-file print verbose external-format))
 
-  ;; Remove the next line when CMUCL will be fixed.
-  (remf keys :external-format)
-  
   (apply #'compile-file input-file :load nil keys))
 
 
@@ -29,7 +25,8 @@
 			     &key
 			     arguments
 			     (error-output *error-output*))
-  (let ((process (extensions:run-program program arguments :error error-output)))
+  (let ((process
+	 (extensions:run-program program arguments :error error-output)))
     (if process
 	(extensions:process-exit-code process)
 	-1)))
@@ -39,30 +36,32 @@
 			   (arguments ())
 			   (input nil)
 			   (output t)
-			   (error-output t)
+			   (error-output *error-output*)
 			   &allow-other-keys)
   (let ((process (extensions:run-program program arguments
 					 :output output
 					 :input input
 					 :error error-output)))
     (if process
-	(extensions:process-exit-code process)
+	(prog1 (extensions:process-exit-code process)
+	  (extensions:process-close process))
 	-1)))
 
 
 ;;; Loading C and C-like files.
 
-(defmethod load-c-file ((loadable-c-pathname pathname)
-			&key
-			(print *load-print*)
-			(verbose *load-verbose*)
-			(libraries '("c"))
-			)
+(defmethod load-object-file ((loadable-object-pathname pathname)
+			     &key
+			     (print *load-print*)
+			     (verbose *load-verbose*)
+			     (libraries '("c"))
+			     &allow-other-keys
+			     )
   (declare (ignore print))
   (when verbose
     (format *trace-output* ";;; MK4: Loading Foreign File ~A."
 	    loadable-c-pathname))
-  (alien:load-foreign (list loadable-c-pathname)
+  (alien:load-foreign (list loadable-object-pathname)
 		      :libraries (mapcar #'(lambda (l)
 					     (format nil "-l~A"))
 					 libraries))

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-07-10 Fri 16:36:38 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-07-31 Fri 12:37:44 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.6 1998/07/10 21:11:35 sds Exp $
+;;; $Id: math.lisp,v 1.7 1998/07/31 16:41:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.7  1998/07/31 16:41:24  sds
+;;; Declare `stream' as a stream in `print-*'.
+;;; Take `sqrt' of the correlation in `regress-n'.
+;;;
 ;;; Revision 1.6  1998/07/10 21:11:35  sds
 ;;; Added `regress-n' and `regress-poly'.
 ;;; Ditched `regress2' and `det3'.
@@ -121,7 +125,7 @@ so that (poly 10 1 2 3 4 5) ==> 12345."
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx) (values double-float double-float))
   (let* ((der (/ (exp (* -0.5d0 (sqr xx))) (double-float (sqrt (* 2 pi)))))
-	 (val (- 1 (* der (poly (/ 1 (1+ (* (abs xx) 0.2316419d0)))
+	 (val (- 1 (* der (poly (/ (1+ (* (abs xx) 0.2316419d0)))
 				1.330274429d0 -1.821255978d0 1.781477937d0
 				-0.356563782d0 0.319381530d0 0.0d0)))))
     (declare (double-float der val))
@@ -136,7 +140,7 @@ Return the value and the derivative, suitable for `newton'."
     (2 (sqrt (reduce #'+ seq :key (compose sqr 'key))))
     (t (expt (reduce #'+ seq :key
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
-	     (/ 1.0d0 (double-float order))))))
+	     (/ (double-float order))))))
 
 (defun normalize (seq &optional (norm #'norm))
   "Make the SEQ have unit norm. Drop nils."
@@ -196,7 +200,7 @@ Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (values double-float)
 	   (type (function (t) double-float) key))
   (let ((len (length seq)))
-    (values (expt (reduce #'* seq :key key) (/ 1 len)) len)))
+    (values (expt (reduce #'* seq :key key) (/ len)) len)))
 
 (defun weighted-geometric-mean (seq wts &key (key #'value))
   "Compute the weighted geometric mean of the sequence SEQ
@@ -267,7 +271,7 @@ without pre-computing the means."
 		 (incf xyb (* xx yy)) (incf x2b (sqr xx))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq c0 (/ 1.0d0 (double-float nn)) c1 (/ 1.0d0 (double-float (1- nn))))
+    (setq c0 (/ (double-float nn)) c1 (/ (double-float (1- nn))))
     (values (with-type double-float (* (- xyb (* xb yb c0)) c1))
             (with-type double-float (* xb c0))
             (with-type double-float (* yb c0))
@@ -295,7 +299,7 @@ Uses the numerically stable algorithm with pre-computing the means."
 		 (incf rr (* xx yy))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq co (/ 1.0d0 (double-float (1- nn))))
+    (setq co (/ (double-float (1- nn))))
     (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
@@ -379,8 +383,8 @@ Return the modified LST. 20% faster than `convex-hull1'."
   (declare (list lst) (type (function (t) double-float) xkey ykey))
   (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0.0d0) (y0 0.0d0)
 	(sl (lambda (pp)	; has to be d/!!!
-              (d/ (the double-float (- (funcall ykey pp) y0))
-                  (abs (the double-float (- (funcall xkey pp) x0)))))))
+              (d/ (with-type double-float (- (funcall ykey pp) y0))
+                  (abs (with-type double-float (- (funcall xkey pp) x0)))))))
        ((null (cddr ll)) lst)
     (declare (double-float x0 y0) (type function ts)
              (type (function (t) double-float) sl))
@@ -485,14 +489,14 @@ and the number of iterations made."
 (defconst +bad-line+ line (make-line) "*The convenient constant for init.")
 
 #+cmu
-(defun print-line (ln &optional (stream t) (depth 1))
+(defun print-line (ln stream depth)
   "Print the line."
-  (declare (type line ln) (ignore depth)) ; "#S(LINE :SL ~g :CO ~g)"
+  (declare (type line ln) (stream stream) (ignore depth))
   (if *print-readably* (funcall (print-readably line) ln stream)
       (format stream "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
 #-cmu
-(defmethod print-object ((ln line) stream)
+(defmethod print-object ((ln line) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
@@ -630,7 +634,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
           ff (d/ (* rr (- len nx 1)) (* (- 1 rr) nx)))
     (assert (<= 0.0d0 rr 1.0d0) (rr) "Rmult (~f) outside [0.0; 1.0]" rr)
     (assert (<= 0.0d0 ff) (ff) "Ftest (~f) is negative" ff)
-    (values cfs free rr ff)))
+    (values cfs free (sqrt rr) ff)))
 
 (defun regress-poly (seq deg &key (xkey #'car) (ykey #'cdr))
   "Polynomial regression."

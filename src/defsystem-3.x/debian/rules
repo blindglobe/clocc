@@ -6,7 +6,7 @@ export DH_COMPAT=4
 pkg=cl-defsystem3
 clc-base=usr/share/common-lisp
 clc-src=$(clc-base)/source
-file-dir=$(clc-src)/defsystem3
+file-dir=$(clc-src)/defsystem
 doc-dir=usr/share/doc/$(pkg)
 
 configure: configure-stamp

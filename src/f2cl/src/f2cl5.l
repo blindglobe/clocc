@@ -790,27 +790,27 @@
      ;; Return 3 pieces: Any proclamations for special variables, the
      ;; declarations for the special variables, and, finally, the
      ;; function itself.
-     (return
-       (values special-proclamation
+     (let ((param-stuff (when key-params
+			  `(let* ,key-params
+			    ,@key-params-decls)))
+	   (save-stuff (when (and (or *save_vbles* *auto-save-data*)
+				  save-inits)
+			 `(let ,save-inits
+			   ,@saved-decls
+			   ,@*data-init*)))
+	   (defun-stuff `(defun ,(cadr defun-bit) ,arglist
+			  ;; Remove empty declaration
+			  ,@(unless (equal formal-arg-decls '((declare)))
+				    formal-arg-decls)
+			  ,prog-bit)))
+       (return 
+	 (values special-proclamation
 	       (when special-proclamation
 		   (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
-	       (if (and (or *save_vbles* *auto-save-data*)
-			save-inits)
-		   (append
-		    `(let* ,key-params
-		      ,@key-params-decls
-		      (let ,save-inits
-			,@saved-decls
-			,@*data-init*
-			(defun ,(cadr defun-bit) ,arglist
-			  ,@formal-arg-decls 
-			  ,prog-bit))))
-		   (append
-		    `(let* ,key-params
-		      ,@key-params-decls
-		      (defun ,(cadr defun-bit) ,arglist
-			,@formal-arg-decls 
-			,prog-bit))))))))
+	       (if (or param-stuff save-stuff)
+		   (append param-stuff save-stuff (list defun-stuff))
+		   defun-stuff))))
+     ))
 
 
 
@@ -1119,17 +1119,17 @@
 		   bounds)))
     (cond ((null (cdr decl))
 	   ;; scalar, no length spec.
-	   (format t "scalar, no length spec = ~A~%" decl)
+	   ;;(format t "scalar, no length spec = ~A~%" decl)
 	   (if (equal (cadr type) '(*))
 	       `(declare (type (simple-array base-char (*)) ,(car decl)))    
 	       `(declare (type (simple-array base-char (,(cadr type))) ,(car decl)))))
 	  ((atom (cadr decl))
 	   ;; scalar, length spec.
-	   (format t "scalar, length spec = ~A~%" decl)
+	   ;;(format t "scalar, length spec = ~A~%" decl)
 	   `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
 	  ((cddr decl)
 	   ;; array with length spec
-	   (format t "array with length spec = ~A => ~A~%" decl (cddr decl))
+	   ;;(format t "array with length spec = ~A => ~A~%" decl (cddr decl))
 	   ;;`(declare (type (simple-array t (,(caadr decl))) ,(car decl)))
 	   `(declare (type (simple-array
 			    (simple-array base-char ,(cddr decl))
@@ -1142,7 +1142,7 @@
            `(declare (type (simple-array base-char (*)) ,(car decl))))
 	  (t
 	   ;; array, no length spec.
-	   (format t "array, no length spec = ~A~%" decl)
+	   ;;(format t "array, no length spec = ~A~%" decl)
            `(declare (type (simple-array
 			    (simple-array base-char ,(if (second type)
 							 `(,(second type))

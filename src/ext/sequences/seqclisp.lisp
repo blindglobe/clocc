@@ -11,6 +11,7 @@
 (provide 'sequences)
 
 (defpackage "SEQUENCES" (:nicknames "SEQ")
+  (:use "COMMON-LISP")
   (:export .
        (elt subseq copy-seq length list-reverse reverse list-nreverse
         nreverse make-sequence concatenate map some every notany notevery

@@ -1,5 +1,19 @@
 2002-06-13  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
+	* defsystem.lisp:
+	Added patch for loading C files under Lispworks on Linux.
+	Patch submitted by Walter C. Pelissero.
+
+	* defsystem.lisp: Updated release number to 3.3i.
+
+	* README: Release number updated to 3.3.
+
+	* ChangeLog: ChangeLog Updated.
+
+	* README: File Added.
+
+2002-06-13  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
 	* README: File Added.
 
 2002-05-30  Marco Antoniotti  <marcoxa@cs.nyu.edu>

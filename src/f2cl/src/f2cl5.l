@@ -2086,8 +2086,7 @@
 				  ;; dimension.  Otherwise use 0.
 				  (if (every #'numberp (third var-type))
 				      (third var-type)
-				      0)
-				  )
+				      0))
 				 (t nil)))
 		     (var-init (cond ((and (listp var-type)
 					   (subtypep (first var-type) 'array))
@@ -2103,7 +2102,7 @@
 		;; type (for scalars) or a zero element array of the
 		;; appropriate dimensions for array slots.
 		(if dims
-		    `(,var ,var-init :type (,*array-type* ,(second var-type) (,(subst '* 0 dims))))
+		    `(,var ,var-init :type (,*array-type* ,(second var-type) ,(subst '(*) 0 dims)))
 		    `(,var ,var-init :type ,var-type))))
 	  varlist))
 
@@ -2193,8 +2192,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.62 2000/08/09 22:45:17 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.63 2000/08/10 18:00:37 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.63  2000/08/10 18:00:37  rtoy
+;;; Declarations of the array type for arrays in common blocks were
+;;; wrong.  (Oops!)
+;;;
 ;;; Revision 1.62  2000/08/09 22:45:17  rtoy
 ;;; o In MAKE-DECLARATION, use the LOGICAL type instead of (MEMBER T NIL)
 ;;;   in declaring arrays.

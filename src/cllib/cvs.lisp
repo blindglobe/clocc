@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.18 2002/03/05 00:28:35 sds Exp $
+;;; $Id: cvs.lisp,v 2.19 2002/03/27 23:24:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -284,7 +284,7 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
              (mesg :log log " * ~s~%" line)
              (unless dry-run
                (with-open-file (out file :direction :output
-                                    :external-format :unix
+                                    #+clisp :external-format #+clisp :unix
                                     :if-exists :supersede)
                  (write-line line out))))))
     (let ((root-cvs (mk-path root :directory '(:relative "CVS")))

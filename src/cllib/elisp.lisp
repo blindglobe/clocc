@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.3 2000/05/02 15:02:16 sds Exp $
+;;; $Id: elisp.lisp,v 2.4 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,6 +13,7 @@
   (require :closio (translate-logical-pathname "cllib:closio"))
   ;; `from-list'
   (require :list (translate-logical-pathname "cllib:list")))
+
 (in-package :cllib)
 
 (defpackage emacs-lisp
@@ -46,7 +47,7 @@
 ;;; Read Emacs-Lisp objects
 ;;;
 
-(eval-when (compile load eval)  ; for `*elisp-readtable*'
+(eval-when (compile load eval)  ; CMUCL for `*elisp-readtable*'
 (defun el::read-elisp-special (stream char)
   (declare (stream stream) (character char))
   (ecase char

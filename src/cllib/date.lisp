@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.3 2000/05/02 14:45:39 sds Exp $
+;;; $Id: date.lisp,v 2.4 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,7 +39,7 @@
 ;;; Date
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (compile load eval)  ; CMUCL
 (deftype days-t () '(signed-byte 20))
 
 ;; Of course, a class would be more appropriate here, especially since

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.10 2000/05/02 15:41:16 sds Exp $
+;;; $Id: url.lisp,v 2.11 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -44,7 +44,7 @@
 ;;; {{{ URL handling
 ;;;
 
-(eval-when (compile load eval)  ; acl compile warning
+(eval-when (compile load eval)  ; ACL CMUCL
 (defstruct (url #+cmu (:print-function print-struct-object))
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot nil :type symbol)       ; protocol
@@ -614,6 +614,7 @@ as the remote one."
 ;;; }}}{{{ news
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (article #+cmu (:print-function print-struct-object))
   (numb 0 :type (unsigned-byte 32)) ; article number
   (subj "" :type simple-string) ; subject
@@ -624,6 +625,7 @@ as the remote one."
   (bytes 0 :type file-size-t)   ; size in bytes
   (lines 0 :type index-t)       ; size in lines
   (xref nil :type list))        ; list of cross-references
+)
 
 (defmethod print-object ((art article) (out stream))
   (if *print-readably* (call-next-method)

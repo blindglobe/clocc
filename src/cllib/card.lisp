@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.3 2000/05/02 14:41:16 sds Exp $
+;;; $Id: card.lisp,v 2.4 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -35,7 +35,7 @@
 ;;; {{{ definitions
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (compile load eval)  ; CMUCL
 (defclass name ()
   ((first :type simple-string :initarg first :accessor name-first
           :documentation "the first name")
@@ -141,7 +141,7 @@
 ;;; }}}{{{ output
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (compile load eval)  ; CMUCL
 (defstruct card-output
   (card nil :type symbol)
   (name nil :type symbol)

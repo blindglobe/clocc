@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
+;;; $Id: closio.lisp,v 1.6 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,7 +32,7 @@
 ;;; }}}{{{ read CLOS objects
 ;;;
 
-(eval-when (compile load eval)  ; for `*clos-readtable*'
+(eval-when (compile load eval)  ; CMUCL for `*clos-readtable*'
 (defun read-object (st char arg)
   "Read an instance of a CLOS class printed as #[name{ slot val}]"
   (declare (ignore char arg))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.10 2000/05/08 20:01:23 sds Exp $
+;;; $Id: xml.lisp,v 2.11 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -113,16 +113,18 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 ;;; XML objects
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct xml-comment (data "" :type string))
-
-(defmethod print-object ((cmt xml-comment) (out stream))
-  (if *print-readably* (call-next-method)
-      (format out "~&<!-- ~a -->~%" (xml-comment-data cmt))))
 
 (defstruct (xml-obj (:conc-name xmlo-))
   (name nil :type symbol)       ; in package XML-TAGS
   (attribs nil :type list)      ; alist of attrib/value
   (data nil :type list))        ; list of objects in the tag
+)
+
+(defmethod print-object ((cmt xml-comment) (out stream))
+  (if *print-readably* (call-next-method)
+      (format out "~&<!-- ~a -->~%" (xml-comment-data cmt))))
 
 (defun xml-size (obj)
   "Compute the approximate size of the object.
@@ -194,7 +196,6 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
 ;;; XML streams
 ;;;
 
-(eval-when (compile load eval)  ; for CMUCL
 (defclass xml-stream-in (fundamental-character-input-stream)
   ((input :initarg :stream :initarg :input :type stream :accessor xmlis-st)
    (all-streams :type list :accessor xmlis-all)
@@ -203,7 +204,6 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
    (comment :accessor xmlis-comment :documentation
             "nil - outside comment, t - inside, 1 - inside, one `-' read"))
   (:documentation "The input stream for reading XML."))
-)
 
 (defsubst stream-length (st)
   "A safe wrap around for `file-stream'."

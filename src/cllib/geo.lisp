@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.6 2000/05/12 16:00:09 rtoy Exp $
+;;; $Id: geo.lisp,v 2.7 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -71,11 +71,13 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
 ;;; }}}{{{ Geo-Data
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0))	; population
   (crd #C(0.0d0 0.0d0) :type (complex double-float)) ; coordinates
   (zip nil :type list))		; list of zip codes.
+)
 
 (defmethod print-object ((gd geo-data) (out stream))
   "Print the geo-data."
@@ -154,6 +156,7 @@ and return a list of geo-data."
 ;;; Countries
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (country)
   "The country structure - all the data about a country you can think of."
   (name "" :type simple-string)	; name
@@ -164,19 +167,19 @@ and return a list of geo-data."
   (inet nil :type symbol)	; Internet Domain
   (incl nil :type (or null country)) ; Included in
   (captl nil :type (or null simple-string)) ; Capital
-  (area 0.0d0 :type (double-float 0d0)) ; Area, in sq km
-  (frnt 0.0d0 :type (double-float 0d0)) ; fontier length, in km
-  (cstl 0.0d0 :type (double-float 0d0)) ; coastline, in km
-  (crd #C(0.0d0 0.0d0) :type (complex double-float)) ; coordinates
+  (area 0d0 :type (double-float 0d0)) ; Area, in sq km
+  (frnt 0d0 :type (double-float 0d0)) ; fontier length, in km
+  (cstl 0d0 :type (double-float 0d0)) ; coastline, in km
+  (crd #C(0d0 0d0) :type (complex double-float)) ; coordinates
   (pop 0 :type integer)		; population
-  (birth 0.0d0 :type (double-float 0d0)) ; birth rate
-  (death 0.0d0 :type (double-float 0d0)) ; death rate
-  (mgrtn 0.0d0 :type double-float) ; net migration rate
-  (fert 0.0d0 :type (double-float 0d0)) ; fertility rate per woman
-  (life 0.0d0 :type (double-float 0d0)) ; life expectancy at birth
-  (gdp 0.0d0 :type (double-float 0d0)) ; GDP, in $$
+  (birth 0d0 :type (double-float 0d0)) ; birth rate
+  (death 0d0 :type (double-float 0d0)) ; death rate
+  (mgrtn 0d0 :type double-float) ; net migration rate
+  (fert 0d0 :type (double-float 0d0)) ; fertility rate per woman
+  (life 0d0 :type (double-float 0d0)) ; life expectancy at birth
+  (gdp 0d0 :type (double-float 0d0)) ; GDP, in $$
   (gdpgr nil :type (or null double-float)) ; GDP growth, in %%
-  (gdppc 0.0d0 :type (double-float 0d0)) ; GDP per capita, in $$
+  (gdppc 0d0 :type (double-float 0d0)) ; GDP per capita, in $$
   (note nil :type (or null simple-string)) ; ISO Note
   (lctn nil :type (or null simple-string)) ; Location Description
   (dspt nil :type (or null simple-string)) ; Territorial Disputes
@@ -185,7 +188,7 @@ and return a list of geo-data."
   (ethn nil :type (or null simple-string)) ; ethnic divisions
   (lang nil :type (or null simple-string)) ; languages
   (rlgn nil :type (or null simple-string)) ; religions
-  )
+  ))
 
 (defmethod print-object ((ntn country) (out stream))
   (when *print-readably* (return-from print-object (call-next-method)))

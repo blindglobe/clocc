@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.5 2000/05/08 17:57:44 sds Exp $
+;;; $Id: rpm.lisp,v 2.6 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,12 +22,14 @@
 ;;; download data
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (download-data (:conc-name dld-)
                           #+cmu (:print-function print-struct-object))
   (url +bad-url+ :type url)     ; location
   (err nil :type (or null error)) ; was there an error?
   (all nil :type list)          ; all files at the location
   (fls nil :type list))         ; files found at the location
+)
 
 (defmethod url ((dld download-data)) (dld-url dld))
 
@@ -102,7 +104,7 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
 ;;; RPM
 ;;;
 
-(eval-when (compile load eval)
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (rpm #+cmu (:print-function print-struct-object))
   (name "name?" :type simple-string)
   (vers "vers?" :type simple-string)

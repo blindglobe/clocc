@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.6 2000/05/02 15:39:14 sds Exp $
+;;; $Id: gq.lisp,v 2.7 2000/05/12 18:36:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,22 +42,24 @@
 ;;; {{{ Daily Data
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (daily-data (:conc-name dd-))
-  (nav 0.0d0 :type double-float)
-  (chg 0.0d0 :type double-float)
-  (prc 0.0d0 :type double-float)
-  (bid 0.0d0 :type double-float)
-  (ask 0.0d0 :type double-float)
-  (pre 0.0d0 :type double-float)
-  (low 0.0d0 :type double-float)
-  (hgh 0.0d0 :type double-float))
+  (nav 0d0 :type double-float)
+  (chg 0d0 :type double-float)
+  (prc 0d0 :type double-float)
+  (bid 0d0 :type double-float)
+  (ask 0d0 :type double-float)
+  (pre 0d0 :type double-float)
+  (low 0d0 :type double-float)
+  (hgh 0d0 :type double-float))
+)
 
 (defun mk-daily-data (&rest args)
   "Make the DAILY-DATA structure, inferring the missing information."
   (let* ((dd (apply #'make-daily-data args))
          (nav (dd-nav dd)) (chg (dd-chg dd)))
     (unless (zerop chg)
-      (when (zerop (dd-prc dd)) (setf (dd-prc dd) (* 100.0d0 (/ chg nav))))
+      (when (zerop (dd-prc dd)) (setf (dd-prc dd) (* 100d0 (/ chg nav))))
       (when (zerop (dd-pre dd)) (setf (dd-pre dd) (- nav chg))))
     dd))
 
@@ -95,8 +97,8 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                :nav (next-number ts)
                :chg (next-number ts)
                :prc (next-number ts)
-               :bid 0.0d0 ; (next-token ts :type 'float :dflt 0.0d0 :num 3)
-               :ask 0.0d0 ; (next-token ts :type 'float :dflt 0.0d0)
+               :bid 0d0 ; (next-token ts :type 'float :dflt 0d0 :num 3)
+               :ask 0d0 ; (next-token ts :type 'float :dflt 0d0)
                :pre (next-number ts)
                :low (next-number ts)
                :hgh (next-number ts)) res)
@@ -118,7 +120,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
         (pop ticks)
         (setq dt (infer-date (next-token ts) (next-token ts)))
         (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)
-                             :prc (/ (next-number ts) 100.0d0))
+                             :prc (/ (next-number ts) 100d0))
               res)
         (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
               dt (car res))))))
@@ -171,9 +173,9 @@ change:~15t~7,2f~35thigh:~45t~7,2f
             res)
       (mesg :log *gq-error-stream* "~a~%" (car res))
       (push (list (next-number ts :num 5)
-                  (next-token ts :type 'number :dflt 0.0d0)
-                  (next-token ts :type 'number :dflt 0.0d0)
-                  (next-token ts :type 'number :dflt 0.0d0)) ar)
+                  (next-token ts :type 'number :dflt 0d0)
+                  (next-token ts :type 'number :dflt 0d0)
+                  (next-token ts :type 'number :dflt 0d0)) ar)
       (push (mapcar
              #'cons
              (dotimes (ii 10 (nreverse ds))
@@ -262,11 +264,13 @@ If the first argument is a date, fix the year."
 (defcustom *history* list nil
   "The history, to be read from `*hist-data-file*'.")
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (pfl)
   (tick nil :type symbol)       ; TICKer
-  (nums 0.0d0 :type double-float) ; NUMber of Shares
-  (bprc 0.0d0 :type double-float) ; Base PRiCe
+  (nums 0d0 :type double-float) ; NUMber of Shares
+  (bprc 0d0 :type double-float) ; Base PRiCe
   (name "" :type string))       ; full NAME
+)
 
 (defun read-pfl (stream ra)
   "Read a PFL from the STREAM, using the read-ahead RA.
@@ -286,10 +290,12 @@ Suitable for `read-list-from-stream'."
   "Find the holding corresponding to the symbol."
   (declare (symbol sy)) (find sy *holdings* :key #'pfl-tick :test #'eq))
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (hist)
   (date +bad-date+ :type date)
-  (totl 0.0d0 :type double-float)
+  (totl 0d0 :type double-float)
   (navs nil :type list))
+)
 
 (defmethod value ((hs hist)) (hist-totl hs))
 (defmethod date ((hs hist)) (hist-date hs))
@@ -408,7 +414,7 @@ YEA is the list of 1, 3, 5, and 10-year returns."
   (declare (list hold hist res) (stream out))
   (unless res
     (return-from process-results (format t "no results - timed out?~%")))
-  (let* ((lh (last hist 2)) (ctot 0.0d0) (otot 0.0d0) (ptot 0.0d0)
+  (let* ((lh (last hist 2)) (ctot 0d0) (otot 0d0) (ptot 0d0)
          (begd (hist-date (car hist))) pers apy db
          (nnavs (mapcar #'dd-nav (cdr res))) (*print-case* :upcase)
          (pnavs (mapcar #'dd-pre (cdr res))))

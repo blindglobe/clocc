@@ -113,26 +113,6 @@
 ;;
 ;;  (declare (type fixnum x y)
 ;;           (type single-float z))
-#+nil
-(defun pretty-decls (decls)
-  (let ((type-alist '()))
-    (map nil #'(lambda (d)
-		 (destructuring-bind (decl (type v-type var))
-		     d
-		   (declare (ignore decl type))
-		   (let ((known (assoc-if #'(lambda (x)
-					      (equal x v-type))
-					  type-alist)))
-		     (if known
-			 (setf (cdr known) (cons var (cdr known)))
-			 (setf type-alist (cons (list v-type var)
-						type-alist))))))
-	 decls)
-    (when type-alist
-      `((declare ,@(mapcar #'(lambda (v)
-			       `(type ,@v))
-			   type-alist))))))
-
 (defun pretty-decls (decls)
   (let ((type-hash (make-hash-table :test 'equal)))
     (dolist (decl decls)
@@ -301,30 +281,6 @@
 			    `(or ,@arg-types)))
 		     res)))))))
 
-;; Create declarations for all the functions used in the subprogram.
-;; We return three items: statement functions, other functions, and
-;; functions in the parameter list of the subprogram.
-#+nil
-(defun make-fcn-decl (fcn-list arglist)
-  (let (stmt-fcns other-fcns arg-fcns)
-    (dolist (fcn fcn-list)
-      (let* ((fname (first fcn))
-	     (type (get-fun-arg-type fcn))
-	     (args (second fcn))
-	     (decl `(function ,(get-upgraded-fun-arg-type args)
-		     (values ,type ,@(if (member fname *intrinsic_function_names*)
-					 nil
-					 '(&rest t))))))
-	(cond ((member fname *subprog_stmt_fns*)
-	       (push `(declare (ftype ,decl ,fname)) stmt-fcns))
-	      ((member fname arglist)
-	       (push `(declare (type ,decl ,fname)) arg-fcns))
-	      (t
-	       (push `(declare (ftype ,decl ,fname)) other-fcns)))))
-    (values (nreverse stmt-fcns)
-	    (nreverse other-fcns)
-	    (nreverse arg-fcns))))
-
 ;; This needs to be reworked!
 (defun get-arg-decl (list-of-arglists)
   (let (res)
@@ -369,6 +325,9 @@
 	  (first types)
 	  types))))
 
+;; Create declarations for all the functions used in the subprogram.
+;; We return three items: statement functions, other functions, and
+;; functions in the parameter list of the subprogram.
 (defun make-fcn-decl (fcn-list arglist)
   (let (stmt-fcns other-fcns arg-fcns)
     (dolist (fcn fcn-list)
@@ -1614,89 +1573,6 @@
 	  (list "***WARNING: Preceding READ statements may not be correct!")))
   
      
-#+nil
-(defmacro fformat (dest cilist args)
-   `(if (equal ,cilist '("~A~%")) 
-        (and (mapcar #'(lambda (arg) (fformat1 ,dest "~A " arg)) ,args)
-             (format ,dest "~%"))
-        ;loop through directives, consume arguments
-        (do ((directives ,cilist (cdr directives))
-             (arglist ,args arglist))
-            ((null directives) )
-            (cond ((stringp (first directives))
-                   (format ,dest (first directives)))
-                  (t
-                   (fformat1 ,dest
-                             (car (first directives)) 
-                             (first arglist))
-                   (setq arglist (cdr arglist)))))))
-
-#+nil
-(progn
-(defmacro fformat (dest-lun format-cilist args)
-  (let ((dest (gensym))
-	(directives (gensym))
-	(cilist (gensym))
-	(arglist (gensym)))
-    `(let ((,dest (lun->stream ,dest-lun))
-	   (,cilist ,format-cilist))
-      (if (equal ,cilist '("~A~%")) 
-	  (and (mapcar #'(lambda (arg) (fformat1 ,dest "~A " arg)) ,args)
-	       (format ,dest "~%"))
-	  ;; loop through directives, consume arguments
-	  (do ((,directives ,cilist (cdr ,directives))
-	       (,arglist ,args ,arglist))
-	      ((null ,directives) )
-            (cond ((stringp (first ,directives))
-                   (format ,dest (first ,directives)))
-                  (t
-                   (fformat1 ,dest
-                             (car (first ,directives)) 
-                             (first ,arglist))
-                   (setq ,arglist (cdr ,arglist)))))))))
-
-(defun fformat1 (dest directive arg)
-   (if (arrayp arg)
-        (print arg)
-        (format dest directive arg)))
-)
-
-#+nil
-(progn
-(defmacro fformat (dest-lun format-cilist &rest args)
-  (let ((stream (gensym)))
-    `(let ((,stream (lun->stream ,dest-lun)))
-      ,@(expand-format stream format-cilist args))))
-
-(defmacro fformat1 (dest directive arg)
-  (let ((val (gensym)))
-    `(let ((,val ,arg))
-      (if (arrayp ,val)
-	  (print ,val)
-	  (format ,dest ,directive ,val)))))
-
-(defun expand-format (dest cilist args)
-  (if (equal cilist '("~A~%"))
-      (append (mapcar #'(lambda (arg) `(fformat1 ,dest "~A " ,arg)) args)
-	   `((format ,dest "~%")))
-
-      (do ((res '())
-	   (directives cilist (cdr directives))
-	   (arglist args arglist))
-	  ((null directives)
-	   (nreverse res))
-	(cond ((stringp (first directives))
-	       ;;(format t "~a~%" (first directives))
-	       (push `(format ,dest ,(first directives))
-		     res))
-	      (t
-	       (push `(fformat1 ,dest
-		       ,(car (first directives)) 
-		       ,(first arglist))
-		     res)
-	       (setq arglist (cdr arglist)))))))
-)
-
 ;; Handle things like FMT = number
 (defun get_format_stmt (label)
   (let ((fmt-num (first label)))
@@ -1921,15 +1797,6 @@
 (defun fixnum-string (x)
    (princ-to-string x))
 
-#+nil
-(defun parse-format-descriptor-I (a w)
-   (prog (directive)
-   (if (listp w) (setq w (car w)))  ;ignore .m
-   (setq directive (list (concatenate 'string "~" (fixnum-string w) "D")))
-   (return 
-        (do ((i 1 (1+ i))
-             (ret nil (append ret (list directive))))
-            ((> i a) ret)))))
 (defun parse-format-descriptor-I (a w)
   (let* ((width (if (listp w)
 		   (car w)
@@ -1938,25 +1805,6 @@
     (list a (list directive))))
 
 ;<kP><a>Fw.d -> ~a{~w,d,k,,,[@]F}
-#+nil
-(defun parse-format-descriptor-F (left right)
-  (prog ((k 0) (a 1) directive)
-     (declare (special k a))
-     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
-         (pattern-match-and-bind '((> k) #\P) left)
-         (pattern-match-and-bind '((> a)) left))
-     (setq directive
-         (list (concatenate 'string 
-                 "~" (fixnum-string (car right)) ","     ;w
-                     (fixnum-string (cadr right)) ","    ;d
-                     (fixnum-string k) ","               ;k
-		     "'*,"
-                     (if *SP* "@F" "F"))))
-    (return
-        (do ((i 1 (1+ i))
-             (ret nil (append ret (list directive))))
-            ((> i a) ret)))))
-
 (defun parse-format-descriptor-F (left right)
   (let ((k 0)
 	(a 1))
@@ -1977,27 +1825,6 @@
 ;; the the exponent is three digits long, the exponent indicator (E or
 ;; is not printed.  Thus instead of xxxE+ddd, we get xxx+ddd.  We
 ;; don't handle that here!
-#+nil
-(defun parse-format-descriptor-E (left right)
-  (prog ((k 0) (a 1) w d (e 2) directive)
-     (declare (special k a w d e))
-     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
-         (pattern-match-and-bind '((> k) #\P) left)
-         (pattern-match-and-bind '((> a)) left))
-     (or (pattern-match-and-bind '((> w) (> d)) right)
-         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
-     (setq directive 
-         (list (concatenate 'string
-			    "~" (fixnum-string w) ","
-			    (fixnum-string d) ","
-			    (fixnum-string e) ","
-			    (fixnum-string k) ",'*"
-			    (if *SP* "@E" "E"))))
-    (return
-      (do ((i 1 (1+ i))
-	   (ret nil (append ret (list directive))))
-	  ((> i a) ret)))))
-
 (defun parse-format-descriptor-E (left right)
   (let ((k 0) (a 1) w d (e 2))
      (declare (special k a w d e))
@@ -2011,31 +1838,10 @@
 			       "~" (fixnum-string w) ","
 			       (fixnum-string d) ","
 			       (fixnum-string e) ","
-			       (fixnum-string k) ",'*"
+			       (fixnum-string k) ",'*,,'E"
 			       (if *SP* "@E" "E")))))
        (list a (list directive)))))
 
-#+nil
-(defun parse-format-descriptor-D (left right)
-  (prog ((k 0) (a 1) w d (e 2) directive)
-     (declare (special k a w d e))
-     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
-         (pattern-match-and-bind '((> k) #\P) left)
-         (pattern-match-and-bind '((> a)) left))
-     (or (pattern-match-and-bind '((> w) (> d)) right)
-         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
-     (setq directive 
-         (list (concatenate 'string
-			    "~" (fixnum-string w) ","
-			    (fixnum-string d) ","
-			    (fixnum-string e) ","
-			    (fixnum-string k) ",'*"
-			    (if *SP* "@D" "D"))))
-    (return
-      (do ((i 1 (1+ i))
-	   (ret nil (append ret (list directive))))
-	  ((> i a) ret)))))
-
 (defun parse-format-descriptor-D (left right)
   (let ((k 0) (a 1) w d (e 2))
      (declare (special k a w d e))
@@ -2049,30 +1855,9 @@
 			       "~" (fixnum-string w) ","
 			       (fixnum-string d) ","
 			       (fixnum-string e) ","
-			       (fixnum-string k) ",'*"
-			       (if *SP* "@D" "D")))))
+			       (fixnum-string k) ",'*,,'D"
+			       (if *SP* "@E" "E")))))
        (list a (list directive)))))
-
-#+nil
-(defun parse-format-descriptor-G (left right)
-  (prog ((k 0) (a 1) w d (e 2) directive)
-     (declare (special k a w d e))
-     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
-         (pattern-match-and-bind '((> k) #\P) left)
-         (pattern-match-and-bind '((> a)) left))
-     (or (pattern-match-and-bind '((> w) (> d)) right)
-         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
-     (setq directive 
-         (list (concatenate 'string
-                            "~" (fixnum-string w) ","
-                            (fixnum-string d) ","
-                            (fixnum-string e) ","
-                            (fixnum-string k) ",'*"
-                            (if *SP* "@G" "G"))))
-    (return
-        (do ((i 1 (1+ i))
-             (ret nil (append ret (list directive))))
-            ((> i a) ret)))))
 
 (defun parse-format-descriptor-G (left right)
   (let ((k 0) (a 1) w d (e 2))
@@ -2280,8 +2065,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.64 2000/08/27 16:36:07 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.65 2000/08/29 14:41:41 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.65  2000/08/29 14:41:41  rtoy
+;;; o Remove lots of unused code
+;;; o Fix a typo in the Fortra D format parser: the equivalent Lisp format
+;;;   is E not D!  Also, explicitly specify the exponent character of "D".
+;;; o For the E format, specify an explicit exponent character of "E".
+;;;
 ;;; Revision 1.64  2000/08/27 16:36:07  rtoy
 ;;; Clean up handling of format statements.  Should handle many more
 ;;; formats correctly now.

@@ -1,3 +1,10 @@
+common-lisp-controller (3.17+3.18.pre4) unstable; urgency=low
+
+  * Remove calls to mk:new-require to remove an unecessary dependency on
+    mk-defsystem3. Use c-l-c's orignal-require function instead.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 28 Aug 2002 11:00:44 -0600
+
 common-lisp-controller (3.17+3.18.pre3) unstable; urgency=low
 
   * Move grabbing of original implementation REQUIRE function to pre-defsystem file.

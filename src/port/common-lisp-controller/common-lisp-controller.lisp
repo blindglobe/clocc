@@ -1,6 +1,4 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
-;;;
-
 
 (in-package :cl-user)
 
@@ -181,7 +179,7 @@ Returns nothing"
                (load (compile-file-pathname file))))
         ;; first ourselves:
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
-        ;; then the functions before any defsystem
+        ;; then the patches before defsystem:
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller-pre-defsystem.lisp")
         ;; then defsystem:
         (compile-and-load  "cl-library:defsystem;defsystem.lisp")

@@ -72,19 +72,19 @@ file or :asdf if found asdf file"
      (mk:oos  module-name
 	      :load
 	      :load-source-instead-of-binary nil
-	      :load-source-if-no-binary nil
-	      :bother-user-if-no-binary nil
-	      :compile-during-load nil)
+		  :load-source-if-no-binary nil
+		  :bother-user-if-no-binary nil
+		  :compile-during-load nil)
      (progn
        (format t "~&;;;Please wait, recompiling library...")
        ;; first compile the sub-components!
        (dolist (sub-system (make::component-depends-on
 			    system))
 	 (when (stringp sub-system)
-               (setf sub-system
-                     (intern sub-system
-                             (find-package :keyword)))
-               (clc-require sub-system)))
+	   (setf sub-system
+		 (intern sub-system
+			 (find-package :keyword)))
+	   (clc-require sub-system)))
        (common-lisp-controller:send-clc-command :recompile
 						(if (stringp module-name)
 						    module-name
@@ -93,7 +93,7 @@ file or :asdf if found asdf file"
 						    module-name))))
        (terpri)
        (asdf:oos  module-name
-		:load
+		  :load
                   :load-source-instead-of-binary nil
                   :load-source-if-no-binary nil
                   :bother-user-if-no-binary nil
@@ -139,19 +139,29 @@ file or :asdf if found asdf file"
 		   definition-pname
 		   default-action ))
 	  ;; no advanced stuff
-	  ;; is the system in the clc root?
 	  (require-defsystem3 module-name)
-	  ;; ifnot, let mk deal with it..
-	(mk::new-require module-name
-			 pathname
-			 definition-pname
-			 default-action
-			 version)))
+	;; ifnot, let original require deal with it..
+	(original-require module-name
+			  pathname
+			  definition-pname
+			  default-action
+			  version)))
      (:asdf
-      (require-asdf module-name))
-     ;; Call original vendor's require if can't find system file
+      (if (not (or pathname
+		   definition-pname
+		   default-action ))
+	  ;; no advanced stuff
+	  (require-asdf module-name)
+	;; ifnot, let original require deal with it..
+	(original-require module-name
+			  pathname
+			  definition-pname
+			  default-action
+			  version)))
+     ;; Call original require if can't find system file
      (otherwise
-      (original-require module-name)))))
+      (original-require module-name pathname definition-pname default-action version)))))
+
 
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.2 2000/03/03 22:01:03 sds Exp $
+;;; $Id: proc.lisp,v 1.3 2000/04/03 20:43:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -166,14 +166,14 @@ whichever comes first."
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
   "Execute BODY; if execution takes more than SECONDS seconds, terminate
 and evaluate TIMEOUT-FORMS."
-  (declare (ignorable seconds timeout-forms))
+  #-threads (declare (ignore seconds timeout-forms))
   ;;#+(or (and allegro multiprocessing) (and cmu mp))
   ;;`(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
   #+threads
-  (with-gensyms (bodyf timeoutf)
+  (with-gensyms ("WT-" bodyf timeoutf)
     `(flet ((,bodyf () ,@body)
             (,timeoutf () ,@timeout-forms))
-      (with-timeout-f seconds bodyf timeoutf)))
+      (with-timeout-f seconds #'bodyf #'timeoutf)))
   #-threads `(progn ,@body))
 
 (defun y-or-n-p-timeout (seconds default &rest args)

@@ -31,7 +31,7 @@
 ;;; MK:DEFSYSTEM 3.2 Interim
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
-;;;               1999, 2000  Mark Kantrowitz and Marco Antoniotti. All
+;;;               1999 - 2002 Mark Kantrowitz and Marco Antoniotti. All
 ;;;                           rights reserved.
 
 ;;; Use, copying, modification, merging, publishing, distribution

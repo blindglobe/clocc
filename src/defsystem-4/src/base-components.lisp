@@ -102,9 +102,11 @@
 					     ; files included in
 					     ; modules etc.)
 
-   ;; The next slot is used for caching purposes.
+   ;; The next slots are used for caching purposes.
    (computed-source-pathname :accessor computed-source-pathname
 			     :initform nil)
+   (computed-source-extension :accessor computed-source-extension
+			      :initform nil)
 
 
    (binary-pathname :accessor component-binary-pathname
@@ -115,9 +117,12 @@
 					     ; "fasl". If NIL,  uses
 					     ; default for
 					     ; machine-type.
-   ;; The next slot is used for caching purposes.
+
+   ;; The next slots are used for caching purposes.
    (computed-binary-pathname :accessor computed-binary-pathname
 			     :initform nil)
+   (computed-binary-extension :accessor computed-binary-extension
+			      :initform nil)
 
 
    ;; error-log-pathname -- Will have to go somewhere else.

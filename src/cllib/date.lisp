@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-12-10 Thu 17:39:03 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-01-06 Wed 23:02:29 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.22 1998/12/10 22:40:39 sds Exp $
+;;; $Id: date.lisp,v 1.23 1999/01/07 04:03:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.23  1999/01/07 04:03:05  sds
+;;; Use `index-t' instead of (unsigned-byte 20).
+;;;
 ;;; Revision 1.22  1998/12/10 22:40:39  sds
 ;;; Added `dttm->string', `string->dttm' and `infer-timezone'.
 ;;; Made `infer-month' return NIL instead of signalling an error when the
@@ -223,9 +226,11 @@ Returns the number of seconds since the epoch (1900-01-01)."
                 (or (numberp mo) (setq mo (or (infer-month mo) mo))))
            (if (symbolp dd)
                (encode-universal-time (or se 0) (or mi 0) (or ho 0)
-                                      da mo ye (infer-timezone zo))
+                                      (min ye da) mo (max ye da)
+                                      (infer-timezone zo))
                (encode-universal-time (or mi 0) (or ho 0) (or dd 0)
-                                      da mo ye (infer-timezone se))))
+                                      (min ye da) mo (max ye da)
+                                      (infer-timezone se))))
           ((and (symbolp ye) (numberp mo) (numberp dd)
                 (or (numberp da) (setq da (or (infer-month da) da))))
            (encode-universal-time (or se 0) (or mi 0) (or ho 0)
@@ -293,7 +298,7 @@ The argument can be:
            (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
                (mk-date :ye da :mo (infer-month ye) :da mo)) n2))))))
 (defmethod date ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
-(defmethod date ((xx symbol)) (unintern xx) (date (string xx)))
+(defmethod date ((xx symbol)) (unintern xx) (date (symbol-name xx)))
 (defmethod date ((xx integer)) (days2date xx))
 (defmethod date ((xx real)) (time2date xx))
 (defmethod date ((xx stream))
@@ -462,7 +467,7 @@ Return T if any errors are detected."
       ((null (cdr rr))
        (format t "~:d record~:p, ~a through ~a. ~d error~:p found.~%"
                len (funcall date (first lst)) d1 err) (zerop err))
-    (declare (type (unsigned-byte 20) len err) (type date d0 d1))
+    (declare (type index-t len err) (type date d0 d1))
     (setq r1 (second rr) d1 (funcall date r1) v1 (if val (funcall val r1)))
     (when (and order-p (date< d1 d0))
       (format stream "~3d. Wrong Order:~% - ~s~% - ~s~%~%" (incf err) r0 r1))
@@ -473,24 +478,25 @@ Return T if any errors are detected."
     (when (and gap (> (days-between d0 d1) gap))
       (format stream "~3d. Large Gap:~% - ~s~% - ~s~%~%" (incf err) r0 r1))))
 
-(defun sync-dates (lists &key labels key cpy set (stream t) op skip)
+(defun sync-dates (lists &key labels key cpy set (out *standard-output*)
+                   op skip)
   "Make all the lists have records for all the dates.
 If LABELS is not given, no messages are printed.
 \(funcall KEY record) ==> date
 \(funcall CPY rec) ==> copy of rec
 \(funcall SET rec dt) ==> set the date of the rec.
-Stops when the lists end. Prints messages to STREAM.
+Stops when the lists end. Prints messages to OUT.
 Calls OP on the section of the LISTS with the same dates, using the
 previous record when SKIP is non-nil and nil otherwise.
-  (sync-dates lists &key labels key cpy set (stream t) op skip)"
-  (declare (list lists))
-  (mesg t stream "Synching dates in ~d lists.~%" (length lists))
+  (sync-dates lists &key labels key cpy set (out *standard-output*) op skip)"
+  (declare (list lists) (type (or null stream) out))
+  (mesg t out "~&Synching dates in ~d lists.~%" (length lists))
   (do ((sec (copy-list lists)) (heads (make-list (length lists))) fnn (nerr 0)
        (bd +bad-date+) (err nil nil) (ckey +bad-date+) (len 0 (1+ len)))
       ((every #'null sec)
-       (mesg t stream "~:d records in ~d lists checked. ~d error~:p found.~%"
+       (mesg t out "~:d records in ~d lists checked. ~d error~:p found.~%"
              len (length lists) nerr))
-    (declare (type (unsigned-byte 20) nerr len) (type date bd ckey))
+    (declare (type index-t nerr len) (type date bd ckey))
     ;; get the current date
     (setq fnn (member nil sec :test-not #'eq)
           bd (funcall key (caar fnn)))
@@ -499,8 +505,8 @@ previous record when SKIP is non-nil and nil otherwise.
             (when (date> bd ckey) (setq bd ckey))
             (unless (date= bd ckey) (setq err t))))
     ;; handle date mismatches
-    (when (and stream labels err)
-      (format stream " --[~:d]--> date mismatch:~:{~%  <~a: ~a>~}~%"
+    (when (and out labels err)
+      (format out " --[~:d]--> date mismatch:~:{~%  <~a: ~a>~}~%"
               len (mapcar #'cons labels sec))
       (incf nerr))
     ;; shift, fix and operate
@@ -515,10 +521,11 @@ previous record when SKIP is non-nil and nil otherwise.
           sec heads)
     (when op (apply op heads))))
 
-(defmacro sync-dates-ui (lists &key labels key cpy (stream t) op skip)
+(defmacro sync-dates-ui (lists &key labels key cpy (out '*standard-output*)
+                         op skip)
   "Use KEY for SET, which should be a slot. See `sync-dates'."
   `(sync-dates ,lists :labels ,labels :key (lambda (rr) (slot-value rr ,key))
-    :cpy ,cpy :stream ,stream  :op ,op :skip ,skip
+    :cpy ,cpy :out ,out  :op ,op :skip ,skip
     :set (lambda (rr dd) (setf (slot-value rr ,key) dd))))
 
 ;;;

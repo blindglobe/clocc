@@ -1,4 +1,4 @@
-# $Id: Makefile,v 2.9 2000/03/23 00:09:15 sds Exp $
+# $Id: Makefile,v 2.10 2000/04/03 22:38:26 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
@@ -11,7 +11,7 @@ NET = base url gq
 SYSTEM := cllib
 ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \
 	../math/clmath/matrix.lisp
-DOCFILES = $(SYSTEM).html
+DOCFILES = $(SYSTEM).html entities.xml
 include $(TOP)/clocc.mk
 
 image:		$(addsuffix .fas,$(BASE))

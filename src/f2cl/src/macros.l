@@ -63,6 +63,34 @@
 (deftype logical ()
   `(member t nil))
 
+;; Decide what you want integer*4 to be.  Good choices are fixnum or
+;; (signed-byte 32).  The latter is good only if your compiler does a
+;; good job with this type.  If you aren't sure, use fixnum.  CMUCL
+;; does a good job with (signed-byte 32).
+;;
+;; If you change this, you may need to change some of the macros
+;; below, such as INT and AINT!
+
+#+cmu
+(deftype integer4 ()
+  `(signed-byte 32))
+#-cmu
+(deftype integer4 ()
+  'fixnum)
+
+(deftype integer2 ()
+  `(signed-byte 16))
+(deftype integer1 ()
+  `(signed-byte 8))
+(deftype real8 ()
+  'double-float)
+(deftype real4 ()
+  'single-float)
+(deftype complex8 ()
+  `(complex single-float))
+(deftype complex16 ()
+  `(complex double-float))
+
 (defconstant %false% nil)
 (defconstant %true% t)
 
@@ -155,7 +183,7 @@
 				  ,step)
 			       ,step)
 		   )))
-      (declare (fixnum ,step ,iteration_count))
+      (declare (integer4 ,step ,iteration_count))
       ;; initialise loop variable
       (setq ,(first do_vble_clause) ,(second do_vble_clause))
       loop

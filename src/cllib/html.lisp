@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.11 2000/06/14 16:35:34 sds Exp $
+;;; $Id: html.lisp,v 1.12 2000/06/28 17:07:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -130,13 +130,13 @@ optional argument SPACE is non-nil."
       (keyword-concat "/" tag)))
 
 (defmethod stream-read-char ((in html-stream-in))
-  (read-char (html-in in)))
+  (read-char (html-in in) nil :eof))
 (defmethod stream-unread-char ((in html-stream-in) (char character))
   (unread-char char (html-in in)))
 (defmethod stream-read-char-no-hang ((in html-stream-in))
-  (read-char-no-hang (html-in in)))
+  (read-char-no-hang (html-in in) nil :eof))
 (defmethod stream-peek-char ((in html-stream-in))
-  (peek-char (html-in in)))
+  (peek-char nil (html-in in) nil :eof))
 (defmethod stream-listen ((in html-stream-in))
   (listen (html-in in)))
 (defmethod stream-read-line ((in html-stream-in))

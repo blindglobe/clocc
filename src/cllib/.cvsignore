@@ -14,3 +14,4 @@ auto.lsp
 *.data
 *.ufsl
 *.mem
+*.err

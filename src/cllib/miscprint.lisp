@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.16 2004/12/24 19:10:27 sds Exp $
+;;; $Id: miscprint.lisp,v 1.17 2004/12/24 19:12:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -138,6 +138,7 @@ The inverse is `hash-table->alist'."
 
 ;;; beware that some lisps (e.g., CLISP and CMUCL) will not use this
 ;;; method for hash-tables.  it does work with Allegro though.
+;;; since CLISP externalizes hash-tables on its own, only CMUCL is a problem.
 (unlock-package :common-lisp)
 (defmethod print-object ((ht hash-table) (out stream))
   (if *print-readably*

@@ -418,12 +418,6 @@ component."
   (declare (type (or null string stream pathname) source-pathname))
   (and source-pathname (probe-file source-pathname)))
 
-(defgeneric needs (component operation &key)
-  (:documentation ""))
-
-(defgeneric action-applicable-p (component operation &key)
-  (:documentation "")
-  (:method ((c component) (operation symbol) &key) t))
 
 
 (defun canonicalize-component-name (component)
@@ -989,7 +983,10 @@ component."
 
 (defvar *trace-action-execution* nil)
 
-(defmethod execute-action :around ((s system) (operation symbol) &key)
+(defmethod execute-action :around ((s system) (operation symbol)
+				   &key
+				   (policy :always)
+				   &allow-other-keys)
   (unless (member operation *known-system-operations*)
     (error 'unknown-system-operation
 	   :operation operation
@@ -1006,12 +1003,14 @@ component."
 
 (defmethod execute-action ((sys standard-system) (operation symbol)
 			   &key
-			   (policy :always))
+			   (policy :always)
+			   &allow-other-keys)
   (execute-action-on-subcomponents sys operation :policy policy))
 
 (defmethod execute-action ((sys-ref system-reference) (operation symbol)
 			   &key
-			   (policy :always))
+			   (policy :always)
+			   &allow-other-keys)
   (with-accessors ((sys-instance system-instance))
     sys-ref
     (if sys-instance
@@ -1033,7 +1032,8 @@ component."
 
 (defmethod execute-action ((sys simple-system) (operation symbol)
 			   &key
-			   (policy :always))
+			   (policy :always)
+			   &allow-other-keys)
   (let ((changed-components ()))
     (dolist (subcomponent (component-components sys) changed-components)
       (multiple-value-bind (result warning-p failure-p other-components)
@@ -1121,7 +1121,9 @@ component."
 
 (defmethod execute-action-on-subcomponents :before ((hc hierarchical-component)
 						    (operation symbol)
-						    &key)
+						    &key
+						    (policy :always)
+						    &allow-other-keys)
   ;; Compute the topological order of the sub-components based of the
   ;; current operation.
   (setf (component-components hc)
@@ -1134,6 +1136,7 @@ component."
 					    (operation (eql :load))
 					    &key
 					    (policy :always)
+					    &allow-other-keys
 					    )
   (let ((changed-subcomponents ()))
     (dolist (c (component-components hc))
@@ -1157,6 +1160,7 @@ component."
 					    &key
 					    (policy :dependencies-changed)
 					    (load *compile-and-load-p*)
+					    &allow-other-keys
 					    )
   (let ((changed-subcomponents ()))
     (dolist (c (component-components hc))
@@ -1271,7 +1275,8 @@ component."
 
 (defmethod execute-action ((m module) (operation (eql :load))
 			   &key
-			   (policy :always))
+			   (policy :always)
+			   &allow-other-keys)
   ;; A module corresponds to a directory and or a grouping of
   ;; components.
 
@@ -1283,7 +1288,8 @@ component."
 (defmethod execute-action ((m module) (operation (eql :compile))
 			   &key
 			   (policy :dependencies-changed)
-			   (load *compile-and-load-p*))
+			   (load *compile-and-load-p*)
+			   &allow-other-keys)
   ;; A module corresponds to a directory and or a grouping of
   ;; components.
 
@@ -1297,6 +1303,7 @@ component."
 			   (policy :always)
 			   (source-pathname (get-component-source-pathname f))
 			   (binary-pathname (get-component-binary-pathname f))
+			   &allow-other-keys
 			   )
   (let ((source-exists-p (source-exists-p f source-pathname))
 	(binary-exists-p (and (component-can-be-compiled-p f)
@@ -1393,7 +1400,7 @@ component."
 			   (load *compile-and-load-p*)
 			   (source-pathname (get-component-source-pathname f))
 			   (binary-pathname (get-component-binary-pathname f))
-			   )
+			   &allow-other-keys)
   (declare (type pathname source-pathname)
 	   (type (or null pathname) binary-pathname))
 
@@ -1442,7 +1449,10 @@ component."
 
 (defvar *trace-action-execution-p* t)
 
-(defmethod execute-action :around ((c component) (action symbol) &key)
+(defmethod execute-action :around ((c component) (action symbol)
+				   &key
+				   (policy :always)
+				   &allow-other-keys)
  (multiple-value-bind (result warnings-p failure-p other-components)
       (call-next-method)
    (when result
@@ -1458,7 +1468,9 @@ component."
 
 (defmethod execute-action-on-subcomponents :around ((hc hierarchical-component)
 						    (action symbol)
-						    &key)
+						    &key
+						    (policy :always)
+						    &allow-other-keys)
   (multiple-value-bind (result warnings-p failure-p other-components)
       (call-next-method)
     (when result
@@ -1470,7 +1482,8 @@ component."
 (defmethod execute-action :before ((c component) (action symbol)
 				   &key
 				   (trace-action-execution 
-				    *trace-action-execution*))
+				    *trace-action-execution*)
+				   &allow-other-keys)
   (when trace-action-execution
     (format *trace-output*
 	    "~&;;; MK4: Executing action ~A on ~A `~A'.~%"
@@ -1645,7 +1658,10 @@ component."
 			 :external-format (component-external-format f)))
 
 
-(defmethod execute-action ((f file) (action (eql :clean)) &key)
+(defmethod execute-action ((f file) (action (eql :clean))
+			   &key
+			   (policy :always)
+			   &allow-other-keys)
   (let ((binary-pathname (get-component-binary-pathname f)))
     (when (binary-exists-p f binary-pathname)
       (clean-action f binary-pathname))))
@@ -1888,7 +1904,8 @@ component."
 
 
 (defmethod execute-action ((f c-header-file) (operation (eql :load))
-			   &key policy)
+			   &key policy
+			   &allow-other-keys)
   (declare (ignore policy))
   ;; A no-op.
   (values (truename (get-component-source-pathname c-header-file))
@@ -1897,7 +1914,8 @@ component."
 
 
 (defmethod execute-action ((f c-header-file) (operation (eql :compile))
-			   &key policy)
+			   &key policy
+			   &allow-other-keys)
   (declare (ignore policy))
   ;; A no-op.
   (values (truename (get-component-source-pathname c-header-file))
@@ -1905,15 +1923,19 @@ component."
 	  nil))
 
 
-(defmethod execute-action ((sll statically-linked-library) (operation (eql :load))
-			   &key policy)
+(defmethod execute-action ((sll statically-linked-library)
+			   (operation (eql :load))
+			   &key policy
+			   &allow-other-keys)
   (declare (ignore policy))
   ;; A no-op.
   (values (truename c-header-file) nil nil))
 
 
-(defmethod execute-action ((sll statically-linked-library) (operation (eql :compile))
-			   &key policy)
+(defmethod execute-action ((sll statically-linked-library)
+			   (operation (eql :compile))
+			   &key policy
+			   &allow-other-keys)
   (declare (ignore policy))
   ;; A no-op.
   (values (truename c-header-file) nil nil))

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 2000-03-03 Fri 12:11:39 EST sds@ksp.com>
+;;; File: <url.lisp - 2000-03-03 Fri 17:50:27 EST sds@ksp.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,7 +9,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 2.1 2000/03/03 17:21:41 sds Exp $
+;;; $Id: url.lisp,v 2.2 2000/03/03 22:51:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -44,7 +44,8 @@
 
 (export '(url url-ask url-eta protocol-rfc
           open-socket-retry open-url with-open-url
-          ftp-list url-send-mail url-get-news url-time view-url
+          ftp-list url-send-mail url-get-news url-time
+          browse-url *browsers*
           dump-url url-get whois finger))
 
 ;;;
@@ -736,21 +737,26 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
 ;;;
 
 (defcustom *browsers* list
-  '((netscape "/usr/bin/netscape" "-remote" "openURL(~a,new-window)")
-    (emacs-w3 "/usr/bin/gnudoit" "(w3-fetch \"~a\")"))
+  '((:netscape "/usr/bin/netscape" "-remote" "openURL(~a,new-window)")
+    (:emacs-w3 "/usr/bin/gnudoit" "(w3-fetch \"~a\")"))
   "The ALIST of browsers.")
 
 ;;;###autoload
-(defun view-url (url &optional (bro 'netscape))
-  "Lounch a browser to view a url."
-  (declare (type url url))
-  (let ((br (copy-list (assoc bro *browsers* :test #'eq))) pos)
-    (assert (consp br) (br) "Unknown browser ~a. Must be one of~?." bro
-            (list-format "~a") (mapcar #'car *browsers*))
-    (setq pos (1+ (position "~a" (cdr br) :test #'search)))
-    (setf (nth pos br) (format nil (nth pos br) url))
-    (run-prog (second br) :args (cddr br))
-    (format t "launched ~a with args ~a~%" (car br) (cddr br))))
+(defun browse-url (url &key (browser :netscape) (out *standard-output*))
+  "Run the browser (a keyword in `*browsers*' or a list) on the URL."
+  (let* ((command
+          (etypecase browser
+            (list browser)
+            (symbol (or (cdr (assoc browser *browsers* :test #'eq))
+                        (error "unknown browser: `~s' (must be a key in `~s')"
+                               browser '*browsers*)))))
+         (args (mapcar (lambda (arg) (format nil arg url)) (cdr command))))
+    (when out
+      (format out "~&;; running [~s~{ ~s~}]..." (car command) args)
+      (force-output (if (eq out t) *standard-output* out)))
+    (run-program (car command) :arguments args)
+    (when out
+      (format out "done~%"))))
 
 ;;;###autoload
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)

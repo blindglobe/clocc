@@ -1294,7 +1294,6 @@
 ;        #+(and :sun4 :lispworks)             ("lisp" . "wfasl")
 ;        #+(and :mips :lispworks)             ("lisp" . "mfasl")
          #+:mcl                               ("lisp" . "fasl")
-	 #+clisp                              ("lsp" . "fas")
 
          ;; Otherwise,
          ("lisp" . "fasl")))

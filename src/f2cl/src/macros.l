@@ -225,10 +225,7 @@
 					 (numberp (second bnd)))
 				    (+ (- (second bnd) idx) 1)
 				    `(+ (- ,(second bnd) ,idx) 1)))
-			    indices bounds)))
-	(offset (mapcar #'(lambda (idx bnd)
-			    `(- ,idx ,(first bnd)))
-			indices bounds)))
+			    indices bounds))))
     `(make-array ,dims
       :element-type ',type
       :displaced-to ,vname
@@ -833,8 +830,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.24 2000/07/28 17:09:13 rtoy Exp $
+;;; $Id: macros.l,v 1.25 2000/07/28 22:10:05 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.25  2000/07/28 22:10:05  rtoy
+;;; Remove unused var from ARRAY-SLICE.
+;;;
 ;;; Revision 1.24  2000/07/28 17:09:13  rtoy
 ;;; o We are in the f2cl package now.
 ;;; o Remove the export expression.

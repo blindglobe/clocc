@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-04-29 Wed 18:40:13 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-05-26 Tue 18:36:56 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.10 1998/04/29 22:41:01 sds Exp $
+;;; $Id: date.lisp,v 1.11 1998/05/27 20:42:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.11  1998/05/27 20:42:03  sds
+;;; Expanded `date' string recognition to include word months.
+;;;
 ;;; Revision 1.10  1998/04/29 22:41:01  sds
 ;;; Added (defmethod date ((xx integer)) (days2date xx)).
 ;;; The new slot DD works fine and all the saved data has correct dates.
@@ -43,7 +46,7 @@
 ;;; Added `regress-dl'.
 ;;;
 
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "print") (sds-require "math")
@@ -76,7 +79,7 @@
 (defun print-date-month (dt &optional (str t) (depth 1))
   "Print the date to the STREAM, month and year only."
   (declare (ignore depth) (type date dt))
-  (format str "~a ~d" (aref *month-names* (1- (date-mo dt))) (date-ye dt)))
+  (format str "~a ~d" (aref +month-names+ (1- (date-mo dt))) (date-ye dt)))
 
 ;;; converters
 
@@ -130,9 +133,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defun infer-month (mon)
   "Get the month from the object, number or name."
   (if (numberp mon) mon
-      (1+ (position mon *month-names* :test
-		    (lambda (s0 s1) (string-equal s0 s1 :start1 0 :end1 2
-						  :start2 0 :end2 2))))))
+      (1+ (position (string mon) +month-names+ :test
+		    (lambda (s0 s1) (string-equal s0 s1 :start1 0 :end1 3
+						  :start2 0 :end2 3))))))
 
 ;;;
 ;;; generic
@@ -143,11 +146,17 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (declaim (ftype (function (t) date) date)))
 (defmethod date ((xx date)) xx)
 (defmethod date ((xx string))
-  "Get the date out of a string `1969-12-7'."
-  (let ((str (nsubstitute #\space #\- xx)))
+  ;; Get the date out of a string.
+  ;; The following formats are accepted: `1969-12-7', `May 8, 1945',
+  ;; `1945, September 2'.
+  (let ((str (nsubstitute-if #\space (lambda (ch) (find ch #(#\- #\, #\. #\/)))
+                             xx)))
     (multiple-value-bind (ye n0) (read-from-string str)
       (multiple-value-bind (mo n1) (read-from-string str nil 0 :start n0)
-	(mk-date :ye ye :mo mo :da (read-from-string str nil 0 :start n1))))))
+        (multiple-value-bind (da n2) (read-from-string str nil 0 :start n1)
+          (values
+           (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
+               (mk-date :ye da :mo (infer-month ye) :da mo)) n2))))))
 (defmethod date ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
 (defmethod date ((xx symbol)) (date (string xx)))
 (defmethod date ((xx real)) (time2date xx))
@@ -242,14 +251,13 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 
 (defun date-quarter (dt)
   "Return the quarter of the date."
-  (declare (type date dt))
+  (declare (type date dt) (values fixnum))
   (1+ (floor (1- (date-mo dt)) 3)))
 
 (defun same-quarter-p (d0 d1)
   "Return t if the dates are in the same quarter."
   (declare (type date d0 d1))
-  (and (= (date-ye d0) (date-ye d1))
-       (= (date-quarter d0) (date-quarter d1))))
+  (and (= (date-ye d0) (date-ye d1)) (= (date-quarter d0) (date-quarter d1))))
 
 (defsubst days-between (d0 &optional (d1 (today)))
   "Return the number of days between the two dates.
@@ -530,11 +538,9 @@ so that -1 corresponds to the last record."
 	    (dated-list-date dl) (dated-list-val dl) (dated-list-chg dl)
 	    (dated-list-misc dl)))
   (if *print-readably* (funcall (print-readably dated-list) dl stream)
-      (let ((*print-case* :upcase))
-	(format stream (case depth (1 "~:d ~a [~a] [~a -- ~a]")
-			     (t "~:d~* [~a] [~a -- ~a]"))
-		(dl-len dl) (dated-list-name dl) (dated-list-code dl)
-		(dl-nth-date dl) (dl-nth-date dl -1)))))
+      (format stream "~:d~:[ ~a~;~*~] [~:@(~a~)] [~a -- ~a]"
+              (dl-len dl) (> depth 1) (dated-list-name dl) (dated-list-code dl)
+              (dl-nth-date dl) (dl-nth-date dl -1))))
 
 (defun date-in-dated-list (dt dl &optional last)
   "Call `date-in-list' on the dated list.
@@ -653,8 +659,9 @@ Return: the change in misc."
 Return nil if at the end already, or the change in value."
   (declare (type dated-list dl))
   (unless (cdr (dated-list-ll dl)) (return-from skip-dl-to-extremum nil))
-  (do ((ll (dated-list-ll dl) (dated-list-ll dl)) ch (mv 0.0d0))
+  (do ((ll (dated-list-ll dl) (dated-list-ll dl)) ch (mv 0.0))
       ((null (setq ch (dl-next-chg dl))) mv)
+    (declare (double-float mv))
     (cond ((minusp (* ch mv)) (setf (dated-list-ll dl) ll)
 	   (return-from skip-dl-to-extremum mv))
 	  (t (incf mv ch)))))
@@ -721,8 +728,8 @@ list object is created and just the list of numbers is returned."
   "UI for `exp-mov-avg' when the argument is a dated list itself."
   (exp-mov-avg
    coeff (dated-list-ll dl) :date (dl-date dl) :key (slot-value dl slot)
-   :code (symbol-concat (dated-list-code dl) "-EMA")
-   :name (format nil "EMA [~5,3f] `~a'" coeff (dated-list-name dl))))
+   :code (keyword-concat (dated-list-code dl) :-ema)
+   :name (format nil "EMA [~3,2f] `~a'" coeff (dated-list-name dl))))
 
 (defun regress-dl (dl &optional begd endd)
   "Regress the dated list in the given interval.
@@ -831,7 +838,7 @@ ch[bf], and dl-extrema will not be idempotent."
       ((null (setq ch (skip-dl-to-extremum dd)))
        (change-list-to-dated-list
 	(nreverse (push chg res)) :code
-	(symbol-concat (dated-list-code dl) "-XTR")
+	(keyword-concat (dated-list-code dl) "-XTR")
 	:name (format nil "Extrema of `~a'" (dated-list-name dl))))
     (setf (change-chf chg) ch) (push chg res)
     (setq chg

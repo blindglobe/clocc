@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-03-02 Tue 15:38:53 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-03-27 Sat 14:08:35 EST sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.12 1999/03/02 20:40:09 sds Exp $
+;;; $Id: base.lisp,v 1.13 1999/03/27 19:24:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.13  1999/03/27 19:24:36  sds
+;;; Added condition `provide-require' and function `require-name-to-file'.
+;;; Use the latter in `sds-require' and `autoload'.
+;;; Added printing `lambda-list-keywords' in `sysinfo'.
+;;;
 ;;; Revision 1.12  1999/03/02 20:40:09  sds
 ;;; Added `defgeneric' `code'.
 ;;;
@@ -162,7 +167,7 @@
       #+cmu (cdr (assoc (string var) *environment-list* :test #'equalp
                         :key #'string)) ; xlib::getenv
       #-cmu
-      (#+(or allegro clisp) system::getenv #+lispworks w:environment-variable
+      (#+(or allegro clisp) system::getenv #+lispworks lw:environment-variable
        #+lucid lcl:environment-variable #+gcl si:getenv (string var)))))
 
 (deftype index-t () '(unsigned-byte 20)) ; for arithmetics
@@ -182,7 +187,8 @@
       (:capitalize (string-capitalize name))
       (t name))))
 #+cmu
-(defvar sys::*command-index* 0)
+(defcustom sys::*command-index* index-t 0
+  "The number of commands issued so far.")
 
 #+(or cmu clisp)
 (setq lisp::*prompt*
@@ -281,63 +287,80 @@ This function takes care of that."
           :finally (return (values te1 va1 ne1 (cons 'values se1)
                                    (cons 'values ge1))))))
 
-(eval-when (load compile eval)
-  (unless (boundp '*require-table*)
-    (defcustom *require-table* hash-table
-      (make-hash-table :test #'equal :size 20)
-      "*The table for `sds-require'.")
-    (dolist (mo '("base" "channel" "currency" "date" "futures" "fx" "gnuplot"
-                  "list" "math" "octave" "print" "report" "rules" "signal"
-                  "util" "work" "matrix"))
-      (declare (simple-string mo))
-      (setf (gethash mo *require-table*)
-            (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-    (dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests"
-                  "elisp"))
-      (declare (simple-string mo))
-      (setf (gethash mo *require-table*)
-            (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
-    (setf (gethash "monitor" *require-table*)
-          (merge-pathnames "metering.lisp" *lisp-dir*))
-    (defun sds-require (fl)
-      "Load the appropriate file."
-      (let ((file (gethash (string fl) *require-table*)) comp)
-        (assert file () "Cannot require `~a'." fl)
-        (setq comp (compile-file-pathname file))
-        (require fl (if (probe-file comp) comp file))
-        (assert (member fl *modules* :test (hash-table-test *require-table*))
-                () "File `~a' failed to provide `~a'." file fl)))))
+(defcustom *require-table* hash-table
+  (make-hash-table :test #'equal :size 20)
+  "*The table for `sds-require'.")
+(dolist (mo '("base" "channel" "currency" "date" "futures" "fx" "gnuplot"
+              "list" "math" "octave" "print" "report" "rules" "signal" "util"
+              "work" "matrix"))
+  (declare (simple-string mo))
+  (setf (gethash mo *require-table*)
+        (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
+(dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests" "elisp"))
+  (declare (simple-string mo))
+  (setf (gethash mo *require-table*)
+        (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
+(setf (gethash "monitor" *require-table*)
+      (merge-pathnames "metering.lisp" *lisp-dir*))
+
+(define-condition provide-require (error)
+  ((proc :type symbol :reader require-proc :initarg :proc)
+   (name :type simple-string :reader require-name :initarg :name))
+  (:report (lambda (cc stream)
+             (declare (stream stream))
+             (format stream "[~s] ~s is not in `~s'"
+                     (require-proc cc) (require-name cc) '*require-table*))))
+
+(defun require-name-to-file (name proc)
+  "Convert the name to the corresponding file in `*require-table*'."
+  (declare (simple-string name) (symbol proc))
+  (or (gethash name *require-table*)
+      (error 'provide-require :proc proc :name name)))
+
+(defun sds-require (fl)
+  "Load the appropriate file."
+  (let* ((file (require-name-to-file fl 'sds-require))
+         (comp (compile-file-pathname file)))
+    (require fl (if (probe-file comp) comp file))
+    (assert (member fl *modules* :test (hash-table-test *require-table*))
+            () "File `~a' failed to provide `~a'." file fl)))
 
 (defun autoload (symb file &optional comment)
   "Declare symbol SYMB to call a function defined in FILE."
   (declare (symbol symb) (type (or simple-string null) comment))
   (unless (fboundp symb)
-    (assert (gethash file *require-table*) (file)
-            "Cannot autoload anything from `~a'." file)
+    (require-name-to-file file 'autoload)
     (setf (fdefinition symb)
           (lambda (&rest args)
             (setf (documentation symb 'function) nil)
             (fmakunbound symb)
             (format t "; ~s is being autoloaded from `~a'~%" symb file)
-            (sds-require file) (apply symb args))
+            (sds-require file) (apply (fdefinition symb) args))
           (documentation symb 'function)
           (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment))))
 
 (defun probe-directory (filename)
   "Check whether the file name names an existsing directory."
+  #+allegro (excl::probe-directory filename)
   #+clisp (lisp:probe-directory filename)
-  #+excl (excl::probe-directory filename)
   #+cmu (eq :directory (unix:unix-file-kind filename)))
 
-#+(or allegro gcl clisp)
+#-cmu
 (defun default-directory ()
   "The default directory."
+  #+allegro (excl:current-directory)
   #+clisp (lisp:default-directory)
-  #+allegro (current-directory)
-  #+gcl (truename "."))
-#+allegro (defsetf default-directory chdir "Change the current directory.")
-#+gcl (defsetf default-directory si:chdir "Change the current directory.")
-#+clisp (defsetf default-directory lisp:cd "Change the current directory.")
+  #+lucid (working-directory)
+  #+lispworks lw:*current-working-directory*
+  #-(or allegro clisp lucid lispworks) (truename "."))
+#-cmu
+(defsetf default-directory
+  #+allegro excl:chdir
+  #+clisp lisp:cd
+  #+gcl si:chdir
+  #+lucid working-directory
+  #+lispworks lw:change-directory
+  "Change the current directory.")
 #-allegro (defun chdir (dir) (setf (default-directory) dir))
 
 (defun sysinfo ()
@@ -399,6 +422,8 @@ Long Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)~%"
                 lambda-parameters-limit call-arguments-limit
                 multiple-values-limit char-code-limit))
     (format t " ~a:~30t~15:d~%" sy (symbol-value sy)))
+  (format t "lambda-list-keywords:~30t~{~<~%~30t~1,74:; ~a~>~}~%"
+          lambda-list-keywords)
   (format t "Internal time unit:~25t~f sec~%*gensym-counter*:~25t~:d
 Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   (current-time t) (format t "~%~75~~%") (room) (values))

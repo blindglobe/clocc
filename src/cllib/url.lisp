@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.49 2004/11/09 17:01:53 sds Exp $
+;;; $Id: url.lisp,v 2.50 2004/11/09 20:24:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -681,7 +681,7 @@ pathname of the downloaded file."
          (pos (position #\( line :from-end t))
          (len (when pos (read-from-string line nil nil :start (1+ pos)))))
     (declare (type socket data) (type file-size-t tot) (type pathname path)
-             (double-float bt) (type (or null file-size-t) rest len))
+             (type (integer 0) bt) (type (or null file-size-t) rest len))
     ;; (when rest (decf len rest))
     (if (null len) (mesg :log *url-output* "File lenth unknown.~%")
         (mesg :log *url-output*

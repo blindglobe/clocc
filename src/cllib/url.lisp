@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-2-1 Mon 18:17:42 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-02-08 Mon 15:44:24 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.17 1999/02/02 00:02:33 sds Exp $
+;;; $Id: url.lisp,v 1.18 1999/02/08 20:45:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.18  1999/02/08 20:45:37  sds
+;;; Updated for cmucl 18b.
+;;;
 ;;; Revision 1.17  1999/02/02 00:02:33  sds
 ;;; Moved `html-translate-specials' &c to clhs.lisp
 ;;; Expanded `url-time'.
@@ -156,7 +159,7 @@
 ;;; }}}{{{ URL handling
 ;;;
 
-(defstruct (url)
+(defstruct (url #+cmu (:print-function print-struct-object))
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot nil :type symbol)       ; protocol
   (user "" :type simple-string) ; username
@@ -204,9 +207,9 @@ guess from the protocol."
 (defun url-get-host (url)
   "Get the right host for the URL: if it is a `news', use `*nntpserver*'."
   (declare (type url url))
-  (case (url-prot url)
-    ((:news :nntp) *nntpserver*)
-    (t (url-host url))))
+  (if (plusp (length (url-host url))) (url-host url)
+      (case (url-prot url) ((:news :nntp) *nntpserver*))))
+
 
 (defun url-path-dir (url)
   "Return the dir part of the url's path, dropping the file name."
@@ -226,22 +229,30 @@ guess from the protocol."
   (when *print-escape* (write-string "\"" stream))
   (let ((*print-escape* nil))
     (write (url-prot url) :stream stream :case :downcase)
-    (case (url-prot url)
-      ((:mailto :news :nntp :file) (write-string ":" stream))
-      (t (write-string "://" stream)))
-    (unless (string= "" (url-user url))
+    (write-string ":" stream)
+    (unless (or (eq :mailto (url-prot url)) (eq :file (url-prot url))
+                (zerop (length (url-host url))))
+      (write-string "//" stream))
+    (unless (zerop (length (url-user url)))
       (write (url-user url) :stream stream)
-      (unless (string= "" (url-pass url))
+      (unless (zerop (length (url-pass url)))
         (write-string "#" stream) (write (url-pass url) :stream stream))
       (write-string "@" stream))
-    (write (url-host url) :stream stream)
-    (unless (zerop (url-port url))
-      (write-string ":" stream) (write (url-port url) :stream stream))
+    (unless (zerop (length (url-host url)))
+      (write (url-host url) :stream stream)
+      (unless (zerop (url-port url))
+        (write-string ":" stream) (write (url-port url) :stream stream)))
     (assert (or (zerop (length (url-path url)))
-                (eq #\/ (aref (url-path url) 0)))
+                (eq (url-prot url) :news) (eq (url-prot url) :nntp)
+                (char= #\/ (aref (url-path url) 0)))
             ((url-path url))
             "non-absolute path in url: `~a'" (url-path url))
-    (write (url-path url) :stream stream))
+    (when (and (not (zerop (length (url-host url))))
+               (or (eq (url-prot url) :news) (eq (url-prot url) :nntp))
+               (not (zerop (length (url-path url))))
+               (not (char= #\/ (aref (url-path url) 0))))
+      (write-string "/" stream))
+    (write-string (url-path url) stream))
   (when *print-escape* (write-string "\"" stream)))
 
 (defcustom *url-special-chars* simple-string "#%&*+,-./:=?@_~"
@@ -266,6 +277,7 @@ The argument can be:
   (:method ((xx symbol)) (unintern xx) (url (symbol-name xx)))
   (:method ((xx stream))
            (url (with-output-to-string (st)
+                  (peek-char t xx) ; skip whitespace
                   (loop :for zz :of-type character = (read-char xx)
                         :while (url-constituent-p zz)
                         :do (write zz :stream st)))))
@@ -276,7 +288,7 @@ The argument can be:
     ("ftp" . :ftp) ("news" . :news) ("nntp" . :nntp))
   "*The alist of (\"string\" . protocol) to guess the protocol from the host.")
 (defmethod url ((xx string))
-  (let* ((string (string-trim +whitespace+ xx)) (url (make-url))
+  (let* ((string (string-trim +whitespace+ xx)) (url (make-url)) slashp
          (idx (position #\: string :test #'char=)) (start 0) idx0)
     (declare (simple-string string) (type index-t start) (type url url)
              (type (or null index-t) idx))
@@ -284,8 +296,9 @@ The argument can be:
       (return-from url
         (progn (setf (url-prot url) :file (url-path url) string) url)))
     (when idx
-      (setf (url-prot url) (kwd (string-upcase (subseq string 0 idx))))
-      (setq start (position #\/ string :start (1+ idx) :test #'char/=)))
+      (setf (url-prot url) (kwd (nstring-upcase (subseq string 0 idx))))
+      (setq start (position #\/ string :start (1+ idx) :test #'char/=)
+            slashp (/= (1+ idx) start)))
     (setq idx (position #\@ string :start start :test #'char=))
     (when idx
       (setq idx0 (position #\# string :start start :test #'char=))
@@ -299,15 +312,20 @@ The argument can be:
       (setf (url-port url) (parse-integer string :start (1+ idx) :end idx0)))
     (when idx0
       (setf (url-path url) (subseq string idx0)))
-    (setf (url-host url) (subseq string start (or idx idx0)))
+    (if (and (not slashp)
+             (or (eq (url-prot url) :nntp) (eq (url-prot url) :news)))
+        (setf (url-path url)
+              (concatenate 'string (subseq string start (or idx idx0))
+                           (url-path url)))
+        (setf (url-host url) (subseq string start (or idx idx0))))
     (unless (url-prot url)
       (cond ((let ((pa (assoc (url-host url) *url-guess-protocol* :test
                               (lambda (ho st)
                                 (declare (simple-string ho st))
-                                (string-equal ho st :end1 (length st))))))
+                                (string-beg-with st ho)))))
                (when pa (setf (url-prot url) (cdr pa)))))
-            ((position #\@ xx) (setf (url-prot url) :mailto))
-            ((error "url: `~a': no protocol specified" xx))))
+            ((position #\@ string) (setf (url-prot url) :mailto))
+            ((error "url: `~a': no protocol specified" string))))
     url))
 
 ;;;
@@ -315,24 +333,26 @@ The argument can be:
 ;;;
 
 #+allegro (deftype socket () 'excl::socket-stream)
-#+cmu (deftype socket () 'system:fd-stream)
 #+clisp (deftype socket () 'stream)
+#+cmu (deftype socket () 'system:fd-stream)
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
   (declare (simple-string host) (fixnum port) (type boolean bin))
-  #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
-                               :input t :output t)
+  #+allegro (socket:make-socket :remote-host host :remote-port port
+                                :format (if bin :binary :text))
   #+clisp (lisp:socket-connect port host :element-type
                                (if bin '(unsigned-byte 8) 'character))
-  #+allegro (socket:make-socket :remote-host host :remote-port port
-                                :format (if bin :binary :text)))
+  #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
+                               :input t :output t :element-type
+                               (if bin '(unsigned-byte 8) 'character)))
 
 (defun open-socket-server (sock)
   "Open a `generic' socket server."
   (declare (ignorable sock) (type socket sock))
+  #+allegro (socket:make-socket :connect :passive)
   #+clisp (lisp:socket-server sock)
-  #+allegro (socket:make-socket :connect :passive))
+  #+cmu (ext:create-inet-socket))
 
 (defun throw-timeout (&rest args)
   "Throw timeout."
@@ -359,21 +379,7 @@ Print the appropriate message MESG to OUT."
   "Execute BODY; if execution takes more than SECONDS seconds, terminate
 and evaluate TIMEOUT-FORMS."
   (declare (ignorable seconds timeout-forms))
-  #+allegro `(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
-  #+cmu
-  `(block with-timeout
-    (catch 'timer-interrupt
-      (let* ((current-process mp:*current-process*)
-             (timer-process (mp:make-process
-                             (lambda ()
-                               (sleep timeout)
-                               (mp:process-interrupt
-                                current-process
-                                (lambda () (throw 'timer-interrupt nil))))
-                             :name "Timeout timer")))
-        (unwind-protect (return-from with-timeout (progn ,@body))
-          (mp:destroy-process timer-process))))
-    ,@timeout-forms)
+  #+(or allegro cmu) `(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
   #+clisp `(progn ,@body))
 
 (defun y-or-n-p-timeout (seconds default &rest args)
@@ -394,7 +400,8 @@ and evaluate TIMEOUT-FORMS."
   "Open a socket connection, retrying until success."
   (declare (simple-string host) (fixnum port) (type (or null stream) err)
            (type (or null index-t) max-retry) (type (real 0) sleep timeout))
-  (loop :with begt = (get-universal-time) :for ii :upfrom 1 :and sock =
+  (loop :with begt = (get-universal-time)
+        :for ii :of-type index-t :upfrom 1 :and sock =
         (multiple-value-bind (sk cond)
             (ignore-errors
               (when err
@@ -431,13 +438,14 @@ the tag `timeout' is thrown."
            (type (or null stream) err))
   (when (eq (url-prot url) :file)
     (return-from open-url (open (url-path url) :direction :input)))
-  (loop :with begt = (get-universal-time)
-        :for sock = (open-socket-retry (url-get-host url) (url-get-port url)
-                                       :err err :sleep sleep :timeout timeout
-                                       :bin (url-prot-bin (url-prot url)))
+  (loop :with begt = (get-universal-time) :and host = (url-get-host url)
+        :and port = (url-get-port url)
+        :for sock :of-type (or null socket) =
+        (open-socket-retry host port :err err :sleep sleep :timeout timeout
+                           :bin (url-prot-bin (url-prot url)))
         :when
         (handler-case
-            (with-timeout ((or timeout *url-default-timeout*) nil)
+            (with-timeout (timeout nil)
               (ecase (url-prot url)
                 (:http (setq sock (url-open-http sock url err)))
                 (:ftp (url-ask sock err 220)
@@ -449,10 +457,11 @@ the tag `timeout' is thrown."
                 (:mailto (url-ask sock err 220))
                 ((:news :nntp)
                  (url-ask sock err 200)
-                 (url-ask sock err 211 "group ~a" (url-host url))
                  (unless (zerop (length (url-path url)))
-                   (url-ask sock err 220 "article ~a"
-                            (subseq (url-path url) 1)))
+                   (let ((strs (split-string (url-path url) "/")))
+                     (url-ask sock err 211 "group ~a" (car strs))
+                     (when (cadr strs)
+                       (url-ask sock err 220 "article ~a" (cadr strs)))))
                  t)
                 ((:time :daytime) t)))
           (error (co)
@@ -462,7 +471,7 @@ the tag `timeout' is thrown."
         :when (> (- (get-universal-time) begt) timeout)
         :do (throw-timeout "open-url (~a): timeout (~d sec)~%" url timeout)
         :do (sleep-mesg sleep err "Connection dropped")
-        (format err "Trying to connect to `~a'...~%" url)))
+        (format err "Trying to connect to ~a:~d...~%" host port)))
 
 (defmacro with-open-url ((socket url &key (rt '*readtable*) err
                                  (timeout '*url-default-timeout*))
@@ -569,41 +578,12 @@ Read until the end, then close the socket."
   (declare (type socket data) (type pathname path) (type (or null stream) log))
   (with-open-file (fl path :direction :output :element-type 'unsigned-byte
                       :if-exists (if rest :append :supersede))
-    ;; (break "entered `socket-to-file'")
     (loop :for pos :of-type index-t = (read-sequence *buffer* data)
           :do (write-sequence *buffer* fl :end pos)
           :sum pos :of-type file-size-t
           :when log :do (princ "." log) (force-output log)
           :while (= pos (length *buffer*))
           :finally (when log (terpri log)) :finally (close data))))
-
-#+nil (progn
-
-(url-ftp-get
- (url "ftp://contrib.redhat.com/libc6/i386/ctags-3.1.2-1.i386.rpm") "~/z/")
-(map 'string #'code-char new-buf)
-(coerce *buffer* 'simple-string)
-(map-into buf #'code-char *buffer*)
-(map-into buf #'code-char new-buf)
-(map-into buf #'identity list-buf)
-(map-into buf #'identity string-buf)
-(map-into buf #'code-char list-buf)
-(peek-char nil data)
-(setq buf (make-string 10))
-(setq list-buf (make-list 10240))
-(setq string-buf (make-string 10240))
-(setq new-buf (make-array 1024 :element-type '(unsigned-byte 8)))
-(lisp:read-byte-sequence new-buf data)
-(lisp:read-char-sequence buf data)
-(lisp:read-byte-sequence list-buf data)
-(lisp:read-char-sequence list-buf data)
-(lisp:read-byte-sequence string-buf data)
-(lisp:read-char-sequence string-buf data)
-(setq data (open "/var/tmp/o/RedHat/RPMS/ctags-3.1.2-1.i386.rpm"
-                 :direction :input :element-type 'unsigned-byte))
-(close data)
-
-)
 
 (defun ftp-get-file (sock rmt loc &key (log *standard-output*) (reget t)
                      (bin t) (retry 2) (timeout *url-default-timeout*))
@@ -698,7 +678,7 @@ This is initialized based on `mail-host-address'.")
 
 ;;; News
 
-(defstruct (article)
+(defstruct (article #+cmu (:print-function print-struct-object))
   (numb 0 :type (unsigned-byte 32)) ; article number
   (subj "" :type simple-string) ; subject
   (auth "" :type simple-string) ; author
@@ -752,24 +732,31 @@ When RE is supplied, articles whose subject match it are retrieved."
           "url-get-news: `~a' is not a `news'" url)
   (flet ((out (st) (if loc (merge-pathnames st loc) out)))
     (with-open-url (sock url :err out)
-      (if (zerop (length (url-path url)))
-          (multiple-value-bind (na a1 a2)
-              (values-list
-               (string-tokens (url-ask sock nil 211 "group ~a" (url-host url))
-                              :start 3 :max 3))
-            (let ((nm (format nil "~d-~d" a1 a2)))
-              (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
-              (url-ask sock out 224 "xover ~a" nm)
-              (let ((ls (map-in #'string->article
-                                (url-dump-to-dot sock :out (out nm)
-                                                 :collect t))))
-                (when re
-                  (dolist (art ls)
-                    (when (search re (article-subj art))
-                      (url-ask sock out 220 "article ~d" (article-numb art))
-                      (url-dump-to-dot sock :out (out (article-numb art))))))
-                ls)))
-          (url-dump-to-dot sock :out (out (url-path-file url)))))))
+      (let ((spl (split-string (url-path url) "/")))
+        (cond ((cadr spl)       ; group and article
+               (url-dump-to-dot sock :out (out (cadr spl))))
+              ((car spl)        ; group only
+               (multiple-value-bind (na a1 a2)
+                   (values-list
+                    (string-tokens (url-ask sock nil 211 "group ~a" (car spl))
+                                   :start 3 :max 3))
+                 (let ((nm (format nil "~d-~d" a1 a2)))
+                   (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
+                   (url-ask sock out 224 "xover ~a" nm)
+                   (let ((ls (map-in #'string->article
+                                     (url-dump-to-dot sock :out (out nm)
+                                                      :collect t))))
+                     (when re
+                       (dolist (art ls)
+                         (when (search re (article-subj art))
+                           (url-ask sock out 220 "article ~d"
+                                    (article-numb art))
+                           (url-dump-to-dot sock :out
+                                            (out (article-numb art))))))
+                     ls))))
+              (t               ; not even group, just host
+               (url-ask sock out 215 "list active")
+               (url-dump-to-dot sock :out (out "active"))))))))
 
 (defcustom *time-servers* list
   '("clock.psu.edu" "black-ice.cc.vt.edu" "clock1.unc.edu" "ntp0.cornell.edu"
@@ -939,7 +926,7 @@ By default nothing is printed."
 FMT is the printing format. 2 args are given: line number and the line
 itself. FMT defaults to \"~3d: ~a~%\".
 OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
-  (declare (type url url) (stream out) (function identity))
+  (declare (type url url) (stream out) (function proc))
   (format out "Opening URL: `~a'...~%" url)
   (catch 'timeout
     (with-open-url (sock url :err out :timeout timeout)
@@ -954,7 +941,7 @@ OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
   (declare (type url url) (stream log))
   (ecase (url-prot url)
     (:ftp (url-ftp-get url loc :timeout timeout :log log))
-    ((:nntp :news) (url-get-news url loc :log log))
+    ((:nntp :news) (url-get-news url loc :out log))
     (:http
      (let* ((path (merge-pathnames (url-path-file url) loc))
             (bt (get-float-time nil))
@@ -988,7 +975,7 @@ OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
 (defun dump-url-tokens (url &key (fmt "~3d: ~a~%") (out *standard-output*))
   "Dump the URL token by token.
 See `dump-url' about the optional parameters."
-  (declare (stream out))
+  (declare (stream out) (simple-string fmt))
   (setq url (url url))
   (with-open-url (sock url :rt *html-readtable* :err *standard-output*)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))

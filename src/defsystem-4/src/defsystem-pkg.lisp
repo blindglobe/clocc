@@ -21,7 +21,7 @@
   )
 
 
-(pushnew :mk-defsystem *features*)
+(pushnew :mk-defsystem-4 *features*)
 
 
 ;;;===========================================================================

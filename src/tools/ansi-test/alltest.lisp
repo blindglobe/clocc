@@ -799,7 +799,7 @@
    (compile nil (lambda (x) (flet ((foo (y) (+ y 1))) (foo (* 2 x)))))
    3)
   7)
-  
+
 ;; tagbody, go, multiple-value-list, multiple-value-call, multiple-value-prog1,
 ;; multiple-value-bind, multiple-value-setq, values, values-list, catch,
 
@@ -2045,7 +2045,8 @@
   char-code-limit
   #+xcl 128
   #+(or (and clisp (not unicode)) akcl sbcl cmu ecls) 256
-  #+(or (and clisp unicode) allegro) 65536
+  #+allegro 65536
+  #+(and clisp unicode) 1114112
   #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 ;; kap 14 sequenzen

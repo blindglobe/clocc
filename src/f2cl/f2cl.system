@@ -20,4 +20,5 @@
 	       (:file "f2cl5")
 	       (:file "f2cl6")
 	       (:file "f2cl7")
+	       (:file "f2cl8")
 	       (:file "macros")))))

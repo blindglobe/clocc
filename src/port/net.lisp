@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.39 2001/12/04 22:15:21 sds Exp $
+;;; $Id: net.lisp,v 1.40 2002/01/07 18:54:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -132,7 +132,7 @@
                        port host :element-type
                        (if bin '(unsigned-byte 8) 'character))
     #+cmu (sys:make-fd-stream (ext:connect-to-inet-socket host port)
-                              :buffering :line
+                              :buffering (if bin :full :line)
                               :input t :output t :element-type
                               (if bin '(unsigned-byte 8) 'character))
     #+gcl (si:make-socket-stream host port bin) ; FIXME

@@ -24,9 +24,7 @@
 (eval-when (compile load eval)
   (proclaim '(optimize (speed 3) (safety 1)))
 
-  (proclaim '(special f-store arg-store exp-store var-store init-store
-	      next-user-function-address lis-store end-store step-store 
-	      body-store *intrinsic_function_names* *external_function_names*
+  (proclaim '(special *intrinsic_function_names* *external_function_names*
 	      *subprog_name* *subprog_stmt_fns*
 	      *functions-used*)))
 ;-----------------------------------------------------------------------------

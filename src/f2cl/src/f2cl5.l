@@ -197,7 +197,7 @@
 			;; Hmm, an array declaration, but no type?
 			(cond ((get-implicit-type vble))
 			      ((default-int-p vble)
-			       'fixnum)
+			       'integer4)
 			      (t 'single-float)))
 		       ((and (listp v-type)
 			     (eq (first v-type) 'character))
@@ -214,7 +214,7 @@
 	 ;;(format t "implicit ~a~%" *implicit_vble_decls*)
 	 (cond ((get-implicit-type vble))
 	       ((default-int-p vble)
-		'fixnum)
+		'integer4)
 	       (t
 		'single-float)))))
 
@@ -938,9 +938,12 @@
 				      init-val)
 				     (t
 				      (ecase type
-					(fixnum 0)
+					((fixnum integer4 integer2 integer1)
+					 0)
 					(single-float 0f0)
-					(double-float 0d0))))))))))))
+					(double-float 0d0)
+					((complex complex8) #c(0f0 0f0))
+					(complex16 #c(0d0 0d0)))))))))))))
 	(t
 	 (if (setq type (get-implicit-type vble))
 	     `(,vble_name ,(cond (init-val
@@ -1117,7 +1120,7 @@
 	  `(declare (type ,type ,vble_name))))
 					; otherwise use default declaration
      (t (if (default-int-p vble)
-	    `(declare (type fixnum ,vble_name))
+	    `(declare (type integer4 ,vble_name))
 	    `(declare (type single-float ,vble_name))))))))
 
 (defun make-char-decl (decl type)
@@ -1178,7 +1181,7 @@
              ((and (not vble-is-formal-arg)
                    (setq type (get-implicit-type decl)))
               type)
-             ((default-int-p decl) 'fixnum)
+             ((default-int-p decl) 'integer4)
              (t  'single-float)))))
 
 (defun default-int-p (vble)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.52 2004/11/30 19:52:07 sds Exp $
+;;; $Id: sys.lisp,v 1.53 2004/12/01 17:44:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -112,9 +112,11 @@ or does not contain valid compiled code."
   #+allegro (excl:arglist fn)
   #+clisp (sys::arglist fn)
   #+(or cmu scl)
-  (values (let ((st (kernel:%function-arglist fn)))
-            (if (stringp st) (read-from-string st)
-                (eval:interpreted-function-arglist fn))))
+  (let ((f (coerce fn 'function)))
+    (typecase f
+      (STANDARD-GENERIC-FUNCTION (pcl:generic-function-lambda-list f))
+      (EVAL:INTERPRETED-FUNCTION (eval:interpreted-function-arglist f))
+      (FUNCTION (values (read-from-string (kernel:%function-arglist f))))))
   #+cormanlisp (ccl:function-lambda-list
                 (typecase fn (symbol (fdefinition fn)) (t fn)))
   #+gcl (let ((fn (etypecase fn
@@ -125,7 +127,7 @@ or does not contain valid compiled code."
   #+lucid (lcl:arglist fn)
   #+sbcl (values (let ((st (sb-kernel:%simple-fun-arglist fn)))
                   (if (stringp st) (read-from-string st)
-                      #+ignore(eval:interpreted-function-arglist fn))))
+                      #+(or) (eval:interpreted-function-arglist fn))))
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl scl)
   (error 'not-implemented :proc (list 'arglist fn)))
 

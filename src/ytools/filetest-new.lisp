@@ -24,17 +24,18 @@
 	  (c (Test-file-chunk-callee file-ch))
 	  (s (Test-file-chunk-slurpee file-ch)))
       (cond (c
-	     (setf (File-chunk-callees file-ch)
-		   (list (tuple c (list macros-sub-file-type*))))
-;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch c)
-	     ))
+	     (setf (File-chunk-callees file-ch) (list c))
+	     (compiled-ch-sub-file-link compiled-ch c macros-sub-file-type*
+					true)))
       (cond (s
+;;;;	     (setq cch* compiled-ch s* s)
+;;;;	     (break "About to link ~s from ~s" compiled-ch s)
 	     ;; This kind of link corresponds to nothing that
 	     ;; occurs "in nature," namely a slurpee that isnt'
 	     ;; a callee.--
 	     (compiled-ch-sub-file-link
 	         compiled-ch
-		 s macros-sub-file-type*)))
+		 s macros-sub-file-type* true)))
 ;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
       file-op-count*))
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.17 2005/01/28 13:24:25 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.18 2005/01/31 14:00:28 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -199,11 +199,11 @@
    )
 
 (defmethod initialize-instance :after ((orch Or-chunk) &rest _)
-   (cond ((not (slot-is-empty orch 'disjuncts))
+   (cond ((slot-truly-filled orch 'disjuncts)
 	  (or-chunk-set-default-and-update orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
 	     (pushnew orch (Chunk-derivees b)))))
-   (cond ((not (slot-is-empty orch 'default))
+   (cond ((slot-truly-filled orch 'default)
 	  (or-chunk-modify-height orch (Or-chunk-default orch))))
    orch)
 
@@ -226,7 +226,7 @@
    orch)
 
 (defun or-chunk-set-default-and-update (orch)
-	  (cond ((slot-is-empty orch 'default)
+	  (cond ((not (slot-truly-filled orch 'default))
 		 (setf (Or-chunk-default orch)
 		       (lastelt (Or-chunk-disjuncts orch)))))
 	  (or-chunk-set-update-basis orch))
@@ -700,10 +700,10 @@
 ;;; forward -- 
 ;;;;; <<<< Or-chunk/derive
 (defmethod derive ((orch Or-chunk))
-   (cond ((slot-is-empty orch 'disjuncts)
+   (cond ((not (slot-truly-filled orch 'disjuncts))
 	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
 		 orch))
-	 ((slot-is-empty orch 'default)
+	 ((not (slot-truly-filled orch 'default))
 	  (error "Deriving Or-chunk with no default disjunct: ~s"
 		  orch)))
    (let ((date nil))
@@ -788,8 +788,8 @@
 			    (cond (k (return k))))))))
 	    (create (exp)
 	       (let ((new-chunk (funcall creator exp)))
-		  (cond ((or (slot-is-empty new-chunk 'name)
-			     (not (Chunk-name new-chunk))
+		  (cond ((or (not (slot-truly-filled new-chunk 'name))
+;;;;			     (not (Chunk-name new-chunk))
 			     (cond ((equal (Chunk-name new-chunk)
 					   exp)
 				    false)
@@ -864,8 +864,12 @@
    (reduce #'max chunks :key #'Chunk-height :initial-value 0))
 
 (defun slot-is-empty (obj slot)
-   (or (not (slot-boundp obj slot))
-       (null (slot-value obj slot))))
+   (not (slot-truly-filled obj slot)))
+
+(defun slot-truly-filled (ob sl)
+   (and (slot-boundp ob sl)
+	(slot-value ob sl)))
+
 
 ;;; For debugging --
 (defun chunk-zap-dates (c)

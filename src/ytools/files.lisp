@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.16 2005/01/28 13:24:26 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.17 2005/01/31 14:00:40 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -104,18 +104,11 @@
 		:initarg :alt-version
 		:initform false)
    ;; - If not nil, the File-chunk for the alternative version.
-   ;; Perhaps the next three should be associated with this file's
+   ;; Perhaps the next two should be associated with this file's
    ;; Loaded-chunk, because they don't make sense for a data file.--
-
-   ;; Either :load-source (load source before compiling), or a list
-   ;; of sub-file-types (slurp them before compiling).  False means
-   ;; no self dependency.--
-   (self-compile-dep :accessor File-chunk-self-compile-dep
-		     :initform false)
    ;; Files that must be loaded when this one is --
    (callees :accessor File-chunk-callees
 	    :initform !())
-   ;; -- A list of pairs (file-chunk (-sub-file-types-))
    ;; Inverse of 'callees' --
    (callers :accessor File-chunk-callers
 	    :initform !())
@@ -131,13 +124,13 @@
 ;; These two methods ensure that 'callers' is the inverse of 'callees' --
 (defmethod (setf File-chunk-callees) :before (_ file-ch)
    (dolist (clee (File-chunk-callees file-ch))
-      (setf (File-chunk-callers (first clee))
-	    (remove file-ch (File-chunk-callers (first clee))))))
+      (setf (File-chunk-callers clee)
+	    (remove file-ch (File-chunk-callers clee)))))
 
 (defmethod (setf File-chunk-callees) :after (_ file-ch)
    (dolist (clee (File-chunk-callees file-ch))
-      (setf (File-chunk-callers (first clee))
-	    (adjoin file-ch (File-chunk-callers (first clee))))))
+      (setf (File-chunk-callers clee)
+	    (adjoin file-ch (File-chunk-callers clee)))))
 
 (defmethod derive ((fc File-chunk))
    (let ((v (File-chunk-alt-version fc)))
@@ -287,8 +280,7 @@
 ;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
 (defmethod derive :after ((lc Loadable-chunk))
-   (loaded-chunk-basis-set (Loadable-chunk-controllee lc))
-   (compiled-chunk-basis-set (Loadable-chunk-controllee lc)))
+   (loaded-chunk-basis-set (Loadable-chunk-controllee lc)))
 
 (defmacro end-header (&rest _)
    '(values))
@@ -298,8 +290,8 @@
 		(\\ (name)
 		  (let ((is-source (file-chunk-is-source file-chunk)))
 		     (let ((compiled-chunk
-			      (and is-source
-				   (place-compiled-chunk file-chunk))))
+			   (and is-source
+				(place-compiled-chunk file-chunk))))
 			(let ((new-lc
 				 (make-instance 'Loaded-chunk
 				    :name name
@@ -494,8 +486,7 @@
 			    (:object
 			     (Loaded-chunk-object loaded-ch)))
 			 (mapcar (\\ (callee)
-				    (place-loaded-chunk (first callee)
-							false))
+				    (place-loaded-chunk callee false))
 				 (File-chunk-callees file-ch))))))
       (let ((selection 
 	       (cond ((eq manip ':compile)
@@ -610,36 +601,6 @@
                                      to decide.~%"))))))))
   manip)
 
-(defun compiled-chunk-basis-set (loaded-ch)
-	  (let* ((file-ch (Loaded-chunk-file loaded-ch))
-		 (compiled-ch (place-compiled-chunk file-ch)))
-	     (setf (Chunk-basis compiled-ch)
-		   (list file-ch))
-	     (setf (Chunk-update-basis compiled-ch)
-		   !())
-	     (dolist (clee (File-chunk-callees file-ch))
-	        (let ((called-file-ch (first clee))
-		      (sub-file-types (second clee)))
-		   (dolist (sfty sub-file-types)
-		      (compiled-ch-sub-file-link
-		         compiled-ch called-file-ch sfty))))
-	     (let ((self-comp-dep
-		       (File-chunk-self-compile-dep file-ch)))
-		(cond ((eq self-comp-dep ':load-source)
-		       (pushnew (place-loaded-source-chunk file-ch)
-				(Chunk-update-basis compiled-ch)))
-		      (self-comp-dep
-		       ;; There are two 'pushnew's above and only
-		       ;; one here because a file's compiled
-		       ;; chunk already has its source in its
-		       ;; basis.  Here we add the requirement
-		       ;; that the sub-file-type actually be
-		       ;; loaded before we compile --
-		       (dolist (sub-file-type self-comp-dep)
-			  (pushnew (Sub-file-type-load-chunker
-				      sub-file-type)
-				   (Chunk-update-basis compiled-ch))))))))
-
 (defun place-compiled-chunk (source-file-chunk)
    (let ((filename (File-chunk-pathname source-file-chunk)))
       (let ((compiled-chunk
@@ -665,18 +626,6 @@
 			 new-chunk)))))
 	 compiled-chunk)))
 	    
-(defun compiled-ch-sub-file-link (compiled-ch callee-ch sub-file-type)
-      (pushnew (funcall
-		  (Sub-file-type-chunker sub-file-type)
-		  (File-chunk-pathname callee-ch))
-	       (Chunk-basis compiled-ch))
-      (pushnew (funcall
-		  (Sub-file-type-load-chunker
-		     sub-file-type)
-		  (File-chunk-pathname callee-ch))
-	       (Chunk-update-basis
-		    compiled-ch)))
-
 (defvar debuggability* 1)
 
 (defmethod derive ((cf-ch Compiled-file-chunk))
@@ -896,6 +845,89 @@
       (cond ((eq (Sub-file-type-name sfty) name)
 	     (return sfty)))))
 
+(defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
+;;;;   (format t "Setting up subfiles that ~s depends on...~%"
+;;;;	   compiled-ch)
+   (dolist (ssfty standard-sub-file-types*)
+;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
+;;;;	      (Sub-file-type-name ssfty)
+;;;;	      (File-chunk-pathname file-ch))
+      (pushnew (funcall
+		  (Sub-file-type-chunker ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-basis compiled-ch))
+      (pushnew (funcall
+		  (Sub-file-type-load-chunker
+		     ssfty)
+		  (File-chunk-pathname file-ch))
+	       (Chunk-update-basis
+		    compiled-ch))))
+
+(defvar fload-version-suffix* ':-new)
+
+(defmacro fload-versions (&rest specs)
+   (let ((olds (mapcar (lambda (x) 
+			  (cond ((consp x) (car x))
+				(t x)))
+		       specs))
+	 (news (mapcar (lambda (x)
+			  (cond ((consp x)
+                                 (cond ((null (cdr x))
+                                        (build-symbol
+					   (:< (car x))
+					   (:< fload-version-suffix*)))
+                                       ((or (is-String (cadr x))
+					    (is-Keyword (cadr x)))
+                                        (build-symbol
+					   (:< (car x)) (:< (cadr x))))
+                                       (t (cadr x))))
+				(t x)))
+		       specs)))
+      `(fload-versions-setup ',olds ',news)))
+
+(defun fload-versions-setup (olds news)
+   (multiple-value-bind (set-olds set-news reset-olds)
+                        (labels ((segregate (olds news)
+                                    (cond ((null news)
+                                           (values !() !() !()))
+                                          (t
+                                           (multiple-value-bind
+                                                   (so sn rso)
+                                                   (segregate (cdr olds)
+                                                              (cdr news))
+                                              (cond ((eq (car news) '-)
+                                                     (values so sn
+                                                             (cons (car olds)
+                                                                   rso)))
+                                                    ((eq (car news)
+							 (car olds))
+                                                     (values
+                                                        (cons (car olds) so)
+                                                        (cons (car news) sn)
+                                                        (cons (car olds) rso)))
+                                                    (t
+                                                     (values
+                                                        (cons (car olds) so)
+                                                        (cons (car news) sn)
+                                                        rso))))))))
+                            (segregate olds news))
+      (let ((changing-chunks !()))
+	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
+	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
+	     ((null oldl))
+	    (let ((fc (place-file-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     (place-file-chunk (car newl)))
+	       (on-list fc changing-chunks)))
+	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
+	     ((null oldl))
+	    (let ((fc (place-file-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     false)
+	       (on-list fc changing-chunks)))
+	 (chunks-update changing-chunks)
+	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
+
 (eval-when (:compile-toplevel :load-toplevel)
    (def-sub-file-type :macros)
 
@@ -1113,71 +1145,6 @@
 	       (memq (keyword-if-sym
 			(read *query-io* false false))
 		     '(:y :yes :t))))))				
-
-(defvar fload-version-suffix* ':-new)
-
-(defmacro fload-versions (&rest specs)
-   (let ((olds (mapcar (lambda (x) 
-			  (cond ((consp x) (car x))
-				(t x)))
-		       specs))
-	 (news (mapcar (lambda (x)
-			  (cond ((consp x)
-                                 (cond ((null (cdr x))
-                                        (build-symbol
-					   (:< (car x))
-					   (:< fload-version-suffix*)))
-                                       ((or (is-String (cadr x))
-					    (is-Keyword (cadr x)))
-                                        (build-symbol
-					   (:< (car x)) (:< (cadr x))))
-                                       (t (cadr x))))
-				(t x)))
-		       specs)))
-      `(fload-versions-setup ',olds ',news)))
-
-(defun fload-versions-setup (olds news)
-   (multiple-value-bind (set-olds set-news reset-olds)
-                        (labels ((segregate (olds news)
-                                    (cond ((null news)
-                                           (values !() !() !()))
-                                          (t
-                                           (multiple-value-bind
-                                                   (so sn rso)
-                                                   (segregate (cdr olds)
-                                                              (cdr news))
-                                              (cond ((eq (car news) '-)
-                                                     (values so sn
-                                                             (cons (car olds)
-                                                                   rso)))
-                                                    ((eq (car news)
-							 (car olds))
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        (cons (car olds) rso)))
-                                                    (t
-                                                     (values
-                                                        (cons (car olds) so)
-                                                        (cons (car news) sn)
-                                                        rso))))))))
-                            (segregate olds news))
-      (let ((changing-chunks !()))
-	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
-	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
-	     ((null oldl))
-	    (let ((fc (place-file-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
-		     (place-file-chunk (car newl)))
-	       (on-list fc changing-chunks)))
-	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
-	     ((null oldl))
-	    (let ((fc (place-file-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
-		     false)
-	       (on-list fc changing-chunks)))
-	 (chunks-update changing-chunks)
-	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 
 (defun slot-truly-filled (ob sl)
    (and (slot-boundp ob sl)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.9 2005/01/28 13:24:37 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.10 2005/01/31 14:00:41 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,13 +13,13 @@
 (defstruct (YT-module
 	      (:constructor make-YT-module
 			    (name contents
-			     &aux (rec false) (loaded false) (postponed !())))
+			     &aux (rec false) (loaded false)))
 	      (:predicate is-YT-module))
    name
    contents     
    expansion
-   rec    ; Load-progress-rec
-   loaded) 
+   chunk
+   loaded-chunk)
 
 ;;; An alist of <name, yt-module> pairs.
 (defvar ytools-modules* !())
@@ -62,7 +62,7 @@
 				 (on-list (list e) rs)
 				 (setq warn t))
 				((memq (car e) '(:run-support :contents))
-				 (on-list (cdr e) conts))
+				 (on-list (cdr e) run-support))
 				((memq (car e) '(:expansion :insert))
 				 (on-list (cdr e) expans))
 				(t
@@ -79,23 +79,6 @@
 	  (setf (YT-module-expansion mod) ',expansion)
 ;;;;	  (note-module-def-time mod)
 	  )))
-
-(def-ytools-pathname-control module
-   (defun :^ (operands _)
-      (let ((remainder (or (member-if (\\ (x) (not (module-name-sym x)))
-				      operands)
-			   !())))
-	 (cond ((not (null module-trace*))
-		(format *error-output*
-		    "Preparing to process modules ~s~%"
-		    (ldiff operands remainder))))
-	 (values (mapcar (\\ (rand)
-			    (make-Module-pseudo-pn
-			       :control 'module
-			       :module rand))
-			 (ldiff operands remainder))
-		 false
-		 remainder))))
 
 (defun place-YT-module (name)
    (val-or-initialize
@@ -115,13 +98,29 @@
 		   (setf (pathname-prop 'load-progress-rec pn)
 		         lpr)))
 	     (setq ytools-modules* (cons p ytools-modules*))))
-      (cadr p)))
 
-(defun find-YT-module (name)
-   (alref ytools-modules* name))
+(def-ytools-pathname-control module
+   (defun :^ (operands _)
+      (let ((remainder (or (member-if (\\ (x) (not (module-name-sym x)))
+				      operands)
+			   !())))
+	 (cond ((not (null module-trace*))
+		(format *error-output*
+		    "Preparing to process modules ~s~%"
+		    (ldiff operands remainder))))
+	 (values (mapcar (\\ (rand)
+			    (make-Module-pseudo-pn
+			       :control 'module
+			       :module rand))
+			 (ldiff operands remainder))
+		 false
+		 remainder))))
 
 (defvar loaded-ytools-modules* !())
 
+(defmethod pathname-fload ((yt-mod YT-module)
+			   &key force-load file-manip))
+   (
 
 
 (defvar module-now-loading* false)
@@ -201,6 +200,145 @@
 	 (t
 	  (error "~s does not designate a package"
 		 exporting-pkg-desig)))))
+
+(defun module-slurp (mpn _ howmuch)
+   (let ((modname (Module-pseudo-pn-module mpn)))
+      (let ((module (find-YT-module modname)))
+	 (cond (module
+		(let ((slurping-lprec*
+		         (YT-module-rec module)))
+		   (cond ((memq modname module-trace*)
+			  (format *error-output*
+			      "Considering slurping module ~s... ~%" modname)))
+		   (cond ((achieved-load-status
+			     slurping-lprec* ':slurped-all)
+			  (cond ((memq modname module-trace*)
+				 (format *error-output*
+				    "Module ~s already slurped~%" modname))))
+			 ((eq howmuch ':header-only)
+			  (cond ((memq modname module-trace*)
+				 (format *error-output*
+				    "Not looking inside module ~s for supporters"
+				    modname))))
+			 (t
+			  (setf (Load-progress-rec-run-time-depends-on
+				   slurping-lprec*)
+				!())
+			  (setf (Load-progress-rec-compile-time-depends-on
+				   slurping-lprec*)
+				!())
+			  (cond ((memq modname module-trace*)
+				 (format *error-output*
+				    "Slurping module ~s, ~% form = ~s"
+				    modname (YT-module-contents module))))
+			  (form-slurp (YT-module-contents module)
+				      (eq howmuch ':whole-file))
+;;;;			  (format t "Doing dependents of ~s~%"
+;;;;				  slurping-lprec*)
+			  ;; The following two forms were lifted from
+			  ;; 'lprec-compile'
+			  (dolist (rtsupp
+				      (Load-progress-rec-run-time-depends-on
+					 slurping-lprec*))
+			     (pathname-slurp rtsupp false ':at-least-header))
+			  (dolist (ctsupp
+				    (Load-progress-rec-compile-time-depends-on
+					 slurping-lprec*))
+			     (pathname-fload ctsupp false false false))
+			  (note-load-status slurping-lprec* ':slurped-all)))))
+	       (t
+		(error "Attempt to slurp non-module ~s"
+		       modname))))))
+
+(defun module-load (mod-pspn force-flag force-compile always-ask)
+                   (ignore always-ask)
+   (let ((modname (Module-pseudo-pn-module mod-pspn)))
+      (bind-fload-compile* (or force-compile fload-compile*)
+	 (ytools-module-load modname force-flag))))
+
+(defun module-compile (mod-pspn force-flag)
+   (let ((modname (Module-pseudo-pn-module mod-pspn)))
+      (bind-fload-compile* ':compile
+	 (ytools-module-load modname force-flag))))
+
+(defun module-expansion (mod-pspn)
+   (let ((modname (Module-pseudo-pn-module mod-pspn)))
+      (let ((mod (find-YT-module modname)))
+	 (cond (mod
+		(YT-module-expansion mod))
+	       (t
+		(error "Undefined YTools module ~s" modname))))))
+
+
+#|
+;;; Example: 
+(def-ytools-module nisp
+   (:run-support
+      (depends-on %ytools/ nilscompat)
+      (depends-on %module/ ydecl-kernel))
+   (:compile-support (depends-on %ydecl/ compnisp))
+   (:expansion
+       (self-compile-dep :macros)
+       (callees-get-nisp-type-slurp))
+   )
+
+(datafun scan-depends-on callees-get-nisp-type-slurp
+   (defun :^ (d sdo-state)
+      (setf (Sds-sub-file-types sdo-state)
+	    (adjoin nisp-type-slurp*
+		    (Sds-sub-file-types sdo-state)))))
+
+
+when scanning a sub-file for nisp types, the scan *dies* if you don't see
+(depends-on %module/ nisp) before the end of the header
+
+|#
+
+(defvar patch-files* '())
+
+(defun load-patch-file-spec (pf)
+       (let ((files (filespecs->pathnames (cdr pf))))
+	  (dolist (file files)
+	     (cond ((probe-file file)
+		    (pathname-fload file false false false))))))
+
+(defmacro load-patch-file (filename^ label^)
+   `(probe-and-load-patch-file ,filename^ ,label^))
+
+(defun probe-and-load-patch-file (name label)
+   (let ((pname (->pathname
+		    (concatenate 'string
+		        name "-"
+			(substitute #\- #\. label)))))
+      (let ((rname (or (get-pathname-with-suffixes pname object-suffixes*)
+		       (get-pathname-with-suffixes pname source-suffixes*))))
+	 (cond (rname
+		(lprec-load (place-load-progress-rec rname)
+			    false false false))))))
+
+(declaim (special final-load*))
+
+(defun note-patch-files (module-name files)
+   (let ((p (assq module-name patch-files*)))
+      (cond ((not p)
+	     (setf p (list module-name))
+	     (setf patch-files* (cons p patch-files*)))   )
+      (setf (cdr p) files)
+      (cond ((not final-load*)
+             (load-patch-file-spec p)))))
+
+(def-ytools-module ytools
+   (:run-support
+	 (eval-when (:execute :compile-toplevel :load-toplevel)
+	    (setq *readtable* ytools-readtable*))
+;;;;         #+allegro
+;;;;	 (depends-on :at-run-time %ytools/ prompthack)
+	 (depends-on %ytools/ multilet)
+	 (depends-on :at-run-time %ytools/ signal misc)
+	 (depends-on (:at :slurp-time :compile-time) %ytools/ setter)
+	 (depends-on :at-compile-time 
+		     %ytools/ object mapper)
+	 (note-patch-files 'all-ytools '(%ytools/ "ytools-patches.nsp"))))
 
 (defun pn-ur-version (pn)
    (or (pathname-source-version pn)

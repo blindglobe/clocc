@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.5 2005/01/31 14:00:40 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.1 2005/01/31 14:00:40 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -198,22 +198,23 @@
 ;;; 'fload'/'fcompl' should be able to decipher dependencies declared by
 ;;; some version of 'defsystem.'  That's where Loadable-chunks come in (qv).
 
-;;; A file as having the appropriate variant loaded into primary
+;;; An entity as (having the appropriate variant) loaded into primary
 ;;; memory --
 (defclass Loaded-chunk (Chunk)
-   (;; The File-chunk this one governs --
-    (file :accessor Loaded-chunk-file
-	  :initarg :file
-	  :type File-chunk)
+   (;; The entity this one governs --
+    (loadee :accessor Loaded-chunk-loadee
+	    :initarg :loadee)
     ;; The Loadable-chunk that controls the features of this one --
     (controller :accessor Loaded-chunk-controller
-		:initarg :controller)
-    ;; The variant currently selected, either a File-chunk, or
-    ;; a Loaded-chunk if we're indirecting through an alt-version --
-    (selection :accessor Loaded-chunk-selection
+		:initarg :controller)))
+
+(defclass Loaded-file-chunk (Loaded-chunk)
+   (;; The variant currently selected, either a File-chunk, or
+    ;; a Loaded-file-chunk if we're indirecting through an alt-version --
+    (selection :accessor Loaded-file-chunk-selection
 	  :initform false)
     ;; The criterion (supplied by user) for how to make the selection --
-    (manip :accessor Loaded-chunk-manip
+    (manip :accessor Loaded-file-chunk-manip
 	   :initarg :manip
 	   :type (member :compile :source :object
 			 :ask-once :ask-every :ask-ask :defer))
@@ -227,17 +228,17 @@
     ;;   :defer -> refer to value of fload-compile*;
     ;;   :follow -> replace 'manip' value with value of fload-compile*
 
-    (source :reader Loaded-chunk-source
+    (source :reader Loaded-file-chunk-source
 	    :initarg :source)
-    (compiled :reader Loaded-chunk-compiled
+    (compiled :reader Loaded-file-chunk-compiled
 	      :initarg :compiled)
-    (object :reader Loaded-chunk-object
+    (object :reader Loaded-file-chunk-object
 	    :initarg :object)))
 
 (defmethod initialize-instance :after ((lc Loaded-chunk )
 				       &key &allow-other-keys)
    (setf (Chunk-basis lc)
-         (list (Loaded-chunk-file lc))))
+         (list (Loaded-chunk-loadee lc))))
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
@@ -272,13 +273,12 @@
 (defvar all-loaded-chunks* !())
 
 (defmethod derive ((lc Loadable-chunk))
-   (error "No method supplied for figuring out what files ~s depends on"
-	  (File-chunk-pathname
-	     (Loaded-chunk-file 
-		(Loadable-chunk-controllee lc)))))
+   (error "No method supplied for figuring out what entities ~s depends on"
+	  (Loadable-chunk-controllee lc)))
 ;;; -- We must subclass Loadable-chunk to supply methods for figuring
 ;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
+This will go --
 (defmethod derive :after ((lc Loadable-chunk))
    (loaded-chunk-basis-set (Loadable-chunk-controllee lc))
 ;;;;   (compiled-chunk-basis-set (Loadable-chunk-controllee lc))
@@ -1051,6 +1051,11 @@
 
 (defvar loaded-files-to-be-monitored* ':global)
 
+;;; Replacement for 'monitor-file-basis':
+(defun 
+
+
+;;; Actually works with any "filoid."
 (defun monitor-file-basis (loaded-file-ch)
    (cond ((eq loaded-files-to-be-monitored* ':global)
 	  (let ((controllers (list (Loaded-chunk-controller loaded-file-ch)))

@@ -74,9 +74,12 @@
 		      (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
 		    (setf prev-line (copy-seq line)))
 		   (t
-		    ;; A continuation line!  Append the line to our buffer
-		    (setf prev-line (concatenate 'string prev-line
-						 (subseq line 6))))))))))))
+		    ;; A continuation line!  Append the line to our
+		    ;; buffer, stripping off leading spaces
+		    (setf prev-line
+			  (concatenate 'string prev-line
+				       (string-left-trim '(#\Space)
+							 (subseq line 6)))))))))))))
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)

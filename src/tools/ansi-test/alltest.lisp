@@ -1811,12 +1811,13 @@
   #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
 (check-for-bug :alltest-legacy-1758
-  (prin1-to-string double-float-epsilon )
-  #+xcl "1.387778780781446D-17"
-  #+(or clisp cmu sbcl sbcl) "1.1102230246251568d-16"
-  #+allegro "2.220446049250313d-16"
-  #+ecls "1.165734175856414d-16"
-  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
+  (let ((s (prin1-to-string double-float-epsilon)))
+    (or #+xcl (equal s "1.387778780781446D-17")
+        #+clisp (equal s "1.1107651257113995d-16") ; linux/i386
+        #+(or clisp cmu sbcl sbcl) (equal s "1.1102230246251568d-16")
+        #+allegro (or equal "2.220446049250313d-16")
+        #+ecls (or equal  "1.165734175856414d-16")))
+  t)
 
 (check-for-bug :alltest-legacy-1766
   (prin1-to-string long-float-epsilon )
@@ -1846,12 +1847,13 @@
   #-(or xcl clisp allegro cmu sbcl ecls) unknown)
 
 (check-for-bug :alltest-legacy-1793
-  (prin1-to-string double-float-negative-epsilon )
-  #+xcl "1.387778780781446D-17"
-  #+(or clisp cmu sbcl sbcl) "5.551115123125784d-17"
-  #+allegro "2.220446049250313d-16"
-  #+ecls "5.828670879282072d-17"
-  #-(or xcl clisp allegro cmu sbcl ecls) unknown)
+  (let ((s (prin1-to-string double-float-negative-epsilon)))
+    (or #+xcl (equal s "1.387778780781446D-17")
+        #+clisp (equal s "5.553825628556998d-17") ; linux/i386
+        #+(or clisp cmu sbcl sbcl) (equal s "5.551115123125784d-17")
+        #+allegro (equal s "2.220446049250313d-16")
+        #+ecls (equal s "5.828670879282072d-17")))
+  t)
 
 (check-for-bug :alltest-legacy-1801
   (prin1-to-string long-float-negative-epsilon )

@@ -57,6 +57,9 @@
 #+aclpc (defmacro rexpt (x y) `(realpart (expt ,x ,y)))
 #-aclpc (defmacro rexpt (x y) `(expt ,x ,y))
 
+(defvar *dummy_var* nil
+  "Used by f2cl for dummy return values")
+
 (defconstant %false% nil)
 (defconstant %true% t)
 

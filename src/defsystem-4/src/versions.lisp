@@ -141,10 +141,10 @@ L1 and L2 are assumed to be lists of numbers, strings or symbols."
   (flet ((test< (le1 le2)
 	   (typecase le1
 	     (number (and (numberp le2) (< le1 le2)))
-	     ((or string symbol) (and (or (stringp l2) (symbolp l2))
-				      (string-lessp le1 le2)))
+	     ((or string symbol) (and  (or (stringp le2) (symbolp le2))
+				       (string-lessp le1 le2)))
 	     ))
-	 (test>  (le1 le2)
+	 (test> (le1 le2)
 	   (typecase le1
 	     (number (and (numberp le2) (> le1 le2)))
 	     ((or string symbol) (and (or (stringp le2) (symbolp le2))

@@ -43,7 +43,7 @@
 					   :name system-name
 					   :type "asd"))))
     (dolist (pkg (user-package-list))
-      (when (string= asdf-path-string (namestring pkg))
+      (when (string= asdf-path-string (namestring (asdf::resolve-symlinks pkg)))
 	(return-from in-user-package t)))
     nil))
 
@@ -284,7 +284,10 @@
   (progn
     (push 'clc-require sb-ext:*module-provider-functions*)
     ;; Overcome the effect of mk-defsystem3's override of 'cl:require
-    (setf (symbol-function 'cl:require) *original-require-function*))
+    (if (symbol-function 'sb-ext:without-package-locks)
+	(sb-ext:without-package-locks
+	 (setf (symbol-function 'cl:require) *original-require-function*))
+	(setf (symbol-function 'cl:require) *original-require-function*)))
   )
 
 

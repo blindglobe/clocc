@@ -34,7 +34,7 @@ registers a Common Lisp package to the Common Lisp Controller system.
 EOF
     exit 1
 fi
-asdf_file=$(realpath "$1" 2>/dev/null || true)
+asdf_file=$(realpath -s "$1" 2>/dev/null || true)
 
 
 if [ ! -f "$asdf_file" ] ; then

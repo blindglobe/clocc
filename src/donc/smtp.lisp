@@ -1031,7 +1031,7 @@ has been an helo/ehlo since they were last set
 (defun temp-mail-location (user) ;; *** temp mail files are written here
   ;; wherever this returns, the user should be
   ;; able to delete his own files from there
-  (declare (ignore user))
+  (declare (ignorable user))
   ;; you might want this in the user's directory or ...
   (if (equal user "root")
       (format nil "/tmp/mail") ;; need a file the user can delete

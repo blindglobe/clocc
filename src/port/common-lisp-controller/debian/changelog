@@ -1,3 +1,9 @@
+common-lisp-controller (3.74) unstable; urgency=low
+
+  * Fix caching logic for loading user-packages.db
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 17 Aug 2003 13:52:26 -0600
+
 common-lisp-controller (3.73) unstable; urgency=low
 
   * Move confmodule call in postinst to see if that helps with postrm's

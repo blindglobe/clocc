@@ -478,7 +478,7 @@
 (my-assert
  (set-difference
   (loop for symbol being
-    the external-symbol
+    the external-symbols
     of *the-cl-package*
     collect symbol)
   *allowed-exported-symbols*
@@ -492,7 +492,7 @@ from the :cl package")
  (set-difference
   *allowed-exported-symbols*
   (loop for symbol being
-    the external-symbol
+    the external-symbols
     of *the-cl-package*
     collect symbol)
   :test #'string-equal)

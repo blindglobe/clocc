@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.14 2003/03/12 18:06:04 sds Exp $
+;;; $Id: proc.lisp,v 1.15 2003/05/16 16:07:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -76,7 +76,8 @@
       Genera
       LispWorks
       (and Lucid multitasking)
-      MCL)
+      MCL
+      scl)
 
 (eval-when (compile load eval)
   (pushnew :threads *features*))
@@ -109,6 +110,7 @@ multiple processes in a single address space.")
                     (return-from process-wrapper
                       (apply function args))))))
           (ccl:process-run-function name #'process-wrapper))
+  #+scl (thread:thread-create (lambda () (apply function args)) :name name)
   #-threads
   (error 'not-implemented :proc (list 'make-process name function args)))
 
@@ -142,6 +144,7 @@ multiple processes in a single address space.")
                          (symbol-function predicate)
                          predicate)
                      args)
+  #+scl FIXME
   #-threads
   (error 'not-implemented :proc (list 'process-wait whostate predicate args)))
 
@@ -162,6 +165,7 @@ whichever comes first."
   #+MCL (apply #'ccl:process-wait-with-timeout whostate (* timeout 60)
                (if (symbolp predicate) (symbol-function predicate) predicate)
                args)
+  #+scl FIXME
   #-threads
   (error 'not-implemented :proc (list 'process-wait-with-timeout timeout
                                       whostate predicate args)))
@@ -221,6 +225,7 @@ and evaluate TIMEOUT-FORMS."
   #+LispWorks  `(mp:without-interrupts ,@body)
   #+Lucid      `(lcl:with-scheduling-inhibited ,@body)
   #+MCL        `(ccl:without-interrupts ,@body)
+  #+scl FIXME
   #-threads    `(progn ,@body))
 
 (defun process-yield ()
@@ -232,7 +237,9 @@ and allows other processes to run."
   #+Genera     (scl:process-allow-schedule)
   #+LispWorks  (mp:process-allow-scheduling)
   #+Lucid      (lcl:process-allow-schedule)
-  #+MCL        (ccl:process-yield)
+  #+(and MCL (not openmcl)) (ccl:process-yield)
+  #+openmcl    (ccl:process-allow-schedule)
+  #+scl FIXME
   #-threads    (error 'not-implemented :proc (list 'process-yield)))
 
 (defun kill-process (process)
@@ -244,6 +251,7 @@ and allows other processes to run."
   #+LispWorks  (mp:process-kill process)
   #+Lucid      (lcl:kill-process process)
   #+MCL        (ccl:process-kill process)
+  #+scl        (thread:destroy-thread process)
   #-threads    (error 'not-implemented :proc (list 'kill-process process)))
 
 (defun interrupt-process (process function &rest args)
@@ -255,6 +263,8 @@ and allows other processes to run."
   #+LispWorks (apply #'mp:process-interrupt process function args)
   #+Lucid     (apply #'lcl:interrupt-process process function args)
   #+MCL       (apply #'ccl:process-interrupt process function args)
+  #+scl       (thread:thread-interrupt process
+                                       (lambda () (apply function args)))
   #-threads   (error 'not-implemented :proc (list 'interrupt-process process
                                                   function args)))
 
@@ -270,6 +280,7 @@ and reapply its initial function to its arguments."
   ;; CCL:RESTART-PROCESS appears to flush the process in
   ;; MCL 3.0, so we have to roll our own.
   #+MCL (interrupt-process process (lambda () (throw 'restart-process nil)))
+  #+scl        FIXME
   #-threads (error 'not-implemented :proc (list 'restart-process process)))
 
 (defun process-p (object)
@@ -281,6 +292,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:process-p object)
   #+Lucid      (lcl:processp object)
   #+MCL        (ccl::processp object)
+  #+scl        (typep object 'thread:thread)
   #-threads    (error 'not-implemented :proc (list 'process-p object)))
 
 (defun process-name (process)
@@ -292,6 +304,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:process-name process)
   #+Lucid      (lcl:process-name process)
   #+MCL        (ccl:process-name process)
+  #+scl        (thread:thread-name process)
   #-threads    (error 'not-implemented :proc (list 'process-name process)))
 
 (defun process-active-p (process)
@@ -304,6 +317,11 @@ and reapply its initial function to its arguments."
                     (not (mp:process-arrest-reasons process)))
   #+Lucid      (lcl:process-active-p process)
   #+MCL        (ccl:process-active-p process)
+  #+scl        (let (activep)
+                 (thread::map-over-threads
+                  (lambda (thread)
+                    (when (eq thread process) (setq activep t))))
+                 activep)
   #-threads    (error 'not-implemented :proc (list 'process-active-p process)))
 
 (defun process-whostate (process)
@@ -315,6 +333,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:process-whostate process)
   #+Lucid      (lcl:process-whostate process)
   #+MCL        (ccl:process-whostate process)
+  #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'process-whostate process)))
 
 (defun process-state (process)
@@ -325,7 +344,9 @@ and reapply its initial function to its arguments."
   #+Genera     (process:process-state process)
   #+LispWorks  (mp:process-state process)
   #+Lucid      (lcl:process-state process)
-  #+MCL        (ccl:process-state process)
+  #+(and MCL (not openmcl)) (ccl:process-state process)
+  #+openmcl    (ccl:process-run-reasons process)
+  #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'process-state process)))
 
 (defun current-process ()
@@ -337,6 +358,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  mp:*current-process*
   #+Lucid      lcl:*current-process*
   #+MCL        ccl:*current-process*
+  #+scl        thread::*thread*
   #-threads    (error 'not-implemented :proc (list 'current-process)))
 
 (defun all-processes ()
@@ -348,6 +370,11 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:list-all-processes)
   #+Lucid      lcl:*all-processes*
   #+MCL        ccl:*all-processes*
+  #+scl        (let (threads)
+                 (thread:map-over-threads
+                  (lambda (thread)
+                    (push thread threads)))
+                 threads)
   #-threads    (error 'not-implemented :proc (list 'all-processes)))
 
 (defun show-processes (&key (stream *standard-output*))
@@ -356,7 +383,8 @@ and reapply its initial function to its arguments."
              (fresh-line stream)
              (si:com-show-processes :output-destination
                                     (list (si:follow-syn-stream stream))))
-  #-Genera
+  #+scl (let ((*standard-output* stream)) (thread:show-threads))
+  #-(or Genera scl)
   (let ((info '()))
     (dolist (process (all-processes))
       (flet ((get-value (accessor)
@@ -402,6 +430,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:make-lock :name name)
   #+Lucid      FIXME
   #+MCL        (ccl:make-process-queue name)
+  #+scl        (thread:make-lock name)
   #-threads    (error 'not-implemented :proc (list 'make-lock name)))
 
 (defun get-lock (lock)
@@ -413,6 +442,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:claim-lock lock)
   #+Lucid      (lcl:process-lock lock)
   #+MCL        (ccl:process-enqueue lock)
+  #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'get-lock lock)))
 
 (defun giveup-lock (lock)
@@ -424,6 +454,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  (mp:release-lock lock)
   #+Lucid      (lcl:process-unlock lock)
   #+MCL        (ccl:process-dequeue lock)
+  #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'giveup-lock lock)))
 
 (defmacro with-lock ((lock) &rest body)
@@ -436,6 +467,7 @@ and reapply its initial function to its arguments."
   #+LispWorks  `(mp:with-lock (,lock) ,@body)
   #+Lucid      `(lcl:with-process-lock (,lock) ,@body)
   #+MCL        `(ccl:with-process-enqueued (,lock) ,@body)
+  #+scl        `(thread:with-lock-held (,lock) ,@body)
   #-threads    `(progn ,@body))
 
 (provide :port-proc)

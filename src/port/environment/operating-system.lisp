@@ -2,7 +2,7 @@
 
 ;;; operating-system.lisp --
 ;;;
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -23,7 +23,7 @@
 ;;; NOTE: the tag must match the class name. See FIND-OS-CLASS below
 ;;; for an explanation.
 
-(defclass unix (operating-system)
+(defclass Unix (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT Unix Operating System Class.")
   (:default-initargs :type "UNIX" :version "" :feature-tag :unix))
@@ -59,7 +59,13 @@
 (defclass Mac-OS (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT MacOS Operating System Class.")
-  (:default-initargs :type "MacOS" :version "8.x" :feature-tag :mac-os))
+  (:default-initargs :type "MacOS" :version "9.x" :feature-tag :mac-os))
+
+(defclass Mac-OS-X (mac-os unix)
+  ()
+  (:documentation "The CL.ENVIRONMENT MacOS X Operating System Class.")
+  (:default-initargs :type "MacOS-X" :version "10.x" :feature-tag :mac-os-x))
+
 
 (defclass Genera (operating-system)
   ()

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-03-20 Sat 17:43:17 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-04-05 Mon 14:16:31 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.33 1999/03/20 22:43:30 sds Exp $
+;;; $Id: date.lisp,v 1.34 1999/04/05 18:17:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.34  1999/04/05 18:17:02  sds
+;;; Added `date-next-year', `date-next-month', `date-next-all'.
+;;;
 ;;; Revision 1.33  1999/03/20 22:43:30  sds
 ;;; Added `+unix-epoch+' and `unix-date'.
 ;;;
@@ -474,7 +477,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (- (date-dd d1) (date-dd d0)))
 
 (defun tomorrow (&optional (dd (today)) (skip 1))
-  "Return the next day.
+  "Return the next day in a new date structure.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd) (type days-t skip) (values date))
@@ -484,6 +487,24 @@ I.e., (tomorrow (today) -1) is yesterday."
   "Return the previous day.  Calls tomorrow."
   (declare (type date dd) (type days-t skip) (values date))
   (tomorrow dd (- skip)))
+
+(defun date-next-year (dd &optional (skip 1))
+  "Increment (destructively) the year."
+  (declare (type date dd) (type days-t skip))
+  (incf (date-ye dd) skip) dd)
+
+(defun date-next-month (dd &optional (skip 1))
+  "Increment (destructively) the month."
+  (declare (type date dd) (type days-t skip))
+  (multiple-value-bind (iy im) (floor (+ -1 skip (date-mo dd)) 12)
+    (incf (date-ye dd) iy)
+    (setf (date-mo dd) (1+ im))
+    dd))
+
+(defun date-next-all (dd &optional (skip 1))
+  "Increment (non-destructively) year, month and day."
+  (declare (type date dd) (type days-t skip))
+  (date-next-year (date-next-month (tomorrow dd skip) skip) skip))
 
 (defun date-in-list (dt lst &optional (key #'date) last)
   "Return the tail of LST starting with DT.

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.13 2000/11/20 17:41:47 sds Exp $
+;;; $Id: gq.lisp,v 2.14 2001/01/04 16:17:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -588,7 +588,8 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 ;;;###autoload
 (defun update-quotes (&key (plot nil plotp) server debug
                       (log #+(or win32 mswindows) *gq-log*
-                           #-(or win32 mswindows) nil))
+                           #-(or win32 mswindows) nil)
+                      (hist-file *hist-data-file*))
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes.
@@ -596,7 +597,7 @@ See `*get-quote-url-list*' for available SERVERs.
 If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
   (let ((*print-log* (if debug *print-log* (mk-arr 'symbol nil 0)))
         (*gq-error-stream* (if debug *gq-error-stream* nil)))
-    (setf (values *holdings* *history*) (read-data-file *hist-data-file*))
+    (setf (values *holdings* *history*) (read-data-file hist-file))
     (unless (eq plot t)
       (multiple-value-bind (srv res hhh yea)
           (apply #'get-quotes server (mapcar #'pfl-tick *holdings*))
@@ -608,7 +609,7 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
           (top-bottom-fl *history* :val #'hist-totl :label #'hist-date
                          :out out)
           (when (or fixed new)
-            (save-data *hist-data-file* *holdings* *history*)
+            (save-data hist-file *holdings* *history*)
             (unless plotp (setq plot t)))
           (when log (close out) (format t "Wrote log to ~s~%" log))))))
   (when plot (plot-portfolio *holdings* *history* :plot)))

@@ -1,12 +1,10 @@
-;;; File: <inspect.lisp - 2000-03-09 Thu 14:08:14 Eastern Standard Time sds@ksp.com>
-;;;
 ;;; Inspect
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.4 2000/03/15 00:57:40 sds Exp $
+;;; $Id: inspect.lisp,v 1.5 2000/03/15 18:40:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,9 +37,8 @@
 (defvar *inspect-print-length* 10) ; default for `*print-length*'
 (defvar *inspect-length* 5)     ; the number of sequence elements to print
 
-(defvar *inspect-count*) ; the number of `inspection' objects in this session
 ;; all `inspection' objects in this session
-(defparameter *inspect-hash* (make-hash-table))
+(defparameter *inspect-all* (make-array 10 :fill-pointer 0 :adjustable t))
 (defparameter *inspect-debug* 0) ; debug level
 
 ;;;
@@ -50,7 +47,7 @@
 
 (defstruct (inspection (:conc-name insp-))
   self
-  (id (incf *inspect-count*) :type fixnum)
+  (id (fill-pointer *inspect-all*) :type fixnum)
   (title "" :type string)
   (blurb nil :type list)
   (up nil :type (or null inspection))
@@ -59,10 +56,14 @@
   (nth-slot nil :type (or null (function (integer) (t t)))) ; value & name
   (set-slot nil :type (or null (function (integer t) t))))
 
-(defun insp-last-slot (insp) (1- (insp-num-slots insp)))
-(defun insp-left-p (insp)
-  (let ((pos (insp-pos insp))) (and pos (< 0 pos))))
-(defun insp-right-p (insp)
+(defun insp-last-slot (insp)
+  (1- (insp-num-slots insp)))
+(defun insp-num-slots-print (insp)
+  (min (insp-last-slot insp) *inspect-length*))
+(defun insp-left-p (insp) ; check for the presence of a left neighbor
+  (let ((pos (insp-pos insp)) (up (insp-up insp)))
+    (and pos up (< 0 pos))))
+(defun insp-right-p (insp) ; check for the presence of a right neighbor
   (let ((pos (insp-pos insp)) (up (insp-up insp)))
     (and pos up (< pos (insp-last-slot up)))))
 
@@ -192,19 +193,32 @@
     (apply #'make-inspection :self obj :title "atom"
            :blurb (list (format nil "type: ~s" (type-of obj))
                         (format nil "class: ~s" (class-of obj))) opts))
-  (:method :around ((obj t) &rest opts)
-    (declare (ignore opts))
-    (let ((insp (call-next-method)))
-      (setf (gethash (insp-id insp) *inspect-hash*) insp))))
+  (:method :around ((obj t) &rest opts &key id &allow-other-keys)
+    (or (and (not id) (find obj *inspect-all* :key #'insp-self))
+        (let ((insp (call-next-method)))
+          (when (> *inspect-debug* 0)
+            (format t "~s [id: ~:d, forced: ~s]: ~s~%" 'inspect-backend
+                    (insp-id insp) id (insp-self insp)))
+          (if id (setf (aref *inspect-all* id) insp)
+              (vector-push-extend insp *inspect-all*))
+          insp))))
 
 (defun get-insp (id-or-insp com)
   "Get the INSPECTION object from the ID (or inspection object) and COMmand."
   (let ((insp (etypecase id-or-insp
                 (inspection id-or-insp)
-                (fixnum (gethash id-or-insp *inspect-hash*)))))
+                (fixnum (aref *inspect-all* id-or-insp)))))
+    (unless (eq insp (aref *inspect-all* (insp-id insp)))
+      (error "~s: ~s is corrupted (~d->~d):~%~s~%~s~%"
+             'get-insp '*inspect-all* (insp-id insp)
+             (insp-id (aref *inspect-all* (insp-id insp))) insp
+             (aref *inspect-all* (insp-id insp))))
     (when insp
       (case com
-        (:s insp) (:q :q)
+        (:q :q)
+        (:s ;; re-inspect Self
+         (inspect-backend (insp-self insp) :up (insp-up insp)
+                          :pos (insp-pos insp) :id (insp-id insp)))
         (:u (insp-up insp))
         (:l (when (insp-pos insp)
               (get-insp (insp-up insp) (1- (insp-pos insp)))))
@@ -226,7 +240,9 @@
     (error "~s: unknown inspect front end: ~s" 'inspect-frontend frontend)))
 (defgeneric inspect-finalize (frontend)
   (:method ((frontend t))
-    (clrhash *inspect-hash*)))
+    (dotimes (ii (length *inspect-all*))
+      (setf (aref *inspect-all* ii) nil))
+    (setf (fill-pointer *inspect-all*) 0)))
 
 ;;;
 ;;; TTY frontend
@@ -238,8 +254,7 @@
   (format out "~s:  ~a~%~{ ~a~%~}" (insp-self insp) (insp-title insp)
           (insp-blurb insp))
   (when (insp-nth-slot insp)
-    (loop :for ii :from 0 :to (min (1- (insp-num-slots insp))
-                                   *inspect-print-length*)
+    (loop :for ii :from 0 :to (insp-num-slots-print insp)
           :do (multiple-value-bind (val name) (funcall (insp-nth-slot insp) ii)
                 (format out "~d~@[ [~a]~]:  ~s~%" ii name val)))))
 
@@ -315,8 +330,7 @@
         (with-tag (:pre) (write (insp-self insp) :stream out)))
       (when (insp-nth-slot insp)
         (with-tag (:ol)
-          (loop :for ii :from 0 :to (min (1- (insp-num-slots insp))
-                                         *inspect-print-length*)
+          (loop :for ii :from 0 :to (insp-num-slots-print insp)
                 :do (multiple-value-bind (val name)
                         (funcall (insp-nth-slot insp) ii)
                       (with-tag (:li)
@@ -396,8 +410,8 @@
         #-clisp (*print-lines* *inspect-print-lines*)
         (*print-level* *inspect-print-level*)
         (*print-length* *inspect-print-length*)
-        (*package* (make-package (gensym))) ; for `read'
-        (*inspect-frontend* frontend) (*inspect-count* -1))
+        (*package* (make-package (gensym "INSPECT-TNP-PACKAGE-"))) ; for `read'
+        (*inspect-frontend* frontend))
     (unwind-protect
          (inspect-frontend (inspect-backend object) frontend)
       (inspect-finalize frontend)

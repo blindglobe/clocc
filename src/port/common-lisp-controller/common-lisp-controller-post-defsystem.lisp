@@ -3,8 +3,10 @@
 ;; Make specialized operator to load only binary files
 ;; Signal error if a binary component is missing
 (in-package :asdf)
+
 (defclass load-only-compiled-op (operation) ())
 (export 'load-only-compiled-op 'asdf)
+
 (defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
   (list (compile-file-pathname (component-pathname c))))
 

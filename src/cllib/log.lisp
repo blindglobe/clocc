@@ -4,19 +4,22 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.17 2004/03/19 16:14:30 sds Exp $
+;;; $Id: log.lisp,v 1.18 2004/09/09 16:08:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-type', `dfloat'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `linear'
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; `pr-secs'
   (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla")))
 
 (in-package :cllib)
 
-(export '(get-float-time elapsed with-timing *print-log* mesg list-format))
+(export '(get-float-time elapsed time-diff with-timing eta
+          *print-log* mesg list-format))
 
 ;;;
 ;;;
@@ -38,14 +41,17 @@ Taken from CLtL2 p602."
   "Return the run (or real) time counter, as a double float."
   (dfloat (if run (get-internal-run-time) (get-internal-real-time))))
 
+(defun time-diff (end beg)
+  "Compute the time (in seconds) between the two given internal timestamps."
+  (with-type double-float
+    (/ (- end beg) (dfloat internal-time-units-per-second))))
+
 (defun elapsed (bt run &optional fmt)
   "Return the time in seconds elapsed since BT,
 previously set using `get-float-time'.
 If FMT is non-NIL, return the corresponding string too."
   (declare (type (double-float 0d0) bt))
-  (let ((nn (with-type double-float
-              (/ (- (get-float-time run) bt)
-                 (dfloat internal-time-units-per-second)))))
+  (let ((nn (time-diff (get-float-time run) bt)))
     (declare (double-float nn))
     (if fmt (values nn (format nil "~/pr-secs/" nn)) nn)))
 
@@ -75,12 +81,34 @@ This has to be a macro to avoid needless evaluating the args."
                              (count nil) (units "bytes")
                              (type t) (out '*standard-output*))
                        &body body)
-  "Evaluate the body, then print the timing."
-  (with-gensyms ("TIMING-" bt bt1 %out el)
-    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)) ,el
-           (,%out (and (print-log-p ,type) ,out))
-           ,@(when count `((,count 0))))
-      (unwind-protect (progn ,@body)
+  "Evaluate the body, then print the timing.
+Within the body you can call a local function ETA of one argument -
+the current relative position which returns 2 values:
+the expected remaining run and real times."
+  (with-gensyms ("TIMING-" bt bt1 %out el last-pos last-time last-time1)
+    `(let* ((,bt (get-float-time)) (,bt1 (get-float-time nil)) ,el
+            (,%out (and (print-log-p ,type) ,out))
+            (,last-time ,bt) (,last-time1 ,bt1) (,last-pos 0)
+            ,@(when count `((,count 0))))
+      (unwind-protect
+           (flet ((eta (pos) ; pos is the current relative position
+                    (if (zerop pos) (values 0 0)
+                      (let* ((now (get-float-time)) (now1 (get-float-time nil))
+                             (lt ,last-time) (lt1 ,last-time1)
+                             (eta (linear 0 ,bt pos now 1))
+                             (eta1 (linear 0 ,bt1 pos now1 1)))
+                        (setq ,last-time now ,last-time1 now1)
+                        (if (= ,last-pos pos)
+                          (values (- eta now) (- eta1 now1))
+                          (let ((lp ,last-pos))
+                            (setq ,last-pos pos)
+                            (values
+                             (time-diff
+                              (/ (+ eta (linear lp lt pos now 1)) 2) ,bt)
+                             (time-diff
+                              (/ (+ eta1 (linear lp lt1 pos now1 1)) 2)
+                              ,bt1))))))))
+             ,@body)
         (when ,%out
           (when ,done (princ "done" ,%out))
           (when (or ,run ',count) (setq ,el (elapsed ,bt t)))

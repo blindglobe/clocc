@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.9 2002/11/30 22:44:21 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.10 2004/02/26 19:50:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -27,7 +27,7 @@
 (in-package :cllib)
 
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
-          #+(or win32 mswindows) *gnuplot-path-console*
+          *gnuplot-file*
           plot-output +plot-term-screen+ +plot-term-printer+ +plot-term-file+
           plot-term make-plot-term
           +plot-timestamp+ directive-term make-plot-stream
@@ -41,25 +41,19 @@
 (defcustom *plot-default-backend* symbol :gnuplot
   "The default plot backend designator.")
 (defcustom *gnuplot-path* simple-string
-  #+(or win32 mswindows)
-  "c:/gnu/gp371w32/wgnupl32.exe"
-  ;; "c:/bin/gnuplot/wgnuplot.exe"
+  #+(or win32 mswindows) "d:/gnu/gp373w32/pgnuplot.exe"
   #+unix "gnuplot"
   "*The path to the graphics-capable gnuplot executable.
 This must be either a full path or a name of an executable in your PATH.")
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
   "*The gnuplot epoch - 2000-1-1.")
-#+(or win32 mswindows)
-(defcustom *gnuplot-path-console* simple-string "c:/gnu/gp371w32/pgnuplot.exe"
-  "*The path to the console gnuplot executable.")
 (eval-when (compile load eval)  ; CMUCL
 (defcustom *gnuplot-printer* simple-string
   (format nil
-          #+(or win32 mswindows) "\\\\server1\\~a"
+          #+(or win32 mswindows) "//SEATTLE/4th Floor N Color"
           #+unix "|lpr -h~@[ -P~a~]"
           (getenv "SDSPRT"))
   "*The printer to print the plots."))
-#+unix
 (defcustom *gnuplot-stream* (or null stream) nil
   "The current gnuplot output stream.")
 (eval-when (compile load eval)  ; CMUCL
@@ -182,6 +176,7 @@ according to the given backend")
   (tics t :type boolean)
   (fmt "%g" :type string)
   (time-p nil :type boolean)
+  (logscale nil :type (or null (eq t) (real (1))))
   (range nil :type (or null cons)))
 
 (defstruct (plot-spec (:conc-name plsp-))
@@ -212,17 +207,22 @@ according to the given backend")
 
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable backend))
-  (format out "set format ~a \"~a\"~%" (plax-name pa) (plax-fmt pa))
-  (format out "set ~alabel \"~a\"~%" (plax-name pa) (plax-label pa))
-  (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-name pa))
-  (if (plax-time-p pa)
-      (format out "set timefmt \"~a\"~%set ~adata time~%"
-              (plax-fmt pa) (plax-name pa))
-      (format out "set ~adata~%" (plax-name pa)))
-  (let ((range (plax-range pa)))
-    (when range
-      (format out "set ~arange [~a:~a]~%" (plax-name pa)
-              (%plotout (car range)) (%plotout (cdr range))))))
+  (let ((name (plax-name pa)))
+    (format out "set format ~a \"~a\"~%" name (plax-fmt pa))
+    (format out "set ~alabel \"~a\"~%" name (plax-label pa))
+    (format out "set ~:[no~;~]~atics~%" (plax-tics pa) name)
+    (if (plax-time-p pa)
+        (format out "set timefmt \"~a\"~%set ~adata time~%" (plax-fmt pa) name)
+        (format out "set ~adata~%" name))
+    (let ((logscale (plax-logscale pa)))
+      (if logscale
+          (format out "set logscale ~a~@[ ~f~]~%" name
+                  (unless (eq logscale t) logscale))
+          (format out "set nologscale ~a~%" name)))
+    (let ((range (plax-range pa)))
+      (when range
+        (format out "set ~arange [~a:~a]~%" name
+                (%plotout (car range)) (%plotout (cdr range)))))))
 
 (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
   (plot-output (plsp-term ps) out backend)
@@ -249,14 +249,15 @@ according to the given backend")
                   (xlabel "x") (ylabel "y")
                   (data-style :lines) (border t)
                   timefmt xb xe (title "plot") legend
-                  (xtics t) (ytics t) grid
+                  (xtics t) (ytics t) grid xlogscale ylogscale
                   (xfmt (or timefmt "%g")) (yfmt "%g"))
   (make-plot-spec
    :data data :term (directive-term plot) :data-style data-style
    :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
                            :range (when (and xb xe) (cons xb xe))
-                           :time-p (not (null timefmt)))
-   :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt)
+                           :logscale xlogscale :time-p (not (null timefmt)))
+   :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
+                           :logscale ylogscale)
    :grid grid :legend legend :title title :border border))
 
 (defgeneric make-plot-stream (directive)
@@ -267,15 +268,9 @@ according to the given backend")
   (:method ((directive stream)) directive)
   (:method ((directive (eql :file))) (make-plot-stream *gnuplot-file*))
   (:method ((directive (eql :wait))) (make-plot-stream :plot))
-  (:method ((directive string)) (open directive :direction :output))
-  (:method ((directive pathname)) (open directive :direction :output))
-  #+(or win32 mswindows)
-  (:method ((directive (eql :print))) (pipe-output *gnuplot-path-console*))
-  #+(or win32 mswindows)
-  (:method ((directive (eql :plot))) (make-plot-stream *gnuplot-file*))
-  #+unix
+  (:method ((directive string)) (make-plot-stream :plot))
+  (:method ((directive pathname)) (make-plot-stream :plot))
   (:method ((directive (eql :print))) (make-plot-stream :plot))
-  #+unix
   (:method ((directive (eql :plot)))
     (setq *gnuplot-stream*
           (or (if (and *gnuplot-stream* (open-stream-p *gnuplot-stream*))
@@ -308,28 +303,14 @@ Should not be called directly but only through `with-plot-stream'."
         (mesg :plot *gnuplot-msg-stream*
               "~&wrote plot commands to ~s~%" plot))
       (ecase plot
-        #+(or win32 mswindows)
-        ((t :plot)
-         (close plot-stream)
-         (mesg :plot *gnuplot-msg-stream* "~&Starting gnuplot...")
-         (close-pipe (pipe-output *gnuplot-path* "/noend" plot-file))
-         (mesg :plot *gnuplot-msg-stream* "done.~%"))
-        #+unix
         ((t :plot) (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%"))
-        #+(or win32 mswindows)
-        (:wait
-         (mesg :plot *gnuplot-msg-stream*
-               "~&Waiting for gnuplot to terminate...")
-         (mesg :plot *gnuplot-msg-stream* "gnuplot returned ~a.~%"
-               (run-prog *gnuplot-path* :args (list "/noend" plot-file))))
-        #+unix
         (:wait
          (fresh-line *terminal-io*)
          (princ "Press <enter> to continue..." *terminal-io*)
          (force-output *terminal-io*) (read-line *terminal-io* nil nil))
         (:print (mesg :plot *gnuplot-msg-stream*
                       "~&Sent the plot to `~a'.~%" *gnuplot-printer*)
-                #+unix (format plot-stream "set output~%"))
+                (format plot-stream "set output~%"))
         (:file
          (close plot-stream)
          (mesg :plot *gnuplot-msg-stream*

@@ -1,3 +1,11 @@
+common-lisp-controller (3.26) unstable; urgency=low
+
+  * NMU
+  * Call asdf::resolves-symlinks so that truename as far as ASDF thinks is
+    the same as CLC's.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 20 Sep 2002 16:29:13 -0600
+
 common-lisp-controller (3.25) unstable; urgency=low
 
   * NMU

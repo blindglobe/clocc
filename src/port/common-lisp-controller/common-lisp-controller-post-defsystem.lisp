@@ -93,14 +93,15 @@ than the maximum file-write-date of output-files, return T."
     (if (beneath-source-root? c)
 	(mapcar #'(lambda (y)
 		    (merge-pathnames 
-		     (enough-namestring y *source-root*) *fasl-root*))
+		     (enough-namestring y (asdf::resolve-symlinks *source-root*))
+		     (asdf::resolve-symlinks *fasl-root*)))
 		orig)
       orig)))
 
 
 (defun beneath-source-root? (c)
   "Returns T if component's directory below *source-root*"
-  (let ((root-dir (pathname-directory *source-root*)))
+  (let ((root-dir (pathname-directory (asdf::resolve-symlinks *source-root*))))
     (and c
 	 (equalp root-dir
 		 (subseq (pathname-directory (asdf:component-pathname c))
@@ -110,14 +111,13 @@ than the maximum file-write-date of output-files, return T."
 (defun system-in-source-root? (c)
   "Returns T if component's directory is the same as *source-root* + component's name"
   (and c
-       (equalp (pathname-directory
-		(asdf:component-pathname c))
-	       (pathname-directory
-		(merge-pathnames
-		 (make-pathname
-		  :directory (list :relative
-				   (asdf:component-name c)))
-		 *source-root*)))))
+       (equalp (pathname-directory (asdf:component-pathname c))
+	       (pathname-directory (asdf::resolve-symlinks
+				    (merge-pathnames
+				     (make-pathname
+				      :directory (list :relative
+						       (asdf:component-name c)))
+				     *source-root*))))))
   
 (defun find-system (module-name)
   "Looks for name of system. Returns :asdf if found asdf file or

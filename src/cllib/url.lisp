@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.24 2001/09/07 15:37:21 sds Exp $
+;;; $Id: url.lisp,v 2.25 2001/09/09 21:06:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -357,8 +357,7 @@ the error `timeout' is signaled."
                     ((:time :daytime) t)
                     (t (error 'code :proc 'open-url :args (list (url-prot url))
                               :mesg "Cannot handle protocol ~s"))))
-              (code (co) (error co))
-              (login (co) (error co))
+              ((or code login path) (co) (error co))
               (error (co)
                 (mesg :err err "Connection to <~a> dropped:~% - ~a~%"
                       url co))))
@@ -407,7 +406,10 @@ ERR is the stream for information messages or NIL for none."
     (declare (fixnum stat))
     (setq sym (read sk) stat (read sk))
     (when (string-equal sym "http/1.1")
-      (when (>= stat 400) (error "~d: ~a~%" res (read-line sk))) ; error
+      (when (>= stat 400)
+        (error 'path :proc 'url-open-http :host (url-host url)
+               :port (url-port url) :mesg "~s: [~a] ~a~%"
+               :args (list (url-path url) stat (read-line sk))))
       (when (= stat 302)        ; redirection
         (setq res (read-line sk)) (read-line sk) (read-line sk)
         (setq sym (read-line sk)
@@ -529,7 +531,7 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
     (let ((dir (url-path-dir url)))
       (unless (zerop (length dir))
         (handler-bind ((network (lambda (co)
-                                  (error 'login :proc 'url-login-ftp :host host
+                                  (error 'path :proc 'url-login-ftp :host host
                                          :port port :mesg "CWD error:~% - ~a"
                                          :args (list (port::net-mesg co))))))
           (url-ask sock err :cwd "cwd ~a" dir))))))

@@ -1,3 +1,21 @@
+2002-03-02  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	More patches from KMR to make DEFSYSTEM 3.x more ACL friendly.
+	A major change has been introduced in the way directories are appended
+	for ACL.  All computations now go through NEW-APPEND-DIRECTORIES.
+	Tests do not show problems, but YMMV.
+
+2002-02-20  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog: ChangeLog updated.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added some initial support for CormanLisp.  Not quite working yet.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Updated copyright notice to include 2001 and 2002.
+
 2002-02-20  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:

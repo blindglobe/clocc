@@ -17,51 +17,42 @@ with the obvious substitutions:
   for this program.
 ====
 
-The places I expect people will want to customize are marked by ***.
-
 General instructions:
 - understand and modify as appropriate both server.lsp and this file
 - load (modified versions of) server.lsp and this file (or compiled versions)
   into lisp
-- set *webserver-commands* to a list of symbols that are allowed to be
-  FUNCALLed by the webserver.  These can be in any package, but  
-  two symbols with the same name in different packages won't work.
-  (On input only the function name is available, not the package.)
-- set *server-root* to a pathname of a directory.
-  The server will only retrieve files below that directory.
+- install customizations
+  The places I expect people will want to customize are marked by ***.
 - do (sss:start-servers)
 - do (sss:serve)
 
-As an example, try 
+As an example, try (in package :http)
+- (defmethod get-method (c (p (eql :|/bin/query|)) data)
+     (status c "HTTP/1.0 200 OK") 
+     (sss:send-string c (format nil "/bin/query: ~S" data))
+     (sss:done c))
+- then try url http://<host>:8000/bin/query?p=foo+fum&q=0&r=17
+- (defmethod post-method (c (p (eql :/example)) data)
+     (status c "HTTP/1.0 200 OK") 
+     (sss:send-string c (format nil "example: ~S" data))
+     (sss:done c))
 - (setf http:*server-root* "/tmp")
-  (setf http:*webserver-commands* '(example))
-  (defun example (data connection)
-    (sss:send-string connection (format nil "~S" data)))
 - install the following text in the file /tmp/sample.html
   <FORM METHOD="POST" action="EXAMPLE">
   <br>username:<INPUT TYPE="text" NAME="user">
   <br>password:<INPUT TYPE="password" NAME="pass">
   <br><input type="submit" name="submit" value="try it"></form>
 - in your browser type in the url
-  http://<your host>:<your port>/sample.html
+  http://<your host>:<your port>/sample.html 
+  This demonstrates the default get method.  When you fill in the form and
+  press the "try it" button it demonstrates the post method.
 
-You should see a form with input fields labeled username and password
-and a "try it" button.  Fill in the fields with anything - this is just
-a demo.  When you press the button the data is sent to the server which 
-calls the example funtion (the action above) on the inputs and the 
-connection object.  The input arguments are then printed in your browser.  
-Now replace example by a function that does what you want.
+Now replace the methods above by code that does what you want.
 
-Well, things aren't quite as straight forward as this example might lead 
-you to believe.
-The function is responsible for all the output to the client, not just 
-an html page.  In the example you (unwittingly in all likelihood) made 
-use of the fact that the most primitive form of HTTP server (HTTP/0.9) 
-simply sends back an html page and closes the stream.
-(The evaler below is closing the stream for you.  That's one of the things 
-you might want to change if you decide to support the Keep-Alive header.)
-You can also send back other headers.  See the do-get function for examples.
-In that case you send something like
+As the call to the status function suggests, the output of these methods
+is more than the html to be displayed.  It includes the entire http
+protocol.  You can also send back other headers.  See the do-get function 
+for examples.  In that case you send something like
 HTTP/1.0 200 OK<CRLF>Content-Type: text/html<CRLF><CRLF>
 and then the html.  Or change the content type to text/plain or whatever.
 If your function computes .gif images you can send image/gif.
@@ -86,8 +77,9 @@ first saw code to act as a web server.
 
 (defpackage "HTTP" (:use "COMMON-LISP")
 	    (:export
-	     "*WEBSERVER-COMMANDS*"
 	     "*SERVER-ROOT*"
+	     "STATUS"  ;; useful in replies
+	     "CRLF"
 	     ))
 
 (in-package :http)
@@ -97,11 +89,6 @@ first saw code to act as a web server.
     #+mswindows "c:/tmp/"
     #+unix "/tmp/"
     #-(or unix mswindows) (error "need to fill in server-root"))
-
-(defvar *webserver-commands* nil) ;; ***
-;; set this to the list of commands that are allowed
-;; for multiple servers you can make it an alist, e.g.
-;; ((8000 f1 f2)(8001 f3))
 
 (defun print-current-time (&optional (stream *standard-output*))
    (multiple-value-bind
@@ -124,6 +111,7 @@ first saw code to act as a web server.
    (uri :accessor uri :initform nil)
    (protocol :accessor protocol :initform nil)
    (content-length :accessor content-length :initform nil)
+   (boundary :accessor boundary :initform nil) ;; for multipart
    (headers :accessor headers :initform nil)
    (body :accessor body :initform nil)))
 
@@ -144,7 +132,18 @@ header: we're collecting headers, in which case we again wait for CRLF.
 The evaler parses the input to get either an empty line or a header.
 If it gets a header, this is added to the headers and we remain in header 
 state.  In the special case of a content-length header we also store the
-value in a slot of the connection.
+value in a slot of the connection.  Another special case is a header of
+form 
+Content-type: multipart/form-data; boundary=...
+This is is added to handle forms containing the FILE input type, which
+have to be inside <FORM ENCTYPE="multipart/form-data" ...>
+I claim to have made this work in one (my own) version of Netscape,
+but I don't know whether it will work anywhere else.
+Note: *** If you plan to use the file input type then you should
+remember to change the max-input-size for http connections, e.g.,
+(defmethod sss:max-input-size ((connection http-connection)) 500000)
+or whatever size of files you wish to allow.
+
 If we get an empty line then, depending on the method, the evaler
 either executes the method (if GET) and then we're done, or (if POST),
 moves to the next state.
@@ -152,6 +151,7 @@ moves to the next state.
 body: we're collecting data for the body.  We're done when either of two
 situations arise. (1) we get eof, (2) there's a content-length header that 
 tells us how many bytes to read, and that many have been read.
+
 At this point the method is executed and then, finally, we're done.
 |#
 
@@ -161,9 +161,11 @@ At this point the method is executed and then, finally, we're done.
   (sss:dbg "http: reader state=~A, start=~a, string=~S"
 	   (state c) start string)
   (cond ((and (eq (state c) :body) (content-length c)
-	      (<= (content-length c) (length string))) ;; extra crlf at end?
+	      (<= (+ start (content-length c)) ;; extra crlf at end?
+		  (length string)))
 	 ;; have to copy cause it's about to to be smashed
-	 (values (subseq string start) (length string)))
+	 (values (subseq string start (+ start (content-length c)))
+		 (+ start (content-length c))))
 	((not (eq (state c) :body))
 	 (let ((pos (search crlf string :start2 start)))
 	   (when pos (values (subseq string start pos) (+ pos 2)))))
@@ -242,7 +244,11 @@ At this point the method is executed and then, finally, we're done.
 	      ;; yeah, I know, not correct for Content-Length: (hello)123
 	      (let (*read-eval* val)
 		(setf val (ignore-errors (read-from-string value)))
-		(when (integerp val) val)))))
+		(when (integerp val) val))))
+	  (when (and (string-equal field "Content-type")
+		     (search "multipart/form-data" value :test 'char-equal)
+		     (setf pos (search "boundary=" value :test 'char-equal)))
+	    (setf (boundary c) (subseq value (+ pos 9)))))
       ;; else do nothing?
       (sss:dbg "http: header? ~A" string)
       )))
@@ -263,9 +269,6 @@ At this point the method is executed and then, finally, we're done.
 			  :unknown-method (meth c)))))
   (sss:done c))
 
-;; *** we do not currently do anything reasonable with "query" URL's
-;; such as http://quote.yahoo.com/q?s=BEOS&d=b
-
 (defun connection-local-port (c)
   #+clisp (lisp:socket-stream-local (sss:sstream c))
   #+allegro (socket:remote-host (sss:sstream c))
@@ -278,69 +281,82 @@ At this point the method is executed and then, finally, we're done.
 	  (ldb (byte 8 8) ip)
 	  (ldb (byte 8 0) ip)))
 
-(defun do-get (c &aux root)
+(defun do-get (c &aux (uri (uri c)) (pos (position #\? uri)))
+  (logform (list :http (print-current-time nil)
+		 (dotted (sss:connection-ipaddr c)) :get (uri c)))
+  (sss:dbg "http: get uri=~A" uri)
+  (get-method c
+	      ;; this is supposed to let you specialize on (eql :|/foo|)
+	      (intern (subseq uri 0 pos) :keyword)
+	      (when pos (parse-form-contents (subseq uri (1+ pos))))))
+
+;; *** you may want to define methods for get-method
+
+;; default method tries to find the file
+(defmethod get-method (c path query &aux root file)
+  (declare (ignore path query))
   (setf root
     (if (listp *server-root*)
 	(cdr (assoc (connection-local-port c) *server-root* :test '=))
       *server-root*))
-  (logform (list :http (print-current-time nil)
-		 (dotted (sss:connection-ipaddr c)) :get (uri c)))
-  (let ((file
-	 (merge-pathnames (pathname (subseq (uri c) 1)) root)))
-    (when
-	(let ((probe (probe-file file)))
-	  (or (not probe)
-	      (< (length (pathname-directory probe))
-		 (length (pathname-directory root)))
-	      (loop for x in (pathname-directory probe)
-		  as y in (pathname-directory root)
-		  thereis (not (equal x y)))
-	      ;; also reject directories, since otherwise open errs
-	      (null (pathname-name probe))))
-      (logform (list :http :not-found file))
-      (status c "HTTP/1.0 404 Not Found")
-      (sss::send-string
-       c (format nil "~A Not Found" (uri c))) ;; this to appear as body
-      (sss:done c)
-      (return-from do-get))
-    (unless (equal "" (protocol c))
-      ;; It looks like we have to guess at the content type ...
-      (let ((ptype (pathname-type file)) ctype)
-	(cond ((member ptype '("html" "htm") :test 'string-equal)
-	       (setf ctype "text/html"))
-	      ((member ptype '("jpg" "jpeg") :test 'string-equal)
-	       (setf ctype "image/jpeg"))
-	      ((member ptype '("gif") :test 'string-equal)
-	       (setf ctype "image/gif"))
-	      ;; *** add other content types as needed
-	      (t (setf ctype "text/plain")))
-	(sss:send-string c "HTTP/1.0 200 OK") (crlf c)
-	(sss:send-string c (format nil "Content-Type: ~A" ctype))
-	(crlf c) (crlf c)))
-    ;; my theory is that we can treat all data as binary here
-    (sss:send-file c file)
-    (sss:done c)))
+  (setf file (merge-pathnames (pathname (subseq (uri c) 1)) root))
+  (when
+      (let ((probe (probe-file file)))
+	(or (not probe)
+	    (< (length (pathname-directory probe))
+	       (length (pathname-directory root)))
+	    (loop for x in (pathname-directory probe)
+		as y in (pathname-directory root)
+		thereis (not (equal x y)))
+	    ;; also reject directories, since otherwise open errs
+	    (null (pathname-name probe))))
+    (logform (list :http :not-found file))
+    (status c "HTTP/1.0 404 Not Found")
+    (sss:send-string
+     c (format nil "~A Not Found" (uri c))) ;; this to appear as body
+    (sss:done c)
+    (return-from get-method))
+  (unless (equal "" (protocol c))
+    ;; It looks like we have to guess at the content type ...
+    (let ((ptype (pathname-type file)) ctype)
+      (cond ((member ptype '("html" "htm") :test 'string-equal)
+	     (setf ctype "text/html"))
+	    ((member ptype '("jpg" "jpeg") :test 'string-equal)
+	     (setf ctype "image/jpeg"))
+	    ((member ptype '("gif") :test 'string-equal)
+	     (setf ctype "image/gif"))
+	    ((string-equal ptype "class")
+	     (setf ctype "application/x-java-binary"))
+	    ;; *** add other content types as needed
+	    (t (setf ctype "text/plain")))
+      (sss:send-string c "HTTP/1.0 200 OK") (crlf c)
+      (sss:send-string c (format nil "Content-Type: ~A" ctype))
+      (crlf c) (crlf c)))
+  ;; my theory is that we can treat all data as binary here
+  (sss:send-file c file)
+  (sss:done c))
 
-(defun do-post (c)
-  (let* ((commands
-	  (if (consp (car *webserver-commands*))
-	      (cdr (assoc (connection-local-port c)
-			  *webserver-commands* :test '=))
-	    *webserver-commands*))
-	 (function
-	  (loop for f in commands
-	      with name = (subseq (uri c) 1 (length (uri c)))
-	      thereis (and (equal name (symbol-name f)) f)))
-	 (args (parse-form-contents (body c))))
-    (sss:dbg "http: post fn=~A args=~A" function args)
-    (logform (list :http (print-current-time nil)
-		   (dotted (sss:connection-ipaddr c)) :post function args))
-    (if function ;; the function is now responsible for status & headers
-	(funcall function args c)
-      (progn (status c "HTTP/1.0 404 Not Found")
-	     (sss:send-string
-	      c (format nil "the function ~A is not supported" (uri c)))
-	     (logform (list :http :not-found function))))))
+(defun do-post (c &aux (uri (uri c))
+		       (args (parse-form-contents
+			      (body c)
+			      ;; see rfc 1521
+			      (concatenate 'string "--" (boundary c)))))
+  (logform (list :http (print-current-time nil)
+		 (dotted (sss:connection-ipaddr c)) :post uri args))
+  (sss:dbg "http: post uri=~A args=~A" uri args)
+  (post-method c
+	       ;; this is supposed to let you specialize on (eql :|/foo|)
+	       (intern uri :keyword) args))
+
+;; *** you may want to define methods for post-method
+
+;; default method simply fails
+(defmethod post-method (connection uri data)
+  (declare (ignore data))
+  (status connection "HTTP/1.0 404 Not Found")
+  (sss:send-string
+   connection (format nil "the function ~A is not supported" uri))
+  (logform (list :http :not-found uri)))
 
 (defun status (con string)
   (sss:send-string con string) (crlf con) (crlf con))
@@ -348,7 +364,10 @@ At this point the method is executed and then, finally, we're done.
 (defun crlf (con)
   (sss:send-byte-vector con #(13 10)))
 
-(defun parse-form-contents (contents)
+(defun parse-form-contents (contents &optional boundary)
+  (when boundary
+    (return-from parse-form-contents
+      (parse-form-contents-boundary contents boundary)))
   ;; input values come in the pairs name=value, delimited by & name is a
   ;; "name" specified in the HTML form value is the string input or
   ;; selection by the user on this form special cases like ? and & are
@@ -362,7 +381,7 @@ At this point the method is executed and then, finally, we're done.
       for varend = (position #\= contents :start start)
       for sym = (subseq contents start varend)
       for val = (subseq contents (1+ varend) end)
-      collect (cons sym (html-to-ascii val)) ;; ***
+      collect (cons sym (html-to-ascii val))
       until (null sep)
       do (setq start (1+ sep))))
 
@@ -384,3 +403,47 @@ At this point the method is executed and then, finally, we're done.
     (loop for i from 0 as c in chars do (setf (char ans i) c))
     ans))
 
+(defun parse-form-contents-boundary (contents boundary)
+  ;; it appears that the contents in this case are not encoded as above
+  (let ((start 0) end hstart hend name nstart nend result)
+    ;; I expect contents of form
+    ;; <boundary> <crlf>
+    ;;  (<headers> <data> <crlf> <boundary> <crlf>)*
+    ;; where <headers> => (<header> <crlf>)* <crlf>
+    ;; I gather from the two crlfs separating header from data that
+    ;; there might be multiple headers, but I really only care about
+    ;; one of the form
+    ;; Content-Disposition: form-data; name="foo" ... 
+
+    ;; start with leading boundary
+    (setf start (search crlf contents :start2 start))
+    (when (null start)
+      (return-from parse-form-contents-boundary '(("error" . "no crlf"))))
+    (unless (string= boundary (subseq contents 0 start))
+      (push (cons "error" (format nil "wrong boundary: got ~A, expected ~A"
+				  (subseq contents 0 start) boundary))
+	    result)
+      ;; expect the others to be the same as the first
+      (setf boundary (subseq contents 0 start)))
+    (incf start 2) ;; past crlf
+    (setf boundary (concatenate 'string boundary crlf))
+  (loop while (setf end (search boundary contents :start2 start)) do
+	(setf name "") ;; in case it's not in a header
+	(setf hstart start)
+	(loop while (> (setf hend
+			 (or (search crlf contents :start2 hstart :end2 end)
+			     0))
+		       hstart)
+	    do ;; handle header
+	      (when (and (= hstart (search "Content-Disposition: form-data"
+					   contents :start2 hstart))
+			 (setf nstart
+			   (search "name=\"" contents :start2 hstart))
+			 (setf nend (position #\" contents :start 
+					      (+ nstart 6))))
+		(setf name (subseq contents (+ nstart 6) nend)))
+	      (setf hstart (+ hend 2)))
+	;; leave out the crlf at both ends
+	(push (cons name (subseq contents (+ hstart 2) (- end 2))) result)
+	(setf start (+ end (length boundary))))
+  result))

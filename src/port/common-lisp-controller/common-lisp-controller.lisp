@@ -101,6 +101,17 @@ This function returns nothing."
     (values)))
 
 
+(defvar *fasl-root* nil "Root of implementation's directories of binary files")
+(defvar *source-root* nil "Root of source directories")
+(defvar *systems-root* nil "Root of systems directory")
+
+(defun pathname-dir-only (path)
+  (when (stringp path)
+    (setq path (parse-namestring path)))
+  (make-pathname :host (pathname-host path)
+		 :device (pathname-device path)
+		 :directory (pathname-directory path)))
+
 (defun init-common-lisp-controller (fasl-root
                                     &key
                                     (source-root "/usr/share/common-lisp/")
@@ -115,9 +126,8 @@ if (>= version 3): load defsystem and patch require.
 
 Returns nothing"
   ;; force both parameters to directories...
-  (let* ((fasl-root (make-pathname :name nil :type nil
-                                   :directory (pathname-directory fasl-root)))
-         (s-root (pathname source-root))
+  (let* ((fasl-root (pathname-dir-only fasl-root))
+         (s-root (pathname-dir-only source-root))
          (source-root (make-pathname
 		       :type :wild
 		       :name :wild
@@ -128,6 +138,10 @@ Returns nothing"
 		       :name :wild
                        :directory (append (pathname-directory s-root)
                                           '("systems")))))
+    (setq *fasl-root* fasl-root)
+    (setq *source-root* (pathname-dir-only source-root))
+    (setq *systems-root* (pathname-dir-only system-root))
+    
     (setf (logical-pathname-translations "cl-library")
           nil)
     (setf (logical-pathname-translations "cl-systems")

@@ -15,17 +15,35 @@
   ((forced-p :initform t)))
 (export 'load-only-compiled-op)
 
+(defclass clc-compile-op (compile-op) ())
+(export 'clc-compile-op)
+
 (defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
   (list (compile-file-pathname (component-pathname c))))
 
 (defmethod perform ((o load-only-compiled-op) (c cl-source-file))
-  (let* ((co (make-sub-operation o 'compile-op))
+  (let* ((co (make-sub-operation o 'clc-compile-op))
 	 (output-files (output-files co c)))
     (setf (component-property c 'last-loaded)
 	  (if (some #'not (map 'list #'load output-files))
 	      nil
 	    (file-write-date (car output-files))))))
 
+(defmethod output-files :around ((c load-only-compiled-op) x)
+  (declare (ignore x))
+  (let ((orig (call-next-method)))
+    (mapcar #'(lambda (y)
+		(merge-pathnames 
+		 (enough-namestring y c-l-c::*source-root*) c-l-c::*fasl-root*))
+	    orig)))
+
+(defmethod output-files :around ((c clc-compile-op) x)
+  (declare (ignore x))
+  (let ((orig (call-next-method)))
+    (mapcar #'(lambda (y)
+		(merge-pathnames 
+		 (enough-namestring y c-l-c::*source-root*) c-l-c::*fasl-root*))
+	    orig)))
 
 (in-package :common-lisp-controller)
 
@@ -37,13 +55,10 @@ file or :asdf if found asdf file"
    ;; it and ignore the errors :-)
    ((ignore-errors
       (equalp
-       (pathname-host
+       (pathname-directory
 	(asdf:component-pathname
 	 (asdf:find-system module-name)))
-       ;; the clc root:
-       (pathname-host
-	(pathname
-	 "cl-library:"))))
+       (pathname-directory *systems-root*)))
     :asdf)
    ((ignore-errors
       (equalp
@@ -69,9 +84,9 @@ file or :asdf if found asdf file"
      (mk:oos  module-name
 	      :load
 	      :load-source-instead-of-binary nil
-		  :load-source-if-no-binary nil
-		  :bother-user-if-no-binary nil
-		  :compile-during-load nil)
+	      :load-source-if-no-binary nil
+	      :bother-user-if-no-binary nil
+	      :compile-during-load nil)
      (progn
        (format t "~&;;;Please wait, recompiling library...")
        ;; first compile the sub-components!
@@ -98,12 +113,26 @@ file or :asdf if found asdf file"
        t))))
 
 
+(defun clc-asdf-oos (op-class system &rest args)
+  (let ((op (apply #'make-instance op-class
+		   :original-initargs args args))
+	(system (if (typep system 'asdf:component) system (asdf:find-system system))))
+    (unless (slot-value system 'asdf::relative-pathname)
+      (setf (slot-value system 'asdf::relative-pathname)
+	    (merge-pathnames
+	     (make-pathname :directory (list :relative
+					     (asdf:component-name system)))
+	     *source-root*)))
+    (with-compilation-unit ()
+      (asdf::traverse op system 'asdf::perform))))
+
+    
 (defun require-asdf (module-name)
   ;; if in the clc root:
   (let ((system (asdf:find-system module-name)))
     (or
      ;; try to load it
-     (ignore-errors (asdf:oos 'asdf::load-only-compiled-op module-name))
+     (ignore-errors (clc-asdf-oos 'asdf::load-only-compiled-op module-name))
      ;; if not: try to compile it
      (progn
        (format t "~&;;;Please wait, recompiling library...")
@@ -121,7 +150,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (asdf:oos 'asdf::load-only-compiled-op module-name) 
+       (clc-asdf-oos 'asdf::load-only-compiled-op module-name) 
        t))))
 
 
@@ -159,7 +188,7 @@ file or :asdf if found asdf file"
       (:defsystem3
        (mk:oos library :compile :verbose nil))
       (:asdf
-       (asdf:oos 'asdf:compile-op library))
+       (clc-asdf-oos 'asdf:clc-compile-op library))
       (t
        (format t "~%Package ~S not found... ignoring~%"
 	       library))))

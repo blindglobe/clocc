@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.9 2000/04/05 23:37:52 sds Exp $
+;;; $Id: sys.lisp,v 1.10 2000/04/07 17:02:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,8 +27,8 @@
 
 (defun getenv (var)
   "Return the value of the environment variable."
-  #+allegro (system::getenv (string var))
-  #+clisp (system::getenv (string var))
+  #+allegro (sys::getenv (string var))
+  #+clisp (sys::getenv (string var))
   #+cmu (cdr (assoc (string var) ext:*environment-list* :test #'equalp
                     :key #'string)) ; xlib::getenv
   #+gcl (si:getenv (string var))
@@ -44,9 +44,9 @@
 (defun variable-special-p (symbol)
   "Return T if the symbol names a global special variable."
   #+allegro (clos::variable-special-p symbol nil)
-  #+clisp (system::special-variable-p symbol)
+  #+clisp (sys::special-variable-p symbol)
   #+cmu (walker:variable-globally-special-p symbol)
-  #+gcl (system:specialp symbol)
+  #+gcl (si:specialp symbol)
   #+lispworks (walker:variable-special-p symbol nil)
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
@@ -60,7 +60,7 @@
                       (eval:interpreted-function-arglist fn))))
   #+gcl (let ((fn (etypecase fn
                     (symbol fn)
-                    (function (system:compiled-function-name fn)))))
+                    (function (si:compiled-function-name fn)))))
           (get fn 'si:debug))
   ;; ??? #+lispworks (walker::walk-arglist symbol nil nil)
   #-(or allegro clisp cmu gcl)
@@ -112,7 +112,7 @@ all slots are returned, otherwise only the slots with
   #+allegro (excl::probe-directory filename)
   #+clisp (lisp:probe-directory filename)
   #+cmu (eq :directory (unix:unix-file-kind filename))
-  #+lispworks (not (system::probe-file-not-directory-p filename))
+  #+lispworks (not (sys::probe-file-not-directory-p filename))
   #-(or allegro clisp cmu lispworks)
   ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
   ;; Date: Wed, 5 May 1999 11:51:19 -0500
@@ -152,17 +152,17 @@ Implementation:~20t~a~%~7tversion:~20t~a~%Machine:  type:~20t~a
           (lisp-implementation-type) (lisp-implementation-version)
           (machine-type) (machine-version) (machine-instance))
   #+win32
-  (if (system::registry
+  (if (sys::registry
        "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" "ProductName")
       (flet ((env (str)
-               (system::registry
+               (sys::registry
                 "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" str)))
         (format out " ~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
                 (env "ProductName") (env "Version") (env "VersionNumber")
                 (env "BootCount") (env "RegisteredOwner")
                 (env "RegisteredOrganization") (env "ProductId")))
       (flet ((env (str)
-               (system::registry
+               (sys::registry
                 "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" str)))
         (format out " WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
                 (env "CurrentVersion") (env "CurrentBuildNUmber")
@@ -181,7 +181,7 @@ Modules:~10t~{~<~%~9t ~1,74:; ~a~>~^,~}.~%Current package:~30t~a~%"
           (short-site-name) (user-homedir-pathname) (default-directory)
           *default-pathname-defaults* *features* *modules* *package*)
   #+clisp (format out "[CLISP] Current language:~30t~a~%"
-                  (system::current-language))
+                  (sys::current-language))
   (flet ((exdi (fl) (integer-length (nth-value 1 (decode-float fl)))))
     (format out "Fixnum length:~25t~3d bits
 Short Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)

@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1998-06-19 Fri 16:17:10 EDT sds@mute.eaglets.com>
+;;; File: <base.lisp - 1998-06-26 Fri 12:03:46 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.4 1998/06/19 20:17:10 sds Exp $
+;;; $Id: base.lisp,v 1.5 1998/06/26 23:07:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.5  1998/06/26 23:07:18  sds
+;;; Added `mk-arr', `map-vec', fixed CMUCL's `getenv'.
+;;; Reworked `current-environment'.
+;;;
 ;;; Revision 1.4  1998/06/19 20:17:10  sds
 ;;; Added `*prompt*'.  Ditched `step-on' and `step-off'.
 ;;;
@@ -38,8 +42,9 @@
 	   #+(or clisp gcl) (declaration values))
   (setq *read-default-float-format* 'double-float *print-case* :downcase
 	*print-array* t)
-  #+cmu (setq *gc-verbose* nil *bytes-consed-between-gcs* 32000000
-              *efficiency-note-cost-threshold* 20)
+  #+cmu (setf *gc-verbose* nil *bytes-consed-between-gcs* 32000000
+              *efficiency-note-cost-threshold* 20
+              (lisp::fd-stream-buffering system:*stdout*) :none)
   ;; #+cmu (push "x86f" make::*standard-binary-file-types*)
   ;; #+cmu (push "lisp" make::*standard-source-file-types*) ; default
   #+allegro
@@ -52,7 +57,7 @@
                 lisp:*floating-point-contagion-ansi* t
 		lisp:*default-float-format* 'double-float
 		;; sys::*source-file-types* '(#".lisp") ; default
-		sys::*prompt-with-package* t)
+		lisp::*prompt-with-package* t)
   #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
   #+allegro-v4.3
   (unless (member :key (excl:arglist #'reduce) :test #'string=)
@@ -95,8 +100,9 @@
   (unless (fboundp 'getenv)
     (defun getenv (var)
       "Return the value of the environment variable."
-      #+cmu ;; xlib::getenv
-      (cdr (assoc (string var) *environment-list* :test #'equalp)) #-cmu
+      #+cmu (cdr (assoc (string var) *environment-list* :test #'equalp
+                        :key #'string)) ; xlib::getenv
+      #-cmu
       (#+(or allegro clisp) system::getenv #+lispworks w:environment-variable
        #+lucid lcl:environment-variable #+gcl si:getenv (string var)))))
 
@@ -109,13 +115,17 @@
           (package-nicknames pkg) :initial-value (package-name pkg)))
 
 #+(or cmu clisp)
-(let* ((dumb (equalp (getenv "TERM") "dumb")) (bb (if dumb "" "[1m"))
-       (ib (if dumb "" "[7m")) (ee (if dumb "" "[m")) (cnt 0))
-  (declare (fixnum cnt) (simple-string bb ib ee))
-  (setq *prompt* (lambda ()
-                   (format nil "~a~(~a~)~a ~a[~:d]:~a " ib
-                           (package-short-name *package*)
-                           ee bb (incf cnt) ee))))
+(let ((cnt 0))
+  (declare (type (unsigned-byte 15) cnt))
+  (setq *prompt*
+        (lambda ()
+          (let* ((dumb (equalp (getenv "TERM") "dumb"))
+                 (bb (if dumb "" "[1m")) (ib (if dumb "" "[7m"))
+                 (ee (if dumb "" "[m")))
+            (declare (simple-string bb ib ee))
+            (format nil "~a~(~a~)~a ~a[~:d]:~a " ib
+                    (package-short-name *package*)
+                    ee bb (incf cnt) ee)))))
 
 (defun run-prog (prog &rest opts &key args wait &allow-other-keys)
   "Common interface to shell. Doesn't return anything useful."
@@ -134,9 +144,9 @@
   "Return an output stream wich will go to the command."
   #+excl (excl:run-shell-command (apply #'vector prog prog args)
 				 :input :stream :wait nil)
-  #+gcl (si::fp-input-stream (apply #'run-process prog args))
-  #+clisp (lisp:make-pipe-output-stream (format nil "~a~{ ~a~}" prog args))
-  #+cmu (process-output (run-program prog args :input :stream :wait nil)))
+  #+gcl (si::fp-input-stream (apply #'run-process prog args)) #+cmu
+  (process-input (run-program prog args :input :stream :output t :wait nil))
+  #+clisp (lisp:make-pipe-output-stream (format nil "~a~{ ~a~}" prog args)))
 
 ;;;
 ;;; }}}{{{ Environment
@@ -219,6 +229,17 @@
   (let ((mi (gensym "MI")))
     `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
 
+(eval-when (compile load eval)
+  (defmacro mk-arr (type init &optional len)
+    "Make array with elements of TYPE, initializing."
+    (if len `(make-array ,len :element-type ,type :initial-element ,init)
+        `(make-array (length ,init) :element-type ,type
+          :initial-contents ,init))))
+
+(defmacro map-vec (type len &rest args)
+  "MAP into a simple-array with elements of TYPE and length LEN."
+  `(map-into (make-array ,len :element-type ,type) ,@args))
+
 #+(or allegro gcl clisp)
 (defun default-directory ()
   "The default directory."
@@ -237,48 +258,46 @@
 (defun current-environment (&optional (stream *standard-output*))
   "Print the current environment to a stream."
   (declare (stream stream))
-  (format stream "~&~%~70~~%~70,,,'-:@<<{[ The current environment ]}>~>~%~
+  (format stream "~&~%~75~~%~75,,,'-:@<<{[ The current environment ]}>~>~%~
 LISP: implementation: ~a; version: ~a~%Machine: type: ~
-~a; version: ~a; instance: ~a~%OS: "
+~a; version: ~a; instance: ~a~%System:"
 	  (lisp-implementation-type) (lisp-implementation-version)
 	  (machine-type) (machine-version) (machine-instance))
   #+win32
   (if (system::registry "SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
 			"ProductName")
-      (win95-sysinfo stream)
-      (winnt-sysinfo stream))
-  #+os/2 (format stream "OS/2")
-  #+unix (format stream "Unix")
-  #+dos (format stream "DOS")
-  #+pc386 (format stream "PC386")
-  #+amiga (format stream "Exec/AmigaDOS")
-  (multiple-value-bind (used avail) (room nil)
-    (format stream "~%Software: type: ~a; version: ~a~%Site:~35t~a (~a)
+      (win95-sysinfo stream) (winnt-sysinfo stream))
+  #+os/2 (format stream " OS/2")
+  #+unix (format stream " Unix")
+  #+dos (format stream " DOS")
+  #+pc386 (format stream " PC386")
+  #+amiga (format stream " Exec/AmigaDOS")
+  (format stream "~%Software: type: ~a; version: ~a~%Site:~35t~a (~a)
 User home:~35t~a~%Current directory:~35t~a~%Default pathname:~35t~a
 Features:~{ ~a~}~%Modules:~{ ~a~}~%Current package:~35t~a;
-Current language:~35t~a~%Bytes currently in use:~35t~10:d
-Bytes available until next GC:~35t~10:d~%Internal time unit:~35t~f sec
-Current time:~35t"
-	    (software-type) (software-version) (long-site-name)
-	    (short-site-name) (user-homedir-pathname) (default-directory)
-	    *default-pathname-defaults* *features* *modules* *package*
-	    #+clisp (system::current-language) #-clisp nil used avail
-	    (/ 1 internal-time-units-per-second)))
-  (current-time stream)
-  (format stream "~%~70~~%"))
+~@[Current language:~35t~a~%~]Bits in a fixnum:~35t~d
+Internal time unit:~35t~f sec~%Current time:~35t"
+          (software-type) (software-version) (long-site-name)
+          (short-site-name) (user-homedir-pathname) (default-directory)
+          *default-pathname-defaults* *features* *modules* *package*
+          #+clisp (system::current-language) #-clisp nil
+          (floor (log (1+ most-positive-fixnum) 2))
+          (/ 1.0d0 internal-time-units-per-second))
+  (current-time stream) (format stream "~%~75~~%") (room) (values))
 
 (defconst +month-names+ (simple-array simple-string (12))
-  #("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug" "Sep" "Oct" "Nov" "Dec")
+  (mk-arr 'simple-string '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug"
+                           "Sep" "Oct" "Nov" "Dec"))
   "*The names of the months.")
 (defconst +week-days+ (simple-array simple-string (7))
-  #("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun")
+  (mk-arr 'simple-string '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
   "*The names of the days of the week.")
 (defconst +time-zones+ list
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
     (0 "GMT" . "GDT"))
   "*The string representations of the time zones.")
-(defconst +whitespace+ simple-vector
-  #(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page)
+(defconst +whitespace+ (simple-array character (*))
+  (mk-arr 'character '(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page))
   "*The whitespace characters.")
 
 (defun current-time (&optional (stream t))
@@ -295,7 +314,7 @@ Current time:~35t"
   (flet ((env (str)
 	   (system::registry "SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
 			     str)))
-    (format stream "~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
+    (format stream " ~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
 	    (env "ProductName") (env "Version") (env "VersionNumber")
 	    (env "BootCount") (env "RegisteredOwner")
 	    (env "RegisteredOrganization") (env "ProductId"))))
@@ -306,7 +325,7 @@ Current time:~35t"
   (flet ((env (str)
 	   (system::registry "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
 			     str)))
-    (format stream "WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
+    (format stream " WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
 	    (env "CurrentVersion") (env "CurrentBuildNUmber")
 	    (env "CSDVersion") (env "CurrentType") (env "RegisteredOwner")
 	    (env "RegisteredOrganization") (env "ProductId"))))
@@ -376,6 +395,8 @@ All the values from nth function are fed to the n-1th."
 (autoload 'all-docs "print" "Print all docs for a symbol.")
 (autoload 'play-animals "animals" "Play the game of animals.")
 (autoload 'load-all-currencies "currency" "Load all the currencies.")
+(autoload 'make "util" "Recompile the files.")
+(autoload 'date "date" "Convert an object to `date'.")
 
 (provide "base")
 ;;; }}} base.lisp ends here

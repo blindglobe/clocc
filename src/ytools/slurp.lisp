@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.4 2004/12/10 22:58:48 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.5 2004/12/13 03:26:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -14,6 +14,8 @@
 	     fload-verbose* eval-when-slurping
 	     make-Printable printable-as-string eof*)))
 
+(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
+(defvar obj-suffix* lisp-object-extn*)
 (defvar object-suffixes* `(,lisp-object-extn*))
 
 (defun pathname-is-source (pn)
@@ -58,7 +60,8 @@
 ;;;;(make-Printable (\\ (srm) (format srm "~a" "#<End of file>")))
 
 (defstruct (Slurp-task
-	      (:constructor make-Slurp-task (label default-handler)))
+;;;;	      (:constructor make-Slurp-task (label default-handler))
+           )
    label
    (handler-table (make-hash-table :test #'eq :size 100))
    default-handler
@@ -73,7 +76,7 @@
 (defmacro def-slurp-task (name
 			  &key ((:default default-handler^)
 				'nil)
-			       ((:file->state file->state-fcn^)
+			       ((:file->state-fcn file->state-fcn^)
 				'(\\ (_) nil)))
    (let ((task-var (build-symbol (:< name) *)))
       `(progn
@@ -93,7 +96,8 @@
 (defvar fload-indent*     0)
 
 (defvar post-file-transduce-hooks* '*not-transducing
-  "A list of things to do (i.e., functions of no arguments to call) after YTools file transducers finish.")
+  "A list of things to do (i.e., functions of no arguments to call) 
+after YTools file transducers finish.")
 
 (defmacro with-post-file-transduction-hooks (&body b)
    `(let ((post-file-transduce-hooks* '()))
@@ -127,39 +131,38 @@
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
 
+;;; The default args for a file-op (such as 'fload' or 'fcompl') are
+;;; stored in a vector #(files flags readtable).
+
 (defun file-op-defaults-update (specs possible-flags
 				acc-defaults set-defaults)
    (let ((defaults (funcall acc-defaults)))
       (multiple-value-bind (files flags readtab)
 	                   (flags-separate specs possible-flags)
 	     (funcall set-defaults
-		 (vector (or files ':nochange)
+		 (vector (cond ((null files) (aref defaults 0))
+			       (t files))
 			 (cond ((and (null flags) (null files))
-				':nochange)
+				(aref defaults 1))
 			       (t flags))
-			 (decipher-readtable readtab))))))
+			 (decipher-readtable readtab (aref defaults 2)))))))
 
-(defun decipher-readtable (readtab)
+(defun decipher-readtable (readtab default-readtab)
    (cond ((eq readtab ':missing)
-	  (let ((default-readtab (caddr defaults)))
-	     (cond ((and default-readtab
-			 (not (eq default-readtab
-				  *readtable*)))
-		    (format *error-output*
-			    "Readtable ~s will be used for this file operation~%"
-			    default-readtab)
-		    default-readtab)
-		   (t
-		    *readtable*))))
+	  (cond ((and default-readtab
+		      (not (eq default-readtab
+			       *readtable*)))
+		 (format *error-output*
+			 "Readtable ~s will be used for this file operation~%"
+			 default-readtab)
+		 default-readtab)
+		(t
+		 *readtable*)))
 	 (t
 	  (name->readtable readtab))))
 
 ;;; True if we're in the midst of an 'fload' or 'fcompl'
 (defvar file-op-in-progress* false)
-
-(defvar post-file-transduce-hooks* '*not-transducing
-  "A list of things to do (i.e., functions of no arguments to call) after YTools file transducers finish.")
-
 
 (defmacro cleanup-after-file-transduction (&body b)
    `(unwind-protect (progn ,@b)
@@ -237,6 +240,7 @@
    `(progn (in-package ,pkg)
 	   (in-readtable ,(or rt pkg))))
 
+(defvar now-slurping* false)
 
 ;;; 'states' is a list of data structures, the same length as
 ;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
@@ -250,7 +254,7 @@
 		  (now-compiling* false)
 		  (now-slurping*   pn)
 		  (slurping-stack* (cons pn slurping-stack*))
-		  #+:excl (excl:*source-pathname* real-pn)
+		  #+:excl (excl:*source-pathname* pn)
 		  #+:excl (excl:*record-source-file-info* nil)
 		  (*package* *package*)
 		  (*readtable* *readtable*))
@@ -258,13 +262,25 @@
 		    (states (mapcar (\\ (slurp-task)
 				       (funcall (Slurp-task-file->state-fcn
 						   slurp-task)
-						pn)))))
+						pn))
+				    slurp-tasks)))
 		   ((or (eq form eof*)
 			(null slurp-tasks)
-			(setq slurp-tasks
+			(multiple-value-setq
+			      (slurp-tasks states)
 			      (form-slurp form slurp-tasks states))))))))))
 
+(defun forms-slurp (forms tasks states)
+      (do ((l forms (cdr l)))
+	  ((or (null l)
+	       (null tasks))
+	   (values tasks states))
+	 (multiple-value-setq (tasks states)
+	                      (form-slurp (car l) tasks states))))
+
+
 ;;; General slurpers take 3 args: the form, the task, and the slurp state
+;;; They return two values: the remaining tasks, and their states.
 (datafun-table general-slurp-handlers* general-slurper :size 50)
 
 ;;; Each element of 'slurp-tasks' is something like :macros, or :header-info
@@ -291,29 +307,29 @@
 			    (form r) (asym a) (task-done false)
 			    (handled-by-task false) h)
 			 (loop
-			    (setq h (href (Slurp-task-handler-table slurp-task)
+			    ;; -- through macro-expansions
+			    (setq h (href (Slurp-task-handler-table task)
 					  asym ':missing))
-			    (cond (h
-				   (setq handled-by-task true)
-				   (setq task-done (funcall h form state)))
-				  ((setq h (Slurp-task-default-handler
-					      slurp-task))
-				   (setq handled-by-task true)
-				   (setq task-done (funcall h form state)))
+			    (cond ((not (eq h ':missing))
+				   (return))
 				  ((macro-function asym)
 				   (setq form (macroexpand-1 form))
 				   (setq asym (form-fcn-sym form)))
 				  (t
-				   (on-list task continuing-tasks)
-				   (on-list state continuing-states)
-				   (return)))
-			    (cond (handled-by-task
-				   (setq handled-by-any-task true)
-				   (cond ((not task-done)
-					  (on-list task continuing-tasks)
-					  (on-list state continuing-states)))
-				   ;; exit macro-expand loop
-				   (return))))))
+				   (return))))
+			 (cond (h
+				(setq handled-by-task true)
+				(setq task-done (funcall h form state)))
+			       ((setq h (Slurp-task-default-handler
+					      task))
+				(setq handled-by-task true)
+				(setq task-done (funcall h form state))))
+			 (cond (handled-by-task
+				(setq handled-by-any-task true)))
+			 (cond ((or (not handled-by-task)
+				    (not task-done))
+				(on-list task continuing-tasks)
+				(on-list state continuing-states)))))
 		   (cond (handled-by-any-task
 			  (values (nreverse continuing-tasks)
 				  (nreverse continuing-states)))
@@ -321,18 +337,10 @@
 			  (let ((h (href general-slurp-handlers*
 					 a)))
 			     (cond (h
-				    (funcall h r slurp-tasks state))
+				    (funcall h r slurp-tasks states))
 				   (t
 				    (values slurp-tasks states))))))))
 	       (t (values slurp-tasks states))))))
-
-(defun forms-slurp (forms tasks states)
-      (do ((l forms (cdr l)))
-	  ((or (null l)
-	       (null tasks))
-	   (values tasks states))
-	 (multiple-value-setq (tasks states)
-	                      (slurp-form (car l) tasks state))))
 
 ;;; The idea is that almost every slurp task will treat 'progn'
 ;;; the same way, so we shouldn't have to create many replicas of
@@ -345,10 +353,10 @@
 (datafun general-slurper prog2 progn)
 
 (datafun general-slurper eval-when-slurping
-   (defun :^ (forms _)
-      (dolist (e (cdr form))
+   (defun :^ (forms tasks states)
+      (dolist (e (cdr forms))
 	 (eval e))
-      false))
+      (values tasks states)))
 
 (datafun general-slurper eval-when
    (defun :^ (form tasks states)
@@ -362,59 +370,6 @@
       (with-packages-unlocked
 	 (forms-slurp (cdr form) tasks states))))
 
-(def-slurp-task :slurp-macros)
-
-(defun macros-slurp-eval (e _) (eval e) false)
-
-(datafun :slurp-macros defmacro #'macros-slurp-eval)
-
-(defmacro needed-by-macros (&body l)
-   `(progn ,@l))
-
-(datafun :slurp-macros needed-by-macros
-   (defun :^ (exp _)
-      (dolist (e exp) (eval e))
-      false))
-
-(datafun :slurp-macros defsetf  #'macros-slurp-eval)
-
-(datafun :slurp-macros defstruct #'macros-slurp-eval)
-
-(datafun :slurp-macros defvar
-   (defun :^ (form _)
-      (eval `(defvar ,(cadr form)))
-      false))
-
-(datafun :slurp-macros defconstant
-   (defun :^ (form _)
-      (cond ((not (boundp (cadr form)))
-	     (eval form)))
-      false))
-
-(datafun :slurp-macros subr-synonym #'macros-slurp-eval)
-
-(datafun :slurp-macros datafun
-  (defun :^ (e _)
-    (cond ((eq (cadr e) 'attach-datafun)
-	   (eval e)))
-    false))
 
 
 
-
-(defvar file-headers* '(in-package depends-on export))
-
-(defvar fload-show-actual-pathnames* false)
-
-
-
-(defmacro end-header (&rest _)
-   '(values))
-	 
-
-
-
-;;; For debugging:
-
-(defun filespec-lprec (fs)
-   (place-load-progress-rec (car (filespecs->ytools-pathnames fs))))

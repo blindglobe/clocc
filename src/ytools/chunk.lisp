@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.6 2004/12/10 22:58:47 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.7 2004/12/13 03:26:36 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -88,9 +88,6 @@
 
 ;;; Key fact about an Or-chunk is that it supplies no reason for any of its
 ;;; disjuncts to be managed, except its default.
-BUG -- If default becomes managed because it's the default, we have no way to
-avoid deriving it, even if there's a more attractive disjunct that is managed
-for an independent reason.
 ;;; This class is handled differently by 'chunk-manage', 'chunk-terminate-mgt',
 ;;; and 'chunks-update'. --
 (defclass Or-chunk (Chunk)
@@ -150,7 +147,8 @@ for an independent reason.
       (pushnew ch (Chunk-derivees b) :test #'eq))
    (dolist (b (Chunk-update-basis ch))
       (pushnew ch (Chunk-update-derivees b) :test #'eq))
-   (cond ((null (Chunk-basis ch))
+   (cond ((and (null (Chunk-basis ch))
+	       (Chunk-managed ch))
 	  (leaf-chunk-update ch)))
 ;;; There is no point in doing this, because 'ch' has no derivees
 ;;; immediately after being created.   
@@ -257,7 +255,7 @@ for an independent reason.
 	        ;; to true, but not if an interrupt occurred --
 		(setf (Chunk-managed chunk)
 		      (and (every #'Chunk-managed
-				  (Chunk-basis chun))
+				  (Chunk-basis chunk))
 			   (or (not its-an-or)
 			       (some #'Chunk-managed
 				     (Or-chunk-disjuncts chunk))))))))))
@@ -270,10 +268,10 @@ for an independent reason.
 ;;; Any other value will cause any derivees to become unmanaged.
 (defun chunk-terminate-mgt (c propagate)
    (cond ((Chunk-managed c)  ;;;;(Chunk-manage-request c)
-	  (cond ((eq (Chunk-managed chunk)
+	  (cond ((eq (Chunk-managed c)
 		     ':in-transition)
 		 (error
-		    "Chunk basis cycle detected at ~S" chunk
+		    "Chunk basis cycle detected at ~S" c
 		    "~%     [-- chunk-terminate-mgt]")))
 	  (unwind-protect
 	     (labels ((chunk-gather-derivees (ch dvl)
@@ -475,8 +473,10 @@ for an independent reason.
 					     (setf (Chunk-date ch)
 					           new-date)
 					     (dolist (d (Chunk-derivees ch))
-						(derivees-update d in-progress))
-					     (dolist (d (Chunk-update-derivees ch))
+						(derivees-update
+						   d in-progress))
+					     (dolist (d (Chunk-update-derivees
+							   ch))
 					        (derivees-update d in-progress)
 					     ))
 					    (t
@@ -486,7 +486,27 @@ for an independent reason.
 						    (setf (Chunk-date ch)
 							  (Chunk-latest-supporter-date
 							     ch))))
-					    ))))))))))
+					    ))))
+;;;;				  ((not (or down-marked (Chunk-managed ch)))
+;;;;				   (format t "Not down marked or managed~%"))
+;;;;				  (t
+;;;;				   (format t "Already up to date~%"))
+			    )))
+;;;;			((= (Chunk-update-mark ch) up-mark)
+;;;;			 (format t "Already up-marked ~s~%"
+;;;;				 up-mark))
+;;;;			(t
+;;;;			 (dolist (b (Chunk-basis ch))
+;;;;			    (cond ((and (not (Chunk-is-leaf b))
+;;;;					(not (chunk-up-to-date b)))
+;;;;				   (format t "Basis ~s not up to date~%"
+;;;;					   b))))
+;;;;			 (dolist (b (Chunk-update-basis ch))
+;;;;			    (cond ((and (not (Chunk-is-leaf b))
+;;;;					(not (chunk-up-to-date b)))
+;;;;				   (format t "U-Basis ~s not up to date~%"
+;;;;					   b)))))
+		   )))
 	 (cond ((some #'Chunk-managed chunks)
 ;;;;		(setf update-no* (+ update-no* 1))
 ;;;;		(format t "update-no* = ~s~%" update-no*)
@@ -518,7 +538,7 @@ for an independent reason.
 			    (Chunk-update-basis orch)
 			    d)
 		    (setf (Chunk-update-basis orch) (list d))))
-	     (return-from 'derive (get-universal-time))))))
+	     (return-from derive (get-universal-time))))))
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.
@@ -529,8 +549,9 @@ for an independent reason.
       (cond ((null (Chunk-basis ch))
 	     (leaf-chunk-update ch))
 	    (t
-	     (>= (Chunk-date ch)
-		 (Chunk-latest-supporter-date ch))))))
+	     (and (>= (Chunk-date ch)
+		      (Chunk-latest-supporter-date ch))
+		  (>= (Chunk-date ch) 0))))))
 
 (defun leaf-chunk-update (leaf-ch)
 	     (let ((d (derive leaf-ch)))

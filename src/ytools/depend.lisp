@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.4 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.5 2004/12/13 03:26:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -56,37 +56,42 @@
   (defun :^ (e file-ch)
      (cond (depends-on-enabled*
 	    (let ((groups (depends-on-args-group (cdr e)))
-		  (compiled-ch (place-compiled-chunk file-ch)))
-	       (let ((loaded-file-ch (place-loaded-chunk file-ch false)))
-		  (labels ((recursive-slurp (pn)
-			      (cond ((not (eq slurping-how-much*
-					':header-only))
-			       (pathname-slurp
-				  pn false ':at-least-header)))))
-		     (dolist (g groups)
-			(let ((files (<# place-file-chunk
-					 (filespecs->ytools-pathnames
-					    (cdr g)))))
-			   (cond ((memq ':compile-time (first g))
-				  (setf (Chunk-basis compiled-ch)
-					(union
-					   files
-					   (Chunk-basis compiled-ch)))
-				  (setf (File-chunk-update-basis compiled-ch)
-				        (union (<# place-loaded-chunk
-						   files)
-					       (File-chunk-update-basis
-						  compiled-ch)))))
-			   (cond ((memq ':run-time (first g))
-				  (setf (File-chunk-callees file-ch)
-					(union files
-					       (File-chunk-callees file-ch)))))
-			   (cond ((or (memq ':read-time (first g))
-				      (memq ':slurp-time (first g)))
-				  (setf (File-chunk-read-basis file-ch)
-					(union files
-					       (File-chunk-read-basis
-						   file-ch))))))))))))
+		  (compiled-ch (place-compiled-chunk file-ch))
+		  (loaded-file-ch (place-loaded-chunk file-ch false)))
+	       (labels ((recursive-slurp (pn)
+			   (cond ((not (eq slurping-how-much*
+				     ':header-only))
+			    (pathname-slurp
+			       pn false ':at-least-header)))))
+		  (dolist (g groups)
+		     (let* ((file-chunks (<# place-file-chunk
+					     (filespecs->ytools-pathnames
+						(cdr g))))
+			    (loaded-file-chunks
+			       (<# (\\ (fc) (place-loaded-chunk fc false))
+				   file-chunks)))
+			(cond ((memq ':compile-time (first g))
+			       (setf (Chunk-basis compiled-ch)
+				     (union
+					file-chunks
+					(Chunk-basis compiled-ch)))
+			       (setf (File-chunk-update-basis compiled-ch)
+				     (union loaded-file-chunks
+					    (File-chunk-update-basis
+					       compiled-ch)))))
+			(cond ((memq ':run-time (first g))
+			       (setf (File-chunk-callees file-ch)
+				     (union file-chunks
+					    (File-chunk-callees file-ch)))
+			       (setf (Chunk-basis loaded-file-ch)
+				     (union loaded-file-chunks
+					    (Chunk-basis loaded-file-ch)))))
+			(cond ((or (memq ':read-time (first g))
+				   (memq ':slurp-time (first g)))
+			       (setf (File-chunk-read-basis file-ch)
+				     (union file-chunks
+					    (File-chunk-read-basis
+						file-ch)))))))))))
     false))
 
 ;;; Return a list of groups, each of the form

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.4 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.5 2004/12/13 03:26:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -361,60 +361,71 @@
 		 dir-list)))
    (let ((start (Pathname-directory pn)))
       (cond ((and (consp start) (eq (car start) ':absolute))
-	     (let ((pn-dir (reverse (cdr start)))
-		   (resid !())
-		   (res !()))
+	     (let ((above-dirs (reverse (cdr start)))
+		   (below-dirs !())
+		   (from-dir-list !()))
 	        ;; We use 'dir-list' as a set of instructions for arriving
 		;; at a relative directory.
 	        ;; As we go, the three variables above represent the
 	        ;; directories traversed so far, leaving us in the "current
 	        ;; directory."
-		;; 'pn-dir' is list (in ascending order) of directories
+		;; 'above-dirs' is list (in ascending order) of directories
 	        ;; above (and including) the current dir.
-	        ;; 'resid' is list (in descending order)
+	        ;; 'below-dirs' is list (in descending order)
 	        ;; of directories we passed on the way up to current dir.
-	        ;; 'res' is a list (in ascending order) of directories
-	        ;; copied from 'dir-list'.
+	        ;; 'from-dir-list' is a list (in ascending order) of
+	        ;; directories copied from 'dir-list'.
 		(dolist (d dir-list)
-;;;;		   (format t "pn-dir = ~s res = ~s d = ~s resid = ~s~%"
-;;;;			   pn-dir res d resid)
+;;;;		   (format t "above-dirs = ~s from-dir-list = ~s d = ~s below-dirs = ~s~%"
+;;;;			   above-dirs from-dir-list d below-dirs)
 		   (cond ((or (memq d '(:back :up)) (equal d ".."))
-			  (cond ((null res)
-				 ;; Go up one layer, recording in 'resid'
+			  (cond ((null from-dir-list)
+				 ;; Go up one layer, recording in 'below-dirs'
 				 ;; the directory passed.--
-				 (cond ((null pn-dir)
+				 (cond ((null above-dirs)
 					(error "Relative directory ~s undefined wrt ~s"
 					       dir-list pn))
 				       (t
-					(push (pop pn-dir) resid))))
-				((null pn-dir)
-				 ;; But once we've started recording
-				 ;; directories in 'res', a ".." directory
-				 ;; is a puzzle.  We either go up and
-				 ;; leave 'res' alone, or, if we can't go
-				 ;; up, we interpret ".." as perversely
-				 ;; instructing us to undo 
-				 ;; the last addition to 'res' --
-				 (pop res))
+					(push (pop above-dirs) below-dirs))))
+			      ;; But once we've started recording
+			      ;; directories in 'from-dir-list', a
+			      ;; ".." directory is a puzzle. --
+				((null above-dirs)
+				 ;; We either go up and leave
+				 ;; 'from-dir-list' alone, or, if we
+				 ;; can't go up, we interpret ".." as
+				 ;; perversely instructing us to undo
+				 ;; the last addition to
+				 ;; 'from-dir-list' --
+				 (pop from-dir-list))
 				(t
-				 ;; This is the case where go up 'pn-dir'
-				 ;; and leave 'res' and 'resid' alone --
-				 (pop pn-dir))))
-			 ((eq d '--)
-			  ;; Special flag that means *don't* record in 'resid'
-			  ;; the last layer we passed.  Useful to purge
-			  ;; "src" layers from "bin" directories.--
-			  (pop resid))
+				 ;; This is the case where we can 
+				 ;; go up (pop 'above-dirs') and leave
+				 ;; 'from-dir-list' and 'below-dirs'
+				 ;; alone --
+				 (pop above-dirs))))
+			 ((member d '(-- "--") :test #'equal)
+			  ;; Special flag that means *don't* record in
+			  ;; 'below-dirs' the last layer we passed.
+			  ;; This makes sense only if this layer does
+			  ;; not help discriminate subdirectories.
+			  ;; Useful to purge "src" layers from "bin"
+			  ;; directories (assuming *all* "bin"
+			  ;; subdirectories come from "src"
+			  ;; subdirectories).--
+			  (pop below-dirs))
 			 (t
-			  ;; A normal directory gets copied to 'res' --
-			  (push d res))))
-;;;;		(format t "pn-dir = ~s~%res = ~s~%resid = ~s~%"
-;;;;			pn-dir res resid)
+			  ;; A normal directory gets copied to
+			  ;; 'from-dir-list' --
+			  (push d from-dir-list))))
+;;;;		(format t "above-dirs = ~s~%from-dir-list = ~s~%below-dirs = ~s~%"
+;;;;			above-dirs from-dir-list below-dirs)
 		(let ((res-pn
 		          (make-Pathname
 			      :directory
-			         `(:absolute ,@(reverse pn-dir)
-					     ,@(reverse res) ,@resid)
+			         `(:absolute ,@(reverse above-dirs)
+					     ,@(reverse from-dir-list)
+					     ,@below-dirs)
 			      :type suff)))
 		   (cond (ensure-existence
 			  (ensure-directories-exist res-pn)))
@@ -434,7 +445,7 @@
    `(and (setf (href ytools-logical-names-table* ',sym)
                (make-Pseudo-pathname ',sym))
 	 (datafun :pn-parse
-	    ,defn)))
+	    ,parser-defn)))
 
 (datafun-alist pn-parsers* :pn-parse)
 

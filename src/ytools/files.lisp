@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.7 2004/12/10 22:58:47 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.8 2004/12/13 03:26:36 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -10,7 +10,7 @@
 (eval-when (:load-toplevel)
    (export '(fload fcompl fload-compile* fcompl-reload*
 	     fload-versions
-	     always-slurp
+	     always-slurp end-header
 	     debuggable debuggability*)))
 
 (defvar fload-flags* '(- -f -a -c -s -o))
@@ -57,10 +57,11 @@
 					 "Illegal flag to 'fload': ~s" flag)
 				 false))))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
-  	   (pathname-fload pn force-flag file-manip)
+  	   (pathname-fload pn :force-load force-flag
+			      :file-manip file-manip)
 	  ))))
 
-(defgeneric pathname-fload (pn))
+(defgeneric pathname-fload (pn &key force-load file-manip))
 
 (defmethod pathname-fload ((pn pathname)
 			   &key force-load file-manip)
@@ -134,8 +135,6 @@
 (defvar final-load* false)
 ; When building systems, bind to true to minimize soul-searching later.
 
-(defgeneric pathname-fload (pn &key force-load file-manip remember))
-
 (defun place-file-chunk (pn)
    (multiple-value-bind (yt-pathname l-pathname)
 			(cond ((is-YTools-pathname pn)
@@ -151,17 +150,23 @@
 	       :pathname l-pathname
 	       :alt-version false)))))
 
+;;; Represents a source file having an up-to-date compiled version.
 (defclass Compiled-file-chunk (File-chunk)
   ((source-file :initarg :source-file
 		:reader Compiled-file-chunk-source-file
 		:type File-chunk)))
 
-;;; Represents the version to be loaded, source, object, or alternative
-;;; version of file.
+;;; Represents the decision having been made which variant of a
+;;; file to load, source, object, or alternative
+;;; version of file (see fload-versions, below).
 (defclass Loadable-chunk (Chunk)
    ((file :reader Loadable-chunk-file
 	  :initarg :file
 	  :type File-chunk)
+    ;; The variant currently selected --
+    (selection :accessor Loadable-chunk-selection
+	  :initform false)
+    ;; The criterion (supplied by user) for how to make the selection --
     (manip :accessor Loadable-chunk-manip
 	   :initarg :manip
 	   :type (member :compile :source :object
@@ -177,19 +182,23 @@
     ;;   :follow -> replace 'manip' value with value of fload-compile*
 
     (source :reader Loadable-chunk-source
-	    :initarg :source
-	    :type File-chunk)
+	    :initarg :source)
+    (compiled :reader Loadble-chunk-compiled
+	      :initarg :compiled)
     (object :reader Loadable-chunk-object
-	    :initarg :object
-	    :type File-chunk)))
+	    :initarg :object)))
 
-;;; A file (compiled or source) as loaded into primary memory --
+;;; A file (compiled or source) as having the appropriate
+;;; variant loaded into primary memory --
 (defclass Loaded-chunk (Chunk)
    ((loadable :reader Loaded-chunk-loadable
 	      :initarg :loadable
-	      :type Loadable-chunk)
-    (basis-chunk :accessor Loaded-chunk-basis-chunk
-		 :initform false)))
+	      :type (or null Loadable-chunk))
+    ;; -- loadable is false (typically) if this is an object file
+    ;; that we don't want to consider compiling.
+    ;; The File-chunk this one governs --
+    (file :accessor Loaded-chunk-basis-chunk
+	  :type File-chunk)))
 
 ;;; Corresponds to information gleaned from file header about what
 ;;; other files (and modules, ...) are necessary in order to load or
@@ -198,7 +207,7 @@
 (defclass Loaded-basis-chunk (Chunk)
   ((file :reader Loaded-basis-chunk-file
 	:initarg :file
-	:type File-chunk)))  
+	:type File-chunk)))
 ;;; It would be a reasonable idea to have alternative versions of this
 ;;; chunk that use 'defsystem' information to figure out the basis.
 
@@ -214,8 +223,7 @@
 ;;; -- The idea is that anything we didn't anticipate takes us
 ;;; out of the header.
    :file->state-fcn (\\ (pn) 
-		       (place-loaded-basis-chunk
-			  (place-file-chunk pn))))
+		       (place-file-chunk pn)))
 
 (defun place-loaded-basis-chunk (fc)
    (chunk-with-name `(:loaded-basis ,(File-chunk-pathname fc))
@@ -231,27 +239,36 @@
 ;;; chunks whose basis it might affect.  That's because 'chunks-update'
 ;;; is based on the assumption that the bases it sees are not in the
 ;;; process of changing.  This comment applies to 
-;;; 'loadable-chunk-compute-basis' as well.
+;;; 'loaded-chunk-compute-basis' as well.
 
 (defmethod derive ((fb Loaded-basis-chunk))
-   (cond ((= (Chunk-date fb) file-op-count*)``
+   (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
 	  (let ((file-ch (Loaded-basis-chunk-file fb)))
 	     (setf (File-chunk-callees ch) !())
 	     (setf (Chunk-basis
 		      (place-compiled-chunk file-ch))
-		   !())
+		   (list file-ch))
 	     (file-slurp (File-chunk-pathname file-ch)
 			 (list compute-file-basis*)
 ;;;;			 (list file-ch)
 	     )
 	     file-op-count*))))
 
+(defmacro end-header (&rest _)
+   '(values))
+
 (datafun :compute-file-basis end-header
    (defun :^ (form file-ch) ;; -- of file being slurped
       (cond ((memq ':no-compile (cdr form))
 	     (place-loadable-chunk file-ch ':source)))
+      (cond ((memq ':continue-slurping (cdr form))
+,better idea: manage (:slurped (:macros <file>))
+	     (format *error-output*
+		     !"Warning-- ':continue-slurping' found in 'end-header' ~
+                       form for ~%   ~s~%"
+		     file-ch)))
    ;;;;      (cond ((and (memq ':continue-slurping (cdr form))
    ;;;;		  (eq slurping-how-much* ':at-least-header))
       (cond (end-header-dbg*
@@ -262,30 +279,38 @@
 
 (defun place-loaded-chunk (file-chunk file-manip)
    (let ((file-choice
-	    (place-loadable-chunk file-chunk file-manip)))
+	    (cond ((eq file-manip ':nochoice) false)
+		  (t
+		   (place-loadable-chunk file-chunk file-manip)))))
       (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
 	   (\\ (name-exp)
 	      (make-instance 'Loaded-chunk
 		 :name name-exp
 		 :loadable file-choice
-		 :basis (list file-choice))))))
+		 :file file-chunk)))))
 
 (defmethod derive ((lc Loaded-chunk))
    (let ((loadable (Loaded-chunk-loadable lc)))
-      (let ((file-chunk (first (Chunk-basis loadable))))
+      (let ((chunk-of-file-to-load
+	       (cond (loadable
+		      (Loadable-chunk-selection loadable))
+		     (t
+		      (Loaded-chunk-file lc)))))
 	 (with-post-file-transduction-hooks
 	    (cleanup-after-file-transduction
 	       (let ((*package* *package*)
 		     (*readtable* *readtable*)
 		     (fload-indent* (+ 3 fload-indent*)))
 		  (fload-op-message "Loading"
-				    (File-chunk-yt-pathname file-chunk)
-				    (File-chunk-pathname file-chunk)
+				    (File-chunk-yt-pathname
+				        chunk-of-file-to-load)
+				    (File-chunk-pathname chunk-of-file-to-load)
 				    "...")
 
-		  (load (File-chunk-pathname file-chunk))
+		  (load (File-chunk-pathname chunk-of-file-to-load))
 		  (fload-op-message "...loaded"
-				    (File-chunk-yt-pathname file-chunk)
+				    (File-chunk-yt-pathname
+				        chunk-of-file-to-load)
 				    false
 				    ""))))
 	 (get-universal-time))))
@@ -313,10 +338,15 @@
 				    :name name
 				    :file file-chunk
 				    :manip (or manip ':follow)
-				    :object (cond (is-source compiled-chunk)
-						  (t file-chunk))
 				    :source (cond (is-source file-chunk)
-						  (t false)))))
+						  (t false))
+				    :compiled (cond (is-source compiled-chunk)
+						    (t file-chunk))
+				    :object (cond (is-source
+						   (place-file-chunk
+						      (File-chunk-pathname
+							 compiled-chunk)))
+						  (t file-chunk)))))
 			   (push new-lc all-loadable-chunks*)
 			   new-lc)))))))
       (cond (manip
@@ -324,10 +354,10 @@
 			     manip))
 		    (format *error-output*
 			    "Changing manip of ~s from ~s to ~s~%"
-			    ld-chunk (Loadable-chunk-manip ld-chunk) manip))
-		   (setf (Loadable-chunk-manip ld-chunk)
-			 manip))))
-      (loadable-chunk-compute-basis ld-chunk)
+			    ld-chunk (Loadable-chunk-manip ld-chunk) manip)
+		    (setf (Loadable-chunk-manip ld-chunk)
+		          manip)))))
+      (loaded-chunk-compute-basis ld-chunk)
       ld-chunk))
 
 ;;; Possible values: 
@@ -365,7 +395,7 @@
 		      '(:defer :follow))
 		(push lc loadables-needing-checking))))
       (dolist (lc loadables-needing-checking)
-	 (loadable-chunk-compute-basis lc)
+	 (loaded-chunk-compute-basis lc)
 	 (cond ((not (chunk-up-to-date lc))
 		(push lc loadables-needing-update))))
       (chunks-update loadables-needing-update)))
@@ -374,7 +404,7 @@
 ;;; The field is changed only by functions defined in this file.
 ;;; Make sure that that remains the case, and that changes in the
 ;;; 'manip' field are carefully synchronized with calls to this function. --
-(defun loadable-chunk-compute-basis (loadable-ch)
+(defun loaded-chunk-compute-basis (loadable-ch)
    (let* ((file-ch (Loadable-chunk-file loadable-ch))
 	  (manip (Loadable-chunk-manip loadable-ch))
 	  (source-exists (Loadable-chunk-source file-ch))
@@ -386,10 +416,10 @@
 	     (error "No source or object file can be found for ~s"
 		    loadable-ch)))
       (cond ((File-chunk-alt-version file-ch)
-	     (setf (Chunk-basis loadable-ch)
-		   (list (place-loadable-chunk
+	     (setf (Chunk-basis loaded-ch)
+		   (list (place-loaded-chunk
 			    (File-chunk-alt-version file-ch)
-			    false))))
+			    ':nochoice))))
 	    (t
 	     (cond (source-exists
 		    (let ((lb (place-loaded-basis-chunk file-ch)))
@@ -409,27 +439,32 @@
 	     (cond ((memq manip '(:ask-once :ask-every :ask-ask))
 		    (setq manip
 		          (ask-user-for-manip loadable-ch
-					      object-exists))))
+					      object-exists)))
+		   ((and (eq manip ':object)
+			 (not object-exists))
+		    (cerror "I will compile the source file"
+			    !"Request to load nonexistent ~
+			      object file for ~s"
+			    (File-chunk-pathname file-ch))
+		    (setq manip ':compile)))
 	     ;; At this point manip is either :object, :source, or
 	     ;; :compile
-	     (setf (Chunk-basis loadable-ch)
-		   (ecase manip
-		      (:source
-		       (list (Loadable-chunk-source loadable-ch)))
-		      ((:object :compile)
-		       (cond ((and (not object-exists)
-				   (eq manip ':object))
-			      (cerror "I will compile the source file"
-				      !"Request to load nonexistent ~
-					object file for ~s"
-				      (File-chunk-pathname file-ch))
-			      (setq manip ':compile)))
-		       (cond ((eq manip ':object)
-			      (list (Loadable-chunk-object loadable-ch)))
-			     (t
-			      (list (place-compiled-chunk
-				       (Loadable-chunk-source
-					   loadable-ch))))))))))))
+	     (setf (Chunk-basis loaded-ch)
+		   (list (ecase manip
+			    (:source
+			     (Loadable-chunk-source loadable-ch))
+			    (:compile
+			     (place-compiled-chunk
+				(Loadable-chunk-source loadable-ch)))
+			    (:object
+			     (Loadable-chunk-object loadable-ch)))))
+	     (setf (Loadable-chunk-selection loadable-ch)
+		   (cond ((eq manip ':compile)
+			  (place-file-chunk
+			     (Compiled-file-chunk-pathname
+				(head (Chunk-basis loaded-ch)))))
+			 (t
+			  (head (Chunk-basis loaded-ch)))))))))
 
 (defun ask-user-for-manip (loadable-ch obj-exists)
    (let ()
@@ -532,7 +567,7 @@
   manip)
 
 (defmethod derive ((ldbl Loadable-chunk))
-  (get-universal-time))
+   false)
 
 (defun place-compiled-chunk (source-file-chunk)
    (let ((filename (File-chunk-pathname source-file-chunk)))
@@ -547,9 +582,11 @@
 					       filename
 					       false)
 				  :name exp
-				  :height (+ (File-chunk-height
-						source-file-chunk)
-					     1)
+				  ;; This will be changed when we
+				  ;; derive the Loaded-basis-chunk
+				  ;; for the source file, but
+				  ;; it must always include the
+				  ;; source-file chunk --
 				  :basis (list source-file-chunk))))
 			 new-chunk)))))
 	 (setf (Chunk-basis compiled-chunk)
@@ -593,7 +630,12 @@
 ;;; (:slurped (N f))
 ;;; The Or-chunk has disjuncts (union L {(:slurped (N f))}), default
 ;;; (:slurped (N f)).
-(defmacro def-sub-file-type (sym &key ((:default default-handler^)))
+(defmacro def-sub-file-type (sym
+			     &key
+			     ((:default default-handler^)
+			      'nil)
+			     ((:file->state-fcn file->state-fcn^)
+			      '(\\ (_) nil)))
    (let  ((sym-name (Symbol-name name)))
       (let ((subfile-class-name (build-symbol (:< (string-capitalize sym-name))
 					      -chunk))
@@ -621,20 +663,24 @@
 		((pathname :reader ,sub-pathname-read-fcn
 			   :initarg :pathname
 			   :type pathname)))
+
 	     (defmethod initialize-instance :after
 				  ((ch ,subfile-class-name)
 				   &rest _)
 		(setf (Chunk-basis ch)
 		      (list (place-file-chunk (,sub-pathname-read-fcn ch)))))
+
 	     (defclass ,slurped-class-name (Chunk)
 	       ((subfile :reader ,slurped-subfile-read-fcn
 			 :initarg :subfile
 			 :type Chunk)))
+
 	     (defmethod initialize-instance :after
 					    ((ch ,slurped-class-name)
 					     &rest _)
 		(setf (Chunk-basis ch)
 		      (list (,slurped-subfile-read-fcn ch))))
+
 	     (defun ,slurped-subfile-placer-fcn (pn)
 		(chunk-with-name
 		   `(:slurped (,',sub-file-type pn))
@@ -648,6 +694,7 @@
 					      ',sub-file-class-name
 					   :name sub-name-exp
 					   :pathname pn)))))))
+
 	     (defclass ,loaded-sym-class-name (Or-chunk)
 		((pathname :reader
 			      (build-symbol (:< loaded-sym-class-name)
@@ -656,6 +703,7 @@
 			   :type pathname)
 		 (loaded-file :accessor ,loaded-class-loaded-file-acc
 			      :type Loaded-chunk)))
+
 	     (defmethod initialize-instance :after
 					    ((ch ,loaded-sym-class-name)
 					     &key sub-file-type file
@@ -668,11 +716,11 @@
 			 (list file-chunk))
 		   (setf (Or-chunk-disjuncts ch)
 			 (list file-chunk slurped-chunk))))
+
 	     (def-slurp-task ,slurp-task-name
 		:default ,default-handler^
-		:file->state-fcn
-		   (\\ (pn) (,slurped-subfile-placer-fcn
-				          pn)))
+		:file->state-fcn ,file->state-fcn^)
+
 	     (defmethod derive ((x ,subfile-class-name))
 		(let ((file (,sub-pathname-read-fcn x)))
 		   (file-slurp file
@@ -729,28 +777,66 @@
                                                         (cons (car news) sn)
                                                         rso))))))))
                             (segregate olds news))
-       (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
-	    (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
-	   ((null oldl))
-          (setf (File-chunk-alt-version
-		    (place-file-chunk (car oldl)))
-                (place-file-chunk (car newl))))
-       (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
-	   ((null oldl))
-          (setf (File-chunk-alt-version
-		    (place-file-chunk (car oldl)))
-                false))
-       (nconc reset-olds (mapcar #'list set-olds set-news))))
+      (let ((changing-chunks !()))
+	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
+	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
+	     ((null oldl))
+	    (let ((fc (place-file-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     (place-file-chunk (car newl)))
+	       (push fc changing-chunks)))
+	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
+	     ((null oldl))
+	    (let ((fc (place-file-chunk (car oldl))))
+	       (setf (File-chunk-alt-version fc)
+		     false)
+	       (push fc changing-chunks)))
+	 (chunks-update changing-chunks)
+	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
+
+
+(def-sub-file-type :macros)
+
+(defun macros-slurp-eval (e _) (eval e) false)
+
+(datafun :slurp-macros defmacro #'macros-slurp-eval)
+
+(defmacro needed-by-macros (&body l)
+   `(progn ,@l))
+
+(datafun :slurp-macros needed-by-macros
+   (defun :^ (exp _)
+      (dolist (e exp) (eval e))
+      false))
+
+(datafun :slurp-macros defsetf  #'macros-slurp-eval)
+
+(datafun :slurp-macros defstruct #'macros-slurp-eval)
+
+(datafun :slurp-macros defvar
+   (defun :^ (form _)
+      (eval `(defvar ,(cadr form)))
+      false))
+
+(datafun :slurp-macros defconstant
+   (defun :^ (form _)
+      (cond ((not (boundp (cadr form)))
+	     (eval form)))
+      false))
+
+(datafun :slurp-macros subr-synonym #'macros-slurp-eval)
+
+(datafun :slurp-macros datafun
+  (defun :^ (e _)
+    (cond ((eq (cadr e) 'attach-datafun)
+	   (eval e)))
+    false))
+
 
 
 ;;; Old stuff from here on --
 
 *************************
-
-
-(defvar loading-stack*   nil)
-   ;; -- stack of Pathnames of files currently being loaded
-
 (defvar loading-src-or-obj* false) ; :source, :object, or false
 
 (defvar fcompl-flags* '(- -f))
@@ -1020,4 +1106,3 @@
 	  (declaim (optimize (speed ,speed) (safety ,safety)
 			     (space ,space) (debug ,debug)))
 	  (setq debuggability* ,n))))
-	 

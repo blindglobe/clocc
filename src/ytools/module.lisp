@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.5 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.6 2004/12/13 03:26:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -99,9 +99,6 @@
    (alref ytools-modules* name))
 
 (defvar loaded-ytools-modules* !())
-
-(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
-(defvar obj-suffix* lisp-object-extn*)
 
 (defconstant can-get-write-times*
     #.(not (not (file-write-date

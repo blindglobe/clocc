@@ -1,16 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.3 2004/12/06 15:09:54 airfoyle Exp $
-
-(defvar datum-a*)
-(defvar datum-b*)
-(defvar datum-c*)
-
-;; For ease of reading, we don't use universal time, but the number
-;; of numerical ops, as our clock.
-
-(defvar num-num-ops* 0)
+;;; $Id: chunktest.lisp,v 1.1.2.4 2004/12/13 03:26:36 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -24,6 +15,11 @@
 	   (cond ((slot-boundp n 'cont)
 		  (Num-reg-contents n))
 		 (t "??"))))
+
+;; For ease of reading, we don't use universal time, but the number
+;; of numerical ops, as our clock.
+
+(defvar num-num-ops* 0)
 
 (defmethod derive ((r Num-reg))
    (cond ((not (slot-boundp r 'fcn))
@@ -41,48 +37,71 @@
 		    num-num-ops*)
 		   (t false))))))
 
-(defparameter
-    chunk-a* 
-    (make-instance 'Num-reg
-	  :name 'a
-	  :basis '()))
-
-(defparameter
-    chunk-b*
-    (make-instance 'Num-reg
-	  :name 'b
-	  :basis '()))
-
-(defparameter
-    chunk-c*
-    (make-instance 'Num-reg
-	  :name 'c
-	  :basis '()))
-
-(defclass K-A-aux (Num-reg)
-   ((delta :accessor K-A-aux-s
-	   :initarg :delta
+;;; We make this a subclass of Num-reg because it will have derivees
+;;; that are Num-regs.--
+(defclass Num-pair-reg (Num-reg)
+   ((cont1 :accessor Num-pair-reg-one
+	   :initarg :one
+	   :type number)
+    (cont2 :accessor Num-pair-reg-two
+	   :initarg :two
 	   :type number)))
-  
-;;; Create a new Num-reg whose value is (v+1)^2, where v is the 
-;;; contents of reg.
-(defun setup-fcn1 (reg delta)
-   (let* ((aux-chunk (make-instance 'K-A-aux
-		        :name (build-symbol aux- (:++ symno*))
-			:delta delta
-			:fcn (\\ (bn _) (+ (first bn) delta ))
-			:basis (list reg)))
-	  (res-chunk (make-instance 'Num-reg
-		       :name (build-symbol res- (:++ symno*))
-		       :basis (list reg)
-		       :update-basis (list aux-chunk)
-		       :fcn (\\ (_ xn) (* (first xn)
-					  (first xn))))))
-      res-chunk))
 
-(defparameter nr1*
-    (setup-fcn1 chunk-a* 1))
+(defmethod derive ((npr Num-pair-reg))
+   (let ((basis (Chunk-basis npr)))
+      (cond ((and (= (length basis)
+		     2)
+		  (every (\\ (b) (typep b 'Num-reg))
+			 basis))
+	     (setf (Num-pair-reg-one npr)
+		   (Num-reg-contents (head basis)))
+	     (setf (Num-pair-reg-two npr)
+	           (Num-reg-contents (head (tail basis))))
+	     ;; We do this to avoid having the slot be empty --
+	     (setf (Num-reg-contents npr) 0)
+	     (incf num-num-ops*))
+	    (t
+	     (error "Buggy basis: ~s" npr)))))
 
+(defun non-mon-cycle-detect ()
+   (let* ((val -1)
+	  (prin-chunk (make-instance 'Num-reg
+			 :name 'prin
+			 :basis !()
+			 :contents 1
+			 :fcn (\\ (_ _) (setq val 1))))
+	  (def-chunk (make-instance 'Num-reg
+			:name 'def
+			:basis (list prin-chunk)
+			:contents 0
+			:fcn (\\ (_ _) (setq val 0))))
+	  (or-chunk (make-instance 'Or-chunk
+		       :disjuncts (list prin-chunk def-chunk)
+		       :default def-chunk)))
+      ;; This should cause an error; if it doesn't, an infinite
+      ;; loop should ensue --
+      (chunk-request-mgt or-chunk)
+      ;; This point should never be reached --
+      val))
+
+;;; Disjuncts are a Num-pair-reg and a Num-reg that
+;;; is equal to the second element of the pair
+(defclass Recip-chunk (Or-chunk Num-reg)
+   ())
+
+(defmethod derive ((rc Recip-chunk))
+   (let ((disjuncts (Or-chunk-disjuncts rc)))
+      (cond ((Chunk-managed (first disjuncts))
+	     (setf (Num-reg-contents rc)
+		   (Num-pair-reg-two (first disjuncts)))
+	     (incf num-num-ops*))
+	    ((Chunk-managed (second disjuncts))
+	     (setf (Num-reg-contents rc)
+		   (Num-reg-contents (second disjuncts)))
+	     (incf num-num-ops*))
+	    (t
+	     (error "Recip-chunk ~s has unmanaged disjuncts"
+		    rc)))))
 
 ;; Numbers (these should all be nonnegative to avoid possibility
 ;; of dividing by zero below)--    
@@ -98,9 +117,17 @@
 
 (defvar numer*)
 
+(defvar rough-denom*)
+
 (defvar denom*)
 
-(defvar top-chunk*)
+(defvar quo-chunk*)
+
+(defvar recip-chunk*)
+
+;;;;(defvar numer-denom-reg* (list 0 0))
+
+(defvar numer-denom-pair*)
 
 (defun build-test-net (k)
    (setq ivec* (make-array k))
@@ -145,7 +172,7 @@
 		       (setq accum
 			     (+ accum
 				(* sign (first bl) (first ul))))))))
-   (setq denom*
+   (setq rough-denom*
 	 (labels ((build-denom (j)
 		     (cond ((= j (- k 2))
 			    (aref inter-chunks* j))
@@ -160,14 +187,32 @@
 				  :fcn (\\ (_ ub)
 					  (/ (first ub) (second ub)))))))))
 	    (build-denom 0)))
-   (setq top-chunk*
+   (setq numer-denom-pair*
+         (make-instance 'Num-pair-reg
+	    :name "<numer,denom>"
+	    :basis (list numer* rough-denom*)
+	    :update-basis !()))
+   ;; This has the same value as rough-denom*, but a shorter name --
+   (setq denom*
+         (make-instance 'Num-reg
+	    :name "denom"
+	    :basis (list rough-denom*)
+	    :fcn (\\ (d _) (first d))))
+   (setq recip-chunk*
+         (make-instance 'Recip-chunk
+	    :name 'recip
+	    :basis (list numer* rough-denom*)
+	    :disjuncts (list numer-denom-pair* denom*)
+	    :default denom*))
+   (setq quo-chunk*
 	 (make-instance 'Num-reg
 	     :name "numer/denom"
-	     :basis (list numer* denom*)
+	     :basis (list numer-denom-pair*)
 	     :update-basis !()
-	     :fcn (\\ (b _) (/ (first b) (second b))))))
+	     :fcn (\\ (_ _) (/ (Num-pair-reg-one numer-denom-pair*)
+			       (Num-pair-reg-two numer-denom-pair*))))))
 
-;;; Independent computer of value of top-chunk*
+;;; Independent computer of value of quo-chunk* or recip-chunk*
 (defun compute ()
    (let ((k (length ivec*)))
       (let ((n (do ((i 0 (+ i 1))
@@ -192,11 +237,14 @@
 ;;;;		  (format t "i = ~s   quo = ~s~%" i quo)
 		)))
 	  (format t "n = ~s   d = ~s~%" n d)
-	  (/ n d))))
+	  (cond ((Chunk-managed quo-chunk*)
+		 (/ n d))
+		(t
+		 d)))))
 	   
 ;;; Build net before starting this --
 (defun net-direct-compare (which-input start-val)
-   (chunk-request-mgt top-chunk*)
+   (chunk-request-mgt recip-chunk*)
    (do ((i start-val (+ i 1))
 	(j which-input (+ j 1))
 	(k (length ivec*)))
@@ -206,11 +254,79 @@
       (setf (aref ivec* j) i)
       (incf num-num-ops*)
       (chunk-up-to-date (aref input-chunks* j))
-      (chunk-update top-chunk*)
+      (cond ((Chunk-managed quo-chunk*)
+	     (chunk-terminate-mgt quo-chunk* false)
+	     (chunk-update recip-chunk*))
+	    (t
+	     (chunk-request-mgt quo-chunk*)
+	     (chunks-update (list quo-chunk* recip-chunk*))))
       (let ((direct (compute))
-	    (via-chunks (Num-reg-contents top-chunk*)))
+	    (via-chunks (Num-reg-contents
+			   (cond ((Chunk-managed quo-chunk*)
+				  quo-chunk*)
+				 (t
+				  recip-chunk*)))))
 	 (format t "~s: ~s <?> ~s~%"
 		   i direct via-chunks)
 	 (cond ((not (= direct via-chunks))
-		(return))))))
+		(format t "Oops! i = ~s j = ~s ~%" i j)
+		(return))
+	       (t
+		(let ((denom-mg (Chunk-managed denom*))
+		      (quo-mg (Chunk-managed quo-chunk*)))
+		   (cond ((cond (denom-mg quo-mg)
+				(t (not quo-mg)))
+			  (format t "Bummer: denom-mg = ~s quo-mg = ~s~%"
+				  denom-mg quo-mg)
+			  (return)))))))))
 
+;;; Everything else is not currently needed --
+#|
+(defvar datum-a*)
+(defvar datum-b*)
+(defvar datum-c*)
+
+(defparameter
+    chunk-a* 
+    (make-instance 'Num-reg
+	  :name 'a
+	  :basis '()))
+
+(defparameter
+    chunk-b*
+    (make-instance 'Num-reg
+	  :name 'b
+	  :basis '()))
+
+(defparameter
+    chunk-c*
+    (make-instance 'Num-reg
+	  :name 'c
+	  :basis '()))
+
+(defclass K-A-aux (Num-reg)
+   ((delta :accessor K-A-aux-s
+	   :initarg :delta
+	   :type number)))
+  
+;;; Create a new Num-reg whose value is (v+1)^2, where v is the 
+;;; contents of reg.
+(defun setup-fcn1 (reg delta)
+   (let* ((aux-chunk (make-instance 'K-A-aux
+		        :name (build-symbol aux- (:++ symno*))
+			:delta delta
+			:fcn (\\ (bn _) (+ (first bn) delta ))
+			:basis (list reg)))
+	  (res-chunk (make-instance 'Num-reg
+		       :name (build-symbol res- (:++ symno*))
+		       :basis (list reg)
+		       :update-basis (list aux-chunk)
+		       :fcn (\\ (_ xn) (* (first xn)
+					  (first xn))))))
+      res-chunk))
+
+(defparameter nr1*
+    (setup-fcn1 chunk-a* 1))
+
+
+|#

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-05-27 Wed 17:20:59 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-06-16 Tue 10:37:19 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.2 1998/05/27 21:24:47 sds Exp $
+;;; $Id: math.lisp,v 1.3 1998/06/16 14:38:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.3  1998/06/16 14:38:30  sds
+;;; Replaced division with recursion in `!!'.
+;;;
 ;;; Revision 1.2  1998/05/27 21:24:47  sds
 ;;; Added :key to `freqs' and moved it to list.lisp.
 ;;;
@@ -54,14 +57,21 @@
   "Compute the double factorial: n!! = n * (n-2) * (n-4) * ..."
   (declare (fixnum nn))
   (multiple-value-bind (kk rr) (floor nn 2)
-    (if (zerop rr) (* (! kk) (expt 2 kk)) (/ (! nn) (!! (1- nn))))))
+    (if (zerop rr) (* (! kk) (expt 2 kk))
+        (labels ((ff (aa bb)
+                   (case (- bb aa)
+                     (2 bb) (4 (* bb (- bb 2))) (6 (* bb (- bb 2) (- bb 4)))
+                     (8 (* bb (- bb 2) (- bb 4) (- bb 6)))
+                     (t (let ((mm (1+ (ash (ash (+ aa bb) -2) 1))))
+                          (* (ff aa mm) (ff mm bb)))))))
+          (if (> nn 1) (ff 1 nn) 1)))))
 
 (defun dot (l0 l1 &key (key #'value) (key0 key) (key1 key))
   "Compute the dot-product of the two sequences,
 presumed to be of the same size."
   (declare (sequence l0 l1) (type (function (t) double-float) key key0 key1)
 	   (values double-float))
-  (let ((res 0.0))
+  (let ((res 0.0d0))
     (declare (double-float res))
     (map nil (lambda (r0 r1)
 	       (incf res (* (funcall key0 r0) (funcall key1 r1))))
@@ -73,7 +83,7 @@ presumed to be of the same size."
 COEFFS are (a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly 10 1 2 3 4 5) ==> 12345."
   (declare (double-float var) (list coeffs) (values double-float))
-  (let ((res 0.0))
+  (let ((res 0.0d0))
     (declare (double-float res))
     (dolist (cc coeffs res)
       (declare (double-float cc))
@@ -85,7 +95,7 @@ COEFFS are #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly 10 1 2 3 4 5) ==> 12345."
   (declare (double-float var) (type (simple-array double-float (3)) coeffs)
 	   (values double-float))
-  (let ((res 0.0))
+  (let ((res 0.0d0))
     (declare (double-float res))
     (dotimes (ii (length coeffs) res)
       (declare (fixnum ii))
@@ -95,10 +105,10 @@ so that (poly 10 1 2 3 4 5) ==> 12345."
   "Compute the error function, accurate to 1e-6. See Hull p. 243.
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx) (values double-float double-float))
-  (let* ((der (/ (exp (* -0.5 (sqr xx))) (sqrt (* 2 pi))))
-	 (val (- 1 (* der (poly (/ 1 (1+ (* (abs xx) 0.2316419)))
-				1.330274429 -1.821255978 1.781477937
-				-0.356563782 0.319381530 0.0)))))
+  (let* ((der (/ (exp (* -0.5d0 (sqr xx))) (double-float (sqrt (* 2 pi)))))
+	 (val (- 1 (* der (poly (/ 1 (1+ (* (abs xx) 0.2316419d0)))
+				1.330274429d0 -1.821255978d0 1.781477937d0
+				-0.356563782d0 0.319381530d0 0.0d0)))))
     (declare (double-float der val))
     (values (if (minusp xx) (- 1 val) val) der)))
 
@@ -106,12 +116,12 @@ Return the value and the derivative, suitable for `newton'."
   "Compute the ORDERth norm of the SEQ. ORDER of 0 means infinity."
   (declare (sequence seq) (real order) (type (function (t) double-float) key))
   (case order
-    (0 (reduce #'max seq :key (compose #'abs key)))
-    (1 (reduce #'+ seq :key (compose #'abs key)))
-    (2 (sqrt (reduce #'+ seq :key (compose #'sqr #'abs key))))
+    (0 (reduce #'max seq :key (compose abs 'key)))
+    (1 (reduce #'+ seq :key (compose abs 'key)))
+    (2 (sqrt (reduce #'+ seq :key (compose sqr abs 'key))))
     (t (expt (reduce #'+ seq :key
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
-	     (/ 1.0 (double-float order))))))
+	     (/ 1.0d0 (double-float order))))))
 
 (defun normalize (lst &optional (norm #'norm))
   "Make the list have unit norm. Drop nils."
@@ -126,7 +136,7 @@ Return the value and the derivative, suitable for `newton'."
   "Return the square of the relative mismatch between the 2 sequences."
   (declare (sequence seq1 seq2) (type (or null fixnum) depth)
 	   (type (function (t) double-float) key) (fixnum start1 start2))
-  (let ((b1 (funcall key (elt seq1 start1))) (dist 0.0)
+  (let ((b1 (funcall key (elt seq1 start1))) (dist 0.0d0)
 	(b2 (funcall key (elt seq2 start2)))
 	(depth (or depth (min (- (length seq1) start1)
 			      (- (length seq2) start2)))))
@@ -178,7 +188,7 @@ Returns 2 values: the mean and the length of the sequence."
 with weights WTS (not necessarily normalized)."
   (declare (sequence seq wts) (type (function (t) double-float) key)
 	   (values double-float))
-  (let ((twt (reduce #'+ wts)) (res 1.0))
+  (let ((twt (reduce #'+ wts)) (res 1.0d0))
     (declare (double-float res twt))
     (map nil (lambda (rr wt)
 	       (declare (double-float wt))
@@ -200,7 +210,7 @@ The mean and the length can be pre-computed for speed."
   (declare (sequence seq) (fixnum len) (double-float mean)
 	   (type (function (t) double-float) key)
 	   (values double-float double-float fixnum))
-  (when (<= len 1) (return-from standard-deviation (values 0.0 mean len)))
+  (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
   (values
    (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
 	    (1- len))) mean len))
@@ -237,12 +247,12 @@ Meaningful only if all the numbers are of the same sign."
   "Quadratic regression."
   (declare (sequence seq) (type (function (t) double-float) xkey ykey)
 	   (values (simple-array double-float (3)) double-float))
-  (let ((c0 (make-array 3 :element-type 'double-float :initial-element 0.0))
-	(c1 (make-array 3 :element-type 'double-float :initial-element 0.0))
-	(c2 (make-array 3 :element-type 'double-float :initial-element 0.0))
-	(c3 (make-array 3 :element-type 'double-float :initial-element 0.0))
-	(re (make-array 3 :element-type 'double-float :initial-element 0.0))
-	(det 0.0) (nn 0) (inv 0.0) (y2b 0.0))
+  (let ((c0 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
+	(c1 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
+	(c2 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
+	(c3 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
+	(re (make-array 3 :element-type 'double-float :initial-element 0.0d0))
+	(det 0.0d0) (nn 0) (inv 0.0d0) (y2b 0.0d0))
     (declare (type (simple-array double-float (3)) c0 c1 c2 c3 re)
 	     (double-float det inv y2b) (fixnum nn))
     (map nil (lambda (el)
@@ -259,10 +269,10 @@ Meaningful only if all the numbers are of the same sign."
 		 (incf (aref c3 2) (* yy x2))))
 	 seq)
     (assert (> nn 2) (nn) "Too few (~d) points are given to regress2!" nn)
-    (setq inv (/ 1.0 nn)) (mulf (aref c1 0) inv) (mulf (aref c0 0) inv)
+    (setq inv (/ 1.0d0 nn)) (mulf (aref c1 0) inv) (mulf (aref c0 0) inv)
     (mulf (aref c0 1) inv) (mulf (aref c0 2) inv) (mulf y2b inv)
     (mulf (aref c3 0) inv) (mulf (aref c3 1) inv) (mulf (aref c3 2) inv)
-    (setf (aref c2 0) 1.0
+    (setf (aref c2 0) 1.0d0
 	  (aref c2 1) (aref c1 0)
 	  (aref c2 2) (aref c0 0)
 	  (aref c1 1) (aref c0 0)
@@ -276,12 +286,12 @@ Meaningful only if all the numbers are of the same sign."
 			       (/ (det3 c0 c1 c3) det))))
     (values re (sqrt (/ (+ y2b (* (sqr (aref re 0)) (aref c0 2))
 			   (* (sqr (aref re 1)) (aref c0 0)) (sqr (aref re 2))
-			   (* -2.0 (aref re 0) (aref c3 2))
-			   (* -2.0 (aref re 1) (aref c3 1))
-			   (* -2.0 (aref re 2) (aref c3 0))
-			   (* 2.0 (aref re 0) (aref re 1) (aref c0 1))
-			   (* 2.0 (aref re 0) (aref re 2) (aref c0 0))
-			   (* 2.0 (aref re 1) (aref re 2) (aref c1 0)))
+			   (* -2.0d0 (aref re 0) (aref c3 2))
+			   (* -2.0d0 (aref re 1) (aref c3 1))
+			   (* -2.0d0 (aref re 2) (aref c3 0))
+			   (* 2.0d0 (aref re 0) (aref re 1) (aref c0 1))
+			   (* 2.0d0 (aref re 0) (aref re 2) (aref c0 0))
+			   (* 2.0d0 (aref re 1) (aref re 2) (aref c1 0)))
 			y2b)))))
 
 (defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
@@ -293,7 +303,8 @@ without pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
 	   (values double-float double-float double-float double-float
 		   double-float fixnum))
-  (let ((xb 0.0) (yb 0.0) (x2b 0.0) (xyb 0.0) (y2b 0.0) (nn 0) (co 0.0))
+  (let ((xb 0.0d0) (yb 0.0d0) (x2b 0.0d0) (xyb 0.0d0) (y2b 0.0d0)
+        (nn 0) (co 0.0d0))
     (declare (double-float xb yb x2b xyb y2b co) (fixnum nn))
     (map nil (lambda (r0 r1)
 	       (let ((xx (funcall key0 r0)) (yy (funcall key1 r1)))
@@ -302,7 +313,7 @@ without pre-computing the means."
 		 (incf xyb (* xx yy)) (incf x2b (sqr xx))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq co (/ 1.0 (double-float nn))) ; (-1 nn) !!!
+    (setq co (/ 1.0d0 (double-float nn))) ; (-1 nn) !!!
     (mulf xb co) (mulf yb co) (mulf xyb co) (mulf x2b co) (mulf y2b co)
     (values (- xyb (* xb yb)) xb yb (- x2b (sqr xb)) (- y2b (sqr yb)) nn)))
 
@@ -316,7 +327,7 @@ Uses the numerically stable algorithm with pre-computing the means."
 		   double-float fixnum))
   (let ((m0 (double-float (mean seq0 :key key0)))
         (m1 (double-float (mean seq1 :key key1)))
-        (nn 0) (d0 0.0) (d1 0.0) (rr 0.0) (co 0.0))
+        (nn 0) (d0 0.0d0) (d1 0.0d0) (rr 0.0d0) (co 0.0d0))
     (declare (fixnum nn) (double-float m0 m1 d0 d1 rr co))
     (map nil (lambda (r0 r1)
 	       (let ((xx (- (funcall key0 r0) m0))
@@ -326,7 +337,7 @@ Uses the numerically stable algorithm with pre-computing the means."
 		 (incf rr (* xx yy))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq co (/ 1.0 (double-float (1- nn))))
+    (setq co (/ 1.0d0 (double-float (1- nn))))
     (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
@@ -337,7 +348,7 @@ Uses the numerically stable algorithm with pre-computing the means."
   "Return volatilities for the terms corresponding to SPLIT-KEY.
 The second value returned is the mean of the volatilities.
 E.g., (volatility (currency-hist (find-currency 'dx))
-                  (compose-m date-ye currency-rec-date)
+                  (compose date-ye currency-rec-date)
                   :key #'currency-rec-avg)
 will return the list of the volatilities for each year
 and the average annual volatility for US Dollar Index."
@@ -398,14 +409,14 @@ that lie below (if UP is non-nil) or above (if UP is nil) the upper
 The accessor keys XKEY and YKEY default to CAR and CDR.
 Return the modified LST. 20% faster than `convex-hull1'."
   (declare (list lst) (type (function (t) double-float) xkey ykey))
-  (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0.0) (y0 0.0)
+  (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0.0d0) (y0 0.0d0)
 	(sl (lambda (pp)	; has to be s/!!!
 	      (s/ (- (funcall ykey pp) y0) (abs (- (funcall xkey pp) x0))))))
        ((null (cddr ll)) lst)
     (declare (double-float x0 y0) (type function ts))
     (setf x0 (funcall xkey (car ll)) y0 (funcall ykey (car ll))
 	  (cdr ll)
-	  (do ((l1 (cddr ll) (cdr l1)) (top (cdr ll)) (csl 0.0)
+	  (do ((l1 (cddr ll) (cdr l1)) (top (cdr ll)) (csl 0.0d0)
 	       (tsl (funcall sl (cadr ll))))
 	      ((null l1) top)
 	    (declare (double-float csl))
@@ -429,7 +440,7 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 
 (defmacro to-percent (vv)
   "1.234 ==> 23.4%"
-  `(* 100.0 (1- ,vv)))
+  `(* 100.0d0 (1- ,vv)))
 
 (defun percent-change (v0 v1 &optional days)
   "Return the percent change in values, from V0 to V1.
@@ -437,7 +448,7 @@ If the optional DAYS is given, return the annualized change too."
   (declare (number v0 v1) (values number))
   (let ((pers (/ v1 v0)))
     (if days
-	(values (to-percent pers) (to-percent (expt pers (/ 365.25 days))))
+	(values (to-percent pers) (to-percent (expt pers (/ 365.25d0 days))))
 	(to-percent pers))))
 
 (defun rel-diff (v0 v1)
@@ -449,7 +460,7 @@ denominator.  Sign is ignored."
 
 (defcustom *relative-tolerance* double-float 1.0e-3
   "*The default relative tolerance for `same-num-p'.")
-(defcustom *absolute-tolerance* double-float 1.0
+(defcustom *absolute-tolerance* double-float 1.0d0
   "*The default absolute tolerance for `same-num-p'.")
 (defcustom *num-tolerance* double-float 1.0e-6
   "*The default numerical tolerance for `same-num-[abs|rel]-p'.")
@@ -497,8 +508,8 @@ and the number of iterations made."
 (eval-when (load compile eval)
 (defstruct (line (:print-function print-line))
   "A straight line."
-  (sl 0.0 :type double-float)	; slope
-  (co 0.0 :type double-float))	; constant
+  (sl 0.0d0 :type double-float)	; slope
+  (co 0.0d0 :type double-float)) ; constant
 )
 
 (defconst +bad-line+ line (make-line) "*The convenient constant for init.")
@@ -562,7 +573,7 @@ keeping the slope intact."
   (declare (type line ln) (list ls)
 	   (type (function (t) double-float) xkey ykey))
   (do ((ff (if up #'line-above-p #'line-below-p))
-       (ll ls (cdr ll)) (xx 0.0) (yy 0.0))
+       (ll ls (cdr ll)) (xx 0.0d0) (yy 0.0d0))
       ((endp ll) ln)
     (declare (double-float xx yy) (type function ff))
     (setq xx (funcall xkey (car ll)) yy (funcall ykey (car ll)))
@@ -579,11 +590,11 @@ If (= x0 x1), an error will be signaled."
 The second value returned is the deviation from the line.
 The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   (declare (sequence seq) (type (function (t) double-float) xkey ykey)
-	   (values line (double-float 0.0 *)))
+	   (values line (double-float 0.0d0 *)))
   (multiple-value-bind (co xm ym xd yd nn sl err)
       (cov seq :xkey xkey :ykey ykey)
     (declare (double-float co xm ym xd yd) (fixnum nn))
-    (setq sl (/ co xd) err (if (= nn 2) 0.0 (s/ (- yd (* sl co)) yd)))
+    (setq sl (/ co xd) err (if (= nn 2) 0.0d0 (s/ (- yd (* sl co)) yd)))
     (assert (not (minusp err)) (err) "REGRESS: error is negative: ~f~%" err)
     (values (make-line :sl sl :co (- ym (* xm sl))) (sqrt err))))
 

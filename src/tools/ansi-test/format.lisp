@@ -40,7 +40,7 @@
  (format nil "~10:@<foobar~>")
  "  foobar  ")
 
-;;  ~< ~s ~^ ---------------------------------------------------------------------
+;;  ~< ~s ~^ ------------------------------------------------------------------
 (my-assert
  (format nil "~15<~S~>" 'foo)
  "            foo")
@@ -318,6 +318,42 @@ but it makes more sense to print non-numeric arguments properly alighned")
 (my-assert
  (FORMAT NIL "~5,3F" 2/3)
  "0.667")
+
+(my-assert
+ (format nil "~1f" 10)
+ "10.0"
+ "22.3.3.1 Tilde F: Fixed-Format Floating-Point
+
+If it is impossible to print the value in the required format in a
+field of width w, then one of two actions is taken. If the parameter
+overflowchar is supplied, then w copies of that parameter are printed
+instead of the scaled value of arg. If the overflowchar parameter is
+omitted, then the scaled value is printed using more than w characters,
+as many more as may be needed.")
+
+(my-assert
+ (format nil "~0f" 10)
+ "10.0"
+ "22.3.3.1 Tilde F: Fixed-Format Floating-Point
+
+If it is impossible to print the value in the required format in a
+field of width w, then one of two actions is taken. If the parameter
+overflowchar is supplied, then w copies of that parameter are printed
+instead of the scaled value of arg. If the overflowchar parameter is
+omitted, then the scaled value is printed using more than w characters,
+as many more as may be needed.")
+
+(my-assert
+ (format nil "~1,,,'xf" -10)
+ "x"
+ "22.3.3.1 Tilde F: Fixed-Format Floating-Point
+
+If it is impossible to print the value in the required format in a
+field of width w, then one of two actions is taken. If the parameter
+overflowchar is supplied, then w copies of that parameter are printed
+instead of the scaled value of arg. If the overflowchar parameter is
+omitted, then the scaled value is printed using more than w characters,
+as many more as may be needed.")
 
 ;;  ~e ----------------------------- ------------------------------------------
 ;;  Format E

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.11 2001/04/20 19:28:30 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.12 2001/09/26 12:55:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -155,7 +155,8 @@ Supplies some HTTP/1.0 headers and calls `with-html-output'."
           (with-tag (:td :align "right")
             (format out "~:d" (ignore-errors (file-size fi))))
           (with-tag (:td :align "right")
-            (princ (ignore-errors (dttm->string (file-write-date fi) :short))
+            (princ (ignore-errors (dttm->string (file-write-date fi)
+                                                :format :short))
                    out)))))))
 
 

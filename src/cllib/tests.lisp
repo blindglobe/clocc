@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.8 2001/09/05 18:10:48 sds Exp $
+;;; $Id: tests.lisp,v 2.9 2001/09/26 12:55:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -81,7 +81,7 @@
               (warn " ### FAILED: ~6:d --> ~a --> ~6:d~2%" n0 dd n1))))
     (flet ((ts (nn st)
              (mesg :test out "~30s --> ~d --> ~a~%"
-                   st nn (dttm->string nn :short))
+                   st nn (dttm->string nn :format :short))
              (unless (= nn (string->dttm st))
                (incf num-err)
                (warn " ### FAILED: ~s --> ~d, not ~d~2%"

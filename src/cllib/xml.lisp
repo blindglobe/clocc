@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.34 2001/09/05 16:04:57 sds Exp $
+;;; $Id: xml.lisp,v 2.35 2001/09/05 18:06:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -768,7 +768,7 @@ The first character to be read is #\T."
                          &body body)
   "Open the XML stream to file."
   (with-gensyms ("WXF-" ff)
-    `(with-timing (:out ,out)
+    `(with-timing (:out ,out :type :xml)
       (when ,reset-ent (xml-init-entities :out ,out))
       (let ((,ff ,file))
         (with-xml-input (,var (open ,ff :direction :input))

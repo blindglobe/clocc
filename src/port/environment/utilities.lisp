@@ -4,11 +4,22 @@
 ;;; A random collection of interfaces to some general functionalities which
 ;;; tur out to be useful across the board.
 ;;;
-;;; Copyright (c) 2000, 2001 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
 (in-package "CL.ENVIRONMENT")
+
+
+;;; source-file-extension --
+
+(declaim (inline source-file-extension))
+
+(defun source-file-extension ()
+  "Returns a string that is the default extension for CL source files.
+The value is implementation dependent."
+  (software-source-file-extension *common-lisp-implementation*))
+
 
 ;;; compiled-file-extension --
 ;;; This should be totally portable.
@@ -48,6 +59,24 @@ The value is operating system and file system dependent."
 (defun cwd ()
   "Returns the pathname of the 'current working directory'."
   (current-working-directory))
+
+(defun print-working-directory (&optional (stream *standard-output*))
+  "Prints and returns the 'truename' of the 'current working directory' on a STREAM.
+STREAM is optional and defaults to *STANDARD-OUTPUT*."
+  (print (truename (cwd)) stream))
+
+(defun pwd (&optional (stream *standard-output*))
+  (print-working-directory stream))
+
+
+(defun (setf current-working-directory) (new-dir)
+  (change-current-working-directory *cl* new-dir))
+
+(defun (setf cwd) (new-dir)
+  (setf (current-working-directory) new-dir))
+
+(defun cd (&optional (new-dir (user-homedir-pathname)))
+  (setf (current-working-directory) new-dir))
 
 
 ;;; end of file -- utilities.lisp --

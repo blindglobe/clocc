@@ -1,4 +1,6 @@
 #!/bin/sh
+# Registers a user package
+# Author: Kevin Rosenberg <kmr@debian.org>  GPL-2 license
 
 set -e
 

@@ -1,4 +1,4 @@
-ocommon-lisp-controller (3.44) unstable; urgency=low
+common-lisp-controller (3.44) unstable; urgency=low
 
   * Fix spelling error in clc-build-daemon.c
   * Add version to control file's adduser depends.

@@ -15,7 +15,8 @@ SBIN_PROGS 	:= register-common-lisp-source unregister-common-lisp-source \
 		clc-reregister-all-impl	clc-build-daemon
 
 BIN_PROGS	:= clc-send-command clc-autobuild-library clc-autobuild-check \
-		clc-autobuild-impl clc-autobuild-only
+		clc-autobuild-impl clc-autobuild-only clc-register-user-package \
+		clc-unregister-user-package
 
 CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp \
 		 post-sysdef-install.lisp
@@ -24,7 +25,8 @@ MAN_FILES := man/clc-send-command.1 man/clc-build-daemon.8 \
 	man/register-common-lisp-implementation.8 \
 	man/clc-reregister-all-impl.8 \
 	man/clc-autobuild-only.1 man/clc-autobuild-check.1 man/clc-autobuild-impl.1 \
-	man/clc-autobuild-library.1
+	man/clc-autobuild-library.1 man/clc-register-user-package.1 \
+	man/clc-unregister-user-package.1
 
 configure: configure-stamp
 configure-stamp:

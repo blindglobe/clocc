@@ -8,7 +8,6 @@ Standards-Version: 3.5.7.0
 
 Package: common-lisp-controller
 Architecture: any
-<<<<<<< control
 Depends: bash (>= 2.04-9), debianutils (>= 1.7), debconf (>= 1.0), mailx, netbase, adduser (>= 3.47), cl-asdf (>= 1.49), cl-defsystem3, realpath
 Conflicts: cmucl (<< 3.1.0)
 Replaces: cmucl (<< 3.1.0)

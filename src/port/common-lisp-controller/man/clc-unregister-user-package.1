@@ -1,0 +1,24 @@
+!.\" 	-*- Mode: Nroff -*-
+.TH "clc-unregister-user-package" "1" "" "" ""
+
+.SH "NAME"
+clc-unregister-user-package \- Unregister a Common Lisp user package
+
+.SH "SYNOPSIS"
+.B clc-unregister-user-package <asdf-file>
+
+.SH "DESCRIPTION"
+This command unregisters a user package. It is given the filename of the ASDF file
+for the user package. When unregistered, the system-wide installation of the
+system name will be available.
+
+.SH "FILES"
+The user package database is stored in ~/.clc/user-packages.db
+
+.SH "BUGS"
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH "AUTHOR"
+Kevin M. Rosenberg <kmr@debian.org>, Oct 2002

@@ -19,7 +19,7 @@
 
 (defmethod find-system ((sys symbol)
 			(cl cl.env:allegro)
-			(defsys-tag (eql :allegro))
+			(defsys-tag (eql :allegro)))
   (apply #'excl:find-system sys nil))
 
 (defmethod load-system ((sys symbol)

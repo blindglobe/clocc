@@ -8,13 +8,14 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.55 2005/01/27 23:02:44 sds Exp $
+;;; $Id: net.lisp,v 1.56 2005/01/27 23:16:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   ;; `getenv'
   (require :port-sys (translate-logical-pathname "port:sys"))
+  #+(or cmu scl) (require :simple-streams) ; for `set-socket-stream-format'
   #+cormanlisp (require :winsock)
   #+lispworks (require "comm"))
 
@@ -172,7 +173,7 @@
   #+abcl 'to-way-stream
   #+allegro 'excl::socket-stream
   #+clisp 'stream
-  #+(or cmu scl) 'sys:fd-stream
+  #+(or cmu scl) 'stream:socket-simple-stream
   #+gcl 'stream
   #+lispworks 'comm:socket-stream
   #+openmcl 'ccl::socket
@@ -183,7 +184,8 @@
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
-  (declare (type (or integer string) host) (fixnum port) (type boolean bin))
+  (declare (type (or integer string) host) (fixnum port)
+           #+(or cmu scl) (ignore bin))
   (let ((host (etypecase host
                 (string host)
                 (integer (hostent-name (resolve-host-ipaddr host))))))
@@ -196,10 +198,8 @@
                        port host :element-type
                        (if bin '(unsigned-byte 8) 'character))
     #+(or cmu scl)
-    (sys:make-fd-stream (ext:connect-to-inet-socket host port)
-                        :buffering (if bin :full :line)
-                        :input t :output t :element-type
-                        (if bin '(unsigned-byte 8) 'character))
+    (make-instance 'stream:socket-simple-stream :direction :io
+                   :remote-host host :remote-port port)
     #+gcl (si:socket port :host host)
     #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
                                       (if bin 'unsigned-byte 'base-char))
@@ -228,8 +228,9 @@
 (defun set-socket-stream-format (socket format)
   "switch between binary and text output"
   #+clisp (setf (stream-element-type socket) format)
-  #+(or acl lispworks) (declare (ignore socket format)) ; bivalent streams
-  #-(or acl clisp lispworks)
+  #+(or acl cmu lispworks scl)
+  (declare (ignore socket format)) ; bivalent streams
+  #-(or acl clisp cmu lispworks scl)
   (error 'not-implemented :proc (list 'set-socket-stream-format socket format)))
 
 (defun socket-host/port (sock)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.1 2000/02/18 21:16:45 sds Exp $
+;;; $Id: proc.lisp,v 1.2 2000/03/03 22:01:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -342,5 +342,5 @@ and reapply its initial function to its arguments."
           (format stream "~A~vT~A~vT~A~%" (first line) name-max (second line)
                   whostate-max  (third line)))))))
 
-(provide "proc")
+(provide :proc)
 ;;; proc.lisp end here

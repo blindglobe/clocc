@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.3 2000/02/18 21:16:45 sds Exp $
+;;; $Id: net.lisp,v 1.4 2000/03/03 22:01:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.4  2000/03/03 22:01:03  sds
+;;; fixed provide statements
+;;;
 ;;; Revision 1.3  2000/02/18 21:16:45  sds
 ;;; in-package :port now; make system works
 ;;;
@@ -271,5 +274,5 @@
 
 ;;; }}}
 
-(provide "net")
+(provide :net)
 ;;; file net.lisp ends here

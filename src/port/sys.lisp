@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.4 2000/03/01 20:01:36 sds Exp $
+;;; $Id: sys.lisp,v 1.5 2000/03/03 22:01:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 ;;; $Log: sys.lisp,v $
+;;; Revision 1.5  2000/03/03 22:01:03  sds
+;;; fixed provide statements
+;;;
 ;;; Revision 1.4  2000/03/01 20:01:36  sds
 ;;; (arglist, class-slot-list): new functions
 ;;;
@@ -255,4 +258,5 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
             (tz->string (- (if dst 1 0) tz))
             (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)))))
 
+(provide :sys)
 ;;; file sys.lisp ends here

@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.2 2000/02/18 21:16:45 sds Exp $
+;;; $Id: shell.lisp,v 1.3 2000/03/03 22:01:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 ;;; $Log: shell.lisp,v $
+;;; Revision 1.3  2000/03/03 22:01:03  sds
+;;; fixed provide statements
+;;;
 ;;; Revision 1.2  2000/02/18 21:16:45  sds
 ;;; in-package :port now; make system works
 ;;;
@@ -84,4 +87,5 @@ This function takes care of that."
     (unwind-protect (progn ,@body)
       (close-pipe ,pipe))))
 
+(provide :shell)
 ;;; file shell.lisp ends here

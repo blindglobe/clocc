@@ -9,7 +9,7 @@
 ;;;
 ;;; 20000107 Marco Antoniotti
 ;;;
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000, 2001 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -34,8 +34,18 @@
 
   ;;--------------------
   ;; Setup Machine Info.
-  
-  (setf *machine* (make-instance 'machine))
+
+  (cond ((or (featurep :x86))		; Works for CMUCL and ACL
+	 (setf *machine* (make-instance 'intel-x86-machine)))
+	((or (featurep :sparc))
+	 (setf *machine* (make-instance 'sparc-machine)))
+	((or (featurep :ppc))
+	 (setf *machine* (make-instance 'sparc-machine)))
+	((or (featurep :alpha))
+	 (setf *machine* (make-instance 'sparc-machine)))
+	((or (featurep :mips))
+	 (setf *machine* (make-instance 'sparc-machine)))
+	(t (setf *machine* (make-instance 'machine))))
 
   ;;-----------------------------
   ;; Setup Operating System Info.
@@ -57,7 +67,10 @@
 	 (setf *operating-system* (make-instance 'Unix))))
 
   #+allegro
-  (cond ((featurep :unix)
+  (cond ((featurep :linux)
+	 (setf *operating-system* (make-instance 'Linux)))
+
+	((featurep :unix)
 	 (setf *operating-system* (make-instance 'Unix)))
 
 	((featurep :mswindows)
@@ -69,7 +82,10 @@
 	)
 
   #+lispworks
-  (cond ((featurep :unix)
+  (cond ((featurep :linux)
+	 (setf *operating-system* (make-instance 'Linux)))
+
+	((featurep :unix)
 	 (setf *operating-system* (make-instance 'Unix)))
 
 	((featurep :win32)
@@ -96,50 +112,73 @@
 
 	(t)				; do nothing?
 	)
-	 
 
+  #+cmu
+  (setf *os* *operating-system*)	; This should become a SYMBOL-MACRO.
+
+  #-cmu
+  (define-symbol-macro *os* *operating-system*)
 	
   ;;---------------------------------------
   ;; Setup Common Lisp Implementation Info.
 
   #+cmu
-  (setf *common-lisp-implementation* (make-instance 'cmucl))
+  (setf *common-lisp-implementation*
+	(make-instance 'cmucl :feature-tag :cmu))
 
   #+sbcl
-  (setf *common-lisp-implementation* (make-instance 'sbcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'sbcl :feature-tag :sbcl))
 
   #+clisp
-  (setf *common-lisp-implementation* (make-instance 'clisp))
+  (setf *common-lisp-implementation*
+	(make-instance 'clisp :feature-tag :clisp))
 
   #+allegro
-  (setf *common-lisp-implementation* (make-instance 'allegro))
+  (setf *common-lisp-implementation*
+	(make-instance 'allegro :feature-tag :allegro))
 
   #+lispworks
-  (setf *common-lisp-implementation* (make-instance 'lispworks))
+  (setf *common-lisp-implementation*
+	(make-instance 'lispworks :feature-tag :lispworks))
 
   #+kcl
-  (setf *common-lisp-implementation* (make-instance 'kcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'kcl :feature-tag :kcl))
 
   #+ibcl
-  (setf *common-lisp-implementation* (make-instance 'ibcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'ibcl :feauture-tag :ibcl))
 
   #+akcl
-  (setf *common-lisp-implementation* (make-instance 'akcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'akcl :feature-tag :akcl))
 
   #+ecolisp
-  (setf *common-lisp-implementation* (make-instance 'ecolisp))
+  (setf *common-lisp-implementation*
+	(make-instance 'ecolisp :feature-tag :ecolisp))
 
   #+gcl
-  (setf *common-lisp-implementation* (make-instance 'gcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'gcl :feature-tag :gcl))
 
   #+lucid
-  (setf *common-lisp-implementation* (make-instance 'lucid))
+  (setf *common-lisp-implementation*
+	(make-instance 'lucid :feature-tag :lucid))
 
   #+mcl
-  (setf *common-lisp-implementation* (make-instance 'mcl))
+  (setf *common-lisp-implementation*
+	(make-instance 'mcl :feature-tag :mcl))
 
   #+genera
-  (setf *common-lisp-implementation* (make-instance 'scl))
+  (setf *common-lisp-implementation*
+	(make-instance 'scl :feature-tag :genera))
+
+  #+cmu
+  (setf *cl* *common-lisp-implementation*) ; This should become a SYMBOL-MACRO.
+
+  #-cmu
+  (define-symbol-macro *cl* *common-lisp-implementation*)
 
   )
 

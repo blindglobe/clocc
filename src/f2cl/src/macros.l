@@ -163,6 +163,7 @@ is not included")
 ;;
 ;; This is done by making a displaced array to VNAME with the
 ;; appropriate offset.
+#+nil
 (defmacro array-slice (vname type indices bounds)
   (let ((dims `(* ,@(mapcar #'(lambda (idx bnd)
 				(if (and (numberp idx)
@@ -173,7 +174,23 @@ is not included")
     `(make-array ,dims
       :element-type ',type
       :displaced-to ,vname
-      :displaced-index-offset ,(col-major-index indices bounds))))  
+      :displaced-index-offset ,(col-major-index indices bounds))))
+
+(defmacro array-slice (vname type indices bounds)
+  ;; To figure the size of the sliced array, use ARRAY-TOTAL-SIZE
+  ;; instead of the f2cl derived/declared BOUNDS, just in case we
+  ;; screwed up or in case we changed the size of the array in some
+  ;; other way.  This isn't possible in a function, but the array
+  ;; might be in a common block and we could change the dimensions of
+  ;; the common block at runtime.  (Some Fortran code like mpfun does
+  ;; this, although it's actually illegal.  Neat hack to "dynamically"
+  ;; change the dimensions.  Of course, for this to work in Fortran,
+  ;; the common block has to contain exactly that one array, or the
+  ;; array must be the last element of the common block.)
+  `(make-array (- (array-total-size ,vname) ,(col-major-index indices bounds))
+    :element-type ',type
+    :displaced-to ,vname
+    :displaced-index-offset ,(col-major-index indices bounds)))
 
 ;; Compute an initializer for make-array given the data in the list
 ;; DATA.  The array has en element type of TYPE and has dimensions of
@@ -1058,8 +1075,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.37 2002/02/07 03:23:15 rtoy Exp $
+;;; $Id: macros.l,v 1.38 2002/02/08 23:38:36 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.38  2002/02/08 23:38:36  rtoy
+;;; Use ARRAY-TOTAL-SIZE to compute how many elements are in the slice
+;;; instead of the f2cl declared/derived bounds so that we can dynamically
+;;; change the size of the array.  Useful for an array in a common block.
+;;;
 ;;; Revision 1.37  2002/02/07 03:23:15  rtoy
 ;;; Add functions to initialize F2CL's Fortran I/O and to close all of
 ;;; F2CL's open units.

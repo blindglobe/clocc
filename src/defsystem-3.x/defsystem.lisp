@@ -3722,7 +3722,7 @@ D
        (make-pathname :type type)
        (translate-logical-pathname (pathname path2)))
       (translate-logical-pathname (pathname path1))))
-	      
+
 
 (defun run-compiler (program
 		     arguments
@@ -3735,8 +3735,8 @@ D
   (flet ((make-useable-stream (&rest streams)
 	   (apply #'make-broadcast-stream (delete nil streams)))
 	 )
-    (let ((error-file error-file)
-	  (error-file-stream nil)
+    (let (#+cmu (error-file error-file)
+	  #+cmu (error-file-stream nil)
 	  (verbose-stream nil)
 	  (old-timestamp (file-write-date output-file))
 	  (fatal-error nil)
@@ -3761,7 +3761,7 @@ D
 		   (make-useable-stream
 		    #+cmu error-file-stream
 		    (and verbose *standard-input*)))
-    
+
 	     (format verbose-stream "Running ~A~@[ ~{~A~^ ~}~]~%" program arguments)
 
 	     (setf fatal-error
@@ -3782,7 +3782,7 @@ D
 		   (and (probe-file output-file)
 			(not (eql old-timestamp
 				  (file-write-date output-file)))))
-	     
+
 
 	     (when output-file-written
 	       (format verbose-stream "~A written~%" output-file))
@@ -3793,11 +3793,11 @@ D
 	  (close error-file-stream)
 	  (unless (or fatal-error (not output-file-written))
 	    (delete-file error-file)))
-	
+
 	(values (and output-file-written output-file)
 		fatal-error
 		fatal-error)))))
-	  
+
 
 
 (defun c-compile-file (filename &rest args
@@ -3840,7 +3840,7 @@ D
 	      ,(namestring (translate-logical-pathname output-file))
 	      ,@(map-options "-L" library-paths #'truename)
 	      ,@(map-options "-l" libraries))))
-      
+
       (multiple-value-bind (output-file warnings fatal-errors)
 	  (run-compiler *c-compiler*
 			arguments

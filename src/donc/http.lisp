@@ -111,6 +111,14 @@ first saw code to act as a web server.
 		     :if-does-not-exist :create :if-exists :append)
       (with-standard-io-syntax (print form log)))))
 
+;; used to limit the amount of junk in the log
+(defun limit-print (x)
+  (if (consp x) (cons (limit-print (car x)) (limit-print (cdr x)))
+    (if (stringp x) (if (> (length x) 100)
+			(concatenate 'string (subseq x 0 100) "...")
+		      x)
+      x)))
+
 (defclass http-connection (sss:connection)
   ((state :accessor state :initform :initial)
    (meth :accessor meth :initform nil) ;; can't use method - in cl package
@@ -166,56 +174,70 @@ At this point the method is executed and then, finally, we're done.
 (defmethod sss:reader ((c http-connection) string start)
   (sss:dbg "http: reader state=~A, start=~a, string=~S"
 	   (state c) start string)
-  (cond ((and (eq (state c) :body) (content-length c)
-	      (<= (+ start (content-length c)) ;; extra crlf at end?
-		  (length string)))
-	 ;; have to copy cause it's about to to be smashed
-	 (values (subseq string start (+ start (content-length c)))
-		 (+ start (content-length c))))
-	((not (eq (state c) :body))
-	 (let ((pos (search crlf string :start2 start)))
-	   (when pos (values (subseq string start pos) (+ pos 2)))))
-	((not (open-stream-p (sss:sstream c))) ;; got eof
-	 ;; probably won't do much good though ...
-	 (values (subseq string start) (length string)))))
+  (multiple-value-bind (ans err);; since we have trouble with this ...
+      (sss::ignore-errs 
+       (multiple-value-list
+
+	(cond ((and (eq (state c) :body) (content-length c)
+		    (<= (+ start (content-length c));; extra crlf at end?
+			(length string)))
+	       ;; have to copy cause it's about to to be smashed
+	       (values (subseq string start (+ start (content-length c)))
+		       (+ start (content-length c))))
+	      ((not (eq (state c) :body))
+	       (let ((pos (search crlf string :start2 start)))
+		 (when pos (values (subseq string start pos) (+ pos 2)))))
+	      ((not (open-stream-p (sss:sstream c)));; got eof
+	       ;; probably won't do much good though ...
+	       (logform (list :http :reader (limit-print string) start))
+	       (values (subseq string start) (length string))))))
+    (when err (logform (list :http :reader (format nil "~a" err) start)))
+    (apply 'values ans)))
 
 
 (defmethod sss:evaler ((c http-connection) string)
-  (sss:dbg "http: evaler state=~A, string=~S" (state c) string)
-  (cond ((eq (state c) :initial)
-	 (multiple-value-bind (found method uri protocol)
-	     (parse-http-command string)
-	   (if found
-	       (sss:dbg "http: parse-http-command => ~A, ~A, ~A"
-			method uri protocol)
-	     (sss:dbg "http: parse-http-command => not found"))
-	   (when found
-	     (setf (meth c) method
-		   (uri c) uri
-		   (protocol c) protocol)
-	     (if (equal protocol "") ;; only get is allowed ...
-		 (do-get c)
-	       (setf (state c) :header))))
-	 "" ;; in case printer tries to do something
-	 )
-	((and (eq (state c) :header) (equal string ""))
-	 (when (content-length c) ;; so we have to read a body
-	   (setf (state c) :body)
-	   (return-from sss:evaler ""))
-	 (call-meth c)
-	 "")
-	((eq (state c) :header)
-	 (parse-header c string)
-	 "")
-	((eq (state c) :body)
-	 (setf (body c) string)
-	 (call-meth c))
-	(t
-	 (logform (list :http (print-current-time nil)
-			:unknown-state (state c)))
-	 (sss:dbg "http: unknown state")
-	 (status c "HTTP/1.0 500 I'm in an unknown state")
-	 (sss:send-string c "the server is totally confused, sorry"))))
+  (multiple-value-bind
+      (ans err)
+      (sss::ignore-errs 
+
+       (sss:dbg "http: evaler state=~A, string=~S" (state c) string)
+       (cond ((eq (state c) :initial)
+	      (multiple-value-bind (found method uri protocol)
+		  (parse-http-command string)
+		(if found
+		    (sss:dbg "http: parse-http-command => ~A, ~A, ~A"
+			     method uri protocol)
+		  (sss:dbg "http: parse-http-command => not found"))
+		(when found
+		  (setf (meth c) method
+			(uri c) uri
+			(protocol c) protocol)
+		  (if (equal protocol "");; only get is allowed ...
+		      (do-get c)
+		    (setf (state c) :header))))
+	      "";; in case printer tries to do something
+	      )
+	     ((and (eq (state c) :header) (equal string ""))
+	      (when (content-length c);; so we have to read a body
+		(setf (state c) :body)
+		(return-from sss:evaler ""))
+	      (call-meth c)
+	      "")
+	     ((eq (state c) :header)
+	      (parse-header c string)
+	      "")
+	     ((eq (state c) :body)
+	      (setf (body c) string)
+	      (call-meth c))
+	     (t
+	      (logform (list :http (print-current-time nil)
+			     :unknown-state (state c)))
+	      (sss:dbg "http: unknown state")
+	      (status c "HTTP/1.0 500 I'm in an unknown state")
+	      (sss:send-string c "the server is totally confused, sorry"))))
+    (when err (logform (list :http :evaler-err
+			     (format nil "~a" err) (limit-print string))))
+    ans))
 
 (defun parse-http-command (command)
   (let (cend ustart uend pstart pend)
@@ -376,8 +398,9 @@ At this point the method is executed and then, finally, we're done.
 			      (when (boundary c)
 				(concatenate 'string "--" (boundary c))))))
   (logform (list :http (print-current-time nil)
-		 (dotted (sss:connection-ipaddr c)) :post uri args))
-  (sss:dbg "http: post uri=~A args=~A" uri args)
+		 (dotted (sss:connection-ipaddr c)) :post uri
+		 (limit-print args)))
+  (sss:dbg "http: post uri=~A args=~A" uri (limit-print args))
   (post-method c
 	       ;; this is supposed to let you specialize on (eql :|/foo|)
 	       (intern uri :keyword) args))
@@ -399,25 +422,31 @@ At this point the method is executed and then, finally, we're done.
   (sss:send-byte-vector con #(13 10)))
 
 (defun parse-form-contents (contents &optional boundary)
-  (when boundary
-    (return-from parse-form-contents
-      (parse-form-contents-boundary contents boundary)))
-  ;; input values come in the pairs name=value, delimited by & name is a
-  ;; "name" specified in the HTML form value is the string input or
-  ;; selection by the user on this form special cases like ? and & are
-  ;; ignored in this parser.
-  ;; return a list of dotted pairs (("name" . "value") ....)
-  (loop
-      with len = (length contents)
-      with start = 0
-      for sep = (position #\& contents :start start)
-      for end = (or sep len)
-      for varend = (position #\= contents :start start)
-      for sym = (subseq contents start varend)
-      for val = (subseq contents (1+ varend) end)
-      collect (cons sym (html-to-ascii val))
-      until (null sep)
-      do (setq start (1+ sep))))
+  (multiple-value-bind
+      (ans err)
+      (ignore-errors 
+	(when boundary
+	  (return-from parse-form-contents
+	    (parse-form-contents-boundary contents boundary)))
+	;; input values come in the pairs name=value, delimited by & name is a
+	;; "name" specified in the HTML form value is the string input or
+	;; selection by the user on this form special cases like ? and & are
+	;; ignored in this parser.
+	;; return a list of dotted pairs (("name" . "value") ....)
+	(loop
+	  with len = (length contents)
+	  with start = 0
+	  for sep = (position #\& contents :start start)
+	  for end = (or sep len)
+	  for varend = (position #\= contents :start start)
+	  for sym = (subseq contents start varend)
+	  for val = (subseq contents (if varend (1+ varend) end) end)
+	  collect (cons sym (html-to-ascii val))
+	  until (null sep)
+	  do (setq start (1+ sep))))
+    (when err (logform (list :http :parse-form-contents-err
+			     (format nil "~a" err) contents boundary)))
+    ans))
 
 (defun html-to-ascii (string)
   ;; recover the real chars the user sent
@@ -453,6 +482,9 @@ At this point the method is executed and then, finally, we're done.
     (setf start (search crlf contents :start2 start))
     (when (null start)
       (return-from parse-form-contents-boundary '(("error" . "no crlf"))))
+    ;; we get some cases where contents is just crlf 2004/1
+    (when (<= (length contents) 4)
+      (return-from parse-form-contents-boundary nil))
     (unless (string= boundary (subseq contents 0 start))
       (push (cons "error" (format nil "wrong boundary: got ~A, expected ~A"
 				  (subseq contents 0 start) boundary))
@@ -460,7 +492,7 @@ At this point the method is executed and then, finally, we're done.
       ;; expect the others to be the same as the first
       (setf boundary (subseq contents 0 start)))
     (incf start 2) ;; past crlf
-    (setf boundary (concatenate 'string boundary crlf))
+    ;; (setf boundary (concatenate 'string boundary crlf))
   (loop while (setf end (search boundary contents :start2 start)) do
 	(setf name "") ;; in case it's not in a header
 	(setf hstart start)
@@ -469,8 +501,9 @@ At this point the method is executed and then, finally, we're done.
 			     0))
 		       hstart)
 	    do ;; handle header
-	      (when (and (= hstart (search "Content-Disposition: form-data"
-					   contents :start2 hstart))
+	      (when (and (equal hstart ;; = no good cause search might be nil
+				(search "Content-Disposition: form-data"
+					contents :start2 hstart))
 			 (setf nstart
 			   (search "name=\"" contents :start2 hstart))
 			 (setf nend (position #\" contents :start 
@@ -479,5 +512,5 @@ At this point the method is executed and then, finally, we're done.
 	      (setf hstart (+ hend 2)))
 	;; leave out the crlf at both ends
 	(push (cons name (subseq contents (+ hstart 2) (- end 2))) result)
-	(setf start (+ end (length boundary))))
+	(setf start (+ end 2 (length boundary))))
   result))

@@ -1867,6 +1867,28 @@ ABS: NIL          REL: NIL               Result: ""
 (defun logical-pathname-p (thing)
   (typep (parse-namestring thing) 'logical-pathname))
 
+#-clisp
+(defun pathname-logical-p (thing)
+  (typecase thing
+    (logical-pathname t)
+    (string (and (= 1 (count #\: thing)) ; Shortcut.
+		 (ignore-errors (translate-logical-pathname thing))
+		 t))
+    (t nil)))
+
+#+clisp ; CLisp has non conformant Logical Pathnames.
+(defun pathname-logical-p (thing)
+  (typecase thing
+    (logical-pathname t)
+    (pathname (let ((pns (namestring thing)))
+		(and (= 1 (count #\: pns)) ; Shortcut.
+		     (logical-pathname-p pns))))
+    (string (and (= 1 (count #\: thing))	; Shortcut.
+		 (ignore-errors (translate-logical-pathname thing))
+		 t))
+    (t nil)))
+
+
 ;;; This affects only one thing.
 ;;; 19990707 Marco Antoniotti
 ;;; old version
@@ -2329,63 +2351,61 @@ D
   ;; before the :binary one.
   (if version
       (multiple-value-setq (version-dir version-replace)
-	  (translate-version version))
-    (setq version-dir *version-dir* version-replace *version-replace*))
+	(translate-version version))
+      (setq version-dir *version-dir* version-replace *version-replace*))
   (let ((pathname
 	 (append-directories
 	  (if version-replace
 	      version-dir
-	    (append-directories (component-root-dir component type)
-				version-dir))
+	      (append-directories (component-root-dir component type)
+				  version-dir))
 	  (component-pathname component type))))
+
     ;; When a logical pathname is used, it must first be translated to
     ;; a physical pathname. This isn't strictly correct. What should happen
     ;; is we fill in the appropriate slots of the logical pathname, and
     ;; then return the logical pathname for use by compile-file & friends.
     ;; But calling translate-logical-pathname to return the actual pathname
     ;; should do for now.
-    #+:logical-pathnames-mk
-    (when (eq (lp:pathname-host-type pathname) :logical)
-      ;;(setf (lp::%logical-pathname-type pathname)
-      ;;      (component-extension component type))
-      (setf pathname (lp:translate-logical-pathname pathname)))
-    #+(and (and allegro-version>= (version>= 4 1))
-	   (not :logical-pathnames-mk))
-    (when (and (pathname-host pathname) (logical-pathname-p pathname))
-      (setf pathname (translate-logical-pathname pathname)))
-    ;; CMUCL 17f has built in logical pathnames which seem to conform
-    ;; well with CLtL2. In particular 'logical-pathname-p'
-    ;; returns true only on *real* logical pathnames.
-    ;; Unfortunately, CMUCL has a mechanism of "search lists" (I
-    ;; suppose somebody just wanted logical pathnames without
-    ;; implementing the whole thing, which breaks the following test
-    ;; and does not allow us to actually use
-    ;; 'translate-logical-pathnames' directly (eg. it would cause an
-    ;; error on the search list "home:", because the logical pathname
-    ;; machinery would try to find the "host" - isn't this a bad
-    ;; name?!? - "home:").  Hence the workaround.
-    #+(and :CMU17 (not :logical-pathnames-mk))
-    (when (common-lisp::logical-host-p (pathname-host pathname))
-      (setf pathname (translate-logical-pathname pathname)))
 
-    #+:lispworks ; Actually the personal edition on PC
-    (setf pathname (translate-logical-pathname pathname))
+    ;; (format t "pathname = ~A~%" pathname)
+    ;; (format t "type = ~S~%" (component-extension component type))
 
-    (namestring
-     (make-pathname :name (pathname-name pathname)
-		    :type (component-extension component type)
-		    :host (when (component-host component)
-			    ;; MCL2.0b1 and ACLPC cause an error on
-			    ;; (pathname-host nil)
-			    (pathname-host (component-host component)))
-		    :device #+(and :CMU (not :cmu17)) :absolute
-		    #-(and :CMU (not :cmu17))
-		    (let ((dev (component-device component)))
-		      (when dev
-			(pathname-device dev)))
-		    ;; :version :newest
-		    ;; Use :directory instead of :defaults
-		    :directory (pathname-directory pathname)))))
+    ;; 20000303 Marco Antoniotti
+    ;; Changed the following according to suggestion by Ray Toy.  I
+    ;; just collapsed the tests for "logical-pathname-ness" into a
+    ;; single test (heavy, but probably very portable) and added the
+    ;; :name argument to the MAKE-PATHNAME in the MERGE-PATHNAMES
+    ;; beacuse of possible null names (e.g. :defsystem components)
+    ;; causing problems with the subsequenct call to NAMESTRING.
+    (cond ((pathname-logical-p pathname) ; See definition of test above.
+	   (setf pathname
+		 (merge-pathnames pathname
+				  (make-pathname
+				   :name (component-name component)
+				   :type (component-extension component
+							      type))))
+	   ;;(format t "new path = ~A~%" pathname)
+	   (namestring (translate-logical-pathname pathname)))
+	  (t
+	   (namestring
+	    (make-pathname :host (when (component-host component)
+				   ;; MCL2.0b1 and ACLPC cause an error on
+				   ;; (pathname-host nil)
+				   (pathname-host (component-host component)))
+			   :directory (pathname-directory pathname)
+			   ;; Use :directory instead of :defaults
+			   :name (pathname-name pathname)
+			   :type (component-extension component type)
+			   :device
+			   #+(and :CMU (not :cmu17))
+			   :absolute
+			   #-(and :CMU (not :cmu17))
+			   (let ((dev (component-device component)))
+			     (when dev
+			       (pathname-device dev)))
+			   ;; :version :newest
+			   ))))))
 
 ;;; What about CMU17 :device :unspecific in the above?
 

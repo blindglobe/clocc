@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
+#include <sys/utsname.h>
 #include <netinet/in.h>
 #include <unistd.h>
 #include <grp.h>
@@ -102,7 +103,7 @@ void readaline (FILE *stream,int closing_connection)
 }
 
 const char *argp_program_version = 
-  "version 1.0 for clc v3";
+  "version 1.5 for clc v3";
 const char *argp_program_bug_address = 
  "debian bug database, package common-lisp-controller";
 static char doc[] = "clc-send-command a program to send commands to the clc-build-daemon";
@@ -111,6 +112,7 @@ static char args_doc[] = "recompile <package> <implementation>\n"
 "remove <package> <implementation>";
 
 static struct argp_option options[] = {
+  {"force-connect",  'F', 0,      0,  "Force the daemon to connect" },
   {"verbose",  'v', 0,      0,  "Produce verbose output" },
   {"quiet",    'q', 0,      0,  "Don't produce any output" },
   {"debug",    'd', 0,      0,  "Show daemon output" },
@@ -119,7 +121,7 @@ static struct argp_option options[] = {
      
 struct arguments {
   char *args[3];
-  int verbose, debug;
+  int verbose, debug, forceconnect;
 };
      
 error_t parse_opt (int key, char *arg, struct argp_state *state)
@@ -144,7 +146,9 @@ error_t parse_opt (int key, char *arg, struct argp_state *state)
     case 'd':
       arguments->debug = 1;
       break;
-      
+    case 'F':
+      arguments->forceconnect = 1;
+      break;
     case ARGP_KEY_ARG:
       if (state->arg_num >= 3)
         /* Too many arguments. */
@@ -199,11 +203,11 @@ int delete_stuff(const char *filename, const struct stat *stat, int flag)
     {
       if (unlink(filename) != 0)
         {
-          char command[4097];
+          char errormessage[4097];
 
-          snprintf(command,4096,"While deleting the file: %s with %i: %i %i",filename,flag,(flag & FTW_F),(flag & FTW_SL));
-          command[4096]=(char)0;
-          reportsystemerror(command);
+          snprintf(errormessage,4096,"While deleting the file: %s with %i: %i %i",filename,flag,(flag & FTW_F),(flag & FTW_SL));
+          errormessage[4096]=(char)0;
+          reportsystemerror(errormessage);
           return 1;
         }
     }
@@ -219,11 +223,11 @@ int delete_directories(const char *filename, const struct stat *stat, int flag)
       if ((rmdir(filename) != 0) &&
           (errno != ENOTEMPTY))
         {
-          char command[4097];
+          char errormessage[4097];
 
-          snprintf(command,4096,"While deleting the directory: %s",filename);
-          command[4096]=(char)0;
-          reportsystemerror(command);
+          snprintf(errormessage,4096,"While deleting the directory: %s",filename);
+          errormessage[4096]=(char)0;
+          reportsystemerror(errormessage);
           return 1;
         }
     }
@@ -232,15 +236,15 @@ int delete_directories(const char *filename, const struct stat *stat, int flag)
 
 void  nuke_package(char *package,char *compiler)
 {
-  char command[4097];
+  char path[4097];
 
 
-  snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
+  snprintf(path,4096,"/usr/lib/common-lisp/%s/%s",
            compiler,package);
-  command[4096]=(char)0;
-  ftw(command, &delete_stuff, 150);
-  while (probe_directory(command)) {
-      ftw(command, &delete_directories, 150);
+  path[4096]=(char)0;
+  ftw(path, &delete_stuff, 150);
+  while (probe_directory(path)) {
+      ftw(path, &delete_directories, 150);
    }
 }
      
@@ -253,7 +257,7 @@ int main(int argc, char *argv[])
   struct hostent *hostinfo;
   int socketfd;
   FILE *stream;
-  int removep;
+  int removep=-1;
   int succesp;
   int opt;
   int closing_connection=0;
@@ -261,6 +265,7 @@ int main(int argc, char *argv[])
   /* Default values. */
   arguments.verbose = 1;
   arguments.debug = 0;
+  arguments.forceconnect = 0;
   arguments.args[0] = NULL;
   arguments.args[1] = NULL;
   arguments.args[2] = NULL;
@@ -295,6 +300,9 @@ int main(int argc, char *argv[])
 
   if (connect( socketfd, &addr, sizeof(addr)) != 0)
     {
+      /* We could not connect to the daemon. 
+	 Can we handle this on our own?
+	 Yes we can! */
       if (removep == 1) 
 	{
 	  /* code lifted and adapted from clc-build-daemon */
@@ -341,18 +349,62 @@ int main(int argc, char *argv[])
 	}
       else
 	{
-	  char command[4097];
-	  /* This cannot be. but I've seen error messages during a from-scratch reinstall,
-	     so we add logging to this to provoke bugreports */
-	  snprintf(command,4096,"/usr/lib/common-lisp-controller/debug-daemon-problems.sh %s %s",
-		   arguments.args[0],
-		   arguments.args[1]);
-	  command[4096]=(char)0;
+	  char *package=arguments.args[1];
+	  char *compiler=arguments.args[2];
+	  /* characters allowed in the package and compiler names: */
+	  char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+
+
+	  if (arguments.forceconnect == 1)
+	    {
+	      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
+	      exit(1);
+	    }
+	  printf("I cannot contact the clc-build-daemon. Possibly you are trying to upgrade it.\n");
+	  printf("I will leave a not to rebuild this package...\n");
 	  
-	  if ( (system(command)) == -1)
-	    reportsystemerror("Could not start the debug-daemon-problems reporter to report a failure to connect to the daemon");
+	  if ((package == (char *) NULL) ||
+	      ( strlen(package) != strspn(package,allowedcharacters)))
+            {
+	      printf("The package %s is invalid!\n", package);
+	      exit(2);
+	    }
 	  else
-	    reportsystemerror("Could not connect to the daemon, I've send a report to root via email!");
+	    {
+	      if ((compiler == (char *) NULL) ||
+		  ( strlen(compiler) != strspn(compiler,allowedcharacters)))
+		{
+		  printf("The compiler %s is invalid!\n", compiler);
+		  exit(2);
+		}
+	      else
+		{
+		  /* Everything looks valid, so let us leave a
+		     message for the builder */
+		  char filename[4097];
+		  struct utsname buf;
+		  FILE *f;
+		  
+		  if (uname(&buf)  != 0)
+		    {
+		      reportsystemerror("Could not get my hostname.");
+		      exit(43);
+		    }
+		  snprintf(filename,4096,"/var/spool/common-lisp-controller/%s-%i",
+			   buf.nodename, (int) getpid());
+		  filename[4096]=(char)0;
+		  
+		  if ( (f=fopen(filename,"wx")) == NULL )
+		    {
+		      reportsystemerror("Could not open spool file");
+		      exit(44);
+		    }
+		  
+		  fprintf(f,"%s %s\n",package,compiler);
+		  fclose(f);
+		}
+	    }
+	  exit(0);
 	}
     }
 

@@ -1,3 +1,13 @@
+common-lisp-controller (3.80) unstable; urgency=low
+
+  * New feature: when the daemon is not reachable we 
+    create a request in a spool directory. Once a day we 
+    retry to do all logged requests. As we remove the 
+    offender, Closes: #183649
+  * Still Closes: #221552
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 19 Dec 2003 23:46:09 +0100
+
 common-lisp-controller (3.79) unstable; urgency=low
 
   * Fix bug when HOME environmental variable has a terminal /

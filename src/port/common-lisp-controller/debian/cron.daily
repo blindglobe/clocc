@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# try to execute the build requests given.
+
+LOCATION=/var/spool/common-lisp-controller
+
+# do not trust anything in that directory!
+
+OLDFILE=""
+while true ; do
+ # find the oldest file:
+ FILE=`find "$LOCATION" -type f -printf "%T@ %p\n" | sort -n | head -n 1 | cut -d ' ' -f 2 `
+ if [ "$FILE" == "$OLDFILE" ] ; then
+  echo looping
+  exit 1
+ fi
+ OLDFILE="$FILE"
+ if [ ! -f "$FILE" ] ; then
+   exit 0
+ fi
+ # carefully execute the command:
+ ./clc-send-command --force-connect recompile \
+   `head -n 1 $FILE | cut -d ' ' -f 1` \
+   `head -n 1 $FILE | cut -d ' ' -f 2` && \
+ grep --recursive --fixed-strings --files-with-matches --null \
+   `head -n 1 $FILE | cut -d ' ' -f 1,2` ${LOCATION}/* | \
+  xargs --null --verbose rm --force 
+ # delete the duplicates:
+done
+

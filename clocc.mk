@@ -10,7 +10,7 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.17 2001/07/25 21:57:52 sds Exp $
+# $Id: clocc.mk,v 1.18 2002/05/24 21:58:02 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 ifndef CLOCC_MK
@@ -30,7 +30,7 @@ MAKEFILES = Makefile $(SYSTEM).system
 ZIPEXTRA += $(TOP)/clocc.mk $(TOP)/clocc.lisp
 RM  = /bin/rm -f
 LN  = /bin/ln
-ZIP = /usr/local/bin/zip -9uD
+ZIP = zip -9uD
 
 ifneq ($(DO_DUMP),)
 CLOCC_TOP =  -I $(TOP)/clocc-top

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.14 2000/05/22 18:55:49 sds Exp $
+;;; $Id: inspect.lisp,v 1.15 2000/05/24 14:24:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,8 +24,9 @@
 
 (in-package :cllib)
 
-(export '(inspect-cllib *inspect-frontend* *inspect-print-lines*
-          *inspect-print-level* *inspect-print-length* *inspect-length*))
+(export
+ '(inspect-cllib *inspect-frontend* *inspect-browser* *inspect-print-lines*
+   *inspect-print-level* *inspect-print-length* *inspect-length*))
 
 ;;;
 ;;; options

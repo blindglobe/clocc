@@ -1,1 +1,1 @@
-(in-package :common-lisp-user)
+(in-package #:common-lisp-user)

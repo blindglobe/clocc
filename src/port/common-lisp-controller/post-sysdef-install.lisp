@@ -1,6 +1,6 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
 
-(in-package :common-lisp-controller)
+(in-package #:common-lisp-controller)
 
 
 (eval-when (:load-toplevel :execute :compile-toplevel)

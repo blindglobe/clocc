@@ -1,3 +1,15 @@
+common-lisp-controller (3.87) unstable; urgency=low
+
+  * Add sbcl-mt to known CL implementations (closes:238550)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 17 Mar 2004 10:02:10 -0700
+
+common-lisp-controller (3.86) unstable; urgency=low
+
+  * Add --force-connect to clc-send-command invocation
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 16 Mar 2004 10:42:04 -0700
+
 common-lisp-controller (3.85) unstable; urgency=low
 
   * We don't need to use sudo as we are root anyway. Closes: #231008 

@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.4 $'
+pversion='$Revision: 1.5 $'
 
 if [ `id -u` != 0 ] ; then
  echo $progname: you need to be root to run this program
@@ -12,7 +12,7 @@ if [ `id -u` != 0 ] ; then
 fi
 
 # This is a list of all known CLC-compatible implementation
-known_impl="cmucl-normal cmucl-safe cmucl-small sbcl clisp acl alisp alisp8 mlisp mlisp8 lispworks openmcl scl"
+known_impl="cmucl-normal cmucl-safe cmucl-small sbcl sbcl-mt clisp acl alisp alisp8 mlisp mlisp8 lispworks openmcl scl"
 
 usage()
 {

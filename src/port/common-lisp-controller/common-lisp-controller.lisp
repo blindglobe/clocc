@@ -1,9 +1,9 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
 
-(in-package :cl-user)
+(in-package #:cl-user)
 
-(defpackage :common-lisp-controller
-    (:use :common-lisp)
+(defpackage #:common-lisp-controller
+    (:use #:common-lisp)
     (:export #:init-common-lisp-controller
              #:add-project-directory
              #:add-translation
@@ -13,9 +13,9 @@
              #:compile-library
 	     #:clc-require
 	     #:source-root-path-to-fasl-path)
-    (:nicknames :c-l-c))
+    (:nicknames #:c-l-c))
 
-(in-package :common-lisp-controller)
+(in-package #:common-lisp-controller)
 
 ;; Some general utilities to make the
 ;; descriptions shorter
@@ -277,7 +277,7 @@ Returns nothing"
 (defun make-clc-send-command-string (command package impl)
   "Function returns a string suitable to pass to the operating
 system to execute the clc-send-command program"
-  (format nil "~A --quiet ~A ~A ~A" 
+  (format nil "~A --quiet --force-connect ~A ~A ~A" 
 	  *clc-send-command-filename* 
 	  (ensure-lower command)
 	  (ensure-lower package)

@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
 ;;; File Function: define variables and functions before defsystem is loaded.
 
-(in-package :common-lisp-controller)
+(in-package #:common-lisp-controller)
 
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (defvar *original-require-function* nil

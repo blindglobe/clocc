@@ -76,10 +76,16 @@ void readaline (FILE *stream,int closing_connection)
   length = getline( &line, &max_length, stream );
 
 
-  if ((length == -1) && ((line == NULL) ||
-                         (line[0] == (char) 0)))
+  if ((length == -1) && 
+      ((line == NULL) ||
+       (line[0] == (char) 0)))
     {
-      reportsystemerror("eof on read");
+      if (closing_connection == 1) 
+        {
+	  line = "220 Bye";
+	}
+      else
+        reportsystemerror("eof on read");
     }
   else
     {
@@ -289,12 +295,6 @@ int main(int argc, char *argv[])
       if (strcmp("540",code) == 0) {
         printf("\nCannot remove: not yet compiled library for implementation\n");
         succesp = 0;
-        fprintf(stream,"QUIT\n");
-        closing_connection=1;
-        if (arguments.debug)
-          {
-            printf("Sending: QUIT\n");
-          }
         continue; 
       }
       if (strcmp("550",code) == 0) {

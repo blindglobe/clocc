@@ -1,0 +1,14 @@
+;;; -*- Mode: lisp -*-
+
+;;; This is just a sample of building series with MK defsystem. You
+;;; may need to change :source-pathname appropriately for your system.
+
+(mk:defsystem memoization
+    :source-pathname "cl-library:memoization;"
+    :source-extension "lisp"
+    :components (:serial 
+ 		  "package"
+ 		  "Memoization"
+ 		  "Save-Memo-Table"
+ 		  "Memoization-Examples"))
+

@@ -1,0 +1,29 @@
+memoization (1.0-4) unstable; urgency=low
+
+  * Now uses common-lisp-controller. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri,  1 Jun 2001 13:24:35 +0200
+
+memoization (1.0-3) unstable; urgency=low
+
+  * Went to FSH. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri,  8 Oct 1999 07:44:14 +0200
+
+memoization (1.0-2) unstable; urgency=low
+
+  * New cmucl release 
+  * Now based on dh-make
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 Oct 1998 23:20:26 +0200
+
+memoization (1.0-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 27 May 1998 18:17:11 +0200
+
+Local variables:
+mode: debian-changelog
+add-log-mailing-address: "pvaneynd@debian.org"
+End:

@@ -1,0 +1,4039 @@
+%!
+%%BoundingBox: (atend)
+%%Pages: (atend)
+%%DocumentFonts: (atend)
+%%EndComments
+%
+% FrameMaker PostScript Prolog 3.0, for use with FrameMaker 3.0
+% Copyright (c) 1986,87,89,90,91 by Frame Technology Corporation.
+% All rights reserved.
+%
+% Known Problems:
+%	Due to bugs in Transcript, the 'PS-Adobe-' is omitted from line 1
+/FMversion (3.0) def 
+% Set up Color vs. Black-and-White
+	/FMPrintInColor systemdict /colorimage known
+		systemdict /currentcolortransfer known or def
+% Uncomment this line to force b&w on color printer
+%   /FMPrintInColor false def
+/FrameDict 195 dict def 
+systemdict /errordict known not {/errordict 10 dict def
+		errordict /rangecheck {stop} put} if
+% The readline in 23.0 doesn't recognize cr's as nl's on AppleTalk
+FrameDict /tmprangecheck errordict /rangecheck get put 
+errordict /rangecheck {FrameDict /bug true put} put 
+FrameDict /bug false put 
+mark 
+% Some PS machines read past the CR, so keep the following 3 lines together!
+currentfile 5 string readline
+00
+0000000000
+cleartomark 
+errordict /rangecheck FrameDict /tmprangecheck get put 
+FrameDict /bug get { 
+	/readline {
+		/gstring exch def
+		/gfile exch def
+		/gindex 0 def
+		{
+			gfile read pop 
+			dup 10 eq {exit} if 
+			dup 13 eq {exit} if 
+			gstring exch gindex exch put 
+			/gindex gindex 1 add def 
+		} loop
+		pop 
+		gstring 0 gindex getinterval true 
+		} def
+	} if
+/FMVERSION {
+	FMversion ne {
+		/Times-Roman findfont 18 scalefont setfont
+		100 100 moveto
+		(FrameMaker version does not match postscript_prolog!)
+		dup =
+		show showpage
+		} if
+	} def 
+/FMLOCAL {
+	FrameDict begin
+	0 def 
+	end 
+	} def 
+	/gstring FMLOCAL
+	/gfile FMLOCAL
+	/gindex FMLOCAL
+	/orgxfer FMLOCAL
+	/orgproc FMLOCAL
+	/organgle FMLOCAL
+	/orgfreq FMLOCAL
+	/yscale FMLOCAL
+	/xscale FMLOCAL
+	/manualfeed FMLOCAL
+	/paperheight FMLOCAL
+	/paperwidth FMLOCAL
+/FMDOCUMENT { 
+	array /FMfonts exch def 
+	/#copies exch def
+	FrameDict begin
+	0 ne dup {setmanualfeed} if
+	/manualfeed exch def
+	/paperheight exch def
+	/paperwidth exch def
+	/yscale exch def
+	/xscale exch def
+	currenttransfer cvlit /orgxfer exch def
+	currentscreen cvlit /orgproc exch def
+	/organgle exch def /orgfreq exch def
+	setpapername 
+	manualfeed {true} {papersize} ifelse 
+	{manualpapersize} {false} ifelse 
+	{desperatepapersize} if
+	end 
+	} def 
+	/pagesave FMLOCAL
+	/orgmatrix FMLOCAL
+	/landscape FMLOCAL
+/FMBEGINPAGE { 
+	FrameDict begin 
+	/pagesave save def
+	3.86 setmiterlimit
+	/landscape exch 0 ne def
+	landscape { 
+		90 rotate 0 exch neg translate pop 
+		}
+		{pop pop}
+		ifelse
+	xscale yscale scale
+	/orgmatrix matrix def
+	gsave 
+	} def 
+/FMENDPAGE {
+	grestore 
+	pagesave restore
+	end 
+	showpage
+	} def 
+/FMFONTDEFINE { 
+	FrameDict begin
+	findfont 
+	ReEncode 
+	1 index exch 
+	definefont 
+	FMfonts 3 1 roll 
+	put
+	end 
+	} def 
+/FMFILLS {
+	FrameDict begin
+	array /fillvals exch def
+	end 
+	} def 
+/FMFILL {
+	FrameDict begin
+	 fillvals 3 1 roll put
+	end 
+	} def 
+/FMNORMALIZEGRAPHICS { 
+	newpath
+	0.0 0.0 moveto
+	1 setlinewidth
+	0 setlinecap
+	0 0 0 sethsbcolor
+	0 setgray 
+	} bind def
+	/fx FMLOCAL
+	/fy FMLOCAL
+	/fh FMLOCAL
+	/fw FMLOCAL
+	/llx FMLOCAL
+	/lly FMLOCAL
+	/urx FMLOCAL
+	/ury FMLOCAL
+/FMBEGINEPSF { 
+	end 
+	/FMEPSF save def 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	[/fy /fx /fh /fw /ury /urx /lly /llx] {exch def} forall 
+	fx fy translate 
+	rotate
+	fw urx llx sub div fh ury lly sub div scale 
+	llx neg lly neg translate 
+	} bind def
+/FMENDEPSF {
+	FMEPSF restore
+	FrameDict begin 
+	} bind def
+FrameDict begin 
+/setmanualfeed {
+%%BeginFeature *ManualFeed True
+	 statusdict /manualfeed true put
+%%EndFeature
+	} def
+/max {2 copy lt {exch} if pop} bind def
+/min {2 copy gt {exch} if pop} bind def
+/inch {72 mul} def
+/pagedimen { 
+	paperheight sub abs 16 lt exch 
+	paperwidth sub abs 16 lt and
+	{/papername exch def} {pop} ifelse
+	} def
+	/papersizedict FMLOCAL
+/setpapername { 
+	/papersizedict 14 dict def 
+	papersizedict begin
+	/papername /unknown def 
+		/Letter 8.5 inch 11.0 inch pagedimen
+		/LetterSmall 7.68 inch 10.16 inch pagedimen
+		/Tabloid 11.0 inch 17.0 inch pagedimen
+		/Ledger 17.0 inch 11.0 inch pagedimen
+		/Legal 8.5 inch 14.0 inch pagedimen
+		/Statement 5.5 inch 8.5 inch pagedimen
+		/Executive 7.5 inch 10.0 inch pagedimen
+		/A3 11.69 inch 16.5 inch pagedimen
+		/A4 8.26 inch 11.69 inch pagedimen
+		/A4Small 7.47 inch 10.85 inch pagedimen
+		/B4 10.125 inch 14.33 inch pagedimen
+		/B5 7.16 inch 10.125 inch pagedimen
+	end
+	} def
+/papersize {
+	papersizedict begin
+		/Letter {lettertray letter} def
+		/LetterSmall {lettertray lettersmall} def
+		/Tabloid {11x17tray 11x17} def
+		/Ledger {ledgertray ledger} def
+		/Legal {legaltray legal} def
+		/Statement {statementtray statement} def
+		/Executive {executivetray executive} def
+		/A3 {a3tray a3} def
+		/A4 {a4tray a4} def
+		/A4Small {a4tray a4small} def
+		/B4 {b4tray b4} def
+		/B5 {b5tray b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	/FMdicttop countdictstack 1 add def 
+	statusdict begin stopped end 
+	countdictstack -1 FMdicttop {pop end} for 
+	} def
+/manualpapersize {
+	papersizedict begin
+		/Letter {letter} def
+		/LetterSmall {lettersmall} def
+		/Tabloid {11x17} def
+		/Ledger {ledger} def
+		/Legal {legal} def
+		/Statement {statement} def
+		/Executive {executive} def
+		/A3 {a3} def
+		/A4 {a4} def
+		/A4Small {a4small} def
+		/B4 {b4} def
+		/B5 {b5} def
+		/unknown {unknown} def
+	papersizedict dup papername known {papername} {/unknown} ifelse get
+	end
+	stopped 
+	} def
+/desperatepapersize {
+	statusdict /setpageparams known
+		{
+		paperwidth paperheight 0 1 
+		statusdict begin
+		{setpageparams} stopped pop 
+		end
+		} if
+	} def
+/savematrix {
+	orgmatrix currentmatrix pop
+	} bind def
+/restorematrix {
+	orgmatrix setmatrix
+	} bind def
+/dmatrix matrix def
+/dpi    72 0 dmatrix defaultmatrix dtransform
+    dup mul exch   dup mul add   sqrt def
+/freq dpi 18.75 div 8 div round dup 0 eq {pop 1} if 8 mul dpi exch div def
+/sangle 1 0 dmatrix defaultmatrix dtransform exch atan def
+/DiacriticEncoding [
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/.notdef /.notdef /.notdef /.notdef /space /exclam /quotedbl
+/numbersign /dollar /percent /ampersand /quotesingle /parenleft
+/parenright /asterisk /plus /comma /hyphen /period /slash /zero /one
+/two /three /four /five /six /seven /eight /nine /colon /semicolon
+/less /equal /greater /question /at /A /B /C /D /E /F /G /H /I /J /K
+/L /M /N /O /P /Q /R /S /T /U /V /W /X /Y /Z /bracketleft /backslash
+/bracketright /asciicircum /underscore /grave /a /b /c /d /e /f /g /h
+/i /j /k /l /m /n /o /p /q /r /s /t /u /v /w /x /y /z /braceleft /bar
+/braceright /asciitilde /.notdef /Adieresis /Aring /Ccedilla /Eacute
+/Ntilde /Odieresis /Udieresis /aacute /agrave /acircumflex /adieresis
+/atilde /aring /ccedilla /eacute /egrave /ecircumflex /edieresis
+/iacute /igrave /icircumflex /idieresis /ntilde /oacute /ograve
+/ocircumflex /odieresis /otilde /uacute /ugrave /ucircumflex
+/udieresis /dagger /.notdef /cent /sterling /section /bullet
+/paragraph /germandbls /registered /copyright /trademark /acute
+/dieresis /.notdef /AE /Oslash /.notdef /.notdef /.notdef /.notdef
+/yen /.notdef /.notdef /.notdef /.notdef /.notdef /.notdef
+/ordfeminine /ordmasculine /.notdef /ae /oslash /questiondown
+/exclamdown /logicalnot /.notdef /florin /.notdef /.notdef
+/guillemotleft /guillemotright /ellipsis /.notdef /Agrave /Atilde
+/Otilde /OE /oe /endash /emdash /quotedblleft /quotedblright
+/quoteleft /quoteright /.notdef /.notdef /ydieresis /Ydieresis
+/fraction /currency /guilsinglleft /guilsinglright /fi /fl /daggerdbl
+/periodcentered /quotesinglbase /quotedblbase /perthousand
+/Acircumflex /Ecircumflex /Aacute /Edieresis /Egrave /Iacute
+/Icircumflex /Idieresis /Igrave /Oacute /Ocircumflex /.notdef /Ograve
+/Uacute /Ucircumflex /Ugrave /dotlessi /circumflex /tilde /macron
+/breve /dotaccent /ring /cedilla /hungarumlaut /ogonek /caron
+] def
+/ReEncode { 
+	dup 
+	length 
+	dict begin 
+	{
+	1 index /FID ne 
+		{def} 
+		{pop pop} ifelse 
+	} forall 
+	0 eq {/Encoding DiacriticEncoding def} if 
+	currentdict 
+	end 
+	} bind def
+/graymode true def
+	/bwidth FMLOCAL
+	/bpside FMLOCAL
+	/bstring FMLOCAL
+	/onbits FMLOCAL
+	/offbits FMLOCAL
+	/xindex FMLOCAL
+	/yindex FMLOCAL
+	/x FMLOCAL
+	/y FMLOCAL
+/setpattern {
+	 /bwidth  exch def
+	 /bpside  exch def
+	 /bstring exch def
+	 /onbits 0 def  /offbits 0 def
+	 freq sangle landscape {90 add} if 
+		{/y exch def
+		 /x exch def
+		 /xindex x 1 add 2 div bpside mul cvi def
+		 /yindex y 1 add 2 div bpside mul cvi def
+		 bstring yindex bwidth mul xindex 8 idiv add get
+		 1 7 xindex 8 mod sub bitshift and 0 ne
+		 {/onbits  onbits  1 add def 1}
+		 {/offbits offbits 1 add def 0}
+		 ifelse
+		}
+		setscreen
+	 {} settransfer
+	 offbits offbits onbits add div FMsetgray
+	/graymode false def
+	} bind def
+/grayness {
+	FMsetgray
+	graymode not {
+		/graymode true def
+		orgxfer cvx settransfer
+		orgfreq organgle orgproc cvx setscreen
+		} if
+	} bind def
+	/HUE FMLOCAL
+	/SAT FMLOCAL
+	/BRIGHT FMLOCAL
+	/Colors FMLOCAL
+FMPrintInColor 
+	
+	{
+	/HUE 0 def
+	/SAT 0 def
+	/BRIGHT 0 def
+	% array of arrays Hue and Sat values for the separations [HUE BRIGHT]
+	/Colors   
+	[[0    0  ]    % black
+	 [0    0  ]    % white
+	 [0.00 1.0]    % red
+	 [0.37 1.0]    % green
+	 [0.60 1.0]    % blue
+	 [0.50 1.0]    % cyan
+	 [0.83 1.0]    % magenta
+	 [0.16 1.0]    % comment / yellow
+	 ] def
+      
+	/BEGINBITMAPCOLOR { 
+		BITMAPCOLOR} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPCOLORc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUECOLOR } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUECOLORc } def
+	/K { 
+		Colors exch get dup
+		0 get /HUE exch store 
+		1 get /BRIGHT exch store
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} def
+	/FMsetgray { 
+		/SAT exch 1.0 exch sub store 
+		  HUE 0 eq BRIGHT 0 eq and
+			{1.0 SAT sub setgray}
+			{HUE SAT BRIGHT sethsbcolor} 
+		  ifelse
+		} bind def
+	}
+	
+	{
+	/BEGINBITMAPCOLOR { 
+		BITMAPGRAY} def
+	/BEGINBITMAPCOLORc { 
+		BITMAPGRAYc} def
+	/BEGINBITMAPTRUECOLOR { 
+		BITMAPTRUEGRAY } def
+	/BEGINBITMAPTRUECOLORc { 
+		BITMAPTRUEGRAYc } def
+	/FMsetgray {setgray} bind def
+	/K { 
+		pop
+		} def
+	}
+ifelse
+/normalize {
+	transform round exch round exch itransform
+	} bind def
+/dnormalize {
+	dtransform round exch round exch idtransform
+	} bind def
+/lnormalize { 
+	0 dtransform exch cvi 2 idiv 2 mul 1 add exch idtransform pop
+	} bind def
+/H { 
+	lnormalize setlinewidth
+	} bind def
+/Z {
+	setlinecap
+	} bind def
+	/fillvals FMLOCAL
+/X { 
+	fillvals exch get
+	dup type /stringtype eq
+	{8 1 setpattern} 
+	{grayness}
+	ifelse
+	} bind def
+/V { 
+	gsave eofill grestore
+	} bind def
+/N { 
+	stroke
+	} bind def
+/M {newpath moveto} bind def
+/E {lineto} bind def
+/D {curveto} bind def
+/O {closepath} bind def
+	/n FMLOCAL
+/L { 
+ 	/n exch def
+	newpath
+	normalize
+	moveto 
+	2 1 n {pop normalize lineto} for
+	} bind def
+/Y { 
+	L 
+	closepath
+	} bind def
+	/x1 FMLOCAL
+	/x2 FMLOCAL
+	/y1 FMLOCAL
+	/y2 FMLOCAL
+	/rad FMLOCAL
+/R { 
+	/y2 exch def
+	/x2 exch def
+	/y1 exch def
+	/x1 exch def
+	x1 y1
+	x2 y1
+	x2 y2
+	x1 y2
+	4 Y 
+	} bind def
+/RR { 
+	/rad exch def
+	normalize
+	/y2 exch def
+	/x2 exch def
+	normalize
+	/y1 exch def
+	/x1 exch def
+	newpath
+	x1 y1 rad add moveto
+	x1 y2 x2 y2 rad arcto
+	x2 y2 x2 y1 rad arcto
+	x2 y1 x1 y1 rad arcto
+	x1 y1 x1 y2 rad arcto
+	closepath
+	16 {pop} repeat
+	} bind def
+/C { 
+	grestore
+	gsave
+	R 
+	clip
+	} bind def
+	/FMpointsize FMLOCAL
+/F { 
+	FMfonts exch get
+	FMpointsize scalefont
+	setfont
+	} bind def
+/Q { 
+	/FMpointsize exch def
+	F 
+	} bind def
+/T { 
+	moveto show
+	} bind def
+/RF { 
+	rotate
+	0 ne {-1 1 scale} if
+	} bind def
+/TF { 
+	gsave
+	moveto 
+	RF
+	show
+	grestore
+	} bind def
+/P { 
+	moveto
+	0 32 3 2 roll widthshow
+	} bind def
+/PF { 
+	gsave
+	moveto 
+	RF
+	0 32 3 2 roll widthshow
+	grestore
+	} bind def
+/S { 
+	moveto
+	0 exch ashow
+	} bind def
+/SF { 
+	gsave
+	moveto
+	RF
+	0 exch ashow
+	grestore
+	} bind def
+/B { 
+	moveto
+	0 32 4 2 roll 0 exch awidthshow
+	} bind def
+/BF { 
+	gsave
+	moveto
+	RF
+	0 32 4 2 roll 0 exch awidthshow
+	grestore
+	} bind def
+/G { 
+	gsave
+	newpath
+	normalize translate 0.0 0.0 moveto 
+	dnormalize scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	closepath fill
+	grestore
+	} bind def
+/A { 
+	gsave
+	savematrix
+	newpath
+	2 index 2 div add exch 3 index 2 div sub exch 
+	normalize 2 index 2 div sub exch 3 index 2 div add exch 
+	translate 
+	scale 
+	0.0 0.0 1.0 5 3 roll arc 
+	restorematrix
+	stroke
+	grestore
+	} bind def
+	/x FMLOCAL
+	/y FMLOCAL
+	/w FMLOCAL
+	/h FMLOCAL
+	/xx FMLOCAL
+	/yy FMLOCAL
+	/ww FMLOCAL
+	/hh FMLOCAL
+	/FMsaveobject FMLOCAL
+	/FMoptop FMLOCAL
+	/FMdicttop FMLOCAL
+/BEGINPRINTCODE { 
+	/FMdicttop countdictstack 1 add def 
+	/FMoptop count 4 sub def 
+	/FMsaveobject save def
+	userdict begin 
+	/showpage {} def 
+	FMNORMALIZEGRAPHICS 
+	3 index neg 3 index neg translate
+	} bind def
+/ENDPRINTCODE {
+	count -1 FMoptop {pop pop} for 
+	countdictstack -1 FMdicttop {pop end} for 
+	FMsaveobject restore 
+	} bind def
+/gn { 
+	0 
+	{	46 mul 
+		cf read pop 
+		32 sub 
+		dup 46 lt {exit} if 
+		46 sub add 
+		} loop
+	add 
+	} bind def
+	/str FMLOCAL
+/cfs { 
+	/str sl string def 
+	0 1 sl 1 sub {str exch val put} for 
+	str def 
+	} bind def
+/ic [ 
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0223
+	0
+	{0 hx} {1 hx} {2 hx} {3 hx} {4 hx} {5 hx} {6 hx} {7 hx} {8 hx} {9 hx}
+	{10 hx} {11 hx} {12 hx} {13 hx} {14 hx} {15 hx} {16 hx} {17 hx} {18 hx}
+	{19 hx} {gn hx} {0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}
+	{13} {14} {15} {16} {17} {18} {19} {gn} {0 wh} {1 wh} {2 wh} {3 wh}
+	{4 wh} {5 wh} {6 wh} {7 wh} {8 wh} {9 wh} {10 wh} {11 wh} {12 wh}
+	{13 wh} {14 wh} {gn wh} {0 bl} {1 bl} {2 bl} {3 bl} {4 bl} {5 bl} {6 bl}
+	{7 bl} {8 bl} {9 bl} {10 bl} {11 bl} {12 bl} {13 bl} {14 bl} {gn bl}
+	{0 fl} {1 fl} {2 fl} {3 fl} {4 fl} {5 fl} {6 fl} {7 fl} {8 fl} {9 fl}
+	{10 fl} {11 fl} {12 fl} {13 fl} {14 fl} {gn fl}
+	] def
+	/sl FMLOCAL
+	/val FMLOCAL
+	/ws FMLOCAL
+	/im FMLOCAL
+	/bs FMLOCAL
+	/cs FMLOCAL
+	/len FMLOCAL
+	/pos FMLOCAL
+/ms { 
+	/sl exch def 
+	/val 255 def 
+	/ws cfs 
+	/im cfs 
+	/val 0 def 
+	/bs cfs 
+	/cs cfs 
+	} bind def
+400 ms 
+/ip { 
+	is 
+	0 
+	cf cs readline pop 
+	{	ic exch get exec 
+		add 
+		} forall 
+	pop 
+	
+	} bind def
+/wh { 
+	/len exch def 
+	/pos exch def 
+	ws 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/bl { 
+	/len exch def 
+	/pos exch def 
+	bs 0 len getinterval im pos len getinterval copy pop
+	pos len 
+	} bind def
+/s1 1 string def
+/fl { 
+	/len exch def 
+	/pos exch def 
+	/val cf s1 readhexstring pop 0 get def
+	pos 1 pos len add 1 sub {im exch val put} for
+	pos len 
+	} bind def
+/hx { 
+	3 copy getinterval 
+	cf exch readhexstring pop pop 
+	} bind def
+	/h FMLOCAL
+	/w FMLOCAL
+	/d FMLOCAL
+	/lb FMLOCAL
+	/bitmapsave FMLOCAL
+	/is FMLOCAL
+	/cf FMLOCAL
+/wbytes { 
+	dup 
+	8 eq {pop} {1 eq {7 add 8 idiv} {3 add 4 idiv} ifelse} ifelse
+	} bind def
+/BEGINBITMAPBWc { 
+	1 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAPGRAYc { 
+	8 {} COMMONBITMAPc
+	} bind def
+/BEGINBITMAP2BITc { 
+	2 {} COMMONBITMAPc
+	} bind def
+/COMMONBITMAPc { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	r                    
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} image 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BEGINBITMAPBW { 
+	1 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAPGRAY { 
+	8 {} COMMONBITMAP
+	} bind def
+/BEGINBITMAP2BIT { 
+	2 {} COMMONBITMAP
+	} bind def
+/COMMONBITMAP { 
+	/r exch def
+	/d exch def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	r                    
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} image
+	bitmapsave restore 
+	grestore
+	} bind def
+	/proc1 FMLOCAL
+	/proc2 FMLOCAL
+	/newproc FMLOCAL
+/Fmcc {
+    /proc2 exch cvlit def
+    /proc1 exch cvlit def
+    /newproc proc1 length proc2 length add array def
+    newproc 0 proc1 putinterval
+    newproc proc1 length proc2 putinterval
+    newproc cvx
+} bind def
+/ngrayt 256 array def
+/nredt 256 array def
+/nbluet 256 array def
+/ngreent 256 array def
+	/gryt FMLOCAL
+	/blut FMLOCAL
+	/grnt FMLOCAL
+	/redt FMLOCAL
+	/indx FMLOCAL
+	/cynu FMLOCAL
+	/magu FMLOCAL
+	/yelu FMLOCAL
+	/k FMLOCAL
+	/u FMLOCAL
+/colorsetup {
+	currentcolortransfer
+	/gryt exch def
+	/blut exch def
+	/grnt exch def
+	/redt exch def
+	0 1 255 {
+		/indx exch def
+		/cynu 1 red indx get 255 div sub def
+		/magu 1 green indx get 255 div sub def
+		/yelu 1 blue indx get 255 div sub def
+		/k cynu magu min yelu min def
+		/u k currentundercolorremoval exec def
+		nredt indx 1 0 cynu u sub max sub redt exec put
+		ngreent indx 1 0 magu u sub max sub grnt exec put
+		nbluet indx 1 0 yelu u sub max sub blut exec put
+		ngrayt indx 1 k currentblackgeneration exec sub gryt exec put
+	} for
+	{255 mul cvi nredt exch get}
+	{255 mul cvi ngreent exch get}
+	{255 mul cvi nbluet exch get}
+	{255 mul cvi ngrayt exch get}
+	setcolortransfer
+	{pop 0} setundercolorremoval
+	{} setblackgeneration
+	} bind def
+	/tran FMLOCAL
+/fakecolorsetup {
+	/tran 256 string def
+	0 1 255 {/indx exch def 
+		tran indx
+		red indx get 77 mul
+		green indx get 151 mul
+		blue indx get 28 mul
+		add add 256 idiv put} for
+	currenttransfer
+	{255 mul cvi tran exch get 255.0 div}
+	exch Fmcc settransfer
+} bind def
+/BITMAPCOLOR { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/bitmapsave save def 
+	colorsetup
+	/is w d wbytes string def
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{cf is readhexstring pop} {is} {is} true 3 colorimage 
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPCOLORc { 
+	/d 8 def
+	gsave
+	translate rotate scale /h exch def /w exch def
+	/lb w d wbytes def 
+	sl lb lt {lb ms} if 
+	/bitmapsave save def 
+	colorsetup
+	/is im 0 lb getinterval def 
+	ws 0 lb getinterval is copy pop 
+	/cf currentfile def 
+	w h d [w 0 0 h neg 0 h] 
+	{ip} {is} {is} true 3 colorimage
+	bitmapsave restore 
+	grestore
+	} bind def
+/BITMAPTRUECOLORc { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        
+        /is w string def
+        
+        ws 0 w getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {ip} {gip} {bip} true 3 colorimage
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUECOLOR { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop } 
+        { cf gis readhexstring pop } 
+        { cf bis readhexstring pop } 
+        true 3 colorimage 
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPTRUEGRAYc { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        
+        /is w string def
+        
+        ws 0 w getinterval is copy pop 
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        {ip gip bip w gray} image
+        bitmapsave restore 
+        grestore
+        } bind def
+/ww FMLOCAL
+/r FMLOCAL
+/g FMLOCAL
+/b FMLOCAL
+/i FMLOCAL
+/gray { 
+        /ww exch def
+        /b exch def
+        /g exch def
+        /r exch def
+        0 1 ww 1 sub { /i exch def r i get .299 mul g i get .587 mul
+			b i get .114 mul add add r i 3 -1 roll floor cvi put } for
+        r
+        } bind def
+/BITMAPTRUEGRAY { 
+        gsave
+        translate rotate scale /h exch def /w exch def
+        /bitmapsave save def 
+        /is w string def
+        /gis w string def
+        /bis w string def
+        /cf currentfile def 
+        w h 8 [w 0 0 h neg 0 h] 
+        { cf is readhexstring pop 
+          cf gis readhexstring pop 
+          cf bis readhexstring pop w gray}  image
+        bitmapsave restore 
+        grestore
+        } bind def
+/BITMAPGRAY { 
+	8 {fakecolorsetup} COMMONBITMAP
+	} bind def
+/BITMAPGRAYc { 
+	8 {fakecolorsetup} COMMONBITMAPc
+	} bind def
+/ENDBITMAP {
+	} bind def
+end 
+	/ALDsave FMLOCAL
+	/ALDmatrix matrix def ALDmatrix currentmatrix pop
+/StartALD {
+	/ALDsave save def
+	 savematrix
+	 ALDmatrix setmatrix
+	} bind def
+/InALD {
+	 restorematrix
+	} bind def
+/DoneALD {
+	 ALDsave restore
+	} bind def
+%%EndProlog
+%%BeginSetup
+(3.0) FMVERSION
+1 1 612 792 0 1 21 FMDOCUMENT
+0 0 /Times-Roman FMFONTDEFINE
+1 0 /Helvetica-Bold FMFONTDEFINE
+2 0 /Times-Italic FMFONTDEFINE
+3 0 /Times-Bold FMFONTDEFINE
+4 0 /Helvetica-Narrow-Bold FMFONTDEFINE
+5 0 /Courier FMFONTDEFINE
+6 0 /Courier-Bold FMFONTDEFINE
+7 0 /Helvetica-Narrow FMFONTDEFINE
+8 0 /Helvetica-Narrow-BoldOblique FMFONTDEFINE
+9 1 /Symbol FMFONTDEFINE
+32 FMFILLS
+0 0 FMFILL
+1 .1 FMFILL
+2 .3 FMFILL
+3 .5 FMFILL
+4 .7 FMFILL
+5 .9 FMFILL
+6 .97 FMFILL
+7 1 FMFILL
+8 <0f1e3c78f0e1c387> FMFILL
+9 <0f87c3e1f0783c1e> FMFILL
+10 <cccccccccccccccc> FMFILL
+11 <ffff0000ffff0000> FMFILL
+12 <8142241818244281> FMFILL
+13 <03060c183060c081> FMFILL
+14 <8040201008040201> FMFILL
+16 1 FMFILL
+17 .9 FMFILL
+18 .7 FMFILL
+19 .5 FMFILL
+20 .3 FMFILL
+21 .1 FMFILL
+22 0.03 FMFILL
+23 0 FMFILL
+24 <f0e1c3870f1e3c78> FMFILL
+25 <f0783c1e0f87c3e1> FMFILL
+26 <3333333333333333> FMFILL
+27 <0000ffff0000ffff> FMFILL
+28 <7ebddbe7e7dbbd7e> FMFILL
+29 <fcf9f3e7cf9f3f7e> FMFILL
+30 <7fbfdfeff7fbfdfe> FMFILL
+%%EndSetup
+%%Page: "7" 7
+%%BeginPaperSize: Letter
+%%EndPaperSize
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+0 10 Q
+0 X
+-0.03 (throughout a system run, and to save expensive calcula-) 72 713.33 P
+-0.18 (tions during an of) 72 702.33 P
+-0.18 (f-line session. It is also a useful aid for) 142.06 702.33 P
+1.43 (timing and pro\336ling code, even in applications where) 72 691.33 P
+-0.05 (only conventional optimization is being performed. The) 72 680.33 P
+0.21 (simplicity and transparency of use allows the facility to) 72 669.33 P
+1.67 (be quickly adopted by programmers, and helps mini-) 72 658.33 P
+(mize the debugging and veri\336cation time.) 72 647.33 T
+0.83 (T) 90 632.33 P
+0.83 (ools for determining when cached values are out) 95.41 632.33 P
+1.11 (of date need to be developed. This is particularly true) 72 621.33 P
+0.03 (when storing the contents of the cache to disk for use in) 72 610.33 P
+0.23 (a later session. Also, there is a lot of area to explore re-) 72 599.33 P
+2.77 (garding inexact matches for memoization. An or) 72 588.33 P
+2.77 (ga-) 282.44 588.33 P
+5.39 (nized framework for \322fuzzy memoization\323 might) 72 577.33 P
+-0.04 (provide utility for applications in planning and/or learn-) 72 566.33 P
+0.53 (ing. Finally) 72 555.33 P
+0.53 (, methods for limiting the size of the memo) 117.98 555.33 P
+2.19 (tables \050either by total entries or time of last access\051) 72 544.33 P
+(should be developed.) 72 533.33 T
+72 518.02 295.2 523 C
+72 518.02 295.2 523 R
+7 X
+0 K
+V
+72 520.99 333 520.99 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(6.) 72 511.36 T
+(Acknowledgments) 83.11 511.36 T
+0 F
+2.19 (People providing valuable feedback on the code) 90 497.36 P
+-0.07 (and early drafts of the paper were V) 72 486.36 P
+-0.07 (.J. Benokraitis \050AAI) 214.28 486.36 P
+1.53 (Corporation\051, Lien T) 72 475.36 P
+1.53 (. Duong \050AAI Corporation\051, T) 157.87 475.36 P
+1.53 (im) 284.65 475.36 P
+1.25 (Finin \050UMBC\051, J. Paul McNamee \050AAI Corporation\051,) 72 464.36 P
+0.04 (Peter Norvig \050Sun Microsystems\051, and David J. Scheer-) 72 453.36 P
+1.99 (er \050The Johns Hopkins Applied Physics Laboratory\051.) 72 442.36 P
+0.35 (John Aspinall \050Symbolics\051 suggested the use of the Di-) 72 431.36 P
+(vided Dif) 72 420.36 T
+(ference example.) 109.85 420.36 T
+72 405.05 295.2 410.02 C
+72 405.05 295.2 410.02 R
+7 X
+0 K
+V
+72 408.02 333 408.02 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(7.) 72 398.38 T
+(References) 83.11 398.38 T
+0 12 Q
+0.12 ([1]) 72 383.05 P
+0.12 (Abelson, Harold, Sussman, Gerald Jay) 88.98 383.05 P
+0.12 (,) 274.2 383.05 P
+2.42 (and Sussman, Julie,) 72 371.05 P
+2 F
+2.42 (Structur) 176.87 371.05 P
+2.42 (e and Inter-) 215.74 371.05 P
+4.96 (pr) 72 359.05 P
+4.96 (etation of Computer Pr) 82.22 359.05 P
+4.96 (ograms) 208.28 359.05 P
+0 F
+4.96 (, MIT) 244.26 359.05 P
+(Press, 1985.) 72 347.05 T
+4.52 ([2]) 72 331.05 P
+4.52 (Cheney) 88.98 331.05 P
+4.52 (, W) 124.84 331.05 P
+4.52 (ard, and Kincaid, David,) 145.73 331.05 P
+2 F
+3.1 (Numerical Mathematics and Computing) 72 319.05 P
+0 F
+3.1 (,) 274.2 319.05 P
+(Brooks/Cole, 1980.) 72 307.05 T
+2.22 ([3]) 72 291.05 P
+2.22 (Cormen, Thomas, Leiserson, Charles,) 88.98 291.05 P
+1.22 (and Rivest, Ronald,) 72 279.05 P
+2 F
+1.22 (Intr) 173.27 279.05 P
+1.22 (oduction to Algo-) 190.81 279.05 P
+5.53 (rithms) 72 267.05 P
+0 F
+5.53 (, McGraw Hill and MIT Press,) 102.65 267.05 P
+(1991.) 72 255.05 T
+-0 ([4][) 72 239.05 P
+-0 (Knuth, Donald E.,) 92.98 239.05 P
+2 F
+-0 (The Art of Comput-) 183.58 239.05 P
+(er Pr) 72 227.05 T
+(ogramming) 96.54 227.05 T
+0 F
+(, Addison-Wesley, 1969.) 151.84 227.05 T
+-0.08 ([5]) 72 211.05 P
+-0.08 (Michie, Donald, \322Memo Functions and) 88.98 211.05 P
+3.22 (Machine Learning,\323) 72 199.05 P
+2 F
+3.22 (Natur) 178.03 199.05 P
+3.22 (e) 205.57 199.05 P
+0 F
+3.22 (,) 210.9 199.05 P
+3 F
+3.22 (218) 220.12 199.05 P
+0 F
+3.22 ( No. 1,) 238.11 199.05 P
+(April 1968, pp.) 72 187.05 T
+(19-22.) 148.29 187.05 T
+2.85 ([6]) 72 171.05 P
+2.85 (Norvig, Peter) 88.98 171.05 P
+2.85 (,) 155.97 171.05 P
+2 F
+2.85 (Paradigms of AI Pr) 164.82 171.05 P
+2.85 (o-) 267.21 171.05 P
+-0.27 (gramming: Case Studies in Common LISP) 72 159.05 P
+0 F
+-0.27 (,) 274.2 159.05 P
+(Morgan Kaufmann, 1992.) 72 147.05 T
+2.59 ([7]) 72 131.05 P
+2.59 (Norvig, Peter) 88.98 131.05 P
+2.59 (, \322T) 155.71 131.05 P
+2.59 (echniques for Auto-) 176.1 131.05 P
+2.66 (matic Memoization with Applications to) 72 119.05 P
+9.82 (Context-Free Parsing,\323) 72 107.05 P
+2 F
+9.82 (Computational) 205.23 107.05 P
+(Linguistics) 72 95.05 T
+0 F
+(, 1991.) 124.65 95.05 T
+316.8 72 540 720 R
+7 X
+V
+0 X
+5.57 ([8]) 316.8 712 P
+5.57 ([W) 333.78 712 P
+5.57 (arren, 1992] W) 348.14 712 P
+5.57 (arrren, David S.,) 431.26 712 P
+0.92 (\322Memoing for Logic Programs,\323) 316.8 700 P
+2 F
+0.92 (Commu-) 480.7 700 P
+3 (nications of the ACM) 316.8 688 P
+0 F
+3 (,) 428.07 688 P
+3 F
+3 (35) 437.07 688 P
+0 F
+3 ( No 3, March) 449.06 688 P
+(1992, pp. 93-111.) 316.8 676 T
+FMENDPAGE
+%%EndPage: "7" 6
+%%Page: "6" 6
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+0 10 Q
+0 X
+0.53 (dence on a global variable or the slot value of a CLOS) 72 713.33 P
+(instance.) 72 702.33 T
+4 F
+(4.2) 72 686.33 T
+(Destructive Operations) 85.67 686.33 T
+0 F
+3.81 (In LISP) 90 672.33 P
+3.81 (, parameters to functions are normally) 124.07 672.33 P
+1.32 (pointers to the existing objects, not new copies. Most) 72 661.33 P
+0.02 (list functions, however) 72 650.33 P
+0.02 (, take care not to modify the sup-) 162.96 650.33 P
+0.68 (plied lists, but make copies of certain sections if need-) 72 639.33 P
+3.45 (ed. Limiting most of their code to these types of) 72 628.33 P
+0.52 (operations allows the LISP programmer to have appar-) 72 617.33 P
+2.69 (ent call-by-value semantics without the overhead of) 72 606.33 P
+(copying lists every time they are passed to a function.) 72 595.33 T
+1.99 (Destructive operations, however) 90 580.33 P
+1.99 (, actually modify) 223.2 580.33 P
+1.72 (the supplied ar) 72 569.33 P
+1.72 (gument. A common rule of thumb for) 134.12 569.33 P
+0.12 (LISP programmers is to only use destructive operations) 72 558.33 P
+1.12 (on lists that are freshly consed \050generated\051, to be sure) 72 547.33 P
+-0.2 (that the changes do not inadvertently propagate to unex-) 72 536.33 P
+1.06 (pected places. If, however) 72 525.33 P
+1.06 (, the routine that creates the) 179.41 525.33 P
+0.12 (list becomes memoized, then the list is no longer newly) 72 514.33 P
+2.07 (created each time, and the destructive operation will) 72 503.33 P
+1.53 (change the value that the memoized function will re-) 72 492.33 P
+(turn.) 72 481.33 T
+2.07 (For instance, suppose that function) 90 466.33 P
+5 11 Q
+5.45 (Raw-Data) 242.47 466.33 P
+0 10 Q
+2.22 (returns a newly consed list of numbers, and is only) 72 455.33 P
+1.1 (called by the function) 72 444.33 P
+5 11 Q
+2.91 (Normalized-Data) 165.79 444.33 P
+0 10 Q
+1.1 (, which) 264.67 444.33 P
+1.55 (uses) 72 433.33 P
+5 11 Q
+4.1 (delete) 93.26 433.33 P
+0 10 Q
+1.55 ( to destructively remove the maximum) 132.81 433.33 P
+1.15 (and minimum entries from the list before returning it.) 72 422.33 P
+-0.21 (Prior to memoization, this might be perfectly safe. After) 72 411.33 P
+0.03 (memoizing) 72 400.33 P
+5 11 Q
+0.09 (Raw-Data) 119.51 400.33 P
+0 10 Q
+0.03 (, however) 172.24 400.33 P
+0.03 (, each subsequent re-) 211.28 400.33 P
+0.21 (trieval of supposedly identical data values might in fact) 72 389.33 P
+(get a shorter list.) 72 378.33 T
+0.77 (Before memoizing a routine that returns a list, the) 90 363.33 P
+-0.03 (programmer needs to check the callers of that routine to) 72 352.33 P
+(verify no destructive operations are performed on it.) 72 341.33 T
+4 F
+(4.3) 72 325.33 T
+(T) 85.67 325.33 T
+(oo-Strict Matches) 90.08 325.33 T
+0 F
+-0.23 (Memoization is performed by doing an exact match) 90 311.33 P
+1 (on the ar) 72 300.33 P
+1 (gument list, using the LISP function) 108.8 300.33 P
+5 11 Q
+2.64 (equal) 262.24 300.33 P
+0 10 Q
+2.22 (by default. If you write) 72 289.33 P
+5 11 Q
+5.85 (\050defun Foo \050&key) 178.02 289.33 P
+2.55 (\050Bar 2\051 \050Baz 3\051 ...\051) 72 278.33 P
+0 10 Q
+0.97 (, and then memoize) 214.03 278.33 P
+5 11 Q
+4.86 (Foo) 72 267.33 P
+0 10 Q
+1.84 (, all of the following will be treated as distinct,) 91.78 267.33 P
+0.49 (even though the parameters have identical values in all) 72 256.33 P
+(cases:) 72 245.33 T
+5 8 Q
+(\050Foo\051) 104.4 231.67 T
+(\050Foo :Bar 2\051) 104.4 222.67 T
+(\050Foo :Bar 2 :Baz 3\051) 104.4 213.67 T
+(\050Foo :Baz 3\051) 104.4 204.67 T
+(\050Foo :Baz 3 :Bar 2\051) 104.4 195.67 T
+0 10 Q
+3.42 (Similarly) 90 179.33 P
+3.42 (, one can have counterintuitive results) 126.56 179.33 P
+0.45 (when the ar) 72 168.33 P
+0.45 (guments are \337oating point numbers, for) 119.35 168.33 P
+0.45 (get-) 279.66 168.33 P
+2.37 (ting that, for instance, 2 is not) 72 157.33 P
+5 11 Q
+6.24 (equal) 210.44 157.33 P
+0 10 Q
+2.37 ( to 2.0, and) 243.4 157.33 P
+1.47 (1.234567 is not) 72 146.33 P
+5 11 Q
+3.87 (equal) 140.81 146.33 P
+0 10 Q
+1.47 ( to 1.23456, even though the) 173.77 146.33 P
+(function may treat them as identical.) 72 135.33 T
+0.19 (The solution adopted by the SMS program is to in-) 90 120.33 P
+1.98 (troduce \322wrapper\323 functions that take keyword ar) 72 109.33 P
+1.98 (gu-) 281.88 109.33 P
+2.5 (ments, \337oating point numbers, etc., canonicalize the) 72 98.33 P
+0.47 (ar) 72 87.33 P
+0.47 (guments into some common form, then pass them on) 79.59 87.33 P
+1.83 (to an internal function that takes only required ar) 72 76.33 P
+1.83 (gu-) 281.88 76.33 P
+316.8 72 540 720 R
+7 X
+V
+0 X
+0.31 (ments in the standard format. It is this internal function) 316.8 713.33 P
+(that would be memoized.) 316.8 702.33 T
+4 F
+(4.4) 316.8 686.33 T
+(Non-Printable V) 330.47 686.33 T
+(alues) 391.5 686.33 T
+0 F
+1.88 (The routine that saves data to disk, described in) 334.8 672.33 P
+1.53 (Section 3.3, does so by printing the representation of) 316.8 661.33 P
+1.73 (the object using) 316.8 650.33 P
+5 11 Q
+4.55 (format) 387.77 650.33 P
+0 10 Q
+1.73 (, then directing that output) 427.32 650.33 P
+1.54 (stream to a \336le. This means that LISP objects whose) 316.8 639.33 P
+0.72 (print representation cannot be parsed by) 316.8 628.33 P
+5 11 Q
+1.9 (read) 483.77 628.33 P
+0 10 Q
+0.72 ( cannot) 510.14 628.33 P
+0.19 (be saved to disk. Some objects such as CLOS instances) 316.8 617.33 P
+2.08 (and structures allow the de\336nition of a custom print) 316.8 606.33 P
+0.68 (function, and this can sometimes be used to save them) 316.8 595.33 P
+-0.11 (to disk. But this is not a general mechanism, and special) 316.8 584.33 P
+(purpose code will need to be written in those cases.) 316.8 573.33 T
+4 F
+(4.5) 316.8 557.33 T
+(Compiler Optimization of Recursive Calls) 330.47 557.33 T
+0 F
+1.16 (Some LISP implementations will remove all self-) 334.8 543.33 P
+0.56 (recursive calls when compilation is done at the highest) 316.8 532.33 P
+1.63 (speed optimization. That is, recursive calls will jump) 316.8 521.33 P
+0.25 (directly to the code, rather than going through the sym-) 316.8 510.33 P
+2.64 (bol-function slot. This means that memoization will) 316.8 499.33 P
+2.07 (only be of bene\336t for repeated calls to the top-level) 316.8 488.33 P
+0.34 (form, and speedups of the type described in section 3.1) 316.8 477.33 P
+1.37 (will be eliminated. However) 316.8 466.33 P
+1.37 (, compilers that have this) 434.31 466.33 P
+1.27 (optimization also provide \337ags that can be set to pre-) 316.8 455.33 P
+(vent its use.) 316.8 444.33 T
+4 F
+(4.6) 316.8 428.33 T
+(Memory Usage) 330.47 428.33 T
+0 F
+1.01 (In most cases, memoization is a time vs. memory) 334.8 414.33 P
+1.66 (trade-of) 316.8 403.33 P
+1.66 (f. In some cases, where a frequently repeated) 348.25 403.33 P
+0.97 (function generates lar) 316.8 392.33 P
+0.97 (ge structures or a lot of garbage,) 405.14 392.33 P
+0.76 (memoization may actually save memory by simply re-) 316.8 381.33 P
+1.99 (using the previously created structures. This was the) 316.8 370.33 P
+0.23 (case in the example of section 3.5.2) 316.8 359.33 P
+0.23 (. However) 463.36 359.33 P
+0.23 (, in most) 504.82 359.33 P
+0.68 (cases you sacri\336ce space in order to gain speed. These) 316.8 348.33 P
+1.34 (trade-of) 316.8 337.33 P
+1.34 (fs should be evaluated carefully to avoid con-) 348.25 337.33 P
+1.37 (suming lar) 316.8 326.33 P
+1.37 (ge amounts of memory with little speedup.) 360.47 326.33 P
+3.49 (Several automated tools can assist in this process.) 316.8 315.33 P
+5 11 Q
+22.1 (Memoized-Function-Call-Count) 316.8 304.33 P
+0 10 Q
+8.38 ( reports) 501.37 304.33 P
+1.36 (on how many times a memoized function was called,) 316.8 293.33 P
+-0.21 (broken down by whether those calls resulted in new cal-) 316.8 282.33 P
+1.95 (culations or previous results being returned from the) 316.8 271.33 P
+-0.23 (hash table.) 316.8 260.33 P
+5 11 Q
+-0.61 (With-Memoization) 361.58 260.33 P
+0 10 Q
+-0.23 ( is a macro that al-) 467.05 260.33 P
+0.73 (lows the user to execute forms in a context where cer-) 316.8 249.33 P
+14.51 (tain functions are temporarily memoized.) 316.8 238.33 P
+5 11 Q
+2.55 (Memoized-Time) 316.8 227.33 P
+0 10 Q
+0.97 ( runs a body of code three times:) 402.49 227.33 P
+0.76 (unmemoized, memoized but with an empty cache, and) 316.8 216.33 P
+-0.17 (memoized with the values of the previous run, returning) 316.8 205.33 P
+(time and space information for each run.) 316.8 194.33 T
+316.8 179.02 540 184 C
+316.8 179.02 540 184 R
+7 X
+0 K
+V
+316.8 181.99 577.8 181.99 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(5.) 316.8 172.36 T
+(Conclusions and Future W) 327.91 172.36 T
+(ork) 454.34 172.36 T
+0 F
+3.19 (In summary) 334.8 158.36 P
+3.19 (, an automatic memoization facility) 385.37 158.36 P
+0.97 (provides the tools to easily convert functions to varia-) 316.8 147.36 P
+-0.15 (tions that \322remember\323 previous ar) 316.8 136.36 P
+-0.15 (guments and associat-) 452.03 136.36 P
+1.03 (ed results. This can be used to get behavior similar to) 316.8 125.36 P
+2.62 (dynamic programming, where a solution is built up) 316.8 114.36 P
+0.8 (from subproblems, but without the necessity for deter-) 316.8 103.36 P
+-0.03 (mining the proper order for calculation. The facility can) 316.8 92.36 P
+1.21 (also be used for calculations that are repeated in time) 316.8 81.36 P
+FMENDPAGE
+%%EndPage: "6" 5
+%%Page: "5" 5
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+4 10 Q
+0 X
+(3.4 Performance Pro\336ling) 72 713.33 T
+0 F
+0.42 (Rath) 90 699.33 P
+0.42 (er than using memoization for its own sake, it) 108.88 699.33 P
+0.25 (can also be used as a tool in conventional optimization.) 72 688.33 P
+0.46 (Most LISP implementations provide a pro\336ling facility) 72 677.33 P
+0.23 (whereby the user can see the time that a top-level func-) 72 666.33 P
+0.62 (tion spends in various lower) 72 655.33 P
+0.62 (-level routines. This is im-) 186.97 655.33 P
+0.97 (portant since knowing where a routine spends its time) 72 644.33 P
+3.04 (tells you where to spend your optimization ef) 72 633.33 P
+3.04 (forts.) 274.38 633.33 P
+1.69 (However) 72 622.33 P
+1.69 (, these pro\336lers generally take quite a bit of) 108.23 622.33 P
+1.03 (overhead. This is certainly worth the ef) 72 611.33 P
+1.03 (fort for impor-) 234.85 611.33 P
+0.22 (tant cases, and is an extremely valuable tool. In smaller) 72 600.33 P
+3.68 (cases, however) 72 589.33 P
+3.68 (, memoization provides a quick but) 135.78 589.33 P
+0.03 (rough method for determining where to spend the ef) 72 578.33 P
+0.03 (fort) 280.77 578.33 P
+0.68 (of optimization. Simplicity is the key: tools that take a) 72 567.33 P
+1.76 (long time to be used will be used only occasionally;) 72 556.33 P
+1.82 (tools that are simple for programmers to use will be) 72 545.33 P
+(used more often.) 72 534.33 T
+0.05 (Rather than running the full metering system, users) 90 519.33 P
+2.61 (would interactively memoize certain functions using) 72 508.33 P
+7.79 (the) 72 497.33 P
+5 F
+18.69 (Memoized-Time) 94.5 497.33 P
+0 F
+7.79 ( macro. This temporarily) 172.46 497.33 P
+1.12 (memoizes certain functions, and then executes a body) 72 486.33 P
+-0.08 (of code without memoization, with memoization and an) 72 475.33 P
+0.16 (empty cache, and with memoization and a full cache. If) 72 464.33 P
+-0.21 (the timing for the second memoized case only improved) 72 453.33 P
+0.62 (by) 72 442.33 P
+0.62 (, for instance 5%, then, for that test case, no amount) 81.35 442.33 P
+1.11 (of optimization in the routines in question would pro-) 72 431.33 P
+(vide more than a 5% speedup at the higher level.) 72 420.33 T
+(For example, consider the following case:) 90 405.33 T
+5 8 Q
+(\050defun) 72 391.67 T
+6 F
+(F1) 105.58 391.67 T
+5 F
+( \050A B C D\051) 115.18 391.67 T
+(\050F2 \050F3 A B\051) 81.6 382.67 T
+(\050F4 B C D\051) 100.78 373.67 T
+(\050F5 A\051\051\051) 100.78 364.67 T
+(\050Memoized-Time \050F2 F3\051 \050F1 <Values>\051\051) 72 346.67 T
+(First Time:) 72 337.67 T
+(30.0 seconds) 134.37 337.67 T
+(Second Time: 29.5 seconds) 72 328.67 T
+(Third Time:) 72 319.67 T
+(29.3 seconds) 134.37 319.67 T
+0 10 Q
+-0.17 (This shows that neither F2 nor F3 contribute signif-) 90 303.33 P
+-0.02 (icantly to the overall time of F1. Again, it is the interac-) 72 292.33 P
+0.04 (tive nature and transparency of the facility that makes it) 72 281.33 P
+2.5 (useful here; if memoization required changes to the) 72 270.33 P
+-0.03 (source code it would never be used for this application.) 72 259.33 P
+4 F
+(3.5) 72 243.33 T
+(T) 85.67 243.33 T
+(wo) 90.08 243.33 T
+(Case Studies) 106.02 243.33 T
+(3.5.1) 72 228.33 T
+(Magnetics) 92.51 228.33 T
+0 F
+2.62 (Figure 6 gives timing statistics for a magnetics) 90 215.33 P
+2.91 (module used in the Signature Management System,) 72 204.33 P
+0.9 (timed after various uses of memoization were put into) 72 193.33 P
+0.7 (ef) 72 182.33 P
+0.7 (fect. Ignoring the bene\336ts when the user asks for the) 79.59 182.33 P
+0.67 (exact same displays at dif) 72 171.33 P
+0.67 (ferent times \050which is in fact) 177.21 171.33 P
+0.25 (quite common\051, the following is a summary of the time) 72 160.33 P
+0.69 (bene\336ts of memoization on the \336rst time invocation of) 72 149.33 P
+-0.07 (the top-level display) 72 138.33 P
+-0.07 (, as shown in Figure 4. T) 152.83 138.33 P
+-0.07 (imes are in) 251.48 138.33 P
+1.06 (seconds, and are conservative approximations. Similar) 72 127.33 P
+(results were obtained with other modules.) 72 116.33 T
+4 F
+(3.5.2) 72 101.33 T
+(Detectability Planning Display) 92.51 101.33 T
+0 F
+0.72 (Given the diverse uses of memoization by various) 90 88.33 P
+2.7 (programmers on the SMS program, an attempt was) 72 77.33 P
+316.8 72 540 720 R
+7 X
+V
+0 X
+0.84 (made to estimate the overall contribution of memoiza-) 316.8 557.33 P
+1.46 (tion to the system. T) 316.8 546.33 P
+1.46 (o do this, the default display \050as) 403.83 546.33 P
+1.33 (shown in Figure 4\051 was run both in the default mode) 316.8 535.33 P
+(and then with) 316.8 524.33 T
+2 F
+(all) 373.71 524.33 T
+0 F
+( memoization turned of) 384.26 524.33 T
+(f:) 477.63 524.33 T
+5 8 Q
+(\050time \050Make-PD-Planning Display\051\051) 316.8 510.67 T
+(Elapsed Time: 4.06 seconds) 316.8 501.67 T
+(Ephemeral Bytes Consed: 615,784) 316.8 492.67 T
+(\050time \050Make-PD-Planning Display\051\051) 316.8 474.67 T
+(Elapsed Time: 2562.74 seconds \05042 min 42 sec\051) 316.8 465.67 T
+(Ephemeral Bytes Consed: 2,969,392,724) 316.8 456.67 T
+0 10 Q
+0.91 (This showed a 631x improvement in speed, and a) 334.8 440.33 P
+0.32 (4,822x improvement in the amount of temporary mem-) 316.8 429.33 P
+1.51 (ory \050garbage\051 allocated. Now) 316.8 418.33 P
+1.51 (, benchmarks are notori-) 437.79 418.33 P
+1.22 (ously misleading, and in many places the code would) 316.8 407.33 P
+0.69 (have been written dramatically dif) 316.8 396.33 P
+0.69 (ferently if memoiza-) 456.48 396.33 P
+-0.2 (tion had not been available. Nevertheless, the results are) 316.8 385.33 P
+(illuminating.) 316.8 374.33 T
+316.8 359.02 540 364 C
+316.8 359.02 540 364 R
+7 X
+0 K
+V
+316.8 361.99 577.8 361.99 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(4.) 316.8 352.36 T
+( Pitfalls) 327.91 352.36 T
+0 F
+2.54 (One of the chief bene\336ts of memoization is its) 334.8 338.36 P
+3.12 (transparency) 316.8 327.36 P
+3.12 (. Since requirements and code tends to) 367.21 327.36 P
+-0.25 (change rapidly in AI programs, the user needs to be able) 316.8 316.36 P
+0.49 (to easily switch back and forth between memoized and) 316.8 305.36 P
+0.97 (unmemoized versions, and without making changes in) 316.8 294.36 P
+0.78 (the routines that make use of the function that is to be) 316.8 283.36 P
+2.11 (memoized. However) 316.8 272.36 P
+2.11 (, an overly transparent view can) 401.77 272.36 P
+0.03 (also lead to dif) 316.8 261.36 P
+0.03 (\336culty) 375.85 261.36 P
+0.03 (, as described in the following sec-) 400.74 261.36 P
+(tions.) 316.8 250.36 T
+4 F
+(4.1) 316.8 234.36 T
+(Non-Functions) 330.47 234.36 T
+0 F
+2.51 (Memoization only works for true functions, not) 334.8 220.36 P
+1.51 (procedures. That is, if a function\325s result is) 316.8 209.36 P
+1.51 (not com-) 502.68 209.36 P
+1.23 (pletely and deterministically speci\336ed by its input pa-) 316.8 198.36 P
+0.09 (rameters, using memoization will give incorrect results,) 316.8 187.36 P
+0.53 (since it uses the parameter list to retrieve previous val-) 316.8 176.36 P
+(ues.) 316.8 165.36 T
+-0.17 (Before memoizing a given routine, the programmer) 334.8 150.36 P
+0.71 (needs to verify that there is no internal dependency on) 316.8 139.36 P
+0.2 (side ef) 316.8 128.36 P
+0.2 (fects. This is not always simple; despite attempts) 343.18 128.36 P
+0.24 (to encourage a functional programming style, program-) 316.8 117.36 P
+0.6 (mers will occasionally discover that some routine their) 316.8 106.36 P
+-0.11 (function depended upon had some deeply buried depen-) 316.8 95.36 P
+501.95 712.27 354.86 712.27 2 L
+V
+0.73 H
+0 Z
+N
+4 F
+(Figure 6: TIming of Magnetics Module) 354.86 713.33 T
+318.85 670.25 419.15 705.75 R
+5 X
+V
+0 X
+(Use of Memoization) 330.52 696.33 T
+419.65 670.25 462.48 705.75 R
+5 X
+V
+0 X
+(T) 431.51 696.33 T
+(ime) 436.37 696.33 T
+(\050Seconds\051) 421.19 686.33 T
+462.73 670.25 537.95 705.75 R
+5 X
+V
+0 X
+(Relative) 484.68 696.33 T
+(Speedup) 483.09 686.33 T
+(\050Cumulative\051) 475.58 676.33 T
+(Original) 353.51 660.33 T
+7 F
+(48) 431.89 660.33 T
+(1.0) 494.04 660.33 T
+4 F
+(Conventional) 343.04 644.33 T
+(Optimization) 344.18 634.33 T
+7 F
+(36) 431.89 639.33 T
+(1.33) 494.04 639.33 T
+4 F
+(Repetitions) 346.69 618.33 T
+(Over T) 349.03 608.33 T
+(ime) 374.85 608.33 T
+7 F
+(24) 431.89 613.33 T
+(2.0) 494.04 613.33 T
+4 F
+(Dynamic Programming) 324.14 592.33 T
+7 F
+(2) 436.44 592.33 T
+(24.0) 489.48 592.33 T
+4 F
+(Saved Lookup T) 327.17 576.33 T
+(ables) 389.87 576.33 T
+7 F
+(0.001) 436.44 576.33 T
+(48,000.) 473.53 576.33 T
+318.6 705.75 318.6 570.25 2 L
+V
+0.5 H
+N
+419.4 706.25 419.4 569.75 2 L
+V
+N
+462.6 706.25 462.6 569.75 2 L
+V
+0.25 H
+N
+538.2 705.75 538.2 570.25 2 L
+V
+0.5 H
+N
+318.35 706 538.45 706 2 L
+V
+N
+318.35 670 538.45 670 2 L
+V
+N
+318.35 654 538.45 654 2 L
+V
+0.25 H
+N
+318.35 628 538.45 628 2 L
+V
+N
+318.35 602 538.45 602 2 L
+V
+N
+318.35 586 538.45 586 2 L
+V
+N
+318.35 570 538.45 570 2 L
+V
+0.5 H
+N
+FMENDPAGE
+%%EndPage: "5" 4
+%%Page: "4" 4
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+0 10 Q
+0 X
+0.42 (a composite of all the potential detection methods \050sig-) 72 713.33 P
+0.39 (natures\051. The user frequently is interested in the contri-) 72 702.33 P
+4.44 (bution of individual signature components to this) 72 691.33 P
+1.75 (composite. Since the probability of detection of each) 72 680.33 P
+0.69 (component is memoized before it is combined into the) 72 669.33 P
+0.48 (composite, any component corresponding to a point on) 72 658.33 P
+-0 (the display can be retrieved almost instantly) 72 647.33 P
+-0 (. T) 247.33 647.33 P
+-0 (aking ad-) 257.73 647.33 P
+(vantage of this, the display of Figure 5 can be set up.) 72 636.33 T
+0.05 (Whenever the user moves the mouse over the com-) 90 469.83 P
+0.98 (posite detectability display \050Figure 4\051, the correspond-) 72 458.83 P
+1 (ing speed and course for the point under the mouse is) 72 447.83 P
+0.75 (calculated. Then, the individual components are calcu-) 72 436.83 P
+0.22 (lated, with their relative values shown in the bar charts.) 72 425.83 P
+0.62 (Due to the ef) 72 414.83 P
+0.62 (fects of memoization, the component val-) 125.57 414.83 P
+-0.11 (ues can be calculated and graphed as quickly as the user) 72 403.83 P
+(can move the mouse.) 72 392.83 T
+0.38 (Accomplishing this was extremely simple, with no) 90 377.83 P
+0.56 (special purpose routines or data structures needed. The) 72 366.83 P
+3.47 (original code looked something like the following,) 72 355.83 P
+(where PD means \322Probability of Detection\323:) 72 344.83 T
+5 8 Q
+(\050defun) 72 331.17 T
+6 F
+(Composite-PD) 105.58 331.17 T
+5 F
+( \050Course Speed <Args>\051) 163.15 331.17 T
+(\050Weighted-Average) 81.6 322.17 T
+(\050Signature-1-PD Course Speed <Arg-Subset>\051) 91.19 313.17 T
+(\050Signature-2-PD Course Speed <Arg-Subset>\051) 91.19 304.17 T
+(\050Signature-3-PD Course Speed <Arg-Subset>\051) 91.19 295.17 T
+(\050Signature-4-PD Course Speed <Arg-Subset>\051) 91.19 286.17 T
+(\050Signature-5-PD Course Speed <Arg-Subset>\051) 91.19 277.17 T
+(\050defun) 72 259.17 T
+6 F
+(Signature-1-PD) 105.58 259.17 T
+5 F
+( ...\051) 172.74 259.17 T
+(\050defun) 72 250.17 T
+6 F
+(Signature-2-PD) 105.58 250.17 T
+5 F
+( ...\051) 172.74 250.17 T
+(\050defun) 72 241.17 T
+6 F
+(Signature-3-PD) 105.58 241.17 T
+5 F
+( ...\051) 172.74 241.17 T
+(\050defun) 72 232.17 T
+6 F
+(Signature-4-PD) 105.58 232.17 T
+5 F
+( ...\051) 172.74 232.17 T
+(\050defun) 72 223.17 T
+6 F
+(Signature-5-PD) 105.58 223.17 T
+5 F
+( ...\051) 172.74 223.17 T
+0 10 Q
+0.19 (Now) 90 206.83 P
+0.19 (, to make the real-time component display) 108.78 206.83 P
+0.19 (, the) 277.8 206.83 P
+1.51 (routines need to look up the \050x,y\051 position of mouse,) 72 195.83 P
+0.36 (convert to \050course,speed\051, then call the individual com-) 72 184.83 P
+2.19 (ponent functions directly) 72 173.83 P
+2.19 (. Since each component has) 175.67 173.83 P
+1.24 (been calculated at each course and speed, all of these) 72 162.83 P
+0.21 (calculations will result in simple table lookups after the) 72 151.83 P
+(following simple change:) 72 140.83 T
+5 8 Q
+(\050Def-Memo-Fun) 72 127.17 T
+6 F
+(Signature-1-PD) 139.16 127.17 T
+5 F
+( ...\051) 206.33 127.17 T
+(\050Def-Memo-Fun) 72 118.17 T
+6 F
+(Signature-2-PD) 139.16 118.17 T
+5 F
+( ...\051) 206.33 118.17 T
+(\050Def-Memo-Fun) 72 109.17 T
+6 F
+(Signature-3-PD) 139.16 109.17 T
+5 F
+( ...\051) 206.33 109.17 T
+(\050Def-Memo-Fun) 72 100.17 T
+6 F
+(Signature-4-PD) 139.16 100.17 T
+5 F
+( ...\051) 206.33 100.17 T
+(\050Def-Memo-Fun) 72 91.17 T
+6 F
+(Signature-5-PD) 139.16 91.17 T
+5 F
+( ...\051) 206.33 91.17 T
+72 72 295.2 720 C
+73.31 481.5 293.89 633 C
+83.31 612 283.31 625 R
+7 X
+0 K
+V
+267.11 617.27 99.52 617.27 2 L
+0 X
+V
+0.73 H
+0 Z
+N
+4 10 Q
+(Figure 5: Individual Signature Components) 99.52 618.33 T
+79.31 483.5 287.31 629 R
+0.5 H
+2 Z
+N
+%%BeginBinary:  10634    
+287 260 137.76 124.8 0 114.72 486.1
+/red <
+00FFFFFFFFFFBFBFBFBFBF7F7F7F7F7F3F3F3F3F3F0000000000FFFFFFFFFFBF
+BFBFBFBF7F7F7F7F7F3F3F3F3F3F0000000000FFFFFFFFFFBFBFBFBFBF7F7F7F
+7F7F3F3F3F3F3F0000000000FFFFFFFFFFBFBFBFBFBF7F7F7F7F7F3F3F3F3F3F
+0000000000FFFFFFFFFFBFBFBFBFBF7F7F7F7F7F3F3F3F3F3F0000000000FFF0
+D2C8BE9A9A0028323C2200004670C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+00FF0000F5001940FFFFD2643C46B25FFF88396672BA88396672FFB25FD300FF
+> store
+/green <
+00FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFBFBFBFBFBFBF
+BFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBFBF7F7F7F7F7F7F7F7F7F7F7F7F7F
+7F7F7F7F7F7F7F7F7F7F7F7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F
+3F3F3F3F3F00000000000000000000000000000000000000000000000000EBE6
+D2BED2CDFFFFE1CDB98B64008280C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000FF
+FFC000CEDEFF19E0FFD7B495B382229EFFE45FABBFBFE45FABBFFF229ED300FF
+> store
+/blue <
+00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FF
+BF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F
+3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00
+FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F00FFBF7F3F000A8C
+46281E32280028323C220080B490C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000080FF7F
+FFCBCDD1B30070D000008CED71B422A0FFE45FABBF72E45FABBF0022A0D300FF
+> store
+ BEGINBITMAPCOLORc
+z"
+T*EFF97z
+T)8F8z
+T'F3"
+F0"
+F3"
+F0
+
+"
+EF
+
+J#F#J#J#
+O'E8E8E8E8?E8E8P1E8E8J&J"J%J"J%:"J"
+DE8E8E8E8E89E8=E8E8E8E8BE8?E8E8E8E8E8CE8J%J";#J'9#J"J'8"J"
+FF3F3E8E87E8F3F36E8E8F3F3E8E8F3F3;E8?E8E8F3F3E8E8E8CE8J%?%8"8#8#8#8#9%A#9#9&9&:%8"8#8#8#8&8%A%8)8%:&:(8#;#:&
+ME8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8F3F3E8E8E8E8E8E8E8E8E8F3E8E8E8E8E8E8E8E8E8E8E8E8E8E8E8F3E8E8E8E8E8E8F3F3F3E8E8E8F3E8E8F3E8E8E8E8E8E8E8E8F3E8E8E8E8E8E8E8F3E8E8E8E8E8E8E8E8E8E8J"8'=)8#D'>"@%=%8)8#F'>":"8#=';%8%9"8#:%8'
+IF3E8E8F3F3E8E8E8E8F3F3E8E8F3F3F3F3E8E8F3F3E8E8E8E8E8F3F3E8F3E8E8E8E8F3F3E8E8F3F3F3F3E8E8F3F3E8E8E8F3F3F3E8E8F3F3E8E8E8F3E8E8E8E8F3F3F3F3F3E8F3E8E8E8E8F3F3F3F3J$F#J"8#I";#J$C"8#@$B"J"="
+FE8E8F3F3F3DF3E8E8F3F3F36E8F3F3F3E8E8E8F3F3F35F3E8J$;#@$D$8":#?#8"J$J";#?#8"?";#J"8#
+FF3E8E8E8E8E8E8E8F3E8E8F3E8E8F3F3E89E8E8E84F3E8E8F3F3E8F3E8E8CF3E8E8J%=%J%?"B"C%J%?"G%D"I#8"
+O F3F3F3F3E8E8F3F38F3F3F3F3F3E8E8E8F3F3:F3F3F3F3F3F3F3F3F3E8F3F3E8J$="J%>"<#A%J"E"<#J"A%J"
+GF3E8E8E8:F3E8E8F3E8E8E8F3E8E8F3>E8E8E8E86E8F3E8E8F35F3J)=-D'<'>#D-8%@'<'8%='B#;%@'
+JE8F3F3E8E8E8E8F3F3E8E8E8F3E8E8F3F3E8E8E8F3E8E8E8E8F3F3E8E8E8E8F3F3F3F3E8E8E8F3E8E8F3F3E8E8E8F3E8E8F3F3E8E8E8E8F3F3E8E8E8E8F3F3E8E8E8F3E8E8E8E8F3F3F3F3E8E8E8E8E8E8E8E8F3J#8$8%:#9'8$8#:#;%>%:#8#=#8#9'8$9&8#;%>%:';%:#8#8#=$8#8#8&
+DF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3E8E8F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3E8E8F3F3F3F3F3F3F3F3F3F3F3F3J'J'
+P0F3E8E8E8E8F3OIF3E8E8E8E8F3J%J%
+P1F3F3F3F3OKF3F3F3F3
+
+
+
+
+
+
+
+
+
+
+J"J"9"J"
+IE5OCE5E5O4E5A&J"J%;#<#B":"J"<#<#
+E5E5E5E5E54E5<E5E5E5E5E5E5E5E5E5E5O0E5E5E5E5E5B&J'9%:%J"J#<%:%
+F3F3F3F3E5O!E5F3F3F3F3E5E5F3F3E5E5F3F3E5JF3BE5E5E5F3F3E5E5F3F3E5F#9$:%9%:#I"=#8#8#8#I$:$;$:"9%:%I#;#8#8#8#>$:$:%8%8$:$:$
+F3E5E5E5E5E5F3E5E5E5E5E5E5E5E5F3E5F3F3E5E5F3F3E5E5E5E5E5E5E5E5E5E5E5E5F3E5E5E5E5E5E5F3F3E5F3F3E5E5F3F3E5E5E5E5E5E5E5E5E5E5E5E5F3E5E5E5E5E5E5E5E5E5E5E5J&:%8%9%<rJ&8&9%?%8%=rJ%9&8%:*8&8%
+4E5F3F3F3E5E5F3F3E5F3E5F3F3E5F3F3E5E5ME5F3F3F3E5E5F3F3F3E5E5F3F3F3E5F3F3E5E5F3F3F3E5BE5F3F3F3E5F3F3F3E5E5F3F3F3E5F3F3F3E5F3F3F3E5E5F3F3F3E5E5F3F3F3J"B"?r=%J%@"J"FrJ"
+=F3F3F3E5E5E5F3;E5E5E5E5F34F3F3O*F3J$Jr=%J%:$:$JrJ$F$:$9$
+5E5E5E5<E5F3F3F3E5;F3F3F3F3E5E5E5E5E5E5BE5JE5E5E5E5E5E5E5E5E5F3E5E5J%JrJ%8%J"=rJ%;"?%9%9$
+5F3F3F3F3;F3O F3F3F3F3E5F3F3F3:E5F3JF3F3F3F3E5F3F3F3F3F3F3F3F3F3F3E5F#<"J"=#8#8#8#8"I"C"E%J#8#8#8#@"="8%B"<"
+E5F3E5GE5F3E5E5F3F3E5E5F3E5E5E5F3E5E5F3;F3E5E5F3F3E5E5F3E5E5F3E5E5F3E5E5B&9&:%9$J'9%:%I&8'8%F#J%:%>%9&9#?&8&8%
+E5E5E5E5F3F3E5E5E5F3E5E5E5F3F3E5E59F3E5E5E5E5F3F3E5E5F3F3E5E5F3F3E5E5E5F3F3E5E5E5F3E5F3E5E5F3F3F3=F3E5E5F3F3E5E5F3F3E5E5F3F3E5E5E5F3F3F3F3E5E5E5F3F3E5E5E5F3E5E5E5F3A&;$;$;#8"9"I%;#<#9#=":"9$:&9%9"9"9"J"<#<#@%9$@";$:$9$
+F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3E5F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3<F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3J"J%J%
+OIF3O%E5E5E5F3O0E5E5E5F3"J"J$J$
+F1;F3P2F3F3F3O1F3F3F3"
+EF
+
+
+
+
+
+
+
+"
+F2"
+F3
+
+
+
+
+
+
+
+
+J&J"
+P@8F8F8F8F8FI8FJ%J"
+PBF3F38F8FG8FJ%9&8%9%:&8"8#8%:&9%
+PH8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8F8F8F8FJ'>.;'8*8%:'
+PG8F8FF3F38F8F8F8FF3F38F8FF38F8FF3F38F8F8FF38F8FF3F3F3F3F38F8FF3F38F8F8F8FF3F38F8FF3F38F8FJ"A$;#B"@#
+PEF38FF3F3F3F3F3F3F3J$:#<"B#I$D#
+PB8F8FF38F8FF38F8F8F8F8F8F8F"J#;%G%F%="<%
+F1PAF3F3F3F3F3F3F3F3F3F38F8FF3F38FF3F3F3F3"J"C"<"J%?"
+EFPK8F8F8F8F38F8FF38FJ'>.A-8#;'
+PGF38F8F8F8FF3F38F8F8F8FF3F3F38F8F8F8FF3F38F8F8FF3F38F8F8FF38F8FF3F3F38F8F8F8FF3J#<%9#;%9%:#8#9$8r#=%
+P@F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F38F8FF3F3F3F3J'
+QLF38F8F8F8FF3J%
+QMF3F3F3F3
+
+
+
+
+
+
+
+
+
+Jz
+P:P2F2J#J"z"
+<8F8FOIF2P2F3F2J%J"J#J#J#
+48F8F8F8FB8F@8F8F7F2F3P2F3F1I'9#J"J#J#8zJ#
+8F8FF3F38F8FF3F3;8F?8F8F8F2F3JE1O6F3F1J#9#9&9&:%8"8#8#8#8&8%=#J"8z
+7F3F38F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8FF3F3;E1HF3J"@%=%8)8#F'Jz
+58F8F8FF3F38FF38F8F8F8FF3F38F8FF3F3F3F38F8FF3F38F8FFHE1I"8#I";#J$
+F38F8FF3F3F368FF3F3J#8"J$J";#J"
+4F3F38F98F8F8F4F38F8FEF3J"B"C%J%J#8zJ#
+6F38F8F8FF3F3:F3F3F3F3@F3F2JF3O6F1F3I#A%J"E"J#J#
+8F8FF38F8FF3>8F8FAF3F1P2F1F3I'>#D-8%@'J"z"
+F38F8F8F8FF3F3F3F38F8F8FF38F8FF3F38F8F8FF38F8FF3F38F8F8F8FF3BF3P2F1F3J%:#8#=#8#9'8$9&8#;%?#J#u#u#u#u#u#u#u#u#u&
+4F3F3F3F3F3F38F8FF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F36F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F3F3"J'
+F2?F38F8F8F8FF3"J%
+EF@F3F3F3F3
+J#@#@#@#@#@#@#@#@#@#
+P7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3
+J#J"<#<#
+P:E1E1OME1E1E1E1E1J%J#<%:%
+P9E1F3F3E1OJE1E1E1F3F3E1E1F3F3E1J#8#J#;#8#8#8#
+P8E1F3F3E1OIF3F3E1F3F3E1E1F3F3E1
+
+
+
+J#8#J#8#8#8#
+P8F3E1E1F3P"F3E1E1F3F3E1E1F3J%J%:%
+P9F3E1E1F3P$F3E1E1F3F3E1E1F3J#J"<#<#
+P:F3F3OMF3F3F3F3F3
+
+
+
+
+Jz
+P:P2F2"J#J"z"
+F2;8F8FOIF2P2F3F2"I%J"J%J#J#
+F38F8F8F8FB8F?8F8F8F8F6F2F3P2F3F1I'9#J"J'J#8zJ#
+8F8FF3F38F8FF3F3;8F?8F8FF3F38F8F4F2F3OEE0;F3F1J#9#9&9&:%8"8#8#8#8&8%=#J"8z
+7F3F38F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8FF3F3;E0OCF3"J"@%=%8)8#F'Jz
+F148F8F8FF3F38FF38F8F8F8FF3F38F8FF3F3F3F38F8FF3F38F8FFOCE0"H"8#I";#J$F$
+EFF38F8FF3F3F368FF3F38F8FF3J#8"J$J";#@$J"
+4F3F38F98F8F8F4F38F8F8F8FF38F3J"B"C%J%=$J#8zJ#
+6F38F8F8FF3F3:F3F3F3F38F8FF36F3F2OEF3;F1F3I#A%J"E"<"8$J#J#
+8F8FF38F8FF3>8F8F8F8F8F8F5F3F1P2F1F3I'>#D-8%@'J"z"
+F38F8F8F8FF3F3F3F38F8F8FF38F8FF3F38F8F8FF38F8FF3F38F8F8F8FF3BF3P2F1F3J%:#8#=#8#9'8$9&8#;%='J#u#u#u#u#u#u#u#u#u&
+4F3F3F3F3F3F38F8FF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F34F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F3F3J'
+@F38F8F8F8FF3J%
+AF3F3F3F3
+J#@#@#@#@#@#@#@#@#@#
+P7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3
+J#J"<#<#
+P:E0E0OME0E0E0E0E0J%J#<%:%
+P9E0F3F3E0OJE0E0E0F3F3E0E0F3F3E0J#8#J#;#8#8#8#
+P8E0F3F3E0OIF3F3E0F3F3E0E0F3F3E0
+
+
+
+J#8#J#8#8#8#
+P8F3E0E0F3P"F3E0E0F3F3E0E0F3"J%J%:%
+F0P8F3E0E0F3P$F3E0E0F3F3E0E0F3"J#J"<#<#
+F3P9F3F3OMF3F3F3F3F3"
+F0
+
+"
+EF
+Jz
+P:P2F2J#J"z"
+<8F8FOIF2P2F3F2J%J"J%J#J#
+48F8F8F8FB8F?8F8F8F8F6F2F3P2F3F1I'9#J"J'J#8zJ#
+8F8FF3F38F8FF3F3;8F?8F8FF3F38F8F4F2F3O2DFO F3F1J#9#9&9&:%8"8#8#8#8&8%=#J"8z
+7F3F38F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8FF3F3;DFO0F3J"@%=%8)8#F'Jz
+58F8F8FF3F38FF38F8F8F8FF3F38F8FF3F3F3F38F8FF3F38F8FFO0DFI"8#I";#J$E%
+F38F8FF3F3F368FF3F38F8F8FF3J#8"J$J";#@%J"
+4F3F38F98F8F8F4F38F8FF3F38F8F7F3J"B"C%J%J#8zJ#
+6F38F8F8FF3F3:F3F3F3F3@F3F2O2F3O F1F3I#A%J"E"<#J#J#
+8F8FF38F8FF3>8F8F8F8F9F3F1P2F1F3I'>#D-8%@'<'J"z"
+F38F8F8F8FF3F3F3F38F8F8FF38F8FF3F38F8F8FF38F8FF3F38F8F8F8FF3F38F8F8F8FF36F3P2F1F3J%:#8#=#8#9'8$9&8#;%>%J#u#u#u#u#u#u#u#u#u&
+4F3F3F3F3F3F38F8FF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F35F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F3F3J'
+@F38F8F8F8FF3J%
+AF3F3F3F3
+J#@#@#@#@#@#@#@#@#@#
+P7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3
+J#J"<#<#
+P:DFDFOMDFDFDFDFDFJ%J#<%:%
+P9DFF3F3DFOJDFDFDFF3F3DFDFF3F3DFJ#8#J#;#8#8#8#
+P8DFF3F3DFOIF3F3DFF3F3DFDFF3F3DF
+
+
+
+J#8#J#8#8#8#
+P8F3DFDFF3P"F3DFDFF3F3DFDFF3J%J%:%
+P9F3DFDFF3P$F3DFDFF3F3DFDFF3J#J"<#<#
+P:F3F3OMF3F3F3F3F3
+
+
+
+"
+8FJz
+P:P2F2J#J"z"
+<8F8FOIF2P2F3F2J%J"J#J#J#
+48F8F8F8FB8FB8F8F5F2F3P2F3F1I'9#J"J"J#8yJ#
+8F8FF3F38F8FF3F3;8FB8F6F2F3E8P$F3F1J#9#9&9&:%8"8#8#8#8&8%?#J"8w
+7F3F38F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8FF39E8F3J"@%=%8)8#F'=#Jw
+58F8F8FF3F38FF38F8F8F8FF3F38F8FF3F3F3F38F8FF3F38F8F8FF3=E8I"8#I";#J$C#
+F38F8FF3F3F368FF3F38FF3J#8"J$J";#?$8"J"
+4F3F38F98F8F8F4F38F8F8F8F8F8F6F3J"B"C%J%J#8yJ#
+6F38F8F8FF3F3:F3F3F3F3@F3F2F3P$F1F3I#A%J"E"<%8"J#J#
+8F8FF38F8FF3>8F8FF3F3F3F3F34F3F1P2F1F3I'>#D-8%@'J"z"
+F38F8F8F8FF3F3F3F38F8F8FF38F8FF3F38F8F8FF38F8FF3F38F8F8F8FF3BF3P2F1F3J%:#8#=#8#9'8$9&8#;%A#J#u#u#u#u#u#u#u#u#u&
+4F3F3F3F3F3F38F8FF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F34F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F3F3J'
+@F38F8F8F8FF3J%
+AF3F3F3F3
+J#@#@#@#@#@#@#@#@#@#
+P7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3
+J#J"<#<#
+P:E8E8OME8E8E8E8E8J%J#<%:%
+P9E8F3F3E8OJE8E8E8F3F3E8E8F3F3E8J#8#J#;#8#8#8#
+P8E8F3F3E8OIF3F3E8F3F3E8E8F3F3E8
+
+
+
+J#8#J#8#8#8#
+P8F3E8E8F3P"F3E8E8F3F3E8E8F3J%J%:%
+P9F3E8E8F3P$F3E8E8F3F3E8E8F3J#J"<#<#
+P:F3F3OMF3F3F3F3F3
+
+
+
+
+Jz
+P:P2F2J#J"z"
+<8F8FOIF2P2F3F2J%J"J&J#J#
+48F8F8F8FB8F?8F8F8F8F8F5F2F3P2F3F1I'9#J"J#8zJ#
+8F8FF3F38F8FF3F3;8FO+F2F3BDEO>F3F1J#9#9&9&:%8"8#8#8#8&8%?%J"8z
+7F3F38F8F8F8F8F8F8F8F8FF38F8F8F8F8F8F8F8F8F8F8F8F8F8F8FF38F8F8F8F8F8FF3F3F3F37DE@F3J"@%=%8)8#F'Jz
+58F8F8FF3F38FF38F8F8F8FF3F38F8FF3F3F3F38F8FF3F38F8FF@DEI"8#I";#J$E$
+F38F8FF3F3F368FF3F38F8F8FJ#8"J$J";#?&J"
+4F3F38F98F8F8F4F38F8FF3F3F38F8F7F3J"B"C%J%J#8zJ#
+6F38F8F8FF3F3:F3F3F3F3@F3F2BF3O>F1F3I#A%J"E"<#J#J#
+8F8FF38F8FF3>8F8F8F8F9F3F1P2F1F3I'>#D-8%@'<'J"z"
+F38F8F8F8FF3F3F3F38F8F8FF38F8FF3F38F8F8FF38F8FF3F38F8F8F8FF3F38F8F8F8FF36F3P2F1F3J%:#8#=#8#9'8$9&8#;%>%J#u#u#u#u#u#u#u#u#u&
+4F3F3F3F3F3F38F8FF3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F35F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F1F2F3F3F3J'
+@F38F8F8F8FF3J%
+AF3F3F3F3
+J#@#@#@#@#@#@#@#@#@#
+P7F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3F3
+J#J"<#<#
+P:DEDEOMDEDEDEDEDEJ%J#<%:%
+P9DEF3F3DEOJDEDEDEF3F3DEDEF3F3DEJ#8#J#;#8#8#8#
+P8DEF3F3DEOIF3F3DEF3F3DEDEF3F3DE
+
+
+
+J#8#J#8#8#8#
+P8F3DEDEF3P"F3DEDEF3F3DEDEF3J%J%:%
+P9F3DEDEF3P$F3DEDEF3F3DEDEF3J#J"<#<#
+P:F3F3OMF3F3F3F3F3
+
+
+
+
+
+
+
+
+
+
+
+8z
+T'8Fz
+T*F9
+
+ENDBITMAP
+%%EndBinary
+72 72 295.2 720 C
+0 0 612 792 C
+316.8 72 540 720 R
+7 X
+0 K
+V
+4 10 Q
+0 X
+(3.3) 316.8 713.33 T
+(Off-Line Runs) 330.47 713.33 T
+0 F
+0.43 (In the Divided-Difference example and the discus-) 334.8 699.33 P
+-0.15 (sion of Section 3.1 it was seen how the use of memoiza-) 316.8 688.33 P
+5.44 (tion could be viewed as an automatic dynamic) 316.8 677.33 P
+0.98 (programming facility, remembering the results of sub-) 316.8 666.33 P
+0.87 (problems when building up a larger solution. This can) 316.8 655.33 P
+(result in the reduction of exponential time algorithms to) 316.8 644.33 T
+1.63 (polynomial or linear time on the first invocation, but) 316.8 633.33 P
+0.61 (without time-consuming rewrites or dynamic program-) 316.8 622.33 P
+0.37 (ming algorithm design. In Section 3.2, it was seen how) 316.8 611.33 P
+0.36 (memoization could save on repeated invocations of ex-) 316.8 600.33 P
+1.27 (pensive calculations, giving a constant factor \050but po-) 316.8 589.33 P
+0.04 (tentially large\051 speedup. This still leaves the case where) 316.8 578.33 P
+0.8 (even the very first invocation is too expensive. This is) 316.8 567.33 P
+0.92 (normally addressed by building a special purpose data) 316.8 556.33 P
+0.43 (file, and filling the values with an off-line execution of) 316.8 545.33 P
+0.42 (the expensive routine. Then, the function in question is) 316.8 534.33 P
+-0.23 (modified to access that file. The automatic memoization) 316.8 523.33 P
+1.14 (facility provides a method to do the same thing while) 316.8 512.33 P
+1.95 (still maintaining the transparency and ease of use of) 316.8 501.33 P
+1.71 (memoization, and without forcing the programmer to) 316.8 490.33 P
+0.25 (know which ranges of values are stored in the data file,) 316.8 479.33 P
+0.93 (and which must be freshly calculated. The idea is that) 316.8 468.33 P
+1.33 (the function is memoized and then run off-line in the) 316.8 457.33 P
+0.19 (normal manner on the cases of interest. The contents of) 316.8 446.33 P
+1.58 (the hash table are then saved to disk in a file with a) 316.8 435.33 P
+1.71 (name associated with the LISP function name. Then,) 316.8 424.33 P
+0.39 (this file is automatically used to seed the hash table for) 316.8 413.33 P
+0.92 (the function when it is reloaded in a later session. For) 316.8 402.33 P
+-0.25 (instance, to use a simplified example from the SMS sys-) 316.8 391.33 P
+1.48 (tem, suppose that) 316.8 380.33 P
+5 11 Q
+3.9 (Magnetic-Parameter) 393.42 380.33 P
+0 10 Q
+1.48 ( was a) 512.07 380.33 P
+0.2 (very time consuming calculation that only depended on) 316.8 369.33 P
+(the latitude and longitude:) 316.8 358.33 T
+5 8 Q
+(\050defun) 316.8 344.67 T
+6 F
+(Magnetic-Parameter) 350.38 344.67 T
+5 F
+( \050Lat Long\051 <Body>\051) 436.73 344.67 T
+0 10 Q
+0.66 (Now) 334.8 328.33 P
+0.66 (, you could run the following at night or over) 353.58 328.33 P
+(the weekend:) 316.8 317.33 T
+5 8 Q
+(\050defun F) 316.8 303.67 T
+6 F
+(ill-Magnetic-Table) 355.18 303.67 T
+5 F
+(\050Lat-Min Lat-Max Lat-Step) 355.18 294.67 T
+( Long-Min Long-Max Long-Step\051) 355.18 285.67 T
+(  \050Memoize \325Magnetic-Parameter\051) 316.8 276.67 T
+(  \050loop for Lat from Lat-Min to Lat-Max) 316.8 267.67 T
+(                by Lat-Step do) 316.8 258.67 T
+(    \050loop for Long from Long-Min to Long-Max) 316.8 249.67 T
+(                   by Long-Step do) 316.8 240.67 T
+(      \050Magnetic-Parameter Lat Long\051\051\051) 316.8 231.67 T
+(  \050Save-Memo-Table \325Magnetic-Parameter\051\051) 316.8 222.67 T
+0 10 Q
+-0.19 (Once this completes, then the previous de\336nition of) 334.8 206.33 P
+5 11 Q
+-0.34 (Magnetic-Parameter) 316.8 195.33 P
+0 10 Q
+-0.13 (would be changed as be-) 441.71 195.33 P
+(low:) 316.8 184.33 T
+5 8 Q
+(\050Def-Memo-Fun) 316.8 170.67 T
+6 F
+(Magnetic-Parameter) 383.96 170.67 T
+5 F
+( \050Lat Long\051) 470.32 170.67 T
+(  \050:Hash-Table-Source :Disk\051) 316.8 161.67 T
+(  <Body>\051) 316.8 152.67 T
+0 10 Q
+0.69 (This is where the ease of use of memoization par-) 334.8 136.33 P
+0.61 (ticularly pays of) 316.8 125.33 P
+0.61 (f. If this were a permanent situation, it) 382.79 125.33 P
+1.19 (might be feasible to build conventional lookup tables.) 316.8 114.33 P
+2.87 (But for temporary conditions \050e.g. running multiple) 316.8 103.33 P
+2.96 (simulations in the same environment\051, the ef) 316.8 92.33 P
+2.96 (fort to) 512.33 92.33 P
+(build the tables would likely not be worth the ef) 316.8 81.33 T
+(fort.) 508.45 81.33 T
+FMENDPAGE
+%%EndPage: "4" 3
+%%Page: "3" 3
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+0 10 Q
+0 X
+0.36 (Earley\325) 72 561.33 P
+0.36 (s algorithm can be obtained for parsing context-) 100.86 561.33 P
+0.76 (free languages by memoizing a simple recursive back-) 72 550.33 P
+(tracking parser [7].) 72 539.33 T
+0.15 (Given this, memoization can be viewed as a gener-) 90 524.33 P
+0.1 (al and straightforward technique for automatic dynamic) 72 513.33 P
+0.66 (programming. Rather than tackling the dif) 72 502.33 P
+0.66 (\336cult task of) 243.9 502.33 P
+0.59 (determining the proper order in which to build up sub-) 72 491.33 P
+1.42 (pieces, a simple solution can be memoized to get the) 72 480.33 P
+3.78 (same performance[3]. The question, then, becomes) 72 469.33 P
+0.3 (which approach is better: memoizing a less ef) 72 458.33 P
+0.3 (\336cient al-) 256.87 458.33 P
+1.63 (gorithm or changing to an implementation that either) 72 447.33 P
+0.59 (uses a dif) 72 436.33 P
+0.59 (ferent algorithm or maintains special-purpose) 110.75 436.33 P
+(data structures?) 72 425.33 T
+0.54 (Clearly) 90 410.33 P
+0.54 (, automatic memoization is not meant to be) 118.77 410.33 P
+-0.18 (a substitute for \336nding the proper algorithm for the task.) 72 399.33 P
+0.3 (However) 72 388.33 P
+0.3 (, in cases where the major bene\336t of the better) 108.23 388.33 P
+-0.23 (algorithm is a savings in repeated calculations, memoiz-) 72 377.33 P
+0.92 (ing the obvious algorithm has several advantages over) 72 366.33 P
+-0.12 (an explicit dynamic programming approach. First of all,) 72 355.33 P
+0.78 (a dif) 72 344.33 P
+0.78 (ferent algorithm would not \322remember\323 its results) 90.64 344.33 P
+0.62 (after the top-level function exits, so it would have per-) 72 333.33 P
+2.08 (formance analogous to the third column of Figure 3) 72 322.33 P
+0.09 (rather than the fourth. This is discussed more in the fol-) 72 311.33 P
+1.73 (lowing section \0503.2\051. Secondly) 72 300.33 P
+1.73 (, memoization tends to) 198.96 300.33 P
+0.17 (keep the code shorter and clearer) 72 289.33 P
+0.17 (, and requires little ad-) 204.29 289.33 P
+-0.12 (ditional debugging if the straightforward method has al-) 72 278.33 P
+2.53 (ready been well tested. On lar) 72 267.33 P
+2.53 (ge programs, there is) 203.8 267.33 P
+0.7 (often a reluctance to change routines that have already) 72 256.33 P
+1.08 (been tested and veri\336ed, especially if that will require) 72 245.33 P
+1.95 (changes in multiple places in the code. Furthermore,) 72 234.33 P
+0.67 (since it is simple to switch back and forth between the) 72 223.33 P
+0.17 (memoized and unmemoized versions, it is easy to com-) 72 212.33 P
+0.43 (pare the performances of the two versions. Finally) 72 201.33 P
+0.43 (, and) 275.34 201.33 P
+2.13 (most importantly) 72 190.33 P
+2.13 (, there is the practical issue of pro-) 142.06 190.33 P
+0.02 (grammer time and ef) 72 179.33 P
+0.02 (fort. If \336nding a better algorithm is) 155.43 179.33 P
+2.09 (dif) 72 168.33 P
+2.09 (\336cult, programmers will tend not to bother unless) 82.92 168.33 P
+-0.16 (there is a very lar) 72 157.33 P
+-0.16 (ge payof) 140.57 157.33 P
+-0.16 (f. So a lot of ef) 174.92 157.33 P
+-0.16 (fort gets placed) 233.9 157.33 P
+1.73 (on a few routines, but others that could bene\336t from) 72 146.33 P
+0.79 (memoization are overlooked altogether) 72 135.33 P
+0.79 (. This last point) 230.64 135.33 P
+0.86 (should be stressed, and in fact this was a common oc-) 72 124.33 P
+0.42 (currence on the Signature Management System \050SMS\051.) 72 113.33 P
+2.69 (Places where wasted calculations were suspected or) 72 102.33 P
+0.67 (even known to occur were often disregarded, since the) 72 91.33 P
+0.05 (ef) 72 80.33 P
+0.05 (fort to quantify the repeats and determine a method to) 79.59 80.33 P
+153.3 712.27 110.49 712.27 2 L
+V
+0.73 H
+0 Z
+N
+4 F
+(Figure 3: A) 110.49 713.33 T
+186.71 712.27 153 712.27 2 L
+V
+N
+(verage T) 153 713.33 T
+258.99 712.27 186.57 712.27 2 L
+V
+N
+(ime in Seconds to) 186.57 713.33 T
+230.06 700.27 104.36 700.27 2 L
+V
+N
+(Calculate Divided-Difference on) 104.36 701.33 T
+235.98 700.27 230.06 700.27 2 L
+V
+N
+8 F
+(N) 230.06 701.33 T
+262.84 700.27 235.98 700.27 2 L
+V
+N
+4 F
+( points) 235.98 701.33 T
+83.05 658.25 111.35 693.75 R
+5 X
+V
+0 X
+(N) 94.24 684.33 T
+111.85 658.25 169.07 693.75 R
+5 X
+V
+0 X
+(Unmemoized) 114.9 684.33 T
+169.32 658.25 226.67 693.75 R
+5 X
+V
+0 X
+(Memoized) 178.19 684.33 T
+(\050First Run\051) 177.29 674.33 T
+226.93 658.25 284.15 693.75 R
+5 X
+V
+0 X
+(Memoized) 235.79 684.33 T
+(\050Subsequent) 230.78 674.33 T
+(Runs\051) 243.99 664.33 T
+7 F
+(15) 95.29 649.33 T
+(1) 124.68 649.33 T
+(1) 128.64 649.33 T
+(0.18) 186.24 649.33 T
+(0.0006) 243.84 649.33 T
+(16) 95.29 635.33 T
+(22) 124.08 635.33 T
+(0.21) 186.24 635.33 T
+(0.0006) 243.84 635.33 T
+(17) 95.29 621.33 T
+(43) 124.08 621.33 T
+(0.22) 186.24 621.33 T
+(0.0006) 243.84 621.33 T
+(18) 95.29 607.33 T
+(87) 124.08 607.33 T
+(0.28) 186.24 607.33 T
+(0.0007) 243.84 607.33 T
+(19) 95.29 593.33 T
+(173) 119.53 593.33 T
+(0.4) 186.24 593.33 T
+(0.0007) 243.84 593.33 T
+(100) 90.73 579.33 T
+(   Centuries) 111.6 579.33 T
+(25.0) 181.68 579.33 T
+(0.002) 243.84 579.33 T
+82.8 693.75 82.8 574.25 2 L
+V
+0.5 H
+N
+111.6 694.25 111.6 573.75 2 L
+V
+N
+169.2 694.25 169.2 573.75 2 L
+V
+0.25 H
+N
+226.8 694.25 226.8 573.75 2 L
+V
+N
+284.4 693.75 284.4 574.25 2 L
+V
+0.5 H
+N
+82.55 694 284.65 694 2 L
+V
+N
+82.55 658 284.65 658 2 L
+V
+N
+82.55 644 284.65 644 2 L
+V
+0.25 H
+N
+82.55 630 284.65 630 2 L
+V
+N
+82.55 616 284.65 616 2 L
+V
+N
+82.55 602 284.65 602 2 L
+V
+N
+82.55 588 284.65 588 2 L
+V
+N
+82.55 574 284.65 574 2 L
+V
+0.5 H
+N
+316.8 72 540 720 R
+7 X
+V
+0 F
+0 X
+1.31 (avoid repetition was frequently deemed not worth the) 316.8 713.33 P
+-0.18 (ef) 316.8 702.33 P
+-0.18 (fort, given the rapidly changing nature of AI software.) 324.39 702.33 P
+1.6 (However) 316.8 691.33 P
+1.6 (, providing an easy method for memoization) 353.03 691.33 P
+0.25 (made it simple to \336nd the routines that really bene\336ted,) 316.8 680.33 P
+1.39 (and additive speedups from several small routines re-) 316.8 669.33 P
+(sulted in greatly increased overall performance.) 316.8 658.33 T
+4 F
+(3.2) 316.8 642.33 T
+( Repetitions Over Time) 328.19 642.33 T
+0 F
+-0.18 (In Section 3.1, there was a central routine which in-) 334.8 628.33 P
+0.56 (voked the lower) 316.8 617.33 P
+0.56 (-level functions repeatedly) 382.12 617.33 P
+0.56 (. Changes to) 489.18 617.33 P
+1.2 (the algorithm at this level, or a data structure local to) 316.8 606.33 P
+1.23 (that central routine could gain many of the same ef) 316.8 595.33 P
+1.23 (\336-) 531.11 595.33 P
+1.44 (ciency bene\336ts as automatic memoization, albeit with) 316.8 584.33 P
+0.27 (decreased \337exibility and increased ef) 316.8 573.33 P
+0.27 (fort. However in a) 465.92 573.33 P
+2.32 (team programming environment dif) 316.8 562.33 P
+2.32 (ferent sections of) 466.53 562.33 P
+0.78 (the system, written by dif) 316.8 551.33 P
+0.78 (ferent programmers, may ac-) 421.64 551.33 P
+0.93 (cess the same function. Alternatively) 316.8 540.33 P
+0.93 (, in an interactive) 467.82 540.33 P
+2.21 (system the user may invoke calculations at dif) 316.8 529.33 P
+2.21 (ferent) 516.69 529.33 P
+-0.25 (times that make use of some of the same pieces. In these) 316.8 518.33 P
+1.22 (cases, there is no central routine which could manage) 316.8 507.33 P
+1.22 (the calling sequence, and the only alternative to auto-) 316.8 496.33 P
+1.67 (matic memoization is to have the routine in question) 316.8 485.33 P
+0.56 (manage its own global data structure to remember pre-) 316.8 474.33 P
+2.3 (vious results. Memoization provides an ef) 316.8 463.33 P
+2.3 (\336cient and) 495.78 463.33 P
+(convenient alternative.) 316.8 452.33 T
+0.9 (For instance, Figure 4 shows a display used as an) 334.8 437.33 P
+1.11 (aid to planning submarine operations in the SMS sys-) 316.8 426.33 P
+1.01 (tem. It shows the predicted probability of detection of) 316.8 415.33 P
+-0.17 (the submarine for various choices of heading and speed,) 316.8 404.33 P
+0.83 (drawn on a polar plot with the angle \050theta\051 indicating) 316.8 393.33 P
+0.73 (heading \0500 corresponding to due north\051, and the radius) 316.8 382.33 P
+1.17 (\050r\051 corresponding to speed. Each \050r) 316.8 371.33 P
+1.17 (,theta\051 pair \050arc\051 in) 461.57 371.33 P
+0.16 (the display is coded with a color indicating the cumula-) 316.8 360.33 P
+0.18 (tive probability of detection for the sub if it were to op-) 316.8 349.33 P
+(erate at the course and speed.) 316.8 338.33 T
+1.55 (This display is used as a high-level tool in plan-) 334.8 105.33 P
+(ning, and thus presents highly summarized information.) 316.8 94.33 T
+0.31 (It presents a single number for probability of detection,) 316.8 83.33 P
+314.45 117 542.35 335 C
+312.45 306.83 564.45 327.33 R
+7 X
+0 K
+V
+524.53 319.61 352.37 319.61 2 L
+0 X
+V
+0.73 H
+0 Z
+N
+4 10 Q
+(Figure 4: SMS Detectability Planning Screen) 352.37 320.67 T
+316.83 119.33 538.44 332 R
+0.5 H
+2 Z
+N
+%%BeginBinary:  57982    
+864 747 216 186.75 0 320.4 124.12
+/red <
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000FF0061253EA07200D7EBFFFFFFFFFFFFFFFFFFF0
+D2C8BE9A9A0028323C2200004670C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+00FF0000F5001940FFFFD2643C46B25FFF88396672BA88396672FFB25FD300FF
+> store
+/green <
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000FF873457DF9F00373C4500787F8CA5BED7EBE6
+D2BED2CDFFFFE1CDB98B64008280C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+00000000000000000000000000000000000000000000000000000000000000FF
+FFC000CEDEFF19E0FFD7B495B382229EFFE45FABBFBFE45FABBFFF229ED300FF
+> store
+/blue <
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000FFFFD9548CFFFFFF1C1E00000A5028374D000A8C
+46281E32280028323C220080B490C00000000000000000000000000000000000
+0000000000000000000000000000000000000000000000000000000000000000
+000000000000000000000000000000000000000000000000000000000080FF7F
+FFCBCDD1B30070D000008CED71B422A0FFE45FABBF72E45FABBF0022A0D300FF
+> store
+ BEGINBITMAPCOLORc
+&z#z"z"z&zzz
+FEF9F9F9FEO*F9FEFEKF9FEO$F8FEO<F8F9F9F9FEFER2EDUK8FO.F29vz8z8zu
+F6O!FEQBFE[3FEF6:t"Jt
+F9F7`-F9Dz
+`,F9
+='J'
+F7F7F7F7F7F7`.F7F7F7F7F7F7>':yJ(
+F9F9F9F9F9F9F6_HF9F9F9F9F9F9F6G"y"
+F6F9F7
+
+Jr
+5F7:$E'J$
+F7F7F7F8F8F8F8F8F6`%F7F7F79&C#9#J%
+FEFEF9F9F9F9F7F6F9`$F9F9F9FE
+J&
+6F9F7F8F6F9
+J$
+7F9F6F9J"
+8F9
+
+G"y"
+F9F7F9Hy
+F9
+
+
+
+
+>z
+`8FE
+@z
+`48E
+
+
+
+
+
+Jz
+OG[0FEJz
+OH[.8C
+
+
+
+JvJ$J$B$:$:$J%?vJ$J%J$J$?$J$?$
+PDFA>FAFAFA:FAFAFAFAFAFAFAFAFAFAFAFAO$FAFAFAFAFAO5FAFAFAIFAFAFAFAJFAFAFA@FAFAFAFAFAFAO@FAFAFAFAFAFAJ#J$J"J#J$J$J"J$J"J$B&B$
+Q!FAFAP"FAFAFAIFA8FAFA5FAFAFAAFAFAFAO"FAFFAFAFAKFAKFAFAFAFAFAFAFAFAFAFAFAJrJ#B':"J#J#;#?"
+PG8CQ&8C8C8C8C8C8C8C8CFAP28C8CPMFAFAFAFAFAJ"8"J$A$J#9"J$J"J$9"
+Q 8CFAO98C8C8C8C8C8CO:8C8CFAO18C8C8CPBFAO,8C8C8CFAJ"J"8"9"@"
+T<8CS4FA8C8CFAJ$8#<%A&>'@&<$A$9#9#8$=$B%<#9#J"<%<#9#<%?':#9#9$=%=*A#9#<%=$8#>#9#=%@%H"F%<$;$8#9#E"8"J%=$;$:$8#:'
+Q'FAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA8FAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA8CFALFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAJ"<#:#>";"<"<">";"J#:#J"=#:#E#:#<"<"J#:#>";"J#:#?"J":#<#:#D"8"C#:#="9"J$J#:#J";"<"
+Q+FAFAFAFAFAFAFAFAFAFAFAO+FAFAFAFA@8CFAFAFAFAFAFAFAFAFAFA5FAFAFAFAFAFA5FAFAFAFAFA7FAFAFAFAFAFAFA8CFAFAFAFAFAFAFADFAFA8CBFAFAFAFA8FAFAFAJ"8"<"<"9#9"?#9":"8$9"?#9"J#9#8"8"H"9#9"9#9#J"9#9"9#9#9"9#9":"9#9"8#9#@"9#9">$C#9#9"9#9"="A#9#=$>"9#9"J"9#9"9"?"8#9#=$C"J"9#9"J";"9#9"
+Q FA8CFAFA8C8CFA8C8CFAFA8C8C8CFA8C8CFA88C8C8C8C8CFAFA8C8CFA8C8C8C8C<FA8C8CFA8C8C8C8CFA8C8CFAFA8C8CFA8C8C8C8CFA8C8CFA8C8C8C8C8C8C8CFA8C8CFAFA8C8C8C8C8C8C8CFA8C8CFA=FA8C8CFA8C8C8C8C8C8C8C8C8CFADFA8C8CFA6FAFA8C8CFAJrA$<"8"A"8"C"A"8"J":"8"B"8"J"8"I"8"@"8"J"8"@"9"8"J"8"A$J"9"8"="8"G"8"D"8"="8$8"J"8"<"Ht@"8"J$;"8"
+PGFA8C8C8C8C8C8C8C8C8C8CHFAFA8C8C8CL8C8C8C8C8C8C98C8C8C8CFA68C8C8C8C8C58C8CFA8C8C8CFA8C8C8CFA8CFA8C9FA8C8CFA8C8C:8C8C8C8C8CJ"=";"8":"8"<":"8"9$D":"8"J"I"8":"8"J"8":"8"A"8":"8"8"8":$H"8":"8"J"8":"8"<"J"8":"8"D"8"?"8":"8"="J"=$J"8":"8"J"B$
+Q"8C8CFA8C8CFA8C8CFA8C8C8C8C8CFAA8CFA8C8CFADFA8C8CFAFA8C8CFAFA8C8C8C8CFA8C8CFA@FA8C8CFA8CCFA8C8CFA8CFAFA8C8CFAFA<FAFAFA8CBFA8C8CFA58C8C8C8CJtJ$J"8"J";"J"9"9"JtJ$
+PG8CO"FAFAFAO*FAFAT#8C8C8FA8CFA68CO"FAFAFAJ$J">"J'G'J'H"8"A'>"9"J"9"<"J";$
+R!FAFAFAO*8C8CO.FAFAFAFAFAFAFAFAFAFAFAFAPKFAFAFAFAFAFA8CFAFAFAFAFAFAFA8C8C8FA8C8CO<8CFAFAFAJ":#J"J"9"J#9":"J$;"
+R FA8C8CTD8C;FAFA6FAFA8CFAO@8C8C8CFAJ"9#J"8#8"J">tDtJtI"@tJ"9#>%9#J$9"
+QMFA8C8CO*8CFAFA8CO&FA8C8CPH8CFA8C?FA8C8CFAFAFAFAFAFAO88C8C8CFAJ"J"J"8"J"8"8"I"9"J$:"
+R"8CP=8CR+8CFA6FA8CFAFA8COGFAFAFA8CJ"8":"8"<":"8"?"@":"8"J"F"8":"8"J"<"8";$A"8";$8"8":$H"8":"8"J"8":"8"J"8";$H">"8";$9"="G"9">r9#J"8":"8"@"
+Q08CFAFA8CFAFA8CFAFAFA8CD8C8CFAFA8C=FA8CFAFAFAFA8CFAFAFAFA8CFAFAFAFA8CFAFA8C@8CFAFA8CJ8CFAFAFAFA8C8CFAFAFAFAFAFAFA8C8C8C8C;8CFAFA8CFAJ"8"A"8"?"8"B"8"J"E"8"J#9"="9"H"9"?"8"J"8"J"8"J"9"J"9"?$J"J"8"="8"8"J"9"
+Q4FAFAFAFAFAFAFAFAM8CFAFA?FAFA8CFAFAFAFAFAFA9FAFAHFAFAO$FAFABFAFA8C8C8C78CO&FAFA8CFAFA4FAFAJ"9#9"?#9"9"9#;">#9"J#="F"9#9"J':";"9$9"=#9"9$9"9"9#9"=#@"9#9"J"9#9"J#H"9$9"I">"9$9"8"?"=#@tJ"9#9">%F"9$9"
+Q18CFAFA8CFAFA8C8CFAFAFAFAFA8C=FAFA8C8CFAFA8C6FAFAFAFAFAFA8C8CFAFAFA8CFAFA8CFAFAFA8C8CFAFA8CFAFA8CFAFA8CB8CFAFA8C8FAFA8CFAFAFA8C8C8CFAFAFA8CFAFAFAFAFAI8CFAFA8CFAFAFA8C8CFAFAFA8CJ#:#>";";";#?";"J"J#:#J#=#;#;">#;#;"<";"E#:#J#:#J"J#;#J">#;#<"9"="J#:#<#9"H"="
+Q28C8C8C8C8C8C8C8C8C8C8C;8C=8C8C8C8C?8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8CD8C8C8C8C68C78C8C8C8C58C8C8C8C8C8C8C8CO38C8C8C8C8C8C8C8C8CJ$D$@%=t=&8$9t<$:$:$<%="8"F%>$AvA&>%<&>'=%9$=%=$;$A$>%=$E%9$;$=&B$?$=&;$;$;%=w>$A$?$=%@$8$:$>r
+PD8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8CFA8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C
+J"8"
+S0FA8CJ#
+S.FAFAJ"
+S28CJ%
+S.8C8C8C8C
+
+J%JrJ$J'=$JvJ$Jw
+Q FAFAFAFAEFAOFFAFAFAEFAFAFAFAFAFAFAFAFAPGFAO FAFAFAOEFAJ"J#=#J$J#<#J$J$J#J$J&>'='J$
+PMFAGFAFAFAFAOLFAFAFA;FAFAFAFAO+FAFAFAO3FAFAFA6FAFADFAFAFAO!FAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAO*FAFAFAJ#J":$:"J"9$:"J':"J#;#;"<";"<"Dt
+Q"8C8CBFA8C8C8CFAP:FA8C8C8CFAQ#8C8C8C8C8C8CFAOEFAFAFAFAFAFAFAFA8CJ"9#9#9"J$J"9"9#=$J#9"J$="9#9"9"9#9"
+QEFA8C8C8C8CFAOB8C8C8CAFA8C8C8C8C8C8CQ"8C8CFAOG8C8C8CFA8C8CFAFA8C8CFAJ"="J"J"J"8"9"8"<"8"?"8"
+QH8C8CP>8CQ48COFFA8C8CFA8C8C8C8CJ#9#<%=$8#>"B$<%=)8&<*?%>'<$9#9#<%J$:$<*:*>';#9#9$;$:$8#<%E';#9#J"<%=*;#9#=%J%@%<#9#
+PKFAFAFAFAFAFAFAFAFAFAFAFAFAFA8C8C8CFAFAFAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA78C8C8CFAFAFAFAFAFAFAFA8CFAFAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA8FAFAFAFAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFAFAP$FAFAFAFAFAFAFAFAFAFAFAFAJ#:#?"C"F#:#>":#;">";"<#:#;"<"J#:#D"J";"@";"<"<"J"<#:#B"<"J"=#:#>";"G":#J"8":"8$8":"8"J#:#<#:#
+Q(FAFAFAFAFA8CFAFAFAFAFAFAFAFAFAFAFAFAFAFAFAFA6FAFAFAFAFA5FAFAFAFAFAFAAFAFAFAFAFAFAFA@8CFAFAFAFAFAFAFAFAFAJFA8C8CFA8CFA8C8CFA9FAFAFAFAFAFAFAFAJ#9#9"9#9"="J"9#9">#;#9"?#9":"9#9"9"9#9"@#9#9"9#9"@"9#H"9#C$>"8$9"9#9#J"<"9#9"@"8$9"9#9#J"9#9"?#9"9#9#=$J$J"9#9":"9#9"9#9#
+PK8C8C8C8CFA8C8CFAFA>FA8C8CFA8C8C8C8CFA8C8CFAFA8C8CFAFA8C8CFA8C8C8C8CFA8C8CFA8CFAFAFA8C8C8C8C8CFA8C8C8CFA8C8C8C8C5FAFA8C8CFAFA8C8C8CFA8C8C8C8C<FA8C8CFA8C8CFA8C8C8C8C8C8C8C@8C8C8CO-FA8C8CFAFA8C8CFA8C8C8C8C$J"8"A$J"8"@"8"9"8"A"8"@"8"?"8"J"8"D":%G"8"A"9"8"@"J$<"8"I"J"8"A"8"I"9"8"J"8"Js="8"@"8"
+F6F6F6Q'8C8C8C8C8C>8C8C8C8C8C8C8C8C8C8C8C8C:8C8C8CFAFAFAFA8C8C8C8CFA8CC8C8C8C8C8C8CL8C8C8C8C8C8CFACFA8CGFA8C8C8C8C$J"8":"8"<"J"8":"8"J":"8"8"8":"8"?$I"8":"8"A$;#A"8":"J$J";"8":"8"?$J"8":"8"<":"8"JuB$8"J"8":"8"8"8":"8"
+F9F9F9Q#FA8C8CFA8C=FA8C8CFA;8C8CFAFA8C8CFA8C8C8CFA8C8CFA8C8C8CFAFAFA8C8C68C8C8CF8CFA8C8CFA8C8C8CLFA8C8CFA8C8CFAAFAFAFAFA8CO%FA8C8CFAFA8C8CFAJ$J$:"J$J$J#Js
+S=FAFAFAO#8C8C8CFAMFAFAFAO3FAFAFAPCFAFAG8CJ";$J'J#9"J$J'C$J'JuB%J'>'
+S:8CFAFAFA7FAFAFAFAFAFA48C8CFAIFAFAFAO FAFAFAFAFAFAFAFAFAO FAFAFAFAFAFAO%8C8C8C8C8CO*FAFAFAFAFAFAFAFAFAFAFAFAJ$;"J"J":#J":#J"8"
+S;8C8C8CFAO$8CKFA8C8CO/FA8C8CPB8CFAJ"?$J$9"Jt>$J"9#Jt>"9#J">tJuJt;t
+QGFAFAFAFAO88C8C8CFA58CFAFAFAO%FA8C8CM8CFA8C8CDFA8CO"FAO:8C8CJ"J$:"J"J"J"J$@"8":"8$8":"8"
+QD8COCFAFAFA8CP&8CO58CI8COBFAFAFA8CFAFA8C8C8CFAFA8CJ"8":"8"J"=";"8":"8"J":"8"8"8":"8"J"8";$A"="B"8":"J"J"F"8";$E"J"<"8";$<":"8"JuF"J"8";$8"8";$
+Q&8CFAFA8C6FAFA8CFAFA8C;FAFA8C8CFAFA8C?8CFAFAFAFAFAFA8CFAFA<FA7FA8CFAFAFAFAFAAFA8CFAFAFAFAFAFA8CA8CFAO&8CFAFAFAFA8CFAFAFAFAJ"8"J"9#9#9"<"8"J"8"@"8"?"9"J"9"A"9#9#9"C"8"J"8"G"8"8"J"9"D"8"J#9"="9"@"8"J"8"9"9";"8"?"8"J"9"?"9"
+Q*FAFA78CFAFAFAFA8CFAFA@FAFAFAFAFAFA9FAFA8CFAFAFAFA8CFAFA9FAFA8CFAFA5FAFAFAFA@FAFA8CFAFAFAFAO)8CFAFA8CFAFAFAFA?FAFAFAFAJ"9#9"J":$:":"9#9"J#9":"9#9"9"9$9"D#9"9$9"?":$:"A"9#J"9#;"=#=%G"9$9">"9#;"=#B':";"9$9">#9">#J$="9#9"9"9#9"J"9$9"9"9$9"=#
+Q'8CFAFA8C58CFAFAFA8C8CFAFA8C>FAFA8C8CFAFA8C8CFAFAFA8CFAFA8CFAFAFA8C8CFAFAFA8C8CFAFA78CFAFAFAFAFAFAFAFA8C8CFAFAFA8C8CFAFAFAFAFAFAFAFAFAFAFA8C8CFAFAFA8CFAFA8CFAFAO FAFAFA8CFAFA8C8CFAFA8C98CFAFAFA8C8CFAFAFA8CFAFA$J#:#J#=#<#:#J";"<#:#;"="B">#;#A#=#C";"J";#=">#9"I#;#@";#="J#=#;#=";"<"J#<#:"<";"<"J#;#;#;#;"
+F7F7F7Q%8C8C8C8C78C8C8C8C8C8C8C8C=8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C68C8C8C8C8C8C8C8C8C8C8C8C8C8C8C88C8C8C8C8C8C8C8C8CO!8C8C8C8C8C8C8C8C;8C8C8C8C8C8C8C8C8C$J$>%=$Gr@%=$:$:$>&?%>r;$<%<&Er=$<&>$;$;&8$;%<$8$:$@&C&8$;%?vA&@&>%9$;$J'='='B$E&?&>%
+FEF9F9PJ8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C?8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8C8"J$
+F5U$FAFAFAJ":"8"
+U*FAFA8CJ"9%
+U'8CFAFAFAFAJ#<#
+U(8C8C8C8CJ$J'J$
+RL8C8C8CP)8C8C8C8C8C8CQ.8C8C8C
+
+
+
+
+
+
+
+
+
+
+Jz
+OH[.FEJz
+OG[08E
+
+
+
+
+
+J#
+V7FAFAJ%
+V6FA8E8EFA
+
+
+
+J%
+V68EFAFA8EJ#
+V78E8E
+
+
+
+
+JP
+V5
+
+J$B"J'>"
+^0FAFAFAFACFAFAFAFAFAFAFAJ(J'
+^.FAFA8E8E8EFAFAO!8E8E8E8EFAFAJ"9"J"
+^/8E8EO&8EJ#;"9%=%9%J$
+^-FA8E8EFAFAFAFAFAFAFAFAFA8EFAFA?FAFAFAJ';'9$J"9&
+^7FAFA8E8EFAFAFAFA8E8EFAFAFA8E8E:FAFAFA8E8EFAJ"8"="8":"J'9"8"
+^88E8E8E8E8E8FAFAFAFAFA8E8E8EJ&
+_68E8E8E8E8E
+J#;"
+^-8EFAFAJ"9":"8"="8"J"8"
+^/FAFAFAFAFAFAFFAFAJ(8';'J&
+^.8E8EFAFAFA8E8E8EFAFAFAFA8E8EFAFAFAFA8ED8EFAFAFA8EJ$;%9"9%9"J"?&
+^08E8E8E8E8E8E8E8E8E8E8E8E8E88E8E8E8E8E8E
+
+
+Jz
+UFO273
+
+
+J'J#
+ULFAFAFAFAFAFAAFAFAJ"8#8"J$Jz
+UKFA7373FAKFAFAFAU'JFEJ"8"J"JrG"
+UM7373LFAV6FAFAJ"9#8&;%:%;$?$J'
+UMFA7373FAFA73FAFAFAFAFAFAFAFAFAFAFAFAFAFAFA73V68E8E8E8E8E8EJ"8#=%9'8'9$?$
+UK73FAFAFA73FAFAFAFA7373FAFAFAFA7373FAFAFAFA73FAFA73J#8#;&H&=$J#9#8%
+UL7373FAFA737373FAFAFAFA737373FAFA73V?FAFAFAFAFAFAFAFAJ#8"C#<#J"J";)
+V 7373FAFAFAFAFA<FFV58E8E8EFAFA8E8EFAFAJS@"E%:%F$8";RJ&9&9"8#
+U>737373737373737373FAFAFAFAV'FAFAFAFAFA8EFA8EFA8E8E8E8EJQC#J&8"BQJ&:$
+U8FAFAM737373737373V!8E8E8E8E8E8EFA8EJPJ':&:%:%8&JP
+U35FA73FAFAFA73FA73FAFA73FA73FAFAFA73FAFA73FAFA73FAAJPBr;"8"8"<$9"8$8"8$9%IrBPJ$>"
+U.7A73FA73FAFA7373FAFA7373FAFA7373FAFA737AV FA8EFAFA8"J%A'C&<$;%:%;&@#B'APJ&9"8"
+F9U'FFFFFFFF7A7A7A7A7A7A73737373737373737373737373737373737373737373737A7A7A7A7A7AUHFA8E8E8EFAFAFAJ%?'J&A%J);)
+U&FFFFFFFF7B7B7B7B7B7AOL7A7B7B7B7BFFFFFFFFU<FAFAFAFAFAFA8EFAFA8E8EFAFAFAFA8EJ%?%J":&@%Ju9#8%9"
+U"FFFFFFFF7B7B7B7BP$7B7B7B7B7B7BFFFFFFFFU78E8E8E8E8E8E8E8EJ%>&?"J#J&?$
+TLFFFFFFFF7B7B7B7B7B7B<7373O87B7B7B7B7BFFFFFFJ%>%J%>%Jz
+THFFFFFFFF7B7B7B7BP<7B7B7B7BFFFFFFFFT$J8EJ$>%JzJ%>$
+TEFFFFFF7B7B7B7B@O27A@7B7B7B7BFFFFFFJ$>$J"J$>$
+TBFFFFFF7B7B7BP47B77B7B7BFFFFFFJ$=%J"JzJ%=$
+T?FFFFFF7B7B7B7B:7BA67DO.7B7B7B7BFFFFFFJ$=$JzJzJ$=$
+T<FFFFFF7B7B7BO!17D617DO!7B7B7BFFFFFFJ$=$JsJsJ$=#
+T9FFFFFF7B7B7BJ7DO*7DJ7B7B7BFFFFJ$=$JtJsJ$<$
+T6FFFFFF7B7B7BD7DO:7DE7B7B7BFFFFFFJ#=$J%J%J$<$Jz
+T4FFFF7B7B7BC7D7D7D7DOK7D7D7D7DD7B7B7BFFFFFFS>J8AJ$<$J%J&J#=#
+T1FFFFFF7B7B7BB7D7D7D7DP%7D7D7D7D7DB7B7BFFFFJ$<$J%J%J$<%J%:%
+T.FFFFFF7B7B7BA7D7D7D7DP.7D7D7D7D@7B7B7BFFFFFFFFTHFAFAFAFAFAFAFAFAJ"=#J%J%J$=#J'8'
+T-FF7B7B@7D7D7D7DP67D7D7D7D?7B7B7BFFFFTEFA8E8E8E8EFAFA8E8E8E8EFAJ$;$J%J%J#=#
+T*FFFFFF7B7B7B>7D7D7D7DP>7D7D7D7D>7B7BFFFFJ#;$J$J$J%;#
+T(FFFF7B7B7B>7D7D7DPF7D7D7D=7B7B7B7BFFFFJ#<"J%J$J#;#
+T&FFFF7B=7D7D7D7DPL7D7D7D>7B7BFFFFJ#<#J$J%J#;$
+T$FFFF7B7B;7D7D7DQ%7D7D7D7D<7B7BFFFFFFJ#;$J$J$J#<#
+T"FFFF7B7B7B:7D7D7DQ,7D7D7D;7B7BFFFFJ#;#J$J#J$;#
+T FFFF7B7B:7D7D7DQ27D7D;7B7B7BFFFFJ#;#J$J$J#;#J"
+SLFFFF7B7B97D7D7DQ77D7D7D;7B7BFFFFT3FAJ#;#J#J$J#;#J'8'
+SJFFFF7B7B97D7DQ=7D7D7D:7B7BFFFFT48EFAFAFAFA8E8EFAFAFAFA8EJ#;#J$J$J#;#J"9%:%
+SHFFFF7B7B87D7D7DQB7D7D7D97B7BFFFFT/8E8E8E8E8E8E8E8E8EJ#;#J#J#J#;"
+SFFFFF7B7B87D7DQH7D7D97B7BFFJ#;#J$J$J#:#Jz
+SDFFFF7B7B77D7D7DQL7D7D7D87B7BFFFFS J8EJ#;#J#J#J#:#
+SBFFFF7B7B77D7DR$7D7D87B7BFFFFJ#;#J#J#J#:#
+S@FFFF7B7B77D7DR(7D7D87B7BFFFFJ";#J$J$J";#
+S?FF7B7B67D7D7DR,7D7D7D77BFFFFJ#:#J#J#J#;"
+S=FFFF7B7B67D7DR27D7D67B7BFFJ#:#J#J#J#:#
+S;FFFF7B7B67D7DR67D7D67B7BFFFFJ";"J#J#J#:#
+S:FF7B67D7DR:7D7D67B7BFFFFJ#:#J#J#J";"Jz
+S8FFFF7B7B57D7DR>7D7D67BFFRBJ89J#:#J#J#J#:#
+S6FFFF7B7B57D7DRB7D7D57B7BFFFFJ";"J#J#J#:"J%=#
+S5FF7B57D7DRF7D7D57B7BFFT!FAFAFAFAFAFAJ#:#J#J#J":#J';#
+S3FFFF7B7B47D7DRJ7D7D57BFFFFSLFA8E8E8E8EFAFA8EJ":#J#J#J#:"J#
+S2FF7B7B47D7DS 7D7D47B7BFFT'FA8EJ#:"J#J#J#9#
+S0FFFF7B47D7DS$7D7D47B7BFFFFJ":#I#J#J":"J#
+S/FF7B7B7D7DS(7D7D47BFFT#FA8EJ#:"J"J"J#9#J#
+S-FFFF7B47DS,7D47B7BFFFFT FA8EJ":#I#J#J":"J'
+S,FF7B7B7D7DS.7D7D47BFFT FAFAFAFAFAFAJ#:"I#J#I#9#J(
+S*FFFF7B7D7DS27D7D7B7BFFFFSK8E8E8E8E8EFA8EJ":#H#J"J":"J"
+S)FF7B7B7D7DS67D47BFFS?FAJ#:"I"J#I":"J'
+S'FFFF7B7DS97D7D7BFFSA8EFAFAFAFA8EJ":#H#J#H#9#J"9%>"
+S&FF7B7B7D7DS<7D7D7B7BFFFFS<8E8E8E8E8E8EJ":"I"J"I":"
+S%FF7B7DS@7D7BFFJ#9#H#J#H#9"Jz
+S#FFFF7B7B7D7DSB7D7D7B7BFFR.J8EJ":"H#J"I"9#
+S"FF7B7D7DSF7D7BFFFFJ":"H"J#H":"
+S!FF7B7DSI7D7D7BFFJ#9#G#J"H#9"
+RMFFFF7B7B7D7DSL7D7B7BFFJ":"H"JyJ#H"9#
+RLFF7B7DPGFAPH7D7D7BFFFFJ":"G#JzJ"H":"
+RKFF7B7D7DP0O273P07D7BFFJ"9#G"J#G#9"
+RJFF7B7B7DT'7D7D7B7BFFJ#9"G#J'J#J"H"9"Jz
+RHFFFF7B7D7DP-FAFAFAFAFAFAO2FAFAP17D7BFFR%J88J":"G"J%J&J#G"9"
+RGFF7B7DP+FAFAFAFAO:FAFAFAFAFAP-7D7D7BFFJ":"G"J%F'J#J&J"G"9#J%:%
+RFFF7B7DP(FAFAFAFAFAFAFAFAFAFAAFAFA8FAFAFAFAFAP*7D7BFFFFS2FAFAFAFAFAFAFAFAJ#J"9#F#J%I"8#8"J&H%J"G":"J#J'8'
+R'FFFF<FF7B7B7D7DP%FAFAFAFAFA7373FAHFAFAFAFAFAFAFAFAFAP'7D7BFF<FFFFR@FA8E8E8E8EFAFA8E8E8E8EFAJ"8"J"9"G"J%J"8"J%8"J%J#F#9"J"8"
+R&FFFF:FF7B7DP#FAFAFAFA97373IFAFA7373FA5FAFAFAFAP$7D7D7B7BFF:FFFFJ":"J#9"G"J%J"9#8&;%:%;$A"J%J"G"9"J":"
+R%FFFF7FFFF7B7DP FAFAFAFA=FA7373FAFA73FAFAFAFAFAFAFAFAFAFAFAFAFA73;FAFAFAFAP"7D7BFF8FFFFJ"<"J":"F#J$J"8#=%9'8'9$>#J$J"G"9"J"<"J'
+R$FFFF5FF7B7D7DOLFAFAFA?73FAFAFA73FAFAFAFA7373FAFAFAFA7373FAFAFAFA737373BFAFAFAP 7D7BFF6FFFFRE8EFAFAFAFA8EJ"="I":"F"J$J#8#;&H&?&J$J#J"G"9"J"="J'
+R$8EFFFF7B7DOKFAFAFAC7373FAFA737373FAFAFAFA737373FAFAFAFA73@FAFAFAO&7E7ED7D7BFF4FF8EREFA8E8E8E8EFAJ"="G"9#F"J$J#8"C#<#H&J$J#J#F"9#G"="
+R%8EFFFF7B7B7DOIFAFAFAH7373FAFAFAFAFA737373FAFACFAFAFAO%7E7EC7D7D7BFFFFFF8EJ"="E"9"F#J$J"@"E%:%J#J$J":"J"F":"E"="
+R&8EFFFF7B7D7DOGFAFAFABFF737373737373737373:FFFF?FAFAFAM7E7ED7D7BFFFF8EJ"="C"9"F"J$JQ<#J#BPJ$J#J"F#9"C"="J"
+R'8EFFFF7B7DOFFAFAFA?FAFAMFAFA=FAFAFAO"7E7EC7D7B7BFFFF8ER=FAJ"="A"9"F"J#J%D':&:%:%8&A"D%J$J">"J"G"9"A"="J'8'
+R(8EFFFF7B7DOEFAFA>FFFFFFFFFA73FAFAFA73FA73FAFA73FA73FAFAFA73FAFA73FAFA73FAFAFFFFFFFF<FAFAFAF7E7EC7D7BFFFF8ERA8EFAFAFAFA8E8EFAFAFAFA8EJ"="?"9"F"J#J%@";"8"8"<$9"8$8"8$9%=%8";"@PJ$J#J#F"9"?"="J"9%:%
+R)8EFFFF7B7DODFAFA<FFFFFFFFFA73FA73FAFA7373FAFA7373FAFA7373FAFA7373FAFAFA73FA:FAFAFAM7E7EB7D7D7BFFFF8ER?8E8E8E8E8E8E8E8E8EJ"="="9"E#J$J%>'=&<$;%:%;&<&=&@$J#J"B#J"F"9"="="
+R*8EFFFF7B7D7DOBFAFAFA:FFFFFFFFFAFAFAFAFAFA7373737373737373737373737373737373737373737373737373FAFAFAFAFAFFFFFF:FAFA@7E7E7EB7D7BFFFF8EJ"=";"9"E"J#J%>%J&>%J$J"J"F"9";"="Jz
+R+8EFFFF7B7DOBFAFA9FFFFFFFFFAFAFAFAO?FAFAFAFAFAFFFFFFFF8FAFAFAL7EB7D7BFFFF8EQ5J8EJ"="9"9"E"J#J$>%J%>$J#J"F#J"F"9"9"="
+R,8EFFFF7B7DOAFAFA8FFFFFFFAFAFAFAOHFAFAFAFAFFFFFF8FAFA:7E7E7EA7D7BFFFF8EJ"=$9"E"J#J$=%J#J%=$J#J"I"J"F"9$="
+R-8EFF8EFF7B7DO@FAFA7FFFFFFFAFAFAFA>7373O0FAFAFAFAFFFFFF7FAFA77E7EA7D7BFF8EFF8EJ"="9"E"J$J$<%J%<$J#J"J"F"9"="
+R.8EFF7B7DO>FAFAFA6FFFFFFFAFAFAFAP*FAFAFAFAFFFFFF6FAFAJ7EA7D7BFF8EJ"?"E"J#J$<$JzJ$<$J$G"J#J"F"?"
+R/8E7B7DO=FAFA6FFFFFFFAFAFA7O2FA7FAFAFAFFFFFF5FAFAFA7E67E7E@7D7B8EJ"="E"J#J$<$J$<$J#J"J#E"="
+R08E7B7DO<FAFA5FFFFFFFAFAFAP8FAFAFAFFFFFF5FAFAH7E@7D7D7B8EJ":#D#J#J#<$J$<#J#B"J#J"E";"
+R18E7B7B7D7DO;FAFA5FFFFFAFAFAP>FAFAFAFFFF5FAFA7E:7E7E@7D7B8EJ"J#J$;$J$;$J#J"J"E"
+RE7DO;FAFA4FFFFFFFAFAFAPDFAFAFAFFFFFF4FAFAG7E@7D7BJ"9"D"J"J#<#J"J#<#J">"J"J"E"9"Jz
+R1FF7B7DO;FA4FFFFFAFAP'7FBFAFAFFFF4FA7E>7E@7D7BFFQ;J87J"9"D"J#I#;$J&J$;$H#J#J"E"9"
+R0FF7B7DO:FAFAFFFFFAFAFAP*7F7F7F7F7F?FAFAFAFFFFFFFAFAF7E7E?7D7BFFJ"9"D"J#I#;#J%J#<#H#9"J"J"E"9"J";%
+R/FF7B7DO9FAFAFFFFFAFAP27F7F7F7F>FAFAFFFFFAFA7EB7E?7D7BFFRKFAFAFAFAFAJ"9"D"J#H$:$J%J$;#H$J"J"E"9"J#;'
+R.FF7B7DO8FAFAFFFFFFFAFAFAP87F7F7F7F<FAFAFAFFFFFAFA7ED7E?7D7BFFRHFAFAFA8E8E8E8EFAJ"9"D"J#H#;#J%J#;#G$J"J"E"9"J#
+R-FF7B7DO7FAFAFFFFFAFAP?7F7F7F7F;FAFAFFFF7F7F7FD7E?7D7BFFRG8E8EJ"9"D"J"H#;#J"H$J#;#H"J#J"E"9"J"9#
+R,FF7B7DO7FAFFFFFAFAP27F7F7F7F:FAFAFFFF7FD7E7E>7D7BFFRM8EFA8EJ"9"D"J#G#;#J$J$:#B":#J"J"E"J#
+R+FF7B7DO6FAFAFFFFFAFAPJ7F7F7F9FAFAFAFFFF7F7F7FD7E>7D7BS%FA8EJ"9"D"J#G#;#J$J#:#G#J"J"E"8"J#
+R*FF7B7DO5FAFAFFFFFAFAQ!7F7F7F9FAFAFFFF7F7FC7E>7D7BFFS FA8EJ"9"D"J"H";#J$J#:#="?"J"J"H"J#
+R)FF7B7DO5FAFFFAFAQ&7F7F7F8FAFAFFFF7F7FC7E>7DFFRLFA8EJ"9"D"J#G#:#J$J#:#F#J#J"D"9"J#
+R(FF7B7DO4FAFAFFFFFAFAQ+7F7F7F7FAFAFFFF7F7FB7E7E=7D7BFFRJFA8EJ"9"D"J"G#:#J"J$J#:"9"C"J"J"D"9"J"
+R'FF7B7DO4FAFFFFFAFAP;7FB7F7F7F6FAFAFF7F7FC7E=7D7BFFR>FAJ"9"D"J#F#:#J#J":#F#J"J"D"9"J&
+R&FF7B7DO3FAFAFFFFFAFAQ57F7F6FAFFFF7F7FB7E=7D7BFFRIFAFAFAFAFAJ"D"J"F#:#J$J#:#F"J"J"D"9"J";":'
+R)7B7DO3FAFFFFFAFAQ97F7F7F4FAFAFFFF7FB7E=7D7BFFR<8E8E8E8E8E8E8E8EJ"G"J#F":#J#J#:#E#J"J"D"9"
+R%FF7DO2FAFAFFFAFAQ>7F7F4FAFAFFFF7F7FA7E=7D7BFFJ"9"C"J"F#:"J#J#:"F"J"J"D"Jz
+R$FF7B7DO2FAFFFFFAQB7F7F4FA7FFF7FA7E=7D7BQ2J8EJ"9"C"J"E#:#J$G$:#E"J"J"G"
+R#FF7B7DO2FAFFFFFAFAQE7F7F7F7F7F7FFFFF7FA7E=7DFFJ"9"C"J#E":#J"J#H#:"E#J"J"9"
+R"FF7B7DO1FAFAFFFAFAPE7FO$7F7F7F7FFF7F7F@7EK7CFFJ"9"J"E#:"J#B";#9#E"J"J"B$9"
+R!FF7BO?FAFFFFFAR 7F7F7F7F7FFFFF7F@7E<7D7C7C7CFFJ"D"J#E":#J#H":"E"J"J"?#9"9"
+R$7B7DO/FAFAFFFAFAR#7F7F7FFF7F@7E<7D7C7C7CFFJ"G"J"E#:"JzJ#="?#9#D#J"J"="<"
+R FF7DO/FAFFFFFAP%17FO?7F7F7F7F7FFFFF7F7F?7E<7D7C7CJ"9"C"J"E":#JxGwJ"H":"E"J"J";">"8"
+QMFF7B7DO/FAFFFAFAOG7F7FO57F7FFF7F?7E<7D7C7CFFJ"9"C"J"D#9#JtJsJ#9"C#9#D"J#J"9"C"Jz
+QLFF7B7DO/FAFFFFFAFAO@7FJ7FO.7F7F7F7F7FFFFF7F?7E7E;7D7CFFQ)J86J"9"C"J#D":"J$J$F":"D"J"J$A"9"
+QKFF7B7DO.FAFAFFFAO?7F7F7FP=7F7F7F7FFF7F@7E;7E7C7C7CFFJ"C"J"E":"F$J&J#9"D#J"J"E"9"J";%
+R 7B7DO.FAFFFA7F7F7FO(7F7F7F7F7FQ&7F7FFF7F7F?7E97E7CFFR9FAFAFAFAFAJ"J"D#9#E#J%J"9#D"J"8"D"J#;'
+QJFFO?FAFFFFFAFA7F7FO'7F7F7F7FQ-7FFFFF7FO)7E7E7CR:FAFAFA8E8E8E8EFAJ"9"C"J"D":"F";"J$J":"D"J"J":"G"J#@"
+QIFF7B7DO-FAFFFA7F7FO 7F7F7FQ27FFF7F>7E67E7EFFR68E8E8EJ"9"C"J#D"9#E#J%J#9"D"J"J"<"C"9"
+QHFF7B7DO,FAFAFFFAFA7F7FO#7F7F7F7FQ67F7FFF7F>7E47E7E7CFFJ"C"J"D#9"F"?"J$J"9#C"J"H">"C"9"J$
+QK7B7DO,FAFFFFFA7F7FF7F7F7FQ<7FFFFF7F>7E7E7E7CFFR=FAFAFAJ"F"J"D":"E#J#J":"C"J"E#@"C"J&
+QGFF7DO,FAFFFA7F7FO!7F7FQ@7FFF7F>7E7E7E7E7CR?FA8E8E8EFAJ"9"J"D"9#E"C"J$J#9"C#J"C"J"J"
+QFFF7BO9FAFFFAFA7F7F@7F7F7FQC7F7FFF7F7F=7E7E>FFR;8EJ"9"C"J"D"9"E#J$J"9"D"J"A"D"C"9"
+QEFF7B7DO+FAFFFA7F7FL7F7F7FQH7FFF7F=7E7E7E7CFFJ"C"J"D"9"E"G"J#J"9"D"J"?"F"C"J"
+QH7B7DO+FAFFFA7F7F:7F7FQL7FFF7F=7E7E7E7CR1FAJ"F"J"C#9"D#I"J#J"9#C"J"="H"C"8"J'
+QDFF7DO+FAFFFFFA7F7F7F77F7FR!7FFFFF7F=7E7E7E7CFFR88EFAFAFAFA8EJ"9"B"J"C":"D"J$J":"C"J";"J"J";";%
+QCFF7B7DO+FAFFFA7FJ7F7F7FR$7FFF7F=7E7EEFFR,8E8E8E8E8E8EJ"J"C"9#C#J"G#J#9"C"J"9"J"C"9"
+QF7BO8FAFFFAFA7F7F77F7F7FR(7F7FFF7F=7E7E57E7CFFJ"F"J"C"9"D"J#J"9"C"J$J"C"Jz
+QBFF7DO*FAFFFA7FI7F7FR,7FFF7F=7E7E7E77E7CQ"J8EJ"9"B"J#J"C"9"D"J"B#J"9"C"J"F"
+QAFF7B7D97E7E=FAFFFA7F;7F7F7FR/7FFF7FO)7EFFJ"J"J#C"9"C#J#J"9"C"J#J"9"
+QD7BI7E:FAFAFFFA7F7FG7F7FR27FFF7F;FAFAG7CFFJ"F"J"9"J"D"9"C"J"=#J"9"C"J"8"J"C"
+Q@FF7D97E7E8FAFFFA7F?7F7F7FR57FFF7F9FAFA97E7CJ"9"B"J";"J"9"C"J#J"9"C"J":"J"F"
+Q?FF7B7D97E7EEFFFA7FF7F7FR87FFF7F7FAFA97EFFJ"B"J"="J"C"9"C"J"9"J"9"C"J"<"J"B"9"
+QB7B7D97E7E5FAFFFA7FB7F7FR;7FFF7F5FAFA97E7CFFJ"J"?"I"C"9"B#J$J"9"C"I">"J"
+Q>FFI7E7EFAFFFA7F7FD7F7F7FR=7FFF7FFAFAF7CJ"9"B"J"G"B#9"B"JzJ#J"9"C"G"J"F"Jz
+Q=FF7B7DD7EFAFFFFFA7FOKO273O#8080O%7FFF7FFAC7EFFPHJ85J"B"J"B#D"B":"B"J#J"9#J#A"J"B"
+Q@7B7D97E7E7EFAFFFA7FR58080O$7FFFFF;FAFAFA97E7CJ"J"E"B"B"9#B"J":"J"F"C"D"J"J%:%
+Q<FFI7E7EFAFFFAFA7FR38080O$7F7FFAFAIFFR)FAFAFAFAFAFAFAFAJ"9"B"J"G"@"B"9"C"J"J#J#8"B"A"F"J"B"9"J'8'
+Q;FF7B7D87E7EFAFFFA7FQ280O'8080O#7F7FFF7FFAFA87E7CFFR'FA8E8E8E8EFAFA8E8E8E8EFAJ"B"J">"F"C"J'J#H%J">"J"B"?"J"B"
+Q>7B7DL7EFAFA7FP'FAFAFAFAFAFAAFAFA80808080J8080O'FF7FFAK7E7CJ"J"J"<"C"8"C"J"8#8"J&A$J#J"9"B"="I"J"J"9#
+Q:FFI7E47EFAFFFA7FP'FA7373FAHFAFAFAFAFA808080O#8080O"7FFF7FFAFAIFFR&8EFA8EJ"B"J"J":"C"F"J"8"J"8%C$J"B"J"9"B";"J"J"B"9"J#
+Q=7B7D87E67EFAFF7FP*7373IFA7373FAFA808080C8080O"7FFF7FFA5FA87E7CFFR(FA8EJ"E"J"J"8"C"9"A#J"9#8&;%:%;$?"J$J#J"9"B"9"J"J"B"J#
+Q9FF7D87E87EFAFFFA7F7FP+FA7373FAFA73FAFAFAFAFAFAFAFAFAFAFAFAFA734808080O 8080O!7FFF7FFA7FA87E7CR*FA8EJ"9"J$B"9"A"J"8#=%9'8'9$>#8"J$J"F"J"9"B$J"J#
+Q8FF7BO17E7F7FFFFA7FP+73FAFAFA73FAFAFAFA7373FAFAFAFA7373FAFAFAFA737373FA5808080<8080O!7FFF80FAFAO4FFR%FA8EJ"B"J"J"@"9"A"J#8#;&H&C"J$J"H#J"9"@"J"J"B"J#
+Q;7B7D87E=7FFFFA7FP-7373FAFA737373FAFAFAFA7373737368080808808080O 7FFF80<FA87E7CR'FA8EJ"E"J"J"9">"9"A"J#8"C#<#H%J#J"J"9">"8"J"J"E"J"
+Q7FF7D87E;7F7FFFFA7FP07373FAFAFAFAFAFAFAFA73:8080K80O 7FFF8080;FA87EFFR FAJ"J";"<"9"A"J"E%:%E"8"J$H"J"J"9"<":"J"J&8'
+Q:7BO27F7FFFFA7FP3737373737373737373FA73=80808080680O 7FFF8080O27CR'FAFAFAFAFA8EFAFAFAFA8EJ"E"J"J"=":"9"A"J#J"8"J#J"J"9":"<"J"J"E"J"8'9%
+Q6FF7D87E:7F7FFFFA7FP/FAFAMFA73A8080H80O 7FFF8080:FA87EFFQM8E8E8E8E8E8E8E8E8E8E8EJ"9"J"J"?"8"9"A"J$=':&:%:%8&?"?%J#C"J#J"9"8">"J"J"9"
+Q5FF7BD7E:7F7FFFFA7FP(FFFFFFFA73FAFAFA73FA73FAFA73FA73FAFAFA73FAFA73FAFA73FA73FFFFFFFF780808098080M7FFF8080:FAD7CFFJ"B"J#9"J%>"8"8"<$9"8$8"8$9%?&?$J$J"J":"J"B"Jz
+Q87B7DO07FFFFAP1FFFFFFFF73FA73FAFA7373FAFA7373FAFA7373FAFA73FAFAFAFAFAFFFFFF6808080F80M7F80O/7E7CPCJ8EJ"E"J"J"E"B"J$C&<$;%:%;&;rB$J">"J"J"8"A"J"J"E"
+Q4FF7D87E:7FFA7FP"FFFFFF73737373737373737373737373737373737373737373FFFFFF68080=80M7FFF80:FA87EFFJ"J"J"B"8"B"J$=$J$=$J#J"J"A"J"J"
+Q77BD7E:7FFF7F7FP FFFFFF7F7F7FO2808080FFFFFF48080E80O"FF80:FAD7CJ"E"J"B":"@"J$<%J$=$I#9"J#J#9"A"J"E"
+Q3FF7DO$7FFF7F7FOLFFFFFF7F7F7F7FO8808080FFFFFF808080@8080J8080FF80O$7EFFJ"J"J"9"8">"J#<$J#J$=#I$J"J"8"9"J"J"
+Q67BD7EFFF7F7F7FOKFFFF7F7F7F67373O'808080FFFF808080C80H8080FFEFAD7CJ"E"J"J"A"9":"<"J#H#<#J$<$J"J":"D"J"J"E"
+Q2FF7D77E:7FFF7F7F7FO68080FFFF7F7FOE808080FFFFFFO)80F808080:FA77EFFJ"J"A"9"<":"J#G$;$BzvB$<#J"J"<"8"A"J"
+Q57BO07FFF7F7F7FO58080FFFFFF7F7F7FO'7F80808080FFFFO(80D8080FF80O07CJ"E"J"J"E">"8"J#:"B#<#J$;#J"J"A"A"J"J"E"Jz
+Q1FF7D77E97F7F7F7FO4808080FFFF7F7FP"808080FFFFO'80B80FF809FA77EFFP<J84J"J"8"@#J"G#;$J#;#J"J$?"9"J"J"A"
+Q47BO<FF7F7F7FO480FFFF7F7F7FP'8080FFFFO&80>81808080FFEFA77E7CJ"E"J"J"A"J#>"=#;#J#;#J"J"C"9"@"J"J%=#
+Q0FF7D77E97FFFOB808080FFFF7F7FP,8080FFFFO%80<8180FF80O3FFQKFAFAFAFAFAFAJ"A"J"J"A"9"J"F#;#J#;#J"J"8"B"D"J"J"A"J';#
+Q37B7D77E97FFF7FO>80FFFF7F7FP08080FFFFO$80:818180809FA77E7CQMFA8E8E8E8EFAFA8EJ"J"J#B"9";#J#;#J"J":"E"J"J#
+Q/FFOB7FO=808080FF7F7FP48080FFFFO#8088181FFO>FFR%FA8EJ"A"J"J"A"8"J"F#:#J#;"J"J"<"A"9"@"J"J"A"J"9#
+Q27B7D77E97FFF7FO=80FFFF7F7FP88080FFO#806818180FF809FA77E7CQL8EFA8EJ"J"A"J#E#:#J#:#J"J">"A"D"J"J#:#
+Q.FFO27FFFO?8080FFFF7F7FP<8080FFFFO"80481818080O2FFQKFA8EFA8EJ"A"J"J"9"J"E#:#J"J#:#J"H"J"8"J"J"A"J#:#
+Q17B7D77EDFF7FO;80FFFF7F7FOD80I8080FFFFO!8081680FFDFA77E7CQMFA8EFA8EJ"J"D"J"E";"J#:"J"E#A"E"@"J"J"J#<'
+Q-FFO27F7FO;80FF7FPD8080FFO!80818181FF809FAFFFQHFA8EFAFAFAFAFAFAJ"A"J"J"A"J#D#:$J":#J"C"D"A"9"@"J"A"J#<(
+Q07B7D77E87FFFO=8080FFFF808080PF80FFFFO 80818180FF80O"7E7CQJFA8E8E8E8E8E8EFA8EJ"J"9"J"E":#J#:"J"A"F"A"J"J"J"
+Q,FFO=FF7FO980FF8080PJ8080FFO 80818180GFAFFFQCFAJ"A"J"J"D"J"D#:";"J":#J"?"J"@"J"A"J&
+Q/7B7D77E87F7FO980FFFF8080PH80FFFFM8081AFF80O"7E7CQJFAFAFAFAFAJ"J"J"A"8"J"D":#J"J#:"J"="I"A"9"@"J"J"J"8'="
+Q+FFF7E87FFF7FO980FF8080OK80O$8080FFM80818180FF808FAFFFQB8E8E8E8E8E8E8E8EJ"A"J"J"C#:"?"J":"J";"J"A"J"A"
+Q.7B7DO-FFO<80FFFF8080PJ80FFM808158180O07E7CJ"J"J"D"J#C":#J#9#J"9"J"D"@"J"J"Jz
+Q*FFF7E87F7FO78080FF8080Q(8080FFFFL8081781FF808FAFFFP5J8EJ"J"J"J"D":"C"J":"J$J"J"
+Q97DO-FFJ80=80FF8080PL80FFL818181D80O07EJ"J"J"@"9"J$J"C#9#E"J":"J"J"A"8"@"J"J"
+Q-7BB7E87FFF7FF808080;80FFFF808080PL80FFJ81<8180FF808FAB7CJ"J"J"9"J"C":"H"J#9"J"J"D"J"D"
+Q)FFO?7FF8080980FF8080PL8080FFH81>81FFO,7EFFJ"A"J"J"@"J";"J"C":"J"J"9#J"J"C"J"J"
+Q,7B7D67E87FFFI8080780FF80P%80O.80FFFFE81K80808FAB7CJ"J"D"J"="J"C"9#J"J":"J"J"A"8"@"J"
+Q(FFO07F7FE8080580FF8080580Q 80FFC81A8180FF80O0FFJ"A"J"J"8"J"I"C"9"J":"J"J"J"J"A"
+Q+7B7D67ECFF7FO!8080FF80Q980FFA81C81O#FA67E7CJ"J"@"J"@"G"B#9"J"J#9"J"J"8"@"J"Jz
+Q'FFO07FFFI808080FFFF80980Q!8080FF?81O"80FF80O0FFP2J83J"A"J"J"J"B#D"B":"JyJ"9"J#J"D"J"J"A"
+Q*7B7D67EF7FE80808080FF80O?80O?80FF<8181F81FFBFA67E7CJ"@"J"E"B"B":"J"JvDvJ"9"J"J"@"C"J%:%
+R77FFFH808080FF80<80F8080O580FF:81I818080S$FAFAFAFAFAFAFAFAJ"D"J"J"@"B":"J%J"9"J"J"J"J"D"J'8'
+Q&FF7DO/7FO(8080FF80O280808080P,80FF881O+FFBFA67EFFQ@FA8E8E8E8EFAFA8E8E8E8EFAJ"J"J"@"8"J"H">"B"9#J"J%J"9"J"J"@"C"J"
+Q)7BB7E77FFF7FE808080FF8080?80=80808080P180FF681L818080O,7CJ"J"J"<"B"9"J"J$J"9"J"J"8"J"J"J"9#
+Q%FFP58048080FF80B809808080P680FF481O+80FFBFAEFFQ?8EFA8EJ"A"J"J"@"8"J"J":"B"9"J$J"9"H"J"J"J"A"J#9'
+Q(7B7D67E77FFF7FD8068080FF80O,808080P:80FF81O!81880O 7E7CQEFA8E8EFAFAFAFA8EJ"8"B"9"J"H$J"9"F"J"8"J#:'
+T$8080FF80E80808080P>80FF81O.80FFS-FA8EFA8E8E8E8EFAJ"D"J"J"@"8"J"J$A"9"J#J"9"B$J"J"J"J"D"J#
+Q$FF7D67E77FFF7FD809808181FF80O)8080PB80FF828181O$818807FA67EFFQ?FA8EJ"J"J"J"?"9"J"C#J"9"@"J"@"8"J"J#
+Q'7BO6FFG80=81FF80H808080PE80FF82O(8180FFO67CQAFA8EJ"J"J"C"J"9"="9"J#J"9">"8"J"J"J"
+Q'7CA7E77F7FO18181FF80O'8080PH80FF8282O?807FAR2FAJ":#>"J"J"J";";"9"J">#J"9"<":"J"@"8"J"?#9"J&8'
+Q#FF7C7C7DO*FFG80:8181FF80K808080PK80FF8282O&8180FFO*7E7D7DFFQ>FAFAFAFAFA8EFAFAFAFA8EJ"9$J"C"J"J"="9"9"J#J"9":"<"J"J$8"J"8'9%
+Q&7C7C7C7CO%7F7FC80:8181FF80O%8080Q 80FF8282O>80O&7D7D7D7DQ=8E8E8E8E8E8E8E8E8E8E8EJ#J"J"J"?"J"9#J"9"8">"J"@"8"J"J#
+Q-7C7C97EAFFO38181O&808080Q#80FF8282O%8180FFAFA:7D7DJ"B%J"C"J"J#9"J$J"9#J"J%A"Jz
+Q"FF7C7CFAFAL7F7FC80E81FF80O!808080Q&80FF82OH80MFA7D7D7DFFP-J8EJ"C$G"J"J"A"9"J$J"J"@"8"J"H$B"
+Q%7CFAFAFA7EAFFO381FF80Q(818181O082O%8180FFAFAFAFAFA7DJ";#J"C"J"J"A"9"J"J"9"A"J"J#:"
+Q0FAFAFAF7F7FC80981FF81Q,81O 80FF82O=80GFAFAFAJ"J$J"J"A"9$J":#J#9"A"J"@"8"J$J"
+Q!FF6FAFAFAOF80981FF818181Q'818181L8282FF82O$8180FFO FAFAFA5FFJ"J$>"J"@"8"J"9"9"J"J"8"9"J"J"?$J"
+Q$7C6FAFAFA7E67FFF7FO:FF8181Q-81J8282FFOH806FAFAFAFA57DJ"D#J"J"D";"J">#J":"9"@"J"@"8"J#C"
+Q/FAFAFAO@809818181Q$818181G8282FF82O$8180FFHFAFAFAJ"J$J"@"8"J"A"@"J"J"<"D"J"J$J"
+Q FF?FAFAFA97FFF7FO.81FF81Q.81E828282O<80:FAFAFA>FFJ"J%J"J"9">"J"B"J"A"J"C"J%J"
+Q#7C?FAFA7F7FO880DFF8181Q!8181C82FFO/81FF@7FFAFAFA>7DJ"J$J"8"J"@"9"@"J"J$?"9"@"J"J$J"Jz
+Q.FA87F7F7F<FF7FO.81FF8181Q.81?82828282FF82O.80@7F7F7F7FAP9J82J"J";#E"J"J"D"J"J"E#J"C"D"J"J"F#:"J"
+PMFFD7F7F7F7FO"8088181P(8AO"818181<828282O#817807F7F7FDFFJ"J$J"J"E"JzA"H"J"E"8"J"8"J$J"J%:%
+Q"7CI7F7F7F6FFO<FF80O/O2738181:8282FFO980FF77F7F7FH7DQ=FAFAFAFAFAFAFAFAJ"J$>"C"J"J"@"9"A"J"J"J"@"J"?$J"J'8'
+Q-FAA7F7F7F7F7FB80881FF8180Q3818824FF82O;807F7F7F@FAQGFA8E8E8E8EFAFA8E8E8E8EFAJ"J"D#J"J"D"A"J"J"J"H"9"@"J"C"G#C"J"
+PLFFD7F7F7FO(808818180PM8158168282FF82O"81FF7F7F7FDFFJ"J$C"8"J"D"J"J"J"J"G$J"J"="9#
+Q!7CO$7F7F7FFF7FO8FF80Q781482482O;807F7F7FO#7DQ;8E8EFA8EJ"J$J"@"9"@"J'J#J"J"H"J"@"J"J%J"J%;#
+Q,FAJ7F7F7FO:81FF8180O9FAFAFAFAFAFAAFAFA:81881829FF82O"817807F7F7FIFAQHFAFAFA8EFA8EJ"J$="J"J"J"8#8"J#J"E#J"J"8">#J"J%:#
+QB7F6808080FFE80F81ODFA7373FAJFAFAJ818282782O;80FF818167FR08E8E8EFAFA8EJ"J"9$="J"@"D"J"8"J#G"J"C"J"8"@"J"H$8"J"J#
+PKFFO,808080807FO,81FF80O;7373JFAFA81;8182:82FF82O"8181818181O,FFQ@FA8EJ"@"J#J"J"@"9"@"J"9#8&;%:%;$>#J"A"J"@"J"8#J"@"J"=#
+Q 7CFAO%8080G80781FF8180O<FA7373FAFA73FAFAFAFAFAFAFAFAFAFAFAFAFA7373O 8182?FF82O/FF8181O$FA7DQ:FAFA8EJ"J#8"J"J"8#=%9'8'9$J"J"?"J"J"9#J"J"
+QA7F?80FF7FO:81OF73FAFAFA73FAFAFAFA7373FAFAFAFA7373FAFAFAFA73;81>8182=82O:808181>7FR*FAJ"C#J"J"@"D"J#8#;&H&J"J"="J"@"J"?"C"J'9&
+R)808080@80781FF80O<7373FAFA737373FAFAFAFA737373981@8182BFF82O!818181RC8EFAFAFAFA8EFAFAFAFAFAJ"8"J#J"@"J#8"C#<#J"J";"J"J%8"J"8"J"9%9'
+PJFF7CO98080O68180O?7373FAFAFAFAFAA81B8182@82O781818181FFO37DFFQ38E8E8E8E8E8E8E8E8E8E8EJ"J"8":$J"J"@"J"E%:%J"9"J"8"@"J$J"J"
+Q*FAO(FF80808080:80781FFP"737373737373737373O58182B82FF82O%818181G7F5FAJ"J"J&J"@"J"J#J"J$J"J&J"Jz
+Q@7F58058080818181O-8180;81O!FAFAO/81E828282GFFO*8282818181481Q3J8EJ$G"J"@"8"@"J$J':&:%:%8&J"J"C"J$B"8"
+RC81818180781FF8180;818181O"FA73FAFAFA73FA73FAFA73FA73FAFAFA73FAFA73FAFA73FAO.82G8282J82828281FFJ"8"J"8"?"<#J"J"9"J"8"8"<$9"8$8"8$9%J"J"J"J#;"J"@"8"
+PIFF7CO3FF80818181O#FFI8181M73FA73FAFA7373FAFA7373FAFA7373FAFA73681D82LFFO$828282O5FA7DFFJ"J"J$J"C"@"J";"J&<$;%:%;&>#J"J"C"J$J"
+Q)FA57FO(818181C818180:8181M7373737373737373737373737373737373737373737373O 82J8282D828282O'7FJ"J$>"J"C"J"="J"J"J"J$J"8"?"
+R'80C81818180AFF80:8181P,81C82O!FFK828282581FF81J"8"?"E#J"C"J"J"J"J"J"C"J#D"
+R1FF80818181=8181O 81DFFO2FFD82M8282>828282J"J$J"C"J"@"J#F#J#J"J"J$J"C"
+PHFFP'818181DFF80:8181AFFFF7373O"FFFFA82O$FFE828282OFFAFFJ"@"J"J"J$J"C"J"B#J"J"J#J"C"J$J"?"J"J"Jz
+PK7CFA57F580L81818068181D818181>FFO8FF>8282O"82827828282AFF8157F@7DP(J81J"8"?"J#J"C"J"E"J#:z:#J"J"J"J"?"
+R0FF808178282?FF8098181;FFFFO280FFFF;82O(FF@8378281J"8$J"J"J":#J$:"J"J"J&J%:%
+S&82828282?81O'819FF8080O1818181FF982O&82@8383838383SAFAFAFAFAFAFAFAFAJ#E"J"J"H"J#:"J":"J"J"?"F#J"J"J'8'
+S,828281780981816FFFF80O681FF782O+FF828383O;7F5FAQAFA8E8E8E8EFAFA8E8E8E8EFAJ"8"@"J"J"?"8"?"J$J"8"J"J"J":#J":#9#J"J"J$J"?"8"?"J"8"J"
+PGFF7CFA57F580FF8081?8282826FF81C814814FF8080O3818181FFFF482O)82:838383>8281FF81O(7DFFQ@8EJ"A$>"J"J"H":"J":"H"J"?$@"J"
+S%8282828281780O!81FF80O<81FF82O88283838383S?8EJ#F"J"J"F"9#J">":"F"J"8"G#J%:$
+S48282FFF81781FF8080O58181FF82O,82FF8383T!FAFAFA8EFAFAFAJ"J$F"?"J"C#9"J":"C#J$J"B"?"J"J%9&
+R;81H8282828180O$81FFFF80OA81FF8282O?838383G82FF81KFAQB8E8E8EFAFA8E8E8EFAJ"J"J"?"8"J"J&="J"J"A":"J"A#9"J">&I"J"J"J"
+Q&FA57F580FF80@8248282828282FFF81:81FF80O7818181FFO?FF838383838383@81B7FR18EJ"8"J$="J"?":"J"D"9"@#J">$J"8"J"
+PFFF7CPB82828281O181FF80O78181FF8383O/82838383PA7DFFQ2FAJ#E"J"J"=":"E#J"F"9">"8"J#J"J"
+SA828280881=81FF808181O&8181FF8383O58383O%82S#FAJ"J"J#J"J";":"D#J"9"<":"J"8$J"J"J'8'
+R:81682?82FFE81?81FF808181O:81FF8383O.82FF8383>83CFFRG8EFAFAFAFA8E8EFAFAFAFA8EJ"?"8"J#>"J"9":"D":"J"I"9":"J"J"B"J"J"J"9%:%
+R#80FF80O6828280O+81FF808181O$8181FF83O483O6818157F5FAQ<8E8E8E8E8E8E8E8E8EJ"J#J"J"<"C#J"9"8"="J#
+Q;7FP-8282>81B81808181O?81FF8383O+8383J"C"J"J"8":$J#9"C">"J"J":"?"J$9"8"J"J"J"Jz
+PEFFFAOJ82@FF82828282O181FF808181O"816818383O'83838383FF@83682OAFFP"J8EJ"J"J$J"J"9"C"J"A"J$J"
+PH7CO>81O4828280781DFF8081OGFF83O#838383Q$7DJ"8"J$J"9"C"A"J"J"9"J#J"8"?"
+R,FF80O@828282O+FF818181O 81881FFO,8383O@81FF81J"J"8"C$J"9$@#J#9"@"J$B"8"J"J"
+R"80O?FF82828282O'FF8181818181OF8383FF83K83838383FF@83OJFAJ"J"J#E"J"9">"E"J"J"8"9"@"J#J"J"
+Q:7FO482O&828281F81818181L8188383FF83H8383O<82K7FJ"J$J">"<"G"J"J":"J$
+R881O?828282O!FF818181J8188383O%838383J"J"8"J$>"J"9"<":"J"?"@"J$J"8"
+Q$FAP<FF82682828281BFF818181OG83FF83A838383583FFJ"J"8"J#J">"8"J"J"J"="9"J#J"J"8"J"Jz
+PDFFO4FF80P!8282L818181481H8178383FFI8383O.83?81FFO4FFP!J80J"J"J"J$J"C#J$?"C"J$J"J"
+PG7CO'80L82O1828282EFF8181OE8383838383;838383P/81O'7DJ%J"9"J"J"J"F"J%J"J"J#9%
+T582828383@FF81B81F81483FFA84838383AFFO(82S'FAFAFAFAFAFAJ"J"J"8"J$J"J"D"C"I$J"J"J"J#9'
+Q97FK81O(FF82C838383@81P"838383848484B83P)7F5FAQ@FA8EFA8E8E8E8EFAJ";#J"J"J"I"I"J#:"J"J#
+T6838383:FFH81D8183FF;848484O683S;FA8EJ$J"J"G"C"C$
+T>838383:81P!838383848484J"J"8"J"J$I"J"J"H"I"8"J$J"J"8"J#
+Q#FAO&FF80?82OA838383FFJ81B818383FF4848484O FFO181FFREFA8EJ"8"J"D#J"J"J"H"J"=#C"J"J"J"J#
+S?FF82@838383481H81@8183B83848484@83O+82581R:FA8EJ"J"J$C"J"J#J"8"D$J"J'
+PCFFO*80PE838383FFM81O"8383683FF848484R!FFQ0FAFAFAFAFAFAJ"J"J#D"J"J%J"J"J(
+PF7CO=81P2838381OL83F83848484OI83P%7DQ28E8E8E8E8EFA8EJ"J"J$="J"J"E"J">#J"J"J"J"
+Q87FPI836838383FFO!81=8183=FF8484684PI7F5FAQ9FAJ"J"J$="J"J">$J"8"J'
+RL82?FFO/83838381OK83;83848484O+83FFT28EFAFAFAFA8EJ"J#J"J"D"J"8#J"="9%
+SA82O/8383O%81;8183@FF8484U98E8E8E8E8E8EJ"8"J"J#8"J"J"D"J"9#J"J">"8"
+R)FF80P&83?83FF81O!8198183>838484>84OK8281FFJ#J"J"Jz
+U)8383OH83?84T4J8EJ";#J"J"B#J#:"J"
+U%FF8383M817818383>8484FFP'83J"J":$J"J$9"J"
+QM8AQ(83838383O@83=84848484Q(81J"J"J"8"J&J"J"A"J&J"J"8"
+Q"FAJ80O=FF82O=8383838383F815818398484848484J84?83FFJ"J"J$J"I"A"J$
+R58AOJ83O"838383D8181837848484J"J"8"F#J"J#E"8"
+R581P<FF838383O3836848484FFJ"J"J$J"G"?#J$J"
+PBFFP(82P<838383@818183834848484RDFFJ"J"J$J"I$J"J"J"?"Jz
+PE7C?7FR%838383O*83848484O*84PG7F5FA7DP"J7FJ#J"E">"H#
+U@8383<8181838484J"8"J"8"J$J"F$J"8"J">"8"J#<#
+R(FF80PEFF83;838383O#83848484:84FFP<8281FFRFFAFAFAFAJ"J#J"C"="D$J"J#<#
+T183O383838818183848484PG83S9FA8EFA8EJ"J#J"A"<#D"J"J#<#
+S<FFP*838378181838384P*FFT*FA8EFA8EJ"J$J"C$J"
+S?82P)838383F83848484P(83J#I"?";"A$J"J#<#
+UL8383818183848484O:84TKFA8EFA8EJ$J"@#J#<#
+V 838383?838484V:FA8EFA8EJ"8"J$D"=":">$J"8"J'8'
+U"FF83K838383818183848484J84FFU=FAFAFAFAFAFAFAFAFAFAFAFAJ#C";":"<$J'r#
+V&8383818183848484V?8E8E8E8E8EFA8EFA8EJ$I#;#J"
+V(83838383838484V?FAJ$>"9"8":$
+V+838383818183848484J#9%9#9ZJ#B"8$JZ<#:#J"="="
+OEFAFAFAFAFAFAFAFA:S:838383848484S9;FAFAFAFAP08E8E8EJ%8$9%J$:)J%8%
+ODFA8E8EFA8E8E8EFA8E8EFAT*8383838180818183838484T.FA8E8EFAFA8E8EFAJ"=#J$8&J"Jz
+OD8EFA8ET38383838181848484R381Q)J8EJ#JvJ"t9uzz9zz9z:z9zz9zzt9uJu
+OFFA8EK7DJ8A8181682?83@83?84O184O083@83?82@826818080K7CJ#:#J"J$8&J"J$
+OEFA8EFA8EOM7FR48383818081818181R37FOJ8EFAFAJ#FzJ&8$9#Jz<#
+ODFA8E:8ES<83838383818080808181S<;8E8E8EJ$>%J#9"A$J%8%
+OEFAFAFA8EFAFA8ET(838381818181T+FAFAFA8E8EFAFA8EJ%9";#J$:"9"9"=$J$:#
+OD8E8E8E8E8E8E8ET&838383818080818181T(8E8E8E8E8EJ$;#I#
+V(83838381818181J#=";";"A$Jz
+V&8383818080818181U0JFAJ$>";"="C$
+V#838383818080818181J$@"J#J#9%
+V 83838381?8181V>FAFAFAFAFAFAJ"8"J#B"<"?"G$J"8"J#9'
+U"84FFF8383818080818181EFF83U?FA8EFA8E8E8E8EFAJ$B#J$J"J#
+UI8383838181F818181O782TLFA8EJ#D">"A"J"
+UG8383818080681J"8"J#E">"C"J$J"J#;'
+S<83FFP%83838180806818181P$FFT,FA8E8EFAFAFAFA8EJ"J$F"J$J"J"J#<'
+T183O083838381O#818181P$82?81S6FA8EFA8E8E8E8EFAJ#H"?"E"J#J"J'
+U@8383818080;8181Q*80S!FAFAFAFAFAFAJ"8"J"8"J$I"J$J"8"J"8"J(
+R(81FFPE84FF683838381O*8181815FF83PEFF80RB8E8E8E8E8EFA8EJ"J$J#@"G"J$J"J"J"J"
+Q7FAR"838383481818080?818181O'82PGFA57CQ8FAJ"J"J#J"J#J"J'
+PEFFP%82P:8383681O38181R?FFQ98EFAFAFAFA8EJ"J"J$J"B"I"J$J"J"="9%
+PB8EO@8APM8383837818080C818181R?8EQ+8E8E8E8E8E8EJ"J"J"8">&J"B"J"J&="8"
+R581OJ83?84FF838383838398180580E8181818181FF83J"J"J$J"J$J"Jz
+Q"7DJ8AQ-838383=81O@818181G82S=J8EJ"J"8"J#G#J#C"J"J#J"8"J"
+QM7FO=83FFO%73738383>818180780L8181O7FF82O=7FJ&8$>"8$J"J#8"J"
+TA737373737373737384FF8383?81OH81FF83P'81J#9#<"J"E"J"J#
+TF8484737383C8180980O#8181J"B":"8$8"9#:"J"E"J"J#J"J"
+T3837384848484738383FF>8180;80O$8181<82OK80J"8"J"8">'9"J"J"8":$J"8"
+R)81FFP2738484847373838383@81OKFF81818181P@FF80J"J"J%9";&J"F"J"J#J"
+RL82BFFJ73738484738383837373D8180=80O(8181O)FFJ"J"J">$9";#9$:"8"J"J"C$I"J"J"J"
+Q8FAP%83C8373738484828283737383FF:81OLFF81818182C82P%FA57CJ"J"?$8"8"8"J#G"J"C$J"Jz
+R681P%73828282827373?818180O>81818181OF81R)J7EJ"J"=";#A"J"H"J"J"J#J"J"
+PFFFQE84737373FF68180@80HFF48181PB7FO'FFJ"J"J"A%:$9"<"J"H"J"J"I$@"J"J"J'9%
+PC8EO*7FP48382828282737373838388180B80J8181818182OL80O@8EQ/FAFAFAFAFAFAFAFAFAFAJ"J"J"8"J'<#:'="I"J"J$J"8"J&8'
+Q#7DOI82?83FFF7373848282827373838383837373FF81P!FF:818181HFF82T,8E8E8E8E8EFA8E8E8E8EFAJ"8"J"B%?"J"I"J"J"J#J"8"
+R*81FFP/82828282828358180D80H81:8181P-FF80J"8#=$:"D"8"F"J"J&J"J"9#
+T68382827373738283FF81P"FF@8181818382O681SA8EFA8EJ"J"J%=#:"="C"D"J"J"J"J%J"J"J%<#
+Q9FAK81OK8282828273738282FF81480F80F81@81808080PHFA57CQ>FAFAFAFAFA8EJ"8"J$?#9$I"D$J#@"8"J"9$J"8"J"J':#
+S@83FF<828282737382828283818181OE8080FF81A80808080;FF82O(80S#8E8E8E8E8EFAFA8EJ"J"J#A"9#<";"C"?"J"J"J"8">"J#J"J#
+R!7FL82O/82827382827382FF81780H8048080FFL8080P-7FRDFA8EJ"J"J$A"9#<">$="9"="J":"@"J$J"J"J"=#
+PGFFO4FFOL8282828282828273738383FF81OG808081K808080O+81P&FFQ3FAFA8EJ"C"J"J"I$G"A"F"?"J"J"G"<";"J"B$H"J"8"J"J"
+PD8E7DO&81O8FF82828282738381880J808080FFE80808080FFO5FF80O48EQ-FAJ"J"J#J"?"<"E":"J"J"E">"9"9"J#I"J'9&
+R881O(83482824738273FF81880L808080FF81O$808082T-8EFAFAFAFA8EFAFAFAFAFAJ"J"J$J"D";"@"9"8"J"@$9"J"H$J"J"J"9%9'
+Q:FAO482O#828282482738283FF81OG808081FF81B80808080O980KFAR#8E8E8E8E8E8E8E8E8E8E8EJ"@$J%>":&@"9#J"J"B"B"9"J#J"J"J"
+SEFF82828288273737382737382828283FF81980O 80808081O+8080O 81L7FK7CJ"?"8"J"A#J"8#?%D"9"J#C"J$="8"Jz
+R"7F81FFO2838282<8273737373738283FFOE8080FFO1818181FF82RMJ8EJ"J$J"9r:":"J"J">"D"9"J"J"9$J"8"
+R981O1828282?82738282G80O"8080FF80C80781818181O:FF80J"8"@"J"J"8#J#@#<"?#9"J"D"9$J#J"J"J"8"
+PE8EFF7DOJ82CFF8282C82828282828181FFOB80FF808080O38181E81680O>FF8EJ"9#Ju?"="8"9"J"J";"D"9"9"J"J#8"J"
+SC838282G82828181FF580O$8080FF8080@80A81FF82P'FAJ"J"J"J":"9"J#D"9";"J"C#J"J"
+Q;FA57FO?82O88181FFO=8080FF8080O)818181O>7FK7CJ"8"?"J"J#:"J":"<"9"H"J$E"9"="J"J";#J"J"8"
+R-81FF81682=8282FFO.828181FF80O&808080FF8080=80BFF8181<81@FF80J$9"J"8">"9#E"J"9"?"J"J"C":$J"
+S>82828282O2828181FFFF80O8FF8080;8088181818181O"80J"J&J#@":"C"J"9"J&J"Jz
+PIFFP=8181828282O:828181FF8AO8FF80OG8181808080P<FFP&J7DJ"C"J"J"J"G$8"?"8"J"B":"J"9"B#J"J"8"?"9$F"J"J"J"
+PF8E7D5FABFF@828181818182FFO/8181FFODFF808080880CFF818080808081M7F5FAC8EJ"?"B"J#J"D#9"@#J#9"E"J"J#J"?"8"J"J'9%
+R$7F8181F8181OA818181FF8A80O5FFFF8080O"81>8080E80FF80O'7CQ@FAFAFAFAFAFAFAFAFAFAJ$J"J"G"9#>"J":"G"J"J"J$J&8'
+S18181815FFO,8181FFFF80O5FF8080580CFF6808080SK8E8E8E8E8EFA8E8E8E8EFAJ">$A"?"J"I":"<"J":"I"J"C"?"B$="J"
+S%828181818182O.8181FF8AO5FF8080M81818080808081SL8EJ"@"J"?"8"?"J#J"J"J":#:"J#9#J"H"J"J#J"J"J"J"
+PJFF7DK7F81FF81=8181<FFO)81581FFFF80O3FFFF808058080CFF=8080<8067F5FA@FFJ"J"J$G"?"J"J#:%J":"J"F"J"C"?"H$J"8"J"C"J%;$
+PG8ECFAO98181818182O+8178181FFFF818AO3FF80880809818180808080CFF80O'7C8EQ4FAFAFAFAFAFAFAJ$J"J"J";#J#:"J"J#J'9&
+S&828181BFFO&81:81FF80O1FFFF80:80OI8081S@8E8E8E8E8EFAFA8E8E8EFAJ"J#J"J#J#:#J#:#J#B"J"@"8"J$J"J"
+R=8158181A82O'8181<8181FFFFO.FFFF8080<808080981FF81A7F7F7F480S28EJ"J"J"?"8"J$J"C"J"J#:#J#:#J"@"J"J"9$J"8"?"J"J"
+Q(7D5FA57F81FF<818181981FFO"81@8181FFFFO*FFFF8080@8080O$8067F7F7F7F;FF807F5FAR*FAJ"J#J"J"J#:$J#;"J">"J"@"8"J#J"@"J"
+PKFFP"8181G82O$81C8080FFFFFFO%FFFF80C8080:81FF81H7F7FOD7CFFQ4FAJ"J"B$J"C"J"J"8#;#J$;#J"J"J$A"J"J'8'
+PH8EOC81818181?81FFM81C8A8080FFFFO FFFFFF8080E80O,80@7F7F7F80OC8EQ48EFAFAFAFA8E8EFAFAFAFA8EJ"?"8"I$J"J"J":#;$J$<#J";"J"@"8"J"B$H"8"?"J"9%:%
+R'7F81FF818181M82O!81D808080FFFFFFHFFFFFF8080H8080:81FF81A7F7F7F7FFF807FR>8E8E8E8E8E8E8E8E8EJ"J"J#J"C"J"J"=#<%J$<$J"9"J"J"J#J"
+Q)7D5FAO&8181F81FFJ81D808080FFFFFFFFAFFFFFF808080K8080:81880G7F7FO%FAJ"J"9$J"J"J#>PJP<$J$J"8"J$8"J"@"Jz
+PLFFO@81818181O%82L81O!80807808080O!808180FFF81O&7F7F7F80O57CFFP)J8EJ"J"8">&J"C"J$J"B%?Z>$J"J"@"C"J"J&="J"
+PI8EO681FF8080818181L81FFE808181E80808080807808080O%80;81FF8077F57F7F7F7F7FFFO98EJ"H$8"J"J$J%J$J"D"J$="?"J"
+R(7F80808080O+82G808080O)80808080A808080OC8181O/7F7F7F807F5FAJ"J"J#J"C"J"9"J"J&J&J"C"J"J#J"
+Q*7D5FAF8080O'81FFB8080D805808080808078080808080P#FF8077F>7F7FO-7CJ"J"8$J"J";"J"JzJ"D"J#8"J"
+PMFFO381FF8080O482D8080B80;780OJ8181O57FFF80O3FFJ"J"?"C"J"@"8"J"="J"J"A"C"J"J#>"J"
+PJ8EO,7F8080O!8182FF?8080@8AQ 81FF8077FE7F7F7FO,8EJ"J#:"J"J"?"J"9"J#J"
+QAFA=8080FFO:FF=8080QKFF81O<7F7F<FAJ"J$9"J"@"J"A"J#J"D"@"J"J"8":$J"Jz
+Q+7DO"80808080O/8182?8080=8A80PM81818077FBFF7F7F7F7FO!7CP6J7CJ"J%J"J"C"J#C"J"J"A"C"J$J"
+Q FFO)7F808080480O"81FF9808080<80PM81FF80O87F7F7FO)FFJ"J"J#@"8"J"9"J"F"J"J"J"J"C$I"J"J%:%
+PK8EDFA4FAFA80FFO782FF78080:8AQ/81B7FBFF7E7E7EFAD8EQ8FAFAFAFAFAFAFAFAJ"J$8"J"J"@"J"H"J"J"A"C"J"?"9$J"J'8'
+Q,7DGFAFAFAFA780O"818298080980PM81FF80O07F7E7E7E7EF7CQFFA8E8E8E8EFAFA8E8E8E8EFAJ"J#I"J"J"J"J"J"A"9"J#J"J"
+Q!FFO"FAFAFFO;FF48048078APM81FF81OL7E7EO!FFQ@8EJ"J"A$H"C"J"@"9"H"J"J"J"E"@"J"J"8"I$@"J"
+PL8EDFAFAFAFA8080O"8182FF80680680PL81818087FBFF7F7E7E7EFAD8EJ"J$A"J"@"J"J#I"J"B"8"@"J"J"B$J"J$
+Q-7D>FAFAFAFAO;81824808808080PL81FF818087FO"7E7E7E7E=7CQIFAFAFAJ#J"8"J"E"J"G"J"B"J"J#J&
+QJFAFA980FFO<FF80;808APL81FFO<FF=7E7ER6FA8E8E8EFAJ"J"8$G"J"J"@"9"A$J"F"J#@"9"@"J"J"?"H&J"J"
+Q"FFAFAFAFAFAFA780O#8182FF808080=8080PL8080FF818087FF7F7E7E7E7E7FFAAFFQ=8EJ"D"J%J"J"@"9"?"J"D"J"B"@"J%I"D"
+PM8E7D47E7EFAFABFFO.8182FF80A808AQ!808180P$7E7D7D7D7C8EJ$8"J"C"J"A"J#B"J"="J"J"8"J"9$J"
+Q@7E7E7E7E@8080O/8280C808080Q"80FFG7FCFF7F@7D7D7D7DR(FAJ"J#J"C"J"D"<"J"@"J";"9"@"J"J#J"J'8'
+Q#FF:7E7E<FAFFO.81FF80F8080Q$80FF8180O<7E=7D7D9FFQ=8EFAFAFAFA8E8EFAFAFAFA8EJ"D"A$J"C"J"@"9":"J#J"9"9"@"J"J"8"J$@"D"J"9%:%
+Q 8E7D7E7E7EI8080O$8182FF80H8080Q.80FF818097FCFF7FJ7D7D7D7C8EQ78E8E8E8E8E8E8E8E8EJ$A"J"J"9"8"J"<"J$9"J"J"B$
+Q87E7E7E7E6FAOH82FF80K8080Q'8081FF81OH7E67D7D7D7DJ"G#J"8"@"J"A"9#J#J"E"J"J"J#F"Jz
+Q$FF7E7EO"80FF80O$8182FF80M8080Q-808097FCFFO&7D7DFFP/J8EJ"D"8$J"J"A"J%J"9"@"J"J"?"J"H&D"
+Q!8E7D7E7E7EHFAO=8182O%80808180Q)FF818097FG7F7E67D7D7D7DFA7C8EJ%J"J"8"@"J"D"J"J#J"9"@"J"J%
+Q/7C7C7E7E47EA80FF80O%81FFO#80P%7F7FO"FF8080O0FFO,7D7B7B7BJ"=#8"J"J#9"J#8"J"9$J"J"?"J"9#<"
+Q%FF7C7C7CMFAOH8080FFQ&7F7F7FO FF808080C7FG7F7EM7B7B7BFFJ"=$J"J"8"@"J">"8"9"J#J"9"9"="J"J"J$<"
+Q"8E7C7C7C;7EA80FF80O%818080FFQ#7F7FO$FF808080O0FFD7D<7B7B7B8EJ%J"J"<":"9"J#="J"9";";"J"J"?"J$
+Q&FF7D7C7CO(FAO>818080FFQ 7F7F7FKFF808080:7FG7F7EO)7B7BFFJ"9"@"J"8"@"J":"<"9"J#J"9"="9"J"J"J"J"D"
+Q#8E7C7CO*80FF80O&818080FFPK7F7FO&FF808080:7FDFFD7D67B8EJ"J"J"8">"9"J$B"J"9"?$J"?"Jz
+QI7E7FAO?818080FFPG7F7F7F7FHFF80808180O57F7EQ>J7BJ"J"8"@"J$@"9"J$J"E$J"J"J"
+Q'FFO680FF80O&80808080FFPC7F7F7FO)FF807F7F97FDFFO9FFJ"D"J"J"J"D"9"J$I"J":"A"8"J"J"?"J"J"D"J%=#
+Q$8E7C67E7FAO=8080FFP?7F7F7F7FEFF807F7F77FH7F7E77D67B8EQ?FAFAFAFAFAFAJ"8"@"J"F"9"J$J":"A":"J"J';#
+R?80FF80O#8080FFP;7F7F7FO-FF807F7FO-FFS.FA8E8E8E8EFAFA8EJ"A"J"C"@"J"H"9"J$J"J":"A"<"J"J"?"J"J"A"J":#
+Q(FF7CO FAFF80O!8080FFP77F7F7F:7FBFF807F7F47FH7F7E77D67BFFQG8EFA8EJ"J"J"J"J"9"J%J"J":"A">"H"J"J"
+Q%8EE7EB80O.80480FFP27F7F7F7F>7F@FF807F7F7FEFFO=8EJ"J"C"@"J"J"9"J"J&J":"A"@"F"J"?"J"J"J$:#
+Q)FFO,FAFF80L80680FFO87FA7F7F7F7F7FO4FF807F7F7FI7F7E77DBFFQEFAFAFAFA8EJ"D"J"J"J"J"9#JzJ"J"9#A"B"J"8"J"D"J&8#
+Q&8E7C67EB80O+80880FFFFO7A7FH7F=FF80807F7FO'FF7FO+7B8EQAFA8E8E8EFAFA8EJ"@"8"@"J#J":"J"9"B"D#B"J"J"J"='
+R7FA80FF80H8080:80FFQ@FF807F7F7F7FO%7E77DR:8EFAFAFAFAFAFAJ"A"J"J"J"J":"J"J"9"B"G"@"J"8"J"A"J(
+Q*FF7C67EO#80F80=80FFQ#7F:FF807F7F7FFFF7FO+7BFFQL8E8E8E8E8EFA8EJ"J"@"8"J"J":"J#9"B"I">"J"C"J"J"J"
+Q'8EO0FA80FFO"80?80FFQ;FFFF807F7F7FFFF7E77DF8EQ>FAJ"J"J"@"J"J#9"J"J":"B"J"J"J"J'
+Q77C67EFFF80C80A8080FFQ"7F6FF807F57FO#7FO+7BR#8EFAFAFAFA8EJ"J"@"D"J"J"9#J"J":"B"J";"J"C"J"J"J"9%>"
+Q+FFO-FA8080A80D80FFFFO/7FP&FF807F77F7FFFF7E77DCFFQB8E8E8E8E8E8EJ"J"J"J"J":"J"I":"B"J"9"J"J"E"
+Q(8EF7EFFFK80F80FFQ 7FFF807F97F7FJ7FO+7B8EJ"A"J"@"D"J"J":"J"F#9#B"J$J"8"@"J"J"Jz
+Q,FF7CO!FA8080>80H80FFQ 7FFFFF80807F;7F807FGFF7F7E77DCFFP7J8EJ"J"J"@"8"A"J$J#9#J"D":"C"J"J"C"J"
+Q)8EF7E8FA80FF80:7F8080J8080FFFFPM7FFF807F=7FGFF7EO18EJ"A"J"J$J":"J":"C"J"J"J"A"
+Q-FF7CO0FFD7F7F7FM80FFQ,FF807FO;7FB7D77BFFJ"J"J"@"D"J"9"J#9#J"J"@#9#C"J"C"J"
+Q*8EF7E8FA808077F7FM8080FFFFO'7FOC7FFFFF80807FO8FF7EO18EJ"J"8"A"J";"J":"J":"C#J"J"J"
+Q:7CO-80FF8057F7FO 80FFQ&FF807F7FO<7FB7D77BJ"8"J"J"D"A"I"="J":#J"<#9#C"J"8"@"J"8"
+Q+8EFFC7E8FAFF807F7FO 80FFFFPI7FFFFF80807FO:FF7F7EO.FF8EJ"J"@"J"?"J#:#J"9#:"D"J"C"J"J"
+Q;7CO"FA80A7F7FO 8080FFFFPH8AFFFF807FO:FF7E87D77BJ"J"J"8"A"F"A"J#:"J"8";"D"J"J"J"Jz
+Q/FFC7ED80FF807F7FO!8080FFPG7FFF807FO>7FB7DDFFP:J7AJ"E"J"D"A"C#C"J":#J#:#C#J"8"@"J"E"
+Q,8E7CO"FAFF807F7F7FO"80FFFFPFFFFF80807F7FO;FF7F7EO"7B8EJ"J"J"@"E"A"F"J#:#J"J#:#D"J"C"J"J"J%:%
+Q0FFC7E9FA80807F7FO"8080FFFFJ7FOEFFFF80807FO<FF7E87DDFFQKFAFAFAFAFAFAFAFAJ"E"J"8"J"H"J#:#J";"E"J"9"J"E"J'8'
+Q-8E7CO.80FF67F7FO#8080FFFFP?FF807FO<FF7FO-7B8EQGFA8E8E8E8EFAFA8E8E8E8EFAJ"J"J"D"A">"J"J";#J#:#D#J"@"J"J"J"
+Q1FFC7E9FAFF807F47FO$80FFFFP;FFFF7F8A7F7FO@7F7E87DDFFR"8EJ"E"J"J"@"9"A"<"J"J#;#J#:%C"J"C"J"E"
+Q.8E7C77E9FA80FF807F67FO$8080FFFFP7FFFF7F7F7F7F7FO>FF7EO#7B8EJ"J"E":"J"J#;#J$:#:"@#J"9"J"J"J$9'
+Q2FFO;80807F87FO%8080FFFFP2FFFFFF7F7F8A7F7FO>FF7FC7DDFFR FAFAFA8EFAFAFAFA8EJ"E"J"J"A"8"B"8"J"J#;#J#;#<"?"J"@"J"J"E"J&8'
+Q/8E7C77E9FA80FF807F:7FO&8080FFFFP.FFFF7F7F7F7FOC7F7E87D87B8EQJFA8E8E8EFAFA8E8E8E8EFAJ"J"D"A$J"J#;#J#;#?"<#J#A"8"@"J"B"J"
+Q3FFO0FAFF7F7F7F<7FO'8080FFFFP*FFFF7F7F8A7F7FO3FAFAFF7F7EO#7BFFR 8EJ"E"J"J"9"?"J"J#;$J$;#A#:"J"8"?"J"J"
+Q08E7C77EE80FF7F@7FO(8080FFFFFFP$FFFFFF7F7F7F8A7FO4FAFAFFG7DH8EJ"B"J"J"A"A"J"J#<#J#<#G#J":"="9"@"J"B"J"
+Q4FF7C77E9FA807FB7FO)8080FFFFP FFFF7F7F7F7FO4FAFAFF7F7EO#7BFFQKFAJ"J"A"8"<"J"J$;$J$;$F$J"<";"9"@"J"J"J'8'
+Q18EO4FA80FF7FD7FO*808080FFFFFFOHFFFFFF7F7F7F7F7F7FO5FAFAFF7F7E97DH8EQK8EFAFAFAFA8E8EFAFAFAFA8EJ"B"J"J"D":"J#J$H#<$H"J$<#J">"="@"J"J"B"J"9%:%
+Q5FF7C77E:FAFF7FF7F7FD8A7F7F8080FFFFFF7FO/FFFFFF7F7FOJFAFA7F7E97D87BFFQL8E8E8E8E8E8E8E8E8EJ"J"J"9"8"J"J#8#H$<%J%<$J"@"8"J"
+Q28EH7EE80FF7FI7FB8A7F7F7F808080FFFFFFFFO:FFFFFFFF7F7F7FOKFAFAFFOC8EJ"8"B"J"A"9#J"J"J$=%J$=$J"B#9"@"J"J"B"8"Jz
+Q38EFF7CO$FA80FF7FK7FG7F4808080FFFFFFFFO3FFFFFF7F7F7FOMFAFAFF7F7E97D87BFF8EP>J8EJ"J"J"A"9"J"J#<#J$>%JP=$J"C"9"@"J"
+Q7FFD7E:FA80FFL7F?8A7F7F7F5808080FFFFFFFFO*7F7F7FP!FAFF7F7E97DJ"E"J"J"A"J#J"?#J$?PJP?$J"C"9"@"J"B"8"
+Q48E7C87E:FA7FO"7F7F=7F7F7F6808080O 7F7F7FP#FAFFFA7EO%7BFF8EJ"B"J$8"J"J"B$J%@RJR@%J"G$J"J"B"
+Q8FF7CO/7F7F7FFFO 7F;8A7F7F7F680808080@7F7F7F7FP%FAFAFAFAC7D87BFFJ"J"J">"<"J"J"E#J%CZC%J"8"9"="J"J"
+Q58EH7E:FA7FFFO 7F:7F7F7F880808080@7F7F7F7FP7FFFAFA7E97DI8EJ"B"J"J"<":"9"J"J"H#J'J&J"C">";"J"B"
+Q9FF7C87E:FA7F7FFFO 7F88A7F7F:808080808080O!7F7F7F7F7FP,FAFFFA7EO%7BFFJ"J":"<"9"J#J"J#JrJrJ"C"9"<"9"J"J"
+Q68EO6FA7F7FFFO 7F7F67F47F7F>7FA7FP0FAFFFAFA7E:7DI8EJ"B"J"J"8">"9"J"J"J$JzJ"C"9">$J"J"B"
+Q:FF7C87E;FA7F7FFFO!7F47F77F7F7FBA7FP6FAFFFAFA7F7E:7D97BFFJ"9"B"J"J$@"9"J#G"J$J#C"9"@$J"J"F"Jz
+Q78EFF7C87E:7E7F7F7FFFO!7F7F8A;7F7F7FQFFAFAFFFAFA7D7D87D97B8EPBJ79J"J$B"9"J"F"J$J"J"D"9"A"8"J"8"
+Q88EO47E7E7E7FFFO"7F7F>7F7F7F47FQ-FAFFFA7D7DO0FF8EJ"B"J"J"9"B"9"J#C"J$J"D"9"A":"J"J"B"J'9%
+Q<FF7C87E77E7E7FFFO"7F7F8AB7F7F7FQ>FAFFFA7D7D57D97BFFR(FAFAFAFAFAFAFAFAFAFAJ"F"J"J";"B"9"J"B"J%J"D"9"A"<"I"J"F"J&9'
+Q98E7C87E57E7E7FFFO#7F7FE7F7F7F7FQ9FAFFFA7D7D7D97B8ER%8E8E8E8E8EFA8E8E8E8EFAJ"J"I"="B"9"J#?"J%J"D"9"A">"G"J"J#
+Q=FFF7E7E7E7FFFO#7F7F7FJ7F7F7F7FQ4FAFFFA7D7D7DGFFR-FA8EJ"9"B"J"?"B"9"J"J%J"D"9"A"@"J"F"J"9#
+Q:8EFF7CK7E7E7FFFO$7FO)7F7F7F7FQ/FAFFFA7D7DJ7B8ER.8EFA8EJ"F"J"F"A"B"9"J#;"J&J"D"9"A"B"D"J"C"8"J#<#
+Q;8E7C87E7E7E7FFFO$7F7F7FO%7F7F7F7F7FQ)FAFFFA7D7D7D97BFF8ER*FA8EFA8EJ"J"C#C"B"9"J#J"D"9"A"D#A"J"J#
+Q?FFF7E7E7E7E7FFFO%7F7FR6FAFFFA7D7D7D7DGFFR5FA8EJ"F"J"A"J"9"J$J"D"9"A"G"?"J"F"J#;#
+Q<8E7C97E7E=7FFFO&7F807FR2FAFFFA7D7D7D:7B8ER*FA8EFA8EJ"8"C"J"G"C"9"J"J#J#D"9"J"J"C"8"J#
+Q=8EFF7CC7E7E7FFFO&7FQ9FAFADFAFAFFFA?7DB7BFF8ER1FA8EJ"J">"I"C"9"J#8"J"E"9"B"J"<"J"J"9#
+QAFFF7E7E7E7FFFR=FAFAFABFAFFFA7D47D7DGFFR*FAFA8EJ"F"J"<"J"C"9"J"J"E"9"B"J":"J"F"J&
+Q>8E7C97E7E57E7FFFR;FAFFAFFFA7D67D7D:7B8ER3FAFAFAFAFAJ"8"C"J":"J"C"9"J#<"J"E"9"B"J"8"J"C"J"9"<'
+Q?8EFF7C97E7E77E7FFFR8FAFAFA?FAFFFA7D87D7D:7BFFR+8E8E8E8E8E8E8E8EJ"C"J"8"J"C"9"J#J#E"9"B"J#J"C"9"
+QCFF7C97E7E97E7FFFR5FAFAFFAFAFFFA7D:7D7D:7BFF8EJ"J#J"C"9"J#A"J"F"9"B"J"Jz
+Q@8EK7E7E;7E7FFFR2FAFAFA;FAFFFA7DO:8EPKJ8EJ"8"C"J"J"C"9"J$J"F"9"B"J"C"
+QA8EFF7C97D=7E7FFFR.FAFAFAHFAFFFA7DO)7BFFJ"C"J$J"C"9#J#G"J"E#9"B"J"C"9"
+QEFF7C77D7D7D=7E7FFFFFR*FAFAFA8FAFFFFFA7DO)7BFF8EJ"9"C"J"9"J"C":"J#J#E":"A#J"
+QB8EFF7C57D7D=7E7FFFR'FAFAJFAFAFFFA7D7DO;8EJ"J";"J"C#9"J$J"J"F"9#A"J"C"8"
+QC8EE7D7D=7E7F7FFFR#FAFAFA6FA4FAFFFAFA7DO+7BFF8EJ"C"H"="J"D"9"J#J"G#F"9"B"J"C"
+QGFF7C7D7D=7E7FFFR FAFA:FAFAFAFFFA7DO+7BFFJ"9"C"F"?"J#C"9#J$J"F#9"B"J"G"
+QD8EFF7C7D7D=7E7E7FFFFFQIFAFAFAMFAFFFFFA7DO+7B8EJ"G"D"A"J"C":"J$J"C#F":"B"J"D"8"Jz
+QE8E7C7D7D>7E7FFFQEFAFAFA@FAFAFAFFFA7DO+7BFF8EQ"J78J"8"J#C"J"C#9"J$J"G":"B"J"
+QF8EFF:7D7D7D>7E7F7FFFQAFAFAFAO"FAFFFA7DO:FFJ"C"@"F"J"D"9#J$J"?#G"9#B"J"C"9"J'9%
+QJFF7C7D7D>7E7FFFFFQ<FAFAFAGFAFAFAFFFAFA7DO,7BFF8ER2FAFAFAFAFAFAFAFAFAFAJ"9"C">"H"J"D":"J$J"G#9"C"J"G"J&9'
+QG8EFF7C7D7D>7E7FFFQ8FAFAFAO%FAFFFFFA7DO,7B8ER38E8E8E8E8EFA8E8E8E8EFAJ"G"<"J"J"D":"J$J";#G":"C"J"D"8"J#="
+QH8E7C7D47D>7E7FFFQ4FAFAFAO FAFAFAFFFA7DO,7BFF8ER8FA8E8EJ"8"D":"J#C#9#J&J#G#9#B#J"D"
+QI8EFF7C7DO'7E7E7F7FFFFFQ-FAFAFAFAFAO'FAFAFFFFFAFA7D7DO,7BFFJ"D"8"J"J"D":"J%J$H":"C"J"9"J#;$
+QMFF7C7D77D@7E7FFFQ(FAFAFAFAO)FA7FFAFFFA7DO<FF8ER8FA8EFAFAFAJ"9"C$J"J"D#9#G$J"J&J"H":"C"J"G"J&
+QJ8EFF7B7E7D97D@7E7F7FFFFF8AFAFAO0FAO*FAFAFAFAFAO.FAFFFA7DO.7B8ER?FA8E8E8EFAJ"E$J#J"E":"E#8"J'JrJ#9#C"J"D"8"J#;"
+QK8E7B7B7B;7D7D?7E7FFF8AFAFAO0FAFAFAFAFAFAKFAODFFFFFAFA7DO.7BFF8ER9FA8E8EJ"8"@"9"J"J#D":#H#JzJ":"C#J"D"
+QL8EFF7B7B<7D?7E7E7FFFFFFAFAO4KFAOJFFFA7D7DO.7BFFJ"=#;"J"J"D#:"A#<#J#9#C"J"D"9"J"9#
+R"FF7B7B7B<7D@7E7F7FFF8AFAFAFAR)FFFFFAFA7DO/7BFF8ER5FAFA8EJ"9";">"J"J"E":#?"?#J#:"D"J"D"9"J'
+QM8EFF7B7B<7D@7E7FFFFFFAFAFAR%FFFFFA7DO/7BFF8ERA8EFAFAFAFA8EJ"9"9"@"J"J#D#:"="B#J":#C#J"H"J"9"=%
+R 8EFF7B7B<7D@7E7E7F7FFF8AFAFAR"FFFAFA7D7DO/7B8ER78E8E8E8E8E8EJ"9$B"J"J"E#9#;"D#J"J#:"D"J"8"
+R!8EFF7C7B7B<7DA7E7F7FFFFFFAFAFAO$FAPGFFFFFA7DO@FF8EJ"9"J"J"F":#8"G#J#:#D"J"D"Jz
+R"8E7BK7DA7E7FFFFF8AFAFAQHFFFFFAFA7DO17BFFQ0J8EJ"8"D"J"J#E#:$I$J":#D#J"D"9"
+R#8EFF7B=7DA7E7E7F7FFFFFFAFAFAFAQDFFFAFA7D7DO17BFF8EJ"D"J"J"F#:"J#J#:"E"J"D"9"
+R'FF7B=7DB7E7F7FFF6FAFAQ@FFFFFA7DO27BFF8EJ"9"D"J"J#F":#J#J#:#D#J"D"9"
+R$8EFF7B=7DB7E7E7FFFFF6FAFAQ<FFFFFAFA7D7DO27BFF8EJ"9"D"J"J"F#:#J$J"J#:#E"J"H"
+R%8EFF7B=7DC7E7FFAFFFF6FAFAFAEFAP?FFFFFAFA7DO37B8EJ"9"D"J#J#D%:#J#J#:#E#J"E"8"
+R&8EFF7B=7D7DB7E7E8AFAFAFAFFFF7FAFAQ3FFFFFAFA7D7DO37BFF8EJ"9"D"J"J"C"9#:#J$J#;"F"J"E"
+R'8EFF7B>7DC7EFAFAFAFFFF7FAFAFAQ.FFFFFA7DO47BFFJ"H"J"J#@"<#:#J$J#;#E#J"E"9"Jz
+R(8E7B>7DC7E7EFAFAFAFFFF8FAFAFAQ)FFFFFAFA7D7DO47BFF8EQ2J77J"8"E"J"J#G#:#J$J#;#F"J"E"9"
+R)8EFF7B>7DD7E7EFAFAFFFF9FAFAFAQ$FFFFFAFA7DO57BFF8EJ"E"J"J"<"A#:#J$J#;#F#J"E"9"J%:%
+R-FF7B>7DE7EFAFAFAFFFF:FAFAFAPMFFFFFAFA7D7DO57BFF8ERDFAFAFAFAFAFAFAFAJ"9"E"J#J#H#:#J%H"J#;#F#J"E"9"J'8'
+R*8EFF7B>7D7DD7E7EFAFAFFFF;FAFAFAFAFAP4FFFFFAFA7D7DO67BFF8ERDFA8E8E8E8EFAFA8E8E8E8EFAJ"9"E"J"J%F#:$J$J$;#G"J"E"9"
+R+8EFF7B?7DE7E7E7FFAFAFAFFFFFF<FAFAFAPAFFFFFFFAFA7DO77BFF8EJ"9"E"J"J$G#;#J%J#;$G#J"E"9"
+R,8EFF7B?7DFFA7D7DFAFAFFFF=FAFAFAFAP;FFFFFAFAFA7D7DO77BFF8EJ"9"E"J#J#8"H#;$J&J$;#H#J"E"9"J'
+R-8EFF7B?7D7DC8A7D7DFAFAFFFFFF>FAFAFAFAFAP3FFFFFFFAFA7D7DO87BFF8ERG8EFAFAFAFA8EJ"9"E"J"J#H#<#J&J#<#H#J"E"9"J'
+R.8EFF7B@7DG7D7DFAFAFFFFAFAFAFAFAFAP,FFFFFAFA7D7DO97BFF8ERHFA8E8E8E8EFAJ"9"E"J"J#<#H$;$J"J$;$H#J"E"9"
+R/8EFF7B@7D@8A7D7D7DFAFAFAFFFFFFCFAP(FFFFFFFAFAFA7D7DO:7BFF8EJ"9#D"J#J"?#I#<#J$<#J"J"D#9"
+R08EFFFF7B@7D7D>7D7D7DFAFAFFFFPGFFFFFFFAFA47DO;7BFFFF8EJ"I#J"J"B#I$;$J$<$J#J"J"
+R18E7B7B@7D<8A7D7DFAFAFAFFFFFFPAFFFFFFFAFAFA47D7DO;7BS.FAJ":"F"J"J"D#J#<%J$<$J#J#E";"J'8'
+R1FFFF7B@7D;7D7D7D4FAFAFFFFFFFFP:FFFFFFFAFAFA57D7DO;7B7BFFFFRJ8EFAFAFAFA8E8EFAFAFAFA8EJ"<"F"J#J"G#J$=$J$=#J$J"F"="J"9%:%
+R0FFFF7B@7D7D88A7D7D4FAFAFAFFFFFFP4FFFFFFFAFA57D7D7DO<7BFFFFRF8E8E8E8E8E8E8E8E8EJ">"F"J"J"I#J$=%J$=$J#J"F"?"
+R/FFFF7BA7D77D7D7D5FAFAFAFFFFFFFFP-FFFFFFFAFAFA57D7DO>7BFFFFJ"@"F"J#J"J#J$>%J%<%J#J"F"9"="Jz
+R.FFFF7BA7D7D47D67D7D6FAFAFAFFFFFFFFP%FFFFFFFFFAFAFAFA67D7DO?7BFF8EFFQ8J8EJ"=#9"F"J"H"J$J%>%J%=$J#J"F"9$="
+R-FF8E8EFF7BB7D8A97D7D7D6FAFAFAFAFFFFFFFFOKFFFFFFFFFAFAFA87D7DO@7BFF8E8E8EFFJ"="8"9"F"J#F"J#J$?%JP>$J$J#F"9"9"="
+R,FF8E8EFF7BB7D7D7D<7D7D8FAFAFAFFFFFFFFOBFAFAFA87D7D7DO@7B7BFF8E8EFFJ"=":"9"F#J"D"J#J%?QJP?%J#J"G"9";"="
+R+FF8E8EFF7B7BB7D8A?7D7D9FAFAFAFAO7FAFAFAFA97D7DOB7BFF8E8EFFJ"="<"9#F"J#B"J$J%AQJR@%J$J"G"9"="="
+R*FF8E8EFFFF7BB7D7D7DA7D7D7D:FAFAFAFAO*FAFAFAFA:7D7D7DOC7BFF8E8EFFJ"=">":"F"J#?"J$J&BTJSB&J$J"G"9"?"="
+R)FF8E8EFF7BC7D7D7DE7D7D7D;FAFAFAFAFAGFAFAFAFAFA;7D7D7DOE7BFF8E8EFFJ"="@#9"F"J"J#J'EZE&J#J"G"9"A"="
+R(FF8E8E8EFF7BD7DO#7D7D>FAFAFAFAFAFAGFAFAFAFAFA>7D7DOG7BFF8E8EFFJ"="C"9"F#J#;"J$J'JrJ$J"G"9"C"="Jz
+R'FF8E8EFF7B7BC7D7D7DK7D7D7DAFAFAFAFAFAFAO*FA@7D7D7DOH7BFF8E8EFFQ1J76J"="E"9"G"J#J$JtJsJ$J#G"9"E"="
+R&FF8E8EFF7BD7D7DO$7D7D7DDFAGFAD7D7D7DOI7B7BFF8E8EFFJ"="G"9"G"J$J$JzJ$J"G#9"G"="J%=#
+R%FF8E8EFF7BE7D7E7DO$7D7D7DJGFAI7D7D7DOK7BFFFF8E8EFFR?FAFAFAFAFAFAJ"="I"9#F"J"J%J%J"G":"I"="J';#
+R$FF8E8EFFFF7BE7DO(7D7D7D7DP67D7D7D7DOM7BFF8E8EFFR=FA8E8E8E8EFAFA8EJ"<"J":"F#J%J$J#G"9#J"<"J#
+R$8E8E58EFF7B7BP"7D7D7D7DP/7D7D7DP!7B7BFF8E8E58E8ERGFA8EJ":"J":"G"J%J%J"H"9"J":"
+R%8E8E78EFF7BP%7D7D7D7DP'7D7D7D7DP#7BFF8E88E8EJ"8"J#9"G"J%J%J"H"9"J"8"J'9#
+R&8E8E98E8EFF7BP(7D7D7D7DOM7D7D7D7DP&7BFF8E:8E8ER?8EFAFAFAFA8EFA8EJ#J"9"G#J%J&J#G#9"J#J'8#
+R'8E8E<8EFF7B7BP*7D7D7D7DOD7D7D7D7D7DP(7B7BFFFF8E<8E8ER@FA8E8E8E8EFAFA8EJ"9#G"J'J&J"H":"J'
+RF8EFFFF7BP-7D7D7D7D7D7DO97D7D7D7D7DP,7BFF8ES:FAFAFAFAFAFAJ":"G#J'JrJ"H"9#J(
+RG8EFF7B7BP17D7D7D7D7D7DO,7DP07BFF8E8ES:8E8E8E8E8EFA8EJ#9"H"JtJtJ#H"9"J"
+RH8E8EFF7BP67DH7DP57B7BFF8ES1FAJ"9#G#JzJ"H#9"J'
+RJ8EFFFF7B7BP=H7DP=7BFFFF8ES58EFAFAFAFA8EJ":"H"J#H":"J"9%>"
+RK8EFF7BT#7B7BFF8ES38E8E8E8E8E8EJ":"H#J"I"9#
+RL8EFF7B7BT 7BFF8E8EJ#9#H"J#H#9"Jz
+RM8E8EFFFF7BSK7B7BFFFF8ER*J8EJ":"H#J"I":"
+S!8EFF7B7BSH7BFF8EJ":"I"J#I"9#
+S"8EFF7BSE7B7BFF8E8EJ#9#H#J#I#9"
+S#8E8EFFFF7B7BSA7B7BFFFF8EJ":"I#J"J":"
+S%8EFF7B7BS>7B4FF8EJ#9#I"J#I#9#
+S&8E8EFFFF7BS;7B7BFFFF8E8EJzJ":"I#J"J":"
+OG48BPI8EFF7B7BS87B4FF8EJsJsJ":#I#J#I#9#
+O?8B48BPB8EFFFF7B7BS47B7BFFFF8E8EJ%J%J#:"J"J#J":"Jz
+O;8B8B8B8BD8B8B8B8BP?8E8EFF47BS17B7B4FF8ER5J75Jr<#9$8w8$9#<rJ":#I#J#J#:"
+O48B8E8E8E8E8E8E8E8E8E8E8E8BP:8EFFFF7B7BS-7B7B4FFFF8EJ&>+8$B$8+>&J#:#I#J"J":#J%:%
+O/8B8B8B8B8B8E8E8E8E8E8B8B8E8B8E8B8E8E8E8E8B8E8B8E8B8B8E8E8E8E8E8B8B8B8B8BP68E8EFFFF7B7BS*7B5FF8E8ESGFAFAFAFAFAFAFAFAJ+9%9+F+9%9+J";"J#J#J#:"J'8'
+O+8B8B8B8B8E8E8E8E8E8E8E8E8E8E8B8B8E8E8E8E8B8B8B8E8E8B8B8B8E8E8E8E8B8B8E8E8E8E8E8E8E8E8E8E8B8B8B8BP48EFF47B7BS&7B7B4FFFF8ESHFA8E8E8E8EFAFA8E8E8E8EFAJ)9';%;&B&;%;'9)J#:#J#J#J":#
+O'8B8B8B8B8E8E8E8E8B8B8B8B8E8E8B8B8E8E8E8B8B8B8B8B8B8B8B8E8E8E8B8B8E8E8B8B8B8B8E8E8E8E8B8B8B8BP18E8EFFFF47B7BS"7B7B5FF8E8EJ(;)9%;(w(;%9);(J#:"J#J#J#9#
+O$8B8B8B8E8E8E8E8B8B8E8E8E8E8B8B8B8B8E8E8B8E8E8E8E8E8E8B8E8E8E8E8E8E8B8E8E8B8B8B8B8E8E8E8E8B8B8E8E8E8E8B8B8BP08E8EFF57B7BRL7B7B5FFFF8E8EJ'=%:(<#<w<#<(:%='J":#J#J#J#:"J'8'
+O!8B8B8B8B8E8E8B8B8E8E8E8E8B8B8B8E8E8B8E8E8E8B8E8E8B8B8B8E8E8E8E8B8B8E8E8B8B8B8BP/8EFFFF57B7BRH7B7B5FFFF8ESM8EFAFAFAFA8E8EFAFAFAFA8EJ'=%>(J(>%='J#:#J#J#J":#J'8'
+M8B8B8E8B8E8E8B8B8E8E8E8B8E8B8B8B8BD8B8B8B8B8E8B8E8E8E8B8B8E8E8B8E8B8BP.8E8EFFFF57B7BRD7B7B6FF8E8ET FA8E8E8E8EFAFA8E8E8E8EFAJ&?%@(sJs(@%?&J";#J#J#J#:"
+J8B8B8B8E8E8B8B8E8E8B8E8E8E8E8E8E8B48B8E8E8E8E8E8E8B8E8E8B8B8E8E8B8B8BP-8EFFFF57B7BR@7B7B6FFFF8EJ&9$:$A#<)z)<#A$:$9&J#;"J#J#J#:#
+H8B8B8E8E8E8E8B8B8B8E8E8B8E8E8E8B8E8E8E8E8E48B8E8E8E8E8E8B8E8E8E8B8E8E8B8B8B8E8E8E8E8B8BP,8E8EFF67B7BR<7B7B6FFFF8E8EJ%=(B#EzE#B(=%J#:#J#J#J#:#J"
+F8B8B8E8E8E8E8B8B8B8B8E8B8E48E8E8B8E8B8B8B8B8E8E8E8E8B8BP,8E8EFFFF67B7BR87B7B6FFFF8E8ET"FAJ%A"9#@#?#J#?#@#9"A%J#:#J#J$J";"J'8'
+D8B8B8E8E8E8B8B8B8E8B8E>8E8B8E8B8B8B8E8E8E8B8BP,8E8EFFFF67B7BR37B7B7B7FF8ET'8EFAFAFAFA8E8EFAFAFAFA8EJ$C+;#?#J#?#;+C$J";#J#J#J#:#J"9%:%
+C8B8E8E8B8E8E8E8E8E8B8B8B8B8B8E8B8E@8E8B8E8B8B8B8B8B8E8E8E8E8E8B8E8E8BP-8EFFFF67B7BR/7B7B8FFFF8E8ET%8E8E8E8E8E8E8E8E8EJ$D#;%rJr%;#D$J#;#J$J#J#:#
+A8B8B8E8B8E8E8E8E8E8BO(8B8E8E8E8E8E8B8E8B8BP,8E8EFFFF67B7B7BR*7B7B8FFFF8E8EJ$D#@(vJv(@#D$J#;#J#J$J#:#Jz
+@8B8E8E8B8E8E8E8E8B8E8E8E8B@8B8E8E8E8B8E8E8E8E8B8E8E8BP-8E8EFFFF77B7BR%7B7B7B8FFFF8E8ERKJ8EJ#E#Hs$z$sH#E#J#;#J#J#J#:#
+?8B8E8B8E8E8B8E8E@8B8E8E8B8E8E8B8E8BP.8E8EFFFF77B7BR!7B7B9FFFF8E8EJ$E#D#DzD#D#E$J#;#J$J$J#;"
+=8B8B8E8B8E8B8E@8E8E8B8E8B8E8B8BP.8E8EFFFF77B7B7BQI7B7B7B9FFFF8EJ$E#J#E$J#;#J#J#J#;#
+<8B8E8E8B8EP"8E8B8E8E8BP/8E8EFFFF87B7BQE7B7B:FFFF8E8EJ#F#E#A#J#A#E#F#J#;#J$J$J#;#
+;8B8E8B8E8B8E8B8ED8E8B8E8B8E8B8E8BP08E8EFFFF87B7B7BQ?7B7B7B:FFFF8E8EJ#;#J$J$J#;#
+SK8E8EFFFF97B7B7BQ97B7B7B;FFFF8E8EJ#F#>#;#DsIsE#<#=#F#J#;#J$J$J$;#
+:8B8E8B8E8B8B8B8E8B8B8E8B8B8B8E8B8E8BP38E8EFFFF:7B7B7BQ37B7B7B;FFFFFF8E8EJ#J"J"J#J#;$J$J$J#<#Jz
+98B8EO,8B:8BO$8E8BP48E8EFFFFFF:7B7B7BQ-7B7B7B<FFFF8E8ES*J74J#>"8"G#9&8"I&8$H"8"=#J#<#J$J$J#;$
+K8B8E8B8B8B8E8E8E8E8E8E8B8E8E8E8E8E8B8E8B8B8B8E8BPH8E8EFFFF;7B7B7BQ'7B7B7B=FFFF8E8E8EJ#J"J"J#J#<#J$J$J%;#J%:%
+88B8EO,8E:8EO&8E8BP78E8EFFFF<7B7B7BQ!7B7B7B<FFFFFFFF8E8ET?FAFAFAFAFAFAFAFAJ'8#J#9'J#<#J%J%J#=#J'8'
+O&8B8B8E8E8B8B8B8EO48E8B8B8B8E8E8B8BQ&8E8EFFFF=7B7B7B7BPG7B7B7B7B=FFFF8E8ET@FA8E8E8E8EFAFA8E8E8E8EFAJ#G#J"J"J#G#J$;$J%J$J#=#
+78B8E8B8EH8B:8BB8E8B8E8BP:8E8E8EFFFFFF>7B7B7B7BP@7B7B7B?FFFF8E8EJ$8$J&8"I&8"H$8$J#<#J%J%J$;%J"9#
+O%8B8B8E8E8B8B48B8B8B8B8B8E8B8B8B8B8B8E8B8B8E8E8B8BQ*8E8EFFFF@7B7B7B7BP87B7B7B7B?FFFFFF8E8E8E8ETL8EFA8EJ"J"J#<$J%J%J$<#J#
+OG8E:8EQG8E8EFFFFFFA7B7B7B7BP07B7B7B7B@FFFFFF8E8EU%FA8EJuI%J(J'J%HuJ$<$J%J&J#=#J&;#
+88B8B8B8B8B68E8E8E8E8E8B8B48E8E8E8E8E8E68B8B8B8B8BPB8E8E8EFFFFFFB7B7B7B7BP'7B7B7B7B7BBFFFF8E8ETJ8EFAFAFAFAFA8EJuF">"J">"EuJ#=$J(J(J$<$J%:#
+88E8B8BO98B8B8EPE8E8EFFFFFFC7B7B7B7B7B7B7AOG7A7B7B7B7B7B7BDFFFFFF8E8E8ETM8E8E8E8EFA8EJ'J$J'J$=$J'JrJ$<$J"=#
+O&8E8E8E8E8E8E:8E8B8BO 8E8E8E8E8E8EQ48E8E8EFFFFFFG7A7A7A7A7A7AO<7AFFFFFFF8E8E8EU!FAFA8EJ#G#J#G#J$=$JsJsJ$=#J"
+78E8B8E8BP*8B8E8B8EPI8E8E8EFFFFFFJ7AO,7AJFFFFFF8E8EU!FAJ$<"8"J&<$J$=$JzJ$=$J'9&
+O#8B8B8E8E8BO48B8E8B8B8E8E8B8BQ78E8E8EFFFFFFO!O,7AO!FFFFFF8E8E8EU&8EFAFAFAFA8EFAFAFAFAFAJ#J#J$=%J"J%=$J"9%9'
+88E8BQ 8B8EQ"8E8E8EFFFFFFFF;7AP8FFFFFFFF8E8E8EU&8E8E8E8E8E8E8E8E8E8E8EJ#:#>#C&<#G#>#D#>#9#J$>$J"J$>$
+K8E8B8E8E8E8E8E8B8E8E8E8E8E8E8E8B8E8E8E8E8E8B8EQ88E8E8EFFFFFFP57A8FFFFFF8E8E8EJ#J#J$>%J%>$Jz
+98E8BPL8B8EQ)8E8E8EFFFFFFFFPFFFFFFFFF8E8E8ET J8EJ#F#E#J#E#F#J%>%J%>%
+:8E8B8E8B8E8BO28B8E8B8E8B8EQ-8E8E8E8EFFFFFFFFP>FFFFFFFF8E8E8E8EJ%>P@"JP?$
+TK8E8E8E8E7AP)8E8E8EJ#F#E#A#J#A#E#F#J%?%J";P@%
+;8E8B8E8B8E8B8E8BD8B8E8B8E8B8E8B8EQ68E8E8E8EFFFFFFFFP%7A8E8E8E8EJ$E#JzJ#E$J%?QJPA%
+<8E8B8B8E8B?@8B?8B8E8B8B8EQ;8E8E8E8EP 8E8E8E8EJ$E#D#9vzv9#D#E$J%AQJQA&
+=8E8E8B8E8B8E8B8B@8E8B8B8E8B8E8B8E8EQ@8E8E8E8EOB8E8E8E8E8EJ#E#Art#J#trA#E#J&BSJRB&
+?8E8B8E8B8B8E8B8E@8E8B8E8B8B8E8B8EQF8E8E8E8E8EO38E8E8E8E8EJ$D#<,J,<#D$J&EUJUD&Jz
+@8E8B8B8E8B8B8B8B8B8E8E8E8E8B8E8EO(8E8E8B8E8E8E8E8B8B8B8B8B8E8B8B8EQL8E8E8E8E8EM8E8E8E8E8ET<JFBJ$D,:#J#:,D$J'IZH'
+A8E8E8B8E8B8E8B8B8B8B8E8E8E8E8E8BO*8B8E8E8E8E8E8B8B8B8B8E8B8E8B8E8ER$8E8E8E8E8E8EM8E8E8E8E8E8EJ$D&?#?#J#?#?&D$JsJrJ%:%
+C8E8B8B8B8E8E8E8E8E8B8E8B@8B8E8B8E8E8E8E8E8B8B8B8ER,8EO58EV)FAFAFAFAFAFAFAFAJ%?'B#?#;z;#?#B'?%JuJuJ'8'
+D8E8E8B8B8B8B8E8E8B8B8E8B8E8B48B8B8E8B8E8B8B8E8E8B8B8B8B8E8ER58EO!8EV/FA8E8E8E8EFAFA8E8E8E8EFAJ%<$8$B#=szs=#B$8$<%Jz;zJ"
+F8E8E8B8B8B8E8E8E8E8B8E8B8B48E8B8B8E8B8E8E8E8E8B8B8B8E8ERA48E68EVF8EJ&@$A#8-J-8#A$@&
+H8E8E8B8B8B8E8B8B8E8B8B8B8B8B8E8E8E8B8E8E8E8E48E8E8E8E8B8E8E8E8B8B8B8B8B8E8B8B8E8B8B8B8E8EJ*;%A'9#J#9'A%;*J$
+J8E8E8E8B8B8E8E8B8B8E8E8B8B8B8B8E8E8E8E8E8B:8B8E8E8E8E8E8B8B8B8B8E8E8B8B8E8E8B8B8E8E8E\;FAFAFAJ);%<%GwG%<%;)J&:&
+M8E8E8B8B8B8E8B8B8E8E8B8B8B8B8E8E8B8E8E8B8B8B8B8E8E8B8B8E8B8B8B8E8E\48EFAFAFAFAFA8E8E8EFAJ%8%9%9$8$<#8%w%8#<$8$9%9%8%J%:"
+O!8E8E8E8B8B8B8B8B8E8E8B8B8B8E8E8E8B8B8E8B8B8B8B8B8E8B8B8B8B8B8E8B8B8E8E8E8B8B8B8E8E8B8B8B8B8B8E8E8E\78E8E8E8E8EJ$:+<%;(B(;%<+:$J"
+O$8E8E8E8B8B8B8B8E8E8E8B8B8B8E8E8B8B8E8B8B8E8E8E8E8E8E8E8E8B8B8E8B8B8E8E8B8B8B8E8E8E8B8B8B8B8E8E8E\9FAJ%:$:#;%9%H%9%;#:$:%J"
+O'8E8E8E8E8B8B8B8B8B8E8E8B8B8B8E8B8B8B8B8E8B8B8B8E8E8B8B8B8B8B8E8E8E8E\9FAJ%;#8r8#9$F$9#8r8#;%J'8'
+O+8E8E8E8E8E8E8B8B8B8E8E8B8B8E8E8B8B8B8E8E8E8E8E8E\@8EFAFAFAFA8E8EFAFAFAFA8EJ(CzC(J"9%:%
+O/8E8E8E8E8E8B8B<8B8B8B8E8E8E8E8E\A8E8E8E8E8E8E8E8E8EJrI'Ir
+O48E8E8E8E8E8E8E8EJt@'@tJz
+O;8E8B8B8B8B8B8B8E[AJ8EJz
+OD:8E
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+J&
+V58E8E8E8E8E
+
+
+
+
+
+J"9$:#
+V2FAFAFAFAFAFAJ"9&8%
+V1FAFA8E8E8EFAFA8E8EFAJ"
+V0FAJ#9&
+V08E8E8EFAFAFA8EJ&
+V5FA8E8E8EFA
+J&8%
+V58EFAFAFA8E8EFAFA8EJ"9$:#
+V28E8E8E8E8E8E
+
+
+
+
+
+
+9&J%
+F6F6F6F6F6`8F6F6F6F6:%J$
+F9F9F9F7`9F9F9F9
+
+@z
+`4FE
+>'z'
+F6F6F6F6F6F6`,F9F6F6F6F6F6F6=(J'
+F9F9F9F9F9F9F7`-F9F9F9F9F9F9
+Dz
+`,FE:tJt
+F7`.F79"z
+F9`@8F;z
+`>ED
+
+
+ENDBITMAP
+%%EndBinary
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "3" 2
+%%Page: "2" 2
+612 792 0 FMBEGINPAGE
+36 770 504 780 R
+7 X
+0 K
+V
+72 18 540 28 R
+V
+306 720 306 72 2 L
+0.5 H
+2 Z
+0 X
+N
+72 72 295.2 720 R
+7 X
+V
+0 10 Q
+0 X
+0.96 (function is returned from) 72 713.33 P
+5 F
+2.31 (Memo) 178.55 713.33 P
+0 F
+0.96 (. A hash table, created) 202.54 713.33 P
+3.11 (via) 72 702.33 P
+5 11 Q
+8.19 (make-hash-table) 89.82 702.33 P
+0 10 Q
+3.11 (, is generated each time) 188.69 702.33 P
+5 11 Q
+2.94 (Memo) 72 614.33 P
+0 10 Q
+1.12 ( is called, then accessed each time the resultant) 98.37 614.33 P
+0.79 (function is invoked. The \336rst) 72 603.33 P
+5 11 Q
+2.08 (gethash) 194.22 603.33 P
+0 10 Q
+0.79 ( form tests to) 240.36 603.33 P
+0.33 (see if there is an entry in the table corresponding to the) 72 592.33 P
+2.23 (ar) 72 581.33 P
+2.23 (gument list) 79.59 581.33 P
+5 11 Q
+5.89 (Args) 131.25 581.33 P
+0 10 Q
+2.23 (. That entry) 157.62 581.33 P
+2.23 (, if any) 207.79 581.33 P
+2.23 (, is stored in) 239.64 581.33 P
+5 11 Q
+-0.58 (Value) 72 570.33 P
+0 10 Q
+-0.22 (, while) 104.96 570.33 P
+5 11 Q
+-0.58 (Found) 134.22 570.33 P
+0 10 Q
+-0.22 (? is assigned a boolean value in-) 167.18 570.33 P
+1.03 (dicating whether the lookup was successful. The form) 72 559.33 P
+5 11 Q
+2.15 (\050apply Function Args\051) 72 548.33 P
+0 10 Q
+0.82 ( simply invokes the) 214.73 548.33 P
+2.77 (original function on the ar) 72 537.33 P
+2.77 (gument list, and) 187.29 537.33 P
+5 11 Q
+7.32 (\050setf) 262.24 537.33 P
+0.06 (\050gethash ...\051\051) 72 526.33 P
+0 10 Q
+0.02 (stores the resultant value in the) 171 526.33 P
+(hash table, returning it as a side ef) 72 515.33 T
+(fect.) 208.38 515.33 T
+5 11 Q
+8.26 (Memo) 90 299.34 P
+0 10 Q
+3.13 ( takes a function as input and returns a) 116.37 299.34 P
+1.43 (memoized version.) 72 288.34 P
+5 11 Q
+3.77 (Memoize) 153.41 288.34 P
+0 10 Q
+1.43 ( takes a function) 199.56 288.34 P
+2 F
+1.43 (name) 273.55 288.34 P
+0 F
+-0.2 (as input, memoizes the associated function, then assigns) 72 277.34 P
+0.25 (that new function to the associated function name. This) 72 266.34 P
+1.81 (supports the memoization of recursive functions, and) 72 255.34 P
+1.95 (existing code that referred to the function name will) 72 244.34 P
+(now automatically get the memoized version.) 72 233.34 T
+5 8 Q
+(\050defun) 72 219.67 T
+6 F
+(Memoize) 105.58 219.67 T
+5 F
+( \050Function-Name\051) 139.16 219.67 T
+(  \050setf) 72 210.67 T
+(    \050symbol-function Function-Name\051) 72 201.67 T
+(    \050Memo \050symbol-function) 72 192.67 T
+(            Function-Name\051\051\051\051) 72 183.67 T
+5 10 Q
+(Memoize) 90 167.34 T
+0 F
+( would be used as follows:) 131.98 167.34 T
+5 8 Q
+(\050defun) 72 153.67 T
+6 F
+(Expensive) 105.58 153.67 T
+5 F
+( \050<Args>\051) 148.76 153.67 T
+(<Long-Body>\051) 206.33 153.67 T
+(\050time \050Expensive <Values>\051\051) 72 144.67 T
+9 10 Q
+(\256) 206.33 144.67 T
+5 8 Q
+([30 seconds]) 218.69 144.67 T
+(\050Memoize \324Expensive\051) 72 135.67 T
+(\050time \050Expensive <Values>\051\051) 72 126.67 T
+9 10 Q
+(\256) 206.33 126.67 T
+5 8 Q
+([) 218.69 126.67 T
+9 10 Q
+(\243) 223.49 126.67 T
+5 8 Q
+(30 seconds]) 228.97 126.67 T
+-0.05 (\050time \050Expensive <Values>\051\051) 72 117.67 P
+9 10 Q
+-0.03 (\256) 206.16 117.67 P
+5 8 Q
+-0.05 ([0.0001 seconds]) 218.5 117.67 P
+0 10 Q
+0.13 (The real version of the facility has many more util-) 90 101.34 P
+2.78 (ities for bookkeeping, memoizing and unmemoizing) 72 90.34 P
+2.58 (functions temporarily or permanently) 72 79.34 P
+2.58 (, evaluating the) 228.7 79.34 P
+69.32 625.01 297.88 699 C
+167.78 649.29 197.28 668.29 R
+0 X
+0 K
+V
+0.5 H
+2 Z
+N
+79.5 679 288.5 691 R
+7 X
+V
+261.87 683.27 106.13 683.27 2 L
+0 X
+V
+0.73 H
+0 Z
+N
+4 10 Q
+(Figure 1: Creating a Memoized Function) 106.13 684.33 T
+92.03 649.29 121.53 668.29 R
+V
+0.5 H
+2 Z
+N
+1 F
+7 X
+1 K
+(F) 101.5 655.14 T
+1 8 Q
+(1) 107.61 652.64 T
+1 10 Q
+(Memo) 168.09 655.14 T
+243.53 649.29 273.03 668.29 R
+0 X
+0 K
+V
+N
+7 X
+1 K
+(F) 253 655.14 T
+1 8 Q
+(2) 259.11 652.64 T
+153.46 661.81 165 658.5 153.46 655.19 153.46 658.5 4 Y
+0 X
+0 K
+V
+121.5 658.5 153.46 658.5 2 L
+1 H
+N
+230.46 661.81 242 658.5 230.46 655.19 230.46 658.5 4 Y
+V
+198.5 658.5 230.46 658.5 2 L
+N
+75 629.5 292.5 696.5 R
+0.5 H
+N
+0 10 Q
+(F1 is input to Memo. F2 is output.) 116 637 T
+0 0 612 792 C
+71.82 311.01 295.38 512 C
+87 356 276.5 469.5 R
+5 X
+0 K
+V
+1 H
+2 Z
+0 X
+N
+81 493 284.5 504.5 R
+7 X
+V
+255.38 496.77 110.11 496.77 2 L
+0 X
+V
+0.73 H
+0 Z
+N
+4 10 Q
+(Figure 2: Using a Memoized Function) 110.11 497.83 T
+199.15 438.5 269.54 457.5 R
+V
+0.5 H
+2 Z
+N
+1 F
+7 X
+1 K
+(Lookup T) 202.23 444.36 T
+(able) 246.47 444.36 T
+110.6 454.75 121.47 448 110.6 441.25 99.72 448 4 Y
+1 H
+0 Z
+0 X
+0 K
+N
+182.96 451.31 194.5 448 182.96 444.69 182.96 448 4 Y
+V
+133 448 182.96 448 2 L
+2 Z
+N
+114.31 392.04 111 380.5 107.69 392.04 111 392.04 4 Y
+V
+111 431.5 111 392.04 2 L
+N
+208.67 430.54 219.99 434.5 212.49 425.14 210.58 427.84 4 Y
+9 X
+V
+126.5 369 210.58 427.84 2 L
+6 X
+V
+9 X
+N
+233.81 340.04 230.5 328.5 227.19 340.04 230.5 340.04 4 Y
+0 X
+V
+230.5 439.5 230.5 340.04 2 L
+N
+113.81 468.54 110.5 457 107.19 468.54 110.5 468.54 4 Y
+V
+110.5 488.5 110.5 468.54 2 L
+N
+0 F
+(Input I to F) 114 478 T
+0 8 Q
+(2) 159.26 475.5 T
+1 18 Q
+(F) 174 361.5 T
+1 14 Q
+(2) 184.99 357 T
+0 10 Q
+(Seen I before?) 114 458 T
+(Y) 123.5 445 T
+(N) 107.5 434.5 T
+(I) 106 411 T
+(I) 148.5 441 T
+(Associate) 141 412.5 T
+(I with V) 141 402.5 T
+114.81 340.54 111.5 329 108.19 340.54 111.5 340.54 4 Y
+V
+111.5 360 111.5 340.54 2 L
+N
+(V) 113 346.5 T
+(V) 232.5 346.5 T
+(Newly Calculated) 76 322 T
+(Retrieved from T) 196.5 322 T
+(able) 265.19 322 T
+73 314.5 290.5 507 R
+0.5 H
+N
+97.35 360.5 126.85 379.5 R
+V
+N
+1 F
+7 X
+1 K
+(F) 106.82 366.36 T
+1 8 Q
+(1) 112.93 363.86 T
+0 0 612 792 C
+316.8 72 540 720 R
+7 X
+0 K
+V
+0 10 Q
+0 X
+1.36 (bene\336ts of memoization, and saving the hash table to) 316.8 713.33 P
+0.09 (disk for use in a later session. But the core implementa-) 316.8 702.33 P
+-0.12 (tion is very similar to the simple version presented here.) 316.8 691.33 P
+316.8 676.02 540 681 C
+316.8 676.02 540 681 R
+7 X
+0 K
+V
+316.8 678.99 577.8 678.99 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(3.) 316.8 669.36 T
+(Applications) 327.91 669.36 T
+0 F
+3.02 (There are four basic applications for automatic) 334.8 655.36 P
+0.29 (memoization: Repetitions W) 316.8 644.36 P
+0.29 (ithin a Function Call, Rep-) 431.93 644.36 P
+1.94 (etitions Over T) 316.8 633.36 P
+1.94 (ime, Of) 380.86 633.36 P
+1.94 (f-Line Runs, and Performance) 413.15 633.36 P
+(Pro\336ling.) 316.8 622.36 T
+4 F
+(3.1 Repetitions W) 316.8 606.36 T
+(ithin a Function Call) 385.04 606.36 T
+0 F
+0.69 (This case is when a single routine calls some sub-) 334.8 592.36 P
+1.15 (routine \050or itself recursively\051 more than is needed, re-) 316.8 581.36 P
+1.31 (sulting in extra calculations. By means of illustration,) 316.8 570.36 P
+0 (consider the following de\336nition of) 316.8 559.36 P
+5 11 Q
+0.01 (Divided-Dif-) 460.9 559.36 P
+0.82 (ference,) 316.8 548.36 P
+0.82 (which) 372.34 548.36 P
+0 10 Q
+0.31 (may be used to determine coef-) 412.71 548.36 P
+0.48 (\336cients of interpolated polynomials. The algorithm is a) 316.8 537.36 P
+0.24 (standard one in numerical methods, taken directly from) 316.8 526.36 P
+2 F
+0.32 (Numerical Mathematics and Computing) 316.8 515.36 P
+0 F
+0.32 ( [2]. The appli-) 478.52 515.36 P
+0.28 (cation is not particularly important; the point is that the) 316.8 504.36 P
+-0.03 (recursive calls form a graph, not a tree, and calculations) 316.8 493.36 P
+0.11 (are repeated. Determining a calling order to avoid these) 316.8 482.36 P
+0.32 (repeated calculations may not appear obvious, and thus) 316.8 471.36 P
+(it is a ripe candidate for Memoization.) 316.8 460.36 T
+5 8 Q
+(\050defun) 316.8 446.69 T
+6 F
+(Divided-Difference) 350.38 446.69 T
+5 F
+( \050Function Points\051) 436.73 446.69 T
+(  "Determines kth coefficient, where) 316.8 437.69 T
+(  \324Points\325 contains k entries") 316.8 428.69 T
+(  \050if) 316.8 419.69 T
+(    \050null \050rest Points\051\051) 316.8 410.69 T
+(    \050apply Function Points\051) 316.8 401.69 T
+(    \050/ \050- \050Divided-Difference) 316.8 392.69 T
+(            Function \050rest Points\051\051) 316.8 383.69 T
+(          \050Divided-Difference) 316.8 374.69 T
+(            Function \050butlast Points\051\051\051) 316.8 365.69 T
+(       \050- \050first \050last Points\051\051) 316.8 356.69 T
+(          \050first Points\051\051\051 \051\051) 316.8 347.69 T
+(\050defun) 316.8 332.69 T
+6 F
+(Test-Function) 350.38 332.69 T
+5 F
+( \050N\051) 412.75 332.69 T
+(  \050* pi \050cos N\051\051\051) 316.8 323.69 T
+0 10 Q
+6.26 (Figure 3 compares the performance of the) 334.8 307.36 P
+1.73 (memoized and unmemoized versions of) 316.8 296.36 P
+5 11 Q
+4.56 (Di) 487.27 296.36 P
+4.56 (vided-) 500.45 296.36 P
+8.77 (Difference) 316.8 285.36 P
+0 10 Q
+3.32 ( using) 382.72 285.36 P
+5 11 Q
+8.77 (Test-Function) 416.02 285.36 P
+0 10 Q
+3.32 ( and the) 501.71 285.36 P
+1.1 (\336rst) 316.8 274.36 P
+2 F
+1.1 (N) 335.95 274.36 P
+0 F
+1.1 ( natural numbers as ar) 342.62 274.36 P
+1.1 (guments. Since one func-) 435.1 274.36 P
+-0 (tion call with) 316.8 263.36 P
+2 F
+-0 (N) 372.04 263.36 P
+0 F
+-0 ( points results in 2 calls with) 378.71 263.36 P
+2 F
+-0 (N) 495.58 263.36 P
+0 F
+-0 (-1 points,) 502.24 263.36 P
+2.14 (the unmemoized version has O\0502) 316.8 252.36 P
+2 8 Q
+1.71 (N) 457.47 256.36 P
+0 10 Q
+2.14 (\051 time complexity) 462.81 252.36 P
+2.14 (.) 537.5 252.36 P
+2.9 (After memoization, the \336rst invocation takes O\050) 316.8 241.36 P
+2 F
+2.9 (N) 526.01 241.36 P
+0 8 Q
+2.32 (2) 532.67 245.36 P
+0 10 Q
+2.9 (\051) 536.67 241.36 P
+1.33 (time, since no subsequence of) 316.8 230.36 P
+5 11 Q
+3.52 (Points) 445.6 230.36 P
+0 10 Q
+1.33 ( is calculated) 485.15 230.36 P
+1.48 (more than once, and there are) 316.8 219.36 P
+1.48 ( =) 530.39 219.36 P
+2.91 ( subsequences. Subsequent invoca-) 390.82 208.36 P
+(tions take near) 316.8 197.36 T
+(-constant time.) 374.89 197.36 T
+0.25 ( This type of repetition is common and is normally) 334.8 182.36 P
+2.74 (addressed by either determining a better calling se-) 316.8 171.36 P
+1.25 (quence or building a special purpose data structure to) 316.8 160.36 P
+2.13 (store intermediate results. For instance, in V) 316.8 149.36 P
+2.13 (olume 2) 505.39 149.36 P
+1.94 (\050Seminumerical Algorithms\051 of) 316.8 138.36 P
+2 F
+1.94 (The Art of Computer) 451.16 138.36 P
+3.41 (Pr) 316.8 127.36 P
+3.41 (ogramming) 326.42 127.36 P
+0 F
+3.41 ( [4], Knuth presents a straightforward) 372.51 127.36 P
+1.48 (method for building up the divided dif) 316.8 116.36 P
+1.48 (ferences in the) 478.76 116.36 P
+0.06 (proper order to get the same performance as the \336rst in-) 316.8 105.36 P
+-0.18 (vocation of the memoized version. Similarly) 316.8 94.36 P
+-0.18 (, Peter Nor-) 493.46 94.36 P
+2.71 (vig shows that the performance of chart parsing or) 316.8 83.36 P
+446.39 215.03 530.39 228.35 C
+0 10 Q
+0 X
+0 K
+(1) 447.39 219.36 T
+(2) 464.98 219.36 T
+(3) 482.56 219.36 T
+9 F
+(\274) 500.14 219.36 T
+2 F
+(N) 522.72 219.36 T
+9 12 Q
+(+) 455.39 219.36 T
+(+) 472.97 219.36 T
+(+) 490.56 219.36 T
+(+) 513.14 219.36 T
+0 0 612 792 C
+316.8 203.36 390.82 217.35 C
+2 10 Q
+0 X
+0 K
+(N) 332 208.36 T
+0 F
+(1) 351.25 208.36 T
+9 12 Q
+(+) 341.67 208.36 T
+(\050) 326.9 208.36 T
+(\051) 356.86 208.36 T
+2 10 Q
+(N) 363.56 208.36 T
+9 12 Q
+(\050) 319.8 208.36 T
+(\051) 370.83 208.36 T
+0 10 Q
+(2) 384.83 208.36 T
+9 12 Q
+(\244) 379.82 208.36 T
+0 0 612 792 C
+FMENDPAGE
+%%EndPage: "2" 1
+%%Page: "1" 1
+612 792 0 FMBEGINPAGE
+36 764 504 774 R
+7 X
+0 K
+V
+72 396 540 711 R
+V
+4 12 Q
+0 X
+(Improving the Performance of AI Software:) 187.99 703 T
+(Payoffs and Pitfalls in Using Automatic Memoization) 165.31 691 T
+3 F
+(Marty Hall) 126 660 T
+(James May\336eld) 342 660 T
+2 10 Q
+(Arti\336cial Intelligence Laboratory) 126 648.33 T
+(Computer Science Department) 342 648.33 T
+(AAI Corporation) 126 637.33 T
+(University of Maryland Baltimor) 342 637.33 T
+(e County) 473.5 637.33 T
+(PO Box 126) 126 626.33 T
+(5401 W) 342 626.33 T
+(ilkens A) 372.26 626.33 T
+(ve.) 403.64 626.33 T
+(Hunt V) 126 615.33 T
+(alley) 153.49 615.33 T
+(, MD 21030) 172.37 615.33 T
+(Baltimor) 342 615.33 T
+(e, MD 21228) 377.17 615.33 T
+(\050410\051 792-6000 x3440) 126 604.33 T
+(\050410\051 455-3099) 342 604.33 T
+(hall@aplcenmp.apl.jhu.edu) 126 593.33 T
+(may\336eld@cs.umbc.edu) 342 593.33 T
+(ABSTRACT) 72 569.33 T
+-0.22 (Many functions perform r) 72 554.33 P
+-0.22 (edundant calculations. W) 173.98 554.33 P
+-0.22 (ithin a single function invocation, several sub-functions may be in-) 274.88 554.33 P
+0.05 (voked with exactly the same ar) 72 543.33 P
+0.05 (guments, or) 194.86 543.33 P
+0.05 (, over the course of time in a system run, a function may be invoked by dif-) 241 543.33 P
+-0.14 (fer) 72 532.33 P
+-0.14 (ent users or r) 82.73 532.33 P
+-0.14 (outines with the same or similar inputs. This observation leads to the obvious conclusion that in some) 135.52 532.33 P
+0.38 (cases it is bene\336cial to stor) 72 521.33 P
+0.38 (e the pr) 182.07 521.33 P
+0.38 (eviously calculated values and only perform a calculation in situations that have) 212.99 521.33 P
+0.26 (not been seen pr) 72 510.33 P
+0.26 (eviously) 138.2 510.33 P
+0.26 (. This technique is called memoization, and the \322manual\323 version of this generally involves) 170.4 510.33 P
+0.11 (building lookup tables. This however) 72 499.33 P
+0.11 (, is often a tedious and time-consuming pr) 219.29 499.33 P
+0.11 (ocess, and r) 387.91 499.33 P
+0.11 (equir) 435.77 499.33 P
+0.11 (es signi\336cant modi\336-) 456.5 499.33 P
+0.31 (cation and debugging of existing code. This is fr) 72 488.33 P
+0.31 (equently inappr) 267.07 488.33 P
+0.31 (opriate in the dynamic, rapid-pr) 330.02 488.33 P
+0.31 (ototyping context of) 459.98 488.33 P
+0.71 (AI softwar) 72 477.33 P
+0.71 (e development. An \322automatic\323 memoization facility is one in which existing functions can be pr) 114.27 477.33 P
+0.71 (ogram-) 510.58 477.33 P
+-0.06 (matically changed to cache pr) 72 466.33 P
+-0.06 (eviously-seen r) 192.42 466.33 P
+-0.06 (esults in a hash table. These r) 252.22 466.33 P
+-0.06 (esults will then be r) 370.6 466.33 P
+-0.06 (eturned when the func-) 448.3 466.33 P
+1.68 (tions ar) 72 455.33 P
+1.68 (e invoked with ar) 104.13 455.33 P
+1.68 (guments they have seen pr) 177.92 455.33 P
+1.68 (eviously) 289.74 455.33 P
+1.68 (. This can be done without changing the code, thus) 321.95 455.33 P
+(pr) 72 444.33 T
+(oviding a simple, modular) 80.51 444.33 T
+(, and transpar) 184.35 444.33 T
+(ent way to dramatically accelerate certain types of functions.) 240.9 444.33 T
+-0.22 (This paper pr) 72 429.33 P
+-0.22 (esents an overview of automatic memoization and discusses the types of applications that bene\336t fr) 125.61 429.33 P
+-0.22 (om it,) 517.45 429.33 P
+1.14 (illustrated with experiences on the ARP) 72 418.33 P
+1.14 (A Submarine Signatur) 234.9 418.33 P
+1.14 (e Management System, a lar) 325.65 418.33 P
+1.14 (ge LISP-based decision) 443.35 418.33 P
+(aiding system.) 72 407.33 T
+72 396 540 711 C
+175.5 674 436.5 687 C
+175.5 682 436.5 682 2 L
+1 H
+2 Z
+0 X
+0 K
+N
+72 396 540 711 C
+0 0 612 792 C
+72 396 540 711 C
+175.5 577 436.5 590 C
+175.5 585 436.5 585 2 L
+1 H
+2 Z
+0 X
+0 K
+N
+72 396 540 711 C
+0 0 612 792 C
+315 72 540 396 R
+7 X
+0 K
+V
+2 10 Q
+0 X
+1.1 (ming) 315 389.33 P
+0 F
+1.1 ( [6], which was in turn inspired by [1]. It takes a) 334.99 389.33 P
+1.41 (function as input and returns an \322equivalent\323 function) 315 378.33 P
+1.48 (that performs lookup from a hash table. When called,) 315 367.33 P
+0.38 (this new function compares the ar) 315 356.33 P
+0.38 (gument to ones that it) 451.87 356.33 P
+0.79 (has recorded previously) 315 345.33 P
+0.79 (. If the ar) 411.4 345.33 P
+0.79 (gument has been seen) 450.21 345.33 P
+0.88 (before, the corresponding value in the hash table is re-) 315 334.33 P
+1.35 (turned. If it has not been seen previously) 315 323.33 P
+1.35 (, the original) 486.49 323.33 P
+0.16 (function is called with that ar) 315 312.33 P
+0.16 (gument, the return value is) 432.49 312.33 P
+1.13 (stored in the hash table with the ar) 315 301.33 P
+1.13 (gument as key) 460.11 301.33 P
+1.13 (, and) 519.45 301.33 P
+(then that value is returned.) 315 290.33 T
+1.38 (As a typographical convention throughout the pa-) 333 275.33 P
+1.32 (per) 315 264.33 P
+1.32 (, LISP code will be in constant-width font. System) 327.36 264.33 P
+0.6 (functions and variables will be in lower case, and user) 315 253.33 P
+0.6 (-) 536.67 253.33 P
+0.98 (de\336ned ones will have the \336rst character of each word) 315 242.33 P
+(capitalized.) 315 231.33 T
+5 8 Q
+(\050defun) 315 217.67 T
+6 F
+( Memo) 343.78 217.67 T
+5 F
+( \050Function\051) 367.77 217.67 T
+(  \050let \050\050Hash-Table) 315 208.67 T
+(          \050make-hash-table :test #'equal\051\051\051) 315 199.67 T
+(    #'\050lambda \050&rest Args\051) 315 190.67 T
+(        \050multiple-value-bind \050Value Found?\051) 315 181.67 T
+(            \050gethash Args Hash-Table\051) 315 172.67 T
+(          \050if Found?) 315 163.67 T
+(            Value) 315 154.67 T
+(            \050setf) 315 145.67 T
+(              \050gethash Args Hash-Table\051) 315 136.67 T
+(              \050apply Function Args\051\051\051\051\051) 315 127.67 T
+(\051\051) 315 118.67 T
+0 10 Q
+2.26 (For those not familiar with LISP) 333 102.33 P
+2.26 (,) 473.41 102.33 P
+5 11 Q
+5.97 (#\325\050lambda) 480.67 102.33 P
+-0.54 (...\051) 315 91.33 P
+0 10 Q
+-0.21 (indicates that a lexical closure \050function with as-) 347.42 91.33 P
+2.48 (sociated binding environment\051 is being created. This) 315 80.33 P
+306 396 306 72 2 L
+0.5 H
+2 Z
+N
+72 72 297 396 R
+7 X
+V
+72 391.02 297 396 C
+72 391.02 297 396 R
+7 X
+0 K
+V
+72 393.99 333 393.99 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(1.) 72 384.36 T
+(Overview) 83.11 384.36 T
+0 F
+1.69 (The following section \0502\051 outlines the concept of) 90 370.36 P
+1.64 (automatic memoization, and gives a simpli\336ed imple-) 72 359.36 P
+0.26 (mentation in Common LISP) 72 348.36 P
+0.26 (. Section 3 looks at applica-) 184.67 348.36 P
+3.03 (tion areas that bene\336t from automatic memoization,) 72 337.36 P
+0.58 (with timing results from several sample problems. Sec-) 72 326.36 P
+1.93 (tion 4 looks at potential pitfalls, and Section 5 gives) 72 315.36 P
+(conclusions and areas for future work.) 72 304.36 T
+1.77 (Code for the entire facility \050in portable Common) 90 289.36 P
+3.08 (LISP\051 is available for non-commercial purposes via) 72 278.36 P
+0.49 (anonymous FTP or electronic mail. Anonymous FTP is) 72 267.36 P
+5.38 (available from ftp.cs.umbc.edu \050130.85.100.53\051, in) 72 256.36 P
+0.26 (/pub/Memoization. Requests for the sources can also be) 72 245.36 P
+(mailed to the author at hall@aplcenmp.apl.jhu.edu.) 72 234.36 T
+72 219.05 297 224.02 C
+72 219.05 297 224.02 R
+7 X
+0 K
+V
+72 222.02 333 222.02 2 L
+V
+2 H
+2 Z
+0 X
+N
+0 0 612 792 C
+1 10 Q
+0 X
+0 K
+(2.) 72 212.38 T
+(What is Automatic Memoization?) 83.11 212.38 T
+0 F
+4.89 (The term \322memoization\323 was \336rst coined by) 90 198.38 P
+0.79 (Donald Michie [5] and refers to the process of tabulat-) 72 187.38 P
+-0.09 (ing results in order to prevent wasted calculations.) 72 176.38 P
+2 F
+-0.09 (Auto-) 274.79 176.38 P
+2.73 (matic) 72 165.38 P
+0 F
+2.73 ( memoization refers to a method by which an) 94.21 165.38 P
+0.37 (existing function can be changed into one that memoiz-) 72 154.38 P
+(es.) 72 143.38 T
+2.99 (For example, consider the simpli\336ed version of) 90 128.38 P
+0.64 (Memo below) 72 117.38 P
+0.64 (, adapted from) 125.01 117.38 P
+2 F
+0.64 (Paradigms of AI Pr) 187.45 117.38 P
+0.64 (ogram-) 267.58 117.38 P
+72 102 297 111 C
+72 102 297 111 R
+7 X
+0 K
+V
+73 105.96 217 105.96 2 L
+V
+0.5 H
+2 Z
+0 X
+N
+0 0 612 792 C
+0 10 Q
+0 X
+0 K
+1.7 (This work was sponsored in part by the Ad-) 90 95.33 P
+7.01 (vanced Research Projects Agency under) 90 85.33 P
+(JHU/APL subcontract 605089-L.) 90 75.33 T
+342 729 558 774 R
+7 X
+V
+0 X
+(T) 342 767.33 T
+(o appear) 347.41 767.33 T
+(,) 381.14 767.33 T
+2 F
+(Pr) 386.14 767.33 T
+(oceedings of Sixth International) 395.76 767.33 T
+(Symposium on Arti\336cial Intelligenc) 342 756.33 T
+0 F
+(e, Monterrey) 483.3 756.33 T
+(,) 534.27 756.33 T
+(Mexico, September 1993.) 342 745.33 T
+FMENDPAGE
+%%EndPage: "1" 0
+%%Trailer
+%%BoundingBox: 0 0 612 792
+%%Pages: 7 -1
+%%DocumentFonts: Times-Roman
+%%+ Helvetica-Bold
+%%+ Times-Italic
+%%+ Times-Bold
+%%+ Helvetica-Narrow-Bold
+%%+ Courier
+%%+ Courier-Bold
+%%+ Helvetica-Narrow
+%%+ Helvetica-Narrow-BoldOblique
+%%+ Symbol

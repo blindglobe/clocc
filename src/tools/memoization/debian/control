@@ -1,0 +1,15 @@
+Source: memoization
+Section: libs
+Priority: optional
+Build-Depends: debhelper
+Maintainer: Peter Van Eynde <pvaneynd@debian.org>
+Standards-Version: 3.2.0.0
+Priority: optional
+
+Package: memoization
+Architecture: i386
+Depends: cmucl (>= 2.4.16)
+Description: A extension library that adds memoization support to CMU-CL.
+ The library adds support not only to memoize functions,
+ but also to have persistent memoization information recording to
+ CMU-CL.

@@ -1,0 +1,14 @@
+Source: cil
+Section: doc
+Priority: optional
+Build-Depends: debhelper
+Maintainer: Peter Van Eynde <pvaneynd@debian.org>
+Standards-Version: 3.2.0.0
+
+Package: cil
+Architecture: i386
+Depends: common-lisp-controller
+Description: Chess In Lisp. A library for cmucl.
+ This library is mainly intended as an example file.
+ .
+ Not much useful stuff can be done yet.

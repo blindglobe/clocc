@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.10 2000/05/12 18:33:57 sds Exp $
+;;; $Id: inspect.lisp,v 1.11 2000/05/16 17:22:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -55,7 +55,7 @@
   (up nil :type (or null inspection)) ; parent
   (num-slots 0 :type fixnum)    ; the number of slots
   (pos nil :type (or null fixnum)) ; pos in parent
-  (nth-slot nil :type (or null (function (integer) (t t)))) ; value & name
+  (nth-slot nil :type (or null (function (integer) (values t t)))) ; val & name
   (set-slot nil :type (or null (function (integer t) t)))) ; set Nth slot
 )
 

@@ -266,7 +266,13 @@ void doqueue()
       char *compiler=arguments.args[2];
       /* characters allowed in the package and compiler names: */
       char command[4097];
-	      
+	     
+      if (geteuid() != 0)
+	{
+	  printf("I cannot remove a package as a normal user. Please run me as root or use --force-connect.\n");
+	  exit(1);
+	}
+      
       printf("I will try to remove the package myself...\n");
 	  
       if ((package == (char *) NULL) ||
@@ -303,7 +309,7 @@ void doqueue()
       struct utsname buf;
       FILE *f;
 	      
-      printf("I will leave a not to rebuild this package...\n");
+      printf("I will leave a note to rebuild this package.\nTo force recompilation run \"/etc/cron.daily/common-lisp-controller\" as root or use --force-connect.\n");
 	  
       if ((package == (char *) NULL) ||
 	  ( strlen(package) != strspn(package,allowedcharacters)))
@@ -536,6 +542,7 @@ int main(int argc, char *argv[])
 	  else
 	    {
 	      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
+	      printf("Please check if service 8990 is correctly enabled for inetd.\n");
 	      exit(1);
 	    }    
 	}
@@ -553,6 +560,7 @@ int main(int argc, char *argv[])
 	  if ( arguments.forceconnect ==  1)
 	    {
 	      printf("I cannot reach the daemon and I have to. Quiting with an error!\n");
+	      printf("Please check if service 8990 is correctly enabled for inetd.\n");
 	      exit(1);
 	    }
 	  else

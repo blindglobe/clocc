@@ -1,3 +1,10 @@
+common-lisp-controller (3.82) unstable; urgency=high
+
+  * Improved validation of the spool files. Could be a securtity problem I
+    guess. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 24 Dec 2003 10:07:44 +0100
+
 common-lisp-controller (3.81) unstable; urgency=low
 
   * Reversed order of the tests, so no more 'Looping' messages

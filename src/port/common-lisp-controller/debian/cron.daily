@@ -6,6 +6,12 @@ LOCATION=/var/spool/common-lisp-controller
 
 # do not trust anything in that directory!
 
+# first remove files with strange characters:
+
+#find $LOCATION \( -name "*\\n*" -or -name "*\\r*" -or -name "*;*" \) -and -type f -print0 \
+find $LOCATION \( -name \*\;\* -or -name \*$'\015'\* -or -name \*$'\012'\* \) -and -type f -print0 \
+  | xargs --null rm --force
+
 OLDFILE=""
 while true ; do
  # find the oldest file:
@@ -20,11 +26,11 @@ while true ; do
  OLDFILE="$FILE"
  # carefully execute the command:
  /usr/bin/clc-send-command --quiet --force-connect recompile \
-   "`head -n 1 $FILE | cut -d ' ' -f 1`" \
-   "`head -n 1 $FILE | cut -d ' ' -f 2`" && \
+   "`head -n 1 $FILE | cut -d ' ' -f 1 | sed 's/[^-a-zA-Z0-9]*//g'`" \
+   "`head -n 1 $FILE | cut -d ' ' -f 2 | sed 's/[^-a-zA-Z0-9]*//g'`" 
+ # delete the duplicates, regardless if we could build:
  grep --recursive --fixed-strings --files-with-matches --null \
-   "`head -n 1 $FILE | cut -d ' ' -f 1,2`" ${LOCATION}/* | \
+   "`head -n 1 $FILE | cut -d ' ' -f 1,2 | sed 's/[^-a-zA-Z0-9 ]*//g'`" ${LOCATION}/* | \
   xargs --null rm --force 
- # delete the duplicates:
 done
 

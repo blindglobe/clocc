@@ -2,6 +2,38 @@
 
 Changes:
 
+Feb 16, 2002
+------------
+
+I implemented option 3 below, except that compiler specific functions
+aren't needed (ARRAY-DISPLACEMENT is exactly what the doctor ordered).
+Displaced arrays are still used, but once we get into the routine, we
+trace down the actual data and offset, so accesses can use the fast
+simple-array accessors.  Tests with mpfun show that the cost of
+looking this up everytime is actually in the noise, and this is a big
+win since we don't have to trace down the data on EVERY array access.
+
+However, we still pay a penalty because every array access needs an
+additional add to take into account the offset of the displaced array
+into the original array which Fortran avoids.  So f2cl probably can't
+be better than half the speed of Fortran in these cases.
+
+While implementing this, it's clear that I messed up array
+declarations.  Only arrays that are parameters need to be declared as
+arrays.  All other arrays can still be declared as simple-arrays.
+
+This change cut the run time of MPFUN by half (from about 12 to 6
+sec).  CMUCL also printed out many notes about using generic
+arithmetic array indices.  We've wrapped all these index calculations
+in fref with (the fixnum ...).  This cuts the time frob 6 sec to about
+3.2 sec.  Not bad!
+
+I think the only thing left that we can do to speed up mpfun is to
+wrap up all integer operations with (the integer4 ...) because that's
+what Fortran says anyway.  This will help us to avoid the expensive
+generic versions of these operations.
+
+
 Feb 11, 2002
 ------------
 

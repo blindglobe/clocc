@@ -1,3 +1,87 @@
+2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Added `:case :common' to load directory definition.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Changed case of some definitions again, to accommodate Franz's kludgy
+	case sensitivity modes.
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp:
+	Added setup for `sparc-v9-machine'.  Probably it needs some tuning.
+
+	* /cvsroot/clocc/clocc/src/port/environment/machine.lisp:
+	Added `sparc-v9-machine'.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Oooops, missed one substitution. Fixed.
+
+	* /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Checked some `case sensitivity' issues, added Mac-OS-X, and changed
+	copyright dates.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Added changes suggested by Kevin Rosenberg to make the package load
+	more smoothly under Windows.
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp:
+	New copyright dates.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Made changes to placate Franz's Allegro kludgy case sensitivity modes.
+
+2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Changed case of some definitions again, to accommodate Franz's kludgy
+	case sensitivity modes.
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp:
+	Added setup for `sparc-v9-machine'.  Probably it needs some tuning.
+
+	* /cvsroot/clocc/clocc/src/port/environment/machine.lisp:
+	Added `sparc-v9-machine'.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Oooops, missed one substitution. Fixed.
+
+	* /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Checked some `case sensitivity' issues, added Mac-OS-X, and changed
+	copyright dates.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Added changes suggested by Kevin Rosenberg to make the package load
+	more smoothly under Windows.
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp:
+	New copyright dates.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Made changes to placate Franz's Allegro kludgy case sensitivity modes.
+
+2002-02-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/INSTALLATION:
+	Changed the installation instructions.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env.system:
+	Changed the initial comment and added the push of the :cl-environment
+	feature.
+	Note however, that this is not the preferred way to load
+	CL-ENVIRONMENT. Please check the INSTALLATION file.
+
+2002-02-21  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	CMUCL is identified by :CMU and Allegro CL by :ALLEGRO
+
+2002-02-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/ChangeLog: File added.
+
+	* /cvsroot/clocc/clocc/src/port/environment/README:
+	README file updated.
+
 2002-02-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/port/environment/README:

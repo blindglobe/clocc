@@ -123,6 +123,7 @@ code.
 	     "CLOSE-SERVERS" "CLOSE-SERVER"  ;; analogous to above
 	     "CONNECTION"  ;; class to specialize
 	     "TEMP-FILE-NAME"
+	     "*SERVER-HOOKS*"
 
 	     ;; possibly useful accessors for connections
 	     "SSTREAM"  ;;  the underlying socket stream
@@ -167,7 +168,7 @@ code.
 (provide :sss)
 
 ;; debugging support
-(defvar *ignore-errs-p* t) ;; [***] set to nil for debugging
+(defvar *ignore-errs-p* t) ;; [***] set to nil for serious debugging
 (defmacro ignore-errs (&rest forms)
   `(flet ((f () .,forms))
      (if *ignore-errs-p* (ignore-errors (f)) (f))))
@@ -186,8 +187,11 @@ code.
 	(apply 'format *trace-output* rest)))
 
 
-(defvar *ports* nil) ;; push your port onto here 
-
+(defvar *ports* nil) ;; push your ports onto here [***]
+(defvar *server-hooks* nil) ;; and push your hooks here [***]
+;; A hook is a function of no arguments that is executed on each
+;; server cycle.  It should return non-nil if it actually does
+;; something and nil if it finds nothing to do.
 (defvar *servers* nil)
 
 (defun start-servers ()
@@ -293,6 +297,8 @@ code.
     (setf *temp-stream* (open *temp-file* :if-does-not-exist :create)))
   (loop ;; for age from 0 do ;; just to show time passing on log
 	(setf done-anything nil)
+	(loop for h in *server-hooks* when (funcall h) do
+	      (setf done-anything t))
 	(loop for c in *connections* do
 	      (if (process-connection c)
 		  ;; should return t if it reads any input
@@ -315,7 +321,7 @@ code.
 
 (defun output-possible (socket-stream)
   #+clisp (member (lisp:socket-status socket-stream 0) '(:output :io))
-  #+allegro ;; *** not expected to work after acl 5.0.1
+  #+allegro ;; [***] not expected to work after acl 5.0.1 !!
   (excl::filesys-fn-will-not-block-p 
    (- -1 (excl:stream-output-fn socket-stream)))
   #-(or allegro clisp) (error "no implementation for output-possible"))
@@ -326,7 +332,7 @@ code.
 
 (defun input-possible (socket-stream)
   #+clisp (member (lisp:socket-status socket-stream 0) '(:input :io))
-  #+allegro ;; *** see above
+  #+allegro ;; [***] see above
   (excl::filesys-fn-will-not-block-p 
    (- -1 (excl:stream-input-fn socket-stream)))
   #-(or allegro clisp) (error "no implementation for input-possible"))

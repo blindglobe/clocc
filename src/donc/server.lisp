@@ -334,7 +334,8 @@ code.
 
 (defun output-possible (socket-stream) 
   #+clisp
-  (member (socket:SOCKET-STATUS socket-stream 0) '(:output :io))
+  (member (socket:SOCKET-STATUS socket-stream 0) '(:output :io :append))
+  ;; append added in 2003, meaning input => eof
   ;; If you're not using a version that supports this operation it's
   ;; at least semi-reasonable for many applications to simply define 
   ;; output-possible as always T - meaning that you'll block when you 

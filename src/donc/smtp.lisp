@@ -553,6 +553,8 @@ domain - the domain name sent in the last helo/ehlo command
 domain-ip - the ip address from which the connection came
 reverse-path - the path supplied in the mail command
 forward-path - list of paths accepted so far in rcpt commands
+ 2003 - change this to list of pairs (translated-addr . input-addr)
+ so I can report the input-addr in the delivered header
 These are all unbound if there has been no helo/ehlo or if there
 has been an helo/ehlo since they were last set
 |#
@@ -739,15 +741,15 @@ has been an helo/ehlo since they were last set
 	       (logform (format nil "password sent for ~A" to))
 	       (return-from rcpt nil)))
       ;; &&& It would be worth while to check whether this is a legal user.
-      ;; with current translate-user this is certain
-      ;; How does one do that? 
-      ;; As things are now we just report an error in delivery.
+      ;; current solution: end file *user-translations* with ("" "unknown")
+      (when (equal user "unknown") (setf accept nil))
       (when accept
 	(logform (format nil "accept mail to ~A" to))
-	(unless (member user forward-path :test 'equal)
+	(unless (member user forward-path :key 'car :test 'equal)
 	  (sss:bind 'forward-path
-		    (cons (format nil "<~A~A" user
-				  (subseq arg (position #\@ arg)))
+		    (cons (cons (format nil "<~A~A" user
+					(subseq arg (position #\@ arg)))
+				to)
 			  forward-path))))
       (if accept
 	  (send-string-crlf+ connection "250 ok")
@@ -987,6 +989,7 @@ has been an helo/ehlo since they were last set
 ;; (<prefix> <userid>)
 ;; ("don" "donc") means any address starting with "don" is for user donc
 ;; note that order is critical - first match wins
+;; end this list with ("" "unknown") - see comment above containing &&&
 ;; This is analogous to /etc/aliases.
 ;; Make it readable by all so anyone can check whether a password is his.
 ;; Also make sure that each userid (allowed to receive mail) maps to itself
@@ -1030,7 +1033,9 @@ has been an helo/ehlo since they were last set
   ;; able to delete his own files from there
   (declare (ignore user))
   ;; you might want this in the user's directory or ...
-  "/tmp/mail")
+  (if (equal user "root")
+      (format nil "/tmp/mail") ;; need a file the user can delete
+      (format nil "/home/~A/" user)))
 
 (defvar *default-deliver* "/root/.smtp.default-deliver")
 ;; *** program that delivers mail - see below
@@ -1137,7 +1142,7 @@ Notice that sendmail to a local address does not go through our demon.
 
 (defun deliver-msg (connection body)
   (declare (special domain domain-ip reverse-path forward-path data))
-  (setf data (reverse data)) ;; in transmission order
+  (setf data (reverse data));; in transmission order
   ;; a few more things required by rfc821 
   (push (format nil "Received: FROM ~A ~A by ~A with ESMTP ; ~A"
 		domain (list-bytes domain-ip) *mydomain* (date))
@@ -1145,51 +1150,55 @@ Notice that sendmail to a local address does not go through our demon.
   (push (format nil "Return-Path: ~A" reverse-path) data)
   (let (shared-file deliver-file user file result err)
     (unwind-protect
-	(loop for fp in forward-path do
-	      (setf user (subseq fp 1 (position #\@ fp)))
-	      ;; interesting - if fp is user@some.other.place
-	      ;; we assume incorrectly it's for user@here
-	      ;; which has the benefit (I think) of NOT relaying
-	      (setf deliver-file (user-file user "deliver"))
-	      (if (probe-file deliver-file)
-		  (progn ;; every such user gets his own copy
-		    (setf file (write-temp-mail user body))
-		    (shell-command
-		     ;; su <user> -c "<deliver> <filename> <sender> <user>" &
-		     (format nil "su ~A -c \"~A ~A ~A ~A\" &"
-			     user deliver-file file
-			     (string-trim "<>" reverse-path) user)))
-		(progn
-		  (unless shared-file
-		    (setf shared-file (write-temp-mail "root" body)))
-		  (setf result
-		    (shell-command
-		     ;; <default-deliver> <filename> <sender> <user> 
-		     (format nil "~A ~A ~A ~A > ~A"
-			     *default-deliver*
-			     shared-file (string-trim "<>" reverse-path)
-			     user *tmp-err-file*)))
-		  (unless (= 0 result)
-		    (setf err
-		      (cons (format nil "error delivering to ~A" fp)
-			    ;; just in case the error file is empty
-			    (append (filecontents *tmp-err-file*) err)))
-		    (logform (format nil
-				     "error in delivery: ~A ~A~
+	(loop for (fp . to) in forward-path do
+	  (let ((data (cons (format nil "X-Sent-To: ~A" to) data)))
+	    (declare (special data))
+	    (setf user (subseq fp 1 (position #\@ fp)))
+	    ;; interesting - if fp is user@some.other.place
+	    ;; we assume incorrectly it's for user@here
+	    ;; which has the benefit (I think) of NOT relaying
+	    (setf deliver-file (user-file user "deliver"))
+	    (if (probe-file deliver-file)
+		(progn;; every such user gets his own copy
+		  (setf file (write-temp-mail user body))
+		  (shell-command
+		   ;; su <user> -c "<deliver> <filename> <sender> <user>" &
+		   (format nil "su ~A -c \"~A ~A ~A ~A\" &"
+			   user deliver-file file
+			   (string-trim "<>" reverse-path) user))
+		  ;; user doesn't have permission to (delete-file file)
+		  )
+	      (progn
+		(unless shared-file
+		  (setf shared-file (write-temp-mail "root" body)))
+		(setf result
+		      (shell-command
+		       ;; <default-deliver> <filename> <sender> <user> 
+		       (format nil "~A ~A ~A ~A > ~A"
+			       *default-deliver*
+			       shared-file (string-trim "<>" reverse-path)
+			       user *tmp-err-file*)))
+		(unless (= 0 result)
+		  (setf err
+			(cons (format nil "error delivering to ~A" fp)
+			      ;; just in case the error file is empty
+			      (append (filecontents *tmp-err-file*) err)))
+		  (logform (format nil
+				   "error in delivery: ~A ~A~
                                       ~% returned from~% ~A ~A ~A ~A"
-				     result (car err)
-				     *default-deliver*
-				     shared-file
-				     (string-trim "<>" reverse-path)
-				     user))))))
+				   result (car err)
+				   *default-deliver*
+				   shared-file
+				   (string-trim "<>" reverse-path)
+				   user)))))))
       (when (and shared-file (not err)) (delete-file shared-file)))
     (if err
 	(loop for e in err do
-	      (send-string-crlf connection (format nil "554- ~A" e))
-	      finally (send-string-crlf+ connection "554 sorry"))
+	  (send-string-crlf connection (format nil "554- ~A" e))
+	  finally (send-string-crlf+ connection "554 sorry"))
       ;; 451 => nothing, 550, 553 => remote protocol error, 
       ;; 554 => service unavailable
-	(send-string-crlf+ connection "250 ok!"))))
+      (send-string-crlf+ connection "250 ok!"))))
 
 (defun rset (c string)
   (declare (ignore string))

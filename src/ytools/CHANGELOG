@@ -1,8 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.3 2005/03/06 01:23:18 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.4 2005/03/06 04:59:05 airfoyle Exp $
 	
-2005-03-05: One more retune of derive-date/derive ritual.  (Version
-	    1.5)
-
+2005-03-05: One more retune of derive-date/derive ritual.  
+	    Made interrogation about what version of files to load
+            more intelligible.  Began work on getting force flags to
+            work correctly.  (Version 1.5)
 2005-03-02: Split derivers into two generic functions, derive-date and
             derive.  Leaf chunks can be out of date.  'derive' is
             called the same way for leaves and non-leaves. (Version

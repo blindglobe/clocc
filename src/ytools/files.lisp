@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.27 2005/03/06 01:23:34 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.28 2005/03/06 04:59:05 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -37,7 +37,7 @@
    (let ((file-op-in-progress* true))
       (catch 'fload-abort
 	 (with-compilation-unit ()
-	    (file-op-defaults-update specs fload-flags*
+	    (file-op-defaults-update 'fload specs fload-flags*
 				   (lambda () default-fload-args*)
 				   (lambda (a)
 				      (setq default-fload-args* a)))
@@ -49,27 +49,30 @@
 	    (file-manip false)
 	    (postpone-derivees false))
 	(dolist (flag flags)
-	    (cond ((memq flag '(-s -o -f -c))
-		   (setq force-flag true))
-		  ((eq flag '-z)
-		   (setq postpone-derivees true)))
-	    (cond ((not (eq flag '-f))
-		   (cond (file-manip
-			  (format *error-output*
-				  "Ignoring redundant flag to fload: ~s~%"
-				  flag))
-			 (t
-			  (setq file-manip
-			     (case flag
-				(-a ':ask)
-				(-c ':compile)
-				(-s ':source)
-				(-o ':object)
-				(-x ':noload)
-				(t
-				 (cerror "I will ignore it"
-					 "Illegal flag to 'fload': ~s" flag)
-				 false))))))))
+	   (cond ((eq flag '-z)
+		  (setq postpone-derivees true))
+		 (file-manip
+		  (format *error-output*
+		     "Ignoring redundant flag to fload: ~s~%"
+		     flag))
+		 (t
+		  (case flag
+		     (-x
+		      (setq file-manip ':noload))
+		     (-s
+		      (setq file-manip ':source)
+		      (setq force-flag ':source))
+		     (-o
+		      (setq file-manip ':object)
+		      (setq force-flag ':object))
+		     (-f
+		      (setq force-flag ':load))
+		     (-c
+		      (setq file-manip ':compile)
+		      (setq force-flag ':compile))
+		     (t
+		      (cerror "I will ignore it"
+			      "Illegal flag to 'fload': ~s" flag))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
   	   (filoid-fload pn :force-load force-flag
 			    :manip file-manip
@@ -113,14 +116,28 @@
 			d))
 		;; It was apparently already up to date,
 		;; so forcing makes sense
-		(chunk-derive-and-record loaded-chunk)
-		(cond (postpone-derivees
-		       (setq postponed-file-chunks*
-			     (append (Chunk-derivees loaded-chunk)
-				     postponed-file-chunks*)))
-		      (t
-		       (chunks-update (Chunk-derivees loaded-chunk)
-				      false)))))))
+		(loaded-chunk-force
+		   loaded-chunk force-load postpone-derivees)))))
+
+(defun loaded-chunk-force (loaded-chunk force postpone-derivees)
+   (let ((operative-chunk
+	    (ecase force
+	       ((:source :object)
+		(place-Loaded-source-chunk
+		   (cond ((eq force ':object)
+			  (Loaded-chunk-object loaded-chunk))
+			 (t
+			  (Loaded-chunk-source loaded-chunk)))))
+	       ((:compile)
+		(Loaded-chunk-compiled loaded-chunk)))))
+     (chunk-derive-and-record operative-chunk)
+     (cond (postpone-derivees
+	    (setq postponed-file-chunks*
+		  (append (Chunk-derivees operative-chunk)
+			  postponed-file-chunks*)))
+	   (t
+	    (chunks-update (Chunk-derivees loaded-chunk)
+			   false)))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -288,8 +305,8 @@
 	   :type (member :compile :source :object
 			 :ask-once :ask-every :ask-ask :defer))
     ;; -- Meanings:
-    ;;   :source -> don't compile, load :source;
-    ;;   :object -> don't compile, load :object;
+    ;;   :source -> don't compile, load source;
+    ;;   :object -> compile only if no object; load object
     ;;   :compile -> compile and then load object;
     ;;   :ask-once -> ask user which to do and record result;
     ;;   :ask-every -> ask user every time basis is recomputed;
@@ -453,6 +470,7 @@
 ;;; Loaded-file-chunk.  However, Loaded-file-chunks are complex entities
 ;;; that can map into different versions depending on user decisions.
 ;;; This class is just a simple loaded-or-not-loaded affair.
+;;; The file doesn't have to be a source file (!?)
 (defclass Loaded-source-chunk (Chunk)
    ((file-ch :accessor Loaded-source-chunk-file
 	     :initarg :file)))
@@ -491,8 +509,8 @@
 
 ;;; Possible values: 
 ;;; :compile -- always compile when object file is missing or out of date)
-;;; :object, :source -- always load object or source without compiling
-;;;             (makes no sense if file is missing)
+;;; :source -- always load source without compiling (if missing, load object)
+;;; :object -- compile if object file is missing, else load existing object
 ;;; :ask-every -- ask user what to do every time the file is looked at
 ;;;         (this gets tedious!)
 ;;; :ask-once -- ask user once and file the answer
@@ -575,6 +593,8 @@
 		   (list (place-Loaded-file-chunk
 			    (File-chunk-alt-version file-ch)
 			    ':nochoice))))
+	    ((not source-exists)
+	     (setq manip ':object))
 	    (t
 	     (cond ((memq manip '(:defer :follow))
 		    (let ((prev-manip manip))
@@ -591,10 +611,10 @@
 					      object-exists)))
 		   ((and (eq manip ':object)
 			 (not object-exists))
-		    (cerror "I will compile the source file"
-			    !"Request to load nonexistent ~
-			      object file for ~s"
-			    (File-chunk-pathname file-ch))
+;;;;		    (cerror "I will compile the source file"
+;;;;			    !"Request to load nonexistent ~
+;;;;			      object file for ~s"
+;;;;			    (File-chunk-pathname file-ch))
 		    (setq manip ':compile)))
 	     ;; At this point manip is either :object, :source, or
 	     ;; :compile
@@ -635,52 +655,47 @@
    (let ()
       (loop 
 	 (format *query-io*
-	    !"Do you want to use the (freshly) compiled, ~a version ~
-              ~% of ~s (~a/+/-, \\\\ to abort)? "
-	    (cond (obj-exists
-		   "source, or object")
-		  (t "or source"))
-	    (File-chunk-pn (Loaded-chunk-loadee loaded-ch))
-	    (cond (obj-exists
-		   "c/s/o")
-		  (t
-		   "c/s")))
+	    !"Do you want to load the object or source version of ~
+              ~% of ~s (o/s, \\\\ to abort)? "
+	      (File-chunk-pn (Loaded-chunk-loadee loaded-ch)))
 	 (let ((manip 
 		  (case (keyword-if-sym (read *query-io*))
-		     ((:c :compile)
-		      ':compile)
 		     ((:s :source)
 		      ':source)
 		     ((:o :object)
 		      (cond (obj-exists
 			     ':object)
-			    (t false)))
+			    (t ':compile)))
 		     (:+
 		      (setq fload-compile* ':compile)
 		      ':compile)
 		     (:-
 		      (setq fload-compile* ':object)
 		      ':object)
+		     ((:c :compile)
+		      ':compile)
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
 		     (t
 		      false))))
 	    (cond (manip
-		   (manip-maybe-remember manip loaded-ch)
+		   (manip-refine-remember manip loaded-ch)
 		   (return manip))
 		  (t
 		   (format *query-io*
-			 !"Type 'c' to compile, then load object file;~%~
-			   type 's' to load source file without compiling;~%~
-			   ~atype '+' to make compiling be the default for ~
-                           this and subsequent files;~%~
-			   type '-' to make object versions be the default for ~
-			   this and subsequent files.~%"
-			 (cond (obj-exists
-				!"type 'o' to load existing object file;~%")
-			       (t "")))))))))
+			 !"Type 's' or 'source' to load source file;~%~
+                           type 'o' or 'object' to load object file;~%~
+                           type '+' to recompile this and every subsequent ~
+                           file from now on;~%~
+                           type '-' to load object files without recompiling ~
+                           whenever possible, from now on.~%")))))))
 
-(defun manip-maybe-remember (manip loaded-ch)
+(defun manip-refine-remember (manip loaded-ch)
+   (cond ((eq manip ':object)
+	  (cond ((y-or-n-p 
+		    !"Do you want to check file write times and recompile ~
+		      if necessary? ")
+		 (setq manip ':compile)))))
    (block dialogue
       (let ((old-manip (Loaded-file-chunk-manip loaded-ch)))
 	 (cond ((eq old-manip ':ask-once)
@@ -695,6 +710,7 @@
 		      ((:y :yes :t)
 		       (setf (Loaded-file-chunk-manip loaded-ch)
 			     manip)
+		       (ask-if-generalize manip)
 		       (return-from dialogue))
 		      ((:n :no)
 		       (loop
@@ -713,8 +729,9 @@
 				 (throw 'fload-abort 'fload-aborted))
 				(t
 				 (format *query-io*
-				    !"Type 'y' so that every question about ~
-				      what to load will be followed by a~%  ~
+				    !"Type 'y' to ensure that every question ~
+                                      about what to load will be followed by ~
+                                      a~%  ~
 				      question about whether to record;~%~
 				      type 'n' to suppress that second ~
 				      annoying question.~%"))))))
@@ -726,11 +743,16 @@
 		       (throw 'fload-abort 'fload-aborted))
 		      (t
 		       (format *query-io*
-			  "Type 'y' to record ~s as form of ~s;~%~
-                           type 'n' to use that value once, ask again next;~%~
-                           type 'd' to use value of 'fload-compile* ~
-                                     to decide.~%"))))))))
+			  "Type 'y' or 'yes' to record ~s as form of ~s;~%~
+                           type 'n' or 'no' to use that value once, ~
+                           ask again next;~%~
+                           type 'd' or 'defer' to use value of ~
+                           'fload-compile* to decide each time.~%"))))))))
   manip)
+
+(defun ask-if-generalize (manip)
+   (cond ((y-or-n-p "Should the same decision apply to all other files?")
+	  (setq fload-compile* manip))))
 
 (defun place-compiled-chunk (source-file-chunk)
    (let ((filename (File-chunk-pathname source-file-chunk)))
@@ -1141,7 +1163,7 @@
 	 (setq file-op-count* (+ file-op-count* 1))))
   (let ((file-op-in-progress* true))
      (with-compilation-unit ()
-	(file-op-defaults-update specs fcompl-flags*
+	(file-op-defaults-update 'fcompl specs fcompl-flags*
 				 (lambda () default-fcompl-args*)
 				 (lambda (a)
 				   (setq default-fcompl-args* a)))

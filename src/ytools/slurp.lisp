@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.15 2005/03/06 01:23:34 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.16 2005/03/06 04:59:05 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -144,24 +144,35 @@ after YTools file transducers finish.")
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
 
+(defvar show-file-ops* true)
+
 ;;; The default args for a file-op (such as 'fload' or 'fcompl') are
 ;;; stored in a vector #(files flags readtable).
 
-(defun file-op-defaults-update (specs possible-flags
+(defun file-op-defaults-update (op specs possible-flags
 				acc-defaults set-defaults)
    (let ((defaults (funcall acc-defaults)))
       (multiple-value-bind (files flags readtab)
 	                   (flags-separate specs possible-flags)
-	     (funcall set-defaults
-		 (vector (cond ((null files) (aref defaults 0))
-			       (t files))
-			 (cond ((and (null flags) (null files))
-				(aref defaults 1))
-			       ((memq '- flags)
-				!())
-			       (t
-				flags))
-			 (decipher-readtable readtab (aref defaults 2)))))))
+	 (let ((new-vec
+		  (vector (cond ((null files) (aref defaults 0))
+				 (t files))
+			  (cond ((and (null flags) (null files))
+				 (aref defaults 1))
+				((memq '- flags)
+				 !())
+				(t
+				 flags))
+			  (decipher-readtable readtab (aref defaults 2)))))
+	    (funcall set-defaults new-vec)
+	    (cond (show-file-ops*
+		    (format *error-output*
+		       "File op ~s [flags: ~s] ~s ~%    [readtable: ~s]~%"
+		       op
+		       (aref new-vec 1)
+		       (aref new-vec 0)
+		       (aref new-vec 2))))
+	    new-vec))))
 
 (defun decipher-readtable (readtab default-readtab)
    (cond ((eq readtab ':missing)

@@ -2,6 +2,17 @@
 
 Changes:
 
+Jul 28, 2000
+------------
+
+F2CL is now in the F2CL package.  We also changed // to F2CL-// and
+REAL to FREAL to prevent collisions with the corresponding Lisp
+symbols.
+
+I think this still needs more testing to make sure everything is
+exported and used correctly, but quadpack and TOMS 715 seem to compile
+and run correctly.
+
 Jul 27, 2000
 ------------
 

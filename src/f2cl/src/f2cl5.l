@@ -198,25 +198,30 @@
     ;;(format t "args = ~a~%" args)
     (dolist (arg args
 	     (nreverse res))
-      ;; Run down the list and lookup the argument types of each.
-      (let ((arg-types (mapcar #'get-fun-arg-type arg)))
-	;;(format t "arg = ~A~%types = ~a~%" arg arg-types)
-	(push (cond ((every #'(lambda (x)
-				(eq x (first arg-types)))
-			    arg-types)
-		     ;; All items are the same, so that's our type,
-		     ;; almost.  We don't parse expressions to
-		     ;; determine the type, so if the type is not a
-		     ;; number, we return T.
-		     (if (subtypep (first arg-types) 'number)
-			 (first arg-types)
-			 t))
-		    (t
-		     ;; Some items are different, so we can't really say.
-		     ;; (Although I think Fortran says they should all have
-		     ;; been the same.)
-		     t))
-	 res)))))
+      ;; Handle the simple cases, and then Run down the list and
+      ;; lookup the argument types of each.
+      (cond ((numberp arg)
+	     (push (type-of arg) res))
+	    ((symbolp arg)
+	     (push (get-fun-arg-type arg) res))
+	    ((and (listp arg)
+		  (eq 'fref (first arg)))
+	     (push (get-fun-arg-type (second arg)) res))
+	    (t
+	     (let ((arg-types (mapcar #'get-fun-arg-type arg)))
+	       ;;(format t "arg = ~A~%types = ~a~%" arg arg-types)
+	       (push (cond ((every #'(lambda (x)
+				       (eq x (first arg-types)))
+				   arg-types)
+			    ;; All items are the same, so that's our type.
+			    (first arg-types))
+			   (t
+			    ;; Some items are different, so we can't
+			    ;; really say. (Although I think Fortran
+			    ;; says they should all have been the
+			    ;; same.)
+			    `(or ,@arg-types)))
+		     res)))))))
 
 ;; Create declarations for all the functions used in the subprogram.
 ;; We return three items: statement functions, other functions, and
@@ -238,6 +243,36 @@
 	    `((declare ,@(nreverse other-fcns)))
 	    `((declare ,@(nreverse arg-fcns))))))
 
+;; Given the program list P, look through it and try to convert all
+;; occurrences of f2cl/ with either / or truncate.  We use truncate if
+;; both parameters are integers.  Otherwise use /.  This is an attempt
+;; to optimize out the calls to the f2cl/ macro.  This is for the
+;; benefit of Lisp compilers that aren't smart enough to optimize
+;; unused parts of the macros out.  (We should probably do a similar
+;; thing for sqrt, log, log10.)
+;;
+;; The program P is destructively modified!
+(defun optimize-f2cl/ (p)
+  (cond ((or (atom p) (null p))
+	 p)
+	((eq (first p) 'f2cl/)
+	 ;;(format t "*** found it ~S ~S~%" (second p) (third p))
+	 (let ((left (get-fun-arg-type (list (second p))))
+	       (right (get-fun-arg-type (list (third p)))))
+	   ;;(format t "*** types = ~S ~S~%" left right)
+	   (cond ((or (subtypep left 'float)
+		      (subtypep right 'float))
+		  (setf (first p) '/))
+		 ((and (subtypep left 'integer)
+		       (subtypep right 'integer))
+		  (setf (first p) 'truncate))
+		 (t
+		  ;; Do nothing
+		  )))
+	 (optimize-f2cl/ (rest p)))
+	(t
+	 (dolist (k (rest p))
+	   (optimize-f2cl/ k)))))
 
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
@@ -489,7 +524,9 @@
 		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body))
 		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body)))
 	       )
-
+     ;;(format t "prog-bit = ~%~S~%" prog-bit)
+     (optimize-f2cl/ prog-bit)
+     ;;(format t "opt prog = ~%~S~%" prog-bit)
      ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
      ;;(format t "*data-init*  = ~a~%" *data-init*)
      ;;(format t "save-inits = ~a~%" save-inits)
@@ -1574,4 +1611,3 @@
     (nreverse res)))
 ;-----------------------------------------------------------------------------
 ; end of f2cl5.l
-     

@@ -109,7 +109,7 @@ is not included")
 	   (let ((lo (first bound)))
 	     (if (and (numberp lo) (zerop lo))
 		 n
-		 `(- ,n ,lo))))
+		 `(the fixnum (- (the fixnum ,n) (the fixnum ,lo))))))
 	 (get-size (bound)
 	   (destructuring-bind (lo hi)
 	       bound
@@ -121,7 +121,7 @@ is not included")
 			  (t
 			   `(- ,hi ,(- lo 1)))))
 		   (t
-		    `(- ,hi (- ,lo 1)))))))
+		    `(the fixnum (- ,hi (the fixnum (- (the fixnum ,lo) 1)))))))))
     (let* ((rev-idx (reverse indices))
 	   (rev-dim (reverse dims))
 	   (idx (get-offset (first rev-idx) (first rev-dim))))
@@ -129,21 +129,21 @@ is not included")
 	   (n (rest rev-idx) (rest n)))
 	  ((endp d)
 	   idx)
-	(setf idx `(+ ,(get-offset (first n) (first d))
-		    (* ,(get-size (first d)) ,idx)))))))
+	(setf idx `(the fixnum (+ ,(get-offset (first n) (first d))
+				  (the fixnum (* ,(get-size (first d)) ,idx)))))))))
 
 (defun check-array-bounds (indices bounds)
   `(and ,@(mapcar #'(lambda (idx dim)
 		     `(<= ,(first dim) ,idx ,(second dim)))
 		 indices bounds)))
 
-(defmacro fref (arr indices bounds)
+(defmacro fref (arr indices bounds &optional offset)
   (if *check-array-bounds*
       `(aref ,arr (if ,(check-array-bounds indices bounds)
-		      ,(col-major-index indices bounds)
+		      (the fixnum (+ (the fixnum ,(or offset 0)) ,(col-major-index indices bounds)))
 		      (error "Out of bounds index for array ~S"
 			     ',arr)))
-      `(aref ,arr ,(col-major-index indices bounds))))
+      `(aref ,arr (the fixnum (+ (the fixnum ,(or offset 0)) ,(col-major-index indices bounds))))))
 
 (defmacro fset (a b) 
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
@@ -156,6 +156,25 @@ is not included")
 
 (defmacro f2cl-// (a b)
   `(concatenate 'string ,a ,b))
+
+;; (with-array-data ((data-var offset-var array))
+;;   ...
+;; )
+
+(defun find-array-data (array)
+  (let ((offset 0))
+    (loop
+	(multiple-value-bind (displaced-to index-offset)
+	    (array-displacement array)
+	  (when (null displaced-to)
+	    (return-from find-array-data (values array offset)))
+	  (incf offset index-offset)
+	  (setf array displaced-to)))))
+
+(defmacro with-array-data ((data-var offset-var array) &rest body)
+  `(multiple-value-bind (,data-var ,offset-var)
+    (find-array-data ,array)
+    ,@body))
 
 ;; Create an array slice for the array named VNAME whose elements are
 ;; of type TYPE.  The slice starts at the indices INDICES and the
@@ -192,6 +211,11 @@ is not included")
     :displaced-to ,vname
     :displaced-index-offset ,(col-major-index indices bounds)))
 
+#+nil
+(defmacro array-slice (vname type indices bounds)
+  (declare (ignore type indices bounds))
+  vname)
+
 ;; Compute an initializer for make-array given the data in the list
 ;; DATA.  The array has en element type of TYPE and has dimensions of
 ;; DIMS.
@@ -224,8 +248,8 @@ is not included")
 ; fdo has similar syntax as do except there will only be one do_vble
 
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
-  (let ((step (gensym))
-	(iteration_count (gensym)))
+  (let ((step (gensym "STEP-"))
+	(iteration_count (gensym "CNT-")))
     `(prog* ((,step ,(third (third do_vble_clause)))
 	     (,iteration_count 
 	      (max 0 (truncate (+ (- ,(third (first predicate_clause))
@@ -244,10 +268,8 @@ is not included")
 	  ,(cons 't 
 		 (append 
 		  (append body
-			  `((setq ,(first do_vble_clause) 
-			     ,(third do_vble_clause)
-			     ,iteration_count 
-			     (1- ,iteration_count))))
+			  `((setq ,(first do_vble_clause) (the integer4 ,(third do_vble_clause))
+			     ,iteration_count (the integer4 (1- ,iteration_count)))))
 		  '((go loop)))))))))
 
 ;(defmacro fdo (do-vbles predicate-clause &rest body)
@@ -341,6 +363,14 @@ is not included")
       (ceiling x)
       (floor x)))
 
+#-cmu
+(defun ftruncate-towards-zero (x)
+  ;; Floating-point version of the above.
+  (if (minusp x)
+      (fceiling x)
+      (ffloor x)))
+
+#+cmu
 (defun ftruncate-towards-zero (x)
   ;; Floating-point version of the above.
   (if (minusp x)
@@ -477,8 +507,9 @@ is not included")
 (defun isign (x y)
   (declare (type integer4 x y))
   (if (>= y 0)
-      (abs x)
-      (- (abs x))))
+      (the integer4 (abs x))
+      (the integer4 (- (the integer4 (abs x))))))
+
 ;; Fortran 77 says SIGN is a generic!
 (defun sign (x y)
   (declare (type (or integer4 single-float double-float) x y))
@@ -679,9 +710,9 @@ is not included")
 (defun log10 (x)
   (typecase x
     (single-float
-     (log (the (single-float 0.0f0) x) 10f0))
+     (log (the (or (single-float 0.0f0) (member 0f0)) x) 10f0))
     (double-float
-     (log (the (double-float 0.0d0) x) 10d0))
+     (log (the (or (double-float 0.0d0) (member 0d0)) x) 10d0))
     (t
      (/ (log x)
 	(typecase x
@@ -1128,8 +1159,20 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.40 2002/02/10 03:43:51 rtoy Exp $
+;;; $Id: macros.l,v 1.41 2002/02/17 15:55:29 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.41  2002/02/17 15:55:29  rtoy
+;;; o For all array accessors, wrap the offset calculations with (the
+;;;   fixnum ...) since they have to be anyway.  Speeds up calculations
+;;;   quite a bit.
+;;; o FREF takes an additional optional OFFSET arg to specify an offset
+;;;   for the new array slicing method.
+;;; o Added WITH-ARRAY-DATA and FIND-ARRAY-DATA to support the new
+;;;   array-slicing method.
+;;; o For FDO, add (the integer4 ...) for loop index calculations.
+;;; o Add some more assertions for ISIGN and LOG10 to help the compiler
+;;;   generate better code.
+;;;
 ;;; Revision 1.40  2002/02/10 03:43:51  rtoy
 ;;; Partial support for WRITE statements writing to a string instead of
 ;;; logical unit.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.6 2000/03/27 20:02:54 sds Exp $
+;;; $Id: url.lisp,v 2.7 2000/03/28 18:28:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -97,7 +97,8 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
 guess from the protocol."
   (declare (type url url))
   (if (zerop (url-port url))
-      (flet ((ssp (st) (ignore-errors (nth-value 2 (socket-service-port st)))))
+      (flet ((ssp (st) (ignore-errors
+                         (servent-port (socket-service-port st)))))
         (or (ssp (string-downcase (string (url-prot url))))
             (ssp (case (url-prot url)
                    (:mailto "smtp") (:news "nntp") (:www "http")))
@@ -107,7 +108,6 @@ guess from the protocol."
 
 (defcustom *nntpserver* simple-string
   (or (getenv "NNTPSERVER") "localhost")
-  ;; (setq *nntpserver* "news0-alterdial.uu.net")
   "*The NNTP server to be user for `news' URLs.")
 
 (defun url-get-host (url)

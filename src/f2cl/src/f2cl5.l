@@ -208,7 +208,9 @@
 		     (destructuring-bind (&optional decl1 decl2)
 			 (vble-declared-twice-p arg *explicit_vble_decls*)
 		       (declare (ignorable decl2))
-		       (first decl1)))
+		       (values (first decl1) t)))
+		    ((vble-is-array-p arg)
+		     (values var-type t))
 		    (t
 		     var-type)))
 	    )))
@@ -217,7 +219,9 @@
 	 (let ((fun (first arg)))
 	   (cond ((eq 'make-array fun)
 		  ;; Some array slicing here.
-		  (second (second (member :element-type arg))))
+		  (values (second (second (member :element-type arg))) t))
+		 ((eq 'array-slice fun)
+		  (values (get-fun-arg-type (second arg)) t))
 		 ((eq 'funcall fun)
 		  ;; Look up function type
 		  (get-fun-arg-type (second arg)))
@@ -317,6 +321,7 @@
 	    (nreverse other-fcns)
 	    (nreverse arg-fcns))))
 
+;; This needs to be reworked!
 (defun get-arg-decl (list-of-arglists)
   (let (res)
     ;; Given a list of arglists, we derive the type for each of the arglists.
@@ -325,27 +330,37 @@
 			;; Literal strings (which are of type (string
 			;; <len>)) confuse the mapcar below, so change
 			;; them into just type 'string.
-			(let ((type (get-fun-arg-type arg)))
-			  (if (subtypep type 'string)
-			      'string
-			      type)))
+			(multiple-value-bind (type arrayp)
+			    (get-fun-arg-type arg)
+			  (cond (arrayp
+				 (intern (concatenate 'string "ARRAY-" (string type))))
+				((subtypep type 'string)
+				 'string)
+				(t
+				 type))))
 		    arglist)
 	    res))
     ;; Now make a list of each of the types of the arguments
-    (mapcar #'(lambda (z)
-		(if (atom z)
-		    z
-		    (let ((nodup (remove-duplicates z)))
-		      (if (rest nodup)
-			  `(or ,@nodup)
-			  (first nodup)))))
-	    (reduce #'(lambda (x accum)
-			(mapcar #'(lambda (a b)
-				    (if (listp a)
-					(cons b a)
-					(list b a)))
-				x accum))
-		    res))))
+    (let ((types
+	   (mapcar #'(lambda (z)
+		       (if (atom z)
+			   z
+			   (let ((nodup (remove-duplicates z :test #'equalp)))
+			     (format t "z = ~A~%" z)
+			     (if (rest nodup)
+				 `(or ,@nodup)
+				 (first nodup)))))
+		   (reduce #'(lambda (x accum)
+			       (mapcar #'(lambda (a b)
+					   (if (listp a)
+					       (cons b a)
+					       (list b a)))
+				       x accum))
+			   res))))
+      ;; Remove an extra set of parens if needed.
+      (if (and (= (length types) 1) (listp (first types)))
+	  (first types)
+	  types))))
 
 (defun make-fcn-decl (fcn-list arglist)
   (let (stmt-fcns other-fcns arg-fcns)
@@ -695,7 +710,7 @@
 	      ;;
 	      ;; (replace array '(a b c ...))
 	      ;;
-	      ;; (fset (fref array n) v)
+	      ;; (fset (fref array n bounds) v)
 	      ;;
 	      ;; (data-implied-do do-loop var val)
 
@@ -815,7 +830,8 @@
 		       (flet ((get-dims (var)
 				(mapcar #'first (lookup-array-bounds var))))
 				  
-		       (cond ((eq 'fset (first init))
+		       (cond #+nil
+			     ((eq 'fset (first init))
 			      ;; We need to get the dimensions for this array
 			      (destructuring-bind (fset (fref var idx) val)
 				  init
@@ -1131,6 +1147,7 @@
 	)))
 
 
+#+nil
 (defun make_make-array_stmt (dimens type &optional init vble)
   (let ((dims (mapcar #'(lambda (x) 
                            (cond ((member '* x) '*)
@@ -1161,12 +1178,57 @@
 		 (append '(list) dims)
 		 ':element-type (list 'quote type))))))
 
+(defun make_make-array_stmt (dimens type &optional init vble)
+  (let ((dims (mapcar #'(lambda (x) 
+                           (cond ((member '* x) '*)
+                                 ((eq (car x) 1) (cadr x))
+                                 ((not (member nil (mapcar #'numberp x)))
+                                  (1+ (- (cadr x) (car x))))
+                                 (t `(1+ (- ,(cadr x) ,(car x))))))
+                       dimens)))
+    ;; Don't need to initialize this variable separately, so kill it.
+    (setf *data-init* (remove-*data-init*-var vble))
+    
+    (cond ((every #'numberp dims)
+	   ;; If all of the dimensions are numbers, we don't have to
+	   ;; make a list out of them.  This can speed up array
+	   ;; creation for smart compilers.
+	   (let ((init-val
+		  (when init
+		    (if (eq 'fill (first init))
+			`(:initial-element ,(second init))
+			`(:initial-contents
+			  ',(fortran-transpose dims
+					       (first (rest init))))))))
+	     (if (= (length dims) 1)
+		 `(make-array ,(first dims) :element-type ',type ,@init-val)
+		 `(make-array ,(reduce #'* dims) :element-type ',type ,@init-val))))
+	  (t
+	   (if (= (length dims) 1)
+	       `(make-array ,@dims :element-type ',type)
+	       `(make-array (reduce #'* (list ,@dims)) :element-type ',type))))))
+
 ;; create a labels form for when statement functions are present
 
 (defun make-labels-form (local-vbles vble-decls *data-init* body)
     `(labels ,*subprog_stmt_fns_bodies*
       (prog ,local-vbles ,@vble-decls ,@*data-init* ,@body)))
 
+
+;; Take the bounds of an array and compute the total size of the array
+;; if possible.  If not, return '*.  Useful for getting the
+;; appropriate type declaration for an array.
+(defun f2cl-array-total-size (bounds)
+  (list (reduce #'(lambda (accum y)
+		    (if (and (numberp accum) (numberp y))
+			(* accum y)
+			'*)
+		    )
+		(mapcar #'(lambda (x)
+			    (if (every #'realp x)
+				(1+ (reduce #'- (reverse x)))
+				'*))
+			bounds))))
 
 ;; make a declaration for vble which may or may not be a formal arg
 ;; vble_name is used to replace vbles called T with T_
@@ -1183,11 +1245,7 @@
 	  (rotatef decl1 decl2))
 	(return `(declare (type (,*array-type*
 				 ,(car decl2)
-                                 ,(mapcar #'(lambda (x)
-                                              (if (every #'realp x)
-                                                  (1+ (reduce #'- (reverse x)))
-                                                  '*))
-                                   (cdadr decl1))
+                                 ,(f2cl-array-total-size (cdadr decl1))
 				 )
 				 ,vble_name)))))
 	  
@@ -1212,23 +1270,19 @@
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return (make-char-decl (car decl) type))))
 	      ((eq type 'ARRAY)
-	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
-                         
+	       (when (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return `(declare (type (,*array-type*
 					    ,(get_array_type (caar decl) 
 							     vble-is-formal-arg)
-					    ,(mapcar #'(lambda (x) 
-							 (if (every #'realp x)
-							     (1+ (reduce #'- (reverse x)))
-							     '*))
-						     (cdar decl))
+					    ,(f2cl-array-total-size (cdar decl))
 					    )
-				      ,vble_name)))))
+				      ,vble_name)))
+		   ))
 	      ((eq type 'LOGICAL)
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
-			 `(declare (type (,*array-type* (member t nil) ,(cadar decl)) 
+			 `(declare (type (,*array-type* (member t nil) ,(f2cl-array-total-size (cadar decl)))
 				    ,vble_name))
 			 `(declare (type (member t nil) ,vble))))))
 	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
@@ -1236,11 +1290,7 @@
 		       (if (cdar decl) 
 			   `(declare (type (,*array-type*
 					    ,type 
-					    ,(mapcar #'(lambda (x) 
-							 (if (every #'realp x)
-							     (1+ (reduce #'- (reverse x)))
-							     '*))
-						     (cdar decl)))
+					    ,(f2cl-array-total-size (cdar decl)))
 				      ,vble_name))
 			   `(declare (type ,type ,vble_name)))))))))
 					; check implicitly declared variable
@@ -2070,8 +2120,18 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.48 2000/07/18 13:59:23 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.49 2000/07/19 14:04:28 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.49  2000/07/19 14:04:28  rtoy
+;;; o GET-FUN-ARG-TYPE returns a second value to indicate if the arg is an
+;;;   array or not.
+;;; o More hacking on GET-ARG-DECL.  Should now correctly identify if an
+;;;   array is used as a parameter.  Still needs work.
+;;; o MAKE_MAKE-ARRAY_STMT creates 1-D arrays for all arrays to support
+;;;   Fortran array slicing.
+;;; o In MAKE-DECLARATION, declare all arrays as 1-D even if
+;;;   multi-dimensional, for supporting Fortran array slicing.
+;;;
 ;;; Revision 1.48  2000/07/18 13:59:23  rtoy
 ;;; o Left out some double precision intrinsics for getting function
 ;;;   types.

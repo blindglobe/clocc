@@ -164,6 +164,7 @@
     (format t "done.~%")))
 
 
+#+not-yet-in-mk4
 (eval-when (:load-toplevel :execute)
   (component-operation :edit 'edit-operation)
   (component-operation 'edit 'edit-operation)

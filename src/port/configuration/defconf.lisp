@@ -17,6 +17,7 @@
 
 (in-package "CL.EXT.CONFIGURATION")
 
+
 ;;;===========================================================================
 ;;; Implementation dependencies.
 
@@ -47,7 +48,7 @@
 	    (defsys-type symbol))
 	   nil)
   (:documentation
-   "Checks wheter a defsys of type DEFSYS-TYPE is available in a given CL."))
+   "Checks whether a defsys of type DEFSYS-TYPE is available in a given CL."))
 
 
 ;;; find-system, load-system -- Implementation dependent.
@@ -257,8 +258,11 @@
 
 	   (declare (ignore keys
 			    logical-pathname-host
-			    library-location
-			    source-location
+			    ;; library-location
+			    ;; source-location
+			    lph-supplied-p
+			    ll-supplied-p
+			    sl-supplied-p
 			    ,@(mapcar #'cadar
 				      special-translations-keywords)))
 
@@ -298,8 +302,12 @@
 
 (defstruct clause
   (kind nil :type symbol)
-  (os-type nil :type symbol)
-  (cl-implementation nil :type symbol)
+  (os-type (cl.env:feature-tag cl.env:*operating-system*)
+	   :type symbol)
+  (machine-type (cl.env:feature-tag cl.env:*machine*)
+		:type symbol)
+  (cl-implementation (cl.env:feature-tag cl.env:*common-lisp-implementation*)
+		     :type symbol)
   )
 
 ;;;---------------------------------------------------------------------------
@@ -455,19 +463,24 @@
 (defun parse-translation (translations)
   (let ((resulting-transl ()))
     (dolist (transl translations (nreverse resulting-transl))
-      (destructuring-bind (logical-pathname-spec translation
-						 &key
-						 (prefix "")
-						 prefix-configuration-key
-						 os-type
-						 &allow-other-keys)
+      (destructuring-bind (logical-pathname-spec
+			   translation
+			   &key
+			   (prefix "")
+			   prefix-configuration-key
+			   (os-type (cl.env:feature-tag
+				     cl.env:*operating-system*))
+			   (machine-type (cl.env:feature-tag
+					  cl.env:*machine*))
+			   &allow-other-keys)
 	  transl
 	(push (make-translation
 	       :spec logical-pathname-spec
 	       :translation translation
 	       :prefix prefix
 	       :prefix-configuration-key prefix-configuration-key
-	       :os-type os-type)
+	       :os-type os-type
+	       :machine-type machine-type)
 	      resulting-transl)))))
 
 

@@ -107,8 +107,8 @@ const char *argp_program_bug_address =
  "debian bug database, package common-lisp-controller";
 static char doc[] = "clc-send-command a program to send commands to the clc-build-daemon";
 
-static char args_doc[] = "recompile <package> <implementation>
-remove <package> <implementation>";
+static char args_doc[] = "recompile <package> <implementation>\n"
+"remove <package> <implementation>";
 
 static struct argp_option options[] = {
   {"verbose",  'v', 0,      0,  "Produce verbose output" },

@@ -1,3 +1,74 @@
+2002-05-10  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* init-environment.lisp:
+	Fixed the read time conditionals to take into account CMUCL 18d.
+
+2002-03-23  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* software.lisp: Fixed defgeneric lambda list
+
+2002-03-14  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* env-package.lisp, impl-dependent/allegro.lisp, init-environment.lisp, software.lisp, utilities.lisp:
+	Added exported binary-directory-name that returns a unique string
+	for an implemenation that is appropriate for a binary directory name.
+
+	Changed a few mode lines to Lisp from CLtL.
+
+2002-03-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* load-cl-environment.lisp:
+	Removed the `:case :common' from the loader file.
+
+2002-03-06  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* impl-dependent/clisp.lisp, system-info.lisp:
+	Updated some CLISP functions invocations from lisp: package to ext: package
+
+2002-03-04  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* init-environment.lisp:
+	Fixed some remaining case problems.  Hopefully now CL-ENVIRONMENT will
+	load cleanly in Franz's case sensitive images.
+
+2002-02-28  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* operating-system.lisp:
+	Fixed definitions of OS-FILE-SYSTEM-DIRECTORY-SEPARATOR methods.
+
+2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* impl-dependent/lispworks.lisp: Updated method for current directory.
+
+	* ChangeLog: ChangeLog updated.
+
+	* load-cl-environment.lisp:
+	Added `:case :common' to load directory definition.
+
+	* env-package.lisp, operating-system.lisp:
+	Changed case of some definitions again, to accommodate Franz's kludgy
+	case sensitivity modes.
+
+	* init-environment.lisp:
+	Added setup for `sparc-v9-machine'.  Probably it needs some tuning.
+
+	* machine.lisp: Added `sparc-v9-machine'.
+
+	* load-cl-environment.lisp: Oooops, missed one substitution. Fixed.
+
+	* operating-system.lisp:
+	Checked some `case sensitivity' issues, added Mac-OS-X, and changed
+	copyright dates.
+
+	* load-cl-environment.lisp:
+	Added changes suggested by Kevin Rosenberg to make the package load
+	more smoothly under Windows.
+
+	* init-environment.lisp: New copyright dates.
+
+	* env-package.lisp:
+	Made changes to placate Franz's Allegro kludgy case sensitivity modes.
+
 2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:

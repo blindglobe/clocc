@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.13 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.14 2005/02/06 05:46:32 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -22,6 +22,10 @@
    contents     
    chunk
    loaded-chunk)
+
+;;; Note that YT-module-chunk is the name of the accessor of the 'chunk'
+;;; slot of 'YT-module', and also the name of a class.  Have fun keeping
+;;; track of them.
 
 ;;; An alist of <name, yt-module> pairs.
 (defvar ytools-modules* !())
@@ -91,6 +95,9 @@
 	    :initarg :module
 	    :type YT-module)))
 
+(defmethod derive ((yt-mod YT-module-chunk))
+   false)
+
 ;;; loadee is a YT-module
 (defclass Loaded-module-chunk (Loaded-chunk)
    ())
@@ -100,30 +107,39 @@
 
 (def-ytools-pathname-control module
    (defun :^ (operands _)
-      (let ((remainder (or (member-if (\\ (x) (not (lookup-YT-module x)))
-				      operands)
-			   !())))
-	 (cond ((not (null module-trace*))
-		(format *error-output*
-		    "Preparing to process modules ~s~%"
-		    (ldiff operands remainder))))
-	 (values (mapcar (\\ (rand)
-			    (make-Module-pseudo-pn
-			       :control 'module
-			       :module rand))
-			 (ldiff operands remainder))
-		 false
-		 remainder))))
+      (do ((opl operands (cdr opl))
+	   mod
+	   (mods !()))
+	  ((or (null opl)
+	       (not (setq mod (lookup-YT-module (car opl)))))
+	   (let ((remainder opl))
+	      (cond ((not (null module-trace*))
+		     (format *error-output*
+			 "Preparing to process modules ~s~%"
+			 mods)))
+	      (values (mapcar (\\ (mod)
+				 (make-Module-pseudo-pn
+				    :name (YT-module-name mod)
+				    :module mod))
+			      mods)
+		      false
+		      remainder)))
+         (on-list mod mods))))
 
 (defmethod pathname-denotation-chunk ((mod-pspn Module-pseudo-pn))
    (place-YT-module-chunk (Module-pseudo-pn-module mod-pspn)))
 
 (defun place-YT-module-chunk (mod)
-   (chunk-with-name `(:YT-module ,(YT-module-name mod))
-      (\\ (name)
-	 (make-instance 'YT-module-chunk
-	    :name name
-	    :module mod))))
+   (or (YT-module-chunk mod)
+       (let ((mod-ch 
+		(chunk-with-name `(:YT-module ,(YT-module-name mod))
+		   (\\ (name)
+		      (make-instance 'YT-module-chunk
+			 :name name
+			 :module mod)))))
+	  (setf (YT-module-chunk mod)
+		mod-ch)
+	  mod-ch)))
 
 ;;; The key hack in the following two items is that a YT-module's
 ;;; dependencies are a subset of the files it will load, possibly
@@ -142,7 +158,9 @@
    (let ((mod (Module-pseudo-pn-module pspn)))
       (values
            (module-loaded-prereqs mod)
-	   (module-form-chunks mod ':run-support))))
+	   (list (place-Loaded-module-chunk
+		    (place-YT-module-chunk mod)
+		    false)))))
 
 (defun module-form-chunks (mod which)
 	   (let ((rforms
@@ -153,7 +171,9 @@
 		     !())
 		    (t
 		     (list (place-Form-chunk
-			      `(progn ,@rforms)))))))
+			      `(progn ,@(mapcan (\\ (e)
+						   (list-copy (rest e)))
+						rforms))))))))
 
 (defun module-loaded-prereqs (mod)
    (let ((loaded-ch (place-Loaded-module-chunk
@@ -175,26 +195,30 @@
    (place-Loaded-module-chunk mod-ch mod-manip))
 
 (defun place-Loaded-module-chunk (mod-chunk mod-manip)
-   (let ((lc (chunk-with-name `(:loaded ,(YT-module-chunk-module mod-chunk))
-		(\\ (name)
-		   (let ((new-lc
-			    (make-instance 'Loaded-module-chunk
-			       :name name
-			       :loadee mod-chunk)))
-		      new-lc))
-		:initializer
-		   (\\ (new-lc)
-		      (cond ((not (slot-truly-filled new-lc 'controller))
-			     (setf (Loaded-chunk-controller new-lc)
-				   (create-loaded-controller
-				      mod-chunk new-lc))))))))
-      (cond ((eq mod-manip ':noload)
-	     (chunk-terminate-mgt lc ':ask))
-;;;;	    ((and mod-manip
-;;;;		  (not (eq mod-manip (Loaded-chunk-manip lc))))
-;;;;	     (setf (Loaded-chunk-manip lc) mod-manip))
-       )
-      lc))
+   (let ((module (YT-module-chunk-module mod-chunk)))
+      (or (YT-module-loaded-chunk module)
+	  (let ((lc (chunk-with-name `(:loaded ,module)
+		       (\\ (name)
+			  (let ((new-lc
+				   (make-instance 'Loaded-module-chunk
+				      :name name
+				      :loadee mod-chunk)))
+			     new-lc))
+		       :initializer
+			  (\\ (new-lc)
+			     (cond ((not (slot-truly-filled new-lc 'controller))
+				    (setf (Loaded-chunk-controller new-lc)
+					  (create-loaded-controller
+					     mod-chunk new-lc))))))))
+	     (cond ((eq mod-manip ':noload)
+		    (chunk-terminate-mgt lc ':ask))
+       ;;;;	    ((and mod-manip
+       ;;;;		  (not (eq mod-manip (Loaded-chunk-manip lc))))
+       ;;;;	     (setf (Loaded-chunk-manip lc) mod-manip))
+	      )
+	     (setf (YT-module-loaded-chunk module)
+		   lc)
+	     lc))))
 
 (defclass Loadable-module-chunk (Loadable-chunk)
    ())
@@ -257,7 +281,9 @@
 (defvar module-now-loading* false)
 
 (defmethod derive ((lmod-ch Loaded-module-chunk))
-   (let ((module (Loaded-chunk-loadee lmod-ch)))
+   (let ((module
+	    (YT-module-chunk-module
+	       (Loaded-chunk-loadee lmod-ch))))
       (dolist (c (YT-module-contents module))
 	 (cond ((memq ':run-support (first c))
 		(dolist (e (rest c))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.20 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.21 2005/02/06 05:46:32 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -178,10 +178,11 @@
 
 (defmethod pathname-denotation-chunk ((pn pathname))
    (cond ((null (Pathname-type pn))
-	  (setq pn (pathname-source-version pn))
-	  (cond ((not pn)
+	  (let ((source-pn (pathname-source-version pn)))
+	  (cond ((not source-pn)
 		 (error "No source file corresponding to ~s"
-			pn)))))
+			pn)))
+	  (setq pn source-pn))))
    (place-File-chunk pn))
 
 (defun place-File-chunk (pn &key kind)
@@ -412,6 +413,9 @@
       (cond ((not (typep file-ch 'File-chunk))
 	     (error "Can't extract file to load from ~s"
 		    lc)))
+;;;;      (dbg-save lc file-ch)
+;;;;      (breakpoint file-chunk-load
+;;;;	 "About to load " lc)
       (file-chunk-load file-ch)))
 
 (defclass Loaded-source-chunk (Chunk)
@@ -614,10 +618,10 @@
 			    (t false)))
 		     (:+
 		      (setq fload-compile* ':compile)
-		      ':defer)
+		      ':compile)
 		     (:-
 		      (setq fload-compile* ':object)
-		      ':defer)
+		      ':object)
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
 		     (t
@@ -664,7 +668,8 @@
 				 (setf (Loaded-file-chunk-manip loaded-ch)
 				       ':ask-every)
 				 (return-from dialogue))
-				((:y :yes))
+				((:y :yes)
+				 (return-from dialogue))
 				((:\\)
 				 (throw 'fload-abort 'fload-aborted))
 				(t

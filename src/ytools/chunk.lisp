@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.21 2005/02/05 02:38:23 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.22 2005/02/06 05:46:31 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -847,12 +847,13 @@
 (defun chunk-with-name (exp creator &key initializer)
        ;; The kernel is the first atom in a non-car position,
        ;; which is often a pathname, but need not be.
-   (labels ((chunk-name-kernel (e)
-	       (dolist (x (cdr e) false)
+   (labels ((chunk-name-kernel (e piecefn)
+	       (dolist (x (funcall piecefn e) false)
 		  (cond ((atom x) (return x))
 			(t
-			 (let ((k (chunk-name-kernel x)))
+			 (let ((k (chunk-name-kernel x piecefn)))
 			    (cond (k (return k))))))))
+
 	    (create (exp)
 	       (let ((new-chunk (funcall creator exp)))
 		  (cond ((or (not (slot-truly-filled new-chunk 'name))
@@ -874,7 +875,10 @@
 	       (let ((list-version
 		        (chunk-name->list-structure exp)))
 		  (cond ((atom list-version) list-version)
-			(t (chunk-name-kernel list-version))))))
+			(t (or (chunk-name-kernel list-version
+						  #'cdr)
+			       (chunk-name-kernel list-version
+						  #'identity)))))))
 	 (let ((bucket (href chunk-table* name-kernel)))
 ;;;;	    (format t "Looking for ~s in~%  bucket ~s~%"
 ;;;;		    exp bucket)
@@ -956,7 +960,7 @@
 (defun place-Form-chunk (form)
    (chunk-with-name `(:form ,form)
       (\\ (name)
-	 (make-instance 'Chunk
+	 (make-instance 'Form-chunk
 	    :name name
 	    :form form))))
 

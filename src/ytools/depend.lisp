@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.11 2005/02/05 02:38:25 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.12 2005/02/06 05:46:32 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -292,9 +292,11 @@
       (multiple-value-bind (bl lbl)
 			   (pathname-run-support pn)
 	 (cond (filoid-ch
-		(setf (File-chunk-callees filoid-ch)
-		      (union bl
-			     (File-chunk-callees filoid-ch)))))
+		(let ((fbl (retain-if (\\ (b) (typep b 'File-chunk))
+				      bl)))
+		   (setf (File-chunk-callees filoid-ch)
+			 (union fbl
+				(File-chunk-callees filoid-ch))))))
 	 (loaded-chunk-augment-basis loaded-filoid-ch lbl))))
 
 (defun pathnames-note-sub-file-deps (pnl compiled-ch sub-file-types)
@@ -303,9 +305,10 @@
 			   (pathname-run-support pn)
 			   (declare (ignore lbl))
 	 (dolist (callee-ch bl)
-	    (dolist (sfty sub-file-types)
-               (compiled-ch-sub-file-link
-		  compiled-ch callee-ch sfty true))))))
+	    (cond ((typep callee-ch 'File-chunk)
+		   (dolist (sfty sub-file-types)
+		      (compiled-ch-sub-file-link
+			 compiled-ch callee-ch sfty true))))))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).
@@ -359,11 +362,13 @@
 		     "Executing ~s~% "
 		     form)))
       (cond ((memq ':continue-slurping (cdr form))
-	     (format *error-output*
-		!"Warning -- ':continue-slurping' encountered in file ~
-                  ~s; this declaration is~
-                  ~%  no longer needed~%"
-		(Sds-file-chunk sdo-state))))
+	     (self-compile-dep-scan-depends-on form sdo-state)
+;;;;	     (format *error-output*
+;;;;		!"Warning -- ':continue-slurping' encountered in file ~
+;;;;                  ~s; this declaration is~
+;;;;                  ~%  no longer needed~%"
+;;;;		(Sds-file-chunk sdo-state))
+	     ))
       true))
 
 (def-excl-dispatch #\' (srm _)

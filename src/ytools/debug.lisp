@@ -1,11 +1,13 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3 2004/07/26 04:41:40 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.1 2005/02/06 05:46:32 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
 
-(end-header :continue-slurping)
+(self-compile-dep :macros)
+
+(end-header)
 
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
@@ -86,6 +88,8 @@
 	     (funcall h form td))
 	    (t
 	     (values (eval (subst-with-stack-vars form)) td)))))
+
+(defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
 (defun subst-with-stack-vars (exp)
    (cond ((and (is-Symbol exp)
@@ -263,8 +267,6 @@
 	  (!= n sym)
 	  (!= sym '*)))
    `(Dbg-entry-type (nth-dbg-entry dbg-stack* ',sym ,n)))
-
-(defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
 (defsetf g-set (&optional (sym '*) (n 0)) (val)
    `(set-dbg-entry-object ',sym ',n ,val))

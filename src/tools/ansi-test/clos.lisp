@@ -66,14 +66,14 @@
 
 (check-for-bug :clos-added-1
   (with-slots (x y) a (+ x y))
-11
+  11)
 
 (check-for-bug :clos-added-2
   (defun foo (z)
     (with-slots (x y)
         z
       (+ x y)))
-  foo
+  foo)
 
 (check-for-bug :clos-added-3
   (foo a)
@@ -538,4 +538,3 @@ So class-of should return a function. Not?")
       (delete-file (merge-pathnames ".lib" lisp-file))
       (mapcar #'foo *t-list*)))
   (100 200))
-

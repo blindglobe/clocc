@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.3 2003/02/28 20:23:10 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.4 2004/09/23 12:34:28 haible Exp $")
 
 (in-package :xlib)
 
@@ -99,6 +99,10 @@
   (ecase #.(c:backend-byte-order c:*backend*)
     (:big-endian)
     (:little-endian (pushnew :clx-little-endian *features*))))
+
+#+CLISP
+(eval-when (:compile-toplevel :execute :load-toplevel)
+  (unless system::*big-endian* (pushnew :clx-little-endian *features*)))
 
 (deftype buffer-bytes () `(simple-array (unsigned-byte 8) (*)))
 

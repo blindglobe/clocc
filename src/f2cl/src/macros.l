@@ -183,7 +183,7 @@
 				  ,step)
 			       ,step)
 		   )))
-      (declare (integer4 ,step ,iteration_count))
+      (declare (type integer4 ,step ,iteration_count))
       ;; initialise loop variable
       (setq ,(first do_vble_clause) ,(second do_vble_clause))
       loop

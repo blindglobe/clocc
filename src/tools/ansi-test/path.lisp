@@ -399,7 +399,9 @@
 	     DIRECTORY "HEICKING" SYSTEM::NAME "*" TYPE :WILD SYSTEM::VERSION NIL)
  #+CLISP
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
-	     :NAME "*" :TYPE "*" :VERSION NIL))
+	     :NAME :WILD :TYPE :WILD :VERSION NIL)
+ #-(or XCL CLISP)
+ #P"*.*")
 
 (my-assert
  (progn (setf file (open "nicht-vorhandenes-file.non"

@@ -173,8 +173,7 @@ compiled-function, function, t
   (multiple-value-bind (a b)
       (subtypep '(satisfies dummy) nil)
     (list a b))
-  (nil #-clisp t
-       #+clisp nil))
+  (nil t))
 
 (check-for-bug :section4-legacy-179
   (multiple-value-bind (a b)

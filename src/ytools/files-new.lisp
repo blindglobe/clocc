@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.12 2004/12/21 17:36:32 airfoyle Exp $
+;;;$Id: files-new.lisp,v 1.1.2.1 2004/12/21 17:36:32 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -184,11 +184,11 @@
 		:reader Compiled-file-chunk-source-file
 		:type File-chunk)))
 
-;;; Represents the decision having been made which variant of a
-;;; file to load, source, object, or alternative
-;;; version of file (see fload-versions, below).
-(defclass Loadable-chunk (Chunk)
-   ((file :reader Loadable-chunk-file
+;;; A file as having the appropriate variant loaded into primary
+;;; memory --
+(defclass Loaded-chunk (Chunk)
+   (;; The File-chunk this one governs --
+    (file :accessor Loaded-chunk-file
 	  :initarg :file
 	  :type File-chunk)
     ;; The variant currently selected, either a File-chunk, or
@@ -217,154 +217,98 @@
     (object :reader Loadable-chunk-object
 	    :initarg :object)))
 
-;;; A file as having the appropriate variant loaded into primary
-;;; memory --
-(defclass Loaded-chunk (Chunk)
-   ((loadable :reader Loaded-chunk-loadable
-	      :initarg :loadable
-	      :type (or null Loadable-chunk))
-    ;; -- loadable is false (typically) if this is an object file
-    ;; that we don't want to consider compiling.
-    ;; The File-chunk this one governs --
-    (file :accessor Loaded-chunk-file
-	  :initarg :file
-	  :type File-chunk)))
-
 (defmethod initialize-instance :after ((lc Loaded-chunk)
 				       &key &allow-other-keys)
    (setf (Chunk-basis lc)
          (list (Loaded-chunk-file lc))))
 
+;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
+;;; up to date.
 ;;; Corresponds to information gleaned from file header about what
 ;;; other files (and modules, ...) are necessary in order to load or
 ;;; compile and load, the given file.  This information forms the basis
 ;;; of the corresponding Loaded-chunk.
-(defclass Loaded-basis-chunk (Chunk)
-  ((file :reader Loaded-basis-chunk-file
-	:initarg :file
-	:type File-chunk)))
-;;; It would be a reasonable idea to have alternative versions of this
-;;; chunk that use 'defsystem' information to figure out the basis.
+;;; Represents the decision having been made which variant of a
+;;; file to load, source, object, or alternative
+;;; version of file (see fload-versions, below).
+(defclass Loadable-chunk (Chunk)
+   ((controllee :reader Loadable-chunk-controllee
+	  :initarg :controllee
+	  :type Loaded-chunk))
+   (:default-initargs :basis !()))
+;;; -- The basis of this chunk is the empty list because it's a
+;;; meta-chunk, which can't be connected to any chunk whose basis it
+;;; might affect.  That's because 'chunks-update' is based on the
+;;; assumption that the bases it sees are not in the process of
+;;; changing.
 
+(defvar all-loadable-chunks* !())
 
-(defmethod initialize-instance :after ((fb-ch Loaded-basis-chunk)
-				       &rest initargs)
-  (setf (Chunk-basis fb-ch) !()))
+;;; Whoever changes the alt-version of a Loadable-chunk (e.g.,
+;;; 'fload-versions') must change its basis accordingly and
+;;; update it if it's managed.      
+(defun place-loadable-chunk (file-chunk manip)
+   (let ((lfc (place-loaded-chunk file-chunk manip)))
+      (let ((ld-chunk
+	       (chunk-with-name
+		  `(:loadable ,(File-chunk-pathname file-chunk))
+		  (\\ (name-exp)
+		     (let ((new-lc (make-instance 'Loadable-chunk
+				      :controllee lfc)))
+			(push new-lc all-loadable-chunks*)
+			new-lc))
+		  :initializer #'loadable-chunk-compute-basis)))
+      (cond (manip
+	     (cond ((not (eq (Loadable-chunk-manip ld-chunk)
+			     manip))
+		    (format *error-output*
+			    "Changing manip of ~s from ~s to ~s~%"
+			    ld-chunk (Loadable-chunk-manip ld-chunk) manip)
+		    (setf (Loadable-chunk-manip ld-chunk)
+		          manip)
+		    (loadable-chunk-compute-basis ld-chunk)))))
+      ld-chunk))
 
-(eval-when (:compile-toplevel :load-toplevel)
-
-;;; State for task is a file chunk, whose basis (and callees)
-;;; we are computing.
-(def-slurp-task compute-file-basis
-   :default (\\ (_ _) true)
-;;; -- The idea is that anything we didn't anticipate takes us
-;;; out of the header.
-   :file->state-fcn (\\ (pn) 
-		       (place-file-chunk pn)))
-)
-
-(defun place-loaded-basis-chunk (fc)
-   (chunk-with-name `(:loaded-basis ,(File-chunk-pathname fc))
-      (\\ (name)
-	 (make-instance 'Loaded-basis-chunk
-	    :name name
-	    :file fc
-	    :basis !()))))
-;;; Though this seems rational --
-;;;;(cond ((file-chunk-is-source fc)
-;;;;			  (list fc))
-;;;;			 (t !()))
-;;; -- we simply can't connect a basis-computing chunk to the
-;;; chunks whose basis it might affect.  That's because 'chunks-update'
-;;; is based on the assumption that the bases it sees are not in the
-;;; process of changing.  This comment applies to 
-;;; 'loadable-chunk-compute-basis' as well.
-
-;;; Figure out what the file and its compiled version depend on.
-;;; Before this is called, fc's callees, and the basis for its compiled
-;;; version, must be reset, so that this can build the lists up again.
-(defgeneric file-chunk-find-basis (fc))
-
-(defmethod derive ((fb Loaded-basis-chunk))
-   (cond ((= (Chunk-date fb) file-op-count*)
-	  false)
-	 (t
-	  (let* ((file-ch (Loaded-basis-chunk-file fb))
-		 (comp-ch (place-compiled-chunk file-ch)))
-	     (setf (File-chunk-callees file-ch) !())
-	     (setf (Chunk-basis comp-ch)
-		   (list file-ch))
-	     (file-chunk-find-basis file-ch)
-;;;;	     (dolist (b (tail (Chunk-basis comp-ch)))
-;;;;	        (...))
-	     file-op-count*))))
-
-;;; Stores callees in fc and its related chunks.
-;;; By subclassing File-chunk, you can alter the way the basis is 
-;;; found.
-(defmethod file-chunk-find-basis ((file-ch File-chunk))
-	     (file-slurp (File-chunk-pathname file-ch)
-			 (list compute-file-basis*)
-			 (\\ (srm)
-			    (let ((readtab
-				     (modeline-extract-readtab srm)))
-			       (cond (readtab
-				      (setf (File-chunk-readtable
-					       file-ch)
-					    readtab)))))))
-
-;;; 'srm' is stream of freshly opened file.  Try to get readtable name
-;;; from first line, returning false if it can't be found.
-(defun modeline-extract-readtab (srm)
-   (let ((c (peek-char false srm false eof*)))
-      (cond ((and (not (eq c eof*))
-		  (char= #\;))
-	     ;; Got comment.  Try to parse as
-	     ;; mode line with readtable spec
-	     (string-extract-readtab (read-line srm)))
-	    (t false))))
-
-(defun string-extract-readtab (str)
-   (let ((rpos (search "Readtable: " str))
-	 (strlen (length str)))
-      (cond (rpos
-	     (let ((pos (+ rpos (length "Readtable: "))))
-		(loop (cond ((and (< pos strlen)
-				  (is-whitespace (elt str pos)))
-			     (setq pos (+ pos 1)))
-			    (t (return))))
-		(cond ((< pos strlen)
-		       (let ((end (position #\; str :start pos)))
-			  (cond (end
-				 ;; Finally!  A readtable name
-				 (let* ((readtab-name
-					     (intern (subseq str pos end)
-						     keyword-package*))
-					(readtab (named-readtable
-						     readtab-name)))
-				    (or readtab
-					(progn
-					   (format *error-output*
-					      "Undefined readtable ~s~%"
-					      readtab-name)
-					   false))))
-				(t
-				 (format *error-output*
-				    !"Can't find end of readtable name in ~
-                                      mode line~
-                                      ~%   \"...~a\"~%"
-				    (subseq str rpos))))))
-		      (t
-		       (format *error-output*
-			  "Can't find readtable name in mode line ~
-                           ~%   \"...~a\"~%"
-			  (subseq str rpos))))))
-	    (t false))))
+(defmethod derive ((lc Loadable-chunk))
+   (error "No method supplied for figuring out what files ~s depends on"
+	  (File-chunk-file (Loadable-chunk-file lc))))
+;;; -- We must subclass Loadable-chunk to supply methods for figuring
+;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
 (defmacro end-header (&rest _)
    '(values))
 
 (defun place-loaded-chunk (file-chunk file-manip)
+   (let ((lc (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
+		(\\ (name)
+		  (let ((is-source (file-chunk-is-source file-chunk)))
+		     (let ((compiled-chunk
+			    (and is-source
+				 (place-compiled-chunk file-chunk))))
+			(let ((new-lc
+				 (make-instance 'Loaded-chunk
+				    :name name
+				    :file file-chunk
+				    :manip (or manip ':follow)
+				    :source (cond (is-source file-chunk)
+						  (t false))
+				    :compiled (cond (is-source compiled-chunk)
+						    (t file-chunk))
+				    :object (cond (is-source
+						   (place-file-chunk
+						      (File-chunk-pathname
+							 compiled-chunk)))
+						  (t file-chunk)))))
+			   new-lc))))
+
+
+		   (\\ (name-exp)
+		      (make-instance 'Loaded-chunk
+			 :name name-exp
+			 :file file-chunk)))))
+	 (cond ((eq file-manip ':noload)
+		(chunk-terminate-mgt lc ':ask)))
+	 lc)))
    (let ((file-choice
 	    (cond ((eq file-manip ':nochoice) false)
 		  (t
@@ -373,15 +317,11 @@
 		      (cond ((eq file-manip ':noload)
 			     false)
 			    (t file-manip)))))))
-      (let ((lc (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
-		   (\\ (name-exp)
-		      (make-instance 'Loaded-chunk
-			 :name name-exp
-			 :loadable file-choice
-			 :file file-chunk)))))
-	 (cond ((eq file-manip ':noload)
-		(chunk-terminate-mgt lc ':ask)))
-	 lc)))
+
+
+
+
+
 
 (defmethod derive ((lc Loaded-chunk))
    (let ((chunk-of-file-to-load lc))
@@ -421,55 +361,7 @@
 				 ""))))
       true))
 
-(defvar all-loadable-chunks* !())
 
-;;; Whoever changes the alt-version of a Loadable-chunk (e.g.,
-;;; 'fload-versions') must change its basis accordingly and
-;;; update it if it's managed.      
-;;; There's really nothing left for the 'deriver' to do, because
-;;; once the basis is determined, you're done.  The derivees
-;;; of the Loadable-chunk just load its basis.
-(defun place-loadable-chunk (file-chunk manip)
-   (let ((ld-chunk
-	    (chunk-with-name
-	       `(:loadable ,(File-chunk-pathname file-chunk))
-	       (\\ (name)
-		  (let ((is-source (file-chunk-is-source file-chunk))
-;;;;			(alt-version
-;;;;			   (let ((v (File-chunk-alt-version file-chunk)))
-;;;;			      (and v (place-loadable-chunk v manip))))
-		        )
-		     (let ((compiled-chunk
-			    (and is-source
-				 (place-compiled-chunk file-chunk))))
-			(let ((new-lc
-				 (make-instance 'Loadable-chunk
-				    :name name
-				    :file file-chunk
-				    :manip (or manip ':follow)
-				    :source (cond (is-source file-chunk)
-						  (t false))
-				    :compiled (cond (is-source compiled-chunk)
-						    (t file-chunk))
-				    :object (cond (is-source
-						   (place-file-chunk
-						      (File-chunk-pathname
-							 compiled-chunk)))
-						  (t file-chunk)))))
-			   (push new-lc all-loadable-chunks*)
-			   new-lc))))
-	       :initializer
-	          #'loadable-chunk-compute-basis)))
-      (cond (manip
-	     (cond ((not (eq (Loadable-chunk-manip ld-chunk)
-			     manip))
-		    (format *error-output*
-			    "Changing manip of ~s from ~s to ~s~%"
-			    ld-chunk (Loadable-chunk-manip ld-chunk) manip)
-		    (setf (Loadable-chunk-manip ld-chunk)
-		          manip)
-		    (loadable-chunk-compute-basis ld-chunk)))))
-      ld-chunk))
 
 ;;; Possible values: 
 ;;; :compile -- always compile when object file is missing or out of date)
@@ -496,6 +388,7 @@
 
 (define-symbol-macro fload-compile* (default-fload-manip))
 
+;;; Not clear what this is supposed to do after the reorganization --
 (defun loadables-check-bases ()
    (let ((loadables-needing-checking !())
 	 (loadables-needing-update !()))
@@ -1139,7 +1032,7 @@
 		))))))
 
 (defun monitor-file-basis (file-ch)
-   (let ((lb-ch (place-loaded-basis-chunk file-ch)))
+   (let ((lb-ch (place-loadable-chunk file-ch false)))
       (chunk-request-mgt lb-ch)
       (chunk-update lb-ch)))
 

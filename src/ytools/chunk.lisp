@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.9 2004/12/20 18:04:00 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.10 2004/12/21 17:36:32 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -102,7 +102,7 @@
 ;;; This class is handled differently by 'chunk-manage', 'chunk-terminate-mgt',
 ;;; and 'chunks-update'. --
 (defclass Or-chunk (Chunk)
-   ((disjuncts :reader Or-chunk-disjuncts
+   ((disjuncts :accessor Or-chunk-disjuncts
 	       :initarg :disjuncts)
     (default :accessor Or-chunk-default
 	     :initarg :default
@@ -126,7 +126,8 @@
 	      (Chunk-name c))
       (print-innards c srm)
       (format srm "~a"
-	      (cond ((Chunk-is-leaf c)
+	      (cond ((and (slot-boundp c 'basis)
+			  (Chunk-is-leaf c))
 		     "*")
 		    ((and (slot-boundp c 'date)
 			  (slot-boundp c 'latest-supporter-date)
@@ -136,7 +137,9 @@
 		    (t "?")))))
 
 (defmethod print-innards :before ((orch Or-chunk) srm)
-   (format srm "|~s|" (len (Or-chunk-disjuncts orch))))
+   (cond ((slot-boundp orch 'disjuncts)
+	  (format srm "|~s|" (len (Or-chunk-disjuncts orch))))
+	 (t (format srm "<no disjuncts>"))))
 
 (defgeneric derive (chunk))
 ;;; Recomputes chunk
@@ -173,13 +176,31 @@
    )
 
 (defmethod initialize-instance :after ((orch Or-chunk) &rest _)
-   (cond ((not (slot-boundp orch 'disjuncts))
-	  (error "Creating Or-chunk with no disjuncts"))
-	 ((not (slot-boundp orch 'default))
-	  (setf (Or-chunk-default orch)
-	        (lastelt (Or-chunk-disjuncts orch)))))
+   (cond ((slot-boundp orch 'disjuncts)
+	  (cond ((not (slot-boundp orch 'default))
+		 (setf (Or-chunk-default orch)
+		       (lastelt (Or-chunk-disjuncts orch)))))
+	  (dolist (b (Or-chunk-disjuncts orch))
+	     (pushnew orch (Chunk-derivees b))
+	     (cond ((and (Chunk-managed b)
+			 (not (Chunk-update-basis orch)))
+		    (setf (Chunk-update-basis orch)
+			  (list b)))))))
+   orch)
+
+(defmethod (setf Or-chunk-disjuncts) :before (_ (orch Or-chunk))
+   (cond ((slot-boundp orch 'disjuncts)
+	  (dolist (d (Or-chunk-disjuncts orch))
+	  (setf (Chunk-derivees d)
+		(remove orch (Chunk-derivees d))))))
+   (setf (Chunk-update-basis orch) false)
+   orch)
+
+(defmethod (setf Or-chunk-disjuncts) :after (_ (orch Or-chunk))
+   (dolist (d (Or-chunk-disjuncts orch))
+      (setf (Chunk-derivees d)
+	    (adjoin orch (Chunk-derivees d))))
    (dolist (b (Or-chunk-disjuncts orch))
-      (pushnew orch (Chunk-derivees b))
       (cond ((and (Chunk-managed b)
 		  (not (Chunk-update-basis orch)))
 	     (setf (Chunk-update-basis orch)
@@ -553,6 +574,12 @@
 	     false))))
 
 (defmethod derive ((orch Or-chunk))
+   (cond ((not (slot-boundp orch 'disjuncts))
+	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
+		 orch))
+	 ((not (slot-boundp orch 'default))
+	  (setf (Or-chunk-default orch)
+	        (lastelt (Or-chunk-disjuncts orch)))))
    (dolist (d (Or-chunk-disjuncts orch)
 	      (error "Attempt to derive Or-chunk with no managed disjunct: ~s"
 		     orch))     
@@ -568,7 +595,7 @@
 			    (Chunk-update-basis orch)
 			    d)
 		    (setf (Chunk-update-basis orch) (list d))))
-	     (return-from derive (get-universal-time))))))
+	     (return-from derive true)))))
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.
@@ -631,6 +658,10 @@
 		  (cond ((atom list-version) list-version)
 			(t (chunk-name-kernel list-version))))))
 	 (let ((bucket (href chunk-table* name-kernel)))
+;;;;	    (format t "Looking for ~s in~%  bucket ~s~%"
+;;;;		    exp bucket)
+;;;;	    (cond ((is-Pathname exp)
+;;;;		   (break "Chunk with pathname exp")))
 	    (do ((bl bucket (cdr bl))
 		 (c nil))
 		((or (null bl)
@@ -649,6 +680,9 @@
 						 (delete temp-chunk
 							 (href chunk-table*
 							       name-kernel))))
+;;;;				     (break !"About to initialize new chunk ~s ~
+;;;;                                              ~%  in bucket ~s~%"
+;;;;					    new-chunk bucket)
 				     (cond (initializer
 					    (funcall initializer
 						     new-chunk)))
@@ -660,7 +694,9 @@
 			(error !"Circularity during chunk construction detected at ~
                                  ~s"
 			       c))
-		       (t c))))))))
+		       (t c)))
+;;;;	      (format t "Skipped ~s~%" c)
+	      )))))
 
 (defun chunk-destroy (ch)
    (walk-table

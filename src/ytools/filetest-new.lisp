@@ -1,15 +1,15 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; Like File-chunk, except for the way basis is computed --
-(defclass Test-file-chunk (File-chunk)
-   ((callee :accessor Test-file-chunk-callee
+(defclass Test-loadable-chunk (Loadable-chunk)
+   ((callee :accessor Test-loadable-chunk-callee
 	    :initarg :callee)))
 
-(defmethod file-chunk-find-basis ((tfc Test-file-chunk))
-   (let ((c (Test-file-chunk-callee tfc)))
+(defmethod derive ((tlc Test-loadable-chunk))
+   (let ((file-ch (Loadable-chunk-file tlc))
+	 (c (Test-loadable-chunk-callee tlc)))
       (cond (c
-	     (let ((compiled-ch (place-compiled-chunk tfc)))
+	     (let ((compiled-ch (place-compiled-chunk file-ch)))
 		(setf (File-chunk-callees tfc) (list c))
 		(dolist (ssfty standard-sub-file-types*)
 		   (format t "Doing ~s~% for pathname ~s~%"

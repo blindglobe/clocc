@@ -1167,13 +1167,16 @@
 	 ))
 
      ;; We need to handle BLOCK DATA subprograms differently from
-     ;; normal subprograms.
+     ;; normal subprograms.  (BLOCK DATA subprograms always start with
+     ;; "/BLOCKDATA".  See f2cl1.l that sets this name.)
      (cond
-       ((and (eq (second defun-bit) '/blockdata/)
+       ((and (let* ((sub-name (string (second defun-bit)))
+		    (name-len (min 10 (length sub-name))))
+	       (string-equal sub-name "/blockdata" :end1 name-len :end2 name-len))
 	     *subprog_common_vars*)
 	;; Block data subprograms need to be handled specially.  The
 	;; data-init part needs to be moved inside the body and
-	;; massaged to initialize the data.
+	;; massaged to initialize the data.  
 	(let ((sym-macs (create-sym-macros)))
 	  #+nil
 	  (format t "save-inits = ~A~%" (mapcar #'(lambda (x)
@@ -2438,8 +2441,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.85 2002/02/17 15:58:16 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.86 2002/03/06 03:17:52 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.86  2002/03/06 03:17:52  rtoy
+;;; With the block data name changes in f2cl1.l, we need to recognize here
+;;; the names that are generated there in f2cl1.
+;;;
 ;;; Revision 1.85  2002/02/17 15:58:16  rtoy
 ;;; o Implement the new array-slicing method.  (Still needs work.)
 ;;; o Try to declare all arrays as simple-array, except for arrays that

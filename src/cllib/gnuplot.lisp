@@ -9,7 +9,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.1 2000/03/22 18:27:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,7 @@
   ;; `regress', `make-line', `line-sl', `line-co'
   (require :math (translate-logical-pathname "cllib:math"))
   ;; `regress-poly'
-  (require :statn (translate-logical-pathname "cllib:stat"))
+  (require :stat (translate-logical-pathname "cllib:stat"))
   ;; `pipe-output', `close-pipe', `run-prog'
   (require :shell (translate-logical-pathname "port:shell")))
 

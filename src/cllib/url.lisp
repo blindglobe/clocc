@@ -7,7 +7,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 2.4 2000/03/21 22:34:44 sds Exp $
+;;; $Id: url.lisp,v 2.5 2000/03/22 18:27:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
   ;; `string-beg-with', `split-string'
   (require :string (translate-logical-pathname "cllib:string"))
   ;; `read-trim', `file-size-t', `file-size'
-  (require : (translate-logical-pathname "cllib:fileio"))
+  (require :fileio (translate-logical-pathname "cllib:fileio"))
   ;; `mesg', `elapsed', `get-float-time', `list-format'
   (require :log (translate-logical-pathname "cllib:log"))
   ;; `to-list'

@@ -1992,7 +1992,8 @@
   '(sin cos tan
     asin acos atan
     sinh cosh tanh
-    exp sign max min))
+    exp sign max min 
+    mod))
 
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name with a
@@ -2769,8 +2770,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.109 2003/07/12 04:27:02 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.110 2003/07/13 18:54:51 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.110  2003/07/13 18:54:51  rtoy
+;;; Add mod to +allowed-lisp-names+.
+;;;
 ;;; Revision 1.109  2003/07/12 04:27:02  rtoy
 ;;; o Make +reserved-lisp-names+ be T, PI, and NIL.
 ;;; o Add +allowed-lisp-names+ to be a list of names which can be used as

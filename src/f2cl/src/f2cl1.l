@@ -923,6 +923,8 @@ main-loop
 		     (mapcar  #'id-expression 
 			      (list-split '|,| (check_new_vbles (third x))))
 		     nil)))
+    ;; Note that this is not a variable.
+    (update-called-functions-list (second x) arglist)
     (cond ((null arglist)
 	   ;; No args to the subroutine
 	   `((,(second x))))

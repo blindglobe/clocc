@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.8 2000/06/02 18:25:11 sds Exp $
+;;; $Id: clocc.lisp,v 1.9 2000/08/19 21:23:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -87,10 +87,15 @@
 ;; When using CLISP, you need version 2000-03-06 or newer. The older version
 ;; 1999-07-22 had serious bugs with logical pathnames.
 
+(defvar *clocc-root* "/usr/local/src/clocc/"
+  "*The root CLOCC directory.")
+
 (setf (logical-pathname-translations "clocc")
-      '(("src;defsystem;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
-	("src;defsystem-3-x;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
-	("**;*" "/usr/local/src/clocc/**/*")
-        ("**;*.*" "/usr/local/src/clocc/**/*.*")))
+      `(("src;defsystem;*"
+         ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*"))
+        ("src;defsystem-3-x;*"
+         ,(concatenate 'string *clocc-root* "src/defsystem-3.x/*"))
+        ("**;*" ,(concatenate 'string *clocc-root* "**/*"))
+        ("**;*.*" ,(concatenate 'string *clocc-root* "**/*.*"))))
 
 ;;; clocc.lisp ends here

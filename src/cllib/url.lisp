@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-05-05 Wed 15:22:13 EDT sds@goems.com>
+;;; File: <url.lisp - 1999-06-03 Thu 16:39:07 EDT sds@goems.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,18 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.29 1999/05/05 21:04:22 sds Exp $
+;;; $Id: url.lisp,v 1.30 1999/06/03 20:41:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.30  1999/06/03 20:41:11  sds
+;;; (+bad-url+): new constant.
+;;; (*rfc-base*): new variable.
+;;; (protocol-rfc): renamed from `url-rfc'.
+;;; (socket-server &c): support CMUCL & LispWorks.
+;;; (*url-replies*): new variable.
+;;; (url-ask): use it; `END' can be symbolic now.
+;;; (cl-server): nascent CL server stuff (ripped from CMUCL).
+;;;
 ;;; Revision 1.29  1999/05/05 21:04:22  sds
 ;;; LispWorks compatibility:
 ;;; (open-socket, resolve-host-ipaddr, open-socket-server):
@@ -233,19 +242,38 @@
   (path "" :type simple-string)) ; pathname
 )
 
-(defun url-rfc (protocol)
+(defconst +bad-url+ url (make-url) "*The convenient constant for init.")
+
+(defcustom *rfc-base* (or null string)
+  "http://www.cis.ohio-state.edu/htbin/rfc/rfc~d.html"
+  "*The format string used to generate the URL in `protocol-rfc'.
+When NIL, just the RFC numbers are returned.")
+
+(defun protocol-rfc (protocol)
   "Return the RFC url for the given protocol.
 See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
-<http://www.internic.net/wp>, <ftp://ds.internic.net/rfc>"
-  (ecase (etypecase protocol (symbol protocol) (url (url-prot protocol)))
-    ((:http :www) #(1945 2068))
-    (:ftp #(959))
-    ((:smtp :mailto) #(821))
-    (:telnet #(1205))
-    (:whois #(954 2167))
-    (:finger #(1288))
-    (:time #(1305))
-    ((:nntp :news) #(977))))
+<http://www.internic.net/wp>, <ftp://ds.internic.net/rfc> and `*rfc-base*'."
+  (let* ((prot (typecase protocol
+                 (symbol (if (keywordp protocol) protocol (kwd protocol)))
+                 (string (kwd protocol)) (url (url-prot protocol))
+                 (t (error 'case-error :proc 'protocol-rfc :args
+                           (list 'protocol protocol 'symbol 'string 'url)))))
+         (rfcs (case prot
+                 ((:http :www) '(1945 2068))
+                 (:ftp '(959))
+                 ((:smtp :mailto) '(821))
+                 (:telnet '(1205))
+                 (:whois '(954 2167))
+                 (:finger '(1288))
+                 (:time '(1305))
+                 ((:nntp :news) '(977))
+                 (t (error 'code :proc 'protocol-rfc :args (list prot)
+                           :mesg "Cannot handle protocol ~s")))))
+    (maplist (lambda (cc)
+               (setf (car cc)
+                     (if *rfc-base*
+                         (url (format nil *rfc-base* (car cc))) (car cc))))
+             rfcs)))
 
 (defun socket-service-port (&optional service (protocol "tcp"))
   "Return the port number of the SERVICE."
@@ -315,25 +343,25 @@ guess from the protocol."
   (subseq (url-path url)
           (1+ (or (position #\/ (url-path url) :from-end t) -1))))
 
-(defmethod print-object ((url url) (stream stream))
+(defmethod print-object ((url url) (out stream))
   "Print the URL in the standard form."
   (when *print-readably* (return-from print-object (call-next-method)))
-  (when *print-escape* (write-string "\"" stream))
+  (when *print-escape* (write-string "\"" out))
   (let ((*print-escape* nil))
-    (write (url-prot url) :stream stream :case :downcase)
-    (write-string ":" stream)
+    (write (url-prot url) :stream out :case :downcase)
+    (write-string ":" out)
     (unless (or (eq :mailto (url-prot url)) (eq :file (url-prot url))
                 (zerop (length (url-host url))))
-      (write-string "//" stream))
+      (write-string "//" out))
     (unless (zerop (length (url-user url)))
-      (write (url-user url) :stream stream)
+      (write (url-user url) :stream out)
       (unless (zerop (length (url-pass url)))
-        (write-string "#" stream) (write (url-pass url) :stream stream))
-      (write-string "@" stream))
+        (write-string "#" out) (write (url-pass url) :stream out))
+      (write-string "@" out))
     (unless (zerop (length (url-host url)))
-      (write (url-host url) :stream stream)
+      (write (url-host url) :stream out)
       (unless (zerop (url-port url))
-        (write-string ":" stream) (write (url-port url) :stream stream)))
+        (write-string ":" out) (write (url-port url) :stream out)))
     (assert (or (zerop (length (url-path url)))
                 (eq (url-prot url) :news) (eq (url-prot url) :nntp)
                 (char= #\/ (aref (url-path url) 0)))
@@ -343,9 +371,9 @@ guess from the protocol."
                (or (eq (url-prot url) :news) (eq (url-prot url) :nntp))
                (not (zerop (length (url-path url))))
                (not (char= #\/ (aref (url-path url) 0))))
-      (write-string "/" stream))
-    (write-string (url-path url) stream))
-  (when *print-escape* (write-string "\"" stream)))
+      (write-string "/" out))
+    (write-string (url-path url) out))
+  (when *print-escape* (write-string "\"" out)))
 
 (defcustom *url-special-chars* simple-string "#%&*+,-./:=?@_~"
   "*The string consisting of non-alphanumeric characters allowed in a URL.")
@@ -424,32 +452,8 @@ The argument can be:
     url))
 
 ;;;
-;;; }}}{{{ Sockets
+;;; name resulution
 ;;;
-
-(deftype socket ()
-  #+allegro 'excl::socket-stream
-  #+cmu 'system:fd-stream
-  #+lispworks 'comm:socket-stream
-  #-(or cmucl allegro lispworks) 'stream)
-
-(defun open-socket (host port &optional bin)
-  "Open a socket connection to HOST at PORT."
-  (declare (type (or integer string) host) (fixnum port) (type boolean bin))
-  (let ((host (etypecase host
-                (string host) (integer (resolve-host-ipaddr host)))))
-    #+allegro (socket:make-socket :remote-host host :remote-port port
-                                  :format (if bin :binary :text))
-    #+clisp (lisp:socket-connect port host :element-type
-                                 (if bin '(unsigned-byte 8) 'character))
-    #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
-                                 :input t :output t :element-type
-                                 (if bin '(unsigned-byte 8) 'character))
-    #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
-                                      (if bin 'unsigned-byte 'base-char))
-    ;; #+gcl
-    #-(or allegro clisp cmu lispworks)
-    (error 'not-implemented :proc (list 'open-socket host port bin))))
 
 (defun resolve-host-ipaddr (host)
   "Call gethostbyname(3) or gethostbyaddr()."
@@ -505,12 +509,41 @@ The argument can be:
     (+ (ash (first ll) 24) (ash (second ll) 16)
        (ash (third ll) 8) (fourth ll))))
 
+;;;
+;;; }}}{{{ Sockets
+;;;
+
+(deftype socket ()
+  #+allegro 'excl::socket-stream
+  #+clisp 'stream
+  #+cmu 'system:fd-stream
+  #+lispworks 'comm:socket-stream
+  #-(or allegro clisp cmucl lispworks) 'stream)
+
+(defun open-socket (host port &optional bin)
+  "Open a socket connection to HOST at PORT."
+  (declare (type (or integer string) host) (fixnum port) (type boolean bin))
+  (let ((host (etypecase host
+                (string host) (integer (resolve-host-ipaddr host)))))
+    #+allegro (socket:make-socket :remote-host host :remote-port port
+                                  :format (if bin :binary :text))
+    #+clisp (lisp:socket-connect port host :element-type
+                                 (if bin '(unsigned-byte 8) 'character))
+    #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
+                                 :input t :output t :element-type
+                                 (if bin '(unsigned-byte 8) 'character))
+    #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
+                                      (if bin 'unsigned-byte 'base-char))
+    ;; #+gcl
+    #-(or allegro clisp cmu lispworks)
+    (error 'not-implemented :proc (list 'open-socket host port bin))))
+
 (defun socket-host (sock)
   "Return the remote host name."
   (declare (type socket sock))
   #+clisp (lisp:socket-stream-host sock)
   #+allegro (socket:ipaddr-to-dotted (socket:remote-host sock))
-  #+cmu (extensions::gethostbyaddr (ext:get-socket-host-and-port sock))
+  #+cmu (ext::gethostbyaddr (ext:get-socket-host-and-port sock))
   ;; #+gcl #+lispworks
   #-(or allegro clisp cmu)
   (error 'not-implemented :proc (list 'socket-host sock)))
@@ -525,16 +558,47 @@ The argument can be:
   #-(or allegro clisp cmu)
   (error 'not-implemented :proc (list 'socket-port sock)))
 
-(defun open-socket-server (sock)
-  "Open a `generic' socket server."
-  (declare (ignorable sock) (type socket sock))
-  #+allegro (socket:make-socket :connect :passive)
-  #+clisp (lisp:socket-server sock)
-  #+cmu (ext:create-inet-socket)
-  #+lispworks (comm:start-up-server)
+(deftype socket-server ()
+  #+allegro 'acl-socket::socket-stream-internet-passive
+  #+clisp 'lisp:socket-server
+  #+cmu 'integer
+  #+lispworks 'comm:socket-stream ; FIXME
+  #-(or allegro clisp cmucl lispworks) t)
+
+(defun socket-accept (serv &optional bin)
+  "Accept a connection on a socket server (passive socket)."
+  (declare (type socket-server serv) (values socket))
+  #+allegro (socket:accept-connection serv)
+  #+clisp (lisp:socket-accept serv :element-type
+                              (if bin '(unsigned-byte 8) 'character))
+  #+cmu (progn
+          (mp:process-wait-until-fd-usable serv :input)
+          (system:make-fd-stream (ext:accept-tcp-connection serv)
+                                 :input t :output t :element-type
+                                 (if bin '(unsigned-byte 8) 'character)))
+  #+lispworks (comm:-something serv) ; FIXME
   ;; #+gcl
   #-(or allegro clisp cmu lispworks)
-  (error 'not-implemented :proc (list 'open-socket-server sock)))
+  (error 'not-implemented :proc (list 'socket-accept serv bin)))
+
+(defun open-socket-server (&optional port)
+  "Open a `generic' socket server."
+  (declare (type (or null integer socket) port) (values socket-server))
+  #+allegro (socket:make-socket :connect :passive :local-port
+                                (when (integerp port) port))
+  #+clisp (lisp:socket-server port)
+  #+cmu (ext:create-inet-listener port)
+  #+lispworks (comm:start-up-server port) ; FIXME
+  ;; #+gcl
+  #-(or allegro clisp cmu lispworks)
+  (error 'not-implemented :proc (list 'open-socket-server port)))
+
+(defun socket-server-close (server)
+  "Close the server."
+  (declare (type socket-server server))
+  #+clisp (lisp:socket-server-close server)
+  #+cmu (unix:unix-close server)
+  #-(or clisp cmu) (close server))
 
 (define-condition network (error)
   ((proc :type symbol :reader net-proc :initarg :proc)
@@ -632,14 +696,14 @@ and evaluate TIMEOUT-FORMS."
         :when (and sock (open-stream-p sock)) :return sock
         :when (and max-retry (>= ii max-retry))
         :do (error 'network :proc 'open-socket-retry :host host :port port
-                   :mesg "max-retry [~a] exceeded~@[~% * last error: ~a~]"
+                   :mesg "max-retry [~a] exceeded~@[~% - last error: ~a~]"
                    :args (list max-retry err-cond))
         :when (>= (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-socket-retry :host host :port port
                    :time timeout)
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
-(defun open-url (url &key (err *standard-output*) (sleep *url-default-sleep*)
+(defun open-url (url &key (err *error-output*) (sleep *url-default-sleep*)
                  (timeout *url-default-timeout*)
                  (max-retry *url-default-max-retry*))
   "Open a socket connection to the URL.
@@ -665,20 +729,20 @@ the error `timeout' is signaled."
             (with-timeout (timeout nil)
               (case (url-prot url)
                 ((:http :www) (setq sock (url-open-http sock url err)))
-                (:ftp (url-ask sock err 220)
+                (:ftp (url-ask sock err :conn)
                       (url-login-ftp sock url err))
                 (:telnet (dolist (word (split-string (url-path url) "/") t)
                            (format sock "~a~%" word)))
                 ((:whois :finger :cfinger)
                  (format sock "~a~%" (url-path-file url)) t)
-                (:mailto (url-ask sock err 220))
+                (:mailto (url-ask sock err :conn))
                 ((:news :nntp)
-                 (url-ask sock err 200)
+                 (url-ask sock err :noop)
                  (unless (zerop (length (url-path url)))
                    (let ((strs (split-string (url-path url) "/")))
-                     (url-ask sock err 211 "group ~a" (car strs))
+                     (url-ask sock err :group "group ~a" (car strs))
                      (when (cadr strs)
-                       (url-ask sock err 220 "article ~a" (cadr strs)))))
+                       (url-ask sock err :article "article ~a" (cadr strs)))))
                  t)
                 ((:time :daytime) t)
                 (t (error 'code :proc 'open-url :args (list (url-prot url))
@@ -686,7 +750,7 @@ the error `timeout' is signaled."
           (code (co) (error co))
           (login (co) (error co))
           (error (co)
-            (mesg :err err "Connection to <~a> dropped:~% * ~a~%" url co)))
+            (mesg :err err "Connection to <~a> dropped:~% - ~a~%" url co)))
         :return sock
         :when sock :do (close sock)
         :when (> (- (get-universal-time) begt) timeout)
@@ -708,7 +772,7 @@ the error `timeout' is signaled."
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
 `*readtable*' is temporarily set to RT (defaults to `*readtable*').
 ERR is the stream for information messages or NIL for none."
-  (let ((uuu (gensym "WOU")))
+  (with-gensyms ("WOU-" uuu)
     `(let* ((,uuu (url ,url)) (*readtable* ,rt)
             (,socket (open-url ,uuu :err ,err :timeout ,timeout
                                :max-retry ,max-retry))
@@ -717,8 +781,8 @@ ERR is the stream for information messages or NIL for none."
       (declare (type url ,uuu) (type socket ,socket))
       (unwind-protect (progn ,@body)
         (case (url-prot ,uuu)
-          ((:ftp :mailto) (url-ask ,socket ,err 221 "quit"))
-          ((:news :nntp) (url-ask ,socket ,err 205 "quit")))
+          ((:ftp :mailto) (url-ask ,socket ,err :quit "quit"))
+          ((:news :nntp) (url-ask ,socket ,err :nntp-quit "quit")))
         (close ,socket)))))
 
 (defun url-open-http (sock url err)
@@ -742,21 +806,44 @@ ERR is the stream for information messages or NIL for none."
         (close sk) (setq sk (open-url sym :err err))
         (format sk "GET ~a HTTP/1.0~2%" (url-path sym))))))
 
+(defcustom *url-replies* hash-table
+  (let ((ht (make-hash-table :test 'eq)))
+    (dolist (cc '(((:user) 331 332) ((:pass) 230 332) ((:acct) 230 202)
+                  ((:syst) 215) ((:stat) 211 212 213) ((:abor) 225 226)
+                  ((:cwd :rnto :dele :rmd) 250) ((:mkd :pwd) 257)
+                  ((:cdup :mode :type :stru :port :noop) 200) ((:quit) 221)
+                  ((:help) 211 214) ((:smnt) 202 250) ((:rein) 120 220)
+                  ((:pasv) 227) ((:allo :site) 200 202) ((:rest :rnfr) 350)
+                  ((:stor :list :stou :retr) 125 150 226 250) ((:xover) 224)
+                  ((:group) 211) ((:article) 220) ((:nntp-quit) 205)
+                  ((:nntp-list) 215) ((:smtp-data) 250 354)
+                  ((:smtp-helo :mail-from :rcpt-to) 250))
+             ht)
+      (dolist (re (car cc)) (setf (gethash re ht) (cdr cc)))))
+  "*The table of URL requests and replies, for use in `url-ask'.
+See RFC959 (FTP) &c.")
+
 (defun url-ask (sock out end &rest req)
   "Send a request; read the response."
   (declare (type socket sock) (type (or null stream) out)
-           (type (unsigned-byte 10) end))
+           (type (or (unsigned-byte 10) symbol list) end))
   (when req
     (apply #'format sock req) (fresh-line sock)
-    (when out (apply #'format out "~&url-ask[~d]: `~@?'~%" end req)))
-  (loop :for ln :of-type simple-string = (read-line sock)
-        :and code :of-type (unsigned-byte 10) = 0
-        :when out :do (format out "~&url-ask[~d]: ~a~%" end
-                              (setq ln (string-right-trim +whitespace+ ln)))
-        :while (or (< (length ln) 3) (char/= #\Space (schar ln 3))
-                   (progn (setq code (or (parse-integer
-                                          ln :end 3 :junk-allowed t) 0))
-                          (and (< code 400) (/= end code))))
+    (when out (apply #'format out "~&url-ask[~s]: `~@?'~%" end req)))
+  (loop :with endl :of-type list =
+        (typecase end
+          (integer (to-list end)) (list end)
+          (symbol (gethash end *ftp-replies*))
+          (t (error 'case-error :proc 'url-ask
+                    :args (list 'end end 'integer 'list 'symbol))))
+        :for ln :of-type simple-string =
+        (string-right-trim +whitespace+ (read-line sock))
+        :for len :of-type index-t = (length ln)
+        :and code :of-type (or null (unsigned-byte 10)) = nil
+        :when out :do (format out "~&url-ask[~s]: ~a~%" end ln)
+        :while (or (< len 3) (and (> len 3) (char/= #\Space (schar ln 3)))
+                   (null (setq code (parse-integer ln :end 3 :junk-allowed t)))
+                   (and (< code 400) endl (not (member code endl :test #'=))))
         :finally (if (< code 400) (return (values ln code))
                      (error 'network :proc 'url-ask :host (socket-host sock)
                             :port (socket-port sock) :mesg ln))))
@@ -774,12 +861,12 @@ ERR is the stream for information messages or NIL for none."
             (+ (ash (parse-integer line :start p2 :end p1) 8)
                (parse-integer line :start p1 :end p0)))))
 
-(defun ftp-get-passive-socket (sock out bin timeout)
+(defun ftp-get-passive-socket (sock err bin timeout)
   "Get a passive socket."
-  (declare (type socket sock) (values socket))
+  (declare (type socket sock) (type (or null stream) err) (values socket))
   (multiple-value-call #'open-socket-retry
-    (ftp-parse-sextuple (url-ask sock out 227 "pasv"))
-    :err out :max-retry 5 :bin bin :timeout timeout))
+    (ftp-parse-sextuple (url-ask sock err :pasv "pasv"))
+    :err err :max-retry 5 :bin bin :timeout timeout))
 
 (defcustom *ftp-anonymous-passwords* list '("abc@ftp.net" "abc@")
   "*The list of passwords to try with anonymous ftp login.
@@ -793,23 +880,23 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
              (error 'login :proc 'url-login-ftp :host host :port port
                     :mesg "All these passwords failed [~a]:~{ ~s~}"
                     :args (cons co *ftp-anonymous-passwords*)))
-      (url-ask sock err 331 "user ~a" (if (zerop (length (url-user url)))
-                                          "anonymous" (url-user url)))
+      (url-ask sock err :user "user ~a" (if (zerop (length (url-user url)))
+                                            "anonymous" (url-user url)))
       (unless (typep (setq co (nth-value
                                1 (ignore-errors
-                                   (url-ask sock err 230 "pass ~a"
+                                   (url-ask sock err :pass "pass ~a"
                                             (if (zerop (length (url-pass url)))
                                                 pwd (url-pass url))))))
                      'error)
         (return)))
-    (ignore-errors (url-ask sock err 215 "syst"))
-    ;; (url-ask sock err 200 "type i")
-    (ignore-errors (url-ask sock err 211 "stat"))
+    (ignore-errors (url-ask sock err nil "syst")) ; :syst
+    ;; (url-ask sock err :type "type i")
+    (ignore-errors (url-ask sock err nil "stat")) ; :stat
     (handler-bind ((network (lambda (co)
                               (error 'login :proc 'url-login-ftp :host host
-                                     :port port :mesg "CWD error: ~a"
+                                     :port port :mesg "CWD error:~% - ~a"
                                      :args (list (net-mesg co))))))
-      (url-ask sock err 250 "cwd ~a" (url-path-dir url)))))
+      (url-ask sock err :cwd "cwd ~a" (url-path-dir url)))))
 
 (defcustom *buffer* (simple-array (unsigned-byte 8) (10240))
   (make-array 10240 :element-type '(unsigned-byte 8))
@@ -857,10 +944,10 @@ Retry (+ 1 RETRY) times if the file length doesn't match the expected."
                    (mesg :log out "File `~a' exists (~:d bytes), ~
 ~:[appending~;overwriting~]...~%" path sz (zerop sz))
                    (unless (zerop sz)
-                     (url-ask sock err 350 "rest ~d" sz)
+                     (url-ask sock err :rest "rest ~d" sz)
                      sz))))
-         (line (progn (url-ask sock err 200 "type ~:[a~;i~]" bin)
-                      (url-ask sock err 150 "retr ~a" rmt)))
+         (line (progn (url-ask sock err :type "type ~:[a~;i~]" bin)
+                      (url-ask sock err :retr "retr ~a" rmt))) ; 150
          (pos (position #\( line :from-end t))
          (len (when pos (read-from-string line nil nil :start (1+ pos)))))
     (declare (type socket data) (type file-size-t tot) (type pathname path)
@@ -870,7 +957,7 @@ Retry (+ 1 RETRY) times if the file length doesn't match the expected."
         (mesg :log out "Expect ~:d dot~:p for ~:d bytes~@[ [~/pr-secs/]~]~%"
               (ceiling (1+ len) (length *buffer*)) len (url-eta len)))
     (setq tot (socket-to-file data path :rest rest :out out))
-    (url-ask sock err 226)
+    (url-ask sock err :retr)      ; 226
     (cond ((or (null len) (= tot len))
            (when (boundp '*url-bytes-transferred*)
              (incf *url-bytes-transferred* tot))
@@ -903,10 +990,10 @@ as the remote one."
   "Get the file list."
   (declare (type socket sock) (type (or null stream) out err))
   (let ((data (ftp-get-passive-socket sock err nil timeout)))
-    (url-ask sock err 150 "list~@[ ~a~]" name)
+    (url-ask sock err :list "list~@[ ~a~]" name) ; 150
     (loop :for line = (read-line data nil nil) :while line :when out :do
           (format out "~a~%" (string-right-trim +whitespace+ line)))
-    (url-ask sock err 226)))
+    (url-ask sock err :list)))  ; 226
 
 ;;; Mail
 
@@ -928,11 +1015,11 @@ This is initialized based on `mail-host-address'.")
   (assert (eq :mailto (url-prot url)) (url)
           "url-send-mail: `~a' is not a `mailto'" url)
   (with-open-url (sock url :err err)
-    (url-ask sock err 250 "helo ~a" helo)
-    (url-ask sock err 250 "mail from: ~a" from)
-    (url-ask sock err 250 "rcpt to: ~a" (url-user url))
-    (url-ask sock err 354 "data")
-    (url-ask sock err 250 "~a~%." text)))
+    (url-ask sock err :smtp-helo "helo ~a" helo) ; 250
+    (url-ask sock err :mail-from "mail from: ~a" from) ; 250
+    (url-ask sock err :rcpt-to "rcpt to: ~a" (url-user url)) ; 250
+    (url-ask sock err :smtp-data "data") ; 354
+    (url-ask sock err :smtp-date "~a~%." text))) ; 250
 
 ;;; News
 
@@ -945,7 +1032,7 @@ This is initialized based on `mail-host-address'.")
   (msid1 "" :type simple-string) ; ????
   (bytes 0 :type file-size-t)   ; size in bytes
   (lines 0 :type index-t)       ; size in lines
-  (xref nil :type list))
+  (xref nil :type list))        ; list of cross-references
 
 (defmethod print-object ((art article) (out stream))
   (if *print-readably* (call-next-method)
@@ -997,24 +1084,25 @@ When RE is supplied, articles whose subject match it are retrieved."
               ((car spl)        ; group only
                (multiple-value-bind (na a1 a2)
                    (values-list
-                    (string-tokens (url-ask sock err 211 "group ~a" (car spl))
+                    (string-tokens (url-ask sock err :group "group ~a"
+                                            (car spl)) ; 211
                                    :start 3 :max 3))
                  (let ((nm (format nil "~d-~d" a1 a2)))
                    (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
-                   (url-ask sock err 224 "xover ~a" nm)
+                   (url-ask sock err :xover "xover ~a" nm) ; 224
                    (let ((ls (map-in #'string->article
                                      (url-dump-to-dot sock :out (out nm)
                                                       :collect t))))
                      (when re
                        (dolist (art ls)
                          (when (search re (article-subj art))
-                           (url-ask sock err 220 "article ~d"
+                           (url-ask sock err :article "article ~d" ; 220
                                     (article-numb art))
                            (url-dump-to-dot sock :out
                                             (out (article-numb art))))))
                      ls))))
               (t               ; not even group, just host
-               (url-ask sock err 215 "list active")
+               (url-ask sock err :nntp-list "list active") ; 215
                (url-dump-to-dot sock :out (out "active"))))))))
 
 (defcustom *time-servers* list
@@ -1284,7 +1372,7 @@ It is bound only by `with-open-html'.")
                                  head))
                           &body body)
   "Output HTML to a file."
-  (let ((mailto (gensym "WOH-MAILTO-")))
+  (with-gensyms ("WOH-MAILTO-" mailto)
     `(let ((,mailto (concatenate 'string "mailto:" *user-mail-address*)))
       (with-open-file (*html-output* ,@open-pars)
         (format *html-output* "<!doctype~{ ~s~}>~%" ,doctype)
@@ -1345,5 +1433,146 @@ It is bound only by `with-open-html'.")
                          (ignore-errors (dttm->string (file-write-date
                                                        fi))))))))))
 
+;;;
+;;; CL server
+;;;
+
+(defcustom *cl-server-port* integer 453
+  "*The default port for `cl-server'.
+Defaults to (parse-integer \"cl\" :radix 36) ==> 453")
+
+(defcustom *cl-server-password* (or null simple-string) "ansi-cl"
+  "*The simple authentication.
+Set to NIL to disable.")
+
+(defcustom *cl-server-quit* list '("bye" "quit" "exit")
+  "*The list of `quit' commands.")
+
+(defun cl-server (&key (port *cl-server-port*) (password *cl-server-password*))
+  "Establish a connection and answer questions."
+  (declare (integer port))
+  (let ((serv (open-socket-server port)))
+    (declare (type socket-server serv))
+    (unwind-protect
+       (loop :for sock :of-type socket = (socket-accept serv) :with pwd :do
+             (format t "[~a] connected:~60t~s:~d~%"
+                     (current-time nil) (socket-host sock) (socket-port sock))
+             (let ((*standard-output* sock)) (sysinfo))
+             :if (or (null password)
+                     (progn
+                       (format sock "Enter password: ") (force-output sock)
+                       (let ((str (read-line sock nil "")))
+                         (declare (simple-string str))
+                         (setq pwd (subseq str 0 (1- (length str))))
+                         (string= pwd password))))
+             :do (format sock "password ok~%to quit, type one of~?.~%"
+                         (list-format "~s") *cl-server-quit*)
+             (loop :for ii :of-type index-t :upfrom 1 :do
+                   (format sock "~a[~d]: > " (package-short-name *package*) ii)
+                   (force-output sock)
+                   (handler-case
+                       (let ((form (read sock)))
+                         (when (and (or (stringp form) (symbolp form))
+                                    (member form *cl-server-quit*
+                                            :test #'string-equal))
+                           (return))
+                         (format sock "~{~a~^ ;~%~}~%"
+                                 (multiple-value-list (eval form))))
+                     (error (co)
+                       (format sock "error:~%~a~%...flushed...~%" co))))
+             (format sock "goodbye~%")
+             (format t "[~a] connection closed:~60t~s:~d~%" (current-time nil)
+                     (socket-host sock) (socket-port sock))
+             :else :do (format sock "wrong password~%")
+             (format t "[~a] access denied [~a]:~60t~s:~d~%" (current-time nil)
+                     pwd (socket-host sock) (socket-port sock))
+             :end :do (close sock))
+      (socket-server-close serv))))
+
+;;; cmucl/src/code/multi-proc.lisp
+#+cmu
+(defun start-lisp-connection-listener (&key (port 1025)
+                                       (password (random (expt 2 24))))
+  (declare (type (unsigned-byte 16) port))
+  "Create a Lisp connection listener, listening on a TCP port for new
+connections and starting a new top-level loop for each. If a password
+is not given then one will be generated and reported."
+  (labels (;; The session top level read eval. loop.
+	   (start-top-level (stream)
+             (unwind-protect
+                  (let* ((*terminal-io* stream)
+                         (*standard-input*
+                          (make-synonym-stream '*terminal-io*))
+                         (*standard-output* *standard-input*)
+                         (*error-output* *standard-input*)
+                         (*debug-io* *standard-input*)
+                         (*query-io* *standard-input*)
+                         (*trace-output* *standard-input*))
+                    (format t "Enter password: ")
+                    (finish-output)
+                    (let* ((*read-eval* nil)
+                           (read-password
+                            (handler-case
+                                (read)
+                              (error () (return-from start-top-level)))))
+                      (unless (equal read-password password)
+                        (return-from start-top-level)))
+                    (sysinfo)
+                    (mp::top-level))
+               (handler-case
+                   (close stream)
+                 (error ()))))
+	   ;; The body of the connection listener.
+	   (listener ()
+	     (declare (optimize (speed 3)))
+	     (let ((serv (open-socket-server port)))
+	       (unwind-protect
+		    (progn
+		      (setf (process-name mp::*current-process*)
+			    (format nil "Lisp connection listener on port ~d"
+				    port))
+		      (format t "~&;;; Started lisp connection listener on ~
+ 				  port ~d with password ~d~%"
+			      port password)
+		      (loop
+		       ;; Wait for new connections.
+                       (let ((sock (socket-accept serv)))
+                         (make-process #'(lambda () (start-top-level sock))
+                                       :name (format
+                                              nil "Lisp session from ~s:~d"
+                                              (socket-host sock)
+                                              (socket-port sock))))))
+		 ;; Close the listener stream.
+		 (when serv (socket-server-close serv))))))
+    ;; Make the listening thread.
+    (make-process #'listener)))
+
 (provide "url")
 ;;; }}} url.lisp ends here
+
+#|
+In Linux 2.2.X with the binmisc module, any .x86f file is a binary file.
+
+pvaneynd:~$ cat /usr/doc/cmucl/examples/Demos/register-lisp-as-executables.sh
+#!/bin/sh
+echo ':lisp:E::x86f::/usr/bin/lisp-start:'  >
+/proc/sys/fs/binfmt_misc/register # this should only work for root
+under linux 2.1.XX or later
+# now you can do "chmod a+x hello.x86f" and
+# ./hello.x86f
+# from your favorite shell.
+
+pvaneynd:~$ cat /usr/doc/cmucl/examples/Demos/lisp-start
+#!/bin/sh
+/usr/bin/lisp -load $1
+
+There is even a demo of how to use a lisp-server to wait for
+commands, so you avoid the startup-delay of cmucl...
+
+pvaneynd:~$ cat /usr/doc/cmucl/examples/Demos/Start-up-server.lisp
+(in-package :user)
+
+(format t "THIS A A HUDGE SECURITY RISC. CHANGE THE PASSWORD!!!~%~%")
+(setf mp::*idle-process* mp::*initial-process*)
+(mp::start-lisp-connection-listener :port 6789 :password "Clara")
+|#

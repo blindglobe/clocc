@@ -20,8 +20,8 @@
        Technology - Programming Language - Common Lisp</ulink></title>
   </biblioentry>">
 
-<!ENTITY clhs "<citation>Common Lisp HyperSpec</citation>">
-<!ENTITY clhs-bib
+<!ENTITY hyperspec "<citation>Common Lisp HyperSpec</citation>">
+<!ENTITY hyperspec-bib
   "<biblioentry id='CLHS'>
    <abbrev>CLHS</abbrev>
    <title><ulink url='&clhs;/FrontMatter'>Common Lisp HyperSpec</ulink></title>

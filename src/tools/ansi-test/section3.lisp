@@ -657,6 +657,15 @@ is actually performed using its cddr instead")
        (symbol-macrolet ((a (first x)))
 	 (expand a)))
    (list n h))
+ error
+ "A has been declared special, thus SYMBOL-MACROLET may not bind it")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (let ((x (list 1 2 3)))
+       (symbol-macrolet ((a-new (first x)))
+	 (expand a-new)))
+   (list n h))
  ((FIRST X) T))
 
 (my-assert
@@ -665,12 +674,29 @@ is actually performed using its cddr instead")
        (symbol-macrolet ((a (first x)))
 	 (macroexpand 'a)))
    (list n h))
- (A nil))
+ error
+ "A has been declared special, thus SYMBOL-MACROLET may not bind it")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (let ((x (list 1 2 3)))
+       (symbol-macrolet ((a-new (first x)))
+	 (macroexpand 'a-new)))
+   (list n h))
+ (a-new nil))
 
 (my-assert
  (multiple-value-bind (n h)
      (symbol-macrolet ((b (alpha x y)))
        (expand-1 b))
+   (list n h))
+ error
+ "B has been declared special, thus SYMBOL-MACROLET may not bind it")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (symbol-macrolet ((b-new (alpha x y)))
+       (expand-1 b-new))
    (list n h))
  ((ALPHA X Y)  T))
 
@@ -678,6 +704,14 @@ is actually performed using its cddr instead")
  (multiple-value-bind (n h)
      (symbol-macrolet ((b (alpha x y)))
        (expand b))
+   (list n h))
+ error
+ "B has been declared special, thus SYMBOL-MACROLET may not bind it")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (symbol-macrolet ((b-new (alpha x y)))
+       (expand b-new))
    (list n h))
  ((GAMMA X Y) T))
 
@@ -687,13 +721,31 @@ is actually performed using its cddr instead")
 		       (a b))
        (expand-1 a))
    (list n h))
- (B T))
+ error
+ "A and B have been declared special, thus SYMBOL-MACROLET may not bind them")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (symbol-macrolet ((b-new (alpha x y))
+		       (a-new b-new))
+       (expand-1 a-new))
+   (list n h))
+ (B-NEW T))
 
 (my-assert
  (multiple-value-bind (n h)
      (symbol-macrolet ((b (alpha x y))
 		       (a b))
        (expand a))
+   (list n h))
+ error
+ "A and B have been declared special, thus SYMBOL-MACROLET may not bind them")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (symbol-macrolet ((b-new (alpha x y))
+		       (a-new b-new))
+       (expand a-new))
    (list n h))
  ((GAMMA X Y) T))
 
@@ -720,7 +772,17 @@ is actually performed using its cddr instead")
 	 (let ((a x))
 	   (expand a))))
    (list n h))
- (A nil))
+ error
+ "A has been declared special, thus SYMBOL-MACROLET may not bind it")
+
+(my-assert
+ (multiple-value-bind (n h)
+     (let ((x (list 1 2 3)))
+       (symbol-macrolet ((a-new (first x)))
+	 (let ((a-new x))
+	   (expand a-new))))
+   (list n h))
+ (a-new nil))
 
 ;;; define-symbol-macro
 (my-assert
@@ -731,7 +793,7 @@ is actually performed using its cddr instead")
  (fboundp 'define-symbol-macro)
  T
  "The macro DEFINE-SYMBOL-MACRO should exist")
- 
+
 (my-assert
  (define-symbol-macro thing1 (first *things*))
  THING1)

@@ -413,6 +413,7 @@ FILENAME                 File containing Fortran code
   (if (eq (caadr margin-line) 'do) (cadadr margin-line) nil))
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
+#+nil
 (defun translate-and-write-subprog (prog-list outport)
   (prog (fort-fun *external_function_names*
 		  *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
@@ -440,6 +441,72 @@ FILENAME                 File containing Fortran code
 	   *vble-declaration-done* nil)
 
      (clrhash *common-blocks*)
+     (setq fort-fun
+	   (do ((lines prog-list (cdr lines)) 
+		(fort-fun nil (append fort-fun
+				      (append (translate-label (caar lines))
+					      (translate-line 
+					       (brackets-check (concat-operators
+								(cadar lines))))))))
+	       ((null (cdr lines))
+		(append fort-fun
+			(cond (*function-flag*
+			       ;; A function.  Return the value of the
+			       ;; function, the value of the variable
+			       ;; with the same name as the function.
+			       `(end_label (return (values ,(cadr fort-fun)
+							   ,@(caddr fort-fun)))))
+			      ((or *program-flag*
+				   (not (eq (car fort-fun) 'defun)))
+			       ;; Return nil if this is the main
+			       ;; program, indicated by either having
+			       ;; a PROGRAM statement (*program-flag*
+			       ;; set) or no DEFUN in FORT-FUN.
+			       `(end_label (return nil)))
+			      (t
+			       ;; A subroutine definition.  Return the
+			       ;; arguments of the subroutine.
+			       `(end_label (return (values 
+						    ,@(caddr fort-fun))))))))))
+     ;; check for missing PROGRAM stmt
+     (if (not (eq (car fort-fun) 'defun))
+         (setq fort-fun (append '(defun *main* nil) fort-fun)))
+     ;;     (format t "~%after translation : ~A" fort-fun)
+
+     (multiple-value-bind (spec-proc spec-decl fun)
+	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
+       ;;(format t "spec-proc = ~S~%" spec-proc)
+       ;;(format t "spec-decl = ~S~%" spec-decl)
+       (when spec-proc
+	 (mapc #'(lambda (s-proc s-decl)
+		   (unless (find (caadr s-proc) *common-block-initialized*)
+		     (special-print s-proc outport)
+		     (terpri outport)
+		     (format outport "~%~%")
+		     (special-print s-decl outport)
+		     (terpri outport)
+		     (format outport "~%~%")
+		     (pushnew (caadr s-proc) *common-block-initialized*)))
+	       spec-proc
+	       spec-decl)
+	 (terpri outport))
+       (special-print fun outport))
+     (print (cadr fort-fun))		;indicate which subprogram is being translated
+     (write-char '#\newline outport)
+     (write-char '#\newline outport)
+     ))
+(defun translate-and-write-subprog (prog-list outport)
+  (clrhash *common-blocks*)
+  (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
+	fort-fun *external_function_names*
+	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
+	*save_vbles* *key_params* *subprog_common_vars* 
+	*subprog_stmt_fns* *subprog_stmt_fns_bodies* *subprog_name*
+	*function-flag* *program-flag*
+	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
+	*parsing-lhs*
+	)
+
      (setq fort-fun
 	   (do ((lines prog-list (cdr lines)) 
 		(fort-fun nil (append fort-fun
@@ -1881,8 +1948,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.64 2000/08/13 04:16:53 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.65 2000/08/18 15:08:49 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.65  2000/08/18 15:08:49  rtoy
+;;; Gratuitous change from prog to let in TRANSLATE-AND-WRITE-SUBPROG.
+;;;
 ;;; Revision 1.64  2000/08/13 04:16:53  rtoy
 ;;; Oops!  CONCAT is still being used!  Reinstate it.
 ;;;

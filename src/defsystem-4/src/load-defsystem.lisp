@@ -1,6 +1,10 @@
 ;;; -*- Mode: CLtL -*-
 
 ;;; load-defsystem.lisp --
+;;;
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
+;;; See file COPYING for details.
+;;;
 ;;; We cannot have a DEFSYSTEM form for the DEFSYSTEM package in the
 ;;; first place, due to an obvious "chicken and egg" problem.  So here
 ;;; is a very old style 'load-' file.
@@ -19,34 +23,13 @@
 
 ;;; Thanks to Kevin Rosenberg for the following very nice idea.
 
-(defun pathname-host-device-directory (path)
-  (check-type path pathname)
-  (make-pathname :host (pathname-host path)
-                 :device (pathname-device path)
-                 :directory (pathname-directory path)
-		 :name nil
-		 :type nil
-		 ))
-
-(defparameter *mk-defsystem-absolute-directory-pathname*
-  (pathname-host-device-directory *load-pathname*))
-
-#| Old stuff
-#+:CMU
-(defparameter *mk-defsystem-absolute-directory-pathname*
-  (parse-namestring
-   "home:lang/cl/defsystem/make/"))
-
-#+(and windows (or lispworks allegro))
-(defparameter *mk-defsystem-absolute-directory-pathname*
-  (parse-namestring
-   "H:/lang/cl/defsystem/make/"))
-
-#+(and unix (or lispworks allegro))
-(defparameter *mk-defsystem-absolute-directory-pathname*
-  (parse-namestring
-   "/home/marcoxa/lang/cl/defsystem/make/"))
-|#
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *mk-defsystem-absolute-directory-pathname*
+    (make-pathname :host (pathname-host *load-pathname*)
+		   :device (pathname-device *load-pathname*)
+		   :directory (pathname-directory *load-pathname*)
+		   ;; :case :common ; Do we need this?
+		   )))
 
 ;;; The following three parameters are tested IN SEQUENCE and
 ;;; exclusively.  The first one found true one will cause the
@@ -234,7 +217,8 @@
 	(error "Cannot find CL-ENVIRONMENT loader file ~@
                 MAKE-DEFSYSTEM:cl-environment;load-cl-environment.lisp.~@
                 Please make sure that CL-ENVIRONEMT is loaded in your ~
-                system.~@
+                system. Note that you do not really need to have the~@
+                `cl-environment' directory under the `MAKE-DEFSYSTEM:' one.~@
                 You can find CL-ENVIRONMENT in the CLOCC at~@
                 <http://sourceforge.net/projects/clocc>."))
       (load "MAKE-DEFSYSTEM:cl-environment;load-cl-environment.lisp"

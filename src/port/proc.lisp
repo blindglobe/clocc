@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.6 2000/04/19 16:49:25 sds Exp $
+;;; $Id: proc.lisp,v 1.7 2000/05/12 18:14:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -194,7 +194,7 @@ and evaluate TIMEOUT-FORMS."
   (with-gensyms ("WT-" bodyf timeoutf)
     `(flet ((,bodyf () ,@body)
             (,timeoutf () ,@timeout-forms))
-      (with-timeout-f seconds #'bodyf #'timeoutf)))
+      (with-timeout-f ,seconds #',bodyf #',timeoutf)))
   #-threads `(progn ,@body))
 
 (defun y-or-n-p-timeout (seconds default &rest args)

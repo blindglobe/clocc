@@ -1292,21 +1292,24 @@ main-loop
 
 (defun parse-data (x)
   ;;(format t "parse-data:  ~S~%" x)
-  (setq x (list-split '|/| (cdr x)))
+  ;;(setq x (list-split '|/| (cdr x)))
   ;;(format t "parse-data post-split:  ~S~%" x)
-  (do ((list x (cddr list))
-       (ret nil (let* ((var (list-split '|,| (car list)))
-		       (vals (list-split '|,| (cadr list)))
-		       (result (mapcar #'parse-data1 var vals)))
-		  ;;(format t "list = ~a~%" list)
-		  ;;(format t "var = ~a~%" var)
-		  ;;(format t "vals = ~a~%" vals)
-		  ;;(format t "result = ~a~%" result)
-		  (setf *data-init* (append *data-init* (if (consp (first result))
+  (do ((list (list-split '|/| (cdr x))
+	     (cddr list))
+       (ret nil
+	    (let ((var (remove nil (list-split '|,| (car list))))
+		  (vals (list-split '|,| (cadr list))))
+	      ;;(format t "list = ~a~%" list)
+	      ;;(format t "var = ~a~%" var)
+	      ;;(format t "vals = ~a~%" vals)
+	      (let* ((is-array (vble-is-array-p (check-reserved-lisp-names (caar var))))
+		     (result (mapcar #'parse-data1 var (if is-array (list vals) vals))))
+		;;(format t "result = ~a~%" result)
+		(setf *data-init* (append *data-init* (if (consp (first result))
 							result
-							(list result))))
-		  ;;(format t "*data-init*:  ~A~%" *data-init*)
-		  )))
+							(list result)))))
+	      ;;(format t "*data-init*:  ~A~%" *data-init*)
+	      )))
       ((null (cdr list)))))
 
 ; parse a (vble_name data1 data2 ...) list
@@ -1343,6 +1346,7 @@ main-loop
 		      nil))))
     (cond ((and (listp (car l))
 		(eq (second (car l)) '*))
+	   ;;(format t "parse-data1 1~%")
 	   `(fill ,(check-reserved-lisp-names (first v))
 	          ,(fix-up-negative-number (cddar l))
 	          :end ,(1- (first (car l)))))
@@ -1351,6 +1355,8 @@ main-loop
 		(numberp (first (second v))))
 	   ;; Initializing one element of an array.  We assume the
 	   ;; lower limit on the array is 1!
+
+	   ;;(format t "parse-data1 array~%")
 	   (let* ((vname (check-reserved-lisp-names (first v)))
 		  (dims (lookup-array-bounds vname)))
 	     `(fset (fref ,vname
@@ -1362,20 +1368,25 @@ main-loop
 		(member '= (first v)))
 	   ;; Implied do loop.  Extract out the important parts of the
 	   ;; implied do and construct what we need from it.
-	     `(data-implied-do ,(first v) ,(data-var v) ,(fix-up-data-reps l)))
+
+	   ;;(format t "parse-data1 implied-do~%")
+	   `(data-implied-do ,(first v) ,(data-var v) ,(fix-up-data-reps l)))
 	  ((and (listp v) (listp l)
 		(= (length v) (length l))
 		(> (length v) 1))
+	   ;;(format t "parse-data1 op~%")
 	   (mapcar #'(lambda (var val)
 		       `(setq ,(check-reserved-lisp-names var)
 			      ,(fix-up-negative-number val)))
 		   v l))
 	  (t
+	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
+	   ;;(format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
 	   (if (vble-is-array-p (check-reserved-lisp-names (first v)))
 	       `(replace ,(check-reserved-lisp-names (first v))
 		         ',(mapcar #'fix-up-negative-number l))
 	       `(setq ,(check-reserved-lisp-names (first v))
-		      ,(fix-up-negative-number (first l))))))))
+		      ,(fix-up-negative-number l)))))))
 
 ; parse EXTERNAL f1, f2, ...
 ; by adding the function names to *external_function_names*
@@ -1786,8 +1797,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.45 2000/07/20 13:40:52 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.46 2000/07/21 17:39:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.46  2000/07/21 17:39:27  rtoy
+;;; PARSE-DATA and friends were mishandling the case
+;;;
+;;; 	DATA array/1,2,3,4/
+;;;
+;;; where array was an array.
+;;;
 ;;; Revision 1.45  2000/07/20 13:40:52  rtoy
 ;;; o PARSE-DATA was not correctly handling data statements of the form:
 ;;;

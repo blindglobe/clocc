@@ -1,3 +1,10 @@
+common-lisp-controller (3.60) unstable; urgency=low
+
+  * register-common-lisp-implementation: Rebuild .asd-based packages
+  are rebuilt as well as .system packages.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat, 12 Apr 2003 12:09:59 -0600
+
 common-lisp-controller (3.59) unstable; urgency=low
 
   * Added a conflict with xinetd. Not the best solution I know.

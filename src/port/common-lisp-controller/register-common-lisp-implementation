@@ -36,6 +36,18 @@ fi
 sh "$FILE" install-clc || (echo "Installation of CLC failed" >&2 ; exit 3) 
 
 # now recompile the stuff
+for i  in /usr/share/common-lisp/systems/*.asd  ; do
+    if [ -f $i -a -r $i ] ; then
+     i=${i%.asd}
+     package=${i##*/}
+     clc-autobuild-check $IMPL $package
+     if [ $? = 0 ]; then
+	 echo recompiling package $package for implementation $IMPL
+	 /usr/bin/clc-send-command --quiet recompile $package $IMPL
+     fi
+    fi
+done
+
 for i  in /usr/share/common-lisp/systems/*.system  ; do
     if [ -f $i -a -r $i ] ; then
      i=${i%.system}

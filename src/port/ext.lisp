@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.5 2000/03/22 23:51:52 sds Exp $
+;;; $Id: ext.lisp,v 1.6 2000/03/30 17:11:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 ;;; $Log: ext.lisp,v $
+;;; Revision 1.6  2000/03/30 17:11:48  sds
+;;; (eof-p): new function
+;;;
 ;;; Revision 1.5  2000/03/22 23:51:52  sds
 ;;; (quit): optional error code argument
 ;;;
@@ -43,7 +46,7 @@
    defsubst defcustom defconst
    mk-arr map-in with-gensyms
    gc quit
-   +eof+ string-tokens
+   +eof+ eof-p string-tokens
    compose compose-f compose-all))
 
 ;;;
@@ -128,6 +131,11 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
 (defconst +eof+ cons (cons nil nil)
   "*The end-of-file object.
 To be passed as the third arg to `read' and checked against using `eq'.")
+
+(defun eof-p (stream)
+  "Return T if the stream has no more data in it."
+  (let ((cc (read-char stream nil nil)))
+    (if cc (unread-char cc stream) t)))
 
 (defun string-tokens (string &key (start 0) max)
   "Read from STRING repeatedly, starting with START, up to MAX tokens.

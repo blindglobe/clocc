@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.23 2001/11/02 22:31:15 sds Exp $
+;;; $Id: math.lisp,v 2.24 2002/07/16 14:57:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,7 +39,7 @@
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
    rel-diff approx=-abs approx=-rel approx=
-   newton integrate-simpson add-probabilities
+   binary-search newton integrate-simpson add-probabilities
    line line-val line-rsl line-below-p line-above-p intersect
    with-line line-adjust line-adjust-dir line-adjust-list
    line-thru-points regress lincom))
@@ -1228,6 +1228,15 @@ absolute tolerances (which default to *relative-tolerance* and
 *absolute-tolerance*)."
   (declare (number v0 v1 rt at))
   (and (> at (abs (- v0 v1))) (> rt (rel-diff v0 v1))))
+
+(defun binary-search (beg end func)
+  "Find the point where FUNC's value changes between BEG and END.
+To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC."
+  (loop :for vb = (funcall func beg) :for ve = (funcall func end)
+    :for mid = (/ (+ beg end) 2) :for vm = (funcall func mid)
+    :when (or (eql vb ve) (eql beg mid) (eql end mid))
+    :return (values beg end vb ve)
+    :do (if (eql vm vb) (setq beg mid) (setq end mid))))
 
 (defun newton (ff &key (val 0) (ival val) (tol *num-tolerance*) (max-it -1))
   "Solve the equation FF(x)=VAL using the Newton's method.

@@ -4067,7 +4067,12 @@ D
 	  #+(and :lispworks4.2 :unix) #'link-load:read-foreign-modules
 	  #+(and :lispworks4.2 :win32) #'fli:register-modules
           #+(or :ecl :gcl :kcl) #'load ; should be enough.
-          #-(or :lucid :allegro :cmu :sbcl) #'load
+          #-(or :lucid
+		:allegro
+		:cmu
+		:sbcl
+		(and :lispworks (or :unix :win32))
+		:ecl :gcl :kcl)
 	  (lambda (&rest args)
 	    (declare (ignore args))
 	    (cerror "Continue returning NIL."

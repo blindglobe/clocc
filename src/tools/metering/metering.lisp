@@ -1058,7 +1058,6 @@ adjusted for overhead."
 			  ,@(when optionals-p
 				  #+cmu `(c:&more arg-context arg-count)
 				  #-cmu `(&rest optional-args)))
-		   (declare (optimize (speed 3) (safety 0) (debug 0)))
 		   (let ((prev-total-time *total-time*)
 			 (prev-total-cons *total-cons*)
 			 (prev-total-calls *total-calls*)
@@ -1392,59 +1391,74 @@ functions set NAMES to be either NIL or :ALL."
           (display-monitoring-results threshold key ignore-no-calls)))))
 
 (defun display-monitoring-results (&optional (threshold 0.01) (key :percent-time)
-                                             (ignore-no-calls t))
-  (let ((max-length 8)                  ; Function header size
-        (total-time 0.0)
-        (total-consed 0)
-        (total-calls 0)
-        (total-percent-time 0)
-        (total-percent-cons 0))
+					     (ignore-no-calls t))
+  (let ((max-length 8)			; Function header size
+	(max-cons-length 8)
+	(total-time 0.0)
+	(total-consed 0)
+	(total-calls 0)
+	(total-percent-time 0)
+	(total-percent-cons 0))			
     (sort-results key)
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
-                (> (m-info-percent-time result) threshold))
-        (setq max-length
-              (max max-length
-                   (length (m-info-name result))))))
+		(> (m-info-percent-time result) threshold))
+	(setq max-length
+	      (max max-length
+		   (length (m-info-name result))))
+	(setq max-cons-length
+	      (max max-cons-length
+		   (m-info-cons-per-call result)))))
     (incf max-length 2)
+    (setf max-cons-length (+ 2 (ceiling (log max-cons-length 10))))
     (format *trace-output*
-            "~&        ~VT                              Cons~
-             ~&        ~VT%     %                       Per      Total   Total~
-             ~&Function~VTTime  Cons  Calls  Sec/Call   Call     Time    Cons~
-             ~&~V,,,'-A"
-            max-length max-length max-length
-            (+ max-length 53) "-")
+	    "~%~%~
+                       ~VT                                     ~VA~
+	     ~%        ~VT   %      %                          ~VA  Total     Total~
+	     ~%Function~VT  Time   Cons    Calls  Sec/Call     ~VA  Time      Cons~
+             ~%~V,,,'-A"
+	    max-length
+	    max-cons-length "Cons"
+	    max-length
+	    max-cons-length "Per"
+	    max-length
+	    max-cons-length "Call"
+	    (+ max-length 62 (max 0 (- max-cons-length 5))) "-")
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
-                (> (m-info-percent-time result) threshold))
-        (format *trace-output*
-                "~&~A:~VT~,2F  ~,2F  ~5D  ~,6F  ~5D  ~,6F  ~6D"
-                (m-info-name result)
-                max-length
-                (m-info-percent-time result)
-                (m-info-percent-cons result)
-                (m-info-calls result)
-                (m-info-time-per-call result)
-                (m-info-cons-per-call result)
-                (m-info-time result)
-                (m-info-cons result))
-        (incf total-time (m-info-time result))
-        (incf total-consed (m-info-cons result))
-        (incf total-calls (m-info-calls result))
-        (incf total-percent-time (m-info-percent-time result))
-        (incf total-percent-cons (m-info-percent-cons result))))
-    (format *trace-output*
-            "~&~V,,,'-A~
-            ~&TOTAL:~VT~,2F  ~,2F  ~5D                   ~,6F  ~6D~
-            ~&Estimated monitoring overhead: ~4,2F seconds~
-            ~&Estimated total monitoring overhead: ~4,2F seconds"
-            (+ max-length 53) "-"
-            max-length
-            total-percent-time total-percent-cons
-            total-calls total-time total-consed
-            (/ (* *monitor-time-overhead* total-calls)
-               time-units-per-second)
-            *estimated-total-overhead*)
+		(> (m-info-percent-time result) threshold))
+	(format *trace-output* 
+		"~%~A:~VT~6,2F  ~6,2F  ~7D  ~,6F  ~VD  ~8,3F  ~10D"
+		(m-info-name result)
+		max-length
+		(* 100 (m-info-percent-time result))
+		(* 100 (m-info-percent-cons result))
+		(m-info-calls result)
+		(m-info-time-per-call result)
+		max-cons-length
+		(m-info-cons-per-call result)
+		(m-info-time result)
+		(m-info-cons result))
+	(incf total-time (m-info-time result))
+	(incf total-consed (m-info-cons result))
+	(incf total-calls (m-info-calls result))
+	(incf total-percent-time (m-info-percent-time result))
+	(incf total-percent-cons (m-info-percent-cons result))))
+    (format *trace-output* 
+	    "~%~V,,,'-A~
+	    ~%TOTAL:~VT~6,2F  ~6,2F  ~7D  ~9@T ~VA  ~8,3F  ~10D~
+            ~%Estimated monitoring overhead: ~5,2F seconds~
+            ~%Estimated total monitoring overhead: ~5,2F seconds"
+	    (+ max-length 62 (max 0 (- max-cons-length 5))) "-"
+	    max-length 
+	    (* 100 total-percent-time)
+	    (* 100 total-percent-cons)
+	    total-calls
+	    max-cons-length " "
+	    total-time total-consed
+	    (/ (* *monitor-time-overhead* total-calls)
+	       time-units-per-second)
+	    *estimated-total-overhead*)
     (when (and (not ignore-no-calls) *no-calls*)
       (setq *no-calls* (sort *no-calls* #'string<))
       (let ((num-no-calls (length *no-calls*)))

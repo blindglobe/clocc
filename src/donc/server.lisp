@@ -1,7 +1,7 @@
 #|
 A multi-service tcp server in lisp
 
-Mail to donc@compsvcs.com (,donc@isi.edu, donc@ap5.com)
+Mail to don@isis.cs3-inc.com (then read the bounce).
 
 table of contents:
  license
@@ -10,7 +10,7 @@ table of contents:
  Instructions for use, examples
 
  ==== license ====
-Copyright (c) 2000 CS3 (see http://www.compsvcs.com/)
+Copyright (c) 2000 CS3
 All rights reserved.
 
 This program is distributed under the terms of
@@ -26,7 +26,11 @@ with the obvious substitutions:
  ==== introductory documentation ====
 
  note: this implementation requires either 
- clisp-2000-03-06 plus socket-status (added to source c. 5/2000) or
+ clisp as of > 2001/6/17
+   packages changed to socket, ext
+   uses SOCKET-STATUS, READ-BYTE-WILL-HANG-P, READ-BYTE-NO-HANG
+    socket-stream-peer with second argument
+ or
  Allegro CL 5.0.1 (modifications expected to be needed for later versions)
 
 This code supports multiple tcp based servers in one shared lisp process.
@@ -124,6 +128,7 @@ code.
 	     "CONNECTION"  ;; class to specialize
 	     "TEMP-FILE-NAME"
 	     "*SERVER-HOOKS*"
+	     "*CYCLE-IO-LIMIT*"
 
 	     ;; possibly useful accessors for connections
 	     "SSTREAM"  ;;  the underlying socket stream
@@ -184,8 +189,16 @@ code.
 		(- (get-internal-run-time) *last-dbg-run-time*))
 	(setf *last-dbg-real-time* (get-internal-real-time)
 	       *last-dbg-run-time* (get-internal-run-time))
-	(apply 'format *trace-output* rest)))
-
+	(apply 'format *trace-output* (abbrev rest))))
+;; just cause we sometimes get huge strings
+;; clearly we could also get huge lists, arrays, etc.
+;; so you might replace this for a given application
+(defun abbrev (x)
+  (cond ((and (stringp x) (> (length x) 300))
+	 (format nil "~A~% ... [total length = ~A] ... ~%~A"
+		 (subseq x 0 100) (length x) (subseq x (- (length x) 100))))
+	((consp x) (cons (abbrev (car x)) (abbrev (cdr x))))
+	(t x)))
 
 (defvar *ports* nil) ;; push your ports onto here [***]
 (defvar *server-hooks* nil) ;; and push your hooks here [***]
@@ -198,7 +211,7 @@ code.
   (loop for p in *ports* do (start-server p)))
 
 (defun start-server (p) ;; (port:open-socket-server p)
-  (push #+clisp (lisp::SOCKET-SERVER p)
+  (push #+clisp (socket:SOCKET-SERVER p)
 	#+allegro(socket:make-socket :connect :passive :local-port p
 				     :format :bivalent)
 	#-(or clisp allegro) (error "no implementation for start-server")
@@ -206,7 +219,7 @@ code.
 
 ;; while we're at it
 (defun close-server (s) ;; (port:socket-server-close s)
-  #+clisp (lisp:socket-server-close s)
+  #+clisp (socket:socket-server-close s)
   #+allegro (close s)
   #-(or clisp allegro) (error "no implementation for close-server")
   (setf *servers* (delete s *servers*)))
@@ -221,9 +234,9 @@ code.
 (defun accept-connection (server) ;; not implemented in port
   (ignore-errs
    #+clisp
-   (when (lisp::SOCKET-WAIT server 0)
-     (make-instance (connection-class (lisp:socket-server-port server))
-       :stream (lisp::SOCKET-ACCEPT server)))
+   (when (socket:SOCKET-WAIT server 0)
+     (make-instance (connection-class (socket:socket-server-port server))
+       :stream (socket:SOCKET-ACCEPT server)))
    #+allegro
    (let ((c (socket:accept-connection server :wait nil)))
      (when c (make-instance (connection-class (socket:local-port server))
@@ -255,7 +268,7 @@ code.
 
 (defun connection-ipaddr (c) ;; port:socket-host/port ?
   #+clisp ;; why can't clisp just give me this directly?
-  (let ((p (lisp:socket-stream-peer (sstream c))) (ans 0)(pos 0) next)
+  (let ((p (socket:socket-stream-peer (sstream c) t)) (ans 0)(pos 0) next)
     (loop for i below 4 do
 	  (setf next (position #\. p :start pos))
 	  (setf ans (+ (ash ans 8)
@@ -320,15 +333,13 @@ code.
 ;; Support for IO
 
 (defun output-possible (socket-stream) 
-  #+clisp 
-  #.(if (fboundp (find-symbol "SOCKET-STATUS" :lisp)) 
-        `(member (,(find-symbol "SOCKET-STATUS" :lisp) socket-stream 0)
-		 '(:output :io)) 
-      ;; If you're not using a version that supports this operation it's
-      ;; at least semi-reasonable for many applications to simply define 
-      ;; output-possible as always T - meaning that you'll block when you 
-      ;; try to write too much.
-      (progn (warn "socket-status not available - using T instead") t)) 
+  #+clisp
+  (member (socket:SOCKET-STATUS socket-stream 0) '(:output :io))
+  ;; If you're not using a version that supports this operation it's
+  ;; at least semi-reasonable for many applications to simply define 
+  ;; output-possible as always T - meaning that you'll block when you 
+  ;; try to write too much.
+  #+ignore (progn (warn "socket-status not available - using T instead") t) 
   #+allegro ;; [***] not expected to work after acl 5.0.1 !! 
   (excl::filesys-fn-will-not-block-p  
    (- -1 (excl:stream-output-fn socket-stream))) 
@@ -338,16 +349,15 @@ code.
   ;; should return t if input functions will not block, i.e. 
   ;; if they will return either eof or a character/byte 
   #+clisp ;; note the stream is in binary mode here
-  #.(if (fboundp (find-symbol "READ-BYTE-WILL-HANG-P" :lisp))
-	;; added 2000/09/12 &&&
-	`(not (,(find-symbol "READ-BYTE-WILL-HANG-P" :lisp) socket-stream))
-      ;; above = (lisp:read-byte-look-ahead socket-stream)
-      '(let ((s-e-t (stream-element-type socket-stream))) 
-	(unwind-protect 
-	    (progn (setf (stream-element-type socket-stream) 'character) 
-		   ;; for binary stream gives wrong answer!@#$% 
-		   (not (lisp:read-char-will-hang-p socket-stream))) 
-	  (setf (stream-element-type socket-stream) s-e-t)))) 
+  (not (ext:READ-BYTE-WILL-HANG-P socket-stream))
+  #+ignore ;; old version
+  (let ((s-e-t (stream-element-type socket-stream))) 
+    (unwind-protect 
+	(progn (setf (stream-element-type socket-stream) 'character) 
+	       ;; for binary stream gives wrong answer!@#$% 
+	       (not (ext:read-char-will-hang-p socket-stream))) 
+      (setf (stream-element-type socket-stream) s-e-t)))
+  ;; above = (lisp:read-byte-look-ahead socket-stream) 
   #+allegro ;; [***] see above 
   (excl::filesys-fn-will-not-block-p  
    (- -1 (excl:stream-input-fn socket-stream)))
@@ -373,6 +383,10 @@ code.
     (nconc (output connection)
 	   (list (list :file file start end)))))
 
+(defvar *cycle-io-limit* 10000) ;; [***]
+;; don't do more than this many characters of input or output per cycle
+;; related to single thread (so other connections get a chance)
+
 ;; This can be used to get the effect of force-output to the connection.
 
 (defun process-output (connection)
@@ -391,6 +405,7 @@ code.
 	     (setf end (min (length output) (or (fourth out) (length output))))
 	     #+clisp (setf (stream-element-type stream) 'character)
 	     (loop for i from start below end
+		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
 		   (write-char (char output i) stream)
 		   finally
@@ -402,6 +417,7 @@ code.
 	     (setf end (min (length output) (or (fourth out) (length output))))
 	     #+clisp (setf (stream-element-type stream) '(unsigned-byte 8))
 	     (loop for i from start below end
+		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
 		   (write-byte (aref output i) stream)
 		   finally
@@ -418,6 +434,7 @@ code.
 			    (or (fourth out) (file-length output))))
 	     #+clisp (setf (stream-element-type stream) '(unsigned-byte 8))
 	     (loop for i from start below end
+		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
 		   ;; I assume we're not changing the file now ...
 		   (write-byte (read-byte output) stream)
@@ -442,11 +459,13 @@ code.
    (loop with char = t with stream = (sstream c)
        with already = (slot-value c 'nchars)
        for i below (- (max-input-size c) already)
+       for char-number below *cycle-io-limit*
        while (setf char (next-char stream)) do
 	 (if (eq char :eof) (close stream)
 	     (vector-push-extend
 	      char (input c)
-	      ;; allegro has the wrong default here
+	      #+allegro;; allegro has the wrong default here
+	      ;; clisp is significantly faster without the argument
 	      (max 20 (length (input c)))))
 	 finally (when (and (= 0 i) (not (slot-value c 'new-input)))
 		   (return-from process-input nil))
@@ -461,13 +480,12 @@ code.
   ;; also we want :eof or nil if there is no character available,
   ;; depending on whether the stream is closed
   #+clisp ;; note the stream is in binary mode here
-  #.(if (fboundp (find-symbol "READ-BYTE-NO-HANG" :lisp))
-	;; added 2000/09/12 &&&
-	`(let ((ans (,(find-symbol "READ-BYTE-NO-HANG" :lisp) stream nil :eof)))
-	  (if (symbolp ans) ans (code-char ans)))
-      '(if (input-possible stream)
+  (let ((ans (ext:READ-BYTE-NO-HANG stream nil :eof)))
+    (if (symbolp ans) ans (code-char ans)))
+  #+ignore ;; old version
+  (if (input-possible stream)
 	(let ((ans (read-byte stream nil :eof)))
-	  (if (eq ans :eof) ans (code-char ans)))))
+	  (if (eq ans :eof) ans (code-char ans))))
   #+allegro ;; already does the right thing
   (read-char-no-hang stream nil :eof)
   #-(or allegro clisp) (error "not yet implemented"))
@@ -581,7 +599,8 @@ function is also error protected.
 (defgeneric evaler (connection input)) ;; you must supply a method
 (defgeneric printer (connection output error)) 
 (defmethod printer (connection output error)
-  (declare (ignore connection output error)))
+  (declare (ignore connection output))
+  (when error (format t "~&printer: ~A" error)))
 
 ;; You could just define a method for your connection class,
 ;; but I hope that won't be the normal thing to do.
@@ -865,7 +884,7 @@ and the next interaction will be read, evaluated and printed from that
 package.
 
 The client can do (sss:disconnect) to disconnect.
-From your server code it's normally better to do
+>From your server code it's normally better to do
 (done <connection>) which will try to finish the output to the 
 connection before closing it.
 

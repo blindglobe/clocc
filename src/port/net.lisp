@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.20 2000/05/18 15:57:19 sds Exp $
+;;; $Id: net.lisp,v 1.21 2000/05/22 19:06:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,8 +22,7 @@
  '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr
    hostent hostent-name hostent-aliases hostent-addr-list hostent-addr-type
    socket open-socket socket-host/port socket-string socket-server
-   socket-accept open-socket-server socket-server-close
-   socket-server-host/port socket-server-string
+   socket-accept open-socket-server socket-server-close socket-server-host/port
    socket-service-port servent-name servent-aliases servent-port servent-proto
    network timeout login))
 
@@ -68,7 +67,8 @@
             (string
              (if (every (lambda (ch) (or (char= ch #\.) (digit-char-p ch)))
                         host)
-                 (socket:dotted-to-ipaddr host) (socket:lookup-hostname host)))
+                 (socket:dotted-to-ipaddr host)
+                 (socket:lookup-hostname host)))
             (integer host)))
          (name (socket:ipaddr-to-hostname ipaddr)))
     (make-hostent :name name :addr-list
@@ -156,13 +156,15 @@
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 
-(defun host/port-string (ho po)
-  (format nil "~s:~d" (if (string= ho "0.0.0.0") "127.0.0.1" ho) po))
-
 (defun socket-string (sock)
-  "Print the socket host and port to a string."
-  (multiple-value-bind (ho po) (socket-host/port sock)
-    (host/port-string ho po)))
+  "Print the socket local&peer host&port to a string."
+  (declare (type socket sock))
+  (multiple-value-bind (ho1 po1 ho2 po2) (socket-host/port sock)
+    (format out "[local: ~a:~d] [peer: ~s:~d]" ho2 po2 ho1 po1)))
+
+;;;
+;;; }}}{{{ socket-servers
+;;;
 
 #+lispworks (defstruct socket-server proc mbox port)
 #-lispworks
@@ -251,11 +253,6 @@ Returns a socket stream or NIL."
                       (socket-server-port server))
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-server-host/port server)))
-
-(defun socket-server-string (server)
-  "Print the socket server host and port to a string."
-  (multiple-value-bind (ho po) (socket-server-host/port server)
-    (host/port-string ho po)))
 
 ;;;
 ;;; }}}{{{ conditions

@@ -77,7 +77,14 @@ C
 c  410 format(i3)
   410 format(3(i4, i3), 4(i2, i8))
       END
-      
+
+      subroutine subr5
+      integer iunit(5)
+      do 10 k = 1, 5
+         write(iunit(k), 9000) 'Unit ', k
+   10 continue
+ 9000 format(1x, a10, i4)
+      end
 
 C
 C

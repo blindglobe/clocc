@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.10 2000/05/02 15:30:28 sds Exp $
+;;; $Id: fileio.lisp,v 1.11 2000/05/08 17:53:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -210,7 +210,7 @@ If NIL, read once and return the object read;
 if a number, read that many times and return a list of objects read,
 if T, read until end of file and return a list of objects read."
   (declare (type (or simple-string pathname) file))
-  (with-timing (:done t)
+  (with-timing (:done t :out out)
     (with-open-file (str file :direction :input)
       (format out "~&Reading `~a' [~:d bytes]..." file (file-length str))
       (force-output)

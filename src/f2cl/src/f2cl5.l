@@ -1242,11 +1242,15 @@
 				      ,vble_name))
 			   `(declare (type ,type ,vble_name)))))))))
 					; check implicitly declared variable
-     ((and (not vble-is-formal-arg) (setq type (get-implicit-type vble)))
+     ((and (not vble-is-formal-arg)
+	   (setq type (get-implicit-type vble)))
       (if (and (listp type) (eq (car type) 'CHARACTER))
 	  (make-char-decl (list vble_name) type)
-	  `(declare (type ,type ,vble_name))))
-					; otherwise use default declaration
+	  (progn
+	    (when (eq type :none)
+	      (warn "Undeclared variable `~A' with no implicit type!" vble))
+	    `(declare (type ,type ,vble_name)))))
+     ;; otherwise use default declaration
      (t (if (default-int-p vble)
 	    `(declare (type integer4 ,vble_name))
 	    `(declare (type single-float ,vble_name))))))))
@@ -2084,8 +2088,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.69 2001/06/03 20:46:08 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.70 2001/06/04 17:16:24 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.70  2001/06/04 17:16:24  rtoy
+;;; Print a warning if there is no implicit type given and the variable
+;;; was not declared.  This is invalid Fortran anyway.
+;;;
 ;;; Revision 1.69  2001/06/03 20:46:08  rtoy
 ;;; Changes to FIX-DO:
 ;;; o Add a test and code to keep FIX-DO from looping forever searching

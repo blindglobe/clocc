@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.4b Interim.
+;;; DEFSYSTEM 3.4 Interim 2.
 
 ;;; defsystem.lisp --
 
@@ -28,7 +28,7 @@
 ;;; Originally written by Mark Kantrowitz, School of Computer Science,
 ;;; Carnegie Mellon University, October 1989.
 
-;;; MK:DEFSYSTEM 3.4b Interim
+;;; MK:DEFSYSTEM 3.4 Interim 2
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
 ;;;               1999 - 2004 Mark Kantrowitz and Marco Antoniotti. All
@@ -1186,7 +1186,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.4b Interim, 2004-02-26"
+(defparameter *defsystem-version* "3.4 Interim 2, 2004-05-31" 
   "Current version number/date for MK:DEFSYSTEM.")
 
 ;;; ********************************
@@ -2492,7 +2492,7 @@ D
          (file-pathname
 	  (make-pathname :name module-string-name
 			 :type *system-extension*))
-
+         
          (lib-file-pathname
 	  (make-pathname :directory (list :relative module-string-name)
                          :name module-string-name
@@ -2542,8 +2542,8 @@ D
           (values system-def-pathname
                   (probe-file system-def-pathname)))
         (values nil nil))))
-
-
+         
+         
 
 
 #|
@@ -3513,8 +3513,8 @@ the system definition, if provided."
 	      (finish-output *query-io*)))))))
 
 #||
- (y-or-n-p-wait #\y 20 "What? ")
- (progn (format t "~&hi") (finish-output)
+(y-or-n-p-wait #\y 20 "What? ")
+(progn (format t "~&hi") (finish-output)
        (y-or-n-p-wait #\y 10 "1? ")
        (y-or-n-p-wait #\n 10 "2? "))
 ||#
@@ -3851,7 +3851,7 @@ the system definition, if provided."
 			    ;; (or (eq force :all) (eq force t))
 			    (find (canonicalize-system-name system)
 				  *modules* :test #'string-equal))
-
+                 
 		 (operate-on-system system operation :force force)))
 
 	      ((listp system)
@@ -4315,6 +4315,8 @@ the system definition, if provided."
 		fatal-error)))))
 
 
+;;; C Language definitions.
+
 (defun c-compile-file (filename &rest args
 				&key
 				(output-file t)
@@ -4393,18 +4395,46 @@ the system definition, if provided."
   :source-extension "c"
   :binary-extension "o")
 
-#||
-;;; FDMM's changes, which we've replaced.
-(defvar *compile-file-function* #'cl-compile-file)
 
-#+(or :clos :pcl)
-(defmethod set-language ((lang (eql :common-lisp)))
-  (setq *compile-file-function* #'cl-compile-file))
+;;; Fortran Language definitions.
+;;; From Matlisp.
 
-#+(or :clos :pcl)
-(defmethod set-language ((lang (eql :scheme)))
-  (setq *compile-file-function #'scheme-compile-file))
-||#
+(export '(*fortran-compiler* *fortran-options*))
+
+(defparameter *fortran-compiler* "g77")
+(defparameter *fortran-options* '("-O"))
+
+(defun fortran-compile-file (filename &rest args
+				      &key output-file error-file
+				      &allow-other-keys)
+  (declare (ignore error-file))
+  (let ((arg-list
+	 (append *fortran-options*
+		 `("-c" ,filename ,@(if output-file `("-o" ,output-file))))))
+    (run-unix-program *fortran-compiler* arg-list)))
+
+
+(mk:define-language :fortran
+    :compiler #'fortran-compile-file
+    :loader #'identity
+    :source-extension "f"
+    :binary-extension "o")
+
+
+;;; AR support.
+;; How to create a library (archive) of object files
+
+(export '(*ar-program* build-lib))
+
+(defparameter *ar-program* "ar")
+
+(defun build-lib (libname directory)
+  (let ((args (list "rv" (truename libname))))
+    (format t ";;; Building archive ~A~%" libname)
+    (run-unix-program *ar-program*
+		      (append args
+			      (mapcar #'truename (directory directory))))))
+
 
 ;;; ********************************
 ;;; Component Operations ***********

@@ -1,10 +1,10 @@
 ;;; url - handle url's and parse HTTP
 ;;;
-;;; Copyright (C) 1998-2000 by Sam Steingold.
+;;; Copyright (C) 1998-2002 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.36 2002/04/08 00:43:42 sds Exp $
+;;; $Id: url.lisp,v 2.37 2002/04/08 00:44:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)

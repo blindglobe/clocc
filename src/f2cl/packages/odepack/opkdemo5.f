@@ -85,6 +85,7 @@ c-----------------------------------------------------------------------
      2     uround, srur
       double precision avdim, atol, cc, hu, rcfl, rcfn, dumach,
      1   rtol, rwork, t, tout
+      dimension neq(1), atol(1), rtol(1)
 c
 c The problem Common blocks below allow for up to 20 species,
 c up to a 50x50 mesh, and up to a 20x20 group structure.
@@ -111,7 +112,7 @@ c Call setpar to set problem parameters.
       call setpar
 c
 c Set remaining problem parameters.
-      neq = ns*mx*my
+      neq(1) = ns*mx*my
       mxns = mx*ns
       dx = ax/(mx-1)
       dy = ay/(my-1)
@@ -120,7 +121,7 @@ c Set remaining problem parameters.
  10     coy(i) = diff(i)/dy**2
 c
 c Write heading.
-      write(6,20)ns, mx,my,neq
+      write(6,20)ns, mx,my,neq(1)
  20   format(' Demonstration program for DLSODPK package'//
      1   ' Food web problem with ns species, ns =',i4/
      2   ' Predator-prey interaction and diffusion on a 2-d square'//
@@ -155,10 +156,10 @@ c Set remaining method parameters.
       iwork(2) = mp*ngrp
       itmax = 5
       itol = 1
-      rtol = 1.0d-5
-      atol = rtol
+      rtol(1) = 1.0d-5
+      atol(1) = rtol(1)
       itask = 1
-      write(6,30)ngrp,ngx,ngy,itmax,rtol,atol
+      write(6,30)ngrp,ngx,ngy,itmax,rtol(1),atol(1)
  30   format(' Preconditioning uses interaction-only block-diagonal',
      1   ' matrix'/' with block-grouping, and Gauss-Seidel iterations'//
      2   ' Number of diagonal block groups = ngrp =',i4,
@@ -396,9 +397,9 @@ c This routine computes the derivative of cc and returns it in cdot.
 c The interaction rates are computed by calls to webr, and these are
 c saved in cc(neq+1),...,cc(2*neq) for use in preconditioning.
 c-----------------------------------------------------------------------
-      integer neq
+      integer neq(1)
       double precision t, cc, cdot
-      dimension cc(neq), cdot(neq)
+      dimension cc(*), cdot(*)
       integer ns, mx, my, mxns
       integer i, ic, ici, idxl, idxu, idyl, idyu, iyoff, jx, jy
       double precision ax,ay,acoef,bcoef,dx,dy,alph,diff,cox,coy
@@ -417,7 +418,7 @@ c
           x = (jx-1)*dx
           ic = iyoff + ns*(jx-1) + 1
 c Get interaction rates at one point (x,y).
-          call webr (x, y, t, cc(ic), cc(neq+ic))
+          call webr (x, y, t, cc(ic), cc(neq(1)+ic))
           idxu = ns
           if (jx .eq. mx) idxu = -ns
           idxl = ns
@@ -432,7 +433,7 @@ c Do differencing in x.
             dcxui = cc(ici+idxu) - cc(ici)
 c Collect terms and load cdot elements.
             cdot(ici) = coy(i)*(dcyui - dcyli) + cox(i)*(dcxui - dcxli)
-     1                  + cc(neq+ici)
+     1                  + cc(neq(1)+ici)
  80         continue
  90       continue
  100    continue
@@ -501,8 +502,9 @@ c-----------------------------------------------------------------------
       external f
       integer neq, ipbd, ier
       double precision t, cc, ccsv, rewt, f0, f1, hl0, bd
-      dimension cc(neq), ccsv(neq), rewt(neq), f0(neq), f1(neq),
+      dimension cc(*), ccsv(*), rewt(*), f0(*), f1(*),
      1          bd(*), ipbd(*)
+      dimension neq(1)
       integer mp, mq, mpsq, itmax,
      2        meshx,meshy,ngx,ngy,ngrp,mxmp,jgx,jgy,jigx,jigy,jxr,jyr
       integer i, ibd, idiag, if0, if00, ig, igx, igy, iip,
@@ -514,7 +516,7 @@ c
       common /pcom3/ meshx, meshy, ngx, ngy, ngrp, mxmp,
      1   jgx(21), jgy(21), jigx(50), jigy(50), jxr(20), jyr(20)
 c
-      n = neq
+      n = neq(1)
 c
 c-----------------------------------------------------------------------
 c Make mp calls to fbg to approximate each diagonal block of Jacobian.
@@ -538,7 +540,7 @@ c-----------------------------------------------------------------------
             fac = -hl0/r
             call fbg (neq, t, cc, jx, jy, f1)
             do 210 i = 1,mp
- 210          bd(ibd+i) = (f1(i) - cc(neq+if0+i))*fac
+ 210          bd(ibd+i) = (f1(i) - cc(neq(1)+if0+i))*fac
             cc(jj) = ccsv(jj)
             ibd = ibd + mp
  220        continue
@@ -601,7 +603,8 @@ c In both cases, the array v is overwritten with the solution.
 c-----------------------------------------------------------------------
       integer n, ipbd, lr, ier
       double precision t, cc, f0, wk, hl0, bd, v
-      dimension cc(n), f0(n), wk(n), bd(*), ipbd(*), v(n)
+      dimension cc(*), f0(*), wk(*), bd(*), ipbd(*), v(*)
+      dimension n(1)
       integer mp, mq, mpsq, itmax,
      2        meshx,meshy,ngx,ngy,ngrp,mxmp,jgx,jgy,jigx,jigy,jxr,jyr
       integer ibd, ig0, igm1, igx, igy, iip, iv, jx, jy
@@ -644,7 +647,8 @@ c The dimensions below assume ns .le. 20.
 c-----------------------------------------------------------------------
       integer n
       double precision hl0, z, x
-      dimension z(n), x(n)
+      dimension z(*), x(*)
+      dimension n(1)
       integer ns, mx, my, mxns,
      1        mp, mq, mpsq, itmax
       integer i, ic, ici, iter, iyoff, jx, jy
@@ -809,7 +813,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c Add increment x to z.
 c-----------------------------------------------------------------------
-      do 300 i = 1,n
+      do 300 i = 1,n(1)
  300    z(i) = z(i) + x(i)
 c
       if (iter .lt. itmax) go to 70

@@ -6,7 +6,7 @@ Maintainer: Peter Van Eynde <pvaneynd@debian.org>
 Standards-Version: 3.5.6.0
 
 Package: clue
-Architecture: all
+Architecture: i386
 Depends: common-lisp-controller, cmucl-source
 Replaces: clio, pictures
 Conflicts: clio, pictures

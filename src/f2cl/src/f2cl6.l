@@ -115,13 +115,9 @@
     ;; Pick some suitable default based on FILE.
     (let ((compiled-path (compile-file-pathname file)))
       (setf outfile-name
-	    (translate-pathname compiled-path
-				(make-pathname :host (pathname-host compiled-path)
-					       :directory (pathname-directory compiled-path)
-					       :name (pathname-name compiled-path)
-					       :type (pathname-type compiled-path))
-				(make-pathname :host (pathname-host compiled-path)
-					       :type "p")))))
+	    (merge-pathnames (make-pathname :host (pathname-host compiled-path)
+					       :type "p")
+			     compiled-path))))
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
 			     :direction :output
@@ -607,8 +603,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.36 2003/07/12 18:44:04 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.37 2003/09/20 13:56:55 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.37  2003/09/20 13:56:55  rtoy
+;;; [ 807859 ] translate-pathname strangeness in f2cl6.l
+;;;
+;;; Use merge-pathnames instead of translate-pathnames to compute the name
+;;; of the output file.
+;;;
 ;;; Revision 1.36  2003/07/12 18:44:04  rtoy
 ;;; Include directory and name when computing the name of the output file.
 ;;;

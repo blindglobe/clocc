@@ -40,7 +40,7 @@
   ((command-line :reader external-command
 		 :type string
 		 :initarg :command))
-  (:default-initarg :command "unknown_external_processor")
+  (:default-initargs :command "unknown_external_processor")
   (:documentation "The External Language Processor Class.
 
 A mixin class used to denote language processors that must be invoked
@@ -98,7 +98,7 @@ It is keyed by keywords.")
 
 (defclass language-loader (language-processor))
 
-(defclass language-linker (language-linker))
+(defclass language-linker (language-processor))
 
 (defclass language-interpreter (language-processor))
 
@@ -199,7 +199,7 @@ object file into a running CL."))
 
 (defgeneric languagep (x)
   (:method ((x language)) t)
-  (:method ((x t)) nil)
+  (:method ((x t)) nil))
 
 
 (defmethod print-object ((l language) stream)
@@ -289,6 +289,23 @@ The `compiler-options' slots contains a plist of compiler dependent
 options that are passed to it when invoked."))
 
 
+(defclass linkable-component-mixin (component-language-mixin)
+  ((linker :accessor component-linker
+	   :initarg :linker
+	   :type (or null function language-linker))
+   (linker-options :accessor component-linker-options
+		   :initarg :linker-options
+		   :type list)
+   )
+  (:default-initargs :compiler nil :linker-options ())
+  (:documentation
+   "A `mixin' class used to specify that a component is `linkable'.
+The `linker' slot contains a function or an instance of the specific
+`linker' to be used to perform the operation.
+The `linker-options' slots contains a plist of compiler dependent
+options that are passed to it when invoked."))
+
+
 (defclass interpretable-component-mixin (component-language-mixin)
   ((interpreter :accessor component-interpreter
 		:initarg :interpreter
@@ -328,7 +345,7 @@ options that are passed to it when invoked."))
 
 (defmethod initialize-instance :after ((c loadable-component-mixin)
 				       &key)
-  (update-language-slot c #'language-loader)))
+  (update-language-slot c #'language-loader))
 
 (defmethod component-loader :before ((c loadable-component-mixin))
   (update-language-slot c #'language-loader))
@@ -699,13 +716,13 @@ The result is a list of keywords."))
 				source-extension binary-extension)
   (assert (symbolp name))
   (let ((language-tag (intern (symbol-name name) (find-package "KEYWORD"))))
-    (make-instance 'language
-		   :name ,language-tag
-		   :compiler ,compiler
-		   :loader ,loader
-		   :processor ,processor
-		   :source-extension ,source-extension
-		   :binary-extension ,binary-extension)))
+    `(make-instance 'language
+		    :name ,language-tag
+		    :compiler ,compiler
+		    :loader ,loader
+		    :processor ,processor
+		    :source-extension ,source-extension
+		    :binary-extension ,binary-extension)))
 
 
 ;;;---------------------------------------------------------------------------

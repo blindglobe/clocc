@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.30 2002/04/25 02:12:28 sds Exp $
+;;; $Id: inspect.lisp,v 1.31 2002/04/25 12:31:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -54,8 +54,7 @@ See `browse-url', `*browser*', and `*browsers*'.")
 (defcustom *inspect-length* fixnum 5
   "*The number of sequence elements to print.")
 
-;; all `inspection' objects in this session
-(defparameter *inspect-all* (make-array 10 :fill-pointer 0 :adjustable t))
+(defparameter *inspect-all* nil) ; all `inspection' objects in this session
 (defparameter *inspect-debug* 0) ; debug level
 (defvar *inspect-unbound-value*) ; the value for the unbound slots
 
@@ -292,14 +291,8 @@ for your frontend.")
 
 (defgeneric inspect-finalize (frontend)
   (:documentation "This should clean after an inspect session.
-The default methods cleans up the `*inspect-all*' vector, which is
-a necessary operation, so one should `call-next-method' when defining
-methods for this generic function.
 You do not have to define methods for this function.")
-  (:method ((frontend t))
-    (dotimes (ii (length *inspect-all*))
-      (setf (aref *inspect-all* ii) nil))
-    (setf (fill-pointer *inspect-all*) 0)))
+  (:method ((frontend t))))
 
 (defun inspect-read-clean-eval (insp stream)
   "Read a form, massage it, then evaluate it.
@@ -524,9 +517,10 @@ This is useful for frontends which provide an eval/modify facility."
   "This function implements the ANSI Common Lisp INSPECT function."
   (let* ((*print-array* nil) (*print-pretty* t)
          (*print-circle* t) (*print-escape* t)
-         #-clisp (*print-lines* *inspect-print-lines*)
+         (*print-lines* *inspect-print-lines*)
          (*print-level* *inspect-print-level*)
          (*print-length* *inspect-print-length*)
+         (*inspect-all* (make-array 10 :fill-pointer 0 :adjustable t))
          (tmp-pack (make-package (gensym "INSPECT-TMP-PACKAGE-")))
          (*package* tmp-pack)
          (*inspect-unbound-value* (intern "#<unbound>" tmp-pack)))

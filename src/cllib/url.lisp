@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.14 2000/07/24 20:26:29 sds Exp $
+;;; $Id: url.lisp,v 2.15 2000/07/25 16:12:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -252,11 +252,9 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
 Print the appropriate message MESG to OUT."
   (declare (type (or null stream) out) (real sleep))
   (let ((sleep (random sleep)))
-    (when out
-      (format out "~a; sleeping for ~d second~:p..." mesg sleep)
-      (force-output out))
+    (mesg :log out "~a; sleeping for ~d second~:p..." mesg sleep)
     (sleep sleep)
-    (when out (format out "done~%"))))
+    (mesg :log out "done~%")))
 
 (defsubst url-prot-bin (prot)
   "Return T if the protocol is binary."
@@ -426,7 +424,7 @@ See RFC959 (FTP) &c.")
            (type (or (unsigned-byte 10) symbol list) end))
   (when req
     (apply #'format sock req) (fresh-line sock)
-    (when out (apply #'format out "~&url-ask[~s]: `~@?'~%" end req)))
+    (mesg :log out "~&url-ask[~s]: `~?'~%" end req))
   (loop :with endl :of-type list =
         (typecase end
           (integer (to-list end)) (list end)
@@ -437,7 +435,7 @@ See RFC959 (FTP) &c.")
         (string-right-trim +whitespace+ (read-line sock))
         :for len :of-type index-t = (length ln)
         :and code :of-type (or null (unsigned-byte 10)) = nil
-        :when out :do (format out "~&url-ask[~s]: ~a~%" end ln)
+        :do (mesg :log out "~&url-ask[~s]: ~a~%" end ln)
         :while (or (< len 3) (and (> len 3) (char/= #\Space (schar ln 3)))
                    (null (setq code (parse-integer ln :end 3 :junk-allowed t)))
                    (and (< code 400) endl (not (member code endl :test #'=))))
@@ -530,6 +528,23 @@ Read until the end, then close the socket."
        (/ (* len (elapsed *url-opening-time* nil))
           *url-bytes-transferred*)))
 
+(defun ftp-mdtm (sock file &key (out *standard-output*))
+  "Return the modification time of a remote file.
+Signal an error if cannot."
+  (declare (type socket sock) (type (or null stream) out) (string file))
+  (let* ((res (url-ask sock out :mdtm "mdtm ~a" file))
+         (pos (1+ (position #\Space res)))
+         (time (encode-universal-time
+                (parse-integer res :start (+ pos 12) :end (+ pos 14))
+                (parse-integer res :start (+ pos 10) :end (+ pos 12))
+                (parse-integer res :start (+ pos 8) :end (+ pos 10))
+                (parse-integer res :start (+ pos 6) :end (+ pos 8))
+                (parse-integer res :start (+ pos 4) :end (+ pos 6))
+                (parse-integer res :start pos :end (+ pos 4))
+                0)))
+    (mesg :log out " * ~a --> ~a~%" file (dttm->string time))
+    time))
+
 (defun ftp-get-file (sock rmt loc &key (out *standard-output*) (reget t)
                      (bin t) (retry 2) (timeout *url-default-timeout*)
                      (err *error-output*))
@@ -577,18 +592,27 @@ pathname of the downloaded file."
 
 (defun url-ftp-get (url loc &rest opts &key (out *standard-output*)
                     (err *error-output*) (max-retry *url-default-max-retry*)
-                    (timeout *url-default-timeout*) &allow-other-keys)
+                    (timeout *url-default-timeout*) timestamp
+                    &allow-other-keys)
   "Get the file specified by the URL, writing it into a local file.
+If TIMESTAMP is given, it should be universal time in seconds since 1900,
+ if the remote file is older than this, it is not downloaded.
 The local file is located in directory LOC and has the same name
-as the remote one."
+ as the remote one."
   (declare (type url url) (type (or null stream) out err))
   (mesg :log out "~& *** getting `~a'...~%" url)
-  (remf opts :max-retry)
+  (remf opts :max-retry) (remf opts :timestamp)
   (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
-    (multiple-value-bind (tot el st)
-        (apply #'ftp-get-file sock (url-path-file url) loc opts)
-      (mesg :log out " *** done [~:d bytes, ~a, ~:d bytes/sec]~%" tot st
-            (round tot el)))))
+    (if (and timestamp
+             (> timestamp
+                (or (ignore-errors
+                      (ftp-mdtm sock (url-path-file url) :out out))
+                    (get-universal-time))))
+        (mesg :log out " --- ignored: file too old~%")
+        (multiple-value-bind (tot el st)
+            (apply #'ftp-get-file sock (url-path-file url) loc opts)
+          (mesg :log out " *** done [~:d bytes, ~a, ~:d bytes/sec]~%" tot st
+                (round tot el))))))
 
 (defun ftp-list (sock &key name (out *standard-output*) (err *error-output*)
                  (timeout *url-default-timeout*))
@@ -596,8 +620,8 @@ as the remote one."
   (declare (type socket sock) (type (or null stream) out err))
   (let ((data (ftp-get-passive-socket sock err nil timeout)))
     (url-ask sock err :list "list~@[ ~a~]" name) ; 150
-    (loop :for line = (read-line data nil nil) :while line :when out :do
-          (format out "~a~%" (string-right-trim +whitespace+ line)))
+    (loop :for line = (read-line data nil nil) :while line :do
+          (mesg :log out "~a~%" (string-right-trim +whitespace+ line)))
     (url-ask sock err :list)))  ; 226
 
 ;;;
@@ -618,7 +642,7 @@ as the remote one."
     (url-ask sock err :mail-from "mail from: ~a" from) ; 250
     (url-ask sock err :rcpt-to "rcpt to: ~a" (url-user url)) ; 250
     (url-ask sock err :smtp-data "data") ; 354
-    (url-ask sock err :smtp-date "~a~%." text))) ; 250
+    (url-ask sock err :smtp-data "~a~%." text))) ; 250
 
 ;;;
 ;;; }}}{{{ news
@@ -762,12 +786,9 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
                         (error "unknown browser: `~s' (must be a key in `~s')"
                                browser '*browsers*)))))
          (args (mapcar (lambda (arg) (format nil arg url)) (cdr command))))
-    (when out
-      (format out "~&;; running [~s~{ ~s~}]..." (car command) args)
-      (force-output (if (eq out t) *standard-output* out)))
+    (mesg :log out "~&;; running [~s~{ ~s~}]..." (car command) args)
     (run-prog (car command) :args args)
-    (when out
-      (format out "done~%"))))
+    (mesg :log out "done~%")))
 
 ;;;###autoload
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)

@@ -4,21 +4,7 @@ Installation Instructions
 
 1. Loading and compiling.
 
-1a. With MK:DEFSYSTEM.
-
-You will need MK:DEFSYSTEM to set up the CL.EXT.CONFIGURATION package.  The
-system should work only on CMUCL (and maybe Allegro).
-
-Before doing anything, you will need to edit (sorry) the 'env.system'
-file in order to have the correct :SOURCE-PATHNAME and
-:BINARY-PATHNAME in place.
-
-Start a CL *in the 'configuration' directory* and do
-
-      (load "defconf.system")
-      (mk:compile-system 'cl.ext.configuration)
-
-1b. Without MK:DEFSYSTEM.
+1a. Without MK:DEFSYSTEM.
 
 Load the file named 'load-cl-configuration.lisp'.
 
@@ -42,6 +28,22 @@ This will compile the files first and then load them.
 
 Non UNIX implementations should be able to change the pathnames
 appropriately.
+
+
+1b. With MK:DEFSYSTEM.
+
+You will need MK:DEFSYSTEM to set up the CL.EXT.CONFIGURATION package.  The
+system should work only on CMUCL (and maybe Allegro).
+
+Before doing anything, you will need to edit (sorry) the 'env.system'
+file in order to have the correct :SOURCE-PATHNAME and
+:BINARY-PATHNAME in place.
+
+Start a CL *in the 'configuration' directory* and do
+
+      (load "defconf.system")
+      (mk:compile-system 'cl.ext.configuration)
+
 
 
 2. Test.

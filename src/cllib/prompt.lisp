@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.9 2004/03/04 21:36:50 sds Exp $
+;;; $Id: prompt.lisp,v 2.10 2004/03/29 20:06:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,7 @@
 #+(and clisp lisp=cl)
 (eval-when (compile load eval) (import 'ext:package-short-name :cllib))
 
-(export '(ext:package-short-name set-cllib-prompt))
+(export '(package-short-name set-cllib-prompt))
 
 #-(and clisp lisp=cl)
 (defun package-short-name (pkg)

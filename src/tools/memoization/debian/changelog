@@ -1,3 +1,9 @@
+cl-memoization (1.0-8) unstable; urgency=low
+
+  * fixed asdf package file. Closes: #174663 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  6 May 2003 13:24:31 +0200
+
 cl-memoization (1.0-7) unstable; urgency=low
 
   * Lintian fix: now doesn't include the CVS directory anymore. 

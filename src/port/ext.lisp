@@ -1,6 +1,6 @@
 ;;; Basic extensions: conditions, compositions &c
 ;;;
-;;; Copyright (C) 1999-2001 by Sam Steingold
+;;; Copyright (C) 1999-2002 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.25 2001/11/02 22:30:39 sds Exp $
+;;; $Id: ext.lisp,v 1.26 2002/04/21 19:56:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -21,6 +21,7 @@
    "GC" "QUIT"
    "+EOF+" "EOF-P" "STRING-TOKENS"
    #-cmu "REQUIRED-ARGUMENT"
+   "UNLOCK-PACKAGE" "RESTORE-PACKAGE-LOCK"
    "COMPOSE" "COMPOSE-F" "COMPOSE-ALL"))
 
 (in-package :port)
@@ -156,6 +157,50 @@ so that the bare symbols are read as keywords."
         (defun required-argument ()
           "A useful default for required arguments and DEFSTRUCT slots."
           (error "A required argument was not supplied.")))
+
+;;;
+;;; package locking
+;;;
+
+(defvar *lock-package-saved-value*)
+
+(defmacro unlock-package (pack)
+  #+allegro
+  `(eval-when (:compile-toplevel)
+     (let ((pa (find-package ,pack)))
+       (setf *lock-package-saved-value* (excl:package-definition-lock pa)
+             (excl:package-definition-lock pa) nil)))
+  #+clisp
+  `(eval-when (:compile-toplevel)
+     (setf *lock-package-saved-value* (ext:package-lock ,pack)
+           (ext:package-lock ,pack) nil))
+  #+lispworks (declare (ignore pack))
+  #+lispworks
+  `(eval-when (:compile-toplevel)
+     (setf *lock-package-saved-value* lw:*handle-warn-on-redefinition*
+           lw:*handle-warn-on-redefinition*nil))
+  #-(or allegro clisp lispworks)
+  ;; nothing to be done
+  (declare (ignore pack)))
+
+(defmacro restore-package-lock (pack)
+  #+allegro
+  `(eval-when (:compile-toplevel)
+     (setf (excl:package-definition-lock (find-package ,pack))
+           *lock-package-saved-value*)
+     (makunbound '*lock-package-saved-value*))
+  #+clisp
+  `(eval-when (:compile-toplevel)
+     (setf (ext:package-lock ,pack) *lock-package-saved-value*)
+     (makunbound '*lock-package-saved-value*))
+  #+lispworks (declare (ignore pack))
+  #+lispworks
+  `(eval-when (:compile-toplevel)
+     (setf lw:*handle-warn-on-redefinition* *lock-package-saved-value*)
+     (makunbound '*lock-package-saved-value*))
+  #-(or allegro clisp lispworks)
+  ;; nothing to be done
+  (declare (ignore pack)))
 
 ;;;
 ;;; Function Compositions

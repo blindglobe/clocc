@@ -2,7 +2,7 @@
 ;;;
 ;;; Cross-implementation Portability System
 ;;;
-;;; $Id: port.system,v 1.6 2001/11/09 19:24:10 sds Exp $
+;;; $Id: port.system,v 1.7 2001/11/09 21:43:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/port.system,v $
 
 (mk:defsystem port

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.6 2000/12/06 20:14:24 sds Exp $
+;;; $Id: clhs.lisp,v 2.7 2001/06/11 19:43:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -48,8 +48,8 @@
       (unless (or (null (skip-search ff "<P><B>Examples:</B><P>"))
                   (null (skip-search ff "<PRE>")))
         (format out " +++ `~a'~%" fl)
-        (do ((st (read-line ff nil +eof+) (read-line ff nil +eof+)))
-            ((or (eq st +eof+) (string= st "</PRE>")))
+        (do ((st (read-line ff nil nil) (read-line ff nil nil)))
+            ((or (null st) (string= st "</PRE>")))
           (princ (html-translate-specials st) out) (terpri out)))))
   (dolist (dir (directory (merge-pathnames "*/" root)))
     (clhs-snarf-examples :root dir :out out)))

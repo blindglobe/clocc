@@ -607,7 +607,7 @@
 	 `(,@(mapcar #'merge-ops expr)))))
 	 
  
-(defun insert-sym-macro (prog-bit)
+(defun create-sym-macros ()
   (let ((sym-lets '()))
     (maphash
      #'(lambda (key varlist)
@@ -626,7 +626,7 @@
 			   sym-lets)))
 	       varlist))
      *common-blocks*)
-    `(symbol-macrolet ,sym-lets ,prog-bit)))
+    sym-lets))
   
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
@@ -780,6 +780,19 @@
 			      (member v *external-function-names*)))
 		      *undeclared_vbles*))
 
+     ;;(format t "*key_params* = ~S~%" *key_params*)
+     ;;(format t "key-params = ~S~%" key-params)
+
+     ;; Convert reserved names in parameter statements 
+     (setq key-params (mapcar #'(lambda (x) 
+                                  (list (check-reserved-lisp-names (car x)) (cadr x))) 
+			      *key_params*))
+     (setq key-params-decls (mapcar #'(lambda (param)
+				       (make-declaration (car param)))
+				   key-params))
+     ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     
+
      ;; Initialize local variables
      (setq local-vbles
 	   (remove-duplicates
@@ -788,7 +801,7 @@
 			    (remove-if 
 			     #'(lambda (x)
 				 (or (member x *save_vbles*) 
-				     (member x *key_params* :key #'car)))
+				     (member x key-params :key #'car)))
 			     (set-difference (append *declared_vbles*
 						     *undeclared_vbles*)
 					     *subprog_common_vars*))))
@@ -818,7 +831,7 @@
 			       (set-difference
 				(append
 				 (set-difference *declared_vbles* 
-						 (mapcar #'car *key_params*))
+						 (mapcar #'car key-params))
 				 *undeclared_vbles*)
 				*subprog_common_vars*))))
 	      :test #'(lambda (a b)
@@ -849,7 +862,7 @@
 		    (mapcar #'make-initialisation 
 			    (remove-if 
 			     #'(lambda (x)
-				 (member x *key_params* :key #'car))
+				 (member x key-params :key #'car))
 			     *save_vbles*)))
 	    :test #'(lambda (a b)
 		      (eq (first a) (first b)))))
@@ -883,16 +896,6 @@
      
      (setq arglist (mapcar #'check-reserved-lisp-names arglist))
 
-     ;;(format t "*key_params* = ~S~%" *key_params*)
-     ;;(format t "key-params = ~S~%" key-params)
-     (setq key-params (mapcar #'(lambda (x) 
-                                  (list (check-reserved-lisp-names (car x)) (cadr x))) 
-			      *key_params*))
-     (setq key-params-decls (mapcar #'(lambda (param)
-				       (make-declaration (car param)))
-				   *key_params*))
-     ;;(format t "key-params-decl = ~S~%" key-params-decls)
-     
      ;;(format t "local-vbles     = ~S~%" local-vbles)
      ;;(format t "vbles-decls     = ~S~%" vble-decls)
      ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
@@ -961,14 +964,17 @@
 				    (mapcar #'first key-params)))))
 
 
-     ;; Add symbol-macrolets to access the common block
-     ;; variables. Also need to add symbol-macrolets to the
-     ;; *data-init* part if this is a Fortran block data subroutine.
+     ;; If there are common blocks here, check to see if we need to
+     ;; add symbol-macrolets so that we can access the variables in
+     ;; the common block.  If so, add them.
+     ;;
+     
      (when *subprog_common_vars*
-       (setf prog-bit (insert-sym-macro prog-bit))
-       (when (and *data-init*
+       (let ((sym-macs (create-sym-macros)))
+	 (if (and *data-init*
 		  (eq (cadr defun-bit) '/blockdata/))
-	 (setf *data-init* (list (insert-sym-macro *data-init*)))))
+	   (setf *data-init* `((symbol-macrolet ,sym-macs ,@*data-init*)))
+	   (setf prog-bit `(symbol-macrolet ,sym-macs ,prog-bit)))))
 
      ;; Return 3 pieces: Any proclamations for special variables, the
      ;; declarations for the special variables, and, finally, the
@@ -2169,8 +2175,18 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.80 2002/02/08 04:27:31 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.81 2002/02/08 06:04:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.81  2002/02/08 06:04:48  rtoy
+;;; o We were generating incorrect code for symbol-macrolets for
+;;;   initializers.  Fix it and clean it up.  Now only generate it either
+;;;   for initialization or the body but not both since you can only
+;;;   initialize common blocks in a block data subprogram.
+;;; o Fix a bug wherein a variable in a parameter statement that was also
+;;;   declared was getting the wrong type and also getting declared as a
+;;;   local var.  Happened because we were checking the other var against
+;;;   the wrong list (was *key-params* but should have been key-params).
+;;;
 ;;; Revision 1.80  2002/02/08 04:27:31  rtoy
 ;;; To support BLOCK DATA subprograms, we need to have the data
 ;;; initialization part of the code wrapped by symbol-macrolets.  Make it

@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-01-28 Thu 09:37:27 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-02-22 Mon 12:52:38 EST sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.10 1999/01/28 14:37:36 sds Exp $
+;;; $Id: base.lisp,v 1.11 1999/02/22 18:18:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.11  1999/02/22 18:18:51  sds
+;;; Added Naggum's ACL readtable fix.
+;;; Added `probe-directory' and *fas-ext*.
+;;;
 ;;; Revision 1.10  1999/01/28 14:37:36  sds
 ;;; Moved `with-open-pipe' here.
 ;;; Renamed `current-environment' to `sysinfo'.
@@ -62,8 +66,8 @@
               *efficiency-note-cost-threshold* 20)
   ;; (lisp::fd-stream-buffering system:*stdout*) :none
   ;; (lisp::fd-stream-buffering system:*tty*) :none)
-  ;; #+cmu (push "x86f" make::*standard-binary-file-types*)
-  ;; #+cmu (push "lisp" make::*standard-source-file-types*) ; default
+  ;; #+cmu (pushnew "x86f" make::*standard-binary-file-types* :test #'equal)
+  ;; #+cmu (pushnew "lisp" make::*standard-source-file-types* :test #'equal)
   #+allegro
   (progn (setq excl:*global-gc-behavior* :auto
                excl::stream-buffer-size 8192)
@@ -72,27 +76,55 @@
          ;; Duane Rettig <duane@franz.com>:
          ;; TIME reports 32 other bytes too many CL unless tuned with
          (setq excl::time-other-base 32)
-         (push "lisp" sys:*source-file-types*))
+         (pushnew "lisp" sys:*source-file-types* :test #'equal)
+         ;; From Erik Naggum <erik@naggum.no> [22 Feb 1999 10:27:45 +0000]
+         ;; fixes the (read-from-string "[#\\x]") problem
+         (loop with readtables = (excl::get-objects 11)
+               for i from 1 to (aref readtables 0)
+               for readtable = (aref readtables i) do
+               (when (excl::readtable-dispatch-tables readtable)
+                 ;; reader for character names immune cltl1
+                 (set-dispatch-macro-character
+                  #\# #\\
+                  (excl::named-function
+                   excl::sharp-backslash
+                   (lambda (stream backslash font)
+                     (declare (ignore font))
+                     (unread-char backslash stream)
+                     (let* ((charstring (excl::read-extended-token stream)))
+                       (unless *read-suppress*
+                         (or (character charstring)
+                             (name-char charstring)
+                             (excl::internal-reader-error
+                              stream "Meaningless character name ~A"
+                              (string-upcase charstring)))))))
+                  readtable))))
   #+clisp (setq lisp:*warn-on-floating-point-contagion* t
                 lisp:*floating-point-contagion-ansi* t
-                lisp:*ansi* t
+                ;; call with "-a" instead
+                ;; lisp:*ansi* t
                 clos::*gf-warn-on-removing-all-methods* nil
                 clos::*warn-if-gf-already-called* nil
                 clos::*gf-warn-on-replacing-method* nil
                 ;; lisp:*pprint-first-newline* nil
                 ;; sys::*source-file-types* '(#".lisp") ; default
+                lisp:*print-rpars* nil ; put closing pars where they belong
                 lisp:*default-float-format* 'double-float)
   #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
   #+allegro-v4.3
   (unless (member :key (excl:arglist #'reduce) :test #'string=)
-    (setq franz:*compile-advice* t) (in-package :franz)
+    (setq excl:*compile-advice* t)
     (excl:defadvice reduce (support-key :before)
       (let ((key (getf (cddr excl:arglist) :key)))
         (when key
           (remf (cddr excl:arglist) :key)
           (setf (second excl:arglist)
-                (map 'vector key (second excl:arglist))))))
-    (in-package :cl-user)))
+                (map 'vector key (second excl:arglist))))))))
+
+(defvar *fas-ext*
+  #+gcl ".o" #+clisp ".fas" #+allegro ".fasl" #+cmu ".x86f"
+  #-(or new-compiler compiler) ".lisp"
+  "The extension for the compiled file.")
 
 ;;; {{{ Extensions
 
@@ -204,6 +236,23 @@ This function takes care of that."
     (unwind-protect (progn ,@body)
       (close-pipe ,pipe))))
 
+(defmacro map-in (fn seq &rest seqs)
+  "`map-into' the first sequence, evaluating it once.
+  (map-in F S) == (map-into S F S)"
+  (let ((mi (gensym "MI")))
+    `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
+
+(eval-when (load compile eval)
+(defmacro mk-arr (type init &optional len)
+  "Make array with elements of TYPE, initializing."
+  (if len `(make-array ,len :element-type ,type :initial-element ,init)
+      `(make-array (length ,init) :element-type ,type
+        :initial-contents ,init))))
+
+(defmacro map-vec (type len &rest args)
+  "MAP into a simple-array with elements of TYPE and length LEN."
+  `(map-into (make-array ,len :element-type ,type) ,@args))
+
 ;;;
 ;;; }}}{{{ Environment
 ;;;
@@ -239,7 +288,8 @@ This function takes care of that."
       (declare (simple-string mo))
       (setf (gethash mo *require-table*)
             (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-    (dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs"))
+    (dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests"
+                  "elisp"))
       (declare (simple-string mo))
       (setf (gethash mo *require-table*)
             (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
@@ -269,22 +319,11 @@ This function takes care of that."
           (documentation symb 'function)
           (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment))))
 
-(defmacro map-in (fn seq &rest seqs)
-  "`map-into' the first sequence, evaluating it once.
-  (map-in F S) == (map-into S F S)"
-  (let ((mi (gensym "MI")))
-    `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
-
-(eval-when (load compile eval)
-(defmacro mk-arr (type init &optional len)
-  "Make array with elements of TYPE, initializing."
-  (if len `(make-array ,len :element-type ,type :initial-element ,init)
-      `(make-array (length ,init) :element-type ,type
-        :initial-contents ,init))))
-
-(defmacro map-vec (type len &rest args)
-  "MAP into a simple-array with elements of TYPE and length LEN."
-  `(map-into (make-array ,len :element-type ,type) ,@args))
+(defun probe-directory (filename)
+  "Check whether the file name names an existsing directory."
+  #+clisp (lisp:probe-directory filename)
+  #+excl (excl::probe-directory filename)
+  #+cmu (eq :directory (unix:unix-file-kind filename)))
 
 #+(or allegro gcl clisp)
 (defun default-directory ()
@@ -294,6 +333,7 @@ This function takes care of that."
   #+gcl (truename "."))
 #+allegro (defsetf default-directory chdir "Change the current directory.")
 #+gcl (defsetf default-directory si:chdir "Change the current directory.")
+#+clisp (defsetf default-directory lisp:cd "Change the current directory.")
 #-allegro (defun chdir (dir) (setf (default-directory) dir))
 
 (defun sysinfo ()

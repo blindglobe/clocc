@@ -1300,12 +1300,12 @@
          #+TI ("lisp" . #.(string (si::local-binary-file-type)))
          #+:gclisp                            ("LSP"  . "F2S")
          #+pyramid                            ("clisp" . "o")
-         #+:coral                             ("lisp" . "fasl")
+         #+:coral                             ("lisp" . "pfsl")
 	 ;; Harlequin LispWorks
 	 #+:lispworks 	      ("lisp" . ,COMPILER:*FASL-EXTENSION-STRING*)
 ;        #+(and :sun4 :lispworks)             ("lisp" . "wfasl")
 ;        #+(and :mips :lispworks)             ("lisp" . "mfasl")
-         #+:mcl                               ("lisp" . "fasl")
+         #+:mcl                               ("lisp" . "pfsl")
 
          ;; Otherwise,
          ("lisp" . ,(pathname-type (compile-file-pathname "foo.lisp")))))
@@ -4413,6 +4413,7 @@ D
 ;;; *** Edit Operation ***
 
 ;;; Should this conditionalization be (or :mcl (and :CCL (not :lispworks)))?
+#|
 #+:ccl
 (defun edit-operation (component force)
   "Always returns nil, i.e. component not changed."
@@ -4442,7 +4443,7 @@ D
 (make::component-operation :edit 'edit-operation)
 #+(or :ccl :allegro)
 (make::component-operation 'edit 'edit-operation)
-
+|#
 ;;; *** Hardcopy System ***
 (defparameter *print-command* "enscript -2Gr" ; "lpr"
   "Command to use for printing files on UNIX systems.")

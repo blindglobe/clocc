@@ -33,9 +33,9 @@ cl-library:;hemlock;**;*.fasl.* -> /home/pvaneynd/junk-pile/hemlock/**/*.fasl
 This function returns nothing."
   (let ((lp-host (ecase for
                    (:cl-library
-                    "cl-library")
+                    "CL-LIBRARY")
                    (:cl-systems
-                    "cl-systems")))
+                    "CL-SYSTEMS")))
         ;; force to pathnames
         (new-root (pathname new-root))
         (new-part (pathname new-part)))
@@ -53,13 +53,10 @@ This function returns nothing."
           ;; construct the destination, based on all this
           (new-dest
            (make-pathname :defaults new-part
-                          :case :common
                           ;; but under new-root
-                          :directory (append (pathname-directory new-root
-                                                                 :case :common)
+                          :directory (append (pathname-directory new-root)
                                              ;; skip the relative
-                                             (rest (pathname-directory new-part
-                                                                       :case :common))))))
+                                             (rest (pathname-directory new-part))))))
       (push (list new-source
                   new-dest)
             (logical-pathname-translations lp-host)))
@@ -69,20 +66,15 @@ This function returns nothing."
            (make-pathname :defaults new-part
                           :directory (cons :absolute
                                            (rest
-                                            (pathname-directory new-part
-                                                                :case :common)))
-                          :case :common
+                                            (pathname-directory new-part)))
                           :host lp-host))
           ;; construct the destination, based on all this
           (new-dest
            (make-pathname :defaults new-part
-                          :case :common
                           ;; but under new-root
-                          :directory (append (pathname-directory new-root
-                                                                 :case :common)
+                          :directory (append (pathname-directory new-root)
                                              ;; skip the relative
-                                             (rest (pathname-directory new-part
-                                                                       :case :common))))))
+                                             (rest (pathname-directory new-part))))))
       (push (list new-source
                   new-dest)
             (logical-pathname-translations lp-host)))
@@ -98,7 +90,6 @@ NOTE: NUKES the cl-library and cl-systems LOGICAL PATHNAMES
 Returns nothing"
   ;; force both parameters to directories...
   (let* ((fasl-root (make-pathname :name nil :type nil :version nil
-                                   :case :common
                                    :defaults (pathname fasl-root)))
          (s-root (pathname source-root))
          (source-root (make-pathname
@@ -113,34 +104,28 @@ Returns nothing"
                        :directory (append (pathname-directory s-root
                                                               :case :common)
                                           '("SYSTEMS")))))
-    (setf (logical-pathname-translations "cl-library")
+    (setf (logical-pathname-translations "CL-LIBRARY")
           nil)
-    (setf (logical-pathname-translations "cl-systems")
+    (setf (logical-pathname-translations "CL-SYSTEMS")
           nil)
         ;;; by default everything is in the fasl tree...
-    (setf (logical-pathname-translations "cl-library")
+    (setf (logical-pathname-translations "CL-LIBRARY")
           (list
            (list (make-pathname :directory '(:relative :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-LIBRARY:")
-                                                     :case :common)
+                                :host (pathname-host (logical-pathname "CL-LIBRARY:"))
                                 :case :common)
                  ;; ;**;*.*.*
                  ;; to                 
-                 (make-pathname :directory (append (pathname-directory fasl-root
-                                                                       :case :common)
+                 (make-pathname :directory (append (pathname-directory fasl-root)
                                                    (list :wild-inferiors))
-                                :case :common
                                 :defaults fasl-root))
            (list (make-pathname :directory '(:absolute :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-LIBRARY:")
-                                                     :case :common)
+                                :host (pathname-host (logical-pathname "CL-LIBRARY:"))
                                 :case :common)
                  ;; ;**;*.*.*
                  ;; to                 
-                 (make-pathname :directory (append (pathname-directory fasl-root
-                                                                       :case :common)
+                 (make-pathname :directory (append (pathname-directory fasl-root)
                                                    (list :wild-inferiors))
-                                :case :common
                                 :defaults fasl-root))))
     ;;; add common source extentions:
     (loop for extention in *source-extentions*
@@ -152,11 +137,10 @@ Returns nothing"
                                           :case :common)))
     ;; now cl-systems:
     ;; by default everything is in the fasl tree...
-    (setf (logical-pathname-translations "cl-systems")
+    (setf (logical-pathname-translations "CL-SYSTEMS")
           (list
            (list (make-pathname :directory '(:relative :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-SYSTEMS:")
-                                           :case :common)
+                                :host (pathname-host (logical-pathname "CL-SYSTEMS:"))
                                 :type "SYSTEM"
                                 :case :common)
                  ;; ;**;*.*.*
@@ -168,8 +152,7 @@ Returns nothing"
                                 :case :common
                                 :defaults system-root))
            (list (make-pathname :directory '(:absolute :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-SYSTEMS:")
-                                           :case :common)
+                                :host (pathname-host (logical-pathname "CL-SYSTEMS:"))
                                 :type "SYSTEM"
                                 :case :common)
                  ;; ;**;*.*.*

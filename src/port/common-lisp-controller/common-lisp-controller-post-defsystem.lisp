@@ -117,12 +117,11 @@ file or :asdf if found asdf file"
   (let ((op (apply #'make-instance op-class
 		   :original-initargs args args))
 	(system (if (typep system 'asdf:component) system (asdf:find-system system))))
-    (unless (slot-value system 'asdf::relative-pathname)
-      (setf (slot-value system 'asdf::relative-pathname)
-	    (merge-pathnames
-	     (make-pathname :directory (list :relative
-					     (asdf:component-name system)))
-	     *source-root*)))
+    (setf (slot-value system 'asdf::relative-pathname)
+	  (merge-pathnames
+	   (make-pathname :directory (list :relative
+					   (asdf:component-name system)))
+	   *source-root*))
     (with-compilation-unit ()
       (asdf::traverse op system 'asdf::perform))))
 

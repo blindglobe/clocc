@@ -1361,11 +1361,8 @@
 	;; declarations for the special variables, and, finally, the
 	;; function itself.
 	(when *subprog_common_vars*
-	  (Format t "subprog_common_vars = ~A~%" *subprog_common_vars*)
 	  (multiple-value-bind (sym-macs sym-lets)
 	      (create-sym-macros)
-	    (format t "sym-macs = ~A~%" sym-macs)
-	    (Format t "sym-lets = ~A~%" sym-lets)
 	    (setf prog-bit `(let ,sym-lets
 			     (symbol-macrolet ,sym-macs ,prog-bit)))))
 
@@ -1585,7 +1582,7 @@
 	    (t
 	     (if (= (length dims) 1)
 		 `(make-array ,@dims :element-type ',type ,@init-val)
-		 `(make-array (reduce #'* (list ,@dims)) :element-type ',type ,@init-val)))))))
+		 `(make-array (the fixnum (reduce #'* (list ,@dims))) :element-type ',type ,@init-val)))))))
 
 ;; create a labels form for when statement functions are present
 
@@ -2607,8 +2604,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.91 2002/03/15 04:04:01 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.92 2002/03/16 14:27:34 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.92  2002/03/16 14:27:34  rtoy
+;;; Remove some print statements that were left in.
+;;;
 ;;; Revision 1.91  2002/03/15 04:04:01  rtoy
 ;;; When creating the symbol macros for accessing common block vars, we
 ;;; can get some speed gain by treating arrays specially so that we don't

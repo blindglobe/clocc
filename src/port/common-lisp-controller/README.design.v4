@@ -15,7 +15,8 @@ Proposed Changes to Common Lisp Controller V4
 
    CLC now imports the function CLC-REQUIRE into the 
    common-lisp-user package. So, to load CLC packages, the user invokes
-   (cl-user:clc-require '<pkg-name>)
+   (cl-user:clc-require '<pkg-name>). If CLC-REQUIRE can't find the package,
+   then the native implementation REQUIRE is called with the argument.
    
 3. Support for User Packages
 
@@ -28,7 +29,8 @@ Proposed Changes to Common Lisp Controller V4
   that they are developing take precendence over an installed
   system-wide package.
 
-  c. New user command: clc-register-user-package
+  c. New user commands: clc-register-user-package and 
+     clc-unregister-user-package.
 
     1. The system name is taken as the last name in the directory
        path.  For example, the command
@@ -44,12 +46,24 @@ Proposed Changes to Common Lisp Controller V4
        files will be written in the directory ~/.clc/lml.
 
     2. The database file for user packages will be in ~/.clc/user-packages.db
-       The format is simply to have store one registered asdf file name per
-       line. This file will be read when the REQUIRE command is used. This
-       database will take precedence over Common Lisp Controller's system
-       root database (/usr/share/common-lisp/systems/).
+       The format is simply to have store one registered directory name per
+       line. This file will be read when the CLC=REQUIRE command is used. This
+       database will take precedence of Common Lisp Controller's system
 
-    3. The binaries for user-level packages will be installed in 
-       directory ~/.clc/lib/<impl>/<pkg>
+    3. The binaries for the user packages will be stored in
+       ~/.clc/bin/<impl>/<pkg>.
 
+4. Command renaming
+   For the purposes of consistency, some commands are renamed. The consistency
+   rules are: 
+      - all CLC functions start with "clc-"
+      - "impl" is the abbreviation for "implmentation"
+      - "library" specifies a system-wide CL package while "user-package" specifies
+        a package local to a particular user.
+      - autobuild is controlled with commands that begin with "clc-autobuild-"
 
+   The following commands are renamed:
+      register-common-lisp-implementation => clc-register-impl
+      unregister-common-lisp-implementation => clc-unregister-impl
+      register-common-lisp-source => clc-register-library
+      unregister-common-lisp-source => clc-unregister-library

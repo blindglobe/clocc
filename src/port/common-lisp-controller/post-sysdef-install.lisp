@@ -369,7 +369,7 @@ than the maximum file-write-date of output-files, return T."
 (defun user-lib-path ()
   (merge-pathnames
    (make-pathname :directory
-		  (list :relative "lib" (car (last (pathname-directory *fasl-root*)))))
+		  (list :relative "bin" (car (last (pathname-directory *fasl-root*)))))
    (user-clc-path)))
 
 (defvar *cached-user-packages* nil

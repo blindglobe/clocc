@@ -198,7 +198,8 @@
 		   saved-decls save-inits
 		   other-fcn-decls
 		   stmt-fcn-decls
-		   arg-fcn-decls)
+		   arg-fcn-decls
+		   common-block-structs)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -211,13 +212,20 @@
      ;;(format t "special-proclamation = ~a~%" special-proclamation)
      (setq common_var_decls 
 	   (mapcar #'make-special-var-decl subprog_common_vars))
-
      ;; Clean up the declarations by merging them into one
      (setq common_var_decls
 	   (append '(declaim)
 		   (mapcar #'(lambda (decl)
 			       (second decl))
 			   common_var_decls)))
+
+     ;;(format t "subprog_common_vars = ~S~%" subprog_common_vars)
+     ;;(format t "declared = ~S~%" common_var_decls)
+     (setf common-block-structs (make-common-block-structure common_var_decls))
+     ;;(format t "struct = ~S~%" common-block-structs)
+
+     (setq special-proclamation common-block-structs)
+     ;;(format t "special-proclamation = ~a~%" special-proclamation)
 
      ;; Get the declarations for all functions
      (multiple-value-setq (stmt-fcn-decls other-fcn-decls arg-fcn-decls)
@@ -244,6 +252,32 @@
 	     (mapcar #'(lambda (param)
 			 (make-declaration (car param)))
 		     key_params))))
+
+     (when *relaxed-array-decls*
+       ;; Old Fortran practice often declared arrays to functions to
+       ;; have length 1.  Since Fortran didn't check array bounds,
+       ;; this basically meant such arrays could have any length.
+       ;; This bit of code converts any such explicit declarations of
+       ;; sizes to '*, meaning anything goes.
+       (setf formal-arg-decls
+	     (list 
+	      (mapcar #'(lambda (decl)
+			  (cond ((and (listp decl)
+				      (eq 'type (first decl))
+				      (subtypep (second decl) 'array))
+				 (destructuring-bind (a n l)
+				     (second decl)
+				   `(type (,a ,n ,(mapcar #'(lambda (x)
+							      (declare (ignore x))
+							      '*)
+							  l))
+				     ,@(rest (rest decl)))))
+				(t
+				 decl)))
+		      (first formal-arg-decls)))))
+
+
+			    
 
      ;; Clean up other-fcn-decls.  If there weren't any, make it so,
      ;; instead of leaving it as an empty declare.
@@ -390,6 +424,10 @@
 			      key_params))
      (setq arglist (append arglist 
 			   (if key_params (append '(&key) key_params))))
+     ;;(format t "local-vbles     = ~S~%" local-vbles)
+     ;;(format t "vbles-decls     = ~S~%" vble-decls)
+     ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
+     ;;(format t "body            = ~S~%" body)
      (setq prog-bit
 	   (if (or save_vbles *auto-save-data*)
 	       ;; If we have SAVE'd variables, don't put their inits
@@ -409,6 +447,29 @@
      ;;(format t "data-init  = ~a~%" data-init)
      ;;(format t "save-inits = ~a~%" save-inits)
      ;;(format t "prog-bit = ~a~%" prog-bit)
+
+     ;; Add symbol-macrolets to access the common block variables
+     (when subprog_common_vars
+       (let ((sym-lets '()))
+	 (maphash
+	  #'(lambda (key varlist)
+	      (mapc #'(lambda (var)
+			(let ((accessor-name
+			       (concatenate 'string
+					    (symbol-name key)
+					    "-"
+					    (symbol-name var)))
+			      (name
+			       (concatenate 'string
+					    "*"
+					    (symbol-name key)
+					    "-COMMON-BLOCK*")))
+			  (push `(,var (,(intern accessor-name) ,(intern name)))
+				sym-lets)))
+		    varlist))
+	  *common-blocks*)
+	 (setf prog-bit `(symbol-macrolet ,sym-lets ,prog-bit))))
+
      
      ;; Return 3 pieces: Any proclamations for special variables, the
      ;; declarations for the special variables, and, finally, the
@@ -416,7 +477,20 @@
      (return
        (values special-proclamation
 	       (when special-proclamation
-		 common_var_decls)
+		 (let ((var-inits '()))
+		   (maphash
+		    #'(lambda (key val)
+			(declare (ignore val))
+			(push `(defvar ,(intern (concatenate 'string
+							     "*"
+							      (symbol-name key)
+							      "-COMMON-BLOCK*"))
+				(,(intern (concatenate 'string
+						      "MAKE-"
+						      (symbol-name key)))))
+			      var-inits))
+		    *common-blocks*)
+		   (nreverse var-inits)))
 	       (if (and (or save_vbles *auto-save-data*)
 			save-inits)
 		   (append
@@ -695,14 +769,16 @@
 			 `(declare (type (simple-array t ,(cadar decl)) 
 				    ,vble_name))
 			 `(declare (type t ,vble))))))
-	      (t (if (setq decl (member vble (cdar type-clauses) :key #'car))
-		     (return 
+	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
+		   (return 
 		       (if (cdar decl) 
 			   `(declare (type (simple-array 
 					    ,type 
 					    ,(mapcar #'(lambda (x) 
-							 (declare (ignore x)) '*)
-						     (cdar decl))) 
+							 (if (every #'realp x)
+							     (1+ (reduce #'- (reverse x)))
+							     '*))
+						     (cdar decl)))
 				      ,vble_name))
 			   `(declare (type ,type ,vble_name)))))))))
 					; check implicitly declared variable
@@ -742,6 +818,7 @@
          (t ; array, no length spec.
            `(make-array ',(remove '|,| (cadr decl)) :element-type 
                                       '(simple-array base-char ',(cdr type))))))
+
 
 (defun get-implicit-type (vble)
    (do ((decls implicit_vble_decls (cdr decls))
@@ -1421,7 +1498,27 @@
                              (list (car lis))))))
        ((null lis) ret)))
 
- 
+(defun make-common-block-vars (varlist common_var_decls)
+  (mapcar #'(lambda (var)
+	      (let* ((decl (find var (rest common_var_decls)
+				 :key #'third))
+		     (var-type (if decl (second decl) nil))
+		     (var-init (cond ((subtypep var-type 'array)
+				      `(make-array ',(third var-type)
+					:element-type ',(second var-type)))
+				     (t
+				      (coerce 0 var-type)))))
+		`(, var ,var-init :type ,var-type)))
+	  varlist))
+			     
+(defun make-common-block-structure (common_var_decls)
+  (let ((res '()))
+    (maphash #'(lambda (key varlist)
+		 (push `(defstruct ,key
+			 ,@(make-common-block-vars varlist common_var_decls))
+		       res))
+	     *common-blocks*)
+    (nreverse res)))
 ;-----------------------------------------------------------------------------
 ; end of f2cl5.l
      

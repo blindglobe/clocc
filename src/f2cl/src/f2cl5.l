@@ -883,6 +883,7 @@
      (multiple-value-setq (stmt-fcn-decls other-fcn-decls arg-fcn-decls)
        (make-fcn-decl *functions-used* arglist))
 
+     #+nil
      (setq formal-arg-decls
 	   (pretty-decls
 	    (append
@@ -894,14 +895,47 @@
 	     (mapcar #'(lambda (vble)
 			 (let ((decl
 				(make-declaration vble :vble-is-formal-arg t)))
+			   (format t "~S: ~S is ~S~%" defun-bit vble decl)
 			   (setf *declared_vbles*
 				 (remove vble *declared_vbles*))
 			   (setf *undeclared_vbles*
 				 (remove vble *undeclared_vbles*))
 			   decl))
 		     (set-difference arglist *external-function-names*)))))
+     (let* ((var-type-list nil)
+	    (var-decls
+	     (mapcar #'(lambda (vble)
+			 (let ((decl
+				(make-declaration vble :vble-is-formal-arg t)))
+			   (destructuring-bind (declare-sym (type-sym type var))
+			       decl
+			     (declare (ignore declare-sym type-sym var))
+			     (push type var-type-list))
+			   (setf *declared_vbles*
+				 (remove vble *declared_vbles*))
+			   (setf *undeclared_vbles*
+				 (remove vble *undeclared_vbles*))
+			   decl))
+		     (set-difference arglist *external-function-names*))))
+       (setf var-type-list (nreverse var-type-list))
+       (format t "declare ~S: ~S~%" (second defun-bit) var-type-list)
+       (let ((entry (gethash (second defun-bit) *f2cl-function-info*)))
+	 (if entry
+	     (setf (f2cl-finfo-arg-types entry) var-type-list)
+	     (setf (gethash (second defun-bit) *f2cl-function-info*)
+		   (make-f2cl-finfo :arg-types var-type-list))))
+       (setq formal-arg-decls
+	   (pretty-decls
+	    (append
+	     ;; Declare any function arguments
+	     (if (equalp arg-fcn-decls '((declare)))
+		 nil
+		 arg-fcn-decls)
+	     ;; Declare variables
+	     var-decls))))
+       
 
-     ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
+     ;; (format t "formal-arg-decls = ~A~%" formal-arg-decls)
      (when *relaxed-array-decls*
        ;; Old Fortran practice often declared arrays to functions to
        ;; have length 1.  Since Fortran didn't check array bounds,
@@ -924,6 +958,8 @@
 				(t
 				 decl)))
 		      (first formal-arg-decls)))))
+
+     ;;(format t "maybe relaxed formal-arg-decls = ~A~%" formal-arg-decls)
 
      ;; Clean up other-fcn-decls.  If there weren't any, make it so,
      ;; instead of leaving it as an empty declare.
@@ -2709,8 +2745,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.103 2002/05/03 17:43:46 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.104 2002/05/04 20:33:32 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.104  2002/05/04 20:33:32  rtoy
+;;; When we construct the declarations for the formal args of the
+;;; function, we save the arg types in away as well for later use.
+;;;
 ;;; Revision 1.103  2002/05/03 17:43:46  rtoy
 ;;; If the array type is simple-array, don't do the with-array-data stuff
 ;;; because we don't need it.

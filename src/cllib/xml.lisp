@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.15 2000/06/02 21:16:18 sds Exp $
+;;; $Id: xml.lisp,v 2.16 2000/06/06 20:34:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -410,8 +410,9 @@ The first character to be read is #\T."
     ;; (set-macro-character #\> #'read-xml nil rt)
     (set-macro-character #\> (get-macro-character #\)) nil rt)
     (set-macro-character #\] (get-macro-character #\)) nil rt)
+    ;; this is a hack, but it works under Allegro, CLISP and CMUCL
+    (set-macro-character #\' (get-macro-character #\") nil rt)
     (set-syntax-from-char #\; #\a rt)
-    ;; (set-macro-character #\; (get-macro-character #\a) nil rt)
     rt))
 
 (defcustom *xml-readtable* readtable (make-xml-readtable)

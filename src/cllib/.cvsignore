@@ -1,6 +1,6 @@
 ChangeLog
 cllib.list
-auto.lsp
+auto.lisp
 *.zip
 *.fas
 *.lib

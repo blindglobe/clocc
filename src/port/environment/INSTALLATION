@@ -2,21 +2,8 @@ CL.ENVIRONMENT 0.1
 
 Installation Instructions
 
-1. With MK:DEFSYSTEM.
 
-You need MK:DEFSYSTEM to do everything automatically.  The system
-should work only on CMUCL (and maybe Allegro).
-
-Before doing anything, you will need to edit (sorry) the 'env.system'
-file in order to have the correct :SOURCE-PATHNAME and
-:BINARY-PATHNAME in place.
-
-Start a CL *in the 'environment' directory* and do
-
-      (load "env.system")
-      (mk:compile-system 'cl.environment)
-
-2. Without MK:DEFSYSTEM.
+1. Without MK:DEFSYSTEM (preferred).
 
 Load the file named 'load-cl-environment.lisp'.
 
@@ -37,6 +24,22 @@ This will load the library.  To actually compile it, run
                                    :compile-first-p t)
 
 This will compile the files first and then load them.
+
+
+2. With MK:DEFSYSTEM.
+
+You need MK:DEFSYSTEM to do everything automatically.  The system
+should work only on CMUCL (and maybe Allegro).
+
+Before doing anything, you will need to edit (sorry) the 'env.system'
+file in order to have the correct :SOURCE-PATHNAME and
+:BINARY-PATHNAME in place.
+
+Start a CL *in the 'environment' directory* and do
+
+      (load "env.system")
+      (mk:compile-system 'cl.environment)
+
 
 3. Test.
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.16 2004/07/15 19:41:29 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.17 2004/07/16 17:20:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -111,7 +111,7 @@ according to the given backend")
   (orientation :landscape :type (member :landscape :portrait))
   (font-family "Helvetica" :type string)
   (font-size 9 :type (integer 1 100))
-  (target nil :type (or null string pathname))))
+  (target nil :type (or null string pathname symbol))))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
   (format out "set terminal ~a~{ ~a~} "

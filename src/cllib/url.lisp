@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.35 2002/04/03 20:53:18 sds Exp $
+;;; $Id: url.lisp,v 2.36 2002/04/08 00:43:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -52,6 +52,7 @@
 (defstruct (url #+cmu (:print-function print-struct-object))
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot nil :type symbol)       ; protocol
+  (get-request-type nil :type symbol) ; proxy: "GET http://..."
   (user "" :type simple-string) ; username
   (pass "" :type simple-string) ; password
   (host "" :type simple-string) ; hostname
@@ -216,14 +217,16 @@ The argument can be:
       (declare (simple-string string) (type index-t start) (type url url)
                (type (or null index-t) idx))
       (when (char= #\/ (char string 0))
-        (return-from url
-          (progn (setf (url-prot url) :file (url-path url) string)
-                 url)))
+        (setf (url-prot url) :file (url-path url) string)
+        (return-from url url))
       (when idx
         (setf (url-prot url) (kwd (nstring-upcase (subseq string 0 idx)))
               start (position #\/ string :start (1+ idx) :test #'char/=
                               :end end)
               slashp (/= (1+ idx) start)))
+      (when (and slashp (eq :file (url-prot url))) ; "file:/"
+        (setf (url-path url) (subseq string (1- start)))
+        (return-from url url))
       (setq idx
             (case (url-prot url)
               ((:nntp :news) nil)
@@ -258,11 +261,11 @@ The argument can be:
       url)))
 
 
-(defcustom *url-default-sleep* (real 0) 30
+(defcustom *url-sleep* (real 0) 30
   "*The number of seconds to sleep when necessary.")
-(defcustom *url-default-timeout* (real 0) 86400
+(defcustom *url-timeout* (real 0) 86400
   "*The default timeout, in seconds.")
-(defcustom *url-default-max-retry* (or null index-t) nil
+(defcustom *url-max-retry* (or null index-t) nil
   "*The default value of max-retry.
 If nil, retry ad infinitum, otherwise a positive fixnum.")
 (defcustom *url-open-init* boolean t
@@ -283,12 +286,11 @@ Print the appropriate message MESG to OUT."
   (eq :time prot))
 
 (defun open-socket-retry (host port &key (err *standard-output*) bin
-                          (sleep *url-default-sleep*)
-                          (max-retry *url-default-max-retry*)
-                          (timeout *url-default-timeout*))
+                          ((:sleep *url-sleep*) *url-sleep*)
+                          ((:max-retry *url-max-retry*) *url-max-retry*)
+                          ((:timeout *url-timeout*) *url-timeout*))
   "Open a socket connection, retrying until success."
-  (declare (simple-string host) (fixnum port) (type (or null stream) err)
-           (type (or null index-t) max-retry) (type (real 0) sleep timeout))
+  (declare (simple-string host) (fixnum port) (type (or null stream) err))
   (loop :with begt = (get-universal-time) :and err-cond
         :for ii :of-type index-t :upfrom 1
         :for sock :of-type (or null socket) =
@@ -296,24 +298,24 @@ Print the appropriate message MESG to OUT."
             (progn
               (mesg :log err
                     "~&[~d~@[/~d~]] Connecting to ~a:~d [timeout ~:d sec]..."
-                    ii max-retry host port timeout)
-              (with-timeout (timeout
+                    ii *url-max-retry* host port *url-timeout*)
+              (with-timeout (*url-timeout*
                              (error 'timeout :proc 'open-socket-retry :host
-                                    host :port port :time timeout))
+                                    host :port port :time *url-timeout*))
                 (open-socket host port bin)))
           (error (co)
             (setq err-cond co)
             (mesg :log err "~%Error connecting: ~a~%" co)))
         :when sock :do (mesg :log err "done:~% [~a]~%" sock)
         :when (and sock (open-stream-p sock)) :return sock
-        :when (and max-retry (>= ii max-retry))
+        :when (and *url-max-retry* (>= ii *url-max-retry*))
         :do (error 'network :proc 'open-socket-retry :host host :port port
                    :mesg "max-retry [~a] exceeded~@[~% - last error: ~a~]"
-                   :args (list max-retry err-cond))
-        :when (>= (- (get-universal-time) begt) timeout)
+                   :args (list *url-max-retry* err-cond))
+        :when (>= (- (get-universal-time) begt) *url-timeout*)
         :do (error 'timeout :proc 'open-socket-retry :host host :port port
-                   :time timeout)
-        :do (sleep-mesg sleep err "[open-socket-retry] Error")))
+                   :time *url-timeout*)
+        :do (sleep-mesg *url-sleep* err "[open-socket-retry] Error")))
 
 (let ((fin (make-array 2 :element-type 'character :initial-contents
                        '(#\Return #\Linefeed))))
@@ -321,10 +323,12 @@ Print the appropriate message MESG to OUT."
     (loop :repeat count :do (write-string fin sock))
     (finish-output sock)))
 
-(defun open-url (url &key (err *error-output*) (sleep *url-default-sleep*)
-                 (timeout *url-default-timeout*) (init *url-open-init*)
+(defun open-url (url &key (err *error-output*)
+                 ((:init *url-open-init*)  *url-open-init*)
                  ((:nntp-server *nntp-server*) *nntp-server*)
-                 (max-retry *url-default-max-retry*))
+                 ((:sleep *url-sleep*) *url-sleep*)
+                 ((:max-retry *url-max-retry*) *url-max-retry*)
+                 ((:timeout *url-timeout*) *url-timeout*))
   "Open a socket connection to the URL.
 When INIT keyword argument is non-nil (default - `cllib::*url-open-init*'),
 issue the appropriate initial commands:
@@ -334,60 +338,58 @@ issue the appropriate initial commands:
  if this is a WHOIS/FINGER URL, ask about the host/user.
 If timeout is non-nil, it specifies the number of seconds before
 the error `timeout' is signaled."
-  (declare (type url url) (type (real 0) sleep timeout)
-           (type (or null stream) err))
+  (declare (type url url) (type (or null stream) err))
   (when (eq :file (url-prot url))
     (return-from open-url (open (url-path url) :direction :input)))
   (loop :with begt = (get-universal-time) :and host = (url-get-host url)
-        :and port = (url-get-port url)
-        :for sock :of-type socket =
-        (open-socket-retry host port :err err :sleep sleep :timeout timeout
-                           :bin (url-prot-bin (url-prot url))
-                           :max-retry max-retry)
-        :when
-        (or (null init)
-            (handler-case
-                (with-timeout (timeout nil)
-                  (case (url-prot url)
-                    ((:http :www) (setq sock (url-open-http sock url err)))
-                    (:ftp (url-ask sock err :conn)
-                          (url-login-ftp sock url err))
-                    (:telnet (dolist (word (split-string (url-path url) "/") t)
-                               (write-string word sock)
-                               (socket-send sock)))
-                    ((:whois :finger :cfinger)
-                     (write-string (url-path-file url) sock)
-                     (socket-send sock)
-                     t)
-                    (:mailto (url-ask sock err :conn))
-                    ((:news :nntp)
-                     (url-ask sock err :noop)
-                     (unless (zerop (length (url-path url)))
-                       (let* ((strs (split-string (url-path url) "/"))
-                              (group (and (not (find #\@ (car strs)
-                                                     :test #'char=))
-                                          (car strs)))
-                              (article (if group (cadr strs)
-                                           (concatenate 'string ; msgid
-                                                        "<" (car strs) ">"))))
-                         (when group
-                           (url-ask sock err :group "group ~a" group))
-                         (when article
-                           (url-ask sock err :article "article ~a" article))))
-                     t)
-                    ((:time :daytime) t)
-                    (t (error 'code :proc 'open-url :args (list (url-prot url))
-                              :mesg "Cannot handle protocol ~s"))))
-              ((or code login net-path) (co) (error co))
-              (error (co)
-                (mesg :err err "Connection to <~a> dropped:~% - ~a~%"
-                      url co))))
-        :return sock
-        :when sock :do (close sock)
-        :when (> (- (get-universal-time) begt) timeout)
-        :do (error 'timeout :proc 'open-url :host host :port port
-                   :time timeout)
-        :do (sleep-mesg sleep err "[open-url] Connection dropped")))
+     :and port = (url-get-port url)
+     :for sock :of-type socket =
+     (open-socket-retry host port :err err
+                        :bin (url-prot-bin (url-prot url)))
+     :when
+     (or (null *url-open-init*)
+         (handler-case
+             (with-timeout (*url-timeout* nil)
+               (case (url-prot url)
+                 ((:http :www) (setq sock (url-open-http sock url err)))
+                 (:ftp (url-ask sock err :conn)
+                       (url-login-ftp sock url err))
+                 (:telnet (dolist (word (split-string (url-path url) "/") t)
+                            (write-string word sock)
+                            (socket-send sock)))
+                 ((:whois :finger :cfinger)
+                  (write-string (url-path-file url) sock)
+                  (socket-send sock)
+                  t)
+                 (:mailto (url-ask sock err :conn))
+                 ((:news :nntp)
+                  (url-ask sock err :noop)
+                  (unless (zerop (length (url-path url)))
+                    (let* ((strs (split-string (url-path url) "/"))
+                           (group (and (not (find #\@ (car strs)
+                                                  :test #'char=))
+                                       (car strs)))
+                           (article (if group (cadr strs)
+                                        (concatenate 'string ; msgid
+                                                     "<" (car strs) ">"))))
+                      (when group
+                        (url-ask sock err :group "group ~a" group))
+                      (when article
+                        (url-ask sock err :article "article ~a" article))))
+                  t)
+                 ((:time :daytime) t)
+                 (t (error 'code :proc 'open-url :args (list (url-prot url))
+                           :mesg "Cannot handle protocol ~s"))))
+           ((or code login net-path) (co) (error co))
+           (error (co)
+             (mesg :err err "Connection to <~a> dropped:~% - ~a~%"
+                   url co))))
+     :return sock
+     :when sock :do (close sock)
+     :when (> (- (get-universal-time) begt) *url-timeout*)
+     :do (error 'timeout :proc 'open-url :host host :port port
+                :time *url-timeout*)
+     :do (sleep-mesg *url-sleep* err "[open-url] Connection dropped")))
 
 (defcustom *url-bytes-transferred* integer 0
   "The number of bytes transferred during the current connection.")
@@ -418,29 +420,55 @@ ERR is the stream for information messages or NIL for none."
             ((:news :nntp) (url-ask ,socket ,err :nntp-quit "quit")))
           (close ,socket))))))
 
+(defun url-get-request (url)
+  (declare (type url url))
+  (concatenate
+   'string "GET "
+   (ecase (url-get-request-type url)
+     ((nil :long) (princ-to-string url)) ; default = :long
+     (:short (if (zerop (length (url-path url))) "/" (url-path url))))
+   " HTTP/1.0"))
+
 (defun url-open-http (sock url err)
-  "Open the socket to the HTTP url."
+  "Open the socket to the HTTP url.
+Sends the request, returns an open socket on success or signals an error."
   (declare (type socket sock) (type url url) (type (or null stream) err))
-  (format sock "GET ~a HTTP/1.0" url)
-  (socket-send sock 2)
-  (do ((sk sock) (stat 302) sym res (*package* +kwd+))
-      ((not (eql stat 302)) sk)
-    (declare (fixnum stat))
-    (setq sym (read sk) stat (read sk))
-    (when (string-equal sym "http/1.1")
-      (when (>= stat 400)
-        (error 'net-path :proc 'url-open-http :host (url-host url)
-               :port (url-port url) :mesg "~s: [~a] ~a~%"
-               :args (list (url-path url) stat (read-line sk))))
-      (when (= stat 302)        ; redirection
-        (setq res (read-line sk)) (read-line sk) (read-line sk)
-        (setq sym (read-line sk)
-              sym (url (subseq sym (1+ (position #\: sym)))))
-        (when (equal "" (url-host sym)) (setf (url-host sym) (url-host url)))
-        (format err " *** redirected to `~a' [~a]~%" sym res)
-        (close sk) (setq sk (open-url sym :err err))
-        (format sk "GET ~a HTTP/1.0" (url-path sym))
-        (socket-send sk 2)))))
+  (let (code status)
+    (flet ((send-request ()     ; set `status' and `code'
+             (let ((req (url-get-request url)))
+               (write-string req sock)
+               (socket-send sock 2)
+               (setq status (read-line sock))
+               (unless (string-beg-with "http/" status)
+                 (error 'net-path :proc 'url-open-http :host (url-host url)
+                        :port (url-port url) :mesg "~s: ~a"
+                        :args (list req status)))
+               (let* ((pos1 (position #\Space status))
+                      (pos2 (position #\Space status :start (1+ pos1))))
+                 (setq code (parse-integer status :start pos1 :end pos2))))))
+      (send-request)
+      (when (and (= 404 code) (null (url-get-request-type url)))
+        ;; try the other get request type
+        (close sock)
+        (setf (url-get-request-type url)
+              (ecase (url-get-request-type url)
+                (:short :long) ((nil :long) :short)))
+        (send-request)))
+    (when (>= code 400)
+      (error 'net-path :proc 'url-open-http :host (url-host url)
+             :port (url-port url) :mesg "~s: [~a] ~a~%"
+             :args (list (url-path url) code status)))
+    (if (>= code 300)        ; redirection
+        (loop :for res = (read-line sock)
+           :until (string-beg-with "Location: " res)
+           :finally (let ((new-url (url (subseq
+                                         res #.(length "Location: ")))))
+                      (when (equal "" (url-host new-url))
+                        (setf (url-host new-url) (url-host url)))
+                      (format err " *** redirected to `~a' [~a]~%"
+                              new-url res)
+                      (return (open-url new-url :err err))))
+        sock)))                 ; success!
 
 (defun http-parse-header (sock &key (out *standard-output*))
   "Read the headers, when there there is none, return nil,
@@ -532,12 +560,12 @@ See RFC959 (FTP) &c.")
             (+ (ash (parse-integer line :start p2 :end p1) 8)
                (parse-integer line :start p1 :end p0)))))
 
-(defun ftp-get-passive-socket (sock err bin timeout)
+(defun ftp-get-passive-socket (sock err bin)
   "Get a passive socket."
   (declare (type socket sock) (type (or null stream) err))
   (multiple-value-call #'open-socket-retry
     (ftp-parse-sextuple (url-ask sock err :pasv "pasv"))
-    :err err :max-retry 5 :bin bin :timeout timeout))
+    :err err :max-retry 5 :bin bin))
 
 (defcustom *ftp-anonymous-passwords* list '("abc@ftp.net" "abc@")
   "*The list of passwords to try with anonymous ftp login.
@@ -618,8 +646,8 @@ Signal an error if cannot."
     time))
 
 (defun ftp-get-file (sock rmt loc &key (out *standard-output*) (reget t)
-                     (bin t) (retry 2) (timeout *url-default-timeout*)
-                     (err *error-output*))
+                     (bin t) (retry 2) (err *error-output*)
+                     ((:timeout *url-timeout*) *url-timeout*))
   "Get the remote file RMT from the FTP socket SOCK,
 writing it into the local directory LOC.  Log to OUT.
 Append if the file exists and REGET is non-nil.
@@ -629,7 +657,7 @@ Return the file size, elapsed time as number and string, and the
 pathname of the downloaded file."
   (declare (type socket sock) (type index-t retry)
            (type (or null stream) out err) (simple-string rmt))
-  (let* ((data (ftp-get-passive-socket sock err t timeout)) (tot 0)
+  (let* ((data (ftp-get-passive-socket sock err t)) (tot 0)
          (bt (get-float-time nil)) (path (merge-pathnames rmt loc))
          (rest (when (and reget (probe-file path))
                  (let ((sz (file-size path)))
@@ -658,13 +686,14 @@ pathname of the downloaded file."
            (mesg :log out "### Wrong file length: ~:d (expected: ~:d [~@:d])
  +++ ~r more attempt~:p +++~%" tot len (- tot len) retry)
            (ftp-get-file sock rmt loc :out out :err err :reget nil :bin bin
-                         :retry (1- retry) :timeout timeout))
+                         :retry (1- retry)))
           ((error "Wrong file length: ~:d (expected: ~:d [~@:d])"
                   tot len (- tot len))))))
 
 (defun url-ftp-get (url loc &rest opts &key (out *standard-output*)
-                    (err *error-output*) (max-retry *url-default-max-retry*)
-                    (timeout *url-default-timeout*) timestamp
+                    (err *error-output*) timestamp
+                    ((:max-retry *url-max-retry*) *url-max-retry*)
+                    ((:timeout *url-timeout*) *url-timeout*)
                     &allow-other-keys)
   "Get the file specified by the URL, writing it into a local file.
 If TIMESTAMP is given, it should be universal time in seconds since 1900,
@@ -674,7 +703,7 @@ The local file is located in directory LOC and has the same name
   (declare (type url url) (type (or null stream) out err))
   (mesg :log out "~& *** getting `~a'...~%" url)
   (remf opts :max-retry) (remf opts :timestamp)
-  (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
+  (with-open-url (sock url :err err)
     (if (and timestamp
              (> timestamp
                 (or (ignore-errors
@@ -687,10 +716,10 @@ The local file is located in directory LOC and has the same name
                 (round tot el))))))
 
 (defun ftp-list (sock &key name (out *standard-output*) (err *error-output*)
-                 (timeout *url-default-timeout*))
+                 ((:timeout *url-timeout*) *url-timeout*))
   "Get the file list."
   (declare (type socket sock) (type (or null stream) out err))
-  (let ((data (ftp-get-passive-socket sock err nil timeout)))
+  (let ((data (ftp-get-passive-socket sock err nil)))
     (url-ask sock err :list "list~@[ ~a~]" name) ; 150
     (loop :for line = (read-line data nil nil) :while line :do
           (mesg :log out "~a~%" (string-right-trim +whitespace+ line)))
@@ -765,14 +794,14 @@ The local file is located in directory LOC and has the same name
       (unless (streamp out) (close str)))))
 
 (defun url-get-news (url loc &key (out *standard-output*) (err *error-output*)
-                     (max-retry *url-default-max-retry*) re)
+                     ((:max-retry *url-max-retry*) *url-max-retry*) re)
   "Get the news article to the OUT stream.
 When RE is supplied, articles whose subject match it are retrieved."
   (declare (type url url) (stream out))
   (assert (or (eq :nntp (url-prot url)) (eq :news (url-prot url))) (url)
           "url-get-news: `~a' is not a `news'" url)
   (flet ((out (st) (if loc (merge-pathnames st loc) out)))
-    (with-open-url (sock url :err err :max-retry max-retry)
+    (with-open-url (sock url :err err)
       (let ((spl (split-string (url-path url) "/")))
         (cond ((cadr spl)       ; group and article
                (url-dump-to-dot sock :out (out (cadr spl))))
@@ -887,9 +916,10 @@ so that the user gets to type it into a browser.")
 
 ;;;###autoload
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)
-                 (err *error-output*) (timeout *url-default-timeout*)
+                 (err *error-output*) (proc #'identity)
+                 ((:timeout *url-timeout*) *url-timeout*)
                  ((:nntp-server *nntp-server*) *nntp-server*)
-                 (proc #'identity) (max-retry *url-default-max-retry*))
+                 ((:max-retry *url-max-retry*) *url-max-retry*))
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
 itself. FMT defaults to \"~3d: ~a~%\".
@@ -897,7 +927,7 @@ OUT is the output stream and defaults to `*standard-output*'.
 This is mostly a debugging function, to be called interactively."
   (declare (type url url) (stream out) (function proc))
   (format out "Opening URL: `~a'...~%" url)
-  (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
+  (with-open-url (sock url :err err)
     (loop :for ii :of-type index-t :from  1
           :and rr = (read-line sock nil nil)
           :until (or (null rr) (and (eq :nntp (url-prot url))
@@ -913,8 +943,8 @@ This is mostly a debugging function, to be called interactively."
         :collect line))
 
 ;;;###autoload
-(defun url-get (url loc &key (timeout *url-default-timeout*)
-                (max-retry *url-default-max-retry*)
+(defun url-get (url loc &key ((:timeout *url-timeout*) *url-timeout*)
+                ((:max-retry *url-max-retry*) *url-max-retry*)
                 (err *error-output*) (out *standard-output*))
   "Get the URL.
 This is the function to be called in programs.
@@ -922,16 +952,14 @@ Arguments: URL - what to get, LOC - where to place it.
 Keywords: `timeout', `max-retry', `out', `err'."
   (declare (type url url) (type (or stream null) err out))
   (case (url-prot url)
-    (:ftp (url-ftp-get url loc :timeout timeout :err err :out out
-                       :max-retry max-retry))
-    ((:nntp :news) (url-get-news url loc :out out :max-retry max-retry))
+    (:ftp (url-ftp-get url loc :err err :out out))
+    ((:nntp :news) (url-get-news url loc :out out))
     ((:http :www)
      (let* ((path (merge-pathnames (url-path-file url) loc))
             (bt (get-float-time nil))
-            (size (with-open-url (sock url :err err :timeout timeout
-                                       :max-retry max-retry)
+            (size (with-open-url (sock url :err err)
                     (flush-http sock)
-                    ;; FIXME: sock is a character stream,
+                    ;; sock is a character stream,
                     ;; and socket-to-file expects a byte stream
                     #+clisp (setf (stream-element-type sock) 'unsigned-byte)
                     (socket-to-file sock path :out out))))

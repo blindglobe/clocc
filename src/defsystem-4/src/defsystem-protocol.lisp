@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -1371,11 +1371,11 @@ component."
 	(when load-source-p (setf load-source-p source-needs-loading-p))
 	(when load-binary-p (setf load-binary-p binary-needs-loading-p)))
 
-      ;; (break "EXECUTE-ACTION :LOAD checkpoint.")
+      #+mk4-breakpoints (break "EXECUTE-ACTION :LOAD checkpoint.")
 
       (when (or load-source-p load-binary-p compile-and-load-p)
 	(cond (compile-and-load-p
-	       (break "EXECUTE-ACTION :LOAD compile and load chekpoint.")
+	       #+mk4-breakpoints (break "EXECUTE-ACTION :LOAD compile and load chekpoint.")
 	       (execute-action f :compile :load nil)
 	       (load-action f binary-pathname))
 	      ((and source-exists-p
@@ -1386,10 +1386,10 @@ component."
 			(and load-binary-p
 			     (not binary-exists-p)
 			     (load-source-if-no-binary f))))
-	       (break "EXECUTE-ACTION :LOAD load source chekpoint.")
+	       #+mk4-breakpoints (break "EXECUTE-ACTION :LOAD load source chekpoint.")
 	       (load-action f source-pathname))
 	      ((and binary-exists-p load-binary-p)
-	       (break "EXECUTE-ACTION :LOAD load binary chekpoint.")
+	       #+mk4-breakpoints (break "EXECUTE-ACTION :LOAD load binary chekpoint.")
 	       (load-action f binary-pathname))
 	      )))))
 

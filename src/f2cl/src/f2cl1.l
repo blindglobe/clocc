@@ -1317,15 +1317,19 @@ FILENAME                 File containing Fortran code
          (t `((if ,(id-predicate (second x)) ,@(translate-line (cddr x)))))))
 
 (defun parse-return (x) x)
+
 (defun parse-parameter (x) 
    (setq x (mapcar #'(lambda (l) (remove '= l))
                    (list-split '|,| (cadr x))))
 
-   (setq *key_params* (append *key_params* 
-                            (mapcar #'(lambda (l)
-                                           (list (first l) (id-factor (second l))))
-                                    x)))
+   ;;(format t "~&split x = ~A~%" x)
+   (setq *key_params*
+	 (append *key_params* 
+		 (mapcar #'(lambda (l)
+			     (list (first l) (id-expression (rest l))))
+			 x)))
    nil)
+
 ; restrict SAVE stmts to
 ;     SAVE a,b,...
 ; or  SAVE /label/a,b,..
@@ -1976,8 +1980,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.83 2002/01/07 18:16:15 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.84 2002/01/08 20:53:48 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.84  2002/01/08 20:53:48  rtoy
+;;; PARSE-PARAMETER was incorrectly parsing parameter statements like
+;;; parameter (k2prim = K2 - K1*MW/MD) because it never expected the rhs
+;;; to be an expression.
+;;;
 ;;; Revision 1.83  2002/01/07 18:16:15  rtoy
 ;;; o Change the :array-type parameter to take a keyword instead of a
 ;;;   symbol.

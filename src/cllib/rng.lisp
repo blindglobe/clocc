@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.9 2001/11/02 22:31:15 sds Exp $
+;;;; $Id: rng.lisp,v 1.10 2001/11/04 07:02:08 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.10  2001/11/04 07:02:08  sds
+;;;;  (gen-exponential-variate-ziggurat): density has to accept 0d0 too
+;;;;
 ;;;;  Revision 1.9  2001/11/02 22:31:15  sds
 ;;;;  prefix module names with `cllib-'
 ;;;;
@@ -617,7 +620,7 @@ mean of 1:
 ;; show that good exponential numbers are still generated.
 (let ((r 7.69711747013104972d0))
   (flet ((density (x)
-	   (declare (type (double-float (0d0)) x))
+	   (declare (type (double-float 0d0) x))
 	   (exp (- x))))
     (declare (inline density))
     (multiple-value-bind (k-table w-table f-table)

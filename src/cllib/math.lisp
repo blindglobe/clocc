@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-10-13 Wed 11:40:43 EDT sds@ksp.com>
+;;; File: <math.lisp - 2000-01-19 Wed 13:10:05 EST sds@ksp.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,78 +9,81 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.20 1999/10/13 15:40:47 sds Exp $
+;;; $Id: math.lisp,v 1.21 2000/01/19 18:12:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.21  2000/01/19 18:12:25  sds
+;;; (number-sum-split, all-num-split): new functions
+;;;
 ;;; Revision 1.20  1999/10/13 15:40:47  sds
 ;;; (percent-change): handle 0 arguments.
 ;;;
-;; Revision 1.19  1999/05/24 21:06:04  sds
-;; (volatility): `dev-fn' keyword argument.
-;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
-;;
-;; Revision 1.18  1999/04/17 22:34:17  sds
-;; (safe-fun): use `values-list'.
-;; (safe-fun1): new macro.
-;;
-;; Revision 1.17  1999/03/17 21:37:32  sds
-;; Added `eval-cont-fract' and `fract-approx'.
-;;
-;; Revision 1.16  1999/02/25 17:33:51  sds
-;; Moved `lincom' here from date.lisp.
-;;
-;; Revision 1.15  1999/02/25 04:40:36  sds
-;; `volatility': swapped return values.
-;;
-;; Revision 1.14  1999/02/22 22:56:10  sds
-;; Use `:min-len' key in the `call-on-split' call in `volatility'.
-;;
-;; Revision 1.13  1999/01/13 23:37:56  sds
-;; Replaced CMUCL-specific print functions with a call to
-;; `print-struct-object'.
-;;
-;; Revision 1.12  1999/01/07 04:07:34  sds
-;; Use `index-t' instead of (unsigned-byte 20).
-;;
-;; Revision 1.11  1998/11/23 21:22:13  sds
-;; Added MDL structure.
-;;
-;; Revision 1.10  1998/11/13 20:16:58  sds
-;; Added `mean-some'.
-;;
-;; Revision 1.9  1998/10/29 21:57:17  sds
-;; Fixed `standard-deviation-relative' to compute the actual volatility.
-;;
-;; Revision 1.8  1998/09/03 13:54:08  sds
-;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
-;; `make-primes-list', `*primes*', `*primes-file*'.
-;; Special case 2 point regression in `regress'; don't signal error on
-;; negative error, just print a message and assume 0.
-;;
-;; Revision 1.7  1998/07/31 16:41:24  sds
-;; Declare `stream' as a stream in `print-*'.
-;; Take `sqrt' of the correlation in `regress-n'.
-;;
-;; Revision 1.6  1998/07/10 21:11:35  sds
-;; Added `regress-n' and `regress-poly'.
-;; Ditched `regress2' and `det3'.
-;;
-;; Revision 1.5  1998/06/19 21:41:40  sds
-;; Use `defmethod' to print structures.
-;;
-;; Revision 1.4  1998/06/19 20:10:38  sds
-;; Made `normalize' work with arbitrary sequences.
-;; Many minor declarations for CMUCL added.
-;;
-;; Revision 1.3  1998/06/16 14:38:30  sds
-;; Replaced division with recursion in `!!'.
-;;
-;; Revision 1.2  1998/05/27 21:24:47  sds
-;; Added :key to `freqs' and moved it to list.lisp.
-;;
-;; Revision 1.1  1998/03/23 16:33:17  sds
-;; Initial revision
-;;
+;;; Revision 1.19  1999/05/24 21:06:04  sds
+;;; (volatility): `dev-fn' keyword argument.
+;;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
+;;;
+;;; Revision 1.18  1999/04/17 22:34:17  sds
+;;; (safe-fun): use `values-list'.
+;;; (safe-fun1): new macro.
+;;;
+;;; Revision 1.17  1999/03/17 21:37:32  sds
+;;; Added `eval-cont-fract' and `fract-approx'.
+;;;
+;;; Revision 1.16  1999/02/25 17:33:51  sds
+;;; Moved `lincom' here from date.lisp.
+;;;
+;;; Revision 1.15  1999/02/25 04:40:36  sds
+;;; `volatility': swapped return values.
+;;;
+;;; Revision 1.14  1999/02/22 22:56:10  sds
+;;; Use `:min-len' key in the `call-on-split' call in `volatility'.
+;;;
+;;; Revision 1.13  1999/01/13 23:37:56  sds
+;;; Replaced CMUCL-specific print functions with a call to
+;;; `print-struct-object'.
+;;;
+;;; Revision 1.12  1999/01/07 04:07:34  sds
+;;; Use `index-t' instead of (unsigned-byte 20).
+;;;
+;;; Revision 1.11  1998/11/23 21:22:13  sds
+;;; Added MDL structure.
+;;;
+;;; Revision 1.10  1998/11/13 20:16:58  sds
+;;; Added `mean-some'.
+;;;
+;;; Revision 1.9  1998/10/29 21:57:17  sds
+;;; Fixed `standard-deviation-relative' to compute the actual volatility.
+;;;
+;;; Revision 1.8  1998/09/03 13:54:08  sds
+;;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
+;;; `make-primes-list', `*primes*', `*primes-file*'.
+;;; Special case 2 point regression in `regress'; don't signal error on
+;;; negative error, just print a message and assume 0.
+;;;
+;;; Revision 1.7  1998/07/31 16:41:24  sds
+;;; Declare `stream' as a stream in `print-*'.
+;;; Take `sqrt' of the correlation in `regress-n'.
+;;;
+;;; Revision 1.6  1998/07/10 21:11:35  sds
+;;; Added `regress-n' and `regress-poly'.
+;;; Ditched `regress2' and `det3'.
+;;;
+;;; Revision 1.5  1998/06/19 21:41:40  sds
+;;; Use `defmethod' to print structures.
+;;;
+;;; Revision 1.4  1998/06/19 20:10:38  sds
+;;; Made `normalize' work with arbitrary sequences.
+;;; Many minor declarations for CMUCL added.
+;;;
+;;; Revision 1.3  1998/06/16 14:38:30  sds
+;;; Replaced division with recursion in `!!'.
+;;;
+;;; Revision 1.2  1998/05/27 21:24:47  sds
+;;; Added :key to `freqs' and moved it to list.lisp.
+;;;
+;;; Revision 1.1  1998/03/23 16:33:17  sds
+;;; Initial revision
+;;;
 
 (in-package :cl-user)
 
@@ -206,6 +209,39 @@ The optional second argument specifies the list of primes."
     (write-to-file *primes* *primes-file* nil ";; Computed in " st
                    (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
                            limit (length *primes*)))))
+
+(defun number-sum-split (num fun fun-1 &optional (out *standard-output*))
+  "Print all the splittings of NUM into (+ (FUN M) (FUN K))
+FUN-1 is the integer inverse function.
+E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
+  (declare (type (integer 0) num) (type (or null stream out))
+           (type (function ((integer 0)) (integer 0)) fun fun-1))
+  (let ((lim (1+ (funcall fun-1 (floor num 2)))) res)
+    (dotimes (ii lim (nreverse res))
+      (let* ((fi (funcall fun ii)) (jj (funcall fun-1 (- num fi)))
+             (fj (funcall fun jj)))
+        (when (= num (+ fi fj))
+          (push (cons ii jj) res)
+          (when out
+            (format out "~:d = ~:d + ~:d   [~:d/~:d]~%" num fi fj ii jj)))))))
+
+(defun all-num-split (min find fun &optional int)
+  "Find first FIND integers with MIN representations as a sum of 2 FUN's."
+  (declare (fixnum min find) (type (function ((integer 0)) (integer 0)) fun)
+           (type (or null double-float) int))
+  (do* ((ht (make-hash-table :test #'eql :size 100)) (cur 0 (1+ cur)) (found 0)
+        (fc (funcall fun cur) (funcall fun cur)) res (bt (get-float-time)))
+       ((= found find) (nreverse res))
+    (when (and int (= 1 (mod cur 1000)) (> (elapsed bt t) int))
+      (format t "~:d..." cur) (force-output)
+      (setq bt (get-float-time)))
+    (dotimes (ii cur)
+      (let* ((sum (+ fc (funcall fun ii))) (ha (gethash sum ht))
+             (new (cons (cons cur ii) ha)))
+        (when (>= (length new) min)
+          (incf found)
+          (format t "~& * ~:d --~d--> ~s~%" sum (length new) new))
+        (setf (gethash sum ht) new)))))
 
 ;;;
 ;;; Ratios

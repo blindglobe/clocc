@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-10-29 Thu 16:43:52 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1998-11-13 Fri 15:16:39 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.9 1998/10/29 21:57:17 sds Exp $
+;;; $Id: math.lisp,v 1.10 1998/11/13 20:16:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.10  1998/11/13 20:16:58  sds
+;;; Added `mean-some'.
+;;;
 ;;; Revision 1.9  1998/10/29 21:57:17  sds
 ;;; Fixed `standard-deviation-relative' to compute the actual volatility.
 ;;;
@@ -312,6 +315,21 @@ of conses of numbers and weights (not necessarily normalized)."
   (declare (sequence seq) (values double-float))
   (weighted-geometric-mean (map 'list #'car seq) (map 'list #'cdr seq)
 			   :key key))
+
+(defun mean-some (seq &key (key #'value))
+  "Compute the mean of the sequence of real numbers.
+NULLs are ignored, so this is like (mean (remove nil seq :key key) :key key).
+Return 2 values: the mean and the length of the sequence."
+  (declare (sequence seq) (type (function (t) (or null double-float)) key)
+           (values double-float fixnum))
+  (let ((len 0))
+    (declare (type (unsigned-byte 20) len))
+    (values (s/ (reduce #'+ seq :key (lambda (rr)
+                                       (let ((val (funcall key rr)))
+                                         (cond (val (incf len) val)
+                                               (0.0)))))
+                len)
+            len)))
 
 (defun standard-deviation (seq &key (len (length seq)) (key #'value)
 			   (mean (mean seq :key key :len len)))

@@ -1007,8 +1007,8 @@ main-loop
 				   (id-expression expr)))
 			     (list-split '|,| (check_new_vbles (third x))))
 		     nil)))
-    ;; Note that this is not a variable.
-    (update-called-functions-list (second x) arglist)
+    ;; Note that this is not a variable and is, in fact, a subroutine.
+    (update-called-functions-list (list (second x) :subroutine) arglist)
     (cond ((null arglist)
 	   ;; No args to the subroutine
 	   `((,(second x))))
@@ -1776,8 +1776,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.41 2000/07/14 16:45:54 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.42 2000/07/18 14:07:05 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.42  2000/07/18 14:07:05  rtoy
+;;; Make the appropriate code changes due to the change in usage in
+;;; UPDATE-CALLED-FUNCTIONS-LIST since the name arg is now either a list
+;;; of the name for functions or a list of the name and :subroutine for
+;;; subroutines.
+;;;
 ;;; Revision 1.41  2000/07/14 16:45:54  rtoy
 ;;; o Allow the user to specify what package the resulting file should be
 ;;;   in and any declaims he wants.

@@ -1,4 +1,4 @@
-
+;; -*- Mode: lisp; Package: F2CL -*-
  ; f2cl1.l
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -11,7 +11,7 @@
 ;	concaten
 ;	f-to-l
 ;---------------------------------------------------------------------------
-(in-package :cl-user)
+(in-package :f2cl)
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defvar *f2cl-version* "2.0 beta")
@@ -251,7 +251,8 @@ INPUT-FILE               File containing Fortran code
 ;------------------------------------------------------------------------------
 
 (defun fortran-to-lisp (file ofile &key declaim package options)
-  (let (*common_array_dims* *format_stmts*)
+  (let ((*package* (find-package "F2CL"))
+	*common_array_dims* *format_stmts*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
@@ -272,7 +273,10 @@ INPUT-FILE               File containing Fortran code
 	      (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
 		      *f2cl-version*
 		      year month date hour minute second))
-	    (let ((*print-case* :downcase))
+	    (let ((*print-case* :downcase)
+		  (*package* (if package
+				 (find-package package)
+				 (find-package "CL-USER"))))
 	      ;; Insert in-package and declaim, if needed
 	      #-(and clisp (not xp))
 	      (when options
@@ -291,7 +295,8 @@ INPUT-FILE               File containing Fortran code
 	      (when declaim
 		(format outport "(declaim ~S)~%" declaim))
 	      (when (or package declaim)
-		(format outport "~2%")))
+		(format outport "~2%"))
+	      (format outport "~2&(use-package :f2cl)~2%"))
 	    (translate-and-write-subprog 
 	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
 	     outport)))
@@ -328,7 +333,8 @@ main-loop
 	  ;;(format t "~% input-list: ~S" input-list)
 	  )
      (setlispread))
-   ; read the next margin
+   ;; read the next margin
+   ;;(format t "read next margin~%")
    (cond ((not (eq (peek-char nil inport nil 'EOF) 'EOF))
           (setq margin (read-six-chars inport))
           (when (not (char-equal (nth 5 margin) #\space)) ;line continuation
@@ -336,13 +342,22 @@ main-loop
                 (go main-loop)))
          (t (setq margin nil)))
 
-   ; extract format-stmts
+   ;; extract format-stmts
+   ;;(format t "extract format-stmts~%")
    (cond ((eq (car input-list) 'FORMAT)
           (parse-format (brackets-check (concat-operators input-list))))
          (t (setq output-list (cons (list *current_label* input-list) 
                                     output-list))))
 
    ; check for end of subprogram
+   #+nil
+   (let ((*print-readably* t)
+	 (*package* (find-package "UNIX")))
+     (format t "check for end of subprogram~%")
+     (format t "(car input-list) = ")
+     (write (car input-list))
+     (Format t "(eq (car input-list) 'end) = ")
+     (write (eq (car input-list) 'end)))
    (if (and (eq (car input-list) 'end) (null (cdr input-list)))
           (return (nreverse output-list)))
   (go main-loop)))
@@ -438,13 +453,14 @@ main-loop
 		     (special-print s-decl outport)
 		     (terpri outport)
 		     (format outport "~%~%")
-		   (pushnew (caadr s-proc) *common-block-initialized*)))
+		     (pushnew (caadr s-proc) *common-block-initialized*)))
 	       spec-proc
 	       spec-decl)
 	 (terpri outport))
        (special-print fun outport))
      (print (cadr fort-fun))		;indicate which subprogram is being translated
-     (write-char '#\newline outport) (write-char '#\newline outport)
+     (write-char '#\newline outport)
+     (write-char '#\newline outport)
      ))
 
 ;=============================================================================
@@ -1497,7 +1513,7 @@ Senac syntax:... | op '| ...|)))
       ((and (eq next '/) (eq (car rest) '/))
        ;; Fortran string concat operator
        (setq rest (cdr rest)
-	     done (cons '// done)))
+	     done (cons 'f2cl-// done)))
 ;---->
       (t 
        (setq done (cons next done))))
@@ -1693,7 +1709,7 @@ loop1
     (setq ans (cons 
 	       (read-preserving-whitespace stream nil 'EOF nil) ans))
 loop2  
-    (setq next-char (peek-char nil stream nil 'EOF nil)) 
+    (setq next-char (peek-char nil stream nil 'EOF nil))
     (cond ((eql next-char #\Space)
 	   (read-char stream nil 'EOF t) (go loop2)))
     (cond ((member next-char '(#\Newline EOF) :test #'eql)
@@ -1811,8 +1827,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.49 2000/07/27 16:40:27 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.50 2000/07/28 16:59:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.50  2000/07/28 16:59:27  rtoy
+;;; o We are in the f2cl package now.
+;;; o Read the preprocessed file in the f2cl package instead of the user
+;;;   package.
+;;; o Convert the Fortran string concatenation operator (//) to f2cl-//.
+;;;
 ;;; Revision 1.49  2000/07/27 16:40:27  rtoy
 ;;; o We want to be in the CL-USER package, not the USER package.
 ;;; o Clisp doesn't have pprint-logical-block.

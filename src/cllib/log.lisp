@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.21 2004/09/10 15:12:56 sds Exp $
+;;; $Id: log.lisp,v 1.22 2004/09/13 18:48:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (in-package :cllib)
 
-(export '(get-float-time elapsed time-diff with-timing eta
+(export '(get-int-time elapsed time-diff with-timing eta
           *print-log* mesg list-format))
 
 ;;;
@@ -35,23 +35,21 @@ Taken from CLtL2 p602."
 ;;; {{{ progress reporting
 ;;;
 
-(declaim (ftype (function (&optional t) (values (double-float 0d0)))
-                get-float-time))
-(defun get-float-time (&optional (run t))
+(declaim (ftype (function (&optional t) (values (integer 0))) get-int-time))
+(defun get-int-time (&optional (run t))
   "Return the run (or real) time counter, as a double float."
   (dfloat (if run (get-internal-run-time) (get-internal-real-time))))
 
 (defun time-diff (end beg)
   "Compute the time (in seconds) between the two given internal timestamps."
-  (with-type double-float
-    (/ (- end beg) (dfloat internal-time-units-per-second))))
+  (dfloat (/ (- end beg) internal-time-units-per-second)))
 
 (defun elapsed (bt run &optional fmt)
   "Return the time in seconds elapsed since BT,
-previously set using `get-float-time'.
+previously set using `get-int-time'.
 If FMT is non-NIL, return the corresponding string too."
-  (declare (type (double-float 0d0) bt))
-  (let ((nn (time-diff (get-float-time run) bt)))
+  (declare (type (integer 0) bt))
+  (let ((nn (time-diff (get-int-time run) bt)))
     (declare (double-float nn))
     (if fmt (values nn (format nil "~/pr-secs/" nn)) nn)))
 
@@ -86,14 +84,14 @@ Within the body you can call a local function ETA of one argument -
 the current relative position which returns 2 values:
 the expected remaining run and real times."
   (with-gensyms ("TIMING-" bt bt1 %out el last-pos last-time last-time1)
-    `(let* ((,bt (get-float-time)) (,bt1 (get-float-time nil)) ,el
+    `(let* ((,bt (get-int-time)) (,bt1 (get-int-time nil)) ,el
             (,%out (and (print-log-p ,type) ,out))
             (,last-time ,bt) (,last-time1 ,bt1) (,last-pos 0)
             ,@(when count `((,count 0))))
       (unwind-protect
            (flet ((eta (pos) ; pos is the current relative position
                     (if (zerop pos) (values 0 0)
-                      (let* ((now (get-float-time)) (now1 (get-float-time nil))
+                      (let* ((now (get-int-time)) (now1 (get-int-time nil))
                              (lt ,last-time) (lt1 ,last-time1)
                              (eta (linear 0 ,bt pos now 1))
                              (eta1 (linear 0 ,bt1 pos now1 1)))

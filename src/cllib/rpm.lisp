@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.17 2003/06/10 02:17:21 sds Exp $
+;;; $Id: rpm.lisp,v 2.18 2004/09/13 18:48:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -563,7 +563,7 @@ Then generate the list to download."
   (rpm-get-present force out)
   (format out " *** ~d package~:p present~%" (length *rpm-present*))
   (rpm-get-available :force force :out out :err err)
-  (let ((bt (get-float-time nil)) (glob 0)
+  (let ((bt (get-int-time nil)) (glob 0)
         #+clisp (#+lisp=cl  ext:*pprint-first-newline*
                  #-lisp=cl lisp:*pprint-first-newline* nil))
     (declare (double-float bt) (type file-size-t glob))

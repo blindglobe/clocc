@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.46 2004/07/16 16:31:22 sds Exp $
+;;; $Id: url.lisp,v 2.47 2004/09/13 18:48:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,7 @@
   (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `read-trim', `file-size-t', `file-size'
   (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
-  ;; `mesg', `elapsed', `get-float-time', `list-format'
+  ;; `mesg', `elapsed', `get-int-time', `list-format'
   (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `to-list'
   (require :cllib-simple (translate-logical-pathname "cllib:simple"))
@@ -434,7 +434,7 @@ ERR is the stream for information messages or NIL for none."
     `(let* ((,uuu (url ,url)) (*readtable* ,rt) (*url-max-retry* ,max-retry)
             (*url-timeout* ,timeout) (*url-error* ,err) (*url-open-init* ,init)
             (,socket (open-url ,uuu))
-            (*url-opening-time* (get-float-time nil))
+            (*url-opening-time* (get-int-time nil))
             (*url-bytes-transferred* 0))
       (declare (type url ,uuu) (type socket ,socket))
       (unwind-protect (progn ,@body)
@@ -669,7 +669,7 @@ Return the file size, elapsed time as number and string, and the
 pathname of the downloaded file."
   (declare (type socket sock) (type index-t retry) (simple-string rmt))
   (let* ((data (ftp-get-passive-socket sock t)) (tot 0)
-         (bt (get-float-time nil)) (path (merge-pathnames rmt loc))
+         (bt (get-int-time nil)) (path (merge-pathnames rmt loc))
          (rest (when (and reget (probe-file path))
                  (let ((sz (file-size path)))
                    (mesg :log *url-output* "File `~a' exists (~:d bytes), ~
@@ -979,7 +979,7 @@ Keywords: `timeout', `max-retry', `out', `err'."
     ((:nntp :news) (url-get-news url loc))
     ((:http :www)
      (let* ((path (merge-pathnames (url-path-file url) loc))
-            (bt (get-float-time nil))
+            (bt (get-int-time nil))
             (size (with-open-url (sock url)
                     (flush-http sock)
                     ;; sock is a character stream,

@@ -46,8 +46,8 @@
 (defgeneric  fortran-file-os-default-source-extension (os)
   (:method ((os cl.env:operating-system)) "f"))
 
-(defun c-file-default-source-extension ()
-  (c-file-os-default-source-extension cl.env:*os*))
+(defun fortran-file-default-source-extension ()
+  (fortran-file-os-default-source-extension cl.env:*os*))
 
 
 (defgeneric  fortran-file-os-default-binary-extension (os)

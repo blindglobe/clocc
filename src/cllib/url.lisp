@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-01-09 Sat 16:55:13 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-01-13 Wed 13:24:52 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.14 1999/01/09 22:15:42 sds Exp $
+;;; $Id: url.lisp,v 1.15 1999/01/13 18:27:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.15  1999/01/13 18:27:03  sds
+;;; `read-html-markup' now handles #\;, #\: and #\, so it is not necessary
+;;; now to remove these characters from buffer in `ts-pull-next'.
+;;;
 ;;; Revision 1.14  1999/01/09 22:15:42  sds
 ;;; Extracted `ts-pull-next' from `read-next'.
 ;;;
@@ -107,15 +111,16 @@
 
 (defun read-html-markup (stream char)
   "Skip through the HTML markup. CHAR=`<'"
-  (declare (stream stream))
+  (declare (stream stream) (character char))
   (ecase char
+    (#\; #\;) (#\, #\,) (#\: #\:)
     (#\< (if *html-parse-tags*
              (cons +html-tag+ (read-delimited-list #\> stream t))
              (do () ((char= (read-char stream t nil t) #\>)))))
     (#\&
      (do (rr (cc (read-char stream t nil t) (read-char stream t nil t)))
-         ((or (null cc) (char= cc #\;))
-          (if (null cc) (error "`&' must be terminated with `;'")
+         ((or (null cc) (char= cc #\;) (char= cc #\#))
+          (if (null cc) (error "`&' must be terminated with `;' or `#'")
               (if *html-parse-tags*
                   (or (cdr (assoc (coerce (cons #\& (nreverse (push cc rr)))
                                           'string)
@@ -133,10 +138,12 @@
 (set-macro-character #\& #'read-html-markup nil *html-readtable*)
 (set-macro-character #\> (get-macro-character #\)) nil *html-readtable*)
 (set-syntax-from-char #\; #\a *html-readtable*)
+;;(set-macro-character #\; #'read-html-markup nil *html-readtable*)
 (set-syntax-from-char #\# #\a *html-readtable*)
 (set-syntax-from-char #\: #\a *html-readtable*)
-;;(set-macro-character #\: (get-macro-character #\)) nil *html-readtable*)
-;;(set-macro-character #\, (get-macro-character #\a) nil *html-readtable*)
+(set-macro-character #\: #'read-html-markup nil *html-readtable*)
+(set-syntax-from-char #\, #\a *html-readtable*)
+(set-macro-character #\, #'read-html-markup nil *html-readtable*)
 
 ;;;
 ;;; }}}{{{ URL handling
@@ -441,14 +448,13 @@ the tag `timeout' is thrown."
                                  (timeout '*url-default-timeout*))
                          &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
-The *readtable* is temporarily set to RT (defaults to *readtable*).
+`*readtable*' is temporarily set to RT (defaults to `*readtable*').
 ERR is the stream for information messages or NIL for none."
-  (let ((rt-old (gensym "WOU")) (uuu (gensym "WOU")))
-    `(let* ((,uuu ,url) (,socket (open-url ,uuu :err ,err :timeout ,timeout))
-            (,rt-old *readtable*))
+  (let ((uuu (gensym "WOU")))
+    `(let* ((,uuu (url ,url)) (*readtable* ,rt)
+            (,socket (open-url ,uuu :err ,err :timeout ,timeout)))
       (declare (type url ,uuu) (type socket ,socket))
-      (unwind-protect (progn (setq *readtable* (or ,rt *readtable*)) ,@body)
-        (setq *readtable* ,rt-old)
+      (unwind-protect (progn ,@body)
         (case (url-prot ,uuu)
           ((:ftp :mailto) (url-ask ,socket ,err 221 "quit"))
           ((:news :nntp) (url-ask ,socket ,err 205 "quit")))
@@ -536,8 +542,6 @@ ERR is the stream for information messages or NIL for none."
 The reasonable value for it's length is determined by your connection speed.
 I recommend 10240 for 112kbps ISDN and 2048 for 28.8kbps, i.e.,
 approximately, the number of bytes you can receive per second.")
-
-(deftype file-size-t () '(unsigned-byte 32))
 
 (defun socket-to-file (data path &key rest (log *standard-output*))
   "Read from a binary socket to a file."
@@ -723,7 +727,7 @@ This is initialized based on `mail-host-address'.")
   (buff "" :type simple-string) ; buffer string
   (posn 0 :type fixnum))        ; position in the buffer
 
-(defcustom *ts-kill* list nil "*The list of characters to kill.")
+(defcustom *ts-kill* list nil "*The list of extra characters to kill.")
 
 (defun ts-pull-next (ts &optional (concat-p t) (kill *ts-kill*))
   "Read the next line from the socket, put it into the buffer.
@@ -731,13 +735,9 @@ If CONCAT-P is non-NIL, the new line is appended,
 otherwise the buffer is replaced.
 Return the new buffer or NIL on EOF."
   (declare (type text-stream ts))
-  (let ((str (read-line (ts-sock ts) nil nil)))
-    (declare (type (or null simple-string) str))
-    (unless str (return-from ts-pull-next nil))
-    (setq str (nsubstitute #\Space #\: str) ; packages
-          str (nsubstitute #\Space #\, str) ; comma outside backquote
-          ;; str (nsubstitute #\Space #\/ str)
-          )
+  (let ((str (or (read-line (ts-sock ts) nil nil)
+                 (return-from ts-pull-next nil))))
+    (declare (type simple-string str))
     (when kill
       (dolist (ch (to-list kill))
         (setq str (nsubstitute #\Space ch str))))
@@ -746,8 +746,8 @@ Return the new buffer or NIL on EOF."
         ((or (= beg len)
              (null (setq beg (position #\. str :start (1+ beg))))))
       (declare (type (signed-byte 21) beg len))
-      (if (or (and (plusp beg) (digit-char-p (schar str (1- beg))))
-              (and (< beg len) (digit-char-p (schar str (1+ beg)))))
+      (if (or (and (plusp beg) (alphanumericp (schar str (1- beg))))
+              (and (< beg len) (alphanumericp (schar str (1+ beg)))))
           (incf beg) (setf (schar str beg) #\Space)))
     (if concat-p
         (setf (ts-buff ts) (concatenate 'string (ts-buff ts) str))
@@ -769,8 +769,6 @@ Return the new buffer or NIL on EOF."
         :unless (typep pos 'error) :do (setf (ts-posn ts) pos)
         :unless (or (typep pos 'error) (eq tok +eof+))
         :return tok))
-
-;;(defun read-next (ts) (read (ts-sock ts) nil +eof+))
 
 (defun next-token (ts &key (num 1) type dflt (kill *ts-kill*))
   "Get the next NUM-th non-tag token from the HTML stream TS."

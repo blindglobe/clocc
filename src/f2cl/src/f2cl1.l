@@ -2072,11 +2072,59 @@ loop2
 (defun f-to-l (file)
    (fortran-to-lisp (preprocess file) "temp"))
 
+
+;; Some pretty printers for f2cl code.
+(defun pprint-fdo (stream fdo-sexp)
+  ;; Print fdo's like so:
+  ;;
+  ;; (f2cl-lib:fdo (iter 1 (+ iter 1))
+  ;;               ((> iter itmax) nil)
+  ;;   (tagbody
+  ;;     ...))
+  (pprint-logical-block (stream fdo-sexp :prefix "(" :suffix ")")
+    (write (pprint-pop) :stream stream)
+    (write-char #\space stream)
+    ; (pprint-newline :miser)
+    (pprint-indent :current 0 stream)
+    (write (pprint-pop) :stream stream)
+    (pprint-newline :mandatory stream)
+    (write (pprint-pop) :stream stream)
+    (pprint-indent :block 1 stream)
+    (pprint-newline :mandatory stream)
+    (loop
+     (write (pprint-pop) :stream stream)
+     (pprint-exit-if-list-exhausted)
+     (write-char #\space stream)
+     (pprint-newline :linear stream))))
+
+(defun pprint-with-array-data (stream list)
+  ;; Print with-array-data like so:
+  ;;
+  ;; (f2cl-lib:with-array-data ((data-var offset-var array))
+  ;;   body)
+  (pprint-logical-block (stream list :prefix "(" :suffix ")")
+    (write (pprint-pop) :stream stream)
+    (write-char #\space stream)
+    (write (pprint-pop) :stream stream)
+    (pprint-indent :block 1 stream)
+    (pprint-newline :mandatory stream)
+    (loop
+      (write (pprint-pop) :stream stream)
+      (pprint-exit-if-list-exhausted)
+      (write-char #\space stream)
+      (pprint-newline :linear stream))))
+	
+(set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo)
+(set-pprint-dispatch '(cons (member f2cl-lib:with-array-data)) #'pprint-with-array-data)
+
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.91 2002/02/17 15:51:19 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.92 2002/03/01 02:41:54 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.92  2002/03/01 02:41:54  rtoy
+;;; Add some pretty-printers so the resulting code looks a bit neater.
+;;;
 ;;; Revision 1.91  2002/02/17 15:51:19  rtoy
 ;;; With the new array-slicing method, the default array type can be
 ;;; simple-array again.

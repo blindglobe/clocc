@@ -3,12 +3,13 @@
 ;;; Copyright (C) 1988, 1992 Bruno Haible
 ;;; This is Free Software, published under the GNU General Public License v2.
 
-; dummy-package for sequences in CLISP
-; Bruno Haible 24.04.1992
+;; dummy-package for sequences in CLISP
+;; Bruno Haible 24.04.1992
 
 (provide 'sequences)
 
-(in-package "SEQUENCES" :nicknames '("SEQ"))
+(defpackage "SEQUENCES" (:nicknames "SEQ"))
+(in-package "SEQUENCES")
 
 (export '(elt subseq copy-seq length list-reverse reverse list-nreverse
           nreverse make-sequence concatenate map some every notany notevery
@@ -22,7 +23,7 @@
 (setf (symbol-function 'list-reverse) (symbol-function 'reverse))
 (setf (symbol-function 'list-nreverse) (symbol-function 'nreverse))
 
-; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
+;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
 (defmacro do-sequence ((var sequenceform &optional (resultform nil))
                        &body body &environment env)
   (multiple-value-bind (body-rest declarations)
@@ -36,11 +37,8 @@
              ,var ; var is only seemingly evaluated
              (MAP NIL
                   #'(LAMBDA (,var) ,@declarations (TAGBODY ,@body-rest))
-                  ,seqvar
-             )
-             ,resultform
-       ) ) )
-) ) )
+                  ,seqvar)
+             ,resultform))))))
 
 (defmacro define-sequence-1 (name &rest functions)
   `(SYSTEM::%DEFSEQ
@@ -50,26 +48,18 @@
                      (if (and (consp function)
                               (eq (first function) 'FUNCTION)
                               (consp (second function))
-                              (eq (first (second function)) 'LAMBDA)
-                         )
+                              (eq (first (second function)) 'LAMBDA))
                        `(FUNCTION
-                          (LAMBDA (SEQ ,@(second (second function)))
-                            ,@(cddr (second function))
-                        ) )
+                         (LAMBDA (SEQ ,@(second (second function)))
+                          ,@(cddr (second function))))
                        `(FUNCTION
-                          (LAMBDA (SEQ &REST SEQ-ARGS)
-                            (APPLY ,function SEQ-ARGS)
-                        ) )
-                   ) )
-                 functions
-         )
-   ) )
-)
+                         (LAMBDA (SEQ &REST SEQ-ARGS)
+                          (APPLY ,function SEQ-ARGS)))))
+                 functions))))
 
 (defmacro define-sequence
   (name &key init upd endtest fe-init fe-upd fe-endtest access access-set
-             copy length make elt set-elt init-start fe-init-end
-  )
+             copy length make elt set-elt init-start fe-init-end)
   (unless upd (error ":UPD must be specified."))
   (unless fe-upd (error ":FE-UPD must be specified."))
   (unless access (error ":ACCESS must be specified."))
@@ -78,62 +68,45 @@
   (unless fe-endtest (error ":FE-ENDTEST must be specified."))
   (unless make (error ":MAKE must be specified."))
   (unless (or init init-start)
-    (error ":INIT or :INIT-START must be specified.")
-  )
+    (error ":INIT or :INIT-START must be specified."))
   (cond ((and init (not init-start))
          (setq init-start
            `#'(lambda (index)
                 (let ((pointer (funcall ,init)))
                   (dotimes (i index) (setq pointer (funcall ,upd pointer)))
-                  pointer
-              ) )
-        ))
+                  pointer))))
         ((and init-start (not init))
          (setq init
-           `#'(lambda () (funcall ,init-start 0))
-  )     ))
+           `#'(lambda () (funcall ,init-start 0)))))
   (unless elt
     (setq elt
-      `#'(lambda (index) (funcall ,access (funcall ,init-start index)))
-  ) )
+      `#'(lambda (index) (funcall ,access (funcall ,init-start index)))))
   (unless set-elt
     (setq set-elt
       `#'(lambda (index value)
-           (funcall ,access-set (funcall ,init-start index) value)
-         )
-  ) )
+           (funcall ,access-set (funcall ,init-start index) value))))
   (unless length
     (setq length
       `#'(lambda ()
            (do ((pointer (funcall ,init) (funcall ,upd pointer))
                 (i 0 (1+ i)))
-               ((funcall ,endtest pointer) i)
-         ) )
-  ) )
+               ((funcall ,endtest pointer) i)))))
   (unless (or fe-init fe-init-end)
-    (error ":FE-INIT or :FE-INIT-END must be specified.")
-  )
+    (error ":FE-INIT or :FE-INIT-END must be specified."))
   (cond ((and fe-init (not fe-init-end))
          (setq fe-init-end
            `#'(lambda (index)
                 (let ((pointer (funcall ,fe-init)))
                   (dotimes (i (- (funcall ,length) index))
-                    (setq pointer (funcall ,fe-upd pointer))
-                  )
-                  pointer
-              ) )
-        ))
+                    (setq pointer (funcall ,fe-upd pointer)))
+                  pointer))))
         ((and fe-init-end (not fe-init))
          (setq fe-init
-           `#'(lambda () (funcall ,fe-init-end (funcall ,length)))
-  )     ))
+           `#'(lambda () (funcall ,fe-init-end (funcall ,length))))))
   (unless copy
     (warn ":COPY not specified, interprete as #'IDENTITY")
-    (setq copy '#'identity)
-  )
+    (setq copy '#'identity))
   `(DEFINE-SEQUENCE-1 ,name
      ,init ,upd ,endtest ,fe-init ,fe-upd ,fe-endtest ,access ,access-set
-     ,copy ,length ,make ,elt ,set-elt ,init-start ,fe-init-end
-   )
-)
+     ,copy ,length ,make ,elt ,set-elt ,init-start ,fe-init-end))
 

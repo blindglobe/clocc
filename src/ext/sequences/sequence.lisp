@@ -3,17 +3,18 @@
 ;;; Copyright (C) 1988, 1992 Bruno Haible
 ;;; This is Free Software, published under the GNU General Public License v2.
 
-; Functions for Sequences
-; Bruno Haible 16.09.1988, 29.12.1988, 24.04.1992
-; Stefan Kain, 01.09.2004: translation of comments
+;; Functions for Sequences
+;; Bruno Haible 16.09.1988, 29.12.1988, 24.04.1992
+;; Stefan Kain, 01.09.2004: translation of comments
+;; Sam Steingold 2004-09-05: updated to ANSI CL
 
 (provide 'sequences)
 
-(in-package "SEQUENCES" :nicknames '("SEQ"))
+(defpackage "SEQUENCES" (:nicknames "SEQ"))
+(in-package "SEQUENCES")
 
 (eval-when (load compile eval)
-  (defvar *seq-package* (find-package "SEQ"))
-)
+  (defvar *seq-package* (find-package "SEQ")))
 
 (shadow '(elt subseq copy-seq length list-reverse reverse list-nreverse
           nreverse make-sequence concatenate map some every notany notevery
@@ -38,22 +39,22 @@
 1. Several types (lists, vectors, trees, strings, ...)
    serve as sequences.
 2. Everything can be compiled.
-   Thus, do not use macros, that depend on the type of the sequence.
-3. user defined sequences
-4. no closures, only global variables. (for efficiency increase)
+   Thus, do not use macros that depend on the type of the sequence.
+3. user-defined sequences
+4. no closures, only global variables. (for increased efficiency)
 
   Additions to COMMON LISP:
-- user defined sequence-types
+- user-defined sequence-types
 - keywords :START and :END for SORT and STABLE-SORT
-- NREVERSE always returns an object, that is EQ to the argument
+- NREVERSE always returns an object that is EQ to the argument
 - keyword :UPDATE for MAKE-SEQUENCE,
   i.e. (make-sequence 'list 4 :initial-element 1 :update #'1+) ==> (1 2 3 4)
 |#
 
-(proclaim '(special
+(declaim (special
   SEQ1             SEQ2             ; the sequence in question
   SEQ1-TYPE        SEQ2-TYPE        ; the type of the sequence, a symbol
-  ; functions:
+  ;; functions:
   SEQ1-ACCESS      SEQ2-ACCESS
   SEQ1-ACCESS-SET  SEQ2-ACCESS-SET
   SEQ1-COPY        SEQ2-COPY
@@ -84,21 +85,16 @@
              (unless (member op '(TYPE ACCESS ACCESS-SET COPY INIT UPD ENDTEST
                                   FE-INIT FE-UPD FE-ENDTEST LENGTH MAKE
                                   ELT SET-ELT INIT-START FE-INIT-END))
-               (return nil)
-      )    ) )
+               (return nil))))
     (let ((bindlist nil))
       (when svar (push `(,name ,form) bindlist))
       (dolist (op operationen)
         (let* ((sym (intern (lisp:concatenate 'string
                               (symbol-name name) "-" (symbol-name op))
-                            *seq-package*
-              ))    )
-          (push `(,sym (,sym)) bindlist)
-      ) )
-      `(LET* ,(lisp:nreverse bindlist) ,@body)
-    )
-    (error "Wrong usage of WITH-SEQUENCE: ~S" w)
-) )
+                            *seq-package*)))
+          (push `(,sym (,sym)) bindlist)))
+      `(LET* ,(lisp:nreverse bindlist) ,@body))
+    (error "Wrong usage of WITH-SEQUENCE: ~S" w)))
 
 #| explanation of the single functions SEQi-XXX:
 
@@ -166,42 +162,30 @@ FE-INIT-END   (lambda (index) ...) -> pointer
 (defmacro define-sequence-function (name . body)
   `(progn
      (defun ,(intern (lisp:concatenate 'string "SEQ1-" (symbol-name name))
-                     *seq-package*
-             )
-            ,@(subst 'seq1 'seq body)
-     )
+                     *seq-package*)
+            ,@(subst 'seq1 'seq body))
      (defun ,(intern (lisp:concatenate 'string "SEQ2-" (symbol-name name))
-                     *seq-package*
-             )
-            ,@(subst 'seq2 'seq body)
-   ) )
-)
+                     *seq-package*)
+            ,@(subst 'seq2 'seq body))))
 
-; the access method to a sequence-type:
+;; the access method to a sequence-type:
 (defstruct (sequence-definition (:conc-name "SD-"))
   init upd endtest fe-init fe-upd fe-endtest access access-set copy length make
-  elt set-elt init-start fe-init-end
-)
-; Such a sequence-definition is located below the name on the propertylist
-; at the properties SEQUENCE-DEFINITION-1 and SEQUENCE-DEFINITION-2,
-; property SEQUENCE-DEFINITION is T.
+  elt set-elt init-start fe-init-end)
+;; Such a sequence-definition is located below the name on the propertylist
+;; at the properties SEQUENCE-DEFINITION-1 and SEQUENCE-DEFINITION-2,
+;; property SEQUENCE-DEFINITION is T.
 
 (defmacro define-sequence-1 (name &rest args)
-  `(progn
-     (setf (get ',name 'sequence-definition) T)
-     (setf (get ',name 'sequence-definition-1)
-           (make-sequence-definition ,@(subst 'seq1 'seq args))
-     )
-     (setf (get ',name 'sequence-definition-2)
-           (make-sequence-definition ,@(subst 'seq2 'seq args))
-     )
-   )
-)
+  `(setf (get ',name 'sequence-definition) T
+         (get ',name 'sequence-definition-1)
+         (make-sequence-definition ,@(subst 'seq1 'seq args))
+         (get ',name 'sequence-definition-2)
+         (make-sequence-definition ,@(subst 'seq2 'seq args))))
 
 (defmacro define-sequence
   (name &key init upd endtest fe-init fe-upd fe-endtest access access-set
-             copy length make elt set-elt init-start fe-init-end
-  )
+             copy length make elt set-elt init-start fe-init-end)
   (unless upd (error ":UPD must be specified."))
   (unless fe-upd (error ":FE-UPD must be specified."))
   (unless access (error ":ACCESS must be specified."))
@@ -210,66 +194,49 @@ FE-INIT-END   (lambda (index) ...) -> pointer
   (unless fe-endtest (error ":FE-ENDTEST must be specified."))
   (unless make (error ":MAKE must be specified."))
   (unless (or init init-start)
-    (error ":INIT or :INIT-START must be specified.")
-  )
+    (error ":INIT or :INIT-START must be specified."))
   (cond ((and init (not init-start))
          (setq init-start
            `#'(lambda (index)
                 (let ((pointer (funcall ,init)))
                   (dotimes (i index) (setq pointer (funcall ,upd pointer)))
-                  pointer
-              ) )
-        ))
+                  pointer))))
         ((and init-start (not init))
          (setq init
-           `#'(lambda () (funcall ,init-start 0))
-  )     ))
+           `#'(lambda () (funcall ,init-start 0)))))
   (unless elt
     (setq elt
-      `#'(lambda (index) (funcall ,access (funcall ,init-start index)))
-  ) )
+      `#'(lambda (index) (funcall ,access (funcall ,init-start index)))))
   (unless set-elt
     (setq set-elt
       `#'(lambda (index value)
-           (funcall ,access-set (funcall ,init-start index) value)
-         )
-  ) )
+           (funcall ,access-set (funcall ,init-start index) value))))
   (unless length
     (setq length
       `#'(lambda ()
            (do ((pointer (funcall ,init) (funcall ,upd pointer))
                 (i 0 (1+ i)))
-               ((funcall ,endtest pointer) i)
-         ) )
-  ) )
+               ((funcall ,endtest pointer) i)))))
   (unless (or fe-init fe-init-end)
-    (error ":FE-INIT or :FE-INIT-END must be specified.")
-  )
+    (error ":FE-INIT or :FE-INIT-END must be specified."))
   (cond ((and fe-init (not fe-init-end))
          (setq fe-init-end
            `#'(lambda (index)
                 (let ((pointer (funcall ,fe-init)))
                   (dotimes (i (- (funcall ,length) index))
-                    (setq pointer (funcall ,fe-upd pointer))
-                  )
-                  pointer
-              ) )
-        ))
+                    (setq pointer (funcall ,fe-upd pointer)))
+                  pointer))))
         ((and fe-init-end (not fe-init))
          (setq fe-init
-           `#'(lambda () (funcall ,fe-init-end (funcall ,length)))
-  )     ))
+           `#'(lambda () (funcall ,fe-init-end (funcall ,length))))))
   (unless copy
     (warn ":COPY not specified, interprete as #'IDENTITY")
-    (setq copy '#'identity)
-  )
+    (setq copy '#'identity))
   `(DEFINE-SEQUENCE-1 ,name
      :init ,init :upd ,upd :endtest ,endtest :fe-init ,fe-init :fe-upd ,fe-upd
      :fe-endtest ,fe-endtest :access ,access :access-set ,access-set :copy ,copy
      :length ,length :make ,make :elt ,elt :set-elt ,set-elt
-     :init-start ,init-start :fe-init-end ,fe-init-end
-   )
-)
+     :init-start ,init-start :fe-init-end ,fe-init-end))
 
 (define-sequence LIST
   :init        #'(lambda () seq)
@@ -287,19 +254,16 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                    (do ((L seq (cdr L)) (N 0 (1+ N)))
                        (nil)
                      (if (atom L) (error "Too big index in ELT: ~S" index))
-                     (if (= N index) (return (car L)))
-                 ) )
+                     (if (= N index) (return (car L)))))
   :set-elt     #'(lambda (index value)
                    (do ((L seq (cdr L)) (N 0 (1+ N)))
                        (nil)
                      (if (atom L) (error "Too big index in ELT: ~S" index))
-                     (if (= N index) (return (rplaca L value)))
-                 ) )
+                     (if (= N index) (return (rplaca L value)))))
   :init-start  #'(lambda (index)
                    (do ((L seq (cdr L)) (N 0 (1+ N)))
                        ((= N index) (return L))
-                     (if (atom L) (error "Invalid :START - index : ~S" index))
-                 ) )
+                     (if (atom L) (error "Invalid :START - index : ~S" index))))
   :fe-init-end #'(lambda (index)
                    (if (<= 0 index)
                      (do* ((L1 nil (cons (car L2) L1))
@@ -307,17 +271,13 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                            (i index (1- i)))
                           ((zerop i) L1)
                        (if (atom L2)
-                         (error "Invalid :END - index : ~S" index)
-                     ) )
-                     (error "Invalid :END - index : ~S" index)
-                 ) )
-)
+                         (error "Invalid :END - index : ~S" index)))
+                     (error "Invalid :END - index : ~S" index))))
 
 (defun active-length (vector)
   (if (array-has-fill-pointer-p vector)
     (fill-pointer vector)
-    (array-dimension vector 0)
-) )
+    (array-dimension vector 0)))
 
 (define-sequence vector ; VECTOR stands for GENERAL-VECTOR
   :init        #'(lambda () 0)
@@ -336,14 +296,11 @@ FE-INIT-END   (lambda (index) ...) -> pointer
   :init-start  #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      index
-                     (error "Invalid :START - index : ~S" index)
-                 ) )
+                     (error "Invalid :START - index : ~S" index)))
   :fe-init-end #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      (1- index)
-                     (error "Invalid :END - index : ~S" index)
-                 ) )
-)
+                     (error "Invalid :END - index : ~S" index))))
 
 (define-sequence string
   :init        #'(lambda () 0)
@@ -362,14 +319,11 @@ FE-INIT-END   (lambda (index) ...) -> pointer
   :init-start  #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      index
-                     (error "Invalid :START - index : ~S" index)
-                 ) )
+                     (error "Invalid :START - index : ~S" index)))
   :fe-init-end #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      (1- index)
-                     (error "Invalid :END - index : ~S" index)
-                 ) )
-)
+                     (error "Invalid :END - index : ~S" index))))
 
 (define-sequence bit-vector
   :init        #'(lambda () 0)
@@ -388,49 +342,41 @@ FE-INIT-END   (lambda (index) ...) -> pointer
   :init-start  #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      index
-                     (error "Invalid :START - index : ~S" index)
-                 ) )
+                     (error "Invalid :START - index : ~S" index)))
   :fe-init-end #'(lambda (index)
                    (if (<= 0 index (active-length seq))
                      (1- index)
-                     (error "Invalid :END - index : ~S" index)
-                 ) )
-)
+                     (error "Invalid :END - index : ~S" index))))
 
 (require 'avlseq) ; (define-sequence avl-tree ...)
 
 
-; (valid-sequence name) returns
-; an error, if name is not a valid Sequence-Type-Specifier,
-; a valid Sequence-Type-Specifier equivalent to name.
+;; (valid-sequence name) returns
+;; an error, if name is not a valid Sequence-Type-Specifier,
+;; a valid Sequence-Type-Specifier equivalent to name.
 (defun valid-sequence (name)
   (or
-    (and (symbolp name)
-         (cond ((eq name 'simple-vector)     'vector)
-               ((eq name 'simple-string)     'string)
-               ((eq name 'simple-bit-vector) 'bit-vector)
-               ((eq name 'array)             'vector)
-               ((eq name 'simple-array)      'vector)
-               ((get name 'sequence-definition) name)
-    )    )
-    (error "There are no sequences of type ~S." name)
-) )
+   (and (symbolp name)
+        (cond ((eq name 'simple-vector)     'vector)
+              ((eq name 'simple-string)     'string)
+              ((eq name 'simple-bit-vector) 'bit-vector)
+              ((eq name 'array)             'vector)
+              ((eq name 'simple-array)      'vector)
+              ((get name 'sequence-definition) name)))
+   (error "There are no sequences of type ~S." name)))
 
 (define-sequence-function TYPE ()
   (or
-    (cond ((listp seq) 'LIST)
-          ((stringp seq) 'STRING)
-          ((bit-vector-p seq) 'BIT-VECTOR)
-          (#+VAX (sys::structurep seq)
-           #-VAX (typep seq 'structure)
-           (let ((name (type-of seq)))
-             (if (get name 'sequence-definition) name nil)
-          ))
-          ((vectorp seq) 'VECTOR)
-          (t nil)
-    )
-    (error "This is not a sequence: ~S" seq)
-) )
+   (cond ((listp seq) 'LIST)
+         ((stringp seq) 'STRING)
+         ((bit-vector-p seq) 'BIT-VECTOR)
+         (#+VAX (sys::structurep seq)
+          #-VAX (typep seq 'structure)
+          (let ((name (type-of seq)))
+            (if (get name 'sequence-definition) name nil)))
+         ((vectorp seq) 'VECTOR)
+         (t nil))
+   (error "This is not a sequence: ~S" seq)))
 
 (defun seq1-init () (sd-init (get seq1-type 'sequence-definition-1)))
 (defun seq1-upd () (sd-upd (get seq1-type 'sequence-definition-1)))
@@ -467,21 +413,17 @@ FE-INIT-END   (lambda (index) ...) -> pointer
 
 (defun elt (sequence index)
   (with-sequence (seq1 (TYPE ELT) sequence)
-    (funcall seq1-elt index)
-) )
+    (funcall seq1-elt index)))
 
 (defun set-elt (sequence index value)
   (with-sequence (seq1 (TYPE SET-ELT) sequence)
-    (funcall seq1-set-elt index value)
-  )
-  value
-)
+    (funcall seq1-set-elt index value))
+  value)
 
 (defsetf elt set-elt)
 #| ; or equivalent:
-(defsetf elt (sequence index) (value)
-  `(set-elt ,sequence ,index ,value)
-)
+ (defsetf elt (sequence index) (value)
+  `(set-elt ,sequence ,index ,value))
 |#
 
 (defmacro test-start-end (startvar endvar)
@@ -489,33 +431,25 @@ FE-INIT-END   (lambda (index) ...) -> pointer
         (endkw (intern (symbol-name endvar) (find-package "KEYWORD"))))
     `(PROGN
        (UNLESS (AND (INTEGERP ,startvar) (>= ,startvar 0))
-         (ERROR "~S must be an integer >= 0, not ~S" ',startkw ,startvar)
-       )
+         (ERROR "~S must be an integer >= 0, not ~S" ',startkw ,startvar))
        (UNLESS (AND (INTEGERP ,endvar) (>= ,endvar 0))
-         (ERROR "~S must be an integer >= 0, not ~S" ',endkw ,endvar)
-       )
+         (ERROR "~S must be an integer >= 0, not ~S" ',endkw ,endvar))
        (UNLESS (>= ,endvar ,startvar)
          (ERROR "~S = ~S may not exceed ~S = ~S."
-                ',startkw ,startvar ',endkw ,endvar
-     ) ) )
-) )
+                ',startkw ,startvar ',endkw ,endvar)))))
 
 (defmacro test-start-end-1 (startvar endvar)
   (let ((startkw (intern (symbol-name startvar) (find-package "KEYWORD")))
         (endkw (intern (symbol-name endvar) (find-package "KEYWORD"))))
     `(PROGN
        (UNLESS (AND (INTEGERP ,startvar) (>= ,startvar 0))
-         (ERROR "~S must be an integer >= 0, not ~S" ',startkw ,startvar)
-       )
+         (ERROR "~S must be an integer >= 0, not ~S" ',startkw ,startvar))
        (WHEN ,endvar
          (UNLESS (AND (INTEGERP ,endvar) (>= ,endvar 0))
-           (ERROR "~S must be an integer >= 0, not ~S" ',endkw ,endvar)
-         )
+           (ERROR "~S must be an integer >= 0, not ~S" ',endkw ,endvar))
          (UNLESS (>= ,endvar ,startvar)
            (ERROR "~S = ~S may not exceed ~S = ~S."
-                  ',startkw ,startvar ',endkw ,endvar
-     ) ) ) )
-) )
+                  ',startkw ,startvar ',endkw ,endvar))))))
 
 
 (defun subseq (sequence start &optional end)
@@ -523,21 +457,18 @@ FE-INIT-END   (lambda (index) ...) -> pointer
     (unless end (setq end (funcall seq1-length)))
     (test-start-end start end)
     (with-sequence (seq2 (TYPE INIT UPD ACCESS-SET)
-                         (funcall seq1-make (- end start))
-                   )
-      (do ((pointer1 (funcall seq1-init-start start) (funcall seq1-upd pointer1))
+                         (funcall seq1-make (- end start)))
+      (do ((pointer1 (funcall seq1-init-start start)
+                     (funcall seq1-upd pointer1))
            (pointer2 (funcall seq2-init) (funcall seq2-upd pointer2))
            (count (- end start) (1- count)))
           ((zerop count))
-        (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-      )
-      seq2
-) ) )
+        (funcall seq2-access-set pointer2 (funcall seq1-access pointer1)))
+      seq2)))
 
 (defsetf subseq (sequence start &optional end) (new-sequence)
   `(progn (replace ,sequence ,new-sequence :start1 ,start :end1 ,end)
-          ,new-sequence
-)  )
+          ,new-sequence))
 
 (defun copy-seq (sequence)
   (with-sequence (seq1 (TYPE LENGTH MAKE INIT UPD ACCESS) sequence)
@@ -547,21 +478,17 @@ FE-INIT-END   (lambda (index) ...) -> pointer
              (pointer2 (funcall seq2-init) (funcall seq2-upd pointer2))
              (count l (1- count)))
             ((zerop count))
-          (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-        )
-        seq2
-) ) ) )
+          (funcall seq2-access-set pointer2 (funcall seq1-access pointer1)))
+        seq2))))
 
 (defun length (sequence)
   (with-sequence (seq1 (TYPE LENGTH) sequence)
-    (funcall seq1-length)
-) )
+    (funcall seq1-length)))
 
 (defun list-reverse (L)
   (do ((L1 L (cdr L1))
        (L2 nil (cons (car L1) L2)))
-      ((atom L1) L2)
-) )
+      ((atom L1) L2)))
 
 (defun reverse (sequence)
   (if (listp sequence)
@@ -573,19 +500,16 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                (pointer2 (funcall seq2-init) (funcall seq2-upd pointer2))
                (count l (1- count)))
               ((zerop count))
-            (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-          )
-          seq2
-) ) ) ) )
+            (funcall seq2-access-set pointer2 (funcall seq1-access pointer1)))
+          seq2)))))
 
 #|; simple version:
-(defun list-nreverse (L)
+ (defun list-nreverse (L)
   (do ((L1 L (cdr L1))
        (L2 nil (rplacd L1 L2)))
-      ((atom L1) L2)
-) )
+      ((atom L1) L2)))
 |#
-; complicated version, fulfills (eq x (list-nreverse x)) :
+;; complicated version, fulfills (eq x (list-nreverse x)) :
 (defun list-nreverse (L)
   (cond ((atom L) L)
         ((atom (cdr L)) L)
@@ -597,16 +521,15 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                 ((atom (cdr L3))
                  (setf (cdr L) L2)
                  (setf (cdr L1) L3)
-                 (rotatef (car L) (car L3))
-            )   )
-            L
-) )     ) )
+                 (rotatef (car L) (car L3))))
+            L))))
 
 (defun nreverse (sequence)
   (if (listp sequence)
     (list-nreverse sequence)
     (with-sequence (seq1 (TYPE) sequence)
-      (if (or (eq seq1-type 'VECTOR) (eq seq1-type 'STRING) (eq seq1-type 'BIT-VECTOR))
+      (if (or (eq seq1-type 'VECTOR) (eq seq1-type 'STRING)
+              (eq seq1-type 'BIT-VECTOR))
         (with-sequence (seq1 (LENGTH INIT UPD FE-INIT FE-UPD ACCESS ACCESS-SET))
           (do ((count (floor (funcall seq1-length) 2) (1- count))
                (pointer1 (funcall seq1-init) (funcall seq1-upd pointer1))
@@ -615,30 +538,26 @@ FE-INIT-END   (lambda (index) ...) -> pointer
             (let ((value1 (funcall seq1-access pointer1))
                   (value2 (funcall seq1-access pointer2)))
               (funcall seq1-access-set pointer1 value2)
-              (funcall seq1-access-set pointer2 value1)
-          ) )
-          seq1
-        )
-        ; general sequence
-        ; general method for sequence of length l :
-        ; nreverse on the first (floor l 2) elements,
-        ; nreverse on the last (floor l 2) elements,
-        ; swap both blocks.
-        ; (if l is odd, the middle element remains unchanged.)
-#|      (with-sequence (LENGTH INIT UPD ACCESS ACCESS-SET)
+              (funcall seq1-access-set pointer2 value1)))
+          seq1)
+        ;; general sequence
+        ;; general method for sequence of length l :
+        ;; nreverse on the first (floor l 2) elements,
+        ;; nreverse on the last (floor l 2) elements,
+        ;; swap both blocks.
+        ;; (if l is odd, the middle element remains unchanged.)
+     #| (with-sequence (LENGTH INIT UPD ACCESS ACCESS-SET)
           (labels
             ((rev-part (pointer k)
-             ; at pointer, reverses exactly k>=1 elements,
-             ; returns the pointer after it.
+               ;; at pointer, reverses exactly k>=1 elements,
+               ;; returns the pointer after it.
                (if (= k 1)
                  (funcall seq1-upd pointer)
                  (let* ((k2 (floor k 2))
                         (pointer-mid (rev-part (funcall seq1-copy pointer) k2))
                         (pointer-mid
-                          (if (oddp k) (funcall seq1-upd pointer-mid) pointer-mid)
-                        )
-                        (pointer-right (rev-part (funcall seq1-copy pointer-mid) k2))
-                       )
+                          (if (oddp k) (funcall seq1-upd pointer-mid) pointer-mid))
+                        (pointer-right (rev-part (funcall seq1-copy pointer-mid) k2)))
                    (do ((pointer1 pointer-left (funcall seq1-upd pointer1))
                         (pointer2 pointer-mid (funcall seq1-upd pointer2))
                         (i k2 (1- i)))
@@ -646,56 +565,48 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                      (let ((value1 (funcall seq1-access pointer1))
                            (value2 (funcall seq1-access pointer2)))
                        (funcall seq1-access-set pointer1 value2)
-                       (funcall seq1-access-set pointer2 value1)
-                   ) )
-                   pointer-right
-            )) ) )
+                       (funcall seq1-access-set pointer2 value1)))
+                   pointer-right))))
             (rev-part (funcall seq1-init) (funcall seq1-length))
-            seq1
-        ) )
-|#      ; the same iteratively instead of recursively:
+            seq1)) |#
+        ;; the same iteratively instead of recursively:
         (with-sequence (seq1 (LENGTH INIT INIT-START UPD ACCESS ACCESS-SET))
           (let* ((l (funcall seq1-length))
                  (k l))
             (dotimes (j (1- l))
-              ; k = (floor l 2^j)
-              ; swap 2^j times
-              ;   a block of length (floor l 2^(j+1)) with the next:
+              ;; k = (floor l 2^j)
+              ;; swap 2^j times
+              ;;   a block of length (floor l 2^(j+1)) with the next:
               (let* ((stack 0)
                      (k1 (- k (setq k (ash k -1))))
                      (pointer1 (funcall seq1-init))
                      (pointer2 (funcall seq1-init-start k1)))
-                ; pointer1 and pointer2 traverse together to the right,
-                ; pointer2 is in front of pointer1 by
-                ; k1 = (- (floor l 2^j) (floor l 2^(j+1)))
+                ;; pointer1 and pointer2 traverse together to the right,
+                ;; pointer2 is in front of pointer1 by
+                ;; k1 = (- (floor l 2^j) (floor l 2^(j+1)))
                 (loop
-                  ; swap two blocks of length k:
+                  ;; swap two blocks of length k:
                   (dotimes (i k) ; k = (floor l 2^(j+1))
                     (let ((value1 (funcall seq1-access pointer1))
                           (value2 (funcall seq1-access pointer2)))
                       (funcall seq1-access-set pointer1 value2)
-                      (funcall seq1-access-set pointer2 value1)
-                    )
+                      (funcall seq1-access-set pointer2 value1))
                     (setq pointer1 (funcall seq1-upd pointer1))
-                    (setq pointer2 (funcall seq1-upd pointer2))
-                  )
+                    (setq pointer2 (funcall seq1-upd pointer2)))
                   (setq stack (+ stack 1))
                   (if (logbitp j stack) (return)) ; if stack=2^j we're done
-                  ; advance pointer1 and pointer2 by k1 steps:
+                  ;; advance pointer1 and pointer2 by k1 steps:
                   (dotimes (i k1)
                     (setq pointer1 (funcall seq1-upd pointer1))
-                    (setq pointer2 (funcall seq1-upd pointer2))
-                  )
-                  ; if (- stack 1) ends with exactly r 1s and stack with exactly r
-                  ; 0s (r>=0). then both pointers must be advanced by 1,
-                  ; if and only if (logbitp (- j 1 r) l) is true.
+                    (setq pointer2 (funcall seq1-upd pointer2)))
+                  ;; if (- stack 1) ends with exactly r 1s and stack
+                  ;; with exactly r 0s (r>=0). then both pointers must
+                  ;; be advanced by 1, if and only if (logbitp (- j 1 r)
+                  ;; l) is true.
                   (when (logbitp l (- j (integer-length (logxor stack (1- stack)))))
                     (setq pointer1 (funcall seq1-upd pointer1))
-                    (setq pointer2 (funcall seq1-upd pointer2))
-          ) ) ) ) )
-          seq1
-        )
-) ) ) )
+                    (setq pointer2 (funcall seq1-upd pointer2)))))))
+          seq1)))))
 
 (defun make-sequence (type size
                       &key (initial-element nil given) (update #'identity))
@@ -709,10 +620,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                  (element initial-element (funcall update element))
                  (count size (1- count)))
                 ((zerop count))
-              (funcall seq1-access-set pointer element)
-        ) ) )
-        seq1
-) ) ) )
+              (funcall seq1-access-set pointer element))))
+        seq1))))
 
 (defun coerce (sequence result-type) ; only for sequences!
   (setq result-type (valid-sequence result-type))
@@ -727,11 +636,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                  (pointer2 (funcall seq2-init) (funcall seq2-upd pointer2))
                  (i size (1- i)))
                 ((zerop i))
-              (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-            )
-            seq2
-      ) ) )
-) ) )
+              (funcall seq2-access-set pointer2 (funcall seq1-access pointer1)))
+            seq2))))))
 
 (defun concatenate (result-type &rest sequences)
   (setq result-type (valid-sequence result-type))
@@ -749,12 +655,9 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                    (count (car lengthsr) (1- count)))
                   ((zerop count))
                 (funcall seq1-access-set pointer1
-                                         (funcall seq2-access pointer2)
-                )
-                (setq pointer1 (funcall seq1-upd pointer1))
-        ) ) ) )
-        seq1
-) ) ) )
+                                         (funcall seq2-access pointer2))
+                (setq pointer1 (funcall seq1-upd pointer1))))))
+        seq1))))
 
 (defun map (result-type fun &rest sequences)
   (if (null sequences)
@@ -764,10 +667,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                         (with-sequence (seq1 (TYPE INIT UPD ENDTEST ACCESS)
                                              seq)
                           (list (cons (funcall seq1-init) (funcall seq1-init))
-                                seq1-type seq1-upd seq1-endtest seq1-access
-                      ) ) )
-                    sequences
-         )) )
+                                seq1-type seq1-upd seq1-endtest seq1-access)))
+                    sequences)))
       (cond ((null result-type) ; only side effect is desired
              (loop
                (do ((seq-r sequences (cdr seq-r))
@@ -782,10 +683,9 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                        (pointer (caar (car seq-desc-r))))
                    (if (funcall seq1-endtest pointer) (return-from map nil))
                    (push (funcall seq1-access pointer) arglist)
-                   (setf (caar (car seq-desc-r)) (funcall seq1-upd pointer))
-            )) ) )
+                   (setf (caar (car seq-desc-r)) (funcall seq1-upd pointer))))))
             ((setq result-type (valid-sequence result-type))
-             ; first determine length of the result, only then apply:
+             ;; first determine length of the result, only then apply:
              (let ((size
                      (do ((count 0 (1+ count)))
                          ((do ((seq-r sequences (cdr seq-r))
@@ -799,10 +699,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                                   (pointer (cdar (car seq-desc-r))))
                               (if (funcall seq1-endtest pointer) (return t))
                               (setf (cdar (car seq-desc-r))
-                                    (funcall seq1-upd pointer)
-                          ) ) )
-                          count
-                    )) ) )
+                                    (funcall seq1-upd pointer))))
+                          count))))
                (let ((seq2-type result-type))
                  (with-sequence (seq2 (MAKE))
                    (with-sequence (seq2 (INIT UPD ACCESS-SET)
@@ -814,10 +712,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                               (arglist nil))
                              ((null seq-r)
                               (funcall seq2-access-set pointer2
-                                       (apply fun (list-nreverse arglist))
-                              )
-                              (setq pointer2 (funcall seq2-upd pointer2))
-                             )
+                                       (apply fun (list-nreverse arglist)))
+                              (setq pointer2 (funcall seq2-upd pointer2)))
                            (let ((seq1 (car seq-r))
                                  (seq1-type (second (car seq-desc-r)))
                                  (seq1-upd (third (car seq-desc-r)))
@@ -826,15 +722,10 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                                  (pointer1 (caar (car seq-desc-r))))
                              (push (funcall seq1-access pointer1) arglist)
                              (setf (caar (car seq-desc-r))
-                                   (funcall seq1-upd pointer1)
-                         ) ) )
-                       )
-                       seq2
-               ) ) ) )
-            ))
-) ) ) )
+                                   (funcall seq1-upd pointer1)))))
+                       seq2))))))))))
 
-; boolean operator for sequences
+;; boolean operator for sequences
 (defmacro def-seq-boolop (name invokeform resultform)
   `(defun ,name (pred &rest sequences)
      (if (null sequences)
@@ -844,18 +735,15 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                            (with-sequence (seq1 (TYPE INIT UPD ENDTEST ACCESS)
                                                 seq)
                              (list (funcall seq1-init)
-                                   seq1-type seq1-upd seq1-endtest seq1-access
-                         ) ) )
-                       sequences
-            )) )
+                                   seq1-type seq1-upd seq1-endtest seq1-access)))
+                       sequences)))
          (loop
            (do ((seq-r sequences (cdr seq-r))
                 (seq-desc-r seq-descriptors (cdr seq-desc-r))
                 (arglist nil))
                ((null seq-r)
                 ,(subst '(apply pred (list-nreverse arglist)) '(invoke)
-                        invokeform :test #'equal
-               ) )
+                        invokeform :test #'equal))
              (let ((seq1 (car seq-r))
                    (seq1-type (second (car seq-desc-r)))
                    (seq1-upd (third (car seq-desc-r)))
@@ -863,21 +751,18 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                    (seq1-access (fifth (car seq-desc-r)))
                    (pointer (first (car seq-desc-r))))
                (if (funcall seq1-endtest pointer)
-                 (return-from ,name ,resultform)
-               )
+                 (return-from ,name ,resultform))
                (push (funcall seq1-access pointer) arglist)
                (setf (first (car seq-desc-r))
-                     (funcall seq1-upd pointer)
-   ) ) ) ) ) ) )
-)
+                     (funcall seq1-upd pointer)))))))))
 
 (def-seq-boolop some     (let ((h (invoke))) (if h (return-from some h))) nil)
 (def-seq-boolop every    (if (null (invoke)) (return-from every nil))     t)
 (def-seq-boolop notany   (if (invoke) (return-from notany nil))           t)
 (def-seq-boolop notevery (if (null (invoke)) (return-from notevery t))    nil)
 #| ; In order to save memory:
-(defun notany (&rest args) (not (apply #'some args)))
-(defun notevery (&rest args) (not (apply #'every args)))
+ (defun notany (&rest args) (not (apply #'some args)))
+ (defun notevery (&rest args) (not (apply #'every args)))
 |#
 
 (defun reduce (fun sequence &key (from-end nil) (start 0) (end nil)
@@ -887,45 +772,40 @@ FE-INIT-END   (lambda (index) ...) -> pointer
       (unless end (setq end (funcall seq1-length)))
       (test-start-end start end)
       (if (= start end)
-        ; empty sequence
+        ;; empty sequence
         (if init-given initial-value (funcall fun))
-        ; non-empty sequence
+        ;; non-empty sequence
         (let ((pointer (funcall seq1-fe-init-end end)))
           (if init-given
             (do* ((value initial-value
-                         (funcall fun (funcall seq1-access pointer) value) )
+                         (funcall fun (funcall seq1-access pointer) value))
                   (pointer pointer (funcall seq1-fe-upd pointer))
                   (count (- end start) (1- count)))
-                 ((zerop count) value)
-            )
+                 ((zerop count) value))
             (do ((value (funcall seq1-access pointer)
-                        (funcall fun (funcall seq1-access pointer) value) )
+                        (funcall fun (funcall seq1-access pointer) value))
                  (count (- end start 1) (1- count)))
                 ((zerop count) value)
-              (setq pointer (funcall seq1-fe-upd pointer))
-    ) ) ) ) )
+              (setq pointer (funcall seq1-fe-upd pointer)))))))
     (with-sequence (seq1 (TYPE LENGTH INIT-START UPD ACCESS) sequence)
       (unless end (setq end (funcall seq1-length)))
       (test-start-end start end)
       (if (= start end)
-        ; empty sequence
+        ;; empty sequence
         (if init-given initial-value (funcall fun))
-        ; non-empty sequence
+        ;; non-empty sequence
         (let ((pointer (funcall seq1-init-start start)))
           (if init-given
             (do* ((value initial-value
-                         (funcall fun value (funcall seq1-access pointer)) )
+                         (funcall fun value (funcall seq1-access pointer)))
                   (pointer pointer (funcall seq1-upd pointer))
                   (count (- end start) (1- count)))
-                 ((zerop count) value)
-            )
+                 ((zerop count) value))
             (do ((value (funcall seq1-access pointer)
-                        (funcall fun value (funcall seq1-access pointer)) )
+                        (funcall fun value (funcall seq1-access pointer)))
                  (count (- end start 1) (1- count)))
                 ((zerop count) value)
-              (setq pointer (funcall seq1-upd pointer))
-    ) ) ) ) )
-) )
+              (setq pointer (funcall seq1-upd pointer)))))))))
 
 (defun fill (sequence item &key (start 0) (end nil))
   (with-sequence (seq1 (TYPE LENGTH INIT-START UPD ACCESS-SET) sequence)
@@ -934,8 +814,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
     (do ((pointer (funcall seq1-init-start start) (funcall seq1-upd pointer))
          (count (- end start) (1- count)))
         ((zerop count) sequence)
-      (funcall seq1-access-set pointer item)
-) ) )
+      (funcall seq1-access-set pointer item))))
 
 (defun replace (sequence1 sequence2
                 &key (start1 0) (end1 nil) (start2 0) (end2 nil))
@@ -950,68 +829,56 @@ FE-INIT-END   (lambda (index) ...) -> pointer
              (count (min count1 count2)))
         #|(when (< count count1) (setq end1 (+ start1 count)))|# ; end1 is not used anymore
         (when (< count count2) (setq end2 (+ start2 count)))
-        ; Exactly count elements have to be copied, and end2=start2+count.
+        ;; Exactly count elements have to be copied, and end2=start2+count.
         (when (and (eq sequence1 sequence2) (> end2 start1) (> start1 start2))
           (setq seq2 (setq sequence2 (subseq sequence2 start2 end2)))
-          (psetq start2 0 #|end2 count|#) ; end2 is not used anymore
-        )
+          (psetq start2 0 #|end2 count|#)) ; end2 is not used anymore
         (do ((pointer1 (funcall seq1-init-start start1)
                        (funcall seq1-upd pointer1))
              (pointer2 (funcall seq2-init-start start2)
                        (funcall seq2-upd pointer2))
              (count count (1- count)))
             ((zerop count) sequence1)
-          (funcall seq1-access-set pointer1 (funcall seq2-access pointer2))
-) ) ) ) )
+          (funcall seq1-access-set pointer1 (funcall seq2-access pointer2)))))))
 
 (defmacro def-seq-testop
           (name lambdalist &body body)
   (setq lambdalist (append lambdalist '((key #'identity))))
   (let ((name1 name)
         (name2 (intern (lisp:concatenate 'simple-string (symbol-name name) "-IF")
-                       (symbol-package name) ))
+                       (symbol-package name)))
         (name3 (intern (lisp:concatenate 'simple-string (symbol-name name) "-IF-NOT")
-                       (symbol-package name) ))
+                       (symbol-package name)))
         (lambdalist1 (append '(item) lambdalist '((test nil) (test-not nil))))
         (lambdalist2 (append '(test) lambdalist))
         (lambdalist3 (append '(test) lambdalist))
         (body1 `(macrolet ((test (arg)
                              `(if test
                                 (funcall test item (funcall key ,arg))
-                                (not (funcall test-not item (funcall key ,arg)))
-                          ))  )
+                                (not (funcall test-not item (funcall key ,arg))))))
                   (if (and test test-not)
-                    (error ":TEST and :TEST-NOT may not be specified at the same time.")
-                  )
+                    (error ":TEST and :TEST-NOT may not be specified at the same time."))
                   (unless (or test test-not) (setq test #'eql))
-                  ,@body
-        )       )
+                  ,@body))
         (body2 `(macrolet ((test (arg)
-                             `(funcall test (funcall key ,arg))
-                          ))
-                  ,@body
-        )       )
+                             `(funcall test (funcall key ,arg))))
+                  ,@body))
         (body3 `(macrolet ((test (arg)
-                             `(not (funcall test (funcall key ,arg)))
-                          ))
-                  ,@body
-        )       )
-       )
+                             `(not (funcall test (funcall key ,arg)))))
+                  ,@body)))
     (when (or (eq name 'substitute) (eq name 'nsubstitute))
       (push 'newitem lambdalist1)
       (push 'newitem lambdalist2)
-      (push 'newitem lambdalist3)
-    )
+      (push 'newitem lambdalist3))
     `(progn
        (defun ,name1 ,lambdalist1 ,body1)
        (defun ,name2 ,lambdalist2 ,body2)
-       (defun ,name3 ,lambdalist3 ,body3)
-     )
-) )
+       (defun ,name3 ,lambdalist3 ,body3))))
 
-; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT, SEQ1-UPD,
-; SEQ1-ACCESS a new sequence for SEQ1 (has length l), with those dl elements
-; missing, that are marked in the bitvector bv (has length l = end - start) with 1.
+;; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT,
+;; SEQ1-UPD, SEQ1-ACCESS a new sequence for SEQ1 (has length l), with
+;; those dl elements missing, that are marked in the bitvector bv (has
+;; length l = end - start) with 1.
 (defun remove-help (l dl bv bvl start end)
   (with-sequence (seq2 (TYPE INIT UPD ACCESS-SET) (funcall seq1-make (- l dl)))
     (let ((pointer1 (funcall seq1-init))
@@ -1019,63 +886,50 @@ FE-INIT-END   (lambda (index) ...) -> pointer
       (dotimes (i start) ; take over the front part unchanged
         (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
         (setq pointer1 (funcall seq1-upd pointer1))
-        (setq pointer2 (funcall seq2-upd pointer2))
-      )
+        (setq pointer2 (funcall seq2-upd pointer2)))
       (dotimes (bvi bvl) ; middle part: sieve
         (when (zerop (bit bv bvi))
           (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-          (setq pointer2 (funcall seq2-upd pointer2))
-        )
-        (setq pointer1 (funcall seq1-upd pointer1))
-      )
+          (setq pointer2 (funcall seq2-upd pointer2)))
+        (setq pointer1 (funcall seq1-upd pointer1)))
       (dotimes (i (- l end)) ; take over back part unchanged
         (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
         (setq pointer1 (funcall seq1-upd pointer1))
-        (setq pointer2 (funcall seq2-upd pointer2))
-      )
-    )
-    seq2
-) )
+        (setq pointer2 (funcall seq2-upd pointer2))))
+    seq2))
 
-; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT, SEQ1-UPD,
-; SEQ1-ACCESS a new sequence for SEQ1 (has length l), with those dl elements
-; missing, that are marked in the bitvector bv (has length l = end - start) with 1,
-; or changes SEQ1 appropriately (destructively).
+;; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT,
+;; SEQ1-UPD, SEQ1-ACCESS a new sequence for SEQ1 (has length l), with
+;; those dl elements missing, that are marked in the bitvector bv (has
+;; length l = end - start) with 1, or changes SEQ1 appropriately
+;; (destructively).
 (defun delete-help (l dl bv bvl start end)
   (if (zerop dl) ; nothing to remove -> go right back
     seq1
     (if (eq seq1-type 'LIST) ; on lists remove a few conses
       (let ((L1 seq1) (L2 nil))
-           ; (cdr L2) = L1 or L2=nil,L1=seq1
+           ;; (cdr L2) = L1 or L2=nil,L1=seq1
         (dotimes (i start) (setq L2 L1 L1 (cdr L1)))
         (dotimes (bvi bvl)
           (if (zerop (bit bv bvi))
             (setq L2 L1 L1 (cdr L1))
             (progn ; remove cons at L1:
               (setq L1 (cdr L1))
-              (if L2 (rplacd L2 L1) (setq seq1 L1))
-        ) ) )
-        seq1
-      )
+              (if L2 (rplacd L2 L1) (setq seq1 L1)))))
+        seq1)
       (if (and (or (eq seq1-type 'VECTOR) (eq seq1-type 'STRING)
-                   (eq seq1-type 'BIT-VECTOR)
-               )
-               (array-has-fill-pointer-p seq1)
-          ) ; for vectors with fill-pointer: decrease fill-pointer
+                   (eq seq1-type 'BIT-VECTOR))
+               (array-has-fill-pointer-p seq1)) ; for vectors with fill-pointer: decrease fill-pointer
         (let ((i start)) ; i = index at fresh entry of the elements
           (dotimes (bvi bvl)
             (when (zerop (bit bv bvi))
-              (setf (aref seq1 i) (aref seq1 (+ start bvi))) (incf i)
-          ) )
+              (setf (aref seq1 i) (aref seq1 (+ start bvi))) (incf i)))
           (do ((j end))
               ((= j l))
-            (setf (aref seq1 i) (aref seq1 j)) (incf i) (incf j)
-          )
+            (setf (aref seq1 i) (aref seq1 j)) (incf i) (incf j))
           (setf (fill-pointer seq1) i)
-          seq1
-        )
-        (remove-help l dl bv bvl start end)
-) ) ) )
+          seq1)
+        (remove-help l dl bv bvl start end)))))
 
 (defmacro def-seq-testop-remove/delete (name helpfun . helpfunargs)
   `(def-seq-testop ,name (sequence
@@ -1087,8 +941,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
          (test-start-end start end)
          (let* ((bvl (- end start))
                 (bv (make-array bvl :element-type 'bit :initial-element 0)))
-           ; bit-vector bv[i] stores,
-           ; if element seq1[start+i] is to be removed.
+           ;; bit-vector bv[i] stores,
+           ;; if element seq1[start+i] is to be removed.
            (if from-end
              (with-sequence (seq1 (FE-INIT-END FE-UPD))
                (do ((pointer1 (funcall seq1-fe-init-end end)
@@ -1100,8 +954,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                    (when (test (funcall seq1-access pointer1))
                      (setf (bit bv bvi) 1)
                      (incf dl)
-                     (when count (decf countdown))
-             ) ) ) )
+                     (when count (decf countdown))))))
              (with-sequence (seq1 (INIT-START))
                (do ((pointer1 (funcall seq1-init-start start)
                               (funcall seq1-upd pointer1))
@@ -1112,12 +965,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                    (when (test (funcall seq1-access pointer1))
                      (setf (bit bv bvi) 1)
                      (incf dl)
-                     (when count (decf countdown))
-             ) ) ) )
-           )
-           (,helpfun l dl bv bvl start end ,@helpfunargs)
-   ) ) ) )
-)
+                     (when count (decf countdown)))))))
+           (,helpfun l dl bv bvl start end ,@helpfunargs))))))
 
 (def-seq-testop-remove/delete remove remove-help)
 (def-seq-testop-remove/delete delete delete-help)
@@ -1128,11 +977,9 @@ FE-INIT-END   (lambda (index) ...) -> pointer
      (macrolet ((test (arg1 arg2)
                   `(if test
                      (funcall test ,arg1 ,arg2)
-                     (not (funcall test-not ,arg1 ,arg2))
-               ))  )
+                     (not (funcall test-not ,arg1 ,arg2)))))
        (if (and test test-not)
-         (error ":TEST and :TEST-NOT may not be specified at the same time.")
-       )
+         (error ":TEST and :TEST-NOT may not be specified at the same time."))
        (unless (or test test-not) (setq test #'eql))
        (with-sequence (seq1 (TYPE LENGTH INIT INIT-START UPD ACCESS COPY MAKE)
                             sequence)
@@ -1142,18 +989,17 @@ FE-INIT-END   (lambda (index) ...) -> pointer
            (test-start-end start end)
            (let* ((bvl (- end start))
                   (bv (make-array bvl :element-type 'bit :initial-element 0)))
-             ; bit-vector bv[i] stores,
-             ; if element seq1[start+i] is to be removed.
+             ;; bit-vector bv[i] stores,
+             ;; if element seq1[start+i] is to be removed.
              (if (not (and (>= bvl 10)
                            test
                            (or (eql test #'eq) (eql test #'eql) (eql test #'equal)
-                               (eql test 'eq) (eql test 'eql) (eql test 'equal)
-                 )    )    )
-               ; standard-method
+                               (eql test 'eq) (eql test 'eql) (eql test 'equal))))
+               ;; standard-method
                (if from-end
-                 ; pointer1 traverses from left to right,
-                 ; pointer2 traverses from pointer1 to the right,
-                 ; if the test succeeds, removal takes place at pointer2.
+                 ;; pointer1 traverses from left to right,
+                 ;; pointer2 traverses from pointer1 to the right,
+                 ;; if the test succeeds, removal takes place at pointer2.
                  (do ((pointer1 (funcall seq1-init-start start)
                                 (funcall seq1-upd pointer1))
                       (bvi1 0 (1+ bvi1)))
@@ -1168,15 +1014,13 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                          (setq pointer2 (funcall seq1-upd pointer2))
                          (if (zerop (bit bv bvi2))
                            (when (test item1 (funcall key
-                                               (funcall seq1-access pointer2)
-                                 )           )
+                                               (funcall seq1-access pointer2)))
                              (setf (bit bv bvi2) 1) ; item at the right is removed
-                             (incf dl)
-                 ) ) ) ) ) )
-                 ; pointer0 is at the left,
-                 ; pointer2 traverses from left to right,
-                 ; pointer1 traverses from the left to pointer2,
-                 ; if the test succeeds, removal takes place at pointer1.
+                             (incf dl)))))))
+                 ;; pointer0 is at the left,
+                 ;; pointer2 traverses from left to right,
+                 ;; pointer1 traverses from the left to pointer2,
+                 ;; if the test succeeds, removal takes place at pointer1.
                  (do* ((pointer0 (funcall seq1-init-start start))
                        (pointer2 (funcall seq1-copy pointer0)
                                  (funcall seq1-upd pointer2))
@@ -1190,94 +1034,76 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                            ((= bvi1 bvi2))
                          (if (zerop (bit bv bvi1))
                            (when (test (funcall key (funcall seq1-access pointer1))
-                                       item2
-                                 )
+                                       item2)
                              (setf (bit bv bvi1) 1) ; item at the left is removed
-                             (incf dl)
-                 ) ) ) ) ) )
-               )
-               ; method with hash table
+                             (incf dl))))))))
+               ;; method with hash table
                (let ((ht (make-hash-table :test test))) ; empty hash table
                  (if from-end
-                   ; pointer traverses from left to right,
-                   ; item is put into the table; if it was already
-                   ; there, removal takes place at pointer.
+                   ;; pointer traverses from left to right,
+                   ;; item is put into the table; if it was already
+                   ;; there, removal takes place at pointer.
                    (do ((pointer (funcall seq1-init-start start)
                                  (funcall seq1-upd pointer))
                         (bvi 0 (1+ bvi)))
                        ((= bvi bvl))
                      (let ((item (funcall key (funcall seq1-access pointer))))
                        (if (gethash item ht)
-                         ; item was already in ht -> removal
+                         ;; item was already in ht -> removal
                          (progn (setf (bit bv bvi) 1) (incf dl))
-                         (setf (gethash item ht) t) ; else put it into ht
-                   ) ) )
-                   ; pointer traverses from left to right,
-                   ; item is put into the table; if it was there
-                   ; already, removal takes place at previous position.
+                         (setf (gethash item ht) t)))) ; else put it into ht
+                   ;; pointer traverses from left to right,
+                   ;; item is put into the table; if it was there
+                   ;; already, removal takes place at previous position.
                    (do ((pointer (funcall seq1-init-start start)
                                  (funcall seq1-upd pointer))
                         (bvi 0 (1+ bvi)))
                        ((= bvi bvl))
                      (let ((item (funcall key (funcall seq1-access pointer))))
                        (let ((i (gethash item ht)))
-                         (when i (setf (bit bv i) 1) (incf dl))
-                       )
-                       (setf (gethash item ht) bvi)
-                   ) )
-               ) )
-             )
-             (,helpfun l dl bv bvl start end)
-   ) ) ) ) )
-)
+                         (when i (setf (bit bv i) 1) (incf dl)))
+                       (setf (gethash item ht) bvi))))))
+             (,helpfun l dl bv bvl start end)))))))
 
 (def-seq-remove/delete-duplicates remove-duplicates remove-help)
 (def-seq-remove/delete-duplicates delete-duplicates delete-help)
 
-; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT, SEQ1-UPD,
-; SEQ1-ACCESS a new sequence for SEQ1 (has length l), with the dl elements
-; being replaced by newitem, that are marked in bitvector bv (has length l = end - start)
-; with 1.
+;; forms with utilization of SEQ1, SEQ1-TYPE, SEQ1-MAKE, SEQ1-INIT,
+;; SEQ1-UPD, SEQ1-ACCESS a new sequence for SEQ1 (has length l), with
+;; the dl elements being replaced by newitem, that are marked in
+;; bitvector bv (has length l = end - start) with 1.
 (defun substitute-help (l dl bv bvl start end newitem)
   (if (zerop dl)
     seq1
     (if (eq seq1-type 'LIST)
       (let ((L1 nil) (L2 seq1)) ; (revappend L1 L2) = seq1
-        ; copy first "start" conses:
+        ;; copy first "start" conses:
         (dotimes (i start) (setq L1 (cons (car L2) L1) L2 (cdr L2)))
-        ; decrease bvl until the next to last 1 in the bitvector:
+        ;; decrease bvl until the next to last 1 in the bitvector:
         (do () ((plusp (bit bv (1- bvl)))) (decf bvl))
-        ; copy subsection/fill with newitems:
+        ;; copy subsection/fill with newitems:
         (dotimes (bvi bvl)
           (setq L1 (cons (if (zerop (bit bv bvi)) (car L2) newitem) L1))
-          (setq L2 (cdr L2))
-        )
-        ; add to old list again:
-        (nreconc L1 L2)
-      )
+          (setq L2 (cdr L2)))
+        ;; add to old list again:
+        (nreconc L1 L2))
       (with-sequence (seq2 (TYPE INIT UPD ACCESS-SET) (funcall seq1-make l))
         (let ((pointer1 (funcall seq1-init))
               (pointer2 (funcall seq2-init)))
           (dotimes (i start)
             (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
             (setq pointer1 (funcall seq1-upd pointer1))
-            (setq pointer2 (funcall seq2-upd pointer2))
-          )
+            (setq pointer2 (funcall seq2-upd pointer2)))
           (dotimes (bvi bvl)
             (funcall seq2-access-set pointer2
-              (if (zerop (bit bv bvi)) (funcall seq1-access pointer1) newitem)
-            )
+              (if (zerop (bit bv bvi)) (funcall seq1-access pointer1) newitem))
             (setq pointer1 (funcall seq1-upd pointer1))
-            (setq pointer2 (funcall seq2-upd pointer2))
-          )
+            (setq pointer2 (funcall seq2-upd pointer2)))
           (dotimes (i (- l end))
             (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
             (setq pointer1 (funcall seq1-upd pointer1))
-            (setq pointer2 (funcall seq2-upd pointer2))
-          )
-        )
-        seq2
-) ) ) )
+            (setq pointer2 (funcall seq2-upd pointer2))))
+        seq2))))
 
 (def-seq-testop-remove/delete substitute substitute-help newitem)
 
@@ -1290,8 +1116,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
       (test-start-end start end)
       (let* ((bvl (- end start))
              (bv (make-array bvl :element-type 'bit :initial-element 0)))
-        ; bit-vector bv[i] stores,
-        ; if element seq1[start+i] is to be replaced.
+        ;; bit-vector bv[i] stores,
+        ;; if element seq1[start+i] is to be replaced.
         (do ((pointer (funcall seq1-fe-init-end end)
                       (funcall seq1-fe-upd pointer))
              (bvi (1- bvl) (1- bvi))
@@ -1300,17 +1126,14 @@ FE-INIT-END   (lambda (index) ...) -> pointer
           (when (or (null count) (plusp countdown))
             (when (test (funcall seq1-access pointer))
               (setf (bit bv bvi) 1)
-              (when count (decf countdown))
-        ) ) )
+              (when count (decf countdown)))))
         (do ((pointer (funcall seq1-init-start start)
                       (funcall seq1-upd pointer))
              (bvi 0 (1+ bvi)))
             ((= bvi bvl))
           (unless (zerop (bit bv bvi))
-            (funcall seq1-access-set pointer newitem)
-        ) )
-        seq1
-    ) )
+            (funcall seq1-access-set pointer newitem)))
+        seq1))
     (with-sequence (seq1 (TYPE INIT-START UPD ACCESS ACCESS-SET ENDTEST) sequence)
       (do ((pointer (funcall seq1-init-start start) (funcall seq1-upd pointer))
            (i (and end (- end start)) (and end (1- i)))
@@ -1319,11 +1142,8 @@ FE-INIT-END   (lambda (index) ...) -> pointer
         (when (or (null count) (plusp countdown))
           (when (test (funcall seq1-access pointer))
             (funcall seq1-access-set pointer newitem)
-            (when count (decf countdown))
-      ) ) )
-      seq1
-    )
-) )
+            (when count (decf countdown)))))
+      seq1)))
 
 (def-seq-testop find (sequence &key (from-end nil) (start 0) (end nil))
   (if from-end
@@ -1334,17 +1154,14 @@ FE-INIT-END   (lambda (index) ...) -> pointer
            (count (- end start) (1- count)))
           ((zerop count) nil)
         (let ((h (funcall seq1-access pointer)))
-          (if (test h) (return h))
-    ) ) )
+          (if (test h) (return h)))))
     (with-sequence (seq1 (TYPE INIT-START UPD ACCESS ENDTEST) sequence)
       (test-start-end-1 start end)
       (do ((pointer (funcall seq1-init-start start) (funcall seq1-upd pointer))
            (count (and end (- end start)) (and end (1- count))))
           ((or (and end (zerop count)) (funcall seq1-endtest pointer)) nil)
         (let ((h (funcall seq1-access pointer)))
-          (if (test h) (return h))
-    ) ) )
-) )
+          (if (test h) (return h)))))))
 
 (def-seq-testop position (sequence &key (from-end nil) (start 0) (end nil))
   (if from-end
@@ -1355,17 +1172,14 @@ FE-INIT-END   (lambda (index) ...) -> pointer
            (index (1- end) (1- index))
            (count (- end start) (1- count)))
           ((zerop count) nil)
-        (if (test (funcall seq1-access pointer)) (return index))
-    ) )
+        (if (test (funcall seq1-access pointer)) (return index))))
     (with-sequence (seq1 (TYPE INIT-START UPD ACCESS ENDTEST) sequence)
       (test-start-end-1 start end)
       (do ((pointer (funcall seq1-init-start start) (funcall seq1-upd pointer))
            (index start (1+ index))
            (count (and end (- end start)) (and end (1- count))))
           ((or (and end (zerop count)) (funcall seq1-endtest pointer)) nil)
-        (if (test (funcall seq1-access pointer)) (return index))
-    ) )
-) )
+        (if (test (funcall seq1-access pointer)) (return index))))))
 
 (def-seq-testop count (sequence &key (from-end nil) (start 0) (end nil))
   (if from-end
@@ -1377,28 +1191,23 @@ FE-INIT-END   (lambda (index) ...) -> pointer
            (i (- end start) (1- i))
            (count 0))
           ((zerop i) count)
-        (when (test (funcall seq1-access pointer)) (incf count))
-    ) )
+        (when (test (funcall seq1-access pointer)) (incf count))))
     (with-sequence (seq1 (TYPE INIT-START UPD ACCESS ENDTEST) sequence)
       (do ((pointer (funcall seq1-init-start start) (funcall seq1-upd pointer))
            (i (and end (- end start)) (and end (1- i)))
            (count 0))
           ((or (and end (zerop i)) (funcall seq1-endtest pointer)) count)
-        (when (test (funcall seq1-access pointer)) (incf count))
-    ) )
-) )
+        (when (test (funcall seq1-access pointer)) (incf count))))))
 
 (defun mismatch (sequence1 sequence2
                  &key (from-end nil) (test nil) (test-not nil) (key #'identity)
-                      (start1 0) (end1 nil) (start2 0) (end2 nil) )
+                      (start1 0) (end1 nil) (start2 0) (end2 nil))
   (macrolet ((test (arg1 arg2)
                `(if test
                   (funcall test ,arg1 ,arg2)
-                  (not (funcall test-not ,arg1 ,arg2))
-            ))  )
+                  (not (funcall test-not ,arg1 ,arg2)))))
     (if (and test test-not)
-      (error ":TEST and :TEST-NOT may not be specified at the same time.")
-    )
+      (error ":TEST and :TEST-NOT may not be specified at the same time."))
     (unless (or test test-not) (setq test #'eql))
     (if from-end
       (with-sequence (seq1 (TYPE LENGTH FE-INIT-END FE-UPD FE-ENDTEST ACCESS)
@@ -1416,12 +1225,10 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                (index end1 (1- index))
                (count (min (- end1 start1) (- end2 start2)) (1- count)))
               ((zerop count)
-               (if (= (- end1 start1) (- end2 start2)) nil index)
-              )
+               (if (= (- end1 start1) (- end2 start2)) nil index))
             (let ((value1 (funcall key (funcall seq1-access pointer1)))
                   (value2 (funcall key (funcall seq2-access pointer2))))
-              (unless (test value1 value2) (return index))
-      ) ) ) )
+              (unless (test value1 value2) (return index))))))
       (with-sequence (seq1 (TYPE INIT-START UPD ENDTEST ACCESS) sequence1)
         (with-sequence (seq2 (TYPE INIT-START UPD ENDTEST ACCESS) sequence2)
           (do ((pointer1 (funcall seq1-init-start start1)
@@ -1433,33 +1240,26 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                (count2 (and end2 (- end2 start2)) (and end2 (1- count2))))
               (nil)
             (let ((1-fertig (or (and end1 (zerop count1))
-                                (funcall seq1-endtest pointer1)
-                  )         )
+                                (funcall seq1-endtest pointer1)))
                   (2-fertig (or (and end2 (zerop count2))
-                                (funcall seq2-endtest pointer2)
-                 ))         )
+                                (funcall seq2-endtest pointer2))))
               (if (or 1-fertig 2-fertig)
-                (return (if (and 1-fertig 2-fertig) nil index))
-            ) )
+                (return (if (and 1-fertig 2-fertig) nil index))))
             (let ((value1 (funcall key (funcall seq1-access pointer1)))
                   (value2 (funcall key (funcall seq2-access pointer2))))
-              (unless (test value1 value2) (return index))
-      ) ) ) )
-) ) )
+              (unless (test value1 value2) (return index)))))))))
 
 #| ; primitive algorithm:
-; Advance always in sequence2 by 1 and then test, if sequence1 starts.
-(defun search (sequence1 sequence2
+;; Advance always in sequence2 by 1 and then test, if sequence1 starts.
+ (defun search (sequence1 sequence2
                &key (from-end nil) (test nil) (test-not nil) (key #'identity)
-                    (start1 0) (end1 nil) (start2 0) (end2 nil) )
+                    (start1 0) (end1 nil) (start2 0) (end2 nil))
   (macrolet ((test (arg1 arg2)
                `(if test
                   (funcall test ,arg1 ,arg2)
-                  (not (funcall test-not ,arg1 ,arg2))
-            ))  )
+                  (not (funcall test-not ,arg1 ,arg2)))))
     (if (and test test-not)
-      (error ":TEST und :TEST-NOT are not both allowed at the same time.")
-    )
+      (error ":TEST und :TEST-NOT are not both allowed at the same time."))
     (unless (or test test-not) (setq test #'eql))
     (if from-end
       (with-sequence (seq1 (TYPE LENGTH FE-INIT-END FE-UPD FE-ENDTEST ACCESS COPY)
@@ -1477,7 +1277,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                 (count20 (- end2 start2) (1- count20))
                 (index (- end2 count10) (1- index)))
                (nil)
-            ; is the sequence in front of pointer10 in front of pointer20?
+            ;; is the sequence in front of pointer10 in front of pointer20?
             (do ((pointer1 (funcall seq1-copy pointer10)
                            (funcall seq1-fe-upd pointer1))
                  (pointer2 (funcall seq2-copy pointer20)
@@ -1486,15 +1286,12 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                  (count2 count20 (1- count2)))
                 (nil)
               (when (zerop count1) ; sequence1 finished ?
-                (return-from search index) ; found!
-              )
+                (return-from search index))  ; found!
               (when (zerop count2) ; Sequence2 finished ?
-                (return-from search nil) ; sequence1 is now too long
-              )
+                (return-from search nil))  ; sequence1 is now too long
               (let ((value1 (funcall key (funcall seq1-access pointer1)))
                     (value2 (funcall key (funcall seq2-access pointer2))))
-                (unless (test value1 value2) (return)) ; abort test
-      ) ) ) ) )
+                (unless (test value1 value2) (return))))))) ; abort test
       (with-sequence (seq1 (TYPE INIT-START UPD ENDTEST ACCESS COPY) sequence1)
         (with-sequence (seq2 (TYPE INIT-START UPD ENDTEST ACCESS COPY) sequence2)
           (do ((pointer10 (funcall seq1-init-start start1))
@@ -1503,7 +1300,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                (count20 (and end2 (- end2 start2)) (and end2 (1- count20)))
                (index start2 (1+ index)))
               (nil)
-            ; is at pointer20 the sequence at pointer10 ?
+            ;; is at pointer20 the sequence at pointer10 ?
             (do ((pointer1 (funcall seq1-copy pointer10)
                            (funcall seq1-upd pointer1))
                  (pointer2 (funcall seq2-copy pointer20)
@@ -1513,17 +1310,13 @@ FE-INIT-END   (lambda (index) ...) -> pointer
                 (nil)
               (when ; sequence1 finished ?
                 (or (and end1 (zerop count1)) (funcall seq1-endtest pointer1))
-                (return-from search index) ; found!
-              )
+                (return-from search index))  ; found!
               (when ; sequence2 finished ?
                 (or (and end2 (zerop count2)) (funcall seq2-endtest pointer2))
-                (return-from search nil) ; sequence1 is now too long
-              )
+                (return-from search nil))  ; sequence1 is now too long
               (let ((value1 (funcall key (funcall seq1-access pointer1)))
                     (value2 (funcall key (funcall seq2-access pointer2))))
-                (unless (test value1 value2) (return)) ; abort test
-      ) ) ) ) )
-) ) )
+                (unless (test value1 value2) (return)))))))))) ; abort test
 |#
 #| ; Knuth's Algorithm:
 formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
@@ -1548,15 +1341,13 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
 |#
 (defun search (sequence1 sequence2
                &key (from-end nil) (test nil) (test-not nil) (key #'identity)
-                    (start1 0) (end1 nil) (start2 0) (end2 nil) )
+                    (start1 0) (end1 nil) (start2 0) (end2 nil))
   (macrolet ((test (arg1 arg2)
                `(if test
                   (funcall test ,arg1 ,arg2)
-                  (not (funcall test-not ,arg1 ,arg2))
-            ))  )
+                  (not (funcall test-not ,arg1 ,arg2)))))
     (if (and test test-not)
-      (error ":TEST and :TEST-NOT may not be specified at the same time.")
-    )
+      (error ":TEST and :TEST-NOT may not be specified at the same time."))
     (unless (or test test-not) (setq test #'eql))
     (with-sequence (seq1 (TYPE LENGTH ACCESS COPY) sequence1)
       (with-sequence (seq2 (TYPE LENGTH ACCESS COPY) sequence2)
@@ -1581,26 +1372,21 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                       (setf (svref Slv i) (funcall seq1-copy Sl))
                       6
                       (when (test (funcall key (funcall seq1-access Si))
-                                  (funcall key (funcall seq1-access Sl))
-                            )
+                                  (funcall key (funcall seq1-access Sl)))
                         (incf l) (setq Sl (funcall seq1-fe-upd Sl))
-                        (go 3)
-                      )
+                        (go 3))
                       (if (zerop l) (go 3))
                       (psetq l (svref lv l) Sl (svref Slv l))
-                      (go 6)
-                    )
+                      (go 6))
                     (prog ((i 0) (Si (funcall seq1-copy S0))
                            (j 0) (Tj (funcall seq2-fe-init-end end2)))
                       11
                       (if (= j n) (return nil))
                       12
                       (unless (test (funcall key (funcall seq1-access Si))
-                                    (funcall key (funcall seq2-access Tj))
-                              )
+                                    (funcall key (funcall seq2-access Tj)))
                         (incf j) (setq Tj (funcall seq2-fe-upd Tj))
-                        (go 11)
-                      )
+                        (go 11))
                       14
                       (incf i) (setq Si (funcall seq1-fe-upd Si))
                       (incf j) (setq Tj (funcall seq2-fe-upd Tj))
@@ -1608,13 +1394,10 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                       (if (= j n) (return nil))
                       16
                       (if (test (funcall key (funcall seq1-access Si))
-                                (funcall key (funcall seq2-access Tj))
-                          )
-                        (go 14)
-                      )
+                                (funcall key (funcall seq2-access Tj)))
+                        (go 14))
                       (psetq i (svref lv i) Si (svref Slv i))
-                      (if (zerop i) (go 12) (go 16))
-            ) ) ) ) )
+                      (if (zerop i) (go 12) (go 16)))))))
             (if (zerop m) start2
               (with-sequence (seq1 (INIT-START UPD))
                 (with-sequence (seq2 (INIT-START UPD))
@@ -1629,26 +1412,21 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                       (setf (svref Slv i) (funcall seq1-copy Sl))
                       6
                       (when (test (funcall key (funcall seq1-access Si))
-                                  (funcall key (funcall seq1-access Sl))
-                            )
+                                  (funcall key (funcall seq1-access Sl)))
                         (incf l) (setq Sl (funcall seq1-upd Sl))
-                        (go 3)
-                      )
+                        (go 3))
                       (if (zerop l) (go 3))
                       (psetq l (svref lv l) Sl (svref Slv l))
-                      (go 6)
-                    )
+                      (go 6))
                     (prog ((i 0) (Si (funcall seq1-copy S0))
                            (j 0) (Tj (funcall seq2-init-start start2)))
                       11
                       (if (= j n) (return nil))
                       12
                       (unless (test (funcall key (funcall seq1-access Si))
-                                    (funcall key (funcall seq2-access Tj))
-                              )
+                                    (funcall key (funcall seq2-access Tj)))
                         (incf j) (setq Tj (funcall seq2-upd Tj))
-                        (go 11)
-                      )
+                        (go 11))
                       14
                       (incf i) (setq Si (funcall seq1-upd Si))
                       (incf j) (setq Tj (funcall seq2-upd Tj))
@@ -1656,19 +1434,13 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                       (if (= j n) (return nil))
                       16
                       (if (test (funcall key (funcall seq1-access Si))
-                                (funcall key (funcall seq2-access Tj))
-                          )
-                        (go 14)
-                      )
+                                (funcall key (funcall seq2-access Tj)))
+                        (go 14))
                       (psetq i (svref lv i) Si (svref Slv i))
-                      (if (zerop i) (go 12) (go 16))
-            ) ) ) ) )
-          )
-) ) ) ) )
+                      (if (zerop i) (go 12) (go 16)))))))))))))
 
 (defun sort (sequence predicate &key (key #'identity) (start 0) (end nil))
-  (stable-sort sequence predicate :key key :start start :end end)
-)
+  (stable-sort sequence predicate :key key :start start :end end))
 
 (defun stable-sort (sequence predicate &key (key #'identity) (start 0) (end nil))
   (with-sequence (seq1 (TYPE LENGTH INIT-START UPD ACCESS ACCESS-SET COPY MAKE)
@@ -1677,74 +1449,60 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
     (test-start-end start end)
     (let ((l (- end start)))
       (with-sequence (seq2 (TYPE INIT UPD ACCESS ACCESS-SET)
-                           (funcall seq1-make (floor l 2))
-                     ) ; helper sequence during the merge
+                           (funcall seq1-make (floor l 2))) ; helper sequence during the merge
         (labels
           ((sort-part (pointer-left k)
-             ; sorts in sequence1 at pointer-left exactly k elements, k>=1,
-             ; and returns a pointer behind these k elements.
-             ; pointer-left is destructively changed.
+             ;; sorts in sequence1 at pointer-left exactly k elements, k>=1,
+             ;; and returns a pointer behind these k elements.
+             ;; pointer-left is destructively changed.
              (if (= k 1)
                (funcall seq1-upd pointer-left)
                (let* ((kl (floor k 2)) ; left part
                       (kr (ceiling k 2)) ; right
                       (pointer-mid ; sort left part:
-                        (sort-part (funcall seq1-copy pointer-left) kl)
-                      )
+                        (sort-part (funcall seq1-copy pointer-left) kl))
                       (pointer-right ; sort right part:
-                        (sort-part (funcall seq1-copy pointer-mid) kr)
-                     ))
-                 ; copy left part to seq2:
+                        (sort-part (funcall seq1-copy pointer-mid) kr)))
+                 ;; copy left part to seq2:
                  (do ((pointer1 (funcall seq1-copy pointer-left)
                                 (funcall seq1-upd pointer1))
                       (pointer2 (funcall seq2-init) (funcall seq2-upd pointer2))
                       (k kl (1- k)))
                      ((zerop k))
-                   (funcall seq2-access-set pointer2 (funcall seq1-access pointer1))
-                 )
-                 ; merge both parts together (from seq2 to seq1):
+                   (funcall seq2-access-set pointer2
+                            (funcall seq1-access pointer1)))
+                 ;; merge both parts together (from seq2 to seq1):
                  (do ((pointer0 pointer-left)
                       (pointer1 pointer-mid) (i1 kr)
-                      (pointer2 (funcall seq2-init)) (i2 kl)
-                     )
+                      (pointer2 (funcall seq2-init)) (i2 kl))
                      ((zerop i2))
                    (when (zerop i1)
                      (loop
                        (funcall seq1-access-set pointer0
-                                (funcall seq2-access pointer2)
-                       )
+                                (funcall seq2-access pointer2))
                        (setq pointer0 (funcall seq1-upd pointer0))
                        (setq pointer2 (funcall seq2-upd pointer2))
                        (decf i2)
-                       (when (zerop i2) (return))
-                     )
-                     (return)
-                   )
+                       (when (zerop i2) (return)))
+                     (return))
                    (if (funcall predicate
                          (funcall key (funcall seq1-access pointer1))
-                         (funcall key (funcall seq2-access pointer2))
-                       )
+                         (funcall key (funcall seq2-access pointer2)))
                      (progn
                        (funcall seq1-access-set pointer0
-                                (funcall seq1-access pointer1)
-                       )
+                                (funcall seq1-access pointer1))
                        (setq pointer0 (funcall seq1-upd pointer0))
                        (setq pointer1 (funcall seq1-upd pointer1))
-                       (decf i1)
-                     )
+                       (decf i1))
                      (progn
                        (funcall seq1-access-set pointer0
-                                (funcall seq2-access pointer2)
-                       )
+                                (funcall seq2-access pointer2))
                        (setq pointer0 (funcall seq1-upd pointer0))
                        (setq pointer2 (funcall seq2-upd pointer2))
-                       (decf i2)
-                 ) ) )
-                 pointer-right
-          )) ) )
+                       (decf i2))))
+                 pointer-right))))
           (if (>= l 1) (sort-part (funcall seq1-init-start start) l))
-          sequence
-) ) ) ) )
+          sequence)))))
 
 (defun merge (result-type sequence1 sequence2 predicate &key (key #'identity))
   (setq result-type (valid-sequence result-type))
@@ -1754,63 +1512,51 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
              (l2 (funcall seq2-length))
              (l (+ l1 l2))
              (type (if (and (eq seq1-type seq2-type)
-                            (or (eq seq1-type 'bit-vector) (eq seq1-type 'string))
-                       )
+                            (or (eq seq1-type 'bit-vector)
+                                (eq seq1-type 'string)))
                        seq1-type
-                       'vector
-             )     )
+                       'vector))
              (result (make-sequence type l)))
         (do ((pointer1 (funcall seq1-init)) (i1 l1)
              (pointer2 (funcall seq2-init)) (i2 l2)
-             (i 0 (1+ i))
-            )
+             (i 0 (1+ i)))
             (nil)
-          ; i1 >=0, i2 >=0.
+          ;; i1 >=0, i2 >=0.
           (when (zerop i1)
             (loop
               (when (zerop i2) (return))
               (setf (aref result i) (funcall seq2-access pointer2))
               (setq pointer2 (funcall seq2-upd pointer2))
-              (incf i) (decf i2)
-            )
-            (return)
-          )
-          ; i1 >0, i2>=0.
+              (incf i) (decf i2))
+            (return))
+          ;; i1 >0, i2>=0.
           (when (zerop i2)
             (loop
               (setf (aref result i) (funcall seq1-access pointer1))
               (setq pointer1 (funcall seq1-upd pointer1))
               (incf i) (decf i1)
-              (when (zerop i1) (return))
-            )
-            (return)
-          )
-          ; i1 >0, i2 >0.
+              (when (zerop i1) (return)))
+            (return))
+          ;; i1 >0, i2 >0.
           (if (funcall predicate
                 (funcall key (funcall seq2-access pointer2))
-                (funcall key (funcall seq1-access pointer1))
-              )
-            ; take over element from sequence2:
+                (funcall key (funcall seq1-access pointer1)))
+            ;; take over element from sequence2:
             (progn
               (setf (aref result i) (funcall seq2-access pointer2))
               (setq pointer2 (funcall seq2-upd pointer2))
-              (decf i2)
-            )
-            ; take over element from Sequence1:
+              (decf i2))
+            ;; take over element from Sequence1:
             (progn
               (setf (aref result i) (funcall seq1-access pointer1))
               (setq pointer1 (funcall seq1-upd pointer1))
-              (decf i1)
-            )
-        ) )
-        ; the vector result is finished.
+              (decf i1))))
+        ;; the vector result is finished.
         (if (eq type result-type)
           result
-          (coerce result result-type)
-        )
-) ) ) )
+          (coerce result result-type))))))
 
-; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
+;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
 #+CLISP ; uses sys::parse-body
 (defmacro do-sequence ((var sequenceform &optional (resultform nil))
                        &body body &environment env)
@@ -1827,9 +1573,6 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                    ((FUNCALL SEQ1-ENDTEST ,pointer))
                  (LET ((,var (FUNCALL SEQ1-ACCESS ,pointer)))
                    ,@declarations
-                   (TAGBODY ,@body-rest)
-             ) ) )
-             ,resultform
-       ) ) )
-) ) )
+                   (TAGBODY ,@body-rest))))
+             ,resultform))))))
 

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-06-26 Fri 13:19:58 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-07-06 Mon 17:57:16 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.15 1998/06/26 23:11:30 sds Exp $
+;;; $Id: date.lisp,v 1.16 1998/07/06 21:58:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.16  1998/07/06 21:58:10  sds
+;;; Combined the two &key arguments of `dl-copy-shift' into one optional
+;;; argument, branching on its type.
+;;;
 ;;; Revision 1.15  1998/06/26 23:11:30  sds
 ;;; Added `days-t' and `dl-slot'.  Switched to `print-object'.
 ;;;
@@ -62,7 +66,8 @@
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "print") (sds-require "math")
-  (sds-require "list") (sds-require "util"))
+  (sds-require "list") (sds-require "util")
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (defconst +day-sec+ fixnum (* 24 60 60) "The number of seconds per day.")
 
@@ -71,7 +76,7 @@
 ;;;
 
 (eval-when (load compile eval)
-(deftype days-t () '(unsigned-byte 20))
+(deftype days-t () '(signed-byte 20))
 (defstruct (date #+cmu (:print-function print-date))
   "The date structure -- year, month, and day."
   (ye 1 :type days-t)
@@ -194,15 +199,17 @@ Returns the number of seconds since the epoch (1900-01-01)."
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a fixnum. KEY should return a date."
   (declare (type (function (t) date) key) (values (function (t) days-t)))
-  (unless (realp beg) (setq beg (date2days (date beg))))
-  (lambda (rr) (- (date2days (funcall key rr)) beg)))
+  (let ((dd (date2days (date beg))))
+    (declare (type days-t dd))
+    (lambda (rr) (- (date2days (funcall key rr)) dd))))
 
 (defun days-since-f (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type (function (t) date) key) (values (function (t) double-float)))
-  (unless (realp beg) (setq beg (date2days (date beg))))
-  (lambda (rr) (double-float (- (date2days (funcall key rr)) beg))))
+  (let ((dd (double-float (date2days (date beg)))))
+    (declare (double-float dd))
+    (lambda (rr) (double-float (- (date2days (funcall key rr)) dd)))))
 
 (defun today ()
   "Return today's date."
@@ -330,10 +337,11 @@ Return T if any errors are detected."
   (do ((rr lst (cdr rr)) (len 1 (1+ len)) ; start from 1 (sic!)
        (r0 (first lst) r1) r1 (err 0)
        (v0 (if val (funcall val (first lst))) v1) v1
-       (d0 (funcall date (first lst)) d1) d1)
+       (d0 (funcall date (first lst)) d1) (d1 +bad-date+))
       ((null (cdr rr))
        (format t "~:d record~:p, ~a through ~a. ~d error~:p found.~%"
 	       len (funcall date (first lst)) d1 err) (zerop err))
+    (declare (type (unsigned-byte 20) len err) (type date d0 d1))
     (setq r1 (second rr) d1 (funcall date r1) v1 (if val (funcall val r1)))
     (when (and order-p (date< d1 d0))
       (format stream "~3d. Wrong Order:~% - ~s~% - ~s~%~%" (incf err) r0 r1))
@@ -356,11 +364,12 @@ previous record when SKIP is non-nil and nil otherwise.
   (sync-dates lists &key lables key cpy set (stream t) op skip)"
   (declare (list lists))
   (mesg t stream "Synching dates in ~d lists.~%" (length lists))
-  (do ((sec (copy-list lists)) (heads (make-list (length lists)))
-       bd fnn (err nil nil) ckey (nerr 0) (len 0 (1+ len)))
+  (do ((sec (copy-list lists)) (heads (make-list (length lists))) fnn (nerr 0)
+       (bd +bad-date+) (err nil nil) (ckey +bad-date+) (len 0 (1+ len)))
       ((every #'null sec)
        (mesg t stream "~:d records in ~d lists checked. ~d error~:p found.~%"
 	     len (length lists) nerr))
+    (declare (type (unsigned-byte 20) nerr len) (type date bd ckey))
     ;; get the current date
     (setq fnn (member nil sec :test-not #'eq)
 	  bd (funcall key (caar fnn)))
@@ -400,11 +409,11 @@ previous record when SKIP is non-nil and nil otherwise.
   "A dated list of records."
   (ll nil :type list)		; the actual list
   (code nil :type symbol)	; the code (2 letter symbol)
-  (name "??" :type string)	; the name of the data
+  (name "??" :type simple-string) ; the name of the data
   (date 'identity :type symbol)	; the date accessor
   (val 'identity :type symbol)	; the value accessor
   (chg 'identity :type symbol)	; the change accessor
-  (misc 'identity :type symbol)) ; the miscellaneous accessor
+  (misc 'identity :type (or symbol function))) ; the miscellaneous accessor
 )
 
 (defsubst dl-date (dl)
@@ -524,23 +533,22 @@ If LAST is non-nil, make sure that the next date is different."
 		     (dated-list-ll dl)))))
   dl)
 
-(defun dl-copy-shift (dl &key shift date)
-  "Copy the dated list DL and shift it to start from DATE,
-or from +SHIFT from the beginning or -SHIFT from the end,
-whichever is positive.  If both SHIFT and DATE are NIL, shift
-to the end (set tge list to NIL)."
-  (declare (type dated-list dl))
+(defun dl-copy-shift (dl &optional shift)
+  "Copy the dated list DL and shift it.
+If SHIFT is a date, make it start from SHIFT, if it's a fixnum,
++SHIFT from the beginning or -SHIFT from the end,
+whichever is positive.  If both SHIFT is NIL, shift
+to the end (set the list to NIL)."
+  (declare (type dated-list dl) (type (or null fixnum date) shift)
+           (values dated-list))
   (let ((cdl (copy-dated-list dl)))
-    (cond ((and shift (null date))
-	   (setf (dated-list-ll cdl)
-		 (if (minusp shift)
-		     (last (dated-list-ll dl) (- shift))
-		     (nthcdr shift (dated-list-ll dl)))))
-	  ((and date (null shift))
-	   (setf (dated-list-ll cdl) (date-in-dated-list date dl)))
-	  ((and (null date) (null shift)) (setf (dated-list-ll cdl) nil))
-	  (t (error "Cannot specify both SHIFT (~a) and DATE (~a)."
-		    shift date)))
+    (declare (type dated-list cdl))
+    (typecase shift
+      (fixnum (setf (dated-list-ll cdl)
+                    (if (minusp shift) (last (dated-list-ll dl) (- shift))
+                        (nthcdr shift (dated-list-ll dl)))))
+      (date (setf (dated-list-ll cdl) (date-in-dated-list shift dl)))
+      (t (setf (dated-list-ll cdl) nil)))
     cdl))
 
 (defun dl-next-chg (dl)
@@ -665,16 +673,19 @@ coefficient for the given sequence. If :date is not given, no dated
 list object is created and just the list of numbers is returned."
   (declare (sequence seq) (double-float coeff)
 	   (type (function (t) double-float) key))
-  (let* ((ema (funcall key (elt seq 0)))
+  (let* ((ema (funcall key (elt seq 0))) (c1 (- 1.0d0 coeff))
 	 (ll
 	  (map 'list
 	       (if date
 		   (lambda (el) (cons (funcall date el)
-				      (setq ema (+ (* coeff (funcall key el))
-						   (* (- 1 coeff) ema)))))
-		   (lambda (el) (setq ema (+ (* coeff (funcall key el))
-					     (* (- 1 coeff) ema)))))
+                                      (with-type double-float
+                                        (setq ema (+ (* coeff (funcall key el))
+                                                     (* c1 ema))))))
+		   (lambda (el) (setq ema (with-type double-float
+                                            (+ (* coeff (funcall key el))
+                                               (* c1 ema))))))
 	       seq)))
+    (declare (double-float ema c1))
     (cond (date
 	   (remf args :key) (remf args :date)
 	   (apply #'make-dated-list :ll ll :date 'car :val 'cdr args))
@@ -767,16 +778,12 @@ Must not assume that the list is properly ordered!"
   (eq (change-type ch1) (change-type ch2)))
 
 #+cmu
-(defun print-change (chg &optional (stream t) (depth 1))
+(defun print-change (chg &optional (stream t) depth)
   "Print the change structure."
-  (declare (type change chg) (fixnum depth))
+  (declare (type change chg) (ignore depth))
   (if *print-readably* (funcall (print-readably change) chg stream)
-      (let ((str (or stream (make-string-output-stream))))
-	(write (change-date chg) :stream str)
-	(format str (case depth ((1 2 3) " [~7,3f <- ~8,3f -> ~7,3f]")
-			  (t "~* ~8,3f"))
-		(change-chb chg) (change-val chg) (change-chf chg))
-	(unless stream (get-output-stream-string str)))))
+      (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
+              (change-chb chg) (change-val chg) (change-chf chg))))
 
 #-cmu
 (defmethod print-object ((chg change) stream)
@@ -831,10 +838,8 @@ Sets ll, date, val, and passes the rest directly to make-dated-list."
   "Print the diff record."
   (declare (type diff df) (ignore depth))
   (if *print-readably* (funcall (print-readably diff) df stream)
-      (let ((str (or stream (make-string-output-stream))))
-	(write (diff-date df) :stream str)
-	(format str " ~15,6f ~15,6f" (diff-di df) (diff-ra df))
-	(unless stream (get-output-stream-string str)))))
+      (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
+              (diff-ra df))))
 
 #-cmu
 (defmethod print-object ((df diff) stream)

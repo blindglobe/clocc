@@ -284,11 +284,7 @@ Tag being parsed:| (cadr x))))
     ;; string (character array) reference 
     ((and (symbolp (car l))
 	  (listp (cadr l))
-	  (eq 'character
-	      (let ((type (lookup-vble-type (car l))))
-		(if (listp type)
-		    (first type)
-		    type))))
+	  (subtypep (lookup-vble-type (car l)) 'string))
      (let* ((vname (check-t-and-pi (car l)))
 	    (indices (mapcar #'id-expression
 			     (list-split '|:| (cadr l)))))

@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1999-11-02 Tue 13:24:12 EST sds@ksp.com>
+;;; File: <gq.lisp - 2000-01-05 Wed 19:33:04 EST sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,16 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.13 1999/11/02 18:25:59 sds Exp $
+;;; $Id: gq.lisp,v 1.14 2000/01/06 00:28:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.14  2000/01/06 00:28:20  sds
+;;; fewer #+/#-
+;;; (get-quotes-apl): call `infer-date'
+;;; (infer-date): first arg can be a date
+;;; (process-results): better output formatting
+;;; (update-quotes): new key `log'
+;;;
 ;;; Revision 1.13  1999/11/02 18:25:59  sds
 ;;; (pr-res): use `formatter'; 8th optional arg.
 ;;; (process-results): adapt to new `pr-res'; `out' must be a stream.
@@ -61,14 +68,11 @@
 ;; Revision 1.1  1997/10/15 15:49:26  sds
 ;; Initial revision
 ;;
-;;;
-;;; to run regularly under winnt (s/a gq.bat):
-;;; at 19:00 /every:M,T,W,Th,F "c:\bin\clisp\lisp.exe -M c:\bin\clisp\lispinit.mem -q -i c:/home/sds/lisp/gq -x \"(update-quotes :plot nil)\""
 
 (in-package :cl-user)
 
 (eval-when (load compile eval)
-  (let ((dir #+unix "/home/sds/eagle/" #+win32 "c:/home/sds/fx/")
+  (let ((dir (merge-pathnames "lisp" (user-homedir-pathname)))
         (*load-verbose* nil) (*load-print* nil))
     (unless (boundp '*require-table*) (load (concatenate 'string dir "base")))
     (sds-require "base") (sds-require "date")
@@ -148,8 +152,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                  :pre (next-number ts)
                  :low (next-number ts)
                  :hgh (next-number ts)) res)
-          ;; (setq dt (infer-date (next-token ts) (next-token ts)))
-          (setq dt (date (next-token ts :num 3)))
+          (setq dt (infer-date (date (next-token ts :num 3))))
           (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
                 dt (car res)))))))
 
@@ -250,12 +253,19 @@ The first arg, SERVER, when non-nil, specifies which server to use."
 
 (defun infer-date (&optional mon day)
   "Guess what the date is.
-Return the most recent date with these month and day."
+Return the most recent date with these month and day.
+If the first argument is a date, fix the year."
   (multiple-value-bind (se mm ho da mo ye) (get-decoded-time)
     (declare (ignore se mm) (fixnum mo ye mm))
     (if mon
-        (let ((mm (infer-month mon)))
-          (mk-date :da day :mo mm :ye (if (<= mm mo) ye (1- ye))))
+        (if (date-p mon)
+            (progn
+              (when (< 1 (abs (- ye (date-ye mon))))
+                (setf (date-ye mon) ye)
+                (fix-date mon))
+              mon)
+            (let ((mm (infer-month mon)))
+              (mk-date :da day :mo mm :ye (if (<= mm mo) ye (1- ye)))))
         (let ((dd (mk-date :da da :mo mo :ye ye)))
           (if (< ho 18) (previous-working-day dd) dd)))))
 
@@ -412,7 +422,7 @@ only the data after `*hist-data-file-sep*' is changed."
 (defun pr-res (out pref v0 v1 per apy v2 &optional (tc (percent-change v2 v0)))
   (declare (stream out) (double-float v0 v1 per apy v2 tc))
   (let ((fmt (formatter
-              "~15t~2,7/comma/ - ~2,7/comma/ = ~2,5/comma/      [~7,3f%")))
+              "~15t~2,7/comma/ - ~2,7/comma/ = ~2,6/comma/    [~7,3f%")))
     (format out "~aP/L: total:" pref)
     (funcall fmt out v0 v1 (- v0 v1) per)
     (format out " APY:~8,3f%]~%        today:" apy)
@@ -491,7 +501,8 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                                          :totl (hist-totl-comp hold
                                                                nnavs)))))
                     t)))
-          (t (format out "Old news [~a].~%" (car res))))))
+          (t (format out "Old news [~a <= ~a].~%"
+                     (car res) (hist-date (cadr lh)))))))
 
 (defun plot-portfolio (hold hist plot)
   "Plot the portfolio."
@@ -518,12 +529,12 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 ;;; }}}{{{ Run the thing
 ;;;
 
-#+win32
 (defcustom *gq-log* pathname
   (merge-pathnames "text/getquote.log" (user-homedir-pathname))
   "The log file for the batch processing.")
 
-(defun update-quotes (&key (plot nil plotp) server debug)
+(defun update-quotes (&key (plot nil plotp) server debug
+                      (log #+win32 *gq-log* #-win32 nil))
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes.
@@ -535,9 +546,9 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
     (unless (eq plot t)
       (multiple-value-bind (srv res hhh yea)
           (apply #'get-quotes server (mapcar #'pfl-tick *holdings*))
-        (let* ((out #-win32 *standard-output*
-                    #+win32 (open *gq-log* :direction :output :if-exists
-                                  :append :if-does-not-exist :create))
+        (let* ((out (if (null log) *standard-output*
+                        (open log :direction :output :if-exists
+                              :append :if-does-not-exist :create)))
                (fixed (gq-fix-hist *holdings* *history* hhh))
                (new (process-results *holdings* *history* srv res yea out)))
           (top-bottom-fl *history* :val #'hist-totl :label #'hist-date
@@ -545,7 +556,7 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
           (when (or fixed new)
             (save-data *hist-data-file* *holdings* *history*)
             (unless plotp (setq plot t)))
-          #+win32 (close out)))))
+          (when log (close out) (format t "Wrote log to ~s~%" log))))))
   (when plot (plot-portfolio *holdings* *history* :plot)))
 
 (provide "gq")

@@ -1,0 +1,171 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+<!--
+ File: <README.html - 2000-02-18 Fri 16:05:43 EST sds@ksp.com>
+ $Id: cllib.html,v 2.1 2000/03/08 18:07:16 sds Exp $
+ $Source: /cvsroot/clocc/clocc/src/cllib/cllib.html,v $
+ -->
+<html>
+
+<head>
+<!-- <base href="http://www.goems.com/~sds/"> -->
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="description" content="README for cllib">
+<meta http-equiv="keywords"
+ content="free software, open-source software, Common Lisp, http, ftp">
+<link rev=made href="mailto:sds@gnu.org">
+<title>README</title>
+</head>
+
+<body>
+
+<h1>README for CLLIB</h1>
+
+<p>To use this package, you will need an <a
+ href="http://www.lisp.org/HyperSpec/FrontMatter/">ANSI Common Lisp</a>
+as well as my cross-implementation portability package <code>port</code>.
+
+<h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
+
+<p><code>CLLIB</code> is now a part of <code>CLOCC</code> (in
+<code>src/cllib</code>), and, as such, is accessible via anonymous CVS
+and FTP, as explain on the <code>CLOCC</code> homepage.
+<code>CLLIB</code> uses <code>mk:defsystem</code>, which is a part of
+<code>CLOCC</code>, as well as <code>src/port</code>, which was actually
+a part of <code>CLOCC</code> before, so it is not feasible to distribute
+<code>CLLIB</code> separately from <code>CLOCC</code>.
+
+
+<h2>Files</h2>
+
+<p>This Common Lisp sources include the following files (in the
+alphabetical order):
+
+<p><table border=2 cellpadding=2>
+<tr><th>file</th><th>description</th></tr>
+<tr><th align=left><code>animals.lisp</code></th>
+    <td align=left>"guess the animal" game; simple neural net</td></tr>
+<tr><th align=left><code>autoload.lisp</code></th>
+    <td align=left>`autoload' function and snarfing autoloads from other
+    files</td></tr>
+<tr><th align=left><code>base.lisp</code></th>
+    <td align=left>basic definitions: package and path</td></tr>
+<tr><th align=left><code>card.lisp</code></th>
+    <td align=left>Rolodex: <a
+    href="http://pweb.netcom.com/~simmonmt/bbdb/index.html">BBDB</a>/<a
+    href="http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html">vCard</a>
+    handling</td></tr>
+<tr><th align=left><code>check.lisp</code></th>
+    <td align=left>check values and types of the elements of a list</td></tr>
+<tr><th align=left><code>clhs.lisp</code></th>
+    <td align=left>Common Lisp HyperSpec access</td></tr>
+<tr><th align=left><code>closio.lisp</code></th>
+    <td align=left>read/write CLOS objects</td></tr>
+<tr><th align=left><code>date.lisp</code></th>
+    <td align=left>date/time</td></tr>
+<tr><th align=left><code>datedl.lisp</code></th>
+    <td align=left>dated lists</tr>
+<tr><th align=left><code>doall.lisp</code></th>
+    <td align=left>answer questions automatically</td></tr>
+<tr><th align=left><code>elisp.lisp</code></th>
+    <td align=left>Load Emacs-Lisp into Common Lisp</td></tr>
+<tr><th align=left><code>fileio.lisp</code></th>
+    <td align=left>read/write lists etc</td></tr>
+<tr><th align=left><code>fin.lisp</code></th>
+    <td align=left>Financial functions: mortgage calculations, Luhn
+    algorithm, Black-Scholes, Solow</td></tr>
+<tr><th align=left><code>geo.lisp</code></th>
+    <td align=left>geography, weather, etc</td></tr>
+<tr><th align=left><code>gnuplot.lisp</code></th>
+    <td align=left>Gnuplot interface</td></tr>
+<tr><th align=left><code>gq.lisp</code></th>
+    <td align=left>GetQuote - stock quotes over the Internet.</td></tr>
+<tr><th align=left><code>h2lisp.lisp</code></th>
+    <td align=left>parsing C headers</td></tr>
+<tr><th align=left><code>html.lisp</code></th>
+    <td align=left>HTML parsing via <code>text-stream</code></td></tr>
+<tr><th align=left><code>htmlgen.lisp</code></th>
+    <td align=left>HTML generation</td></tr>
+<tr><th align=left><code>inspect.lisp</code></th>
+    <td align=left>portable inspector (tty and html broser)</td></tr>
+<tr><th align=left><code>iter.lisp</code></th>
+    <td align=left>iterate across multidimensional arrays</td></tr>
+<tr><th align=left><code>laser.lisp</code></th>
+    <td align=left>print a hardcopy</td></tr>
+<tr><th align=left><code>list.lisp</code></th>
+    <td align=left>list utilities</td></tr>
+<tr><th align=left><code>log.lisp</code></th>
+    <td align=left>time elapsed, messages etc</td></tr>
+<tr><th align=left><code>math.lisp</code></th>
+    <td align=left>math functions</td></tr>
+<tr><th align=left><code>miscprint.lisp</code></th>
+    <td align=left>print hash tables, packages, characters etc</td></tr>
+<tr><th align=left><code>octave.lisp</code></th>
+    <td align=left>interact with <a
+    href="http://www.che.wisc.edu/octave">octave</a></tr>
+<tr><th align=left><code>rpm.lisp</code></th>
+    <td align=left>RPM handling (download etc)</td></tr>
+<tr><th align=left><code>server.lisp</code></th>
+    <td align=left>REPL over a socket</td></tr>
+<tr><th align=left><code>simple.lisp</code></th>
+    <td align=left><code>with-collect</code> and some simple stuff</td></tr>
+<tr><th align=left><code>sorted.lisp</code></th>
+    <td align=left>operate on sorted lists (map, reduce etc)</td></tr>
+<tr><th align=left><code>stat.lisp</code></th>
+    <td align=left>multidimensional statistics - requires
+    <code>clmath:matrix</code></td></tr>
+<tr><th align=left><code>string.lisp</code></th>
+    <td align=left>string splitting</td></tr>
+<tr><th align=left><code>symb.lisp</code></th>
+    <td align=left>symbol concatenation</td></tr>
+<tr><th align=left><code>tilsla.lisp</code></th>
+    <td align=left><code>comma</code> and friends for
+    <code>format ~//</code></td></tr>
+<tr><th align=left><code>url.lisp</code></th>
+    <td align=left>HTTP/FTP/URL etc</td></tr>
+<tr><th align=left><code>withtype.lisp</code></th>
+    <td align=left>various utilities not fitting anywhere else</td></tr>
+</table>
+
+<h2>License</h2>
+
+<p>This is distributed under the <a
+href="http://www.gnu.org/copyleft/gpl.html">GNU GPL</a>.
+
+<p>If you must use the code in a proprietary environment (i.e., you
+would like to distribute without sources something based on this
+library), please <a href="mailto:sds@gnu.org">contact me</a> and I am
+sure we will be able to find some agreeable terms.
+
+<!-- for a license (you will have 2 options: promise in writing that you
+will send me all enhancements to this library you will ever make, with
+permission to redistribute under the same conditions; or pay me a fixed
+sum). -->
+
+<h2>Compiling</h2>
+
+<p>To use the library, type <code>"make system"</code>, which should
+compile all the files.  Alternatively, you can issue the
+<code>(mk:compile-system "cllib")</code> command yourself.
+This will create and compile the <code>"auto.lisp"</code> file with all
+the autoloads.
+Then you can dump your images.
+
+<h2>Comments</h2>
+
+<p><a href="mailto:clocc-devel@lists.sourceforge.net">Comments</a>
+and <a
+href="https://sourceforge.net/bugs/?func=addbug&group_id=1802">bug
+reports</a> are welcome.
+
+<br><br><br><hr>
+
+<p><table width="100%"><tr><td align="left"><a href="mailto:sds@gnu.org"><img
+ align="left" src="data/mbox.gif" width=29 height=34 border=0
+ alt="mailbox"></a><a href="sds.html">Sam Steingold</a><br>
+<address><a href="mailto:sds@gnu.org">sds@gnu.org</a></address>
+<td align="right">created: <strong>1999-01-01</strong></table>
+
+<!-- <p><br><img src="pub/server.cgi?README.html"> -->
+
+</body>
+</html>

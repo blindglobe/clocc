@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.12 2002/01/26 19:37:21 sds Exp $
+;;; $Id: card.lisp,v 2.13 2003/07/07 13:51:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -214,8 +214,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
             (slot-val cc 'urll) (dttm->string (card-created cc) :format :date)
             (dttm->string (card-timestamp cc) :format :date))))
 
-(defconstant +card-vcard-begin+ "BEGIN:VCARD")
-(defconstant +card-vcard-end+ "END:VCARD")
+(defconst +card-vcard-begin+ string "BEGIN:VCARD" "VCARD start marker")
+(defconst +card-vcard-end+ string "END:VCARD" "VCARD end marker")
 
 (defun card-print-as-vcard (cc out)
   (declare (type card cc) (stream out))

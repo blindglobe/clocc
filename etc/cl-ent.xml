@@ -11,7 +11,7 @@
 <!ENTITY clhs "http://www.lisp.org/HyperSpec">
 <!ENTITY mop "http://www.lisp.org/mop">
 <!ENTITY cl "<ulink url='http://www.lisp.org'><command>Common Lisp</command></ulink>">
-<!ENTITY clos "<command>CLOS</command>">
+<!ENTITY clos "<ulink url='&clhs;/Body/chap-7.html'><command>CLOS</command></ulink>">
 <!ENTITY clx "<ulink url='http://www.cliki.net/CLX'><command>CLX</command></ulink>">
 
 <!ENTITY ansi-cl "<citation><link linkend='ansi-cl'>ANSI CL standard</link></citation>">
@@ -66,7 +66,6 @@
 <!ENTITY amop "<citation><link linkend='amop'>Metaobject Protocol</link></citation>">
 <!ENTITY amop-bib
   "<biblioentry id='amop'>
-   <abbrev>Metaobject Protocol</abbrev>
    <abbrev>AMOP</abbrev>
    <authorgroup>
     <author><firstname>Gregor</firstname><surname>Kiczales</surname></author>
@@ -96,8 +95,8 @@
 <!-- *** implementations *** -->
 <!ENTITY ccl "<ulink url='http://corman.net/lisp'><command>CormanLisp</command></ulink>">
 <!ENTITY clisp "<ulink url='http://clisp.cons.org'><command>CLISP</command></ulink>">
-<!ENTITY cmucl "<ulink url='http://www.cons.org/cmucl'><command>CMU CL</command></ulink>">
-<!ENTITY gcl "<ulink url='ftp://ftp.ma.utexas.edu/pub/gcl'><command>GCL</command></ulink>">
+<!ENTITY cmucl "<ulink url='http://www.cons.org/cmucl/'><command>CMU CL</command></ulink>">
+<!ENTITY gcl "<ulink url='http://www.gnu.org/software/gcl/'><command>GCL</command></ulink>">
 <!ENTITY acl "<ulink url='http://www.franz.com'><command>Allegro CL</command></ulink>">
 <!ENTITY lispworks "<ulink url='http://www.xanalys.com/software_tools/products/index.html'><command>LispWorks</command></ulink>">
 
@@ -143,11 +142,17 @@
 <!ENTITY out-s "&output-s; &stream-t;">
 <!ENTITY bidi-s "<ulink url='&clhs;/Body/glo_b.html#bidirectional'>bidirectional</ulink> &stream-t;">
 <!ENTITY fresh "<ulink url='&clhs;/Body/glo_f.html#fresh'>fresh</ulink>">
+<!ENTITY consing "<ulink url='&clhs;/Body/glo_c.html#cons'>consing[3]</ulink>">
 <!ENTITY constant "<ulink url='&clhs;/Body/glo_c.html#constant_variable'>constant variable</ulink>">
 <!ENTITY variable "<ulink url='&clhs;/Body/glo_v.html#variable'>variable</ulink>">
 <!ENTITY recog-subt "<ulink url='&clhs;/Body/glo_r.html#recognizable_subtype'>recognizable subtype</ulink>">
 <!ENTITY place "<ulink url='&clhs;/Body/glo_p.html#place'>place</ulink>">
 <!ENTITY mul-val "<ulink url='&clhs;/Body/glo_m.html#multiple_values'>multiple values</ulink>">
+<!ENTITY finally "<ulink url='&clhs;/Body/sec_6-1-7-2.html'><literal>FINALLY</literal></ulink>">
+<!ENTITY cont-err "<ulink url='&clhs;/Body/glo_c.html#continuable'>continuable</ulink> &error-t;">
+<!ENTITY funname "<ulink url='&clhs;/Body/glo_f.html#function_name'>function name</ulink>">
+<!ENTITY ext-obj "<ulink url='&clhs;/Body/sec_3-2-4-1.html'>externalizable object</ulink>">
+<!ENTITY spelalist "<ulink url='&clhs;/Body/sec_3-4-3.html'>specialized lambda list</ulink>">
 
 <!-- *** packages *** -->
 <!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote role='package'>COMMON-LISP</quote></ulink>">

@@ -225,7 +225,9 @@
 		  (get-fun-arg-type (second arg)))
 		 ((eq 'fref fun)
 		  ;; Look up array references
-		  (get-fun-arg-type (second arg)))
+		  (values (get-fun-arg-type (second arg))
+			  (if *array-slicing*
+			      t nil)))
 		 ((member fun '(+ - * f2cl/ expt))
 		  ;; Basic arithmetic operations.
 		  (fortran-contagion (get-fun-arg-type (second arg))
@@ -2088,8 +2090,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.71 2002/01/06 23:10:12 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.72 2002/01/07 20:55:40 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.72  2002/01/07 20:55:40  rtoy
+;;; In GET-FUN-ARG-TYPE, we were always returning array types for FREF.  This
+;;; is true if array-slicing is enabled.
+;;;
 ;;; Revision 1.71  2002/01/06 23:10:12  rtoy
 ;;; Rename *intrinsic_function_names*, *external_function_names* and
 ;;; *subprog_stmt_fns* to use dashes.

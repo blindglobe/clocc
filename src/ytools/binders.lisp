@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: binders.lisp,v 1.3 2004/10/03 15:32:08 airfoyle Exp $
+;;;$Id: binders.lisp,v 1.4 2004/11/07 05:21:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 Drew McDermott and Yale University. 
 ;;; This software is released under the terms of the Modified BSD
@@ -8,7 +8,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(multiple-value-let bind letrec
-	     let-fun let-fun-nonrec let-var)))
+	     let-fun let-fun-nonrec let-var intercept pass)))
 
 (defmacro multiple-value-let (vars e &rest l)
    (multiple-value-bind (vars l)
@@ -97,3 +97,16 @@
 	    (not (memq (caar b) '(declare ignore))))
 	(values (ignore-convert (nreverse declarations)) b))   ))
 
+(defmacro intercept (tag &body b)
+   (cond ((is-Symbol tag)
+	  `(catch ',tag ,@b))
+	 (t
+	  (error "Argument to 'intercept' must be a symbol: ~S"
+		 tag))))
+
+(defmacro pass (tag r)
+   (cond ((is-Symbol tag)
+	  `(throw ',tag ,r))
+	 (t
+	  (error "Argument to 'pass' must be a symbol: ~S"
+		 tag))))

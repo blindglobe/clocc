@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.30 2004/11/01 14:01:08 airfoyle Exp $
+$Id: CHANGELOG,v 1.31 2004/11/07 05:21:07 airfoyle Exp $
 	
+2004-11-07: Resurrected 'intercept' and 'pass' with improved type
+            checking. (Version 1.4.8.7)
+
 2004-10-30: Changed output for warning message in 'decipher-readtable'
             (slurp.lisp). (Version 1.4.8.6)
 

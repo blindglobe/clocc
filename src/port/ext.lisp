@@ -1,6 +1,6 @@
 ;;; Basic extensions: conditions, compositions &c
 ;;;
-;;; Copyright (C) 1999-2002 by Sam Steingold
+;;; Copyright (C) 1999-2003 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.34 2003/06/07 21:59:20 sds Exp $
+;;; $Id: ext.lisp,v 1.35 2003/06/07 22:01:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"

@@ -1,6 +1,6 @@
 ;;; Shell Access
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2003 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.16 2002/11/30 22:31:20 sds Exp $
+;;; $Id: shell.lisp,v 1.17 2003/06/07 22:01:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)

@@ -1,6 +1,6 @@
 ;;; LispM-style portable multiprocessing
 ;;;
-;;; Copyright (C) 1999 by Sam Steingold
+;;; Copyright (C) 1999-2003 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.15 2003/05/16 16:07:31 sds Exp $
+;;; $Id: proc.lisp,v 1.16 2003/06/07 22:01:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.

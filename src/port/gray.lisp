@@ -1,6 +1,6 @@
 ;;; Gray streams
 ;;;
-;;; Copyright (C) 1999-2001 by Sam Steingold
+;;; Copyright (C) 1999-2003 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gray.lisp,v 1.9 2003/05/16 15:41:25 sds Exp $
+;;; $Id: gray.lisp,v 1.10 2003/06/07 22:01:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/gray.lisp,v $
 
 (eval-when (compile load eval)

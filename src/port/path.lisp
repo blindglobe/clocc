@@ -1,6 +1,6 @@
 ;;; Pathnames and Filesystems
 ;;;
-;;; Copyright (C) 1999-2001 by Sam Steingold
+;;; Copyright (C) 1999-2003 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.6 2003/06/06 02:05:22 sds Exp $
+;;; $Id: path.lisp,v 1.7 2003/06/07 22:01:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)

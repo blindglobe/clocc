@@ -42,6 +42,9 @@ assignments are never coerced.  For any other value, coercion is done
 only when needed. ")
 (defvar *default-lisp-extension* "lisp"
   "The default extension (file type) for the output file name")
+
+(defvar *fortran-extensions* '("f" "for")
+  "A list of possible extensions for Fortran files.")
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
@@ -83,6 +86,15 @@ INPUT-FILE               File containing Fortran code
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns))
 
+    (unless (probe-file input-file)
+      ;; Can't find it, so look for some other possibilities
+      (do* ((ext *fortran-extensions* (rest ext))
+	    (path (merge-pathnames input-file (make-pathname :type (first ext)))
+		  (merge-pathnames input-file (make-pathname :type (first ext)))))
+	  ((or (null ext)
+	       (probe-file path))
+	   (setf input-file path))))
+      
     (unless output-file
       (let ((input-path (pathname input-file)))
 	(setf output-file (make-pathname :host (pathname-host input-path)
@@ -90,7 +102,7 @@ INPUT-FILE               File containing Fortran code
 					 :directory (pathname-directory input-path)
 					 :name (pathname-name input-path)
 					 :type extension))))
-
+    (format t ";; ~S -> ~S~%" input-file output-file)
     (let ((processed-file (preprocess input-file)))
       (fortran-to-lisp processed-file output-file)
       (unless keep-temp-file
@@ -124,9 +136,6 @@ INPUT-FILE               File containing Fortran code
 ;	setlispread
 ;	lineread
 ;	read-six-chars
-;	outfile
-;	infile
-;	const
 ;	introduce-continue
 ;	find-do
 ;----------------------------------
@@ -656,15 +665,15 @@ main-loop
   (return
     `((case 
        ,(id-expression (cdddr x)) 
-       ,@(mapcar #'(lambda (x n) (list n (make-label x))) labels (listn 1 len)))))))
+       ,@(mapcar #'(lambda (x n)
+		     (list n (make-label x)))
+		 labels (listn 1 len)))))))
 
 (defun listn (a b)
-   (prog (lis)
-         (cond ((< b a) (return (reverse (listn b a))))
-               ((eq a b) (return (append1 () a)))
-               (t  (setq lis (append1 () a))
-                   (do ((i (1+ a) (1+ i))) ((> i b)) (setq lis (append1 lis i)))                   (return lis))
-)))
+  "Compute a list of integers from A to B, inclusive"
+  (if (<= a b)
+      (loop for x from a to b collect x)
+      (loop for x from b downto a collect x)))
 
 ;------------------------------------------------------------------------------
 (defun parse-comp-goto (x)
@@ -699,39 +708,6 @@ main-loop
 ;------------------------------------------------------------------------------
 
 ;declaration
-#+nil
-(defun parse-declaration (x)		; x is the line
-  (setq *declared_vbles*
-	(append (mapcar #'(lambda (v)
-			    (check-t-and-pi (car v)))
-			(list-split '|,|
-			 (if (eq (cadr x) '*)
-			     (cdddr x)
-			     (cdr x))))
-		*declared_vbles*))
-  (cond ((eq (first x) 'integer)
-	 (setq *explicit_vble_decls* 
-	       (build_decl_list *explicit_vble_decls* 'fixnum (cdr x))))
-	((eq (first x) 'double)
-	 (setq *explicit_vble_decls* 
-	       (build_decl_list *explicit_vble_decls* 'double-float (cdr x))))
-	((eq (first x) 'real)
-	 (setq *explicit_vble_decls* 
-	       (build_decl_list *explicit_vble_decls* 'single-float (cdr x))))
-	((eq (first x) 'character)
-	 (parse-char-decl x))
-	((eq (first x) 'complex)
-	 (setq *explicit_vble_decls*  
-	       (build_decl_list *explicit_vble_decls* 'complex (cdr x))))
-	((eq (first x) 'logical)
-	 (setq *explicit_vble_decls*  
-	       (build_decl_list *explicit_vble_decls* 'logical (cdr x))))
-	((eq (first x) 'dimension)
-	 (setq *explicit_vble_decls*   
-	       (build_decl_list *explicit_vble_decls* 'array (cdr x))))
-	(t nil))
-  nil)
-
 (defun parse-declaration (x)		; x is the line
   (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
@@ -1547,16 +1523,6 @@ loop2
        (read-char stream nil 'EOF t)
        (read-char stream nil 'EOF t)))
 
-;-----------------------------------------------------------------------------
-(defun outfile (x) (open x :direction :output :if-exists :rename-and-delete))
-(defun infile (x) (open x :direction :input))
-(defun tyipeek (u) (peek-char nil u nil -1))
-(defun const (x n)
-   (prog (lis)
-      (setq lis ())
-      (do ((i 1 (1+ i))) ((> i n)) (setq lis (cons x lis)))
-      (return lis)
-))
 ;------------------------------------------------------------------------------	
 
 (defun brackets-check (x)
@@ -1646,6 +1612,3 @@ loop2
 
 ;-----------------------------------------------------------------------------
 ;end of f2cl1.l
-
- 
-

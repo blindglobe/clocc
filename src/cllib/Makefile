@@ -1,4 +1,4 @@
-# $Id: Makefile,v 2.14 2000/05/11 21:21:29 sds Exp $
+# $Id: Makefile,v 2.15 2000/05/16 14:08:54 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
@@ -7,7 +7,7 @@ SOURCES := animals base card check clhs closio date datedl doall elisp fileio \
 	octave rpm server simple sorted stat string symb tilsla url withtype \
 	inspect autoload htmlgen xml prompt matrix getopt
 BASE = $(TOP)/clocc base auto
-NET = $(TOP)/clocc base url gq
+NET = $(TOP)/clocc base url gq rpm
 SCRIPT = $(TOP)/clocc base getopt
 SYSTEM := cllib
 ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \

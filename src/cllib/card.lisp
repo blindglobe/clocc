@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.7 2001/03/29 23:35:06 sds Exp $
+;;; $Id: card.lisp,v 2.8 2001/06/11 19:42:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -526,8 +526,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
                      (when (slot-boundp cc slot)
                        (setf (slot-value cc slot)
                              (nreverse (slot-value cc slot)))))
-          :finally (loop :for str = (read-line in nil +eof+)
-                         :until (or (eq str +eof+) (string= str "BEGIN:VCARD"))
+          :finally (loop :for str = (read-line in nil nil)
+                         :until (or (null str) (string= str "BEGIN:VCARD"))
                          :finally (return-from card-read-vcard
                                     (values (initialize-instance cc) str))))))
 

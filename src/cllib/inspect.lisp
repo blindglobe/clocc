@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.8 2000/03/23 00:10:51 sds Exp $
+;;; $Id: inspect.lisp,v 1.9 2000/04/19 16:47:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -397,9 +397,8 @@
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
   (declare (ignore backend))
   (do ((server (let ((server (open-socket-server)))
-                 (browse-url (format nil "http://~a:~d/0/:s"
-                                     (socket-server-host server)
-                                     (socket-server-port server))
+                 (browse-url (format nil "http://~a/0/:s"
+                                     (socket-server-string server))
                              :browser *inspect-browser*)
                  server))
        sock id com)

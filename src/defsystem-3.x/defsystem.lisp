@@ -1286,7 +1286,7 @@
 
 (defun add-registry-location (pathname)
   "Adds a path to the central registry."
-  (push pathname *central-registry*))
+  (pushnew pathname *central-registry* :tets #'equal))
 
 (defvar *bin-subdir* ".bin/"
   "The subdirectory of an AFS directory where the binaries are really kept.")
@@ -2019,7 +2019,7 @@ ABS: NIL          REL: NIL               Result: ""
   (etypecase relative-dir
     (string (setq relative-dir (parse-namestring relative-dir)))
     (pathname #| do nothing |#))
-  
+
   (translate-logical-pathname
    (merge-pathnames relative-dir absolute-dir)))
 

@@ -26,7 +26,9 @@
 	   )
 
   ;; Basic Interface.
-  (:export "SOFTWARE-TYPE"
+  (:export "FEATURE-TAG"
+
+	   "SOFTWARE-TYPE"
 	   "SOFTWARE-VERSION"
 	   "MACHINE-TYPE"
 	   "MACHINE-VERSION"
@@ -52,7 +54,9 @@
 	   "COMMON-LISP-IMPLEMENTATION-VERSION"
 
 	   "*COMMON-LISP-IMPLEMENTATION*"
+	   "*CL*"
 	   "*OPERATING-SYSTEM*"
+	   "*OS*"
 	   "*MACHINE*"
 
 	   "VERSION"
@@ -120,6 +124,7 @@
 	   "MS-WINDOWS-32"
 	   "MS-WINDOWS-95"
 	   "MS-WINDOWS-98"
+	   "MS-WINDOWS-ME"
 	   "MS-WINDOWS-NT"
 	   "MS-WINDOWS-NT-TSE"
 	   "MS-WINDOWS-2000"
@@ -130,6 +135,18 @@
 
   ;; Genera.
   (:export "GENERA")
+
+  ;;--------------------------------------------
+  ;; Exports related to known Machine Architectures.
+  (:export "INTEL-X86-MACHINE"
+	   "SPARC-MACHINE"
+	   "PPC-MACHINE"
+	   "MIPS-MACHINE"
+	   "ALPHA-MACHINE")
+
+  ;;--------------------------------------------
+  ;; Across the board utilities.
+  (:export "COMPILED-FILE-EXTENSION")
   )
 	   
 

@@ -810,13 +810,19 @@ is not included")
 	     (declare (integer4 ,do-var))
 	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
 
-(defun process-implied-do (ido low-bnds init)
+(defun process-implied-do (ido low-bnds var-types init)
   (destructuring-bind (data-vars (index-var start end &optional step))
       ido
-    (flet ((map-vars (v)
-	     (mapcar #'(lambda (x b)
-			 `(fset (fref ,(first x) ,(second x) ((,b))) (pop ,init)))
-		     v low-bnds)))
+    (labels
+	((convert-type (type)
+	   (if (eq type 'integer4)
+	       `(truncate (pop ,init))
+	       `(coerce (pop ,init) ',type)))
+	 (map-vars (v)
+	   (mapcar #'(lambda (x b vt)
+		       `(fset (fref ,(first x) ,(second x) ((,b)))
+			 ,(convert-type vt)))
+		   v low-bnds var-types)))
     `(do ((,index-var ,start (+ ,index-var ,(or step 1))))
          ((> ,index-var ,end))
        ,@(map-vars data-vars))
@@ -824,10 +830,10 @@ is not included")
 
 
 ;; Process implied do loops for data statements
-(defmacro data-implied-do (implied-do low-bnds vals)
+(defmacro data-implied-do (implied-do low-bnds var-types vals)
   (let ((v (gensym)))
     `(let ((,v ',vals))
-      ,(process-implied-do implied-do low-bnds v))))
+      ,(process-implied-do implied-do low-bnds var-types v))))
 
 ;-----------------------------------------------------------------------------  ; end of macros.l
    
@@ -1178,8 +1184,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.45 2002/03/18 23:34:16 rtoy Exp $
+;;; $Id: macros.l,v 1.46 2002/03/19 02:23:09 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.46  2002/03/19 02:23:09  rtoy
+;;; According to the rules of Fortran, the initializers in a DATA
+;;; statement are supposed to be converted to match the type of the
+;;; variable that is being initialized.  Make it so by passing the
+;;; variable type to the macro DATA-IMPLIED-DO so that the conversion can
+;;; be done.
+;;;
 ;;; Revision 1.45  2002/03/18 23:34:16  rtoy
 ;;; Was not correctly handling some implied do loops containing multiple
 ;;; variables in the loop in data statements.  Fix that and clean up some

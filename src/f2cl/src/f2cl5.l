@@ -1038,7 +1038,15 @@
 		       (flet ((get-dims (var)
 				(mapcar #'caar
 					    (mapcar #'lookup-array-bounds
-						    (if (listp var) var (list var))))))
+						    (if (listp var) var (list var)))))
+			      (get-types (vars)
+				;; I'm lazy.  Use make-declaration
+				;; to figure out the type of the array
+				;; element.
+				(mapcar #'(lambda (v)
+					    (let ((init (make-declaration v)))
+					      (second (second (second init)))))
+					vars)))
 				  
 		       (cond #+nil
 			     ((eq 'fset (first init))
@@ -1048,11 +1056,13 @@
 				(declare (ignore fset fref))
 				`(fset (fref ,var ,idx ,(get-dims var)) ,val)))
 			     ((eq 'data-implied-do (first init))
-			      ;; We need to get the dimensions for this array
+			      ;; We need to get the dimensions for
+			      ;; this array as well as the types.
 			      (destructuring-bind (ido loop var vals)
 				  init
 				(declare (ignore ido))
-				`(data-implied-do ,loop ,(get-dims var) ,vals)))
+				`(data-implied-do ,loop ,(get-dims var) ,(get-types var)
+				   ,vals)))
 			     (t
 			      init))))
 		   *data-init*))
@@ -2616,8 +2626,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.94 2002/03/18 23:46:48 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.95 2002/03/19 02:23:09 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.95  2002/03/19 02:23:09  rtoy
+;;; According to the rules of Fortran, the initializers in a DATA
+;;; statement are supposed to be converted to match the type of the
+;;; variable that is being initialized.  Make it so by passing the
+;;; variable type to the macro DATA-IMPLIED-DO so that the conversion can
+;;; be done.
+;;;
 ;;; Revision 1.94  2002/03/18 23:46:48  rtoy
 ;;; Was not correctly handling implicit variable declarations.  We just
 ;;; want to compare the first character of the variable agains the given

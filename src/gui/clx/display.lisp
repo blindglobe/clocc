@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.4 2002/08/29 07:34:00 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.5 2003/02/24 09:17:37 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -56,8 +56,7 @@
 
 (defparameter *known-authorizations* '("MIT-MAGIC-COOKIE-1"))
 
-(defun list-know-authorizations ()
-  "Lists what authorizations we can find"
+(defun read-xauth-entry (stream)
   (labels ((read-short (stream &optional (eof-errorp t))
 	     (let ((high-byte (read-byte stream eof-errorp)))
 	       (and high-byte
@@ -74,112 +73,66 @@
 		 (dotimes (k length)
 		   (setf (aref vector k) (read-byte stream)))
 		 vector))))
-    ;;; where is .Xauthority?
-    (let ((pathname (authority-pathname)))
-      (when pathname
-        (format t "~&Lookin in ~A for information...~%"
-                pathname)
-        ;;; read the info:
-	(with-open-file (stream pathname
-                                :element-type '(unsigned-byte 8)
-				:if-does-not-exist nil)
-	  (when stream
-            (loop
-                (let ((family (read-short stream nil)))
-                  (when (null family)
-                    (return))
-                  (let* ((address (read-short-length-vector stream))
-                         (number (parse-integer (read-short-length-string stream)))
-                         (name (read-short-length-string stream))
-                         (data (read-short-length-vector stream)))
-                    (format t "~&Family: ~A ip: ~S display: ~S type: ~S data: ~S"
-                            (case family
-                              (0 :tcp)
-                              (1 :dna)
-                              (2 :chaos)
-                              (256 :unix)
-                              (t :unknown))
-                            (if (eq family 256)
-                                (map 'string
-                                     #'code-char
-                                     address)
-                                address)
-                            number
-                            name
-                            data)))))))))
-  (values))
+    (let ((family (read-short stream nil)))
+      (if (null family)
+	(list nil nil nil nil nil)
+	(let* ((address (read-short-length-vector stream))
+	       (number (parse-integer (read-short-length-string stream)))
+	       (name (read-short-length-string stream))
+	       (data (read-short-length-vector stream))
+	       (family (or (car (rassoc family *protocol-families*)) family)))
+	  (list 
+	   family
+	   (ecase family
+	     (:local (map 'string #'code-char address))
+	     (:internet (coerce address 'list)))
+	   number name data))))))
 
 (defun get-best-authorization (host display protocol)
-  "Tries to determine if and what authorization we have for the X session.
-returns best-name and best-data it could find"
-  (labels ((read-short (stream &optional (eof-errorp t))
-	     (let ((high-byte (read-byte stream eof-errorp)))
-	       (and high-byte
-		    (dpb high-byte (byte 8 8) (read-byte stream)))))
-	   (read-short-length-string (stream)
-	     (let ((length (read-short stream)))
-	       (let ((string (make-string length)))
-		 (dotimes (k length)
-		   (setf (schar string k) (card8->char (read-byte stream))))
-		 string)))
-	   (read-short-length-vector (stream)
-	     (let ((length (read-short stream)))
-	       (let ((vector (make-array length :element-type '(unsigned-byte 8))))
-		 (dotimes (k length)
-		   (setf (aref vector k) (read-byte stream)))
-		 vector))))
-    ;;; where is .Xauthority?
-    (let ((pathname (authority-pathname)))
-      (when pathname
-        ;;; read the info:
-	(with-open-file (stream pathname
-                                :element-type '(unsigned-byte 8)
-				:if-does-not-exist nil)
-	  (when stream
-            ;; what are we looking for?
-	    (let* ((host-family (ecase protocol
-				  ((:tcp :internet nil) 0)
-                                  ;; the remaining protocol are legacy and not supported
-				  ((:dna :DECnet) 1)
-				  ((:chaos) 2)
-                                  ;; except unix of course
-				  ((:unix) 256)))
-                   ;; the unix protocol is always the correct host: the localhost!
-		   (host-address (unless (eq protocol :unix)
-                                   (rest (host-address host host-family))))
-		   (best-name nil)
-		   (best-data nil))
-              
-              ;; go through the file and find the best cookie:
-	      (loop
-	       (let ((family (read-short stream nil)))
-		 (when (null family)
-                   ;; nothing usefull found
-		   (return (values "" "")))
-		 (let* ((address (read-short-length-vector stream))
-			(number (parse-integer (read-short-length-string stream)))
-			(name (read-short-length-string stream))
-			(data (read-short-length-vector stream)))
-		   (when (and (= family host-family)
-                              ;; it is the family we were looking for
-                              ;; is it also the host?
-                              (or (= family 256)
-                                  ;; unix: alway correct host...
-                                  (equal host-address (coerce address 'list)))
-                              ;; is is the correct display?
-			      (= number display)
-                              ;; do we know this authorization?
-			      (let ((pos1 (position name *known-authorizations* :test #'string=)))
-				(and pos1
-				     (or (null best-name)
-					 (< pos1 (position best-name *known-authorizations*
-							   :test #'string=))))))
-		     (setf best-name name)
-		     (setf best-data data)))))
-	      (when best-name
-		(return-from get-best-authorization
-		  (values best-name best-data)))))))))
-  (values "" ""))
+  ;; parse .Xauthority, extract the cookie for DISPLAY on HOST.
+  ;; PROTOCOL determines whether the server connection is using an
+  ;; Internet protocol (value of :internet) or a non-network
+  ;; protocol such as Unix domain sockets (value of :local).  Returns
+  ;; two strings: an authorization name (very likely the string
+  ;; "MIT-MAGIC-COOKIE-1") and an authorization key, represented as
+  ;; fixnums in a vector.  If we fail to find an appropriate cookie,
+  ;; return two empty strings.
+  (let ((pathname (authority-pathname)))
+    (when pathname
+      (with-open-file (stream pathname :element-type '(unsigned-byte 8)
+			      :if-does-not-exist nil)
+	(when stream
+	  (let* ((host-address (and (eql protocol :internet)
+				    (rest (host-address host protocol))))
+		 (best-name nil) (best-pos nil)
+		 (best-data nil))
+	    ;; Check for the localhost address, in which case we're
+	    ;; really FamilyLocal.
+	    (when (or (eql protocol :local)
+		      (and (eql protocol :internet)
+			   (equal host-address '(127 0 0 1))))
+	      (setq host-address (get-host-name))
+	      (setq protocol :local))
+	    (loop
+	     (destructuring-bind (family address number name data)
+		 (read-xauth-entry stream)
+	       (unless family (return))
+	       (when (and (eql family protocol)
+			  (equal host-address address)
+			  (= number display)
+			  (let ((pos1 (position name *known-authorizations*
+						:test #'string=)))
+			    (and pos1
+				 (or (null best-pos)
+				     (< pos1 best-pos)))))
+		 (setf best-name name
+		       best-pos (position name *known-authorizations*
+					  :test #'string=)
+		       best-data data))))
+	    (when best-name
+	      (return-from get-best-authorization
+		(values best-name best-data)))))))
+    (values "" "")))
 
 ;;
 ;; Resource id management
@@ -380,35 +333,16 @@ returns best-name and best-data it could find"
 		      ,@(and timeout `(:timeout ,timeout)))
 	 ,@body))))
 
-(defun guess-display ()
-  "This tried to gues what display you need to use.
-Returns the host,the display and the screen
-or NIL if it failed"
-  (let* ((where (port:getenv "DISPLAY"))
-         (parts  (when where
-                   (split-sequence:split-sequence #\: where)))
-         (host (when parts
-                 (first parts)))
-         (parts2 (when (and parts
-                            (stringp (second parts)))
-                   (split-sequence:split-sequence #\. (second parts))))
-         (display (when (and parts2
-                             (stringp (first parts2)))
-                    (ignore-errors
-                      (parse-integer
-                       (first parts2)))))
-         (screen (when  (and parts2
-                             (stringp (second parts2)))
-                   (ignore-errors
-                     (parse-integer
-                      (second parts2))))))
-    (when (and host
-               display
-               screen)
-      (values host
-              display
-              screen))))
-    
+;;; XXX add open-clx-display from cmucl
+;;; PVE
+
+(defun open-default-display ()
+  "Opens the default display"
+  (destructuring-bind (host display screen protocol)
+      (get-default-display)
+    (declare (ignore screen))
+    (open-display host :display display :protocol protocol)))
+
 (defun open-display (host &key (display 0) protocol authorization-name authorization-data)
   ;; Implementation specific routine to setup the buffer for a specific host and display.
   ;; This must interface with the local network facilities, and will probably do special

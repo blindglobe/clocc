@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 1.7 2004/07/01 03:13:33 airfoyle Exp $
+;;;$Id: datafun.lisp,v 1.8 2004/09/20 03:49:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -79,7 +79,7 @@
 
 (defmacro datafun-table (name ind &key (size 100))
   `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-      (defvar ,name (make-eq-hash-table :size ',size))
+      (defvar ,name (make-hash-table :size ',size :test #'eq))
       (datafun attach-datafun ,ind
          (defun :^ (ind sym fname)
 	    (ignore ind)

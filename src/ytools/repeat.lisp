@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 1.4 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: repeat.lisp,v 1.5 2004/06/16 17:36:18 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -495,6 +495,11 @@
 		 '*simple (car v)
 		 (list (make-Rep-var-prop
 			  'init (cadr v) 1))))
+	 ((equal (cddr v) '(:then :again))
+	  (make-Rep-var
+	     '*each-iter (car v)
+	     (list (make-Rep-var-prop 'init (cadr v) 1)
+		   (make-Rep-var-prop 'iterfcnvar (gensym) -1))))
 	 (t
 	  (make-Rep-var
 	       '*reset (car v)

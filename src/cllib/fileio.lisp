@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.25 2002/12/21 15:13:50 sds Exp $
+;;; $Id: fileio.lisp,v 1.26 2003/01/08 19:08:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -330,6 +330,20 @@ Non-existent files are assumed to be VERY old."
 (defsubst file-newest (f0 f1)
   "Returnt the newest of the two existing files."
   (if (> (file-write-date f0) (file-write-date f1)) f0 f1))
+
+(let ((buf1 (make-array 1024 :element-type '(unsigned-byte 8)))
+      (buf2 (make-array 1024 :element-type '(unsigned-byte 8))))
+;;;###autoload
+(defun file-equal-p (file1 file2)
+  "Check whether the two files are identical, like cmp(1)."
+  (with-open-file (f1 file1 :element-type '(unsigned-byte 8))
+    (with-open-file (f2 file2 :element-type '(unsigned-byte 8))
+      (when (= (file-length f1) (file-length f2))
+        (loop :for l1 = (read-sequence buf1 f1)
+              :and l2 = (read-sequence buf2 f2)
+          :until (or (zerop l1) (zerop l2))
+          :always (and (= l1 l2) (equalp buf1 buf2)))))))
+)
 
 (defun latest-file (path &optional (nth 0))
   "Return the latest file matching PATH, which should be wild.

@@ -115,18 +115,21 @@
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
 				    FREF FREF-STRING F2CL/
-				    FLOG FSQRT FFLOAT EXPT))
+				    FLOG FSQRT FFLOAT EXPT
+				    %FALSE% %TRUE%))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *intrinsic_function_names*)
 		    (member exprs *key_params* :key #'car)
 		    (member exprs *external_function_names*)
 		    (member exprs *declared_vbles*)
 		    (member exprs *undeclared_vbles*)
-		    (sym-is-fun-name (list exprs)))
+		    (sym-is-fun-name (list exprs))
+		    (sym-is-number-p exprs))
 		nil)
 	       ((eq exprs 'PAUSE)
 		)
 	       (t
+		(format t "adding unknown var ~A~%" exprs)
 		(pushnew (check-t-and-pi exprs) *undeclared_vbles*))))
 	((listp exprs)
 	 (mapc #'check_new_vbles exprs)
@@ -1220,6 +1223,18 @@
 (defun sym-is-fun-name (expr)
    (and (listp (cadr expr)) (not (null (cdr expr)))))
 
+;; Test if a symbol is really an f2cl hacked number.  This only
+;; happens when the number is in exponential form with a negative
+;; exponent.
+(defun sym-is-number-p (expr)
+  (let* ((s (string expr))
+	 (neg (position #\% s)))
+    (when neg
+      ;; Ok, it might be a number.
+      (and (member (aref s (1- neg)) '(#\d #\e) :test #'char-equal)
+	   (numberp (read-from-string (subseq s 0 (- neg 2))))
+	   (numberp (read-from-string (subseq s (1+ neg))))))))
+      
 ; given a list of variables names proclaim them special
 (defun make-special-proclamation (vars)
    (if vars `(proclaim '(special ,@vars)) nil))

@@ -108,7 +108,7 @@ file or :asdf if found asdf file"
 (defun clc-require (module-name &optional pathname definition-pname
 				default-action (version mk::*version*))
   (let ((system-type (find-system module-name)))
-    (ecase system-type
+    (case system-type
      (:defsystem3
       (if (not (or pathname
 		   definition-pname

@@ -2,11 +2,11 @@
 ;;; get stock/mutual fund quotes from the Internet
 ;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2002 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.25 2002/01/26 17:40:27 sds Exp $
+;;; $Id: gq.lisp,v 2.26 2002/02/12 19:37:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -99,11 +99,8 @@ change:~15t~7,2f~35thigh:~45t~7,2f
       (mesg :xml ,err " *** header:~%")
       (loop :for xx = (read-line ,str nil nil) :do (mesg :xml ,err "~s~%" xx)
        :while (and xx (not (string= "" xx))))
-                                ; (not (string-beg-with "Content-Type:" xx))
-      (mesg :xml ,err " *** data~%")
-      (let ((*xml-read-balanced* nil) (*xml-read-entities* nil))
-        (with-xml-input (,var ,str)
-          ,@body)))))
+      (mesg :xml ,err " *** data:~%")
+      (with-xml-input (,var ,str) ,@body))))
 
 ;;;###autoload
 (defun get-url-xml-tokens (url &key (out *standard-output*)
@@ -151,6 +148,12 @@ This is just a debugging function, to be called interactively."
                                  (dfloat (read-from-string tok)))))))))
     (loop :repeat nn :for cur = (next stream) :finally (return cur))))
 
+(defun date-mo/da/ye (xx)
+  "Parse the date in the MM/DD/YYYY format"
+  (multiple-value-bind (mo da ye)
+      (values-list (string-tokens (purge-string xx "/") :max 3))
+    (mk-date :ye ye :mo mo :da da)))
+
 (defun get-quotes-apl (url &rest ticks)
   "Get the data from the APL WWW server."
   (with-url-xml (sock (apply #'gq-complete-url url ticks)
@@ -170,21 +173,28 @@ This is just a debugging function, to be called interactively."
 
 (defun get-quotes-yahoo (url &rest ticks)
   "Get the data from the Yahoo WWW server."
-  (with-url-xml (sock (apply #'gq-complete-url url ticks)
-                      :timeout *gq-timeout* :err *gq-error-stream*)
-    (loop :until (string= "<tr" (read-line sock))) (read-line sock)
-    (do ((ti ticks (cdr ti)) res dt)
-        ((null ti) (cons (or dt (gq-guess-date)) (nreverse res)))
-      (gq-skip sock (symbol-name (car ti)))
-      (setq dt (string-tokens (gq-next sock 3)))
-      (mesg :log *gq-error-stream* "raw date: ~s~%" dt)
-      (setq dt (infer-date (car dt) (cadr dt)))
-      (mesg :log *gq-error-stream* "parsed date: ~s~%" dt)
-      (push (mk-daily-data :nav (gq-next-num sock) :chg (gq-next-num sock)
-                           :prc (/ (gq-next-num sock) 100d0))
-            res)
-      (mesg :log *gq-error-stream* " *** Found [~s] [~a]: ~a~%"
-            (car ti) dt (car res)))))
+  (with-open-url (sock (apply #'gq-complete-url url ticks)
+                       :timeout *gq-timeout* :err *gq-error-stream*)
+    (mesg t *gq-error-stream* " *** header:~%")
+    (loop :for xx = (read-line sock nil nil)
+          :do (mesg t *gq-error-stream* "~s~%" xx)
+          :while (and xx (not (string= "" xx))))
+    (mesg t *gq-error-stream* " *** data:~%")
+    (let (date res line)
+      (dolist (ti ticks (cons date res))
+        (setq line (read-line sock))
+        (mesg t *gq-error-stream* " * ~a~%" line)
+        (multiple-value-bind (name nav dt time chg)
+            (values-list (string-tokens (purge-string line ",") :max 5))
+          (declare (ignore time))
+          (assert (string= (symbol-name ti) name) (name ti)
+                  "~s: name(~s)/tick(~s) mismatch" 'get-quotes-yahoo name ti)
+          (setq dt (date-mo/da/ye dt))
+          (when (and date (date/= date dt))
+            (warn "~s: date mismatch: ~s and ~s"
+                  'get-quotes-yahoo date dt))
+          (setq date dt)
+          (push (mk-daily-data :nav nav :chg chg) res))))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
@@ -257,10 +267,48 @@ This is just a debugging function, to be called interactively."
       (mesg :log *gq-error-stream* " *** Found [~s]: ~a~%"
             (car ti) (car res)))))
 
+(defun get-quotes-xmltoday (url &rest ticks)
+  "Get the data from the XMLToday StockQuote server."
+  (let ((xo (with-url-xml (sock (apply #'gq-complete-url url ticks)
+                                :timeout *gq-timeout* :err *gq-error-stream*)
+              (read-from-stream sock)))
+        (*xml-print-xml* :readably)
+        date res)
+    (mesg :xml *gq-error-stream* "~s" xo)
+    (assert (and xo (null (cdr xo))) (xo)
+            "~s: wrong object read: ~s" 'get-quotes-xmltoday xo)
+    (setq xo (xml-purge-data (xmlo-name-check (car xo) "stock_quotes")))
+    (mapc (lambda (ti da)
+            (let* ((data (xmlo-data (xmlo-name-check da "stock_quote"))))
+              (assert (string= (symbol-name ti)
+                               (car (xmlo-data (xmlo-name-check
+                                                (first data) "symbol"))))
+                      (ti da) "~s: tick(~s)/data mismatch:~s"
+                      'get-quotes-xmltoday ti da)
+              (let* ((wh (xmlo-data (xmlo-name-check (second data) "when")))
+                     (dd (car (xmlo-data (xmlo-name-check (car wh) "date"))))
+                     (dt (date-mo/da/ye dd)))
+                (when (and date (date/= date dt))
+                  (warn "~s: date mismatch: ~s and ~s"
+                        'get-quotes-xmltoday date dt))
+                (setq date dt))
+              (let* ((ask (find "ask" data :test #'equal
+                                :key (lambda (xo) (xmlo-tag xo "type"))))
+                     (nav (read-from-string
+                           (xmlo-tag (xmlo-name-check ask "price") "value")))
+                     (cha (find "change" data :test #'string= :key #'xmlo-nm))
+                     (chg (read-from-string (car (xmlo-data cha)))))
+                (push (mk-daily-data :nav nav :chg chg) res))))
+          ticks (xmlo-data xo))
+    (cons date res)))
+
 (defcustom *get-quote-url-list* list
-  (list (list (make-url :prot :http :port 80 :host "quote.yahoo.com"
-                        :path "/q?s=")
+  (list (list (make-url :prot :http :port 80 :host "finance.yahoo.com"
+                        :path "/d/quotes.csv?f=sl1d1t1c1ohgv&e=.csv&s=")
               'get-quotes-yahoo "Yahoo")
+        (list (make-url :prot :http :port 80 :host "www.xmltoday.com"
+                        :path "/examples/stockquote/getxmlquote.vep?s=")
+              'get-quotes-xmltoday "xmltoday")
         (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
                         :path "/exe/sm/chart&Symbol=")
               'get-quotes-sm "StockMaster")

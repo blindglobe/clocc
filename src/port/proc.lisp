@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.3 2000/04/03 20:43:54 sds Exp $
+;;; $Id: proc.lisp,v 1.4 2000/04/05 23:56:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -27,8 +27,9 @@
 ;;; Scheduling.
 ;;; PROCESS-WAIT (whostate predicate &rest args)
 ;;; PROCESS-WAIT-WITH-TIMEOUT (timeout whostate predicate &rest args)
-;;; WITH-TIMEOUT
-;;; WITHOUT-INTERRUPTS
+;;; WITH-TIMEOUT ((timeout &body timeout-forms) &body body-forms)
+;;; WITHOUT-SCHEDULING (&body body)
+;;; PROCESS-YIELD
 ;;;
 ;;; Process manipulation
 ;;; KILL-PROCESS (process)
@@ -43,6 +44,12 @@
 ;;; CURRENT-PROCESS ()
 ;;; ALL-PROCESSES ()
 ;;; SHOW-PROCESSES ()
+;;;
+;;; Locks
+;;; MAKE-LOCK (&key name)
+;;; GET-LOCK (lock)
+;;; GIVEUP-LOCK (lock)
+;;; WITH-LOCK ((lock) &rest body)
 
 (eval-when (compile load eval)
   (require :ext (translate-logical-pathname "clocc:src;port;ext")))
@@ -50,11 +57,13 @@
 (in-package :port)
 
 (export '(+threads-p+ make-process
-          process-wait process-wait-with-timeout without-interrupts
+          process-wait process-wait-with-timeout
           with-timeout y-or-n-p-timeout maybe-y-or-n-p
+          without-scheduling process-yield
           kill-process interrupt-process restart-process
           processp process-name process-active-p process-whostate
-          current-process all-processes show-processes))
+          current-process all-processes show-processes
+          make-lock get-lock giveup-lock with-lock))
 
 ;;;
 ;;; process creatioon
@@ -201,6 +210,17 @@ and evaluate TIMEOUT-FORMS."
   #+MCL       `(ccl:without-interrupts ,@body)
   #-threads   `(progn ,@body))
 
+(defun process-yield ()
+  "Yields the current process' remaining time slice
+and allows other processes to run."
+  #+Allegro   (mp:process-allow-schedule)
+  #+CMU       (mp:process-yield)
+  #+Genera    FIXME
+  #+LispWorks (mp:process-allow-scheduling)
+  #+Lucid     FIXME
+  #+MCL       (ccl:process-yield)
+  #-threads   (error 'not-implemented :proc (list 'process-yield)))
+
 (defun kill-process (process)
   "Kill PROCESS."
   #+Allegro   (mp:process-kill process)
@@ -341,6 +361,53 @@ and reapply its initial function to its arguments."
         (dolist (line info)
           (format stream "~A~vT~A~vT~A~%" (first line) name-max (second line)
                   whostate-max  (third line)))))))
+
+;;;
+;;; Locks
+;;;
+;;; (MCL implementation actually uses MCL `queues', which are just
+;;;  locks where the order in which processes block on a queue is the
+;;;  order in which they unblock.)
+
+(defun make-lock (&key name)
+  "Creates a new lock."
+  #+Allegro   (mp:make-process-lock :name name)
+  #+CMU       (mp:make-lock name)
+  #+Genera    FIXME
+  #+LispWorks (mp:make-lock :name name)
+  #+Lucid     FIXME
+  #+MCL       (ccl:make-process-queue name)
+  #-threads   (error 'not-implemented :proc (list 'make-lock name)))
+
+(defun get-lock (lock)
+  "Claims a lock, blocking until the current process can get it."
+  #+Allegro   (mp:process-lock lock)
+  #+CMU       (mp::lock-wait lock)
+  #+Genera    FIXME
+  #+LispWorks (mp:claim-lock lock)
+  #+Lucid     FIXME
+  #+MCL       (ccl:process-enqueue lock)
+  #-threads   (error 'not-implemented :proc (list 'get-lock lock)))
+
+(defun giveup-lock (lock)
+  "Gives up possession of a lock."
+  #+Allegro   (mp:process-unlock lock)
+  #+CMU       FIXME
+  #+Genera    FIXME
+  #+LispWorks (mp:release-lock lock)
+  #+Lucid     FIXME
+  #+MCL       (ccl:process-dequeue lock)
+  #-threads   (error 'not-implemented :proc (list 'giveup-lock lock)))
+
+(defmacro with-lock ((lock) &rest body)
+  "This macro executes the body with LOCK locked."
+  #+Allegro   `(mp:with-process-lock (,lock) ,@body)
+  #+CMU       `(mp:with-lock-held (,lock) ,@body)
+  #+Genera    FIXME
+  #+LispWorks `(mp:with-lock (,lock) ,@body)
+  #+Lucid     FIXME
+  #+MCL       `(ccl:with-process-enqueued (,lock) ,@body)
+  #-threads   `(progn ,@body))
 
 (provide :proc)
 ;;; proc.lisp end here

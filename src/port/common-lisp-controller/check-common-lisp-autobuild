@@ -1,0 +1,114 @@
+#!/bin/bash -e
+# Checks if a package should be autobuild for an implementation
+# Written by Kevin Rosenberg <kmr@debian.org>
+# GPL-2 license
+
+progname="$(basename $0)"
+pversion='$Revision: 1.1 $'
+
+usage()
+{
+        cat >&2 <<END
+Usage: $progname implentation-name package-name [OPTIONS]
+$progname checks if a package should be auto-built for a 
+particular implementation. It returns a status code of 1 for "yes"
+and 0 for "no". Returns 255 for a usage error.
+
+Options: 
+  -h                  Print this short help message
+END
+}
+
+# return 1 status if ab_file exists and contains yes as the first line
+ab_file_yes()
+{
+    file=$1
+    echo $file
+    if [ -r $file ]; then
+	first_line=$(cat $file | head -1 | tr "[A-Z]" "[a-z]")
+	if [ $(expr "yes" : "$first_line") ]; then
+	    exit 1
+	fi
+    fi
+    exit 0
+}
+
+clc_bin_dir=/usr/lib/common-lisp/bin
+
+if [ $(($# < 2)) = 1 ]; then 
+  echo "Error: too few arguments" >&2
+  usage
+  exit 255
+fi
+
+# make sure that first two arguments are not an option switch
+if [ $(expr "$1" : "\(\-\)") ]; then
+  echo "error: Missing implementation name"
+  usage
+  exit 1
+fi
+if [ $(expr "$2" : "\(\-\)") ]; then
+  echo "error: Missing source package name"
+  usage
+  exit 1
+fi
+
+impl=$1
+shift
+source=$1
+shift
+
+ab_dir=/etc/common-lisp
+impl_bin=/usr/lib/common-lisp/bin/$impl.sh
+
+# Command line
+while [ $# != 0 ]; do
+    case "$1" in
+        -h) usage; exit 0;              ;;
+	-*) usage; exit 255;            ;;
+	*)  echo "Error: extra arguments"; usage; exit 255;            ;;
+    esac
+    shift
+done
+
+if [ ! -x $impl_bin ]; then
+  echo "$progname: can't find executable implementation script $impl_bin" >& 2
+  exit 255
+fi
+
+# Check autobuilding by check for the most specific first
+
+source_ab=$ab_dir/$impl/$source/autobuild
+impl_ab=$ab_dir/$impl/autobuild
+global_db=$ab_dir/autobuild
+
+if [ -r $source_ab ]; then
+    # package's autobuild readable
+    ab_file_yes $source_ab
+    if [ $? ]; then
+	exit 0
+    else
+	exit 1
+    fi
+fi
+# use impl default
+if [ -r $impl_ab ]; then
+    ab_file_yes $impl_ab
+    if [ $? ]; then
+	exit 0
+    else
+	exit 1
+    
+    fi
+fi
+# Use global default
+if [ -r $global_ab ]; then
+    ab_file_yes $global_ab
+    if [ $? ]; then
+	exit 0
+    else
+	exit 1
+    fi
+fi
+
+echo "$progname: internal error: should never reach here" >& 2

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.29 2002/04/21 20:01:18 sds Exp $
+;;; $Id: gq.lisp,v 2.30 2002/08/07 01:26:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -52,6 +52,7 @@
   (nav 0d0 :type double-float)
   (chg 0d0 :type double-float)
   (prc 0d0 :type double-float)
+  (vol 0 :type integer)
   (bid 0d0 :type double-float)
   (ask 0d0 :type double-float)
   (pre 0d0 :type double-float)
@@ -73,9 +74,9 @@
       (format out "price:~15t~7,2f~35tbid:~45t~7,2f
 previous:~15t~7,2f~35task:~45t~7,2f
 change:~15t~7,2f~35thigh:~45t~7,2f
-%:~15t~7,2f~35tlow:~45t~7,2f~%"
-              (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
-              (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
+%:~15t~7,2f~35tlow:~45t~7,2f~%~[~:;~:*vol: ~17:d~%~]"
+              (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd) (dd-chg dd)
+              (dd-hgh dd) (dd-prc dd) (dd-low dd) (dd-vol dd))))
 
 (declaim (ftype (function () (values date)) gq-guess-date))
 (defun gq-guess-date ()
@@ -185,9 +186,9 @@ This is just a debugging function, to be called interactively."
       (dolist (ti ticks (cons date (nreverse res)))
         (setq line (read-line sock))
         (mesg t *gq-error-stream* " * ~a~%" line)
-        (multiple-value-bind (name nav dt time chg)
-            (values-list (string-tokens (purge-string line ",") :max 5))
-          (declare (ignore time))
+        (multiple-value-bind (name nav dt time chg open hgh low vol)
+            (values-list (string-tokens (purge-string line ",") :max 9))
+          (declare (ignore time open))
           (assert (string= (symbol-name ti) name) (name ti)
                   "~s: name(~s)/tick(~s) mismatch" 'get-quotes-yahoo name ti)
           (setq dt (date-mo/da/ye dt))
@@ -195,7 +196,11 @@ This is just a debugging function, to be called interactively."
             (warn "~s: date mismatch: ~s and ~s"
                   'get-quotes-yahoo date dt))
           (setq date dt)
-          (push (mk-daily-data :nav nav :chg chg) res))))))
+          (push (mk-daily-data :nav nav :chg chg
+                               :vol (if (numberp vol) vol 0)
+                               :low (if (numberp low) low 0d0)
+                               :hgh (if (numberp hgh) hgh 0d0))
+                res))))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
@@ -293,14 +298,28 @@ This is just a debugging function, to be called interactively."
                   (warn "~s: date mismatch: ~s and ~s"
                         'get-quotes-xmltoday date dt))
                 (setq date dt))
-              (let* ((*read-default-float-format* 'double-float)
-                     (ask (find "ask" data :test #'equal
-                                :key (lambda (xo) (xmlo-tag xo "type"))))
-                     (nav (read-from-string
-                           (xmlo-tag (xmlo-name-check ask "price") "value")))
-                     (cha (find "change" data :test #'string= :key #'xmlo-nm))
-                     (chg (read-from-string (car (xmlo-data cha)))))
-                (push (mk-daily-data :nav nav :chg chg) res))))
+              (flet ((get-price (type)
+                       (let ((val (xmlo-tag (xmlo-name-check
+                                             (find type data :test #'equal :key
+                                                   (lambda (xo)
+                                                     (xmlo-tag xo "type")))
+                                             "price")
+                                            "value")))
+                         (if (string-equal val "n/a") 0d0
+                             (read-from-string val))))
+                     (get-data (type)
+                       (let ((val (car (xmlo-data
+                                        (find type data :test #'string=
+                                              :key #'xmlo-nm)))))
+                         (if (string-equal val "n/a") 0
+                             (read-from-string val)))))
+                (let ((*read-default-float-format* 'double-float))
+                  (push (mk-daily-data :nav (get-price "ask")
+                                       :hgh (get-price "dayhigh")
+                                       :low (get-price "daylow")
+                                       :chg (float (get-data "change") 1d0)
+                                       :vol (get-data "volume"))
+                        res)))))
           ticks (xmlo-data xo))
     (cons date (nreverse res))))
 
@@ -375,7 +394,8 @@ If the first argument is a date, fix the year."
 (defcustom *hist-data-file* pathname
   (mk-path (user-homedir-pathname) :directory '(:relative "text")
            :name "invest" :type "txt")
-  "*The file with the historical data.")
+  "*The file with the historical data.
+See the value of `*hist-data-file-header*' for file format.")
 (defcustom *hist-data-file-header* simple-string
   ";*GetQuote portfolio*
 ; file format is as follows:
@@ -497,7 +517,7 @@ only the data after `*hist-data-file-sep*' is changed."
   "Fix the values in the history. Return T if something was fixed."
   (declare (list hist hold hhh))
   (let ((fixed nil))
-    (when (listp hhh)
+    (when (consp hhh)
       (setq hhh
             (map-sorted
              'list
@@ -539,6 +559,13 @@ only the data after `*hist-data-file-sep*' is changed."
     (format out " APY:~8,3f%]~%        today:" apy)
     (funcall fmt out v0 v2 (- v0 v2) tc)
     (format out "]~2%")))
+
+(defun show-results (tickers srv res &optional (out *standard-output*))
+  "Print the results."
+  (when res
+    (format out "~2%~72:@<~a results for ~a:~>~%" srv (car res))
+    (map nil (lambda (ti dd) (format out " *** ~s:~%~s~%" ti dd))
+         tickers (cdr res))))
 
 (defun process-results (hold hist srv res yea
                         &optional (out *standard-output*))
@@ -647,7 +674,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 (defun update-quotes (&key (plot nil plotp) server debug
                       (log #+(or win32 mswindows) *gq-log*
                            #-(or win32 mswindows) nil)
-                      (hist-file *hist-data-file*))
+                      tickers (hist-file *hist-data-file*))
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes.
@@ -655,18 +682,24 @@ See `*get-quote-url-list*' for available SERVERs.
 If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
   (let ((*print-log* (if debug *print-log* #()))
         (*gq-error-stream* (if debug *gq-error-stream* nil)))
-    (setf (values *holdings* *history*) (read-data-file hist-file))
+    (setf (values *holdings* *history*)
+          (if hist-file (read-data-file hist-file)
+              (mapcar (lambda (ti) (make-pfl :tick ti)) tickers)))
     (unless (eq plot t)
       (multiple-value-bind (srv res hhh yea)
-          (apply #'get-quotes server (mapcar #'pfl-tick *holdings*))
+          (apply #'get-quotes server
+                 (if hist-file (mapcar #'pfl-tick *holdings*) tickers))
         (let* ((out (if (null log) *standard-output*
                         (open log :direction :output :if-exists
                               :append :if-does-not-exist :create)))
-               (fixed (gq-fix-hist *holdings* *history* hhh))
-               (new (process-results *holdings* *history* srv res yea out)))
-          (top-bottom-fl *history* :val #'hist-totl :label #'hist-date
-                         :out out)
-          (when (or fixed new)
+               (fixed (and *history* (gq-fix-hist *holdings* *history* hhh)))
+               (new (if *history*
+                        (process-results *holdings* *history* srv res yea out)
+                        (show-results tickers srv res out))))
+          (when *history*
+            (top-bottom-fl *history* :val #'hist-totl :label #'hist-date
+                           :out out))
+          (when (and *history* (or fixed new))
             (save-data hist-file *holdings* *history*)
             (unless plotp (setq plot t)))
           (when log (close out) (format t "Wrote log to ~s~%" log))))))

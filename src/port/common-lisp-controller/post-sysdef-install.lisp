@@ -393,7 +393,9 @@ than the maximum file-write-date of output-files, return T."
 
 (defun user-package-list ()
   "Returns user package list from cache, updates cached version if needed."
-  (let ((current-date (file-write-date (user-packages-path))))
+  (let* ((path (user-packages-path))
+	 (current-date (when (probe-file path)
+			 (file-write-date path))))
     (when current-date
       (when (or (null *cached-user-packages-date*)
 		(> current-date *cached-user-packages-date))

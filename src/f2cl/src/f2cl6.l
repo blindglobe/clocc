@@ -31,39 +31,37 @@
 (defvar *inp* nil)
 ;---------------------------------------------------------------------------
 (defun preprocess (file &key (outfile-name "prep.tmp"))
-  (prog (inport outport line)
-     (when *verbose*
-       (format t "~&preprocessing begins ...~%"))
-     (setq inport (infile file)
-           outport (outfile outfile-name))
-   loop
-     (setq line (read-line inport nil 'EOF))
-     (when (eq line 'EOF) 
-       (close outport)
-       (close inport)
-       (return outfile-name))
-     #+nil(setq line (string-upcase (string-right-trim '(#\Space) line)))
-     (setq line (string-right-trim '(#\Space) line))
-     (cond 
-       ((string= line "") nil)		; we leave out blank lines
-       ((or (char-equal (char line 0) #\C)
-	    (char-equal (char line 0) #\*))
-	(if *comments* (write-comment-line line outport)))
-       (t
-	(when *verbose* (princ line) (terpri))
-	;; Handle tabs.  If the line begins with a tab, replace it with 6
-	;; spaces.  Then replace all tabs with a single space.
-	(when (char-equal (aref line 0) #\Tab)
-	  (setf line (concatenate 'string "      " (subseq line 1))))
-	(setf line (substitute #\Space #\Tab line))
+  (when *verbose*
+    (format t "~&preprocessing begins ...~%"))
+  (with-open-file (inport file :direction :input)
+    (with-open-file (outport outfile-name
+			     :direction :output
+			     :if-exists :rename-and-delete)
+      (do ((line (read-line inport nil 'eof)
+		 (read-line inport nil 'eof)))
+	  ((eq line 'eof)
+	   outfile-name)
+	(let ((line (string-right-trim '(#\Space) line)))
+	  (cond 
+	    ((string= line "") nil)	; we leave out blank lines
+	    ((or (char-equal (char line 0) #\C)
+		 (char-equal (char line 0) #\*))
+	     (if *comments* (write-comment-line line outport)))
+	    (t
+	     (when *verbose* (princ line) (terpri))
+	     ;; Handle tabs.  If the line begins with a tab, replace it with 6
+	     ;; spaces.  Then replace all tabs with a single space.
+	     (when (char-equal (aref line 0) #\Tab)
+	       (setf line (concatenate 'string "      " (subseq line 1))))
+	     (setf line (substitute #\Space #\Tab line))
 
-	(write-line (adjust_nrs (replace_logl_ops line)) outport)))
-     (go loop)))
+	     (write-line (adjust_nrs (replace_logl_ops line)) outport))))))))
+
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
  (if *verbose* 
-   (format t "      COMMENT \"~a\"~%" (string-downcase (subsequence line 1))))
- (format outport "      COMMENT \"~a\"~%" (string-downcase (subsequence line 1))))
+   (format t "      FORTRAN_COMMENT ~S~%" (string-downcase (subsequence line 1))))
+ (format outport "      FORTRAN_COMMENT ~S~%" (string-downcase (subsequence line 1))))
 
 (defun replace_logl_ops  (line)
    (prog (inport outport char)

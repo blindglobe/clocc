@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 1.6 2004/06/24 14:13:52 airfoyle Exp $
+;;;$Id: repeat.lisp,v 1.7 2004/06/25 20:19:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,7 +12,7 @@
 (slurp-whole-file)
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(repeat forall exists 
+   (export '(repeat forall exists keyword-args->alist
 	     one-collect list-collect empty-Collector Collector-elements
 	     collector-clear keyword-args->alist)))
 

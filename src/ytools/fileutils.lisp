@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fileutils.lisp,v 1.3 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: fileutils.lisp,v 1.4 2004/06/25 20:19:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -25,16 +25,18 @@
 		      (cond ((not (is-Load-progress-rec r))
 			     (error "~s has 'load-progress-rec' property ~s"
 				    pn r)))
-		      (case (Load-progress-rec-status r)
-			 ((:loaded)
-			  (lprec-load r false false false))
-			 ((:maybe-compiled)
-			  (lprec-compile
-			     r false
-			     (files-changed-since
-			        (lprec-find-supporters r)
-				(nth-value
-				   1 (lprec-find-version-modtimes r)))))))))))
+		      (cond ((not (is-Pseudo-pathname
+				     (Load-progress-rec-pathname r)))
+			     (case (Load-progress-rec-status r)
+				((:loaded)
+				 (lprec-load r false false false))
+				((:maybe-compiled)
+				 (lprec-compile
+				    r false
+				    (files-changed-since
+				       (lprec-find-supporters r)
+				       (nth-value
+					  1 (lprec-find-version-modtimes r)))))))))))))
       pathname-prop-table*))
 
 (defvar fload-version-suffix* ':-new)

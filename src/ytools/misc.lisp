@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 1.4 2004/05/05 15:55:20 airfoyle Exp $
+;;;$Id: misc.lisp,v 1.5 2004/06/25 20:19:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -135,7 +135,7 @@
 ;; Notational variant
 (defmacro memoize-val (exp^ &key ((:missing-if uncached-val^) 'false)
 				 ((:store-as store-place^)
-				  (signal-problem val-or-initialize
+				  (signal-problem memoize-val
 				         "'val-or-initialize' must have"
-				         " :init argument")))
+				         " :store-as argument")))
    `(val-or-initialize ,store-place^ :init ,exp^ :missing-if ,uncached-val^))

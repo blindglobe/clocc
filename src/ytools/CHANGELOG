@@ -1,3 +1,8 @@
+2004-06-25: Further enhancements to alref. .  Made packages work in
+	    names of YTools logical pathnames.  Fixed bug in 'repeat'
+	    for var notation (v e0 :then e1) so it's the same as (v =
+	    e0 :then e1).  Got 'fload-recheck' working correctly.
+	
 2004-04-20: Added 'val-or-initialize' and its notational variant,
             'memoize-val', to misc.  Tightened definitions of 'alref' and
 	    'alref.' .
@@ -14,7 +19,6 @@
             right the logic of when to recompile or reload a file.
 	
 2003-11-08: Slight change to an error message in pathname.lisp.
->>>>>>> 1.3.2.1
 	
 2003-10-28: Changed ytload.lisp to allow .lmd files to be in arbitrary places
 	

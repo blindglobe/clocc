@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-06-03 Thu 16:39:07 EDT sds@goems.com>
+;;; File: <url.lisp - 1999-10-12 Tue 11:43:39 EDT sds@ksp.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,18 +9,25 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.30 1999/06/03 20:41:11 sds Exp $
+;;; $Id: url.lisp,v 1.31 1999/10/12 15:44:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
-;;; Revision 1.30  1999/06/03 20:41:11  sds
-;;; (+bad-url+): new constant.
-;;; (*rfc-base*): new variable.
-;;; (protocol-rfc): renamed from `url-rfc'.
-;;; (socket-server &c): support CMUCL & LispWorks.
-;;; (*url-replies*): new variable.
-;;; (url-ask): use it; `END' can be symbolic now.
-;;; (cl-server): nascent CL server stuff (ripped from CMUCL).
+;;; Revision 1.31  1999/10/12 15:44:04  sds
+;;; (socket-service-port): corrected `services' path under win32.
+;;; (url-ask): use `*url-replies*'.
+;;; (url-login-ftp): fixed the error message.
+;;; (html-stream): new Gray stream.
+;;; (next-token, next-number): more verbose.
 ;;;
+;; Revision 1.30  1999/06/03 20:41:11  sds
+;; (+bad-url+): new constant.
+;; (*rfc-base*): new variable.
+;; (protocol-rfc): renamed from `url-rfc'.
+;; (socket-server &c): support CMUCL & LispWorks.
+;; (*url-replies*): new variable.
+;; (url-ask): use it; `END' can be symbolic now.
+;; (cl-server): nascent CL server stuff (ripped from CMUCL).
+;;
 ;;; Revision 1.29  1999/05/05 21:04:22  sds
 ;;; LispWorks compatibility:
 ;;; (open-socket, resolve-host-ipaddr, open-socket-server):
@@ -289,8 +296,8 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
                      (second tok)
                      (string-downcase (string (third tok)))))))
     (with-open-file (fl #+unix "/etc/services" #+win32
-                        (concatenate 'string (system:getenv "windir")
-                                     "/system32/etc/services")
+                        (concatenate 'string (getenv "windir")
+                                     "/system32/drivers/etc/services")
                         :direction :input)
       (loop :with name :and alis :and port :and prot
             :for st = (read-line fl nil +eof+)
@@ -833,7 +840,7 @@ See RFC959 (FTP) &c.")
   (loop :with endl :of-type list =
         (typecase end
           (integer (to-list end)) (list end)
-          (symbol (gethash end *ftp-replies*))
+          (symbol (gethash end *url-replies*))
           (t (error 'case-error :proc 'url-ask
                     :args (list 'end end 'integer 'list 'symbol))))
         :for ln :of-type simple-string =
@@ -878,8 +885,8 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
   (let ((host (socket-host sock)) (port (socket-port sock)) co)
     (dolist (pwd *ftp-anonymous-passwords*
              (error 'login :proc 'url-login-ftp :host host :port port
-                    :mesg "All these passwords failed [~a]:~{ ~s~}"
-                    :args (cons co *ftp-anonymous-passwords*)))
+                    :mesg "All passwords failed: ~{ ~s~}~% -- ~a"
+                    :args (list *ftp-anonymous-passwords* co)))
       (url-ask sock err :user "user ~a" (if (zerop (length (url-user url)))
                                             "anonymous" (url-user url)))
       (unless (typep (setq co (nth-value
@@ -1137,6 +1144,36 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
                     (values (string->dttm (copy-seq str)) str nil)))))))))
 
 ;;;
+;;; }}}{{{ HTML streams
+;;;
+
+#+(or clisp acl cmu) (progn
+
+(defclass html-stream (#+acl excl:fundamental-character-input-stream
+                       #+clisp lisp:fundamental-character-input-stream
+                       #+cmu ext:fundamental-character-input-stream)
+  ((input :initarg :stream :initarg :input :type stream :reader html-in))
+  (:documentation "The input stream for reading HTML."))
+
+(defcustom *html-unterminated-tags* list '(:p :li :dd :dt :tr :td :th)
+   "*The list of tags without the corresponding `/' tag.")
+
+(defun html-end-tag (tag)
+  (if (member tag *html-unterminated-tags* :test #'eq) tag
+      (keyword-concat "/" tag)))
+
+(defmethod stream-read-char ((in html-stream)) (read-char (html-in in)))
+(defmethod stream-unread-char ((in html-stream)) (unread-char (html-in in)))
+(defmethod stream-read-char-no-hang ((in html-stream))
+  (read-char-no-hang (html-in in)))
+;; (defmethod stream-peak-char ((in html-stream)) (peak-char (html-in in)))
+(defmethod stream-listen ((in html-stream)) (listen (html-in in)))
+(defmethod stream-read-line ((in html-stream)) (read-line (html-in in)))
+(defmethod stream-clear-output ((in html-stream)) (clear-input (html-in in)))
+
+)
+
+;;;
 ;;; }}}{{{ HTML parsing
 ;;;
 
@@ -1195,19 +1232,23 @@ Return the new buffer or NIL on EOF."
   "Get the next NUM-th non-tag token from the HTML stream TS."
   (declare (type text-stream ts) (type index-t num))
   (let (tt)
-    (dotimes (ii num (if (and type (not (typep tt type))) dflt tt))
+    (dotimes (ii num)
       (declare (type index-t ii))
       (do () ((not (html-tag-p (setq tt (read-next ts :errorp t :kill kill))))
-              (mesg :log t "token: ~a~%" tt))
-        (mesg :log t "tag: ~a~%" tt)))))
+              (mesg :log t "~d token: ~a~%" ii tt))
+        (mesg :log t "tag: ~a~%" tt)))
+    (if (and type (not (typep tt type))) dflt tt)))
 
 (defun next-number (ts &key (num 1) (kill *ts-kill*))
   "Get the next NUM-th number from the HTML stream TS."
   (declare (type text-stream ts) (type index-t num))
   (let (tt)
-    (dotimes (ii num tt)
+    (dotimes (ii num)
       (declare (type index-t ii))
-      (do () ((numberp (setq tt (next-token ts :kill kill))))))))
+      (do () ((numberp (setq tt (next-token ts :kill kill)))))
+      (mesg :log t "~d - number: ~a~%" ii tt))
+    (mesg :log t " -><- number: ~a~%" tt)
+    tt))
 
 (defun skip-tokens (ts end &key (test #'eql) (key #'identity) kill)
   "Skip tokens until END, i.e., until (test (key token) end) is T."

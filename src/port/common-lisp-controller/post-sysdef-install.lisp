@@ -90,10 +90,12 @@
   
 (defun system-in-source-root? (c)
   "Returns T if component's directory is the same as *source-root* + component's name"
-  (and c
-       (equalp (pathname-directory (asdf:component-pathname c))
-	       (pathname-directory
-		(ignore-errors
+  ;; asdf::resolve-symlinks gives an error for non-existent pathnames
+  ;; on lispworks
+  (ignore-errors
+    (and c
+	 (equalp (pathname-directory (asdf:component-pathname c))
+		 (pathname-directory
 		  (asdf::resolve-symlinks
 		   (merge-pathnames
 		    (make-pathname

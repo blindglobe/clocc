@@ -15,7 +15,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.5 2004/06/09 15:31:32 sds Exp $
+;;; $Id: munkres.lisp,v 2.6 2004/09/27 16:43:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
 (eval-when (compile load eval)
@@ -40,9 +40,16 @@ Returns the total cost and two assignment vectors: X->Y and Y->X."
     :and x-next = (make-array x-count)
     :and y-next = (make-array y-count)
     :and cost = 0
+    ;;:and eps = (loop :with min :and max :for i :from 0 :to (1- x-count) :do
+    ;;             (loop :for j :from 0 :to (1- y-count)
+    ;;               :for cost = (abs (aref cost-mx i j)) :do
+    ;;               (when (or (null min) (< cost min)) (setq min cost))
+    ;;               (when (or (null max) (> cost max)) (setq max cost)))
+    ;;             :finally (return (* (/ (- max min) (+ max min))
+    ;;                                 )))
     :for iteration-count :upfrom 1
     :do (when out
-          (format out "~S(~:D): ~S~%   ~S~%   ~S~%" 'assignment
+          (format out "~&~S(~:D): ~S~%   ~S~%   ~S~%" 'assignment
                   iteration-count cost x-matching y-matching))
     ;; s-x == all free X vertices
     (dotimes (i x-count)
@@ -94,11 +101,16 @@ Returns the total cost and two assignment vectors: X->Y and Y->X."
         (incf len)
         :unless j :return nil
         :do (setq pos j) (decf weight (aref cost-mx i j)) (incf len))
-      (assert (= min weight) (min weight)
-              "~S: bug: min label=~S  /=  augmenting path weight=~S"
-              'assignment min weight)
+      (unless (= min weight) ; (< (/ (- min weight) (+ min weight)) eps)
+        (warn "~S: rounding error ~5F * float-epsilon"
+              'assignment (/ (- min weight) (+ (abs min) (abs weight))
+                             (etypecase min
+                               (short-float short-float-epsilon)
+                               (single-float single-float-epsilon)
+                               (double-float double-float-epsilon)
+                               (long-float long-float-epsilon)))))
       (when out
-        (format out "   => augmenting path: len=~:D weight=~S~%" len weight))
+        (format out "~&   => augmenting path: len=~:D weight=~S~%" len weight))
       (incf cost weight))))
 
 (provide :cllib-munkres)

@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.22 2000/12/04 17:51:38 sds Exp $
+;;; $Id: cllib.system,v 1.23 2001/01/08 22:52:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -32,7 +32,7 @@
             ("base" "simple" "string" "sorted" "log" "withtype" #+cmu"closio"))
      (:file "datedl" :depends-on
             ("base" "withtype" "date" "laser" "math" "symb"))
-     (:file "doall" :depends-on ("base" "metering"))
+     (:file "doall" :depends-on ("base"))
      (:file "elisp" :depends-on ("base" "closio" "list"))
      (:file "fileio" :depends-on ("base" "withtype" "symb" "log"))
      (:file "fin" :depends-on ("base" "math" "tilsla" "withtype"))
@@ -53,7 +53,6 @@
      (:file "math" :depends-on
             ("base" "simple" "withtype" "fileio" "log" "list"))
      (:file "matrix" :depends-on ("base" "withtype"))
-     (:file "metering" :source-pathname "../tools/metering/metering")
      (:file "miscprint" :depends-on ("base" "simple"))
      #+clisp (:file "octave" :depends-on ("base"))
      (:file "prompt" :depends-on ("base"))

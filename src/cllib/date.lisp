@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-06-19 Fri 16:58:33 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-06-26 Fri 13:19:58 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.14 1998/06/19 21:41:16 sds Exp $
+;;; $Id: date.lisp,v 1.15 1998/06/26 23:11:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.15  1998/06/26 23:11:30  sds
+;;; Added `days-t' and `dl-slot'.  Switched to `print-object'.
+;;;
 ;;; Revision 1.14  1998/06/19 21:41:16  sds
 ;;; Use `defmethod' to print structures.
 ;;;
@@ -68,12 +71,13 @@
 ;;;
 
 (eval-when (load compile eval)
+(deftype days-t () '(unsigned-byte 20))
 (defstruct (date #+cmu (:print-function print-date))
   "The date structure -- year, month, and day."
-  (ye 1 :type fixnum)
+  (ye 1 :type days-t)
   (mo 1 :type (integer 1 12))
   (da 1 :type (integer 1 31))
-  (dd nil :type (or null fixnum))) ; number of days since the epoch (1900-1-1)
+  (dd nil :type (or null days-t))) ; days since the epoch (1900-1-1 == 0)
 )
 
 #+cmu
@@ -90,7 +94,6 @@
       (format stream "~4,'0d-~2,'0d-~2,'0d" (date-ye dt)
 	      (date-mo dt) (date-da dt))))
 
-
 (defconst +bad-date+ date (make-date) "*The convenient constant for init.")
 
 (defun print-date-month (dt &optional (str t) (depth 1))
@@ -102,7 +105,7 @@
 
 (defsubst date2num (dt)
   "Convert the date to the numerical format YYYYMMDD."
-  (declare (type date dt) (values fixnum))
+  (declare (type date dt) (values integer))
   (+ (* 10000 (date-ye dt)) (* 100 (date-mo dt)) (date-da dt)))
 
 (defsubst date2time (dt)
@@ -133,13 +136,13 @@ Returns the number of seconds since the epoch (1900-01-01)."
 
 (defsubst date2days (dt)
   "Convert the date to the number of days since the epoch (1900-01-01)."
-  (declare (type date dt) (values fixnum))
+  (declare (type date dt) (values days-t))
   (or (date-dd dt)
       (progn (format t "~& *** Fixed date ~d~%" dt) (date-dd (fix-date dt)))))
 
 (defsubst days2date (days)
   "Convert the number of days since the epoch (1900-01-01) to the date."
-  (declare (fixnum days) (values date)) (time2date (* days +day-sec+)))
+  (declare (type days-t days) (values date)) (time2date (* days +day-sec+)))
 
 (defun num2date (num)
   "Get the date from the number."
@@ -159,13 +162,13 @@ Returns the number of seconds since the epoch (1900-01-01)."
 ;;;
 
 (eval-when (load compile eval)
+  (fmakunbound 'date)
   (defgeneric date (xx) (:documentation "Convert to or extract a date."))
   (declaim (ftype (function (t) date) date)))
 (defmethod date ((xx date)) xx)
 (defmethod date ((xx string))
-  ;; Get the date out of a string.
-  ;; The following formats are accepted: `1969-12-7', `May 8, 1945',
-  ;; `1945, September 2'.
+  ;; The following formats are accepted:
+  ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
   (let ((str (nsubstitute-if #\space (lambda (ch) (find ch #(#\- #\, #\. #\/)))
                              xx)))
     (multiple-value-bind (ye n0) (read-from-string str)
@@ -176,10 +179,10 @@ Returns the number of seconds since the epoch (1900-01-01)."
                (mk-date :ye da :mo (infer-month ye) :da mo)) n2))))))
 (defmethod date ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
 (defmethod date ((xx symbol)) (date (string xx)))
-(defmethod date ((xx real)) (time2date xx))
 (defmethod date ((xx integer)) (days2date xx))
+(defmethod date ((xx real)) (time2date xx))
 (defmethod date ((xx stream))
-  "Read date in format MONTH DAY YEAR."
+  ;; Read date in format MONTH DAY YEAR
   (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
 (defmethod date ((xx cons)) (date (car xx)))
 
@@ -190,7 +193,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defun days-since (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a fixnum. KEY should return a date."
-  (declare (type (function (t) date) key) (values (function (t) fixnum)))
+  (declare (type (function (t) date) key) (values (function (t) days-t)))
   (unless (realp beg) (setq beg (date2days (date beg))))
   (lambda (rr) (- (date2days (funcall key rr)) beg)))
 
@@ -268,7 +271,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 
 (defun date-quarter (dt)
   "Return the quarter of the date."
-  (declare (type date dt) (values fixnum))
+  (declare (type date dt) (values (integer 1 4)))
   (1+ (floor (1- (date-mo dt)) 3)))
 
 (defun same-quarter-p (d0 d1)
@@ -286,12 +289,13 @@ Arguments can be dates or objects parsable with `date'."
   "Return the next day.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
-  (declare (type date dd) (fixnum skip) (values date))
+  (declare (type date dd) (type days-t skip) (values date))
   (days2date (+ (date2days dd) skip)))
 
 (defsubst yesterday (&optional (dd (today)) (skip 1))
   "Return the previous day.  Calls tomorrow."
-  (declare (type date dd) (fixnum skip) (values date)) (tomorrow dd (- skip)))
+  (declare (type date dd) (type days-t skip) (values date))
+  (tomorrow dd (- skip)))
 
 (defun date-in-list (dt lst &optional (key #'date) last)
   "Return the tail of LST starting with DT.
@@ -422,6 +426,12 @@ previous record when SKIP is non-nil and nil otherwise.
   "Return the MISC function of the dated list DL."
   (declare (type dated-list dl) (values function))
   (symbol-function (dated-list-misc dl)))
+
+(defsubst dl-slot (dl slot)
+  "Return the SLOT function of the dated list DL."
+  (declare (type dated-list dl) (type (member val chg) slot)
+           (values (function (t) double-float)))
+  (symbol-function (slot-value dl slot)))
 
 (defsubst dl-len (dl)
   "Return the length of the dated list."
@@ -629,7 +639,7 @@ Return nil if at the end already, or the change in value."
 Key defaults to VAL; split defaults to `date-ye'."
   (declare (type dated-list dl) (function split) (symbol slot))
   (volatility (dated-list-ll dl) (compose 'split (dl-date dl))
-	      :key (slot-value dl slot)))
+              :key (dl-slot dl slot)))
 
 (defun print-volatilities (ls &key (out t) (dl #'identity) (head #'identity))
   "Print the annual and monthly volatilities of the objects in the list.
@@ -672,10 +682,10 @@ list object is created and just the list of numbers is returned."
 
 (defun exp-mov-avg-dl (coeff dl &optional (slot 'val))
   "UI for `exp-mov-avg' when the argument is a dated list itself."
-  (exp-mov-avg
-   coeff (dated-list-ll dl) :date (dl-date dl) :key (slot-value dl slot)
-   :code (keyword-concat (dated-list-code dl) :-ema)
-   :name (format nil "EMA [~3,2f] `~a'" coeff (dated-list-name dl))))
+  (exp-mov-avg coeff (dated-list-ll dl) :date (dl-date dl) :name
+               (format nil "EMA [~3,2f] `~a'" coeff (dated-list-name dl))
+               :key (dl-slot dl slot)
+               :code (keyword-concat (dated-list-code dl) :-ema)))
 
 (defun regress-dl (dl &optional begd endd)
   "Regress the dated list in the given interval.
@@ -695,25 +705,24 @@ Must not assume that the list is properly ordered!"
 (defsubst mean-dl (dl &key (slot 'val))
   "Apply `mean' to the dated list."
   (declare (type dated-list dl))
-  (mean (dated-list-ll dl) :key (slot-value dl slot)))
+  (mean (dated-list-ll dl) :key (dl-slot dl slot)))
 
 (defun standard-deviation-dl (dl &rest opts &key (slot 'val)
 			      &allow-other-keys)
   "Apply `standard-deviation' to the dated list."
   (declare (type dated-list dl))
   (remf opts :slot)
-  (apply #'standard-deviation (dated-list-ll dl) :key (slot-value dl slot)
-	 opts))
+  (apply #'standard-deviation (dated-list-ll dl) :key (dl-slot dl slot) opts))
 
 (defsubst standard-deviation-relative-dl (dl &key (slot 'val))
   "Apply `standard-deviation' to the dated list."
   (declare (type dated-list dl))
-  (standard-deviation-relative (dated-list-ll dl) :key (slot-value dl slot)))
+  (standard-deviation-relative (dated-list-ll dl) :key (dl-slot dl slot)))
 
 (defsubst weighted-mean-dl (dl wts &key (slot 'val))
   "Apply `weighted-mean' to the dated list."
   (declare (type dated-list dl))
-  (weighted-mean (dated-list-ll dl) wts :key (slot-value dl slot)))
+  (weighted-mean (dated-list-ll dl) wts :key (dl-slot dl slot)))
 
 (defmacro with-truncated-dl ((dt dl) &body body)
   "Evaluate BODY when DL is truncated by the date DT."
@@ -791,7 +800,7 @@ ch[bf], and dl-extrema will not be idempotent."
       ((null (setq ch (skip-dl-to-extremum dd)))
        (change-list-to-dated-list
 	(nreverse (push chg res)) :code
-	(keyword-concat (dated-list-code dl) "-XTR")
+	(keyword-concat (dated-list-code dl) :-xtr)
 	:name (format nil "Extrema of `~a'" (dated-list-name dl))))
     (setf (change-chf chg) ch) (push chg res)
     (setq chg

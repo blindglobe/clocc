@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.2 2001/11/02 22:31:15 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.3 2001/11/07 17:08:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -126,8 +126,15 @@ according to the given backend")
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable backend))
-  (format out "set terminal ~a~@[ ~a~]~%set output~@[ '~a'~]~%"
-          (pltm-terminal pt) (pltm-terminal-options pt) (pltm-target pt)))
+  (format out "set terminal ~a~@[ ~a~]~%"
+          (pltm-terminal pt) (pltm-terminal-options pt))
+  (if (pltm-target pt)
+      (format out "set output '~a'~%"
+              (make-pathname :type (if (string= "postscript"
+                                                (pltm-terminal pt))
+                                       "ps" (pltm-terminal pt))
+                             :defaults (pltm-target pt)))
+      (format out "set output~%")))
 
 (defconst +plot-term-screen+ plot-term
   (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows")
@@ -178,7 +185,8 @@ according to the given backend")
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-axis (:conc-name plax-))
-  (label "" :type string)
+  (name "" :type string)        ; gnuplot name: [xyz]{2}
+  (label "" :type string)       ; label: "value", "time"...
   (tics t :type boolean)
   (fmt "%g" :type string)
   (time-p nil :type boolean)
@@ -187,8 +195,8 @@ according to the given backend")
 (defstruct (plot-spec (:conc-name plsp-))
   (term +plot-term-screen+ :type plot-term)
   (timestamp +plot-timestamp+ :type (or null plot-timestamp))
-  (x-axis (make-plot-axis :label "x") :type plot-axis)
-  (y-axis (make-plot-axis :label "y") :type plot-axis)
+  (x-axis (make-plot-axis :name "x") :type plot-axis)
+  (y-axis (make-plot-axis :name "y") :type plot-axis)
   (data-style :lines :type symbol)
   (border t :type boolean)
   (timefmt nil :type (or null string))
@@ -209,13 +217,16 @@ according to the given backend")
 
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable backend))
-  (format out "set format ~a \"~a\"~%"
-          (plax-label pa) (plax-fmt pa))
-  (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-label pa))
-  (format out "set ~adata~:[~; time~]~%" (plax-label pa) (plax-time-p pa))
+  (format out "set format ~a \"~a\"~%" (plax-name pa) (plax-fmt pa))
+  (format out "set ~alabel \"~a\"~%" (plax-name pa) (plax-label pa))
+  (format out "set ~:[no~;~]~atics~%" (plax-tics pa) (plax-name pa))
+  (if (plax-time-p pa)
+      (format out "set timefmt \"~a\"~%set ~adata time~%"
+              (plax-fmt pa) (plax-name pa))
+      (format out "set ~adata~%" (plax-name pa)))
   (let ((range (plax-range pa)))
     (when range
-      (format out "set ~arange [~a:~a]~%" (plax-label pa)
+      (format out "set ~arange [~a:~a]~%" (plax-name pa)
               (%plotout (car range)) (%plotout (cdr range))))))
 
 (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
@@ -247,10 +258,10 @@ according to the given backend")
                   (xfmt (or timefmt "%g")) (yfmt "%g"))
   (make-plot-spec
    :data data :term (directive-term plot) :data-style data-style
-   :x-axis (make-plot-axis :label xlabel :tics xtics :fmt xfmt
+   :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
                            :range (when (and xb xe) (cons xb xe))
                            :time-p (not (null timefmt)))
-   :y-axis (make-plot-axis :label ylabel :tics ytics :fmt yfmt)
+   :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt)
    :grid grid :legend legend :title title :border border))
 
 (defgeneric make-plot-stream (directive)
@@ -286,12 +297,11 @@ Should not be called directly but only through `with-plot-stream'."
     (plot-msg "~s: plot directive ~s is deprecated; use ~s~%"
               'internal-with-plot-stream t :plot)
     (setq plot :plot))
-  (let ((plot-file (if (or (stringp plot) (pathnamep plot))
-                       (prog1 plot (setq plot :file))
-                       *gnuplot-file*))
-        (plot-stream (make-plot-stream plot))
-        (plot-spec (apply #'make-plot :data body-function opts)))
+  (let* ((plot-stream (make-plot-stream plot))
+         (plot-spec (apply #'make-plot :data body-function :plot plot opts))
+         (plot-file (pltm-target (plsp-term plot-spec))))
     (declare (stream plot-stream))
+    (when (or (stringp plot) (pathnamep plot)) (setq plot :file))
     (unwind-protect
          (plot-output plot-spec plot-stream backend)
       ;; clean up
@@ -304,7 +314,7 @@ Should not be called directly but only through `with-plot-stream'."
         ((t :plot)
          (close plot-stream)
          (plot-msg "Starting gnuplot...")
-         (close-pipe (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
+         (close-pipe (pipe-output *gnuplot-path* "/noend" plot-file))
          (format *gnuplot-msg-stream* "done.~%"))
         #+unix
         ((t :plot) (plot-msg "Done plotting.~%"))
@@ -312,8 +322,7 @@ Should not be called directly but only through `with-plot-stream'."
         (:wait
          (plot-msg "Waiting for gnuplot to terminate...")
          (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
-                 (run-prog *gnuplot-path* :args
-                           (list "/noend" *gnuplot-file*))))
+                 (run-prog *gnuplot-path* :args (list "/noend" plot-file))))
         #+unix
         (:wait
          (fresh-line *terminal-io*)

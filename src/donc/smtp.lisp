@@ -757,6 +757,13 @@ has been an helo/ehlo since they were last set
 
 ;; *** this may be redefined for your system
 ;; we use these values for file: "cf" "adr" "pw" "ac" "deliver"
+;; This version allows for virtual users but requires a little
+;; additional setup - search below for virtual user
+(defun user-file (user file)
+  (if (ext:probe-directory (format nil "/root/smtp/~a/" user))
+       (format nil "/root/smtp/~a/.smtp.~a" user file)
+    (format nil "/root/smtp/~a/.smtp.~a" "default" file)))
+#+ignore ;; old version which stores user files in their home dir's  
 (defun user-file (user file)
   (if (equal user "root")
       (format nil "/root/.smtp.~A" file)
@@ -1028,7 +1035,17 @@ has been an helo/ehlo since they were last set
   (deliver-msg c string)
   (sss:unbind 'data))
 
-(defun temp-mail-location (user) ;; *** temp mail files are written here
+;; *** temp mail files are written here
+;; the value returned should be writable by user (if it's a real user)
+;; This version supports virtual users.  Search for virtual users below
+(defun temp-mail-location (user)
+  ;; wherever this returns, the user should be
+  ;; able to delete his own files from there
+  (if (ext:probe-directory (format nil "/root/smtp/~a/" user))
+       (format nil "/root/smtp/~a/" user)
+    (format nil "/root/smtp/~a/" "default")))
+#+ignore ;; version that does not support virtual users
+(defun temp-mail-location (user)
   ;; wherever this returns, the user should be
   ;; able to delete his own files from there
   (declare (ignorable user))
@@ -1140,6 +1157,35 @@ Notice that sendmail to a local address does not go through our demon.
   (with-open-file (f file)
     (loop with line while (setf line (read-line f nil nil)) collect line)))
 
+;; *** used for virtual user support
+;; is this a "real" user - to whom we can actually deliver mail here
+(defun real-user (user)
+  (or (equal user "root")
+      (ext::probe-directory (format nil "/home/~a/" user))))
+
+#| virtual user support - added 2004/2
+Instead of a user's customization files being in his home directory
+we create a separate directory for each user who wants to customize
+and one other "default" directory for other users.
+All virtual users need their own customization directories.
+Real users who customize should be able to write to their customization
+directories.
+What I do:
+ mkdir /root/smtp # the user customization directories
+ mkdir /root/smtp/default # the default customization directory
+ mkdir /root/smtp/don # a non-default user directory
+ chown don /root/smtp/don # which should be writable by the user
+To add a virtual user, first add a line to the translation file such as
+ ("feedback" "feedback") ;; the first is the address, the second the user
+then create a directory as above
+ mkdir /root/smtp/feedback
+and at very least, give it a delivery file to say what to do with
+the mail for that user, e.g. put this in /root/smtp/feedback/.smtp.deliver
+ #! /bin/bash
+ cat $1 | /usr/lib/sendmail -i -N never -f $2 don
+ rm $1
+|#
+
 (defun deliver-msg (connection body)
   (declare (special domain domain-ip reverse-path forward-path data))
   (setf data (reverse data));; in transmission order
@@ -1158,7 +1204,9 @@ Notice that sendmail to a local address does not go through our demon.
 	    ;; we assume incorrectly it's for user@here
 	    ;; which has the benefit (I think) of NOT relaying
 	    (setf deliver-file (user-file user "deliver"))
-	    (if (probe-file deliver-file)
+	    (if (and (probe-file deliver-file)
+		     ;; 2004/02/26 virtual user support
+		     (real-user user))
 		(progn;; every such user gets his own copy
 		  (setf file (write-temp-mail user body))
 		  (shell-command
@@ -1175,7 +1223,9 @@ Notice that sendmail to a local address does not go through our demon.
 		      (shell-command
 		       ;; <default-deliver> <filename> <sender> <user> 
 		       (format nil "~A ~A ~A ~A > ~A"
-			       *default-deliver*
+			       ;; 2004/02/26 virtual user support
+			       (if (probe-file deliver-file) deliver-file
+				 *default-deliver*)
 			       shared-file (string-trim "<>" reverse-path)
 			       user *tmp-err-file*)))
 		(unless (= 0 result)

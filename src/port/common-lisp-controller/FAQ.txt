@@ -24,6 +24,12 @@ Q3: What systems are available?
 
 A3: Have a look in /usr/share/common-lisp/systems/
 
-Q4: What is the best way to use a ASDF definition filea
+Q4: What is the best way to use a ASDF definition file
 
 A4: See the README.packaging document.
+
+Q5: Why can't I use xinetd?
+
+A5: See BTS bug #176464. xinetd doesn't handle unknown services
+(that have to be specified with a number, not a name) well. This
+breaks the invocation of the daemon.

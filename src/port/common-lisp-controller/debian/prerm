@@ -20,7 +20,9 @@ case "$1" in
         if [ -L /usr/doc/common-lisp-controller ]; then
           rm -f /usr/doc/common-lisp-controller
         fi
-        update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
+	# Updates by KMR to make sure any previous form of service is removed
+        update-inetd --remove "^8990@localhost\t.*"
+        update-inetd --remove "^8990\t.*"
     	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
             if [ -f "$compiler" -a -r "$compiler" ] ; then
              i=${compiler##*/}

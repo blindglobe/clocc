@@ -41,17 +41,17 @@
   ;; Otherwise, expands to the KEYSYM.
   (let ((mapping (find-if #'(lambda (mapping)
 			      ;; Better to use keysym-mapping accessors directly, but in R3 CLX these
-			      ;; macros are defined only at compile time. 
-			      (and (characterp (first mapping))		       ; xlib::keysym-mapping-object 
-				   (not (second mapping))		       ; xlib::keysym-mapping-mask 
-				   (not (third mapping))		       ; xlib::keysym-mapping-modifiers 
-				   (not (fourth mapping))		       ; xlib::keysym-mapping-lowercase 
-				   (not (fifth mapping))		       ; xlib::keysym-mapping-translate 
+			      ;; macros are defined only at compile time.
+			      (and (characterp (first mapping))		       ; xlib::keysym-mapping-object
+				   (not (second mapping))		       ; xlib::keysym-mapping-mask
+				   (not (third mapping))		       ; xlib::keysym-mapping-modifiers
+				   (not (fourth mapping))		       ; xlib::keysym-mapping-lowercase
+				   (not (fifth mapping))		       ; xlib::keysym-mapping-translate
 				   ))
-			  
+
 			  (gethash keysym xlib::*keysym->character-map*))))
     `,(if mapping
-	(first mapping)							       ; xlib::keysym-mapping-object 
+	(first mapping)							       ; xlib::keysym-mapping-object
 	keysym)))
 
 
@@ -64,19 +64,19 @@
     #\newline                                'text-complete
     #\linefeed                               'text-complete
     (char-or-keysym #.(xlib::keysym 255 83)) '(text-move-point :chars 1)       ; Right Arrow
-    (char-or-keysym #.(xlib::keysym 255 81)) '(text-move-point :chars -1)      ; Left Arrow 
+    (char-or-keysym #.(xlib::keysym 255 81)) '(text-move-point :chars -1)      ; Left Arrow
     (char-or-keysym #.(xlib::keysym 255 82)) 'ignore			       ; Up Arrow
     (char-or-keysym #.(xlib::keysym 255 84)) 'ignore			       ; Down Arrow
 
-    ;; KCL or CMUCL doesn't support char-bits!
-    #-(or kcl cmu) #\Control-\y    #-(or kcl cmu) 'edit-text-paste
-    #-(or kcl cmu) #\Control-\w    #-(or kcl cmu) 'edit-text-cut
-    #-(or kcl cmu) #\Meta-\w       #-(or kcl cmu) 'display-text-copy
-    #-(or kcl cmu) #\Control-\a    #-(or kcl cmu) '(text-move-sol)
-    #-(or kcl cmu) #\Control-\e    #-(or kcl cmu) '(text-move-eol)
-    #-(or kcl cmu) #\Control-\k    #-(or kcl cmu) '(text-delete-eol)
+    ;; CLISP, KCL or CMUCL do not support char-bits!
+    #-(or kcl cmu clisp) #\Control-\y #-(or kcl cmu clisp) 'edit-text-paste
+    #-(or kcl cmu clisp) #\Control-\w #-(or kcl cmu clisp) 'edit-text-cut
+    #-(or kcl cmu clisp) #\Meta-\w    #-(or kcl cmu clisp) 'display-text-copy
+    #-(or kcl cmu clisp) #\Control-\a #-(or kcl cmu clisp) '(text-move-sol)
+    #-(or kcl cmu clisp) #\Control-\e #-(or kcl cmu clisp) '(text-move-eol)
+    #-(or kcl cmu clisp) #\Control-\k #-(or kcl cmu clisp) '(text-delete-eol)
     ))
-	      
+
 
 ;;;----------------------------------------------------------------------------+
 ;;;                                                                            |
@@ -90,15 +90,15 @@
   ((commands         :type	     list
 		     :initform       (list *default-edit-text-field-command-table*)
 		     :initarg	     :commands
-		     :accessor	     edit-text-commands)   
+		     :accessor	     edit-text-commands)
 
    (focus-p          :type           boolean
 		     :initform       nil
 		     :accessor       edit-text-focus-p))
-  
+
   (:resources
     (cursor :initform *i-bar-cursor-index* :type cursor))
-  
+
   (:documentation  "Basic behaviors for editing text."))
 
 
@@ -108,7 +108,7 @@
 ;;;                              Event Handling                                |
 ;;;                                                                            |
 ;;;----------------------------------------------------------------------------+
- 
+
 (defevent text-editor (:button-press :button-1 :control) edit-text-cut)
 (defevent text-editor :enter-notify  (change-focus t))
 (defevent text-editor :leave-notify  (change-focus nil))
@@ -122,12 +122,12 @@
       (and
 	;; Text window actually the one gaining/losing focus?
 	(if explicit-p
-	    (member kind '(:ancestor :inferior :nonlinear))     
+	    (member kind '(:ancestor :inferior :nonlinear))
 	    focus-p)
 
 	;; Actually losing when leaving?
 	(or new-value explicit-p (not (eq (input-focus (contact-display text)) text))))
-      
+
       (setf (edit-text-focus-p text) new-value))))
 
 
@@ -148,24 +148,24 @@
 	((scale  (contact-scale text))
 	 (caret  (getf *text-caret-dimensions* scale))
 	 (offset (text-caret-baseline-offset caret)))
-	
+
 	;; Get image and dimensions for active/inactive caret.
 	(multiple-value-bind (width height image)
 	    (if focus-p
 		(values
 		  (text-caret-width caret)
-		  (text-caret-height caret)		
+		  (text-caret-height caret)
 		  (getf (getf *text-caret-images* :active) scale))
-		
+
 		(values
 		  nil
-		  (or (text-caret-inactive-height caret) (text-caret-height caret))		
+		  (or (text-caret-inactive-height caret) (text-caret-height caret))
 		  (getf (getf *text-caret-images* :inactive) scale)))
-	  
+
 	  ;; Adjust amount of image to copy.
 	  (setf width  (or width height)
 		height (min height (+ (text-caret-descent text scale) offset)))
-	  
+
 	  ;; Copy image pixmap.
 	  (multiple-value-bind (x y) (text-base-position text point)
 	    (using-gcontext (gc :drawable text :function boole-xor :exposures :off)
@@ -237,26 +237,26 @@ Returns the deleted text."))
   (let*
     ((display     (contact-display text))
      (client-clip (display-clipboard-text display))
-     (paste       
+     (paste
        ;; Does this client own the :CLIPBOARD selection?
        (if (plusp (length client-clip))
-	   
+
 	   ;; Yes, get it the easy way.
 	   client-clip
-	   
+
 	   ;; No, use interclient communication.
 	   (flet
-	     ((throw-convert (text) 
+	     ((throw-convert (text)
 			     (declare (ignore text))
 			     (with-event (property) (throw :convert property))))
-	     
+
 	     (let ((time (when (processing-event-p) (with-event (time) time))))
-	       (with-event-mode (text `(:selection-notify ,#'throw-convert)) 
+	       (with-event-mode (text `(:selection-notify ,#'throw-convert))
 		 (convert-selection :clipboard :string text :paste time)
-		 
+
 		 ;; Wait for :selection-notify to report result of conversion.
 		 (when (catch :convert (loop (process-next-event display)))
-		   
+
 		   ;; Conversion successful --- get stored value.
 		   (get-property
 		     text :paste :result-type 'string
@@ -265,9 +265,9 @@ Returns the deleted text."))
 		     ;; to the keysym encoding, hence the following transform function.
 		     ;; Note that #'code-char might work on many systems, but this is not guaranteed
 		     ;; since Common Lisp does not specify a standard character encoding.
-		     
+
 		     :transform #'(lambda (code) (keysym->character display code))))))))))
-    
+
     (if paste
 	(text-insert text paste)
 	(bell display))
@@ -285,12 +285,12 @@ Returns the deleted text."))
     (let* ((changed-p (if new-value (not focus-p) focus-p))
 	   (caret-p   (and changed-p (not (text-selection-range text)))))
       (when caret-p
-	(setf (text-caret-displayed-p text) nil))      
-      (call-next-method)      
+	(setf (text-caret-displayed-p text) nil))
+      (call-next-method)
       (when changed-p
 	(when caret-p
 	  (setf (text-caret-displayed-p text) t))
-	(apply-callback text (if new-value :resume :suspend)))))  
+	(apply-callback text (if new-value :resume :suspend)))))
   new-value)
 
 
@@ -307,12 +307,12 @@ Returns the deleted text."))
 		     :initform       nil
 		     :initarg	     :length
 		     :accessor	     edit-text-field-length))
-  
+
   (:resources
     (font :initform *default-display-text-font*)
     (display-gravity :initform :west)
     length)
-  
+
   (:documentation  "A single line of editable text."))
 
 (defun make-edit-text-field (&rest initargs)
@@ -340,12 +340,12 @@ Returns the deleted text."))
 ;;;                                                                            |
 ;;;----------------------------------------------------------------------------+
 
-(defmethod display :around ((text edit-text-field) &optional x y width height &key) 
-  
+(defmethod display :around ((text edit-text-field) &optional x y width height &key)
+
   ;; Display underline
-  (multiple-value-bind (base-x base-y) (call-next-method)    
+  (multiple-value-bind (base-x base-y) (call-next-method)
     (let ((scale (contact-scale text)))
-      (with-slots (foreground font length width clip-rectangle) text      
+      (with-slots (foreground font length width clip-rectangle) text
 	(let*
 	  ((underline-y (+ base-y (text-caret-descent text scale)))
 	   ;; Length of line reflects max string length
@@ -358,12 +358,12 @@ Returns the deleted text."))
 				  ;; Use average char width and hope for the best.
 				  (pixel-round (+ (min-char-width font) (max-char-width font)) 2)))
 			    width)))
-	  
+
 	  (using-gcontext (gc :drawable   text
 			      :foreground foreground
 			      :clip-mask  clip-rectangle)
 	    (draw-line text gc start-x underline-y end-x underline-y))))))
-  
+
   ;; Display caret, current selection
   (setf (text-selection-displayed-p text x y width height) t)
   (setf (text-caret-displayed-p text) t))
@@ -384,29 +384,29 @@ Returns the deleted text."))
     (with-slots (font foreground clip-rectangle) text
     (let ((ascent  (font-ascent font))
 	  (descent (font-descent font)))
-      
+
       (multiple-value-bind (from-x from-y)
 	  (text-mark-point text from)
 	(let ((to-x (text-mark-point text to)))
-	  
+
 	  (using-gcontext
 	    (gc :drawable   text
 		:function   boole-xor
 		:clip-mask  clip-rectangle
 		:foreground (logxor
 			      foreground
-			      (contact-current-background-pixel text)))	    	    
-	    
+			      (contact-current-background-pixel text)))
+
 	    (if (every #'numberp (list exposed-x exposed-y
 				       exposed-width exposed-height))
-		
+
 		;; Clip highlight to intersection of clip rectangle and exposed region.
 		(let
 		  ((old-clip-x      (display-clip-x text))
 		   (old-clip-y      (display-clip-y text))
 		   (old-clip-width  (display-clip-width text))
 		   (old-clip-height (display-clip-height text)))
-		  
+
 		  (setf
 		    (display-clip-x text)     (max old-clip-x exposed-x)
 		    (display-clip-y text)     (max old-clip-y exposed-y)
@@ -425,13 +425,13 @@ Returns the deleted text."))
 			(abs (- from-x to-x))
 			(+ ascent descent)
 			t)))
-		  
+
 		  ;; Restore clip rectangle
 		  (setf (display-clip-x text)      old-clip-x
 			(display-clip-y text)      old-clip-y
 			(display-clip-width text)  old-clip-width
 			(display-clip-height text) old-clip-height))
-		
+
 		;; Else draw highlight without additional clipping
 		(draw-rectangle
 		  text gc
@@ -453,7 +453,7 @@ Returns the deleted text."))
   (with-slots
     (length font (contact-width width) (contact-height height) (contact-border-width border-width))
     text
-    (multiple-value-bind (text-width text-height) 
+    (multiple-value-bind (text-width text-height)
 	(if length
 	    ;; Prefer to be big enough for length chars (use average char width and hope for the best).
 	    (values (* length (pixel-round (+ (min-char-width font) (max-char-width font)) 2))
@@ -462,7 +462,7 @@ Returns the deleted text."))
 	    ;; Else use current source extent.
 	    (display-text-extent text))
 
-      (let ((scale (contact-scale text)))	
+      (let ((scale (contact-scale text)))
 	(values
 	  ;; Ensure wide enough to display caret at end.
 	  (max (+ text-width (text-caret-width (getf *text-caret-dimensions* scale))) (or width contact-width))
@@ -481,7 +481,7 @@ Returns the deleted text."))
   (multiple-value-bind (width height ascent) (call-next-method)
     (declare (ignore height))
     (let ((descent (1+ (text-caret-descent text (contact-scale text)))))
-      (values width (+ ascent descent) ascent descent))))	  
+      (values width (+ ascent descent) ascent descent))))
 
 
 
@@ -496,7 +496,7 @@ Returns the deleted text."))
   (with-slots (commands) edit-text
     (with-event (character keysym)
       (let ((input (or character keysym)))
-	
+
 	;; Look up command in command table list.
 	(multiple-value-bind (command default)
 	    (dolist (table commands)
@@ -504,14 +504,14 @@ Returns the deleted text."))
 		     (default (unless command (text-command table :default))))
 		(when (or command default)
 		  (return (values command default)))))
-	  
+
 	  (cond
 	    ;; Command found --- call with edit-text and other args.
 	    (command
 	     (if (listp command)
 		 (apply (first command) edit-text (rest command))
 		 (funcall command edit-text)))
-	    
+
 	    ;; Default command found --- call with edit-text, input, and other args.
 	    (default
 	     (if (listp default)
@@ -519,7 +519,7 @@ Returns the deleted text."))
 		 (funcall default edit-text input)))))))))
 
 
-  
+
 (defgeneric text-insert (edit-text chars)
   (:documentation "Insert the CHARS into the EDIT-TEXT at the current point
 and increment the point."))
@@ -547,36 +547,36 @@ and increment the point."))
 
 
 (flet
-  ((edit-text-field-insert (text char) 
+  ((edit-text-field-insert (text char)
      (declare (type edit-text-field text)
 	      (type (or character string) char))
-     (with-slots (buffer mark point gravity length) text 
+     (with-slots (buffer mark point gravity length) text
        (multiple-value-bind (select-start select-end) (text-selection-range text)
-	 
+
 	 ;; Invoke :insert callback
 	 (let ((initial-insert-point (or select-start point)))
 	   (multiple-value-bind (insert-point char)
 	       (apply-callback-else (text :insert text initial-insert-point char)
 		 (values initial-insert-point char))
-	     
+
 	     (when
 	       (or
 		 ;; Insertion refused?
 		 (not insert-point)
-		 
+
 		 ;; Too many chars?
 		 (and length (>= (buffer-length buffer) length)
 		      (bell (contact-display text)) t))
-	       
-	       ;; Insertion not allowed. 
+
+	       ;; Insertion not allowed.
 	       (return-from edit-text-field-insert))
-	     
+
 	     ;; If insert point altered, then clear selection and do not delete it.
 	     (unless (or (not select-start) (= insert-point initial-insert-point))
 	       (setf (edit-text-mark text) point
 		     select-start          nil))
-	     
-	     (while-changing-marks (text) 
+
+	     (while-changing-marks (text)
 	       (let*
 		 ((clear-all-p
 		    (case gravity
@@ -584,26 +584,26 @@ and increment the point."))
 		      (otherwise                       t)))
 		  (clear-position
 		    (if clear-all-p 0 insert-point)))
-		 
+
 		 ;; Clear before changing source.
 		 (multiple-value-bind (base-x base-y) (text-base-position text clear-position)
 		   (text-clear-line text base-x base-y)
-		   
+
 		   ;; Delete current selection.
 		   (when select-start
 		     (buffer-delete buffer select-start select-end))
-		   
-		   
+
+
 		   ;; Insert new character and move point
-		   (let ((new-point (buffer-line-insert buffer char insert-point)))	      	      
-		     
+		   (let ((new-point (buffer-line-insert buffer char insert-point)))
+
 		     ;; Refresh new line
 		     (text-refresh-line
 		       text clear-position
 		       :clear-p nil
 		       :base-x  (unless clear-all-p base-x)
-		       :base-y  base-y)	       
-		     
+		       :base-y  base-y)
+
 		     ;; Update point, mark.
 		     (setf mark (setf point new-point))))))))))))
 
@@ -613,9 +613,9 @@ and increment the point."))
   (defmethod text-insert ((text edit-text-field) (char string))
     (edit-text-field-insert text char)))
 
- 
+
 (defgeneric text-move-point (edit-text &key lines chars)
-  (:documentation "Increment the point of the EDIT-TEXT by the 
+  (:documentation "Increment the point of the EDIT-TEXT by the
 given number of LINES and CHARS."))
 
 (defmethod text-move-point ((text text-editor) &key (lines 0) (chars 0))
@@ -626,7 +626,7 @@ given number of LINES and CHARS."))
 	    (text-change-highlight text point new-point)
 	    (setf mark (move-mark mark new-point)))
 	(setf point (move-mark point new-point))))
-    
+
     (apply-callback text :point text (buffer-mark-position buffer point))))
 
 
@@ -660,37 +660,37 @@ given number of LINES and CHARS."))
     (text-rubout text)))
 
 (defgeneric text-rubout (edit-text)
-  (:documentation "Decrement the current point and delete the character in the EDIT-TEXT 
+  (:documentation "Decrement the current point and delete the character in the EDIT-TEXT
 at the new point."))
 
 
 (defmethod text-rubout ((text edit-text-field))
   (with-slots (point mark gravity buffer) text
     (multiple-value-bind (select-start select-end) (text-selection-range text)
-      
+
       ;; Attempt to delete non-existent character?
       (if (and (not select-start) point (zerop point))
-	  
+
 	  ;; Yes, beep a warning.
 	  (bell (contact-display text))
-	  
-	  ;; No, perform delete.	  
+
+	  ;; No, perform delete.
 	  (let ((initial-start (or select-start (buffer-move-mark buffer point :chars -1)))
 		(initial-end  (or select-end point)))
-	    
+
 	    ;; Invoke :delete callback.
 	    (multiple-value-bind (start end)
 		(apply-callback-else (text :delete text initial-start initial-end)
 		  (values initial-start initial-end))
-	      
+
 	      ;; Deletion allowed?
 	      (unless start (return-from text-rubout))
-	      
+
 	      ;; If delete range altered, then clear selection and do not delete it.
 	      (unless (and (= start initial-start) (= end initial-end))
 		(setf (edit-text-mark text) point
 		      select-start          nil))
-	      
+
 	      (let*
 		((clear-all-p
 		   (case gravity
@@ -698,16 +698,16 @@ at the new point."))
 		     (otherwise                       t)))
 		 (clear-position
 		   (if clear-all-p 0 start)))
-		
+
 		(while-changing-marks (text)
 		  ;; Clear before changing source.
 		  (multiple-value-bind (base-x base-y) (text-base-position text clear-position)
 		    (text-clear-line text base-x base-y)
-		    
+
 		    ;; Delete chars and reset point, mark.
-		    (buffer-line-delete buffer (setf point (setf mark start)) end)      
-		    
-		    ;; Redisplay chars	
+		    (buffer-line-delete buffer (setf point (setf mark start)) end)
+
+		    ;; Redisplay chars
 		    (text-refresh-line
 		      text clear-position
 		      :clear-p nil
@@ -725,7 +725,7 @@ at the new point."))
 
     (if verified-p
 	(apply-callback text :complete)
-	
+
 	(confirm-p
 	  :near          text
 	  :message       (or message "Text changes not accepted.")
@@ -749,22 +749,22 @@ at the new point."))
     (char-or-keysym #.(xlib::keysym 255 82)) '(text-move-point :lines -1)  ; Up Arrow
     (char-or-keysym #.(xlib::keysym 255 84)) '(text-move-point :lines 1)  ; Down Arrow
 
-    ;; KCL or CMUCL doesn't support char-bits!
-    #-(or kcl cmu) #\Control-\y      #-(or kcl cmu) 'edit-text-paste
-    #-(or kcl cmu) #\Control-\w      #-(or kcl cmu) 'edit-text-cut
-    #-(or kcl cmu) #\Meta-\w         #-(or kcl cmu) 'display-text-copy
-    #-(or kcl cmu) #\Control-\a      #-(or kcl cmu) '(text-move-sol)
-    #-(or kcl cmu) #\Control-\e      #-(or kcl cmu) '(text-move-eol)
-    #-(or kcl cmu) #\Control-\k      #-(or kcl cmu) '(text-delete-eol)
+    ;; CLISP, KCL and CMUCL do not support char-bits!
+    #-(or kcl cmu clisp) #\Control-\y #-(or kcl cmu clisp) 'edit-text-paste
+    #-(or kcl cmu clisp) #\Control-\w #-(or kcl cmu clisp) 'edit-text-cut
+    #-(or kcl cmu clisp) #\Meta-\w    #-(or kcl cmu clisp) 'display-text-copy
+    #-(or kcl cmu clisp) #\Control-\a #-(or kcl cmu clisp) '(text-move-sol)
+    #-(or kcl cmu clisp) #\Control-\e #-(or kcl cmu clisp) '(text-move-eol)
+    #-(or kcl cmu clisp) #\Control-\k #-(or kcl cmu clisp) '(text-delete-eol)
     ))
- 
+
 (defcontact edit-text (text-editor display-text)
   ((commands :initform (list *default-edit-text-command-table*)))
-  
+
   (:resources
     (display-gravity :initform :north-west))
 
-  
+
   (:documentation  "Multiple lines of editable text."))
 
 (defun make-edit-text (&rest initargs)
@@ -781,56 +781,56 @@ at the new point."))
 ;;;----------------------------------------------------------------------------+
 
 
-(let ((insert-start (make-mark)) 
-      (insert-mark  (make-mark)))  
+(let ((insert-start (make-mark))
+      (insert-mark  (make-mark)))
   (flet
     ((edit-text-insert (text string)
        (declare (type edit-text text)
 		(type (or character string) string))
-    
+
        (with-slots (buffer mark point font gravity alignment extent-left extent-width) text
 	 (multiple-value-bind (select-start select-end) (text-selection-range text)
-	   
+
 	   ;; Initialize insert mark.
-	   (move-mark insert-start (or select-start point)) 
-	   
+	   (move-mark insert-start (or select-start point))
+
 	   ;; Invoke :insert callback, if necessary
 	   (multiple-value-bind (insert-pos string)
 	       (apply-callback-else
 		 (text :insert text (buffer-mark-position buffer insert-start) string)
 		 (values t string))
-	     
+
 	     ;; Insert allowed?
 	     (unless insert-pos (return-from edit-text-insert))
-	     
+
 	     ;; New insert position returned?
 	     (unless (eq insert-pos t)
 	       ;; Yes, convert to insert mark.
 	       (buffer-position-mark buffer insert-pos insert-start))
-	     
+
 	     ;; If insert point altered, then clear selection and do not delete it.
 	     (unless (or (not select-start) (mark-equal insert-start select-start))
 	       (setf (edit-text-mark text) point
 		     select-start          nil))
-	     
+
 	     (while-changing-marks (text)
-	       (let ((small-delete-p 
+	       (let ((small-delete-p
 		       (cond
 			 (select-start
-			  ;; Delete current selection, if any. 
+			  ;; Delete current selection, if any.
 			  (buffer-delete buffer select-start select-end)
-			  
+
 			  ;; Return true if delete limited to one line.
 			  (= (mark-line-index select-end) (mark-line-index select-start)))
-			 
+
 			 (:else
 			  t))))
-		 
+
 		 ;; Insert new string and move insert mark
 		 (move-mark insert-mark insert-start)
 		 (buffer-insert buffer string insert-mark)
 		 (move-mark mark (move-mark point insert-mark))
-		 
+
 		 ;; Redisplay is simple and efficient for most common case ---
 		 ;; :north-west gravity, :left alignment, and insert/delete affecting only one line.
 		 ;; Otherwise, redisplay is simple and inefficient! Replace with more
@@ -840,47 +840,47 @@ at the new point."))
 		     (if
 		       (or (and (eq gravity :north-west) (eq alignment :left))
 			   (and (eq gravity :north-east) (eq alignment :right)))
-		    
-		       ;; Optimize this case... 
+
+		       ;; Optimize this case...
 		       (let*
 			 ((one-line-p  (and small-delete-p
 					    (= (mark-line-index insert-mark)
 					       (mark-line-index insert-start))))
 			  (ascent      (font-ascent font))
-			  (descent     (font-descent font)) 
+			  (descent     (font-descent font))
 			  (clear-start (mark-line-index insert-start))
 			  (line-height (+ ascent descent)))
-			 
+
 			 ;; Clear damaged areas. If multiple lines damaged, just clear to bottom of window.
-			 (when (eq alignment :left)    
+			 (when (eq alignment :left)
 			   ;; This case can be optimized: clear first line only from insert point.
 			   (text-clear-line
-			     text 
+			     text
 			     (text-base-x text clear-start (mark-index insert-start))
 			     (text-base-y text clear-start)))
-			 
+
 			 (unless (and (eq alignment :left) one-line-p)
 			   (when (eq alignment :left)
 			     ;; First line already cleared above.
 			     (incf clear-start))
-			   
-			   ;; Clear one or more lines. 
+
+			   ;; Clear one or more lines.
 			   (clear-area
 			     text
 			     :x extent-left
 			     :y (- (text-base-y text clear-start) ascent)
 			     :width extent-width
 			     :height (when one-line-p line-height)))
-			 
+
 			 ;; If multiple lines damaged, just redisplay to end of buffer.
 			 (values insert-start (if one-line-p insert-mark nil) t))
-		   
+
 		       ;; Else punt and redisplay everything!  Replace with more efficient
 		       ;; algorithm when possible.
 		       (progn
 			 (clear-area text)
 			 (values 0 nil nil)))
-		   
+
 		   (setf (text-extent-defined-p text) nil)
 		   (text-refresh text refresh-start refresh-end clear-p)))))))))
 
@@ -894,14 +894,14 @@ at the new point."))
       (edit-text-insert text char))
 
     (defmethod text-insert-nongraphic ((text edit-text) (char (eql #\linefeed)))
-      (edit-text-insert text #\newline)))) 
+      (edit-text-insert text #\newline))))
 
 
 (let ((prev-point (make-mark)))
-  
+
   (defmethod text-rubout ((text edit-text))
     (with-slots (point mark gravity alignment buffer font extent-left extent-width) text
-      
+
       (multiple-value-bind (initial-start initial-end) (text-selection-range text)
 	;; Attempt to delete non-existent character?
 	(if
@@ -909,87 +909,87 @@ at the new point."))
 
 	  ;; Yes, beep a warning.
 	  (bell (contact-display text))
-	  
-	  ;; No, perform delete. 
+
+	  ;; No, perform delete.
 	  (while-changing-marks (text)
 	    (move-mark prev-point point)
-	    
+
 	    ;; Determine initial delete range.
 	    (setf initial-start (or initial-start (buffer-move-mark buffer point :chars -1))
 		  initial-end   (or initial-end prev-point))
-	    
+
 	    ;; Invoke :delete callback to determine actual delete range.
 	    (multiple-value-bind (start end)
 		(apply-callback-else (text :delete text initial-start initial-end)
 		  (values initial-start initial-end))
-	      
+
 	      ;; Deletion allowed?
-	      (unless start (return-from text-rubout)) 
-	      
+	      (unless start (return-from text-rubout))
+
 	      ;; If delete range altered, then clear selection and do not delete it.
 	      (unless (and (mark-equal start initial-start) (mark-equal end initial-end))
-		(setf (edit-text-mark text) point)) 
-	      
+		(setf (edit-text-mark text) point))
+
 	      ;; Clear damaged area, delete chars, then redisplay.
 	      ;;
 	      ;; Redisplay is simple and efficient for most common case ---
 	      ;; :north-west gravity, :left alignment, and delete affecting only one line.
 	      ;; Otherwise, redisplay is simple and inefficient! Replace with more
 	      ;; sophisticated algorithm when possible.
-	      
+
 	      (let ((start (move-mark initial-start start))
 		    (end   (move-mark initial-end end)))
-		
+
 		;; Clear efficiently, if possible.
-		(multiple-value-bind (refresh-start refresh-end clear-p) 
+		(multiple-value-bind (refresh-start refresh-end clear-p)
 		    (if
 		      (or (and (eq gravity :north-west) (eq alignment :left))
 			  (and (eq gravity :north-east) (eq alignment :right)))
-		      
-		      ;; Optimize this case... 
+
+		      ;; Optimize this case...
 		      (let*
 			((one-line-p  (= (mark-line-index start) (mark-line-index end)))
 			 (ascent      (font-ascent font))
-			 (descent     (font-descent font)) 
+			 (descent     (font-descent font))
 			 (clear-start (mark-line-index start))
 			 (line-height (+ ascent descent)))
-			
+
 			;; Clear damaged areas. If multiple lines damaged, just clear to bottom of window.
-			(when (eq alignment :left)    
+			(when (eq alignment :left)
 			  ;; This case can be optimized: clear first line only from delete point.
 			  (text-clear-line
-			    text 
+			    text
 			    (text-base-x text clear-start (mark-index start))
 			    (text-base-y text clear-start)))
-			
+
 			(unless (and (eq alignment :left) one-line-p)
 			  (when (eq alignment :left)
 			    ;; First line already cleared above.
 			    (incf clear-start))
-			  
-			  ;; Clear one or more lines. 
+
+			  ;; Clear one or more lines.
 			  (clear-area
 			    text
 			    :x extent-left
 			    :y (- (text-base-y text clear-start) ascent)
 			    :width extent-width
 			    :height (when one-line-p line-height)))
-			
+
 			(values start (when one-line-p end) t))
-		      
+
 		      ;; Else punt and redisplay everything!  Replace with more efficient
 		      ;; algorithm when possible.
 		      (progn
 			(clear-area text)
 			(values 0 nil nil)))
-		  
+
 		  ;; Delete chars.
 		  (buffer-delete buffer start end)
-		  
+
 		  ;; Redisplay buffer.
 		  (setf (text-extent-defined-p text) nil)
-		  (text-refresh text refresh-start refresh-end clear-p)) 
-		
+		  (text-refresh text refresh-start refresh-end clear-p))
+
 		;; Update point and mark.
 		(move-mark point (move-mark mark start))))))))))
 

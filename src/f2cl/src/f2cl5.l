@@ -1401,7 +1401,7 @@
 		    (t
 		     `(,(first p) ,@(mapcar #'grovel-frefs (rest p))))))
 	    (generate-with-array (arrays body)
-	      (let ((result body))
+	      (let (array-data-forms)
 		(flet ((find-type (a)
 			 (dolist (x (rest (first formal-arg-decls)))
 			   (when (member a x)
@@ -1411,14 +1411,9 @@
 		    (let ((d-name (array-data-name a))
 			  (o-name (array-offset-name a))
 			  (d-type (find-type a)))
-		      (setf result `(with-array-data (,d-name
-						      ,o-name
-						      ,a)
-				     (declare (type f2cl-lib:integer4 ,o-name)
-				              (type (simple-array ,d-type (*)) ,d-name)
-				              (ignorable ,o-name ,d-name))
-				     ,result))))
-		      result))))
+		      (push `(,a ,d-type ,d-name ,o-name) array-data-forms)))
+		  `(with-multi-array-data ,array-data-forms
+		     ,body)))))
 	 ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
 
 	 ;; If array-slicing is not used and the array-type is
@@ -2770,8 +2765,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.111 2003/11/12 05:32:49 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.112 2003/11/13 05:39:09 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.112  2003/11/13 05:39:09  rtoy
+;;; Generate code to use the new macro WITH-MULTI-ARRAY-DATA.
+;;;
 ;;; Revision 1.111  2003/11/12 05:32:49  rtoy
 ;;; The test for matching arglist for ENTRY points was wrong.  Fix it.
 ;;;

@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.1 2000/05/23 22:09:59 sds Exp $
+;;; $Id: cvs.lisp,v 2.2 2000/05/23 22:13:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -202,7 +202,6 @@
         (when (null (cdr rr)) (push ff (author-owns au)))))
     (setq aul (sort (mapcar #'cdr (cdr (hash-table->alist aht))) #'<
                     :key (compose length author-revs)))
-    (progn (terpri)
     (format t "name        owns   modified  revisions   lines changed~%")
     (dolist (au aul)
       (format t "~a~10t ~5:d ~10:d ~10:d ~15:d~%"
@@ -213,7 +212,7 @@
             (reduce #'+ aul :key (lambda (au) (length (author-owns au))))
             (reduce #'+ aul :key (lambda (au) (length (author-mods au))))
             (reduce #'+ aul :key (lambda (au) (length (author-revs au))))
-            (reduce #'+ aul :key #'author-lines)))
+            (reduce #'+ aul :key #'author-lines))
     (values aul aht)))
 
 (provide :cvs)

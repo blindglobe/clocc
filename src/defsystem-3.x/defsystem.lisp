@@ -3649,8 +3649,7 @@ D
 				default-action (version *version*))
   ;; If the pathname is present, this behaves like the old require.
   (unless (and module-name
-	       (find #-CMU (string module-name)
-		     #+CMU (string-downcase (string module-name))
+	       (find (string module-name)
 		     *modules* :test #'string=))
     (cond (pathname
 	   (funcall *old-require* module-name pathname))

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.17 2001/07/03 14:08:12 sds Exp $
+;;; $Id: gq.lisp,v 2.18 2001/08/21 15:02:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -172,12 +172,14 @@ This is just a debugging function, to be called interactively."
   "Get the data from the Yahoo WWW server."
   (with-url-xml (sock (apply #'gq-complete-url url ticks)
                       :timeout *gq-timeout* :err *gq-error-stream*)
+    (loop :until (string= "<tr" (read-line sock))) (read-line sock)
     (do ((ti ticks (cdr ti)) res dt)
         ((null ti) (cons (or dt (gq-guess-date)) (nreverse res)))
       (gq-skip sock (symbol-name (car ti)))
       (setq dt (string-tokens (gq-next sock 3)))
-      (print dt)
+      (mesg :log *gq-error-stream* "raw date: ~s~%" dt)
       (setq dt (infer-date (car dt) (cadr dt)))
+      (mesg :log *gq-error-stream* "parsed date: ~s~%" dt)
       (push (mk-daily-data :nav (gq-next-num sock) :chg (gq-next-num sock)
                            :prc (/ (gq-next-num sock) 100d0))
             res)

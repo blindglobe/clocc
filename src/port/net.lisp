@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.52 2004/08/02 23:09:47 sds Exp $
+;;; $Id: net.lisp,v 1.53 2004/11/09 16:31:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -26,7 +26,7 @@
    socket open-socket socket-host/port socket-string socket-server
    socket-accept open-socket-server socket-server-close socket-server-host/port
    socket-service-port servent-name servent-aliases servent-port servent-proto
-   network timeout login net-path))
+   servent-p servent network timeout login net-path))
 
 ;;;
 ;;; {{{ name resolution
@@ -539,36 +539,36 @@ Kind can be :stream or :datagram."
 (defun socket-service-port (&optional service (protocol "tcp"))
   "Return the SERVENT structure corresponding to the SERVICE.
 When SERVICE is NIL, return the list of all services."
-  (flet ((parse (str)
-           (let* ((tok (string-tokens
-                        (subseq str 0 (or (position #\# str) (length str)))))
-                  (port/prot (string-tokens (nsubstitute
-                                             #\Space #\/
-                                             (symbol-name (second tok))))))
-             (values (string-downcase (string (first tok)))
-                     (mapcar (compose string-downcase string) (cdddr tok))
-                     (first port/prot)
-                     (string-downcase (string (second port/prot))))))
-         (mkse (na al po pr)
-           (make-servent :name na :aliases al :port po :proto pr)))
-    (with-open-file (fl #+unix "/etc/services" #+(or win32 mswindows)
-                        (concatenate 'string (getenv "windir")
-                                     "/system32/drivers/etc/services")
-                        :direction :input)
-      (loop :with name :and alis :and port :and prot
-            :for st = (read-line fl nil nil)
-            :until (null st)
-            :unless (or (equal "" st) (char= #\# (schar st 0)))
-              :do (setf (values name alis port prot) (parse st)) :and
-              :if service
-                :when (and (string-equal protocol prot)
-                           (or (string-equal service name)
-                               (member service alis :test #'string-equal)))
-                  :return (mkse name alis port prot) :end
-                :else :collect (mkse name alis port prot) :end :end
-            :finally (when service
-                       (error "~s: service ~s is not found for protocol ~s"
-                              'socket-service-port service protocol))))))
+  (with-open-file (fl #+unix "/etc/services" #+(or win32 mswindows)
+                      (concatenate 'string (getenv "windir")
+                                   "/system32/drivers/etc/services")
+                      :direction :input)
+    (loop :with name :and aliases :and port :and prot :and tokens
+      :for st = (read-line fl nil nil)
+      :until (null st)
+      :unless (or (zerop (length st)) (char= #\# (schar st 0)))
+        :do (setq tokens (string-tokens
+                          (nsubstitute
+                           #\Space #\/ (subseq st 0 (position #\# st))))
+                  name (string-downcase (string (first tokens)))
+                  aliases (mapcar (compose string-downcase string)
+                                  (cdddr tokens))
+                  port (second tokens)
+                  prot (third tokens)) :and
+        :if service
+          :when (and (string-equal protocol prot)
+                     (or (string-equal service name)
+                         (member service aliases :test #'string-equal)))
+            :return (make-servent :name name :aliases aliases :port port
+                                  :proto prot)
+          :end
+          :else :collect (make-servent :name name :aliases aliases :port port
+                                       :proto prot)
+        :end
+      :end
+      :finally (when service
+                 (error "~s: service ~s is not found for protocol ~s"
+                        'socket-service-port service protocol)))))
 
 ;;; }}}
 

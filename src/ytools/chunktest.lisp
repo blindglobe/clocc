@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.5 2004/12/20 18:04:00 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.6 2004/12/24 22:48:43 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -86,10 +86,10 @@
 
 ;;; Disjuncts are a Num-pair-reg and a Num-reg that
 ;;; is equal to the second element of the pair
-(defclass Recip-chunk (Or-chunk Num-reg)
+(defclass Denom-chunk (Or-chunk Num-reg)
    ())
 
-(defmethod derive ((rc Recip-chunk))
+(defmethod derive ((rc Denom-chunk))
    (let ((disjuncts (Or-chunk-disjuncts rc)))
       (cond ((Chunk-managed (first disjuncts))
 	     (setf (Num-reg-contents rc)
@@ -100,7 +100,7 @@
 		   (Num-reg-contents (second disjuncts)))
 	     (incf num-num-ops*))
 	    (t
-	     (error "Recip-chunk ~s has unmanaged disjuncts"
+	     (error "Denom-chunk ~s has unmanaged disjuncts"
 		    rc)))))
 
 ;; Numbers (these should all be nonnegative to avoid possibility
@@ -123,7 +123,7 @@
 
 (defvar quo-chunk*)
 
-(defvar recip-chunk*)
+(defvar denom-chunk*)
 
 ;;;;(defvar numer-denom-reg* (list 0 0))
 
@@ -198,12 +198,15 @@
 	    :name "denom"
 	    :basis (list rough-denom*)
 	    :fcn (\\ (d _) (first d))))
-   (setq recip-chunk*
-         (make-instance 'Recip-chunk
-	    :name 'recip
+   (setq denom-chunk*
+         (make-instance 'Denom-chunk
+	    :name 'denom
 	    :basis (list numer* rough-denom*)
 	    :disjuncts (list numer-denom-pair* denom*)
 	    :default denom*))
+;;;;   (cond ((not (null (Chunk-update-basis denom-chunk*)))
+;;;;	  (break "denom-chunk* has suspicious update-basis: ~s"
+;;;;		 (Chunk-update-basis denom-chunk*))))
    (setq quo-chunk*
 	 (make-instance 'Num-reg
 	     :name "numer/denom"
@@ -212,7 +215,7 @@
 	     :fcn (\\ (_ _) (/ (Num-pair-reg-one numer-denom-pair*)
 			       (Num-pair-reg-two numer-denom-pair*))))))
 
-;;; Independent computer of value of quo-chunk* or recip-chunk*
+;;; Independent computer of value of quo-chunk* or denom-chunk*
 (defun compute ()
    (let ((k (length ivec*)))
       (let ((n (do ((i 0 (+ i 1))
@@ -244,7 +247,7 @@
 	   
 ;;; Build net before starting this --
 (defun net-direct-compare (which-input start-val &optional (num-iters 1000))
-   (chunk-request-mgt recip-chunk*)
+   (chunk-request-mgt denom-chunk*)
    (do ((i start-val (+ i 1))
 	(j which-input (+ j 1))
 	(k (length ivec*)))
@@ -255,18 +258,19 @@
       (setf (aref ivec* j) i)
       (incf num-num-ops*)
       (chunk-up-to-date (aref input-chunks* j))
+      (format t "chunk ~s <- ~s " j i)
       (cond ((Chunk-managed quo-chunk*)
 	     (chunk-terminate-mgt quo-chunk* false)
-	     (chunk-update recip-chunk*))
+	     (chunk-update denom-chunk*))
 	    (t
 	     (chunk-request-mgt quo-chunk*)
-	     (chunks-update (list quo-chunk* recip-chunk*))))
+	     (chunks-update (list quo-chunk* denom-chunk*))))
       (let ((direct (compute))
 	    (via-chunks (Num-reg-contents
 			   (cond ((Chunk-managed quo-chunk*)
 				  quo-chunk*)
 				 (t
-				  recip-chunk*)))))
+				  denom-chunk*)))))
 	 (format t "~s: ~s <?> ~s~%"
 		   i direct via-chunks)
 	 (cond ((not (= direct via-chunks))

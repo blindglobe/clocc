@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.9 2004/12/20 18:04:01 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.10 2004/12/24 22:48:43 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -213,7 +213,7 @@ after YTools file transducers finish.")
 
 (defvar fload-show-actual-pathnames* true)
 
-(defun fload-op-message (beg-message pn real-pn end-message)
+(defun file-op-message (beg-message pn real-pn end-message)
    (if fload-verbose*
        (progn
 	  (print-spaces fload-indent* *query-io*)
@@ -278,6 +278,10 @@ after YTools file transducers finish.")
 						   slurp-task)
 					   pn))
 			       slurp-tasks)))
+		      (file-op-message
+		          (format nil "Slurping ~s"
+				      (mapcar #'Slurp-task-label slurp-tasks))
+			  pn false "...")
 		      (cond (stream-init
 			     (funcall stream-init s)))
 		      (do ((form (read s false eof*) (read s false eof*))
@@ -291,7 +295,8 @@ after YTools file transducers finish.")
 				  (null tasks)))
 			   slurp-states)
 ;;;;			(format t "Slurped form ~s~%" form)
-			))))))
+			)
+		      (file-op-message "...slurped" pn false ""))))))
 	 (t !())))
 
 (defun forms-slurp (forms tasks states)

@@ -1,6 +1,6 @@
-!;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
+;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend-new.lisp,v 1.1.2.1 2004/12/21 17:36:32 airfoyle Exp $
+;;;$Id: depend-new.lisp,v 1.1.2.2 2004/12/24 22:48:43 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -10,13 +10,26 @@
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(depends-on module funktion)))
 
-(defclass Slurped-loadable-chunk (Loadable-chunk))
+(eval-when (:compile-toplevel :load-toplevel)
+
+;;; State for task is a file chunk, whose basis (and callees)
+;;; we are computing.
+(def-slurp-task compute-file-basis
+   :default (\\ (_ _) true)
+;;; -- The idea is that anything we didn't anticipate takes us
+;;; out of the header.
+   :file->state-fcn (\\ (pn) 
+		       (place-file-chunk pn)))
+)
    
+(defclass Slurped-loadable-chunk (Loadable-chunk) ())
+
 (defmethod derive ((fb Slurped-loadable-chunk))
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
-	  (let* ((file-ch (Loadable-chunk-file fb))
+	  (let* ((loaded-ch (Loadable-chunk-controllee fb))
+		 (file-ch (Loaded-chunk-file loaded-ch))
 		 (comp-ch (place-compiled-chunk file-ch)))
 	     (setf (File-chunk-callees file-ch) !())
 	     (setf (Chunk-basis comp-ch)
@@ -32,6 +45,8 @@
 					    readtab))))))
 ;;;;	     (dolist (b (tail (Chunk-basis comp-ch)))
 ;;;;	        (...))
+;;; Now called automatically in :after method for Loadable-chunk/derive --
+;;;;	     (loaded-chunk-basis-set loaded-ch)
 	     file-op-count*))))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
@@ -82,18 +97,13 @@
 			  (subseq str rpos))))))
 	    (t false))))
 
-(eval-when (:compile-toplevel :load-toplevel)
-
-;;; State for task is a file chunk, whose basis (and callees)
-;;; we are computing.
-(def-slurp-task compute-file-basis
-   :default (\\ (_ _) true)
-;;; -- The idea is that anything we didn't anticipate takes us
-;;; out of the header.
-   :file->state-fcn (\\ (pn) 
-		       (place-file-chunk pn)))
-)
-
+(defmethod create-loaded-controller ((file-ch File-chunk) (loaded-ch Loaded-chunk))
+   (chunk-with-name
+       `(:loadable ,(Chunk-name file-ch))
+       (\\ (name)
+	  (make-instance 'Slurped-loadable-chunk
+	     :name name
+	     :controllee loaded-ch))))
 
 (defvar depends-on-enabled* true)
 
@@ -139,6 +149,36 @@
 		       (cond (depends-on-enabled*
 			      (fload ,@run-time-deps)))))))))
 
+(defvar end-header-dbg* false)
+
+(datafun compute-file-basis in-readtable
+   (defun :^ (form file-ch)
+      (let ((readtab (name->readtable (cadr form)))
+	    (prev-readtab (File-chunk-readtable file-ch)))
+	 (cond ((not (eq readtab prev-readtab))
+		(format *error-output*
+		   "Changing readtable of ~s from ~s to ~s = ~s~%"
+		   file-ch prev-readtab (cadr form) readtab)))
+		(setf (File-chunk-readtable file-ch)
+		      readtab)
+		;; for the duration of the slurp --
+		(setq *readtable* readtab))))
+
+(datafun compute-file-basis end-header
+   (defun :^ (form file-ch) ;; -- of file being slurped
+      (cond ((memq ':no-compile (cdr form))
+	     (place-loaded-chunk file-ch ':source)))
+      (cond (end-header-dbg*
+	     (format *error-output*
+		     "Executing ~s~% "
+		     form)))
+      (cond ((memq ':continue-slurping (cdr form))
+	     (format *error-output*
+		!"Warning -- ':continue-slurping' encountered in file ~
+                  ~s; this declaration is~
+                  ~%  no longer needed~%")))
+      true))
+
 (datafun compute-file-basis depends-on
   (defun :^ (e file-ch)
      (cond (depends-on-enabled*
@@ -166,24 +206,18 @@
 			       (setf (File-chunk-callees file-ch)
 				     (union file-chunks
 					    (File-chunk-callees file-ch)))
-			       (dolist (ssfty standard-sub-file-types*)
-				  (dolist (fc file-chunks)
-				     (pushnew (funcall
-					         (Sub-file-type-chunker ssfty)
-						 (File-chunk-pathname fc))
-					      (Chunk-basis compiled-ch))
-				     (pushnew (funcall
-					         (Sub-file-type-load-chunker
-						    ssfty)
-						 (File-chunk-pathname fc))
-					      (Chunk-update-basis
-					           compiled-ch))))))
+			       (dolist (fc file-chunks)
+				  (compiled-chunk-note-sub-file-bases
+				     compiled-ch fc))
 			       ;; This would seem to be redundant,
-			       ;; because the file will be loaded
-			       ;; by what 'depends-on' expands into --
-;;;;			       (setf (Chunk-basis loaded-file-ch)
-;;;;				     (union loaded-file-chunks
-;;;;					    (Chunk-basis loaded-file-ch)))
+			       ;; because the file will be loaded by
+			       ;; what 'depends-on' expands into.
+			       ;; But the redundancy is harmless, because
+			       ;; the chunk system will avoid loading files
+			       ;; twice. --
+			       (setf (Chunk-basis loaded-file-ch)
+				     (union loaded-file-chunks
+					    (Chunk-basis loaded-file-ch)))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
 			       (setf (File-chunk-read-basis file-ch)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.10 2004/12/21 17:36:32 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.11 2004/12/24 22:48:43 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -22,7 +22,7 @@
 ;;; needs it has a pointer to the Chunk so it can tell whether the
 ;;; information is up to date and if not recompute it.
 (defclass Chunk ()
-  ((name :reader Chunk-name  ; -- An S-expression
+  ((name :accessor Chunk-name  ; -- An S-expression
 	  :initarg :name
 	  :initform "")
    (manage-request :accessor Chunk-manage-request
@@ -67,7 +67,7 @@
    ;; -- back pointers to chunks this one is a member of the basis of
    (update-basis :accessor Chunk-update-basis
 		 :initarg :update-basis
-		 :initform false
+		 :initform !()
 		 :type list)
    ;; -- A list of Chunks governing the derivation of this one.
    ;; Think of it as keeping track of the "derivability" of this one.
@@ -85,8 +85,7 @@
 		:initform  0
 		:type fixnum)
    ;; - Marked with number of update in progress
-   )
-)
+   ))
 ;;; We sort of assume that update-basis is "derivative" in the sense
 ;;; that if the chunk is up to date wrt the basis, there are no "surprises" 
 ;;; in the update-basis.  Every chunk in the update basis is a function
@@ -121,13 +120,15 @@
 (defmethod print-object ((c Chunk) srm)
    (print-unreadable-object (c srm)
       (format srm "Chunk~a~s"
-	      (cond ((Chunk-managed c) "=")
+	      (cond ((eq (Chunk-managed c) ':in-transition)
+		     "~")
+		    ((Chunk-managed c) "=")
 		    (t "_"))
 	      (Chunk-name c))
       (print-innards c srm)
       (format srm "~a"
 	      (cond ((and (slot-boundp c 'basis)
-			  (Chunk-is-leaf c))
+			  (chunk-is-leaf c))
 		     "*")
 		    ((and (slot-boundp c 'date)
 			  (slot-boundp c 'latest-supporter-date)
@@ -177,15 +178,9 @@
 
 (defmethod initialize-instance :after ((orch Or-chunk) &rest _)
    (cond ((slot-boundp orch 'disjuncts)
-	  (cond ((not (slot-boundp orch 'default))
-		 (setf (Or-chunk-default orch)
-		       (lastelt (Or-chunk-disjuncts orch)))))
+	  (or-chunk-set-update-basis orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
-	     (pushnew orch (Chunk-derivees b))
-	     (cond ((and (Chunk-managed b)
-			 (not (Chunk-update-basis orch)))
-		    (setf (Chunk-update-basis orch)
-			  (list b)))))))
+	     (pushnew orch (Chunk-derivees b)))))
    orch)
 
 (defmethod (setf Or-chunk-disjuncts) :before (_ (orch Or-chunk))
@@ -193,21 +188,21 @@
 	  (dolist (d (Or-chunk-disjuncts orch))
 	  (setf (Chunk-derivees d)
 		(remove orch (Chunk-derivees d))))))
-   (setf (Chunk-update-basis orch) false)
+   (setf (Chunk-update-basis orch) !())
    orch)
 
+;;; All of this is mainly to make the internals of Or-chunks
+;;; look reasonably consistent.  The final decision about
+;;; the default and update-basis are actually made in 'chunk-manage'.
 (defmethod (setf Or-chunk-disjuncts) :after (_ (orch Or-chunk))
    (dolist (d (Or-chunk-disjuncts orch))
       (setf (Chunk-derivees d)
 	    (adjoin orch (Chunk-derivees d))))
-   (dolist (b (Or-chunk-disjuncts orch))
-      (cond ((and (Chunk-managed b)
-		  (not (Chunk-update-basis orch)))
-	     (setf (Chunk-update-basis orch)
-		   (list b)))))
+   (or-chunk-set-update-basis orch)
    orch)
 
-(defun Chunk-is-leaf (ch) (null (Chunk-basis ch)))
+(defun chunk-is-leaf (ch)
+   (null (Chunk-basis ch)))
 
 (defvar basis-inverters-dbg* false)
 
@@ -262,7 +257,8 @@
 	    (adjoin ch (Chunk-update-derivees b)))))
 
 (defun chunk-request-mgt (c)
-   (cond ((not (Chunk-manage-request c))
+   (cond ((or (not (Chunk-manage-request c))
+	      (not (Chunk-managed c)))
 	  (setf (Chunk-manage-request c) true)
 	  (chunk-manage c))))
 
@@ -274,7 +270,8 @@
 		     ':in-transition)
 		 (error
 		    !"Chunk basis cycle detected at ~S" chunk 
-                     "~%     [-- chunk-manage]"))))
+                     "~%     [-- chunk-manage]")))
+	  true)
 	 (t
 	  (let ((its-an-or (typep chunk 'Or-chunk)))
 	     (unwind-protect
@@ -283,28 +280,37 @@
 		   (dolist (b (Chunk-basis chunk))
 		      (chunk-manage b))
 		   (cond (its-an-or
-			  (cond ((not (some #'Chunk-managed
-					    (Or-chunk-disjuncts chunk)))
-				 (chunk-manage (Or-chunk-default chunk))))))
+			  (or-chunk-set-update-basis chunk)
+			  (chunk-manage (first (Chunk-update-basis chunk)))))
 		   ;; If 'chunk' is a non-default disjunct
 		   ;; of an Or-chunk, then the default disjunct no
 		   ;; longer gets a reason to be managed from the Or.
 		   (dolist (d (Chunk-derivees chunk))
 		      (cond ((and (Chunk-managed d)
 				  (typep d 'Or-chunk))
-			     (let ((d-default (Or-chunk-default d)))
-				(cond ((not (eq chunk d-default))
+			     (let ((d-disjuncts (Or-chunk-disjuncts d))
+				   (d-default (Or-chunk-default d)))
+				(cond ((and (not (eq chunk d-default))
+					    (memq chunk d-disjuncts))
 				       (setf (Chunk-update-basis d)
 					     (list chunk))
 				       (chunk-terminate-mgt d-default false))))))))
 	        ;; Normally this just sets (chunk-managed chunk)
 	        ;; to true, but not if an interrupt occurred --
-		(setf (Chunk-managed chunk)
-		      (and (every #'Chunk-managed
-				  (Chunk-basis chunk))
-			   (or (not its-an-or)
-			       (some #'Chunk-managed
-				     (Or-chunk-disjuncts chunk))))))))))
+		(progn
+		    (setf (Chunk-managed chunk)
+			  (and (every #'Chunk-managed
+				      (Chunk-basis chunk))
+			       (or (not its-an-or)
+				   (some #'Chunk-managed
+					 (Or-chunk-disjuncts chunk)))))
+;;;;		    (format t "chunk-managed? ~s : ~s~%"
+;;;;			    chunk (Chunk-managed chunk))
+;;;;		    (cond ((not (Chunk-managed chunk))
+;;;;			   (setq ch* chunk)
+;;;;			   (break "Bogosity for ~s" ch*)))
+		 ))
+	     (Chunk-managed chunk)))))
 
 ;;; This terminates the explicit request for management.
 ;;; If 'propagate' is false, then the chunk will remain managed unless
@@ -313,6 +319,7 @@
 ;;; derivees should become unmanaged.
 ;;; Any other value will cause any derivees to become unmanaged.
 (defun chunk-terminate-mgt (c propagate)
+   (setf (Chunk-manage-request c) false)
    (cond ((Chunk-managed c)  ;;;;(Chunk-manage-request c)
 	  (cond ((eq (Chunk-managed c)
 		     ':in-transition)
@@ -443,8 +450,7 @@
 			 (let ((in-progress (cons ch in-progress)))
 ;;;;			    (format t "Setting down-mark of ~s~%" ch)
 			    (setf (Chunk-update-mark ch) down-mark)
-			    (cond ((null (Chunk-basis ch))
-				   ;; Reached a leaf
+			    (cond ((chunk-is-leaf ch)
 				   (chunk-derive-and-record ch)
 ;;;;				   (format t "Leaf derived: ~s~%" ch)
 				   (cons ch
@@ -496,12 +502,12 @@
 			      ;; Run the deriver when and only when
 			      ;; its basis is up to date --
 			      (every (\\ (b)
-					(or (Chunk-is-leaf b)
+					(or (chunk-is-leaf b)
 					    (chunk-up-to-date b)))
 				     (Chunk-basis ch))
 			      ;; Ditto for update-basis --
 			      (every (\\ (b)
-					(or (Chunk-is-leaf b)
+					(or (chunk-is-leaf b)
 					    (chunk-up-to-date b)))
 				     (Chunk-update-basis ch)))
 			 (let ((in-progress
@@ -530,12 +536,12 @@
 ;;;;				 up-mark))
 ;;;;			(t
 ;;;;			 (dolist (b (Chunk-basis ch))
-;;;;			    (cond ((and (not (Chunk-is-leaf b))
+;;;;			    (cond ((and (not (chunk-is-leaf b))
 ;;;;					(not (chunk-up-to-date b)))
 ;;;;				   (format t "Basis ~s not up to date~%"
 ;;;;					   b))))
 ;;;;			 (dolist (b (Chunk-update-basis ch))
-;;;;			    (cond ((and (not (Chunk-is-leaf b))
+;;;;			    (cond ((and (not (chunk-is-leaf b))
 ;;;;					(not (chunk-up-to-date b)))
 ;;;;				   (format t "U-Basis ~s not up to date~%"
 ;;;;					   b)))))
@@ -554,6 +560,24 @@
 		   (dolist (leaf leaves)
 		      (dolist (d (Chunk-derivees leaf))
 			 (derivees-update d !())))))))))
+
+(defun or-chunk-set-update-basis (orch)
+   (cond ((null (Or-chunk-disjuncts orch))
+	  (error !"Attempting to maintain Or-chunk with ~
+                   no disjuncts: ~s"
+		 orch)))
+   (cond ((or (null (Chunk-update-basis orch))
+	      (not (Chunk-managed (first (Chunk-update-basis orch)))))
+	  (dolist (b (Or-chunk-disjuncts orch))
+	     (cond ((Chunk-managed b)
+		    (setf (Chunk-update-basis orch)
+			  (list b))
+		    (return-from or-chunk-set-update-basis))))
+	  (cond ((not (Or-chunk-default orch))
+		 (setf (Or-chunk-default orch)
+		       (lastelt (Or-chunk-disjuncts orch)))))
+	  (setf (Chunk-update-basis orch)
+	        (list (Or-chunk-default orch))))))
 
 ;;; Run 'derive', update ch's date, and return t if date has moved 
 ;;; forward -- 
@@ -574,28 +598,27 @@
 	     false))))
 
 (defmethod derive ((orch Or-chunk))
-   (cond ((not (slot-boundp orch 'disjuncts))
+   (cond ((slot-is-empty orch 'disjuncts)
 	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
 		 orch))
-	 ((not (slot-boundp orch 'default))
+	 ((slot-is-empty orch 'default)
+	  (cerror "I will set it to the last disjunct"
+		  "Deriving Or-chunk with no default disjunct: ~s"
+		  orch)
 	  (setf (Or-chunk-default orch)
 	        (lastelt (Or-chunk-disjuncts orch)))))
+
    (dolist (d (Or-chunk-disjuncts orch)
-	      (error "Attempt to derive Or-chunk with no managed disjunct: ~s"
-		     orch))     
+	      (Chunk-date (Or-chunk-default orch)))
+;;; Alarmist --
+;;;;	      (error "Attempt to derive Or-chunk with no managed disjunct: ~s"
+;;;;		     orch)
+;;;   -- It's perfectly okay to update an unmanaged chunk, and an unmanaged
+;;;   Or-chunk can have unmanaged disjuncts.     
       (cond ((and (Chunk-managed d)
-		  (or (Chunk-is-leaf d)
+		  (or (chunk-is-leaf d)
 		      (chunk-up-to-date d)))
-	     (cond ((not (and (consp (Chunk-update-basis orch))
-			      (eq (car (Chunk-update-basis orch))
-				  d)))
-		    (format *error-output*
-			    !"Or-chunk update basis is ~s, ~
-                              ~% but first managed disjunct is ~s~%"
-			    (Chunk-update-basis orch)
-			    d)
-		    (setf (Chunk-update-basis orch) (list d))))
-	     (return-from derive true)))))
+	     (return-from derive (Chunk-date d))))))
 
 ;;; If 'basis' is non-!(), then it's up to date
 ;;; if and only if its date >= the dates of its bases.
@@ -640,6 +663,8 @@
   (:method ((l cons))
      (mapcar #'chunk-name->list-structure l)))
 
+;;; IMPORTANT: All chunks should be created using the following function --
+
 ;;; Index chunks by first pathname in their names, if any
 ;;; If 'creator' is non-false, it's a function that creates
 ;;; a new chunk, which is placed in the table.
@@ -651,7 +676,24 @@
 		  (cond ((atom x) (return x))
 			(t
 			 (let ((k (chunk-name-kernel x)))
-			    (cond (k (return k)))))))))
+			    (cond (k (return k))))))))
+	    (create (exp)
+	       (let ((new-chunk (funcall creator exp)))
+		  (cond ((or (slot-is-empty new-chunk 'name)
+			     (not (Chunk-name new-chunk))
+			     (cond ((equal (Chunk-name new-chunk)
+					   exp)
+				    false)
+				   (t
+				    (cerror "I will change the name"
+					    !"Name of new chunk is ~s; ~
+					      it should be ~s~%"
+					    (Chunk-name new-chunk)
+					    exp)
+				    true)))
+			 (setf (Chunk-name new-chunk)
+			       exp)))
+		  new-chunk)))
       (let ((name-kernel
 	       (let ((list-version
 		        (chunk-name->list-structure exp)))
@@ -674,18 +716,14 @@
 					   :name exp)))
 				  (on-list temp-chunk
 					   (href chunk-table* name-kernel))
-				  (let ((new-chunk (funcall creator exp)))
+				  (let ((new-chunk (create exp)))
 				     (setf (href chunk-table* name-kernel)
 					   (cons new-chunk
 						 (delete temp-chunk
 							 (href chunk-table*
 							       name-kernel))))
-;;;;				     (break !"About to initialize new chunk ~s ~
-;;;;                                              ~%  in bucket ~s~%"
-;;;;					    new-chunk bucket)
 				     (cond (initializer
-					    (funcall initializer
-						     new-chunk)))
+					    (funcall initializer new-chunk)))
 				     (cond ((Chunk-managed new-chunk)
 					    (chunk-update new-chunk)))
 				     new-chunk)))
@@ -713,6 +751,9 @@
   (dolist (d (Chunk-update-derivees ch))
      (setf (Chunk-update-basis d) (delete ch (Chunk-update-basis d)))))	  
 
+(defun slot-is-empty (obj slot)
+   (or (not (slot-boundp obj slot))
+       (null (slot-value obj slot))))
 
 ;;; For debugging --
 (defun chunk-zap-dates (c)

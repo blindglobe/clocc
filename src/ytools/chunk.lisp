@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.32 2005/03/14 06:02:01 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.33 2005/03/21 13:34:02 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -218,8 +218,10 @@
 (defgeneric derive (chunk)
    (:method ((c Chunk))
       (format *error-output*
-	 "No derive method found for ~c; assuming up to date~%"
+	 "No derive method found for ~s; assuming up to date~%"
 	 c)
+      (setq bad-ch* c)
+      (break "Underivable chunk")
       false))
 ;;; Recomputes chunk
 ;;;   and returns time when it changed (usually current universal time)

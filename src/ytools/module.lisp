@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.21 2005/03/18 15:44:40 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.22 2005/03/21 13:34:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -242,7 +242,10 @@
 	  (mod-chunk (place-YT-module-chunk module))
 	  (lmod-chunk (place-Loaded-module-chunk
 		         mod-chunk manip)))
-      (loaded-chunk-fload lmod-chunk force-load postpone-derivees)))
+;;;;      (setq lmod-ch* lmod-chunk)
+;;;;      (break "In filoid-fload, got module ~s" module)
+      (cond ((not (eq manip ':noload))
+	     (loaded-chunk-fload lmod-chunk force-load postpone-derivees)))))
 
 (defmethod place-Loaded-chunk ((mod-ch YT-module-chunk) mod-manip)
    (place-Loaded-module-chunk mod-ch mod-manip))
@@ -259,7 +262,7 @@
 			     new-lc))
 		       :initializer
 			  (\\ (new-lc)
-			      (cond ((not (slot-truly-filled
+			     (cond ((not (slot-truly-filled
 					      new-lc 'controller))
 				    (setf (Loaded-chunk-controller new-lc)
 					  (create-loaded-controller
@@ -323,7 +326,7 @@ Not needed, because it's essentially identical to scan-depends-on
 		      acts
 		      (list scan-depends-on*)     ;;;;module-scan*
 		      (list (make-Scan-depends-on-state
-			       :file-ch mod-chunk
+			       :file-chunk mod-chunk
 			       :sub-file-types !()))))))))
    file-op-count*)
 
@@ -335,6 +338,9 @@ Not needed, because it's essentially identical to scan-depends-on
 	       (Loaded-chunk-loadee lmod-ch))))
       (dolist (c (YT-module-contents module))
 	 (cond ((memq ':run-support (first c))
+;;;;		(setq mod* module)
+;;;;		(break "In Loaded-module-chunk/derive, evaluating ~s"
+;;;;		       c)
 		(dolist (e (rest c))
 		   (eval e)))))))
 
@@ -342,9 +348,10 @@ Not needed, because it's essentially identical to scan-depends-on
    !())
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-module-chunk)
-			       force postpone-derivees)
-   (
-
+			       _ _)
+   (cerror "Proceed without forced compilation"
+	   "Not implemented: Forcing compilation of module ~s"
+	   (Loaded-chunk-loadee loaded-chunk)))
 
 (defmethod filoid-fcompl ((mod-pspn Module-pseudo-pn)
 			  &key force-compile
@@ -352,13 +359,41 @@ Not needed, because it's essentially identical to scan-depends-on
 			       cease-mgt
 			       postpone-derivees)
    (let* ((mod-ch (pathname-denotation-chunk mod-pspn))
-	  (loaded-mod-ch (place-Loaded-chunk mod-ch false)))
+	  (loaded-mod-ch (place-Loaded-chunk mod-ch false))
+	  (compiled-mod-ch (place-compiled-chunk mod-ch)))
       (monitor-filoid-basis loaded-mod-ch)
-      (
+      (cond (force-compile
+	     (format *error-output*
+		!"Warning: Ignoring :force-compile argument to 'filoid-fcompl ~
+                  ~% for module chunk ~s~%"
+		mod-ch)))
+      (cond (cease-mgt
+	     (chunk-terminate-mgt compiled-mod-ch  ':ask))
+	    (t
+	     (let (;;;;(comp-date
+		   ;;;;   (Chunk-date compiled-mod-ch))
+		   )
+		(chunk-request-mgt compiled-mod-ch)
+		(file-ops-maybe-postpone
+		   (chunk-update compiled-mod-ch false postpone-derivees))
+		(cond ((and (not (chunk-up-to-date loaded-mod-ch))
+			    (or load (load-after-compile)))
+		       (file-ops-maybe-postpone
+			     (chunks-update (list loaded-mod-ch)
+					    true postpone-derivees)))))))))
 
+(defmethod place-compiled-chunk ((source-mod-ch YT-module-chunk))
+   (chunk-with-name `(:compiled ,(YT-module-chunk-module source-mod-ch))
+      (\\ (name)
+	 (make-instance 'Compiled-module-chunk
+	    :module (YT-module-chunk-module source-mod-ch)
+	    :name name))))
+
+(eval-when (:load-toplevel :compile-toplevel :execute)
 
 (def-slurp-task module-compile
    :default (\\ (_ _) false))
+)
 
 (defmethod derive ((comp-mod Compiled-module-chunk))
    (let ((module
@@ -369,18 +404,27 @@ Not needed, because it's essentially identical to scan-depends-on
 			     (list module-compile*)
 			     (list false)))))))
 
-		(dolist (e (rest c))
-		   (eval e)))))))
-
-(defmacro module-elements (specs)
+(defmacro module-elements (&rest specs)
       (multiple-value-bind (files flags readtab)
 	                   (flags-separate specs filespecs-load-flags*)
-	 `(filespecs-do-load ',files ',flags ',readtab)))
+	 `(filespecs-load ',files ',flags ,readtab)))
 
-(datafun module-compile filespecs-load
+(datafun module-compile fload
    (defun :^ (form _)
-      (
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate (cdr form) filespecs-load-flags*)
+	 (compile-if-flags-say-so files flags readtab))))
 
+(datafun module-compile module-elements fload)
+
+(defun compile-if-flags-say-so (files flags readtab)
+      (let ((flags (flags-check flags filespecs-load-flags*)))
+	 (cond ((or (memq '-c flags) (memq '-o flags))
+		(filespecs-do-compile
+		   files
+		   (retain-if (\\ (g) (eq g '-z))
+			      flags)
+		   readtab)))))
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))
@@ -443,12 +487,9 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
 |#
 
 (def-ytools-module ytools
-   (let ((*readtable* ytools-readtable*))
-      (fload %ytools/ multilet)
-      (fload %ytools/ signal misc)
-      (fload %ytools/ setter)
-      (fload %ytools/ object mapper)
-    ))
+   ((:run-support :compile-support)
+    (module-elements %ytools/ multilet signal misc setter object mapper
+		     :readtable ytools-readtable*)))
 
 (defun ytools-module-load (name)
    (let ((yt-mod (lookup-YT-module name)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.19 2005/03/18 15:19:31 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.20 2005/03/21 13:34:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(depends-on module funktion scan-depends-on self-compile-dep
+   (export '(depends-on module scan-depends-on self-compile-dep
 	     end-header)))
 
 (eval-when (:compile-toplevel :load-toplevel)
@@ -164,10 +164,11 @@
 		       run-time-deps)
 	     ,@(include-if (not (null run-time-deps))
 		  `(cond (depends-on-enabled*
-			  (filespecs-load ',run-time-deps)
-;;;;			  (let ((default-fload-args* (vector !() !() nil)))
-;;;;			     (fload ,@run-time-deps))
-			  )))))))
+			  ,@(mapcar (\\ (pn)
+				       `(filoid-fload
+				           ',pn
+					   :manip ':follow))
+				    run-time-deps))))))))
 
 (defvar end-header-dbg* false)
 
@@ -208,10 +209,7 @@
 		   ;; -- If it's not a real File-chunk, it's something
 		   ;; like a module chunk.
 		   (groups (depends-on-args-group (cdr e)))
-		   (compiled-ch
-		       (cond ((typep file-ch 'File-chunk)
-			      (place-compiled-chunk file-ch))
-			     (t false)))
+		   (compiled-ch (place-compiled-chunk file-ch))
 		   (loaded-file-ch (place-Loaded-chunk file-ch false))
 		   )
 	       (labels ()
@@ -239,18 +237,18 @@
 					 ;; sub-file-types should be the
 					 ;; crucial ones.--
 					 (Sds-sub-file-types sdo-state))))))
-			(cond ((or (memq ':read-time (first g))
-				   (memq ':slurp-time (first g)))
-			       (cond (compiled-ch
-				      (pathnames-note-slurp-support
-					  pnl file-ch sdo-state)
-				      (setf (File-chunk-read-basis file-ch)
-					    (union
-					      (mapcar
-					         #'pathname-denotation-chunk
-						 pnl)
-					      (File-chunk-read-basis
-						 file-ch)))))))
+			(multiple-value-bind (slurp-dep which-slurp-types)
+			                     (extract-slurp-times (first g))
+			   (cond (slurp-dep
+				  (pathnames-note-slurp-support
+					  pnl file-ch which-slurp-types)
+				  (setf (File-chunk-read-basis file-ch)
+					(union
+					  (mapcar
+					     #'pathname-denotation-chunk
+					     pnl)
+					  (File-chunk-read-basis
+					     file-ch))))))
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn))
 				  (lpchunk (place-Loaded-chunk pchunk false)))
@@ -262,10 +260,24 @@
 					      (list sdo-state)))))))))))
     false))
 
+;;; Returns < read-or-slurp-dependency, slurp-types >
+;;; If all slurp-types are involved, second val is !().
+(defun extract-slurp-times (times)
+   (cond ((or (memq ':read-time times)
+	      (memq ':slurp-time times))
+	  (values true !()))
+	 (t
+	  (let ((slurp-times !()))
+	     (dolist (time times)
+	        (cond ((car-eq time ':slurp-time)
+		       (setq slurp-times (union (cdr time) slurp-times)))))
+	     slurp-times))))
+
 ;;; Return a list of groups, each of the form
 ;;; ((<time>*)
 ;;;  --filespecs--)
-;;; where each <time> is either :run-time, :compile-time, :read-time
+;;; where each <time> is either :run-time, :compile-time, 
+;;; :slurp-time, :read-time
 (defun depends-on-args-group (args)
    (cond ((and (= (len args) 1)
 	       (is-Symbol (car args)))
@@ -348,14 +360,20 @@
 		      (compiled-ch-sub-file-link
 			 compiled-ch callee-ch sfty true))))))))
 
-(defun pathnames-note-slurp-support (pnl file-ch sdo-state)
+(defun pathnames-note-slurp-support (pnl file-ch sub-file-type-names)
    (dolist (pn pnl)
       (let* ((dep-ch (pathname-denotation-chunk pn))
-	     (loaded-dep-ch (place-Loaded-chunk dep-ch false)))
-	 (dolist (sfty (Sds-sub-file-types sdo-state))
-	    (let ((slurped-sub-file-ch
+	     (loaded-dep-ch (place-Loaded-chunk dep-ch false))
+	     (filename (File-chunk-pathname file-ch)))
+	 (dolist (sfty (cond ((null sub-file-type-names)
+			      ;; Use 'em all
+			      sub-file-types*)
+			     (t
+			      (mapcar #'lookup-sub-file-type
+				      sub-file-type-names))))
+	    (let* ((slurped-sub-file-ch
 		     (funcall (Sub-file-type-slurp-chunker sfty)
-			      (File-chunk-pathname file-ch))))
+			      filename)))
 ;;;;	       (out "Introducing dependency: "
 ;;;;		    :% 2 slurped-sub-file-ch
 ;;;;		    :% 2 "has basis augmented with"
@@ -417,15 +435,13 @@
 (defmacro end-header (&rest _)
    '(values))
 
-(datafun scan-depends-on filespecs-load 
-;; If scanning 
+;;;;(datafun scan-depends-on filespecs-load 
+;;;;;; If scanning 
+;;;;
+;;;;   (defun :^ (form sdo-state)
+;;;;      ()))
 
-   (defun :^ (form sdo-state)
-      ()))
 
-
-
-;;; We have to adapt this to the chunkified universe
 (datafun scan-depends-on end-header
    (defun :^ (form sdo-state)
       (let ((flags (cdr form)))
@@ -446,18 +462,6 @@
 ;;;;            (self-compile-dep-scan-depends-on form sdo-state)
 		))
 	 true)))
-
-(def-excl-dispatch #\' (srm _)
-   (list 'funktion (read srm true nil true)))
-
-;;;;  (let ((f (read srm)))
-;;;;     (cond ((atom f) (list 'funktion f))
-;;;;	   (t f))))
-
-(defmacro funktion (f)
-   (cond ((and (atom f) (> debuggability* 0))
-	  `',f)
-	 (t `#',f)))
 
 ;;; Actual pathnames don't have expansions, but some pseudo-pathnames
 ;;; do.

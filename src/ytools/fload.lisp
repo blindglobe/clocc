@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.1 2005/03/18 15:19:33 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.2 2005/03/21 13:34:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,9 +9,21 @@
 
 (eval-when (:load-toplevel)
    (export '(fload filespecs-load fcompl filespecs-compile
-	     fload-compile* bind-fload-compile* fcompl-reload*
+	      fcompl-reload*
 	     fload-versions postponed-files-update
+funktion
 	     debuggable debuggability*)))
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+
+(def-excl-dispatch #\' (srm _)
+   (list 'funktion (read srm true nil true)))
+
+(defmacro funktion (f)
+   (cond ((and (atom f) (> debuggability* 0))
+	  `',f)
+	 (t `#',f)))
+)
 
 (defmacro debuggable (n)
    (multiple-value-bind (speed safety space debug)
@@ -114,16 +126,6 @@
 			    :postpone-derivees postpone-derivees)
 	  ))))
 
-;;; Possible values: 
-;;; :compile -- always compile when object file is missing or out of date)
-;;; :source -- always load source without compiling (if missing, load object)
-;;; :object -- compile if object file is missing, else load existing object
-;;; :ask-every -- ask user what to do every time the file is looked at
-;;;         (this gets tedious!)
-;;; :ask-once -- ask user once and file the answer
-;;; :ask-ask -- ask, then ask the user whether to keep asking
-(defvar fload-compile-flag* ':ask)
-
 ;;; A class with just one instance, representing the fload-compile-flag*'s
 ;;; being set to the user's desired value --
 (defclass Fload-compile-flag-set (Chunk)
@@ -160,6 +162,20 @@
        ,@b))
 
 (defvar fload-compile-flag-chunk* (make-instance 'Fload-compile-flag-set))
+
+(defun loadeds-check-bases ()
+   (let ((loadeds-needing-checking !()))
+      (dolist (lc all-loaded-file-chunks*)
+	 (cond ((memq (Loaded-file-chunk-manip lc)
+		      '(:defer :follow))
+		(on-list lc loadeds-needing-checking))))
+;;;;      (dolist (lc loadeds-needing-checking)
+;;;;	 (monitor-filoid-basis lc)
+;;;;	 (cond ((not (chunk-up-to-date lc))
+;;;;		(on-list lc loadeds-needing-update))))
+      (chunks-update (cons fload-compile-flag-chunk*
+			   loadeds-needing-checking)
+		     false false)))
 
 ;;; 'filoid-fload' is the entry point to declare that a filoid
 ;;; should be loaded, figure out its basis, and tell the chunk
@@ -229,145 +245,8 @@
 
 ;;;;   (pathname-is-source (File-chunk-pathname file-ch))
 
-(defvar final-load* false)
-; When building systems, bind to true to minimize soul-searching later.
-
-(defmethod derive-date ((lc Loaded-file-chunk))
-   false)
-
-(defmethod derive ((lc Loaded-file-chunk))
-   (let ((loaded-ch lc) file-ch)
-      (loop 
-	 (setq file-ch
-	       (Loaded-file-chunk-selection loaded-ch))
-	 (cond ((not file-ch)
-		(loaded-chunk-set-basis loaded-ch)
-		(setq file-ch
-		      (Loaded-file-chunk-selection loaded-ch))))
-	 (cond ((typep file-ch 'Loaded-file-chunk)
-		(setq loaded-ch file-ch)
-		;; Indirection; go around again looking
-		;; for an actual file.
-	        )
-	       (t
-		(return))))
-      (cond ((not (typep file-ch 'File-chunk))
-	     (error "Can't extract file to load from ~s"
-		    lc)))
-;;;;      (dbg-save lc file-ch)
-;;;;      (breakpoint file-chunk-load
-;;;;	 "About to load " lc)
-      (file-chunk-load file-ch)))
-
-(defmethod derive ((l-source Loaded-source-chunk))
-   (file-chunk-load (Loaded-source-chunk-file l-source)))
-
-(defun file-chunk-load (file-ch)
-      (with-post-file-transduction-hooks
-	 (cleanup-after-file-transduction
-	    (let ((*package* *package*)
-		  (*readtable* *readtable*)
-		  (fload-indent* ;;;;(+ 3 fload-indent*)
-		      (* 3 (Chunk-depth file-ch))))
-	       (file-op-message "Loading"
-				 (File-chunk-pn
-				     file-ch)
-				 (File-chunk-pathname file-ch)
-				 "...")
-	       (load (File-chunk-pathname file-ch))
-	       (file-op-message "...loaded"
-				 (File-chunk-pn
-				     file-ch)
-				 false
-				 ""))))
-      (get-universal-time))
-
-;;; This must be called whenever the 'manip' field changes.
-(defmethod loaded-chunk-set-basis ((loaded-ch Loaded-file-chunk))
-   (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
-	  (manip (Loaded-file-chunk-manip loaded-ch))
-	  (source-exists (Loaded-file-chunk-source loaded-ch))
-	  (obj-file-chunk (Loaded-file-chunk-object loaded-ch))
-	  (object-exists
-	     (and obj-file-chunk
-		  (probe-file (File-chunk-pathname obj-file-chunk)))))
-      (cond (loaded-manip-dbg*
-	     (format t !"Setting loaded chunk basis, ~
-                         manip initially = ~s~%" manip)))
-      (cond ((not (or source-exists object-exists))
-	     (error "No source or object file can be found for ~s"
-		    loaded-ch)))
-      (cond ((File-chunk-alt-version file-ch)
-	     (setf (Chunk-basis loaded-ch)
-		   (list (place-Loaded-file-chunk
-			    (File-chunk-alt-version file-ch)
-			    ':nochoice))))
-	    ((not source-exists)
-	     (setq manip ':object))
-	    (t
-	     (cond ((memq manip '(:defer :follow))
-		    (let ((prev-manip manip))
-		       (setq manip fload-compile*)
-		       (cond ((eq manip ':ask)
-			      ;; Old style doesn't make enough distinctions
-			      (setq manip ':ask-ask)))
-		       (cond ((eq prev-manip ':follow)
-			      (setf (Loaded-file-chunk-manip loaded-ch)
-				    manip))))))
-	     (cond ((memq manip '(:ask-once :ask-every :ask-ask))
-		    (setq manip
-		          (ask-user-for-manip loaded-ch
-					      object-exists)))
-		   ((and (eq manip ':object)
-			 (not object-exists))
-;;;;		    (cerror "I will compile the source file"
-;;;;			    !"Request to load nonexistent ~
-;;;;			      object file for ~s"
-;;;;			    (File-chunk-pathname file-ch))
-		    (setq manip ':compile)))
-	     ;; At this point manip is either :object, :source, or
-	     ;; :compile
-	     (cond (loaded-manip-dbg*
-		    (format t !"Now manip = ~s ~
-                                [should be :object, :source, or :compile]~
-                                ~%  loaded-ch = ~s~%"
-			    manip loaded-ch)))
-	     (let ((first-time (null (Loaded-chunk-principal-bases
-				         loaded-ch))))
-		(setf (Loaded-chunk-principal-bases loaded-ch)
-		      (list (ecase manip
-			       (:source
-				(Loaded-file-chunk-source loaded-ch))
-			       (:compile
-				(place-compiled-chunk
-				   (Loaded-file-chunk-source loaded-ch)))
-			       (:object
-				(Loaded-file-chunk-object loaded-ch)))))
-		(cond (first-time
-		       (setf (Chunk-basis loaded-ch)
-			     (append (Loaded-chunk-principal-bases loaded-ch)
-				     (mapcar
-				         (\\ (callee)
-					    (place-Loaded-chunk callee false))
-					 (File-chunk-callees file-ch)))))
-		      (t
-		       (loaded-chunk-change-basis
-			   loaded-ch 
-			   (mapcar (\\ (callee)
-				      (place-Loaded-chunk callee false))
-				   (File-chunk-callees file-ch))))))))
-      (let ((selection 
-	       (cond ((eq manip ':compile)
-		      (place-File-chunk
-			 (File-chunk-pathname
-			    (head (Chunk-basis loaded-ch)))))
-		     (t
-		      (head (Chunk-basis loaded-ch))))))
-	 (cond (loaded-manip-dbg*
-		(format t "Setting selection of ~s~% to ~s~%"
-			loaded-ch selection)))
-	 (setf (Loaded-file-chunk-selection loaded-ch)
-	       selection))))
+;;;;(defvar final-load* false)
+;;;; When building systems, bind to true to minimize soul-searching later.
 
 ;;; 'loaded-ch' is a Loaded-file-chunk
 (defun ask-user-for-manip (loaded-ch obj-exists)
@@ -416,6 +295,8 @@
                            file from now on;~%~
                            type '-' to load object files without recompiling ~
                            whenever possible, from now on.~%")))))))
+
+(setq user-manip-asker* !'ask-user-for-manip)
 
 (defun manip-refine-remember (manip loaded-ch)
    (cond ((eq manip ':object)
@@ -483,27 +364,6 @@
 		  "Should the same decision apply to all other files? "))
 	  (setq fload-compile* manip))))
 
-;;; We can assume that derive-date has already set the date to the old write
-;;; time, and that some supporter has a more recent time.
-(defmethod derive ((cf-ch Compiled-file-chunk))
-   (let* ((pn (File-chunk-pn
-		 (Compiled-file-chunk-source-file cf-ch)))
-	  (real-pn (pathname-resolve pn true))
-	  (real-ov (File-chunk-pathname
-		      (Compiled-file-chunk-object-file cf-ch)))
-	  (old-obj-write-time
-		   (and real-ov
-			(probe-file real-ov)
-			(pathname-write-time real-ov))))
-      (let ((now-compiling* pn)
-	    (now-loading* false)
-	    (now-slurping* false)
-	    (debuggability* debuggability*)
-	    (fload-indent*
-	       (* 3 (Chunk-depth cf-ch))))
-	 (compile-and-record pn real-pn real-ov
-			     cf-ch old-obj-write-time))))
-
 ;;;;(defmethod derive ((cf-ch Compiled-file-chunk))
 ;;;;   (let ((pn (File-chunk-pn
 ;;;;		(Compiled-file-chunk-source-file cf-ch))))
@@ -540,40 +400,6 @@
 ;;;;		      ;; Up to date
 ;;;;		      false)))))))
 
-(defun compile-and-record (pn real-pn object-file cf-ch old-obj-write-time)
-   (prog2
-      (file-op-message "Beginning compilation of" pn real-pn "...")
-      (with-post-file-transduction-hooks
-	 (cleanup-after-file-transduction
-	    (let ((*compile-verbose* false))
-	       (cond (object-file
-		      (compile-file real-pn :output-file object-file))
-		     (t
-		      (compile-file real-pn)
-		      (setq object-file (pathname-object-version
-					   real-pn true))))
-	       (let* ((new-compile-time
-			 (and object-file
-			      (probe-file object-file)
-			      (pathname-write-time object-file)))
-		      (success
-			 (and new-compile-time
-			      (or (not old-obj-write-time)
-				  (> new-compile-time
-				     old-obj-write-time)))))
-		  (fcompl-log real-pn (and success object-file))
-		  (cond (success
-			 (setf (Compiled-file-chunk-last-compile-time
-				  cf-ch)
-			       new-compile-time)
-			 new-compile-time)
-			(t 
-			 (let ((comp-time (get-universal-time)))
-			    (format *error-output*
-			       "Compilation failed [time ~s]: ~s~%"
-			       comp-time real-pn))))))))
-      (file-op-message "...compiled to" object-file false "")))
-
 (defparameter fcompl-flags* '(- -f -x -l -z))
 (defparameter filespecs-compile-flags* '(-l -z))
 ;;; -x -> "Stop managing compiled file (i.e., stop compiling)"
@@ -607,7 +433,7 @@
 (defun filespecs-compile (specs flags rt)
    (filespecs-do-compile
       specs
-      (flags-check flags flags filespecs-compile-flags*)
+      (flags-check flags filespecs-compile-flags*)
       rt))
 
 (defun filespecs-do-compile (specs flags *readtable*)
@@ -741,30 +567,9 @@
 		(prin1 newlog ss)
 		))))))
 
+(setq fcompl-logger* !'fcompl-log)
+
 ;;;;(defun compile-opt-lev () `((compile-opt ,compile-opt*)))
-
-(defvar loaded-filoids-to-be-monitored* ':global)
-
-(defun monitor-filoid-basis (loaded-filoid-ch)
-   (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
-	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
-		 loaded-filoid-ch)))
-   (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
-		(loaded-filoids-to-be-monitored* !()))
-	     (loop
-	        (dolist (loadable-ch controllers)
-		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false false)
-	        (cond ((null loaded-filoids-to-be-monitored*)
-		       (return))
-		      (t
-		       (setq controllers 
-			     (mapcar #'Loaded-chunk-controller
-				     loaded-filoids-to-be-monitored*))
-		       (setq loaded-filoids-to-be-monitored* !()))))))
-	 (t
-	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 
 (defun current-time-string ()
    (multiple-value-bind (sec mnt hr day mo yr wkday dst tz)

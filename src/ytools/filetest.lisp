@@ -18,6 +18,8 @@
 	    :name name
 	    :controllee lc))))
 
+(defvar file-op-count* 0)
+
 (defmethod derive ((tlc Test-loadable-chunk))
    (let* ((loaded-ch (Loadable-chunk-controllee tlc))
 	  (file-ch (Loaded-chunk-loadee loaded-ch))

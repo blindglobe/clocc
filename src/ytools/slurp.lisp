@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.22 2005/03/18 15:19:33 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.23 2005/03/21 13:34:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -89,6 +89,8 @@
 ;;; Actually, its argument is not necessarily a pathname, because
 ;;; we may want to slurp non-file entities.  (E.g., modules.)
 
+(defvar all-slurp-tasks* !())
+
 (defmacro def-slurp-task (name
 			  &key ((:default default-handler^)
 				'nil)
@@ -104,7 +106,19 @@
 	     (defun :^ (_ sym fname)
 	        (setf (href (Slurp-task-handler-table ,task-var)
 			    sym)
-		      (symbol-function fname)))))))
+		      (symbol-function fname))))
+	  (setq all-slurp-tasks*
+		(cons ,task-var
+		      (delete-if (\\ (stask)
+				    (eq (Slurp-task-label stask)
+					',name))
+				 all-slurp-tasks*))))))
+
+(defun lookup-slurp-task (name)
+   (dolist (stask all-slurp-tasks* false)
+      (cond ((eq (Slurp-task-label stask)
+		 name)
+	     (return stask)))))
 
 (defvar fload-verbose*            true)		
 ;;; -- true for message during FLOAD and related ops.
@@ -212,19 +226,19 @@ after YTools file transducers finish.")
 	    (t (setq readtab ':missing)))
       (do ((al args (cond (flags-done al) (t (cdr al))))
 	   (flags-done false))
-;;;;	   fname interned-flag
 	  ((or flags-done (null al))
 	   (values al
 		   (flags-check (reverse flags) possible-flags)
 		   readtab))
          (cond ((is-Symbol (car al))
-;;;;		(setq fname
-;;;;		      (symbol-name (car al)))
-		(setq flags-done (not (char= (elt fname 0) #\-))))
+		(setq flags-done
+		      (not (char= (elt (symbol-name (car al))
+				       0)
+				  #\-))))
 	       (t
 		(setq flags-done true)))
 	 (cond ((not flags-done)
-		(setq flags (cons flag flags)))))))
+		(setq flags (cons (car al) flags)))))))
 
 ;;;;		(setq interned-flag
 ;;;;		      (intern fname ytools-package*))
@@ -248,11 +262,11 @@ after YTools file transducers finish.")
 		       (t
 			(cerror "I'll ignore it"
 			   "Unexpected flag ~s; expected one of ~a"
-			      (car al)
+			      flag
 			      (mapcar (lambda (flag)
 					 (intern (symbol-name flag)
 						 *package*))
-				      possible-flags))
+				      expected))
 			!()))))
 	   flags))
 
@@ -474,6 +488,8 @@ after YTools file transducers finish.")
    (defun :^ (form tasks states)
       (cond ((memq ':slurp-toplevel (cadr form))
 	     (eval-forms-for-slurp-tasks (cddr form) tasks states))
+	    ((memq ':compile-toplevel (cadr form))
+	     (forms-slurp (cddr form) tasks states))
 	    (t
 	     (values tasks states)))))
 

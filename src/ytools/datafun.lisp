@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 1.8.2.1 2005/03/13 00:30:43 airfoyle Exp $
+;;;$Id: datafun.lisp,v 1.8.2.2 2005/03/21 13:34:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -27,24 +27,24 @@
 
 (defmacro datafun (master sym def)
    (let (funame)
-      `(eval-when (:compile-toplevel :load-toplevel :execute
-		   :slurp-toplevel)
-	  ,(cond ((atom def)
-		  (setf funame (build-symbol (< def) - (< master)))
-		  `(declare-datafun ',funame ',master ',sym nil))
-		 ((memq (car def) '(function funktion))
-		  `(declare-datafun ',(cadr def) ',master ',sym nil))
-		 (t
-		  (setf funame (build-symbol (< sym) - (< master)))
-		  (let ((definer (car def))
-			(definiens
-			   (cond ((eq (cadr def) ':^)
-				  (cddr def))
-				 (t (cdr def)))))
-		  `(progn
-		     (,definer ,funame ,@definiens)
-		     (declare-datafun ',funame ',master
-				      ',sym t))))))))
+;;;;      `(eval-when (:compile-toplevel :load-toplevel :execute
+;;;;		   :slurp-toplevel)  ... )
+       (cond ((atom def)
+	      (setf funame (build-symbol (< def) - (< master)))
+	      `(declare-datafun ',funame ',master ',sym nil))
+	     ((memq (car def) '(function funktion))
+	      `(declare-datafun ',(cadr def) ',master ',sym nil))
+	     (t
+	      (setf funame (build-symbol (< sym) - (< master)))
+	      (let ((definer (car def))
+		    (definiens
+		       (cond ((eq (cadr def) ':^)
+			      (cddr def))
+			     (t (cdr def)))))
+	      `(progn
+		 (,definer ,funame ,@definiens)
+		 (declare-datafun ',funame ',master
+				  ',sym t)))))))
 
 (defvar datafun-attachers* (make-eq-hash-table :size 100))
 
@@ -75,7 +75,7 @@
 		   "I will place the function name on the property list of the symbol"
 		   "No attach function for symbol ~s and task ~s~%"
 		   sym  master)
-		(setf (get sym master) (symbol-function funame)))   ))))
+		(setf (get sym master) (symbol-function funame)))))))
 
 (defmacro datafun-table (name ind &key (size 100))
   `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)

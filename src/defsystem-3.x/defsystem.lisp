@@ -4168,9 +4168,11 @@ the system definition, if provided."
 #+#.(cl:if (cl:find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") '(and) '(or))
 (progn
   (defun cmucl-mk-defsystem-module-provider (name)
-    (mk:load-system (string-downcase (string name))
-		    :compile-during-load t
-		    :verbose nil))
+    (let ((module-name (string-downcase (string name))))
+      (when (mk:find-system module-name :load-or-nil)
+	(mk:load-system module-name
+			:compile-during-load t
+			:verbose nil))))
 
   (pushnew 'cmucl-mk-defsystem-module-provider ext:*module-provider-functions*)
   )

@@ -36,7 +36,12 @@
 	      ;; displaced array.  (Implies *array-type* is array.)
 	      *array-slicing*
 	      ;; If non-NIL, apply array slicing (in ID-FACTOR)
-	      *apply-array-slice*)))
+	      *apply-array-slice*
+	      ;; If non-NIL, we are parsing the LHS of an assignment.
+	      ;; (Used mostly so we don't incorrectly convert the
+	      ;; definition of a statement function into a call of the
+	      ;; function with mutliple-value-bind.)
+	      *parsing-lhs*)))
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common
@@ -152,6 +157,56 @@ INPUT-FILE               File containing Fortran code
       (unless keep-temp-file
 	(delete-file processed-file))
       (values output-file))))
+
+(defun f2cl-compile (filename &key output-file
+			      error-file prune-labels include-comments
+			      (auto-save t) (relaxed-array-decls t)
+			      (coerce-assigns :as-needed)
+			      keep-lisp-file
+			      (array-type 'simple-array)
+			      (array-slicing t)
+			      package
+			      declaim)
+  "Convert the Fortran to Common Lisp and compile the resulting Lisp file
+
+FILENAME                 File containing Fortran code
+
+:OUTPUT-FILE             File to contain Lisp code
+
+:VERBOSE                 verbose output. Default = NIL.
+:PRUNE-LABELS            Prune unused labels. Default = NIL.
+:INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be buggy.)
+                         Default = NIL
+:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
+                         Default = T.
+:RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters
+                         to functions.  Default = T.
+:COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements automatically coerce the
+                         RHS to the appropriate type for the assignment.  If NIL or :NEVER,
+                         coercion never happens.  Otherwise, coercion happens as needed.
+                         The Default = :AS-NEEDED
+:KEEP-LISP-FILE          If T, the converted Lisp file is not deleted.  Default = NIL.
+:ARRAY-TYPE              The type of array f2cl should use.  Should be 'simple-array or
+                         'array.
+:ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an array reference
+                         in a call to a subroutine or function, we are really passing a
+                         subarray to the routine instead of just the single value.
+:PACKAGE                 A string or symbol specifying what package the result code
+                         should be in. (Basically puts a (in-package <p>) at the top.)
+:DECLAIM                 Declaim compilation options  (Basically puts a
+                         (declaim <declaim>) at the top.)
+"
+  (let ((lisp-file
+	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
+	       :auto-save auto-save :relaxed-array-decls relaxed-array-decls
+	       :coerce-assigns coerce-assigns
+	       :array-type array-type
+	       :array-slicing array-slicing
+	       :package package :declaim declaim)))
+    (multiple-value-prog1
+	(compile-file lisp-file :output-file output-file :error-file error-file)
+      (unless keep-lisp-file
+      (delete-file lisp-file)))))
 ;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)
@@ -885,8 +940,14 @@ INPUT-FILE               File containing Fortran code
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:
 (defun parse-assignment (x)
-  (let ((lhs (parse-expression (tail-chop '= x)))
-	(rhs (parse-expression (head-chop '= x))))
+  ;; Make sure we don't mangle statement functions into
+  ;; multiple-value-bind forms by saying we're parsing the LHS
+  ;; now. When parsing the RHS, it's OK if we convert function calls
+  ;; to a multiple-value-bind form.
+  (let ((lhs (parse-expression (tail-chop '= x) t))
+	(rhs (parse-expression (head-chop '= x) nil)))
+    ;;(format t "lhs = ~A~%" lhs)
+    ;;(format t "rhs = ~A~%" rhs)
     (cond ((listp lhs)
 	   ;; Look for undeclared variables in the rhs
 	   (check_new_vbles rhs)
@@ -998,7 +1059,9 @@ INPUT-FILE               File containing Fortran code
 ;                                   (princ-to-string (car lhs))))
 ;                     ,(cdr lhs) ,rhs)))))
 
-(defun parse-expression (x) (id-expression x))
+(defun parse-expression (x &optional (parse-lhs-p nil))
+  (let ((*parsing-lhs* parse-lhs-p))
+    (id-expression x)))
 
 (defun parse-pause (x) 
    `((error ,(cadr x))))
@@ -1021,23 +1084,25 @@ INPUT-FILE               File containing Fortran code
 	  ((null args)
 	   (values (nreverse v) (nreverse vnames)))
 	(let* ((arg (first args))
-	       (var (if (symbolp arg)
-			(intern (concatenate 'string "NEW-" (symbol-name arg)))
-			(intern (format nil "A-VAR-~D" count)))))
+	       (var (intern (concatenate 'string "VAR-" (princ-to-string count)))))
 	  (push var vnames)
 	  (push (cond ((or (vble-is-array-p arg)
-			   (member arg *external_function_names*))
+			   (member arg *external_function_names*)
+			   (member arg *intrinsic_function_names*)
+			   (member arg '(%true% %false%)))
 		       ;; Fortran can't return whole arrays or
-		       ;; functions, so don't try to assign the
-		       ;; value to arrays or functions.
+		       ;; functions, so don't try to assign the value
+		       ;; to arrays or functions.  Also, we don't want
+		       ;; to assign to constants like %true% and
+		       ;; %false%.
 		       nil)
 		      ((symbolp arg)
 		       ;; A simple variable
-		       `(setf ,arg ,var))
+		       `(when ,var (setf ,arg ,var)))
 		      ((and (listp arg)
 			    (eq (first arg) 'fref))
 		       ;; A reference to a single element of an array.
-		       `(fset ,arg ,var))
+		       `(when ,var (fset ,arg ,var)))
 		      (t
 		       ;; This means it's either a number or some
 		       ;; expression, so obviously we can't modify
@@ -1795,8 +1860,26 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.58 2000/08/04 14:20:31 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.59 2000/08/05 19:16:46 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.59  2000/08/05 19:16:46  rtoy
+;;; o Add special var *PARSING-LHS*
+;;; o Add function F2CL-COMPILE to compile a Fortran file to object code
+;;;   so the user doesn't have to call compile-file himself.
+;;; o In PARSE-ASSIGNMENT, call PARSE-EXPRESSION appropriately if we're
+;;;   parsing the LHS or RHS of an assignment.  (Prevents mangling of
+;;;   statement function definitions into multiple-value-bind's of the
+;;;   function.)
+;;; o Changes to GENERATE-CALL-TO-ROUTINE:
+;;;     o Revert back to just naming the variables sequentially.  The
+;;;       problem is if the same variable is used more than once in the
+;;;       parameter list.  (We may want to add this back in eventually.)
+;;;     o Don't try to assign to constants like %TRUE% and %FALSE%.
+;;;     o Only try to assign a new value to the parameter if the function
+;;;       actually returned a new (non-NIL) value.  This allows for
+;;;       functions that don't return extra parameters (like intrinsics)
+;;;       to still be used without f2cl knowing exactly the calling sequence.
+;;;
 ;;; Revision 1.58  2000/08/04 14:20:31  rtoy
 ;;; Add very rudimentary support for Fortran READ statements.  This means
 ;;; we just basically call read and assign the result to the (simple)

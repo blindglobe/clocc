@@ -164,15 +164,24 @@
 		     (member vble (cdar type-clauses) :key #'car)))
 	      ((or type
 		   (null type-clauses))
-	       (if (eq (caar type-clauses) 'array)
-		   ;; Hmm, an array declaration, but no type?
-		   (cond ((get-implicit-type vble))
-			 ((default-int-p vble)
-			  'fixnum)
-			 (t 'single-float))
-		   (caar type-clauses)))
-	   ;;(format t  "type-clause = ~S~%" type-clauses)
-	   ))
+	       (let ((v-type (caar type-clauses)))
+		 (cond ((eq v-type 'array)
+			;; Hmm, an array declaration, but no type?
+			(cond ((get-implicit-type vble))
+			      ((default-int-p vble)
+			       'fixnum)
+			      (t 'single-float)))
+		       ((and (listp v-type)
+			     (eq (first v-type) 'character))
+			;; Hmm, a Fortran character string.  Make it a Lisp string
+			(format t "v-type = ~S~%" v-type)
+			(if (numberp (second v-type))
+			    `(string ,(second v-type))
+			    'string))
+		       (t
+			v-type)))
+	       ;;(format t  "type-clause = ~S~%" type-clauses)
+	       )))
 	(t
 	 ;;(format t "  is not declared. Implicit type = ~a~%" (get-implicit-type vble))
 	 ;;(format t "implicit ~a~%" *implicit_vble_decls*)

@@ -2,7 +2,7 @@
 
 ;;; software.lisp --
 ;;;
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -85,12 +85,21 @@
 (defclass eclipse (generic-common-lisp-implementation) ())
 
 
-;; The default binary directory name is the lowercase of the feature tag
+;;; The default binary directory name is the lowercase of the feature tag
 
 (defgeneric software-binary-directory-name (software))
 
 (defmethod software-binary-directory-name ((software software))
   (string-downcase (symbol-name (cl-feature-tag software))))
 
+
+;;; A generic function that allows for the specification of a "default
+;;; source extension".
+
+(defgeneric software-source-file-extension (sw)
+  )
+
+(defmethod software-source-file-extension ((sw generic-common-lisp-implementation))
+  "lisp")
 
 ;;; end of file -- software.lisp

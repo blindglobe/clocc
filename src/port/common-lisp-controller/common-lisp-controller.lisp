@@ -10,7 +10,7 @@
              #:add-project-directory
              #:add-translation
              #:send-clc-command
-	     #:make-send-clc-command-sting
+	     #:make-clc-send-command-sting
 	     #:*clc-send-command-filename*)
     (:nicknames :c-l-c))
 

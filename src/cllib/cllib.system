@@ -2,6 +2,8 @@
 ;;;
 ;;; CLLIB - a Library of useful utilities
 ;;;
+;;; $Id: cllib.system,v 1.5 2000/03/22 23:57:19 sds Exp $
+;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 
 (mk:defsystem cllib
     :source-pathname (translate-logical-pathname "clocc:src;cllib;")
@@ -53,6 +55,7 @@
      (:file "withtype" :depends-on ("base"))
      (:file "xml" :depends-on ("base")))
     :finally-do
-    (progn (funcall (intern "AUTOLOAD-GENERATE" :cllib)
+    (progn (in-package :cllib)
+           (funcall (intern "AUTOLOAD-GENERATE" :cllib)
                     (mk:files-in-system :cllib) "auto.lisp")
            (compile-file "auto.lisp")))

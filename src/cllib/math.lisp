@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.43 2004/05/10 02:24:17 sds Exp $
+;;; $Id: math.lisp,v 2.44 2004/05/10 03:45:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1149,7 +1149,7 @@ When the distribution is not discreet, entropy is not available."
             (if weight
                 (standard-deviation-weighted seq seq :value key :weight weight)
                 (standard-deviation seq :len len :key key))
-          (make-mdl :sd std :mn mean :le len :mi min :ma max
+          (make-mdl :sd (dfloat std) :mn (dfloat mean) :le len :mi min :ma max
                     :en (when discreet
                           (entropy-sequence seq :key key :weight weight)))))))
 

@@ -394,7 +394,7 @@ Estimated total monitoring overhead: 0.88 seconds
 #+:mcl
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from ccl provide require))
-#+(or :clisp (and :cmu :new-compiler))
+#+(or :clisp :lispworks (and :cmu :new-compiler))
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:export "*MONITORED-FUNCTIONS*"
 	   "MONITOR" "MONITOR-ALL" "UNMONITOR" "MONITOR-FORM"
@@ -407,7 +407,7 @@ Estimated total monitoring overhead: 0.88 seconds
 	   "REPORT"))
 #+(and :cltl2
        (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
-                :mcl :clisp
+                :mcl :clisp :lispworks
                 (and :cmu :new-compiler))))
 (unless (find-package "MONITOR")
   (make-package "MONITOR" :nicknames '("MON") :use '("COMMON-LISP")))

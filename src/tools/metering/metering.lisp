@@ -525,7 +525,7 @@ Estimated total monitoring overhead: 0.88 seconds
 ;  #+:new-compiler
   '(the consing-type (ext:get-bytes-consed)))
 
-#+CLISP
+#+:clisp
 (defun get-cons ()
   (multiple-value-bind (real1 real2 run1 run2 gc1 gc2 space1 space2 gccount)
       (sys::%%time)
@@ -667,6 +667,55 @@ Estimated total monitoring overhead: 0.88 seconds
 
   (defmacro get-cons () '(the consing-type 0)))
 
+;; actually, neither `get-cons' nor `get-time' are used as is,
+;; but only in the following macro `with-time/cons'
+#-:clisp
+(defmacro with-time/cons ((delta-time delta-cons) form &body post-process)
+  (let ((start-cons (gensym "START-CONS-"))
+        (start-time (gensym "START-TIME-")))
+    `(let ((,start-time (get-time)) (,start-cons (get-cons)))
+       (declare (type time-type ,start-time)
+                (type consing-type ,start-cons))
+       (multiple-value-prog1 ,form
+         (let ((,delta-time (- (get-time) ,start-time))
+               (,delta-cons (- (get-cons) ,start-cons)))
+           ,@post-process)))))
+
+#+:clisp
+(if (< internal-time-units-per-second 1000000)
+    ;; TIME_1: AMIGA, OS/2, UNIX_TIMES
+    (defmacro delta4-time (new-time1 new-time2 old-time1 old-time2)
+      `(dpb (- ,new-time1 ,old-time1) (byte 16 16) (- ,new-time2 ,old-time2)))
+    ;; TIME_2: other UNIX, WIN32
+    (defmacro delta4-time (new-time1 new-time2 old-time1 old-time2)
+      `(+ (* (- ,new-time1 ,old-time1) internal-time-units-per-second)
+          (- ,new-time2 ,old-time2))))
+#+:clisp
+(defmacro delta4-cons (new-cons1 new-cons2 old-cons1 old-cons2)
+  `(dpb (- ,new-cons1 ,old-cons1) (byte 24 24) (- ,new-cons2 ,old-cons2)))
+
+;; avoid consing: when the application conses a lot,
+;; get-cons may return a bignum, so we really should not use it.
+#+:clisp
+(defmacro with-time/cons ((delta-time delta-cons) form &body post-process)
+  (let ((beg-cons1 (gensym "BEG-CONS1-")) (end-cons1 (gensym "END-CONS1-"))
+        (beg-cons2 (gensym "BEG-CONS2-")) (end-cons2 (gensym "END-CONS2-"))
+        (beg-time1 (gensym "BEG-TIME1-")) (end-time1 (gensym "END-TIME1-"))
+        (beg-time2 (gensym "BEG-TIME2-")) (end-time2 (gensym "END-TIME2-"))
+        (re1 (gensym)) (re2 (gensym)) (gc1 (gensym)) (gc2 (gensym)))
+    `(multiple-value-bind (,re1 ,re2 ,beg-time1 ,beg-time2
+                           ,gc1 ,gc2 ,beg-cons1 ,beg-cons2) (sys::%%time)
+       (declare (ignore ,re1 ,re2 ,gc1 ,gc2))
+       (multiple-value-prog1 ,form
+         (multiple-value-bind (,re1 ,re2 ,end-time1 ,end-time2
+                               ,gc1 ,gc2 ,end-cons1 ,end-cons2) (sys::%%time)
+           (declare (ignore ,re1 ,re2 ,gc1 ,gc2))
+           (let ((,delta-time (delta4-time ,end-time1 ,end-time2
+                                           ,beg-time1 ,beg-time2))
+                 (,delta-cons (delta4-cons ,end-cons1 ,end-cons2
+                                           ,beg-cons1 ,beg-cons2)))
+             ,@post-process))))))
+
 ;;; ********************************
 ;;; Required Arguments *************
 ;;; ********************************
@@ -778,34 +827,15 @@ Estimated total monitoring overhead: 0.88 seconds
             (values args t)
           (values args nil))))))
 
-#+CLISP
+#+:clisp
 (defun required-arguments (name)
-  (let ((function (symbol-function name)))
-    (case (type-of function)
-      (FUNCTION
-       (if (compiled-function-p function)
-           (multiple-value-bind (req-anz opt-anz rest-p key-p
-                                         keyword-list allow-other-keys-p)
-               (sys::signature function)
-             (declare (ignore keyword-list allow-other-keys-p))
-             (values req-anz (or (plusp opt-anz) rest-p key-p)))
-           (let ((lambdalist (car (sys::%record-ref function 1))))
-             (values (or (position-if #'(lambda (x)
-                                          (member x lambda-list-keywords))
-                                      lambdalist)
-                         (length lambdalist))
-                     (and (intersection lambdalist lambda-list-keywords) t)))))
-      (COMPILED-FUNCTION
-       (multiple-value-bind (name req-anz opt-anz rest-p
-                                  keywords allow-other-keys)
-           (sys::subr-info function)
-         (declare (ignore allow-other-keys))
-         (if name
-             (values req-anz (or (plusp opt-anz) rest-p keywords))
-             (values 0 t))))
-      (T (values 0 t)))))
+  (multiple-value-bind (name req-num opt-num rest-p key-p keywords allow-p)
+      (sys::function-signature name t)
+    (if name ; no error
+        (values req-num (or (/= 0 opt-num) rest-p key-p keywords allow-p))
+        (values 0 t))))
 
-#-(or :cmu CLISP :lcl3.0 :lcl4.0 :mcl1.3.2 :mcl :excl)
+#-(or :cmu :clisp :lcl3.0 :lcl4.0 :mcl1.3.2 :mcl :excl)
 (progn
  (eval-when (compile eval)
    (warn
@@ -1070,63 +1100,60 @@ adjusted for overhead."
 		   (let ((prev-total-time *total-time*)
 			 (prev-total-cons *total-cons*)
 			 (prev-total-calls *total-calls*)
-;			 (old-time inclusive-time)
-;			 (old-cons inclusive-cons)
-;			 (old-nested-calls nested-calls)
-			 (start-time (get-time))
-			 (start-cons (get-cons)))
+			 ;; (old-time inclusive-time)
+			 ;; (old-cons inclusive-cons)
+			 ;; (old-nested-calls nested-calls)
+			 )
 		     (declare (type time-type prev-total-time)
-			      (type time-type start-time)
 			      (type consing-type prev-total-cons)
-			      (type consing-type start-cons)
 			      (fixnum prev-total-calls))
-		     (multiple-value-prog1
-			 ,(if optionals-p
-			      #+cmu `(multiple-value-call
-					 old-definition
-				       (values ,@required-args)
-				       (c:%more-arg-values arg-context
-							   0
-							   arg-count))
-			      #-cmu `(apply old-definition
-				      ,@required-args optional-args)
-			      `(funcall old-definition ,@required-args))
-		       (let ((delta-time (- (get-time) start-time))
-			     (delta-cons (- (get-cons) start-cons)))
-			 ;; Calls
-			 (incf calls)
-			 (incf *total-calls*)
-			    ;;; nested-calls includes this call
-			 (incf nested-calls (the fixnum
-						 (- *total-calls*
-						    prev-total-calls)))
-;			 (setf nested-calls (+ old-nested-calls
-;					       (- *total-calls*
-;						  prev-total-calls)))
-			 ;; Time
-			    ;;; Problem with inclusive time is that it
-			    ;;; currently doesn't add values from recursive
-			    ;;; calls to the same function. Change the
-			    ;;; setf to an incf to fix this?
-			 (incf inclusive-time (the time-type delta-time))
-;			 (setf inclusive-time (+ delta-time old-time))
-			 (incf exclusive-time (the time-type
-						   (+ delta-time
-						      (- prev-total-time
-							 *total-time*))))
-			 (setf *total-time* (the time-type
-						 (+ delta-time
-						    prev-total-time)))
-			 ;; Consing
-			 (incf inclusive-cons (the consing-type delta-cons))
-;			 (setf inclusive-cons (+ delta-cons old-cons))
-			 (incf exclusive-cons (the consing-type
-						   (+ delta-cons
-						      (- prev-total-cons
-							 *total-cons*))))
-			 (setf *total-cons*
-			       (the consing-type
-				    (+ delta-cons prev-total-cons))))))))
+                     (with-time/cons (delta-time delta-cons)
+                       ;; form
+                       ,(if optionals-p
+                            #+cmu `(multiple-value-call
+                                       old-definition
+                                     (values ,@required-args)
+                                     (c:%more-arg-values arg-context
+                                                         0
+                                                         arg-count))
+                            #-cmu `(apply old-definition
+                                          ,@required-args optional-args)
+                            `(funcall old-definition ,@required-args))
+                       ;; post-processing:
+                       ;; Calls
+                       (incf calls)
+                       (incf *total-calls*)
+                       ;; nested-calls includes this call
+                       (incf nested-calls (the fixnum
+                                            (- *total-calls*
+                                               prev-total-calls)))
+                       ;; (setf nested-calls (+ old-nested-calls
+                       ;;                       (- *total-calls*
+                       ;;                          prev-total-calls)))
+                       ;; Time
+                       ;; Problem with inclusive time is that it
+                       ;; currently doesn't add values from recursive
+                       ;; calls to the same function. Change the
+                       ;; setf to an incf to fix this?
+                       (incf inclusive-time (the time-type delta-time))
+                       ;; (setf inclusive-time (+ delta-time old-time))
+                       (incf exclusive-time (the time-type
+                                              (+ delta-time
+                                                 (- prev-total-time
+                                                    *total-time*))))
+                       (setf *total-time* (the time-type
+                                            (+ delta-time
+                                               prev-total-time)))
+                       ;; Consing
+                       (incf inclusive-cons (the consing-type delta-cons))
+                       ;; (setf inclusive-cons (+ delta-cons old-cons))
+                       (incf exclusive-cons (the consing-type
+                                              (+ delta-cons
+                                                 (- prev-total-cons
+                                                    *total-cons*))))
+                       (setf *total-cons*
+                             (the consing-type
+                               (+ delta-cons prev-total-cons)))))))
 	 (setf (get-monitor-info name)
 	       (make-metering-functions
 		:name name

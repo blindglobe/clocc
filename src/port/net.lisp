@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.38 2001/11/02 22:30:39 sds Exp $
+;;; $Id: net.lisp,v 1.39 2001/12/04 22:15:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -26,7 +26,7 @@
    socket open-socket socket-host/port socket-string socket-server
    socket-accept open-socket-server socket-server-close socket-server-host/port
    socket-service-port servent-name servent-aliases servent-port servent-proto
-   network timeout login path))
+   network timeout login net-path))
 
 ;;;
 ;;; {{{ name resolution
@@ -372,7 +372,7 @@ Kind can be :stream or :datagram."
                (format out " [timeout ~a sec]" (timeout-time cc))))))
 
 (define-condition login (network) ())
-(define-condition path (network) ())
+(define-condition net-path (network) ())
 
 ;;;
 ;;; }}}{{{ `socket-service-port'

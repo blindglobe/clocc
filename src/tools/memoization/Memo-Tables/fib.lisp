@@ -2,13 +2,13 @@
 
 (in-package "MEMOIZATION")
 
-(proclaim '(special user::*Temporary-Hash-Table*))
+(proclaim '(special common-lisp-user::*Temporary-Hash-Table*))
 
-(setq user::*Temporary-Hash-Table*
+(setq common-lisp-user::*Temporary-Hash-Table*
       (make-hash-table :size 62 :test #'EQUAL))
 
 (flet ((F (Key Value)
-         (setf (gethash Key user::*Temporary-Hash-Table*) Value)))
+         (setf (gethash Key common-lisp-user::*Temporary-Hash-Table*) Value)))
   (F '(8) '21)
   (F '(9) '34)
   (F '(10) '55)

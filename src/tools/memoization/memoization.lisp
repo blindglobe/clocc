@@ -607,7 +607,7 @@
 
 (defun Redefine-Arglist ()
   "Alters `arglist' to show original arguments for memoized functions"
-  (let ((Arglist-Function-Name 'user::arglist))
+  (let ((Arglist-Function-Name 'common-lisp-user::arglist))
     (when
       (and (fboundp Arglist-Function-Name)
 	   (not (get Arglist-Function-Name :Original-Definition)))

@@ -233,7 +233,7 @@ stored in the table.
 
 However, compilers that have this optimization also have flags that
 can be set to prevent its use. In Lucid, this is set via
-(user::compiler-options :tail-merge NIL)
+(common-lisp-user::compiler-options :tail-merge NIL)
 
 (G) Memory Usage
 

@@ -1,3 +1,9 @@
+cl-memoization (1.0-9) unstable; urgency=low
+
+  * Don't use :USER package anymore. closes: #194831 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 27 May 2003 11:52:04 +0200
+
 cl-memoization (1.0-8) unstable; urgency=low
 
   * fixed asdf package file. Closes: #174663 

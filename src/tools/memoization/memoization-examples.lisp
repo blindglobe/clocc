@@ -116,7 +116,7 @@
 ;;; WARNING! On Lucid, if you compile with speed 3, you get "optimization of
 ;;; tail calls", which is actually removal of all directly recursive calls.
 ;;; This can be changed back by either a SPEED optimization of 2, or an
-;;; explicity setting of (user::compiler-options :tail-merge NIL). Giving a
+;;; explicity setting of (common-lisp-user::compiler-options :tail-merge NIL). Giving a
 ;;; NOTINLINE proclamation is not sufficient. This same problem may occur on
 ;;; other systems as well, so be on the lookout.
 

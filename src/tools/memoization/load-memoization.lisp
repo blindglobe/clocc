@@ -62,8 +62,8 @@
 ;;; NEED TO BE CHANGED.
 
 (defvar *Memoization-Base-Directory*
-  (if (boundp 'user::*SMS-File-Prefix*)
-      (concatenate 'string user::*SMS-File-Prefix* "Memoization/")
+  (if (boundp 'common-lisp-user::*SMS-File-Prefix*)
+      (concatenate 'string common-lisp-user::*SMS-File-Prefix* "Memoization/")
       #+cmu                    "/usr/src/cmucl/memoization-1.0/"
       #+:symbolics             "bugs:/shared/SMS/Code/Memoization/"
       #+:lucid                 "/shared/SMS/Code/Memoization/"
@@ -165,7 +165,7 @@
 ;;;===========================================================================
 ;;; Once your own package is established, you may want to have an entry here 
 ;;; that has that package use-package :Memoization, or uncomment the line below
-;;; that makes Memoization available in the :User package.
+;;; that makes Memoization available in the :common-lisp-user package.
 
 (let ((Symbols
 	'(Define-Memo-Function Define-Precalculated-Memo-Function Memoize

@@ -75,14 +75,14 @@
 	   (Hash-Table-Test-Name (get Function-Name :Memo-Table-Test))) )
     (with-open-file (File Filename :direction :output)
       (Print-File-Header File)
-      (format File "(proclaim '(special user::*Temporary-Hash-Table*))~2%")
-      (format File "(setq user::*Temporary-Hash-Table*~%")
+      (format File "(proclaim '(special common-lisp-user::*Temporary-Hash-Table*))~2%")
+      (format File "(setq common-lisp-user::*Temporary-Hash-Table*~%")
       (format File "      (make-hash-table :size ~S :test #'~S))~2%"
 	      (round (* Size-Factor Size)) Hash-Table-Test)
       (format File "(flet ((F (Key Value)~%")
       (format
 	File
-	"         (setf (gethash Key user::*Temporary-Hash-Table*) Value)))~%")
+	"         (setf (gethash Key common-lisp-user::*Temporary-Hash-Table*) Value)))~%")
       (maphash #'(lambda (Key Value) (format File "  (F '~S '~S)~%" Key Value))
 	       Table)
       (format File ")") )      ; Ends the flet
@@ -129,7 +129,7 @@
 ;;;===========================================================================
 ;;; See Load-Saved-Memo-Table below and Save-Memo-Table.
 
-(defparameter user::*Temporary-Hash-Table* NIL
+(defparameter common-lisp-user::*Temporary-Hash-Table* NIL
   "Temporary table to store hash table loaded from a saved file")
 
 ;;;===========================================================================
@@ -140,7 +140,7 @@
 (defun Load-Saved-Memo-Table (Function-Name)
   "Loads file defining hash table that was saved in an earlier session"
   (Load-and-Compile-if-Needed (Memo-Table-Base-File Function-Name))
-  user::*Temporary-Hash-Table*)
+  common-lisp-user::*Temporary-Hash-Table*)
 
 ;;;===========================================================================
 ;;; Returns the pathname of the source file (presumably ...Foo.lisp)

@@ -7,19 +7,23 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.3 2000/05/23 23:01:09 sds Exp $
+;;; $Id: cvs.lisp,v 2.4 2000/05/24 23:50:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `string-beg-with'
   (require :string (translate-logical-pathname "cllib:string"))
-  ;; `skip-to-line', `read-list-from-stream'
+  ;; `skip-to-line', `read-list-from-stream', `file-size-t'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
   ;; `string->dttm'
   (require :date (translate-logical-pathname "cllib:date"))
   ;; `hash-table->alist'
-  (require :miscprint (translate-logical-pathname "cllib:miscprint")))
+  (require :miscprint (translate-logical-pathname "cllib:miscprint"))
+  ;; `default-directory'
+  (require :sys (translate-logical-pathname "port:sys"))
+  ;; `with-open-pipe'
+  (require :shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
@@ -82,10 +86,12 @@
   (lines- 0 :type index-t)
   (log nil :type list))         ; of strings
 
-(defstruct (file #+cmu (:print-function print-struct-object))
+(defstruct (cvs-file (:conc-name cvsf-)
+                     #+cmu (:print-function print-struct-object))
   (rcs "" :type string)
   (work "" :type string)
   (head "" :type string)
+  (size 0 :type file-size-t)
   (tot-rev 0 :type index-t)
   (revs nil :type list))        ; of revisions
 
@@ -118,8 +124,22 @@
                       :lines-  (abs (or (cadr lines+-) 0)))
        (if fin +eof+ (read in))))))
 
+(defun pathname-ensure-name (path)
+  (let ((path (pathname path)))
+    (if (pathname-name path) path
+        ;; this is an ugly workaround for CLISP's buggy handling of pathnames:
+        ;; first, it thinks ".foo" has no name, second,
+        ;; (make-pathname :defaults "a.b" :name "c" :type nil) => #p"c.b"
+        (make-pathname ;; :defaults path
+                       :host (pathname-host path)
+                       :device (pathname-device path)
+                       :directory (pathname-directory path)
+                       :version (pathname-version path)
+                       :name (concatenate 'string "." (pathname-type path))
+                       :type nil))))
+
 (defun cvs-read-file (in ra)
-  "Read a FILE froma stream.  Suitable for `read-list-from-stream'."
+  "Read a CVS-FILE from a stream.  Suitable for `read-list-from-stream'."
   (declare (stream in) (symbol ra))
   (unless (eq ra :rcs)
     (error "~s: read-ahead is `~s' (`~s' expected)" 'cvs-read-file ra :rcs))
@@ -141,13 +161,15 @@
       (unless (= tot-rev (length revs))
         (warn "total revision (~d) != number of revisions (~d)"
               tot-rev (length revs)))
-      ;; (format t "~&~s: ~a~%" 'cvs-read-file rcs)
-      (values (make-file :revs revs :rcs rcs :work work :head head
-                         :tot-rev tot-rev)
+      (values (make-cvs-file
+               :revs revs :work work :head head :tot-rev tot-rev :rcs rcs
+               :size (file-size (merge-pathnames
+                                 (pathname-ensure-name work)
+                                 (directory-namestring in))))
               (read in nil +eof+)))))
 
 (defun cvs-read-log (path)
-  "Read CVS log, return a list of FILE structures."
+  "Read CVS log, return a list of CVS-FILE structures."
   (with-timing (:done t)
     (with-open-file (in path :direction :input)
       (format t "~&~s: ~a [~:d bytes]..." 'cvs-read-log path (file-length in))
@@ -159,9 +181,13 @@
   (declare (type revision rr))
   (+ (revision-lines+ rr) (revision-lines- rr)))
 
-(defsubst file-lines (ff)
-  (declare (type file ff))
-  (reduce #'+ (file-revs ff) :key #'rev-lines))
+(defsubst cvsf-lines (ff)
+  (declare (type cvs-file ff))
+  (reduce #'+ (cvsf-revs ff) :key #'rev-lines))
+
+(defsubst cvsf-list-size (fl)
+  (declare (type list fl))
+  (reduce #'+ fl :key #'cvsf-size))
 
 ;;;
 ;;; stat by the author
@@ -185,36 +211,59 @@
               (length (author-mods au)) (length (author-revs au))
               (author-lines au))))
 
-;;;###autoload
-(defun cvs-stat-log (path)
-  "Generate and print some statistics of the CVS repository."
-  (let ((fl (cvs-read-log path)) (aht (make-hash-table :test 'equal)) aul)
-    (format t "~a: ~:d files, ~:d revisions, ~:d lines changed~%"
-            path (length fl) (reduce #'+ fl :key #'file-tot-rev)
-            (reduce #'+ fl :key #'file-lines))
+(defun cvs-stat-files (fl)
+  "Generate and print some statistics about a list of CVS-FILE structs."
+  (let ((aht (make-hash-table :test 'equal)) aul)
+    (format
+     t "~:d file~:p (~:d byte~:p), ~:d revision~:p, ~:d line~:p changed~%"
+     (length fl) (cvsf-list-size fl)
+     (reduce #'+ fl :key #'cvsf-tot-rev) (reduce #'+ fl :key #'cvsf-lines))
     (dolist (ff fl)
-      (do ((rr (file-revs ff) (cdr rr)) au re na)
+      (do ((rr (cvsf-revs ff) (cdr rr)) au re na)
           ((null rr))
         (setq re (car rr) na (revision-author re)
               au (or (gethash na aht)
                      (setf (gethash na aht) (make-author :name na))))
         (push re (author-revs au))
-        (pushnew ff (author-mods au) :key #'file-rcs)
+        (pushnew ff (author-mods au) :key #'cvsf-rcs)
         (when (null (cdr rr)) (push ff (author-owns au)))))
     (setq aul (sort (mapcar #'cdr (cdr (hash-table->alist aht))) #'<
                     :key (compose length author-revs)))
-    (format t "name        owns   modified  revisions   lines changed~%")
+    (format t "name~10t ~21@a ~10@a ~10@a ~15@a~%"
+            "owns: files     bytes" "modified" "revisions" "lines changed")
     (dolist (au aul)
-      (format t "~a~10t ~5:d ~10:d ~10:d ~15:d~%"
+      (format t "~a~10t ~5:d ~15:d ~10:d ~10:d ~15:d~%"
               (author-name au) (length (author-owns au))
-              (length (author-mods au)) (length (author-revs au))
-              (author-lines au)))
-    (format t "total~10t ~5:d ~10:d ~10:d ~15:d~%"
-            (reduce #'+ aul :key (lambda (au) (length (author-owns au))))
-            (reduce #'+ aul :key (lambda (au) (length (author-mods au))))
-            (reduce #'+ aul :key (lambda (au) (length (author-revs au))))
+              (cvsf-list-size (author-owns au)) (length (author-mods au))
+              (length (author-revs au)) (author-lines au)))
+    (format t "total~10t ~5:d ~15:d ~10:d ~10:d ~15:d~%"
+            (reduce #'+ aul :key (compose length author-owns))
+            (reduce #'+ aul :key (compose cvsf-list-size author-owns))
+            (reduce #'+ aul :key (compose length author-mods))
+            (reduce #'+ aul :key (compose length author-revs))
             (reduce #'+ aul :key #'author-lines))
     (values aul aht)))
+
+;;;###autoload
+(defun cvs-stat-log (path)
+  "Generate and print some statistics of the CVS repository."
+  (when (char= #\/ (char path (1- (length path))))
+    (with-timing ()
+      (format t "~s: ~a is a directory, running `cvs log`..."
+              'cvs-stat-log path)
+      (force-output)
+      (let ((old-path (default-directory)))
+        (setf (default-directory) path)
+        (setq path (merge-pathnames "cvs.log" path))
+        (unwind-protect
+            (with-open-pipe (pipe (pipe-input "cvs" "log"))
+              (with-open-file (log path :direction :output)
+                (loop :for line = (read-line pipe nil nil)
+                      :while line :do (write-line line log))
+                (format t "done [~:d byte~:p]" (file-length log))))
+          (setf (default-directory) old-path)))))
+  (format t "~a: " path)
+  (cvs-stat-files (cvs-read-log path)))
 
 (provide :cvs)
 ;;; file cvs.lisp ends here

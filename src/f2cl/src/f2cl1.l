@@ -1128,7 +1128,8 @@ main-loop
       (if stored-dims
           (if (not (equal (cadr stored-dims) dims))
               (error "common array ~A dimensions not equivalent between subprograms" vble))
-          (setq *common_array_dims* (append (list vble dims) *common_array_dims*)))))
+          (setq *common_array_dims*
+		(append (list vble (parse_dimension_specs dims)) *common_array_dims*)))))
 
 (defun extract-atoms (x)
    (do ((l x (cdr l))
@@ -1160,11 +1161,11 @@ main-loop
 		 ,@(mapcar #'(lambda (decl)
 			       (let ((dcl (remove '* decl)))
 				 ;; (format t "  decl = ~A~%" dcl)
-				 (destructuring-bind (name &optional dim-or-len &rest len)
+				 (destructuring-bind (name &optional dim-or-len)
 				     dcl
-				   (if (and dim-or-len (listp dim-or-len))
+				   (if dim-or-len
 				       ;; An array of characters
-				       `(,name ,(parse_dimension_specs dim-or-len) ,@len)
+				       `(,name ,@(parse_dimension_specs dim-or-len))
 				       ;; A simple character string
 				       dcl))))
 			   (list-split '|,| (cdddr x))))
@@ -1178,7 +1179,7 @@ main-loop
 		     (push
 		      (if (and dim-or-len (listp dim-or-len))
 			  ;; An array
-			  `((character ,@len) (,name ,(parse_dimension_specs dim-or-len)))
+			  `((character ,@len) (,name ,@(parse_dimension_specs dim-or-len)))
 			  ;; A simple character string
 			  `((character ,(or dim-or-len 1)) (,name)))
 		      *explicit_vble_decls*)))

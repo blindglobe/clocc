@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.31 2002/03/14 15:54:40 sds Exp $
+;;; $Id: url.lisp,v 2.32 2002/03/30 17:16:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -314,6 +314,12 @@ Print the appropriate message MESG to OUT."
                    :time timeout)
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
+(let ((fin (make-array 2 :element-type 'character :initial-contents
+                       '(#\Return #\Newline))))
+  (defun socket-send (sock &optional (count 1))
+    (loop :repeat count :do (write-string fin sock))
+    (finish-output sock)))
+
 (defun open-url (url &key (err *error-output*) (sleep *url-default-sleep*)
                  (timeout *url-default-timeout*) (init *url-open-init*)
                  ((:nntp-server *nntp-server*) *nntp-server*)
@@ -346,9 +352,12 @@ the error `timeout' is signaled."
                     (:ftp (url-ask sock err :conn)
                           (url-login-ftp sock url err))
                     (:telnet (dolist (word (split-string (url-path url) "/") t)
-                               (format sock "~a~%" word)))
+                               (write-string word sock)
+                               (socket-send sock)))
                     ((:whois :finger :cfinger)
-                     (format sock "~a~%" (url-path-file url)) t)
+                     (write-string (url-path-file url) sock)
+                     (socket-send sock)
+                     t)
                     (:mailto (url-ask sock err :conn))
                     ((:news :nntp)
                      (url-ask sock err :noop)
@@ -411,7 +420,9 @@ ERR is the stream for information messages or NIL for none."
 (defun url-open-http (sock url err)
   "Open the socket to the HTTP url."
   (declare (type socket sock) (type url url) (type (or null stream) err))
-  (format sock "GET ~a HTTP/1.0~2%" (url-path url))
+  (format sock "GET ~a HTTP/1.0" ; http://host == http://host/
+          (if (zerop (length (url-path url))) "/" (url-path url)))
+  (socket-send sock 2)
   (do ((sk sock) (stat 302) sym res (*package* +kwd+))
       ((not (eql stat 302)) sk)
     (declare (fixnum stat))
@@ -428,7 +439,8 @@ ERR is the stream for information messages or NIL for none."
         (when (equal "" (url-host sym)) (setf (url-host sym) (url-host url)))
         (format err " *** redirected to `~a' [~a]~%" sym res)
         (close sk) (setq sk (open-url sym :err err))
-        (format sk "GET ~a HTTP/1.0~2%" (url-path sym))))))
+        (format sk "GET ~a HTTP/1.0" (url-path sym))
+        (socket-send sk 2)))))
 
 (defun http-parse-header (sock &key (out *standard-output*))
   "Read the headers, when there there is none, return nil,
@@ -477,7 +489,7 @@ See RFC959 (FTP) &c.")
   (declare (type socket sock) (type (or null stream) out)
            (type (or (unsigned-byte 10) symbol list) end))
   (when req
-    (apply #'format sock req) (fresh-line sock)
+    (apply #'format sock req) (socket-send sock)
     (mesg :log out "~&url-ask[~s]: `~?'~%" end (car req) (cdr req)))
   (loop :with endl :of-type list =
         (typecase end

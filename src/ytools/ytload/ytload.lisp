@@ -15,7 +15,7 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
-;;;$Id: ytload.lisp,v 1.7 2004/03/13 04:06:06 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.1 2005/01/17 17:49:56 airfoyle Exp $
 
 (defvar tools-version* "1.3")
 
@@ -250,12 +250,23 @@
       (setq directory-delimiter*
 	   (nth-value 1 (peel-last-non-whitespace
 				     config-directory*)))
-      (cond ((or (member (elt directory-delimiter* 0)
-			 '(#\/ #\\ #\:))
-		 (y-or-n-p "Is '~a' really the directory delimiter (type blank line if so, else delimiter): "
-			   directory-delimiter*))
-	     (return)))
-      (setq directory-delimiter* nil)))
+      (cond ((stringp directory-delimiter*)
+	     (cond ((member (elt directory-delimiter* 0)
+			    '(#\/ #\\ #\:))
+		    (return))
+		   (t
+		    (format *query-io*
+			    "Is '~a' really the directory delimiter ~% (type blank line if so, else correct delimiter): "
+			    directory-delimiter*)
+		    (let ((delim (nth-value 1 (peel-last-non-whitespace
+						 (read-line *query-io*)))))
+		       (cond (delim
+			      (setq directory-delimiter* delim)
+			      (setq config-directory*
+				    (concatenate 'string config-directory
+						 directory-delimiter*))
+			      (return)))))))
+	    (t (setq directory-delimiter* nil)))))
 		    
 (defun ensure-filename-case ()
 	 (cond ((is-set filename-case*) nil)

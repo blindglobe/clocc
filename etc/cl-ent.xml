@@ -2,7 +2,7 @@
 
 <!-- *** Entities for docbook/xml, related to Common Lisp *** -->
 <!--
- Copyright (C) 2000-2001 by Sam Steingold
+ Copyright (C) 2000-2002 by Sam Steingold
  This is Free Software, covered by the GNU GPL (v2 or later)
  See http://www.gnu.org/copyleft/gpl.html
  -->
@@ -72,7 +72,7 @@
 <!ENTITY fsf "<ulink url='http://www.fsf.org'>Free Software Foundation (FSF)</ulink>">
 <!ENTITY eff "<ulink url='http://www.eff.org'>Electronic Frontier Foundation</ulink>">
 <!ENTITY gnu "<ulink url='http://www.gnu.org'>GNU</ulink>">
-<!ENTITY readline "&gnu; <ulink url='ftp://ftp.gnu.org/gnu/readline/'>readline</ulink>">
+<!ENTITY readline "&gnu; <ulink url='http://cnswww.cns.cwru.edu/~chet/readline/rltop.html'>readline</ulink>">
 <!ENTITY gpl "<ulink url='http://www.gnu.org/copyleft/gpl.html'>GPL</ulink>">
 <!ENTITY lgpl "<ulink url='http://www.gnu.org/copyleft/lgpl.html'>LGPL</ulink>">
 <!ENTITY gfdl "<ulink url='http://www.gnu.org/copyleft/fdl.html'>GFDL</ulink>">
@@ -92,12 +92,12 @@
 <!-- *** platforms *** -->
 <!ENTITY acorn "<ulink url='http://www.acorn.com/'><emphasis role='strong'>Acorn</emphasis></ulink>">
 <!ENTITY amiga "<ulink url='http://www.amiga.org/'><emphasis role='strong'>Amiga</emphasis></ulink>">
+<!ENTITY cygwin "<ulink url='http://cygwin.com/'><emphasis role='strong'>Cygwin</emphasis></ulink>">
 <!ENTITY dos "<ulink url='http://www.freedos.org/'><emphasis role='strong'>DOS</emphasis></ulink>">
 <!ENTITY linux "<ulink url='http://www.linux.org/'><emphasis role='strong'>Linux</emphasis></ulink>">
 <!ENTITY nextstep "<ulink url='http://www.next.com/'><emphasis role='strong'>NeXTstep</emphasis></ulink>">
 <!ENTITY os2 "<ulink url='http://www.os2.org/'><emphasis role='strong'>OS/2</emphasis></ulink>">
 <!ENTITY unicode "<ulink url='http://www.unicode.org/'><emphasis role='strong'>UNICODE</emphasis></ulink>">
-<!ENTITY unix "<ulink url='http://www.UNIX-systems.org/online.html'><emphasis role='strong'>UNIX</emphasis></ulink>">
 <!ENTITY win32 "<ulink url='http://www.willows.com/'><emphasis role='strong'>Win32</emphasis></ulink>">
 
 
@@ -108,6 +108,7 @@
 <!ENTITY repl "<ulink url='&clhs;/Body/sec_25-1-1.html'>read-eval-print loop</ulink>">
 <!ENTITY iter-forms "<ulink url='&clhs;/Body/glo_i.html#iteration_form'><quote>iteration forms</quote></ulink>">
 <!ENTITY alist "<ulink url='&clhs;/Body/glo_a.html#association_list'>alist</ulink>">
+<!ENTITY type-eq "<ulink url='&clhs;/Body/glo_t.html#type_equivalent'>type equivalent</ulink>">
 
 <!-- *** packages *** -->
 <!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote>COMMON-LISP</quote></ulink>">

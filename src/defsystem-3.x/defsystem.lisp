@@ -861,7 +861,7 @@
 ;;; Now that ANSI CL includes PROVIDE and REQUIRE again, is this code
 ;;; necessary?
 
-#-(or (and :CMU :new-compiler)
+#-(or :CMU
       :vms
       :mcl
       :lispworks
@@ -4257,9 +4257,9 @@ D
 			  #+(or :cmu :scl) (and *cmu-errors-to-file*
 						(component-full-pathname component
 									 :error))
-			  #+(and CMU (not :new-compiler))
-			  :errors-to-terminal
-			  #+(and CMU (not :new-compiler))
+			  #+CMU
+			  :error-output
+			  #+CMU
 			  *cmu-errors-to-terminal*
 			  (component-compiler-options component)
 			  ))))

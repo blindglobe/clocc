@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.5 2002/06/17 21:38:20 sds Exp $
+;;; $Id: path.lisp,v 1.6 2003/06/06 02:05:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,19 +18,24 @@
 
 (export
  '(pathname-ensure-name probe-directory default-directory chdir mkdir rmdir
-   *logical-hosts-definitions* load-logical-host))
+   safe-truename un-unspecific *logical-hosts-definitions* load-logical-host))
 
 ;;;
 ;;; utilities
 ;;;
+
+(defun un-unspecific (value)
+  "Convert :UNSPECIFIC to NIL."
+  (if (eq value :unspecific) nil value))
 
 (defun pathname-ensure-name (path)
   "Make sure that the pathname has a name slot.
 Call `pathname' on it argument and, if there is no NAME slot,
 but there is a TYPE slot, move TYPE into NAME."
   (let ((path (pathname path)))
-    (if (or (pathname-name path) (null (pathname-type path))) path
-        ;; if you use CLISP, you will need 2000-03-09 or newer
+    (if (or (un-unspecific (pathname-name path))
+            (null (un-unspecific (pathname-type path))))
+        path
         (make-pathname :name (concatenate 'string "." (pathname-type path))
                        :type nil :defaults path))))
 
@@ -45,8 +50,8 @@ but there is a TYPE slot, move TYPE into NAME."
   ;; Date: Wed, 5 May 1999 11:51:19 -0500
   ;; fold the name.type into directory
   (let* ((path (pathname filename))
-         (name (pathname-name path))
-         (type (pathname-type path))
+         (name (un-unspecific (pathname-name path)))
+         (type (un-unspecific (pathname-type path)))
          (new-dir
           (cond ((and name type) (list (concatenate 'string name "." type)))
                 (name (list name))
@@ -54,8 +59,9 @@ but there is a TYPE slot, move TYPE into NAME."
                 (t nil))))
     (when new-dir
       (setq path (make-pathname
-                  :directory (append (pathname-directory path) new-dir)
-                  :name nil :type nil :defaults path)))
+                  :directory (append (un-unspecific (pathname-directory path))
+                                     new-dir)
+                  :name nil :type nil :version nil :defaults path)))
     #+allegro (excl::probe-directory path)
     #+clisp (values
              (ignore-errors
@@ -109,6 +115,16 @@ but there is a TYPE slot, move TYPE into NAME."
       (lw::delete-directory dir)
       (delete-file dir))
   #-(or allegro clisp cmu lispworks) (delete-file dir))
+
+(defun safe-truename (path)
+  "Like TRUENAME, but handle non-existing files.
+Note that the directory must exist."
+  (or (ignore-errors (truename path))
+      (let ((dir (make-pathname :name nil :type nil :version nil
+                                :defaults path)))
+        (make-pathname :name (pathname-name path) :type (pathname-type path)
+                       :version (pathname-version path)
+                       :defaults (or (truename dir) dir)))))
 
 ;;;
 ;;; logical pathnames

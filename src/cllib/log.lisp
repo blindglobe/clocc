@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.27 2004/10/28 18:44:56 sds Exp $
+;;; $Id: log.lisp,v 1.28 2004/11/09 20:43:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,7 +42,7 @@ See CLtL2 p602 and <http://www.lisp.org/HyperSpec/Body/sec_22-3-7-2.html>"
 
 (defun time-diff (end beg)
   "Compute the time (in seconds) between the two given internal timestamps."
-  (declare (type integer end beg))
+  (declare (type real end beg)) ; values of LINEAR in ETA are not integer
   (/ (- end beg)
      ;; CLISP compiled files are cross-platform,
      ;; so this value must be fixed at load time, not at read time

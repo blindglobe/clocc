@@ -118,7 +118,6 @@
 	    (translate-pathname compiled-path
 				(make-pathname :type (pathname-type compiled-path))
 				(make-pathname :type "p")))))
-  (format t "outfile-name = ~A~%" outfile-name)
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
 			     :direction :output
@@ -589,8 +588,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.30 2002/02/07 20:35:22 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.31 2002/02/07 22:12:56 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.31  2002/02/07 22:12:56  rtoy
+;;; Oops.  Remove that debugging statement.
+;;;
 ;;; Revision 1.30  2002/02/07 20:35:22  rtoy
 ;;; Choose a better name than "prep.tmp" in whatever directory we are in
 ;;; for the temporary preprocessed file.  Make it go into the same

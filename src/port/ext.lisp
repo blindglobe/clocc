@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.36 2004/08/02 22:44:48 sds Exp $
+;;; $Id: ext.lisp,v 1.37 2004/10/18 15:17:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -23,7 +23,7 @@
    "+EOF+" "EOF-P" "STRING-TOKENS" "REMOVE-PLIST"
    #-cmu "REQUIRED-ARGUMENT"
    "UNLOCK-PACKAGE" "RESTORE-PACKAGE-LOCK"
-   "COMPOSE" "COMPOSE-F" "COMPOSE-ALL"))
+   "COMPOSE" "COMPOSE-SAFE" "COMPOSE-F" "COMPOSE-ALL"))
 
 (in-package :port)
 
@@ -243,8 +243,18 @@ E.g., (compose abs (dl-val zz) 'key) ==>
                                       (cons (cadar xx) (cdr rr)) rr))
                    rr))))
     (with-gensyms ("COMPOSE-" arg)
-      (let ((ff (rec functions arg)))
-        `(lambda (,arg) ,ff)))))
+      `(lambda (,arg) ,(rec functions arg)))))
+
+(defmacro compose-safe (&rest functions)
+  "Like COMPOSE, but return NIL as soon as an intermediate value is NIL."
+  (labels ((rec (xx yy)
+             (let* ((first (first xx)) (rest (rest xx))
+                    (var (gensym (format nil "~S ~S " 'compose-safe first))))
+               (if rest
+                   `(let ((,var ,(rec rest yy))) (and ,var (,first ,var)))
+                   `(and ,yy (,first ,yy))))))
+    (with-gensyms ("COMPOSE-SAFE-" arg)
+      `(lambda (,arg) ,(rec functions arg)))))
 
 (defun compose-f (&rest functions)
   "Return the composition of all the arguments.

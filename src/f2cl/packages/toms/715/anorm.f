@@ -82,7 +82,7 @@ C------------------------------------------------------------------
       INTEGER I
 CS    REAL
       DOUBLE PRECISION
-     1     A,ANORM,ARG,B,C,D,DEL,EPS,HALF,P,ONE,Q,RESULT,SIXTEN,
+     1     A,ARG,B,C,D,DEL,EPS,HALF,P,ONE,Q,RESULT,SIXTEN,
      2     SQRPI,THRSH,ROOT32,X,XLOW,XDEN,XNUM,Y,XSQ,XUPPR,ZERO
       DIMENSION A(5),B(4),C(9),D(8),P(6),Q(5)
 C------------------------------------------------------------------

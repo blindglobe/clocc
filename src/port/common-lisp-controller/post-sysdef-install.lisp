@@ -382,7 +382,7 @@ than the maximum file-write-date of output-files, return T."
   (let ((pkgs-path (user-packages-path)))
     (when (probe-file pkgs-path)
       (let ((pkgs '()))
-	(with-open-file (strm pkgs-path :direction :input :if-not-exists nil)
+	(with-open-file (strm pkgs-path :direction :input :if-does-not-exist nil)
   	  (when strm
 	    (do ((line (read-line strm nil 'eof) (read-line strm nil 'eof)))
 		((eq line 'eof))

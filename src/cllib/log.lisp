@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.22 2004/09/13 18:48:58 sds Exp $
+;;; $Id: log.lisp,v 1.23 2004/09/15 19:07:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -38,7 +38,7 @@ Taken from CLtL2 p602."
 (declaim (ftype (function (&optional t) (values (integer 0))) get-int-time))
 (defun get-int-time (&optional (run t))
   "Return the run (or real) time counter, as a double float."
-  (dfloat (if run (get-internal-run-time) (get-internal-real-time))))
+  (if run (get-internal-run-time) (get-internal-real-time)))
 
 (defun time-diff (end beg)
   "Compute the time (in seconds) between the two given internal timestamps."

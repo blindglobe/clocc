@@ -1,3 +1,15 @@
+cl-defsystem3 (3.3i+cvs.2004.07.13) unstable; urgency=low
+
+  * New upstream -- fixes previous upstream bug
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 13 Jul 2004 00:09:57 -0600
+
+cl-defsystem3 (3.3i+cvs.2004.06.29+really.2004.06.02) unstable; urgency=low
+
+  * Revert to earlier version due to upstream bug
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 29 Jun 2004 16:24:37 -0600
+
 cl-defsystem3 (3.3i+cvs.2004.06.28) unstable; urgency=low
 
   * New upstream

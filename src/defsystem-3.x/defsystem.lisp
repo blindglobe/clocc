@@ -4165,7 +4165,7 @@ the system definition, if provided."
 (pushnew 'sbcl-mk-defsystem-module-provider sb-ext:*module-provider-functions*)
 )
 
-#+#.(cl:if (cl:find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") '(and) '(or))
+#+#.(cl:if (cl:and (cl:find-package "EXT") (cl:find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT")) '(and) '(or))
 (progn
   (defun cmucl-mk-defsystem-module-provider (name)
     (let ((module-name (string-downcase (string name))))

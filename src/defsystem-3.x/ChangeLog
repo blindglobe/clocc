@@ -1,3 +1,8 @@
+2004-07-12 23:37  kevinrosenberg
+
+	* defsystem.lisp: o Avoid checks for symbol in "EXT" package
+	unless "EXT" package exists. Fixes compilation on AllegroCL and SBCL.
+	
 2004-06-28 14:50  rtoy
 
 	* defsystem.lisp: o Change default for *DONT-REDEFINE-REQUIRE* to T

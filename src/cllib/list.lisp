@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-10-13 Wed 14:42:53 EDT sds@ksp.com>
+;;; File: <list.lisp - 2000-01-19 Wed 13:11:36 EST sds@ksp.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,48 +9,51 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.12 1999/10/13 18:43:54 sds Exp $
+;;; $Id: list.lisp,v 1.13 2000/01/19 18:13:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.13  2000/01/19 18:13:52  sds
+;;; (with-collect): do not convert case in `gensym'
+;;;
 ;;; Revision 1.12  1999/10/13 18:43:54  sds
 ;;; (with-sublist): cosmetic gensym rename.
 ;;;
-;; Revision 1.11  1999/05/24 20:51:44  sds
-;; (flatten, filter): new functions.
-;; (call-on-split): use filter.
-;;
-;; Revision 1.10  1999/05/05 20:59:40  sds
-;; (nsplit-list): use the `case-error' condition.
-;;
-;; Revision 1.9  1999/04/09 21:45:06  sds
-;; Replaced `collecting' with `with-collect' (multiple collection).
-;;
-;; Revision 1.8  1999/04/09 18:48:18  sds
-;; Added `collecting'.
-;;
-;; Revision 1.7  1999/02/22 22:56:53  sds
-;; `call-on-split': new key `:min-len'.
-;;
-;; Revision 1.6  1999/01/12 22:09:36  sds
-;; Fixed the previous feature.
-;;
-;; Revision 1.5  1999/01/12 18:52:19  sds
-;; Added key `obj' to `nsplit-list'.
-;;
-;; Revision 1.4  1999/01/07 04:06:30  sds
-;; Use `index-t' instead of (unsigned-byte 20).
-;;
-;; Revision 1.3  1998/05/27 21:23:41  sds
-;; Moved the sorted stuff from date.lisp here.
-;; Moved `freqs' from math.lisp here.
-;; Added `zero-len-p'.
-;;
-;; Revision 1.2  1998/04/21 23:31:40  sds
-;; Added `with-nsplit' and `call-on-split'.
-;;
-;; Revision 1.1  1998/03/23 16:31:44  sds
-;; Initial revision
-;;
+;;; Revision 1.11  1999/05/24 20:51:44  sds
+;;; (flatten, filter): new functions.
+;;; (call-on-split): use filter.
+;;;
+;;; Revision 1.10  1999/05/05 20:59:40  sds
+;;; (nsplit-list): use the `case-error' condition.
+;;;
+;;; Revision 1.9  1999/04/09 21:45:06  sds
+;;; Replaced `collecting' with `with-collect' (multiple collection).
+;;;
+;;; Revision 1.8  1999/04/09 18:48:18  sds
+;;; Added `collecting'.
+;;;
+;;; Revision 1.7  1999/02/22 22:56:53  sds
+;;; `call-on-split': new key `:min-len'.
+;;;
+;;; Revision 1.6  1999/01/12 22:09:36  sds
+;;; Fixed the previous feature.
+;;;
+;;; Revision 1.5  1999/01/12 18:52:19  sds
+;;; Added key `obj' to `nsplit-list'.
+;;;
+;;; Revision 1.4  1999/01/07 04:06:30  sds
+;;; Use `index-t' instead of (unsigned-byte 20).
+;;;
+;;; Revision 1.3  1998/05/27 21:23:41  sds
+;;; Moved the sorted stuff from date.lisp here.
+;;; Moved `freqs' from math.lisp here.
+;;; Added `zero-len-p'.
+;;;
+;;; Revision 1.2  1998/04/21 23:31:40  sds
+;;; Added `with-nsplit' and `call-on-split'.
+;;;
+;;; Revision 1.1  1998/03/23 16:31:44  sds
+;;; Initial revision
+;;;
 
 (in-package :cl-user)
 
@@ -122,7 +125,7 @@ In CLISP, push/nreverse is about 1.25 times as fast as pushing into the
 tail, so this macro uses push/nreverse on CLISP and push into the tail
 on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
   #+clisp
-  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-RET-" cc)))
+  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~s-RET-" cc)))
                      collectors)))
     `(let (,@ret)
       (declare (list ,@ret))
@@ -131,11 +134,11 @@ on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
         ,@forms
         (values ,@(mapcar (lambda (re) `(sys::list-nreverse ,re)) ret)))))
   #-clisp
-  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-RET-" cc)))
+  (let ((ret (mapcar (lambda (cc) (gensym (format nil "~s-RET-" cc)))
                      collectors))
-        (tail (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-TAIL-" cc)))
+        (tail (mapcar (lambda (cc) (gensym (format nil "~s-TAIL-" cc)))
                       collectors))
-        (tmp (mapcar (lambda (cc) (gensym (format nil "~:@(~s~)-TMP-" cc)))
+        (tmp (mapcar (lambda (cc) (gensym (format nil "~s-TMP-" cc)))
                      collectors)))
     `(let (,@ret ,@tail)
       (declare (list ,@ret ,@tail))

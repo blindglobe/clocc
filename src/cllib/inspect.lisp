@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.16 2000/05/24 23:02:52 sds Exp $
+;;; $Id: inspect.lisp,v 1.17 2000/07/20 15:32:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -74,7 +74,7 @@ See `browse-url' and `*browsers*'.")
 )
 
 (defun insp-check (insp)
-  ;; this should always be okay
+  ;; this should always be okay, nevertheless
   ;; we use `warn' instead of `assert' or `error' because
   ;; the objects being inspected could possibly be modified
   ;; in another thread
@@ -316,7 +316,7 @@ This is useful for frontends which provide an eval/modify facility."
 
 (defmethod print-inspection ((insp inspection) (out stream)
                              (backend (eql :tty)))
-  (format out "~s:  ~a~%~{ ~a~%~}" (insp-self insp) (insp-title insp)
+  (format out "~&~s:  ~a~%~{ ~a~%~}" (insp-self insp) (insp-title insp)
           (insp-blurb insp))
   (when (insp-nth-slot insp)
     (loop :for ii :from 0 :to (insp-num-slots-print insp)
@@ -410,7 +410,9 @@ This is useful for frontends which provide an eval/modify facility."
 
 (defun http-command (server &key (debug *inspect-debug*))
   "Accept a connection from the server, return the GET command and the socket."
+  (when (> debug 1) (format t "%s: server: ~s~%" 'http-command server))
   (let ((socket (socket-accept server)))
+    (when (> debug 1) (format t "%s: socket: ~s~%" 'http-command socket))
     (loop (let ((line (read-line socket nil nil)))
             (when (> debug 1) (format t "-> ~a~%" line))
             (when (string-beg-with "GET /" line)
@@ -426,6 +428,8 @@ This is useful for frontends which provide an eval/modify facility."
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
   (do ((server (let ((server (open-socket-server)))
+                 (when (> *inspect-debug* 0)
+                   (format t "~&%s: server: ~s~%" 'inspect-frontend server))
                  (browse-url
                   (format nil "http://127.0.0.1:~d/0/:s"
                           (nth-value 1 (socket-server-host/port server)))
@@ -463,7 +467,7 @@ This is useful for frontends which provide an eval/modify facility."
         #-clisp (*print-lines* *inspect-print-lines*)
         (*print-level* *inspect-print-level*)
         (*print-length* *inspect-print-length*)
-        (*package* (make-package (gensym "INSPECT-TNP-PACKAGE-"))) ; for `read'
+        (*package* (make-package (gensym "INSPECT-TMP-PACKAGE-"))) ; for `read'
         (*inspect-frontend* frontend)
         (*inspect-browser* browser))
     (unwind-protect

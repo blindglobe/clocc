@@ -17,14 +17,14 @@
 #    gcl        uses ${GCL} if set, else "gcl"
 
 usage(){
-    cat <<EOF
+    cat <<\EOF
 Usage:
  run-lisp [clause ...] [argument ...]
-     clause ::= -i file    ; load file \`file'
-              | -c file    ; compile file \`file'
-              | -x form    ; execute form \`form'
-              | -I image   ; use image file \`image'
-              | -d image   ; dump to image \`image'
+     clause ::= -i file    ; load file `file'
+              | -c file    ; compile file `file'
+              | -x form    ; execute form `form'
+              | -I image   ; use image file `image'
+              | -d image   ; dump to image `image'
               | --safety n ; set safety level for compilation
               | --speed n  ; set speed level for compilation
 
@@ -36,7 +36,7 @@ Usage:
      evaluated in.
 
  run-lisp -run image
-   interactively run \`image'
+   interactively run `image'
    (user:run) will be called upon start up.
 
 Makefile support

@@ -12,7 +12,8 @@ EOF
     exit 1
 fi
 
-FILE="/usr/share/common-lisp/systems/$1.system"
+DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$1.system"
+ASDF_FILE="/usr/share/common-lisp/systems/$1.asd"
 SOURCENAME="/usr/share/common-lisp/source/$1"
 
 if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then    
@@ -24,17 +25,18 @@ EOF
     exit 2
 fi
 
-if [ ! -f "$FILE" ] ; then
+if [[ ! -f "$DEFSYSTEM3_FILE" && ! -f "$ASDF_FILE" ]] ; then
     cat <<EOF
-$0: $FILE does not exist. This is needed to
-register the $1 package.
+$0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE exists. 
+One of these files is needed to register the $1 package.
 EOF
     exit 3
 fi
 
-if [ ! -r "$FILE" ] ; then
+if [ ! -r "$DEFSYSTEM3_FILE" && ! -r "$ASDF_FILE" ] ; then
     cat <<EOF
-$0: $FILE is not a regular file. This is needed to register the $1 package.
+$0: Neither $DEFSYSTEM3_FILE nor $ADSF_FILE is a regular file. 
+One of these files is needed to register the $1 package.
 EOF
     exit 3
 fi

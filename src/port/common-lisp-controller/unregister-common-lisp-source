@@ -17,7 +17,8 @@ EOF
     exit 1
 fi
 
-FILE="/usr/share/common-lisp/systems/$1.system"
+DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$1.system"
+ASDF_FILE="/usr/share/common-lisp/systems/$1.asd"
 SOURCENAME="/usr/share/common-lisp/source/$1"
 if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then 
     cat <<EOF
@@ -30,12 +31,13 @@ EOF
     exit 0
 fi
 
-if [ ! -e "$FILE" -a ! -h "$FILE" ] ; then                                                                                                                   
+if [[ (! -e "$DEFSYSTEM3_FILE" -a ! -h "$DEFSYSTEM3_FILE") &&
+      (! -e "$ASDF_FILE" -a ! -h "$ASDF_FILE") && ]]; then
     cat <<EOF
-$0: $FILE does not exist.  This is needed to  
-unregister the $1 package.
+$0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE  exists. 
+One of these are needed to unregister the $1 package.
 
-Maybe you already uninstalled it?
+Perhaps you already uninstalled it?
 EOF
     exit 0
 fi

@@ -1,3 +1,289 @@
+2002-11-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/defsystem-protocol.lisp:
+	Fixed component class determination algorithm (an infinite loop was
+	starting for NIL class specs).
+
+	Fixed inheritance of language slot.
+
+	* src/predefined-specialized-components.lisp:
+	Changed some default initargs.
+
+	* src/language-support.lisp: Fixed a couple of typos.
+
+2002-11-26  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/syntax.lisp: Added some comments.
+
+	* src/syntax.lisp: Changed `language' default for :FILE clauses to NIL.
+
+	* src/registry.lisp:
+	Removed duplicate definition of *SYSTEM-FILE-EXTENSION*.
+
+	* src/predefined-specialized-components.lisp:
+	Fixed default extensions and language initargs for the C and Java
+	files.
+
+	Eventually this file will have to be broken up to accommodate
+	different extensions.
+
+	* src/predefined-components.lisp:
+	Changed hierachy definition, removed default source extension from the
+	STANDARD-SYSTEM class definition and added a default :language :common-lisp
+	initarg to it.
+
+	* src/language-support.lisp:
+	Cleaned up a bit.  Removed default :language initarg from the
+	COMPONENT-LANGUAGE-MIXIN class.  Fixed a few problems with inheritance
+	of :language attribute over the part-of hierarchy.
+
+	* src/defsystem-pkg.lisp: Added :EXPORT of FIND-COMPONENT.
+
+	* src/base-components.lisp:
+	Changed the hierarchy by pushing up the inheritance from teh
+	COMPONENT-LANGUAGE-MIXIN class.
+
+	* src/predefined-specialized-components.lisp:
+	Added definitions for Java files and fixed some initialization issues
+	for C files.
+
+	* src/language-support.lisp:
+	Fixed problem with RUN-PROCESSOR-COMMAND.  Fixed construction of
+	filename string to pass to RUN-OS-COMMAND (a pathname needed to be
+	NAMETRINGed).
+
+	* src/defsystem-protocol.lisp:
+	Fixed several incongruities related to the compilation of Java files.
+
+	* src/languages/java/java.lisp:
+	Fixed generation of 'javac' command and initialization of file
+	extensions.
+
+	* src/languages/shared/shared-functionality.lisp:
+	Missing RETURN call in PROCESS-OPTIONS.
+
+	* src/utilities/user-interaction.lisp:
+	Fixed several typos and remoned the unused function
+	TELL-USER-NO-FILES.
+
+	* src/languages/shared/shared-functionality.lisp:
+	Fixed typo that messed up a CASE form, thus making the file
+	un-READable.
+
+	* src/languages/java/java.lisp:
+	Added missing :output-pathname to INVOKE-COMPILER method.
+
+	* src/languages/fortran/fortran.lisp:
+	Added missing :output-pathname to INVOKE-COMPILER function.
+
+	* src/languages/c/c.lisp:
+	Fixed a few types and cleaned up considerably by removing old code.
+
+	* src/impl-dependent/cmucl.lisp:
+	Removed function COMPILE-FILE-INTERNAL (useless because of
+	':allow-other-keys t' trick).
+
+	Fixed other functions to suppress warnings.
+
+	* src/impl-dependent/sbcl.lisp, src/impl-dependent/lispworks.lisp, src/impl-dependent/allegro.lisp:
+	Removed function COMPILE-FILE-INTERNAL (useless because of
+	':allow-other-keys t' trick).
+
+	* src/defsystem-protocol.lisp:
+	Many fixes.  Mostly typos, but some substantial.  The major one has
+	been the finalization of the :LOAD action, which right now is moslty
+	in line with the spec (and viceversa).
+
+2002-11-25  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/predefined-specialized-components.lisp:
+	Changed Emacs mode line to "Lisp".
+
+	* src/predefined-components.lisp:
+	Updated with latest development from the "language" definitions.
+	Fixed a few typos.
+
+	* src/load-defsystem.lisp: Reordered the loading of some files.
+	The file utilities/user-interaction is still problematic since it
+	represents a circularity in the definitions dependencies.
+	Moving the loading of "defsystem.lisp" (which contains only
+	"declarations") helped a little.
+
+	* src/language-support.lisp:
+	Many changes.  Mostly fixes of relatively trivial bugs. The biggest
+	fix regarded the updating of the language slot for a processor.
+
+	* src/defsystem-pkg.lisp: Added export of CLEAN-SYSTEM.
+
+	* src/defsystem.lisp:
+	Moved here the definition of the generic functions for the pathname
+	manipulation protocol.
+
+	* src/base-components.lisp:
+	Added "META DATA" mixin to allow for the specification of author,
+	affiliation etc. etc. Fixed consequentely the class hierarchy.
+
+	Fixed the names of some accessors to make them more conventional
+	(COMPONENT-LOAD-ONLY-P and COMPONENT-COMPILE-ONLY-P).
+
+	* src/actions.lisp:
+	Fixed a few typos and registering of new action tags.
+
+	* src/versions.lisp:
+	Fixed typo that caused an "unreachable code" message.
+
+	* src/syntax.lisp: Fixed a few typos here and there.
+
+2002-11-14  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/utilities/y-or-n-p-wait.lisp, src/utilities/user-interaction.lisp:
+	Checkpoint version.
+
+	The functionalities in this file will probably go away.
+
+	* src/languages/shared/shared-functionality.lisp:
+	Initial checkin of shared language specifications for MK4.
+
+	* src/languages/scheme/scheme.lisp: Checkpoint version.
+
+	* src/languages/java/java.lisp:
+	Initial checkin of Java language specifications for MK4.
+
+	* src/languages/fortran/fortran.lisp, src/languages/c/c.lisp:
+	Checkpoint version.
+
+	All the language classes and some of the processors are in place.
+
+	* src/impl-dependent/lispworks.lisp: Checkpoint version.
+
+	* src/impl-dependent/lcl.lisp: Checkpoint version.
+	Not necessarily working.
+
+	* src/impl-dependent/kcl-derivatives.lisp, src/impl-dependent/cmucl.lisp:
+	Fixed a few system dependencies.
+
+	* src/impl-dependent/allegro.lisp:
+	Fixed function COMPILE-FILE-INTERNAL.
+	(Note: it will change again since the REMF could be replaced by a
+	:allow-other-keys t)
+
+	* src/registry.lisp:
+	Finalized the construction of the library for the handling of the
+	registry.
+
+	* src/load-defsystem.lisp:
+	Fixed several problems with the loading of the library.
+	Added the loading of the new files.
+
+	* src/language-support.lisp:
+	Finalized the class hierarchy and the definitions necessary to provide
+	an infrastructure for full support of foreign languages and language
+	processors.
+
+	* src/defsystem-protocol.lisp: Many changes.
+
+	Added support for `session' class.
+
+	Fixed several minor nuisances with the loading of the file (it should
+	now load without a glitch).
+
+	Added better support for the `language based dispatching' of the
+	various actions.
+
+	Other minor fixes.
+
+	* src/defsystem.lisp:
+	Updated the generic functions declaration in order to account for more
+	keyword parameters (i.e. added some `&allow-other-keys').
+
+	* src/base-components.lisp:
+	Added notion of `session' for each defsystem component in order to
+	remove the global variables affecting the compile and load behavior in
+	the old MK3.
+
+	Also mixed a minor issue with the timestamp machinery.
+
+	* INSTALL: Typos fixed.
+
+2002-09-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/base-components.lisp: Added class 'session-information'.
+
+2002-07-30  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/predefined-specialized-components.lisp, src/predefined-components.lisp:
+	Added a few new classes and changed some definitions to reflect the
+	new external language handling architecture.
+
+	* src/load-defsystem.lisp: Changed the load order of a couple of files.
+
+	* src/language-support.lisp:
+	Added several new definitions which decouple several aspects of
+	external language handling.
+
+	* src/defsystem-protocol.lisp:
+	Many fixes and simplifications in the code due to the changes to the
+	class structure, the timestamp scheme and the dependency selection
+	machinery.
+
+	* src/defsystem.lisp:
+	Added some doc string and fixed a few definitions.
+
+	* src/base-components.lisp:
+	Added code to better support external languages, dependencies and
+	timestamps.
+
+	* src/actions.lisp:
+	Added more definitions for handling actions and the action database.
+
+2002-07-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/impl-dependent/sbcl.lisp:
+	Added file to support SBCL.  Hopefully not too different from CMUCL.
+
+2002-07-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* src/languages/c/c.lisp:
+	Added preliminary support for generic C compilers.
+
+	* src/syntax.lisp: Fixed a few minor nuisances in the syntax handling.
+
+	* src/registry.lisp: Fixed the registry handling.
+
+	* src/predefined-specialized-components.lisp:
+	Changed the hierarchy structure to reflect changes in the predefined
+	components.
+
+	* src/predefined-components.lisp:
+	Added a few new classes (OBJECT-FILE, EXECUTABLE-FILE, etc etc) and
+	fixed a few minor things.
+
+	* src/load-defsystem.lisp:
+	Added loading of "MAKE-DEFSYSTEM:utilities:split-sequence.*" if
+	needed. This is the SPLIT-SEQUENCE from ccLan.
+
+	* src/language-support.lisp:
+	Preliminary definitions for foreign language support.
+
+	* src/defsystem-protocol.lisp:
+	A lot of changed exploring different ways to support foreign
+	languages. Plus fixes to FIND-SYSTEM so that now does the right thing
+	w.r.t. the system registry.
+
+	* src/defsystem-pkg.lisp: Added several mising exports.
+
+	* src/actions.lisp:
+	Added ACTION class and added a preliminary DEFINE-ACTION macro.
+
+	* src/utilities/split-sequence.lisp:
+	Added file 'split-sequence.lisp' from ccLan.
+
+	* src/versions.lisp:
+	Several changes made to make version objects complete. Added
+	PARSE-VERSION-STRING function and fixed other inconsistencies.
+
 2002-07-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* src/languages/c/c.lisp:

@@ -3,8 +3,12 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.5 2002/03/19 23:28:32 rtoy Exp $
+;;; $Id: quadpack.system,v 1.6 2003/09/25 04:05:55 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.6  2003/09/25 04:05:55  rtoy
+;;; Compute the necessary translation for the Fortran directory from the
+;;; current translation for clocc instead of hard-wiring the path.
+;;;
 ;;; Revision 1.5  2002/03/19 23:28:32  rtoy
 ;;; Add a defsystem to compile the Fortran codes directly via
 ;;; f2cl-compile.  Leave the old defsystem around, but with a new name.
@@ -26,7 +30,17 @@
 
 ;;; Change this as appropriate.
 
-(push '("**;fortran;*.*.*" "/home/unix/toy/apps/sourceforge/clocc/**/Fortran/*.*")
+;; I (rtoy) was stupid and named the Fortran directory Fortran, which
+;; doesn't work so well with logical pathnames.  This is an attempt to
+;; convert that appropriately by setting up the correct translation.
+(push (list "src;f2cl;**;fortran;*.*.*"
+	    (let ((path (translate-logical-pathname "clocc:src;f2cl;**;")))
+	      (make-pathname :host (pathname-host path)
+			     :device (pathname-device path)
+			     :directory (append (pathname-directory path) '("Fortran"))
+			     :name :wild
+			     :type :wild
+			     :version :wild)))
       (logical-pathname-translations "clocc"))
 
 

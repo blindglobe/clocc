@@ -215,7 +215,10 @@
 	((listp arg)
 	 ;; We have an expression of some type
 	 (let ((fun (first arg)))
-	   (cond ((eq 'fref fun)
+	   (cond ((eq 'make-array fun)
+		  ;; Some array slicing here.
+		  (second (second (member :element-type arg))))
+		 ((eq 'fref fun)
 		  ;; Look up array references
 		  (get-fun-arg-type (second arg)))
 		 ((member fun '(+ - * f2cl/ expt))
@@ -252,7 +255,10 @@
 		 (t
 		  (get-fun-arg-type fun)))))
 	(t
-	 (type-of arg))))
+	 ;; If we have a fixnum, return integer4 instead.
+	 (if (fixnump arg)
+	     'integer4
+	     (type-of arg)))))
 
 (defun get-upgraded-fun-arg-type (args)
   (let ((res '()))
@@ -1989,8 +1995,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.45 2000/07/14 14:08:26 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.46 2000/07/14 15:50:25 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.46  2000/07/14 15:50:25  rtoy
+;;; o When getting the type of an arg, handle the case when the arg is
+;;;   actually a call to make-array for array slicing.  Get the type form
+;;;   the :element-type.
+;;; o If the arg has type fixnum, return integer4 instead.
+;;;
 ;;; Revision 1.45  2000/07/14 14:08:26  rtoy
 ;;; Honor the user's choice of declaring arrays as array or simple-array.
 ;;; Except we leave Fortran character strings still declared as

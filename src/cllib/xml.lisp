@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.31 2001/04/23 15:22:42 sds Exp $
+;;; $Id: xml.lisp,v 2.32 2001/04/26 21:09:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,10 @@
 
 (export
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
-   with-xml-input with-xml-file xml-read-from-file read-standalone-char))
+   with-xml-input with-xml-file xml-read-from-file read-standalone-char
+   xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data
+   xml-name xml-name-p xmln-ln xmln-ns
+   xml-namespace xml-namespace-p xmlns-uri xmlns-pre xmlns-nht))
 
 ;;;
 ;;; Entities

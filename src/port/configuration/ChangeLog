@@ -1,3 +1,24 @@
+2002-03-02  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/configuration/defconf.lisp:
+	Fixed minor problem in clauses initialization and parsing.
+	The warning (due to uninitialized fields and undefaulted keyword
+	arguments) has gone away.
+
+	* /cvsroot/clocc/clocc/src/port/configuration/defconf-package.lisp:
+	Made the package file more ACL kludgy case sensitivity friendly.
+
+2002-02-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/configuration/ChangeLog:
+	ChangeLog updated.
+
+	* /cvsroot/clocc/clocc/src/port/configuration/INSTALLATION:
+	Slightly improved INSTALLATION instructions.
+
+	* /cvsroot/clocc/clocc/src/port/configuration/defconf.system:
+	Improved error messages under suggestions by Edmund Weitz.
+
 2002-02-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/port/configuration/defconf.system:

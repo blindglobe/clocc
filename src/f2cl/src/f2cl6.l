@@ -44,22 +44,32 @@
   ;;
   ;; Return the position of the character after the matching end quote.
   ;;
-  ;; We need to be smarter here and handle Fortran's quoting mechanism
-  ;; for embedding quotes inside quoted strings.
+  ;; Remember that Fortran says 'It''s time' is the string "It's
+  ;; time".  That is, a quote followed by a quote is a single quote,
+  ;; not the termination of the string.
   (let ((len (length line)))
     (incf k)
-    (loop while (and (not (char-equal (aref line k) #\'))
-		     (< k len)) do
-		     (write-char (aref line k) out)
-		     (incf k))
-    (write-char (aref line k) out)
+    (loop
+	(when (char-equal (aref line k) #\')
+	  ;; End of string or quoted quote character?
+	  (if (and (< k len) (char-equal (aref line (1+ k)) #\'))
+	      (progn
+		(write-char #\' out)
+		(incf k))
+	      (return)))
+	(when (>= k len)
+	  (return))
+      (write-char (aref line k) out)
+      (incf k))
+    (write-char #\" out)
     (1+ k)))
 
 (defun process-format-line (line)
   ;; We have a Fortran format line.  Go through and convert all
-  ;; Hollerith strings to regular strings.  Hollerith strings look
-  ;; like a number followed by H (or h).  Skip over any strings that
-  ;; might be there.
+  ;; Hollerith strings to regular strings.  Convert Fortran strings
+  ;; (single quotes) to Lisp strings (double quotes). Hollerith
+  ;; strings look like a number followed by H (or h).  Skip over any
+  ;; strings that might be there.
   (let ((k 0)
 	(line-len (length line))
 	(out (make-string-output-stream)))
@@ -70,7 +80,7 @@
 	(let ((ch (aref line k)))
 	  (cond ((char-equal ch #\')
 		 ;; Find the next quote
-		 (write-char ch out)
+		 (write-char #\" out)
 		 (setf k (find-quote k line out)))
 		((digit-char-p ch)
 		 ;; Got a digit.  Look for the next non-digit.
@@ -82,8 +92,8 @@
 		       ;; A Hollerith!  Compute the length of the
 		       ;; Hollerith string and where the number ends.
 		       
-		       (multiple-value-bind (len stop)
-			   (parse-integer line :start k :junk-allowed t)
+		       (let ((len
+			      (parse-integer line :start k :junk-allowed t)))
 			 ;; Copy this many characters to the output
 			 (incf posn)
 			 (write-char #\" out)
@@ -252,15 +262,26 @@
 	  (cond ((eql char 'EOF)
 		 (return-from adjust_nrs (get-output-stream-string outport)))
 
-		;; check for single quote and pass over all char until next one
+		;; check for single quote and pass over all characters
+		;; until next one.  But a single quote followed by a
+		;; single quote quotes the quote and doesn't terminate
+		;; the quoted string.
 		((char= char #\')
 		 (setq prev-char #\space)
 		 (write-char #\" outport)
-		 (do ((char (read-char *inp* nil 'EOF t)
-			    (read-char *inp* nil 'EOF t)))
-		     ((char= char #\')
-		      (write-char #\" outport))
-		   (write-char char outport)))
+		 (loop
+		     (setf char (read-char *inp* nil 'EOF t))
+		     (let ((nxt (peek-char nil *inp* nil nil)))
+		       (cond ((and (char= char #\')
+				   (and nxt (char= nxt #\')))
+			      (write-char #\' outport)
+			      ;; Skip over the quote
+			      (read-char *inp* nil 'EOF t))
+			     ((char= char #\')
+			      (write-char #\" outport)
+			      (return))
+			     (t
+			      (write-char char outport))))))
 
 		;; check for non-complex number 
 		((parse-number prev-char char outport)
@@ -550,8 +571,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.25 2001/09/09 21:05:50 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.26 2001/09/10 16:21:39 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.26  2001/09/10 16:21:39  rtoy
+;;; Handle Fortran-style strings better by handling quoted quotes.  (In
+;;; Fortran 'It''s time' is the string "It's time".)
+;;;
 ;;; Revision 1.25  2001/09/09 21:05:50  rtoy
 ;;; Undo rev 1.23.  This one should work better.
 ;;;

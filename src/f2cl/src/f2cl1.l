@@ -15,15 +15,15 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (eval-when (compile load eval)
-  (proclaim '(special *readtable* sentable))
-  (proclaim '(special intrinsic_function_names external_function_names
-	      undeclared_vbles declared_vbles implicit_vble_decls
-	      subprog-arglist data-init
-	      explicit_vble_decls function-flag key_params
-	      save_vbles program-flag subprog_name
-	      subprog_common_vars  common_array_dims
-	      format_stmts current_label
-	      subprog_stmt_fns subprog_stmt_fns_bodies
+  (proclaim '(special *readtable* *sentable*))
+  (proclaim '(special *intrinsic_function_names* *external_function_names*
+	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
+	      *subprog-arglist* *data-init*
+	      *explicit_vble_decls* *function-flag* *key_params*
+	      *save_vbles* *program-flag* *subprog_name*
+	      *subprog_common_vars*  *common_array_dims*
+	      *format_stmts* *current_label*
+	      *subprog_stmt_fns* *subprog_stmt_fns_bodies*
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*)))
@@ -194,15 +194,15 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 ;------------------------------------------------------------------------------
 #+xxxx
 (defun fortran-to-lisp (file ofile)
-  (prog (inport outport  common_array_dims format_stmts)
+  (prog (inport outport  *common_array_dims* *format_stmts*)
      (if *verbose* (format t "beginning the main translation ...~%"))
      (setq inport (infile file)
            outport (outfile ofile)
-           common_array_dims nil)
+           *common_array_dims* nil)
      (do ((char (peek-char nil inport nil 'EOF) 
                 (peek-char nil inport nil 'EOF)))
          ((eq char 'EOF) )
-       (setq format_stmts nil)
+       (setq *format_stmts* nil)
        (translate-and-write-subprog 
 	(introduce-continue (readsubprog-extract-format-stmts inport)) outport))
      (close inport)
@@ -211,16 +211,16 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 ;-----------------------------------------------------------------------------
 
 (defun fortran-to-lisp (file ofile)
-  (let (common_array_dims format_stmts)
+  (let (*common_array_dims* *format_stmts*)
     (if *verbose* (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
       (with-open-file (outport ofile :direction :output 
 			       :if-exists :rename-and-delete)
-        (setq common_array_dims nil)
+        (setq *common_array_dims* nil)
         (do ((char (peek-char nil inport nil 'EOF) 
                    (peek-char nil inport nil 'EOF)))
             ((eq char 'EOF) )
-          (setq format_stmts nil)
+          (setq *format_stmts* nil)
 	  (let ((*print-level* nil)
 		(*print-length* nil))
 	    (translate-and-write-subprog 
@@ -231,13 +231,13 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 ;-----------------------------------------------------------------------------
 (defun readsubprog-extract-format-stmts (inport)
  (prog (input-list output-list (margin nil) (multiple-line-flag nil)
-        current-line current_label)
+        current-line *current_label*)
     (if *verbose* (format t "~&extracting format statements ...~%"))
 main-loop 
 
    ; label
    (if (not multiple-line-flag)
-       (setq current_label 
+       (setq *current_label* 
             (if (integerp (read-from-string (coerce margin 'string) nil))
                 (read-from-string (coerce margin 'string) nil)
                 nil)))
@@ -270,7 +270,7 @@ main-loop
    ; extract format-stmts
    (cond ((eq (car input-list) 'FORMAT)
           (parse-format (brackets-check (concat-operators input-list))))
-         (t (setq output-list (cons (list current_label input-list) 
+         (t (setq output-list (cons (list *current_label* input-list) 
                                     output-list))))
 
    ; check for end of subprogram
@@ -299,28 +299,28 @@ main-loop
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
 (defun translate-and-write-subprog (prog-list outport)
-  (prog (fort-fun external_function_names
-		  undeclared_vbles declared_vbles implicit_vble_decls explicit_vble_decls
-		  save_vbles key_params subprog_common_vars 
-		  subprog_stmt_fns subprog_stmt_fns_bodies subprog_name
-		  function-flag program-flag
+  (prog (fort-fun *external_function_names*
+		  *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
+		  *save_vbles* *key_params* *subprog_common_vars* 
+		  *subprog_stmt_fns* *subprog_stmt_fns_bodies* *subprog_name*
+		  *function-flag* *program-flag*
 		  labels)		; labels is the do integers
      (setq labels (remove nil (mapcar #'find-do prog-list)))
 
-     (setq external_function_names nil
-	   undeclared_vbles nil
-	   declared_vbles nil
-	   implicit_vble_decls nil
-	   explicit_vble_decls nil
-	   save_vbles nil
-	   key_params nil
-	   subprog_common_vars nil
-	   subprog_stmt_fns nil
-	   subprog_stmt_fns_bodies nil
-	   function-flag nil
-	   program-flag nil
-	   subprog-arglist nil
-	   data-init nil
+     (setq *external_function_names* nil
+	   *undeclared_vbles* nil
+	   *declared_vbles* nil
+	   *implicit_vble_decls* nil
+	   *explicit_vble_decls* nil
+	   *save_vbles* nil
+	   *key_params* nil
+	   *subprog_common_vars* nil
+	   *subprog_stmt_fns* nil
+	   *subprog_stmt_fns_bodies* nil
+	   *function-flag* nil
+	   *program-flag* nil
+	   *subprog-arglist* nil
+	   *data-init* nil
 	   *functions-used* nil
 	   *vble-declaration-done* nil)
 
@@ -334,9 +334,9 @@ main-loop
 								(cadar lines))))))))
 	       ((null (cdr lines)) 
 		(append fort-fun
-			(cond (function-flag 
+			(cond (*function-flag* 
 			       `(end_label (return ,(cadr fort-fun))))
-			      (program-flag
+			      (*program-flag*
 			       `(end_label (return nil)))
 			      (t
 			       `(end_label (return (values 
@@ -608,35 +608,35 @@ main-loop
 
 ; program definition
 (defun parse-prog-definition (bindings) 
-   (setq program-flag t)
-   (setq subprog_name (variable-value '%name bindings))
-   (list 'defun (if subprog_name subprog_name '*MAIN*)
+   (setq *program-flag* t)
+   (setq *subprog_name* (variable-value '%name bindings))
+   (list 'defun (if *subprog_name* *subprog_name* '*MAIN*)
 ;         (read-from-string 
 ;             (concatenate 'string "*MAIN*"
-;                    (princ-to-string subprog_name)))
+;                    (princ-to-string *subprog_name*)))
          nil
          ))
 
 ; subroutine definition
 (defun parse-subr-definition (bindings) 
   (prog (arg-list)
-   (setq subprog_name (variable-value '%name bindings))
+   (setq *subprog_name* (variable-value '%name bindings))
    (setq arg-list (mapcar #'check-t-and-pi
 			  (remove '|,| (variable-value '%arg-list bindings))))
-   (setq subprog-arglist arg-list)
-   (return (list 'defun subprog_name 
+   (setq *subprog-arglist* arg-list)
+   (return (list 'defun *subprog_name* 
                     (if arg-list arg-list nil)))))
 
 ; typed function definition
 (defun parse-typed-fun-definition (bindings)
-  (setq function-flag t)
+  (setq *function-flag* t)
   (prog (fun-name)
    (setq fun-name (variable-value '%name bindings)
-         declared_vbles (list fun-name)
-         explicit_vble_decls 
+         *declared_vbles* (list fun-name)
+         *explicit_vble_decls* 
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
-   (setq subprog-arglist (remove '|,| (variable-value '%arg-list bindings)))
+   (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
    (return
    (list 'defun 
          fun-name 
@@ -644,8 +644,8 @@ main-loop
 
 ; untyped function definition
 (defun parse-fun-definition (bindings)
-   (setq function-flag t)
-   (setq subprog-arglist (remove '|,| (variable-value '%arg-list bindings)))
+   (setq *function-flag* t)
+   (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
    (list 'defun 
          (variable-value '%name bindings) 
          (remove '|,| (variable-value '%arg-list bindings))))
@@ -746,34 +746,34 @@ main-loop
 
 ;declaration
 (defun parse-declaration (x)		; x is the line
-  (setq declared_vbles
+  (setq *declared_vbles*
 	(append (mapcar #'(lambda (v)
 			    (check-t-and-pi (car v)))
 			(list-split '|,|
 			 (if (eq (cadr x) '*)
 			     (cdddr x)
 			     (cdr x))))
-		declared_vbles))
+		*declared_vbles*))
   (cond ((eq (first x) 'integer)
-	 (setq explicit_vble_decls 
-	       (build_decl_list explicit_vble_decls 'fixnum (cdr x))))
+	 (setq *explicit_vble_decls* 
+	       (build_decl_list *explicit_vble_decls* 'fixnum (cdr x))))
 	((eq (first x) 'double)
-	 (setq explicit_vble_decls 
-	       (build_decl_list explicit_vble_decls 'double-float (cdr x))))
+	 (setq *explicit_vble_decls* 
+	       (build_decl_list *explicit_vble_decls* 'double-float (cdr x))))
 	((eq (first x) 'real)
-	 (setq explicit_vble_decls 
-	       (build_decl_list explicit_vble_decls 'single-float (cdr x))))
+	 (setq *explicit_vble_decls* 
+	       (build_decl_list *explicit_vble_decls* 'single-float (cdr x))))
 	((eq (first x) 'character)
 	 (parse-char-decl x))
 	((eq (first x) 'complex)
-	 (setq explicit_vble_decls  
-	       (build_decl_list explicit_vble_decls 'complex (cdr x))))
+	 (setq *explicit_vble_decls*  
+	       (build_decl_list *explicit_vble_decls* 'complex (cdr x))))
 	((eq (first x) 'logical)
-	 (setq explicit_vble_decls  
-	       (build_decl_list explicit_vble_decls 'logical (cdr x))))
+	 (setq *explicit_vble_decls*  
+	       (build_decl_list *explicit_vble_decls* 'logical (cdr x))))
 	((eq (first x) 'dimension)
-	 (setq explicit_vble_decls   
-	       (build_decl_list explicit_vble_decls 'array (cdr x))))
+	 (setq *explicit_vble_decls*   
+	       (build_decl_list *explicit_vble_decls* 'array (cdr x))))
 	(t nil))
   nil)
 
@@ -781,12 +781,12 @@ main-loop
    (if (eq (third x) '*) (setq x `(,(first x) 
                                    (,(second x) ,(third x) ,(fourth x))
                                    ,@(cddddr x))))
-   (setq implicit_vble_decls 
+   (setq *implicit_vble_decls* 
          (append (mapcar #'(lambda (y)
                                `(,(car (convert-data-type y))
                                  ,@(list-split '|,| (remove '- (car (last y))))))
                          (list-split '|,| (cdr x)))
-                 implicit_vble_decls)) 
+                 *implicit_vble_decls*)) 
    nil)
 
 (defun build_decl_list (decl_list type decl)
@@ -835,15 +835,15 @@ main-loop
 	(t
 	 ;;statement_function
 	 (progn
-	   (setq subprog_stmt_fns (append subprog_stmt_fns (list (car lhs)))
-		 subprog_stmt_fns_bodies
-		 (append subprog_stmt_fns_bodies 
+	   (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs)))
+		 *subprog_stmt_fns_bodies*
+		 (append *subprog_stmt_fns_bodies* 
 			 `((,(car lhs) ,(cdr lhs) ,rhs))))
 	   nil))))
-;       (and (setq subprog_stmt_fns (append subprog_stmt_fns (list (car lhs))))
+;       (and (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs))))
 ;            `((defun ,(read-from-string 
 ;                           (concatenate 'string 
-;                                   (princ-to-string subprog_name)
+;                                   (princ-to-string *subprog_name*)
 ;                                   (princ-to-string (car lhs))))
 ;                     ,(cdr lhs) ,rhs)))))
 
@@ -934,7 +934,7 @@ main-loop
    (setq x (mapcar #'(lambda (l) (remove '= l))
                    (list-split '|,| (cadr x))))
 
-   (setq key_params (append key_params 
+   (setq *key_params* (append *key_params* 
                             (mapcar #'(lambda (l)
                                            (list (first l) (id-factor (second l))))
                                     x)))
@@ -943,8 +943,8 @@ main-loop
 ;     SAVE a,b,...
 ; or  SAVE /label/a,b,..
 (defun parse-save (x)
-   (setq save_vbles
-        (append save_vbles
+   (setq *save_vbles*
+        (append *save_vbles*
                 (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x)))))
    nil) 
   
@@ -977,9 +977,9 @@ main-loop
 		  (warn "current common block doesn't match previous occurrence")))))))
 
    
-   ;; pick out lists of vblenames and add to subprog_common_vars
-   (setq subprog_common_vars 
-         (append subprog_common_vars
+   ;; pick out lists of vblenames and add to *subprog_common_vars*
+   (setq *subprog_common_vars* 
+         (append *subprog_common_vars*
                  (do ((list x (cddr list))
                       (ret nil (append (extract-atoms (cadr list)) ret)))
                      ((endp list)
@@ -994,8 +994,8 @@ main-loop
 						  (remove '|,| (cadr nlist)))
 			    (setq nlist (cdr nlist)))
 			   ;; check if array dimensioned elsewhere
-			   ((member (car nlist) declared_vbles)
-			    (do ((decls explicit_vble_decls (cdr decls)))
+			   ((member (car nlist) *declared_vbles*)
+			    (do ((decls *explicit_vble_decls* (cdr decls)))
 				((null decls) nil)
 			      (do ((vbles (cdar decls) (cdr vbles)))
 				  ((null vbles) nil)
@@ -1004,17 +1004,17 @@ main-loop
 				    (update_cm_array_dims (car nlist)
 							  (cdar vbles))))))
 			   )))))
-;   (print common_array_dims)                
+;   (print *common_array_dims*)                
    nil)
 
-; append list of vble and dims to common_array_dims if vble not already in list
+; append list of vble and dims to *common_array_dims* if vble not already in list
 ; when vble in list check dims match with that stored
 (defun update_cm_array_dims (vble dims)
-   (let ((stored-dims (member vble common_array_dims)))
+   (let ((stored-dims (member vble *common_array_dims*)))
       (if stored-dims
           (if (not (equal (cadr stored-dims) dims))
               (error "common array ~A dimensions not equivalent between subprograms" vble))
-          (setq common_array_dims (append (list vble dims) common_array_dims)))))
+          (setq *common_array_dims* (append (list vble dims) *common_array_dims*)))))
 
 (defun extract-atoms (x)
    (do ((l x (cdr l))
@@ -1029,12 +1029,12 @@ main-loop
            (t 
             (setq first-bit `(character 1)
                   decl-list (list-split '|,| (cdr x)))))
-     (setq explicit_vble_decls 
+     (setq *explicit_vble_decls* 
            (cons
               `(,first-bit
                       ,@(mapcar #'(lambda (decl) (remove '* decl))
                            decl-list))
-              explicit_vble_decls))))
+              *explicit_vble_decls*))))
 
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
@@ -1075,10 +1075,10 @@ main-loop
 		  ;;(format t "var = ~a~%" var)
 		  ;;(format t "vals = ~a~%" vals)
 		  ;;(format t "result = ~a~%" result)
-		  (setf data-init (append data-init (if (consp (first result))
+		  (setf *data-init* (append *data-init* (if (consp (first result))
 							result
 							(list result))))
-		  ;;(format t "data-init:  ~A~%" data-init)
+		  ;;(format t "*data-init*:  ~A~%" *data-init*)
 		  )))
       ((null (cdr list)))))
 
@@ -1164,10 +1164,10 @@ main-loop
 		      ,(fix-up-negative-number (first l))))))))
 
 ; parse EXTERNAL f1, f2, ...
-; by adding the function names to external_function_names
+; by adding the function names to *external_function_names*
 (defun parse-external (x)
-   (setq external_function_names
-         (append external_function_names (remove '|,| (cdr x))))
+   (setq *external_function_names*
+         (append *external_function_names* (remove '|,| (cdr x))))
    nil)
 
 ;=============================================================================

@@ -3,7 +3,7 @@
 ;;; defconf.lisp
 ;;; A 'configure' for Common Lisp.
 
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYING for details).
 
@@ -177,11 +177,17 @@
     ;; "Initialize" the following variables.
     (push (list :library-location
 		(current-directory-namestring
-		 cl.env:*common-lisp-implementation*))
+		 cl.env:*common-lisp-implementation*)
+		:os-type (cl.env:feature-tag cl.env:*os*)
+		:cl-implementation (cl.env:feature-tag cl.env:*cl*)
+		)
 	  library-location-clauses)
     (push (list :source-location
 		(current-directory-namestring
-		 cl.env:*common-lisp-implementation*))
+		 cl.env:*common-lisp-implementation*)
+		:os-type (cl.env:feature-tag cl.env:*os*)
+		:cl-implementation (cl.env:feature-tag cl.env:*cl*)
+		)
 	  source-location-clauses)
 
     ;; 20000226 Marco Antoniotti
@@ -317,11 +323,12 @@
   (location "" :type string))
 
 (defmethod parse-conf-clause ((key (eql :source-location)) clause)
-  (destructuring-bind (loc-kwd location
-			       &key
-			       os-type
-			       cl-implementation
-			       &allow-other-keys)
+  (destructuring-bind (loc-kwd
+		       location
+		       &key
+		       (os-type (cl.env:feature-tag cl.env:*os*))
+		       (cl-implementation (cl.env:feature-tag cl.env:*cl*))
+		       &allow-other-keys)
       clause
     (make-location-clause :kind loc-kwd
 			  :location location

@@ -1997,9 +1997,12 @@
 (defun parse-format-descriptor-H (width string)
   (declare (ignore width))
   (list (coerce (mapcar #'(lambda (char-or-digit)
-			    (if (numberp char-or-digit)
-				(aref (format nil "~D" char-or-digit) 0)
-				char-or-digit))
+			    (cond ((numberp char-or-digit)
+				   (aref (princ-to-string char-or-digit) 0))
+				  ((symbolp char-or-digit)
+				   (aref (symbol-name char-or-digit) 0))
+				  (t
+				   char-or-digit)))
 			string)
 		'string)))
 
@@ -2141,8 +2144,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.57 2000/08/02 16:26:20 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.58 2000/08/03 03:39:49 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.58  2000/08/03 03:39:49  rtoy
+;;; The string passed to PARSE-FORMAT-DESCRIPTOR-H can be a character,
+;;; digit, or symbol.  These all need to be converted to character.  Make
+;;; it so.
+;;;
 ;;; Revision 1.57  2000/08/02 16:26:20  rtoy
 ;;; The D and E format descriptors should print out a D and E,
 ;;; respectively.  Thus add PARSE-FORMAT-DESCRIPTOR-D.

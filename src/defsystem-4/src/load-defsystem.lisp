@@ -25,10 +25,10 @@
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defparameter *mk-defsystem-absolute-directory-pathname*
-    (make-pathname :host (pathname-host *load-pathname*)
-		   :device (pathname-device *load-pathname*)
-		   :directory (pathname-directory *load-pathname*)
-		   :case :common ; Do we need this?
+    (make-pathname :host (pathname-host *load-truename*)
+		   :device (pathname-device *load-truename*)
+		   :directory (pathname-directory *load-truename*)
+		   ;; :case :common ; Do we need this?
 		   )))
 
 ;;; The following three parameters are tested IN SEQUENCE and

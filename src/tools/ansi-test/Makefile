@@ -13,7 +13,7 @@ all: normal safe sbcl clisp
 clisp:
 	$(MKDIR) clisp ;
 	$(RM) *.erg clisp/* ;
-	time $(CLISP) -i tests.lisp
+	time $(CLISP) -i tests.lisp < /dev/null
 	$(MV) *.erg clisp ;
 	$(RM) *.fas *.lib ;
 	ls -l $@ ;

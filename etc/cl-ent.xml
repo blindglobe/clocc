@@ -2,7 +2,7 @@
 
 <!-- *** Entities for docbook/xml, related to Common Lisp *** -->
 <!--
- Copyright (C) 2000-2002 by Sam Steingold
+ Copyright (C) 2000-2003 by Sam Steingold
  This is Free Software, covered by the GNU GPL (v2 or later)
  See http://www.gnu.org/copyleft/gpl.html
  -->
@@ -36,34 +36,46 @@
 <!ENTITY cltl1-bib
   "<biblioentry id='CLtL1'>
    <abbrev>CLtL1</abbrev>
-   <authorgroup>
-    <author>
+   <authorgroup><author>
      <firstname>Guy L.</firstname>
      <surname>Steele</surname>
      <lineage>Jr.</lineage>
-    </author>
-   </authorgroup>
+   </author></authorgroup>
+   <citetitle>Common Lisp: the Language (1st Edition)</citetitle>
    <pubdate>1984</pubdate> <pagenums>465</pagenums>
    <isbn>0-201-10088-6</isbn>
    <publisher><publishername>Digital Press</publishername></publisher>
-   <citetitle>Common Lisp: the Language (1st Edition)</citetitle>
   </biblioentry>">
 
 <!ENTITY cltl2 "<citation><link linkend='CLtL2'>CLtL2</link></citation>">
 <!ENTITY cltl2-bib
   "<biblioentry id='CLtL2'>
    <abbrev>CLtL2</abbrev>
-   <authorgroup>
-    <author>
+   <authorgroup><author>
      <firstname>Guy L.</firstname>
      <surname>Steele</surname>
      <lineage>Jr.</lineage>
-    </author>
-   </authorgroup>
+   </author></authorgroup>
+   <citetitle><ulink url='http://www.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/html/cltl/cltl2.html'>Common Lisp: the Language (2nd Edition)</ulink></citetitle>
    <pubdate>1990</pubdate> <pagenums>1032</pagenums>
    <isbn>0-201-10088-6</isbn>
    <publisher><publishername>Digital Press</publishername></publisher>
-   <citetitle><ulink url='http://www.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/html/cltl/cltl2.html'>Common Lisp: the Language (2nd Edition)</ulink></citetitle>
+  </biblioentry>">
+
+<!ENTITY amop "<citation><link linkend='amop'>Metaobject Protocol</link></citation>">
+<!ENTITY amop-bib
+  "<biblioentry id='amop'>
+   <abbrev>AMOP</abbrev>
+   <authorgroup>
+    <author><firstname>Gregor</firstname><surname>Kiczales</surname></author>
+    <author><firstname>Jim</firstname><surname>des Rivieres</surname></author>
+    <author><firstname>Daniel G.</firstname><surname>Bobrow</surname></author>
+   </authorgroup>
+   <citetitle><ulink url='&mop;'>The Art of the Metaobject Protocol</ulink></citetitle>
+   <pubdate>1991</pubdate> <pagenums>335</pagenums>
+   <isbn>0-262-61074-4</isbn>
+   <publisher><publishername><ulink url='http://www-mitpress.mit.edu'>MIT
+      Press</ulink></publishername></publisher>
   </biblioentry>">
 
 <!ENTITY gray-streams "<ulink url='ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail'>STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</ulink>">
@@ -120,6 +132,7 @@
 <!ENTITY in-s "<ulink url='&clhs;/Body/glo_i.html#input'>input</ulink> &stream-t;">
 <!ENTITY out-s "<ulink url='&clhs;/Body/glo_o.html#output'>output</ulink> &stream-t;">
 <!ENTITY bidi-s "<ulink url='&clhs;/Body/glo_b.html#bidirectional'>bidirectional</ulink> &stream-t;">
+<!ENTITY fresh "<ulink url='&clhs;/Body/glo_f.html#fresh'>fresh</ulink>">
 
 <!-- *** packages *** -->
 <!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote>COMMON-LISP</quote></ulink>">

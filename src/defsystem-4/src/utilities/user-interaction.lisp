@@ -62,7 +62,8 @@
 	  (t
 	   (format stream "~%~A-" prompt)
 	   (do* ((cursor prompt-length)
-		 (contents (split-string contents) (cdr contents))
+		 (contents (split-sequence:split-sequence #\Space contents)
+			   (cdr contents))
 		 (content (car contents) (car contents))
 		 (content-length (1+ (length content)) (1+ (length content))))
 	       ((null contents))
@@ -88,7 +89,7 @@
 	     ;; This gets around the problem of DEFSYSTEM reporting
 	     ;; that it's loading a module, when it eventually never
 	     ;; loads any of the files of the module.
-	     (case what 
+	     (case what
 	       ((compile :compile) 
 		(if (component-load-only component)
 		    ;; If it is :load-only t, we're loading.
@@ -99,7 +100,7 @@
 	       (otherwise what))
 	     (component-type component)
 	     (or (when type
-		   (component-full-pathname component type))
+		   (get-component-source-pathname component type))
 		 (component-name component))
 	     (and *tell-user-when-done*
 		  (not no-dots))))))
@@ -121,15 +122,17 @@
      ,@body
      (tell-user-done ,component ,force ,no-dots)))
 
-
+#|
 (defun tell-user-no-files (component &optional force)
   (when (or *oos-verbose* force)
     (format-justified-string (prompt-string component)
       (format nil "Source file ~A ~
              ~:[and binary file ~A ~;~]not found, not loading."
 	      (component-full-pathname component :source)
-	      (or *load-source-if-no-binary* *load-source-instead-of-binary*)
+	      (or (session-load-source-if-no-binary component)
+		  (sessions-load-source-instead-of-binary component))
 	      (component-full-pathname component :binary)))))
+|#
 
 
 (defun tell-user-require-system (name parent)

@@ -1,3 +1,9 @@
+cl-defsystem3 (3.3i+cvs.2003.12.05) unstable; urgency=low
+
+  * New upstream
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri,  5 Dec 2003 15:08:59 -0700
+
 cl-defsystem3 (3.3i+cvs.2003.04.30) unstable; urgency=low
 
   * New upstream: changes for CMU 18e+  

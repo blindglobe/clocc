@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.22 2000/05/22 19:18:28 sds Exp $
+;;; $Id: net.lisp,v 1.23 2000/05/23 16:57:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -159,8 +159,10 @@
 (defun socket-string (sock)
   "Print the socket local&peer host&port to a string."
   (declare (type socket sock))
-  (multiple-value-bind (ho1 po1 ho2 po2) (socket-host/port sock)
-    (format nil "[local: ~a:~d] [peer: ~s:~d]" ho2 po2 ho1 po1)))
+  (with-output-to-string (stream)
+    (print-unreadable-object (sock stream :type t :identity t)
+      (multiple-value-bind (ho1 po1 ho2 po2) (socket-host/port sock)
+        (format stream "[local: ~a:~d] [peer: ~s:~d]" ho2 po2 ho1 po1)))))
 
 ;;;
 ;;; }}}{{{ socket-servers

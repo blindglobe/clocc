@@ -7,9 +7,7 @@
 ;;; This is the only file with #+/#- (well... almost).
 ;;; Anyway, I am open for suggestions.
 ;;;
-;;; 20000107 Marco Antoniotti
-;;;
-;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -47,6 +45,8 @@
 	 (setf *machine* (make-instance 'sparc-machine)))
 	((or (featurep :mips))
 	 (setf *machine* (make-instance 'sparc-machine)))
+	((or (and (featurep :apple) (featurep :macosx) (featurep :lispworks)))
+	 (setf *machine* (make-instance 'ppc-machine)))
 	(t (setf *machine* (make-instance 'machine))))
 
   ;;-----------------------------
@@ -87,6 +87,9 @@
   (cond ((featurep :linux)
 	 (setf *operating-system* (make-instance 'linux)))
 
+	((featurep :macosx)
+	 (setf *operating-system* (make-instance 'mac-os-x)))
+
 	((featurep :unix)
 	 (setf *operating-system* (make-instance 'unix)))
 
@@ -115,10 +118,6 @@
 	(t)				; do nothing?
 	)
 
-  #+(and cmu (not :|18c|) (not :|18d|))
-  (setf *os* *operating-system*)	; This should become a SYMBOL-MACRO.
-
-  #+(or (not cmu) (and cmu (or :|18d| :|18c|)))
   (define-symbol-macro *os* *operating-system*)
 	
   ;;---------------------------------------
@@ -183,10 +182,6 @@
   (setf *common-lisp-implementation*
 	(make-instance 'scl :feature-tag :genera))
 
-  #+(and cmu (not :|18c|) (not :|18d|))
-  (setf *cl* *common-lisp-implementation*) ; This should become a SYMBOL-MACRO.
-
-  #+(or (not cmu) (and cmu (or :|18c| :|18d|)))
   (define-symbol-macro *cl* *common-lisp-implementation*)
 
   )

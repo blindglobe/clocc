@@ -4642,6 +4642,26 @@ the system definition, if provided."
 	   nil)
 	  (t nil))))
 
+;; see CLOCC/PORT/sys.lisp:compiled-file-p
+(eval-when (load eval compile)
+  (when (find-package "PORT")
+    (import (find-symbol "COMPILED-FILE-P" "PORT"))))
+(unless (fboundp 'compiled-file-p)
+ (defun compiled-file-p (file-name)
+  "Return T if the FILE-NAME is a filename designator for a valid compiled.
+Signal an error when it is not a filename designator.
+Return NIL when the file does not exist, or is not readable,
+or does not contain valid compiled code."
+  #+clisp
+  (with-open-file (in file-name :direction :input :if-does-not-exist nil)
+    (and in
+         (let ((line (read-line in nil nil)))
+           (and line
+                (string= line "(SYSTEM::VERSION " :start1 0
+                         :end1 #.(length "(SYSTEM::VERSION "))
+                (null (nth-value 1 (ignore-errors
+                                     (eval (read-from-string line)))))))))
+  #-clisp t))
 
 (defun needs-compilation (component force)
   ;; If there is no binary, or it is older than the source
@@ -4649,7 +4669,7 @@ the system definition, if provided."
   ;; Otherwise we only need to recompile if it depends on a file that changed.
   (declare (ignore force))
   (let ((source-pname (component-full-pathname component :source))
-	(binary-pname (component-full-pathname component :binary)))
+        (binary-pname (component-full-pathname component :binary)))
     (and
      ;; source must exist
      (probe-file source-pname)
@@ -4660,7 +4680,9 @@ the system definition, if provided."
       (null (probe-file binary-pname))
       ;; old binary
       (< (file-write-date binary-pname)
-	 (file-write-date source-pname))))))
+         (file-write-date source-pname))
+      ;; invalid binary
+      #+clisp (not (compiled-file-p binary-pname))))))
 
 
 (defun needs-loading (component &optional (check-source t) (check-binary t))

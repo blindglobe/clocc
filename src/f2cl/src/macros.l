@@ -89,6 +89,8 @@ is not included")
 (defconstant %false% nil)
 (defconstant %true% t)
 
+#+nil
+(progn
 (defmacro fexport (x) `(eval-when (compile load eval) (export ,x)))
 
 (defmacro fproclaim (x) `(eval-when (compile load eval) (proclaim ,x)))
@@ -102,7 +104,6 @@ is not included")
 ;-------------------------------------------------------------------------
 
 (defmacro apply! (fun args) (eval `(cons ,fun ,args)))
-
 ;-----------------------------------------------------------------------------
 
 (defmacro do! (var init step end &rest body)
@@ -131,6 +132,7 @@ is not included")
 
 (defmacro store-cl (name-indices val)
   `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
+);
 ;-----------------------------------------------------------------------------
 
 ;; Array dimensions are (d1, d2, d3, ...)
@@ -359,7 +361,7 @@ is not included")
 ;-----------------------------------------------------------------------------       
 ; set up a list of intrinsic function names
 ;real xxx
-(defvar *intrinsic_function_names*
+(defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
     idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
@@ -1105,8 +1107,12 @@ is not included")
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.33 2001/04/30 15:38:12 rtoy Exp $
+;;; $Id: macros.l,v 1.34 2002/01/06 23:11:04 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.34  2002/01/06 23:11:04  rtoy
+;;; o Rename *intrinsic_function_names* to use dashes.
+;;; o Comment out some unused functions and macros.
+;;;
 ;;; Revision 1.33  2001/04/30 15:38:12  rtoy
 ;;; Add a version of I1MACH.
 ;;;

@@ -766,9 +766,9 @@
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
-			 `(declare (type (simple-array t ,(cadar decl)) 
+			 `(declare (type (simple-array (member t nil) ,(cadar decl)) 
 				    ,vble_name))
-			 `(declare (type t ,vble))))))
+			 `(declare (type (member t nil) ,vble))))))
 	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return 
 		       (if (cdar decl) 

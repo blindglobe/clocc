@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.5 2000/06/02 15:39:10 sds Exp $
+;;; $Id: tests.lisp,v 2.6 2000/09/29 17:37:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -13,6 +13,7 @@
   (require :log (translate-logical-pathname "cllib:log"))
   ;; these files will be tested:
   (require :string (translate-logical-pathname "cllib:string"))
+  (require :math (translate-logical-pathname "cllib:math"))
   (require :date (translate-logical-pathname "cllib:date"))
   (require :url (translate-logical-pathname "cllib:url"))
   (require :rpm (translate-logical-pathname "cllib:rpm"))
@@ -32,15 +33,41 @@
              (let ((r1 (apply #'substitute-subseq seq from to keys)))
                (unless (string= r1 res)
                  (incf num-err)
-                 (format
-                  out " ### FAILED: ~s ~s ~s~{ ~s~}~% ->~10t~s~% /=~10t~s~%"
-                  seq from to keys r1 res)))))
+                 (warn " ### FAILED: ~s ~s ~s~{ ~s~}~% ->~10t~s~% /=~10t~s~%"
+                       seq from to keys r1 res)))))
       (ts "ab123efghcda" "abcdefghcda" "cd" "123" :start 1 :end 6)
       (ts "ab123efgh123a" "abcdefghcda" "cd" "123" :start 1)
       (ts "ab123efghcda" "abcdefghcda" "cd" "123" :end 6)
       (ts "ab123efgh123a" "abcdefghcda" "cd" "123")
       (ts "abcdefghcda" "abcdefghcda" "cd" "123" :start 5 :end 6))
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-string num-err)
+    num-err))
+
+(defun test-math (&key (out *standard-output*))
+  (mesg :test out " ** ~s...~%" 'test-math)
+  (let ((num-err 0))
+    (labels ((perm= (li1 la1 li2 la2)
+               (when (set-difference li1 li2 :test #'equalp)
+                 (incf num-err)
+                 (warn "permutation lists differ:
+ ** ~s **~%~s~% ** ~s **~%~s~% ** difference **~%~s~%"
+                       la1 li1 la2 li2
+                       (set-difference li1 li2 :test #'equalp))))
+             (perm-eq (li1 la1 li2 la2)
+               (perm= li1 la1 li2 la2)
+               (perm= li2 la2 li1 la1))
+             (ts-perm (nn)
+               (mesg :test out " * permutations of ~d element~:p~%" nn)
+               (let* ((ve (make-vector-indexed nn))
+                      (le (permutations-list ve :method :lex))
+                      (sh (permutations-list ve :method :shuffle))
+                      (sw (permutations-list ve :method :swap)))
+                 (perm-eq le :lex sh :shuffle)
+                 (perm-eq le :lex sw :swap))))
+      (ts-perm 3)
+      (ts-perm 4)
+      (ts-perm 5))
+    (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-math num-err)
     num-err))
 
 (defun test-date (&key (out *standard-output*))
@@ -51,13 +78,13 @@
             (mesg :test out "~6:d --> ~a --> ~6:d~%" n0 dd n1)
             (unless (= n0 n1)
               (incf num-err)
-              (format t " ### FAILED: ~6:d --> ~a --> ~6:d~2%" n0 dd n1))))
+              (warn " ### FAILED: ~6:d --> ~a --> ~6:d~2%" n0 dd n1))))
     (flet ((ts (nn st)
              (mesg :test out "~30s --> ~d --> ~a~%" st nn (dttm->string nn))
              (unless (= nn (string->dttm st))
                (incf num-err)
-               (format t " ### FAILED: ~s --> ~d, not ~d~2%"
-                       st (string->dttm st) nn))))
+               (warn " ### FAILED: ~s --> ~d, not ~d~2%"
+                     st (string->dttm st) nn))))
       (ts 3126878578 "1999/02/01 17:22:58")
       (ts 3126896578 "Mon Feb  1 17:22:58 1999 EST")
       (ts 3126878578 "Feb  1 Mon 17:22:58 1999 GMT")
@@ -78,7 +105,7 @@
              (mesg :test out " ~a < ~a~%" v0 v1)
              (unless (version< v0 v1)
                (incf num-err)
-               (format t " ### FAILED: ~a < ~a~2%" v0 v1))))
+               (warn " ### FAILED: ~a < ~a~2%" v0 v1))))
       (av "3.3.2" "3.3.11")
       (av "4.2b980516" "4.2")
       (av "3.3.2pl2" "3.3.3")
@@ -95,14 +122,11 @@
              (let ((uu (url st)))
                (unless (equalp uu url)
                  (incf num-err)
-                 (format t " ### PARSING FAILED:~% ### ")
-                 (terpri) (pr uu) (terpri)
-                 (princ " ### ") (pr url) (terpri) (terpri))
+                 (warn " ### PARSING FAILED:~%~s~% ###~%~s~%" uu url))
                (unless (string= (princ-to-string uu) pr)
                  (incf num-err)
-                 (format
-                  t " ### PRINTING FAILED:~%~5t~s -->~%~5t~s~% not~5t~s~2%"
-                  st uu st)))))
+                 (warn " ### PRINTING FAILED:~%~5t~s -->~%~5t~s~% not~5t~s~2%"
+                       st uu st)))))
       (ts "news://nntp.gnu.org/gnu.discuss"
           (make-url :prot :news :user "" :pass "" :host "nntp.gnu.org" :port 0
                     :path "/gnu.discuss")
@@ -130,10 +154,10 @@
              (handler-case
                  (let ((o1 (read-from-string str)))
                    (unless (equalp o1 obj)
-                     (format t " ### READING FAILED: ~s != ~s~%" o1 obj)
+                     (warn " ### READING FAILED: ~s != ~s~%" o1 obj)
                      (incf num-err)))
                (error (err)
-                 (format t " ### READ ERROR: ~a~%" err)
+                 (warn " ### READ ERROR: ~a~%" err)
                  (incf num-err)))))
       (ts "[a ?\\C-a ?c #\\z]" #(a (:control #\a) #\c #\z))
       (ts "[?Z ?\\^M ?\\n]" #(#\Z (:control #\M) #\Newline)))
@@ -147,11 +171,12 @@
              (handler-case
                  (let ((len (length (xml-read-from-file path :reset-ent nil))))
                    (if (= num len)
-                       (format t " * correct length: ~:d~%" len)
-                       (format t " #~d# wrong length: ~:d (should be ~:d)~%"
-                               (incf num-err) len num)))
+                       (mesg :test out " * correct length: ~:d~%" len)
+                       (mesg :test out
+                             " #~d# wrong length: ~:d (should be ~:d)~%"
+                             (incf num-err) len num)))
                (error (err)
-                 (format t " ### ERROR: ~a~%" err)
+                 (warn " ### ERROR: ~a~%" err)
                  (incf num-err)))))
       (mesg :test out " ** ~s...~%" 'test-xml)
       (ts *xml-ent-file* 283)
@@ -165,7 +190,7 @@
              (mesg :test out " * ~a~%" path)
              (handler-case (when (cvs-stat-log path) 1)
                (error (err)
-                 (format t " ### ERROR: ~a~%" err)
+                 (warn " ### ERROR: ~a~%" err)
                  (incf num-err)))))
       (mesg :test out " ** ~s...~%" 'test-cvs)
       (ts (namestring (translate-logical-pathname "clocc:"))))
@@ -175,6 +200,7 @@
 (defun test-all (&key (out *standard-output*))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let ((num-err (+ (test-string :out out)
+                    (test-math :out out)
                     (test-date :out out)
                     (test-rpm :out out)
                     (test-url :out out)

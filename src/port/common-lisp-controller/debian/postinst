@@ -47,9 +47,9 @@ case "$1" in
 EOF
     db_get common-lisp-controller/auto-build
     if [ "$RET" = "true" ]; then
-      touch /etc/common-lisp/autobuild
+      echo "yes" > /etc/common-lisp/autobuild
     else
-      rm -f /etc/common-lisp/autobuild 
+      echo "no" > /etc/common-lisp/autobuild 
     fi
     # in any case we rebuild with defsystem loaded...
     for compiler in /usr/lib/common-lisp/bin/*.sh ; do

@@ -10,7 +10,7 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.18 2002/05/24 21:58:02 sds Exp $
+# $Id: clocc.mk,v 1.19 2003/07/03 15:41:18 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 ifndef CLOCC_MK
@@ -80,10 +80,11 @@ $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
 	@$(LN) -s . $(SYSTEM);
 	@$(LN) -s . extra;
 	@$(LN) -s $(ZIPEXTRA) .;
+	@test -z "$(ZIPEXTRALINK)" || $(LN) -s $(ZIPEXTRALINK) .;
 	@echo ...updating zip file $@...;
 	@$(ZIP) $@ $(patsubst %,$(SYSTEM)/%,$^) $(ZIPEXTRANOLINK) \
 		$(patsubst %,$(SYSTEM)/extra/%,$(notdir $(ZIPEXTRA)));
-	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA));
+	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA)) $(notdir $(ZIPEXTRALINK));
 
 clean-all: force
 	$(RM) $(FASLFILES) core *.core *.mem *.dxl TAGS *.list

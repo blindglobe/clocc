@@ -10,35 +10,39 @@ Load the file named 'load-cl-environment.lisp'.
       (load "load-cl-environment.lisp")
 
 Be careful about the directory you are in and/or the actual location
-of the aforementioned file.
+of the aforementioned file.  The package is actually loaded from the
+directory of *LOAD-TRUENAME* as bound by the call to LOAD.
+
+1.1 Utility function.
 
 Once the file is loaded you will have the function
-LOAD-CL-ENVIRONMENT-LIBRARY at your disposal (it loaded in *PACKAGE*).
+CL-USER::LOAD-CL-ENVIRONMENT-LIBRARY at your disposal.  This can be
+used for debugging and other purposes.
 You can now issue.
 
-      (load-cl-environment-library :directory "/where/is/the/env/library/")
+      (cl-user::load-cl-environment-library :directory "/where/the/env/library/is/")
 
 This will load the library.  To actually compile it, run
 
-      (load-cl-environment-library :directory "/where/is/the/env/library/"
+      (cl-user::load-cl-environment-library :directory "/where/the/env/library/is/"
                                    :compile-first-p t)
 
 This will compile the files first and then load them.
 
+You can skip Section 2.
+
 
 2. With MK:DEFSYSTEM.
 
-You need MK:DEFSYSTEM to do everything automatically.  The system
-should work only on CMUCL (and maybe Allegro).
+You need MK:DEFSYSTEM to do everything automatically.  Just issue the
+following commands.
 
-Before doing anything, you will need to edit (sorry) the 'env.system'
-file in order to have the correct :SOURCE-PATHNAME and
-:BINARY-PATHNAME in place.
-
-Start a CL *in the 'environment' directory* and do
-
-      (load "env.system")
+      (load "/where/the/library/is/env.system")
       (mk:compile-system 'cl.environment)
+
+This procedure is less tested.  The reason why the system file is not
+recommended is that I consider CL-ENVIRONMENT a "lower level"
+functionality than that provided by any "defsystem" utility.
 
 
 3. Test.
@@ -55,5 +59,4 @@ does not guarantee you to maintain the same instances (yet).
 You can also try the function CL.ENV:SYSTEM-INFO to get a
 comprehensive printout regarding your current CL session.
 
-2000-01-29 Marco Antoniotti
-
+2004-01-21 Marco Antoniotti

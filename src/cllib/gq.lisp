@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.26 2002/02/12 19:37:18 sds Exp $
+;;; $Id: gq.lisp,v 2.27 2002/02/12 19:52:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -180,7 +180,8 @@ This is just a debugging function, to be called interactively."
           :do (mesg t *gq-error-stream* "~s~%" xx)
           :while (and xx (not (string= "" xx))))
     (mesg t *gq-error-stream* " *** data:~%")
-    (let (date res line)
+    (let ((*read-default-float-format* 'double-float)
+          date res line)
       (dolist (ti ticks (cons date res))
         (setq line (read-line sock))
         (mesg t *gq-error-stream* " * ~a~%" line)
@@ -292,7 +293,8 @@ This is just a debugging function, to be called interactively."
                   (warn "~s: date mismatch: ~s and ~s"
                         'get-quotes-xmltoday date dt))
                 (setq date dt))
-              (let* ((ask (find "ask" data :test #'equal
+              (let* ((*read-default-float-format* 'double-float)
+                     (ask (find "ask" data :test #'equal
                                 :key (lambda (xo) (xmlo-tag xo "type"))))
                      (nav (read-from-string
                            (xmlo-tag (xmlo-name-check ask "price") "value")))

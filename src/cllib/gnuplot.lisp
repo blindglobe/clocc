@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1997-12-04 Thu 15:09:13 EST - sds@wintermute.eagle>
+;;; File: <gnuplot.lisp - 1998-02-12 Thu 16:36:03 EST sds@mute.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.7 1997/12/04 20:10:08 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.8 1998/02/12 21:38:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.8  1998/02/12 21:38:19  sds
+;;; Switched to `defgeneric' and `require'.
+;;;
 ;;; Revision 1.7  1997/12/04 20:10:08  sds
 ;;; Made `with-plot-stream' and `plot-header' plot and print,
 ;;; not just write the file.
@@ -41,39 +44,76 @@
 ;(make-pipe-io-stream)
 ;(make-pipe-output-stream)
 
-(defvar *gnuplot-path* "c:/bin/wgnuplot/wgnuplot.exe"
+(defvar *gnuplot-path* #+win32 "c:/bin/gnuplot/wgnuplot.exe"
+	#+unix "/usr/local/bin/gnuplot"
   "*The path to the windows gnuplot executable.")
+(defvar *gnuplot-epoch* (date2time (date "2000-1-1"))
+  "*The gnuplot epoch - the number of seconds on 2000-1-1.")
+#+win32
 (defvar *gnuplot-path-console* "c:/bin/cgnuplot.exe"
   "*The path to the console gnuplot executable.")
-(defvar *gnuplot-printer* "\\\\server1\\ddslaser"
+(defvar *gnuplot-printer* #+win32 "\\\\server1\\ddslaser" #+unix "ddslaser"
   "*The printer to print the plots.")
-;(defvar *gnuplot-stream* nil "The current gnuplot output stream.")
+#+unix (defvar *gnuplot-stream* nil "The current gnuplot output stream.")
 (defvar *gnuplot-file* (merge-pathnames "plot.tmp" *fin-dir*)
   "*The tmp file for gnuplot.")
+(defvar *gnuplot-postscript* '(nil print)
+  "*The list of values for the PLOT option that imply postscript output.")
+(defvar *gnuplot-msg-stream* t "*The message stream of gnuplot functions.")
 
 (defmacro with-plot-stream ((str plot &rest header) &body body)
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream plot-or-print &rest header) body).
 HEADERs are passed to `plot-header', which see.
-PLOT means: T => plot; NIL => print; other => write
-`*gnuplot-file*' and print a message."
-  `(let ((,str (if ,plot (open *gnuplot-file* :direction :output
-			       :if-exists :supersede)
-		   (make-pipe-output-stream *gnuplot-path-console*))))
-    (unwind-protect
-	 (progn (plot-header ,str ,plot ,@header) ,@body)
-      (when ,str (close ,str))
-      (cond ((eq ,plot t)
-	     (format t "&Starting gnuplot...")
-	     (close (make-pipe-output-stream
-		     (format nil "~a ~a" *gnuplot-path* *gnuplot-file*)))
-	     (format t "done.~%"))
-	    ((eq ,plot nil)
-	     (format t "~&Sent the plot to the printer `~a'.~%"
-		     *gnuplot-printer*))
-	    ((format t "~&Prepared file `~a'.
+PLOT means: T, 'plot => plot; member of `*gnuplot-postscript*' => print;
+'wait => plot and wait for gnuplot to terminate.
+'ignore => do nothing, print nothing, return NIL.
+other => write `*gnuplot-file*' and print a message."
+  `(let (,str)
+    (unless (eq ,plot 'ignore)
+      (setq ,str
+	    #+win32 (if (member ,plot *gnuplot-postscript* :test #'eq)
+			(pipe-output *gnuplot-path-console*)
+			(open *gnuplot-file* :direction :output
+			      :if-exists :supersede))
+	    #+unix (if (eq ,plot 'file)
+		       (open *gnuplot-file* :direction :output
+			     :if-exists :supersede)
+		       (setq *gnuplot-stream*
+			     (or *gnuplot-stream*
+				 (pipe-output *gnuplot-path*)))))
+      (unwind-protect
+	   (progn (plot-header ,str ,plot ,@header) ,@body)
+	#+win32 (when ,str (close ,str))
+	#+win32
+	(cond ((or (eq ,plot t) (eq ,plot 'plot))
+	       (format *gnuplot-msg-stream* "~&Starting gnuplot...")
+	       (close (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
+	       (format *gnuplot-msg-stream* "done.~%"))
+	      ((eq ,plot 'wait)
+	       (format *gnuplot-msg-stream*
+		       "~&Waiting for gnuplot to terminate...")
+	       (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
+		       (run-prog *gnuplot-path* :args
+				 (list "/noend" *gnuplot-file*))))
+	      ((member ,plot *gnuplot-postscript* :test #'eq)
+	       (format *gnuplot-msg-stream*
+		       "~&Sent the plot to the printer `~a'.~%"
+		       *gnuplot-printer*))
+	      ((format *gnuplot-msg-stream* "~&Prepared file `~a'.
 Type \"load '~a'\" at the gnuplot prompt.~%"
-		     *gnuplot-file* *gnuplot-file*))))))
+		       *gnuplot-file* *gnuplot-file*)))
+	#+unix
+	(cond ((or (eq ,plot t) (eq ,plot 'plot))
+	       (format *gnuplot-msg-stream* "Done plotting.~%"))
+	      ((eq ,plot 'wait) (format t "Press <enter> to continue...")
+	       (read-line *terminal-io* nil nil))
+	      ((eq ,plot 'file) (close ,str)
+	       (format *gnuplot-msg-stream* "Wrote `~a'.~%" *gnuplot-file*))
+	      ((member ,plot *gnuplot-postscript* :test #'eq)
+	       (format *gnuplot-msg-stream*
+		       "~&Sent the plot to the printer `~a'.~%"
+		       *gnuplot-printer*)))))))
 
 (defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title)
   "Print the header stuff into the stream.
@@ -81,14 +121,16 @@ This is called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
 XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE (xrange)."
   (flet ((pr (x) (if (numberp x) x (format nil "'~a'" x))))
-    (format str "set terminal ~:[postscript landscape~;windows~]
+    (format str "set terminal ~:[postscript landscape~*~;~a~]
 set output~:* ~:['~a'~;~*~]
 set time '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
 set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'
 set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%"
-	    plot *gnuplot-printer*
-	    timefmt xlabel ylabel data-style (pr xb) (pr xe) title)))
+	    (not (member plot *gnuplot-postscript* :test #'eq))
+	    #+unix "x11" #+win32 "windows"
+	    *gnuplot-printer* timefmt xlabel ylabel data-style
+	    (pr xb) (pr xe) title)))
 
 (defun plot-dl-channels (dls chs &rest opts)
   "Plot the dated lists and the channels.
@@ -100,14 +142,15 @@ The rest is passed to `plot-dated-lists'."
 	(endd (apply #'max (mapcar (compose #'date2time #'channel-endd) chs))))
     (incf endd (* 0.25 (- endd begd)))
     (setq begd (date begd) endd (date endd))
-    (format t "~&Plotting ~d channel~:p and ~d dated list~:p in [~a -- ~a].~%"
+    (format *gnuplot-msg-stream*
+	    "~&Plotting ~d channel~:p and ~d dated list~:p in [~a -- ~a].~%"
 	    (length chs) (length dls) begd endd)
     (apply #'plot-dated-lists begd endd dls :channels chs opts)))
 
 (defun plot-dated-lists (begd endd dls &key (title "Plot") (xlabel "time")
 			 (ylabel "value, $") (data-style "lines")
 			 (timefmt "%Y-%m-%d") ema rel (slot 'val)
-			 channels (plot t))
+			 channels posl (plot t))
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -128,7 +171,8 @@ CHANNELS id the list of channels to plot."
 					      (dated-list-name dl) ee))
 				    ema)))
 		    dls))
-    (when channels (dolist (ch channels) (plot-channel-str ch str)))
+    (dolist (ch channels) (plot-channel-str ch str))
+    (dolist (pos posl) (plot-pos-str pos str))
     (terpri str)
     (let* ((emal (make-list (length ema))) bv
 	   (val (if rel (lambda (dl) (/ (dl-nth-slot dl slot) bv))
@@ -152,7 +196,7 @@ CHANNELS id the list of channels to plot."
 	;; clean EMAL for the next pass
 	(mapl (lambda (ee) (setf (car ee) nil)) emal)))))
 
-(defun plot-lists (lss &key (key #'identity) (title "Plot") (xlabel "nums")
+(defun plot-lists (lss &key (key #'value) (title "Plot") (xlabel "nums")
 		   (ylabel "value") (data-style "linespoints") rel depth
 		   (plot t))
   "Plot the given lists of numbers.
@@ -173,27 +217,52 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
 	    ((= ix depth) (format str "e~%"))
 	  (format str "~f~20t~f~%" ix (funcall val ll)))))))
 
-(defun plot-lists-arg (lss &key (key #'identity) (title "Plot") (xlabel "nums")
+(defun plot-lists-arg (lss &key (key #'value) (title "Plot") (xlabel "nums")
 		       (ylabel "value") (data-style "linespoints") rel
 		       (plot t))
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the list
-of conses of abscissas and ordinates."
+of conses of abscissas and ordinates. KEY is used to extract the cons."
   (declare (list lss))
-  (let ((beg (apply #'min (mapcar #'caadr lss)))
-	(end (apply #'max (mapcar (compose #'caar #'last) lss))))
-    (with-plot-stream (str plot xlabel ylabel data-style nil beg end title)
-      (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%"
-	      (mapcar #'car lss))
-      (let* (bv (val (if rel (lambda (kk) (/ kk bv)) #'identity)))
-	(dolist (ls lss)
-	  (setq bv (funcall key (cdadr ls)))
-	  (do ((ll (cdr ls) (cdr ll)) kk)
-	      ((null ll) (format str "e~%"))
-	    (setq kk (funcall key (car ll)))
-	    (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk)))))))))
+  (with-plot-stream (str plot xlabel ylabel data-style nil
+		     (apply #'min (mapcar #'caadr lss))
+		     (apply #'max (mapcar (compose #'caar #'last) lss)) title)
+    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%"
+	    (mapcar #'car lss))
+    (let* (bv (val (if rel (lambda (kk) (/ kk bv)) #'identity)))
+      (dolist (ls lss)
+	(setq bv (funcall key (cdadr ls)))
+	(do ((ll (cdr ls) (cdr ll)) kk)
+	    ((null ll) (format str "e~%"))
+	  (setq kk (funcall key (car ll)))
+	  (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk))))))))
+
+(defun plot-error-bars (ll &key (title "Plot") (xlabel "nums") (ylabel "value")
+			(data-style "lines") (plot t) (xkey #'first)
+			(ykey #'second) (ydkey #'third))
+  "Plot the list with errorbars.
+The first element is the title, all other are records from which we
+get x, y and ydelta with xkey, ykey and ydkey."
+  (declare (list ll))
+  (with-plot-stream (str plot xlabel ylabel data-style nil
+		     (funcall xkey (second ll)) (funcall xkey (car (last ll)))
+		     title)
+    (format str "plot 0 title \"\", '-' title \"~a\" with errorbars,~
+ '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
+    (dolist (rr ll (format str "e~%"))
+      (format str "~a ~a ~a~%" (funcall xkey rr)
+	      (funcall ykey rr) (funcall ydkey rr)))
+    (dolist (rr ll (format str "e~%"))
+      (format str "~a ~a~%" (funcall xkey rr)
+	      (funcall ykey rr) (funcall ydkey rr)))
+    (dolist (rr ll (format str "e~%"))
+      (format str "~a ~a~%" (funcall xkey rr)
+	      (- (funcall ykey rr) (funcall ydkey rr))))
+    (dolist (rr ll (format str "e~%"))
+      (format str "~a ~a~%" (funcall xkey rr)
+	      (+ (funcall ykey rr) (funcall ydkey rr))))))
 
 (defun plot-functions (fnl xmin xmax numpts &key (title "Function Plot")
 		       (xlabel "x") (ylabel "y") (data-style "lines") (plot t))
@@ -239,22 +308,36 @@ DEPTH out of the dated list."
     (make-line :sl (* (line-sl ln) dd) :co
 	       (- (line-co ln) (* (line-sl ln) dd begd)))))
 
-(defun plot-line-str (ln beg end str)
+(defun plot-line-str (ln beg end str &optional (title ""))
   "Write the string to plot stream STR for plotting the line from BEG to END.
 This is not a complete plotting function (not a UI)!"
   (declare (type line ln) (real beg end))
-  (format str ", ((x>~f)?((x<~f)?(~f*x+~f):1/0):1/0) title \"\" with lines"
-	  beg end (line-sl ln) (line-co ln)))
+  (format str ", ((x>~f)?((x<~f)?(~f*x+~f):1/0):1/0) title \"~a\" with lines"
+	  beg end (line-sl ln) (line-co ln) title))
+
+(defun plot-pos-str (pos str)
+  "Write the string to plot stream STR for plotting the position POS.
+This is not a complete plotting function (not a UI)!"
+  (declare (type pos pos))
+  (let ((beg (- (date2time (pos-begd pos)) *gnuplot-epoch*))
+	(end (- (date2time (pos-endd pos)) *gnuplot-epoch*)))
+    (plot-line-str (line-day2sec (pos2line pos) beg) beg end str)))
 
 (defun plot-channel-str (ch str)
   "Write the string to plot stream STR for plotting the channel.
-This is not a complete plotting function (not a UI)!"
+Omit zero lines. This is not a complete plotting function (not a UI)!"
   (declare (type channel ch) (type stream str))
-  (let* ((epoch (date2time (date "2000-1-1")))
-	 (beg (- (date2time (channel-begd ch)) epoch))
-	 (end (- (date2time (channel-endd ch)) epoch)))
-    (plot-line-str (line-day2sec (channel-top ch) beg) beg end str)
-    (plot-line-str (line-day2sec (channel-bot ch) beg) beg end str)
-    (plot-line-str (line-day2sec (channel-sta ch) beg) beg end str)))
+  (let ((beg (- (date2time (channel-begd ch)) *gnuplot-epoch*))
+	(end (- (date2time (channel-endd ch)) *gnuplot-epoch*)))
+    (unless (and (zerop (line-sl (channel-top ch)))
+		 (zerop (line-sl (channel-top ch))))
+      (plot-line-str (line-day2sec (channel-top ch) beg) beg end str))
+    (unless (and (zerop (line-sl (channel-bot ch)))
+		 (zerop (line-sl (channel-bot ch))))
+      (plot-line-str (line-day2sec (channel-bot ch) beg) beg end str))
+    (unless (and (zerop (line-sl (channel-reg ch)))
+		 (zerop (line-sl (channel-reg ch))))
+      (plot-line-str (line-day2sec (channel-reg ch) beg) beg end str))))
 
+(provide "gnuplot")
 ;;; gnuplot.lisp ends here

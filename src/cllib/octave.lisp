@@ -1,10 +1,20 @@
-;;; File: <octave.lisp - 1997-10-08 Wed 11:45:54 EDT - sds@WINTERMUTE.eagle>
+;;; File: <octave.lisp - 1998-02-12 Thu 16:43:06 EST sds@mute.eaglets.com>
 ;;;
 ;;; Octave interface
 ;;;
-;;; $Id: octave.lisp,v 1.3 1997/10/08 15:46:16 sds Exp $
+;;; Copyright (C) 1997 by Sam Steingold.
+;;; This is free software.
+;;; GNU General Public License v.2 (GPL2) is applicable:
+;;; No warranty; you may copy/modify/redistribute under the same
+;;; conditions with the source code. See <URL:http://www.gnu.org>
+;;; for details and precise copyright document.
+;;;
+;;; $Id: octave.lisp,v 1.4 1998/02/12 21:43:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 ;;; $Log: octave.lisp,v $
+;;; Revision 1.4  1998/02/12 21:43:09  sds
+;;; Switched to `defgeneric' and `require'.
+;;;
 ;;; Revision 1.3  1997/10/08 15:46:16  sds
 ;;; Moved make-dx-mx here.
 ;;;
@@ -12,8 +22,11 @@
 ;;; flush-stream is not used anymore.
 ;;;
 
-(defun dot0 (l0 l1 &key (key #'identity) key0 key1)
-  "Compute the dot-product of the two sequencies,
+(eval-when (load compile eval)
+  (sds-require 'util) (sds-require 'date) (sds-require 'currency))
+
+(defun dot0 (l0 l1 &key (key #'value) key0 key1)
+  "Compute the dot-product of the two sequences,
 presumed to be of the same size."
   (declare (sequence l0 l1))
   (setq key0 (or key0 key) key1 (or key1 key))
@@ -91,3 +104,6 @@ output_precision = 20~%AA=[")
 	    (dot (elt hists ii) (elt hists ii) :key #'currency-rec-avg)
 	    (aref *dx-vector* ii)
 	    (dot (elt hists ii) dx-h :key #'currency-rec-avg)))))
+
+(provide "octave")
+;;; octave.lisp ends here

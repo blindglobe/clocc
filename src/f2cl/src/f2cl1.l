@@ -1476,8 +1476,11 @@ FILENAME                 File containing Fortran code
 ;; returns the value of the function in addition to the parameters.
 
 (defun generate-call-to-routine (routine arglist &optional return)
-  (let* ((routine-name (check-reserved-lisp-names (first routine)))
-	 (finfo (gethash routine-name *f2cl-function-info*)))
+  (multiple-value-bind (routine-name finfo)
+      (if (eq (first routine) 'funcall)
+	  (values routine (gethash (second routine) *f2cl-function-info*))
+	  (values (list (check-reserved-lisp-names (first routine)))
+		  (gethash (first routine) *f2cl-function-info*)))
     (if (and finfo (f2cl-finfo-return-values finfo))
 	(let ((this (gethash *subprog_name* *f2cl-function-info*)))
 	  (unless this
@@ -1576,11 +1579,11 @@ FILENAME                 File containing Fortran code
 	;;(format t "setters = ~A~%" setters)
 	(if setters
 	    `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-		  (,routine-name ,@arglist)
+		  (,@routine-name ,@arglist)
 		(declare (ignore ,@ignored-vars))
 		,@setters
 		,@(if return (list 'ret-val))))
-	    `((,routine-name ,@arglist)))))))
+	    `((,@routine-name ,@arglist)))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -2385,8 +2388,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.122 2003/07/12 04:24:38 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.123 2003/07/13 18:58:30 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.123  2003/07/13 18:58:30  rtoy
+;;; Be more careful in generate-call-to-routine when the routine is
+;;; actually funcalling a routine.
+;;;
 ;;; Revision 1.122  2003/07/12 04:24:38  rtoy
 ;;; o Add new keyword parameter to specify the package to be used for
 ;;;   compiling the code.  Defaults to COMMON-LISP-USER

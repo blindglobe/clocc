@@ -7,7 +7,7 @@ Installation Instructions
 You need MK:DEFSYSTEM to do everything automatically.  The system
 should work only on CMUCL (and maybe Allegro).
 
-Before doing anyhting, you will need to edit (sorry) the 'env.system'
+Before doing anything, you will need to edit (sorry) the 'env.system'
 file in order to have the correct :SOURCE-PATHNAME and
 :BINARY-PATHNAME in place.
 
@@ -36,7 +36,7 @@ This will load the library.  To actually compile it, run
       (load-cl-environment-library :directory "/where/is/the/env/library/"
                                    :compile-first-p t)
 
-This will compile the files first and tehn load them.
+This will compile the files first and then load them.
 
 3. Test.
 

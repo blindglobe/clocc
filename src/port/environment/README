@@ -1,7 +1,7 @@
 CL.ENVIRONMENT 0.1
 
 This package contains a set of definitions whose intent is to
-facilitate the management of a system dependencies.
+facilitate the management of system dependencies.
 
 In particular, many little bits and pieces of information, which are
 usually represented as strings or features in a Common Lisp
@@ -21,4 +21,4 @@ Please see the files INSTALLATION and COPYRIGHT for more information.
 The package is currently released under the LGPL and all the files
 should be considered to include such Copyright notice.
 
-2000-01-29 Marco Antoniotti
+2000-06-19 Marco Antoniotti

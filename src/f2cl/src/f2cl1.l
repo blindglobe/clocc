@@ -205,7 +205,8 @@ FILENAME                 File containing Fortran code
 	       :array-slicing array-slicing
 	       :package package :declaim declaim)))
     (multiple-value-prog1
-	(compile-file lisp-file :output-file output-file :error-file error-file)
+	#+cmu (compile-file lisp-file :output-file output-file :error-file error-file)
+	#-cmu (compile-file lisp-file :output-file output-file)
       (unless keep-lisp-file
 	(delete-file lisp-file)))))
 ;---------------------------------------------------------------------------
@@ -1199,17 +1200,34 @@ FILENAME                 File containing Fortran code
 	      ,@setters
 	      ,@(if return (list 'ret-val))))
 	  `((,@routine ,@arglist))))))
+
+;; Convert array references to an array slice, as appropriate. That
+;; is, the array reference must be the actual arg. No arithmetic
+;; allowed.  We assume that's true if FREF is the first element of the
+;; arg expression.
+(defun maybe-convert-array-ref-to-slice (arg-list)
+  (if (not *array-slicing*)
+      expr
+      (mapcar #'(lambda (expr)
+		  ;;(format t "expr = ~A~%" expr)
+		  (if (eq (first expr) 'fref)
+		      `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
+		      expr))
+	      arg-list)))
+      
 ;------------------------------------------------------------------------------
 (defun parse-subroutine-call (x)
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
-		     (mapcar #'(lambda (expr)
-				 (let ((*apply-array-slice* *array-slicing*))
-				   (id-expression expr)))
+		     (mapcar #'id-expression
 			     (list-split '|,| (check_new_vbles (third x))))
 		     nil)))
     ;; Note that this is not a variable and is, in fact, a subroutine.
     (update-called-functions-list (list (second x) :subroutine) arglist)
+
+    ;; Now convert array references to an array slice, as appropriate.
+    (setf arglist (maybe-convert-array-ref-to-slice arglist))
+
     (cond ((null arglist)
 	   ;; No args to the subroutine
 	   `((,(second x))))
@@ -1956,8 +1974,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.67 2000/08/30 16:54:04 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.68 2000/09/01 13:54:26 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.68  2000/09/01 13:54:26  rtoy
+;;; o F2CL-COMPILE:  not all COMPILE-FILE's have the :ERROR-FILE option.
+;;; o Added MAYBE-CONVERT-ARRAY-REF-TO-SLICE to convert array refs to
+;;;   slices if appropriate.
+;;; o PARSE-SUBROUTINE-CALL:  we were not careful enough about array
+;;;   slicing.  We should only apply array slicing if the argument is an
+;;;   array ref.  Any arithmetic should disable array-slicing.
+;;;
 ;;; Revision 1.67  2000/08/30 16:54:04  rtoy
 ;;; In F2CL-COMPILE, make :output-file default to T.  CMUCL won't produce
 ;;; an output if it's NIL.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.13 2002/08/13 22:02:46 sds Exp $
+;;; $Id: geo.lisp,v 2.14 2002/11/30 22:34:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -321,7 +321,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
                              (&rest dump-args &key (out *standard-output*)
                                     &allow-other-keys))
   "Dump all the URLs for all the relevant countries."
-  (remf dump-args :out)
+  (retq dump-args (remove-plist dump-args :out))
   (dolist (cc (apply #'find-country find-args))
     (let ((st (if (or (and (symbolp out) (fboundp out)) (functionp out))
 		  (funcall out cc) out)))

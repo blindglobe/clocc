@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.9 2000/05/12 18:13:30 sds Exp $
+;;; $Id: ext.lisp,v 1.10 2000/07/31 17:53:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage port
@@ -95,7 +95,8 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   #+cormanlisp (cl::gc)
   #+gcl (si::gbc)
   #+lispworks (hcl:normal-gc)
-  #-(or allegro clisp cmu cormanlisp gcl lispworks)
+  #+lucid (lcl:gc)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
   (error 'not-implemented :proc (list 'gc)))
 
 (defun quit (&optional code)
@@ -105,7 +106,8 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   #+cormanlisp (win32:exitprocess code)
   #+gcl (lisp:bye code)
   #+lispworks (lw:quit :status code)
-  #-(or allegro clisp cmu cormanlisp gcl lispworks)
+  #+lucid (lcl:quit code)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
   (error 'not-implemented :proc (list 'quit code)))
 
 (defconst +eof+ cons (cons nil nil)

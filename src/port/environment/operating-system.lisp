@@ -203,4 +203,27 @@
 				(tag (eql :ms-windows-2000)))
   t)
 
+
+;;; One piece of information always useful and needed.
+
+(defgeneric os-file-system-directory-separator (os)
+  (:documentation
+   "Returns a string that contains the 'directory separator' for the OS.
+The string is usually one character long."))
+
+(defmethod os-file-system-directory-separator ((os unix)) "/")
+
+(defmethod os-file-system-directory-separator ((os Mac-OS)) ":")
+
+(defmethod os-file-system-directory-separator ((os genera)) ">")
+
+(defmethod os-file-system-directory-separator ((os amiga)) "\\") ; Check this!!
+
+(defmethod os-file-system-directory-separator ((os OS/2)) "\\")
+
+(defmethod os-file-system-directory-separator ((os MS-DOS)) "\\")
+
+(defmethod os-file-system-directory-separator ((os MS-Windows)) "\\")
+
+
 ;;; end of file -- operating-system.lisp

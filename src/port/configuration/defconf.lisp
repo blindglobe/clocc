@@ -38,7 +38,19 @@
 	   (namestring ".")))
 
 
-;;; find-system, load-system -- Implementation dependent
+;;; defsys-type-available-p -- Checks for availability of a particular
+;;; DEFSYS in a running CL image.  The specialized methods are in the
+;;; 'impl-dependent' directory.
+
+(defgeneric defsys-type-available-p (cl defsys-type)
+  (:method ((cl cl.env:generic-common-lisp-implementation)
+	    (defsys-type symbol))
+	   nil)
+  (:documentation
+   "Checks wheter a defsys of type DEFSYS-TYPE is available in a given CL."))
+
+
+;;; find-system, load-system -- Implementation dependent.
 
 ;;; I want to be fancy and allow different defsystem to cohabitate in a
 ;;; session.  This is tricky: see the various definitions in the
@@ -52,16 +64,67 @@
 (defgeneric load-system (system-designator cl defsys-tag &rest keys))
 
 
+;;;===========================================================================
+;;; Useful utilities.
+
 ;;; configure-format -- A useful little macro.
 
 (defun configure-format (outstream format-control &rest format-args)
   (format outstream "~&CL CONFIGURE: ~?" format-control format-args))
 
 
-;;; Interface variables
+;;;===========================================================================
+;;; The implementation.
+
+;;;---------------------------------------------------------------------------
+;;; Error handling.
+;;; For simplicity I will simply have CONFIGURATION-ERROR and
+;;; CONFIGURATION-WARNING.  Check the inheritance structure to see
+;;; what they mean.
+
+;;; CONFIGURATION-ERROR --
+
+(define-condition configuration-error (error)
+  ((message-control :reader conf-error-message-control
+                    :initarg :message-control)
+   (message-arguments :reader conf-error-message-arguments
+                      :initarg :message-arguments)
+   )
+  (:documentation "The Configuration Error Condition.")
+  (:default-initargs :message-control "some error happened."
+                     :message-arguments ())
+  (:report (lambda (ce stream)
+	     (format stream
+		     "CL.EXT.CONFIGURATION: ~?"
+		     (conf-error-message-control ce)
+		     (conf-error-message-arguments ce)))))
+
+
+;;; CONFIGURATION-WARNING --
+
+(define-condition configuration-warning (warning)
+  ((message-control :reader conf-warning-message-control
+                    :initarg :message-control)
+   (message-arguments :reader conf-warning-message-arguments
+                      :initarg :message-arguments)
+   )
+  (:documentation "The Configuration Warning Condition.")
+  (:default-initargs :message-control "watch out."
+                     :message-arguments ())
+  (:report (lambda (ce stream)
+	     (format stream
+		     "CL.EXT.CONFIGURATION: ~?"
+		     (conf-warning-message-control ce)
+		     (conf-warning-message-arguments ce)))))
+
+
+;;; Interface variables.
 
 (defvar *configure-verbose* t)
 
+
+;;;---------------------------------------------------------------------------
+;;; Entry points.
 
 ;;; setup -- The entry point.
 ;;; The DEFCONFIGURATION macro defines a method for CONFIGURE of the form
@@ -75,7 +138,9 @@
     (:documentation "One of the CONFIGURE entry points.")
     (:method ((s symbol) &rest keys &key)
 	     (declare (ignore keys))
-	     (error "No configuration defined for ~S." s))
+	     (error 'configuration-error
+		    :message-control "No configuration defined for ~S."
+		    :message-arguments (list s)))
     (:method ((s string) &rest keys &key)
 	     (apply #'setup (intern s *package*) keys))
     )
@@ -90,7 +155,7 @@
 (defmacro defconfiguration (system-name slots &rest configuration-clauses)
   (declare (ignore slots))
 
-  ;; Note, most of the following variables work as stacks.  The first item
+  ;; Note, most of the following variables work as stacks.  The last item
   ;; being pushed in acts like the default.
   (let ((system-name (etypecase system-name
 		       (symbol system-name)
@@ -148,7 +213,7 @@
 	))
 
     ;; At this point I have all the clauses where I need them.
-    ;; Now I can create the CONFIGURE method.
+    ;; Now I can create the SETUP method.
 
     (let* ((source-locations-clauses-parsed
 	    (parse-location-clauses source-location-clauses))
@@ -170,19 +235,32 @@
 	     (collect-keywords special-translations)))
 	   )
       `(progn
+	 
+	 ;; 20001009 Marco Antoniotti
+	 ;; If the argument passing convention for this method
+	 ;; changes, then we must make appropriate changes to
+	 ;; BUILD-MAIN-TRANSLATIONS and friends.
+
 	 (defmethod setup ((system-name (eql ',system-name))
 			   &rest keys
 			   &key
-			   (logical-pathname-host ,logical-pathname-host)
-			   (library-location ,library-location-default)
-			   (source-location ,source-location-default)
+			   (logical-pathname-host
+			    ,logical-pathname-host
+			    lph-supplied-p)
+			   (library-location
+			    ,library-location-default
+			    ll-supplied-p)
+			   (source-location
+			    ,source-location-default
+			    sl-supplied-p)
 			   ,@special-translations-keywords)
 
-	   (declare (ignorable keys
-			       logical-pathname-host
-			       library-location
-			       source-location
-			       ,@(mapcar #'cadar special-translations-keywords)))
+	   (declare (ignore keys
+			    logical-pathname-host
+			    library-location
+			    source-location
+			    ,@(mapcar #'cadar
+				      special-translations-keywords)))
 
 	   ,@(build-translations-forms special-translations
 				       logical-pathname-host
@@ -261,7 +339,10 @@
 		       (os cl.env:*operating-system*)
 		       (mach cl.env:*machine*))
   (declare (ignore cl-implementation mach))
-  (let ((current-os-type (cl.env:os-feature-tag os)))
+  (let ((current-os-type (cl.env:os-feature-tag os))
+	(defaulting-clause nil)		; This variable may eventually
+					; hold the result.
+	)
     (dolist (clause location-clauses)
       (let ((os-type (location-clause-os-type clause)))
 	(cond ((check-os-type-by-tag-p os-type os)
@@ -269,13 +350,25 @@
 
 	      ((null os-type)
 	       ;; Maybe warn?
-	       (return-from build-location (location-clause-location clause)))
+	       (unless defaulting-clause
+		 (setf defaulting-clause (location-clause-location clause))))
 
 	      (t nil)))			; Keep looping.
 	      )
-    (error "No location clause found for specified underlying system (~A)."
-	   current-os-type)
+
+    ;; If not OS specific clause was found, do the following.
+    (cond ((not (null defaulting-clause))
+	   (warn "CL CONFIGURATION: Defaulting to non-os specific ~
+                  clause ~S."
+		 defaulting-clause)
+	   defaulting-clause)
+	  (t
+	   (error 'configuration-error
+		  :message-control "no location clause found for specified ~
+                                    underlying system (~A)."
+		  :message-arguments (list current-os-type))))
     ))
+
 
 (defun build-location-default (location-clauses
 			       &optional
@@ -288,7 +381,8 @@
   (if location-clauses
       (build-location location-clauses cl-implementation os mach)
       (current-directory-namestring cl-implementation)))
-      
+
+
 ;;;---------------------------------------------------------------------------
 ;;; Special Translations.
 ;;; These structures are really a definition of a AST of the possible
@@ -377,15 +471,88 @@
 	      resulting-transl)))))
 
 
+
+;;; build-main-translations --
+;;; This function is *NOT* self contained.  In particular it requires
+;;; knowledge of the argument passing convention of the SETUP method
+;;; being generated.
+
+;;; THIS FUNCTION MAY BE USELESS.
+;;; 20001009 MA
+
+(defun build-main-translations (default-library-location)
+  (let* ((library-location-with-inferiors
+	  (concatenate 'string default-library-location
+		       (wild-inferior-directories cl.env:*operating-system*)))
+
+	 #|
+	 (main-translations `('("**;*.*.*" ,library-location-with-inferiors)
+			       '("**;*.*" ,library-location-with-inferiors)
+			       '("*.*" ,library-location)))
+         |#
+	 (ll-with-inferiors-form
+	  `(if ll-supplied-p		; Variable from the SETUP method.
+	       (concatenate 'string library-location
+		 	    (wild-inferior-directories
+			     cl.env:*operating-system*))
+               ',library-location-with-inferiors))
+	 )
+    `((list "**;*.*.*" ,ll-with-inferiors-form)
+      (list "**;*.*"  ,ll-with-inferiors-form)
+      (list "*.*"
+	     `(if ll-supplied-p		; Variable from the SETUP method.
+	          library-location
+	          ',default-library-location)
+	     ))
+    ))
+
+;;; build-translations-forms --
+;;; This function is *NOT* self contained.  In particular it requires
+;;; knowledge of the argument passing convention of the SETUP method
+;;; being generated.
+
 (defun build-translations-forms (special-translations
 				 logical-host-string
 				 library-location)
-  (let* ((library-location-with-inferiors
+  (declare (ignorable library-location))
+  (let* (#|(library-location-with-inferiors
 	  (concatenate 'string library-location
-		       (wild-inferior-directories cl.env:*operating-system*)))
-	 (main-translations `('("**;*.*.*" ,library-location-with-inferiors)
+		       (wild-inferior-directories
+			cl.env:*operating-system*)))|#
+
+	 (library-location-with-inferiors-form
+	  '(concatenate 'string library-location
+	                (wild-inferior-directories cl.env:*operating-system*)))
+
+	 (source-location-with-inferiors-form
+	  '(if (and source-location (string/= "" source-location))
+	       (concatenate 'string source-location
+		 	    (wild-inferior-directories
+			     cl.env:*operating-system*))
+	       (concatenate 'string library-location
+		            (wild-inferior-directories
+			     cl.env:*operating-system*))))
+	 
+	 #|(main-translations `('("**;*.*.*" ,library-location-with-inferiors)
 			      '("**;*.*" ,library-location-with-inferiors)
-			      '("*.*" ,library-location)))
+			      '("*.*" ,library-location)))|#
+	 ;; (main-translations (build-main-translations library-location))
+
+	 (source-translations
+	  `((list "SOURCE;**;*.*.*" ,source-location-with-inferiors-form)
+	    (list "SOURCE;**;*.*" ,source-location-with-inferiors-form)
+	    (list "SOURCE;*.*" (if (and source-location
+					(string/= "" source-location))
+				   source-location
+				   library-location))))
+
+	 (main-translations
+	  `(,@source-translations
+	    (list "**;*.*.*" ,library-location-with-inferiors-form)
+	    (list "**;*.*" ,library-location-with-inferiors-form)
+	    (list "*.*" library-location)
+	    ))
+
 	 (hosts-table (make-hash-table :test #'equal))
 	 (hosts
 	  (delete nil
@@ -491,9 +658,9 @@
 			  "checking required module ~S.~%"
 			  ',module-name)
 	(require ',module-name ',pathnames-components))
-      (file-error (fe) (signal fe))
-      (type-error (te) (signal fe))
-      (error (e) (signal e)))))
+      (file-error (fe) (error fe))
+      (type-error (te) (error fe))
+      (error (e) (error e)))))
 
 
 (defun build-required-module-forms (required-module-clauses)
@@ -512,7 +679,7 @@
 
 (eval-when (:load-toplevel :compile-toplevel :execute)
   (defvar *known-defsystem-implementations*
-    '(:mk :make				; MK:DEFSYSTEM
+    '(:mk :make :mk-defsystem		; MK:DEFSYSTEM
       :allegro
       :genera
       :lispworks
@@ -569,6 +736,18 @@
 	(configure-format *standard-output*
 			  "checking required system ~S.~%"
 			  ',system-name)
+	
+	(unless (defsys-type-available-p cl.env:*common-lisp-implementation*
+		                         ',system-type)
+	  (error 'configuration-error
+		 :message-control "CL CONFIGURATION: no defsystem of type ~
+                                   ~S is available in ~S."
+		 :message-arguments
+		 (list
+		  ',system-type
+		  (cl.env:common-lisp-implementation-type
+		   cl.env:*common-lisp-implementation*))))
+	
 	(let ((system-found-p
 	       (find-system ',system-name
 			    cl.env:*common-lisp-implementation*
@@ -586,9 +765,9 @@
 			 cl.env:*common-lisp-implementation*
 			 ',system-type))
 	  ))
-      (file-error (fe) (signal fe))
-      (type-error (te) (signal fe))
-      (error (e) (signal e)))))
+      (file-error (fe) (error fe))
+      (type-error (te) (error fe))
+      (error (e) (error e)))))
 
 (defun build-required-system-forms (required-system-clauses)
   (build-forms required-system-clauses))
@@ -651,9 +830,9 @@
 				  cl.env:*common-lisp-implementation*
 				  ',system-type))
 		   ))
-	       (file-error (fe) (signal fe))
-	       (type-error (te) (signal fe))
-	       (error (e) (signal e)))))
+	       (file-error (fe) (error fe))
+	       (type-error (te) (error fe))
+	       (error (e) (error e)))))
 	 )
     (mapcar #'build-required-system-clause required-system-clauses)))
 |#
@@ -718,9 +897,9 @@
 	      `(configure-format "package ~S not found and not loaded."
 				 ',package-name)
 	      )))
-      (file-error (fe) (signal fe))
-      (type-error (te) (signal fe))
-      (error (e) (signal e)))
+      (file-error (fe) (error fe))
+      (type-error (te) (error fe))
+      (error (e) (error e)))
     ))
 
 (defun build-required-package-forms (required-package-clauses)
@@ -767,9 +946,9 @@
 		       (dolist (p ',package-components)
 			 (load (merge-pathname pkg-location-pathname p)))
 		       ))))
-	       (file-error (fe) (signal fe))
-	       (type-error (te) (signal fe))
-	       (error (e) (signal e))))
+	       (file-error (fe) (error fe))
+	       (type-error (te) (error fe))
+	       (error (e) (error e))))
 	   ))
     (mapcar #'build-required-package-clause required-package-clauses)))
 |#

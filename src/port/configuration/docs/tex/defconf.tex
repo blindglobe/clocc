@@ -2,14 +2,15 @@
 
 % defconf.tex --
 
-% $Id: defconf.tex,v 1.1 2000/02/28 15:05:33 marcoxa Exp $
+% $Id: defconf.tex,v 1.2 2000/10/10 16:17:28 marcoxa Exp $
 
-\documentclass[a4paper]{article}
+%\documentclass[a4paper]{article}
+\documentclass{article}
 
 \usepackage{latexsym}
 %\usepackage{epsfig}
 \usepackage{alltt}
-\usepackage{html}
+%\usepackage{html}
 
 %\input{progr-macros}
 
@@ -70,11 +71,11 @@
 
 % HTML color directive
 
-\bodytext{BGCOLOR="\#FFFFFF"
-	  TEXT="\#000000"
-	  LINK="\#0099ff"
-	  % VLINK="\#00ff99"
-	  ALINK="\#FF00FF"}
+% \bodytext{BGCOLOR="\#FFFFFF"
+% 	  TEXT="\#000000"
+% 	  LINK="\#0099ff"
+% 	  % VLINK="\#00ff99"
+% 	  ALINK="\#FF00FF"}
 
 \maketitle
 
@@ -515,26 +516,28 @@ according to its kind.
 	the \clhsterm{host} is used as the ``main'' logical pathname
 	host for the configuration.
 
-\item	\code{:source-location}\\
+\item	\code{:library-location}\\
 	if the \emph{location} specified in this clause is not the
 	empty string (\code{""}), it must denote a
 	directory in the underlying file system. The \emph{location}
 	is augmented with a wildcard \code{"**"} and used to set up
-	the \code{system-name:source;**;*.*.*} translation
-	\notimpl{}. Otherwise, the translation is set up using the
-	\code{:library-location} clause. I.e. the
-	\code{system-name:source;**;*.*.*} translation will be set to
-	be the same of the ``library'' translation.
+	the \code{system-name:**;*.*.*} translation. If the
+	\emph{location} is the empty string or if no
+	\code{:library-location} can be found, then the translation
+	will be set using the ``current working directory'' (See
+	``Notes:'' section).
 
-\item	\code{:library-location}\\
-	if \emph{location} specified in this clause is not the
+\item	\code{:source-location}\\
+	if this clause is supplied and the \emph{location} specified
+	in this clause is not the 
 	empty string (\code{""}), it must denote a
 	directory in the underlying file system. The \emph{location}
 	is augmented with a wildcard \code{"**"} and used to set up
-	the \code{system-name:**;*.*.*} translation. If the
-	\emph{location} is the empty string, then the translation will
-	be set using the ``current working directory'' (See ``Notes:''
-	section).
+	the \code{system-name:source;**;*.*.*} translation. Otherwise,
+	the translation is set up using the
+	\code{:library-location} clause. I.e. the
+	\code{system-name:source;**;*.*.*} translation will be set to
+	be the same of the ``library'' translation.
 
 \item	\code{:special-translations}\\
 	if present, this clause contains some extra translations which
@@ -602,9 +605,11 @@ according to its kind.
 	The ``availability test'' is performed based on the value of
 	the \code{:system-type} option \notimpl{}.  This option can
 	assume any of the following values\footnote{The list is
-	currently incomplete.}: \code{:mk}, \code{:allegro}, \code{:lispworks},
+	currently incomplete.}: \code{:mk} (also \code{:make} and
+	\code{:mk-defsystem}), \code{:allegro}, \code{:lispworks},
 	\code{:lcl}, \code{:genera}, \code{:pcl}, and \code{:mcl}.
-	Where \code{:mk} denotes \code{MK:DEFSYSTEM}, \code{:pcl}
+	Where \code{:mk} (\code{:make}, or \code{:mk-defsystem})
+	denotes \code{MK:DEFSYSTEM}, \code{:pcl}
 	denotes the \code{DEFSYS} implementation of \code{PCL}, and
 	the remaining ones denote the other implementation dependent
 	\code{DEFSYSTEM}.

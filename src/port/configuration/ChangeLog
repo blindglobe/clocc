@@ -1,0 +1,16 @@
+2000-10-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defconf.lisp: Added conditions (CONFIGURATION-ERROR and
+	CONFIGURATION-WARNING) and checked their use.
+
+	* docs/tex/defconf.tex: Fixed the documentation.
+
+2000-10-09  Marco Antoniotti  <marcoxa@cons.org>
+
+	* Fixed problems with defaulting behavior for :LIBRARY-LOCATION
+	and :SOURCE-LOCATION.  The translations now obey the specs.
+	
+2000-10-09  Marco Antoniotti  <marcoxa@cons.org>
+
+	* ChangeLog started.
+

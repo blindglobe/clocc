@@ -26,7 +26,8 @@
 				     "configuration"))
 		 (:module "impl-dependent"
 			  :components
-			  (
+			  ((:file "defsys-availability")
+			   
 			   ;; These will become
 			   ;; (:file "cmucl" :if-feature :cmucl)
 			   #+cmu

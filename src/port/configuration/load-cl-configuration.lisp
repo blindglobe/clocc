@@ -29,7 +29,10 @@
                             directory~@
                ;;;          \"~A\"~2%"
 	    directory))
-  (let ((directory (pathname directory)))
+  (let ((directory (pathname directory))
+	(directory-separator
+	 (cl.env:os-file-system-directory-separator cl.env:*operating-system*))
+	)
     (flet ((load-and-or-compile (file)
 	     (if compile-first-p
 		 (multiple-value-bind (output-truename warnings-p failure-p)
@@ -42,14 +45,24 @@
 			     output-truename
 			     warnings-p
 			     failure-p)
-		     (return-from load-cl-environment-library nil)
+		     (return-from load-cl-configuration-library nil)
 		     )
 		   (load output-truename :verbose load-verbose))
 		 (load file :verbose load-verbose)))
 	   )
       
       (setf (logical-pathname-translations "CL-CONF-LIBRARY")
-	    `(("*.*.*" ,(namestring (truename directory)))
+	    `(("**;*.*.*" ,(concatenate 'string
+					(namestring (truename directory))
+					directory-separator
+					"**"
+					directory-separator))
+	      ("**;*.*" ,(concatenate 'string
+				      (namestring (truename directory))
+				      directory-separator
+				      "**"
+				      directory-separator))
+	      ("*.*.*" ,(namestring (truename directory)))
 	      ("*.*"   ,(namestring (truename directory)))))
 
       (load-and-or-compile "CL-CONF-LIBRARY:defconf-package.lisp")
@@ -58,6 +71,8 @@
       (load-and-or-compile "CL-CONF-LIBRARY:defconf.lisp")
 
       ;; System dependent part.
+      (load-and-or-compile
+       "CL-CONF-LIBRARY:impl-dependent;defsys-availability.lisp")
       #+cmu
       (load-and-or-compile "CL-CONF-LIBRARY:impl-dependent;cmucl.lisp")
       #+allegro

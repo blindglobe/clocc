@@ -18,7 +18,7 @@
 (defmethod find-system ((sys symbol)
 			(cl cl.env:generic-common-lisp-implementation)
 			(defsys-tag (eql :mk)))
-  (apply #'mk::find-system sys nil))	; AAARRGGGGH! Not external!
+  (apply #'mk:find-system sys nil))	; Finally it has been made external.
 
 (defmethod load-system ((sys symbol)
 			(cl cl.env:generic-common-lisp-implementation)

@@ -16,60 +16,41 @@ all: cmucl-normal cmucl-safe cmucl-small sbcl clisp
 clean:
 	$(RM) -rf clisp sbcl cmucl-normal cmucl-small cmucl-safe
 
+PRE_TEST=$(MKDIR) $@ ; \
+	$(RM) *.erg $@/*;
+
+POST_TEST=$(MV) *.erg $@ ; \
+	ls -l $@ ; \
+	cat $@/state-info.erg > $@-ERROR-IDS ; \
+	grep -h '^Bugid: ' $@/*.erg  | cut -d ' ' -f 2 >> $@-ERROR-IDS ; \
+	true;
+
 clisp:
-	$(MKDIR) clisp ;
-	$(RM) *.erg clisp/* ;
+	$(PRE_TEST)
 	time $(CLISP) -i tests.lisp < /dev/null && true
-	$(MV) *.erg clisp ;
 	$(RM) *.fas *.lib ;
-	ls -l $@ ;
-	cat clisp/state-info.erg > clisp-ERROR-IDS
-	grep -h '^Bugid: ' clisp/*.erg  | cut -d ' ' -f 2 >> clisp-ERROR-IDS
-	true
+	$(POST_TEST)
 
 sbcl:
-	$(MKDIR) sbcl ;
-	$(RM) *.erg sbcl/* ;
+	$(PRE_TEST)
 	time $(SBCL) --eval '(load "tests")'
-	$(MV) *.erg sbcl ;
 	$(RM) *.x86f ;
-	ls -l $@ ;
-	cat sbcl/state-info.erg > sbcl-ERROR-IDS
-	grep -h '^Bugid: ' sbcl/*.erg  | cut -d ' ' -f 2 >> sbcl-ERROR-IDS
-	true
+	$(POST_TEST)
 
 cmucl-normal:
-	$(MKDIR) cmucl-normal ;
-	$(RM) *.erg cmucl-normal/* ;
+	$(PRE_TEST)
 	time $(CMUCL) -core $(CMUCL_NORMAL) -load tests.lisp
-	$(MV) *.erg cmucl-normal ;
 	$(RM) *.x86f ;
-	ls -l $@ ;
-	cat cmucl-normal/state-info.erg > cmucl-normal-ERROR-IDS
-	grep -h '^Bugid: ' cmucl-normal/*.erg  | cut -d ' ' -f 2 >> cmucl-normal-ERROR-IDS
-	true
+	$(POST_TEST)
 
 cmucl-small:
-	$(MKDIR) cmucl-small ;
-	$(RM) *.erg cmucl-small/* ;
+	$(PRE_TEST)
 	time $(CMUCL) -core $(CMUCL_SMALL) -load tests.lisp
-	$(MV) *.erg cmucl-small ;
 	$(RM) *.x86f ;
-	ls -l $@ ;
-	cat cmucl-small/state-info.erg > cmucl-small-ERROR-IDS
-	grep -h '^Bugid: ' cmucl-small/*.erg  | cut -d ' ' -f 2 >> cmucl-small-ERROR-IDS
-	true
-
+	$(POST_TEST)
 
 cmucl-safe:
-	$(MKDIR) cmucl-safe ;
-	$(RM) *.erg cmucl-safe/* ;
+	$(PRE_TEST)
 	time $(CMUCL) -core $(CMUCL_SAFE) -load tests.lisp
-	$(MV) *.erg cmucl-safe ;
 	$(RM) *.x86f ;
-	ls -l $@ ;
-	cat cmucl-safe/state-info.erg > cmucl-safe-ERROR-IDS
-	grep -h '^Bugid: ' cmucl-safe/*.erg  | cut -d ' ' -f 2 >> cmucl-safe-ERROR-IDS
-	true
-
-
+	$(POST_TEST)

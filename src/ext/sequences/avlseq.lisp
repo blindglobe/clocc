@@ -1,3 +1,9 @@
+;;; Extensible Sequence Type
+;;; AVL trees as Sequences
+;;;
+;;; Copyright (C) 1988, 1992 Bruno Haible
+;;; This is Free Software, published under the GNU General Public License v2.
+
 ; AVL-Bäume, implementiert in COMMON LISP, als Sequences
 ; Bruno Haible, 22.09.1988
 ; CLISP-Version 29.12.1988

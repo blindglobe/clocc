@@ -1,3 +1,8 @@
+;;; Extensible Sequence Type
+;;;
+;;; Copyright (C) 1988, 1992 Bruno Haible
+;;; This is Free Software, published under the GNU General Public License v2.
+
 ; Funktionen für Sequences
 ; Bruno Haible 16.09.1988, 29.12.1988, 24.04.1992
 

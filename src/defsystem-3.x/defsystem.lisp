@@ -1727,7 +1727,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	 (rel-directory (directory-to-list (pathname-directory rel-dir)))
 	 (rel-keyword (when (keywordp (car rel-directory))
 			(pop rel-directory)))
-	 (rel-file (file-namestring rel-dir))
+         #-(or :MCL :sbcl :clisp) (rel-file (file-namestring rel-dir))
 	 ;; Stig (July 2001);
 	 ;; These values seems to help clisp as well
 	 #+(or :MCL :sbcl :clisp) (rel-name (pathname-name rel-dir))
@@ -3438,7 +3438,7 @@ D
 	    (setf (getf ext:*herald-items*
 			(intern (string-upcase  (component-name component))
 				(find-package :keyword)))
-		  (list 
+		  (list
 		     (component-banner component)))))
 
       ;; Reset the package. (Cleanup form of unwind-protect.)

@@ -50,4 +50,4 @@
   (:default-initargs :feature-tag :mips))
 	  
 
-;;; end of file -- software.lisp
+;;; end of file -- machine.lisp

@@ -4244,13 +4244,14 @@ D
 
 ;;; *** System Source Size ***
 
-(defun system-source-size (system-name)
+(defun system-source-size (system-name &optional (force :all))
   "Prints a short report and returns the size in bytes of the source files in
    <system-name>."
-  (let* ((file-list (files-in-system system-name :all :source))
+  (let* ((file-list (files-in-system system-name force :source))
          (total-size (file-list-size file-list)))
-    (format t "~&~S (~A files) totals ~A bytes (~A K)"
-            system-name (length file-list) total-size (round total-size 1024))
+    (format t "~&~a/~a (~:d files) totals ~:d bytes (~:d kB)"
+            system-name force (length file-list)
+            total-size (round total-size 1024))
     total-size))
 
 (defun file-list-size (file-list)

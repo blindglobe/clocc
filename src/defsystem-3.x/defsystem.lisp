@@ -2049,14 +2049,14 @@ D
 					; with "/"), directory or file
 					; (ends with "/").
   (source-pathname *source-pathname-default*)
-  source-extension              ; A string, e.g., "lisp"; if NIL, inherit
+  source-extension			; A string, e.g., "lisp"
+					; if NIL, inherit
   (binary-pathname *binary-pathname-default*)
   binary-root-dir
-  (binary-extension (cdr *filename-extensions*) :type string)
-                                ; A string, e.g., "fasl". If
-                                ; NIL, uses default for
-                                ; machine-type.
-  package                       ; Package for use-package.
+  binary-extension			; A string, e.g., "fasl". If
+					; NIL, uses default for
+					; machine-type.
+  package				; Package for use-package.
 
   ;; The following three slots are used to provide for alternate compilation
   ;; and loading functions for the files contained within a component. If

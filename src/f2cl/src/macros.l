@@ -815,6 +815,7 @@
     `(let ((,stream (lun->stream ,dest-lun)))
       ,@(expand-format stream format-cilist args))))
 
+#+nil
 (defmacro fformat1 (dest directive arg)
   (let ((val (gensym)))
     `(let ((,val ,arg))
@@ -823,11 +824,27 @@
 	  (print ,val)
 	  (format ,dest ,directive ,val)))))
 
+(defmacro fformat1 (dest directive arg)
+  (let ((val (gensym)))
+    `(let ((,val ,arg))
+      (cond ((and (arrayp ,val)
+		  (not (stringp ,val)))
+	     (dotimes (k (array-total-size ,val))
+	       (format ,dest ,directive (row-major-aref ,val k))
+	       (terpri ,dest)))
+	    ((listp ,val)
+	     (dolist (item ,val)
+	       (format ,dest ,directive item)
+	       (terpri ,dest)))
+	    (t
+	     (format ,dest ,directive ,val))))))
+
 (defun expand-format (dest cilist args)
   (if (equal cilist '("~A~%"))
       (append (mapcar #'(lambda (arg) `(fformat1 ,dest "~A " ,arg)) args)
 	   `((format ,dest "~%")))
 
+      ;loop through directives, consume arguments
       (do ((res '())
 	   (directives cilist (cdr directives))
 	   (arglist args arglist))
@@ -903,8 +920,14 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.26 2000/08/01 22:10:41 rtoy Exp $
+;;; $Id: macros.l,v 1.27 2000/08/03 13:45:53 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.27  2000/08/03 13:45:53  rtoy
+;;; Make FFORMAT1 handle lists that we get from implied do loops.
+;;;
+;;; The whole FFORMAT stuff needs to be rethought if we really want to
+;;; support Fortran output.
+;;;
 ;;; Revision 1.26  2000/08/01 22:10:41  rtoy
 ;;; o Try to make the Fortran functions to convert to integers work the
 ;;;   way Fortran says they should.

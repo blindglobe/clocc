@@ -218,6 +218,9 @@
 	   (cond ((eq 'make-array fun)
 		  ;; Some array slicing here.
 		  (second (second (member :element-type arg))))
+		 ((eq 'funcall fun)
+		  ;; Look up function type
+		  (get-fun-arg-type (second arg)))
 		 ((eq 'fref fun)
 		  ;; Look up array references
 		  (get-fun-arg-type (second arg)))
@@ -1433,8 +1436,14 @@
                                           (fix-do exprs labels)))
                     ((and (eq (caar exprs) 'go)
                           (label-matches-dolabel-p (cadar exprs) do-label))
-                     (setq subclause '(return)
-                           exprs (cdr exprs)))
+		     ;; Why do we treat a go to to the continue
+		     ;; statement of the do loop differently?  Why
+		     ;; "(return)" instead of "(go label)"
+                     #+nil
+		     (setq subclause '(return)
+                           exprs (cdr exprs))
+		     (setq subclause (car exprs)
+			   exprs (cdr exprs)))
                     (t (setq subclause (car exprs)
                              exprs (cdr exprs)))))
             ((eq (car exprs) 'continue_place_holder)
@@ -1995,8 +2004,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.46 2000/07/14 15:50:25 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.47 2000/07/14 21:23:37 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.47  2000/07/14 21:23:37  rtoy
+;;; o In GET-FUN-ARG-TYPE, when looking up the type of an expression,
+;;;   handle (funcall f ...) by looking up the type of "f" instead of
+;;;   looking up the type of "funcall"!
+;;;
+;;; o In FIX-DO, a goto to the end of the loop would get translated into a
+;;;   (return).  This seems wrong, and I don't know why it wants to do
+;;;   this.
+;;;
 ;;; Revision 1.46  2000/07/14 15:50:25  rtoy
 ;;; o When getting the type of an arg, handle the case when the arg is
 ;;;   actually a call to make-array for array slicing.  Get the type form

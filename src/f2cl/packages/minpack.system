@@ -1,0 +1,43 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;;
+;;; $Id: minpack.system,v 1.1 2000/08/29 16:10:01 rtoy Exp $
+;;; $Log: minpack.system,v $
+;;; Revision 1.1  2000/08/29 16:10:01  rtoy
+;;; Initial rev.
+;;;
+;;; Revision 1.1  2000/07/21 22:13:48  rtoy
+;;; Initial version.
+;;;
+;; Convert a Fortran file to Lisp and compile the Lisp file.
+#+nil
+(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
+  (compile-file (f2cl filename :array-slicing array-slicing
+		      :array-type array-type)
+		:output-file output-file :error-file error-file))
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem minpack
+    :source-pathname "clocc:src;f2cl;packages;minpack"
+    :components
+    ((:module "minpack"
+	      :source-pathname ""
+	      :source-extension "f"
+	      :language :f2cl
+	      :compiler-options (:declaim (optimize (debug 3)))
+	      :components
+	      ((:file "dpmpar")
+	       (:file "enorm")
+	       (:file "fdjac2")
+	       (:file "qrsolv")
+	       (:file "lmpar")
+	       (:file "qrfac")
+	       (:file "lmdif")
+	       (:file "lmdif1")
+	       (:file "lmder")
+	       (:file "lmder1")
+	       ))))
+

@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.15 2004/12/18 14:03:53 haible Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.16 2005/01/21 11:41:02 haible Exp $")
 
 (in-package :xlib)
 
@@ -602,9 +602,6 @@
            (when (or (string= host "")
                      (string= host "unix"))
              ;; ok, try to connect to a AF_UNIX domain socket
-             ;;
-             ;; clisp doesn't have sockets, but special code for
-             ;; X connections:
              #-clisp
              (port::open-unix-socket (format nil
                                              "~A~D"
@@ -612,9 +609,9 @@
                                              display)
                                      :kind :stream
                                      :bin t)
-             ;; clisp doesn't have this...
+             ;; clisp has special code for X connections:
              #+clisp
-             (sys::make-socket-stream "" 0)))))
+             (sys::make-socket-stream "" display)))))
     (if socket
         socket
         ;; try to connect by hand

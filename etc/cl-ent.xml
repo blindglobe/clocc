@@ -103,6 +103,8 @@
 <!ENTITY unicode "<ulink url='http://www.unicode.org/'><emphasis role='strong'>UNICODE</emphasis></ulink>">
 <!ENTITY win32 "<ulink url='http://www.willows.com/'><emphasis role='strong'>Win32</emphasis></ulink>">
 
+<!-- *** etc *** -->
+<!ENTITY http "<ulink url='http://www.w3.org/Protocols/'><command>HTTP</command></ulink>">
 
 <!-- *** CLHS - Common Lisp HyperSpec *** -->
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3 2004/07/26 04:41:40 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.4 2005/02/21 14:10:02 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -10,7 +10,8 @@
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
-	     symshow =g htab-show file-show test check condition-display-string)))
+	     symshow =g htab-show file-show test check
+	     condition-display-string)))
 
 ;; Each entry is of the form (flag form type), where flag is a symbol,
 ;; often *.  The idea is to make it easy to munge the forms further,

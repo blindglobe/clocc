@@ -1,7 +1,11 @@
-$Id: CHANGELOG,v 1.31 2004/11/07 05:21:07 airfoyle Exp $
+$Id: CHANGELOG,v 1.32 2005/02/21 14:10:01 airfoyle Exp $
 	
+2005-01-25: Add utility 'stream-indent' to outin.lisp            
+
 2004-11-07: Resurrected 'intercept' and 'pass' with improved type
-            checking. (Version 1.4.8.7)
+            checking.  Altered 'ytools-logical-pathname-def' so it
+            returns a second argument (the 'obj-version' of the
+            pathname) (Version 1.4.8.7)
 
 2004-10-30: Changed output for warning message in 'decipher-readtable'
             (slurp.lisp). (Version 1.4.8.6)

@@ -15,7 +15,7 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
-;;;$Id: ytload.lisp,v 1.7 2004/03/13 04:06:06 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.8 2005/02/21 14:10:02 airfoyle Exp $
 
 (defvar tools-version* "1.3")
 
@@ -191,6 +191,17 @@
 			 (pathname ytload-directory* ))))))
 	 (cond ((probe-file mod-file)
 		(load mod-file))
+	       ((and (not (check-loaded ':ytools))
+		     (not (string= module 
+				   (cond ((eq filename-case* ':upper)
+					  "YTOOLS")
+					 (t
+					  "ytools"))))
+		     (y-or-n-p "Can't find file for module ~a; load ytools and repeat search? "
+			       module))
+		
+		(yt-load :ytools)
+		(load-module-file module))
 	       (t
 		(error "Can't find file for module ~s" module)))))
    module)

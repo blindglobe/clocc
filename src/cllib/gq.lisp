@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1999-10-19 Tue 14:42:56 EDT sds@ksp.com>
+;;; File: <gq.lisp - 1999-11-02 Tue 13:24:12 EST sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,15 +11,20 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.12 1999/10/19 18:50:08 sds Exp $
+;;; $Id: gq.lisp,v 1.13 1999/11/02 18:25:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
-;;; Revision 1.12  1999/10/19 18:50:08  sds
-;;; (get-quotes-pf): updated.
-;;; (infer-date): work with no args.
-;;; (process-results): better date inference.
-;;; (update-quotes): new `:debug' keyword argument.
+;;; Revision 1.13  1999/11/02 18:25:59  sds
+;;; (pr-res): use `formatter'; 8th optional arg.
+;;; (process-results): adapt to new `pr-res'; `out' must be a stream.
+;;; (update-quotes): dump the `ia' business.
 ;;;
+;; Revision 1.12  1999/10/19  18:50:08  sds
+;; (get-quotes-pf): updated.
+;; (infer-date): work with no args.
+;; (process-results): better date inference.
+;; (update-quotes): new `:debug' keyword argument.
+;;
 ;; Revision 1.11  1999/10/13  15:43:19  sds
 ;; (get-quotes-apl): updated.
 ;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
@@ -404,53 +409,61 @@ only the data after `*hist-data-file-sep*' is changed."
           (setf (hist-totl hr) ntot fixed t))))
     fixed))
 
-(defun pr-res (str pref v0 v1 per apy v2)
-  (format str "~aP/L: total:~15t~2,7/comma/ - ~2,7/comma/ = ~2,5/comma/~
-~55t[~7,3f% APY:~8,3f%]
-        today:~15t~2,7/comma/ - ~2,7/comma/ = ~2,5/comma/~55t[~7,3f%]~2%"
-          pref v0 v1 (- v0 v1) per apy v0 v2 (- v0 v2) (percent-change v2 v0)))
+(defun pr-res (out pref v0 v1 per apy v2 &optional (tc (percent-change v2 v0)))
+  (declare (stream out) (double-float v0 v1 per apy v2 tc))
+  (let ((fmt (formatter
+              "~15t~2,7/comma/ - ~2,7/comma/ = ~2,5/comma/      [~7,3f%")))
+    (format out "~aP/L: total:" pref)
+    (funcall fmt out v0 v1 (- v0 v1) per)
+    (format out " APY:~8,3f%]~%        today:" apy)
+    (funcall fmt out v0 v2 (- v0 v2) tc)
+    (format out "]~2%")))
 
-(defun process-results (hold hist srv res yea &optional (str t))
+(defun process-results (hold hist srv res yea
+                        &optional (out *standard-output*))
   "Process the results, update the history.
 Return non-nil if the history was updated and needs to be saved.
 RES is a list of SERVER, DATE and DAILY-RECS.
 YEA is the list of 1, 3, 5, and 10-year returns."
-  (declare (list hold hist res))
+  (declare (list hold hist res) (stream out))
   (unless res
     (return-from process-results (format t "no results - timed out?~%")))
-  (let* ((lh (last hist 2)) cv ov pv (ctot 0.0d0) (otot 0.0d0) (ptot 0.0d0)
+  (let* ((lh (last hist 2)) (ctot 0.0d0) (otot 0.0d0) (ptot 0.0d0)
          (begd (hist-date (car hist))) pers apy db
          (nnavs (mapcar #'dd-nav (cdr res))) (*print-case* :upcase)
          (pnavs (mapcar #'dd-pre (cdr res))))
     (declare (double-float ctot otot ptot) (type date begd))
-    (format str "~2%~72:@<~a results [~a]:~>
+    (format out "~2%~72:@<~a results [~a]:~>
 ~72:@<<[~a -- ~a (~:d days)]>~>~2%"
             srv (current-time nil) begd (car res)
             (setq db (days-between begd (car res))))
     (apply #'mapc
            (lambda (hl dd &optional ye)
-             (format str "Fund: ~a [~a]~48t~7,3f * ~6,2f = ~2,6:/comma/~%"
-                    (pfl-tick hl) (pfl-name hl) (pfl-nums hl) (dd-nav dd)
-                    (setq cv (* (pfl-nums hl) (dd-nav dd))))
-             (when ye
-               (format str "~10t[1ye:~6,2f%; 3ye:~6,2f%; 5ye:~6,2f%; ~
+             (let* ((cv (* (pfl-nums hl) (dd-nav dd)))
+                    (ov (* (pfl-nums hl) (pfl-bprc hl)))
+                    (cn (cond ((not (zerop (dd-pre dd))) (dd-pre dd))
+                              ((not (zerop (dd-chg dd)))
+                               (- (dd-nav dd) (dd-chg dd)))
+                              (t (nth (position (pfl-tick hl) hold :test #'eq
+                                                :key #'pfl-tick)
+                                      (hist-navs (cadr lh))))))
+                    (pv (* (pfl-nums hl) cn)))
+               (declare (double-float cv ov cn pv))
+               (format out "Fund: ~a [~a]~48t~7,3f * ~6,2f = ~2,6:/comma/~%"
+                       (pfl-tick hl) (pfl-name hl) (pfl-nums hl)
+                       (dd-nav dd) cv)
+               (when ye
+                 (format out "~10t[1ye:~6,2f%; 3ye:~6,2f%; 5ye:~6,2f%; ~
 10ye:~6,2f%]~%" (first ye) (second ye) (third ye) (fourth ye)))
-             (prin1 dd str)
-             (setq ov (* (pfl-nums hl) (pfl-bprc hl))
-                   pv (* (pfl-nums hl)
-                         (cond ((not (zerop (dd-pre dd))) (dd-pre dd))
-                               ((not (zerop (dd-chg dd)))
-                                (- (dd-nav dd) (dd-chg dd)))
-                               (t (nth (position (pfl-tick hl) hold :test #'eq
-                                                 :key #'pfl-tick)
-                                       (hist-navs (cadr lh)))))))
-             (incf ctot cv) (incf otot ov) (incf ptot pv)
-             (setf (values pers apy)
-                   (percent-change (pfl-bprc hl) (dd-nav dd) db))
-             (pr-res str "   " cv ov pers apy pv))
+               (prin1 dd out)
+               (incf ctot cv) (incf otot ov) (incf ptot pv)
+               (setf (values pers apy)
+                     (percent-change (pfl-bprc hl) (dd-nav dd) db))
+               (pr-res out "   " cv ov pers apy pv
+                       (percent-change cn (dd-nav dd)))))
            hold (rest res) (if yea (list yea) nil))
     (setf (values pers apy) (percent-change otot ctot db))
-    (pr-res str " * " ctot otot pers apy ptot)
+    (pr-res out " * " ctot otot pers apy ptot)
     (cond ((date> (car res) (hist-date (cadr lh)))
            (unless (or ;; who cares whether this is the next day or not?!
                     ;; (date= (tomorrow (hist-date (cadr lh))) (car res))
@@ -458,7 +471,7 @@ YEA is the list of 1, 3, 5, and 10-year returns."
                     (equal (hist-navs (cadr lh)) pnavs)
                     (and (equal (hist-navs (car lh)) pnavs)
                          (equal (hist-navs (cadr lh)) nnavs)))
-             (format str "A discrepancy found:~% last record:~15t~{~7,2f~}~% ~
+             (format out "A discrepancy found:~% last record:~15t~{~7,2f~}~% ~
 previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                      (hist-navs (cadr lh)) pnavs
                      (setf (cddr lh)
@@ -468,9 +481,9 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                                             (hist-totl-comp hold pnavs)))))
              (setq lh (cdr lh)))
            (cond ((equal nnavs (hist-navs (cadr lh)))
-                  (format str "Same NAVs as on ~a, no record added.~%"
+                  (format out "Same NAVs as on ~a, no record added.~%"
                           (hist-date (cadr lh))))
-                 (t (format str "A record for date ~a added:~%~5t~{~a~}~%"
+                 (t (format out "A record for date ~a added:~%~5t~{~a~}~%"
                             (car res)
                             (setf (cddr lh)
                                   (list (make-hist
@@ -478,7 +491,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                                          :totl (hist-totl-comp hold
                                                                nnavs)))))
                     t)))
-          (t (format str "Old news [~a].~%" (car res))))))
+          (t (format out "Old news [~a].~%" (car res))))))
 
 (defun plot-portfolio (hold hist plot)
   "Plot the portfolio."
@@ -516,27 +529,24 @@ if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes.
 See `*get-quote-url-list*' for available SERVERs.
 If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
-  ;; interactive (ia) = works with CLISP and ACL, but not with CMUCL
-  (let ((ia (eq *standard-output* *standard-input*))
-        (*print-log* (if debug *print-log* (mk-arr 'symbol nil 0)))
+  (let ((*print-log* (if debug *print-log* (mk-arr 'symbol nil 0)))
         (*gq-error-stream* (if debug *gq-error-stream* nil)))
-    #+win32 (unless ia
-              (setq *hist-data-file* (pathname "c:/home/sds/text/invest.txt")))
     (setf (values *holdings* *history*) (read-data-file *hist-data-file*))
     (unless (eq plot t)
-      (multiple-value-bind (srv res hhh yea str fixed new)
+      (multiple-value-bind (srv res hhh yea)
           (apply #'get-quotes server (mapcar #'pfl-tick *holdings*))
-        (setq str (or ia #-win32 t
-                      #+win32 (open *gq-log* :direction :output :if-exists
-                                    :append :if-does-not-exist :create))
-              fixed (gq-fix-hist *holdings* *history* hhh)
-              new (process-results *holdings* *history* srv res yea str))
-        (top-bottom-fl *history* :val #'hist-totl :label #'hist-date)
-        (when (or fixed new)
-          (save-data *hist-data-file* *holdings* *history*)
-          (unless plotp (setq plot t)))
-        (unless (eq t str) (close str))))
-    (when plot (plot-portfolio *holdings* *history* (if ia :plot :wait)))))
+        (let* ((out #-win32 *standard-output*
+                    #+win32 (open *gq-log* :direction :output :if-exists
+                                  :append :if-does-not-exist :create))
+               (fixed (gq-fix-hist *holdings* *history* hhh))
+               (new (process-results *holdings* *history* srv res yea out)))
+          (top-bottom-fl *history* :val #'hist-totl :label #'hist-date
+                         :out out)
+          (when (or fixed new)
+            (save-data *hist-data-file* *holdings* *history*)
+            (unless plotp (setq plot t)))
+          #+win32 (close out)))))
+  (when plot (plot-portfolio *holdings* *history* :plot)))
 
 (provide "gq")
 ;;; }}} gq.lisp ends here

@@ -2,6 +2,33 @@
 
 Changes:
 
+Feb 07, 2002
+------------
+
+Richard Fateman used f2cl to compile the mpfun package.  It failed.
+Some of the key changes needed to make this work, but I don't know if
+mpfun works or not yet.
+
+o mpfun has a block data subprogram.  We now handle this now by
+  cheating.  We rewrite the block data statement into a subroutine
+  statement for a routine named /blockdata/.  This seems to work,
+  after getting symbol-macrolets into the initialization part of the
+  code.
+
+  However, we leave it up to the user to actually call the block data
+  subprogram at least once.  Should we do this automatically for the
+  user?  If so, how?
+
+o Fixed some number parsing bugs that mpfun exposed.  (PARSE-NUMBER is
+  such a mess!)
+
+Other changes:
+
+o The temp file prep.tmp is now computed from the input file name and
+  is given the same name with a new extension of "p" (for
+  preprocess).  (Hmm, should it be "tmp" instead?)
+o Fixed some more bugs.  See logs for details.
+
 Jan 13, 2002
 ------------
 
@@ -38,6 +65,10 @@ Can handle extended DO loops like:
     DO K = 1, 10
       PRINT *, K
     END DO
+
+We do this by converting this to a regular do loop but with a label
+that is larger than any possible Fortran label (which is limited to 6
+digits).
 
 Aug 29, 2000 or so
 ------------

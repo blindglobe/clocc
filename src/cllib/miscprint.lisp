@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.14 2004/03/23 23:18:52 sds Exp $
+;;; $Id: miscprint.lisp,v 1.15 2004/06/17 20:48:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,7 +15,7 @@
 (in-package :cllib)
 
 (export
- '(hash-table-keys hash-table->alist alist->hash-table make-ht-readtable
+ '(hash-table-keys hash-table->alist alist->hash-table make-ht-readtable pophash
    print-all-ascii print-all-packages plist->alist alist->plist plist= alist=))
 
 ;;;
@@ -119,6 +119,12 @@ The inverse is `hash-table->alist'."
   (let ((ht (make-hash-table :test (car alist))))
     (dolist (co (cdr alist) ht)
       (setf (gethash (car co) ht) (cdr co)))))
+
+(defun pophash (object ht)
+  "Remove the value and return it."
+  (multiple-value-bind (value present-p) (gethash object ht)
+    (when present-p (remhash object ht))
+    (values value present-p)))
 
 ;;;###autoload
 (defun make-ht-readtable (&optional (rt (copy-readtable)))

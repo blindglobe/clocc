@@ -36,14 +36,23 @@ INSTALLATION OF CLOCC
 (load *)
 (compile-file (translate-logical-pathname "clocc:src;defsystem;defsystem"))
 (load *)
-(load (translate-logical-pathname "clocc:src;port;sys")) ; for `chdir'
 
 ;; * compile some systems
-(port:chdir "src/port")
-(mk:oos "port" :compile)
-(port:chdir "../src/cllib)
+(setq mk::*central-registry*
+      (nconc
+       (list
+        ;; select the systems you want to use
+        (translate-logical-pathname "clocc:src;cllib;")
+        (translate-logical-pathname "clocc:src;ext;queues;")
+        (translate-logical-pathname "clocc:src;ext;union-find;")
+        (translate-logical-pathname "clocc:src;f2cl;packages;")
+        (translate-logical-pathname "clocc:src;f2cl;")
+        (translate-logical-pathname "clocc:src;port;")
+        (translate-logical-pathname "clocc:src;port;configuration;")
+        (translate-logical-pathname "clocc:src;port;environment;")
+        (translate-logical-pathname "clocc:src;tools;metering;"))
+       mk::*central-registry*))
 (mk:oos "cllib" :compile)
-(port:chdir "../src/f2cl)
 (mk:oos "f2cl" :compile)
 ...
 

@@ -26,7 +26,7 @@ case "$1" in
              i=${i%.sh}
              if [ -x "$compiler" ] ; then
                 echo Deinstalling for ${i##*/}
-                echo Removing defsystem for $i
+                echo Removing Common Lisp Controller for $i
                 sh  "$compiler" remove-defsystem || true
                 echo
                 echo Done rebuilding

@@ -1,3 +1,13 @@
+common-lisp-controller (3.27) unstable; urgency=low
+
+  * NMU
+  * Rename some "defsystem" strings to "clc"
+  * Change sh to bash in postinst
+  * Rework rules file to use dh_install rather than install
+  * Remove copyright-defsystem and defsystem.text from package
+  
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 22 Sep 2002 14:09:04 -0600
+
 common-lisp-controller (3.26) unstable; urgency=low
 
   * NMU

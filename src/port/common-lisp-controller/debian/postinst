@@ -58,8 +58,8 @@ EOF
 	 i=${i%.sh}
 	 if [ -x "$compiler" ] ; then
 	    echo Reinstalling for $i
-	    echo Recompiling defsystem for $i
-	    sh  "$compiler" install-defsystem || true
+	    echo Recompiling Common Lisp Controller for $i
+	    bash "$compiler" install-defsystem || true
 	    echo
 	    echo Done rebuilding
 	fi 
@@ -75,8 +75,8 @@ EOF
 	     i=${i%.sh}
 	     if [ -x "$compiler" ] ; then
 	        echo Deinstalling for ${i##*/}
-	        echo Removing defsystem for $i
-	        sh  "$compiler" remove-defsystem || true
+	        echo Removing Common Lisp Controller for $i
+	        bash "$compiler" remove-defsystem || true
 	        echo
 	        echo Done rebuilding
 	    fi 

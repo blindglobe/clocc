@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.31 2004/04/13 20:58:01 sds Exp $
+;;; $Id: fileio.lisp,v 1.32 2004/06/15 14:36:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -198,7 +198,7 @@ NICE (default T).  Uses `with-standard-io-syntax'."
 The optional third argument is passed to `pr'.
 Return the size of the file."
   (declare (type (or simple-string pathname) file))
-  (format t "Writing `~a'..." file) (force-output)
+  (format t "~&Writing `~a'..." file) (force-output)
   (with-timing (:count file-length)
     (with-open-file (str file :direction :output :if-exists :supersede)
       (declare (stream str))

@@ -2430,16 +2430,40 @@ loop2
       (write (pprint-pop) :stream stream)
       (pprint-exit-if-list-exhausted)
       (write-char #\space stream)
-      (pprint-newline :linear stream))))
-	
+       (pprint-newline :linear stream))))
+
+(defun pprint-with-multi-array-data (stream list)
+  ;; Print with-array-data like so:
+  ;;
+  ;; (f2cl-lib:with-array-data ((data-var offset-var array))
+  ;;   body)
+  (pprint-logical-block (stream list :prefix "(" :suffix ")")
+    (write (pprint-pop) :stream stream)
+    ;;(write-char #\space stream)
+    (pprint-indent :block 3 stream)
+    (pprint-newline :mandatory stream)
+    (write (pprint-pop) :stream stream)
+    (pprint-indent :block 1 stream)
+    (pprint-newline :mandatory stream)
+    (loop
+      (write (pprint-pop) :stream stream)
+      (pprint-exit-if-list-exhausted)
+      (write-char #\space stream)
+       (pprint-newline :linear stream))))
+
 (set-pprint-dispatch '(cons (member f2cl-lib:fdo)) #'pprint-fdo)
 (set-pprint-dispatch '(cons (member f2cl-lib:with-array-data)) #'pprint-with-array-data)
+(set-pprint-dispatch '(cons (member f2cl-lib:with-multi-array-data))
+		     #'pprint-with-multi-array-data)
 
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.124 2003/11/12 05:32:03 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.125 2003/11/13 05:38:15 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.125  2003/11/13 05:38:15  rtoy
+;;; Define a pretty-printer for WITH-MULTI-ARRAY-DATA.
+;;;
 ;;; Revision 1.124  2003/11/12 05:32:03  rtoy
 ;;; Many changes to make assigned gotos work
 ;;;

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.25 2001/03/17 22:50:30 liam Exp $
+;;; $Id: sys.lisp,v 1.26 2001/03/19 16:03:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,9 +19,8 @@
 (export
  '(getenv finalize variable-special-p arglist
    class-slot-list class-slot-initargs
-   pathname-ensure-name probe-directory default-directory chdir
-   mkdir rmdir sysinfo
-   +month-names+ +week-days+ +time-zones+ tz->string current-time))
+   pathname-ensure-name probe-directory default-directory chdir mkdir rmdir
+   +month-names+ +week-days+ +time-zones+ tz->string current-time sysinfo))
 
 ;;;
 ;;; System
@@ -218,7 +217,8 @@ but there is a TYPE slot, move TYPE into NAME."
   #+allegro (excl:delete-directory dir)
   #+clisp (lisp:delete-dir dir)
   #+cmu (unix:unix-rmdir dir)
-  #-(or allegro clisp cmu) (delete-file dir))
+  #+lispworks (lw:delete-directory dir)
+  #-(or allegro clisp cmu lispworks) (delete-file dir))
 
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."

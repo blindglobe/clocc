@@ -75,11 +75,20 @@
 		    (setf prev-line (copy-seq line)))
 		   (t
 		    ;; A continuation line!  Append the line to our
-		    ;; buffer, stripping off leading spaces
-		    (setf prev-line
-			  (concatenate 'string prev-line
-				       (string-left-trim '(#\Space)
-							 (subseq line 6)))))))))))))
+		    ;; buffer, carefully stripping off leading spaces.
+		    ;; If the last character of the buffer or the
+		    ;; first character of this line is a punctuation,
+		    ;; strip off leading spaces.  Otherwise, leave a
+		    ;; space between.
+		    (let ((new-line (string-left-trim '(#\Space) (subseq line 6))))
+		      (setf prev-line
+			    (concatenate 'string prev-line
+					 (if (and prev-line
+						  (or (member (aref prev-line (1- (length prev-line))) '(\#.))
+						      (member (aref new-line 0) '(\#.))))
+					     ""
+					     " ")
+					 new-line))))))))))))
 
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
@@ -267,8 +276,31 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.12 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.13 2000/07/21 17:43:17 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.13  2000/07/21 17:43:17  rtoy
+;;; Need to be more careful about continuation lines.  We now leave a
+;;; space between lines when concatenating them, except when the previous
+;;; line ends with punctuation, or the current line begins with
+;;; punctuation.  This is intended to handle cases like:
+;;;
+;;; 	double precision
+;;;        & x
+;;;
+;;; from being converted to
+;;;
+;;; 	double precisionx
+;;;
+;;; which is wrong.  We want a space before the x.
+;;;
+;;; We want to handle these cases to, though:
+;;;
+;;; 	x = y .le
+;;;        &. 42
+;;;
+;;; which shouldn't get a space between lines because we want "x = y
+;;; .le. 42", not the invalid "x = y .le . 42".
+;;;
 ;;; Revision 1.12  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

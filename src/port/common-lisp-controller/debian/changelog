@@ -2,6 +2,7 @@ common-lisp-controller (3.73) unstable; urgency=low
 
   * Move confmodule call in postinst to see if that helps with postrm's
   failure.
+  * Fix output redirection (closes:204054)
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  3 Aug 2003 22:57:22 -0600
 

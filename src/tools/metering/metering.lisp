@@ -1246,7 +1246,7 @@ THRESHOLD % will be reported."
        (progn
          (monitor-all ,packages)
          (reset-all-monitoring)
-         (time ,form))
+         (#+clisp ext:times #-clisp time ,form))
      (report-monitoring :names :all :nested ,nested :threshold ,threshold
                         :key ,key)
      (unmonitor)))
@@ -1262,7 +1262,8 @@ THRESHOLD % will be reported."
          (dolist (fun ',functions)
            (monitoring-encapsulate fun))
          (reset-all-monitoring)
-         ,@body)
+         (#+clisp ext:times #-clisp time
+                  (progn ,@body)))
      (report-monitoring :names :all :nested ,nested :threshold ,threshold
                         :key ,key)
      (unmonitor)))

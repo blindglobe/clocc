@@ -1,8 +1,13 @@
 common-lisp-controller (3.88) unstable; urgency=low
 
-  * Don't run the cronjob if we are removed. Closes: #239108 
+  * Don't run the cronjob if we are removed. Closes: #239108
+  * Removed bash-ism from the cronjob. Closes: #241985
+  * Added french and dutch translations. Closes: #227063, #241429
+  * Moved the connect request, so the syslog is not filled
+    with "clc-build-daemon: error: eof on read: Success"
+    junk.
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 22 Mar 2004 14:34:13 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 Apr 2004 14:45:36 +0200
 
 common-lisp-controller (3.87) unstable; urgency=low
 

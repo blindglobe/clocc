@@ -27,7 +27,7 @@ while true ; do
  if [ ! -f "$FILE" ] ; then
    exit 0
  fi
- if [ "$FILE" == "$OLDFILE" ] ; then
+ if [ "$FILE" = "$OLDFILE" ] ; then
   echo looping
   exit 1
  fi

@@ -528,7 +528,6 @@ int main(int argc, char *argv[])
 
   addr.sin_addr = *(struct in_addr *) hostinfo->h_addr;
   
-  connected = connect(socketfd, &addr, sizeof(addr));
   queueonly = access("/etc/common-lisp/queue-only",F_OK);
   
   if (queueonly == 0)
@@ -537,6 +536,8 @@ int main(int argc, char *argv[])
       if ( arguments.forceconnect ==  1)
 	{
 	  /* we should connect, could we? */
+          connected = connect(socketfd, &addr, sizeof(addr));
+
 	  if (connected == 0)
 	    doconnect();
 	  else
@@ -552,6 +553,8 @@ int main(int argc, char *argv[])
   else
     {
       /* we should reach the daemon */
+      connected = connect(socketfd, &addr, sizeof(addr));
+
       if (connected == 0)
 	doconnect();
       else

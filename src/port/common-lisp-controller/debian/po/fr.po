@@ -14,9 +14,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: common-lisp-controller (3.71)\n"
-"Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2003-12-20 18:16+0100\n"
-"PO-Revision-Date: 2003-08-13 08:28+0100\n"
+"PO-Revision-Date: 2004-01-02 15:27+0100\n"
 "Last-Translator: Christian Perrier <bubulle@debian.org>\n"
 "Language-Team: French <debian-l10n-french@lists.debian.org>\n"
 "MIME-Version: 1.0\n"
@@ -28,6 +27,7 @@ msgstr ""
 #: ../templates:4
 msgid "Only build lisp libraries daily"
 msgstr ""
+"Limiter la construction des bibliothèques LISP à une fois par jour ?"
 
 #. Type: boolean
 #. Description
@@ -36,6 +36,9 @@ msgid ""
 "Should all lisp libraries only be build by the nightly cronjob? If so all "
 "interactive user requests to recompile a library (by requiring it) will fail."
 msgstr ""
+"L'ensemble des bibliothèques LISP peuvent n'être recompilées que par une "
+"tâche quotidienne de cron. Dans ce cas, les tentatives interactives de "
+"recompilation d'une bibliothèque par les utilisateurs échoueront."
 
 #. Type: boolean
 #. Description
@@ -45,12 +48,18 @@ msgid ""
 "Later you can manually run the daily cronjob to build all the libraries for "
 "the users."
 msgstr ""
+"Il peut être judicieux d'activer cette option si vous souhaitez que la mise "
+"à jour se termine rapidement. Ultérieurement, vous pourrez lancer vous-même "
+"cette tâche quotidienne de cron pour construire toutes les bibliothèques "
+"pour les utilisateurs."
 
 #. Type: boolean
 #. Description
 #: ../templates:4
 msgid "Note that removal of libraries or implementations is immediate."
 msgstr ""
+"Veuillez noter que la suppression des bibliothèques et des mises en oeuvre "
+"(« implementations ») reste immédiate."
 
 #. Type: boolean
 #. Description

@@ -682,17 +682,23 @@ Estimated total monitoring overhead: 0.88 seconds
            ,@post-process)))))
 
 #+:clisp
+(defun delta4 (nv1 nv2 ov1 ov2 by)
+  (- (+ (ash nv1 by) nv2) (+ (ash ov1 by) ov2)))
+#+:clisp                        ; CLISP 2.29 built-in
+(let ((del (find-symbol "DELTA4" "SYS")))
+  (when del (setf (fdefinition 'delta4) (fdefinition del))))
+#+:clisp
 (if (< internal-time-units-per-second 1000000)
     ;; TIME_1: AMIGA, OS/2, UNIX_TIMES
     (defmacro delta4-time (new-time1 new-time2 old-time1 old-time2)
-      `(dpb (- ,new-time1 ,old-time1) (byte 16 16) (- ,new-time2 ,old-time2)))
+      `(delta4 ,new-time1 ,new-time2 ,old-time1 ,old-time2 16))
     ;; TIME_2: other UNIX, WIN32
     (defmacro delta4-time (new-time1 new-time2 old-time1 old-time2)
       `(+ (* (- ,new-time1 ,old-time1) internal-time-units-per-second)
           (- ,new-time2 ,old-time2))))
 #+:clisp
 (defmacro delta4-cons (new-cons1 new-cons2 old-cons1 old-cons2)
-  `(dpb (- ,new-cons1 ,old-cons1) (byte 24 24) (- ,new-cons2 ,old-cons2)))
+  `(delta4 ,new-cons1 ,new-cons2 ,old-cons1 ,old-cons2 24))
 
 ;; avoid consing: when the application conses a lot,
 ;; get-cons may return a bignum, so we really should not use it.

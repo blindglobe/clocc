@@ -33,7 +33,8 @@ The value is operating system and file system dependent."
 
 ;;; current-working-directory --
 
-(declaim (inline current-working-directory))
+(declaim (inline current-working-directory)
+	 (inline cwd))
 
 (defun current-working-directory ()
   "Returns the pathname of the 'current working directory'."

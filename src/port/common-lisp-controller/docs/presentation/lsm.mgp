@@ -23,7 +23,7 @@
 %nodefault
 %center, size 7, font "standard", fore "white", vgap 20
 
-common-lisp-controller and cclan
+common-lisp-controller and cCLan
 
 %fore "yellow"
 Go 'West' for Common Lisp
@@ -37,25 +37,39 @@ to the masses (of students)
 %page
 
 Contents
-	What?
-	
+
+
+	What is c-l-c?
+	Why cmucl->c-l-c->cCLan?
+	Perl vs Lisp habbits
+	What does c-l-c define?
+	What is the goal?
+	Who needs to do what??
+	How is common-lisp-controller implemented?
+	An example of a library:
+	An example of an implementation:
+	How about normal hackers?
+	cCLan
+	Problems...
+	Todo
+
 %page
 
 What is c-l-c?
 
-common-lisp-controller: standard of
-	installation source packages
+common-lisp-controller: standard for
+	installation Lisp library packages
 	compiling those packages for all available lisp implementations
 	making those packages then available with a simple 'require' for end-users
 %pause
 
-cclan: CPAN but for lisp
+cCLan: CPAN but for lisp
 	at the moment mostly limited to debian packages (rpm on the way)
-	works on cmucl and sbcl at the moment. ACL should work, clisp should too
+	works on CMUCL and sbcl at the moment. ACL should work, clisp should too
 
 %page
 
-Why cmucl->c-l-c->cclan?
+Why cmucl->c-l-c->cCLan?
 
 Current situation:
 	Students and newbies of CMUCL, sbcl and clisp see:
@@ -70,7 +84,7 @@ industrial for mere students
 
 %page
 
-Why common-lisp-controller
+Perl vs Lisp habbits
 
 Compare a typical Perl/Java/Python hacker:
 	I need to talk to X and Y
@@ -146,7 +160,7 @@ common-lisp-controller
 
 %page
 
-How?
+What does c-l-c define?
 
 common-lisp-controller is:
 
@@ -194,7 +208,7 @@ our own system because:
 
 	we won't 'fit in' with the rest of the system
 	we won't get included into distributions: 'All students need to have Debian X' \
-is a much easier requirement then 'Get cmucl, clorb, mysql, ...'
+is a much easier requirement then 'Get CMUCL, clorb, mysql, ...'
 %pause
 	there are more interesting and less painfull things in life
 
@@ -230,16 +244,19 @@ What is the goal?
 
 Who needs to do what??
 
+%pause
 	Users
 		Known how to get packages and at least load them
 		Most packaging standard require documentation at a certain \
 location and people are used to looking for documentation there
+%pause
 	Writers of libraries
 		Install source in correct location
 		Write and install defsystem in correct location
 		Test compilation and installation
 		Use skeleton
 		Upload
+%pause
 	Writers of implementations
 		Write dialect-script
 		Adapt post-installation and pre-removal scripts
@@ -265,12 +282,10 @@ Where to store meta-information
 
 %center
 
-
-
 As a database of installed libraries and implementations 
 we use the already available defsystem and dialect-scripts. 
-Each piece only does its little piece, 
-with religious error checking.
+
+Idea: store one bit in one bit, not two.
 
 %page
 
@@ -339,26 +354,6 @@ The dialect-script is in
 %font "typewriter", fore "green", size 3, center
 /usr/lib/common-lisp/bin/cmucl-safe.sh:
 %font "standard", fore "white", size 5, leftfill
-
-%page
-
-The site-init.lisp
-
-
-In the site-init.lisp we have:
-
-%font "typewriter", fore "green", size 3, leftfill
-(load "/usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller.lisp")
-
-(common-lisp-controller:init-common-lisp-controller 
- (cond
-   ((member :high-security *features*)
-    "/usr/lib/common-lisp/cmucl-safe/")
-   ((member :small *features*)
-    "/usr/lib/common-lisp/cmucl-small/")
-   (t
-    "/usr/lib/common-lisp/cmucl-normal/")))
-
 
 %page
 
@@ -439,6 +434,25 @@ cmucl-safe.sh highlights
 
 %page 
 
+The site-init.lisp
+
+
+In the site-init.lisp we have:
+
+%font "typewriter", fore "green", size 3, leftfill
+(load "/usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller.lisp")
+
+(common-lisp-controller:init-common-lisp-controller 
+ (cond
+   ((member :high-security *features*)
+    "/usr/lib/common-lisp/cmucl-safe/")
+   ((member :small *features*)
+    "/usr/lib/common-lisp/cmucl-small/")
+   (t
+    "/usr/lib/common-lisp/cmucl-normal/")))
+
+%page
+
 How about normal hackers?
 
 I am hacking McClim at the moment. 
@@ -467,15 +481,22 @@ In my ~/.cmucl-init.lisp I've got:
 
 %page
 
-cclan
+cCLan
 
 %center
 
-cclan is much like CPAN:
+cCLan is much like CPAN:
  a system to make libraries available across \
 distributions.
 
 At the moment most packages are debian-based, mostly because most developers use debian.
+
+Apt-able repository at:
+%font "typewriter", fore "green", size 3, center
+deb http://www-jcsu.jesus.cam.ac.uk/ftp/pub/debian local lisp
+deb-src http://www-jcsu.jesus.cam.ac.uk/ftp/pub/debian local lisp
+%font "standard", fore "white", size 5, center
+
 
 Documentation and a skeleton-generator are in the design-fase. 
 Web-page at :
@@ -485,6 +506,7 @@ http://ww.telent.net/cliki/cclan
 %page
 
 Problems...
+
 
 	Logical pathnames are difficult, many implementations have problems \
 and they are limited...
@@ -503,3 +525,13 @@ Todo
 	adding McClim
 	adding a portable, modern CLX
 	adding LWL support
+
+%page
+
+
+%nodefault
+
+
+%font "standard", fore "red", size 10, center
+
+That's all folks!

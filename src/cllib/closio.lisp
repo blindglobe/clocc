@@ -1,4 +1,4 @@
-;;; File: <closio.lisp - 2000-02-18 Fri 12:19:23 EST sds@ksp.com>
+;;; File: <closio.lisp - 2000-03-01 Wed 14:56:04 EST sds@ksp.com>
 ;;;
 ;;; Read/Write CLOS objects
 ;;;
@@ -7,7 +7,7 @@
 ;;; Load this file and your CLOS objects will be printeed with #[] format;
 ;;; bind `*readtable*' to `*clos-readtable*' and `read' will read #[]
 ;;;
-;;; $Id: closio.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: closio.lisp,v 1.2 2000/03/01 20:10:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,8 +18,7 @@
 (eval-when (load compile eval)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
-(export '(pr *clos-readtable* make-clos-readtable class-slot-list
-          arglist macroexpand-r))
+(export '(pr *clos-readtable* make-clos-readtable macroexpand-r))
 
 ;;;
 ;;; {{{ print the object readably
@@ -76,41 +75,6 @@ NICE (default T).  Uses `with-standard-io-syntax'."
 ;;; }}}{{{ print CLOS objects readably
 ;;;
 
-(defun class-slot-list (class &optional (all t))
-  "Return the list of slots of a CLASS.
-CLASS can be a symbol, a class object (as returned by `class-of')
-or an instance of a class.
-If the second optional argument ALL is non-NIL (default),
-all slots are returned, otherwise only the slots with
-:allocation type :instance are returned."
-  #-(or allegro clisp cmu lispworks)
-  (error 'not-implemented :proc 'class-slot-list)
-  (macrolet ((class-slots* (class)
-               `(#+allegro clos:class-slots
-                 #+clisp clos::class-slots
-                 #+cmu pcl::class-slots
-                 #+lispworks hcl::class-slots ,class))
-             (slot-name (slot)
-               #+allegro `(slot-value ,slot 'clos::name)
-               #+clisp `(clos::slotdef-name ,slot)
-               #+cmu `(slot-value ,slot 'pcl::name)
-               #+lispworks `(hcl::slot-definition-name ,slot))
-             (slot-alloc (slot)
-               `(#+allegro clos::slotd-allocation
-                 #+clisp clos::slotdef-allocation
-                 #+cmu pcl::slot-definition-allocation
-                 #+lispworks hcl::slot-definition-allocation ,slot)))
-    (mapcan (lambda (slot)
-              (when (or all (eq (slot-alloc slot) :instance))
-                (list (slot-name slot))))
-            (class-slots*
-             (typecase class
-               (class class) (symbol (find-class class))
-               ((or structure-object standard-object) (class-of class))
-               (t (error 'case-error :proc 'class-slot-list
-                         :args (list 'class class 'class 'symbol
-                                     'structure-object 'standard-object))))))))
-
 (defmethod print-object ((obj standard-object) (out stream))
   (let ((cl (class-of obj)))
     (format out "#[~s" (class-name cl))
@@ -120,22 +84,8 @@ all slots are returned, otherwise only the slots with
     (write-string "]" out)))
 
 ;;;
-;;; }}}{{{ arglist & macroexpand-r
+;;; }}}{{{ macroexpand-r
 ;;;
-
-(defun arglist (fn)
-  "Return the signature of the function."
-  #+allegro (ext:arglist fn)
-  #+clisp (sys::arglist fn)
-  #+cmu (values (let ((st (kernel:%function-arglist fn)))
-                  (if (stringp st) (read-from-string st)
-                      (eval:interpreted-function-arglist fn))))
-  #+gcl (let ((fn (etypecase fn
-                    (symbol fn)
-                    (function (system:compiled-function-name fn)))))
-          (get fn 'si:debug))
-  ;; #+lispworks
-  #-(or allegro clisp cmu gcl) (error 'not-implemented :proc 'arglist))
 
 (defun macroexpand-r (form)
   "Recursive macroexpand - unreliable because of `macrolet' &c."

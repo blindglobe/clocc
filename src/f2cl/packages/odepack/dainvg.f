@@ -6,6 +6,7 @@
       INTEGER I, LENPW, MLP1, NROWPW
       DOUBLE PRECISION T, Y, YDOT, PW
       DIMENSION Y(*), YDOT(*), PW(*), IPVT(*)
+      dimension neq(1)
 C-----------------------------------------------------------------------
 C This subroutine computes the initial value
 C of the vector YDOT satisfying
@@ -22,7 +23,7 @@ C
 C
 C Full matrix case -----------------------------------------------------
 C
-      LENPW = NEQ*NEQ
+      LENPW = NEQ(1)*NEQ(1)
       DO 10  I = 1, LENPW
    10    PW(I) = 0.0D0
 C
@@ -30,12 +31,13 @@ C
       CALL RES ( NEQ, T, Y, PW, YDOT, IER )
       IF (IER .GT. 1) RETURN
 C
-      CALL ADDA ( NEQ, T, Y, 0, 0, PW, NEQ )
-      CALL DGEFA ( PW, NEQ, NEQ, IPVT, IER )
+      itemp = neq(1)
+      CALL ADDA ( NEQ, T, Y, 0, 0, PW, itemp )
+      CALL DGEFA ( PW, itemp, itemp, IPVT, IER )
       IF (IER .EQ. 0) GO TO 20
          IER = -IER
          RETURN
-   20 CALL DGESL ( PW, NEQ, NEQ, IPVT, YDOT, 0 )
+   20 CALL DGESL ( PW, itemp, itemp, IPVT, YDOT, 0 )
       RETURN
 C
 C Band matrix case -----------------------------------------------------

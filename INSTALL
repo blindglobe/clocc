@@ -11,12 +11,11 @@ INSTALLATION OF CLOCC
    and then dump an image with them.
    This image will be used in compiling the rest of CLOCC.
 
-4. You should be able compile any package in CLOCC now by typing
+4. You should be able to compile any package in CLOCC now by typing
    "make system" in the appropriate directory.
-   E.g., if you want to compile a "port" (the cross-implementation
+   E.g., if you want to compile "PORT" (the cross-implementation
    portability system), you do
         $ cd src/port
         $ make system
 
-5. Packages in CLOCC are documented separately.  You should look for
-   files <package>/<package>.txt or <package>/<package>.html.
+5. Please report bugs and ask for help on <clocc-list@lists.sourceforge.net>.

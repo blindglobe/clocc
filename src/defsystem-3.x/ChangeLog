@@ -1,3 +1,59 @@
+2002-11-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp:
+	Changed licensing terms to make them more DFSG compliant.
+
+	Also added first cut code to achieve "pathname less" operation of MK3,
+	following the ideas in ASDF.  If the DEFSYSTEM form is loaded from a
+	file, then the location of the file (intended as a directory) is
+	computed from *LOAD-PATHNAME* and stored as the :SOURCE-PATHNAME of
+	the system.
+
+2002-11-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp: Added patches to accomodate Scieneer Common Lisp.
+	Thanks to Douglas T. Crosher.
+
+	* defsystem.lisp:
+	Patched *FILENAME-EXTENSIONS* to take better care of the latest MCL.
+	Thanks to Tom Russ <tar@isi.edu>.
+
+	* defsystem.lisp:
+	Added patches by Juanio Ripoll to make MK:DEFSYSTEM 3.3i work with
+	ECL.
+
+2002-11-14  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp:
+	Added some minor patches to accomodate ECL (thanks to Juan Jose Garcia
+	Ripoll).
+
+2002-09-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed problem in NEW-REQUIRE.  Removed STRING-DOWNCASE for CMUCL.
+
+2002-08-26  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* defsystem.html, defsystem.text: move documentation
+
+	* defsystem.html, defsystem.text:
+	Add documentation files from common lisp controller directory in
+	preparation for defsystem source being removed from common lisp
+	controller. Common Lisp Controller can depend on defsystem
+	versions 3 & 4 as well as asdf without including them in its
+	source.
+
+2002-06-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+2002-06-17  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed loading of foreign modules for C under Lispworks (patch provided
+	by Dave Fox from Xanalys).
+
 2002-06-17  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* defsystem.lisp:
@@ -132,7 +188,8 @@
 2002-02-11  stig  <stig@tapulon>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
-	minor case-change of the symbol T to t, to correspond to other case-changes done recently.
+	minor case-change of the symbol T to t, to correspond to other
+	case-changes done recently.
 
 2002-02-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.5 2000/05/01 20:13:43 sds Exp $
+;;; $Id: datedl.lisp,v 1.6 2000/05/02 14:59:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,9 +25,6 @@
 
 (export '(dated-list dl-nth-date dated-list-name dl-nth-slot dl-shift
           copy-dated-list dl-endp dl-len dl-ll dl-date))
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; Dated List
@@ -86,7 +83,7 @@
   (fdefinition (dated-list-date dl)))
 
 (declaim (ftype (function (dated-list) (values (function (t) double-float)))
-                dl-date dl-chg))
+                dl-val dl-chg))
 (defsubst dl-val (dl)
   "Return the VAL function of the dated list DL."
   (declare (type dated-list dl))
@@ -134,14 +131,16 @@ so that -1 corresponds to the last record."
   (declare (type dated-list dl) (fixnum nn))
   (if (minusp nn) (car (last (dl-ll dl) (- nn))) (nth nn (dl-ll dl))))
 
-(declaim (ftype (function (dated-list fixnum) (values (or null date)))
+(declaim (ftype (function (dated-list &optional fixnum)
+                          (values (or null date)))
                 dl-nth-date))
 (defun dl-nth-date (dl &optional (nn 0))
   "Return the Nth date of the dated list."
   (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dl-date dl) bb))))
 
-(declaim (ftype (function (dated-list fixnum) (values (or null double-float)))
+(declaim (ftype (function (dated-list &optional fixnum)
+                          (values (or null double-float)))
                 dl-nth-val dl-nth-chg))
 (defun dl-nth-val (dl &optional (nn 0))
   "Return the Nth value of the dated list."
@@ -238,7 +237,7 @@ so that -1 corresponds to the last record."
   "*What to do in `rollover' when the first date is bigger than the last.
 One of NIL (nothing), :ERROR and :WARN.")
 
-(declaim (ftype (function (list date-f-t) (values date)) rollover))
+(declaim (ftype (function (list &optional date-f-t) (values date)) rollover))
 (defun rollover (list &optional (datef #'date))
   "Return the rollover date for the list."
   (declare (list list) (type date-f-t datef))
@@ -256,13 +255,14 @@ One of NIL (nothing), :ERROR and :WARN.")
                                    :error :warn nil)))))
         ld)))
 
-(declaim (ftype (function (dated-list (or null date) t) (values list))
+(declaim (ftype (function ((or null date) dated-list &optional t)
+                          (values list))
                 date-in-dated-list))
 (defun date-in-dated-list (dt dl &optional last)
   "Call `date-in-list' on the dated list.
 If  LAST is non-nil, make sure that the next date is different.
 No side effects.  Returns CP and CL for `dl-shift'."
-  (declare (type dated-list dl) (type (or null date) dt))
+  (declare (type (or null date) dt) (type dated-list dl))
   (if (null dt) (dl-ll dl)
       (do ((dd (dl-date dl)) (ls (dated-list-cl dl) (cdr ls)))
           ((or (null (cdar ls)) (date<= dt (rollover ls dd)))
@@ -272,8 +272,8 @@ No side effects.  Returns CP and CL for `dl-shift'."
 (defun dl-double-date-p (dt dl)
   "Return T if the date DT is present in DL twice."
   (declare (type dated-list dl))
-  (setq dt (date dt))
-  (let ((ta (second (date-in-dated-list dt dl))))
+  (let* ((dt (date dt)) (ta (second (date-in-dated-list dt dl))))
+    (declare (type date dt))
     (and ta (date= dt (funcall (dl-date dl) ta)))))
 
 (defcustom *dl-max-overlap* index-t 100
@@ -355,7 +355,10 @@ roll-over dates."
           (- (dl-nth-val dl) v0))
         (- (dl-nth-val dl) (if ro (funcall (dl-val dl) (car ro)) v0)))))
 
-;;(declaim (ftype (function (dated-list ??) (values fixnum)) dl-count-jumps))
+(declaim (ftype (function (dated-list &optional (function (date) t)
+                           (function (t t) t))
+                          (values fixnum))
+                dl-count-jumps))
 (defun dl-count-jumps (dl &optional (key #'date-ye) (test #'eql))
   "Return the number of years in the dated list."
   (declare (type dated-list dl) (type (function (date) t) key))
@@ -382,11 +385,11 @@ roll-over dates."
     (multiple-value-bind (me nu) (mean (car jj) :key #'car)
       (format out "Up   [~:d]: mean: ~7,3f; standard deviation: ~7,3f~%"
               nu me (standard-deviation (car jj) :len nu :mean me :key #'car)))
-    (top-bottom-ui (car jj) 5 5 t :stream out :key #'car :label #'cdr)
+    (top-bottom-ui (car jj) 5 5 t :out out :key #'car :label #'cdr)
     (multiple-value-bind (me nu) (mean (cdr jj) :key #'car)
       (format out "Down [~:d]: mean: ~7,3f; standard deviation: ~7,3f~%"
               nu me (standard-deviation (cdr jj) :len nu :mean me :key #'car)))
-    (top-bottom-ui (cdr jj) 5 5 t :stream out :key #'car :label #'cdr)))
+    (top-bottom-ui (cdr jj) 5 5 t :out out :key #'car :label #'cdr)))
 
 (defun skip-dl-to-date (dl dt &optional stlog)
   "Skip (shift) the dated list DL to the date DT.
@@ -507,7 +510,9 @@ It is is replaced with (X . EMA)."
                 el))
             seq)))
 
-;; (declaim (ftype (function (double-float dated-list) (values dated-list)) exp-mov-avg-dl))
+(declaim (ftype (function (double-float dated-list &optional t symbol)
+                          (values dated-list))
+                exp-mov-avg-dl))
 (defun exp-mov-avg-dl (coeff idl &optional double (slot 'val))
   "UI for `exp-mov-avg' when the argument is a dated list itself.
 When DOUBLE is given, compute 2 averages, with COEFF and COEFF/2,

@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1998-12-09 Wed 16:16:18 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1998-12-28 Mon 15:18:57 EST sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.6 1998/12/09 21:16:34 sds Exp $
+;;; $Id: base.lisp,v 1.7 1998/12/28 20:19:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.7  1998/12/28 20:19:33  sds
+;;; Added `close-pipe'.
+;;;
 ;;; Revision 1.6  1998/12/09 21:16:34  sds
 ;;; Added `pipe-input'.  Sorted autoloads.
 ;;;
@@ -154,7 +157,7 @@
 
 (defun pipe-output (prog &rest args)
   "Return an output stream which will go to the command."
-  #+excl (excl:run-shell-command (apply #'vector prog prog args)
+  #+excl (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
                                  :input :stream :wait nil)
   #+gcl (si::fp-input-stream (apply #'run-process prog args)) #+cmu
   (process-input (run-program prog args :input :stream :output t :wait nil))
@@ -162,11 +165,16 @@
 
 (defun pipe-input (prog &rest args)
   "Return an input stream from which the command output will be read."
-  #+excl (excl:run-shell-command (apply #'vector prog prog args)
+  #+excl (excl:run-shell-command (format nil "~a~{ ~a~}" prog args)
                                  :output :stream :wait nil)
   #+gcl (si::fp-output-stream (apply #'run-process prog args)) #+cmu
   (process-output (run-program prog args :output :stream :input t :wait nil))
   #+clisp (lisp:make-pipe-input-stream (format nil "~a~{ ~a~}" prog args)))
+
+(defun close-pipe (stream)
+  (declare (stream stream))
+  (close stream)
+  #+allegro (sys:reap-os-subprocess))
 
 ;;;
 ;;; }}}{{{ Environment

@@ -24,12 +24,13 @@
 ;; right to left. Thus, all sequence-functions operate also on
 ;; AVL-trees.
 
-(defpackage #:avl)
-(in-package #:avl)
-(shadow '(length member delete copy merge))
-(export '(treep member insert delete do-avl avl-to-seq seq-to-avl copy merge))
 (require 'sequences)
-(import '(sequences::avl-tree sequences::seq))
+(defpackage #:avl
+  (:shadow #:length #:member #:delete #:copy #:merge)
+  (:export #:treep #:member #:insert #:delete #:do-avl #:avl-to-seq
+           #:seq-to-avl #:copy #:merge)
+  (:import-from #:sequences sequences::avl-tree sequences::seq))
+(in-package #:avl)
 
 ;; data structure of a tree: empty tree=nil, else node
 (deftype tree ()
@@ -379,9 +380,6 @@
       (make-node :level (1+ (level right)) :left left :right right
                  :length size))))
 
-(defun make-avl-tree (size)
-  (box-tree (make-tree size)))
-
 ;; AVL-tree as sequence of type AVL-TREE :
 ;; pointer is a vector with fill-pointer.
 ;; fill-pointer=0 -> end reached.
@@ -401,6 +399,7 @@
                            (setq tr (node-left tr)))))
                      pointer))
   :upd         #'(lambda (pointer)
+                   (declare (ignore seq))
                    (if (zerop (fill-pointer pointer))
                      (error "Reached the right end of a ~S." 'avl-tree)
                      (let ((tr (aref pointer (1- (fill-pointer pointer)))))
@@ -419,7 +418,9 @@
                            (if (zerop (fill-pointer pointer)) (return))
                            (if (eq (vector-pop pointer) 'LEFT) (return))))
                        pointer)))
-  :endtest     #'(lambda (pointer) (zerop (fill-pointer pointer)))
+  :endtest     #'(lambda (pointer)
+                   (declare (ignore seq))
+                   (zerop (fill-pointer pointer)))
   :fe-init     #'(lambda ()
                    (let* ((tr (unbox seq))
                           (l (level tr))
@@ -433,6 +434,7 @@
                            (setq tr (node-right tr)))))
                      pointer))
   :fe-upd      #'(lambda (pointer)
+                   (declare (ignore seq))
                    (if (zerop (fill-pointer pointer))
                      (error "Reached the left end of a ~S." 'avl-tree)
                      (let ((tr (aref pointer (1- (fill-pointer pointer)))))
@@ -451,25 +453,32 @@
                            (if (zerop (fill-pointer pointer)) (return))
                            (if (eq (vector-pop pointer) 'RIGHT) (return))))
                        pointer)))
-  :fe-endtest  #'(lambda (pointer) (zerop (fill-pointer pointer)))
+  :fe-endtest  #'(lambda (pointer)
+                   (declare (ignore seq))
+                   (zerop (fill-pointer pointer)))
   :access      #'(lambda (pointer)
+                   (declare (ignore seq))
                    (if (zerop (fill-pointer pointer))
                      (error "Reached the end of a ~S." 'avl-tree)
                      (node-value (aref pointer (1- (fill-pointer pointer))))))
   :access-set  #'(lambda (pointer value)
+                   (declare (ignore seq))
                    (if (zerop (fill-pointer pointer))
                      (error "Reached the end of a ~S." 'avl-tree)
                      (setf (node-value (aref pointer
                                              (1- (fill-pointer pointer))))
                            value)))
   :copy        #'(lambda (pointer)
+                   (declare (ignore seq))
                    (make-array (array-dimensions pointer)
                                :initial-contents pointer
                                :fill-pointer (fill-pointer pointer)))
   :length      #'(lambda ()
                    (let ((tr (unbox seq)))
                      (if tr (node-length tr) 0)))
-  :make        #'make-avl-tree
+  :make        #'(lambda (size)
+                   (declare (ignore seq))
+                   (box-tree (make-tree size)))
   :elt         #'(lambda (index)
                    (let ((tr (unbox seq)))
                      (if (and tr (< index (node-length tr)))

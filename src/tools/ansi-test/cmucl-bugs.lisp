@@ -624,6 +624,7 @@ these are not rationals, so we get a complex number back.
      (pcl:generic-function-lambda-list
       (ensure-generic-function 'change-class)))
     2)
+ T
  "change-class (instance t) (new-class symbol) &rest initargs")
 
 ;;; From the clisp CHANGES file:

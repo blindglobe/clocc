@@ -82,11 +82,11 @@
     (let ((bindlist nil))
       (when svar (push `(,name ,form) bindlist))
       (dolist (op operationen)
-        (let* ((sym (intern (lisp:concatenate 'string
+        (let* ((sym (intern (cl:concatenate 'string
                               (symbol-name name) "-" (symbol-name op))
                             *seq-package*)))
           (push `(,sym (,sym)) bindlist)))
-      `(LET* ,(lisp:nreverse bindlist) ,@body))
+      `(LET* ,(cl:nreverse bindlist) ,@body))
     (error "Wrong usage of WITH-SEQUENCE: ~S" w)))
 
 #| explanation of the single functions SEQi-XXX:
@@ -154,10 +154,10 @@ FE-INIT-END   (lambda (index) ...) -> pointer
 
 (defmacro define-sequence-function (name . body)
   `(progn
-     (defun ,(intern (lisp:concatenate 'string "SEQ1-" (symbol-name name))
+     (defun ,(intern (cl:concatenate 'string "SEQ1-" (symbol-name name))
                      *seq-package*)
             ,@(subst 'seq1 'seq body))
-     (defun ,(intern (lisp:concatenate 'string "SEQ2-" (symbol-name name))
+     (defun ,(intern (cl:concatenate 'string "SEQ2-" (symbol-name name))
                      *seq-package*)
             ,@(subst 'seq2 'seq body))))
 
@@ -838,9 +838,9 @@ FE-INIT-END   (lambda (index) ...) -> pointer
           (name lambdalist &body body)
   (setq lambdalist (append lambdalist '((key #'identity))))
   (let ((name1 name)
-        (name2 (intern (lisp:concatenate 'simple-string (symbol-name name) "-IF")
+        (name2 (intern (cl:concatenate 'simple-string (symbol-name name) "-IF")
                        (symbol-package name)))
-        (name3 (intern (lisp:concatenate 'simple-string (symbol-name name) "-IF-NOT")
+        (name3 (intern (cl:concatenate 'simple-string (symbol-name name) "-IF-NOT")
                        (symbol-package name)))
         (lambdalist1 (append '(item) lambdalist '((test nil) (test-not nil))))
         (lambdalist2 (append '(test) lambdalist))
@@ -1560,7 +1560,7 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                    (eq (caar body-rest) 'declare))
             (setq declarations (revappend (cdr (pop body-rest)) declarations))
             (return)))
-        (values body-rest (lisp:nreverse declarations)))
+        (values body-rest (cl:nreverse declarations)))
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)) (pointer (gensym)))
       `(BLOCK NIL

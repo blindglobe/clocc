@@ -36,7 +36,7 @@
                    (eq (caar body-rest) 'declare))
             (setq declarations (revappend (cdr (pop body-rest)) declarations))
             (return)))
-        (values body-rest (lisp:nreverse declarations)))
+        (values body-rest (cl:nreverse declarations)))
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)))
       `(BLOCK NIL

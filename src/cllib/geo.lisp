@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.9 2000/05/24 23:02:52 sds Exp $
+;;; $Id: geo.lisp,v 2.10 2000/06/29 19:26:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -89,7 +89,8 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
   (format out "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd)) (geod-zip gd)))
 
 (defcustom *census-gazetteer-url* url
-  (make-url :prot :http :host "www.census.gov" :path "/cgi-bin/gazetteer?")
+  (make-url :port 80 :prot :http :host "www.census.gov"
+            :path "/cgi-bin/gazetteer?")
   "*The URL to use to get the cite information.")
 
 ;;;###autoload

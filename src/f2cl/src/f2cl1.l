@@ -26,7 +26,8 @@
 	      *subprog_stmt_fns* *subprog_stmt_fns_bodies* *prune_labels*
 	      *auto-save-data*
 	      *functions-used*
-	      *vble-declaration-done*)))
+	      *vble-declaration-done*
+	      *array-type*)))
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common
@@ -51,7 +52,8 @@ only when needed. ")
 			(auto-save t) (relaxed-array-decls t)
 			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
-			keep-temp-file)
+			keep-temp-file
+			(array-type 'simple-array))
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -62,7 +64,8 @@ INPUT-FILE               File containing Fortran code
 :PRUNE-LABELS            Prune unused labels. Default = NIL.
 :INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be buggy.)
                          Default = NIL
-:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  Default = T.
+:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
+                         Default = T.
 :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters
                          to functions.  Default = T.
 :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements automatically coerce the
@@ -72,19 +75,26 @@ INPUT-FILE               File containing Fortran code
 :EXTENSION               The extension to use for the output file, if needed.  Defaults to
                          *DEFAULT-LISP-EXTENSION* or \"lisp\"
 :KEEP-TEMP-FILE          If T, the temporary file is not deleted.  Default = NIL.
+:ARRAY-TYPE              The type of array f2cl should use.  Should be 'simple-array or
+                         'array.
 "
 
 
   (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
   (format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
 
+  ;; Check (some) parameters for validity
+  (assert (or (null coerce-assigns)
+	      (member coerce-assigns '(:always :never :as-needed t))))
+  (assert (member array-type '(simple-array array)))
   (let ((*verbose* verbose)
 	(*prune_labels* prune-labels)
 	(*comments* include-comments)
 	(*auto-save-data* auto-save)
 	(*common-block-initialized* nil)
 	(*relaxed-array-decls* relaxed-array-decls)
-	(*coerce-assignments* coerce-assigns))
+	(*coerce-assignments* coerce-assigns)
+	(*array-type* array-type))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -1707,8 +1717,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.38 2000/07/14 13:30:08 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.39 2000/07/14 14:05:45 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.39  2000/07/14 14:05:45  rtoy
+;;; Allow the user to specify whether he wants f2cl to declare arrays as
+;;; type array or simple-array.
+;;;
 ;;; Revision 1.38  2000/07/14 13:30:08  rtoy
 ;;; o Computed goto apparently can have a comma before the expression, and
 ;;;   we weren't handling this correctly.  (At least g77 allows it, even

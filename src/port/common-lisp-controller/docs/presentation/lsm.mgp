@@ -1,0 +1,363 @@
+%include "/usr/X11R6/lib/X11/mgp/default.mgp"
+%%
+%%default 1 leftfill, size 2, fore "white", back "black", font "thick"
+%%default 2 size 7, vgap 10, prefix " "
+%%default 3 size 2, bar "gray70", vgap 10
+%%default 4 size 5, fore "white", vgap 30, prefix " ", font "standard"
+%%
+%%
+%% Default settings that are applied to TAB-indented lines.
+%%
+%%tab 1 size 5, vgap 40, prefix "  ", icon box "green" 50
+%%tab 2 size 4, vgap 40, prefix "      ", icon arc "yellow" 50
+%%tab 3 size 3, vgap 40, prefix "            ", icon delta3 "white" 40
+%%
+%%
+%%
+%default 1 bgrad
+%default 2 center
+%default 3 leftfill
+%page
+
+%center
+%nodefault
+%center, size 7, font "standard", fore "white", vgap 20
+
+common-lisp-controller and cclan
+
+%fore "yellow"
+Go 'West' for Common Lisp
+%fore "white"
+or
+%fore "green"
+Bringing 
+Common Lisp development 
+to the masses (of students)
+
+%page
+
+Contents
+	What?
+	
+%page
+
+What?
+
+common-lisp-controller: standard of
+	installation source packages
+	compiling those packages for all available lisp implementations
+	making those packages then available with a simple 'require' for end-users
+%pause
+
+cclan: CPAN but for lisp
+	at the moment mostly limited to debian packages (rpm on the way)
+	works on cmucl and sbcl at the moment. ACL should work, clisp should too
+
+%page
+
+Why?
+
+Current situation:
+	Students and newbies of CMUCL, sbcl and clisp see:
+		A program with a UI from the early 70's
+		No obvious way to talk to DBMS, mail, news, snmp, CORBA etc
+		No way to do that cool servlet stuff
+%pause
+	People that use ACL see a slightly better picture, but
+		Still many protocols are not supported (snmp, mail, GL)
+		May extentions are over the top. For example: clim, ObjectStore are much too \
+industrial for mere students
+
+%page
+
+Why? The mentality
+
+Compare a typical Perl hacker:
+	I need to talk to X and Y
+		Get X from CPAN
+		Get Y from CPAN
+		Fight X
+		Fight Y
+		Get X talking to Y
+To a typical Lisp hacker:
+%pause
+	I need to talk to X
+		Look at X specs
+		Write a X thingie
+		Look at Y
+		Write a Y thingie
+		Get X talking to Y
+%page 
+
+Why is this a problem?
+
+%center
+
+Problem: 
+(time (+ (download X) (fight X))) << (time (study X) (write X))
+
+and
+
+Perl people download, fight and send patches.
+Lisp people study, write. Sometimes they release the source.
+
+%page
+
+What's wrong with releasing the source?
+
+Problem with current available Lisp code:
+	sometimes implementation specific (rarely)
+	some use MK:DEFSYSTEM most use something all new and unique
+	most have hard-wired locations from where they need to be
+	most need source hacking before they compile
+
+Compare this to: 
+
+%center
+perl Makefile.pl ; make ; make install
+
+
+%page
+
+What is wrong with lisp libraries in distributions?
+
+Some people released Lisp libraries into distributions like debian. 
+Problems:
+	all depend on one version of a lisp implementation
+	lisp implementations do incompatible changes to themselves without changing version
+	need to coordinate lisp and lisp library releases
+%pause
+Solution: common-lisp-controller
+
+%page
+
+How?
+
+common-lisp-controller is:
+
+	a standard for locations of:
+%pause
+		Source repositories: /usr/share/common-lisp/repositories/
+		Source code: /usr/share/common-lisp/source/
+		System definitions: /usr/share/common-lisp/systems/
+		Compiled code: /usr/lib/common-lisp/<implementation>/<system>/
+%pause
+	standard logical pathnames that point at these
+		cl-library:
+		cl-systems:
+%pause
+	a standard method to register source packages
+%pause
+	and to register implementations
+%pause
+	and to recompile each source package for each \
+	compiler without that they get messed up
+
+%page
+
+But that is not enough..
+
+%center
+
+Essential things have been overlooked: dependencies, versions, package formats. Right?
+
+No: 
+
+%page
+
+Why is it not needed to make dpkg in lisp.
+
+Existing systems already have these functions. It has no use implementing \
+our own system because:
+	we won't 'fit in' with the rest of the system
+	we won't get included into distributions: 'All students need to have Debian X' \
+is a much easier requirement then 'Get cmucl, clorb, mysql, ...'
+	there are more interesting and less painfull things in life
+
+%center
+
+Almost all existing package systems have these functions, we just need to \
+fill in a skeleton to have a c-l-c package for these systems.
+
+%page
+
+Why do this?
+
+(require :foo) should 'just work'
+%pause
+	Students and new users:
+		easier introduction
+		more powerfull base system
+		demonstration of usefullness 'hey look how easy this is in lisp!'
+%pause
+	Power users
+		easy installation of libraries
+		standard invocation, location of help
+		automagical dependencies
+		source code level debugging possible
+
+%page
+
+For who?
+
+	Users
+		Known how to get packages and at least load them
+		Most packaging standard require documentation at a certain \
+location and people are used to looking for documentation there
+	Writers of libraries
+		Install source in correct location
+		Write and install defsystem in correct location
+		Test compilation and installation
+		Upload
+	Writers of implementations
+		Write dialect-script
+		Adapt post-installation and pre-removal scripts
+		Test recompilation for new dialect
+		Upload
+
+%page
+
+How?
+
+
+Shell scripts
+
+%pause
+Why?
+	are a part of every known package systems post-installation handling
+	are pretty much standard
+	are known to system administators, they might not trust a Lisp installer
+	can be sandboxed
+
+%page
+
+Where to store meta-information
+
+%center
+
+As a database of installed libraries and implementations we use the already\
+available defsystem and dialect-scripts. Each piece only does its little piece, with
+religious error checking.
+
+%page
+
+An example of a library:
+
+Cil (Chess In Lisp) is my default example.
+
+Defsystem:
+
+%%font "typewriter" fore "green"
+;;; -*- Mode: lisp -*-
+
+;;; This is just a sample of building series with MK defsystem. You
+;;; may need to change :source-pathname appropriately for your system.
+
+(mk:defsystem cil
+    :source-pathname "cl-library:cil;"
+    :source-extension "lisp"
+    :components ((:file "cil")))
+%%font "standard" fore "white"
+
+This system only has one file: cil.lisp in cl-library:cil;
+
+The source on a debian system then is at 
+	/usr/share/common-lisp/repositories/cil/cil.lisp
+and
+	/usr/share/common-lisp/source/cil/cil.lisp
+the compiled file for cmucl-safe goes into:
+	/usr/lib/common-lisp/cmucl-safe/cil/cil.x86f
+
+Why share/lib? share=shared between systems!
+
+In the post-installation we have:
+	/usr/sbin/register-common-lisp-source cil
+
+That's all folks!
+
+%page
+
+An example of an implementation:
+
+cmucl-safe has a dialect-script with several help scripts.
+In post-install we just do: 	/usr/sbin/register-common-lisp-implementation cmucl-safe
+
+The dialect-script is in /usr/lib/common-lisp/bin/cmucl-safe.sh:
+
+highlights are:
+
+%%quote
+#!/bin/sh
+..
+if [[ ! -f /usr/share/common-lisp/source/defsystem/defsystem.lisp ]] ; then
+  cat <<EOF
+$0: cannot find the defsystem source.
+This should not happen. Please report this
+as a bug.
+EOF
+  exit 0
+fi
+
+..
+case $1 in
+    rebuild)
+	    echo $0 rebuilding...
+	    shift
+	    while [ ! -z "$1" ] ; do
+		echo rebuilding $1
+		lisp -core $IMAGE -eval "
+...
+	(mk:oos :$1 :compile :verbose nil)))
+(unix:unix-exit 0)" -noinit  
+     remove)
+	    echo $0 removing packages...
+	    shift
+	    while [ ! -z "$1" ] ; do
+		rm -rf "/usr/lib/common-lisp/$DIR/$1"
+		shift
+ 	    done
+	    rmdir /usr/lib/common-lisp/$DIR 2> /dev/null 
+	    ;;
+    install-defsystem)
+    	    echo installing the defsystem...
+	    ( cd /usr/lib/cmucl
+	      # does an old image allready exists?
+	      if [ ! -f ${IMAGE%.core}-old.core ] ; then
+	        mv $IMAGE ${IMAGE%.core}-old.core 
+              fi
+	     lisp  \
+	       -core ${IMAGE%.core}-old.core -load /usr/lib/cmucl/install-defsystem.lisp \
+	       -noinit   && \
+               mv new-lisp.core $IMAGE || (echo FAILED ; mv ${IMAGE%.core}-old.core $IMAGE ) )
+    	    ;;
+    remove-defsystem)
+	    if [ ! -f ${IMAGE%.core}-old.core ] ; then
+	      mv ${IMAGE%.core}-old.core $IMAGE
+	    fi
+    	    ;;
+    make-user-image)
+    	    if [[ ! -f $2 ]] ; then 
+	      echo Cannot find file $2 to load and dump!
+	      exit 321
+	    fi
+	    lisp -core $IMAGE -eval "
+(load \"$1\")
+#-gengc (setf lisp::*need-to-collect-garbage* nil)
+(gc-on)
+    ;;
+    ;; Save the lisp.
+(save-lisp #p\"home:lisp.core\")" -noinit  && echo New image created
+%%
+
+%page
+
+cclan
+
+cclan is much like CPAN: a system to make libraries available across
+distributions.
+
+At the moment most packages are debian-based, mostly because most developers use debian.
+
+Documentation and a skeleton-generator are in the design-fase. Web-page at :
+	http://ww.telent.net/cliki/cclan
+

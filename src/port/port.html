@@ -1,0 +1,83 @@
+<!doctype html public "-//W3C//DTD HTML 3.2//EN">
+<!--
+ File: <README.html - 2000-02-18 Fri 16:05:43 EST sds@ksp.com>
+ $Id: port.html,v 1.1 2000/03/08 18:22:23 sds Exp $
+ $Source: /cvsroot/clocc/clocc/src/port/port.html,v $
+ -->
+<html>
+
+<head>
+<!-- <base href="http://www.goems.com/~sds/"> -->
+<meta http-equiv="Content-Type" content="text/html">
+<meta http-equiv="description" content="README for port">
+<meta http-equiv="keywords"
+ content="free software, open-source software, Common Lisp, http, ftp">
+<link rev=made href="mailto:sds@gnu.org">
+<title>README</title>
+</head>
+
+<body>
+
+<h1>README for CLLIB</h1>
+
+<p>To use this package, you will need an <a
+ href="http://www.lisp.org/HyperSpec/FrontMatter/">ANSI Common Lisp</a>.
+
+<h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
+
+<p><code>PORT</code> is now a part of <code>CLOCC</code> (in
+<code>src/port</code>), and, as such, is accessible via anonymous CVS
+and FTP, as explain on the <code>CLOCC</code> homepage.
+<code>PORT</code> uses <code>mk:defsystem</code>, which is a part of
+<code>CLOCC</code>.
+
+
+<h2>Files</h2>
+
+<p>This Common Lisp sources include the following files (in the
+alphabetical order):
+
+<p><table border=2 cellpadding=2>
+<tr><th>file</th><th>description</th></tr>
+<tr><th align=left><code>ext.lisp</code></th>
+    <td align=left>miscellaneous minor extensions, used everywhere</td></tr>
+<tr><th align=left><code>net.lisp</code></th>
+    <td align=left>sockets, socket servers, hostname resulution etc</td></tr>
+<tr><th align=left><code>proc.lisp</code></th>
+    <td align=left>LispM-style portable multiprocessing</td></tr>
+<tr><th align=left><code>shell.lisp</code></th>
+    <td align=left>shell access, pipes</td></tr>
+<tr><th align=left><code>sys.lisp</code></th>
+    <td align=left>getenv, arglist, class-slot-list, chdir, etc</td></tr>
+</table>
+
+<h2>License</h2>
+
+<p>This is distributed under the <a
+href="http://www.gnu.org/copyleft/lgpl.html">GNU LGPL</a>.
+
+
+<h2>Compiling</h2>
+
+<p>To use the library, type <code>"make system"</code>, which should
+compile all the files.  Alternatively, you can issue the
+<code>(mk:compile-system "port")</code> command yourself.
+Then you can dump your images.
+
+<h2>Comments</h2>
+
+<p><a href="mailto:clocc-devel@lists.sourceforge.net">Comments</a>
+and <a
+href="https://sourceforge.net/bugs/?func=addbug&group_id=1802">bug
+reports</a> are welcome.
+
+<br><br><br><hr>
+
+<p><table width="100%"><tr><td align="left"><a href="mailto:sds@gnu.org"><img
+ align="left" src="data/mbox.gif" width=29 height=34 border=0
+ alt="mailbox"></a><a href="sds.html">Sam Steingold</a><br>
+<address><a href="mailto:sds@gnu.org">sds@gnu.org</a></address>
+<td align="right">created: <strong>1999-01-01</strong></table>
+
+</body>
+</html>

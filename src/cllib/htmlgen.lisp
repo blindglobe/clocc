@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.15 2002/04/03 19:25:29 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.16 2002/07/22 14:15:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -85,7 +85,7 @@ Both print a tag but the second one does not do a `terpri' afterwards."
           (with-tag (:html)
             (with-tag (:head ,@head)
               (with-tag (:meta ,@meta))
-              (with-tag (:link :rev 'made :href ,mailto))
+              (with-tag (:link :rev "made" :href ,mailto))
               (with-tag (:title) (princ ,title ,var)))
             (with-tag (:body)
               ,@body

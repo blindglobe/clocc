@@ -717,6 +717,10 @@ main-loop
 			     (cdddr x)
 			     (cdr x))))
 		*declared_vbles*))
+  ;; If we declared an intrinsic function name, remove that from the
+  ;; list of declared variables.
+  (setf *declared_vbles*
+	(set-difference *declared_vbles* *intrinsic_function_names*))
   (let ((type (find (first x) '((integer integer4)
 				(integer4 integer4)
 				(integer2 integer2)

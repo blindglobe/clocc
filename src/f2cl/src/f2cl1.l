@@ -647,7 +647,8 @@ main-loop
 (defun parse-subr-definition (bindings) 
   (prog (arg-list)
    (setq subprog_name (variable-value '%name bindings))
-   (setq arg-list (remove '|,| (variable-value '%arg-list bindings)))
+   (setq arg-list (mapcar #'check-t-and-pi
+			  (remove '|,| (variable-value '%arg-list bindings))))
    (setq subprog-arglist arg-list)
    (return (list 'defun subprog_name 
                     (if arg-list arg-list nil)))))

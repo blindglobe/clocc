@@ -1,0 +1,34 @@
+#!/bin/sh
+
+if [[ "$UID" != 0 ]] ; then
+ echo You need to be root to run $0
+ exit 1
+fi
+
+if [[ -z "$1" ]] ; then
+ cat <<EOF
+$0 compiler-name 
+
+un-registers a Common Lisp compiler to the 
+Common-Lisp-Controller system.
+EOF
+    exit 1
+fi
+
+
+FILE="/usr/lib/common-lisp/bin/$1.sh"
+
+if [[ ! -r "$FILE" ]] ; then
+  cat <<EOF
+$0: No implementation of the name $1 is registered 
+EOF
+  exit 2
+fi
+
+# Just remove the damn subtree
+
+rm -rf /usr/lib/common-lisp/${1}/
+
+cat <<EOF
+$0: Compiler $1 uninstalled
+EOF

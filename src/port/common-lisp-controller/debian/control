@@ -1,0 +1,15 @@
+Source: common-lisp-controller
+Section: devel
+Priority: optional
+Build-Depends: debhelper
+Maintainer: Peter Van Eynde <pvaneynd@debian.org>
+Standards-Version: 3.1.1
+
+Package: common-lisp-controller
+Architecture: all
+Depends: bash (>= 2.04-9), debianutils (>= 1.7)
+Conflicts: cmucl (<< 2.5.2)
+Description: This is a common lisp source and compiler manager.
+ With this package you can install and manage 
+ common lisp sources and compilers and have
+ a working defsystem system.

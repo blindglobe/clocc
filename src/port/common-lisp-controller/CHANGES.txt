@@ -1,0 +1,17 @@
+PVE 10-MAY-2001
+    Added the install-defsystem support.
+
+PVE 1-MAY-2001
+    Added common-lisp-controller.lisp with init-common-lisp-controller
+    and add-translation function
+
+    Move defsystem to common-lisp-controller, added the banner
+    feature.
+
+    INCOMPATIBLE CHANGE: now all systems should use
+    cl-library:;foo;bar.lisp not anymore:
+    cl-library:foo;bar.lisp as the last one should translate to
+    /foo/bar.lisp while the first one translates to
+    <root-of-cl-library>/foo/bar.lisp.
+
+  

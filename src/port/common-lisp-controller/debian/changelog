@@ -1,0 +1,62 @@
+common-lisp-controller (2.0) unstable; urgency=low
+
+  * Now with new target: install-defsystem.
+  * Now allows normal file targets, fixes: #97257
+  * Now knows about .c files. Fixes: #97258
+  * Note that -noinit should be used. Fixes: #99255
+  * Fixed sbcl buglet. Fixes: #99403 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 31 May 2001 21:06:54 +0200
+
+common-lisp-controller (1.6) unstable; urgency=low
+
+  * Now for all architectures. Fixes: #96769 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  9 May 2001 17:41:38 +0200
+
+common-lisp-controller (1.5) unstable; urgency=low
+
+  * changed copyright to LGPL
+  * Fixed typo
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  9 May 2001 17:41:15 +0200
+
+common-lisp-controller (1.4) unstable; urgency=low
+
+  * Just remove the subtree of a compiler. This seems a better idea.
+  * Added examples for hemlock and stuff.
+  * Added banners.
+  * defsystem is now a part of common-lisp-controller
+  * Fixed -f problem, now is -r thanks to rahul on #lisp 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  1 May 2001 12:37:49 +0200
+
+common-lisp-controller (1.3) unstable; urgency=low
+
+  * Added bash dependency
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 20 Feb 2001 21:56:55 +0100
+
+common-lisp-controller (1.2) unstable; urgency=low
+
+  * The scripts should be executable you dofus!
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 12 Feb 2001 20:38:21 +0100
+
+common-lisp-controller (1.1) unstable; urgency=low
+
+  * Fixed missing clean target.
+  * Now installs in correct directory, Fixes: Bug#85355.
+  * Now includes programs :-) Fixes: Bug#85310. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun, 11 Feb 2001 16:50:03 +0100
+
+common-lisp-controller (1.0) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 12 Sep 2000 08:05:34 +0200
+
+Local variables:
+mode: debian-changelog
+End:

@@ -1,0 +1,44 @@
+Q1: I want to hack my programs! How can I have my own repository?
+
+A1: Just create a shadow-tree with symlinks or CVS in you
+homedirectory and add an overriding translation in you startup
+script. Like:
+
+; my ~/.cmucl-init.cl file:
+(load "/var/lib/cmucl/site-init.lisp")
+
+(format t "Hello Peter!~%")
+
+(add-translation :cl-library
+                 "/home/pvaneynd/hemlock/"
+                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
+                                             :wild-inferiors)
+                                :type "FASL"
+                                :case :common))
+(add-translation :cl-library
+                 "/home/pvaneynd/hemlock/"
+                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
+                                             :wild-inferiors)
+                                :type "X86F"
+                                :case :common))
+(add-translation :cl-library
+                 "/home/pvaneynd/hemlock/"
+                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
+                                             :wild-inferiors)
+                                :type "ERR"
+                                :case :common))
+(add-translation :cl-library
+                 "/home/pvaneynd/hemlock/"
+                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
+                                             :wild-inferiors)
+                                :type "BIN"
+                                :case :common))
+
+Q2: This sucks: register-common-lisp-source foo worked, but now
+(require :foo) doesn't!
+
+A2: Maybe the build failed. Make your lisp stop on errror. For cmucl
+comment the "-batch -quiet" parameters out in
+/usr/lib/common-lisp/bin/cmucl-*.sh. Then you'll be droped in the
+debugger.
+

@@ -1,0 +1,71 @@
+#!/bin/sh
+
+if [[ "$UID" != 0 ]] ; then
+ echo You need to be root to run $0
+ exit 1
+fi
+
+# first check if there is at least a package-name:
+
+if [[ -z "$1" ]] ; then
+ cat <<EOF
+$0 package-name
+
+registers a Common Lisp source tree to the 
+Common-Lisp-Controller system.
+EOF
+    exit 1
+fi
+
+FILE="/usr/share/common-lisp/systems/$1.system"
+SOURCENAME="/usr/share/common-lisp/source/$1"
+if [ ! -d "$SOURCENAME" -o  ! -h "$SOURCENAME" ] ; then    
+    cat <<EOF
+$0: $SOURCENAME does not exist.
+
+This is where I expected package $1 to be.
+EOF
+    exit 2
+fi
+
+if [[ ! -r "$FILE" ]] ; then
+    cat <<EOF
+$0: $FILE does not exist or is not
+a regular file. This is needed to
+register the $1 package.
+EOF
+    exit 3
+fi
+
+# now recompile the stuff
+chown -R nobody /usr/lib/common-lisp/
+
+su --shell=/bin/sh --command="
+umask 022
+for compiler in /usr/lib/common-lisp/bin/*.sh ; do
+    if [[ -r \$compiler ]] ; then
+     i=\${compiler##.*/}
+     i=\${i%.sh}
+     echo Recompiling for \${i##*/}
+     if [ ! -x \"\$compiler\" ] ; then
+ 	cat <<EOF
+$0: to recompile $1 with \$(basename \$compiler)
+I should use \$compiler, but that script does not
+exist or is not executable for me
+EOF
+ 	exit 4
+     fi
+     echo Recompiling package $0 for \$i
+     sh  \"\$compiler\" rebuild \"$1\"
+     echo
+     echo Done rebuilding
+    fi
+done" nobody || (echo Installation failed ; exit 3)
+
+chown -R root.root /usr/lib/common-lisp/
+chmod a+r,-s -R /usr/lib/common-lisp/
+
+cat <<EOF
+$0: Package $1 installed
+EOF
+

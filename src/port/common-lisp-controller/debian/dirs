@@ -1,0 +1,9 @@
+usr/sbin
+usr/share/common-lisp
+usr/share/common-lisp/source
+usr/share/common-lisp/repositories
+usr/share/common-lisp/systems
+usr/share/common-lisp/source/defsystem
+usr/share/common-lisp/source/common-lisp-controller
+usr/lib/common-lisp
+usr/lib/common-lisp/bin

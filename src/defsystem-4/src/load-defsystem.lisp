@@ -230,6 +230,9 @@
     (let ((*load-verbose* t))
       (dolist (f *mk-defsystem-lp-filenames*)
 	(load-compiling-if-needed f)))
+
+    (pushnew :mk-defsystem-4 *features*)
+    (provide :mk-defsystem-4)
     ))
 
 

@@ -2,13 +2,14 @@
 ;;; <http://www.public.iastate.edu/~ddoty/HungarianAlgorithm.html>
 ;;; <http://216.249.163.93/bob.pilgrim/445/munkres.html>
 ;;; <http://www.math.uwo.ca/~mdawes/courses/344/kuhn-munkres.html>
+;;; <http://netlib.bell-labs.com/netlib/toms/548.gz>
 ;;; Handbook Of Graph Theory, Algorithm 11.3.2, p. 1110
 ;;;
 ;;; Copyright (C) 2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.1 2004/06/07 21:07:58 sds Exp $
+;;; $Id: munkres.lisp,v 2.2 2004/06/07 21:39:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
 (defpackage :cllib)

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -8,20 +8,23 @@
 (in-package "MK4")
 
 (defparameter *central-registry*
-  (make-pathname :directory '(:absolute
-			      "usr"
-			      "local"
-			      "common-lisp"
-			      "systems")))
+  (list (make-pathname :directory '(:absolute
+				    "usr"
+				    "local"
+				    "common-lisp"
+				    "systems")))
+  "List of paths to check for system files.")
 
 (defvar *system-file-extension* "system")
 
-
 (defun system-registry-paths (&optional paths-list)
   (append (mapcar #'pathname paths-list)
-	  (list *central-registry*)
+	  *central-registry*
 	  (list (cl.env:cwd))))
 
+(defun add-registry-location (pathname)
+  "Adds a path to the central registry."
+  (push pathname *central-registry*))
 
 (define-condition system-definition-file-not-found (file-error)
   ((name :reader file-not-found-system-name

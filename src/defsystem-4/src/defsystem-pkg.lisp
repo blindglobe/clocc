@@ -65,6 +65,7 @@
   	   )
 
   (:export #:*central-registry*
+	   #:add-registry-location
 	   #:*bin-subdir*
 	   #:machine-type-translation
 	   #:software-type-translation

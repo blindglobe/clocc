@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; load-defsystem.lisp --
 ;;;
@@ -28,7 +28,6 @@
     (make-pathname :host (pathname-host *load-truename*)
 		   :device (pathname-device *load-truename*)
 		   :directory (pathname-directory *load-truename*)
-		   ;; :case :common ; Do we need this?
 		   )))
 
 ;;; The following three parameters are tested IN SEQUENCE and
@@ -93,6 +92,7 @@
     #+(or kcl ibcl akcl ecl gcl) "MAKE-DEFSYSTEM:impl-dependent;kcl-derivates"
 
     "MAKE-DEFSYSTEM:defsystem"
+    "MAKE-DEFSYSTEM:registry"
     "MAKE-DEFSYSTEM:defsystem-protocol"
     "MAKE-DEFSYSTEM:actions"
     ;; "MAKE-DEFSYSTEM:provide-require"

@@ -1,10 +1,10 @@
 ;;; Gnuplot (http://www.gnuplot.org/) interface
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2004 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.12 2004/05/08 21:27:01 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.13 2004/07/14 20:27:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -29,7 +29,7 @@
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
           *gnuplot-file*
           plot-output +plot-term-screen+ +plot-term-printer+ +plot-term-file+
-          plot-term make-plot-term
+          plot-term make-plot-term plot-histogram
           +plot-timestamp+ directive-term make-plot-stream
           with-plot-stream plot-dated-lists plot-dated-lists-depth
           plot-lists plot-lists-arg plot-error-bars plot-functions))
@@ -41,12 +41,12 @@
 (defcustom *plot-default-backend* symbol :gnuplot
   "The default plot backend designator.")
 (defcustom *gnuplot-path* simple-string
-  #+(or win32 mswindows) "d:/gnu/gp373w32/pgnuplot.exe"
+  #+(or win32 mswindows) "d:/gnu/gp400w32/bin/pgnuplot.exe"
   #+unix "gnuplot"
   "*The path to the graphics-capable gnuplot executable.
 This must be either a full path or a name of an executable in your PATH.")
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
-  "*The gnuplot epoch - 2000-1-1.")
+  "*The gnuplot epoch - 2000-01-01.")
 (eval-when (compile load eval)  ; CMUCL
 (defcustom *gnuplot-printer* simple-string
   (format nil
@@ -111,16 +111,18 @@ according to the given backend")
   (target nil :type (or null string pathname))))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
-  (declare (ignorable backend))
   (format out "set terminal ~a~@[ ~a~]~%"
           (pltm-terminal pt) (pltm-terminal-options pt))
-  (if (pltm-target pt)
-      (format out "set output '~a'~%"
-              (make-pathname :type (if (string= "postscript"
-                                                (pltm-terminal pt))
-                                       "ps" (pltm-terminal pt))
-                             :defaults (pltm-target pt)))
-      (format out "set output~%")))
+  (let ((target (pltm-target pt)))
+    (typecase target
+      (null (format out "set output~%"))
+      (symbol (format out "set output '~a'~%" (symbol-value target)))
+      ((string pathname)
+       (format out "set output '~a'~%"
+               (make-pathname :type (if (string= "postscript"
+                                                 (pltm-terminal pt))
+                                        "ps" (pltm-terminal pt))
+                              :defaults target))))))
 
 (defconst +plot-term-screen+ plot-term
   (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows")
@@ -128,7 +130,7 @@ according to the given backend")
 (defconst +plot-term-printer+ plot-term
   (make-plot-term :terminal "postscript"
                   :terminal-options "landscape 'Helvetica' 9"
-                  :target *gnuplot-printer*)
+                  :target '*gnuplot-printer*)
   "The `plot-term' object sending the plot to the printer.")
 (defconst +plot-term-file+ plot-term
   (make-plot-term :terminal "postscript"
@@ -136,6 +138,9 @@ according to the given backend")
                   :target *gnuplot-file*)
   "The `plot-term' object sending the plot to the printer.")
 
+(defun ps-terminal (file)
+  (make-plot-term :target file :terminal "postscript"
+                  :terminal-options "landscape 'Helvetica' 9"))
 (defgeneric directive-term (directive)
   (:documentation "Return the PLOT-TERM object appropriate for this directive")
   (:method ((directive t))
@@ -145,14 +150,8 @@ according to the given backend")
   (:method ((directive (eql :wait))) +plot-term-screen+)
   (:method ((directive (eql :print))) +plot-term-printer+)
   (:method ((directive (eql :file))) +plot-term-file+)
-  (:method ((directive string))
-    (make-plot-term :terminal "postscript"
-                    :terminal-options "landscape 'Helvetica' 9"
-                    :target directive))
-  (:method ((directive pathname))
-    (make-plot-term :terminal "postscript"
-                    :terminal-options "landscape 'Helvetica' 9"
-                    :target directive)))
+  (:method ((directive string)) (ps-terminal directive))
+  (:method ((directive pathname)) (ps-terminal directive)))
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (plot-timestamp (:conc-name plts-))
@@ -162,7 +161,6 @@ according to the given backend")
 
 (defmethod plot-output ((pt plot-timestamp) (out stream)
                         (backend (eql :gnuplot)))
-  (declare (ignorable backend))
   (format out "set timestamp \"~a\" ~d,~d '~a'~%" (plts-fmt pt)
           (car (plts-pos pt)) (cdr (plts-pos pt)) (plts-font pt)))
 
@@ -206,7 +204,6 @@ according to the given backend")
                     "\""))))
 
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
-  (declare (ignorable backend))
   (let ((name (plax-name pa)))
     (format out "set format ~a \"~a\"~%" name (plax-fmt pa))
     (format out "set ~alabel \"~a\"~%" name (plax-label pa))
@@ -218,7 +215,7 @@ according to the given backend")
       (if logscale
           (format out "set logscale ~a~@[ ~f~]~%" name
                   (unless (eq logscale t) logscale))
-          (format out "set nologscale ~a~%" name)))
+          (format out "unset logscale ~a~%" name)))
     (let ((range (plax-range pa)))
       (when range
         (format out "set ~arange [~a:~a]~%" name
@@ -232,10 +229,10 @@ according to the given backend")
   (flet ((set-opt (nm par)
            (case par
              ((t) (format out "set ~a~%" nm))
-             ((nil) (format out "set no~a~%" nm))
+             ((nil) (format out "unset ~a~%" nm))
              (t (format out "set ~a ~a~%" nm (%plotout par))))))
     (set-opt "border" (plsp-border ps))
-    (set-opt "data style" (plsp-data-style ps))
+    (set-opt "style data" (plsp-data-style ps))
     (set-opt "title" (plsp-title ps))
     (set-opt "key" (plsp-legend ps))
     (set-opt "grid" (plsp-grid ps))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.11 2000/05/12 18:36:16 sds Exp $
+;;; $Id: xml.lisp,v 2.12 2000/05/24 23:02:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -114,9 +114,11 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct xml-comment (data "" :type string))
+(defstruct (xml-comment #+cmu (:print-function print-struct-object))
+  (data "" :type string))
 
-(defstruct (xml-obj (:conc-name xmlo-))
+(defstruct (xml-obj (:conc-name xmlo-)
+                    #+cmu (:print-function print-struct-object))
   (name nil :type symbol)       ; in package XML-TAGS
   (attribs nil :type list)      ; alist of attrib/value
   (data nil :type list))        ; list of objects in the tag

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.8 2000/05/15 18:43:26 sds Exp $
+;;; $Id: geo.lisp,v 2.9 2000/05/24 23:02:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -72,7 +72,8 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (geo-data (:conc-name geod-))
+(defstruct (geo-data (:conc-name geod-)
+                     #+cmu (:print-function print-struct-object))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0))	; population
   (crd #C(0d0 0d0) :type (complex double-float)) ; coordinates
@@ -157,7 +158,7 @@ and return a list of geo-data."
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (country)
+(defstruct (country #+cmu (:print-function print-struct-object))
   "The country structure - all the data about a country you can think of."
   (name "" :type simple-string)	; name
   (fips nil :type symbol)	; FIPS PUB 10-4 code (US Dept of State)

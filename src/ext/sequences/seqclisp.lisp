@@ -3,7 +3,7 @@
 ;;; Copyright (C) 1988, 1992 Bruno Haible
 ;;; This is Free Software, published under the GNU General Public License v2.
 
-; Dummy-Package für Sequences in CLISP
+; dummy-package for sequences in CLISP
 ; Bruno Haible 24.04.1992
 
 (provide 'sequences)
@@ -33,7 +33,7 @@
          (LET ((,seqvar ,sequenceform))
            (LET ((,var NIL))
              ,@declarations
-             ,var ; var wird nur zum Schein ausgewertet
+             ,var ; var is only seemingly evaluated
              (MAP NIL
                   #'(LAMBDA (,var) ,@declarations (TAGBODY ,@body-rest))
                   ,seqvar
@@ -70,15 +70,15 @@
   (name &key init upd endtest fe-init fe-upd fe-endtest access access-set
              copy length make elt set-elt init-start fe-init-end
   )
-  (unless upd (error ":UPD muß angegeben werden."))
-  (unless fe-upd (error ":FE-UPD muß angegeben werden."))
-  (unless access (error ":ACCESS muß angegeben werden."))
-  (unless access-set (error ":ACCESS-SET muß angegeben werden."))
-  (unless endtest (error ":ENDTEST muß angegeben werden."))
-  (unless fe-endtest (error ":FE-ENDTEST muß angegeben werden."))
-  (unless make (error ":MAKE muß angegeben werden."))
+  (unless upd (error ":UPD must be specified."))
+  (unless fe-upd (error ":FE-UPD must be specified."))
+  (unless access (error ":ACCESS must be specified."))
+  (unless access-set (error ":ACCESS-SET must be specified."))
+  (unless endtest (error ":ENDTEST must be specified."))
+  (unless fe-endtest (error ":FE-ENDTEST must be specified."))
+  (unless make (error ":MAKE must be specified."))
   (unless (or init init-start)
-    (error "Es muß :INIT oder :INIT-START angegeben werden.")
+    (error ":INIT or :INIT-START must be specified.")
   )
   (cond ((and init (not init-start))
          (setq init-start
@@ -111,7 +111,7 @@
          ) )
   ) )
   (unless (or fe-init fe-init-end)
-    (error "Es muß :FE-INIT oder :FE-INIT-END angegeben werden.")
+    (error ":FE-INIT or :FE-INIT-END must be specified.")
   )
   (cond ((and fe-init (not fe-init-end))
          (setq fe-init-end
@@ -128,7 +128,7 @@
            `#'(lambda () (funcall ,fe-init-end (funcall ,length)))
   )     ))
   (unless copy
-    (warn ":COPY nicht angegeben, interpretiere als #'IDENTITY")
+    (warn ":COPY not specified, interprete as #'IDENTITY")
     (setq copy '#'identity)
   )
   `(DEFINE-SEQUENCE-1 ,name

@@ -1,3 +1,9 @@
+common-lisp-controller (3.31) unstable; urgency=low
+
+  * Add check in clc-autobuild-check for empty file
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 20:54:58 -0600
+
 common-lisp-controller (3.30) unstable; urgency=low
 
   * NMU

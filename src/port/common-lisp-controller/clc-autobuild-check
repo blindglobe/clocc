@@ -1,10 +1,11 @@
-#!/bin/bash -e
+#!/bin/sh 
+set -e
 # Checks if a package should be autobuild for an implementation
 # Written by Kevin Rosenberg <kmr@debian.org>
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.1 $'
+pversion='$Revision: 1.2 $'
 
 usage()
 {
@@ -24,15 +25,18 @@ ab_file_yes()
 {
     file=$1
     # file exists and is empty, equivalent to yes
-    if [[ -f $file && ! -s $file ]]; then
+    if [ -f $file ] && [ ! -s $file ]; then
 	true
 	return
     fi
     if [ -r $file ]; then
-	first_line=$(cat $file | head -1 | tr "[A-Z]" "[a-z]")
-	if [ "$(expr "$first_line" : ".*\(yes\).*")" ]; then
-	    true
-	    return
+	first_line="$(cat $file | head -1)"
+	if [ "$first_line" ]; then
+	    first_line =  "$(echo "$first_line" | tr "[A-Z]" "[a-z]")"
+	    if [ "$(expr "$first_line" : ".*\(yes\).*")" ]; then
+		true
+		return
+	    fi
 	fi
     fi
     false

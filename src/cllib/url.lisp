@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.55 2005/01/26 19:32:52 sds Exp $
+;;; $Id: url.lisp,v 2.56 2005/01/26 19:34:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -956,7 +956,7 @@ This is mostly a debugging function, to be called interactively."
   "Read everything from the HTTP socket SOCK, until a blank line."
   (loop :for line = (read-line sock nil nil)
         :while (and line (plusp (length line))
-                    #+cmu (not (string= line (string #\Return))))
+                    (not (string= line #.(string #\Return))))
         :collect line))
 
 ;;;###autoload

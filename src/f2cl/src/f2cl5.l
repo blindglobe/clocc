@@ -134,6 +134,18 @@
 	 (Error "What happened?")))
   exprs)
 
+;; This takes a list of individual Lisp declarations and combines them
+;; into one based on the declared type.  Thus
+;;
+;;  (declare (type fixnum x))
+;;  (declare (type fixnum y))
+;;  (declare (type single-float z))
+;;
+;; becomes
+;;
+;;  (declare (type fixnum x y)
+;;           (type single-float z))
+#+nil
 (defun pretty-decls (decls)
   (let ((type-alist '()))
     (map nil #'(lambda (d)
@@ -152,6 +164,21 @@
       `((declare ,@(mapcar #'(lambda (v)
 			       `(type ,@v))
 			   type-alist))))))
+
+(defun pretty-decls (decls)
+  (let ((type-hash (make-hash-table :test 'equal)))
+    (dolist (decl decls)
+      (destructuring-bind (dcl (type v-type var))
+	  decl
+	(declare (ignore dcl type))
+	(let ((val (gethash v-type type-hash)))
+	  (setf (gethash v-type type-hash)
+		(push var val)))))
+    (let ((dec '()))
+      (maphash #'(lambda (key val)
+		   (push `(type ,key ,@val) dec))
+	       type-hash)
+      `((declare ,@dec)))))
 
 (defun lookup-vble-type (vble)
   ;;(format t "lookup-vble: ~a~%" vble)
@@ -424,7 +451,9 @@
 		   other-fcn-decls
 		   stmt-fcn-decls
 		   arg-fcn-decls
-		   common-block-structs)
+		   common-block-structs
+		   key-params
+		   key-params-decls)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -472,11 +501,7 @@
 			   (setf *undeclared_vbles*
 				 (remove vble *undeclared_vbles*))
 			   decl))
-		     (set-difference arglist *external_function_names*))
-	     ;; Declare parameters
-	     (mapcar #'(lambda (param)
-			 (make-declaration (car param)))
-		     *key_params*))))
+		     (set-difference arglist *external_function_names*)))))
 
      (when *relaxed-array-decls*
        ;; Old Fortran practice often declared arrays to functions to
@@ -644,11 +669,17 @@
      ;;(format t "*data-init* after : ~S~%" *data-init*)
      
      (setq arglist (mapcar #'check-t-and-pi arglist))
-     (setq *key_params* (mapcar #'(lambda (x) 
+
+     ;;(format t "*key_params* = ~S~%" *key_params*)
+     ;;(format t "key-params = ~S~%" key-params)
+     (setq key-params (mapcar #'(lambda (x) 
                                   (list (check-t-and-pi (car x)) (cadr x))) 
 			      *key_params*))
-     (setq arglist (append arglist 
-			   (if *key_params* (append '(&key) *key_params*))))
+     (setq key-params-decls (mapcar #'(lambda (param)
+				       (make-declaration (car param)))
+				   *key_params*))
+     ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     
      ;;(format t "local-vbles     = ~S~%" local-vbles)
      ;;(format t "vbles-decls     = ~S~%" vble-decls)
      ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
@@ -729,17 +760,20 @@
 	       (if (and (or *save_vbles* *auto-save-data*)
 			save-inits)
 		   (append
-		    `(let ,save-inits
-		      ,@saved-decls
-		      ,@*data-init*
+		    `(let ,key-params
+		      ,@key-params-decls
+		      (let ,save-inits
+			,@saved-decls
+			,@*data-init*
+			(defun ,(cadr defun-bit) ,arglist
+			  ,@formal-arg-decls 
+			  ,prog-bit))))
+		   (append
+		    `(let ,key-params
+		      ,@key-params-decls
 		      (defun ,(cadr defun-bit) ,arglist
 			,@formal-arg-decls 
-			,prog-bit)))
-		   (append
-		    defun-bit 
-		    `(,arglist)
-		    formal-arg-decls 
-		    `(,prog-bit)))))))
+			,prog-bit))))))))
 
 
 
@@ -814,13 +848,15 @@
 	     ((null type-clauses) )
 	   (setq type (caar type-clauses))
 	   ;;(format t "type-clauses = ~S~%" type-clauses)
-	   ;;(format t "type = ~A~%" type)
+	   ;;(format t "looping: type = ~A~%" type)
 	   (cond ((and (listp type)
 		       (eq (car type) 'CHARACTER))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return `(,vble_name ,
 				(make-char-init (car decl) type)))))
 		 ((eq type 'ARRAY)
+		  ;;(format t "array type-clauses = ~S~%" (cdar type-clauses))
+		  ;;(format t "array decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return 
 			`(,vble_name 
@@ -837,8 +873,8 @@
 			      ,(make_make-array_stmt (cadar decl) t))
 			    `(,vble_name nil)))))
 		 (t
-		  ;;(format t "decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
-		  ;;(format t "init-val = ~S~%" init-val)
+		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
+		  ;;(format t "default init-val = ~S~%" init-val)
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return 
 			(if (cdar decl) 
@@ -1052,13 +1088,17 @@
          ((atom (cadr decl)) ; scalr, length spec.
           `(make-array '(,(cadr decl)) :element-type 'base-char))
          ((cddr decl) ; array with length spec
-          `(make-array ',(remove '|,| (cadr decl)) :element-type
-                                      '(simple-array base-char '(,(caddr decl)))))
+	  (let ((dims (remove '|,| (cadr decl))))
+	    (if (every #'numberp dims)
+		`(make-array ',dims :element-type '(simple-array base-char (,(caddr decl))))
+		`(make-array (list ,@dims) :element-type '(simple-array base-char (,(caddr decl)))))))
          ((equal (cadr decl) '(*)) ; unspecified length spec
            "")
          (t ; array, no length spec.
-           `(make-array ',(remove '|,| (cadr decl)) :element-type 
-                                      '(simple-array base-char ',(cdr type))))))
+	  (let ((dims (remove '|,| (cadr decl))))
+	    (if (every #'numberp dims)
+		`(make-array ',dims :element-type '(simple-array base-char ,(cdr type)))
+		`(make-array (list ,@dims) :element-type '(simple-array base-char ,(cdr type))))))))
 
 
 (defun get-implicit-type (vble)

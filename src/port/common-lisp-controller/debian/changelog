@@ -1,3 +1,10 @@
+common-lisp-controller (3.91) unstable; urgency=low
+
+  * Use fboundp rather than symbol-function when checking for the
+  existence of sb-ext:without-package-locks
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue, 13 Jul 2004 09:22:27 -0600
+
 common-lisp-controller (3.90) unstable; urgency=low
 
   * Support SBCL package locks

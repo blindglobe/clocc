@@ -358,7 +358,7 @@
   (progn
     (push 'clc-require sb-ext:*module-provider-functions*)
     ;; Overcome the effect of mk-defsystem3's override of 'cl:require
-    (if (symbol-function 'sb-ext:without-package-locks)
+    (if (fboundp 'sb-ext:without-package-locks)
 	(sb-ext:without-package-locks
 	 (setf (symbol-function 'cl:require) *original-require-function*))
 	(setf (symbol-function 'cl:require) *original-require-function*)))

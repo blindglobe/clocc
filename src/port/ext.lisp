@@ -8,15 +8,22 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.1 1999/11/24 17:07:09 sds Exp $
+;;; $Id: ext.lisp,v 1.2 2000/02/10 17:53:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 ;;; $Log: ext.lisp,v $
+;;; Revision 1.2  2000/02/10 17:53:40  sds
+;;; (+eof+): new constant (for `string-tokens')
+;;; (string-tokens): new function (for net)
+;;;
 ;;; Revision 1.1  1999/11/24 17:07:09  sds
 ;;; Cross-implementation Portability System
 ;;;
 ;;;
 
 (in-package :cl-user)
+
+(eval-when (load compile eval)
+  #+(or clisp gcl) (declaim (declaration values)))
 
 ;;;
 ;;; Conditions
@@ -97,6 +104,26 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
     #-(or allegro clisp gcl)
     (error 'not-implemented :proc (list 'quit))))
 
+(defconst +eof+ cons (cons nil nil)
+  "*The end-of-file object.
+To be passed as the third arg to `read' and checked against using `eq'.")
+
+(defun string-tokens (string &key (start 0) max)
+  "Read from STRING repeatedly, starting with START, up to MAX tokens.
+Return the list of objects read and the final index in STRING.
+Binds `*package*' to the keyword package,
+so that the bare symbols are read as keywords."
+  (declare (type (or null fixnum) max) (type fixnum start))
+  (do ((beg start) obj res (num 0 (1+ num))
+       (*package* (find-package "KEYWORD")))
+      ((and max (= max num)) (values (nreverse res) beg))
+    (declare (fixnum beg num))
+    (setf (values obj beg)
+          (read-from-string string nil +eof+ :start beg))
+    (if (eq obj +eof+)
+        (return (values (nreverse res) beg))
+        (push obj res))))
+
 ;;;
 ;;; Function Compositions
 ;;;
@@ -132,5 +159,5 @@ All the values from nth function are fed to the n-1th."
             (lambda (&rest args) (multiple-value-call f0 (apply f1 args))))
           functions :initial-value #'identity))
 
-
+(provide "ext")
 ;;; file ext.lisp ends here

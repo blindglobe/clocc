@@ -345,7 +345,7 @@ Tag being parsed:| (cadr x))))
 
        ;; Now convert array references to an array slice, as
        ;; appropriate.
-       (setf args (maybe-convert-array-ref-to-slice args))
+       (setf args (maybe-convert-array-ref-to-slice args fname))
 
        ;; Functions can modify the arguments in addition to returning
        ;; a value.  We need to handle this like a subroutine call, as
@@ -430,8 +430,14 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.31 2002/09/13 17:50:19 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.32 2003/11/13 22:16:59 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.32  2003/11/13 22:16:59  rtoy
+;;; Try to be smarter about generating args to functions, which is an
+;;; issue if the arg is an element of an array.  If we know the declared
+;;; types of the function, try to generate the appropriate arg, meaning
+;;; either a single element of the array or a slice of the array.
+;;;
 ;;; Revision 1.31  2002/09/13 17:50:19  rtoy
 ;;; From Douglas Crosher:
 ;;;

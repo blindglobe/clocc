@@ -1,3 +1,6 @@
+# $Id: Makefile,v 1.9 2000/05/23 17:28:28 sds Exp $
+# $Source: /cvsroot/clocc/clocc/Makefile,v $
+
 TOP := $(shell pwd)
 LISPEXT := lisp
 SOURCES := clocc
@@ -22,8 +25,8 @@ clocc-top.$(FASLEXT): $(TOP_DEP)
 
 endif
 
-Change.log:
-	@rcs2log > $@ 2>/dev/null
-	@egrep "^[a-zA-Z0-9]" $@ | cut -d'<' -f2 | cut -d@ -f1 | \
+cvs.log: force
+	cvs log > $@ 2>/dev/null
+	@fgrep "author:" $@ | sed 's/^.*author: \([^;]*\);.*$$/\1/' | \
 		sort | uniq -c | sort | sed 's/^/    /';
-	@egrep "^[a-zA-Z0-9]" $@ | wc -l;
+	@fgrep "author:" $@ | wc -l;

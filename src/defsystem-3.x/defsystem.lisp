@@ -954,7 +954,7 @@
 		  ;; a load error.
 		  (setf pathname nil))))
 	  ;; Now that we've got the list of pathnames, let's load them.
-	  (dolist (pname pathname T)
+	  (dolist (pname pathname t)
 	    (load pname :verbose nil)))))))
 
 ;;; ********************************

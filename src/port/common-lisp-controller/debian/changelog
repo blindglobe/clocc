@@ -1,3 +1,10 @@
+common-lisp-controller (3.72) unstable; urgency=low
+
+  * postrm: surround #DEBHELPER# with set +e/set -e to work-around debconf
+  error (closes:204048)  
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  3 Aug 2003 21:23:18 -0600
+
 common-lisp-controller (3.71) unstable; urgency=low
 
   * Yes another attempt to work around bug #183960

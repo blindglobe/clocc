@@ -150,19 +150,36 @@
 
 (defun get-fun-arg-type (arg)
   (cond ((symbolp arg)
-	 (lookup-vble-type arg))
+	 (case arg
+	   ((%false% %true%)
+	    t)
+	   (t
+	    (lookup-vble-type arg))))
 	((listp arg)
 	 ;; We have an expression of some type
-	 (cond ((eq 'fref (first arg))
-		;; Look up array references
-		(get-fun-arg-type (second arg)))
-	       ((member (first arg) '(+ - * /))
-		;; Basic arithmetic operations.  (Division is probably
-		;; wrong.)
-		(fortran-contagion (get-fun-arg-type (second arg))
-				   (get-fun-arg-type (third arg))))
-	       (t
-		(get-fun-arg-type (first arg)))))
+	 (let ((fun (first arg)))
+	   (cond ((eq 'fref fun)
+		  ;; Look up array references
+		  (get-fun-arg-type (second arg)))
+		 ((member fun '(+ - * f2cl/ expt))
+		  ;; Basic arithmetic operations.
+		  (fortran-contagion (get-fun-arg-type (second arg))
+				     (get-fun-arg-type (third arg))))
+		 ((member fun '(sin cos tan
+				asin acos atan atan2
+				exp flog alog10
+				fsqrt))
+		  ;; Generic functions
+		  (get-fun-arg-type (second arg)))
+		 ((member fun '(dsin dcos dtan
+				dasin dacos datan datan2
+				dexp dlog dlog10
+				dble
+				dsqrt))
+		  ;; Double-precision functions
+		  'double-float)
+		 (t
+		  (get-fun-arg-type fun)))))
 	(t
 	 (type-of arg))))
 

@@ -202,8 +202,12 @@ Returns nothing"
         ;; then defsystem:
         (compile-and-load  "cl-library:defsystem;defsystem.lisp")
 	;; then asdf:
+	;; For SBCL, take advantage of it's REQUIRE/contrib directories integration
+	#+sbcl (when (boundp 'sb-ext:*module-provider-functions*)
+		 (pushnew :sbcl-hooks-require cl:*features*))
         (compile-and-load  "cl-library:asdf;asdf.lisp")
         (compile-and-load  "cl-library:asdf;wild-modules.lisp")
+	#+sbcl (setq cl:*features* (delete :sbcl-hooks-require  cl:*features*))
         ;; then the patches:
         (compile-and-load  "cl-library:common-lisp-controller;post-sysdef-install.lisp")
         ;; register ourselves:

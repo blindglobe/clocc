@@ -1,3 +1,9 @@
+common-lisp-controller (3.54) unstable; urgency=low
+
+  * Add support for SBCL's REQUIRE/contrib directories integration
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  3 Mar 2003 12:14:57 -0700
+
 common-lisp-controller (3.53) unstable; urgency=low
 
   * Work-around mk-defsystem's override of CL:REQUIRE for SBCL

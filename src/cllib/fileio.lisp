@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.6 2000/04/04 21:31:33 sds Exp $
+;;; $Id: fileio.lisp,v 1.7 2000/04/10 21:00:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,7 +25,7 @@
           count-sexps code-complexity
           write-list-to-stream write-list-to-file
           read-list-from-stream read-list-from-file
-          write-to-file read-from-file append-to-file
+          pr write-to-file read-from-file append-to-file
           read-trim skip-to-line skip-search skip-blanks read-non-blanks))
 
 ;;;
@@ -164,6 +164,18 @@ EOF defaults to `+eof+'.
 ;;;
 ;;; }}}{{{ Read/Write object
 ;;;
+
+;;;###autoload
+(defun pr (obj &optional (str *standard-output*) (nice t))
+  "Print the OBJECT readably to the STREAM (default `*standard-output*').
+Set `*print-circle*' and `*print-pretty*' to the third argument
+NICE (default T).  Uses `with-standard-io-syntax'."
+  (declare (stream str))
+  (with-standard-io-syntax
+    (let (#+clisp (lisp:*print-indent-lists* 1)
+          #+clisp (lisp:*print-rpars* nil))
+      (write obj :stream str :case :downcase :circle nice :pretty nice)))
+  (values))
 
 ;;;###autoload
 (defun write-to-file (obj file &optional (nice t) &rest comments)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.43 2003/01/03 17:40:46 sds Exp $
+;;; $Id: url.lisp,v 2.44 2003/01/03 17:42:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -798,7 +798,7 @@ The local file is located in directory LOC and has the same name
                      &aux (*url-caller* 'open-url))
   "Get the news article to the OUT stream.
 When RE is supplied, articles whose subject match it are retrieved."
-  (declare (type url url) (stream out))
+  (declare (type url url))
   (assert (or (eq :nntp (url-prot url)) (eq :news (url-prot url))) (url)
           "url-get-news: `~a' is not a `news'" url)
   (flet ((out (st) (if loc (merge-pathnames st loc) *url-output*)))

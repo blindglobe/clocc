@@ -1,16 +1,29 @@
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
-SOURCES := base math print list util date octave gnuplot url gq geo \
-	rpm animals h2lisp clhs elisp card fin # matrix
+SOURCES := animals base card check clhs closio date datedl doall elisp fileio \
+	fin geo gnuplot gq h2lisp html iter laser list log math miscprint \
+	octave rpm server simple sorted stat string symb tilsla url withtype
+BASE = base
+NET = base url gq
+SYSTEM := cllib
 include $(TOP)/clocc.mk
+RM  = /bin/rm -f
+LN  = /bin/ln
+ZIP = /usr/local/bin/zip -9uD
 
-deps:	$(addsuffix .$(LISPEXT),$(SOURCES))
-	@echo " *** making dependencies...";
-	@rm -f deps;
-	@for fl in $(SOURCES); do \
-		DEPS=`sed -n -e "s/;.*$$//" -e "s/\\#-.*$$//" -e "s/(eval-when ([a-z ]*) //" -e "s/))/)/" -e "s/(sds-require \"\\([a-z0-9A-Z]*\\)\")/\\1.$$\(FASLEXT)/gp" $${fl}.$(LISPEXT)`; \
-		echo $${fl}.'$$(FASLEXT): '$${DEPS} >> deps; \
-		echo >> deps; \
-	done;
+cllib.zip:	$(LISPFILES) manifest README.html Makefile ChangeLog
+	@${RM} cllib
+	@$(LN) -s . cllib
+	@echo ...updating zip file $@...;
+	@$(ZIP) $@ $(patsubst %,cllib/%,$^)
+	@$(RM) cllib
 
-include deps
+manifest:	$(LISPFILES)
+	etags $^
+	sed "s?^/.*/\([^/]*\),?\1?" TAGS | cut -d" " -f2 > $@
+
+image:		$(addsuffix .fas,$(BASE))
+	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image
+
+image-net:	$(addsuffix .fas,$(NET))
+	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image-net

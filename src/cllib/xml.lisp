@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.3 2000/03/31 22:18:04 sds Exp $
+;;; $Id: xml.lisp,v 2.4 2000/04/04 17:50:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -124,16 +124,41 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
   (attribs nil :type list)      ; alist of attrib/value
   (data nil :type list))        ; list of objects in the tag
 
+(defun xml-size (obj)
+  "Compute the approximate size of the object.
+The first number returned is `text sise' (no tags)
+the second is `file size' (including tags)."
+  (typecase obj
+    (string (let ((ll (length obj))) (values ll ll)))
+    (xml-obj
+     (do ((fs (reduce #'+ (xmlo-attribs obj)
+                      :key (lambda (att)
+                             (+ (length (symbol-name (car att)))
+                                (length (cadr att)) 5))
+                      :initial-value
+                      (+ 5 (* 2 (length (symbol-name (xmlo-name obj)))))))
+          (ts 0) (dl (xmlo-data obj) (cdr dl)))
+         ((null dl) (values ts fs))
+       (multiple-value-bind (t0 f0) (xml-size (car dl))
+         (incf fs f0) (incf ts t0))))
+    (t (error 'case-error :proc 'xml-size :args
+              (list 'object obj 'string 'xml-obj)))))
+
+(defcustom *xml-print-xml* boolean nil
+  "*Set to non-NIL to print XML-OBJ for XML parsing.
+Note that the Unicode characters will NOT be printed as &#nnnn;.")
+
 (defmethod print-object ((xml xml-obj) (out stream))
   (cond (*print-readably* (call-next-method))
-        ((typep out 'file-stream)
+        (*xml-print-xml*
          (format out "<~a~:{ ~a=~s~}>~:*~:[~;~%~]~{~a~^~%~}</~a>"
                  (xmlo-name xml) (xmlo-attribs xml) (xmlo-data xml)
                  (xmlo-name xml)))
         ((print-unreadable-object (xml out :type t :identity t)
-           (format out "~a [~:{~a=~s~^ ~}] ~:d objects inside"
-                   (xmlo-name xml) (xmlo-attribs xml)
-                   (length (xmlo-data xml)))))))
+           (multiple-value-bind (ts fs) (xml-size xml)
+             (format out "~a [~:{~a=~s~^ ~}] ~:d object~:p ~:d/~:d chars"
+                     (xmlo-name xml) (xmlo-attribs xml)
+                     (length (xmlo-data xml)) ts fs))))))
 
 (defun xml-push (new xml)
   "Add NEW to data in XML."

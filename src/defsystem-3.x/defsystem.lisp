@@ -825,7 +825,7 @@
 ;;; ********************************
 ;;; Let's be smart about CLtL2 compatible Lisps:
 (eval-when (compile load eval)
-  #+(or (and allegro-version>= (version>= 4 0)) :mcl)
+  #+(or (and allegro-version>= (version>= 4 0)) :mcl :sbcl)
   (pushnew :cltl2 *features*))
 
 ;;; ********************************
@@ -851,7 +851,7 @@
 ;;; Now that ANSI CL includes PROVIDE and REQUIRE again, is this code
 ;;; necessary?
 
-#-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks :clisp
+#-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks :clisp :sbcl
       (and allegro-version>= (version>= 4 1)))
 (eval-when #-(or :lucid :cmu17 :cmu18)
            (:compile-toplevel :load-toplevel :execute)
@@ -968,7 +968,7 @@
 #+clisp
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
-#-(or :cltl2 :lispworks)
+#-(or :sbcl :cltl2 :lispworks)
 (in-package "MAKE" :nicknames '("MK"))
 
 ;;; For CLtL2 compatible lisps...
@@ -999,7 +999,7 @@
 ;;; The code below, is originally executed also for CMUCL. However I
 ;;; believe this is wrong, since CMUCL comes with its own defpackage.
 ;;; I added the extra :CMU in the 'or'.
-#+(and :cltl2 (not (or :cmu :clisp
+#+(and :cltl2 (not (or :cmu :clisp :sbcl
 		       (and :excl (or :allegro-v4.0 :allegro-v4.1))
 		       :mcl)))
 (eval-when (compile load eval)
@@ -1010,6 +1010,10 @@
 ;;; Here I add the proper defpackage for CMU
 #+:CMU
 (defpackage "MAKE" (:use "COMMON-LISP" "CONDITIONS")
+  (:nicknames "MK"))
+
+#+:sbcl
+(defpackage "MAKE" (:use "COMMON-LISP")
   (:nicknames "MK"))
 
 #+(or :cltl2 :lispworks)
@@ -1089,13 +1093,13 @@
 ;;; easier to use. Since some lisps have already defined defsystem
 ;;; in the user package, we may have to shadowing-import it.
 #|
-#-(OR :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
+#-(OR :sbcl :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
 (eval-when (compile load eval)
   (import *exports* #-(or :cltl2 :lispworks) "USER"
 	            #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
   (import *special-exports* #-(or :cltl2 :lispworks) "USER"
 	                    #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
-#+(OR :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
+#+(OR :sbcl :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
 (eval-when (compile load eval)
   (import *exports* #-(or :cltl2 :lispworks) "USER"
 	            #+(or :cltl2 :lispworks) "COMMON-LISP-USER")
@@ -1112,7 +1116,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.2 Interim, 2000-03-15"
+(defparameter *defsystem-version* "3.2 Interim, 2000-07-13"
   "Current version number/date for Defsystem.")
 
 ;;; ********************************
@@ -1132,8 +1136,8 @@
 ;;; directories.
 (defun home-subdirectory (directory)
   (concatenate 'string
-	#+:cmu "home:"
-	#-:cmu (let ((homedir (user-homedir-pathname)))
+	#+(or :sbcl :cmu) "home:"
+	#-(or :sbcl :cmu) (let ((homedir (user-homedir-pathname)))
 		 (or (when homedir (namestring homedir))
 		     "~/"))
 	directory))
@@ -1164,6 +1168,7 @@
     #+:LUCID     (working-directory)
     #+ACLPC      (current-directory)
     #+:ALLEGRO   (excl:current-directory)
+    #+:sbcl      (progn *default-pathname-defaults*)
     #+:CMU       (ext:default-directory)
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>
     ;; Somehow it is better to qualify default-directory in CMU with
@@ -1188,6 +1193,7 @@
     #+:lispworks4
     (hcl:get-working-directory)
     ;; Home directory
+    #-sbcl
     (mk::home-subdirectory "lisp/systems/")
 
     ;; Global registry
@@ -1294,12 +1300,12 @@
          #+TI ("lisp" . #.(string (si::local-binary-file-type)))
          #+:gclisp                            ("LSP"  . "F2S")
          #+pyramid                            ("clisp" . "o")
-         #+:coral                             ("lisp" . "fasl")
+         #+:coral                             ("lisp" . "pfsl")
 	 ;; Harlequin LispWorks
 	 #+:lispworks 	      ("lisp" . ,COMPILER:*FASL-EXTENSION-STRING*)
 ;        #+(and :sun4 :lispworks)             ("lisp" . "wfasl")
 ;        #+(and :mips :lispworks)             ("lisp" . "mfasl")
-         #+:mcl                               ("lisp" . "fasl")
+         #+:mcl                               ("lisp" . "pfsl")
 
          ;; Otherwise,
          ("lisp" . ,(pathname-type (compile-file-pathname "foo.lisp")))))
@@ -1339,12 +1345,13 @@
 ;;; ********************************
 ;;; Component Operation Definition *
 ;;; ********************************
+(eval-when (:compile-toplevel :load-toplevel :execute)
 (defvar *version-dir* nil
   "The version subdir. bound in operate-on-system.")
 (defvar *version-replace* nil
   "The version replace. bound in operate-on-system.")
 (defvar *version* nil
-  "Default version.")
+  "Default version."))
 
 (defvar *component-operations* (make-hash-table :test #'equal)
   "Hash table of (operation-name function) pairs.")
@@ -1370,7 +1377,7 @@
        (declare (ignore char arg))
        `(afs-binary-directory ,(read stream t nil t)))))
 
-(defconstant *find-irix-version-script*
+(defvar *find-irix-version-script*
     "\"1,4 d\\
 s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 /./,$ d\\
@@ -1396,7 +1403,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 			       (1+ blank-pos)))
     (concatenate 'string
       os " " os-version))      ; " " version-rest
-  #+(and :sgi :cmu)
+  #+(and :sgi :cmu :sbcl)
   (concatenate 'string
     (software-type)
     (software-version))
@@ -1422,6 +1429,8 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 		"lispworks" " " (lisp-implementation-version))
   #+excl      (concatenate 'string
 		"excl" " " EXCL::*COMMON-LISP-VERSION-NUMBER*)
+  #+sbcl      (concatenate 'string
+			   "sbcl" " " (lisp-implementation-version))
   #+cmu       (concatenate 'string
 		"cmu" " " (lisp-implementation-version))
   #+kcl       "kcl"
@@ -1450,10 +1459,10 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 		  #+(and :sgi :allegro-version>= (version>= 4 2))
 		  (machine-version)))
 	(software (software-type-translation
-		   #-(and :sgi (or :cmu
+		   #-(and :sgi (or :cmu :sbcl
 				   (and :allegro-version>= (version>= 4 2))))
 		   (software-type)
-		   #+(and :sgi (or :cmu
+		   #+(and :sgi (or :cmu :sbcl
 				   (and :allegro-version>= (version>= 4 2))))
 		   (operating-system-version)))
 	(lisp (compiler-type-translation (compiler-version))))
@@ -1672,14 +1681,25 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	 (abs-directory (directory-to-list (pathname-directory abs-dir)))
 	 (abs-keyword (when (keywordp (car abs-directory))
 			(pop abs-directory)))
-	 (abs-name (file-namestring abs-dir)) ; was pathname-name
+	 ;; Stig (July 2001):
+	 ;; Somehow CLISP dies on the next line, but NIL is ok.
+	 (abs-name (ignore-errors (file-namestring abs-dir))) ; was pathname-name
 	 (rel-directory (directory-to-list (pathname-directory rel-dir)))
 	 (rel-keyword (when (keywordp (car rel-directory))
 			(pop rel-directory)))
 	 (rel-file (file-namestring rel-dir))
-	 #+:MCL (rel-name (pathname-name rel-dir))
-         #+:MCL (rel-type (pathname-type rel-dir))
+	 ;; Stig (July 2001);
+	 ;; These values seems to help clisp as well
+	 #+(or :MCL :sbcl :clisp) (rel-name (pathname-name rel-dir))
+	 #+(or :MCL :sbcl :clisp) (rel-type (pathname-type rel-dir))
 	 (directory nil))
+
+    ;; Stig (July 2001):
+    ;; CLISP seems to have a bug and only accepts upcased types
+    #+clisp
+    (when rel-type
+      (setq rel-type (string-upcase rel-type)))
+
     ;; TI Common Lisp pathnames can return garbage for file names because
     ;; of bizarreness in the merging of defaults.  The following code makes
     ;; sure that the name is a valid name by comparing it with the
@@ -1716,11 +1736,11 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	       rel-keyword)
       ;; The following feature switches seem necessary in CMUCL
       ;; Marco Antoniotti 19990707
-      #+:CMU
+      #+(or :sbcl :CMU)
       (if (typep abs-dir 'logical-pathname)
 	  (setf abs-keyword :absolute)
 	  (setf abs-keyword rel-keyword))
-      #-:CMU
+      #-(or :sbcl :CMU)
       (setf abs-keyword rel-keyword))
     (setf directory (append abs-directory rel-directory))
     (when abs-keyword (setf directory (cons abs-keyword directory)))
@@ -1732,8 +1752,12 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
                     directory
 		    #+(and :cmu (not (or :cmu17 :cmu18)))
                     (coerce directory 'simple-vector)
-		    :name #-:MCL rel-file #+:MCL rel-name
-		    #+:MCL :type #+:MCL rel-type
+		    :name
+		    #-(or :sbcl :MCL :clisp) rel-file
+		    #+(or :sbcl :MCL :clisp) rel-name
+		    
+		    #+(or :sbcl :MCL :clisp) :type
+		    #+(or :sbcl :MCL :clisp) rel-type
 		    ))))
 
 (defun directory-to-list (directory)
@@ -1936,7 +1960,10 @@ ABS: NIL          REL: NIL               Result: ""
 
 (defun append-logical-pnames (absolute relative)
   (declare (type (or null string pathname) absolute relative))
-  (let ((abs (if absolute (namestring absolute) ""))
+  (let ((abs (if absolute
+		 #-clisp (namestring absolute) 
+		 #+clisp absolute ;; Stig (July 2001): hack to avoid CLISP from translating the whole string
+		 ""))
 	(rel (if relative (namestring relative) ""))
 	)
     ;; Make sure the absolute directory ends with a semicolon unless
@@ -2101,7 +2128,6 @@ D
   ;; satisfies any demand to recompile.
   load-only				; If T, will not compile this
 					; file on operation :compile.
-
   ;; If compile-only is T, will not load the file on operation :compile.
   ;; Either compiles or loads the file, but not both. In other words,
   ;; compiling the file satisfies the demand to load it. This is useful
@@ -2114,6 +2140,8 @@ D
   load-always				; If T, will force loading
 					; even if file has not
 					; changed.
+  ;; PVE: add banner 
+  (banner nil :type (or null string))
 
   (documentation nil :type (or null string)) ; Optional documentation slot
   )
@@ -2468,7 +2496,9 @@ D
 			   :device
 			   #+(and :CMU (not (or :cmu17 :cmu18)))
 			   :absolute
-			   #-(and :CMU (not (or :cmu17 :cmu18)))
+			   #+sbcl
+			   :unspecific
+			   #-(or :sbcl (and :CMU (not (or :cmu17 :cmu18))))
 			   (let ((dev (component-device component)))
 			     (if dev
                                  (pathname-device dev)
@@ -3144,9 +3174,21 @@ D
 	(multiple-value-bind (*version-dir* *version-replace*)
 	    (translate-version version)
 	  ;; CL implementations may uniformly default this to nil
-	  (let ((*load-verbose* t) ; nil
-		#-(or MCL CMU CLISP) (*compile-file-verbose* t) ; nil
-		(*compile-verbose* t) ; nil
+	  (let ((*load-verbose* #-common-lisp-controller t
+				#+common-lisp-controller nil) ; nil
+		#-(or MCL CMU CLISP :sbcl)
+		(*compile-file-verbose* t) ; nil
+		#+common-lisp-controller
+		(*compile-print* nil)
+		#+(and common-lisp-controller cmu)
+		(ext:*compile-progress* nil)
+		#+(and common-lisp-controller cmu)
+		(ext:*require-verbose* nil)
+		#+(and common-lisp-controller cmu)
+		(ext:*gc-verbose* nil)
+		
+		(*compile-verbose* #-common-lisp-controller t
+				   #+common-lisp-controller nil) ; nil
 		(*version* version)
 		(*oos-verbose* verbose)
 		(*oos-test* test)
@@ -3156,9 +3198,10 @@ D
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (find-system name :load)))
-	    #-(or CMU CLISP)
+	    #-(or CMU CLISP :sbcl)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
-		     (ignore *compile-verbose* #-MCL *compile-file-verbose*))
+		     (ignore *compile-verbose* #-MCL *compile-file-verbose*)
+		     (optimize (inhibit-warnings 3)))
 	    (unless (component-operation operation)
 	      (error "Operation ~A undefined." operation))
 	    (operate-on-component system operation force))))
@@ -3337,7 +3380,15 @@ D
 	    (tell-user-generic (format nil "Doing finalizations for ~A"
 				       (component-name component)))
 	    (or *oos-test*
-		(eval (component-finally-do component)))))
+		(eval (component-finally-do component))))
+	  
+	  ;; add the banner if needed
+	  #+cmu
+	  (when (component-banner component)
+	    (setf (getf ext:*herald-items*
+			(intern (string-upcase  (component-name component))
+				(find-package :keyword)))
+		  (component-banner component))))
 
       ;; Reset the package. (Cleanup form of unwind-protect.)
       ;;(in-package old-package)
@@ -3503,7 +3554,9 @@ D
 (unless *old-require*
   (setf *old-require*
 	(symbol-function #-(or :lispworks
+			       :sbcl
 			       (and :excl :allegro-v4.0)) 'lisp:require
+			 #+:sbcl 'cl:require
 			 #+:lispworks 'system:::require
 			 #+(and :excl :allegro-v4.0) 'cltl1:require))
 
@@ -3520,7 +3573,8 @@ D
       `(eval-when (compile load eval)
 	 (new-require ,module-name ,pathname ,definition-pname
 		      ,default-action ,version)))
-    (setf (macro-function #-(and :excl :allegro-v4.0) 'lisp:require
+    (setf (macro-function #-(and :excl :sbcl :allegro-v4.0) 'lisp:require
+			  #+:sbcl 'cl:require
 			  #+(and :excl :allegro-v4.0) 'cltl1:require)
 	  (macro-function 'require-as-macro))))
 ||#
@@ -3533,8 +3587,9 @@ D
 (unless *old-require*
   (setf *old-require*
 	(symbol-function
-	 #-(or (and :excl :allegro-v4.0) :mcl :lispworks) 'lisp:require
+	 #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
 	 #+(and :excl :allegro-v4.0) 'cltl1:require
+	 #+:sbcl 'cl:require
 	 #+:lispworks3.1 'common-lisp::require
 	 #+(and :lispworks (not :lispworks3.1)) 'system::require
 	 #+:mcl 'ccl:require))
@@ -3544,9 +3599,10 @@ D
 	  (ccl:*warn-if-redefine-kernel* nil))
       #-(or (and allegro-version>= (version>= 4 1)) :lispworks)
       (setf (symbol-function
-	     #-(or (and :excl :allegro-v4.0) :mcl :lispworks) 'lisp:require
+	     #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
 	     #+(and :excl :allegro-v4.0) 'cltl1:require
 	     #+:lispworks3.1 'common-lisp::require
+	     #+:sbcl 'cl:require
 	     #+(and :lispworks (not :lispworks3.1)) 'system::require
 	     #+:mcl 'ccl:require)
 	    (symbol-function 'new-require))
@@ -3671,7 +3727,7 @@ D
 ;;; we might add a COMPILER-OPTIONS slot to the component defstruct.
 
 (defparameter *c-compiler* "gcc")
-#-(or symbolics (and :lispworks :harlequin-pc-lisp (not :unix)))
+#-(or symbolics (and :lispworks :harlequin-pc-lisp ))
 
 (defun run-unix-program (program arguments)
   ;; arguments should be a list of strings, where each element is a
@@ -3682,14 +3738,14 @@ D
 		      program arguments))
   #+KCL (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+:cmu (extensions:run-program program arguments)
-  #+:lispworks (#.(or (find-symbol "CALL-SYSTEM-SHOWING-OUTPUT" "FOREIGN")
-		      (find-symbol "CALL-SYSTEM-SHOWING-OUTPUT" "SYSTEM"))
+  #+:sbcl (sb-ext:run-program program arguments)
+  #+:lispworks (foreign:call-system-showing-output
 		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+clisp (#+lisp=cl ext:run-program #-lisp=cl lisp:run-program
                      program :arguments arguments)
   )
 
-#+(or symbolics (and :lispworks :harlequin-pc-lisp (not :unix)))
+#+(or symbolics (and :lispworks :harlequin-pc-lisp))
 (defun run-unix-program (program arguments)
   (error "MK::RUN-UNIX-PROGRAM: this does not seem to be a UN*X system.")
   )
@@ -3800,7 +3856,6 @@ D
 	(values (and output-file-written output-file)
 		fatal-error
 		fatal-error)))))
-
 
 
 (defun c-compile-file (filename &rest args
@@ -3944,9 +3999,11 @@ D
 	       
 	       ;; make certain the directory we need to write to
 	       ;; exists [pvaneynd@debian.org 20001114]
-               ;; #+common-lisp-controller
 	       (ensure-directories-exist 
-		(make-pathname :directory (pathname-directory output-file)))
+		(make-pathname
+		 :directory
+		 (pathname-directory
+		  output-file)))
 	       
 	       (or *oos-test*
 		   (apply (compile-function component)
@@ -4356,6 +4413,7 @@ D
 ;;; *** Edit Operation ***
 
 ;;; Should this conditionalization be (or :mcl (and :CCL (not :lispworks)))?
+#|
 #+:ccl
 (defun edit-operation (component force)
   "Always returns nil, i.e. component not changed."
@@ -4385,6 +4443,7 @@ D
 (make::component-operation :edit 'edit-operation)
 #+(or :ccl :allegro)
 (make::component-operation 'edit 'edit-operation)
+|#
 
 ;;; *** Hardcopy System ***
 (defparameter *print-command* "enscript -2Gr" ; "lpr"

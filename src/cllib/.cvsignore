@@ -1,0 +1,12 @@
+*.fas
+*.lib
+*.axpf
+*.x86f
+*.hpf
+*.sgif
+*.sparcf
+*.fasl
+*.o
+*.data
+*.ufsl
+*.mem

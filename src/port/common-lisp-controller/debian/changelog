@@ -1,3 +1,9 @@
+common-lisp-controller (3.38) unstable; urgency=high
+
+  * Add version depends of cl-asdf
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri,  4 Oct 2002 12:00:46 -0600
+
 common-lisp-controller (3.37) unstable; urgency=high
 
   * Add program arguments to inetd.conf (closes: 162171)

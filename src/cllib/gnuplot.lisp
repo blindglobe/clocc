@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1998-10-06 Tue 19:41:04 EDT sds@eho.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-10-09 Fri 10:06:58 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.17 1998/10/06 23:41:57 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.18 1998/10/09 14:07:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.18  1998/10/09 14:07:33  sds
+;;; Added `force-output' to `with-plot-stream', which fixes the CMUCL delay
+;;; problem.
+;;;
 ;;; Revision 1.17  1998/10/06 23:41:57  sds
 ;;; Added `xtics', `ytics' and `grid' gnuplot options.
 ;;;
@@ -133,6 +137,7 @@ other => write `*gnuplot-file*' and print a message."
                                 (pipe-output *gnuplot-path*))))))
       (declare (stream ,str))
       (unwind-protect (progn (plot-header ,str ,plot ,@header) ,@body)
+        (force-output ,str)
         #+win32 (when ,str (close ,str))
         #+win32
         (cond ((or (eq ,plot t) (eq ,plot :plot))
@@ -166,7 +171,7 @@ Type \"load '~a'\" at the gnuplot prompt.~%"
               ((eq ,plot :print)
                (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
                        *gnuplot-printer*)
-               (format *gnuplot-stream* "set terminal x11~%set output~%")))))))
+               (format ,str "set terminal x11~%set output~%")))))))
 
 (defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title key
                     xtics ytics grid)

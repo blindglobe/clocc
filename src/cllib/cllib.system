@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.25 2001/03/14 23:35:29 sds Exp $
+;;; $Id: cllib.system,v 1.26 2001/03/15 00:03:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -62,7 +62,7 @@
      (:file "miscprint" :depends-on ("base" "simple"))
      #+clisp (:file "octave" :depends-on ("base"))
      (:file "prompt" :depends-on ("base"))
-     (:file "rng")
+     (:file "rng" :depends-on ("base" "withtype"))
      (:file "rpm" :depends-on ("base" "url"))
      (:file "server" :depends-on ("base" "log" "prompt"))
      (:file "simple" :depends-on ("base"))

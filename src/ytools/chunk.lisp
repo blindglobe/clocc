@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.28 2005/03/06 01:23:33 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.29 2005/03/06 22:51:17 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -56,6 +56,12 @@
    ;; -- 0 if not derived from anything, else 1 + max height
    ;; of chunks in 'basis' (but different for Or-chunks; see below).
                     ;;;;; <<<< Update-stuff
+   (depth :accessor Chunk-depth
+	  :type integer
+	  :initform 0)
+   ;; -- used for debugging; depth changes every time we change
+   ;; what counts as 0 depth.
+
    (date :accessor Chunk-date
 	 :initform +no-info-date+
 	 :type number)
@@ -130,11 +136,6 @@
 	     :initform false)))
 ;;;;; >>>> Or-chunk
 
-;;; We use the 'update-basis' slot for this now --
-;;;;    ;; This is the disjunct from which 'chunk' is currently derived --
-;;;;    (active :accessor Or-chunk-active
-;;;;	    :initform false)
-
 (defgeneric print-innards (x srm)
   (:method ((x t) srm)
      (declare (ignore srm))
@@ -164,6 +165,30 @@
    (cond ((slot-boundp orch 'disjuncts)
 	  (format srm "|~s|" (len (Or-chunk-disjuncts orch))))
 	 (t (format srm "<no disjuncts>"))))
+
+(defgeneric chunk-calculate-height (chunk)
+   (:method ((ch Chunk))
+      (cond ((chunk-is-leaf ch)
+	     0)
+	    (t
+	     (+ (reduce #'max (Chunk-basis ch) :key #'Chunk-height)
+		1)))))
+
+(defmethod chunk-calculate-height :around ((or-ch Or-chunk))
+   (let ((default (Or-chunk-default or-ch)))
+      (cond (default
+	     (max (Chunk-height default)
+		  (call-next-method or-ch)))
+	    (t
+	     (call-next-method or-ch)))))
+
+(defun chunk-propagate-height (ch)
+   (let* ((current-height (Chunk-height ch))
+	  (new-height (chunk-calculate-height ch)))
+      (cond ((not (= new-height current-height))
+	     (setf (Chunk-height ch) new-height)
+	     (dolist (d (Chunk-derivees ch))
+	        (chunk-propagate-height d))))))
 
 ;;; Report  the last time the chunk became derived or
 ;;; false if it has never been derived. 
@@ -200,6 +225,7 @@
       (pushnew ch (Chunk-derivees b) :test #'eq))
    (dolist (b (Chunk-update-basis ch))
       (pushnew ch (Chunk-update-derivees b) :test #'eq))
+   (chunk-propagate-height ch)
    (cond ((and (null (Chunk-basis ch))
 	       (Chunk-managed ch))
 	  (leaf-chunk-update ch)))
@@ -215,8 +241,12 @@
 	  (or-chunk-set-default-and-update orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
 	     (pushnew orch (Chunk-derivees b)))))
-   (cond ((slot-truly-filled orch 'default)
-	  (or-chunk-modify-height orch (Or-chunk-default orch))))
+   ;; Note that 'chunk-propagate-height' is called twice for
+   ;; Or-chunks, first by the initialize-instance[:after] method
+   ;; for chunks in general, then by this method.  
+   (chunk-propagate-height orch)
+;;;;   (cond ((slot-truly-filled orch 'default)
+;;;;	  (or-chunk-modify-height orch (Or-chunk-default orch))))
    orch)
 
 (defmethod (setf Or-chunk-disjuncts) :before (_ (orch Or-chunk))
@@ -235,6 +265,7 @@
       (setf (Chunk-derivees d)
 	    (adjoin orch (Chunk-derivees d))))
    (or-chunk-set-default-and-update orch)
+   (chunk-propagate-height orch)
    orch)
 
 (defun or-chunk-set-default-and-update (orch)
@@ -243,13 +274,15 @@
 		       (lastelt (Or-chunk-disjuncts orch)))))
 	  (or-chunk-set-update-basis orch))
 
-(defmethod (setf Or-chunk-default) :after (d (orch Or-chunk))
-   (or-chunk-modify-height orch d))
+(defmethod (setf Or-chunk-default) :after (_ (orch Or-chunk))
+   (chunk-propagate-height orch))
 
-(defun or-chunk-modify-height (orch default)
-   (let ((h-from-d (+ (Chunk-height default) 1)))
-      (cond ((> h-from-d (Chunk-height orch))
-	     (setf (Chunk-height orch) h-from-d)))))
+;;;;   (or-chunk-modify-height orch d)
+;;;;
+;;;;(defun or-chunk-modify-height (orch default)
+;;;;   (let ((h-from-d (+ (Chunk-height default) 1)))
+;;;;      (cond ((> h-from-d (Chunk-height orch))
+;;;;	     (setf (Chunk-height orch) h-from-d)))))
 
 (defun chunk-is-leaf (ch)
    (null (Chunk-basis ch)))
@@ -279,6 +312,7 @@
    (cond ((Chunk-managed ch)
 	  (dolist (b (Chunk-basis ch))
 	     (chunk-manage b))))
+   (chunk-propagate-height ch)
    (set-latest-support-date ch))
 
 ;;; Returns a list starting with 'ch' and containing all derivees* of 'ch'
@@ -688,18 +722,22 @@
 ;;;;(defvar postpone-updates* ':do-now)
 
 
-(defun chunk-update (ch postpone-derivees)
-    (chunks-update (list ch) postpone-derivees))
+(defun chunk-update (ch force postpone-derivees)
+    (chunks-update (list ch) force postpone-derivees))
 	 
 (defvar chunk-update-dbg* false)
 
+;;; 'force' is true if the 'chunks' must be derived, even if
+;;; up to date.
 ;;; 'postpone-derivees' is true if the only chunks to be updated are the
 ;;; supportive descendents of 'chunks'.
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
-(defun chunks-update (chunks postpone-derivees)
+(defun chunks-update (chunks force postpone-derivees)
    (let* (derive-mark down-mark up-mark
 	  max-here temporarily-managed
+	  (must-derive (cond (force (list-copy chunks))
+			     (t !())))
 	  (postponed !()))
       (labels ((chunks-leaves-up-to-date (chunkl in-progress)
 		  (let ((need-updating !()))
@@ -726,13 +764,18 @@
                                through itself"
 			     ch))
 			(t
+			 (setf (Chunk-depth ch)
+			       (cond ((null in-progress) 0)
+				     (t
+				      (+ (Chunk-depth (first in-progress))
+					 1))))
 			 (chunk-mark ch down-mark)
 			 (chunk-derive-date-and-record ch)
 			 (cond (chunk-update-dbg*
-				(chunk-date-note ch "Dated chunk")))
+				(chunk-date-note ch "Dated chunk; depth")))
 			 (cond ((and (chunk-is-leaf ch)
 				     (= (Chunk-date ch) +no-info-date+))
-				(chunk-derive-and-record ch)
+				(do-derive ch)
 				(cond (chunk-update-dbg*
 				       (chunk-date-note
 					  ch " Leaf chunk; derived")))))
@@ -756,15 +799,15 @@
 				      ;; works because the leaves supporting
 				      ;; ch have passed their dates up
 				      ;; via 'set-latest-support-date' --
-				      (cond ((or (chunk-up-to-date ch)
-						 (update-interrupted))
-					     !())
-					    (t
+				      (cond ((and (still-must-derive ch)
+						  (not (update-interrupted)))
 					     (temporarily-manage
 						(Chunk-update-basis ch))
 					     (chunks-leaves-up-to-date
 						(Chunk-update-basis ch)
-						in-progress))))))))))
+						in-progress))
+					    (t
+					     !())))))))))
 
                (check-from-derivees (ch in-progress)
 		  (let ((updatees
@@ -807,21 +850,20 @@
 				   (format t "Temporarily managing ~s~%"
 					   ud-ch)))
 			    (on-list ud-ch temporarily-managed)
-			    (chunk-internal-req-mgt ud-ch)))
-;;;;		    (loaded-c-check)
-		    ))
+			    (chunk-internal-req-mgt ud-ch)))))
 
 	       (derivees-update (ch in-progress)
 		  (cond (chunk-update-dbg*
-			 (format *error-output* "Considering ~s~%  [after ~s]~%"
-				 ch in-progress)))
+			 (format *error-output*
+			    "Considering ~s~%  [after ~s] [depth ~s]~%"
+				 ch in-progress (Chunk-depth ch))))
 		  (cond ((member ch in-progress)
 			 (error
 			    !"Cycle in derivation links from ~s"
 			    ch))
 			((and (Chunk-managed ch)
 			      (not (chunk-is-marked ch up-mark))
-			      (not (chunk-date-up-to-date ch))
+			      (still-must-derive ch)
 			      ;; Run the deriver when and only when
 			      ;; its basis is up to date --
 			      (every #'chunk-up-to-date
@@ -853,7 +895,7 @@
 ;;;;				       (setq l-ch* ch)
 ;;;;				       (break "About to derive ~s"
 ;;;;					      ch)
-				       (chunk-derive-and-record ch)))
+				       (do-derive ch)))
 				(cond ((not (update-interrupted))
 				       (let ((in-progress
 						(cons ch in-progress)))
@@ -871,6 +913,16 @@
 		  (dolist (d l)
 		     (dolist (c (set-latest-support-date d))
 		        (derivees-update c in-progress))))
+
+	       (still-must-derive (ch)
+		  (or (not (chunk-date-up-to-date ch))
+		      (and force (memq ch must-derive))))
+
+	       (do-derive (ch)
+		 (chunk-derive-and-record ch)
+		 (cond (force
+			(setq must-derive
+			      (delete ch must-derive)))))
 
 	       (update-interrupted ()
 		  (cond ((> chunk-event-num* max-here)
@@ -921,7 +973,7 @@
 	 ;; all over again, but 'derive' is _not_ rerun on any chunk it
 	 ;; was previously run on.
 
-	 (cond ((some #'Chunk-managed chunks)
+	 (cond ((or force (some #'Chunk-managed chunks))
 		;; Every chunk derived is marked with this mark,
 		;; to avoid deriving it twice (even if the update
 		;; process is restarted) --
@@ -944,14 +996,17 @@
 		      (setq chunk-event-num* max-here)
 		      (setq temporarily-managed !())
 		      (unwind-protect
-			 (let ((chunks-needing-update
-				   (chunks-leaves-up-to-date chunks !())))
-			     (cond (chunk-update-dbg*
-				    (format *error-output*
-				       "Updating derivees of chunks ~s~%"
-				       chunks-needing-update)))
-			     (dolist (ch chunks-needing-update)
-				(derivees-update ch !())))
+			 (progn
+			    (cond (force
+				   (temporarily-manage chunks)))
+			    (let ((chunks-needing-update
+				      (chunks-leaves-up-to-date chunks !())))
+				(cond (chunk-update-dbg*
+				       (format *error-output*
+					  "Updating derivees of chunks ~s~%"
+					  chunks-needing-update)))
+				(dolist (ch chunks-needing-update)
+				   (derivees-update ch !()))))
 			 (dolist (ud-ch temporarily-managed)
 			    (cond (temp-mgt-dbg*
 				   (format t "No longer managing ~s~%" ud-ch)))
@@ -964,19 +1019,18 @@
 			     (format *error-output*
 				"Restarting update of ~s~%"
 				chunks))))
-;;;;		   (format *error-output*
-;;;;		      "Discarding ~s through ~s~%"
-;;;;		      min-here (- max-here 1))
 		   (chunk-event-discard derive-mark)
-;;;;		   (do ((ev min-here (+ ev 1)))
-;;;;		       ((= ev max-here))
-;;;;		     (chunk-event-discard ev))
 		   )))
+	 (cond (force
+		(cond ((not (null must-derive))
+		       (cerror "Will proceed with derivations unforced"
+			       "Forced derivations of ~s did not occur"
+			       must-derive)))))
 	 (nodup postponed))))
 
 (defun chunk-date-note (ch context)
    (format *error-output*
-      "~a ~s ~s [~a]~%"
+      "~a ~s ~s [~a] [depth ~s]~%"
       context ch
       (Chunk-date ch)
       (cond ((chunk-up-to-date ch)
@@ -984,7 +1038,8 @@
 	    ((= (Chunk-date ch) +no-info-date+)
 	     "no info")
 	    (t
-	     "out of date"))))
+	     "out of date"))
+      (Chunk-depth ch)))
 
 (defun or-chunk-set-update-basis (orch)
    (cond ((null (Or-chunk-disjuncts orch))
@@ -1025,6 +1080,17 @@
 			   (> date (Chunk-date d)))
 		       (setq date (Chunk-date d)))))))))
 ;;;;; >>>> Or-chunk/derive
+
+;;;;(defun chunks-force-update (chunks postpone-derivees)
+;;;;   (dolist (ch chunks)
+;;;;     (chunk-derive-and-record ch))
+;;;;   (let ((combined-derivees
+;;;;	    (mapcan (\\ (ch) (list-copy (Chunk-derivees ch)))
+;;;;		    chunks)))
+;;;;      (cond (postpone-derivees
+;;;;	     combined-derivees)
+;;;;	    (t
+;;;;	     (chunks-update combined-derivees false)))))
 
 (defun chunk-up-to-date (ch)
 ;;;;   (let ()
@@ -1228,7 +1294,7 @@
 				 (cond (initializer
 					(funcall initializer new-chunk)))
 				 (cond ((Chunk-managed new-chunk)
-					(chunk-update new-chunk false)))
+					(chunk-update new-chunk false false)))
 				 new-chunk))))))
 	      )))))
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.28 2005/03/06 04:59:05 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.29 2005/03/06 22:51:17 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -48,31 +48,39 @@
       (let ((force-flag false)
 	    (file-manip false)
 	    (postpone-derivees false))
-	(dolist (flag flags)
-	   (cond ((eq flag '-z)
-		  (setq postpone-derivees true))
-		 (file-manip
-		  (format *error-output*
-		     "Ignoring redundant flag to fload: ~s~%"
-		     flag))
-		 (t
-		  (case flag
-		     (-x
-		      (setq file-manip ':noload))
-		     (-s
-		      (setq file-manip ':source)
-		      (setq force-flag ':source))
-		     (-o
-		      (setq file-manip ':object)
-		      (setq force-flag ':object))
-		     (-f
-		      (setq force-flag ':load))
-		     (-c
-		      (setq file-manip ':compile)
-		      (setq force-flag ':compile))
+	 (labels ((set-manip (v force-too flag)
+		     (cond (file-manip
+			    (format *error-output*
+			       "Ignoring redundant flag ~s to fload"
+			       flag))
+			   (t
+			    (setq file-manip v)
+			    (cond (force-too
+				   (setq force-flag v)))))))
+	    (dolist (flag flags)
+	       (cond ((eq flag '-z)
+		      (setq postpone-derivees true))
+		     (file-manip
+		      (format *error-output*
+			 "Ignoring redundant flag to fload: ~s~%"
+			 flag))
 		     (t
-		      (cerror "I will ignore it"
-			      "Illegal flag to 'fload': ~s" flag))))))
+		      (case flag
+			 (-x
+			  (set-manip ':noload false '-x))
+			 (-s
+			  (set-manip ':source true '-s))
+			 (-o
+			  (set-manip ':object true '-o))
+			 (-f
+			  (setq force-flag ':load))
+			 (-c
+			  (set-manip ':compile true '-c))
+			 (-a
+			  (set-manip ':ask-ask false '-a))
+			 (t
+			  (cerror "I will ignore it"
+				  "Illegal flag to 'fload': ~s" flag)))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
   	   (filoid-fload pn :force-load force-flag
 			    :manip file-manip
@@ -108,9 +116,8 @@
       (let ((d (Chunk-date loaded-chunk)))
 ;;;;	 (format t "Updating ~s~%"
 ;;;;		 loaded-chunk)
-	 (setq postponed-file-chunks*
-	       (append (chunk-update loaded-chunk postpone-derivees)
-		       postponed-file-chunks*))
+	 (file-ops-maybe-postpone
+	    (chunk-update loaded-chunk false postpone-derivees))
 	 (cond ((and force-load
 		     (= (Chunk-date loaded-chunk)
 			d))
@@ -118,26 +125,6 @@
 		;; so forcing makes sense
 		(loaded-chunk-force
 		   loaded-chunk force-load postpone-derivees)))))
-
-(defun loaded-chunk-force (loaded-chunk force postpone-derivees)
-   (let ((operative-chunk
-	    (ecase force
-	       ((:source :object)
-		(place-Loaded-source-chunk
-		   (cond ((eq force ':object)
-			  (Loaded-chunk-object loaded-chunk))
-			 (t
-			  (Loaded-chunk-source loaded-chunk)))))
-	       ((:compile)
-		(Loaded-chunk-compiled loaded-chunk)))))
-     (chunk-derive-and-record operative-chunk)
-     (cond (postpone-derivees
-	    (setq postponed-file-chunks*
-		  (append (Chunk-derivees operative-chunk)
-			  postponed-file-chunks*)))
-	   (t
-	    (chunks-update (Chunk-derivees loaded-chunk)
-			   false)))))
 
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
@@ -212,6 +199,29 @@
 (defun file-chunk-is-source (file-ch)
    (eq (File-chunk-kind file-ch) ':source))
 
+(defun loaded-chunk-force (loaded-chunk force postpone-derivees)
+   (let ((obj-file-chunk (Loaded-file-chunk-object loaded-chunk))
+	 (src-file-chunk (Loaded-file-chunk-source loaded-chunk)))
+      ;; If force = :load, load object if it exists --
+      (cond ((eq force ':load)
+	     (setq force
+		   (cond ((probe-file (File-chunk-pathname obj-file-chunk))
+			  ':object)
+			 (t
+			  ':source)))))
+      (let ((operative-chunk
+	       (ecase force
+		  ((:source :object)
+		   (place-Loaded-source-chunk
+		      (cond ((eq force ':object)
+			     obj-file-chunk)
+			    (t
+			     src-file-chunk))))
+		  ((:compile)
+		   (Loaded-file-chunk-compiled loaded-chunk)))))
+	(file-ops-maybe-postpone
+	   (chunk-update operative-chunk true postpone-derivees)))))
+
 ;;;;   (pathname-is-source (File-chunk-pathname file-ch))
 
 (defvar final-load* false)
@@ -263,6 +273,9 @@
   ((source-file :initarg :source-file
 		:reader Compiled-file-chunk-source-file
 		:type File-chunk)
+   (object-file :initarg :object-file
+		 :accessor Compiled-file-chunk-object-file
+		 :type File-chunk)
    (last-compile-time :accessor Compiled-file-chunk-last-compile-time
 		      :initform -1)))
 
@@ -413,7 +426,7 @@
 			      (and is-source
 				   (place-compiled-chunk file-chunk))))
 			(let ((new-lc
-				 (make-instance 'Loaded-file-chunk
+				 (make-instance 'Loaded-file-chunk 
 				    :name name
 				    :loadee file-chunk
 				    :manip (or file-manip ':follow)
@@ -493,7 +506,8 @@
 	 (cleanup-after-file-transduction
 	    (let ((*package* *package*)
 		  (*readtable* *readtable*)
-		  (fload-indent* (+ 3 fload-indent*)))
+		  (fload-indent* ;;;;(+ 3 fload-indent*)
+		      (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
 				 (File-chunk-pn
 				     file-ch)
@@ -566,7 +580,7 @@
 ;;;;		(on-list lc loadeds-needing-update))))
       (chunks-update (cons fload-compile-flag-chunk*
 			   loadeds-needing-checking)
-		     false)))
+		     false false)))
 
 (defvar loaded-manip-dbg* false)
 
@@ -658,29 +672,37 @@
 	    !"Do you want to load the object or source version of ~
               ~% of ~s (o/s, \\\\ to abort)? "
 	      (File-chunk-pn (Loaded-chunk-loadee loaded-ch)))
-	 (let ((manip 
+	 (multiple-value-bind
+	          (manip general)
 		  (case (keyword-if-sym (read *query-io*))
 		     ((:s :source)
-		      ':source)
+		      (values ':source false))
 		     ((:o :object)
-		      (cond (obj-exists
-			     ':object)
-			    (t ':compile)))
+		      (values (cond (obj-exists
+				     ':object)
+				    (t ':compile))
+			      false))
 		     (:+
 		      (setq fload-compile* ':compile)
-		      ':compile)
+		      (values ':compile true))
 		     (:-
 		      (setq fload-compile* ':object)
-		      ':object)
+		      (values ':object true))
 		     ((:c :compile)
-		      ':compile)
+		      (values ':compile false))
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
 		     (t
-		      false))))
+		      (values false nil)))
+;;;;	    (format *query-io* "manip = ~s general = ~s~%"
+;;;;		    manip general)
 	    (cond (manip
-		   (manip-refine-remember manip loaded-ch)
-		   (return manip))
+		   (cond (general 
+			  (setf (Loaded-file-chunk-manip loaded-ch)
+				manip)
+			  (return manip))
+			 (t
+			  (return (manip-refine-remember manip loaded-ch)))))
 		  (t
 		   (format *query-io*
 			 !"Type 's' or 'source' to load source file;~%~
@@ -751,11 +773,16 @@
   manip)
 
 (defun ask-if-generalize (manip)
-   (cond ((y-or-n-p "Should the same decision apply to all other files?")
+   (cond ((and (not (eq fload-compile* manip))
+	       (y-or-n-p
+		  "Should the same decision apply to all other files? "))
 	  (setq fload-compile* manip))))
 
 (defun place-compiled-chunk (source-file-chunk)
-   (let ((filename (File-chunk-pathname source-file-chunk)))
+   (let* ((filename (File-chunk-pathname source-file-chunk))
+	  (ov (pathname-object-version filename false))
+	  (real-ov (and (not (eq ov ':none))
+			(pathname-resolve ov false))))
       (let ((compiled-chunk
 	       (chunk-with-name
 		   `(:compiled ,filename)
@@ -763,6 +790,9 @@
 		      (let ((new-chunk
 			       (make-instance 'Compiled-file-chunk
 				  :source-file source-file-chunk
+				  :object-file (place-File-chunk
+						  real-ov
+						  :kind ':object)
 				  :pathname (pathname-object-version
 					       filename
 					       false)
@@ -808,9 +838,8 @@
    (let* ((pn (File-chunk-pn
 		 (Compiled-file-chunk-source-file cf-ch)))
 	  (real-pn (pathname-resolve pn true))
-	  (ov (pathname-object-version pn false))
-	  (real-ov (and (not (eq ov ':none))
-			(pathname-resolve ov false)))
+	  (real-ov (File-chunk-pathname
+		      (Compiled-file-chunk-object-file cf-ch)))
 	  (old-obj-write-time
 		   (and real-ov
 			(probe-file real-ov)
@@ -1217,33 +1246,51 @@
 		      false))
 	  (compiled-chunk
 	     (place-compiled-chunk file-chunk))
+	  (object-file-chunk
+	     (Compiled-file-chunk-object-file compiled-chunk))
+	  (object-pathname
+	     (File-chunk-pathname object-file-chunk))
+	  (object-file-date
+	     (and (probe-file object-pathname)
+		  (file-write-date object-pathname)))
 ;;;;	  (comp-date
 ;;;;	     (pathname-write-time
 ;;;;	        (File-chunk-pathname compiled-chunk)))
 	  )
-      (cond (cease-mgt
-	     (cond (force-compile
-		    ;; One last fling --
-		    (monitor-filoid-basis lpchunk)
-		    (chunk-derive-and-record compiled-chunk)))
-	     (chunk-terminate-mgt compiled-chunk ':ask))
-	    (t
-	     (let ((comp-date
-		      (Chunk-date compiled-chunk)))
-	        (monitor-filoid-basis lpchunk)
-		(chunk-request-mgt compiled-chunk)
-		(setq postponed-file-chunks*
-		      (append (chunk-update compiled-chunk postpone-derivees)
-			      postponed-file-chunks*))
-		(cond ((and force-compile
-			    (= (Chunk-date compiled-chunk)
-			       comp-date))
-		       ;; Hasn't been compiled yet
-		       (chunk-derive-and-record compiled-chunk))))))
-      (cond ((or load
-		 (load-after-compile))
-	     (setf (Loaded-file-chunk-manip lpchunk) ':compiled)
-	     (loaded-chunk-fload lpchunk false postpone-derivees)))))
+      (labels ((force-compile ()
+		  (file-ops-maybe-postpone
+		     (chunks-update (list compiled-chunk)
+				    true postpone-derivees)))
+	       (consider-loading ()
+		  (cond ((and (not (chunk-up-to-date lpchunk))
+			      (probe-file object-pathname)
+			      (or (not object-file-date)
+				  (> (file-write-date object-pathname)
+				     object-file-date))
+			      (or load (load-after-compile)))
+			 (file-ops-maybe-postpone
+			    (chunks-update (list lpchunk)
+					   true postpone-derivees))))))
+	 (monitor-filoid-basis lpchunk)
+	 (cond (cease-mgt
+		(chunk-terminate-mgt compiled-chunk ':ask)
+		(cond (force-compile
+		       ;; One last fling --
+		       (force-compile)
+		       (consider-loading))))
+	       (t
+		(let ((comp-date
+			 (Chunk-date compiled-chunk)))
+		   (chunk-request-mgt compiled-chunk)
+		   (file-ops-maybe-postpone
+		      (chunk-update compiled-chunk false postpone-derivees))
+		   (cond ((and force-compile
+			       (= (Chunk-date compiled-chunk)
+				  comp-date))
+			  ;; Hasn't been compiled yet
+			  (force-compile)
+			  (chunk-derive-and-record compiled-chunk)))
+		   (consider-loading)))))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve
@@ -1293,7 +1340,7 @@
 	     (loop
 	        (dolist (loadable-ch controllers)
 		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false)
+	        (chunks-update controllers false false)
 	        (cond ((null loaded-filoids-to-be-monitored*)
 		       (return))
 		      (t
@@ -1388,11 +1435,15 @@
 	       (setf (File-chunk-alt-version fc)
 		     false)
 	       (on-list fc changing-chunks)))
-	 (chunks-update changing-chunks false)
+	 (chunks-update changing-chunks false false)
 	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 
+(defun file-ops-maybe-postpone (chunks)
+   (setq postponed-file-chunks*
+	 (append chunks postponed-file-chunks*)))
+
 (defun postponed-files-update ()
-   (chunks-update postponed-file-chunks* false))
+   (chunks-update postponed-file-chunks* false false))
 
 (defun compilable (pathname)
    (member (Pathname-type pathname) source-suffixes* :test #'equal))

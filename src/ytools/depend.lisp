@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.13 2005/03/06 01:23:33 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.14 2005/03/06 22:51:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -42,19 +42,19 @@
 (defclass Loadable-file-chunk-from-scan (Loadable-chunk) ())
 
 (defmethod derive-date ((fb Loadable-file-chunk-from-scan))
-   (format *error-output*
-      "[D]Loadable chunk date = ~s file-op-count* = ~s~%"
-      (Chunk-date fb) file-op-count*)
+;;;;   (format *error-output*
+;;;;      "[D]Loadable chunk date = ~s file-op-count* = ~s~%"
+;;;;      (Chunk-date fb) file-op-count*)
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t +no-info-date+)))
 
 (defmethod derive ((fb Loadable-file-chunk-from-scan))
-   (format *error-output*
-      "Loadable chunk date = ~s file-op-count* = ~s~%  file: ~s~%"
-      (Chunk-date fb)
-      file-op-count*
-      (Loaded-chunk-loadee (Loadable-chunk-controllee fb)))
+;;;;   (format *error-output*
+;;;;      "Loadable chunk date = ~s file-op-count* = ~s~%  file: ~s~%"
+;;;;      (Chunk-date fb)
+;;;;      file-op-count*
+;;;;      (Loaded-chunk-loadee (Loadable-chunk-controllee fb)))
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
@@ -233,6 +233,9 @@
 						    pnl)
 					    (File-chunk-read-basis
 						file-ch)))))
+			(format *error-output*
+			   "Checking bases of ~S~%"
+			   pnl)
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn))
 				  (lpchunk (place-Loaded-chunk pchunk false)))

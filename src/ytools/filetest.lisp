@@ -365,9 +365,9 @@
 ;;;;			       (Chunk-date compiled-file-chunk-c*))
 ;;;;		       (break "Filoid bases monitored")
 		       (case i
-			  (0 (chunk-update loaded-file-chunk-c* false))
-			  (1 (chunk-update file-chunk-l* false))
-			  (2 (chunk-update file-chunk-s* false)
+			  (0 (chunk-update loaded-file-chunk-c* false false))
+			  (1 (chunk-update file-chunk-l* false false))
+			  (2 (chunk-update file-chunk-s* false false)
 			     (setq sms-ch*
 			           (chunk-with-name
 				      `(:slurped (:macros ,(File-chunk-pathname
@@ -388,11 +388,11 @@
 			     (chunks-update
 			        (list ;;;; loaded-file-chunk-c*
 				      loaded-file-chunk-d*)
-				false))
+				false false))
 			  (4 (chunk-terminate-mgt loaded-file-chunk-c* false)
-			     (chunk-update loaded-file-chunk-c* false)
+			     (chunk-update loaded-file-chunk-c* false false)
 			     (chunk-update ;;;;loaded-file-chunk-d*
-			                   file-chunk-s* false)))
+			                   file-chunk-s* false false)))
 		       (format t !"After iteration ~s:~
 				   ~% File 'l' status = ~s ~
                                    File 's' status = ~s ~

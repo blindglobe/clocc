@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.16 2005/03/06 01:23:34 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.17 2005/03/06 22:51:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -399,6 +399,6 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
 	     (let ((chl (module-form-chunks yt-mod ':run-support)))
 	        (dolist (ch chl)
 		   (chunk-request-mgt ch))
-		(chunks-update chl false)))
+		(chunks-update chl false false)))
 	    (t
 	     (error "Can't load YTools module -- undefined")))))

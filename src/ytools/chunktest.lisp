@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.10 2005/03/06 01:23:33 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.11 2005/03/06 22:51:17 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -313,11 +313,11 @@
       (format t "chunk ~s <- ~s ~%" j i)
       (cond ((Chunk-managed quo*)
 	     (chunk-terminate-mgt quo* false)
-	     (chunk-update denom-or-chunk* false))
+	     (chunk-update denom-or-chunk* false false))
 	    (t
 	     (chunk-request-mgt quo*)
 	     (chunks-update (list quo* denom-or-chunk*)
-			    false)))
+			    false false)))
       (let ((direct (compute))
 	    (via-chunks (Num-reg-contents
 			   (cond ((Chunk-managed quo*)

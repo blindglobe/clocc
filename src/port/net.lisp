@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.33 2001/07/09 19:42:16 sds Exp $
+;;; $Id: net.lisp,v 1.34 2001/07/09 19:45:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -300,15 +300,16 @@ whichever comes first. If there was a timeout, return NIL."
   #-(or clisp cmu)
   (error 'not-implemented :proc (list 'wait-for-stream stream timeout)))
 
-(defun open-unix-socket (path &optional (kind :stream) bin)
+(defun open-unix-socket (path &key (kind :stream) bin)
   "Opens a unix socket. Path is the location.
 Kind can be :stream or :datagram."
-  (declare (simple-string path))
+  (declare (simple-string path) #-cmu (ignore kind))
   #+cmu (sys:make-fd-stream (ext:connect-to-unix-socket path kind)
                             :input t :output t :element-type
                             (if bin '(unsigned-byte 8) 'character))
-  #-(or cmu)
-  (error 'not-implemented :proc (list 'open-unix-socket path kind bin)))
+  #-cmu
+  (open path :element-type (if bin '(unsigned-byte 8) 'character)
+        :direction :io))
 
 ;;;
 ;;; }}}{{{ conditions

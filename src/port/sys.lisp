@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.48 2003/07/25 13:05:15 sds Exp $
+;;; $Id: sys.lisp,v 1.49 2004/05/18 21:20:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -114,6 +114,11 @@
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl scl)
   (error 'not-implemented :proc (list 'arglist fn)))
 
+#+(and clisp (not mop))
+(eval-when (compile load eval)
+  (when (find-symbol "SLOT-DEFINITION-NAME" "CLOS")
+    (pushnew :MOP *features*)))
+
 ;; implementations with MOP-ish CLOS
 #+(or allegro clisp cmu cormanlisp lispworks lucid sbcl scl)
 ;; we use `macrolet' for speed - so please be careful about double evaluations
@@ -136,7 +141,8 @@
            (slot-name (slot)
              #+(and allegro (not (version>= 6))) `(clos::slotd-name ,slot)
              #+(and allegro (version>= 6)) `(clos:slot-definition-name ,slot)
-             #+clisp `(clos::slotdef-name ,slot)
+             #+(and clisp (not mop)) `(clos::slotdef-name ,slot)
+             #+(and clisp mop) `(clos::slot-definition-name ,slot)
              #+cmu `(slot-value ,slot 'pcl::name)
              #+cormanlisp `(getf ,slot :name)
              #+lispworks `(hcl::slot-definition-name ,slot)
@@ -147,7 +153,8 @@
              #+(and allegro (not (version>= 6))) `(clos::slotd-initargs ,slot)
              #+(and allegro (version>= 6))
              `(clos:slot-definition-initargs ,slot)
-             #+clisp `(clos::slotdef-initargs ,slot)
+             #+(and clisp (not mop)) `(clos::slotdef-initargs ,slot)
+             #+(and clisp mop) `(clos::slot-definition-initargs ,slot)
              #+cmu `(slot-value ,slot 'pcl::initargs)
              #+cormanlisp `(getf ,slot :initargs)
              #+lispworks `(hcl::slot-definition-initargs ,slot)
@@ -160,7 +167,8 @@
              `(clos::slotd-allocation ,slot)
              #+(and allegro (version>= 6))
              `(clos:slot-definition-allocation ,slot)
-             #+clisp `(clos::slotdef-allocation ,slot)
+             #+(and clisp (not mop)) `(clos::slotdef-allocation ,slot)
+             #+(and clisp mop) `(clos::slot-definition-allocation ,slot)
              #+cmu `(pcl::slot-definition-allocation ,slot)
              #+cormanlisp `(getf ,slot :allocation)
              #+lispworks `(hcl::slot-definition-allocation ,slot)

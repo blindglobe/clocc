@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.9 2005/01/27 23:02:46 sds Exp $
+;;; $Id: string.lisp,v 1.10 2005/03/30 22:19:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,11 +16,32 @@
 
 (export
  '(string-beg-with string-end-with string-beg-with-cs string-end-with-cs
+   edit-distance
    purge-string split-string split-seq substitute-subseq substitute-subseq-if))
 
 ;;;
 ;;;
 ;;;
+
+(let ((cache-vec (make-array 10 :adjustable t)) diag)
+(defun edit-distance (s1 s2)
+  "The edit (Levenshtein) distance between strings.
+See <http://www.merriampark.com/ld.htm>
+<http://www.cut-the-knot.org/do_you_know/Strings.shtml>."
+  (let ((l1 (length s1)) (l2 (length s2)))
+    (unless (>= (length cache-vec) l1)
+      (adjust-array cache-vec l1))
+    (setq diag 0)
+    (loop :for i :from 0 :below l1 :do (setf (aref cache-vec i) (1+ i)))
+    (loop :for j :from 0 :below l2 :and c2 :across s2 :do
+      (loop :for i :from 0 :below l1 :and c1 :across s1
+        :for old = (aref cache-vec i) :do
+        (shiftf diag (aref cache-vec i)
+                (min (if (char= c1 c2) diag (1+ diag))
+                     (1+ (aref cache-vec i))
+                     (1+ (if (zerop i) (1+ j) (aref cache-vec (1- i))))))))
+    (aref cache-vec (1- l1)))))
+
 
 (defmacro string-beg-with (beg strv &optional (lenv `(length ,strv)))
   "Check whether the string STRV starts with BEG."

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.20 2001/11/02 22:31:15 sds Exp $
+;;; $Id: gq.lisp,v 2.21 2001/11/07 17:09:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -618,7 +618,7 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
             (save-data hist-file *holdings* *history*)
             (unless plotp (setq plot t)))
           (when log (close out) (format t "Wrote log to ~s~%" log))))))
-  (when plot (plot-portfolio *holdings* *history* :plot)))
+  (when plot (plot-portfolio *holdings* *history* plot)))
 
 (provide :cllib-gq)
 ;;; }}} gq.lisp ends here

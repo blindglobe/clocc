@@ -1109,18 +1109,45 @@
 	    `(declare (type single-float ,vble_name))))))))
 
 (defun make-char-decl (decl type)
-   (cond ((null (cdr decl)) ; scalar, no length spec.
-          (if (equal (cadr type) '(*))
-          `(declare (type (simple-array base-char (*)) ,(car decl)))    
-          `(declare (type (simple-array base-char (,(cadr type))) ,(car decl)))))
-         ((atom (cadr decl)) ; scalr, length spec.
-          `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
-         ((cddr decl) ; array with length spec
-          `(declare (type (simple-array t (,(caadr decl))) ,(car decl))))
-         ((equal (cadr decl) '(*)) ; unspecified length spec
+  (flet ((decl-bounds (bounds)
+	   (mapcar #'(lambda (b)
+		       (destructuring-bind (lo hi)
+			   b
+			 (if (and (numberp lo) (numberp hi))
+			     (+ 1 (- hi lo))
+			     '*)))
+		   bounds)))
+    (cond ((null (cdr decl))
+	   ;; scalar, no length spec.
+	   (format t "scalar, no length spec = ~A~%" decl)
+	   (if (equal (cadr type) '(*))
+	       `(declare (type (simple-array base-char (*)) ,(car decl)))    
+	       `(declare (type (simple-array base-char (,(cadr type))) ,(car decl)))))
+	  ((atom (cadr decl))
+	   ;; scalar, length spec.
+	   (format t "scalar, length spec = ~A~%" decl)
+	   `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
+	  ((cddr decl)
+	   ;; array with length spec
+	   (format t "array with length spec = ~A => ~A~%" decl (cddr decl))
+	   ;;`(declare (type (simple-array t (,(caadr decl))) ,(car decl)))
+	   `(declare (type (simple-array
+			    (simple-array base-char ,(cddr decl))
+			    ,(decl-bounds (second decl)))
+		      ,(car decl)))
+	   )
+	  ((equal (cadr decl) '(*))
+	   ;; unspecified length spec
+	   (format t "unspecified length spec = ~A~%" decl)
            `(declare (type (simple-array base-char (*)) ,(car decl))))
-         (t ; array, no length spec.
-           `(declare (type (simple-array t (1)) ,(car decl))))))
+	  (t
+	   ;; array, no length spec.
+	   (format t "array, no length spec = ~A~%" decl)
+           `(declare (type (simple-array
+			    (simple-array base-char ,(if (second type)
+							 `(,(second type))
+							 '(*)))
+			    ,(decl-bounds (second decl))) ,(car decl)))))))
 
 (defun make-char-init (decl type)
   (cond ((equal (cadr type) '(*))	; unspecified length spec
@@ -1140,7 +1167,7 @@
 				       `(+ 1 (- ,hi ,lo)))))
 			     (remove '|,| (cadr decl)))))
 	   ;;(format t "dims = ~A~%" dims)
-	   `(f2cl-init-string ,dims ,(caddr decl))
+	   `(f2cl-init-string ,dims ,(cddr decl))
 	   #+nil
 	   (if (every #'numberp dims)
 	       `(make-array ',dims

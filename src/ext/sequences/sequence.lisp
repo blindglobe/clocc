@@ -11,6 +11,7 @@
 (provide 'sequences)
 
 (defpackage "SEQUENCES" #-lispworks (:nicknames "SEQ")
+  (:use "COMMON-LISP")
   (:shadow .
     #1=(elt subseq copy-seq length list-reverse reverse list-nreverse
         nreverse make-sequence concatenate map some every notany notevery
@@ -364,7 +365,7 @@ FE-INIT-END   (lambda (index) ...) -> pointer
          ((stringp seq) 'STRING)
          ((bit-vector-p seq) 'BIT-VECTOR)
          (#+VAX (sys::structurep seq)
-          #-VAX (typep seq 'structure)
+          #-VAX (typep seq 'structure-object)
           (let ((name (type-of seq)))
             (if (get name 'sequence-definition) name nil)))
          ((vectorp seq) 'VECTOR)

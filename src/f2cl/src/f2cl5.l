@@ -775,6 +775,33 @@
 				      (flatten-helper (cdr x) r))))))
     (flatten-helper x nil)))
 
+(defun entry-functions (entry main args)
+  (flet ((make-vars (n)
+	   (let ((v '()))
+	     (dotimes (k n)
+	       (push (intern (format nil "V~D" k)) v))
+	     (nreverse v)))
+	 (select-vars (k n vlist)
+	   (append (list (elt vlist k))
+		   (subseq vlist n))))
+    (let* ((count 0)
+	   (n-entries (1+ (length *entry-points*)))
+	   (n-returns (+ n-entries (length args)))
+	   (vlist (make-vars n-returns)))
+      (cons `(defun ,main ,args
+	      (multiple-value-bind ,vlist
+		  (,entry ',main ,@args)
+		(values ,@(select-vars 0 n-entries vlist))))
+	    (mapcar #'(lambda (x)
+			(let ((vlist (make-vars n-returns)))
+			  (incf count)
+			  `(defun ,(first x) ,@(rest x)
+			    (multiple-value-bind ,vlist
+				(,entry ',(first x) ,@(second x))
+			      (values ,@(select-vars count n-entries vlist))))
+			  ))
+		    *entry-points*)))))
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -786,7 +813,8 @@
 		   key-params
 		   key-params-decls
 		   all-decls
-		   additional-args)
+		   additional-args
+		   entry-points)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -1093,6 +1121,15 @@
 			     (rest (first other-fcn-decls))))
      (setf all-decls `((declare ,@all-decls)))
      ;;(format t "all-decls = ~A~%" all-decls)
+
+     (when *entry-points*
+       (setf entry-points
+	     (mapcar #'(lambda (x)
+			 (let ((name (first x)))
+			 `(if (eq %name% ',name) (go ,name))))
+		     *entry-points*)))
+     (format t "entry-points = ~A~%" entry-points)
+       
      (setq prog-bit
 	   (if (or *save_vbles* *auto-save-data*)
 	       ;; If we have SAVE'd variables, don't put their inits
@@ -1100,12 +1137,12 @@
 	       ;; where they belong.
 	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
-		     (prog ,local-vbles ,@all-decls ,@body))
-		   `(prog ,local-vbles ,@all-decls ,@body))
+		     (prog ,local-vbles ,@all-decls ,@entry-points ,@body))
+		   `(prog ,local-vbles ,@all-decls ,@entry-points ,@body))
 	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
-		     (prog ,local-vbles ,@all-decls ,@*data-init* ,@body))
-		   `(prog ,local-vbles ,@all-decls ,@*data-init* ,@body)))
+		     (prog ,local-vbles ,@all-decls ,@*data-init* ,@entry-points ,@body))
+		   `(prog ,local-vbles ,@all-decls ,@*data-init* ,@entry-points ,@body)))
 	       )
      ;;(format t "prog-bit = ~%~S~%" prog-bit)
 
@@ -1393,11 +1430,22 @@
 	    (setf prog-bit `(let ,sym-lets
 			     (symbol-macrolet ,sym-macs ,prog-bit)))))
 
-	(let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
-			      ;; Remove empty declaration
-			      ,@(unless (equal formal-arg-decls '((declare)))
-					formal-arg-decls)
-			      ,prog-bit))
+	;; Handle entry points.
+	(let* ((defun (if *entry-points* 'labels 'defun))
+	       (defun-name (if *entry-points*
+			       (intern (concatenate 'string "MULTI-ENTRY-" (string (cadr defun-bit))))
+			       (cadr defun-bit)))
+	       (defun-stuff (if *entry-points*
+				`(,defun ((,defun-name (%name% ,@arglist)
+					  ,@(unless (equal formal-arg-decls '((declare)))
+					    formal-arg-decls)
+					  ,prog-bit))
+				  ,@(entry-functions defun-name (cadr defun-bit) arglist))
+				`(,defun ,defun-name ,arglist
+				  ;; Remove empty declaration
+				  ,@(unless (equal formal-arg-decls '((declare)))
+					    formal-arg-decls)
+				  ,prog-bit)))
 	       (save-stuff (if (and (or *save_vbles* *auto-save-data*)
 				    save-inits)
 			       `(let ,save-inits
@@ -2631,8 +2679,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.96 2002/03/19 04:11:46 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.97 2002/03/19 06:03:14 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.97  2002/03/19 06:03:14  rtoy
+;;; First pass at adding support for ENTRY statements (multiple entry
+;;; points into a routine).  See NOTES for description of technique.
+;;;
 ;;; Revision 1.96  2002/03/19 04:11:46  rtoy
 ;;; GET-UPGRADED-FUN-ARG-TYPE wasn't correctly returning the type of a
 ;;; function call.  Didn't matter before, but with the recent coercion

@@ -121,6 +121,9 @@ only when needed. ")
 (defvar *assigned-variables* nil
   "List of variables that are assigned a value")
 
+(defvar *entry-points* nil
+  "List of ENTRY points")
+
 (defvar *f2cl-trace* nil)
 ;----------------------------------------------------------------------------
 
@@ -192,7 +195,8 @@ INPUT-FILE               File containing Fortran code
 	(*array-slicing* array-slicing)
 	(*apply-array-slice* nil)
 	(*declare-common-blocks* declare-common)
-	(*assigned-variables* nil))
+	(*assigned-variables* nil)
+	(*entry-points* nil))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -651,6 +655,7 @@ FILENAME                 File containing Fortran code
 			       ;; with the same name as the function.
 			       `(end_label
 				 (return (values ,(cadr fort-fun)
+						 ,@(mapcar #'first *entry-points*)
 						 ,@(maybe-nullify-returns (caddr fort-fun))))))
 			      ((or *program-flag*
 				   (not (eq (car fort-fun) 'defun)))
@@ -878,6 +883,10 @@ FILENAME                 File containing Fortran code
 			  '/blockdata/)))
 	 (setq bindings (id-definition-sub `(subroutine ,bdname)))
 	 (return (parse-subr-definition bindings))))
+
+     (when (eq (car x) 'entry)
+       (push (rest x) *entry-points*)
+       (return (list (second x))))
 
      ;;fall out the bottom:
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
@@ -2235,8 +2244,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.103 2002/03/19 04:10:05 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.104 2002/03/19 06:03:14 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.104  2002/03/19 06:03:14  rtoy
+;;; First pass at adding support for ENTRY statements (multiple entry
+;;; points into a routine).  See NOTES for description of technique.
+;;;
 ;;; Revision 1.103  2002/03/19 04:10:05  rtoy
 ;;; Comment out some debugging print statements.
 ;;;

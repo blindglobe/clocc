@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.13 2000/04/19 16:39:26 sds Exp $
+;;; $Id: net.lisp,v 1.14 2000/04/27 23:35:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -169,20 +169,27 @@
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'open-socket-server port)))
 
-(defun socket-accept (serv &optional bin)
-  "Accept a connection on a socket server (passive socket)."
-  (declare (type socket-server serv) (values socket))
-  #+allegro (let ((sock (socket:accept-connection serv :wait t)))
-              (socket:set-socket-format sock (if bin :binary :text))
-              sock)
-  #+clisp (lisp:socket-accept serv :element-type
-                              (if bin '(unsigned-byte 8) 'character))
-  #+cmu (progn
-          (sys:wait-until-fd-usable serv :input)
+(defun socket-accept (serv &key bin wait)
+  "Accept a connection on a socket server (passive socket).
+Keyword arguments are:
+ BIN - create a binary stream;
+ WAIT - wait for the connection this many seconds
+        (the default is NIL - wait forever).
+Returns a socket stream or NIL."
+  (declare (type socket-server serv) (values (or null socket)))
+  #+allegro (let ((sock (socket:accept-connection serv :wait (not wait))))
+              (when sock
+                (socket:set-socket-format sock (if bin :binary :text))
+                sock))
+  #+clisp (multiple-value-bind (sec usec) (floor (or wait 0))
+            (when (lisp:socket-wait serv sec (round usec 1d-6))
+              (lisp:socket-accept serv :element-type
+                                  (if bin '(unsigned-byte 8) 'character))))
+  #+cmu (when (sys:wait-until-fd-usable serv :input wait)
           (sys:make-fd-stream (ext:accept-tcp-connection serv)
                               :input t :output t :element-type
                               (if bin '(unsigned-byte 8) 'character)))
-  #+gcl (si:accept-socket-connection serv bin) ; FIXME
+  #+gcl (si:accept-socket-connection serv bin wait) ; FIXME
   #+lispworks (make-instance
                'comm:socket-stream :direction :io
                :socket (mp:mailbox-read (socket-server-mbox serv))

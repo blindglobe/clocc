@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.10 2000/07/31 17:53:04 sds Exp $
+;;; $Id: ext.lisp,v 1.11 2001/01/08 20:39:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage port
@@ -134,6 +134,15 @@ so that the bare symbols are read as keywords."
     (if (eq obj +eof+)
         (return (values (nreverse res) beg))
         (push obj res))))
+
+#+cmu (progn
+        (import '(ext:required-argument) :port)
+        (export '(required-argument) :port))
+#-cmu (progn
+        (proclaim '(ftype (function () nil) required-argument))
+        (defun required-argument ()
+          "A useful default for required keyword args and DEFSTRUCT slots."
+          (error "A required keyword argument was not supplied.")))
 
 ;;;
 ;;; Function Compositions

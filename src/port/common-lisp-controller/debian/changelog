@@ -1,9 +1,15 @@
+common-lisp-controller (3.19) unstable; urgency=low
+
+  * Nothing yet... 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 11 Sep 2002 11:23:36 +0200
+
 common-lisp-controller (3.18) unstable; urgency=low
 
   * Remove calls to mk:new-require to remove an unecessary dependency on
     mk-defsystem3. Use c-l-c's orignal-require function instead.
     (Kevin Rosenberg)
-  * Move grabbing of original implementation REQUIRE function to 
+  * Move grabbing of original implementation REQUIRE function to
     pre-defsystem file. (Kevin Rosenberg)
   * Bug fixes for Lispworks. (Kevin Rosenberg)
   * Add preliminary asdf support. (Kevin Rosenberg)
@@ -13,7 +19,7 @@ common-lisp-controller (3.18) unstable; urgency=low
     on Debian package cl-defsystem3 (Kevin Rosenberg)
   * Upstream fix for :cltl2 symbol. Closes: #146504
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 28 Aug 2002 20:45:51 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 11 Sep 2002 10:59:37 +0200
 
 common-lisp-controller (3.17) unstable; urgency=low
 

@@ -1,3 +1,21 @@
+common-lisp-controller (2.10) unstable; urgency=high
+
+  * Fixed major logical pathname problem.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 20 Nov 2001 20:35:36 +0100
+
+common-lisp-controller (2.9) unstable; urgency=high
+
+  * Fixed add-project-directory
+  * New, updated defsystem
+    Fixes: #118854
+  * Should have lintian overrides:
+    Fixes: #96107, #103892
+  * Banners fixed.
+    Fixes: #119875
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 17 Nov 2001 11:07:57 +0100
+
 common-lisp-controller (2.8) unstable; urgency=low
 
   * Now includes italian translation 

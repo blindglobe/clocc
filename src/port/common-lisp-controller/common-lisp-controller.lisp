@@ -18,6 +18,14 @@
                                   "L" "LSP"
                                   "C" "H"))
 
+(defvar *fasl-type* 
+  (load-time-value 
+   (pathname-type
+    (compile-file-pathname "foo.lisp")
+    :case :common))
+  "This is the type of compiled lisp files.")
+
+
 (defun add-translation (for new-root new-part)                           
   "Adds a translation to the logical pathname named by FOR (:cl-library or :cl-systems)
 NEW-ROOT is the new root for this translation, NEW-PART is the part below the
@@ -25,10 +33,10 @@ root that should be added.
 For example
  (add-translation :cl-library \"/home/pvaneynd/junk-pile/\"
                   (make-pathname :directory '(:RELATIVE \"HEMLOCK\" :wild-inferiors)
-                                 :type \"FASL\"
+                                 :type *fasl-type*
                                  :case :common))
-should add a translation that
-cl-library:;hemlock;**;*.fasl.* -> /home/pvaneynd/junk-pile/hemlock/**/*.fasl
+should add a translation (in CMUCL) that
+cl-library:;hemlock;**;*.x86f.* -> /home/pvaneynd/junk-pile/hemlock/**/*.x86f
 
 This function returns nothing."
   (let ((lp-host (ecase for
@@ -47,16 +55,20 @@ This function returns nothing."
             new-part)
     
     (let ((new-source
-           ;; construct based on new-part but in the right logical pathname
+	   ;; construct based on new-part but in the right logical pathname
            (make-pathname :defaults new-part
-                          :host lp-host))
+                          :host lp-host
+                          :case :common))
           ;; construct the destination, based on all this
           (new-dest
            (make-pathname :defaults new-part
                           ;; but under new-root
-                          :directory (append (pathname-directory new-root)
+                          :directory (append (pathname-directory new-root
+                                                                 :case :common)
                                              ;; skip the relative
-                                             (rest (pathname-directory new-part))))))
+                                             (rest (pathname-directory new-part
+                                                                       :case :common)))
+                          :case :common)))
       (push (list new-source
                   new-dest)
             (logical-pathname-translations lp-host)))
@@ -66,15 +78,20 @@ This function returns nothing."
            (make-pathname :defaults new-part
                           :directory (cons :absolute
                                            (rest
-                                            (pathname-directory new-part)))
+                                            (pathname-directory new-part
+                                                                :case :common)))
+                          :case :common
                           :host lp-host))
           ;; construct the destination, based on all this
           (new-dest
            (make-pathname :defaults new-part
                           ;; but under new-root
-                          :directory (append (pathname-directory new-root)
+                          :directory (append (pathname-directory new-root
+                                                                 :case :common)
                                              ;; skip the relative
-                                             (rest (pathname-directory new-part))))))
+                                             (rest (pathname-directory new-part
+                                                                       :case :common)))
+                          :case :common)))
       (push (list new-source
                   new-dest)
             (logical-pathname-translations lp-host)))
@@ -146,7 +163,7 @@ Returns nothing"
                  ;; ;**;*.*.*
                  ;; to                 
                  (make-pathname :directory (append (pathname-directory system-root
-                                           :case :common)
+                                                                       :case :common)
                                                    (list :wild-inferiors))
                                 :type "SYSTEM"
                                 :case :common
@@ -158,7 +175,7 @@ Returns nothing"
                  ;; ;**;*.*.*
                  ;; to                 
                  (make-pathname :directory (append (pathname-directory system-root
-                                           :case :common)
+                                                                       :case :common)
                                                    (list :wild-inferiors))
                                 :type "SYSTEM"
                                 :case :common
@@ -166,7 +183,8 @@ Returns nothing"
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)
-  "This registers a SOURCE-ROOT and FASL-ROOT translation for the subdirectory project for all PROJECTS.
+  "This registers a SOURCE-ROOT and FASL-ROOT translation for the subdirectory 
+project for all PROJECTS.
 Optionally you can also register SYSTEM-DIRECTORY.
 Returns nothing"
   (declare (type pathname source-root fasl-root system-directory))
@@ -188,7 +206,7 @@ Returns nothing"
     (pushnew  "/home/pvaneynd/common-lisp/systems/"
               (symbol-value
                (intern "*CENTRAL-REGISTRY*"
-                      (find-package :make)))
+                       (find-package :make)))
               :test #'equalp))
   (values))
 

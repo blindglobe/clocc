@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.29 2002/04/03 19:24:40 sds Exp $
+;;; $Id: inspect.lisp,v 1.30 2002/04/25 02:12:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -518,22 +518,22 @@ This is useful for frontends which provide an eval/modify facility."
 ;;;
 
 ;;;###autoload
-(defun inspect-cllib (object &key (frontend *inspect-frontend*)
-                      (browser *inspect-browser*))
+(defun inspect-cllib (object &key
+                      ((:frontend *inspect-frontend*) *inspect-frontend*)
+                      ((:browser *inspect-browser*) *inspect-browser*))
   "This function implements the ANSI Common Lisp INSPECT function."
   (let* ((*print-array* nil) (*print-pretty* t)
          (*print-circle* t) (*print-escape* t)
          #-clisp (*print-lines* *inspect-print-lines*)
          (*print-level* *inspect-print-level*)
          (*print-length* *inspect-print-length*)
-         (*package* (make-package (gensym "INSPECT-TMP-PACKAGE-")))
-         (*inspect-unbound-value* (intern "#<unbound>" *package*))
-         (*inspect-frontend* frontend)
-         (*inspect-browser* browser))
+         (tmp-pack (make-package (gensym "INSPECT-TMP-PACKAGE-")))
+         (*package* tmp-pack)
+         (*inspect-unbound-value* (intern "#<unbound>" tmp-pack)))
     (unwind-protect
-         (inspect-frontend (inspect-backend object) frontend)
-      (inspect-finalize frontend)
-      (delete-package *package*))
+         (inspect-frontend (inspect-backend object) *inspect-frontend*)
+      (inspect-finalize *inspect-frontend*)
+      (delete-package tmp-pack))
     (values)))
 
 (provide :cllib-inspect)

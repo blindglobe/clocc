@@ -1,0 +1,55 @@
+;;; -*- Lisp -*-
+;;;
+;;; CLLIB - a Library of useful utilities
+;;;
+
+(mk:defsystem cllib
+    :source-pathname (translate-logical-pathname "clocc:src;cllib;")
+    ;; :package :cllib
+    :source-extension "lisp"
+    :components
+    ((:file "animals" :depends-on
+            ("base" "string" "symb" "fileio" "miscprint"))
+     (:file "autoload" :depends-on ("base" "fileio"))
+     (:file "base")
+     (:file "card" :depends-on
+            ("base" "withtype" "closio" "tilsla" "string" "date"))
+     (:file "check" :depends-on ("base" "log" "math"))
+     (:file "clhs" :depends-on ("base" "withtype" "fileio" "html"))
+     (:file "closio" :depends-on ("base"))
+     (:file "date" :depends-on
+            ("base" "list" "string" "sorted" "log" "withtype"))
+     (:file "datedl" :depends-on
+            ("base" "withtype" "date" "laser" "math" "symb"))
+     (:file "doall" :depends-on ("base"))
+     (:file "elisp" :depends-on ("base" "list" "closio"))
+     (:file "fileio" :depends-on ("base" "withtype" "symb" "log" "closio"))
+     (:file "fin" :depends-on ("base" "math" "tilsla" "withtype"))
+     (:file "geo" :depends-on
+            ("base" "withtype" "symb" "log" "fileio" "html" "tilsla" "url"))
+     (:file "gnuplot" :depends-on ("base" "date" "datedl" "math" "stat"))
+     (:file "gq" :depends-on ("base""withtype" "html" "url" "gnuplot"))
+     (:file "h2lisp" :depends-on ("base" "withtype" "html"))
+     (:file "html" :depends-on ("base" "url"))
+     (:file "iter" :depends-on ("base" "simple" "withtype" "log" "math"))
+     (:file "laser" :depends-on ("base" "log"))
+     (:file "list" :depends-on ("base" "simple"))
+     (:file "log" :depends-on ("base" "withtype" "tilsla"))
+     (:file "math" :depends-on ("base" "withtype" "fileio" "log" "list"))
+     (:file "miscprint" :depends-on ("base" "simple"))
+     #+clisp (:file "octave" :depends-on ("base"))
+     (:file "rpm" :depends-on ("base" "url"))
+     (:file "server" :depends-on ("base" "log"))
+     (:file "simple" :depends-on ("base"))
+     (:file "sorted" :depends-on ("base" "tilsla" "math"))
+     (:file "stat" :depends-on ("base" "math" "withtype"))
+     (:file "string" :depends-on ("base"))
+     (:file "symb" :depends-on ("base"))
+     (:file "tilsla" :depends-on ("base" "withtype"))
+     (:file "url" :depends-on ("base" "withtype" "symb" "string" "fileio"
+                                      "log" "simple" "tilsla" "date"))
+     (:file "withtype" :depends-on ("base")))
+    :finally-do
+    (progn (funcall (intern "AUTOLOAD-GENERATE" :cllib)
+                    (mk:files-in-system :cllib) "auto.lisp")
+           (compile-file "auto.lisp")))

@@ -138,7 +138,7 @@
    (dolist (bf ytools-core-files*)
       (let ((lisp-file
 	       (merge-pathnames
-		  (make-pathname :name bf :type lisp-source-extn*)
+		  (make-pathname :name bf :type "lisp")
 		  ytools-dir-pathname*))
 	    (fasl-file
 	       (ensure-directories-exist

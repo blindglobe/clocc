@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.5 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.6 2004/05/05 15:55:20 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -847,6 +847,7 @@
 	    (setq dirsegs
 	          (remove-if (\\ (s) (string= s ""))
 			     dirsegs))
+;;;;	    (format t "dirsegs = ~s~%" dirsegs )
 	    (let ((ytpn (mergem (strings->ytools-pathnames dirsegs pkg))))
 ;;;;	       (format t "ytpn = ~s~%" ytpn)
 	       (cond (abs

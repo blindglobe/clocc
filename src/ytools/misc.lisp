@@ -1,13 +1,13 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 1.3 2004/04/24 23:01:24 airfoyle Exp $
+;;;$Id: misc.lisp,v 1.4 2004/05/05 15:55:20 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(depends-on :at-run-time %ytools/ setter mapper)
+(depends-on :at-run-time %ytools/ setter mapper signal)
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(out-to-string dbg-out dbg-out-indent

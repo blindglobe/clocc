@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.3 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.4 2004/05/05 15:55:20 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -34,7 +34,10 @@
    (let ((curstate (Out-stream-state stream))
 	 (real-stream (Out-stream-stream stream)))
       (cond ((eq curstate 'unindented)
-	     (format real-stream "~V,0T" (Out-stream-indent stream))
+#+allegro    (format real-stream "~V,0T" (Out-stream-indent stream))
+#-allegro    (progn (fresh-line real-stream)
+		    (print-spaces (Out-stream-indent stream)
+				  real-stream))
 	     (setf (Out-stream-state stream) 'indented)))
       real-stream))
 

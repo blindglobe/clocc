@@ -40,13 +40,17 @@
 ;;; works based upon this Software are permitted, as long as the
 ;;; following conditions are met:
 
-;;;      o this copyright notice is included intact and is prominently
-;;;        visible in the Software
-;;;      o distribution of a modification to the Software have been
-;;;        previously submitted to the maintainers; if the maintainers
-;;;        decide not to include the submitted changes, the "full
-;;;        name" of the re-distributed Software ("MK:DEFSYSTEM", or
-;;;        "MAKE:DEFSYSTEM", or "MK-DEFSYSTEM") must be changed.
+;;;    o this copyright notice is included intact and is prominently
+;;;      visible in the Software
+;;;    o if modifications have been made to the source code of the
+;;;      this package that have not been adopted for inclusion in the
+;;;      official version of the Software as maintained by the Copyright
+;;;      holders, then the modified package MUST CLEARLY identify that
+;;;      such package is a non-standard and non-official version of
+;;;      the Software.  Furthermore, it is strongly encouraged that any
+;;;      modifications made to the Software be sent via e-mail to the
+;;;      MK-DEFSYSTEM maintainers for consideration of inclusion in the
+;;;      official MK-DEFSYSTEM package.
 
 ;;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
 ;;; EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
@@ -2784,7 +2788,26 @@ D
     ;; Return the component.
     component))
 
+
+;;; defsystem --
+;;; The main macro.
+;;;
+;;; 2002-11-22 Marco Antoniotti
+;;; Added code to achieve a first cut "pathname less" operation,
+;;; following the ideas in ASDF.  If the DEFSYSTEM form is loaded from
+;;; a file, then the location of the file (intended as a directory) is
+;;; computed from *LOAD-PATHNAME* and stored as the :SOURCE-PATHNAME
+;;; of the system.
+
 (defmacro defsystem (name &rest definition-body)
+  (unless (find :source-pathname definition-body)
+    (setf definition-body
+	  (list* :source-pathname
+		 '(when *load-pathname*
+		        (make-pathname :name nil
+			               :type nil
+			               :defaults *load-pathname*))
+		 definition-body)))
   `(create-component :defsystem ',name ',definition-body nil 0))
 
 (defun create-component-pathnames (component parent)
@@ -3383,8 +3406,9 @@ D
 		(system (find-system name :load)))
 	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp scl)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
-		     (ignore *compile-verbose* #-MCL *compile-file-verbose*)
-		     (optimize (inhibit-warnings 3)))
+		     #-openmcl (ignore *compile-verbose*
+				       #-MCL *compile-file-verbose*)
+		     #-openmcl (optimize (inhibit-warnings 3)))
 	    (unless (component-operation operation)
 	      (error "Operation ~A undefined." operation))
 	    (operate-on-component system operation force))))
@@ -3924,6 +3948,7 @@ D
 		      program arguments))
   #+(or :kcl :ecl) (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+(or :cmu :scl) (extensions:run-program program arguments)
+  #+:openmcl (ccl:run-program program arguments)
   #+:sbcl (sb-ext:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
 		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))

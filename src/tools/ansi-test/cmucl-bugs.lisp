@@ -676,8 +676,8 @@ these are not rationals, so we get a complex number back.
   "From Gilbert Baumann")
 
 (check-for-bug  :cmucl-bugs-loop-destructuring
-  (loop with (a . b) of-type float = (list 0.0 . 1.0)
-        and (c . d) of-type float = (list 2.0 . 3.0)
+  (loop with (a b) of-type float = (list 0.0 1.0)
+        and (c d) of-type float = (list 2.0 3.0)
         return (list a b c d))
   (0.0 1.0 2.0 3.0)
   "From: Wolfhard Buss")

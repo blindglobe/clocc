@@ -291,17 +291,17 @@ options that are passed to it when invoked."))
 
 (defclass linkable-component-mixin (component-language-mixin)
   ((linker :accessor component-linker
-	   :writer set-component-linker ; This is needed for initializations.
+	   :writer set-component-linker	; This is needed for initializations.
 	   :initarg :linker
 	   :type (or null function language-linker))
    (linker-options :accessor component-linker-options
 		   :initarg :linker-options
 		   :type list)
    (libraries :accessor linkable-component-libraries
-	      :initargs :libraries
+	      :initarg :libraries
 	      :type list)
    )
-  (:default-initargs :compiler nil :linker-options () :libraries ())
+  (:default-initargs :linker nil :linker-options () :libraries ())
   (:documentation
    "A `mixin' class used to specify that a component is `linkable'.
 The `linker' slot contains a function or an instance of the specific

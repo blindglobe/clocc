@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.6 2000/04/04 21:32:48 sds Exp $
+;;; $Id: string.lisp,v 1.7 2000/05/12 18:35:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -90,6 +90,14 @@ zero-length subsequences too.
   (apply #'split-seq str (lambda (ch) (declare (character ch)) (find ch chars))
          opts))
 
+(defun sequence-type (seq)
+  "Return the symbol representing the type of the sequence SEQ.
+Returns one of (string, vector or list)."
+  (typecase seq
+    (string 'string) (vector 'vector) (list 'list)
+    (t (error 'case-error :proc 'substitute-type :args
+              (list 'seq seq 'string 'vector 'list)))))
+
 (defun substitute-subseq-if (seq begf endf repf &key (start 0) end)
   "Substitute all subsequences in a sequence with a replacement sequence.
 The result is of the same type as SEQ.
@@ -114,10 +122,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
            (type (function (sequence index-t t) (or null index-t)) begf)
            (type (function (sequence index-t t) index-t) endf)
            (type (function (sequence index-t t symbol) sequence) repf))
-  (loop :with type =
-        (typecase seq (string 'string) (vector 'vector) (list 'list)
-                  (t (error 'case-error :proc 'substitute-subseq :args
-                            (list 'seq seq 'string 'vector 'list))))
+  (loop :with type :of-type symbol = (sequence-type seq)
         :and last :of-type index-t = start
         :for next = (funcall begf seq last end)
         :unless (or next all) :return seq
@@ -134,10 +139,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
 The result is of the same type as SEQ.
   (substitute-subseq SEQ SUB REP &key START END TEST KEY)"
   (declare (sequence seq sub rep) (type index-t start))
-  (loop :with type =
-        (typecase seq (string 'string) (vector 'vector) (list 'list)
-                  (t (error 'case-error :proc 'substitute-subseq :args
-                            (list 'seq seq 'string 'vector 'list))))
+  (loop :with type :of-type symbol = (sequence-type seq)
         :and olen :of-type index-t = (length sub)
         :and last :of-type index-t = start
         :for next = (search sub seq :start2 last :end2 end :test test :key key)

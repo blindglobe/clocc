@@ -23,6 +23,7 @@
 			 linkable-component-mixin
 			 #|c-language-mixin|#)
   ()
+  (:default-initargs :source-extension "c" :binary-extension "o")
   )
 
 (defclass c-header-file (c-file)
@@ -31,11 +32,11 @@
 
 (defclass c-executable (c-file executable-file)
   ()
-  (:default-initargs :link t :compile-only t))
+  (:default-initargs :link t :compile-only t :source-extension nil))
 
 (defclass c-object (c-file object-file)
   ()
-  (:default-initargs :link t))
+  (:default-initargs :link t :source-extension "o"))
 
 
 ;;; Notes:

@@ -6,15 +6,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.8 2000/05/24 23:02:52 sds Exp $
+;;; $Id: gq.lisp,v 2.9 2000/06/29 19:46:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `index-t'
+  ;; `index-t', `whitespace-char-p'
   (require :withtype (translate-logical-pathname "cllib:withtype"))
-  ;; `*html-readtable*'
-  (require :html (translate-logical-pathname "cllib:html"))
+  ;; `with-xml-input'
+  (require :xml (translate-logical-pathname "cllib:xml"))
   ;; `make-url'
   (require :url (translate-logical-pathname "cllib:url"))
   ;; `plot-dated-lists'
@@ -30,6 +30,8 @@
 
 (defcustom *gq-error-stream* (or null stream) *error-output*
   "The error stream for `with-open-url'.")
+(defcustom *gq-timeout* (real 0) 600
+  "*The default timeout, in seconds.")
 
 (defun gq-complete-url (url &rest ticks)
   "Complete URL to get the quotes for TICKS."
@@ -84,67 +86,106 @@ change:~15t~7,2f~35thigh:~45t~7,2f
           (if (< ho 17) (yesterday td) td)
           (yesterday td (if (= wd 5) 1 2))))))
 
+(defmacro with-url-xml ((var url &key (err '*error-output*)
+                             (max-retry '*url-default-max-retry*)
+                             (timeout '*gq-timeout*))
+                        &body body)
+  "Open the URL as an XML stream."
+  (with-gensyms ("WUX-" str)
+    `(with-open-url (,str ,url :err ,err :max-retry ,max-retry
+                     :timeout ,timeout)
+      (mesg :xml ,err " *** header:~%")
+      (loop :for xx = (read-line ,str nil nil) :do (mesg :xml ,err "~s~%" xx)
+       :while (and xx (not (string= "" xx))))
+                                ; (not (string-beg-with "Content-Type:" xx))
+      (mesg :xml ,err " *** data~%")
+      (with-xml-input (,var ,str)
+        (let ((*xml-read-balanced* nil) (*xml-read-entities* nil))
+          ,@body)))))
+
+;;;###autoload
+(defun get-url-xml-tokens (url &key (out *standard-output*)
+                           (err *error-output*))
+  "Dump the URL token by token.
+This is just a debugging function, to be called interactively."
+  (with-url-xml (sock (url url) :err err)
+    (loop :for ii :upfrom 1 :and rr = (read sock nil +eof+)
+          :until (eq +eof+ rr)
+          :do (format out "~&~d: " ii) (pr rr out) (terpri out))))
+
+(defun stream-next-num (stream)
+  (loop (let ((cur (read stream))) (when (numberp cur) (return cur)))))
+
+(defun gq-dat (obj)
+  ;; (mesg :log *gq-error-stream* "-> ~s~%" obj)
+  (typecase obj
+    (xml-obj (car (xmlo-data obj)))
+    (xml-comment (xml-comment-data obj))
+    (cons (cdr obj))
+    (string obj)
+    (symbol (symbol-name obj))
+    (t (prin1-to-string obj))))
+
+(defun gq-next (stream &optional (nn 1))
+  (loop :repeat nn :for cur = (gq-dat (read stream)) :finally (return cur)))
+
+(defun gq-skip (stream string)
+  (loop (when (string-equal (gq-next stream) string) (return))))
+
+(defun gq-next-num (stream &optional (nn 1))
+  (labels ((nump (ch)
+             (or (whitespace-char-p ch)
+                 (member ch '(#\- #\.))
+                 (digit-char-p ch)))
+           (clean (line)
+             (nsubstitute #\Space #\% line)
+             (nsubstitute #\Space #\+ line)
+             (nsubstitute #\Space #\, line)
+             line)
+           (next (stream)
+             (loop (let ((tok (clean (gq-next stream))))
+                     (when (and (some #'digit-char-p tok) (every #'nump tok))
+                       (return (with-standard-io-syntax
+                                 (dfloat (read-from-string tok)))))))))
+    (loop :repeat nn :for cur = (next stream) :finally (return cur))))
+
 (defun get-quotes-apl (url &rest ticks)
   "Get the data from the APL WWW server."
-  (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
-                       :err *gq-error-stream* :rt *html-readtable*)
-    (do (dt zz res (ts (make-text-stream :sock sock)))
-        ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
-         (cons (or dt (gq-guess-date)) (nreverse res)))
-      (when (eq (car ticks) zz)
-        (mesg :log *gq-error-stream* " *** Found: ~a~%" (car ticks))
-        (pop ticks)
-        (push (mk-daily-data
-               :nav (next-number ts)
-               :chg (next-number ts)
-               :prc (next-number ts)
-               :bid 0d0 ; (next-token ts :type 'float :dflt 0d0 :num 3)
-               :ask 0d0 ; (next-token ts :type 'float :dflt 0d0)
-               :pre (next-number ts)
-               :low (next-number ts)
-               :hgh (next-number ts)) res)
-        (setq dt (infer-date (ignore-errors (date (next-token ts :num 3)))))
-        (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
-              dt (car res))))))
+  (with-url-xml (sock (apply #'gq-complete-url url ticks)
+                       :timeout *gq-timeout* :err *gq-error-stream*)
+    (do ((ti ticks (cdr ti)) res dt)
+        ((null ti) (cons (or dt (gq-guess-date)) (nreverse res)))
+      (gq-skip sock (symbol-name (car ti)))
+      (push (mk-daily-data :nav (gq-next-num sock) :chg (gq-next-num sock)
+                           :prc (/ (gq-next-num sock) 100d0) :bid 0d0 :ask 0d0
+                           :pre (gq-next-num sock) :low (gq-next-num sock)
+                           :hgh (gq-next-num sock))
+            res)
+      ;;(setq dt (string-tokens (gq-next sock 2))
+      ;;      dt (infer-date (car dt) (cadr dt)))
+      (mesg :log *gq-error-stream* " *** Found [~s] [~a]: ~a~%"
+            (car ti) dt (car res)))))
 
 (defun get-quotes-yahoo (url &rest ticks)
   "Get the data from the Yahoo WWW server."
-  (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
-                       :err *gq-error-stream* :rt *html-readtable*)
-    (do ((st (read-line sock) (read-line sock)))
-        ((string-beg-with "</tr></table><b>Views:" st)))
-    (do (dt zz res (ts (make-text-stream :sock sock)))
-        ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
-         (cons (or dt (gq-guess-date)) (nreverse res)))
-      (when (eq (car ticks) zz)
-        (mesg :log *gq-error-stream* " *** Found: ~a~%" (car ticks))
-        (pop ticks)
-        (setq dt (infer-date (next-token ts) (next-token ts)))
-        (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)
-                             :prc (/ (next-number ts) 100d0))
-              res)
-        (mesg :log *gq-error-stream* " *** Found [~a]: ~a~%"
-              dt (car res))))))
-
-(defun get-quotes-pf (url &rest ticks)
-  "Get the data from the PathFinder WWW server."
-  (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
-                       :err *gq-error-stream* :rt *html-readtable*)
-    (let ((dt (infer-date)) (ts (make-text-stream :sock sock)))
-      (declare (type date dt) (type text-stream ts))
-      (ts-skip-scripts ts)
-      (do ((zz (next-token ts) (next-token ts)) res)
-          ((null ticks) (cons dt (nreverse res)))
-        (when (eq (car ticks) zz)
-          (mesg :log *gq-error-stream* " *** found: ~s~%" (car ticks))
-          (pop ticks)
-          (push (mk-daily-data :nav (next-number ts)) res)
-          (mesg :log *gq-error-stream* " *** saved: ~s~%" (car res)))))))
+  (with-url-xml (sock (apply #'gq-complete-url url ticks)
+                      :timeout *gq-timeout* :err *gq-error-stream*)
+    (do ((ti ticks (cdr ti)) res dt)
+        ((null ti) (cons (or dt (gq-guess-date)) (nreverse res)))
+      (gq-skip sock (symbol-name (car ti)))
+      (setq dt (string-tokens (gq-next sock 3)))
+      (print dt)
+      (setq dt (infer-date (car dt) (cadr dt)))
+      (push (mk-daily-data :nav (gq-next-num sock) :chg (gq-next-num sock)
+                           :prc (/ (gq-next-num sock) 100d0))
+            res)
+      (mesg :log *gq-error-stream* " *** Found [~s] [~a]: ~a~%"
+            (car ti) dt (car res)))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
   (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res ts dt
-       (gd (gq-guess-date)) (*ts-kill* '(#\%)))
+       (gd (gq-guess-date)))
       ((null ti)
        (setq dt (caar (last (car hh))))
        (unless (date= dt gd)
@@ -161,8 +202,8 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                       (nreverse hh))
                (nreverse ar)))
     (mesg :log *gq-error-stream* " *** Processing ~a~%" (car ti))
-    (with-open-url (sock (gq-complete-url url (car ti)) :timeout 600
-                         :rt *html-readtable* :err *gq-error-stream*)
+    (with-url-xml (sock (gq-complete-url url (car ti))
+                        :timeout *gq-timeout* :err *gq-error-stream*)
       (do ((st (read-line sock) (read-line sock))
            (sy (concatenate 'string "(" (symbol-name (car ti)) ")")))
           ((string-beg-with sy st)
@@ -185,6 +226,33 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                (push (next-number ts) vs)))
             hh))))
 
+(defun get-quotes-pf (url &rest ticks)
+  "Get the data from the PathFinder WWW server."
+  (with-url-xml (sock (apply #'gq-complete-url url ticks)
+                      :timeout *gq-timeout* :err *gq-error-stream*)
+    ;; the morons that run PathFinder put commas in the
+    ;; attribute lists!!!  BEWARE!!!
+    (do ((ti ticks (cdr ti)) res)
+        ((null ti) (cons (gq-guess-date) (nreverse res)))
+      (gq-skip sock (symbol-name (car ti)))
+      (push (mk-daily-data :nav (gq-next-num sock) :chg (gq-next-num sock 2))
+            res)
+      (mesg :log *gq-error-stream* " *** Found [~s]: ~a~%"
+            (car ti) (car res)))))
+
+(defun get-quotes-cnn (url &rest ticks)
+  "Get the data from the CNN-FN WWW server."
+  (with-url-xml (sock (apply #'gq-complete-url url ticks)
+                      :timeout *gq-timeout* :err *gq-error-stream*)
+    (do ((ti ticks (cdr ti)) res)
+        ((null ti) (cons (gq-guess-date) (nreverse res)))
+      (gq-skip sock (symbol-name (car ti)))
+      (push (mk-daily-data :nav (stream-next-num sock)
+                           :chg (stream-next-num sock))
+            res)
+      (mesg :log *gq-error-stream* " *** Found [~s]: ~a~%"
+            (car ti) (car res)))))
+
 (defcustom *get-quote-url-list* list
   (list (list (make-url :prot :http :port 80 :host "qs.secapl.com"
                         :path "/cgi-bin/qs?ticks=")
@@ -193,34 +261,37 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                         :path "/q?s=")
               'get-quotes-yahoo "Yahoo")
         (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
-                        :path "/wc/form/P1?template=sm/chart&Symbol=")
+                        :path "/exe/sm/chart&Symbol=")
               'get-quotes-sm "StockMaster")
         (list (make-url :prot :http :port 80 :host "quote.pathfinder.com"
                         :path "/money/quote/qc?symbols=")
               'get-quotes-pf "PathFinder")
-        (list (make-url :prot :http :port 80 :host "www.stockmaster.com"
-                        :path "/cgi-bin/graph?sym=")
-              'get-quotes-sm-old "old StockMaster"))
+        (list (make-url :prot :http :port 80 :host "qs.cnnfn.com"
+                        :path "/tq/stockquote?symbols=")
+              'get-quotes-cnn "CNN"))
   "*The list of known URL templates for getting quotes.")
 
 (defun get-quotes (server &rest ticks)
   "Get the quotes from one of `*get-quote-url-list*'.
-The first arg, SERVER, when non-nil, specifies which server to use."
-  (if server
-      (let ((qq (if (numberp server) (nth server *get-quote-url-list*)
-                    (find server *get-quote-url-list* :key #'third
-                          :test (lambda (se na)
-                                  (search se na :test #'char-equal))))))
-        (assert qq (server) "Unknown server `~a'.~%" server)
-        (multiple-value-call #'values (third qq)
-                             (apply (second qq) (first qq) ticks)))
-      (do ((ql *get-quote-url-list* (cdr ql)) res name)
-          ((or (endp ql) (car res)) (values-list (cons name res)))
-        (format t "~&Trying ~a..." (setq name (caddar ql)))
-        (force-output)
-        (setq res (multiple-value-list
-                   (ignore-errors (apply (cadar ql) (caar ql) ticks))))
-        (format t "~:[failed...[~a]~;success!~*~]~%" (car res) (cdr res)))))
+The first arg, SERVER, when non-nil, specifies which server to use,
+ when it is T, all server are tried unconditionally."
+  (flet ((gq (srv) (apply (second srv) (first srv) ticks)))
+    (if (and server (not (eq server t)))
+        (let ((qq (if (numberp server) (nth server *get-quote-url-list*)
+                      (find server *get-quote-url-list* :key #'third
+                            :test (lambda (se na)
+                                    (search se na :test #'char-equal))))))
+          (assert qq (server) "Unknown server `~a'.~%" server)
+          (multiple-value-call #'values (third qq) (gq qq)))
+        (do ((ql *get-quote-url-list* (cdr ql)) res name log)
+            ((or (endp ql) (and (null server) (car res)))
+             (format t "Results:~%~:{~a: ~a~%~}" (nreverse log))
+             (values-list (cons name res)))
+          (format t "~&Trying ~a...~%" (setq name (caddar ql)))
+          (let ((re (multiple-value-list (ignore-errors (gq (car ql))))))
+            (if (car re) (setq res re)
+                (format t "~&~a: ~a~%" name (cadr re)))
+            (push (list name (or (car re) (cadr re))) log))))))
 
 (defun infer-date (&optional mon day)
   "Guess what the date is.

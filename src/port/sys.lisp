@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.43 2002/03/30 00:51:46 sds Exp $
+;;; $Id: sys.lisp,v 1.44 2002/07/21 15:23:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,8 +42,9 @@
   #+gcl (si:getenv (string var))
   #+lispworks (lw:environment-variable (string var))
   #+lucid (lcl:environment-variable (string var))
+  #+mcl (ccl::getenv var)
   #+sbcl (sb-ext:posix-getenv var)
-  #-(or allegro clisp cmu gcl lispworks lucid sbcl)
+  #-(or allegro clisp cmu gcl lispworks lucid mcl sbcl)
   (error 'not-implemented :proc (list 'getenv var)))
 
 (defun (setf getenv) (val var)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.17 2001/03/30 22:22:30 sds Exp $
+;;; $Id: fileio.lisp,v 1.18 2001/04/02 17:02:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -335,8 +335,14 @@ When it is NIL, return a list of conses (FILE . FILE-WRITE-DATE)"
   "Save or read VAR into/from file.
 NAME is the name template, and should contain one `~a' format instruction
  if you want the filename to contain the timestamp;
-VAR is a symbol whos value is being saved;
-VOIDP is a predicate called on value of VAR (default - NULL);
+VAR is a symbol whose value is being saved;
+VOIDP is a predicate called on value of VAR (default - NULL) to determine
+ whether to save or restore: if WHAT is non-NIL or VAR is VOIDP, then READ,
+ otherwise - WRITE.
+When WHAT is non-NIL, it can determine the file to be read:
+ as a pathname designator, it specifies the path,
+ as a number, the n-th latest file (see `latest-file'),
+ when neither - the latest file matching basedir/name* will be read.
 PRE-SAVE and POST-READ are functions called before save and after reading,
  they should be non-destructive and return the value to be written to the
  file and assigned to the variable respectively;

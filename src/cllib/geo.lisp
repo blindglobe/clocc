@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.10 2000/06/29 19:26:28 sds Exp $
+;;; $Id: geo.lisp,v 2.11 2001/06/11 19:43:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -151,7 +151,7 @@ and return a list of geo-data."
   (setf (url-path url) (format nil "/~a//x" code))
   (with-open-url (sock url)
     (do (rr)
-	((eq +eof+ (setq rr (read-line sock nil +eof+))))
+	((null (setq rr (read-line sock nil nil))))
       (format out "~a~%" rr))))
 
 ;;;

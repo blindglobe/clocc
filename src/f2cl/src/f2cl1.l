@@ -494,16 +494,17 @@ FILENAME                 File containing Fortran code
 	  (setlispread))
         ;; extract format-stmts
         ;;(format t "extract format-stmts~%")
-	(format t "~A~%" input-list)
+	;;(format t "~S~%" input-list)
 	(when (and (eq (car input-list) 'write)
 		   (stringp (fifth input-list)))
-	  (format t "Found desired write statement ~D ~A~%" write-label input-list)
-	  (push 
-	   `(,margin ,(list 'write '|(| (third input-list) '|,| write-label '|)| (nthcdr 6 input-list)))
-	   output-list)
+	  ;;(format t "Found desired write statement ~D~% ~S~%" write-label input-list)
+	  (let ((new `(write |(| ,(third input-list) |,| ,write-label |)|
+		       ,@(nthcdr 6 input-list))))
+	    ;;(format t "new = ~S~%" new)
+	    (push `(,margin ,new) output-list))
 	  (setf *current_label* write-label)
 	  (incf write-label)
-	  (format t "~D format(~A)" *current_label* (fifth input-list))
+	  ;;(format t "~D format(~A)" *current_label* (fifth input-list))
 	  (let ((fmt (unwind-protect
 			  (progn
 			    (set-fortran-read)
@@ -2193,8 +2194,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.95 2002/03/07 04:57:22 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.96 2002/03/07 05:19:59 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.96  2002/03/07 05:19:59  rtoy
+;;; o Comment out some debugging print statements.
+;;; o Wasn't rewriting the write statement correctly.  This works much
+;;;   better.
+;;;
 ;;; Revision 1.95  2002/03/07 04:57:22  rtoy
 ;;; First cut at handling write(*, <fmt-string>).  Do this be converting
 ;;; to write(*,<number>) with a new format statement containing the format

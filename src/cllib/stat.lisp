@@ -1,11 +1,11 @@
-;;; n-dim statistics, requires matrix operations
+;;; n-dim statistics.
 ;;; for simple regression, see math.lisp
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: stat.lisp,v 1.3 2000/04/27 15:59:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,10 +14,8 @@
   (require :math (translate-logical-pathname "cllib:math"))
   ;; `map-vec'
   (require :withtype (translate-logical-pathname "cllib:withtype"))
-  ;; `matrix-solve', `matrix-inverse', `matrix-print',
-  ;; `matrix-multiply-mat-col'
-  (require :matrix (translate-logical-pathname
-                    "clocc:src;math;clmath;matrix")))
+  ;; `matrix-solve'
+  (require :matrix (translate-logical-pathname "cllib:matrix")))
 
 (in-package :cllib)
 
@@ -70,14 +68,7 @@
       (loop :for jj :of-type index-t :from 0 :to ii :do
             (decf (aref mx ii jj) (* len (aref mms ii) (aref mms jj)))
             (setf (aref mx jj ii) (aref mx ii jj))))
-    (handler-case (clmath:matrix-solve mx (replace cfs rhs))
-      (division-by-zero (co)
-        (format t "regress-n: `clmath:matrix-solve' failed: ~a~%" co)
-        (clmath:matrix-print mx)
-        (let ((det (clmath:matrix-inverse mx)))
-          (assert (/= 0 det) (mx) "the matrix is degenerate (det = 0)~%")
-          (format t "det == ~f; using `clmath:matrix-inverse'.~%" det)
-          (clmath:matrix-multiply-mat-col mx rhs cfs))))
+    (matrix-solve mx (replace cfs rhs))
     (setq free (- yyb (dot cfs mms))
           rr (/ (dot cfs rhs) yys)
           ff (d/ (* rr (- len nx 1)) (* (- 1 rr) nx)))

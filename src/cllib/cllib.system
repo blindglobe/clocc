@@ -2,8 +2,13 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.9 2000/04/10 21:01:36 sds Exp $
+;;; $Id: cllib.system,v 1.10 2000/04/27 15:59:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
+
+;;; when adding a file to CLLIB, one has to modify the following:
+;;; 1. cllib.system (defsystem)
+;;; 2. Makefile ($(SOURCES))
+;;; 3. cllib.html (file list)
 
 (mk:defsystem cllib
     :source-pathname (translate-logical-pathname "clocc:src;cllib;")
@@ -17,7 +22,8 @@
      (:file "card" :depends-on
             ("base" "withtype" "closio" "tilsla" "string" "date"))
      (:file "check" :depends-on ("base" "log" "math"))
-     (:file "clhs" :depends-on ("base" "withtype" "string" "fileio" "html"))
+     (:file "clhs" :depends-on
+            ("base" "withtype" "string" "fileio" "log" "html"))
      (:file "closio" :depends-on ("base"))
      (:file "date" :depends-on
             ("base" "simple" "string" "sorted" "log" "withtype"))
@@ -28,7 +34,7 @@
      (:file "fileio" :depends-on ("base" "withtype" "symb" "log"))
      (:file "fin" :depends-on ("base" "math" "tilsla" "withtype"))
      (:file "geo" :depends-on
-            ("base" "withtype" "symb" "log" "fileio" "html" "tilsla" "url"))
+            ("base" "withtype" "symb" "fileio" "html" "tilsla" "url"))
      (:file "gnuplot" :depends-on ("base" "date" "datedl" "math" "stat"))
      (:file "gq" :depends-on ("base""withtype" "html" "url" "gnuplot"))
      (:file "h2lisp" :depends-on ("base" "withtype" "html"))
@@ -41,6 +47,7 @@
      (:file "list" :depends-on ("base" "simple"))
      (:file "log" :depends-on ("base" "withtype" "tilsla"))
      (:file "math" :depends-on ("base" "withtype" "fileio" "log" "list"))
+     (:file "matrix" :depends-on ("base" "withtype"))
      (:file "miscprint" :depends-on ("base" "simple"))
      #+clisp (:file "octave" :depends-on ("base"))
      (:file "prompt" :depends-on ("base"))
@@ -48,7 +55,7 @@
      (:file "server" :depends-on ("base" "log" "prompt"))
      (:file "simple" :depends-on ("base"))
      (:file "sorted" :depends-on ("base" "tilsla" "math"))
-     (:file "stat" :depends-on ("base" "math" "withtype"))
+     (:file "stat" :depends-on ("base" "math" "withtype" "matrix"))
      (:file "string" :depends-on ("base" "withtype"))
      (:file "symb" :depends-on ("base"))
      (:file "tilsla" :depends-on ("base" "withtype"))

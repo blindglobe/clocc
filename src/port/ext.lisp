@@ -8,25 +8,24 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.8 2000/05/09 18:49:50 sds Exp $
+;;; $Id: ext.lisp,v 1.9 2000/05/12 18:13:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage port
   (:use "COMMON-LISP")
-  (:nicknames "ORG.CONS.CLOCC/SDS/PORT"))
-
-(in-package :port)
-
-(setf (logical-pathname-translations "port")
-      `(("**;*" ,(logical-pathname "clocc:src;port;**;*"))))
-
-(export
- '(code case-error not-implemented ; conditions
+  (:nicknames "ORG.CONS.CLOCC/SDS/PORT")
+  (:export
+   code case-error not-implemented ; conditions
    defsubst defcustom defconst
    mk-arr map-in with-gensyms
    gc quit
    +eof+ eof-p string-tokens
    compose compose-f compose-all))
+
+(in-package :port)
+
+(setf (logical-pathname-translations "port")
+      `(("**;*" ,(logical-pathname "clocc:src;port;**;*"))))
 
 ;;;
 ;;; Conditions
@@ -67,9 +66,8 @@
 
 (defmacro defconst (name type init doc)
   "Define a typed constant."
-  `(eval-when (compile load eval) ; kill compile warnings
-    (unless (boundp ',name) (declaim (type ,type ,name))
-            (defconstant ,name (the ,type ,init) ,doc))))
+  `(progn (declaim (type ,type ,name))
+    (defconstant ,name (the ,type ,init) ,doc)))
 
 (defmacro mk-arr (type init &optional len)
   "Make array with elements of TYPE, initializing."

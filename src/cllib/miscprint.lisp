@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
+;;; $Id: miscprint.lisp,v 1.6 2000/05/18 20:35:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,7 +34,7 @@
         :initially
         (format
          st "~&char (~~c, ~~@c, ~~:@c, ~~:c)~42toct~52tdec~62thex  macro~%")
-        :for co :from 0 :to char-code-limit
+        :for co :from 0 :below char-code-limit
         :for ch :of-type (or null character) = (code-char co)
         :when ch :do (ascii-char ch st) (terpri st)
         :finally (unless str (return (get-output-stream-string st)))))

@@ -128,7 +128,8 @@
 
 (defun lprec-find-supporters (lprec)
    (labels ((walk-through-supporters (lpr)
-;;;;           (format t "Walking through ~s~%" lpr)
+;;;;	       (trace-around walk-through
+;;;;		  (:> "(walk-through: " lpr ")")
 	       (list-copy
 		  (cond ((= (Load-progress-rec-supp-timestamp lpr)
 			    file-op-count*)
@@ -137,6 +138,9 @@
 			 (setf (Load-progress-rec-supp-timestamp lpr)
 			       file-op-count*)
 			 ;; Slurp to set immediate supporters --
+			 (setf (Load-progress-rec-run-time-depends-on lpr) !())
+			 (setf (Load-progress-rec-compile-time-depends-on lpr)
+			       !())
 			 (lprec-slurp lprec false ':header-only)
 			 (setf (Load-progress-rec-supporters lpr) !())
 			 ;; -- Set to harmless value in case we come across
@@ -149,7 +153,9 @@
 					     lpr))
 				      (walk-down
 					 (Load-progress-rec-compile-time-depends-on
-					     lpr)))))))))
+					     lpr))))))))
+;;;;		  (:< (val &rest _) "walk-through: " val))
+	       )
 	    (walk-down (immediate-supporters)
 	       (mapcan (\\ (s)
 			  (cond ((is-Pseudo-pathname s)
@@ -159,10 +165,16 @@
 					    (place-load-progress-rec s))))))
 		       immediate-supporters))
 	    (pns-nodups (pnl)
-	       (remove-duplicates pnl :test #'pn-equal)))
+;;;;	       (trace-around pns-nodups
+;;;;		  (:> "(pns-nodups: " pnl ")")
+	       (remove-duplicates pnl :test #'pn-equal)
+;;;;		  (:< (val &rest _) "pns-nodups: " val))
+	       ))
       (let ((l (walk-through-supporters lprec)))
 ;;;;	 (format t "Before nodups: supporters = ~s~%" l)
-	 (pns-nodups l))))
+;;;;	 (pns-nodups l)
+	 l
+	 )))
 
 ;;; Presupposing that 'lprec' represents a loaded file whose loadable-version
 ;;; is up to date, find supporters that have changed since the last time

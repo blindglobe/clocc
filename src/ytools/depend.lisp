@@ -118,8 +118,8 @@
 							    pn)))
 					     (:slurp-time
 					      #'(lambda (pn)
-	  ;;;;					   (format *error-output*
-	  ;;;;					      "Loading pathname ~s~%" pn)
+	  					   (format *error-output*
+	  					      "Loading pathname ~s~%" pn)
 						   (pathname-fload pn false false false)
 						   ;;;;(pathname-slurp pn false ':whole-file)
 						   ))))
@@ -306,11 +306,11 @@
 		(error "Undefined YTools module ~s" modname))))))
 
 (def-ytools-pathname-control module
-     :parser #'module-parse
-     :slurper #'module-slurp
-     :loader #'module-load
-     :compiler #'module-compile
-     :expander #'module-expansion)
+     :parser 'module-parse
+     :slurper 'module-slurp
+     :loader 'module-load
+     :compiler 'module-compile
+     :expander 'module-expansion)
 
 (defun pathname-sym (pn)
    (intern (file-name-as-symbol-name (Pathname-name pn))))

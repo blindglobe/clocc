@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.16 2000/06/06 20:34:36 sds Exp $
+;;; $Id: xml.lisp,v 2.17 2000/06/06 21:35:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -171,20 +171,22 @@ If this is `:sgml', use maximum SGML compatibility.")
 
 (defmethod print-object ((xml xml-obj) (out stream))
   (cond (*xml-print-xml*
-         (format out "<~a~:{ ~a=~s~}" (xmlo-name xml) (xmlo-attribs xml))
-         (cond ((or (xmlo-data xml) (eq *xml-print-xml* :sgml))
-                (princ ">" out)
-                (dolist (dd (xmlo-data xml))
-                  (princ (typecase dd (string (xml-de-unicode dd)) (t dd))
-                         out))
-                (format out "</~a>" (xmlo-name xml)))
-               (t (princ "/>" out)))) ; short form
+         (let ((*package* *xml-pack*))
+           (format out "<~s~:{ ~s=~s~}" (xmlo-name xml) (xmlo-attribs xml))
+           (cond ((or (xmlo-data xml) (eq *xml-print-xml* :sgml))
+                  (princ ">" out)
+                  (dolist (dd (xmlo-data xml))
+                    (princ (typecase dd (string (xml-de-unicode dd)) (t dd))
+                           out))
+                  (format out "</~s>" (xmlo-name xml)))
+                 (t (princ "/>" out))))) ; short form
         (*print-readably* (call-next-method))
         ((print-unreadable-object (xml out :type t :identity t)
            (multiple-value-bind (ts fs) (xml-size xml)
-             (format out "~a [~:{~a=~s~^ ~}] ~:d object~:p ~:d/~:d chars"
-                     (xmlo-name xml) (xmlo-attribs xml)
-                     (length (xmlo-data xml)) ts fs))))))
+             (let ((*package* *xml-pack*))
+               (format out "~s [~:{~s=~s~^ ~}] ~:d object~:p ~:d/~:d chars"
+                       (xmlo-name xml) (xmlo-attribs xml)
+                       (length (xmlo-data xml)) ts fs)))))))
 
 (defun xml-push (new xml)
   "Add NEW to data in XML."
@@ -324,10 +326,25 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
                         all :initial-value ""))
         :else :collect (concatenate 'string "-" (string ch)) :into all))
 
+(defun xml-list-to-namespaces (list)
+  "Destructively replace 'name #\: name' with `name:name'.
+Creates packages and interns symbols in them."
+  (do ((ll list (cdr ll)))
+      ((null (cddr ll)) list)
+    (when (and (eql #\: (cadr ll)) (symbolp (car ll)) (symbolp (caddr ll)))
+      (let* ((pp (or (find-package (car ll))
+                     (let ((pp (make-package (car ll))))
+                       (format t "~& * Created new namespace: ~a~%" pp)
+                       pp)))
+             (sy (intern (symbol-name (caddr ll)) pp)))
+        (export (list sy) pp)
+        (setf (car ll) sy
+              (cdr ll) (cdddr ll))))))
+
 (defun xml-read-tag (str)
   "Read the tag, from <TAG-NAME> to </TAG-NAME>.
 The first character to be read is #\T."
-  (let ((attribs (read-delimited-list #\> str t)))
+  (let ((attribs (xml-list-to-namespaces (read-delimited-list #\> str t))))
     (if (eq 'xml-tags::/ (car (last attribs)))
         (xml-obj-from-list (nbutlast attribs))
         (loop :with next :and xml = (xml-obj-from-list attribs)
@@ -347,12 +364,14 @@ The first character to be read is #\T."
     (#\<                        ; read tag
      (let ((ch (read-char stream t nil t)) (*package* *xml-pack*))
        (case ch
-         (#\/ (let ((tag (read-delimited-list #\> stream t)))
+         (#\/ (let ((tag (xml-list-to-namespaces
+                          (read-delimited-list #\> stream t))))
                 (assert (null (cdr tag)) (tag)
                         "~s[~a]: end tag ~s has attributes ~s" 'read-xml stream
                         (car tag) (cdr tag))
                 tag))
-         (#\? (let ((tags (read-delimited-list #\> stream t)))
+         (#\? (let ((tags (xml-list-to-namespaces
+                           (read-delimited-list #\> stream t))))
                 (assert (eq 'xml-tags::? (car (last tags))) (tags)
                         "~s[~a]: <? was terminated by ~s" 'read-xml stream
                         (car (last tags)))
@@ -364,10 +383,11 @@ The first character to be read is #\T."
                                  :data (xml-read-comment stream)))
                   (xml-tags::entity (xml-read-entity stream))
                   ;; FIXME - there might be comments!
-                  (t (cons obj (read-delimited-list #\> stream t))))))
+                  (t (cons obj (xml-list-to-namespaces
+                                (read-delimited-list #\> stream t)))))))
          (t (unread-char ch stream)
             (xml-read-tag stream)))))
-    (#\[ (read-delimited-list #\] stream t))
+    (#\[ (xml-list-to-namespaces (read-delimited-list #\] stream t)))
     ;;(#\> (funcall (get-macro-character #\)) stream char)
     ;;     (xml-read-text stream #\<))
     ((#\& #\%)
@@ -395,7 +415,8 @@ The first character to be read is #\T."
                                      (close st)))
                                  (xmlis-all stream))))
           (incf (xmlis-size stream) (stream-length str))
-          (read stream t nil t)))))))
+          (read stream t nil t)))))
+    (#\: #\:)))
 
 ;;;
 ;;; UI
@@ -412,6 +433,9 @@ The first character to be read is #\T."
     (set-macro-character #\] (get-macro-character #\)) nil rt)
     ;; this is a hack, but it works under Allegro, CLISP and CMUCL
     (set-macro-character #\' (get-macro-character #\") nil rt)
+    ;; handle namespaces
+    (set-syntax-from-char #\: #\Space rt)
+    (set-macro-character #\: #'read-xml nil rt)
     (set-syntax-from-char #\; #\a rt)
     rt))
 

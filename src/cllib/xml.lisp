@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.13 2000/06/02 15:44:27 sds Exp $
+;;; $Id: xml.lisp,v 2.14 2000/06/02 19:35:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,7 +21,9 @@
 
 (in-package :cllib)
 
-(export '(*xml-readtable* with-xml-input with-xml-file xml-read-from-file))
+(export
+ '(*xml-readtable* *xml-print-xml*
+   with-xml-input with-xml-file xml-read-from-file))
 
 ;;;
 ;;; Entities
@@ -149,9 +151,10 @@ the second is `file size' (including tags)."
     (t (error 'case-error :proc 'xml-size :args
               (list 'object obj 'string 'xml-obj)))))
 
-(defcustom *xml-print-xml* boolean nil
-  "*Set to non-NIL to print XML-OBJ for XML parsing.
-Note that the Unicode characters will NOT be printed as &#nnnn;.")
+(defcustom *xml-print-xml* symbol nil
+  "*Set to non-NIL to print XML-OBJ for future XML parsing.
+Note that the Unicode characters will NOT be printed as &#nnnn;.
+If this is `:sgml', use maximum SGML compatibility.")
 
 (defun xml-ascii-p (char) (> 256 (char-code char)))
 
@@ -168,10 +171,14 @@ Note that the Unicode characters will NOT be printed as &#nnnn;.")
 
 (defmethod print-object ((xml xml-obj) (out stream))
   (cond (*xml-print-xml*
-         (format out "<~a~:{ ~a=~s~}>" (xmlo-name xml) (xmlo-attribs xml))
-         (dolist (dd (xmlo-data xml))
-           (princ (typecase dd (string (xml-de-unicode dd)) (t dd)) out))
-         (format out "</~a>" (xmlo-name xml)))
+         (format out "<~a~:{ ~a=~s~}" (xmlo-name xml) (xmlo-attribs xml))
+         (cond ((or (xmlo-data xml) (eq *xml-print-xml* :sgml))
+                (princ ">" out)
+                (dolist (dd (xmlo-data xml))
+                  (princ (typecase dd (string (xml-de-unicode dd)) (t dd))
+                         out))
+                (format out "</~a>" (xmlo-name xml)))
+               (t (princ "/>" out)))) ; short form
         (*print-readably* (call-next-method))
         ((print-unreadable-object (xml out :type t :identity t)
            (multiple-value-bind (ts fs) (xml-size xml)
@@ -292,18 +299,18 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
         :for ch = (read-char str t nil t)
         :until (funcall endp ch) :collect ch :into list
         :finally
-        (progn (unread-char ch str)
-               (when clean (setq list (compress-whitespace list)))
-               (when base
-                 (do ((ll list (cdr ll))) ((null ll)) ; &#nnnn;
-                   (when (and (char= #\& (car ll)) (char= #\# (cadr ll)))
-                     (do* ((l1 (cddr ll) (cdr l1)) (nn 0))
-                          ((char= #\; (car l1))
-                           (setf (car ll) (code-char nn)
-                                 (cdr ll) (cdr l1)))
-                       (setq nn (+ (* nn base)
-                                   (digit-char-p (car l1) base)))))))
-               (return (values (coerce list 'string) ch)))))
+        (unread-char ch str)
+        (when clean (setq list (compress-whitespace list)))
+        (when base
+          (do ((ll list (cdr ll))) ((null ll)) ; &#nnnn;
+            (when (and (char= #\& (car ll)) (char= #\# (cadr ll)))
+              (do* ((l1 (cddr ll) (cdr l1)) (nn 0))
+                   ((char= #\; (car l1))
+                    (setf (car ll) (code-char nn)
+                          (cdr ll) (cdr l1)))
+                (setq nn (+ (* nn base)
+                            (digit-char-p (car l1) base)))))))
+        (return (values (coerce list 'string) ch))))
 
 (defun xml-read-comment (str)
   "We are inside a comment; read it and return as a string."
@@ -318,19 +325,22 @@ TERM can be a predicate, a chacacter or a sequence of chacacters."
         :else :collect (concatenate 'string "-" (string ch)) :into all))
 
 (defun xml-read-tag (str)
-  "read the tag, from <TAG-NAME> to </TAG-NAME>,
-the first character to be read is #\T"
-  (loop :with next :and xml =
-        (xml-obj-from-list (read-delimited-list #\> str t))
-        :initially (push (xmlo-name xml) (xmlis-stack str))
-        :while (not (consp next)) :do
-        (xml-push (xml-read-text str "<&") xml)
-        (xml-push (setq next (read str t nil t)) xml)
-        :finally (progn (assert (eq (car next) (car (xmlis-stack str))) (next)
-                                "~s[~a]: ~s terminated ~s" 'xml-read-tag str
-                                next (xmlis-stack str))
-                        (pop (xmlis-stack str))
-                        (return xml))))
+  "Read the tag, from <TAG-NAME> to </TAG-NAME>.
+The first character to be read is #\T."
+  (let ((attribs (read-delimited-list #\> str t)))
+    (if (eq 'xml-tags::/ (car (last attribs)))
+        (xml-obj-from-list (nbutlast attribs))
+        (loop :with next :and xml = (xml-obj-from-list attribs)
+              :initially (push (xmlo-name xml) (xmlis-stack str))
+              :while (not (consp next)) :do
+              (xml-push (xml-read-text str "<&") xml)
+              (xml-push (setq next (read str t nil t)) xml)
+              :finally
+              (assert (eq (car next) (car (xmlis-stack str))) (next)
+                      "~s[~a]: ~s terminated ~s" 'xml-read-tag str
+                      next (xmlis-stack str))
+              (pop (xmlis-stack str))
+              (return xml)))))
 
 (defun read-xml (stream char)
   (ecase char

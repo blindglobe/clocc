@@ -1,31 +1,25 @@
-;;; File: <octave.lisp - 1997-09-12 Fri 16:57:56 EDT - sds@WINTERMUTE.eagle>
+;;; File: <octave.lisp - 1997-10-08 Wed 11:45:54 EDT - sds@WINTERMUTE.eagle>
 ;;;
 ;;; Octave interface
 ;;;
-;;; $Id: octave.lisp,v 1.2 1997/09/12 20:58:24 sds Exp $
+;;; $Id: octave.lisp,v 1.3 1997/10/08 15:46:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 ;;; $Log: octave.lisp,v $
+;;; Revision 1.3  1997/10/08 15:46:16  sds
+;;; Moved make-dx-mx here.
+;;;
 ;;; Revision 1.2  1997/09/12 20:58:24  sds
 ;;; flush-stream is not used anymore.
 ;;;
 
-(defun dot0 (l0 l1 &key (key #'identity))
+(defun dot0 (l0 l1 &key (key #'identity) key0 key1)
   "Compute the dot-product of the two sequencies,
 presumed to be of the same size."
   (declare (sequence l0 l1))
-  (reduce #'+ (map 'list #'(lambda (r0 r1)
-			     (* (funcall key r0) (funcall key r1))) l0 l1)
+  (setq key0 (or key0 key) key1 (or key1 key))
+  (reduce #'+ (map 'list (lambda (r0 r1)
+			   (* (funcall key0 r0) (funcall key1 r1))) l0 l1)
 	  :initial-value 0.0))
-
-(defun dot (l0 l1 &key (key #'identity))
-  "Compute the dot-product of the two sequencies,
-presumed to be of the same size."
-  (let ((res 0.0))
-    (declare (double-float res))
-    (map nil #'(lambda (r0 r1)
-		 (incf res (* (funcall key r0) (funcall key r1))))
-	 l0 l1)
-    res))
 
 (defvar *octave-program* "c:/bin/octave.exe" "*The octave executable.")
 
@@ -46,7 +40,7 @@ Send the data to Octave, get the answer."
 	     (array-dimension vec 0))
     (error "solve-lin: the matrix must be N x N, and vector - N"))
   (multiple-value-bind (oc-io oc-in oc-ou dim ans endstr les)
-      (MAKE-PIPE-IO-STREAM *octave-program*)
+      (make-pipe-io-stream *octave-program*)
     (setq dim (array-dimension mx 0)
 	  ans (make-array dim :element-type 'double-float
 			  :initial-element 0.0 :adjustable nil)
@@ -72,3 +66,28 @@ output_precision = 20~%AA=[")
     (close oc-ou)
     (close oc-io)
     ans))
+
+(defvar *dx-matrix* nil "The matrix of the currencies' dot products.")
+(defvar *dx-vector* nil "The vector of the currencies' dot products.")
+(defvar *dx-weights* nil "*The new weights.")
+
+(defun make-dx-mx ()
+  "Make the matrix for DX."
+  (let (hists (dim 0) (dx-h (currency-hist (get-currency 'dx))))
+    (dolist (cr *currencies-table*)
+      (unless (zerop (currency-wt cr))
+	(push (currency-hist cr) hists)
+	(incf dim)))
+    (setq *dx-matrix* (make-array (list dim dim) :element-type 'double-float
+				  :initial-element 0.0 :adjustable nil))
+    (setq *dx-vector* (make-array dim :element-type 'double-float
+				  :initial-element 0.0 :adjustable nil))
+    (dotimes (ii dim)
+      (dotimes (jj ii)
+	(setf (aref *dx-matrix* ii jj)
+	      (dot (elt hists ii) (elt hists jj) :key #'currency-rec-avg)
+	      (aref *dx-matrix* jj ii) (aref *dx-matrix* ii jj)))
+      (setf (aref *dx-matrix* ii ii)
+	    (dot (elt hists ii) (elt hists ii) :key #'currency-rec-avg)
+	    (aref *dx-vector* ii)
+	    (dot (elt hists ii) dx-h :key #'currency-rec-avg)))))

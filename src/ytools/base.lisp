@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.15 2004/09/20 03:49:57 airfoyle Exp $
+;;;$Id: base.lisp,v 1.16 2004/09/26 12:01:14 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -249,14 +249,19 @@
 (defvar subr-synonyms* '())
 		  
 (cl:defun define-subr-synonym (syn subr)
-	  (setf (symbol-function syn) (symbol-function subr))
-	  (let ((p (assoc syn subr-synonyms* :test #'eq)))
-	     (cond ((not p)
-		    (setq subr-synonyms*
-		          (cons (list syn subr) subr-synonyms*)))
+   ;; Work around bug in OpenMCL --
+   #+openmcl (cond ((macro-function subr)
+		    (setf (macro-function syn) (macro-function subr)))
 		   (t
-		    (setf (cadr p) subr)))))
-
+		    (setf (symbol-function syn)
+		          (symbol-function subr))))
+   #-openmcl (setf (symbol-function syn) (symbol-function subr))
+   (let ((p (assoc syn subr-synonyms* :test #'eq)))
+      (cond ((not p)
+	     (setq subr-synonyms*
+		   (cons (list syn subr) subr-synonyms*)))
+	    (t
+	     (setf (cadr p) subr)))))
 )
 
 (cl:defun make-eq-hash-table (&rest args)

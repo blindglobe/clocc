@@ -173,36 +173,6 @@
 		     (component-of cnaos)))))
 
 
-;;; component-language-mixin --
-;;; The following three slots are used to provide for alternate compilation
-;;; and loading functions for the files contained within a component. If
-;;; a component has a compiler or a loader specified, those functions are
-;;; used. Otherwise the functions are derived from the language. If no
-;;; language is specified, it defaults to Common Lisp (:lisp). Other current
-;;; possible languages include :scheme (PseudoScheme) and :c, but the user
-;;; can define additional language mappings. Compilation functions should 
-;;; accept a pathname argument and a :output-file keyword; loading functions
-;;; just a pathname argument. The default functions are #'compile-file and
-;;; #'load. Unlike fdmm's SET-LANGUAGE macro, this allows a defsystem to 
-;;; mix languages.
-
-#+now-in-language-support
-(defclass component-language-mixin ()
-  ((language :accessor component-language
-	     :initarg :language
-	     :type (or null symbol))
-   (compiler :accessor component-compiler
-	     :initarg :compiler
-	     :type (or null function))
-   (loader   :accessor component-loader
-	     :initarg :loader
-	     :type (or null function))
-   )
-  (:default-initargs :language :common-lisp)
-  (:documentation
-   "A 'mixin' class used to specify a component language other than CL."))
-
-
 ;;; component --
 
 (defclass component (topological-sort-node-mixin)
@@ -295,6 +265,15 @@
    (changed-timestamp :accessor component-changed-timestamp
 		      :initform 0
 		      :type (integer 0 *)) ; A 'universal' time.
+
+
+   ;;; timestamp-set.
+   ;;; Generalization of the changed-timestamp concept.
+   ;;; Maintained as an ALIST.
+   ;;; Note that the accessor COMPONENT-TIMESTAMPS is not exported.
+   (timestamp-set :accessot component-timestamps
+		  :initform ()
+		  :type list)
    
    ;; If load-only is T, will not compile the file on operation :compile.
    ;; In other words, for files which are :load-only T, loading the file
@@ -363,28 +342,63 @@
 
 
 ;;; dependency --
+;;; A Dependency is an element maintained in the DEPENDS-ON slot.
+;;; It may be a component designatorm a list of the form
+;;;
+;;;   (<component designator> <action-tag>+)
+;;;
+;;; where <action-tag> is the symbolic tag used to denote an action
+;;; (e.g. :load or :compile) or a STRUCTURED-DEPENDENCY.
+
 ;;; Dependencies are a little hairy, because of backward
-;;; compatibility.  Hence the extra accessor methods on 'component',
-;;; 'symbol' and 'string'.  I.e. the dependency list may or may not be
-;;; normalized to a list of 'dependency' instances.
+;;; compatibility.  I.e. the dependency list may or may not be
+;;; normalized to a list of 'structured-dependency' instances.
 
-(defparameter *known-dependency-types*
-  (list :load :compile :clean))
+(defstruct structured-dependency
+  component
+  actions
+  modifiers				; A plist where to store things
+					; like :if-feature. Unused for
+					; the time being.
+  )
 
+(deftype dependency ()
+  (or string symbol component list structured-dependency))
+
+#||
 (defclass dependency ()
-  ((action :accessor dependency-on-actions
+  ((action :accessor dependency-actions
 	   :initarg :action
 	   :type list
 	   )
-   (component :accessor dependency-on-component
+   (component :accessor dependency-component
 	      :initarg :component
 	      :type (or null string symbol component))
    )
   (:default-initargs :action '(:compile :load) :component nil))
+||#
 
-(defmethod dependency-on-component ((c component)) c)
-(defmethod dependency-on-component ((c symbol)) c)
-(defmethod dependency-on-component ((c string)) c)
+
+
+(declaim (inline dependency-actions dependency-component))
+
+(defun dependency-actions (d)
+  "Given a dependency D, it returns the set of actions to be considered.
+A return value of NIL actually means that this dependency is
+unconditional on any of the actions."
+  (declare (type dependency d))
+  (etypecase d
+    (list (rest d))
+    (structured-dependency (structured-dependency-actions d))
+    ((or string symbol) ())))
+
+(defun dependency-component (d)
+  (declare (type depenency d))
+  (etypecase d
+    (list (first d))
+    (structured-dependency (structured-dependency-component d))
+    ((or string symbol) d)))
+
 
 (defgeneric select-component-dependencies (component action))
 

@@ -8,10 +8,15 @@
 ;;; Public License (LGPL, see file COPYING for details).
 
 (unless (find-package "MAKE")
-  (error "CL.EXT.CONFIGURATION requires the MK:DEFSYSTEM package."))
+  (error "To build CL.EXT.CONFIGURATION by loading this file~@
+          MK:DEFSYSTEM package is required.~@
+          You can download MK:DEFSYSTEM from the CLOCC~@
+          <http://sourceforge.net/projects/clocc/>."))
 
 (unless (find-package "CL.ENVIRONMENT")
-  (error "CL.EXT.CONFIGURATION requires the CL.ENVIRONMENT package."))
+  (error "CL.EXT.CONFIGURATION requires the CL.ENVIRONMENT package.~@
+          You can download CL.ENVIRONMENT from the CLOCC~@
+          <http://sourceforge.net/projects/clocc/>."))
 
 (mk:defsystem "CL.EXT.CONFIGURATION"
     :source-pathname ""

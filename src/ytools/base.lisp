@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.6 2004/06/02 17:50:56 airfoyle Exp $
+;;;$Id: base.lisp,v 1.7 2004/06/23 18:25:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -282,8 +282,13 @@
 
 (subr-synonym tuple list)
 
+;;; For decomposing lists
 (subr-synonym head car t)
 (subr-synonym tail cdr t)
+
+;;; For decomposing dot-pairs used as two-entry records (e.g., binary trees)
+(subr-synonym left car t)
+(subr-synonym right cdr t)
 
 ;;;;(subr-synonym one first)
 ;;;;(subr-synonym two second t)
@@ -394,66 +399,92 @@
 	  (symbol-name x))
 	 (t (format nil "~a" x))   ))
 
-(defmacro alist-entry (^x ^l &optional (^initial 'false))
-   `(alist-entry-def ,^x ,^l
-		     ,(cond ((eq ^initial 'false) 'false)
-			    (t `(\\ () ,^initial)))))
-
+(defmacro alist-entry (x^ l^ &optional (initial^ 'false))
+   `(alist-entry-def ,x^ ,l^
+		     ,(cond ((eq initial^ 'false) 'false)
+			    (t `(\\ () ,initial^)))))
 
 (defun alist-entry-def (x a initializer)
    (let ((p (assq x a)))
       (cond (p (cadr p))
 	    (t (and initializer (funcall initializer))))))
 
-(define-setf-expander alist-entry-def (x l initializer)
+(define-setf-expander alist-entry-def (x l &optional initializer)
    (multiple-value-bind (ltemps lvals lstores lset lacc)
                         (get-setf-expansion l)
-      (let ((xvar (gensym)) (newvar (gensym)) (lvar (gensym))
+      (let ((entry-var (gensym))
+	    (xvar (gensym)) (newvar (gensym)) (lvar (gensym))
             (storevar (car lstores)))
-         (values `(,xvar ,@ltemps ,lvar)
-                 `(,x ,@lvals ,lacc)
+         (values `(,xvar ,@ltemps ,lvar ,entry-var)
+                 `(,x ,@lvals ,lacc (assoc ,xvar ,lvar :test #'eq))
                  `(,newvar)
-                 `(let ((p (assq ,xvar ,lvar)))
-                     (cond ((not p)
-                            (let ((,storevar (cons (tuple ,xvar ,newvar)
-                                                   ,lvar)))
-                                ,lset
-				,newvar))
-	                   (t
-	                    (setf (cadr p) ,newvar)))
-                      ,newvar)
-                 `(alist-entry-def ,xvar ,lvar ,initializer)))))
+                 `(progn
+                     (cond ((not ,entry-var)
+			    (setq ,entry-var (tuple ,xvar ,newvar))
+			    (let ((,storevar (cons ,entry-var ,lvar)))
+			      ,lset)))
+		     (setf (cadr ,entry-var) ,newvar)
+		     ,newvar)
+                 `(cond (,entry-var (cadr ,entry-var))
+			(t ,(cond ((memq initializer '(false nil)) 'false)
+				  (t `(funcall (\\ () ,initializer))))))))))
 
-(defmacro alref. (alist^ key^ &optional (default^ 'false))
-   (let ((entryvar (gensym)))
-      `(let ((,entryvar (assq ,key^ ,alist^)))
-	  (cond (,entryvar (cdr ,entryvar))
-		(t ,default^)))))
+;;;;(alist-entry-def ,xvar ,lvar ,initializer)
 
-(define-setf-expander alref. (alist^ key^ &optional default^)
+(defmacro alref. (alist^ key^ &optional (default^ 'false)
+			      &key ((:test test^) '#'eq)
+				   ((:acc acc^) '#'right)
+				   ((:new-entry new-entry^)))
+                 (declare (ignore new-entry^))
+   (let ((entry-var (gensym)))
+      (let ((acc-form (cond ((and (consp acc^)
+				  (memq (car acc^) '(function quote funktion)))
+			     `(,(cadr acc^) ,entry-var))
+			    (t
+			     `(funcall ,acc^ ,entry-var)))))
+	 `(let ((,entry-var (assoc ,key^ ,alist^ :test ,test^)))
+	     (cond (,entry-var ,acc-form)
+		   (t ,default^))))))
+
+(define-setf-expander alref. (alist^ key^ &optional (default^ 'false)
+					  &key ((:test test^) '#'eq)
+					       ((:acc acc^) '#'right)
+					       ((:new-entry new-entry^)))
    (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
                         (get-setf-expansion alist^)
-      (let ((keyvar (gensym)) (newvar (gensym)) (alist-var (gensym))
+      (let ((key-var (gensym)) (new-var (gensym)) (alist-var (gensym))
 	    (entry-var (gensym))
-            (storevar (car alstores)))
-         (values `(,keyvar ,@altemps ,alist-var ,entry-var)
-                 `(,key^ ,@alvals ,alist-acc (assq ,keyvar ,alist-var))
-                 `(,newvar)
-                 `(cond (,entry-var
-			 (setf (cdr ,entry-var) ,newvar))
-			(t
-			 (let ((,storevar (cons (cons ,keyvar ,newvar)
-						,alist-var)))
-			   ,alist-set
-			   ,newvar)))
-                 `(cond (,entry-var (cdr ,entry-var))
-			(t ,default^))))))
+            (store-var (car alstores)))
+	 (let ((acc-form (cond ((and (consp acc^)
+				     (memq (car acc^) '(function quote funktion)))
+				`(,(cadr acc^) ,entry-var))
+			       (t
+				(error "Can't set ~s of alref. entry in ~s"
+				       acc^ alist^)))))
+	    (values `(,key-var ,@altemps ,alist-var
+			       ,entry-var)
+		    `(,key^ ,@alvals ,alist-acc
+			    (assoc ,key-var ,alist-var :test ,test^))
+		    `(,new-var)
+		    `(progn
+		         (cond ((not ,entry-var)
+				(setq ,entry-var (cons ,key-var ,new-entry^))
+				(let ((,store-var (cons ,entry-var ,alist-var)))
+				   ,alist-set)))
+			 (setf ,acc-form ,new-var)
+			 ,new-var)
+		    `(cond (,entry-var (cdr ,entry-var))
+			   (t ,default^)))))))
 
-(defmacro alref (alist^ key^ &optional (default^ 'false))
-   (let ((entryvar (gensym)))
-      `(let ((,entryvar (assq ,key^ ,alist^)))
-	  (cond (,entryvar (cadr ,entryvar))
-		(t ,default^)))))
+;;; Most common special case.
+(defmacro alref (alist^ key^ &optional (default^ 'false)
+			     &key ((:test test^) '#'eq))
+   `(alref. ,alist^ ,key^ ,default^ :test ,test^ :acc #'second))
+
+;;;;   (let ((entryvar (gensym)))
+;;;;      `(let ((,entryvar (assoc ,key^ ,alist^ :test ,test^)))
+;;;;	  (cond (,entryvar (cadr ,entryvar))
+;;;;		(t ,default^)))))
 
 (define-setf-expander alref (alist^ key^ &optional default^)
    (multiple-value-bind (altemps alvals alstores alist-set alist-acc)

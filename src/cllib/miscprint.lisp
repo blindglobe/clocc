@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.6 2000/05/18 20:35:21 sds Exp $
+;;; $Id: miscprint.lisp,v 1.7 2000/06/06 16:13:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,6 +27,7 @@
     (format str "\"~c\"~5t~@c~17t~:@c~27t~:c~35t ~9:o ~9:d ~9:x  ~a"
             ch ch ch ch co co co (get-macro-character ch))))
 
+;;;###autoload
 (defun print-all-ascii (&optional (str *standard-output*))
   (declare (type (or null stream) str))
   (loop :with *print-pretty* = nil
@@ -69,6 +70,7 @@ the number of symbols without any bindings."
             (mapcar #'package-name (package-used-by-list pa)) ns ne nw)
     (values ns ne nw)))
 
+;;;###autoload
 (defun print-all-packages (&optional (out *standard-output*))
   "Print all packages."
   (declare (stream out))

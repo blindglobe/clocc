@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.35 2004/11/11 22:17:26 sds Exp $
+;;; $Id: cllib.system,v 1.36 2004/12/22 19:56:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -73,7 +73,8 @@
      (:file "string" :depends-on ("base" "withtype"))
      (:file "symb" :depends-on ("base"))
      (:file "tests" :depends-on
-            ("base" "string" "date" "url" "rpm" "elisp" "xml" "cvs" "munkres"))
+            ("base" "string" "date" "url" "rpm" "elisp" "xml" "cvs" "munkres"
+             "matrix"))
      (:file "tilsla" :depends-on ("base" "withtype"))
      (:file "url" :depends-on ("base" "withtype" "symb" "string" "fileio"
                                "log" "simple" "tilsla" "date"))

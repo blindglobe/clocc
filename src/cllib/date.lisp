@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
+;;; $Id: date.lisp,v 2.3 2000/05/02 14:45:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,9 +21,6 @@
   (require :withtype (translate-logical-pathname "cllib:withtype")))
 
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(string->dttm dttm->string +day-sec+ print-date-month
           date date2time date2num date2days time2date days2date mk-date
@@ -270,7 +267,8 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (6 (yesterday dd 2))
     (0 (yesterday dd 3))))
 
-;; (declaim (ftype (function (??) (values date)) next-bad-day))
+(declaim (ftype (function (&optional date (member 1 -1)) (values date))
+                next-bad-day))
 (defun next-bad-day (&optional (date (today)) (dir 1))
   "Return the next Friday the 13th after (before) DATE.
 The second optional argument can be 1 (default) for `after' and
@@ -287,6 +285,7 @@ The second optional argument can be 1 (default) for `after' and
 ;;;
 
 (eval-when (compile load eval) (fmakunbound 'date))
+(declaim (ftype date-f-t date))
 ;;;###autoload
 (defgeneric date (xx)
   (:documentation "Convert to or extract a date.
@@ -315,7 +314,6 @@ The argument can be:
   (:method ((xx stream))        ; Read date in format MONTH DAY YEAR
     (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
   (:method ((xx cons)) (date (car xx))))
-(declaim (ftype date-f-t date))
 
 ;;;
 ;;; utilities
@@ -455,13 +453,14 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1)) (= (date-quarter d0) (date-quarter d1))))
 
-(declaim (ftype (function (date date) (values fixnum)) days-between))
+(declaim (ftype (function (date &optional date) (values fixnum)) days-between))
 (defsubst days-between (d0 &optional (d1 (today)))
   "Return the number of days between the two dates."
   (declare (type date d0 d1))
   (- (date-dd d1) (date-dd d0)))
 
-(declaim (ftype (function (date days-t) (values date)) tomorrow yesterday))
+(declaim (ftype (function (&optional date days-t) (values date))
+                tomorrow yesterday))
 (defun tomorrow (&optional (dd (today)) (skip 1))
   "Return the next day in a new date structure.
 With the optional second argument (defaults to 1) skip as many days.
@@ -492,7 +491,8 @@ I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd) (type days-t skip))
   (date-next-year (date-next-month (tomorrow dd skip) skip) skip))
 
-;;(declaim (ftype (function (??) (values list)) date-in-list))
+(declaim (ftype (function (t list &optional date-f-t t) (values list))
+                date-in-list))
 (defun date-in-list (dt lst &optional (key #'date) last)
   "Return the tail of LST starting with DT.
 If LAST is non-nil, make sure that the next date is different.

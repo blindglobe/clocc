@@ -61,10 +61,9 @@
 
 (my-assert
  (let ((stack (copy-list '(a b c d e f))))
-   (loop while stack
-     for item = (length stack) then (pop stack)
+   (loop for item = (length stack) then (pop stack) while stack
      collect item))
- (6 A B C D E F))
+ (6 A B C D E))
 
 ;; p 737
 
@@ -84,7 +83,7 @@
 
 
 (my-assert
- (make-array '(22) :element-type 'single-float)
+ (make-array '(22) :element-type 'single-float :initial-element 0.0)
  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
 
 
@@ -93,17 +92,17 @@
  #-clisp
  #2A((0 0) (0 0))
  #+clisp
- #2A((NIL NIL) (NIL NIL))) 
+ #2A((NIL NIL) (NIL NIL)))
 
 
 (my-assert
- (make-array '(2 2) :element-type 'single-float)
+ (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
  #2A((0.0 0.0) (0.0 0.0)))
 
 ;; without pretty-print?
 
 (my-assert
- (make-array '(22) :element-type 'single-float)
+ (make-array '(22) :element-type 'single-float :initial-element 0.0)
  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
 
 
@@ -115,7 +114,7 @@
  #2A((NIL NIL) (NIL NIL)))
 
 (my-assert
- (make-array '(2 2) :element-type 'single-float)
+ (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
  #2A((0.0 0.0) (0.0 0.0)))
 
 ;; bignums
@@ -302,7 +301,7 @@
 
 
 (my-assert
- (make-sequence '(vector float) 4)
+ (make-sequence '(vector float) 4  :initial-element 0.0)
  #(0.0 0.0 0.0 0.0))
 
 
@@ -310,11 +309,11 @@
  (typep (complex 0.0d0) '(complex double-float))
  t
  "complex returns a number whose real part is realpart
-and whose imaginary part is imagpart. 
+and whose imaginary part is imagpart.
 
 If realpart is a rational and imagpart is the rational
 number zero, the result of complex is realpart, a rational.
-Otherwise, the result is a complex. 
+Otherwise, the result is a complex.
 
 If either realpart or imagpart is a float, the non-float
 is converted to a float before the complex is created. If
@@ -418,14 +417,14 @@ these are not rationals, so we get a complex number back.
    (defclass cl1 ()())
    (defclass cl2 (cl1 missing)())
    (defclass cl4 ()())
-   
+
    (defmethod foo ((c cl2))
      c)
    ;; method specializing on class with fwd reference
    ;; ok so far
 
    ;; then this dies
-   
+
    (defmethod foo ((c cl4))
      c)   ;; add a new method to gf #'foo
    t)
@@ -590,8 +589,8 @@ these are not rationals, so we get a complex number back.
  3)
 
 ;;; From: Sam Steingold <sds@gnu.org>
-
-(my-assert 
+#+UNIX
+(my-assert
  (let ((z (make-concatenated-stream
 	   (make-string-input-stream "abc")
 	   (open "/etc/hosts"))))
@@ -638,4 +637,4 @@ these are not rationals, so we get a complex number back.
 
 
 
-     
+

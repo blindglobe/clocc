@@ -162,7 +162,7 @@ INPUT-FILE               File containing Fortran code
 			      error-file prune-labels include-comments
 			      (auto-save t) (relaxed-array-decls t)
 			      (coerce-assigns :as-needed)
-			      keep-lisp-file
+			      (keep-lisp-file t)
 			      (array-type 'simple-array)
 			      (array-slicing t)
 			      package
@@ -1860,8 +1860,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.59 2000/08/05 19:16:46 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.60 2000/08/07 13:02:21 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.60  2000/08/07 13:02:21  rtoy
+;;; Make :keep-lisp-file default to T.
+;;;
 ;;; Revision 1.59  2000/08/05 19:16:46  rtoy
 ;;; o Add special var *PARSING-LHS*
 ;;; o Add function F2CL-COMPILE to compile a Fortran file to object code

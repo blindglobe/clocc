@@ -2,6 +2,7 @@
 
 (in-package "COMMON-LISP-USER")
 
+(pushnew :clx-debugging *features*)
 
 (mk:defsystem :clx
     :source-pathname "cl-library:clx;"

@@ -2,6 +2,9 @@
 
 (in-package "COMMON-LISP-USER")
 
+(pushnew :clx-debugging *features*)
+
+
 ;;; Aid function:
 
 (defun comf (file)

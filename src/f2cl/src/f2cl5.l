@@ -187,7 +187,7 @@
   (cond ((symbolp arg)
 	 (case arg
 	   ((%false% %true%)
-	    t)
+	    'logical)
 	   (t
 	    ;; Lookup the variable type and return it.
 	    (let ((var-type (lookup-vble-type arg)))
@@ -223,6 +223,9 @@
 				dsqrt))
 		  ;; Double-precision functions
 		  'double-float)
+		 ((member fun '(and or not > >= equal <= < logeqv logxor))
+		  ;; Logical operations
+		  'logical)
 		 (t
 		  (get-fun-arg-type fun)))))
 	(t

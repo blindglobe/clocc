@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.25 2000/12/12 15:44:52 sds Exp $
+;;; $Id: xml.lisp,v 2.26 2001/01/08 20:50:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,6 +19,8 @@
   (require :log (translate-logical-pathname "cllib:log"))
   ;; `read-from-stream'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `required-argument'
+  (require :ext (translate-logical-pathname "port:ext"))
   ;; `socket'
   (require :net (translate-logical-pathname "port:net"))
   (require :gray (translate-logical-pathname "port:gray")))
@@ -253,7 +255,8 @@ If such a name already exists, re-use it."
 
 (defmethod print-object ((xmln xml-name) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))
-        ((null (xmln-ns xmln)) (write (xmln-ln xmln) :stream out))
+        ((eq (xmln-ns xmln) +xml-namespace-none+)
+         (write (xmln-ln xmln) :stream out))
         (*xml-print-xml*
          (format out "~@[~a:~]~a" (xmln-prefix xmln) (xmln-ln xmln)))
         ((format out "~:[~a:~;~*~]~a" (eq +xml-namespace-none+ (xmln-ns xmln))
@@ -262,9 +265,9 @@ If such a name already exists, re-use it."
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-tag (:conc-name xmlt-)
                     #+cmu (:print-function print-struct-object))
-  (name nil :type (or string cons xml-name))
   ;; `string' and `cons' are replaced with `xml-name' during
   ;; `xml-resolve-namespaces'
+  (name (required-argument) :type (or string cons xml-name))
   (args nil :type list))        ; alist of arg/value
 )
 

@@ -1,0 +1,30 @@
+.\" 	-*- Mode: Nroff -*-
+.TH "check-common-lisp-autobuild" "8" "" "" ""
+
+.SH "NAME"
+check-common-lisp-autobuild \- Checks if a Common Lisp package should be autobuilt
+
+.SH "SYNOPSIS"
+.B check-common-lisp-autobuild impl-name pkg-name [OPTIONS]
+
+.SH "DESCRIPTION"
+This command sets checks the autobuild status for a package on a
+given implementation. This command has an exit status of 0 if the
+package should be autobuilt and 1 if it should not be autobuilt.
+An exit status of 2 represents an error with usage.
+
+.SH "OPTIONS"
+.TP 16
+.B \-h
+Print short help message
+
+.SH "SEE ALSO"
+/usr/share/doc/common-lisp-controller/README.autobuild
+
+.SH "BUGS"
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH "AUTHOR"
+Kevin M. Rosenberg <kmr@debian.org>, Sep 2002

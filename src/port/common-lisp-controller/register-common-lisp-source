@@ -45,14 +45,16 @@ fi
 
 for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
-     i=${compiler##*/}
-     i=${i%.sh}
-     if [ -f /etc/common-lisp/autobuild -o \
-          -f "/etc/common-lisp/$i/autobuild" -o \
-          -f "/etc/common-lisp/$i/$1/autobuild" ] ; then
-       echo recompiling package $1 for implementation $i
-       /usr/bin/clc-send-command --quiet recompile $1 $i
-     fi
+	i=${compiler##*/}
+	i=${i%.sh}
+        #if [ -f /etc/common-lisp/autobuild -o \
+        #     -f "/etc/common-lisp/$i/autobuild" -o \
+        #     -f "/etc/common-lisp/$i/$1/autobuild" ] ; then
+        check-common-lisp-autobuild $compiler $SOURCENAME
+        if [ $? = 0 ]; then
+	    echo recompiling package $1 for implementation $i
+	    /usr/bin/clc-send-command --quiet recompile $1 $i
+	fi
     fi
 done
 

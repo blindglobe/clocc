@@ -2,7 +2,9 @@
 
  Autobuilding packages is controlled with the contents of
  autobuild files in certain location. These files should contain
- a single line with the word "yes" or "no".
+ a single line with the word "yes" or "no". For compatibility with
+ the previous control of autobuilding, it an autobuild file exists
+ and the size of the file is 0 bytes, that is equivalent to "yes".
 
  The rules are:
 

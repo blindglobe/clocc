@@ -1,4 +1,21 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
+
+;; Make specialized operator to load only binary files
+;; Signal error if a binary component is missing
+(in-package :asdf)
+(defclass load-only-compiled-op (operation) ())
+(export 'load-only-compiled-op 'asdf)
+(defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
+  (list (compile-file-pathname (component-pathname c))))
+
+(defmethod perform ((o load-only-compiled-op) (c cl-source-file))
+  (let* ((output-files (output-files o c)))
+        (setf (component-property c 'last-loaded)
+	      (if (some #'not (map 'list #'load output-files))
+		  nil
+		(file-write-date (car output-files))))))
+
+
 (in-package :common-lisp-controller)
 
 
@@ -7,6 +24,9 @@
     (error "You need to load the mk defsystem before loading or compiling this file!"))
   (unless (find-package :asdf)
     (error "You need to load the asdf system before loading or compiling this file!")))
+
+
+(in-package :common-lisp-controller)
 
 (defun find-system (module-name)
   "Looks for name of system. Returns :defsystem3 if found defsystem
@@ -82,12 +102,12 @@ file or :asdf if found asdf file"
   (let ((system (asdf:find-system module-name)))
     (or
      ;; try to load it
-     (asdf:oos 'asdf:load-op module-name)
+     (ignore-errors (asdf:oos 'asdf:load-only-compiled-op module-name))
      ;; if not: try to compile it
      (progn
        (format t "~&;;;Please wait, recompiling library...")
        ;; first compile the sub-components!
-       (dolist (sub-system (components system))
+       (dolist (sub-system (asdf:module-components system))
 	 (when (typep sub-system 'asdf:system)
 	   (setf sub-system
 		 (intern sub-system
@@ -100,7 +120,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (asdf:oos 'asdf:load-op module-name) 
+       (asdf:oos 'asdf:load-only-compiled-op module-name) 
        t))))
 
 (defvar *original-require-function* nil)

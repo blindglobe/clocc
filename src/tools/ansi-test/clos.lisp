@@ -117,7 +117,7 @@
   80)
 
 (check-for-bug
-    :clos-reinit-instance-x-30
+    :clos-reinit-instance-y-30
   (y-val (reinitialize-instance a :x 30))
   20)
 
@@ -374,7 +374,7 @@ null, symbol, list, sequence, t")
   10)
 
 
-(check-for-bug :clos-added-1
+(check-for-bug :clos-added-7
  (progn
    (defmethod initialize-instance ((inst <C1>) &rest ignore)
        (call-next-method)
@@ -382,7 +382,7 @@ null, symbol, list, sequence, t")
    nil)
  nil)
 
-(check-for-bug :clos-added-2
+(check-for-bug :clos-added-8
   (x-val (make-instance (find-class '<C1>) :x 101 :y 120))
   101)
 

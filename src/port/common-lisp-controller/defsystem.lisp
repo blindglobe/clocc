@@ -1169,7 +1169,7 @@
     #+ACLPC      (current-directory)
     #+:ALLEGRO   (excl:current-directory)
     #+:CMU       (ext:default-directory)
-    #+:sbcl      (sb-int:default-directory)
+    #+:sbcl      *default-pathname-defaults*
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>
     ;; Somehow it is better to qualify default-directory in CMU with
     ;; the appropriate package (i.e. "EXTENSIONS".)
@@ -1685,8 +1685,8 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	 (rel-keyword (when (keywordp (car rel-directory))
 			(pop rel-directory)))
 	 (rel-file (file-namestring rel-dir))
-	 #+:MCL (rel-name (pathname-name rel-dir))
-         #+:MCL (rel-type (pathname-type rel-dir))
+	 #+(or :MCL :sbcl) (rel-name (pathname-name rel-dir))
+         #+(or :MCL :sbcl) (rel-type (pathname-type rel-dir))
 	 (directory nil))
     ;; TI Common Lisp pathnames can return garbage for file names because
     ;; of bizarreness in the merging of defaults.  The following code makes
@@ -1740,8 +1740,8 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
                     directory
 		    #+(and :cmu (not (or :cmu17 :cmu18)))
                     (coerce directory 'simple-vector)
-		    :name #-:MCL rel-file #+:MCL rel-name
-		    #+:MCL :type #+:MCL rel-type
+		    :name #-(or :sbcl :MCL) rel-file #+(or :sbcl :MCL) rel-name
+		    #+(or :sbcl :MCL) :type #+(or :sbcl :MCL) rel-type
 		    ))))
 
 (defun directory-to-list (directory)
@@ -3980,7 +3980,6 @@ D
 	       
 	       ;; make certain the directory we need to write to
 	       ;; exists [pvaneynd@debian.org 20001114]
-               #+common-lisp-controller
 	       (ensure-directories-exist 
 		(make-pathname 
 		 :directory

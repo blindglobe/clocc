@@ -682,8 +682,8 @@ Estimated total monitoring overhead: 0.88 seconds
            ,@post-process)))))
 
 #+:clisp
-(defun delta4 (nv1 nv2 ov1 ov2 by)
-  (- (+ (ash nv1 by) nv2) (+ (ash ov1 by) ov2)))
+(defmacro delta4 (nv1 nv2 ov1 ov2 by)
+  `(- (dpb (- ,nv1 ,ov1) (byte ,by ,by) nv2) ov2))
 #+:clisp                        ; CLISP 2.29 built-in
 (let ((del (find-symbol "DELTA4" "SYS")))
   (when del (setf (fdefinition 'delta4) (fdefinition del))))

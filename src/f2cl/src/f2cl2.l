@@ -16,7 +16,7 @@
 (eval-when (compile load eval)
   (proclaim '(optimize (speed 3) (safety 1)))
 
-  (proclaim '(special *intrinsic_function_names* *external-function-names*
+  (proclaim '(special *intrinsic-function-names* *external-function-names*
 	      *subprog_name* *subprog-stmt-fns*
 	      *functions-used*)))
 ;-----------------------------------------------------------------------------
@@ -276,7 +276,7 @@ Tag being parsed:| (cadr x))))
 					; intrinsic function call:
     ((and (symbolp (car l)) 
 	  (listp (cadr l))
-	  (member (car l) *intrinsic_function_names*))
+	  (member (car l) *intrinsic-function-names*))
      (cond ((not (null (cddr l)))
 	    (princ-reset
 	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
@@ -432,8 +432,12 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.29 2002/01/06 23:10:12 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.30 2002/01/06 23:28:16 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.30  2002/01/06 23:28:16  rtoy
+;;; Missed a few renamings of *intrinsic_function_names* and
+;;; *external_function_names*.
+;;;
 ;;; Revision 1.29  2002/01/06 23:10:12  rtoy
 ;;; Rename *intrinsic_function_names*, *external_function_names* and
 ;;; *subprog_stmt_fns* to use dashes.

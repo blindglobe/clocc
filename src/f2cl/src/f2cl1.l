@@ -18,7 +18,7 @@
 
 (eval-when (compile load eval)
   (proclaim '(special *readtable* *sentable*))
-  (proclaim '(special *intrinsic-function-names* *external_function_names*
+  (proclaim '(special *intrinsic-function-names* *external-function-names*
 	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
 	      *subprog-arglist* *data-init*
 	      *explicit_vble_decls* *function-flag* *key_params*
@@ -464,7 +464,7 @@ FILENAME                 File containing Fortran code
 (defun translate-and-write-subprog (prog-list outport)
   (clrhash *common-blocks*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
-	fort-fun *external_function_names*
+	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
 	*subprog-stmt-fns* *subprog_stmt_fns_bodies* *subprog_name*
@@ -1145,7 +1145,7 @@ FILENAME                 File containing Fortran code
 	       (var (intern (concatenate 'string "VAR-" (princ-to-string count)))))
 	  (push var vnames)
 	  (push (cond ((or (vble-is-array-p arg)
-			   (member arg *external_function_names*)
+			   (member arg *external-function-names*)
 			   (member arg *intrinsic-function-names*)
 			   (member arg '(%true% %false%)))
 		       ;; Fortran can't return whole arrays or
@@ -1956,8 +1956,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.80 2002/01/06 23:10:11 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.81 2002/01/06 23:28:16 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.81  2002/01/06 23:28:16  rtoy
+;;; Missed a few renamings of *intrinsic_function_names* and
+;;; *external_function_names*.
+;;;
 ;;; Revision 1.80  2002/01/06 23:10:11  rtoy
 ;;; Rename *intrinsic_function_names*, *external_function_names* and
 ;;; *subprog_stmt_fns* to use dashes.

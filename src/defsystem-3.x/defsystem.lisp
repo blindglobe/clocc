@@ -1166,7 +1166,7 @@
     ;; Somehow it is better to qualify default-directory in CMU with
     ;; the appropriate package (i.e. "EXTENSIONS".)
     ;; Same for Allegro.
-    #+:lispworks
+    #+(and :lispworks (not :lispworks4))
     ,(multiple-value-bind (major minor)
 			  #-:lispworks-personal-edition
 			  (system::lispworks-version)
@@ -1180,9 +1180,10 @@
 	   `(make-pathname :directory
 			   ,(find-symbol "*CURRENT-WORKING-DIRECTORY*"
 					 (find-package "SYSTEM")))
-	 (find-symbol "*CURRENT-WORKING-DIRECTORY*"
-		      (find-package "LW"))))
-
+           (find-symbol "*CURRENT-WORKING-DIRECTORY*"
+                        (find-package "LW"))))
+    #+:lispworks4
+    (hcl:get-working-directory)
     ;; Home directory
     (mk::home-subdirectory "lisp/systems/")
 

@@ -403,6 +403,18 @@ these are not rationals, so we get a complex number back.
 
 (my-assert
  (progn
+   (compile-file "compile-bug5.lisp")
+   :ok)
+ :ok)
+
+(my-assert
+ (progn
+   (compile-file "compile-bug6.lisp")
+   :ok)
+ :ok)
+
+(my-assert
+ (progn
    (defclass cl1 ()())
    (defclass cl2 (cl1 missing)())
    (defclass cl4 ()())
@@ -604,6 +616,17 @@ these are not rationals, so we get a complex number back.
 			  (peek-char nil file nil 'eof t)))))
  (#\F F EOF))
 
+;;; From Barry Margolin:
+
+#+cmu
+(my-assert
+ (> (length
+     (pcl:generic-function-lambda-list
+      (ensure-generic-function 'change-class)))
+    2)
+ "change-class (instance t) (new-class symbol) &rest initargs")
+
+;;; From the clisp CHANGES file:
 
 
 

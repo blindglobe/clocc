@@ -1,3 +1,97 @@
+2002-03-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
+	Added ENSURE-DIRECTORIES-EXIST to COMPILE-ACTION to fix a (stupid) bug
+	found by Kevin Rosenberg.
+
+2002-03-06  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp:
+	Changed two strings to uninterned symbols to support Allegro's
+	case sensitivity
+
+2002-03-05  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/allegro.lisp:
+	Added missing function COMPILE-FILE-INTERNAL.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/cmucl.lisp:
+	Kludgy patch for CMUCL 18c ANSI incompatibility (:external-format).
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/allegro.lisp:
+	Conditionalized some old code.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/adjoin-dirs.lisp:
+	Made defpackage definition friendlier to Franz's case sensitive
+	mode.
+
+2002-03-04  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Re-bound *LOAD-PRINT* and *LOAD-VERBOSE* to NIL in auxiliary
+	function. Maybe an overkill, but it make life a little easier.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
+	Removed two `defgeneric's from the file and fixed declarations of
+	methods that can receive different keyword parameters.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem.lisp:
+	Hopefully fixed problems with keyword parameters in method definitions
+	by massaging the DEFGENERIC forms.
+
+	Also updated the list of generic functions available in the protocol.
+
+2002-03-02  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/ambler/ambler-pkg.lisp:
+	Made friendlier for ACL kludgy case sensitive modes.
+
+2002-03-01  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
+	Fixed inheritance of pathname extensions.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/base-components.lisp:
+	Added `computed-{source,binary}-extension' slots.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Added push of new (temporary) feature :mk-defsystem-4.
+	Added `(provide :mk-defsystem-4)' as well.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp:
+	Modified package definition to accommodate Franz Allegro kludgy case
+	sensitivity modes.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Removed `:case :common' from load pathaname definition.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem.lisp:
+	Changed definition of EXECUTE-ACTION to account for unclear behavior
+	of single `&key' parameters.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
+	Checkpoint version. Work in progress to fix inheritance of some pathname
+	components.
+
+2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp:
+	Changed feature pushed on *features* to :mk-defsystem-4.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Added `:case :common' to load directory definition.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/languages/fortran/fortran.lisp:
+	Fixed definition of FORTRAN-FILE-DEFAULT-SOURCE-EXTENSION.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/allegro.lisp:
+	Fixed reference to `excl:run-shell-command' (was `-program').
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Improved loading of package using the suggestion by Kevin Rosenberg.
+	Updated copyright dates.
+	Removed old commented-out code.
+
 2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp:

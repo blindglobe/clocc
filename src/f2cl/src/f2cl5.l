@@ -144,25 +144,31 @@
 	       type-hash)
       `((declare ,@dec)))))
 
-(defun lookup-vble-type (vble &optional (arrayp t))
+(defun lookup-vble-type (vble &optional (decls *explicit_vble_decls*))
   ;;(format t "lookup-vble: ~a~%" vble)
   (cond ((member vble *declared_vbles*)
 	 ;;(format t "  is declared var~%")
 	 ;;(format t "  explicit_vbld_decls = ~A~%" *explicit_vble_decls*)
 	 
 	 ;; First for declared variables
-	 (do* ((type-clauses *explicit_vble_decls*
+	 (do* ((type-clauses decls
 			     (rest type-clauses))
 	       (type (member vble (cdar type-clauses) :key #'car)
 		     (member vble (cdar type-clauses) :key #'car)))
 	      ((or type
 		   (null type-clauses))
 	       (let ((v-type (caar type-clauses)))
-		 (cond ((and (eq v-type 'array) arrayp)
-			;; Hmm, an array declaration, but no type?
-			;; Try to lookup the type but skip over array
-			;; types.  Then use an implicit type, if possible.
-			(cond ((lookup-vble-type vble nil))
+		 (cond ((eq v-type 'array)
+			;; Hmm, this is probably an array declared
+			;; with a dimension statement, and either the
+			;; type is declared later or implicit typing
+			;; is used.
+			;;
+			;; Try to lookup the type again but skip over
+			;; array types.  If this works, the array type
+			;; was explicitly given so use it. Otherwise,
+			;; use Fortran typing rules.
+			(cond ((lookup-vble-type vble (remove 'array decls :key #'first)))
 			      ((get-implicit-type vble))
 			      ((default-int-p vble)
 			       'integer4)

@@ -19,16 +19,16 @@
   "<biblioentry id='ansi-cl'>
    <abbrev>ANSI CL</abbrev>
    <pubdate>1994</pubdate>
-   <citetitle>ANSI Common Lisp standard X3.226-1994 -
+   <title>ANSI Common Lisp standard X3.226-1994 -
        <ulink url='http://www.ncits.org/tc_home/j13sd4.htm'>Information
-       Technology - Programming Language - Common Lisp</ulink></citetitle>
+       Technology - Programming Language - Common Lisp</ulink></title>
   </biblioentry>">
 
 <!ENTITY hyperspec "<citation><link linkend='CLHS'>Common Lisp HyperSpec</link></citation>">
 <!ENTITY hyperspec-bib
   "<biblioentry id='CLHS'>
    <abbrev>CLHS</abbrev>
-   <citetitle><ulink url='&clhs;/FrontMatter/'>Common Lisp HyperSpec</ulink></citetitle>
+   <title><ulink url='&clhs;/FrontMatter/'>Common Lisp HyperSpec</ulink></title>
   </biblioentry>">
 
 <!ENTITY cltl1 "<xref linkend='CLtL1'/>">
@@ -40,7 +40,7 @@
      <surname>Steele</surname>
      <lineage>Jr.</lineage>
    </author></authorgroup>
-   <citetitle>Common Lisp: the Language (1st Edition)</citetitle>
+   <title>Common Lisp: the Language (1st Edition)</title>
    <pubdate>1984</pubdate> <pagenums>465 pages</pagenums>
    <isbn>0-201-10088-6</isbn>
    <publisher><publishername>Digital Press</publishername></publisher>
@@ -55,7 +55,7 @@
      <surname>Steele</surname>
      <lineage>Jr.</lineage>
    </author></authorgroup>
-   <citetitle><ulink url='http://www.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/html/cltl/cltl2.html'>Common Lisp: the Language (2nd Edition)</ulink></citetitle>
+   <title><ulink url='http://www.cs.cmu.edu/afs/cs.cmu.edu/project/ai-repository/ai/html/cltl/cltl2.html'>Common Lisp: the Language (2nd Edition)</ulink></title>
    <pubdate>1990</pubdate> <pagenums>1032 pages</pagenums>
    <isbn>0-201-10088-6</isbn>
    <publisher><publishername>Digital Press</publishername></publisher>
@@ -70,7 +70,7 @@
     <author><firstname>Jim</firstname><surname>des Rivieres</surname></author>
     <author><firstname>Daniel G.</firstname><surname>Bobrow</surname></author>
    </authorgroup>
-   <citetitle><ulink url='&mop;'>The Art of the Metaobject Protocol</ulink></citetitle>
+   <title><ulink url='&mop;'>The Art of the Metaobject Protocol</ulink></title>
    <pubdate>1991</pubdate> <pagenums>335 pages</pagenums>
    <isbn>0-262-61074-4</isbn>
    <publisher><publishername><ulink url='http://www-mitpress.mit.edu'>MIT
@@ -80,15 +80,16 @@
 <!ENTITY pg-ansi-cl-bib
  "<biblioentry id='pg-ansi-cl'><abbrev>PG-ANSI-CL</abbrev>
    <author><firstname>Paul</firstname><surname>Graham</surname></author>
-   <title>ANSI Common Lisp</title>
+   <title><ulink url='http://paulgraham.com/acl.html'>ANSI
+     Common Lisp</ulink></title>
    <publishername>Prentice Hall</publishername><pubdate>1995</pubdate>
-   <pagenums>432 pages</pagenums><isbn>0133708756</isbn></biblioentry>">
+   <pagenums>432 pages</pagenums><isbn>0-133-70875-6</isbn></biblioentry>">
 <!ENTITY pg-on-lisp-bib
  "<biblioentry id='pg-on-lisp'><abbrev>PG-On-Lisp</abbrev>
    <author><firstname>Paul</firstname><surname>Graham</surname></author>
-   <title>On Lisp</title>
+   <title><ulink url='http://paulgraham.com/onlisp.html'>On Lisp</ulink></title>
    <publishername>Prentice Hall</publishername><pubdate>1993</pubdate>
-   <pagenums>413 pages</pagenums><isbn>0130305529</isbn></biblioentry>">
+   <pagenums>413 pages</pagenums><isbn>0-130-30552-9</isbn></biblioentry>">
 
 
 <!ENTITY gray-streams "<ulink url='ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail'>STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</ulink>">

@@ -1,23 +1,41 @@
+CLISP=clisp -a -norc
+CMUCL_SAFE=/usr/lib/cmucl/lisp-safe.core
+CMUCL_NORMAL=/usr/lib/cmucl/lisp-normal.core
+RM=rm -f
+MV=mv -f
+MKDIR=mkdir -p
+
 all: normal safe sbcl clisp
 	echo ok
 
 .PHONY: clisp sbcl normal safe
 
 clisp:
-	mkdir clisp ; rm *.erg clisp/* ; clisp -a -i tests.lisp 
-	mv *.erg clisp ; rm *.fas ; true
+	$(MKDIR) clisp ; $(RM) *.erg clisp/* ;
+	$(CLISP) -i tests.lisp 
+	$(MV) *.erg clisp ; $(RM) *.fas *.lib ;
+	ls $@ ;
+	true
 
 sbcl:
-	mkdir sbcl ; mv *.erg sbcl/ ; echo '(load "tests")' | sbcl 
-	mv *.erg sbcl ; rm *.x86f ; true
-
+	$(MKDIR) sbcl ; $(RM) *.erg sbcl/* ;
+	echo '(load "tests")' | sbcl 
+	$(MV) *.erg sbcl ; $(RM) *.x86f ;
+	ls $@ ;
+	true
 
 normal:
-	mkdir cmucl-normal ; rm *.erg cmucl-normal/* ; lisp -core /usr/lib/cmucl/lisp-normal.core -load tests.lisp 
-	mv *.erg cmucl-normal ; rm *.x86f ; true
+	$(MKDIR) cmucl-normal ; $(RM) *.erg cmucl-normal/* ;
+	lisp -core $(CMUCL_NORMAL) -load tests.lisp 
+	$(MV) *.erg cmucl-normal ; $(RM) *.x86f ;
+	ls $@ ;
+	true
 
 safe:
-	mkdir cmucl-safe ; rm *.erg cmucl-safe/* ; lisp -core /usr/lib/cmucl/lisp-safe.core -load tests.lisp 
-	mv *.erg cmucl-safe ; rm *.x86f ; true
+	$(MKDIR) cmucl-safe ; $(RM) *.erg cmucl-safe/* ;
+	lisp -core $(CMUCL_SAFE) -load tests.lisp 
+	$(MV) *.erg cmucl-safe ; $(RM) *.x86f ;
+	ls $@ ;
+	true
 
 

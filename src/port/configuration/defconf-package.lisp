@@ -3,7 +3,7 @@
 ;;; defconf-package.lisp --
 ;;; A 'configure' for Common Lisp.
 
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYING for details).
 ;;; The Package definition.
@@ -18,20 +18,20 @@
     (error "CL.EXT.CONFIGURATION requires the CL.ENVIRONMENT package.")))
 
 (defpackage "CL.EXT.CONFIGURATION" (:use "COMMON-LISP")
-  (:nicknames "CONF")
-  (:shadow "CONFIGURE" "SETUP")		; This 'shadow' clause is a
+  (:nicknames "CONF" "conf")
+  (:shadow #:configure #:setup)		; This 'shadow' clause is a
 					; little paranoid. Better safe
 					; than sorry.
-  (:shadow "FIND-SYSTEM" "LOAD-SYSTEM")	; Again, a safety measure.
+  (:shadow #:find-system #:load-system)	; Again, a safety measure.
 
-  (:export "DEFCONFIGURATION"
-	   "CONFIGURATION"
-	   "SETUP"
-	   "CONFIGURE-FORMAT"
+  (:export #:defconfiguration
+	   #:configuration
+	   #:setup
+	   #:configure-format
 	   )
 
-  (:export "PARSE-CONF-CLAUSE"
-	   "BUILD-CONF-CLAUSE"
+  (:export #:parse-conf-clause
+	   #:build-conf-clause
 	   )
   )
 

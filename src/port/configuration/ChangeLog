@@ -1,3 +1,23 @@
+2002-02-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/configuration/defconf.system:
+	Improved error messages under suggestions by Edmund Weitz.
+
+2001-08-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/configuration/defconf.lisp:
+	Changed the order in which the 'special-translations' are inserted in
+	the logical translation list.  Now they are first.  Otherwise the
+	catch all translation "**;*.*.*" would override them.
+
+	* /cvsroot/clocc/clocc/src/port/configuration/load-cl-configuration.lisp:
+	Minor fix.
+
+2001-05-08  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/configuration/ChangeLog:
+	Forgot to update the changelog.
+
 2001-05-08  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* Fixed a minor annoying buglet in the construction of

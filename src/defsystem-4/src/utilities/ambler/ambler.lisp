@@ -124,17 +124,19 @@ the (possibly modified) AMBLING-CONTEXT."))
 ;;;===========================================================================
 ;;; Interface implementation.
 
-(defmethod amble-expression ((expression t) (context t) &key env &allow-other-keys)
+(defmethod no-applicable-method ((amble-expression (eql #'amble-expression))
+				 &rest args)
   (error 'no-ambler-defined
-	 :whole-form expression
-	 :context context))
+	 :whole-form (first args)
+	 :context (second args)))
 
 
-(defmethod amble-form ((operator t) (form t) (context t) &key env &allow-other-keys)
+(defmethod no-applicable-method ((amble-form (eql #'amble-form))
+				 &rest args)
   (error 'no-ambler-defined
-	 :form-operator operator
-	 :whole-form form
-	 :context context))
+	 :form-operator (first args)
+	 :whole-form (second args)
+	 :context (third args)))
 
 
 ;;;---------------------------------------------------------------------------

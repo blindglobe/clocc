@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.27 2002/05/02 13:38:59 sds Exp $
+;;; $Id: ext.lisp,v 1.28 2002/06/17 20:10:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -153,7 +153,7 @@ so that the bare symbols are read as keywords."
         (import 'ext:required-argument :port)
         (export 'ext:required-argument :port))
 #-cmu (progn
-        (proclaim '(ftype (function () nil) required-argument))
+        (proclaim '(ftype (function () null) required-argument))
         (defun required-argument ()
           "A useful default for required arguments and DEFSTRUCT slots."
           (error "A required argument was not supplied.")))

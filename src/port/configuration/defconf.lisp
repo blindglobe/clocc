@@ -19,7 +19,6 @@
 
 ;;;===========================================================================
 ;;; Implementation dependencies.
-;;; If this section becomes too complex with conditionals then we can
 
 ;;; The package uses the CL.ENV package to factor away implementation
 ;;; dependent details. Some of the "DEFSYSTEM" interfaces are

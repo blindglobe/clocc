@@ -151,6 +151,9 @@ incorrect, so use caution.")
 	  (make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
     table))
 
+;; Hash table of all statement functions
+(defvar *f2cl-statement-finfo* (make-hash-table))
+
 (defun clear-f2cl-finfo ()
   (clrhash *f2cl-function-info*)
   (setf (gethash 'd1mach *f2cl-function-info*)
@@ -186,7 +189,8 @@ INPUT-FILE               File containing Fortran code
 :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.
                          Default = T.
 :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters
-                         to functions.  Default = T.
+                         to functions. That is, any array length declarations are ignored
+                         if possible, like old Fortran used to. Default = T.
 :COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements automatically coerce the
                          RHS to the appropriate type for the assignment.  If NIL or :NEVER,
                          coercion never happens.  Otherwise, coercion happens as needed.
@@ -198,13 +202,15 @@ INPUT-FILE               File containing Fortran code
                          :array.
 :ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an array reference
                          in a call to a subroutine or function, we are really passing a
-                         subarray to the routine instead of just the single value.
+                         subarray to the routine instead of just the single value, unless
+                         f2cl knows the function takes a scalar arg that is not modified.
 :PACKAGE                 A string or symbol specifying what package the result code
                          should be in. (Basically puts a (in-package <p>) at the top.)
 :DECLAIM                 Declaim compilation options  (Basically puts a
                          (declaim <declaim>) at the top.)
-:DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
-                         Otherwise, the structures for the common blocks are not declared.
+:DECLARE-COMMON          When non-NIL, any structures defintions for common blocks are
+                         defined here. Otherwise, the structures for the common blocks
+                         are expected to be defined elsewhere.
 :FLOAT-FORMAT            Float format to use when printing the result.  Default is
                          *READ-DEFAULT-FLOAT-FORMAT*
 "
@@ -736,6 +742,7 @@ FILENAME                 File containing Fortran code
 
 (defun translate-and-write-subprog (prog-list outport)
   (clrhash *common-blocks*)
+  (clrhash *f2cl-statement-finfo*)
   (let ((labels (remove nil (mapcar #'find-do prog-list))) ; labels is the do integers
 	fort-fun *external-function-names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
@@ -1488,6 +1495,15 @@ FILENAME                 File containing Fortran code
 	   ;; Look up type of statement function and coerce the RHS to the desired type.
 	   ;;(format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
 	   ;;(format t "type = ~A, ~A~%" lhs-type rhs-type)
+	   
+	   ;; Add this function to the function database
+	   (let ((arg-types (mapcar #'(lambda (a)
+					(first (get-upgraded-fun-arg-type (list (list a)))))
+				    (cdr lhs))))
+	     ;;(format t "arg-types = ~A~%" arg-types)
+	     (setf (gethash (car lhs) *f2cl-statement-finfo*)
+		   (make-f2cl-finfo :arg-types arg-types :return-values (make-list (length arg-types)))))
+	   
 	   (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs)))
 		 *subprog_stmt_fns_bodies*
 		 (append *subprog_stmt_fns_bodies* 
@@ -1662,15 +1678,17 @@ FILENAME                 File containing Fortran code
 	 ;; don't modify it, just use the array element.  Otherwise,
 	 ;; we want a slice.
 	 (let ((n-args (length arg-list))
-	       (finfo (if (member fun-name *external-function-names*)
+	       (finfo (if (member fun-name *subprog-arglist*)
 			  nil
-			  (gethash fun-name *f2cl-function-info*)))
+			  (or (gethash fun-name *f2cl-statement-finfo*)
+			      (gethash fun-name *f2cl-function-info*))))
 	       arg-info ret-info)
 	   #+nil
-	   (when *external-function-names*
-	     (format t "external = ~A~%" *external-function-names*)
+	   (when *subprog-arglist*
+	     (format t "external = ~A~%" *subprog-arglist*)
 	     (format t "finfo = ~A~%" finfo)
 	     (format t "fun-name = ~A~%" fun-name))
+	   ;;(format t "~A finfo = ~A~%" fun-name finfo)
 	   (cond (finfo
 		  (setf arg-info (f2cl-finfo-arg-types finfo))
 		  (setf ret-info (f2cl-finfo-return-values finfo)))
@@ -2518,8 +2536,25 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.129 2003/11/14 02:55:54 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.130 2003/11/14 04:29:31 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.130  2003/11/14 04:29:31  rtoy
+;;; Handle function calls to statement functions too so we can generate
+;;; the correct args for them.  Do this by adding a hash table to hold
+;;; info about statement functions.
+;;;
+;;; 	(*f2cl-statement-finfo*): New variable holding the hash-table for
+;;; 	of function info for statement functions.
+;;; 	(f2cl): Give better descriptions of some options in the docstring.
+;;; 	(translate-and-write-subprog): Clear out the hash-table for the
+;;; 	statement function info.
+;;; 	(parse-arrayref-or-stmtfn): Save away function info when we find a
+;;; 	statement function.
+;;; 	(maybe-convert-array-ref-to-slice): If the function is in the
+;;; 	arglist, we can't do anything special about it.  Otherwise, try to
+;;; 	find the function in the global database or the statement-function
+;;; 	database so we can generate the correct array references.
+;;;
 ;;; Revision 1.129  2003/11/14 02:55:54  rtoy
 ;;; 	* src/f2cl1.l (maybe-convert-array-ref-to-slice): When looking up
 ;;; 	the function name to get the argument types, we need to be

@@ -854,16 +854,28 @@
 ;;; Now that ANSI CL includes PROVIDE and REQUIRE again, is this code
 ;;; necessary?
 
-#-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks :clisp :sbcl
+#-(or (and :CMU (not :new-compiler))
+      :vms
+      :mcl
+      :lispworks
+      :clisp
+      :sbcl
+      :cormanlisp
       (and allegro-version>= (version>= 4 1)))
 (eval-when #-(or :lucid :cmu17 :cmu18)
            (:compile-toplevel :load-toplevel :execute)
 	   #+(or :lucid :cmu17 :cmu18)
            (compile load eval)
-  (unless (or (fboundp 'lisp::require) (fboundp 'user::require)
+
+  (unless (or (fboundp 'lisp::require)
+	      (fboundp 'user::require)
+
 	      #+(and :excl (and allegro-version>= (version>= 4 0)))
 	      (fboundp 'cltl1::require)
-	      #+:lispworks (fboundp 'system::require))
+
+	      #+:lispworks
+	      (fboundp 'system::require))
+
     #-:lispworks
     (in-package "LISP")
     #+:lispworks
@@ -971,6 +983,9 @@
 #+clisp
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
+#+cormanlisp
+(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
+
 #-(or :sbcl :cltl2 :lispworks)
 (in-package "MAKE" :nicknames '("MK"))
 
@@ -1044,11 +1059,36 @@
 
 (pushnew :mk-defsystem *features*)
 
+;;; Some compatibility issues.  Mostly for CormanLisp.
+;;; 2002-02-20 Marco Antoniotti
+
+#+cormanlisp
+(defun compile-file-pathname (pathname-designator)
+ (merge-pathnames (make-pathname :type "fasl")
+		  (etypecase pathname-designator
+		    (pathname pathname-designator)
+		    (string (parse-namestring pathname-designator))
+		    ;; We need FILE-STREAM here as well.
+		    )))
+
+#+cormanlisp
+(defun file-namestring (pathname-designator)
+  (let ((p (etypecase pathname-designator
+	     (pathname pathname-designator)
+	     (string (parse-namestring pathname-designator))
+	     ;; We need FILE-STREAM here as well.
+	     )))
+    (namestring (make-pathname :directory ()
+			       :name (pathname-name p)
+			       :type (pathname-type p)
+			       :version (pathname-version p)))))
+
 ;;; The external interface consists of *exports* and *other-exports*.
 
 ;;; AKCL (at least 1.603) grabs all the (export) forms and puts them up top in
 ;;; the compile form, so that you can't use a defvar with a default value and
 ;;; then a succeeding export as well.
+
 (eval-when (compile load eval)
    (defvar *special-exports* nil)
    (defvar *exports* nil)
@@ -1134,9 +1174,18 @@
   "If T, afs-binary-directory will try to return a name dependent
    on the particular lisp compiler version being used.")
 
+;;; home-subdirectory --
 ;;; HOME-SUBDIRECTORY is used only in *central-registry* below.
 ;;; Note that CMU CL 17e does not understand the ~/ shorthand for home
 ;;; directories.
+;;;
+;;; Note:
+;;; 20020220 Marco Antoniotti
+;;; The #-cormanlisp version is the original one, which is broken anyway, since
+;;; it is UNIX dependent.
+;;; I added the kludgy #+cormalisp (v 1.5) one, since it is missing
+;;; the ANSI USER-HOMEDIR-PATHNAME function.
+#-cormanlisp
 (defun home-subdirectory (directory)
   (concatenate 'string
 	#+(or :sbcl :cmu) "home:"
@@ -1144,6 +1193,11 @@
 		 (or (when homedir (namestring homedir))
 		     "~/"))
 	directory))
+
+#+cormanlisp
+(defun home-subdirectory (directory)
+  (declare (type string directory))
+  (concatenate 'string "C:\\" directory))
 
 ;;; The following function is available for users to add
 ;;;   (setq mk:*central-registry* (defsys-env-search-path))
@@ -3245,7 +3299,7 @@ D
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (find-system name :load)))
-	    #-(or CMU CLISP :sbcl :lispworks)
+	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
 		     (ignore *compile-verbose* #-MCL *compile-file-verbose*)
 		     (optimize (inhibit-warnings 3)))

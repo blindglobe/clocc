@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.3 2003/06/30 20:08:01 sds Exp $
+;;; $Id: csv.lisp,v 2.4 2003/07/01 17:15:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,8 +23,9 @@
   "Print a vector as a comma-separated line."
   (declare (type vector vec) (stream out))
   (loop :with len = (length vec) :for val :across vec :and ii :from 1
-        :do (write val :stream out)
-        :unless (= ii len) :do (write-char #\, out)))
+        :when val :do (write val :stream out)
+        :unless (= ii len) :do (write-char #\, out))
+  (terpri out))
 
 (defcustom *csv-separator* character #\,
   "The separator in the CSV file, normally the comma.")

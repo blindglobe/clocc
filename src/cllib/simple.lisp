@@ -1,10 +1,10 @@
 ;;; simple operations
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.11 2004/09/09 16:07:28 sds Exp $
+;;; $Id: simple.lisp,v 1.12 2004/10/30 14:43:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,7 +14,7 @@
 
 (export '(ppprint-list nsublist fix-list to-list from-list zero-len-p paste
           lexicographic-comparison ensure below-p linear
-          skip-to-new flatten with-collect filter list-length-dotted))
+          skip-to-new flatten with-collect filter list-length-dotted set=))
 
 ;;;
 ;;; {{{ `with-collect'
@@ -176,6 +176,12 @@ The second value is the last atom (i.e., `dotted-p')."
     (when (atom fast) (return (values nn fast)))
     (when (atom (cdr fast)) (return (values (1+ nn) (cdr fast))))
     (when (eq (cdr fast) slow) (return nil))))
+
+(defun set= (set1 set2 &rest rest &key key test test-not)
+  "Check whether two sets are the same."
+  (declare (ignore key test test-not))
+  (and (apply #'subsetp set1 set2 rest)
+       (apply #'subsetp set2 set1 rest)))
 
 ;;; }}}
 

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-01-06 Wed 22:57:22 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-01-08 Fri 12:09:27 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.12 1999/01/07 03:58:08 sds Exp $
+;;; $Id: url.lisp,v 1.13 1999/01/08 17:15:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.13  1999/01/08 17:15:25  sds
+;;; Made `read-html-markup' skip `*html-specials*'.
+;;; Added `with-timeout' for CMUCL, `socket-to-file', `*ts-kill*' (used in
+;;; `read-next'), `url-get' (unifies all `url-get-*' functions).
+;;;
 ;;; Revision 1.12  1999/01/07 03:58:08  sds
 ;;; Use `index-t' instead of (unsigned-byte 20).
 ;;; Use `file-size-t' instead of (unsigned-byte 32).
@@ -82,23 +87,39 @@
 (defcustom *html-verbose* (member t nil) nil "*Be verbose while parsing.")
 (defconst +html-tag+ cons (list :*html-tag*)
   "*The car of any html tag that is read.")
+(defcustom *html-specials* list
+  '(("&gt;" . #\>) ("&lt;" . #\<) ("&quot;" . #\") ("&amp;" . #\&)
+    ("&nbsp;" . #\Space))
+  "Alist of translations of HTML specials like `&*'.")
 
 (defun strip-html-markup (str)
   "Return a new string, sans HTML."
   (declare (simple-string str))
-  (apply #'concatenate 'string
-         (do* ((p0 (position #\< str) (position #\< str :start p1))
-               (res (list (subseq str 0 p0)))
-               (p1 (position #\> str) (position #\> str :start (or p0 0))))
-              ((or (null p0) (null p1)) (nreverse res))
-           (push (subseq str (1+ p1) (position #\< str :start p1)) res))))
+  (do* ((p0 (position #\< str) (position #\< str :start p1))
+        (res (list (subseq str 0 p0)))
+        (p1 (position #\> str) (position #\> str :start (or p0 0))))
+       ((or (null p0) (null p1))
+        (apply #'concatenate 'string (nreverse res)))
+    (push (subseq str (1+ p1) (position #\< str :start p1)) res)))
 
 (defun read-html-markup (stream char)
   "Skip through the HTML markup. CHAR=`<'"
-  (declare (stream stream) (ignore char))
-  (if *html-parse-tags*
-      (cons +html-tag+ (read-delimited-list #\> stream t))
-      (do () ((char= (read-char stream t nil t) #\>)))))
+  (declare (stream stream))
+  (ecase char
+    (#\< (if *html-parse-tags*
+             (cons +html-tag+ (read-delimited-list #\> stream t))
+             (do () ((char= (read-char stream t nil t) #\>)))))
+    (#\&
+     (do (rr (cc (read-char stream t nil t) (read-char stream t nil t)))
+         ((or (null cc) (char= cc #\;))
+          (if (null cc) (error "`&' must be terminated with `;'")
+              (if *html-parse-tags*
+                  (or (cdr (assoc (coerce (cons #\& (nreverse (push cc rr)))
+                                          'string)
+                                  *html-specials* :test #'string-equal))
+                      #\Space)
+                  #\Space)))
+       (when *html-parse-tags* (push cc rr))))))
 
 (defun html-tag-p (obj)
   "Return T if the object is an HTML tag."
@@ -106,10 +127,11 @@
       (null obj)))
 
 (set-macro-character #\< #'read-html-markup nil *html-readtable*)
+(set-macro-character #\& #'read-html-markup nil *html-readtable*)
 (set-macro-character #\> (get-macro-character #\)) nil *html-readtable*)
+(set-syntax-from-char #\; #\a *html-readtable*)
 (set-syntax-from-char #\# #\a *html-readtable*)
 (set-syntax-from-char #\: #\a *html-readtable*)
-(set-syntax-from-char #\; #\a *html-readtable*)
 ;;(set-macro-character #\: (get-macro-character #\)) nil *html-readtable*)
 ;;(set-macro-character #\, (get-macro-character #\a) nil *html-readtable*)
 
@@ -278,7 +300,7 @@ The argument can be:
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
-  (declare (simple-string host) (fixnum port))
+  (declare (simple-string host) (fixnum port) (ignorable bin))
   #+cmu (system:make-fd-stream (ext:connect-to-inet-socket host port)
                                :input t :output t)
   #+clisp (lisp:socket-connect port host)
@@ -315,13 +337,27 @@ Print the appropriate message MESG to OUT."
 (defmacro with-timeout ((seconds &body timeout-forms) &body body)
   "Execute BODY; if execution takes more than SECONDS seconds, terminate
 and evaluate TIMEOUT-FORMS."
-  #+allegro
-  `(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
-  #-allegro
-  `(progn ,@body))
+  (declare (ignorable seconds timeout-forms))
+  #+allegro `(mp:with-timeout (,seconds ,@timeout-forms) ,@body)
+  #+cmu
+  `(block with-timeout
+    (catch 'timer-interrupt
+      (let* ((current-process mp:*current-process*)
+             (timer-process (mp:make-process
+                             (lambda ()
+                               (sleep timeout)
+                               (mp:process-interrupt
+                                current-process
+                                (lambda () (throw 'timer-interrupt nil))))
+                             :name "Timeout timer")))
+        (unwind-protect (return-from with-timeout (progn ,@body))
+          (mp:destroy-process timer-process))))
+    ,@timeout-forms)
+  #+clisp `(progn ,@body))
 
 (defun y-or-n-p-timeout (seconds default &rest args)
   "`y-or-n-p' with timeout."
+  (declare (ignorable seconds default))
   (with-timeout (seconds (format t "[Timed out] ~:[NO~;YES~]~%" default)
                          default)
     (apply #'y-or-n-p args)))
@@ -500,6 +536,21 @@ approximately, the number of bytes you can receive per second.")
 
 (deftype file-size-t () '(unsigned-byte 32))
 
+(defun socket-to-file (data path &key rest (log *standard-output*))
+  "Read from a binary socket to a file."
+  (declare (type socket data) (type pathname path) (type (or null stream) log))
+  (let ((tot 0))
+    (declare (type file-size-t tot))
+    (with-open-file (fl path :direction :output :element-type 'unsigned-byte
+                        :if-exists (if rest :append :supersede))
+      (loop :for pos = (#+clisp lisp:read-byte-sequence #-clisp read-sequence
+                                *buffer* data)
+            :do (write-sequence *buffer* fl :end pos) (incf tot pos)
+            :when log :do (princ "." log) (force-output log)
+            :while (= pos (length *buffer*))))
+    (when log (terpri log))
+    tot))
+
 (defun ftp-get-file (sock rmt loc &key (log *standard-output*) (reget t)
                      (bin t) (retry 2) (timeout *url-default-timeout*))
   "Get the remote file RMT from the FTP socket SOCK,
@@ -522,21 +573,14 @@ Retry (+ 1 RETRY) times if the file length doesn't match the expected."
                       (url-ask sock log 150 "retr ~a" rmt)))
          (pos (position #\( line :from-end t))
          (len (when pos (read-from-string line nil nil :start (1+ pos)))))
-    (declare (type socket data) (type file-size-t tot)
+    (declare (type socket data) (type file-size-t tot) (type pathname path)
              (double-float bt) (type (or null file-size-t) rest len))
     ;; (when rest (decf len rest))
     (when log
       (if len (format log "Expect ~:d dot~:p for ~:d bytes~%"
                       (ceiling (1+ len) (length *buffer*)) len)
           (format log "File lenth unknown.~%")))
-    (with-open-file (fl path :direction :output :element-type 'unsigned-byte
-                        :if-exists (if rest :append :supersede))
-      (loop :for pos = (#+clisp lisp:read-byte-sequence #-clisp read-sequence
-                                *buffer* data)
-            :do (write-sequence *buffer* fl :end pos) (incf tot pos)
-            :when log :do (princ "." log) (force-output log)
-            :while (= pos (length *buffer*))))
-    (when log (terpri log))
+    (setq tot (socket-to-file data path :rest rest :log log))
     (url-ask sock log 226)
     (cond ((or (null len) (= tot len))
            (multiple-value-call #'values tot (elapsed bt nil t)))
@@ -636,12 +680,17 @@ This is initialized based on `mail-host-address'.")
 
 (defun url-dump-to-dot (sock &key (out *standard-output*) collect)
   "Read from SOCK until dot."
-  (declare (type socket sock) (stream out))
-  (loop :for st :of-type simple-string = (read-trim sock)
-        :until (string= "." st) :do (format out "~a~%" st)
-        :when collect :collect st))
+  (declare (type socket sock) (type (or string stream) out))
+  (let ((str (if (streamp out) out
+                 (open out :direction :output :if-exists :supersede))))
+    (declare (stream str))
+    (unwind-protect
+         (loop :for st :of-type simple-string = (read-trim sock)
+               :until (string= "." st) :do (write-string st str) (terpri str)
+               :when collect :collect st)
+      (unless (streamp out) (close str)))))
 
-(defun url-get-news (url &optional (out *standard-output*))
+(defun url-get-news (url loc &optional (out *standard-output*))
   "Get the news article to the OUT stream."
   (declare (type url url) (stream out))
   (assert (or (eq :nntp (url-prot url)) (eq :news (url-prot url))) (url)
@@ -651,11 +700,15 @@ This is initialized based on `mail-host-address'.")
         (let ((st (url-ask sock nil 211 "group ~a" (url-host url))))
           (multiple-value-bind (na p0) (read-from-string st nil -1 :start 3)
             (multiple-value-bind (a1 p1) (read-from-string st nil -1 :start p0)
-              (let ((a2 (read-from-string st nil -1 :start p1)))
+              (let* ((a2 (read-from-string st nil -1 :start p1))
+                     (nm (format nil "~d-~d" a1 a2)))
                 (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
-                (url-ask sock out 224 "xover ~d-~d" a1 a2)
-                (url-dump-to-dot sock :out out :collect t)))))
-        (url-dump-to-dot sock :out out))))
+                (url-ask sock out 224 "xover ~a" nm)
+                (url-dump-to-dot
+                 sock :out (if loc (merge-pathnames nm loc) out)
+                 :collect t)))))
+        (url-dump-to-dot
+         sock :out (if loc (merge-pathnames (url-path-file url) loc) out)))))
 
 ;;;
 ;;; }}}{{{ HTML parsing
@@ -667,25 +720,32 @@ This is initialized based on `mail-host-address'.")
   (buff "" :type simple-string) ; buffer string
   (posn 0 :type fixnum))        ; position in the buffer
 
-(defun read-next (ts &optional errorp)
+(defcustom *ts-kill* list nil "*The list of characters to kill.")
+
+(defun read-next (ts &optional errorp (kill *ts-kill*))
   "Read the next something from TS - a text stream."
+  (declare (type text-stream ts))
   (do (str tok pos) (nil)
-    (declare (type (or null simple-string) str))
+    (declare (type (or null cons simple-string) str))
     (when (or (typep pos 'error) (>= (ts-posn ts) (length (ts-buff ts))))
       (unless (typep pos 'error) (setf (ts-posn ts) 0))
       (setq str (read-line (ts-sock ts) nil +eof+))
       (when (eq str +eof+)
         (if (typep pos 'error) (error pos)
-            (if errorp (error "EOF on ~a" ts) (return-from read-next +eof+))))
-      (setq str (nsubstitute #\space #\: str)
-            str (nsubstitute #\space #\, str)
-            str (nsubstitute #\space #\/ str))
+            (if errorp (error "EOF on ~a" ts)
+                (return-from read-next +eof+))))
+      (setq str (nsubstitute #\Space #\: str)
+            str (nsubstitute #\Space #\, str)
+            str (nsubstitute #\Space #\/ str))
+      (when kill
+        (dolist (ch (to-list kill))
+          (setq str (nsubstitute #\Space ch str))))
       ;; (nsubstitute #\space #\. str) breaks floats, so we have to be smart
       (do ((beg -1) (len (1- (length str))))
           ((or (= beg len)
                (null (setq beg (position #\. str :start (1+ beg))))))
-        (declare (type (signed-byte 20) beg len))
-        (if (or (digit-char-p (schar str (1- beg)))
+        (declare (type (signed-byte 21) beg len))
+        (if (or (and (plusp beg) (digit-char-p (schar str (1- beg))))
                 (and (< beg len) (digit-char-p (schar str (1+ beg)))))
             (incf beg) (setf (schar str beg) #\Space)))
       (setf (ts-buff ts) (if (typep pos 'error)
@@ -699,26 +759,29 @@ This is initialized based on `mail-host-address'.")
 
 ;;(defun read-next (ts) (read (ts-sock ts) nil +eof+))
 
-(defun next-token (ts &optional (num 1) type dflt)
+(defun next-token (ts &key (num 1) type dflt (kill *ts-kill*))
   "Get the next NUM-th non-tag token from the HTML stream TS."
   (declare (type text-stream ts) (type index-t num))
   (let (tt)
     (dotimes (ii num (if (and type (not (typep tt type))) dflt tt))
       (declare (type index-t ii))
-      (do () ((not (html-tag-p (setq tt (read-next ts t)))))))))
+      (do () ((not (html-tag-p (setq tt (read-next ts t kill)))))
+        (mesg :log t "tag: ~a~%" tt)))))
 
-(defun next-number (ts &optional (num 1))
+(defun next-number (ts &key (num 1) (kill *ts-kill*))
   "Get the next NUM-th number from the HTML stream TS."
   (declare (type text-stream ts) (type index-t num))
   (let (tt)
     (dotimes (ii num tt)
       (declare (type index-t ii))
-      (do () ((numberp (setq tt (next-token ts))))))))
+      (do () ((numberp (setq tt (next-token ts :kill kill))))))))
 
-(defun skip-tokens (ts end &key (test #'eql) (key #'identity))
+(defun skip-tokens (ts end &key (test #'eql) (key #'identity) kill)
   "Skip tokens until END, i.e., until (test (key token) end) is T."
   (declare (type text-stream ts))
-  (do (tt) ((funcall test (setq tt (funcall key (next-token ts))) end) tt)))
+  (do (tt) ((funcall test (setq tt (funcall key (next-token ts :kill kill)))
+                     end)
+            tt)))
 
 (defun skip-to-line (st ln &optional out)
   "Read from stream ST until a line starting with LN.
@@ -762,6 +825,7 @@ By default nothing is printed."
 
 (defun view-url (url &optional (bro 'netscape))
   "Lounch a browser to view a url."
+  (declare (type url url))
   (let ((br (copy-list (assoc bro *browsers* :test #'eq))) pos)
     (assert (consp br) (br) "Unknown browser ~a. Must be one of~?." bro
             (list-format "~a") (mapcar #'car *browsers*))
@@ -775,14 +839,32 @@ By default nothing is printed."
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
 itself. FMT defaults to \"~3d: ~a~%\".
-OUT is the output stream and defaults to T."
-  (declare (stream out))
-  (format out "Opening URL: `~a'...~%" (setq url (url url)))
+OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
+  (declare (type url url) (stream out))
+  (format out "Opening URL: `~a'...~%" url)
   (catch 'timeout
-    (with-open-url (sock url :err *standard-output* :timeout timeout)
+    (with-open-url (sock url :err out :timeout timeout)
       (loop :for ii :of-type index-t :from  1
             :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
             :do (format out fmt ii (string-right-trim +whitespace+ rr))))))
+
+(defun url-get (url loc &key (timeout *url-default-timeout*)
+                (log *standard-output*))
+  "Get the URL."
+  (declare (type url url) (stream log))
+  (ecase (url-prot url)
+    (:ftp (url-ftp-get url loc :timeout timeout :log log))
+    ((:nntp :news) (url-get-news url loc log))
+    (:http
+     (let* ((path (merge-pathnames (url-path-file url) loc))
+            (bt (get-float-time nil))
+            (size (with-open-url (sock url :err log :timeout timeout)
+                    (socket-to-file sock path :log log))))
+       (declare (type file-size-t size))
+       (multiple-value-bind (el st) (elapsed bt nil t)
+         (declare (double-float el))
+         (format log "Wrote `~a' [~:d bytes, ~a, ~:d bytes/sec]."
+                 path size st (round size el)))))))
 
 (defun whois (host &rest keys)
   "Get the whois information on a host."
@@ -818,19 +900,17 @@ See `dump-url' about the optional parameters."
 ;;; HyperSpec examples
 ;;;
 
-(defcustom *html-specials* list
-  '(("&gt;" . #\>) ("&lt;" . #\<) ("&quot;" . #\") ("&amp;" . #\&))
-  "Alist of translations of HTML specials like `&*'.")
-
-(defun html-translate-specials (str)
+(defun html-translate-specials (str &optional space)
   "Replace (non-destructively) HTML specals with their interpretations.
-HTML tags, surrounded by `<>', are removed."
+HTML tags, surrounded by `<>', are removed or replaced with a space, is
+optional argument SPACE is non-nil."
   (declare (string str))
   (do ((beg 0 (1+ beg)) res (len (length str)))
       ((>= beg len) (coerce (nreverse res) 'string))
     (declare (type index-t beg len))
     (case (char str beg)
-      (#\< (setq beg (or (position #\> str :start beg) len)))
+      (#\< (setq beg (or (position #\> str :start beg) len))
+           (when space (push #\Space res)))
       (#\&
        (let ((pa (assoc str *html-specials* :test
                         (lambda (str tag)
@@ -838,8 +918,10 @@ HTML tags, surrounded by `<>', are removed."
                             (and (>= len end)
                                  (string= str tag :start1 beg
                                           :end1 end)))))))
-         (incf beg (1- (length (car pa))))
-         (push (cdr pa) res)))
+         (cond (pa (incf beg (1- (length (car pa))))
+                   (push (cdr pa) res))
+               (t (when space (push #\Space res))
+                  (setq beg (or (position #\; str :start beg) len))))))
       (t (push (char str beg) res)))))
 
 (defcustom *hyperspec-root* pathname

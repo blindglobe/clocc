@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.5 2000/06/23 18:42:01 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.6 2000/11/16 18:34:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,8 @@
 
 (in-package :cllib)
 
-(export '(*gnuplot-path* #+win32 *gnuplot-path-console* *gnuplot-printer*
+(export '(*gnuplot-path* *gnuplot-printer*
+          #+(or win32 mswindows) *gnuplot-path-console*
           with-plot-stream plot-dated-lists plot-dated-lists-depth
           plot-lists plot-lists-arg plot-error-bars plot-functions))
 
@@ -32,17 +33,19 @@
 ;;;
 
 (defcustom *gnuplot-path* simple-string
-  #+win32 "c:/bin/gnuplot/wgnuplot.exe"
+  #+(or win32 mswindows) "c:/bin/gnuplot/wgnuplot.exe"
   #+unix (if (string-equal (machine-type) "linux")
              "/usr/bin/gnuplot" "/usr/local/bin/gnuplot")
   "*The path to the windows gnuplot executable.")
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
   "*The gnuplot epoch - 2000-1-1.")
-#+win32
+#+(or win32 mswindows)
 (defcustom *gnuplot-path-console* simple-string "c:/bin/cgnuplot.exe"
   "*The path to the console gnuplot executable.")
 (defcustom *gnuplot-printer* simple-string
-  (format nil #+win32 "\\\\server1\\~a" #+unix "|lpr -h~@[ -P~a~]"
+  (format nil
+          #+(or win32 mswindows) "\\\\server1\\~a"
+          #+unix "|lpr -h~@[ -P~a~]"
           (getenv "SDSPRT"))
   "*The printer to print the plots.")
 #+unix
@@ -80,9 +83,10 @@ PLOT means:
   NIL      => do nothing, print nothing, return NIL."
   `(when ,plot
     (let ((,str
-           #+win32 (if (eq ,plot :print) (pipe-output *gnuplot-path-console*)
-                       (open *gnuplot-file* :direction :output
-                             :if-exists :supersede))
+           #+(or win32 mswindows)
+           (if (eq ,plot :print) (pipe-output *gnuplot-path-console*)
+               (open *gnuplot-file* :direction :output
+                     :if-exists :supersede))
            #+unix (if (eq ,plot :file)
                       (open *gnuplot-file* :direction :output
                             :if-exists :supersede)
@@ -93,8 +97,8 @@ PLOT means:
                                 (pipe-output *gnuplot-path*))))))
       (declare (stream ,str))
       (unwind-protect (progn (apply #'plot-header ,str ,plot ,@header) ,@body)
-        #+win32 (close-pipe ,str)
-        #+win32
+        #+(or win32 mswindows) (close-pipe ,str)
+        #+(or win32 mswindows)
         (ecase ,plot
           ((t :plot)
            (plot-msg "Starting gnuplot...")
@@ -141,7 +145,7 @@ The following gnuplot options are accepted:
         (format str "set terminal postscript landscape 'Helvetica' 9
 set output '~a'~%" *gnuplot-printer*)
         (format str "set terminal ~a~@[ ~a~]~%set output~%" #+unix "x11"
-                #+win32 "windows" term))
+                #+(or win32 mswindows) "windows" term))
     (format str "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~@[ time~%set timefmt '~a'~]~%set format x '~a'
 ~@[set format y '~a'~%~]set xlabel '~a'~%set ylabel '~a'~%set border

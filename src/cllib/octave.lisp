@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: octave.lisp,v 2.4 2000/11/08 22:28:23 sds Exp $
+;;; $Id: octave.lisp,v 2.5 2000/11/16 18:34:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 
 (eval-when (compile load eval)
@@ -28,7 +28,7 @@ presumed to be of the same size."
 	  :initial-value 0))
 
 (defcustom *octave-program* simple-string
-  #+win32 "c:/bin/octave.exe" #+unix "/usr/local/bin/octave"
+  #+(or win32 mswindows) "c:/bin/octave.exe" #+unix "/usr/local/bin/octave"
   "*The octave executable.")
 
 (defun solve-lin (mx vec &optional dump)

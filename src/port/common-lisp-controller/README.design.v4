@@ -43,9 +43,13 @@ Proposed Changes to Common Lisp Controller V4
        lml.asd file and the source files are located. The binary
        files will be written in the directory ~/.clc/lml.
 
-    2. The database file for user packages will be in ~/.clc/user-packages.
-       The format is simply to have store one registered directory name per
+    2. The database file for user packages will be in ~/.clc/user-packages.db
+       The format is simply to have store one registered asdf file name per
        line. This file will be read when the REQUIRE command is used. This
        database will take precedence over Common Lisp Controller's system
        root database (/usr/share/common-lisp/systems/).
+
+    3. The binaries for user-level packages will be installed in 
+       directory ~/.clc/lib/<impl>/<pkg>
+
 

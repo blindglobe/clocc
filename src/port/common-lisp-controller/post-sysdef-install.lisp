@@ -89,17 +89,49 @@ than the maximum file-write-date of output-files, return T."
 
 (in-package :common-lisp-controller)
 
-;;
+(defun in-user-package (c)
+  "Returns T if the ADSF component is in a component of a registered user package."
+  (check-type c asdf:component)
+  (let* ((system (asdf::component-system c))
+	 (system-path (asdf:component-pathname system))
+	 (system-name (asdf:component-name system))
+	 (asdf-path-string (namestring
+			    (make-pathname :defaults system-path
+					   :name system-name
+					   :type "asd"))))
+    (dolist (pkg (user-package-list))
+      (when (string= asdf-path-string (namestring pkg))
+	(return-from in-user-package t)))
+    nil))
+
+(defun user-package-root (c)
+  "Return the output file root for a user-package asdf component"
+  (let* ((system (asdf::component-system c))
+	 (system-name (asdf:component-name system)))
+    (merge-pathnames
+     (make-pathname :directory (list :relative system-name))
+     (user-lib-path))))
+
 (defmethod asdf:output-files :around ((op asdf:operation) (c asdf:component))
   "Method to rewrite output files to fasl-root"
   (let ((orig (call-next-method)))
-    (if (beneath-source-root? c)
+    (cond
+     ((beneath-source-root? c)
+      (mapcar #'(lambda (y)
+		  (merge-pathnames 
+		   (enough-namestring y (asdf::resolve-symlinks *source-root*))
+		   *fasl-root*))
+	      orig))
+     ((in-user-package c)
+      (let ((user-package-root (user-package-root c)))
 	(mapcar #'(lambda (y)
 		    (merge-pathnames 
-		     (enough-namestring y (asdf::resolve-symlinks *source-root*))
-		     *fasl-root*))
-		orig)
-      orig)))
+		     (enough-namestring y (asdf:component-pathname
+					   (asdf::component-system c)))
+		     user-package-root))
+		orig)))
+     (t
+      orig))))
 
 (defun beneath-source-root? (c)
   "Returns T if component's directory below *source-root*"
@@ -120,16 +152,30 @@ than the maximum file-write-date of output-files, return T."
 				      :directory (list :relative
 						       (asdf:component-name c)))
 				     *source-root*))))))
-  
-(defun find-system (module-name)
+
+(defun ensure-user-packages-added ()
+  (dolist (pkg (user-package-list))
+    (let ((dir (namestring (asdf::pathname-sans-name+type pkg))))
+      (unless (find-if
+	       #'(lambda (entry)
+		   (when (typep entry 'pathname)
+		     (setq entry (namestring entry)))
+		   (when (string= entry dir)
+		     t))
+		   asdf:*central-registry*)
+	(push dir asdf:*central-registry*)))))
+
+(defun find-system-def (module-name)
   "Looks for name of system. Returns :asdf if found asdf file or
 :defsystem3 if found defsystem file."
+  (ensure-user-packages-added)
   (cond
    ;; probing is for weenies: just do
    ;; it and ignore the errors :-)
    ((ignore-errors
       (let ((system (asdf:find-system module-name)))
-	(when (system-in-source-root? system)
+	(when (or (system-in-source-root? system)
+		  (in-user-package system))
 	  :asdf))))
    ((ignore-errors
       (equalp
@@ -195,38 +241,38 @@ than the maximum file-write-date of output-files, return T."
 (defun require-asdf (module-name)
   (let ((system (asdf:find-system module-name)))
     (when system
-       (handler-case
-	(asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
-	(error ()
-	       (format t "~&;;;Please wait, recompiling library...")
-               (cond
-                 (*recompiling-from-daemon*
-                  (asdf:oos 'asdf:compile-op module-name))
-                 (t
-                  ;; first compile the depends-on
-                  (dolist (sub-system
-                            ;; skip asdf:load-op at beginning of first list
-                            (cdar (asdf:component-depends-on
-                                   (make-instance 'asdf:compile-op) system)))
-                    (clc-require sub-system))
-                  (let ((module-name-str
-                         (if (stringp module-name)
-                             module-name
-                             (string-downcase (symbol-name module-name)))))
-                    (common-lisp-controller:send-clc-command :recompile module-name-str))))
-               (terpri)
-	       (asdf:oos 'asdf:load-compiled-op module-name)
-	       t)
-	(:no-error (res)
-		   (declare (ignore res))
-		   t)))))
+      (handler-case
+       (asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
+       (error ()
+	      (format t "~&;;;Please wait, recompiling library...")
+	      (cond
+	       (*recompiling-from-daemon*
+		(asdf:oos 'asdf:compile-op module-name))
+	       (t
+		;; first compile the depends-on
+		(dolist (sub-system
+			 ;; skip asdf:load-op at beginning of first list
+			 (cdar (asdf:component-depends-on
+				(make-instance 'asdf:compile-op) system)))
+		  (clc-require sub-system))
+		(let ((module-name-str
+		       (if (stringp module-name)
+			   module-name
+			 (string-downcase (symbol-name module-name)))))
+		  (common-lisp-controller:send-clc-command :recompile module-name-str))))
+	      (terpri)
+		(asdf:oos 'asdf:load-compiled-op module-name)
+		t)
+       (:no-error (res)
+		  (declare (ignore res))
+		  t)))))
 
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...
 (defun clc-require (module-name &optional (pathname 'c-l-c::unspecified))
   (if (not (eq pathname 'c-l-c::unspecified))
       (original-require module-name pathname)
-    (let ((system-type (find-system module-name)))
+    (let ((system-type (find-system-def module-name)))
       (case system-type
 	(:defsystem3
 	 (require-defsystem3 module-name))
@@ -239,7 +285,7 @@ than the maximum file-write-date of output-files, return T."
   "Recompiles the given library"
   (let* (;; this is because of clc-build-daemon
          (*recompiling-from-daemon* t)
-	 (system (find-system library)))
+	 (system (find-system-def library)))
     (case system
       (:defsystem3
        (mk:oos library :compile :verbose nil))
@@ -315,21 +361,40 @@ than the maximum file-write-date of output-files, return T."
        (make-pathname :directory '(:relative ".clc"))
        home-dir))))
 
-(defun user-package-list ()
-  "Return list of user packages (which is a list of pathname'd directories)"
-  (let* ((dir (user-clc-path))
-	 (pkgs-path (when dir
-		      (make-pathname :defaults dir
-				     :name "user-packages"
-				     :type "db"))))
+(defun user-packages-path ()
+  (make-pathname :defaults (user-clc-path)
+		 :name "user-packages"
+		 :type "db"))
+
+(defun user-lib-path ()
+  (merge-pathnames
+   (make-pathname :directory
+		  (list :relative "lib" (car (last (pathname-directory *fasl-root*)))))
+   (user-clc-path)))
+
+(defvar *cached-user-packages* nil
+  "Cache list of user packages")
+(defvar *cached-user-packages-date* nil
+  "Cached file-write-date of user packages")
+  
+(defun load-user-package-list ()
+  "Return list of user packages (pathnames)"
+  (let ((pkgs-path (user-packages-path)))
     (when (probe-file pkgs-path)
       (let ((pkgs '()))
 	(with-open-file (strm pkgs-path :direction :input :if-not-exists nil)
   	  (when strm
 	    (do ((line (read-line strm nil 'eof) (read-line strm nil 'eof)))
 		((eq line 'eof))
-	      (setq line (append-dir-terminator-if-needed line))
 	      (let ((path (ignore-errors (parse-namestring line))))
 		(when path
 		  (push path pkgs))))))
 	pkgs))))
+
+(defun user-package-list ()
+  "Returns user package list from cache, updates cached version if needed."
+  (let ((current-date (file-write-date (user-packages-path))))
+    (when current-date
+      (when (or (null *cached-user-packages-date*)
+		(> current-date *cached-user-packages-date))
+	(setq *cached-user-packages* (load-user-package-list))))))

@@ -2,70 +2,51 @@
 
 set -e
 
-PROGNAME=$(basename $0)
+progname=$(basename $0)
 
 if [ ! -d "$HOME" ]; then
   echo "User home directory $HOME does not exist as a directory" >&2
   exit 3
 fi
 
-CLC_USER_DIR=$HOME/.clc
+clc_user_dir=$HOME/.clc
 
-if [ ! -d "$CLC_USER_DIR" ]; then
-  mkdir "$CLC_USER_DIR" ||
-   (echo "Unable to create CLC user directory $CLC_USER_DIR" >&2; exit 3)
+if [ ! -d "$clc_user_dir" ]; then
+  mkdir "$clc_user_dir" ||
+   (echo "Unable to create CLC user directory $clc_user_dir" >&2; exit 3)
 fi
 
-CLC_USER_DB=$HOME/.clc/user-packages.db
+clc_user_db=$HOME/.clc/user-packages.db
 
-if [ ! -f "$CLC_USER_DB" ]; then
-  touch "$CLC_USER_DB" ||
-    (echo "Unable to create CLC user package file $CLC_USER_DB" >&2; exit 3)
+if [ ! -f "$clc_user_db" ]; then
+  touch "$clc_user_db" ||
+    (echo "Unable to create CLC user package file $clc_user_db" >&2; exit 3)
 fi
 
 if [ -z "$1" ] ; then
  cat <<EOF
-usage: $PROGNAME package-dir
+usage: $progname package-asd-file
 
 registers a Common Lisp package to the Common Lisp Controller system.
 EOF
     exit 1
 fi
+asdf_file=$(realpath "$1" 2>/dev/null || true)
 
-PKG_DIR="$1"
-if [ "$PKG_DIR" = "." ]; then
-  PKG_DIR=$(pwd)
-fi
-PKG_NAME=$(echo "$PKG_DIR" | sed -e 's@.*/\([a-zA-Z0-9\-]*\)@\1@')
-ASDF_FILE="$PKG_DIR/$PKG_NAME.asd"
 
-if [ ! \( -d "$PKG_DIR" -o  -h "$PKG_DIR" \) ] ; then    
-    cat <<EOF
-$PROGNAME: directory or symlink $PKG_DIR does not exist.
-
-This is where I expected package $PKG_NAME to be.
-EOF
-    exit 2
-fi
-
-if [ ! -f "$ASDF_FILE" ] ; then
-    cat <<EOF
-$PROGNAME: The ASDF file $ASDF_FILE does not exist. 
-This file is needed to register the $PKG_NAME package.
-EOF
+if [ ! -f "$asdf_file" ] ; then
+    echo "The user package file $1 does not exist." 
     exit 3
 fi
 
 # now store user directory into database file
 
-output=$(grep "^$PKG_DIR\$" $CLC_USER_DB || true)
+output=$(grep "^$asdf_file\$" $clc_user_db || true)
 if [ "$output" ]; then
-  echo "User directory $PKG_DIR already exists in CLC database, ignoring"
+  echo "User package $asdf_file already exists in CLC database, ignoring"
   exit 1;
 fi
 
-echo $PKG_DIR >> $CLC_USER_DB
+echo $asdf_file >> $clc_user_db
 
-echo "$PROGNAME: User directory $PKG_DIR installed"
-
-
+echo "User package $asdf_file installed"

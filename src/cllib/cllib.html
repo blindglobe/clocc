@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
           "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <!--
- $Id: cllib.html,v 2.20 2001/03/14 23:35:29 sds Exp $
+ $Id: cllib.html,v 2.21 2001/04/22 04:59:13 sds Exp $
  $Source: /cvsroot/clocc/clocc/src/cllib/cllib.html,v $
  -->
 <html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -11,6 +11,7 @@
 <meta http-equiv="description" content="README for cllib"/>
 <meta http-equiv="keywords"
  content="free software, open-source software, Common Lisp, http, ftp"/>
+<base href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/~checkout~/clocc/clocc/">
 <link rev="made" href="mailto:sds@gnu.org"/>
 <title>README</title>
 </head>
@@ -41,13 +42,13 @@ as well as my cross-implementation portability package <a
 <h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
 
 <p><code>CLLIB</code> is now a part of <code>CLOCC</code> (in
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/cllib/?cvsroot=clocc"><code>src/cllib</code></a>),
+<a href="src/cllib/"><code>src/cllib</code></a>),
 and, as such, is accessible via anonymous CVS
 and FTP, as explained on the <code>CLOCC</code> homepage.
 <code>CLLIB</code> can be compiled using
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/defsystem-3.x/defsystem.lisp?cvsroot=clocc"><code>mk:defsystem</code></a>,
+<a href="src/defsystem-3.x/defsystem.lisp"><code>mk:defsystem</code></a>,
 which is a part of <code>CLOCC</code>, and it relies on
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/port/?cvsroot=clocc"><code>src/port</code></a>,
+<a href="src/port/"><code>src/port</code></a>,
 (<a href="ftp://cellar.goems.com/pub/clocc/port.zip">download</a>)
 which was actually a part of <code>CLLIB</code> before.</p>
 
@@ -59,110 +60,110 @@ alphabetical order):</p>
 
 <table border="2" cellpadding="2">
 <tr><th>file</th><th>description</th></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/animals.lisp?cvsroot=clocc"><code>animals.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/animals.lisp"><code>animals.lisp</code></a></th>
     <td align="left">"guess the animal" game; simple neural net</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/autoload.lisp?cvsroot=clocc"><code>autoload.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/autoload.lisp"><code>autoload.lisp</code></a></th>
     <td align="left"><code>autoload</code> function and snarfing
     autoloads from other files</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/base.lisp?cvsroot=clocc"><code>base.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/base.lisp"><code>base.lisp</code></a></th>
     <td align="left">basic definitions: package and path</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/card.lisp?cvsroot=clocc"><code>card.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/card.lisp"><code>card.lisp</code></a></th>
     <td align="left">Rolodex: <a
-    href="http://pweb.netcom.com/~simmonmt/bbdb/index.html">BBDB</a>/<a
+    href="http://bbdb.sourceforge.net">BBDB</a>/<a
     href="http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html">vCard</a>
     handling</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/check.lisp?cvsroot=clocc"><code>check.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/check.lisp"><code>check.lisp</code></a></th>
     <td align="left">check values and types of the elements of a list</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/clhs.lisp?cvsroot=clocc"><code>clhs.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/clhs.lisp"><code>clhs.lisp</code></a></th>
     <td align="left"><a href="http://www.lisp.org/HyperSpec/FrontMatter/"
      >Common Lisp HyperSpec</a> access</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/closio.lisp?cvsroot=clocc"><code>closio.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/closio.lisp"><code>closio.lisp</code></a></th>
     <td align="left">read/write CLOS objects</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/cvs.lisp?cvsroot=clocc"><code>cvs.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/cvs.lisp"><code>cvs.lisp</code></a></th>
     <td align="left">CVS diff and log parsing</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/date.lisp?cvsroot=clocc"><code>date.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/date.lisp"><code>date.lisp</code></a></th>
     <td align="left">date/time</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/datedl.lisp?cvsroot=clocc"><code>datedl.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/datedl.lisp"><code>datedl.lisp</code></a></th>
     <td align="left">dated lists</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/doall.lisp?cvsroot=clocc"><code>doall.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/doall.lisp"><code>doall.lisp</code></a></th>
     <td align="left">answer questions automatically; requires
-     <a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/tools/metering/metering.lisp?cvsroot=clocc"><code>metering.lisp</code></a></td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/elisp.lisp?cvsroot=clocc"><code>elisp.lisp</code></a></th>
+     <a href="src/tools/metering/metering.lisp"><code>metering.lisp</code></a></td></tr>
+<tr><th align="left"><a href="src/cllib/elisp.lisp"><code>elisp.lisp</code></a></th>
     <td align="left">Load <a
     href="http://www.cs.indiana.edu/elisp/elisp-intro.html">Emacs-Lisp</a>
     code into Common Lisp</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/fileio.lisp?cvsroot=clocc"><code>fileio.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/fileio.lisp"><code>fileio.lisp</code></a></th>
     <td align="left">read/write lists etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/fin.lisp?cvsroot=clocc"><code>fin.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/fin.lisp"><code>fin.lisp</code></a></th>
     <td align="left">Financial functions: mortgage calculations, Luhn
     algorithm, Black-Scholes, Solow</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/geo.lisp?cvsroot=clocc"><code>geo.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/geo.lisp"><code>geo.lisp</code></a></th>
     <td align="left">geography, weather, etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/getopt.lisp?cvsroot=clocc"><code>getopt.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/getopt.lisp"><code>getopt.lisp</code></a></th>
     <td align="left">command line option processing - for Lisp scripting</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/gnuplot.lisp?cvsroot=clocc"><code>gnuplot.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/gnuplot.lisp"><code>gnuplot.lisp</code></a></th>
     <td align="left"><a href="http://www.gnuplot.org/">Gnuplot</a>
     interface</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/gq.lisp?cvsroot=clocc"><code>gq.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/gq.lisp"><code>gq.lisp</code></a></th>
     <td align="left">GetQuote - stock quotes over the Internet.</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/h2lisp.lisp?cvsroot=clocc"><code>h2lisp.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/h2lisp.lisp"><code>h2lisp.lisp</code></a></th>
     <td align="left">parsing C headers</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/html.lisp?cvsroot=clocc"><code>html.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/html.lisp"><code>html.lisp</code></a></th>
     <td align="left">HTML parsing via <code>text-stream</code></td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/htmlgen.lisp?cvsroot=clocc"><code>htmlgen.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/htmlgen.lisp"><code>htmlgen.lisp</code></a></th>
     <td align="left">HTML generation</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/inspect.lisp?cvsroot=clocc"><code>inspect.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/inspect.lisp"><code>inspect.lisp</code></a></th>
     <td align="left">portable inspector
     (2 frontends: TTY and an HTML broser)</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/iter.lisp?cvsroot=clocc"><code>iter.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/iter.lisp"><code>iter.lisp</code></a></th>
     <td align="left">iterate across multidimensional arrays</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/laser.lisp?cvsroot=clocc"><code>laser.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/laser.lisp"><code>laser.lisp</code></a></th>
     <td align="left">print a hardcopy</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/list.lisp?cvsroot=clocc"><code>list.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/list.lisp"><code>list.lisp</code></a></th>
     <td align="left">list utilities</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/log.lisp?cvsroot=clocc"><code>log.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/log.lisp"><code>log.lisp</code></a></th>
     <td align="left">time elapsed, messages etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/math.lisp?cvsroot=clocc"><code>math.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/math.lisp"><code>math.lisp</code></a></th>
     <td align="left">arithmetics, permutations, statistics, geometry and more</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/matrix.lisp?cvsroot=clocc"><code>matrix.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/matrix.lisp"><code>matrix.lisp</code></a></th>
     <td align="left">matrix operations (solving linear equations,
     inversion)</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/miscprint.lisp?cvsroot=clocc"><code>miscprint.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/miscprint.lisp"><code>miscprint.lisp</code></a></th>
     <td align="left">print hash tables, packages, characters etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/octave.lisp?cvsroot=clocc"><code>octave.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/octave.lisp"><code>octave.lisp</code></a></th>
     <td align="left">interact with <a
     href="http://www.che.wisc.edu/octave">octave</a></td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/prompt.lisp?cvsroot=clocc"><code>prompt.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/prompt.lisp"><code>prompt.lisp</code></a></th>
     <td align="left">fontify the prompt in an xterm</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/rng.lisp?cvsroot=clocc"><code>rng.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/rng.lisp"><code>rng.lisp</code></a></th>
     <td align="left">Random Number Generator (by
         <a href="http://www.mindspring.com/~rtoy">Raymond Toy</a>)
         for various non-trivial distributions</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/rpm.lisp?cvsroot=clocc"><code>rpm.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/rpm.lisp"><code>rpm.lisp</code></a></th>
     <td align="left">RPM handling (download etc) - a better
     <a href="http://www.tuxedo.org/~esr/software.html">rpmwatcher</a></td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/server.lisp?cvsroot=clocc"><code>server.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/server.lisp"><code>server.lisp</code></a></th>
     <td align="left">REPL over a socket</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/simple.lisp?cvsroot=clocc"><code>simple.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/simple.lisp"><code>simple.lisp</code></a></th>
     <td align="left"><code>with-collect</code> and some simple stuff</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/sorted.lisp?cvsroot=clocc"><code>sorted.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/sorted.lisp"><code>sorted.lisp</code></a></th>
     <td align="left">operate on sorted lists (map, reduce etc)</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/stat.lisp?cvsroot=clocc"><code>stat.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/stat.lisp"><code>stat.lisp</code></a></th>
     <td align="left">multidimensional statistics - requires</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/string.lisp?cvsroot=clocc"><code>string.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/string.lisp"><code>string.lisp</code></a></th>
     <td align="left">string splitting</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/symb.lisp?cvsroot=clocc"><code>symb.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/symb.lisp"><code>symb.lisp</code></a></th>
     <td align="left">symbol concatenation</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/tests.lisp?cvsroot=clocc"><code>tests.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/tests.lisp"><code>tests.lisp</code></a></th>
     <td align="left">regression testing (internal)</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/tilsla.lisp?cvsroot=clocc"><code>tilsla.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/tilsla.lisp"><code>tilsla.lisp</code></a></th>
     <td align="left"><code>comma</code> and friends for
     <code>format ~//</code></td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/url.lisp?cvsroot=clocc"><code>url.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/url.lisp"><code>url.lisp</code></a></th>
     <td align="left">HTTP/FTP/URL etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/withtype.lisp?cvsroot=clocc"><code>withtype.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/withtype.lisp"><code>withtype.lisp</code></a></th>
     <td align="left">various utilities not fitting anywhere else</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/cllib/xml.lisp?cvsroot=clocc"><code>xml.lisp</code></a></th>
+<tr><th align="left"><a href="src/cllib/xml.lisp"><code>xml.lisp</code></a></th>
     <td align="left"><a href="http://www.w3.org/XML/">XML</a> parsing</td></tr>
 </table>
 
@@ -186,11 +187,27 @@ the autoloads.
 Then you can dump your images.</p>
 
 <p>See also the general <a href="http://clocc.sourceforge.net">CLOCC</a>
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/INSTALL?cvsroot=clocc"><code>INSTALL</code></a>
+<a href="INSTALL"><code>INSTALL</code></a>
 instructions.</p>
 
-<p>This library depends on <code>port</code> and <code>metering</code>.
+<p>This library depends on <a href="src/port/"><code>port</code></a>
+ and <a href="src/tools/metering/metering.lisp"><code>metering</code></a>.
 These packages will be compiled by <code>"make system"</code>.</p>
+
+<p>Please note that this package exports symbols with names which might
+be already present as an extension in your Common Lisp implementation.
+I recommend issuing the following command before using this package:</p>
+<pre>
+#+clisp
+(shadowing-import
+ '(cllib::read-from-file cllib::browse-url cllib::*browsers* cllib::*browser*
+   cllib::package-short-name cllib::with-collect cllib::! cllib::erf
+   cllib::with-html-output cllib::with-http-output
+   cllib::*inspect-frontend* cllib::*inspect-browser*
+   cllib::*inspect-print-lines* cllib::*inspect-print-level*
+   cllib::*inspect-print-length* cllib::*inspect-length*))
+</pre>
+
 
 <h2>Comments</h2>
 

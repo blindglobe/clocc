@@ -1,7 +1,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
           "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <!--
- $Id: port.html,v 1.10 2001/02/13 17:21:46 sds Exp $
+ $Id: port.html,v 1.11 2001/04/22 05:02:30 sds Exp $
  $Source: /cvsroot/clocc/clocc/src/port/port.html,v $
  -->
 <html xml:lang="en" xmlns="http://www.w3.org/1999/xhtml">
@@ -11,6 +11,7 @@
 <meta http-equiv="description" content="README for port"/>
 <meta http-equiv="keywords"
  content="free software, open-source software, Common Lisp, portability"/>
+<base href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/~checkout~/clocc/clocc/">
 <link rev="made" href="mailto:sds@gnu.org"/>
 <title>README</title>
 </head>
@@ -43,11 +44,11 @@ hidden from the user.</p>
 <h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
 
 <p><code>PORT</code> is now a part of <code>CLOCC</code> (in
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/port/?cvsroot=clocc"><code>src/port</code></a>),
+<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/port/"><code>src/port</code></a>),
 and, as such, is accessible via anonymous CVS and FTP, as explained on
 the <code>CLOCC</code> homepage.
 <code>PORT</code> uses
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/defsystem-3.x/defsystem.lisp?cvsroot=clocc"><code>mk:defsystem</code></a>,
+<a href="src/defsystem-3.x/defsystem.lisp"><code>mk:defsystem</code></a>,
 which is a part of <code>CLOCC</code> too.</p>
 
 
@@ -58,18 +59,18 @@ alphabetical order):</p>
 
 <table border="2" cellpadding="2">
 <tr><th>file</th><th>description</th></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/ext.lisp?cvsroot=clocc"><code>ext.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/ext.lisp"><code>ext.lisp</code></a></th>
     <td align="left">miscellaneous minor extensions, used everywhere</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/gray.lisp?cvsroot=clocc"><code>gray.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/gray.lisp"><code>gray.lisp</code></a></th>
     <td align="left">David N. Gray's <a href="ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail">STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</a> unification</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/net.lisp?cvsroot=clocc"><code>net.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/net.lisp"><code>net.lisp</code></a></th>
     <td align="left">sockets, socket servers, host name resolution
         etc</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/proc.lisp?cvsroot=clocc"><code>proc.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/proc.lisp"><code>proc.lisp</code></a></th>
     <td align="left">LispM-style portable multiprocessing</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/shell.lisp?cvsroot=clocc"><code>shell.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/shell.lisp"><code>shell.lisp</code></a></th>
     <td align="left">shell access, pipes</td></tr>
-<tr><th align="left"><a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/port/sys.lisp?cvsroot=clocc"><code>sys.lisp</code></a></th>
+<tr><th align="left"><a href="src/port/sys.lisp"><code>sys.lisp</code></a></th>
     <td align="left"><code>getenv</code>, <code>arglist</code>,
         <code>class-slot-list</code>, <code>chdir</code>, etc</td></tr>
 </table>
@@ -87,8 +88,29 @@ compile all the files.  Alternatively, you can issue the
 Then you can dump your images.</p>
 
 <p>See also the general <a href="http://clocc.sourceforge.net">CLOCC</a>
-<a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/INSTALL?cvsroot=clocc"><code>INSTALL</code></a>
+<a href="INSTALL"><code>INSTALL</code></a>
 instructions.</p>
+
+<p>Please note that this package exports symbols with names which might
+be already present as an extension in your Common Lisp implementation.
+I recommend issuing the following command before using this package:</p>
+<pre>
+#+allegro
+(shadowing-import '(port::gc port::arglist port::chdir))
+#+clisp
+(shadowing-import
+ '(port::getenv port::arglist port::gc port::finalize port::sysinfo
+   port::with-gensyms port::probe-directory port::current-time port::quit
+   port::default-directory port::resolve-host-ipaddr port::hostent
+   port::hostent-name port::hostent-aliases port::hostent-addr-list
+   port::socket-server port::socket-accept port::socket-server-close
+   port::socket-service-port))
+#+cmu
+(shadowing-import
+ '(port::quit port::default-directory port::gc port::process-wait
+   port::finalize))
+</pre>
+
 
 <h2>Comments</h2>
 

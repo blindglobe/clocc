@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.7 2000/04/10 21:00:05 sds Exp $
+;;; $Id: fileio.lisp,v 1.8 2000/04/27 15:40:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,7 +13,7 @@
   (require :withtype (translate-logical-pathname "cllib:withtype"))
   ;; `+kwd+'
   (require :symb (translate-logical-pathname "cllib:symb"))
-  ;; `get-float-time', `elapsed-1', `mesg'
+  ;; `with-timing', `mesg'
   (require :log (translate-logical-pathname "cllib:log")))
 
 (in-package :cllib)
@@ -116,13 +116,13 @@ PRIN1 is the default. Returns the length of the list."
   "Write the list into the file, printing the elements one per line.
 Calls `write-list-to-stream', which see. Returns nil."
   (declare (list lst) (type (function (t stream) t) print-function))
-  (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
+  (with-timing ()
     (format t "~&Writing `~a'..." fout) (force-output)
-    (format t "done [~:d records (~:d bytes) in ~a/~a]~%"
+    (format t "done [~:d record~:p (~:d byte~:p)]"
             (with-open-file
                 (stout fout :direction :output :if-exists :supersede)
               (write-list-to-stream lst stout print-function))
-            (file-size fout) (elapsed-1 bt t) (elapsed-1 bt1 nil))))
+            (file-size fout))))
 
 (defun read-list-from-stream (stream read-function &optional (eof +eof+)
                               &rest args)
@@ -148,7 +148,7 @@ EOF defaults to `+eof+'.
   (read-list-from-file FILE-IN READ-FUNCTION EOF &rest ARGS)"
   (declare (type (function (stream t t) (values t t)) read-function)
            (type (or simple-string pathname) fin) (values list fixnum t))
-  (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
+  (with-timing ()
     (multiple-value-bind (lst len last)
         (with-open-file (stin fin :direction :input :if-does-not-exist nil)
           (unless stin
@@ -157,8 +157,7 @@ EOF defaults to `+eof+'.
           (format t "~&Reading `~a' [~:d bytes]..." fin (file-length stin))
           (force-output)
           (apply #'read-list-from-stream stin read-function eof args))
-      (format t "done [~:d records in ~a/~a]~%"
-              len (elapsed-1 bt t) (elapsed-1 bt1 nil))
+      (format t "done [~:d record~:p]" len)
       (values lst len last))))
 
 ;;;
@@ -183,7 +182,7 @@ NICE (default T).  Uses `with-standard-io-syntax'."
 The optional third argument is passed to `pr'."
   (declare (type (or simple-string pathname) file))
   (format t "Writing `~a'..." file) (force-output)
-  (let ((bt (get-float-time)) (bt1 (get-float-time nil)) el el1)
+  (with-timing ()
     (with-open-file (str file :direction :output :if-exists :supersede)
       (declare (stream str))
       (format str ";; File: <~a - " file) (current-time str)
@@ -192,9 +191,9 @@ The optional third argument is passed to `pr'."
               (getenv "USER") (lisp-implementation-type)
               (lisp-implementation-version) nice comments)
       (pr obj str nice)
-      (format str "~2%;; file written [~a/~a]~%" (setq el (elapsed-1 bt t))
-              (setq el1 (elapsed-1 bt1 nil)))
-      (format t "done [~:d bytes, ~a/~a]~%" (file-length str) el el1))))
+      (format str "~2%;; file written [") (current-time str)
+      (format str "]~%")
+      (format t "done [~:d byte~:p]" (file-length str)))))
 
 ;;;###autoload
 (defun read-from-file (file &key (readtable *readtable*) repeat
@@ -207,20 +206,17 @@ If NIL, read once and return the object read;
 if a number, read that many times and return a list of objects read,
 if T, read until end of file and return a list of objects read."
   (declare (type (or simple-string pathname) file))
-  (let ((bt (get-float-time)) (bt1 (get-float-time nil)))
-    (prog1 (with-open-file (str file :direction :input)
-             (format out "~&Reading `~a' [~:d bytes]..."
-                     file (file-length str))
-             (force-output)
-             (with-standard-io-syntax
-               (let ((*readtable* readtable))
-                 (cond ((null repeat) (read str))
-                       ((numberp repeat)
-                        (loop :repeat repeat :collect (read str)))
-                       ((loop :for obj = (read str nil +eof+)
-                              :while (not (eq obj +eof+))
-                              :collect obj))))))
-      (format out "done [~a/~a]~%" (elapsed-1 bt t) (elapsed-1 bt1 nil)))))
+  (with-timing (:done t)
+    (with-open-file (str file :direction :input)
+      (format out "~&Reading `~a' [~:d bytes]..." file (file-length str))
+      (force-output)
+      (with-standard-io-syntax
+        (let ((*readtable* readtable))
+          (cond ((null repeat) (read str))
+                ((numberp repeat) (loop :repeat repeat :collect (read str)))
+                ((loop :for obj = (read str nil +eof+)
+                       :while (not (eq obj +eof+))
+                       :collect obj))))))))
 
 (defun append-to-file (file fmt &rest fmt-args)
   "Append to the file the formatted output."

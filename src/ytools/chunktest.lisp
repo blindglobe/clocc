@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.6 2004/12/24 22:48:43 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.7 2004/12/29 20:15:03 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -86,10 +86,10 @@
 
 ;;; Disjuncts are a Num-pair-reg and a Num-reg that
 ;;; is equal to the second element of the pair
-(defclass Denom-chunk (Or-chunk Num-reg)
+(defclass Denom-or-chunk (Or-chunk Num-reg)
    ())
 
-(defmethod derive ((rc Denom-chunk))
+(defmethod derive ((rc Denom-or-chunk))
    (let ((disjuncts (Or-chunk-disjuncts rc)))
       (cond ((Chunk-managed (first disjuncts))
 	     (setf (Num-reg-contents rc)
@@ -100,7 +100,7 @@
 		   (Num-reg-contents (second disjuncts)))
 	     (incf num-num-ops*))
 	    (t
-	     (error "Denom-chunk ~s has unmanaged disjuncts"
+	     (error "Denom-or-chunk ~s has unmanaged disjuncts"
 		    rc)))))
 
 ;; Numbers (these should all be nonnegative to avoid possibility
@@ -121,9 +121,9 @@
 
 (defvar denom*)
 
-(defvar quo-chunk*)
+(defvar quo*)
 
-(defvar denom-chunk*)
+(defvar denom-or-chunk*)
 
 ;;;;(defvar numer-denom-reg* (list 0 0))
 
@@ -198,16 +198,16 @@
 	    :name "denom"
 	    :basis (list rough-denom*)
 	    :fcn (\\ (d _) (first d))))
-   (setq denom-chunk*
-         (make-instance 'Denom-chunk
+   (setq denom-or-chunk*
+         (make-instance 'Denom-or-chunk
 	    :name 'denom
 	    :basis (list numer* rough-denom*)
 	    :disjuncts (list numer-denom-pair* denom*)
 	    :default denom*))
-;;;;   (cond ((not (null (Chunk-update-basis denom-chunk*)))
-;;;;	  (break "denom-chunk* has suspicious update-basis: ~s"
-;;;;		 (Chunk-update-basis denom-chunk*))))
-   (setq quo-chunk*
+;;;;   (cond ((not (null (Chunk-update-basis denom-or-chunk*)))
+;;;;	  (break "denom-or-chunk* has suspicious update-basis: ~s"
+;;;;		 (Chunk-update-basis denom-or-chunk*))))
+   (setq quo*
 	 (make-instance 'Num-reg
 	     :name "numer/denom"
 	     :basis (list numer-denom-pair*)
@@ -215,7 +215,7 @@
 	     :fcn (\\ (_ _) (/ (Num-pair-reg-one numer-denom-pair*)
 			       (Num-pair-reg-two numer-denom-pair*))))))
 
-;;; Independent computer of value of quo-chunk* or denom-chunk*
+;;; Independent computer of value of quo* or denom-or-chunk*
 (defun compute ()
    (let ((k (length ivec*)))
       (let ((n (do ((i 0 (+ i 1))
@@ -240,14 +240,14 @@
 ;;;;		  (format t "i = ~s   quo = ~s~%" i quo)
 		)))
 	  (format t "n = ~s   d = ~s~%" n d)
-	  (cond ((Chunk-managed quo-chunk*)
+	  (cond ((Chunk-managed quo*)
 		 (/ n d))
 		(t
 		 d)))))
 	   
 ;;; Build net before starting this --
 (defun net-direct-compare (which-input start-val &optional (num-iters 1000))
-   (chunk-request-mgt denom-chunk*)
+   (chunk-request-mgt denom-or-chunk*)
    (do ((i start-val (+ i 1))
 	(j which-input (+ j 1))
 	(k (length ivec*)))
@@ -258,19 +258,19 @@
       (setf (aref ivec* j) i)
       (incf num-num-ops*)
       (chunk-up-to-date (aref input-chunks* j))
-      (format t "chunk ~s <- ~s " j i)
-      (cond ((Chunk-managed quo-chunk*)
-	     (chunk-terminate-mgt quo-chunk* false)
-	     (chunk-update denom-chunk*))
+      (format t "chunk ~s <- ~s ~%" j i)
+      (cond ((Chunk-managed quo*)
+	     (chunk-terminate-mgt quo* false)
+	     (chunk-update denom-or-chunk*))
 	    (t
-	     (chunk-request-mgt quo-chunk*)
-	     (chunks-update (list quo-chunk* denom-chunk*))))
+	     (chunk-request-mgt quo*)
+	     (chunks-update (list quo* denom-or-chunk*))))
       (let ((direct (compute))
 	    (via-chunks (Num-reg-contents
-			   (cond ((Chunk-managed quo-chunk*)
-				  quo-chunk*)
+			   (cond ((Chunk-managed quo*)
+				  quo*)
 				 (t
-				  denom-chunk*)))))
+				  denom-or-chunk*)))))
 	 (format t "~s: ~s <?> ~s~%"
 		   i direct via-chunks)
 	 (cond ((not (= direct via-chunks))
@@ -278,7 +278,7 @@
 		(return false))
 	       (t
 		(let ((denom-mg (Chunk-managed denom*))
-		      (quo-mg (Chunk-managed quo-chunk*)))
+		      (quo-mg (Chunk-managed quo*)))
 		   (cond ((cond (denom-mg quo-mg)
 				(t (not quo-mg)))
 			  (format t "Bummer: denom-mg = ~s quo-mg = ~s~%"

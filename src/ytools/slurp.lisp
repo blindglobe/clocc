@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.11 2004/12/29 06:41:58 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.12 2004/12/29 20:15:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -282,8 +282,10 @@ after YTools file transducers finish.")
 		          (format nil "Slurping ~s"
 				      (mapcar #'Slurp-task-label slurp-tasks))
 			  pn false "...")
-;;;;		      (setq slurped-pn* pn slurp-tasks* slurp-tasks)
-;;;;		      (break "Slurping")
+;;;;		      (cond ((equal slurped-pn*
+;;;;				    (->pathname "tezt-s.lisp"))
+;;;;			     (setq slurped-pn* pn slurp-tasks* slurp-tasks)
+;;;;			     (break "Slurping")))
 		      (cond (stream-init
 			     (funcall stream-init s)))
 		      (do ((form (read s false eof*) (read s false eof*))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.14 2004/12/29 06:41:57 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.15 2004/12/29 20:15:03 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -408,6 +408,8 @@
       (chunks-update (cons fload-compile-flag-chunk*
 			   loadeds-needing-update))))
 
+(defvar loaded-manip-dbg* false)
+
 ;;; This must be called whenever the 'manip' field changes.
 ;;; It is called :after deriving any Loadable-chunk (see above).
 (defun loaded-chunk-basis-set (loaded-ch)
@@ -418,7 +420,9 @@
 	     (probe-file
 		(File-chunk-pathname
 		   (Loaded-chunk-object loaded-ch)))))
-      (format t "At start, manip = ~s~%" manip)
+      (cond (loaded-manip-dbg*
+	     (format t !"Setting loaded chunk basis, ~
+                         manip initially = ~s~%" manip)))
       (cond ((not (or source-exists object-exists))
 	     (error "No source or object file can be found for ~s"
 		    loaded-ch)))
@@ -450,8 +454,11 @@
 		    (setq manip ':compile)))
 	     ;; At this point manip is either :object, :source, or
 	     ;; :compile
-	     (format t "manip = ~s loaded-ch = ~s~%"
-		     manip loaded-ch)
+	     (cond (loaded-manip-dbg*
+		    (format t !"Now manip = ~s ~
+                                [should be :object, :source, or :compile]~
+                                ~%  loaded-ch = ~s~%"
+			    manip loaded-ch)))
 	     (setf (Chunk-basis loaded-ch)
 	           (cons (ecase manip
 			    (:source
@@ -471,8 +478,9 @@
 			    (head (Chunk-basis loaded-ch)))))
 		     (t
 		      (head (Chunk-basis loaded-ch))))))
-	 (format t "Setting selection of ~s~% to ~s~%"
-		 loaded-ch selection)
+	 (cond (loaded-manip-dbg*
+		(format t "Setting selection of ~s~% to ~s~%"
+			loaded-ch selection)))
 	 (setf (Loaded-chunk-selection loaded-ch)
 	       selection))))
 
@@ -760,14 +768,14 @@
 			      :type Loaded-chunk)))
 
 	     (defun ,loaded-subfile-placer-fcn (pn)
-		(format t "Placing new loaded chunk for ~s subfile chunk of ~s~%"
-			',sym pn)
+;;;;		(format t "Placing new loaded chunk for ~s subfile chunk of ~s~%"
+;;;;			',sym pn)
 		(chunk-with-name
 		    `(:loaded (,',sym ,pn))
 		    (\\ (name-exp)
-		       (format t !"Creating new loaded chunk for ~
-                                   ~s subfile chunk of ~s~%"
-			       ',sym pn)
+;;;;		       (format t !"Creating new loaded chunk for ~
+;;;;                                   ~s subfile chunk of ~s~%"
+;;;;			       ',sym pn)
 		       (let ()
 			  (make-instance ',loaded-sym-class-name
 			      :name name-exp
@@ -810,12 +818,12 @@
 )
 
 (defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
-   (format t "Setting up subfiles that ~s depends on...~%"
-	   compiled-ch)
+;;;;   (format t "Setting up subfiles that ~s depends on...~%"
+;;;;	   compiled-ch)
    (dolist (ssfty standard-sub-file-types*)
-      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
-	      (Sub-file-type-name ssfty)
-	      (File-chunk-pathname file-ch))
+;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
+;;;;	      (Sub-file-type-name ssfty)
+;;;;	      (File-chunk-pathname file-ch))
       (pushnew (funcall
 		  (Sub-file-type-chunker ssfty)
 		  (File-chunk-pathname file-ch))

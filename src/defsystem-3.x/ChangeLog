@@ -1,3 +1,8 @@
+2001-07-26  Sam Steingold  <sds@gnu.org>
+
+	* defsystem.lisp (new-append-directories): removed CLISP-specific
+	type upcasing (why was it there in the first place?!)
+
 2001-06-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
@@ -6,26 +11,26 @@
 
 	Added a few fixes for LispWorks on PC/Windows.
 
-2001-05-07  sds  <sds@tapulon>
+2001-05-07  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore: cr/lf
 
-2001-04-11  sds  <sds@tapulon>
+2001-04-11  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	updated for CLISP #+LISP=CL
 
-2001-03-18  sds  <sds@tapulon>
+2001-03-18  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore: added lww *.fsl
 
-2001-03-16  sds  <sds@tapulon>
+2001-03-16  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (component-full-pathname-i):
 	init device from `pathname'
 	 when it is nil in the `component'
 
-2001-02-06  sds  <sds@tapulon>
+2001-02-06  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (run-compiler):
 	`error-file' and `error-file-stream'
@@ -36,19 +41,19 @@
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	Added patch for 'new-append-directories' for MCL 3.4.
 
-2001-01-08  sds  <sds@tapulon>
+2001-01-08  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	updated for CMUCL 18c, where :cmu17 is not a feature anymore
 	(component): type defaults to `:file'
 
-2000-07-26  rtoy  <rtoy@tapulon>
+2000-07-26  Raymond Toy  <rtoy@users.sourceforge.net>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	Add COMPILER-OPTIONS to COMPONENT defstruct to allow user to specify
 	special compiler options for a particular component.
 
-2000-05-16  sds  <sds@tapulon>
+2000-05-16  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (system-source-size):
 	message tweak
@@ -57,22 +62,22 @@
 	fixed the CLISP version (`logical-pathname-p'
 	was called but not defined) and unified both versions into one.
 
-2000-05-15  sds  <sds@tapulon>
+2000-05-15  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (c-compile-file):
 	ignore `error-file' (kill a warning)
 
-2000-05-12  sds  <sds@tapulon>
+2000-05-12  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (*central-registry*):
 	fixed for lispworks4 (from dey)
 
-2000-05-11  sds  <sds@tapulon>
+2000-05-11  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (system-source-size):
 	new optional argument `force'
 
-2000-05-10  rtoy  <rtoy@tapulon>
+2000-05-10  Raymond Toy  <rtoy@users.sourceforge.net>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	CMUCL and CLISP RUN-PROGRAM want the arguments as a list of strings.
@@ -85,18 +90,18 @@
 	Don't default binary-extension so we can inherit this from the
 	parent, just like source-extension.
 
-2000-04-19  haible  <haible@tapulon>
+2000-04-19  Bruno Haible  <haible@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	Add three #+clisp, to silence warnings.
 
-2000-04-07  sds  <sds@tapulon>
+2000-04-07  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (component source-extension):
 	do not supply an init
 	form (stig's patch)
 
-2000-03-29  sds  <sds@tapulon>
+2000-03-29  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (*filename-extensions*):
 	use `compile-file-pathname' to find the
@@ -113,7 +118,7 @@
 	always use the package qualifier "MK:" to access LOAD-SYSTEM,
 	COMPILE-SYSTEM and friends.
 
-2000-03-22  haible  <haible@tapulon>
+2000-03-22  Bruno Haible  <haible@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	*filename-extensions* needs only one entry for CLISP, not two.
@@ -123,7 +128,7 @@
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	Fixed the '*defsystem-version* variable to reflect the current version.
 
-2000-03-03  sds  <sds@tapulon>
+2000-03-03  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	do not redefine provide/require under clisp
@@ -141,12 +146,12 @@
 	HARDCOPY-SYSTEM are no longer imported in the COMMON-LISP-USER
 	package. Cfr. the definitions of *EXPORTS* and *SPECIAL-EXPORTS*.
 
-2000-02-18  sds  <sds@tapulon>
+2000-02-18  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore:
 	ignore the compiled files
 
-2000-02-16  sds  <sds@tapulon>
+2000-02-16  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	finally, works with CLISP
@@ -158,7 +163,7 @@
 	(default-source-extension, default-binary-extension): default
 	based on `*filename-extensions*', not not hardwired `lisp/fasl'
 
-2000-02-11  sds  <sds@tapulon>
+2000-02-11  Sam Steingold  <sds@gnu.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
 	compile with clisp

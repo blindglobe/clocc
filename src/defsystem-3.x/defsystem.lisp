@@ -1694,12 +1694,6 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	 #+(or :MCL :sbcl :clisp) (rel-type (pathname-type rel-dir))
 	 (directory nil))
 
-    ;; Stig (July 2001):
-    ;; CLISP seems to have a bug and only accepts upcased types
-    #+clisp
-    (when rel-type
-      (setq rel-type (string-upcase rel-type)))
-
     ;; TI Common Lisp pathnames can return garbage for file names because
     ;; of bizarreness in the merging of defaults.  The following code makes
     ;; sure that the name is a valid name by comparing it with the
@@ -1755,7 +1749,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 		    :name
 		    #-(or :sbcl :MCL :clisp) rel-file
 		    #+(or :sbcl :MCL :clisp) rel-name
-		    
+
 		    #+(or :sbcl :MCL :clisp) :type
 		    #+(or :sbcl :MCL :clisp) rel-type
 		    ))))
@@ -1961,7 +1955,7 @@ ABS: NIL          REL: NIL               Result: ""
 (defun append-logical-pnames (absolute relative)
   (declare (type (or null string pathname) absolute relative))
   (let ((abs (if absolute
-		 #-clisp (namestring absolute) 
+		 #-clisp (namestring absolute)
 		 #+clisp absolute ;; Stig (July 2001): hack to avoid CLISP from translating the whole string
 		 ""))
 	(rel (if relative (namestring relative) ""))
@@ -2140,7 +2134,7 @@ D
   load-always				; If T, will force loading
 					; even if file has not
 					; changed.
-  ;; PVE: add banner 
+  ;; PVE: add banner
   (banner nil :type (or null string))
 
   (documentation nil :type (or null string)) ; Optional documentation slot
@@ -3186,7 +3180,7 @@ D
 		(ext:*require-verbose* nil)
 		#+(and common-lisp-controller cmu)
 		(ext:*gc-verbose* nil)
-		
+
 		(*compile-verbose* #-common-lisp-controller t
 				   #+common-lisp-controller nil) ; nil
 		(*version* version)
@@ -3381,7 +3375,7 @@ D
 				       (component-name component)))
 	    (or *oos-test*
 		(eval (component-finally-do component))))
-	  
+
 	  ;; add the banner if needed
 	  #+cmu
 	  (when (component-banner component)
@@ -3996,15 +3990,15 @@ D
 							     :binary))
 		     #-:lucid
 		     (component-full-pathname component :binary)))
-	       
+
 	       ;; make certain the directory we need to write to
 	       ;; exists [pvaneynd@debian.org 20001114]
-	       (ensure-directories-exist 
+	       (ensure-directories-exist
 		(make-pathname
 		 :directory
 		 (pathname-directory
 		  output-file)))
-	       
+
 	       (or *oos-test*
 		   (apply (compile-function component)
 			  source-pname

@@ -1,4 +1,4 @@
-;;; File: <geo.lisp - 1998-07-31 Fri 12:37:41 EDT sds@mute.eaglets.com>
+;;; File: <geo.lisp - 1999-01-06 Wed 22:56:42 EST sds@eho.eaglets.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: geo.lisp,v 1.4 1998/07/31 16:54:23 sds Exp $
+;;; $Id: geo.lisp,v 1.5 1999/01/07 03:57:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 ;;; $Log: geo.lisp,v $
+;;; Revision 1.5  1999/01/07 03:57:16  sds
+;;; Use `index-t' instead of (unsigned-byte 20).
+;;;
 ;;; Revision 1.4  1998/07/31 16:54:23  sds
 ;;; Declared `stream' as a stream in `print-*'.
 ;;;
@@ -48,7 +51,7 @@ read from the stream."
 			 (char-equal (schar lt nn) #\w)) -1)
 		    (t (error "Wrong sign designation: `~a'. ~
 Must be one of [N]orth, [S]outh, [E]ast or [W]est." (schar lt nn)))))
-    (double-float (* sig (+ cc (/ se 3600d0))))))
+    (dfloat (* sig (+ cc (/ se 3600d0))))))
 
 (defun geo-location (str &key (start 0))
   "Return the latitude and longitude as two numbers from a string of
@@ -77,7 +80,7 @@ second argument."
 (eval-when (load compile eval)
 (defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
-  (pop 0 :type (real 0 *))	; population
+  (pop 0 :type (real 0))	; population
   (lat 0.0d0 :type double-float) ; latitude
   (lon 0.0d0 :type double-float) ; longitude
   (zip nil :type list))		; list of zip codes.
@@ -93,27 +96,28 @@ second argument."
           (geod-zip gd)))
 
 (defcustom *census-gazetteer-url* url
-  (make-url :prot "http" :host "www.census.gov" :path "/cgi-bin/gazetteer?")
+  (make-url :prot :http :host "www.census.gov" :path "/cgi-bin/gazetteer?")
   "*The URL to use to get the cite information.")
 
-(defun cite-info (&key (url *census-gazetteer-url*) city state zip (out t))
+(defun cite-info (&key (url *census-gazetteer-url*) city state zip
+                  (out *standard-output*))
   "Get the cite info from the U.S. Gazetteer.
 Print the results to the stream OUT (defaults to T, discard if NIL)
 and return a list of geo-data."
   (setq url (if (url-p url) (copy-url url) (url url)))
-  (unless (or city state zip)
-    (error "You must specify at least one of :city, :state or :zip~%"))
+  (assert (or city state zip) (city state zip)
+          "You must specify at least one of :city, :state or :zip~%")
   (flet ((prep (str) (if str (substitute #\+ #\Space (string str)) "")))
     (setf (url-path url)
 	  (format nil "~acity=~a&state=~a&zip=~a" (url-path url) (prep city)
 		  (prep state) (or zip ""))))
-  (with-open-url (sock url *readtable* t)
+  (with-open-url (sock url :err *standard-output*)
     (skip-search sock "<ul>")
     (do ((str "") res gd (ii 1 (1+ ii)))
 	((or (search "</ul>" str)
 	     (search "</ul>" (setq str (read-line sock))))
 	 (nreverse res))
-      (declare (type (unsigned-byte 20) ii) (simple-string str))
+      (declare (type index-t ii) (simple-string str))
       ;; name
       (setq gd (make-geo-data :name (strip-html-markup str))
 	    str (read-line sock))
@@ -148,7 +152,7 @@ and return a list of geo-data."
   "Print the weather report for CODE to OUT."
   (setq url (if (url-p url) (copy-url url) (url url)))
   (setf (url-path url) (format nil "/~a//x" code))
-  (with-open-url (sock url nil)
+  (with-open-url (sock url)
     (do (rr)
 	((eq +eof+ (setq rr (read-line sock nil +eof+))))
       (format out "~a~%" rr))))
@@ -168,20 +172,20 @@ and return a list of geo-data."
   (inet nil :type symbol)	; Internet Domain
   (incl nil :type (or null country)) ; Included in
   (captl nil :type (or null simple-string)) ; Capital
-  (area 0.0d0 :type (double-float 0.0 *)) ; Area, in sq km
-  (frnt 0.0d0 :type (double-float 0.0 *)) ; fontier length, in km
-  (cstl 0.0d0 :type (double-float 0.0 *)) ; coastline, in km
+  (area 0.0d0 :type (double-float 0.0)) ; Area, in sq km
+  (frnt 0.0d0 :type (double-float 0.0)) ; fontier length, in km
+  (cstl 0.0d0 :type (double-float 0.0)) ; coastline, in km
   (lat 0.0d0 :type double-float) ; Latitude
   (lon 0.0d0 :type double-float) ; Longitude
   (pop 0 :type integer)		; population
-  (birth 0.0d0 :type (double-float 0.0 *)) ; birth rate
-  (death 0.0d0 :type (double-float 0.0 *)) ; death rate
+  (birth 0.0d0 :type (double-float 0.0)) ; birth rate
+  (death 0.0d0 :type (double-float 0.0)) ; death rate
   (mgrtn 0.0d0 :type double-float) ; net migration rate
-  (fert 0.0d0 :type (double-float 0.0 *)) ; fertility rate per woman
-  (life 0.0d0 :type (double-float 0.0 *)) ; life expectancy at birth
-  (gdp 0.0d0 :type (double-float 0.0 *)) ; GDP, in $$
+  (fert 0.0d0 :type (double-float 0.0)) ; fertility rate per woman
+  (life 0.0d0 :type (double-float 0.0)) ; life expectancy at birth
+  (gdp 0.0d0 :type (double-float 0.0)) ; GDP, in $$
   (gdpgr nil :type (or null double-float)) ; GDP growth, in %%
-  (gdppc 0.0d0 :type (double-float 0.0 *)) ; GDP per capita, in $$
+  (gdppc 0.0d0 :type (double-float 0.0)) ; GDP per capita, in $$
   (note nil :type (or null simple-string)) ; ISO Note
   (lctn nil :type (or null simple-string)) ; Location Description
   (dspt nil :type (or null simple-string)) ; Territorial Disputes
@@ -222,7 +226,7 @@ GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])
   (- (+ (country-birth ntn) (country-mgrtn ntn)) (country-death ntn)))
 
 (defcustom *geo-code-url* url
-  (make-url :prot "http" :host "www.odci.gov" :path
+  (make-url :prot :http :host "www.odci.gov" :path
 	    "/cia/publications/factbook/appf.html")
   "*The URL with the table of the codes.")
 (defcustom *geo-info-template* simple-string
@@ -275,7 +279,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 (defun fetch-country-list ()
   "Initialize `*country-list*' from `*geo-code-url*'."
   (format t "~&Reading `~a'" *geo-code-url*)
-  (with-open-url (st *geo-code-url* *readtable* t)
+  (with-open-url (st *geo-code-url* :err *standard-output*)
     ;; (with-open-file (st "/home/sds/lisp/wfb-appf.htm" :direction :input)
     (skip-search st "Entity")
     (skip-search st "</TR>")
@@ -321,13 +325,15 @@ is a float, such as the GDP, VALUE is a cons with the range.
 		 (car (apply #'find-country find-args)))))
     (view-url (format nil *geo-info-template* (country-fips ntn)))))
 
-(defmacro dump-find-country ((&rest find-args) (&rest dump-args &key (out t)
-						&allow-other-keys))
+(defmacro dump-find-country ((&rest find-args)
+                             (&rest dump-args &key (out *standard-output*)
+                                    &allow-other-keys))
   "Dump all the URLs for all the relevant countries."
   (remf dump-args :out)
   (dolist (cc (apply #'find-country find-args))
     (let ((st (if (or (and (symbolp out) (fboundp out)) (functionp out))
 		  (funcall out cc) out)))
+      (declare (stream st))
       (format st "~70~~%~a~70~~%" cc)
       (apply #'dump-country cc :out st dump-args))))
 
@@ -336,7 +342,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
   (declare (type country cc))
   ;; (setf (country-note cc) (current-time nil))
   (with-open-url (st (url (format nil *geo-info-template* (country-fips cc)))
-		     nil t)
+		     :err *standard-output*)
     (ignore-errors
       (setf (country-lctn cc) (next-info st "<B>Location:</B>")
 	    (values (country-lat cc) (country-lon cc))
@@ -345,8 +351,8 @@ is a float, such as the GDP, VALUE is a cons with the range.
       (setf (country-area cc) (next-info st "<BR><I>total:</I>" 'float))
       (let ((lb (next-info st "<BR><B>Land boundaries:</B>" 'number)))
 	(typecase lb
-	  (number (setf (country-frnt cc) (double-float lb)))
-	  (t (setf (country-frnt cc) (double-float (parse-num (read-line st))))
+	  (number (setf (country-frnt cc) (dfloat lb)))
+	  (t (setf (country-frnt cc) (dfloat (parse-num (read-line st))))
 	     (add-note cc "Borders with: "
 		       (next-info st "<BR><I>border countr")))))
       (setf (country-cstl cc) (next-info st "<BR><B>Coastline:</B>" 'float)
@@ -377,7 +383,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
   "Get the next object from stream STR, skipping till SKIP, of type TYPE."
   (declare (stream str) (simple-string skip) (symbol type))
   (let ((ln (skip-to-line str skip)))
-    (case type (float (double-float (parse-num ln))) (number (parse-num ln))
+    (case type (float (dfloat (parse-num ln))) (number (parse-num ln))
 	  (t (concatenate 'string ln (read-non-blanks str))))))
 
 (defun add-note (cc &rest news)

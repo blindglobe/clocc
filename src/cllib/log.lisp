@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.19 2004/09/09 20:02:38 sds Exp $
+;;; $Id: log.lisp,v 1.20 2004/09/09 20:15:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -104,10 +104,10 @@ the expected remaining run and real times."
                             (setq ,last-pos pos)
                             (values
                              (time-diff
-                              (/ (+ eta (linear lp lt pos now 1)) 2) ,now)
+                              (/ (+ eta (linear lp lt pos now 1)) 2) now)
                              (time-diff
-                              (/ (+ eta1 (linear lp lt1 pos now1 1)) 2)
-                              ,now1))))))))
+                              (/ (+ eta1 (linear lp lt1 pos now1 1)) 2) now1)
+                             )))))))
              ,@body)
         (when ,%out
           (when ,done (princ "done" ,%out))

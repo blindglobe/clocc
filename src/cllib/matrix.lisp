@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.7 2003/07/11 20:32:03 sds Exp $
+;;; $Id: matrix.lisp,v 2.8 2004/12/18 17:55:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -54,10 +54,8 @@ By default prints the contents.
     (unless colp
       (case rank
         (1 (loop :for elt :across aa :do (format out fmt elt) (terpri out)))
-        (2 (loop :with dim1 :of-type index-t = (1- (array-dimension aa 0))
-             :and  dim2 :of-type index-t = (1- (array-dimension aa 1))
-             :for ii :of-type index-t :from 0 :to dim1 :do
-             (loop :for jj :of-type index-t :from 0 :to dim2 :do
+        (2 (dotimes (ii (array-dimension aa 0))
+             (dotimes (jj (array-dimension aa 1))
                (format out fmt (aref aa ii jj)))
              (terpri out)))
         (t (error 'case-error :proc 'matrix-print :args
@@ -76,8 +74,8 @@ By default prints the contents.
   "Generate an NxN identity matrix"
   (declare (type index-t nn))
   (loop :with matrix = (make-array (list nn nn) :initial-element 0)
-        :for ii :from 0 :to (1- nn) :do (setf (aref matrix ii ii) 1)
-        :finally (return matrix)))
+    :for ii :from 0 :below nn :do (setf (aref matrix ii ii) 1)
+    :finally (return matrix)))
 
 (defun array-copy (aa &optional bb)
   "Copy an arbitrary array."
@@ -98,24 +96,24 @@ By default prints the contents.
   (declare (type array mx))
   (let ((dim (array-dimension mx 0)))
     (and (= dim (array-dimension mx 1))
-         (loop :for ii :of-type index-t :from 1 :to (1- dim)
-               :unless (loop :for jj :of-type index-t :from 0 :to (1- ii)
-                             :unless (= (aref mx ii jj) (aref mx jj ii))
-                             :return nil :finally (return t))
-               :return nil :finally (return t)))))
+         (loop :for ii :of-type index-t :from 1 :below dim
+           :unless (loop :for jj :of-type index-t :from 0 :below ii
+                     :unless (= (aref mx ii jj) (aref mx jj ii))
+                     :return nil :finally (return t))
+           :return nil :finally (return t)))))
 
 (defun matrix-id-p (mx)
   "Check the matrix for being identity."
   (declare (type array mx))
   (let ((dim (array-dimension mx 0)))
     (and (= dim (array-dimension mx 1))
-         (loop :for ii :of-type index-t :from 1 :to (1- dim)
-               :unless (and (loop :for jj :of-type index-t :from 0 :to (1- ii)
-                                  :unless (and (zerop (aref mx ii jj))
-                                               (zerop (aref mx jj ii)))
-                                  :return nil :finally (return t))
-                            (= 1 (aref mx ii ii)))
-               :return nil :finally (return t)))))
+         (loop :for ii :of-type index-t :from 1 :below dim
+           :unless (and (loop :for jj :of-type index-t :from 0 :below ii
+                          :unless (and (zerop (aref mx ii jj))
+                                       (zerop (aref mx jj ii)))
+                          :return nil :finally (return t))
+                        (= 1 (aref mx ii ii)))
+           :return nil :finally (return t)))))
 
 (defun matrix-transpose (mx)
   "Transpose the matrix."
@@ -165,11 +163,10 @@ By default prints the contents.
     (error 'dimension :proc 'bilinear :args
            (list (array-dimensions mx) (array-dimensions v0)
                  (array-dimensions v1))))
-  (loop :for ii :of-type index-t :from 0 :to (1- (array-dimension mx 0))
-        :sum (* (aref v0 ii)
-                (loop :for jj :of-type index-t :from 0
-                      :to (1- (array-dimension mx 1))
-                      :sum (* (aref mx ii jj) (aref v1 jj))))))
+  (loop :for ii :of-type index-t :from 0 :below (array-dimension mx 0)
+    :sum (* (aref v0 ii)
+            (loop :for jj :of-type index-t :from 0 :below (array-dimension mx 1)
+              :sum (* (aref mx ii jj) (aref v1 jj))))))
 
 ;;;
 ;;; Matrix Multiplication
@@ -180,12 +177,12 @@ By default prints the contents.
 The optional third argument is the place where to put the return value."
   (flet ((num-arr (num input dim)   ; scalar X any array
            (loop :with res :of-type array = (array-check-return re dim)
-                 :with tot :of-type index-t = (array-total-size res)
-                 :with to = (make-array tot :displaced-to res)
-                 :with fr = (make-array tot :displaced-to input)
-                 :for ii :of-type index-t :from 0 :to (1- tot)
-                 :do (setf (aref to ii) (* num (aref fr ii)))
-                 :finally (return res))))
+             :with tot :of-type index-t = (array-total-size res)
+             :with to = (make-array tot :displaced-to res)
+             :with fr = (make-array tot :displaced-to input)
+             :for ii :of-type index-t :from 0 :below tot
+             :do (setf (aref to ii) (* num (aref fr ii)))
+             :finally (return res))))
     (cond ((numberp aa) (num-arr aa bb (array-dimensions bb)))
           ((numberp bb) (num-arr bb aa (array-dimensions aa)))
           ((and (= 2 (array-rank aa)) ; matrix X matrix
@@ -193,15 +190,14 @@ The optional third argument is the place where to put the return value."
            (if (= (array-dimension aa 1)
                   (array-dimension bb 0))
                (loop :with res :of-type array =
-                     (array-check-return re (list (array-dimension aa 0)
-                                                  (array-dimension bb 1)))
-                     :for ii :from 0 :to (1- (array-dimension aa 0)) :do
-                     (loop :for jj :from 0 :to (1- (array-dimension bb 1)) :do
-                           (loop :for kk :from 0
-                                 :to (1- (array-dimension aa 1)) :do
-                                 (incf (aref res ii jj)
-                                       (* (aref aa ii kk) (aref bb kk jj)))))
-                     :finally (return res))
+                 (array-check-return re (list (array-dimension aa 0)
+                                              (array-dimension bb 1)))
+                 :for ii :from 0 :below (array-dimension aa 0) :do
+                 (loop :for jj :from 0 :below (array-dimension bb 1) :do
+                   (loop :for kk :from 0 :below (array-dimension aa 1) :do
+                     (incf (aref res ii jj)
+                           (* (aref aa ii kk) (aref bb kk jj)))))
+                 :finally (return res))
                (error 'dimension :proc 'matrix-multiply :args
                       (list (array-dimensions aa) (array-dimensions bb)))))
           ((and (= 1 (array-rank aa)) ; row X matrix
@@ -209,12 +205,12 @@ The optional third argument is the place where to put the return value."
            (if (= (array-dimension aa 0)
                   (array-dimension bb 0))
                (loop :with res :of-type array =
-                     (array-check-return re (list (array-dimension bb 1)))
-                     :for ii :from 0 :to (1- (array-dimension bb 1)) :do
-                     (loop :for jj :from 0 :to (1- (array-dimension aa 0)) :do
-                           (incf (aref res ii)
-                                 (* (aref aa jj) (aref bb jj ii))))
-                     :finally (return res))
+                 (array-check-return re (list (array-dimension bb 1)))
+                 :for ii :from 0 :below (array-dimension bb 1) :do
+                 (loop :for jj :from 0 :below (array-dimension aa 0) :do
+                   (incf (aref res ii)
+                         (* (aref aa jj) (aref bb jj ii))))
+                 :finally (return res))
                (error 'dimension :proc 'matrix-multiply :args
                       (list (array-dimensions aa) (array-dimensions bb)))))
           ((and (= 2 (array-rank aa)) ; matrix X column
@@ -222,12 +218,11 @@ The optional third argument is the place where to put the return value."
            (if (= (array-dimension aa 1)
                   (array-dimension bb 0))
                (loop :with res :of-type array =
-                     (array-check-return re (list (array-dimension aa 0)))
-                     :for ii :from 0 :to (1- (array-dimension aa 0)) :do
-                     (loop :for jj :from 0 :to (1- (array-dimension bb 0)) :do
-                           (incf (aref res ii)
-                                 (* (aref aa ii jj) (aref bb jj))))
-                     :finally (return res))
+                 (array-check-return re (list (array-dimension aa 0)))
+                 :for ii :from 0 :below (array-dimension aa 0) :do
+                 (loop :for jj :from 0 :below (array-dimension bb 0) :do
+                   (incf (aref res ii) (* (aref aa ii jj) (aref bb jj))))
+                 :finally (return res))
                (error 'dimension :proc 'matrix-multiply :args
                       (list (array-dimensions aa) (array-dimensions bb)))))
           ((and (= 1 (array-rank aa)) ; column X row (row X col is dot)
@@ -235,9 +230,9 @@ The optional third argument is the place where to put the return value."
            (loop :with res :of-type array =
                  (array-check-return
                   re (list (array-dimension aa 0) (array-dimension bb 0)))
-                 :for ii :from 0 :to (1- (array-dimension aa 0)) :do
-                 (loop :for jj :from 0 :to (1- (array-dimension bb 0)) :do
-                       (setf (aref res ii jj) (* (aref aa ii) (aref bb jj))))
+                 :for ii :from 0 :below (array-dimension aa 0) :do
+                 (loop :for jj :from 0 :below (array-dimension bb 0) :do
+                   (setf (aref res ii jj) (* (aref aa ii) (aref bb jj))))
                  :finally (return res)))
           (t (error 'code :proc 'matrix-multiply :args (list aa bb) :mesg
                     "cannot multiply a matrix <~:/matrix-print/> ~
@@ -260,23 +255,23 @@ A is assumed to be a lower-triangular matrix."
   (declare (type (array * (* *)) aa) (type (array * (*)) bb))
   (mx-solve-check aa bb)
   (loop :with nn :of-type index-t = (1- (array-dimension aa 0))
-        :for ii :of-type index-t :from 0 :to nn :do
-        (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
-        (loop :for jj :of-type index-t :from (1+ ii) :to nn :do
-              (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
-        :finally (return bb)))
+    :for ii :of-type index-t :from 0 :to nn :do
+    (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
+    (loop :for jj :of-type index-t :from (1+ ii) :to nn :do
+      (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
+    :finally (return bb)))
 
 (defun matrix-solve-upper (aa bb &optional diag1)
   "Solve Ax=b, put the result in b.
 A is assumed to be an upper-triangular matrix."
   (declare (type (array * (* *)) aa) (type (array * (*)) bb))
   (mx-solve-check aa bb)
-  (loop :with nn  :of-type index-t = (1- (array-dimension aa 0))
-        :for ii :of-type index-t :downfrom nn :to 1 :do
-        (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
-        (loop :for jj :of-type index-t :downfrom (1- ii) :to 1 :do
-              (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
-        :finally (return bb)))
+  (loop :with nn :of-type index-t = (1- (array-dimension aa 0))
+    :for ii :of-type index-t :downfrom nn :to 1 :do
+    (unless diag1 (divf (aref bb ii) (aref aa ii ii)))
+    (loop :for jj :of-type index-t :downfrom (1- ii) :to 1 :do
+      (decf (aref bb jj) (* (aref aa jj ii) (aref bb ii))))
+    :finally (return bb)))
 
 (defun matrix-lu (mx lu)
   "Decompose the matrix MX into Lower*Upper.
@@ -292,16 +287,16 @@ See Horn/Johnson 'Matrix Analysis' 3.5.2."
   (let ((nn (1- (array-dimension mx 0))))
     (flet ((lu-sum (ii jj)
              (loop :for kk :of-type index-t :downfrom (1- (min ii jj)) :to 0
-                   :sum (* (aref lu ii kk) (aref lu kk jj)))))
+               :sum (* (aref lu ii kk) (aref lu kk jj)))))
       (loop :for ii :of-type index-t :from 0 :to nn :do
-            (loop :for jj :of-type index-t :from ii :to nn
-                  :do (setf (aref lu jj ii)
-                            (- (aref mx jj ii) (lu-sum jj ii))))
-            (loop :for jj :of-type index-t :from (1+ ii) :to nn
-                  :do (setf (aref lu ii jj)
-                            (/ (- (aref mx ii jj) (lu-sum ii jj))
-                               (aref lu ii ii))))
-            :finally (return lu)))))
+        (loop :for jj :of-type index-t :from ii :to nn
+          :do (setf (aref lu jj ii)
+                    (- (aref mx jj ii) (lu-sum jj ii))))
+        (loop :for jj :of-type index-t :from (1+ ii) :to nn
+          :do (setf (aref lu ii jj)
+                    (/ (- (aref mx ii jj) (lu-sum ii jj))
+                       (aref lu ii ii))))
+        :finally (return lu)))))
 
 (defun matrix-solve-lu (mx bb &optional (lu mx) (xx bb))
   "Solve the linear system Ax=b.
@@ -353,10 +348,10 @@ Return the determinant of the matrix."
                (declare (type index-t ii))
                (unless (= ii kk)
                  (loop :with ki = (aref aa kk ii)
-                       :for jj :of-type index-t :from 0 :to (1- nn)
-                       :unless (= jj kk) :do
-                       (setf (aref aa jj ii)
-                             (+ (* ki (aref aa jj kk)) (aref aa jj ii))))))
+                   :for jj :of-type index-t :from 0 :below nn
+                   :unless (= jj kk) :do
+                   (setf (aref aa jj ii)
+                         (+ (* ki (aref aa jj kk)) (aref aa jj ii))))))
              (dotimes (jj nn)   ; divide row by pivot
                (declare (type index-t jj))
                (divf (aref aa jj kk) pivot))
@@ -368,10 +363,10 @@ Return the determinant of the matrix."
              (if (>= kk nn) 1
                  (let ((ii kk) (jj kk) (max (abs (aref mx kk kk))) pivot)
                    (declare (type index-t ii jj))
-                   (loop :for i0 :of-type index-t :from kk :to (1- nn) :do
-                         (loop :for j0 :of-type index-t :from kk :to (1- nn)
-                               :when (> (abs (aref mx i0 j0)) max) :do
-                               (setq ii i0 jj j0 max (abs (aref mx i0 j0)))))
+                   (loop :for i0 :of-type index-t :from kk :below nn :do
+                     (loop :for j0 :of-type index-t :from kk :below nn
+                       :when (> (abs (aref mx i0 j0)) max) :do
+                       (setq ii i0 jj j0 max (abs (aref mx i0 j0)))))
                    (setq pivot (aref mx ii jj))
                    (when (= pivot 0) (return-from matrix-inverse 0))
                    (mx-swap-rows mx nn ii kk)

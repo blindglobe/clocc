@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.3 2002/09/24 16:38:41 sds Exp $
+;;; $Id: clhs.lisp,v 3.4 2002/12/22 20:10:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -156,7 +156,7 @@
                                ("*" . "star") ("**" . "st2") ("***" . "st3")
                                ("/" . "slash") ("//" . "sl2") ("///" . "sl3")
                                ("+" . "plus") ("++" . "pl2") ("+++" . "pl3")
-                               ("-" . "minus") ("1+" . "pl1") ("1-" . "su1"))
+                               ("-" . "sub") ("1+" . "pl1") ("1-" . "su1"))
                              :test #'string=))
                  (string-downcase name)))
         (xml-name name)
@@ -164,9 +164,9 @@
         (font "function")
         (ent-tab '((">=" . "-geq") ("<=" . "-leq") ("/=" . "-neq")
                    ("=" . "-eq") (">" . "-grt") ("<" . "-lst")))
-        (xml-tab'(("&" . "&amp;") ; & must come first!
-                  (">=" . "&gt;=") ("<=" . "&lt;=")
-                  (">" . "&gt;") ("<" . "&lt;"))))
+        (xml-tab '(("&" . "&amp;") ; & must come first!
+                   (">=" . "&gt;=") ("<=" . "&lt;=")
+                   (">" . "&gt;") ("<" . "&lt;"))))
     (dolist (re ent-tab)
       (setq ent (substitute-subseq ent (car re) (cdr re) :test #'char=)))
     (dolist (re xml-tab)
@@ -195,7 +195,7 @@
              (unless (or (string-end-with "class" ent)
                          (string-end-with "type" ent))
                (setq ent (concatenate 'string ent "-t"))))
-            ((type-is 'res)     ; restart
+            ((type-is 'res) ; restart
              (setq ent (concatenate 'string ent "-s")))
             ((type-is 'dec) ; declaratons
              (setq font "literal" ent (concatenate 'string ent "-dec")))
@@ -208,6 +208,13 @@
                    ent (concatenate 'string (subseq ent 1) "-amp")))
             (t (warn "~s: strange object: ~s [~s]~% [~s ~s]~%"
                      'clhs-write-entity name html ent font))))
+    ;; do not override the standard entities
+    (when (member ent '("and" "lambda" "or") :test #'string=)
+      (setq ent (concatenate 'string ent "-m"))) ; macros
+    (when (member ent '("map" "not") :test #'string=)
+      (setq ent (concatenate 'string ent "-f"))) ; functions
+    (when (member ent '("pi") :test #'string=)
+      (setq ent (concatenate 'string ent "-v"))) ; variable
     (format
      out "<!ENTITY ~a \"<ulink url='&clhs;/Body/~a'><~a>~a</~a></ulink>\">~%"
      ent html font xml-name font)))

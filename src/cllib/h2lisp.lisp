@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.2 2000/05/02 15:39:14 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.3 2000/05/12 18:32:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -164,7 +164,6 @@
 ;;; H --> LISP
 ;;;
 
-#+cmu (pushnew 'compile pcl::*defmethod-times*)
 (defgeneric h2lisp (in out)
   (:documentation "Convert C header to lisp.
 Return the number of forms processed.")

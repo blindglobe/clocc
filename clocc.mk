@@ -10,8 +10,12 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.15 2000/06/20 15:41:22 sds Exp $
+# $Id: clocc.mk,v 1.16 2000/07/12 18:20:43 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
+
+ifndef CLOCC_MK
+
+CLOCC_MK = true
 
 RUNLISP := $(TOP)/bin/run-lisp
 LISPFILE := $(TOP)/bin/lisp-file
@@ -91,3 +95,5 @@ ifneq ($(DUMPEXT),)
 endif
 
 force:
+
+endif				# CLOCC_MK

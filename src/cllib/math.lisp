@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.64 2005/01/27 23:02:47 sds Exp $
+;;; $Id: math.lisp,v 2.65 2005/01/28 16:46:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1018,7 +1018,7 @@ occurs, i.e., the normalized sequence should be the probability distribution."
                                (if (zerop num) 0 (* num (log num 2))))))))
     (- (log tot 2) (/ sum tot))))
 
-(defun entropy-sequence (seq &key (key #'value) (test 'eql) weight)
+(defun entropy-sequence (seq &key (key #'value) (test 'eql) (weight 1))
   "Compute the entropy of the given distribution.
 The values are counted and the result is used as a probability distribution.
  (multiple-value-bind (entropy ht) (entropy-sequence seq)

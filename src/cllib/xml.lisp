@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.26 2001/01/08 20:50:25 sds Exp $
+;;; $Id: xml.lisp,v 2.27 2001/03/13 23:11:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -651,6 +651,7 @@ The first character to be read is #\T."
 
 (defun read-xml (stream char)
   (ecase char
+    (#\/ 'xml-tags::/)
     (#\<                        ; read tag
      (let ((ch (read-char stream t nil t)) (*package* *xml-pack*))
        (case ch
@@ -718,6 +719,7 @@ The first character to be read is #\T."
   "Return a readtable for reading XML."
   (set-macro-character #\< #'read-xml nil rt)
   (set-macro-character #\[ #'read-xml nil rt)
+  (set-macro-character #\/ #'read-xml nil rt)
   (cond (*xml-read-entities*
          (set-macro-character #\& #'read-xml nil rt)
          (set-macro-character #\% #'read-xml nil rt))

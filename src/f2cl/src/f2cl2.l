@@ -347,33 +347,10 @@ Tag being parsed:| (cadr x))))
 	      ;;(format t "array   = ~A~%" vname)
 	      ;;(format t "indices = ~A~%" indices)
 	      ;;(format t "bounds  = ~A~%" bounds)
-	      (let ((dims (mapcar #'(lambda (idx bnd)
-				      (if (and (numberp idx)
-					       (numberp (second bnd)))
-					  (+ (- (second bnd) idx) 1)
-					  `(+ (- ,(second bnd) ,idx) 1)))
-				  indices bounds))
-		    (offset (mapcar #'(lambda (idx bnd)
-					`(- ,idx ,(first bnd)))
-				    indices bounds)))
-		`(make-array ,@dims
-		  :element-type ',(lookup-vble-type vname)
-		  :displaced-to ,vname
-		  :displaced-index-offset (array-row-major-index ,vname ,@offset))))
+	      `(array-slice ,vname ,(lookup-vble-type vname) ,indices ,bounds))
 	     (t
-	      ;; If all of the lower bounds are 1, don't need to pass that
-	      ;; on.  The fref macro already handles this situation.  Doesn't
-	      ;; affect the behavior, but makes the Lisp code look a bit
-	      ;; cleaner.
-	      (append (list 'fref vname)
-		      (list indices)
-		      (let ((blist (mapcar #'car bounds)))
-			(unless (and blist
-				     (every #'(lambda (x)
-						(and (numberp x)
-						     (= x 1)))
-					    blist))
-			  (list (mapcar #'car bounds)))))))))
+	      `(fref ,vname ,indices ,bounds)
+	      ))))
     ;; string (character array) reference 
     ((and (symbolp (car l))
 	  (listp (cadr l))
@@ -465,8 +442,14 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.20 2000/07/18 14:04:33 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.21 2000/07/19 13:50:11 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.21  2000/07/19 13:50:11  rtoy
+;;; o Use the macro ARRAY-SLICE to slice the array instead of inline as we
+;;;   were doing it.
+;;; o All arrays are 1-D now to support proper Fortran array slicing, so
+;;;   FREF needs to know the array dimensions.
+;;;
 ;;; Revision 1.20  2000/07/18 14:04:33  rtoy
 ;;; Changes for UPDATE-CALLED-FUNCTIONS-LIST:
 ;;;

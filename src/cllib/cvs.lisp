@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.23 2002/08/13 22:02:46 sds Exp $
+;;; $Id: cvs.lisp,v 2.24 2004/11/09 20:20:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -72,11 +72,12 @@
   (:method ((in t) (out string)) (cvs-diff2patch in (pathname out)))
   (:method ((in pathname) (out t))
     (with-open-file (istream in :direction :input)
-      (format t "~&~s: reading: ~s [~:d bytes]~%" in)
+      (format t "~&~s: reading: ~s [~:d byte~:p]~%"
+              'cvs-diff2patch in (file-length istream))
       (cvs-diff2patch istream out)))
   (:method ((in t) (out pathname))
     (with-open-file (ostream out :direction :output)
-      (format t "~&~s: writing: ~s~%" out)
+      (format t "~&~s: writing: ~s~%" 'cvs-diff2patch out)
       (cvs-diff2patch in ostream))))
 
 ;;;

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.23 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.24 2005/03/28 14:13:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -249,12 +249,14 @@
 				  (setf (Code-file-chunk-read-basis file-ch)
 					(union
 					  (mapcar
-					     #'pathname-denotation-chunk
+					     (\\ (pn)
+						(pathname-denotation-chunk
+						   pn true))
 					     pnl)
 					  (Code-file-chunk-read-basis
 					     file-ch))))))
 			(dolist (pn pnl)
-			   (let* ((pchunk (pathname-denotation-chunk pn))
+			   (let* ((pchunk (pathname-denotation-chunk pn true))
 				  (lpchunk (place-Loaded-chunk pchunk false)))
 			      (monitor-filoid-basis lpchunk)
 			      (loaded-chunk-set-basis lpchunk)
@@ -362,7 +364,7 @@
 	  (let ((filename (Code-file-chunk-pathname file-ch)))
 	     (dolist (pn pnl)
 	        (let ((code-chunk
-		         (pathname-denotation-chunk pn)))
+		         (pathname-denotation-chunk pn true)))
 		   (cond ((typep code-chunk 'Code-file-chunk)
 			  (dolist (sfty sub-file-types)
 			     (let* ((sf-load-chunker
@@ -392,7 +394,7 @@
 
 (defun pathnames-note-slurp-support (pnl file-ch sub-file-type-names)
    (dolist (pn pnl)
-      (let* ((dep-ch (pathname-denotation-chunk pn))
+      (let* ((dep-ch (pathname-denotation-chunk pn true))
 	     (loaded-dep-ch (place-Loaded-chunk dep-ch false))
 	     (filename (Code-file-chunk-pathname file-ch)))
 	 (dolist (sfty (cond ((null sub-file-type-names)
@@ -435,7 +437,7 @@
    (pathname-run-support pn))
 
 (defmethod pathname-run-support ((pn pathname))
-   (let ((file-ch (pathname-denotation-chunk pn)))
+   (let ((file-ch (pathname-denotation-chunk pn true)))
       (values (list file-ch)
 	      (list (place-Loaded-chunk file-ch false)))))
 

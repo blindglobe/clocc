@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.6 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.7 2005/03/28 14:13:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -236,6 +236,8 @@ funktion
 		   loaded-chunk force-load)))))
 
 (defgeneric loaded-chunk-force (loaded-chunk force))
+
+(defvar fcompl-reload* ':ask)
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-file-chunk)
 			       force)
@@ -477,8 +479,6 @@ funktion
 			    :cease-mgt cease-mgt
 			    :postpone-derivees postpone-derivees)))))
 
-(defvar fcompl-reload* ':ask)
-
 (defgeneric filoid-fcompl (pn &key force-compile
 				     load
 				     cease-mgt
@@ -673,13 +673,14 @@ funktion
 	       (cond ((not (eq old-cfc new-cfc))
 		      (setf (Code-chunk-alt-version old-cfc)
 			    new-cfc)
-		      (cond ((and (chunk-manage-request old-av)
+		      (cond ((and old-av
+				  (Chunk-manage-request old-av)
 				  (y-or-n-p !"Cancel request to manage ~s ~
                                               [probably yes]?"
 					    old-av))
 			     (on-list old-av changing-chunks)))
 		      (cond ((and (Chunk-managed old-cfc)
-				  (not (chunk-manage-request new-cfc))
+				  (not (Chunk-manage-request new-cfc))
 				  (y-or-n-p !"Begin management of ~s ~
                                               [probably yes]?"
 					    old-cfc))
@@ -690,9 +691,9 @@ funktion
 	    (let* ((rfc (pathname-denotation-chunk (head oldl) false))
 		   (old-av (Code-chunk-alt-version rfc)))
 	       (cond (old-av
-		      (setf (Code-file-chunk-alt-version rfc)
+		      (setf (Code-chunk-alt-version rfc)
 			    false)
-		      (cond ((and (chunk-manage-request old-av)
+		      (cond ((and (Chunk-manage-request old-av)
 				  (y-or-n-p !"Cancel request to manage ~s ~
                                               [probably yes]?"
 					    old-av))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.26 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.27 2005/03/28 14:13:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -375,7 +375,7 @@ Not needed, because it's essentially identical to scan-depends-on
 			       load
 			       cease-mgt
 			       postpone-derivees)
-   (let* ((mod-ch (pathname-denotation-chunk mod-pspn))
+   (let* ((mod-ch (pathname-denotation-chunk mod-pspn true))
 	  (loaded-mod-ch (place-Loaded-chunk mod-ch false))
 	  (compiled-mod-ch (place-compiled-chunk mod-ch)))
       (monitor-filoid-basis loaded-mod-ch)

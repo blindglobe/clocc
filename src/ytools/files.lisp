@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.44 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.45 2005/03/28 14:13:24 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -235,8 +235,8 @@
     ;;   :ask-once -> ask user which to do and record result;
     ;;   :ask-every -> ask user every time basis is recomputed;
     ;;   :ask-ask -> ask once and ask if it should keep asking;
-    ;;   :defer -> refer to value of fload-compile*;
-    ;;   :follow -> replace 'manip' value with value of fload-compile*
+    ;;   :defer -> refer to value of fload-compile-flag*;
+    ;;   :follow -> replace 'manip' value with value of fload-compile-flag*
 
     (source :reader Loaded-file-chunk-source
 	    :initarg :source)
@@ -792,7 +792,7 @@
 ;;;;             ~% manip of loaded-ch = ~s, old-date* = ~s~%"
 ;;;;	    cf-ch loaded-ch-manip old-date*)
 	 (cond ((and (eq loaded-ch-manip ':fresh-object)
-		     (not (eq fload-compile* ':compile)))
+		     (not (eq fload-compile-flag* ':compile)))
 		;; If we're about to compile, then the object file
 		;; must be non-fresh (or nonexistent); the 'manip' sez
 		;; we've got to ask the user

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.37 2005/03/28 03:23:56 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.38 2005/03/28 14:13:17 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -355,6 +355,10 @@
 		   (setf latest-supporter-date late)))))
       (cond ((> latest-supporter-date
 		(Chunk-latest-supporter-date ch))
+;;;;	     (cond ((> latest-supporter-date 10000)
+;;;;		    (setq bad-ch* ch)
+;;;;		    (break "Chunk ~s has suspicious latest supporter-date ~s"
+;;;;			   ch latest-supporter-date)))			   
 	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)))
       (cons ch
 	    (let ((ch-date (Chunk-date ch)))
@@ -1331,9 +1335,7 @@
 		     ;; If the deriver returned false, that means that
 		     ;; the chunk is now up to date with respect to
 		     ;; its supporters.
-		     (cond ((< (Chunk-latest-supporter-date ch) 0)
-			    (get-universal-time))
-			   (t (Chunk-latest-supporter-date ch))))
+		     (max 0 old-date (Chunk-latest-supporter-date ch)))
 		 old-date)
 	      (cond (chunk-update-dbg*
 		     (format *error-output*
@@ -1360,14 +1362,11 @@
 		       (format *error-output*
 			  "Recording date ~s for ~s~%"
 			  new-date ch)))
-;;;;		(cond ((and (= new-date -1)
-;;;;			    (> old-date 1000)
-;;;;			    (not (car-eq (Chunk-name ch)
-;;;;					 ':loadable)))
+;;;;		(cond ((> new-date 10000)
 ;;;;		       (setq bad-ch* ch old-date* old-date)
 ;;;;		       (break
-;;;;			  "Setting date to -1 (was ~s)~%  for ~s"
-;;;;			  old-date ch)))
+;;;;			  "Setting date to  (was ~s)~%  for ~s"
+;;;;			  new-date old-date ch)))
 		true)
 	       ((< new-date old-date)
 		(cerror "I will set the date to the new date"

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.6 2000/08/16 20:31:10 sds Exp $
+;;; $Id: date.lisp,v 2.7 2000/08/16 21:04:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,7 +27,7 @@
 (export '(string->dttm dttm->string +day-sec+ print-date-month
           date date2time date2num date2days time2date days2date mk-date
           unix-date infer-timezone infer-month
-          days-week-day date-week-day black-days
+          days-week-day date-week-day black-days working-day-p
           days-to-next-working-day next-working-day previous-working-day
           days-since days-since-f
           date= date/= date< date> date<= date<=3 date<3 date>= date>=3 date>3
@@ -473,10 +473,18 @@ I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd) (type days-t skip))
   (date-next-year (date-next-month (tomorrow dd skip) skip) skip))
 
+(defun working-day-p (&optional (dd (today)))
+  "Is today a working day?"
+  (declare (type date dd))
+  (case (date-week-day dd)
+    ((0 1 2 3 4) t)
+    (t nil)))
+
 (declaim (ftype (function (&optional date days-t) (values days-t))
                 days-to-next-working-day))
 (defun days-to-next-working-day (&optional (date (today)) (skip 1))
-  "Return the number of days until the next working day."
+  "Return the number of days until the next Nth working day."
+  (declare (type date date) (type days-t skip))
   (multiple-value-bind (ww rr) (floor skip 5)
     (+ (* 7 ww)
        (if (> (+ rr (min 4 (date-week-day date))) 4)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.15 2000/05/31 20:17:24 sds Exp $
+;;; $Id: sys.lisp,v 1.16 2000/07/31 17:54:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -57,7 +57,8 @@
   #+cmu (walker:variable-globally-special-p symbol)
   #+gcl (si:specialp symbol)
   #+lispworks (eq :special (hcl:variable-information symbol))
-  #-(or allegro clisp cmu gcl lispworks)
+  #+lucid (system:proclaimed-special-p symbol)
+  #-(or allegro clisp cmu gcl lispworks lucid)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
 
 (defun arglist (fn)
@@ -74,7 +75,8 @@
                     (function (si:compiled-function-name fn)))))
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
-  #-(or allegro clisp cmu cormanlisp gcl lispworks)
+  #+lucid (lcl:arglist fn)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
   (error 'not-implemented :proc (list 'arglist fn)))
 
 (defun class-slot-list (class &optional (all t))
@@ -84,27 +86,30 @@ or an instance of a class.
 If the second optional argument ALL is non-NIL (default),
 all slots are returned, otherwise only the slots with
 :allocation type :instance are returned."
-  #-(or allegro clisp cmu cormanlisp lispworks)
+  #-(or allegro clisp cmu cormanlisp lispworks lucid)
   (error 'not-implemented :proc (list 'class-slot-list class))
-  #+(or allegro clisp cmu cormanlisp lispworks)
+  #+(or allegro clisp cmu cormanlisp lispworks lucid)
   (macrolet ((class-slots* (class)
                #+allegro `(clos:class-slots ,class)
                #+clisp `(clos::class-slots ,class)
                #+cmu `(pcl::class-slots ,class)
                #+cormanlisp `(cl:class-slots ,class)
-               #+lispworks `(hcl::class-slots ,class))
+               #+lispworks `(hcl::class-slots ,class)
+               #+lucid `(clos:class-slots ,class))
              (slot-name (slot)
                #+allegro `(slot-value ,slot 'clos::name)
                #+clisp `(clos::slotdef-name ,slot)
                #+cmu `(slot-value ,slot 'pcl::name)
                #+cormanlisp `(getf ,slot :name)
-               #+lispworks `(hcl::slot-definition-name ,slot))
+               #+lispworks `(hcl::slot-definition-name ,slot)
+               #+lucid `(clos:slot-definition-name ,slot))
              (slot-alloc (slot)
                #+allegro `(clos::slotd-allocation ,slot)
                #+clisp `(clos::slotdef-allocation ,slot)
                #+cmu `(pcl::slot-definition-allocation ,slot)
                #+cormanlisp `(getf ,slot :allocation)
-               #+lispworks `(hcl::slot-definition-allocation ,slot)))
+               #+lispworks `(hcl::slot-definition-allocation ,slot)
+               #+lucid `(clos:slot-definition-allocation ,slot)))
     (mapcan (if all (compose list slot-name)
                 (lambda (slot)
                   (when (eq (slot-alloc slot) :instance)

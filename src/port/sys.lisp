@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.3 2000/03/01 16:02:03 sds Exp $
+;;; $Id: sys.lisp,v 1.4 2000/03/01 20:01:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 ;;; $Log: sys.lisp,v $
+;;; Revision 1.4  2000/03/01 20:01:36  sds
+;;; (arglist, class-slot-list): new functions
+;;;
 ;;; Revision 1.3  2000/03/01 16:02:03  sds
 ;;; (variable-special-p): new function
 ;;;
@@ -28,7 +31,7 @@
 (in-package :port)
 
 (export
- '(getenv variable-special-p
+ '(getenv variable-special-p arglist class-slot-list
    probe-directory default-directory chdir sysinfo
    +month-names+ +week-days+ +time-zones+ +whitespace+
    tz->string current-time))
@@ -49,7 +52,7 @@
   (error 'not-implemented :proc (list 'getenv var)))
 
 ;;;
-;;; Special
+;;; Introspection
 ;;;
 
 (defun variable-special-p (symbol)
@@ -58,8 +61,59 @@
   #+clisp (system::special-variable-p symbol)
   #+cmu (walker:variable-globally-special-p symbol)
   #+gcl (system:specialp symbol)
-  #-(allegro clisp cmu gcl)
+  #-(or allegro clisp cmu gcl)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
+
+(defun arglist (fn)
+  "Return the signature of the function."
+  #+allegro (ext:arglist fn)
+  #+clisp (sys::arglist fn)
+  #+cmu (values (let ((st (kernel:%function-arglist fn)))
+                  (if (stringp st) (read-from-string st)
+                      (eval:interpreted-function-arglist fn))))
+  #+gcl (let ((fn (etypecase fn
+                    (symbol fn)
+                    (function (system:compiled-function-name fn)))))
+          (get fn 'si:debug))
+  ;; #+lispworks
+  #-(or allegro clisp cmu gcl) (error 'not-implemented :proc 'arglist))
+
+(defun class-slot-list (class &optional (all t))
+  "Return the list of slots of a CLASS.
+CLASS can be a symbol, a class object (as returned by `class-of')
+or an instance of a class.
+If the second optional argument ALL is non-NIL (default),
+all slots are returned, otherwise only the slots with
+:allocation type :instance are returned."
+  #-(or allegro clisp cmu lispworks)
+  (error 'not-implemented :proc 'class-slot-list)
+  #+(or allegro clisp cmu lispworks)
+  (macrolet ((class-slots* (class)
+               `(#+allegro clos:class-slots
+                 #+clisp clos::class-slots
+                 #+cmu pcl::class-slots
+                 #+lispworks hcl::class-slots ,class))
+             (slot-name (slot)
+               #+allegro `(slot-value ,slot 'clos::name)
+               #+clisp `(clos::slotdef-name ,slot)
+               #+cmu `(slot-value ,slot 'pcl::name)
+               #+lispworks `(hcl::slot-definition-name ,slot))
+             (slot-alloc (slot)
+               `(#+allegro clos::slotd-allocation
+                 #+clisp clos::slotdef-allocation
+                 #+cmu pcl::slot-definition-allocation
+                 #+lispworks hcl::slot-definition-allocation ,slot)))
+    (mapcan (if all (compose list slot-name)
+                (lambda (slot)
+                  (when (eq (slot-alloc slot) :instance)
+                    (list (slot-name slot)))))
+            (class-slots*
+             (typecase class
+               (class class) (symbol (find-class class))
+               ((or structure-object standard-object) (class-of class))
+               (t (error 'case-error :proc 'class-slot-list
+                         :args (list 'class class 'class 'symbol
+                                     'structure-object 'standard-object))))))))
 
 ;;;
 ;;; Environment

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.30 2004/12/22 19:55:41 sds Exp $
+;;; $Id: tests.lisp,v 2.31 2004/12/23 15:05:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -315,7 +315,8 @@
       num-err)))
 
 (defun test-all (&key (out *standard-output*)
-                 (what '(string math date rpm url elisp xml munkres cvs base64))
+                 (what '(string math date rpm url elisp xml munkres cvs base64
+                         matrix))
                  (disable-network-dependent-tests t))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)

@@ -32,7 +32,7 @@
 	     (format s "During load-compiled-op, compiled file ~A is older than source file ~A"
 		     (output-file c) (source-file c)))))
 
-(defclass load-compiled-op (operation)
+(defclass load-compiled-op (load-op)
   ()
   (:documentation "This operation loads each compiled file for a component. If a binary component does not exist then the condition load-compiled-error-not-exist will be signaled. If both the source file and binary components exists, and if the file-write-date of the binary is earlier than the source, then the condition load-compiled-error-out-dated will be signaled."))
 

@@ -1,53 +1,89 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; Like File-chunk, except for the way basis is computed --
 (defclass Test-file-chunk (File-chunk)
    ((callee :accessor Test-file-chunk-callee
-	    :initarg :callee)))
+	    :initarg :callee)
+    (slurpee :accessor Test-file-chunk-slurpee
+	     :initarg :slurpee)))
 
-(defmethod file-chunk-find-basis ((tfc Test-file-chunk))
-   (let ((c (Test-file-chunk-callee tfc)))
+(defclass Test-loadable-chunk (Loadable-chunk)
+   ())
+
+(defmethod create-loaded-controller ((tfc Test-file-chunk) (lc Loaded-chunk))
+   (chunk-with-name `(:loadable ,tfc)
+      (\\ (name)
+	 (make-instance 'Test-loadable-chunk
+	    :name name
+	    :controllee lc))))
+
+(defmethod derive ((tlc Test-loadable-chunk))
+   (let* ((loaded-ch (Loadable-chunk-controllee tlc))
+	  (file-ch (Loaded-chunk-file loaded-ch))
+	  (compiled-ch (place-compiled-chunk file-ch))
+	  (c (Test-file-chunk-callee file-ch))
+	  (s (Test-file-chunk-slurpee file-ch)))
       (cond (c
-	     (let ((compiled-ch (place-compiled-chunk tfc)))
-		(setf (File-chunk-callees tfc) (list c))
-		(dolist (ssfty standard-sub-file-types*)
-		   (format t "Doing ~s~% for pathname ~s~%"
-			   ssfty (File-chunk-pathname tfc))
-		   (pushnew (funcall
-			       (Sub-file-type-chunker ssfty)
-			       (File-chunk-pathname c))
-			    (Chunk-basis compiled-ch))
-		   (pushnew (funcall
-			       (Sub-file-type-load-chunker
-				  ssfty)
-			       (File-chunk-pathname c))
-			    (Chunk-update-basis
-				 compiled-ch))))))))
+	     (setf (File-chunk-callees file-ch) (list c))
+	     (compiled-chunk-note-sub-file-bases compiled-ch c)))
+      (cond (s
+	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
+      file-op-count*))
 
-(defvar file-chunk-1*)
-(defvar file-chunk-2*)
+(defvar file-chunk-l*)
+(defvar file-chunk-s*)
+(defvar file-chunk-c*)
 
-(defvar loaded-file-chunk-1*)
-(defvar loaded-file-chunk-2*)
+(defvar loaded-file-chunk-l*)
+(defvar loaded-file-chunk-s*)
+(defvar loaded-file-chunk-c*)
 
-(defvar file-1-status*)
-(defvar file-2-status*)
+(defvar file-l-status*)
+(defvar file-s-status*)
+(defvar file-c-status*)
 
 (defparameter file-contents*
     (list
-(list '"test1.lisp"
+
+(list '"test-l.lisp"
 ";-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-(setq file-1-status* ':loaded)"
-)
-(list '"test2.lisp"
-";-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
-(in-package :ytools)"
+(needed-by-macros (setq file-l-status* ':slurped))
 
-(setq file-2-status* ':loaded)
-)))
+(setq file-l-status* ':loaded)
+
+(eval-when (:load-toplevel)
+   (setq file-l-status* ':compiled))"
+)
+
+(list '"test-s.lisp"
+";-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
+(in-package :ytools)
+
+(defmacro set-file-c-status (x)
+   `(setq file-c-status* ',x))
+
+(needed-by-macros (setq file-s-status* ':slurped))
+
+(setq file-s-status* ':loaded)
+
+(eval-when (:load-toplevel)
+   (setq file-s-status* ':compiled))"
+)
+
+(list '"test-c.lisp"
+";-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
+(in-package :ytools)
+
+(needed-by-macros (setq file-c-status* ':slurped))
+
+(set-file-c-status :loaded)
+
+(eval-when (:load-toplevel)
+   (set-file-c-status :compiled))"
+)     
+))
 
 ;;; The following test must be able to run prior to the definition
 ;;; of 'depends-on', and hence does not use 'fload', 'fcompl', or 
@@ -57,27 +93,41 @@
 (defun file-test ()
    (setq file-op-count* (+ file-op-count* 1))
    (dolist (p file-contents*)
-      (with-open-file (srm1 (first p)
+      (with-open-file (srmf (first p)
 			:direction ':output :if-exists ':supersede)
-	 (princ (second p) srm1)))
-   (setq file-1-status* ':not-loaded)
-   (setq file-2-status* ':not-loaded)
-   (setq file-chunk-1*
-         (place-file-chunk (merge-pathnames "test1.lisp" *load-truename*)))
-   (change-class file-chunk-1* 'Test-file-chunk :callee false)
-   (setq loaded-file-chunk-1*
-	 (place-loaded-chunk file-chunk-1* ':source))
-   (monitor-file-basis file-chunk-1*)
-   (setq file-chunk-2*
-	 (place-file-chunk (merge-pathnames "test2.lisp" *load-truename*)))
-   (change-class file-chunk-2* 'Test-file-chunk :callee file-chunk-1*)
-   (setq loaded-file-chunk-2*
-         (place-loaded-chunk file-chunk-2* ':compile))
-   (monitor-file-basis file-chunk-2*)
-   (chunk-request-mgt loaded-file-chunk-2*)
-   (chunk-update loaded-file-chunk-2*)
-   (format t "File 1 status = ~s File 2 status = ~s~%"
-	   file-1-status* file-2-status*)
-   (and (eq file-1-status* ':loaded)
-	(eq file-2-status* ':loaded)))
+	 (princ (second p) srmf)))
+   (setq file-l-status* ':initial)
+   (setq file-s-status* ':initial)
+   (setq file-c-status* ':initial)
+   (fmakunbound 'set-file-c-status)
+
+   (labels ((set-em-up (name-chars callee slurpee manip)
+	       (let ((file-ch
+		        (place-file-chunk
+			   (merge-pathnames
+			       (concatenate 'string
+				  "test-" name-chars ".lisp")
+			       *load-truename*))))
+		  (change-class file-ch 'Test-file-chunk
+				:callee callee :slurpee slurpee)
+		  (let ((loaded-ch
+			   (place-loaded-chunk file-ch manip)))
+		     (monitor-file-basis loaded-ch)
+		     (values file-ch loaded-ch)))))
+      (multiple-value-setq
+	  (file-chunk-l* loaded-file-chunk-l*)
+	  (set-em-up "l" false false ':source))
+      (multiple-value-setq
+	  (file-chunk-s* loaded-file-chunk-s*)
+	  (set-em-up "s" false false ':compile))
+      (multiple-value-setq
+	  (file-chunk-c* loaded-file-chunk-c*)
+	  (set-em-up "c" file-chunk-l* file-chunk-s* ':compile))
+      (chunk-request-mgt loaded-file-chunk-c*)
+      (chunk-update loaded-file-chunk-c*)
+      (format t "File 'l' status = ~s File 's' status = ~s File 'c' status = ~s~%"
+	      file-l-status* file-s-status* file-c-status*)
+      (and (eq file-l-status* ':loaded)
+	   (eq file-s-status* ':slurped)
+	   (eq file-c-status* ':compiled))))
 

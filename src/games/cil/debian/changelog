@@ -1,3 +1,10 @@
+cl-cil (200100227-6) unstable; urgency=low
+
+  * Now uses asdf.
+  * Rename to be in line with naming standard for CL packages 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 15 Nov 2002 15:07:53 +0100
+
 cil (200100227-5) unstable; urgency=low
 
   * lintian fixes to changelog, updated standard version

@@ -91,6 +91,18 @@
     ))
 
 
+(define-condition unknown-component-class (simple-error)
+  ((unknown-component-class-designator
+    :initarg :unknown-class-designator
+    :reader unknown-component-class-designator)
+   )
+  (:report (lambda (cnd stream)
+	     (user-message stream
+			   "no component class designated by ~S was found."
+			   (unknown-component-class-designator cnd))))
+  )
+
+
 (defun get-component-class-by-key (key)
   (rest (assoc key *components-classes-by-key* :test #'eq)))
 
@@ -174,6 +186,18 @@
 				      &key
 				      &allow-other-keys)
   (get-component-class component-type))
+
+
+
+;;; Language manipulation --
+
+(defmethod component-language ((c component))
+  (let ((l (call-next-method)))
+    (if l
+	l
+	(let ((container (component-part-of c)))
+	  (when container
+	    (setf (component-language c) (component-language container)))))))
 
 
 ;;; If you use strings for system names, be sure to use the same case
@@ -507,9 +531,11 @@ component."
 				&key
 				&allow-other-keys)
   (declare (type (or string symbol) name))
-  (apply #'construct-component (get-component-class component-type)
-	 name
-	 keys))
+  (let ((component-class (get-component-class component-type)))
+    (unless component-class
+      (error 'unknown-component-class
+	     :unknown-class-designator component-type))
+    (apply #'construct-component component-class name keys)))
 
 
 (defmethod construct-component ((component-type standard-class)
@@ -645,10 +671,19 @@ component."
 				       (binary-extension nil bext-supplied-p)
 				       (source-extension nil sext-supplied-p)
 				       &allow-other-keys)
-  (when (and bext-supplied-p binary-extension)
-    (setf (computed-binary-extension sc) binary-extension))
-  (when (and sext-supplied-p source-extension)
-    (setf (computed-source-extension sc) source-extension)))
+  (let ((comp-lang (component-language sc)))
+
+    (cond ((and bext-supplied-p binary-extension)
+	   (setf (computed-binary-extension sc) binary-extension))
+	  ((and comp-lang (languagep comp-lang))
+	   (setf (computed-binary-extension sc)
+		 (language-binary-extension comp-lang))))
+    
+    (cond ((and sext-supplied-p source-extension)
+	   (setf (computed-source-extension sc) source-extension))
+	  ((and comp-lang (languagep comp-lang))
+	   (setf (computed-source-extension sc)
+		 (language-source-extension comp-lang))))))
 
 
 ;;; add-sub-component --
@@ -708,7 +743,9 @@ component."
 (defgeneric set-binary-pathname-dirty-bit (component))
 
 
-;;; update-pathname-components-from-container --
+;;; update-source-pathname-components-from-container --
+;;; This function will eventually be used to coalesce functionality
+;;; now spread around several INITIALIZE-INSTANCE.
 
 (defun update-source-pathname-components-from-container (component container)
   (declare (type component component container)
@@ -988,15 +1025,15 @@ component."
 	;; computations on components that have not been installed
 	;; in a system tree.
 
-	(if (and (not (null container)) (null source-extension))
-	    (let ((container-source-extension
-		   (get-component-source-extension container)))
-	      (setf computed-source-extension container-source-extension))
-	    (setf computed-source-extension source-extension))
+	(cond ((and (not (null container)) (null source-extension))
+	       (let ((container-source-extension
+		      (get-component-source-extension container)))
+		 (setf computed-source-extension container-source-extension)))
+	      (t (setf computed-source-extension source-extension)))
 	;; Otherwise just return the previously stored
 	;; 'computed-source-extension'.
 	computed-source-extension)))
-  
+
 
 ;;;---------------------------------------------------------------------------
 ;;; Action execution. (As per KMP's definition).
@@ -1680,7 +1717,7 @@ component."
 		   (get-component-binary-pathname f)))
   (if (dependencies-changed-p f operation)
       ;; If any dependency has changed, then a file needs compilation
-      ;; is it has a source file mapping.
+      ;; if it has a source file mapping.
       (probe-file source-pathname)
 
       ;; Otherwise, we check a number of conditions involving the
@@ -1779,6 +1816,14 @@ component."
   (error 'no-compiler :component f))
 
 
+(defmethod compile-action :before ((f file) (source pathname)
+				   &key
+				   (output-file (compile-file-pathname source))
+				   (error-log-file nil))
+  (declare (ignore error-log-file))
+  (ensure-directories-exist output-file))
+
+
 
 ;;; This is the LOAD-ACTION for CL files.
 ;;; It is a shorthand for the generic LOAD-ACTION processing.
@@ -1805,7 +1850,8 @@ component."
 
 
 ;;; This is the COMPILE-ACTION for CL files.
-;;; Missing the old UNMUNGE-LUCID function.
+;;; Note that the INVOKE-COMPILER machinery is bypassed in this case.
+;;; Instead we call CL:COMPILE-file directly.
 
 #+make-debugging
 (defmethod compile-action ((f common-lisp-file) (source pathname)
@@ -1826,12 +1872,11 @@ component."
 	  nil)
   )
 
-#-make-debubbing
+#-make-debugging
 (defmethod compile-action ((f common-lisp-file) (source pathname)
 			   &key
 			   (output-file (compile-file-pathname source))
 			   (error-log-file nil))
-  (ensure-directories-exist output-file)
   (cl:compile-file source
 		   :output-file output-file
 		   :error-file error-log-file
@@ -1842,6 +1887,8 @@ component."
 		   :external-format (component-external-format f)
 		   :allow-other-keys t
 		   ))
+
+
 
 
 (defmethod execute-action ((f file) (action (eql :clean))
@@ -2056,7 +2103,7 @@ component."
 
 
 (defmethod load-action ((f c-file) (p pathname) &key)
-  ;; Gross hack nto tho muck too much with the class hierarchy.
+  ;; Gross hack not to muck too much with the class hierarchy.
   ;; Essentially, not all the descendants of C-FILE are linkable components.
   (let ((libs (and (linkable-component-p f)
 		   (linkable-component-libraries f))))

@@ -3140,7 +3140,7 @@ D
 	    (translate-version version)
 	  ;; CL implementations may uniformly default this to nil
 	  (let ((*load-verbose* t) ; nil
-		#-(or MCL CMU) (*compile-file-verbose* t) ; nil
+		#-(or MCL CMU CLISP) (*compile-file-verbose* t) ; nil
 		(*compile-verbose* t) ; nil
 		(*version* version)
 		(*oos-verbose* verbose)
@@ -3151,7 +3151,7 @@ D
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
 		(system (find-system name :load)))
-	    #-CMU
+	    #-(or CMU CLISP)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
 		     (ignore *compile-verbose* #-MCL *compile-file-verbose*))
 	    (unless (component-operation operation)
@@ -3675,6 +3675,7 @@ D
   #+:cmu (extensions:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
 		(format nil "~A~@[ ~A~]" program arguments))
+  #+clisp (lisp:run-program program :arguments arguments)
   )
 
 #+(or symbolics (and :lispworks :harlequin-pc-lisp))

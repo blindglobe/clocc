@@ -1,0 +1,7 @@
+This is a 'get it out of the door' release. The subsystems included have patches 
+that still have to be integrated with upstream.
+
+Expect a more polished release soon. But in the mean time I would appriciate
+bugreports on this release. If you do encounter problems, please recompile
+with debug 3 and send a traceback.
+

@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.6 2002/03/29 00:51:35 pvaneynd Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.7 2002/03/29 20:44:54 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -492,7 +492,8 @@
 ;;; MAKE-PROCESS-LOCK: Creating a process lock.
 
 (defun make-process-lock (name)
-  #-clisp  (port::make-lock :name name))
+  #-(or sbcl clisp)
+  (port::make-lock :name name))
 
 
 ;;; HOLDING-LOCK: Execute a body of code with a lock held.
@@ -539,7 +540,7 @@
 
 (defun process-wakeup (process)
   (declare (ignore process))
-  #-clisp
+  #-(or clisp sbcl)
   (port:process-yield))
 
 ;;; CURRENT-PROCESS: Return the current process object for input locking and
@@ -550,7 +551,7 @@
 ;;; Default return NIL, which is acceptable even if there is a scheduler.
 
 (defun current-process ()
-  #-clisp
+  #-(or sbcl clisp)
   (port:current-process))
 
 ;;; WITHOUT-INTERRUPTS -- provide for atomic operations.
@@ -720,12 +721,12 @@
     (cond ((null stream))
 	  ((listen stream) nil)
 	  ((eql timeout 0) :timeout)
-          #-clisp
+          #-(or allegro clisp)
 	  (t
 	   (if (port::wait-for-stream stream timeout)
 	       nil
 	       :timeout))
-          #+clisp
+          #+(or allegro clisp)
           ((not (null timeout))
            (multiple-value-bind (npoll fraction)
                (truncate timeout *buffer-read-polling-time*)
@@ -983,10 +984,7 @@
 (defun homedir-file-pathname (name)
   (and #-(or unix mach) (search "Unix" (software-type) :test #'char-equal)
        (merge-pathnames
-        (#+sbcl
-         translate-logical-pathname
-         #-sbcl
-         progn
+        (translate-logical-pathname
          (user-homedir-pathname))
         (pathname name))))
 

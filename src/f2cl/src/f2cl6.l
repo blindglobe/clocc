@@ -556,21 +556,24 @@
 		 ;; was read.  Because of skip-spaces above, this CHAR
 		 ;; is not necessarily the last character read anymore.
 		 ;; We have to modify the stream directly now.
-		 #+t
-		 (if (equal (peek-char nil *inp* nil 'EOF t) 'EOF)
-		     (setq *inp* (make-string-input-stream (string char)))
-		     (setq *inp* 
-			   (make-string-input-stream
-			    (concatenate 'string (string char) (read-line *inp*)))))
-		 #-nil (unread-char char *inp*)
+		 (let ((p (peek-char nil *inp* nil 'EOF t)))
+		   (if (equal p 'EOF)
+		       (setq *inp* (make-string-input-stream (string char)))
+		       (setq *inp* 
+			     (make-string-input-stream
+			      (concatenate 'string (string char) (read-line *inp*))))))
 		 (write (get-output-stream-string str) :stream outport :escape nil)
 		 (write-char '#\space outport)
 		 (return-from parse-number t))))))))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.27 2001/09/10 16:37:14 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.28 2002/01/05 18:28:34 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.28  2002/01/05 18:28:34  rtoy
+;;; Was still erroneously doing an unread-char.  (Caught by Clisp.)
+;;; Works with Clisp and CMUCL now, and probably others.
+;;;
 ;;; Revision 1.27  2001/09/10 16:37:14  rtoy
 ;;; Oops.  Forgot to strip out the extra quote when we got quoted quotes
 ;;; in format strings.

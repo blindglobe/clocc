@@ -1,26 +1,26 @@
-;;; File: <xml.lisp - 2000-03-21 Tue 16:33:51 EST sds@ksp.com>
-;;;
 ;;; XML parsing
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.1 2000/03/21 22:39:21 sds Exp $
+;;; $Id: xml.lisp,v 2.2 2000/03/23 05:00:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `+whitespace+', `whitespace-char-p'
+  (require :withtype (translate-logical-pathname "cllib:withtype"))
   (require :gray (translate-logical-pathname "port:gray")))
 
 (in-package :cllib)
 
 (defpackage xml-tags (:use))
-(defcustom *xml-pack* 'package (find-package :xml-tags)
+(defcustom *xml-pack* package (find-package :xml-tags)
   "The package with all the XML tags and entities.")
-(defcustom *xml-amp* 'hash-table (make-hash-table :test 'eq)
+(defcustom *xml-amp* hash-table (make-hash-table :test 'eq)
   "The `&' entities")
-(defcustom *xml-per* 'hash-table (make-hash-table :test 'eq)
+(defcustom *xml-per* hash-table (make-hash-table :test 'eq)
   "The `%' entities")
 
 (defstruct (xml-obj (:conc-name xml-))
@@ -30,7 +30,7 @@
 
 (defmethod print-object ((xml xml-obj) (out stream))
   (if *print-readably* (call-next-method)
-      (format out "<~a~:{ ~a=~s~}>~{~a~%~}</~a>~%" (xml-name xml)
+      (format out "<~a~:{ ~a=~s~}>~{~a~^~%~}</~a>" (xml-name xml)
               (xml-attribs xml) (xml-data xml) (xml-name xml))))
 
 (defclass xml-stream-in (fundamental-character-input-stream)
@@ -64,10 +64,22 @@
    (loop :for xx :on (cdr list) :by #'cddr
          :collect (list (xml-trim-key (car xx)) (cadr xx)))))
 
+(defun compress-whitespace (list)
+  (do ((ll list (cdr ll)) good)
+      ((null ll)
+       (when good (setf (cdr good) nil))
+       (member-if (complement #'whitespace-char-p) list))
+    (if (whitespace-char-p (car ll))
+      (loop :initially (setf (car ll) #\Space)
+            :while (and (cdr ll) (whitespace-char-p (cadr ll)))
+            :do (setf (cdr ll) (cddr ll)))
+      (setq good ll))))
+
 (defun xml-read-text (str term)
-  (coerce (loop :for ch = (read-char str t nil t)
-                :while (char/= ch term) :collect ch
-                :finally (unread-char term str))
+  (coerce (compress-whitespace
+           (loop :for ch = (read-char str t nil t)
+                 :while (char/= ch term) :collect ch
+                 :finally (unread-char term str)))
           'string))
 
 (defun xml-read-comment (str)
@@ -82,7 +94,7 @@
         :else :collect (concatenate 'string "-" (string ch)) :into all))
 
 (defun read-xml (stream char)
-  (case char
+  (ecase char
     (#\<                        ; read tag
      (let ((ch (read-char stream t nil t)) (*package* *xml-pack*))
        (case ch
@@ -90,7 +102,7 @@
                 (assert (null (cdr tag)) (tag)
                         "~s[~a]: end tag ~s has attributes ~s" 'read-xml stream
                         (car tag) (cdr tag))
-                (car tag)))
+                tag))
          (#\? (let ((tags (read-delimited-list #\> stream t)))
                 (assert (eq 'xml-tags::? (car (last tags))) (tags)
                         "~s[~a]: <? was terminated by ~s" 'read-xml stream
@@ -101,20 +113,23 @@
                 (if (eq 'xml-tags::-- obj) (xml-read-comment stream)
                     (cons obj (read-delimited-list #\> stream t)))))
          (t (unread-char ch stream)
-            (do* ((xml (xml-obj-from-list (read-delimited-list #\> stream t)))
-                  (next (read stream t nil t) (read stream t nil t)))
-                 ((symbolp next)
-                  (assert (eq next (xml-name xml)) (next)
-                          "~s[~a]: ~s was terminated by ~s" 'read-xml stream
-                          (xml-name xml) next)
-                  (nreverse (xml-data xml))
-                  xml)
-              (push next (xml-data xml)))))))
+            (do ((xml (xml-obj-from-list (read-delimited-list #\> stream t)))
+                 next)
+                ((consp next)
+                 (assert (eq (car next) (xml-name xml)) (next)
+                         "~s[~a]: ~s was terminated by ~s" 'read-xml stream
+                         (xml-name xml) next)
+                 (nreverse (xml-data xml))
+                 xml)
+              (setq next (xml-read-text stream #\<))
+              (when (< 0 (length next)) (push next (xml-data xml)))
+              (setq next (read stream t nil t))
+              (when (xml-obj-p next) (push next (xml-data xml))))))))
     (#\[ (read-delimited-list #\] stream t))
+    (#\> (funcall (get-macro-character #\)) stream char)
+         (xml-read-text stream #\<))))
     ;; (#\& (gethash (xml-trim-key (read stream t nil t)) *xml-amp*))
     ;; (#\% (gethash (xml-trim-key (read stream t nil t)) *xml-per*))
-    (t (xml-read-text stream #\<))))
-;; (error "~s[~a]: ~s" 'read-xml stream char)
 
 (defun make-xml-readtable ()
   (let ((rt (copy-readtable)))
@@ -122,6 +137,7 @@
     (set-macro-character #\[ #'read-xml nil rt)
     ;; (set-macro-character #\& #'read-xml nil rt)
     ;; (set-macro-character #\% #'read-xml nil rt)
+    ;; (set-macro-character #\> #'read-xml nil rt)
     (set-macro-character #\> (get-macro-character #\)) nil rt)
     (set-macro-character #\] (get-macro-character #\)) nil rt)
     (set-syntax-from-char #\; #\a rt)

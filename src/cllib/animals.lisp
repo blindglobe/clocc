@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.7 2000/05/22 19:28:42 sds Exp $
+;;; $Id: animals.lisp,v 2.8 2001/04/02 16:38:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,25 +17,28 @@
   (require :fileio (translate-logical-pathname "cllib:fileio"))
   ;; `+clos-readtable+'
   (require :closio (translate-logical-pathname "cllib:closio"))
+  ;; `mesg'
+  (require :log (translate-logical-pathname "cllib:log"))
   ;; `symbol-concat'
   (require :symb (translate-logical-pathname "cllib:symb")))
 
 (in-package :cllib)
 
-(export '(play-animals play-game))
+(export '(play-animals play-game *animals-file-name*))
 
 ;;;
 ;;; Standard version
 ;;;
 
-(defvar *animals-debug-output* nil "Print more debugging info.")
 (defvar *animals-debug-use-built-in-data* nil "Do not read the file.")
 (defvar *animals-default-data*
   '("Is it an insect" ("Can it sting" "a bee" .
     "a roach") "Can it fly" "a duck" . "a penguin")
   "The built-in to be used if `*animals-debug-use-built-in-data*' is non-nil.")
 (defvar *animals-data* nil "The actual data tree.")
-(defvar *animals-file-name* nil "The data file. Defaults to ~/.animals.")
+(defcustom *animals-file-name* string "animals"
+  "*The data file.
+Defaults to (merge-pathnames \"animals\" *datadir*).")
 
 (defun anml-get-question (old new)
   "Get the question that will distinguish betwee OLD and NEW.
@@ -105,7 +108,7 @@ Returnes a fresh string."
              (cons quest (cons 1st 2nd)))))))
 
 (defun save-restore-animals (&optional what)
-  (save-restore what :var '*animals-data* :name "animals" :basedir *datadir*))
+  (save-restore what :var '*animals-data* :name *animals-file-name*))
 
 ;;;###autoload
 (defun play-animals ()
@@ -114,8 +117,7 @@ Returnes a fresh string."
   (if *animals-debug-use-built-in-data*
       (setq *animals-data* *animals-default-data*)
       (save-restore-animals))
-  (when *animals-debug-output*
-    (format t "animals-data now:~%~s~%" *animals-data*))
+  (mesg :animals t "animals-data now:~%~s~%" *animals-data*)
   ;; play the game
   (let ((animals-data-modified nil))
     (do ((root *animals-data* *animals-data*) follow over)
@@ -128,16 +130,14 @@ Returnes a fresh string."
                 (cons (anml-finish root) (cddr follow))
                 (cons (cadr follow) (anml-finish root)))
             animals-data-modified t)
-      (when *animals-debug-output*
-        (format t "`*animals-data*' now: ~a~%" *animals-data*))
+      (mesg :animals t "`*animals-data*' now: ~a~%" *animals-data*)
       (setq over (y-or-n-p "Quit?")))
     ;; save the new information
-    (when *animals-debug-output*
-      (format t "done - saving the information...~%"))
+    (mesg :animals t "done - saving the information...~%")
     (if *animals-debug-use-built-in-data*
         (print "used built-in data -- no save!")
         (if animals-data-modified
-            (write-to-file *animals-data* *animals-file-name*)
+            (save-restore-animals *animals-data*)
             (format t "You taught me no new animals this time...~%"))))
   (when (y-or-n-p "Exit lisp?") (quit)))
 

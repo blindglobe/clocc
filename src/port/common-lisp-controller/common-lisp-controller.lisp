@@ -10,7 +10,7 @@
              #:add-project-directory
              #:add-translation
              #:send-clc-command
-	     #:make-clc-send-command-sting
+	     #:make-clc-send-command-string
 	     #:*clc-send-command-filename*)
     (:nicknames :c-l-c))
 
@@ -218,10 +218,21 @@ Returns nothing"
 (defvar *clc-send-command-filename* "/usr/bin/clc-send-command"
  "Filename of clc-send-command executable")
 
-(defun make-clc-send-command-string (command package)
+(defun ensure-lower (obj)
+  (etypecase obj
+    (string
+     (string-downcase obj))
+    (symbol
+     (string-downcase (symbol-name obj)))))
+    
+(defun make-clc-send-command-string (command package impl)
   "Function returns a string suitable to pass to the operating
 system to execute the clc-send-command program"
-  (format nil "~A ~A ~A --quiet" *clc-send-command-filename* command package))
+  (format nil "~A --quiet ~A ~A ~A" 
+	  *clc-send-command-filename* 
+	  (ensure-lower command)
+	  (ensure-lower package)
+	  (ensure-lower impl)))
 
 (defun send-clc-command (command package)
   "Function to be overrided by the implementation.
@@ -231,6 +242,6 @@ Should execute:
 with command either :recompile or :remove"
   (cerror "Done"
           "This implementation has not yet implemented common-lisp-controller:send-clc-command.
-Please run /usr/bin/clc-send-command ~A ~A <implementation-name> --quiet
+Please run /usr/bin/clc-send-command --quiet ~A ~A <implementation-name>
 and continue"
           command package))

@@ -1,7 +1,7 @@
 <!-- *** Entities for docbook/xml, related to Common Lisp *** -->
 <!--
- Copyright (C) 2000 by Sam Steingold
- This is Free Software, covered by the GNU GPL (v2)
+ Copyright (C) 2000-2001 by Sam Steingold
+ This is Free Software, covered by the GNU GPL (v2 or later)
  See http://www.gnu.org/copyleft/gpl.html
  -->
 
@@ -102,7 +102,7 @@
 <!ENTITY lambda-expr "<ulink url='&clhs;/Body/glo_l.html#lambda_expression'>lambda expression</ulink>">
 <!ENTITY repl "<ulink url='&clhs;/Body/sec_25-1-1.html'>read-eval-print loop</ulink>">
 <!ENTITY iter-forms "<ulink url='&clhs;/Body/glo_i.html#iteration_form'><quote>iteration forms</quote></ulink>">
-
+<!ENTITY alist "<ulink url='&clhs;/Body/glo_a.html#association_list'>alist</ulink>">
 
 <!-- *** packages *** -->
 <!ENTITY cl-pac "<ulink url='&clhs;/Body/sec_11-1-2-1.html'><quote>COMMON-LISP</quote></ulink>">

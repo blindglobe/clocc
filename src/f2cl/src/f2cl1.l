@@ -1216,8 +1216,8 @@ FILENAME                 File containing Fortran code
 	   (check_new_vbles (list lhs))
 	   (check_new_vbles (list rhs))
 	   (when (member lhs *subprog-arglist*)
-	     (format t "subprog-arglist = ~A~%" *subprog-arglist*)
-	     (format t "lhs = ~A~%" lhs)
+	     ;;(format t "subprog-arglist = ~A~%" *subprog-arglist*)
+	     ;;(format t "lhs = ~A~%" lhs)
 	     (pushnew lhs *assigned-variables*))
 	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
 		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
@@ -2235,8 +2235,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.102 2002/03/19 01:45:20 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.103 2002/03/19 04:10:05 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.103  2002/03/19 04:10:05  rtoy
+;;; Comment out some debugging print statements.
+;;;
 ;;; Revision 1.102  2002/03/19 01:45:20  rtoy
 ;;; Oops.  Remove the debugging print statements.
 ;;;

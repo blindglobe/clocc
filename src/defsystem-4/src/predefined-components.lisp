@@ -157,7 +157,7 @@ operated on in a `serial' way."))
   ()
   (:default-initargs
     :language :common-lisp
-    ;; :source-extension "lisp"
+    :source-extension (cl.env:source-file-extension)
     :binary-extension (cl.env:compiled-file-extension)))
 
 (defgeneric common-lisp-file-p (x)
@@ -177,8 +177,17 @@ operated on in a `serial' way."))
 
 
 (defclass library (standard-hierarchical-component
-		   component-language-mixin)
-  ())
+		   loadable-component-mixin
+		   compilable-component-mixin
+		   linkable-component-mixin
+		   )
+  ((build-externally-p :accessor build-externally-p
+		       :initargs :build-externally-p)
+   )
+  (:default-initargs
+     :language :common-lisp
+     :type :library
+     :build-externally-p nil))
 
 (defgeneric library-p (x)
   (:method ((x library)) t)
@@ -194,5 +203,6 @@ operated on in a `serial' way."))
 (defgeneric binary-exists-p (file &optional binary-pathname))
 
 (defgeneric source-exists-p (file &optional source-pathname))
+
 
 ;;; end of file -- predefined-components.lisp --

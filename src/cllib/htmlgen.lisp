@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.14 2002/01/16 22:38:20 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.15 2002/04/03 19:25:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,8 +17,7 @@
 (in-package :cllib)
 
 (export '(html-stream-out with-html-output with-http-output with-tag
-          *with-html-output-doctype* http-error
-          flush-http directory-index))
+          *with-html-output-doctype* http-error directory-index))
 
 ;;;
 ;;; preparation
@@ -136,12 +135,6 @@ Supplies some HTTP/1.0 headers and calls `with-html-output'."
         (when (and ,dbg (> ,dbg 0))
           (format t "~s: closing ~s~%" 'with-http-output ,sock))
         (close ,sock)))))
-
-(defun flush-http (sock)
-  "Read everything from the HTTP socket SOCK, until a blank line."
-  (loop :for line = (read-line sock nil nil)
-        :while (and line (plusp (length line)))
-        :collect line))
 
 (defun http-error (sock url &key (name "Not Found") (code 404)
                    (keep-alive nil) (debug 0))

@@ -1,3 +1,4 @@
+
 /* clc-build-daemon  -*- Mode:C -*-
 
    written by Peter Van Eynde, copyright 2002
@@ -420,31 +421,19 @@ int main(int argc, char *argv[])
                   printf("250 recompiling package %s for compiler %s with %i\n", package, compiler,showoutput);
                   syslog(LOG_NOTICE,"Recompiling package %s for compiler %s",package,compiler);
 
-                  if (showoutput != 0)
-                    {
-                      if (pipe(descriptors) != 0)
-                        reporterror("while creating pipe");
-                    }
+                  if (pipe(descriptors) != 0)
+                    reporterror("while creating pipe");
+
                   /* [0] is for reading, [1] is for writing */
                   if ( (child = fork()) == 0)
                     {
                       struct passwd *login_data;
 
-                      if (showoutput == 0)
-                        {
-                          if ( freopen("/dev/null","r+",stdout) == NULL)
-                            reporterror("reopen stdout rw");
-                          if (freopen("/dev/null","r+",stderr)  == NULL)
-                            reporterror("reopen stderr rw");
-                        }
-                      else
-                        {
-                          close(descriptors[0]);
-                          dup2(descriptors[1],STDOUT_FILENO);
-                          dup2(descriptors[1],STDERR_FILENO);
-                          close(descriptors[1]);
-                        }
-
+                      close(descriptors[0]);
+                      dup2(descriptors[1],STDOUT_FILENO);
+                      dup2(descriptors[1],STDERR_FILENO);
+                      close(descriptors[1]);
+                      
                       if (freopen("/dev/null","r+",stdin) == NULL)
                         reporterror("reopen stdin");
 
@@ -519,43 +508,40 @@ int main(int argc, char *argv[])
                     {
                       int status;
                       pid_t pid;
+                      FILE *child;
 
-                      if (showoutput == 1)
+                      close(descriptors[1]);
+                      
+                      child = fdopen(descriptors[0], "r");
+                      if (child == (FILE *) NULL)
+                        reporterror("while opening child stream");
+                      
+                      for(;;)
                         {
-                          FILE *child;
-
-                          close(descriptors[1]);
-
-                          child = fdopen(descriptors[0], "r");
-                          if (child == (FILE *) NULL)
-                            reporterror("while opening child stream");
-
-                          for(;;)
+                          size_t length;
+                          ssize_t read;
+                          
+                          length = 0;
+                          
+                          current_line++;
+                          if (current_line > MAX_LINES)
+                            current_line = 0;
+                          
+                          read = getline(&(lines[current_line]), &length, child);
+                          
+                          if (read <= 0)
                             {
-                              size_t length;
-                              ssize_t read;
-                              
-                              length = 0;
-                              
-                              current_line++;
-                              if (current_line > MAX_LINES)
-                                current_line = 0;
-
-                              read = getline(&(lines[current_line]), &length, child);
-
-                              if (read <= 0)
+                              if (feof(child))
                                 {
-                                  if (feof(child))
-                                    {
-                                      free(lines[current_line]);
-                                      lines[current_line] = NULL;
-                                      break;
-                                    }
-                                  else
-                                    reporterror("while reading from the child pipe");
+                                  free(lines[current_line]);
+                                  lines[current_line] = NULL;
+                                  break;
                                 }
-                              printf("310 %s",lines[current_line]);
+                              else
+                                reporterror("while reading from the child pipe");
                             }
+                          if (showoutput == 1)
+                            printf("310 %s",lines[current_line]);
                         }
 
                       pid = wait(&status);

@@ -1,0 +1,27 @@
+.\" 	-*- Mode: Nroff -*-
+.TH "clc-autobuild-source" "8" "" "" ""
+
+.SH "NAME"
+clc-autobuild-library \- Sets autobuild default for Common Lisp Library Package
+
+.SH "SYNOPSIS"
+.B clc-autobuild-library library value [OPTIONS]
+
+.SH "DESCRIPTION"
+This command sets the autobuild default for Common Lisp a Common Lisp
+library package. The valid autobuild values are "yes", "no", and "inherit".
+When the autobuild valus is "inherit", then the library package inherits
+the default autobuild value for each implementation.
+
+.SH "OPTIONS"
+.TP 16
+.B \-h
+Print short help message
+
+.SH "BUGS"
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH "AUTHOR"
+Kevin M. Rosenberg <kmr@debian.org>, Sep 2002

@@ -9,14 +9,17 @@ CLC_SBIN	:= usr/sbin/
 CLC_BIN		:= usr/bin/
 CLC_SRC 	:= usr/share/common-lisp/source/common-lisp-controller/
 
-SBIN_PROGS := register-common-lisp-source unregister-common-lisp-source \
+SBIN_PROGS 	:= register-common-lisp-source unregister-common-lisp-source \
 		register-common-lisp-implementation unregister-common-lisp-implementation \
 		clc-reregister-impl clc-check-autobuild clc-only-compatible clc-not-compatible \
 		clc-autobuild-impl clc-build-daemon
 
-CLC_SRC_FILES :=common-lisp-controller.lisp pre-sysdef-install.lisp post-sysdef-install.lisp
+BIN_PROGS	:= clc-send-command clc-autobuild-library
 
-MAN_FILES := clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 \
+CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp post-sysdef-install.lisp
+
+MAN_FILES := clc-send-command.1 clc-autobuild-library.1 \
+	clc-build-daemon.8 register-common-lisp-implementation.8 \
 	register-common-lisp-source.8 unregister-common-lisp-implementation.8 \
 	unregister-common-lisp-source.8 clc-reregister-impl.8 clc-only-compatible.8 \
 	clc-not-compatible.8 clc-check-autobuild.8 clc-autobuild-impl.8
@@ -50,7 +53,7 @@ install: build
 	dh_installdirs
 	# Add here commands to install the package into debian/pkg-name
 	dh_install $(SBIN_PROGS) $(CLC_SBIN)
-	dh_install clc-send-command $(CLC_BIN)
+	dh_install $(BIN_PROGS) $(CLC_BIN)
 	dh_install $(CLC_SRC_FILES) $(CLC_SRC)
 	dh_install lisp-config.lisp etc/
 

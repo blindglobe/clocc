@@ -9,7 +9,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 2.2 2000/03/03 22:51:14 sds Exp $
+;;; $Id: url.lisp,v 2.3 2000/03/09 19:06:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -737,8 +737,8 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
 ;;;
 
 (defcustom *browsers* list
-  '((:netscape "/usr/bin/netscape" "-remote" "openURL(~a,new-window)")
-    (:emacs-w3 "/usr/bin/gnudoit" "(w3-fetch \"~a\")"))
+  '((:netscape "/usr/local/bin/netscape" "-remote" "openURL(~a,new-window)")
+    (:emacs-w3 "/usr/local/bin/gnudoit" "(w3-fetch \"~a\")"))
   "The ALIST of browsers.")
 
 ;;;###autoload
@@ -754,7 +754,7 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
     (when out
       (format out "~&;; running [~s~{ ~s~}]..." (car command) args)
       (force-output (if (eq out t) *standard-output* out)))
-    (run-program (car command) :arguments args)
+    (run-prog (car command) :args args)
     (when out
       (format out "done~%"))))
 

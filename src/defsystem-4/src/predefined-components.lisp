@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -142,7 +142,7 @@ operated on in a `serial' way."))
   ()
   (:default-initargs
     :language :common-lisp
-    :source-extension "lisp"
+    ;; :source-extension "lisp"
     :binary-extension (cl.env:compiled-file-extension)))
 
 (defgeneric common-lisp-file-p (x)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.15 2002/10/07 16:34:47 sds Exp $
+;;; $Id: tests.lisp,v 2.16 2003/01/08 19:09:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -192,7 +192,7 @@
                  (incf num-err)))))
       (mesg :test out " ** ~s...~%" 'test-xml)
       (ts *xml-ent-file* 283)
-      (ts (translate-logical-pathname "clocc:etc;cl-ent.xml") 1157))
+      (ts (translate-logical-pathname "clocc:etc;cl-ent.xml") 1160))
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-xml num-err)
     num-err))
 

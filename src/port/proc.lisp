@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.5 2000/04/06 14:42:48 sds Exp $
+;;; $Id: proc.lisp,v 1.6 2000/04/19 16:49:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -52,7 +52,8 @@
 ;;; WITH-LOCK ((lock) &rest body)
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext")))
+  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  #+CormanLisp (require 'THREADS))
 
 (in-package :port)
 
@@ -69,7 +70,14 @@
 ;;; process creatioon
 ;;;
 
-#+(or Genera Lucid (and Allegro multiprocessing) MCL LispWorks (and CMU mp))
+#+(or (and Allegro multiprocessing)
+      (and CMU mp)
+      CormanLisp
+      Genera
+      LispWorks
+      Lucid
+      MCL)
+
 (eval-when (compile load eval)
   (pushnew :threads *features*))
 
@@ -79,8 +87,10 @@ multiple processes in a single address space.")
 
 (defun make-process (name function &rest args)
   "Create a new process and start it."
+  #+CormanLisp (declare (ignore name))
   #+Allegro (apply #'mp:process-run-function name function args)
   #+CMU (mp:make-process (lambda () (apply function args)) :name name)
+  #+CormanLisp (th:create-thread (lambda () (apply function args)))
   #+Genera
   (process:make-process name
                         :initial-function function
@@ -90,7 +100,7 @@ multiple processes in a single address space.")
                         :warm-boot-action
                         #'process:process-warm-boot-delayed-restart)
   #+LispWorks (apply #'mp:process-run-function name '() function args)
-  #+Lucid   (lcl:make-process :function function :name name :args args)
+  #+Lucid (lcl:make-process :function function :name name :args args)
   ;; CCL:RESTART-PROCESS appears to flush the process in
   ;; MCL 3.0, so we have to roll our own.
   #+MCL (flet ((process-wrapper ()
@@ -109,6 +119,7 @@ multiple processes in a single address space.")
   "Sleep until PREDICATE becomes true."
   #+Allegro (apply #'mp:process-wait whostate predicate args)
   #+CMU (mp:process-wait whostate (lambda () (apply predicate args)))
+  #+CormanLisp FIXME
   ;;; The scheduler in Genera sometimes calls a wait function twice
   ;;; before actually returning.  If the wait function returns true the
   ;;; first time but NIL the second, we keep on waiting.  This is bad
@@ -141,6 +152,7 @@ whichever comes first."
   (apply #'mp:process-wait-with-timeout whostate timeout predicate args)
   #+CMU (mp:process-wait-with-timeout
          whostate timeout (lambda () (apply predicate args)))
+  #+CormanLisp FIXME
   #+Genera
   (apply #'process:process-wait-with-timeout whostate timeout predicate args)
   #+LispWorks
@@ -202,39 +214,43 @@ and evaluate TIMEOUT-FORMS."
 
 (defmacro without-scheduling (&body body)
   "Run BODY with interrupts disabled."
-  #+Allegro   `(mp:without-scheduling ,@body)
-  #+CMU       `(mp:without-scheduling ,@body)
-  #+Genera    `(process:with-no-other-processes ,@body)
-  #+LispWorks `(mp:without-interrupts ,@body)
-  #+Lucid     `(lcl:with-scheduling-inhibited ,@body)
-  #+MCL       `(ccl:without-interrupts ,@body)
-  #-threads   `(progn ,@body))
+  #+Allegro    `(mp:without-scheduling ,@body)
+  #+CMU        `(mp:without-scheduling ,@body)
+  #+CormanLisp FIXME
+  #+Genera     `(process:with-no-other-processes ,@body)
+  #+LispWorks  `(mp:without-interrupts ,@body)
+  #+Lucid      `(lcl:with-scheduling-inhibited ,@body)
+  #+MCL        `(ccl:without-interrupts ,@body)
+  #-threads    `(progn ,@body))
 
 (defun process-yield ()
   "Yields the current process' remaining time slice
 and allows other processes to run."
-  #+Allegro   (mp:process-allow-schedule)
-  #+CMU       (mp:process-yield)
-  #+Genera    FIXME
-  #+LispWorks (mp:process-allow-scheduling)
-  #+Lucid     FIXME
-  #+MCL       (ccl:process-yield)
-  #-threads   (error 'not-implemented :proc (list 'process-yield)))
+  #+Allegro    (mp:process-allow-schedule)
+  #+CMU        (mp:process-yield)
+  #+CormanLisp FIXME
+  #+Genera     FIXME
+  #+LispWorks  (mp:process-allow-scheduling)
+  #+Lucid      FIXME
+  #+MCL        (ccl:process-yield)
+  #-threads    (error 'not-implemented :proc (list 'process-yield)))
 
 (defun kill-process (process)
   "Kill PROCESS."
-  #+Allegro   (mp:process-kill process)
-  #+CMU       (mp:destroy-process process)
-  #+Genera    (process:process-kill process)
-  #+LispWorks (mp:process-kill process)
-  #+Lucid     (lcl:kill-process process)
-  #+MCL       (ccl:process-kill process)
-  #-threads   (error 'not-implemented :proc (list 'kill-process process)))
+  #+Allegro    (mp:process-kill process)
+  #+CMU        (mp:destroy-process process)
+  #+CormanLisp (th:terminate-thread process)
+  #+Genera     (process:process-kill process)
+  #+LispWorks  (mp:process-kill process)
+  #+Lucid      (lcl:kill-process process)
+  #+MCL        (ccl:process-kill process)
+  #-threads    (error 'not-implemented :proc (list 'kill-process process)))
 
 (defun interrupt-process (process function &rest args)
   "Run FUNCTION in PROCESS."
   #+Allegro   (apply #'mp:process-interrupt process function args)
   #+CMU       (mp:process-interrupt process (lambda () (apply function args)))
+  #+CormanLisp FIXME
   #+Genera    (apply #'process:process-interrupt process function args)
   #+LispWorks (apply #'mp:process-interrupt process function args)
   #+Lucid     (apply #'lcl:interrupt-process process function args)
@@ -245,11 +261,12 @@ and allows other processes to run."
 (defun restart-process (process)
   "Throw out PROCESS' current computation
 and reapply its initial function to its arguments."
-  #+Allegro   (mp:process-reset process)
-  #+CMU       (mp:restart-process process)
-  #+Genera    (process:process-reset process)
-  #+LispWorks (mp:process-reset process)
-  #+Lucid     (lcl:restart-process process)
+  #+Allegro    (mp:process-reset process)
+  #+CMU        (mp:restart-process process)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-reset process)
+  #+LispWorks  (mp:process-reset process)
+  #+Lucid      (lcl:restart-process process)
   ;; CCL:RESTART-PROCESS appears to flush the process in
   ;; MCL 3.0, so we have to roll our own.
   #+MCL (interrupt-process process (lambda () (throw 'restart-process nil)))
@@ -257,74 +274,81 @@ and reapply its initial function to its arguments."
 
 (defun process-p (object)
   "T if OBJECT is a process."
-  #+Allegro   (mp::process-p object)
-  #+CMU       (mp:processp object)
-  #+Genera    (process:process-p object)
-  #+LispWorks (mp:process-p object)
-  #+Lucid     (lcl:processp object)
-  #+MCL       (ccl::processp object)
-  #-threads   (error 'not-implemented :proc (list 'process-p object)))
+  #+Allegro    (mp::process-p object)
+  #+CMU        (mp:processp object)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-p object)
+  #+LispWorks  (mp:process-p object)
+  #+Lucid      (lcl:processp object)
+  #+MCL        (ccl::processp object)
+  #-threads    (error 'not-implemented :proc (list 'process-p object)))
 
 (defun process-name (process)
   "PROCESS' name."
-  #+Allegro   (mp:process-name process)
-  #+CMU       (mp:process-name process)
-  #+Genera    (process:process-name process)
-  #+LispWorks (mp:process-name process)
-  #+Lucid     (lcl:process-name process)
-  #+MCL       (ccl:process-name process)
-  #-threads   (error 'not-implemented :proc (list 'process-name process)))
+  #+Allegro    (mp:process-name process)
+  #+CMU        (mp:process-name process)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-name process)
+  #+LispWorks  (mp:process-name process)
+  #+Lucid      (lcl:process-name process)
+  #+MCL        (ccl:process-name process)
+  #-threads    (error 'not-implemented :proc (list 'process-name process)))
 
 (defun process-active-p (process)
   "T if PROCESS is doing soemthing."
-  #+Allegro   (mp:process-active-p process)
-  #+CMU       (mp:process-active-p process)
-  #+Genera    (process:process-active-p process)
-  #+LispWorks (and (mp:process-run-reasons process)
-                   (not (mp:process-arrest-reasons process)))
-  #+Lucid     (lcl:process-active-p process)
-  #+MCL       (ccl:process-active-p process)
-  #-threads   (error 'not-implemented :proc (list 'process-active-p process)))
+  #+Allegro    (mp:process-active-p process)
+  #+CMU        (mp:process-active-p process)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-active-p process)
+  #+LispWorks  (and (mp:process-run-reasons process)
+                    (not (mp:process-arrest-reasons process)))
+  #+Lucid      (lcl:process-active-p process)
+  #+MCL        (ccl:process-active-p process)
+  #-threads    (error 'not-implemented :proc (list 'process-active-p process)))
 
 (defun process-whostate (process)
   "Returns a string describing PROCESS' current status."
-  #+Allegro   (mp:process-whostate process)
-  #+CMU       (mp:process-whostate process)
-  #+Genera    (process:process-whostate process)
-  #+LispWorks (mp:process-whostate process)
-  #+Lucid     (lcl:process-whostate process)
-  #+MCL       (ccl:process-whostate process)
-  #-threads   (error 'not-implemented :proc (list 'process-whostate process)))
+  #+Allegro    (mp:process-whostate process)
+  #+CMU        (mp:process-whostate process)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-whostate process)
+  #+LispWorks  (mp:process-whostate process)
+  #+Lucid      (lcl:process-whostate process)
+  #+MCL        (ccl:process-whostate process)
+  #-threads    (error 'not-implemented :proc (list 'process-whostate process)))
 
 (defun process-state (process)
   "Returns a symbol describing PROCESS' current state."
-  #+Allegro   (car (mp:process-run-reasons process))
-  #+CMU       (mp:process-state process)
-  #+Genera    (process:process-state process)
-  #+LispWorks (mp:process-state process)
-  #+Lucid     (lcl:process-state process)
-  #+MCL       (ccl:process-state process)
-  #-threads   (error 'not-implemented :proc (list 'process-state process)))
+  #+Allegro    (car (mp:process-run-reasons process))
+  #+CMU        (mp:process-state process)
+  #+CormanLisp FIXME
+  #+Genera     (process:process-state process)
+  #+LispWorks  (mp:process-state process)
+  #+Lucid      (lcl:process-state process)
+  #+MCL        (ccl:process-state process)
+  #-threads    (error 'not-implemented :proc (list 'process-state process)))
 
 (defun current-process ()
   "The current process."
-  #+Allegro   mp:*current-process*
-  #+CMU       mp:*current-process*
-  #+Genera    scl:*current-process*
-  #+LispWorks mp:*current-process*
-  #+Lucid     lcl:*current-process*
-  #+MCL       ccl:*current-process*
-  #-threads   (error 'not-implemented :proc (list 'current-process)))
+  #+Allegro    mp:*current-process*
+  #+CMU        mp:*current-process*
+  #+CormanLisp ccl:*current-thread-handle*
+  #+Genera     scl:*current-process*
+  #+LispWorks  mp:*current-process*
+  #+Lucid      lcl:*current-process*
+  #+MCL        ccl:*current-process*
+  #-threads    (error 'not-implemented :proc (list 'current-process)))
 
 (defun all-processes ()
   "A list of all processes."
-  #+Allegro   mp:*all-processes*
-  #+CMU       (mp:all-processes)
-  #+Genera    process:*all-processes*
-  #+LispWorks (mp:list-all-processes)
-  #+Lucid     lcl:*all-processes*
-  #+MCL       ccl:*all-processes*
-  #-threads   (error 'not-implemented :proc (list 'all-processes)))
+  #+Allegro    mp:*all-processes*
+  #+CMU        (mp:all-processes)
+  #+CormanLisp FIXME
+  #+Genera     process:*all-processes*
+  #+LispWorks  (mp:list-all-processes)
+  #+Lucid      lcl:*all-processes*
+  #+MCL        ccl:*all-processes*
+  #-threads    (error 'not-implemented :proc (list 'all-processes)))
 
 (defun show-processes (&key (stream *standard-output*))
   "Print out info on all processes."
@@ -371,43 +395,47 @@ and reapply its initial function to its arguments."
 
 (defun make-lock (&key name)
   "Creates a new lock."
-  #+Allegro   (mp:make-process-lock :name name)
-  #+CMU       (mp:make-lock name)
-  #+Genera    FIXME
-  #+LispWorks (mp:make-lock :name name)
-  #+Lucid     FIXME
-  #+MCL       (ccl:make-process-queue name)
-  #-threads   (error 'not-implemented :proc (list 'make-lock name)))
+  #+Allegro    (mp:make-process-lock :name name)
+  #+CMU        (mp:make-lock name)
+  #+CormanLisp FIXME
+  #+Genera     FIXME
+  #+LispWorks  (mp:make-lock :name name)
+  #+Lucid      FIXME
+  #+MCL        (ccl:make-process-queue name)
+  #-threads    (error 'not-implemented :proc (list 'make-lock name)))
 
 (defun get-lock (lock)
   "Claims a lock, blocking until the current process can get it."
-  #+Allegro   (mp:process-lock lock)
-  #+CMU       (mp::lock-wait lock)
-  #+Genera    FIXME
-  #+LispWorks (mp:claim-lock lock)
-  #+Lucid     FIXME
-  #+MCL       (ccl:process-enqueue lock)
-  #-threads   (error 'not-implemented :proc (list 'get-lock lock)))
+  #+Allegro    (mp:process-lock lock)
+  #+CMU        (mp::lock-wait lock)
+  #+CormanLisp FIXME
+  #+Genera     FIXME
+  #+LispWorks  (mp:claim-lock lock)
+  #+Lucid      FIXME
+  #+MCL        (ccl:process-enqueue lock)
+  #-threads    (error 'not-implemented :proc (list 'get-lock lock)))
 
 (defun giveup-lock (lock)
   "Gives up possession of a lock."
-  #+Allegro   (mp:process-unlock lock)
-  #+CMU       (setf (mp::lock-process lock) nil)
-  #+Genera    FIXME
-  #+LispWorks (mp:release-lock lock)
-  #+Lucid     FIXME
-  #+MCL       (ccl:process-dequeue lock)
-  #-threads   (error 'not-implemented :proc (list 'giveup-lock lock)))
+  #+Allegro    (mp:process-unlock lock)
+  #+CMU        (setf (mp::lock-process lock) nil)
+  #+CormanLisp FIXME
+  #+Genera     FIXME
+  #+LispWorks  (mp:release-lock lock)
+  #+Lucid      FIXME
+  #+MCL        (ccl:process-dequeue lock)
+  #-threads    (error 'not-implemented :proc (list 'giveup-lock lock)))
 
 (defmacro with-lock ((lock) &rest body)
   "This macro executes the body with LOCK locked."
-  #+Allegro   `(mp:with-process-lock (,lock) ,@body)
-  #+CMU       `(mp:with-lock-held (,lock) ,@body)
-  #+Genera    FIXME
-  #+LispWorks `(mp:with-lock (,lock) ,@body)
-  #+Lucid     FIXME
-  #+MCL       `(ccl:with-process-enqueued (,lock) ,@body)
-  #-threads   `(progn ,@body))
+  #+Allegro    `(mp:with-process-lock (,lock) ,@body)
+  #+CMU        `(mp:with-lock-held (,lock) ,@body)
+  #+CormanLisp FIXME
+  #+Genera     FIXME
+  #+LispWorks  `(mp:with-lock (,lock) ,@body)
+  #+Lucid      FIXME
+  #+MCL        `(ccl:with-process-enqueued (,lock) ,@body)
+  #-threads    `(progn ,@body))
 
 (provide :proc)
 ;;; proc.lisp end here

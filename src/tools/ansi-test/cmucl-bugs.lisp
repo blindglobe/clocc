@@ -687,6 +687,174 @@ these are not rationals, so we get a complex number back.
   "From Michael A. Koerber")
 
 
+(check-for-bug :cmucl-compilation-error-with-labels
+  (functionp 
+   (compile
+    nil
+    (lambda (final-indices &rest tensors+indices)
+      (labels
+          ((find-buggy-indices (rest-tensors+indices seen-so-far-hash)
+             ;; return a list of badly-behaved indices (occurring too many times)
+             ;; every index that does not appear exactly twice is badly behaved.
+             ;; (either must be sum index and appear twice in sum, or appear twice
+             ;; as free-left and free-right index.)
+             ;; XXX NOTE: we only check for well-formed-ness, not if
+             ;; index ranges are compatible.
+             (if (null rest-tensors+indices)
+                 (let ((bad-indices nil))
+                   (maphash 
+                    #'(lambda (k v)
+                        (if (i/= v 2)
+                            (ppush bad-indices k)))
+                    seen-so-far-hash)
+                   bad-indices)
+                 (progn
+                   (dolist (ix (cdar rest-tensors+indices))
+                     (if (not (and (consp ix)) (eql (car ix :fix)))
+                         (hv-inc seen-so-far-hash ix)))
+                   (find-buggy-indices (cdr rest-tensors+indices) seen-so-far-hash))))
+           ;;
+           (contract-fix-reduce-1-tensor (tensor indices final-indices) ; don't confuse final-indices with our outer defun parameter!
+             (mv-bind (li-rest-indices nr-rest-indices nr-contractions li-pairs)
+                      (_remove-contraction-indexpairs indices)
+                      (let* ((v-given-initial-indices (coerce indices '(simple-array * (*))))
+                             (nr-initial-indices (array-dimension v-given-initial-indices 0))
+                             (nr-fixations
+                              (reduce #'(lambda (x y)
+                                          (if (and (consp x) (eq (car x) :fix))
+                                              (i1+ y)
+                                              y))
+                                      v-given-initial-indices
+                                      :initial-value 0)))
+                        ;; four possible combinations of fixations and contractions.
+                        (cond
+                          ((and have-fixations (i/= 0 nr-contractions))
+                           ;; first fix, then contract.
+                           (let* ((nr-indices-after-fixations (i- nr-initial-indices nr-fixations))
+                                  (v-indices-after-fixations (make-array nr-indices-after-fixations))
+                                  (nonfixed-index-pos 0))
+                             (dotimes (j nr-initial-indices)
+                               (declare (fixnum j))
+                               (let ((idx-j (aref v-given-initial-indices j)))
+                                 (if (not (and (consp idx-j) (eq (car idx-j) :fix)))
+                                     (progn
+                                       (setf (aref v-indices-after-fixations nonfixed-index-pos) idx-j)
+                                       (incf nonfixed-index-pos)))))
+                             (let* ((fixated (sp-permute-fix-indices tensor (v-int-range nr-indices-after-fixations)))
+                                    (contraction-permutation 
+                                     (map '(simple-array * (*))
+                                          #'(lambda (idx)
+                                              (position idx final-indices :test #'equalp))
+                                          v-indices-after-fixations))
+                                    (contracted (apply #'_sp-contract-tensor
+                                                       `(,fixated ,contraction-permutation ,@li-pairs))))
+                               contracted)))
+                          ((i= 0 nr-contractions)
+                           ;; (possibly) fixations, but no contractions.
+                           (let ((indices-old-to-new 
+                                  (map '(simple-array * (*))
+                                       #'(lambda (idx)
+                                           (if (and (consp idx) (eq (car idx) :fix))
+                                               idx
+                                               (position idx final-indices :test #'equalp)))
+                                       v-given-initial-indices)))
+                             ;; check for special case of trivial permutation. In that case, do nothing at all.
+                             (labels
+                                 ((is-identity-permutation (v pos)
+                                    (declare (type (simple-array fixnum (*)) v) (fixnum pos))
+                                    (cond ((i< pos 0) t)
+                                          ((i= pos (aref v pos))
+                                           (is-identity-permutation v (i1- pos)))
+                                          (t nil))))
+                               (if (is-identity-permutation indices-old-to-new
+                                                            (array-dimension indices-old-to-new 0))
+                                   tensor
+                                   (sp-permute-fix-indices tensor indices-old-to-new)))))
+                          (t
+                           ;; remaining case: contractions, but no fixations.
+                           (let ((v-permutation 
+                                  (map '(simple-array fixnum (*))
+                                       #'(lambda (idx) (position idx final-indices :test #'equalp))
+                                       li-rest-indices)))
+                             (apply #'_sp-contract-tensor `(,tensor ,v-permutation ,@li-pairs))))))))
+           )
+        ;; ensure index structure is correct.
+        ;; (this little overhead should be worth the effort...)
+        (let ((buggy-indices (find-buggy-indices (cons (cons :dummy final-indices) tensors+indices))))
+          (if buggy-indices
+              (error (format nil "sp-x impossible index structure, offending indices: ~S" buggy-indices))))
+        (let ((nr-tensors (length tensors+indices)))
+          (cond
+            ;; The cases of zero and one tensors are special. Zero tensors are simple; one tensor is a bit ugly,
+            ;; since it may have fixations, permutations, and contractions.
+            ;;
+            ((i= 0 nr-tensors);; special case of zero-factor tensor product
+             (let ((result (make-sp-array nil :nonsparse t)))
+               (sp-set! result 1)
+               result))
+            ((i= 1 nr-tensors)
+             ;; oh dear. Only one tensor. Needs special treatment.
+             (contract-fix-reduce-1-tensor (caar tensors+indices) (cdar tensors+indices) final-indices))
+            (t
+             ;; okay, we have at least two tensors.
+             (let ((tensors+indices-selfcontracted-fixed
+                    (map '(simple-array cons (*))
+                         #'(lambda (t+i)
+                             (mv-bind (li-rest-indices nr-remaining-indices nr-contractions li-pairs)
+                                      (_remove-contraction-indexpairs (cdr t+i))
+                                      (let* ((selfcontracted-fixed-indices
+                                              (mapcan #'(lambda (idx) (if (and (consp idx) (eq (car idx) :fix))
+                                                                          nil
+                                                                          (cons idx nil)))
+                                                      li-rest-indices))
+                                             (t-selfcontracted-fixed
+                                              (contract-fix-reduce-1-tensor (car t+i)
+                                                                            (cdr t+i)
+                                                                            selfcontracted-fixed-indices)))
+                                        (cons t-selfcontracted-fixed selfcontracted-fixed-indices))))
+                         tensors+indices)))
+               (_sp-x-1 v-tensors+indices-selfcontracted-fixed final-indices)))))))))
+  T
+  "From :Thomas Fischbacher")
+
+
+(check-for-bug :cmucl-bugs-format-too-short
+  (format nil "~2f" 123456.123)
+  "123456."
+  "From Sam Steingold:
+I would have to agree with Sam that it would appear that the Spec was
+fairly clear that LWW is correct and the other implmentations are
+buggy.  The relevant passages from the Hyperspec are:
+
+  The full form is ~w,d,k,overflowchar,padcharF. The parameter w is the
+  width of the field to be printed; d is the number of digits to print
+  after the decimal point; k is a scale factor that defaults to zero.
+
+  ...
+
+  If it is impossible to print the value in the required format in a field
+  of width w, then one of two actions is taken. If the parameter
+  overflowchar is supplied, then w copies of that parameter are printed
+  instead of the scaled value of arg. If the overflowchar parameter is
+  omitted, then the scaled value is printed using more than w characters,
+  as many more as may be needed.
+
+It would appear that the appropriate to use additional space to get the
+number output.")
+
+
+(check-for-bug :cmucl-bugs-structure-with-named-part-1
+  (defstruct (foo-bar-cmucl-bugs-1 (:type list) :named))
+  foo-bar-cmucl-bugs-1)
+
+(check-for-bug :cmucl-bugs-structure-with-named-part-2
+  (foo-bar-cmucl-bugs-1-p nil)
+  nil
+  "From Fernando D. Mato Mira")
+
+
+  
+  
     
 
 

@@ -13,25 +13,25 @@ c-----------------------------------------------------------------------
       external f1, jac1, f2, jac2
       integer i, iopar, iopt, iout, istate, itask, itol, iwork,
      1   leniw, lenrw, liw, lout, lrw, mband, meth, mf, miter,
-     2   ml, mu, neq, nerr, nfe, nfea, nje, nout, nqu, nst
+     2   ml, mu, neq(1), nerr, nfe, nfea, nje, nout, nqu, nst
       double precision atol, dtout, er, erm, ero, hu, rtol, rwork, t,
      1   tout, tout1, y
-      dimension y(25), rwork(697), iwork(45)
+      dimension y(25), rwork(697), iwork(45), rtol(1), atol(1)
       data lout/6/, tout1/1.39283880203d0/, dtout/2.214773875d0/
 c
       nerr = 0
       itol = 1
-      rtol = 0.0d0
-      atol = 1.0d-6
+      rtol(1) = 0.0d0
+      atol(1) = 1.0d-6
       lrw = 697
       liw = 45
       iopt = 0
 c
 c First problem
 c
-      neq = 2
+      neq(1) = 2
       nout = 4
-      write (lout,110) neq,itol,rtol,atol
+      write (lout,110) neq(1),itol,rtol(1),atol(1)
  110  format(/' Demonstration program for DLSODE package'///
      1  ' Problem 1:  Van der Pol oscillator:'/
      2  '  xdotdot - 3*(1 - x**2)*xdot + x = 0, ',
@@ -62,7 +62,7 @@ c
         if (istate .lt. 0) go to 175
         iopar = iout - 2*(iout/2)
         if (iopar .ne. 0) go to 170
-        er = abs(y(1))/atol
+        er = abs(y(1))/atol(1)
         ero = max(ero,er)
         if (er .gt. 1000.0d0) then
           write (lout,150)
@@ -78,7 +78,7 @@ c
       lenrw = iwork(17)
       leniw = iwork(18)
       nfea = nfe
-      if (miter .eq. 2) nfea = nfe - neq*nje
+      if (miter .eq. 2) nfea = nfe - neq(1)*nje
       if (miter .eq. 3) nfea = nfe - nje
       write (lout,180) lenrw,leniw,nst,nfe,nfea,nje,ero
  180  format(//' Final statistics for this run:'/
@@ -93,14 +93,14 @@ c
 c
 c Second problem
 c
-      neq = 25
+      neq(1) = 25
       ml = 5
       mu = 0
       iwork(1) = ml
       iwork(2) = mu
       mband = ml + mu + 1
       nout = 5
-      write (lout,210) neq,ml,mu,itol,rtol,atol
+      write (lout,210) neq(1),ml,mu,itol,rtol(1),atol(1)
  210  format(///70('-')///
      1  ' Problem 2: ydot = A * y , where',
      2  '  A is a banded lower triangular matrix'/
@@ -115,7 +115,7 @@ c
  220  format(///' Solution with mf =',i3//
      1       5x,'t             max.err.     nq      h'//)
       t = 0.0d0
-      do 230 i = 2,neq
+      do 230 i = 2,neq(1)
  230    y(i) = 0.0d0
       y(1) = 1.0d0
       itask = 1
@@ -131,7 +131,7 @@ c
         write (lout,240) t,erm,nqu,hu
  240    format(d15.5,d14.3,i5,d14.3)
         if (istate .lt. 0) go to 275
-        er = erm/atol
+        er = erm/atol(1)
         ero = max(ero,er)
         if (er .gt. 1000.0d0) then
           write (lout,150)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.33 2005/03/17 13:07:11 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.34 2005/03/17 17:51:24 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -105,7 +105,8 @@
 			 &key force-load manip postpone-derivees)
    (let* ((pchunk (pathname-denotation-chunk pn))
 	  (lpchunk (place-Loaded-chunk pchunk manip)))
-      (loaded-chunk-fload lpchunk force-load postpone-derivees)))
+      (cond ((not (eq manip ':noload))
+	     (loaded-chunk-fload lpchunk force-load postpone-derivees)))))
 
 (defvar postponed-file-chunks* !())
 

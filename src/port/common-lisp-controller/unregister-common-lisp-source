@@ -31,8 +31,8 @@ EOF
     exit 0
 fi
 
-if [[ (! -e "$DEFSYSTEM3_FILE" -a ! -h "$DEFSYSTEM3_FILE") &&
-      (! -e "$ASDF_FILE" -a ! -h "$ASDF_FILE") && ]]; then
+if [ (! -e "$DEFSYSTEM3_FILE" -a ! -h "$DEFSYSTEM3_FILE") ] && \
+    [ (! -e "$ASDF_FILE" -a ! -h "$ASDF_FILE") ]; then
     cat <<EOF
 $0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE  exists. 
 One of these are needed to unregister the $1 package.

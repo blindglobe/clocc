@@ -1666,8 +1666,8 @@
 		  ((stringp (car dl))
 		   (list (car dl)))
 		  ((listp (car dl))
-		   ;; Repeat group once
-		   (append  '(1) (list (parse-format1 (car dl) nil))))
+		   ;; Repeat group forever, as signaled by the rep factor of T.
+		   (append  '(T) (list (parse-format1 (car dl) nil))))
 		  ((and (numberp (car dl))
 			(listp (cadr dl)))
 		   ;; Repetition of a group
@@ -2067,8 +2067,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.66 2000/08/29 15:55:04 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.67 2000/08/30 16:56:24 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.67  2000/08/30 16:56:24  rtoy
+;;; In PARSE-FORMAT1, if there's no repetition factor for a group, then
+;;; the group is supposed to be repeated forever until all the data has
+;;; been printed.  (I think)
+;;;
 ;;; Revision 1.66  2000/08/29 15:55:04  rtoy
 ;;; o In GET-ARG-DECL, return type INTEGER4 if the arg is a subtype of
 ;;;   INTEGER4. (So fixnum args are treated as INTEGER4 args for

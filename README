@@ -4,7 +4,7 @@ This is CLOCC, the Common Lisp Open Code Collection.
 It contains Lisp code for various applications which is
   * Common Lisp, i.e. runs in ANSI CL implementations,
   * Free Software, according to the Debian Free Software Guidelines
-    (e.g. licensed under GPL, LGPL or BSD licenses),
+    (e.g. licensed under GPL, LGPL, MIT or BSD licenses, or public domain),
   * Portable, i.e. should be portable among CL implementations with low
     effort, and does not require modifications to the CL implementation
     itself,

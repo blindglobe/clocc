@@ -42,8 +42,7 @@
 	  (long-site-name)
           (short-site-name)
 	  (user-homedir-pathname)
-	  ;; (ext:default-directory)
-	  (truename ".")		; Hopefully working everywhere.
+	  (current-working-directory)
           *default-pathname-defaults*
 	  *features*
 	  *modules*

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.4 2002/02/06 21:35:59 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.5 2002/03/24 22:19:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -74,15 +74,6 @@ This must be either a full path or a name of an executable in your PATH.")
   "Return the number of seconds from date DT to `+gnuplot-epoch+'."
   (declare (type date dt))
   (- (date2time dt) +gnuplot-epoch+))
-
-(defun plot-msg (&rest args)
-  "Write a status message to `*gnuplot-msg-stream*'."
-  (fresh-line *gnuplot-msg-stream*)
-  (write-string "[" *gnuplot-msg-stream*)
-  (current-time *gnuplot-msg-stream*)
-  (write-string "] " *gnuplot-msg-stream*)
-  (apply #'format *gnuplot-msg-stream* args)
-  (force-output *gnuplot-msg-stream*))
 
 (defmacro with-plot-stream ((str &rest options) &body body)
   "Execute body, with STR bound to the gnuplot stream.
@@ -294,8 +285,9 @@ according to the given backend")
   "The gist of `with-plot-stream' is here.
 Should not be called directly but only through `with-plot-stream'."
   (when (eq plot t)
-    (plot-msg "~s: plot directive ~s is deprecated; use ~s~%"
-              'internal-with-plot-stream t :plot)
+    (mesg :plot *gnuplot-msg-stream*
+          "~&~s: plot directive ~s is deprecated; use ~s~%"
+          'internal-with-plot-stream t :plot)
     (setq plot :plot))
   (let* ((plot-stream (make-plot-stream plot))
          (plot-spec (apply #'make-plot :data body-function :plot plot opts))
@@ -308,32 +300,36 @@ Should not be called directly but only through `with-plot-stream'."
       (fresh-line plot-stream)
       (force-output plot-stream)
       (when (streamp plot)
-        (plot-msg "wrote plot commands to ~s~%" plot))
+        (mesg :plot *gnuplot-msg-stream*
+              "~&wrote plot commands to ~s~%" plot))
       (ecase plot
         #+(or win32 mswindows)
         ((t :plot)
          (close plot-stream)
-         (plot-msg "Starting gnuplot...")
+         (mesg :plot *gnuplot-msg-stream* "~&Starting gnuplot...")
          (close-pipe (pipe-output *gnuplot-path* "/noend" plot-file))
-         (format *gnuplot-msg-stream* "done.~%"))
+         (mesg :plot *gnuplot-msg-stream* "done.~%"))
         #+unix
-        ((t :plot) (plot-msg "Done plotting.~%"))
+        ((t :plot) (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%"))
         #+(or win32 mswindows)
         (:wait
-         (plot-msg "Waiting for gnuplot to terminate...")
-         (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
-                 (run-prog *gnuplot-path* :args (list "/noend" plot-file))))
+         (mesg :plot *gnuplot-msg-stream*
+               "~&Waiting for gnuplot to terminate...")
+         (mesg :plot *gnuplot-msg-stream* "gnuplot returned ~a.~%"
+               (run-prog *gnuplot-path* :args (list "/noend" plot-file))))
         #+unix
         (:wait
          (fresh-line *terminal-io*)
          (princ "Press <enter> to continue..." *terminal-io*)
          (force-output *terminal-io*) (read-line *terminal-io* nil nil))
-        (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*)
+        (:print (mesg :plot *gnuplot-msg-stream*
+                      "~&Sent the plot to `~a'.~%" *gnuplot-printer*)
                 #+unix (format plot-stream "set output~%"))
         (:file
          (close plot-stream)
-         (plot-msg "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
-                   plot-file plot-file))))))
+         (mesg :plot *gnuplot-msg-stream*
+               "~&Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
+               plot-file plot-file))))))
 
 (defun plot-data-style (num-ls)
   "Decide upon the appropriate data style for the number of points."

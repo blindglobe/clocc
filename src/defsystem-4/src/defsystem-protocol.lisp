@@ -658,16 +658,6 @@ component."
 	 (class-name (class-of c))
 	 ss))
 
-#+skipped
-(defmethod add-sub-component :after ((shc standard-hierarchical-component)
-				     (sc stored-component))
-  (unless (component-source-extension sc)
-    (setf (component-source-extension sc) (component-source-extension shc)
-	  (source-extension-inherited-p sc) t))
-  (unless (component-binary-extension sc)
-    (setf (component-binary-extension sc) (component-binary-extension shc)
-	  (binary-extension-inherited-p sc) t)))
-
 
 ;;;---------------------------------------------------------------------------
 ;;; Pathname management.
@@ -991,67 +981,6 @@ component."
 	;; 'computed-source-extension'.
 	computed-source-extension)))
   
-#+wrong
-(defmethod (setf component-source-extension)
-    :after (v (c standard-hierarchical-component))
-
-  #+wrong
-  (unless v
-    ;; If V is NIL we need to inherit the value from the container.
-    (let ((container (component-part-of c)))
-      (when container
-	(setf (component-source-extension c)
-	      (component-source-extension container)
-	      (source-extension-inherited-p c)
-	      t))))
-
-  ;; Propagate the value.
-  (dolist (subc (component-components c))
-    (unless (component-source-extension subc)
-      (setf (component-source-extension subc) v
-	    (source-extension-inherited-p subc) t))))
-
-
-#+wrong
-(defmethod (setf component-binary-extension)
-    :after (v (c standard-hierarchical-component))
-
-  #+wrong
-  (unless v
-    ;; If V is NIL we need to inherit the value from the container.
-    (let ((container (component-part-of c)))
-      (when container
-	(setf (component-binary-extension c)
-	      (component-binary-extension container)
-	      (binary-extension-inherited-p c)
-	      t))))
-
-  ;; Propagate the value.
-  (dolist (subc (component-components c))
-    (unless (component-binary-extension subc)
-      (setf (component-binary-extension subc) v
-	    (binary-extension-inherited-p subc) t))))
-
-#+wrong
-(defmethod component-source-extension :before ((c stored-component))
-  (unless (component-source-extension c)
-    (let ((container (component-part-of c)))
-      (when container
-	(setf (component-source-extension c)
-	      (component-source-extension container)
-	      (source-extension-inherited-p c)
-	      t)))))
-
-#+wrong
-(defmethod component-binary-extension :before ((c stored-component))
-  (unless (component-binary-extension c)
-    (let ((container (component-part-of c)))
-      (when container
-	(setf (component-binary-extension c)
-	      (component-binary-extension container)
-	      (binary-extension-inherited-p c)
-	      t)))))
-
 
 ;;;---------------------------------------------------------------------------
 ;;; Action execution. (As per KMP's definition).

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.32 2004/06/15 14:36:31 sds Exp $
+;;; $Id: fileio.lisp,v 1.33 2004/06/17 13:41:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -185,11 +185,11 @@ defaults to `read' and is called with 3 arguments - STREAM, NIL and EOF.
 ;;;###autoload
 (defun pr (obj &optional (str *standard-output*) (nice t))
   "Print the OBJECT readably to the STREAM (default `*standard-output*').
-Set `*print-circle*' and `*print-pretty*' to the third argument
-NICE (default T).  Uses `with-standard-io-syntax'."
+Set `*print-pretty*' to the third argument NICE (default T).
+Uses `with-standard-io-syntax'."
   (declare (stream str))
   (with-standard-io-syntax
-    (write obj :stream str :case :downcase :circle nice :pretty nice))
+    (write obj :stream str :case :downcase :pretty nice))
   (values))
 
 ;;;###autoload

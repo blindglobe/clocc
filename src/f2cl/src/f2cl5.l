@@ -1713,7 +1713,7 @@
 	  (rotatef decl1 decl2))
 	(return `(declare (type (,(if (and vble-is-formal-arg *array-slicing*)
 				      'array
-				      'simple-array)
+				      *array-type*)
 				 ,(car decl2)
                                  ,(f2cl-array-total-size (cdadr decl1))
 				 )
@@ -2695,8 +2695,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.98 2002/03/19 17:28:07 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.99 2002/03/19 23:08:24 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.99  2002/03/19 23:08:24  rtoy
+;;; Oops.  The array type should default to whatever *array-type* is, not
+;;; simple-array!
+;;;
 ;;; Revision 1.98  2002/03/19 17:28:07  rtoy
 ;;; o Declare some vars as ignored when creating the entry point
 ;;;   functions.

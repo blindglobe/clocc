@@ -277,7 +277,7 @@ INPUT-FILE               File containing Fortran code
 			      (keep-lisp-file t)
 			      (array-type :array)
 			      (array-slicing t)
-			      package
+			      (package :common-lisp-user)
 			      declaim
 			      declare-common
 			      (float-format *read-default-float-format*)
@@ -308,6 +308,7 @@ FILENAME                 File containing Fortran code
                          subarray to the routine instead of just the single value.
 :PACKAGE                 A string or symbol specifying what package the result code
                          should be in. (Basically puts a (in-package <p>) at the top.)
+                         Default:  :common-lisp-user.
 :DECLAIM                 Declaim compilation options  (Basically puts a
                          (declaim <declaim>) at the top.)
 :DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
@@ -1475,17 +1476,18 @@ FILENAME                 File containing Fortran code
 ;; returns the value of the function in addition to the parameters.
 
 (defun generate-call-to-routine (routine arglist &optional return)
-  (let ((finfo (gethash (first routine) *f2cl-function-info*)))
+  (let* ((routine-name (check-reserved-lisp-names (first routine)))
+	 (finfo (gethash routine-name *f2cl-function-info*)))
     (if (and finfo (f2cl-finfo-return-values finfo))
 	(let ((this (gethash *subprog_name* *f2cl-function-info*)))
 	  (unless this
 	    (setf (gethash *subprog_name* *f2cl-function-info*)
 		  (make-f2cl-finfo)))
 	  ;; Add this function to the list of called functions
-	  (pushnew (first routine)
+	  (pushnew routine-name
 		   (f2cl-finfo-calls (gethash *subprog_name*
 					      *f2cl-function-info*))))
-	(warn "Generating call to unknown function ~A.  Check generated call!" routine))
+	(warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
     
     (setf finfo (if (and *use-function-info* finfo)
 		    (f2cl-finfo-return-values finfo)
@@ -1574,11 +1576,11 @@ FILENAME                 File containing Fortran code
 	;;(format t "setters = ~A~%" setters)
 	(if setters
 	    `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-		  (,@routine ,@arglist)
+		  (,routine-name ,@arglist)
 		(declare (ignore ,@ignored-vars))
 		,@setters
 		,@(if return (list 'ret-val))))
-	    `((,@routine ,@arglist)))))))
+	    `((,routine-name ,@arglist)))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -1637,11 +1639,13 @@ FILENAME                 File containing Fortran code
 
 ;------------------------------------------------------------------------------
 (defun parse-do-loop (x)
-  (let* ((limits (list-split '|,| (cddddr x))) (step (third limits)))
-    `((fdo (,(third x)
+  (let* ((limits (list-split '|,| (cddddr x)))
+	 (step (third limits))
+	 (loop-var (check-reserved-lisp-names (third x))))
+    `((fdo (,loop-var
 	    ,(id-expression (first limits))
-	    (+ ,(third x) ,(if (null step) 1 (id-expression step))))
-       ((> ,(third x) ,(id-expression (second limits))) nil)
+	    (+ ,loop-var ,(if (null step) 1 (id-expression step))))
+       ((> ,loop-var ,(id-expression (second limits))) nil)
        ,(read-from-string 
 	 (concatenate 'string (symbol-name :fdo_body_label)
 		      (princ-to-string (second x))) nil)
@@ -1743,7 +1747,7 @@ FILENAME                 File containing Fortran code
     ;; the common block.
     (do ((list x (cddr list)))
 	((endp list))
-      (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
+      (let ((varlist (second list))
 	    (block-name (or (caar list) '%blank%)))
 	;; Check to see if this is another instance.  If so, Fortran
 	;; says these elements are a member of the common block.
@@ -1755,7 +1759,8 @@ FILENAME                 File containing Fortran code
 	  ;;(format t "  vars = ~S~%" varlist)
 	  ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
 	  (setf (gethash block-name *common-blocks*)
-		(append val (remove-if-not #'symbolp varlist))))))
+		(append val (mapcar #'check-reserved-lisp-names
+				    (remove-if-not #'symbolp varlist)))))))
 
    
     ;; pick out lists of vblenames and add to *subprog_common_vars*
@@ -2380,8 +2385,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.121 2003/01/08 18:41:46 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.122 2003/07/12 04:24:38 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.122  2003/07/12 04:24:38  rtoy
+;;; o Add new keyword parameter to specify the package to be used for
+;;;   compiling the code.  Defaults to COMMON-LISP-USER
+;;; o When generating a call to a routine, we need to check for reserved
+;;;   Lisp names and mangle it appropriately.  Use the new name as needed.
+;;; o When parsing a do loop, we need to check reserved lisp names
+;;;   for the loop variable.  (Because other places will have mangled the
+;;;   name).
+;;;
 ;;; Revision 1.121  2003/01/08 18:41:46  rtoy
 ;;; Reference symbols in the common-lisp package with "common-lisp:",
 ;;; instead of "lisp:".

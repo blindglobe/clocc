@@ -1,0 +1,489 @@
+%% -*- Mode: LaTeX -*-
+
+% defsystem.tex --
+
+% \title{DEFSYSTEM: A \texttt{make} facility for Common Lisp}
+
+
+\documentclass[a4paper]{article}
+
+\usepackage{latexsym}
+%\usepackage{epsfig}
+\usepackage{alltt}
+
+%\input{progr-macros}
+
+%\addtolength{\textwidth}{.75in}
+%\addtolength{\textheight}{.75in}
+
+\newcommand{\CL}{\textsc{Common Lisp}}
+\newcommand{\CLOS}{\textsc{CLOS}}
+\newcommand{\Java}{\textsc{Java}}
+
+\newcommand{\DEFSYSTEM}{\texttt{DEFSYSTEM}}
+
+\newcommand{\checkcite}[1]{{\textbf{[Missing Citation: #1]}}}
+\newcommand{\checkref}[1]{{\textbf{[Missing Reference: #1]}}}
+
+\newcommand{\missingpart}[1]{{\ }\vspace{2mm}\\
+{\textbf{[Still Missing: #1]}}\\
+\vspace{2mm}}
+
+\newcommand{\marginnote}[1]{%
+\marginpar{\begin{small}\begin{em}
+\raggedright #1
+\end{em}\end{small}}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\object}[1]{\texttt{\textit{#1}}} % 'object' of discourse.
+\newcommand{\clobject}[1]{\texttt{\textit{#1}}} % A CL 'object'.
+\newcommand{\syntaxnt}[1]{\emph{<#1>}}
+
+\newcommand{\tm}{$^\mathsf{tm}$}
+
+
+\title{
+\texttt{DEFSYSTEM}: A \texttt{make} for Common Lisp\\
+{\normalsize A Thoughtful Re-Implementation of an Old Idea.}\\
+(Draft 1)
+}
+
+\author{Marco Antoniotti and Peter Van Eynde}
+
+%\date{}
+
+
+%\includeonly{}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+The utilities of the \texttt{make} class \missingpart{more
+intro\ldots}.
+
+
+\section{Structural Form}
+
+\missingpart{quick explanation of ``structural vs. procedural''.}
+
+\section{Component Hierarchy}
+
+<The system, written in \emph{portable} \CLOS{}, will rely on the
+class hierarchy depicted in Figure~\ref{fig:class-hier}
+
+\begin{figure}
+\rule{\textwidth}{2pt}
+\begin{alltt}
+system-component
+        system
+                system-library
+                different-system
+                        acl-defsystem
+                        harlequin-defsystem
+                        mcl-defsystem
+                        pcl-defsystem
+                        symbolics-defsystem
+        module
+                module-library
+        file
+                C/C++/Objc-source
+                        H-source
+                        C-source
+                        C++-source
+                        Objc-source
+                OS-object-file
+                        a.out-file
+                        elf-file
+                        coff-file
+                        exe-file
+                        obj-file
+                Common-Lisp-source
+                        Common-Lisp-PCL-dependent-source
+                Scheme-source
+                Java-source
+                Java-class-file
+         tag
+\end{alltt}
+\rule{\textwidth}{2pt}
+\caption{The \texttt{DEFSYSTEM} base hierarchy.}
+\label{fig:class-hier}
+\end{figure}
+
+The key elements in the hierarchy and in the structure of a system
+definition are the top level \object{system}, \object{module}, \object{file}.
+\begin{description}
+\item[{\object{system}:}]
+        this component is a \emph{logical} grouping of
+        related and \emph{self-contained} pieces of code, which -- once made
+        ready for execution -- realize a given application.
+
+\item[{\object{module}:}]
+        this component is meaningful only within a \object{system} and
+        it is meant to denote a \emph{logical} subdivision of a system
+        into sub-parts which are \emph{not} self-contained.
+
+\item[{\object{file}:}]
+        this component represents a traditional file on a given
+        operating system.
+
+        The various flavors of the \object{file} represent different
+        file types (mostly sources and derivations from them through
+        compilation).
+
+\item[{\object{tag}:}]
+        this component is a special \emph{place holder} which can be
+        used to attach special code to be executed in a given
+        dependency graph.
+\end{description}
+
+The object \object{system} has some flavors which serve to capture
+some pragmatic cases which can present themselves in the course of
+development of a complex system.
+
+\begin{description}
+\item[{\object{system-library}:}] This is just a system which will
+        offer provisions to produce a \emph{library} -- where the
+        meaning of \emph{library} is quite open-ended: an
+        approximation would be a \code{.so} or a \code{.dll}, but also
+        a specially compiled \CL{} file or a \Java{} \code{.jar} or
+        \code{.zip} file.
+
+\item[{\object{different-defsystem}:}] This case is rather common in
+        \CL{} and it serves as a place holder for the various version of
+        \code{DEFSYSTEM} which float around different implementations.
+\end{description}
+
+The object \object{module} has a \object{module-library} flavor which
+has the same role has the \object{system-library} object, but with all
+the \emph{logical} limitations that a module has with respect to a
+\object{system}.
+
+\subsection{``Part-of'' admissible relations}
+
+A \object{system} is (most of the times) a collection of files,
+directories and other items, logically organized according to a \emph{part-of}
+relationship.
+
+Each system component may contain a set of sub-components with the
+following limitations:
+\begin{itemize}
+\item	a \object{file} cannot contain any sub-component\marginnote{Or
+	maybe it should be allowed to?} and it cannot stand alone,
+	i.e. it must be contained in a \object{module} or a \object{system}.
+\item	a \object{module} cannot stand alone, i.e. it must be
+	contained into a \object{system} or another \object{module}.
+\item	a \object{system} can be contained as a sub-component in
+	either another \object{system} or \object{module}.
+\item	a \object{tag} does not contain any sub component and must be
+	contained in a \object{system} or a \object{module}.
+\end{itemize}
+
+\subsection{File System and Package Names Mapping Conventions}
+
+A \object{system} defines a logical collection of items (i.e. files)
+which resides on a file system provided by the underlying operating
+system. Therefore a system must have an associated \emph{file system
+location} in some directory. Also, it is desirable to have a \CL{}
+\emph{package} associated with each \object{system}.
+
+These characteristics are similar to those found in the \Java{}
+language system\footnote{Of course, the possibility -- or at least a
+convention -- to define \emph{hierarchical} packages in \CL{} would be
+helpful.}.
+
+Therefore the \DEFSYSTEM{} facility will rely on a centralized place
+holder of ``locations'' where to start looking for the
+\object{system}s present in the machine or network. In previous
+\DEFSYSTEM{}s, this feature was provided through the use of a variable
+(e.g. \code{*central-registry*}); in \Java{} this would be somewhat
+equivalent to the \code{CLASSPATH} machinery.
+
+This version of \DEFSYSTEM{} constructs names of \CL{} packages and
+sub-directories starting from the name of the \object{system} and/or
+\object{module}, unless explicitly overridden (we will see how).
+
+Each \object{file} object will also be charged to produce auxiliary
+file names to support various operations. E.g. a C file named
+\code{foo.c} will be in charge to produce either a name for its
+compiled version: \code{foo.o} or \code{foo.obj} in dependence of the
+underlying C compiler and operating system conventions.
+
+\subsection{Version Control}
+
+
+It is desirable to provide \DEFSYSTEM{} with the capabilities typical
+of a \emph{revision control system}. Therefore \DEFSYSTEM{} will
+provide a set of commands to support these capabilities.
+
+However, it it also desirable to use revision control systems which
+are already available, especially on UN*X systems.  In particular, the
+file-based \texttt{RCS} and \texttt{xdelta}, and the \emph{project}-based
+\texttt{CVS} and \texttt{PRCS}. How this connection will be realized
+is still to be decided.
+
+
+\section{Syntax and Features}
+
+The main syntactic support for the \DEFSYSTEM{} is given by the
+\code{defsystem} macro, which constructs a ``top-level''
+\object{system}. Its syntax is defined as:
+
+\begin{alltt}
+  (defsystem \syntaxnt{name} &rest \syntaxnt{options})
+\end{alltt}
+where
+\begin{description}
+\item[{\code{\syntaxnt{name}}}] can be either a \CL{} \clobject{symbol} or
+	a \clobject{string}.
+\item[{\code{\syntaxnt{options}}}] can either be one of the following.\\
+	\begin{tabular}{p{.27\textwidth}p{.60\textwidth}}
+	\code{:class}
+		& the \CLOS{} class that specifies this
+		  \object{system} specialized class.
+		  The default is \code{system}.\\[1mm]
+
+	\code{:source-pathname}
+		& the pathname of the directory that actually contains
+		  the \object{system}. If not present it defaults to
+		  the ``current'' directory.
+		  This can obviously be a \clobject{logical
+		  pathname}.\\[1mm]
+
+	\code{:source-extension}
+		& the file name \emph{extension} to be used for the
+		code sources.\\[1mm]
+
+
+	\code{:compiled-pathname}, \code{:binary-pathname}
+		& the pathname of the directory that actually contains
+		the ``compiled'' components of the \object{system}.\\[1mm]
+
+	\code{:compiled-extension}, \code{:binary-extension}
+		& the file name \emph{extension} to be used for the
+		``compiled'' components of the \object{system}.\\[1mm]
+
+
+	\code{:package}
+		& the name of the package this \object{system} should
+		be loaded in.\\[1mm]
+
+	\code{:components}
+		& a \clobject{list} of \code{\syntaxnt{sub-component
+		  specifications}} (described later).\\[1mm]
+
+	\code{:depends-on}
+		& either a \object{system designator} (i.e. either a
+		\CL{} \clobject{string} or \clobject{symbol}) or a
+		\clobject{list} of \object{system designator}s (this
+		is a restricted form of the general one available to
+		other classes of \object{sub-component}s).\\[1mm]
+
+	\code{:before}
+		& a \clobject{list} of \code{\syntaxnt{before methods
+		  specifications}} (described later).\\[1mm]
+
+	\code{:after}
+		& a \clobject{list} of \code{\syntaxnt{after methods
+		specifications}} (described later).\\[1mm]
+
+	\code{:around}
+		& a \clobject{list} of \code{\syntaxnt{around methods
+		specifications}} (described later).\\[1mm]
+
+	\code{:override}
+		& a \clobject{list} of \code{\syntaxnt{`main' methods
+		specifications}} (described later).\\[1mm]
+
+	\end{tabular}
+\end{description}
+
+\noindent
+In turn, each \code{\syntaxnt{sub-component specification}} is defined as
+follows, with one exception.
+\begin{alltt}
+  (\syntaxnt{sub-component main class} \syntaxnt{name} &rest \syntaxnt{options})
+\end{alltt}
+A \CL{} \clobject{string} can stand as a \code{\syntaxnt{sub-component
+specification}}.  In this case it is interpreted to be of class
+\code{file} with proper defaults filled in\footnote{Where ``proper''
+means ``conventionally agreed upon by he developers and by the users
+who submitted relevant feedback.}.
+
+\noindent
+As for the top level \code{defsystem} we have that
+\begin{description}
+\item[{\code{\syntaxnt{sub-component main class}}}] is one of
+	\begin{description}
+	\item[\code{:system}] a system
+	\item[\code{:module}] a module
+	\item[\code{:file}] a file
+	\item[\code{:tag}] a tag
+	\end{description}
+
+\item[\code{\syntaxnt{name}}] can be either a \CL{} \clobject{symbol} or
+	a \clobject{string}.
+
+\item[\code{\syntaxnt{options}}] are similar to the case for the
+	top-level \code{defsystem}, with the exceptions described
+	hereafter.
+	\missingpart{exception descriptions: e.g. conventions on
+	pathname expansions using supplied parameters and component
+	name.}
+\end{description}
+
+\section{Implementation Outline}
+
+The implementation of \DEFSYSTEM{} is briefly described in this
+section. We start with the basic requirements and continue with the
+description of various aspects of the implementation.
+
+\subsection{Registries and Paths}
+
+In order to provide a flexible (though maybe subtle and complex) way
+to manipulate \DEFSYSTEM{}s specifications we must distinguish between
+two kinds of \emph{locations} where to look in in order to find
+various things.
+
+First of all, we need to list the \emph{locations} where we can find
+\DEFSYSTEM{}s specifications (conventionally files of type/extension
+\code{.system} containing a \code{defsystem} specification -- plus
+auxiliary code).
+
+Secondly, we need a list of \emph{locations} where to look for the actual
+\DEFSYSTEM{}s components.
+
+We also want to allow these \emph{lists} of locations to partially
+overlap.
+
+This distinction is needed because in \CL{} we want to leave maximum
+freedom to the programmer (even to hang her/himself) and because in \CL{}
+there are no actual provisions about where things should actually be
+located.
+
+Once a \code{defsystem} form has been evaluated (maybe by loading a
+\code{.system} file), we can store its definition and its
+\emph{internal state} in a centralized
+\object{registry} (or \emph{repository}, the actual name is
+unimportant), indexed by the \object{system}'s \emph{normalized name}.
+\marginnote{Define ``normalized name''.}.
+
+\noindent
+Therefore we define three variables
+\begin{description}
+\item[\code{*defsystems-locations*}] a \emph{set} of
+	\clobject{pathname}s and/or \clobject{logical pathnames}
+	denoting a set of \emph{directories} where to look to find
+	\code{defsystem}s specifications.
+
+\item[\code{*systems-paths*}]  a \emph{set} of
+	\clobject{pathname}s and/or \clobject{logical pathnames}
+	denoting a set of \emph{directories} where to look to find
+	\code{defsystem}s actual components.
+
+\item[\code{*system-specifications-registry*}] a data structure
+	indexed by \object{system} \object{designator}s which contains the
+	known (i.e. ``loaded'') \object{system} specifications.
+\end{description}
+The first two variables are \emph{visible} and settable by the
+user. The third is really internal in the implementation.
+
+\missingpart{Interface to underlying tools}
+
+\missingpart{Topological sort}
+
+\missingpart{Design Choices: when to build the top-sort, compatibility
+issues etc.}
+
+\section{Usage, Interface and Extendibility}
+
+\subsection{Usage}
+
+Example
+
+\begin{alltt}
+
+(use-package "MAKE")
+
+(defsystem socket-interface
+   :source-pathname "code:cl-sockets" \emph{; A logical pathname.}
+   :components
+   ((:module c-library
+       :target-pathname "libCLCSocket"
+       :binary-extension ".so" \emph{; :binary-extension and :target-extension
+                               ; are synonyms.}
+       :class module-library
+       :language (member "C" "C++" "ObjC")
+       :components
+       ("socket.h" "interface.h""
+        ("socket.c" :depends-on "socket.h")
+        \emph{;; Strings and conses with a string as first element are
+        ;; implicitelytaken to be files.}
+        (:file "transport.c" :depends-on "socket.h")
+        (:file "client"
+           :source-extension "c"
+           :depends-on ("socket.h "interface.h")
+           :language "C") \emph{; This is actually derived from the extension.}
+        (:file "connection.c" :depends-on ("socket.h "interface.h"))
+      ))
+    (:module cl-library
+       :source-pathname "cl-library" \emph{; As is, it is relative
+                                     ; to "code:cl-sockets".}
+       :components
+       ((:file "socket-macros")
+        (:file "internals" :depends-on "socket-macros"))
+       :depends-on c-library)))
+
+\end{alltt}
+
+\subsection{Interface}
+
+\subsection{Extendibility}
+
+Extensibility in \DEFSYSTEM{} is achieved mainly through
+\code{:before}, \code{:after} and \code{:around} methods on the
+specified \emph{component protocol}\marginnote{This \emph{component
+protocol} should be defined before, especially w.r.t. the component
+types and hierarchy.}. Each component definition may contain a set of
+``method specifications''. An example may be the following:
+
+\begin{alltt}
+(:module xxx
+   :components
+   ((:file "defsystem.lisp"
+           :before ((load (dfl-file)
+                       (format t ";;; Loading ~A as a system.~"
+                               dfl-file))
+                    (compile (dfl-file)
+                       (do-something-before-compiling dfl-file)))
+   )))
+\end{alltt}
+
+\noindent
+Of course there are provisions for specifying these methods
+``separatedly'', by means of a standard \code{defmethod} definition.
+
+\begin{alltt}
+(defmethod load-component :before
+       ((dfl-file (eql (find-component 'sys
+                                       'xxx
+                                       "defsystem.lisp"))))
+   (format t ";;; Loading ~A as a system.~" dfl-file))
+\end{alltt}
+
+\subsubsection{Extensibility Tools}
+
+\emph{List here all the generic functions hooks and the ``support
+functions'' like \code{find-component}}.
+
+\section{\DEFSYSTEM{} Dictionary}
+
+\section{Conclusions}
+
+\section{Distribution Agreement}
+
+\end{document}
+
+% end of file -- defsystem.tex --

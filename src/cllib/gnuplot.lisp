@@ -1,14 +1,17 @@
-;;; File: <gnuplot.lisp - 1997-08-28 Thursday 15:20:02 EDT - sds@WINTERMUTE.eagle>
+;;; File: <gnuplot.lisp - 1997-10-01 Wed 16:19:19 EDT - sds@WINTERMUTE.eagle>
+;;;
 ;;; Gnuplot
-;;; $Id: gnuplot.lisp,v 1.2 1997/10/01 15:34:55 sds Exp $
+;;;
+;;; $Id: gnuplot.lisp,v 1.3 1997/10/01 20:48:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.3  1997/10/01 20:48:12  sds
+;;; Added plot-dated-lists.
+;;;
 ;;; Revision 1.2  1997/10/01 15:34:55  sds
 ;;; Cosmetic fixes.
 ;;;
 ;;;
-
-(proclaim '(optimize (speed 3) (space 0) (safety 3) (debug 3)))
 
 ;(run-shell-command)
 ;(shell)
@@ -20,6 +23,31 @@
 (defvar *gnuplot-path* "c:\\bin\\wgnuplot\\wgnuplot.exe"
   "*The path to the gnuplot executable")
 (defvar *gnuplot-stream* nil "The current gnuplot output stream.")
+(defvar *gnuplot-file* (merge-pathnames "plot.tmp" *fin-dir*)
+  "*The tmp file for gnuplot.")
+
+(defvar *gnuplot-init*
+  "set xdata time
+set xlabel 'time'
+set ylabel 'value, $'
+set data style lines
+set timefmt '%Y-%m-%d'
+" "*The initial string to be sent to gnuplot.")
+
+(defun plot-dated-lists (begd endd title &rest dls)
+  "Plot the dated lists from BEGD to ENDD."
+  (declare (type date begd endd))
+  (unless dls (error "nothing to plot for `~a'~%" title))
+  (with-open-file (str *gnuplot-file* :direction :output :if-exists :supersede)
+    (princ *gnuplot-init* str)
+    (format str "set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
+	    title (mapcar #'dated-list-name dls))
+    (dolist (dl dls)
+      (do ((td (shift-dl (copy-dated-list dl) begd) (shift-dl td)))
+	  ((date-more-p (dl-beg-date td) endd) (format str "e~%"))
+	(format str "~a ~f~%" (dl-beg-date td) (dl-beg-misc td)))))
+  (format t "File `~a' for gnuplot is prepared.
+Type \"load '~a'\" at the gnuplot prompt.~%" *gnuplot-file* *gnuplot-file*))
 
 (defun plot-contract (ctr title &optional (use-old t))
   "Plot contract history using gnuplot.

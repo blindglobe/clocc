@@ -1,17 +1,16 @@
 <!doctype html public "-//W3C//DTD HTML 3.2//EN">
 <!--
- $Id: port.html,v 1.4 2000/03/28 14:39:10 sds Exp $
+ $Id: port.html,v 1.5 2000/04/21 16:37:23 sds Exp $
  $Source: /cvsroot/clocc/clocc/src/port/port.html,v $
  -->
 <html>
 
 <head>
-<!-- <base href="http://www.goems.com/~sds/"> -->
 <meta http-equiv="Content-Type" content="text/html">
 <meta http-equiv="description" content="README for port">
 <meta http-equiv="keywords"
  content="free software, open-source software, Common Lisp, http, ftp">
-<link rev=made href="mailto:sds@gnu.org">
+<link rev="made" href="mailto:sds@gnu.org">
 <title>README</title>
 </head>
 
@@ -20,23 +19,25 @@
 <h1>README for <a href="port.zip">PORT</a></h1>
 
 <p>This package provides a platform-independent interface to various
-features absent from ANSI Common Lisp, such as sockets, shell, Gray
-streams etc.  The implementation-specific things, like loads of
-<code>#+/#-</code>, are hidden from the user.
+features absent from the <a
+href="http://www.x3.org/tc_home/j13sd4.htm">ANSI Common Lisp
+standard</a>, such as sockets, shell, Gray streams etc.  The
+implementation-specific things, like loads of <code>#+/#-</code>, are
+hidden from the user.</p>
 
 <p>You can download this file using the link above, as well as via FTP from
  <a href="ftp://cellar.goems.com/pub/clisp/port.zip">cellar.goems.com</a>,
- and the following HTTP mirrors:
+ and the following HTTP mirrors:</p>
  <ul>
-  <li><a href="http://www.podval.org/~sds/data/port.zip">podval.org</a>
-  <li><a href="http://www.goems.com/~sds/data/port.zip">goems.com</a>
-  <li><a href="http://www.nether.net/~sds/data/port.zip">nether.net</a>
-  <li><a href="http://www.110.net/~p586/data/port.zip">110.net</a>
+  <li><a href="http://www.podval.org/~sds/data/port.zip">podval.org</a></li>
+  <li><a href="http://www.goems.com/~sds/data/port.zip">goems.com</a></li>
+  <li><a href="http://www.nether.net/~sds/data/port.zip">nether.net</a></li>
+  <li><a href="http://www.110.net/~p586/data/port.zip">110.net</a></li>
  </ul>
 
 <p>To use this package, you will need an <a
  href="http://www.lisp.org/HyperSpec/FrontMatter/">ANSI</a> <a
- href="http://www.lisp.org/table/systems.html">Common Lisp</a>.
+ href="http://www.lisp.org/table/systems.html">Common Lisp</a>.</p>
 
 <h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
 
@@ -44,57 +45,55 @@ streams etc.  The implementation-specific things, like loads of
 <code>src/port</code>), and, as such, is accessible via anonymous CVS
 and FTP, as explain on the <code>CLOCC</code> homepage.
 <code>PORT</code> uses <code>mk:defsystem</code>, which is a part of
-<code>CLOCC</code>.
+<code>CLOCC</code>.</p>
 
 
 <h2>Files</h2>
 
 <p>This Common Lisp sources include the following files (in the
-alphabetical order):
+alphabetical order):</p>
 
-<p><table border=2 cellpadding=2>
+<p><table border="2" cellpadding="2">
 <tr><th>file</th><th>description</th></tr>
-<tr><th align=left><code>ext.lisp</code></th>
-    <td align=left>miscellaneous minor extensions, used everywhere</td></tr>
-<tr><th align=left><code>gray.lisp</code></th>
-    <td align=left>David N. Gray's <a href="ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail">STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</a> unification</td></tr>
-<tr><th align=left><code>net.lisp</code></th>
-    <td align=left>sockets, socket servers, hostname resulution etc</td></tr>
-<tr><th align=left><code>proc.lisp</code></th>
-    <td align=left>LispM-style portable multiprocessing</td></tr>
-<tr><th align=left><code>shell.lisp</code></th>
-    <td align=left>shell access, pipes</td></tr>
-<tr><th align=left><code>sys.lisp</code></th>
-    <td align=left>getenv, arglist, class-slot-list, chdir, etc</td></tr>
+<tr><th align="left"><code>ext.lisp</code></th>
+    <td align="left">miscellaneous minor extensions, used everywhere</td></tr>
+<tr><th align="left"><code>gray.lisp</code></th>
+    <td align="left">David N. Gray's <a href="ftp://parcftp.xerox.com/pub/cl/cleanup/mail/stream-definition-by-user.mail">STREAM-DEFINITION-BY-USER:GENERIC-FUNCTIONS</a> unification</td></tr>
+<tr><th align="left"><code>net.lisp</code></th>
+    <td align="left">sockets, socket servers, host name resolution
+        etc</td></tr>
+<tr><th align="left"><code>proc.lisp</code></th>
+    <td align="left">LispM-style portable multiprocessing</td></tr>
+<tr><th align="left"><code>shell.lisp</code></th>
+    <td align="left">shell access, pipes</td></tr>
+<tr><th align="left"><code>sys.lisp</code></th>
+    <td align="left"><code>getenv</code>, <code>arglist</code>,
+        <code>class-slot-list</code>, <code>chdir</code>, etc</td></tr>
 </table>
 
 <h2>License</h2>
 
-<p>This is distributed under the <a
-href="http://www.gnu.org/copyleft/lgpl.html">GNU LGPL</a>.
-
+<p>This package is distributed under the <a
+href="http://www.gnu.org/copyleft/lgpl.html">GNU LGPL</a>.</p>
 
 <h2>Compiling</h2>
 
 <p>To use the library, type <code>"make system"</code>, which should
 compile all the files.  Alternatively, you can issue the
 <code>(mk:compile-system "port")</code> command yourself.
-Then you can dump your images.
+Then you can dump your images.</p>
 
 <h2>Comments</h2>
 
 <p><a href="mailto:clocc-devel@lists.sourceforge.net">Comments</a>
 and <a
 href="https://sourceforge.net/bugs/?func=addbug&group_id=1802">bug
-reports</a> are welcome.
+reports</a> are welcome.</p>
 
 <br><br><br><hr>
 
-<p><table width="100%"><tr><td align="left"><a href="mailto:sds@gnu.org"><img
- align="left" src="data/mbox.gif" width=29 height=34 border=0
- alt="mailbox"></a><a href="sds.html">Sam Steingold</a><br>
-<address><a href="mailto:sds@gnu.org">sds@gnu.org</a></address>
-<td align="right">created: <strong>2000-03-01</strong></table>
+<p><a href="http://www.podval.org/~sds">Sam Steingold</a>
+<address><a href="mailto:sds@gnu.org">sds@gnu.org</a></address></p>
 
 </body>
 </html>

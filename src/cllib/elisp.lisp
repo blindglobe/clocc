@@ -1,10 +1,10 @@
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
-;;; Copyright (C) 1999-2000 by Sam Steingold
+;;; Copyright (C) 1999-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.12 2004/12/23 15:06:49 sds Exp $
+;;; $Id: elisp.lisp,v 2.13 2004/12/24 19:35:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -180,7 +180,7 @@
 (defsubst el::% (x y) (rem x y))
 (defsubst el::file-directory-p (ff) (probe-directory ff))
 (defsubst el::sref (ar ix) (aref ar ix))
-(defsubst el::set-default (sy va) (set sy va))
+(defsubst el::set-default (sy va) (setf (symbol-value sy) va))
 (defsubst el::default-value (sy) (symbol-value sy))
 
 (defun el::run-hooks (&rest hooks)

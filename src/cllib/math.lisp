@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.52 2004/07/16 18:52:05 sds Exp $
+;;; $Id: math.lisp,v 2.53 2004/07/29 17:33:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -41,7 +41,7 @@
    mdl-normalize mdl-denormalize mdl-normalize-function
    normalizer-table normalize-function-list
    kurtosis-skewness kurtosis-skewness-weighted
-   covariation covariation1 cov volatility
+   covariance covariance1 cov volatility
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
    rel-diff approx=-abs approx=-rel approx=
@@ -1066,9 +1066,9 @@ The values are counted and the result is used as a probability distribution.
          seq wts)
     (values (/ kurt (1- tot)) (/ skew (1- tot)) std mean tot)))
 
-(defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
-  "Compute the covariation between the data in the two sequences.
-Return 6 values: covariation, mean0, mean1, dispersion0,
+(defun covariance (seq0 seq1 &key (key0 #'value) (key1 #'value))
+  "Compute the covariance between the data in the two sequences.
+Return 6 values: covariance, mean0, mean1, dispersion0,
 dispersion1, number of elements considered.
 Uses the fast but numerically unstable algorithm
 without pre-computing the means."
@@ -1082,7 +1082,7 @@ without pre-computing the means."
                  (incf nn) (incf xb xx) (incf yb yy) (incf y2b (expt yy 2))
                  (incf xyb (* xx yy)) (incf x2b (expt xx 2))))
          seq0 seq1)
-    (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
+    (assert (> nn 1) (nn) "Too few (~d) points are given to covariance!" nn)
     (setq c0 (/ (dfloat nn)) c1 (/ (dfloat (1- nn))))
     (values (with-type double-float (* (- xyb (* xb yb c0)) c1))
             (with-type double-float (* xb c0))
@@ -1091,9 +1091,9 @@ without pre-computing the means."
             (with-type double-float (* (- y2b (* yb yb c0)) c1))
             nn)))
 
-(defun covariation1 (seq0 seq1 &key (key0 #'value) (key1 #'value))
-  "Compute the covariation between the data in the two sequences.
-Return 6 values: covariation, mean0, mean1, dispersion0,
+(defun covariance1 (seq0 seq1 &key (key0 #'value) (key1 #'value))
+  "Compute the covariance between the data in the two sequences.
+Return 6 values: covariance, mean0, mean1, dispersion0,
 dispersion1, number of elements considered.
 Uses the numerically stable algorithm with pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
@@ -1108,13 +1108,13 @@ Uses the numerically stable algorithm with pre-computing the means."
                  (incf nn) (incf d0 (expt xx 2)) (incf d1 (expt yy 2))
                  (incf rr (* xx yy))))
          seq0 seq1)
-    (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
+    (assert (> nn 1) (nn) "Too few (~d) points are given to covariance!" nn)
     (setq co (/ (dfloat (1- nn))))
     (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
-  "Interface to `covariation' with one sequence."
-  (covariation seq seq :key0 xkey :key1 ykey))
+  "Interface to `covariance' with one sequence."
+  (covariance seq seq :key0 xkey :key1 ykey))
 
 (defun volatility (lst split-key &rest args
                    &key (dev-fn #'standard-deviation-relative)

@@ -5,13 +5,14 @@ common-lisp-controller (3.27) unstable; urgency=low
   if the binary directory exists, but has no files in it 
   * New autobuilding system, described in README.autobuild
   * Add new commands: clc-check-autobuild, clc-only-compatible,
-  clc-not-compatible, clc-autobuild-library, clc-autobuild-implementation
+  clc-not-compatible, clc-autobuild-library, clc-autobuild-impl
   * Rename reregister-common-lisp-implementations to clc-reregister-all-impl
   * Rename some "defsystem" strings to "clc"
   * Change sh to bash invocation in postinst
   * Rework rules file to use dh_install rather than install
   * Remove copyright-defsystem and defsystem.text from package
-  
+  * Change how original-require function is called (to better support clisp)
+   
  -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 22 Sep 2002 14:09:04 -0600
 
 common-lisp-controller (3.26) unstable; urgency=low

@@ -2,26 +2,28 @@ CREATING DEBIAN LIBRARY PACKAGES FOR COMMON LISP CONTROLLER
 ===========================================================
 
 1. Decide on a name for the package. For this file, we'll use the
-sample foopkg.
+sample foopkg. This name is used in several places and must be the
+same in each place.
 
-1. Create an ASDF system definition file if one does not exist. The name
+2. Create an ASDF system definition file if one does not exist. The name
 of this file should be foopkg.asd 
 
-  The defsystem form in the ASDF file should have the system name of
-  :foopkg. The ASDF defsystem should *not* contain a pathname. The pathname
-  will be automatically found by ASDF.
+The defsystem form in the ASDF file should have the system name of
+:foopkg. The ASDF defsystem should *not* contain a pathname. The
+pathname will be automatically found by ASDF.
 
-An example
+EXAMPLE
+
 (in-package :asdf)
 (defsystem :foopkg
   :components ((:file "package")
 	       (:file "routines" :depends-on "package")))
 	
+2. In your Debian package, have the source files and the .asd file
+installed in the directory /usr/share/common-lisp/source/foopkg/.
 
-2. In your Debian package, have the source files and the .asd file installed
-in the directory /usr/share/common-lisp/source/foopkg/. 
-
-3. In your Debian package's rule file, create the symbolic link with debhelper
+3. In your Debian package's rule file, create the symbolic link with debhelper.
+You can use the following command in your debian/rules file:
   dh_link usr/share/common-lisp/source/foopkg/foopkg.asd \
           usr/share/common-lisp/systems/foopkg/foopkg.asd
 

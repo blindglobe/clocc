@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.30 2002/11/28 20:24:32 sds Exp $
+;;; $Id: ext.lisp,v 1.31 2002/11/30 22:30:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -19,7 +19,7 @@
    "DEFSUBST" "DEFCUSTOM" "DEFCONST"
    "MK-ARR" "MAP-IN" "WITH-GENSYMS"
    "GC" "QUIT"
-   "+EOF+" "EOF-P" "STRING-TOKENS"
+   "+EOF+" "EOF-P" "STRING-TOKENS" "REMOVE-PLIST"
    #-cmu "REQUIRED-ARGUMENT"
    "UNLOCK-PACKAGE" "RESTORE-PACKAGE-LOCK"
    "COMPOSE" "COMPOSE-F" "COMPOSE-ALL"))
@@ -151,6 +151,17 @@ so that the bare symbols are read as keywords."
               (push obj res)))
         (read-from-string (concatenate 'string "(" string ")")
                           t nil :start start))))
+
+(defun remove-plist (plist &rest keys)
+  "Remove the keys from the plist.
+Useful for re-using the &REST arg after removing some options."
+  (do (copy rest)
+      ((null (setq rest (nth-value 2 (get-properties plist keys))))
+       (nreconc copy plist))
+    (do () ((eq plist rest))
+      (push (pop plist) copy)
+      (push (pop plist) copy))
+    (setq plist (cddr plist))))
 
 #+cmu (progn
         (import 'ext:required-argument :port)

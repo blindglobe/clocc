@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.46 2002/07/21 15:22:34 sds Exp $
+;;; $Id: net.lisp,v 1.47 2003/01/21 17:43:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -489,14 +489,15 @@ Kind can be :stream or :datagram."
   "Return the SERVENT structure corresponding to the SERVICE.
 When SERVICE is NIL, return the list of all services."
   (flet ((parse (str)
-           (let ((tok (string-tokens
-                       (nsubstitute
-                        #\Space #\/ (subseq str 0 (or (position #\# str)
-                                                      (length str)))))))
+           (let* ((tok (string-tokens
+                        (subseq str 0 (or (position #\# str) (length str)))))
+                  (port/prot (string-tokens (nsubstitute
+                                             #\Space #\/
+                                             (symbol-name (second tok))))))
              (values (string-downcase (string (first tok)))
                      (mapcar (compose string-downcase string) (cdddr tok))
-                     (second tok)
-                     (string-downcase (string (third tok))))))
+                     (first port/prot)
+                     (string-downcase (string (second port/prot))))))
          (mkse (na al po pr)
            (make-servent :name na :aliases al :port po :proto pr)))
     (with-open-file (fl #+unix "/etc/services" #+(or win32 mswindows)

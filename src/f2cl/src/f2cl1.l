@@ -136,7 +136,7 @@ correctly. If the database is incorrect, the function call will be
 incorrect, so use caution.")
 
 (defstruct f2cl-finfo
-  arg-types return-values)
+  arg-types return-values calls)
 
 ;; Hash table of all known converted functions.  
 (defvar *f2cl-function-info*
@@ -1441,8 +1441,16 @@ FILENAME                 File containing Fortran code
 
 (defun generate-call-to-routine (routine arglist &optional return)
   (let ((finfo (gethash (first routine) *f2cl-function-info*)))
-    (unless finfo
-      (warn "Generating call to unknown function ~A.  Check generated call!" routine))
+    (if (and finfo (f2cl-finfo-return-values finfo))
+	(let ((this (gethash *subprog_name* *f2cl-function-info*)))
+	  (unless this
+	    (setf (gethash *subprog_name* *f2cl-function-info*)
+		  (make-f2cl-finfo)))
+	  ;; Add this function to the list of called functions
+	  (pushnew (first routine)
+		   (f2cl-finfo-calls (gethash *subprog_name*
+					      *f2cl-function-info*))))
+	(warn "Generating call to unknown function ~A.  Check generated call!" routine))
     
     (setf finfo (if (and *use-function-info* finfo)
 		    (f2cl-finfo-return-values finfo)
@@ -2369,8 +2377,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.116 2002/05/07 03:56:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.117 2002/06/30 13:09:58 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.117  2002/06/30 13:09:58  rtoy
+;;; Let f2cl also keep track of a list of functions that a function
+;;; calls.  (Useful for generating dependencies.)
+;;;
 ;;; Revision 1.116  2002/05/07 03:56:07  rtoy
 ;;; o In TRANSLATE_LINT, change how output when *verbose* is set so we can
 ;;;   see better what f2cl is really reading.  (Was hard to differentiate

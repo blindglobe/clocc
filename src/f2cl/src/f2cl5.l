@@ -1468,55 +1468,58 @@
 ;------------------------------------------------------------------------------
 
 (defun fix-do (checklist labels)
-   (do ((do-expr (ldiff (car checklist) (last (car checklist))) )
-        (loop-body '(tagbody) 
-                   (if subclause (cons subclause loop-body) loop-body))
-        (exprs (cdr checklist))
-        (subclause nil)
-        (do-label (car (last (car checklist)))))
+  (do ((do-expr (ldiff (car checklist) (last (car checklist))) )
+       (loop-body '(tagbody) 
+		  (if subclause (cons subclause loop-body) loop-body))
+       (exprs (cdr checklist))
+       (subclause nil)
+       (do-label (car (last (car checklist)))))
 
-       ((end-do-p exprs do-label) 
-        (cond
-           ((multiple-do-labelp (car exprs) labels)
-            (values (append do-expr 
-                            (list (reverse loop-body))) exprs))
+      ((or (null exprs)
+	   (end-do-p exprs do-label))
+       (cond
+	 ((null exprs)
+	  (error "A DO statement without a matching label?!"))
+	 ((multiple-do-labelp (car exprs) labels)
+	  (values (append do-expr 
+			  (list (reverse loop-body))) exprs))
 
-           ((not (eq (second exprs) 'continue_place_holder)) 
-            (values (append do-expr 
-                        (list 
-              (reverse (cons (second exprs) 
-                         (cons (intern (remove-prefix do-label)) loop-body))))) 
-              (cddr exprs))) 
-           (t 
-            (values (append do-expr 
-                        (list 
-              (reverse (cons (intern (remove-prefix do-label)) loop-body)))) 
-              (cddr exprs))) ))
-;body
-       (cond ((listp (car exprs))
-              (cond ((eq (caar exprs) 'if-then)
-                     (multiple-value-setq (subclause exprs) 
-                                          (fix-ifthen exprs labels)))
-                    ((eq (caar exprs) 'fdo)
-                     (multiple-value-setq (subclause exprs) 
-                                          (fix-do exprs labels)))
-                    ((and (eq (caar exprs) 'go)
-                          (label-matches-dolabel-p (cadar exprs) do-label))
-		     ;; Why do we treat a go to to the continue
-		     ;; statement of the do loop differently?  Why
-		     ;; "(return)" instead of "(go label)"
-                     #+nil
-		     (setq subclause '(return)
-                           exprs (cdr exprs))
-		     (setq subclause (car exprs)
-			   exprs (cdr exprs)))
-                    (t (setq subclause (car exprs)
-                             exprs (cdr exprs)))))
-            ((eq (car exprs) 'continue_place_holder)
-             (setq subclause nil
-                   exprs (cdr exprs)))
-            (t (setq subclause (car exprs)
-                     exprs (cdr exprs))))))
+	 ((not (eq (second exprs) 'continue_place_holder)) 
+	  (values (append do-expr 
+			  (list 
+			   (reverse (cons (second exprs) 
+					  (cons (intern (remove-prefix do-label)) loop-body))))) 
+		  (cddr exprs))) 
+	 (t 
+	  (values (append do-expr 
+			  (list 
+			   (reverse (cons (intern (remove-prefix do-label)) loop-body)))) 
+		  (cddr exprs))) ))
+    ;; body
+    (cond ((listp (car exprs))
+	   (cond ((eq (caar exprs) 'if-then)
+		  (multiple-value-setq (subclause exprs) 
+		    (fix-ifthen exprs labels)))
+		 ((eq (caar exprs) 'fdo)
+		  (multiple-value-setq (subclause exprs) 
+		    (fix-do exprs labels)))
+		 ((and (eq (caar exprs) 'go)
+		       (label-matches-dolabel-p (cadar exprs) do-label))
+		  ;; Why do we treat a go to to the continue
+		  ;; statement of the do loop differently?  Why
+		  ;; "(return)" instead of "(go label)"
+		  #+nil
+		  (setq subclause '(return)
+			exprs (cdr exprs))
+		  (setq subclause (car exprs)
+			exprs (cdr exprs)))
+		 (t (setq subclause (car exprs)
+			  exprs (cdr exprs)))))
+	  ((eq (car exprs) 'continue_place_holder)
+	   (setq subclause nil
+		 exprs (cdr exprs)))
+	  (t (setq subclause (car exprs)
+		   exprs (cdr exprs))))))
 
 (defun remove-prefix (x) (string-left-trim "FDO_BODY_" x))
 
@@ -2081,8 +2084,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.68 2000/09/03 02:33:39 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.69 2001/06/03 20:46:08 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.69  2001/06/03 20:46:08  rtoy
+;;; Changes to FIX-DO:
+;;; o Add a test and code to keep FIX-DO from looping forever searching
+;;;   for a non-existent DO label.  We cause an error now if this happens.
+;;; o Gratuitously re-indented code.
+;;;
 ;;; Revision 1.68  2000/09/03 02:33:39  rtoy
 ;;; FORTRAN-CONTAGION returned (complex double-float) and (complex
 ;;; single-float) which confuses f2cl.  Return complex16 and complex8

@@ -10,11 +10,11 @@
 # Prior to invocation the LISPTYPE environment variable must been set to
 # one of these:
 #
-#    clisp      
-#    cmucl
-#    acl43
-#    acl5
-#    gcl
+#    clisp      uses ${CLISP} if set, else "clisp"
+#    cmucl      uses ${CMUCL} if set, else "lisp"
+#    acl43      uses ${ACL43} if set, else "cl"
+#    acl5       uses ${ACL5} if set, else "cl"
+#    gcl        uses ${GCL} if set, else "gcl"
 
 usage(){
     cat <<EOF
@@ -119,15 +119,14 @@ case "$1" in
         * )
             # Since make does not stop when the exit status is 1, we simply
             # echo LISPTYPE_NOT_SET here.
-            fail "Sorry, option -faslext not supported for LISPTYPE=${LISPTYPE}."
             echo LISPTYPE_NOT_SET
-            exit 1
+            fail "Sorry, option -faslext not supported for LISPTYPE=${LISPTYPE}."
             ;;
       esac
       ;;
   "-dumpext" )
       shift 1
-      case $LISPTYPE in
+      case "$LISPTYPE" in
           clisp)
               echo .mem
           ;;
@@ -141,19 +140,19 @@ case "$1" in
               echo .core
           ;;
           *)
-              # same as above
-              fail "Sorry, option -dumpext not supported for LISPTYPE=${LISPTYPE}."
+              # Since make does not stop when the exit status is 1, we simply
+              # echo LISPTYPE_NOT_SET here.
               echo LISPTYPE_NOT_SET
-              exit 1
+              fail "Sorry, option -dumpext not supported for LISPTYPE=${LISPTYPE}."
           ;;
       esac
     ;;
   "-run" )
     # we special case on '-run' for now
     shift 1
-    case $LISPTYPE in
+    case "$LISPTYPE" in
         clisp)
-            ${CLISP-clisp} -M $1.mem -x '(run)'
+            ${CLISP-clisp} -M "$1".mem -x '(run)'
         ;; 
         cmucl )
             ${CMUCL-lisp} -core "$1".core -eval '(run)'
@@ -186,7 +185,8 @@ case "$1" in
               exit 1
             fi
             shift
-            arg=`echo "$1" | sed -e 's,\(["\\]\),\\\\\1,g'`
+            backslashify='s,\(["\\]\),\\\1,g'
+            arg=`echo "$1" | sed -e "$backslashify"`
             todo=$todo" (load \"${arg}\")"
             shift
             ;;
@@ -203,7 +203,8 @@ case "$1" in
               fail "missing argument for $1"
             fi
             shift
-            arg=`echo "$1" | sed -e 's,\(["\\]\),\\\\\1,g'`
+            backslashify='s,\(["\\]\),\\\1,g'
+            arg=`echo "$1" | sed -e "$backslashify"`
             # todo=$todo" (compile-file \"${arg}\" :print nil)"
             # truename helps, when using Franz' emacs interface
             todo=$todo" (compile-file (truename \"${arg}\") :print nil)"
@@ -222,7 +223,8 @@ case "$1" in
               fail "missing argument for $1"
             fi
             shift
-            arg=`echo "$1" | sed -e 's,\(["\\]\),\\\\\1,g'`
+            backslashify='s,\(["\\]\),\\\1,g'
+            arg=`echo "$1" | sed -e "$backslashify"`
             case "$LISPTYPE" in
               clisp )
                   todo=$todo" (lisp:saveinitmem \"${arg}.mem\")"
@@ -265,7 +267,8 @@ case "$1" in
             shift 1
         ;;
         *)
-            arg=`echo "$1" | sed -e 's,\(["\\]\),\\\\\1,g'`
+            backslashify='s,\(["\\]\),\\\1,g'
+            arg=`echo "$1" | sed -e "$backslashify"`
             args=$args" \"${arg}\""
             shift
             ;;
@@ -281,7 +284,7 @@ case "$1" in
     case "$LISPTYPE" in
       clisp )
           todo="(setq lisp:*load-paths* '(#P\"\")) "$todo
-          echo "$todo" | exec ${CLISP-clisp} ${image+"-M ${image}.mem"} -
+          echo "$todo" | ${CLISP-clisp} ${image+"-M ${image}.mem"} -
           ;;
       cmucl )
           # we have to convince CMUCL to return a proper exit status.
@@ -293,13 +296,13 @@ case "$1" in
           exec ${CMUCL-lisp} ${image+"-core ${image}.core"} -eval "$todo"
           ;;
       acl43 )
-          echo "$todo" | exec ${image-${ACL43-cl}} -batch
+          echo "$todo" | ${image-${ACL43-cl}} -batch
           ;;
       acl5 )
-          echo "$todo" | exec ${ACL5-cl} ${image+"-I ${image}.dxl"} -batch
+          echo "$todo" | ${ACL5-cl} ${image+"-I ${image}.dxl"} -batch
           ;;
       gcl )
-          echo "$todo" | exec ${image-${GCL-gcl}} -batch
+          echo "$todo" | ${image-${GCL-gcl}} -batch
           ;;
       * )
           if [ -n "$LISPTYPE" ] ; then

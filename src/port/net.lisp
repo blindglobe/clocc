@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.45 2002/06/20 13:24:10 sds Exp $
+;;; $Id: net.lisp,v 1.46 2002/07/21 15:22:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -183,6 +183,8 @@
     #+gcl (si:make-socket-stream host port bin) ; FIXME
     #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
                                       (if bin 'unsigned-byte 'base-char))
+    #+mcl (ccl:make-socket :remote-host host :remote-port port
+                           :format (if binary-p :binary :text))
     #+(and sbcl db-sockets)
     (let ((socket (make-instance 'sockets:inet-socket
                                  :type :stream :protocol :tcp)))
@@ -199,7 +201,7 @@
          'net.sbcl.sockets:binary-stream-socket
          'net.sbcl.sockets:character-stream-socket)
      :port port :host host)
-    #-(or allegro clisp cmu gcl lispworks
+    #-(or allegro clisp cmu gcl lispworks mcl
           (and sbcl (or net.sbcl.sockets db-sockets)))
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.7 2001/02/06 20:08:54 sds Exp $
+;;; $Id: base.lisp,v 2.8 2001/04/02 16:33:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,7 +14,8 @@
 (defpackage "CLLIB"
   (:use "COMMON-LISP" "PORT")
   (:nicknames "ORG.CONS.CLOCC/SDS/CLLIB")
-  (:export "VALUE" "CODE"))
+  (:export "VALUE" "CODE"
+           "*DATADIR*" "*MAIL-HOST-ADDRESS*" "*USER-MAIL-ADDRESS*"))
 
 (in-package :cllib)
 

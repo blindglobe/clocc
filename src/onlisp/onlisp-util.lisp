@@ -911,8 +911,7 @@
   "Setf to a new value based on the old by applying op;
    e.g., incf could be considered _f with op = +."   ; LMH
   (multiple-value-bind (vars forms var set access)
-      #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
-      #-ansi-cl (get-setf-method place)
+      (get-setf-expansion place)	; LMH ANSI CL changed name
     `(let* (,@(mapcar #'list vars forms)
             (,(car var) (,op ,access ,@args)))
        ,set)))
@@ -923,8 +922,7 @@
 (defmacro pull (obj place &rest args)
   "Pull specified obj out of place; complement to pushnew."   ; LMH
   (multiple-value-bind (vars forms var set access)
-      #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
-      #-ansi-cl (get-setf-method place)
+      (get-setf-expansion place)	; LMH ANSI CL changed name
     (let ((g (gensym)))
       `(let* ((,g ,obj)
               ,@(mapcar #'list vars forms)
@@ -934,8 +932,7 @@
 (defmacro pull-if (test place &rest args)
   "Pull what passes test out of place."   ; LMH
   (multiple-value-bind (vars forms var set access)
-      #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
-      #-ansi-cl (get-setf-method place)
+      (get-setf-expansion place)	; LMH ANSI CL changed name
     (let ((g (gensym)))
       `(let* ((,g ,test)
               ,@(mapcar #'list vars forms)
@@ -945,8 +942,7 @@
 (defmacro popn (n place)
   "Pop n elements off place."   ; LMH
   (multiple-value-bind (vars forms var set access)
-      #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
-      #-ansi-cl (get-setf-method place)
+      (get-setf-expansion place)	; LMH ANSI CL changed name
     (with-gensyms (gn glst)
       `(let* ((,gn ,n)
               ,@(mapcar #'list vars forms)
@@ -956,28 +952,27 @@
                 ,set)))))
 
 (defmacro sortf (op &rest places)
-  "Sort places according to op."   ; LMH
+  "Sort places according to op."	; LMH
   (let* ((meths (mapcar #'(lambda (p)
                             (multiple-value-list
-			     #+ansi-cl (get-setf-expansion p) ; LMH ANSI CL changed name
-			     #-ansi-cl (get-setf-method p)))
+			     (get-setf-expansion p))) ; LMH ANSI CL changed name
                         places))
          (temps (apply #'append (mapcar #'third meths))))
     `(let* ,(mapcar #'list
-                    (mapcan #'(lambda (m)
-                                (append (first m)
-                                        (third m)))
-                            meths)
-                    (mapcan #'(lambda (m)
-                                (append (second m)
-                                        (list (fifth m))))
-                            meths))
+	     (mapcan #'(lambda (m)
+			 (append (first m)
+				 (third m)))
+		     meths)
+	     (mapcan #'(lambda (m)
+			 (append (second m)
+				 (list (fifth m))))
+		     meths))
        ,@(mapcon #'(lambda (rest)
                      (mapcar
-                       #'(lambda (arg)
-                           `(unless (,op ,(car rest) ,arg)
-                              (rotatef ,(car rest) ,arg)))
-                       (cdr rest)))
+		      #'(lambda (arg)
+			  `(unless (,op ,(car rest) ,arg)
+			     (rotatef ,(car rest) ,arg)))
+		      (cdr rest)))
                  temps)
        ,@(mapcar #'fourth meths))))
 

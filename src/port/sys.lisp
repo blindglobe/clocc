@@ -8,11 +8,11 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.36 2001/10/11 21:28:56 sds Exp $
+;;; $Id: sys.lisp,v 1.37 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   #+(and allegro mswindows)
   (require :ole))
 
@@ -385,5 +385,5 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
             ye mo da (aref +week-days+ dw) ho mi se
             (tz->string tz dst))))
 
-(provide :sys)
+(provide :port-sys)
 ;;; file sys.lisp ends here

@@ -8,13 +8,13 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.37 2001/09/09 20:41:21 sds Exp $
+;;; $Id: net.lisp,v 1.38 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   ;; `getenv'
-  (require :sys (translate-logical-pathname "port:sys"))
+  (require :port-sys (translate-logical-pathname "port:sys"))
   #+cormanlisp (require :winsock)
   #+lispworks (require "comm"))
 
@@ -420,5 +420,5 @@ When SERVICE is NIL, return the list of all services."
 
 ;;; }}}
 
-(provide :net)
+(provide :port-net)
 ;;; file net.lisp ends here

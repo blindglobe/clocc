@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.24 2001/06/11 19:33:28 sds Exp $
+;;; $Id: ext.lisp,v 1.25 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -192,5 +192,5 @@ All the values from nth function are fed to the n-1th."
             (lambda (&rest args) (multiple-value-call f0 (apply f1 args))))
           functions :initial-value #'identity))
 
-(provide :ext)
+(provide :port-ext)
 ;;; file ext.lisp ends here

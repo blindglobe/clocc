@@ -8,11 +8,11 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.14 2001/09/09 19:55:06 sds Exp $
+;;; $Id: shell.lisp,v 1.15 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext")))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext")))
 
 (in-package :port)
 
@@ -100,5 +100,5 @@
     (unwind-protect (progn ,@body)
       (close-pipe ,pipe))))
 
-(provide :shell)
+(provide :port-shell)
 ;;; file shell.lisp ends here

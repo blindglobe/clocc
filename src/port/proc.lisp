@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.10 2001/06/08 14:13:58 sds Exp $
+;;; $Id: proc.lisp,v 1.11 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -52,7 +52,7 @@
 ;;; WITH-LOCK ((lock) &rest body)
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   #+CormanLisp (require 'THREADS))
 
 (in-package :port)
@@ -438,5 +438,5 @@ and reapply its initial function to its arguments."
   #+MCL        `(ccl:with-process-enqueued (,lock) ,@body)
   #-threads    `(progn ,@body))
 
-(provide :proc)
+(provide :port-proc)
 ;;; proc.lisp end here

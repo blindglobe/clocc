@@ -8,13 +8,13 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gray.lisp,v 1.6 2001/09/09 19:55:06 sds Exp $
+;;; $Id: gray.lisp,v 1.7 2001/11/02 22:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/gray.lisp,v $
 
 (eval-when (compile load eval)
   #-(or allegro clisp cmu lispworks sbcl)
   (error 'not-implemented :proc "Gray streams")
-  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   #+cmu
   (unless (ignore-errors (find-class 'ext:fundamental-input-stream))
     (load "library:subsystems/gray-streams-library")))
@@ -45,5 +45,5 @@
   (import gray-symbols :port)
   (export gray-symbols :port))
 
-(provide :gray)
+(provide :port-gray)
 ;;; file gray.lisp ends here

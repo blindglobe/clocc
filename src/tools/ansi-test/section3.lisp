@@ -728,9 +728,9 @@ is actually performed using its cddr instead")
  *THINGS*)
 
 (my-assert
- (not (functionp (symbol-function 'define-symbol-macro)))
- NIL
- "The macro define-symbol-function should exist")
+ (fboundp 'define-symbol-macro)
+ T
+ "The macro DEFINE-SYMBOL-MACRO should exist")
  
 (my-assert
  (define-symbol-macro thing1 (first *things*))

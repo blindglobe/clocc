@@ -171,6 +171,78 @@ error_t parse_opt (int key, char *arg, struct argp_state *state)
     }
   return 0;
 }
+
+int probe_directory(char *pathname)
+{
+  /* returns 1 if directory exists */
+  DIR *dir;
+
+  dir = opendir(pathname);
+  if (dir == (DIR *) NULL)
+    return 0;
+  else
+    {
+      if (closedir(dir) != 0)
+	reportsystemerror("Could not close directory stream!?");
+      return 1;
+    }
+}
+
+
+/* delete the files */
+int delete_stuff(const char *filename, const struct stat *stat, int flag)
+{
+  /*   just a normal file? */
+  if ( (flag == FTW_F) ||
+       /* or a symbolic link? */
+       (flag == FTW_SL))
+    {
+      if (unlink(filename) != 0)
+        {
+          char command[4097];
+
+          snprintf(command,4096,"While deleting the file: %s with %i: %i %i",filename,flag,(flag & FTW_F),(flag & FTW_SL));
+          command[4096]=(char)0;
+          reportsystemerror(command);
+          return 1;
+        }
+    }
+  return 0;
+}
+
+/* delete the directory */
+int delete_directories(const char *filename, const struct stat *stat, int flag)
+{
+  /* just a directory? */
+  if (flag == FTW_D)
+    {
+      if ((rmdir(filename) != 0) &&
+          (errno != ENOTEMPTY))
+        {
+          char command[4097];
+
+          snprintf(command,4096,"While deleting the directory: %s",filename);
+          command[4096]=(char)0;
+          reportsystemerror(command);
+          return 1;
+        }
+    }
+  return 0;
+}
+
+void  nuke_package(char *package,char *compiler)
+{
+  char command[4097];
+
+
+  snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
+           compiler,package);
+  command[4096]=(char)0;
+  ftw(command, &delete_stuff, 150);
+  while (probe_directory(command)) {
+      ftw(command, &delete_directories, 150);
+   }
+}
      
 static struct argp argp = { options, parse_opt, args_doc, doc };
 
@@ -198,6 +270,16 @@ int main(int argc, char *argv[])
   if (arguments.debug)
     showdaemonoutput = 1;
 
+  if (strcmp("remove",arguments.args[0]) == 0)
+    removep = 1;
+  else 
+    {
+      if (strcmp("recompile",arguments.args[0]) == 0)
+        removep = 0;
+      else
+        reporterror("internal error icecream");
+    }
+  
   socketfd = socket( PF_INET, SOCK_STREAM, 0);
   if (socketfd < 0)
     reportsystemerror("Could not open socketfd");
@@ -213,18 +295,65 @@ int main(int argc, char *argv[])
 
   if (connect( socketfd, &addr, sizeof(addr)) != 0)
     {
-      char command[4097];
-      /* This cannot be. but I've seen error messages during a from-scratch reinstall,
-	 so we add logging to this to provoke bugreports */
-      snprintf(command,4096,"/usr/lib/common-lisp-controller/debug-daemon-problems.sh %s %s",
-	       arguments.args[0],
-	       arguments.args[1]);
-      command[4096]=(char)0;
-      
-      if ( (system(command)) == -1)
-	reportsystemerror("Could not start the debug-daemon-problems reporter to report a failure to connect to the daemon");
+      if (removep == 1) 
+	{
+	  /* code lifted and adapted from clc-build-daemon */
+	  char *package=arguments.args[1];
+	  char *compiler=arguments.args[2];
+	  /* characters allowed in the package and compiler names: */
+	  char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+
+	  printf("I cannot contact the clc-build-daemon. Possibly you are trying to upgrade it.\n");
+	  printf("I will try to remove the package myself...\n");
+	  
+	  if ((package == (char *) NULL) ||
+	      ( strlen(package) != strspn(package,allowedcharacters)))
+            {
+	      printf("The package %s is invalid!\n", package);
+	      exit(2);
+	    }
+	  else
+	    {
+	    if ((compiler == (char *) NULL) ||
+		( strlen(compiler) != strspn(compiler,allowedcharacters)))
+	      {
+		printf("The compiler %s is invalid!\n", compiler);
+		exit(2);
+	      }
+	    else
+	      {
+		char command[4097];
+		
+		snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
+			 compiler,package);
+		command[4096]=(char)0;
+		if (! probe_directory(command) )
+		  {
+		    printf("Cannot remove  package %s for compiler %s\n",package,compiler);
+		  }
+		else
+		  {
+		    nuke_package(package,compiler);
+		  }
+	      }
+	    }
+	  exit(0);
+	}
       else
-	reportsystemerror("Could not connect to the daemon, I've send a report to root via email!");
+	{
+	  char command[4097];
+	  /* This cannot be. but I've seen error messages during a from-scratch reinstall,
+	     so we add logging to this to provoke bugreports */
+	  snprintf(command,4096,"/usr/lib/common-lisp-controller/debug-daemon-problems.sh %s %s",
+		   arguments.args[0],
+		   arguments.args[1]);
+	  command[4096]=(char)0;
+	  
+	  if ( (system(command)) == -1)
+	    reportsystemerror("Could not start the debug-daemon-problems reporter to report a failure to connect to the daemon");
+	  else
+	    reportsystemerror("Could not connect to the daemon, I've send a report to root via email!");
+	}
     }
 
   stream = fdopen(socketfd, "r+");
@@ -238,16 +367,6 @@ int main(int argc, char *argv[])
 
   if (setvbuf(stream, (char *) NULL, _IOLBF, BUFSIZ) != 0)
     reportsystemerror("Could not make stream line buffered");
-
-  if (strcmp("remove",arguments.args[0]) == 0)
-    removep = 1;
-  else 
-    {
-      if (strcmp("recompile",arguments.args[0]) == 0)
-        removep = 0;
-      else
-        reporterror("internal error icecream");
-    }
 
   for(succesp=1;;)
     {

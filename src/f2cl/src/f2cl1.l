@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2004/08/14 13:44:37 $"))
+  (remove #\$ "2.0 beta $Date: 2004/08/17 16:09:01 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -1201,7 +1201,6 @@ FILENAME                 File containing Fortran code
                  (princ-to-string (variable-value '%label bindings))) 
             nil))) )
 ;------------------------------------------------------------------------------
-#+nil
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
 
@@ -2555,8 +2554,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.135 2004/08/14 13:44:37 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.136 2004/08/17 16:09:01 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.136  2004/08/17 16:09:01  rtoy
+;;; Reinstate make-label here.  This really needs to be cleaned up.
+;;;
 ;;; Revision 1.135  2004/08/14 13:44:37  rtoy
 ;;; Add support for ASSIGN statement.
 ;;;

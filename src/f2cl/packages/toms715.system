@@ -1,0 +1,95 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;;
+;;; $Id: toms715.system,v 1.1 2000/07/21 22:13:48 rtoy Exp $
+;;; $Log: toms715.system,v $
+;;; Revision 1.1  2000/07/21 22:13:48  rtoy
+;;; Initial version.
+;;;
+
+;; Convert a Fortran file to Lisp and compile the Lisp file.
+(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
+  (compile-file (f2cl filename :array-slicing array-slicing
+		      :array-type array-type)
+		:output-file output-file :error-file error-file))
+
+(mk:define-language :f2cl
+    :compiler #'f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem toms715
+    :source-pathname "clocc:src;f2cl;packages;"
+    :components
+    ((:module "715"
+	      :source-pathname "toms;715;"
+	      :binary-pathname "toms;lib;"
+	      :source-extension "f"
+	      :language :f2cl
+	      :components
+	      (
+	       (:file "anorm")
+	       (:file "besei0")
+	       (:file "besei1")
+	       (:file "besek0")
+	       (:file "besek1")
+	       (:file "besi0")
+	       (:file "besi1")
+	       (:file "besj0")
+	       (:file "besj1")
+	       (:file "besk0")
+	       (:file "besk1")
+	       (:file "besy0")
+	       (:file "besy1")
+	       (:file "calcei")
+	       (:file "calci0")
+	       (:file "calci1")
+	       (:file "calck0")
+	       (:file "calck1")
+	       (:file "calerf")
+	       (:file "caljy0")
+	       (:file "caljy1")
+	       (:file "daw")
+	       (:file "derf")
+	       (:file "derfc")
+	       (:file "derfcx")
+	       (:file "dgamma")
+	       (:file "dlgama")
+	       (:file "dsubn")
+	       (:file "ei")
+	       (:file "eone")
+	       (:file "expei")
+	       (:file "machar")
+	       (:file "psi")
+	       (:file "ren")
+	       (:file "ribesl")
+	       (:file "rjbesl")
+	       (:file "rkbesl")
+	       (:file "rybesl")
+	       ))
+     ((:module "tests"
+	       :source-pathname "toms;715;"
+	       :binary-pathname "toms;lib;"
+	       :language :f2cl
+	       :components
+	       (
+		(:file "algtst")
+		(:file "anrtst")
+		(:file "dawtst")
+		(:file "eitest")
+		(:file "erftst")
+		(:file "gamtst")
+		(:file "i0test")
+		(:file "i1test")
+		(:file "j0test")
+		(:file "j1test")
+		(:file "k0test")
+		(:file "k1test")
+		(:file "psitst")
+		(:file "ritest")
+		(:file "rjtest")
+		(:file "rktest")
+		(:file "rytest")
+		(:file "y0test")
+		(:file "y1test")
+		)))))
+

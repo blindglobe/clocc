@@ -1214,7 +1214,8 @@
  (prog (vble_name type decl1)
    (setq vble_name (check-reserved-lisp-names vble))
   (return
-   (cond				;check for vble with two declarations i.e. an array
+   (cond
+     ;;check for vble with two declarations i.e. an array
      ((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
       (destructuring-bind (decl1 decl2)
 	  decl1
@@ -1236,7 +1237,7 @@
       ;;(format t "arglist  = ~A~%" *subprog-arglist*)
       nil
       )
-					; check for declared variable
+     ;; check for declared variable
      ((member vble *declared_vbles*)
       (do ((type-clauses *explicit_vble_decls* (cdr type-clauses))
 	   (decl nil))
@@ -1270,8 +1271,10 @@
 					    ,(f2cl-array-total-size (cdar decl)))
 				      ,vble_name))
 			   `(declare (type ,type ,vble_name)))))))))
-					; check implicitly declared variable
-     ((and (not vble-is-formal-arg)
+     ;; check implicitly declared variable.  (Why do we check to see
+     ;; if the var is a formal arg?  What difference does that make
+     ;; here?  I'm taking it out.)
+     ((and #+nil (not vble-is-formal-arg)
 	   (setq type (get-implicit-type vble)))
       (if (and (listp type) (eq (car type) 'CHARACTER))
 	  (make-char-decl (list vble_name) type)
@@ -1411,9 +1414,13 @@
   (let* ((s (string expr))
 	 (neg (position #\% s)))
     (when neg
-      ;; Ok, it might be a number.
+      ;; Ok, it might be a f2cl hacked number which looks something like
+      ;;
+      ;; m.mmmD%xx Make sure the character before "%" is D or E, and
+      ;; then make sure that the stuff before the exponent and after
+      ;; the "%" is a valid number.
       (and (member (aref s (1- neg)) '(#\d #\e) :test #'char-equal)
-	   (numberp (read-from-string (subseq s 0 (- neg 2))))
+	   (numberp (read-from-string (subseq s 0 (1- neg))))
 	   (numberp (read-from-string (subseq s (1+ neg))))))))
       
 ; given a list of variables names proclaim them special
@@ -2156,8 +2163,23 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.78 2002/02/07 22:16:19 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.79 2002/02/07 23:21:58 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.79  2002/02/07 23:21:58  rtoy
+;;; MAKE-DECLARATION
+;;; o For some reason when we were checking for implicitly declared
+;;;   variables, we checked to see if the variable was a formal arg or
+;;;   not.  Formal args can be implicitly declared too, so the check is
+;;;   removed.  (Why where we checking before?)
+;;; o Clean up some comments.
+;;;
+;;; SYM-IS-NUMBER-P
+;;; o Add some comments
+;;; o We were incorrectly saying things like 1D%3 were not numbers, but
+;;;   this is wrong.  It is a number.  Solves the occasional problem where
+;;;   we got weird things like unused variables named |1D%3|.  (Off-by-one
+;;;   bug.)
+;;;
 ;;; Revision 1.78  2002/02/07 22:16:19  rtoy
 ;;; If an array was declared but actually dimensioned in a common block
 ;;; like

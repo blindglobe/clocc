@@ -1,3 +1,10 @@
+common-lisp-controller (3.39) unstable; urgency=low
+
+  * Remove the :cltl2 item that mk-defsystem3 pushes onto cl:*features*
+  (closes: #146504)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat,  5 Oct 2002 11:43:34 -0600
+
 common-lisp-controller (3.38) unstable; urgency=high
 
   * Add version depends of cl-asdf

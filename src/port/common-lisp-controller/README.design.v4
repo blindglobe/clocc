@@ -11,7 +11,13 @@ Proposed Changes to Common Lisp Controller V4
     preferred. For more details about building "pathname-less"
     packages, see the file README.packaging.
 
-2. Support for User Packages
+2. No longer override the Common Lisp function REQUIRE.
+
+   CLC now imports the function CLC-REQUIRE into the 
+   common-lisp-user package. So, to load CLC packages, the user invokes
+   (cl-user:clc-require '<pkg-name>)
+   
+3. Support for User Packages
 
   a. These are packages installed in a user defined directory and are
   outside of the system root.

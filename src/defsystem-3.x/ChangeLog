@@ -1,3 +1,9 @@
+2002-01-09  Raymond Toy  <toy@rtp.ericsson.se>
+
+	* defsystem.lisp (create-component): Let :compiler-options be
+	inherited from the parent if no :compiler-options option is
+	given. 
+
 2001-07-26  Sam Steingold  <sds@gnu.org>
 
 	* defsystem.lisp (new-append-directories): removed CLISP-specific

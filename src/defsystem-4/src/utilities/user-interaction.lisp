@@ -2,9 +2,37 @@
 
 
 ;;; user-interaction.lisp --
-;;; Output to User
+;;; Output to User.
+;;;
+;;; Notes.
+;;;
+;;; 20020725 Marco Antoniotti
+;;; The MK3 code is rather complex and mayby too much.
+;;; It will be replaced with simpler functionality.
 
 (in-package "MK4")
+
+;;;===========================================================================
+;;; New functionality.
+
+
+(defvar *defsystem-standard-output* *standard-output*)
+
+(defvar *defsystem-error-output* *error-output*)
+
+(defvar *defsystem-trace-output* *trace-output*)
+
+(defvar *user-message-prefix* ";;; MK4: ")
+
+(defun user-message (where format-string &rest format-arguments)
+  (format where "~&~A~?~%"
+	  *user-message-prefix*
+	  format-string
+	  format-arguments))
+
+
+;;;===========================================================================
+;;; Old code
 
 ;;; All output to the user is via the tell-user functions.
 

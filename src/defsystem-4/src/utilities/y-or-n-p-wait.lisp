@@ -33,9 +33,12 @@ while we busy-wait. If 0, skips call to SLEEP.")
 (defun internal-real-time-in-seconds ()
   (get-universal-time))
 
-(defun read-char-wait (&optional (timeout 20) input-stream
-                                 (eof-error-p t) eof-value
-                                 &aux peek)
+(defun read-char-wait (&optional (timeout 20)
+				 input-stream
+                                 (eof-error-p t)
+				 eof-value
+                                 &aux
+				 peek)
   (do ((start (internal-real-time-in-seconds)))
       ((or (setq peek (listen input-stream))
            (< (+ start timeout) (internal-real-time-in-seconds)))

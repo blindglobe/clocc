@@ -1,8 +1,12 @@
 ;;;
 ;;; Some simple tests of the Quadpack routines, taken from the Quadpack book.
 ;;;
-;;; $Id: quadpack-tests.lisp,v 1.1 2000/07/20 15:28:25 rtoy Exp $
+;;; $Id: quadpack-tests.lisp,v 1.2 2000/07/21 21:18:32 rtoy Exp $
 ;;; $Log: quadpack-tests.lisp,v $
+;;; Revision 1.2  2000/07/21 21:18:32  rtoy
+;;; If besj0 and dgamma functions exist, use them in the solutions so we
+;;; can compute the absolute error.
+;;;
 ;;; Revision 1.1  2000/07/20 15:28:25  rtoy
 ;;; Initial revision
 ;;;
@@ -169,8 +173,10 @@ Expect non-zero error codes for
 (defun tst3 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     (float (* pi (bessel-j0 (expt 2 alpha)))
-		    1d0))
+	     (if (fboundp 'besj0)
+		 (float (* pi (besj0 (expt 2 alpha)))
+			1d0)
+		 0d0))
 			 
 	   (quad (alpha key)
 	     (declare (double-float alpha))
@@ -184,12 +190,9 @@ Expect non-zero error codes for
 			 0d0 (float pi 1d0) 0d0 relerr key
 			 0d0 0d0 0 0 limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel key result abserr neval ier z-lim z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e  ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier)))))
+			 (soln alpha) (abs-error result (soln alpha)))))))
     (format t "Test integral 3:
          %PI
         /
@@ -465,8 +468,10 @@ Expect non-zero error codes for
 (defun tst6 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     (float (* pi (bessel-j0 (expt 2 alpha)))
-		    1d0))
+	     (if (fboundp 'besj0)
+		 (float (* pi (besj0 (expt 2 alpha)))
+			1d0)
+		 0d0))
 			 
 	   (quad-qng (alpha)
 	     (declare (double-float alpha))
@@ -478,12 +483,9 @@ Expect non-zero error codes for
 		       0d0 relerr
 		       0d0 0d0 0 0)
 	       (declare (ignorable junk a b epsabs epsrel result abserr neval ier))
-	       #+nil
 	       (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e  ~10,3,2e~%"
 		       alpha result abserr neval ier
-		       (soln alpha) (abs-error result (soln alpha)))
-	       (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-		       alpha result abserr neval ier)))
+		       (soln alpha) (abs-error result (soln alpha)))))
 	   (quad-qags (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -498,12 +500,9 @@ Expect non-zero error codes for
 			  0d0 0d0 0 0
 			  limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel result abserr neval ier z-lim z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e  ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   (quad-qag (alpha key)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -516,12 +515,9 @@ Expect non-zero error codes for
 			 0d0 (float pi 1d0) 0d0 relerr key
 			 0d0 0d0 0 0 limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel key result abserr neval ier z-lim z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e  ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   )
     (format t "Test integral 6:
          %PI
@@ -760,11 +756,6 @@ Expect non-zero error code for:
 (defun tst9 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     #+nil
-	     (float (/ pi
-		       (sqrt (- (expt (+ 1d0 (expt 2d0 (- alpha))) 2)
-				1d0)))
-		    1d0)
 	     (let ((2alpha (expt 2 (- alpha))))
 	       (float (/ pi
 			 (sqrt (* 2alpha (+ 2 2alpha))))
@@ -855,10 +846,11 @@ Expect non-zero error code for:
 (defun tst10 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     (float (/ pi
-		       (sqrt (- (expt (+ 1d0 (expt 2d0 (- alpha))) 2)
-				1d0)))
-		    1d0))
+	     (if (fboundp 'dgamma)
+		 (/ (* (expt 2 (- alpha 2))
+		       (expt (dgamma (/ alpha 2)) 2))
+		    (dgamma alpha))
+		 0d0))
 	   (quad (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -872,12 +864,9 @@ Expect non-zero error code for:
 			   0d0 0d0 0 0
 			   limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   (quad-qaws (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -896,12 +885,9 @@ Expect non-zero error code for:
 			   0d0 0d0 0 0
 			   limit lenw 0 iwork work)
 		 (declare (ignorable junk a b z-alfa z-beta z-int epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier)))))
+			 (soln alpha) (abs-error result (soln alpha)))))))
     (format t "Test integral 10:
 
       %PI                           %PI					    
@@ -962,10 +948,10 @@ Expect no non-zero error codes
 (defun tst11 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     (float (/ pi
-		       (sqrt (- (expt (+ 1d0 (expt 2d0 (- alpha))) 2)
-				1d0)))
-		    1d0))
+	     (if (fboundp 'dgamma)
+		 (dgamma alpha)
+		 0d0))
+
 	   (quad (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -979,12 +965,9 @@ Expect no non-zero error codes
 			   0d0 0d0 0 0
 			   limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   (quad-qaws (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -1004,12 +987,9 @@ Expect no non-zero error codes
 			   0d0 0d0 0 0
 			   limit lenw 0 iwork work)
 		 (declare (ignorable junk a b z-alfa z-beta z-int epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier)))))
+			 (soln alpha) (abs-error result (soln alpha)))))))
     (format t "Test integral 11:
 
     1                               1						
@@ -1149,10 +1129,11 @@ Expect no non-zero error codes
 (defun tst13 (&key (limit 200) (relerr 1d-8))
   (labels ((soln (alpha)
 	     (declare (double-float alpha))
-	     (float (/ pi
-		       (sqrt (- (expt (+ 1d0 (expt 2d0 (- alpha))) 2)
-				1d0)))
-		    1d0))
+	     (if (fboundp 'besj0)
+		 (* (float pi 1d0)
+		    (cos (expt 2 (- alpha 1)))
+		    (besj0 (expt 2 (- alpha 1))))
+		 0d0))
 	   (quad-qags (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -1167,12 +1148,9 @@ Expect no non-zero error codes
 			  0d0 0d0 0 0
 			  limit lenw 0 iwork work)
 		 (declare (ignorable junk a b epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   (quad-qawo (alpha)
 	     (declare (double-float alpha))
 	     (let* ((leniw limit)
@@ -1191,12 +1169,9 @@ Expect no non-zero error codes
 		 ;; DQAWO evaluates the function at the end points.
 		 ;; Thus, we changed the limits slightly.
 		 (declare (ignorable junk a b omega integr epsabs epsrel result abserr neval ier z-leniw z-maxp1 z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier))))
+			 (soln alpha) (abs-error result (soln alpha))))))
 	   (quad-qaws (alpha)
 	     (declare (double-float alpha))
 	     (let* ((lenw (* 4 limit))
@@ -1212,12 +1187,9 @@ Expect no non-zero error codes
 			  0d0 0d0 0 0
 			  limit lenw 0 iwork work)
 		 (declare (ignorable junk a b z-alfa z-beta z-int epsabs epsrel result abserr neval ier z-limit z-lenw last))
-		 #+nil
 		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d  ~22,15,2e ~10,3,2e~%"
 			 alpha result abserr neval ier
-			 (soln alpha) (abs-error result (soln alpha)))
-		 (format t "~5f  ~22,15,2e  ~22,15,2e  ~5d  ~5d~%"
-			 alpha result abserr neval ier)))))
+			 (soln alpha) (abs-error result (soln alpha)))))))
     (format t "Test integral 13:
 
      1

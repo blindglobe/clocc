@@ -653,3 +653,26 @@
 		       ,(first arglist))
 		     res)
 	       (setq arglist (cdr arglist)))))))
+
+;; Initialize a multi-dimensional array of character strings. I think
+;; we need to do it this way to appease some picky compilers (like
+;; CMUCL).  The initial-element is needed to get rid of a warning
+;; about the default initial element not being a simple
+;; string. However, this initializes all elements of the array to
+;; exactly the same string, so we loop over the entire array contents
+;; and initialize each element with a string of the appropriate
+;; length.  The string is initialized with #\Space because it seems
+;; that's what Fortran initializes it to.
+(defmacro f2cl-init-string (dims len)
+  (let ((init (gensym))
+	(new-dims (if (every #'numberp dims)
+		      `',dims
+		      `(list ,@dims))))
+    `(let ((,init (make-array ,new-dims
+			      :element-type `(simple-array base-char (,',@len))
+			      :initial-element (make-string ,@len))))
+       (dotimes (k (array-total-size ,init))
+	 (setf (row-major-aref ,init k)
+	       (make-string ,@len :initial-element #\Space)))
+       ,init)))
+

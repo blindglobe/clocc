@@ -4146,6 +4146,27 @@ the system definition, if provided."
 	 (symbol-function 'new-require))))))
 )
 
+
+;;; Well, let's add some more REQUIRE hacking; specifically for SBCL,
+;;; and, eventually, for CMUCL.
+
+#+sbcl
+(eval-when (:load-toplevel :execute)
+
+(defun sbcl-mk-defsystem-module-provider (module-name)
+  ;; Let's hope things go smoothly.
+  (mk:load-system module-name :load-or-nil
+                  :compile-during-load t
+                  :verbose nil))
+
+(pushnew 'sbcl-mk-defsystem-module-provider sb-ext:*module-provider-functions*)
+)
+
+
+
+
+
+
 ;;; ********************************
 ;;; Language-Dependent Characteristics
 ;;; ********************************

@@ -6,12 +6,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.12 2000/08/14 16:45:30 sds Exp $
+;;; $Id: closio.lisp,v 1.13 2000/08/14 19:31:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `class-slot-initargs'
+  ;; `class-slot-list', `class-slot-initargs'
   (require :sys (translate-logical-pathname "clocc:src;port;sys")))
 
 (in-package :cllib)
@@ -56,20 +56,21 @@
 ;;; }}}{{{ print CLOS objects readably
 ;;;
 
-;; without this, Allegro issues a warning on compiling this file
-;; about redefining a symbol (`print-object') in a locked package
+;; without this, Allegro issues a warning about redefining a symbol
+;; (`print-object') in a locked package when compiling this file
 #+allegro
 (eval-when (compile)
   (setf (excl:package-definition-lock (find-package :common-lisp)) nil))
 
 (defmethod print-object ((obj standard-object) (out stream))
   (if *print-readably*
-      (let ((cl (class-of obj)))
-        (format out "#[~s" (class-name cl))
-        (dolist (slot (class-slot-initargs cl nil))
-          (when (slot-boundp obj slot)
-            (format out " ~s ~s" slot (slot-value obj slot))))
-        (write-string "]" out))
+      (loop :with cl = (class-of obj)
+            :initially (format out "#[~s" (class-name cl))
+            :for slot :in (class-slot-list cl nil)
+            :and init :in (class-slot-initargs cl nil)
+            :when (slot-boundp obj slot)
+            :do (format out " ~s ~s" init (slot-value obj slot))
+            :finally (write-string "]" out))
       (call-next-method)))
 
 #+allegro

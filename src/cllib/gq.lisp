@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1999-01-08 Fri 12:09:35 EST sds@eho.eaglets.com>
+;;; File: <gq.lisp - 1999-01-09 Sat 21:36:50 EST sds@eho.eaglets.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.8 1999/01/08 17:12:16 sds Exp $
+;;; $Id: gq.lisp,v 1.9 1999/01/10 02:37:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.9  1999/01/10 02:37:25  sds
+;;; Replaced `gq-fix-date' with `gq-guess-date'.
+;;;
 ;;; Revision 1.8  1999/01/08 17:12:16  sds
 ;;; Fixed `get-quotes-sm'.
 ;;;
@@ -95,23 +98,24 @@ change:~15t~7,2f~35thigh:~45t~7,2f
               (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
               (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
 
-(defun gq-fix-date (dt)
-  "Fix the date to be the last date when the quote could be available."
-  (declare (type (or null date) dt) (values date))
+(defun gq-guess-date ()
+  "Guess the date: the last date when the quote could be available."
+  (declare (values date))
   (multiple-value-bind (se mi ho da mo ye wd) (get-decoded-time)
     (declare (ignore se mi) (fixnum ho da mo ye wd))
     (let ((td (mk-date :ye ye :mo mo :da da)))
       (declare (type date td))
-      (if (and (or (null dt) (date= dt td)) (< ho 17))
-          (yesterday td (case wd (0 3) (6 2) (t 1))) (or dt td)))))
+      (if (< wd 5)              ; weekday
+          (if (< ho 17) (yesterday td) td)
+          (yesterday td (if (= wd 5) 1 2))))))
 
 (defun get-quotes-apl (url &rest ticks)
   "Get the data from the APL WWW server."
   (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
                        :err *gq-error-stream* :rt *html-readtable*)
-    (do (zz res dt (ts (make-text-stream :sock sock)))
+    (do (zz res (ts (make-text-stream :sock sock)))
         ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
-         (cons (gq-fix-date dt) (nreverse res)))
+         (cons (gq-guess-date) (nreverse res)))
       (mesg :logv t " -> ~a~%" zz)
       (when (eq (car ticks) zz)
         (mesg :log t "Found: ~a~%" (pop ticks))
@@ -129,21 +133,26 @@ change:~15t~7,2f~35thigh:~45t~7,2f
   "Get the data from the PathFinder WWW server."
   (with-open-url (sock (apply #'gq-complete-url url ticks) :timeout 600
                        :err *gq-error-stream* :rt *html-readtable*)
-    (do (zz res dt (ts (make-text-stream :sock sock)))
-        ((or (null ticks) (eq (setq zz (next-token ts)) +eof+))
-         (cons (gq-fix-date dt) (nreverse res)))
-      (if dt
-          (when (eq (car ticks) zz)
-            (pop ticks)
-            (push (mk-daily-data :nav (next-number ts :num 6)) res))
-          (when (and (eq zz 'latest) (eq (next-token ts) 'prices))
-            (setq dt (infer-date (next-token ts) (next-token ts))))))))
+    (let ((dt +bad-date+) (ts (make-text-stream :sock sock)))
+      (declare (type date dt) (type text-stream ts))
+      (do ((t0 (next-token ts) (next-token ts)) (t1 nil t0))
+          ((and (eq t1 'latest) (eq t0 'prices))
+           (setq dt (infer-date (next-token ts) (next-token ts)))))
+      (do ((zz (next-token ts) (next-token ts)) res)
+          ((null ticks) (cons dt (nreverse res)))
+        (when (eq (car ticks) zz)
+          (pop ticks)
+          (push (mk-daily-data :nav (next-number ts :num 6)) res))))))
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
-  (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res dt ts
-       (*ts-kill* '(#\%)))
+  (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res ts dt
+       (gd (gq-guess-date)) (*ts-kill* '(#\%)))
       ((null ti)
+       (setq dt (caar (last (car hh))))
+       (unless (date= dt gd)
+         (format t "Warning: implied date (~a) differs from given date (~a)~%"
+                 gd dt))
        (values (cons dt (nreverse res))
                (apply #'mapcar
                       (lambda (&rest cns)
@@ -165,10 +174,11 @@ change:~15t~7,2f~35thigh:~45t~7,2f
       (push (mk-daily-data :nav (next-number ts) :chg (next-number ts)
                            :prc (next-number ts))
             res)
-      (setq dt (gq-fix-date nil))
-      (mesg :log *gq-error-stream* " ~a:~%~a~%" dt (car res))
-      (push (list (next-number ts :num 5) (next-number ts)
-                  (next-number ts) (next-number ts)) ar)
+      (mesg :log *gq-error-stream* " ~a:~%~a~%" (car res))
+      (push (list (next-number ts :num 5)
+                  (next-token ts :type 'number :dflt 0.0)
+                  (next-token ts :type 'number :dflt 0.0)
+                  (next-token ts :type 'number :dflt 0.0)) ar)
       (push (mapcar
              #'cons
              (dotimes (ii 10 (nreverse ds))

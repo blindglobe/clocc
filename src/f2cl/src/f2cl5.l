@@ -518,7 +518,7 @@
 	 (let ((fun (if (every #'(lambda (e)
 				   (eq e 'integer4))
 			       (mapcar #'(lambda (arg)
-					   (let ((res (get-fun-arg-type (list arg))))
+					   (let ((res (get-fun-arg-type arg)))
 					     ;;(format t "arg = type ~A: ~A~%" res arg)
 					     res))
 				       (rest p)))
@@ -2701,8 +2701,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.100 2002/03/19 23:45:47 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.101 2002/03/20 15:50:41 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.101  2002/03/20 15:50:41  rtoy
+;;; Fix typo in getting the argument type in optimize-integer-arithmetic.
+;;;
 ;;; Revision 1.100  2002/03/19 23:45:47  rtoy
 ;;; When calling a function, it's sometimes (fun args) or (funcall fun
 ;;; args), so we need to check before we look up the type of the function

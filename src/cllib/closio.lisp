@@ -6,11 +6,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.10 2000/06/14 16:35:34 sds Exp $
+;;; $Id: closio.lisp,v 1.11 2000/08/14 16:22:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
+  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  ;; `class-slot-initargs'
+  (require :sys (translate-logical-pathname "clocc:src;port;sys")))
 
 (in-package :cllib)
 
@@ -58,7 +60,7 @@
   (if *print-readably*
       (let ((cl (class-of obj)))
         (format out "#[~s" (class-name cl))
-        (dolist (slot (class-slot-list cl nil))
+        (dolist (slot (class-slot-initargs cl nil))
           (when (slot-boundp obj slot)
             (format out " ~s ~s" slot (slot-value obj slot))))
         (write-string "]" out))

@@ -1,17 +1,24 @@
-;;; File: <geo.lisp - 1999-01-06 Wed 22:56:42 EST sds@eho.eaglets.com>
+;;; File: <geo.lisp - 1999-05-24 Mon 17:36:06 EDT sds@goems.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
 ;;;
-;;; Copyright (C) 1998 by Sam Steingold.
+;;; Copyright (C) 1998-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: geo.lisp,v 1.5 1999/01/07 03:57:16 sds Exp $
+;;; $Id: geo.lisp,v 1.6 1999/05/24 21:39:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 ;;; $Log: geo.lisp,v $
+;;; Revision 1.6  1999/05/24 21:39:35  sds
+;;; (geo-data): complex `crd' instead of `lat'/`lon'.
+;;; (print-geo-coords): the `coordinates' are always a complex number.
+;;; (*country-file*): removed.
+;;; (save-restore-country-list): use `save-restore'.
+;;; (find-country): use `remove-if-not'.
+;;;
 ;;; Revision 1.5  1999/01/07 03:57:16  sds
 ;;; Use `index-t' instead of (unsigned-byte 20).
 ;;;
@@ -60,40 +67,33 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
   (setq str (nsubstitute #\Space #\: (string str))
 	str (nsubstitute #\Space #\, (string str)))
   (with-input-from-string (st str :start start)
-    (values (parse-geo-coord st) (parse-geo-coord st))))
+    (complex (parse-geo-coord st) (parse-geo-coord st))))
 
-(defun print-geo-coords (obj &optional (ar1 t) (ar2 t))
-  "Print the geographic coordinates to the stream.
-If the first two arguments are numbers, print them to the third argument.
-Otherwise, the print the slots LAT and LON of the first argument to the
-second argument."
-  (let (lat lon str)
-    (if (and (realp obj) (realp ar1)) (setq lat obj lon ar1 str ar2)
-	(setq lat (slot-value obj 'lat) lon (slot-value obj 'lon) str ar1))
-    (format str "~9,5f ~a  ~9,5f ~a" lat (if (minusp lat) #\S #\N) lon
+(defun print-geo-coords (coord &optional (out *standard-output*))
+  "Print the geographic coordinates to the stream."
+  (declare (type (complex double-float) coord) (stream out))
+  (let ((lat (realpart coord)) (lon (imagpart coord)))
+    (declare (double-float lat lon))
+    (format out "~9,5f ~a  ~9,5f ~a" lat (if (minusp lat) #\S #\N) lon
 	    (if (minusp lon) #\W #\E))))
 
 ;;;
 ;;; }}}{{{ Geo-Data
 ;;;
 
-(eval-when (load compile eval)
 (defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0))	; population
-  (lat 0.0d0 :type double-float) ; latitude
-  (lon 0.0d0 :type double-float) ; longitude
+  (crd #C(0.0d0 0.0d0) :type (complex double-float)) ; coordinates
   (zip nil :type list))		; list of zip codes.
-)
 
-(defmethod print-object ((gd geo-data) (stream stream))
+(defmethod print-object ((gd geo-data) (out stream))
   "Print the geo-data."
   (when *print-readably* (return-from print-object (call-next-method)))
-  (format stream "Place: ~a~%Population: ~12:d;~30tLocation: "
+  (format out "Place: ~a~%Population: ~12:d;~30tLocation: "
           (geod-name gd) (geod-pop gd))
-  (print-geo-coords gd stream)
-  (format stream "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd))
-          (geod-zip gd)))
+  (print-geo-coords (geod-crd gd) out)
+  (format out "~%Zip Code~p:~{ ~d~}~%" (length (geod-zip gd)) (geod-zip gd)))
 
 (defcustom *census-gazetteer-url* url
   (make-url :prot :http :host "www.census.gov" :path "/cgi-bin/gazetteer?")
@@ -130,8 +130,9 @@ and return a list of geo-data."
 	    str (nsubstitute #\Space #\< str))
       (with-input-from-string (st str)
 	(read st)
-	(setf (geod-lat gd) (* (read st) (if (eq 'n (read st)) 1 -1))
-	      (geod-lon gd) (* (read st) (if (eq 'w (read st)) 1 -1))))
+	(setf (geod-crd gd)
+              (complex (* (read st) (if (eq 'n (read st)) 1 -1))
+                       (* (read st) (if (eq 'w (read st)) 1 -1)))))
       ;; zip
       (setq str (read-line sock))
       (setf (geod-zip gd)
@@ -145,7 +146,7 @@ and return a list of geo-data."
       (when out (format out "~%~:d. ~a" ii gd)))))
 
 (defcustom *weather-url* url
-  (make-url :prot "telnet" :port 3000 :host "mammatus.sprl.umich.edu")
+  (make-url :prot :telnet :port 3000 :host "mammatus.sprl.umich.edu")
   "*The url for the weather information.")
 
 (defun weather-report (code &key (out t) (url *weather-url*))
@@ -161,7 +162,6 @@ and return a list of geo-data."
 ;;; Countries
 ;;;
 
-(eval-when (load compile eval)
 (defstruct (country)
   "The country structure - all the data about a country you can think of."
   (name "" :type simple-string)	; name
@@ -175,8 +175,7 @@ and return a list of geo-data."
   (area 0.0d0 :type (double-float 0.0)) ; Area, in sq km
   (frnt 0.0d0 :type (double-float 0.0)) ; fontier length, in km
   (cstl 0.0d0 :type (double-float 0.0)) ; coastline, in km
-  (lat 0.0d0 :type double-float) ; Latitude
-  (lon 0.0d0 :type double-float) ; Longitude
+  (crd #C(0.0d0 0.0d0) :type (complex double-float)) ; coordinates
   (pop 0 :type integer)		; population
   (birth 0.0d0 :type (double-float 0.0)) ; birth rate
   (death 0.0d0 :type (double-float 0.0)) ; death rate
@@ -194,18 +193,18 @@ and return a list of geo-data."
   (ethn nil :type (or null simple-string)) ; ethnic divisions
   (lang nil :type (or null simple-string)) ; languages
   (rlgn nil :type (or null simple-string)) ; religions
-  ))
+  )
 
-(defmethod print-object ((ntn country) (stream stream))
+(defmethod print-object ((ntn country) (out stream))
   (when *print-readably* (return-from print-object (call-next-method)))
-  (format stream "~a~@[ (~a)~] [~a ~a] [ISO: ~a ~a ~d]~@[ part of ~a~]
+  (format out "~a~@[ (~a)~] [~a ~a] [ISO: ~a ~a ~d]~@[ part of ~a~]
 Location: "
           (country-name ntn) (country-captl ntn) (country-fips ntn)
           (country-inet ntn) (country-iso2 ntn) (country-iso3 ntn)
           (country-isod ntn) (and (country-incl ntn)
                                   (country-name (country-incl ntn))))
-  (print-geo-coords ntn stream)
-  (format stream "~%Population: ~15:d  B: ~5f  D: ~5f  M: ~5f  Net: ~5f
+  (print-geo-coords (country-crd ntn) out)
+  (format out "~%Population: ~15:d  B: ~5f  D: ~5f  M: ~5f  Net: ~5f
 Fertility: ~5f births/woman   Life expectancy at birth: ~5f years
 Area: ~1/comma/ sq km  Frontiers: ~1/comma/ km  Coastline: ~1/comma/ km
 GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])
@@ -233,8 +232,6 @@ GDP: ~2,15:/comma/ (~f $/cap~@[; %~4f growth~])
   "http://www.odci.gov/cia/publications/factbook/~a.html"
   "*The string for generating the URL for getting information on a country.")
 (defcustom *country-list* list nil "*The list of known countries.")
-(defcustom *country-file* pathname (merge-pathnames "country.dat" *lisp-dir*)
-  "The file with the country data.")
 
 (defsubst find-country (slot value &optional (ls *country-list*)
 			(test (cond ((member slot '(name cap note)) #'search)
@@ -248,15 +245,12 @@ Looks in list LS, which defaults to `*country-list*'.  If slot value
 is a float, such as the GDP, VALUE is a cons with the range.
   (find-country SLOT VALUE &optional LS TEST)"
   (declare (symbol slot) (type (function (t t) t) test) (list ls))
-  (mapcan (lambda (nn)
-	    (when (funcall test value (slot-value nn slot)) (list nn)))
-	  ls))
+  (remove-if-not (lambda (nn) (funcall test value (slot-value nn slot))) ls))
 
 (defun save-restore-country-list (&optional (save t))
   "Save or restore `*country-list*'."
-  (if (and save *country-list*) (write-to-file *country-list* *country-file*)
-      (setq *country-list* (read-from-file *country-file*)))
-  (values))
+  (save-restore save :var '*country-list* :name "country.dat"
+                :basedir *lisp-dir*))
 
 (defun str-core (rr)
   "Get the substring of the string from the first `>' to the last `<'."
@@ -323,7 +317,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 (defun view-country (&rest find-args)
   (let ((ntn (if (country-p (car find-args)) (car find-args)
 		 (car (apply #'find-country find-args)))))
-    (view-url (format nil *geo-info-template* (country-fips ntn)))))
+    (view-url (url (format nil *geo-info-template* (country-fips ntn))))))
 
 (defmacro dump-find-country ((&rest find-args)
                              (&rest dump-args &key (out *standard-output*)
@@ -345,7 +339,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 		     :err *standard-output*)
     (ignore-errors
       (setf (country-lctn cc) (next-info st "<B>Location:</B>")
-	    (values (country-lat cc) (country-lon cc))
+            (country-crd cc)
 	    (geo-location (next-info st "<BR><B>Geographic coordinates:</B>")))
       (skip-to-line st "<b>Area:</b>")
       (setf (country-area cc) (next-info st "<BR><I>total:</I>" 'float))
@@ -412,6 +406,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 	    (* next (case (read-from-string st nil nil :start pos)
 		      (trillion 1000000000000) (billion 1000000000)
 		      (million 1000000) (t 1)))))
+    (declare (type (or null index-t) pos next))
     (push (subseq st pos (setq next (position #\, st :start pos))) res)))
 
 #+sds-ignore

@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.6 2000/05/23 22:21:00 sds Exp $
+;;; $Id: card.lisp,v 2.7 2001/03/29 23:35:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -534,8 +534,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 #+nil (progn
 
 ;;; BBDB i/o
-(let ((*readtable* +elisp-readtable+))
-  (setq *user-cards* (read-list-from-file *user-bbdb-file* #'card-read-bbdb)))
+(setq *user-cards* (read-list-from-file *user-bbdb-file* #'card-read-bbdb
+                                        :readtable +elisp-readtable+))
 (let ((*card-output-type* +card-output-bbdb+))
   (write-list-to-file *user-cards* *user-bbdb-file*))
 
@@ -547,8 +547,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 ;;; native i/o
 (let ((*card-output-type* nil))
   (write-to-file *user-cards* *user-native-file*))
-(let ((*readtable* +clos-readtable+))
-  (setq *user-cards* (read-from-file *user-native-file*)))
+(setq *user-cards* (read-from-file *user-native-file*
+                                   :readtable +clos-readtable+))
 
 ;;; Pretty printing
 (let ((*card-output-type* +card-output-pretty+))

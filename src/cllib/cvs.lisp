@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.10 2000/09/07 14:55:19 sds Exp $
+;;; $Id: cvs.lisp,v 2.11 2001/03/29 23:35:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -102,7 +102,8 @@
 (defparameter *cvs-log-sep-2* (make-string 77 :initial-element #\=))
 
 (defun cvs-read-change (in ra)
-  "Read a CHANGE from a stream.  Suitable for `read-list-from-stream'."
+  "Read a CHANGE from a stream.
+Suitable for `read-list-from-stream'."
   (declare (stream in) (symbol ra))
   (unless (eq ra :revision)
     (error "~s: read-ahead is `~s' (`~s' expected)"
@@ -128,7 +129,8 @@
        (if fin +eof+ (read in))))))
 
 (defun cvs-read-file (in ra)
-  "Read a CVS-FILE from a stream.  Suitable for `read-list-from-stream'."
+  "Read a CVS-FILE from a stream.
+Suitable for `read-list-from-stream'."
   (declare (stream in) (symbol ra))
   (loop :while (eq ra :cvs) :do (read-line in) (setq ra (read in)))
   (unless (eq ra :rcs)
@@ -145,7 +147,7 @@
            (tot-rev (parse-integer tot-rev-l :end p0))
            (sel-rev (parse-integer tot-rev-l :start (1+ p1)))
            (revs (progn (skip-to-line in *cvs-log-sep-1* nil)
-                        (read-list-from-stream in #'cvs-read-change +eof+)))
+                        (read-list-from-stream in #'cvs-read-change)))
            (path (merge-pathnames (pathname-ensure-name work)
                                   (directory-namestring in))))
       (unless (= tot-rev sel-rev)

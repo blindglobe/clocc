@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.14 2001/01/04 16:17:29 sds Exp $
+;;; $Id: gq.lisp,v 2.15 2001/03/29 23:35:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -402,7 +402,7 @@ Suitable for `read-list-from-stream'."
     (unless fl
       (return-from read-data-file
         (format t " *** Cannot open file `~a' for reading~%" file)))
-    (values (read-list-from-stream fl #'read-pfl *hist-data-file-sep*)
+    (values (read-list-from-stream fl #'read-pfl :eof *hist-data-file-sep*)
             (read-list-from-stream fl #'read-hist))))
 
 (defun save-data (file hold hist)

@@ -7,13 +7,15 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: prompt.lisp,v 2.1 2000/03/23 00:09:15 sds Exp $
+;;; $Id: prompt.lisp,v 2.2 2000/03/23 02:38:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `getenv'
-  (require :base (translate-logical-pathname "port:sys")))
+  (require :sys (translate-logical-pathname "port:sys")))
+
+(in-package :cllib)
 
 ;; CLISP defines but does not export this function
 ;; #+clisp (import 'sys::package-short-name)
@@ -53,3 +55,6 @@
   #+allegro
   (multiple-value-bind (bb ib ee) (beg-end)
     (setq tpl:*prompt* (concatenate 'string bb tpl:*prompt* ee))))
+
+(provide :prompt)
+;; prompt.lisp ends here

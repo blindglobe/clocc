@@ -1,6 +1,10 @@
 (in-package :cl-user)
 
 (my-assert
+ (progn (ensure-directories-exist "test-dir/") t)
+ T)
+
+(my-assert
  (#+cmu unix:unix-access
 	#+sbcl sb-unix:unix-access "test-dir"
 	#+cmu unix:r_ok

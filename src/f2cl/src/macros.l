@@ -375,12 +375,25 @@ is not included")
     ,@(computed-goto-aux tag-lst)))
 
 ;; macro for a lisp equivalent of Fortran assigned GOTOs
+#+nil
 (defmacro assigned-goto (i &optional tag-lst)
    `(if ,tag-lst
         (if (member ,i ,tag-lst) 
             (go ,i)
             (error "bad statement number in assigned goto"))
         (go ,i)))
+
+(defun assigned-goto-aux (tag-list)
+  (let ((cases nil))
+    (dolist (tag tag-list)
+      (push `(,tag (go ,(make-label tag)))
+	    cases))
+    (push `(t (error "Unknown label for assigned goto")) cases)
+    (nreverse cases)))
+
+(defmacro assigned-goto (var tag-list)
+  `(case ,var
+     ,@(assigned-goto-aux tag-list)))
 
 ;;-----------------------------------------------------------------------------
 ;;
@@ -1270,8 +1283,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.54 2003/09/25 03:43:43 rtoy Exp $
+;;; $Id: macros.l,v 1.55 2003/11/12 05:33:22 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.55  2003/11/12 05:33:22  rtoy
+;;; Macro to handle assigned gotos was wrong.  Fix it.
+;;;
 ;;; Revision 1.54  2003/09/25 03:43:43  rtoy
 ;;; Need to check for reserved names in the fdo macro.  (I think.)
 ;;;

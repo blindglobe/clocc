@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.8 2004/07/30 16:29:12 sds Exp $
+;;; $Id: stat.lisp,v 1.9 2004/07/30 18:28:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -108,9 +108,9 @@ The vector contains the counts in the Ith bin."
          (min (mdl-mi mdl)) (max (mdl-ma mdl)))
     (mesg :log out "~&~S: ~S~%" 'histogram mdl)
     (assert (/= min max) (min max) "~S: min=max=~A" 'histogram min)
-    (let ((width (/ nbins (- max min))) (last (1- nbins))
+    (let ((width (/ (- max min) nbins)) (last (1- nbins))
           (vec (make-array nbins :initial-element 0)))
-      (loop :for x :in list :for v = (floor (* width (- (funcall key x) min)))
+      (loop :for x :in list :for v = (floor (- (funcall key x) min) width)
         :do (incf (aref vec (min v last))))
       (loop :for s :across vec :minimize s :into i :maximize s :into a
         :finally (mesg :log out "~S: bin size from ~:D to ~:D~%"

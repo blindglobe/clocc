@@ -1,3 +1,9 @@
+common-lisp-controller (3.53) unstable; urgency=low
+
+  * Work-around mk-defsystem's override of CL:REQUIRE for SBCL
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sat,  1 Mar 2003 19:16:20 -0700
+
 common-lisp-controller (3.52) unstable; urgency=low
 
   * Have clc-send-command return a zero status if trying to remove a

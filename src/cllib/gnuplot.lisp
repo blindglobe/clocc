@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.8 2002/08/19 13:14:11 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.9 2002/11/30 22:44:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -357,11 +357,11 @@ EMA is the list of parameters for Exponential Moving Averages."
   (assert dls () "Nothing to plot for `~a'~%" title)
   (setq begd (if begd (date begd) (dl-nth-date (car dls)))
         endd (if endd (date endd) (dl-nth-date (car dls) -1)))
-  (remf opts :ema) (remf opts :rel) (remf opts :slot)
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style (or data-style (plot-data-style
                                                  (days-between begd endd)))
-                     :timefmt timefmt :xb begd :xe endd opts)
+                     :timefmt timefmt :xb begd :xe endd
+                     (remove-plist opts :ema :rel :slot))
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}"
             ;; Ugly.  But gnuplot requires a comma *between* plots,
             ;; and this is the easiest way to do that.
@@ -404,9 +404,9 @@ EMA is the list of parameters for Exponential Moving Averages."
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (declare (list lss) (type fixnum depth))
-  (remf opts :depth) (remf opts :rel) (remf opts :key)
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
-                     :data-style data-style :xb 0 :xe (1- depth) opts)
+                     :data-style data-style :xb 0 :xe (1- depth)
+                     (remove-plist opts :depth :rel :key))
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car lss))
     (let* (bv (val (if rel
                        (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
@@ -438,11 +438,10 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
                                         :ykey (compose cdr 'key))) lss)))
   (setq xbeg (or xbeg (reduce #'min lss :key (compose car 'key cadr)))
         xend (or xend (reduce #'max lss :key (compose car 'key car last))))
-  (remf opts :key) (remf opts :rel) (remf opts :lines) (remf opts :quads)
-  (remf opts :xbeg) (remf opts :xend)
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel
                      :data-style (or data-style (plot-data-style lss))
-                     :xb xbeg :xe xend :title title opts)
+                     :xb xbeg :xe xend :title title
+                     (remove-plist opts :key :rel :lines :quads :xbeg :xend))
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}" (mapcar #'car lss))
     (dolist (ln lines) (plot-line-str ln xbeg xend str))
     (dolist (qu quads) (plot-quad-str qu xbeg xend str))
@@ -466,10 +465,10 @@ Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 The first element is the title, all other are records from which we
 get x, y and ydelta with xkey, ykey and ydkey."
   (declare (list ll))
-  (remf opts :xkey) (remf opts :ykey) (remf opts :ydkey)
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style data-style :xb (funcall xkey (second ll))
-                     :xe (funcall xkey (car (last ll))) opts)
+                     :xe (funcall xkey (car (last ll)))
+                     (remove-plist opts :xkey :ykey :ydkey))
     (format str "plot 0 title \"\", '-' title \"~a\" with errorbars,~
  '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
     (dolist (rr ll (format str "e~%"))

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 2000-02-18 Fri 13:11:40 EST sds@ksp.com>
+;;; File: <url.lisp - 2000-03-03 Fri 12:11:39 EST sds@ksp.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,7 +9,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: url.lisp,v 2.1 2000/03/03 17:21:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -596,14 +596,6 @@ as the remote one."
 ;;;
 ;;; }}}{{{ mail
 ;;;
-
-(defcustom *mail-host-address* simple-string
-  (let ((st (machine-instance))) (subseq st 0 (position #\Space st)))
-  "*Name of this machine, for purposes of naming users.")
-(defcustom *user-mail-address* simple-string
-  (concatenate 'string (getenv "USER") "@" *mail-host-address*)
-  "*Full mailing address of this user.
-This is initialized based on `mail-host-address'.")
 
 (defun url-send-mail (url &key (err *error-output*)
                       (text (current-time nil))

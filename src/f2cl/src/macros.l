@@ -1124,7 +1124,7 @@ causing all pending operations to be flushed"
 		      `',dims
 		      `(list ,@dims))))
     `(let ((,init (make-array ,new-dims
-			      :element-type `(simple-array base-char (,',@len))
+			      :element-type `(simple-array character (,',@len))
 			      :initial-element (make-string ,@len))))
        (dotimes (k (array-total-size ,init))
 	 (setf (aref ,init k)
@@ -1309,8 +1309,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.60 2004/09/01 14:17:57 rtoy Exp $
+;;; $Id: macros.l,v 1.61 2005/03/28 20:38:18 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.61  2005/03/28 20:38:18  rtoy
+;;; Make strings with an element-type of character instead of base-char,
+;;; in case the Lisp implementation has unicode support.
+;;;
 ;;; Revision 1.60  2004/09/01 14:17:57  rtoy
 ;;; atan2 takes single-float args, not double-float.
 ;;;

@@ -1946,8 +1946,8 @@
 	   ;; scalar, no length spec.
 	   ;;(format t "scalar, no length spec = ~A~%" decl)
 	   (if (equal (cadr type) '(*))
-	       `(declare (type (simple-array base-char (*)) ,(car decl)))    
-	       `(declare (type (simple-array base-char (,(cadr type))) ,(car decl)))))
+	       `(declare (type (simple-array character (*)) ,(car decl)))    
+	       `(declare (type (simple-array character (,(cadr type))) ,(car decl)))))
 	  ((atom (cadr decl))
 	   ;; scalar, length spec.
 	   ;;(format t "scalar, length spec = ~A~%" decl)
@@ -1957,12 +1957,12 @@
 	  ((equal (cadr decl) '(*))
 	   ;; unspecified length spec
 	   ;;(format t "unspecified length spec = ~A~%" decl)
-           `(declare (type (simple-array base-char (*)) ,(car decl))))
+           `(declare (type (simple-array character (*)) ,(car decl))))
 	  (t
 	   ;; array, no length spec.
 	   ;;(format t "array, no length spec = ~A~%" decl)
            `(declare (type (,*array-type*
-			    (simple-array base-char ,(if (second type)
+			    (simple-array character ,(if (second type)
 							 `(,(second type))
 							 '(*)))
 			    ,(decl-bounds (rest decl))) ,(car decl)))))))
@@ -1972,7 +1972,7 @@
 	 ;;(format t "make-char-init unspecified length spec (*)~%")
 	 "")
 	((null (cdr decl))		; scalar, no length spec.      
-	 `(make-array '(,(cadr type)) :element-type 'base-char :initial-element #\Space))
+	 `(make-array '(,(cadr type)) :element-type 'character :initial-element #\Space))
 	((atom (cadr decl))		; scalar, length spec.
 	 (error "shouldn't happen!")
 	 ;;`(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space)
@@ -2432,7 +2432,7 @@
    (setq str
          (read-from-string (make-array (- dim i) :displaced-to str 
                                                  :displaced-index-offset i
-                                                 :element-type 'base-char)))
+                                                 :element-type 'character)))
    (setq *print-array* old-print-array
          *print-length* old-print-length
          *print-level* old-print-level)
@@ -2953,8 +2953,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.121 2004/08/15 11:16:14 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.122 2005/03/28 20:38:02 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.122  2005/03/28 20:38:02  rtoy
+;;; Make strings with an element-type of character instead of base-char,
+;;; in case the Lisp implementation has unicode support.
+;;;
 ;;; Revision 1.121  2004/08/15 11:16:14  rtoy
 ;;; Don't want that eval-when there.
 ;;;

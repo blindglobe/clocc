@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.27 2001/11/02 22:31:14 sds Exp $
+;;; $Id: url.lisp,v 2.28 2001/12/04 22:22:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -41,6 +41,7 @@
           open-socket-retry open-url with-open-url
           ftp-list url-send-mail url-get-news url-time
           browse-url *browsers* *browser*
+          *nntp-server* *url-replies* *url-errors*
           dump-url url-get whois finger))
 
 ;;;
@@ -102,21 +103,21 @@ guess from the protocol."
         (or (ssp (string-downcase (string (url-prot url))))
             (ssp (case (url-prot url)
                    (:mailto "smtp") (:news "nntp") (:www "http")))
-            ;; yuk!! Solaris does not have http in /etc/services
+            ;; yuk!! Solaris 2.5.1 does not have http in /etc/services
             (and (eq (url-prot url) :http) 80)
             (error 'code :proc 'url-get-port :args (list url)
                    :mesg "Cannot guess the port for ~s")))
       (url-port url)))
 
-(defcustom *nntpserver* simple-string
+(defcustom *nntp-server* simple-string
   (or (getenv "NNTPSERVER") "localhost")
   "*The NNTP server to be user for `news' URLs.")
 
 (defun url-get-host (url)
-  "Get the right host for the URL: if it is a `news', use `*nntpserver*'."
+  "Get the right host for the URL: if it is a `news', use `*nntp-server*'."
   (declare (type url url))
   (if (plusp (length (url-host url))) (url-host url)
-      (case (url-prot url) ((:news :nntp) *nntpserver*))))
+      (case (url-prot url) ((:news :nntp) *nntp-server*))))
 
 (defun url-path-parse (url)
   "Parse the path of URL, returning 3 values: DIR, FILE and ARGS."
@@ -222,7 +223,9 @@ The argument can be:
               start (position #\/ string :start (1+ idx) :test #'char/=
                               :end end)
               slashp (/= (1+ idx) start)))
-      (setq idx (position #\@ string :start start :test #'char= :end end))
+      (setq idx
+            (and slashp
+                 (position #\@ string :start start :test #'char= :end end)))
       (when idx
         (setq idx0 (position #\# string :start start :test #'char= :end end))
         (if idx0 (setf (url-pass url) (subseq string (1+ idx0) idx)
@@ -312,6 +315,7 @@ Print the appropriate message MESG to OUT."
 
 (defun open-url (url &key (err *error-output*) (sleep *url-default-sleep*)
                  (timeout *url-default-timeout*) (init *url-open-init*)
+                 ((:nntp-server *nntp-server*) *nntp-server*)
                  (max-retry *url-default-max-retry*))
   "Open a socket connection to the URL.
 When INIT keyword argument is non-nil (default - `cllib::*url-open-init*'),
@@ -348,16 +352,22 @@ the error `timeout' is signaled."
                     ((:news :nntp)
                      (url-ask sock err :noop)
                      (unless (zerop (length (url-path url)))
-                       (let ((strs (split-string (url-path url) "/")))
-                         (url-ask sock err :group "group ~a" (car strs))
-                         (when (cadr strs)
-                           (url-ask sock err :article "article ~a"
-                                    (cadr strs)))))
+                       (let* ((strs (split-string (url-path url) "/"))
+                              (group (and (not (find #\@ (car strs)
+                                                     :test #'char=))
+                                          (car strs)))
+                              (article (if group (cadr strs)
+                                           (concatenate 'string ; msgid
+                                                        "<" (car strs) ">"))))
+                         (when group
+                           (url-ask sock err :group "group ~a" group))
+                         (when article
+                           (url-ask sock err :article "article ~a" article))))
                      t)
                     ((:time :daytime) t)
                     (t (error 'code :proc 'open-url :args (list (url-prot url))
                               :mesg "Cannot handle protocol ~s"))))
-              ((or code login path) (co) (error co))
+              ((or code login net-path) (co) (error co))
               (error (co)
                 (mesg :err err "Connection to <~a> dropped:~% - ~a~%"
                       url co))))
@@ -407,7 +417,7 @@ ERR is the stream for information messages or NIL for none."
     (setq sym (read sk) stat (read sk))
     (when (string-equal sym "http/1.1")
       (when (>= stat 400)
-        (error 'path :proc 'url-open-http :host (url-host url)
+        (error 'net-path :proc 'url-open-http :host (url-host url)
                :port (url-port url) :mesg "~s: [~a] ~a~%"
                :args (list (url-path url) stat (read-line sk))))
       (when (= stat 302)        ; redirection
@@ -454,6 +464,13 @@ otherwise return the first line."
   "*The table of URL requests and replies, for use in `url-ask'.
 See RFC959 (FTP) &c.")
 
+(defcustom *url-errors* hash-table
+  (let ((ht (make-hash-table :test 'eq)))
+    (dolist (cc '(((:group) 411) ((:article) 423 430))
+             ht)
+      (dolist (re (car cc)) (setf (gethash re ht) (cdr cc)))))
+  "*The table of URL requests and error replies, for use in `url-ask'.")
+
 (defun url-ask (sock out end &rest req)
   "Send a request; read the response."
   (declare (type socket sock) (type (or null stream) out)
@@ -477,7 +494,10 @@ See RFC959 (FTP) &c.")
                    (and (< code 400) endl (not (member code endl :test #'=))))
         :finally (if (< code 400) (return (values ln code))
                      (multiple-value-bind (ho po) (socket-host/port sock)
-                       (error 'network :proc 'url-ask :host ho
+                       (error (if (member code (gethash end *url-errors*)
+                                          :test #'=)
+                                  'net-path 'network)
+                              :proc 'url-ask :host ho
                               :port po :mesg ln)))))
 
 ;;;
@@ -531,8 +551,9 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
     (let ((dir (url-path-dir url)))
       (unless (zerop (length dir))
         (handler-bind ((network (lambda (co)
-                                  (error 'path :proc 'url-login-ftp :host host
-                                         :port port :mesg "CWD error:~% - ~a"
+                                  (error 'net-path :proc 'url-login-ftp
+                                         :host host :port port
+                                         :mesg "CWD error:~% - ~a"
                                          :args (list (port::net-mesg co))))))
           (url-ask sock err :cwd "cwd ~a" dir))))))
 
@@ -739,26 +760,28 @@ When RE is supplied, articles whose subject match it are retrieved."
       (let ((spl (split-string (url-path url) "/")))
         (cond ((cadr spl)       ; group and article
                (url-dump-to-dot sock :out (out (cadr spl))))
-              ((car spl)        ; group only
-               (multiple-value-bind (na a1 a2)
-                   (values-list
-                    (string-tokens (url-ask sock err :group "group ~a"
-                                            (car spl)) ; 211
-                                   :start 3 :max 3))
-                 (let ((nm (format nil "~d-~d" a1 a2)))
-                   (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
-                   (url-ask sock err :xover "xover ~a" nm) ; 224
-                   (let ((ls (map-in #'string->article
-                                     (url-dump-to-dot sock :out (out nm)
-                                                      :collect t))))
-                     (when re
-                       (dolist (art ls)
-                         (when (search re (article-subj art))
-                           (url-ask sock err :article "article ~d" ; 220
-                                    (article-numb art))
-                           (url-dump-to-dot sock :out
-                                            (out (article-numb art))))))
-                     ls))))
+              ((car spl)        ; group or msgid only
+               (if (find #\@ (car spl) :test #'char=) ; msgid ?
+                   (url-dump-to-dot sock :out (out (car spl)))
+                   (multiple-value-bind (na a1 a2) ; group
+                       (values-list
+                        (string-tokens (url-ask sock err :group "group ~a"
+                                                (car spl)) ; 211
+                                       :start 3 :max 3))
+                     (let ((nm (format nil "~d-~d" a1 a2)))
+                       (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
+                       (url-ask sock err :xover "xover ~a" nm) ; 224
+                       (let ((ls (map-in #'string->article
+                                         (url-dump-to-dot sock :out (out nm)
+                                                          :collect t))))
+                         (when re
+                           (dolist (art ls)
+                             (when (search re (article-subj art))
+                               (url-ask sock err :article "article ~d" ; 220
+                                        (article-numb art))
+                               (url-dump-to-dot sock :out
+                                                (out (article-numb art))))))
+                         ls)))))
               (t               ; not even group, just host
                (url-ask sock err :nntp-list "list active") ; 215
                (url-dump-to-dot sock :out (out "active"))))))))
@@ -841,6 +864,7 @@ so that the user gets to type it into a browser.")
 ;;;###autoload
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)
                  (err *error-output*) (timeout *url-default-timeout*)
+                 ((:nntp-server *nntp-server*) *nntp-server*)
                  (proc #'identity) (max-retry *url-default-max-retry*))
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
@@ -851,7 +875,9 @@ This is mostly a debugging function, to be called interactively."
   (format out "Opening URL: `~a'...~%" url)
   (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
     (loop :for ii :of-type index-t :from  1
-          :and rr = (read-line sock nil nil) :until (null rr)
+          :and rr = (read-line sock nil nil)
+          :until (or (null rr) (and (eq :nntp (url-prot url))
+                                    (string= "." rr)))
           :do (format out fmt ii
                       (funcall proc (string-right-trim +whitespace+ rr))))))
 

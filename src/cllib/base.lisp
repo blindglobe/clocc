@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-05-24 Mon 15:43:21 EDT sds@goems.com>
+;;; File: <base.lisp - 1999-06-03 Thu 13:24:42 EDT sds@goems.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.21 1999/05/24 19:47:04 sds Exp $
+;;; $Id: base.lisp,v 1.22 1999/06/03 17:26:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.22  1999/06/03 17:26:37  sds
+;;; (with-gensyms): new macro.
+;;; (map-in): use it.
+;;; (compose): treat quoted symbols properly.
+;;;
 ;;; Revision 1.21  1999/05/24 19:47:04  sds
 ;;; (package-short-name): made public.
 ;;; (quit): made public.
@@ -351,10 +356,16 @@ This function takes care of that."
     (unwind-protect (progn ,@body)
       (close-pipe ,pipe))))
 
+(defmacro with-gensyms (syms &body body)
+  "Bind symbols to gensyms.  First sym is a string - `gensym' prefix.
+Inspired by Paul Graham, <On Lisp>, p. 145."
+  `(let (,@(mapcar (lambda (sy) `(,sy (gensym ,(car syms)))) (cdr syms)))
+    ,@body))
+
 (defmacro map-in (fn seq &rest seqs)
   "`map-into' the first sequence, evaluating it once.
   (map-in F S) == (map-into S F S)"
-  (let ((mi (gensym "MI")))
+  (with-gensyms ("MI-" mi)
     `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
 
 (eval-when (load compile eval)
@@ -607,13 +618,12 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   "Macro: compose functions or macros of 1 argument into a lambda.
 E.g., (compose abs (dl-val zz) 'key) ==>
   (lambda (yy) (abs (funcall (dl-val zz) (funcall key yy))))"
-  (labels ((zz (xx yy)
-             (let ((rr (list (car xx) (if (cdr xx) (zz (cdr xx) yy) yy))))
-               (if (consp (car xx))
-                   (cons 'funcall (if (eq (caar xx) 'quote)
-                                      (cons (cadar xx) (cdr rr)) rr))
-                   rr))))
-    (let ((ff (zz functions 'yy))) `(lambda (yy) ,ff))))
+  (labels ((rec (xx yy)
+             (let ((rr (list (car xx) (if (cdr xx) (rec (cdr xx) yy) yy))))
+               (if (consp (car xx)) (cons 'funcall rr) rr))))
+    (with-gensyms ("COMPOSE-" arg)
+      (let ((ff (rec functions arg)))
+        `(lambda (,arg) ,ff)))))
 
 (defun compose-f (&rest functions)
   "Return the composition of all the arguments.

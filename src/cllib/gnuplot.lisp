@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1998-02-19 Thu 17:49:16 EST sds@mute.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-03-20 Fri 14:07:53 EST sds@mute.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.9 1998/02/19 22:49:42 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.10 1998/03/23 15:53:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.10  1998/03/23 15:53:41  sds
+;;; Fixed to work with ACL and CMU CL.
+;;;
 ;;; Revision 1.9  1998/02/19 22:49:42  sds
 ;;; Switched to automatic guessing of data-style via `plot-data-style'.
 ;;;
@@ -41,8 +44,8 @@
 ;;;
 
 (eval-when (load compile eval)
-  (sds-require 'util) (sds-require 'date)
-  (sds-require 'channel) (sds-require 'signal))
+  (sds-require "util") (sds-require "date")
+  (sds-require "channel") (sds-require "signal"))
 
 ;(run-shell-command "ls")
 ;(shell)
@@ -51,19 +54,19 @@
 ;(make-pipe-io-stream)
 ;(make-pipe-output-stream)
 
-(defvar *gnuplot-path* #+win32 "c:/bin/gnuplot/wgnuplot.exe"
+(defcustom *gnuplot-path* simple-string #+win32 "c:/bin/gnuplot/wgnuplot.exe"
 	#+unix "/usr/local/bin/gnuplot"
   "*The path to the windows gnuplot executable.")
-(defvar *gnuplot-epoch* (date2time (make-date :ye 2000 :mo 1 :da 1))
+(defcustom *gnuplot-epoch* integer (date2time (make-date :ye 2000 :mo 1 :da 1))
   "*The gnuplot epoch - the number of seconds on 2000-1-1.")
 #+win32
-(defvar *gnuplot-path-console* "c:/bin/cgnuplot.exe"
+(defcustom *gnuplot-path-console* simple-string "c:/bin/cgnuplot.exe"
   "*The path to the console gnuplot executable.")
-(defvar *gnuplot-printer*
+(defcustom *gnuplot-printer* simple-string
   #+win32 "\\\\server1\\ddslaser" #+unix "|lpr -Pddslaser"
   "*The printer to print the plots.")
 #+unix (defvar *gnuplot-stream* nil "The current gnuplot output stream.")
-(defvar *gnuplot-file* (merge-pathnames "plot.tmp" *fin-dir*)
+(defcustom *gnuplot-file* pathname (merge-pathnames "plot.tmp" *fin-dir*)
   "*The tmp file for gnuplot.")
 (defvar *gnuplot-msg-stream* t "*The message stream of gnuplot functions.")
 
@@ -168,7 +171,7 @@ REL means plot everything relative to the first value.
 EMA is the list of parameters for Exponential Moving Averages.
 CHANNELS id the list of channels to plot."
   (setq begd (if begd (date begd) (dl-nth-date (car dls)))
-	endd (if endd (date endd) (dl-nth-date (car dls) nil)))
+	endd (if endd (date endd) (dl-nth-date (car dls) -1)))
   (unless dls (error "nothing to plot for `~a'~%" title))
   (setq data-style (or data-style (plot-data-style (days-between begd endd))))
   (with-plot-stream (str plot xlabel ylabel data-style timefmt begd endd title)
@@ -191,14 +194,14 @@ CHANNELS id the list of channels to plot."
       (dolist (dl dls)
 	(setq bv (dl-nth-slot dl slot))
 	(do* ((td (dl-shift (copy-dated-list dl) begd) (dl-shift td)))
-	     ((or (dl-endp td) (date-more-p (dl-nth-date td) endd))
+	     ((or (dl-endp td) (date> (dl-nth-date td) endd))
 	      (format str "e~%"))
-	  (mapl (lambda (e c)
-		  (let ((v (funcall val td)))
+	  (mapl (lambda (ee cc)
+		  (let ((vv (funcall val td)))
 		    (push (cons (dl-nth-date td)
-				(+ (* (car c) v)
-				   (* (- 1 (car c)) (or (cdaar e) v))))
-			  (car e))))
+				(+ (* (car cc) vv)
+				   (* (- 1 (car cc)) (or (cdaar ee) vv))))
+			  (car ee))))
 		emal ema)
 	  (format str "~a ~f~%" (dl-nth-date td) (funcall val td)))
 	(dolist (em emal)
@@ -285,8 +288,8 @@ FNL is a list of (name . function)."
   (setq data-style (or data-style (plot-data-style numpts)))
   (with-plot-stream (str plot xlabel ylabel data-style nil xmin xmax title)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
-    (do ((fn fnl (cdr fn)) (ptl nil nil)) ((null fn) (format str "e~%"))
-      (dotimes (ii (1+ numpts) (nreverse ptl))
+    (do ((fn fnl (cdr fn))) ((null fn) (format str "e~%"))
+      (dotimes (ii (1+ numpts))
 	(let ((xx (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts)))
 	  (format str "~f~20t~f~%" xx (funcall (cdar fn) xx)))))))
 
@@ -308,7 +311,7 @@ DEPTH out of the dated list."
   (do ((bd (dl-nth-date dl)) (ll (dated-list-ll dl) (cdr ll))
        (ii 0 (1+ ii)) rr)
       ((or (null ll) (= ii depth)) (nreverse rr))
-    (push (cons (days-between bd (funcall (dated-list-date dl) (car ll)))
+    (push (cons (days-between bd (funcall (dl-date dl) (car ll)))
 		(slot-value (car ll) slot)) rr)))
 
 (defun line-day2sec (ln begd)
@@ -333,7 +336,9 @@ This is not a complete plotting function (not a UI)!"
   (declare (type pos pos))
   (let ((beg (- (date2time (pos-begd pos)) *gnuplot-epoch*))
 	(end (- (date2time (pos-endd pos)) *gnuplot-epoch*)))
-    (plot-line-str (line-day2sec (pos2line pos) beg) beg end str)))
+    (plot-line-str (line-day2sec (pos2line pos) beg) beg end str
+		   (format nil "~4f ~a/~a" (pos-size pos) (pos-begd pos)
+			   (pos-endd pos)))))
 
 (defun plot-channel-str (ch str)
   "Write the string to plot stream STR for plotting the channel.

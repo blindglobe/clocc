@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.2 2001/07/06 08:09:21 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -491,15 +491,9 @@
 
 ;;; MAKE-PROCESS-LOCK: Creating a process lock.
 
-#-(or (and cmu mp))
 (defun make-process-lock (name)
-  (declare (ignore name))
-  nil)
+  (port::make-lock :name name))
 
-
-#+(and cmu mp)
-(defun make-process-lock (name)
-  (mp:make-lock name))
 
 ;;; HOLDING-LOCK: Execute a body of code with a lock held.
 
@@ -507,41 +501,12 @@
 ;;; passes its timeout to the holding-lock macro, so any timeout you want to
 ;;; work for event-listen you should do for holding-lock.
 
-;; If you're not sharing DISPLAY objects within a multi-processing
-;; shared-memory environment, this is sufficient
-#-(or (and CMU mp))
-(defmacro holding-lock ((locator display &optional whostate &key timeout) &body body)
-  (declare (ignore locator display whostate timeout))
-  `(progn ,@body))
-
-;;; HOLDING-LOCK for CMU Common Lisp.
-;;;
-;;; We are not multi-processing, but we use this macro to try to protect
-;;; against re-entering request functions.  This can happen if an interrupt
-;;; occurs and the handler attempts to use X over the same display connection.
-;;; This can happen if the GC hooks are used to notify the user over the same
-;;; display connection.  We inhibit GC notifications since display of them
-;;; could cause recursive entry into CLX.
-;;;
-#+(and CMU (not mp))
-(defmacro holding-lock ((locator display &optional whostate &key timeout)
-			&body body)
-  `(let ((ext:*gc-verbose* nil)
-	 (ext:*gc-inhibit-hook* nil)
-	 (ext:*before-gc-hooks* nil)
-	 (ext:*after-gc-hooks* nil))
-     ,locator ,display ,whostate ,timeout
-     (system:without-interrupts (progn ,@body))))
-
-;;; HOLDING-LOCK for CMU Common Lisp with multi-processes.
-;;;
-#+(and cmu mp)
 (defmacro holding-lock ((lock display &optional (whostate "CLX wait")
 			      &key timeout)
 			&body body)
-  (declare (ignore display))
-  `(mp:with-lock-held (,lock ,whostate ,@(and timeout `(:timeout ,timeout)))
-    ,@body))
+  (declare (ignore display whostate timeout))
+  `(port:with-lock (,lock)
+     ,@body))
 
 
 ;;; WITHOUT-ABORTS
@@ -551,7 +516,7 @@
 ;;; request writing and reply reading to ensure that requests are atomically
 ;;; written and replies are atomically read from the stream.
 
-#-(or Genera excl lcl3.0)
+#-:lcl3.0
 (defmacro without-aborts (&body body)
   `(progn ,@body))
 
@@ -559,31 +524,22 @@
 ;;; Caller guarantees that PROCESS-WAKEUP will be called after the predicate's
 ;;; value changes.
 
-#-(or (and cmu mp))
-(defun process-block (whostate predicate &rest predicate-args)
-  (declare (ignore whostate))
-  (or (apply predicate predicate-args)
-      (error "Program tried to wait with no scheduler.")))
-
-#+(and cmu mp)
 (defun process-block (whostate predicate &rest predicate-args)
   (declare (type function predicate))
-  (mp:process-wait whostate #'(lambda ()
-				(apply predicate predicate-args))))
+  (apply #'port:process-wait
+         whostate
+         predicate
+         predicate-args))
+                     
+                         
 
 ;;; PROCESS-WAKEUP: Check some other process' wait function.
 
 (declaim (inline process-wakeup))
 
-#-(or (and cmu mp))
 (defun process-wakeup (process)
   (declare (ignore process))
-  nil)
-
-#+(and cmu mp)
-(defun process-wakeup (process)
-  (declare (ignore process))
-  (mp:process-yield))
+  (port:process-yield))
 
 ;;; CURRENT-PROCESS: Return the current process object for input locking and
 ;;; for calling PROCESS-WAKEUP.
@@ -592,13 +548,8 @@
 
 ;;; Default return NIL, which is acceptable even if there is a scheduler.
 
-#-(or (and cmu mp))
 (defun current-process ()
-  nil)
-
-#+(and cmu mp)
-(defun current-process ()
-  mp:*current-process*)
+  (port:current-process))
 
 ;;; WITHOUT-INTERRUPTS -- provide for atomic operations.
 
@@ -644,34 +595,36 @@
 ;;;	the stream to the server.
 ;;;----------------------------------------------------------------------------
 
-;;; OPEN-X-STREAM - create a stream for communicating to the appropriate X
-;;; server
-
-#-(or CMU)
-(defun open-x-stream (host display protocol)
-  host display protocol ;; unused
-  (error "OPEN-X-STREAM not implemented yet."))
-
 ;;; OPEN-X-STREAM -- for CMU Common Lisp.
 ;;;
 ;;; The file descriptor here just gets tossed into the stream slot of the
 ;;; display object instead of a stream.
 ;;;
-#+cmu
-(alien:def-alien-routine ("connect_to_server" xlib::connect-to-server)
-			 c-call:int
-  (host c-call:c-string)
-  (port c-call:int))
-#+cmu
-(defun open-x-stream (host display protocol)
-  (declare (ignore protocol))
-  (let ((server-fd (connect-to-server host display)))
-    (unless (plusp server-fd)
-      (error "Failed to connect to X11 server: ~A (display ~D)" host display))
-    (system:make-fd-stream server-fd :input t :output t
-			   :element-type '(unsigned-byte 8))))
 
+(defconstant +X-unix-socket-path+
+  "/tmp/.X11-unix/X"
+  "The location of the X socket")
 
+(defun open-x-stream (host display protocol)  
+  (declare (ignore protocol)
+           (type (integer 0) display))
+  (cond
+    ;; are we dealing with a localhost?
+    ((or (string= host "")
+         (string= host "unix"))
+     ;; ok, try to connect to a AF_UNIX domain socket
+     (port:open-unix-socket (format nil
+                                    "~A~D"
+                                    +X-unix-socket-path+
+                                    display)
+                            :stream
+                            t))
+    (t
+     ;; try to connect by hand
+     (port:open-socket (resolve-host-ipaddr host)
+                       (+ 6000 display)
+                       t))))
+         
 ;;; BUFFER-READ-DEFAULT - read data from the X stream
 
 ;;; BUFFER-READ-DEFAULT for CMU Common Lisp.
@@ -680,7 +633,6 @@
 ;;; Timeout 0 is the only case where READ-INPUT dives into BUFFER-READ without
 ;;; first calling BUFFER-INPUT-WAIT-DEFAULT.
 ;;;
-#+CMU
 (defun buffer-read-default (display vector start end timeout)
   (declare (type display display)
 	   (type buffer-bytes vector)
@@ -691,78 +643,23 @@
 	      (not (listen (display-input-stream display))))
 	 :timeout)
 	(t
-	 (system:read-n-bytes (display-input-stream display)
-			      vector start (- end start))
-	 nil)))
-
-
-;;; WARNING:
-;;;	CLX performance will suffer if your lisp uses read-byte for
-;;;	receiving all data from the X Window System server.
-;;;	You are encouraged to write a specialized version of
-;;;	buffer-read-default that does block transfers.
-#-(or CMU)
-(defun buffer-read-default (display vector start end timeout)
-  (declare (type display display)
-	   (type buffer-bytes vector)
-	   (type array-index start end)
-	   (type (or null (real 0 *)) timeout))
-  #.(declare-buffun)
-  (let ((stream (display-input-stream display)))
-    (declare (type (or null stream) stream))
-    (or (cond ((null stream))
-	      ((listen stream) nil)
-	      ((and timeout (= timeout 0)) :timeout)
-	      ((buffer-input-wait-default display timeout)))
-	(do* ((index start (index1+ index)))
-	     ((index>= index end) nil)
-	  (declare (type array-index index))
-	  (let ((c (read-byte stream nil nil)))
-	    (declare (type (or null card8) c))
-	    (if (null c)
-		(return t)
-	      (setf (aref vector index) (the card8 c))))))))
+         (read-sequence vector
+                        (display-input-stream display)
+                        :start start
+                        :end end)
+         nil)))
 
 ;;; BUFFER-WRITE-DEFAULT - write data to the X stream
 
-#+CMU
 (defun buffer-write-default (vector display start end)
   (declare (type buffer-bytes vector)
 	   (type display display)
 	   (type array-index start end))
   #.(declare-buffun)
-  (system:output-raw-bytes (display-output-stream display) vector start end)
-  nil)
-
-;;; WARNING:
-;;;	CLX performance will be severely degraded if your lisp uses
-;;;	write-byte to send all data to the X Window System server.
-;;;	You are STRONGLY encouraged to write a specialized version
-;;;	of buffer-write-default that does block transfers.
-
-#-(or CMU)
-(defun buffer-write-default (vector display start end)
-  ;; The default buffer write function for use with common-lisp streams
-  (declare (type buffer-bytes vector)
-	   (type display display)
-	   (type array-index start end))
-  #.(declare-buffun)
-  (let ((stream (display-output-stream display)))
-    (declare (type (or null stream) stream))
-    (unless (null stream)
-      (with-vector (vector buffer-bytes)
-	(do ((index start (index1+ index)))
-	    ((index>= index end))
-	  (declare (type array-index index))
-	  (write-byte (aref vector index) stream))))))
-
-#+CMU
-(defun buffer-write-default (vector display start end)
-  (declare (type buffer-bytes vector)
-	   (type display display)
-	   (type array-index start end))
-  #.(declare-buffun)
-  (system:output-raw-bytes (display-output-stream display) vector start end)
+  (write-sequence vector
+                  (display-output-stream display)
+                  :start start
+                  :end end)
   nil)
 
 ;;; buffer-force-output-default - force output to the X stream
@@ -793,35 +690,6 @@
 
 ;;; The default implementation
 
-;; Poll for input every *buffer-read-polling-time* SECONDS.
-#-(or CMU)
-(defparameter *buffer-read-polling-time* 0.5)
-
-#-(or CMU)
-(defun buffer-input-wait-default (display timeout)
-  (declare (type display display)
-	   (type (or null (real 0 *)) timeout))
-  (declare (clx-values timeout))
-  
-  (let ((stream (display-input-stream display)))
-    (declare (type (or null stream) stream))
-    (cond ((null stream))
-	  ((listen stream) nil)
-	  ((and timeout (= timeout 0)) :timeout)
-	  ((not (null timeout))
-	   (multiple-value-bind (npoll fraction)
-	       (truncate timeout *buffer-read-polling-time*)
-	     (dotimes (i npoll)			; Sleep for a time, then listen again
-	       (sleep *buffer-read-polling-time*)
-	       (when (listen stream)
-		 (return-from buffer-input-wait-default nil)))
-	     (when (plusp fraction)
-	       (sleep fraction)			; Sleep a fraction of a second
-	       (when (listen stream)		; and listen one last time
-		 (return-from buffer-input-wait-default nil)))
-	     :timeout)))))
-
-#+CMU
 (defun buffer-input-wait-default (display timeout)
   (declare (type display display)
 	   (type (or null number) timeout))
@@ -831,13 +699,9 @@
 	  ((listen stream) nil)
 	  ((eql timeout 0) :timeout)
 	  (t
-	   (if #-mp (system:wait-until-fd-usable (system:fd-stream-fd stream)
-						 :input timeout)
-	       #+mp (mp:process-wait-until-fd-usable
-		     (system:fd-stream-fd stream) :input timeout)
+	   (if (port:process-wait-for-stream stream timeout)
 	       nil
 	       :timeout)))))
-
 
 ;;; BUFFER-LISTEN-DEFAULT - returns T if there is input available for the
 ;;; buffer. This should never block, so it can be called from the scheduler.
@@ -885,19 +749,6 @@
 
 (declaim (inline buffer-replace))
 
-#+cmu
-(defun buffer-replace (buf1 buf2 start1 end1 &optional (start2 0))
-  (declare (type buffer-bytes buf1 buf2)
-	   (type array-index start1 end1 start2))
-  #.(declare-buffun)
-  (kernel:bit-bash-copy
-   buf2 (+ (* start2 vm:byte-bits)
-	   (* vm:vector-data-offset vm:word-bits))
-   buf1 (+ (* start1 vm:byte-bits)
-	   (* vm:vector-data-offset vm:word-bits))
-   (* (- end1 start1) vm:byte-bits)))
-
-#-CMU
 (defun buffer-replace (buf1 buf2 start1 end1 &optional (start2 0))
   (declare (type buffer-bytes buf1 buf2)
 	   (type array-index start1 end1 start2))
@@ -1031,20 +882,9 @@
 ;;  HOST hacking
 ;;-----------------------------------------------------------------------------
 
-#-(or CMU)
 (defun host-address (host &optional (family :internet))
-  ;; Return a list whose car is the family keyword (:internet :DECnet :Chaos)
-  ;; and cdr is a list of network address bytes.
-  (declare (type stringable host)
-	   (type (or null (member :internet :decnet :chaos) card8) family))
-  (declare (clx-values list))
-  host family
-  (error "HOST-ADDRESS not implemented yet."))
-
-#+CMU
-(defun host-address (host &optional (family :internet))
-  ;; Return a list whose car is the family keyword (:internet :DECnet :Chaos)
-  ;; and cdr is a list of network address bytes.
+  "Return a list whose car is the family keyword (:internet :DECnet :Chaos)
+  and cdr is a list of network address bytes."
   (declare (type stringable host)
 	   (type (or null (member :internet :decnet :chaos) card8) family))
   (declare (clx-values list))
@@ -1052,14 +892,15 @@
 	     (error "Unknown host ~S" host))
 	   (no-address-error ()
 	     (error "Host ~S has no ~S address" host family)))
-    (let ((hostent (ext:lookup-host-entry (string host))))
-      (when (not hostent)
+    
+    (let ((hostent (port:resolve-host-ipaddr (string host))))
+      (when (not (port:hostent-addr-list hostent))
 	(no-host-error))
       (ecase family
 	((:internet nil 0)
-	 (unless (= (ext::host-entry-addr-type hostent) 2)
+	 (unless (= (port:hostent-addr-type hostent) 2)
 	   (no-address-error))
-	 (let ((addr (first (ext::host-entry-addr-list hostent))))
+	 (let ((addr (first (port:hostent-addr-list hostent))))
 	   (list :internet
 		 (ldb (byte 8 24) addr)
 		 (ldb (byte 8 16) addr)
@@ -1092,8 +933,7 @@
 ;;; Utilities 
 
 (defun getenv (name)
-  #+CMU (cdr (assoc name ext:*environment-list* :test #'string=))
-  #-(or CMU) (progn name nil))
+  (port:getenv name))
 
 (defun homedir-file-pathname (name)
   (and #-(or unix mach) (search "Unix" (software-type) :test #'char-equal)

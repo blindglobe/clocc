@@ -5,6 +5,7 @@
 
 (mk:defsystem :clx
     :source-pathname "cl-library:clx;"
+    :depends-on (("clocc-port"))
     :source-extension "lisp"
     :components
     (:serial     

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-05-24 Mon 15:54:43 EDT sds@goems.com>
+;;; File: <date.lisp - 1999-06-04 Fri 16:08:51 EDT sds@goems.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,15 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.39 1999/05/24 20:59:20 sds Exp $
+;;; $Id: date.lisp,v 1.40 1999/06/04 20:11:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.40  1999/06/04 20:11:27  sds
+;;; (dl-fl, with-saved-dl, with-truncated-dl): use `with-gensyms'.
+;;; (with-saved-dls): call `gensym' with an argument.
+;;; (volatility-dl): fix the second value.
+;;; (print-volatilities):  align the years.
+;;;
 ;;; Revision 1.39  1999/05/24 20:59:20  sds
 ;;; (timestamp): moved to util.lisp.
 ;;; (check-dates): check and fix roll-overs too.
@@ -764,7 +770,7 @@ previous record when SKIP is non-nil and nil otherwise.
 
 (defsetf dl-fl (dl) (ls)
   "Init FL and CL."
-  (let ((xx (gensym "DL-FL")) (yy (gensym "DL-FL")))
+  (with-gensyms ("DL-FL-" xx yy)
     `(let ((,xx ,dl) (,yy ,ls))
       (setf (dated-list-cl ,xx) ,yy (dated-list-fl ,xx) ,yy
        (dated-list-cp ,xx) (cdar ,yy)))))
@@ -882,8 +888,7 @@ so that -1 corresponds to the last record."
 
 (defmacro with-saved-dl (dl &body body)
   "Save FL, CL, CP, do BODY, restore FL, CL, CP."
-  (let ((fl (gensym "WSDL")) (cl (gensym "WSDL"))
-        (cp (gensym "WSDL")) (ll (gensym "WSDL")))
+  (with-gensyms ("WSDL-" fl cl cp ll)
     `(let* ((,ll ,dl) (,fl (dated-list-fl ,ll))
             (,cl (dated-list-cl ,ll)) (,cp (dated-list-cp ,ll)))
       (unwind-protect (progn ,@body)
@@ -892,8 +897,7 @@ so that -1 corresponds to the last record."
 
 (defmacro with-truncated-dl ((dl bd ed) &body body)
   "Evaluate BODY when DL is truncated by the dates BD and ED."
-  (let ((ll (gensym "WTDL")) (cp (gensym "WTDL")) (tp (gensym "WTDL"))
-        (cl (gensym "WTDL")) (tl (gensym "WTDL")))
+  (with-gensyms ("WTDL-" ll cp tp cl tl)
     `(let ((,ll ,dl))
       (with-saved-dl ,ll
         (when ,bd
@@ -913,10 +917,10 @@ so that -1 corresponds to the last record."
 (defmacro with-saved-dls ((&rest dls) &body body)
   "Save several dated lists, like nested `with-saved-dl'."
   (let* ((nn (length dls))
-         (ll (map-into (make-list nn) #'gensym))
-         (fl (map-into (make-list nn) #'gensym))
-         (cl (map-into (make-list nn) #'gensym))
-         (cp (map-into (make-list nn) #'gensym)))
+         (ll (map-into (make-list nn) (lambda () (gensym "WSDLS-LL-"))))
+         (fl (map-into (make-list nn) (lambda () (gensym "WSDLS-FL-"))))
+         (cl (map-into (make-list nn) (lambda () (gensym "WSDLS-CL-"))))
+         (cp (map-into (make-list nn) (lambda () (gensym "WSDLS-CP-")))))
     `(let* (,@(mapcar #'list ll dls)
             ,@(mapcar (lambda (sy dd) `(,sy (dated-list-fl ,dd))) fl ll)
             ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cl ,dd))) cl ll)
@@ -1141,7 +1145,11 @@ Key defaults to VAL; split defaults to `date-ye'."
                       (apply #'volatility (cdr ll) sp :dev-fn dev-fn opts)
                       (volatility (cdr ll) sp :dev-fn dev-fn :key key)))
         :nconc ls :into lst :sum vv :into tv :of-type double-float
-        :finally (return (values (/ tv nn) lst))))
+        :finally (return (values (/ tv nn)
+                                 (call-on-split
+                                  (sort lst #'< :key #'car)
+                                  (lambda (ll) (mean ll :key #'cdr))
+                                  :split-key #'car)))))
 
 (defun print-volatilities (ls &key (out t) (dl #'identity) (head #'identity))
   "Print the annual and monthly volatilities of the objects in the list.
@@ -1149,16 +1157,17 @@ DL is the dated list accessor; HEAD is ihe header for the object,
 it should return a short symbol or string."
   (declare (list ls) (function dl head))
   (format out "~&~70,,,'_:@< Volatilities ~>~%Name     Monthly Annual :")
-  (let ((py t))
+  (let ((beg nil))
     (dolist (ob ls)
       (let ((dl (funcall dl ob)) (he (funcall head ob)) mv lv av)
         (setf (values av lv) (volatility-dl dl :split #'date-ye)
               mv (volatility-dl dl :split #'date-mo))
-        (when py (setq py nil)
-              (dolist (ye lv (terpri out)) (format out "  ~d" (car ye))))
-        (format out "~a~10t~6,4f ~6,4f :" he mv av)
-        (dolist (yv lv) (format out " ~5,3f" (cdr yv)))
-        (terpri out)))))
+        (unless beg
+          (setq beg (caar lv))
+          (dolist (ye lv (terpri out)) (format out "   ~d" (car ye))))
+        (format out "~a~10t~6,5f ~6,5f :" he mv av)
+        (dolist (yv (member beg lv :key #'car) (terpri out))
+          (format out " ~6,5f" (cdr yv)))))))
 
 (defun exp-mov-avg (coeff seq &optional (key #'value) date)
   "Return the list of the exponential moving averages with the given

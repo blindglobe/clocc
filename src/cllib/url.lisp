@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.34 2002/04/03 19:39:17 sds Exp $
+;;; $Id: url.lisp,v 2.35 2002/04/03 20:53:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -846,7 +846,15 @@ For additional servers see http://www.eecis.udel.edu/~mills/ntp/servers.htm")
 (defcustom *browsers* list
   '((:netscape "netscape" "~a")
     (:netscape-remote "netscape" "-remote" "openURL(~a,new-window)")
-    (:lynx "xterm" "-e" "lynx" "~a")
+    (:mozilla "mozilla" "~a")
+    (:mozilla-remote "mozilla" "-remote" "openURL(~a,new-window)")
+    (:konqueror "kfmclient" "openURL" "~a")
+    (:lynx "lynx" "~a")
+    (:lynx-xterm "xterm" "-e" "lynx" "~a")
+    (:links "links" "~a")
+    (:links-xterm "xterm" "-e" "links" "~a")
+    (:w3m "w3m" "~a")
+    (:w3m-xterm "xterm" "-e" "w3m" "~a")
     (:mmm "mmm" "-external" "~a")
     (:mosaic "xmosaic" "~a")
     (:emacs-w3 "gnudoit" "-q" "(w3-fetch \"~a\")"))

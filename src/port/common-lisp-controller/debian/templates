@@ -1,46 +1,41 @@
 Template: common-lisp-controller/auto-build
 Type: boolean
 Default: true
-Description: autobuild lisp libraries for all lisp compilers?
- Do you want what I rebuild all libraries for all compilers
- as they are installed?
+_Description: Autobuild LISP libraries for all LISP compilers?
+ Should all libraries for all compilers be rebuilt as they are installed?
  .
- Note that this can take a significant amount of time on
- every install.
+ Note that this can take a significant amount of time on every install.
 
 Template: common-lisp-controller/how-to-control
 Type: note
-Description: how to control autobuilding
- Autobuilding packages is controlled with
- placing files in certain places. You can create
- those files yourself with "touch".
+_Description: Autobuilding control note
+ Autobuilding packages is controlled with placing files in certain places.
+ You can create those files yourself with "touch".
  .
  The rules are:
  .
- If the file /etc/common-lisp/autobuild exists all
- packages for all compilers will be built.
+ If the file /etc/common-lisp/autobuild exists all packages for all
+ compilers will be built.
  .
- If for an implementation foo the file 
- /etc/common-lisp/foo/autobuild exists all packages
- for that implementation will be build.
+ If for an implementation foo the file /etc/common-lisp/foo/autobuild
+ exists all packages for that implementation will be build.
  .
- If for an implementation foo and a package bar the
- file /etc/common-lisp/foo/bar/autobuild exists this
- package will be autobuild for that implementation.
+ If for an implementation foo and a package bar the file
+ /etc/common-lisp/foo/bar/autobuild exists this package will be autobuild
+ for that implementation.
 
 Template: common-lisp-controller/short-site-name
 Type: string
-Default: Unknown
-Description: The short common lisp site name
- You can configure what the common lisp implementations are 
- going to use as "short site name". This is mostly unused
- except in some error reporting tools.
+_Default: Unknown
+_Description: The short common LISP site name
+ You can configure what the common LISP implementations are going to use as
+ "short site name". This is mostly unused except in some error reporting
+ tools.
 
 Template: common-lisp-controller/long-site-name
 Type: string
-Default: Site name not initialized
-Description: The long common lisp site name
- You can configure what the common lisp implementations are 
- going to use as "long site name". This is mostly unused
- except in some error reporting tools.
-
+_Default: Site name not initialized
+_Description: The long common LISP site name
+ You can configure what the common LISP implementations are going to use as
+ "long site name". This is mostly unused except in some error reporting
+ tools.

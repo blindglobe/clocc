@@ -1,0 +1,135 @@
+#
+#    Translators, if you are not familiar with the PO format, gettext
+#    documentation is worth reading, especially sections dedicated to
+#    this format, e.g. by running:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#
+#    Some information specific to po-debconf are available at
+#            /usr/share/doc/po-debconf/README-trans
+#         or http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+#    Developers do not need to manually edit POT or PO files.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: common-lisp-controller (3.71)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-08-13 08:20+0200\n"
+"PO-Revision-Date: 2003-08-13 08:28+0100\n"
+"Last-Translator: Christian Perrier <bubulle@debian.org>\n"
+"Language-Team: French <debian-l10n-french@lists.debian.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=iso-8859-15\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Description
+#: ../templates:4
+msgid "Autobuild LISP libraries for all LISP compilers?"
+msgstr ""
+"Construction automatique des bibliothèques pour tous les compilateurs LISP ?"
+
+#. Description
+#: ../templates:4
+msgid ""
+"Should all libraries for all compilers be rebuilt as they are installed?"
+msgstr ""
+"Faut-il reconstruire toutes les bibliothèques de tous les compilateurs lors "
+"de leur installation ?"
+
+#. Description
+#: ../templates:4
+msgid "Note that this can take a significant amount of time on every install."
+msgstr ""
+"Veuillez noter que cela peut prendre un temps non négligeable à chaque "
+"installation."
+
+#. Description
+#: ../templates:11
+msgid "Autobuilding control note"
+msgstr "Note à propos du contrôle de la construction automatique"
+
+#. Description
+#: ../templates:11
+msgid ""
+"Autobuilding packages is controlled with placing files in certain places. "
+"You can create those files yourself with \"touch\"."
+msgstr ""
+"La construction automatique des paquets est gérée en plaçant des fichiers à "
+"certains endroits. Ces fichiers peuvent être créés avec « touch »."
+
+#. Description
+#: ../templates:11
+msgid "The rules are:"
+msgstr "Les règles suivantes sont appliquées :"
+
+#. Description
+#: ../templates:11
+msgid ""
+"If the file /etc/common-lisp/autobuild exists all packages for all compilers "
+"will be built."
+msgstr ""
+"- si le fichier /etc/common-lisp/autobuild existe, tous les\n"
+"  paquets de tous les compilateurs seront construits ;"
+
+#. Description
+#: ../templates:11
+msgid ""
+"If for an implementation foo the file /etc/common-lisp/foo/autobuild exists "
+"all packages for that implementation will be build."
+msgstr ""
+"- si, pour le compilateur toto, le fichier\n"
+"  /etc/common-lisp/toto/autobuild existe, tous les\n"
+"  paquets seront reconstruits pour ce compilateur ;"
+
+#. Description
+#: ../templates:11
+msgid ""
+"If for an implementation foo and a package bar the file /etc/common-lisp/foo/"
+"bar/autobuild exists this package will be autobuild for that implementation."
+msgstr ""
+"- si, pour le compilateur toto et le paquet titi, le fichier\n"
+"  /etc/common-lisp/toto/titi/autobuild existe, ce paquet sera\n"
+"  reconstruit pour ce compilateur."
+
+#. Default
+#: ../templates:29
+msgid "Unknown"
+msgstr "Inconnu"
+
+#. Description
+#: ../templates:30
+msgid "The short common LISP site name"
+msgstr "Nom court du site LISP commun"
+
+#. Description
+#: ../templates:30
+msgid ""
+"You can configure what the common LISP implementations are going to use as "
+"\"short site name\". This is mostly unused except in some error reporting "
+"tools."
+msgstr ""
+"Les compilateurs LISP communs utiliseront ce nom comme « nom court de "
+"site » (« short site name »). Cela est pratiquement inutilisé sauf par "
+"certains outils de vérification d'erreurs."
+
+#. Default
+#: ../templates:37
+msgid "Site name not initialized"
+msgstr "Nom de site indéfini"
+
+#. Description
+#: ../templates:38
+msgid "The long common LISP site name"
+msgstr "Nom long du site LISP commun"
+
+#. Description
+#: ../templates:38
+msgid ""
+"You can configure what the common LISP implementations are going to use as "
+"\"long site name\". This is mostly unused except in some error reporting "
+"tools."
+msgstr ""
+"Les compilateurs LISP communs utiliseront ce nom comme « nom long de "
+"site » (« long site name »). Cela est pratiquement inutilisé sauf par "
+"certains outils de vérification d'erreurs."

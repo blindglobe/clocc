@@ -1,0 +1,115 @@
+#
+#    Translators, if you are not familiar with the PO format, gettext
+#    documentation is worth reading, especially sections dedicated to
+#    this format, e.g. by running:
+#         info -n '(gettext)PO Files'
+#         info -n '(gettext)Header Entry'
+#
+#    Some information specific to po-debconf are available at
+#            /usr/share/doc/po-debconf/README-trans
+#         or http://www.debian.org/intl/l10n/po-debconf/README-trans
+#
+#    Developers do not need to manually edit POT or PO files.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2003-08-13 08:20+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#. Description
+#: ../templates:4
+msgid "Autobuild LISP libraries for all LISP compilers?"
+msgstr ""
+
+#. Description
+#: ../templates:4
+msgid ""
+"Should all libraries for all compilers be rebuilt as they are installed?"
+msgstr ""
+
+#. Description
+#: ../templates:4
+msgid "Note that this can take a significant amount of time on every install."
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid "Autobuilding control note"
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid ""
+"Autobuilding packages is controlled with placing files in certain places. "
+"You can create those files yourself with \"touch\"."
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid "The rules are:"
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid ""
+"If the file /etc/common-lisp/autobuild exists all packages for all compilers "
+"will be built."
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid ""
+"If for an implementation foo the file /etc/common-lisp/foo/autobuild exists "
+"all packages for that implementation will be build."
+msgstr ""
+
+#. Description
+#: ../templates:11
+msgid ""
+"If for an implementation foo and a package bar the file /etc/common-lisp/foo/"
+"bar/autobuild exists this package will be autobuild for that implementation."
+msgstr ""
+
+#. Default
+#: ../templates:29
+msgid "Unknown"
+msgstr ""
+
+#. Description
+#: ../templates:30
+msgid "The short common LISP site name"
+msgstr ""
+
+#. Description
+#: ../templates:30
+msgid ""
+"You can configure what the common LISP implementations are going to use as "
+"\"short site name\". This is mostly unused except in some error reporting "
+"tools."
+msgstr ""
+
+#. Default
+#: ../templates:37
+msgid "Site name not initialized"
+msgstr ""
+
+#. Description
+#: ../templates:38
+msgid "The long common LISP site name"
+msgstr ""
+
+#. Description
+#: ../templates:38
+msgid ""
+"You can configure what the common LISP implementations are going to use as "
+"\"long site name\". This is mostly unused except in some error reporting "
+"tools."
+msgstr ""

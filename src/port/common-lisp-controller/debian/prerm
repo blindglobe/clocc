@@ -20,7 +20,7 @@ case "$1" in
         update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
     	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
             if [ -f "$compiler" -a -r "$compiler" ] ; then
-             i=${compiler##.*/}
+             i=${compiler##*/}
              i=${i%.sh}
              if [ -x "$compiler" ] ; then
                 echo Deinstalling for ${i##*/}

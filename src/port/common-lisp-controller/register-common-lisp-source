@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # first check if there is at least a package-name:
 
@@ -43,7 +43,7 @@ fi
 
 for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
-     i=${compiler##.*/}
+     i=${compiler##*/}
      i=${i%.sh}
      if [ -f /etc/common-lisp/autobuild -o \
           -f "/etc/common-lisp/$i/autobuild" -o \

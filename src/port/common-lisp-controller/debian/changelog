@@ -1,3 +1,11 @@
+common-lisp-controller (3.5) unstable; urgency=low
+
+  * Fixed typos in installation scripts. Closes: #152419
+  * Added escape characters for " in site-names. Closes: #152508
+  * Fixed typo in unregister-common-lisp-source. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 11 Jul 2002 09:25:56 +0200
+
 common-lisp-controller (3.4) unstable; urgency=high
 
   * Damn. #151983 was caused by having a ipv6 inetd installed :-(.

@@ -1,4 +1,4 @@
-#! /bin/sh
+#! /bin/bash
 # postinst script for cmucl
 #
 # see: dh_installdeb(1)
@@ -29,9 +29,9 @@ case "$1" in
     update-inetd --add "8990\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 
     db_get common-lisp-controller/long-site-name
-    long="$RET"
+    long="${RET//\"/\\\"}"
     db_get common-lisp-controller/short-site-name
-    short="$RET"
+    short="${RET//\"/\\\"}"
     umask 0022
     cat > /etc/lisp-config.lisp <<EOF
 (in-package :common-lisp-user)
@@ -54,10 +54,10 @@ EOF
     # in any case we rebuild with defsystem loaded...
     for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	if [ -f "$compiler" -a -r "$compiler" ] ; then
-	 i=${compiler##.*/}
+	 i=${compiler##*/}
 	 i=${i%.sh}
 	 if [ -x "$compiler" ] ; then
-	    echo Reinstalling for ${i##*/}
+	    echo Reinstalling for $i
 	    echo Recompiling defsystem for $i
 	    sh  "$compiler" install-defsystem || true
 	    echo
@@ -71,7 +71,7 @@ EOF
         update-inetd --remove "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	    if [ -f "$compiler" -a -r "$compiler" ] ; then
-	     i=${compiler##.*/}
+	     i=${compiler##*/}
 	     i=${i%.sh}
 	     if [ -x "$compiler" ] ; then
 	        echo Deinstalling for ${i##*/}

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ `id -u` != 0 ] ; then
  echo You need to be root to run $0
@@ -42,9 +42,9 @@ fi
 
 for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
-     i=${compiler##.*/}
+     i=${compiler##*/}
      i=${i%.sh}
-     /usr/bin/clc-send-command --quiet remove $0 $i
+     /usr/bin/clc-send-command --quiet remove $1 $i
     fi
 done
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ `id -u` != 0 ] ; then
  echo You need to be root to run $0

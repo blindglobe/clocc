@@ -796,7 +796,9 @@ FILENAME                 File containing Fortran code
      ;; reduce any DOUBLE PRECSION, REAL*8 etc to one word data types
      (when (member (car x) '(double real integer complex)) 
        (setq x (reduce-data-type x)))
-     (when *verbose* (format t "~a~%" (string-downcase (princ-to-string x))))
+     (when *verbose*
+       (write x :case :downcase)
+       (terpri))
 
      ;;return
      (when (id-return x)
@@ -1261,13 +1263,16 @@ FILENAME                 File containing Fortran code
 	       (list (- (second expr)))
 	       expr)))
     (let ((fixed-up-bds (mapcar #'fixup-negative (list-split '|:| bds))))
-      ;; If a bound is "*", just return T instead.
+      ;; If a bound is "*", just return "*".
       (if (null (cdr fixed-up-bds))
-	  (list 1 (or (eq (caar fixed-up-bds) '*)
+	  (list 1 (if (eq (caar fixed-up-bds) '*)
+		      '*
 		      (id-expression (car fixed-up-bds))))
-	  (list (or (eq (caar fixed-up-bds) '*)
+	  (list (if (eq (caar fixed-up-bds) '*)
+		    '*
 		    (id-expression (car fixed-up-bds)))
-		(or (eq (caadr fixed-up-bds) '*)
+		(if (eq (caadr fixed-up-bds) '*)
+		    '*
 		    (id-expression (cdr fixed-up-bds))))))))
 
 ;-----------------------------------------------------------------------------
@@ -2364,8 +2369,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.115 2002/05/07 03:26:10 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.116 2002/05/07 03:56:07 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.116  2002/05/07 03:56:07  rtoy
+;;; o In TRANSLATE_LINT, change how output when *verbose* is set so we can
+;;;   see better what f2cl is really reading.  (Was hard to differentiate
+;;;   between strings and symbols, before, for example.)
+;;; o In PARSE_UPPER_AND_LOWER_BOUNDS, we were returning T for unknown
+;;;   array bounds.  This caused an extraneous Fortran variable T to be
+;;;   introduced.  Return '* instead so we don't get the extraneous
+;;;   variable anymore.
+;;;
 ;;; Revision 1.115  2002/05/07 03:26:10  rtoy
 ;;; o With the function info changes, we were incorrectly saying a
 ;;;   variable was set when it might not have been.  Fix it.

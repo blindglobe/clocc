@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: animals.lisp,v 2.2 2000/04/10 19:01:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,6 +15,8 @@
   (require :miscprint (translate-logical-pathname "cllib:miscprint"))
   ;; `write-to-file', `save-restore'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `*clos-readtable*'
+  (require :closio (translate-logical-pathname "cllib:closio"))
   ;; `symbol-concat'
   (require :symb (translate-logical-pathname "cllib:symb")))
 (in-package :cllib)
@@ -188,9 +190,12 @@ Returnes a fresh string."
   "*The root node, from which the search starts by default.")
 
 (defun save-restore-network (&optional file)
-  (save-restore file :name "network.dat" :var '*network* :basedir *datadir*
-                :voidp (lambda (ht) (>= 1 (hash-table-count ht))) :clos t
-                :pre-save #'hash-table->alist :post-read #'alist->hash-table))
+  (save-restore file :name "network.dat"
+                :var '*network* :basedir *datadir*
+                :voidp (lambda (ht) (>= 1 (hash-table-count ht)))
+                :readtable *clos-readtable*
+                :pre-save #'hash-table->alist
+                :post-read #'alist->hash-table))
 
 (defun resolve (&optional (root *root-node*))
   "Walk through the `*network*' starting with root."

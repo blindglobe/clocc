@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.19 2003/04/26 03:30:23 sds Exp $
+;;; $Id: tests.lisp,v 2.20 2003/07/11 20:49:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -210,17 +210,21 @@
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-cvs num-err)
     num-err))
 
-(defun test-all (&key (out *standard-output*))
+(defun test-all (&key (out *standard-output*)
+                 (what '(string math date rpm url elisp xml cvs)))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
-  (let ((num-err (+ (test-string :out out)
-                    (test-math :out out)
-                    (test-date :out out)
-                    (test-rpm :out out)
-                    (test-url :out out)
-                    (test-elisp :out out)
-                    (test-xml :out out)
-                    (test-cvs :out out))))
-    (mesg :test out " *** ~s: ~:d error~:p~2%" 'test-all num-err)))
+  (let* ((num-test 0)
+         (num-err (reduce #'+ what :key
+                          (lambda (w)
+                            (let ((sy (intern (concatenate 'string "TEST-"
+                                                           (string-upcase w))
+                                              "CLLIB")))
+                              (if (fboundp sy)
+                                  (progn (incf num-test)
+                                         (funcall sy :out out))
+                                  0))))))
+    (mesg :test out " *** ~s: ~:d error~:p in ~:d test~:p~2%"
+          'test-all num-err num-test)))
 
 (provide :cllib-tests)
 ;;; file tests.lisp ends here

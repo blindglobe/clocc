@@ -4154,7 +4154,7 @@ the system definition, if provided."
 ;;; and, eventually, for CMUCL.
 
 #+sbcl
-(eval-when (:load-toplevel :execute)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defun sbcl-mk-defsystem-module-provider (name)
   ;; Let's hope things go smoothly.

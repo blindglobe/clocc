@@ -1,3 +1,9 @@
+cl-defsystem3 (3.3i+cvs.2004.07.18.1) unstable; urgency=low
+
+  * New upstream (closes:259991)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 18 Jul 2004 20:58:47 -0600
+
 cl-defsystem3 (3.3i+cvs.2004.07.13.1) unstable; urgency=low
 
   * Fix upstream bug for SBCL

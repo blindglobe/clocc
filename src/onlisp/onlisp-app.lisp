@@ -1,13 +1,13 @@
 ;;; This code is copyright 1993 by Paul Graham.
 ;;; Distribution under clocc.sourceforge.net
 ;;; Liam M. Healy (LMH), liam@users.sourceforge.net
-;;; By permission of Paul Graham, this is distributed under the 
+;;; By permission of Paul Graham, this is distributed under the
 ;;; GNU General Public License (GPL), version 2.
 ;;; The license accompanies this file under the name "COPYING", or
-;;; see http://www.gnu.org/copyleft/gpl.html for a copy. 
+;;; see http://www.gnu.org/copyleft/gpl.html for a copy.
 
-;;; LMH changes are: 
-;;; Added 
+;;; LMH changes are:
+;;; Added
 ;;;  - in-package and export defintions from this package
 ;;;  - form seperators (by book section)
 ;;;  - comments
@@ -22,7 +22,7 @@
 ;;; No elimination of duplicate definitions,
 ;;; which will cause many warnings when compiling.
 ;;; Anyone who wants to clean up this file should send the
-;;; result to me at the email above. 
+;;; result to me at the email above.
 
 (in-package :pg)
 
@@ -40,7 +40,7 @@
 
 (defmacro db-query (key &optional (db '*default-db*))
   `(gethash ,key ,db))
-  
+
 (defun db-push (key val &optional (db *default-db*))
   (push val (db-query key db)))
 
@@ -57,24 +57,24 @@
          ,@body))))
 
 (defun interpret-query (expr &optional binds)
-  (case (car expr)   
+  (case (car expr)
     (and  (interpret-and (reverse (cdr expr)) binds))
     (or   (interpret-or (cdr expr) binds))
     (not  (interpret-not (cadr expr) binds))
     (t    (lookup (car expr) (cdr expr) binds))))
- 
+
 (defun interpret-and (clauses binds)
   (if (null clauses)
       (list binds)
       (mapcan #'(lambda (b)
                   (interpret-query (car clauses) b))
               (interpret-and (cdr clauses) binds))))
- 
+
 (defun interpret-or (clauses binds)
   (mapcan #'(lambda (c)
               (interpret-query c binds))
           clauses))
- 
+
 (defun interpret-not (clause binds)
   (if (interpret-query clause binds)
       nil
@@ -129,9 +129,9 @@
 ;;;; Chapter 20, Continuations
 ;;;; ********************************************************************************
 
-(setq *cont* #'identity)
+(defvar *cont* #'identity)
 
-(defmacro =lambda (parms &body body) 
+(defmacro =lambda (parms &body body)
   `#'(lambda (*cont* ,@parms) ,@body))
 
 (defmacro =defun (name parms &body body)
@@ -141,10 +141,10 @@
        (defmacro ,name ,parms
          `(,',f *cont* ,,@parms))
        (defun ,f (*cont* ,@parms) ,@body))))
- 
+
 (defmacro =bind (parms expr &body body)
   `(let ((*cont* #'(lambda ,parms ,@body))) ,expr))
-    
+
 (defmacro =values (&rest retvals)
   `(funcall *cont* ,@retvals))
 
@@ -172,7 +172,7 @@
 
 (defmacro choose-bind (var choices &body body)
   `(cb #'(lambda (,var) ,@body) ,choices))
- 
+
 (defun cb (fn choices)
   (declare (function fn))			; LMH
   (if choices
@@ -182,7 +182,7 @@
                  *paths*))
        (funcall fn (car choices)))
      (fail)))
- 
+
 (defun fail ()
   (if *paths*
       (funcall (the function (pop *paths*)))   ; LMH
@@ -192,21 +192,22 @@
 ;;;; Chapter 21, Multiple Processes
 ;;;; ********************************************************************************
 
-(defstruct proc  pri state wait) 
+(defstruct proc  pri state wait)
 
 (proclaim '(special *procs* *proc*))
 
 (defvar *halt* (gensym))
 
 (defvar *default-proc*
-        (make-proc :state #'(lambda (x) 
+        (make-proc :state #'(lambda (x)
+                              (declare (ignore x))
                               (format t "~%>> ")
                               (princ (eval (read)))
                               (pick-process))))
-        
+
 (defmacro fork (expr pri)
   `(prog1 ',expr
-          (push (make-proc 
+          (push (make-proc
                   :state #'(lambda (,(gensym))
                              ,expr
                              (pick-process))
@@ -216,7 +217,7 @@
 (defmacro program (name args &body body)
   `(=defun ,name ,args
      (setq *procs* nil)
-     ,@body 
+     ,@body
      (catch *halt* (loop (pick-process)))))
 
 (defun pick-process ()
@@ -224,7 +225,7 @@
     (setq *proc*  p
           *procs* (delete p *procs*))
     (funcall (proc-state p) val)))
-    
+
 (defun most-urgent-process ()
   (let ((proc1 *default-proc*) (max -1) (val1 t))
     (dolist (p *procs*)
@@ -239,22 +240,22 @@
     (values proc1 val1)))
 
 (defun arbitrator (test cont)
-  (setf (proc-state *proc*) cont 
+  (setf (proc-state *proc*) cont
         (proc-wait *proc*)  test)
   (push *proc* *procs*)
   (pick-process))
- 
+
 (defmacro wait (parm test &body body)
-  `(arbitrator #'(lambda () ,test) 
-               #'(lambda (,parm) ,@body))) 
- 
+  `(arbitrator #'(lambda () ,test)
+               #'(lambda (,parm) ,@body)))
+
 (defmacro yield (&body body)
   `(arbitrator nil #'(lambda (,(gensym)) ,@body)))
- 
+
 (defun setpri (n) (setf (proc-pri *proc*) n))
 
 (defun halt (&optional val) (throw *halt* val))
- 
+
 (defun kill (&optional obj &rest args)
   (if obj
       (setq *procs* (apply #'delete obj *procs* args))
@@ -262,29 +263,29 @@
 
 (defvar *open-doors* nil)
 
-(=defun pedestrian () 
+(=defun pedestrian ()
   (wait d (car *open-doors*)
     (format t "Entering ~A~%" d)))
 
-(program ped () 
+(program ped ()
   (fork (pedestrian) 1))
 
-(=defun capture (city) 
+(=defun capture (city)
   (take city)
   (setpri 1)
   (yield
     (fortify city)))
 
-(=defun plunder (city) 
+(=defun plunder (city)
   (loot city)
   (ransom city))
 
-(defun take (c)    (format t "Liberating ~A.~%" c)) 
-(defun fortify (c) (format t "Rebuilding ~A.~%" c)) 
-(defun loot (c)    (format t "Nationalizing ~A.~%" c)) 
+(defun take (c)    (format t "Liberating ~A.~%" c))
+(defun fortify (c) (format t "Rebuilding ~A.~%" c))
+(defun loot (c)    (format t "Nationalizing ~A.~%" c))
 (defun ransom (c)  (format t "Refinancing ~A.~%" c))
 
-(program barbarians ()   
+(program barbarians ()
   (fork (capture 'rome) 100)
   (fork (plunder 'rome) 98))
 
@@ -294,11 +295,13 @@
 
 (defmacro defnode (name &rest arcs)
   `(=defun ,name (pos regs) (choose ,@arcs)))
- 
+
 (defmacro down (sub next &rest cmds)
   `(=bind (* pos regs) (,sub pos (cons nil regs))
      (,next pos ,(compile-cmds cmds))))
- 
+
+(defvar *sent*)
+
 (defmacro cat (cat next &rest cmds)
   `(if (= (length *sent*) pos)
        (fail)
@@ -325,7 +328,7 @@
      (if (cdr result) result (car result))))
 
 (defmacro set-register (key val regs)
-  `(cons (cons (cons ,key ,val) (car ,regs)) 
+  `(cons (cons (cons ,key ,val) (car ,regs))
          (cdr ,regs)))
 
 (defmacro setr (key val regs)
@@ -347,7 +350,7 @@
              (fail))))))
 
 (defun types (word)
-  (case word 
+  (case word
     ((do does did) '(aux v))
     ((time times) '(n v))
     ((fly flies) '(n v))
@@ -407,7 +410,7 @@
 (defnode pp/prep
   (down np pp/np
     (setr op *)))
- 
+
 (defnode pp/np
   (up `(pp (prep ,(getr prep))
            (obj ,(getr op)))))
@@ -450,23 +453,23 @@
  `(progn
     (setq *paths* nil)
     (=bind (binds) (prove-query ',(rep_ query) nil)
-      (let ,(mapcar #'(lambda (v) 
+      (let ,(mapcar #'(lambda (v)
                         `(,v (fullbind ',v binds)))
                     (vars-in query #'atom))
-        ,@body 
+        ,@body
         (fail)))))
 
 (defun rep_ (x)
-  (if (atom x) 
+  (if (atom x)
       (if (eq x '_) (gensym "?") x)
       (cons (rep_ (car x)) (rep_ (cdr x)))))
 
 (defun fullbind (x b)
-  (cond ((varsym? x) (aif2 (binding x b) 
-                           (fullbind it b) 
+  (cond ((varsym? x) (aif2 (binding x b)
+                           (fullbind it b)
                            (gensym)))
         ((atom x) x)
-        (t (cons (fullbind (car x) b) 
+        (t (cons (fullbind (car x) b)
                  (fullbind (cdr x) b)))))
 
 (defun varsym? (x)
@@ -477,13 +480,13 @@
     `(with-gensyms ,vars
        (setq *paths* nil)
        (=bind (,gb) ,(gen-query (rep_ query))
-         (let ,(mapcar #'(lambda (v) 
+         (let ,(mapcar #'(lambda (v)
                            `(,v (fullbind ,v ,gb)))
                        vars)
            ,@body)
          (fail)))))
 
-(defun varsym? (x) 
+(defun varsym? (x)
   (and (symbolp x) (not (symbol-package x))))
 
 (defun gen-query (expr &optional binds)
@@ -491,22 +494,22 @@
     (and (gen-and (cdr expr) binds))
     (or  (gen-or  (cdr expr) binds))
     (not (gen-not (cadr expr) binds))
-    (t   `(prove (list ',(car expr) 
-                       ,@(mapcar #'form (cdr expr))) 
+    (t   `(prove (list ',(car expr)
+                       ,@(mapcar #'form (cdr expr)))
                  ,binds))))
- 
+
 (defun gen-and (clauses binds)
   (if (null clauses)
       `(=values ,binds)
       (let ((gb (gensym)))
         `(=bind (,gb) ,(gen-query (car clauses) binds)
            ,(gen-and (cdr clauses) gb)))))
- 
+
 (defun gen-or (clauses binds)
   `(choose
-     ,@(mapcar #'(lambda (c) (gen-query c binds)) 
+     ,@(mapcar #'(lambda (c) (gen-query c binds))
                clauses)))
- 
+
 (defun gen-not (expr binds)
   (let ((gpaths (gensym)))
     `(let ((,gpaths *paths*))
@@ -518,6 +521,8 @@
                  (setq *paths* ,gpaths)
                  (=values ,binds))))))
 
+(defvar *rules* nil)
+
 (=defun prove (query binds)
    (choose-bind r *rules* (=funcall r query binds)))
 
@@ -526,40 +531,38 @@
       pat
       `(cons ,(form (car pat)) ,(form (cdr pat)))))
 
-(defvar *rules* nil)
-
 (defmacro <- (con &rest ant)
-  (let ((ant (if (= (length ant) 1) 
-                 (car ant) 
+  (let ((ant (if (= (length ant) 1)
+                 (car ant)
                  `(and ,@ant))))
-    `(length (conc1f *rules* 
+    `(length (conc1f *rules*
                      ,(rule-fn (rep_ ant) (rep_ con))))))
 
 (defun rule-fn (ant con)
   (with-gensyms (val win fact binds)
     `(=lambda (,fact ,binds)
        (with-gensyms ,(vars-in (list ant con) #'simple?)
-         (multiple-value-bind 
-             (,val ,win) 
+         (multiple-value-bind
+             (,val ,win)
              (match ,fact
                     (list ',(car con)
-                          ,@(mapcar #'form (cdr con))) 
+                          ,@(mapcar #'form (cdr con)))
                     ,binds)
-           (if ,win 
-               ,(gen-query ant val) 
+           (if ,win
+               ,(gen-query ant val)
                (fail)))))))
 
 (defun rule-fn (ant con)
   (with-gensyms (val win fact binds paths)                 ;
     `(=lambda (,fact ,binds ,paths)                        ;
        (with-gensyms ,(vars-in (list ant con) #'simple?)
-         (multiple-value-bind 
-             (,val ,win) 
+         (multiple-value-bind
+             (,val ,win)
              (match ,fact
-                    (list ',(car con) 
-                          ,@(mapcar #'form (cdr con))) 
+                    (list ',(car con)
+                          ,@(mapcar #'form (cdr con)))
                     ,binds)
-           (if ,win 
+           (if ,win
                ,(gen-query ant val paths)                  ;
                (fail)))))))
 
@@ -568,7 +571,7 @@
     `(with-gensyms ,vars
        (setq *paths* nil)
        (=bind (,gb) ,(gen-query (rep_ query) nil '*paths*) ;
-         (let ,(mapcar #'(lambda (v) 
+         (let ,(mapcar #'(lambda (v)
                            `(,v (fullbind ,v ,gb)))
                        vars)
            ,@body)
@@ -583,12 +586,12 @@
     (is   (gen-is (cadr expr) (third expr) binds))         ;
     (cut  `(progn (setq *paths* ,paths)                    ;
                   (=values ,binds)))                       ;
-    (t    `(prove (list ',(car expr) 
+    (t    `(prove (list ',(car expr)
                         ,@(mapcar #'form (cdr expr)))
                   ,binds *paths*))))                       ;
- 
+
 (=defun prove (query binds paths)                          ;
-   (choose-bind r *rules* 
+   (choose-bind r *rules*
      (=funcall r query binds paths)))                      ;
 
 (defun gen-and (clauses binds paths)                       ;
@@ -602,7 +605,7 @@
   `(choose
      ,@(mapcar #'(lambda (c) (gen-query c binds paths))    ;
                clauses)))
- 
+
 (defun gen-not (expr binds paths)                          ;
   (let ((gpaths (gensym)))
     `(let ((,gpaths *paths*))
@@ -613,17 +616,17 @@
                (progn
                  (setq *paths* ,gpaths)
                  (=values ,binds))))))
- 
+
 (defmacro with-binds (binds expr)
   `(let ,(mapcar #'(lambda (v) `(,v (fullbind ,v ,binds)))
                  (vars-in expr))
      ,expr))
- 
+
 (defun gen-lisp (expr binds)
   `(if (with-binds ,binds ,expr)
        (=values ,binds)
        (fail)))
- 
+
 (defun gen-is (expr1 expr2 binds)
   `(aif2 (match ,expr1 (with-binds ,binds ,expr2) ,binds)
          (=values it)
@@ -679,7 +682,7 @@
 
 (defun run-methods (obj name args)
   (let ((meth (rget obj name)))
-    (if meth 
+    (if meth
         (apply meth obj args)
         (error "No ~A method for ~A." name obj))))
 
@@ -703,12 +706,12 @@
 (defun run-core-methods (obj name args &optional pri)
   (multiple-value-prog1
     (progn (run-befores obj name args)
-           (apply (or pri (rget obj name :primary)) 
+           (apply (or pri (rget obj name :primary))
                   obj args))
     (run-afters obj name args)))
 
 (defun rget (obj prop &optional meth (skip 0))
-  (some2 #'(lambda (a) 
+  (some2 #'(lambda (a)
              (multiple-value-bind (val win) (gethash prop a)
                (if win
                    (case meth (:around  (meth- around val))
@@ -725,12 +728,12 @@
   (labels ((rec (lst)
              (when lst
                (rec (cdr lst))
-               (let ((am (meth- after 
+               (let ((am (meth- after
                                 (gethash prop (car lst)))))
                  (if am (apply am (car lst) args))))))
     (rec (ancestors obj))))
 
-(defmacro defmeth ((name &optional (type :primary)) 
+(defmacro defmeth ((name &optional (type :primary))
                    obj parms &body body)
   (let ((gobj (gensym)))
     `(let ((,gobj ,obj))
@@ -743,18 +746,18 @@
 (defun build-meth (name type gobj parms body)
   (let ((gargs (gensym)))
     `#'(lambda (&rest ,gargs)
-          (labels 
+          (labels
             ((call-next ()
-               ,(if (or (eq type :primary) 
+               ,(if (or (eq type :primary)
                         (eq type :around))
                     `(cnm ,gobj ',name (cdr ,gargs) ,type)
                     '(error "Illegal call-next.")))
              (next-p ()
                ,(case type
-                  (:around 
+                  (:around
                    `(or (rget ,gobj ',name :around 1)
-                        (rget ,gobj ',name :primary))) 
-                  (:primary 
+                        (rget ,gobj ',name :primary)))
+                  (:primary
                    `(rget ,gobj ',name :primary 1))
                   (t nil))))
             (apply #'(lambda ,parms ,@body) ,gargs)))))
@@ -771,10 +774,10 @@
                     (error "No next method."))))))
 
 (defmacro undefmeth ((name &optional (type :primary)) obj)
-  `(setf (,(symb 'meth- type) (gethash ',name ,obj)) 
+  `(setf (,(symb 'meth- type) (gethash ',name ,obj))
          nil))
 
-(defmacro children (obj) 
+(defmacro children (obj)
   `(gethash 'children ,obj))
 
 (defun parents (obj)
@@ -782,13 +785,13 @@
 
 (defun set-parents (obj pars)
   (dolist (p (parents obj))
-    (setf (children p) 
+    (setf (children p)
           (delete obj (children p))))
   (setf (gethash 'parents obj) pars)
   (dolist (p pars)
     (pushnew obj (children p)))
-  (maphier #'(lambda (obj) 
-               (setf (gethash 'ancestors obj) 
+  (maphier #'(lambda (obj)
+               (setf (gethash 'ancestors obj)
                      (get-ancestors obj)))
            obj)
   pars)
@@ -811,7 +814,7 @@
      (setf (get ',name 'mcombine)
            ,(case op
               (:standard nil)
-              (:progn '#'(lambda (&rest args) 
+              (:progn '#'(lambda (&rest args)
                            (car (last args))))
               (t op)))))
 
@@ -832,9 +835,9 @@
 (defun comb-normal (comb obj name args)
   (apply comb
          (mapcan #'(lambda (a)
-                     (let* ((pm (meth- primary 
+                     (let* ((pm (meth- primary
                                        (gethash name a)))
-                            (val (if pm 
+                            (val (if pm
                                      (apply pm obj args))))
                         (if val (list val))))
                  (ancestors obj))))
@@ -845,7 +848,7 @@
       (let ((pm (meth- primary (gethash name (car ancs)))))
         (if pm
             (let ((new (apply pm obj args)))
-              (and new 
+              (and new
                    (comb-and obj name args (cdr ancs) new)))
             (comb-and obj name args (cdr ancs) last)))))
 
@@ -882,6 +885,6 @@
        (return t))))
 
 
-; This code is copyright 1993 by Paul Graham, but anyone who wants 
+; This code is copyright 1993 by Paul Graham, but anyone who wants
 ; to use the code in any nonprofit activity, or distribute free
 ; verbatim copies (including this notice), is encouraged to do so.

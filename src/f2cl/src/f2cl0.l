@@ -62,13 +62,18 @@
    "LGE" "LGT" "FLOG" "LOG10" "LT" "MAX" "MAX0"
    "MAX1" "MIN0" "MIN1" "NINT" "FREAL"
    "SIGN" "SNGL" "FSQRT"
+   ;; Other functions
+   "D1MACH" "R1MACH"
    ))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.7 2001/02/26 15:38:22 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.8 2001/04/26 17:49:50 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.8  2001/04/26 17:49:50  rtoy
+;;; Export new functions D1MACH and R1MACH
+;;;
 ;;; Revision 1.7  2001/02/26 15:38:22  rtoy
 ;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
 ;;; code refers to it.  Export this variable too.

@@ -56,4 +56,24 @@ means that no limit should be imposed on this recursion)."))
   )
 
 
+;;;---------------------------------------------------------------------------
+;;; Component Pathname Protocol.
+
+(defgeneric get-component-source-pathname (component))
+(defgeneric get-component-source-directory (component))
+(defgeneric get-component-binary-pathname (component))
+(defgeneric get-component-binary-directory (component))
+(defgeneric get-component-error-log-pathname (component))
+(defgeneric get-component-error-log-directory (component))
+
+;;; This is from ASDF.  It is a good idea.
+;;; OUTPUT-PATHNAMES is a better name.
+
+(defgeneric output-files (component operation))
+(defgeneric output-pathnames (component operation))
+
+;;; However, it can be generalized
+(defgeneric output-components (component operation))
+
+
 ;;; end of file -- defsystem.lisp --

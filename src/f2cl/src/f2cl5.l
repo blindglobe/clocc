@@ -1123,24 +1123,50 @@
            `(declare (type (simple-array t (1)) ,(car decl))))))
 
 (defun make-char-init (decl type)
-   (cond ((null (cdr decl)) ; scalar, no length spec.      
-          `(make-array '(,(cadr type)) :element-type 'base-char :initial-element #\Space))
-         ((atom (cadr decl)) ; scalar, length spec.
-          `(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space))
-         ((cddr decl) ; array with length spec
-	  (let ((dims (remove '|,| (cadr decl))))
-	    (if (every #'numberp dims)
-		`(make-array ',dims :element-type '(simple-array base-char (,(caddr decl))))
-		`(make-array (list ,@dims) :element-type '(simple-array base-char (,(caddr decl)))
-		  :initial-element #\Space))))
-         ((equal (cadr decl) '(*)) ; unspecified length spec
-           "")
-         (t ; array, no length spec.
-	  (let ((dims (remove '|,| (cadr decl))))
-	    (if (every #'numberp dims)
-		`(make-array ',dims :element-type '(simple-array base-char ,(cdr type))
-		  :initial-element #\Space)
-		`(make-array (list ,@dims) :element-type '(simple-array base-char ,(cdr type))))))))
+  (cond ((equal (cadr type) '(*))	; unspecified length spec
+	 ;;(format t "make-char-init unspecified length spec (*)~%")
+	 "")
+	((null (cdr decl))		; scalar, no length spec.      
+	 `(make-array '(,(cadr type)) :element-type 'base-char :initial-element #\Space))
+	((atom (cadr decl))		; scalar, length spec.
+	 `(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space))
+	((cddr decl)			; array with length spec
+	 ;;(format t "make-char-init array, with length spec~%")
+	 (let ((dims (mapcar #'(lambda (bounds)
+				 (destructuring-bind (lo hi)
+				     bounds
+				   (if (and (numberp lo) (numberp hi))
+				       (+ 1 (- hi lo))
+				       `(+ 1 (- ,hi ,lo)))))
+			     (remove '|,| (cadr decl)))))
+	   ;;(format t "dims = ~A~%" dims)
+	   `(f2cl-init-string ,dims ,(caddr decl))
+	   #+nil
+	   (if (every #'numberp dims)
+	       `(make-array ',dims
+		 :element-type '(simple-array base-char (,(caddr decl)))
+		 :initial-element (make-string ,(caddr decl)))
+	       `(make-array (list ,@dims)
+		 :element-type '(simple-array base-char (,(caddr decl)))
+		 :initial-element (make-string ,(caddr decl))))))
+	(t				; array, no length spec.
+	 ;;(format t "make-char-init array, no length spec~%")
+	 (let ((dims (mapcar #'(lambda (bounds)
+				 (destructuring-bind (lo hi)
+				     bounds
+				   (if (and (numberp lo) (numberp hi))
+				       (+ 1 (- hi lo))
+				       `(+ 1 (- ,hi ,lo)))))
+			     (remove '|,| (cadr decl)))))
+	   ;;(format t "dims = ~A~%" dims)
+	   `(f2cl-init-string ,dims ,(cdr type))
+	   #+nil
+	   (if (every #'numberp dims)
+	       `(make-array ',dims :element-type '(simple-array base-char ,(cdr type))
+		 :initial-element (make-string ,(cdr type)))
+	       `(make-array (list ,@dims) :element-type '(simple-array base-char ,(cdr type))
+		 :initial-element (make-string ,(cdr type))))
+	   ))))
 
 
 (defun get-implicit-type (vble)
@@ -1175,19 +1201,19 @@
    (and (string>= (string vble) "I")
         (string< (string vble) "O")))
 
-; test whether or not a given symbol has been defined as an array
+;; test whether or not a given symbol has been defined as an array
 (defun vble-is-array-p (v)
-   ; check to see if v is explicitly declared and dimensioned
-   (if (member v *declared_vbles*)
-          (do ((decls *explicit_vble_decls* (cdr decls)))
-              ((null decls) nil)
-              (if (do ((vbles (cdar decls) (cdr vbles)))
-                      ((null vbles) nil)
-                      (if (and (eq v (caar vbles)) (cdar vbles))
-                          (return t)))
-                  (return t)))
-     ; else check if v is a common variable and an array
-     (member v *common_array_dims*)))
+  ;; check to see if v is explicitly declared and dimensioned
+  (if (member v *declared_vbles*)
+      (do ((decls *explicit_vble_decls* (cdr decls)))
+	  ((null decls) nil)
+	(if (do ((vbles (cdar decls) (cdr vbles)))
+		((null vbles) nil)
+	      (if (and (eq v (caar vbles)) (cdar vbles))
+		  (return t)))
+	    (return t)))
+      ;; else check if v is a common variable and an array
+      (member v *common_array_dims*)))
 
 ; test if a symbol is a function call rather than an undeclared vble
 ; used in check_new_vbles

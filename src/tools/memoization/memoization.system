@@ -8,7 +8,7 @@
     :source-extension "lisp"
     :components (:serial 
  		  "package"
- 		  "Memoization"
- 		  "Save-Memo-Table"
- 		  "Memoization-Examples"))
+ 		  "memoization"
+ 		  "save-memo-table"
+ 		  "memoization-examples"))
 

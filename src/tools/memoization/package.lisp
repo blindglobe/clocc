@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Syntax: Common-Lisp; Package: User; Base: 10 -*-
 
-(in-package :User)
+(in-package :user)
 
 ;; Ripped from Load-Memoization.lisp by Peter Van Eynde, originally:
 
@@ -14,9 +14,9 @@
 ;;; to use the more convenient "defpackage".
 
 (defpackage :Memoization
-	:nicknames (:Memo)
-	:use (:Common-Lisp)
-	:export ("DEFINE-MEMO-FUNCTION" "DEFINE-PRECALCULATED-MEMO-FUNCTION" "MEMOIZE"
+	(:nicknames :Memo)
+	(:use :Common-Lisp)
+	(:export "DEFINE-MEMO-FUNCTION" "DEFINE-PRECALCULATED-MEMO-FUNCTION" "MEMOIZE"
 	  "MEMOIZE-FUNCTIONS" "UNMEMOIZE" "UNMEMOIZE-FUNCTIONS"
 	  "UNMEMOIZE-ALL-FUNCTIONS" "REMEMOIZE" "REMEMOIZE-FUNCTIONS"
 	  "CLEAR-MEMO-TABLE" "CLEAR-MEMO-TABLES" "SAVE-MEMO-TABLE"

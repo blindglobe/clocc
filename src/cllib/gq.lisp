@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.27 2002/02/12 19:52:59 sds Exp $
+;;; $Id: gq.lisp,v 2.28 2002/02/13 15:02:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -182,7 +182,7 @@ This is just a debugging function, to be called interactively."
     (mesg t *gq-error-stream* " *** data:~%")
     (let ((*read-default-float-format* 'double-float)
           date res line)
-      (dolist (ti ticks (cons date res))
+      (dolist (ti ticks (cons date (nreverse res)))
         (setq line (read-line sock))
         (mesg t *gq-error-stream* " * ~a~%" line)
         (multiple-value-bind (name nav dt time chg)
@@ -302,7 +302,7 @@ This is just a debugging function, to be called interactively."
                      (chg (read-from-string (car (xmlo-data cha)))))
                 (push (mk-daily-data :nav nav :chg chg) res))))
           ticks (xmlo-data xo))
-    (cons date res)))
+    (cons date (nreverse res))))
 
 (defcustom *get-quote-url-list* list
   (list (list (make-url :prot :http :port 80 :host "finance.yahoo.com"

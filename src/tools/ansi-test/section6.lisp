@@ -162,8 +162,9 @@
 (check-for-bug :section6-legacy-162
   (loop for i in '(a b c d) by #'cddr
         collect i into my-list
-        finally  my-list) ;;; hmm
-  nil )
+        finally (values my-list)) ; FINALLY requires a "compound form"
+  nil
+  "The value of FINALLY is not the value of the LOOP form.")
 
 ;;; 6.1.3.2
 

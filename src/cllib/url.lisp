@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.37 2002/04/08 00:44:31 sds Exp $
+;;; $Id: url.lisp,v 2.38 2002/04/21 20:00:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -399,8 +399,8 @@ the error `timeout' is signaled."
 (makunbound '*url-opening-time*)
 
 (defmacro with-open-url ((socket url &key (rt '*readtable*) err
-                                 (max-retry '*url-default-max-retry*)
-                                 (timeout '*url-default-timeout*)
+                                 (max-retry '*url-max-retry*)
+                                 (timeout '*url-timeout*)
                                  (init '*url-open-init*))
                          &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.

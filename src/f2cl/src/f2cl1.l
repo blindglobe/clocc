@@ -1366,8 +1366,7 @@ main-loop
 	  ((and (listp v) (listp l)
 		(listp (second v))
 		(numberp (first (second v))))
-	   ;; Initializing one element of an array.  We assume the
-	   ;; lower limit on the array is 1!
+	   ;; Initializing one element of an array.
 
 	   ;;(format t "parse-data1 array~%")
 	   (let* ((vname (check-reserved-lisp-names (first v)))
@@ -1375,7 +1374,7 @@ main-loop
 	     `(fset (fref ,vname
 		          ,(remove '|,| (second v))
 		          ,dims)
-	       ,(fix-up-negative-number (first l)))))
+	       ,(fix-up-negative-number l))))
 	  ((and (listp v) (listp l)
 		(listp (first v))
 		(member '= (first v)))
@@ -1395,7 +1394,8 @@ main-loop
 	  (t
 	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
 	   ;;(format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
-	   (if (vble-is-array-p (check-reserved-lisp-names (first v)))
+	   (if (and (vble-is-array-p (check-reserved-lisp-names (first v)))
+		    (null (rest v)))
 	       `(replace ,(check-reserved-lisp-names (first v))
 		         ',(mapcar #'fix-up-negative-number l))
 	       `(setq ,(check-reserved-lisp-names (first v))
@@ -1810,8 +1810,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.47 2000/07/21 21:14:21 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.48 2000/07/21 21:56:37 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.48  2000/07/21 21:56:37  rtoy
+;;; Squash another parsing bug in initializing a single element of an
+;;; array.
+;;;
 ;;; Revision 1.47  2000/07/21 21:14:21  rtoy
 ;;; The last change to PARSE-DATA broke the case of
 ;;;

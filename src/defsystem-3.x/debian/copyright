@@ -7,6 +7,8 @@ It was downloaded from SourceForge CVS server with the below commands:
  2) cvs -z3 -d:pserver:anonymous@cvs.clocc.sourceforge.net:/cvsroot/clocc \
          co clocc
  3) The source code is in the directory ./src/defsystem-3.x
+
+Changes compared to upstream: None.
  
 Upstream Author(s): Mark Kantrowitz and Marco Antoniotti
 

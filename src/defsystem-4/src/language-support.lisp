@@ -16,8 +16,6 @@
 ;;; system definition file for the changes to take effect. 
 
 
-
-
 ;;; Notes.
 ;;;
 ;;; 2002-05-22 Marco Antoniotti
@@ -37,6 +35,29 @@
   (:method ((x language-processor)) t)
   (:method ((x t)) nil))
 
+
+(defclass external-language-processor (language-processor)
+  ((command-line :reader external-command
+		 :type string
+		 :initarg :command))
+  (:default-initarg :command "unknown_external_processor")
+  (:documentation "The External Language Processor Class.
+
+A mixin class used to denote language processors that must be invoked
+via the underlying OS interface, e.g. `cc'.  This class essentially
+provides the `command-line' slot accessible by the `external-reader'
+reader.  The default content of this slot is
+\"unknown_external_processor\", which should generate an error when
+invoked by the OS interface.
+
+This is opposed to language processors that can be invoked directly
+via a CL function call (e.g. a C compiler implemented in CL)."))
+
+(defgeneric external-language-processor-p (x)
+  (:method ((x external-language-processor)) t)
+  (:method ((x t)) nil))
+
+
 (defvar *language-processors* (make-hash-table)
   "Table containing language processor instances.
 It is keyed by keywords.")
@@ -52,11 +73,46 @@ It is keyed by keywords.")
   (setf (gethash kwd *language-processors*) lp))
 
 
+
+;;; Generic "traditional" processors.
+;;; Note the difference betweend the "loader" and the "linker" is to
+;;; be understood in the following sense.
+;;;
+;;; We need to "load" something in a running CL image. To do so we
+;;; usually just issue '(load ...)' for CL files and something
+;;; implementation dependent for 'object' files.
+;;;
+;;; We need to produce an "object" or "executable" by linking together
+;;; some items external to the running CL. To do so we have
+;;; essentially to resort to something like `ld' on UNIX, but this may
+;;; not be sufficient. E.g. we may have to do some peculiar things to
+;;; produce - say - a `.lib' file under Windows starting from a
+;;; `.dll'.
+;;;
+;;; Hence the distinction between `loader-processor' and
+;;; `linker-processor'.
+
+
+
 (defclass language-compiler (language-processor))
 
 (defclass language-loader (language-processor))
 
+(defclass language-linker (language-linker))
+
 (defclass language-interpreter (language-processor))
+
+
+;;; object-loader --
+;;; The distinction between `language-loader' and `object-loader' is
+;;; nominal.  They are essentially the same class, and are both
+;;; provided because of the `object-file'.
+
+(defclass object-loader (language-processor)
+  ()
+  (:documentation "The Object Loader Class.
+This class represents the tools that are used to load an OS dependent
+object file into a running CL."))
 
 
 ;;; Language Processors initialization methods.
@@ -70,8 +126,14 @@ It is keyed by keywords.")
 
 ;;; define-language-processor --
 ;;; This is essentially a "singleton" class definition form.
+;;;
+;;; Notes:
+;;;
+;;; 20020722 Marco Antoniotti
 ;;; The implementation is incorrect since I am not really using a
 ;;; SINGLETON :METACLASS.  Will fix this later.
+;;;
+;;; Unused for the time being.
 
 (defmacro define-language-processor (name (&optional
 					   (superclass 'language-processor))
@@ -99,6 +161,7 @@ It is keyed by keywords.")
 		       function		 ; `language-processor',
 		       language-compiler)
 	     :initarg :compiler)
+
    (processor :accessor language-processor ; As above.
 	      :type (or null
 			function
@@ -111,21 +174,32 @@ It is keyed by keywords.")
 		     language-loader)
 	   :initarg :loader)
 
+   (linker :accessor language-linker	; As above.
+	   :type (or null
+		     function
+		     language-linker)
+	   :initarg :loader)
+
    (source-extension
     :accessor language-source-extension
     :type (or null string)
-    :initarg :source-extension) ; Filename extensions for
-					    ; source files. 
+    :initarg :source-extension)		; Filename extensions for
+					; source files. 
    (binary-extension
     :accessor language-binary-extension
     :type (or null string)
-    :initarg :binary-extension) ; Filename extensions for
-					    ; binary files.
+    :initarg :binary-extension)		; Filename extensions for
+					; binary files.
    )
   (:default-initargs :compiler nil :loader nil :processor nil
 		     :source-extension nil
 		     :binary-extension nil)
   )
+
+
+(defgeneric languagep (x)
+  (:method ((x language)) t)
+  (:method ((x t)) nil)
 
 
 (defmethod print-object ((l language) stream)
@@ -139,6 +213,20 @@ It is keyed by keywords.")
 	     (language-binary-extension l))))
 
 
+;;; component-language-mixin --
+;;; The following three slots are used to provide for alternate compilation
+;;; and loading functions for the files contained within a component. If
+;;; a component has a compiler or a loader specified, those functions are
+;;; used. Otherwise the functions are derived from the language. If no
+;;; language is specified, it defaults to Common Lisp (:lisp). Other current
+;;; possible languages include :scheme (PseudoScheme) and :c, but the user
+;;; can define additional language mappings. Compilation functions should 
+;;; accept a pathname argument and a :output-file keyword; loading functions
+;;; just a pathname argument. The default functions are #'compile-file and
+;;; #'load. Unlike fdmm's SET-LANGUAGE macro, this allows a defsystem to 
+;;; mix languages.
+
+#||
 (defclass component-language-mixin ()
   ((language :accessor component-language
 	     :initarg :language
@@ -153,7 +241,439 @@ It is keyed by keywords.")
   (:default-initargs :language :common-lisp)
   (:documentation
    "A 'mixin' class used to specify a component language other than CL."))
+||#
 
+
+(defclass component-language-mixin ()
+  ((language :accessor component-language
+	     :initarg :language
+	     :type (or null symbol language))
+   )
+  (:default-initargs :language :common-lisp)
+  (:documentation
+   "The Language Mixin Class.
+A 'mixin' class used to specify the (progamming) `language' of the content."))
+
+
+(defclass loadable-component-mixin (component-language-mixin)
+  ((loader :accessor component-loader
+	   :initarg :loader
+	   :type (or null function language-loader))
+   (loader-options :accessor component-compiler-options
+		   :initarg :loader-options
+		   :type list)
+   )
+  (:default-initargs :loader nil)
+  (:documentation 
+   "A `mixin' class used to specify that a component is `loadable'.
+The `loader' slot contains a function or an instance of the specific
+`loader' to be used to perform the operation.
+The `loader-options' slots contains a plist of loader dependent
+options that are passed to it when invoked."))
+
+
+(defclass compilable-component-mixin (component-language-mixin)
+  ((compiler :accessor component-compiler
+	   :initarg :compiler
+	   :type (or null function language-compiler))
+   (compiler-options :accessor component-compiler-options
+		     :initarg :compiler-options
+		     :type list)
+   )
+  (:default-initargs :compiler nil :compiler-options ())
+  (:documentation
+   "A `mixin' class used to specify that a component is `compilable'.
+The `compiler' slot contains a function or an instance of the specific
+`compiler' to be used to perform the operation.
+The `compiler-options' slots contains a plist of compiler dependent
+options that are passed to it when invoked."))
+
+
+(defclass interpretable-component-mixin (component-language-mixin)
+  ((interpreter :accessor component-interpreter
+		:initarg :interpreter
+		:type (or null function language-interpreter))
+   )
+  (:default-initargs :interpreter nil)
+  (:documentation
+   "A `mixin' class used to specify that a component is `interpretable'.
+The `intepreter' slot contains a function or an instance of the specific
+`interpreter' to be used to perform the operation.
+The `interpreter-options' slots contains a plist of compiler dependent
+options that are passed to it when invoked."))
+
+
+;;; Language Mixin and Processors Mixin Initialization and Access Protocols.
+
+(defmethod initialize-instance :after ((c component-language-mixin)
+				       &key (language :common-lisp))
+  (let ((language (find-language language)))
+    (when language (setf (component-language c) language))))
+
+(defmethod component-language :before ((c component-language-mixin))
+  (unless (languagep (slot-value c 'language))
+    (let ((language (find-language language)))
+      (when language (setf (component-language c) language)))))
+
+
+(defun update-language-slot (c language-slot-reader)
+  (declare (type loadable-component-mixin c)
+	   (type symbol slot))
+  (with-accessors (l component-language)
+    c
+    (when (and (languagep l) (funcall language-slot-reader l))
+      (setf (component-loader c)
+	    (funcall language-slot-reader slot-value l)))))
+
+
+(defmethod initialize-instance :after ((c loadable-component-mixin)
+				       &key)
+  (update-language-slot c #'language-loader)))
+
+(defmethod component-loader :before ((c loadable-component-mixin))
+  (update-language-slot c #'language-loader))
+
+
+
+(defmethod initialize-instance :after ((c compilable-component-mixin)
+				       &key)
+  (update-language-slot c #'language-compiler))
+
+(defmethod component-compiler :before ((c compilable-component-mixin))
+  (update-language-slot c #'language-compiler))
+
+
+
+(defmethod initialize-instance :after ((c linkable-component-mixin) &key)
+  (update-language-slot c #'language-linker))
+
+(defmethod component-linker :before ((c linkable-component-mixin))
+  (update-language-slot c #'language-linker))
+
+
+
+(defmethod initialize-instance :after ((c interpretable-component-mixin)
+				       &key)
+  (update-language-slot c #'language-interpreter))
+
+(defmethod component-interpreter :before ((c interpretable-component-mixin))
+  (update-language-slot c #'language-interpreter))
+
+
+;;; Predefined instances.
+
+(defvar *cl-foreign-object-loader* (make-instance 'object-loader))
+
+
+;;;===========================================================================
+;;; Processors Protocol.
+
+(define-condition language-processor-error (simple-error)
+  ((processor :reader language-processor-error-processor
+	      :type (or null language-processor)
+	      :initarg :processor))
+  (:default-initargs :processor nil)
+  (:documentation "The Language Processor Error Condition.
+A class of conditions generated by the invokation of various language
+dependent processors."))
+
+
+;;; output-file-pathname --
+;;; The next function implements a particular interpretation of the
+;;; COMPILE-FILE-PATHNAME function from CLHS.
+;;; I happen to think (as the CLisp implementors do) that this is the
+;;; correct interpretation.
+;;; The name also seems more correct.
+
+(defun output-file-pathname (input-file
+			     &key
+			     (output-file (compile-file-pathname input-file))
+			     &allow-other-keys)
+  (declare (type (or string pathname) input-file output-file))
+  (merge-pathnames (pathname output-file) (merge-pathnames input-file)))
+
+
+;;; process-options --
+
+(defgeneric process-options (processor options &key &allow-other-keys)
+  (:documentation "Processes a list of OPTIONS.
+
+OPTIONS is a plist keyed by keywords.
+
+Returns two values. A list of STRINGs or other items suitable to be
+passed to the underlying interface to the Operating System or to
+whatever other interface is used to invoke the actual PROCESSOR.
+A list of KEYWORDs that represent all the options being processed."))
+
+
+;;; list-known-processor-options --
+
+(defgeneric list-known-processor-options (language-processor)
+  (:method ((lp language-processor)) ())
+  (:documentation
+   "Returns the options handled by the processor.
+The result is a list of keywords."))
+
+
+(defgeneric invoke-processor (processor pathname
+					&rest args
+					&key
+					verbose
+					options
+					&allow-other-keys))
+
+
+(defgeneric invoke-processor-external (processor pathname
+						 &rest args
+						 &key
+						 verbose
+						 options
+						 &allow-other-keys))
+
+
+(defgeneric invoke-compiler (compiler pathname
+				      &rest args
+				      &key
+				      output-pathname
+				      verbose
+				      options
+				      &allow-other-keys))
+
+
+;;; I.e. the "loader" CL uses to "load" something within its execution
+;;; environment.
+
+(defgeneric invoke-loader (compiler pathname
+				    &rest args
+				    &key
+				    verbose
+				    options
+				    &allow-other-keys)
+  )
+
+
+;;; I.e. the "linker" used to produce an output "linked"
+;;; file. E.g. "ld".
+
+(defgeneric invoke-linker (compiler pathname
+				    &rest args
+				    &key
+				    verbose
+				    options
+				    &allow-other-keys)
+  )
+
+(defgeneric invoke-interpreter (interpreter pathname
+					    &rest args
+					    &key
+					    verbose
+					    options
+					    &allow-other-keys))
+
+
+;;;---------------------------------------------------------------------------
+;;; Predefined methods and functions.
+
+
+;;; run-processor-command --
+;;; The main driver that sets up a few output streams (regular and
+;;; error) and that eventually calls the CL implementation dependent
+;;; RUN-OS-PROGRAM.
+;;;
+;;; The INVOKE-PROCESSOR (-COMPILER, -INTERPRETER, -LOADER, -LINKER, -EXTERNAL)
+;;; methods may call RUN-PROCESSOR-COMMAND.
+;;;
+;;; Notes.
+;;;
+;;; 20020725 Marco Antoniotti
+;;; History. This was in the language/c/c.lisp file.  It originates in
+;;; MK3 as RUN-C-COMPILER.
+
+(defun run-processor-command (program
+			      arguments
+			      output-file
+			      &optional
+			      (error-file
+			       (compile-file-pathname
+				file
+				:output-file (c-file-default-error-pathanme)))
+			      (error-output *error-output*)
+			      (verbose nil))
+  (declare (type string program)
+	   (type list arguments)
+	   (type pathname output-file)
+	   (type (or null pathname) error-file)
+	   (type (or null stream (member t)) error-output)
+	   (type boolean verbose))
+  
+  (flet ((make-compound-stream (&rest streams)
+	   (apply #'make-broadcast-stream (delete nil streams)))
+	 )
+    (let ((error-output (if (eq t error-output) *error-output* error-output))
+	  (error-file-stream nil)
+	  (verbose-stream nil)
+	  (old-timestamp (file-write-date output-file))
+	  (fatal-error nil)
+	  (output-file-written nil)
+	  )
+      (declare (type (or null stream)
+		     error-output
+		     error-file-stream
+		     verbose-stream)
+	       (type integer old-timestamp)
+	       (type boolean fatal-error output-file-written))
+      (handler-case
+       (progn
+	 (when error-file
+	   (setf error-file-stream
+		 (open error-file :direction :output :if-exists :supersede)))
+
+	 (with-open-stream (verbose-stream (make-compound-stream
+					    error-file-stream
+					    (and verbose *trace-output*)))
+
+	   (with-open-stream (error-output
+			      (make-compound-stream error-file-stream
+						    error-output))
+	     (user-message verbose-stream
+			   "running: ~A~@[ ~{~A~^ ~}~]."
+			   program
+			   arguments)
+
+	     (let ((process-status
+		    (run-os-program program
+				    :arguments arguments
+				    :error error-output)))
+	       (setf fatal-error (not (zerop process-status)))))
+	       
+	   (setf output-file-written-p
+		 (and (probe-file output-file)
+		      (/= old-timestamp
+			      (file-write-date output-file))))
+
+	   (when output-file-written
+	     (user-message verbose-stream "~A written."
+			   output-file))
+	     
+	   (user-message verbose-stream
+			 "running of ~S completed~@[ with errors~]."
+			 program
+			 fatal-error)
+
+	   (values (and output-file-written-p output-file)
+		   fatal-error
+		   fatal-error)))
+	   
+	   (error (e)
+		  (when error-file
+		    (close error-file-stream)
+		    (unless (or fatal-error (not output-file-written))
+		      (delete-file error-file)))
+		  (values (and output-file-written-p (pathname output-file))
+			  fatal-error
+			  fatal-error))
+
+	   (:no-error (output-file-result warnings-p fatal-errors-p)
+		      (when error-file
+			(close error-file-stream)
+			(unless (or fatal-errors-p (not output-file-written))
+			  (delete-file error-file)))
+		      (values output-file-result
+			      wanrings-p
+			      fatal-errors))
+	   ))
+    ))
+
+
+;;; invoke-processor-external ---
+
+(defmethod invoke-processor-external ((e-proc external-language-processor)
+				      (file pathname)
+				      &rest args
+				      &key
+				      (options ())
+				      (output-pathname
+				       (output-file-pathname file))
+				      (error-log-file nil)
+				      (error-output *error-output*)
+				      (errorp t)
+				      (verbose *compile-verbose*)
+				      &allow-other-keys)
+  (declare (ignore args)
+	   (type list options args)
+	   (type (or null pathname) output-pathname error-log-file)
+	   (type (or null stream (member t)) error-output)
+	   (type boolean verbose errorp)
+	   )
+
+  (flet ((add-output-option (options)
+	   (if (or (member :output-file options) (null output-pathname))
+	       options
+	       (list* :output-file (namestring output-pathname) options)
+	       ))
+	 )
+    (let ((arguments (process-options e-proc (add-ouput-option options))))
+      (multiple-value-bind (output-file warnings fatal-errors)
+	  (run-processor-command (external-command e-proc)
+				 arguments
+				 output-file
+				 error-log-file
+				 error-output
+				 verbose)
+	(if (and errorp (or (not output-file) fatal-errors))
+	    (error 'language-processor-error
+		   :processor e-proc
+		   :format-control "MK4: Invoking ~S on ~S failed."
+		   :format-arguments (list e-proc file))
+	    (values output-file warnings fatal-errors))))))
+
+
+;;; load-object-file --
+;;; The LOAD-OBJECT-FILE is the interface to the CL implementation
+;;; dependent foreign object loader.  This is a very thin layer over
+;;; the CL implementation FFI facilities.
+;;;
+;;; LOAD-OBJECT-FILE is called by INVOKE-LOADER (which is used
+;;; essentially as a hook).
+;;;
+;;; The actual implementation methods are in the
+;;; impl-dependent/<CL implementation>.lisp files.
+;;;
+;;; Notes.
+;;;
+;;; 20020725 Marco Antoniotti
+;;; History. This was in the language/c/c.lisp file.
+
+(defgeneric load-object-file (loadable-c-pahtname
+			      &key
+			      (print *load-print*)
+			      (verbose *load-verbose*)
+			      (libraries '("c"))
+			      )
+  (:documentation
+   "Loads a C object file (or similar) into the CL environment."))
+
+(defmethod no-applicable-method ((lcf (eql #'load-object-file))
+				 &rest arguments)
+  (error "MK4: LOAD-OBJECT-FILE undefined for arguments ~S."
+	 arguments))
+
+
+;;; The main loader.
+
+(defmethod invoke-loader ((ol object-loader) (object-pathname pathname)
+			  &key
+			  (print *load-print*)
+			  (verbose *load-verbose*)
+			  (libraries ()))
+  (load-object-file object-pathname
+		    :print print
+		    :verbose verbose
+		    :libraries libraries))
+
+
+;;;===========================================================================
+;;; Languages Data Base.
 
 (defvar *language-table* (make-hash-table :test #'equal)
   "Hash table that maps from languages to language instances.")
@@ -167,49 +687,40 @@ It is keyed by keywords.")
   (setf (gethash name *language-table*) language-instance))
 
 
+(defmethod initialize-instance :after ((l language) &key)
+  (setf (find-language (language-name l)) l))
 
 
+;;; define-language --
+;;; Useful Macro.
 
-(defun compile-function (component)
-  (or (component-compiler component)
-      (let ((language (find-language (or (component-language component)
-					 :lisp))))
-	(when language (language-compiler language)))
-      #'compile-file))
-
-
-(defun load-function (component)
-  (or (component-loader component)
-      (let ((language (find-language (or (component-language component)
-					 :lisp))))
-	(when language (language-loader language)))
-      #'load))
-
-
-(defmacro define-language (name &key compiler loader processor
+(defmacro define-language (name &key
+				compiler loader processor
 				source-extension binary-extension)
   (assert (symbolp name))
-  (let ((language (gensym "LANGUAGE"))
-	(language-tag (intern (symbol-name name) (find-package "KEYWORD")))
-	)
-    `(let ((,language (make-instance 'language
-				     :name ,language-tag
-				     :compiler ,compiler
-				     :loader ,loader
-				     :processor ,processor
-				     :source-extension ,source-extension
-				     :binary-extension ,binary-extension)))
-       (setf (find-language ',language-tag) ,language)
-       ,language)))
+  (let ((language-tag (intern (symbol-name name) (find-package "KEYWORD"))))
+    (make-instance 'language
+		   :name ,language-tag
+		   :compiler ,compiler
+		   :loader ,loader
+		   :processor ,processor
+		   :source-extension ,source-extension
+		   :binary-extension ,binary-extension)))
 
 
-;;; Common Lisp Language Definition (really useless, here for completenenss).
+;;;---------------------------------------------------------------------------
+;;; Language definitions.
+
+;;; Common Lisp Language Definition (mostly useless, here for completenenss).
 
 (define-language :common-lisp
   :compiler #'compile-file
   :loader #'load
   :source-extension "lisp"
   :binary-extension (cl.env:compiled-file-extension))
+
+
+;;; Pseudo Scheme Language Definition.
 
 (define-language scheme
   :source-extension "scm"
@@ -225,5 +736,24 @@ It is keyed by keywords.")
 
 ||#
 
+
+
+;;;===========================================================================
+;;; Old code
+
+(defun compile-function (component)
+  (or (component-compiler component)
+      (let ((language (find-language (or (component-language component)
+					 :lisp))))
+	(when language (language-compiler language)))
+      #'compile-file))
+
+
+(defun load-function (component)
+  (or (component-loader component)
+      (let ((language (find-language (or (component-language component)
+					 :lisp))))
+	(when language (language-loader language)))
+      #'load))
 
 ;;; end of file -- language-support.lisp --

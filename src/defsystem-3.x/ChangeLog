@@ -1,3 +1,48 @@
+2005-03-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	After a suggestion by David Tolpin, the code is simplified even more,
+	and the logic should be now more clear: use the user supplied pieces
+	of the pathname if non NIL.
+
+2005-03-09  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Change in COMPONENT-FULL-PATHNAME-I.  The treatment of PATHNAME-HOST
+	and PATHNAME-DEVICE in the call to MAKE-PATHNAME in the T branch of
+	the last COND is bogus.  COMPONENT-DEVICE and COMPONENT-HOST must
+	respect the ANSI definition, hence, they cannot be PATHNAMEs.  The
+	simplification of the code is useful and it should make MK:DEFSYSTEM
+	work better with OpenMCL and other systems.  SCL compatibility may be
+	broken, but I doubt it will.
+
+2005-03-03  pvaneynd  <pvaneynd@vault>
+
+	* debian/changelog, debian/control:
+	debian release 3.4i+cvs.2005.03.03.1
+
+2005-02-04  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Set *DONT-REDEFINE-REQUIRE* default to T for ACL (requested by
+	Robert Goldman.)
+
+2005-01-28  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed loading of foreign libraries in Lispworks, which uses different
+	functions on different platoforms.
+
+2005-01-04  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Added small patch to the computation of COMPONENT-HOST to accommodate
+	a recent change in CMUCL.  The patch ensures that eventually the
+	default host is taken from *DEFAULT-PATHNAME-DEFAULTS*.
+	Thanks to Raymond Toy for this patch.
+
 2005-01-04  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.24 2001/02/07 20:07:22 sds Exp $
+;;; $Id: inspect.lisp,v 1.25 2001/02/07 20:13:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -485,7 +485,7 @@ This is useful for frontends which provide an eval/modify facility."
                 (format out "error: wrong command: ~:d/~s" id com))
               (with-tag (:p)
                 (princ "either this is an old inspect session, or a " out)
-                (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (print "bug" out))))))
+                (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (princ "bug" out))))))
     (when (> *inspect-debug* 0)
       (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend frontend
               id com (insp-id insp)))))

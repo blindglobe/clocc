@@ -400,6 +400,9 @@ is not included")
             (error "bad statement number in assigned goto"))
         (go ,i)))
 
+(defun make-label (n) 
+  (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
+
 (defun assigned-goto-aux (tag-list)
   (let ((cases nil))
     (dolist (tag tag-list)
@@ -1300,8 +1303,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.57 2003/11/23 14:10:11 rtoy Exp $
+;;; $Id: macros.l,v 1.58 2004/08/14 04:17:45 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.58  2004/08/14 04:17:45  rtoy
+;;; Need a definition for MAKE-LABEL.
+;;;
 ;;; Revision 1.57  2003/11/23 14:10:11  rtoy
 ;;; FDO should not call function that are not in the F2CL-LIB package.
 ;;; Macros.l should be self-contained.

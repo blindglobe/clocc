@@ -24,5 +24,5 @@ The syntax is
   common-lisp-source-compatible <pkg> [impl ...]
 
 This is designed to be called by a package's installation program. It
-sets autobuild to "no" for that package for all implementations except
+sets package's autobuild to "no" for all implementations except
 for the implementations supplied on the command-line.

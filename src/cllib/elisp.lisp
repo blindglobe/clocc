@@ -1,35 +1,37 @@
-;;; File: <elisp.lisp - 1999-10-25 Mon 13:40:54 EDT sds@ksp.com>
+;;; File: <elisp.lisp - 2000-01-19 Wed 13:14:15 EST sds@ksp.com>
 ;;;
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
 ;;; Copyright (C) 1999 by Sam Steingold
 ;;;
-;;; $Id: elisp.lisp,v 1.5 1999/10/25 17:41:14 sds Exp $
+;;; $Id: elisp.lisp,v 1.6 2000/01/19 18:15:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 ;;; $Log: elisp.lisp,v $
+;;; Revision 1.6  2000/01/19 18:15:59  sds
+;;; require print for `make-clos-readtable'
+;;;
 ;;; Revision 1.5  1999/10/25 17:41:14  sds
 ;;; Support LispWorks and GCL.
 ;;;
-;; Revision 1.4  1999/04/22 19:25:31  sds
-;; (el::make-elisp-readtable): call `make-object-readtable'.
-;; (*elisp-readtable*): a constant now.
-;;
-;; Revision 1.3  1999/04/20 17:34:46  sds
-;; (el::make-elisp-readtable): redefine macro #\".
-;; (el::read-elisp-special): handle #\": \n, \r, \f, \t, \v.
-;;
-;; Revision 1.2  1999/02/22 18:20:12  sds
-;; Works now.
-;;
-;; Revision 1.1  1999/02/20 19:15:30  sds
-;; Initial revision
-;;
-;;
+;;; Revision 1.4  1999/04/22 19:25:31  sds
+;;; (el::make-elisp-readtable): call `make-object-readtable'.
+;;; (*elisp-readtable*): a constant now.
+;;;
+;;; Revision 1.3  1999/04/20 17:34:46  sds
+;;; (el::make-elisp-readtable): redefine macro #\".
+;;; (el::read-elisp-special): handle #\": \n, \r, \f, \t, \v.
+;;;
+;;; Revision 1.2  1999/02/22 18:20:12  sds
+;;; Works now.
+;;;
+;;; Revision 1.1  1999/02/20 19:15:30  sds
+;;; Initial revision
+;;;
 
 (in-package :cl-user)
 
 (eval-when (load compile eval)
-  (sds-require "base") (sds-require "list")
+  (sds-require "base") (sds-require "list") (sds-require "print")
   (export '(cl-user::defsubst) :cl-user)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3)))
 

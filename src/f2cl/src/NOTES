@@ -2,6 +2,29 @@
 
 Changes:
 
+Jul 19, 2000
+------------
+
+Previously, all Fortran arrays were converted to the Lisp arrays of
+with the same number of dimensions.  This also meant that the Lisp
+arrays were stored in row-major order whereas Fortran arrays are in
+column order.
+
+The code has been changed so that all Fortran arrays are converted to
+1-D Lisp arrays.  Also, all array references are now done in
+column-major order in Lisp, just like Fortran.  The intent of this
+change is to make array slicing work properly even for
+multi-dimensional arrays.
+
+If correctly implemented, it would be conceivable to convert LAPACK to
+Lisp. :-)
+
+The code has been given some simple tests and appears to work
+correctly.  Still needs some work on the initializations in Fortran
+DATA statements where we had to transpose the data.  Don't need that
+anymore.
+
+
 Jul 14, 2000
 ------------
 
@@ -23,7 +46,7 @@ parameter, change the Fortran code to the equivalent:
 	call sub(tmp)
 	x(10) = tmp
 
-The last assignment is needed only if sub is modifying it's argument.
+The last assignment is needed only if sub is modifying its argument.
 
 NOTE: Array slicing can have severe performance penalties because when
 array slicing is enabled, all arrays are declared as array's, not

@@ -177,7 +177,12 @@ an error of type error is signaled. ")
    (defmethod foo041 ((x real)) 'ok)
    (defmethod foo041 ((x integer)) (call-next-method (sqrt x)))
    (foo041 2))
- ok)
+ error
+ "CLHS:  When providing arguments to CALL-NEXT-METHOD, the following
+ rule must be satisfied or an error of type ERROR should be signaled:
+ the ordered set of applicable methods for a changed set of arguments
+ for CALL-NEXT-METHOD must be the same as the ordered set of applicable
+ methods for the original arguments to the generic function.")
 
 (my-assert
  (ccase 'x)

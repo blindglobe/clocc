@@ -463,7 +463,6 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; Type Definitions ***************
 ;;; ********************************
 
-#+(or cmu sbcl)
 (eval-when (compile load eval)
   (deftype time-type () '(unsigned-byte 32))
   (deftype consing-type () '(unsigned-byte 32)))
@@ -1240,24 +1239,23 @@ adjusted for overhead."
   `(dolist (name ,(if names `',names '*monitored-functions*) (values))
      (monitoring-unencapsulate name)))
 
-(defun MONITOR-ALL (&optional (package *package*))
+(defun MONITOR-ALL (&optional (packages *package*))
   "Monitor all functions in the specified package."
-  (let ((package (if (packagep package)
-		     package
-		     (find-package package))))
+  (dolist (package (if (listp packages) packages (list packages)))
+    (setq package (find-package package))
     (do-symbols (symbol package)
       (when (eq (symbol-package symbol) package)
         (monitoring-encapsulate symbol)))))
 
 (defmacro MONITOR-FORM (form
                         &optional (nested :exclusive) (threshold 0.01)
-                        (key :percent-time))
+                        (key :percent-time) (packages *package*))
   "Monitor the execution of all functions in the current package
 during the execution of FORM.  All functions that are executed above
 THRESHOLD % will be reported."
   `(unwind-protect
        (progn
-         (monitor-all)
+         (monitor-all ,packages)
          (reset-all-monitoring)
          (time ,form))
      (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)
@@ -1301,14 +1299,14 @@ of an empty function many times."
   (let ((overhead-function (symbol-function 'stub-function)))
     (dotimes (x overhead-iterations)
       (funcall overhead-function overhead-function)))
-;  (dotimes (x overhead-iterations)
-;    (stub-function nil))
-  (let ((fiter (float overhead-iterations)))
+  ;; (dotimes (x overhead-iterations)
+  ;;   (stub-function nil))
+  (let ((fiter overhead-iterations))
     (multiple-value-bind (calls nested-calls time cons)
         (monitor-info-values 'stub-function)
       (declare (ignore calls nested-calls))
-      (setq *monitor-time-overhead* (/ time fiter)
-            *monitor-cons-overhead* (/ cons fiter))))
+      (setq *monitor-time-overhead* (float (/ time fiter))
+            *monitor-cons-overhead* (float (/ cons fiter)))))
   (unmonitor stub-function))
 (set-monitor-overhead)
 
@@ -1365,7 +1363,8 @@ functions set NAMES to be either NIL or :ALL."
 
   (let ((total-time 0)
         (total-cons 0)
-        (total-calls 0))
+        (total-calls 0)
+        #+clisp (custom:*warn-on-floating-point-contagion* nil))
     ;; Compute overall time and consing.
     (dolist (name names)
       (multiple-value-bind (calls nested-calls time cons)

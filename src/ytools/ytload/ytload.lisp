@@ -71,15 +71,19 @@
 
 ;;; 'start-over' = true means ignore existing settings for config vars
 ;;; Implies reinstall.
-(defun cl-user::yt-install (module &key (start-over nil) (config-dir nil))
+(defun cl-user::yt-install (module &key (if-installed ':warn)
+					(start-over nil)
+					(config-dir nil))
    (setq module (intern (string module) :keyword))
    (cond (config-dir
 	  (setq config-directory* config-dir)))
    (load-yt-config-file)
    (cond ((or start-over
 	      (not (check-installed module))
-	      (y-or-n-p "Module ~s already installed; reinstall?"
-			module))
+	      (eq if-installed ':reinstall)
+	      (and (eq if-installed ':warn)
+		   (y-or-n-p "Module ~s already installed; reinstall?"
+			     module)))
 	  (cond ((really-install module start-over)
 		 (format t "~a is installed~%" module)
 		 t)

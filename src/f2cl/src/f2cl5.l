@@ -1590,6 +1590,22 @@
      ,(get_format_stmt (list (second x)))
      ,@(mapcar #'parse-output-argument 
 		       (list-split '|,| (cdddr x))))))
+
+;; x is of the form '(read (lun |,| format) var |,| var)
+;;
+;; We're not trying to implement full Fortran read functionality.  We
+;; just want to read data into the variables.  Implied do loops are
+;; not supported.
+(defun parse-read (x)
+  (append (list "***WARNING:  READ statement may not be translated correctly!")
+	  (mapcar #'(lambda (var)
+		      `(setf ,(if (rest var)
+				  var
+				  (first var))
+			(read)))
+		  (remove nil (list-split '|,| (cddr x))))
+	  (list "***WARNING: Preceding READ statements may not be correct!")))
+  
      
 #+nil
 (defmacro fformat (dest cilist args)
@@ -2144,8 +2160,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.58 2000/08/03 03:39:49 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.59 2000/08/04 14:20:31 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.59  2000/08/04 14:20:31  rtoy
+;;; Add very rudimentary support for Fortran READ statements.  This means
+;;; we just basically call read and assign the result to the (simple)
+;;; variable.  We don't even bother to look at the format number or check
+;;; the variable type.
+;;;
 ;;; Revision 1.58  2000/08/03 03:39:49  rtoy
 ;;; The string passed to PARSE-FORMAT-DESCRIPTOR-H can be a character,
 ;;; digit, or symbol.  These all need to be converted to character.  Make

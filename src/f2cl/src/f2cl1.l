@@ -553,6 +553,9 @@ INPUT-FILE               File containing Fortran code
      ;;print
      (when (eq (car x) 'print)
        (return (parse-print x)))
+     ;; read
+     (when (eq (car x) 'read)
+       (return (parse-read x)))
        
      ;;format
      (when (eq (car x) 'format)
@@ -1792,8 +1795,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.57 2000/08/01 22:45:46 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.58 2000/08/04 14:20:31 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.58  2000/08/04 14:20:31  rtoy
+;;; Add very rudimentary support for Fortran READ statements.  This means
+;;; we just basically call read and assign the result to the (simple)
+;;; variable.  We don't even bother to look at the format number or check
+;;; the variable type.
+;;;
 ;;; Revision 1.57  2000/08/01 22:45:46  rtoy
 ;;; o Add a few comments.
 ;;; o GENERATE-CALL-TO-ROUTINE was crashing when passed an array-slice.

@@ -65,7 +65,7 @@
    "MAX1" "MIN0" "MIN1" "NINT" "FREAL"
    "SIGN" "SNGL" "FSQRT"
    ;; Other functions
-   "D1MACH" "R1MACH"
+   "D1MACH" "R1MACH" "I1MACH"
    ))
 
 (defpackage "FORTRAN-TO-LISP"
@@ -81,8 +81,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.13 2002/03/11 16:40:21 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.14 2002/04/18 13:03:29 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.14  2002/04/18 13:03:29  rtoy
+;;; Forgot to export I1MACH.
+;;;
 ;;; Revision 1.13  2002/03/11 16:40:21  rtoy
 ;;; Export INT-ADD, INT-SUB, INT-MUL.
 ;;;

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: sorted.lisp,v 1.3 2000/04/10 20:58:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)
@@ -131,7 +131,7 @@ Returns them for possible further processing."
                       (funcall key bot))))
       (values top bot))))
 
-(defun top-bottom-fl (ls &key (val #'value) (label #'date)
+(defun top-bottom-fl (ls &key (val #'value) (label #'identity)
                       (out *standard-output*))
   "Print top/bottom/first/last information about the list."
   (declare (list ls) (type (function (t) double-float) val)

@@ -174,7 +174,7 @@ file or :asdf if found asdf file"
 	 (symbol-function 'cl:require)
          #+(and :lispworks (not :lispworks3.1))
 	 (symbol-function 'system::require)
-         #+(and :lispworks :lispworks3.1))
+         #+(and :lispworks :lispworks3.1)
 	 (symbol-function 'common-lisp::require)
          #+:mcl
 	 (symbol-function 'ccl:require))

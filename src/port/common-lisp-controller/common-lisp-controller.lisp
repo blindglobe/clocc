@@ -183,6 +183,7 @@ Returns nothing"
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
         ;; then defsystem:
         (compile-and-load  "cl-library:defsystem;defsystem.lisp")
+	;; then asdf:
         (compile-and-load  "cl-library:asdf;asdf.lisp")
         (compile-and-load  "cl-library:asdf;wild-modules.lisp")
         ;; then the patches:

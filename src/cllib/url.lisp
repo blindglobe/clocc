@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-03-24 Wed 09:34:58 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-04-06 Tue 17:57:12 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.20 1999/03/24 17:01:54 sds Exp $
+;;; $Id: url.lisp,v 1.21 1999/04/06 21:57:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.21  1999/04/06 21:57:33  sds
+;;; Added `directory-index' and `with-open-html'.
+;;;
 ;;; Revision 1.20  1999/03/24 17:01:54  sds
 ;;; More `*html-specials*'.  Added `url-rfc'.
 ;;; `socket-service-port' returns 4 values now.
@@ -190,14 +193,14 @@
 See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
 <http://www.internic.net/wp>, <ftp://ds.internic.net/rfc>"
   (ecase (etypecase protocol (symbol protocol) (url (url-prot protocol)))
-    ((:http :news) #(1945 2068))
+    ((:http :www) #(1945 2068))
     (:ftp #(959))
     ((:smtp :mailto) #(821))
     (:telnet #(1205))
     (:whois #(954 2167))
     (:finger #(1288))
     (:time #(1305))
-    (:nntp #(977))))
+    ((:nntp :news) #(977))))
 
 (defun socket-service-port (&optional service (protocol "tcp"))
   "Return the port number of the SERVICE."
@@ -223,7 +226,8 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
               :do (setf (values name alis port prot) (parse st)) :and
               :if service
                 :when (and (string-equal protocol prot)
-                           (string-equal service name))
+                           (or (string-equal service name)
+                               (member service alis :test #'string-equal)))
                   :return (values name alis port prot) :end
                 :else :collect (vector name alis port prot) :end :end
             :finally (when service
@@ -235,11 +239,11 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
 guess from the protocol."
   (declare (type url url))
   (if (zerop (url-port url))
-      (or (case (url-prot url)
-            (:mailto (nth-value 2 (socket-service-port "smtp")))
-            (:news (nth-value 2 (socket-service-port "nntp"))))
-          (nth-value 2 (socket-service-port
-                        (string-downcase (string (url-prot url))))))
+      (flet ((ssp (st) (ignore-errors (nth-value 2 (socket-service-port st)))))
+        (or (ssp (string-downcase (string (url-prot url))))
+            (ssp (case (url-prot url)
+                   (:mailto "smtp") (:news "nntp") (:www "http")))
+            (error "[url-get-port] Cannot guess the port for ~s" url)))
       (url-port url)))
 
 (defcustom *nntpserver* simple-string
@@ -252,7 +256,6 @@ guess from the protocol."
   (declare (type url url))
   (if (plusp (length (url-host url))) (url-host url)
       (case (url-prot url) ((:news :nntp) *nntpserver*))))
-
 
 (defun url-path-dir (url)
   "Return the dir part of the url's path, dropping the file name."
@@ -449,17 +452,32 @@ The argument can be:
   #+clisp (lisp:socket-server sock)
   #+cmu (ext:create-inet-socket))
 
-(define-condition timeout (error)
-  ((proc :type symbol :reader timeout-proc :initarg :proc)
-   (host :type simple-string :reader timeout-host :initarg :host)
-   (port :type (unsigned-byte 16) :reader timeout-port :initarg :port)
-   (time :type (real 0) :reader timeout-time :initarg :time)
-   (mesg :type simple-string :reader timeout-mesg :initarg :mesg))
-  (:report (lambda (cc stream)
-             (format stream "[~s] timeout on ~a:~d~@[ [~a sec]~]~@[ [~a]~]"
-                     (timeout-proc cc) (timeout-host cc) (timeout-port cc)
-                     (when (slot-boundp cc 'time) (timeout-time cc))
-                     (when (slot-boundp cc 'mesg) (timeout-mesg cc))))))
+(define-condition network (error)
+  ((proc :type symbol :reader net-proc :initarg :proc)
+   (host :type simple-string :reader net-host :initarg :host)
+   (port :type (unsigned-byte 16) :reader net-port :initarg :port)
+   (mesg :type simple-string :reader net-mesg :initarg :mesg :initform "")
+   (args :type list :reader net-args :initarg :args :initform nil))
+  (:report (lambda (cc out)
+             (format out "[~s] ~s:~d~@[ ~?~]"
+                     (net-proc cc) (net-host cc) (net-port cc)
+                     (when (slot-boundp cc 'mesg) (net-mesg cc))
+                     (when (slot-boundp cc 'args) (net-args cc))))))
+
+(define-condition timeout (network)
+  ((time :type (real 0) :reader timeout-time :initarg :time))
+  (:report (lambda (cc out)
+             (call-next-method)
+             (when (slot-boundp cc 'time)
+               (format out " [timeout ~a sec]" (timeout-time cc))))))
+
+(define-condition code (error)
+  ((proc :type symbol :reader code-proc :initarg :proc)
+   (mesg :type simple-string :reader code-mesg :initarg :mesg :initform "")
+   (args :type list :reader code-args :initarg :args :initform nil))
+  (:report (lambda (cc out)
+             (format out "[~s] ~?" (code-proc cc) (code-mesg cc)
+                     (code-args cc)))))
 
 (defcustom *url-default-sleep* (real 0) 30
   "*The number of seconds to sleep when necessary.")
@@ -502,7 +520,7 @@ and evaluate TIMEOUT-FORMS."
   "Open a socket connection, retrying until success."
   (declare (simple-string host) (fixnum port) (type (or null stream) err)
            (type (or null index-t) max-retry) (type (real 0) sleep timeout))
-  (loop :with begt = (get-universal-time)
+  (loop :with begt = (get-universal-time) :and err-cond
         :for ii :of-type index-t :upfrom 1
         :for sock =
         (handler-case
@@ -514,17 +532,19 @@ and evaluate TIMEOUT-FORMS."
                              (error 'timeout :proc 'open-socket-retry :host
                                     host :port port :time timeout))
                 (open-socket host port bin)))
-          (error (co) (mesg :log err "~%Error connecting: ~a~%" co)))
+          (error (co)
+            (setq err-cond co)
+            (mesg :log err "~%Error connecting: ~a~%" co)))
         :when (and err sock) :do (mesg :log err "done: ~a~%" sock)
         :when (and sock (open-stream-p sock)) :return sock
-        :when (and max-retry (> ii max-retry)) :return nil
+        :when (and max-retry (> ii max-retry)) :return err-cond
         :when (>= (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-socket-retry :host host :port port
                    :time timeout)
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
 (defun open-url (url &key (err *standard-output*) (sleep *url-default-sleep*)
-                 (timeout *url-default-timeout*))
+                 (timeout *url-default-timeout*) max-retry)
   "Open a socket connection to the URL.
 Issue the appropriate initial commands:
  if this is an HTTP URL, also issue the GET command;
@@ -532,21 +552,26 @@ Issue the appropriate initial commands:
  if this is a NEWS/NNTP URL, set group and possibly request article;
  if this is a WHOIS/FINGER URL, ask about the host/user.
 If timeout is non-nil, it specifies the number of seconds before
-the tag `timeout' is thrown."
+the error `timeout' is signaled."
   (declare (type url url) (type (real 0) sleep timeout)
            (type (or null stream) err))
   (when (eq (url-prot url) :file)
     (return-from open-url (open (url-path url) :direction :input)))
   (loop :with begt = (get-universal-time) :and host = (url-get-host url)
         :and port = (url-get-port url)
-        :for sock :of-type (or null socket) =
+        :for sock :of-type (or null socket error) =
         (open-socket-retry host port :err err :sleep sleep :timeout timeout
-                           :bin (url-prot-bin (url-prot url)))
+                           :bin (url-prot-bin (url-prot url))
+                           :max-retry max-retry)
+        :when (or (null sock) (typep sock 'error))
+        :do (error 'network :proc 'open-url :host host :port port
+                   :mesg "max-retry [~a] exceeded~@[ last error: ~a]"
+                   :args (list max-retry sock))
         :when
         (handler-case
             (with-timeout (timeout nil)
-              (ecase (url-prot url)
-                (:http (setq sock (url-open-http sock url err)))
+              (case (url-prot url)
+                ((:http :www) (setq sock (url-open-http sock url err)))
                 (:ftp (url-ask sock err 220)
                       (url-login-ftp sock url err))
                 (:telnet (dolist (word (split-string (url-path url) "/") t)
@@ -562,10 +587,12 @@ the tag `timeout' is thrown."
                      (when (cadr strs)
                        (url-ask sock err 220 "article ~a" (cadr strs)))))
                  t)
-                ((:time :daytime) t)))
+                ((:time :daytime) t)
+                (t (error 'code :proc 'open-url :mesg
+                          "Cannot handle protocol ~s" :args (url-prot url)))))
+          (code (co) (error co))
           (error (co)
-            (when err (format err "Connection to `~a' dropped: `~a'~%"
-                              url co))))
+            (mesg :err err "Connection to `~a' dropped: `~a'~%" url co)))
         :return sock :when sock :do (close sock)
         :when (> (- (get-universal-time) begt) timeout)
         :do (error 'timeout :proc 'open-url :host host :port port
@@ -579,7 +606,7 @@ the tag `timeout' is thrown."
   "The time when the current connection was open.")
 (makunbound '*url-opening-time*)
 
-(defmacro with-open-url ((socket url &key (rt '*readtable*) err
+(defmacro with-open-url ((socket url &key (rt '*readtable*) err max-retry
                                  (timeout '*url-default-timeout*))
                          &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
@@ -587,7 +614,8 @@ the tag `timeout' is thrown."
 ERR is the stream for information messages or NIL for none."
   (let ((uuu (gensym "WOU")))
     `(let* ((,uuu (url ,url)) (*readtable* ,rt)
-            (,socket (open-url ,uuu :err ,err :timeout ,timeout))
+            (,socket (open-url ,uuu :err ,err :timeout ,timeout
+                               :max-retry ,max-retry))
             (*url-opening-time* (get-float-time nil))
             (*url-bytes-transferred* 0))
       (declare (type url ,uuu) (type socket ,socket))
@@ -681,18 +709,18 @@ The reasonable value for it's length is determined by your connection speed.
 I recommend 10240 for 112kbps ISDN and 2048 for 28.8kbps, i.e.,
 approximately, the number of bytes you can receive per second.")
 
-(defun socket-to-file (data path &key rest (log *standard-output*))
+(defun socket-to-file (data path &key rest (out *standard-output*))
   "Read from a binary socket to a file.
 Read until the end, then close the socket."
-  (declare (type socket data) (type pathname path) (type (or null stream) log))
+  (declare (type socket data) (type pathname path) (type (or null stream) out))
   (with-open-file (fl path :direction :output :element-type 'unsigned-byte
                       :if-exists (if rest :append :supersede))
     (loop :for pos :of-type index-t = (read-sequence *buffer* data)
           :do (write-sequence *buffer* fl :end pos)
           :sum pos :of-type file-size-t
-          :when log :do (princ "." log) (force-output log)
+          :when out :do (princ "." out) (force-output out)
           :while (= pos (length *buffer*))
-          :finally (when log (terpri log)) :finally (close data))))
+          :finally (when out (terpri out)) :finally (close data))))
 
 (defun url-eta (len)
   "Return the ETA for the given length or nil or cannot determine."
@@ -702,73 +730,74 @@ Read until the end, then close the socket."
        (/ (* len (elapsed *url-opening-time* nil))
           *url-bytes-transferred*)))
 
-(defun ftp-get-file (sock rmt loc &key (log *standard-output*) (reget t)
-                     (bin t) (retry 2) (timeout *url-default-timeout*))
+(defun ftp-get-file (sock rmt loc &key (out *standard-output*) (reget t)
+                     (bin t) (retry 2) (timeout *url-default-timeout*)
+                     (err *error-output*))
   "Get the remote file RMT from the FTP socket SOCK,
-writing it into the local directory LOC.  Log to LOG.
+writing it into the local directory LOC.  Log to OUT.
 Append if the file exists and REGET is non-nil.
 Use binary mode if BIN is non-nil (default).
 Retry (+ 1 RETRY) times if the file length doesn't match the expected."
   (declare (type socket sock) (type index-t retry)
-           (type (or null stream) log) (simple-string rmt)
+           (type (or null stream) out err) (simple-string rmt)
            (values file-size-t double-float simple-string pathname))
-  (let* ((data (ftp-get-passive-socket sock log t timeout)) (tot 0)
+  (let* ((data (ftp-get-passive-socket sock err t timeout)) (tot 0)
          (bt (get-float-time nil)) (path (merge-pathnames rmt loc))
          (rest (when (and reget (probe-file path))
                  (let ((sz (file-size path)))
-                   (when log (format log "File `~a' exists (~:d bytes), ~
-~:[appending~;overwriting~]...~%" path sz (zerop sz)))
+                   (mesg :log out "File `~a' exists (~:d bytes), ~
+~:[appending~;overwriting~]...~%" path sz (zerop sz))
                    (unless (zerop sz)
-                     (url-ask sock log 350 "rest ~d" sz)
+                     (url-ask sock err 350 "rest ~d" sz)
                      sz))))
-         (line (progn (url-ask sock log 200 "type ~:[a~;i~]" bin)
-                      (url-ask sock log 150 "retr ~a" rmt)))
+         (line (progn (url-ask sock err 200 "type ~:[a~;i~]" bin)
+                      (url-ask sock err 150 "retr ~a" rmt)))
          (pos (position #\( line :from-end t))
          (len (when pos (read-from-string line nil nil :start (1+ pos)))))
     (declare (type socket data) (type file-size-t tot) (type pathname path)
              (double-float bt) (type (or null file-size-t) rest len))
     ;; (when rest (decf len rest))
-    (when log
-      (if (null len) (format log "File lenth unknown.~%")
-          (format log "Expect ~:d dot~:p for ~:d bytes~@[ [~/pr-secs/]~]~%"
-                  (ceiling (1+ len) (length *buffer*)) len (url-eta len))))
-    (setq tot (socket-to-file data path :rest rest :log log))
-    (url-ask sock log 226)
+    (if (null len) (mesg :log out "File lenth unknown.~%")
+        (mesg :log out "Expect ~:d dot~:p for ~:d bytes~@[ [~/pr-secs/]~]~%"
+              (ceiling (1+ len) (length *buffer*)) len (url-eta len)))
+    (setq tot (socket-to-file data path :rest rest :out out))
+    (url-ask sock err 226)
     (cond ((or (null len) (= tot len))
            (when (boundp '*url-bytes-transferred*)
              (incf *url-bytes-transferred* tot))
            (multiple-value-call #'values tot (elapsed bt nil t) path))
           ((plusp retry)
-           (when log
-             (format log "### Wrong file length: ~:d (expected: ~:d [~@:d]) ###
- +++ ~r more attempt~:p +++~%" tot len (- tot len) retry))
-           (ftp-get-file sock rmt loc :log log :reget nil :bin bin
+           (mesg :log out "### Wrong file length: ~:d (expected: ~:d [~@:d])
+ +++ ~r more attempt~:p +++~%" tot len (- tot len) retry)
+           (ftp-get-file sock rmt loc :out out :err err :reget nil :bin bin
                          :retry (1- retry) :timeout timeout))
           ((error "Wrong file length: ~:d (expected: ~:d [~@:d])"
                   tot len (- tot len))))))
 
-(defun url-ftp-get (url loc &rest opts &key (log *standard-output*)
-                    (timeout *url-default-timeout*) &allow-other-keys)
+(defun url-ftp-get (url loc &rest opts &key (out *standard-output*) max-retry
+                    (timeout *url-default-timeout*) (err *error-output*)
+                    &allow-other-keys)
   "Get the file specified by the URL, writing it into a local file.
 The local file is located in directory LOC and has the same name
 as the remote one."
-  (declare (type url url) (type (or null stream) log))
-  (format t "~& *** getting `~a'...~%" url)
-  (with-open-url (sock url :err log :timeout timeout)
+  (declare (type url url) (type (or null stream) out err))
+  (mesg :log out "~& *** getting `~a'...~%" url)
+  (remf opts :max-retry)
+  (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
     (multiple-value-bind (tot el st)
         (apply #'ftp-get-file sock (url-path-file url) loc opts)
-      (format t " *** done [~:d bytes, ~a, ~:d bytes/sec]~%" tot st
-              (round tot el)))))
+      (mesg :log out " *** done [~:d bytes, ~a, ~:d bytes/sec]~%" tot st
+            (round tot el)))))
 
-(defun ftp-list (sock &key name (out *standard-output*) log
+(defun ftp-list (sock &key name (out *standard-output*) (err *error-output*)
                  (timeout *url-default-timeout*))
   "Get the file list."
-  (declare (type socket sock) (type (or null stream) out log))
-  (let ((data (ftp-get-passive-socket sock log nil timeout)))
-    (url-ask sock log 150 "list~@[ ~a~]" name)
+  (declare (type socket sock) (type (or null stream) out err))
+  (let ((data (ftp-get-passive-socket sock err nil timeout)))
+    (url-ask sock err 150 "list~@[ ~a~]" name)
     (loop :for line = (read-line data nil nil) :while line :when out :do
           (format out "~a~%" (string-right-trim +whitespace+ line)))
-    (url-ask sock log 226)))
+    (url-ask sock err 226)))
 
 ;;; Mail
 
@@ -780,21 +809,21 @@ as the remote one."
   "*Full mailing address of this user.
 This is initialized based on `mail-host-address'.")
 
-(defun url-send-mail (url &key (out *standard-output*)
+(defun url-send-mail (url &key (err *error-output*)
                       (text (current-time nil))
                       (helo *mail-host-address*)
                       (from *user-mail-address*))
   "Send TEXT to URL (which should be a MAILTO)."
-  (declare (type url url) (type (or null stream) out)
+  (declare (type url url) (type (or null stream) err)
            (simple-string text helo from))
   (assert (eq :mailto (url-prot url)) (url)
           "url-send-mail: `~a' is not a `mailto'" url)
-  (with-open-url (sock url :err out)
-    (url-ask sock out 250 "helo ~a" helo)
-    (url-ask sock out 250 "mail from: ~a" from)
-    (url-ask sock out 250 "rcpt to: ~a" (url-user url))
-    (url-ask sock out 354 "data")
-    (url-ask sock out 250 "~a~%." text)))
+  (with-open-url (sock url :err err)
+    (url-ask sock err 250 "helo ~a" helo)
+    (url-ask sock err 250 "mail from: ~a" from)
+    (url-ask sock err 250 "rcpt to: ~a" (url-user url))
+    (url-ask sock err 354 "data")
+    (url-ask sock err 250 "~a~%." text)))
 
 ;;; News
 
@@ -844,38 +873,39 @@ This is initialized based on `mail-host-address'.")
                :when collect :collect st)
       (unless (streamp out) (close str)))))
 
-(defun url-get-news (url loc &key (out *standard-output*) re)
+(defun url-get-news (url loc &key (out *standard-output*) re max-retry
+                     (err *error-output*))
   "Get the news article to the OUT stream.
 When RE is supplied, articles whose subject match it are retrieved."
   (declare (type url url) (stream out))
   (assert (or (eq :nntp (url-prot url)) (eq :news (url-prot url))) (url)
           "url-get-news: `~a' is not a `news'" url)
   (flet ((out (st) (if loc (merge-pathnames st loc) out)))
-    (with-open-url (sock url :err out)
+    (with-open-url (sock url :err err :max-retry max-retry)
       (let ((spl (split-string (url-path url) "/")))
         (cond ((cadr spl)       ; group and article
                (url-dump-to-dot sock :out (out (cadr spl))))
               ((car spl)        ; group only
                (multiple-value-bind (na a1 a2)
                    (values-list
-                    (string-tokens (url-ask sock nil 211 "group ~a" (car spl))
+                    (string-tokens (url-ask sock err 211 "group ~a" (car spl))
                                    :start 3 :max 3))
                  (let ((nm (format nil "~d-~d" a1 a2)))
                    (format out "~:d articles, from ~:d to ~:d~%" na a1 a2)
-                   (url-ask sock out 224 "xover ~a" nm)
+                   (url-ask sock err 224 "xover ~a" nm)
                    (let ((ls (map-in #'string->article
                                      (url-dump-to-dot sock :out (out nm)
                                                       :collect t))))
                      (when re
                        (dolist (art ls)
                          (when (search re (article-subj art))
-                           (url-ask sock out 220 "article ~d"
+                           (url-ask sock err 220 "article ~d"
                                     (article-numb art))
                            (url-dump-to-dot sock :out
                                             (out (article-numb art))))))
                      ls))))
               (t               ; not even group, just host
-               (url-ask sock out 215 "list active")
+               (url-ask sock err 215 "list active")
                (url-dump-to-dot sock :out (out "active"))))))))
 
 (defcustom *time-servers* list
@@ -1041,38 +1071,45 @@ By default nothing is printed."
     (format t "launched ~a with args ~a~%" (car br) (cddr br))))
 
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out *standard-output*)
-                 (timeout *url-default-timeout*) (proc #'identity))
+                 (err *error-output*) (timeout *url-default-timeout*)
+                 (proc #'identity) max-retry)
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
 itself. FMT defaults to \"~3d: ~a~%\".
-OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
+OUT is the output stream and defaults to `*standard-output*'.
+This is mostly a debugging function, to be called interactively."
   (declare (type url url) (stream out) (function proc))
   (format out "Opening URL: `~a'...~%" url)
-  (handler-case
-      (with-open-url (sock url :err out :timeout timeout)
-        (loop :for ii :of-type index-t :from  1
-              :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
-              :do (format out fmt ii
-                          (funcall proc (string-right-trim +whitespace+ rr)))))
-    (timeout (cc) (format *error-output* "dump-url: ~a~%" cc))))
+  (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
+    (loop :for ii :of-type index-t :from  1
+          :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
+          :do (format out fmt ii
+                      (funcall proc (string-right-trim +whitespace+ rr))))))
 
-(defun url-get (url loc &key (timeout *url-default-timeout*)
-                (log *standard-output*))
-  "Get the URL."
-  (declare (type url url) (stream log))
-  (ecase (url-prot url)
-    (:ftp (url-ftp-get url loc :timeout timeout :log log))
-    ((:nntp :news) (url-get-news url loc :out log))
-    (:http
+(defun url-get (url loc &key (timeout *url-default-timeout*) max-retry
+                (err *error-output*) (out *standard-output*))
+  "Get the URL.
+This is the function to be called in programs.
+Arguments: URL - what to get, LOC - where to place it.
+Keywords: `timeout', `max-retry', `out', `err'."
+  (declare (type url url) (type (or stream null) err out))
+  (case (url-prot url)
+    (:ftp (url-ftp-get url loc :timeout timeout :err err :out out
+                       :max-retry max-retry))
+    ((:nntp :news) (url-get-news url loc :out out :max-retry max-retry))
+    ((:http :www)
      (let* ((path (merge-pathnames (url-path-file url) loc))
             (bt (get-float-time nil))
-            (size (with-open-url (sock url :err log :timeout timeout)
-                    (socket-to-file sock path :log log))))
+            (size (with-open-url (sock url :err err :timeout timeout
+                                       :max-retry max-retry)
+                    (socket-to-file sock path :out out))))
        (declare (type file-size-t size))
        (multiple-value-bind (el st) (elapsed bt nil t)
          (declare (double-float el))
-         (format log "Wrote `~a' [~:d bytes, ~a, ~:d bytes/sec]."
-                 path size st (round size el)))))))
+         (mesg :log out "Wrote `~a' [~:d bytes, ~a, ~:d bytes/sec]."
+               path size st (round size el)))))
+    (t (error 'code :proc 'url-get :mesg "Cannot handle protocol ~s"
+              :args (url-prot url)))))
 
 (defun whois (host &rest keys)
   "Get the whois information on a host."
@@ -1093,16 +1130,48 @@ OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
                                         (subseq str-address 0 pos)))
            :fmt "~*~a~%" keys)))
 
-(defun dump-url-tokens (url &key (fmt "~3d: ~a~%") (out *standard-output*))
+(defun dump-url-tokens (url &key (fmt "~3d: ~a~%") (out *standard-output*)
+                        (err *error-output*) max-retry)
   "Dump the URL token by token.
-See `dump-url' about the optional parameters."
+See `dump-url' about the optional parameters.
+This is mostly a debugging function, to be called interactively."
   (declare (stream out) (simple-string fmt))
   (setq url (url url))
-  (with-open-url (sock url :rt *html-readtable* :err *standard-output*)
+  (with-open-url (sock url :rt *html-readtable* :err err :max-retry max-retry)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))
         ((eq +eof+ (setq rr (read-next ts))))
       (declare (type index-t ii))
       (format out fmt ii rr))))
 
+;;;
+;;; }}}{{{ HTML generation
+;;;
+
+(defmacro with-open-html ((str (&rest open-pars)
+                               (&key (doctype "html public \"-//W3C//DTD HTML 3.2//EN\"")
+                                     (meta "http-equiv=\"Content-Type\" content=\"text/html\"")
+                                     base (title "untitled")))
+                          &body body)
+  "Output HTML to a file."
+  `(with-open-file (,str ,@open-pars)
+    (format ,str "<!doctype ~a>~%<meta ~a>~%" ,doctype ,meta)
+    (when ,base (format ,str "<base href=~s>~%" ,base))
+    (format ,str "<html>~2%<head><title>~a</title></head>~2%" ,title)
+    ,@body
+    (format ,str "~2%</body>~%</html>~%")))
+
+(defun directory-index (dir file &key (title (format nil "Index of ~a" dir)))
+  "Output the index for a directory."
+  (with-open-html (ff (file :direction :output)
+                      (:title title))
+    (format ff "<h1>Index of ~a</h1>~2%<table border=1>~%" dir)
+    (dolist (fi (directory dir))
+      (format
+       ff " <tr><th align=left><a href=\"~a\">~a</a>
+<td align=right>~:d<td align=right>~a~%"
+       fi fi (ignore-errors (file-size fi))
+       (ignore-errors (dttm->string (file-write-date fi)))))
+    (format ff "</table>~%")))
+
 (provide "url")
-;;; url.lisp ends here
+;;; }}} url.lisp ends here

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.8 2004/06/24 14:13:52 airfoyle Exp $
+;;;$Id: base.lisp,v 1.9 2004/06/24 20:54:45 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -23,14 +23,15 @@
 	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
 	     is-Keyword is-String memq assq nodup =<
 	     is-Pair is-cons list-copy
-	     tuple head tail
+	     tuple pair head tail left right
 	     ;;;; one two three four five six seven eight nine ten
 	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
 	     is-Fixnum is-Ratio is-sublist is-whitespace
 	     is-Stream list->values values->list lastelt len string-length
 	     build-symbol symno* true false keyword-package*
-	     eval-when alist-entry alist-entry-set alref. alref condense
+	     eval-when condense
+	     assoc= alist-entry alist-entry-set alref. alref
 	     include-if series car-eq take drop occurs-in empty-list
 	     on-list off-list --)))
 
@@ -258,6 +259,8 @@
 (cl:defun memq (x l) (member x l :test #'eq))
 (cl:defun assq (k al) (assoc k al :test #'eq))
 (cl:defun assoc= (test k al) (assoc k al :test test))
+(define-compiler-macro assoc= (eqt^ x^ al^)
+   `(assoc ,x^ ,al^ :test ,eqt^))
 
 (defun nodup (l &key (test #'eql))
    (declare (type list l))
@@ -282,6 +285,7 @@
 (subr-synonym list-copy copy-list)
 
 (subr-synonym tuple list)
+(subr-synonym pair cons)
 
 ;;; For decomposing lists
 (subr-synonym head car t)
@@ -405,9 +409,9 @@
 		     ,(cond ((eq initial^ 'false) 'false)
 			    (t `(\\ () ,initial^)))))
 
-(defun alist-entry-def (x a initializer)
-   (let ((p (assq x a)))
-      (cond (p (cadr p))
+(defun alist-entry-def (x a initializer =test)
+   (let ((p (assoc x a :test =test)))
+      (cond (p (second p))
 	    (t (and initializer (funcall initializer))))))
 
 (define-setf-expander alist-entry-def (x l &optional initializer)
@@ -472,9 +476,8 @@
 				(setq ,entry-var (cons ,key-var ,new-entry^))
 				(let ((,store-var (cons ,entry-var ,alist-var)))
 				   ,alist-set)))
-			 (setf ,acc-form ,new-var)
-			 ,new-var)
-		    `(cond (,entry-var (cdr ,entry-var))
+			 (setf ,acc-form ,new-var))
+		    `(cond (,entry-var ,accform)
 			   (t ,default^)))))))
 
 ;;; Most common special case.
@@ -487,24 +490,29 @@
 ;;;;	  (cond (,entryvar (cadr ,entryvar))
 ;;;;		(t ,default^)))))
 
-(define-setf-expander alref (alist^ key^ &optional default^)
-   (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
-                        (get-setf-expansion alist^)
-      (let ((keyvar (gensym)) (newvar (gensym)) (alist-var (gensym))
-	    (entry-var (gensym))
-            (storevar (car alstores)))
-         (values `(,keyvar ,@altemps ,alist-var ,entry-var)
-                 `(,key^ ,@alvals ,alist-acc (assq ,keyvar ,alist-var))
-                 `(,newvar)
-                 `(cond (,entry-var
-			 (setf (cadr ,entry-var) ,newvar))
-			(t
-			 (let ((,storevar (cons (tuple ,keyvar ,newvar)
-						,alist-var)))
-			   ,alist-set
-			   ,newvar)))
-                 `(cond (,entry-var (cadr ,entry-var))
-			(t ,default^))))))
+;;;;   (let ((entryvar (gensym)))
+;;;;      `(let ((,entryvar (assoc= #'eq ,key^ ,alist^)))
+;;;;	  (cond (,entryvar (second ,entryvar))
+;;;;		(t ,default^)))))
+
+;;;;(define-setf-expander alref (alist^ key^ &optional default^)
+;;;;   (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
+;;;;                        (get-setf-expansion alist^)
+;;;;      (let ((keyvar (gensym)) (newvar (gensym)) (alist-var (gensym))
+;;;;	    (entry-var (gensym))
+;;;;            (storevar (car alstores)))
+;;;;         (values `(,keyvar ,@altemps ,alist-var ,entry-var)
+;;;;                 `(,key^ ,@alvals ,alist-acc (assoc= #'eq ,keyvar ,alist-var))
+;;;;                 `(,newvar)
+;;;;                 `(cond (,entry-var
+;;;;			 (setf (cadr ,entry-var) ,newvar))
+;;;;			(t
+;;;;			 (let ((,storevar (cons (tuple ,keyvar ,newvar)
+;;;;						,alist-var)))
+;;;;			   ,alist-set
+;;;;			   ,newvar)))
+;;;;                 `(cond (,entry-var (cadr ,entry-var))
+;;;;			(t ,default^))))))
 
 ;;;;(set-dispatch-macro-character #\! #\( #'lpar-exclmac ytools-readtable*)
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.27 2002/11/30 22:56:48 sds Exp $
+;;; $Id: math.lisp,v 2.28 2003/07/07 13:52:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -87,10 +87,10 @@
   ;; we do not use the double recursion a la `product-from-to'
   ;; because it would take us outside the realm of the integers
   (loop :with res = 1
-        :for ii :from 1 :to (max kk (- nn kk))
-        :for jj :from nn :by -1
-        :do (mulf res (/ jj ii))
-        :finally (return res)))
+    :for ii :from 1 :to (max kk (- nn kk))
+    :for jj :downfrom nn
+    :do (mulf res (/ jj ii))
+    :finally (return res)))
 
 (declaim (ftype (function (integer) (values integer)) ! !!))
 (defun ! (nn)

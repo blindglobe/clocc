@@ -1,4 +1,4 @@
-;;; File: <rpm.lisp - 1999-06-03 Thu 16:23:33 EDT sds@goems.com>
+;;; File: <rpm.lisp - 1999-10-25 Mon 13:53:52 EDT sds@ksp.com>
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
@@ -9,77 +9,83 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 1.15 1999/06/03 20:48:40 sds Exp $
+;;; $Id: rpm.lisp,v 1.16 1999/10/25 17:53:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 ;;; $Log: rpm.lisp,v $
-;;; Revision 1.15  1999/06/03 20:48:40  sds
-;;; (download-data): do not include `url', use a alot instead.
-;;; (dld-reset): set `dld-all' too.
-;;; (rpm-list-size): new function.
-;;; (*rpm-locations*): use `macrolet' to init.
-;;; (rpm-prune-list): use `remove-if-not' instead of `mapcan'.
-;;; (rpm-get-available): replaced `&optional' with `&key';
-;;; new argument: `err'.
+;;; Revision 1.16  1999/10/25 17:53:55  sds
+;;; (*rpm-local-paths*): removed eagle-specifics.
+;;; (rpm-downloaded): look in both `*rpm-local-target*' and
+;;; `*rpm-local-paths*'.
+;;; (rpm-list-rpm): new keyword argument `local'.
 ;;;
-;;; Revision 1.14  1999/05/15 01:49:46  sds
-;;; (download-data): new slot - `all'.
-;;; (*rpm-locations-timeout*): new user variable.
-;;; (rpm-new-packages): renamed `rpm-get-available'.  use
-;;; `*rpm-locations-timeout*' to decide whether to get again.
-;;; (show-rpms): new `local' optional argument.
-;;;
-;;; Revision 1.13  1999/05/03 18:14:30  sds
-;;; (*rpm-max-retry*): new variable.  Replaced the ubiquitous use of
-;;; `timeout' keyword argument with `*rpm-timeout*'.
-;;; (rpm-pos): new function.
-;;; (rpm-skip-p): skip "pre" releases.
-;;;
-;;; Revision 1.12  1999/04/17 23:22:31  sds
-;;; (download-data): new structure (AKA dld).
-;;; (*rpm-locations*): a list of `download-data', replaces `*rpm-urls*'.
-;;; (rpm-print-rpm-url): removed (replaced with `download-data').
-;;; (rpm-new-packages, rpm-list-rpm, rpm-get-new-rpms &c): use `dld'.
-;;;
-;;; Revision 1.11  1999/04/09 19:19:14  sds
-;;; Added `short-string-to-rpm'.  Cleaned up the `rpm' generic function.
-;;;
-;;; Revision 1.10  1999/03/24 17:04:24  sds
-;;; 4 new fields in the RPM structure: `btime', `itime', `ftime' and `size'.
-;;; Removed `+unix-epoch+'.
-;;; Handle long `ls' output in (rpm string) method.
-;;; Added `rpm-list-rpm'.
-;;;
-;;; Revision 1.9  1999/02/19 14:29:53  sds
-;;; `rpm-get-new-rpms': fix for timeout condition.
-;;;
-;;; Revision 1.8  1999/02/09 23:21:26  sds
-;;; Removed `catch timeout'.
-;;;
-;;; Revision 1.7  1999/01/24 20:30:38  sds
-;;; Added `rpm-skip-p', `*rpm-skip*', `rpm-print-rpm-url'.
-;;; Use `with-open-pipe'.
-;;;
-;;; Revision 1.6  1999/01/07 03:56:34  sds
-;;; Use `close-pipe', `index-t' instead of (unsigned-byte 20).
-;;; Added `version<' and a test suite for it.
-;;;
-;;; Revision 1.5  1998/12/03 15:56:33  sds
-;;; Added a `note' field to the `rpm' structure.
-;;; Added `rpm-get-present', `show-rpms', `rpm-current'.
-;;;
-;;; Revision 1.4  1998/11/21 21:00:44  sds
-;;; Added `timeout' catch/throw.
-;;;
-;;; Revision 1.3  1998/11/19 19:37:41  sds
-;;; Replaced `*rpm-local-path*' with a list - `*rpm-local-paths*'.
-;;;
-;;; Revision 1.2  1998/11/19 17:02:52  sds
-;;; Moved `binary-pos' to util.lisp.
-;;;
-;;; Revision 1.1  1998/11/18 01:01:56  sds
-;;; Initial revision
-;;;
-;;;
+;; Revision 1.15  1999/06/03 20:48:40  sds
+;; (download-data): do not include `url', use a alot instead.
+;; (dld-reset): set `dld-all' too.
+;; (rpm-list-size): new function.
+;; (*rpm-locations*): use `macrolet' to init.
+;; (rpm-prune-list): use `remove-if-not' instead of `mapcan'.
+;; (rpm-get-available): replaced `&optional' with `&key';
+;; new argument: `err'.
+;;
+;; Revision 1.14  1999/05/15 01:49:46  sds
+;; (download-data): new slot - `all'.
+;; (*rpm-locations-timeout*): new user variable.
+;; (rpm-new-packages): renamed `rpm-get-available'.  use
+;; `*rpm-locations-timeout*' to decide whether to get again.
+;; (show-rpms): new `local' optional argument.
+;;
+;; Revision 1.13  1999/05/03 18:14:30  sds
+;; (*rpm-max-retry*): new variable.  Replaced the ubiquitous use of
+;; `timeout' keyword argument with `*rpm-timeout*'.
+;; (rpm-pos): new function.
+;; (rpm-skip-p): skip "pre" releases.
+;;
+;; Revision 1.12  1999/04/17 23:22:31  sds
+;; (download-data): new structure (AKA dld).
+;; (*rpm-locations*): a list of `download-data', replaces `*rpm-urls*'.
+;; (rpm-print-rpm-url): removed (replaced with `download-data').
+;; (rpm-new-packages, rpm-list-rpm, rpm-get-new-rpms &c): use `dld'.
+;;
+;; Revision 1.11  1999/04/09 19:19:14  sds
+;; Added `short-string-to-rpm'.  Cleaned up the `rpm' generic function.
+;;
+;; Revision 1.10  1999/03/24 17:04:24  sds
+;; 4 new fields in the RPM structure: `btime', `itime', `ftime' and `size'.
+;; Removed `+unix-epoch+'.
+;; Handle long `ls' output in (rpm string) method.
+;; Added `rpm-list-rpm'.
+;;
+;; Revision 1.9  1999/02/19 14:29:53  sds
+;; `rpm-get-new-rpms': fix for timeout condition.
+;;
+;; Revision 1.8  1999/02/09 23:21:26  sds
+;; Removed `catch timeout'.
+;;
+;; Revision 1.7  1999/01/24 20:30:38  sds
+;; Added `rpm-skip-p', `*rpm-skip*', `rpm-print-rpm-url'.
+;; Use `with-open-pipe'.
+;;
+;; Revision 1.6  1999/01/07 03:56:34  sds
+;; Use `close-pipe', `index-t' instead of (unsigned-byte 20).
+;; Added `version<' and a test suite for it.
+;;
+;; Revision 1.5  1998/12/03 15:56:33  sds
+;; Added a `note' field to the `rpm' structure.
+;; Added `rpm-get-present', `show-rpms', `rpm-current'.
+;;
+;; Revision 1.4  1998/11/21 21:00:44  sds
+;; Added `timeout' catch/throw.
+;;
+;; Revision 1.3  1998/11/19 19:37:41  sds
+;; Replaced `*rpm-local-path*' with a list - `*rpm-local-paths*'.
+;;
+;; Revision 1.2  1998/11/19 17:02:52  sds
+;; Moved `binary-pos' to util.lisp.
+;;
+;; Revision 1.1  1998/11/18 01:01:56  sds
+;; Initial revision
+;;
+;;
           rpm-get-new-rpms rpm-list-rpm rpm-clean-up))
 (in-package :cl-user)
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
@@ -148,15 +154,7 @@
   "*The number of seconds after which `*rpm-locations*' is updated.")
 (defcustom *rpm-local-paths* list '(#p"/var/tmp/RPMS/")
   "The paths to the local RPMs.")
-(defcustom *rpm-local-paths* list
-  (case (read-from-string (machine-instance))
-    (mute.eaglets.com
-     '(#p"/var/tmp/o/RedHat/RPMS/" #p"/var/tmp/" #p"/mnt/n/var/tmp/"
-       #p"/mnt/n/var/tmp/o/RedHat/RPMS/"))
-    (eho.eaglets.com
-     '(#p"/var/tmp/o/RedHat/RPMS/" #p"/var/tmp/" #p"/mnt/n/var/tmp/"
-       #p"/mnt/n/mnt/c/tmp/linux/RedHat/RPMS/"))
-    (t '(#p"/var/tmp/")))
+(defcustom *rpm-local-target* pathname #p"/var/tmp/"
   "The local path where to download stuff.")
 (defcustom *rpm-command-line* simple-string
   "rpm --queryformat \"%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} %{BUILDTIME} %{INSTALLTIME} %{SIZE}\\n\""
@@ -348,7 +346,8 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
                 (mapcan (lambda (pp) (directory (merge-pathnames "*.rpm" pp)))
                         (adjoin *rpm-local-target* *rpm-local-paths*
                                 :test #'equalp))))
-                        *rpm-local-paths*)))
+        #'rpm<))
+
 (defun rpm-present ()
   "Return the simple vector of RPMs installed and already downloaded."
   (delete-duplicates
@@ -593,20 +592,28 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*)
-(defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*))
-  "Look for the RPM on all sites."
+  "Look for the RPM on all sites.
+If `local' keyword argument is non-nil, use only the data already
+available in `*rpm-locations*'."
+  (dolist (dld *rpm-locations*)
+    (if local
         (loop :initially (format out " *** ~a:~%" dld)
-    (ignore-errors
-      (with-open-url (sock (dld-url dld) :err err :timeout *rpm-timeout*
-                           :max-retry *rpm-max-retry*)
-        (format out " *** ~a:~%" dld)
-        (ftp-list sock :name name :err err :out out)))))
+              :for rpm :in (dld-all dld) :with ii :of-type index-t = 0
+              :when (search name (rpm-name rpm))
+              :do (format out "~3d: ~a~%" (incf ii) rpm))
+        (ignore-errors
+          (with-open-url (sock (dld-url dld) :err err :timeout *rpm-timeout*
+                               :max-retry *rpm-max-retry*)
+            (format out " *** ~a:~%" dld)
+            (ftp-list sock :name name :err err :out out))))))
+
+;;(defgeneric rpm-clean-up (&optional (dirs *rpm-local-paths*))
 ;;  (:documentation "Remove old RPM files."))
 ;; (rpm-clean-up "/var/tmp/")
 ;; (rpm-clean-up)
 ;; (rpm-clean-up "/var/tmp/o/")
 
-;; (rpm-clean-up "/var/tmp/o/RedHat/RPMS/")
+;;;###autoload
                                    :test #'equalp))
                      (out *standard-output*))
   "Remove old RPM files."

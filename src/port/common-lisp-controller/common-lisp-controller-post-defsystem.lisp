@@ -1,12 +1,19 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
 
+(eval-when (:load-toplevel :execute :compile-toplevel)
+  (unless (find-package :mk)
+    (error "You need to load the mk defsystem before loading or compiling this file!"))
+  (unless (find-package :asdf)
+    (error "You need to load the asdf system before loading or compiling this file!")))
+
+
 ;; Make specialized operator to load only binary files
 ;; Signal error if a binary component is missing
 (in-package :asdf)
 
 (defclass load-only-compiled-op (operation)
   ((forced-p :initform t)))
-(export 'load-only-compiled-op 'asdf)
+(export 'load-only-compiled-op)
 
 (defmethod output-files ((operation load-only-compiled-op) (c cl-source-file))
   (list (compile-file-pathname (component-pathname c))))
@@ -18,16 +25,6 @@
 	  (if (some #'not (map 'list #'load output-files))
 	      nil
 	    (file-write-date (car output-files))))))
-
-
-(in-package :common-lisp-controller)
-
-
-(eval-when (:load-toplevel :execute :compile-toplevel)
-  (unless (find-package :mk)
-    (error "You need to load the mk defsystem before loading or compiling this file!"))
-  (unless (find-package :asdf)
-    (error "You need to load the asdf system before loading or compiling this file!")))
 
 
 (in-package :common-lisp-controller)
@@ -106,7 +103,7 @@ file or :asdf if found asdf file"
   (let ((system (asdf:find-system module-name)))
     (or
      ;; try to load it
-     (ignore-errors (asdf:oos 'asdf:load-only-compiled-op module-name))
+     (ignore-errors (asdf:oos 'asdf::load-only-compiled-op module-name))
      ;; if not: try to compile it
      (progn
        (format t "~&;;;Please wait, recompiling library...")
@@ -124,7 +121,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (asdf:oos 'asdf:load-only-compiled-op module-name) 
+       (asdf:oos 'asdf::load-only-compiled-op module-name) 
        t))))
 
 
@@ -155,6 +152,20 @@ file or :asdf if found asdf file"
       (original-require module-name pathname)))))
 
 
+(defun compile-library (library)
+  "Recompiles the given library"
+  (let ((system (find-system library)))
+    (case system
+      (:defsystem3
+       (mk:oos library :compile :verbose nil))
+      (:asdf
+       (asdf:oos 'asdf:compile-op library))
+      (t
+       (format t "~%Package ~S not found... ignoring~%"
+	       library))))
+  (values))
+
+
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:
 (eval-when (:load-toplevel :execute)
@@ -183,16 +194,3 @@ file or :asdf if found asdf file"
    (setf (symbol-function 'lisp:require)
 	 (symbol-function 'clc-require))))
 
-
-(defun compile-library (library)
-  "Recompiles the give library"
-  (let ((system (find-system library)))
-    (case system
-      (:defsystem3
-       (mk:oos library :compile :verbose nil))
-      (:asdf
-       (asdf:oos 'asdf:compile-op library))
-      (t
-       (format t "~%Package ~S not found... ignoring~%"
-	       library))))
-  (values))

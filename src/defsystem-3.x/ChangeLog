@@ -1,3 +1,15 @@
+2002-06-13  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* README: File Added.
+
+2002-05-30  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Minor fix to DEFINE-LANGUAGE :C (better feature discrimination in
+	place).
+
 2002-05-30  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* defsystem.lisp:

@@ -1256,7 +1256,7 @@ end-of-file
  type-error)
 
 (check-for-bug :excepsit-legacy-1269
-  (let ((*readtable* (copy-read-table)))
+  (let ((*readtable* (copy-readtable)))
     (setf (readtable-case *readtable*) ':unknown))
  type-error)
 

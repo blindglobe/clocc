@@ -31,4 +31,17 @@ The value is operating system and file system dependent."
   (os-file-system-directory-separator *os*))
 
 
+;;; current-working-directory --
+
+(declaim (inline current-working-directory))
+
+(defun current-working-directory ()
+  "Returns the pathname of the 'current working directory'."
+  (current-directory-pathname *cl*))
+
+(defun cwd ()
+  "Returns the pathname of the 'current working directory'."
+  (current-working-directory))
+
+
 ;;; end of file -- utilities.lisp --

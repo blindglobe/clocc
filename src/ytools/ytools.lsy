@@ -128,7 +128,7 @@
 (cl:defun load-core ()
       (dolist (bf ytools-core-files*)
 	 (load (merge-pathnames
-		  (make-pathname :name bf)
+		  (make-pathname :name bf :type lisp-object-extn*)
 		  ytools-bin-dir-pathname*)))
 ;;;;      (format t "Before loading ytinit, config-directory* = ~s~%"
 ;;;;	      config-directory*)
@@ -138,7 +138,7 @@
    (dolist (bf ytools-core-files*)
       (let ((lisp-file
 	       (merge-pathnames
-		  (make-pathname :name bf)
+		  (make-pathname :name bf :type lisp-source-extn*)
 		  ytools-dir-pathname*))
 	    (fasl-file
 	       (ensure-directories-exist

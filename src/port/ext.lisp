@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.32 2002/12/15 14:45:42 sds Exp $
+;;; $Id: ext.lisp,v 1.33 2003/02/17 22:52:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -34,15 +34,15 @@
 ;;;
 
 (define-condition code (error)
-  ((proc :reader code-proc :initarg :proc)
-   (mesg :type simple-string :reader code-mesg :initarg :mesg)
-   (args :type list :reader code-args :initarg :args))
+  ((proc :reader code-proc :initarg :proc :initform nil)
+   (mesg :type (or null simple-string) :reader code-mesg
+         :initarg :mesg :initform nil)
+   (args :type list :reader code-args :initarg :args :initform nil))
   (:documentation "An error in the user code.")
   (:report (lambda (cc out)
              (declare (stream out))
-             (format out "[~s]~@[ ~?~]" (code-proc cc)
-                     (and (slot-boundp cc 'mesg) (code-mesg cc))
-                     (and (slot-boundp cc 'args) (code-args cc))))))
+             (format out "[~s]~@[ ~?~]" (code-proc cc) (code-mesg cc)
+                     (code-args cc)))))
 
 (define-condition case-error (code)
   ((mesg :type simple-string :reader code-mesg :initform

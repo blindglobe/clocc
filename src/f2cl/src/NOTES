@@ -2,6 +2,43 @@
 
 Changes:
 
+Jul 14, 2000
+------------
+
+Preliminary support for array slicing.  That is 
+
+	real x(100)
+	call sub(x(10))
+
+really means that the subroutine sub is passed an array of length 90
+which starts from element 10 of x.
+
+This assumes that sub really wanted an array.  If not, this will
+pass an incorrect type to sub.  If sub really wanted a simple real
+parameter, change the Fortran code to the equivalent:
+
+	real x(100)
+	real tmp
+	tmp = x(10)
+	call sub(tmp)
+	x(10) = tmp
+
+The last assignment is needed only if sub is modifying it's argument.
+
+NOTE: Array slicing can have severe performance penalties because when
+array slicing is enabled, all arrays are declared as array's, not
+simple-array's.  If you don't need array slicing, don't use it.  In
+the first example, array slicing is needed, so it must be turned on
+for this code.  The routine sub should then also be converted with
+an array-type of array since we're not passing a simple-array into the
+routine.
+
+NOTE: Array slicing really only works with one-dimensional arrays.
+While multi-dimensional arrays are recognized and handled, Fortran
+stores arrays in column-major order whereas Lisp stores arrays in
+row-major order.  Thus, the array slice will not actually refer to the
+correct elements.
+
 Jul 12, 2000
 ------------
 

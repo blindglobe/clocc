@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 2000-01-05 Wed 19:33:04 EST sds@ksp.com>
+;;; File: <gq.lisp - 2000-01-19 Wed 13:04:58 EST sds@ksp.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.14 2000/01/06 00:28:20 sds Exp $
+;;; $Id: gq.lisp,v 1.15 2000/01/19 18:07:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.15  2000/01/19 18:07:01  sds
+;;; (get-quotes-sm): expanded debug
+;;;
 ;;; Revision 1.14  2000/01/06 00:28:20  sds
 ;;; fewer #+/#-
 ;;; (get-quotes-apl): call `infer-date'
@@ -26,48 +29,48 @@
 ;;; (process-results): adapt to new `pr-res'; `out' must be a stream.
 ;;; (update-quotes): dump the `ia' business.
 ;;;
-;; Revision 1.12  1999/10/19  18:50:08  sds
-;; (get-quotes-pf): updated.
-;; (infer-date): work with no args.
-;; (process-results): better date inference.
-;; (update-quotes): new `:debug' keyword argument.
-;;
-;; Revision 1.11  1999/10/13  15:43:19  sds
-;; (get-quotes-apl): updated.
-;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
-;; (code): added a method for PFL.
-;; (update-quotes): bind `*gq-error-stream*' to nil.
-;;
-;; Revision 1.10  1999/02/25 23:38:18  sds
-;; Updated for the new `dated-list'.
-;;
-;; Revision 1.9  1999/01/10 02:37:25  sds
-;; Replaced `gq-fix-date' with `gq-guess-date'.
-;;
-;; Revision 1.8  1999/01/08 17:12:16  sds
-;; Fixed `get-quotes-sm'.
-;;
-;; Revision 1.7  1998/12/23 18:42:20  sds
-;; Added `*gq-error-stream*'.
-;;
-;; Revision 1.6  1998/07/31 16:53:57  sds
-;; Declared `stream' as a stream in `print-*'.
-;;
-;; Revision 1.5  1998/06/30 13:47:42  sds
-;; Switched to `print-object'.
-;;
-;; Revision 1.4  1998/06/15 21:48:32  sds
-;; Made `gq-fix-date' return the last trading date (skip weekend).
-;;
-;; Revision 1.3  1998/03/10 18:29:20  sds
-;; Replaced `multiple-value-set*' with `(setf (values ))'.
-;;
-;; Revision 1.2  1997/10/31 21:59:41  sds
-;; Added `cite-info' and `strip-html-markup'.
-;;
-;; Revision 1.1  1997/10/15 15:49:26  sds
-;; Initial revision
-;;
+;;; Revision 1.12  1999/10/19  18:50:08  sds
+;;; (get-quotes-pf): updated.
+;;; (infer-date): work with no args.
+;;; (process-results): better date inference.
+;;; (update-quotes): new `:debug' keyword argument.
+;;;
+;;; Revision 1.11  1999/10/13  15:43:19  sds
+;;; (get-quotes-apl): updated.
+;;; (*get-quote-url-list*): added ports (solaris can't guess http ports)
+;;; (code): added a method for PFL.
+;;; (update-quotes): bind `*gq-error-stream*' to nil.
+;;;
+;;; Revision 1.10  1999/02/25 23:38:18  sds
+;;; Updated for the new `dated-list'.
+;;;
+;;; Revision 1.9  1999/01/10 02:37:25  sds
+;;; Replaced `gq-fix-date' with `gq-guess-date'.
+;;;
+;;; Revision 1.8  1999/01/08 17:12:16  sds
+;;; Fixed `get-quotes-sm'.
+;;;
+;;; Revision 1.7  1998/12/23 18:42:20  sds
+;;; Added `*gq-error-stream*'.
+;;;
+;;; Revision 1.6  1998/07/31 16:53:57  sds
+;;; Declared `stream' as a stream in `print-*'.
+;;;
+;;; Revision 1.5  1998/06/30 13:47:42  sds
+;;; Switched to `print-object'.
+;;;
+;;; Revision 1.4  1998/06/15 21:48:32  sds
+;;; Made `gq-fix-date' return the last trading date (skip weekend).
+;;;
+;;; Revision 1.3  1998/03/10 18:29:20  sds
+;;; Replaced `multiple-value-set*' with `(setf (values ))'.
+;;;
+;;; Revision 1.2  1997/10/31 21:59:41  sds
+;;; Added `cite-info' and `strip-html-markup'.
+;;;
+;;; Revision 1.1  1997/10/15 15:49:26  sds
+;;; Initial revision
+;;;
 
 (in-package :cl-user)
 
@@ -175,7 +178,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
 
 (defun get-quotes-sm (url &rest ticks)
   "Get the data from the StockMaster WWW server."
-  (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res ts dt
+  (do ((ti ticks (cdr ti)) (ds nil nil) (vs nil nil) hh ar res ts dt furl
        (gd (gq-guess-date)) (*ts-kill* '(#\%)))
       ((null ti)
        (setq dt (caar (last (car hh))))
@@ -192,9 +195,10 @@ change:~15t~7,2f~35thigh:~45t~7,2f
                         (make-hist :date (caar cns) :navs (mapcar #'cdr cns)))
                       (nreverse hh))
                (nreverse ar)))
-    (mesg :log *gq-error-stream* " *** Processing ~a~%" (car ti))
-    (with-open-url (sock (gq-complete-url url (car ti)) :timeout 600
-                         :rt *html-readtable* :err *gq-error-stream*)
+    (setq furl (gq-complete-url url (car ti)))
+    (mesg :log *gq-error-stream* " *** Processing ~a [~a]~%" (car ti) furl)
+    (with-open-url (sock furl :timeout 600 :rt *html-readtable*
+                         :err *gq-error-stream*)
       (do ((st (read-line sock) (read-line sock))
            (sy (concatenate 'string "(" (symbol-name (car ti)) ")")))
           ((string-beg-with sy st)

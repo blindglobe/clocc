@@ -44,17 +44,17 @@
 				  program arguments)))
 
 
-(defmethod load-c-file ((loadable-c-pathname pathname)
-			&key
-			(print *load-print*)
-			(verbose *load-verbose*)
-			(libraries '("c"))
-			)
+(defmethod load-object-file ((loadable-object-pathname pathname)
+			     &key
+			     (print *load-print*)
+			     (verbose *load-verbose*)
+			     (libraries '("c"))
+			     )
   (declare (ignore libraries))
   (when verbose
     (format *trace-output* ";;; MK4: Loading Foreign File ~A."
 	    loadable-c-pathname))
-  (load loadable-c-pathname :print print :verbose verbose))
+  (load loadable-object-pathname :print print :verbose verbose))
 
 
 

@@ -177,7 +177,7 @@ C        MESSAGE
             IF (LKNTRL.LE.0) GO TO 40
 C              ERROR NUMBER
                WRITE (IUNIT,30) LERR
-   30          FORMAT (15H ERROR NUMBER =,I10)
+   30          FORMAT (' ERROR NUMBER =',I10)
    40       CONTINUE
    50    CONTINUE
 C        TRACE-BACK
@@ -255,8 +255,8 @@ C        PRINT TO EACH UNIT
             IF (IUNIT.EQ.0) IUNIT = I1MACH(4)
 C           PRINT TABLE HEADER
             WRITE (IUNIT,10)
-   10       FORMAT (32H0          ERROR MESSAGE SUMMARY/
-     1      51H MESSAGE START             NERR     LEVEL     COUNT)
+   10       FORMAT ('0          ERROR MESSAGE SUMMARY'/
+     1      ' MESSAGE START             NERR     LEVEL     COUNT')
 C           PRINT BODY OF TABLE
             DO 20 I=1,10
                IF (KOUNT(I).EQ.0) GO TO 30
@@ -266,7 +266,7 @@ C           PRINT BODY OF TABLE
    30       CONTINUE
 C           PRINT NUMBER OF OTHER ERRORS
             IF (KOUNTX.NE.0) WRITE (IUNIT,40) KOUNTX
-   40       FORMAT (41H0OTHER ERRORS NOT INDIVIDUALLY TABULATED=,I10)
+   40       FORMAT ('0OTHER ERRORS NOT INDIVIDUALLY TABULATED=',I10)
             WRITE (IUNIT,50)
    50       FORMAT (1X)
    60    CONTINUE

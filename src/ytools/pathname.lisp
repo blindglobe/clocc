@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.3 2004/12/06 15:09:55 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.4 2004/12/09 12:55:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -14,7 +14,7 @@
 	     pathname->string pathname-equal pathname-get
 	     ->pathname filespecs->pathnames filespecs->ytools-pathnames
 	     def-ytools-logical-pathname ytools-logical-pathname-def
-	     ytools)))
+	     ytools def-ytools-pathname-control)))
 
 ;;; Some logical names really name special modes of "file" handling.
 
@@ -26,8 +26,6 @@
 (defmethod make-load-form ((pspn Pseudo-pathname) &optional env)
    (declare (ignore env))
    `(make-Pseudo-pathname :name ',(Pseudo-pathname-name pspn)))
-
-(datafun-alist pn-parsers* pn-parse)
 
 (defstruct (YTools-pathname
 	       (:predicate is-YTools-pathname)
@@ -432,9 +430,15 @@
 	    (not (memq (car dl) '(:up :back))))
 	(reverse (nconc updnl dl)))))
 
-(defmacro def-ytools-pathname-control (sym)
-   `(setf (href ytools-logical-names-table* ',sym)
-          (make-Pseudo-pathname ',sym)))
+(defmacro def-ytools-pathname-control (sym parser-defn)
+   `(and (setf (href ytools-logical-names-table* ',sym)
+               (make-Pseudo-pathname ',sym))
+	 (datafun :pn-parse
+	    ,defn)))
+
+(datafun-alist pn-parsers* :pn-parse)
+
+
 
 ;;;======================================================================
 ;;; turn a list of fload-style filespecs into a list of pathnames. the
@@ -466,7 +470,8 @@
 					(multiple-value-bind 
 					               (sym remainder)
 					               (%-factor
-							  symname spec specl specs)
+							  symname
+							  spec specl specs)
 					   (setq specl remainder)
 					   sym))
 				       (t
@@ -494,7 +499,8 @@
 				    (setq default (make-Pathname)))
 				   (t
 				    (on-list
-				       (merge-with-default-given-name pnx default)
+				       (merge-with-default-given-name
+					  pnx default)
 				       pathnames))))
 			    ((pn-is-absolute pnx)
 			     (setq default pnx))
@@ -1054,29 +1060,6 @@
 		  :directory (Pathname-directory pn)
 		  :version #+allegro ':unspecific #-allegro ':newest))
 
-#|
-This never served any real purpose anyway --
-(def-ytools-pathname-control perform)
 
-(defun perform-pspn-parse (operands _)
-   (let ((remainder (or (member-if #'atom operands)
-			!())))
-      (values (list (make-Perform-pseudo-pn
-		       :control 'Perform
-		       :actions (ldiff operands remainder)))
-	      false
-	      remainder)))
-
-(defun perform-pspn-execute (perform-pspn &rest _)
-  (dolist (a (Perform-pseudo-pn-actions perform-pspn))
-     (eval a)))
-
-(def-ytools-pathname-control Perform
-   :parser #'perform-pspn-parse
-   :slurper #'perform-pspn-execute
-   :loader #'perform-pspn-execute
-   :compiler #'perform-pspn-execute
-   :expander false)
-|#
 
 		  

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.3 2004/11/27 20:03:02 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.4 2004/12/09 12:55:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -86,7 +86,8 @@
 				  (setf (File-chunk-read-basis file-ch)
 					(union files
 					       (File-chunk-read-basis
-						   file-ch))))))))))))))
+						   file-ch))))))))))))
+    false))
 
 ;;; Return a list of groups, each of the form
 ;;; ((<time>*)
@@ -144,23 +145,6 @@
       (cond (expandfn
 	     (funcall expandfn pn))
 	    (t !()))))
-
-(defun module-parse (operands default-pathname)
-                    (ignore default-pathname)
-   (let ((remainder (or (member-if (\\ (x) (not (module-name-sym x)))
-				   operands)
-			!())))
-      (cond ((not (null module-trace*))
-	     (format *error-output*
-		 "Preparing to process modules ~s~%"
-		 (ldiff operands remainder))))
-      (values (mapcar (\\ (rand)
-			 (make-Module-pseudo-pn
-			    :control 'module
-			    :module rand))
-		      (ldiff operands remainder))
-	      false
-	      remainder)))
 
 (defun module-name-sym (x)
    (and (is-Symbol x)
@@ -236,6 +220,8 @@
 		(YT-module-expansion mod))
 	       (t
 		(error "Undefined YTools module ~s" modname))))))
+
+THIS IS OLD-FASHIONED --
 
 (def-ytools-pathname-control module
      :parser 'module-parse

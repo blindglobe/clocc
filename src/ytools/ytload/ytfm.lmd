@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytfm.lmd,v 1.6 2004/04/24 23:01:24 airfoyle Exp $
+;;;$Id: ytfm.lmd,v 1.6.2.1 2004/12/09 12:55:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved

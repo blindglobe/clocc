@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.2 2004/11/24 04:24:00 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.3 2004/12/09 12:55:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,7 @@
 
 
 (cl:eval-when (:compile-toplevel :load-toplevel :execute)
-   (shadow '(#:defun #:defmacro #:eval-when)))
+   (shadow '(#:defun #:defmacro #:eval-when #:defmethod)))
 
 ;;; These have to be separate because if the following is
 ;;; *read* before the 'shadow' is *evaluated*, then there will
@@ -67,14 +67,33 @@
 
 (cl:defun underscores-elim (args)
    (let ((realargs '())
-	 (new-ignores '()))
+	 (new-ignores '())
+	 (keyargs nil))
       (dolist (a args)
-	 (cond ((eq a '_)
-		(let ((new (gensym)))
-		   (push new new-ignores)
-		   (push new realargs)))
-	       (t
-		(push a realargs))))
+	 (labels ((got-underscore ()
+		   (let ((new (gensym)))
+		      (push new new-ignores)
+		      (push (subst new '_ a)
+			    realargs))))
+	    (cond ((eq a '_)
+		   (got-underscore))
+		  ((consp a)
+		   (cond (keyargs
+			  (cond ((or (eq (car a) '_)
+				     (and (consp (car a))
+					  (eq (cadr (car a))
+					      '_)))
+				 (got-underscore))
+				(t
+				 (push a realargs))))
+			 ((eq (car a) '_)
+			  (got-underscore))
+			 (t
+			  (push a realargs))))
+		  (t
+		   (cond ((eq a '&key)
+			  (setq keyargs t)))
+		   (push a realargs)))))
       (values (reverse realargs)
 	      new-ignores)))
 
@@ -96,6 +115,22 @@
    (multiple-value-bind (args body)
 			(ignore-smooth args body)
       `(cl:defmacro ,name ,args ,@body)   ))
+
+(cl:defmacro defmethod (name &rest stuff &whole dm-exp)
+   (let ((qualifiers '())
+	 args body)
+      (do ((sl stuff (cdr sl)))
+	  ((or (null sl)
+	       (listp (car sl)))
+	   (cond ((null sl)
+		  (error "Unintelligible: ~s" dm-exp))
+		 (t
+		  (setq args (car sl))
+		  (setq body (cdr sl)))))
+	(push (car sl) qualifiers))
+      (multiple-value-bind (args body)
+	                   (ignore-smooth args body)
+	 `(cl:defmethod ,name ,@(reverse qualifiers) ,args ,@body))))
 
 (cl:defmacro \\ (args &rest body)
    (multiple-value-bind (args body)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.4 2004/11/27 20:03:03 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.5 2004/12/09 12:55:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -23,6 +23,9 @@
 
 ;;; An alist of <name, yt-module> pairs.
 (defvar ytools-modules* !())
+
+(defstruct (Module-pseudo-pn (:include Pseudo-pathname))
+   module)
 
 ;;; (def-ytools-module name ---acts--- (:insert ---acts---))
 ;;; The first group of acts becomes a (run-time or compile-time) supporter
@@ -55,16 +58,32 @@
 ;;;;	  (note-module-def-time mod)
 	  )))
 
-(def-ytools-pathname-control module)
+(def-ytools-pathname-control module
+   (defun :^ (operands _)
+      (let ((remainder (or (member-if (\\ (x) (not (module-name-sym x)))
+				      operands)
+			   !())))
+	 (cond ((not (null module-trace*))
+		(format *error-output*
+		    "Preparing to process modules ~s~%"
+		    (ldiff operands remainder))))
+	 (values (mapcar (\\ (rand)
+			    (make-Module-pseudo-pn
+			       :control 'module
+			       :module rand))
+			 (ldiff operands remainder))
+		 false
+		 remainder))))
 
 (defun place-YT-module (name)
-   (let ((p (assq name ytools-modules*)))
-      (cond ((not p)
-	     (setq p (tuple name (make-YT-module name '(values))))
-	     (let ((pn (make-Pathname :directory
+   (val-or-initialize
+      (alref ytools-modules* name)
+      :init (let ((pn (make-Pathname :directory
 				      '(:relative "%ytools#module")
 				      :name
 				      (symbol-name name))))
+
+
 	        (let ((lpr (make-Load-progress-rec
 			      :pathname (make-Module-pseudo-pn
 					   :control 'module
@@ -77,8 +96,7 @@
       (cadr p)))
 
 (defun find-YT-module (name)
-   (let ((p (assq name ytools-modules*)))
-      (and p (cadr p))))
+   (alref ytools-modules* name))
 
 (defvar loaded-ytools-modules* !())
 

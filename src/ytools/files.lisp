@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.5 2004/12/06 15:09:54 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.6 2004/12/09 12:55:36 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -174,7 +174,7 @@
     ;;   :ask-every -> ask user every time basis is recomputed;
     ;;   :ask-ask -> ask once and ask if it should keep asking;
     ;;   :defer -> refer to value of fload-compile*;
-    ;;   :follow -> refer to value of fload-compile* once
+    ;;   :follow -> replace 'manip' value with value of fload-compile*
 
     (source :reader Loadable-chunk-source
 	    :initarg :source
@@ -231,7 +231,7 @@
 ;;; 'loadable-chunk-compute-basis' as well.
 
 (defmethod derive ((fb Loaded-basis-chunk))
-   (cond ((= (Chunk-date fb) file-op-count*)
+   (cond ((= (Chunk-date fb) file-op-count*)``
 	  false)
 	 (t
 	  (let ((file-ch (Loaded-basis-chunk-file fb)))
@@ -305,7 +305,7 @@
 			    (and is-source
 				 (place-compiled-chunk file-chunk))))
 			(let ((new-lc
-				 (make-Loadable-chunk
+				 (make-instance 'Loadable-chunk
 				    :name name
 				    :file file-chunk
 				    :manip (or manip ':follow)
@@ -327,18 +327,13 @@
       ld-chunk))
 
 ;;; Possible values: 
-;;;  Just like values of Load-progress-rec-whether-compile, except that
-;;;  the latter can be :unknown.
-;;;  The local whether-compile for an lprec dominates the global flag,
-;;;  unless it's :unknown.
-
 ;;; :compile -- always compile when object file is missing or out of date)
 ;;; :object, :source -- always load object or source without compiling
-;;;     Even if :object, if object doesn't exist source will be loaded
-;;;     with no questions asked.
-;;;     (Unlikely you would ever want one of these globally; they can be
-;;;     useful in a Load-progress-rec.)
-;;; :ask -- ask user what to do
+;;;             (makes no sense if file is missing)
+;;; :ask-every -- ask user what to do every time the file is looked at
+;;;         (this gets tedious!)
+;;; :ask-once -- ask user once and file the answer
+;;; :ask-ask -- ask, then ask the user whether to keep asking
 (defvar fload-compile-flag* ':ask)
 
 (defun default-fload-manip () fload-compile-flag*)
@@ -465,18 +460,21 @@
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
 		     (t
-		      (format *query-io*
-			 !"Type 'c' to compile, then load object file;~%~
-			   type 's' to load source file without compiling;~%~
-			   ~atype '+' to make compiling be the default for this ~
-			   and subsequent files;~%~
-			   type '-' to make object versions be the default for ~
-			   this and subsequent files.~%"
-			 !"type 'o' to load existing object file ;~%")
 		      false))))
 	    (cond (manip
 		   (manip-maybe-remember manip loadable-ch)
-		   (return manip)))))))
+		   (return manip))
+		  (t
+		   (format *query-io*
+			 !"Type 'c' to compile, then load object file;~%~
+			   type 's' to load source file without compiling;~%~
+			   ~atype '+' to make compiling be the default for ~
+                           this and subsequent files;~%~
+			   type '-' to make object versions be the default for ~
+			   this and subsequent files.~%"
+			 (cond (obj-exists
+				!"type 'o' to load existing object file;~%")
+			       (t "")))))))))
 
 (defun manip-maybe-remember (manip loadable-ch)
    (block dialogue
@@ -575,6 +573,71 @@
 			       )
 			      (t (compile-file real-pn)))))))
 	    (fload-op-message "...compiled to" real-ov false "")))))
+
+;;; A "sub-file" is a chunk of data that is a subset (usually proper)
+;;; of a file, with the property that when the file is loaded the subset
+;;; is sure to be loaded, so that (:loaded f) obviates (:slurped (S f)),
+;;; where S is the kind of subfile.  (S is :macros, :nisp-type-decls, or
+;;; the like.)
+;;; We need 3 Chunk subclasses for sub-file-type N:
+;;; Class name: N-class         Chunk name: (N f)            - the contents 
+;;;                                                            of the sub-file
+;;;             Slurped-N-class             (:slurped (N f)) - as slurped
+;;;             Loaded-N-class              (:loaded (N f))  - Or-chunk (see below)
+;;; Plus one or more existing classes L, typically (:loaded f), that trump
+;;; (:slurped (N f))
+;;; The Or-chunk has disjuncts (union L {(:slurped (N f))}), default
+;;; (:slurped (N f)).
+(defmacro def-sub-file-type (sym &key ((:default default-handler^)))
+   (let* ((sym-name (Symbol-name name))
+	  (subfile-class-name (build-symbol (:< (string-capitalize sym-name))
+					    -chunk))
+	  (slurped-class-name
+	     (build-symbol Slurped- (:< sym-name) -chunk))
+	  (loaded-chunk-class-name
+	     (build-symbol Loaded- (:< sym-name) -chunk))
+	  (sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
+					       -pathname))
+	  (ld-pathname-read-fcn (build-symbol (:< loaded-chunk-class-name)
+					      -pathname))
+	  (loaded-class-loaded-file-acc
+	     (build-symbol (:< loaded-chunk-class-name)
+			   -loaded-file)))
+      `(progn
+	  (defclass ,subfile-class-name (Chunk)
+	     ((pathname :reader ,sub-pathname-read-fcn
+			:initarg :pathname
+			:type pathname)))
+	  (defmethod initialize-instance ((ch ,chunk-class-name)
+					  &rest initargs)
+                                         (declare (ignore initargs))
+	     (setf (Chunk-basis ch)
+	           (list (place-file-chunk (,pathname-read-fcn ch)))))
+	  (defclass ,loaded-chunk-class-name (Chunk)
+	     ((pathname :reader
+			   (build-symbol (:< loaded-chunk-class-name)
+					 -pathname)
+			:initarg :pathname
+			:type pathname)
+	      (loaded-file :accessor ,loaded-class-loaded-file-acc
+			   :type Loaded-chunk)))
+	  (defmethod initialize-instance ((ch ,loaded-chunk-class-name)
+					  &rest initargs)
+                                         (declare (ignore initargs))
+	     (setf (Chunk-basis ch)
+	           (list (place-file-chunk (,pathname-read-fcn ch))))
+	     (setf (,loaded-class-loaded-file-acc ch)
+	           (
+		      
+)
+	  (def-slurp-task ,(build-symbol (:package :keyword)
+			      slurp- (:< sym-name))
+	     :default ,default-handler^)
+	  (defmethod derive ((x ,chunk-class-name))
+	     ( 
+	  
+	  
+
 
 (defvar fload-version-suffix* ':-new)
 

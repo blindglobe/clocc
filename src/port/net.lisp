@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.18 2000/05/09 18:52:55 sds Exp $
+;;; $Id: net.lisp,v 1.19 2000/05/15 20:58:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -204,7 +204,7 @@ Returns a socket stream or NIL."
                 (socket:set-socket-format sock (if bin :binary :text))
                 sock))
   #+clisp (multiple-value-bind (sec usec) (floor (or wait 0))
-            (when (lisp:socket-wait serv sec (round usec 1d-6))
+            (when (lisp:socket-wait serv (and wait sec) (round usec 1d-6))
               (lisp:socket-accept serv :element-type
                                   (if bin '(unsigned-byte 8) 'character))))
   #+cmu (when (sys:wait-until-fd-usable serv :input wait)

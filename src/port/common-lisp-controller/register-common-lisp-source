@@ -1,4 +1,4 @@
-#!/bin/bash
+bash/#!/bin
 
 PROGNAME=$(basename $0)
 
@@ -50,7 +50,7 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
 	i=${compiler##*/}
 	i=${i%.sh}
-        check-cl-autobuild $i $PKG_NAME
+        clc-check-autobuild $i $PKG_NAME
         if [ $? = 0 ]; then
 	    echo Recompiling package $PKG_NAME for implementation $i
 	    /usr/bin/clc-send-command --quiet recompile $PKG_NAME $i

@@ -9,16 +9,28 @@ CLC_SBIN	:= usr/sbin/
 CLC_BIN		:= usr/bin/
 CLC_SRC 	:= usr/share/common-lisp/source/common-lisp-controller/
 
+SBIN_PROGS := register-common-lisp-source unregister-common-lisp-source \
+		register-common-lisp-implementation unregister-common-lisp-implementation \
+		clc-reregister-impl clc-check-autobuild clc-only-compatible clc-not-compatible \
+		clc-autobuild-impl clc-build-daemon
+
+CLC_SRC_FILES :=common-lisp-controller.lisp pre-sysdef-install.lisp post-sysdef-install.lisp
+
+MAN_FILES := clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 \
+	register-common-lisp-source.8 unregister-common-lisp-implementation.8 \
+	unregister-common-lisp-source.8 clc-reregister-impl.8 clc-only-compatible.8 \
+	clc-not-compatible.8 clc-check-autobuild.8 clc-autobuild-impl.8
+
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.	
+# Add here commands to configure the package.	
 	touch configure-stamp
 
 build: configure-stamp build-stamp
 build-stamp:
 	dh_testdir
-	# Add here commands to compile the package.
+# Add here commands to compile the package.
 	-$(MAKE) 
 	touch build-stamp
 
@@ -26,7 +38,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	rm -f build-stamp configure-stamp
-	# Add here commands to clean up after the build process.
+# Add here commands to clean up after the build process.
 	-$(MAKE) clean
 	rm -f *~  || true
 	dh_clean
@@ -36,26 +48,15 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-
 	# Add here commands to install the package into debian/pkg-name
-	dh_install register-common-lisp-source $(CLC_SBIN)
-	dh_install register-common-lisp-implementation $(CLC_SBIN)
-	dh_install unregister-common-lisp-source $(CLC_SBIN)
-	dh_install unregister-common-lisp-implementation $(CLC_SBIN)
-	dh_install reregister-common-lisp-implementations $(CLC_SBIN)
-	dh_install check-cl-autobuild $(CLC_SBIN)
-	dh_install cl-only-compatible $(CLC_SBIN)	
-	dh_install cl-not-compatible $(CLC_SBIN)	
-	dh_install autobuild-cl-impl $(CLC_SBIN)
-	dh_install clc-build-daemon $(CLC_SBIN)
+	dh_install $(SBIN_PROGS) $(CLC_SBIN)
 	dh_install clc-send-command $(CLC_BIN)
-	dh_install common-lisp-controller.lisp pre-sysdef-install.lisp \
-		post-sysdef-install.lisp $(CLC_SRC)
+	dh_install $(CLC_SRC_FILES) $(CLC_SRC)
 	dh_install lisp-config.lisp etc/
 
 # Build architecture-independent files here.
  binary-indep: build install
-# We have nothing to do by default.
+
 
 # Build architecture-dependent files here.
 binary-arch: build install
@@ -75,10 +76,7 @@ binary-arch: build install
 #	dh_installcron
 #	dh_installinfo
 #	dh_undocumented
-	dh_installman clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 register-common-lisp-source.8 \
-                unregister-common-lisp-implementation.8 unregister-common-lisp-source.8 reregister-common-lisp-implementations.8 \
-		cl-only-compatible.8 check-cl-autobuild.8 cl-not-compatible.8 \
-		autobuild-cl-impl.8
+	dh_installman $(MAN_FILES)
 	dh_link
 	dh_strip
 	dh_compress

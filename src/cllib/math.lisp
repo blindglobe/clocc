@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.44 2004/05/10 03:45:54 sds Exp $
+;;; $Id: math.lisp,v 2.45 2004/05/10 03:52:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -446,9 +446,8 @@ The order in which the permutations are listed is either
 (defun dot (l0 l1 &key (key #'value) (key0 key) (key1 key))
   "Compute the dot-product of the two sequences,
 presumed to be of the same size."
-  (declare (sequence l0 l1) (type (function (t) double-float) key key0 key1))
-  (let ((res 0d0))
-    (declare (double-float res))
+  (declare (sequence l0 l1))
+  (let ((res 0))
     (map nil (lambda (r0 r1)
                (incf res (* (funcall key0 r0) (funcall key1 r1))))
          l0 l1)

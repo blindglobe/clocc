@@ -252,7 +252,8 @@ is not included")
 
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
   (let ((step (gensym (symbol-name '#:step-)))
-	(iteration_count (gensym (symbol-name '#:cnt-))))
+	(iteration_count (gensym (symbol-name '#:cnt-)))
+	(loop-var (f2cl::check-reserved-lisp-names (first do_vble_clause))))
     `(prog* ((,step ,(third (third do_vble_clause)))
 	     (,iteration_count 
 	      (max 0 (the integer4
@@ -264,7 +265,7 @@ is not included")
 		   )))
       (declare (type integer4 ,step ,iteration_count))
       ;; initialise loop variable
-      (setq ,(first do_vble_clause) ,(second do_vble_clause))
+      (setq ,loop-var ,(second do_vble_clause))
       loop
       (return
 	(cond				; all iterations done
@@ -273,7 +274,7 @@ is not included")
 	  ,(cons 't 
 		 (append 
 		  (append body
-			  `((setq ,(first do_vble_clause) (the integer4 ,(third do_vble_clause))
+			  `((setq ,loop-var (the integer4 ,(third do_vble_clause))
 			     ,iteration_count (the integer4 (1- ,iteration_count)))))
 		  '((go loop)))))))))
 
@@ -1269,8 +1270,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.53 2003/01/07 18:44:52 rtoy Exp $
+;;; $Id: macros.l,v 1.54 2003/09/25 03:43:43 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.54  2003/09/25 03:43:43  rtoy
+;;; Need to check for reserved names in the fdo macro.  (I think.)
+;;;
 ;;; Revision 1.53  2003/01/07 18:44:52  rtoy
 ;;; Add new implementations of aint.  Speeds up mpnorm by a factor of 5 on
 ;;; CMUCL/sparc!

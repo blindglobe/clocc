@@ -177,12 +177,12 @@
 
 (check-for-bug :type-legacy-178
   (typep #c(2 3) (quote (complex float)))
-  nil)
+  #.(subtypep (type-of 2) (upgraded-complex-part-type 'float))
+  "(complex foo) == (complex (upgraded-complex-part-type foo))")
 
 (check-for-bug :type-legacy-182
   (typep #c(2 3) (quote (complex symbol)))
-  #+(or cmu sbcl) error
-  #-(or cmu sbcl) nil)
+  error)
 
 (check-for-bug :type-legacy-187
   (typep '#(a b c d) (quote vector))
@@ -195,8 +195,8 @@
 #|                                      ;
 ;;
 ;; depends on (upgraded-array-element-type 'symbol) !
-(typep '#(a b c d) (quote (vector symbol 4)))
-nil
+ (typep '#(a b c d) (quote (vector symbol 4)))
+ nil
 |#
 
 (check-for-bug :type-legacy-202

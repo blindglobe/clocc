@@ -980,13 +980,16 @@
 ;;; MAKE package. A nice side-effect is that the short nickname
 ;;; MK is my initials.
 
+#+ecl
+(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
+
 #+clisp
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
 #+cormanlisp
 (defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
-#-(or :sbcl :cltl2 :lispworks)
+#-(or :sbcl :cltl2 :lispworks :ecl)
 (in-package "MAKE" :nicknames '("MK"))
 
 ;;; For CLtL2 compatible lisps...
@@ -1335,6 +1338,7 @@
  	 #+ACLPC                              ("lsp"  . "fsl")
  	 #+CLISP                              ("lsp"  . "fas")
          #+KCL                                ("lsp"  . "o")
+         #+ECL                                ("lsp"  . "so")
          #+IBCL                               ("lsp"  . "o")
          #+Xerox                              ("lisp" . "dfasl")
 	 ;; Lucid on Silicon Graphics
@@ -1496,13 +1500,13 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
   #+cmu       (concatenate 'string
 		"cmu" " " (lisp-implementation-version))
   #+kcl       "kcl"
+  #+IBCL      "ibcl"
   #+akcl      "akcl"
   #+gcl       "gcl"
+  #+ecl       "ecl"
   #+lucid     "lucid"
   #+ACLPC     "aclpc"
   #+CLISP     "clisp"
-  #+KCL       "kcl"
-  #+IBCL      "ibcl"
   #+Xerox     "xerox"
   #+symbolics "symbolics"
   #+mcl       "mcl"

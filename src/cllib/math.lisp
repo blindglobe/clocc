@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.35 2004/03/29 20:10:35 sds Exp $
+;;; $Id: math.lisp,v 2.36 2004/04/05 20:01:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -993,20 +993,25 @@ occurs, i.e., the normalized sequence should be the probability distribution."
                                (if (zerop num) 0 (* num (log num 2))))))))
     (- (log tot 2) (/ sum tot))))
 
-(defun count-all (seq &key (test 'eql) (key #'value) append
+(defun count-all (seq &key (test 'eql) (key #'value) append weight
                   &aux (ht (or append (make-hash-table :test test))))
   "Return the hash table with counts for values of the sequence."
-  (map nil (lambda (el) (incf (gethash (funcall key el) ht 0))) seq)
+  (map nil (if weight
+               (lambda (el)
+                 (incf (gethash (funcall key el) ht 0)
+                       (funcall weight el)))
+               (lambda (el) (incf (gethash (funcall key el) ht 0))))
+       seq)
   ht)
 
-(defun entropy-sequence (seq &key (key #'value) (test 'eql))
+(defun entropy-sequence (seq &key (key #'value) (test 'eql) weight)
   "Compute the entropy of the given distribution.
 The values are counted and the result is used as a probability distribution.
  (multiple-value-bind (entropy ht) (entropy-sequence seq)
    (assert (= entropy
               (entropy-distribution
                (loop :for v :being :each :hash-value :of ht :collect v)))))"
-  (let* ((ht (count-all seq :key key :test test))
+  (let* ((ht (count-all seq :key key :test test :weight weight))
          (tot 0) (sum 0))
     (loop :for num :being :each :hash-value :of ht :do
       (incf tot num)
@@ -1112,10 +1117,14 @@ and the list of the volatilities for each year."
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (mdl)
+  "MDL structure contains sample statistics.
+It is printed as follows: [mean standard-deviation max/min length[ entropy]]
+When the distribution is not discreet, entropy is not available."
   (mn 0d0 :type double-float)   ; Mean
   (sd 0d0 :type (double-float 0d0)) ; Deviation
-  (ma 0d0 :type double-float)       ; Max
-  (mi 0d0 :type double-float)       ; Min
+  (ma 0 :type number)       ; Max
+  (mi 0 :type number)       ; Min
+  (en 0 :type (or null number)) ; entropy (only when discreet)
   (le 0 :type index-t))         ; Length
 )
 
@@ -1124,10 +1133,14 @@ and the list of the volatilities for each year."
 
 (defmethod print-object ((mdl mdl) (out stream))
   (if *print-readably* (call-next-method)
-      (format out "[~6f ~6f ~f/~f ~5:d]" (mdl-mn mdl) (mdl-sd mdl)
-              (mdl-ma mdl) (mdl-mi mdl) (mdl-le mdl))))
+      (let* ((en (mdl-en mdl))
+             (fo (if en (formatter "~:D") (formatter "~6F")))
+             (ma (format nil fo (mdl-ma mdl)))
+             (mi (string-left-trim +whitespace+ (format nil fo (mdl-mi mdl)))))
+        (format out "[~6f ~6f ~6@A/~6A ~5:d~@[ ~6f~]]"
+                (mdl-mn mdl) (mdl-sd mdl) ma mi (mdl-le mdl) en))))
 
-(defun standard-deviation-mdl (seq &key (key #'value) weight)
+(defun standard-deviation-mdl (seq &key (key #'value) weight discreet)
   "Compute an MDL from the SEQ."
   (let ((len (length seq)))
     (if (zerop len) +bad-mdl+
@@ -1135,7 +1148,9 @@ and the list of the volatilities for each year."
             (if weight
                 (standard-deviation-weighted seq seq :value key :weight weight)
                 (standard-deviation seq :len len :key key))
-          (make-mdl :sd std :mn mean :le len :mi min :ma max)))))
+          (make-mdl :sd std :mn mean :le len :mi min :ma max
+                    :en (when discreet
+                          (entropy-sequence seq :key key :weight weight)))))))
 
 ;;;
 ;;; Misc

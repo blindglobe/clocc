@@ -1047,12 +1047,12 @@
 ;----------------------------------------------------------------------------- 
 
 (eval-when (compile load eval)  
-  (proclaim '(special *format_stmts* *current_label* SP dlist-flag)))
+  (proclaim '(special *format_stmts* *current_label* *SP* *dlist-flag*)))
 
 (defun parse-format (x)
-  (prog (SP)
-   (declare (special SP))
-   (setq SP nil)
+  (prog (*SP*)
+   (declare (special *SP*))
+   (setq *SP* nil)
    (setq *format_stmts* (cons (list *current_label*
                                  (parse-format1 (cadr x)))
                             *format_stmts*)))
@@ -1238,7 +1238,7 @@
          (t (id-expression arg))))
 
 (defun parse-implied-DO (do-list)
-   (prog (ctrl-vars dlist ivar e1 e2 e3 (dlist-flag nil))
+   (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
       (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
             dlist (parse-dlist (ldiff do-list ctrl-vars))
             ivar (first (first ctrl-vars))
@@ -1246,7 +1246,7 @@
             e2 (id-expression (second ctrl-vars))
             e3 (if (third ctrl-vars) (third ctrl-vars) 1))
       (return
-      (if dlist-flag
+      (if *dlist-flag*
       `(do ((,ivar ,e1 (+ ,ivar ,e3))
             (ret nil (append ret ,dlist)))
            ((> ,ivar ,e2) ret))
@@ -1256,7 +1256,7 @@
            ((> ,ivar ,e2) (reverse ret)))))))
 
 (defun parse-dlist (x)
-   (setq dlist-flag t)
+   (setq *dlist-flag* t)
    `(list ,@(mapcar #'parse-output-argument x)))
 
 ;--------------------------------------------------------------------------------
@@ -1431,7 +1431,7 @@
                  "~" (fixnum-string (car right)) ","     ;w
                      (fixnum-string (cadr right)) ","    ;d
                      (fixnum-string k) ",,"              ;k
-                     (if SP "@F" "F"))))
+                     (if *SP* "@F" "F"))))
     (return
         (do ((i 1 (1+ i))
              (ret nil (append ret (list directive))))
@@ -1451,7 +1451,7 @@
 			    (fixnum-string d) ","
 			    (fixnum-string e) ","
 			    (fixnum-string k) ",'*"
-			    (if SP "@E" "E"))))
+			    (if *SP* "@E" "E"))))
     (return
       (do ((i 1 (1+ i))
 	   (ret nil (append ret (list directive))))
@@ -1471,7 +1471,7 @@
                             (fixnum-string d) ","
                             (fixnum-string e) ","
                             (fixnum-string k) ",'*"
-                            (if SP "@G" "G"))))
+                            (if *SP* "@G" "G"))))
     (return
         (do ((i 1 (1+ i))
              (ret nil (append ret (list directive))))
@@ -1488,7 +1488,7 @@
    (list (concatenate 'string "~" (fixnum-string w) "@T")))
 
 (defun parse-format-descriptor-S (right)
-   (setq SP (if (eq right #\P) t nil))
+   (setq *SP* (if (eq right #\P) t nil))
    "")
 
 #+nil

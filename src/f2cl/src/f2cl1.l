@@ -1719,7 +1719,7 @@ Senac syntax:... | op '| ...|)))
 	((eq (car x) 'double) 
 	 (append '(double-float) (cdr x)))
 	((eq (car x) 'logical) 
-	 (append t (cdr x)))
+	 (append '(logical) (cdr x)))
 	(t x)))
 
 (defun reduce-data-type (x)
@@ -1949,8 +1949,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.75 2001/06/04 17:14:38 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.76 2001/06/04 17:20:10 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.76  2001/06/04 17:20:10  rtoy
+;;; CONVERT-DATA-TYPE was incorrectly returning T instead of '(LOGICAL)
+;;; for LOGICAL Fortran types.
+;;;
 ;;; Revision 1.75  2001/06/04 17:14:38  rtoy
 ;;; Handle IMPLICIT NONE by putting ":NONE (A-Z)" as the type for
 ;;; *implicit_vble_decls*.

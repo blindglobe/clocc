@@ -9,8 +9,12 @@
 
 ;;; Derived and specialized components.
 
+;;;---------------------------------------------------------------------------
+;;; C.
+
 (defclass c-file (file)
   ()
+  (:default-initargs :language :c)
   )
 
 (defclass c-source-file (c-file
@@ -52,6 +56,42 @@
 (defclass dynamically-linked-library (library)
   ()
   (:default-initargs :binary-extension (shared-library-extension))
+  )
+
+
+;;;---------------------------------------------------------------------------
+;;; Java.
+
+(defclass java-file (file)
+  ()
+  (:default-initargs :language :java)
+  )
+
+(defclass java-source-file (java-file
+			    compilable-component-mixin
+			    loadable-component-mixin
+			    linkable-component-mixin
+			    )
+  ()
+  (:default-initargs :source-extension "java" :binary-extension "class")
+  )
+
+
+(defclass java-class-file (java-file
+			   loadable-component-mixin
+			   linkable-component-mixin
+			   )
+  ()
+  (:default-initargs :source-extension "class" :binary-extension "class")
+  )
+
+
+(defclass java-jar-file (java-file
+			 loadable-component-mixin
+			 linkable-component-mixin
+			 )
+  ()
+  (:default-initargs :source-extension "jar" :binary-extension "jar")
   )
 
 ;;; end of file -- predefined-specialized-components.lisp --

@@ -1,4 +1,4 @@
-;;; File: <rpm.lisp - 1999-02-19 Fri 09:26:20 EST sds@eho.eaglets.com>
+;;; File: <rpm.lisp - 1999-03-24 Wed 09:35:20 EST sds@eho.eaglets.com>
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
@@ -9,9 +9,15 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 1.9 1999/02/19 14:29:53 sds Exp $
+;;; $Id: rpm.lisp,v 1.10 1999/03/24 17:04:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 ;;; $Log: rpm.lisp,v $
+;;; Revision 1.10  1999/03/24 17:04:24  sds
+;;; 4 new fields in the RPM structure: `btime', `itime', `ftime' and `size'.
+;;; Removed `+unix-epoch+'.
+;;; Handle long `ls' output in (rpm string) method.
+;;; Added `rpm-list-rpm'.
+;;;
 ;;; Revision 1.9  1999/02/19 14:29:53  sds
 ;;; `rpm-get-new-rpms': fix for timeout condition.
 ;;;
@@ -55,6 +61,8 @@
 (defcustom *rpm-urls* list
   (list (list (make-url :prot :ftp :host "rawhide.redhat.com"
                         :path "/i386/RedHat/RPMS/"))
+        (list (make-url :prot :ftp :host "ftp.redhat.com"
+                        :path "/pub/starbuck/i386/RedHat/RPMS/"))
         (list (make-url :prot :ftp :host "updates.redhat.com"
                         :path "/current/i386/"))
         (list (make-url :prot :ftp :host "updates.redhat.com"
@@ -66,13 +74,13 @@
         (list (make-url :prot :ftp :host "developer.redhat.com"
                         :path "/pub/rhcn/RPMS/i386/"))
         (list (make-url :prot :ftp :host "developer.redhat.com"
-                        :path "/pub/rhcn/RPMS/noarch/"))
+                        :path "/pub/rhcn/RPMS/noarch/")))
         ;; (list (make-url :prot :ftp :host "ftp.suse.com" :path ; X server
         ;;                 "/pub/suse_update/XFree86-3.3.3.1-SuSE/glibc2/"))
 ;;; (make-url :prot :ftp :host "ftp.cc.gatech.edu" :path
 ;;; "/pub/linux/distributions/suse/suse_update/XFree86-3.3.3.1-SuSE/glibc2/")
-        (list (make-url :prot :ftp :host "ftp.dosemu.org" ; dosemu
-                        :path "/dosemu/")))
+        ;; (list (make-url :prot :ftp :host "ftp.dosemu.org" ; dosemu
+        ;;                 :path "/dosemu/"))
   "The list of URLs where to look for RPMs.")
 (defcustom *rpm-local-paths* list
   (ecase (read-from-string (machine-instance))
@@ -86,7 +94,7 @@
 (defcustom *rpm-command-line* simple-string
   "rpm --queryformat \"%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} %{BUILDTIME} %{INSTALLTIME} %{SIZE}\\n\""
   "The rpm(1) command line to print all the installed packages.
-  "rpm --queryformat \"%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} %{BUILDTIME} %{INSTALLTIME}\\n\""
+See `rpm --querytags' for more tags")
 (defcustom *rpm-timeout* index-t 600
   "*The default timeout (in seconds) for RPM network operations.")
 (defcustom *rpm-max-retry* (or null index-t) 10
@@ -98,6 +106,10 @@
   (arch "arch?" :type simple-string)
   (btime nil :type (or null integer)) ; build time
   (itime nil :type (or null integer)) ; install time
+  (ftime nil :type (or null integer)) ; file time
+  (size nil :type (or null integer))
+  (note nil))
+)
 
 (defconst +bad-rpm+ rpm (make-rpm) "*The convenient constant for init.")
 
@@ -117,36 +129,57 @@
 
 (defun short-string-to-rpm (name)
   "Convert the short string like `pack-1.2-3.i386.rpm' to RPM.
-(defcustom +unix-epoch+ integer (date2time (mk-date :ye 1970 :mo 1 :da 1))
-  "The start of the UNIX epoch - 1970-01-01.")
-(defun unix-date (nn)
-  "Convert UNIX time_t number to date."
-  (declare (type (unsigned-byte 32) nn) (values date))
-  (time2date (+ nn +unix-epoch+)))
-
 (fmakunbound 'rpm)
   (:method ((obj rpm)) obj)
   (:method ((obj symbol))
     (unintern obj)
-  (:method ((obj symbol)) (unintern obj) (rpm (symbol-name obj)))
       (setf (rpm-note rr) (list path)
            (let ((rr (rpm (pathname-name path))))
              (setf (rpm-note rr) (list path))
              rr)))
   ;; should work with strings like:
-(defmethod rpm ((obj string))
-  (let* ((line (string-trim +whitespace+ obj))
-         (pc (position #\Space line :test #'char=)) (name (subseq line 0 pc))
-         (p0 (position #\- name :from-end t)) (len (length name))
+(defmethod rpm ((obj symbol))
+  (unintern obj)
+  (let* ((name (symbol-name obj)) (len (length name))
+         (p0 (position #\- name :from-end t))
          (p1 (position #\- name :from-end t :end (1- p0)))
          (p2 (if (string= ".rpm" name :start2 (- len 4)) (- len 4) len))
          (p3 (or (position #\. name :from-end t :start p0 :end p2) p2)))
-    (multiple-value-bind (bd id)
-        (values-list (string-tokens line :start len :max 2))
-      (make-rpm :name (subseq name 0 p1) :vers (subseq name (1+ p1) p0)
-                :rels (subseq name (1+ p0) p3) :arch (subseq name (1+ p3) p2)
-                :note (when bd (list (cons (unix-date bd)
-                                           (when id (unix-date id)))))))))
+    (make-rpm :name (subseq name 0 p1) :vers (subseq name (1+ p1) p0)
+              :rels (subseq name (1+ p0) p3) :arch (subseq name (1+ p3) p2))))
+  ;; "pack-1.2-3.i386.rpm"
+         (rpm (ignore-errors (rpm (car toks)))))
+    (assert (symbolp (car toks)) ()
+            "The first token in ~s is not a symbol: cannot convert to RPM" obj)
+    (cond (rpm
+           (setf (rpm-btime rpm)
+                 (if (cadr toks) (+ +unix-epoch+ (cadr toks)))
+                 (rpm-itime rpm)
+                 (if (caddr toks) (+ +unix-epoch+ (caddr toks)))
+                 (rpm-size rpm) (cadddr toks))
+           (return-from rpm rpm))
+          ((char/= #\- (schar (symbol-name (car toks)) 0))
+           (error "special file cannot be an RPM: ~s" obj))
+          ((numberp (fourth toks)) (setq toks (cdddr toks)))
+          ((numberp (fifth toks)) (setq toks (cddddr toks))))
+    (assert (symbolp (fifth toks)) ()
+            "~s: ~s is not a symbol: cannot convert to RPM" obj (fifth toks))
+    (setf rpm (rpm (fifth toks)) (rpm-size rpm) (first toks)
+          (rpm-ftime rpm)
+          (let ((day (third toks)) (mon (infer-month (second toks))))
+            (if (numberp (fourth toks))
+                (encode-universal-time 0 0 0 day mon (fourth toks))
+                (let* ((str (symbol-name (fourth toks)))
+                       (mi (parse-integer str :start 3))
+                       (ho (parse-integer str :end 2))
+                       (now (get-universal-time))
+                       (ye (nth-value 5 (decode-universal-time now)))
+                       (ft (encode-universal-time 0 mi ho day mon ye)))
+                  (if (< ft now) ft
+                      (encode-universal-time  0 mi ho day mon (1- ye)))))))
+    rpm))
+
+(defun rpm< (r0 r1)
   "Sorting order on RPMs."
   (declare (type rpm r0 r1))
   (or (string< (rpm-name r0) (rpm-name r1))
@@ -238,7 +271,7 @@
                            :max-retry *rpm-max-retry*)
       (with-open-url (sock url :err log :timeout timeout)
         (let ((data (ftp-get-passive-socket sock t nil timeout)))
-          (url-ask sock log 150 "nlst")
+          (url-ask sock log 150 "list") ; nlst
           (prog1 (map-in (lambda (rr) (setf (rpm-note rr) (list url)) rr)
                          (rpm-read data))
             (url-ask sock log 226))))
@@ -268,29 +301,31 @@ The elements matching `*rpm-skip*' are removed, too."
 (defun rpm-print-rpm-url (rpmurl)
   "Print the cons (URL . (list RPMs))."
   (declare (type (cons url list) rpmurl))
-  (format t " * ~a:~{~<~%~10t ~1,74:; ~a~>~^,~}.~%"
-          (car rpmurl) (cdr rpmurl)))
+  (format t " * ~a [~:d bytes]:~{~<~%~10t ~1,74:; ~a~>~^,~}.~%"
+          (car rpmurl) (reduce #'+ (cdr rpmurl) :key #'rpm-size) (cdr rpmurl)))
 
 (defun rpm-new-packages (&optional force (log *standard-output*))
   "Get the list of all RPMs in `*rpm-urls*' and put it there.
   (when (or force (notany #'dld-all *rpm-locations*)
   (declare (type (or null stream) log))
-  (when (or force (notany #'cdr *rpm-urls*))
+  (when (or force
+            (notany (lambda (ur) (and (cdr ur) (rpm-p (cadr ur)))) *rpm-urls*))
     (format t " *** Getting the list of new packages...~%")
     (let ((bt (get-float-time nil)) avail (na 0) (le 0) (bt0 0.0d0))
-      (declare (double-float bt bt0) (list avail) (type index-t na le))
+      (declare (double-float bt bt0) (type (or list condition) avail)
+               (type index-t na le))
       (dolist (url *rpm-urls*)
         (declare (type (cons url list) url))
         (format t " *** processing `~a'...~%" (car url))
         (setq bt0 (get-float-time nil) avail (rpm-available (car url) log))
-        (cond ((listp avail)
-               (setf (cdr url) (rpm-prune-list avail) le (length (cdr url)))
-               (incf na le)
-               (format t " *** ~d new RPM~:p (out of ~d in `~a') [~a]~%" le
-                       (length avail) (car url) (elapsed-1 bt0 nil)))
-              (t (setf (cdr url) (list avail))
-                 (format t " *** `~a': failed! [~a]~%"
-                         (car url) (elapsed-1 bt0 nil)))))
+        (etypecase avail
+          (list (setf (cdr url) (rpm-prune-list avail) le (length (cdr url)))
+                (incf na le)
+                (format t " *** ~d new RPM~:p (out of ~d in `~a') [~a]~%" le
+                        (length avail) (car url) (elapsed-1 bt0 nil)))
+          (condition (setf (cdr url) (list avail))
+                     (format t " *** `~a': failed! [~a]~%"
+                             (car url) (elapsed-1 bt0 nil)))))
       (format t " *** ~d new RPM~:p in ~r URL~:p [~a]~%" na
               (length *rpm-urls*) (elapsed-1 bt nil))
       (dolist (ll *rpm-urls*)
@@ -307,7 +342,12 @@ The elements matching `*rpm-skip*' are removed, too."
   (loop :for rpm :of-type rpm :across *rpm-present*
         :with ii :of-type index-t = 0
         :when (search what (rpm-name rpm) :test #'char-equal)
-        :do (format t "~3d. ~a:~{~%~10t~a~}~%" (incf ii) rpm (rpm-note rpm))
+        :do (format t "~3d. ~a [~@[~:d bytes ,~]~a/~a/~a]:~{~%~10t~a~}~%"
+                    (incf ii) rpm (rpm-size rpm)
+                    (if (rpm-btime rpm) (time2date (rpm-btime rpm)))
+                    (if (rpm-itime rpm) (time2date (rpm-itime rpm)))
+                    (if (rpm-ftime rpm) (time2date (rpm-ftime rpm)))
+                    (rpm-note rpm))
         :finally (format t "~[None~:;~:*~d~] found.~%" ii)))
   "Delete some RPMs from the vector `*rpm-present*'."
   (declare (simple-string what))
@@ -357,17 +397,22 @@ The elements matching `*rpm-skip*' are removed, too."
               :and all :of-type file-size-t = (reduce #'+ rpms :key #'rpm-size)
               :for pos = (binary-pos (rpm-name rpm) *rpm-present*
                                      :test #'string< :key #'rpm-name)
-              :with glob :of-type file-size-t = 0
-              :do (format t " *** [~d/~d] getting~25t`~a'...~%" ii len rpm)
+              :with got :of-type file-size-t = 0
+              :do (format out " *** [~d/~d] ~a~@[ [~:d bytes~@[, ~/pr-secs/~]~
+~@[/~/pr-secs/~]]~]~%"
+              :do (format t " *** [~d/~d] ~a~@[ [~:d bytes~@[, ~/pr-secs/~]~
+                          (url-eta all))
+              :if (rpm< (svref *rpm-present* pos) rpm) :do
+              (multiple-value-bind (tot el st path)
                   (ftp-get-file sock (format nil "~a.rpm" rpm)
                                 *rpm-local-target* :err err :bin t :out out)
                 (declare (type file-size-t tot) (double-float el)
                                 *rpm-local-target* :log log :bin t
                                 :timeout timeout)
                 (cond ((rpm-path-valid-p path)
-                         (simple-string st))
+                       (incf got tot)
                        (format out " *** done [~:d bytes, ~a, ~:d bytes/sec]
-                       (incf glob tot)
+ *** replacing ~a with ~a in `*rpm-present*'~%"
                        (format t " *** done [~:d bytes, ~a, ~:d bytes/sec]
                                (svref *rpm-present* pos) rpm)
                        (setf (svref *rpm-present* pos)
@@ -378,7 +423,7 @@ The elements matching `*rpm-skip*' are removed, too."
               :else :do (format out " *** already have~25t`~a'.~%" rpm)
               :end :finally (return got)))
               :else :do (format t " *** already have~25t`~a'.~%" rpm)
-              :end :finally (return glob)))
+      (mesg :log err "rpm-get-list [~a]:~% - ~a~%" url co)
     (error (co)
       (when log (format log "rpm-get-list [~a]: ~a~%" url co))
              (rpm-get-list url rpms :out out :err err :retry (1- retry)
@@ -410,8 +455,8 @@ The elements matching `*rpm-skip*' are removed, too."
                 (format t " *** Pruning [~d]..." len) (force-output)
                 (setf (cdr url) (rpm-prune-list (cdr url)))
                 (format t "done [~d left]~%" (length (cdr url))))
-              (format t " *** ~a: ~a~%" (car url) (cadr url)))
-          (format t " *** ~a: no new packages~%" (car url))))
+              (format t " *** ~a:~%~10t~a~%" (car url) (cadr url)))
+          (format t " *** ~a:~60tno new packages~%" (car url))))
     (format t " *** [~a] done" (current-time nil))
     (if (zerop glob) (format t ".~%")
                   glob st (round glob el))))
@@ -419,10 +464,19 @@ The elements matching `*rpm-skip*' are removed, too."
 
 ;;;###autoload
 (defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*)
+(defun rpm-list-rpm (name &key (out *standard-output*) log
+                       (timeout *rpm-timeout*))
+  "Look for the RPM on all sites."
+  (dolist (url *rpm-urls*)
+    (with-open-url (sock (car url) :err log :timeout timeout)
+      (format out " *** ~a:~%" (car url))
+      (ftp-list sock :name name :log log :out out))))
+;;  (:documentation "Remove old RPM files."))
 ;; (rpm-clean-up "/var/tmp/")
 ;; (rpm-clean-up)
 ;; (rpm-clean-up "/var/tmp/o/")
 
+;; (rpm-clean-up "/var/tmp/o/RedHat/RPMS/")
                                    :test #'equalp))
                      (out *standard-output*))
   "Remove old RPM files."

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.29 2005/03/06 22:51:17 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.30 2005/03/09 13:49:27 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1184,11 +1184,13 @@
 		(setf (Chunk-date ch) new-date)
 		true)
 	       ((< new-date old-date)
-		(cerror "I will ignore the new date"
+		(cerror "I will set the date to the new date"
 			!"Chunk deriver or dater returned date ~s, ~
 			  which is before current date ~s"
 			  new-date old-date)
-		false)
+;;; Just ignoring the new date usually causes the bug to recur --
+;;;;		false
+		(setf (Chunk-date ch) new-date))
 	       (t
 		false)))
 

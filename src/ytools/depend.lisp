@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.14 2005/03/06 22:51:17 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.15 2005/03/09 13:49:27 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -167,15 +167,18 @@
 				 (list-copy (rest g)))
 				(t !())))
 		       dgroups)))
-	 `(progn
-	      ,@(include-if (not (null read-time-deps))
-		   `(eval-when (:compile-toplevel :execute)
-		       (cond (depends-on-enabled*
-			      (fload ,@read-time-deps)))))
-	      ,@(include-if (not (null run-time-deps))
-		   `(eval-when (:load-toplevel :execute)
-		       (cond (depends-on-enabled*
-			      (fload ,@run-time-deps)))))))))
+	 ;; This is a kludge to avoid the calls to 'fload' here
+	 ;; changing the real default-fload-args* --
+	 `(let ((default-fload-args* (vector !() !() nil)))
+	     (progn
+		,@(include-if (not (null read-time-deps))
+		     `(eval-when (:compile-toplevel :execute)
+			 (cond (depends-on-enabled*
+				(fload ,@read-time-deps)))))
+		,@(include-if (not (null run-time-deps))
+		     `(eval-when (:load-toplevel :execute)
+			 (cond (depends-on-enabled*
+				(fload ,@run-time-deps))))))))))
 
 (defvar end-header-dbg* false)
 
@@ -233,9 +236,9 @@
 						    pnl)
 					    (File-chunk-read-basis
 						file-ch)))))
-			(format *error-output*
-			   "Checking bases of ~S~%"
-			   pnl)
+;;;;			(format *error-output*
+;;;;			   "Checking bases of ~S~%"
+;;;;			   pnl)
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn))
 				  (lpchunk (place-Loaded-chunk pchunk false)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.29 2005/03/06 22:51:17 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.30 2005/03/09 13:49:27 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -18,7 +18,7 @@
 (defvar fload-flags* '(- -f -c -a -s -o -x -z))
 ;;; -  -> "Clear sticky flags"
 ;;; -f -> "Force load even if apparently up to date"
-;;; -c -> "Compile each file"
+;;; -c -> "Compile and load each file even if apparently up to date"
 ;;; -a -> "Ask whether to compile each file"
 ;;; -s -> "Load source, ignoring possibility of loading object"
 ;;; -o -> "Load object, without recompiling"
@@ -142,7 +142,8 @@
    ;; 'pathname' is its resolution
    (kind :reader File-chunk-kind
 	 :initarg :kind)
-   ;; -- :source, :object, :data
+   ;; -- :source, :object, :data (":data" can include files of
+   ;; of source code that won't be compiled).
    (readtable :accessor File-chunk-readtable
 	      :initarg :readtable
 	      :initform false)
@@ -198,6 +199,9 @@
 
 (defun file-chunk-is-source (file-ch)
    (eq (File-chunk-kind file-ch) ':source))
+
+(defun file-chunk-is-object (file-ch)
+   (eq (File-chunk-kind file-ch) ':object))
 
 (defun loaded-chunk-force (loaded-chunk force postpone-derivees)
    (let ((obj-file-chunk (Loaded-file-chunk-object loaded-chunk))
@@ -421,7 +425,8 @@
 (defun place-Loaded-file-chunk (file-chunk file-manip)
    (let ((lc (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
 		(\\ (name)
-		  (let ((is-source (file-chunk-is-source file-chunk)))
+		  (let ((is-source (file-chunk-is-source file-chunk))
+			(is-object (file-chunk-is-object file-chunk)))
 		     (let ((compiled-chunk
 			      (and is-source
 				   (place-compiled-chunk file-chunk))))
@@ -430,15 +435,17 @@
 				    :name name
 				    :loadee file-chunk
 				    :manip (or file-manip ':follow)
-				    :source (cond (is-source file-chunk)
-						  (t false))
+				    :source (cond (is-object false)
+						  (t file-chunk))
 				    :compiled (cond (is-source compiled-chunk)
-						    (t file-chunk))
+						    (is-object file-chunk)
+						    (t false))
 				    :object (cond (is-source
 						   (place-File-chunk
 						      (File-chunk-pathname
 							 compiled-chunk)))
-						  (t file-chunk)))))
+						  (is-object file-chunk)
+						  (t false)))))
 ;;;;			   (setq cc* compiled-chunk)
 ;;;;			   (loaded-file-chunk-set-basis new-lc)
 			   (push new-lc all-loaded-file-chunks*)
@@ -592,10 +599,10 @@
    (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
 	  (manip (Loaded-file-chunk-manip loaded-ch))
 	  (source-exists (Loaded-file-chunk-source loaded-ch))
+	  (obj-file-chunk (Loaded-file-chunk-object loaded-ch))
 	  (object-exists
-	     (probe-file
-		(File-chunk-pathname
-		   (Loaded-file-chunk-object loaded-ch)))))
+	     (and obj-file-chunk
+		  (probe-file (File-chunk-pathname obj-file-chunk)))))
       (cond (loaded-manip-dbg*
 	     (format t !"Setting loaded chunk basis, ~
                          manip initially = ~s~%" manip)))
@@ -848,7 +855,8 @@
 	    (now-loading* false)
 	    (now-slurping* false)
 	    (debuggability* debuggability*)
-	    (fload-indent* (+ 3 fload-indent*)))
+	    (fload-indent*
+	       (* 3 (Chunk-depth cf-ch))))
 	 (compile-and-record pn real-pn real-ov
 			     cf-ch old-obj-write-time))))
 

@@ -1,12 +1,16 @@
-;;; File: <elisp.lisp - 1999-04-20 Tue 13:33:32 EDT sds@eho.eaglets.com>
+;;; File: <elisp.lisp - 1999-04-22 Thu 15:22:43 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
 ;;; Copyright (C) 1999 by Sam Steingold
 ;;;
-;;; $Id: elisp.lisp,v 1.3 1999/04/20 17:34:46 sds Exp $
+;;; $Id: elisp.lisp,v 1.4 1999/04/22 19:25:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 ;;; $Log: elisp.lisp,v $
+;;; Revision 1.4  1999/04/22 19:25:31  sds
+;;; (el::make-elisp-readtable): call `make-object-readtable'.
+;;; (*elisp-readtable*): a constant now.
+;;;
 ;;; Revision 1.3  1999/04/20 17:34:46  sds
 ;;; (el::make-elisp-readtable): redefine macro #\".
 ;;; (el::read-elisp-special): handle #\": \n, \r, \f, \t, \v.
@@ -24,14 +28,14 @@
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "list")
   (export '(cl-user::defsubst) :cl-user)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3)))
 
-(defpackage emacs-lisp
-  #-allegro
-  (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
-  (:nicknames elisp el) (:use cl cl-user)
-  (:shadow let let* if member delete load require defcustom defconst provide
-           ignore format /))
+  (defpackage emacs-lisp
+    #-allegro
+    (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
+    (:nicknames elisp el) (:use cl cl-user)
+    (:shadow let let* if member delete load require defcustom defconst provide
+             ignore format /)))
 
 ;;;
 ;;; Emacs-Lisp-specific special forms
@@ -61,6 +65,7 @@
 ;;; Read Emacs-Lisp objects
 ;;;
 
+(eval-when (load compile eval)  ; for `*elisp-readtable*'
 (defun el::read-elisp-special (stream char)
   (declare (stream stream) (character char))
   (ecase char
@@ -95,17 +100,15 @@
 
 (defun el::make-elisp-readtable ()
   "Make the readtable for Emacs-Lisp parsing."
-  (let ((rt (copy-readtable)))
-    (set-syntax-from-char #\[ #\( rt)
-    (set-syntax-from-char #\] #\) rt)
+  (let ((rt (make-object-readtable)))
     (set-macro-character #\? #'el::read-elisp-special nil rt)
     (set-macro-character #\[ #'el::read-elisp-special nil rt)
     (set-macro-character #\" #'el::read-elisp-special nil rt)
-    (set-macro-character #\] (get-macro-character #\) rt) nil rt)
     ;; (setf (readtable-case rt) :downcase)
     rt))
+)
 
-(defparameter *elisp-readtable* (el::make-elisp-readtable)
+(defconst *elisp-readtable* readtable (el::make-elisp-readtable)
   "The readtable for Emacs-Lisp parsing.")
 
 ;;; bug in ACL and CMUCL
@@ -140,7 +143,7 @@
 (defun el::setcdr (cons obj) (setf (cdr cons) obj))
 (defun el::ignore (&rest ignore) (declare (ignore ignore)) nil)
 (defun el::sit-for (sec &optional (ms 0) nodisp)
-  (declare (ignore nodisp))
+  (declare (real sec ms) (ignore nodisp))
   (sleep (+ sec (/ ms 1000))))
 (defun el::string-to-number (string &optional (base 10))
   (parse-integer string :radix base))

@@ -1,4 +1,4 @@
-This is Screamer - and extension of Common Lisp that adds support for
+This is Screamer - an extension of Common Lisp that adds support for
 nondeterministic programming.
 
 This code is base on the version 3.24 from Jeffrey Mark Siskind.
@@ -6,6 +6,7 @@ This code should run on any ANSI Common Lisp.
 
 This software is Copyright (C) by Jeffrey Mark Siskind.
 It is hereby released undef the GNU Lesser General Public License.
+See also <http://opensource.franz.com/preamble.html>.
 
 Note that it may take a long time to compile Screamer (i.e. 1.5 hours
 using the Lucid production compiler on a Sun SPARCstation 2).

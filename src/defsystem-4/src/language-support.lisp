@@ -561,7 +561,7 @@ The result is a list of keywords."))
       (declare (type (or null stream)
 		     error-output
 		     error-file-stream)
-	       (type integer old-timestamp)
+	       (type (or null integer) old-timestamp)
 	       (type boolean fatal-error output-file-written-p))
       (handler-case
        (progn
@@ -581,49 +581,57 @@ The result is a list of keywords."))
 			   program
 			   arguments)
 
-	     (let ((process-status
-		    (run-os-program program
-				    :arguments arguments
-				    :error error-output)))
-	       (setf fatal-error (not (zerop process-status)))))
+	     (handler-case
+	      (let ((process-status
+		     (run-os-program program
+				     :arguments arguments
+				     :error error-output)))
+		(setf fatal-error (not (zerop process-status))))
+	      (error (e)
+		     (format *error-output*
+			     ">>> Minchia ~?~%"
+			     (simple-condition-format-control e)
+			     (simple-condition-format-arguments e)
+			     )))
 	       
-	   (setf output-file-written-p
-		 (and (probe-file output-file)
-		      (/= old-timestamp
-			      (file-write-date output-file))))
+	     (setf output-file-written-p
+		   (and (probe-file output-file)
+			(or (null old-timestamp)
+			    (/= old-timestamp
+				(file-write-date output-file)))))
 
-	   (when output-file-written-p
-	     (user-message verbose-stream "~A written."
-			   output-file))
+	     (when output-file-written-p
+	       (user-message verbose-stream "~A written."
+			     output-file))
 	     
-	   (user-message verbose-stream
-			 "running of ~S completed~@[ with errors~]."
-			 program
-			 fatal-error)
+	     (user-message verbose-stream
+			   "running of ~S completed~@[ with errors~]."
+			   program
+			   fatal-error)
 
-	   (values (and output-file-written-p output-file)
-		   fatal-error
-		   fatal-error)))
+	     (values (and output-file-written-p output-file)
+		     fatal-error
+		     fatal-error))))
 	   
-	   (error (e)
-		  (format *error-output* "~S" e)
+       (error (e)
+	      (format *error-output* "~S" e)
+	      (when error-file
+		(close error-file-stream)
+		(unless (or fatal-error (not output-file-written-p))
+		  (delete-file error-file)))
+	      (values (and output-file-written-p (pathname output-file))
+		      fatal-error
+		      fatal-error))
+
+       (:no-error (output-file-result warnings-p fatal-errors-p)
 		  (when error-file
 		    (close error-file-stream)
-		    (unless (or fatal-error (not output-file-written-p))
+		    (unless (or fatal-errors-p (not output-file-written-p))
 		      (delete-file error-file)))
-		  (values (and output-file-written-p (pathname output-file))
-			  fatal-error
-			  fatal-error))
-
-	   (:no-error (output-file-result warnings-p fatal-errors-p)
-		      (when error-file
-			(close error-file-stream)
-			(unless (or fatal-errors-p (not output-file-written-p))
-			  (delete-file error-file)))
-		      (values output-file-result
-			      warnings-p
-			      fatal-errors-p))
-	   ))
+		  (values output-file-result
+			  warnings-p
+			  fatal-errors-p))
+       ))
     ))
 
 
@@ -657,7 +665,7 @@ The result is a list of keywords."))
     (let ((arguments (process-options e-proc (add-output-option options))))
       (multiple-value-bind (output-file warnings fatal-errors)
 	  (run-processor-command (external-command e-proc)
-				 arguments
+				 (list* (namestring file) arguments)
 				 output-pathname
 				 error-log-file
 				 error-output

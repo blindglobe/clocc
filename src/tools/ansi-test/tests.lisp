@@ -113,9 +113,12 @@ the returnvalues or the type of the condition used."
   `(progn
 
      ;; testing the test suite itself: BUGIDs should be unique.
-     (if (gethash ',bugid *bugid->seenp*)
-	 (format t "~&~%ERROR!! duplicate BUGID=~S~%" ',bugid)
-	 (setf (gethash ',bugid *bugid->seenp*) t))
+     (cond
+       ((gethash ',bugid *bugid->seenp*)
+        (format *log* "~&~%ERROR!! duplicate BUGID=~S~%" ',bugid)
+        (format t "~&~%ERROR!! duplicate BUGID=~S~%" ',bugid))
+       (t
+        (setf (gethash ',bugid *bugid->seenp*) t)))
 
      ;; actually testing the Lisp implementation
      (cond ((gethash ',bugid *bugid->knownp*)
@@ -257,20 +260,40 @@ the returnvalues or the type of the condition used."
 
   ;; testing the test suite itself again: Check for
   ;; mistyped/gone-stale/otherwise-hosed *BUGID->KNOWNP* data.
-  (maphash (lambda (bugid ignored-knownp)
-	     (declare (ignore ignored-knownp))
-	     (unless (gethash bugid *bugid->seenp*)
-	       (format t
-		       "~&~%ERROR!! KNOWNP BUGID=~S corresponds to no test."
-		       bugid)))
-	   *bugid->knownp*)
-
+  (with-open-file (*log* "state-info.erg"
+                         :direction :output)
+    (loop for item in (list
+                       'machine-version
+                       'machine-type
+                       'machine-instance
+                       'lisp-implementation-version
+                       'lisp-implementation-type
+                       'software-type
+                       'software-version)
+          do
+          (format *log* "~A: ~A~%" item (funcall item)
+                  (lisp-implementation-version)))	
+    
+    
+    (maphash (lambda (bugid ignored-knownp)
+               (declare (ignore ignored-knownp))
+               (unless (gethash bugid *bugid->seenp*)
+                 (format t
+                         "~&~%ERROR!! KNOWNP BUGID=~S corresponds to no test."
+                         bugid)
+                 (format *log*
+                         "~&~%ERROR!! KNOWNP BUGID=~S corresponds to no test."
+                         bugid)))
+             *bugid->knownp*))
+    
   ;; Voila.
   t)
 
-;(run-test "unix-tests")
-;(run-test "steele7")
-;(quit)
 (run-all-tests)
 
 (format t "~%~%tests complete~%")
+#+cmu
+(unix:unix-exit 0)
+
+#+sbcl
+(SB-UNIX:UNIX-EXIT 0)

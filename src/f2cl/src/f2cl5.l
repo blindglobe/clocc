@@ -399,13 +399,15 @@
 	   expr)
 	  ((eq (first expr) 'fref)
 	   ;; Fixup the expressions for the index.
-	   `(fref ,(second expr) ,(mapcar #'fixup-expression (third expr))))
+	   ;;(format t "expr = ~S: ~S~%" expr (mapcar #'fixup-expression (third expr)))
+	   `(fref ,(second expr) ,(mapcar #'fixup-expression (third expr)) ,(fourth expr)))
 	  ((is-neg (second expr))
 	   ;; We have (F (- Z) X ...).  If F is '+,
 	   ;; make it (- X Z).  If Z is a number, make it (F -Z X ...)
 	   (cond ((eq (first expr) '+)
+		  ;; (+ (- Z) X ...) => (- X Z)
 		  `(- ,@(mapcar #'fixup-expression (rest (rest expr)))
-		    ,(second (second expr))))
+		      ,@(mapcar #'fixup-expression (rest (second expr)))))
 		 ((numberp (second (second expr)))
 		  `(,(first expr) ,(- (second (second expr)))
 		    ,@(mapcar #'fixup-expression (rest (rest expr)))))
@@ -425,8 +427,9 @@
 		                  ,@(mapcar #'fixup-expression (nthcdr 3 expr))))
 		 (t
 		  ;; Process the X and (- Z) parts now
+		  ;;(format t "T case (F X (- Z) ...): ~S~%" expr)
 		  `(,(first expr) ,(fixup-expression (second expr))
-		                  ,@(fixup-expression (rest (rest expr)))))))
+		                  ,@(mapcar #'fixup-expression (rest (rest expr)))))))
 	  ((and (eq (first expr) '+)
 		(listp (third expr))
 		(member (first (third expr)) '(* /))
@@ -437,8 +440,8 @@
 	   ;;(format t "got ~S~%" expr)
 	   `(- ,(fixup-expression (second expr))
 	     (,(first (third expr))
-	      ,@(fixup-expression (rest (second (third expr))))
-	      ,@(fixup-expression (rest (rest (third expr)))))))
+	      ,@(mapcar #'fixup-expression (rest (second (third expr))))
+	      ,@(mapcar #'fixup-expression (rest (rest (third expr)))))))
 	  (t
 	   ;; Didn't match, so descend into the remaining args
 	   `(,(first expr) ,@(mapcar #'fixup-expression (rest expr)))))))

@@ -923,26 +923,29 @@ FILENAME                 File containing Fortran code
 	    (t
 	     (error "Failed to parse a declaration!")))))
   nil)
-	
+
+;; Parse an implicit declaration.  X is the whole statement.
 (defun parse-implicit-decl (x)
   (cond ((eq (second x) 'none)
 	 ;; implicit none
-	 (setq *implicit_vble_decls* nil))
+	 (setq *implicit_vble_decls* '((:none (a z)))))
 	(t
-	 (when (eq (third x) '*)
-	   ;; Handle implicit <type> * <length> by rewriting x with
-	   ;; the appropriate type.
-	   (setq x `(,(first x) 
-		     (,(second x) ,(third x) ,(fourth x))
-		     ,@(cddddr x))))
-	 (setq *implicit_vble_decls* 
-	       (append (mapcar #'(lambda (y)
-				   `(,(car (convert-data-type y))
-				     ,@(list-split '|,|
-						   (remove '- (car (last y))))))
-			       (list-split '|,| (cdr x)))
-		       *implicit_vble_decls*))))
-  (values))
+	 (let ((decls 
+		(if (eq (third x) '*)
+		    ;; Handle IMPLICIT <type> * <length> by rewriting x with
+		    ;; the appropriate type.
+		    `(,(first x) 
+		      (,(second x) ,(third x) ,(fourth x))
+		      ,@(cddddr x))
+		    x)))
+	   (mapc #'(lambda (y)
+		     (push `(,(car (convert-data-type y))
+			     ,@(list-split '|,|
+					   (remove '- (car (last y)))))
+			   *implicit_vble_decls*))
+		 (list-split '|,| (cdr decls))))))
+  nil)
+
 
 (defun build_decl_list (decl_list type decl)
   (cons `(,type 
@@ -1946,8 +1949,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.74 2001/06/04 14:31:20 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.75 2001/06/04 17:14:38 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.75  2001/06/04 17:14:38  rtoy
+;;; Handle IMPLICIT NONE by putting ":NONE (A-Z)" as the type for
+;;; *implicit_vble_decls*.
+;;;
 ;;; Revision 1.74  2001/06/04 14:31:20  rtoy
 ;;; Recognize IMPLICIT NONE, but the semantics are NOT currently
 ;;; implemented:  undeclared variables will still be declared with default

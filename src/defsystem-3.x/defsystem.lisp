@@ -1298,13 +1298,10 @@
          #+:mcl                               ("lisp" . "fasl")
 
          ;; Otherwise,
-         ("lisp" . "fasl")))
+         ("lisp" . ,(pathname-type (compile-file-pathname "foo.lisp")))))
   "Filename extensions for Common Lisp. A cons of the form
    (Source-Extension . Binary-Extension). If the system is
    unknown (as in *features* not known), defaults to lisp and fasl.")
-
-;;; In ANSI CL, we should be able to get the object file type by
-;;; doing (pathname-type (compile-file-pathname "foo.lisp")).
 
 (defvar *system-extension*
   ;; MS-DOS systems can only handle three character extensions.

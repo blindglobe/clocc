@@ -174,7 +174,6 @@
 		       ((and (listp v-type)
 			     (eq (first v-type) 'character))
 			;; Hmm, a Fortran character string.  Make it a Lisp string
-			(format t "v-type = ~S~%" v-type)
 			(if (numberp (second v-type))
 			    `(string ,(second v-type))
 			    'string))

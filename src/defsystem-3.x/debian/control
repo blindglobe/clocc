@@ -7,9 +7,9 @@ Standards-Version: 3.5.7.0
 
 Package: cl-defsystem3
 Architecture: all
-Depends: ${shlibs:Depends}, cmucl-normal | lisp-compiler
+Depends: ${shlibs:Depends}
 Replaces: common-lisp-controller (<< 3.18)
-Recommends: common-lisp-controller
+Recommends: common-lisp-controller, cmucl-normal | lisp-compiler
 Description: Make system for Common Lisp Packages 
  defsystem3 provides a "make" type functions for Common Lisp packages. It
  provides compilation and loading features for complex Lisp systems

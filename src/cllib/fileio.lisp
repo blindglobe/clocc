@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.37 2004/08/17 21:30:00 sds Exp $
+;;; $Id: fileio.lisp,v 1.38 2004/09/03 16:23:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (in-package :cllib)
 
-(export '(file-size-t file-size rename-files save-restore
+(export '(file-size-t file-size dir-size rename-files save-restore
           count-sexps code-complexity load-compile-maybe file-equal-p
           file-newer file-newest
           write-list-to-stream write-list-to-file file-cmp
@@ -34,11 +34,17 @@
 (deftype file-size-t () '(unsigned-byte 32))
 )
 
-(declaim (ftype (function (t) file-size-t) file-size))
+(declaim (ftype (function (t) file-size-t) file-size dir-size))
 ;;;###autoload
 (defun file-size (fn)
   "Return the size of file named FN."
   (with-open-file (str fn :direction :input) (file-length str)))
+
+;;;###autoload
+(defun dir-size (dir)
+  "Return the total size of all files in directory DIR."
+  (+ (reduce #'+ (directory (merge-pathnames "*" dir)) :key #'file-size)
+     (reduce #'+ (directory (merge-pathnames "*/" dir)) :key #'dir-size)))
 
 ;;;###autoload
 (defun rename-files (from to)

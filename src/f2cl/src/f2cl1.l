@@ -18,14 +18,14 @@
 
 (eval-when (compile load eval)
   (proclaim '(special *readtable* *sentable*))
-  (proclaim '(special *intrinsic_function_names* *external_function_names*
+  (proclaim '(special *intrinsic-function-names* *external_function_names*
 	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
 	      *subprog-arglist* *data-init*
 	      *explicit_vble_decls* *function-flag* *key_params*
 	      *save_vbles* *program-flag* *subprog_name*
 	      *subprog_common_vars*  *common_array_dims*
 	      *format_stmts* *current_label*
-	      *subprog_stmt_fns* *subprog_stmt_fns_bodies* *prune_labels*
+	      *subprog-stmt-fns* *subprog_stmt_fns_bodies* *prune_labels*
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*
@@ -467,7 +467,7 @@ FILENAME                 File containing Fortran code
 	fort-fun *external_function_names*
 	*undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 	*save_vbles* *key_params* *subprog_common_vars* 
-	*subprog_stmt_fns* *subprog_stmt_fns_bodies* *subprog_name*
+	*subprog-stmt-fns* *subprog_stmt_fns_bodies* *subprog_name*
 	*function-flag* *program-flag*
 	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
 	*parsing-lhs*
@@ -906,7 +906,7 @@ FILENAME                 File containing Fortran code
   ;; If we declared an intrinsic function name, remove that from the
   ;; list of declared variables.
   (setf *declared_vbles*
-	(set-difference *declared_vbles* *intrinsic_function_names*))
+	(set-difference *declared_vbles* *intrinsic-function-names*))
   (let ((type (find (first x) '((integer integer4)
 				(integer4 integer4)
 				(integer2 integer2)
@@ -1105,12 +1105,12 @@ FILENAME                 File containing Fortran code
 	   ;; Look up type of statement function and coerce the RHS to the desired type.
 	   ;;(format t "statement func:  ~A~%" `((,(car lhs) ,(cdr lhs) ,rhs)))
 	   ;;(format t "type = ~A, ~A~%" lhs-type rhs-type)
-	   (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs)))
+	   (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs)))
 		 *subprog_stmt_fns_bodies*
 		 (append *subprog_stmt_fns_bodies* 
 			 `((,(car lhs) ,(cdr lhs) ,rhs-expr))))
 	   nil))))
-;       (and (setq *subprog_stmt_fns* (append *subprog_stmt_fns* (list (car lhs))))
+;       (and (setq *subprog-stmt-fns* (append *subprog-stmt-fns* (list (car lhs))))
 ;            `((defun ,(read-from-string 
 ;                           (concatenate 'string 
 ;                                   (princ-to-string *subprog_name*)
@@ -1146,7 +1146,7 @@ FILENAME                 File containing Fortran code
 	  (push var vnames)
 	  (push (cond ((or (vble-is-array-p arg)
 			   (member arg *external_function_names*)
-			   (member arg *intrinsic_function_names*)
+			   (member arg *intrinsic-function-names*)
 			   (member arg '(%true% %false%)))
 		       ;; Fortran can't return whole arrays or
 		       ;; functions, so don't try to assign the value
@@ -1583,10 +1583,10 @@ FILENAME                 File containing Fortran code
 		      ,(fix-up-negative-number l)))))))
 
 ; parse EXTERNAL f1, f2, ...
-; by adding the function names to *external_function_names*
+; by adding the function names to *external-function-names*
 (defun parse-external (x)
-   (setq *external_function_names*
-         (append *external_function_names* (remove '|,| (cdr x))))
+   (setq *external-function-names*
+         (append *external-function-names* (remove '|,| (cdr x))))
    nil)
 
 ;=============================================================================
@@ -1956,8 +1956,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.79 2002/01/05 19:01:21 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.80 2002/01/06 23:10:11 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.80  2002/01/06 23:10:11  rtoy
+;;; Rename *intrinsic_function_names*, *external_function_names* and
+;;; *subprog_stmt_fns* to use dashes.
+;;;
 ;;; Revision 1.79  2002/01/05 19:01:21  rtoy
 ;;; Don't print out the copyright messages when running f2cl.
 ;;;

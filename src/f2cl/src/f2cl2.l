@@ -16,8 +16,8 @@
 (eval-when (compile load eval)
   (proclaim '(optimize (speed 3) (safety 1)))
 
-  (proclaim '(special *intrinsic_function_names* *external_function_names*
-	      *subprog_name* *subprog_stmt_fns*
+  (proclaim '(special *intrinsic_function_names* *external-function-names*
+	      *subprog_name* *subprog-stmt-fns*
 	      *functions-used*)))
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -357,7 +357,7 @@ Tag being parsed:| (cadr x))))
        ;; is.  If it's on the RHS, it's a real function call so call
        ;; it correctly.
        (if (or *parsing-lhs*
-	       (member fname *subprog_stmt_fns*))
+	       (member fname *subprog-stmt-fns*))
 	   `(,fname ,@args)
 	   (first (generate-call-to-routine
 		   (cond ((member fname *subprog-arglist*)
@@ -432,8 +432,12 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.28 2000/09/01 14:05:25 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.29 2002/01/06 23:10:12 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.29  2002/01/06 23:10:12  rtoy
+;;; Rename *intrinsic_function_names*, *external_function_names* and
+;;; *subprog_stmt_fns* to use dashes.
+;;;
 ;;; Revision 1.28  2000/09/01 14:05:25  rtoy
 ;;; o ID-FACTOR: we were not careful enough about array slicing in
 ;;;   function calls.  We should only apply array slicing if the argument

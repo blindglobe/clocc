@@ -51,11 +51,11 @@
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
-  (proclaim '(special *intrinsic_function_names* *external_function_names*
+  (proclaim '(special *intrinsic-function-names* *external-function-names*
 	      *declared_vbles* *undeclared_vbles* *key_params* *save_vbles*
 	      *explicit_vble_decls* *implicit_vble_decls* *common_array_dims*
 	      *subprog_common_vars* *program-flag* 
-	      *subprog_stmt_fns* *subprog_stmt_fns_bodies*
+	      *subprog-stmt-fns* *subprog_stmt_fns_bodies*
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*))
@@ -81,7 +81,7 @@
 				    FUNCALL))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *key_params* :key #'car)
-		    (member exprs *external_function_names*)
+		    (member exprs *external-function-names*)
 		    (member exprs *declared_vbles*)
 		    (member exprs *undeclared_vbles*)
 		    (sym-is-fun-name (list exprs))
@@ -363,10 +363,10 @@
 	       (decl `(function ,(get-arg-decl args)
 		       (values
 			,@(if ftype nil (list type))
-			,@(if (member fname *intrinsic_function_names*)
+			,@(if (member fname *intrinsic-function-names*)
 			      nil
 			      '(&rest t))))))
-	  (cond ((member fname *subprog_stmt_fns*)
+	  (cond ((member fname *subprog-stmt-fns*)
 		 (push `(declare (ftype ,decl ,fname)) stmt-fcns))
 		((member fname arglist)
 		 ;;(format t "arglist fcn = ~A~%" `(declare (type ,decl ,fname)))
@@ -607,7 +607,7 @@
        (format t "undeclared_vbles = ~S~%" *undeclared_vbles*)
        (format t "implicit_vbles   = ~S~%" *implicit_vble_decls*)
        (format t "*functions used* = ~S~%" *functions-used*)
-       (format t "external func    = ~S~%" *external_function_names*)
+       (format t "external func    = ~S~%" *external-function-names*)
        (format t "*subprog_common_vars* = ~S~%" *subprog_common_vars*)
        (format t "*common_array_dims*   = ~S~%" *common_array_dims*)
        (format t "*explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
@@ -656,7 +656,7 @@
 			   (setf *undeclared_vbles*
 				 (remove vble *undeclared_vbles*))
 			   decl))
-		     (set-difference arglist *external_function_names*)))))
+		     (set-difference arglist *external-function-names*)))))
 
      (when *relaxed-array-decls*
        ;; Old Fortran practice often declared arrays to functions to
@@ -725,14 +725,14 @@
      (setf *declared_vbles*
 	   (remove-if #'(lambda (v)
 			  (or (member v *functions-used* :key #'caar)
-			      (member v *external_function_names*)))
+			      (member v *external-function-names*)))
 		      *declared_vbles*))
      ;; If a variable names a function used or an external function or
      ;; delete the variable.
      (setf *undeclared_vbles*
 	   (remove-if #'(lambda (v)
 			  (or (member v *functions-used* :key #'caar)
-			      (member v *external_function_names*)))
+			      (member v *external-function-names*)))
 		      *undeclared_vbles*))
 
      ;; Initialize local variables
@@ -857,11 +857,11 @@
 	       ;; If we have SAVE'd variables, don't put their inits
 	       ;; into the function.  Put them in the let outside the function
 	       ;; where they belong.
-	       (if *subprog_stmt_fns*
+	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
 		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
 		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
-	       (if *subprog_stmt_fns*
+	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
 		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body))
 		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body)))
@@ -891,7 +891,7 @@
      ;; we don't need to do that.
      (setf prog-bit (fixup-external-function-refs
 		     prog-bit
-		     (set-difference *external_function_names* arglist)))
+		     (set-difference *external-function-names* arglist)))
      ;; Do the same for intrinsic function names, but be sure to
      ;; remove any variables whose name might match an intrinsic
      ;; function name.
@@ -905,7 +905,7 @@
      (setf prog-bit
 	   (fixup-external-function-refs
 	    prog-bit
-	    (set-difference *intrinsic_function_names*
+	    (set-difference *intrinsic-function-names*
 			    (append *declared_vbles*
 				    *undeclared_vbles*
 				    arglist
@@ -1024,8 +1024,8 @@
 	;; Don't need any initialization for statement functions or
 	;; external functions.  (But perhaps we should put one in to
 	;; say these are actually functions?)
-	((or (member vble *external_function_names*)
-	     (member vble *subprog_stmt_fns*))
+	((or (member vble *external-function-names*)
+	     (member vble *subprog-stmt-fns*))
 	 nil
 	 )
 	;; check for declared variable
@@ -1199,11 +1199,11 @@
 	  
      ;; Don't need any initialization for statement functions or
      ;; external functions
-     ((or (member vble *external_function_names*)
-	  (member vble *subprog_stmt_fns*))
+     ((or (member vble *external-function-names*)
+	  (member vble *subprog-stmt-fns*))
       ;;(format t "no declaration needed for ~A~%" vble)
-      ;;(format t "stmt fns = ~A~%" *subprog_stmt_fns*)
-      ;;(format t "ext fns  = ~A~%" *external_function_names*)
+      ;;(format t "stmt fns = ~A~%" *subprog-stmt-fns*)
+      ;;(format t "ext fns  = ~A~%" *external-function-names*)
       ;;(format t "arglist  = ~A~%" *subprog-arglist*)
       nil
       )
@@ -2088,8 +2088,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.70 2001/06/04 17:16:24 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.71 2002/01/06 23:10:12 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.71  2002/01/06 23:10:12  rtoy
+;;; Rename *intrinsic_function_names*, *external_function_names* and
+;;; *subprog_stmt_fns* to use dashes.
+;;;
 ;;; Revision 1.70  2001/06/04 17:16:24  rtoy
 ;;; Print a warning if there is no implicit type given and the variable
 ;;; was not declared.  This is invalid Fortran anyway.

@@ -1,4 +1,26 @@
+2003-10-28: Changed ytload.lisp to allow .lmd files to be in arbitrary places
+	
 2003-10-27: Eliminated Allegro check in depend.lisp"
 	
+2003-10-26: Added 'ytcopy.lisp' utility
+	
+2003-08-24: Declared var fload-compile* properly.
+	    Better y-n query handling in one place
+	    Still struggling with precise definition of 'depends-on'
+	
+2003-08-15: Slight reorganization of 'repeat.lisp' to split some local
+	    functions off so they can be used elsewhere.
+	
+2003-08-14: Changed handling of datafuns on property lists, adding
+            'datafun-on-plist'.
+	    In mapper.lisp, had to explicitly declare that 'mapmac'
+	    property is stored on symbol plists.  Ditto for 'match-code'
+	    property in setter.lisp.
+	    Slight bug fix in setter.lisp
+	
+2003-08-06: Fixed bug in pathname.lisp	    
+	
+2003-08-03: Added '--' to base.lisp
+	
 2003-07-13: Replaced :continue with :proceed in 'signal-problem'.  Made
-the string after :proceed evaluable.
+            the string after :proceed evaluable.

@@ -71,11 +71,37 @@
               (parse-namestring ytools-home-dir*))
 
 (defparameter ytools-bin-dir-pathname*
-              (ensure-directories-exist
-		 (merge-pathnames
-		    (make-pathname
-		       :directory ytools-bin-relative*)
-		    ytools-dir-pathname*)))
+   (let ((dirs (pathname-directory (pathname standard-bin-path*))))
+      (cond ((and (not (null dirs)) (eq (car dirs) ':relative))
+	     (setq dirs (cdr dirs))
+	     (let ((down-layers '())
+		   (yt-dirs (reverse (pathname-directory ytools-dir-pathname*))))
+		(loop
+		   (cond ((or (null yt-dirs)
+			      (member (car yt-dirs) '(:relative :absolute)))
+			  (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
+				 ytools-dir-pathname* (pathname standard-bin-path*))))
+		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
+			    down-layers yt-dirs dirs)
+		   (cond ((or (null dirs)
+			      (not (member (car dirs) '(:up :back))))
+			  (let ((final-dirs
+				   (append (reverse yt-dirs)
+					   dirs
+					   down-layers)))
+			     (format t "Final dirs = ~S~%" final-dirs)
+			     (return
+				(ensure-directories-exist
+				   (merge-pathnames
+				      (make-pathname
+					 :directory final-dirs)
+				      ytools-dir-pathname*))))))
+		  (setq down-layers (cons (car yt-dirs) down-layers))
+		  (setq yt-dirs (cdr yt-dirs))
+		  (setq dirs (cdr dirs)))))
+	    (t
+	     (error "Can't build ytools-bin-dir-pathname* from ~s"
+		    (pathname standard-bin-path*))))))
 
 (setq *features* (adjoin ':ytools *features*))
 

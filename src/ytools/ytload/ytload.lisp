@@ -165,6 +165,10 @@
 		  (t
 		   (funcall fun)))))))
 
+;;; Alist whose entries tell where module files live.  Default is
+;;; same directory as ytload.lisp itself.
+(defvar module-filenames* '())
+
 ;; The yt-config file must already be loaded.
 (defun load-module-file (module)
    ;(load-yt-config-file)
@@ -174,21 +178,26 @@
 	     (string-upcase module))
 	    (t
 	     (string-downcase module))))
-   (let ((mod-file
-	    (merge-pathnames 
-	       (make-pathname
-;;;;		   :directory `(:relative
-;;;;				   ,(cond ((eq filename-case* ':upper)
-;;;;					   "LOADER")
-;;;;					  (t "loader")))
-		   :name module
-		   :type "lmd")  ;;':unspecific
-	       (pathname ytload-directory* ))))
-      (cond ((probe-file mod-file)
-	     (load mod-file))
-	    (t
-	     (error "Can't find file for module ~s" module))))
+   (let ((e (assoc module module-filenames* :test #'equal)))
+      (let ((mod-file
+	       (cond (e
+		      (pathname (cadr e)))
+		     (t
+		      (merge-pathnames 
+			 (make-pathname
+			     :name module
+			     :type "lmd")  ;;':unspecific
+			 (pathname ytload-directory* ))))))
+	 (cond ((probe-file mod-file)
+		(load mod-file))
+	       (t
+		(error "Can't find file for module ~s" module)))))
    module)
+
+   ;;;;		   :directory `(:relative
+   ;;;;				   ,(cond ((eq filename-case* ':upper)
+   ;;;;					   "LOADER")
+   ;;;;					  (t "loader")))
 
 (defun set-read-env (l)
    (cond ((and l (consp l))

@@ -1666,10 +1666,16 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
       (push :case-insensitive common-lisp:*features*))))
 
 
-#+(and allegro case-sensitive)
+#+(and allegro case-sensitive ics)
 (compiler-type-translation "excl 6.1" "excl-m")
-#+(and allegro case-insensitive)
+#+(and allegro case-sensitive (not ics))
+(compiler-type-translation "excl 6.1" "excl-m8")
+
+#+(and allegro case-insensitive ics)
 (compiler-type-translation "excl 6.1" "excl-a")
+#+(and allegro case-insensitive (not ics))
+(compiler-type-translation "excl 6.1" "excl-a8")
+
 (compiler-type-translation "excl 4.2" "excl")
 (compiler-type-translation "excl 4.1" "excl")
 (compiler-type-translation "cmu 17f" "cmu")
@@ -1928,9 +1934,14 @@ ABS: NIL          REL: NIL               Result: ""
    however, may have a filename stuck on the end."
   (when (or absolute-directory relative-directory)
     (cond
+     ;; KMR commented out because: when appending two logical pathnames,
+     ;; using this code translates the first logical pathname then appends
+     ;; the second logical pathname -- an error.
+     #|
       ;; We need a reliable way to determine if a pathname is logical.
       ;; Allegro 4.1 does not recognize the syntax of a logical pathname
       ;;  as being logical unless its logical host is already defined.
+
       #+(or (and allegro-version>= (version>= 4 1))
 	    :logical-pathnames-mk)
       ((and absolute-directory
@@ -1938,7 +1949,7 @@ ABS: NIL          REL: NIL               Result: ""
 	    relative-directory)
        ;; For use with logical pathnames package.
        (append-logical-directories-mk absolute-directory relative-directory))
-
+     |#
       ((namestring-probably-logical absolute-directory)
        ;; A simplistic stab at handling logical pathnames
        (append-logical-pnames absolute-directory relative-directory))
@@ -1958,9 +1969,28 @@ ABS: NIL          REL: NIL               Result: ""
 (defun append-logical-directories-mk (absolute-dir relative-dir)
   (lp:append-logical-directories absolute-dir relative-dir))
 
-;;; this works in allegro-v4.1 and above.
-;;; New version
-;;; 20000323 Marco Antoniotti
+
+;;; append-logical-pathnames-mk --
+;;; The following is probably still bogus and it does not solve the
+;;; problem of appending two logical pathnames.
+;;; Anyway, as per suggetsion by KMR, the function is not called
+;;; anymore.
+;;; Hopefully this will not cause problems for ACL.
+
+#+(and (and allegro-version>= (version>= 4 1))
+       (not :logical-pathnames-mk))
+(defun append-logical-directories-mk (absolute-dir relative-dir)
+  ;; We know absolute-dir and relative-dir are non nil.  Moreover
+  ;; absolute-dir is a logical pathname.
+  (setq absolute-dir (logical-pathname absolute-dir))
+  (etypecase relative-dir
+    (string (setq relative-dir (parse-namestring relative-dir)))
+    (pathname #| do nothing |#))
+  
+  (translate-logical-pathname
+   (merge-pathnames relative-dir absolute-dir)))
+
+#| Old version 2002-03-02
 #+(and (and allegro-version>= (version>= 4 1))
        (not :logical-pathnames-mk))
 (defun append-logical-directories-mk (absolute-dir relative-dir)
@@ -1983,7 +2013,8 @@ ABS: NIL          REL: NIL               Result: ""
 	      (pathname-type relative-dir))
     :version (or (pathname-version absolute-dir)
 		 (pathname-version relative-dir)))))
-#| Old version
+
+;; Old version
 #+(and (and allegro-version>= (version>= 4 1))
        (not :logical-pathnames-mk))
 (defun append-logical-directories-mk (absolute-dir relative-dir)

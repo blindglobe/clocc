@@ -253,6 +253,8 @@ Tag being parsed:| (cadr x))))
      (cond ((not (null (cddr l)))
 	    (princ-reset
 	     '|f2cl error: missing +, *, /, or ^ operator following a function call.| l)))
+     (update-called-functions-list (car l)
+				   (mapcar #'id-expression (list-split '|,| (cadr l))))
      (cons (case (car l)
 	     ;; Handle some special cases for intrinsic functions
 	     (char 'fchar)

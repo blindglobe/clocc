@@ -1986,7 +1986,13 @@
       (t (make-declaration v)))))
 
 (defparameter +reserved-lisp-names+
-  '(t pi nil funcall prog prog1 progn mapcar map mapc))
+  '(t pi nil))
+
+(defparameter +allowed-lisp-names+
+  '(sin cos tan
+    asin acos atan
+    sinh cosh tanh
+    exp sign max min))
 
 ;; Check if the Fortran name would collide with Lisp names like T, PI,
 ;; NIL, FUNCALL, PROG, etc.  If it does, replace it a new name with a
@@ -2001,9 +2007,15 @@
 (defun check-reserved-lisp-names (x)
   (multiple-value-bind (found-it access)
       (find-symbol (string x) :common-lisp)
-    (if (and found-it (eq access :external))
-	(intern (concatenate 'string (string x) "$"))
-	x)))
+    (cond ((member x +allowed-lisp-names+)
+	   x)
+	  ((or (and found-it
+		    (not (eq access :internal))
+		    (fboundp found-it))
+	       (member x +reserved-lisp-names+))
+	   (intern (concatenate 'string (string x) "$")))
+	  (t
+	   x))))
 
 ;-----------------------------------------------------------------------------     
 ; functions for fixing DO and IF structures
@@ -2757,8 +2769,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.108 2003/01/08 18:41:47 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.109 2003/07/12 04:27:02 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.109  2003/07/12 04:27:02  rtoy
+;;; o Make +reserved-lisp-names+ be T, PI, and NIL.
+;;; o Add +allowed-lisp-names+ to be a list of names which can be used as
+;;;   is because the Fortran usage matches the Lisp usage.  This prevents
+;;;   spurious variables with names like ABS$ from being created.
+;;; o Use +allowed-lisp-names+ when checking for reserved lisp names.
+;;;
 ;;; Revision 1.108  2003/01/08 18:41:47  rtoy
 ;;; Reference symbols in the common-lisp package with "common-lisp:",
 ;;; instead of "lisp:".

@@ -1126,6 +1126,13 @@
 		   find-system
 		   defsystem compile-system load-system hardcopy-system
 
+                   system-definition-pathname
+
+                   missing-component
+                   missing-component-name
+                   missing-component-component
+                   missing-module
+                   missing-system
 
 		   machine-type-translation
 		   software-type-translation
@@ -2306,24 +2313,29 @@ D
 
 
 (define-condition missing-component (simple-condition)
-  ((name :reader missing-component-name :initarg :name))
+  ((name :reader missing-component-name :initarg :name)
+   (component :reader missing-component-component :initarg :component)
+   )
   (:report (lambda (mmc stream)
-	     (format stream "MK:DEFSYSTEM: missing component ~S."
-                     (missing-component-name mmc))))
+	     (format stream "MK:DEFSYSTEM: missing component ~S for ~S."
+                     (missing-component-name mmc)
+                     (missing-component-component mmc))))
   )
 
 (define-condition missing-module (missing-component)
   ()
   (:report (lambda (mmc stream)
-	     (format stream "MK:DEFSYSTEM: missing module ~S."
-                     (missing-component-name mmc))))
+	     (format stream "MK:DEFSYSTEM: missing module ~S for ~S."
+                     (missing-component-name mmc)
+                     (missing-component-component mmc))))
   )
 
 (define-condition missing-system (missing-module)
   ()
   (:report (lambda (msc stream)
-	     (format stream "MK:DEFSYSTEM: missing system ~S."
-                     (missing-component-name msc))))
+	     (format stream "MK:DEFSYSTEM: missing system ~S for ~S."
+                     (missing-component-name msc)
+                     (missing-component-component msc))))
   )
 
 
@@ -2407,14 +2419,21 @@ D
 
 ;;; compute-system-path --
 
-
 (defun compute-system-path (module-name definition-pname)
   (let* ((file-pathname
 	  (make-pathname :name (etypecase module-name
 				 (symbol (string-downcase
 					  (string module-name)))
 				 (string module-name))
-			 :type *system-extension*)))
+			 :type *system-extension*))
+         (lib-file-pathname
+	  (make-pathname :directory (list :relative module-name)
+                         :name (etypecase module-name
+				 (symbol (string-downcase
+					  (string module-name)))
+				 (string module-name))
+			 :type *system-extension*))
+         )
     (or (when definition-pname		; given pathname for system def
 	  (probe-file definition-pname))
 	;; Then the central registry. Note that we also check the current
@@ -2422,18 +2441,47 @@ D
 	(cond (*central-registry*
 	       (if (listp *central-registry*)
 		   (dolist (registry *central-registry*)
-		     (let ((file (probe-file
-				  (append-directories (if (consp registry)
-							  (eval registry)
-							  registry)
-						      file-pathname))))
+		     (let ((file (or (probe-file
+				      (append-directories (if (consp registry)
+							      (eval registry)
+							      registry)
+						          file-pathname))
+                                     (probe-file
+				      (append-directories (if (consp registry)
+							      (eval registry)
+							      registry)
+						          lib-file-pathname))
+                                     ))
+                           )
 		       (when file (return file))))
-		   (probe-file (append-directories *central-registry*
-						   file-pathname))))
+		   (or (probe-file (append-directories *central-registry*
+						       file-pathname))
+                       (probe-file (append-directories *central-registry*
+						       lib-file-pathname))
+                       ))
+               )
 	      (t
 	       ;; No central registry. Assume current working directory.
 	       ;; Maybe this should be an error?
-	       (probe-file file-pathname))))))
+	       (or (probe-file file-pathname)
+                   (probe-file lib-file-pathname)))))
+    ))
+
+
+(defun system-definition-pathname (system-name)
+  (let ((system (ignore-errors (find-system system-name :error))))
+    (if system
+        (let ((system-def-pathname
+               (make-pathname :type "system"
+                              :defaults (pathname (component-full-pathname system :source))))
+              )
+          (values system-def-pathname
+                  (probe-file system-def-pathname)))
+        (values nil nil))))
+         
+         
+
+
 #|
 
 (defun compute-system-path (module-name definition-pname)
@@ -3421,7 +3469,10 @@ D
 		(*bother-user-if-no-binary* bother-user-if-no-binary)
 		(*load-source-instead-of-binary* load-source-instead-of-binary)
 		(*minimal-load* minimal-load)
-		(system (find-system name :load)))
+		(system (if (and (component-p name)
+                                 (member (component-type name) '(:system :defsystem :subsystem)))
+                            name
+                            (find-system name :load))))
 	    #-(or CMU CLISP :sbcl :lispworks :cormanlisp scl)
 	    (declare (special *compile-verbose* #-MCL *compile-file-verbose*)
 		     #-openmcl (ignore *compile-verbose*
@@ -4642,7 +4693,10 @@ D
 
 (defun files-in-system (name &optional (force :all) (type :source) version)
   ;; Returns a list of the pathnames in system in load order.
-  (let ((system (find-system name :load)))
+  (let ((system (if (and (component-p name)
+                         (member (component-type name) '(:defsystem :system :subsystem)))
+                    name
+                    (find-system name :load))))
     (multiple-value-bind (*version-dir* *version-replace*)
 	(translate-version version)
       (let ((*version* version))

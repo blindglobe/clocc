@@ -1873,7 +1873,7 @@
          ((pattern-match-and-bind '((+ left) #\E (+ right)) x)
           (parse-format-descriptor-E left right))
          ((pattern-match-and-bind '((+ left) #\D (+ right)) x)
-          (parse-format-descriptor-E left right))
+          (parse-format-descriptor-D left right))
          ((pattern-match-and-bind '((> left) #\T #\R (+ right)) x)
           (parse-format-descriptor-TR right))
          ((pattern-match-and-bind '((> left) #\X) x)
@@ -1916,6 +1916,10 @@
              (ret nil (append ret (list directive))))
             ((> i a) ret)))))
 
+;; Note: The Fortran standard says that, for a format like Ew.d, if
+;; the the exponent is three digits long, the exponent indicator (E or
+;; is not printed.  Thus instead of xxxE+ddd, we get xxx+ddd.  We
+;; don't handle that here!
 (defun parse-format-descriptor-E (left right)
   (prog ((k 0) (a 1) w d (e 2) directive)
      (declare (special k a w d e))
@@ -1931,6 +1935,26 @@
 			    (fixnum-string e) ","
 			    (fixnum-string k) ",'*"
 			    (if *SP* "@E" "E"))))
+    (return
+      (do ((i 1 (1+ i))
+	   (ret nil (append ret (list directive))))
+	  ((> i a) ret)))))
+
+(defun parse-format-descriptor-D (left right)
+  (prog ((k 0) (a 1) w d (e 2) directive)
+     (declare (special k a w d e))
+     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
+         (pattern-match-and-bind '((> k) #\P) left)
+         (pattern-match-and-bind '((> a)) left))
+     (or (pattern-match-and-bind '((> w) (> d)) right)
+         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
+     (setq directive 
+         (list (concatenate 'string
+			    "~" (fixnum-string w) ","
+			    (fixnum-string d) ","
+			    (fixnum-string e) ","
+			    (fixnum-string k) ",'*"
+			    (if *SP* "@D" "D"))))
     (return
       (do ((i 1 (1+ i))
 	   (ret nil (append ret (list directive))))
@@ -2117,8 +2141,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.56 2000/08/02 14:42:20 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.57 2000/08/02 16:26:20 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.57  2000/08/02 16:26:20  rtoy
+;;; The D and E format descriptors should print out a D and E,
+;;; respectively.  Thus add PARSE-FORMAT-DESCRIPTOR-D.
+;;;
 ;;; Revision 1.56  2000/08/02 14:42:20  rtoy
 ;;; o Add support for parsing Hollerith strings in format statements.  Not
 ;;;   perfect because the preprocessor mangles spaces within the string,

@@ -400,7 +400,14 @@
 	  ((eq (first expr) 'fref)
 	   ;; Fixup the expressions for the index.
 	   ;;(format t "expr = ~S: ~S~%" expr (mapcar #'fixup-expression (third expr)))
-	   `(fref ,(second expr) ,(mapcar #'fixup-expression (third expr)) ,@(fourth expr)))
+	   `(fref ,(second expr)
+	     ,(mapcar #'fixup-expression (third expr))
+	     ,@(if (fourth expr)
+		   (list (fourth expr)))))
+	  ((eq (first expr) 'fdo)
+	   ;; Handle fdo: the fdo macro depends on a certain format
+	   ;; for the loop (yuck!  Need to change that!)
+	   `(fdo ,(second expr) ,(third expr) ,@(mapcar #'fixup-expression (nthcdr 3 expr))))
 	  ((is-neg (second expr))
 	   ;; We have (F (- Z) X ...).  If F is '+,
 	   ;; make it (- X Z).  If Z is a number, make it (F -Z X ...)

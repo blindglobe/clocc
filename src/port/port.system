@@ -2,7 +2,7 @@
 ;;;
 ;;; Cross-implementation Portability System
 ;;;
-;;; $Id: port.system,v 1.4 2000/12/12 16:15:50 sds Exp $
+;;; $Id: port.system,v 1.5 2001/11/09 19:15:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/port.system,v $
 
 (mk:defsystem port
@@ -12,6 +12,7 @@
     ((:file "ext")
      (:file "gray" :depends-on ("ext"))
      (:file "net" :depends-on ("ext" "sys"))
+     (:file "path" :depends-on ("ext"))
      (:file "proc" :depends-on ("ext"))
      (:file "shell" :depends-on ("ext"))
      (:file "sys" :depends-on ("ext")))

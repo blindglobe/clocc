@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.37 2001/11/02 22:30:39 sds Exp $
+;;; $Id: sys.lisp,v 1.38 2001/11/09 19:15:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,6 @@
 (export
  '(getenv finalize variable-special-p arglist
    class-slot-list class-slot-initargs
-   pathname-ensure-name probe-directory default-directory chdir mkdir rmdir
    +month-names+ +week-days+ +time-zones+ tz->string string->tz
    current-time sysinfo))
 
@@ -188,88 +187,6 @@ initargs for all slots are returned, otherwise only the slots with
 ;;; Environment
 ;;;
 
-(defun pathname-ensure-name (path)
-  "Make sure that the pathname has a name slot.
-Call `pathname' on it argument and, if there is no NAME slot,
-but there is a TYPE slot, move TYPE into NAME."
-  (let ((path (pathname path)))
-    (if (or (pathname-name path) (null (pathname-type path))) path
-        ;; if you use CLISP, you will need 2000-03-09 or newer
-        (make-pathname :name (concatenate 'string "." (pathname-type path))
-                       :type nil :defaults path))))
-
-(defun probe-directory (filename)
-  "Check whether the file name names an existing directory."
-  ;; based on
-  ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
-  ;; Date: Wed, 5 May 1999 11:51:19 -0500
-  ;; fold the name.type into directory
-  (let* ((path (pathname filename))
-         (name (pathname-name path))
-         (type (pathname-type path))
-         (new-dir
-          (cond ((and name type) (list (concatenate 'string name "." type)))
-                (name (list name))
-                (type (list type))
-                (t nil))))
-    (when new-dir
-      (setq path (make-pathname
-                  :directory (append (pathname-directory path) new-dir)
-                  :name nil :type nil :defaults path)))
-    #+allegro (excl::probe-directory path)
-    #+clisp (values
-             (ignore-errors
-               (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
-                          path)))
-    #+cmu (eq :directory (unix:unix-file-kind (namestring path)))
-    #+lispworks (lw:file-directory-p path)
-    #+sbcl (eq :directory (sb-unix:unix-file-kind (namestring path)))
-    #-(or allegro clisp cmu lispworks sbcl)
-    (probe-file (make-pathname :directory dir))))
-
-(defun default-directory ()
-  "The default directory."
-  #+allegro (excl:current-directory)
-  #+clisp (#+lisp=cl ext:default-directory #-lisp=cl lisp:default-directory)
-  #+cmucl (ext:default-directory)
-  #+cormanlisp (ccl:get-current-directory)
-  #+lispworks (hcl:get-working-directory)
-  #+lucid (lcl:working-directory)
-  #-(or allegro clisp cmucl cormanlisp lispworks lucid) (truename "."))
-
-(defun chdir (dir)
-  #+allegro (excl:chdir dir)
-  #+clisp (#+lisp=cl ext:cd #-lisp=cl lisp:cd dir)
-  #+cmu (setf (ext:default-directory) dir)
-  #+cormanlisp (ccl:set-current-directory dir)
-  #+gcl (si:chdir dir)
-  #+lispworks (hcl:change-directory dir)
-  #+lucid (lcl:working-directory dir)
-  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
-  (error 'not-implemented :proc (list 'chdir dir)))
-
-(defsetf default-directory chdir "Change the current directory.")
-
-(defun mkdir (dir)
-  #+allegro (excl:make-directory dir)
-  #+clisp (#+lisp=cl ext:make-dir #-lisp=cl lisp:make-dir dir)
-  #+cmu (unix:unix-mkdir (directory-namestring dir) #o777)
-  #+lispworks (system:make-directory dir)
-  #+sbcl (sb-unix:unix-mkdir (directory-namestring dir) #o777)
-  #-(or allegro clisp cmu lispworks sbcl)
-  (error 'not-implemented :proc (list 'mkdir dir)))
-
-(defun rmdir (dir)
-  #+allegro (excl:delete-directory dir)
-  #+clisp (#+lisp=cl ext:delete-dir #-lisp=cl lisp:delete-dir dir)
-  #+cmu (unix:unix-rmdir dir)
-  #+lispworks
-  ;; `lw:delete-directory' is present in LWW 4.1.20 but not on LWL 4.1.0
-  (if (fboundp 'lw::delete-directory)
-      (lw::delete-directory dir)
-      (delete-file dir))
-  #-(or allegro clisp cmu lispworks) (delete-file dir))
-
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."
   (declare (stream out))
@@ -347,6 +264,10 @@ Long Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)~%"
   (format out "Internal time unit:~25t~f sec~%*gensym-counter*:~25t~:d
 Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   (current-time out) (format out "~%~75~~%") (room) (values))
+
+;;;
+;;; time & date
+;;;
 
 (defconst +month-names+ (simple-array simple-string (12))
   (mk-arr 'simple-string '("Jan" "Feb" "Mar" "Apr" "May" "Jun" "Jul" "Aug"

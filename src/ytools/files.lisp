@@ -1,3 +1,5 @@
+BIZARRO
+
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 	     

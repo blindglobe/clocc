@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.1 2000/05/16 23:37:52 sds Exp $
+;;; $Id: tests.lisp,v 2.2 2000/05/19 19:14:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -102,19 +102,20 @@
                   t " ### PRINTING FAILED:~%~5t~s -->~%~5t~s~% not~5t~s~2%"
                   st uu st)))))
       (ts "news://nntp.gnu.org/gnu.discuss"
-          #S(url :prot :news :user "" :pass "" :host "nntp.gnu.org" :port 0
-                 :path "/gnu.discuss")
+          (make-url :prot :news :user "" :pass "" :host "nntp.gnu.org" :port 0
+                    :path "/gnu.discuss")
           "news://nntp.gnu.org/gnu.discuss")
-      (ts "news:gnu.discuss" #S(url :prot :news :user "" :pass "" :host ""
-                                    :port 0 :path "gnu.discuss")
+      (ts "news:gnu.discuss"
+          (make-url :prot :news :user "" :pass "" :host "" :port 0
+                    :path "gnu.discuss")
           "news:gnu.discuss")
       (ts "ftp://user#password@host.domain/path/to/file"
-          #S(url :prot :ftp :user "user" :pass "password" :host
-                 "host.domain" :port 0 :path "/path/to/file")
+          (make-url :prot :ftp :user "user" :pass "password" :host
+                    "host.domain" :port 0 :path "/path/to/file")
           "ftp://user#password@host.domain/path/to/file")
       (ts "www.gnu.org/gpl.html"
-          #S(url :prot :http :user "" :pass "" :host "www.gnu.org" :port 0
-                 :path "/gpl.html")
+          (make-url :prot :http :user "" :pass "" :host "www.gnu.org" :port 0
+                    :path "/gpl.html")
           "http://www.gnu.org/gpl.html"))
     (mesg :test out " ** ~s: ~:d error~:p~%" 'test-url num-err)
     num-err))
@@ -124,9 +125,13 @@
   (let ((*readtable* +elisp-readtable+) (num-err 0))
     (flet ((ts (str obj)
              (mesg :test out " * ~s --> ~s~%" str obj)
-             (let ((o1 (read-from-string str)))
-               (unless (equalp o1 obj)
-                 (format t " ### READING FAILED: ~s != ~s~%" o1 obj)
+             (handler-case
+                 (let ((o1 (read-from-string str)))
+                   (unless (equalp o1 obj)
+                     (format t " ### READING FAILED: ~s != ~s~%" o1 obj)
+                     (incf num-err)))
+               (error (err)
+                 (format t " ### READ ERROR: ~a~%" err)
                  (incf num-err)))))
       (ts "[a ?\\C-a ?c #\\z]" #(a (:control #\a) #\c #\z))
       (ts "[?Z ?\\^M ?\\n]" #(#\Z (:control #\M) #\Newline)))
@@ -143,4 +148,4 @@
     (mesg :test out " *** ~s: ~:d error~:p~%" 'test-all num-err)))
 
 (provide :tests)
-;;; file tests.lsp ends here
+;;; file tests.lisp ends here

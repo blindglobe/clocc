@@ -11,7 +11,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: gq.lisp,v 2.1 2000/03/22 17:52:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -337,9 +337,9 @@ If the file doesn't exist, it is created. If it exists,
 only the data after `*hist-data-file-sep*' is changed."
   (declare (list hold hist))
   (with-open-file (outst file :direction :io :if-exists :overwrite)
-    (cond ((read outst nil nil)         ; file existed
+    (cond ((< 0 (file-length outst)) ; file existed
            (format t "File `~a' exists.  Appending...~%" file)
-           (do (zz)
+           (do (zz (*package* +kwd+))
                ((or (eq zz +eof+) (eq zz *hist-data-file-sep*))
                 (when (eq zz +eof+)
                   (error "File `~a' is corrupted: `~a' not found.~%"

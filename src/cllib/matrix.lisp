@@ -1,10 +1,19 @@
 ;;; Matrix Routines
 ;;;
+;;; The main advantage of this file is that is can work with matrices
+;;; with elements of arbitrary types (bignums, ratios).
+;;; The main disadvantages are performance and limited functionality.
+;;;
+;;; If you need fast floating point matrix operations,
+;;; you should useMatLisp (http://matlisp.sourceforge.net/),
+;;; which relies on BLAS (http://www.netlib.org/blas) and
+;;; LAPACK (http://www.netlib.org/lapack) for heavy-duty computations.
+;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.1 2000/04/27 15:59:26 sds Exp $
+;;; $Id: matrix.lisp,v 2.2 2000/04/27 19:46:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -147,10 +156,10 @@ By default prints the contents.
            (list (array-dimensions mx) (array-dimensions v0)
                  (array-dimensions v1))))
   (loop :for ii :of-type index-t :from 0 :to (1- (array-dimension mx 0))
-        :add (* (aref v0 ii)
+        :sum (* (aref v0 ii)
                 (loop :for jj :of-type index-t :from 0
                       :to (1- (array-dimension mx 1))
-                      :add (* (aref mx ii jj) (aref v1 jj))))))
+                      :sum (* (aref mx ii jj) (aref v1 jj))))))
 
 ;;;
 ;;; Matrix Multiplication

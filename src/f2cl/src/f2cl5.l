@@ -853,26 +853,29 @@
      ;; Return 3 pieces: Any proclamations for special variables, the
      ;; declarations for the special variables, and, finally, the
      ;; function itself.
-     (let ((param-stuff (when key-params
-			  `(let* ,key-params
-			    ,@key-params-decls)))
-	   (save-stuff (when (and (or *save_vbles* *auto-save-data*)
-				  save-inits)
-			 `(let ,save-inits
-			   ,@saved-decls
-			   ,@*data-init*)))
-	   (defun-stuff `(defun ,(cadr defun-bit) ,arglist
-			  ;; Remove empty declaration
-			  ,@(unless (equal formal-arg-decls '((declare)))
-				    formal-arg-decls)
-			  ,prog-bit)))
+     (let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
+			   ;; Remove empty declaration
+			   ,@(unless (equal formal-arg-decls '((declare)))
+				     formal-arg-decls)
+			   ,prog-bit))
+	    (save-stuff (if (and (or *save_vbles* *auto-save-data*)
+				 save-inits)
+			    `(let ,save-inits
+			      ,@saved-decls
+			      ,@*data-init*
+			      ,defun-stuff)
+			    defun-stuff))
+	    (param-stuff (if key-params
+			     `(let* ,key-params
+			       ,@key-params-decls
+			       ,save-stuff)
+			     save-stuff)))
+       
        (return 
 	 (values special-proclamation
 	       (when special-proclamation
 		   (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
-	       (if (or param-stuff save-stuff)
-		   (append param-stuff save-stuff (list defun-stuff))
-		   defun-stuff))))
+	       param-stuff)))
      ))
 
 

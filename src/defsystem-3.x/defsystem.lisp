@@ -1105,6 +1105,7 @@
 		 '(*central-registry*
 		   *bin-subdir*
 
+		   add-registry-location
 		   find-system
 		   defsystem compile-system load-system hardcopy-system
 
@@ -1258,6 +1259,11 @@
   "Central directory of system definitions. May be either a single
    directory pathname, or a list of directory pathnames to be checked
    after the local directory.")
+
+
+(defun add-registry-location (pathname)
+  "Adds a path to the central registry."
+  (push pathname *central-registry*))
 
 (defvar *bin-subdir* ".bin/"
   "The subdirectory of an AFS directory where the binaries are really kept.")

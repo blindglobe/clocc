@@ -1,3 +1,10 @@
+2002-03-22  Kevin Rosenberg (kevin@rosenberg.net)
+	
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Backported ADD-REGISTRY-LOCATION function from DEFSYSTEM 4.
+	Users are encouraged to use this function rather than
+	directly pushing registry pathnames onto mk:*central-registry*.
+	
 2002-03-02  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:

@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1998-06-12 Fri 14:17:11 EDT sds@mute.eaglets.com>
+;;; File: <base.lisp - 1998-06-19 Fri 16:17:10 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.3 1998/06/12 18:54:05 sds Exp $
+;;; $Id: base.lisp,v 1.4 1998/06/19 20:17:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.4  1998/06/19 20:17:10  sds
+;;; Added `*prompt*'.  Ditched `step-on' and `step-off'.
+;;;
 ;;; Revision 1.3  1998/06/12 18:54:05  sds
 ;;; Made `compose-m' more flexible, renamed it `compose', renamed the
 ;;; function `compose' into `compose-f'.
@@ -30,11 +33,13 @@
 (in-package :cl-user)
 
 (eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))
-	   #+clisp (declaration values))
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3)
+                     #+cmu-sds-ignore (ext:inhibit-warnings 3))
+	   #+(or clisp gcl) (declaration values))
   (setq *read-default-float-format* 'double-float *print-case* :downcase
 	*print-array* t)
-  #+cmu (setq *gc-verbose* nil *bytes-consed-between-gcs* 32000000)
+  #+cmu (setq *gc-verbose* nil *bytes-consed-between-gcs* 32000000
+              *efficiency-note-cost-threshold* 20)
   ;; #+cmu (push "x86f" make::*standard-binary-file-types*)
   ;; #+cmu (push "lisp" make::*standard-source-file-types*) ; default
   #+allegro
@@ -90,9 +95,27 @@
   (unless (fboundp 'getenv)
     (defun getenv (var)
       "Return the value of the environment variable."
-      (#+cmu xlib::getenv #+(or allegro clisp) system::getenv
-       #+lispworks w:environment-variable #+lucid lcl:environment-variable
-       #+gcl si:getenv (string var)))))
+      #+cmu ;; xlib::getenv
+      (cdr (assoc (string var) *environment-list* :test #'equalp)) #-cmu
+      (#+(or allegro clisp) system::getenv #+lispworks w:environment-variable
+       #+lucid lcl:environment-variable #+gcl si:getenv (string var)))))
+
+(defun package-short-name (pkg)
+  "Return the shortest (nick)name of the package."
+  (declare (type package pkg) (values simple-string))
+  (reduce (lambda (st0 st1)
+            (declare (simple-string st0 st1))
+            (if (> (length st0) (length st1)) st1 st0))
+          (package-nicknames pkg) :initial-value (package-name pkg)))
+
+#+(or cmu clisp)
+(let* ((dumb (equalp (getenv "TERM") "dumb")) (bb (if dumb "" "[1m"))
+       (ib (if dumb "" "[7m")) (ee (if dumb "" "[m")) (cnt 0))
+  (declare (fixnum cnt) (simple-string bb ib ee))
+  (setq *prompt* (lambda ()
+                   (format nil "~a~(~a~)~a ~a[~:d]:~a " ib
+                           (package-short-name *package*)
+                           ee bb (incf cnt) ee))))
 
 (defun run-prog (prog &rest opts &key args wait &allow-other-keys)
   "Common interface to shell. Doesn't return anything useful."
@@ -159,15 +182,18 @@
     (dolist (mo '("base" "channel" "currency" "date" "futures" "fx" "gnuplot"
 		  "list" "math" "octave" "print" "report" "rules" "signal"
 		  "util" "work"))
+      (declare (simple-string mo))
       (setf (gethash mo *require-table*)
 	    (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
     (dolist (mo '("gq" "url" "geo" "animals"))
+      (declare (simple-string mo))
       (setf (gethash mo *require-table*)
 	    (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
     (setf (gethash "monitor" *require-table*)
 	  (merge-pathnames "metering.lisp" *lisp-dir*))
     (defun sds-require (fl)
-      (let ((file (gethash fl *require-table*)) comp)
+      "Load the appropriate file."
+      (let ((file (gethash (string fl) *require-table*)) comp)
 	(unless file (error "Cannot require `~a'." fl))
 	(setq comp (compile-file-pathname file))
 	(require fl (if (probe-file comp) comp file))
@@ -203,21 +229,6 @@
 #+gcl (defsetf default-directory si:chdir "Change the current directory.")
 #+clisp (defsetf default-directory lisp:cd "Change the current directory.")
 #-allegro (defun chdir (dir) (setf (default-directory) dir))
-
-;;; 1997-11-03 Mon 09:37:59 EST
-;;; from Bruno Haible <haible@ma2s2.mathematik.uni-karlsruhe.de>
-#+clisp
-(defun step-on ()
-  "Turn on stepping after break."
-  (declare (compile))
-  (setq sys::*step-level* 0
-        sys::*step-quit* most-positive-fixnum
-        *evalhook* #'sys::step-hook-fn))
-#+clisp
-(defun step-off ()
-  "Turn off stepping. `continue' to proceed."
-  (declare (compile))
-  (setq sys::*step-quit* 0))
 
 ;;;
 ;;; }}}{{{ Environment

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.24 2002/01/07 19:42:41 sds Exp $
+;;; $Id: gq.lisp,v 2.25 2002/01/26 17:40:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -401,7 +401,7 @@ Suitable for `read-list-from-stream'."
   "Compute the correct total from the hist records and holdings list."
   (declare (list hold navs))
   (loop :for ho :of-type pfl :in hold :for vl :of-type double-float :in navs
-        :sum (* vl (pfl-nums ho)) double-float))
+        :sum (* vl (pfl-nums ho)) :of-type double-float))
 
 (defun read-data-file (file)
   "Return 2 values: the list of holdings and the history list."

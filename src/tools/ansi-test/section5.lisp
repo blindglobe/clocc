@@ -1871,11 +1871,11 @@
   (1 2 3 (4 MIDDLEGUY-SYMBOL 6) 7 8 9))
 
 (check-for-bug :section5-legacy-1873
-  (defsetf subseq (sequence start &optional end) (new-sequence)
+  (defsetf my-subseq (sequence start &optional end) (new-sequence)
     `(progn (replace ,sequence ,new-sequence
                      :start1 ,start :end1 ,end)
             ,new-sequence))
-  SUBSEQ)
+  MY-SUBSEQ)
 
 (unintern '*XY*)
 

@@ -507,7 +507,7 @@ and we return 3 and 4")
   "check the shiftf result")
 
 (check-for-bug :setf-legacy-509
-  (progn (defsetf subseq (sequence start &optional end) (new-sequence)
+  (progn (defsetf my-subseq (sequence start &optional end) (new-sequence)
            `(progn (replace ,sequence ,new-sequence
                             :start1 ,start :end1 ,end)
                    ,new-sequence)) t)
@@ -516,13 +516,13 @@ and we return 3 and 4")
 (check-for-bug :setf-legacy-516
   (let (s)
     (setf s (copy-seq "asdfg")
-          (subseq s 1 3) "xy"))
+          (my-subseq s 1 3) "xy"))
   "xy")
 
 (check-for-bug :setf-legacy-522
   (let (s)
     (setf s (copy-seq "asdfg")
-          (subseq s 1 3) "xy")
+          (my-subseq s 1 3) "xy")
     s)
   "axyfg")
 

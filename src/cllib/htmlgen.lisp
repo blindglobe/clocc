@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.13 2001/11/02 22:31:15 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.14 2002/01/16 22:38:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,6 +17,7 @@
 (in-package :cllib)
 
 (export '(html-stream-out with-html-output with-http-output with-tag
+          *with-html-output-doctype* http-error
           flush-http directory-index))
 
 ;;;
@@ -41,15 +42,19 @@
 (defmethod stream-clear-output ((stream html-stream-out))
   (with-slots (target-stream) stream (clear-output target-stream)))
 (defmethod close ((stream html-stream-out) &rest opts)
-  (with-slots (target-stream) stream (apply #'close target-stream opts)))
+  (with-slots (target-stream) stream (apply #'close target-stream opts))
+  (call-next-method))
 
 ;;;
 ;;; HTML generation
 ;;;
 
+(defvar *with-html-output-doctype*
+  '("html" "PUBLIC" "\"-//W3C//DTD XHTML 1.0 Strict//EN\""
+    "\"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\""))
+
 (defmacro with-html-output ((var stream
-                             &key (doctype ''(html public
-                                              "-//W3C//DTD HTML 3.2//EN"))
+                             &key (doctype '*with-html-output-doctype*)
                                   (meta '(:http-equiv "Content-Type"
                                           :content "text/html"))
                                   base comment (title "untitled") (footer t)
@@ -68,7 +73,7 @@ Both print a tag but the second one does not do a `terpri' afterwards."
                    `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)
                      ,@forms (format ,',raw "</~a>" ,tag))))
         (with-open-stream (,var (make-instance 'html-stream-out :stream ,raw))
-          (format ,raw "<!doctype~{ ~s~}>~%" ,doctype)
+          (format ,raw "<!DOCTYPE~{ ~a~}>~%" ,doctype)
           ;; print the comment
           (format ,raw "<!--~% Created on ") (current-time ,raw)
           (format ,raw "~% by ~a@~a~% using `with-open-html'
@@ -100,30 +105,35 @@ Both print a tag but the second one does not do a `terpri' afterwards."
   (write-char (code-char 10) sock))
 
 (defmacro with-http-output ((var raw &rest opts &key keep-alive (debug 0)
+                             (return-code 200) (return-name "OK")
                              &allow-other-keys)
                             &body body)
   "Write some HTML to an http client on socket stream RAW.
 Supplies some HTTP/1.0 headers and calls `with-html-output'."
-  (with-gensyms ("HTTP-" string stream sock header line)
+  (with-gensyms ("HTTP-" string stream sock header line dbg alive)
     (remf opts :keep-alive) (remf opts :debug)
+    (remf opts :return-code) (remf opts :return-name)
     `(let* ((,sock ,raw)
+            (,dbg ,debug) (,alive ,keep-alive)
             (,string (with-output-to-string (,stream)
                        (with-html-output (,var ,stream ,@opts) ,@body)))
-            (,header (list "HTTP/1.0 200 OK" "Content-type: text/html"
+            (,header (list (format nil "HTTP/1.0 ~d ~a"
+                                   ,return-code ,return-name)
+                           "Content-type: text/html"
                            (format nil "Content-length: ~d" (length ,string))
                            (format nil "Connection: ~:[Close~;Keep-Alive~]"
-                                   ,keep-alive))))
+                                   ,alive))))
       (dolist (,line ,header)
         (write-string ,line ,sock)
-        (when (and ,debug (> ,debug 0))
+        (when (and ,dbg (> ,dbg 0))
           (format t "<- ~a~%" ,line))
         (crlf ,sock))
       (crlf ,sock)
       (write-string ,string ,sock)
-      (when (and ,debug (> ,debug 3))
+      (when (and ,dbg (> ,dbg 3))
         (format t "<- ~s~%" ,string))
-      (unless ,keep-alive
-        (when (and ,debug (> ,debug 0))
+      (unless ,alive
+        (when (and ,dbg (> ,dbg 0))
           (format t "~s: closing ~s~%" 'with-http-output ,sock))
         (close ,sock)))))
 
@@ -132,6 +142,15 @@ Supplies some HTTP/1.0 headers and calls `with-html-output'."
   (loop :for line = (read-line sock nil nil)
         :while (and line (plusp (length line)))
         :collect line))
+
+(defun http-error (sock url &key (name "Not Found") (code 404)
+                   (keep-alive nil) (debug 0))
+  "Report a request error."
+  (with-http-output (out sock :keep-alive keep-alive :debug debug
+                         :return-code code :return-name name)
+    (with-tag (:h1) (princ name out))
+    (with-tag (:p)
+      (format out "The requested URL ~s was not found on this server." url))))
 
 ;;;
 ;;; this is an example on how to use `with-open-html' and `with-tag'.

@@ -1,10 +1,13 @@
-;;; File: <gnuplot.lisp - 1997-10-17 Fri 16:34:41 EDT - sds@WINTERMUTE.eagle>
+;;; File: <gnuplot.lisp - 1997-10-29 Wed 16:51:55 EST - sds@WINTERMUTE.eagle>
 ;;;
 ;;; Gnuplot interface
 ;;;
-;;; $Id: gnuplot.lisp,v 1.5 1997/10/17 20:34:51 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.6 1997/10/29 21:52:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.6  1997/10/29 21:52:08  sds
+;;; Added plot-functions.
+;;;
 ;;; Revision 1.5  1997/10/17 20:34:51  sds
 ;;; Added plot-lists-arg.
 ;;;
@@ -20,9 +23,9 @@
 ;;;
 ;;;
 
-;(run-shell-command)
+;(run-shell-command "ls")
 ;(shell)
-;(run-program)
+;(run-program "ls")
 ;(make-pipe-input-stream)
 ;(make-pipe-io-stream)
 ;(make-pipe-output-stream)
@@ -33,9 +36,28 @@
 (defvar *gnuplot-file* (merge-pathnames "plot.tmp" *fin-dir*)
   "*The tmp file for gnuplot.")
 
+(defmacro with-plot-stream ((str &rest header) &body body)
+  "Execute body, wich STR bound to the gnuplot stream."
+  `(multiple-value-prog1
+    (with-open-file (,str *gnuplot-file* :direction :output
+		     :if-exists :supersede)
+      (plot-header ,str ,@header) ,@body)
+    (format t "~&Prepared file `~a'.
+Type \"load '~a'\" at the gnuplot prompt.~%"
+     *gnuplot-file* *gnuplot-file*)))
+
+(defun plot-header (str xlabel ylabel data-style timefmt xb xe title)
+  "Print the header stuff into the stream."
+  (flet ((pr (x) (if (numberp x) x (format nil "'~a'" x))))
+    (format str "set time '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
+set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
+set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'
+set data style ~a~%set xrange [~a:~a]~%set title '~a'~%"
+	    timefmt xlabel ylabel data-style (pr xb) (pr xe) title)))
+
 (defun plot-dated-lists (begd endd dls &key (title "Plot") (xlabel "time")
 			 (ylabel "value, $") (data-style "lines")
-			 (timefmt "%Y-%m-%d") ema rel)
+			 (timefmt "%Y-%m-%d") ema rel (slot 'val))
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot set commands.
 REL means plot everything relative to the first value.
@@ -48,10 +70,8 @@ EMA is the list of parameters for Exponential Moving Averages."
 		   (t (parse-date endd))))
   (unless dls (error "nothing to plot for `~a'~%" title))
   (with-open-file (str *gnuplot-file* :direction :output :if-exists :supersede)
-    (format str "set xdata time~%set xlabel '~a'~%set ylabel '~a'
-set data style ~a~%set timefmt '~a'~%set xrange ['~a':'~a']
-set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
-	    xlabel ylabel data-style timefmt begd endd title
+    (plot-header str xlabel ylabel data-style timefmt begd endd title)
+    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%"
 	    ;; Ugly. But gnuplot requires a comma *between* plots,
 	    ;; and this is the easiest way to do that.
 	    (mapcan (lambda (dl)
@@ -62,9 +82,10 @@ set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
 				    ema)))
 		    dls))
     (let* ((emal (make-list (length ema))) bv
-	   (val (if rel (lambda (dl) (/ (dl-beg-misc dl) bv)) #'dl-beg-misc)))
+	   (val (if rel (lambda (dl) (/ (dl-beg-slot dl slot) bv))
+		    (lambda (dl) (dl-beg-slot dl slot)))))
       (dolist (dl dls)
-	(setq bv (dl-beg-misc dl))
+	(setq bv (dl-beg-slot dl slot))
 	(do* ((td (shift-dl (copy-dated-list dl) begd) (shift-dl td)))
 	     ((or (null (dated-list-ll td))
 		  (date-more-p (dl-beg-date td) endd))
@@ -82,7 +103,8 @@ set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
 	    (format str "~a ~f~%" (car ee) (cdr ee))))
 	;; clean EMAL for the next pass
 	(mapl (lambda (ee) (setf (car ee) nil)) emal))))
-  (format t "Prepared file `~a'. Type \"load '~a'\" at the gnuplot prompt.~%"
+  (format t "~&Prepared file `~a'.
+Type \"load '~a'\" at the gnuplot prompt.~%"
 	  *gnuplot-file* *gnuplot-file*))
 
 (defun plot-lists (lss &key (key #'identity) (title "Plot") (xlabel "nums")
@@ -93,10 +115,8 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (unless depth
     (setq depth (apply #'min (mapcar (compose #'length #'rest) lss))))
   (with-open-file (str *gnuplot-file* :direction :output :if-exists :supersede)
-    (format str "set xdata~%set xlabel '~a'~%set ylabel '~a'
-set xrange [0:~d]~%set data style ~a~%set title '~a'
-plot~{ '-' using 1:2 title '~a'~^,~}~%"
-	    xlabel ylabel (1- depth) data-style title (mapcar #'car lss))
+    (plot-header str xlabel ylabel data-style nil 0 (1- depth) title)
+    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car lss))
     (let* (bv (val (if rel
 		       (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
 		       (lambda (ll) (if ll (funcall key (car ll)) bv)))))
@@ -104,31 +124,69 @@ plot~{ '-' using 1:2 title '~a'~^,~}~%"
 	(setq bv (funcall key (cadr ls)))
 	(do ((ll (cdr ls) (cdr ll)) (ix 0 (1+ ix)))
 	    ((= ix depth) (format str "e~%"))
-	  (format str "~f~10t~f~%" ix (funcall val ll))))))
-  (format t "Prepared file `~a'. Type \"load '~a'\" at the gnuplot prompt.~%"
+	  (format str "~f~20t~f~%" ix (funcall val ll))))))
+  (format t "~&Prepared file `~a'.
+Type \"load '~a'\" at the gnuplot prompt.~%"
 	  *gnuplot-file* *gnuplot-file*))
 
 (defun plot-lists-arg (lss &key (key #'identity) (title "Plot") (xlabel "nums")
 		       (ylabel "value") (data-style "linespoints") rel)
   "Plot the given lists of numbers.
 LSS is a list of lists, car of each list is the title, cdr is the list
-of conses of abscissas and ordinatas."
+of conses of abscissas and ordinates."
   (declare (list lss))
   (let ((beg (apply #'min (mapcar #'caadr lss)))
 	(end (apply #'max (mapcar (compose #'caar #'last) lss))))
     (with-open-file (str *gnuplot-file* :direction :output
 		     :if-exists :supersede)
-      (format str "set xdata~%set xlabel '~a'~%set ylabel '~a'
-set xrange [~d:~d]~%set data style ~a~%set title '~a'
-plot~{ '-' using 1:2 title '~a'~^,~}~%"
-	      xlabel ylabel beg end data-style title (mapcar #'car lss))
+      (plot-header str xlabel ylabel data-style nil beg end title)
+      (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%"
+	      (mapcar #'car lss))
       (let* (bv (val (if rel (lambda (kk) (/ kk bv)) #'identity)))
 	(dolist (ls lss)
-	  (setq bv (funcall key (cadr ls)))
+	  (setq bv (funcall key (cdadr ls)))
 	  (do ((ll (cdr ls) (cdr ll)) kk)
 	      ((null ll) (format str "e~%"))
 	    (setq kk (funcall key (car ll)))
-	    (format str "~f~10t~f~%" (car kk) (funcall val (cdr kk))))))))
-  (format t "Prepared file `~a'. Type \"load '~a'\" at the gnuplot prompt.~%"
+	    (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk))))))))
+  (format t "~&Prepared file `~a'.
+Type \"load '~a'\" at the gnuplot prompt.~%"
 	  *gnuplot-file* *gnuplot-file*))
 
+(defun plot-functions (fnl xmin xmax numpts &key (title "Function Plot")
+		       (xlabel "x") (ylabel "y") (data-style "lines"))
+  "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
+FNL is a list of (name . function)."
+  (declare (list fnl) (type real xmin xmax) (fixnum numpts))
+  (with-plot-stream (str xlabel ylabel data-style nil xmin xmax title)
+    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%"
+	    (mapcar #'car fnl))
+    (do ((fn fnl (cdr fn)) (ptl nil nil)) ((null fn) (format str "e~%"))
+      (dotimes (ii (1+ numpts) (nreverse ptl))
+	(let ((xx (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts)))
+	  (format str "~f~20t~f~%" xx (funcall (cdar fn) xx)))))))
+
+(defun plot-dated-lists-depth (depth dls slot &rest opts)
+  "Plot the dated lists, DEPTH *days* from the beginning.
+OPTS is passed to `plot-lists-arg'."
+  (apply #'plot-lists-arg
+	 (mapcar
+	  (lambda (dl)
+	    (cons (print-dlist dl nil 2)
+		  (dated-list-to-day-list dl :slot slot :depth depth)))
+	  dls)
+	 opts))
+
+(defun slot-accessor (slot)
+  "Return a slot accessor to slot SLOT."
+  (lambda (xx) (slot-value xx slot)))
+
+(defun dated-list-to-day-list (dl &key (slot 'val) (depth (dl-len dl)))
+  "Make a list of conses (days-from-beg . value) of length
+DEPTH out of the dated list."
+  (declare (type dated-list dl) (symbol slot) (fixnum depth))
+  (do ((bd (dl-beg-date dl)) (ll (dated-list-ll dl) (cdr ll))
+       (ii 0 (1+ ii)) rr)
+      ((or (null ll) (= ii depth)) (nreverse rr))
+    (push (cons (days-between bd (funcall (dated-list-date dl) (car ll)))
+		(slot-value (car ll) slot)) rr)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.16 2004/09/26 12:01:14 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17 2004/10/02 19:36:47 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -197,7 +197,7 @@
 ;;;;		       (error "Illegal '!' construct !~a~a~s"
 ;;;;			      (or param sym) ch sym))))))))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 ; Useful macro in backquote. ,@(INCLUDE-IF test -stuff-) includes stuff if
 ; test is non-false.  If stuff is omitted, it defaults to test itself.
@@ -206,7 +206,6 @@
 	  `(list-if-not-false ,tst))
 	 (t
 	  `(cond (,tst (list ,@stuff)) (t '())   ))))
-)
 
 (cl:defmacro subr-synonym (syn subr &optional setf-able (numargs 1))
    (cond ((eq syn subr)
@@ -235,6 +234,7 @@
 			  (defun ,setf-name (,@setf-args v)
 			     (setf (,subr ,@setf-args) v))
 			  (defsetf ,syn ,setf-name))))))))
+)
 
 ;;;; This doesn't work due to a bug in Allegro
 ;;;;	      ,@(include-if setf-able
@@ -244,7 +244,7 @@
 ;;;;		       (define-compiler-macro (setf ,syn) (v^ x^)
 ;;;;			   `(setf (,',subr ,x^) ,v^))))))))
 
-(cl:eval-when (:compile-toplevel :load-toplevel)
+(cl:eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defvar subr-synonyms* '())
 		  
@@ -402,7 +402,8 @@
 	       (t
 		`(values (intern ,(symstuff l))))))))
 
-(cl:eval-when (:compile-toplevel :load-toplevel)
+(cl:eval-when (:compile-toplevel :load-toplevel :execute)
+
 (defun symstuff (l)
    `(concatenate 'string
      ,@(mapcan

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.6 2000/04/10 18:35:43 sds Exp $
+;;; $Id: shell.lisp,v 1.7 2000/07/31 17:52:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,11 +29,13 @@
   #+allegro (apply #'excl:run-shell-command (apply #'vector prog prog args)
                    :wait wait opts)
   #+clisp (apply #'lisp:run-program prog :arguments args opts)
-  #+cmu (ext:run-program prog args :wait wait)
+  #+cmu (apply ext:run-program prog args :wait wait opts)
   #+gcl (apply #'si:run-process prog args)
   #+liquid (apply #'lcl:run-program prog args)
-  #+lispworks (sys::call-system (format nil "~a~{ ~a~}" prog args))
-  #-(or allegro clisp cmu gcl liquid lispworks)
+  #+lispworks (apply #'sys::call-system (format nil "~a~{ ~a~}" prog args)
+                     opts)
+  #+lucid (apply #'lcl:run-program prog :wait wait :arguments args opts)
+  #-(or allegro clisp cmu gcl liquid lispworks lucid)
   (error 'not-implemented :proc (list 'run-prog prog opts)))
 
 (defun pipe-output (prog &rest args)
@@ -46,7 +48,8 @@
   #+gcl (si::fp-input-stream (apply #'si:run-process prog args))
   #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
                               :direction :output)
-  #-(or allegro clisp cmu gcl lispworks)
+  #+lucid (lcl:run-program prog :arguments args :wait nil :output :stream)
+  #-(or allegro clisp cmu gcl lispworks lucid)
   (error 'not-implemented :proc (list 'pipe-output prog args)))
 
 (defun pipe-input (prog &rest args)
@@ -59,7 +62,8 @@
   #+gcl (si::fp-output-stream (apply #'si:run-process prog args))
   #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
                               :direction :input)
-  #-(or allegro clisp cmu gcl lispworks)
+  #+lucid (lcl:run-program prog :arguments args :wait nil :input :stream)
+  #-(or allegro clisp cmu gcl lispworks lucid)
   (error 'not-implemented :proc (list 'pipe-input prog args)))
 
 ;;; Allegro CL: a simple `close' does NOT get rid of the process.

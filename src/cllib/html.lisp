@@ -4,7 +4,7 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: html.lisp,v 1.4 2000/03/09 20:28:04 sds Exp $
+;;; $Id: html.lisp,v 1.5 2000/03/13 21:52:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -122,8 +122,6 @@ optional argument SPACE is non-nil."
 ;;; }}}{{{ HTML streams
 ;;;
 
-#+(or clisp acl cmu) (progn
-
 (defclass html-stream-in (fundamental-character-input-stream)
   ((input :initarg :stream :initarg :input :type stream :reader html-in))
   (:documentation "The input stream for reading HTML."))
@@ -147,10 +145,8 @@ optional argument SPACE is non-nil."
   (listen (html-in in)))
 (defmethod stream-read-line ((in html-stream-in))
   (read-line (html-in in)))
-(defmethod stream-clear-output ((in html-stream-in))
+(defmethod stream-clear-input ((in html-stream-in))
   (clear-input (html-in in)))
-
-)
 
 ;;;
 ;;; }}}{{{ HTML parsing via `text-stream'

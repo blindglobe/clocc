@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.17 2004/12/23 14:49:07 sds Exp $
+;;; $Id: base.lisp,v 2.18 2004/12/23 15:06:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,7 +14,7 @@
 (defpackage #:cllib
   (:use #:common-lisp #:port)
   (:nicknames #:org.cons.clocc/sds/cllib)
-  #+cmu (:shadowing-import-from #:port #:defstruct)
+  #+cmu (:shadowing-import-from #:port port:defstruct)
   (:export #:value #:code #:*datadir* #:*mail-host-address*
            #:*user-mail-address*))
 

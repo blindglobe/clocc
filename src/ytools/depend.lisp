@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.1 2004/11/21 05:12:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -53,19 +53,21 @@
 							 now-loading-lprec*)))))
 			   (cond ((not (and ,@(include-if some-comp 'c-recorder)
 					    ,@(include-if some-run 'r-recorder)))
-				  (format *error-output* ;;;; cerror "Forge on"  ;;;;
+				  (format *error-output* 
 					  "Warning: depends-on form in file being loaded without fload: ~% ~s~%"
 					  '(depends-on ,@stuff))))
 			   ,@(mapcan
 				(lambda (g)
 				   (let ((at-run-time (memq ':run-time (car g)))
-					 (at-compile-time (memq ':compile-time (car g))))
+					 (at-compile-time (memq ':compile-time
+								(car g))))
 				      (cond ((or at-run-time at-compile-time)
 					     (let ((pnl
 						      (filespecs->ytools-pathnames
 							 (cdr g))))
 					        (depends-on-expansion
-						   pnl at-run-time at-compile-time)))
+						   pnl at-run-time
+						   at-compile-time)))
 					    (t !()))))
 				dgroups)))))
 	       (t '(values))))))
@@ -91,18 +93,59 @@
 
 ;;; 2/3 of these lambdas can be alpha-reduced.
 
-(datafun to-slurp depends-on
-  (defun :^ (e slurp-if-substantive)
+(datafun :compute-file-basis depends-on
+  (defun :^ (e file-ch)
      (cond (depends-on-enabled*
-	    (let ((groups (depends-on-args-group (cdr e))))
-	       (labels ((recursive-slurp (pn)
-			   (cond ((not (eq slurping-how-much*
-				     ':header-only))
-			    (pathname-slurp
-			       pn false ':at-least-header)))))
-		  (dolist (g groups)
-		     (let ((pnl (filespecs->ytools-pathnames (cdr g)))
+	    (let ((groups (depends-on-args-group (cdr e)))
+		  (compiled-ch (place-compiled-chunk file-ch)))
+	       (let ((loaded-file-ch (place-loaded-chunk file-ch false)))
+		  (labels ((recursive-slurp (pn)
+			      (cond ((not (eq slurping-how-much*
+					':header-only))
+			       (pathname-slurp
+				  pn false ':at-least-header)))))
+		     (dolist (g groups)
+			(let ((files (<# place-file-chunk
+					 (filespecs->ytools-pathnames (cdr g)))))
+			   (cond ((memq ':compile-time (first g))
+				  (setf (File-chunk-basis compiled-ch)
+					(union
+					   files
+					   (File-chunk-basis compiled-ch)))
+				  (setf (File-chunk-update-basis compiled-ch)
+				        (union (<# place-loaded-chunk
+						   files)
+					       (File-chunk-update-basis
+						  compiled-ch)))))
+			   (cond ((memq ':run-time (first g))
+				  (setf (File-chunk-callees file-ch)
+					(union files
+					       (File-chunk-callees file-ch)))))
+			   (cond ((or (memq ':slurp-time (first g))
+				      (memq ':read-time (first g)))
+				  (dolist (s-f-ch files)
+				     (setf (File-chunk-read-basis file-ch)
+				           (adjoin s-f-ch
+						   (File-chunk-read-basis
+						      file-ch)))
+				     (cond ((not (memq s-f-ch
+						       (Chunk-basis compiled-ch)))
+					    (setf (Chunk-basis compiled-ch)
+					          (append (Chunk-basis
+							     compiled-ch)
+							  (list s-f-ch))))))))
+				     (
+					   
+
+			       
+
+
 			   (pathname-handlers
+
+
+
+
+
 			      (mapcar (\\ (m)
 					 (ecase m
 					     (:compile-time

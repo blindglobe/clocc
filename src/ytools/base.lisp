@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17 2004/10/02 19:36:47 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.1 2004/11/21 05:12:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -618,8 +618,39 @@
 
 (def-excl-dispatch #\" (srm _)
    (unread-char #\" srm)
-   (let ((fstr (read srm)))
-      (format nil fstr)))
+   (let ((fstr (read srm))
+	 (slen (length fstr)))
+      (do ((squig (position #\~ fstr)
+		  (position #\~ fstr :start postskip))
+	   (prev 0 postskip)
+	   postskip
+	   (seg "" "")
+	   (res ""
+		(concatenate 'string
+		             res (subseq fstr prev squig) seg)))
+	  ((or (null squig)
+	       (>= squig (- slen 1)))
+	   (concatenate 'string res
+		    (subseq fstr prev
+			    (or squig slen))))
+	(let ((ch (elt fstr (+ squig 1))))
+	   (cond ((char= ch #\~)
+		  (setq seg "~")
+		  (setq postskip (+ squig 2)))
+		 ((char= ch #\%)
+		  (setq seg (string #\Newline))
+		  (setq postskip (+ squig 2)))
+		 ((is-whitespace ch)
+		  (setq postskip (position-if-not #'is-whitespace fstr
+					      :start (+ squig 2)))
+		  (cond ((not postskip)
+			 ;; This shouldn't happen, so do something
+			 ;; inelegant to avoid trouble
+			 (setq postskip slen))))
+		 (t
+		  (setq postskip (+ squig 1))))))))
+	 
+;;;;(format nil fstr)))
 
 ;;;;(set-dispatch-macro-character #\! #\" #'quote-funmac ytools-readtable*)
 

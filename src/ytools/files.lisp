@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.1 2004/11/19 15:31:48 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.2 2004/11/21 05:12:38 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -19,6 +19,8 @@
 (defvar default-fload-args* (vector !() !() nil))
 
 (defun do-fload (specs)
+   (cond ((not file-op-in-progress*)
+	  (setq file-op-count* (+ file-op-count* 1))))
    (let ((file-op-in-progress* true))
       (catch 'fload-abort
 	 (with-compilation-unit ()
@@ -85,16 +87,40 @@
 	      :initform false)
    (alt-version nil))
    ;; - If not nil, the File-chunk for the alternative version.
+   ;; Files that must be loaded when this one is --
+   (callees :accessor File-chunk-callees
+	    :initform !())
+   ;; Inverse of 'callees' --
+   (callers :accessor File-chunk-callers
+	    :initform !())
+   ;; Files that must be loaded when this one is read --
+   (read-basis :accessor File-chunk-read-basis
+	       :initform !())
 )
 ;; -- Files are the finest grain we allow.  If a file is out of date,
 ;; then every chunk associated with the file is assumed to be out of
 ;; date.  More than one chunk can be associated with a file.  For now,
 ;; don't allow a chunk to be associated with more than one file.
 
+;; These two methods ensure that 'callers' is the inverse of 'callees' --
+(defmethod (setf File-chunk-callees) :before (new-callees file-ch)
+   (dolist (clee (File-chunk-callees file-ch))
+      (setf (File-chunk-callers clee)
+	    (remove file-ch (File-chunk-callers clee)))))
+
+(defmethod (setf File-chunk-callees) :after (new-callees file-ch)
+   (dolist (clee (File-chunk-callees file-ch))
+      (setf (File-chunk-callers clee)
+	    (adjoin file-ch (File-chunk-callers clee)))))
+
 (defmethod derive ((fc File-chunk))
    (let ((v (File-chunk-alt-version fc)))
       (cond (v (derive v))
 	    (t (file-write-date (File-chunk-pathname fc))))))
+
+(defun File-chunk-pn (file-ch)
+   (or (File-chunk-yt-pathname file-ch)
+       (File-chunk-pathname file-ch)))
 
 (defvar final-load* false)
 ; When building systems, bind to true to minimize soul-searching later.
@@ -110,7 +136,7 @@
       (chunk-with-name
 	 l-pathname
 	 (\\ (_)
-	    (make-File-chunk
+	    (make-instance 'File-chunk
 	       :name `(:file ,(or yt-pathname l-pathname))
 	       :yt-pathname yt-pathname
 	       :pathname l-pathname
@@ -125,15 +151,20 @@
    ((file :reader Loadable-chunk-file
 	  :initarg :file
 	  :type File-chunk)
-    ;; If this is :source, don't compile, load :source; if :object,
-    ;; don't compile, load :object; if :compile, compile and then
-    ;; load object; if :ask-once, ask user which to do (then ask if
-    ;; this should be remembered); if :ask-every, ask user, but don't
-    ;; ask if it should keep asking.--
     (manip :accessor Loadable-chunk-manip
 	   :initarg :manip
 	   :type (member :compile :source :object
-			 :ask-once :ask-every))
+			 :ask-once :ask-every :ask-ask :defer))
+    ;; -- Meanings:
+    ;;   :source -> don't compile, load :source;
+    ;;   :object -> don't compile, load :object;
+    ;;   :compile -> compile and then load object;
+    ;;   :ask-once -> ask user which to do and record result;
+    ;;   :ask-every -> ask user every time basis is recomputed;
+    ;;   :ask-ask -> ask once and ask if it should keep asking;
+    ;;   :defer -> refer to value of fload-compile*;
+    ;;   :follow -> refer to value of fload-compile* once
+
     (source :reader Loadable-chunk-source
 	    :initarg :source
 	    :type File-chunk)
@@ -141,21 +172,40 @@
 	    :initarg :object
 	    :type File-chunk)))
 
-(defclass Loaded-chunk (Chunk))
+(defclass Loaded-chunk (Chunk)
+   ((loadable :reader Loaded-chunk-loadable
+	      :initarg :loadable
+	      :type Loadable-chunk)))
 
 (defun place-loaded-chunk (file-chunk file-manip)
    (let ((file-choice
 	    (place-loadable-chunk file-chunk file-manip)))
       (chunk-with-name `(:loaded ,(file-chunk-key-pathname file-chunk))
 	   (\\ (name-exp)
-	      (make-Loaded-chunk
+	      (make-instance 'Loaded-chunk
 		 :name name-exp
+		 :loadable file-choice
 		 :basis (list file-choice))))))
 
 (defmethod derive ((lc Loaded-chunk))
-   (let ((loadable (first (Chunk-basis lc))))
-      (load (File-chunk-pathname (first (Chunk-basis loadable))))
-      (get-universal-time)))
+   (let ((loadable (Loaded-chunk-loadable lc)))
+      (let ((file-chunk (first (Chunk-basis loadable))))
+	 (with-post-file-transduction-hooks
+	    (cleanup-after-file-transduction
+	       (let ((*package* *package*)
+		     (*readtable* *readtable*)
+		     (fload-indent* (+ 3 fload-indent*)))
+		  (fload-op-message "Loading"
+				    (File-chunk-yt-pathname file-chunk)
+				    (File-chunk-l-pathname file-chunk)
+				    "...")
+
+		  (load (File-chunk-l-pathname file-chunk))
+		  (fload-op-message "...loaded"
+				    (File-chunk-yt-pathname file-chunk)
+				    false
+				    ""))))
+	 (get-universal-time))))
 
 ;;; Whoever changes the alt-version of a Loadable-chunk (e.g.,
 ;;; 'fload-versions') must change its basis accordingly and
@@ -185,69 +235,202 @@
 					 (t file-chunk))
 			   :source (cond (is-source file-chunk)
 					 (t false)))))))))
+      (cond ((and manip
+		  (not (Loadable-chunk-manip new-chunk)))
+	     (setf (Loadable-chunk-manip new-chunk)
+	           manip)))
       (loadable-chunk-compute-basis new-chunk)
       new-chunk))
 
 (defun loadable-chunk-compute-basis (loadable-ch)
    (setf (Chunk-basis loadable-ch)
 	 (let ((file-ch (Loadable-chunk-file loadable-ch))
-	       (manip (Loadable-chunk-manip loadable-ch)))
+	       (manip (Loadable-chunk-manip loadable-ch))
+	       (source-exists (File-chunk-source file-ch))
+	       (object-exists
+		  (probe-file
+		     (File-chunk-pathname
+			(Loadable-chunk-object loadable-ch)))))
+	    (cond ((not (and source-exists object-exists))
+		   (error "No source or object file can be found for ~s"
+			  loadable-ch)))
 	    (cond ((File-chunk-alt-version file-ch)
-		   (list (File-chunk-alt-version file-ch)))
-		  ((memq manip '(:ask-once :ask-every))
-		   ??? '())
-		  (t
-		   (ecase manip
-		     (:source
-		      (cond ((Loadable-chunk-source loadable-ch)
-			     (list (Loadable-chunk-source loadable-ch)))
-			    (t
-			     (source-file-missing loadable-ch))))
-		     (:object
-		      (cond ((Loadable-chunk-object loadable-ch)
-			     (list (Loadable-chunk-object loadable-ch)))
-			    (t
-			     (cerror "I will compile the source file"
-				     "Request to load nonexistent object file for ~s"
-				     (File-chunk-l-pathname file-ch))
-			     (list (place-compiled-chunk
-				      (Loadable-chunk-source loadable-ch))))))
-		     (:compile
-		      (cond ((Loadable-chunk-source loadable-ch)
-			     (list (place-compiled-chunk
-				      (Loadable-chunk-source loadable-ch))))
-			    (t
-			     (source-file-missing loadable-ch))))))))))
+		   (list (place-loadable-chunk
+			    (File-chunk-alt-version file-ch))))
+		  ((not source-exists)
+		   (setq manip ':object))
+		  ((memq manip '(:defer :follow))
+		   (setq manip fload-compile*)
+		   (cond ((eq manip ':follow)
+			  (setf (Loadable-chunk-manip loadable-ch)
+			        manip))))
+		  ((memq manip '(:ask-once :ask-every :ask-ask))
+		   (cond (source-exists
+			  (setq manip
+			        (ask-user-for-manip loadable-ch
+						    object-exists)))
+			 (t
+			  (setq manip ':object)))))
+	    ;; At this point manip is either :object, :source, or
+	    ;; :compile
+	    (ecase
+	       (:source
+		(list (Loadable-chunk-source loadable-ch)))
+	       (:object
+		(cond (object-exists
+		       (list (Loadable-chunk-object loadable-ch)))
+		      (t
+		       (cerror "I will compile the source file"
+			       "Request to load nonexistent object file for ~s"
+			       (File-chunk-l-pathname file-ch))
+		       (list (place-compiled-chunk
+				(Loadable-chunk-source loadable-ch))))))
+	       (:compile
+		(cond ((Loadable-chunk-source loadable-ch)
+		       (list (place-compiled-chunk
+				(Loadable-chunk-source loadable-ch))))
+		      (t
+		       (source-file-missing loadable-ch))))))))
 
-(defun source-file-missing (loadable-ch)
-   (cerror "I will load the object file from now on"
-	   "Request to load or compile nonexistent source file for ~s"
-	   (File-chunk-l-pathname file-ch))
-   (setf (Loadable-chunk-manip loadable-ch)
-	 ':object)
-   (list (Loadable-chunk-object loadable-ch)))
+(defun ask-user-for-manip (loadable-ch obj-exists)
+   (let ()
+      (loop 
+	 (format *query-io*
+	    !"Do you want to use the freshly compiled, ~
+              ~a version ~% of ~s (~a, \\\\ to abort) ?"
+	    (cond (obj-exists
+		   "source, or object")
+		  (t "or source"))
+	    (File-chunk-pn file-ch)
+	    (cond (obj-exists
+		   "c/s/o")
+		  (t
+		   "c/o")))
+	 (let ((manip 
+		  (case (keyword-if-sym (read *query-io*))
+		     ((:c :compile)
+		      ':compile)
+		     ((:s :source)
+		      ':source)
+		     ((:o :object)
+		      ':object)
+		     ((:\\)
+		      (throw 'fload-abort 'fload-aborted))
+		     (t
+		      (format *query-io* "???~%")
+		      false))))
+	    (cond (manip
+		   (manip-maybe-remember manip loadable-ch)
+		   (return manip)))))))
+
+(defun manip-maybe-remember (manip loadable-ch)
+   (block dialogue
+      (let ((old-manip (Loadable-chunk-manip loadable-ch)))
+	 (cond ((eq old-manip ':ask-once)
+		(setf (Loadable-chunk-manip loadable ch)
+		       manip))
+	       ((eq old-manip ':ask-ask)
+		(loop
+		   (format *query-io*
+			   !"Record this choice for future encounters ~
+                             with this file (y/n/d, \\\\ to abort)? ")
+		   (case (keyword-if-sym (read *query-io*))
+		      ((:y :yes :t)
+		       (setf (Loadable-chunk-manip loadable-ch)
+			     manip)
+		       (return-from dialogue))
+		      ((:n :no)
+		       (loop
+			  (format *query-io*
+				  !"Ask again next time whether to record ~
+				    (y/n, \\\\ to abort)? ")
+			  (let ((q (keyword-if-sym (read *query-io*))))
+			     (case q
+			        ((:n :no)
+				 (setf (Loadable-chunk-manip loadable-ch)
+				       ':ask-every)
+				 (return-from dialogue))
+				((:y :yes))
+				((:\\)
+				 (throw 'fload-abort 'fload-aborted))
+				(t
+				 (format *query-io*
+				    "Type 'y' so that every question about ~
+                                     what to load will be followed by a~%  ~
+				     question about whether to record;~%~
+			             type 'n' to suppress that second ~
+                                     annoying question.~%"))))))
+		      ((:d :defer)
+		       (setf (Loadable-chunk-manip loadable-ch)
+			     ':defer)
+		       (return-from dialogue))
+		      ((:\\)
+		       (throw 'fload-abort 'fload-aborted))
+		      (t
+		       (format *query-io*
+			  "Type 'y' to record ~s as form of ~s;~%~
+                           type 'n' to use that value once, ask again next;~%~
+                           type 'd' to use value of 'fload-compile* ~
+                                     to decide.~%"))))))))
+  manip)
 
 (defmethod derive ((ldbl Loadable-chunk))
-   (get-universal-time))
+  (get-universal-time))
 
+(defclass File-basis-chunk (Chunk)
+  ((file :reader File-basis-chunk-file
+	:initarg :file
+	:type File-chunk)))
 
+(defmethod initialize-instance :after ((fb-ch File-basis-chunk)
+				      &rest initargs)
+  (setf (Chunk-basis fb-ch)
+	(list (File-basis-chunk-file fb-ch))))
 
+;;; State for task is a file chunk, whose basis (and callees)
+;;; we are computing.
+(def-slurp-task :compute-file-basis
+   :default (\\ (_ _) true))
+;;; -- The idea is that anything we didn't anticipate takes us
+;;; out of the header.
 
+(defmethod derive ((fb File-basis-chunk))
+   (let ((file-ch (File-basis-chunk-file fb)))
+      (setf (File-chunk-callees ch) !())
+      (setf (Chunk-basis
+	       (place-compiled-chunk file-ch))
+	    !())
+      (file-slurp (File-chunk-pathname file-ch)
+		  (list compute-file-basis*)
+		  (list file-ch))
+      file-op-count*))
+;;; -- Does this dating trick work given that a File-basis-chunk's
+;;; basis is a file with a real-world date?
 
-
+(datafun :compute-file-basis end-header
+   (defun :^ (form file-ch) ;; -- of file being slurped
+      (cond ((memq ':no-compile (cdr form))
+	     (place-loadable-chunk file-ch ':source)))
+   ;;;;      (cond ((and (memq ':continue-slurping (cdr form))
+   ;;;;		  (eq slurping-how-much* ':at-least-header))
+      (cond (end-header-dbg*
+	     (format *error-output*
+		     "Executing ~s~% "
+		     form)))
+      true))
 
 (defun lprec-load (lprec force-flag force-compile must-ask)
-   (let ()   ;;;;(lprec-pn (Load-progress-rec-pathname lprec))
+(let ()   ;;;;(lprec-pn (Load-progress-rec-pathname lprec))
 ;;;;      (setq lprecs* (cons lprec lprecs*))
-      (let ((supporters (lprec-find-supporters lprec))
-	    (when-reached-status (Load-progress-rec-when-reached lprec))
-	    )
-	 (multiple-value-bind (ur-mod-time ldble-mod-time)
-			      (lprec-find-version-modtimes lprec)
-	    (let ((changed-supporters
-		     (cond (ldble-mod-time
-			    (files-changed-since supporters ldble-mod-time))
-			   (t !()))))
+   (let ((supporters (lprec-find-supporters lprec))
+	 (when-reached-status (Load-progress-rec-when-reached lprec))
+	 )
+      (multiple-value-bind (ur-mod-time ldble-mod-time)
+			   (lprec-find-version-modtimes lprec)
+	 (let ((changed-supporters
+		  (cond (ldble-mod-time
+			 (files-changed-since supporters ldble-mod-time))
+			(t !()))))
 ;;;;	       (out "Contemplating loading " :% 1 lprec
 ;;;;		    :% " Status: " (Load-progress-rec-status lprec) :%)
 ;;;;		    (achieved-load-status lprec ':loaded)
@@ -255,188 +438,188 @@
 ;;;;		    " = when-reached-status"
 ;;;;		    :% "# of changed supporters = " (len changed-supporters)
 ;;;;		    :%
-	       (cond ((or force-flag
-			  (not (achieved-load-status lprec ':loaded))
-			  (> ur-mod-time when-reached-status)
-		      ;;; This is not necessary, because calling 'achieved-load-status'
-		      ;;; above did the check already.--
+	    (cond ((or force-flag
+		       (not (achieved-load-status lprec ':loaded))
+		       (> ur-mod-time when-reached-status)
+		   ;;; This is not necessary, because calling 'achieved-load-status'
+		   ;;; above did the check already.--
 ;;;;			  (or (> ur-mod-time ldble-mod-time)
 ;;;;			      (> ur-mod-time when-reached-status))
-			  (and (not (null changed-supporters))
-			       (or (some (\\ (cs) (> (cadr cs) when-reached-status))
-					 changed-supporters)
-				   (not (memq (Load-progress-rec-whether-compile
-					       lprec)
-					      '(:object :source))))))
+		       (and (not (null changed-supporters))
+			    (or (some (\\ (cs) (> (cadr cs) when-reached-status))
+				      changed-supporters)
+				(not (memq (Load-progress-rec-whether-compile
+					    lprec)
+					   '(:object :source))))))
 ;;;;		      (dbg-save ur-mod-time ldble-mod-time changed-supporters
 ;;;;				(wc (Load-progress-rec-whether-compile lprec))
 ;;;;				lprec)
 ;;;;		      (breakpoint lprec-load "Loading!!?")
-		      ;; There's a reason to load or reload, possibly
-		      ;; after (re)compilation.
-		      (let ((src-version (lprec-find-source-pathname lprec))
-			    (obj-version (lprec-find-object-pathname lprec)))
-			 (multiple-value-bind (version-to-load src-or-obj)
-					      (lprec-check-compile
-						 lprec
-						 src-version obj-version
-						 (cond (force-compile
-							':just-do-it)
-						       ((not (probe-file obj-version))
-							':no-object)
-						       ((> ur-mod-time ldble-mod-time)
-							':out-of-date)
-						       ((not (null changed-supporters))
-							':supporter-out-of-date)
-						       (must-ask
-							':have-to-ask)
-						       (t
-							':no-reason))
-						 changed-supporters
-						 must-ask)
-			    (cond (version-to-load
-				   (pathname-really-fload
-				      version-to-load src-or-obj lprec))
-				  (t
-				   (format *error-output*
-					   "Nothing to load~%"))))))
-		     (t
-		      (dolist (pn changed-supporters)
-			 (fload-if-recompile (car pn))))
-		      ))))))
+		   ;; There's a reason to load or reload, possibly
+		   ;; after (re)compilation.
+		   (let ((src-version (lprec-find-source-pathname lprec))
+			 (obj-version (lprec-find-object-pathname lprec)))
+		      (multiple-value-bind (version-to-load src-or-obj)
+					   (lprec-check-compile
+					      lprec
+					      src-version obj-version
+					      (cond (force-compile
+						     ':just-do-it)
+						    ((not (probe-file obj-version))
+						     ':no-object)
+						    ((> ur-mod-time ldble-mod-time)
+						     ':out-of-date)
+						    ((not (null changed-supporters))
+						     ':supporter-out-of-date)
+						    (must-ask
+						     ':have-to-ask)
+						    (t
+						     ':no-reason))
+					      changed-supporters
+					      must-ask)
+			 (cond (version-to-load
+				(pathname-really-fload
+				   version-to-load src-or-obj lprec))
+			       (t
+				(format *error-output*
+					"Nothing to load~%"))))))
+		  (t
+		   (dolist (pn changed-supporters)
+		      (fload-if-recompile (car pn))))
+		   ))))))
 
 (defun lprec-find-supporters (lprec)
-   (labels ((walk-through-supporters (lpr)
+(labels ((walk-through-supporters (lpr)
 ;;;;	       (trace-around walk-through
 ;;;;		  (:> "(walk-through: " lpr ")")
-	       (list-copy
-		  (cond ((= (Load-progress-rec-supp-timestamp lpr)
+	    (list-copy
+	       (cond ((= (Load-progress-rec-supp-timestamp lpr)
+			 file-op-count*)
+		      (Load-progress-rec-supporters lpr))
+		     (t
+		      (setf (Load-progress-rec-supp-timestamp lpr)
 			    file-op-count*)
-			 (Load-progress-rec-supporters lpr))
-			(t
-			 (setf (Load-progress-rec-supp-timestamp lpr)
-			       file-op-count*)
-			 ;; Slurp to set immediate supporters --
-			 (setf (Load-progress-rec-run-time-depends-on lpr) !())
-			 (setf (Load-progress-rec-compile-time-depends-on lpr)
-			       !())
-			 (lprec-slurp lprec true ':header-only)
-			 (let ((curr-supps (Load-progress-rec-supporters lpr)))
+		      ;; Slurp to set immediate supporters --
+		      (setf (Load-progress-rec-run-time-depends-on lpr) !())
+		      (setf (Load-progress-rec-compile-time-depends-on lpr)
+			    !())
+		      (lprec-slurp lprec true ':header-only)
+		      (let ((curr-supps (Load-progress-rec-supporters lpr)))
 ;;;;			    (out "curr-supps = " curr-supps :%)
-			    (setf (Load-progress-rec-supporters lpr) !())
-			    ;; -- Set to harmless value in case we come across
-			    ;; this same lprec during the recursive walk.
-			    (setf (Load-progress-rec-supporters lpr)
-				  (pns-nodups
-				     (nconc
-					 (walk-down
-					    (Load-progress-rec-run-time-depends-on
-						lpr))
-					 (walk-down
-					    (Load-progress-rec-compile-time-depends-on
-						lpr))
-					 curr-supps)))))))
+			 (setf (Load-progress-rec-supporters lpr) !())
+			 ;; -- Set to harmless value in case we come across
+			 ;; this same lprec during the recursive walk.
+			 (setf (Load-progress-rec-supporters lpr)
+			       (pns-nodups
+				  (nconc
+				      (walk-down
+					 (Load-progress-rec-run-time-depends-on
+					     lpr))
+				      (walk-down
+					 (Load-progress-rec-compile-time-depends-on
+					     lpr))
+				      curr-supps)))))))
 ;;;;		  (:< (val &rest _) "walk-through: " val))
-	       )
-	    (walk-down (immediate-supporters)
-	       (mapcan (\\ (s)
-			  (cond ((is-Pseudo-pathname s)
-				 !())
-				(t
-				 (cons s (walk-through-supporters
-					    (place-load-progress-rec s))))))
-		       immediate-supporters))
-	    (pns-nodups (pnl)
+	    )
+	 (walk-down (immediate-supporters)
+	    (mapcan (\\ (s)
+		       (cond ((is-Pseudo-pathname s)
+			      !())
+			     (t
+			      (cons s (walk-through-supporters
+					 (place-load-progress-rec s))))))
+		    immediate-supporters))
+	 (pns-nodups (pnl)
 ;;;;	       (trace-around pns-nodups
 ;;;;		  (:> "(pns-nodups: " pnl ")")
-	       (remove-duplicates pnl :test #'pn-equal)
+	    (remove-duplicates pnl :test #'pn-equal)
 ;;;;		  (:< (val &rest _) "pns-nodups: " val))
-	       ))
-      (let ((l (walk-through-supporters lprec)))
+	    ))
+   (let ((l (walk-through-supporters lprec)))
 ;;;;	 (format t "Before nodups: supporters = ~s~%" l)
 ;;;;	 (pns-nodups l)
-	 l
-	 )))
+      l
+      )))
 
 ;;; Presupposing that 'lprec' represents a loaded file whose loadable-version
 ;;; is up to date, find supporters that have changed since the last time
 ;;; the loadable-version changed.
 ;;; Returns list of pairs (supporter when-it-last-changed)
 (defun files-changed-since (supps loadable-mod-time)
-   (mapcan (\\ (supp)
-	      (multiple-value-bind (supp-ur-time ign)
-				   (lprec-find-version-modtimes
-				      (place-load-progress-rec supp))
-				   (declare (ignore ign))
-		 (cond ((> supp-ur-time loadable-mod-time)
-			(list (tuple supp supp-ur-time)))
-		       (t !()))))
-	   supps))
+(mapcan (\\ (supp)
+	   (multiple-value-bind (supp-ur-time ign)
+				(lprec-find-version-modtimes
+				   (place-load-progress-rec supp))
+				(declare (ignore ign))
+	      (cond ((> supp-ur-time loadable-mod-time)
+		     (list (tuple supp supp-ur-time)))
+		    (t !()))))
+	supps))
 
-(defun fload-if-recompile (ytpn)
-   (let ((src-version (pathname-source-version ytpn))
-	 (lprec (place-load-progress-rec ytpn)))
-      (cond ((and (achieved-load-status lprec ':loaded)
-		  (> (lprec-find-version-modtimes lprec)
-		     (Load-progress-rec-when-reached lprec)))
-	     (loop
-		(format *query-io*
-		   "Source file older than loaded version of ~s~% Reload it now (recompiling if appropriate)? (y/n, \\\\ to abort) "
-		   src-version)
-		(let ((ans (keyword-if-sym (read *query-io*))))
-		   (labels (
-
-	  ;; Indentation for local functions
-	  (compile-and-load ()
-	   (let ((obj-version
-		    (lprec-find-supporters-and-compile lprec true)))
-	      (cond (obj-version
-		     (pathname-really-fload obj-version ':object lprec)))))
-
-	  (ask-if-compile ()
-	  ;;;;    (trace-around ask-if-compile
-	  ;;;;       (:> "(ask-if-compile: " ")")
-	   (loop
-	      (format *query-io* "Should I recompile ~s (y/n, \\\\ to abort)?"
+    (defun fload-if-recompile (ytpn)
+      (let ((src-version (pathname-source-version ytpn))
+	    (lprec (place-load-progress-rec ytpn)))
+	 (cond ((and (achieved-load-status lprec ':loaded)
+		     (> (lprec-find-version-modtimes lprec)
+			(Load-progress-rec-when-reached lprec)))
+		(loop
+		   (format *query-io*
+		      "Source file older than loaded version of ~s~% Reload it now (recompiling if appropriate)? (y/n, \\\\ to abort) "
 		      src-version)
-	      (let ((ans (keyword-if-sym (read *query-io*))))
-		 (case ans
-		   ((:y :yes :t)
-		    (compile-and-load)
-		    (return ':compile))
-		   ((:n :no :nil)
-		    (pathname-really-fload src-version ':source lprec)
-		    (return ':source))
-		   (:\\
-		    (throw 'fload-abort 'fload-aborted))
-		   (t
-		    (format *query-io* "???~%")))))
-	  ;;;;       (:< (val &rest _) "ask-if-compile: " val))
-	   )
+		   (let ((ans (keyword-if-sym (read *query-io*))))
+		      (labels (
 
-	  (ask-what-this-means ()
-	   (let ((obj-version (pathname-object-version src-version true)))
-	      (cond (obj-version
-		     (loop 
-		       (format *query-io*
-			       "Previously the object version of ~s was loaded;~% shall I reload it, recompile and reload it, or skip? (Type l, c, or /; \\\\ to abort): "
-			       src-version)
-			(case (keyword-if-sym (read *query-io*))
-			   ((:l :load)
-			    (pathname-really-fload obj-version ':object lprec)
-			    (return))
-			   ((:c :compile)
-			    (compile-and-load)
-			    (return))
-			   ((:/ :s :skip)
-			    (return))
-			   (:\\ (throw 'fload-abort 'fload-aborted))
-			   (t (format *query-io* "???~%")))))
-		    (t
-		     (format *query-io*
-			     "The object version of has apparently been deleted ~s%"
-			     src-version)
-		     (ask-if-compile))))))
+	     ;; Indentation for local functions
+	     (compile-and-load ()
+	      (let ((obj-version
+		       (lprec-find-supporters-and-compile lprec true)))
+		 (cond (obj-version
+			(pathname-really-fload obj-version ':object lprec)))))
+
+	     (ask-if-compile ()
+	     ;;;;    (trace-around ask-if-compile
+	     ;;;;       (:> "(ask-if-compile: " ")")
+	      (loop
+		 (format *query-io* "Should I recompile ~s (y/n, \\\\ to abort)?"
+			 src-version)
+		 (let ((ans (keyword-if-sym (read *query-io*))))
+		    (case ans
+		      ((:y :yes :t)
+		       (compile-and-load)
+		       (return ':compile))
+		      ((:n :no :nil)
+		       (pathname-really-fload src-version ':source lprec)
+		       (return ':source))
+		      (:\\
+		       (throw 'fload-abort 'fload-aborted))
+		      (t
+		       (format *query-io* "???~%")))))
+	     ;;;;       (:< (val &rest _) "ask-if-compile: " val))
+	      )
+
+	     (ask-what-this-means ()
+	      (let ((obj-version (pathname-object-version src-version true)))
+		 (cond (obj-version
+			(loop 
+			  (format *query-io*
+				  "Previously the object version of ~s was loaded;~% shall I reload it, recompile and reload it, or skip? (Type l, c, or /; \\\\ to abort): "
+				  src-version)
+			   (case (keyword-if-sym (read *query-io*))
+			      ((:l :load)
+			       (pathname-really-fload obj-version ':object lprec)
+			       (return))
+			      ((:c :compile)
+			       (compile-and-load)
+			       (return))
+			      ((:/ :s :skip)
+			       (return))
+			      (:\\ (throw 'fload-abort 'fload-aborted))
+			      (t (format *query-io* "???~%")))))
+		       (t
+			(format *query-io*
+				"The object version of has apparently been deleted ~s%"
+				src-version)
+			(ask-if-compile))))))
 
 	  ;; Resume normal indentation
 	  ;; We're in the middle of a loop here, waiting for a valid input to the question
@@ -650,22 +833,7 @@
 		"Because this file has no object file, I will load the source file~%")))
       obj-or-source))
 
-(defun maybe-remember-disp (disp lprec)
-  (format *query-io*
-	  "Remember this action for future encounters with this file (y/n, \\\\ to abort)? ")
-  (case (keyword-if-sym (read *query-io*))
-     ((:y :yes :t)
-      (setf (Load-progress-rec-whether-compile lprec)
-	    disp))
-     ((:n :no)
-      (setf (Load-progress-rec-whether-compile lprec)
-	    ':ask))
-     ((:\\)
-      (throw 'fload-abort 'fload-aborted))
-     (t
-      (format *query-io* "???~%")
-      (maybe-remember-disp disp lprec)))
-  disp)
+
 
 (defvar loading-stack*   nil)
    ;; -- stack of Pathnames of files currently being loaded

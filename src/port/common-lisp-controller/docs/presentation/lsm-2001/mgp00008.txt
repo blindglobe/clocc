@@ -1,0 +1,15 @@
+
+How about lisp libraries in distributions?
+
+Some people released Lisp libraries 
+into distributions like debian. 
+
+Problems:
+all depend on one version of a lisp implementation
+lisp implementations do incompatible changes to themselves without changing version
+need to coordinate lisp and lisp library releases
+
+Solution: 
+
+common-lisp-controller
+

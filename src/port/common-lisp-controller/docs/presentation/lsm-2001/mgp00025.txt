@@ -1,0 +1,19 @@
+
+cCLan
+
+
+cCLan is much like CPAN:
+ a system to make libraries available across distributions.
+
+At the moment most packages are debian-based, mostly because most developers use debian.
+
+Apt-able repository at:
+deb http://www-jcsu.jesus.cam.ac.uk/ftp/pub/debian local lisp
+deb-src http://www-jcsu.jesus.cam.ac.uk/ftp/pub/debian local lisp
+
+
+Documentation and a skeleton-generator are in the design-fase. 
+Web-page at :
+http://ww.telent.net/cliki/cclan
+
+

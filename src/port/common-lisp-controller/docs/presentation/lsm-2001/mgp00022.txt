@@ -1,0 +1,20 @@
+
+cmucl-safe.sh highlights
+
+    remove-defsystem)
+            if [ ! -f ${IMAGE%.core}-old.core ] ; then
+              mv ${IMAGE%.core}-old.core $IMAGE
+            fi
+                ;;
+    make-user-image)
+                if [[ ! -f $1 ]] ; then 
+              echo Cannot find file $1 to load and dump!
+              exit 321
+            fi
+            lisp -core $IMAGE -eval "
+(load \"$1\")
+(gc-on)
+    ;;
+    ;; Save the lisp.
+(save-lisp #p\"home:lisp.core\")" -noinit  && echo New image created
+

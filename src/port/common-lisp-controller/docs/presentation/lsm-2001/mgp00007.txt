@@ -1,0 +1,14 @@
+
+What's wrong with releasing the source?
+
+Problem with current available Lisp code:
+sometimes implementation specific (rarely)
+some use MK:DEFSYSTEM most use something all new and unique
+most have hard-wired locations from where they need to be
+most need source hacking before they compile
+
+Compare this to: 
+
+perl Makefile.pl ; make ; make install
+
+

@@ -1,0 +1,24 @@
+
+cmucl-safe.sh highlights
+
+..
+if [[ ! -f /usr/share/common-lisp/source/defsystem/defsystem.lisp ]] ; then
+  cat <<EOF
+$0: cannot find the defsystem source.
+This should not happen. Please report this
+as a bug.
+EOF
+  exit 0
+fi
+
+..
+case $1 in
+    rebuild)
+            echo $0 rebuilding...
+            shift
+            while [ ! -z "$1" ] ; do
+                echo rebuilding $1
+                lisp -core $IMAGE -eval "
+...
+        (mk:oos :$1 :compile :verbose nil)))
+(unix:unix-exit 0)" -noinit  

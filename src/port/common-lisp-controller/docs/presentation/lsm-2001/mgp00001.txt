@@ -1,0 +1,10 @@
+
+
+common-lisp-controller and cCLan
+
+Go 'West' for Common Lisp
+or
+Bringing 
+Common Lisp development 
+to the masses (of students)
+

@@ -1,0 +1,12 @@
+
+How is common-lisp-controller implemented?
+
+
+Shell scripts
+
+Why?
+are a part of every known package systems post-installation handling
+are pretty much standard
+are known to system administators, they might not trust a Lisp installer
+can be sandboxed
+

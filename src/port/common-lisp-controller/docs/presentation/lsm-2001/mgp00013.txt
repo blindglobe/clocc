@@ -1,0 +1,14 @@
+
+What is the goal?
+
+(require :foo) should 'just work'
+Students and new users:
+easier introduction
+more powerfull base system
+demonstration of usefullness 'hey look how easy this is in lisp!'
+Power users
+easy installation of libraries
+standard invocation, location of help
+automagical dependencies
+source code level debugging possible
+

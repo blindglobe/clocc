@@ -1,0 +1,14 @@
+
+But that is not enough..
+
+
+Essential things have been overlooked: 
+dependencies
+versions
+package formats
+... 
+
+Right?
+
+No!
+

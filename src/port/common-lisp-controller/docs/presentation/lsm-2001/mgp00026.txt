@@ -1,0 +1,10 @@
+
+Problems...
+
+
+Logical pathnames are difficult, many implementations have problems and they are limited...
+writing good shell code is a nightmare (bugs/lines >> 1)
+investigate security implications of design
+no portable clx
+no way to report compilation bugs. Actually no way to notice them :-)
+

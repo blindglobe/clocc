@@ -1,0 +1,17 @@
+
+The site-init.lisp
+
+
+In the site-init.lisp we have:
+
+(load "/usr/share/common-lisp/source/common-lisp-controller/common-lisp-controller.lisp")
+
+(common-lisp-controller:init-common-lisp-controller 
+ (cond
+   ((member :high-security *features*)
+    "/usr/lib/common-lisp/cmucl-safe/")
+   ((member :small *features*)
+    "/usr/lib/common-lisp/cmucl-small/")
+   (t
+    "/usr/lib/common-lisp/cmucl-normal/")))
+

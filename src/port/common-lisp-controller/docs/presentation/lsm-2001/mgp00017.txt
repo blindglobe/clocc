@@ -1,0 +1,20 @@
+
+An example of a library:
+
+
+Cil (Chess In Lisp) is my default example.
+
+Defsystem:
+
+;;; -*- Mode: lisp -*-
+
+;;; This is just a sample of building series with MK defsystem. You
+;;; may need to change :source-pathname appropriately for your system.
+
+(mk:defsystem cil
+    :source-pathname "cl-library:cil;"
+    :source-extension "lisp"
+    :components ((:file "cil")))
+
+This system only has one file: cil.lisp in cl-library:cil;
+

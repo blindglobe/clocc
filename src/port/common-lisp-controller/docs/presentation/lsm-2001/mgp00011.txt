@@ -1,0 +1,9 @@
+
+Why is it not needed to make dpkg in lisp.
+
+Existing systems already have these functions. It has no use implementing our own system because:
+
+we won't 'fit in' with the rest of the system
+we won't get included into distributions: 'All students need to have Debian X' is a much easier requirement then 'Get CMUCL, clorb, mysql, ...'
+there are more interesting and less painfull things in life
+

@@ -1,0 +1,17 @@
+
+What does c-l-c define?
+
+common-lisp-controller is:
+
+a standard for locations of:
+Source repositories: /usr/share/common-lisp/repositories/
+Source code: /usr/share/common-lisp/source/
+System definitions: /usr/share/common-lisp/systems/
+Compiled code: /usr/lib/common-lisp/<implementation>/<system>/
+standard logical pathnames that point at these
+cl-library:
+cl-systems:
+a standard method to register source packages
+and to register implementations
+and to recompile each source package for each compiler without that they get messed up
+

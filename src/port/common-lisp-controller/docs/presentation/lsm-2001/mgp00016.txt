@@ -1,0 +1,9 @@
+
+Where to store meta-information
+
+
+As a database of installed libraries and implementations 
+we use the already available defsystem and dialect-scripts. 
+
+Idea: store one bit in one bit, not two.
+

@@ -58,5 +58,5 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     fi
 done
 
-cat "$PROGNAME: Package $PKG_NAME installed"
+echo "$PROGNAME: Package $PKG_NAME installed"
 

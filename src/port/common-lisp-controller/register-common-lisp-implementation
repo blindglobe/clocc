@@ -49,5 +49,5 @@ for i  in /usr/share/common-lisp/systems/*.system  ; do
 done
 
 
-cat "$PROGNAME: Compiler $IMPL installed"
+echo "$PROGNAME: Compiler $IMPL installed"
 

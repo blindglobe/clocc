@@ -80,10 +80,14 @@
     (:cl-file . ,(find-class 'common-lisp-file))
     (:common-lisp-file . ,(find-class 'common-lisp-file))
     (:c-file . ,(find-class 'c-file))
+    (:c-source-file . ,(find-class 'c-source-file))
     (:c-header-file . ,(find-class 'c-header-file))
     (:library . ,(find-class 'library))
     (:statically-linked-library . ,(find-class 'statically-linked-library))
     (:dynamically-linked-library . ,(find-class 'dynamically-linked-library))
+    (:java-file . ,(find-class 'java-file))
+    (:java-source-file . ,(find-class 'java-source-file))
+    (:java-jar-file . ,(find-class 'java-jar-file))
     ))
 
 
@@ -124,13 +128,20 @@
 
 
 (defmethod determine-component-class ((component-key (eql :file))
+				      (language (eql :java))
+				      &key
+				      &allow-other-keys)
+  (get-component-class :java-source-file))
+
+
+(defmethod determine-component-class ((component-key (eql :file))
 				      (language (eql :c))
 				      &key
 				      (header nil)
 				      &allow-other-keys)
   (if header
       (get-component-class :c-header-file)
-      (get-component-class :c-file)))
+      (get-component-class :c-source-file)))
 
 
 (defmethod determine-component-class ((component-key (eql :library))
@@ -155,7 +166,7 @@
 				      &key
 				      &allow-other-keys)
   ;; This should be :jar-file.
-  (get-component-class :library))
+  (get-component-class :java-jar-file))
 
 
 (defmethod determine-component-class ((component-type symbol)
@@ -1571,7 +1582,8 @@ component."
   (declare (type pathname source-pathname)
 	   (type (or null pathname) binary-pathname))
 
-  (let ((must-compile-p
+  (let ((load-p (and (not (component-compile-only-p f)) load))
+	(must-compile-p
 	 (and (not (component-load-only-p f)) ; not load-only.
 	      ;; Policy munging will be cleared in a while.
 	      (or (member policy '(:always
@@ -1594,8 +1606,13 @@ component."
 			       :output-file binary-pathname
 			       :error-log-file (get-component-error-log-pathname f)
 			       :other-options (component-compiler-options f))
+	     ;; Note.
+	     ;; The following may have to be changed.  After all the
+	     ;; overall result of the action may be to compile and
+	     ;; load.  So, if the :LOAD action *is* called, then maybe
+	     ;; its values should be returned.
 	     (prog1 (values output-truename warnings-p failure-p)
-	       (when (and (not failure-p) load)
+	       (when (and (not failure-p) load-p)
 		 ;; This needs reworking.
 		 ;; Probably it needs to be moved out into an :around method.
 		 (execute-action f :load
@@ -1748,22 +1765,12 @@ component."
 
 
 ;;; This is the LOAD-ACTION for generic files.
-;;; Still undecided about how to treat different languages/compilers/
-
-#||
-(defmethod load-action ((f file) (p pathname))
-  (load-action-by-content f pathname (find-language (component-language f))))
-||#
 
 (defmethod load-action ((f file) (p pathname) &key)
   (error 'no-loader :component f))
 
 
 ;;; This is the COMPILE-ACTION for generic files.
-#||
-(defmethod compile-action ((f file) (p pathname))
-  (compile-action-by-content f pathname (find-language (component-language f))))
-||#
 
 (defmethod compile-action ((f file) (p pathname)
 			   &key error-log-file
@@ -2047,30 +2054,6 @@ component."
 		   :allow-other-keys t
 		   ))
 
-#||
-(defmethod compile-action ((f c-file) (p pathname)
-			   &key
-			   (output-file (get-component-binary-pathname f))
-			   (error-log-file nil))
-  (print
-   `(c-compile-file ,(c-file-compiler f) ,p
-		    :output-file ,(get-component-binary-pathname f)
-		    :error-file  ,(get-component-error-pathname f)
-		    :error-output ,(c-file-error-output f)
-		    :verbose ,*compile-verbose*
-		    :debug ,(c-file-compile-debug f)
-		    :link ,(c-file-compile-link f)
-		    :optimize ,(c-file-compile-optimize f)
-		    :cflags ,(c-file-compile-cflags f)
-		    :cppflags ,(c-file-compile-cppflags f)
-		    :definitions ,(c-file-compile-definitions f)
-		    :include-paths ,(c-file-include-paths f)
-		    :library-paths ,(c-file-include-paths f)
-		    :libraries ,(c-file-libraries f)
-		    :errorp ,(c-file-compilation-error-p f)))
-  (values (truename p) nil nil))
-||#
-
 
 (defmethod load-action ((f c-file) (p pathname) &key)
   ;; Gross hack nto tho muck too much with the class hierarchy.
@@ -2081,16 +2064,6 @@ component."
 		   :print (or (component-load-print f) *load-print*)
 		   :verbose (or (component-load-verbose f) *load-verbose*)
 		   :libraries libs)))
-
-#||
-(defmethod load-action ((f c-file) (p pathname))
-  (print
-   `(load-c-file ,p
-		 :print ,(or (component-load-print f) *load-print*)
-		 :verbose ,(or (component-load-verbose f) *load-verbose*)
-		 :libraries ,(c-file-libraries f)))
-  (values p nil nil))
-||#
 
 
 (defmethod execute-action ((f c-header-file) (operation (eql :load))
@@ -2109,6 +2082,32 @@ component."
   (declare (ignore policy))
   ;; A no-op.
   (values (truename (get-component-source-pathname f))
+	  nil
+	  nil))
+
+;;;---------------------------------------------------------------------------
+;;; Java support.
+
+(defmethod compile-action ((f java-source-file) (p pathname)
+			   &key
+			   (output-file (get-component-binary-pathname f))
+			   (error-log-file nil))
+  (declare (type pathname output-file)
+	   (type (or null pathname) error-log-file))
+  (invoke-compiler (component-compiler f) p
+		   :output-pathname output-file
+		   :verbose *compile-verbose*
+		   :options (component-compiler-options f)
+		   :error-log-file error-log-file
+		   :allow-other-keys t
+		   )
+  )
+
+
+(defmethod execute-action ((f java-source-file) (action (eql :load))
+			   &key &allow-other-keys)
+  ;; A no-op for the time being.
+  (values (truename (get-component-binary-pathname f))
 	  nil
 	  nil))
 

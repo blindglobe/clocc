@@ -319,17 +319,20 @@ code.
 
 ;; Support for IO
 
-(defun output-possible (socket-stream)
-  #+clisp (member (lisp:socket-status socket-stream 0) '(:output :io))
-  #+allegro ;; [***] not expected to work after acl 5.0.1 !!
-  (excl::filesys-fn-will-not-block-p 
-   (- -1 (excl:stream-output-fn socket-stream)))
-  #+ignore t ;; work around described below
+(defun output-possible (socket-stream) 
+  #+clisp 
+  #.(if (fboundp (find-symbol "SOCKET-STATUS" :lisp)) 
+        `(member (,(find-symbol "SOCKET-STATUS" :lisp) socket-stream 0)
+		 '(:output :io)) 
+      ;; If you're not using a version that supports this operation it's
+      ;; at least semi-reasonable for many applications to simply define 
+      ;; output-possible as always T - meaning that you'll block when you 
+      ;; try to write too much.
+      (progn (warn "socket-status not available - using T instead") t)) 
+  #+allegro ;; [***] not expected to work after acl 5.0.1 !! 
+  (excl::filesys-fn-will-not-block-p  
+   (- -1 (excl:stream-output-fn socket-stream))) 
   #-(or allegro clisp) (error "no implementation for output-possible"))
-;; If you're not using a version that supports this operation it's
-;; at least semi-reasonable for many applications to simply define 
-;; output-possible as always T - meaning that you'll block when you 
-;; try to write too much.
 
 (defun input-possible (socket-stream) 
   ;; should return t if input functions will not block, i.e. 

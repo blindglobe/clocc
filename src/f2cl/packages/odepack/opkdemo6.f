@@ -42,6 +42,7 @@ c-----------------------------------------------------------------------
      2   dx, atol, t, tout, x, cx, z, cz, y, rwork, c2tot, avdim
       common /pcom/ q1,q2,q3,q4,a3,a4,om,c3,dz,hdco,vdco,haco,mx,mz,mm
       dimension y(2,10,10), rwork(4264), iwork(235)
+      dimension neq(1), rtol(1), atol(1), jroot(1)
       data dkh/4.0d-6/, vel/0.001d0/, dkv0/1.0d-8/, halfda/4.32d4/,
      1  pi/3.1415926535898d0/, twohr/7200.0d0/, rtol/1.0d-5/,
      2  floor/100.0d0/, lrw/4264/, liw/235/, mf/22/, jpre/1/, jacflg/1/
@@ -62,10 +63,10 @@ c Load Common block of problem parameters.
       haco = vel/(2.0d0*dx)
       vdco = (1.0d0/dz**2)*dkv0
 c Set other input arguments.
-      atol = rtol*floor
-      neq = 2*mx*mz
+      atol(1) = rtol(1)*floor
+      neq(1) = 2*mx*mz
       iwork(1) = 8*mx*mz
-      iwork(2) = neq
+      iwork(2) = neq(1)
       iwork(3) = jpre
       iwork(4) = jacflg
       t = 0.0d0
@@ -86,7 +87,7 @@ c Set initial profiles.
  20     continue
 c
 c Write heading, problem parameters, solution parameters.
-      write(6,30) mx, mz, mf, rtol, atol
+      write(6,30) mx, mz, mf, rtol(1), atol(1)
  30   format('Demonstration program for DLSODKR package'//
      1       '2D diurnal kinetics-transport PDE system with 2 species'/
      2       'Spatial mesh is',i3,' by',i3/'Method flag is mf =',i3,
@@ -107,9 +108,9 @@ c Loop over output points, call DLSODKR, print sample solution values.
      1              y(2,1,1), y(2,5,5), y(2,10,10)
  60     format('   c1 (bot.left/middle/top rt.) =',3d12.3/
      1         '   c2 (bot.left/middle/top rt.) =',3d12.3)
-        write(6,62)c2tot,jroot
+        write(6,62)c2tot,jroot(1)
  62     format('   total c2 =',d15.6,
-     1         '   jroot =',i2' (1 = root found, 0 = no root)')
+     1         '   jroot =',i2,' (1 = root found, 0 = no root)')
         if (istate .lt. 0) then
           write(6,65)istate
  65       format('DLSODKR returned istate = ',i3)
@@ -223,7 +224,7 @@ c Load all terms into ydot.
       subroutine gdem (neq, t, y, ng, gout)
       integer neq, ng,  mx, mz, mm,
      1   iblok, iblok0, idn, iup, ileft, iright, jx, jz
-      double precision t, y(2,*), gout,
+      double precision t, y(2,*), gout(*),
      1   q1, q2, q3, q4, a3, a4, om, c3, dz, hdco, vdco, haco,
      2   c1, c2, c2dn, c2up, c2lt, c2rt, c2dot, czdn, czup, horad2,
      3   hord2, qq1, qq2, qq4, rkin2, s, sum, vertd2, zdn, zup
@@ -277,7 +278,7 @@ c Load all terms into c2dot and sum.
           sum = sum + c2dot
  10       continue
  20     continue
-      gout = sum
+      gout(1) = sum
       return
       end
 

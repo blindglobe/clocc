@@ -863,21 +863,24 @@
  (digit-char 1 2)
  #\1)
 
-(my-assert
- char-control-bit
- error)
+;; evan though char-*-bit are not in the ANSI CL standard,
+;; they may be present as an extension
 
-(my-assert
- char-meta-bit
- error)
+;; (my-assert
+;;  char-control-bit
+;;  error)
 
-(my-assert
- char-super-bit
- error)
+;; (my-assert
+;;  char-meta-bit
+;;  error)
 
-(my-assert
- char-hyper-bit
- error)
+;; (my-assert
+;;  char-super-bit
+;;  error)
+
+;; (my-assert
+;;  char-hyper-bit
+;;  error)
 
 (my-assert
  (char-name #\Space)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.15 2000/06/13 15:38:19 sds Exp $
+;;; $Id: fileio.lisp,v 1.16 2001/03/29 23:33:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -128,27 +128,27 @@ Returns the number of records and the file size."
         (format t "done [~:d record~:p] [~:d byte~:p]" len size)
         (values len size)))))
 
-(defun read-list-from-stream (stream read-function &optional (eof +eof+)
-                              &rest args)
+(defun read-list-from-stream (stream read-function &key args
+                              (eof +eof+) (readtable *readtable*))
   "Read the input STREAM into the list, each line becomes a list element.
 READ-FUNCTION should take a stream and a read-ahead object as its arguments
 and return two values: the record read and a read-ahead object or EOF for
-end of file. ARGS are just passed to READ-FUNCTION.
+end of file.  ARGS are just passed to READ-FUNCTION.
 EOF is passed to `read' and checked against with `eq'. It defaults to `+eof+'.
 Return three values - the list read, its length, and the last element.
-`*package*' is bound to KEYWORD, so bare symbols are read as keywords."
+`*package*' is bound to KEYWORD, so bare symbols are read as keywords.
+`*readtable*' is bound to READTABLE."
   (declare (stream stream)
            (type (function (stream t t) (values t t)) read-function))
-  (do* ((*package* +kwd+) (ra (read stream nil eof)) new lst (len 0 (1+ len)))
+  (do* ((*package* +kwd+) (*readtable* readtable)
+        (ra (read stream nil eof)) new lst (len 0 (1+ len)))
        ((eq ra eof) (values (nreverse lst) len new))
     (declare (type index-t len))
     (setf (values new ra) (apply read-function stream ra args))
     (push new lst)))
 
-(defun read-list-from-file (fin read-function &optional (eof +eof+)
-                            &rest args)
-  "Read the file into the list. Just calls `read-list-from-stream'.
-EOF defaults to `+eof+'.
+(defun read-list-from-file (fin read-function &rest args)
+  "Read the file into the list.  Calls `read-list-from-stream'.
   (read-list-from-file FILE-IN READ-FUNCTION EOF &rest ARGS)"
   (declare (type (function (stream t t) (values t t)) read-function)
            (type (or simple-string pathname) fin))
@@ -160,7 +160,7 @@ EOF defaults to `+eof+'.
               (format t "~& *** Cannot open file `~a' for reading~%" fin)))
           (format t "~&Reading `~a' [~:d bytes]..." fin (file-length stin))
           (force-output)
-          (apply #'read-list-from-stream stin read-function eof args))
+          (apply #'read-list-from-stream stin read-function args))
       (format t "done [~:d record~:p]" len)
       (values lst len last))))
 

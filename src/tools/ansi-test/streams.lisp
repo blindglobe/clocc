@@ -10,7 +10,7 @@
 (my-assert
  (prin1-to-string (make-broadcast-stream))
  #+xcl "#<%TYPE-STRUCTURE-STREAM NIL>"
- #+clisp "#<BROADCAST-STREAM>"
+ #+clisp "#<OUTPUT BROADCAST-STREAM>"
  #+(or cmu sbcl) "#<Broadcast Stream>"
  #+ecls "#<broadcast stream 8>"
  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)

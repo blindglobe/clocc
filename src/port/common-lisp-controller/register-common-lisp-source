@@ -12,15 +12,16 @@ EOF
     exit 1
 fi
 
-DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$1.system"
-ASDF_FILE="/usr/share/common-lisp/systems/$1.asd"
-SOURCENAME="/usr/share/common-lisp/source/$1"
+PKGNAME="$1"
+DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$PKGNAME.system"
+ASDF_FILE="/usr/share/common-lisp/systems/$PKGNAME.asd"
+SOURCENAME="/usr/share/common-lisp/source/$PKGNAME"
 
 if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then    
     cat <<EOF
 $0: directory or symlink $SOURCENAME does not exist.
 
-This is where I expected package $1 to be.
+This is where I expected package $PKGNAME to be.
 EOF
     exit 2
 fi
@@ -28,7 +29,7 @@ fi
 if [ ! \( -f "$DEFSYSTEM3_FILE" -o -f "$ASDF_FILE" \) ] ; then
     cat <<EOF
 $0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE exists. 
-One of these files is needed to register the $1 package.
+One of these files is needed to register the $PKGNAME package.
 EOF
     exit 3
 fi
@@ -50,10 +51,10 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
         #if [ -f /etc/common-lisp/autobuild -o \
         #     -f "/etc/common-lisp/$i/autobuild" -o \
         #     -f "/etc/common-lisp/$i/$1/autobuild" ] ; then
-        check-common-lisp-autobuild $compiler $SOURCENAME
+        check-common-lisp-autobuild $i $PKGNAME
         if [ $? = 0 ]; then
-	    echo recompiling package $1 for implementation $i
-	    /usr/bin/clc-send-command --quiet recompile $1 $i
+	    echo Recompiling package $PKGNAME for implementation $i
+	    /usr/bin/clc-send-command --quiet recompile $PKGNAME $i
 	fi
     fi
 done

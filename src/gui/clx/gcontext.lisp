@@ -43,7 +43,7 @@
 ;;;	environment.
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/gcontext.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/gcontext.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -82,9 +82,9 @@
 	      `(within-definition (def-gc-internals ,name)
 		 ,@(nreverse macros)
 		 (eval-when (eval compile load)
-		   (defconstant *gcontext-data-length* ,index)
-		   (defconstant *gcontext-indexes* ',indexes)
-		   (defconstant *gcontext-masks*
+		   (defparameter *gcontext-data-length* ,index)
+		   (defparameter *gcontext-indexes* ',indexes)
+		   (defparameter *gcontext-masks*
 				',(coerce (nreverse masks) 'simple-vector)))))))
   (def-gc-internals ignore
     (:clip :clip-mask) (:dash :dashes) (:font-obj :font) (:timestamp)))

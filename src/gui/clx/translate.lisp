@@ -246,21 +246,21 @@
     result))
 
 (eval-when (compile eval load) ;; Required for Symbolics...
-(defconstant character-set-switch-keysym (keysym 255 126))
-(defconstant left-shift-keysym (keysym 255 225))
-(defconstant right-shift-keysym (keysym 255 226))
-(defconstant left-control-keysym (keysym 255 227))
-(defconstant right-control-keysym (keysym 255 228))
-(defconstant caps-lock-keysym (keysym 255 229))
-(defconstant shift-lock-keysym (keysym 255 230))
-(defconstant left-meta-keysym (keysym 255 231))
-(defconstant right-meta-keysym (keysym 255 232))
-(defconstant left-alt-keysym (keysym 255 233))
-(defconstant right-alt-keysym (keysym 255 234))
-(defconstant left-super-keysym (keysym 255 235))
-(defconstant right-super-keysym (keysym 255 236))
-(defconstant left-hyper-keysym (keysym 255 237))
-(defconstant right-hyper-keysym (keysym 255 238))
+(defparameter character-set-switch-keysym (keysym 255 126))
+(defparameter left-shift-keysym (keysym 255 225))
+(defparameter right-shift-keysym (keysym 255 226))
+(defparameter left-control-keysym (keysym 255 227))
+(defparameter right-control-keysym (keysym 255 228))
+(defparameter caps-lock-keysym (keysym 255 229))
+(defparameter shift-lock-keysym (keysym 255 230))
+(defparameter left-meta-keysym (keysym 255 231))
+(defparameter right-meta-keysym (keysym 255 232))
+(defparameter left-alt-keysym (keysym 255 233))
+(defparameter right-alt-keysym (keysym 255 234))
+(defparameter left-super-keysym (keysym 255 235))
+(defparameter right-super-keysym (keysym 255 236))
+(defparameter left-hyper-keysym (keysym 255 237))
+(defparameter right-hyper-keysym (keysym 255 238))
 ) ;; end eval-when
 
 

@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.5 2002/01/07 17:00:54 pvaneynd Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.6 2002/03/29 00:51:35 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -492,7 +492,7 @@
 ;;; MAKE-PROCESS-LOCK: Creating a process lock.
 
 (defun make-process-lock (name)
-  (port::make-lock :name name))
+  #-clisp  (port::make-lock :name name))
 
 
 ;;; HOLDING-LOCK: Execute a body of code with a lock held.
@@ -539,6 +539,7 @@
 
 (defun process-wakeup (process)
   (declare (ignore process))
+  #-clisp
   (port:process-yield))
 
 ;;; CURRENT-PROCESS: Return the current process object for input locking and
@@ -549,6 +550,7 @@
 ;;; Default return NIL, which is acceptable even if there is a scheduler.
 
 (defun current-process ()
+  #-clisp
   (port:current-process))
 
 ;;; WITHOUT-INTERRUPTS -- provide for atomic operations.
@@ -601,39 +603,45 @@
 ;;; display object instead of a stream.
 ;;;
 
-(defconstant +X-unix-socket-path+
+(defparameter +X-unix-socket-path+
   "/tmp/.X11-unix/X"
   "The location of the X socket")
 
 (defun open-x-stream (host display protocol)  
   (declare (ignore protocol)
            (type (integer 0) display))
-  (cond
-    ;; are we dealing with a localhost?
-    ((or (string= host "")
-         (string= host "unix"))
-     ;; ok, try to connect to a AF_UNIX domain socket
-     #-clisp
-     (port::open-unix-socket (format nil
-                                     "~A~D"
-                                     +X-unix-socket-path+
-                                     display)
-                             :kind :stream
-                             :bin t)
-     ;; clisp doesn't have this...
-     #+clisp
-     (sys::make-socket-stream "" 0))
-    (t
-     ;; try to connect by hand
-     (let ((host (host-address host)))
-       (when host
-         ;; Fixme: get a descent ip standard in CLX: a vector!
-         (let ((ip (format nil
-                           "~{~D~^.~}"
-                           (rest host))))
-           (port:open-socket ip 
-                             (+ 6000 display)
-                             t)))))))
+  (let ((socket
+         ;; are we dealing with a localhost?
+         (progn #+nil ignore-errors
+           (when (or (string= host "")
+                     (string= host "unix"))
+             ;; ok, try to connect to a AF_UNIX domain socket
+             ;;
+             ;; clisp doesn't have sockets, but special code for
+             ;; X connections:
+             #-clisp
+             (port::open-unix-socket (format nil
+                                             "~A~D"
+                                             +X-unix-socket-path+
+                                             display)
+                                     :kind :stream
+                                     :bin t)
+             ;; clisp doesn't have this...
+             #+clisp
+             (sys::make-socket-stream "" 0)))))
+    (if socket
+        socket
+        ;; try to connect by hand
+        (let ((host (host-address host)))
+          (when host
+            ;; Fixme: get a descent ip standard in CLX: a vector!
+            (let ((ip (format nil
+                              "~{~D~^.~}"
+                              (rest host))))
+              (port:open-socket ip 
+                                (+ 6000 display)
+                                ;; binary:
+                                t)))))))
          
 ;;; BUFFER-READ-DEFAULT - read data from the X stream
 
@@ -700,6 +708,10 @@
 
 ;;; The default implementation
 
+#+clisp
+(defparameter *buffer-read-polling-time* 0.5
+  "Poll for input every X seconds")
+
 (defun buffer-input-wait-default (display timeout)
   (declare (type display display)
 	   (type (or null number) timeout))
@@ -708,10 +720,24 @@
     (cond ((null stream))
 	  ((listen stream) nil)
 	  ((eql timeout 0) :timeout)
+          #-clisp
 	  (t
 	   (if (port::wait-for-stream stream timeout)
 	       nil
-	       :timeout)))))
+	       :timeout))
+          #+clisp
+          ((not (null timeout))
+           (multiple-value-bind (npoll fraction)
+               (truncate timeout *buffer-read-polling-time*)
+             (dotimes (i npoll)                 ; Sleep for a time, then listen again
+               (sleep *buffer-read-polling-time*)
+               (when (listen stream)
+                 (return-from buffer-input-wait-default nil)))
+             (when (plusp fraction)
+               (sleep fraction)                 ; Sleep a fraction of a second
+               (when (listen stream)            ; and listen one last time
+                 (return-from buffer-input-wait-default nil)))
+             :timeout)))))
 
 ;;; BUFFER-LISTEN-DEFAULT - returns T if there is input available for the
 ;;; buffer. This should never block, so it can be called from the scheduler.
@@ -956,7 +982,13 @@
 
 (defun homedir-file-pathname (name)
   (and #-(or unix mach) (search "Unix" (software-type) :test #'char-equal)
-       (merge-pathnames (user-homedir-pathname) (pathname name))))
+       (merge-pathnames
+        (#+sbcl
+         translate-logical-pathname
+         #-sbcl
+         progn
+         (user-homedir-pathname))
+        (pathname name))))
 
 ;;; DEFAULT-RESOURCES-PATHNAME - The pathname of the resources file to load if
 ;;; a resource manager isn't running.

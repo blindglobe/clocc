@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/clx.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
 
 ;; Primary Interface Author:
 ;;	Robert W. Scheifler
@@ -440,7 +440,7 @@
 
 (deftype xatom () '(or string symbol))
 
-(defconstant *predefined-atoms*
+(defparameter *predefined-atoms*
 	     '#(nil :PRIMARY :SECONDARY :ARC :ATOM :BITMAP
 		    :CARDINAL :COLORMAP :CURSOR
 		    :CUT_BUFFER0 :CUT_BUFFER1 :CUT_BUFFER2 :CUT_BUFFER3
@@ -470,7 +470,7 @@
 
 (deftype timestamp () '(or null card32))
 
-(defconstant *bit-gravity-vector*
+(defparameter *bit-gravity-vector*
 	     '#(:forget :north-west :north :north-east :west
 		:center :east :south-west :south
 		:south-east :static))
@@ -479,7 +479,7 @@
   '(member :forget :north-west :north :north-east :west
 	   :center :east :south-west :south :south-east :static))
 
-(defconstant *win-gravity-vector*
+(defparameter *win-gravity-vector*
 	     '#(:unmap :north-west :north :north-east :west
 		:center :east :south-west :south :south-east
 		:static))
@@ -537,7 +537,7 @@
     (write-string " " stream)
     (prin1 (gcontext-id gcontext) stream)))
 
-(defconstant *event-mask-vector*
+(defparameter *event-mask-vector*
 	     '#(:key-press :key-release :button-press :button-release
 		:enter-window :leave-window :pointer-motion :pointer-motion-hint
 		:button-1-motion :button-2-motion :button-3-motion :button-4-motion
@@ -556,7 +556,7 @@
 (deftype event-mask ()
   '(or mask32 (clx-list event-mask-class)))
 
-(defconstant *pointer-event-mask-vector*
+(defparameter *pointer-event-mask-vector*
 	     '#(%error %error :button-press :button-release
 		:enter-window :leave-window :pointer-motion :pointer-motion-hint
 		:button-1-motion :button-2-motion :button-3-motion :button-4-motion
@@ -571,7 +571,7 @@
 (deftype pointer-event-mask ()
   '(or mask32 (clx-list pointer-event-mask-class)))
 
-(defconstant *device-event-mask-vector*
+(defparameter *device-event-mask-vector*
 	     '#(:key-press :key-release :button-press :button-release :pointer-motion
 		:button-1-motion :button-2-motion :button-3-motion :button-4-motion
 		:button-5-motion :button-motion))
@@ -584,7 +584,7 @@
 (deftype device-event-mask ()
   '(or mask32 (clx-list device-event-mask-class)))
 
-(defconstant *state-mask-vector*
+(defparameter *state-mask-vector*
 	     '#(:shift :lock :control :mod-1 :mod-2 :mod-3 :mod-4 :mod-5
 		:button-1 :button-2 :button-3 :button-4 :button-5))
 
@@ -597,7 +597,7 @@
 (deftype state-mask-key ()
   '(or modifier-key (member :button-1 :button-2 :button-3 :button-4 :button-5)))
 
-(defconstant *gcontext-components*
+(defparameter *gcontext-components*
 	     '(:function :plane-mask :foreground :background
 	       :line-width :line-style :cap-style :join-style :fill-style
 	       :fill-rule :tile :stipple :ts-x :ts-y :font :subwindow-mode
@@ -628,7 +628,7 @@
 (deftype draw-direction ()
   '(member :left-to-right :right-to-left))
 
-(defconstant *boole-vector*
+(defparameter *boole-vector*
 	     '#(#.boole-clr #.boole-and #.boole-andc2 #.boole-1
 		#.boole-andc1 #.boole-2 #.boole-xor #.boole-ior
 		#.boole-nor #.boole-eqv #.boole-c2 #.boole-orc2

@@ -19,15 +19,18 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
 
 (in-package :xlib)
 
 ;;; Authorizaton
+;;; shamelessly stolen from the cmucl sources:
+;;;
 
 (defparameter *known-authorizations* '("MIT-MAGIC-COOKIE-1"))
 
-(defun get-best-authorization (host display protocol)
+(defun list-know-authorizations ()
+  "Lists what authorizations we can find"
   (labels ((read-short (stream &optional (eof-errorp t))
 	     (let ((high-byte (read-byte stream eof-errorp)))
 	       (and high-byte
@@ -44,21 +47,81 @@
 		 (dotimes (k length)
 		   (setf (aref vector k) (read-byte stream)))
 		 vector))))
+    ;;; where is .Xauthority?
     (let ((pathname (authority-pathname)))
       (when pathname
-	(with-open-file (stream pathname :element-type '(unsigned-byte 8)
+        (format t "~&Lookin in ~A for information...~%"
+                pathname)
+        ;;; read the info:
+	(with-open-file (stream pathname
+                                :element-type '(unsigned-byte 8)
 				:if-does-not-exist nil)
 	  (when stream
+            (loop
+                (let ((family (read-short stream nil)))
+                  (when (null family)
+                    (return))
+                  (let* ((address (read-short-length-vector stream))
+                         (number (parse-integer (read-short-length-string stream)))
+                         (name (read-short-length-string stream))
+                         (data (read-short-length-vector stream)))
+                    (format t "~&Family: ~A ip: ~S display: ~S type: ~S data: ~S"
+                            (case family
+                              (0 :tcp)
+                              (1 :dna)
+                              (2 :chaos)
+                              (256 :unix)
+                              (t :unknown))
+                            (if (eq family 256)
+                                (map 'string
+                                     #'code-char
+                                     address)
+                                address)
+                            number
+                            name
+                            data)))))))))
+  (values))
+
+(defun get-best-authorization (host display protocol)
+  "Tries to determine if and what authorization we have for the X session.
+returns best-name and best-data it could find"
+  (labels ((read-short (stream &optional (eof-errorp t))
+	     (let ((high-byte (read-byte stream eof-errorp)))
+	       (and high-byte
+		    (dpb high-byte (byte 8 8) (read-byte stream)))))
+	   (read-short-length-string (stream)
+	     (let ((length (read-short stream)))
+	       (let ((string (make-string length)))
+		 (dotimes (k length)
+		   (setf (schar string k) (card8->char (read-byte stream))))
+		 string)))
+	   (read-short-length-vector (stream)
+	     (let ((length (read-short stream)))
+	       (let ((vector (make-array length :element-type '(unsigned-byte 8))))
+		 (dotimes (k length)
+		   (setf (aref vector k) (read-byte stream)))
+		 vector))))
+    ;;; where is .Xauthority?
+    (let ((pathname (authority-pathname)))
+      (when pathname
+        ;;; read the info:
+	(with-open-file (stream pathname
+                                :element-type '(unsigned-byte 8)
+				:if-does-not-exist nil)
+	  (when stream
+            ;; what are we looking for?
 	    (let* ((host-family (ecase protocol
 				  ((:tcp :internet nil) 0)
 				  ((:dna :DECnet) 1)
 				  ((:chaos) 2)
 				  ((:unix) 256)))
-		   (host-address (if (eq protocol :unix)
-				     (map 'list #'char-int (machine-instance))
-				     (rest (host-address host host-family))))
+                   ;; the unix protocol is always the correct host: the localhost!
+		   (host-address (unless (eq protocol :unix)
+                                   (rest (host-address host host-family))))
 		   (best-name nil)
 		   (best-data nil))
+              
+              ;; go through the file and find the best cookie:
 	      (loop
 	       (let ((family (read-short stream nil)))
 		 (when (null family)
@@ -68,7 +131,8 @@
 			(name (read-short-length-string stream))
 			(data (read-short-length-vector stream)))
 		   (when (and (= family host-family)
-			      (equal host-address (coerce address 'list))
+                              (or (= family 256)
+                                  (equal host-address (coerce address 'list)))
 			      (= number display)
 			      (let ((pos1 (position name *known-authorizations* :test #'string=)))
 				(and pos1
@@ -302,7 +366,7 @@
 			      (if (member host '("" "unix") :test #'equal)
 				  :unix
 				  protocol))))
-  ;; PROTOCOL is the network protocol (something like :TCP :DNA or :CHAOS). See OPEN-X-STREAM.
+  ;; PROTOCOL is the network protocol now _alwas_ :TCP
   (let* ((stream (open-x-stream host display protocol))
 	 (disp (make-buffer *output-buffer-size* #'make-display-internal
 			    :host host :display display

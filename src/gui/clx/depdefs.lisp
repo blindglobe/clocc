@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/depdefs.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -73,7 +73,7 @@
 ;;; useful for much beyond xatoms and windows (since almost nothing else
 ;;; ever comes back in events).
 ;;;--------------------------------------------------------------------------
-(defconstant *clx-cached-types*
+(defparameter *clx-cached-types*
 	     '( drawable
 		window
 		pixmap

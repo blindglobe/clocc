@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.27 2005/01/27 18:09:52 sds Exp $
+;;; $Id: date.lisp,v 2.28 2005/01/27 18:15:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -552,7 +552,8 @@ I.e., (tomorrow (today) -1) is yesterday."
 (defun date-next-year (dd &optional (skip 1))
   "Increment (destructively) the year."
   (declare (type date dd) (type days-t skip))
-  (incf (date-ye dd) skip) dd)
+  (incf (date-ye dd) skip)
+  (fix-date dd))
 
 (defun date-next-month (dd &optional (skip 1))
   "Increment (destructively) the month."
@@ -560,7 +561,7 @@ I.e., (tomorrow (today) -1) is yesterday."
   (multiple-value-bind (iy im) (floor (+ -1 skip (date-mo dd)) 12)
     (incf (date-ye dd) iy)
     (setf (date-mo dd) (1+ im))
-    dd))
+    (fix-date dd)))
 
 (defun date-next-all (dd &optional (skip 1))
   "Increment (non-destructively) year, month and day."

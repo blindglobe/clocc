@@ -79,6 +79,7 @@ first saw code to act as a web server.
 	    (:export
 	     "*SERVER-ROOT*"  ;; set these
 	     "*LOG*"
+	     "*MIME-TYPE-FILE*"
 
 	     "STATUS"  ;; useful in replies
 	     "CRLF"

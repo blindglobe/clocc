@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1998-12-28 Mon 15:18:57 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-01-06 Wed 22:42:00 EST sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.7 1998/12/28 20:19:33 sds Exp $
+;;; $Id: base.lisp,v 1.8 1999/01/07 03:42:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.8  1999/01/07 03:42:14  sds
+;;; Added `index-t'.
+;;;
 ;;; Revision 1.7  1998/12/28 20:19:33  sds
 ;;; Added `close-pipe'.
 ;;;
@@ -112,6 +115,8 @@
       #-cmu
       (#+(or allegro clisp) system::getenv #+lispworks w:environment-variable
        #+lucid lcl:environment-variable #+gcl si:getenv (string var)))))
+
+(deftype index-t () '(unsigned-byte 20)) ; for arithmetics
 
 #+cmu
 (defun sys::package-short-name (pkg)

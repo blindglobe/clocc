@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.19 2000/11/08 22:41:02 sds Exp $
+;;; $Id: inspect.lisp,v 1.20 2000/11/08 23:56:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -413,28 +413,28 @@ This is useful for frontends which provide an eval/modify facility."
 
 (defun http-command (server &key (debug *inspect-debug*))
   "Accept a connection from the server, return the GET command and the socket."
-  (when (> debug 1) (format t "%s: server: ~s~%" 'http-command server))
+  (when (> debug 1) (format t "~s: server: ~s~%" 'http-command server))
   (let ((socket (socket-accept server)))
-    (when (> debug 1) (format t "%s: socket: ~s~%" 'http-command socket))
-    (loop (let ((line (read-line socket nil nil)))
-            (when (> debug 1) (format t "-> ~a~%" line))
-            (when (string-beg-with "GET /" line)
-              (let* ((pos (position #\/ line :test #'char= :start 5))
-                     (id (parse-integer line :start 5 :end pos))
-                     (com (read-from-string line nil nil :start (1+ pos))))
-                (when (> debug 0)
-                  (format t "~s: ~d ~s~%" 'http-command id com))
-                (when (> debug 1)
-                  (loop (format t "-> ~a~%" (read-line socket nil nil))
-                        (unless (listen socket) (return))))
-                (return (values socket id com))))))))
+    (when (> debug 1) (format t "~s: socket: ~s~%" 'http-command socket))
+    (let ((response (flush-http socket)))
+      (when (> debug 1)
+        (dolist (line response)
+          (format t "-> ~a~%" line)))
+      (dolist (line response)
+        (when (string-beg-with "GET /" line)
+          (let* ((pos (position #\/ line :test #'char= :start 5))
+                 (id (parse-integer line :start 5 :end pos))
+                 (com (read-from-string line nil nil :start (1+ pos))))
+            (when (> debug 0)
+              (format t "~s: ~d ~s~%" 'http-command id com))
+            (return (values socket id com))))))))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
   (do ((server
         (let* ((server (open-socket-server))
                (port (nth-value 1 (socket-server-host/port server))))
           (when (> *inspect-debug* 0)
-            (format t "~&%s: server: ~s~%" 'inspect-frontend server))
+            (format t "~&~s: server: ~s~%" 'inspect-frontend server))
           (if *inspect-browser*
               (browse-url (format nil "http://127.0.0.1:~d/0/:s" port)
                           :browser *inspect-browser*)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.40 2004/04/16 20:21:40 sds Exp $
+;;; $Id: math.lisp,v 2.41 2004/05/03 18:28:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -953,6 +953,8 @@ The mean and the length can be pre-computed for speed."
            (type (function (t) number) weight))
   (multiple-value-bind (mn twt)
       (mean-weighted seq wts :value value :weight weight)
+    (when (= twt 1)
+      (return-from standard-deviation-weighted (values 0d0 mn twt mn mn)))
     (let ((sum 0d0) min max)
       (map nil (lambda (xx ww)
                  (let ((val (funcall value xx)))

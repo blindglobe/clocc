@@ -91,7 +91,8 @@
 				    (package (symbol-package name))
 				    (system t))
 			      &body forms)
-  (declare (type symbol name))
+  (declare (type symbol name)
+	   (ignore system))
   (let* ((name-as-string (symbol-name name))
 	 (action-name (if conc-name
 			 (intern (format nil "~A-ACTION"
@@ -100,10 +101,14 @@
 			 name))
 	 (lambda-list (mapcar #'simplify-lambda-list specialized-lambda-list))
 	 )
-    (intern name-as-atring (find-package "KEYWORD"))
+
+    (register-action (intern name-as-string (find-package "KEYWORD")))
+    #||
+    (intern name-as-string (find-package "KEYWORD"))
     (register-action system
 		     action-name
 		     (find-symbol name-as-atring (find-package "KEYWORD")))
+    ||#
     `(defgeneric ,action-name ,lambda-list
        ,@(when documentation `(:documentation ,documentation))
        (:method ,specialized-lambda-list ,@forms))))

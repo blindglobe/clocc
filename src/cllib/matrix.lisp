@@ -5,7 +5,7 @@
 ;;; The main disadvantages are performance and limited functionality.
 ;;;
 ;;; If you need fast floating point matrix operations,
-;;; you should useMatLisp (http://matlisp.sourceforge.net/),
+;;; you should use MatLisp (http://matlisp.sourceforge.net/),
 ;;; which relies on BLAS (http://www.netlib.org/blas) and
 ;;; LAPACK (http://www.netlib.org/lapack) for heavy-duty computations.
 ;;;
@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.6 2003/07/09 20:43:22 sds Exp $
+;;; $Id: matrix.lisp,v 2.7 2003/07/11 20:32:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -35,28 +35,33 @@
 ;;; printing
 ;;;
 
-(defun matrix-print (out aa colp atp &optional (fmt (formatter "~5,1,10$ ")))
+(defun matrix-print (out aa colp atp &optional fmt-arg)
   "Print a matrix.  Suitable for `format' ~//.
 By default prints the contents.
 @ means print the rank and dimensions too.
 : means print just the rank and the dimensions."
   (declare (stream out) (type array aa))
-  (let ((rank (array-rank aa)))
+  (let ((rank (array-rank aa))
+        (fmt (case fmt-arg
+               ((#\,) (formatter " ~:d"))      ; 123,456,789
+               ((#\$) (formatter " ~5,1,10$")) ; Matlab-style
+               ((nil) (formatter " ~S"))
+               (t fmt-arg))))
     (declare (type index-t rank))
-    (when atp (format out ";; Matrix: " aa))
-    (if colp
-        (format out "rank: ~d; dimension~:p: ~{~d~^x~}~%"
-                rank (array-dimensions aa))
-        (case rank
-          (1 (loop :for elt :across aa :do (format out fmt elt) (terpri out)))
-          (2 (loop :with dim1 :of-type index-t = (1- (array-dimension aa 0))
-                   :and  dim2 :of-type index-t = (1- (array-dimension aa 1))
-                   :for ii :of-type index-t :from 0 :to dim1 :do
-                   (loop :for jj :of-type index-t :from 0 :to dim2 :do
-                         (format out fmt (aref aa ii jj)))
-                   (terpri out)))
-          (t (error 'case-error :proc 'matrix-print :args
-                    (list 'matrix aa 1 2)))))
+    (when atp
+      (format out ";; Matrix: rank: ~d; dimension~:p: ~{~d~^x~}~%"
+              rank (array-dimensions aa)))
+    (unless colp
+      (case rank
+        (1 (loop :for elt :across aa :do (format out fmt elt) (terpri out)))
+        (2 (loop :with dim1 :of-type index-t = (1- (array-dimension aa 0))
+             :and  dim2 :of-type index-t = (1- (array-dimension aa 1))
+             :for ii :of-type index-t :from 0 :to dim1 :do
+             (loop :for jj :of-type index-t :from 0 :to dim2 :do
+               (format out fmt (aref aa ii jj)))
+             (terpri out)))
+        (t (error 'case-error :proc 'matrix-print :args
+                  (list 'matrix aa 1 2)))))
     aa))
 
 ;;;

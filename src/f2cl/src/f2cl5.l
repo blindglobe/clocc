@@ -2249,6 +2249,7 @@
 ;; We're not trying to implement full Fortran read functionality.  We
 ;; just want to read data into the variables.  Implied do loops are
 ;; not supported.
+#+nil
 (defun parse-read (x)
   (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
 	  (mapcar #'(lambda (var)
@@ -2256,6 +2257,17 @@
 				  var
 				  (first var))
 			(read)))
+		  (remove nil (list-split '|,| (cddr x))))
+	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
+
+(defun parse-read (x)
+  (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
+	  (mapcar #'(lambda (var)
+		      (let ((expr (id-expression var)))
+			(if (and (listp expr)
+				 (eq (first expr) 'fref))
+			    `(fset ,expr (read))
+			    `(setf ,expr (read)))))
 		  (remove nil (list-split '|,| (cddr x))))
 	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
   
@@ -2805,8 +2817,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.114 2003/11/14 06:32:43 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.115 2003/11/15 05:02:07 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.115  2003/11/15 05:02:07  rtoy
+;;; Some simple fixups for READ when reading into arrays.  We need to
+;;; identify the expression to generate the correct form for setting the
+;;; variable to what was read.
+;;;
+;;; READ still needs lots of work.
+;;;
 ;;; Revision 1.114  2003/11/14 06:32:43  rtoy
 ;;; In INSERT-DECLARATIONS, we were computing var-type-list and var-decls
 ;;; incorrectly.  The were both too short when the arglist had external

@@ -44,6 +44,7 @@
 	      ("*.*"   ,(namestring (truename directory)))))
 
       (load-and-or-compile "CL-ENV-LIBRARY:env-package.lisp")
+      (load-and-or-compile "CL-ENV-LIBRARY:feature-tagged-type-class.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:software.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:machine.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:operating-system.lisp")

@@ -17,7 +17,8 @@
 
 ;;; Known CL implementations.
 
-(defclass generic-common-lisp-implementation (software)
+(defclass generic-common-lisp-implementation (software
+					      feature-tagged-type-class)
   ((type :reader common-lisp-implementation-type)
    (version :reader common-lisp-implementation-version)
    (tag :reader common-lisp-implementation-feature-tag
@@ -28,6 +29,13 @@
   (:default-initargs :type (lisp-implementation-type)
                      :version (lisp-implementation-version)))
 
+
+;;; Tags for CL implementations
+;;; CMUCL	:cmucl
+;;; ACL		:acl
+;;; LW		:lispworks
+;;; etc etc
+;;; Adde them!!!
 
 (defclass cmucl (generic-common-lisp-implementation) ())
 

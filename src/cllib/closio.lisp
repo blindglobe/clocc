@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.17 2002/04/21 19:57:45 sds Exp $
+;;; $Id: closio.lisp,v 1.18 2002/08/13 22:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,19 +20,7 @@
  '(*closio-method* +clos-readtable+ make-clos-readtable macroexpand-r))
 
 ;;;
-;;; {{{ print structure in CMUCL via `print-object'
-;;;
-
-#+cmu
-(progn
-  (defmethod print-object ((xx structure-object) (out stream))
-    (kernel:default-structure-print xx out 1))
-  (defun print-struct-object (xx out depth)
-    (declare (ignore depth))
-    (print-object xx out)))
-
-;;;
-;;; }}}{{{ read CLOS objects
+;;; {{{ read CLOS objects
 ;;;
 
 (defcustom *closio-method* symbol nil

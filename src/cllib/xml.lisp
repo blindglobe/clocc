@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.42 2002/08/13 17:25:24 sds Exp $
+;;; $Id: xml.lisp,v 2.43 2002/08/13 22:02:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -129,7 +129,7 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (xml-misc #+cmu (:print-function print-struct-object))
+(defstruct (xml-misc)
   ;; XML object from the preamble which we cannot handle just yet
   (type nil :type symbol)
   (data nil :type list))        ; contents
@@ -142,7 +142,7 @@ If this is `:sgml', use maximum SGML compatibility.
 If this is `:readably', print for the Lisp reader
   (you must also set `*print-circle*' to non-nil).")
 
-(defsubst xml-print-readably-p ()
+(defun xml-print-readably-p ()
   (or *print-readably*
       (and (eq :readably *xml-print-xml*)
            (or *print-circle*
@@ -172,11 +172,10 @@ If this is `:readably', print for the Lisp reader
 )
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (xml-comment #+cmu (:print-function print-struct-object))
+(defstruct (xml-comment)
   (data "" :type string))
 
-(defstruct (xml-namespace (:conc-name xmlns-)
-                          #+cmu (:print-function print-struct-object))
+(defstruct (xml-namespace (:conc-name xmlns-))
   (uri "" :type string)
   (pre (princ-to-string (gensym "NS")) :type string)
   (nht (make-hash-table :test 'equal) :type hash-table)) ; names
@@ -213,8 +212,7 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
   "The default namespace.")
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (xml-name (:conc-name xmln-)
-                     #+cmu (:print-function print-struct-object))
+(defstruct (xml-name (:conc-name xmln-))
   (ln "" :type string)          ; local name
   (ns +xml-namespace-none+ :type xml-namespace))
 )
@@ -294,8 +292,7 @@ If such a name already exists, re-use it."
                  (xmln-ns xmln) (xmln-ln xmln)))))
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (xml-tag (:conc-name xmlt-)
-                    #+cmu (:print-function print-struct-object))
+(defstruct (xml-tag (:conc-name xmlt-))
   ;; `string' and `cons' are replaced with `xml-name' during
   ;; `xml-resolve-namespaces'
   (name (required-argument) :type (or string cons xml-name))
@@ -310,11 +307,9 @@ If such a name already exists, re-use it."
                  (xmlt-name xmlt) (xmlt-args xmlt)))))
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (xml-decl (:include xml-tag)
-                     #+cmu (:print-function print-struct-object)))
+(defstruct (xml-decl (:include xml-tag)))
 
-(defstruct (xml-obj (:include xml-tag) (:conc-name xmlo-)
-                    #+cmu (:print-function print-struct-object))
+(defstruct (xml-obj (:include xml-tag) (:conc-name xmlo-))
   (data nil :type list))        ; list of objects in the tag
 )
 

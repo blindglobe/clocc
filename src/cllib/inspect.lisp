@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.32 2002/07/22 14:23:54 sds Exp $
+;;; $Id: inspect.lisp,v 1.33 2002/08/13 22:02:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -63,8 +63,7 @@ See `browse-url', `*browser*', and `*browsers*'.")
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (inspection (:conc-name insp-)
-                       #+cmu (:print-function print-struct-object))
+(defstruct (inspection (:conc-name insp-))
   self                          ; the object being inspected
   (id (fill-pointer *inspect-all*) :type fixnum) ; unique in a session
   (title "" :type string)       ; the short description of the object

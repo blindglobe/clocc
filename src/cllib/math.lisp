@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.24 2002/07/16 14:57:26 sds Exp $
+;;; $Id: math.lisp,v 2.25 2002/08/13 22:02:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1061,7 +1061,7 @@ and the list of the volatilities for each year."
 ;;; Mean / Deviation / Length
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (mdl #+cmu (:print-function print-struct-object))
+(defstruct (mdl)
   (mn 0d0 :type double-float)   ; Mean
   (sd 0d0 :type (double-float 0d0)) ; Deviation
   (le 0 :type index-t))         ; Length
@@ -1283,7 +1283,7 @@ Returns the probability of at least one event happening."
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (line #+cmu (:print-function print-struct-object))
+(defstruct (line)
   "A straight line."
   (sl 0d0 :type double-float) ; slope
   (co 0d0 :type double-float)) ; constant

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.38 2002/04/21 20:00:09 sds Exp $
+;;; $Id: url.lisp,v 2.39 2002/08/13 22:02:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -49,7 +49,7 @@
 ;;;
 
 (eval-when (compile load eval)  ; ACL CMUCL
-(defstruct (url #+cmu (:print-function print-struct-object))
+(defstruct (url)
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot nil :type symbol)       ; protocol
   (get-request-type nil :type symbol) ; proxy: "GET http://..."
@@ -751,7 +751,7 @@ The local file is located in directory LOC and has the same name
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (article #+cmu (:print-function print-struct-object))
+(defstruct (article)
   (numb 0 :type (unsigned-byte 32)) ; article number
   (subj "" :type simple-string) ; subject
   (auth "" :type simple-string) ; author

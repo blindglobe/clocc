@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.24 2002/05/20 13:50:08 sds Exp $
+;;; $Id: date.lisp,v 2.25 2002/08/13 22:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,8 +17,6 @@
   (require :cllib-sorted (translate-logical-pathname "cllib:sorted"))
   ;; `mesg'
   (require :cllib-log (translate-logical-pathname "cllib:log"))
-  ;; `print-struct-object'
-  #+cmu (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `dfloat'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
 
@@ -60,7 +58,7 @@
 ;; functions (like `structure-object' i/o).
 ;; E.g.:
 #|
-(defclass date ()
+ (defclass date ()
   ((ye :type days-t :initform 0 :initarg year :initarg ye
        :accessor date-ye :documentation "year")
    (mo :type (integer 1 12) :initform 1 :initarg month :initarg mo
@@ -75,7 +73,7 @@
                     :documentation "The list of slots for readable printing."))
   (:documentation "The DATE class."))
 
-(defmethod initialize-instance :after ((dt date-c) &rest junk)
+ (defmethod initialize-instance :after ((dt date-c) &rest junk)
   (declare (ignore junk))
   (incf (slot-value dt 'nn))
   (unless (slot-boundp dt 'dd)
@@ -85,12 +83,12 @@
       (setf (dadd dt) (floor tm +day-sec+)
             (daye dt) (nth-value 5 (decode-universal-time tm 0))))))
 
-(defun make-date (&key (ye 1) (mo 1) (da 1) (dd nil dd-p))
+ (defun make-date (&key (ye 1) (mo 1) (da 1) (dd nil dd-p))
   (if dd-p (make-instance 'date 'ye ye 'mo mo 'da da 'dd dd)
       (make-instance 'date 'ye ye 'mo mo 'da da)))
 |#
 
-(defstruct (date #+cmu (:print-function print-struct-object))
+(defstruct (date)
   "The date structure -- year, month, and day."
   (ye 1 :type days-t)
   (mo 1 :type (integer 1 12))

@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.22 2002/06/17 21:40:52 sds Exp $
+;;; $Id: cvs.lisp,v 2.23 2002/08/13 22:02:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -83,7 +83,7 @@
 ;;; CVS log stat
 ;;;
 
-(defstruct (revision #+cmu (:print-function print-struct-object))
+(defstruct (revision)
   (rev "" :type string)
   (time 0 :type integer)
   (author "" :type string)
@@ -92,8 +92,7 @@
   (lines- 0 :type index-t)
   (log nil :type list))         ; of strings
 
-(defstruct (cvs-file (:conc-name cvsf-)
-                     #+cmu (:print-function print-struct-object))
+(defstruct (cvs-file (:conc-name cvsf-))
   (rcs "" :type string)
   (work "" :type string)
   (head "" :type string)
@@ -195,7 +194,7 @@ Suitable for `read-list-from-stream'."
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (author #+cmu (:print-function print-struct-object))
+(defstruct (author)
   (name "" :type string)
   (owns nil :type list)         ; list of files owned
   (mods nil :type list)         ; list of files modified
@@ -313,7 +312,7 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
 ;; (sort *known-developers* #'> :key #'developer-hit)
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (developer #+cmu (:print-function print-struct-object))
+(defstruct (developer)
   (nick "" :type string)
   (hit 1 :type integer)
   (names nil :type list)
@@ -337,8 +336,7 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
                                           :end2 (position #\@ y))))))))
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (changelog-entry (:conc-name chlen-)
-                            #+cmu (:print-function print-struct-object))
+(defstruct (changelog-entry (:conc-name chlen-))
   (date +bad-date+ :type date)
   (id "" :type string)
   (name "" :type string)

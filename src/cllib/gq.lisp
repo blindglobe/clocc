@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.30 2002/08/07 01:26:19 sds Exp $
+;;; $Id: gq.lisp,v 2.31 2002/08/13 22:02:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -47,8 +47,7 @@
 ;;;
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (daily-data (:conc-name dd-)
-                       #+cmu (:print-function print-struct-object))
+(defstruct (daily-data (:conc-name dd-))
   (nav 0d0 :type double-float)
   (chg 0d0 :type double-float)
   (prc 0d0 :type double-float)
@@ -415,7 +414,7 @@ See the value of `*hist-data-file-header*' for file format.")
   "The history, to be read from `*hist-data-file*'.")
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (pfl #+cmu (:print-function print-struct-object))
+(defstruct (pfl)
   (tick nil :type symbol)       ; TICKer
   (nums 0d0 :type double-float) ; NUMber of Shares
   (bprc 0d0 :type double-float) ; Base PRiCe
@@ -441,7 +440,7 @@ Suitable for `read-list-from-stream'."
   (declare (symbol sy)) (find sy *holdings* :key #'pfl-tick :test #'eq))
 
 (eval-when (compile load eval)  ; CMUCL
-(defstruct (hist #+cmu (:print-function print-struct-object))
+(defstruct (hist)
   (date +bad-date+ :type date)
   (totl 0d0 :type double-float)
   (navs nil :type list))

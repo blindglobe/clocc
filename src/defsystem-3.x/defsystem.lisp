@@ -3379,10 +3379,14 @@ D
 	  ;; add the banner if needed
 	  #+cmu
 	  (when (component-banner component)
+	    (unless (stringp (component-banner component))
+	      (error "The banner should be a string, it is: ~S"
+	             (component-banner component)))
 	    (setf (getf ext:*herald-items*
 			(intern (string-upcase  (component-name component))
 				(find-package :keyword)))
-		  (component-banner component))))
+		  (list 
+		     (component-banner component)))))
 
       ;; Reset the package. (Cleanup form of unwind-protect.)
       ;;(in-package old-package)

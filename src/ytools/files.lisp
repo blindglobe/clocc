@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.21 2005/02/06 05:46:32 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.22 2005/02/11 05:11:31 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -86,6 +86,8 @@
       (loaded-chunk-set-basis loaded-chunk)
       (chunk-request-mgt loaded-chunk)
       (let ((d (Chunk-date loaded-chunk)))
+	 (format t "Updating ~s~%"
+		 loaded-chunk)
 	 (chunk-update loaded-chunk)
 	 (cond ((and force-load
 		     (= (Chunk-date loaded-chunk)
@@ -1271,3 +1273,9 @@
 	  (declaim (optimize (speed ,speed) (safety ,safety)
 			     (space ,space) (debug ,debug)))
 	  (setq debuggability* ,n))))
+
+;;; For debugging --
+(defun flchunk (pn)
+   (let ((pn (->pathname pn)))
+      (place-Loaded-file-chunk (place-File-chunk pn)
+			       false)))

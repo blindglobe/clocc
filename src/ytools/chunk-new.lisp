@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.23 2005/02/11 05:11:31 airfoyle Exp $
+;;; $Id: chunk-new.lisp,v 1.1.2.3 2005/02/11 05:11:30 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -300,6 +300,56 @@
       (setf (Chunk-update-derivees b)
 	    (adjoin ch (Chunk-update-derivees b)))))
 
+;;; The number of the next chunk event (management request or update) .
+(defvar chunk-event-num* 1)
+;;; Each chunk-event is actually given two numbers, one for propagating
+;;; "down" and one for "up."  (See chunks-update, below.)
+
+;;; A list recording events that are finished.  Format: First element
+;;; is smallest number that is greater than all finished events.
+;;; Remaining elements, if any, are finished events with numbers greater
+;;; than that.
+(defvar done-events* (list 0))
+
+(defun chunk-event-discard (evnum)
+   (cond ((= evnum (+ (first done-events*) 1))
+	  ;; Opportunity to condense the list of done events
+	  (loop
+	     (setq done-events* (rest done-events*))
+	     (cond ((and (not (null done-events*))
+			 (= (first done-events*)
+			    (+ evnum 1)))
+		    (setq evnum (first done-events*)))
+		   (t
+		    (setq done-events
+			  (cons evnum done-events*))
+		    (return)))))
+	 (t
+	  (loop
+	     (cond ((or (null (rest done-events*))
+			(> (first (rest done-events*))
+			   evnum))
+		    (on-list evnum (rest done-events*))
+		    (return))
+		   (t
+		    (setq done-events* (rest done-events*))))))))
+
+(defun chunk-mark (ch evnum)
+   (on-list evnum (Chunk-update-marks ch)))
+
+(defun chunk-is-marked (ch evnum)
+   (do ((marks (Chunk-update-marks ch) (rest marks))
+	(prev false marks))
+       ((or (null marks)
+	    (= (first marks) evnum))
+	(not (null marks)))
+      (cond ((< (first marks) (first done-events*))
+	     (cond (prev
+		    (setf (rest prev) (rest marks)))
+		   (t
+		    (setf (Chunk-update-marks ch)
+			  (rest marks))))))))
+
 ;;;;; <<<< chunk-requesters
 ;;; Returns management state of 'c' (normally true after this runs).
 (defun chunk-request-mgt (c)
@@ -528,7 +578,7 @@
 	       (Or-chunk-disjuncts orch))))
 ;;;;; >>>> reason-to-manage
 
-(defvar update-no* 0)
+;;;;(defvar update-no* 0)
 
 (defvar temp-mgt-dbg* false)
 (defvar bad-bases*)
@@ -540,7 +590,7 @@
   '(format t " ...Skipping because ~s~%"
 	   (cond ((not (Chunk-managed ch))
 		  "not managed")
-		 ((= (Chunk-update-mark ch) up-mark)
+		 ((chunk-is-marked ch up-mark)
 		  "marked")
 		 ((chunk-date-up-to-date ch)
 		  "up to date")
@@ -572,69 +622,48 @@
 
 (defvar postpone-updates* ':do-now)
 
-(defun chunk-update (ch)
-   (cond ((listp postpone-updates*)
-	  (on-list ch postpone-updates*))
-	 (t
-	  (chunks-update-until-done (list ch)))))
+
+;;;;;;(defun chunk-update (ch)
+;;;;;;   (cond ((listp postpone-updates*)
+;;;;;;	  (on-list ch postpone-updates*))
+;;;;;;	 (t
+;;;;;;	  (chunks-update-until-done (list ch)))))
+;;;;;;
+;;;;;;(defun chunks-update (chunks)
+;;;;;;   (cond ((listp postpone-updates*)
+;;;;;;	  (setf postpone-updates*
+;;;;;;		(append chunks postpone-updates*)))
+;;;;;;	 (t
+;;;;;;	  (chunks-update-until-done chunks))))
+;;;;;;
+;;;;;;(defun chunks-update-until-done (chunks)
+;;;;;;   (let ((postpone-updates* !()))
+;;;;;;      (loop 
+;;;;;;	 (chunks-update-now chunks)
+;;;;;;	 (cond ((null postpone-updates*)
+;;;;;;		(return)))
+;;;;;;	 (setq chunks (nreverse postpone-updates*))
+;;;;;;	 (setq postpone-updates* !()))))      
+	 
+(defvar chunk-update-dbg* false)
 
 (defun chunks-update (chunks)
-   (cond ((listp postpone-updates*)
-	  (setf postpone-updates*
-		(append chunks postpone-updates*)))
-	 (t
-	  (chunks-update-until-done chunks))))
+   (let* (down-mark up-mark max-here temporarily-managed)
+      (labels ((chunks-leaves-up-to-date (chunkl in-progress)
+		  (let ((supporting-leaves !()))
+		     (dolist (ch chunkl supporting-leaves)
+			(let ((sl (check-leaves-up-to-date ch in-progress)))
+			   (cond ((update-interrupted)
+				  (return !()))
+				 (t
+				  (setq supporting-leaves
+					(nconc sl supporting-leaves))))))))
 
-;;; Any attempt to update something while an update is in progress
-;;; will get postponed until the current one is done.
-(defun chunks-update-until-done (chunks)
-   (let ((postpone-updates* !()))
-      (loop 
-	 (chunks-update-now chunks)
-	 (cond ((null postpone-updates*)
-		(return)))
-	 (setq chunks (nreverse postpone-updates*))
-	 (setq postpone-updates* !()))))      
-	 
-(defun chunks-update-now (chunks)
-   ;; We have two mechanisms for keeping track of updates in progress.
-   ;; The 'in-progress' stack is used to detect a situation where a
-   ;; chunk feeds its own input, which would cause an infinite recursion
-   ;; if undetected (and may indicate an impossible update goal).  
-   ;; The mark mechanism is used to avoid processing a chunk which has
-   ;; already been processed. during this call to 'chunk-update'.  This
-   ;; is "merely" for efficiency, but it's not a case of premature
-   ;; optimization, because it's very easy for the derivation graph to
-   ;; have exponentially many occurrences of a chunk if the graph is
-   ;; expanded to a tree (which is what eliminating this optimization
-   ;; would amount to).
-   ;; The algorithm is hairy because of the need to handle "update bases,"
-   ;; the chunks needed to run a chunk's deriver, but not to test whether
-   ;; it is up to date.  We first propagate down to leaves ('check-leaves-
-   ;; up-to-date'), then back up resetting the 'latest-supporter-date'
-   ;; of all the chunks we passed.  If that allows us to detect that a chunk
-   ;; is out of date, we must go down and up again through its update-basis.
-   ;; We temporarily make the update-basis chunks managed (using 
-   ;; 'unwind-protect' to avoid leaving them managed afterward).
-   ;; The process stops when no further updates can be found.
-   ;; Now we call 'derivees-update' to call 'derive' on all out-of-date 
-   ;; chunks that can be reached from the marked leaves.
-   ;; Note: The procedure calls the deriver of a chunk at most once.
-   ;; Derivers of leaves are called in 'check-leaves-up-to-date'; other
-   ;; derivers are called in 'derivees-update'.
-   ;; Note: 'chunk-up-to-date' is called only on non-leaves in
-   ;; 'check-from-new-starting-points' and 'derivees-update'.  This is
-   ;; valid because all leaves reachable have already been checked,
-   ;; and useful because we don't know how expensive a call to a leaf
-   ;; deriver is.
-   (let ((down-mark (+ update-no* 1))
-	 (up-mark (+ update-no* 2))
-	 (temporarily-managed !()))
-      (labels ((check-leaves-up-to-date (ch in-progress)
+	       (check-leaves-up-to-date (ch in-progress)
 		  ;; Returns list of leaf chunks supporting ch.
 		  ;; Also marks all derivees* of those leaves with proper
 		  ;; latest-supporter-date.
-		  (cond ((= (Chunk-update-mark ch) down-mark)
+		  (cond ((chunk-is-marked ch down-mark)
 			 !())
 			((member ch in-progress)
 			 (error
@@ -642,22 +671,31 @@
                                through itself"))
 			(t
 			 (let ((in-progress (cons ch in-progress)))
-			    (format t "Setting down-mark of ~s~%" ch)
-			    (setf (Chunk-update-mark ch) down-mark)
+			    (cond (chunk-update-dbg*
+				   (format *error-output*
+					   "Setting down-mark of ~s~%" ch)))
 			    (cond ((chunk-is-leaf ch)
-				   (chunk-derive-and-record ch)
-				   (format t "Leaf derived: ~s~%" ch)
-				   (cons ch
-					 (check-from-new-starting-points
-					    (set-latest-support-date ch)
-					    in-progress)))
+				   (cond ((not (chunk-is-marked ch down-mark))
+					  (chunk-mark ch down-mark)
+					  (chunk-derive-and-record ch)
+					  (cond (chunk-update-dbg*
+						 (format *error-output*
+						    "Leaf derived: ~s~%"
+						    ch)))))
+				   (cond ((update-interrupted)
+					  !())
+					 (t
+					  (cons ch
+						(check-from-new-starting-points
+						   (set-latest-support-date ch)
+						   in-progress)))))
 				  (t
-				   (flet ((recur (b)
-					     (check-leaves-up-to-date
-						b in-progress)))
+				   (chunk-mark ch down-mark)
+				   (flet ()
 				      (nconc
-					 (mapcan #'recur
-						 (Chunk-basis ch))
+					 (chunks-leaves-up-to-date
+					    (Chunk-basis ch)
+					    in-progress)
 					 ;; The call to 'chunk-up-to-date'
 					 ;; works because the leaves supporting
 					 ;; ch have passed their dates up
@@ -665,27 +703,28 @@
 					 (cond ((not (chunk-up-to-date ch))
 						(temporarily-manage
 						   (Chunk-update-basis ch))
-						(mapcan #'recur
-							(Chunk-update-basis
-							    ch)))
+						(chunks-leaves-up-to-date
+						   (Chunk-update-basis ch)
+						   in-progress))
 					       (t !()))))))))))
 
 	       (check-from-new-starting-points (updatees in-progress)
 		  ;; Sweep up from leaves may have found new chunks that
 		  ;; to be checked.
-		  (let ((nsp (mapcan (\\ (ch)
-					(check-leaves-up-to-date
-					   ch in-progress))
-				     (remove-if-not  ; = keep-if
+		  (let ((nsp (nconc (chunks-leaves-up-to-date
+					   ch in-progress)
+				    (retain-if
 					(\\ (c)
 					   (and (not (chunk-up-to-date c))
 						(or (Chunk-managed c)
-						    (= (Chunk-update-mark c)
-						       down-mark))))
+						    (chunk-is-marked
+						       c down-mark))))
 					(set-difference updatees
 							in-progress)))))
-		     (format t "New starting points from ~s~%   = ~s~%"
-			       updatees nsp)
+		     (cond (chunk-update-dbg*
+			    (format *error-output*
+				    "New starting points from ~s~%   = ~s~%"
+				    updatees nsp)))
 		     nsp))
 
 	       (temporarily-manage (update-chunks)
@@ -700,13 +739,14 @@
 		    ))
 
 	       (derivees-update (ch in-progress)
-		  (format t "Considering ~s~%" ch)
+		  (cond (chunk-update-dbg*
+			 (format *error-output* "Considering ~s~%" ch)))
 		  (cond ((member ch in-progress)
 			 (error
 			    !"Cycle in derivation links from ~s"
 			    ch))
 			((and (Chunk-managed ch)
-			      (not (= (Chunk-update-mark ch) up-mark))
+			      (not (chunk-is-marked ch up-mark))
 			      (not (chunk-date-up-to-date ch))
 			      ;; Run the deriver when and only when
 			      ;; its basis is up to date --
@@ -719,11 +759,16 @@
 					(or (chunk-is-leaf b)
 					    (chunk-up-to-date b)))
 				     (Chunk-update-basis ch)))
-			 (format t " ...Deriving!~%")
+			 (cond (chunk-update-dbg*
+				(format *error-output* " ...Deriving!~%")))
+The marking scheme fails us here, I think.  If we restart, we need to be able 
+to get through previously derived (and marked) descendents to reach
+those that still need updating.  
 			 (let ((in-progress
 				     (cons ch in-progress)))
-			    (setf (Chunk-update-mark ch) up-mark)
-			    (cond ((chunk-derive-and-record ch)
+			    (cond ((and (chunk-derive-and-record ch)
+					(not (update-interrupted)))
+				   (chunk-mark ch up-mark)
 				   (dolist (d (Chunk-derivees ch))
 				      (derivees-update d in-progress))
 				   (dolist (d (Chunk-update-derivees
@@ -731,23 +776,72 @@
 				      (derivees-update d in-progress))))))
 			(t
 			 (report-reason-to-skip-chunk))
-			)))
+			))
+
+	       (update-interrupted ()
+		  (> chunk-event-num* max-here)))
+	 ;; We have two mechanisms for keeping track of updates in
+	 ;; progress.  The 'in-progress' stack is used to detect a
+	 ;; situation where a chunk feeds its own input, which would
+	 ;; cause an infinite recursion if undetected (and may
+	 ;; indicate an impossible update goal).  The mark mechanism
+	 ;; is used to avoid processing a chunk which has already been
+	 ;; processed. during this call to 'chunk-update'.  This is
+	 ;; "merely" for efficiency, but it's not a case of premature
+	 ;; optimization, because it's very easy for the derivation
+	 ;; graph to have exponentially many occurrences of a chunk if
+	 ;; the graph is expanded to a tree (which is what eliminating
+	 ;; this optimization would amount to).  The algorithm is
+	 ;; hairy because of the need to handle "update bases," the
+	 ;; chunks needed to run a chunk's deriver, but not to test
+	 ;; whether it is up to date.  We first propagate down to
+	 ;; leaves ('check-leaves- up-to-date'), then back up
+	 ;; resetting the 'latest-supporter-date' of all the chunks we
+	 ;; passed.  If that allows us to detect that a chunk is out
+	 ;; of date, we must go down and up again through its
+	 ;; update-basis.  We temporarily make the update-basis chunks
+	 ;; managed (using 'unwind-protect' to avoid leaving them
+	 ;; managed afterward).  The process stops when no further
+	 ;; updates can be found.  Now we call 'derivees-update' to
+	 ;; call 'derive' on all out-of-date chunks that can be
+	 ;; reached from the marked leaves.  Note: The procedure calls
+	 ;; the deriver of a chunk at most once.  Derivers of leaves
+	 ;; are called in 'check-leaves-up-to-date'; other derivers
+	 ;; are called in 'derivees-update'.  Note: 'chunk-up-to-date'
+	 ;; is called only on non-leaves in
+	 ;; 'check-from-new-starting-points' and 'derivees-update'.
+	 ;; This is valid because all leaves reachable have already
+	 ;; been checked, and useful because we don't know how
+	 ;; expensive a call to a leaf deriver is.
 	 (cond ((some #'Chunk-managed chunks)
-		(setq update-no* up-mark)
+		(setq min-here chunk-update-num*)
+;;;;		(setq update-no* up-mark)
+		unwind-protect --- declare nums used
 		(unwind-protect
-		   (let ((leaves
-			    (mapcan (\\ (ch)
-				       (cond ((Chunk-managed ch)
-					      (check-leaves-up-to-date ch !()))
-					     (t !())))
-				    chunks)))
-		      (dolist (leaf leaves)
-			 (dolist (d (Chunk-derivees leaf))
-			    (derivees-update d !()))))
-		  (dolist (ud-ch temporarily-managed)
-		     (cond (temp-mgt-dbg*
-			    (format t "No longer managing ~s~%" ud-ch)))
-		     (chunk-terminate-mgt ud-ch false))))))))
+		   (loop 
+		      ;; If a chunk event occurs while we're updating,
+		      ;; we must restart.  We detect that if
+		      ;; chunk-event-num* ever exceeds 'max-here'.
+		      (setq down-mark chunk-event-num*)
+		      (setq up-mark (+ chunk-event-num* 1))
+		      (setq max-here (+ up-mark 1))
+		      (setq chunk-event-num* max-here)
+		      (setq temporarily-managed !())
+		      (unwind-protect
+			 (let ((leaves
+				  (chunks-leaves-up-to-date ch !())))
+			    (dolist (leaf leaves)
+			       (dolist (d (Chunk-derivees leaf))
+				  (derivees-update d !()))))
+			(dolist (ud-ch temporarily-managed)
+			   (cond (temp-mgt-dbg*
+				  (format t "No longer managing ~s~%" ud-ch)))
+			   (chunk-terminate-mgt ud-ch false)))
+		     (cond ((not (update-interrupted))
+			    (return))))
+		  (do ((ev min-here (+ ev 1)))
+		      ((= ev max-here))
+		     (chunk-event-discard ev))))))))
 
 (defun or-chunk-set-update-basis (orch)
    (cond ((null (Or-chunk-disjuncts orch))

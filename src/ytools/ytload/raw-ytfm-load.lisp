@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.2 2005/02/03 05:18:45 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.3 2005/02/11 05:11:31 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -8,6 +8,9 @@
 ;;; The working directory should be set to the ytools directory.
 
 (load-yt-config-file)
+
+(setq *default-pathname-defaults*
+      (pathname "~/CVSified/dev/clocc/src/ytools/"))
 
 (load "ytload/ytfm.lmd")
 

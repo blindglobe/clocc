@@ -1,4 +1,4 @@
-;;; based on v1.9 -*- mode: lisp -*-
+;;; based on v1.11 -*- mode: lisp -*-
 (in-package :cl-user)
 
 
@@ -90,6 +90,46 @@
 (check-for-bug :clos-added-6
   (fmakunbound 'foo)
   foo)
+
+(check-for-bug
+    :clos-reinit-instance-x-20
+  (x-val (reinitialize-instance a :x 20))
+  20)
+
+(check-for-bug
+    :clos-reinit-instance-x-30
+  (x-val (reinitialize-instance a :x 30))
+  30)
+
+(check-for-bug
+    :clos-reinit-instance-x-50
+  (x-val (reinitialize-instance a :x 50))
+  50)
+
+(check-for-bug
+    :clos-reinit-instance-x-80
+  (x-val (reinitialize-instance a :x 80))
+  80)
+
+(check-for-bug
+    :clos-reinit-instance--y-20
+  (x-val (reinitialize-instance a :y 20))
+  80)
+
+(check-for-bug
+    :clos-reinit-instance-x-30
+  (y-val (reinitialize-instance a :x 30))
+  20)
+
+(check-for-bug
+    :clos-reinit-instance-y-50
+  (x-val (reinitialize-instance a :y 50))
+  30)
+
+(check-for-bug
+    :clos-reinit-instance-y-80
+  (y-val (reinitialize-instance a :x 80))
+  50)
 
 (check-for-bug :clos-legacy-66
   (defparameter b (make-instance (find-class '<C2>) :x 10 :y 20 :z 30))

@@ -1,4 +1,4 @@
-;;; based on v1.22 -*- mode: lisp -*-
+;;; based on v1.23 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :path-legacy-4
@@ -401,6 +401,10 @@
   #-(or XCL CLISP)
   #P"*.*")
 
+(check-for-bug :path-truename-with-borken-path
+  (truename "~/no/ such / path /  nicht-vorhandenes-file.new")
+  error)
+  
 (check-for-bug :path-legacy-406
   (progn (setf file (open "nicht-vorhandenes-file.non"
                           :direction :input

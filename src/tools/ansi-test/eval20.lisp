@@ -1,4 +1,4 @@
-;; based on v1.2 -*- mode: lisp -*-
+;; based on v1.4 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;; testen abschitt 20
@@ -26,6 +26,18 @@
 (check-for-bug :eval20-legacy-26
   (eval 'x)
   3)
+
+;; eval-when
+(check-for-bug :eval20-eval-when
+  (let ((ff "eval-when-test.lisp"))
+    (with-open-file (foo ff :direction :output)
+      (format foo "~%(eval-when (compile eval)
+  ;; note that LAMBDA is not externalizable
+  (defvar *junk* #.(lambda (x) (+ 15 x))))~%"))
+    (delete-file (compile-file ff))
+    (delete-file ff)
+    nil)
+  nil)
 
 ;; constantp
 

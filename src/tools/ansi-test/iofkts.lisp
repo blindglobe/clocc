@@ -1,4 +1,4 @@
-;;; based on v1.7 -*- mode: lisp -*-
+;;; based on v1.9 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;; ****************************************************************************
@@ -426,7 +426,7 @@ out of sync")
 (check-for-bug :iofkts-legacy-426
   (progn (setq a (make-string-input-stream "1   2   ;32  abA"))
          (setq b (make-string-input-stream " 1 2 3 A x y z
-a b c")) t)
+a b c ")) t)
   t)
 
 (check-for-bug :iofkts-legacy-432
@@ -435,7 +435,7 @@ a b c")) t)
 
 (check-for-bug :iofkts-legacy-436
   (setq c (multiple-value-list (read-line b)))
-  (" x y z" nil))
+  (" x y z " nil))
 
 (check-for-bug :iofkts-legacy-440
   (length c)

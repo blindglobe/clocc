@@ -33,6 +33,7 @@ the returnvalues or the type of the condition used."
 (defvar *log* nil)
 (defvar *output-generated* nil)
 (defvar *lisp-type*
+  #+lispworks "LWL"
   #+CLISP "CLISP"
   #+AKCL "AKCL"
   #+CMU "CMUCL"

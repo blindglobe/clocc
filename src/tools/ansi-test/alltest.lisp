@@ -1,4 +1,4 @@
-;;; based on v1.12 -*- mode: lisp -*-
+;;; based on v1.15 -*- mode: lisp -*-
 ;;*****************************************************************************
 ;;*                    short test      XCL                                    *
 ;;*****************************************************************************
@@ -794,6 +794,12 @@
           (list 'u 'i 'v))
   (a 1 u b 2 i c 3 v))
 
+(check-for-bug :alltest-direct-funcall-of-compiled-lambda
+  (funcall
+   (compile nil (lambda (x) (flet ((foo (y) (+ y 1))) (foo (* 2 x)))))
+   3)
+  7)
+  
 ;; tagbody, go, multiple-value-list, multiple-value-call, multiple-value-prog1,
 ;; multiple-value-bind, multiple-value-setq, values, values-list, catch,
 
@@ -3186,6 +3192,14 @@
     (test-hash-table-iterator tab)
     )
   t)
+
+
+(check-for-bug :alltest-equalp-string-hash
+  (gethash "foo" (read-from-string
+                  (prin1-to-string
+                   (make-hash-table :test 'equalp :initial-contents
+                                    '(("FOO" . "bar"))))))
+  "bar")
 
 ;; kap 17 felder
 ;; ----------------------------------------------------------------------------

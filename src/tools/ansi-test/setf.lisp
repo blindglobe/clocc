@@ -1,4 +1,4 @@
-;;; based on v1.4 -*- mode: lisp -*-
+;;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :setf-legacy-4

@@ -357,6 +357,10 @@ instead of the scaled value of arg. If the overflowchar parameter is
 omitted, then the scaled value is printed using more than w characters,
 as many more as may be needed.")
 
+(check-for-bug :format-too-long-fp
+  (format nil "~2f" 1234567.1234)
+  "1234567.")
+
 ;;  ~e ----------------------------- ------------------------------------------
 ;;  Format E
 

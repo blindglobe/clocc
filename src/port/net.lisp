@@ -8,9 +8,13 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.7 2000/03/28 18:02:31 sds Exp $
+;;; $Id: net.lisp,v 1.8 2000/03/28 18:24:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.8  2000/03/28 18:24:45  sds
+;;; (servent): new defstruct
+;;; (socket-service-port): return it
+;;;
 ;;; Revision 1.7  2000/03/28 18:02:31  sds
 ;;; (resolve-host-ipaddr): in clisp, it's `addrtype'
 ;;;
@@ -74,10 +78,10 @@
 
 (defstruct hostent
   "see gethostbyname(3) for details"
-  (name "" :type simple-string)
-  (aliases nil :type list)
-  (addr-list nil :type list)
-  (addr-type 2 :type fixnum))
+  (name "" :type simple-string) ; canonical name of host
+  (aliases nil :type list)      ; alias list
+  (addr-list nil :type list)    ; list of addresses
+  (addr-type 2 :type fixnum))   ; host address type
 
 (defun resolve-host-ipaddr (host)
   "Call gethostbyname(3) or gethostbyaddr(3)."
@@ -268,10 +272,16 @@
 ;;; }}}{{{ `socket-service-port'
 ;;;
 
+(defstruct servent
+  "see getservbyname(3) for details"
+  (name "" :type simple-string) ; official name of service
+  (aliases nil :type list)      ; alias list
+  (port -1 :type fixnum)        ; port service resides at
+  (proto "" :type simple-string)) ; protocol to use
+
 (defun socket-service-port (&optional service (protocol "tcp"))
-  "Return the port number of the SERVICE."
-  ;; #+clisp (lisp:socket-service-port service protocol)
-  ;; #-clisp
+  "Return the SERVENT structure corresponding to the SERVICE.
+When SERVICE is NIL, return the list of all services."
   (flet ((parse (str)
            (let ((tok (string-tokens
                        (nsubstitute
@@ -280,7 +290,9 @@
              (values (string-downcase (string (first tok)))
                      (mapcar (compose string-downcase string) (cdddr tok))
                      (second tok)
-                     (string-downcase (string (third tok)))))))
+                     (string-downcase (string (third tok))))))
+         (mkse (na al po pr)
+           (make-servent :name na :aliases al :port po :proto pr)))
     (with-open-file (fl #+unix "/etc/services" #+win32
                         (concatenate 'string (getenv "windir")
                                      "/system32/drivers/etc/services")
@@ -294,11 +306,11 @@
                 :when (and (string-equal protocol prot)
                            (or (string-equal service name)
                                (member service alis :test #'string-equal)))
-                  :return (values name alis port prot) :end
-                :else :collect (vector name alis port prot) :end :end
+                  :return (mkse name alis port prot) :end
+                :else :collect (mkse name alis port prot) :end :end
             :finally (when service
-                       (error "service ~s is not found for protocol ~s"
-                              service protocol))))))
+                       (error "~s: service ~s is not found for protocol ~s"
+                              'socket-service-port service protocol))))))
 
 ;;; }}}
 

@@ -224,10 +224,9 @@
 		  ;; Look up function type
 		  (get-fun-arg-type (second arg)))
 		 ((eq 'fref fun)
-		  ;; Look up array references
-		  (values (get-fun-arg-type (second arg))
-			  (if *array-slicing*
-			      t nil)))
+		  ;; Look up array references.
+		  (let ((result (get-fun-arg-type (second arg))))
+		    (values (get-fun-arg-type (second arg)) nil)))
 		 ((member fun '(+ - * f2cl/ expt))
 		  ;; Basic arithmetic operations.
 		  (fortran-contagion (get-fun-arg-type (second arg))
@@ -353,6 +352,7 @@
 	  fcn
 	;;(format t "declaring fcn ~S~%" fcn)
 	;;(format t "fname = ~A~%" fname)
+	;;(format t "args = ~A~%" args)
 	(let* ((type (get-fun-arg-type fcn))
 	       ;; If the function is an intrinsic, there is exactly
 	       ;; one return value.  If it's not an intrinsic but it
@@ -368,11 +368,17 @@
 			,@(if (member fname *intrinsic-function-names*)
 			      nil
 			      '(&rest t))))))
+	  ;;(format t "type = ~A~%" type)
+	  ;;(format t "decl = ~A~%" decl)
+	  ;;(format t "get-arg-decl = ~A~%" (get-arg-decl args))
 	  (cond ((member fname *subprog-stmt-fns*)
 		 (push `(declare (ftype ,decl ,fname)) stmt-fcns))
 		((member fname arglist)
 		 ;;(format t "arglist fcn = ~A~%" `(declare (type ,decl ,fname)))
 		 (push `(declare (type ,decl ,fname)) arg-fcns))
+		((member fname *intrinsic-function-names*)
+		 ;; We don't need declarations for intrinsic functions
+		 nil)
 		(t
 		 (push `(declare (ftype ,decl ,fname)) other-fcns))))))
     (values stmt-fcns other-fcns arg-fcns)))
@@ -596,7 +602,8 @@
 		   arg-fcn-decls
 		   common-block-structs
 		   key-params
-		   key-params-decls)
+		   key-params-decls
+		   all-decls)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -685,8 +692,9 @@
 
      ;; Clean up other-fcn-decls.  If there weren't any, make it so,
      ;; instead of leaving it as an empty declare.
-     (when (equal other-fcn-decls '((declare)))
-	 (setf other-fcn-decls nil))
+     (if (equal other-fcn-decls '((declare)))
+	 (setf other-fcn-decls nil)
+	 (setf other-fcn-decls (pretty-decls other-fcn-decls)))
      
      ;; If we are auto-SAVE'ing variables initialized in DATA
      ;; statements, we add all of the variables in the *data-init* list
@@ -854,6 +862,10 @@
      ;;(format t "vbles-decls     = ~S~%" vble-decls)
      ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
      ;;(format t "body            = ~S~%" body)
+     (setf all-decls (append (rest (first vble-decls))
+			     (rest (first other-fcn-decls))))
+     (setf all-decls `((declare ,@all-decls)))
+     ;;(format t "all-decls = ~A~%" all-decls)
      (setq prog-bit
 	   (if (or *save_vbles* *auto-save-data*)
 	       ;; If we have SAVE'd variables, don't put their inits
@@ -861,12 +873,12 @@
 	       ;; where they belong.
 	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
-		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
-		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@body))
+		     (prog ,local-vbles ,@all-decls ,@body))
+		   `(prog ,local-vbles ,@all-decls ,@body))
 	       (if *subprog-stmt-fns*
 		   `(labels ,*subprog_stmt_fns_bodies* ,@stmt-fcn-decls
-		     (prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body))
-		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body)))
+		     (prog ,local-vbles ,@all-decls ,@*data-init* ,@body))
+		   `(prog ,local-vbles ,@all-decls ,@*data-init* ,@body)))
 	       )
      ;;(format t "prog-bit = ~%~S~%" prog-bit)
 
@@ -960,9 +972,9 @@
        
        (return 
 	 (values special-proclamation
-	       (when special-proclamation
+		 (when special-proclamation
 		   (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
-	       param-stuff)))
+		 param-stuff)))
      ))
 
 
@@ -2090,8 +2102,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.72 2002/01/07 20:55:40 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.73 2002/01/08 03:24:44 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.73  2002/01/08 03:24:44  rtoy
+;;; o Correct the previous change about looking up the type of array
+;;;   references.  If we have an fref, it can't be an array slice because
+;;;   we would have already sliced it before we get here.
+;;; o Try to pretty up the declarations for other functions by merging
+;;;   them into just one declaration.
+;;; o Group the declaration statements for variables and other functions
+;;;   into just a single declaration.
+;;;
 ;;; Revision 1.72  2002/01/07 20:55:40  rtoy
 ;;; In GET-FUN-ARG-TYPE, we were always returning array types for FREF.  This
 ;;; is true if array-slicing is enabled.

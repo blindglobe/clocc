@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.47 2003/06/07 22:01:12 sds Exp $
+;;; $Id: sys.lisp,v 1.48 2003/07/25 13:05:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -36,7 +36,7 @@
 (defun getenv (var)
   "Return the value of the environment variable."
   #+allegro (sys::getenv (string var))
-  #+clisp (sys::getenv (string var))
+  #+clisp (ext:getenv (string var))
   #+(or cmu scl)
   (cdr (assoc (string var) ext:*environment-list* :test #'equalp
               :key #'string))
@@ -51,7 +51,7 @@
 (defun (setf getenv) (val var)
   "Set an environment variable."
   #+allegro (setf (sys::getenv (string var)) (string val))
-  #+clisp (setf (sys::getenv (string var)) (string val))
+  #+clisp (setf (ext:getenv (string var)) (string val))
   #+(or cmu scl)
   (let ((cell (assoc (string var) ext:*environment-list* :test #'equalp
                      :key #'string)))

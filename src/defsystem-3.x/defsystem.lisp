@@ -1085,6 +1085,7 @@
 ;;; We import these symbols into the USER package to make them
 ;;; easier to use. Since some lisps have already defined defsystem
 ;;; in the user package, we may have to shadowing-import it.
+#|
 #-(OR :CMU :CCL :ALLEGRO :EXCL :lispworks :symbolics)
 (eval-when (compile load eval)
   (import *exports* #-(or :cltl2 :lispworks) "USER"
@@ -1098,6 +1099,7 @@
   (shadowing-import *special-exports*
 		    #-(or :cltl2 :lispworks) "USER"
 		    #+(or :cltl2 :lispworks) "COMMON-LISP-USER"))
+|#
 
 #-(or :PCL :CLOS)
 (when (find-package "PCL")
@@ -1812,7 +1814,9 @@ ABS: NIL          REL: NIL               Result: ""
       ;;  as being logical unless its logical host is already defined.
       #+(or (and allegro-version>= (version>= 4 1))
 	    :logical-pathnames-mk)
-      ((and absolute-directory (logical-pathname-p absolute-directory))
+      ((and absolute-directory
+	    (logical-pathname-p absolute-directory)
+	    relative-directory)
        ;; For use with logical pathnames package.
        (append-logical-directories-mk absolute-directory relative-directory))
 
@@ -1836,6 +1840,31 @@ ABS: NIL          REL: NIL               Result: ""
   (lp:append-logical-directories absolute-dir relative-dir))
 
 ;;; this works in allegro-v4.1 and above.
+;;; New version
+;;; 20000323 Marco Antoniotti
+#+(and (and allegro-version>= (version>= 4 1))
+       (not :logical-pathnames-mk))
+(defun append-logical-directories-mk (absolute-dir relative-dir)
+  ;; We know absolute-dir and relative-dir are non nil.  Moreover
+  ;; absolute-dir is a logical pathname.
+  (setq absolute-dir (logical-pathname absolute-dir))
+  (etypecase relative-dir
+    (string (setq relative-dir (parse-namestring relative-dir)))
+    (pathname #| do nothing |#))
+
+  (translate-logical-pathname
+   (make-pathname
+    :host (or (pathname-host absolute-dir)
+	      (pathname-host relative-dir))
+    :directory (append (pathname-directory absolute-dir)
+		       (cdr (pathname-directory relative-dir)))
+    :name (or (pathname-name absolute-dir)
+	      (pathname-name relative-dir))
+    :type (or (pathname-type absolute-dir)
+	      (pathname-type relative-dir))
+    :version (or (pathname-version absolute-dir)
+		 (pathname-version relative-dir)))))
+#| Old version
 #+(and (and allegro-version>= (version>= 4 1))
        (not :logical-pathnames-mk))
 (defun append-logical-directories-mk (absolute-dir relative-dir)
@@ -1854,6 +1883,7 @@ ABS: NIL          REL: NIL               Result: ""
 		(pathname-type relative-dir))
       :version (or (pathname-version absolute-dir)
 		   (pathname-version relative-dir))))))
+|#
 
 ;;; determines if string or pathname object is logical
 #+:logical-pathnames-mk
@@ -1891,15 +1921,22 @@ ABS: NIL          REL: NIL               Result: ""
 ;;; This affects only one thing.
 ;;; 19990707 Marco Antoniotti
 ;;; old version
+
 (defun namestring-probably-logical (namestring)
   (and (stringp namestring)
        ;; unix pathnames don't have embedded semicolons
        (find #\; namestring)))
-
-#|| new version
+#||
+;;; New version
 (defun namestring-probably-logical (namestring)
   (and (stringp namestring)
        (typep (parse-namestring namestring) 'logical-pathname)))
+
+
+;;; New new version
+;;; 20000321 Marco Antoniotti
+(defun namestring-probably-logical (namestring)
+  (pathname-logical-p namestring))
 ||#
 
 (defun append-logical-pnames (absolute relative)
@@ -2159,6 +2196,38 @@ D
 		    value)))))))
     value))
 
+
+;;; compute-system-path --
+
+
+(defun compute-system-path (module-name definition-pname)
+  (let* ((file-pathname
+	  (make-pathname :name (etypecase module-name
+				 (symbol (string-downcase
+					  (string module-name)))
+				 (string module-name))
+			 :type *system-extension*)))
+    (or (when definition-pname		; given pathname for system def
+	  (probe-file definition-pname))
+	;; Then the central registry. Note that we also check the current
+	;; directory in the registry, but the above check is hard-coded.
+	(cond (*central-registry*
+	       (if (listp *central-registry*)
+		   (dolist (registry *central-registry*)
+		     (let ((file (probe-file
+				  (append-directories (if (consp registry)
+							  (eval registry)
+							  registry)
+						      file-pathname))))
+		       (when file (return file))))
+		   (probe-file (append-directories *central-registry*
+						   file-pathname))))
+	      (t
+	       ;; No central registry. Assume current working directory.
+	       ;; Maybe this should be an error?
+	       (probe-file file-pathname))))))
+#|
+
 (defun compute-system-path (module-name definition-pname)
   (let* ((filename (format nil "~A.~A"
 			   (if (symbolp module-name)
@@ -2184,6 +2253,8 @@ D
 	       ;; No central registry. Assume current working directory.
 	       ;; Maybe this should be an error?
 	       (probe-file filename))))))
+|#
+
 
 (defvar *reload-systems-from-disk* t
   "If T, always tries to reload newer system definitions from disk.

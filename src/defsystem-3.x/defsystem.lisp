@@ -2444,18 +2444,19 @@ D
 ;;; compute-system-path --
 
 (defun compute-system-path (module-name definition-pname)
-  (let* ((file-pathname
-	  (make-pathname :name (etypecase module-name
-				 (symbol (string-downcase
-					  (string module-name)))
-				 (string module-name))
+  (let* ((module-string-name
+          (etypecase module-name
+            (symbol (string-downcase
+                     (string module-name)))
+            (string module-name)))
+
+         (file-pathname
+	  (make-pathname :name module-string-name
 			 :type *system-extension*))
+         
          (lib-file-pathname
-	  (make-pathname :directory (list :relative module-name)
-                         :name (etypecase module-name
-				 (symbol (string-downcase
-					  (string module-name)))
-				 (string module-name))
+	  (make-pathname :directory (list :relative module-string-name)
+                         :name module-string-name
 			 :type *system-extension*))
          )
     (or (when definition-pname		; given pathname for system def
@@ -2704,7 +2705,8 @@ the system definition, if provided."
       (otherwise
        (component-full-pathname-i component type version)))))
 
-(defun component-full-pathname-i (component type &optional (version *version*)
+(defun component-full-pathname-i (component type
+                                            &optional (version *version*)
 					    &aux version-dir version-replace)
   ;; If the pathname-type is :binary and the root pathname is null,
   ;; distribute the binaries among the sources (= use :source pathname).
@@ -2806,11 +2808,17 @@ the system definition, if provided."
   (ecase type
     (:source (or (component-source-extension component)
 		 (unless local
-		   (default-source-extension component)))) ; system default
+		   (default-source-extension component)) ; system default
+                 ;; (and (component-language component))
+                 ))
     (:binary (or (component-binary-extension component)
 		 (unless local
-		   (default-binary-extension component)))) ; system default
+		   (default-binary-extension component)) ; system default
+                 ;; (and (component-language component))
+                 ))
     (:error  *compile-error-file-type*)))
+
+
 (defsetf component-extension (component type) (value)
   `(ecase ,type
      (:source (setf (component-source-extension ,component) ,value))
@@ -2824,7 +2832,8 @@ the system definition, if provided."
   (let ((component (apply #'make-component
 			  :type type
 			  :name name
-			  :indent indent definition-body)))
+			  :indent indent
+			  definition-body)))
     ;; Set up :load-only attribute
     (unless (find :load-only definition-body)
       ;; If the :load-only attribute wasn't specified,
@@ -2867,7 +2876,9 @@ the system definition, if provided."
 
     ;; Type specific setup:
     (when (or (eq type :defsystem) (eq type :system) (eq type :subsystem))
-      (setf (get-system name) component))
+      (setf (get-system name) component)
+      #|(unless (component-language component)
+	(setf (component-language component) :lisp))|#)
 
     ;; Set up the component's pathname
     (create-component-pathnames component parent)
@@ -2913,10 +2924,12 @@ the system definition, if provided."
 
 (defun create-component-pathnames (component parent)
   ;; Set up language-specific defaults
+
   (setf (component-language component)
 	(or (component-language component) ; for local defaulting
 	    (when parent		; parent's default
 	      (component-language parent))))
+
   (setf (component-compiler component)
 	(or (component-compiler component) ; for local defaulting
 	    (when parent		; parent's default
@@ -2948,11 +2961,21 @@ the system definition, if provided."
 
   ;; Set up extension defaults
   (setf (component-extension component :source)
-	(or (component-extension component :source :local t) ; local default
+	(or (component-extension component :source
+                                 :local #| (component-language component) |#
+                                 t
+                                 ) ; local default
+            (when (component-language component)
+              (default-source-extension component))
 	    (when parent		; parent's default
 	      (component-extension parent :source))))
   (setf (component-extension component :binary)
-	(or (component-extension component :binary  :local t) ; local default
+	(or (component-extension component :binary
+                                 :local #| (component-language component) |#
+                                 t
+                                 ) ; local default
+            (when (component-language component)
+              (default-binary-extension component))
 	    (when parent		; parent's default
 	      (component-extension parent :binary))))
 
@@ -2961,6 +2984,7 @@ the system definition, if provided."
   ;; to allow distribution of binaries among the sources to work.
   (generate-component-pathname component parent :source)
   (generate-component-pathname component parent :binary))
+
 
 ;; maybe file's inheriting of pathnames should be moved elsewhere?
 (defun generate-component-pathname (component parent pathname-type)
@@ -4361,7 +4385,7 @@ the system definition, if provided."
 	      (or (find force '(:all :new-source-all t) :test #'eq)
 		  (and (find force '(:new-source :new-source-and-dependents)
 			     :test #'eq)
-		       (needs-compilation component)))))
+		       (needs-compilation component nil)))))
 	(source-pname (component-full-pathname component :source)))
 
     (cond ((and must-compile (probe-file source-pname))
@@ -4405,7 +4429,7 @@ the system definition, if provided."
 	   nil)
 	  (t nil))))
 
-(defun needs-compilation (component)
+(defun needs-compilation (component force)
   ;; If there is no binary, or it is older than the source
   ;; file, then the component needs to be compiled.
   ;; Otherwise we only need to recompile if it depends on a file that changed.
@@ -4415,6 +4439,8 @@ the system definition, if provided."
      ;; source must exist
      (probe-file source-pname)
      (or
+      ;; We force recompilation.
+      (find force '(:all :new-source-all) :test #'eq)
       ;; no binary
       (null (probe-file binary-pname))
       ;; old binary
@@ -4456,7 +4482,7 @@ the system definition, if provided."
 	 ;; needs-compilation has an implicit source-exists in it.
 	 (needs-compilation (if (component-load-only component)
 				source-needs-loading
-				(needs-compilation component)))
+				(needs-compilation component force)))
 	 (check-for-new-source
 	  ;; If force is :new-source*, we're checking for files
 	  ;; whose source is newer than the compiled versions.
@@ -4469,13 +4495,17 @@ the system definition, if provided."
 	      (and load-binary (component-load-only component))
 	      (and check-for-new-source needs-compilation)))
 	 (compile-and-load
-	  (and needs-compilation (or load-binary check-for-new-source)
-	       (compile-and-load-source-if-no-binary component))))
+	  (and needs-compilation
+               (or load-binary check-for-new-source)
+	       (compile-and-load-source-if-no-binary component)))
+         )
     ;; When we're trying to minimize the files loaded to only those
     ;; that need be, restrict the values of load-source and load-binary
     ;; so that we only load the component if the files are newer than
     ;; the load-time.
-    (when *minimal-load*
+    (when (and *minimal-load*
+               (not (find force '(:all :new-source-all)
+		          :test #'eq)))
       (when load-source (setf load-source source-needs-loading))
       (when load-binary (setf load-binary binary-needs-loading)))
 
@@ -4496,7 +4526,8 @@ the system definition, if provided."
 			   (or *load-source-instead-of-binary*
 			       (component-load-only component)
 			       (not *compile-during-load*)))
-		      (and load-binary (not binary-exists)
+		      (and load-binary
+                           (not binary-exists)
 			   (load-source-if-no-binary component))))
 	     ;; Load the source if the source exists and:
 	     ;;   o  we're loading binary and it doesn't exist
@@ -4542,7 +4573,7 @@ the system definition, if provided."
 	    (and (find force '(:new-source :new-source-and-dependents
 					   :new-source-all)
 		       :test #'eq)
-		 (needs-compilation component)))
+		 (needs-compilation component nil)))
     (let ((binary-pname (component-full-pathname component :binary)))
       (when (probe-file binary-pname)
 	(with-tell-user ("Deleting binary"   component :binary)
@@ -4758,7 +4789,7 @@ the system definition, if provided."
      (when (setq changed
 		 (or (find force '(:all t) :test #'eq)
 		     (and (not (non-empty-listp force))
-			  (needs-compilation component))))
+			  (needs-compilation component nil))))
        (setq result
 	     (list component))))
     ((:module :system :subsystem :defsystem)

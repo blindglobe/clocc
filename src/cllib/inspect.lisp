@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.5 2000/03/15 18:40:54 sds Exp $
+;;; $Id: inspect.lisp,v 1.6 2000/03/17 23:04:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -122,12 +122,13 @@
     (multiple-value-bind (len dotted-p) (list-length-dotted obj)
       (apply
        #'make-inspection
-       :num-slots (if len (if dotted-p (1+ len) len) most-positive-fixnum)
+       :num-slots (if len (if dotted-p (1+ len) len)
+                      (1+ (position obj obj :test #'eq)))
        :nth-slot (lambda (ii) (if (and dotted-p (= ii len)) dotted-p
                                   (nth ii obj)))
        :set-slot (lambda (ii val)
                    (if (and dotted-p (= ii len))
-                       (setf (cdr (nthcdr ii obj)) val)
+                       (setf (cdr (nthcdr (1- ii) obj)) val)
                        (setf (nth ii obj) val)))
        :blurb (list (if len
                         (if dotted-p
@@ -193,7 +194,7 @@
     (apply #'make-inspection :self obj :title "atom"
            :blurb (list (format nil "type: ~s" (type-of obj))
                         (format nil "class: ~s" (class-of obj))) opts))
-  (:method :around ((obj t) &rest opts &key id &allow-other-keys)
+  (:method :around ((obj t) &key id &allow-other-keys)
     (or (and (not id) (find obj *inspect-all* :key #'insp-self))
         (let ((insp (call-next-method)))
           (when (> *inspect-debug* 0)
@@ -244,6 +245,20 @@
       (setf (aref *inspect-all* ii) nil))
     (setf (fill-pointer *inspect-all*) 0)))
 
+(defun inspect-read-clean-eval (insp stream)
+  (labels ((clean (form)
+             (cond ((eq (car form) :self)
+                    (setf (car form) (list 'quote (insp-self insp)))
+                    (clean-up (cdr form)))
+                   ((eq (car form) :slot)
+                    (setf (car form) 'funcall
+                          (cdr form) (cons (insp-nth-slot insp) (cdr form)))
+                    (clean-up (cddr form)))
+                   (t (clean-up (car form))
+                      (clean-up (cdr form)))))
+           (clean-up (form) (when (consp form) (clean form)) form))
+    (eval (clean-up (read stream nil nil)))))
+
 ;;;
 ;;; TTY frontend
 ;;;
@@ -279,34 +294,21 @@
         (format t " :r~15t inspect the right neighbor~%"))
        (when (insp-nth-slot insp)
          (format t " number~15t inspect this slot~%"))
-       (format t " :e lisp form~15t eval this form, with these substitutions:
+       (format t " :e lisp-form~15t eval this form, with these substitutions:
  ~20t (:slot number) is replaced with the appropriate slot value
  ~20t :self is replaced with this object
+ :m num lisp~15t Modify this slot
  :q~15t return to the main Read/Eval/Print loop~% ---> ")
        (force-output))
       (:d (describe (insp-self insp)))
       ((:p :a) (print-inspection insp *terminal-io* frontend))
-      (:e (labels ((clean (form)
-                     (cond ((eq (car form) :self)
-                            (setf (car form) `',(insp-self insp))
-                            (clean-up (cdr form)))
-                           ((eq (car form) :slot)
-                            (setf (car form) 'funcall
-                                  (cdr form) (cons (insp-nth-slot insp)
-                                                   (cdr form)))
-                            (clean-up (cddr form)))
-                           (t (clean-up (car form))
-                              (clean-up (cdr form)))))
-                   (clean-up (form) (when (consp form) (clean form)) form))
-            (multiple-value-bind (form err)
-                (ignore-errors (read *terminal-io* nil nil))
-              (if err (format t "read error: ~s" err)
-                  (let ((cln (clean-up form)))
-                    (format t " in > ~s~% -- > ~s~%" form cln)
-                    (multiple-value-bind (res err)
-                        (ignore-errors (eval cln))
-                      (if err (format t "eval error: ~s" err)
-                          (format t " ++ > ~%" res))))))))
+      (:e (handler-case (print (inspect-read-clean-eval insp *terminal-io*))
+            (error (err) (format t " *** error: ~s" err))))
+      (:m (handler-case
+              (print (funcall (insp-set-slot insp)
+                              (inspect-read-clean-eval insp *terminal-io*)
+                              (inspect-read-clean-eval insp *terminal-io*)))
+            (error (err) (format t " *** error: ~s" err))))
       (t (cond ((setq insp (get-insp id com))
                 (print-inspection insp *terminal-io* frontend)
                 (setq id (insp-id insp)))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.29 2004/11/12 19:13:36 sds Exp $
+;;; $Id: tests.lisp,v 2.30 2004/12/22 19:55:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -13,6 +13,7 @@
   (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; these files will be tested:
   (require :cllib-string (translate-logical-pathname "cllib:string"))
+  (require :cllib-matrix (translate-logical-pathname "cllib:matrix"))
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   (require :cllib-date (translate-logical-pathname "cllib:date"))
   (require :cllib-url (translate-logical-pathname "cllib:url"))
@@ -212,6 +213,27 @@
       (ts (namestring (translate-logical-pathname "clocc:"))))
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-cvs num-err)
     num-err))
+
+(defun test-matrix (&key (out *standard-output*) (num-test 10)
+                    (dim 10) (max 10))
+  (loop :repeat num-test :with det :with i1 = (make-array (list dim dim))
+    :with error-count = 0 :for err = 0
+    :for mx = (random-matrix dim dim max) :for m1 = (array-copy mx) :do
+    (handler-case (setq det (matrix-inverse m1))
+      (division-by-zero (c)
+        (mesg :test out " ** degenerate matrix~%~S~%"
+              (first (arithmetic-error-operands c)))))
+    (mesg :test out " ** det = ~S~%" det)
+    (matrix-multiply mx m1 i1)
+    (dotimes (i dim)
+      (dotimes (j dim)
+        (let ((e (abs (- (if (= i j) 1 0) (aref i1 i j)))))
+          (when (< err e)
+            (setq err e)))))
+    (if (> err 0.001)
+        (warn " ###~:D### ERROR: ~F~%~S~%==>~%~S" (incf error-count) err mx m1)
+        (mesg :test out "    err = ~S~%" err))
+    :finally (return error-count)))
 
 (defun test-munkres (&key (out *standard-output*))
   (let ((num-err 0)

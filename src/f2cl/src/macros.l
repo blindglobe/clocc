@@ -326,7 +326,8 @@ is not included")
 ;;-----------------------------------------------------------------------------
 ;;
 ;; Define the intrinsic functions
-
+;;
+;; Reference:  The Fortran 77 standard found at www.fortran.com.  Section 15.10
 (declaim (inline truncate-towards-zero ftruncate-towards-zero))
 
 (defun truncate-towards-zero (x)
@@ -345,6 +346,9 @@ is not included")
   (if (minusp x)
       (fceiling x)
       (ffloor x)))
+
+;; INT is the generic name as well as the integer version.  IFIX is
+;; the same.  IDINT is the double version.
 
 (declaim (inline int ifix idfix))
 
@@ -387,42 +391,44 @@ is not included")
 (defun idfix (x)
   (int x))
 
+;; AINT is the generic and specific function for real; DINT, for
+;; double.  It truncates its arg towards zero and returns the integer
+;; as a floating-point number of the same type as its arg.
+;;
+;; ANINT is the generic and specific function for real; DNINT, for
+;; double. It rounds to the nearest integer and returns the result as
+;; a float of the same type.
+;;
+;; NINT is the generic and specific function for real; IDNINT, for
+;; double.  Does the same as ANINT, but the result is an integer.
+
 (declaim (inline aint dint anint dnint nint idnint))
 
-#-cmu
 (defun aint (x)
   (etypecase x
     (single-float
-     (ftruncate-towards-zero (the (single-float #.(float most-negative-fixnum)
-						#.(float most-positive-fixnum))
-			       x)))
+     (ftruncate-towards-zero (the single-float x)))
     (double-float
-     (ftruncate-towards-zero (the (double-float #.(float most-negative-fixnum 1d0)
-						#.(float most-positive-fixnum 1d0))
-			       x)))))
-#+cmu
-(defun aint (x)
-  (etypecase x
-    (single-float
-     (ftruncate-towards-zero (the (single-float #.(float (- (ash 1 31)))
-						#.(float (1- (ash 1 31))))
-			       x)))
-    (double-float
-     (ftruncate-towards-zero (the (double-float #.(float (- (ash 1 31)) 1d0)
-						#.(float (1- (ash 1 31)) 1d0))
-			       x)))))
+     (ftruncate-towards-zero (the double-float x)))))
 
 (defun dint (x)
   (aint x))
 
 (defun anint (x)
-  (coerce (round x) (type-of x)))
+  (values (fround x)))
 (defun dnint (x)
   (values (fround x)))
 (defun nint (x)
   (values (round x)))
 (defun idnint (x)
   (values (round x)))
+
+;; Type conversion
+;;
+;; FREAL is F2CL's version of the Fortran REAL which takes converts
+;; its arg to a real.  SNGL is the same.  DBLE returns a double.  They
+;; also return the real part of a complex number.  CMPLX takes one or
+;; two args and creates a complex number.
 
 (declaim (inline freal sngl dble cmplx))
 (defun freal (x)
@@ -462,6 +468,10 @@ is not included")
   (mod x y))
 
 
+;; Transfer of sign.  SIGN is the generic and specific function for
+;; real.  ISIGN is for integers; DSIGN for doubles.  Basically
+;; computes sign(a2)*|a1|.
+
 (declaim (inline isign sign dsign))
 
 (defun isign (x y)
@@ -484,55 +494,75 @@ is not included")
   (declare (type double-float x y))
   (float-sign y x))
 
+;; Positive difference.  DIM is the generic and specific function for
+;; real.  IDIM is for integers; DDIM, doubles.
+;;
+;; If a1 > a2, returns a1-a2, otherwise 0.  Basically the same as
+;; max(0, a1-a2).
 (declaim (inline idim dim ddim))
 (defun idim (x y)
   (declare (type integer4 x y))
-  (abs (- x y)))
-;; Fortran 77 says DIM is a generic! 
+  (max 0 (- x y)))
+
 (defun dim (x y)
   (declare (type (or integer4 single-float double-float) x y))
   (etypecase x
     (integer4
-     (abs (- x y)))
+     (max 0 (- x y)))
     (single-float
-     (abs (- x y)))
+     (max 0f0 (- x y)))
     (double-float
-     (abs (- x y)))))
+     (max 0d0 (- x y)))))
 
 (defun ddim (x y)
   (declare (type double-float x y))
-  (abs (- x y)))
+  (max 0d0 (- x y)))
 
+;; Double-precision product.  How this is done isn't specified, but I
+;; suspect the real args are converted to doubles and then the product
+;; is computed.
 (defun dprod (x y)
-  (coerce (* x y) `double-float))
+  (declare (single-float x y))
+  (* (float x 1d0) (float y 1d0)))
 
-(defun max0 (&rest x)
-  (apply #'max x))
-(defun amax1 (&rest x)
-  (apply #'max x))
-(defun dmax1 (&rest x)
-  (apply #'max x))
+;; The max and min functions.
+;;
+;; MAX is the generic. MAX0, AMAX1, and DMAX1 returns the max of the
+;; args with the same type as the args.
+;;
+;; AMAX0 takes integer args and returns the max as a real. MAX1 takes
+;; real args and returns the max as a integer.  (How the conversion is
+;; done isn't specified.)
+;;
+;; Should we make these macros that expand directly to the appropriate
+;; max?
+(defun max0 (x y &rest z)
+  (declare (integer x y))
+  (apply #'max x y z))
+(defun amax1 (x y &rest z)
+  (declare (single-float x y))
+  (apply #'max x y z))
+(defun dmax1 (x y &rest z)
+  (declare (double-float x y))
+  (apply #'max x y z))
+(defun max1 (x y &rest z)
+  (declare (single-float x y))
+  (int (apply #'max x y z)))
+(defun amax0 (x y &rest z)
+  (declare (integer4 x y))
+  (float (apply #'max x y z) 1f0))
 
-(defun min0 (&rest x)
-  (apply #'min x))
-(defun amin1 (&rest x)
-  (apply #'min x))
-(defun dmin1 (&rest x)
-  (let ((result (first x)))
-    (declare (double-float result))
-    (dolist (val (rest x))
-      (declare (double-float val))
-      (setf result (min result val)))
-    result))
+(defun min0 (x y &rest z)
+  (apply #'min x y z))
+(defun amin1 (x y &rest z)
+  (apply #'min x y z))
+(defun dmin1 (x y &rest z)
+  (apply #'min x y z))
 
-(defun amax0 (&rest x)
-  (float (apply #'max x)))
-(defun max1 (&rest x)
-  (nint (apply #'max x)))
-(defun amin0 (&rest x)
-  (float (apply #'min x)))
-(defun min1 (&rest x)
-  (nint (apply #'min x)))
+(defun amin0 (x y &rest z)
+  (float (apply #'min x y z)))
+(defun min1 (x y &rest z)
+  (nint (apply #'min x y z)))
 
 ;; Define some compile macros for these max/min functions.
 #+cmu
@@ -593,6 +623,8 @@ is not included")
   (string<= s1 s2))
 
 
+;; AIMAG: imaginary part of a complex number
+;; CONJG: conjugate of a complex number
 (declaim (inline aimag conjg))
 (defun aimag (c)
   (imagpart c))
@@ -1075,8 +1107,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.38 2002/02/08 23:38:36 rtoy Exp $
+;;; $Id: macros.l,v 1.39 2002/02/09 15:59:26 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.39  2002/02/09 15:59:26  rtoy
+;;; o Add more and better comments
+;;; o AINT was broken because it should accept any range of floats.
+;;; o DIM and friends computed the wrong thing!
+;;; o Change DPROD to convert to doubles first.
+;;; o Some cleanup of MAX and MIN
+;;;
 ;;; Revision 1.38  2002/02/08 23:38:36  rtoy
 ;;; Use ARRAY-TOTAL-SIZE to compute how many elements are in the slice
 ;;; instead of the f2cl declared/derived bounds so that we can dynamically

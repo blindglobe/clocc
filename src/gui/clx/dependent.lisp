@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.4 2001/11/08 22:03:20 pvaneynd Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.5 2002/01/07 17:00:54 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -59,26 +59,26 @@
 
 (eval-when (eval compile load)
 
-(defconstant *buffer-speed* #+clx-debugging 1 #-clx-debugging 3
-  "Speed compiler option for buffer code.")
-(defconstant *buffer-safety* #+clx-debugging 3 #-clx-debugging 0
-  "Safety compiler option for buffer code.")
+  (defconstant *buffer-speed* #+clx-debugging 1 #-clx-debugging 3
+               "Speed compiler option for buffer code.")
+  (defconstant *buffer-safety* #+clx-debugging 3 #-clx-debugging 0
+               "Safety compiler option for buffer code.")
 
-(defun declare-bufmac ()
-  `(declare (optimize (speed ,*buffer-speed*) (safety ,*buffer-safety*))))
+  (defun declare-bufmac ()
+    `(declare (optimize (speed ,*buffer-speed*) (safety ,*buffer-safety*))))
 
 ;;; It's my impression that in lucid there's some way to make a declaration
 ;;; called fast-entry or something that causes a function to not do some
 ;;; checking on args. Sadly, we have no lucid manuals here.  If such a
 ;;; declaration is available, it would be a good idea to make it here when
 ;;; *buffer-speed* is 3 and *buffer-safety* is 0.
-(defun declare-buffun ()
-  #+clx-debugging
-  '(declare (optimize (speed 0) (safety 3)))
-  #-clx-debugging
-  `(declare (optimize (speed ,*buffer-speed*) (safety ,*buffer-safety*))))
+  (defun declare-buffun ()
+    #+clx-debugging
+    '(declare (optimize (speed 0) (safety 3)))
+    #-clx-debugging
+    `(declare (optimize (speed ,*buffer-speed*) (safety ,*buffer-safety*))))
 
-)
+  )
 
 (declaim (inline card8->int8 int8->card8
 		 card16->int16 int16->card16
@@ -87,207 +87,207 @@
 
 (progn
 
-(defun card8->int8 (x)
-  (declare (type card8 x))
-  (declare (clx-values int8))
-  #.(declare-buffun)
-  (the int8 (if (logbitp 7 x)
-		(the int8 (- x #x100))
-	      x)))
+  (defun card8->int8 (x)
+    (declare (type card8 x))
+    (declare (clx-values int8))
+    #.(declare-buffun)
+    (the int8 (if (logbitp 7 x)
+                  (the int8 (- x #x100))
+                  x)))
 
-(defun int8->card8 (x)
-  (declare (type int8 x))
-  (declare (clx-values card8))
-  #.(declare-buffun)
-  (the card8 (ldb (byte 8 0) x)))
+  (defun int8->card8 (x)
+    (declare (type int8 x))
+    (declare (clx-values card8))
+    #.(declare-buffun)
+    (the card8 (ldb (byte 8 0) x)))
 
-(defun card16->int16 (x)
-  (declare (type card16 x))
-  (declare (clx-values int16))
-  #.(declare-buffun)
-  (the int16 (if (logbitp 15 x)
-		 (the int16 (- x #x10000))
-		 x)))
+  (defun card16->int16 (x)
+    (declare (type card16 x))
+    (declare (clx-values int16))
+    #.(declare-buffun)
+    (the int16 (if (logbitp 15 x)
+                   (the int16 (- x #x10000))
+                   x)))
 
-(defun int16->card16 (x)
-  (declare (type int16 x))
-  (declare (clx-values card16))
-  #.(declare-buffun)
-  (the card16 (ldb (byte 16 0) x)))
+  (defun int16->card16 (x)
+    (declare (type int16 x))
+    (declare (clx-values card16))
+    #.(declare-buffun)
+    (the card16 (ldb (byte 16 0) x)))
 
-(defun card32->int32 (x)
-  (declare (type card32 x))
-  (declare (clx-values int32))
-  #.(declare-buffun)
-  (the int32 (if (logbitp 31 x)
-		 (the int32 (- x #x100000000))
-		 x)))
+  (defun card32->int32 (x)
+    (declare (type card32 x))
+    (declare (clx-values int32))
+    #.(declare-buffun)
+    (the int32 (if (logbitp 31 x)
+                   (the int32 (- x #x100000000))
+                   x)))
 
-(defun int32->card32 (x)
-  (declare (type int32 x))
-  (declare (clx-values card32))
-  #.(declare-buffun)
-  (the card32 (ldb (byte 32 0) x)))
+  (defun int32->card32 (x)
+    (declare (type int32 x))
+    (declare (clx-values card32))
+    #.(declare-buffun)
+    (the card32 (ldb (byte 32 0) x)))
 
-)
+  )
 
 (declaim (inline aref-card8 aset-card8 aref-int8 aset-int8))
 
 
 (progn
 
-(defun aref-card8 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values card8))
-  #.(declare-buffun)
-  (the card8 (aref a i)))
+  (defun aref-card8 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values card8))
+    #.(declare-buffun)
+    (the card8 (aref a i)))
 
-(defun aset-card8 (v a i)
-  (declare (type card8 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a i) v))
+  (defun aset-card8 (v a i)
+    (declare (type card8 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a i) v))
 
-(defun aref-int8 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values int8))
-  #.(declare-buffun)
-  (card8->int8 (aref a i)))
+  (defun aref-int8 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values int8))
+    #.(declare-buffun)
+    (card8->int8 (aref a i)))
 
-(defun aset-int8 (v a i)
-  (declare (type int8 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a i) (int8->card8 v)))
+  (defun aset-int8 (v a i)
+    (declare (type int8 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a i) (int8->card8 v)))
 
-)
+  )
 
 
 (progn
 
-(defun aref-card16 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values card16))
-  #.(declare-buffun)
-  (the card16
-       (logior (the card16
-		    (ash (the card8 (aref a (index+ i *word-1*))) 8))
-	       (the card8
-		    (aref a (index+ i *word-0*))))))
+  (defun aref-card16 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values card16))
+    #.(declare-buffun)
+    (the card16
+      (logior (the card16
+                (ash (the card8 (aref a (index+ i *word-1*))) 8))
+              (the card8
+                (aref a (index+ i *word-0*))))))
 
-(defun aset-card16 (v a i)
-  (declare (type card16 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a (index+ i *word-1*)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i *word-0*)) (the card8 (ldb (byte 8 0) v)))
-  v)
+  (defun aset-card16 (v a i)
+    (declare (type card16 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a (index+ i *word-1*)) (the card8 (ldb (byte 8 8) v))
+          (aref a (index+ i *word-0*)) (the card8 (ldb (byte 8 0) v)))
+    v)
 
-(defun aref-int16 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values int16))
-  #.(declare-buffun)
-  (the int16
-       (logior (the int16
-		    (ash (the int8 (aref-int8 a (index+ i *word-1*))) 8))
-	       (the card8
-		    (aref a (index+ i *word-0*))))))
+  (defun aref-int16 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values int16))
+    #.(declare-buffun)
+    (the int16
+      (logior (the int16
+                (ash (the int8 (aref-int8 a (index+ i *word-1*))) 8))
+              (the card8
+                (aref a (index+ i *word-0*))))))
 
-(defun aset-int16 (v a i)
-  (declare (type int16 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a (index+ i *word-1*)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i *word-0*)) (the card8 (ldb (byte 8 0) v)))
-  v)
+  (defun aset-int16 (v a i)
+    (declare (type int16 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a (index+ i *word-1*)) (the card8 (ldb (byte 8 8) v))
+          (aref a (index+ i *word-0*)) (the card8 (ldb (byte 8 0) v)))
+    v)
 
-(defun aref-card32 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values card32))
-  #.(declare-buffun)
-  (the card32
-       (logior (the card32
-		    (ash (the card8 (aref a (index+ i *long-3*))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i *long-2*))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i *long-1*))) 8))
-	       (the card8
-		    (aref a (index+ i *long-0*))))))
+  (defun aref-card32 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values card32))
+    #.(declare-buffun)
+    (the card32
+      (logior (the card32
+                (ash (the card8 (aref a (index+ i *long-3*))) 24))
+              (the card29
+                (ash (the card8 (aref a (index+ i *long-2*))) 16))
+              (the card16
+                (ash (the card8 (aref a (index+ i *long-1*))) 8))
+              (the card8
+                (aref a (index+ i *long-0*))))))
 
-(defun aset-card32 (v a i)
-  (declare (type card32 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
-  v)
+  (defun aset-card32 (v a i)
+    (declare (type card32 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
+          (aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
+          (aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
+          (aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
+    v)
 
-(defun aref-int32 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values int32))
-  #.(declare-buffun)
-  (the int32
-       (logior (the int32
-		    (ash (the int8 (aref-int8 a (index+ i *long-3*))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i *long-2*))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i *long-1*))) 8))
-	       (the card8
-		    (aref a (index+ i *long-0*))))))
+  (defun aref-int32 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values int32))
+    #.(declare-buffun)
+    (the int32
+      (logior (the int32
+                (ash (the int8 (aref-int8 a (index+ i *long-3*))) 24))
+              (the card29
+                (ash (the card8 (aref a (index+ i *long-2*))) 16))
+              (the card16
+                (ash (the card8 (aref a (index+ i *long-1*))) 8))
+              (the card8
+                (aref a (index+ i *long-0*))))))
 
-(defun aset-int32 (v a i)
-  (declare (type int32 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
-  v)
+  (defun aset-int32 (v a i)
+    (declare (type int32 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
+          (aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
+          (aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
+          (aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
+    v)
 
-(defun aref-card29 (a i)
-  (declare (type buffer-bytes a)
-	   (type array-index i))
-  (declare (clx-values card29))
-  #.(declare-buffun)
-  (the card29
-       (logior (the card29
-		    (ash (the card8 (aref a (index+ i *long-3*))) 24))
-	       (the card29
-		    (ash (the card8 (aref a (index+ i *long-2*))) 16))
-	       (the card16
-		    (ash (the card8 (aref a (index+ i *long-1*))) 8))
-	       (the card8
-		    (aref a (index+ i *long-0*))))))
+  (defun aref-card29 (a i)
+    (declare (type buffer-bytes a)
+             (type array-index i))
+    (declare (clx-values card29))
+    #.(declare-buffun)
+    (the card29
+      (logior (the card29
+                (ash (the card8 (aref a (index+ i *long-3*))) 24))
+              (the card29
+                (ash (the card8 (aref a (index+ i *long-2*))) 16))
+              (the card16
+                (ash (the card8 (aref a (index+ i *long-1*))) 8))
+              (the card8
+                (aref a (index+ i *long-0*))))))
 
-(defun aset-card29 (v a i)
-  (declare (type card29 v)
-	   (type buffer-bytes a)
-	   (type array-index i))
-  #.(declare-buffun)
-  (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
-	(aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
-	(aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
-	(aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
-  v)
+  (defun aset-card29 (v a i)
+    (declare (type card29 v)
+             (type buffer-bytes a)
+             (type array-index i))
+    #.(declare-buffun)
+    (setf (aref a (index+ i *long-3*)) (the card8 (ldb (byte 8 24) v))
+          (aref a (index+ i *long-2*)) (the card8 (ldb (byte 8 16) v))
+          (aref a (index+ i *long-1*)) (the card8 (ldb (byte 8 8) v))
+          (aref a (index+ i *long-0*)) (the card8 (ldb (byte 8 0) v)))
+    v)
 
-)
+  )
 
 (defsetf aref-card8 (a i) (v)
   `(aset-card8 ,v ,a ,i))
@@ -354,13 +354,13 @@
 ;;; in the value, and see if the protocal encoding falls in the desired range
 ;;; (64'ths of a degree.)
 ;;;
-(deftype angle () '(satisfies anglep))
+  (deftype angle () '(satisfies anglep))
 
-(defun anglep (x)
-  (and (typep x 'real)
-       (<= (* -360 64) (radians->int16 x) (* 360 64))))
+  (defun anglep (x)
+    (and (typep x 'real)
+         (<= (* -360 64) (radians->int16 x) (* 360 64))))
 
-)
+  )
 
 
 ;;-----------------------------------------------------------------------------
@@ -375,82 +375,82 @@
 
 (macrolet ((char-translators ()
 	     (let ((alist
-		     `(;; The normal ascii codes for the control characters.
-		       ,@`((#\Return . 13)
-			   (#\Linefeed . 10)
-			   (#\Rubout . 127)
-			   (#\Page . 12)
-			   (#\Tab . 9)
-			   (#\Backspace . 8)
-			   (#\Newline . 10)
-			   (#\Space . 32))
+                    `(;; The normal ascii codes for the control characters.
+                      ,@`((#\Return . 13)
+                          (#\Linefeed . 10)
+                          (#\Rubout . 127)
+                          (#\Page . 12)
+                          (#\Tab . 9)
+                          (#\Backspace . 8)
+                          (#\Newline . 10)
+                          (#\Space . 32))
 
-		       ;; The rest of the common lisp charater set with the normal
-		       ;; ascii codes for them.
-		       (#\! . 33) (#\" . 34) (#\# . 35) (#\$ . 36)
-		       (#\% . 37) (#\& . 38) (#\' . 39) (#\( . 40)
-		       (#\) . 41) (#\* . 42) (#\+ . 43) (#\, . 44)
-		       (#\- . 45) (#\. . 46) (#\/ . 47) (#\0 . 48)
-		       (#\1 . 49) (#\2 . 50) (#\3 . 51) (#\4 . 52)
-		       (#\5 . 53) (#\6 . 54) (#\7 . 55) (#\8 . 56)
-		       (#\9 . 57) (#\: . 58) (#\; . 59) (#\< . 60)
-		       (#\= . 61) (#\> . 62) (#\? . 63) (#\@ . 64)
-		       (#\A . 65) (#\B . 66) (#\C . 67) (#\D . 68)
-		       (#\E . 69) (#\F . 70) (#\G . 71) (#\H . 72)
-		       (#\I . 73) (#\J . 74) (#\K . 75) (#\L . 76)
-		       (#\M . 77) (#\N . 78) (#\O . 79) (#\P . 80)
-		       (#\Q . 81) (#\R . 82) (#\S . 83) (#\T . 84)
-		       (#\U . 85) (#\V . 86) (#\W . 87) (#\X . 88)
-		       (#\Y . 89) (#\Z . 90) (#\[ . 91) (#\\ . 92)
-		       (#\] . 93) (#\^ . 94) (#\_ . 95) (#\` . 96)
-		       (#\a . 97) (#\b . 98) (#\c . 99) (#\d . 100)
-		       (#\e . 101) (#\f . 102) (#\g . 103) (#\h . 104)
-		       (#\i . 105) (#\j . 106) (#\k . 107) (#\l . 108)
-		       (#\m . 109) (#\n . 110) (#\o . 111) (#\p . 112)
-		       (#\q . 113) (#\r . 114) (#\s . 115) (#\t . 116)
-		       (#\u . 117) (#\v . 118) (#\w . 119) (#\x . 120)
-		       (#\y . 121) (#\z . 122) (#\{ . 123) (#\| . 124)
-		       (#\} . 125) (#\~ . 126))))
+                        ;; The rest of the common lisp charater set with the normal
+                        ;; ascii codes for them.
+                      (#\! . 33) (#\" . 34) (#\# . 35) (#\$ . 36)
+                      (#\% . 37) (#\& . 38) (#\' . 39) (#\( . 40)
+                      (#\) . 41) (#\* . 42) (#\+ . 43) (#\, . 44)
+                      (#\- . 45) (#\. . 46) (#\/ . 47) (#\0 . 48)
+                      (#\1 . 49) (#\2 . 50) (#\3 . 51) (#\4 . 52)
+                      (#\5 . 53) (#\6 . 54) (#\7 . 55) (#\8 . 56)
+                      (#\9 . 57) (#\: . 58) (#\; . 59) (#\< . 60)
+                      (#\= . 61) (#\> . 62) (#\? . 63) (#\@ . 64)
+                      (#\A . 65) (#\B . 66) (#\C . 67) (#\D . 68)
+                      (#\E . 69) (#\F . 70) (#\G . 71) (#\H . 72)
+                      (#\I . 73) (#\J . 74) (#\K . 75) (#\L . 76)
+                      (#\M . 77) (#\N . 78) (#\O . 79) (#\P . 80)
+                      (#\Q . 81) (#\R . 82) (#\S . 83) (#\T . 84)
+                      (#\U . 85) (#\V . 86) (#\W . 87) (#\X . 88)
+                      (#\Y . 89) (#\Z . 90) (#\[ . 91) (#\\ . 92)
+                      (#\] . 93) (#\^ . 94) (#\_ . 95) (#\` . 96)
+                      (#\a . 97) (#\b . 98) (#\c . 99) (#\d . 100)
+                      (#\e . 101) (#\f . 102) (#\g . 103) (#\h . 104)
+                      (#\i . 105) (#\j . 106) (#\k . 107) (#\l . 108)
+                      (#\m . 109) (#\n . 110) (#\o . 111) (#\p . 112)
+                      (#\q . 113) (#\r . 114) (#\s . 115) (#\t . 116)
+                      (#\u . 117) (#\v . 118) (#\w . 119) (#\x . 120)
+                      (#\y . 121) (#\z . 122) (#\{ . 123) (#\| . 124)
+                      (#\} . 125) (#\~ . 126))))
 	       (cond ((dolist (pair alist nil)
 			(when (not (= (char-code (car pair)) (cdr pair)))
 			  (return t)))
 		      `(progn
 			 (defconstant *char-to-card8-translation-table*
-				      ',(let ((array (make-array
-						       (let ((max-char-code 255))
-							 (dolist (pair alist)
-							   (setq max-char-code
-								 (max max-char-code
-								      (char-code (car pair)))))
-							 (1+ max-char-code))
-						       :element-type 'card8)))
-					  (dotimes (i (length array))
-					    (setf (aref array i) (mod i 256)))
-					  (dolist (pair alist)
-					    (setf (aref array (char-code (car pair)))
-						  (cdr pair)))
-					  array))
+                           ',(let ((array (make-array
+                                           (let ((max-char-code 255))
+                                             (dolist (pair alist)
+                                               (setq max-char-code
+                                                     (max max-char-code
+                                                          (char-code (car pair)))))
+                                             (1+ max-char-code))
+                                           :element-type 'card8)))
+                                  (dotimes (i (length array))
+                                    (setf (aref array i) (mod i 256)))
+                                  (dolist (pair alist)
+                                    (setf (aref array (char-code (car pair)))
+                                          (cdr pair)))
+                                  array))
 			 (defconstant *card8-to-char-translation-table*
-				      ',(let ((array (make-array 256)))
-					  (dotimes (i (length array))
-					    (setf (aref array i) (code-char i)))
-					  (dolist (pair alist)
-					    (setf (aref array (cdr pair)) (car pair)))
-					  array))
+                           ',(let ((array (make-array 256)))
+                                  (dotimes (i (length array))
+                                    (setf (aref array i) (code-char i)))
+                                  (dolist (pair alist)
+                                    (setf (aref array (cdr pair)) (car pair)))
+                                  array))
 			 (progn
   			   (defun char->card8 (char)
 			     (declare (type base-char char))
 			     #.(declare-buffun)
 			     (the card8 (aref (the (simple-array card8 (*))
-						   *char-to-card8-translation-table*)
+                                                *char-to-card8-translation-table*)
 					      (the array-index (char-code char)))))
 			   (defun card8->char (card8)
 			     (declare (type card8 card8))
 			     #.(declare-buffun)
 			     (the base-char
-				  (or (aref (the simple-vector *card8-to-char-translation-table*)
-					    card8)
-				      (error "Invalid CHAR code ~D." card8))))
+                               (or (aref (the simple-vector *card8-to-char-translation-table*)
+                                         card8)
+                                   (error "Invalid CHAR code ~D." card8))))
 			   )
 			 (dotimes (i 256)
 			   (unless (= i (char->card8 (card8->char i)))
@@ -567,9 +567,9 @@
 ;; It doesn't because CLtL doesn't pass the environment to GET-SETF-METHOD.
 (defmacro conditional-store (place old-value new-value)
   `(without-interrupts
-     (cond ((eq ,place ,old-value)
-	    (setf ,place ,new-value)
-	    t))))
+    (cond ((eq ,place ,old-value)
+           (setf ,place ,new-value)
+           t))))
 
 ;;;----------------------------------------------------------------------------
 ;;; IO Error Recovery
@@ -615,19 +615,25 @@
      ;; ok, try to connect to a AF_UNIX domain socket
      #-clisp
      (port::open-unix-socket (format nil
-                                    "~A~D"
-                                    +X-unix-socket-path+
-                                    display)
-                            :kind :stream
-                            :bin t)
-      ;; clisp doesn't have this...
-      #+clisp
-      (sys::make-socket-stream "" 0))
+                                     "~A~D"
+                                     +X-unix-socket-path+
+                                     display)
+                             :kind :stream
+                             :bin t)
+     ;; clisp doesn't have this...
+     #+clisp
+     (sys::make-socket-stream "" 0))
     (t
      ;; try to connect by hand
-     (port:open-socket (resolve-host-ipaddr host)
-                       (+ 6000 display)
-                       t))))
+     (let ((host (host-address host)))
+       (when host
+         ;; Fixme: get a descent ip standard in CLX: a vector!
+         (let ((ip (format nil
+                           "~{~D~^.~}"
+                           (rest host))))
+           (port:open-socket ip 
+                             (+ 6000 display)
+                             t)))))))
          
 ;;; BUFFER-READ-DEFAULT - read data from the X stream
 
@@ -703,7 +709,7 @@
 	  ((listen stream) nil)
 	  ((eql timeout 0) :timeout)
 	  (t
-	   (if (port::process-wait-for-stream stream timeout)
+	   (if (port::wait-for-stream stream timeout)
 	       nil
 	       :timeout)))))
 
@@ -718,7 +724,7 @@
     (declare (type (or null stream) stream))
     (if (null stream)
 	t
-      (listen stream))))
+        (listen stream))))
 
 
 ;;;----------------------------------------------------------------------------
@@ -766,8 +772,8 @@
       (push `(setf (svref ,local-state ,index) (svref ,saved-state ,index))
 	    resets))
     `(unwind-protect
-	 (progn
-	   ,@body)
+          (progn
+            ,@body)
        (let ((,local-state (gcontext-local-state ,gc)))
 	 (declare (type gcontext-state ,local-state))
 	 ,@resets
@@ -842,7 +848,7 @@
 ;;-----------------------------------------------------------------------------
 
 (defun default-error-handler (display error-key &rest key-vals
-			      &key asynchronous &allow-other-keys)
+                                      &key asynchronous &allow-other-keys)
   (declare (type generalized-boolean asynchronous)
 	   (dynamic-extent key-vals))
   ;; The default display-error-handler.
@@ -905,11 +911,20 @@
 	 (unless (= (port:hostent-addr-type hostent) 2)
 	   (no-address-error))
 	 (let ((addr (first (port:hostent-addr-list hostent))))
-	   (list :internet
-		 (ldb (byte 8 24) addr)
-		 (ldb (byte 8 16) addr)
-		 (ldb (byte 8  8) addr)
-		 (ldb (byte 8  0) addr))))))))
+	   (etypecase addr
+	     (integer 
+              (list :internet
+                    (ldb (byte 8 24) addr)
+                    (ldb (byte 8 16) addr)
+                    (ldb (byte 8  8) addr)
+                    (ldb (byte 8  0) addr)))
+ 	     (string
+              (let ((parts (mapcar #'parse-integer 
+                                   (split-sequence:split-sequence 
+                                    #\. 
+                                    addr :count 4))))
+		(cons :internet
+		      parts))))))))))
 
 
 ;;-----------------------------------------------------------------------------
@@ -1034,7 +1049,7 @@
   '(unsigned-byte 24))
 
 (deftype pixarray-32-element-type ()
- '(unsigned-byte 32))
+  '(unsigned-byte 32))
 
 (deftype pixarray-1  ()
   '(simple-array pixarray-1-element-type (* *)))
@@ -1067,13 +1082,13 @@
 ;;; Element-type is ignored.
 ;;;
 (defmacro with-underlying-simple-vector 
-	  ((variable element-type pixarray) &body body)
+    ((variable element-type pixarray) &body body)
   (declare (ignore element-type))
   `(lisp::with-array-data ((,variable ,pixarray)
 			   (start)
 			   (end))
-      (declare (ignore start end))
-      ,@body))
+     (declare (ignore start end))
+     ,@body))
 
 ;;; These are used to read and write pixels from and to CARD8s.
 
@@ -1082,7 +1097,7 @@
 (defmacro read-image-load-byte (size position integer)
   (unless *image-bit-lsb-first-p* (setq position (- 7 position)))
   `(the (unsigned-byte ,size)
-	(ldb (byte ,size ,position)(the card8 ,integer))))
+     (ldb (byte ,size ,position)(the card8 ,integer))))
 
 ;;; READ-IMAGE-ASSEMBLE-BYTES is used to build 16, 24 and 32 bit pixels from
 ;;; the appropriate number of CARD8s.
@@ -1107,9 +1122,9 @@
   integer-size
   (unless *image-byte-lsb-first-p* (setq position (- integer-size 8 position)))
   `(the card8
-	(ldb
-	 (byte 8 ,position)
-	 (the (unsigned-byte ,integer-size) ,integer))))
+     (ldb
+      (byte 8 ,position)
+      (the (unsigned-byte ,integer-size) ,integer))))
 
 ;;; WRITE-IMAGE-ASSEMBLE-BYTES is used to build a CARD8 from 1 or 4 bit
 ;;; pixels.
@@ -1167,7 +1182,7 @@
 
 #+(or CMU)
 (defun fast-read-pixarray-24 (buffer-bbuf index array x y width height 
-			      padded-bytes-per-line bits-per-pixel)
+                                          padded-bytes-per-line bits-per-pixel)
   (declare (type buffer-bytes buffer-bbuf)
 	   (type pixarray-24 array)
 	   (type card16 width height)
@@ -1191,9 +1206,9 @@
 	  (declare (type array-index end i x))
 	  (setf (aref vector x)
 		(read-image-assemble-bytes
-		  (aref buffer-bbuf (index+ i 0))
-		  (aref buffer-bbuf (index+ i 1))
-		  (aref buffer-bbuf (index+ i 2))))))))
+                 (aref buffer-bbuf (index+ i 0))
+                 (aref buffer-bbuf (index+ i 1))
+                 (aref buffer-bbuf (index+ i 2))))))))
   t)
 
 #+CMU
@@ -1216,31 +1231,31 @@
 (defun copy-bit-rect (source source-width sx sy dest dest-width dx dy
 			     height width)
   (declare (type array-index source-width sx sy dest-width dx dy height width))
-   #.(declare-buffun)
-   (lisp::with-array-data ((sdata source)
-			   (sstart)
-			   (send))
-     (declare (ignore send))
-     (lisp::with-array-data ((ddata dest)
-			     (dstart)
-			     (dend))
-       (declare (ignore dend))
-       (assert (and (zerop sstart) (zerop dstart)))
-       (do ((src-idx (index+ (* vm:vector-data-offset vm:word-bits)
-			     sx (index* sy source-width))
-		     (index+ src-idx source-width))
-	    (dest-idx (index+ (* vm:vector-data-offset vm:word-bits)
-			      dx (index* dy dest-width))
-		      (index+ dest-idx dest-width))
-	    (count height (1- count)))
-	   ((zerop count))
-	 (declare (type array-index src-idx dest-idx count))
-	 (kernel:bit-bash-copy sdata src-idx ddata dest-idx width)))))
+  #.(declare-buffun)
+  (lisp::with-array-data ((sdata source)
+                          (sstart)
+                          (send))
+    (declare (ignore send))
+    (lisp::with-array-data ((ddata dest)
+                            (dstart)
+                            (dend))
+      (declare (ignore dend))
+      (assert (and (zerop sstart) (zerop dstart)))
+      (do ((src-idx (index+ (* vm:vector-data-offset vm:word-bits)
+                            sx (index* sy source-width))
+                    (index+ src-idx source-width))
+           (dest-idx (index+ (* vm:vector-data-offset vm:word-bits)
+                             dx (index* dy dest-width))
+                     (index+ dest-idx dest-width))
+           (count height (1- count)))
+          ((zerop count))
+        (declare (type array-index src-idx dest-idx count))
+        (kernel:bit-bash-copy sdata src-idx ddata dest-idx width)))))
 
 #+CMU
 (defun fast-read-pixarray-using-bitblt
-       (bbuf boffset pixarray x y width height padded-bytes-per-line
-	bits-per-pixel)
+    (bbuf boffset pixarray x y width height padded-bytes-per-line
+          bits-per-pixel)
   (declare (type (array * 2) pixarray))
   #.(declare-buffun)
   (copy-bit-rect bbuf
@@ -1254,9 +1269,9 @@
   t)
 
 (defun fast-read-pixarray (bbuf boffset pixarray
-			   x y width height padded-bytes-per-line
-			   bits-per-pixel
-			   unit byte-lsb-first-p bit-lsb-first-p)
+                                x y width height padded-bytes-per-line
+                                bits-per-pixel
+                                unit byte-lsb-first-p bit-lsb-first-p)
   (declare (type buffer-bytes bbuf)
 	   (type array-index boffset
 		 padded-bytes-per-line)
@@ -1268,23 +1283,23 @@
   (progn bbuf boffset pixarray x y width height padded-bytes-per-line
 	 bits-per-pixel unit byte-lsb-first-p bit-lsb-first-p)
   (or
-    (let ((function
-	    (or (and (index= (pixarray-element-size pixarray) bits-per-pixel)
-		     #'fast-read-pixarray-using-bitblt)
-		(and (index= bits-per-pixel 24)
-		     #'fast-read-pixarray-24))))
-      (when function
-	(read-pixarray-internal
-	  bbuf boffset pixarray x y width height padded-bytes-per-line
-	  bits-per-pixel function
-	  unit byte-lsb-first-p bit-lsb-first-p
-	  *image-unit* *image-byte-lsb-first-p* *image-bit-lsb-first-p*)))))
+   (let ((function
+          (or (and (index= (pixarray-element-size pixarray) bits-per-pixel)
+                   #'fast-read-pixarray-using-bitblt)
+              (and (index= bits-per-pixel 24)
+                   #'fast-read-pixarray-24))))
+     (when function
+       (read-pixarray-internal
+        bbuf boffset pixarray x y width height padded-bytes-per-line
+        bits-per-pixel function
+        unit byte-lsb-first-p bit-lsb-first-p
+        *image-unit* *image-byte-lsb-first-p* *image-bit-lsb-first-p*)))))
 
 ;;; FAST-WRITE-PIXARRAY - copy part of a pixarray into an array of CARD8s
 
 #+(or CMU)
 (defun fast-write-pixarray-24 (buffer-bbuf index array x y width height
-			       padded-bytes-per-line bits-per-pixel)
+                                           padded-bytes-per-line bits-per-pixel)
   (declare (type buffer-bytes buffer-bbuf)
 	   (type pixarray-24 array)
 	   (type int16 x y)
@@ -1317,8 +1332,8 @@
 
 #+CMU
 (defun fast-write-pixarray-using-bitblt
-       (bbuf boffset pixarray x y width height padded-bytes-per-line
-	bits-per-pixel)
+    (bbuf boffset pixarray x y width height padded-bytes-per-line
+          bits-per-pixel)
   #.(declare-buffun)
   (copy-bit-rect pixarray
 		 (index* (array-dimension pixarray 1) bits-per-pixel)
@@ -1331,8 +1346,8 @@
   t)
 
 (defun fast-write-pixarray (bbuf boffset pixarray x y width height
-			    padded-bytes-per-line bits-per-pixel
-			    unit byte-lsb-first-p bit-lsb-first-p)
+                                 padded-bytes-per-line bits-per-pixel
+                                 unit byte-lsb-first-p bit-lsb-first-p)
   (declare (type buffer-bytes bbuf)
 	   (type pixarray pixarray)
 	   (type card16 x y width height)
@@ -1343,17 +1358,17 @@
   (progn bbuf boffset pixarray x y width height padded-bytes-per-line
 	 bits-per-pixel unit byte-lsb-first-p bit-lsb-first-p)
   (or
-    (let ((function
-	    (or (and (index= (pixarray-element-size pixarray) bits-per-pixel)
-		     #'fast-write-pixarray-using-bitblt)
-		(and (index= bits-per-pixel 24)
-		     #'fast-write-pixarray-24))))
-      (when function
-	(write-pixarray-internal
-	  bbuf boffset pixarray x y width height padded-bytes-per-line
-	  bits-per-pixel function
-	  *image-unit* *image-byte-lsb-first-p* *image-bit-lsb-first-p*
-	  unit byte-lsb-first-p bit-lsb-first-p)))))
+   (let ((function
+          (or (and (index= (pixarray-element-size pixarray) bits-per-pixel)
+                   #'fast-write-pixarray-using-bitblt)
+              (and (index= bits-per-pixel 24)
+                   #'fast-write-pixarray-24))))
+     (when function
+       (write-pixarray-internal
+        bbuf boffset pixarray x y width height padded-bytes-per-line
+        bits-per-pixel function
+        *image-unit* *image-byte-lsb-first-p* *image-bit-lsb-first-p*
+        unit byte-lsb-first-p bit-lsb-first-p)))))
 
 ;;; FAST-COPY-PIXARRAY - copy part of a pixarray into another
 

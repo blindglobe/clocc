@@ -10,7 +10,7 @@
 ;;; CL:REMOVE, CL:SUBSTITUTE et al. (:from-end being non-NIL only
 ;;; affects the answer if :count is less than the number of
 ;;; subsequences, by analogy with the above-referenced functions).
-;;;   
+;;;
 ;;; * changing the :maximum keyword argument to :count, by analogy
 ;;; with CL:REMOVE, CL:SUBSTITUTE, and so on.
 ;;;
@@ -45,7 +45,7 @@
 ;;; -> ("" "" "r" "c" "d" "" "r" ""), 11
 ;;;
 ;;; * (split-sequence-if-not (lambda (x) (member x '(#\a #\b))) "abracadabra")
-;;; -> ("ab" "a" "a" "ab" "a"), 11 
+;;; -> ("ab" "a" "a" "ab" "a"), 11
 ;;;
 ;;; * (split-sequence #\; ";oo;bar;ba;" :start 1 :end 9)
 ;;; -> ("oo" "bar" "b"), 9
@@ -71,16 +71,16 @@ this function; :from-end values of NIL and T are equivalent unless
 argument to CL:SUBSEQ into the sequence indicating where processing
 stopped."
   (let ((len (length seq))
-        (other-keys (nconc (when test-supplied 
+        (other-keys (nconc (when test-supplied
                              (list :test test))
-                           (when test-not-supplied 
+                           (when test-not-supplied
                              (list :test-not test-not))
-                           (when key-supplied 
+                           (when key-supplied
                              (list :key key)))))
     (unless end (setq end len))
     (if from-end
         (loop for right = end then left
-              for left = (max (or (apply #'position delimiter seq 
+              for left = (max (or (apply #'position delimiter seq
 					 :end right
 					 :from-end t
 					 other-keys)
@@ -91,18 +91,18 @@ stopped."
               if (and count (>= nr-elts count))
               ;; We can't take any more. Return now.
               return (values (nreverse subseqs) right)
-              else 
+              else
               collect (subseq seq (1+ left) right) into subseqs
               and sum 1 into nr-elts
               until (< left start)
               finally (return (values (nreverse subseqs) (1+ left))))
       (loop for left = start then (+ right 1)
-            for right = (min (or (apply #'position delimiter seq 
+            for right = (min (or (apply #'position delimiter seq
 					:start left
 					other-keys)
 				 len)
 			     end)
-            unless (and (= right left) 
+            unless (and (= right left)
                         remove-empty-subseqs) ; empty subseq we don't want
             if (and count (>= nr-elts count))
             ;; We can't take any more. Return now.
@@ -126,12 +126,12 @@ this function; :from-end values of NIL and T are equivalent unless
 argument to CL:SUBSEQ into the sequence indicating where processing
 stopped."
   (let ((len (length seq))
-        (other-keys (when key-supplied 
+        (other-keys (when key-supplied
 		      (list :key key))))
     (unless end (setq end len))
     (if from-end
         (loop for right = end then left
-              for left = (max (or (apply #'position-if predicate seq 
+              for left = (max (or (apply #'position-if predicate seq
 					 :end right
 					 :from-end t
 					 other-keys)
@@ -142,18 +142,18 @@ stopped."
               if (and count (>= nr-elts count))
               ;; We can't take any more. Return now.
               return (values (nreverse subseqs) right)
-              else 
+              else
               collect (subseq seq (1+ left) right) into subseqs
               and sum 1 into nr-elts
               until (< left start)
               finally (return (values (nreverse subseqs) (1+ left))))
       (loop for left = start then (+ right 1)
-            for right = (min (or (apply #'position-if predicate seq 
+            for right = (min (or (apply #'position-if predicate seq
 					:start left
 					other-keys)
 				 len)
 			     end)
-            unless (and (= right left) 
+            unless (and (= right left)
                         remove-empty-subseqs) ; empty subseq we don't want
             if (and count (>= nr-elts count))
             ;; We can't take any more. Return now.
@@ -166,7 +166,7 @@ stopped."
 
 (defun split-sequence-if-not (predicate seq &key (count nil) (remove-empty-subseqs nil) (from-end nil) (start 0) (end nil) (key nil key-supplied))
   "Return a list of subsequences in seq delimited by items satisfying
-(CL:COMPLEMENT predicate).
+\(CL:COMPLEMENT predicate).
 
 If :remove-empty-subseqs is NIL, empty subsequences will be included
 in the result; otherwise they will be discarded.  All other keywords
@@ -177,12 +177,12 @@ of this function; :from-end values of NIL and T are equivalent unless
 argument to CL:SUBSEQ into the sequence indicating where processing
 stopped."
   (let ((len (length seq))
-	(other-keys (when key-supplied 
+	(other-keys (when key-supplied
 		      (list :key key))))
     (unless end (setq end len))
     (if from-end
         (loop for right = end then left
-              for left = (max (or (apply #'position-if-not predicate seq 
+              for left = (max (or (apply #'position-if-not predicate seq
 					 :end right
 					 :from-end t
 					 other-keys)
@@ -193,18 +193,18 @@ stopped."
               if (and count (>= nr-elts count))
               ;; We can't take any more. Return now.
               return (values (nreverse subseqs) right)
-              else 
+              else
               collect (subseq seq (1+ left) right) into subseqs
               and sum 1 into nr-elts
               until (< left start)
               finally (return (values (nreverse subseqs) (1+ left))))
       (loop for left = start then (+ right 1)
-            for right = (min (or (apply #'position-if-not predicate seq 
+            for right = (min (or (apply #'position-if-not predicate seq
 					:start left
 					other-keys)
 				 len)
 			     end)
-            unless (and (= right left) 
+            unless (and (= right left)
                         remove-empty-subseqs) ; empty subseq we don't want
             if (and count (>= nr-elts count))
             ;; We can't take any more. Return now.

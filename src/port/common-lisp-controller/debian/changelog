@@ -1,3 +1,9 @@
+common-lisp-controller (3.34) unstable; urgency=low
+
+  * Add wrapper when redefining openmcl's require function
+  
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 26 Sep 2002 15:45:31 -0600
+
 common-lisp-controller (3.33) unstable; urgency=low
 
   * Fix type if clc-autobuild-check

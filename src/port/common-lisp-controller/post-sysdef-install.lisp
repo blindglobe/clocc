@@ -235,7 +235,7 @@ than the maximum file-write-date of output-files, return T."
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:
 (eval-when (:load-toplevel :execute)
-  #-(or (and allegro-version>= (version>= 4 1)) :lispworks)
+  #-(or (and allegro-version>= (version>= 4 1)) :lispworks openmcl)
   (setf (symbol-function
          #-(or (and :excl :allegro-v4.0) :mcl :sbcl :lispworks) 'lisp:require
          #+(and :excl :allegro-v4.0) 'cltl1:require
@@ -245,6 +245,10 @@ than the maximum file-write-date of output-files, return T."
          #+:mcl 'ccl:require)
         (symbol-function 'clc-require))
 
+  #+openmcl
+  (let ((ccl::*warn-if-redefine-kernel* nil))
+    (setf (symbol-function 'ccl:require (symbol-function 'clc-require))))
+  
   #+:lispworks
   (let ((warn-packs system::*packages-for-warn-on-redefinition*))
     (declare (special system::*packages-for-warn-on-redefinition*))

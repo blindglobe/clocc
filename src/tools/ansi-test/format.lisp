@@ -260,7 +260,7 @@
 ;;  YYYYYY, ZZZZZZZZ.
 ")
 
-;;  ~f ---------------------------------------------------------------------------
+;;  ~f ------------------------------------------------------------------------
 ;;  Format F
 
 (my-assert
@@ -299,17 +299,17 @@
  (format nil "~9,0,6f" 3.14159)
  " 3141590.")
 
-;;  ANSI CL is not clear here whether the width is ignored or not.
 (my-assert
  (FORMAT NIL "~5D" (QUOTE A))
- "A")
+ "    A"
+ "ANSI CL is not clear here whether the width is ignored or not,
+but it makes more sense to print non-numeric arguments properly alighned")
 
-;;  ANSI CL is not clear here whether the width is ignored or not.
 (my-assert
  (FORMAT NIL "~5,3F" (QUOTE A))
- "A    "
- "If ~F has to print a non-fp, it should do ~D, ~D
-uses ~A if the argument is not a number...")
+ "    A"
+ "ANSI CL is not clear here whether the width is ignored or not,
+but it makes more sense to print non-numeric arguments properly alighned")
 
 (my-assert
  (FORMAT NIL "~5,3F" #C(1.2 0.3))
@@ -319,7 +319,7 @@ uses ~A if the argument is not a number...")
  (FORMAT NIL "~5,3F" 2/3)
  "0.667")
 
-;;  ~e ---------------------------------------------------------------------------
+;;  ~e ----------------------------- ------------------------------------------
 ;;  Format E
 
 (my-assert
@@ -362,7 +362,7 @@ uses ~A if the argument is not a number...")
  (format nil "~9,2,1E" 0.0314159)
  "  3.14E-2")
 
-;;  ~% ~d ~e (v) -----------------------------------------------------------------
+;;  ~% ~d ~e (v) --------------------------------------------------------------
 (my-assert
  (let (x)
    (dotimes (k 13 x)
@@ -385,7 +385,7 @@ Scale factor -4: | 0.000031E+05|" "
 Scale factor -5: | 0.000003E+06|"))
 
 
-;;  ~g ---------------------------------------------------------------------------
+;;  ~g ------------------------------------------------------------------------
 (my-assert
  (defun foo (x)
    (format nil "~9,2,1,,'*G|~9,3,2,3,'?,,'$G|~9,3,2,0,'%G|~9,2G"
@@ -429,7 +429,7 @@ Scale factor -5: | 0.000003E+06|"))
 
 ;; (foo 3.14L120 und L1200) fehler in numerik
 
-;;  ~a ---------------------------------------------------------------------------
+;;  ~a ------------------------------------------------------------------------
 
 (my-assert
  (FORMAT NIL "foo")

@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.10 2001/11/04 07:02:08 sds Exp $
+;;;; $Id: rng.lisp,v 1.11 2004/05/18 21:04:30 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.11  2004/05/18 21:04:30  sds
+;;;;  whitespace changes to help emacs
+;;;;
 ;;;;  Revision 1.10  2001/11/04 07:02:08  sds
 ;;;;  (gen-exponential-variate-ziggurat): density has to accept 0d0 too
 ;;;;
@@ -1871,7 +1874,7 @@ with mean M:
 				       state)))))))
 
 #||
-(defun time-expo (n)
+ (defun time-expo (n)
   (declare (fixnum n))
   (flet (#+cmu
 	 (timer (f)
@@ -1900,7 +1903,7 @@ with mean M:
 		     #'gen-exponential-variate-ziggurat))
       (timer f))))
 
-(defun time-gaussian (n)
+ (defun time-gaussian (n)
   (declare (fixnum n))
   (flet (#+cmu
 	 (timer (f)
@@ -1927,7 +1930,7 @@ with mean M:
 		     #'gen-gaussian-variate-ziggurat))
       (timer f))))
 
-(defun time-cauchy (n)
+ (defun time-cauchy (n)
   (declare (fixnum n))
   (gc)
   (format t "gen-cauchy-variate-tan~%")
@@ -1944,7 +1947,7 @@ with mean M:
 	   (gen-cauchy-variate-algorithm-ca *random-state*))))
   )
 
-(defun time-gamma (n a)
+ (defun time-gamma (n a)
   (declare (fixnum n))
   (flet ((timer (f)
 	   (let ((func (coerce f 'function)))
@@ -1967,14 +1970,14 @@ with mean M:
 ;;; Some simple routines for plotting histograms.  This is meant to be
 ;;; used as a simple means of testing the generators above.
 
-(defun make-hist-centers (lo hi intervals)
+ (defun make-hist-centers (lo hi intervals)
   (let ((center (make-array intervals))
 	(step (/ (- hi lo) intervals)))
     (dotimes (k intervals)
       (setf (aref center k) (+ lo (* k step) (/ step 2))))
     center))
 
-(defun make-hist (x &key lo hi (intervals 10))
+ (defun make-hist (x &key lo hi (intervals 10))
   (let* ((lo-limit (or lo (reduce #'min x)))
 	 (hi-limit (or hi (reduce #'max x)))
 	 (hist (make-array intervals :initial-element 0))
@@ -1990,7 +1993,7 @@ with mean M:
     (values step hist (make-hist-centers lo-limit hi-limit intervals))))
 
 
-(defun plot-hist (x &key (intervals 10) lo hi)
+ (defun plot-hist (x &key (intervals 10) lo hi)
   (multiple-value-bind (step count center)
       (make-hist x :intervals intervals :lo lo :hi hi)
     (format t "step = ~A~%" step)
@@ -2007,7 +2010,7 @@ with mean M:
 		  (exp (- (float (aref center k) 1.0)))))))))
 
 
-(defun plot-hist-pdf (x pdf &key (intervals 10) lo hi)
+ (defun plot-hist-pdf (x pdf &key (intervals 10) lo hi)
   (multiple-value-bind (step count center)
       (make-hist x :intervals intervals :lo lo :hi hi)
     (format t "step = ~A~%" step)
@@ -2023,7 +2026,7 @@ with mean M:
 		  (float (aref center k) 1.0)
 		  (float (funcall pdf (aref center k)))))))))
 
-(defun rng-expo-histogram (n gen)
+ (defun rng-expo-histogram (n gen)
   (let ((m 2d0)
 	(r (make-array n :element-type 'double-float)))
     (dotimes (k n)
@@ -2033,7 +2036,7 @@ with mean M:
 			 (/ (exp (- (/ x m))) m))
 		   :intervals 50 :lo 0 :hi (* 10 m))))
 
-(defun rng-gaussian-histogram (n gen)
+ (defun rng-gaussian-histogram (n gen)
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
       (setf (aref r k) (funcall gen *random-state*)))
@@ -2042,7 +2045,7 @@ with mean M:
 			 (* (/ (sqrt (* 2 pi))) (exp (* -0.5d0 x x))))
 		   :intervals 50 :lo -5 :hi 5)))
 
-(defun rng-cauchy-histogram (n gen &key (limit 100))
+ (defun rng-cauchy-histogram (n gen &key (limit 100))
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
       (setf (aref r k) (funcall gen *random-state*)))
@@ -2050,7 +2053,7 @@ with mean M:
 			 (/ (* pi (+ 1 (* x x)))))
 		   :intervals 500 :lo (- limit) :hi limit)))
 
-(defun rng-gamma-histogram (n a gamma gen)
+ (defun rng-gamma-histogram (n a gamma gen)
   (let ((r (make-array n :element-type 'double-float)))
     (dotimes (k n)
       (setf (aref r k) (funcall gen a *random-state*)))

@@ -33,6 +33,8 @@ this is or a character, a symbol or a string.")
          #+cmu	 
 	 (eq (ext:info variable kind var)
 	     ':special);; like clisp
+	 #+ecls
+	 (si::specialp var)
          #+sbcl	 
 	 (eq (sb-int::info variable kind var)
 	     ':special);; like clisp
@@ -365,7 +367,7 @@ this is or a character, a symbol or a string.")
 (my-assert
  (makunbound 'v3)
  #+(or xcl allegro cmu sbcl) v3
- #+clisp error)
+ #+(or clisp ecls) error)
 
 (my-assert
  (fmakunbound 'v3)
@@ -609,7 +611,7 @@ this is or a character, a symbol or a string.")
 (my-assert
  (makunbound 'v5)
  #+(or xcl allegro cmu sbcl) v5
- #+clisp error)
+ #+(or clisp ecls) error)
 
 (my-assert
  (not (null (remprop 'v5 'i2)))

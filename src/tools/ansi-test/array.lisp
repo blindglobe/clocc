@@ -248,7 +248,8 @@
        #+gcl (equal s "63")
        #+allegro (equal s "65536")
        #+(or cmu sbcl) (equal s "65529")
-       #-(or xcl clisp akcl allegro cmu sbcl) "unknown"
+       #+ecls (equal s "64")
+       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
        ) )
  t)
 
@@ -260,7 +261,8 @@
        #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
        #+allegro (equal s "16777216")
        #+(or cmu sbcl) (equal s "536870911")
-       #-(or xcl clisp akcl allegro cmu sbcl) "unknown"
+       #+ecls (equal s "16777216")
+       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
        ) )
  t)
 
@@ -271,7 +273,8 @@
        #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
        #+allegro (equal s "16777216")
        #+(or cmu sbcl) (equal s "536870911")
-       #-(or xcl clisp akcl allegro cmu sbcl) "unknown"
+       #+ecls (equal s "16777216")
+       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
        ) )
  t)
 
@@ -316,8 +319,8 @@
  (array-element-type da1)
  #+(or xcl allegro cmu sbcl) double-float
  #+clisp t
- #+akcl long-float
- #-(or xcl clisp akcl allegro cmu sbcl) unknown)
+ #+(or akcl ecls) long-float
+ #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 ;;test rang
 
@@ -362,8 +365,8 @@
 
 (my-assert
  (setf (aref zero) 1.0)
- #+(or xcl clisp akcl allegro cmu sbcl) type-error
- #-(or xcl clisp akcl allegro cmu sbcl) unknown)
+ #+(or xcl clisp akcl allegro cmu sbcl ecls) type-error
+ #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 (unintern 'zero)
 
@@ -997,7 +1000,7 @@
 (my-assert
  (vector-push-extend 5.0s0 vmfad)
  #+(or xcl gcl allegro cmu sbcl) error
- #+(or clisp (and akcl (not gcl))) 0
- #-(or xcl clisp akcl allegro cmu sbcl) unknown)
+ #+(or clisp ecls (and akcl (not gcl))) 0
+ #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 (unintern 'vmfad)

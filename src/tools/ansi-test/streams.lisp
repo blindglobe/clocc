@@ -12,7 +12,8 @@
  #+xcl "#<%TYPE-STRUCTURE-STREAM NIL>"
  #+clisp "#<BROADCAST-STREAM>"
  #+(or cmu sbcl) "#<Broadcast Stream>"
- #-(or xcl clisp akcl allegro cmu sbcl) unknown)
+ #+ecls "#<broadcast stream 8>"
+ #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 (my-assert
  (progn (setq s1 (open "d1.plc" :direction :output))

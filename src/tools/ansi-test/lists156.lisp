@@ -23,12 +23,12 @@
 (my-assert
  (PAIRLIS '(A B C)
 	  '(1 2 3))
- #+(or XCL CLISP ALLEGRO cmu sbcl)
+ #+(or XCL CLISP ALLEGRO cmu sbcl ecls)
  ((C . 3)
   (B . 2)
   (A . 1))
  #+AKCL ((A . 1) (B . 2) (C . 3))
- #-(or XCL CLISP AKCL ALLEGRO cmu sbcl) UNKNOWN)
+ #-(or XCL CLISP AKCL ALLEGRO cmu sbcl ecls) UNKNOWN)
 
 (my-assert
  (ASSOC 'A

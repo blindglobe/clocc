@@ -22,8 +22,7 @@
 
 
 (defvar *allowed-exported-symbols*
-  (list
-   "&allow-other-keys"            "*print-miser-width*"
+  '("&allow-other-keys"            "*print-miser-width*"
    "&aux"                         "*print-pprint-dispatch*"
    "&body"                        "*print-pretty*"
    "&environment"                 "*print-radix*"

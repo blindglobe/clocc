@@ -16,6 +16,6 @@
    (gensym)
    (prin1-to-string (gensym "garbage-")))
  #+xcl "#:|garbage|-33"
- #+(or clisp akcl allegro cmu sbcl) "#:|garbage-33|"
- #-(or xcl clisp akcl allegro cmu sbcl) UNKNOWN)
+ #+(or clisp akcl allegro cmu sbcl ecls) "#:|garbage-33|"
+ #-(or xcl clisp akcl allegro cmu sbcl ecls) UNKNOWN)
 

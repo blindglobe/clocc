@@ -21,8 +21,8 @@
 (my-assert
  (format nil "~10:@<foo~;bar~>")
  #+(or XCL CLISP ALLEGRO) "  foo bar "
- #+(or AKCL cmu sbcl) " foo bar  "
- #-(or XCL CLISP AKCL ALLEGRO cmu sbcl) UNKNOWN)
+ #+(or AKCL cmu sbcl ecls) " foo bar  "
+ #-(or XCL CLISP AKCL ALLEGRO cmu sbcl ecls) UNKNOWN)
 
 (my-assert
  (format nil "~10<foobar~>")

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.14 2004/12/29 20:15:03 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.15 2005/01/03 14:22:59 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -21,10 +21,12 @@
 ;;; information in the Chunk.  We just have to ensure that anyone who
 ;;; needs it has a pointer to the Chunk so it can tell whether the
 ;;; information is up to date and if not recompute it.
+;;;;; <<<< Chunk-defn
 (defclass Chunk ()
   ((name :accessor Chunk-name  ; -- An S-expression
 	  :initarg :name
 	  :initform "")
+                    ;;;;; <<<< Mgt-stuff
    (manage-request :accessor Chunk-manage-request
 		   :initform false
 		   :type boolean)
@@ -37,14 +39,16 @@
     ;; field is true.  
     ;; Global invariant: c is managed if and only if either its
     ;; manage-request is t or some derivee is managed.
+                    ;;;;; >>>> Mgt-stuff
    (height :accessor Chunk-height
 	   :type integer)
    ;; -- 0 if not derived from anything, else 1 + max height
-   ;; of chunks in 'basis'. 
+   ;; of chunks in 'basis' (but different for Or-chunks; see below).
+                    ;;;;; <<<< Update-stuff
    (date :accessor Chunk-date
 	 :initform -1
 	 :type number)
-   ;; -- date when updated or -1 if unknown
+   ;; -- date when last updated or -1 if never updated
    (latest-supporter-date
          :accessor Chunk-latest-supporter-date
 	 :initform +no-supporters-date+
@@ -56,6 +60,7 @@
    ;; 'latest-supporter-date' to decrease.  In particular, a chunk can
    ;; go from begin out of date to being up to date only by a call
    ;; to 'chunks-update'.
+                    ;;;;; <<<< Bases-derivees
    (basis :accessor Chunk-basis
 	  :initarg :basis
 	  :initform !()
@@ -65,6 +70,7 @@
 	     :initform !()
 	     :type list)
    ;; -- back pointers to chunks this one is a member of the basis of
+                    ;;;;; >>>> Bases-derivees
    (update-basis :accessor Chunk-update-basis
 		 :initarg :update-basis
 		 :initform !()
@@ -85,7 +91,9 @@
 		:initform  0
 		:type fixnum)
    ;; - Marked with number of update in progress
+                    ;;;;; >>>> Update-stuff
    ))
+;;;;; >>>> Chunk-defn
 ;;; We sort of assume that update-basis is "derivative" in the sense
 ;;; that if the chunk is up to date wrt the basis, there are no "surprises" 
 ;;; in the update-basis.  Every chunk in the update basis is a function
@@ -160,8 +168,7 @@
    (setf (Chunk-height ch)
          (cond ((null (Chunk-basis ch)) 0)
 	       (t
-		(+ (reduce #'max (Chunk-basis ch)
-			   :key #'Chunk-height)
+		(+ (chunks-max-height (Chunk-basis ch))
 		   1))))
    (dolist (b (Chunk-basis ch))
       (pushnew ch (Chunk-derivees b) :test #'eq))
@@ -179,16 +186,23 @@
    (cond ((slot-boundp orch 'disjuncts)
 	  (or-chunk-set-update-basis orch)
 	  (dolist (b (Or-chunk-disjuncts orch))
-	     (pushnew orch (Chunk-derivees b)))))
+	     (pushnew orch (Chunk-derivees b)))
+	  (or-chunk-set-height orch)))
    orch)
 
 (defmethod (setf Or-chunk-disjuncts) :before (_ (orch Or-chunk))
    (cond ((slot-boundp orch 'disjuncts)
 	  (dolist (d (Or-chunk-disjuncts orch))
-	  (setf (Chunk-derivees d)
-		(remove orch (Chunk-derivees d))))))
+	     (setf (Chunk-derivees d)
+		    (remove orch (Chunk-derivees d))))
+	  (or-chunk-set-height orch)))
    (setf (Chunk-update-basis orch) !())
    orch)
+
+(defun or-chunk-set-height (orch)
+	  (setf (Chunk-height orch)
+	        (+ 1 (max (chunks-max-height (Chunk-basis orch))
+			  (chunks-max-height (Or-chunk-disjuncts orch))))))
 
 ;;; All of this is mainly to make the internals of Or-chunks
 ;;; look reasonably consistent.  The final decision about
@@ -239,14 +253,6 @@
       (cond ((or (> latest-supporter-date
 		    (Chunk-latest-supporter-date ch))
 		 (= latest-supporter-date +no-supporters-date+))
-;;;;	     (cond ((and (>= (Chunk-date ch) 0)
-;;;;			 (>= latest-supporter-date 0)
-;;;;			 (>= (Chunk-date ch)
-;;;;			     latest-supporter-date))
-;;;;		    (setq ch* ch)
-;;;;		    (format t !"Chunk ~s up to date in unlikely circumstances ~
-;;;;                             ~%  date = ~s latest-supporter-date = ~s~%"
-;;;;			   ch (Chunk-date ch) latest-supporter-date)))
 	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)
 	     (cons ch
 		   (mapcan (\\ (d) (set-latest-support-date d))
@@ -597,6 +603,7 @@
 			    ch))
 			((and (Chunk-managed ch)
 			      (not (= (Chunk-update-mark ch) up-mark))
+			      (not (chunk-date-up-to-date ch))
 			      ;; Run the deriver when and only when
 			      ;; its basis is up to date --
 			      (every (\\ (b)
@@ -609,45 +616,16 @@
 					    (chunk-up-to-date b)))
 				     (Chunk-update-basis ch)))
 			 (let ((in-progress
-				     (cons ch in-progress))
-			       (down-marked (= (Chunk-update-mark ch)
-					       down-mark)))
+				     (cons ch in-progress)))
 			    (setf (Chunk-update-mark ch) up-mark)
-			    (cond ((and (or down-marked
-					    (Chunk-managed ch))
-					(not (chunk-up-to-date ch)))
-				   (cond ((chunk-derive-and-record ch)
-					  (dolist (d (Chunk-derivees ch))
-					     (derivees-update
-						d in-progress))
-					  (dolist (d (Chunk-update-derivees
-							ch))
-					     (derivees-update
-					        d in-progress)))))
-;;;;				  ((not (or down-marked (Chunk-managed ch)))
-;;;;				   (format t "Not down marked or managed~%"))
-;;;;				  (t
-;;;;				   (format t "Already up to date~%"))
-			    )))
-;;;;			((= (Chunk-update-mark ch) up-mark)
-;;;;			 (format t "Already up-marked ~s~%"
-;;;;				 up-mark))
-;;;;			(t
-;;;;			 (dolist (b (Chunk-basis ch))
-;;;;			    (cond ((and (not (chunk-is-leaf b))
-;;;;					(not (chunk-up-to-date b)))
-;;;;				   (format t "Basis ~s not up to date~%"
-;;;;					   b))))
-;;;;			 (dolist (b (Chunk-update-basis ch))
-;;;;			    (cond ((and (not (chunk-is-leaf b))
-;;;;					(not (chunk-up-to-date b)))
-;;;;				   (format t "U-Basis ~s not up to date~%"
-;;;;					   b)))))
-		   )))
+			    (cond ((chunk-derive-and-record ch)
+				   (dolist (d (Chunk-derivees ch))
+				      (derivees-update d in-progress))
+				   (dolist (d (Chunk-update-derivees
+						 ch))
+				      (derivees-update d in-progress)))))))))
 	 (cond ((some #'Chunk-managed chunks)
 		(setq update-no* up-mark)
-;;;;		(setf update-no* (+ update-no* 1))
-;;;;		(format t "update-no* = ~s~%" update-no*)
 		(unwind-protect
 		   (let ((leaves
 			    (mapcan (\\ (ch)
@@ -847,6 +825,9 @@
      (setf (Chunk-update-derivees b) (delete ch (Chunk-update-derivees b))))
   (dolist (d (Chunk-update-derivees ch))
      (setf (Chunk-update-basis d) (delete ch (Chunk-update-basis d)))))	  
+
+(defun chunks-max-height (chunks)
+   (reduce #'max chunks :key #'Chunk-height :initial-value 0))
 
 (defun slot-is-empty (obj slot)
    (or (not (slot-boundp obj slot))

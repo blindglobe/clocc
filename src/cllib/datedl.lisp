@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.11 2002/08/19 13:13:02 sds Exp $
+;;; $Id: datedl.lisp,v 1.12 2002/11/30 22:33:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -446,7 +446,7 @@ Return nil if at the end already, or the change in value."
 Key defaults to VAL; split defaults to `date-ye'."
   (declare (type dated-list dl) (type (or fixnum function) split)
            (type (function (sequence) double-float) dev-fn))
-  (remf opts :split) (remf opts :dev-fn)
+  (setq opts (remove-plist opts :split :dev-fn))
   (loop :for ll :in (dated-list-fl dl) :and nn :of-type index-t :from 0
         :with sp :of-type (or function fixnum) =
         (if (functionp split) (compose 'split (dl-date dl)) split)
@@ -559,8 +559,8 @@ Must not assume that the list is properly ordered!"
                               &allow-other-keys)
   "Apply `standard-deviation' to the dated list."
   (declare (type dated-list dl))
-  (remf opts :slot)
-  (apply #'standard-deviation (dl-ll dl) :key (dl-slot dl slot) opts))
+  (apply #'standard-deviation (dl-ll dl) :key (dl-slot dl slot)
+         (remove-plist opts :slot)))
 
 (defsubst standard-deviation-relative-dl (dl &key (slot 'val))
   "Apply `standard-deviation' to the dated list."

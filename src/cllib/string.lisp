@@ -1,6 +1,4 @@
-;;; File: <string.lisp - 2000-03-08 Wed 16:56:41 Eastern Standard Time sds@ksp.com>
-;;;
-;;; string utilities
+;;; String Utilities
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold.
 ;;; This is open-source software.
@@ -9,7 +7,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: string.lisp,v 1.3 2000/03/23 02:39:29 sds Exp $
+;;; $Id: string.lisp,v 1.4 2000/03/24 20:38:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,8 +17,9 @@
 
 (in-package :cllib)
 
-(export '(string-beg-with string-end-with string-beg-with-cs string-end-with-cs
-          purge-string split-string split-seq substitute-subseq))
+(export
+ '(string-beg-with string-end-with string-beg-with-cs string-end-with-cs
+   purge-string split-string split-seq substitute-subseq substitute-subseq-if))
 
 ;;;
 ;;;
@@ -72,12 +71,6 @@
   "Non-destructively remove junk from string."
   (substitute-if #\Space (lambda (cc) (find cc junk :test #'char=)) str))
 
-(defsubst split-string (str chars &rest opts)
-  "Split the string on chars."
-  (declare (string str) (sequence chars))
-  (apply #'split-seq str (lambda (ch) (declare (character ch)) (find ch chars))
-         opts))
-
 (defun split-seq (seq pred &key (start 0) end key strict)
   "Return a list of subseq's of SEQ, split on predicate PRED.
 Start from START, end with END.  If STRICT is non-nil, collect
@@ -94,6 +87,49 @@ zero-length subsequences too.
         (setq st1 (position-if pred seq :start st0 :end end :key key))
         :collect (subseq seq st0 st1)))
 
+(defsubst split-string (str chars &rest opts)
+  "Split the string on chars."
+  (declare (string str) (sequence chars))
+  (apply #'split-seq str (lambda (ch) (declare (character ch)) (find ch chars))
+         opts))
+
+(defun substitute-subseq-if (seq begf endf repf &key (start 0) end)
+  "Substitute all subsequences in a sequence with a replacement sequence.
+The result is of the same type as SEQ.
+  (substitute-subseq-if SEQ BEG-F END-F REPL-F &key START END)
+BEG-F and END-F will be passed 3 arguments: SEQ, start and end of search
+REP-F will be passed 4 arguments: SEQ, start and end of replacement, and
+ the type of the sequence to return.
+Therefore, `substitute-subseq' could be implemented as
+
+ (defun substitute-subseq (seq sub rep &key (start 0) end
+                           (test #'eql) (key #'identity))
+   (substitute-subseq-if
+    seq
+    (lambda (seq beg fin)
+      (search sub seq :start2 beg :end2 fin :test test :key key))
+    (lambda (seq beg fin) (declare (ignore seq fin)) (+ beg (length sub)))
+    (lambda (seq beg fin type) (declare (ignore seq beg fin type)) rep)
+    :start start :end end))
+
+Is is implemented separately for (non-existent :-) performance reasons."
+  (declare (sequence seq) (type index-t start)
+           (type (function (sequence index-t t) (or null index-t)) begf)
+           (type (function (sequence index-t) index-t) endf)
+           (type (function (sequence index-t t symbol) sequence) repf))
+  (loop :with type =
+        (typecase seq (string 'string) (vector 'vector) (list 'list)
+                  (t (error 'case-error :proc 'substitute-subseq :args
+                            (list 'seq seq 'string 'vector 'list))))
+        :and last :of-type index-t = start
+        :for next = (funcall begf seq last end)
+        :collect (subseq seq last next) :into all
+        :while next
+        :do (setq last (funcall endf seq next end))
+        :collect (funcall repf seq next last type) :into all
+        :finally (return (reduce (lambda (s0 s1) (concatenate type s0 s1))
+                                 all :initial-value (subseq seq 0 start)))))
+
 (defun substitute-subseq (seq sub rep &key (start 0) end
                           (test #'eql) (key #'identity))
   "Substitute all subsequences in a sequence with a replacement sequence.
@@ -109,7 +145,8 @@ The result is of the same type as SEQ.
         :for next = (search sub seq :start2 last :end2 end :test test :key key)
         :collect (subseq seq last next) :into all
         :while next :collect rep :into all :do (setq last (+ next olen))
-        :finally (return (apply #'concatenate type (subseq seq 0 start) all))))
+        :finally (return (reduce (lambda (s0 s1) (concatenate type s0 s1))
+                                 all :initial-value (subseq seq 0 start)))))
 
 (provide :string)
 ;;; }}} string.lisp ends here

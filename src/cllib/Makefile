@@ -1,5 +1,9 @@
-# $Id: Makefile,v 2.18 2001/03/14 23:35:29 sds Exp $
+# CLLIB Makefile
+# LISPTYPE should be set before using this file
+#
+# $Id: Makefile,v 2.19 2001/03/15 16:38:08 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
+
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
 SOURCES := animals base card check clhs closio date datedl doall elisp fileio \

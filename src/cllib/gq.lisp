@@ -1,4 +1,4 @@
-;;; File: <gq.lisp - 1998-06-15 Mon 17:47:53 EDT sds@mute.eaglets.com>
+;;; File: <gq.lisp - 1998-06-30 Tue 09:47:14 EDT sds@mute.eaglets.com>
 ;;;
 ;;; GetQuote
 ;;; get stock/mutual fund quotes from the Internet
@@ -11,9 +11,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gq.lisp,v 1.4 1998/06/15 21:48:32 sds Exp $
+;;; $Id: gq.lisp,v 1.5 1998/06/30 13:47:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.5  1998/06/30 13:47:42  sds
+;;; Switched to `print-object'.
+;;;
 ;;; Revision 1.4  1998/06/15 21:48:32  sds
 ;;; Made `gq-fix-date' return the last trading date (skip weekend).
 ;;;
@@ -36,7 +39,8 @@
   (let ((dir #+unix "/home/sds/eagle/" #+win32 "c:/home/sds/fx/")
 	(*load-verbose* nil) (*load-print* nil))
     (unless (boundp '*require-table*) (load (concatenate 'string dir "base")))
-    (sds-require "date") (sds-require "url") (sds-require "gnuplot")))
+    (sds-require "date") (sds-require "url") (sds-require "gnuplot"))
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 
 (defun gq-complete-url (url &rest ticks)
@@ -50,7 +54,7 @@
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (daily-data (:print-function print-dd) (:conc-name dd-))
+(defstruct (daily-data #+cmu (:print-function print-dd) (:conc-name dd-))
   (nav 0.0d0 :type double-float)
   (chg 0.0d0 :type double-float)
   (prc 0.0d0 :type double-float)
@@ -70,6 +74,17 @@
       (when (zerop (dd-pre dd)) (setf (dd-pre dd) (- nav chg))))
     dd))
 
+#-cmu
+(defmethod print-object ((dd daily-data) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "price:~15t~7,2f~35tbid:~45t~7,2f
+previous:~15t~7,2f~35task:~45t~7,2f
+change:~15t~7,2f~35thigh:~45t~7,2f
+%:~15t~7,2f~35tlow:~45t~7,2f~%"
+	      (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
+	      (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
+
+#+cmu
 (defun print-dd (dd &optional stream depth)
   "Print the daily datum."
   (declare (ignore depth) (type daily-data dd))
@@ -88,7 +103,7 @@ change:~15t~7,2f~35thigh:~45t~7,2f
     (declare (ignore se mi) (fixnum ho da mo ye wd))
     (let ((td (mk-date :ye ye :mo mo :da da)))
       (declare (type date dt))
-      (if (and (or (null dt) (date= dt td)) (< ho 18))
+      (if (and (or (null dt) (date= dt td)) (< ho 17))
           (yesterday td (case wd (0 3) (6 2) (t 1))) (or dt td)))))
 
 (defun get-quotes-apl (url &rest ticks)
@@ -228,7 +243,7 @@ Return the most recent date with these month and day."
   "The history, to be read from `*hist-data-file*'.")
 
 (eval-when (load compile eval)
-(defstruct (pfl (:print-function print-pfl))
+(defstruct (pfl #+cmu (:print-function print-pfl))
   (tick nil :type symbol)
   (nums 0.0d0 :type double-float)
   (bprc 0.0d0 :type double-float)
@@ -242,6 +257,13 @@ Suitable for `read-list-from-stream'."
   (values (make-pfl :tick ra :nums (read stream) :bprc (read stream)
 		    :name (read stream)) (read stream nil +eof+)))
 
+#-cmu
+(defmethod print-object ((pfl pfl) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~:@(~a~) ~8,3f ~7,2f ~a" (pfl-tick pfl) (pfl-nums pfl)
+	      (pfl-bprc pfl) (pfl-name pfl))))
+
+#+cmu
 (defun print-pfl (pfl &optional stream depth)
   "Print the PFL struct."
   (declare (type pfl pfl) (ignore depth))
@@ -254,7 +276,7 @@ Suitable for `read-list-from-stream'."
   (declare (symbol sy)) (find sy *holdings* :key #'pfl-tick :test #'eq))
 
 (eval-when (load compile eval)
-(defstruct (hist (:print-function print-hist))
+(defstruct (hist #+cmu (:print-function print-hist))
   (date +bad-date+ :type date)
   (totl 0.0d0 :type double-float)
   (navs nil :type list))
@@ -270,6 +292,13 @@ Suitable for `read-list-from-stream'."
        (values hist vl))
     (push vl rr)))
 
+#-cmu
+(defmethod print-object ((hist hist) stream)
+  (if *print-readably* (call-next-method)
+      (format stream "~a ~15,5f~{ ~7,2f~}" (hist-date hist)
+	      (hist-totl hist) (hist-navs hist))))
+
+#+cmu
 (defun print-hist (hist &optional stream depth)
   "Print the HIST struct."
   (declare (type hist hist) (ignore depth))
@@ -307,14 +336,14 @@ only the data after `*hist-data-file-sep*' is changed."
 			 file *hist-data-file-sep*)))
 	     (setq zz (read outst nil +eof+)))
 	   (terpri outst)
-	   (write-list-to-stream hist outst #'print-hist))
+	   (write-list-to-stream hist outst))
 	  (t				; new file
 	   (format t "File `~a' does not exists. Creating...~%" file)
 	   (princ *hist-data-file-header* outst)
 	   (terpri outst)
-	   (write-list-to-stream hold outst #'print-pfl)
+	   (write-list-to-stream hold outst)
 	   (terpri outst) (princ *hist-data-file-sep* outst) (terpri outst)
-	   (write-list-to-stream hist outst #'print-hist))))
+	   (write-list-to-stream hist outst))))
   (format t "~d record~:p about ~r holding~:p written.~%"
 	  (length hist) (length hold)))
 
@@ -386,7 +415,7 @@ YEA is the list of 1, 3, 5, and 10-year returns."
 	     (when ye
 	       (format str "~10t[1ye:~6,2f%; 3ye:~6,2f%; 5ye:~6,2f%; ~
 10ye:~6,2f%]~%" (first ye) (second ye) (third ye) (fourth ye)))
-	     (print-dd dd str)
+	     (prin1 dd str)
 	     (setq ov (* (pfl-nums hl) (pfl-bprc hl))
 		   pv (* (pfl-nums hl)
 			 (cond ((not (zerop (dd-pre dd))) (dd-pre dd))

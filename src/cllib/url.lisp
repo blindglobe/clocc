@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1998-05-26 Tue 16:13:42 EDT sds@mute.eaglets.com>
+;;; File: <url.lisp - 1998-06-30 Tue 09:47:50 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.2 1998/05/26 20:19:35 sds Exp $
+;;; $Id: url.lisp,v 1.3 1998/06/30 13:48:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.3  1998/06/30 13:48:08  sds
+;;; Switched to `print-object'.
+;;;
 ;;; Revision 1.2  1998/05/26 20:19:35  sds
 ;;; Adopted to work with ACL 5beta.
 ;;;
@@ -22,7 +25,8 @@
 (in-package :cl-user)
 
 (eval-when (load compile eval)
-  (sds-require "base") (sds-require "print") (sds-require "util"))
+  (sds-require "base") (sds-require "print") (sds-require "util")
+  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; {{{ HTML parsing
@@ -73,7 +77,7 @@
 ;;; }}}{{{ URL handling
 ;;;
 
-(defstruct (url (:print-function print-url))
+(defstruct (url #+cmu (:print-function print-url))
   "URL - Uniform Resource Locator: protocol://user#password@host:port/path."
   (prot "" :type string)		; protocol
   (user "" :type string)		; username
@@ -117,23 +121,54 @@ guess from the protocol."
   (setq url (url url))
   (subseq (url-path url) (1+ (position #\/ (url-path url) :from-end t))))
 
+#-cmu
+(defmethod print-object ((url url) stream)
+  "Print the URL in the standard form."
+  (if *print-readably* (call-next-method)
+      (let ((str (case stream ((nil) (make-string-output-stream))
+                       ((t) *standard-output*) (t stream))))
+        (declare (stream str))
+        (when *print-escape* (write #\" :stream str))
+        (let ((*print-escape* nil))
+          (write (url-prot url) :stream str) (write-string "://" str)
+          (unless (string= "" (url-user url))
+            (write (url-user url) :stream str)
+            (unless (string= "" (url-pass url))
+              (write-string "#" str) (write (url-pass url) :stream str))
+            (write-string "@" str))
+          (write (url-host url) :stream str)
+          (unless (zerop (url-port url))
+            (write-string ":" str) (write (url-port url) :stream str))
+          (unless (or (zerop (length (url-path url)))
+                      (eq #\/ (aref (url-path url) 0)))
+            (write-string "/" str))
+          (write (url-path url) :stream str))
+        (when *print-escape* (write #\" :stream str))
+        (unless stream (get-output-stream-string str)))))
+
+#+cmu
 (defun print-url (url &optional (stream t) depth)
   "Print the URL in the standard form."
   (declare (ignore depth) (type url url))
-  (let ((str (or stream (make-string-output-stream))) (*print-escape* nil))
-    (write (url-prot url) :stream str) (write-string "://" str)
-    (unless (equal "" (url-user url))
-      (write (url-user url) :stream str)
-      (unless (equal "" (url-pass url))
-	(write-string "#" str) (write (url-pass url) :stream str))
-      (write-string "@" str))
-    (write (url-host url) :stream str)
-    (unless (zerop (url-port url))
-      (write-string ":" str) (write (url-port url) :stream str))
-    (unless (or (zerop (length (url-path url)))
-		(eq #\/ (aref (url-path url) 0)))
-      (write-string "/" str))
-    (write (url-path url) :stream str)
+  (let ((str (case stream ((nil) (make-string-output-stream))
+                   ((t) *standard-output*) (t stream))))
+    (declare (stream str))
+    (when *print-escape* (write #\" :stream str))
+    (let ((*print-escape* nil))
+      (write (url-prot url) :stream str) (write-string "://" str)
+      (unless (equal "" (url-user url))
+        (write (url-user url) :stream str)
+        (unless (equal "" (url-pass url))
+          (write-string "#" str) (write (url-pass url) :stream str))
+        (write-string "@" str))
+      (write (url-host url) :stream str)
+      (unless (zerop (url-port url))
+        (write-string ":" str) (write (url-port url) :stream str))
+      (unless (or (zerop (length (url-path url)))
+                  (eq #\/ (aref (url-path url) 0)))
+        (write-string "/" str))
+      (write (url-path url) :stream str))
+    (when *print-escape* (write #\" :stream str))
     (unless stream (get-output-stream-string str))))
 
 (defcustom *url-special-chars* simple-string "#%&*+,-./:=?@_~"

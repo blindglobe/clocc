@@ -9,7 +9,15 @@
 
 ;;; Derived and specialized components.
 
-(defclass c-file (file c-language-mixin)
+(defclass c-file (file)
+  ()
+  )
+
+(defclass c-source-file (c-file
+			 compilable-component-mixin
+			 loadable-component-mixin
+			 linkable-component-mixin
+			 #|c-language-mixin|#)
   ()
   )
 
@@ -19,7 +27,7 @@
 
 (defclass c-executable (c-file executable-file)
   ()
-  (:default-initargs :link t))
+  (:default-initargs :link t :compile-only t))
 
 (defclass c-object (c-file object-file)
   ()

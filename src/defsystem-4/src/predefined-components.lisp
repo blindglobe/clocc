@@ -141,7 +141,7 @@ operated on in a `serial' way."))
 (defun filep (x) (file-p x))
 
 
-(defclass object-file (file)
+(defclass object-file (file loadable-component-mixin linkable-component-mixin)
   ()
   )
 
@@ -150,7 +150,10 @@ operated on in a `serial' way."))
   )
 
 
-(defclass common-lisp-file (file)
+(defclass common-lisp-file (file
+			    loadable-component-mixin
+			    compilable-component-mixin
+			    interpretable-component-mixin)
   ()
   (:default-initargs
     :language :common-lisp

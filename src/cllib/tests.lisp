@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.27 2004/11/11 22:17:26 sds Exp $
+;;; $Id: tests.lisp,v 2.28 2004/11/12 18:37:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -289,6 +289,7 @@
         (unless (equalp vec (base64-decode str))
           (mesg :test out "<~S -> ~S -> ~S>" vec str (base64-decode str))
           (incf num-err)))
+      (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-base64 num-err)
       num-err)))
 
 (defun test-all (&key (out *standard-output*)

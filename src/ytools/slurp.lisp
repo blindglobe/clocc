@@ -36,24 +36,22 @@
 
 (defun place-load-progress-rec (pn)
    (setq pn (pathname-resolve pn true))
-   (let ((lpr (pathname-prop 'load-progress-rec pn)))
-      (or lpr
-	  (let ((lpr (make-Load-progress-rec
-			:pathname (make-Pathname
-				     :type (cond ((member (Pathname-type pn)
-							  source-suffixes*
-							  :test #'string=)
-						  false)
-						 (t (Pathname-type pn)))
-				     :defaults pn)
-			:status false
-			:whether-compile false
-			:when-reached (get-universal-time)
-			:when-loaded false
-			:status-timestamp file-op-count*)))
-	     (setf (pathname-prop 'load-progress-rec pn)
-		   lpr)
-	     lpr))))
+   (let ((typeless-pn
+	    (make-Pathname
+	       :type (cond ((member (Pathname-type pn) source-suffixes*
+				    :test #'string=)
+			    false)
+			   (t (Pathname-type pn)))
+	       :defaults pn)))
+      (let ((lpr (pathname-prop 'load-progress-rec typeless-pn)))
+	 (or lpr
+	     (let ((lpr (make-Load-progress-rec
+			   :pathname typeless-pn)))
+		(setf (pathname-prop 'load-progress-rec typeless-pn)
+		      lpr)
+		(setf (pathname-prop 'load-progress-rec pn)
+		      lpr)
+		lpr)))))
 	     
 (defmacro find-lprec (&rest filespecs)
    `(do-find-lprec ',filespecs))
@@ -115,6 +113,7 @@
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
 
+;;; Why the hell is this a macro?
 (defmacro file-op-defaults-update (specs possible-flags
 				   acc-defaults set-defaults)
    (let ((default-var (gensym)))
@@ -398,7 +397,8 @@ NOT USED BY ANYONE (oddly enough)
 		(cond ((memq interned-flag possible-flags)
 		       (setq flags (cons interned-flag flags)))
 		      (t
-		       (error "Unexpected flag ~s; expected one of ~a"
+		       (cerror "I'll ignore it"
+			   "Unexpected flag ~s; expected one of ~a"
 			      (car al)
 			      (mapcar (lambda (flag)
 					 (intern (symbol-name flag)

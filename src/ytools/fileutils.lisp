@@ -28,7 +28,11 @@
 			 ((:loaded)
 			  (lprec-load r false false false))
 			 ((:maybe-compiled)
-			  (lprec-compile r false (find-changed-supporters r)))))))))
+			  (lprec-compile
+			     r false
+			     (find-changed-supporters
+				(lprec-find-supporters r)
+				(Load-progress-rec-when-reached r))))))))))
       pathname-prop-table*))
 
 (defvar fload-version-suffix* ':-new)

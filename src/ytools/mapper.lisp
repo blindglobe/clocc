@@ -24,20 +24,20 @@
 
 (defmacro <? (&rest l)
    (match-cond (mapmacify l)
-      ?( (?fcn ?larg)
+      (:? (?fcn ?larg)
 	(let ((negfcn
 		 (match-cond fcn
-		    ?( #'(lambda ?args ?@lbody ?res)
+		    (:? #'(lambda ?args ?@lbody ?res)
 		      `#'(lambda ,args ,@lbody (not ,res)))
-		    ?( (\\ ?args ?@lbody ?res)
+		    (:? (\\ ?args ?@lbody ?res)
 		      `(\\ ,args ,@lbody (not ,res)))
 		    ((consp fcn)
 		     (let ((fvar (gensym)))
 			`(let ((,fvar ,fcn))
 			    (\\ (x) (not (funcall ,fvar x))))))
-		    ?( #'sym
+		    (:? #'sym
 		      `(\\ (x) (not (,sym x))))
-		    ?( ?sym
+		    (:? ?sym
 		      `(\\ (x) (not (,sym x)))))))
 	   `(remove-if ,negfcn ,larg)))
       (t

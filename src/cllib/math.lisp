@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.14 2000/09/29 17:42:36 sds Exp $
+;;; $Id: math.lisp,v 2.15 2000/11/01 17:01:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
 
 (export
  '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
-   product-from-to binomial
+   product-from-to binomial *primes* *primes-file*
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
    with-permutations-swap with-permutations-lex permutations-list

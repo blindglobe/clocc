@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.41 2004/05/03 18:28:34 sds Exp $
+;;; $Id: math.lisp,v 2.42 2004/05/09 02:54:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -874,22 +874,13 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 (defun mean (seq &key (key #'value) (len (length seq)))
   "Compute the mean of the sequence of real numbers.
 Returns 2 values: the mean and the length of the sequence."
-  (declare (sequence seq) (type (function (t) double-float) key)
-           (fixnum len))
-  (values (/ (reduce #'+ seq :key key) len) len))
-
-(defun mean-cx (seq &key (key #'value) (len (length seq)))
-  "Compute the mean of the sequence of complex numbers.
-Returns 2 values: the mean and the length of the sequence."
-  (declare (sequence seq) (type (function (t) (complex double-float)) key)
-           (fixnum len))
+  (declare (sequence seq) (fixnum len))
   (values (/ (reduce #'+ seq :key key) len) len))
 
 (defun mean-weighted (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
-  (declare (sequence seq wts) (type (function (t) double-float) value)
-           (type (function (t) number) weight))
+  (declare (sequence seq wts) (type (function (t) number) weight))
   (let ((twt (reduce #'+ wts :key weight)))
     (values (/ (dot seq wts :key0 value :key1 weight) twt)
             twt)))
@@ -931,10 +922,9 @@ Return 2 values: the mean and the length of the sequence."
                            (mean (mean seq :key key :len len)))
   "Compute the standard deviation of the sequence SEQ.
 The mean and the length can be pre-computed for speed."
-  (declare (sequence seq) (fixnum len) (double-float mean)
-           (type (function (t) double-float) key))
+  (declare (sequence seq) (fixnum len))
   (when (<= len 1)
-    (return-from standard-deviation (values 0d0 mean len mean mean)))
+    (return-from standard-deviation (values 0 mean len mean mean)))
   (let (min max)
     (values
      (sqrt (/ (reduce #'+ seq :key
@@ -949,8 +939,7 @@ The mean and the length can be pre-computed for speed."
 (defun standard-deviation-weighted (seq wts &key
                                     (value #'value) (weight #'value))
   "Compute the standard deviation of the sequence with weights."
-  (declare (sequence seq wts) (type (function (t) double-float) value)
-           (type (function (t) number) weight))
+  (declare (sequence seq wts) (type (function (t) number) weight))
   (multiple-value-bind (mn twt)
       (mean-weighted seq wts :value value :weight weight)
     (when (= twt 1)
@@ -974,14 +963,13 @@ The mean and the length can be pre-computed for speed."
   "Compute the relative standard deviation (StD(log(x[i+1]/x[i]))).
 Meaningful only if all the numbers are of the same sign,
 if this is not the case, the result will be a complex number."
-  (declare (sequence seq) (type (function (t) double-float) key))
+  (declare (sequence seq))
   (let (pr (sq 0d0) (su 0d0) (nn 0))
     (declare (double-float sq su) (type (or null double-float) pr)
              (type index-t nn))
     (map nil (lambda (rr)
                (let* ((cc (funcall key rr))
                       (vv (when pr (log (/ cc pr)))))
-                 (declare (double-float cc) (type (or null double-float) vv))
                  (setq pr cc)
                  (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
          seq)
@@ -1033,7 +1021,7 @@ The values are counted and the result is used as a probability distribution.
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."
-  (declare (sequence seq) (type (function (t) double-float) key))
+  (declare (sequence seq))
   (unless std (setf (values std mean len) (standard-deviation seq :key key)))
   (let ((skew 0d0) (kurt 0d0))
     (map nil (lambda (rr)
@@ -1047,7 +1035,7 @@ The values are counted and the result is used as a probability distribution.
 (defun kurtosis-skewness-weighted (seq wts &key std mean tot
                                    (value #'value) (weight #'value))
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."
-  (declare (sequence seq) (type (function (t) double-float) value weight))
+  (declare (sequence seq))
   (unless std
     (setf (values std mean tot)
           (standard-deviation-weighted seq wts :value value :weight weight)))
@@ -1224,15 +1212,11 @@ p1=p(x=1), p2=p(y=1), p12=p(x=1 & y=1)"
 
 (defsubst below-p (x0 y0 x1 y1 x2 y2)
   "Check whether (x0 y0) is below the line (x1 y1) -- (x2 y2)."
-  (declare (double-float x0 y0 x1 y1 x2 y2))
-  (< y0 (with-type double-float
-          (/ (+ (* y1 (- x2 x0)) (* y2 (- x0 x1))) (- x2 x1)))))
+  (< y0 (/ (+ (* y1 (- x2 x0)) (* y2 (- x0 x1))) (- x2 x1))))
 
 (defsubst linear (x0 y0 x1 y1 tt)
   "Compute the linear function through (x0 y0) and (x1 y1) at tt."
-  (declare (double-float x0 y0 x1 y1 tt))
-  (with-type double-float
-    (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0))))
+  (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0)))
 
 (defmacro safe-fun (func pred &optional default)
   "Return a function that will run FUNC when the PRED is non-NIL.

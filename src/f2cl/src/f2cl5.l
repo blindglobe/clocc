@@ -783,17 +783,23 @@
 			    #+nil
 			    (format t "var = ~A :type ~A Part ~A posn ~A~%"
 				    v var-type part posn)
+			    (let ((accessor-name
+				   (intern (format nil "~A-~A" key v)))
+				  (name
+				   (intern (format nil "*~A-COMMON-BLOCK*" key))))
 			    (if arrayp
-				(push `(,(intern (format nil "~A-~A" key v))
-					 (make-array ,len :element-type ',(second var-type)
-						     :displaced-to (,(intern (format nil "~A-PART-~D" key part))
-								     ,(intern (format nil "*~A-COMMON-BLOCK*" key)))
-						     :displaced-index-offset ,posn))
-				      sym-lets)
+				(progn
+				  (push `(,accessor-name
+					  (make-array ,len :element-type ',(second var-type)
+						      :displaced-to (,(intern (format nil "~A-PART-~D" key part))
+								      ,name)
+						      :displaced-index-offset ,posn))
+					sym-lets)
+				  (push `(,v ,accessor-name) sym-mlets))
 				(push `(,v (aref (,(intern (format nil "~A-PART-~D" key part))
 						   ,block-special-name)
 						 ,posn))
-				      sym-mlets))))
+				      sym-mlets)))))
 			      
 		     (cond ((eq prev-type el-type)
 			    ;; Same block
@@ -2969,8 +2975,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.118 2004/08/14 04:15:56 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.119 2004/08/14 16:10:10 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.119  2004/08/14 16:10:10  rtoy
+;;; Forgot to create the symbol-macrolet for arrays in the common block,
+;;; when using common-blocks-as-arrays.
+;;;
 ;;; Revision 1.118  2004/08/14 04:15:56  rtoy
 ;;; o GET_ARRAY_TYPE was not computing the array type in some situations.
 ;;;   (I hope this is the right fix.)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.12 2001/04/20 19:27:26 sds Exp $
+;;; $Id: date.lisp,v 2.13 2001/04/22 03:55:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -236,6 +236,10 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (:method ((format (eql :long)) se mi ho da mo ye dd)
     (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
             ye mo da (aref +week-days+ dd) ho mi se))
+  (:method ((format (eql :mbox)) se mi ho da mo ye dd)
+    (format nil "~a ~a ~d ~2,'0d:~2,'0d:~2,'0d ~d"
+            (aref +week-days+ dd) (aref +month-names+ (1- mo))
+            da ho mi se ye))
   (:method ((format (eql :usa)) se mi ho da mo ye dd)
     (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
             (aref +week-days+ dd) da (aref +month-names+ (1- mo))

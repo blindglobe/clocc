@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.27 2002/01/16 22:41:23 sds Exp $
+;;; $Id: inspect.lisp,v 1.28 2002/02/12 16:02:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -427,7 +427,7 @@ This is useful for frontends which provide an eval/modify facility."
     (format t "~s: server: ~s; socket: ~s~%" 'http-command server socket))
   (let (response id com keep-alive)
     (loop (unless (and socket (open-stream-p socket))
-            (setq socket (socket-accept server :external-format :dos))
+            (setq socket (socket-accept server))
             (when (> debug 1)
               (format t "~s: new socket: ~s~%" 'http-command socket)))
           (setq response (flush-http socket))

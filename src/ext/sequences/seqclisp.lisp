@@ -26,8 +26,7 @@
 ;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
 (defmacro do-sequence ((var sequenceform &optional (resultform nil))
                        &body body &environment env)
-  (multiple-value-bind (body-rest declarations)
-      (system::parse-body body nil env)
+  (multiple-value-bind (body-rest declarations) (system::parse-body body)
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)))
       `(BLOCK NIL

@@ -23,7 +23,7 @@
    (version :reader common-lisp-implementation-version)
    (tag :reader common-lisp-implementation-feature-tag
 	:reader cl-feature-tag
-	:type symbol)
+	:type keyword)
    )
   (:documentation "The CL.ENVIRONMENT Common Lisp Implementation Class.")
   (:default-initargs :type (lisp-implementation-type)
@@ -34,18 +34,29 @@
 ;;; CMUCL	:cmucl
 ;;; ACL		:acl
 ;;; LW		:lispworks
+;;; Corman Lisp	:corman-lisp
 ;;; etc etc
 ;;; Adde them!!!
 
-(defclass cmucl (generic-common-lisp-implementation) ())
+(defclass cmucl (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :cmucl))
 
-(defclass sbcl (cmucl) ())
+(defclass sbcl (cmucl)
+  ()
+  (:default-initargs :feature-tag :sbcl))
 
-(defclass allegro (generic-common-lisp-implementation) ())
+(defclass allegro (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :acl))
 
-(defclass lispworks (generic-common-lisp-implementation) ())
+(defclass lispworks (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :lispworks))
 
-(defclass clisp (generic-common-lisp-implementation) ())
+(defclass clisp (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :clisp))
 
 (defclass kcl (generic-common-lisp-implementation) ())
 
@@ -63,7 +74,9 @@
 
 (defclass scl (generic-common-lisp-implementation) ()) ; Symbolics Genera.
 
-(defclass corman (generic-common-lisp-implementation) ())
+(defclass corman (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :corman-lisp))
 
 (defclass eclipse (generic-common-lisp-implementation) ())
 

@@ -8,11 +8,13 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.27 2000/11/16 18:34:03 sds Exp $
+;;; $Id: net.lisp,v 1.28 2000/12/03 06:01:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
   (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  ;; `getenv'
+  (require :sys (translate-logical-pathname "port:sys"))
   #+cormanlisp (require :winsock)
   #+lispworks (require "comm"))
 

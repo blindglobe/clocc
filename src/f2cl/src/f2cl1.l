@@ -126,7 +126,7 @@ only when needed. ")
 			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file
-			(array-type :simple-array array-type-p)
+			(array-type :array array-type-p)
 			(array-slicing t)
 			package
 			declaim
@@ -229,7 +229,7 @@ INPUT-FILE               File containing Fortran code
 			      (auto-save t) (relaxed-array-decls t)
 			      (coerce-assigns :as-needed)
 			      (keep-lisp-file t)
-			      (array-type :simple-array)
+			      (array-type :array)
 			      (array-slicing t)
 			      package
 			      declaim
@@ -2075,8 +2075,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.89 2002/02/09 16:10:45 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.90 2002/02/10 03:42:45 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.90  2002/02/10 03:42:45  rtoy
+;;; Since :array-slicing defaults to T, make :array-type default to :array
+;;; instead of :simple-array.
+;;;
 ;;; Revision 1.89  2002/02/09 16:10:45  rtoy
 ;;; o Add new var *DECLARE-COMMON-BLOCKS*
 ;;; o F2CL and F2CL-COMPILE take a new arg :declare-common, defaulting to

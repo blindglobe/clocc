@@ -1,8 +1,11 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.6 2002/07/02 12:31:35 rtoy Exp $
+;;; $Id: minpack.system,v 1.7 2002/07/02 21:32:36 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.7  2002/07/02 21:32:36  rtoy
+;;; Add dependency to minpack.lisp to define the package.
+;;;
 ;;; Revision 1.6  2002/07/02 12:31:35  rtoy
 ;;; o Put the code in the MINPACK package.
 ;;; o Add defsystem for the tests.
@@ -40,7 +43,9 @@
 (mk:defsystem minpack
     :source-pathname "clocc:src;f2cl;packages;minpack"
     :components
-    ((:module "minpack"
+    ((:file "minpack"
+		      :language :lisp)
+     (:module "minpack"
 	      :source-pathname ""
 	      :source-extension "f"
 	      :package "MINPACK"
@@ -52,7 +57,8 @@
 				 :array-slicing t
 				 :package "MINPACK")
 	      :components
-	      ((:file "dpmpar")
+	      (
+	       (:file "dpmpar")
 	       (:file "enorm")
 	       (:file "fdjac1" :depends-on ("dpmpar"))
 	       (:file "fdjac2" :depends-on ("dpmpar"))

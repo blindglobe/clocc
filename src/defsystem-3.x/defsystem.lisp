@@ -2002,6 +2002,7 @@ D
 
 
 (defun new-file-type (pathname type)
+  ;; why not (make-pathname :type type :defaults pathname)?
   (make-pathname
    :host (pathname-host pathname)
    :device (pathname-device pathname)
@@ -2470,8 +2471,9 @@ D
 			   :absolute
 			   #-(and :CMU (not (or :cmu17 :cmu18)))
 			   (let ((dev (component-device component)))
-			     (when dev
-			       (pathname-device dev)))
+			     (if dev
+                                 (pathname-device dev)
+                                 (pathname-device pathname)))
 			   ;; :version :newest
 			   ))))))
 

@@ -2,6 +2,38 @@
 
 Changes:
 
+Feb 11, 2002
+------------
+
+MPFUN now compiles and runs, but it is about 5-10 times slower than
+Fortran.  Had to tweak a couple for Fortran routines to prevent f2cl
+from slicing an array that shouldn't have been, and f2cl didn't
+correctly convert some write/format statements.
+
+I think this is caused array-slicing that we do which has displaced
+arrays to displaced arrays to displaced arrays....  Chasing down the
+data is expensive.  How to solve this:
+
+1. Copy the arrays to new arrays, call the function, then copy the
+   data back.  The function can now use simple-arrays for speed, but
+   this probably causes lots of consing.  The consing and the copying
+   may negate any speed gains we get.  This should be fairly easy to
+   do in f2cl.
+2. Add extra args to functions that contain the starting index of the
+   array.  So when an array is sliced, we adjust the index and pass
+   that on to the called function.  Every array access now has an
+   extra addition, but should be have better performance than
+   displaced-arrays.  This is quite a bit more work.
+3. Use compiler-specific functions to get at the data.  CMUCL has
+   with-array-data that might a pointer to the actual data, after
+   chasing down all of the displacements.  If so, this should be
+   relatively easy to do and should give decent performance.  Probably
+   not as fast as option 2.
+
+Also, there might be some slowdowns from integer arithmetic.  Should
+we wrap up integer operations with (the integer4 (...))?  This is what
+Fortran does, essentially.
+
 Feb 07, 2002
 ------------
 

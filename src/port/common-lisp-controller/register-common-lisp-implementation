@@ -38,9 +38,9 @@ for i  in /usr/share/common-lisp/systems/*.system  ; do
      i=${i%.system}
      package=${i##*/}
      if [ -f /etc/common-lisp/autobuild -o \
-          -f "/etc/common-lisp/$0/autobuild" -o \
-          -f "/etc/common-lisp/$0/$package/autobuild" ] ; then
-       /usr/sbin/clc-send-command --quiet recompile $package $0
+          -f "/etc/common-lisp/$1/autobuild" -o \
+          -f "/etc/common-lisp/$1/$package/autobuild" ] ; then
+       /usr/bin/clc-send-command --quiet recompile $package $1
      fi
     fi
 done

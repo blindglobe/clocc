@@ -27,3 +27,20 @@ Description: how to control autobuilding
  If for a implementation foo and a package bar the
  file /etc/common-lisp/foo/bar/autobuild exists this
  package will be autobuild for that implementation.
+
+Template: common-lisp-controller/short-site-name
+Type: string
+Default: Unknown
+Description: The short common lisp site name
+ You can configure what the common lisp implementations are 
+ going to use as "short site name". This is mostly unused
+ except in some error reporting tools.
+
+Template: common-lisp-controller/long-site-name
+Type: string
+Default: Site name not initialized
+Description: The long common lisp site name
+ You can configure what the common lisp implementations are 
+ going to use as "long site name". This is mostly unused
+ except in some error reporting tools.
+

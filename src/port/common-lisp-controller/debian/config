@@ -3,6 +3,13 @@
 # Source debconf library.
 . /usr/share/debconf/confmodule
 
+# site names
+db_input medium common-lisp-controller/short-site-name || true
+db_go
+
+db_input medium common-lisp-controller/long-site-name || true
+db_go
+
 # autobuild?
 db_input high common-lisp-controller/auto-build || true
 db_go
@@ -10,5 +17,4 @@ db_go
 #show note..
 db_input high  common-lisp-controller/how-to-control || true
 db_go
-
 

@@ -1,11 +1,19 @@
+common-lisp-controller (2.100) unstable; urgency=low
+
+  * Don't forget to downcase the package name
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  2 Jul 2002 20:32:30 +0200
+
 common-lisp-controller (2.99) unstable; urgency=low
 
   * Now with clc-build-daemon: build lisp packages when you need them!
-  * Now with debconf configuration system 
+  * Now with debconf configuration system
   * repositories is depricated!
   * man pages
+  * Still Closes: #146504
+  * Updated defsystem. Closes: #145349 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Sat,  8 Jun 2002 22:58:26 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 22 Jun 2002 23:40:27 +0200
 
 common-lisp-controller (2.15) unstable; urgency=low
 

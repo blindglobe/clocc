@@ -248,3 +248,15 @@ Returns nothing"
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (pushnew :common-lisp-controller *features*))
 
+
+(defun send-clc-command (command package)
+  "Function to be overrided by the implementation.
+Should execute:
+/usr/bin/clc-send-command command package <implementation-name> --quiet
+
+with command either :recompile or :remove"
+  (cerror "Done"
+          "This implementation has not yet implemented common-lisp-controller:send-clc-command.
+Please run /usr/bin/clc-send-command ~A ~A <implementation-name> --quiet
+and continue"
+          command package))

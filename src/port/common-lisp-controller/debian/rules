@@ -50,6 +50,7 @@ install: build
 	install --group=root --owner=root --mode=644 defsystem.lisp $(DESTDIR)/usr/share/common-lisp/source/defsystem/
 	install --group=root --owner=root --mode=644 common-lisp-controller.lisp $(DESTDIR)/usr/share/common-lisp/source/common-lisp-controller/
 	install --group=root --owner=root --mode=644 common-lisp-controller-post-defsystem.lisp $(DESTDIR)/usr/share/common-lisp/source/common-lisp-controller/
+	install --group=root --owner=root --mode=644 lisp-config.lisp $(DESTDIR)/etc/lisp-config.lisp
 
 
 # Build architecture-independent files here.
@@ -74,7 +75,8 @@ binary-arch: build install
 #	dh_installcron
 #	dh_installinfo
 	dh_undocumented
-	dh_installman
+	dh_installman clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 register-common-lisp-source.8 \
+                       unregister-common-lisp-implementation.8 unregister-common-lisp-source.8
 	dh_link
 	dh_strip
 	dh_compress

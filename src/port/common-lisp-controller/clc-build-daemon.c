@@ -82,7 +82,7 @@ int showoutput=1; /* do we show the compilation output? */
 /* characters allowed in the package and compiler names: */
 char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
 /* delimiters: */
-char delim[]=" \t\n";
+char delim[]=" \t\n\r";
 
 /* report a error and die */
 void reporterror(const char *where)

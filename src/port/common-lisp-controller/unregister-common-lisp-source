@@ -44,7 +44,7 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
      i=${compiler##.*/}
      i=${i%.sh}
-     /usr/sbin/clc-send-command --quiet remove $0 $i
+     /usr/bin/clc-send-command --quiet remove $0 $i
     fi
 done
 

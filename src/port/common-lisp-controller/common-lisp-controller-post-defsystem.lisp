@@ -7,10 +7,8 @@
 
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...
-
 (defun clc-require (module-name &optional pathname definition-pname
-				default-action (version
-                                                (intern "*VERSION*" :MK)))
+				default-action (version mk::*version*))
   (if (and (not (or pathname
                     definition-pname
                     default-action ))
@@ -21,10 +19,9 @@
              ;; it and ignore the errors :-)
              (equalp
               (pathname-host
-               (funcall (intern "COMPONENT-SOURCE-ROOT-DIR" :MK)
-                        (funcall (intern "FIND-SYSTEM" :MK)
-                                 module-name
-                                 :load-or-nil)))
+               (make::component-source-root-dir
+                (mk:find-system module-name
+                                :load-or-nil)))
               ;; the clc root:
               (pathname-host
                (pathname
@@ -32,37 +29,38 @@
       ;; if in the clc root:
       (or
        ;; try to load it
-       (funcall (intern "OOS" :MK)
-                module-name
-               :load
-               :load-source-instead-of-binary nil
-               :load-source-if-no-binary nil
-               :bother-user-if-no-binary nil
-               :compile-during-load nil)
+       (mk:oos  module-name
+                :load
+                :load-source-instead-of-binary nil
+                :load-source-if-no-binary nil
+                :bother-user-if-no-binary nil
+                :compile-during-load nil)
        ;; if not: try to compile it
        (progn
-         (common-lisp-controller:send-clc-command "compile"
+         (format t "~&;;;Please wait, recompiling library...")
+         (common-lisp-controller:send-clc-command :recompile
                                                   (if (stringp module-name)
                                                       module-name
-                                                      (format nil "~A"
-                                                              module-name)))
-         (funcall (intern "OOS" :MK)
-                module-name
-               :load
-               :load-source-instead-of-binary nil
-               :load-source-if-no-binary nil
-               :bother-user-if-no-binary nil
-               :compile-during-load nil))
+                                                      (string-downcase
+                                                       (symbol-name
+                                                        module-name))))
+         (terpi)
+         (mk:oos  module-name
+                  :load
+                  :load-source-instead-of-binary nil
+                  :load-source-if-no-binary nil
+                  :bother-user-if-no-binary nil
+                  :compile-during-load nil)
+         t)
        ;; otherwise fail with a meaningful message:
        (error "I could not load the common-lisp-controller package ~A, please report a bug to the debian BTS"
               module-name))
       ;; ifnot, let mk deal with it..
-      (funcall (intern "NEW-REQUIRE" :MK)
-               module-name
-               pathname
-               definition-pname
-               default-action
-               version)))
+      (mk::new-require module-name
+                       pathname
+                       definition-pname
+                       default-action
+                       version)))
 
 ;; override the standard require with this:
 ;; ripped from mk:defsystem:

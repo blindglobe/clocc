@@ -28,6 +28,13 @@ case "$1" in
     configure)
     update-inetd --add "8990@localhost\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 
+    db_get common-lisp-controller/long-site-name
+    long="$RET"
+    db_get common-lisp-controller/short-site-name
+    short="$RET"
+    umask 0022
+    echo -e "(in-package :common-lisp-user)\n(setf *short-site-name* \"${short}\" *long-site-name* \"${long}\")\n" > /etc/lisp-config.lisp
+
     db_get common-lisp-controller/auto-build
     if [ "$RET" = "true" ]; then
       touch /etc/common-lisp/autobuild

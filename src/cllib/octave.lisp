@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: octave.lisp,v 2.3 2000/05/15 18:43:26 sds Exp $
+;;; $Id: octave.lisp,v 2.4 2000/11/08 22:28:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 
 (eval-when (compile load eval)
@@ -30,15 +30,6 @@ presumed to be of the same size."
 (defcustom *octave-program* simple-string
   #+win32 "c:/bin/octave.exe" #+unix "/usr/local/bin/octave"
   "*The octave executable.")
-
-(defun flush-stream (in-str &optional (out-str t))
-  "Flush the stream IN-STR, dumping the stuff to the stream OUT-STR."
-  (if out-str
-      (do ((nn 0 (1+ nn))) ((null (listen in-str)))
-        (declare (fixnum nn))
-	(format out-str "octave -~2d-> ~a~%" nn (read-line in-str)))
-      (do () ((null (listen in-str)))
-	(read-line in-str))))
 
 (defun solve-lin (mx vec &optional dump)
   "Given a matrix N x N and an N vector, return the solution of the system.

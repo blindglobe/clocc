@@ -10,48 +10,92 @@
     (error "You need to load the asdf system before loading or compiling this file!")))
 
 
-;; Make specialized operator to load only binary files
-;; Signal error if a binary component is missing
-
 ;; load-only-compiled-op is an ASDF operation that only loads
 ;; compiled code
-(defclass load-only-compiled-op (asdf:operation)
-  ((asdf::forced-p :initform t)))
 
-(defmethod asdf:output-files ((asdf:operation load-only-compiled-op)
-			      (c asdf:cl-source-file))
-  (list (compile-file-pathname (asdf:component-pathname c))))
+(in-package :asdf)
+(define-condition load-compiled-error (error)
+  ((output-file :initform nil :initarg :output-file :reader output-file))
+  (:report (lambda (c s)
+	       (format s "Error when performing load-compiled-op with output file ~A"
+		       (output-file c)))))
 
-(defmethod asdf:perform ((o load-only-compiled-op) (c asdf:cl-source-file))
-  (let* ((co (asdf::make-sub-operation o 'clc-compile-op))
-	 (output-files (asdf:output-files co c)))
-    (setf (asdf:component-property c 'asdf::last-loaded)
-	  (if (some #'not (map 'list #'load output-files))
-	      nil
-	    (file-write-date (car output-files))))))
+(define-condition load-compiled-error-not-exist (load-compiled-error)
+  ()
+  (:report (lambda (c s)
+	       (format s "During load-compiled-op, compiled file ~A does not exist"
+		       (output-file c)))))
 
-(defmethod asdf:output-files :around ((c load-only-compiled-op) x)
-  (declare (ignore x))
+(define-condition load-compiled-error-out-dated (load-compiled-error)
+  ((source-file :initform nil :initarg :source-file :reader source-file))
+  (:report (lambda (c s)
+	     (format s "During load-compiled-op, compiled file ~A is older than source file ~A"
+		     (output-file c) (source-file c)))))
+
+(defclass load-compiled-op (operation)
+  ()
+  (:documentation "This operation loads each compiled file for a component. If  a binary component does not exist then the condition load-compiled-error-not-exist will be signaled. If both the source file and binary components exists, and if the file-write-date of the binary is earlier than the source, then the condition load-compiled-error-out-dated will be signaled."))
+
+
+(defmethod output-files ((operation load-compiled-op)
+			 (c cl-source-file))
+  (list (compile-file-pathname (component-pathname c))))
+
+(defmethod perform ((o load-compiled-op) (c source-file))
+  (let* ((co (make-sub-operation o 'compile-op))
+	 (output-files (output-files co c))
+	 (source-date (when (probe-file (component-pathname c))
+			(file-write-date (component-pathname c)))))
+    (dolist (of output-files)
+      (unless (probe-file of)
+	(error 'load-compiled-error-not-exist
+	       :output-file of))
+      (when (and source-date
+		 (> source-date (file-write-date of)))
+	(error 'load-compiled-error-out-dated
+	       :output-file of
+	       :source-file (component-pathname c)))
+      (load of))
+    (setf (component-property c ':last-loaded)
+	  (file-write-date (car output-files)))))
+
+(export 'load-compiled-op)
+
+(in-package :common-lisp-controller)
+
+;;
+(defmethod asdf:output-files :around ((op asdf:operation) (c asdf:component))
+  "Method to rewrite output files to fasl-root"
   (let ((orig (call-next-method)))
-    (mapcar #'(lambda (y)
-		(merge-pathnames 
-		 (enough-namestring y *source-root*) *fasl-root*))
-	    orig)))
-
-;; clc-compile-op is an ASDF operation that compiles source code using
-;; the CLC *fasl-root* as the root of the output directories
-
-(defclass clc-compile-op (asdf:compile-op) ())
-
-(defmethod asdf:output-files :around ((c clc-compile-op) x)
-  (declare (ignore x))
-  (let ((orig (call-next-method)))
-    (mapcar #'(lambda (y)
-		(merge-pathnames 
-		 (enough-namestring y *source-root*) *fasl-root*))
-	    orig)))
+    (if (beneath-source-root? c)
+	(mapcar #'(lambda (y)
+		    (merge-pathnames 
+		     (enough-namestring y *source-root*) *fasl-root*))
+		orig)
+      orig)))
 
 
+(defun beneath-source-root? (c)
+  "Returns T if component's directory below *source-root*"
+  (let ((root-dir (pathname-directory *source-root*)))
+    (and c
+	 (equalp root-dir
+		 (subseq (pathname-directory (asdf:component-pathname c))
+			 0 (length root-dir))))))
+
+  
+(defun system-in-source-root? (c)
+  "Returns T if component's directory is the same as *source-root* + component's name"
+  (and c
+       (equalp (pathname-directory
+		(asdf:component-pathname c))
+	       (pathname-directory
+		(merge-pathnames
+		 (make-pathname
+		  :directory (list :relative
+				   (asdf:component-name c)))
+		 *source-root*)))))
+  
 (defun find-system (module-name)
   "Looks for name of system. Returns :asdf if found asdf file or
 :defsystem3 if found defsystem file."
@@ -60,15 +104,7 @@
    ;; it and ignore the errors :-)
    ((ignore-errors
       (let ((system (asdf:find-system module-name)))
-	(when (and system
-		   (equalp (pathname-directory
-			    (asdf:component-pathname system))
-			   (pathname-directory
-			    (merge-pathnames
-			     (make-pathname
-			      :directory (list :relative
-					       (asdf:component-name system)))
-			     *source-root*))))
+	(when (system-in-source-root? system)
 	  :asdf))))
    ((ignore-errors
       (equalp
@@ -103,10 +139,8 @@
        (dolist (sub-system (make::component-depends-on
 			    system))
 	 (when (stringp sub-system)
-	   (setf sub-system
-		 (intern sub-system
-			 (find-package :keyword)))
-	   (clc-require sub-system)))
+	   (setf sub-system (intern sub-system (find-package :keyword))))
+	 (clc-require sub-system))
        (common-lisp-controller:send-clc-command :recompile
 						(if (stringp module-name)
 						    module-name
@@ -115,55 +149,54 @@
 						    module-name))))
        (terpri)
        (mk:oos  module-name
-		  :load
-                  :load-source-instead-of-binary nil
-                  :load-source-if-no-binary nil
-                  :bother-user-if-no-binary nil
-                  :compile-during-load nil)
+		:load
+		:load-source-instead-of-binary nil
+		:load-source-if-no-binary nil
+		:bother-user-if-no-binary nil
+		:compile-during-load nil)
        t))))
 
 
 (defun require-asdf (module-name)
-  ;; if in the clc root:
   (let ((system (asdf:find-system module-name)))
-    (or
-     ;; try to load it
-     (ignore-errors (asdf:oos 'load-only-compiled-op module-name))
-     ;; if not: try to compile it
-     (progn
-       (format t "~&;;;Please wait, recompiling library...")
-       ;; first compile the sub-components!
-       (dolist (sub-system (asdf:module-components system))
-	 (when (typep sub-system 'asdf:system)
-	   (setf sub-system
-		 (intern sub-system
-			 (find-package :keyword)))
-	   (clc-require sub-system)))
-       (common-lisp-controller:send-clc-command :recompile
-						(if (stringp module-name)
-						    module-name
-						  (string-downcase
-						   (symbol-name
-						    module-name))))
-       (terpri)
-       (asdf:oos 'load-only-compiled-op module-name) 
-       t))))
-
+    (when system
+       (handler-case
+	(asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
+	(error ()
+	       (format t "~&;;;Please wait, recompiling library...")
+	       ;; first compile the sub-components!
+	       (dolist (sub-system (asdf:module-components system))
+		 (when (typep sub-system 'asdf:system)
+		   (setf sub-system (intern (asdf:component-name sub-system)
+					    (find-package :keyword)))
+		   (clc-require sub-system)))
+	       (let ((module-name-str
+		      (if (stringp module-name)
+			  module-name
+			(string-downcase (symbol-name module-name)))))
+		 (common-lisp-controller:send-clc-command :remove module-name-str)
+		 (common-lisp-controller:send-clc-command :recompile module-name-str))
+	       (terpri)
+	       (asdf:oos 'asdf:load-compiled-op module-name) 
+	       t)
+	(:no-error (res)
+		   (declare (ignore res))
+		   t)))))
 
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...
 (defun clc-require (module-name &optional pathname definition-pname
-				default-action (version mk::*version*))
+				default-action)
   (let ((system-type (find-system module-name)))
     (case system-type
-     (:defsystem3
-      (if (not (or pathname
-		   definition-pname
-		   default-action ))
-	  ;; no advanced stuff
-	  (require-defsystem3 module-name)
-	;; ifnot, let original require deal with it..
-	(original-require module-name pathname)))
+      (:defsystem3
+       (if (not (or pathname
+		    definition-pname
+		    default-action ))
+	   ;; no advanced stuff
+	   (require-defsystem3 module-name)
+	 ;; ifnot, let original require deal with it..
+	 (original-require module-name pathname)))
      (:asdf
       (if (not (or pathname
 		   definition-pname
@@ -184,7 +217,7 @@
       (:defsystem3
        (mk:oos library :compile :verbose nil))
       (:asdf
-       (asdf:oos 'clc-compile-op library))
+       (asdf:oos 'asdf:compile-op library))
       (t
        (format t "~%Package ~S not found... ignoring~%"
 	       library))))

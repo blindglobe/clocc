@@ -1,3 +1,18 @@
+common-lisp-controller (3.23) unstable; urgency=low
+
+  * NMU
+  * Rework asdf loading of compiled-only files 
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 18 Sep 2002 12:40:58 -0600
+
+common-lisp-controller (3.22) unstable; urgency=low
+
+  * NMU
+  * Rework output-files for asdf systems to handle loading of dependent
+    systems.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 18 Sep 2002 11:42:55 -0600
+
 common-lisp-controller (3.21) unstable; urgency=low
   
   * NMU

@@ -331,15 +331,19 @@ code.
 ;; output-possible as always T - meaning that you'll block when you 
 ;; try to write too much.
 
-(defun input-possible (socket-stream)
-  ;; should return t if input functions will not block, i.e.
-  ;; if they will return either eof or a character/byte
-  #+allegro ;; [***] see above
-  (excl::filesys-fn-will-not-block-p 
-   (- -1 (excl:stream-input-fn socket-stream)))
-  #+clisp  ;; works even for binary streams, Hurray!
-  (not (lisp:read-char-will-hang-p stream))
-  #-(or allegro clisp) (error "no implementation for input-possible"))
+(defun input-possible (socket-stream) 
+  ;; should return t if input functions will not block, i.e. 
+  ;; if they will return either eof or a character/byte 
+  #+allegro ;; [***] see above 
+  (excl::filesys-fn-will-not-block-p  
+   (- -1 (excl:stream-input-fn socket-stream))) 
+  #+clisp  ;; doesn't complain for binary stream but gives wrong answer!@#$% 
+  (let ((s-e-t (stream-element-type socket-stream))) 
+    (unwind-protect 
+        (progn (setf (stream-element-type socket-stream) 'character) 
+               (not (lisp:read-char-will-hang-p socket-stream))) 
+      (setf (stream-element-type socket-stream) s-e-t))) 
+  #-(or allegro clisp) (error "no implementation for input-possible")) 
 
 ;; These are mostly for use by evalers and printers.
 

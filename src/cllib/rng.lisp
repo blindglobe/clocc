@@ -1,9 +1,16 @@
-;;;; $Id: rng.lisp,v 1.6 2001/08/26 13:50:33 rtoy Exp $
+;;;; $Id: rng.lisp,v 1.7 2001/08/27 13:53:24 rtoy Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.7  2001/08/27 13:53:24  rtoy
+;;;;  o Change scaling in Ziggurat method for exponential variates because
+;;;;    CMUCL on sparc doesn't convert (unsigned-byte 32) to floats very
+;;;;    well.
+;;;;  o Add timing info for CMUCL sparc.  Ziggurat method is the fastest
+;;;;    still.
+;;;;
 ;;;;  Revision 1.6  2001/08/26 13:50:33  rtoy
 ;;;;  Add Marsaglia's Ziggurat method for generating exponential and
 ;;;;  Gaussian variates.  Almost twice as fast as any of the others.
@@ -585,14 +592,20 @@ mean of 1:
       ((<= (* u u) (exp (- (/ v u mu))))
        (/ v u)))))
 
-;; Marsaglia's Ziggurat method for generating exponential variates.
+;; Marsaglia's Ziggurat method for generating exponential
+;; variates. Note: this is slightly different from the version given
+;; in his paper.  We changed the scaling from 2^32 to 2^31 because
+;; CMUCL 18c on sparc doesn't do a good job of converting
+;; (unsigned-byte 32) to floating-point because it doesn't have such
+;; an instruction (only signed-bytes).  (Apparently x86 does.)  Tests
+;; show that good exponential numbers are still generated.
 (let ((r 7.69711747013104972d0))
   (flet ((density (x)
 	   (declare (type (double-float (0d0)) x))
 	   (exp (- x))))
     (declare (inline density))
     (multiple-value-bind (k-table w-table f-table)
-	(ziggurat-init 255 r 0.0039496598225815571993d0 32
+	(ziggurat-init 255 r 0.0039496598225815571993d0 31
 		       #'density
 		       #'(lambda (x)
 			   (- (log x))))
@@ -601,7 +614,7 @@ mean of 1:
 		 (random-state state)
 		 (optimize (speed 3)))
 	(loop
-	    (let* ((j (random (ash 1 32) state))
+	    (let* ((j (random (ash 1 31) state))
 		   (i (logand j 255))
 		   (x (* j (aref w-table i))))
 	      (when (< j (aref k-table i))
@@ -613,7 +626,8 @@ mean of 1:
 		       (- (density x) (aref f-table i)))
 		(return (* mu x)))))))))
 
-;;; Some timing results on a 866 MHz Pentium III:
+;;; Some timing results from running CMUCL 18c+ on a 866 MHz Pentium
+;;; III:
 ;;;
 ;;; (cllib::time-expo 5000000)
 ;;;
@@ -629,7 +643,22 @@ mean of 1:
 ;;;
 ;;; On this platform, Margaglia's Ziggurat method is far and away the
 ;;; fastest.
-
+;;;
+;;; For CMUCL 18c+ (with sparc-v9 changes) running on a 300 MHz Ultra 30:
+;;; (cllib::time-expo 5000000)
+;;;
+;;; Method 	real	user	sys	cons
+;;;
+;;; Log		1.63	1.5	0.02	16000480
+;;; Algo S	1.44	1.24	0.12	16000480
+;;; SA		1.45	1.25	0.1	16000480
+;;; EA		1.17	1.06	0.08	16000480
+;;; EA-2	1.33	1.07	0.11	16000480
+;;; Ratio	3.31	3.02	0.11	16000480
+;;; Zigg	0.81	0.62	0.15	16000480
+;;;
+;;; So the Ziggurat method is quite a bit faster on this platform too.
+;;;
 ;;; Pick the one that works best for you.
 
 (defmacro gen-exponential-variate (mu state)
@@ -967,7 +996,7 @@ of zero and a variance of 1.
 		(return x))))))))
 
 
-;;; Some timing results on a 866 MHz Pentium III:
+;;; Some timing results for CMUCL 18c+ on a 866 MHz Pentium III:
 ;;;
 ;;; (cllib::time-gaussian 1000000)
 ;;;
@@ -981,6 +1010,22 @@ of zero and a variance of 1.
 ;;;
 ;;; Based on these results, Marsalia's Ziggurat method is far and away
 ;;; the fastest.
+;;;
+;;; Some timing results for CMUCL 18c+ (sparc-v9) on a 300 MHz Ultra
+;;; 30:
+;;; 
+;;; (cllib::time-gaussian 500000)
+;;;
+;;; Method 	real	user	sys	cons
+;;;
+;;; Polar	0.83	0.78	0.02	 8000480
+;;; NA		1.03	0.83	0.12	20000480
+;;; Box/Trig	1.39	1.15	0.06	 8000480
+;;; Ratio	1.27	0.93	0.08	 8000480
+;;; Zigg	0.42	0.33	0.06	 8220912
+;;;
+;;; Based on these results, Marsalia's Ziggurat method is far and away
+;;; the fastest on this platform too.
 
 ;;; Select one that works for you.
 (defmacro gen-gaussian-variate (state)

@@ -40,8 +40,14 @@
 	   )
       
       (setf (logical-pathname-translations "CL-ENV-LIBRARY")
-	    `(("*.*.*" ,(namestring (truename directory)))
-	      ("*.*"   ,(namestring (truename directory)))))
+	    `(("**;*.*.*"
+	       ,(make-pathname
+		 :directory (append (pathname-directory directory)
+				    (list :wild-inferiors))))
+	      ("**;*.*"
+	       ,(make-pathname
+		 :directory (append (pathname-directory directory)
+				    (list :wild-inferiors))))))
 
       (load-and-or-compile "CL-ENV-LIBRARY:env-package.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:feature-tagged-type-class.lisp")
@@ -50,9 +56,28 @@
       (load-and-or-compile "CL-ENV-LIBRARY:operating-system.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:environment.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:init-environment.lisp")
-      (load-and-or-compile "CL-ENV-LIBRARY:system-info.lisp")
+
+      ;; Implementation dependencies (in alphabetical order).
+      #+acl
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;allegro.lisp")
+
+      #+clisp
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;clisp.lisp")
+
+      #+cmu
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;cmucl.lisp")
+
+      #+lcl
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;lcl.lisp")
+
+      #+lispworks
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;lispworks.lisp")
+
+      ;; First usage of the above definitions.
       (load-and-or-compile "CL-ENV-LIBRARY:utilities.lisp")
-      )))
+      (load-and-or-compile "CL-ENV-LIBRARY:system-info.lisp")
+      ))
+  (pushnew :cl-environment *features*))
 
 
 ;;; end of file -- env.system --

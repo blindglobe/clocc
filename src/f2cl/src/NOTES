@@ -2,6 +2,24 @@
 
 Changes:
 
+Aug 02, 2000
+------------
+
+Add support for Hollerith strings in FORMAT statements.  This may
+lose white-space characters in the original string, but is certainly
+better than just saying "*Hollerith*" on output. :-)
+
+Aug 01, 2000
+------------
+
+Including comments in the f2cl output was broken when I made the
+preprocessor handle continuation lines.  I think this is fixed now by
+collecting all comments and printing them after we're sure we have
+read in one complete logical line.  The comments may now be in the
+wrong spot, but they were never really guaranteed to be in the correct
+spot anyway.
+
+
 Jul 28, 2000
 ------------
 

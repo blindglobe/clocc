@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.10 2000/05/15 18:43:26 sds Exp $
+;;; $Id: log.lisp,v 1.11 2000/05/19 19:21:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -53,14 +53,14 @@ If FMT is non-NIL, return the corresponding string too."
                              (out '*standard-output*))
                        &body body)
   "Evaluate the body, then print the timing."
-  (with-gensyms ("TIMING-" bt bt1)
-    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)))
+  (with-gensyms ("TIMING-" bt bt1 %out)
+    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)) (,%out ,out))
       (unwind-protect (progn ,@body)
-        (when ,out
-          (when ,done (princ "done" ,out))
-          (when ,run (format ,out " [run: ~/pr-secs/]" (elapsed ,bt t)))
-          (when ,real (format ,out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
-          (when ,terpri (terpri ,out)))))))
+        (when ,%out
+          (when ,done (princ "done" ,%out))
+          (when ,run (format ,%out " [run: ~/pr-secs/]" (elapsed ,bt t)))
+          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+          (when ,terpri (terpri ,%out)))))))
 
 ;;;
 ;;; }}}{{{ logging

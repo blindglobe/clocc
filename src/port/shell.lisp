@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.12 2001/04/25 21:44:19 sds Exp $
+;;; $Id: shell.lisp,v 1.13 2001/07/09 17:13:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -68,7 +68,7 @@
            #-lisp=cl lisp:make-pipe-input-stream
                      (format nil "~a~{ ~a~}" prog args))
   #+cmu (ext:process-output (ext:run-program prog args :output :stream
-                                             :input t :wait nil))
+                                             :error t :input t :wait nil))
   #+gcl (si::fp-output-stream (apply #'si:run-process prog args))
   #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
                               :direction :input)

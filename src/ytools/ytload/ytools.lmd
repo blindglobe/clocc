@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytools.lmd,v 1.3 2004/03/10 04:43:23 airfoyle Exp $
+;;;$Id: ytools.lmd,v 1.4 2004/04/24 23:01:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -27,6 +27,13 @@
 				    (short-site-name)
 				    directory-delimiter*
 				    "ytinit.lisp"))
-	     (load-if-there (strings-concat config-directory* "ytinit.lisp")))
+	     (load-if-there (merge-pathnames
+			       "ytinit.lisp"
+			       (user-homedir-pathname)))
+	     (let ((config-dir-pathname
+		      (pathname config-directory*)))
+	        (cond ((not (equal config-dir-pathname (user-homedir-pathname)))
+		       (load-if-there
+			  (merge-pathnames "ytinit.lisp" config-dir-pathname))))))
 	  (list ytools-package*
 		ytools-readtable*))))

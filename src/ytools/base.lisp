@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.4 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: base.lisp,v 1.5 2004/04/24 23:01:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -22,7 +22,10 @@
 	     Array-dimension Array-dimensions
 	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
 	     is-Keyword is-String memq assq nodup =<
-	     is-Pair is-cons list-copy tuple is-Char is-Integer is-Number
+	     is-Pair is-cons list-copy
+	     tuple head tail
+	     ;;;; one two three four five six seven eight nine ten
+	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
 	     is-Fixnum is-Ratio is-sublist is-whitespace
 	     is-Stream list->values values->list lastelt len string-length
@@ -177,17 +180,36 @@
 	  `(cond (,tst (list ,@stuff)) (t '())   ))))
 )
 
-(cl:defmacro subr-synonym (syn subr &optional setfable)
-   `(cl:eval-when (:compile-toplevel :load-toplevel :execute)
-       (cond ((not (eq ',syn ',subr))
-	      ;; If they're eq, it's probably because they 
-	      ;; looked different when input, as:
-	      ;; (subr-synonym 'make-Pathname 'make-pathname)
+(cl:defmacro subr-synonym (syn subr &optional setf-able)
+   (cond ((eq syn subr)
+	  ;; If they're eq, the only reason to declare them synonyms
+	  ;; is that they looked different when input, as:
+	  ;; (subr-synonym 'make-Pathname 'make-pathname)
+	  `'(subr-synonym ,syn ,subr))
+	 (t
+	  `(cl:eval-when (:compile-toplevel :load-toplevel :execute)
 	      (define-subr-synonym ',syn ',subr)
 	      (define-compiler-macro ,syn (&rest args)
 		 `(,',subr ,@args))
-	      ,@(include-if setfable
-		   `(defun (setf ,syn) (v x) (setf (,subr x) v)))))))
+	      ;; If setf-able, we assume only one arg, or
+	      ;; things will get too messy.
+	      ,@(include-if setf-able
+		   (let ((setf-name (intern (concatenate 'string
+					        (symbol-name syn)
+						"-" (symbol-name :setf)))))
+		      `(progn
+			  (defun ,setf-name (x v)
+			     (setf (,subr x) v))
+			  (defsetf ,syn ,setf-name))))))))
+
+;;;; This doesn't work due to a bug in Allegro
+;;;;	      ,@(include-if setf-able
+;;;;		   `(progn
+;;;;		       (defun (setf ,syn) (v x)
+;;;;			  (setf (,subr x) v))
+;;;;		       (define-compiler-macro (setf ,syn) (v^ x^)
+;;;;			   `(setf (,',subr ,x^) ,v^))))))))
+
 (cl:eval-when (:compile-toplevel :load-toplevel)
 
 (defvar subr-synonyms* '())
@@ -242,6 +264,8 @@
 	(res '()))
        ((null tl) res)
      (cond ((not (member (car tl) (cdr tl) :test test))
+
+
 	    (setq res (cons (car tl) res))))))
 
 (subr-synonym =< <=)
@@ -255,7 +279,23 @@
 (subr-synonym is-cons consp)
 (subr-synonym is-sublist subsetp)
 (subr-synonym list-copy copy-list)
+
 (subr-synonym tuple list)
+
+(subr-synonym head car t)
+(subr-synonym tail cdr t)
+
+;;;;(subr-synonym one first)
+;;;;(subr-synonym two second t)
+;;;;(subr-synonym three third t)
+;;;;(subr-synonym four fourth t)
+;;;;(subr-synonym five fifth t)
+;;;;(subr-synonym six sixth t)
+;;;;(subr-synonym seven seventh t)
+;;;;(subr-synonym eight eighth t)
+;;;;(subr-synonym nine ninth t)
+;;;;(subr-synonym ten tenth t)
+
 (subr-synonym is-Char characterp)
 (subr-synonym is-Integer integerp)
 (subr-synonym is-Number numberp)
@@ -394,20 +434,20 @@
    (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
                         (get-setf-expansion alist^)
       (let ((keyvar (gensym)) (newvar (gensym)) (alist-var (gensym))
+	    (entry-var (gensym))
             (storevar (car alstores)))
-         (values `(,keyvar ,@altemps ,alist-var)
-                 `(,key^ ,@alvals ,alist-acc)
+         (values `(,keyvar ,@altemps ,alist-var ,entry-var)
+                 `(,key^ ,@alvals ,alist-acc (assq ,keyvar ,alist-var))
                  `(,newvar)
-                 `(let ((p (assq ,keyvar ,alist-var)))
-                     (cond ((not p)
-                            (let ((,storevar (cons (cons ,keyvar ,newvar)
-                                                   ,alist-var)))
-                                ,alist-set
-				,newvar))
-	                   (t
-	                    (setf (cdr p) ,newvar)))
-                      ,newvar)
-                 `(alref. ,alist-var ,keyvar ,default^)))))
+                 `(cond (,entry-var
+			 (setf (cdr ,entry-var) ,newvar))
+			(t
+			 (let ((,storevar (cons (cons ,keyvar ,newvar)
+						,alist-var)))
+			   ,alist-set
+			   ,newvar)))
+                 `(cond (,entry-var (cdr ,entry-var))
+			(t ,default^))))))
 
 (defmacro alref (alist^ key^ &optional (default^ 'false))
    (let ((entryvar (gensym)))
@@ -419,20 +459,20 @@
    (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
                         (get-setf-expansion alist^)
       (let ((keyvar (gensym)) (newvar (gensym)) (alist-var (gensym))
+	    (entry-var (gensym))
             (storevar (car alstores)))
-         (values `(,keyvar ,@altemps ,alist-var)
-                 `(,key^ ,@alvals ,alist-acc)
+         (values `(,keyvar ,@altemps ,alist-var ,entry-var)
+                 `(,key^ ,@alvals ,alist-acc (assq ,keyvar ,alist-var))
                  `(,newvar)
-                 `(let ((p (assq ,keyvar ,alist-var)))
-                     (cond ((not p)
-                            (let ((,storevar (cons (tuple ,keyvar ,newvar)
-                                                   ,alist-var)))
-                                ,alist-set
-				,newvar))
-	                   (t
-	                    (setf (cadr p) ,newvar)))
-                      ,newvar)
-                 `(alref ,alist-var ,keyvar ,default^)))))
+                 `(cond (,entry-var
+			 (setf (cadr ,entry-var) ,newvar))
+			(t
+			 (let ((,storevar (cons (tuple ,keyvar ,newvar)
+						,alist-var)))
+			   ,alist-set
+			   ,newvar)))
+                 `(cond (,entry-var (cadr ,entry-var))
+			(t ,default^))))))
 
 ;;;;(set-dispatch-macro-character #\! #\( #'lpar-exclmac ytools-readtable*)
 

@@ -1,18 +1,19 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: misc.lisp,v 1.3 2004/04/24 23:01:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(depends-on :at-run-time %ytools/ setter)
+(depends-on :at-run-time %ytools/ setter mapper)
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-   (export '(out-to-string dbg-out err-out cons-if-new plev plen
+   (export '(out-to-string dbg-out dbg-out-indent
+	     err-out cons-if-new plev plen
 	     classify shorter list-splice is-list-of boole-eq eqn
-	     mod-load)))
+	     mod-load val-or-initialize memoize-val)))
 
 (defmacro out-to-string (&rest outargs)
    `(with-output-to-string (string-stream) (out (:to string-stream) ,@outargs)))
@@ -20,6 +21,15 @@
 (defmacro dbg-out (gate^ &rest msgstuff)
    `(cond (,gate^
 	   (err-out ,@msgstuff))))
+
+(defmacro dbg-out-indent (gate^ space^ &body body)
+   (let ((bod-fun (gensym)))
+      `(let-fun ((,bod-fun () ,@body))
+	  (cond (,gate^
+		 (out-indent *error-output* ,space^
+		    (,bod-fun)))
+		(t
+		 (,bod-fun))))))
 
 (defmacro err-out (&rest msgstuff) 
 	   `(progn (out (:to *error-output*)
@@ -107,3 +117,25 @@
 		       str ".lsy")))
       (do-fload `(%module/ ,(intern str (find-package str))))))
 	     
+(defmacro val-or-initialize (e^ &key ((:missing-if missing^) 'false)
+				     ((:init init^)
+				      (signal-problem val-or-initialize
+				         "'val-or-initialize' must have"
+				         " :init argument")))
+   (multiple-value-bind (itemp-vars ivals istore-vars iset iacc)
+                        (get-setf-expansion e^)
+      (let ((curval-var (car istore-vars)))   ;(gensym)
+	 `(let* ,(<# tuple itemp-vars ivals)
+	     (let ((,curval-var ,iacc))
+		(cond ((eq ,curval-var ,missing^)
+		       (!= ,curval-var ,init^)
+		       ,iset))
+		,curval-var)))))
+
+;; Notational variant
+(defmacro memoize-val (exp^ &key ((:missing-if uncached-val^) 'false)
+				 ((:store-as store-place^)
+				  (signal-problem val-or-initialize
+				         "'val-or-initialize' must have"
+				         " :init argument")))
+   `(val-or-initialize ,store-place^ :init ,exp^ :missing-if ,uncached-val^))

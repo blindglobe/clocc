@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 1.4 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: setter.lisp,v 1.5 2004/04/24 23:01:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -20,7 +20,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq match-cond match-let
-	     make-Qvar is-Qvar Qvar-sym Qvar-notes)))
+	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes)))
 
 ;;;;(declaim (special *-*))
 
@@ -600,8 +600,9 @@
 			(funcall unwrap-deeper
 			   (Qvaroid-notes clause)))
 		       ((car-eq clause ':?)
-			(funcall unwrap-deeper
-			   (cadr clause)))
+			(funcall unwrap-deeper (cddr clause)))
+;;;;			(<# (\\ (e) (funcall unwrap-deeper e))
+;;;;			    (cdr clause))
 		       (t
 			(mapcan unwrap-deeper clause))))
 	      (cddr exp))

@@ -1,3 +1,9 @@
+cl-cil (200100227-7) unstable; urgency=low
+
+  * Also works with other systems except cmucl 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 15 Nov 2002 23:24:34 +0100
+
 cl-cil (200100227-6) unstable; urgency=low
 
   * Now uses asdf.

@@ -96,7 +96,6 @@
    (setf (symbol-function 'lisp:require)
 	 (symbol-function 'clc-require))))
 
-
 (defun compile-library (library)
   "Recompiles the give library"
 
@@ -115,7 +114,7 @@
           (pathname
            "cl-library:")))))
      ;; if in the clc root:
-     (mk:oos library :compile :verbose nil))
+     (mk:oos library :compile :verbose t))
     (t
      (format t "~%Package ~S not found... ignoring~%"
              library)))

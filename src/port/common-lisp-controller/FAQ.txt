@@ -5,17 +5,15 @@ homedirectory and add an overriding translation in you startup
 script. Like:
 
 ; my ~/.cmucl-init.cl file:
-(load "/var/lib/cmucl/site-init.lisp")
+(load "/etc/common-lisp/cmucl/site-init.lisp")
 
 (format t "Hello Peter!~%")
 
 (common-lisp-controller:add-project-directory
- "/home/pvaneynd/common-lisp/src/"
- "/home/pvaneynd/common-lisp/fasl/"
- '("CLIM" "MCCLIM" "CLX" #+nil "CLOCC-PORT"
-   "ECLIPSE"
-   "HEMLOCK" #+nil "CMUCL-CLX" "CMUCL")
- "/home/pvaneynd/common-lisp/systems/")
+ #p"/home/pvaneynd/common-lisp/src/"
+ #p"/home/pvaneynd/common-lisp/fasl/"
+ '("clue")
+ #p"/home/pvaneynd/common-lisp/systems/")
 
 Q2: This sucks: register-common-lisp-source foo worked, but now
 (require :foo) doesn't!

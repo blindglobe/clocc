@@ -573,6 +573,7 @@ int main(int argc, char *argv[])
                           if ( (fork())  == 0)
                             {
                               struct passwd *login_data;
+                              char command[4097];
 
                               login_data = getpwnam("cl-builder");
 
@@ -591,7 +592,12 @@ int main(int argc, char *argv[])
                               if (setsid() == -1)
                                 reporterror("could not create a session");
 
-                              mail_pipe = popen("/usr/bin/mail -s \"clc build failure\" root -e ","w");
+                              snprintf(command,4096,
+                                       "/usr/bin/mail -s \"clc build failure of %s for %s\" root -e",
+                                       package,compiler);
+                              command[4096]=(char) 0;
+                              
+                              mail_pipe = popen(command,"w");
 
                               if (mail_pipe == NULL)
                                 reporterror("Could not open a pipe to /usr/bin/mail");

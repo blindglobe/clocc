@@ -192,7 +192,7 @@ Returns nothing"
   (declare (type pathname source-root fasl-root system-directory))
   (loop for project in projects
         do
-        (let ((project (string-upcase project)))
+        (let ((project project))
           (add-translation
            :cl-library fasl-root
            (make-pathname :directory (list :relative project :wild-inferiors)
@@ -246,3 +246,5 @@ with command either :recompile or :remove"
 Please run /usr/bin/clc-send-command --quiet ~A ~A <implementation-name>
 and continue"
           command package))
+
+

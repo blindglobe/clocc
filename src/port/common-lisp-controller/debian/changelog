@@ -1,3 +1,10 @@
+common-lisp-controller (3.17) unstable; urgency=low
+
+  * Include the name of the implementation/library in the email.
+  * Fixed add-project-directory
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 24 Aug 2002 07:57:47 +0200
+
 common-lisp-controller (3.16) unstable; urgency=low
 
   * Make certain the /usr/lib/common-lisp/<implementation> directories are

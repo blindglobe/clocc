@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.12 2000/06/29 19:27:07 sds Exp $
+;;; $Id: log.lisp,v 1.13 2001/09/05 18:05:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -49,26 +49,17 @@ If FMT is non-NIL, return the corresponding string too."
     (declare (double-float nn))
     (if fmt (values nn (format nil "~/pr-secs/" nn)) nn)))
 
-(defmacro with-timing ((&key (terpri t) (done nil) (run t) (real t)
-                             (out '*standard-output*))
-                       &body body)
-  "Evaluate the body, then print the timing."
-  (with-gensyms ("TIMING-" bt bt1 %out)
-    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)) (,%out ,out))
-      (unwind-protect (progn ,@body)
-        (when ,%out
-          (when ,done (princ "done" ,%out))
-          (when ,run (format ,%out " [run: ~/pr-secs/]" (elapsed ,bt t)))
-          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
-          (when ,terpri (terpri ,%out)))))))
-
 ;;;
 ;;; }}}{{{ logging
 ;;;
 
-(defcustom *print-log* (simple-array symbol (*))
-  (mk-arr 'symbol '(:log :logv :date :plot :head :res :opt :err :test :xml))
+(defcustom *print-log* 'simple-vector
+  '#(:log :logv :date :plot :head :res :opt :err :test :xml)
   "The list of message types which are being printed.")
+
+(defun print-log-p (type)
+  "Check whether this message TYPE is being logged."
+  (or (eq type t) (find type *print-log* :test #'eq)))
 
 (defmacro mesg (type str &rest args)
   "Call format -- conditionally.
@@ -76,9 +67,23 @@ This has to be a macro to avoid needless evaluating the args."
   (with-gensyms ("MESG-" out typ)
     `(let ((,out ,str) (,typ ,type))
       (declare (type (or stream (member nil t)) ,out))
-      (when (and ,out (or (eq ,typ t) (find ,typ *print-log* :test #'eq)))
+      (when (and ,out (print-log-p ,typ))
         (format ,out ,@args)
         (force-output (if (eq t ,out) *standard-output* ,out))))))
+
+(defmacro with-timing ((&key (terpri t) (done nil) (run t) (real t)
+                             (type t) (out '*standard-output*))
+                       &body body)
+  "Evaluate the body, then print the timing."
+  (with-gensyms ("TIMING-" bt bt1 %out)
+    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil))
+           (,%out (and (print-log-p ,type) ,out)))
+      (unwind-protect (progn ,@body)
+        (when ,%out
+          (when ,done (princ "done" ,%out))
+          (when ,run (format ,%out " [run: ~/pr-secs/]" (elapsed ,bt t)))
+          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+          (when ,terpri (terpri ,%out)))))))
 
 ;;; }}}
 

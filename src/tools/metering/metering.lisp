@@ -380,7 +380,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; For CLtL2 compatible lisps
 
-#+(and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
+#+(and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1 :allegro-v6.0))
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from cltl1 provide require))
 #+:mcl

@@ -108,9 +108,17 @@
 		 (write-char ch out)
 		 (incf k)))))))
   
-(defun preprocess (file &key (outfile-name "prep.tmp"))
+(defun preprocess (file &key (outfile-name nil))
   (when *verbose*
     (format t "~&preprocessing begins ...~%"))
+  (unless outfile-name
+    ;; Pick some suitable default based on FILE.
+    (let ((compiled-path (compile-file-pathname file)))
+      (setf outfile-name
+	    (translate-pathname compiled-path
+				(make-pathname :type (pathname-type compiled-path))
+				(make-pathname :type "p")))))
+  (format t "outfile-name = ~A~%" outfile-name)
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
 			     :direction :output
@@ -581,8 +589,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.29 2002/02/07 20:14:12 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.30 2002/02/07 20:35:22 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.30  2002/02/07 20:35:22  rtoy
+;;; Choose a better name than "prep.tmp" in whatever directory we are in
+;;; for the temporary preprocessed file.  Make it go into the same
+;;; directory as the Fortran file, but with the extension "p".
+;;;
 ;;; Revision 1.29  2002/02/07 20:14:12  rtoy
 ;;; f2cl was incorrectly parsing
 ;;;

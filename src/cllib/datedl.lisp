@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.10 2002/08/13 22:02:46 sds Exp $
+;;; $Id: datedl.lisp,v 1.11 2002/08/19 13:13:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
 
 (in-package :cllib)
 
-(export '(dated-list dl-nth-date dated-list-name dl-nth-slot dl-shift
+(export '(dated-list mk-dl dl-nth-date dated-list-name dl-nth-slot dl-shift
           copy-dated-list dl-endp dl-len dl-ll dl-date))
 
 ;;;

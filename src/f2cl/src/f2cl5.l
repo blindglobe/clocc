@@ -51,14 +51,21 @@
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
-  (proclaim '(special keywords *intrinsic_function_names* *external_function_names*
+  (proclaim '(special *intrinsic_function_names* *external_function_names*
 	      *declared_vbles* *undeclared_vbles* *key_params* *save_vbles*
 	      *explicit_vble_decls* *implicit_vble_decls* *common_array_dims*
 	      *subprog_common_vars* *program-flag* 
 	      *subprog_stmt_fns* *subprog_stmt_fns_bodies*
 	      *auto-save-data*
 	      *functions-used*
-	      *vble-declaration-done*)))
+	      *vble-declaration-done*))
+)
+
+(defvar *fortran-keywords*
+  '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE RETURN
+    STOP PRINT READ WRITE BACKSPACE CLOSE ENDFILE INQUIRE
+    OPEN REWIND FORMAT AND OR NOT))
+
 
 
 (defun check_new_vbles (prog_list)
@@ -71,7 +78,7 @@
 				     (numberp (car exprs))
 				     (member (car exprs) 
 					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= ><))
-				     (member (car exprs) keywords)
+				     (member (car exprs) *fortran-keywords*)
 				     (member (car exprs) *intrinsic_function_names*)
 				     (member (car exprs) *key_params* :key #'car)
 				     (member (car exprs) *external_function_names*)
@@ -88,10 +95,6 @@
 				       (cons (check-t-and-pi (car exprs))
 					     *undeclared_vbles*)))))))
       ((null exprs) prog_list)))
-
-(setq keywords '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE RETURN
-                       STOP PRINT READ WRITE BACKSPACE CLOSE ENDFILE INQUIRE
-                       OPEN REWIND FORMAT AND OR NOT))
 
 (defun pretty-decls (decls)
   (let ((type-alist '()))

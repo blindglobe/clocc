@@ -1,3 +1,10 @@
+common-lisp-controller (3.56) unstable; urgency=low
+
+  * Rename remove-defsystem to remove-clc, install-defsystem to
+    install-clc
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Tue,  4 Mar 2003 21:52:57 -0700
+
 common-lisp-controller (3.55) unstable; urgency=low
 
   * Add ~/.sbcl/systems/ to asdf:*central-registry*

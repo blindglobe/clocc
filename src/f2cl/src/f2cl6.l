@@ -80,7 +80,7 @@
 		      ;; Not continuation.  Print out the buffered line, if
 		      ;; any, and save this line for later.
 		      (when prev-line
-			(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
+			;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
 			(write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
 		      (setf prev-line (copy-seq line))
 		      ;; Print out the collected comments, if any
@@ -216,7 +216,8 @@
              (write-char '#\space outport)
              (write logl-op :stream outport) ; write the converted string with spaces
              (write-char '#\space outport))
-            (t (write-char '#\. outport) ; put the dot back
+            (t
+	     (write-char '#\. outport) ; put the dot back
                (write  str :stream outport :escape nil))))) ; put everything else back
 
 ;------------------------------------------------------------------------------
@@ -257,6 +258,7 @@
        (setq str (make-string-output-stream))
        ;; examine first char and peek at second to ascertain this is a number
        (setq nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
+       ;; (format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
        (cond ((and (my-digit-char-p char) 
 		   (or (and (not (eql nxt-char 'EOF)) 
 			    (my-digit-char-p nxt-char))
@@ -275,7 +277,9 @@
        loop
        (setq char (read-char *inp* nil 'EOF t)
 	     nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
-       (if (eql nxt-char 'EOF) (setq nxt-char `#\space))
+       (when (eql nxt-char 'EOF)
+	 (setq nxt-char `#\space))
+       ;; (format t "char, nxt-char = ~S ~S~%" char nxt-char)
        (cond ((eql char 'EOF)
 	      ;; Assume number is complete.
 	      (write (get-output-stream-string str) :stream outport :escape nil)
@@ -355,12 +359,11 @@
       (return-from parse-number nil))
     (let ((str (make-string-output-stream))
 	  ;; examine first char and peek at second to ascertain this
-	  ;; is a number.  Skip over spaces if this looks like it
-	  ;; starts a number.
-	  (nxt-char (when (or (my-digit-char-p char)
-			      (member char '(#\. #\+ #\-)))
-		      (skip-spaces)
-		      (peek-char nil *inp* nil 'EOF #+broken-peek-char t))))
+	  ;; is a number.  Don't try to skip over spaces here because
+	  ;; it confuses later stages of the parser.  (In particular,
+	  ;; the Fortran "6.or." gets mangled into the symbol "6OR".)
+	  (nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t)))
+      ;;(format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
       (cond ((and (my-digit-char-p char) 
 		  (or (and (not (eql nxt-char 'EOF))
 			   (my-digit-char-p nxt-char))
@@ -380,6 +383,7 @@
 	     (write-char '#\0 str)
 	     (write-char '#\. str) )
 	    (t
+	     ;;(format t "parse-number done!?~%")
 	     (return-from parse-number nil)))
       ;; parse rest of number;EOF
       (loop
@@ -394,6 +398,7 @@
 	  (setq nxt-char (peek-char nil *inp* nil 'EOF)))
 	(when (eql nxt-char 'EOF)
 	  (setq nxt-char `#\space))
+	;;(format t "char, nxt-char = ~S ~S~%" char nxt-char)
 	(cond ((eql char 'EOF)
 	       ;; Assume number is complete.
 	       (write (get-output-stream-string str) :stream outport :escape nil)
@@ -461,8 +466,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.19 2000/08/13 22:31:10 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.20 2000/08/18 15:22:11 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.20  2000/08/18 15:22:11  rtoy
+;;; Can't swallow blanks (for now) at the first part of parse-number
+;;; because it causes things like "6.or." to become the symbol "6OR",
+;;; which is wrong.
+;;;
 ;;; Revision 1.19  2000/08/13 22:31:10  rtoy
 ;;; With the change in PARSE-NUMBER, ADJUST_NRS was sometimes messing up
 ;;; the columns for the statement number and the statement itself.  Fix

@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2004/08/11 19:00:33 $"))
+  (remove #\$ "2.0 beta $Date: 2004/08/13 21:16:27 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -132,6 +132,8 @@ only when needed. ")
 
 (defvar *float-format* 'single-float)
 
+(defvar *common-blocks-as-arrays* nil)
+
 (defvar *use-function-info*
   t
   "If non-NIL, the database of function return values is used in
@@ -176,6 +178,7 @@ incorrect, so use caution.")
 			declaim
 			declare-common
 			(float-format *read-default-float-format*)
+	                common-as-array
 			&allow-other-keys)
   "Fortran to Common Lisp converter
 
@@ -242,7 +245,8 @@ INPUT-FILE               File containing Fortran code
 	(*declare-common-blocks* declare-common)
 	(*assigned-variables* nil)
 	(*entry-points* nil)
-	(*float-format* float-format))
+	(*float-format* float-format)
+	(*common-blocks-as-arrays* common-as-array))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -291,6 +295,7 @@ INPUT-FILE               File containing Fortran code
 			      declaim
 			      declare-common
 			      (float-format *read-default-float-format*)
+                              common-as-array
 			      &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
@@ -334,7 +339,8 @@ FILENAME                 File containing Fortran code
 	       :array-slicing array-slicing
 	       :package package :declaim declaim
 	       :declare-common declare-common
-	       :float-format float-format))
+	       :float-format float-format
+	       :common-as-array common-as-array))
 	(*read-default-float-format* float-format))
     (multiple-value-prog1
 	#+(or cmu scl) (compile-file lisp-file :output-file output-file :error-file error-file)
@@ -2536,8 +2542,22 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.133 2004/08/11 19:00:33 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.134 2004/08/13 21:16:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.134  2004/08/13 21:16:27  rtoy
+;;; First pass at creating common blocks as arrays.  Intent is to allow
+;;; odepack to be converted via f2cl.
+;;;
+;;; So a common block structure is created that creates as large an array
+;;; as possible for consecutive elements of the same type in the common
+;;; block.  A new array is created for each such section.  Then the
+;;; elements of the common block are accessed either as either an
+;;; individual element of the array or as a displaced array.
+;;;
+;;; This might have speed impacts, so the default is not to do this.  Use
+;;; the keyword :common-as-array to control this feature.  Default is off,
+;;; preserving old behavior.
+;;;
 ;;; Revision 1.133  2004/08/11 19:00:33  rtoy
 ;;; Set the f2cl version to include the RCS Date.
 ;;;

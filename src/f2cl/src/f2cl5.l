@@ -713,28 +713,108 @@
 (defun create-sym-macros ()
   (let ((sym-mlets '())
 	(sym-lets ()))
-    (maphash
-     #'(lambda (key varlist)
-	 (mapc #'(lambda (var)
-		   (let ((accessor-name
-			  (intern (concatenate 'string
-					       (symbol-name key)
-					       "-"
-					       (symbol-name var))))
-			 (name
-			  (intern (concatenate 'string
-					       "*"
-					       (symbol-name key)
-					       (symbol-name '#:-common-block*)))))
-		     (if (vble-is-array-p var)
-			 (progn
-			   (push `(,accessor-name (,accessor-name ,name)) sym-lets)
-			   (push `(,var ,accessor-name) sym-mlets))
-			 (push `(,var (,accessor-name ,name)) sym-mlets))
-		     ))
-	       varlist))
-     *common-blocks*)
+    (if *common-blocks-as-arrays*
+	(let ((common-var-decls (mapcar #'make-special-var-decl *subprog_common_vars*)))
+	  (setf common-var-decls (append '(declaim)
+					 (mapcar #'(lambda (decl)
+						     (second decl))
+						 common-var-decls)))
+	  (multiple-value-setq (sym-mlets sym-lets)
+	    (create-sym-macros-array common-var-decls)))
+	(maphash
+	 #'(lambda (key varlist)
+	     (mapc #'(lambda (var)
+		       (let ((accessor-name
+			      (intern (concatenate 'string
+						   (symbol-name key)
+						   "-"
+						   (symbol-name var))))
+			     (name
+			      (intern (concatenate 'string
+						   "*"
+						   (symbol-name key)
+						   (symbol-name '#:-common-block*)))))
+			 (if (vble-is-array-p var)
+			     (progn
+			       (push `(,accessor-name (,accessor-name ,name)) sym-lets)
+			       (push `(,var ,accessor-name) sym-mlets))
+			     (push `(,var (,accessor-name ,name)) sym-mlets))
+			 ))
+		   varlist))
+	 *common-blocks*))
     (values sym-mlets sym-lets)))
+
+(defun create-sym-macros-array (common_var_decls)
+  (let ((sym-mlets '())
+	(sym-lets ()))
+    (flet
+	((process-block (key varlist)
+	   (let ((block-special-name (intern (format nil "*~A-COMMON-BLOCK*" key)))
+		 (part 0)
+		 (prev-type nil)
+		 (total-len 0)
+		 (posn 0))
+	     (dolist (v varlist)
+	       (let* ((decl (find v (rest common_var_decls) :key #'third))
+		      (var-type (if decl (second decl) nil))
+		      (el-type (if (subtypep var-type 'array)
+				   (second var-type)
+				   var-type))
+		      (dims (cond ((and (listp var-type)
+					(subtypep var-type 'array)
+					(not (subtypep var-type 'string)))
+				   ;;(format t "array var-type = ~A ~A~%" var var-type)
+				   ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+
+				   ;; If the dimension of the array is
+				   ;; a number, use the actual
+				   ;; dimension.  Otherwise use 0.
+				   (if (every #'numberp (third var-type))
+				       (third var-type)
+				       0))
+				  (t nil))))
+		 (unless prev-type
+		   (setf prev-type el-type))
+		 (multiple-value-bind (len arrayp)
+		     (if (subtypep var-type 'array)
+			 (values (first (third var-type)) t)
+			 (values 1 nil))
+		   (flet ((create ()
+			    #+nil
+			    (format t "var = ~A :type ~A Part ~A posn ~A~%"
+				    v var-type part posn)
+			    (if arrayp
+				(push `(,(intern (format nil "~A-~A" key v))
+					 (make-array ,len :element-type ',(second var-type)
+						     :displaced-to (,(intern (format nil "~A-PART-~D" key part))
+								     ,(intern (format nil "*~A-COMMON-BLOCK*" key)))
+						     :displaced-index-offset ,posn))
+				      sym-lets)
+				(push `(,v (aref (,(intern (format nil "~A-PART-~D" key part))
+						   ,block-special-name)
+						 ,posn))
+				      sym-mlets))))
+			      
+		     (cond ((eq prev-type el-type)
+			    ;; Same block
+			    (create)
+			    (incf total-len len)
+			    (incf posn len))
+			   (t
+			    (setf prev-type el-type)
+			    (incf part)
+			    (setf total-len 0)
+			    (setf posn 0)
+			    (create)
+			    (incf total-len len)
+			    (incf posn len)
+			    )))))))))
+      (maphash #'process-block *common-blocks*)
+      (setf sym-mlets (nreverse sym-mlets))
+      (setf sym-lets (nreverse sym-lets))
+      ;;(format t "sym-mlets = ~S~%" sym-mlets)
+      ;;(format t "sym-lets  = ~S~%" sym-lets)
+      (values sym-mlets sym-lets))))
 
 (defun coerce-parameter-assign (lhs rhs)
   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
@@ -2688,53 +2768,106 @@
   ;; COMMON_VAR_DECLS is a set of declaims computed in
   ;; INSERT-DECLARATIONS.  We use that to determine the appropriate
   ;; initalizations for the variables.
-  (mapcar #'(lambda (var)
-	      (let* ((decl (find var (rest common_var_decls)
-				 :key #'third))
-		     (var-type (if decl (second decl) nil))
-		     (dims (cond ((and (listp var-type)
-				       (subtypep var-type 'array)
-				       (not (subtypep var-type 'string)))
-				  ;;(format t "array var-type = ~A ~A~%" var var-type)
-				  ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+  (if *common-blocks-as-arrays*
+      (make-common-block-vars-array-like varlist common_var_decls)
+      (mapcar #'(lambda (var)
+		  (let* ((decl (find var (rest common_var_decls)
+				     :key #'third))
+			 (var-type (if decl (second decl) nil))
+			 (dims (cond ((and (listp var-type)
+					   (subtypep var-type 'array)
+					   (not (subtypep var-type 'string)))
+				      ;;(format t "array var-type = ~A ~A~%" var var-type)
+				      ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
 
-				  ;; If the dimension of the array is
-				  ;; a number, use the actual
-				  ;; dimension.  Otherwise use 0.
-				  (if (every #'numberp (third var-type))
-				      (third var-type)
-				      0))
-				 (t nil)))
-		     (var-init (cond ((and (listp var-type)
-					   (subtypep (first var-type) 'array))
-				      `(make-array ',dims :element-type ',(second var-type)
-					:initial-element ,(if (subtypep (second var-type) 'logical)
-							      nil
-							      (coerce 0 (second var-type)))))
-				     ((subtypep var-type 'logical)
-				      nil)
-				     (t
-				      (coerce 0 var-type)))))
-		;; Initialize the slot with a 0 of the appropriate
-		;; type (for scalars) or a zero element array of the
-		;; appropriate dimensions for array slots.
-		#+nil
-		(when dims
-		  (format t "dims = ~A~%" dims)
-		  (format t "new dims = ~A~%" (subst '(*) 0 dims))
-		  (format t "relaxed  = ~A~%" (make-list (length dims) :initial-element '*)))
-		(if dims
-		    `(,var ,var-init
-		      :type (,*array-type* ,(second var-type)
-			     ,(if *relaxed-array-decls*
-				  (make-list (if (listp dims)
-						 (length dims)
-						 1)
-					     :initial-element '*)
-				  (subst '(*) 0 dims))))
-		    `(,var ,var-init :type ,var-type))))
-	  varlist))
+				      ;; If the dimension of the array is
+				      ;; a number, use the actual
+				      ;; dimension.  Otherwise use 0.
+				      (if (every #'numberp (third var-type))
+					  (third var-type)
+					  0))
+				     (t nil)))
+			 (var-init (cond ((and (listp var-type)
+					       (subtypep (first var-type) 'array))
+					  `(make-array ',dims :element-type ',(second var-type)
+						       :initial-element ,(if (subtypep (second var-type) 'logical)
+									     nil
+									     (coerce 0 (second var-type)))))
+					 ((subtypep var-type 'logical)
+					  nil)
+					 (t
+					  (coerce 0 var-type)))))
+		    ;; Initialize the slot with a 0 of the appropriate
+		    ;; type (for scalars) or a zero element array of the
+		    ;; appropriate dimensions for array slots.
+		    #+nil
+		    (when dims
+		      (format t "dims = ~A~%" dims)
+		      (format t "new dims = ~A~%" (subst '(*) 0 dims))
+		      (format t "relaxed  = ~A~%" (make-list (length dims) :initial-element '*)))
+		    (if dims
+			`(,var ,var-init
+			       :type (,*array-type* ,(second var-type)
+						    ,(if *relaxed-array-decls*
+							 (make-list (if (listp dims)
+									(length dims)
+									1)
+								    :initial-element '*)
+							 (subst '(*) 0 dims))))
+			`(,var ,var-init :type ,var-type))))
+	      varlist)))
 
+(defun make-common-block-vars-array-like (varlist common_var_decls)
+  (let ((part 0)
+	(prev-type nil)
+	(total-len 0)
+	(slots nil))
+    (dolist (v varlist)
+      (let* ((decl (find v (rest common_var_decls) :key #'third))
+	     (var-type (if decl (second decl) nil))
+	     (el-type (if (subtypep var-type 'array)
+			  (second var-type)
+			  var-type))
+	     (dims (cond ((and (listp var-type)
+			       (subtypep var-type 'array)
+			       (not (subtypep var-type 'string)))
+			  ;;(format t "array var-type = ~A ~A~%" var var-type)
+			  ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+
+			  ;; If the dimension of the array is
+			  ;; a number, use the actual
+			  ;; dimension.  Otherwise use 0.
+			  (if (every #'numberp (third var-type))
+			      (third var-type)
+			      0))
+			 (t nil))))
+	(unless prev-type
+	  (setf prev-type el-type))
+	(cond ((eq prev-type el-type)
+	       ;; Keep accumulating
+	       (incf total-len (if (subtypep var-type 'array)
+				   (first (third var-type))
+				   1)))
+	      (t
+	       ;; Different type.  Stop accumulating
+	       ;;(format t "Part ~A:  Len ~A, type ~A ~%" part total-len prev-type)
+	       (push `(,(intern (format nil "PART-~D" part))
+		       (make-array ,total-len :element-type ',prev-type)
+		       :type (simple-array ,prev-type (,total-len)))
+		     slots)
+	       (setf prev-type nil)
+	       (incf part)
+	       (setf total-len 0)))
+	#+nil
+	(format t "var = ~A :type ~A :el-type ~A :dims ~A~%" v var-type el-type dims)
+	))
+    (when prev-type
+      ;;(format t "Part ~A:  Len ~A, type ~A~%" part total-len prev-type)
+      (push `(,(intern (format nil "PART-~D" part))
+	      (make-array ,total-len :element-type ',prev-type)
+	      :type (simple-array ,prev-type (,total-len)))
+	    slots))
+    (nreverse slots)))
 			     
 ;; Create a structure for the given common blocks.
 (defun make-common-block-structure (common_var_decls)
@@ -2821,8 +2954,22 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.116 2003/11/15 14:16:45 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.117 2004/08/13 21:16:28 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.117  2004/08/13 21:16:28  rtoy
+;;; First pass at creating common blocks as arrays.  Intent is to allow
+;;; odepack to be converted via f2cl.
+;;;
+;;; So a common block structure is created that creates as large an array
+;;; as possible for consecutive elements of the same type in the common
+;;; block.  A new array is created for each such section.  Then the
+;;; elements of the common block are accessed either as either an
+;;; individual element of the array or as a displaced array.
+;;;
+;;; This might have speed impacts, so the default is not to do this.  Use
+;;; the keyword :common-as-array to control this feature.  Default is off,
+;;; preserving old behavior.
+;;;
 ;;; Revision 1.116  2003/11/15 14:16:45  rtoy
 ;;; When parsing READ, if the variable has type STRING, we need to use
 ;;; f2cl-set-string to make sure strings get the right length.

@@ -1,4 +1,9 @@
-2003-11-08: Slight change to an error message in pathname.lisp.	    
+; -*- Mode: text -*-
+	
+2003-12-11: (branch ytools-1-2-dev) Rewrote file-update checker to get
+            right the logic of when to recompile or reload a file.
+	
+2003-11-08: Slight change to an error message in pathname.lisp.
 	
 2003-10-28: Changed ytload.lisp to allow .lmd files to be in arbitrary places
 	

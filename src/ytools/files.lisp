@@ -544,6 +544,7 @@
 				      (eq (Load-progress-rec-whether-compile
 						  lprec)
 					  ':source))
+				 (lprec-recompute-version-modtimes lprec)
 				 src-version)
 				(t
 				 (dolist (rtsupp
@@ -583,6 +584,7 @@
 	 (fcompl-log src-version (and success obj-version))
 	 (cond (success
 		(note-load-status lprec ':maybe-compiled)
+		(lprec-recompute-version-modtimes lprec)
 		(ask-next-time lprec)
 		obj-version)
 	       (t

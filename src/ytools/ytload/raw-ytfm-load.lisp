@@ -1,9 +1,9 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
 
-;;; This file is for getting a raw Lisp up to the point where the
-;;; ytools-core-files* can be loaded.  It is used only for debugging
-;;; YTFM.  It assumes that ytload/ytload.lisp has already been loaded.
+;;; This file is for recompiling a subset of ytools-core-files* 
+;;; (in the proper order) when debugging YTFM.
+;;; It assumes that ytload/ytload.lisp has already been loaded.
 ;;; The working directory should be set to the ytools directory.
 
 (load-yt-config-file)
@@ -23,6 +23,8 @@
 	    (make-pathname :name fname :type lisp-object-extn*)
 	    ytools-bin-dir-pathname*)))
 
+;;; There is no particular need for this.  Just do (yt-install :ytfm)
+;;; and answer "y" when it asks if you mean to reinstall.
 (defun yt-recompile ()
    (dolist (fname ytools-core-files*)
       (yt-comp fname)

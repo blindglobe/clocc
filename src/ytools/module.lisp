@@ -266,6 +266,12 @@
    (cond ((and (not (is-Pseudo-pathname (Load-progress-rec-pathname lprec)))
 	       (not (= (Load-progress-rec-file-mod-timestamp lprec)
 		       file-op-count*)))
+	  (lprec-recompute-version-modtimes lprec)))
+   (values (Load-progress-rec-ur-mod-time lprec)
+	   (Load-progress-rec-loadable-mod-time lprec)))
+
+
+(defun lprec-recompute-version-modtimes (lprec)
 	  (let ((src-version (lprec-find-source-pathname lprec))
 		(obj-version (lprec-find-object-pathname lprec))
 		(whether-compile (lprec-guess-whether-compile lprec)))
@@ -296,9 +302,7 @@
 		(setf (Load-progress-rec-loadable-mod-time lprec)
 		      (file-write-date loadable-version))
 		(setf (Load-progress-rec-file-mod-timestamp lprec)
-		      file-op-count*)))))
-   (values (Load-progress-rec-ur-mod-time lprec)
-	   (Load-progress-rec-loadable-mod-time lprec)))
+		      file-op-count*))))
 
 (defun lprec-find-source-pathname (lprec)
    (let ((spn (Load-progress-rec-source-pathname lprec)))

@@ -94,6 +94,7 @@
 <!-- *** platforms *** -->
 <!ENTITY acorn "<ulink url='http://www.acorn.com/'><emphasis role='strong'>Acorn</emphasis></ulink>">
 <!ENTITY amiga "<ulink url='http://www.amiga.org/'><emphasis role='strong'>Amiga</emphasis></ulink>">
+<!ENTITY ascii "<ulink url='http://www.cplusplus.com/doc/papers/ascii.html'><emphasis role='strong'>ASCII</emphasis></ulink>">
 <!ENTITY cygwin "<ulink url='http://cygwin.com/'><emphasis role='strong'>Cygwin</emphasis></ulink>">
 <!ENTITY dos "<ulink url='http://www.freedos.org/'><emphasis role='strong'>DOS</emphasis></ulink>">
 <!ENTITY linux "<ulink url='http://www.linux.org/'><emphasis role='strong'>Linux</emphasis></ulink>">

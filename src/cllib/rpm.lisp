@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.8 2001/04/11 14:40:21 sds Exp $
+;;; $Id: rpm.lisp,v 2.9 2001/04/20 16:23:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -602,7 +602,7 @@ available in `*rpm-locations*'."
 
 ;;; active mode ftp - doesn't work - why?!
 
-#+(or clisp allegro)
+#+nil ;; (or clisp allegro)
 (progn
 
 (defun local-host (sock)

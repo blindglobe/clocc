@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.4 2000/05/12 18:36:16 sds Exp $
+;;; $Id: date.lisp,v 2.5 2000/06/07 13:57:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,6 +17,8 @@
   (require :sorted (translate-logical-pathname "cllib:sorted"))
   ;; `mesg'
   (require :log (translate-logical-pathname "cllib:log"))
+  ;; `print-struct-object'
+  #+cmu (require :closio (translate-logical-pathname "cllib:closio"))
   ;; `dfloat'
   (require :withtype (translate-logical-pathname "cllib:withtype")))
 

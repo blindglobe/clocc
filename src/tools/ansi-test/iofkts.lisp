@@ -435,7 +435,7 @@ a b c ")) t)
 
 (check-for-bug :iofkts-legacy-436
   (setq c (multiple-value-list (read-line b)))
-  (" x y z " nil))
+  (" x y z" nil))
 
 (check-for-bug :iofkts-legacy-440
   (length c)
@@ -443,7 +443,7 @@ a b c ")) t)
 
 (check-for-bug :iofkts-legacy-444
   (multiple-value-list (read-line b))
-  ("a b c" t))
+  ("a b c " t))
 
 (check-for-bug :iofkts-legacy-448
   (multiple-value-list (read-line b))

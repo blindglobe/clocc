@@ -1,3 +1,10 @@
+common-lisp-controller (3.73) unstable; urgency=low
+
+  * Move confmodule call in postinst to see if that helps with postrm's
+  failure.
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun,  3 Aug 2003 22:57:22 -0600
+
 common-lisp-controller (3.72) unstable; urgency=low
 
   * postrm: expand #DEBHELPER#. Tried using "|| true" to avoid debconf errors 

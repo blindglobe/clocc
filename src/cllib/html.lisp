@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.12 2000/06/28 17:07:23 sds Exp $
+;;; $Id: html.lisp,v 1.13 2001/03/29 22:16:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -82,7 +82,6 @@ optional argument SPACE is non-nil."
   "Skip through the HTML markup. CHAR=`<'"
   (declare (stream stream) (character char))
   (ecase char
-    (#\; #\;) (#\, #\,) (#\: #\:)
     (#\< (let ((obj (read stream t nil t)))
            (make-html-tag
             :data (if (eq :!-- obj) (xml-read-comment stream)
@@ -103,12 +102,12 @@ optional argument SPACE is non-nil."
   (set-macro-character #\& #'read-html-markup nil rt)
   (set-macro-character #\> (get-macro-character #\)) nil rt)
   (set-syntax-from-char #\; #\a rt)
-  ;;(set-macro-character #\; #'read-html-markup nil rt)
+  ;;(set-macro-character #\; #'read-standalone-char nil rt)
   (set-syntax-from-char #\# #\a rt)
   (set-syntax-from-char #\: #\a rt)
-  (set-macro-character #\: #'read-html-markup nil rt)
+  (set-macro-character #\: #'read-standalone-char nil rt)
   (set-syntax-from-char #\, #\a rt)
-  (set-macro-character #\, #'read-html-markup nil rt)
+  (set-macro-character #\, #'read-standalone-char nil rt)
   rt)
 
 (defcustom *html-readtable* readtable (make-html-readtable)

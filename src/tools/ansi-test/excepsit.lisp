@@ -537,14 +537,14 @@ program-error is signaled.")
 
 #-sbcl
 (check-for-bug :excepsit-legacy-540
-  (defstruct foo32 a system::a)
+  (defstruct foo32 a foo20::a)
   program-error)
 
 #-sbcl
 (check-for-bug :excepsit-legacy-545
   (progn
     (defstruct foo33 a)
-    (defstruct (foo34 (:include foo33)) system::a))
+    (defstruct (foo34 (:include foo33)) foo20::a))
   program-error)
 
 (check-for-bug :excepsit-legacy-551

@@ -1987,12 +1987,21 @@ FILENAME                 File containing Fortran code
 	  (t
 	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
 	   ;;(format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
-	   (if (and (vble-is-array-p (check-reserved-lisp-names (first v)))
-		    (null (rest v)))
-	       `(replace ,(check-reserved-lisp-names (first v))
-		         ',(mapcar #'fix-up-negative-number l))
-	       `(setq ,(check-reserved-lisp-names (first v))
-		      ,(fix-up-negative-number l)))))))
+	   (cond ((subtypep (lookup-vble-type (check-reserved-lisp-names (first v)))
+			    'string)
+		  ;; Need to initialize a string carefully.
+		  ;;
+		  ;; FIXME: We should probably do this when we declare
+		  ;; the array instead.
+		  `(replace ,(check-reserved-lisp-names (first v))
+		            ,(first l)))
+		 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
+			(null (rest v)))
+		  `(replace ,(check-reserved-lisp-names (first v))
+		         ',(mapcar #'fix-up-negative-number l)))
+		 (t
+		  `(setq ,(check-reserved-lisp-names (first v))
+		      ,(fix-up-negative-number l))))))))
 
 ; parse EXTERNAL f1, f2, ...
 ; by adding the function names to *external-function-names*
@@ -2371,8 +2380,28 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.119 2002/09/13 17:50:18 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.120 2003/01/08 18:19:00 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.120  2003/01/08 18:19:00  rtoy
+;;; Was incorrectly converting things like
+;;;
+;;; 	character*8 s
+;;; 	data s/'z'/
+;;;
+;;; to
+;;;
+;;;   (let ((s (make-array 8 :element-type 'base-char :initial-element #\space)))
+;;;     (setf s "z"))
+;;;
+;;; It should really be
+;;;
+;;;   (let ((s (make-array 8 :element-type 'base-char :initial-element #\space)))
+;;;     (replace s "z"))
+;;;
+;;; We really should do this when making the array, not afterwords.
+;;;
+;;; Bug noted by Christophe Rhodes.
+;;;
 ;;; Revision 1.119  2002/09/13 17:50:18  rtoy
 ;;; From Douglas Crosher:
 ;;;

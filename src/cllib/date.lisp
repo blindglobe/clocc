@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-02-25 Thu 16:23:10 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-03-02 Tue 13:15:30 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.31 1999/02/25 21:50:25 sds Exp $
+;;; $Id: date.lisp,v 1.32 1999/03/02 18:16:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.32  1999/03/02 18:16:57  sds
+;;; Added `dl-last-date'.  Fixed `dl-next-chg'.
+;;; Remove the first list when it is too short in `(setf dl-overlap)'.
+;;;
 ;;; Revision 1.31  1999/02/25 21:50:25  sds
 ;;; Added constant `+bad-dl+'.
 ;;; Added macros `with-saved-dl' and `with-saved-dls'.
@@ -516,7 +520,7 @@ Return NIL if no errors were detected, the number of errors otherwise."
                                 err fixed)
                                (check lst order-p same-p jump gap date
                                       val stream nil)))))
-               (declare (type index-t len err) (type date d0 d1))
+               (declare (type index-t len err fixed) (type date d0 d1))
                (setq r1 (second rr) d1 (funcall date r1)
                      v1 (if val (funcall val r1)))
                (when (and (null fff) order-p (date< d1 d0))
@@ -556,10 +560,11 @@ Return NIL if no errors were detected, the number of errors otherwise."
                           (setf (car lst) (cadr rr) (cdr lst) (cddr rr)))
                          (t (format stream " ### cannot fix~%"))))))))
     (if (dated-list-p lst)
-        (let ((date (dl-date lst)) (val (dl-val lst)) (ii -1))
+        (let ((date (dl-date lst)) (val (dl-val lst)) (ii 0))
+          (declare (type index-t ii))
           (dolist (ll (dated-list-fl lst))
-            (format stream " [~d: ~a ~d] " (incf ii) (car ll)
-                    (length (cdr ll)))
+            (format stream " [~d: ~a ~d] " ii (car ll) (length (cdr ll)))
+            (incf ii)
             (check (cdr ll) order-p same-p jump gap date val stream fixp)))
         (check lst order-p same-p jump gap date val stream fixp))))
 
@@ -694,7 +699,7 @@ previous record when SKIP is non-nil and nil otherwise.
 (defun dl-full-len (dl)
   "Return the full length of the dated list."
   (declare (type dated-list dl) (values fixnum))
-  (reduce #'+ (dated-list-fl dl) :key (compose 1- length)))
+  (reduce #'+ (dated-list-fl dl) :key (compose length cdr)))
 
 (defsubst dl-endp (dl)
   "Check for the end of the dated list."
@@ -737,6 +742,11 @@ so that -1 corresponds to the last record."
   (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (slot-value dl slot) bb))))
 
+(defun dl-last-date (dl)
+  "Return the last date of the dated list."
+  (declare (type dated-list dl))
+  (funcall (dl-date dl) (car (last (car (last (dated-list-fl dl)))))))
+
 (defmethod print-object ((dl dated-list) (stream stream))
   (if *print-readably* (call-next-method)
       (let ((fl (dated-list-fl dl)) (dd (dl-date dl))
@@ -769,7 +779,7 @@ If  LAST is non-nil, make sure that the next date is different.
 No side effects.  Returns CP and CL for `dl-shift'."
   (declare (type dated-list dl) (type (or null date) dt) (values list))
   (if (null dt) (dl-ll dl)
-      (do ((dd (dl-date dl)) (ls (dated-list-fl dl) (cdr ls)))
+      (do ((dd (dl-date dl)) (ls (dated-list-cl dl) (cdr ls)))
           ((date<= dt (rollover (car ls) dd))
            (values (date-in-list dt (cdar ls) dd last) ls))
         (declare (type date-f-t dd)))))
@@ -798,8 +808,14 @@ No side effects.  Returns CP and CL for `dl-shift'."
         :minimize col :into mol
         :finally (mesg :head out " *** ~a --> ~d~%" dl mol) (return mol)))
 
-(defun (setf dl-overlap) (ol dl)
-  "Modify the overlap."
+(defun (setf dl-overlap) (ol dl &optional (out *standard-output*))
+  "Modify the overlap.  The dated list is reset."
+  (declare (type dated-list dl) (type index-t ol) (type (or null stream) out))
+  (let ((len (length (car (dated-list-fl dl)))))
+    (when (> ol len)
+      (mesg :log out "setf dl-overlap: removed first list [~d records, ~a]~%"
+            len (car (pop (dated-list-fl dl))))))
+  (dl-reset dl)
   (loop :with dd :of-type function = (dl-date dl)
         :for ll :in (cdr (dated-list-fl dl))
         :and rd = (rollover (car (dated-list-fl dl)) dd) :then (rollover ll dd)
@@ -812,47 +828,52 @@ No side effects.  Returns CP and CL for `dl-shift'."
 (defun dl-shift (dl &optional (dt 1))
   "Make DL start from DT. Return the DL.
 If DT is a fixnum, skip that many records instead.
-Defaults to 1."
+Defaults to 1.  The second values returned is
+whether there was a rollover."
   (declare (type dated-list dl) (type (or fixnum date) dt))
   (etypecase dt
     (date (setf (values (dated-list-cp dl) (dated-list-cl dl))
-                (date-in-dated-list dt dl)))
+                (date-in-dated-list dt dl))
+          dl)
     (integer
-     (loop :repeat dt :with dd :of-type function = (dl-date dl)
+     (loop :repeat dt :with dd :of-type function = (dl-date dl) :and roll
            :with rd :of-type date = (rollover (car (dated-list-cl dl)) dd)
            :if (and (cdr (dated-list-cp dl))
                     (date<= (funcall dd (cadr (dated-list-cp dl))) rd))
            :do (pop (dated-list-cp dl))
-           :else :do (pop (dated-list-cl dl)) :and
+           :else :do (pop (dated-list-cl dl)) (setq roll t) :and
              :if (dated-list-cl dl)
-             :do (setf (dated-list-cp dl)
-                       (cdr (date-in-list rd (cdar (dated-list-cl dl)) dd))
+             :do (setf roll (date-in-list rd (cdar (dated-list-cl dl)) dd)
+                       (dated-list-cp dl) (cdr roll)
                        rd (rollover (car (dated-list-cl dl)) dd))
-             :else :do (setf (dated-list-cp dl) nil) :and :return dl :end
-           :end)))
-  dl)
+             :else :do (setf (dated-list-cp dl) nil)
+                   :and :return (values dl roll) :end
+           :end :finally (return (values dl roll))))))
 
 (defun dl-next-chg (dl)
   "Shift dl to the next date, return the change in val.
 Can be used with chain contracts, where there are double records for
 roll-over dates."
   (declare (type dated-list dl))
-  (let ((ll (dl-ll dl)))
-    (unless (cdr ll) (return-from dl-next-chg nil))
-    (cond ((date= (funcall (dl-date dl) (first ll))
-                  (funcall (dl-date dl) (second ll)))
-           (unless (cddr ll) (return-from dl-next-chg nil))
-           (setf (dl-ll dl) (cddr ll))
-           (- (funcall (dl-val dl) (third ll))
-              (funcall (dl-val dl) (second ll))))
-          (t (setf (dl-ll dl) (cdr ll))
-             (- (funcall (dl-val dl) (second ll))
-                (funcall (dl-val dl) (first ll)))))))
+  (let* ((v0 (dl-nth-val dl)) (d0 (dl-nth-date dl))
+         (ro (nth-value 1 (dl-shift dl))))
+    (when (dl-endp dl) (return-from dl-next-chg nil))
+    (if (date= d0 (dl-nth-date dl)) ; never rollovers (1 list)
+        (let ((v0 (dl-nth-val dl)))
+          (when (dl-endp (dl-shift dl)) (return-from dl-next-chg nil))
+          (- (dl-nth-val dl) v0))
+        (- (dl-nth-val dl) (if ro (funcall (dl-val dl) (car ro)) v0)))))
 
-(defsubst dl-count-jumps (dl &optional (key #'date-ye))
+(defun dl-count-jumps (dl &optional (key #'date-ye) (test #'eql))
   "Return the number of years in the dated list."
   (declare (type dated-list dl) (type (function (date) t) key) (values fixnum))
-  (count-jumps (dl-ll dl) :key (compose 'key (dl-date dl))))
+  (with-saved-dl dl
+    (loop :with kk :of-type function = (compose 'key (dl-date dl))
+          :with kp = (funcall kk (dl-nth dl))
+          :and kc = (funcall kk (dl-nth (dl-shift dl)))
+          :do (dl-shift dl) :until (dl-endp dl)
+          :do (setq kp kc kc (funcall kk (dl-nth dl)))
+          :count (not (funcall test kp kc)))))
 
 (defun dl-jumps (dl)
   "Return a cons of 2 lists - the up and down moves in the dated list."

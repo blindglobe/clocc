@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: rpm.lisp,v 2.2 2000/04/27 15:41:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -354,34 +354,34 @@ Then generate the list to download."
             (> (- (get-universal-time) (get '*rpm-locations* 'updated))
                *rpm-locations-timeout*))
     (format out " *** Getting the list of new packages...~%")
-    (let ((bt (get-float-time nil)) (na 0) (le 0) (bt0 0.0d0)
-          #+clisp (lisp:*pprint-first-newline* nil)
-          (*url-default-timeout* *rpm-timeout*)
-          (*url-default-max-retry* *rpm-max-retry*))
-      (declare (double-float bt bt0) (type index-t na le))
-      (dolist (dld *rpm-locations*)
-        (declare (type download-data dld))
-        (dld-reset dld)
-        (format out " *** processing `~a'...~%" dld)
-        (handler-case
-            (progn
-              (setq bt0 (get-float-time nil))
-              (setf (dld-all dld) (rpm-available (dld-url dld)
-                                                 :out out :err err)
-                    (dld-fls dld) (rpm-prune-list (dld-all dld))
-                    le (length (dld-fls dld)))
-              (incf na le)
-              (format out " *** ~d new RPM~:p (out of ~d) [~a]:~% --> ~a~%"
-                      le (length (dld-all dld)) (elapsed-1 bt0 nil) dld))
-          (error (co)
-            (setf (dld-err dld) co)
-            (format out " *** failed [~a]:~% - ~a~%" (elapsed-1 bt0 nil) co))))
-      (format out " *** ~d new RPM~:p in ~r URL~:p [~a]~%" na
-              (length *rpm-locations*) (elapsed-1 bt nil))
-      (setf (get '*rpm-locations* 'updated) (get-universal-time))
-      (dolist (dld *rpm-locations*)
+    (with-timing ()
+      (let ((na 0) (le 0)
+            #+clisp (lisp:*pprint-first-newline* nil)
+            (*url-default-timeout* *rpm-timeout*)
+            (*url-default-max-retry* *rpm-max-retry*))
+        (declare (type index-t na le))
+        (dolist (dld *rpm-locations*)
+          (declare (type download-data dld))
+          (dld-reset dld)
+          (format out " *** processing `~a'...~%" dld)
+          (handler-case
+              (with-timing ()
+                (setf (dld-all dld) (rpm-available (dld-url dld)
+                                                   :out out :err err)
+                      (dld-fls dld) (rpm-prune-list (dld-all dld))
+                      le (length (dld-fls dld)))
+                (incf na le)
+                (format out " *** ~d new RPM~:p (out of ~d):~% --> ~a~% * "
+                        le (length (dld-all dld)) dld))
+            (error (co)
+              (setf (dld-err dld) co)
+              (format out " *** failed:~% - ~a~%" co))))
+        (format out " *** ~d new RPM~:p in ~r URL~:p " na
+                (length *rpm-locations*))))
+    (setf (get '*rpm-locations* 'updated) (get-universal-time))
+    (dolist (dld *rpm-locations*)
         (when (dld-fls dld)
-          (format out " * ~a~%" dld))))))
+          (format out " * ~a~%" dld)))))
 
 ;;;###autoload
 (defun show-rpms (&optional (what "") (local t))
@@ -440,12 +440,10 @@ Then generate the list to download."
   "Make sure `*rpm-present*' is initialized."
   (declare (type (or null stream) out))
   (when (or force (zerop (length *rpm-present*)))
-    (let ((bt0 (get-float-time t)) (bt1 (get-float-time nil)))
+    (with-timing ()
       (mesg t out " * Finding the RPMs...")
       (setq *rpm-present* (rpm-present))
-      (mesg t out "done [~d package~:p; run: ~a; real: ~a]~%"
-            (length *rpm-present*)
-            (elapsed-1 bt0 t) (elapsed-1 bt1 nil)))))
+      (mesg t out "done [~d package~:p]" (length *rpm-present*)))))
 
 ;;;###autoload
 (defun rpm-get-list (url rpms &key (out *standard-output*) (err *error-output*)

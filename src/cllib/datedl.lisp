@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: datedl.lisp,v 1.3 2000/04/27 15:53:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -548,7 +548,7 @@ Must not assume that the list is properly ordered!"
 (defsubst weighted-mean-dl (dl wts &key (slot 'val))
   "Apply `weighted-mean' to the dated list."
   (declare (type dated-list dl))
-  (weighted-mean (dl-ll dl) wts :key (dl-slot dl slot)))
+  (weighted-mean (dl-ll dl) wts :value (dl-slot dl slot)))
 
 ;;;
 ;;; Change

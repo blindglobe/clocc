@@ -276,7 +276,6 @@ Tag being parsed:| (cadr x))))
        (append (list 'fref vname)
 	       (list indices)
 	       (let ((blist (mapcar #'car bounds)))
-		 (format t "blist = ~S~%" blist)
 		 (unless (and blist
 			      (every #'(lambda (x)
 					 (= x 1))

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.22 2001/12/06 20:35:11 sds Exp $
+;;; $Id: gq.lisp,v 2.23 2001/12/07 18:31:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -323,10 +323,8 @@ If the first argument is a date, fix the year."
 ;;;
 
 (defcustom *hist-data-file* pathname
-  (merge-pathnames (make-pathname :directory '(:relative "text")
-                                  :name "invest" :type "txt"
-                                  :defaults nil)
-                   (user-homedir-pathname))
+  (mk-path (user-homedir-pathname) :directory '(:relative "text")
+           :name "invest" :type "txt")
   "*The file with the historical data.")
 (defcustom *hist-data-file-header* simple-string
   ";*GetQuote portfolio*
@@ -591,10 +589,8 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 ;;;
 
 (defcustom *gq-log* pathname
-  (merge-pathnames (make-pathname :directory '(:relative "text")
-                                  :name "getquote" :type "log"
-                                  :defaults nil)
-                   (user-homedir-pathname))
+  (mk-path (user-homedir-pathname) :directory '(:relative "text")
+           :name "getquote" :type "log")
   "The log file for the batch processing.")
 
 ;;;###autoload

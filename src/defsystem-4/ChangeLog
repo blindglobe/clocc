@@ -1,4 +1,9 @@
-2002-02-27  Marco Antoniotti  <marcoxa@cons.org>
+2002-02-27  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp:
+	Changed feature pushed on *features* to :mk-defsystem-4.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/ChangeLog: ChangeLog updated.
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
 	Added `:case :common' to load directory definition.

@@ -1112,70 +1112,28 @@
 				 (equal vble (second x)))
 			     *data-init*)))
 
-;; DATA is a sequence of numbers in Fortran column-major order.
-;; Create a Lisp array (row-major order) with the data in the correct
-;; order.
-(defun fortran-transpose (dims data)
-  (if (= (length dims) 1)
-      data
-      (let* ((ndims (length dims))
-	     (limits (make-array ndims :initial-contents dims))
-	     (cnt (make-array ndims :initial-element 0))
-	     (array-result (make-array dims))
-	     result)
-	(map nil #'(lambda (x)
-		     (let ((idx (apply #'array-row-major-index
-				       array-result (coerce cnt 'list))))
-		       ;; Set the correct element
-		       (setf (row-major-aref array-result idx) x)
-		       ;; Update the indices in column major order
-		       ;; (first index varies fastest)
-		       (do ((carry 1)
-			    (k 0 (1+ k)))
-			   ((or (>= k ndims)
-				(zerop carry)))
-			 (incf (aref cnt k) carry)
-			 (if (>= (aref cnt k) (aref limits k))
-			     (setf (aref cnt k) 0)
-			     (setf carry 0)))))
-	     data)
-	;; Now we need to convert the array into a nested structure of
-	;; sequences.  We are lazy here.  This does what we want
-	(setf result (format nil "~A~%" array-result))
-	(values (read-from-string (subseq result (position #\( result))))
-	)))
-
-
-#+nil
-(defun make_make-array_stmt (dimens type &optional init vble)
-  (let ((dims (mapcar #'(lambda (x) 
-                           (cond ((member '* x) '*)
-                                 ((eq (car x) 1) (cadr x))
-                                 ((not (member nil (mapcar #'numberp x)))
-                                  (1+ (- (cadr x) (car x))))
-                                 (t `(1+ (- ,(cadr x) ,(car x))))))
-                       dimens)))
-    ;; Don't need to initialize this variable separately, so kill it.
-    (setf *data-init* (remove-*data-init*-var vble))
-    
-    (cond ((every #'numberp dims)
-	   ;; If all of the dimensions are numbers, we don't have to
-	   ;; make a list out of them.  This can speed up array
-	   ;; creation for smart compilers.
-	   (let ((init-val
-		  (when init
-		    (if (eq 'fill (first init))
-			`(:initial-element ,(second init))
-			`(:initial-contents
-			  ',(fortran-transpose dims
-					       (first (rest init))))))))
-	     (if (= (length dims) 1)
-		 `(make-array ,(first dims) :element-type ',type ,@init-val)
-		 `(make-array '(,@dims) :element-type ',type ,@init-val))))
-	  (t
-	   (list 'make-array 
-		 (append '(list) dims)
-		 ':element-type (list 'quote type))))))
+;; DIMS is a list of the dimensions of an array.  DATA is a list of
+;; data to use for initializing an array.
+(defun fortran-data-init (type dims data)
+  (cond ((every #'numberp dims)
+	 ;; We can compute everything we need at compile time so let's
+	 ;; do it.
+	 (let ((data-len (length data))
+	       (total-length (reduce #'* dims)))
+	   (cond ((< data-len total-length)
+		  ;; Need to append some data.
+		  `(',(append data (make-list (- total-length data-len)
+					      :initial-element (coerce 0 type)))))
+		 ((> data-len total-length)
+		  ;; Need to truncate some data
+		  `(',(subseq data 0 total-length)))
+		 (t
+		  `(',data)))))
+	(t
+	 ;; Dispatch the creation to a macro to be compiled later by
+	 ;; Lisp.
+	 `((array-initialize ,type ,dims ,data))
+	 )))
 
 (defun make_make-array_stmt (dimens type &optional init vble)
   (let ((dims (mapcar #'(lambda (x) 
@@ -1188,24 +1146,24 @@
     ;; Don't need to initialize this variable separately, so kill it.
     (setf *data-init* (remove-*data-init*-var vble))
     
-    (cond ((every #'numberp dims)
-	   ;; If all of the dimensions are numbers, we don't have to
-	   ;; make a list out of them.  This can speed up array
-	   ;; creation for smart compilers.
-	   (let ((init-val
-		  (when init
-		    (if (eq 'fill (first init))
-			`(:initial-element ,(second init))
-			`(:initial-contents
-			  ',(fortran-transpose dims
-					       (first (rest init))))))))
+    (let ((init-val
+	   (when init
+	     (if (eq 'fill (first init))
+		 `(:initial-element ,(second init))
+		 `(:initial-contents
+		   ,@(fortran-data-init type dims
+					(first (rest init))))))))
+      (cond ((every #'numberp dims)
+	     ;; If all of the dimensions are numbers, we don't have to
+	     ;; make a list out of them.  This can speed up array
+	     ;; creation for smart compilers.
 	     (if (= (length dims) 1)
 		 `(make-array ,(first dims) :element-type ',type ,@init-val)
-		 `(make-array ,(reduce #'* dims) :element-type ',type ,@init-val))))
-	  (t
-	   (if (= (length dims) 1)
-	       `(make-array ,@dims :element-type ',type)
-	       `(make-array (reduce #'* (list ,@dims)) :element-type ',type))))))
+		 `(make-array ,(reduce #'* dims) :element-type ',type ,@init-val)))
+	    (t
+	     (if (= (length dims) 1)
+		 `(make-array ,@dims :element-type ',type ,@init-val)
+		 `(make-array (reduce #'* (list ,@dims)) :element-type ',type ,@init-val)))))))
 
 ;; create a labels form for when statement functions are present
 
@@ -2119,8 +2077,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.50 2000/07/19 22:17:13 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.51 2000/07/20 13:43:00 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.51  2000/07/20 13:43:00  rtoy
+;;; Since all arrays are now actually stored in column-major order in a
+;;; 1-dimensional vector, we don't need to transpose the data initializers
+;;; anymore.  Replace fortran-transpose with fortran-data-init to
+;;; correctly initialize the array.
+;;;
 ;;; Revision 1.50  2000/07/19 22:17:13  rtoy
 ;;; Remove a print statement inadvertently left in.
 ;;;

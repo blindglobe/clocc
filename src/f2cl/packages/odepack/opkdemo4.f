@@ -16,6 +16,7 @@ c-----------------------------------------------------------------------
       double precision atol, er, ero, errt, rtol, rwork,
      1   t, tout, tzero, y, yt
       dimension y(2), atol(2), rwork(57), iwork(22), jroot(2)
+      dimension neq(1), rtol(1)
       data lout/6/
 c
       nerr = 0
@@ -29,12 +30,12 @@ c   g1 = ((2*log(y)+8)/t - 5)*y (= dy/dt)  (with root at t = 2.5),
 c   g2 = log(y) - 2.2491  (with roots at t = 2.47 and 2.53)
 c-----------------------------------------------------------------------
 c Set all input parameters and print heading.
-      neq = 1
+      neq(1) = 1
       y(1) = 1.0d0
       t = 1.0d0
       tout = 2.0d0
       itol = 1
-      rtol = 1.0d-6
+      rtol(1) = 1.0d-6
       atol(1) = 1.0d-6
       itask = 1
       istate = 1
@@ -43,7 +44,7 @@ c Set all input parameters and print heading.
       liw = 21
       jt = 2
       ng = 2
-      write (lout,110) itol,rtol,atol(1),jt
+      write (lout,110) itol,rtol(1),atol(1),jt
  110  format(/' Demonstration program for DLSODAR package'////
      1  ' First problem'///
      2  ' Problem is  dy/dt = ((2*log(y)+8)/t - 5)*y,  y(1) = 1'//
@@ -67,7 +68,7 @@ c Print y and error in y, and print warning if error too large.
         write (lout,130) t,y(1),er
  130    format(' At t =',d15.7,5x,'y =',d15.7,5x,'error =',d12.4)
         if (istate .lt. 0) go to 185
-        er = abs(er)/(rtol*abs(y(1)) + atol(1))
+        er = abs(er)/(rtol(1)*abs(y(1)) + atol(1))
         ero = max(ero,er)
         if (er .gt. 1000.0d0) then
           write (lout,140)
@@ -107,7 +108,7 @@ c Problem complete.  Print final statistics.
       lenrw = iwork(17)
       leniw = iwork(18)
       nfea = nfe
-      if (jt .eq. 2) nfea = nfe - neq*nje
+      if (jt .eq. 2) nfea = nfe - neq(1)*nje
       write (lout,190) lenrw,leniw,nst,nfe,nfea,nje,nge,ero
  190  format(//' Final statistics for this run:'/
      1  ' rwork size =',i4,'   iwork size =',i4/
@@ -129,10 +130,10 @@ c to 15 figures for purposes of checking the accuracy.
 c-----------------------------------------------------------------------
 c Set tolerance parameters and print heading.
       itol = 2
-      rtol = 1.0d-6
+      rtol(1) = 1.0d-6
       atol(1) = 1.0d-6
       atol(2) = 1.0d-4
-      write (lout,200) itol,rtol,atol(1),atol(2)
+      write (lout,200) itol,rtol(1),atol(1),atol(2)
  200  format(////80('*')//' Second problem (Van der Pol oscillator)'//
      1  ' Problem is dy1/dt = y2,  dy2/dt = 100*(1-y1**2)*y2 - y1'/
      2  '            y1(0) = 2,  y2(0) = 0'//
@@ -141,7 +142,7 @@ c Set tolerance parameters and print heading.
 c
 c Loop over jt = 1, 2.  Set remaining parameters and print jt.
       do 290 jt = 1,2
-      neq = 2
+      neq(1) = 2
       y(1) = 2.0d0
       y(2) = 0.0d0
       t = 0.0d0
@@ -198,7 +199,7 @@ c Problem complete.  Print final statistics.
       lenrw = iwork(17)
       leniw = iwork(18)
       nfea = nfe
-      if (jt .eq. 2) nfea = nfe - neq*nje
+      if (jt .eq. 2) nfea = nfe - neq(1)*nje
       write (lout,280) lenrw,leniw,nst,nfe,nfea,nje,nge
  280  format(//' Final statistics for this run:'/
      1  '  rwork size =',i4,'   iwork size =',i4/

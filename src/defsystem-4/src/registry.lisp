@@ -40,10 +40,7 @@ listed in the central registry."
   (setf *central-registry* (delete location *central-registry*
 				   :test #'equalp)))
 
-<<<<<<< variant A
->>>>>>> variant B
 (defvar *system-file-extension* "system")
-======= end
 
 (defun delete-registry-entry (entry-index
 			      &aux (registry-length

@@ -366,7 +366,7 @@ is not included")
   ;; here as well.
   (etypecase x
     (integer
-     x)
+     (the integer4 x))
     (single-float
      (truncate (the (single-float #.(float most-negative-fixnum)
 				  #.(float most-positive-fixnum))
@@ -384,7 +384,7 @@ is not included")
   ;; code was wrong.
   (etypecase x
     (integer
-     x)
+     (the integer4 x))
     (single-float
      (truncate (the (single-float #.(float (- (ash 1 31)))
 				  #.(float (1- (ash 1 31))))
@@ -689,9 +689,9 @@ is not included")
 (defun log10 (x)
   (typecase x
     (single-float
-     (log (the (or (single-float 0.0f0) (member 0f0)) x) 10f0))
+     (log (the (or (single-float (0.0f0)) (member 0f0)) x) 10f0))
     (double-float
-     (log (the (or (double-float 0.0d0) (member 0d0)) x) 10d0))
+     (log (the (or (double-float (0.0d0)) (member 0d0)) x) 10d0))
     (t
      (/ (log x)
 	(typecase x
@@ -1138,8 +1138,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.42 2002/03/06 03:21:16 rtoy Exp $
+;;; $Id: macros.l,v 1.43 2002/03/06 23:07:19 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.43  2002/03/06 23:07:19  rtoy
+;;; o Make INT return an integer4 type, not integer.
+;;; o log10 was thinking it could generate complex result, but that's not
+;;;   true.  Declare the arg correctly so the compiler knows it can't.
+;;;
 ;;; Revision 1.42  2002/03/06 03:21:16  rtoy
 ;;; o Speed up FIND-ARRAY-DATA a little by declaring the offset to be a
 ;;;   fixnum, which it has to be since it's an index to an array.

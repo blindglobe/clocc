@@ -2,6 +2,47 @@
 
 Changes:
 
+Aug 29, 2000 or so
+------------
+
+Some fixes to handling of format statements.  I think we do a much
+better job now.
+
+Some bugs were fixed:
+o Function calls need array slicing applied.
+o The Fortran D format was converted to Lisp ~D, when it should have
+  been ~E.
+o Statement functions should coerce the result to the right type.
+
+Added the MINPACK package, which highlighted some of the bugs above.
+(Cool!)  Note:  the MINPACK package appears to have some lines that
+exceed column 72.  This isn't a problem for f2cl, but you compiler
+might drop those characters past column 72.
+
+
+Aug 18, 2000
+------------
+
+Changed PARSE-NUMBER to handle some spaces embedded within numbers.
+While I wanted it to handle ALL spaces embedded within numbers, there
+are certain cases where I'm missing something and we end up
+incorrectly parsing the file later.  In particular there can be no
+spaces before the decimal point.  Spaces anywhere else in the number
+appear ok.
+
+Aug 09, 2000
+------------
+
+Fix some bugs in parsing common blocks.  The test val/commontest.for
+should now be converted correctly.  
+
+Also, Fortran says the definition of the elements of a common block
+can be split over several common statements.  We support that now
+(at the expense of checking for inconsistently declared common
+blocks).  You'll have to manually check this.
+
+
+
 Aug 04, 2000
 ------------
 Add rudimentary support for Fortran READ statements.  Only tested for

@@ -1,5 +1,6 @@
 common-lisp-controller (3.34) unstable; urgency=low
 
+  * NMU
   * Add required wrapper when redefining openmcl's REQUIRE function.
   (OpenMCL now supports CLC!)
   
@@ -7,6 +8,7 @@ common-lisp-controller (3.34) unstable; urgency=low
 
 common-lisp-controller (3.33) unstable; urgency=low
 
+  * NMU
   * Fix type if clc-autobuild-check
   * Add check in preinst to avoid adding cl-builder user if already exists
   in passwd file.
@@ -15,12 +17,14 @@ common-lisp-controller (3.33) unstable; urgency=low
 
 common-lisp-controller (3.32) unstable; urgency=low
 
+  * NMU
   * Improve logic in clc-autobuild-check
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 22:23:20 -0600
 
 common-lisp-controller (3.31) unstable; urgency=low
 
+  * NMU
   * Add check in clc-autobuild-check for empty file
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 20:54:58 -0600

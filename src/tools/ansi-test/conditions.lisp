@@ -406,8 +406,9 @@ supplied to make-condition, nil is used as a default. "
 	    (declare (ignore c))
 	    (return-from foo 23))))
       (error "Foo"))))
- #-ANSI-CL nil
- #+ANSI-CL 23)
+ 23
+ "If a handler declines (ie. just return) the next available is used, so
+ the first one just returns nil, and the second, returning 23 is called")
 
 ;;; Multiple handlers should work.
 (my-assert

@@ -92,12 +92,13 @@
   "Returns T if component's directory is the same as *source-root* + component's name"
   (and c
        (equalp (pathname-directory (asdf:component-pathname c))
-	       (pathname-directory (asdf::resolve-symlinks
-				    (merge-pathnames
-				     (make-pathname
-				      :directory (list :relative
-						       (asdf:component-name c)))
-				     *source-root*))))))
+	       (pathname-directory
+		(ignore-errors
+		  (asdf::resolve-symlinks
+		   (merge-pathnames
+		    (make-pathname
+		     :directory (list :relative (asdf:component-name c)))
+		    *source-root*)))))))
 
 (defun ensure-user-packages-added ()
   (dolist (pkg (user-package-list))

@@ -15,6 +15,7 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
+;;;$Id: ytload.lisp,v 1.6 2004/03/10 04:43:23 airfoyle Exp $
 
 (defvar tools-version* "1.3")
 

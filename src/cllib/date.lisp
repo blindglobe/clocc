@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-06-04 Fri 16:08:51 EDT sds@goems.com>
+;;; File: <date.lisp - 1999-10-19 Tue 14:38:22 EDT sds@ksp.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,156 +9,159 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.40 1999/06/04 20:11:27 sds Exp $
+;;; $Id: date.lisp,v 1.41 1999/10/19 18:38:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
-;;; Revision 1.40  1999/06/04 20:11:27  sds
-;;; (dl-fl, with-saved-dl, with-truncated-dl): use `with-gensyms'.
-;;; (with-saved-dls): call `gensym' with an argument.
-;;; (volatility-dl): fix the second value.
-;;; (print-volatilities):  align the years.
+;;; Revision 1.41  1999/10/19 18:38:42  sds
+;;; (previous-working-day): new function.
 ;;;
-;;; Revision 1.39  1999/05/24 20:59:20  sds
-;;; (timestamp): moved to util.lisp.
-;;; (check-dates): check and fix roll-overs too.
-;;; (*rollover-bad-date*): new variable.
-;;; (rollover): use it.
-;;; (dl-overlap): use `last' instead of `nthcdr'/`nreverse'.
-;;;
-;;; Revision 1.38  1999/05/20 20:30:19  sds
-;;; (with-truncated-dl): truncate both forward and backwards.
-;;; (volatility-dl): take a keyword arg dev-fn.
-;;; (exp-mov-avg-dl): fixed :name.
-;;;
-;;; Revision 1.37  1999/05/11 20:02:28  sds
-;;; (date-latest, date-earliest): new functions.
-;;;
-;;; Revision 1.36  1999/05/11 17:57:30  sds
-;;; (infer-timezone): use error 'case-error.
-;;; (date<3, date>3): new functions.
-;;;
-;;; Revision 1.35  1999/04/21 20:35:00  sds
-;;; (dttm->string): print the (zero) offset.
-;;; (date): added a sample (commented out) CLOS implementation.
-;;;
-;;; Revision 1.34  1999/04/05 18:17:02  sds
-;;; Added `date-next-year', `date-next-month', `date-next-all'.
-;;;
-;;; Revision 1.33  1999/03/20 22:43:30  sds
-;;; Added `+unix-epoch+' and `unix-date'.
-;;;
-;;; Revision 1.32  1999/03/02 18:16:57  sds
-;;; Added `dl-last-date'.  Fixed `dl-next-chg'.
-;;; Remove the first list when it is too short in `(setf dl-overlap)'.
-;;;
-;;; Revision 1.31  1999/02/25 21:50:25  sds
-;;; Added constant `+bad-dl+'.
-;;; Added macros `with-saved-dl' and `with-saved-dls'.
-;;; Macro `with-truncated-dl' uses `with-saved-dl' now.
-;;;
-;;; Revision 1.30  1999/02/25 04:45:39  sds
-;;; Added `date-f-t', `date<=3', `date>=3', `dl-reset', `mk-dl', `rollover'.
-;;; Removed `dl-copy-shift'.  Fixed `dl-shift', `dl-overlap'.
-;;; Improved `fixing' in `check-dates'.
-;;; Added `cp' to `dated-list'.
-;;; Added `describe-object' method for `dated-list'.
-;;;
-;;; Revision 1.29  1999/02/23 23:48:21  sds
-;;; Major changes: many lists in a dated list;
-;;; `check-dates' can fix some problems.
-;;;
-;;; Revision 1.28  1999/02/02 00:03:24  sds
-;;; Added `to-string', fixed `string->dttm'.
-;;;
-;;; Revision 1.27  1999/02/01 19:34:04  sds
-;;; Added `purge-string' and `*string-junk*'.
-;;; Fixed `string->dttm' for the case when the date starts with a weekday.
-;;;
-;;; Revision 1.26  1999/02/01 18:59:07  sds
-;;; Use `string-tokens' in `date'.
-;;;
-;;; Revision 1.25  1999/01/13 23:37:56  sds
-;;; Replaced CMUCL-specific print functions with a call to
-;;; `print-struct-object'.
-;;;
-;;; Revision 1.24  1999/01/08 20:00:39  sds
-;;; Replaced calls to `date2days' with calls to `date-dd'.
-;;; Speedups expected.
-;;;
-;;; Revision 1.23  1999/01/07 04:03:05  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;;
-;;; Revision 1.22  1998/12/10 22:40:39  sds
-;;; Added `dttm->string', `string->dttm' and `infer-timezone'.
-;;; Made `infer-month' return NIL instead of signalling an error when the
-;;; month cannot be inferred.
-;;;
-;;; Revision 1.21  1998/11/13 19:22:39  sds
-;;; Added `days-week-day', `date-week-day' and `next-bad-day' for Friday the
-;;; 13th handling.
-;;;
-;;; Revision 1.20  1998/11/05 19:19:24  sds
-;;; Added `date<=', `date>=' and `date=*'.
-;;;
-;;; Revision 1.19  1998/08/05 22:03:28  sds
-;;; Added `date-mon-name' and `date-mon-offset'.
-;;;
-;;; Revision 1.18  1998/08/03 18:37:31  sds
-;;; Renamed `earliest-date' and `latest-date' to `date-min' and `date-max'.
-;;;
-;;; Revision 1.17  1998/07/31 16:43:25  sds
-;;; Added `exp-mov-avg-append' and `lincom'.
-;;; Declared `stream' as a stream in `print-*'.
-;;;
-;;; Revision 1.16  1998/07/06 21:58:10  sds
-;;; Combined the two &key arguments of `dl-copy-shift' into one optional
-;;; argument, branching on its type.
-;;;
-;;; Revision 1.15  1998/06/26 23:11:30  sds
-;;; Added `days-t' and `dl-slot'.  Switched to `print-object'.
-;;;
-;;; Revision 1.14  1998/06/19 21:41:16  sds
-;;; Use `defmethod' to print structures.
-;;;
-;;; Revision 1.13  1998/06/19 20:18:31  sds
-;;; Made `fix-date' not inline.  Added some declarations for CMUCL.
-;;;
-;;; Revision 1.12  1998/05/27 21:24:20  sds
-;;; Moved sorted stuff from here to list.lisp.
-;;;
-;;; Revision 1.11  1998/05/27 20:42:03  sds
-;;; Expanded `date' string recognition to include word months.
-;;;
-;;; Revision 1.10  1998/04/29 22:41:01  sds
-;;; Added (defmethod date ((xx integer)) (days2date xx)).
-;;; The new slot DD works fine and all the saved data has correct dates.
-;;;
-;;; Revision 1.9  1998/04/20 22:53:37  sds
-;;; Made the function slots in dated-list only sybols.
-;;;
-;;; Revision 1.8  1998/04/03 18:41:12  sds
-;;; Added DD (days since epoch) to the date structure.
-;;; Ditched *century*.
-;;;
-;;; Revision 1.7  1998/03/23 15:52:12  sds
-;;; Fixed to work with ACL and CMU CL.
-;;;
-;;; Revision 1.6  1998/03/10 18:30:07  sds
-;;; Replaced `multiple-value-set*' with `(setf (values ))'.
-;;;
-;;; Revision 1.5  1998/02/12 21:43:27  sds
-;;; Switched to `defgeneric' and `require'.
-;;;
-;;; Revision 1.4  1998/01/14 22:17:46  sds
-;;; Portability: runs under CMU CL and ACL.
-;;;
-;;; Revision 1.3  1997/12/04 20:02:53  sds
-;;; Moved `channel' to channel.lisp.
-;;; Made printing respect *print-readably*.
-;;;
-;;; Revision 1.2  1997/11/12 22:26:47  sds
-;;; Added `regress-dl'.
-;;;
+;; Revision 1.40  1999/06/04 20:11:27  sds
+;; (dl-fl, with-saved-dl, with-truncated-dl): use `with-gensyms'.
+;; (with-saved-dls): call `gensym' with an argument.
+;; (volatility-dl): fix the second value.
+;; (print-volatilities):  align the years.
+;;
+;; Revision 1.39  1999/05/24 20:59:20  sds
+;; (timestamp): moved to util.lisp.
+;; (check-dates): check and fix roll-overs too.
+;; (*rollover-bad-date*): new variable.
+;; (rollover): use it.
+;; (dl-overlap): use `last' instead of `nthcdr'/`nreverse'.
+;;
+;; Revision 1.38  1999/05/20 20:30:19  sds
+;; (with-truncated-dl): truncate both forward and backwards.
+;; (volatility-dl): take a keyword arg dev-fn.
+;; (exp-mov-avg-dl): fixed :name.
+;;
+;; Revision 1.37  1999/05/11 20:02:28  sds
+;; (date-latest, date-earliest): new functions.
+;;
+;; Revision 1.36  1999/05/11 17:57:30  sds
+;; (infer-timezone): use error 'case-error.
+;; (date<3, date>3): new functions.
+;;
+;; Revision 1.35  1999/04/21 20:35:00  sds
+;; (dttm->string): print the (zero) offset.
+;; (date): added a sample (commented out) CLOS implementation.
+;;
+;; Revision 1.34  1999/04/05 18:17:02  sds
+;; Added `date-next-year', `date-next-month', `date-next-all'.
+;;
+;; Revision 1.33  1999/03/20 22:43:30  sds
+;; Added `+unix-epoch+' and `unix-date'.
+;;
+;; Revision 1.32  1999/03/02 18:16:57  sds
+;; Added `dl-last-date'.  Fixed `dl-next-chg'.
+;; Remove the first list when it is too short in `(setf dl-overlap)'.
+;;
+;; Revision 1.31  1999/02/25 21:50:25  sds
+;; Added constant `+bad-dl+'.
+;; Added macros `with-saved-dl' and `with-saved-dls'.
+;; Macro `with-truncated-dl' uses `with-saved-dl' now.
+;;
+;; Revision 1.30  1999/02/25 04:45:39  sds
+;; Added `date-f-t', `date<=3', `date>=3', `dl-reset', `mk-dl', `rollover'.
+;; Removed `dl-copy-shift'.  Fixed `dl-shift', `dl-overlap'.
+;; Improved `fixing' in `check-dates'.
+;; Added `cp' to `dated-list'.
+;; Added `describe-object' method for `dated-list'.
+;;
+;; Revision 1.29  1999/02/23 23:48:21  sds
+;; Major changes: many lists in a dated list;
+;; `check-dates' can fix some problems.
+;;
+;; Revision 1.28  1999/02/02 00:03:24  sds
+;; Added `to-string', fixed `string->dttm'.
+;;
+;; Revision 1.27  1999/02/01 19:34:04  sds
+;; Added `purge-string' and `*string-junk*'.
+;; Fixed `string->dttm' for the case when the date starts with a weekday.
+;;
+;; Revision 1.26  1999/02/01 18:59:07  sds
+;; Use `string-tokens' in `date'.
+;;
+;; Revision 1.25  1999/01/13 23:37:56  sds
+;; Replaced CMUCL-specific print functions with a call to
+;; `print-struct-object'.
+;;
+;; Revision 1.24  1999/01/08 20:00:39  sds
+;; Replaced calls to `date2days' with calls to `date-dd'.
+;; Speedups expected.
+;;
+;; Revision 1.23  1999/01/07 04:03:05  sds
+;; Use `index-t' instead of (unsigned-byte 20).
+;;
+;; Revision 1.22  1998/12/10 22:40:39  sds
+;; Added `dttm->string', `string->dttm' and `infer-timezone'.
+;; Made `infer-month' return NIL instead of signalling an error when the
+;; month cannot be inferred.
+;;
+;; Revision 1.21  1998/11/13 19:22:39  sds
+;; Added `days-week-day', `date-week-day' and `next-bad-day' for Friday the
+;; 13th handling.
+;;
+;; Revision 1.20  1998/11/05 19:19:24  sds
+;; Added `date<=', `date>=' and `date=*'.
+;;
+;; Revision 1.19  1998/08/05 22:03:28  sds
+;; Added `date-mon-name' and `date-mon-offset'.
+;;
+;; Revision 1.18  1998/08/03 18:37:31  sds
+;; Renamed `earliest-date' and `latest-date' to `date-min' and `date-max'.
+;;
+;; Revision 1.17  1998/07/31 16:43:25  sds
+;; Added `exp-mov-avg-append' and `lincom'.
+;; Declared `stream' as a stream in `print-*'.
+;;
+;; Revision 1.16  1998/07/06 21:58:10  sds
+;; Combined the two &key arguments of `dl-copy-shift' into one optional
+;; argument, branching on its type.
+;;
+;; Revision 1.15  1998/06/26 23:11:30  sds
+;; Added `days-t' and `dl-slot'.  Switched to `print-object'.
+;;
+;; Revision 1.14  1998/06/19 21:41:16  sds
+;; Use `defmethod' to print structures.
+;;
+;; Revision 1.13  1998/06/19 20:18:31  sds
+;; Made `fix-date' not inline.  Added some declarations for CMUCL.
+;;
+;; Revision 1.12  1998/05/27 21:24:20  sds
+;; Moved sorted stuff from here to list.lisp.
+;;
+;; Revision 1.11  1998/05/27 20:42:03  sds
+;; Expanded `date' string recognition to include word months.
+;;
+;; Revision 1.10  1998/04/29 22:41:01  sds
+;; Added (defmethod date ((xx integer)) (days2date xx)).
+;; The new slot DD works fine and all the saved data has correct dates.
+;;
+;; Revision 1.9  1998/04/20 22:53:37  sds
+;; Made the function slots in dated-list only sybols.
+;;
+;; Revision 1.8  1998/04/03 18:41:12  sds
+;; Added DD (days since epoch) to the date structure.
+;; Ditched *century*.
+;;
+;; Revision 1.7  1998/03/23 15:52:12  sds
+;; Fixed to work with ACL and CMU CL.
+;;
+;; Revision 1.6  1998/03/10 18:30:07  sds
+;; Replaced `multiple-value-set*' with `(setf (values ))'.
+;;
+;; Revision 1.5  1998/02/12 21:43:27  sds
+;; Switched to `defgeneric' and `require'.
+;;
+;; Revision 1.4  1998/01/14 22:17:46  sds
+;; Portability: runs under CMU CL and ACL.
+;;
+;; Revision 1.3  1997/12/04 20:02:53  sds
+;; Moved `channel' to channel.lisp.
+;; Made printing respect *print-readably*.
+;;
+;; Revision 1.2  1997/11/12 22:26:47  sds
+;; Added `regress-dl'.
+;;
 
 (in-package :cl-user)
 
@@ -378,6 +381,14 @@ Returns the number of seconds since the epoch (1900-01-01)."
   "Return the week day of the date."
   (declare (type date date) (values (integer 0 6)))
   (days-week-day (date-dd date)))
+
+(defun previous-working-day (&optional (dd (today)))
+  "Return the previous working day."
+  (declare (type date dd))
+  (case (date-week-day dd)
+    ((1 2 3 4 5) (yesterday dd))
+    (6 (yesterday dd 2))
+    (0 (yesterday dd 3))))
 
 (defun next-bad-day (&optional (date (today)) (dir 1))
   "Return the next Friday the 13th after (before) DATE.

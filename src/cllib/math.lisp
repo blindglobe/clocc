@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.54 2004/07/30 15:46:40 sds Exp $
+;;; $Id: math.lisp,v 2.55 2004/07/30 18:26:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,7 +34,7 @@
    dot poly1 poly erf cndf norm normalize rel-dist
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
-   standard-deviation-relative standard-deviation-mdl
+   standard-deviation-relative standard-deviation-mdl min+max
    count-all find-duplicates entropy-sequence entropy-distribution
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
@@ -935,6 +935,15 @@ Return 2 values: the mean and the length of the sequence."
                 len)
             len)))
 
+(defmacro min+max (val min min$ max max$)
+  "Create a form to update MIN, MAX and their counts MIN$ and MAX$ from VAL.
+All arguments are symbols, not forms!"
+  `(progn
+     (cond ((or (null ,min) (< ,val ,min)) (setq ,min ,val ,min$ 1))
+           ((= ,val ,min) (incf ,min$)))
+     (cond ((or (null ,max) (> ,val ,max)) (setq ,max ,val ,max$ 1))
+           ((= ,val ,max) (incf ,max$)))))
+
 (defun standard-deviation (seq &key (len (length seq)) (key #'value)
                            (mean (mean seq :key key :len len)))
   "Compute the standard deviation of the sequence SEQ.
@@ -944,16 +953,10 @@ The mean and the length can be pre-computed for speed."
     (return-from standard-deviation (values 0 mean len mean 1 mean 1)))
   (let (min max mi$ ma$)
     (values
-     (sqrt (/ (reduce #'+ seq :key
-                      (lambda (yy)
-                        (let ((val (funcall key yy)))
-                          (cond ((or (null min) (< val min))
-                                 (setq min val mi$ 1))
-                                ((= val min) (incf mi$)))
-                          (cond ((or (null max) (> val max))
-                                 (setq max val ma$ 1))
-                                ((= val max) (incf ma$)))
-                          (sqr (- val mean)))))
+     (sqrt (/ (reduce #'+ seq :key (lambda (yy)
+                                     (let ((val (funcall key yy)))
+                                       (min+max val min mi$ max ma$)
+                                       (sqr (- val mean)))))
               (1- len)))
      mean len min mi$ max ma$)))
 
@@ -968,12 +971,8 @@ The mean and the length can be pre-computed for speed."
     (let ((sum 0d0) min max mi$ ma$)
       (map nil (lambda (xx ww)
                  (let ((val (funcall value xx)))
-                   (cond ((or (null min) (< val min)) (setq min val mi$ 1))
-                         ((= val min) (incf mi$)))
-                   (cond ((or (null max) (> val max)) (setq max val ma$ 1))
-                         ((= val max) (incf ma$)))
-                   (incf sum (* (funcall weight ww)
-                                (sqr (- val mn))))))
+                   (min+max val min mi$ max ma$)
+                   (incf sum (* (funcall weight ww) (sqr (- val mn))))))
            seq wts)
       (values (sqrt (/ sum (1- twt))) mn twt min mi$ max ma$))))
 

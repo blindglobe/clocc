@@ -1,7 +1,9 @@
 # -*- Makefile -*-
 # Common Makefile rules.
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
-# $Id: clocc.mk,v 1.7 2000/03/08 19:05:34 sds Exp $
+# This file requires GNU Make
+#
+# $Id: clocc.mk,v 1.8 2000/03/28 14:38:00 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
@@ -23,9 +25,9 @@ default: force
 	@echo " + all - compile all files in SOURCES ($(SOURCES)) one by one"
 	@echo " + system - run mk:compile-file on SYSTEM ($(SYSTEM))"
 	@echo " + ChangeLog - create the ChangeLog file using rcs2log"
-	@echo " + $(SYSTEM).list - the list of functons and variables"
+	@echo " + $(SYSTEM).list - the list of all functons and variables defined by this system"
 	@echo " + TAGS - Emacs tags"
-	@echo " + $(SYSTEM).zip - the archive of SOURCES, DOCFILES"
+	@echo " + $(SYSTEM).zip - the archive of SOURCES, DOCFILES ($(DOCFILES)), MAKEFILES ($(MAKEFILES)) and ZIPEXTRA ($(ZIPEXTRA))"
 
 system: $(SYSTEM).system
 	$(RUNLISP) -i $(CLOCCTOP) -x '(mk:compile-system "$(SYSTEM)")'
@@ -45,14 +47,14 @@ $(SYSTEM).list: TAGS
 	sed -e 's?^/.*/??' -e 's/ *.*/ ...)/' -e 's/,[0-9]*$$//' TAGS > $@
 
 $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
-	@${RM} ${SYSTEM};
+	@$(RM) $(SYSTEM);
 	@$(LN) -s . $(SYSTEM);
 	@$(LN) -s . extra;
 	@$(LN) -s $(ZIPEXTRA) .;
 	@echo ...updating zip file $@...;
 	@$(ZIP) $@ $(patsubst %,$(SYSTEM)/%,$^) \
 		$(patsubst %,$(SYSTEM)/extra/%,$(notdir $(ZIPEXTRA)));
-	@${RM} ${SYSTEM} extra $(notdir $(ZIPEXTRA));
+	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA));
 
 clean: force
 	rm -f $(FASLFILES)

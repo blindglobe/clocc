@@ -374,7 +374,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; Let's be smart about CLtL2 compatible Lisps:
 (eval-when (compile load eval)
-  #+(or (and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
+  #+(or (and :excl (or :allegro-v4.0 (and :allegro-version>= (version>= 4 1))))
         :mcl
         (and :cmu :new-compiler))
   (pushnew :cltl2 *features*))
@@ -388,7 +388,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; For CLtL2 compatible lisps
 
-#+(and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1 :allegro-v6.0))
+#+(and :excl (or :allegro-v4.0 (and :allegro-version>= (version>= 4 1))))
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from cltl1 provide require))
 #+:mcl
@@ -406,7 +406,8 @@ Estimated total monitoring overhead: 0.88 seconds
 	   "MONITORING-ENCAPSULATE" "MONITORING-UNENCAPSULATE"
 	   "REPORT"))
 #+(and :cltl2
-       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
+       (not (or (and :excl (or :allegro-v4.0 (and :allegro-version>=
+                                                  (version>= 4 1))))
                 :mcl :clisp :lispworks
                 (and :cmu :new-compiler))))
 (unless (find-package "MONITOR")
@@ -418,12 +419,13 @@ Estimated total monitoring overhead: 0.88 seconds
 
 #+(and :excl :allegro-v4.0)
 (cltl1:provide "monitor")
-#+(and :excl (or :allegro-v4.1 :allegro-v5.0.1))
+#+(and :excl :allegro-version>= (version>= 4 1))
 (provide "monitor")
 #+:mcl
 (ccl:provide "monitor")
 #+(and :cltl2
-       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1  :allegro-v5.0.1))
+       (not (or (and :excl (or :allegro-v4.0 (and :allegro-version>=
+                                                  (version>= 4 1))))
                 :mcl
                 (and :cmu :new-compiler))))
 (provide "monitor")

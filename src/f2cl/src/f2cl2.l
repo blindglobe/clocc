@@ -249,6 +249,7 @@ Tag being parsed:| (cadr x))))
 	     (char 'fchar)
 	     (sqrt 'fsqrt)
 	     (log 'flog)
+	     (float 'ffloat)
 	     (t (car l)))
 	   (mapcar #'id-expression
 		   (list-split '|,| (cadr l)))))

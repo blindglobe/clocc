@@ -1,7 +1,7 @@
 <!doctype html public "-//W3C//DTD HTML 3.2//EN">
 <!--
- File: <README.html - 2000-02-18 Fri 16:05:43 EST sds@ksp.com>
- $Id: cllib.html,v 2.2 2000/03/08 19:03:50 sds Exp $
+ File: <cllib.html - 2000-02-18 Fri 16:05:43 EST sds@ksp.com>
+ $Id: cllib.html,v 2.3 2000/03/09 19:19:03 sds Exp $
  $Source: /cvsroot/clocc/clocc/src/cllib/cllib.html,v $
  -->
 <html>
@@ -21,18 +21,19 @@
 <h1>README for CLLIB</h1>
 
 <p>To use this package, you will need an <a
- href="http://www.lisp.org/HyperSpec/FrontMatter/">ANSI Common Lisp</a>
-as well as my cross-implementation portability package <code>port</code>.
+ href="http://www.lisp.org/HyperSpec/FrontMatter/">ANSI</a> <a
+ href="http://www.lisp.org/table/systems.html">Common Lisp</a>
+as well as my cross-implementation portability package <a
+ href="ftp://cellar.goems.com/pub/clisp/port.zip"><code>port</code></a>.
 
 <h2><a href="http://clocc.sourceforge.net">CLOCC</a></h2>
 
 <p><code>CLLIB</code> is now a part of <code>CLOCC</code> (in
 <code>src/cllib</code>), and, as such, is accessible via anonymous CVS
-and FTP, as explain on the <code>CLOCC</code> homepage.
+and FTP, as explained on the <code>CLOCC</code> homepage.
 <code>CLLIB</code> uses <code>mk:defsystem</code>, which is a part of
 <code>CLOCC</code>, as well as <code>src/port</code>, which was actually
-a part of <code>CLOCC</code> before, so it is not feasible to distribute
-<code>CLLIB</code> separately from <code>CLOCC</code>.
+a part of <code>CLLIB</code> before.
 
 
 <h2>Files</h2>
@@ -92,7 +93,8 @@ alphabetical order):
 <tr><th align=left><code>htmlgen.lisp</code></th>
     <td align=left>HTML generation</td></tr>
 <tr><th align=left><code>inspect.lisp</code></th>
-    <td align=left>portable inspector (tty and html broser)</td></tr>
+    <td align=left>portable inspector
+    (2 frontends: TTY and an HTML broser)</td></tr>
 <tr><th align=left><code>iter.lisp</code></th>
     <td align=left>iterate across multidimensional arrays</td></tr>
 <tr><th align=left><code>laser.lisp</code></th>

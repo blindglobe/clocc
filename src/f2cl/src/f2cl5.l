@@ -848,11 +848,11 @@
 (defun make-initialisation (vble)
   ;; Look up variable in *data-init* to see if it has an
   ;; initialized value from a data statement
-  (flet ((lookup-*data-init* (v)
+  (flet ((lookup-data-init (v)
 	   (let ((val (find-if #'(lambda (name)
 				   (eq v (second name)))
 			       *data-init*)))
-	     ;;(format t "lookup-*data-init* for ~S = ~S~%" v val)
+	     ;;(format t "lookup-data-init for ~S = ~S~%" v val)
 	     (when val
 	       (cond ((eq 'fill (first val))
 		      (list 'fill (third val)))
@@ -861,7 +861,7 @@
 		     ((eq 'replace (first val))
 		      (third val)))))))
     (let* ((vble_name (check-t-and-pi vble))
-	   (init-val (lookup-*data-init* vble))
+	   (init-val (lookup-data-init vble))
 	   type decl1)
       ;;(format t "*data-init* = ~A~%" *data-init*)
       ;;(format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
@@ -1139,20 +1139,22 @@
 
 (defun make-char-init (decl type)
    (cond ((null (cdr decl)) ; scalar, no length spec.      
-          `(make-array '(,(cadr type)) :element-type 'base-char))
-         ((atom (cadr decl)) ; scalr, length spec.
-          `(make-array '(,(cadr decl)) :element-type 'base-char))
+          `(make-array '(,(cadr type)) :element-type 'base-char :initial-element #\Space))
+         ((atom (cadr decl)) ; scalar, length spec.
+          `(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space))
          ((cddr decl) ; array with length spec
 	  (let ((dims (remove '|,| (cadr decl))))
 	    (if (every #'numberp dims)
 		`(make-array ',dims :element-type '(simple-array base-char (,(caddr decl))))
-		`(make-array (list ,@dims) :element-type '(simple-array base-char (,(caddr decl)))))))
+		`(make-array (list ,@dims) :element-type '(simple-array base-char (,(caddr decl)))
+		  :initial-element #\Space))))
          ((equal (cadr decl) '(*)) ; unspecified length spec
            "")
          (t ; array, no length spec.
 	  (let ((dims (remove '|,| (cadr decl))))
 	    (if (every #'numberp dims)
-		`(make-array ',dims :element-type '(simple-array base-char ,(cdr type)))
+		`(make-array ',dims :element-type '(simple-array base-char ,(cdr type))
+		  :initial-element #\Space)
 		`(make-array (list ,@dims) :element-type '(simple-array base-char ,(cdr type))))))))
 
 

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.51 2004/11/30 18:54:54 sds Exp $
+;;; $Id: sys.lisp,v 1.52 2004/11/30 19:52:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -83,8 +83,8 @@ Return NIL when the file does not exist, or is not readable,
 or does not contain valid compiled code."
   #+clisp
   (with-open-file (in file-name :direction :input :if-does-not-exist nil)
-    (and in
-         (let ((form (ignore-errors (read-from-string (read-line in nil nil)))))
+    (and in (char= #\( (peek-char nil in))
+         (let ((form (ignore-errors (read in nil nil))))
            (and (consp form)
                 (eq (car form) 'SYSTEM::VERSION)
                 (null (nth-value 1 (ignore-errors (eval form))))))))

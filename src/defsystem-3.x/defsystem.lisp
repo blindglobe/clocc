@@ -4654,8 +4654,8 @@ Return NIL when the file does not exist, or is not readable,
 or does not contain valid compiled code."
   #+clisp
   (with-open-file (in file-name :direction :input :if-does-not-exist nil)
-    (and in
-         (let ((form (ignore-errors (read-from-string (read-line in nil nil)))))
+    (and in (char= #\( (peek-char nil in))
+         (let ((form (ignore-errors (read in nil nil))))
            (and (consp form)
                 (eq (car form) 'SYSTEM::VERSION)
                 (null (nth-value 1 (ignore-errors (eval form))))))))

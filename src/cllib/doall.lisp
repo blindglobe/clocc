@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: doall.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: doall.lisp,v 1.3 2000/05/02 14:59:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/doall.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,14 +13,12 @@
 
 (export '(do-all))
 
-#-gcl
 (eval-when (compile load eval)
   (require :monitor (translate-logical-pathname
                      "clocc:src;tools;metering;metering")))
 
 (in-package :cllib)
 
-#-gcl
 (defun do-all (monitorp func answers &rest args)
   "Run FUNC answering ANSWERS (boolean list) to the y-or-n-p's.
 ARGS is passed to FUNC.

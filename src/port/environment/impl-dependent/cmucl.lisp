@@ -14,4 +14,15 @@
 (defmethod current-directory-pathname ((cl-implementation cl.env:cmucl))
   (pathname (ext:default-directory)))
 
+
+(defmethod change-current-directory ((cl-implementation cl.env:sbcl)
+				     (new-dir string))
+  (change-current-directory cl-implementation
+			    (parse-namestring new-dir)))
+
+
+(defmethod change-current-directory ((cl-implementation cl.env:sbcl)
+				     (new-dir pathname))
+  (pathname (setf (ext:default-directory) new-dir)))
+
 ;;; end of file -- cmucl.lisp --

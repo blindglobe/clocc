@@ -324,6 +324,7 @@ code.
   #+allegro ;; [***] not expected to work after acl 5.0.1 !!
   (excl::filesys-fn-will-not-block-p 
    (- -1 (excl:stream-output-fn socket-stream)))
+  #+ignore t ;; work around described below
   #-(or allegro clisp) (error "no implementation for output-possible"))
 ;; If you're not using a version that supports this operation it's
 ;; at least semi-reasonable for many applications to simply define 
@@ -331,14 +332,18 @@ code.
 ;; try to write too much.
 
 (defun input-possible (socket-stream)
-  #+clisp (member (lisp:socket-status socket-stream 0) '(:input :io))
   #+allegro ;; [***] see above
   (excl::filesys-fn-will-not-block-p 
    (- -1 (excl:stream-input-fn socket-stream)))
+  #+clisp (member (lisp:socket-status socket-stream 0) '(:input :io))
+  #+ignore ;; work around for earlier clisp versions without socket-status
+  (if (eq (stream-element-type socket-stream) 'character)
+      (listen socket-stream)
+    (let ((type (stream-element-type socket-stream)))
+      (setf (stream-element-type socket-stream) 'character)
+      (prog1 (listen socket-stream)
+	(setf (stream-element-type socket-stream) type))))
   #-(or allegro clisp) (error "no implementation for input-possible"))
-;; If you're not using a version that supports this operation
-;; you can replace this by a call to listen.  You might have to surround
-;; that with code to switch between character and byte streams.
 
 ;; These are mostly for use by evalers and printers.
 
@@ -490,8 +495,8 @@ code.
 (defun reason-not-to-accept (connection)
   (loop for (nbits limit) in '((32 4) (24 8) (16 16) (8 32) (0 64)) do
 	(let ((count (loop for c in *connections* count
-			   (= (ash (connection-ipaddr connection) (- nbits))
-			      (ash (connection-ipaddr c) (- nbits))))))
+			   (= (ash (connection-ipaddr connection) (- nbits 32))
+			      (ash (connection-ipaddr c) (- nbits 32))))))
 	  (when (>= count limit)
 	    (return-from reason-not-to-accept
 	      (format nil

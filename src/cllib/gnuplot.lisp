@@ -1,17 +1,20 @@
-;;; File: <gnuplot.lisp - 1998-04-29 Wed 17:26:28 EDT sds@mute.eaglets.com>
+;;; File: <gnuplot.lisp - 1998-06-03 Wed 13:14:13 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
 ;;; Copyright (C) 1997 by Sam Steingold.
-;;; This is free software.
+;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.11 1998/04/29 22:36:32 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.12 1998/06/03 17:20:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.12  1998/06/03 17:20:35  sds
+;;; Added a plot-key key, for placement of the gnuplot legend.
+;;;
 ;;; Revision 1.11  1998/04/29 22:36:32  sds
 ;;; Made `*gnuplot-epoch*' into a constant `+gnuplot-epoch+'.
 ;;; Added function `plot-sec-to-epoch'.
@@ -47,7 +50,7 @@
 ;;;
 ;;;
 
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "date")
@@ -85,17 +88,17 @@
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream plot-or-print &rest header) body).
 HEADERs are passed to `plot-header', which see.
-PLOT means: T, 'plot => plot; 'print => print;
+PLOT means: T, :plot => plot; :print => print;
 'wait => plot and wait for gnuplot to terminate.
 NIL => do nothing, print nothing, return NIL.
 other => write `*gnuplot-file*' and print a message."
   `(let (,str)
     (when ,plot
       (setq ,str
-	    #+win32 (if (eq ,plot 'print) (pipe-output *gnuplot-path-console*)
+	    #+win32 (if (eq ,plot :print) (pipe-output *gnuplot-path-console*)
 			(open *gnuplot-file* :direction :output
 			      :if-exists :supersede))
-	    #+unix (if (eq ,plot 'file)
+	    #+unix (if (eq ,plot :file)
 		       (open *gnuplot-file* :direction :output
 			     :if-exists :supersede)
 		       (setq *gnuplot-stream*
@@ -107,40 +110,40 @@ other => write `*gnuplot-file*' and print a message."
 	   (progn (plot-header ,str ,plot ,@header) ,@body)
 	#+win32 (when ,str (close ,str))
 	#+win32
-	(cond ((or (eq ,plot t) (eq ,plot 'plot))
+	(cond ((or (eq ,plot t) (eq ,plot :plot))
 	       (format *gnuplot-msg-stream* "~&Starting gnuplot...")
 	       (close (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
 	       (format *gnuplot-msg-stream* "done.~%"))
-	      ((eq ,plot 'wait)
+	      ((eq ,plot :wait)
 	       (format *gnuplot-msg-stream*
 		       "~&Waiting for gnuplot to terminate...")
 	       (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
 		       (run-prog *gnuplot-path* :args
 				 (list "/noend" *gnuplot-file*))))
-	      ((eq ,plot 'print)
+	      ((eq ,plot :print)
 	       (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
 		       *gnuplot-printer*))
 	      ((format *gnuplot-msg-stream* "~&Prepared file `~a'.
 Type \"load '~a'\" at the gnuplot prompt.~%"
 		       *gnuplot-file* *gnuplot-file*)))
 	#+unix
-	(cond ((or (eq ,plot t) (eq ,plot 'plot))
+	(cond ((or (eq ,plot t) (eq ,plot :plot))
 	       (format *gnuplot-msg-stream* "Done plotting.~%"))
-	      ((eq ,plot 'wait) (format t "Press <enter> to continue...")
+	      ((eq ,plot :wait) (format t "Press <enter> to continue...")
 	       (read-line *terminal-io* nil nil))
-	      ((eq ,plot 'file) (close ,str)
+	      ((eq ,plot :file) (close ,str)
 	       (format *gnuplot-msg-stream* "Wrote `~a'.~%" *gnuplot-file*))
-	      ((eq ,plot 'print)
+	      ((eq ,plot :print)
 	       (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
 		       *gnuplot-printer*)))))))
 
-(defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title)
+(defun plot-header (str plot xlabel ylabel data-style timefmt xb xe title key)
   "Print the header stuff into the stream.
 This is called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
-XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE (xrange)."
-  (flet ((pr (x) (if (numberp x) x (format nil "'~a'" x))))
-    (if (eq plot 'print)
+XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND KEY"
+  (flet ((pp (x) (if (numberp x) x (format nil "'~a'" x))))
+    (if (eq plot :print)
 	(format str "set terminal postscript landscape~%set output '~a'~%"
 		*gnuplot-printer*)
 	(format str "set terminal ~a~%set output~%" #+unix "x11"
@@ -148,8 +151,8 @@ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE (xrange)."
     (format str "set time '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
 set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
 set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'
-set data style ~a~%set xrange [~f:~f]~%set title \"~a\"~%"
-	    timefmt xlabel ylabel data-style (pr xb) (pr xe) title)))
+set data style ~a~%set xrange [~f:~f]~%set title \"~a\"~%~@[set key ~a~%~]"
+	    timefmt xlabel ylabel data-style (pp xb) (pp xe) title key)))
 
 (defun plot-dl-channels (dls chs &rest opts)
   "Plot the dated lists and the channels.
@@ -176,7 +179,7 @@ The rest is passed to `plot-dated-lists'."
 
 (defun plot-dated-lists (begd endd dls &key (title "Plot") (xlabel "time")
 			 (ylabel "value") data-style (timefmt "%Y-%m-%d")
-			 ema rel (slot 'val) channels posl (plot t))
+			 ema rel (slot 'val) channels posl (plot t) plot-key)
   "Plot the dated lists from BEGD to ENDD.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -187,7 +190,8 @@ CHANNELS id the list of channels to plot."
 	endd (if endd (date endd) (dl-nth-date (car dls) -1)))
   (unless dls (error "nothing to plot for `~a'~%" title))
   (setq data-style (or data-style (plot-data-style (days-between begd endd))))
-  (with-plot-stream (str plot xlabel ylabel data-style timefmt begd endd title)
+  (with-plot-stream (str plot xlabel ylabel data-style timefmt begd endd title
+                     plot-key)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}"
 	    ;; Ugly.  But gnuplot requires a comma *between* plots,
 	    ;; and this is the easiest way to do that.
@@ -226,7 +230,7 @@ CHANNELS id the list of channels to plot."
 	(mapl (lambda (ee) (setf (car ee) nil)) emal)))))
 
 (defun plot-lists (lss &key (key #'value) (title "Plot") (xlabel "nums")
-		   (ylabel "value") data-style rel depth (plot t))
+		   (ylabel "value") data-style rel depth (plot t) plot-key)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -234,7 +238,8 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (declare (list lss))
   (setq depth (or depth (1- (apply #'min (mapcar #'length lss))))
 	data-style (or data-style (plot-data-style depth)))
-  (with-plot-stream (str plot xlabel ylabel data-style nil 0 (1- depth) title)
+  (with-plot-stream (str plot xlabel ylabel data-style nil 0 (1- depth) title
+                     plot-key)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car lss))
     (let* (bv (val (if rel
 		       (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
@@ -246,7 +251,8 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
 	  (format str "~f~20t~f~%" ix (funcall val ll)))))))
 
 (defun plot-lists-arg (lss &key (key #'identity) (title "Plot") (xlabel "nums")
-		       (ylabel "value") data-style rel lines quads (plot t))
+		       (ylabel "value") data-style rel lines quads (plot t)
+                       plot-key)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
@@ -264,7 +270,8 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
 				    :ykey (compose #'cdr key))) lss)))
   (let ((be (apply #'min (mapcar #'caadr lss)))
 	(en (apply #'max (mapcar (compose-m caar last) lss))))
-    (with-plot-stream (str plot xlabel ylabel data-style nil be en title)
+    (with-plot-stream (str plot xlabel ylabel data-style nil be en title
+                       plot-key)
       (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}" (mapcar #'car lss))
       (dolist (ln lines) (plot-line-str ln be en str))
       (dolist (qu quads) (plot-quad-str qu be en str))
@@ -279,15 +286,17 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
 
 (defun plot-error-bars (ll &key (title "Plot") (xlabel "nums") (ylabel "value")
 			data-style (plot t) (xkey #'first)
-			(ykey #'second) (ydkey #'third))
+			(ykey #'second) (ydkey #'third) plot-key)
   "Plot the list with errorbars.
+Most of the keys are the gnuplot options (see the documentation
+for `plot-header' and `with-plot-stream' for details.)
 The first element is the title, all other are records from which we
 get x, y and ydelta with xkey, ykey and ydkey."
   (declare (list ll))
   (setq data-style (or data-style (plot-data-style (list ll))))
   (with-plot-stream (str plot xlabel ylabel data-style nil
 		     (funcall xkey (second ll)) (funcall xkey (car (last ll)))
-		     title)
+		     title plot-key)
     (format str "plot 0 title \"\", '-' title \"~a\" with errorbars,~
  '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
     (dolist (rr ll (format str "e~%"))
@@ -304,14 +313,15 @@ get x, y and ydelta with xkey, ykey and ydkey."
 	      (+ (funcall ykey rr) (funcall ydkey rr))))))
 
 (defun plot-functions (fnl xmin xmax numpts &key (title "Function Plot")
-		       (xlabel "x") (ylabel "y") data-style (plot t))
+		       (xlabel "x") (ylabel "y") data-style (plot t) plot-key)
   "Plot the functions from XMIN to XMAX with NUMPTS+1 points.
 Most of the keys are the gnuplot options (see the documentation
 for `plot-header' and `with-plot-stream' for details.)
 FNL is a list of (name . function)."
   (declare (list fnl) (real xmin xmax) (fixnum numpts))
   (setq data-style (or data-style (plot-data-style numpts)))
-  (with-plot-stream (str plot xlabel ylabel data-style nil xmin xmax title)
+  (with-plot-stream (str plot xlabel ylabel data-style nil xmin xmax title
+                     plot-key)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
     (do ((fn fnl (cdr fn))) ((null fn) (format str "e~%"))
       (dotimes (ii (1+ numpts))

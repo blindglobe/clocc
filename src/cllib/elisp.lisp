@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
+;;; $Id: elisp.lisp,v 2.10 2002/03/18 20:40:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -295,7 +295,7 @@
 
 #+allegro (pushnew "el" sys:*source-file-types* :test #'equal)
 #+cmu (pushnew "el" ext::*load-source-types* :test #'equal)
-#+clisp (pushnew #p".el" sys::*source-file-types* :test #'equalp)
+#+clisp (pushnew "el" custom:*source-file-types* :test #'equalp)
 #+lispworks (pushnew "el" system:*text-file-types* :test #'equal)
 #+gcl (error 'not-implemented :proc 'file-types)
 

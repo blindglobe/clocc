@@ -646,7 +646,8 @@
 		   common-block-structs
 		   key-params
 		   key-params-decls
-		   all-decls)
+		   all-decls
+		   additional-args)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
 	   arglist (caddr fort-fun)
@@ -718,6 +719,7 @@
 			   decl))
 		     (set-difference arglist *external-function-names*)))))
 
+     ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
      (when *relaxed-array-decls*
        ;; Old Fortran practice often declared arrays to functions to
        ;; have length 1.  Since Fortran didn't check array bounds,
@@ -746,6 +748,8 @@
      (if (equal other-fcn-decls '((declare)))
 	 (setf other-fcn-decls nil)
 	 (setf other-fcn-decls (pretty-decls other-fcn-decls)))
+
+     (setf other-fcn-decls nil)
      
      ;; If we are auto-SAVE'ing variables initialized in DATA
      ;; statements, we add all of the variables in the *data-init* list
@@ -912,6 +916,16 @@
      
      (setq arglist (mapcar #'check-reserved-lisp-names arglist))
 
+     ;;(format t "arglist = ~a~%" arglist)
+     #+nil
+     
+     (format t "arglist arrays = ~A~%"
+	     (remove nil
+		     (mapcar #'(lambda (x)
+				 (if (subtypep (second x) 'array)
+				     (cddr x)
+				     nil))
+			     (rest (first formal-arg-decls)))))
      ;;(format t "local-vbles     = ~S~%" local-vbles)
      ;;(format t "vbles-decls     = ~S~%" vble-decls)
      ;;(format t "other-fcn-decls = ~S~%" other-fcn-decls)
@@ -978,6 +992,179 @@
 				    *undeclared_vbles*
 				    arglist
 				    (mapcar #'first key-params)))))
+
+     ;; Add additional parameters for slicing
+     #+nil
+     (let ((array-args
+	    (let ((a '()))
+	      (mapc #'(lambda (x)
+			(when (subtypep (second x) 'array)
+			  (mapc #'(lambda (y)
+				    (push y a))
+				(cddr x))))
+		    (rest (first formal-arg-decls)))
+	      (nreverse a))))
+       ;;(format t "array-args = ~A~%" array-args)
+       (setf additional-args
+	     (remove nil
+		     (mapcar #'(lambda (x)
+				 (when (member x array-args)
+				   (list (intern (concatenate 'string
+							      (symbol-name x)
+							      "-OFFSET"))
+					 0)))
+			     arglist)))
+       ;;(format t "additional args = ~A~%" additional-args)
+
+       ;;(format t "arglist = ~a~%" arglist)
+       (when additional-args
+	 (setf arglist (append arglist `(&optional ,@additional-args))))
+       ;;(format t "new arglist = ~a~%" arglist)
+
+       ;; Grovel over the code looking for frefs.  Modify them to handle
+       ;; array-slicing.
+
+       ;;(format t "prog-bit = ~A~%" prog-bit)
+
+       (labels
+	   ((array-offset-name (name)
+	      (intern (concatenate 'string
+				   (symbol-name name)
+				   "-OFFSET")))
+	    (grovel-call (p)
+	      ;;(format t "grovel-call = ~A~%" p)
+	      (let* ((offsets '())
+		     (new-call
+		      (mapcar
+		       #'(lambda (x)
+			   ;;(format t "x = ~A~%" x)
+			   (cond
+			     ((and (listp x)
+				   (eq (first x) 'array-slice))
+			      ;; (array-slice var type (indices) bounds)
+			      (push `(+ ,(if (member (second x) array-args)
+					     (array-offset-name (second x))
+					     0)
+				      ,(f2cl-lib::col-major-index (fourth x)
+								  (fifth x)))
+				    offsets)
+			      (second x))
+			     ((member x array-args)
+			      (push (array-offset-name x)
+				    offsets)
+			      x)
+			     ((vble-is-array-p x)
+			      (push 0 offsets)
+			      x)
+			     (t
+			      x)))
+		       p)))
+		(append new-call (reverse offsets))))
+	    (grovel-frefs (p)
+	      (cond ((or (atom p) (null p))
+		     p)
+		    ((eq (first p) 'fref)
+		     (destructuring-bind (fref-name var &rest stuff)
+			 p
+		       (if (member var array-args)
+			   ;; We have an fref.  If the array is an argument
+			   ;; to the routine, we need to add in the offset.
+			   `(,fref-name ,var ,@stuff ,(array-offset-name var))
+			   p)))
+		    ((eq (first p) 'multiple-value-bind)
+		     ;; A Fortran function call.
+		     (destructuring-bind (m-v-b vars call &rest stuff)
+			 p
+		       `(,m-v-b ,vars ,(grovel-call call) ,@stuff)))
+		    ((and (symbolp (first p))
+			  (member 'array-slice (rest p)
+				  :key #'(lambda (x)
+					   (if (listp x)
+					       (car x)
+					       x))))
+		     ;; array-slice in a function call.
+		     ;;(format t "array-slice in fcall: ~a~%" p)
+		     `(,(first p) ,@(grovel-call (rest p))))
+		    ((and (symbolp (first p))
+			  (some #'(lambda (x)
+				    (member x array-args))
+				(rest p)))
+		     `(,(first p) ,@(grovel-call (rest p))))
+		    (t
+		     `(,(first p) ,@(mapcar #'grovel-frefs (rest p)))))))
+	 (setf prog-bit (grovel-frefs prog-bit))
+	 ;;(format t "new-prog-bit = ~A~%" prog-bit)
+	 ))
+
+     (let ((array-args
+	    (let ((a '()))
+	      (mapc #'(lambda (x)
+			(when (subtypep (second x) 'array)
+			  (mapc #'(lambda (y)
+				    (push y a))
+				(cddr x))))
+		    (rest (first formal-arg-decls)))
+	      (nreverse a))))
+       ;;(format t "array-args = ~A~%" array-args)
+       
+       
+       ;;(format t "arglist = ~a~%" arglist)
+       ;;(format t "new arglist = ~a~%" arglist)
+
+       ;; Grovel over the code looking for frefs.  Modify them to handle
+       ;; array-slicing.
+
+       ;;(format t "prog-bit = ~A~%" prog-bit)
+
+       (labels
+	   ((array-offset-name (name)
+	      (intern (concatenate 'string
+				   (symbol-name name)
+				   "-%OFFSET%")))
+	    (array-data-name (name)
+	      (intern (concatenate 'string
+				   (symbol-name name)
+				   "-%DATA%")))
+	    (grovel-frefs (p)
+	      (cond ((or (atom p) (null p))
+		     p)
+		    ((eq (first p) 'fref)
+		     (destructuring-bind (fref-name var &rest stuff)
+			 p
+		       (if (member var array-args)
+			   ;; We have an fref.  If the array is an argument
+			   ;; to the routine, we need to add in the offset.
+			   `(,fref-name ,(array-data-name var)
+			                ,@stuff ,(array-offset-name var))
+			   p)))
+		    (t
+		     `(,(first p) ,@(mapcar #'grovel-frefs (rest p))))))
+	    (generate-with-array (arrays body)
+	      (let ((result body))
+		(flet ((find-type (a)
+			 (dolist (x (rest (first formal-arg-decls)))
+			   (when (member a x)
+			     (return-from find-type (second (second x))))
+			   t)))
+		  (dolist (a arrays)
+		    (let ((d-name (array-data-name a))
+			  (o-name (array-offset-name a))
+			  (d-type (find-type a)))
+		      (setf result `(with-array-data (,d-name
+						      ,o-name
+						      ,a)
+				     (declare (type f2cl-lib:integer4 ,o-name)
+				      (type (simple-array ,d-type (*)) ,d-name))
+				     ,result))))
+		      result))))
+	 ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
+	 (setf prog-bit (grovel-frefs prog-bit))
+	 ;;(format t "new-prog-bit = ~A~%" prog-bit)
+	 
+	 (setf prog-bit (generate-with-array array-args prog-bit))
+	 ;;(format t "new-prog-bit = ~A~%" prog-bit)
+		 
+	 ))
 
      ;; We need to handle BLOCK DATA subprograms differently from
      ;; normal subprograms.
@@ -1289,7 +1476,9 @@
 	  decl1
 	(when (eq (car decl2) 'array)
 	  (rotatef decl1 decl2))
-	(return `(declare (type (,*array-type*
+	(return `(declare (type (,(if (and vble-is-formal-arg *array-slicing*)
+				      'array
+				      'simple-array)
 				 ,(car decl2)
                                  ,(f2cl-array-total-size (cdadr decl1))
 				 )
@@ -1468,8 +1657,9 @@
 	    (if (and (eq v (caar vbles)) (cdar vbles))
 		(return-from vble-is-array-p t)))
 	  (return-from vble-is-array-p t))))
-  ;; else check if v is a common variable and an array
-  (member v *common_array_dims*))
+  ;; else check if v is a common variable and an array or has 2 declarations
+  (or (member v *common_array_dims*)
+      (vble-declared-twice-p v *explicit_vble_decls*)))
 
 
 
@@ -1771,11 +1961,13 @@
       (if *dlist-flag*
       `(do ((,ivar ,e1 (+ ,ivar ,e3))
             (ret nil (append ret ,dlist)))
-           ((> ,ivar ,e2) ret))
+           ((> ,ivar ,e2) ret)
+	(declare (type integer4 ,ivar)))
 
       `(do ((,ivar ,e1 (+ ,ivar ,e3))
             (ret nil (cons ,dlist ret)))
-           ((> ,ivar ,e2) (reverse ret)))))))
+           ((> ,ivar ,e2) (reverse ret))
+	(declare (type integer4 ,ivar)))))))
 
 (defun parse-dlist (x)
    (setq *dlist-flag* t)
@@ -2246,8 +2438,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.84 2002/02/14 14:36:16 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.85 2002/02/17 15:58:16 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.85  2002/02/17 15:58:16  rtoy
+;;; o Implement the new array-slicing method.  (Still needs work.)
+;;; o Try to declare all arrays as simple-array, except for arrays that
+;;;   are parameters to a function
+;;; o Declare some loop variables apropriately for implied do loops in
+;;;   write statements.
+;;; o We don't try to declare the functions used by a routine anymore.
+;;;   (Should this be optional?)
+;;;
 ;;; Revision 1.84  2002/02/14 14:36:16  rtoy
 ;;; Add sinh, cosh, tanh to the list of generics we need to handle.
 ;;; Expand on the comments.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.3 2000/05/23 20:20:58 sds Exp $
+;;; $Id: tests.lisp,v 2.4 2000/05/31 20:19:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -16,7 +16,8 @@
   (require :date (translate-logical-pathname "cllib:date"))
   (require :url (translate-logical-pathname "cllib:url"))
   (require :rpm (translate-logical-pathname "cllib:rpm"))
-  (require :elisp (translate-logical-pathname "cllib:elisp")))
+  (require :elisp (translate-logical-pathname "cllib:elisp"))
+  (require :cvs (translate-logical-pathname "cllib:cvs")))
 
 (in-package :cllib)
 
@@ -138,13 +139,26 @@
     (mesg :test out " ** ~s: ~:d error~:p~%" 'test-elisp num-err)
     num-err))
 
+(defun test-cvs (&key (out *standard-output*))
+  (let ((num-err 0))
+    (flet ((ts (path)
+             (mesg :test out " * ~a~%" path)
+             (handler-case (when (cvs-stat-log path) 1)
+               (error (err)
+                 (format t " ### ERROR: ~a~%" err)
+                 (incf num-err)))))
+      (mesg :test out " ** ~s...~%" 'test-cvs)
+      (ts (namestring (translate-logical-pathname "clocc:"))))
+    num-err))
+
 (defun test-all (&key (out *standard-output*))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let ((num-err (+ (test-string :out out)
                     (test-date :out out)
                     (test-rpm :out out)
                     (test-url :out out)
-                    (test-elisp :out out))))
+                    (test-elisp :out out)
+                    (test-cvs :out out))))
     (mesg :test out " *** ~s: ~:d error~:p~%" 'test-all num-err)))
 
 (provide :tests)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.20 2001/04/11 14:40:21 sds Exp $
+;;; $Id: fileio.lisp,v 1.21 2001/04/20 18:30:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -308,7 +308,7 @@ By default nothing is printed."
 (defun file-newer (f0 f1)
   "Return T if the first arg is newer than the second.
 Non-existent files are assumed to be VERY old."
-  (flet ((fwd (ff) (or (file-write-date ff) 0)))
+  (flet ((fwd (ff) (or (ignore-errors (file-write-date ff)) 0)))
     (> (fwd f0) (fwd f1))))
 
 ;;;###autoload

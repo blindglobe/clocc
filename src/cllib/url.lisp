@@ -1,15 +1,28 @@
-;;; File: <url.lisp - 1998-03-10 Tue 13:31:36 EST sds@mute.eaglets.com>
+;;; File: <url.lisp - 1998-05-26 Tue 16:13:42 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
-;;; $Id: url.lisp,v 1.1 1998/03/10 18:31:44 sds Exp $
+;;; Copyright (C) 1998 by Sam Steingold.
+;;; This is open-source software.
+;;; GNU General Public License v.2 (GPL2) is applicable:
+;;; No warranty; you may copy/modify/redistribute under the same
+;;; conditions with the source code. See <URL:http://www.gnu.org>
+;;; for details and precise copyright document.
+;;;
+;;; $Id: url.lisp,v 1.2 1998/05/26 20:19:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.2  1998/05/26 20:19:35  sds
+;;; Adopted to work with ACL 5beta.
+;;;
 ;;; Revision 1.1  1998/03/10 18:31:44  sds
 ;;; Initial revision
 ;;;
 
-(eval-when (load compile eval) (sds-require 'util))
+(in-package :cl-user)
+
+(eval-when (load compile eval)
+  (sds-require "base") (sds-require "print") (sds-require "util"))
 
 ;;;
 ;;; {{{ HTML parsing
@@ -18,14 +31,13 @@
 ;(setq *read-eval* nil *read-suppress* t) ; for parsing
 ;(setq *read-eval* t *read-suppress* nil) ; original
 
-(defvar *html-readtable* (copy-readtable nil)
+(defcustom *html-readtable* readtable (copy-readtable nil)
   "The readtable for HTML parsing.")
-(defvar *html-tag* (list '*html-tag*)
-  "*The car of any html tag that is read.")
-(defvar *html-parse-tags* nil
+(defcustom *html-parse-tags* (member t nil) nil
   "*If non-nil, parse tags, if nil - return nil for all tags.")
-(defvar *whitespace* '#(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page)
-  "*The whitespace characters.")
+(defcustom *html-verbose* (member t nil) nil "*Be verbose while parsing.")
+(defconst +html-tag+ cons (list :*html-tag*)
+  "*The car of any html tag that is read.")
 
 (defun strip-html-markup (str)
   "Return a new string, sans HTML."
@@ -41,12 +53,12 @@
   "Skip through the HTML markup. CHAR=`<'"
   (declare (ignore char))
   (if *html-parse-tags*
-      (cons *html-tag* (read-delimited-list #\> stream t))
+      (cons +html-tag+ (read-delimited-list #\> stream t))
       (do () ((char= (read-char stream t nil t) #\>)))))
 
 (defun html-tag-p (obj)
   "Return T if the object is an HTML tag."
-  (if *html-parse-tags* (and (consp obj) (eq (car obj) *html-tag*))
+  (if *html-parse-tags* (and (consp obj) (eq (car obj) +html-tag+))
       (null obj)))
 
 (set-macro-character #\< #'read-html-markup nil *html-readtable*)
@@ -70,21 +82,23 @@
   (port 0  :type fixnum)		; port number
   (path "/" :type string))		; pathname
 
+(eval-when (load compile eval)
 (unless (fboundp 'socket-service-port)
-  (defun socket-service-port (prot)
-    "Return the port number of the protocol."
-    (with-open-file (fl #+unix "/etc/services" #+win32
-			(concatenate 'string (system:getenv "windir")
-				     "/system32/etc/services")
-			:direction :input)
-      (do ((st (read-line fl nil *eof*) (read-line fl nil *eof*))
-	   res pos srv)
-	  ((or res (eq st *eof*)) res)
-	(unless (or (zerop (length st)) (char= #\# (char st 0)))
-	  (setf (values srv pos) (read-from-string st nil ""))
-	  (when (string-equal prot srv)
-	    (nsubstitute #\space #\/ st)
-	    (setq res (read-from-string st nil nil :start pos))))))))
+(defun socket-service-port (prot)
+  "Return the port number of the protocol."
+  (declare (simple-string prot))
+  (with-open-file (fl #+unix "/etc/services" #+win32
+                      (concatenate 'string (system:getenv "windir")
+                                   "/system32/etc/services")
+                      :direction :input)
+    (do ((st (read-line fl nil +eof+) (read-line fl nil +eof+))
+         res pos srv)
+        ((or res (eq st +eof+)) res)
+      (unless (or (zerop (length st)) (char= #\# (char st 0)))
+        (setf (values srv pos) (read-from-string st nil ""))
+        (when (string-equal prot srv)
+          (nsubstitute #\space #\/ st)
+          (setq res (read-from-string st nil nil :start pos)))))))))
 
 (defun url-get-port (url)
   "Get the correct port of the URL - if the port is not recorded there,
@@ -106,23 +120,23 @@ guess from the protocol."
 (defun print-url (url &optional (stream t) depth)
   "Print the URL in the standard form."
   (declare (ignore depth) (type url url))
-  (let ((str (or stream (make-string-output-stream))))
-    (princ (url-prot url) str) (princ "://" str)
+  (let ((str (or stream (make-string-output-stream))) (*print-escape* nil))
+    (write (url-prot url) :stream str) (write-string "://" str)
     (unless (equal "" (url-user url))
-      (princ (url-user url) str)
+      (write (url-user url) :stream str)
       (unless (equal "" (url-pass url))
-	(princ "#" str) (princ (url-pass url) str))
-      (princ "@" str))
-    (princ (url-host url) str)
+	(write-string "#" str) (write (url-pass url) :stream str))
+      (write-string "@" str))
+    (write (url-host url) :stream str)
     (unless (zerop (url-port url))
-      (princ ":" str) (princ (url-port url) str))
+      (write-string ":" str) (write (url-port url) :stream str))
     (unless (or (zerop (length (url-path url)))
 		(eq #\/ (aref (url-path url) 0)))
-      (princ "/" str))
-    (princ (url-path url) str)
+      (write-string "/" str))
+    (write (url-path url) :stream str)
     (unless stream (get-output-stream-string str))))
 
-(defvar *url-special-chars* "#%&*+,-./:=?@_~"
+(defcustom *url-special-chars* simple-string "#%&*+,-./:=?@_~"
   "*The string consisting of non-alphanumeric characters allowed in a URL.")
 
 (defun url-constituent (char)
@@ -137,12 +151,12 @@ guess from the protocol."
   (parse-url
    (with-output-to-string (st)
      (do (zz) ((not (url-constituent (setq zz (read-char str)))) st)
-       (princ zz st)))))
+       (write zz :stream st)))))
 
 (defun parse-url (string &key (start 0) end)
   "Parse a string into a new URL."
   (declare (string string))
-  (setq string (string-trim *whitespace* string))
+  (setq string (string-trim +whitespace+ string))
   (let ((idx (search "://" string :start2 start :end2 end :test #'char=))
 	idx0 (url (make-url)))
     (when idx
@@ -183,9 +197,17 @@ guess from the protocol."
 
 (defstruct (text-stream (:conc-name ts-))
   "Text stream - to read a tream of text - skipping `:'."
-  (sock nil)				; socket to read from
-  (buff "" :type string)		; buffer string
-  (posn 0 :type fixnum))		; position in the buffer
+  (sock nil)			; socket to read from
+  (buff "" :type simple-string)	; buffer string
+  (posn 0 :type fixnum))	; position in the buffer
+
+(defun open-socket (url)
+  "Open a socket connection to the URL."
+  (declare (type url url))
+  #+clisp (lisp:socket-connect (url-get-port url) (url-host url))
+  #+allegro (socket:make-socket :remote-host (url-host url) :remote-port
+                                (url-get-port url)))
+#+allegro (deftype socket () 'excl::socket-stream)
 
 (defmacro with-open-url ((socket url &optional (rt '*html-readtable*) err)
 			 &body body)
@@ -194,77 +216,84 @@ The *readtable* is temporarily set to RT (defaults to *html-readtable*).
 If this is an HTTP URL, also issue the GET command.
 If this is an FTP URL, cd and get (if there is a file part).
 ERR is the stream for information messages."
-  (let ((rt-old (gensym "WOU")))
-    `(let ((,socket (socket-connect (url-get-port ,url) (url-host ,url)))
-	   (,rt-old *readtable*))
-      (setq *readtable* (or ,rt *readtable*))
+  (let ((rt-old (gensym "WOU")) (uuu (gensym "WOU")))
+    `(let* ((,uuu ,url) (,socket (open-socket ,uuu))
+	    (,rt-old *readtable*))
       (unwind-protect
 	   (progn
-	     (cond ((equal "http" (url-prot ,url))
-		    (format ,socket "GET ~a HTTP/1.0~%~%" (url-path ,url))
-		    (let ((sym (read ,socket)) (res (read ,socket)))
-		      (when (string-equal sym "http/1.1")
-			(when (>= res 400) ; error
-			  (error "~d: ~a~%" res (read-line ,socket)))
-			(when (= 302 res) ; redirection
-			  (setq res (read-line ,socket))
-			  (read-line ,socket) (read-line ,socket)
-			  (setq sym (read-line ,socket)
-				sym (parse-url (subseq sym (1+ (position
-								#\: sym)))))
-			  (close ,socket)
-			  (format ,err " *** redirected to `~a' [~a]~%"
-				  sym res)
-			  (setq ,socket (socket-connect (url-get-port sym)
-							(url-host sym)))
-			  (format ,socket "GET ~a HTTP/1.0~%~%"
-				  (url-path sym))))))
-		   ((equal "ftp" (url-prot ,url))
-		    (format ,socket "cd ~a~%" (url-path-dir ,url))
-		    (unless (equal "" (url-path-file ,url))
-		      (format "get ~a~%" (url-path-file ,url))))
-		   ((equal "telnet" (url-prot ,url))
-		    (dolist (word (split-string (url-path ,url) "/"))
+	     (setq *readtable* (or ,rt *readtable*))
+	     (cond ((equal "http" (url-prot ,uuu))
+		    (setq ,socket (url-open-http ,socket ,uuu ,err)))
+		   ((equal "ftp" (url-prot ,uuu))
+		    (format ,socket "cd ~a~%" (url-path-dir ,uuu))
+		    (unless (equal "" (url-path-file ,uuu))
+		      (format "get ~a~%" (url-path-file ,uuu))))
+		   ((equal "telnet" (url-prot ,uuu))
+		    (dolist (word (split-string (url-path ,uuu) "/"))
 		      (format ,socket "~a~%" word)))
-		   ((equal "whois" (url-prot ,url))
-		    (format ,socket "~a~%" (url-path-file ,url))))
+		   ((equal "whois" (url-prot ,uuu))
+		    (format ,socket "~a~%" (url-path-file ,uuu))))
 	     ,@body)
 	(setq *readtable* ,rt-old)
 	(close ,socket)))))
 
-(defun read-next (ts)
+(defun url-open-http (sock url err)
+  "Open the socket to the url."
+  (declare (type (or null socket) sock) (type url url))
+  (setq sock (or sock (open-socket url)))
+  (format sock "GET ~a HTTP/1.0~%~%" (url-path url))
+  (do ((sk sock) (stat 302) sym res) ((not (eql stat 302)) sk)
+    (setq sym (read sk) stat (read sk))
+    (when (string-equal sym "http/1.1")
+      (when (>= stat 400) (error "~d: ~a~%" res (read-line sk))) ; error
+      (when (= stat 302) ; redirection
+	(setq res (read-line sk)) (read-line sk) (read-line sk)
+	(setq sym (read-line sk)
+	      sym (parse-url (subseq sym (1+ (position #\: sym)))))
+	(when (equal "" (url-host sym)) (setf (url-host sym) (url-host url)))
+	(format err " *** redirected to `~a' [~a]~%" sym res)
+	(when *html-verbose*
+	  (do (st) ((eq +eof+ (setq st (read-line sk nil +eof+))))
+	    (format t "~a~%" st)))
+	(close sk) (setq sk (open-socket sym))
+	(format sk "GET ~a HTTP/1.0~%~%" (url-path sym))))))
+
+(defun read-next (ts &optional errorp)
   "Read the next something from TS - a text stream."
   (do (str tok pos) (nil)
     (when (or (typep pos 'error) (>= (ts-posn ts) (length (ts-buff ts))))
       (unless (typep pos 'error) (setf (ts-posn ts) 0))
-      (setf str (read-line (ts-sock ts) nil *eof*))
-      (when (eq str *eof*)
-	(if (typep pos 'error) (error pos) (return-from read-next *eof*)))
+      (setf str (read-line (ts-sock ts) nil +eof+))
+      (when (eq str +eof+)
+	(if (typep pos 'error) (error pos)
+	    (if errorp (error "EOF on ~a" ts) (return-from read-next +eof+))))
       (setq str (nsubstitute #\space #\: str)
 	    str (nsubstitute #\space #\, str)
 	    str (nsubstitute #\space #\/ str))
       ;; (nsubstitute #\space #\. str) breaks floats, so we have to be smart
-      (do ((beg -1)) ((null (setq beg (position #\. str :start (1+ beg)))))
+      (do ((beg -1) (len (1- (length str))))
+	  ((or (= beg len)
+	       (null (setq beg (position #\. str :start (1+ beg))))))
 	(if (or (digit-char-p (elt str (1- beg)))
-		(digit-char-p (elt str (1+ beg))))
+		(and (< beg len) (digit-char-p (elt str (1+ beg)))))
 	    (incf beg) (setf (elt str beg) #\Space)))
       (setf (ts-buff ts) (if (typep pos 'error)
 			     (concatenate 'string (ts-buff ts) str) str)))
     (setf (values tok pos)
 	  (ignore-errors
-	    (read-from-string (ts-buff ts) nil *eof* :start (ts-posn ts))))
+	    (read-from-string (ts-buff ts) nil +eof+ :start (ts-posn ts))))
     (unless (typep pos 'error) (setf (ts-posn ts) pos))
-    (unless (or (typep pos 'error) (eq tok *eof*))
+    (unless (or (typep pos 'error) (eq tok +eof+))
       (return-from read-next tok))))
 
-;(defun read-next (ts) (read (ts-sock ts) nil *eof*))
+;(defun read-next (ts) (read (ts-sock ts) nil +eof+))
 
 (defun next-token (ts &optional (num 1) type dflt)
   "Get the next NUM-th non-tag token from the HTML stream TS."
   (declare (type text-stream ts))
   (let (tt)
     (dotimes (ii num (if (and type (not (typep tt type))) dflt tt))
-      (do () ((not (html-tag-p (setq tt (read-next ts)))))))))
+      (do () ((not (html-tag-p (setq tt (read-next ts t)))))))))
 
 (defun next-number (ts &optional (num 1))
   "Get the next NUM-th number from the HTML stream TS."
@@ -277,6 +306,59 @@ ERR is the stream for information messages."
   (declare (type text-stream ts))
   (do (tt) ((funcall test (setq tt (funcall key (next-token ts))) end) tt)))
 
+(defun skip-to-line (st ln &optional out)
+  "Read from stream ST until a line starting with LN.
+The optional third argument specifies where the message should go.
+By default nothing is printed."
+  (declare (stream st) (simple-string ln))
+  (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
+  (do ((len (length ln)) (rr (read-line st) (read-line st)))
+      ((and (>= (length rr) len) (string-equal ln rr :end2 len))
+       (subseq rr (length ln)))
+    (declare (fixnum len) (simple-string rr))))
+
+(defun skip-search (stream string &optional out)
+  "Read from STREAM until STRING is found by `search.'"
+  (declare (stream stream) (simple-string string) (values simple-string))
+  (mesg :head out " +++ `skip-search' --> `~a'~%" string)
+  (do ((st (read-line stream) (read-line stream)))
+      ((search string st :test #'char-equal) st)
+    (declare (simple-string st))))
+
+(defsubst read-trim (stream)
+  "Read a line from stream and trim it."
+  (declare (type stream stream) (values simple-string))
+  (string-trim +whitespace+ (read-line stream)))
+
+(defun skip-blanks (stream)
+  "Read from STREAM first non-blank string is found."
+  (declare (type stream stream) (values simple-string))
+  (do ((st (read-trim stream) (read-trim stream)))
+      ((/= 0 (length st)) st)
+    (declare (simple-string st))))
+
+(defun read-non-blanks (stream)
+  "Read from STREAM through the first blank string."
+  (declare (type stream stream) (values simple-string))
+  (do* ((st (read-trim stream) (read-trim stream))
+	(res st (concatenate 'string res " " st)))
+       ((zerop (length st)) res)
+    (declare (simple-string st res))))
+
+(defcustom *browsers* list
+  '((netscape "/usr/local/netscape/netscape" "-remote" "openURL(~a)"))
+  "The ALIST of browsers.")
+
+(defun view-url (url &optional (bro 'netscape))
+  "Lounch a browser to view a url."
+  (let ((br (copy-list (assoc bro *browsers* :test #'eq))) pos)
+    (assert (consp br) (br) "Unknown browser ~a. Must be one of~?." bro
+	    (list-format "~a") (mapcar #'car *browsers*))
+    (setq pos (1+ (position "~a" (cdr br) :test #'search)))
+    (setf (nth pos br) (format nil (nth pos br) url))
+    (run-prog (second br) :args (cddr br))
+    (format t "launched ~a with args ~a~%" (car br) (cddr br))))
+
 (defun dump-url (url &key (fmt "~3d: ~a~%") (out t))
   "Dump the URL line by line.
 FMT is the printing format. 2 args are given: line number and the line
@@ -285,7 +367,7 @@ OUT is the output stream and defaults to T."
   (setq url (url url))
   (with-open-url (sock url *readtable* t)
     (do (rr (ii 0 (1+ ii)))
-	((eq *eof* (setq rr (read-line sock nil *eof*))))
+	((eq +eof+ (setq rr (read-line sock nil +eof+))))
       (format out fmt ii rr))))
 
 (defun whois (host)
@@ -300,7 +382,7 @@ See `dump-url' about the optional parameters."
   (setq url (url url))
   (with-open-url (sock url *html-readtable* t)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))
-	((eq *eof* (setq rr (read-next ts))))
+	((eq +eof+ (setq rr (read-next ts))))
       (format out fmt ii rr))))
 
 (provide "url")

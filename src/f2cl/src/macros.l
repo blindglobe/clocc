@@ -329,13 +329,22 @@ is not included")
 	  `(the integer4 (+ ,arg (int-add ,@more-args)))
 	  `(the integer4 (+ ,arg ,@more-args)))))
 
-(defmacro int-sub (arg &rest more-args)
-  (if (null more-args)
-      `(the integer4 (- ,arg))
-      (if (> (length more-args) 1)
-	  `(the integer4 (- ,arg (int-sub ,@more-args)))
-	  `(the integer4 (- ,arg ,@more-args)))))
+(defun convert-int-sub (args)
+  (let ((nargs (length args)))
+    (case nargs
+      (1
+       `(the integer4 (- ,(first args))))
+      (2
+       `(the integer4 (- ,(first args) ,(second args))))
+      (t
+       (let ((result `(the integer4 (- ,(first args) ,(second args)))))
+	 (dolist (arg (rest (rest args)))
+	   (setf result `(the integer4 (- ,result ,arg))))
+	 result)))))
 
+(defmacro int-sub (&rest args)
+  (convert-int-sub args))
+  
 (defmacro int-mul (arg &rest more-args)
   (if (null more-args)
       arg
@@ -1064,7 +1073,7 @@ causing all pending operations to be flushed"
     (2 most-positive-double-float)
     (3 double-float-epsilon)
     (4 (scale-float double-float-epsilon 1))
-    (5 (log (float-radix 1d0) 10d0))))
+    (5 (log (float (float-radix 1d0) 1d0) 10d0))))
 
 (defun r1mach (i)
   (ecase i
@@ -1074,7 +1083,7 @@ causing all pending operations to be flushed"
     (2 most-positive-single-float)
     (3 single-float-epsilon)
     (4 (scale-float single-float-epsilon 1))
-    (5 (log (float-radix 1d0) 10d0))))
+    (5 (log (float (float-radix 1f0)) 10f0))))
 
 ;;
 ;;     This is the CMLIB version of I1MACH, the integer machine
@@ -1188,8 +1197,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.48 2002/05/03 17:48:06 rtoy Exp $
+;;; $Id: macros.l,v 1.49 2002/05/05 23:38:47 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.49  2002/05/05 23:38:47  rtoy
+;;; The int-sub macro didn't handle things like (- 3 m m) correctly.  It
+;;; was returning (- 3 (- m m)) instead of (- (- 3 m) m)!
+;;;
 ;;; Revision 1.48  2002/05/03 17:48:06  rtoy
 ;;; GCL doesn't have least-positive-normalized-{single/double}-float, so
 ;;; use just least-positive-{single/double}-float.

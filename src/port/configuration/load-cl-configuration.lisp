@@ -91,7 +91,8 @@
       (load-and-or-compile "CL-CONF-LIBRARY:impl-dependent;pcl-defsys.lisp")
       #+mk-defsystem
       (load-and-or-compile "CL-CONF-LIBRARY:impl-dependent;mk-defsystem.lisp")
-      )))
+      ))
+  (pushnew :cl-configuration *features*))
     
 
 ;;; end of file -- load-cl-configuration.lisp --

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.55 2004/12/05 15:38:12 sds Exp $
+;;; $Id: sys.lisp,v 1.56 2004/12/06 15:03:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -125,12 +125,8 @@ or does not contain valid compiled code."
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
   #+lucid (lcl:arglist fn)
-  #+sbcl
-  (let ((f (coerce fn 'function)))
-    (typecase f
-      (STANDARD-GENERIC-FUNCTION (sb-pcl:generic-function-lambda-list f))
-      #+(or) (EVAL:INTERPRETED-FUNCTION (eval:interpreted-function-arglist f))
-      (FUNCTION (sb-kernel:%simple-fun-arglist f))))
+  #+sbcl (progn (require :sb-introspect)
+                (sb-introspect:function-arglist fn))
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl scl)
   (error 'not-implemented :proc (list 'arglist fn)))
 

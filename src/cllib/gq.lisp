@@ -1,10 +1,15 @@
-;;; File: <gq.lisp - 1997-10-15 Wed 11:47:01 EDT - sds@WINTERMUTE.eagle>
+;;; File: <gq.lisp - 1997-10-31 Fri 16:46:38 EST - sds@WINTERMUTE.eagle>
 ;;;
 ;;; GetQuote
+;;; get stock/mutual fund quotes from the Internet
+;;; via the WWW using HTTP/1.0, save into a file, plot.
 ;;;
-;;; $Id: gq.lisp,v 1.1 1997/10/15 15:49:26 sds Exp $
+;;; $Id: gq.lisp,v 1.2 1997/10/31 21:59:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 ;;; $Log: gq.lisp,v $
+;;; Revision 1.2  1997/10/31 21:59:41  sds
+;;; Added cite-info and strip-html-markup.
+;;;
 ;;; Revision 1.1  1997/10/15 15:49:26  sds
 ;;; Initial revision
 ;;;
@@ -28,6 +33,18 @@
   "*The car of any html tag that is read.")
 (defvar *html-parse-tags* nil
   "*If non-nil, parse tags, if nil - return nil for all tags.")
+(defvar *whitespace* '(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page)
+  "*The whitespace characters.")
+
+(defun strip-html-markup (str)
+  "Return a new stirng, sans HTML."
+  (declare (string str))
+  (apply #'concatenate 'string
+	 (do* ((p0 (position #\< str) (position #\< str :start p1))
+	       (res (list (subseq str 0 p0)))
+	       (p1 (position #\> str) (position #\> str :start (or p0 0))))
+	      ((or (null p0) (null p1)) (nreverse res))
+	   (push (subseq str (1+ p1) (position #\< str :start p1)) res))))
 
 (defun read-html-markup (stream char)
   "Skip through the HTML markup. CHAR=`<'"
@@ -65,8 +82,19 @@
 (defun url-get-port (url)
   "Get the correct port of the URL - if the port is not recorded trere,
 guess from the protocol."
+  (unless (url-p url) (setq url (parse-url url)))
   (if (zerop (url-port url)) (socket-service-port (url-prot url))
       (url-prot url)))
+
+(defun url-path-dir (url)
+  "Return the dir part of the url's path, droping the file name."
+  (unless (url-p url) (setq url (parse-url url)))
+  (subseq (url-path url) 0 (1+ (position #\/ (url-path url) :from-end t))))
+
+(defun url-path-file (url)
+  "Return the file part of the url's path, droping the dir."
+  (unless (url-p url) (setq url (parse-url url)))
+  (subseq (url-path url) (1+ (position #\/ (url-path url) :from-end t))))
 
 (defun print-url (url &optional (stream t) depth)
   "Print the URL in the standard form."
@@ -107,6 +135,7 @@ guess from the protocol."
 (defun parse-url (string &key (start 0) end)
   "Parse a string into a new URL."
   (declare (string string))
+  (setq string (string-trim *whitespace* string))
   (let ((idx (search "://" string :start2 start :end2 end :test #'char=))
 	idx0 (url (make-url)))
     (when idx
@@ -145,32 +174,45 @@ guess from the protocol."
   (buff "" :type string)		; buffer string
   (posn 0 :type fixnum))		; position in the buffer
 
-(defmacro with-open-url ((socket url &optional (rt '*html-readtable*))
+(defmacro with-open-url ((socket url &optional (rt '*html-readtable*) err)
 			 &body body)
   "Execute BODY, binding SOCK to the socket corresponding to the URL.
 The *readtable* is temporarily set to RT (defaults to *html-readtable*).
-If this is an HTTP URL, also issue the GET command."
-  (let ((rt-old (gensym "WOU")) (urll (gensym "WOU")))
-    `(let ((,urll ,url) ,socket ,rt-old)
-      (setq ,socket (socket-connect (url-get-port ,urll) (url-host ,urll))
-       ,rt-old *readtable* *readtable* (or ,rt *readtable*))
+If this is an HTTP URL, also issue the GET command.
+If this is an FTP URL, cd and get (if there is a file part).
+ERR is the stream for information messages."
+  (let ((rt-old (gensym "WOU")))
+    `(let ((,socket (socket-connect (url-get-port ,url) (url-host ,url)))
+	   (,rt-old *readtable*))
+      (setq *readtable* (or ,rt *readtable*))
       (unwind-protect
-	   (progn (when (equal "http" (url-prot ,urll))
-		    (format ,socket "GET ~a HTTP/1.0~%~%" (url-path ,urll))
+	   (progn
+	     (cond ((equal "http" (url-prot ,url))
+		    (format ,socket "GET ~a HTTP/1.0~%~%" (url-path ,url))
 		    (let ((sym (read ,socket)) (res (read ,socket)))
 		      (when (string-equal sym "http/1.1")
 			(when (>= res 400) ; error
 			  (error "~d: ~a~%" res (read-line ,socket)))
 			(when (= 302 res) ; redirection
+			  (setq res (read-line ,socket))
 			  (read-line ,socket) (read-line ,socket)
-			  (read-line ,socket)
-			  (setq sym (read-line ,socket))
+			  (setq sym (read-line ,socket)
+				sym (parse-url (subseq sym (1+ (position
+								#\: sym)))))
 			  (close ,socket)
-			  (setq ,socket (socket-connect (url-get-port ,urll)
-							(url-host ,urll)))
+			  (format ,err " *** redirected to `~a' [~a]~%"
+				  sym res)
+			  (setq ,socket (socket-connect (url-get-port sym)
+							(url-host sym)))
 			  (format ,socket "GET ~a HTTP/1.0~%~%"
-				  (subseq sym 10))))))
-		  ,@body)
+				  (url-path sym))))))
+		   ((equal "ftp" (url-prot ,url))
+		    (format ,socket "cd ~a~%" (url-path-dir ,url))
+		    (unless (equal "" (url-path-file ,url))
+		      (format "get ~a~%" (url-path-file ,url))))
+		   ((equal "whois" (url-prot ,url))
+		    (format ,socket "~a~%" (url-path-file ,url))))
+	     ,@body)
 	(setq *readtable* ,rt-old)
 	(close ,socket)))))
 
@@ -182,9 +224,13 @@ If this is an HTTP URL, also issue the GET command."
       (setf str (read-line (ts-sock ts) nil *eof*))
       (when (eq str *eof*)
 	(if (typep pos 'error) (error pos) (return-from read-next *eof*)))
-      (nsubstitute #\space #\: str)
-      (nsubstitute #\space #\, str)
-      (nsubstitute #\space #\. str)
+      (setq str (nsubstitute #\space #\: str)
+	    str (nsubstitute #\space #\, str))
+      ;; (nsubstitute #\space #\. str) breaks floats, so we have to be smart
+      (do ((beg -1)) ((null (setq beg (position #\. str :start (1+ beg)))))
+	(if (or (digit-char-p (elt str (1- beg)))
+		(digit-char-p (elt str (1+ beg))))
+	    (incf beg) (setf (elt str beg) #\Space)))
       (setf (ts-buff ts) (if (typep pos 'error)
 			     (concatenate 'string (ts-buff ts) str) str)))
     (multiple-value-setq (tok pos)
@@ -209,35 +255,135 @@ If this is an HTTP URL, also issue the GET command."
 	      (do () ((numberp (setq tt (next-token ts))))))))
 
 (defsubst skip-tokens (ts end &key (test #'eql) (key #'identity))
-  "Skip tokens until END."
+  "Skip tokens until END, i.e., until (test (key tocken) end) is T."
   (declare (type text-stream ts))
   (do (tt) ((funcall test (setq tt (funcall key (next-token ts))) end) tt)))
 
-(defun dump-url (url)
-  "Dump the URL line by line."
+(defun dump-url (url &optional (fmt "~3d: ~a~%") (out t))
+  "Dump the URL line by line.
+FMT is the printing format. 2 args are given: line number and the line
+itself. FMT defaults to \"~3d: ~a~%\".
+OUT is the output stream. Defaults to T."
   (setq url (if (url-p url) url (parse-url (string url))))
-  (with-open-url (sock url *readtable*)
+  (with-open-url (sock url *readtable* t)
     (do (rr (ii 0 (1+ ii)))
 	((eq *eof* (setq rr (read-line sock nil *eof*))))
-      (format t "~3d: ~a~%" ii rr))))
+      (format out fmt ii rr))))
 
-(defun dump-url-tockens (url)
-  "Dump the URL tocken by tocken."
+(defun whois (host)
+  "Get the whois information on a host."
+  (dump-url (make-url :prot "whois" :host "rs.internic.net"
+		      :path (concatenate 'string "/" (string host)))
+	    "~*~a~%"))
+
+(defun dump-url-tockens (url &optional (fmt "~3d: ~a~%") (out t))
+  "Dump the URL tocken by tocken.
+See `dump-url' about the optional parameters."
   (setq url (if (url-p url) url (parse-url (string url))))
-  (with-open-url (sock url)
+  (with-open-url (sock url *html-readtable* t)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))
 	((eq *eof* (setq rr (read-next ts))))
-      (format t "~3d: ~a~%" ii rr))))
+      (format out fmt ii rr))))
 
 (defun gq-complete-url (url &rest ticks)
   "Complete URL to get the quotes for TICKS."
   (setq url (if (url-p url) (copy-url url) (parse-url (string url))))
-  (setf (url-path url)
-	(format nil "~a~{+~:@(~a~)~}"
-		(subseq (url-path url) 0
-			(1+ (position #\= (url-path url) :test #'char=)))
-		ticks))
+  (setf (url-path url) (format nil "~a~{+~:@(~a~)~}" (url-path url) ticks))
   url)
+
+(defun parse-geo-coord (st)
+  "Return the number parsed from latitude or longitude (dd:mm:ss[nsew])
+read from the stream."
+  (let* ((sig 1) (cc (+ (read st) (/ (read st) 60.0d0)))
+	 (lt (read st)) se nn)
+    (if (numberp lt) (setq se lt nn 0 lt (string (read st)))
+	(multiple-value-setq (se nn)
+	  (parse-integer (setq lt (string lt)) :junk-allowed t)))
+    (unless se (error "Cannot parse the seconds from `~a'~%" lt))
+    (setq sig (cond ((or (char-equal (elt lt nn) #\n)
+			 (char-equal (elt lt nn) #\e)) 1)
+		    ((or (char-equal (elt lt nn) #\s)
+			 (char-equal (elt lt nn) #\w)) -1)
+		    (t (error "Wrong sign designation: `~a'. ~
+Must be one of [N]orth, [S]outh, [E]ast or [W]est.~%" (elt lt nn)))))
+    (* sig (+ cc (/ se 3600d0)))))
+
+(defun geo-location (str &optional (num 2))
+  "Return the latitude and longitude as two numbers from a string of
+type \"48:51:00N 2:20:00E\". The optional second argument says how many
+coordinates to read (default 2). If it is 1, return just one number, if
+more than 1, return the list."
+  (setq str (nsubstitute #\Space #\: (string str)))
+  (with-input-from-string (st str)
+    (if (= num 1) (parse-geo-coord st)
+	(do ((ii 0 (1+ ii)) res) ((= ii num) (nreverse res))
+	  (push (parse-geo-coord st) res)))))
+
+;;;
+;;; }}}{{{ Geo-Data
+;;;
+
+(defstruct (geo-data (:print-function print-geod) (:conc-name geod-))
+  (name "??" :type string)		; the name of the place
+  (pop 0 :type (real 0 *))		; population
+  (lat 0.0 :type float)			; latitude
+  (lon 0.0 :type float)			; longitude
+  (zip nil :type list))			; list of zip codes.
+
+(defun print-geod (gd &optional stream depth)
+  "Print the geo-data."
+  (declare (ignore depth))
+  (format stream "Place: ~a~%Population: ~12:d;~30t~
+Location: ~9,5f ~a  ~9,5f ~a~%Zip Code~p:~{ ~d~}~%"
+	  (geod-name gd) (geod-pop gd)
+	  (geod-lat gd) (if (minusp (geod-lat gd)) #\S #\N)
+	  (geod-lon gd) (if (minusp (geod-lat gd)) #\W #\E)
+	  (length (geod-zip gd)) (geod-zip gd)))
+
+(defvar *census-gazetteer-url* (make-url :prot "http" :host "www.census.gov"
+					 :path "/cgi-bin/gazetteer?")
+  "*The URL to use to get the cite information.")
+
+(defun cite-info (url &key city state zip (out t))
+  "Get the cite info from the U.S. Gazetteer.
+Print the results to the stream OUT (defaults to T) and return a list
+of geo-data."
+  (setq url (if (url-p url) (copy-url url) (parse-url (string url)))
+	city (if city (substitute #\+ #\Space (string city)) "")
+	state (if state (substitute #\+ #\Space (string state)) ""))
+  (setf (url-path url) (format nil "~acity=~a&state=~a&zip=~a"
+			       (url-path url) city state (or zip "")))
+  (with-open-url (sock url *readtable* t)
+    (do () ((search "<ul>" (read-line sock))))
+    (do ((str "") res gd (ii 1 (1+ ii)))
+	((or (search "</ul>" str)
+	     (search "</ul>" (setq str (read-line sock))))
+	 (nreverse res))
+      ;; name
+      (setq gd (make-geo-data :name (strip-html-markup str))
+	    str (read-line sock))
+      ;; population
+      (setf (geod-pop gd) (parse-integer str :junk-allowed t :start
+					 (1+ (position #\: str))))
+      ;; location
+      (setq str (nsubstitute #\Space #\: (read-line sock))
+	    str (nsubstitute #\Space #\, str)
+	    str (nsubstitute #\Space #\< str))
+      (with-input-from-string (st str)
+	(read st)
+	(setf (geod-lat gd) (* (read st) (if (eq 'n (read st)) 1 -1))
+	      (geod-lon gd) (* (read st) (if (eq 'w (read st)) 1 -1))))
+      ;; zip
+      (setq str (read-line sock))
+      (setf (geod-zip gd)
+	    (if (search "Zip Code" str)
+		(with-input-from-string (st str :start (1+ (position #\: str)))
+		  (do (rr re) ((null (setq rr (read st nil nil)))
+			       (nreverse re))
+		    (when (numberp rr) (push rr re))))
+		(list zip)))
+      (read-line sock) (setq str (read-line sock))
+      (push gd res) (format out "~%~:d. " ii) (print-geod gd out))))
 
 ;;;
 ;;; }}}{{{ Daily Data
@@ -342,12 +488,14 @@ The first arg, SERVER, when non-nil, specifies which server to use."
       (let ((qq (if (numberp server) (elt *get-quote-url-list* server)
 		    (find server *get-quote-url-list* :key #'third
 			  :test #'string-equal))))
-	(cons (third qq) (ignore-errors
-			  (apply (second qq) (first qq) ticks))))
+	(values-list (cons (third qq)
+			   (multiple-value-list
+			       (apply (second qq) (first qq) ticks)))))
       (do ((ql *get-quote-url-list* (cdr ql)) res name)
-	  (res (cons name res))
+	  ((car res) (values-list (cons name res)))
 	(setq name (car (last (car ql)))
-	      res (ignore-errors (apply (cadar ql) (caar ql) ticks))))))
+	      res (multiple-value-list
+		      (ignore-errors (apply (cadar ql) (caar ql) ticks)))))))
 
 (defun infer-date (mon day)
   "Guess what the date is.
@@ -466,50 +614,55 @@ only the data after `*hist-data-file-sep*' is changed."
 	  (length hist) (length hold)))
 
 (defun gq-fix-hist (hold hist hhh)
-  "Fix the values in the history."
+  "Fix the values in the history. Return T if something was fixed."
   (declare (list hist hold hhh))
-  (when hhh
-    (setq hhh
-	  (map-sorted
-	   'list
-	   (lambda (hi hs)
-	     (when hs
-	       (cond (hi
-		      (unless (every #'= (hist-navs hi) (hist-navs hs))
-			(format t "Wrong NAVs on ~a:
+  (let ((fixed nil))
+    (when hhh
+      (setq hhh
+	    (map-sorted
+	     'list
+	     (lambda (hi hs)
+	       (when hs
+		 (cond (hi
+			(unless (every #'= (hist-navs hi) (hist-navs hs))
+			  (format t "Wrong NAVs on ~a:
 ~5tOriginal:~15t~{~7,2f~}~%~5tActual:~15t~{~7,2f~}~%"
-				(hist-date hi) (hist-navs hi) (hist-navs hs))
-			(setf (hist-navs hi) (hist-navs hs))))
-		     (t
-		      (format t "Missing record for ~a. Fixed.~%"
-			      (hist-date hs))
-		      (setq hi hs))))
-	     hi)
-	   #'date-less-p hist hhh :ckey #'hist-date))
-    (setf (car hist) (car hhh) (cdr hist) (cdr hhh)))
-  (let (ntot)
-    (dolist (hr hist)
-      (setq ntot (hist-totl-comp hold (hist-navs hr)))
-      (unless (same-num-p ntot (hist-totl hr) 0.01d0 0.00001d0)
-	(format t "Bad total (~a): ~15,5f; correct: ~15,5f~%"
-		(hist-date hr) (hist-totl hr) ntot)
-	(setf (hist-totl hr) ntot)))))
+				  (hist-date hi) (hist-navs hi) (hist-navs hs))
+			  (setf (hist-navs hi) (hist-navs hs) fixed t)))
+		       (t
+			(format t "Missing record for ~a. Fixed.~%"
+				(hist-date hs))
+			(setq hi hs fixed t))))
+	       hi)
+	     #'date-less-p hist hhh :ckey #'hist-date))
+      ;; modify hist by side effect
+      (setf (car hist) (car hhh) (cdr hist) (cdr hhh)))
+    (let (ntot)
+      (dolist (hr hist)
+	(setq ntot (hist-totl-comp hold (hist-navs hr)))
+	(unless (same-num-p ntot (hist-totl hr) 0.01d0 0.00001d0)
+	  (format t "Bad total (~a): ~15,5f; correct: ~15,5f~%"
+		  (hist-date hr) (hist-totl hr) ntot)
+	  (setf (hist-totl hr) ntot fixed t))))
+    fixed))
 
-(defun process-results (hold hist res yea &optional (str t))
+(defun process-results (hold hist srv res yea &optional (str t))
   "Process the results, update the history.
 Return non-nil if the history was updated and needs to be saved.
 RES is a list of SERVER, DATE and DAILY-RECS.
 YEA is the list of 1, 3, 5, and 10-year returns."
   (declare (list hold hist res))
+  (unless res
+    (return-from process-results (format t "no results - timed out?~%")))
   (let ((lh (last hist)) cv ov pv (ctot 0.0d0) (otot 0.0d0) (ptot 0.0d0)
-	(begd (hist-date (car hist))) pers apy
-	(nnavs (mapcar #'dd-nav (cddr res)))
-	(pnavs (mapcar #'dd-pre (cddr res))))
+	(begd (hist-date (car hist))) pers apy db
+	(nnavs (mapcar #'dd-nav (cdr res)))
+	(pnavs (mapcar #'dd-pre (cdr res))))
     (declare (float ctot otot))
     (format str "~2%~72:@<~a results [~a]:~>
 ~72:@<<[~a -- ~a (~:d days)]>~>~2%"
-	    (pop res) (current-time nil) begd (car res)
-	    (days-between begd (car res)))
+	    srv (current-time nil) begd (car res)
+	    (setq db (days-between begd (car res))))
     (apply #'mapc
 	   (lambda (hl dd &optional ye)
 	     (format str "Fund: ~:@(~a~) [~a]~48t~7,3f * ~6,2f = $~a~%"
@@ -520,26 +673,33 @@ YEA is the list of 1, 3, 5, and 10-year returns."
 10ye:~6,2f%]~%" (first ye) (second ye) (third ye) (fourth ye)))
 	     (print-dd dd str)
 	     (setq ov (* (pfl-nums hl) (pfl-bprc hl))
-		   pv (* (pfl-nums hl) (dd-pre dd)))
+		   pv (* (pfl-nums hl)
+			 (cond ((not (zerop (dd-pre dd))) (dd-pre dd))
+			       ((not (zerop (dd-chg dd)))
+				(- (dd-nav dd) (dd-chg dd)))
+			       (t (elt (hist-navs (car lh))
+				       (position (pfl-tick hl) hold :test #'eq
+						 :key #'pfl-tick))))))
 	     (incf ctot cv) (incf otot ov) (incf ptot pv)
-	     (multiple-value-setq (pers apy)
-	       (percent-change ov cv begd (car res)))
+	     (multiple-value-setq (pers apy) (percent-change ov cv db))
 	     (format str "   P/L: total:~15t~a - ~a = ~a~55t[~7,3f% APY:~8,3f%]
         today:~15t~a - ~a = ~a~55t[~7,3f%]~2%"
 		     (commas cv 2 7) (commas ov 2 7) (commas (- cv ov) 2 5)
 		     pers apy (commas cv 2 7) (commas pv 2 7)
 		     (commas (- cv pv) 2 5) (percent-change pv cv)))
 	   hold (rest res) (if yea (list yea) nil))
-    (multiple-value-setq (pers apy) (percent-change otot ctot begd (car res)))
+    (multiple-value-setq (pers apy) (percent-change otot ctot db))
     (format str " * P/L: total:~15t~a - ~a = ~a~55t[~7,3f% APY:~8,3f%]
         today:~15t~a - ~a = ~a~55t[~7,3f%]~2%"
 	    (commas ctot 2 7) (commas otot 2 7) (commas (- ctot otot) 2 5)
 	    pers apy (commas ctot 2 7) (commas ptot 2 7)
 	    (commas (- ctot ptot) 2 5) (percent-change ptot ctot))
     (cond ((date-more-p (car res) (hist-date (car lh)))
-	   (unless (every (lambda (cv pv)
-			    (or (zerop pv) (same-num-p cv pv 0.01d0 0.001d0)))
-			  (hist-navs (car lh)) pnavs)
+	   (unless (or (equalp (tomorrow (hist-date (car lh))) (car res))
+		       (every (lambda (cv pv)
+				(or (zerop pv)
+				    (same-num-p cv pv 0.01d0 0.001d0)))
+			      (hist-navs (car lh)) pnavs))
 	     (format str "A discrepancy found:~% last record:~15t~{~7,2f~}~% ~
 previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 		     (hist-navs (car lh)) pnavs
@@ -548,11 +708,17 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 					    :navs pnavs :totl
 					    (hist-totl-comp hold pnavs)))))
 	     (setq lh (cdr lh)))
-	   (format str "A record for date ~a added:~%~5t~{~a~}~%" (car res)
-		   (setf (cdr lh)
-			 (list (make-hist :date (car res) :navs nnavs
-					  :totl (hist-totl-comp hold nnavs)))))
-	   t)
+	   (cond ((equalp nnavs (hist-navs (car lh)))
+		  (format str "Same NAVs as on ~a, no record added.~%"
+			  (hist-date (car lh))))
+		 (t (format str "A record for date ~a added:~%~5t~{~a~}~%"
+			    (car res)
+			    (setf (cdr lh)
+				  (list (make-hist
+					 :date (car res) :navs nnavs
+					 :totl (hist-totl-comp hold
+							       nnavs)))))
+		    t)))
 	  (t (format str "Old news [~a].~%" (car res))))))
 
 (defun plot-portfolio (hold hist)
@@ -564,7 +730,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 	(hist-date (car hist)) (hist-date (car (last hist)))
 	(cons (make-dated-list :ll hist :date #'hist-date :name
 			       "Total Value" :misc #'hist-totl)
-	      (nreverse res)) :rel t
+	      (nreverse res)) :rel t :slot 'misc
 	:title "Portfolio History" :data-style "linespoints"
 	:ylabel "Relative Value"))
     (push (make-dated-list
@@ -579,7 +745,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 (defvar *gq-log* (pathname "c:/home/sds/text/getquote.log")
   "The log file for the batch processing.")
 
-(defun update-quotes (&optional (plot nil plotp))
+(defun update-quotes (&optional (plot nil plotp) server)
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes."
@@ -588,13 +754,14 @@ If PLOT is T, just plot, do not try to update quotes."
   (multiple-value-setq (*holdings* *history*)
     (read-data-file *hist-data-file*))
   (unless (eq plot t)
-    (multiple-value-bind (res hhh yea str)
-	(apply #'get-quotes nil (mapcar #'pfl-tick *holdings*))
-      (gq-fix-hist *holdings* *history* hhh)
+    (multiple-value-bind (srv res hhh yea str fixed new)
+	(apply #'get-quotes server (mapcar #'pfl-tick *holdings*))
       (setq str (or (eq *standard-output* *standard-input*)
 		    (open *gq-log* :direction :output :if-exists
-			  :append :if-does-not-exist :create)))
-      (when (process-results *holdings* *history* res yea str)
+			  :append :if-does-not-exist :create))
+	    fixed (gq-fix-hist *holdings* *history* hhh)
+	    new (process-results *holdings* *history* srv res yea str))
+      (when (or fixed new)
 	(save-data *hist-data-file* *holdings* *history*)
 	(unless plotp (setq plot t)))
       (unless (eq t str) (close str))))

@@ -74,10 +74,10 @@ binary-arch: build install
 #	dh_installinit
 #	dh_installcron
 #	dh_installinfo
-	dh_undocumented
+#	dh_undocumented
 	dh_installman clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 register-common-lisp-source.8 \
                 unregister-common-lisp-implementation.8 unregister-common-lisp-source.8 \
-		reregister-common-lisp-implementations.1
+		reregister-common-lisp-implementations.8
 	dh_link
 	dh_strip
 	dh_compress

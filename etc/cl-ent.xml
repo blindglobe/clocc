@@ -103,6 +103,7 @@
 <!-- *** Editors *** -->
 <!ENTITY emacs "<ulink url='http://www.gnu.org/software/emacs/'>Emacs</ulink>">
 <!ENTITY xemacs "<ulink url='http://www.xemacs.org'>XEmacs</ulink>">
+<!ENTITY ilisp "<ulink url='http://ilisp.cons.org/'>ILISP</ulink>">
 
 <!-- *** platforms *** -->
 <!ENTITY acorn "<ulink url='http://www.acorn.com/'><emphasis role='strong'>Acorn</emphasis></ulink>">

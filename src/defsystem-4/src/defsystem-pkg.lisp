@@ -64,9 +64,30 @@
 	   #:execute-action
   	   )
 
+  (:export #:operate-on-system
+	   #:oos)
+
+  (:export #:version
+	   #:make-version
+	   #:parse-version-string
+
+	   #:version-major-number-tag
+	   #:version-minor-number-tag
+	   
+	   #:version=
+	   #:version<
+	   #:version>
+	   #:version<=
+	   #:version>=)
+
   (:export #:*central-registry*
 	   #:add-registry-location
-	   #:*bin-subdir*
+	   #:delete-registry-location
+	   #:delete-registry-entry
+	   #:system-registry-paths
+	   )
+
+  (:export #:*bin-subdir*
 	   #:machine-type-translation
 	   #:software-type-translation
 	   #:compiler-type-translation

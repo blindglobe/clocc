@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.10 2005/03/30 22:19:24 sds Exp $
+;;; $Id: string.lisp,v 1.11 2005/03/30 23:16:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,8 +24,9 @@
 ;;;
 
 (let ((cache-vec (make-array 10 :adjustable t)) diag)
-(defun edit-distance (s1 s2)
-  "The edit (Levenshtein) distance between strings.
+(defun edit-distance (s1 s2 &key (test #'eql))
+  "The edit (Levenshtein) distance between strings
+ (actually, arbitrary vectors).
 See <http://www.merriampark.com/ld.htm>
 <http://www.cut-the-knot.org/do_you_know/Strings.shtml>."
   (let ((l1 (length s1)) (l2 (length s2)))
@@ -37,7 +38,7 @@ See <http://www.merriampark.com/ld.htm>
       (loop :for i :from 0 :below l1 :and c1 :across s1
         :for old = (aref cache-vec i) :do
         (shiftf diag (aref cache-vec i)
-                (min (if (char= c1 c2) diag (1+ diag))
+                (min (if (funcall test c1 c2) diag (1+ diag))
                      (1+ (aref cache-vec i))
                      (1+ (if (zerop i) (1+ j) (aref cache-vec (1- i))))))))
     (aref cache-vec (1- l1)))))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.11 2000/05/16 17:22:47 sds Exp $
+;;; $Id: inspect.lisp,v 1.12 2000/05/16 17:33:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -286,7 +286,6 @@
 
 (defmethod print-inspection ((insp inspection) (out stream)
                              (backend (eql :tty)))
-  (declare (ignore backend))
   (format out "~s:  ~a~%~{ ~a~%~}" (insp-self insp) (insp-title insp)
           (insp-blurb insp))
   (when (insp-nth-slot insp)
@@ -342,7 +341,6 @@
 
 (defmethod print-inspection ((insp inspection) (raw stream)
                              (backend (eql :http)))
-  (declare (ignore backend))
   (flet ((href (com) (format nil "/~d/~s" (insp-id insp) com)))
     (with-html-output (out raw :title (insp-title insp) :footer nil)
       (with-tag (:h1) (princ (insp-title insp) out))

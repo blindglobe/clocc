@@ -1,14 +1,13 @@
 common-lisp-controller (3.62) unstable; urgency=low
 
-  * Added dependency on adduser. Closes: #192297
   * Removed /etc/lisp-config.lisp as it is generated at config time.
     Closes: #188065
   * Don't forget to remove the file on purge of course :-).
-  * There _is_ a problem with xinetd, see bug #176464, so 
+  * There _is_ a problem with xinetd, see bug #176464, so
     the conflict is here to stay for the moment :-).
     Closes: #162171
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  7 May 2003 14:19:47 +0200
+ -- Peter <pvaneynd@debian.org>  Thu,  8 May 2003 23:29:27 +0200
 
 common-lisp-controller (3.61) unstable; urgency=low
 

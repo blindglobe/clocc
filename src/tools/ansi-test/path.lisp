@@ -1,12 +1,17 @@
 ;;; based on v1.23 -*- mode: lisp -*-
+;;; the trick is that the tests that come with CLISP are run in the
+;;; traditional mode, when symbols are recognized as pathname
+;;; designators, while these tests are run in the ansi mode, where the
+;;; only pathname designators are pathnames, strings and file streams.
+
 (in-package :cl-user)
 
 (check-for-bug :path-legacy-4
   (setf string "test-pathname.abc" symbol 'test-pathname.abc)
   test-pathname.abc)
 
-;;pathname -mögl. Argumenttypen: pathname,string,symbol,stream
-;;         -resultat: pathname
+;;pathname argument type: pathname,string,stream [ symbol - non-ANSI]
+;;         result: pathname
 
 (check-for-bug :path-legacy-11
   (SETF PATHSTRING (PATHNAME STRING))
@@ -19,7 +24,7 @@
               :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
 (check-for-bug :path-legacy-21
-  (SETF PATHSYMBOL (PATHNAME symbol))
+  (SETF PATHSYMBOL (PATHNAME #+XCL symbol #+CLISP string))
   #+XCL
   #S(PATHNAME SYSTEM::HOST
               NIL SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME
@@ -75,7 +80,7 @@
               :NAME "test-pathname" :TYPE "abc" :VERSION NIL))
 
 (check-for-bug :path-legacy-77
-  (PARSE-NAMESTRING SYMBOL)
+  (PARSE-NAMESTRING #+XCL SYMBOL #+CLISP STRING)
   #+XCL
   #S(PATHNAME SYSTEM::HOST NIL
               SYSTEM::DEVICE "DISK00$ABT43" DIRECTORY "XCL.MAIN" SYSTEM::NAME "TEST-PATHNAME"
@@ -404,7 +409,7 @@
 (check-for-bug :path-truename-with-borken-path
   (truename "~/no/ such / path /  nicht-vorhandenes-file.new")
   error)
-  
+
 (check-for-bug :path-legacy-406
   (progn (setf file (open "nicht-vorhandenes-file.non"
                           :direction :input

@@ -1,3 +1,10 @@
+common-lisp-controller (3.68) unstable; urgency=low
+
+  * common-lisp-controller.lisp: reduce internal dependence on
+  logical pathnames
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Sun, 20 Jul 2003 19:27:19 -0600
+
 common-lisp-controller (3.67) unstable; urgency=low
 
   * Now clc-send-command can handle a clc-build-daemon

@@ -169,24 +169,19 @@ Returns nothing"
 	    ("cl-systems:**;*.system" ,(make-pathname :directory (append (pathname-directory system-root)
 									 (list :wild-inferiors))
 						      :name :wild
-						      :type "system"))
-	    ("cl-systems:;**;*.asd" ,(make-pathname :directory (append (pathname-directory system-root)
-									  (list :wild-inferiors))
-						       :name :wild
-						       :type "asd"))
-	    ("cl-systems:**;*.asd" ,(make-pathname :directory (append (pathname-directory system-root)
-									 (list :wild-inferiors))
-						      :name :wild
-						      :type "asd"))))
+						      :type "system"))))
     (when (>= version 3)
-      (flet ((compile-and-load (file)
-		(let ((file-path
-		       #-clisp (pathname file)
-		       #+clisp (translate-logical-pathname (namestring file)))
-		      (compiled-file-pathname
-		       #-clisp (translate-logical-pathname (compile-file-pathname file))
-		       #+clisp (translate-logical-pathname (namestring (compile-file-pathname file)))))
-               ;; first make the target directory:
+      (flet ((compile-and-load (pkg filename)
+	       (let* ((file (parse-namestring filename))
+		      (file-path
+		       (merge-pathnames
+			(make-pathname :name (pathname-name file)
+				       :type (pathname-type file)
+				       :directory (list :relative pkg))
+			source-root))
+			(compiled-file-pathname
+			 (compile-file-pathname file-path)))
+		  ;; first make the target directory:
 		  (ensure-directories-exist compiled-file-pathname)
 		  ;; now compile it:
 		  (compile-file file-path
@@ -196,35 +191,36 @@ Returns nothing"
 		  ;; then load it:
 		  (load compiled-file-pathname))))
         ;; first ourselves:
-        (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
+        (compile-and-load  "common-lisp-controller"
+			   "common-lisp-controller.lisp")
         ;; then the patches before defsystem:
-        (compile-and-load  "cl-library:common-lisp-controller;pre-sysdef-install.lisp")
+        (compile-and-load  "common-lisp-controller"
+			   "pre-sysdef-install.lisp")
         ;; then defsystem:
-        (compile-and-load  "cl-library:defsystem;defsystem.lisp")
+        (compile-and-load  "defsystem" "defsystem.lisp")
 	;; then asdf:
 	;; For SBCL, take advantage of it's REQUIRE/contrib directories integration
 	#+sbcl (when (boundp 'sb-ext::*module-provider-functions*)
 		 (pushnew :sbcl-hooks-require cl:*features*))
-        (compile-and-load  "cl-library:asdf;asdf.lisp")
-        (compile-and-load  "cl-library:asdf;wild-modules.lisp")
-	#+sbcl ;(ignore-errors
-		 (pushnew
+        (compile-and-load  "asdf" "asdf.lisp")
+        (compile-and-load  "asdf" "wild-modules.lisp")
+	#+sbcl (pushnew
 		  '(merge-pathnames #P".sbcl/systems/" (user-homedir-pathname))
 		  (symbol-value (intern (symbol-name '#:*central-registry*)
 					(find-package :asdf))))
-		 ;)
 	#+sbcl (setq cl:*features* (delete :sbcl-hooks-require  cl:*features*))
         ;; then the patches:
-        (compile-and-load  "cl-library:common-lisp-controller;post-sysdef-install.lisp")
+        (compile-and-load  "common-lisp-controller" "post-sysdef-install.lisp")
         ;; register ourselves:
-        (push (make-pathname :directory (pathname-directory 
-					 (translate-logical-pathname "cl-systems:dummy.system")))
-              (symbol-value (intern (symbol-name :*central-registry*)
-                                    (find-package :make))))
-	(push (make-pathname :directory (pathname-directory 
-					 (translate-logical-pathname "cl-systems:dummy.asd")))
-              (symbol-value (intern (symbol-name :*central-registry*)
-                                    (find-package :asdf))))))
+	(let ((systems (merge-pathnames
+			(make-pathname :directory '(:relative "systems"))
+			source-root)))
+	  (push systems
+		(symbol-value (intern (symbol-name :*central-registry*)
+				      (find-package :make))))
+	  (push systems
+		(symbol-value (intern (symbol-name :*central-registry*)
+				      (find-package :asdf)))))))
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)

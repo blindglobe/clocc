@@ -29,7 +29,7 @@
   (:shadow #:length #:member #:delete #:copy #:merge)
   (:export #:treep #:member #:insert #:delete #:do-avl #:avl-to-seq
            #:seq-to-avl #:copy #:merge)
-  (:import-from #:sequences sequences::avl-tree sequences::seq))
+  (:import-from #:sequences sequences::seq))
 (in-package #:avl)
 
 ;; data structure of a tree: empty tree=nil, else node

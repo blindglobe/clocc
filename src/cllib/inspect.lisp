@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.28 2002/02/12 16:02:19 sds Exp $
+;;; $Id: inspect.lisp,v 1.29 2002/04/03 19:24:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,7 +15,7 @@
   (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `open-socket-server'
   (require :port-net (translate-logical-pathname "port:net"))
-  ;; `browse-url'
+  ;; `browse-url', `flush-http'
   (require :cllib-url (translate-logical-pathname "cllib:url"))
   ;; `string-beg-with'
   (require :cllib-string (translate-logical-pathname "cllib:string"))

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.44 2002/06/05 14:07:19 sds Exp $
+;;; $Id: net.lisp,v 1.45 2002/06/20 13:24:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -230,7 +230,7 @@
                   (car loc) (caddr loc)))
   #+lispworks
   (multiple-value-bind (ho1 po1) (comm:socket-stream-peer-address sock)
-    (multiple-value-bind (ho1 po2) (comm:socket-stream-address sock)
+    (multiple-value-bind (ho2 po2) (comm:socket-stream-address sock)
       (values (ipaddr-to-dotted ho1) po1
               (ipaddr-to-dotted ho2) po2)))
   #+(and sbcl db-sockets)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.49 2004/06/25 18:19:41 sds Exp $
+;;; $Id: math.lisp,v 2.50 2004/06/28 13:22:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,6 +39,7 @@
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    mdl-normalize mdl-denormalize mdl-normalize-function
+   normalizer-table normalize-function-list
    kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
@@ -1175,6 +1176,45 @@ When the distribution is not discreet, entropy is not available."
 (defun mdl-normalize-function (function mdl)
   "return a normalized version of FUNCTION"
   (lambda (x) (mdl-normalize (funcall function x) mdl)))
+
+;; when the mdl argument is a constant object, access slots
+;; note that this is _NOT_ safe in general and compilers must _NOT_ do this
+;; automatically: the constant argument's slots might be modified elsewhere
+#|
+ (define-compiler-macro mdl-normalize (&whole form value mdl)
+  (if (mdl-p mdl)
+      `(/ (- ,value ,(mdl-mn mdl)) ,(mdl-sd mdl))
+      form))
+ (define-compiler-macro mdl-denormalize (&whole form value mdl)
+  (if (mdl-p mdl)
+      (+ (* ,value ,(mdl-sd mdl)) ,(mdl-mn mdl))
+      form))
+|#
+
+(defun normalizer-table (functions list &key (out *standard-output*)
+                         &aux (mdl-ht (make-hash-table)))
+  "Return the HASH-TABLE mapping functions to their normalizers.
+FUNCTIONS is a list of lists of symbols, each naming a function."
+  (dolist (fl functions mdl-ht)
+    (dolist (f fl)
+      (unless (gethash f mdl-ht)
+        (let ((mdl (standard-deviation-mdl list :key (fdefinition f))))
+          (when out (format out "~&~30@S: ~S~%" f mdl))
+            (setf (gethash f mdl-ht) mdl))))))
+
+(defun normalize-function-list (fl mdl-ht)
+  "Return a function which is a sum of elements of FL normalized with MDL-HT.
+If A and B are functions, then
+ (A B) ==> (lambda (x) (+ (A/N x) (B/N x)))
+where `X/N' means normalized with (GETHASH X MDL-HT)"
+  `(lambda (x)
+     (+ ,@(mapcar (lambda (f)
+                    ;; what if the user modifies mdl-ht and expects
+                    ;; the returned functions to change automatically?
+                    ;;(let ((m (gethash f mdl-ht)))
+                    ;;  `(/ (- (,f x) ,(mdl-mn m)) ,(mdl-sd m)))
+                    `(mdl-normalize (,f x) ,(gethash f mdl-ht)))
+                  fl))))
 
 ;;;
 ;;; information-theoretic and statistical measures of prediction performance

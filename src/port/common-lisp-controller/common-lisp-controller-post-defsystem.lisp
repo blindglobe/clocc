@@ -89,7 +89,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (asdf:oos  module-name
+       (mk:oos  module-name
 		  :load
                   :load-source-instead-of-binary nil
                   :load-source-if-no-binary nil

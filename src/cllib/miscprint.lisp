@@ -1,10 +1,10 @@
 ;;; print misc special opjects
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.15 2004/06/17 20:48:33 sds Exp $
+;;; $Id: miscprint.lisp,v 1.16 2004/12/24 19:10:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)

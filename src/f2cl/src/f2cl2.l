@@ -106,6 +106,24 @@ Tag being parsed:| (cadr x))))
      (cond ((eq (car l) '+) (setq l (cdr l)))
            ((eq (car l) '-) (setq l (cons 0 l))))
 
+     ;; This is a hack.  Let's try to identify some logical
+     ;; operations.  If we find them we rewrite the expression with
+     ;; parentheses and parse it normally.  Thus, x .le. y*z is
+     ;; written as (x) .le. (y*z).
+     (dolist (log-op '(<= < >= > equal ><))
+       (let ((split (list-split-multi log-op l)))
+	 (when (cdr split)
+	   ;; The expression was split into parts for the given
+	   ;; logical op.  Rewrite the expression with appropropriate
+	   ;; parens.
+	   (let ((rewrite nil))
+	     (dolist (s split)
+	       (push s rewrite)
+	       (push log-op rewrite))
+	     ;; The first element of rewrite is the operator.  Need to
+	     ;; remove it.
+	     (setf l (nreverse (cdr rewrite)))))))
+	       
      (setq x (list-split-multi '+ l))
      (setq x (list x (extract '(+ -) l)))
      (setq y (list-itp (mapcar #'id-term (car x)) 
@@ -115,14 +133,15 @@ Tag being parsed:| (cadr x))))
 ;-----------------------------------------------------------------------------
 
 (defun id-term (l)
- (prog (x)
-     (setq x (apply #'append (mapcar #'(lambda (x) (list-split-bin '/ x))
-                                    (list-split-multi '* l))))
+  (prog (x)
+     (setq x (apply #'append (mapcar #'(lambda (x)
+					 (list-split-bin '/ x))
+				     (list-split-multi '* l))))
      (setq x (list x (extract '(* /) l)))
      (if (and (equal (caar x) '(-1)) (equal (cadr x) '(*)))
          (return `(- ,(id-factor1 (cadar x)))))
      (return (list-itp (mapcar #'id-factor1 (car x)) 
-                      (cadr x)))))
+		       (cadr x)))))
 
 ;-----------------------------------------------------------------------------
 (defun id-factor1 (l)
@@ -430,8 +449,17 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.32 2003/11/13 22:16:59 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.33 2004/08/11 16:51:32 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.33  2004/08/11 16:51:32  rtoy
+;;; A possible fix for the parsing bug wherein x .le. y*z was parsed as (x
+;;; .le. y) * z.
+;;;
+;;; We look for logical operations and rewrite the expression with
+;;; parentheses around the left and right parts of the operation.  Thus x
+;;; .le. y*z becomes (x) .le. (y*z), which will be parsed correctly by the
+;;; rest of the routines.
+;;;
 ;;; Revision 1.32  2003/11/13 22:16:59  rtoy
 ;;; Try to be smarter about generating args to functions, which is an
 ;;; issue if the arg is an element of an array.  If we know the declared

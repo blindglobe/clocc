@@ -1,9 +1,13 @@
-;;;; $Id: rng.lisp,v 1.5 2001/03/29 21:21:56 sds Exp $
+;;;; $Id: rng.lisp,v 1.6 2001/08/26 13:50:33 rtoy Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.6  2001/08/26 13:50:33  rtoy
+;;;;  Add Marsaglia's Ziggurat method for generating exponential and
+;;;;  Gaussian variates.  Almost twice as fast as any of the others.
+;;;;
 ;;;;  Revision 1.5  2001/03/29 21:21:56  sds
 ;;;;  (gen-exponential-variate-sa, gen-exponential-variate-algorithm-ma,
 ;;;;  gen-exponential-variate-ea, gen-exponential-variate-ea-2):
@@ -91,6 +95,48 @@
 (deftype non-negative-float (type &optional hi)
   `(or (member ,(coerce 0 type))
        (,type (,(coerce 0 type)) ,(or hi *))))
+
+;; Initialize tables for Marsaglia's Ziggurat method of generating
+;; random numbers.  See http://www.jstatsoft.org for a reference.
+;;
+;; Let 0 = x[0] < x[1] < x[2] <...< x[n].  Select a set of rectangles
+;; with common area v such that
+;;
+;; x[k]*(f(x[k-1]) - f(x[k])) = v
+;;
+;; and
+;;
+;;              inf
+;; v = r*f(r) + int f(x) dx
+;;               r
+;;
+;; where r = x[n].
+;;
+(defun ziggurat-init (n r v scale f finv)
+  ;; n = one less than the number of elements in the tables
+  ;; r = x[n]
+  ;; v = common area term
+  ;; scale = 2^scale is the scaling to use to make integers
+  ;; f = density function
+  ;; finv = inverse density function
+  (let ((x (make-array (1+ n) :element-type 'double-float))
+	(fx (make-array (1+ n) :element-type 'double-float))
+	(k-table (make-array (1+ n) :element-type '(unsigned-byte 32)))
+	(w-table (make-array (1+ n) :element-type 'double-float)))
+    (setf (aref x n) r)
+    (loop for k from (1- n) downto 1 do
+	  (let ((prev (aref x (1+ k))))
+	    (setf (aref x k) (funcall finv (+ (/ v prev)
+					      (funcall f prev))))
+	    (setf (aref fx k) (funcall f (aref x k)))))
+    (loop for k from 1 to n do
+	  (setf (aref k-table k)
+		(floor (scale-float (/ (aref x (1- k)) (aref x k)) scale)))
+	  (setf (aref w-table k)
+		(* (aref x k) (expt .5d0 scale))))
+    (setf (aref k-table 0) (floor (scale-float (/ (* r (funcall f r)) v) scale)))
+    (setf (aref w-table 0) (* (/ v (funcall f r)) (expt 0.5d0 scale)))
+    (values k-table w-table fx)))
 
 ;;;;-------------------------------------------------------------------------
 ;;;;
@@ -113,6 +159,7 @@
 ;;;    gen-exponential-variate-ea
 ;;;    gen-exponential-variate-ea-2
 ;;;    gen-exponential-variate-ratio
+;;;    gen-exponential-variate-ziggurat
 ;;;
 ;;; These don't seem to work:
 ;;;    gen-exponential-variate-algorithm-ma
@@ -538,18 +585,55 @@ mean of 1:
       ((<= (* u u) (exp (- (/ v u mu))))
        (/ v u)))))
 
-;;; Pick the one that works best for you.
-;;;
-;;; 500000 numbers generated.  Time is elapsed real time in seconds,
-;;; Second number is bytes consed.
-;;;
-;;; CPU	          N    Log      Algo-A  Ratio
-;;; U-30 300  500000   0.69     0.85     1.6
-;;;                    8M       8M       8M
+;; Marsaglia's Ziggurat method for generating exponential variates.
+(let ((r 7.69711747013104972d0))
+  (flet ((density (x)
+	   (declare (type (double-float (0d0)) x))
+	   (exp (- x))))
+    (declare (inline density))
+    (multiple-value-bind (k-table w-table f-table)
+	(ziggurat-init 255 r 0.0039496598225815571993d0 32
+		       #'density
+		       #'(lambda (x)
+			   (- (log x))))
+      (defun gen-exponential-variate-ziggurat (mu state)
+	(declare (type (double-float 0d0) mu)
+		 (random-state state)
+		 (optimize (speed 3)))
+	(loop
+	    (let* ((j (random (ash 1 32) state))
+		   (i (logand j 255))
+		   (x (* j (aref w-table i))))
+	      (when (< j (aref k-table i))
+		(return (* mu x)))
+	      (when (zerop i)
+		(return (* mu (- r (log (random 1d0 state))))))
+	      (when (< (* (random 1d0 state) (- (aref f-table (1- i))
+						(aref f-table i)))
+		       (- (density x) (aref f-table i)))
+		(return (* mu x)))))))))
 
+;;; Some timing results on a 866 MHz Pentium III:
+;;;
+;;; (cllib::time-expo 5000000)
+;;;
+;;; Method 	real	user	sys	cons
+;;;
+;;; Log		1.97	1.66	0.27	79998968
+;;; Algo S	2.15	1.81	0.3	79998968
+;;; SA		1.99	1.59	0.35	79998968
+;;; EA		2.7	2.38	0.29	79998968
+;;; EA-2	2.34	1.92	0.38	79998976
+;;; Ratio	4.18	3.75	0.3	79998976
+;;; Zigg	1.28	0.94	0.32	79998976
+;;;
+;;; On this platform, Margaglia's Ziggurat method is far and away the
+;;; fastest.
+
+;;; Pick the one that works best for you.
 
 (defmacro gen-exponential-variate (mu state)
-  `(gen-exponential-variate-log-method ,mu ,state))
+  `(gen-exponential-variate-ziggurat ,mu ,state))
 
 
 ;;;;-------------------------------------------------------------------------
@@ -839,7 +923,66 @@ of zero and a variance of 1.
 		     (<= xs (- (* 4.0d0 (log u))))))
 	    (return-from gen-gaussian-variate-ratio x))))))
 
-;;; Select one that works for you
+;; Marsaglia's Ziggurat method for Gaussians
+(let ((r 3.442619855899d0))
+  (flet ((density (x)
+	   (declare (double-float x)
+		    (optimize (speed 3) (safety 0)))
+	   (exp (* -0.5d0 x x))))
+    (declaim (inline density))
+    (multiple-value-bind (k-table w-table f-table)
+	(ziggurat-init 127 r 9.91256303526217d-3 31
+		       #'density
+		       #'(lambda (x)
+			   (sqrt (* -2 (log x)))))
+      (defun gen-gaussian-variate-ziggurat (state)
+	(declare (random-state state)
+		 (optimize (speed 3)))
+	(loop
+	    ;; We really want a signed 32-bit random number. So make a
+	    ;; 32-bit unsigned number, take the low 31 bits as the
+	    ;; number, and use the most significant bit as the sign.
+	    ;; Doing this in other ways can cause consing.
+	    (let* ((ran (random (ash 1 32) state))
+		   (sign (ldb (byte 1 31) ran))
+		   (j (if (plusp sign)
+			  (- (ldb (byte 31 0) ran))
+			  (ldb (byte 31 0) ran)))
+		   (i (logand j 127))
+		   (x (* j (aref w-table i))))
+	      (when (< (abs j) (aref k-table i))
+		(return x))
+	      (when (zerop i)
+		(loop 
+		    (let ((x (/ (- (log (random 1d0 state))) r))
+			  (y (- (log (random 1d0 state)))))
+		      (when (> (+ y y) (* x x))
+			(return-from gen-gaussian-variate-ziggurat
+			  (if (plusp j)
+			      (- (+ r x))
+			      (+ r x)))))))
+	      (when (< (* (random 1d0 state) (- (aref f-table (1- i))
+						(aref f-table i)))
+		       (- (density x) (aref f-table i)))
+		(return x))))))))
+
+
+;;; Some timing results on a 866 MHz Pentium III:
+;;;
+;;; (cllib::time-gaussian 1000000)
+;;;
+;;; Method 	real	user	sys	cons
+;;;
+;;; Polar	0.45	0.39	0.05	15994880
+;;; NA		0.88	0.71	0.16	39997432
+;;; Box/Trig	0.5	0.4	0.08	16003064
+;;; Ratio	0.58	0.5	0.08	16003064
+;;; Zigg	0.28	0.22	0.05	16437240
+;;;
+;;; Based on these results, Marsalia's Ziggurat method is far and away
+;;; the fastest.
+
+;;; Select one that works for you.
 (defmacro gen-gaussian-variate (state)
   `(gen-gaussian-variate-polar ,state))
 
@@ -1680,7 +1823,8 @@ with mean M:
 		     #'gen-exponential-variate-sa
 		     #'gen-exponential-variate-ea
 		     #'gen-exponential-variate-ea-2
-		     #'gen-exponential-variate-ratio))
+		     #'gen-exponential-variate-ratio
+		     #'gen-exponential-variate-ziggurat))
       (timer f))))
 
 (defun time-gaussian (n)
@@ -1697,7 +1841,8 @@ with mean M:
     (dolist (f (list #'gen-gaussian-variate-polar
 		     #'gen-gaussian-variate-algorithm-na
 		     #'gen-gaussian-variate-box-trig
-		     #'gen-gaussian-variate-ratio))
+		     #'gen-gaussian-variate-ratio
+		     #'gen-gaussian-variate-ziggurat))
       (timer f))))
 
 (defun time-cauchy (n)

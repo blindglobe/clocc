@@ -3,8 +3,11 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.2 2000/07/21 17:48:29 rtoy Exp $
+;;; $Id: quadpack.system,v 1.3 2000/07/21 22:12:35 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.3  2000/07/21 22:12:35  rtoy
+;;; :ARRAY-SLICING should default to NIL.
+;;;
 ;;; Revision 1.2  2000/07/21 17:48:29  rtoy
 ;;; Add some support for :compiler-options if MK defsystem supports it.
 ;;;
@@ -28,7 +31,7 @@
 
 
 ;; Convert a Fortran file to Lisp and compile the Lisp file.
-(defun f2cl-compile (filename &key output-file error-file array-slicing (array-type 'array))
+(defun f2cl-compile (filename &key output-file error-file (array-slicing t) (array-type 'array))
   (compile-file (f2cl filename :array-slicing array-slicing
 		      :array-type array-type)
 		:output-file output-file :error-file error-file))

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; init-environment.lisp --
 ;;; This file is really hairy.  I decide to leave it so.  The
@@ -138,7 +138,14 @@
 
   #+allegro
   (setf *common-lisp-implementation*
-	(make-instance 'allegro :feature-tag :allegro))
+    (make-instance 'allegro :feature-tag :allegro
+		   :case-sensitive 
+		   (case excl:*current-case-mode*
+		     ((:case-sensitive-lower :case-sensitive-upper)
+		      t)
+		     (t 
+		      nil))
+		   :characters-16bits (when (find :ics cl:*features*) t)))
 
   #+lispworks
   (setf *common-lisp-implementation*

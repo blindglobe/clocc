@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; utilities.lisp --
 ;;; A random collection of interfaces to some general functionalities which
@@ -20,6 +20,11 @@
 The value is implementation dependent."
   (pathname-type (compile-file-pathname *default-pathname-defaults*)))
 
+
+(defun binary-directory-name ()
+  "Returns a string for a unique binary directory name for the
+Common Lisp implementation"
+  (software-binary-directory-name *common-lisp-implementation*))
 
 ;;; file-system-directory-separator --
 

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; env-package.lisp --
 ;;;
@@ -154,6 +154,7 @@
   ;;--------------------------------------------
   ;; Across the board utilities.
   (:export #:compiled-file-extension
+	   #:binary-directory-name
 	   #:file-system-directory-separator
 	   #:current-working-directory
 	   #:cwd

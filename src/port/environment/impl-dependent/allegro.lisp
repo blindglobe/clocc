@@ -14,6 +14,15 @@
 (defmethod current-directory-pathname ((cl-implementation cl.env:allegro))
   (pathname (excl:current-directory)))
 
+;;; Override generic software-binary-directory-name method
+
+(defmethod software-binary-directory-name ((software allegro))
+  (concatenate 'string
+    (string-downcase (symbol-name (cl-feature-tag software)))
+    "-"
+    (if (software-case-sensitive software) "m" "a")
+    (if (software-characters-16bits software) "16" "8")))
+
 
 ;;; DEFSYSTEM utilities
 #|

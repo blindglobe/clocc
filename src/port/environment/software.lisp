@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; software.lisp --
 ;;;
@@ -48,7 +48,10 @@
   (:default-initargs :feature-tag :sbcl))
 
 (defclass allegro (generic-common-lisp-implementation)
-  ()
+  ((case-sensitive :type boolean :initarg :case-sensitive
+		   :accessor software-case-sensitive)
+   (characters-16bits :type boolean :initarg :characters-16bits
+		      :accessor software-characters-16bits))
   (:default-initargs :feature-tag :allegro))
 
 (defclass lispworks (generic-common-lisp-implementation)
@@ -80,6 +83,14 @@
   (:default-initargs :feature-tag :corman-lisp))
 
 (defclass eclipse (generic-common-lisp-implementation) ())
+
+
+;; The default binary directory name is the lowercase of the feature tag
+
+(defgeneric software-binary-directory-name ((software software)))
+
+(defmethod software-binary-directory-name ((software software))
+  (string-downcase (symbol-name (cl-feature-tag software))))
 
 
 ;;; end of file -- software.lisp

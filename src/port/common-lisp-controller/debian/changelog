@@ -1,3 +1,9 @@
+common-lisp-controller (3.85) unstable; urgency=low
+
+  * We don't need to use sudo as we are root anyway. Closes: #231008 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Feb 2004 23:09:19 +0100
+
 common-lisp-controller (3.84) unstable; urgency=medium
 
   * The spool directory should be world-writable to be any good! 

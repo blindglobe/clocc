@@ -63,62 +63,62 @@
 			      :version (common-lisp:software-version))))
 
 	((featurep :linux)
-	 (setf *operating-system* (make-instance 'Linux)))
+	 (setf *operating-system* (make-instance 'linux)))
 
 	(t
-	 (setf *operating-system* (make-instance 'Unix))))
+	 (setf *operating-system* (make-instance 'unix))))
 
   #+allegro
   (cond ((featurep :linux)
-	 (setf *operating-system* (make-instance 'Linux)))
+	 (setf *operating-system* (make-instance 'linux)))
 
 	((featurep :unix)
-	 (setf *operating-system* (make-instance 'Unix)))
+	 (setf *operating-system* (make-instance 'unix)))
 
 	((featurep :mswindows)
 	 (if (featurep :windows-32)
-	     (setf *operating-system* (make-instance 'MS-Windows-32))
-	     (setf *operating-system* (make-instance 'MS-Windows))))
+	     (setf *operating-system* (make-instance 'ms-windows-32))
+	     (setf *operating-system* (make-instance 'ms-windows))))
 
 	(t)				; do nothing?
 	)
 
   #+lispworks
   (cond ((featurep :linux)
-	 (setf *operating-system* (make-instance 'Linux)))
+	 (setf *operating-system* (make-instance 'linux)))
 
 	((featurep :unix)
-	 (setf *operating-system* (make-instance 'Unix)))
+	 (setf *operating-system* (make-instance 'unix)))
 
 	((featurep :win32)
-	 (setf *operating-system* (make-instance 'MS-Windows-32)))
+	 (setf *operating-system* (make-instance 'ms-windows-32)))
 
 	(t)				; do nothing?
 	)
 
   #+clisp
   (cond ((featurep :unix)
-	 (setf *operating-system* (make-instance 'Unix)))
+	 (setf *operating-system* (make-instance 'unix)))
 
 	((featurep :os/2)
-	 (setf *operating-system* (make-instance 'OS/2)))
+	 (setf *operating-system* (make-instance 'os/2)))
 
 	((featurep :ms-dos)
-	 (setf *operating-system* (make-instance 'MS-DOS)))
+	 (setf *operating-system* (make-instance 'ms-dos)))
 
 	((featurep :win32)
-	 (setf *operating-system* (make-instance 'MS-Windows)))
+	 (setf *operating-system* (make-instance 'ms-windows)))
 
 	((featurep :amiga)
-	 (setf *operating-system* (make-instance 'Amiga)))
+	 (setf *operating-system* (make-instance 'amiga)))
 
 	(t)				; do nothing?
 	)
 
-  #+cmu
+  #+(and cmu (not :|18c|))
   (setf *os* *operating-system*)	; This should become a SYMBOL-MACRO.
 
-  #-cmu
+  #+(or (not cmu) (and cmu :|18c|))
   (define-symbol-macro *os* *operating-system*)
 	
   ;;---------------------------------------
@@ -176,10 +176,10 @@
   (setf *common-lisp-implementation*
 	(make-instance 'scl :feature-tag :genera))
 
-  #+cmu
+  #+(and cmu (not :|18c|))
   (setf *cl* *common-lisp-implementation*) ; This should become a SYMBOL-MACRO.
 
-  #-cmu
+  #+(or (not cmu) (and cmu :|18c|))
   (define-symbol-macro *cl* *common-lisp-implementation*)
 
   )

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-2-1 Mon 13:57:58 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-2-1 Mon 14:33:10 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.26 1999/02/01 18:59:07 sds Exp $
+;;; $Id: date.lisp,v 1.27 1999/02/01 19:34:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.27  1999/02/01 19:34:04  sds
+;;; Added `purge-string' and `*string-junk*'.
+;;; Fixed `string->dttm' for the case when the date starts with a weekday.
+;;;
 ;;; Revision 1.26  1999/02/01 18:59:07  sds
 ;;; Use `string-tokens' in `date'.
 ;;;
@@ -226,27 +230,36 @@ Returns the number of seconds since the epoch (1900-01-01)."
         (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d GMT"
                 ye mo da (aref +week-days+ dd) ho mi se))))
 
+(defcustom *string-junk* (simple-array character (5))
+  (mk-arr 'character '(#\: #\- #\, #\. #\/))
+  "The characters removed from a string by `purge-string'.")
+
+(defsubst purge-string (str)
+  "Destructively remove junk from string."
+  (declare (simple-string str))
+  (nsubstitute-if
+   #\Space (lambda (cc) (find cc *string-junk* :test #'char=)) str))
+
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (destructuring-bind (ye mo da dd ho mi se zo)
-      (string-tokens
-       (nsubstitute-if
-        #\Space (lambda (c) (find c #(#\: #\- #\, #\. #\/))) xx))
-    (cond ((and (numberp ye) (numberp da)
-                (or (numberp mo) (setq mo (or (infer-month mo) mo))))
-           (if (symbolp dd)
-               (encode-universal-time (or se 0) (or mi 0) (or ho 0)
-                                      (min ye da) mo (max ye da)
-                                      (infer-timezone zo))
-               (encode-universal-time (or mi 0) (or ho 0) (or dd 0)
-                                      (min ye da) mo (max ye da)
-                                      (infer-timezone se))))
-          ((and (symbolp ye) (numberp mo) (numberp dd)
-                (or (numberp da) (setq da (or (infer-month da) da))))
-           (encode-universal-time (or se 0) (or mi 0) (or ho 0)
-                                  mo da dd (infer-timezone zo)))
-          ((error "string->dttm: `~a': cannot parse" xx)))))
+  (let ((tokens (string-tokens (purge-string xx) :max 8)))
+    (multiple-value-bind (ye mo da dd ho mi se zo)
+        (values-list (if (symbolp (car tokens)) (cdr tokens) tokens))
+      (cond ((and (numberp ye) (numberp da)
+                  (or (numberp mo) (setq mo (or (infer-month mo) mo))))
+             (if (symbolp dd)
+                 (encode-universal-time (or se 0) (or mi 0) (or ho 0)
+                                        (min ye da) mo (max ye da)
+                                        (infer-timezone zo))
+                 (encode-universal-time (or mi 0) (or ho 0) (or dd 0)
+                                        (min ye da) mo (max ye da)
+                                        (infer-timezone se))))
+            ((and (symbolp ye) (numberp mo) (numberp dd)
+                  (or (numberp da) (setq da (or (infer-month da) da))))
+             (encode-universal-time (or se 0) (or mi 0) (or ho 0)
+                                    mo da dd (infer-timezone zo)))
+            ((error "string->dttm: ~s: cannot parse" xx))))))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."
@@ -299,13 +312,8 @@ The argument can be:
   (:method ((xx string))
            ;; The following formats are accepted:
            ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
-           (destructuring-bind (ye mo da)
-               (string-tokens
-                (nsubstitute-if
-                 #\Space (lambda (ch) (or (char= ch #\-) (char= ch #\,)
-                                          (char= ch #\.) (char= ch #\/)))
-                 xx)
-                :max 3)
+           (multiple-value-bind (ye mo da)
+               (values-list (string-tokens (purge-string xx) :max 3))
              (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
                  (mk-date :ye da :mo (infer-month ye) :da mo))))
   (:method ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+

@@ -46,6 +46,6 @@ Proposed Changes to Common Lisp Controller V4
     2. The database file for user packages will be in ~/.clc/user-packages.
        The format is simply to have store one registered directory name per
        line. This file will be read when the REQUIRE command is used. This
-       database will take precedence of Common Lisp Controller's system
+       database will take precedence over Common Lisp Controller's system
        root database (/usr/share/common-lisp/systems/).
 

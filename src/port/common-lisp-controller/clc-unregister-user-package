@@ -1,0 +1,49 @@
+#!/bin/sh
+
+set -e
+
+PROGNAME=$(basename $0)
+
+if [ ! -d "$HOME" ]; then
+  echo "User home directory $HOME does not exist as a directory" >&2
+  exit 3
+fi
+
+CLC_USER_DIR=$HOME/.clc
+
+if [ ! -d "$CLC_USER_DIR" ]; then
+  echo "User-level CLC directory $CLC_USER_DIR does not exist."
+  echo "Maybe you never registered any user packages."
+  exit 3
+fi
+
+CLC_USER_DB=$HOME/.clc/user-packages
+
+if [ ! -f "$CLC_USER_DB" ]; then
+  "No user packages are currently registered."
+  exit 0
+fi
+
+if [ -z "$1" ] ; then
+ cat <<EOF
+usage: $PROGNAME package-dir
+
+registers a Common Lisp package to the Common Lisp Controller system.
+EOF
+    exit 1
+fi
+
+PKG_DIR="$1"
+if [ "$PKG_DIR" = "." ]; then
+  PKG_DIR=$(pwd)
+fi
+
+found=$(grep "^${PKG_DIR}\$" $CLC_USER_DB || true)
+
+if [ "$found" ]; then
+    grep -v  "^${PKG_DIR}\$" $CLC_USER_DB > ${CLC_USER_DB}.new
+    mv ${CLC_USER_DB}.new $CLC_USER_DB
+else
+    echo "Directory $PKG_DIR is not registered as a CLC user package"
+fi
+

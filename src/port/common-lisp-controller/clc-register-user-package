@@ -36,7 +36,7 @@ PKG_DIR="$1"
 if [ "$PKG_DIR" = "." ]; then
   PKG_DIR=$(pwd)
 fi
-PKG_NAME=$(echo "$PKG_DIR" | sed -e 's@.*/\([a-zA-Z0-9]*\)@\1@')
+PKG_NAME=$(echo "$PKG_DIR" | sed -e 's@.*/\([a-zA-Z0-9\-]*\)@\1@')
 ASDF_FILE="$PKG_DIR/$PKG_NAME.asd"
 
 if [ ! \( -d "$PKG_DIR" -o  -h "$PKG_DIR" \) ] ; then    

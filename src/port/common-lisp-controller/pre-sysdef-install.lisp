@@ -29,4 +29,5 @@
       (apply *original-require-function* args)
     (format t "~&;; Original require function not found~%")))
 
-(export 'original-require)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (export 'original-require))

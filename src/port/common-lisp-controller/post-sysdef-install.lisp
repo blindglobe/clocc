@@ -10,84 +10,15 @@
     (error "You need to load the asdf system before loading or compiling this file!")))
 
 
-;; load-only-compiled-op is an ASDF operation that only loads
-;; compiled code
-
-(in-package :asdf)
-(define-condition load-compiled-error (error)
-  ((output-file :initform nil :initarg :output-file :reader output-file))
-  (:report (lambda (c s)
-	       (format s "Error when performing load-compiled-op with output file ~A"
-		       (output-file c)))))
-
-(define-condition load-compiled-error-not-exist (load-compiled-error)
-  ()
-  (:report (lambda (c s)
-	       (format s "During load-compiled-op, compiled file ~A does not exist"
-		       (output-file c)))))
-
-(define-condition load-compiled-error-out-dated (load-compiled-error)
-  ((source-file :initform nil :initarg :source-file :reader source-file))
-  (:report (lambda (c s)
-	     (format s "During load-compiled-op, compiled file ~A is older than source file ~A"
-		     (output-file c) (source-file c)))))
-
 ;; Remove the :cltl2 that mk-defsystem3 pushes onto features
 (setq cl:*features* (delete :cltl2 *features*))
 
-(defclass load-compiled-op (load-op)
-  ()
-  (:documentation "This operation loads each compiled file for a component. If a binary component does not exist then the condition load-compiled-error-not-exist will be signaled. If both the source file and binary components exists, and if the file-write-date of the binary is earlier than the source, then the condition load-compiled-error-out-dated will be signaled."))
 
-(defmethod output-files ((operation load-compiled-op)
-			 (c cl-source-file))
-  (list (compile-file-pathname (component-pathname c))))
-
-(defmethod operation-done-p ((o load-compiled-op) (c source-file))
-  "Compare the :last-loaded time of the source-file to the file-write-date of
-the output files. If :last-loaded is not NIL and is greater
-than the maximum file-write-date of output-files, return T."
-  (let ((load-date (component-property c 'last-loaded))
-	(max-binary-date (maximum-file-write-date (output-files o c))))
-    (when (and load-date max-binary-date (>= load-date max-binary-date))
-      t)))
-  
-(defun maximum-file-write-date (files)
-  "Returns NIL if some files don't exist"
-  (let ((max nil))
-    (dolist (f files)
-      (unless (probe-file f)
-	(return nil))
-      (let ((date (file-write-date f)))
-	(if max
-	    (when (< max date)
-	      (setq max date))
-	  (setq max date))))
-    max))
-
-(defmethod perform ((o load-compiled-op) (c source-file))
-  (let* ((co (make-sub-operation o 'compile-op))
-	 (output-files (output-files co c))
-	 (source-date (when (probe-file (component-pathname c))
-			(file-write-date (component-pathname c)))))
-    (dolist (of output-files)
-      (unless (probe-file of)
-	(error 'load-compiled-error-not-exist
-	       :output-file of))
-      (when (and source-date
-		 (> source-date (file-write-date of)))
-	(error 'load-compiled-error-out-dated
-	       :output-file of
-	       :source-file (component-pathname c)))
-      (load of))
-    (setf (component-property c ':last-loaded)
-	  (maximum-file-write-date output-files))))
-
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (export 'load-compiled-op))
-
-(in-package :common-lisp-controller)
+(defun asdf-system-compiled-p (system)
+  "Returns T is an ASDF system is already compiled" 
+  (notany #'(lambda (op) (and (typep (car op) 'asdf:compile-op)
+			      (not (asdf:operation-done-p (car op) (cdr op)))))
+	  (asdf::traverse (make-instance 'asdf:compile-op) system)))
 
 (defun in-user-package (c)
   "Returns T if the ADSF component is in a component of a registered user package."
@@ -243,31 +174,30 @@ than the maximum file-write-date of output-files, return T."
 (defun require-asdf (module-name)
   (let ((system (asdf:find-system module-name)))
     (when system
-      (handler-case
-       (asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
-       (error ()
-	      (format t "~&;;;Please wait, recompiling library...")
-	      (cond
-	       (*recompiling-from-daemon*
-		(asdf:oos 'asdf:compile-op module-name))
-	       (t
-		;; first compile the depends-on
-		(dolist (sub-system
-			 ;; skip asdf:load-op at beginning of first list
-			 (cdar (asdf:component-depends-on
-				(make-instance 'asdf:compile-op) system)))
-		  (clc-require sub-system))
-		(let ((module-name-str
-		       (if (stringp module-name)
-			   module-name
-			 (string-downcase (symbol-name module-name)))))
-		  (common-lisp-controller:send-clc-command :recompile module-name-str))))
-	      (terpri)
-		(asdf:oos 'asdf:load-compiled-op module-name)
-		t)
-       (:no-error (res)
-		  (declare (ignore res))
-		  t)))))
+      (if (asdf-system-compiled-p system)
+	  (asdf:oos 'asdf:load-op module-name)
+	(progn
+	  (format t "~&;;; Please wait, recompiling library...")
+	  (cond
+	   (*recompiling-from-daemon*
+	    (asdf:oos 'asdf:compile-op module-name))
+	   (t
+	    ;; first compile the depends-on
+	    (dolist (sub-system
+			;; skip asdf:load-op at beginning of first list
+			(cdar (asdf:component-depends-on
+			       (make-instance 'asdf:compile-op) system)))
+	      (clc-require sub-system))
+	    (let ((module-name-str
+		   (if (stringp module-name)
+		       module-name
+		     (string-downcase (symbol-name module-name)))))
+	      ;; clc-build-daemon will report pkg built unless all components are removed
+	      (common-lisp-controller:send-clc-command :remove module-name-str)
+	      (common-lisp-controller:send-clc-command :recompile module-name-str))))
+	  (terpri)
+	  (asdf:oos 'asdf:load-op module-name)))
+      t)))
 
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...

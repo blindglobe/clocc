@@ -26,6 +26,12 @@ Thanks in advance, the clc maintainers.
 
 Start of report.
 
+ls -l /etc/inetd.conf:
+`ls -l /etc/inetd.conf 2>&1`
+
+dpkg -l netkit-inetd
+`dpkg -l netkit-inetd 2>&1`
+
 grep 8990 /etc/inetd.conf:
 `grep 8990 /etc/inetd.conf 2>&1`
 

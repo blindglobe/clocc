@@ -1,3 +1,11 @@
+common-lisp-controller (3.57) unstable; urgency=low
+
+  * Improved error reporting script :-(
+  * Added Pre-depends on netkit-inetd as this seems to be the 
+    cause of the build-failures...
+
+ -- Peter <pvaneynd@debian.org>  Tue,  4 Mar 2003 21:56:59 +0100
+
 common-lisp-controller (3.56) unstable; urgency=low
 
   * Rename remove-defsystem to remove-clc, install-defsystem to

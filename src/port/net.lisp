@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.43 2002/04/25 18:02:31 sds Exp $
+;;; $Id: net.lisp,v 1.44 2002/06/05 14:07:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -162,7 +162,8 @@
   #+lispworks 'comm:socket-stream
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:stream-socket
-  #-(or allegro clisp cmucl gcl lispworks) 'stream)
+  #-(or allegro clisp cmu gcl lispworks
+	(and sbcl (or db-sockets net.sbcl.sockets))) 'stream)
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
@@ -268,7 +269,7 @@
   #+gcl 'si:socket-stream
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:passive-socket
-  #-(or allegro clisp cmucl gcl (and sbcl (or net.sbcl.sockets db-sockets))) t)
+  #-(or allegro clisp cmu gcl (and sbcl (or net.sbcl.sockets db-sockets))) t)
 
 (defun open-socket-server (&optional port)
   "Open a `generic' socket server."
@@ -414,7 +415,7 @@ whichever comes first. If there was a timeout, return NIL."
   (net.sbcl.sockets:wait-for-input-data stream timeout)
   #+(and sbcl db-sockets)
   (sb-sys:wait-until-fd-usable (sb-sys:fd-stream-fd stream) :input timeout)
-  #-(or clisp cmu sbcl)
+  #-(or clisp cmu (and sbcl (or net.sbcl.sockets db-sockets)))
   (error 'not-implemented :proc (list 'wait-for-stream stream timeout)))
 
 (defun open-unix-socket (path &key (kind :stream) bin)
@@ -437,7 +438,7 @@ Kind can be :stream or :datagram."
     (sockets:socket-make-stream socket :input t :output t
                                 :buffering :none
                                 :element-type '(unsigned-byte 8)))
-  #-(or cmu allegro sbcl)
+  #-(or allegro cmu (and sbcl (or net.sbcl.sockets db-sockets)))
   (open path :element-type (if bin '(unsigned-byte 8) 'character)
         :direction :io))
 

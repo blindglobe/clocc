@@ -177,7 +177,24 @@ is not included")
 (defmacro with-array-data ((data-var offset-var array) &rest body)
   `(multiple-value-bind (,data-var ,offset-var)
     (find-array-data ,array)
-    ,@body))
+     ,@body))
+
+(defun multi-array-data-aux (array-info body)
+  (let ((results body))
+    (dolist (a (reverse array-info))
+      (destructuring-bind (array a-type var-name offset-var)
+	  a
+	(setf results
+	      `((multiple-value-bind (,var-name ,offset-var)
+		    (find-array-data ,array)
+		  (declare (ignorable ,offset-var ,var-name)
+			   (type f2cl-lib:integer4 ,offset-var)
+			   (type (simple-array ,a-type (*)) ,var-name))
+		  ,@results)))))
+    (first results)))
+
+(defmacro with-multi-array-data (array-info &rest body)
+  (multi-array-data-aux array-info body))
 
 ;; Create an array slice for the array named VNAME whose elements are
 ;; of type TYPE.  The slice starts at the indices INDICES and the
@@ -1283,8 +1300,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.55 2003/11/12 05:33:22 rtoy Exp $
+;;; $Id: macros.l,v 1.56 2003/11/13 05:37:11 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.56  2003/11/13 05:37:11  rtoy
+;;; Add macro WITH-MULTI-ARRAY-DATA.  Basically like WITH-ARRAY-DATA, but
+;;; takes a list of array info so we don't get deeply nested code when
+;;; there are lots of arrays.
+;;;
+;;; Keep WITH-ARRAY-DATA around for backward compatibility.
+;;;
 ;;; Revision 1.55  2003/11/12 05:33:22  rtoy
 ;;; Macro to handle assigned gotos was wrong.  Fix it.
 ;;;

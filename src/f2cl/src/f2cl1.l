@@ -1707,10 +1707,9 @@ FILENAME                 File containing Fortran code
 			      (format t "  a-info, r-info, SLICE-P = ~A ~A ~A~%"
 				      a-info r-info (or (subtypep a-info 'array) r-info))
 			      ;; If the declared type is an array,
-			      ;; slice it.  If the arg is modified
-			      ;; (r-info is non-NIL) slice it.
-			      ;; Otherwise, grab just the element.
-			      (if (or r-info (subtypep a-info 'array))
+			      ;; slice it.  Otherwise, grab just the
+			      ;; element.
+			      (if (subtypep a-info 'array)
 				  `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
 				  expr))
 			     (t
@@ -2536,8 +2535,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.130 2003/11/14 04:29:31 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.131 2003/11/14 06:45:41 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.131  2003/11/14 06:45:41  rtoy
+;;; Actually, if the declared arg type is an array, we always want to
+;;; slice.  Otherwise, we just want the single element.
+;;;
 ;;; Revision 1.130  2003/11/14 04:29:31  rtoy
 ;;; Handle function calls to statement functions too so we can generate
 ;;; the correct args for them.  Do this by adding a hash table to hold

@@ -5,19 +5,6 @@
 
 (in-package "MK4")
 
-(defun compile-file-internal (input-file
-			      &rest keys
-			      &key
-			      output-file
-			      error-file
-			      (print *compile-print*)
-			      (verbose *compile-verbose*)
-			      (external-format :default)
-			      &allow-other-keys)
-  (declare (ignore output-file error-file print verbose external-format))
-
-  (apply #'compile-file input-file :load nil keys))
-
 
 ;;; run-program --
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.36 2005/03/21 13:34:02 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.37 2005/03/22 17:24:57 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -148,6 +148,10 @@
     ;; dependencies from whatever places are appropriate --
     (principal-bases :accessor Loaded-chunk-principal-bases
 		     :initform !())
+    (status :initform ':not-loaded
+	    :accessor Loaded-chunk-status)
+   ;; -- values :load-succeeded or :load-failed
+   ;; once load has been attempted
     ;; The Loadable-chunk that computes the basis of this one --
     (controller :accessor Loaded-chunk-controller
 		:initarg :controller)))
@@ -229,6 +233,20 @@
                            which differs from principal basis ~s"
 			 loaded-ch loaded-basis
 			 (Loaded-chunk-principal-bases loaded-ch))))))))
+
+;;; A loaded-chunk's basis should start with the universal-bases,
+;;; and the universal-bases should be non-empty.
+(defun loaded-chunk-bases-in-harmony (loaded-ch)
+   (let ((principals (Loaded-chunk-principal-bases loaded-ch)))
+      (and (not (null principals))
+	   (do ((pbl principals
+		     (tail pbl))
+		(bl (Loaded-chunk-basis loaded-ch)
+		    (tail bl)))
+	       ((null pbl) true)
+	     (cond ((or (null bl)
+			(not (eq (head pbl) (head bl))))
+		    (return false)))))))
 
 (defmethod derive-date ((lc Loaded-file-chunk))
    false)
@@ -366,6 +384,7 @@
 	 (cleanup-after-file-transduction
 	    (let ((*package* *package*)
 		  (*readtable* *readtable*)
+		  (success true)
 		  (fload-indent* ;;;;(+ 3 fload-indent*)
 		      (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
@@ -373,12 +392,18 @@
 				     file-ch)
 				 (File-chunk-pathname file-ch)
 				 "...")
-	       (load (File-chunk-pathname file-ch))
-	       (file-op-message "...loaded"
-				 (File-chunk-pn
-				     file-ch)
-				 false
-				 ""))))
+	       (unwind-protect
+		  (handler-bind ((error (e)
+				    (setq success false)))
+		     (load (File-chunk-pathname file-ch)))
+		  (cond (success
+			 (file-op-message "...loaded"
+					   (File-chunk-pn
+					       file-ch)
+					   false ""))
+			(t
+			 (file-op-message "...load attempt failed!"
+					  false false "")))))))
       (get-universal-time))
 
 (defgeneric loaded-chunk-set-basis (loaded-ch)
@@ -457,30 +482,28 @@
                                 [should be :object, :source, or :compile]~
                                 ~%  loaded-ch = ~s~%"
 			    manip loaded-ch)))
-	     (let ((first-time (null (Loaded-chunk-principal-bases
-				         loaded-ch))))
-		(setf (Loaded-chunk-principal-bases loaded-ch)
-		      (list (ecase manip
-			       (:source
-				(Loaded-file-chunk-source loaded-ch))
-			       (:compile
-				(place-compiled-chunk
-				   (Loaded-file-chunk-source loaded-ch)))
-			       (:object
-				(Loaded-file-chunk-object loaded-ch)))))
-		(cond (first-time
-		       (setf (Chunk-basis loaded-ch)
-			     (append (Loaded-chunk-principal-bases loaded-ch)
-				     (mapcar
-				         (\\ (callee)
-					    (place-Loaded-chunk callee false))
-					 (File-chunk-callees file-ch)))))
-		      (t
-		       (loaded-chunk-change-basis
-			   loaded-ch 
-			   (mapcar (\\ (callee)
-				      (place-Loaded-chunk callee false))
-				   (File-chunk-callees file-ch))))))))
+	     (cond ((loaded-chunk-bases-in-harmony loaded-ch)
+		    (loaded-chunk-change-basis
+			loaded-ch 
+			(mapcar (\\ (callee)
+				   (place-Loaded-chunk callee false))
+				(File-chunk-callees file-ch))))
+		   (t
+		    (setf (Loaded-chunk-principal-bases loaded-ch)
+			  (list (ecase manip
+				   (:source
+				    (Loaded-file-chunk-source loaded-ch))
+				   (:compile
+				    (place-compiled-chunk
+				       (Loaded-file-chunk-source loaded-ch)))
+				   (:object
+				    (Loaded-file-chunk-object loaded-ch)))))
+		    (setf (Chunk-basis loaded-ch)
+			  (append (Loaded-chunk-principal-bases loaded-ch)
+				  (mapcar
+				      (\\ (callee)
+					 (place-Loaded-chunk callee false))
+				      (File-chunk-callees file-ch))))))))
       (let ((selection 
 	       (cond ((eq manip ':compile)
 		      (place-File-chunk
@@ -504,6 +527,10 @@
    (object-file :initarg :object-file
 		 :accessor Compiled-file-chunk-object-file
 		 :type File-chunk)
+   (status :initform ':uncompiled
+	   :accessor Compiled-file-chunk-status)
+   ;; -- values :compile-succeeded or :compile-failed
+   ;; once compilation has been attempted
    (last-compile-time :accessor Compiled-file-chunk-last-compile-time
 		      :initform -1)))
 
@@ -589,40 +616,57 @@
 (defvar fcompl-logger* false)
 
 (defun compile-and-record (pn real-pn object-file cf-ch old-obj-write-time)
-   (prog2
-      (file-op-message "Beginning compilation of" pn real-pn "...")
-      (with-post-file-transduction-hooks
-	 (cleanup-after-file-transduction
-	    (let ((*compile-verbose* false))
-	       (cond (object-file
-		      (compile-file real-pn :output-file object-file))
-		     (t
-		      (compile-file real-pn)
-		      (setq object-file (pathname-object-version
-					   real-pn true))))
-	       (let* ((new-compile-time
-			 (and object-file
-			      (probe-file object-file)
-			      (pathname-write-time object-file)))
-		      (success
-			 (and new-compile-time
-			      (or (not old-obj-write-time)
-				  (> new-compile-time
-				     old-obj-write-time)))))
-		  (cond (fcompl-logger*
-			 (funcall fcompl-logger*
-				  real-pn (and success object-file))))
-		  (cond (success
-			 (setf (Compiled-file-chunk-last-compile-time
-				  cf-ch)
-			       new-compile-time)
-			 new-compile-time)
-			(t 
-			 (let ((comp-time (get-universal-time)))
-			    (format *error-output*
-			       "Compilation failed [time ~s]: ~s~%"
-			       comp-time real-pn))))))))
-      (file-op-message "...compiled to" object-file false "")))
+   (file-op-message "Beginning compilation of" pn real-pn "...")
+   (with-post-file-transduction-hooks
+      (cleanup-after-file-transduction
+	 (let ((*compile-verbose* false)
+	       (error-during-compilation false))
+	    (unwind-protect
+	       (handler-bind ((error (e)
+				 (setq error-during-compilation e)))
+		  (cond (object-file
+			 (compile-file real-pn :output-file object-file))
+			(t
+			 (compile-file real-pn)
+			 (setq object-file (pathname-object-version
+					      real-pn true)))))
+	      (let* ((success
+			(and (not error-during-compilation)
+			     object-file
+			     (probe-file object-file)))
+		     (new-compile-time
+			(cond (success
+			       (pathname-write-time object-file))
+			      (t
+			       (get-universal-time)))))
+		 (cond ((and success
+			     old-obj-write-time
+			     (< new-compile-time old-obj-write-time))
+			(format *error-output*
+			   "Object-file write-time anomaly ~s"
+			   object-file)
+			(setq success false)
+			(setq new-compile-time (get-universal-time))))
+		 (setf (Compiled-file-chunk-last-compile-time
+			       cf-ch)
+		       new-compile-time)
+		 (cond (success
+			(cond (fcompl-logger*
+			       (funcall fcompl-logger*
+					real-pn object-file)))
+			(setf (Compiled-file-chunk-status cf-ch)
+			      ':compile-succeeded)
+			(file-op-message "...compiled to"
+					 object-file false "")
+			new-compile-time)
+		       (t
+			(cond (fcompl-logger*
+			       (funcall fcompl-logger*
+					real-pn false)))
+			(setf (Compiled-file-chunk-status cf-ch)
+			      ':compile-failed)
+			(file-op-message "...compilation failed!"
+					 false false "")))))))))
 
 (eval-when (:compile-toplevel :load-toplevel)
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.19 2001/07/03 14:07:33 sds Exp $
+;;; $Id: url.lisp,v 2.20 2001/07/16 16:10:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -426,7 +426,7 @@ See RFC959 (FTP) &c.")
            (type (or (unsigned-byte 10) symbol list) end))
   (when req
     (apply #'format sock req) (fresh-line sock)
-    (mesg :log out "~&url-ask[~s]: `~?'~%" end req))
+    (mesg :log out "~&url-ask[~s]: `~?'~%" end (car req) (cdr req)))
   (loop :with endl :of-type list =
         (typecase end
           (integer (to-list end)) (list end)

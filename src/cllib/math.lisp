@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.50 2004/06/28 13:22:18 sds Exp $
+;;; $Id: math.lisp,v 2.51 2004/06/29 13:53:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1213,7 +1213,10 @@ where `X/N' means normalized with (GETHASH X MDL-HT)"
                     ;; the returned functions to change automatically?
                     ;;(let ((m (gethash f mdl-ht)))
                     ;;  `(/ (- (,f x) ,(mdl-mn m)) ,(mdl-sd m)))
-                    `(mdl-normalize (,f x) ,(gethash f mdl-ht)))
+                    `(mdl-normalize (,f x) ,(or (gethash f mdl-ht)
+                                                (error "~S: ~S is not in ~S"
+                                                       'normalize-function-list
+                                                       f mdl-ht))))
                   fl))))
 
 ;;;

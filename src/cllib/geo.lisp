@@ -4,24 +4,24 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.11 2001/06/11 19:43:41 sds Exp $
+;;; $Id: geo.lisp,v 2.12 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `kwd'
-  (require :symb (translate-logical-pathname "cllib:symb"))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb"))
   ;; `save-restore', `skip-search', `skip-blanks', `skip-to-line',
   ;; `read-non-blanks'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `strip-html-markup'
-  (require :html (translate-logical-pathname "cllib:html"))
+  (require :cllib-html (translate-logical-pathname "cllib:html"))
   ;; `comma'
-  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `make-url'
-  (require :url (translate-logical-pathname "cllib:url")))
+  (require :cllib-url (translate-logical-pathname "cllib:url")))
 
 (in-package :cllib)
 
@@ -420,5 +420,5 @@ is a float, such as the GDP, VALUE is a cons with the range.
       (format t " *** ~a~2%" cc)))
   (save-restore-country-list))
 
-(provide :geo)
+(provide :cllib-geo)
 ;;; geo.lisp ends here

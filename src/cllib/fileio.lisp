@@ -4,17 +4,17 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.22 2001/05/10 16:03:35 sds Exp $
+;;; $Id: fileio.lisp,v 1.23 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `+kwd+'
-  (require :symb (translate-logical-pathname "cllib:symb"))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb"))
   ;; `with-timing', `mesg'
-  (require :log (translate-logical-pathname "cllib:log")))
+  (require :cllib-log (translate-logical-pathname "cllib:log")))
 
 (in-package :cllib)
 
@@ -374,5 +374,5 @@ BASEDIR is the pathname relative to which NAME is expanded (`*datadir*')."
 
 ;;; }}}
 
-(provide :fileio)
+(provide :cllib-fileio)
 ;;; file fileio.lisp ends here

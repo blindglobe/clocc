@@ -4,19 +4,19 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
+;;; $Id: iter.lisp,v 1.6 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `to-list'
-  (require :simple (translate-logical-pathname "cllib:simple"))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; `map-vec'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `mesg'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `dot', `approx=-abs', `normalize'
-  (require :math (translate-logical-pathname "cllib:math")))
+  (require :cllib-math (translate-logical-pathname "cllib:math")))
 
 (in-package :cllib)
 
@@ -219,5 +219,5 @@ Returns the list of the 2^dim points, less if the set was degenerate."
 
 ;;; }}}
 
-(provide :iter)
+(provide :cllib-iter)
 ;;; file iter.lisp ends here

@@ -4,23 +4,23 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.9 2001/04/02 17:03:15 sds Exp $
+;;; $Id: animals.lisp,v 2.10 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `string-beg-with'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `alist->hash-table', `hash-table->alist'
-  (require :miscprint (translate-logical-pathname "cllib:miscprint"))
+  (require :cllib-miscprint (translate-logical-pathname "cllib:miscprint"))
   ;; `write-to-file', `save-restore'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `+clos-readtable+'
-  (require :closio (translate-logical-pathname "cllib:closio"))
+  (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `mesg'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `symbol-concat'
-  (require :symb (translate-logical-pathname "cllib:symb")))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb")))
 
 (in-package :cllib)
 
@@ -299,5 +299,5 @@ Returnes a fresh string."
         :while (y-or-n-p "One more game?"))
   (save-restore-network t))
 
-(provide :animals)
+(provide :cllib-animals)
 ;;; animals.lisp ends here

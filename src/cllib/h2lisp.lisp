@@ -6,15 +6,14 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.6 2001/03/29 22:17:22 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.7 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `text-stream'
-  (require :html (translate-logical-pathname "cllib:html")))
+  ;; (require :cllib-html (translate-logical-pathname "cllib:html"))
+  )
 
 (in-package :cllib)
 
@@ -27,7 +26,9 @@
 (defstruct c-dim "C dimension." dim)
 (defstruct c-cmt "C comment." data)
 
-(defun read-c-junk (stream char)
+(defun read-standalone-char (stream char) (declare (ignore stream)) char)
+
+(defun read-c-object (stream char)
   (declare (stream stream) (character char))
   (ecase char
     (#\{ (read-delimited-list #\} stream t))
@@ -53,32 +54,31 @@
         (make-c-cmt :data
                     (concatenate
                      'string "/*"
-                     (coerce
-                      (loop :for c1 :of-type character = (read-char stream)
-                            :and c2 :of-type character = #\Null :then c1
-                            :until (and (char= c2 #\*) (char= c1 #\/))
-                            :collect c1)
-                      'string) "/")))
+                     (loop :for c1 = (read-char stream t nil t)
+                           :and c2 = #\Null :then c1
+                           :until (and (char= c2 #\*) (char= c1 #\/))
+                           :collect c1)
+                     "/")))
        (#\/ (make-c-cmt :data (concatenate 'string "/" (read-line stream))))
-       (t '/)))))
+       (t #\/)))))
 
 (defun make-c-readtable (&optional (rt (copy-readtable)))
   "Make the readtable for parsing C."
-  (set-macro-character #\/ #'read-c-junk nil rt)
+  (set-macro-character #\/ #'read-c-object nil rt)
   (set-macro-character #\| #'read-standalone-char nil rt)
-  (set-macro-character #\# #'read-c-junk nil rt)
+  (set-macro-character #\# #'read-c-object nil rt)
   (set-syntax-from-char #\; #\a rt)
   (set-macro-character #\; #'read-standalone-char nil rt)
   (set-syntax-from-char #\# #\a rt)
-  (set-macro-character #\# #'read-c-junk nil rt)
+  (set-macro-character #\# #'read-c-object nil rt)
   (set-syntax-from-char #\: #\a rt)
   (set-macro-character #\: #'read-standalone-char nil rt)
   (set-syntax-from-char #\, #\a rt)
   (set-macro-character #\, #'read-standalone-char nil rt)
   (set-macro-character #\* #'read-standalone-char nil rt)
-  (set-macro-character #\{ #'read-c-junk nil rt)
+  (set-macro-character #\{ #'read-c-object nil rt)
   (set-macro-character #\} (get-macro-character #\)) nil rt)
-  (set-macro-character #\[ #'read-c-junk nil rt)
+  (set-macro-character #\[ #'read-c-object nil rt)
   (set-macro-character #\] (get-macro-character #\)) nil rt)
   (setf (readtable-case rt) :preserve)
   rt)
@@ -182,7 +182,7 @@ Return the number of forms processed.")
   (format out "~%;;; reading from ~a~2%" in)
   (unless (eq out *standard-output*)
     (format t "~%;;; reading from ~a~2%" in))
-  (loop :with *readtable* = *c-readtable* :and numf :of-type index-t = 0
+  (loop :with *readtable* = *c-readtable* :and numf = 0
         ;; :initially (setq *c-un-types* nil)
         :for line :of-type simple-string =
         (string-trim
@@ -195,8 +195,8 @@ Return the number of forms processed.")
                               (format t "~% *** Undefined types:~
 ~{~<~%~20t ~1,79:; ~a~>~^,~}~%" *c-un-types*))
                             numf))))
-        :for len :of-type index-t = (length line)
-        :with depth :of-type index-t = 0 ; #if nesting
+        :for len = (length line)
+        :with depth = 0 ; #if nesting
         :with ts :of-type text-stream = (make-text-stream :sock in)
         :do                     ; process statement
         (cond ((zerop len) (terpri out))
@@ -277,7 +277,7 @@ Return the number of forms processed.")
                (setf (ts-buff ts) line (ts-posn ts) 0)
                (let* ((ll (read-statement ts))
                       (args (mapcar #'c-convert-decl
-                                    (nsplit-list (car (last ll)) :obj #\,)))
+                                    (nsplit-list (last ll) :obj #\,)))
                       (fun (c-convert-decl (nbutlast ll))))
                  (format out "(def-c-call-out ~s
   (:arguments~{~<~%~12t ~1,79:; ~s~>~})~%  (:return-type~{ ~s~}))~%"
@@ -287,5 +287,5 @@ Return the number of forms processed.")
 ;(LET ((*readtable* (copy-readtable)))
 ;  (eval (read-from-string "(read-next ts :skip #'c-cmt-p)")))
 
-(provide :h2lisp)
+(provide :cllib-h2lisp)
 ;;; file h2lisp.lisp ends here

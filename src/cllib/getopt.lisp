@@ -5,13 +5,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: getopt.lisp,v 2.2 2000/05/08 20:10:20 sds Exp $
+;;; $Id: getopt.lisp,v 2.3 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/getopt.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `kwd'
-  (require :symb (translate-logical-pathname "cllib:symb")))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb")))
 
 (in-package :cllib)
 
@@ -70,5 +70,5 @@ allow missing (additional) non-option arguments."
         (format t "~a~%" co)
         (return t)))))
 
-(provide :getopt)
+(provide :cllib-getopt)
 ;;; file getopt.lisp ends here

@@ -4,21 +4,21 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.22 2001/09/06 16:58:58 rtoy Exp $
+;;; $Id: math.lisp,v 2.23 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `mesg', `get-float-time', `elapsed', `with-timing'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `read-from-file', `write-to-file'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `with-collect'
-  (require :simple (translate-logical-pathname "cllib:simple"))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; `call-on-split'
-  (require :list (translate-logical-pathname "cllib:list")))
+  (require :cllib-list (translate-logical-pathname "cllib:list")))
 
 (in-package :cllib)
 
@@ -703,8 +703,8 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 	    SQRT(2*%PI)  ]
 			 /
 			  0
-       
-       
+
+
          = 1/2*erf(x/sqrt(2))
 "
   (declare (double-float x))
@@ -749,7 +749,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 	 (q1 d0)
 	 (v1 (/ p1 q1))
 	 (k 1))
-    (loop 
+    (loop
 	(let ((y (funcall den k))
 	      (x (funcall num k)))
 	  (multiple-value-bind (p2 q2)
@@ -772,7 +772,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
 		  (setf p2 (* p2 (scale-float 1L0 power-of-2)))
 		  (setf q1 (* q1 (scale-float 1L0 power-of-2)))
 		  (setf q2 (* q2 (scale-float 1L0 power-of-2)))))
-		
+
 	      (psetf p0 p1
 		     p1 p2)
 	      (psetf q0 q1
@@ -1395,5 +1395,5 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   (declare (double-float c0 x0 c1 x1))
   (with-type double-float (+ (* c0 x0) (* c1 x1))))
 
-(provide :math)
+(provide :cllib-math)
 ;;; math.lisp ends here

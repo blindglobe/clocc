@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.5 2000/10/09 23:40:53 sds Exp $
+;;; $Id: sorted.lisp,v 1.6 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `print-seqs', `comma'
-  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `percent-change'
-  (require :math (translate-logical-pathname "cllib:math")))
+  (require :cllib-math (translate-logical-pathname "cllib:math")))
 
 (in-package :cllib)
 
@@ -299,5 +299,5 @@ are expensive compared with `nthcdr'."
 
 ;;; }}}
 
-(provide :sorted)
+(provide :cllib-sorted)
 ;;; file sorted.lisp ends here

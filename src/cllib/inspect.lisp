@@ -4,23 +4,23 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.25 2001/02/07 20:13:44 sds Exp $
+;;; $Id: inspect.lisp,v 1.26 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `list-length-dotted'
-  (require :simple (translate-logical-pathname "cllib:simple"))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; `class-slot-list'
-  (require :closio (translate-logical-pathname "cllib:closio"))
+  (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `open-socket-server'
-  (require :net (translate-logical-pathname "port:net"))
+  (require :port-net (translate-logical-pathname "port:net"))
   ;; `browse-url'
-  (require :url (translate-logical-pathname "cllib:url"))
+  (require :cllib-url (translate-logical-pathname "cllib:url"))
   ;; `string-beg-with'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `with-tag'
-  (require :htmlgen (translate-logical-pathname "cllib:htmlgen")))
+  (require :cllib-htmlgen (translate-logical-pathname "cllib:htmlgen")))
 
 (in-package :cllib)
 
@@ -513,5 +513,5 @@ This is useful for frontends which provide an eval/modify facility."
       (delete-package *package*))
     (values)))
 
-(provide :inspect)
+(provide :cllib-inspect)
 ;;; inspect.lisp ends here

@@ -4,11 +4,11 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: symb.lisp,v 1.6 2000/05/19 19:34:25 sds Exp $
+;;; $Id: symb.lisp,v 1.7 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/symb.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)
 
@@ -47,5 +47,5 @@
   (eq (if suff1p (keyword-concat (code key1) (code suffix1)) (code key1))
       (if suff2p (keyword-concat (code key2) (code suffix2)) (code key2))))
 
-(provide :symb)
+(provide :cllib-symb)
 ;;; file symb.lisp ends here

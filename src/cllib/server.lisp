@@ -4,16 +4,16 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: server.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
+;;; $Id: server.lisp,v 1.6 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/server.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `list-format'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `package-short-name'
-  (require :prompt (translate-logical-pathname "cllib:prompt"))
-  (require :net (translate-logical-pathname "port:net")))
+  (require :cllib-prompt (translate-logical-pathname "cllib:prompt"))
+  (require :port-net (translate-logical-pathname "port:net")))
 
 (in-package :cllib)
 
@@ -161,5 +161,5 @@ pvaneynd:~$ cat /usr/doc/cmucl/examples/Demos/Start-up-server.lisp
 |#
 
 
-(provide :server)
+(provide :cllib-server)
 ;;; file server.lisp ends here

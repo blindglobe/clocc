@@ -5,11 +5,11 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: doall.lisp,v 1.4 2000/05/12 18:29:59 sds Exp $
+;;; $Id: doall.lisp,v 1.5 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/doall.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   (require :monitor (translate-logical-pathname
                      "clocc:src;tools;metering;metering")))
 
@@ -35,5 +35,5 @@ ARGS is passed to FUNC.
       (setq *query-io* ost)))
   (values))
 
-(provide :doall)
+(provide :cllib-doall)
 ;;; file doall.lisp ends here

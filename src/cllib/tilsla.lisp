@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tilsla.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
+;;; $Id: tilsla.lisp,v 1.6 2001/11/02 22:31:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tilsla.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `dfloat'
-  (require :withtype (translate-logical-pathname "cllib:withtype")))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
 
 (in-package :cllib)
 
@@ -135,5 +135,5 @@ the `FORMATTER' macro."
 
 ;;; }}}
 
-(provide :tilsla)
+(provide :cllib-tilsla)
 ;;; file tilsla.lisp ends here

@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: withtype.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
+;;; $Id: withtype.lisp,v 1.6 2001/11/02 22:31:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/withtype.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `mk-arr' [:ext is already required by :base anyway]
-  (require :ext (translate-logical-pathname "port:ext")))
+  (require :port-ext (translate-logical-pathname "port:ext")))
 
 (in-package :cllib)
 
@@ -61,5 +61,5 @@ Adopted from P.Graham `ANSI CL', p 410; with some modifications."
                                    (cdr nexp))))
          expr)))
 
-(provide :withtype)
+(provide :cllib-withtype)
 ;;; file withtype.lisp ends here

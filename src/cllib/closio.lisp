@@ -6,13 +6,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.15 2001/01/08 20:48:19 sds Exp $
+;;; $Id: closio.lisp,v 1.16 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `class-slot-list', `class-slot-initargs'
-  (require :sys (translate-logical-pathname "clocc:src;port;sys")))
+  (require :port-sys (translate-logical-pathname "clocc:src;port;sys")))
 
 (in-package :cllib)
 
@@ -120,5 +120,5 @@ otherwise you will probably get an error.")
 
 ;;; }}}
 
-(provide :closio)
+(provide :cllib-closio)
 ;;; file closio.lisp ends here

@@ -4,33 +4,33 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.26 2001/09/10 14:39:30 sds Exp $
+;;; $Id: url.lisp,v 2.27 2001/11/02 22:31:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `kwd', `+kwd+'
-  (require :symb (translate-logical-pathname "cllib:symb"))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb"))
   ;; `string-beg-with', `split-string'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `read-trim', `file-size-t', `file-size'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `mesg', `elapsed', `get-float-time', `list-format'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `to-list'
-  (require :simple (translate-logical-pathname "cllib:simple"))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; `pr-secs'
-  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `dttm->string', `string->dttm'
-  (require :date (translate-logical-pathname "cllib:date"))
+  (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `run-prog'
-  (require :shell (translate-logical-pathname "port:shell"))
+  (require :port-shell (translate-logical-pathname "port:shell"))
   ;; `with-timeout'
-  (require :proc (translate-logical-pathname "port:proc"))
+  (require :port-proc (translate-logical-pathname "port:proc"))
   ;; `socket', `network', `socket-service-port', `open-socket'
-  (require :net (translate-logical-pathname "port:net")))
+  (require :port-net (translate-logical-pathname "port:net")))
 
 (in-package :cllib)
 
@@ -903,5 +903,5 @@ Keywords: `timeout', `max-retry', `out', `err'."
                                         (subseq str-address 0 pos)))
            :fmt "~*~a~%" keys)))
 
-(provide :url)
+(provide :cllib-url)
 ;;; }}} url.lisp ends here

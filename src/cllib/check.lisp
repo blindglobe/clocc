@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: check.lisp,v 1.4 2000/05/15 18:43:26 sds Exp $
+;;; $Id: check.lisp,v 1.5 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/check.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `list-format', `mesg'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `rel-diff'
-  (require :math (translate-logical-pathname "cllib:math")))
+  (require :cllib-math (translate-logical-pathname "cllib:math")))
 
 (in-package :cllib)
 
@@ -99,5 +99,5 @@ for relative change of at least ~5,3f~%"
         (setq err t)
         (mesg :err out " +++ ~a ===> ~f~%" rec val)))))
 
-(provide :check)
+(provide :cllib-check)
 ;;; file check.lisp ends here

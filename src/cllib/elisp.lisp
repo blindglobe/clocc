@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.8 2001/10/11 21:16:47 sds Exp $
+;;; $Id: elisp.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `make-clos-readtable'
-  (require :closio (translate-logical-pathname "cllib:closio"))
+  (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `from-list'
-  (require :list (translate-logical-pathname "cllib:list")))
+  (require :cllib-list (translate-logical-pathname "cllib:list")))
 
 (in-package :cllib)
 
@@ -357,5 +357,5 @@ The suffix stuff is ignored."
 ;; (cllib::compile-el-file "cal-hebrew")
 ;; (el::calendar-hebrew-date-string)
 
-(provide :elisp)
+(provide :cllib-elisp)
 ;;; file elisp.lisp ends here

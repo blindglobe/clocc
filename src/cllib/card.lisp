@@ -9,23 +9,23 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.8 2001/06/11 19:42:17 sds Exp $
+;;; $Id: card.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `class-slot-list'
-  (require :closio (translate-logical-pathname "cllib:closio"))
+  (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `pr-secs'
-  (require :tilsla (translate-logical-pathname "cllib:tilsla"))
+  (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `substitute-subseq', `string-beg-with', `string-end-with', `split-string'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `date2time'
-  (require :date (translate-logical-pathname "cllib:date"))
+  (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `url'
-  (require :url (translate-logical-pathname "cllib:url")))
+  (require :cllib-url (translate-logical-pathname "cllib:url")))
 
 (in-package :cllib)
 
@@ -561,5 +561,5 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 )
 
 ;;; }}}
-(provide :card)
+(provide :cllib-card)
 ;;; file card.lisp ends here

@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.9 2001/04/02 16:36:16 sds Exp $
+;;; $Id: autoload.lisp,v 1.10 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `skip-to-line', `timestamp'
-  (require :fileio (translate-logical-pathname "cllib:fileio")))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio")))
 
 (in-package :cllib)
 

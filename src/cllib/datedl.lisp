@@ -4,22 +4,22 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.8 2000/05/15 18:43:26 sds Exp $
+;;; $Id: datedl.lisp,v 1.9 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `date'
-  (require :date (translate-logical-pathname "cllib:date"))
+  (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `with-printing'
-  (require :laser (translate-logical-pathname "cllib:laser"))
+  (require :cllib-laser (translate-logical-pathname "cllib:laser"))
   ;; `mean', `standard-deviation', `standard-deviation-relative', `volatility'
   ;; `lincom', `regress', `mean-weighted', `s/', `rel-diff'
-  (require :math (translate-logical-pathname "cllib:math"))
+  (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `keyword-concat'
-  (require :symb (translate-logical-pathname "cllib:symb")))
+  (require :cllib-symb (translate-logical-pathname "cllib:symb")))
 
 (in-package :cllib)
 
@@ -788,5 +788,5 @@ Return NIL if no errors were detected, the number of errors otherwise."
                     fd (setf (caar ll) (tomorrow ld -10)) ld)))
         (check lst order-p same-p jump gap date val out fixp))))
 
-(provide :datedl)
+(provide :cllib-datedl)
 ;;; file datedl.lisp ends here

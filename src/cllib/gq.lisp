@@ -6,21 +6,21 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.19 2001/09/05 18:07:26 sds Exp $
+;;; $Id: gq.lisp,v 2.20 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t', `whitespace-char-p'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `with-xml-input'
-  (require :xml (translate-logical-pathname "cllib:xml"))
+  (require :cllib-xml (translate-logical-pathname "cllib:xml"))
   ;; `make-url'
-  (require :url (translate-logical-pathname "cllib:url"))
+  (require :cllib-url (translate-logical-pathname "cllib:url"))
   ;; `next-token', `next-number', `text-stream'
-  (require :html (translate-logical-pathname "cllib:html"))
+  (require :cllib-html (translate-logical-pathname "cllib:html"))
   ;; `plot-dated-lists'
-  (require :gnuplot (translate-logical-pathname "cllib:gnuplot")))
+  (require :cllib-gnuplot (translate-logical-pathname "cllib:gnuplot")))
 
 (in-package :cllib)
 
@@ -620,5 +620,5 @@ If DEBUG is non-nil, do not bind `*print-log*' and `*gq-error-stream*'."
           (when log (close out) (format t "Wrote log to ~s~%" log))))))
   (when plot (plot-portfolio *holdings* *history* :plot)))
 
-(provide :gq)
+(provide :cllib-gq)
 ;;; }}} gq.lisp ends here

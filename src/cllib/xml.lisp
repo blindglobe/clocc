@@ -4,26 +4,26 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.37 2001/10/05 19:50:20 sds Exp $
+;;; $Id: xml.lisp,v 2.38 2001/11/02 22:31:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `+whitespace+', `whitespace-char-p'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `substitute-subseq-if'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; print CLOS objects readably
-  (require :closio (translate-logical-pathname "cllib:closio"))
+  (require :cllib-closio (translate-logical-pathname "cllib:closio"))
   ;; `with-timing', `mesg'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `read-from-stream'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `required-argument'
-  (require :ext (translate-logical-pathname "port:ext"))
+  (require :port-ext (translate-logical-pathname "port:ext"))
   ;; `socket'
-  (require :net (translate-logical-pathname "port:net"))
-  (require :gray (translate-logical-pathname "port:gray")))
+  (require :port-net (translate-logical-pathname "port:net"))
+  (require :port-gray (translate-logical-pathname "port:gray")))
 
 (in-package :cllib)
 
@@ -901,5 +901,5 @@ The first character to be read is #\T."
           (mesg :xml out "done [~:d bytes total]" (stream-length str)))
         (terpri str)))))
 
-(provide :xml)
+(provide :cllib-xml)
 ;;; file xml.lisp ends here

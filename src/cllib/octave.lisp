@@ -4,11 +4,11 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: octave.lisp,v 2.6 2001/04/11 14:40:21 sds Exp $
+;;; $Id: octave.lisp,v 2.7 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)
 
@@ -68,5 +68,5 @@ output_precision = 20~%AA=[")
     (close oc-io)
     ans))
 
-(provide :octave)
+(provide :cllib-octave)
 ;;; octave.lisp ends here

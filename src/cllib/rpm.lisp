@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.10 2001/09/09 21:07:22 sds Exp $
+;;; $Id: rpm.lisp,v 2.11 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `url' - generic function
-  (require :url (translate-logical-pathname "cllib:url"))
+  (require :cllib-url (translate-logical-pathname "cllib:url"))
   ;; `with-open-pipe', `pipe-input'
-  (require :shell (translate-logical-pathname "port:shell")))
+  (require :port-shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
@@ -666,5 +666,5 @@ available in `*rpm-locations*'."
 
 )
 
-(provide :rpm)
+(provide :cllib-rpm)
 ;;; file rpm.lisp ends here

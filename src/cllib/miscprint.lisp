@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.10 2000/10/02 17:17:30 sds Exp $
+;;; $Id: miscprint.lisp,v 1.11 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-collect'
-  (require :simple (translate-logical-pathname "cllib:simple")))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple")))
 
 (in-package :cllib)
 
@@ -162,5 +162,5 @@ The inverse is `hash-table->alist'."
             (car co) (car ll)
             (car ll) co))))
 
-(provide :miscprint)
+(provide :cllib-miscprint)
 ;;; file miscprint.lisp ends here

@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.7 2001/04/11 14:40:21 sds Exp $
+;;; $Id: prompt.lisp,v 2.8 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `getenv'
-  (require :sys (translate-logical-pathname "port:sys")))
+  (require :port-sys (translate-logical-pathname "port:sys")))
 
 (in-package :cllib)
 
@@ -57,5 +57,5 @@
   #-(or allegro clisp cmu)
   (error 'not-implemented :proc 'set-cllib-prompt))
 
-(provide :prompt)
+(provide :cllib-prompt)
 ;; prompt.lisp ends here

@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.8 2001/08/27 17:21:33 rtoy Exp $
+;;;; $Id: rng.lisp,v 1.9 2001/11/02 22:31:15 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.9  2001/11/02 22:31:15  sds
+;;;;  prefix module names with `cllib-'
+;;;;
 ;;;;  Revision 1.8  2001/08/27 17:21:33  rtoy
 ;;;;  o ZIGGURAT-INIT:  forgot to initialize x[0], fx[0], and fx[n].
 ;;;;    (Thanks to Clisp for catching this stupid error.)
@@ -91,9 +94,9 @@
 ;;;;
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `dfloat', `with-type'
-  (require :withtype (translate-logical-pathname "cllib:withtype")))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
 
 (in-package :cllib)
 
@@ -147,7 +150,7 @@
     (setf (aref x 0) 0d0)
     (setf (aref fx 0) (funcall f (aref x 0)))
     (setf (aref fx n) (funcall f (aref x n)))
-    
+
     (loop for k from 1 to n do
 	  (setf (aref k-table k)
 		(floor (scale-float (/ (aref x (1- k)) (aref x k)) scale)))
@@ -995,7 +998,7 @@ of zero and a variance of 1.
 	      (when (< (abs j) (aref k-table i))
 		(return x))
 	      (when (zerop i)
-		(loop 
+		(loop
 		    (let ((x (/ (- (log (random 1d0 state))) r))
 			  (y (- (log (random 1d0 state)))))
 		      (when (> (+ y y) (* x x))
@@ -1026,7 +1029,7 @@ of zero and a variance of 1.
 ;;;
 ;;; Some timing results for CMUCL 18c+ (sparc-v9) on a 300 MHz Ultra
 ;;; 30:
-;;; 
+;;;
 ;;; (cllib::time-gaussian 500000)
 ;;;
 ;;; Method 	real	user	sys	cons
@@ -2055,5 +2058,5 @@ with mean M:
 
 ||#
 
-(provide :rng)
+(provide :cllib-rng)
 ;;; file rng.lisp ends here

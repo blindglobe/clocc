@@ -4,11 +4,11 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.6 2000/09/26 16:53:47 sds Exp $
+;;; $Id: simple.lisp,v 1.7 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base")))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)
 
@@ -139,5 +139,5 @@ The second value is the last atom (i.e., `dotted-p')."
 
 ;;; }}}
 
-(provide :simple)
+(provide :cllib-simple)
 ;;; file simple.lisp ends here

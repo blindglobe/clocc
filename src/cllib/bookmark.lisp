@@ -5,13 +5,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: bookmark.lisp,v 1.1 2001/07/09 19:48:01 sds Exp $
+;;; $Id: bookmark.lisp,v 1.2 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/bookmark.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  (require :url (translate-logical-pathname "clocc:src;cllib;url"))
-  (require :card (translate-logical-pathname "clocc:src;cllib;card")))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-url (translate-logical-pathname "clocc:src;cllib;url"))
+  (require :cllib-card (translate-logical-pathname "clocc:src;cllib;card")))
 
 (in-package :cllib)
 
@@ -27,7 +27,7 @@
 
 (defclass link (rec)
   ((vtime :type integer :reader vtime :documentation "Visit time.")
-   (url :type url :accessor link-url :documentation "The URL of this link.")
+   (url :type url :accessor link-url :documentation "The URL of this link."))
   (:documentation "WWW link"))
 
 (defclass folder (rec)
@@ -42,5 +42,5 @@
     (unless (slot-boundp rr 'atime) (setf (slot-value rr 'atime) tm))
     (unless (slot-boundp rr 'mtime) (setf (slot-value rr 'mtime) tm))))
 
-(provide :bookmark)
+(provide :cllib-bookmark)
 ;;; file bookmark.lisp ends here

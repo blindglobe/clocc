@@ -4,12 +4,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.8 2001/04/02 16:33:39 sds Exp $
+;;; $Id: base.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
-  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
-  (require :sys (translate-logical-pathname "port:sys")))
+  (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
+  (require :port-sys (translate-logical-pathname "port:sys")))
 
 (defpackage "CLLIB"
   (:use "COMMON-LISP" "PORT")
@@ -49,5 +49,5 @@ This is initialized based on `mail-host-address'.")
   (:documentation "Get the code of the object.")
   (:method ((xx symbol)) xx))
 
-(provide :base)
+(provide :cllib-base)
 ;;; }}} base.lisp ends here

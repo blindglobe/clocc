@@ -4,21 +4,21 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.8 2001/10/27 15:45:26 sds Exp $
+;;; $Id: clhs.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `string-beg-with', `substitute-subseq'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `skip-search'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `with-timing'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `html-translate-specials'
-  (require :html (translate-logical-pathname "cllib:html")))
+  (require :cllib-html (translate-logical-pathname "cllib:html")))
 
 (in-package :cllib)
 
@@ -1400,5 +1400,5 @@
       (mapc #'gtk:widget-show (list window sw canvas)))
     (gtk:event-loop)))
 |#
-(provide :clhs)
+(provide :cllib-clhs)
 ;;; file clhs.lisp ends here

@@ -4,13 +4,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: list.lisp,v 2.4 2000/05/22 19:28:42 sds Exp $
+;;; $Id: list.lisp,v 2.5 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-collect', `zero-len-p', `to-list', `filter'
-  (require :simple (translate-logical-pathname "cllib:simple")))
+  (require :cllib-simple (translate-logical-pathname "cllib:simple")))
 
 (in-package :cllib)
 
@@ -146,5 +146,5 @@ Also, do NOT try to return a cons from NEWL.  You'd be surprised!"
                 (cons (if cnt? (incf ii) (funcall split-key (car ll)))
                       (apply func ll args)))))))
 
-(provide :list)
+(provide :cllib-list)
 ;;; list.lisp ends here

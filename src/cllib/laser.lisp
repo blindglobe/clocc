@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: laser.lisp,v 1.3 2000/05/02 15:39:14 sds Exp $
+;;; $Id: laser.lisp,v 1.4 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/laser.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; for `list-format'
-  (require :log (translate-logical-pathname "cllib:log"))
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; for `run-prog', `pipe-output', `with-open-pipe'
-  (require :shell (translate-logical-pathname "port:shell")))
+  (require :port-shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
@@ -108,5 +108,5 @@ to the stream before BODY and can be a string or a sequence thereof."
                  (map nil (lambda (ll) (write-string ll ,out)) ,pre)))
     ,@body))
 
-(provide :laser)
+(provide :cllib-laser)
 ;;; file laser.lisp ends here

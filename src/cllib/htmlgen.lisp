@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.12 2001/09/26 12:55:32 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.13 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `dttm->string' - needed only for `directory-index'
-  ;; (require :date (translate-logical-pathname "cllib:date"))
+  ;; (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; "Gray streams"
-  (require :gray (translate-logical-pathname "port:gray")))
+  (require :port-gray (translate-logical-pathname "port:gray")))
 
 (in-package :cllib)
 
@@ -160,5 +160,5 @@ Supplies some HTTP/1.0 headers and calls `with-html-output'."
                    out)))))))
 
 
-(provide :htmlgen)
+(provide :cllib-htmlgen)
 ;;; file htmlgen.lisp ends here

@@ -4,25 +4,25 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.1 2001/06/08 18:06:04 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.2 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
 ;;; (see also other exported functions)
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `date2time', `+day-sec+', `days-between', `date>'
-  (require :date (translate-logical-pathname "cllib:date"))
+  (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `dl-nth-date', `dated-list-name', `dl-nth-slot', `dl-shift',
   ;; `copy-dated-list', `dl-endp', `dl-len', `dl-ll', `dl-date'
-  (require :datedl (translate-logical-pathname "cllib:datedl"))
+  (require :cllib-datedl (translate-logical-pathname "cllib:datedl"))
   ;; `regress', `make-line', `line-sl', `line-co'
-  (require :math (translate-logical-pathname "cllib:math"))
+  (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `regress-poly'
-  (require :stat (translate-logical-pathname "cllib:stat"))
+  (require :cllib-stat (translate-logical-pathname "cllib:stat"))
   ;; `pipe-output', `close-pipe', `run-prog'
-  (require :shell (translate-logical-pathname "port:shell")))
+  (require :port-shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
@@ -536,5 +536,5 @@ from BEG to END.  This is not a complete plotting function (not a UI)!"
   (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title \"~a\" ~
 with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
 
-(provide :gnuplot)
+(provide :cllib-gnuplot)
 ;;; gnuplot.lisp ends here

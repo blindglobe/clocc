@@ -7,23 +7,23 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.13 2001/05/23 20:01:38 sds Exp $
+;;; $Id: cvs.lisp,v 2.14 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `string-beg-with', `substitute-subseq'
-  (require :string (translate-logical-pathname "cllib:string"))
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `skip-to-line', `read-list-from-stream', `file-size-t'
-  (require :fileio (translate-logical-pathname "cllib:fileio"))
+  (require :cllib-fileio (translate-logical-pathname "cllib:fileio"))
   ;; `string->dttm'
-  (require :date (translate-logical-pathname "cllib:date"))
+  (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `hash-table->alist'
-  (require :miscprint (translate-logical-pathname "cllib:miscprint"))
+  (require :cllib-miscprint (translate-logical-pathname "cllib:miscprint"))
   ;; `default-directory', `pathname-ensure-name', `probe-directory'
-  (require :sys (translate-logical-pathname "port:sys"))
+  (require :port-sys (translate-logical-pathname "port:sys"))
   ;; `with-open-pipe'
-  (require :shell (translate-logical-pathname "port:shell")))
+  (require :port-shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
@@ -283,5 +283,5 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
       (unless (string-equal "CVS" (car (last (pathname-directory dir))))
         (cvs-change-root dir substitutions :dry-run dry-run :log log)))))
 
-(provide :cvs)
+(provide :cllib-cvs)
 ;;; file cvs.lisp ends here

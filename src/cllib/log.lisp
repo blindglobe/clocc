@@ -4,15 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.14 2001/09/19 13:36:03 sds Exp $
+;;; $Id: log.lisp,v 1.15 2001/11/02 22:31:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
-  (require :base (translate-logical-pathname "clocc:src;cllib;base"))
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-type', `dfloat'
-  (require :withtype (translate-logical-pathname "cllib:withtype"))
+  (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `pr-secs'
-  (require :tilsla (translate-logical-pathname "cllib:tilsla")))
+  (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla")))
 
 (in-package :cllib)
 
@@ -87,5 +87,5 @@ This has to be a macro to avoid needless evaluating the args."
 
 ;;; }}}
 
-(provide :log)
+(provide :cllib-log)
 ;;; file log.lisp ends here

@@ -1,0 +1,13 @@
+======================= README ======================
+This is CLOCC, the Common Lisp Open Code Collection.
+
+It contains Lisp code for various applications which is
+  * Common Lisp, i.e. runs in ANSI CL implementations,
+  * Free Software, according to the Debian Free Software Guidelines
+    (e.g. licensed under GPL, LGPL or BSD licenses),
+  * Portable, i.e. should be portable among CL implementations with low
+    effort, and does not require modifications to the CL implementation
+    itself,
+  * Self-contained, i.e. does not require packages not in this repository,
+  * Ready to use, i.e. runs out of the box in the Free CL implementations.
+

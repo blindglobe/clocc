@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.40 2001/11/09 19:24:53 sds Exp $
+;;; $Id: sys.lisp,v 1.41 2002/01/23 14:31:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -303,7 +303,7 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
 (defun current-time (&optional (out t))
   "Print the current time to the stream (defaults to t)."
   (multiple-value-bind (se mi ho da mo ye dw dst tz) (get-decoded-time)
-    (declare (fixnum se mi ho da mo ye dw tz))
+    (declare (fixnum se mi ho da mo ye dw) (type rational tz))
     (format out "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a"
             ye mo da (aref +week-days+ dw) ho mi se
             (tz->string tz dst))))

@@ -251,8 +251,7 @@ Tag being parsed:| (cadr x))))
 	     (t (car l)))
 	   (mapcar #'id-expression
 		   (list-split '|,| (cadr l)))))
-
-					; array reference:
+    ;; array reference:
     ((and (symbolp (car l))
 	  (listp (cadr l))
 	  (vble-is-array-p (check-t-and-pi (car l))))
@@ -275,12 +274,14 @@ Tag being parsed:| (cadr x))))
        (append (list 'fref vname)
 	       (list indices)
 	       (let ((blist (mapcar #'car bounds)))
-		 (unless (every #'(lambda (x)
-				(= x 1))
-			    blist)
+		 (format t "blist = ~S~%" blist)
+		 (unless (and blist
+			      (every #'(lambda (x)
+					 (= x 1))
+				     blist))
 		   (list (mapcar #'car bounds)))))))
-
-					; function call:
+    
+    ;; function call:
     ((and (symbolp (car l))
 	  (listp (cadr l)))
      ;; Should we check for T and PI here?

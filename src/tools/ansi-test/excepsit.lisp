@@ -561,7 +561,7 @@ program-error is signaled.")
  (progn
    (with-open-file (s "/tmp/foo35.tmp" :direction :output))
    (delete-file "/tmp/foo35.tmp/bar"))
- #+CLSIP nil
+ #+CLISP nil
  #-CLISP file-error)
 
 (my-assert

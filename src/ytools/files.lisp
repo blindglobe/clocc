@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.8 2004/12/13 03:26:36 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.9 2004/12/15 22:37:20 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -79,7 +79,8 @@
 ;;; The name of a File-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
 ;;; This represents a primitive file, not one whose contents are
-;;; managed by the file/chunk system itself.
+;;; managed by the file/chunk system itself (e.g., an object file
+;;; whose compilation is handled by a Compiled-file-chunk).
 (defclass File-chunk (Chunk)
   ((pathname :reader File-chunk-pathname
 	     :initarg :pathname
@@ -188,8 +189,8 @@
     (object :reader Loadable-chunk-object
 	    :initarg :object)))
 
-;;; A file (compiled or source) as having the appropriate
-;;; variant loaded into primary memory --
+;;; A file as having the appropriate variant loaded into primary
+;;; memory --
 (defclass Loaded-chunk (Chunk)
    ((loadable :reader Loaded-chunk-loadable
 	      :initarg :loadable
@@ -252,9 +253,57 @@
 		   (list file-ch))
 	     (file-slurp (File-chunk-pathname file-ch)
 			 (list compute-file-basis*)
-;;;;			 (list file-ch)
-	     )
+			 (\\ (srm)
+			    (let ((c (peek-char false srm false eof*)))
+			       (cond ((and (not (eq c eof*))
+					   (char= #\;))
+				      ;; Got comment.  Try to parse as
+				      ;; mode line with readtable spec
+				      (let ((line (read-line srm)))
+					 (let ((readtab
+						  (extract-readtab line)))
+					    (cond (readtab
+						   (setf (File-chunk-readtable
+							    file-ch)
+						         readtab))))))))))
 	     file-op-count*))))
+
+(defun extract-readtab (str)
+   (let ((pos (search "Readtable: " str))
+	 (strlen (length str)))
+      (cond (rpos
+	     (let ((pos (+ pos (length "Readtable: "))))
+		(loop (cond ((and (< pos strlen)
+				  (is-whitespace (elt str pos)))
+			     (setq pos (+ pos 1)))
+			    (t (return))))
+		(cond ((< pos strlen)
+		       (let ((end (position #\; str :start pos)))
+			  (cond (end
+				 ;; Finally!  A readtable name
+				 (let* ((readtab-name
+					     (intern (subseq str pos end)
+						     keyword-package*))
+					(readtab (named-readtable
+						     readtab-name)))
+				    (or readtab
+					(progn
+					   (format *error-output*
+					      "Undefined readtable ~s~%"
+					      readtab-name)
+					   false))))
+				(t
+				 (format *error-output*
+				    !"Can't find end of readtable name in ~
+                                      mode line~
+                                      ~%   \"...~a\"~%"
+				    (subseq str rpos))))))
+		      (t
+		       (format *error-output*
+			  "Can't find readtable name in mode line ~
+                           ~%   \"...~a\"~%"
+			  (subseq str rpos))))))
+	    (t false))))
 
 (defmacro end-header (&rest _)
    '(values))
@@ -725,7 +774,8 @@
 		(let ((file (,sub-pathname-read-fcn x)))
 		   (file-slurp file
 			       (list ,(build-symbol (:< slurp-task-name)
-						    *))))))))))
+						    *))
+			       false))))))))
 
 (defvar fload-version-suffix* ':-new)
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.5 2004/12/13 03:26:36 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.6 2004/12/15 22:37:20 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -244,8 +244,9 @@ after YTools file transducers finish.")
 
 ;;; 'states' is a list of data structures, the same length as
 ;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
-;;; for the corresponding task.
-(defun file-slurp (pn slurp-tasks)   ;;;; states
+;;; for the corresponding task.  'stream-init', if not false, is
+;;; a function to apply to the stream when it is opened.
+(defun file-slurp (pn slurp-tasks stream-init)   ;;;; states
    (let ((post-file-transduce-hooks* !()))
       (with-open-file (s pn :direction ':input)
 	 (cleanup-after-file-transduction
@@ -258,6 +259,8 @@ after YTools file transducers finish.")
 		  #+:excl (excl:*record-source-file-info* nil)
 		  (*package* *package*)
 		  (*readtable* *readtable*))
+	       (cond (stream-init
+		      (funcall stream-init s)))
 	       (do ((form (read s false eof*) (read s false eof*))
 		    (states (mapcar (\\ (slurp-task)
 				       (funcall (Slurp-task-file->state-fcn

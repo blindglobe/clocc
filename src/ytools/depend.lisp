@@ -79,7 +79,7 @@
 		 (cons `(cond (r-recorder
 			       (dolist (pn ',pnl)
 				 (funcall r-recorder pn)
-				 (pathname-fload pn false false))))
+				 (pathname-fload pn false false false))))
 		       (mapcan (\\ (pn)
 				   (cond ((is-Pseudo-pathname pn)
 					  (list-copy
@@ -106,7 +106,7 @@
 					 (ecase m
 					     (:compile-time
 					      #'(lambda (pn)
-						   (pathname-fload pn false false)
+						   (pathname-fload pn false false false)
 						   (funcall (lpr-comp-tdo-recorder
 							       slurping-lprec*)
 							    pn)))
@@ -120,7 +120,7 @@
 					      #'(lambda (pn)
 	  ;;;;					   (format *error-output*
 	  ;;;;					      "Loading pathname ~s~%" pn)
-						   (pathname-fload pn false false)
+						   (pathname-fload pn false false false)
 						   ;;;;(pathname-slurp pn false ':whole-file)
 						   ))))
 				      (car g))))
@@ -274,7 +274,7 @@
 			  (dolist (ctsupp
 				    (Load-progress-rec-compile-time-depends-on
 					 slurping-lprec*))
-			     (pathname-fload ctsupp false false))
+			     (pathname-fload ctsupp false false false))
 			  (note-load-status slurping-lprec* ':slurped-all)))))
 	       (t
 		(error "Attempt to slurp non-module ~s"
@@ -325,7 +325,7 @@
        (let ((files (filespecs->pathnames (cdr pf))))
 	  (dolist (file files)
 	     (cond ((probe-file file)
-		    (pathname-fload file false false))))))
+		    (pathname-fload file false false false))))))
 
 (defmacro load-patch-file (filename^ label^)
    `(probe-and-load-patch-file ,filename^ ,label^))

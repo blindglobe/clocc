@@ -12,7 +12,8 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(repeat forall exists 
-	     one-collect list-collect empty-Collector Collector-elements)))
+	     one-collect list-collect empty-Collector Collector-elements
+	     collector-clear)))
 
 (defmacro forall (&rest stuff)
    (multiple-value-let (vars lists body) (for-analyze stuff)
@@ -155,7 +156,7 @@
 ;;; We keep track of their positions for use by syntax checkers.
 
 (defstruct (Rep-var-prop (:constructor make-Rep-var-prop (prop val position))
-		       (:type list))
+	                 (:type list))
    prop val position)
 ;;; The position is for complex macros that want to know where the
 ;;; prop originally occurred.
@@ -209,6 +210,10 @@
 (defsetf col_elts (c) (el)
    `(error
        "Can't set elements of Collector ~s to ~s" ,c ,el))
+
+(defun collector-clear (col)
+   (setf (Collector-elements col) !())
+   (setf (Collector-last-tail col) false))
 
 (defmacro collector (&optional _)
    `(empty-Collector))

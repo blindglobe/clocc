@@ -22,7 +22,8 @@
 	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
 	     is-Keyword is-String memq assq nodup =<
 	     is-Pair is-cons list-copy tuple is-Char is-Integer is-Number
-	     is-Float is-Fixnum is-Ratio is-sublist is-whitespace
+	     is-Float is-Single-float is-Double-float
+	     is-Fixnum is-Ratio is-sublist is-whitespace
 	     is-Stream list->values values->list lastelt len string-length
 	     build-symbol symno* true false keyword-package*
 	     eval-when alist-entry alist-entry-set alref. alref condense
@@ -104,6 +105,10 @@
 
 (defparameter keyword-package* (find-package 'keyword))
 
+;;; Each entry is of form (char global-handler -local-handlers-)
+;;; The current readtable is looked up in the local-handlers (itself an
+;;; alist).  If no entry, use global.  If no global, '!' should be taken
+;;; as an ordinary character.
 (defvar excl-handlers* '())
 
 (defun excl-reader (srm ch)
@@ -112,19 +117,27 @@
 	  ;; end of file
 	  (intern "!"))
 	 (t
-	  (let ((e (assq ch excl-handlers*)))
-	     (cond ((and e (cadr e))
-		    (read-char srm)
-		    (funcall (cadr e) srm ch))
-		   ((member ch '(#\space #\tab #\newline #\return #\linefeed #\page
-				 #\( #\))
-			    :test #'char=)
-		    (intern "!"))
-		   (t
-		    ;; if any problems here, could try UNREAD-CHAR + (VALUES)
-		    (values
-		     (intern (concatenate 'string
-			           "!" (string (read srm t nil t)))))))))))
+	  (labels ((nonmacro ()
+		      (cond ((member ch '(#\space #\tab #\newline #\return #\linefeed
+					  #\page #\( #\))
+				     :test #'char=)
+			     (intern "!"))
+			    (t
+			     ;; if any problems here, could try UNREAD-CHAR + (VALUES)
+			     (values
+			      (intern (concatenate 'string
+					    "!" (string (read srm t nil t)))))))))
+	     (let ((e (assoc ch excl-handlers* :test #'eq)))
+		(cond (e
+		       (let ((r (assq *readtable* (cddr e))))
+			  (cond (r
+				 (read-char srm)
+				 (funcall (cadr r) srm ch))
+				((cadr e)
+				 (read-char srm)
+				 (funcall (cadr e) srm ch))
+				(t (nonmacro)))))
+		      (t (nonmacro))))))))
 
 (set-macro-character #\! #'excl-reader ytools-readtable*)
 
@@ -246,6 +259,9 @@
 (subr-synonym is-Integer integerp)
 (subr-synonym is-Number numberp)
 (subr-synonym is-Float floatp)
+
+(defun is-Single-float (x) (typep x 'single-float))
+(defun is-Double-float (x) (typep x 'double-float))
 
 (defun is-Fixnum (n)
    (and (integerp n)
@@ -420,15 +436,29 @@
 ;;;;(set-dispatch-macro-character #\! #\( #'lpar-exclmac ytools-readtable*)
 
 (defmacro def-excl-dispatch (char args &body b)
-   (let ((fun-name (intern (format nil "excl-handler-~a" char))))
-      `(progn
-	  (defun ,fun-name ,args
-	     ,@b)
-	  (let ((e (assq ',char excl-handlers*)))
-	     (cond ((not e)
-		    (setq e (tuple ',char nil))
-		    (setq excl-handlers* (cons e excl-handlers*))))
-	     (setf (cadr e) #',fun-name)))))
+   (multiple-value-bind (b rt)
+                        (let ((tl (member ':readtable b)))
+			   (cond (tl
+				  (values `(,@(ldiff b tl) ,@(cddr tl))
+					  (cadr tl)))
+				 (t
+				  (values b nil))))
+      (let ((fun-name (intern (format nil "excl-handler-~a" char))))
+	 `(progn
+	     (defun ,fun-name ,args
+		,@b)
+	     (let ((e (assq ',char excl-handlers*)))
+		(cond ((not e)
+		       (setq e (tuple ',char nil))
+		       (setq excl-handlers* (cons e excl-handlers*))))
+		,(cond (rt
+			`(let ((rte (assq ,rt (cddr e))))
+			    (cond ((not rte)
+				   (setq rte (tuple ,rt nil))
+				   (setf (cddr e) (cons rte (cddr e)))))
+			    (setf (cadr rte) #',fun-name)))
+		       (t
+			`(setf (cadr e) #',fun-name))))))))
 
 (def-excl-dispatch #\( (srm ch)
    (setq ch (peek-char t srm))

@@ -411,4 +411,11 @@
    `(cond ((or ,even-if-set (not (boundp ',var)))
 	   (setq ,var (progn ,@body))
 	   (dump-yt-config-file))))
-   
+
+;;; Returns t if fload wasn't aborted
+(defmacro with-fload-abort (&rest body)
+   `(let ((fl-finished nil))
+       (catch 'fload-abort
+	  ,@body
+	  (setq fl-finished t))
+       fl-finished))

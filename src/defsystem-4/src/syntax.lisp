@@ -156,12 +156,12 @@
 (ambler:def-form-ambler :finally (initially-form defsystem-ambler-context)
   (destructuring-bind (kwd-initially initially-expr &rest other-forms)
       initially-form
-    (list :initially `(lambda (,(intern (symbol-name '#:this-component)
-					*package*))
-			(declare (ignorable
-				  ,(intern (symbol-name '#:this-component)
-					   *package*)))
-			,initially-expr)
+    (list :finally `(lambda (,(intern (symbol-name '#:this-component)
+				      *package*))
+		      (declare (ignorable
+				,(intern (symbol-name '#:this-component)
+					 *package*)))
+		      ,initially-expr)
 	  (ambler:amble-expression other-forms context))))
 
 

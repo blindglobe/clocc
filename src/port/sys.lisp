@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.14 2000/05/22 17:51:17 sds Exp $
+;;; $Id: sys.lisp,v 1.15 2000/05/31 20:17:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (export
  '(getenv finalize variable-special-p arglist class-slot-list
-   probe-directory default-directory chdir sysinfo
+   pathname-ensure-name probe-directory default-directory chdir sysinfo
    +month-names+ +week-days+ +time-zones+ tz->string current-time))
 
 ;;;
@@ -120,6 +120,16 @@ all slots are returned, otherwise only the slots with
 ;;;
 ;;; Environment
 ;;;
+
+(defun pathname-ensure-name (path)
+  "Make sure that the pathname has a name slot.
+Call `pathname' on it argument and, if there is no NAME slot,
+but there is a TYPE slot, move TYPE into NAME."
+  (let ((path (pathname path)))
+    (if (or (pathname-name path) (null (pathname-type path))) path
+        ;; if you use CLISP, you will need 2000-03-09 or newer
+        (make-pathname :name (concatenate 'string "." (pathname-type path))
+                       :type nil :defaults path))))
 
 (defun probe-directory (filename)
   "Check whether the file name names an existing directory."

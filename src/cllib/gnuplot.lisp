@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.11 2004/04/09 20:20:00 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.12 2004/05/08 21:27:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -176,7 +176,7 @@ according to the given backend")
   (tics t :type boolean)
   (fmt "%g" :type string)
   (time-p nil :type boolean)
-  (logscale nil :type (or null (eq t) (real (1))))
+  (logscale nil :type (or null (eql t) (real (1))))
   (range nil :type (or null cons)))
 
 (defstruct (plot-spec (:conc-name plsp-))

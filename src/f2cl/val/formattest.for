@@ -8,16 +8,26 @@ C
       k=3
       l=4.5
       write(*,9010), j
+      write(*,9011) 100
+      write(*,9012) 50
+      write(*,9013) 10000
       write(*,9020) l
+      write(*,9025) l
       write(*,9040), k, j
       write(*,9050) l,l,l,l
       write(*,9060), l
-9010  FORMAT("INTEGER VALUE",I3/) 
-9020  FORMAT("REAL VALUE",F3.2/)
+      write(*,9065) l
+ 9010 FORMAT("INTEGER VALUE",I3/)
+ 9011 format("Integer value",i3/)
+ 9012 format("Integer value",i4.2/)
+ 9013 format("Overflow value", i3)
+9020  FORMAT("REAL VALUE*",F3.2/)
+ 9025 format("REAL VALUE ", f4.2/)
 9030  FORMAT("STRING WITH NO ARGS"/)
 9040  FORMAT("MORE THAN 1 VALUE", I3, I3 /)
 9050  FORMAT("Lots of reals: ", 4F5.2 /)
-9060  FORMAT("scale factor of two: ", 2PF4.1 /)
+9060  FORMAT("scale factor of two*: ", 2PF4.1 /)
+ 9065 FORMAT("scale factor of two: ", 2PF5.1 /)
       END
 C
       SUBROUTINE subr2
@@ -27,7 +37,9 @@ C
       C=10.2
       D=10.3
       WRITE(*,111),J,A,B,C,D
-  111 FORMAT(1X,I6,2X,4D16.8)
+      write(*,112),J,dble(a),dble(b),dble(c),dble(d)
+  111 FORMAT(1X,I6,2X,4E16.8)
+  112 FORMAT(1X,I6,2X,4D16.8)
   372 WRITE(*,908),J,J,D                                              
   908 FORMAT(19H0ZFEAS ...ITERATION,I5,5X,18HPIVOT REJECTED  Q=,
      X I5,5X,6HPIVOT=,D16.8)
@@ -56,9 +68,13 @@ C
   300 CONTINUE
       WRITE(*, *) "ARRAY:"
       WRITE (*, 400) TESTARR
+      WRITE(*, *) "ARRAY2:"
+      WRITE (*, 410) TESTARR
       WRITE(*,*) "SUBARRAY:"
-      WRITE(*, 400) (TESTARR, I=2,4)
+      WRITE(*, 400) (TESTARR(i), I=2,4)
   400 FORMAT(I4)
+  410 format(i3)
+c  410 format(3(i4, i3), 4(i2, i8))
       END
       
 

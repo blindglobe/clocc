@@ -1584,7 +1584,7 @@
       (setq x (append (list (first x) (second x) '|,|) (cddr x))))
   `((fformat ,(parse_format_dest (first (second x)))
      ,(if (null (second (second x))) 
-	  '("~A~%")
+	  '(("~A~%"))
 	  (get_format_stmt (nthcdr 2 (second x))))
      ,@(mapcar #'parse-output-argument 
 	       (list-split '|,| (cdddr x))))))
@@ -1705,7 +1705,7 @@
 	   (get_format_stmt (list (third label))))
 	  ((or (eq fmt-num '*)
 	       (not (numberp fmt-num)))
-	   '("~A~%"))
+	   '(("~A~%")))
 	  (t
 	   (do ((lis *format_stmts* (cdr lis)))
 	       ((null lis) (error "format stmt ~A not found" fmt-num))
@@ -1773,24 +1773,34 @@
 
 ;--------------------------------------------------------------------------------
 
-(defun parse-format1 (format)
+(defun parse-format1 (format &optional (newlinep t))
   (let ((x (list-split '|,| (fix-slashes format))))
     (do ((desc-lists x (cdr desc-lists))
 	 (directive) (dl)
 	 (directive-list nil (append directive-list directive)))
-	((null desc-lists) (append directive-list '("~%")))
+	((null desc-lists)
+	 (if newlinep
+	     (append directive-list '("~%"))
+	     directive-list))
       (setq dl (car desc-lists))
       (setq directive 
 	    (cond ((null dl) nil)	;(list nil))
 		  ((stringp (car dl))
 		   (list (car dl)))
 		  ((listp (car dl))
-		   (append  '("~{") (parse-format1 (car dl)) '("~}")))
+		   ;; Repeat group once
+		   (append  '(1) (list (parse-format1 (car dl) nil))))
 		  ((and (numberp (car dl))
 			(listp (cadr dl)))
-		   (append '("~") (list (car dl)) '("{")
-			   (parse-format1 (cadr dl)) '("~}")))
+		   ;; Repetition of a group
+		   (append (list (car dl))
+			   (list (parse-format1 (cadr dl) nil))))
 		  ((numberp (car dl))
+		   ;; Simple repeated format descriptor (Handles the
+		   ;; case where the repetition factor is separated
+		   ;; from the format descriptor.  The case when the
+		   ;; repetition factor is NOT separated is handled
+		   ;; below.
 		   (parse-format-descriptor-list (car dl) 
 						 (destruct-descriptor-list (cdr dl))))
 		  (t (parse-format-descriptor-list 1 
@@ -1911,6 +1921,7 @@
 (defun fixnum-string (x)
    (princ-to-string x))
 
+#+nil
 (defun parse-format-descriptor-I (a w)
    (prog (directive)
    (if (listp w) (setq w (car w)))  ;ignore .m
@@ -1919,8 +1930,15 @@
         (do ((i 1 (1+ i))
              (ret nil (append ret (list directive))))
             ((> i a) ret)))))
+(defun parse-format-descriptor-I (a w)
+  (let* ((width (if (listp w)
+		   (car w)
+		   w))
+	(directive (list (format nil "~~~DD" width))))
+    (list a (list directive))))
 
 ;<kP><a>Fw.d -> ~a{~w,d,k,,,[@]F}
+#+nil
 (defun parse-format-descriptor-F (left right)
   (prog ((k 0) (a 1) directive)
      (declare (special k a))
@@ -1939,10 +1957,27 @@
              (ret nil (append ret (list directive))))
             ((> i a) ret)))))
 
+(defun parse-format-descriptor-F (left right)
+  (let ((k 0)
+	(a 1))
+    (declare (special k a))
+    (or (pattern-match-and-bind '((> k) #\P (> a)) left)
+	(pattern-match-and-bind '((> k) #\P) left)
+	(pattern-match-and-bind '((> a)) left))
+    (let ((directive
+	   (list (concatenate 'string 
+			      "~" (fixnum-string (car right)) "," ;w
+			      (fixnum-string (cadr right)) "," ;d
+			      (fixnum-string k) "," ;k
+			      "'*,"
+			      (if *SP* "@F" "F")))))
+      (list a (list directive)))))
+
 ;; Note: The Fortran standard says that, for a format like Ew.d, if
 ;; the the exponent is three digits long, the exponent indicator (E or
 ;; is not printed.  Thus instead of xxxE+ddd, we get xxx+ddd.  We
 ;; don't handle that here!
+#+nil
 (defun parse-format-descriptor-E (left right)
   (prog ((k 0) (a 1) w d (e 2) directive)
      (declare (special k a w d e))
@@ -1963,6 +1998,24 @@
 	   (ret nil (append ret (list directive))))
 	  ((> i a) ret)))))
 
+(defun parse-format-descriptor-E (left right)
+  (let ((k 0) (a 1) w d (e 2))
+     (declare (special k a w d e))
+     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
+         (pattern-match-and-bind '((> k) #\P) left)
+         (pattern-match-and-bind '((> a)) left))
+     (or (pattern-match-and-bind '((> w) (> d)) right)
+         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
+     (let ((directive 
+	    (list (concatenate 'string
+			       "~" (fixnum-string w) ","
+			       (fixnum-string d) ","
+			       (fixnum-string e) ","
+			       (fixnum-string k) ",'*"
+			       (if *SP* "@E" "E")))))
+       (list a (list directive)))))
+
+#+nil
 (defun parse-format-descriptor-D (left right)
   (prog ((k 0) (a 1) w d (e 2) directive)
      (declare (special k a w d e))
@@ -1983,6 +2036,24 @@
 	   (ret nil (append ret (list directive))))
 	  ((> i a) ret)))))
 
+(defun parse-format-descriptor-D (left right)
+  (let ((k 0) (a 1) w d (e 2))
+     (declare (special k a w d e))
+     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
+         (pattern-match-and-bind '((> k) #\P) left)
+         (pattern-match-and-bind '((> a)) left))
+     (or (pattern-match-and-bind '((> w) (> d)) right)
+         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
+     (let ((directive 
+	    (list (concatenate 'string
+			       "~" (fixnum-string w) ","
+			       (fixnum-string d) ","
+			       (fixnum-string e) ","
+			       (fixnum-string k) ",'*"
+			       (if *SP* "@D" "D")))))
+       (list a (list directive)))))
+
+#+nil
 (defun parse-format-descriptor-G (left right)
   (prog ((k 0) (a 1) w d (e 2) directive)
      (declare (special k a w d e))
@@ -2002,6 +2073,23 @@
         (do ((i 1 (1+ i))
              (ret nil (append ret (list directive))))
             ((> i a) ret)))))
+
+(defun parse-format-descriptor-G (left right)
+  (let ((k 0) (a 1) w d (e 2))
+     (declare (special k a w d e))
+     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
+         (pattern-match-and-bind '((> k) #\P) left)
+         (pattern-match-and-bind '((> a)) left))
+     (or (pattern-match-and-bind '((> w) (> d)) right)
+         (pattern-match-and-bind '((> w) (> d) #\E (> e)) right))
+     (let ((directive 
+	    (list (concatenate 'string
+			       "~" (fixnum-string w) ","
+			       (fixnum-string d) ","
+			       (fixnum-string e) ","
+			       (fixnum-string k) ",'*"
+			       (if *SP* "@G" "G")))))
+       (list a (list directive)))))
 
 (defun parse-format-descriptor-/ ()
    '("~%"))
@@ -2192,8 +2280,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.63 2000/08/10 18:00:37 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.64 2000/08/27 16:36:07 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.64  2000/08/27 16:36:07  rtoy
+;;; Clean up handling of format statements.  Should handle many more
+;;; formats correctly now.
+;;;
 ;;; Revision 1.63  2000/08/10 18:00:37  rtoy
 ;;; Declarations of the array type for arrays in common blocks were
 ;;; wrong.  (Oops!)

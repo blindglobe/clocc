@@ -812,10 +812,60 @@
 
 (declaim (ftype (function (t) stream) lun->stream))
 
+#+nil
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
     `(let ((,stream (lun->stream ,dest-lun)))
       ,@(expand-format stream format-cilist args))))
+
+(defmacro fformat (dest-lun format-cilist &rest args)
+  (let ((stream (gensym)))
+    `(let ((,stream (lun->stream ,dest-lun)))
+      (execute-format-main ,stream ',format-cilist ,@args))))
+
+(defun execute-format (top stream format arg-list)
+  (do ((formats format (if (and top (null formats))
+			   format
+			   (rest formats))))
+      ((or (null arg-list)
+	   (and (not top)
+		(null formats)))
+       ;;(format t "~&formats = ~S~%" formats)
+       (do ((more formats (rest more)))
+	   ((not (stringp (first more))))
+	 (format stream (first more)))
+       arg-list)
+    (when (null formats)
+      (setf formats format))
+    #+nil
+    (let ((*print-circle* t))
+      (format t "~&formats = ~S~%" formats))
+    (cond ((listp (first formats))
+	   (format stream (caar formats) (pop arg-list)))
+	  ((numberp (first formats))
+	     (dotimes (k (first formats))
+	       ;;(format t "k = ~A, format = ~S~%" k (second formats))
+	       (setf arg-list
+		     (execute-format nil stream (second formats) arg-list)))
+	   (setf formats (rest formats))
+	   ;;(format t "  cont with format = ~S~%" formats)
+	   )
+	  (t
+	   (format stream (car formats))))))
+	   
+       
+(defun execute-format-main (stream format &rest args)
+  (let ((format-list (copy-tree format))
+	(arg-list (apply #'append (map 'list #'(lambda (x)
+						 (cond ((numberp x)
+							(list x))
+						       ((stringp x)
+							(list x))
+						       (t
+							(coerce x 'list))))
+				       args))))
+    (execute-format t stream format-list arg-list)))
+
 
 #+nil
 (defmacro fformat1 (dest directive arg)
@@ -922,8 +972,12 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.28 2000/08/07 19:00:47 rtoy Exp $
+;;; $Id: macros.l,v 1.29 2000/08/27 16:36:07 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.29  2000/08/27 16:36:07  rtoy
+;;; Clean up handling of format statements.  Should handle many more
+;;; formats correctly now.
+;;;
 ;;; Revision 1.28  2000/08/07 19:00:47  rtoy
 ;;; Add type ARRAY-STRINGS to denote an array of strings.
 ;;;

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.44 2003/01/03 17:42:36 sds Exp $
+;;; $Id: url.lisp,v 2.45 2004/07/16 16:02:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -143,6 +143,12 @@ guess from the protocol; save the guessed value."
   "Return the args part of the URL's path."
   (nth-value 2 (url-path-parse url)))
 
+(defun path-absolute-p (string)
+  (or (case (char string 0) ((#\/ #\\) t) (t nil)) ; absolute path
+      #+(or win32 windows mswindows cygwin) ; w32 path: "c:..."
+      (and (alpha-char-p (char string 0))
+           (char= #\: (char string 1)))))
+
 (defmethod print-object ((url url) (out stream))
   "Print the URL in the standard form."
   (when *print-readably* (return-from print-object (call-next-method)))
@@ -164,7 +170,7 @@ guess from the protocol; save the guessed value."
         (write-string ":" out) (write (url-port url) :stream out)))
     (assert (or (zerop (length (url-path url)))
                 (eq :news (url-prot url)) (eq :nntp (url-prot url))
-                (char= #\/ (aref (url-path url) 0)))
+                (path-absolute-p (url-path url)))
             ((url-path url))
             "non-absolute path in url: `~a'" (url-path url))
     (when (and (not (zerop (length (url-host url))))
@@ -215,7 +221,7 @@ The argument can be:
            (end (position #\? string :test #'char=)))
       (declare (simple-string string) (type index-t start) (type url url)
                (type (or null index-t) idx))
-      (when (char= #\/ (char string 0))
+      (when (path-absolute-p string)
         (setf (url-prot url) :file (url-path url) string)
         (return-from url url))
       (when idx

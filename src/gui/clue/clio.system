@@ -4,7 +4,9 @@
 
 (mk:defsystem clio
     :depends-on ( clue )
-    :source-pathname "cl-library:clio;"
+    :source-pathname 
+    #+common-lisp-controller "cl-library:clio;"
+    #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;clio;")
     :components
     ((:file "clio")
      (:file "defgeneric")

@@ -45,7 +45,9 @@
 	 (load obj))))))
 
 (mk:defsystem clue
-    :source-pathname "cl-library:clue;"
+    :source-pathname 
+    #+common-lisp-controller "cl-library:clue;"
+    #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;clue;")
     :depends-on (:cmucl-clx)
     :components
     ((:file "clue")                     ; Define packages
@@ -69,3 +71,4 @@
               :load-form t
               :compile-only t
               :compile-form (hack-precom "cl-library:clue;" :compile))))
+

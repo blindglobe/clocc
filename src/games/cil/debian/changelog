@@ -1,8 +1,10 @@
 cil (200100227-5) unstable; urgency=low
 
-  * 
+  * lintian fixes to changelog, updated standard version
+    build-depends.
+  * Now compiles with sbcl: fixed too liberal defconstant's 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:46:00 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 25 Apr 2002 11:16:09 +0200
 
 cil (200100227-4) unstable; urgency=low
 
@@ -56,7 +58,3 @@ cil (19970608-1) unstable; urgency=low
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 25 Apr 1998 16:28:31 +0200
 
-Local variables:
-mode: debian-changelog
-add-log-mailing-address: "pvaneynd@debian.org"
-End:

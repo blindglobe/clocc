@@ -206,7 +206,7 @@ Returns nothing"
                                 :type extention
                                 :case :common)))))
   (when system-directory
-    (pushnew  "/home/pvaneynd/common-lisp/systems/"
+    (pushnew  system-directory
               (symbol-value
                (intern "*CENTRAL-REGISTRY*"
                        (find-package :make)))

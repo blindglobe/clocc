@@ -1,8 +1,9 @@
 memoization (1.0-5) unstable; urgency=low
 
-  * 
+  * changelog without emacs stuff, linitian fix
+  * updated standard version 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:45:47 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 24 Apr 2002 20:24:19 +0200
 
 memoization (1.0-4) unstable; urgency=low
 
@@ -29,7 +30,3 @@ memoization (1.0-1) unstable; urgency=low
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 27 May 1998 18:17:11 +0200
 
-Local variables:
-mode: debian-changelog
-add-log-mailing-address: "pvaneynd@debian.org"
-End:

@@ -1,3 +1,9 @@
+clue (20011231) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 31 Dec 2001 15:47:13 +0100
+
 clue (20011230) unstable; urgency=high
 
   * Fixed declarations, now compiles with safe core!

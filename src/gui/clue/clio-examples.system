@@ -4,5 +4,7 @@
 
 (mk:defsystem clio-examples
  :depends-on ( clue clio )
- :source-pathname "cl-library:clio;examples;"
+ :source-pathname 
+ #+common-lisp-controller "cl-library:clio;examples;"
+ #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;clio;examples;")
  :components ("package" "cmd-frame" "sketchpad" "sketch"))

@@ -1,3 +1,23 @@
+common-lisp-controller (2.15) unstable; urgency=low
+
+  * Small fix from  Frederic Dumont <frederic.dumont@easynet.be> for
+    add-project-directory.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 24 Apr 2002 21:06:43 +0200
+
+common-lisp-controller (2.14) unstable; urgency=low
+
+  * Don't depend on a lisp-compiler.
+    Closes: #140979, #141482, #142497
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun, 14 Apr 2002 12:23:27 +0200
+
+common-lisp-controller (2.13) unstable; urgency=low
+
+  * Now depends on lisp-compiler
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 29 Mar 2002 21:39:29 +0100
+
 common-lisp-controller (2.12) unstable; urgency=low
 
   * Fixed "Done " message for u-c-l-s 

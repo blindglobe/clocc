@@ -3,7 +3,9 @@
 (in-package :User)
 
 (mk:defsystem pictures
-    :source-pathname "cl-library:pictures;"
+    :source-pathname 
+    #+common-lisp-controller "cl-library:pictures;"
+    #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;pictures;")
     :depends-on (clue )
     :components
     ((:file "package")

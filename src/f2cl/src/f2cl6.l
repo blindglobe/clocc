@@ -27,15 +27,6 @@
 (in-package :user)
 (eval-when (compile load eval) (proclaim '(special *verbose* *comments*)))
 ;--------------------------------------------------------------------------  
-#+xxxx
-(defvar intrinsic_function_names
-  '(int ifix idint real float sngl dble cmplx ichar char aint dint
-    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
-    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amini dmini
-    amini min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
-    exp dexp cexp log alog dlog clog log10 alog10 dlog10 sin dsin csin
-    cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
-    sinh dsinh cosh dcosh tanh dtanh))
 ; global stream input for parse-number:
 (defvar *inp* nil)
 ;---------------------------------------------------------------------------

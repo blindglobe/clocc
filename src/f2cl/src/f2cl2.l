@@ -285,14 +285,6 @@ Tag being parsed:| (cadr x))))
        ;; argument list so we can determine later the types of each
        ;; parameter, if we really want to.
 
-       ;; Note: Currently the first use of the function determines the
-       ;; arguments saved for the function.  We should probably be
-       ;; more careful and, for each use, append the argument list to
-       ;; the function.  This would allow us to check the argument
-       ;; types across calls of the function within one subprogram.
-       #+nil
-       (pushnew (list fname (length args) args) *functions-used*
-		:key #'car)
        (update-called-functions-list fname args)
        (cond ((and (member fname *external_function_names*)
 		   (member fname *subprog-arglist*))

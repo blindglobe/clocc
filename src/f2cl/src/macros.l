@@ -77,10 +77,6 @@
 
 (defmacro apply! (fun args) (eval `(cons ,fun ,args)))
 
-(defmacro map-defvar (&rest l)
-   `(progn ,@(mapcar #'(lambda (x y) (list 'defvar x y))
-                     (car (odd-even l)) 
-                     (cadr (odd-even l)))))
 ;-----------------------------------------------------------------------------
 
 (defmacro do! (var init step end &rest body)
@@ -111,20 +107,12 @@
   `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
 ;-----------------------------------------------------------------------------
 
-#+nil
-(defmacro fref (arr &rest indices)
-  `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices)))
-
 (defmacro fref (arr indices &optional low-bnds)
   (if low-bnds
       `(aref ,arr ,@(mapcar #'(lambda (k lim)
 				`(- ,k ,lim))
 			    indices low-bnds))
       `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) indices))))
-
-#+nil
-(defmacro fset (a b) 
-  `(setf (fref ,(second a) ,@(cddr a)) ,b))
 
 (defmacro fset (a b) 
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
@@ -151,27 +139,6 @@
           ,(second pred-clause)))
 
 ; fdo has similar syntax as do except there will only be one do_vble
-#+nil
-(defmacro fdo (do_vble_clause predicate_clause &rest body)
-   `(prog* ((step ,(third (third do_vble_clause)))
-            (iteration_count 
-               (max (truncate (+ (- ,(third (first predicate_clause))
-                                    ,(second do_vble_clause)) step) step) 0)))
-           ; initialise loop variable
-           (setq ,(first do_vble_clause) ,(second do_vble_clause))
-           loop
-           (return
-           (cond ; all iterations done
-                 ((zerop iteration_count) nil)
-                 ; execute loop, in/de-crement loop vble and decrement cntr
-                 ,(cons 't 
-                        (append 
-                         (append body
-                             `((setq ,(first do_vble_clause) 
-                                     ,(third do_vble_clause)
-                                     iteration_count 
-                                            (1- iteration_count))))
-                         '((go loop))))))))
 
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
   (let ((step (gensym))
@@ -241,11 +208,6 @@
 
 ;----------------------------------------------------------------------------
 ;; macro for division 
-#+nil
-(defmacro f2cl/ (x y)
-   `(if (and (typep ,x 'fixnum) (typep ,y 'fixnum))
-        (floor ,x ,y)
-        (/ ,x ,y)))
 
 (defmacro f2cl/ (x y)
   (let ((top (gensym))
@@ -258,12 +220,6 @@
 	  (/ ,top ,bot)))))
 
 ;; macro for a lisp equivalent of Fortran arithmetic IFs
-#+nil
-(defmacro arithmetic-if (pred s1 s2 s3)
-   `(cond ((< ,pred 0) ,s1)
-          ((= ,pred 0) ,s2)
-          (t ,s3)))
-
 (defmacro arithmetic-if (pred s1 s2 s3)
   (let ((tst (gensym)))
     `(let ((,tst ,pred))
@@ -272,11 +228,6 @@
 	    (t ,s3)))))
 
 ;; macro for a lisp equivalent of Fortran computed GOTOs
-#+nil
-(defmacro computed-goto (tag-lst i)
-   `(let ((tag ,(nth (1- (eval i)) tag-lst)))
-       (if tag (go tag) nil)))
-
 (defun computed-goto-aux (tags)
   (let ((idx 0)
 	(result '()))
@@ -309,9 +260,6 @@
     sinh dsinh cosh dcosh tanh dtanh))
 
 ; some macros for intrinsic functions
-#+nil
-(defmacro int (x)
-   `(values (truncate ,x)))
 (defmacro int (x)
   (let ((xval (gensym)))
     ;; We use fixnum here because f2cl thinks Fortran integers are
@@ -335,12 +283,6 @@
 (defmacro idfix (x)
   `(int ,x))
 
-#+nil
-(defmacro aint (x)
-   `(values (ftruncate ,x)))
-#+nil
-(defmacro dint (x)
-   `(values (ftruncate ,x)))
 (defmacro aint (x)
   (let ((xval (gensym)))
     `(let ((,xval ,x))
@@ -537,13 +479,6 @@
    `(acos ,x))
 (defmacro datan (x)
    `(atan ,x))
-#+nil
-(defmacro atan2 (x y)
-   `(atan (/ ,x ,y)))
-#+nil
-(defmacro datan2 (x y)
-   `(atan (/ ,x ,y)))
-
 (defmacro atan2 (x y)
   `(atan ,x ,y))
 (defmacro datan2 (x y)

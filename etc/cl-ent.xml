@@ -70,6 +70,7 @@
 <!ENTITY readline "&gnu; <ulink url='ftp://ftp.gnu.org/gnu/readline/'>readline</ulink>">
 <!ENTITY gpl "<ulink url='http://www.gnu.org/copyleft/gpl.html'>GPL</ulink>">
 <!ENTITY lgpl "<ulink url='http://www.gnu.org/copyleft/lgpl.html'>LGPL</ulink>">
+<!ENTITY gfdl "<ulink url='http://www.gnu.org/copyleft/fdl.html'>GFDL</ulink>">
 
 <!-- *** implementations *** -->
 <!ENTITY ccl "<ulink url='http://corman.net/lisp><command>CormanLisp</command></ulink>">

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9 2004/10/05 22:15:57 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.10 2004/11/09 14:38:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -115,8 +115,6 @@
    file      ;; Either false; or a logical-name symbol;
              ;; or a pathname specifying only a name, optional type,
              ;; optional version
-;;;;   filename  ;; Either a symbol or false.  The symbol that was used to
-;;;;             ;; generate the file, if any.
 )
 ;;; Hmmm.  Host and device are supposed to be hidden in the 'directory'
 

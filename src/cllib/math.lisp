@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: math.lisp,v 2.2 2000/04/10 18:59:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -167,7 +167,7 @@ The optional second argument specifies the list of primes."
   "Print all the splittings of NUM into (+ (FUN M) (FUN K))
 FUN-1 is the integer inverse function.
 E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
-  (declare (type (integer 0) num) (type (or null stream out))
+  (declare (type (integer 0) num) (type (or null stream) out)
            (type (function ((integer 0)) (integer 0)) fun fun-1))
   (let ((lim (1+ (funcall fun-1 (floor num 2)))) res)
     (dotimes (ii lim (nreverse res))

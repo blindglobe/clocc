@@ -18,8 +18,7 @@
 
 usage(){
     cat <<EOF
-INVOCATION
-
+Usage:
  run-lisp [clause ...] [argument ...]
      clause ::= -i file    ; load file \`file'
               | -c file    ; compile file \`file'
@@ -153,7 +152,7 @@ case "$1" in
     case "$LISPTYPE" in
         clisp)
             ${CLISP-clisp} -M "$1".mem -x '(run)'
-        ;; 
+        ;;
         cmucl )
             ${CMUCL-lisp} -core "$1".core -eval '(run)'
             ;;
@@ -182,7 +181,6 @@ case "$1" in
         -i)
             if [ $# = 1 ]; then
               fail "missing argument for $1"
-              exit 1
             fi
             shift
             backslashify='s,\(["\\]\),\\\1,g'
@@ -243,7 +241,6 @@ case "$1" in
                   ;;
               * )
                   fail "Sorry, option -d not supported for LISPTYPE=${LISPTYPE}."
-                  exit 1
                   ;;
             esac
             shift
@@ -251,7 +248,6 @@ case "$1" in
         --safety)
             if [ $# = 1 ]; then
               fail "missing argument for $1"
-              exit 1
             fi
             shift 1
             todo=$todo" (proclaim (quote (optimize (safety "$1"))))"
@@ -260,7 +256,6 @@ case "$1" in
         --speed)
             if [ $# = 1 ]; then
               fail "missing argument for $1"
-              exit 1
             fi
             shift 1
             todo=$todo" (proclaim (quote (optimize (speed "$1"))))"

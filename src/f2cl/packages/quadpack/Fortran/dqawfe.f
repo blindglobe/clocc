@@ -203,6 +203,8 @@ c
       integer ier,ierlst,integr,iord,ktmin,l,last,lst,limit,limlst,ll,
      *    maxp1,momcom,nev,neval,nnlog,nres,numrl2
 c
+      double precision rsl, erl
+      integer ierl
       dimension alist(limit),blist(limit),chebmo(maxp1,25),elist(limit),
      *  erlst(limlst),ierlst(limlst),iord(limit),nnlog(limit),psum(52),
      *  res3la(3),rlist(limit),rslst(limlst)
@@ -293,9 +295,16 @@ c           integrate over current subinterval.
 c
         dla = lst
         epsa = eps*fact
+        rsl = rslst(lst)
+        erl = erlst(lst)
+        ierl = ierlst(lst)
         call dqawoe(f,c1,c2,omega,integr,epsa,0.0d+00,limit,lst,maxp1,
-     *  rslst(lst),erlst(lst),nev,ierlst(lst),last,alist,blist,rlist,
-     *  elist,iord,nnlog,momcom,chebmo)
+     *  rsl,erl,nev,ierl,last,alist,blist,rlist,
+     *       elist,iord,nnlog,momcom,chebmo)
+        ierlst(lst) = ierl
+        erlst(lst) = erl
+        rslst(lst) = rsl
+        
         neval = neval+nev
         fact = fact*p
         errsum = errsum+erlst(lst)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.32 2005/03/14 06:02:02 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.33 2005/03/17 13:07:11 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1474,6 +1474,9 @@
 	 (chunks-update changing-chunks false false)
 	 (nconc reset-olds (mapcar #'list set-olds set-news)))))
 
+;;; The "maybe" is because 'chunks' can be the empty list if the
+;;; appropriate "postpone" argument was false in the call that 
+;;; produced it.--
 (defun file-ops-maybe-postpone (chunks)
    (setq postponed-file-chunks*
 	 (append chunks postponed-file-chunks*)))

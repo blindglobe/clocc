@@ -1,8 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.7 2005/03/14 06:02:01 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.8 2005/03/17 13:07:10 airfoyle Exp $
 	
 2005-03-13: Debugged interaction between 'depends-on' and
             'self-compile-dep'. More tuning of ynisp to new chunk
-            system. 
+            system.  
 
 2005-03-12: Better cycle detection in chunk network.  Implemented
             'at-slurp-time' dependencies.

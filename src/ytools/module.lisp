@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.18 2005/03/14 06:02:02 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.19 2005/03/17 13:07:11 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -280,9 +280,25 @@
 	    :controllee loaded-ch
 	    :name name))))
 
-;;; During debugging, may hold a bogus group gleaned from
-;;; a module definition.--
-(defvar bad-group*)
+(def-slurp-task module-scan
+   :default (\\ (form state)
+	       (let ((dos-handler
+		        (href
+		           (Slurp-task-handler-table
+			      scan-depends-on*)
+			   (car form))))
+		  (cond (dos-handler
+			 (funcall dos-handler form state))
+			(t true))))
+   :file->state-fcn (\\ (mod)
+		       (cond ((is-YT-module mod)
+			      (make-Scan-depends-on-state
+				 :file-chunk (place-YT-module-chunk mod)
+;;;;				 :expect-only-run-time-dependencies true
+				 :sub-file-types (list macros-sub-file-type*)))
+			     (t
+			      (error "Attempt to scan non-module ~s"
+				     mod)))))
 
 (defmethod derive ((mod-controller Loadable-module-chunk))
    (let* ((loaded-mod-chunk
@@ -292,42 +308,12 @@
 	  (module (YT-module-chunk-module mod-chunk))
 	  (clal (YT-module-contents module)))
       (dolist (al clal)
-	 (let ((times (first al))
-	       (acts (rest al)))
-	    (dolist (a acts)
-;;; Okay, what we really want to do here is pretend we're scanning
-;;; a file, but that would require parameterizing scanning so it
-;;; works with pseudo-files.  If we can't do it right, no sense in
-;;; doing it in a half-assed way for which there is no demand. --	      
-;;;;	       (loop
-;;;;		  (cond ((and (consp a)
-;;;;			      (is-Symbol (car a))
-;;;;			      (macro-function (car a))
-;;;;			      (not (eq (car a) 'depends-on)))
-;;;;			 (setq a (macroexpand-1 a)))
-;;;;			(t
-;;;;			 (return))))
-	       (cond ((car-eq a 'depends-on)
-		      (let ((groups (depends-on-args-group (cdr a))))
-			 ;; What 'depends-on-args-group' returns is not
-			 ;; really tailored to this context, where
-			 ;; :run-time, :compile-time, etc. don't mean
-			 ;; anything.
-			 (dolist (g groups)
-			    (cond ((or (memq ':expansion times)
-				       (memq ':run-time (first g)))
-				   (let ((pnl (filespecs->ytools-pathnames
-					         (cdr g))))
-				      (pathnames-note-run-support
-					  pnl false
-					  loaded-mod-chunk)))
-				  (t
-				   (setq bad-group* g)
-				   (cerror "Forge on!"
-				      !"Warning: Meaningless to have ~
-					':compile-time' dependency in ~
-                                        module ~s~%"
-				      (YT-module-name module))))))))))))
+	 (let ((acts (rest al)))
+	    (forms-slurp
+	       acts
+	       (list module-scan*)
+	       (list (funcall (Slurp-task-file->state-fcn module-scan*)
+			      module))))))
    file-op-count*)
 
 (defvar module-now-loading* false)
@@ -340,6 +326,10 @@
 	 (cond ((memq ':run-support (first c))
 		(dolist (e (rest c))
 		   (eval e)))))))
+
+(defmethod loaded-chunk-set-basis ((mod-loaded-ch Loaded-module-chunk))
+   !())
+
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))

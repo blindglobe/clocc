@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.17 2005/03/14 06:02:02 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.18 2005/03/17 13:07:11 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,9 +13,10 @@
 (eval-when (:compile-toplevel :load-toplevel)
 
 (defstruct (Scan-depends-on-state (:conc-name Sds-))
-   file-chunk  ; or the symbol *, meaning the whose basis is being found
+   file-chunk  ; for the file whose basis is being found
+;;;;   expect-only-run-time-dependencies
    sub-file-types)
-;; -- A list of sub-file types L such that all supportive children found
+;; -- A list of sub-file types L such that all antecedents found
 ;; after this will be slurped with respect to every element of L.
 
 ;;; State for task is an Sdo-state for the file chunk we're scanning.
@@ -28,6 +29,7 @@
 		    (\\ (pn)
 		       (make-Scan-depends-on-state
 			  :file-chunk (place-File-chunk pn)
+;;;;			  :expect-only-run-time-dependencies false
 			  :sub-file-types (list macros-sub-file-type*)
 		        )))
  )
@@ -194,60 +196,69 @@
 		   e)))
 	 false)))
 
+;;; During debugging, may hold a bogus group gleaned from
+;;; a module definition.--
+(defvar bad-group*)
+
 (datafun scan-depends-on depends-on
   (defun :^ (e sdo-state)
      (cond (depends-on-enabled*
 	    (let* ((file-ch (Sds-file-chunk sdo-state))
+		   ;; -- If it's not a real File-chunk, it's something
+		   ;; like a module chunk.
 		   (groups (depends-on-args-group (cdr e)))
-		   (compiled-ch (place-compiled-chunk file-ch))
+		   (compiled-ch
+		       (cond ((typep file-ch 'File-chunk)
+			      (place-compiled-chunk file-ch))
+			     (t false)))
 		   (loaded-file-ch (place-Loaded-chunk file-ch false))
 		   )
 	       (labels ()
 		  (dolist (g groups)
 		     (let* ((pnl (filespecs->ytools-pathnames (cdr g))))
 			(cond ((memq ':compile-time (first g))
-			       (pathnames-note-compile-support
-				  pnl compiled-ch)))
+			       (cond (compiled-ch
+				      (pathnames-note-compile-support
+					 pnl compiled-ch))
+				     (t
+				      (setq bad-group* g)
+				      (cerror "Forge on!"
+					 !"Warning: ~
+					   ':compile-time' dependency in ~
+					   unexpected context ~s~%"
+					 e)))))
 			(cond ((memq ':run-time (first g))
 			       (pathnames-note-run-support
 				  pnl file-ch
 				  loaded-file-ch)
-			       (pathnames-note-sub-file-deps
-				  pnl compiled-ch
-				  ;; Not clear why _these_
-				  ;; sub-file-types should be the
-				  ;; crucial ones.--
-				  (Sds-sub-file-types sdo-state))))
+			       (cond (compiled-ch
+				      (pathnames-note-sub-file-deps
+					 pnl compiled-ch
+					 ;; Not clear why _these_
+					 ;; sub-file-types should be the
+					 ;; crucial ones.--
+					 (Sds-sub-file-types sdo-state))))))
 			(cond ((or (memq ':read-time (first g))
 				   (memq ':slurp-time (first g)))
-;;;;			       (cond ((and (equal (Pathname-name
-;;;;						     (File-chunk-pathname
-;;;;							file-ch))
-;;;;						  "intypes")
-;;;;					   (not (memq ydecl::nisp-types-sub-file-type*
-;;;;						      (Sds-sub-file-types
-;;;;						          sdo-state))))
-;;;;				      (dbg-save sdo-state)
-;;;;				      (breakpoint depends-on-scan-depends-on
-;;;;					 "Missing link")))
-			       (pathnames-note-slurp-support
-				   pnl file-ch sdo-state)
-;;;;			       (dbg-save pnl file-ch sdo-state)
-;;;;			       (breakpoint depends-on-scan-depends-on
-;;;;				  "Noting slurp support for " file-ch)
-			       (setf (File-chunk-read-basis file-ch)
-				     (union (mapcar #'pathname-denotation-chunk
-						    pnl)
-					    (File-chunk-read-basis
-						file-ch)))))
-;;;;			(format *error-output*
-;;;;			   "Checking bases of ~S~%"
-;;;;			   pnl)
+			       (cond (compiled-ch
+				      (pathnames-note-slurp-support
+					  pnl file-ch sdo-state)
+				      (setf (File-chunk-read-basis file-ch)
+					    (union
+					      (mapcar
+					         #'pathname-denotation-chunk
+						 pnl)
+					      (File-chunk-read-basis
+						 file-ch)))))))
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn))
 				  (lpchunk (place-Loaded-chunk pchunk false)))
 			      (monitor-filoid-basis lpchunk)
-			      (loaded-chunk-set-basis lpchunk)))))))))
+			      (loaded-chunk-set-basis lpchunk)
+			      (let ((expansion (pathname-expansion pn)))
+				 (forms-slurp expansion
+					      (list scan-depends-on*)
+					      (list sdo-state)))))))))))
     false))
 
 ;;; Return a list of groups, each of the form

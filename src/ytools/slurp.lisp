@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.20 2005/03/14 06:02:02 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.21 2005/03/17 13:07:11 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -78,14 +78,16 @@
 			(print-innards slurp-tsk srm))))))
    label
    (handler-table (make-hash-table :test #'eq :size 100))
-   default-handler
-   file->state-fcn) 
 ;;; -- handler-table maps symbols to functions of one argument that
 ;;; handle forms beginning with that symbol
-;;; default-handler is for all other forms.  If it's false, then
+   default-handler
+;;; -- default-handler is for all other forms.  If it's false, then
 ;;; there isn't a default handler.  
-;;; file->state-fcn takes a pathname and returns the state object
+   file->state-fcn) 
+;;; -- file->state-fcn takes a pathname and returns the state object
 ;;; for the slurp task (default: return nil).
+;;; Actually, its argument is not necessarily a pathname, because
+;;; we may want to slurp non-file entities.  (E.g., modules.)
 
 (defmacro def-slurp-task (name
 			  &key ((:default default-handler^)
@@ -404,11 +406,10 @@ after YTools file transducers finish.")
 				 (handled-by-task false) h)
 			      (setq h (href (Slurp-task-handler-table task)
 					    asym))
+			      (cond ((not h)
+				     (setq h (Slurp-task-default-handler
+					      task))))
 			      (cond (h
-				     (setq handled-by-task true)
-				     (setq task-done (funcall h form state)))
-				    ((setq h (Slurp-task-default-handler
-						   task))
 				     (setq handled-by-task true)
 				     (setq task-done (funcall h form state))))
 			      (cond (handled-by-task

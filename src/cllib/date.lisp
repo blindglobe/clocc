@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-01-13 Wed 18:21:49 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-2-1 Mon 13:57:58 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.25 1999/01/13 23:37:56 sds Exp $
+;;; $Id: date.lisp,v 1.26 1999/02/01 18:59:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.26  1999/02/01 18:59:07  sds
+;;; Use `string-tokens' in `date'.
+;;;
 ;;; Revision 1.25  1999/01/13 23:37:56  sds
 ;;; Replaced CMUCL-specific print functions with a call to
 ;;; `print-struct-object'.
@@ -110,6 +113,14 @@
 
 (eval-when (load compile eval)
 (deftype days-t () '(signed-byte 20))
+
+;; of course, a class would be more appropriate here, especially since
+;; this would allow us to use an :after `initialize-instance' method to
+;; properly init DD.
+;; Unfortunately, this would mean that we will have to define our own
+;; print/read procedures.  While the former is doable, the latter would
+;; apparently require make-load-form, which is missing from CLISP.
+
 (defstruct (date #+cmu (:print-function print-struct-object))
   "The date structure -- year, month, and day."
   (ye 1 :type days-t)
@@ -218,7 +229,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (multiple-value-bind (ye mo da dd ho mi se zo)
+  (destructuring-bind (ye mo da dd ho mi se zo)
       (string-tokens
        (nsubstitute-if
         #\Space (lambda (c) (find c #(#\: #\- #\, #\. #\/))) xx))
@@ -271,9 +282,9 @@ The second optional argument can be 1 (default) for `after' and
 ;;; generic
 ;;;
 
-(eval-when (load compile eval)
-  (fmakunbound 'date)
-  (defgeneric date (xx) (:documentation "Convert to or extract a date.
+(fmakunbound 'date)
+(defgeneric date (xx)
+  (:documentation "Convert to or extract a date.
 The argument can be:
    - a date - it is returned untouched;
    - a string - it is destructively parsed;
@@ -283,29 +294,28 @@ The argument can be:
    - a stream - read as Month Day Year;
    - a structure - the appropriate slot is used;
    - a cons - called recursively on CAR;
-   - NIL - an error is signalled."))
-  (declaim (ftype (function (t) date) date)))
-(defmethod date ((xx date)) xx)
-(defmethod date ((xx string))
-  ;; The following formats are accepted:
-  ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
-  (let ((str (nsubstitute-if #\Space (lambda (ch) (find ch #(#\- #\, #\. #\/)))
-                             xx)))
-    (multiple-value-bind (ye n0) (read-from-string str)
-      (multiple-value-bind (mo n1) (read-from-string str nil 0 :start n0)
-        (multiple-value-bind (da n2) (read-from-string str nil 0 :start n1)
-          (values
-           (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
-               (mk-date :ye da :mo (infer-month ye) :da mo)) n2))))))
-(defmethod date ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
-(defmethod date ((xx symbol)) (unintern xx) (date (symbol-name xx)))
-(defmethod date ((xx integer)) (days2date xx))
-(defmethod date ((xx real)) (time2date xx))
-(defmethod date ((xx stream))
-  ;; Read date in format MONTH DAY YEAR
-  (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
-(defmethod date ((xx cons)) (date (car xx)))
-
+   - NIL - an error is signalled.")
+  (:method ((xx date)) xx)
+  (:method ((xx string))
+           ;; The following formats are accepted:
+           ;; `1969-12-7', `May 8, 1945', `1945, September 2'.
+           (destructuring-bind (ye mo da)
+               (string-tokens
+                (nsubstitute-if
+                 #\Space (lambda (ch) (or (char= ch #\-) (char= ch #\,)
+                                          (char= ch #\.) (char= ch #\/)))
+                 xx)
+                :max 3)
+             (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
+                 (mk-date :ye da :mo (infer-month ye) :da mo))))
+  (:method ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
+  (:method ((xx symbol)) (unintern xx) (date (symbol-name xx)))
+  (:method ((xx integer)) (days2date xx))
+  (:method ((xx real)) (time2date xx))
+  (:method ((xx stream))        ; Read date in format MONTH DAY YEAR
+           (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
+  (:method ((xx cons)) (date (car xx))))
+(declaim (ftype (function (t) date) date))
 ;;;
 ;;; utilities
 ;;;
@@ -413,8 +423,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (and (= (date-ye d0) (date-ye d1)) (= (date-quarter d0) (date-quarter d1))))
 
 (defsubst days-between (d0 &optional (d1 (today)))
-  "Return the number of days between the two dates.
-Arguments can be dates or objects parsable with `date'."
+  "Return the number of days between the two dates."
   (declare (type date d0 d1) (values fixnum))
   (- (date-dd d1) (date-dd d0)))
 

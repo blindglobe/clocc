@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.22 2004/03/11 19:44:00 sds Exp $
+;;; $Id: clocc.lisp,v 1.23 2004/05/09 21:03:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -83,6 +83,8 @@
   (pushnew 'compile pcl::*defclass-times*)
   (pushnew 'compile pcl::*defgeneric-times*)
   (pushnew 'compile pcl::*defmethod-times*))
+
+#+cmu (setq ext:*gc-verbose* nil)
 
 (eval-when (compile eval)
   (let (x y)

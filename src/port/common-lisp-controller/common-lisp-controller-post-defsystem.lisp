@@ -34,12 +34,34 @@
 
 (defclass load-compiled-op (operation)
   ()
-  (:documentation "This operation loads each compiled file for a component. If  a binary component does not exist then the condition load-compiled-error-not-exist will be signaled. If both the source file and binary components exists, and if the file-write-date of the binary is earlier than the source, then the condition load-compiled-error-out-dated will be signaled."))
-
+  (:documentation "This operation loads each compiled file for a component. If a binary component does not exist then the condition load-compiled-error-not-exist will be signaled. If both the source file and binary components exists, and if the file-write-date of the binary is earlier than the source, then the condition load-compiled-error-out-dated will be signaled."))
 
 (defmethod output-files ((operation load-compiled-op)
 			 (c cl-source-file))
+  (declare (ignore operation))
   (list (compile-file-pathname (component-pathname c))))
+
+(defmethod operation-done-p ((o load-compiled-op) (c source-file))
+  "Compare the :last-loaded time of the source-file to the file-write-date of
+the output files. If :last-loaded is not NIL and is greater
+than the maximum file-write-date of output-files, return T."
+  (let ((load-date (component-property c 'last-loaded))
+	(max-binary-date (maximum-file-write-date (output-files o c))))
+    (when (and load-date max-binary-date (>= load-date max-binary-date))
+      t)))
+  
+(defun maximum-file-write-date (files)
+  "Returns NIL if some files don't exist"
+  (let ((max nil))
+    (dolist (f files)
+      (unless (probe-file f)
+	(return nil))
+      (let ((date (file-write-date f)))
+	(if max
+	    (when (< max date)
+	      (setq max date))
+	  (setq max date))))
+    max))
 
 (defmethod perform ((o load-compiled-op) (c source-file))
   (let* ((co (make-sub-operation o 'compile-op))
@@ -57,7 +79,8 @@
 	       :source-file (component-pathname c)))
       (load of))
     (setf (component-property c ':last-loaded)
-	  (file-write-date (car output-files)))))
+	  (maximum-file-write-date output-files))))
+
 
 (export 'load-compiled-op)
 
@@ -136,8 +159,7 @@
      (progn
        (format t "~&;;;Please wait, recompiling library...")
        ;; first compile the sub-components!
-       (dolist (sub-system (make::component-depends-on
-			    system))
+       (dolist (sub-system (make::component-depends-on system))
 	 (when (stringp sub-system)
 	   (setf sub-system (intern sub-system (find-package :keyword))))
 	 (clc-require sub-system))
@@ -164,12 +186,12 @@
 	(asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
 	(error ()
 	       (format t "~&;;;Please wait, recompiling library...")
-	       ;; first compile the sub-components!
-	       (dolist (sub-system (asdf:module-components system))
-		 (when (typep sub-system 'asdf:system)
-		   (setf sub-system (intern (asdf:component-name sub-system)
-					    (find-package :keyword)))
-		   (clc-require sub-system)))
+	       ;; first compile the depends-on
+	       (dolist (sub-system
+			;; skip asdf:load-op at beginning of first list
+			(cdar (asdf:component-depends-on
+			      (make-instance 'asdf:compile-op) system)))
+		 (clc-require sub-system))
 	       (let ((module-name-str
 		      (if (stringp module-name)
 			  module-name

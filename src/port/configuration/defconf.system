@@ -16,6 +16,7 @@
 (mk:defsystem "CL.EXT.CONFIGURATION"
     :source-pathname ""
     :binary-pathname ""
+    :source-extension "lisp"
     :components ((:file "defconf-package")
 		 (:file "configuration-template"
 			:depends-on ("defconf-package"))

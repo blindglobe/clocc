@@ -234,7 +234,7 @@ c           chebmo    - array containing the modified chebyshev
 c                       moments (see also routine dqc25f)
 c
       data p/0.9d+00/
-      data pi / 3.1415926535 8979323846 2643383279 50 d0 /
+      data pi / 3.14159265358979323846264338327950d0 /
 c
 c           test on validity of parameters
 c           ------------------------------

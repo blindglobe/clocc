@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: withtype.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
+;;; $Id: withtype.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/withtype.lisp,v $
 
 (eval-when (compile load eval)
@@ -37,7 +37,7 @@
 
 (defmacro dfloat (num)
   "Coerce to double float."
-  `(float ,num 1.0d0))
+  `(float ,num 1d0))
 
 (deftype index-t () '(unsigned-byte 20))
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.12 2000/05/12 20:48:14 sds Exp $
+;;; $Id: url.lisp,v 2.13 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -358,7 +358,7 @@ the error `timeout' is signaled."
 (defcustom *url-bytes-transferred* integer 0
   "The number of bytes transferred during the current connection.")
 (makunbound '*url-bytes-transferred*)
-(defcustom *url-opening-time* double-float 0.0d0
+(defcustom *url-opening-time* double-float 0d0
   "The time when the current connection was open.")
 (makunbound '*url-opening-time*)
 

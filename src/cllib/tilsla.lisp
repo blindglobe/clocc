@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tilsla.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
+;;; $Id: tilsla.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tilsla.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,9 +32,9 @@ after and before the decimal point."
     (let ((dnum (abs (dfloat dnum))))
       (declare (double-float dnum))
       (unless ddp (setq dd (1- (length (format nil "~f" dnum)))))
-      (when (< (- 1 dnum) (expt 0.1d0 dd)) ; rounding at formatting
+      (when (< (- 1 dnum) (expt 1d-1 dd)) ; rounding at formatting
         (if (minusp inum) (decf inum) (incf inum))
-        (setq dnum 0.0d0))
+        (setq dnum 0d0))
       (format nil "~v:d~v,vf" di inum (1+ dd) dd dnum))))
 
 (defun comma (stream num colon-p atsign-p &optional (dd 0 ddp) (di 0)
@@ -60,7 +60,7 @@ dollar sign is printed."
       (unless ddp (setq dd (1- (length (format nil "~f" dnum)))))
       (when (< (- 1 dnum) (expt 1/10 dd)) ; rounding at formatting
         (incf inum (signum inum))
-        (setq dnum 0.0d0))
+        (setq dnum 0d0))
       (let ((str (format nil "~,,v:d~v,vf" commachar inum (1+ dd) dd dnum))
             (sig (if (and atsign-p (plusp num)) #\+)))
         (declare (simple-string str))
@@ -76,7 +76,7 @@ dollar sign is printed."
 (defconst +internal-time-digits+ fixnum
   (min 3 (round (log internal-time-units-per-second) (log 10)))
   "The number of digits in `internal-time-units-per-second'.")
-(defcustom *seconds-long-threshold* double-float 300.0d0
+(defcustom *seconds-long-threshold* double-float 300d0
   "If time is larger than this, `pr-secs' will use `hh:mm:ss' format.")
 
 (defun pr-secs (stream sec colon-p atsign-p)

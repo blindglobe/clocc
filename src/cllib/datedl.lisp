@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.7 2000/05/12 18:36:16 sds Exp $
+;;; $Id: datedl.lisp,v 1.8 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -420,7 +420,7 @@ Return: the change in misc."
 Return nil if at the end already, or the change in value."
   (declare (type dated-list dl))
   (unless (cdr (dl-ll dl)) (return-from skip-dl-to-extremum nil))
-  (do ((ll (dl-ll dl) (dl-ll dl)) ch (mv 0.0d0))
+  (do ((ll (dl-ll dl) (dl-ll dl)) ch (mv 0d0))
       ((null (setq ch (dl-next-chg dl))) mv)
     (declare (double-float mv))
     (cond ((minusp (* ch mv)) (setf (dl-ll dl) ll)
@@ -486,7 +486,7 @@ coefficient for the given sequence."
   (declare (double-float coeff) (sequence seq)
            (type (or null date-f-t) date)
            (type (function (t) double-float) key))
-  (let* ((ema (funcall key (elt seq 0))) (c1 (- 1.0d0 coeff)))
+  (let* ((ema (funcall key (elt seq 0))) (c1 (- 1d0 coeff)))
     (declare (double-float ema c1))
     (map 'list
          (if date
@@ -501,7 +501,7 @@ coefficient for the given sequence."
 The SEQ is a sequence of conses with (cdr (last ELT)) being a double-float X.
 It is is replaced with (X . EMA)."
   (declare (double-float coeff) (sequence seq))
-  (let ((ema (cdr (last (elt seq 0)))) (c1 (- 1.0d0 coeff)))
+  (let ((ema (cdr (last (elt seq 0)))) (c1 (- 1d0 coeff)))
     (declare (double-float ema c1))
     (map-in (lambda (el)
               (let* ((ee (last el)) (nn (cdr ee)))
@@ -518,7 +518,7 @@ It is is replaced with (X . EMA)."
 When DOUBLE is given, compute 2 averages, with COEFF and COEFF/2,
 and make the latter accessible through MISC."
   (declare (double-float coeff) (type dated-list idl))
-  (let* ((c2 (/ coeff 2.0d0)) (dd (dl-date idl)) (kk (dl-slot idl slot))
+  (let* ((c2 (/ coeff 2d0)) (dd (dl-date idl)) (kk (dl-slot idl slot))
          (dl (make-dated-list
               :date 'car :val 'cdr :name
               (format nil "EMA [~3,2f~:[~*~;/~4,3f~]] `~a'" coeff
@@ -643,8 +643,8 @@ ch[bf], and dl-extrema will not be idempotent."
 (defstruct (diff #+cmu (:print-function print-struct-object))
   "A dated diff."
   (date +bad-date+ :type date)
-  (di 0.0 :type real)           ; difference
-  (ra 1.0 :type real))          ; ratio
+  (di 0d0 :type real)           ; difference
+  (ra 1d0 :type real))          ; ratio
 )
 
 (defmethod date ((xx diff)) (diff-date xx))

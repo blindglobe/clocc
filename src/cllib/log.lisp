@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.9 2000/05/08 20:00:19 sds Exp $
+;;; $Id: log.lisp,v 1.10 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,7 +32,7 @@ Taken from CLtL2 p602."
 ;;; {{{ progress reporting
 ;;;
 
-(declaim (ftype (function (&optional t) (values (double-float 0.0d0)))
+(declaim (ftype (function (&optional t) (values (double-float 0d0)))
                 get-float-time))
 (defun get-float-time (&optional (run t))
   "Return the run (or real) time counter, as a double float."
@@ -42,7 +42,7 @@ Taken from CLtL2 p602."
   "Return the time in seconds elapsed since BT,
 previously set using `get-float-time'.
 If FMT is non-NIL, return the corresponding string too."
-  (declare (type (double-float 0.0d0) bt))
+  (declare (type (double-float 0d0) bt))
   (let ((nn (with-type double-float
               (/ (- (get-float-time run) bt)
                  (dfloat internal-time-units-per-second)))))

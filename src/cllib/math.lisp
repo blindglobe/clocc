@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.9 2000/05/12 18:36:16 sds Exp $
+;;; $Id: math.lisp,v 2.10 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -185,7 +185,7 @@ The optional second argument specifies the list of primes."
   (declare (fixnum limit))
   (with-timing (:done t)
     (format t "Computing primes up to ~:d..." limit) (force-output)
-    (primes-to limit 10.0d0))
+    (primes-to limit 10d0))
   (write-to-file *primes* *primes-file* nil
                  (format nil "~%;; Upper limit: ~:d~%;; ~:d primes~%"
                          limit (length *primes*))))
@@ -238,11 +238,11 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
   ;;       (values (+ (car fract) (/ v0)) (+ (car fract) (/ v1))))
   ;;     (values (car fract) (1+ (car fract)))))
 
-(defcustom *relative-tolerance* double-float 1.0d-3
+(defcustom *relative-tolerance* double-float 1d-3
   "*The default relative tolerance for `approx='.")
-(defcustom *absolute-tolerance* double-float 1.0d0
+(defcustom *absolute-tolerance* double-float 1d0
   "*The default absolute tolerance for `approx='.")
-(defcustom *num-tolerance* double-float 1.0d-6
+(defcustom *num-tolerance* double-float 1d-6
   "*The default numerical tolerance for `approx=-[abs|rel]'.")
 
 (defun fract-approx (xx &optional (eps *num-tolerance*))
@@ -273,7 +273,7 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
   "Compute the dot-product of the two sequences,
 presumed to be of the same size."
   (declare (sequence l0 l1) (type (function (t) double-float) key key0 key1))
-  (let ((res 0.0d0))
+  (let ((res 0d0))
     (declare (double-float res))
     (map nil (lambda (r0 r1)
                (incf res (* (funcall key0 r0) (funcall key1 r1))))
@@ -285,7 +285,7 @@ presumed to be of the same size."
 COEFFS are (a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly1 10 1 2 3 4 5) ==> 12345."
   (declare (double-float var) (list coeffs))
-  (let ((res 0.0d0))
+  (let ((res 0d0))
     (declare (double-float res))
     (dolist (cc coeffs res)
       (declare (double-float cc))
@@ -296,21 +296,21 @@ so that (poly1 10 1 2 3 4 5) ==> 12345."
 COEFFS are #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly 10 1 2 3 4 5) ==> 12345."
   (declare (double-float var) (type simple-vector coeffs))
-  (loop :with res :of-type double-float = 0.0d0
+  (loop :with res :of-type double-float = 0d0
         :for cc :of-type double-float :across coeffs
         :do (setq res (+ cc (* var res))) :finally (return res)))
 
 (defun erf (xx)
   "Compute the error function, accurate to 1e-6. See Hull p. 243.
 The same as
-  (+ 0.5 (/ (integrate-simpson (lambda (tt) (exp (* tt tt -0.5))) 0 xx)
-            (sqrt (* 2 pi))))
+  (+ 0.5d0 (/ (integrate-simpson (lambda (tt) (exp (* tt tt -0.5d0))) 0 xx)
+              (sqrt (* 2 pi))))
 Return the value and the derivative, suitable for `newton'."
   (declare (double-float xx))
   (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (dfloat (sqrt (* 2 pi)))))
          (val (- 1 (* der (poly (/ (1+ (* (abs xx) 0.2316419d0)))
                                 #(1.330274429d0 -1.821255978d0 1.781477937d0
-                                  -0.356563782d0 0.319381530d0 0.0d0))))))
+                                  -0.356563782d0 0.319381530d0 0d0))))))
     (declare (double-float der val))
     (values (if (minusp xx) (- 1 val) val) der)))
 
@@ -340,7 +340,7 @@ Return the value and the derivative, suitable for `newton'."
   "Return the square of the relative mismatch between the 2 sequences."
   (declare (sequence seq1 seq2) (type (or null fixnum) depth)
            (type (function (t) double-float) key) (fixnum start1 start2))
-  (let ((b1 (funcall key (elt seq1 start1))) (dist 0.0d0)
+  (let ((b1 (funcall key (elt seq1 start1))) (dist 0d0)
         (b2 (funcall key (elt seq2 start2)))
         (depth (or depth (min (- (length seq1) start1)
                               (- (length seq2) start2)))))
@@ -389,7 +389,7 @@ Returns 2 values: the mean and the length of the sequence."
   "Compute the weighted geometric mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
   (declare (sequence seq wts) (type (function (t) double-float) value weight))
-  (let ((twt (reduce #'+ wts :key weight)) (res 1.0d0))
+  (let ((twt (reduce #'+ wts :key weight)) (res 1d0))
     (declare (double-float res twt))
     (map nil (lambda (rr wt)
                (setq res (* res (expt (funcall value rr)
@@ -407,7 +407,7 @@ Return 2 values: the mean and the length of the sequence."
     (values (s/ (reduce #'+ seq :key (lambda (rr)
                                        (let ((val (funcall key rr)))
                                          (cond (val (incf len) val)
-                                               (0.0d0)))))
+                                               (0d0)))))
                 len)
             len)))
 
@@ -417,7 +417,7 @@ Return 2 values: the mean and the length of the sequence."
 The mean and the length can be pre-computed for speed."
   (declare (sequence seq) (fixnum len) (double-float mean)
            (type (function (t) double-float) key))
-  (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
+  (when (<= len 1) (return-from standard-deviation (values 0d0 mean len)))
   (values
    (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
             (1- len)))
@@ -430,7 +430,7 @@ The mean and the length can be pre-computed for speed."
            (type (function (t) number) weight))
   (multiple-value-bind (mn twt)
       (mean-weighted seq wts :value value :weight weight)
-    (let ((sum 0.0d0))
+    (let ((sum 0d0))
       (map nil (lambda (xx ww)
                  (incf sum (* (funcall weight ww)
                               (sqr (- (funcall value xx) mn)))))
@@ -447,7 +447,7 @@ The mean and the length can be pre-computed for speed."
 Meaningful only if all the numbers are of the same sign,
 if this is not the case, the result will be a complex number."
   (declare (sequence seq) (type (function (t) double-float) key))
-  (let (pr (sq 0.0d0) (su 0.0d0) (nn 0))
+  (let (pr (sq 0d0) (su 0d0) (nn 0))
     (declare (double-float sq su) (type (or null double-float) pr)
              (type index-t nn))
     (map nil (lambda (rr)
@@ -457,13 +457,13 @@ if this is not the case, the result will be a complex number."
                  (setq pr cc)
                  (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
          seq)
-    (values (sqrt (max 0.0d0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
+    (values (sqrt (max 0d0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."
   (declare (sequence seq) (type (function (t) double-float) key))
   (unless std (setf (values std mean len) (standard-deviation seq :key key)))
-  (let ((skew 0.0d0) (kurt 0.0d0))
+  (let ((skew 0d0) (kurt 0d0))
     (map nil (lambda (rr)
                (let* ((cc (/ (- (funcall key rr) mean) std))
                       (c3 (* cc cc cc)))
@@ -479,7 +479,7 @@ if this is not the case, the result will be a complex number."
   (unless std
     (setf (values std mean tot)
           (standard-deviation-weighted seq wts :value value :weight weight)))
-  (let ((skew 0.0d0) (kurt 0.0d0))
+  (let ((skew 0d0) (kurt 0d0))
     (map nil (lambda (rr ww)
                (let* ((cc (/ (- (funcall value rr) mean) std))
                       (wt (funcall weight ww))
@@ -496,8 +496,8 @@ dispersion1, number of elements considered.
 Uses the fast but numerically unstable algorithm
 without pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
-  (let ((xb 0.0d0) (yb 0.0d0) (x2b 0.0d0) (xyb 0.0d0) (y2b 0.0d0)
-        (nn 0) (c0 0.0d0) (c1 0.0d0))
+  (let ((xb 0d0) (yb 0d0) (x2b 0d0) (xyb 0d0) (y2b 0d0)
+        (nn 0) (c0 0d0) (c1 0d0))
     (declare (double-float xb yb x2b xyb y2b c0 c1) (type index-t nn))
     (map nil (lambda (r0 r1)
                (let ((xx (funcall key0 r0)) (yy (funcall key1 r1)))
@@ -522,7 +522,7 @@ Uses the numerically stable algorithm with pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
   (let ((m0 (dfloat (mean seq0 :key key0)))
         (m1 (dfloat (mean seq1 :key key1)))
-        (nn 0) (d0 0.0d0) (d1 0.0d0) (rr 0.0d0) (co 0.0d0))
+        (nn 0) (d0 0d0) (d1 0d0) (rr 0d0) (co 0d0))
     (declare (fixnum nn) (double-float m0 m1 d0 d1 rr co))
     (map nil (lambda (r0 r1)
                (let ((xx (- (funcall key0 r0) m0))
@@ -559,8 +559,8 @@ and the list of the volatilities for each year."
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (mdl #+cmu (:print-function print-struct-object))
-  (mn 0.0d0 :type double-float)   ; Mean
-  (sd 0.0d0 :type (double-float 0.0d0)) ; Deviation
+  (mn 0d0 :type double-float)   ; Mean
+  (sd 0d0 :type (double-float 0d0)) ; Deviation
   (le 0 :type index-t))         ; Length
 )
 
@@ -629,7 +629,7 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 (defsubst d/ (aa bb)
   "Double float fast safe division; only 2 arguments are allowed."
   (declare (double-float aa bb))
-  (if (zerop bb) (cond ((zerop aa) 1.0d0)
+  (if (zerop bb) (cond ((zerop aa) 1d0)
                        ((plusp aa) most-positive-double-float)
                        (most-negative-double-float))
       (/ aa bb)))
@@ -660,7 +660,7 @@ that lie below (if UP is non-nil) or above (if UP is nil) the upper
 The accessor keys XKEY and YKEY default to CAR and CDR.
 Return the modified LST. 20% faster than `convex-hull1'."
   (declare (list lst) (type (function (t) double-float) xkey ykey))
-  (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0.0d0) (y0 0.0d0)
+  (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0d0) (y0 0d0)
         (sl (lambda (pp)        ; has to be d/!!!
               (d/ (with-type double-float (- (funcall ykey pp) y0))
                   (abs (with-type double-float (- (funcall xkey pp) x0)))))))
@@ -669,7 +669,7 @@ Return the modified LST. 20% faster than `convex-hull1'."
              (type (function (t) double-float) sl))
     (setf x0 (funcall xkey (car ll)) y0 (funcall ykey (car ll))
           (cdr ll)
-          (do ((l1 (cddr ll) (cdr l1)) (top (cdr ll)) (csl 0.0d0)
+          (do ((l1 (cddr ll) (cdr l1)) (top (cdr ll)) (csl 0d0)
                (tsl (funcall sl (cadr ll))))
               ((null l1) top)
             (declare (double-float csl tsl))
@@ -684,17 +684,17 @@ Return the modified LST. 20% faster than `convex-hull1'."
 
 (defmacro to-percent (vv)
   "1.234 ==> 23.4%"
-  `(* 100.0d0 (1- ,vv)))
+  `(* 100d0 (1- ,vv)))
 
 (defun percent-change (v0 v1 &optional days)
   "Return the percent change in values, from V0 to V1.
 If the optional DAYS is given, return the annualized change too."
   (declare (number v0 v1) (type (or null number) days))
-  (if (zerop v0) (values 0.0d0 0.0d0)
+  (if (zerop v0) (values 0d0 0d0)
       (let ((pers (dfloat (/ v1 v0))))
         (if (and days (not (zerop days)))
             (values (to-percent pers)
-                    (if (zerop days) 0.0d0
+                    (if (zerop days) 0d0
                         (to-percent (expt pers (/ 365.25d0 days)))))
             (to-percent pers)))))
 
@@ -746,17 +746,17 @@ and the number of iterations made."
 Returns the integral, the last approximation, and the number of points."
   (declare (double-float x0 xm eps)
            (type (function (double-float) double-float) ff))
-  (do* ((f0 (funcall ff x0)) (f1 (funcall ff (* 0.5 (+ x0 xm))))
-        (fm (funcall ff xm)) (hh (* 0.5 (- xm x0)) (* hh 0.5))
+  (do* ((f0 (funcall ff x0)) (f1 (funcall ff (* 0.5d0 (+ x0 xm))))
+        (fm (funcall ff xm)) (hh (* 0.5d0 (- xm x0)) (* hh 0.5d0))
         (mm 2 (* mm 2))
-        (sum-even 0.0d0 (+ sum-odd sum-even))
+        (sum-even 0d0 (+ sum-odd sum-even))
         (sum-odd
          f1 (loop :for ii :of-type index-t :from 1 :below mm :by 2
-                  :and step :of-type double-float :from 1.0d0 :by 2.0d0
+                  :and step :of-type double-float :from 1d0 :by 2d0
                   :sum (funcall ff (+ x0 (* hh step))) :of-type double-float))
-        (int-last 0.0d0 int)
-        (int (* (/ hh 3.0) (+ f0 (* 4.0 f1) fm))
-             (* (/ hh 3.0) (+ f0 (* 4.0 sum-odd) (* 2.0 sum-even) fm))))
+        (int-last 0d0 int)
+        (int (* (/ hh 3d0) (+ f0 (* 4d0 f1) fm))
+             (* (/ hh 3d0) (+ f0 (* 4d0 sum-odd) (* 2d0 sum-even) fm))))
        ((< (abs (- int int-last)) eps) (values int int-last mm))
     (declare (double-float sum-odd sum-even hh f0 f1 fm int int-last)
              (type index-t mm))))
@@ -773,8 +773,8 @@ Returns the probability of at least one event happening."
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (line #+cmu (:print-function print-struct-object))
   "A straight line."
-  (sl 0.0d0 :type double-float) ; slope
-  (co 0.0d0 :type double-float)) ; constant
+  (sl 0d0 :type double-float) ; slope
+  (co 0d0 :type double-float)) ; constant
 )
 
 (defconst +bad-line+ line (make-line) "*The convenient constant for init.")
@@ -842,7 +842,7 @@ keeping the slope intact."
   (declare (type line ln) (list ls)
            (type (function (t) double-float) xkey ykey))
   (do ((ff (if up #'line-above-p #'line-below-p))
-       (ll ls (cdr ll)) (xx 0.0d0) (yy 0.0d0))
+       (ll ls (cdr ll)) (xx 0d0) (yy 0d0))
       ((endp ll) ln)
     (declare (double-float xx yy) (type function ff))
     (setq xx (funcall xkey (car ll)) yy (funcall ykey (car ll)))
@@ -869,7 +869,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
                                  (funcall ykey (elt seq 0))
                                  (funcall xkey (elt seq 1))
                                  (funcall ykey (elt seq 1)))
-               0.0d0))
+               0d0))
     (t (multiple-value-bind (co xm ym xd yd nn)
            (cov seq :xkey xkey :ykey ykey)
          (declare (double-float co xm ym xd yd) (fixnum nn))
@@ -878,7 +878,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
            (when (minusp err)
              (mesg :err t "REGRESS: error is negative: ~f (assumed 0) [len: ~d]
 ~s~%" err nn seq)
-             (setq err 0.0d0))
+             (setq err 0d0))
            (values (make-line :sl sl :co
                               (with-type double-float (- ym (* xm sl))))
                    (sqrt err)))))))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: check.lisp,v 1.3 2000/05/02 15:39:14 sds Exp $
+;;; $Id: check.lisp,v 1.4 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/check.lisp,v $
 
 (eval-when (compile load eval)
@@ -91,7 +91,7 @@ for relative change of at least ~5,3f~%"
 (defun out-of-bounds-p (ll &key (key #'value) (bn *big-num*) (out t))
   "Check for outrageous numbers in the list."
   (declare (list ll) (type (function (t) double-float)) (double-float bn))
-  (let ((err nil) (bn- (- bn)) (bn1 (/ bn)) (bn1- (- (/ bn))) (val 0.0d0))
+  (let ((err nil) (bn- (- bn)) (bn1 (/ bn)) (bn1- (- (/ bn))) (val 0d0))
     (declare (double-float bn- bn1 bn1- val))
     (dolist (rec ll err)
       (setq val (funcall key rec))

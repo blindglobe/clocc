@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
+;;; $Id: iter.lisp,v 1.5 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
 (eval-when (compile load eval)
@@ -107,7 +107,7 @@ Returns the list of the 2^dim points, less if the set was degenerate."
   (let* ((ll (if (> (length lst) (1+ (length (car lst))))
                  (convex-hull-n-dim (cdr lst)) (cdr lst)))
          (new (car lst)) (len (length ll)) (dim (length (car lst)))
-         (mid (mk-arr 'double-float 0.0d0 dim)))
+         (mid (mk-arr 'double-float 0d0 dim)))
     (declare (fixnum len dim) (type (simple-array double-float (*)) new mid))
     (setq mid (apply #'map-into mid
                      (lambda (&rest nums) (/ (apply #'+ nums) len)) ll))

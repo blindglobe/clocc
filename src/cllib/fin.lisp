@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.3 2000/05/02 15:39:14 sds Exp $
+;;; $Id: fin.lisp,v 2.4 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,7 @@
 
 (defun mgg-rate (apr &optional monthly)
   "Convert the annual to monthly."
-  (if monthly (1- (expt (1+ apr) (/ 1.0 12))) (/ apr 12.0)))
+  (if monthly (1- (expt (1+ apr) (/ 1d0 12))) (/ apr 12d0)))
 
 (defun mgg-discount (term apr &optional monthly)
   "The discount (principal/periodic payment) for the TERM and APR."
@@ -60,7 +60,7 @@ APR of 7% should be given as 0.07, not as 7."
                                 (di1 (mgg-discount tt apr1 monthly))
                                 (mm1 (* principal di1))
                                 (dd (- mm mm1)) (amt (/ dd di1))
-                                (pnt-amt (* pts 0.01 principal))
+                                (pnt-amt (* pts 1d-2 principal))
                                 (term (/ (mgg-term (/ dd pnt-amt) apr1) 12)))
                            (list (* 100 apr1) mm1 dd amt pts pnt-amt term)))
                        apr-pts)
@@ -148,10 +148,10 @@ the ratio K_{n+1}/K_n from K_n/K_{n-1}."
 and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
   (declare (double-float k-y-0 dgn alpha))
   (format t "~&year capital  income     k/y consumption~%")
-  (let* ((kk0 (expt k-y-0 (/ 1.0 (- 1 alpha)))) (sav (* dgn k-y-0))
+  (let* ((kk0 (expt k-y-0 (/ 1d0 (- 1 alpha)))) (sav (* dgn k-y-0))
 	 (yy0 (expt kk0 alpha)) (cc0 (* (- 1 sav) yy0)))
     (format t "    ~8,3f~8,3f~8,3f~8,3f~%" kk0 yy0 k-y-0 cc0)
-    (do ((del 1.0) yy cc (nn 1 (1+ nn)) (kk kk0) (ky k-y-0))
+    (do ((del 1d0) yy cc (nn 1 (1+ nn)) (kk kk0) (ky k-y-0))
 	((or (< del *num-tolerance*) (> nn 100)))
       (multiple-value-setq (kk ky) (solow-next-year kk ky alpha dgn alpha))
       (setq yy (/ kk ky) cc (* (- 1 alpha) yy))
@@ -167,9 +167,9 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
 (defun lognormal (xx)
   (declare (double-float xx))
   (if (plusp xx)
-      (/ (exp (let ((ll (log xx))) (* ll ll -0.5)))
+      (/ (exp (let ((ll (log xx))) (* ll ll -0.5d0)))
          (dfloat (sqrt (* 2 pi))) xx)
-      0.0))
+      0d0))
 
 ;;;
 ;;; Checking Credit Card Number validity via Luhn algorithm.
@@ -208,16 +208,16 @@ instead."
 
 (newton (lambda (xx)
           (values (integrate-simpson #'lognormal 0 xx) (lognormal xx)))
-        :val 0.5 :ival 2)
+        :val 0d5 :ival 2)
 ;; ==> 1.0
 
 (time
 (setq lll
 (loop with lognormalx = (lambda (xx) (* xx (lognormal xx)))
-      with mean = (integrate-simpson lognormalx 0.0 100.0)
-      for xx of-type double-float from 0.1 to 20.0 by 0.1
-      for v0 = (* 100 (integrate-simpson #'lognormal 0.0 xx))
-      for v1 = (/ (integrate-simpson lognormalx 0.0 xx) mean 0.01)
+      with mean = (integrate-simpson lognormalx 0d0 100d0)
+      for xx of-type double-float from 0d1 to 20d0 by 0d1
+      for v0 = (* 100 (integrate-simpson #'lognormal 0d0 xx))
+      for v1 = (/ (integrate-simpson lognormalx 0d0 xx) mean 1d-2)
       do (format t "~%~4f low ~6,3f% have ~6,3f%, top ~6,3f% have ~6,3f%"
                  xx v0 v1 (- 100 v0) (- 100 v1))
       collect (cons v0 v1))))

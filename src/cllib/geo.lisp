@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.7 2000/05/12 18:36:16 sds Exp $
+;;; $Id: geo.lisp,v 2.8 2000/05/15 18:43:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -36,7 +36,7 @@
   "Return the number parsed from latitude or longitude (dd:mm:ss[NSEW])
 read from the stream."
   (declare (stream st))
-  (let* ((sig 1) (cc (+ (read st) (/ (read st) 60.0d0)))
+  (let* ((sig 1) (cc (+ (read st) (/ (read st) 60d0)))
 	 (lt (read st)) se nn)
     (if (numberp lt) (setq se lt nn 0 lt (string (read st)))
 	(setf (values se nn)
@@ -75,7 +75,7 @@ type \"48:51:00N 2:20:00E\". Return 2 values - latitude and longitude."
 (defstruct (geo-data (:conc-name geod-))
   (name "??" :type string)	; the name of the place
   (pop 0 :type (real 0))	; population
-  (crd #C(0.0d0 0.0d0) :type (complex double-float)) ; coordinates
+  (crd #C(0d0 0d0) :type (complex double-float)) ; coordinates
   (zip nil :type list))		; list of zip codes.
 )
 

@@ -91,6 +91,7 @@
     (let ((dir (namestring (asdf::pathname-sans-name+type pkg))))
       (unless (find-if
 	       #'(lambda (entry)
+		   (setq entry (eval entry))
 		   (when (typep entry 'pathname)
 		     (setq entry (namestring entry)))
 		   (when (string= entry dir)

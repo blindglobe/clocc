@@ -207,6 +207,12 @@ Returns nothing"
 		 (pushnew :sbcl-hooks-require cl:*features*))
         (compile-and-load  "cl-library:asdf;asdf.lisp")
         (compile-and-load  "cl-library:asdf;wild-modules.lisp")
+	#+sbcl ;(ignore-errors
+		 (pushnew
+		  '(merge-pathnames #P".sbcl/systems/" (user-homedir-pathname))
+		  (symbol-value (intern (symbol-name '#:*central-registry*)
+					(find-package :asdf))))
+		 ;)
 	#+sbcl (setq cl:*features* (delete :sbcl-hooks-require  cl:*features*))
         ;; then the patches:
         (compile-and-load  "cl-library:common-lisp-controller;post-sysdef-install.lisp")

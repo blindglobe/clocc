@@ -1,3 +1,10 @@
+common-lisp-controller (3.55) unstable; urgency=low
+
+  * Add ~/.sbcl/systems/ to asdf:*central-registry*
+  * Have asdf:*central-registry* processing evaluate each entry
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  3 Mar 2003 15:12:55 -0700
+
 common-lisp-controller (3.54) unstable; urgency=low
 
   * Add support for SBCL's REQUIRE/contrib directories integration

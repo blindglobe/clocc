@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.54 2005/01/26 18:28:00 sds Exp $
+;;; $Id: url.lisp,v 2.55 2005/01/26 19:32:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -980,7 +980,7 @@ Keywords: `timeout', `max-retry', `out', `err'."
                     (flush-http sock)
                     ;; sock is a character stream,
                     ;; and socket-to-file expects a byte stream
-                    #+clisp (setf (stream-element-type sock) 'unsigned-byte)
+                    (set-socket-stream-format sock '(unsigned-byte 8))
                     (socket-to-file sock path))))
        (declare (type file-size-t size))
        (multiple-value-bind (el st) (elapsed bt nil t)

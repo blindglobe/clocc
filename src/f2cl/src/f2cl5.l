@@ -420,7 +420,7 @@
 		  `(,(first expr) ,(- (second (second expr)))
 		    ,@(mapcar #'fixup-expression (rest (rest expr)))))
 		 (t
-		  expr)))
+		  `(,@(mapcar #'fixup-expression expr)))))
 	  ((is-neg (third expr))
 	   ;; We have (F X (- Z) ...).  If F is '+, convert to (- X Z).
 	   ;; If not, but Z is a number, convert to (F X -Z ...).
@@ -453,6 +453,47 @@
 	  (t
 	   ;; Didn't match, so descend into the remaining args
 	   `(,(first expr) ,@(mapcar #'fixup-expression (rest expr)))))))
+
+(defun fixup-relop (expr)
+  (cond ((or (null expr)
+	     (atom expr)
+	     (typep expr 'string))
+	 expr)
+	((member (first expr) '(|>=| |<=| EQUAL |/=| < > =))
+	 ;; If one arguments is a string, replace operation with the
+	 ;; appropriate string operation.
+	 (let ((lhs (get-fun-arg-type (list (second expr))))
+	       (rhs (get-fun-arg-type (list (third expr)))))
+	   (cond ((or (subtypep lhs 'string)
+		      (subtypep rhs 'string))
+		  (let ((op (intern (concatenate 'string
+						 "FSTRING-"
+						 (symbol-name (first expr))))))
+		    `(,op ,(second expr) ,(third expr))))
+		 (t
+		  expr))))
+	(t
+	 `(,@(mapcar #'fixup-relop expr)))))
+
+(defun merge-ops (expr)
+  (cond ((or (null expr)
+	     (atom expr)
+	     (typep expr 'string))
+	 expr)
+	((and (third expr)
+	      (member (first expr) '(+ * - /)))
+	 ;; Try to merge a bunch of +, *, -, / operations into one.
+	 (destructuring-bind (op next args)
+	     expr
+	   (setf args (list args))
+	   (loop while (and (listp next) (eq op (first next)))
+	     do
+	     (push (third next) args)
+	     (setf next (second next)))
+	   `(,op ,(merge-ops next) ,@(merge-ops args))))
+	(t
+	 `(,@(mapcar #'merge-ops expr)))))
+	 
  
 
 (defun insert-declarations (fort-fun) 
@@ -725,6 +766,10 @@
 
      (setf prog-bit (fixup-expression (fixup-expr-mul prog-bit)))
 
+     (setf prog-bit (fixup-relop prog-bit))
+
+     (setf prog-bit (merge-ops prog-bit))
+
      ;; Try to optimize out calls to f2cl/.
      ;;(format t "fixed-up prog-bit = ~%~S~%" prog-bit)
      (setf prog-bit (optimize-f2cl/ prog-bit))
@@ -763,20 +808,7 @@
      (return
        (values special-proclamation
 	       (when special-proclamation
-		 (let ((var-inits '()))
-		   (maphash
-		    #'(lambda (key val)
-			(declare (ignore val))
-			(push `(defvar ,(intern (concatenate 'string
-							     "*"
-							      (symbol-name key)
-							      "-COMMON-BLOCK*"))
-				(,(intern (concatenate 'string
-						      "MAKE-"
-						      (symbol-name key)))))
-			      var-inits))
-		    *common-blocks*)
-		   (nreverse var-inits)))
+		   (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
 	       (if (and (or *save_vbles* *auto-save-data*)
 			save-inits)
 		   (append
@@ -890,7 +922,7 @@
 		      (return
 			(if (cdar decl) 
 			    `(,vble_name
-			      ,(make_make-array_stmt (cadar decl) t))
+			      ,(make_make-array_stmt (cdar decl) t))
 			    `(,vble_name nil)))))
 		 (t
 		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
@@ -1752,26 +1784,106 @@
                              (list (car lis))))))
        ((null lis) ret)))
 
+
+;; Creates the slots for the common block.  Each variable in the
+;; common block is a slot.  We initialize the slot with the
+;; appropriate value and type.  Even if the array dimensions are
+;; known, we don't use them here, just in case the dimensions contain
+;; Fortran PARAMETER values.
 (defun make-common-block-vars (varlist common_var_decls)
+  ;; VARLIST is the list of variables in the common block.
+  ;; COMMON_VAR_DECLS is a set of declaims computed in
+  ;; INSERT-DECLARATIONS.  We use that to determine the appropriate
+  ;; initalizations for the variables.
   (mapcar #'(lambda (var)
 	      (let* ((decl (find var (rest common_var_decls)
 				 :key #'third))
 		     (var-type (if decl (second decl) nil))
-		     (var-init (cond ((subtypep var-type 'array)
-				      `(make-array ',(third var-type)
-					:element-type ',(second var-type)))
+		     (dims (cond ((and (listp var-type)
+				       (subtypep (first var-type) 'array))
+				  (mapcar #'(lambda (x)
+					      (declare (ignore x))
+					      0)
+					  (lookup-array-bounds var)))
+				 (t nil)))
+		     (var-init (cond ((and (listp var-type)
+					   (subtypep (first var-type) 'array))
+				      `(make-array ',dims :element-type ',(second var-type)))
 				     (t
 				      (coerce 0 var-type)))))
-		`(, var ,var-init :type ,var-type)))
+		;; Initialize the slot with a 0 of the appropriate
+		;; type (for scalars) or a zero element array of the
+		;; appropriate dimensions for array slots.
+		(if dims
+		    `(,var ,var-init :type (simple-array ,(second var-type) ,(subst '* 0 dims)))
+		    `(,var ,var-init :type ,var-type))))
 	  varlist))
+
 			     
+;; Create a structure for the given common blocks.
 (defun make-common-block-structure (common_var_decls)
   (let ((res '()))
     (maphash #'(lambda (key varlist)
-		 (push `(defstruct ,key
+		 (push `(defstruct (,key (:predicate ,(intern (concatenate 'string
+									   "IS-"
+									   (symbol-name key)
+									   "-P"))))
 			 ,@(make-common-block-vars varlist common_var_decls))
 		       res))
 	     *common-blocks*)
     (nreverse res)))
+
+(defun make-common-block-var-init (varlist common_var_decls)
+  (flet ((fixup-bounds (bounds)
+	   (mapcar #'(lambda (bound)
+		       (if (every #'numberp bound)
+			   (- (second bound) (first bound))
+			   `(- ,(second bound) ,(first bound))))
+		   bounds)))
+    (let ((initializer '()))
+      (dolist (var varlist)
+	(let* ((decl (find var (rest common_var_decls)
+			   :key #'third))
+	       (var-type (if decl (second decl) nil))
+	       (dims (cond ((and (listp var-type)
+				 (subtypep (first var-type) 'array))
+			    (fixup-bounds (lookup-array-bounds var)))
+			   (t nil)))
+	       (var-init (cond ((and (listp var-type)
+				     (subtypep (first var-type) 'array))
+				`(make-array (list ,@dims) :element-type ',(second var-type)))
+			       (t
+				(coerce 0 var-type)))))
+	  (when dims
+	    (setf initializer (append initializer
+				      `(,(intern (symbol-name var) "KEYWORD") ,var-init))))))
+      initializer)))
+
+;; This assigns the common block structure to a global variable.  The
+;; common block is initialized with reasonable defaults.  The
+;; KEY-PARAMS is needed, just in case arrays in the common block are
+;; dimensioned from PARAMETER values.
+(defun make-common-block-init (comm-blocks comm-decls key-params key-param-decls)
+  ;; COMM-BLOCKS is the hash table of all common blocks.  COMM-DECLS
+  ;; is the list of declaims for the variables in the common block.
+  ;; KEY-PARAMS is the list of Fortran PARAMETER values.
+  ;; KEY-PARAM-DECLS is the appropriate set of declarations for the
+  ;; PARAMTERs.
+  (let ((var-inits '()))
+    (maphash
+     #'(lambda (key val)
+	 (push `(let ,key-params
+		 ,@key-param-decls
+		 (defparameter ,(intern (concatenate 'string
+						     "*"
+						     (symbol-name key)
+						     "-COMMON-BLOCK*"))
+		   (,(intern (concatenate 'string
+					  "MAKE-"
+					  (symbol-name key)))
+		     ,@(make-common-block-var-init val comm-decls))))
+	       var-inits))
+     comm-blocks)
+    (nreverse var-inits)))
 ;-----------------------------------------------------------------------------
 ; end of f2cl5.l

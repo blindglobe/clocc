@@ -37,7 +37,7 @@ means that no limit should be imposed on this recursion)."))
 						       &key policy
 						       &allow-other-keys))
 
-(defgeneric load-action (component component-pathname))
+(defgeneric load-action (component component-pathname &key &allow-other-keys))
 
 (defgeneric compile-action (component component-source-pathname
 				      &key

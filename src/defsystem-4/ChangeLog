@@ -1,4 +1,20 @@
-2002-02-25  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+2002-02-27  Marco Antoniotti  <marcoxa@cons.org>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Added `:case :common' to load directory definition.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/languages/fortran/fortran.lisp:
+	Fixed definition of FORTRAN-FILE-DEFAULT-SOURCE-EXTENSION.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/allegro.lisp:
+	Fixed reference to `excl:run-shell-command' (was `-program').
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
+	Improved loading of package using the suggestion by Kevin Rosenberg.
+	Updated copyright dates.
+	Removed old commented-out code.
+
+2002-02-25  Marco Antoniotti  <marcoxa@cons.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
 	Added :after method to
@@ -17,14 +33,33 @@
 	binary-extension to allow for inheritance of defaults from containing
 	component.
 
-2002-02-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+2002-02-25  Marco Antoniotti  <marcoxa@cons.org>
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:
+	Added :after method to
+
+		add-sub-component (standard-heirarchical-component stored-component)
+
+	to implement inheritance of some pathname components (i.e. extensions).
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/predefined-components.lisp:
+	Changed default source-extension for Common Lisp files.
+	Still missing some more intelligent merging with
+	*default-pathname-defaults*.
+
+	* /cvsroot/clocc/clocc/src/defsystem-4/src/base-components.lisp:
+	Made some modifications to the defaults for source-extension and
+	binary-extension to allow for inheritance of defaults from containing
+	component.
+
+2002-02-22  Marco Antoniotti  <marcoxa@cons.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/ALPHA-NOTICE: File Added.
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp:
 	Fixed stupid closing comment mishap.
 
-2002-02-21  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+2002-02-21  Marco Antoniotti  <marcoxa@cons.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/ambler/ambler.system:
 	File added.
@@ -32,7 +67,7 @@
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/tests/component-test.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/tests/crscl.system, /cvsroot/clocc/clocc/src/defsystem-4/src/tests/README, /cvsroot/clocc/clocc/src/defsystem-4/src/tests/test-file.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/ambler/ambler.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/ambler/ambler-pkg.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/ambler/COPYING, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/run-os-program.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/save-image.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/user-interaction.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/utilities/y-or-n-p-wait.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/allegro.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/clisp.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/cmucl.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/common.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/corman.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/kcl-derivatives.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/lcl.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/lispworks.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/mcl.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/impl-dependent/poplog.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/languages/c/c.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/languages/fortran/fortran.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/languages/scheme/scheme.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/actions.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/adjoin-dirs.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/base-components.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-pkg.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/language-support.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/load-defsystem.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/predefined-components.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/predefined-specialized-components.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/registry.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/syntax.lisp, /cvsroot/clocc/clocc/src/defsystem-4/src/versions.lisp, /cvsroot/clocc/clocc/src/defsystem-4/COPYING, /cvsroot/clocc/clocc/src/defsystem-4/INSTALL, /cvsroot/clocc/clocc/src/defsystem-4/README, /cvsroot/clocc/clocc/src/defsystem-4/THIS-IS-DF4, /cvsroot/clocc/clocc/src/defsystem-4/TODO:
 	Files added.
 
-2001-01-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+2001-01-09  Marco Antoniotti  <marcoxa@cons.org>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/docs/defsystem.tex:
 	Added MK-DEFSYSTEM-4 Specification Document.

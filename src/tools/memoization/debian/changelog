@@ -1,3 +1,10 @@
+cl-memoization (1.0-6) unstable; urgency=low
+
+  * Now uses asdf
+  * Now uses the new CL package name standard
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 15 Nov 2002 23:19:48 +0100
+
 memoization (1.0-5) unstable; urgency=low
 
   * changelog without emacs stuff, linitian fix

@@ -1,6 +1,6 @@
 ;;; -*- Mode: LISP; Syntax: Common-Lisp; Package: User; Base: 10 -*-
 
-(in-package :user)
+(in-package :common-lisp-user)
 
 ;; Ripped from Load-Memoization.lisp by Peter Van Eynde, originally:
 

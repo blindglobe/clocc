@@ -2,6 +2,13 @@
 
 Changes:
 
+Aug 14, 2004
+------------
+
+ODEPACK added to the set of packages.
+Ran 4 of test demos and they seem to work.  Some minor differences in
+the output, but I attribute that to arithmetic differences.
+
 Aug 13, 2004
 ------------
 

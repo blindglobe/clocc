@@ -68,16 +68,19 @@
 
 
 
+#+nil
 (defun check_new_vbles (prog_list)
+  (format t "check_new ~S~%" prog_list)
   (do ((exprs prog_list (cdr exprs))
        (vble_list nil
 		  (append vble_list
-			  (cond ((listp (car exprs)) 
+			  (cond ((listp (car exprs))
+				 (format t "c-n-v 1 = ~S~%" (car exprs))
 				 (check_new_vbles (car exprs)))
 				((or (not (symbolp (car exprs)))
 				     (numberp (car exprs))
-				     (member (car exprs) 
-					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= ><))
+				     #+nil(member (car exprs) 
+					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
 				     (member (car exprs) *fortran-keywords*)
 				     (member (car exprs) *intrinsic_function_names*)
 				     (member (car exprs) *key_params* :key #'car)
@@ -86,15 +89,47 @@
 				     (member (car exprs) *undeclared_vbles*)
 				     (sym-is-fun-name exprs)
 				     (numberp (id-expression (list (car exprs)))))
+				 (format t "c-n-v 2 = ~S~%" (car exprs))
 				 nil)
 				;; special case of error messages
 				((eq (car exprs) 'PAUSE)
 				 (return prog_list))
+				((member (car exprs) 
+					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
+				 nil)
 				(t
+				 (format t "adding unknown ~S~%" (car exprs))
 				 (setq *undeclared_vbles*
 				       (cons (check-t-and-pi (car exprs))
 					     *undeclared_vbles*)))))))
-      ((null exprs) prog_list)))
+      ((null exprs)
+       (format t "check-new returns ~S~%" prog_list)
+       prog_list)
+    (format t "expr = ~S~%" exprs)))
+
+(defun check_new_vbles (exprs)
+  (cond ((or (null exprs) (numberp exprs))
+	 )
+	((symbolp exprs)
+	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
+		    (member exprs *fortran-keywords*)
+		    (member exprs *intrinsic_function_names*)
+		    (member exprs *key_params* :key #'car)
+		    (member exprs *external_function_names*)
+		    (member exprs *declared_vbles*)
+		    (member exprs *undeclared_vbles*)
+		    (sym-is-fun-name (list exprs)))
+		nil)
+	       ((eq exprs 'PAUSE)
+		)
+	       (t
+		(pushnew (check-t-and-pi exprs) *undeclared_vbles*))))
+	((listp exprs)
+	 (mapc #'check_new_vbles exprs)
+	 )
+	(t
+	 (Error "What happened?")))
+  exprs)
 
 (defun pretty-decls (decls)
   (let ((type-alist '()))
@@ -242,37 +277,132 @@
     (values `((declare ,@(nreverse stmt-fcns)))
 	    `((declare ,@(nreverse other-fcns)))
 	    `((declare ,@(nreverse arg-fcns))))))
-
+
 ;; Given the program list P, look through it and try to convert all
-;; occurrences of f2cl/ with either / or truncate.  We use truncate if
-;; both parameters are integers.  Otherwise use /.  This is an attempt
-;; to optimize out the calls to the f2cl/ macro.  This is for the
-;; benefit of Lisp compilers that aren't smart enough to optimize
-;; unused parts of the macros out.  (We should probably do a similar
-;; thing for sqrt, log, log10.)
+;; occurrences of f2cl/ with either / or TRUNCATE.  We use TRUNCATE if
+;; both parameters are integers; / if both parameters are float or
+;; complex.  If we can't determine the types of the parameters, we
+;; leave it alone.
 ;;
-;; The program P is destructively modified!
+;; A new tree with the (possibly) modified code is returned.
+;;
+;; This is an attempt to optimize out the calls to the f2cl/ macro.
+;; This is for the benefit of Lisp compilers that aren't smart enough
+;; to optimize unused parts of the macros out. (We should probably do
+;; a similar thing for sqrt, log, log10.)
+;;
 (defun optimize-f2cl/ (p)
   (cond ((or (atom p) (null p))
 	 p)
 	((eq (first p) 'f2cl/)
-	 ;;(format t "*** found it ~S ~S~%" (second p) (third p))
-	 (let ((left (get-fun-arg-type (list (second p))))
-	       (right (get-fun-arg-type (list (third p)))))
-	   ;;(format t "*** types = ~S ~S~%" left right)
-	   (cond ((or (subtypep left 'float)
-		      (subtypep right 'float))
-		  (setf (first p) '/))
-		 ((and (subtypep left 'integer)
-		       (subtypep right 'integer))
-		  (setf (first p) 'truncate))
-		 (t
-		  ;; Do nothing
-		  )))
-	 (optimize-f2cl/ (rest p)))
+	 ;; Let's try to optimize f2cl/ to either / or truncate
+	 ;; appropriately.  If both parameters to f2cl/ are integers,
+	 ;; we use truncate; if either parameter is a float or
+	 ;; complex, use /.  If we can't determine the type, leave the
+	 ;; macro in.
+
+	 (let* ((left (get-fun-arg-type (list (second p))))
+		(right (get-fun-arg-type (list (third p))))
+		(fun (cond ((and (subtypep left 'integer)
+				 (subtypep right 'integer))
+			    'truncate)
+			   ((or (subtypep left 'number)
+				(subtypep right 'number))
+			    '/)
+			   (t
+			    'f2cl/))))
+	   `(,fun ,@(mapcar #'optimize-f2cl/ (rest p)))))
 	(t
-	 (dolist (k (rest p))
-	   (optimize-f2cl/ k)))))
+	 `(,(first p) ,@(mapcar #'optimize-f2cl/ (rest p))))))
+
+
+
+;; In the following functions, we are trying to simplify some of the
+;; expressions produced by f2cl.  We should probably use some real
+;; pattern matching algorithm instead of these hand-written matchers.
+;;
+;; Fix up the expression by destructively modifying it. This tries to
+;; convert some expressions produced by f2cl into something more
+;; readable:
+
+;; f2cl always converts (- X) to (* -1 X).  This function tries to
+;; undo that.  A new tree is returned with the result.
+(defun fixup-expr-mul (expr)
+  (cond ((or (atom expr) (null expr))
+	 expr)
+	((and (eq (first expr) '*)
+	      (numberp (second expr))
+	      (= (second expr) -1))
+	 ;; Convert (* -1 X) to (- X)
+	 `(- ,@(fixup-expr-mul (rest (rest expr)))))
+	(t
+	 `(,(first expr) ,@(mapcar #'fixup-expr-mul (rest expr))))))
+
+;; We try to handle some conversions that make the resulting
+;; expressions a bit easier to read and more natural.  Also, some of
+;; the transformations reduce the number of operations needed.  (These
+;; may not be needed if the compiler is smart enough.)
+;;
+;; F2CL                            RESULT
+;; (- N)                           -N        (for numeric N)
+;; (+ (- Z) X)                     (- X Z)
+;; (op (- Z) X)                    (op -Z X) (for number N, and any function F, except +
+;; (+ X (- Z))                     (- X Z)
+;; (F X (- Z))                     (F X -Z)  (for F /= + and Z a number)
+;; (+ X (op (- Z) Y))              (- X (op Z Y))  (for op = * or /)
+(defun fixup-expression (expr) 
+  (flet ((is-neg (e)
+	   ;; Return T if the e looks something like '(- Z)
+	   (and (listp e)
+		(eq (first e) '-)
+		(= (length e) 2))))
+    (cond ((or (atom expr) (null expr))
+	   expr)
+	  ((eq (first expr) 'fref)
+	   ;; Fixup the expressions for the index.
+	   `(fref ,(second expr) ,(mapcar #'fixup-expression (third expr))))
+	  ((is-neg (second expr))
+	   ;; We have (F (- Z) X).  If F is '+,
+	   ;; make it (- X Z).  If Z is a number, make it (F -Z X)
+	   (cond ((eq (first expr) '+)
+		  `(- ,@(mapcar #'fixup-expression (rest (rest expr)))
+		    ,(second (second expr))))
+		 ((numberp (second (second expr)))
+		  `(,(first expr) ,(- (second (second expr)))
+		    ,@(mapcar #'fixup-expression (rest (rest expr)))))
+		 (t
+		  expr)))
+	  ((is-neg (third expr))
+	   ;; We have (F X (- Z)).  If F is '+, convert to (- X Z).
+	   ;; If not, but Z is a number, convert to (F X -Z).
+	   (cond ((eq '+ (first expr))
+		  ;; We have '(+ X (- Z)).  Make that '(- X Z)
+		  `(- ,@(mapcar #'fixup-expression (list (second expr)))
+		      ,@(mapcar #'fixup-expression (list (second (third expr))))))
+		 ((numberp (second (third expr)))
+		  ;; We have (F X (- N)).  Make that (F X -N)
+		  `(,(first expr) ,@(mapcar #'fixup-expression (list (second expr)))
+		                  ,(- (second (third expr)))))
+		 (t
+		  ;; Process the X and (- Z) parts now
+		  `(,(first expr) ,(fixup-expression (second expr))
+		                  ,@(fixup-expression (rest (rest expr)))))))
+	  ((and (eq (first expr) '+)
+		(listp (third expr))
+		(member (first (third expr)) '(* /))
+		(listp (second (third expr)))
+		(eq (first (second (third expr))) '-))
+	   ;; We have (+ X (op (- Z) Y)).  Convert to (- X (op Z Y)), for op = * or /.
+
+	   ;;(format t "got ~S~%" expr)
+	   `(- ,(fixup-expression (second expr))
+	     (,(first (third expr))
+	      ,@(fixup-expression (rest (second (third expr))))
+	      ,@(fixup-expression (rest (rest (third expr)))))))
+	  (t
+	   ;; Didn't match, so descend into the remaining args
+	   `(,(first expr) ,@(mapcar #'fixup-expression (rest expr)))))))
+ 
 
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
@@ -525,7 +655,14 @@
 		   `(prog ,local-vbles ,@vble-decls ,@other-fcn-decls ,@*data-init* ,@body)))
 	       )
      ;;(format t "prog-bit = ~%~S~%" prog-bit)
-     (optimize-f2cl/ prog-bit)
+
+     ;; Do some common fixups to make the code faster (for compilers
+     ;; not sufficiently smart) and prettier
+     (setf prog-bit (fixup-expression (fixup-expr-mul prog-bit)))
+
+     ;; Try to optimize out calls to f2cl/.
+     ;;(format t "fixed-up prog-bit = ~%~S~%" prog-bit)
+     (setf prog-bit (optimize-f2cl/ prog-bit))
      ;;(format t "opt prog = ~%~S~%" prog-bit)
      ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
      ;;(format t "*data-init*  = ~a~%" *data-init*)

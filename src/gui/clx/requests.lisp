@@ -17,7 +17,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/requests.lisp,v 1.3 2002/08/29 07:33:24 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/requests.lisp,v 1.4 2003/02/24 09:17:10 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -543,7 +543,7 @@
     (pad8 1)
     (card16 (encode-modifier-mask modifiers))))
 
-(defun ungrab-button (window button &key (modifiers :any ))
+(defun ungrab-button (window button &key (modifiers :any))
   (declare (type window window)
 	   (type (or (member :any) card8) button)
 	   (type modifier-mask modifiers))

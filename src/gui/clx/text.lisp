@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/text.lisp,v 1.3 2001/11/08 22:03:20 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/text.lisp,v 1.4 2003/02/24 09:17:17 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -74,6 +74,7 @@
            (type (or null xlib:font) afont)
            (type vector dst))
   (declare (xlib::clx-values integer (or null integer xlib:font) (or null integer)))
+  
   (let ((min-char-index (xlib:font-min-char afont))
         (max-char-index (xlib:font-max-char afont)))
     afont

@@ -1,17 +1,20 @@
-;;; File: <animals.lisp - 1998-05-22 Fri 12:32:09 EDT sds@mute.eaglets.com>
+;;; File: <animals.lisp - 1999-04-09 Fri 15:14:34 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Guess an Animal - CL implementation.
 ;;;
-;;; Copyright (C) 1997 by Sam Steingold.
+;;; Copyright (C) 1997-1999 by Sam Steingold.
 ;;; This is free software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: animals.lisp,v 1.2 1998/05/22 16:34:19 sds Exp $
+;;; $Id: animals.lisp,v 1.3 1999/04/09 19:17:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 ;;; $Log: animals.lisp,v $
+;;; Revision 1.3  1999/04/09 19:17:49  sds
+;;; Use `string-beg-with' in `anml-add-article'.
+;;;
 ;;; Revision 1.2  1998/05/22 16:34:19  sds
 ;;; Added `anml-add-article'.
 ;;;
@@ -22,7 +25,8 @@
 
 (in-package :cl-user)
 
-(eval-when (load compile eval) (sds-require "base"))
+(eval-when (load compile eval)
+  (sds-require "base") (sds-require "util"))
 
 (defvar animals-debug-output nil "Print more debugging info.")
 (defvar animals-debug-use-built-in-data nil "Do not read the file.")
@@ -52,11 +56,13 @@ The question will contain `it'."
   "Add an article in the beginning of the string."
   (declare (simple-string str))
   (setq str (string-trim +whitespace+ str))
-  (if (or (string-equal "a " str :start 0 :end 2)
-	  (string-equal "an " str :start 0 :end 3)
-	  (string-equal "the " str :start 0 :end 4))
+  (if (let ((len (length str)))
+        (or (string-beg-with "a " str len)
+            (string-beg-with "an " str len)
+            (string-beg-with "the " str len)))
       str
-      (concatenate 'string (if (member (schar str 0) #(#\a #\e #\i #\o #\u))
+      (concatenate 'string (if (find (schar str 0) #(#\a #\e #\i #\o #\u)
+                                     :test #'char=)
                                "an " "a ") str)))
 (defun anml-finish (tail)
   "Endgame."
@@ -101,7 +107,7 @@ The question will contain `it'."
 		 (if anfl (prog1 (read anfl) (format t "File read.~%"))
 		     (format t "Cannot read `~a'.~%" animals-file-name))))
 	 (unless (consp animals-data)
-	   (format t "Invalid data: ~a~%Using the dafault.~%" animals-data)
+	   (format t "Invalid data: ~a~%Using the default.~%" animals-data)
 	   (setq animals-data animals-default-data))))
   (when animals-debug-output
     (format t "animals-data now: ~a~%" animals-data))
@@ -129,7 +135,7 @@ The question will contain `it'."
 	     (print animals-data anfl) (terpri anfl)))
 	 (format t "Wrote file `~a'~%" animals-file-name))
 	(t (format t "You taught me no new animals this time...~%")))
-  (when (y-or-n-p "Exit lisp?") (exit)))
+  (when (y-or-n-p "Exit lisp?") (lisp:exit)))
 
 (provide "animals")
 ;;; animals.lisp ends here

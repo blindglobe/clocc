@@ -1,0 +1,120 @@
+;-*- Mode: Common-lisp; Package: ytools; -*-
+(in-package :ytools)
+
+;;; Copyright (C) 1976-2003 
+;;;     Drew McDermott and Yale University.  All rights reserved
+;;; This software is released under the terms of the Modified BSD
+;;; License.  See file COPYING for details.
+
+(defparameter ytools-package* (find-package :ytools))
+(defparameter lisp-package* (find-package :common-lisp))
+(defparameter cl-user-package* (find-package :common-lisp-user))
+
+(declaim (special lisp-object-extn* lisp-source-extn*))
+
+(push ':newfangled *features*)
+
+#-excl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+   (defvar readtable-table*
+           (list (list ':lisp lisp-readtable*)
+		 (list ':ytools ytools-readtable*)))
+   (defun named-readtable (name &optional errorp)
+      (setq name (intern (symbol-name name) :keyword))
+      (let ((e (assoc name readtable-table*)))
+	 (cond (e (cadr e))
+	       (errorp
+		(error "There is no readtable named ~s" name))
+	       (t nil))))
+   (defun (setf named-readtable) (rt name &optional errorp)
+      (declare (ignore errorp))
+      (setq name (intern (symbol-name name) :keyword))
+      (let ((e (assoc name readtable-table*)))
+	 (cond ((not e)
+		(setq e (list name nil))
+		(setq readtable-table*
+		      (cons e readtable-table*))))
+	 (setf (cadr e) rt)
+	 rt)))
+
+#+excl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+   (import 'excl:named-readtable))
+
+(setf (named-readtable ':ytools) ytools-readtable*)
+
+(defparameter ytools-core-files*
+    '("base" "datafun" "pathname" "module" "slurp" "files" "depend"))
+
+(defparameter ytools-bin-relative*
+              (append (pathname-directory (parse-namestring standard-bin-path*))
+		      (cond ((string= bin-idio* "") '())
+			    (t (cdr (pathname-directory (parse-namestring bin-idio*)))))
+		      '("ytools")))
+
+;;;;	     '(:relative :back "bin" "ytools")
+
+(defparameter dir-delim*
+     (cond ((= (length ytools::directory-delimiter*)
+	       1)
+	    (elt ytools::directory-delimiter* 0))
+	   (t
+	    (error "YTools requires directory-delimiter to be ~
+                    exactly one character, not ~s"
+		  ytools::directory-delimiter*))))
+
+
+;;;;(defparameter ytools-home-dir* "~/CVSified/prog/ytools/")
+;;;;(defparameter lisp-object-extn* "fasl")
+
+(defparameter ytools-dir-pathname*
+              (parse-namestring ytools-home-dir*))
+
+(defparameter ytools-bin-dir-pathname*
+              (merge-pathnames
+	         (make-pathname
+		    :directory ytools-bin-relative*)
+		 ytools-dir-pathname*))
+
+(setq *features* (adjoin ':ytools *features*))
+
+(cl:defun load-core ()
+   (flet ((load-if-there (filename)
+	     (cond ((probe-file filename)
+		    (load filename)))))
+      (dolist (bf ytools-core-files*)
+	 (load (merge-pathnames
+		  (make-pathname :name bf)
+		  ytools-bin-dir-pathname*)))
+;;;;      (format t "Before loading ytinit, config-directory* = ~s~%"
+;;;;	      config-directory*)
+      (load-if-there (concatenate 'string
+			     ytools-home-dir*
+			     (short-site-name)
+			     directory-delimiter*
+			     "ytinit.lisp"))
+      (load-if-there (strings-concat config-directory* "ytinit.lisp"))))
+     
+(cl:defun compile-core ()
+   (dolist (bf ytools-core-files*)
+      (let ((lisp-file
+	       (merge-pathnames
+		  (make-pathname :name bf)
+		  ytools-dir-pathname*))
+	    (fasl-file
+	       (merge-pathnames
+		  (make-pathname :name bf :type lisp-object-extn*)
+		  ytools-bin-dir-pathname*)))
+	 (compile-file lisp-file :output-file fasl-file)
+	 (load fasl-file))))
+     
+(cl:defun use-ytools (&optional (pkg *package*))
+   (shadowing-import '(ytools::defun ytools::defmacro ytools::eval-when))
+   (use-package :ytools pkg))
+
+(eval-when (:load-toplevel :execute)
+  (export '(use-ytools named-readtable)))
+
+(setq *features* (adjoin ':ytools *features*))
+
+(defconstant +ytools-version+ "1.0.1")

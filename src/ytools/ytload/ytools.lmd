@@ -1,0 +1,22 @@
+;-*- Mode: Common-lisp; Package: ytools; -*-
+(in-package :ytools)
+
+;;; Copyright (C) 1976-2003 
+;;;     Drew McDermott and Yale University.  All rights reserved
+;;; This software is released under the terms of the Modified BSD
+;;; License.  See file COPYING for details.
+
+(defun install-ytools (start-over)
+                      (declare (ignore start-over))
+   (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
+	  (format t "Compiling all YTools")
+	  (let ((fload-compile* ':compile))
+	     (ytools-module-load 'ytools t))
+	  t)
+	 (t nil)))
+
+(defun load-ytools ()      
+   (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
+	  (ytools-module-load 'ytools t)
+	  (list ytools-package*
+		ytools-readtable*))))

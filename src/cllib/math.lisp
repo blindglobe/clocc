@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.46 2004/05/20 17:33:52 sds Exp $
+;;; $Id: math.lisp,v 2.47 2004/05/25 20:26:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,8 @@
 (in-package :cllib)
 
 (export
- '(mulf divf sqr ! !! stirling fibonacci ruler primes-to divisors primep
+ '(mulf divf sqr triangle
+   ! !! stirling fibonacci ruler primes-to divisors primep
    product-from-to binomial *primes* *primes-file*
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
@@ -61,6 +62,10 @@
   "Compute the square of a number, taking care to eval only once."
   (if (atom xx) `(* ,xx ,xx)
       (with-gensyms ("SQR-" var) `(let ((,var ,xx)) (* ,var ,var)))))
+(declaim (inline triangle))
+(defun triangle (i)
+  "Compute the triangular number"
+  (/ (* i (1- i)) 2))
 
 ;;;
 ;;; Integers

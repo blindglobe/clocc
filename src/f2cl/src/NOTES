@@ -2,6 +2,13 @@
 
 Changes:
 
+Aug 04, 2000
+------------
+Add rudimentary support for Fortran READ statements.  Only tested for
+reading into simple variables.  No checks are made for the correct
+type read; we don't even try to parse the format statement associated
+with READ or any of the possible options like END or ERROR.
+
 Aug 02, 2000
 ------------
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.6 2000/11/16 18:34:03 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.7 2001/04/26 19:01:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -96,7 +96,7 @@ PLOT means:
                                     *gnuplot-stream*)
                                 (pipe-output *gnuplot-path*))))))
       (declare (stream ,str))
-      (unwind-protect (progn (apply #'plot-header ,str ,plot ,@header) ,@body)
+      (unwind-protect (progn (plot-header ,str ,plot ,@header) ,@body)
         #+(or win32 mswindows) (close-pipe ,str)
         #+(or win32 mswindows)
         (ecase ,plot
@@ -131,7 +131,7 @@ PLOT means:
                     timefmt xb xe (title "plot") legend (xtics t) (ytics t)
                     grid term (xfmt (or timefmt "%g")) (yfmt "%g"))
   "Print the header stuff into the stream.
-This can be called ONLY by `with-plot-stream'.
+This may be called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
  XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND LEGEND GRID TERM"
   (declare (stream str))
@@ -159,7 +159,7 @@ set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
   (when (listp num-ls)
     (setq num-ls (1- (apply #'min (mapcar #'length num-ls)))))
   (assert (realp num-ls) (num-ls)
-          "plot-data-style got neither number nor list: ~s" num-ls)
+          "~s got neither number nor list: ~s" 'plot-data-style num-ls)
   (if (> num-ls 30) "lines" "linespoints"))
 
 ;;;###autoload

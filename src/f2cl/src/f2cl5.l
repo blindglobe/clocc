@@ -248,6 +248,7 @@
 		 ((member fun '(dsin dcos dtan
 				dasin dacos datan datan2
 				dexp dlog dlog10
+				dabs dmax1 dmin1
 				dble
 				dsqrt))
 		  ;; Double-precision functions
@@ -295,13 +296,17 @@
 ;; Create declarations for all the functions used in the subprogram.
 ;; We return three items: statement functions, other functions, and
 ;; functions in the parameter list of the subprogram.
+#+nil
 (defun make-fcn-decl (fcn-list arglist)
   (let (stmt-fcns other-fcns arg-fcns)
     (dolist (fcn fcn-list)
       (let* ((fname (first fcn))
-	     (type (lookup-vble-type fname))
+	     (type (get-fun-arg-type fcn))
 	     (args (second fcn))
-	     (decl `(function ,(get-upgraded-fun-arg-type args) ,type)))
+	     (decl `(function ,(get-upgraded-fun-arg-type args)
+		     (values ,type ,@(if (member fname *intrinsic_function_names*)
+					 nil
+					 '(&rest t))))))
 	(cond ((member fname *subprog_stmt_fns*)
 	       (push `(declare (ftype ,decl ,fname)) stmt-fcns))
 	      ((member fname arglist)
@@ -311,6 +316,67 @@
     (values (nreverse stmt-fcns)
 	    (nreverse other-fcns)
 	    (nreverse arg-fcns))))
+
+(defun get-arg-decl (list-of-arglists)
+  (let (res)
+    ;; Given a list of arglists, we derive the type for each of the arglists.
+    (dolist (arglist list-of-arglists)
+      (push (mapcar #'(lambda (arg)
+			;; Literal strings (which are of type (string
+			;; <len>)) confuse the mapcar below, so change
+			;; them into just type 'string.
+			(let ((type (get-fun-arg-type arg)))
+			  (if (subtypep type 'string)
+			      'string
+			      type)))
+		    arglist)
+	    res))
+    ;; Now make a list of each of the types of the arguments
+    (mapcar #'(lambda (z)
+		(if (atom z)
+		    z
+		    (let ((nodup (remove-duplicates z)))
+		      (if (rest nodup)
+			  `(or ,@nodup)
+			  (first nodup)))))
+	    (reduce #'(lambda (x accum)
+			(mapcar #'(lambda (a b)
+				    (if (listp a)
+					(cons b a)
+					(list b a)))
+				x accum))
+		    res))))
+
+(defun make-fcn-decl (fcn-list arglist)
+  (let (stmt-fcns other-fcns arg-fcns)
+    (dolist (fcn fcn-list)
+      (destructuring-bind ((fname &optional ftype) args)
+	  fcn
+	;;(format t "declaring fcn ~S~%" fcn)
+	;;(format t "fname = ~A~%" fname)
+	(let* ((type (get-fun-arg-type fcn))
+	       ;; If the function is an intrinsic, there is exactly
+	       ;; one return value.  If it's not an intrinsic but it
+	       ;; is a function, the return values are the function
+	       ;; value and the list of arguments.  (This is how f2cl
+	       ;; works).  If it's not an intrinsic and is a
+	       ;; subroutine (ftype non-NIL), the return type is the
+	       ;; list of arguments.  (Should we derive the type of
+	       ;; these and put them in the values list?)
+	       (decl `(function ,(get-arg-decl args)
+		       (values
+			,@(if ftype nil (list type))
+			,@(if (member fname *intrinsic_function_names*)
+			      nil
+			      '(&rest t))))))
+	  (cond ((member fname *subprog_stmt_fns*)
+		 (push `(declare (ftype ,decl ,fname)) stmt-fcns))
+		((member fname arglist)
+		 ;;(format t "arglist fcn = ~A~%" `(declare (type ,decl ,fname)))
+		 (push `(declare (type ,decl ,fname)) arg-fcns))
+		(t
+		 (push `(declare (ftype ,decl ,fname)) other-fcns))))))
+    (values stmt-fcns other-fcns arg-fcns)))
 
 ;; Given the program list P, look through it and try to convert all
 ;; occurrences of f2cl/ with either / or TRUNCATE.  We use TRUNCATE if
@@ -655,14 +721,14 @@
      ;; delete the variable.
      (setf *declared_vbles*
 	   (remove-if #'(lambda (v)
-			  (or (member v *functions-used* :key #'car)
+			  (or (member v *functions-used* :key #'caar)
 			      (member v *external_function_names*)))
 		      *declared_vbles*))
      ;; If a variable names a function used or an external function or
      ;; delete the variable.
      (setf *undeclared_vbles*
 	   (remove-if #'(lambda (v)
-			  (or (member v *functions-used* :key #'car)
+			  (or (member v *functions-used* :key #'caar)
 			      (member v *external_function_names*)))
 		      *undeclared_vbles*))
 
@@ -2004,8 +2070,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.47 2000/07/14 21:23:37 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.48 2000/07/18 13:59:23 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.48  2000/07/18 13:59:23  rtoy
+;;; o Left out some double precision intrinsics for getting function
+;;;   types.
+;;; o Declarations for functions were not quite right.  Make it better, but
+;;;   still needs some work.
+;;; o The format of *functions-used* has changed.  Do the right thing in
+;;;   insert-declarations.
+;;;
 ;;; Revision 1.47  2000/07/14 21:23:37  rtoy
 ;;; o In GET-FUN-ARG-TYPE, when looking up the type of an expression,
 ;;;   handle (funcall f ...) by looking up the type of "f" instead of

@@ -3,8 +3,11 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.1 2000/07/20 15:42:18 rtoy Exp $
+;;; $Id: quadpack.system,v 1.2 2000/07/21 17:48:29 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.2  2000/07/21 17:48:29  rtoy
+;;; Add some support for :compiler-options if MK defsystem supports it.
+;;;
 ;;; Revision 1.1  2000/07/20 15:42:18  rtoy
 ;;; Initial revision
 ;;;
@@ -25,9 +28,12 @@
 
 
 ;; Convert a Fortran file to Lisp and compile the Lisp file.
-(defun f2cl-compile (filename &key output-file error-file)
-  (compile-file (f2cl filename) :output-file output-file :error-file error-file))
+(defun f2cl-compile (filename &key output-file error-file array-slicing (array-type 'array))
+  (compile-file (f2cl filename :array-slicing array-slicing
+		      :array-type array-type)
+		:output-file output-file :error-file error-file))
 
+;; Used only if your defsystem doesn't support :compiler-options 
 (defun f2cl-compile-no-slice (filename &key output-file error-file)
   (compile-file (f2cl filename :array-slicing nil :array-type 'array)
 		:output-file output-file :error-file error-file))
@@ -106,10 +112,14 @@
 				   "dqelg"
 				   "dqpsrt"))
 	       (:file "dqawfe"
-		      :language :f2cl-no-slice
 		      :depends-on ("dqagie"
 				   "dqawoe"
-				   "dqelg"))
+				   "dqelg")
+		      ;; If your defsystem doesn't support :compiler-options, use this:
+		      ;; :language :f2cl-no-slice
+		      ;; If your defsystem does support :compiler-options, use this:
+		      :compiler-options (:array-slicing nil :array-type array)
+		      )
 	       (:file "dqawoe"
 		      :depends-on ("dqc25f"
 				   "dqpsrt"

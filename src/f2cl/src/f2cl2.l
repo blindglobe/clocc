@@ -154,13 +154,15 @@ Tag being parsed:| (cadr x))))
 
 ;------------------------------------------------------------------------------
 (defun lookup-array-bounds (v)
-  (let (bound)
-    (map nil #'(lambda (e)
-		 (let ((res (find v (rest e) :key #'car)))
-		   (when res
-		     (setf bound res))))
-	 *explicit_vble_decls*)
-    (rest bound)))
+  (map nil #'(lambda (e)
+	       (let ((res (find v (rest e) :key #'car)))
+		 (when (and res
+			    (not (null (rest res))))
+		   ;; If this entry has dimensions, we're done!
+		   (return-from lookup-array-bounds (rest res)))))
+       *explicit_vble_decls*)
+  (error "Cannot find array bounds for ~S!" v))
+
 
 (defun update-called-functions-list (name args)
   (let ((fcn (member name *functions-used* :key #'car)))

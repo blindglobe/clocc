@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.33 2004/03/04 21:37:44 sds Exp $
+;;; $Id: math.lisp,v 2.34 2004/03/17 23:36:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -929,7 +929,8 @@ Return 2 values: the mean and the length of the sequence."
 The mean and the length can be pre-computed for speed."
   (declare (sequence seq) (fixnum len) (double-float mean)
            (type (function (t) double-float) key))
-  (when (<= len 1) (return-from standard-deviation (values 0d0 mean len)))
+  (when (<= len 1)
+    (return-from standard-deviation (values 0d0 mean len mean mean)))
   (let (min max)
     (values
      (sqrt (/ (reduce #'+ seq :key

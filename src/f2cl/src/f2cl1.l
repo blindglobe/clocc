@@ -1647,10 +1647,10 @@ FILENAME                 File containing Fortran code
 		      nil))))
     (cond ((and (listp (car l))
 		(eq (second (car l)) '*))
-	   ;;(format t "parse-data1 1~%")
+	   ;;(format t "parse-data1 1 l = ~A~%" l)
 	   `(fill ,(check-reserved-lisp-names (first v))
 	          ,(fix-up-negative-number (cddar l))
-	          :end ,(1- (first (car l)))))
+	          :end ,(first (car l))))
 	  ((and (listp v) (listp l)
 		(listp (second v))
 		(numberp (first (second v))))
@@ -2063,8 +2063,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.87 2002/02/08 04:24:38 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.88 2002/02/08 23:28:26 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.88  2002/02/08 23:28:26  rtoy
+;;; Off-by-one error in initializing an array with FILL.  We didn't fill
+;;; the last element!
+;;;
 ;;; Revision 1.87  2002/02/08 04:24:38  rtoy
 ;;; Add support for BLOCK DATA subprograms.
 ;;;

@@ -1,10 +1,10 @@
 ;;; HTML parsing - very rudimentary
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.17 2002/04/21 20:08:26 sds Exp $
+;;; $Id: html.lisp,v 1.18 2002/04/21 20:10:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,7 @@
 
 (defstruct html-tag data)
 
-;; ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MISC/SGML.TXT
+;; <ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MISC/SGML.TXT>
 
 (defcustom *html-specials* list
   '(("gt" . #\>) ("lt" . #\<) ("quot" . #\") ("amp" . #\&) ("nbsp" . #\Space)

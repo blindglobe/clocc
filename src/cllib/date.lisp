@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-08-03 Mon 14:37:02 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-08-05 Wed 18:02:44 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.18 1998/08/03 18:37:31 sds Exp $
+;;; $Id: date.lisp,v 1.19 1998/08/05 22:03:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.19  1998/08/05 22:03:28  sds
+;;; Added `date-mon-name' and `date-mon-offset'.
+;;;
 ;;; Revision 1.18  1998/08/03 18:37:31  sds
 ;;; Renamed `earliest-date' and `latest-date' to `date-min' and `date-max'.
 ;;;
@@ -108,10 +111,21 @@
 
 (defconst +bad-date+ date (make-date) "*The convenient constant for init.")
 
-(defun print-date-month (dt &optional (str t) (depth 1))
+(defun date-mon-name (dt)
+  "Return the name of the month."
+  (declare (type date dt) (values simple-string))
+  (aref +month-names+ (1- (date-mo dt))))
+
+(defun date-mon-offset (dt)
+  "Return the number of characters printed for the previous months."
+  (declare (type date dt) (values (unsigned-byte 10)))
+  (let ((pos (1- (date-mo dt))))
+    (reduce #'+ +month-names+ :key #'length :end pos :initial-value pos)))
+
+(defun print-date-month (dt &optional (str t))
   "Print the date to the STREAM, month and year only."
-  (declare (ignore depth) (type date dt))
-  (format str "~a ~d" (aref +month-names+ (1- (date-mo dt))) (date-ye dt)))
+  (declare (type date dt))
+  (format str "~a ~d" (date-mon-name dt) (date-ye dt)))
 
 ;;; converters
 
@@ -261,7 +275,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
     (or (and (= (1+ m0) m1) (= y0 y1))
 	(and (= m0 12) (= m1 1) (= (1+ y0) y1)))))
 
-(defun same-month-p (d0 d1)
+(defun date-month= (d0 d1)
   "Return t if the dates are in the same month."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1)) (= (date-mo d0) (date-mo d1))))
@@ -279,7 +293,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type date dt) (values (integer 1 4)))
   (1+ (floor (1- (date-mo dt)) 3)))
 
-(defun same-quarter-p (d0 d1)
+(defun date-quarter= (d0 d1)
   "Return t if the dates are in the same quarter."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1)) (= (date-quarter d0) (date-quarter d1))))
@@ -519,34 +533,34 @@ If  LAST is non-nil, make sure that the next date is different."
   (let ((ta (second (date-in-dated-list dt dl))))
     (and ta (date= dt (funcall (dl-date dl) ta)))))
 
-(defun dl-shift (dl &optional dt last)
+(defun dl-shift (dl &optional (dt 1) last)
   "Make DL start from DT. Return the DL.
-If dt is omitted, skip one record.
+If DT is a fixnum, skip that many records instead.
 If LAST is non-nil, make sure that the next date is different."
-  (declare (type dated-list dl))
+  (declare (type dated-list dl) (type (or fixnum date) dt))
   (setf (dated-list-ll dl)
-	(if dt (date-in-dated-list dt dl last)
-	    (cdr (if last (skip-to-new (dated-list-ll dl) :test #'date=
-				       :key (dl-date dl))
-		     (dated-list-ll dl)))))
+	(if (date-p dt) (date-in-dated-list dt dl last)
+	    (nthcdr dt (if last (skip-to-new (dated-list-ll dl) :test #'date=
+                                             :key (dl-date dl))
+                           (dated-list-ll dl)))))
   dl)
 
 (defun dl-copy-shift (dl &optional shift)
   "Copy the dated list DL and shift it.
 If SHIFT is a date, make it start from SHIFT, if it's a fixnum,
 +SHIFT from the beginning or -SHIFT from the end,
-whichever is positive.  If both SHIFT is NIL, shift
+whichever is positive.  If SHIFT is NIL, shift
 to the end (set the list to NIL)."
   (declare (type dated-list dl) (type (or null fixnum date) shift)
            (values dated-list))
   (let ((cdl (copy-dated-list dl)))
     (declare (type dated-list cdl))
-    (typecase shift
+    (ctypecase shift
       (fixnum (setf (dated-list-ll cdl)
                     (if (minusp shift) (last (dated-list-ll dl) (- shift))
                         (nthcdr shift (dated-list-ll dl)))))
       (date (setf (dated-list-ll cdl) (date-in-dated-list shift dl)))
-      (t (setf (dated-list-ll cdl) nil)))
+      (null (setf (dated-list-ll cdl) nil)))
     cdl))
 
 (defun dl-next-chg (dl)
@@ -675,6 +689,7 @@ it should return a short symbol or string."
 coefficient for the given sequence. If :date is not given, no dated
 list object is created and just the list of numbers is returned."
   (declare (double-float coeff) (sequence seq)
+           (type (or null (function (t) date)) date)
 	   (type (function (t) double-float) key))
   (let* ((ema (funcall key (elt seq 0))) (c1 (- 1.0d0 coeff))
 	 (ll
@@ -706,16 +721,17 @@ Its is replaced by (X . EMA)."
                 el))
             seq)))
 
-(defun exp-mov-avg-dl (coeff dl &optional double (slot 'val))
+(defun exp-mov-avg-dl (coeff idl &optional double (slot 'val))
   "UI for `exp-mov-avg' when the argument is a dated list itself.
 When DOUBLE is given, compute 2 averages, with COEFF and COEFF/2,
 and make the latter accessible through MISC."
+  (declare (double-float coeff) (type dated-list idl) (values dated-list))
   (let* ((c2 (/ coeff 2.0d0))
-         (dl (exp-mov-avg coeff (dated-list-ll dl) :date (dl-date dl) :name
+         (dl (exp-mov-avg coeff (dated-list-ll idl) :date (dl-date idl) :name
                           (format nil "EMA [~3,2f~:[~;/~4,3f~]] `~a'" coeff
-                                  double c2 (dated-list-name dl))
-                          :key (dl-slot dl slot) :code
-                          (keyword-concat (dated-list-code dl) :-ema))))
+                                  double c2 (dated-list-name idl))
+                          :key (dl-slot idl slot) :code
+                          (keyword-concat (dated-list-code idl) :-ema))))
     (when double
       (setf (dated-list-val dl) 'cadr
             (dated-list-misc dl) 'cddr)
@@ -763,8 +779,8 @@ Must not assume that the list is properly ordered!"
   "Evaluate BODY when DL is truncated by the date DT."
   (let ((ll (gensym "WTD")) (tt (gensym "WTD")))
     `(let* ((,ll (date-in-dated-list ,dt ,dl)) (,tt (cdr ,ll)))
-      (unwind-protect (progn (setf (cdr ,ll) nil) ,@body)
-	(setf (cdr ,ll) ,tt)))))
+      (unwind-protect (progn (when ,ll (setf (cdr ,ll) nil)) ,@body)
+	(when ,ll (setf (cdr ,ll) ,tt))))))
 
 ;;;
 ;;; Change
@@ -797,7 +813,7 @@ Must not assume that the list is properly ordered!"
   (declare (type change chg))
   (if (change-max-p chg) :max :min))
 
-(defsubst same-type-p (ch1 ch2)
+(defsubst change-type= (ch1 ch2)
   "Are these two of the same type (min/max)?"
   (declare (type change ch1 ch2))
   (eq (change-type ch1) (change-type ch2)))
@@ -879,6 +895,8 @@ a diff structure is created with the same date and the difference
 and the ratio of the values.
 The date is accessed by (funcall date* rec),
 the value by (funcall val* rec)."
+  (declare (list ls0 ls1) (type (function (t) date) date0 date1)
+           (type (function (t) real) val0 val1) (values list))
   (do* ((bd (date-max (funcall date0 (car ls0))
                       (funcall date1 (car ls1)))) ll c0 c1 d0 d1 cd
 	(pd nil cd)             ; prev date

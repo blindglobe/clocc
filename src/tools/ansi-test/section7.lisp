@@ -17,12 +17,9 @@
  nil)					; XXX
 
 (my-assert
- (multiple-value-bind (a b)
-     (function-keywords (find-method #'gf1
-				     '()
-				     (list (find-class
-					    'integer))))
-   (list a b))
+ (multiple-value-list
+  (function-keywords (find-method #'gf1 '()
+                                  (list (find-class 'integer)))))
  ((:C :DEE :E EFF) nil))
 
 (my-assert
@@ -31,10 +28,8 @@
  nil)					; XXX
 
 (my-assert
- (multiple-value-bind (a b)
-     (function-keywords
-      (find-method #'gf2 '() (list (find-class 'integer))))
-   (list a b))
+ (multiple-value-list
+  (function-keywords (find-method #'gf2 '() (list (find-class 'integer)))))
  (() nil))
 
 (my-assert
@@ -45,10 +40,8 @@
  t)
 
 (my-assert
- (multiple-value-bind (a b)
-     (function-keywords
-      (find-method #'gf3 '() (list (find-class 'integer))))
-   (list a b))
+ (multiple-value-list
+  (function-keywords (find-method #'gf3 '() (list (find-class 'integer)))))
  ((:B :C :D) t))
 
 ;;; if only i knew more about clos

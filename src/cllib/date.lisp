@@ -1,17 +1,20 @@
-;;; File: <date.lisp - 1998-08-05 Wed 18:02:44 EDT sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-11-05 Thu 14:19:05 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997 by Sam Steingold.
+;;; Copyright (C) 1997, 1998 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.19 1998/08/05 22:03:28 sds Exp $
+;;; $Id: date.lisp,v 1.20 1998/11/05 19:19:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.20  1998/11/05 19:19:24  sds
+;;; Added `date<=', `date>=' and `date=*'.
+;;;
 ;;; Revision 1.19  1998/08/05 22:03:28  sds
 ;;; Added `date-mon-name' and `date-mon-offset'.
 ;;;
@@ -189,7 +192,17 @@ Returns the number of seconds since the epoch (1900-01-01)."
 
 (eval-when (load compile eval)
   (fmakunbound 'date)
-  (defgeneric date (xx) (:documentation "Convert to or extract a date."))
+  (defgeneric date (xx) (:documentation "Convert to or extract a date.
+The argument can be:
+   - a date - it is returned untouched;
+   - a string - it is destructively parsed;
+   - a symbol - it is uninterned and its name is destructively parsed;
+   - an integer - interpreted as the number of days since the epoch,
+   - a real number - interpreted as the number of seconds since the epoch;
+   - a stream - read as Month Day Year;
+   - a structure - the appropriate slot is used;
+   - a cons - called recursively on CAR;
+   - NIL - an error is signalled."))
   (declaim (ftype (function (t) date) date)))
 (defmethod date ((xx date)) xx)
 (defmethod date ((xx string))
@@ -204,7 +217,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
            (if (numberp ye) (mk-date :ye ye :mo (infer-month mo) :da da)
                (mk-date :ye da :mo (infer-month ye) :da mo)) n2))))))
 (defmethod date ((xx null)) (error "Cannot convert NIL to date")) ; +bad-date+
-(defmethod date ((xx symbol)) (date (string xx)))
+(defmethod date ((xx symbol)) (unintern xx) (date (string xx)))
 (defmethod date ((xx integer)) (days2date xx))
 (defmethod date ((xx real)) (time2date xx))
 (defmethod date ((xx stream))
@@ -228,9 +241,9 @@ and (funcall KEY arg), as a fixnum. KEY should return a date."
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type (function (t) date) key) (values (function (t) double-float)))
-  (let ((dd (double-float (date2days (date beg)))))
+  (let ((dd (dfloat (date2days (date beg)))))
     (declare (double-float dd))
-    (lambda (rr) (double-float (- (date2days (funcall key rr)) dd)))))
+    (lambda (rr) (dfloat (- (date2days (funcall key rr)) dd)))))
 
 (defun today ()
   "Return today's date."
@@ -244,11 +257,11 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 	    ye mo da ho mi se)))
 
 (defun date= (d0 d1)
-  "Check that the dates are the same. Like equalp, but works with children."
+  "Check that the two dates are the same."
   (declare (type date d0 d1)) (= (date2days d0) (date2days d1)))
 
 (defun date/= (d0 d1)
-  "Check that the dates are not the same."
+  "Check that the two dates are not the same."
   (declare (type date d0 d1)) (/= (date2days d0) (date2days d1)))
 
 (defun date< (d0 d1)
@@ -258,6 +271,19 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 (defun date> (d0 d1)
   "Check the precedence of the two dates."
   (declare (type date d0 d1)) (> (date2days d0) (date2days d1)))
+
+(defun date<= (d0 d1)
+  "Check the precedence of the two dates."
+  (declare (type date d0 d1)) (<= (date2days d0) (date2days d1)))
+
+(defun date>= (d0 d1)
+  "Check the precedence of the two dates."
+  (declare (type date d0 d1)) (>= (date2days d0) (date2days d1)))
+
+(defun date=* (&rest dates)
+  "Check any number of dates for being the same."
+  (declare (dynamic-extent dates))
+  (apply #'= (map-into dates #'date2days dates)))
 
 (defsubst date-max (d0 d1)
   "Return the latest date."
@@ -304,7 +330,7 @@ Arguments can be dates or objects parsable with `date'."
   (declare (type date d0 d1) (values fixnum))
   (- (date2days d1) (date2days d0)))
 
-(defsubst tomorrow (&optional (dd (today)) (skip 1))
+(defun tomorrow (&optional (dd (today)) (skip 1))
   "Return the next day.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
@@ -364,16 +390,16 @@ Return T if any errors are detected."
     (when (and gap (> (days-between d0 d1) gap))
       (format stream "~3d. Large Gap:~% - ~s~% - ~s~%~%" (incf err) r0 r1))))
 
-(defun sync-dates (lists &key lables key cpy set (stream t) op skip)
+(defun sync-dates (lists &key labels key cpy set (stream t) op skip)
   "Make all the lists have records for all the dates.
-If LABLES is not given, no messages are printed.
+If LABELS is not given, no messages are printed.
 \(funcall KEY record) ==> date
 \(funcall CPY rec) ==> copy of rec
 \(funcall SET rec dt) ==> set the date of the rec.
 Stops when the lists end. Prints messages to STREAM.
 Calls OP on the section of the LISTS with the same dates, using the
 previous record when SKIP is non-nil and nil otherwise.
-  (sync-dates lists &key lables key cpy set (stream t) op skip)"
+  (sync-dates lists &key labels key cpy set (stream t) op skip)"
   (declare (list lists))
   (mesg t stream "Synching dates in ~d lists.~%" (length lists))
   (do ((sec (copy-list lists)) (heads (make-list (length lists))) fnn (nerr 0)
@@ -390,9 +416,9 @@ previous record when SKIP is non-nil and nil otherwise.
 	    (when (date> bd ckey) (setq bd ckey))
 	    (unless (date= bd ckey) (setq err t))))
     ;; handle date mismatches
-    (when (and stream lables err)
+    (when (and stream labels err)
       (format stream " --[~:d]--> date mismatch:~:{~%  <~a: ~a>~}~%"
-	      len (mapcar #'cons lables sec))
+	      len (mapcar #'cons labels sec))
       (incf nerr))
     ;; shift, fix and operate
     (mapl (lambda (ls hd)
@@ -406,9 +432,9 @@ previous record when SKIP is non-nil and nil otherwise.
 	  sec heads)
     (when op (apply op heads))))
 
-(defmacro sync-dates-ui (lists &key lables key cpy (stream t) op skip)
+(defmacro sync-dates-ui (lists &key labels key cpy (stream t) op skip)
   "Use KEY for SET, which should be a slot. See `sync-dates'."
-  `(sync-dates ,lists :lables ,lables :key (lambda (rr) (slot-value rr ,key))
+  `(sync-dates ,lists :labels ,labels :key (lambda (rr) (slot-value rr ,key))
     :cpy ,cpy :stream ,stream  :op ,op :skip ,skip
     :set (lambda (rr dd) (setf (slot-value rr ,key) dd))))
 
@@ -624,7 +650,7 @@ Return: the change in misc."
 	  (format t "Missing ~a data for: ~a~%" (dated-list-name dl) dt))
 	(setf (dated-list-ll dl) dl-t)
 	(+ dr (- (funcall (dl-misc dl) dlr1) rr)))
-    (unless dl-t (error "~a ended before ~a~%" (dated-list-name dl) dt))
+    (assert dl-t (dt) "~a ended before ~a~%" (dated-list-name dl) dt)
     (when (and dlr2 (date= dld (funcall (dl-date dl) dlr2)))
       (mesg t stlog " ---> new ~a contract~%" (dated-list-name dl))
       (format t "New ~a contract started ~a~%" (dated-list-name dl) dld)
@@ -646,7 +672,7 @@ Return nil if at the end already, or the change in value."
   "Print the dated lists from BEGD to ENDD, inclusive."
   (let ((bd (date begd)) (ed (date endd)))
     (declare (type date bd ed))
-    (unless dls (error "nothing to print for ~a -- ~a~%" bd ed))
+    (assert dls (dls) "nothing to print for ~a -- ~a~%" bd ed)
     (with-printing (prn)
       (dolist (dl dls)
 	(format prn "~a [~a -- ~a]~%" (dated-list-name dl) bd ed)
@@ -888,7 +914,8 @@ Sets ll, date, val, and passes the rest directly to make-dated-list."
       (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
               (diff-ra df))))
 
-(defun diff-lists (ls0 ls1 &key date0 date1 val0 val1)
+(defun diff-lists (ls0 ls1 &key (date0 #'date) (date1 #'date)
+                   (val0 #'value) (val1 #'value))
   "Generate a list of diff's from the given 2 lists.
 For each pair of records in 2 lists that have the same dates
 a diff structure is created with the same date and the difference

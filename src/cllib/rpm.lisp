@@ -1,12 +1,15 @@
-;;; File: <rpm.lisp - 1998-11-19 Thu 12:02:40 EST sds@eho.eaglets.com>
+;;; File: <rpm.lisp - 1998-11-19 Thu 14:37:00 EST sds@eho.eaglets.com>
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; Copyright (C) 1998 by Sam Steingold
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
-;;; $Id: rpm.lisp,v 1.2 1998/11/19 17:02:52 sds Exp $
+;;; $Id: rpm.lisp,v 1.3 1998/11/19 19:37:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 ;;; $Log: rpm.lisp,v $
+;;; Revision 1.3  1998/11/19 19:37:41  sds
+;;; Replaced `*rpm-local-path*' with a list - `*rpm-local-paths*'.
+;;;
 ;;; Revision 1.2  1998/11/19 17:02:52  sds
 ;;; Moved `binary-pos' to util.lisp.
 ;;;
@@ -35,9 +38,10 @@
         (list (make-url :prot "ftp" :host "contrib.redhat.com"
                         :path "/noarch/")))
   "The list of URLs where to look for RPMs.")
-(defcustom *rpm-local-path* pathname #p"/var/tmp/o/RedHat/RPMS/"
-  "The path to the local RPMs.")
-(defcustom *rpm-local-target* pathname #p"/var/tmp"
+(defcustom *rpm-local-paths* list
+  '(#p"/var/tmp/o/RedHat/RPMS/" #p"/var/tmp/")
+  "The local path where to download stuff.")
+(defcustom *rpm-command-line* simple-string
   "rpm --queryformat \"%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH} %{BUILDTIME} %{INSTALLTIME} %{SIZE}\\n\""
   "The rpm(1) command line to print all the installed packages.
   "rpm -qa --queryformat \"%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\\n\""
@@ -49,6 +53,8 @@
   (btime nil :type (or null integer)) ; build time
   (arch "arch?" :type simple-string))
 
+(defmethod print-object ((rpm rpm) (out stream))
+  (if *print-readably* (call-next-method)
 (defmethod print-object ((rpm rpm) (stream stream))
               (rpm-name rpm) (rpm-vers rpm) (rpm-rels rpm) (rpm-arch rpm)
       (format stream "~a-~a-~a.~a" (rpm-name rpm) (rpm-vers rpm)
@@ -82,24 +88,22 @@
   "Read RPMs from the stream."
               (read-line in nil nil)
   (sort (loop :for line :of-type simple-string = (read-line in nil nil)
-              :while line :when (< 4 (length line)) :collect (rpm line))
+              :for rr :of-type rpm = (ignore-errors (rpm line))
+              :while line :when rr :collect rr)
 (defun rpm-installed ()
   "Return the list of RPMs installed."
-(defun rpm-present (&optional force)
-  "Update `*rpm-present*' and return it."
-  (setq *rpm-present*
-        (if (and (null force) *rpm-present*) *rpm-present*
-            (coerce
-             (delete-duplicates
-              (merge 'list
-                     (sort (mapcar #'rpm (directory
-                                          (merge-pathnames
-                                           "*.rpm" *rpm-local-path*)))
-                           #'rpm<)
-                     (rpm-read (pipe-input *rpm-command-line*))
-                     #'rpm<)
-              :test #'string= :key #'rpm-name)
-             'simple-vector))))
+  (delete-duplicates
+  "Return the list of RPMs installed and already downloaded."
+          (lambda (r0 r1)
+   (merge 'simple-vector
+          (sort (mapcar #'rpm
+                        (mapcan (lambda (pp)
+                                  (directory (merge-pathnames "*.rpm" pp)))
+                                *rpm-local-paths*))
+                #'rpm<)
+          (rpm-read (pipe-input *rpm-command-line*))
+          #'rpm<)
+(defun rpm-available (url &key (out *standard-output*) (err *error-output*)
                       (retry 2))
 (defun rpm-available (url)
   (handler-case
@@ -113,26 +117,35 @@
   "Get the list of all RPMs in `*rpm-urls*' and put it there.
   (when (or force (notany #'dld-all *rpm-locations*)
   (dolist (url *rpm-urls*)
-    (format t "Processing `~a'...~%" (car url))
+    (format t " *** processing `~a'...~%" (car url))
     (setf (cdr url)
           (mapcan (lambda (rpm)
                     (let ((pos (binary-pos rpm *rpm-present* :test #'string<
                                            :key #'rpm-name)))
                       (when (and pos (rpm< (svref *rpm-present* pos) rpm))
                         (list rpm))))
-                  (rpm-available (car url))))))
+                  (rpm-available (car url))))
+    (format t " *** ~d new RPMs~%" (length (cdr url)))))
 (defun show-rpms (&optional (what "") (local t))
 (defun rpm-get-new-rpms ()
   "Download the RPMs from `*rpm-urls*'."
+  (when (zerop (length *rpm-present*))
+    (setq *rpm-present* (rpm-present)))
+  (format t " *** ~d packages present
+ *** Getting the list of new packages...~%"
+          (length *rpm-present*))
+  (when (notany #'cdr *rpm-urls*) (rpm-new-packages))
   (dolist (url *rpm-urls*)
     (when (cdr url)
+      (format t " *** getting ~d files from `~a'~%"
+              (length (cdr url)) (car url))
       (with-open-url (sock (car url) :err t)
         (dolist (rpm (cdr url))
-          (format t "getting `~a'..." rpm) (force-output)
-          (let ((bt (get-float-time))
+          (format t " *** getting `~a'...~%" rpm)
+          (let ((bt (dfloat (get-internal-real-time)))
                 (tot (ftp-get-file sock (format nil "~a.rpm" rpm)
                                    *rpm-local-target* :log t)))
             (multiple-value-bind (el st) (elapsed bt t)
-              (format t "done [~:d bytes, ~a, ~f bytes/sec]~%" tot st
-                      (/ tot el)))))))))
+              (format t "~& *** done [~:d bytes, ~a, ~:d bytes/sec]~%" tot st
+                      (round tot el)))))))))
 ;;; file rpm.lisp ends here

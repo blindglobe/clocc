@@ -1,3 +1,7 @@
+KMR 19-SEP-2002 (Kevin M. Rosenberg)
+    - Add support for CLISP
+    - Fixed all known issues with ASDF support
+
 KMR 14-SEP-2002 (Kevin M. Rosenberg)
     - Add reregister-common-lisp-implementations function
 

@@ -29,11 +29,6 @@
   "This is the type of compiled lisp files.")
 
 
-(defun make-wild-type-namestring (path)
-  (concatenate 'string
-	       (namestring path)
-	       ".*"))
-
 (defun add-translation (for new-root new-part)
   "Adds a translation to the logical pathname named by FOR (:cl-library or :cl-systems)
 NEW-ROOT is the new root for this translation, NEW-PART is the part below the
@@ -64,10 +59,9 @@ This function returns nothing."
     
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
-	   (make-wild-type-namestring
-	    (namestring (make-pathname :defaults new-part
-				       :name :wild
-				       :host lp-host))))
+	   (namestring (make-pathname :defaults new-part
+				      :name :wild
+				      :host lp-host)))
           ;; construct the destination, based on all this
           (new-dest
 	   (make-pathname :defaults new-part
@@ -82,13 +76,12 @@ This function returns nothing."
     ;; also support the old way
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
-	   (make-wild-type-namestring
-	    (namestring (make-pathname :defaults new-part
-				       :directory (cons :absolute
-							(rest
-							 (pathname-directory new-part)))
-				       :host lp-host))))
-          ;; construct the destination, based on all this
+	   (namestring (make-pathname :defaults new-part
+				      :directory (cons :absolute
+						       (rest
+							(pathname-directory new-part)))
+				      :host lp-host)))
+	  ;; construct the destination, based on all this
 	  (new-dest
 	   (make-pathname :defaults new-part
 			  ;; but under new-root
@@ -185,19 +178,21 @@ Returns nothing"
 						      :type "asd"))))
     (when (>= version 3)
       (flet ((compile-and-load (file)
+		(let ((file-path
+		       #-clisp (pathname file)
+		       #+clisp (translate-logical-pathname (namestring file)))
+		      (compiled-file-pathname
+		       #-clisp (translate-logical-pathname (compile-file-pathname file))
+		       #+clisp (translate-logical-pathname (namestring (compile-file-pathname file)))))
                ;; first make the target directory:
-               (ensure-directories-exist 
-                (make-pathname 
-                 :directory
-                 (pathname-directory    
-                  (translate-logical-pathname 
-                   (compile-file-pathname file)))))
-               ;; now compile it:
-               (compile-file file
-                             :print nil
-                             :verbose nil)
-               ;; then load it:
-               (load (compile-file-pathname file))))
+		  (ensure-directories-exist compiled-file-pathname)
+		  ;; now compile it:
+		  (compile-file file-path
+				:output-file compiled-file-pathname
+				:print nil
+				:verbose nil)
+		  ;; then load it:
+		  (load compiled-file-pathname))))
         ;; first ourselves:
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
         ;; then the patches before defsystem:

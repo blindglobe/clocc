@@ -1,3 +1,12 @@
+common-lisp-controller (3.24) unstable; urgency=low
+
+  * NMU
+  * Remove make-wild-type-namestring since it doesn't help anything and 
+  it causes trouble with clisp.
+  * Add support for clisp's handling of LPNs in compile-and-load command. 
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 19 Sep 2002 12:39:23 -0600
+
 common-lisp-controller (3.23) unstable; urgency=low
 
   * NMU

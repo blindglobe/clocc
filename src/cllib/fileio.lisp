@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.39 2004/09/26 14:16:51 sds Exp $
+;;; $Id: fileio.lisp,v 1.40 2004/11/30 18:18:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -335,7 +335,8 @@ Non-existent files are assumed to be VERY old."
   "Compile the file if newer than the compiled and load it."
   (if force (load (compile-file file))
       (let ((cf (compile-file-pathname file)))
-        (if (file-newer file cf)
+        (if (or (file-newer file cf)
+                (not (port:compiled-file-p cf)))
             (load (compile-file file))
             (unless load-only-if-compiled
               (load cf))))))

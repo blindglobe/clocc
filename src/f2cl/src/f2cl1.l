@@ -45,6 +45,7 @@ block; the value is a list of all variables in the common block.")
 			(auto-save t) (relaxed-array-decls t)
 			(coerce-assigns nil)
 			(extension (or *default-lisp-extension* "lisp"))
+			keep-temp)
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -62,6 +63,7 @@ INPUT-FILE               File containing Fortran code
                          appropriate type for the assignment.  Default = NIL.
 :EXTENSION               The extension to use for the output file, if needed.  Defaults to
                          *DEFAULT-LISP-EXTENSION* or \"lisp\"
+:KEEP-TEMP               If T, the temporary file is not deleted.  Default = NIL.
 "
 
 
@@ -84,8 +86,11 @@ INPUT-FILE               File containing Fortran code
 					 :name (pathname-name input-path)
 					 :type extension))))
 
-    (fortran-to-lisp (preprocess input-file) output-file)
-    (values output-file)))
+    (let ((processed-file (preprocess input-file)))
+      (fortran-to-lisp processed-file output-file)
+      (unless keep-temp-file
+	(delete-file processed-file))
+      (values output-file))))
 ;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)

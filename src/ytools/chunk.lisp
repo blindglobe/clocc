@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.5 2004/12/09 12:55:36 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.6 2004/12/10 22:58:47 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -228,8 +228,9 @@ for an independent reason.
    (cond ((Chunk-managed chunk)
 	  (cond ((eq (Chunk-managed chunk)
 		     ':in-transition)
-		 (format *error-output*
-		    "Chunk basis cycle detected at ~S~%" chunk))))
+		 (error
+		    !"Chunk basis cycle detected at ~S" chunk 
+                     "~%     [-- chunk-manage]"))))
 	 (t
 	  (let ((its-an-or (typep chunk 'Or-chunk)))
 	     (unwind-protect
@@ -269,6 +270,11 @@ for an independent reason.
 ;;; Any other value will cause any derivees to become unmanaged.
 (defun chunk-terminate-mgt (c propagate)
    (cond ((Chunk-managed c)  ;;;;(Chunk-manage-request c)
+	  (cond ((eq (Chunk-managed chunk)
+		     ':in-transition)
+		 (error
+		    "Chunk basis cycle detected at ~S" chunk
+		    "~%     [-- chunk-terminate-mgt]")))
 	  (unwind-protect
 	     (labels ((chunk-gather-derivees (ch dvl)
 			 (cond ((and (Chunk-managed ch)

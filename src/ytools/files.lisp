@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.6 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.7 2004/12/10 22:58:47 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -210,9 +210,12 @@
 ;;; State for task is a file chunk, whose basis (and callees)
 ;;; we are computing.
 (def-slurp-task :compute-file-basis
-   :default (\\ (_ _) true))
+   :default (\\ (_ _) true)
 ;;; -- The idea is that anything we didn't anticipate takes us
 ;;; out of the header.
+   :file->state-fcn (\\ (pn) 
+		       (place-loaded-basis-chunk
+			  (place-file-chunk pn))))
 
 (defun place-loaded-basis-chunk (fc)
    (chunk-with-name `(:loaded-basis ,(File-chunk-pathname fc))
@@ -241,7 +244,8 @@
 		   !())
 	     (file-slurp (File-chunk-pathname file-ch)
 			 (list compute-file-basis*)
-			 (list file-ch))
+;;;;			 (list file-ch)
+	     )
 	     file-op-count*))))
 
 (datafun :compute-file-basis end-header
@@ -583,61 +587,97 @@
 ;;; Class name: N-class         Chunk name: (N f)            - the contents 
 ;;;                                                            of the sub-file
 ;;;             Slurped-N-class             (:slurped (N f)) - as slurped
-;;;             Loaded-N-class              (:loaded (N f))  - Or-chunk (see below)
+;;;             Loaded-N-class              (:loaded (N f))  - Or-chunk
+;;;							       (see below)
 ;;; Plus one or more existing classes L, typically (:loaded f), that trump
 ;;; (:slurped (N f))
 ;;; The Or-chunk has disjuncts (union L {(:slurped (N f))}), default
 ;;; (:slurped (N f)).
 (defmacro def-sub-file-type (sym &key ((:default default-handler^)))
-   (let* ((sym-name (Symbol-name name))
-	  (subfile-class-name (build-symbol (:< (string-capitalize sym-name))
-					    -chunk))
-	  (slurped-class-name
-	     (build-symbol Slurped- (:< sym-name) -chunk))
-	  (loaded-chunk-class-name
-	     (build-symbol Loaded- (:< sym-name) -chunk))
-	  (sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
-					       -pathname))
-	  (ld-pathname-read-fcn (build-symbol (:< loaded-chunk-class-name)
-					      -pathname))
-	  (loaded-class-loaded-file-acc
-	     (build-symbol (:< loaded-chunk-class-name)
-			   -loaded-file)))
-      `(progn
-	  (defclass ,subfile-class-name (Chunk)
-	     ((pathname :reader ,sub-pathname-read-fcn
-			:initarg :pathname
-			:type pathname)))
-	  (defmethod initialize-instance ((ch ,chunk-class-name)
-					  &rest initargs)
-                                         (declare (ignore initargs))
-	     (setf (Chunk-basis ch)
-	           (list (place-file-chunk (,pathname-read-fcn ch)))))
-	  (defclass ,loaded-chunk-class-name (Chunk)
-	     ((pathname :reader
-			   (build-symbol (:< loaded-chunk-class-name)
-					 -pathname)
-			:initarg :pathname
-			:type pathname)
-	      (loaded-file :accessor ,loaded-class-loaded-file-acc
-			   :type Loaded-chunk)))
-	  (defmethod initialize-instance ((ch ,loaded-chunk-class-name)
-					  &rest initargs)
-                                         (declare (ignore initargs))
-	     (setf (Chunk-basis ch)
-	           (list (place-file-chunk (,pathname-read-fcn ch))))
-	     (setf (,loaded-class-loaded-file-acc ch)
-	           (
-		      
-)
-	  (def-slurp-task ,(build-symbol (:package :keyword)
-			      slurp- (:< sym-name))
-	     :default ,default-handler^)
-	  (defmethod derive ((x ,chunk-class-name))
-	     ( 
-	  
-	  
-
+   (let  ((sym-name (Symbol-name name)))
+      (let ((subfile-class-name (build-symbol (:< (string-capitalize sym-name))
+					      -chunk))
+	    (slurped-class-name
+	       (build-symbol Slurped- (:< sym-name) -chunk))
+	    (loaded-sym-class-name
+	       (build-symbol Loaded- (:< sym-name) -chunk)))
+      (let* ((sub-pathname-read-fcn (build-symbol (:< subfile-class-name)
+						  -pathname))
+	     (slurped-subfile-read-fcn (build-symbol (:< slurped-class-name)
+						     -subfile))
+	     (slurped-subfile-placer-fcn
+		(build-symbol place-
+			      (:< slurped-subfile-read-fcn)
+			      -chunk))
+	     (ld-pathname-read-fcn (build-symbol (:< loaded-sym-class-name)
+						 -pathname))
+	     (loaded-class-loaded-file-acc
+		(build-symbol (:< loaded-sym-class-name)
+			      -loaded-file))
+	     (slurp-task-name (build-symbol (:package :keyword)
+				 slurp- (:< sym-name))))
+         `(progn
+	     (defclass ,subfile-class-name (Chunk)
+		((pathname :reader ,sub-pathname-read-fcn
+			   :initarg :pathname
+			   :type pathname)))
+	     (defmethod initialize-instance :after
+				  ((ch ,subfile-class-name)
+				   &rest _)
+		(setf (Chunk-basis ch)
+		      (list (place-file-chunk (,sub-pathname-read-fcn ch)))))
+	     (defclass ,slurped-class-name (Chunk)
+	       ((subfile :reader ,slurped-subfile-read-fcn
+			 :initarg :subfile
+			 :type Chunk)))
+	     (defmethod initialize-instance :after
+					    ((ch ,slurped-class-name)
+					     &rest _)
+		(setf (Chunk-basis ch)
+		      (list (,slurped-subfile-read-fcn ch))))
+	     (defun ,slurped-subfile-placer-fcn (pn)
+		(chunk-with-name
+		   `(:slurped (,',sub-file-type pn))
+		   (\\ (name-exp)
+		      (make-instance ',slurped-class-name
+			 :name name-exp
+			 :subfile (chunk-with-name
+				     (cadr exp)
+				     (\\ (sub-name-exp)
+					(make-instance
+					      ',sub-file-class-name
+					   :name sub-name-exp
+					   :pathname pn)))))))
+	     (defclass ,loaded-sym-class-name (Or-chunk)
+		((pathname :reader
+			      (build-symbol (:< loaded-sym-class-name)
+					    -pathname)
+			   :initarg :pathname
+			   :type pathname)
+		 (loaded-file :accessor ,loaded-class-loaded-file-acc
+			      :type Loaded-chunk)))
+	     (defmethod initialize-instance :after
+					    ((ch ,loaded-sym-class-name)
+					     &key sub-file-type file
+						  &allow-other-keys)
+		(setq file (pathname file))
+		(let ((file-chunk (place-loaded-chunk file false))
+		      (slurped-chunk 
+			 (,slurped-subfile-placer-fcn file)))
+		   (setf (Chunk-basis ch)
+			 (list file-chunk))
+		   (setf (Or-chunk-disjuncts ch)
+			 (list file-chunk slurped-chunk))))
+	     (def-slurp-task ,slurp-task-name
+		:default ,default-handler^
+		:file->state-fcn
+		   (\\ (pn) (,slurped-subfile-placer-fcn
+				          pn)))
+	     (defmethod derive ((x ,subfile-class-name))
+		(let ((file (,sub-pathname-read-fcn x)))
+		   (file-slurp file
+			       (list ,(build-symbol (:< slurp-task-name)
+						    *))))))))))
 
 (defvar fload-version-suffix* ':-new)
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.3 2004/11/27 20:03:03 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.4 2004/12/10 22:58:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -61,16 +61,26 @@
 	      (:constructor make-Slurp-task (label default-handler)))
    label
    (handler-table (make-hash-table :test #'eq :size 100))
-   default-handler) 
+   default-handler
+   file->state-fcn) 
 ;;; -- handler-table maps symbols to functions of one argument that
 ;;; handle forms beginning with that symbol
 ;;; default-handler is for all other forms.  If it's false, then
 ;;; there isn't a default handler.  
+;;; file->state-fcn takes a pathname and returns the state object
+;;; for the slurp task (default: return nil).
 
-(defmacro def-slurp-task (name &key ((:default default-handler^)))
+(defmacro def-slurp-task (name
+			  &key ((:default default-handler^)
+				'nil)
+			       ((:file->state file->state-fcn^)
+				'(\\ (_) nil)))
    (let ((task-var (build-symbol (:< name) *)))
       `(progn
-	  (defvar ,task-var (make-Slurp-task ',name ,default-handler^))
+	  (defvar ,task-var
+	      (make-Slurp-task ',name
+			       :default-handler ,default-handler^
+			       :file->state-fcn ,file->state-fcn^))
 	  (datafun attach-datafun ,name
 	     (defun :^ (ind sym fname)
 	        (setf (href (Slurp-task-handler-table ,task-var)
@@ -231,7 +241,7 @@
 ;;; 'states' is a list of data structures, the same length as
 ;;; 'slurp-tasks'.  Each element of 'states' serves as a blackboard
 ;;; for the corresponding task.
-(defun file-slurp (pn slurp-tasks states)
+(defun file-slurp (pn slurp-tasks)   ;;;; states
    (let ((post-file-transduce-hooks* !()))
       (with-open-file (s pn :direction ':input)
 	 (cleanup-after-file-transduction
@@ -244,7 +254,11 @@
 		  #+:excl (excl:*record-source-file-info* nil)
 		  (*package* *package*)
 		  (*readtable* *readtable*))
-	       (do ((form (read s false eof*) (read s false eof*)))
+	       (do ((form (read s false eof*) (read s false eof*))
+		    (states (mapcar (\\ (slurp-task)
+				       (funcall (Slurp-task-file->state-fcn
+						   slurp-task)
+						pn)))))
 		   ((or (eq form eof*)
 			(null slurp-tasks)
 			(setq slurp-tasks

@@ -1,13 +1,13 @@
 ;;; This code is copyright 1993 by Paul Graham.
 ;;; Distribution under clocc.sourceforge.net
 ;;; Liam M. Healy (LMH), liam@users.sourceforge.net
-;;; By permission of Paul Graham, this is distributed under the 
+;;; By permission of Paul Graham, this is distributed under the
 ;;; GNU General Public License (GPL), version 2.
 ;;; The license accompanies this file under the name "COPYING", or
-;;; see http://www.gnu.org/copyleft/gpl.html for a copy. 
+;;; see http://www.gnu.org/copyleft/gpl.html for a copy.
 
-;;; LMH changes are: 
-;;; Added 
+;;; LMH changes are:
+;;; Added
 ;;;  - in-package and export defintions from this package
 ;;;  - form seperators (by book section)
 ;;;  - comments
@@ -44,7 +44,7 @@
 (declaim (inline last1 single append1 conc1 mklist))
 
 (defun last1 (lst)
-  "The last item in a list."  ; LMH 
+  "The last item in a list."  ; LMH
   (declare (list lst))
   (car (last lst)))
 
@@ -52,11 +52,11 @@
   "Test list for one element."   ; LMH
   (and (consp lst) (not (cdr lst))))
 
-(defun append1 (lst obj) 
+(defun append1 (lst obj)
   "Add the obj onto the end of the lst."   ; LMH
   (append lst (list obj)))
 
-(defun conc1 (lst obj)   
+(defun conc1 (lst obj)
   "Destructively add the obj onto the end of the lst."   ; LMH
   (nconc lst (list obj)))
 
@@ -69,13 +69,13 @@
    than calling length twice."   ; LMH
   (declare (sequence x y))   ; LMH
   (labels ((compare (x y)
-             (and (consp x) 
+             (and (consp x)
                   (or (null y)
                       (compare (cdr x) (cdr y))))))
     (if (and (listp x) (listp y))
         (compare x y)
         (> (length x) (length y)))))
- 
+
 (defun filter (fn lst)
   "Calls fn on each element of the lst, returning a
    list of non-NIL results."   ; LMH
@@ -105,7 +105,7 @@
                    ((atom x) (cons x acc))
                    (t (rec (car x) (rec (cdr x) acc))))))
     (rec x nil)))
-|# 
+|#
 
 (defun prune (test tree)
   "Descend tree, removing items that return nil from test."	; LMH
@@ -113,7 +113,7 @@
   (labels ((rec (tree acc)
              (cond ((null tree) (nreverse acc))
                    ((consp (car tree))
-                    (rec (cdr tree) 
+                    (rec (cdr tree)
                          (cons (rec (car tree) nil) acc)))
                    (t (rec (cdr tree)
                            (if (funcall test (car tree))
@@ -159,7 +159,7 @@
 (defun duplicate (obj lst &key (test #'eql))
   "Test if obj is duplicated in lst."   ; LMH
   (declare (function test))   ; LMH
-  (member obj (cdr (member obj lst :test test)) 
+  (member obj (cdr (member obj lst :test test))
           :test test))
 
 (defun split-if (fn lst)
@@ -267,7 +267,7 @@
 
 (defun mapcars (fn &rest lsts)
   (declare (function fn))			; LMH
-  "Mapcar a function over several lists, like (apply #'mapcar fn lsts) but without 
+  "Mapcar a function over several lists, like (apply #'mapcar fn lsts) but without
    unnecessary consing."   ; LMH
   (let ((result nil))
     (dolist (lst lsts)
@@ -280,8 +280,8 @@
   "Mapcar for trees."				; LMH
   (if (some #'atom args)
       (apply fn args)
-      (apply #'mapcar 
-             #'(lambda (&rest args) 
+      (apply #'mapcar
+             #'(lambda (&rest args)
                  (apply #'rmapcar fn args))
              args)))
 
@@ -296,7 +296,7 @@
   "Read separate items and make into a list."   ; LMH
   (values (read-from-string
             (concatenate 'string "("
-                                 (the simple-base-string (apply #'read-line args))   ; LMH 
+                                 (the simple-base-string (apply #'read-line args))   ; LMH
                                  ")"))))
 
 (declaim (stream *query-io*))  ; LMH
@@ -342,7 +342,7 @@
   "Take apart symbol, returning a list of symbols whose print form
    is each character."   ; LMH
   (map 'list #'(lambda (c)
-                 (intern (make-string 1 
+                 (intern (make-string 1
                                       :initial-element c)))
              (symbol-name sym)))
 
@@ -380,7 +380,7 @@
         (multiple-value-bind (val win) (gethash args cache)
           (if win
               val
-              (setf (gethash args cache) 
+              (setf (gethash args cache)
                     (apply fn args)))))))
 
 ;;; LMH make into a macro
@@ -404,7 +404,7 @@
             (fns (butlast fns)))
 	(declare (function fn1))			; LMH
         #'(lambda (&rest args)
-            (reduce #'funcall fns 
+            (reduce #'funcall fns
                     :from-end t
                     :initial-value (apply fn1 args))))
       #'identity))
@@ -427,7 +427,7 @@
       fn
       (let ((chain (apply #'fint fns)))
 	(declare (function chain))		; LMH correct?
-        #'(lambda (x) 
+        #'(lambda (x)
             (and (funcall fn x) (funcall chain x))))))
 
 (defun fun (fn &rest fns)
@@ -451,7 +451,7 @@
 (defun lrec (rec &optional base)
   (declare (function rec))			; LMH
   "Function to define flat list recurser.
-   Rec is a function that takes two arguments, the first 
+   Rec is a function that takes two arguments, the first
    will be the car of the list, the second is a function
    that will produce the cdr.  Base is a function to be called
    or value when the list is empty.
@@ -463,7 +463,7 @@
                      (funcall base)
                      base)
                  (funcall rec (car lst)
-                              #'(lambda () 
+                              #'(lambda ()
                                   (self (cdr lst)))))))
     #'self))
 
@@ -495,7 +495,7 @@
   (declare (function rec))   ; LMH
   "Tree traverser: Recurse down a tree.  Rec is a function
    that takes two arguments, the first being the result of the left branch,
-   the second the result of the right branch.  Base is a function called 
+   the second the result of the right branch.  Base is a function called
    or value returned if at a leaf."   ; LMH
   (labels ((self (tree)
              (if (atom tree)
@@ -503,7 +503,7 @@
                      (funcall base tree)
                      base)
                  (funcall rec (self (car tree))
-                              (if (cdr tree) 
+                              (if (cdr tree)
                                   (self (cdr tree)))))))
     #'self))
 
@@ -518,19 +518,19 @@
   "Tree traverser: Recurse down a tree.  Rec is a function
    that takes three arguments, the first is the tree,
    the second is the result of the left branch,
-   the third is the result of the right branch.  Base is a function called 
+   the third is the result of the right branch.  Base is a function called
    or value returned if at a leaf.  Differs from ttrav in that
    it need not traverse the whole tree. "   ; LMH
-  (labels 
+  (labels
     ((self (tree)
        (if (atom tree)
            (if (functionp base)
                (funcall base tree)
                base)
-           (funcall rec tree 
-                        #'(lambda () 
+           (funcall rec tree
+                        #'(lambda ()
                             (self (car tree)))
-                        #'(lambda () 
+                        #'(lambda ()
                             (if (cdr tree)
                                 (self (cdr tree))))))))
     #'self))
@@ -546,7 +546,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(mac)))   ; LMH
 
-(defmacro mac (expr) 
+(defmacro mac (expr)
   "Print macroexpansion."   ; LMH
   `(pprint (macroexpand-1 ',expr)))
 
@@ -589,7 +589,7 @@
   (let ((bodfn (gensym))
         (vars (mapcar #'(lambda (v) (cons v (gensym)))
                       (remove-duplicates
-                        (mapcar #'car 
+                        (mapcar #'car
                                 (mappend #'cdr clauses))))))
     `(labels ((,bodfn ,(mapcar #'car vars)
                  ,@body))
@@ -654,7 +654,7 @@
                      choices)))))
 
 (defmacro >case (expr &rest clauses)
-  "Case for which keys are evaluated.  Keys must always be given as 
+  "Case for which keys are evaluated.  Keys must always be given as
    a list to avoid ambiguity."   ; LMH
   (let ((g (gensym)))
     `(let ((,g ,expr))
@@ -732,15 +732,15 @@
 				  nil)
 			       (,bodfn ,@(map1-n #'(lambda (n)
 						     (declare (fixnum n))	; LMH
-						     `(nth ,(1- n) 
+						     `(nth ,(1- n)
 							   ,rest))
 						 len))))))))))
- 
+
 (defun dt-args (len rest src)
   (declare (fixnum len))			; LMH
   (map0-n #'(lambda (m)
 	      (declare (fixnum m))		; LMH
-              (map1-n #'(lambda (n) 
+              (map1-n #'(lambda (n)
 			  (declare (fixnum n))	; LMH
                           (let ((x (+ m n)))
 			    (declare (fixnum x))	; LMH
@@ -794,7 +794,7 @@
   "Multiple value version of psetq."		; LMH
   (let* ((pairs (group args 2))
          (syms  (mapcar #'(lambda (p)
-                            (mapcar #'(lambda (x) 
+                            (mapcar #'(lambda (x)
 					(declare (ignore x))	; LMH
 					(gensym))
                                     (mklist (car p))))
@@ -803,14 +803,14 @@
                (if (null ps)
                    `(setq
 		      ,@(mapcan #'(lambda (p s)
-				    (shuffle (mklist (car p)) 
+				    (shuffle (mklist (car p))
 					     s))
 				pairs syms))
                    (let ((body (rec (cdr ps) (cdr ss))))
                      (let ((var/s (caar ps))
                            (expr (cadar ps)))
                        (if (consp var/s)
-                           `(multiple-value-bind ,(car ss) 
+                           `(multiple-value-bind ,(car ss)
 				,expr
                               ,body)
                            `(let ((,@(car ss) ,expr))
@@ -821,7 +821,7 @@
   "Interleave two lists."   ; LMH
   (cond ((null x) y)
         ((null y) x)
-        (t (list* (car x) (car y) 
+        (t (list* (car x) (car y)
                   (shuffle (cdr x) (cdr y))))))
 
 (defmacro mvdo (binds (test &rest result) &body body)
@@ -830,8 +830,8 @@
   (let ((label (gensym))
         (temps (mapcar #'(lambda (b)
                            (if (listp (car b))
-                               (mapcar #'(lambda (x) 
-					   (declare (ignore x))	; LMH 
+                               (mapcar #'(lambda (x)
+					   (declare (ignore x))	; LMH
                                            (gensym))
                                        (car b))
                                (gensym)))
@@ -844,13 +844,13 @@
        (prog ,(mapcar #'(lambda (b var) (list b var))
 		      (mappend #'mklist (mapcar #'car binds))
 		      (mappend #'mklist temps))
-	     ,label 
+	     ,label
 	     (if ,test
 		 (return (progn ,@result)))
 	     ,@body
 	     (mvpsetq ,@(mapcan #'(lambda (b)
 				    (if (third b)
-					(list (car b) 
+					(list (car b)
 					      (third b))))
 				binds))
 	     (go ,label)))))
@@ -889,7 +889,7 @@
    "Destructively append, insuring the first place becomes
    the appended object.")   ; LMH
 
-(define-modify-macro conc1f (obj) 
+(define-modify-macro conc1f (obj)
   (lambda (place obj)
     (nconc place (list obj)))
   "Destructively add one element to the end of the list.")   ; LMH
@@ -931,20 +931,20 @@
               (,(car var) (delete ,g ,access ,@args)))
          ,set))))
 
-(defmacro pull-if (test place &rest args) 
+(defmacro pull-if (test place &rest args)
   "Pull what passes test out of place."   ; LMH
-  (multiple-value-bind (vars forms var set access) 
+  (multiple-value-bind (vars forms var set access)
       #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
       #-ansi-cl (get-setf-method place)
-    (let ((g (gensym))) 
-      `(let* ((,g ,test) 
-              ,@(mapcar #'list vars forms) 
-              (,(car var) (delete-if ,g ,access ,@args))) 
-         ,set)))) 
+    (let ((g (gensym)))
+      `(let* ((,g ,test)
+              ,@(mapcar #'list vars forms)
+              (,(car var) (delete-if ,g ,access ,@args)))
+         ,set))))
 
-(defmacro popn (n place) 
+(defmacro popn (n place)
   "Pop n elements off place."   ; LMH
-  (multiple-value-bind (vars forms var set access) 
+  (multiple-value-bind (vars forms var set access)
       #+ansi-cl (get-setf-expansion place) ; LMH ANSI CL changed name
       #-ansi-cl (get-setf-method place)
     (with-gensyms (gn glst)
@@ -958,22 +958,22 @@
 (defmacro sortf (op &rest places)
   "Sort places according to op."   ; LMH
   (let* ((meths (mapcar #'(lambda (p)
-                            (multiple-value-list 
+                            (multiple-value-list
 			     #+ansi-cl (get-setf-expansion p) ; LMH ANSI CL changed name
 			     #-ansi-cl (get-setf-method p)))
                         places))
          (temps (apply #'append (mapcar #'third meths))))
     `(let* ,(mapcar #'list
                     (mapcan #'(lambda (m)
-                                (append (first m) 
+                                (append (first m)
                                         (third m)))
                             meths)
                     (mapcan #'(lambda (m)
-                                (append (second m) 
+                                (append (second m)
                                         (list (fifth m))))
                             meths))
        ,@(mapcon #'(lambda (rest)
-                     (mapcar 
+                     (mapcar
                        #'(lambda (arg)
                            `(unless (,op ,(car rest) ,arg)
                               (rotatef ,(car rest) ,arg)))
@@ -990,20 +990,20 @@
 	       aif2 awhen2 acond2 read2 do-file)))   ; LMH
 
 (defmacro aif (test-form then-form &optional else-form)
-  "Anaphoric if: use `it' in then-form, else-form to 
+  "Anaphoric if: use `it' in then-form, else-form to
    refer to result of the test-form."   ; LMH
   `(let ((it ,test-form))
      (declare (ignorable it))		; LMH
      (if it ,then-form ,else-form)))
 
 (defmacro awhen (test-form &body body)
-  "Anaphoric when: use `it' in body to 
+  "Anaphoric when: use `it' in body to
    refer to result of the test-form."   ; LMH
   `(aif ,test-form
         (progn ,@body)))
 
 (defmacro awhile (expr &body body)
-  "Anaphoric while: use `it' in body to 
+  "Anaphoric while: use `it' in body to
    refer to result of the expr"		; LMH
   `(do ((it ,expr ,expr))
        ((not it))
@@ -1011,7 +1011,7 @@
      ,@body))
 
 (defmacro aand (&rest args)
-  "Anaphoric and: use `it' to refer to result of 
+  "Anaphoric and: use `it' to refer to result of
   previous form evaluation."   ; LMH
   (cond ((null args) t)
         ((null (cdr args)) (car args))
@@ -1073,14 +1073,14 @@
        (if (or it ,win) ,then ,else))))
 
 (defmacro awhen2 (test &body body)
-  "Anaphoric when for two returned values: use `it' in body to 
+  "Anaphoric when for two returned values: use `it' in body to
    refer to result of the test.  Test can return two values,
    when is satisfied if either is true, but `it' refers to first."   ; LMH
   `(aif2 ,test
          (progn ,@body)))
 
 (defmacro acond2 (&rest clauses)
-  "Anaphoric cond for two returned values: use `it' in body to 
+  "Anaphoric cond for two returned values: use `it' in body to
    refer to result of the test.  Test can return two values,
    when is satisfied if either is true, but `it' refers to first."   ; LMH
   (if (null clauses)
@@ -1119,11 +1119,11 @@
 ;;; fn subsumes fif, fint, fun
 
 (defmacro fn (expr)
-  "Make the function according to the expression, 
+  "Make the function according to the expression,
    e.g., (fn (and ingegerp oddp)) makes the function
    #'(lambda (x) (and (integerp x) (oddp x)))."   ; LMH
  `#',(rbuild expr))
- 
+
 (defun rbuild (expr)
   (if (or (atom expr) (eq (car expr) 'lambda))
       expr
@@ -1143,7 +1143,7 @@
     `(lambda (,g)
        ,(labels ((rec (fns)
                    (if fns
-                       `(,(rbuild (car fns)) 
+                       `(,(rbuild (car fns))
                          ,(rec (cdr fns)))
                        g)))
           (rec fns)))))
@@ -1163,7 +1163,7 @@
    (alrec (and (oddp it) rec) t) is the equivalent of
    (lrec #'(lambda (x f) (and (oddp x) (funcall f))) t)."   ; LMH
   (let ((gfn (gensym)))
-    `(lrec #'(lambda (it ,gfn) 
+    `(lrec #'(lambda (it ,gfn)
 	       (declare (ignorable it) (function ,gfn))   ; LMH
                (#+cltl2 symbol-macrolet #+symbolics clos:symbol-macrolet ((rec (funcall ,gfn)))
                  ,rec))
@@ -1193,13 +1193,13 @@
   (on-cdrs (union it rec) (car sets) (cdr sets)))
 
 (defun intersections (&rest sets)
-  "The intersection of all the sets (like intersection, 
+  "The intersection of all the sets (like intersection,
    but takes an arbitrary number of arguments)."   ; LMH
   (unless (some #'null sets)
     (on-cdrs (intersection it rec) (car sets) (cdr sets))))
 
 (defun differences (set &rest outs)
-  "The set difference of all the sets (like set-difference, 
+  "The set difference of all the sets (like set-difference,
    but takes an arbitrary number of arguments).  Handles multiple
    arguments the same way #'- does."   ; LMH
   (on-cdrs (set-difference rec it) set outs))
@@ -1208,7 +1208,7 @@
   "Finds both the maximum and minimum in a single traversal of the list."   ; LMH
   (when args
     (on-cdrs (multiple-value-bind (mx mn) rec
-	       (declare (number mx mn))   ; LMH 
+	       (declare (number mx mn))   ; LMH
                (values (max mx it) (min mn it)))
              (values (car args) (car args))
              (cdr args))))
@@ -1355,13 +1355,13 @@
 ;;; (defanaph aif :rule :first)
 ;;; (defanaph asetf :rule :place)
 ;;; (defanaph a+)
-;;; usage: (a+ menu-price (* it 0.05) (* it 3)) 
+;;; usage: (a+ menu-price (* it 0.05) (* it 3))
 ;;; menu-price + 5% tax + 3x tax for tip
 
 (defmacro defanaph (name &optional &key calls (rule :all))
   "Define an anaphoric macro; 'it refers to result of previous computation.
    Rule is:
-     :all -- 'it will always be bound to value of previous argument, 
+     :all -- 'it will always be bound to value of previous argument,
      :first -- 'it bound to first argument,
   or :place -- first argument treated as generalized variable, 'it bound to
                its initial value."   ; LMH
@@ -1410,17 +1410,17 @@
   (set-dispatch-macro-character #\# left
       #'(lambda (stream char1 char2)
 	  (declare (ignore char1 char2))    ; LMH
-          (apply fn 
+          (apply fn
                  (read-delimited-list right stream t)))))))
 
 ;;; This defines #[] to give a sequence, e.g. #[3 7 ] expands to (3 4 5 6 7)
-;;; Note a space before ] is needed on Symbolics but not CMUCL; 
+;;; Note a space before ] is needed on Symbolics but not CMUCL;
 ;;; See CLtR p. 687.
 (defdelim #\[ #\] (x y)
 	  (list 'quote (mapa-b #'identity (ceiling x) (floor y))))
 
 ;;; This defines #{} as functional composition, e.g. (funcall #{list 1+} 7) gives (8).
-;;; This is commented out because of subtle problems balancing parenthesis in emacs. 
+;;; This is commented out because of subtle problems balancing parenthesis in emacs.
 #|
 (defdelim #\{ #\} (&rest args)
 	  `(fn (compose ,@args)))
@@ -1442,7 +1442,7 @@
 (eval-when (compile load)    ; LMH destruc, dbind-ex needs to be loaded when match1 compiled
 
 (defun destruc (pat seq &optional (atom? #'atom) (n 0))
-  (declare (function atom?) (fixnum n))   ; LMH 
+  (declare (function atom?) (fixnum n))   ; LMH
   (if (null pat)
       nil
       (let ((rest (cond ((funcall atom? pat) pat)
@@ -1483,13 +1483,13 @@
     `(let ((,gar ,ar))
        (let ,(let ((row -1) (col -1))        ; LMH add decl for col
 	       (declare (fixnum row))		; LMH
-               (mapcan 
+               (mapcan
                  #'(lambda (pat)
                      (incf row)
                      (setq col -1)
                      (mapcar #'(lambda (p)
-                                 `(,p (aref ,gar 
-                                            ,row 
+                                 `(,p (aref ,gar
+                                            ,row
                                             ,(incf (the fixnum col)))))	; LMH
 			     pat))
                  pats))
@@ -1547,10 +1547,10 @@
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(match)))
 
+(declaim (ftype (function (t t &optional t) (values list symbol)) match))
 (defun match (x y &optional binds)
-  (declare (values list symbol))
-  "Destructuring match on symbols that begin with ?, 
-   e.g. (match '(p a b c a) '(p ?x ?y c ?x)) 
+  "Destructuring match on symbols that begin with ?,
+   e.g. (match '(p a b c a) '(p ?x ?y c ?x))
    returns ((?Y . B) (?X . A)) and T."   ; LMH
   (acond2
 ;    ((or (eql x y) (eql x '_) (eql y '_)) (values binds t))
@@ -1603,7 +1603,7 @@
              (vars-in (cdr expr) atom?))))
 
 (defmacro if-match (pat seq then &optional else)
-  "Destructuring match on symbols that begin with ?, 
+  "Destructuring match on symbols that begin with ?,
    like match but with pat known at compile time, more efficient."   ; LMH
   `(let ,(mapcar #'(lambda (v) `(,v ',(gensym)))
                  (vars-in pat #'simple?))
@@ -1614,9 +1614,9 @@
       (match1 `((,pat ,seq)) then else)
       (with-gensyms (gseq gelse)
         `(labels ((,gelse () ,else))
-           ,(gen-match (cons (list gseq seq) 
+           ,(gen-match (cons (list gseq seq)
                              (destruc pat gseq #'simple?))
-                       then 
+                       then
                        `(,gelse))))))
 
 (defun simple? (x) (or (atom x) (eq (car x) 'quote)))
@@ -1646,7 +1646,7 @@
                     ,else))))
           (t `(if (equal ,pat ,expr) ,then ,else)))))
 
-(defun gensym? (s) 
+(defun gensym? (s)
   (and (symbolp s) (not (symbol-package s))))
 
 (defun length-test (pat rest)

@@ -290,40 +290,55 @@ be a symbol in any package. ...
 
 ;;; quote
 (my-assert
- (setq a 1)
+ (let ((a 1)) 
+   a)
  1)
 
 (my-assert
- (quote (setq a 3))
+ (let ((a 1)) 
+ (quote (setq a 3)))
  (SETQ A 3))
 
 (my-assert
- a
+ (let ((a 1)) 
+ (quote (setq a 3)))
+ a)
  1)
 
 (my-assert
- 'a
+ (let ((a 1)) 
+ (quote (setq a 3)))
+ 'a)
  A)
 
 (my-assert
- ''a
+ (let ((a 1)) 
+ (quote (setq a 3)))
+ ''a)
  (QUOTE A) )
 
 (my-assert
- '''a
+ (let ((a 1)) 
+ (quote (setq a 3)))
+ '''a)
  (QUOTE (QUOTE A)))
 
 (my-assert
- (setq a 43)
+ (let ((a 43))
+   a)
  43)
 
 (my-assert
- (list a (cons a 3))
+ (let ((a 43))
+  (list a (cons a 3)))
  (43 (43 . 3)))
 
 (my-assert
- (list (quote a) (quote (cons a 3)))
+ (let ((a 43))
+  (list a (cons a 3))
+  (list (quote a) (quote (cons a 3))))
  (A (CONS A 3)) )
+
 
 (my-assert
  1
@@ -993,11 +1008,13 @@ is actually performed using its cddr instead")
  t)
 
 (my-assert
- (setq a 6)
+ (let ((a 6))
+   a)
  6 )
 
 (my-assert
- (constantp a)
+ (let ((a 6))
+ (constantp a))
  t)
 
 (my-assert

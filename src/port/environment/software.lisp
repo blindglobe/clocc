@@ -32,12 +32,13 @@
 
 ;;; Tags for CL implementations
 ;;; CMUCL	:cmucl
+;;; SBCL	:sbcl
 ;;; ACL		:allegro
 ;;; CLISP       :clisp
 ;;; LW		:lispworks
 ;;; Corman Lisp	:corman-lisp
 ;;; etc etc
-;;; Add them!!!
+;;; See below!!!
 
 (defclass cmucl (generic-common-lisp-implementation)
   ()
@@ -62,27 +63,53 @@
   ()
   (:default-initargs :feature-tag :clisp))
 
-(defclass kcl (generic-common-lisp-implementation) ())
+(defclass kcl (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :kcl))
 
-(defclass ibcl (kcl) ())
+(defclass ibcl (kcl)
+  ()
+  (:default-initargs :feature-tag :ibcl))
 
-(defclass akcl (kcl) ())
+(defclass akcl (kcl)
+  ()
+  (:default-initargs :feature-tag :akcl))
 
-(defclass ecolisp (kcl) ())
+(defclass ecolisp (kcl)
+  ()
+  (:default-initargs :feature-tag :ecolisp))
 
-(defclass gcl (kcl) ())
+(defclass ecl (ecolisp)
+  ()
+  (:default-initargs :feature-tag :ecl))
 
-(defclass mcl (generic-common-lisp-implementation) ())
+(defclass gcl (kcl)
+  ()
+  (:default-initargs :feature-tag :gcl))
 
-(defclass lucid (generic-common-lisp-implementation) ())
+(defclass mcl (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :mcl))
 
-(defclass scl (generic-common-lisp-implementation) ()) ; Symbolics Genera.
+(defclass lucid (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :lucid))
+
+(defclass lcl (lucid)
+  ()
+  (:default-initargs :feature-tag :lcl))
+
+(defclass scl (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :genera)) ; Symbolics Genera.
 
 (defclass corman (generic-common-lisp-implementation)
   ()
   (:default-initargs :feature-tag :corman-lisp))
 
-(defclass eclipse (generic-common-lisp-implementation) ())
+(defclass eclipse (generic-common-lisp-implementation)
+  ()
+  (:default-initargs :feature-tag :eclipse))
 
 
 ;;; The default binary directory name is the lowercase of the feature tag
@@ -102,4 +129,4 @@
 (defmethod software-source-file-extension ((sw generic-common-lisp-implementation))
   "lisp")
 
-;;; end of file -- software.lisp
+;;; end of file -- software.lisp --

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; sbcl.lisp --
 ;;; SBCL implementation dependencies.

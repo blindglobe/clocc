@@ -8,9 +8,10 @@
 
 ;;; New version that placates Franz's Allegro kludgy case sensitivity modes.
 
-(defpackage "CL.ENVIRONMENT" (:use "COMMON-LISP")
+(defpackage "ORG.CONS.CLOCC/MARCOXA/CL-ENVIRONMENT"
+  (:use "COMMON-LISP")
   (:nicknames "CL.ENV"
-	      "ORG.CONS.CLOCC/MARCOXA/CL-ENVIRONMENT"
+	      "CL.ENVIRONMENT"
 	      "cl.env")
 
   ;; Shadow symbols from Chapter 25 of the CLHS.

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; clisp.lisp --
 ;;; Haible's CLisp implementation dependencies.

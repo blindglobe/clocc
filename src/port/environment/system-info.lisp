@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; system-info.lisp --
 ;;; Cannibalized from Sam Steingold's SYSINFO.

@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; allegro.lisp --
 ;;; Franz Inc. implementation dependencies.

@@ -15,13 +15,13 @@
   (pathname (ext:default-directory)))
 
 
-(defmethod change-current-directory ((cl-implementation cl.env:sbcl)
+(defmethod change-current-directory ((cl-implementation cl.env:cmucl)
 				     (new-dir string))
   (change-current-directory cl-implementation
 			    (parse-namestring new-dir)))
 
 
-(defmethod change-current-directory ((cl-implementation cl.env:sbcl)
+(defmethod change-current-directory ((cl-implementation cl.env:cmucl)
 				     (new-dir pathname))
   (pathname (setf (ext:default-directory) new-dir)))
 

@@ -1,4 +1,4 @@
-CL.ENVIRONMENT 1.1
+CL.ENVIRONMENT 1.2
 
 Installation Instructions
 
@@ -62,4 +62,4 @@ does not guarantee you to maintain the same instances (yet).
 You can also try the function CL.ENV:SYSTEM-INFO to get a
 comprehensive printout regarding your current CL session.
 
-2004-01-21 Marco Antoniotti
+2004-06-10 Marco Antoniotti

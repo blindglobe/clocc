@@ -1,10 +1,10 @@
-;;; File: <autoload.lisp - 2000-02-18 Fri 15:17:00 EST sds@ksp.com>
+;;; File: <autoload.lisp - 2000-03-01 Wed 14:36:23 EST sds@ksp.com>
 ;;;
 ;;; generate and use autoloads
 ;;;
 ;;; Copyright (C) 2000 by Sam Steingold
 ;;;
-;;; $Id: autoload.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: autoload.lisp,v 1.2 2000/03/01 19:47:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,6 +23,8 @@
 ;;; autoload
 ;;;
 
+(defparameter *autoload-defun* '
+  ;; this will be written into `auto.lisp'
 (defun autoload (symb file &optional comment)
   "Declare symbol SYMB to call a function defined in FILE."
   (declare (symbol symb) (type (or simple-string null) comment))
@@ -38,6 +40,8 @@
             (apply (fdefinition symb) args))
           (documentation symb 'function)
           (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment))))
+
+)
 
 (defgeneric autoload-stream (in out log)
   (:documentation "Generate the autoloads writing into a stream.")
@@ -70,9 +74,8 @@
   "Generate the autoloads, indicated by ';;;###autoload'."
   (with-open-file (outs out :direction :output :if-exists :supersede
                         :if-does-not-exist :create)
-    (format outs ";;; autoloads generated on ~s~%(require :autoload)~%~
-                  (in-package :cllib)~2%"
-            (timestamp))
+    (format outs ";;; autoloads generated on ~s~%(in-package :cllib)~2%~s~2%"
+            (timestamp) *autoload-defun*)
     (let ((tot (autoload-stream in outs log)))
       (format log "wrote ~d autoload~:p to ~s (~:d bytes)~%"
               tot out (file-length outs))

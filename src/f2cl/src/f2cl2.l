@@ -278,27 +278,49 @@ Tag being parsed:| (cadr x))))
        (princ-reset
 	'|f2cl error: missing +, *, /, or ^ operator following a function call.| l))
 
-     ;; Given the array name and indices, look up the the bounds for
-     ;; this array and construct the appropriate expression to access
-     ;; the array correctly.
+
+     ;; Given the array name and indices, look up the the
+     ;; bounds for this array and construct the appropriate
+     ;; expression to access the array correctly.
      (let* ((vname (check-reserved-lisp-names (car l)))
 	    (indices (mapcar #'id-expression
 			     (list-split '|,| (cadr l))))
 	    (bounds (lookup-array-bounds vname)))
 
-       ;; If all of the lower bounds are 1, don't need to pass that
-       ;; on.  The fref macro already handles this situation.  Doesn't
-       ;; affect the behavior, but makes the Lisp code look a bit
-       ;; cleaner.
-       (append (list 'fref vname)
-	       (list indices)
-	       (let ((blist (mapcar #'car bounds)))
-		 (unless (and blist
-			      (every #'(lambda (x)
-					 (and (numberp x)
-					      (= x 1)))
-				     blist))
-		   (list (mapcar #'car bounds)))))))
+       ;; Decide if we want to access the specified element or return a
+       ;; slice of the array.  (Used only in calls to functions and
+       ;; subroutines.
+       (cond (*apply-array-slice*
+	      ;;(format t "array   = ~A~%" vname)
+	      ;;(format t "indices = ~A~%" indices)
+	      ;;(format t "bounds  = ~A~%" bounds)
+	      (let ((dims (mapcar #'(lambda (idx bnd)
+				      (if (and (numberp idx)
+					       (numberp (second bnd)))
+					  (+ (- (second bnd) idx) 1)
+					  `(+ (- ,(second bnd) ,idx) 1)))
+				  indices bounds))
+		    (offset (mapcar #'(lambda (idx bnd)
+					`(- ,idx ,(first bnd)))
+				    indices bounds)))
+		`(make-array ,@dims
+		  :element-type ',(lookup-vble-type vname)
+		  :displaced-to ,vname
+		  :displaced-index-offset (array-row-major-index ,vname ,@offset))))
+	     (t
+	      ;; If all of the lower bounds are 1, don't need to pass that
+	      ;; on.  The fref macro already handles this situation.  Doesn't
+	      ;; affect the behavior, but makes the Lisp code look a bit
+	      ;; cleaner.
+	      (append (list 'fref vname)
+		      (list indices)
+		      (let ((blist (mapcar #'car bounds)))
+			(unless (and blist
+				     (every #'(lambda (x)
+						(and (numberp x)
+						     (= x 1)))
+					    blist))
+			  (list (mapcar #'car bounds)))))))))
     ;; string (character array) reference 
     ((and (symbolp (car l))
 	  (listp (cadr l))
@@ -390,8 +412,13 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.18 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.19 2000/07/14 15:48:34 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.19  2000/07/14 15:48:34  rtoy
+;;; Preliminary support for array slicing.  Any array reference in a
+;;; function or subroutine call is assumed to mean a slice of the array.
+;;; This is done by creating a displaced array to the original array.
+;;;
 ;;; Revision 1.18  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

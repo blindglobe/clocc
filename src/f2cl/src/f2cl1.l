@@ -95,7 +95,10 @@
 	      ;; (Used mostly so we don't incorrectly convert the
 	      ;; definition of a statement function into a call of the
 	      ;; function with mutliple-value-bind.)
-	      *parsing-lhs*)))
+	      *parsing-lhs*
+	      ;; List of statement labels in a subprogram
+	      *statement-labels*
+	      )))
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common
@@ -431,7 +434,7 @@ FILENAME                 File containing Fortran code
 
 (defun fortran-to-lisp (file ofile &key declaim package options)
   (let ((*package* (find-package :f2cl))
-	*common_array_dims* *format_stmts*)
+	*common_array_dims* *format_stmts* *statement-labels*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
     (with-open-file (inport file :direction :input)
@@ -442,6 +445,7 @@ FILENAME                 File containing Fortran code
                    (peek-char nil inport nil 'eof)))
             ((eq char 'eof) )
           (setq *format_stmts* nil)
+	  (setq *statement-labels* nil)
 	  (let ((*print-level* nil)
 		(*print-length* nil))
 	    ;; Print a header to the file indicating when this was
@@ -580,10 +584,9 @@ FILENAME                 File containing Fortran code
 (defun readsubprog-extract-format-stmts (inport)
   (let ((extended-label 100000)		; Must be bigger than any possible valid Fortran label.
 	(extended-do-label-stack '())
-	input-list output-list margin *current_label* )
+	input-list output-list margin *current_label*)
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
-
     (loop
 	;; Get the left margin (contains line number)
 	(setq margin (unless (eq (peek-char nil inport nil 'eof) 'eof)
@@ -593,6 +596,9 @@ FILENAME                 File containing Fortran code
 	      (let ((label (read-from-string (coerce margin 'string) nil)))
 		(if (integerp label)
 		    label)))
+        ;; Add to list
+        (when *current_label*
+	  (push *current_label* *statement-labels*))
 	;; Make sure we aren't hosed if we break out of this!
 	(with-fortran-syntax
 	  ;; read body of a line
@@ -631,7 +637,7 @@ FILENAME                 File containing Fortran code
 	     ;; label but a string.  Convert this to a label and add
 	     ;; a format statement.
 	     (let ((new `(write |(| ,(third input-list) |,| ,extended-label |)|
-			  ,@(nthcdr 6 input-list))))
+				,@(nthcdr 6 input-list))))
 	       ;;(format t "new = ~S~%" new)
 	       (push `(,margin ,new) output-list))
 	     (setf *current_label* extended-label)
@@ -987,9 +993,15 @@ FILENAME                 File containing Fortran code
 	 (setq bindings (id-definition-sub `(subroutine ,bdname)))
 	 (return (parse-subr-definition bindings))))
 
+     #+nil
      (when (eq (car x) 'entry)
+       (format t "ENTRY point: ~A~%" (car x))
+       (format t " REST = ~A~%" (rest x))
        (push (rest x) *entry-points*)
        (return (list (second x))))
+     (setf bindings (id-definition-entry x))
+     (when (not (eq bindings 'fail))
+       (return (parse-entry-definition bindings)))
 
      ;;fall out the bottom:
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
@@ -1019,36 +1031,53 @@ FILENAME                 File containing Fortran code
 (defun id-definition-fun (x) 
   (unify x '(function %name %arg-list) nil))
 
+(defun id-definition-entry (x)
+  (unify x '(entry %name %arg-list) nil))
+
 ; continue
 (defun id-continue (x) (unify x '(continue) nil))
 
 ;goto label
 (defun id-goto (x)
- (unify x '(goto %label) nil))
-(defun id-assgn-goto (x)
- (and (eq (car x) 'goto)
-      (listp (cadr x))))
+  (unify x '(goto %label) nil))
+
+(defun id-comp-goto-core (x)
+  ;; (l1, l2, ...) [,] expr
+  (let ((ex (remove '|,| x)))
+    (and (listp (first ex))
+	 (second x))))
+
 (defun id-comp-goto (x)
   ;; goto (l1, l2, l3, ...) [,] expr
   (and (eq (first x) 'goto)
-       (or (and (not (listp (second x)))
-		(cddr x))
-	   (not (numberp (second x))))))
-;go to label
-(defun id-go-to (x)
- (unify x '(go to %label) nil))
-(defun id-assgn-go-to (x)
- (and (eq (car x) 'go)
-      (eq (cadr x) 'to)
-      (listp (caddr x))))
+       (id-comp-goto-core (cdr x))))
 
 (defun id-comp-go-to (x)
   ;; go to (l1, l2, l3, ...) [,] expr
   (and (eq (car x) 'go)
        (eq (cadr x) 'to)
-       (or (and (not (listp (third x)))
-		(cdddr x))
-	   (not (numberp (third x))))))
+       (id-comp-goto-core (cddr x))))
+
+;go to label
+(defun id-go-to (x)
+ (unify x '(go to %label) nil))
+
+(defun id-assgn-go-to-core (x)
+  ;; var [,] [(l1, l2, ...)]
+  (let ((expr (remove '|,| x)))
+    (and (symbolp (first expr))
+	 (listp (second expr)))))
+
+(defun id-assgn-go-to (x)
+  ;; go to var [,] [(l1, l2, l3, ...)]
+  (and (eq (first x) 'go)
+       (eq (second x) 'to)
+       (id-assgn-go-to-core (cddr x))))
+
+(defun id-assgn-goto (x)
+  ;; goto var [,] [(l1, l2, l3, ...)]
+  (and (eq (car x) 'goto)
+       (id-assgn-go-to-core (cdr x))))
 
 
 ;integer x,y,z,...
@@ -1137,6 +1166,13 @@ FILENAME                 File containing Fortran code
          (remove '|,| (variable-value '%arg-list bindings))))
 
 
+;; Entry point
+(defun parse-entry-definition (bindings)
+  (let* ((entry-name (variable-value '%name bindings))
+	 (arglist (remove '|,| (variable-value '%arg-list bindings)))
+	 (args (mapcar #'check-reserved-lisp-names arglist)))
+    (push (list entry-name args) *entry-points*)
+    (list entry-name)))
 
 ;goto
 (defun parse-goto (bindings) 
@@ -1147,17 +1183,6 @@ FILENAME                 File containing Fortran code
 ;------------------------------------------------------------------------------
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
-
-(defun parse-assgn-goto (x)
- (prog (labels len)
-  (setq labels (remove '|,| (cadr x)))
-  (setq len (length labels))
-  (return
-    `((case 
-       ,(id-expression (cdddr x)) 
-       ,@(mapcar #'(lambda (x n)
-		     (list n (make-label x)))
-		 labels (listn 1 len)))))))
 
 (defun listn (a b)
   "Compute a list of integers from A to B, inclusive"
@@ -1193,6 +1218,7 @@ FILENAME                 File containing Fortran code
 	`((computed-goto ,(caddr x))))))
 
 ;------------------------------------------------------------------------------
+#+nil
 (defun parse-assgn-go-to (x)
  (prog (labels len)
   (setq labels (remove '|,| (caddr x)))
@@ -1200,7 +1226,31 @@ FILENAME                 File containing Fortran code
   (return
     `((case 
        ,(id-expression (cddddr x)) 
-       ,@(mapcar #'(lambda (x n) (list n (make-label x))) labels (listn 1 len)))))))
+	,@(mapcar #'(lambda (x n) (list n (make-label x))) labels (listn 1 len)))))))
+
+(defun parse-assgn-go-to (x)
+  ;; go to var [,] [(l1, l2, ...)]
+  (let* ((expr (remove '|,| x))
+	 (labels (remove '|,| (fourth expr))))
+    `((assigned-goto ,(third expr) ,(or labels (reverse *statement-labels*))))))
+    
+#+nil
+(defun parse-assgn-goto (x)
+ (prog (labels len)
+  (setq labels (remove '|,| (cadr x)))
+  (setq len (length labels))
+  (return
+    `((case 
+       ,(id-expression (cdddr x)) 
+       ,@(mapcar #'(lambda (x n)
+		     (list n (make-label x)))
+		 labels (listn 1 len)))))))
+
+(defun parse-assgn-goto (x)
+  ;; goto var [,] [(l1, l2, ...)]
+  (let* ((expr (remove '|,| x))
+	 (labels (remove '|,| (third expr))))
+    `((assigned-goto ,(second expr) ,(or labels (reverse *statement-labels*))))))
 
 ;------------------------------------------------------------------------------
 
@@ -2388,8 +2438,25 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.123 2003/07/13 18:58:30 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.124 2003/11/12 05:32:03 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.124  2003/11/12 05:32:03  rtoy
+;;; Many changes to make assigned gotos work
+;;;
+;;; o Add *statement-labels* to hold a list of statement labels found in s
+;;;   subprogram.  (Needed so we can branch to the correct label in
+;;;   assigned goto statements.)
+;;; o Use *statement-labels* in various places.
+;;; o Unify the parsing of computed GOTOs.
+;;; o Make assigned gotos work.
+;;; o Add support for the ASSIGN statement (which was missing).
+;;;
+;;; Fixups for ENTRY points:
+;;; o Fix up parsing of ENTRY points.  We weren't setting up
+;;;   *entry-points* correctly, and did not handle the arglist correctly.
+;;; o Parse entry points similarly to subroutine calls, using two new
+;;;   functions:  ID-DEFINITION-ENTRY, PARSE-ENTRY-DEFINITION
+;;;
 ;;; Revision 1.123  2003/07/13 18:58:30  rtoy
 ;;; Be more careful in generate-call-to-routine when the routine is
 ;;; actually funcalling a routine.

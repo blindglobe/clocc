@@ -36,7 +36,7 @@ install: build
 	dh_installdirs $(file-dir) $(doc-dir)
 	dh_install defsystem.lisp $(file-dir)
 	cp ChangeLog changelog
-	dh_install README changelog $(doc-dir)
+	dh_install README changelog defsystem.text defsystem.html $(doc-dir)
 	rm changelog
 
 # Build architecture-independent files here.

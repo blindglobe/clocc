@@ -154,7 +154,17 @@
 	   ((%false% %true%)
 	    t)
 	   (t
-	    (lookup-vble-type arg))))
+	    ;; Lookup the variable type and return it.
+	    (let ((var-type (lookup-vble-type arg)))
+	      (cond ((eq var-type 'array)
+		     ;; Look up the type of the array
+		     (destructuring-bind (decl1 decl2)
+			 (vble-declared-twice-p arg *explicit_vble_decls*)
+		       (declare (ignorable decl2))
+		       (first decl1)))
+		    (t
+		     var-type)))
+	    )))
 	((listp arg)
 	 ;; We have an expression of some type
 	 (let ((fun (first arg)))
@@ -1335,7 +1345,7 @@
    (if (not (symbolp x)) (return x))
    (setq x (make-string-input-stream (symbol-name x)))
     loop
-   (setq char (peek-char nil x nil 'EOF t))
+   (setq char (peek-char nil x nil 'EOF nil))
    (if (equal char 'EOF) (return (reverse descriptor-list)))
    (cond ((or (digit-char-p char) (member char '(#\+ #\-)))
           (multiple-value-setq (atm x) (read-number-from-stream x)))
@@ -1347,7 +1357,7 @@
 (defun read-number-from-stream (x)
    (prog ((number-str "") char)
      loop
-   (setq char (peek-char nil x nil 'EOF t))
+   (setq char (peek-char nil x nil 'EOF nil))
    (if (equal char 'EOF) (return (values (read-from-string number-str) x)))
    (if (or (digit-char-p char) (member char '(#\+ #\-)))
        (setq number-str (concatenate `string number-str (string (read-char x))))

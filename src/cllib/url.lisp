@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.42 2002/11/30 22:50:58 sds Exp $
+;;; $Id: url.lisp,v 2.43 2003/01/03 17:40:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -525,7 +525,7 @@ See RFC959 (FTP) &c.")
         (string-right-trim +whitespace+ (read-line sock))
         :for len :of-type index-t = (length ln)
         :and code :of-type (or null (unsigned-byte 10)) = nil
-        :do (mesg :log *url-errors* "~&url-ask[~s]: ~a~%" end ln)
+        :do (mesg :log *url-error* "~&url-ask[~s]: ~a~%" end ln)
         :while (or (< len 3) (and (> len 3) (char/= #\Space (schar ln 3)))
                    (null (setq code (parse-integer ln :end 3 :junk-allowed t)))
                    (and (< code 400) endl (not (member code endl :test #'=))))

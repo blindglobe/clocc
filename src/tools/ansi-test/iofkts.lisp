@@ -327,7 +327,7 @@ out of sync")
   (get-output-stream-string a)
   #+xcl ""
   #-xcl "
-\"yyy\"
+\"yyy\" \
 \"zzz\" ")
 
 (check-for-bug :iofkts-legacy-333

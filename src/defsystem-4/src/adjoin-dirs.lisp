@@ -6,19 +6,7 @@
 
 (in-package "CL.EXT.FILESYSTEM")
 
-;;; Testing and debugging.
-
-(setf (logical-pathname-translations "AD-TEST-SIMPLE")
-      `(("*.*.*" "/usr/local/tmp/*.*.*")
-	("*.*" "/usr/local/tmp/*.*")))
-
-
-(setf (logical-pathname-translations "AD-TEST-SUBDIR")
-      `(("**;*.*.*" "/usr/local/share/**/*.*.*")
-	("**;*.*" "/usr/local/share/**/*.*")
-
-	(";**;*.*" "/usr/local/share/r/**/*.*")
-	(";**;*.*" "/usr/local/share/r/**/*.*")))
+;;; Debugging aids.
 
 (defparameter *debug-adjoin-directories* nil)
 
@@ -46,7 +34,7 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
   (declare (ignore host))
   (debug-message "pathname pathname (~S ~S)~%" dp1 p2)
   (when (and (pathname-name dp1) (not (eq (pathname-name dp1) :unspecific)))
-    (error "directory pathname has valid NAME component ~S." dp1))
+    (error "Directory pathname has valid NAME component ~S." dp1))
   (merge-pathnames p2 dp1))
 
 
@@ -138,6 +126,21 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 ;;; This would be the specialization of Cases 3 and 4. However a
 ;;; LOGICAL-PATHNAME is a PATHNAME, so Cases 3 and 4 do apply before,
 ;;; and the recursion works its magic.
+
+
+;;; Testing.
+
+(setf (logical-pathname-translations "AD-TEST-SIMPLE")
+      `(("*.*.*" "/usr/local/tmp/*.*.*")
+	("*.*" "/usr/local/tmp/*.*")))
+
+
+(setf (logical-pathname-translations "AD-TEST-SUBDIR")
+      `(("**;*.*.*" "/usr/local/share/**/*.*.*")
+	("**;*.*" "/usr/local/share/**/*.*")
+
+	(";**;*.*" "/usr/local/share/r/**/*.*")
+	(";**;*.*" "/usr/local/share/r/**/*.*")))
 
 
 ;;; end of file -- adjoin-dirs.lisp --

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-02-08 Mon 15:44:24 EST sds@eho.eaglets.com>
+;;; File: <url.lisp - 1999-02-09 Tue 18:00:35 EST sds@eho.eaglets.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.18 1999/02/08 20:45:37 sds Exp $
+;;; $Id: url.lisp,v 1.19 1999/02/09 23:19:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.19  1999/02/09 23:19:58  sds
+;;; Removed `throw-timeout'.
+;;; Added `socket-host', `socket-port' and a condition `timeout'.
+;;;
 ;;; Revision 1.18  1999/02/08 20:45:37  sds
 ;;; Updated for cmucl 18b.
 ;;;
@@ -347,6 +351,20 @@ The argument can be:
                                :input t :output t :element-type
                                (if bin '(unsigned-byte 8) 'character)))
 
+(defun socket-host (sock)
+  "Return the remote host name."
+  (declare (type socket sock))
+  #+clisp (lisp:socket-stream-host sock)
+  #+allegro (socket:ipaddr-to-dotted (socket:remote-host sock))
+  #+cmu (extensions::gethostbyaddr (ext:get-socket-host-and-port sock)))
+
+(defun socket-port (sock)
+  "Return the remote port number."
+  (declare (type socket sock))
+  #+clisp (lisp:socket-stream-port sock)
+  #+allegro (socket:remote-port sock)
+  #+cmu (nth-value 1 (ext:get-socket-host-and-port sock)))
+
 (defun open-socket-server (sock)
   "Open a `generic' socket server."
   (declare (ignorable sock) (type socket sock))
@@ -354,10 +372,16 @@ The argument can be:
   #+clisp (lisp:socket-server sock)
   #+cmu (ext:create-inet-socket))
 
-(defun throw-timeout (&rest args)
-  "Throw timeout."
-  (apply #'format *error-output* args)
-  (throw 'timeout nil))
+(define-condition timeout (error)
+  ((proc :type symbol :reader timeout-proc :initarg :proc)
+   (host :type simple-string :reader timeout-host :initarg :host)
+   (port :type (unsigned-byte 16) :reader timeout-port :initarg :port)
+   (time :type (or null (real 0)) :reader timeout-time :initarg :time)
+   (mesg :type (or null simple-string) :reader timeout-mesg :initarg :mesg))
+  (:report (lambda (cc stream)
+             (format stream "[~s] timeout on ~a:~d~@[ [~a sec]~]~@[ [~a]~]"
+                     (timeout-proc cc) (timeout-host cc) (timeout-port cc)
+                     (timeout-time cc) (timeout-mesg cc)))))
 
 (defcustom *url-default-sleep* (real 0) 20
   "*The number of seconds to sleep when necessary.")
@@ -418,8 +442,8 @@ and evaluate TIMEOUT-FORMS."
         :when (and sock (open-stream-p sock)) :return sock
         :when (and max-retry (> ii max-retry)) :return nil
         :when (>= (- (get-universal-time) begt) timeout)
-        :do (throw-timeout "open-socket-retry (~a:~d): timeout (~d sec)~%"
-                           host port timeout)
+        :do (error 'timeout :proc 'open-socket-retry :host host :port port
+                   :time timeout)
         :do (sleep-mesg sleep err "Error")
         (format err "[~d~@[/~d~]] trying to connect to ~a:~d...~%"
                 ii max-retry host port)))
@@ -469,7 +493,8 @@ the tag `timeout' is thrown."
                               url co))))
         :return sock :when sock :do (close sock)
         :when (> (- (get-universal-time) begt) timeout)
-        :do (throw-timeout "open-url (~a): timeout (~d sec)~%" url timeout)
+        :do (error 'timeout :proc 'open-url :host host :port port
+                   :time timeout)
         :do (sleep-mesg sleep err "Connection dropped")
         (format err "Trying to connect to ~a:~d...~%" host port)))
 
@@ -546,7 +571,8 @@ ERR is the stream for information messages or NIL for none."
   (loop :for sck =
         (multiple-value-bind (st cd) (url-ask sock out 227 "pasv")
           (when (>= cd 400)
-            (throw-timeout "Cannot create data connection: ~a~%" st))
+            (error 'timeout :proc 'ftp-get-passive-socket :mesg st :host
+                   (socket-host sock) :port (socket-port sock)))
           (multiple-value-call #'open-socket-retry (ftp-parse-sextuple st)
                                :err out :max-retry 5 :bin bin
                                :timeout timeout))
@@ -928,12 +954,13 @@ itself. FMT defaults to \"~3d: ~a~%\".
 OUT is the output stream and defaults to `*STANDARD-OUTPUT*'."
   (declare (type url url) (stream out) (function proc))
   (format out "Opening URL: `~a'...~%" url)
-  (catch 'timeout
-    (with-open-url (sock url :err out :timeout timeout)
-      (loop :for ii :of-type index-t :from  1
-            :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
-            :do (format out fmt ii
-                        (funcall proc (string-right-trim +whitespace+ rr)))))))
+  (handler-case
+      (with-open-url (sock url :err out :timeout timeout)
+        (loop :for ii :of-type index-t :from  1
+              :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
+              :do (format out fmt ii
+                          (funcall proc (string-right-trim +whitespace+ rr)))))
+    (timeout (cc) (format *error-output* "dump-url: ~a~%" cc))))
 
 (defun url-get (url loc &key (timeout *url-default-timeout*)
                 (log *standard-output*))

@@ -8,29 +8,8 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.6 2000/03/30 17:11:48 sds Exp $
+;;; $Id: ext.lisp,v 1.7 2000/04/19 16:32:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
-;;; $Log: ext.lisp,v $
-;;; Revision 1.6  2000/03/30 17:11:48  sds
-;;; (eof-p): new function
-;;;
-;;; Revision 1.5  2000/03/22 23:51:52  sds
-;;; (quit): optional error code argument
-;;;
-;;; Revision 1.4  2000/03/03 22:01:03  sds
-;;; fixed provide statements
-;;;
-;;; Revision 1.3  2000/02/18 21:16:45  sds
-;;; in-package :port now; make system works
-;;;
-;;; Revision 1.2  2000/02/10 17:53:40  sds
-;;; (+eof+): new constant (for `string-tokens')
-;;; (string-tokens): new function (for net)
-;;;
-;;; Revision 1.1  1999/11/24 17:07:09  sds
-;;; Cross-implementation Portability System
-;;;
-;;;
 
 (defpackage port
   (:use "COMMON-LISP")
@@ -115,17 +94,20 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   #+allegro (excl:gc)
   #+clisp (lisp:gc)
   #+cmu (ext:gc)
+  #+cormanlisp (cl::gc)
   #+gcl (si::gbc)
-  #+lispworks (normal-gc)
-  #-(or allegro clisp cmu gcl lispworks)
+  #+lispworks (hcl:normal-gc)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks)
   (error 'not-implemented :proc (list 'gc)))
 
 (defun quit (&optional code)
   #+allegro (excl:exit code)
   #+clisp (lisp:quit code)
   #+cmu (ext:quit code)
+  #+cormanlisp (win32:exitprocess code)
   #+gcl (lisp:bye code)
-  #-(or allegro clisp cmu gcl)
+  #+lispworks (lw:quit :status code)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks)
   (error 'not-implemented :proc (list 'quit code)))
 
 (defconst +eof+ cons (cons nil nil)

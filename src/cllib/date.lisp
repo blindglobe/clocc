@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.17 2001/09/26 12:52:35 sds Exp $
+;;; $Id: date.lisp,v 2.18 2001/09/26 15:50:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -192,11 +192,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
   "Guess the timezone."
   (typecase obj
     (symbol (unintern obj) (infer-timezone (symbol-name obj)))
-    (string
-     (or (car (find obj +time-zones+ :test
-                    (lambda (st el) (or (string-equal st (cadr el))
-                                        (string-equal st (cddr el))))))
-         0))
+    (string (or (car (string->tz obj)) 0))
     (number
      (cond ((< -24 obj 24) obj)
            ((multiple-value-bind (ho mi) (floor obj 100)
@@ -217,14 +213,16 @@ Returns the number of seconds since the epoch (1900-01-01)."
 
 (defun dttm->string (dttm &key (format :long) (tz 0))
   "Print the date/time as returned by `encode-universal-time'.
-The date is interpreted in the time zone TZ (defaults to GMT --
-universal time) and printed using DATE-FORMATTER with FORMAT."
+DTTM is the universal time (GMT).
+FORMAT is passed to DATE-FORMATTER.
+TZ is the time zone in which the time is printed, NIL means local."
   (declare (type (integer 0) dttm))
-  (multiple-value-bind (se mi ho da mo ye dd) (decode-universal-time dttm tz)
-    (date-formatter format se mi ho da mo ye dd)))
+  (multiple-value-bind (se mi ho da mo ye dd dst zo)
+      (decode-universal-time dttm tz)
+    (date-formatter format se mi ho da mo ye dd dst zo)))
 
-(defgeneric date-formatter (format se mi ho da mo ye dd)
-  (:documentation "Format the date using the given format spec.
+(defgeneric date-formatter (format se mi ho da mo ye dd dst tz)
+  (:documentation "Format the decoded time using the given format spec.
 The supported specs are:
   function -- run it
   string   -- assume it's a format string for the other arguments
@@ -232,27 +230,28 @@ The supported specs are:
   :long    -- \"2001-04-22 Sun 04:53:44 +0000 (GMT)\"
   :mbox    -- \"Sun Apr 22 04:53:44 2001\"
   :usa     -- \"Sun, 22 Apr 2001 04:53:44 +0000 (GMT)\"")
-  (:method ((format function) se mi ho da mo ye dd)
-    (funcall format se mi ho da mo ye dd))
-  (:method ((format string) se mi ho da mo ye dd)
-    (format nil format se mi ho da mo ye dd))
-  (:method ((format t) se mi ho da mo ye dd)
+  (:method ((format function) se mi ho da mo ye dd dst tz)
+    (funcall format se mi ho da mo ye dd dst tz))
+  (:method ((format string) se mi ho da mo ye dd dst tz)
+    (format nil format se mi ho da mo ye dd dst tz))
+  (:method ((format t) se mi ho da mo ye dd dst tz)
     (error "~s: unknown format: ~s [date: ~s]" 'date-formatter format
-           (date-formatter :short se mi ho da mo ye dd)))
-  (:method ((format (eql :short)) se mi ho da mo ye dd)
-    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d"
-            ye mo da (aref +week-days+ dd) ho mi se))
-  (:method ((format (eql :long)) se mi ho da mo ye dd)
-    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
-            ye mo da (aref +week-days+ dd) ho mi se))
-  (:method ((format (eql :mbox)) se mi ho da mo ye dd)
-    (format nil "~a ~a ~d ~2,'0d:~2,'0d:~2,'0d ~d"
+           (date-formatter :short se mi ho da mo ye dd dst tz)))
+  (:method ((format (eql :short)) se mi ho da mo ye dd dst tz)
+    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d~@[ ~a~]"
+            ye mo da (aref +week-days+ dd) ho mi se
+            (and (/= 0 tz) (tz->string tz dst))))
+  (:method ((format (eql :long)) se mi ho da mo ye dd dst tz)
+    (format nil "~d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a"
+            ye mo da (aref +week-days+ dd) ho mi se (tz->string tz dst)))
+  (:method ((format (eql :mbox)) se mi ho da mo ye dd dst tz)
+    (format nil "~a ~a ~d ~2,'0d:~2,'0d:~2,'0d ~d~@[ ~a~]"
             (aref +week-days+ dd) (aref +month-names+ (1- mo))
-            da ho mi se ye))
-  (:method ((format (eql :usa)) se mi ho da mo ye dd)
-    (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d +0000 (GMT)"
+            da ho mi se ye (and (/= 0 tz) (tz->string tz dst))))
+  (:method ((format (eql :usa)) se mi ho da mo ye dd dst tz)
+    (format nil "~a, ~d ~a ~d ~2,'0d:~2,'0d:~2,'0d ~a"
             (aref +week-days+ dd) da (aref +month-names+ (1- mo))
-            ye ho mi se)))
+            ye ho mi se (tz->string tz dst))))
 
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."

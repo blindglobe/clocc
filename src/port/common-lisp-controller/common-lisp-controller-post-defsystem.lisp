@@ -44,17 +44,14 @@
                                                       (string-downcase
                                                        (symbol-name
                                                         module-name))))
-         (terpi)
+         (terpri)
          (mk:oos  module-name
                   :load
                   :load-source-instead-of-binary nil
                   :load-source-if-no-binary nil
                   :bother-user-if-no-binary nil
                   :compile-during-load nil)
-         t)
-       ;; otherwise fail with a meaningful message:
-       (error "I could not load the common-lisp-controller package ~A, please report a bug to the debian BTS"
-              module-name))
+         t))
       ;; ifnot, let mk deal with it..
       (mk::new-require module-name
                        pathname

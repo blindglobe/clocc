@@ -1,4 +1,23 @@
-common-lisp-controller (2.100) unstable; urgency=low
+common-lisp-controller (3.3) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri,  5 Jul 2002 07:09:54 +0200
+
+common-lisp-controller (3.2) unstable; urgency=low
+
+  * Provide some feedback during registration so people don't wonder what the
+    wait is for.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri,  5 Jul 2002 06:59:30 +0200
+
+common-lisp-controller (3.1) unstable; urgency=high
+
+  * Fixed the terpi -> terpri bug
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu,  4 Jul 2002 17:06:28 +0200
+
+common-lisp-controller (3.0) unstable; urgency=low
 
   * Don't forget to downcase the package name
 

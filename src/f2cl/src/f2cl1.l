@@ -1351,6 +1351,15 @@ FILENAME                 File containing Fortran code
 (defun parse-pause (x) 
    `((error ,(cadr x))))
 
+(defun find-duplicates (list)
+  (let ((dups '()))
+    (do ((head list (rest head))
+	 (tail (rest list) (rest tail)))
+	((null tail))
+      (when (and (atom (first head))
+		 (member (first head) tail :test 'eq))
+	(pushnew (first head) dups)))
+    dups))
 ;; Subroutines and functions can modify the values of input
 ;; parameters.  We handle this in Lisp by returning the input
 ;; parameters to the caller as multiple values.  This function
@@ -1362,7 +1371,8 @@ FILENAME                 File containing Fortran code
 (defun generate-call-to-routine (routine arglist &optional return)
   (multiple-value-bind (all-setters vnames)
       ;; Figure out if and how to set the parameters to the returned values.
-      (do ((v nil)
+      (do ((dups (find-duplicates arglist))
+	   (v nil)
 	   (count 0 (+ count 1))
 	   (vnames nil)
 	   (args arglist (rest args)))
@@ -1374,12 +1384,18 @@ FILENAME                 File containing Fortran code
 	  (push (cond ((or (vble-is-array-p arg)
 			   (member arg *external-function-names*)
 			   (member arg *intrinsic-function-names*)
-			   (member arg '(%true% %false%)))
+			   (member arg '(%true% %false%))
+			   (member arg dups))
 		       ;; Fortran can't return whole arrays or
 		       ;; functions, so don't try to assign the value
 		       ;; to arrays or functions.  Also, we don't want
 		       ;; to assign to constants like %true% and
 		       ;; %false%.
+		       ;;
+		       ;; Also, if the same var is used as an arg more
+		       ;; than once, it can't be set either.  (Because
+		       ;; the value would depend on who set it last,
+		       ;; and that's illegal in Fortran (I think).
 		       nil)
 		      ((symbolp arg)
 		       ;; A simple variable
@@ -2244,8 +2260,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.105 2002/03/19 23:11:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.106 2002/03/22 23:00:12 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.106  2002/03/22 23:00:12  rtoy
+;;; When generating the call to a routine, we don't have to have a setter
+;;; if the same arg is used multiple times in the arglist.  This is
+;;; undefined Fortran behavior.
+;;;
 ;;; Revision 1.105  2002/03/19 23:11:12  rtoy
 ;;; Be conservative: For F2CL-COMPILE, change the default :array-type to
 ;;; be :array instead of :simple-array.

@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.2 2000/02/10 17:53:40 sds Exp $
+;;; $Id: ext.lisp,v 1.3 2000/02/18 21:16:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 ;;; $Log: ext.lisp,v $
+;;; Revision 1.3  2000/02/18 21:16:45  sds
+;;; in-package :port now; make system works
+;;;
 ;;; Revision 1.2  2000/02/10 17:53:40  sds
 ;;; (+eof+): new constant (for `string-tokens')
 ;;; (string-tokens): new function (for net)
@@ -20,10 +23,22 @@
 ;;;
 ;;;
 
-(in-package :cl-user)
+(defpackage port
+  (:use "COMMON-LISP")
+  (:nicknames "ORG.CONS.CLOCC/SDS/PORT"))
 
-(eval-when (load compile eval)
-  #+(or clisp gcl) (declaim (declaration values)))
+(in-package :port)
+
+(setf (logical-pathname-translations "port")
+      `(("**;*" ,(logical-pathname "clocc:src;port;**;*"))))
+
+(export
+ '(code case-error not-implemented ; conditions
+   defsubst defcustom defconst
+   mk-arr map-in with-gensyms
+   gc quit
+   +eof+ string-tokens
+   compose compose-f compose-all))
 
 ;;;
 ;;; Conditions
@@ -53,30 +68,26 @@
 ;;; Extensions
 ;;;
 
-(eval-when (load compile eval)
-  (unless (fboundp 'defsubst)
-    (defmacro defsubst (name arglist &body body)
-      "Declare an inline defun."
-      `(progn (declaim (inline ,name)) (defun ,name ,arglist ,@body))))
+(defmacro defsubst (name arglist &body body)
+  "Declare an inline defun."
+  `(progn (declaim (inline ,name)) (defun ,name ,arglist ,@body)))
 
-  (unless (fboundp 'defcustom)
-    (defmacro defcustom (name type init doc)
-      "Define a typed variable."
-      `(progn (declaim (type ,type ,name))
-        (defvar ,name (the ,type ,init) ,doc))))
+(defmacro defcustom (name type init doc)
+  "Define a typed variable."
+  `(progn (declaim (type ,type ,name))
+    (defvar ,name (the ,type ,init) ,doc)))
 
-  (unless (fboundp 'defconst)
-    (defmacro defconst (name type init doc)
-      "Define a typed constant."
-      `(eval-when (load compile eval) ; kill compile warnings
-        (unless (boundp ',name) (declaim (type ,type ,name))
-                (defconstant ,name (the ,type ,init) ,doc)))))
+(defmacro defconst (name type init doc)
+  "Define a typed constant."
+  `(eval-when (compile load eval) ; kill compile warnings
+    (unless (boundp ',name) (declaim (type ,type ,name))
+            (defconstant ,name (the ,type ,init) ,doc))))
 
-  (defmacro mk-arr (type init &optional len)
-    "Make array with elements of TYPE, initializing."
-    (if len `(make-array ,len :element-type ,type :initial-element ,init)
-        `(make-array (length ,init) :element-type ,type
-          :initial-contents ,init))))
+(defmacro mk-arr (type init &optional len)
+  "Make array with elements of TYPE, initializing."
+  (if len `(make-array ,len :element-type ,type :initial-element ,init)
+      `(make-array (length ,init) :element-type ,type
+        :initial-contents ,init)))
 
 (defmacro with-gensyms (syms &body body)
   "Bind symbols to gensyms.  First sym is a string - `gensym' prefix.
@@ -90,19 +101,22 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   (with-gensyms ("MI-" mi)
     `(let ((,mi ,seq)) (map-into ,mi ,fn ,mi ,@seqs))))
 
-(unless (fboundp 'gc)           ; #+cmu (gc)
-  (defun gc ()
-    "Invoke the garbage collector."
-    #+clisp (lisp:gc) #+allegro (excl:gc) #+gcl (si::gbc)
-    #+lispworks (normal-gc)))
+(defun gc ()
+  "Invoke the garbage collector."
+  #+allegro (excl:gc)
+  #+clisp (lisp:gc)
+  #+cmucl (ext:gc)
+  #+gcl (si::gbc)
+  #+lispworks (normal-gc)
+  #-(or allegro clisp cmucl gcl lispworks)
+  (error 'not-implemented :proc (list 'gc)))
 
-(unless (fboundp 'quit)
-  (defun quit ()
-    #+allegro (exit)
-    #+clisp (lisp:quit)
-    #+gcl (bye)
-    #-(or allegro clisp gcl)
-    (error 'not-implemented :proc (list 'quit))))
+(defun quit ()
+  #+allegro (exit)
+  #+clisp (lisp:quit)
+  #+gcl (bye)
+  #-(or allegro clisp gcl)
+  (error 'not-implemented :proc (list 'quit)))
 
 (defconst +eof+ cons (cons nil nil)
   "*The end-of-file object.

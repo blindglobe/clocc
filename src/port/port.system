@@ -1,0 +1,14 @@
+;;; -*- Lisp -*-
+;;;
+;;; Cross-implementation Portability System
+;;;
+
+(mk:defsystem port
+    :source-pathname (translate-logical-pathname "clocc:src;port;")
+    :source-extension "lisp"
+    :components
+    ((:file "ext")
+     (:file "shell" :depends-on ("ext"))
+     (:file "proc" :depends-on ("ext"))
+     (:file "net" :depends-on ("ext"))
+     (:file "sys" :depends-on ("ext"))))

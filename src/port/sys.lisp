@@ -8,15 +8,26 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.1 1999/11/24 17:07:09 sds Exp $
+;;; $Id: sys.lisp,v 1.2 2000/02/18 21:16:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 ;;; $Log: sys.lisp,v $
+;;; Revision 1.2  2000/02/18 21:16:45  sds
+;;; in-package :port now; make system works
+;;;
 ;;; Revision 1.1  1999/11/24 17:07:09  sds
 ;;; Cross-implementation Portability System
 ;;;
 ;;;
 
-(in-package :cl-user)
+(eval-when (compile load eval)
+  (require :ext (translate-logical-pathname "clocc:src;port;ext")))
+
+(in-package :port)
+
+(export
+ '(getenv probe-directory default-directory chdir sysinfo
+   +month-names+ +week-days+ +time-zones+ +whitespace+
+   tz->string current-time))
 
 ;;;
 ;;; System
@@ -52,17 +63,17 @@
     (when name (setq dir (append dir (list name))))
     (probe-file (make-pathname :directory dir))))
 
-#-cmu
 (defun default-directory ()
   "The default directory."
   #+allegro (excl:current-directory)
   #+clisp (lisp:default-directory)
+  #+cmucl (ext:default-directory)
   #+lispworks (hcl:get-working-directory)
   #+lucid (working-directory)
-  #-(or allegro clisp lispworks lucid) (truename "."))
+  #-(or allegro clisp cmucl lispworks lucid) (truename "."))
 
-#-allegro
 (defun chdir (dir)
+  #+allegro (ext:chdir dir)
   #+clisp (lisp:cd dir)
   #+cmu (setf (default-directory) dir)
   #+gcl (si:chdir dir)
@@ -71,7 +82,7 @@
   #-(or allegro clisp cmu gcl lispworks lucid)
   (error 'not-implemented :proc (list 'chdir dir)))
 
-#-cmu (defsetf default-directory chdir "Change the current directory.")
+(defsetf default-directory chdir "Change the current directory.")
 
 (defun sysinfo (&optional (out *standard-output*))
   "Print the current environment to a stream."

@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.2 2000/02/10 17:55:50 sds Exp $
+;;; $Id: net.lisp,v 1.3 2000/02/18 21:16:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.3  2000/02/18 21:16:45  sds
+;;; in-package :port now; make system works
+;;;
 ;;; Revision 1.2  2000/02/10 17:55:50  sds
 ;;; (hostent): new defstruct
 ;;; (resolve-host-ipaddr): return a `hostent' instance
@@ -21,12 +24,21 @@
 ;;;
 ;;;
 
-(in-package :cl-user)
-(require "ext")
+(eval-when (compile load eval)
+  (require :ext (translate-logical-pathname "clocc:src;port;ext"))
+  #+lispworks (require "comm"))
 
+(in-package :port)
+
+(export
+ '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr hostent
+   socket open-socket socket-host socket-port socket-server
+   socket-accept open-socket-server socket-server-close
+   socket-service-port
+   network timeout login))
 
 ;;;
-;;; name resulution
+;;; {{{ name resulution
 ;;;
 
 (defun ipaddr-to-dotted (ipaddr)
@@ -103,7 +115,7 @@
   (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 ;;;
-;;; Sockets
+;;; }}}{{{ sockets
 ;;;
 
 (deftype socket ()
@@ -195,7 +207,7 @@
   #-(or clisp cmu) (close server))
 
 ;;;
-;;; Conditions
+;;; }}}{{{ conditions
 ;;;
 
 (define-condition network (error)
@@ -221,4 +233,43 @@
 
 (define-condition login (network) ())
 
+;;;
+;;; }}}{{{ `socket-service-port'
+;;;
+
+(defun socket-service-port (&optional service (protocol "tcp"))
+  "Return the port number of the SERVICE."
+  ;; #+clisp (lisp:socket-service-port service protocol)
+  ;; #-clisp
+  (flet ((parse (str)
+           (let ((tok (string-tokens
+                       (nsubstitute
+                        #\Space #\/ (subseq str 0 (or (position #\# str)
+                                                      (length str)))))))
+             (values (string-downcase (string (first tok)))
+                     (mapcar (compose string-downcase string) (cdddr tok))
+                     (second tok)
+                     (string-downcase (string (third tok)))))))
+    (with-open-file (fl #+unix "/etc/services" #+win32
+                        (concatenate 'string (getenv "windir")
+                                     "/system32/drivers/etc/services")
+                        :direction :input)
+      (loop :with name :and alis :and port :and prot
+            :for st = (read-line fl nil +eof+)
+            :until (eq +eof+ st)
+            :unless (or (equal "" st) (char= #\# (schar st 0)))
+              :do (setf (values name alis port prot) (parse st)) :and
+              :if service
+                :when (and (string-equal protocol prot)
+                           (or (string-equal service name)
+                               (member service alis :test #'string-equal)))
+                  :return (values name alis port prot) :end
+                :else :collect (vector name alis port prot) :end :end
+            :finally (when service
+                       (error "service ~s is not found for protocol ~s"
+                              service protocol))))))
+
+;;; }}}
+
+(provide "net")
 ;;; file net.lisp ends here

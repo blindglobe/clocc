@@ -208,7 +208,7 @@ C--------------------------------------------------------------------
  1001 FORMAT(' Test of PSI(X) vs (PSI(X/2)+PSI(X/2+1/2))/2 + ln(2)'
      1 //)
  1010 FORMAT(I7,' random arguments were tested from the interval ',
-     1 1H(,F5.1,1H,,F5.1,1H)//)
+     1 '(',F5.1,',',F5.1,')',//)
  1011 FORMAT(' ABS(PSI(X)) was larger',I6,' times', /
      1     21X,' agreed',I6,' times, and'/
      1   17X,'was smaller',I6,' times.'//)

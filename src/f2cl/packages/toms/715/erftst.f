@@ -348,7 +348,7 @@ C-----------------------------------------------------------------
      1    ' = ',I4,' **',F7.2)
  1025 FORMAT('1Special Tests'//)
  1030 FORMAT(7X,'Estimated loss of base',i3,'significant digits in'//
-     1       3X'X',5X,'Erf(x)+Erf(-x)',3X,'Erf(x)+Erfc(x)-1',
+     1       3X,'X',5X,'Erf(x)+Erf(-x)',3X,'Erf(x)+Erfc(x)-1',
      1       3X,'Erfcx(x)-exp(x*x)*erfc(x)'/)
  1031 FORMAT(F7.3,3F16.2)
  1040 FORMAT(//' Test of special arguments'//)

@@ -295,6 +295,42 @@ At this point the method is executed and then, finally, we're done.
 	      (intern (subseq uri 0 pos) :keyword)
 	      (when pos (parse-form-contents (subseq uri (1+ pos))))))
 
+(defvar *mime-types* (make-hash-table :test 'equal))
+;; in case there's no mime types file we'll put in a few common cases
+(setf (gethash "html" *mime-types*) "text/html"
+      (gethash "htm" *mime-types*) "text/html"
+      (gethash "jpeg" *mime-types*) "image/jpeg"
+      (gethash "jpg" *mime-types*) "image/jpeg"
+      (gethash "gif" *mime-types*) "image/gif")
+
+(defvar *mime-type-file* "/etc/mime.types") ;; ***
+;; The "correct" way to adjust types is to change this file.
+;; The file is interpreted as a sequence of lines.
+;; Each line not starting with # contains strings separated by tabs or spaces.
+;; The first is a mime type, the rest are file extensions.
+;; I downcase the types (should be a noop?), compare extensions case insensitive.
+
+(defun whitespace-p (x) (member x '(#\tab #\space)))
+(defun read-mime-types ()
+  (ignore-errors ;; in case file is not there or unreadable or ...
+   (with-open-file (f *mime-type-file*)
+     (let (line type pos1 pos2)
+       (loop while (setf line (read-line f nil nil)) do
+	     (setf pos1 (position-if-not 'whitespace-p line))
+	     (when (and pos1 (not (eql #\# (char line pos1))))
+	       (setf pos2 (position-if 'whitespace-p line :start pos1))
+	       (setf type (subseq line pos1 pos2)) ;; nil ok
+	       (loop while (and pos2
+				(setf pos1 (position-if-not
+					    'whitespace-p line :start pos2)))
+		   do (setf pos2 (position-if
+				  'whitespace-p line :start pos1))
+		      (setf (gethash (string-downcase
+				      (subseq line pos1 pos2))
+				     *mime-types*)
+			(string-downcase type)))))))))
+(read-mime-types)
+
 ;; *** you may want to define methods for get-method
 
 ;; default method tries to find the file
@@ -324,16 +360,7 @@ At this point the method is executed and then, finally, we're done.
   (unless (equal "" (protocol c))
     ;; It looks like we have to guess at the content type ...
     (let ((ptype (pathname-type file)) ctype)
-      (cond ((member ptype '("html" "htm") :test 'string-equal)
-	     (setf ctype "text/html"))
-	    ((member ptype '("jpg" "jpeg") :test 'string-equal)
-	     (setf ctype "image/jpeg"))
-	    ((member ptype '("gif") :test 'string-equal)
-	     (setf ctype "image/gif"))
-	    ((string-equal ptype "class")
-	     (setf ctype "application/x-java-binary"))
-	    ;; *** add other content types as needed
-	    (t (setf ctype "text/plain")))
+      (setf ctype (gethash (string-downcase ptype) *mime-types* "text/plain"))
       (sss:send-string c "HTTP/1.0 200 OK") (crlf c)
       (sss:send-string c (format nil "Content-Type: ~A" ctype))
       (crlf c) (crlf c)))

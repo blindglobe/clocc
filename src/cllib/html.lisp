@@ -4,7 +4,7 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: html.lisp,v 1.5 2000/03/13 21:52:23 sds Exp $
+;;; $Id: html.lisp,v 1.6 2000/03/23 15:46:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -189,6 +189,7 @@ Return the new buffer or NIL on EOF."
   "Read the next something from TS - a text stream."
   (declare (type text-stream ts) (type (or null function) skip))
   (loop :with *package* = +kwd+ :and tok :and pos
+        :and *read-default-float-format* = 'double-float
         :when (and (or (typep pos 'error)
                        (>= (ts-posn ts) (length (ts-buff ts))))
                    (null (ts-pull-next ts (typep pos 'error) kill)))

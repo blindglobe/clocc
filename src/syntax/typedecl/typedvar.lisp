@@ -476,7 +476,7 @@
 (cl:defmethod documentation (x (doc-type (eql 'function)))
   (documentation x 'cl:function))
 (cl:defmethod (setf documentation) (new-value x (doc-type (eql 'function)))
-  ((setf documentation) new-value x 'cl:function))
+  (funcall #'(setf documentation) new-value x 'cl:function))
 (set-dispatch-macro-character #\# #\'
   (cl:function
     (cl:lambda (stream sub-char n)

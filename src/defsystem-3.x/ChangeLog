@@ -1,0 +1,175 @@
+2001-06-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Changed definition of 'compile-file-operation' to meet requirements
+	for COMMON-LISP-CONTROLLER.
+
+	Added a few fixes for LispWorks on PC/Windows.
+
+2001-05-07  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore: cr/lf
+
+2001-04-11  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	updated for CLISP #+LISP=CL
+
+2001-03-18  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore: added lww *.fsl
+
+2001-03-16  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (component-full-pathname-i):
+	init device from `pathname'
+	 when it is nil in the `component'
+
+2001-02-06  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (run-compiler):
+	`error-file' and `error-file-stream'
+	 should exist only under #+cmu
+
+2001-01-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added patch for 'new-append-directories' for MCL 3.4.
+
+2001-01-08  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	updated for CMUCL 18c, where :cmu17 is not a feature anymore
+	(component): type defaults to `:file'
+
+2000-07-26  rtoy  <rtoy@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Add COMPILER-OPTIONS to COMPONENT defstruct to allow user to specify
+	special compiler options for a particular component.
+
+2000-05-16  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (system-source-size):
+	message tweak
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (pathname-logical-p):
+	fixed the CLISP version (`logical-pathname-p'
+	was called but not defined) and unified both versions into one.
+
+2000-05-15  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (c-compile-file):
+	ignore `error-file' (kill a warning)
+
+2000-05-12  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (*central-registry*):
+	fixed for lispworks4 (from dey)
+
+2000-05-11  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (system-source-size):
+	new optional argument `force'
+
+2000-05-10  rtoy  <rtoy@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	CMUCL and CLISP RUN-PROGRAM want the arguments as a list of strings.
+	Change RUN-UNIX-PROGRAM so the arguments are a list.  Convert the list
+	to a string for the other platforms.  (Not tested.)
+
+	Modify C-COMPILE-FILE accordingly.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Don't default binary-extension so we can inherit this from the
+	parent, just like source-extension.
+
+2000-04-19  haible  <haible@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Add three #+clisp, to silence warnings.
+
+2000-04-07  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (component source-extension):
+	do not supply an init
+	form (stig's patch)
+
+2000-03-29  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (*filename-extensions*):
+	use `compile-file-pathname' to find the
+	default binary extension.
+
+2000-03-23  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Fixed problem with ACL and construction of system filenames in
+	COMPUTE-SYSTEM-PATH.
+
+	Also fixed problem with exports conflicting with native ACL and LW
+	defsystems.  No symbol is now imported in COMMON-LISP-USER.  You must
+	always use the package qualifier "MK:" to access LOAD-SYSTEM,
+	COMPILE-SYSTEM and friends.
+
+2000-03-22  haible  <haible@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	*filename-extensions* needs only one entry for CLISP, not two.
+
+2000-03-15  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Fixed the '*defsystem-version* variable to reflect the current version.
+
+2000-03-03  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	do not redefine provide/require under clisp
+
+2000-03-03  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added change suggested by Raymond Toy and function PATHNAME-LOGICAL-P.
+	The beast has been tested lightly with no problems encountered.
+
+2000-02-28  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	The symbols FIND-SYSTEM, LOAD-SYSTEM, DEFSYSTEM, COMPILE-SYSTEM and
+	HARDCOPY-SYSTEM are no longer imported in the COMMON-LISP-USER
+	package. Cfr. the definitions of *EXPORTS* and *SPECIAL-EXPORTS*.
+
+2000-02-18  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/.cvsignore:
+	ignore the compiled files
+
+2000-02-16  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	finally, works with CLISP
+	(*filename-extensions*): clisp uses `lsp', not `lisp'
+	(*standard-source-file-types*, *standard-binary-file-types*):
+	 removed (never used)
+	(component): default `source-extension' and `binary-extension' on
+	`*filename-extensions*', not hardwired `lisp/fasl'
+	(default-source-extension, default-binary-extension): default
+	based on `*filename-extensions*', not not hardwired `lisp/fasl'
+
+2000-02-11  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	compile with clisp
+
+2000-01-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+
+2000-01-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp: New file.
+

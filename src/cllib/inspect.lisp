@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.3 2000/03/13 22:01:20 sds Exp $
+;;; $Id: inspect.lisp,v 1.4 2000/03/15 00:57:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -65,15 +65,6 @@
 (defun insp-right-p (insp)
   (let ((pos (insp-pos insp)) (up (insp-up insp)))
     (and pos up (< pos (insp-last-slot up)))))
-
-(defmethod print-object ((insp inspection) (out stream))
-  (if *print-readably* (call-next-method)
-      (handler-case (print-inspection insp out *inspect-frontend*)
-        (error (err)
-          ;(declare (ignore err))
-          (format t "~&*** print error for inspection! ***~%")
-          (call-next-method)
-          (format t "~&*** print error: ~s***~%" err)))))
 
 (defun set-slot-error (ii obj)
   (error "~s: Cannot set the slot number ~s for object ~s"
@@ -253,7 +244,7 @@
                 (format out "~d~@[ [~a]~]:  ~s~%" ii name val)))))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :tty)))
-  (princ insp)
+  (print-inspection insp *terminal-io* frontend)
   (do (com (id (insp-id insp)))
       ((eq com :q))
     (fresh-line)
@@ -263,6 +254,7 @@
       (:q)
       ((:h :?) (format t " *** commands:~% :h, :?~15t this help
  :p, :a~15t Print the current item Again
+ :s~15t re-inspect this item (Self)
  :d~15t Describe the current item~%")
        (when (insp-up insp)
          (format t " :u~15t return UP to the parent~%"))
@@ -278,7 +270,7 @@
  :q~15t return to the main Read/Eval/Print loop~% ---> ")
        (force-output))
       (:d (describe (insp-self insp)))
-      ((:p :a) (princ insp))
+      ((:p :a) (print-inspection insp *terminal-io* frontend))
       (:e (labels ((clean (form)
                      (cond ((eq (car form) :self)
                             (setf (car form) `',(insp-self insp))
@@ -301,7 +293,7 @@
                       (if err (format t "eval error: ~s" err)
                           (format t " ++ > ~%" res))))))))
       (t (cond ((setq insp (get-insp id com))
-                (princ insp)
+                (print-inspection insp *terminal-io* frontend)
                 (setq id (insp-id insp)))
                (t (format t "command `~s' is not valid here~%" com)
                   (setq insp (get-insp id :s))))))))
@@ -329,7 +321,7 @@
                         (funcall (insp-nth-slot insp) ii)
                       (with-tag (:li)
                         (with-tag (:a :href (href ii))
-                          (princ (string (or name "inspect")) out))
+                          (princ (or name "inspect") out))
                         (with-tag (:pre) (write val :stream out)))))))
       (with-tag (:hr))
       (with-tag (:h2) (princ "describe:" out))
@@ -381,7 +373,7 @@
         (with-html-output (out sock :title "inspect" :footer nil)
           (with-tag (:h1) (princ "thanks for using inspect" out))
           (with-tag (:p) (princ "you may close this window now" out)))
-        (if (setq insp (get-insp id com)) (write insp :stream sock)
+        (if (setq insp (get-insp id com)) (print-inspection insp sock frontend)
             (with-html-output (out sock :title "inspect" :footer nil)
               (with-tag (:h1)
                 (format out "error: wrong command: ~:d/~s" id com))

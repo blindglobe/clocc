@@ -889,7 +889,7 @@ is not included")
   (declare (type double-float x))
   (atan x))
 (defun atan2 (x y)
-  (declare (type double-float x))
+  (declare (type single-float x))
   (atan x y))
 (defun datan2 (x y)
   (declare (type double-float x y))
@@ -1309,8 +1309,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.59 2004/08/14 22:29:16 marcoxa Exp $
+;;; $Id: macros.l,v 1.60 2004/09/01 14:17:57 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.60  2004/09/01 14:17:57  rtoy
+;;; atan2 takes single-float args, not double-float.
+;;;
 ;;; Revision 1.59  2004/08/14 22:29:16  marcoxa
 ;;; Added an EVAL-WHEN to silence the LW compiler.
 ;;;

@@ -271,7 +271,7 @@ At this point the method is executed and then, finally, we're done.
 	    (setf (content-length c)
 	      ;; yeah, I know, not correct for Content-Length: (hello)123
 	      (let (*read-eval* val)
-		(setf val (ignore-errors (read-from-string value)))
+		(setf val (sss::ignore-errs (read-from-string value)))
 		(when (integerp val) val))))
 	  (when (and (string-equal field "Content-type")
 		     (search "multipart/form-data" value :test 'char-equal)
@@ -335,7 +335,7 @@ At this point the method is executed and then, finally, we're done.
 
 (defun whitespace-p (x) (member x '(#\tab #\space)))
 (defun read-mime-types ()
-  (ignore-errors ;; in case file is not there or unreadable or ...
+  (sss::ignore-errs ;; in case file is not there or unreadable or ...
    (with-open-file (f *mime-type-file*)
      (let (line type pos1 pos2)
        (loop while (setf line (read-line f nil nil)) do
@@ -424,7 +424,7 @@ At this point the method is executed and then, finally, we're done.
 (defun parse-form-contents (contents &optional boundary)
   (multiple-value-bind
       (ans err)
-      (ignore-errors 
+      (sss::ignore-errs 
 	(when boundary
 	  (return-from parse-form-contents
 	    (parse-form-contents-boundary contents boundary)))

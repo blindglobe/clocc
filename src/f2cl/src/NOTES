@@ -2,6 +2,13 @@
 
 Changes:
 
+Jul 27, 2000
+------------
+
+Did some testing with Clisp and made the necessary minor changes.
+Seems to work correctly with Clisp, although very slowly for the
+tests. 
+
 Jul 20, 2000
 ------------
 

@@ -1,4 +1,4 @@
-;;; File: <string.lisp - 2000-02-18 Fri 13:11:41 EST sds@ksp.com>
+;;; File: <string.lisp - 2000-03-08 Wed 16:56:41 Eastern Standard Time sds@ksp.com>
 ;;;
 ;;; string utilities
 ;;;
@@ -9,15 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: string.lisp,v 1.1 2000/02/18 20:24:11 sds Exp $
+;;; $Id: string.lisp,v 1.2 2000/03/09 19:04:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base")))
-(in-package :cllib)
 
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
+(in-package :cllib)
 
 (export '(string-beg-with string-end-with string-beg-with-cs string-end-with-cs
           purge-string split-string split-seq substitute-subseq))
@@ -70,7 +68,6 @@
 
 (defsubst purge-string (str &optional (junk *string-junk*))
   "Non-destructively remove junk from string."
-  (declare (simple-string str junk))
   (substitute-if #\Space (lambda (cc) (find cc junk :test #'char=)) str))
 
 (defsubst split-string (str chars &rest opts)
@@ -101,14 +98,16 @@ zero-length subsequences too.
 The result is of the same type as SEQ.
   (substitute-subseq SEQ SUB REPL &key START END TEST KEY)"
   (declare (sequence seq sub rep) (type index-t start))
-  (do* ((olen (length sub)) (last start (+ next olen))
-        (new (subseq seq 0 start))
-        (type (etypecase seq (string 'string) (vector 'vector) (list 'list)))
-        (next (search sub seq :start2 last :end2 end :test test :key key)
-              (search sub seq :start2 last :end2 end :test test :key key)))
-       ((null next) (concatenate type new (subseq seq last)))
-    (declare (type index-t olen last) (symbol type) (sequence new))
-    (setq new (concatenate type new (subseq seq last next) rep))))
+  (loop :with type =
+        (typecase seq (string 'string) (vector 'vector) (list 'list)
+                  (t (error 'case-error :proc 'substitute-subseq :args
+                            (list 'seq seq 'string 'vector 'list))))
+        :and olen :of-type index-t = (length sub)
+        :and last :of-type index-t = start
+        :for next = (search sub seq :start2 last :end2 end :test test :key key)
+        :collect (subseq seq last next) :into all
+        :while next :collect rep :into all :do (setq last (+ next olen))
+        :finally (return (apply #'concatenate type (subseq seq 0 start) all))))
 
 (provide :string)
 ;;; }}} string.lisp ends here

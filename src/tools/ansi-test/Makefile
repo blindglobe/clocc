@@ -1,7 +1,7 @@
 CLISP=clisp -a -norc
 CMUCL_SAFE=/usr/lib/cmucl/lisp-safe.core
 CMUCL_NORMAL=/usr/lib/cmucl/lisp-normal.core
-RM=rm -f
+RM=rm -fr
 MV=mv -f
 MKDIR=mkdir -p
 

@@ -10,11 +10,17 @@ c
          x(k) = k * k
    10 continue
 
-      call sub(x, len)
-      call sub(x(5), 5)
-      call sub(x(10), 10)
+      call sub2(x, len)
+      call sub2(x(5), 5)
+      call sub2(x(10), 10)
       end
 
+      subroutine sub2(x,n)
+      real x(n)
+      x(2) = 89
+      call sub(x(2), n-1)
+      return
+      end
       subroutine sub(x, n)
       real x(n)
       integer k

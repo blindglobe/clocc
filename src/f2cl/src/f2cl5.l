@@ -2161,12 +2161,34 @@
 	(directive (list (format nil "~~~DA" width))))
     (list a (list directive))))
 
+;; Handle Fortran Iw.m format
+(defun print-i-format (ostream val colonp at-sign-p width pad-width)
+  (declare (ignore colonp at-sign-p))
+  (let ((output (format nil "~V,'0D" width val)))
+    ;; Converting leading zeros to blanks as needed
+    (dotimes (k (- width pad-width))
+      (setf (aref output k) #\space))
+    (princ output ostream)
+    (values)))
+
 (defun parse-format-descriptor-I (a w)
+  ;; aIw.m
+  ;;
+  ;; According to the Fortran standard, if m is given, the output is
+  ;; zero-padded on the left to occupy m positions.  In addition if m
+  ;; = 0, and the number is 0, we aren't supposed to output
+  ;; anything. We don't handle that here.  It's also unclear to me
+  ;; what happens if m < w, but I think that means the number is
+  ;; zero-padded to a width of m and printed right-justified in a
+  ;; field of width w.
   (let* ((width (if (listp w)
 		   (car w)
 		   w))
-	(directive (list (format nil "~~~DD" width))))
-    (list a (list directive))))
+	(directive (if (and (listp w) (second w))
+		       (format nil "~~~D,~D/f2cl:print-i-format/" width (second w))
+		       (format nil "~~~DD" width)
+		       )))
+    (list a (list (list directive)))))
 
 ;<kP><a>Fw.d -> ~a{~w,d,k,,,[@]F}
 (defun parse-format-descriptor-F (left right)
@@ -2441,8 +2463,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.86 2002/03/06 03:17:52 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.87 2002/03/06 23:04:10 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.87  2002/03/06 23:04:10  rtoy
+;;; Actually handle Iw.m as Fortran would.
+;;;
 ;;; Revision 1.86  2002/03/06 03:17:52  rtoy
 ;;; With the block data name changes in f2cl1.l, we need to recognize here
 ;;; the names that are generated there in f2cl1.

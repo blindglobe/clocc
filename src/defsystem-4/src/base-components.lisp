@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -95,8 +95,12 @@
 		     :initarg :source-extension
 		     :type (or null string)) ; A string, e.g.,
 					     ; "lisp". If NIL,  uses
-					     ; default for
-					     ; machine-type.
+					     ; default, where
+					     ; `default' is to be
+					     ; interpreted based on
+					     ; context. (E.g. for
+					     ; files included in
+					     ; modules etc.)
 
    ;; The next slot is used for caching purposes.
    (computed-source-pathname :accessor computed-source-pathname
@@ -145,7 +149,9 @@
 					; for PARSE-NAMESTRING.
     :device nil
     :source-pathname nil
+    :source-extension nil
     :binary-pathname nil
+    :binary-extension nil
     :version :newest
     )
   (:documentation

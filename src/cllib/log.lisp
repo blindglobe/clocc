@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.16 2004/02/27 17:39:11 sds Exp $
+;;; $Id: log.lisp,v 1.17 2004/03/19 16:14:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -87,7 +87,8 @@ This has to be a macro to avoid needless evaluating the args."
           (when ,run (format ,%out " [run: ~/pr-secs/]" ,el))
           (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
           ,(when count
-            `(format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units))
+             `(unless (zerop ,el)
+                (format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units)))
           (when ,terpri (terpri ,%out)))))))
 
 ;;; }}}

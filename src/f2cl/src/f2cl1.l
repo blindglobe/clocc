@@ -1676,15 +1676,16 @@ FILENAME                 File containing Fortran code
 		       ;;(format t "expr = ~A~%" expr)
 		       (cond ((and (listp expr)
 				   (eq (first expr) 'fref))
-			      ;;(format t " expr = ~A~%" expr)
-			      ;;(format t "  a-info, r-info = ~A ~A~%" a-info r-info)
-			      
+			      #+nil
+			      (format t " expr = ~A~%" expr)
+			      #+nil
+			      (format t "  a-info, r-info, SLICE-P = ~A ~A ~A~%"
+				      a-info r-info (or (subtypep a-info 'array) r-info))
 			      ;; If the declared type is an array,
 			      ;; slice it.  If the arg is modified
 			      ;; (r-info is non-NIL) slice it.
 			      ;; Otherwise, grab just the element.
-			      (if (or (typep a-info 'array)
-				      r-info)
+			      (if (or r-info (subtypep a-info 'array))
 				  `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
 				  expr))
 			     (t
@@ -2510,8 +2511,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.127 2003/11/13 22:16:59 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.128 2003/11/13 22:37:08 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.128  2003/11/13 22:37:08  rtoy
+;;; Oops.  We want subtypep, not typep!
+;;;
 ;;; Revision 1.127  2003/11/13 22:16:59  rtoy
 ;;; Try to be smarter about generating args to functions, which is an
 ;;; issue if the arg is an element of an array.  If we know the declared

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.8 2004/08/09 21:35:49 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9 2004/09/12 14:40:05 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -418,7 +418,9 @@
 					    (t
 					     "Maybe")))))
 		       (with-compilation-unit ()
-			  (eval (YT-module-contents ytm)))
+			  (eval (YT-module-contents ytm))
+			  (dolist (e (YT-module-expansion ytm))
+			     (eval e)))
 		       (note-load-status now-loading-lprec* ':loaded))
 		      ((memq name module-trace*)
 		       (format *error-output*

@@ -510,6 +510,10 @@
 	   ;; Handle fdo: the fdo macro depends on a certain format
 	   ;; for the loop (yuck!  Need to change that!)
 	   `(fdo ,(second expr) ,(third expr) ,@(mapcar #'fixup-expression (nthcdr 3 expr))))
+	  ((and (eq (first expr) '-)
+		(numberp (second expr)))
+	   ;; Convert (- N) to just -N
+	   (- (second expr)))
 	  ((is-neg (second expr))
 	   ;; We have (F (- Z) X ...).  If F is '+,
 	   ;; make it (- X Z).  If Z is a number, make it (F -Z X ...)
@@ -584,13 +588,14 @@
 	((and (third expr)
 	      (member (first expr) '(+ * - /)))
 	 ;; Try to merge a bunch of +, *, -, / operations into one.
-	 (destructuring-bind (op next args)
+	 (destructuring-bind (op next &rest args)
 	     expr
-	   (setf args (list args))
-	   (loop while (and (listp next) (eq op (first next)))
-	     do
-	     (push (third next) args)
-	     (setf next (second next)))
+	   ;;(setf args (list args))
+	   (when (and (listp next) (third next))
+	     (loop while (and (listp next) (eq op (first next)))
+	       do
+	       (push (third next) args)
+	       (setf next (second next))))
 	   `(,op ,(merge-ops next) ,@(merge-ops args))))
 	(t
 	 `(,@(mapcar #'merge-ops expr)))))
@@ -911,13 +916,15 @@
        (format t "key-params            = ~A~%" key-params)
        (format t "*declared_vbles*      = ~A~%" *declared_vbles*)
        (format t "*undeclared_vbles*    = ~A~%" *undeclared_vbles*)
-       (format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*))
+       (format t "*subprog_common_vars* = ~A~%" *subprog_common_vars*)
+       (format t "arglist               = ~A~%" arglist))
      (setf prog-bit
 	   (fixup-external-function-refs
 	    prog-bit
 	    (set-difference *intrinsic_function_names*
 			    (append *declared_vbles*
 				    *undeclared_vbles*
+				    arglist
 				    (mapcar #'first key-params)))))
 
 
@@ -2077,8 +2084,19 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.51 2000/07/20 13:43:00 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.52 2000/07/21 17:47:20 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.52  2000/07/21 17:47:20  rtoy
+;;; o FIXUP-EXPRESSION:  add a case to convert (- N) to just -N, when N is
+;;;   a number.
+;;;
+;;; o MERGE-OPS: incorrectly merged (- (- 3) IT) to (- 3 IT).  I think
+;;;   this is fixed now.
+;;;
+;;; o INSERT-DECLARATIONS: Don't fixup external function refs if an
+;;;   intrinsic was actually a variable in the arglist.  (Missed this case
+;;;   from before.)
+;;;
 ;;; Revision 1.51  2000/07/20 13:43:00  rtoy
 ;;; Since all arrays are now actually stored in column-major order in a
 ;;; 1-dimensional vector, we don't need to transpose the data initializers

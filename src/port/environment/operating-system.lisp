@@ -8,11 +8,10 @@
 
 (in-package "CL.ENVIRONMENT")
 
-(defclass operating-system (software)
+(defclass operating-system (software feature-tagged-type-class)
   ((type :reader operating-system-type :reader os-type)
    (version :reader operating-system-version :reader os-version)
    (tag :reader operating-system-feature-tag :reader os-feature-tag
-	:initarg :feature-tag
 	:type symbol)
    )
   (:documentation "The CL.ENVIRONMENT Operating System Class."))
@@ -131,10 +130,17 @@
 
 (defclass MS-Windows-2000 (MS-Windows-NT MS-Windows-98)
   ()
-  (:documentation "The CL.ENVIRONMENT MS Windows NT Operating System Class.")
+  (:documentation "The CL.ENVIRONMENT MS Windows 2000 Operating System Class.")
   (:default-initargs :type "Windows 2000"
                      :version ""
 		     :feature-tag :ms-windows-2000))
+
+(defclass MS-Windows-ME (MS-Windows-NT MS-Windows-98)
+  ()
+  (:documentation "The CL.ENVIRONMENT MS Windows ME Operating System Class.")
+  (:default-initargs :type "Windows ME"
+                     :version ""
+		     :feature-tag :ms-windows-me))
 
 
 ;;; Special operating system related functionalities.
@@ -201,6 +207,10 @@
 
 (defmethod os-tag-compatible-p ((os cl.env:ms-windows)
 				(tag (eql :ms-windows-2000)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-me)))
   t)
 
 

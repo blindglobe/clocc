@@ -337,14 +337,18 @@ Tag being parsed:| (cadr x))))
 	  (listp (cadr l)))
      ;; Should we check for T and PI here?
      (let ((fname (car l))
-	   (args (let ((*apply-array-slice* *array-slicing*))
-		   (mapcar #'id-expression (list-split '|,| (cadr l))))))
+	   (args (mapcar #'id-expression (list-split '|,| (cadr l)))))
+       
        ;; Save the function name and number of arguments so we can
        ;; declare the function appropriately.  We also save the
        ;; argument list so we can determine later the types of each
        ;; parameter, if we really want to.
-
        (update-called-functions-list (list fname) args)
+
+       ;; Now convert array references to an array slice, as
+       ;; appropriate.
+       (setf args (maybe-convert-array-ref-to-slice args))
+
        ;; Functions can modify the arguments in addition to returning
        ;; a value.  We need to handle this like a subroutine call, as
        ;; done in PARSE-SUBROUTINE-CALL.  If this function call is on
@@ -428,8 +432,14 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.27 2000/08/29 03:20:25 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.28 2000/09/01 14:05:25 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.28  2000/09/01 14:05:25  rtoy
+;;; o ID-FACTOR: we were not careful enough about array slicing in
+;;;   function calls.  We should only apply array slicing if the argument
+;;;   is an array ref.  Any arithmetic on the arg should disable
+;;;   array-slicing.
+;;;
 ;;; Revision 1.27  2000/08/29 03:20:25  rtoy
 ;;; Array slicing needs to handled in not only subroutine calls but
 ;;; function calls too.  Make it so.

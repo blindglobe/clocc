@@ -1,10 +1,10 @@
 ;;; Symbols & Keywords
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold
+;;; Copyright (C) 1997-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: symb.lisp,v 1.7 2001/11/02 22:31:15 sds Exp $
+;;; $Id: symb.lisp,v 1.8 2004/12/22 16:56:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/symb.lisp,v $
 
 (eval-when (compile load eval)
@@ -12,7 +12,7 @@
 
 (in-package :cllib)
 
-(export '(symbol-concat +kwd+ kwd keyword-concat read-key keyword=))
+(export '(symbol-concat +kwd+ kwd keyword-concat read-key keyword= kill-symbol))
 
 ;;(defmacro symbol-concat (&rest args)
 ;;  (let ((lst (mapcar (lambda (zz) (if (stringp zz) zz `(string ,zz))) args)))
@@ -46,6 +46,14 @@
   "Check whether the two keywords with the suffixes are the same."
   (eq (if suff1p (keyword-concat (code key1) (code suffix1)) (code key1))
       (if suff2p (keyword-concat (code key2) (code suffix2)) (code key2))))
+
+(defun kill-symbol (id)
+  "Kill symbol: unboud, unintern, remove properties."
+  (makunbound id)
+  (fmakunbound id)
+  (setf (symbol-plist id) nil)
+  (let ((p (symbol-package id)))
+    (if p (unintern id p) (warn "~S: Killing dead symbol ~S" 'kill-id id))))
 
 (provide :cllib-symb)
 ;;; file symb.lisp ends here

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.16 2000/05/02 14:33:18 sds Exp $
+;;; $Id: net.lisp,v 1.17 2000/05/08 17:11:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -131,8 +131,8 @@
   (declare (type socket sock))
   #+allegro (values (socket:ipaddr-to-dotted (socket:remote-host sock))
                     (socket:remote-port sock))
-  #+clisp (values (lisp:socket-stream-host sock)
-                  (lisp:socket-stream-port sock))
+  #+clisp (multiple-value-bind (ho po) (lisp:socket-stream-peer sock)
+            (values (subseq ho 0 (position #\Space ho :test #'char=)) po))
   #+cmu (multiple-value-bind (ho po)
             (ext:get-socket-host-and-port (sys:fd-stream-fd sock))
           (values (ipaddr-to-dotted ho) po))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.14 2000/06/02 19:35:43 sds Exp $
+;;; $Id: xml.lisp,v 2.15 2000/06/02 21:16:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -380,6 +380,7 @@ The first character to be read is #\T."
                      (xml-entity ent (case char
                                        (#\& *xml-amp*) (#\% *xml-per*))
                                  char :proc 'read-xml))))
+       (read-char stream)       ; #\;
        (etypecase str
          (string str)           ; "??" for undefined entities and &#nnnn;
          (stream

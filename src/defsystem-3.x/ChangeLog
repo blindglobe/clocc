@@ -1,3 +1,17 @@
+2002-03-26  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Changed computation of the compiled file extension for ACL when the
+	source file type is "cl".
+
+	Cfr.
+		#+excl ("cl"   . ,(pathname-type (compile-file-pathname "foo.cl")))
+
+2002-03-23  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog, /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Backported ADD-REGISTRY-LOCATION function from defsystem-4
+
 2002-03-22  Kevin Rosenberg (kevin@rosenberg.net)
 	
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:

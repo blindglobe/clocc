@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.26 2004/10/27 22:32:20 sds Exp $
+;;; $Id: log.lisp,v 1.27 2004/10/28 18:44:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,7 +27,7 @@
 
 (defun list-format (item-fmt)
   "Return the format string for list printing, printing the item as ITEM-FMT.
-Taken from CLtL2 p602."
+See CLtL2 p602 and <http://www.lisp.org/HyperSpec/Body/sec_22-3-7-2.html>"
   (format nil "~~#[ none~~; ~a~~; ~a and ~a~~:;~~@{~~#[~~; and~~] ~a~~^,~~}~~]"
           item-fmt item-fmt item-fmt item-fmt))
 

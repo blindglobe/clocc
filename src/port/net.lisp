@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.17 2000/05/08 17:11:08 sds Exp $
+;;; $Id: net.lisp,v 1.18 2000/05/09 18:52:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -127,20 +127,31 @@
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 
 (defun socket-host/port (sock)
-  "Return the remote host&port, as 2 values."
+  "Return the remote and local host&port, as 4 values."
   (declare (type socket sock))
   #+allegro (values (socket:ipaddr-to-dotted (socket:remote-host sock))
-                    (socket:remote-port sock))
-  #+clisp (multiple-value-bind (ho po) (lisp:socket-stream-peer sock)
-            (values (subseq ho 0 (position #\Space ho :test #'char=)) po))
-  #+cmu (multiple-value-bind (ho po)
-            (ext:get-socket-host-and-port (sys:fd-stream-fd sock))
-          (values (ipaddr-to-dotted ho) po))
-  #+gcl (let ((peer (si:getpeername sock)))
-          (values (car peer) (caddr peer)))
-  #+lispworks (multiple-value-bind (ho po)
-                  (comm:socket-stream-peer-address sock)
-                (values (ipaddr-to-dotted ho) po))
+                    (socket:remote-port sock)
+                    (socket:ipaddr-to-dotted (socket:local-host sock))
+                    (socket:local-port sock))
+  #+clisp (flet ((ip (ho) (subseq ho 0 (position #\Space ho :test #'char=))))
+            (multiple-value-bind (ho1 po1) (lisp:socket-stream-peer sock)
+              (multiple-value-bind (ho2 po2) (lisp:socket-stream-local sock)
+                (values (ip ho1) po1
+                        (ip ho2) po2))))
+  #+cmu (let ((fd (sys:fd-stream-fd sock)))
+          (multiple-value-bind (ho1 po1) (ext:get-peer-host-and-port fd)
+            (multiple-value-bind (ho2 po2) (ext:get-socket-host-and-port fd)
+              (values (ipaddr-to-dotted ho1) po1
+                      (ipaddr-to-dotted ho2) po2))))
+  #+gcl (let ((peer (si:getpeername sock))
+              (loc (si:getsockname sock)))
+          (values (car peer) (caddr peer)
+                  (car loc) (caddr loc)))
+  #+lispworks
+  (multiple-value-bind (ho1 po1) (comm:socket-stream-peer-address sock)
+    (multiple-value-bind (ho1 po2) (comm:socket-stream-local-address sock)
+      (values (ipaddr-to-dotted ho1) po1
+              (ipaddr-to-dotted ho2) po2)))
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 

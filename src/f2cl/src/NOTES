@@ -2,6 +2,20 @@
 
 Changes:
 
+Mar 18, 2002
+------------
+
+We've added some preliminary support for ENTRY statements in Fortran.
+We only support simple uses of ENTRY statements where the ENTRY
+statement matches the original SUBPROGRAM statement in number, name,
+and type of arguments.
+
+This works by taking the actual body of the routine and creating a new
+routine out of it with a new first parameter.  This new parameter is
+the name of the function we want to call.  A separate function for
+each ENTRY point is created which basically just calls the new routine
+with the first arg set appropriately.
+
 Mar 16, 2002
 ------------
 Since f2cl always returns all the arguments for a subprogram, this can

@@ -1106,7 +1106,7 @@
 	  decl1
 	(when (eq (car decl2) 'array)
 	  (rotatef decl1 decl2))
-	(return `(declare (type (simple-array
+	(return `(declare (type (,*array-type*
 				 ,(car decl2)
                                  ,(mapcar #'(lambda (x)
                                               (if (every #'realp x)
@@ -1139,7 +1139,7 @@
 	      ((eq type 'ARRAY)
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
                          
-		   (return `(declare (type (simple-array 
+		   (return `(declare (type (,*array-type*
 					    ,(get_array_type (caar decl) 
 							     vble-is-formal-arg)
 					    ,(mapcar #'(lambda (x) 
@@ -1153,13 +1153,13 @@
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
-			 `(declare (type (simple-array (member t nil) ,(cadar decl)) 
+			 `(declare (type (,*array-type* (member t nil) ,(cadar decl)) 
 				    ,vble_name))
 			 `(declare (type (member t nil) ,vble))))))
 	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return 
 		       (if (cdar decl) 
-			   `(declare (type (simple-array 
+			   `(declare (type (,*array-type*
 					    ,type 
 					    ,(mapcar #'(lambda (x) 
 							 (if (every #'realp x)
@@ -1200,12 +1200,12 @@
 	   `(declare (type (simple-array base-char (,(cadr decl))) ,(car decl))))
 	  ((equal (cadr decl) '(*))
 	   ;; unspecified length spec
-	   (format t "unspecified length spec = ~A~%" decl)
+	   ;;(format t "unspecified length spec = ~A~%" decl)
            `(declare (type (simple-array base-char (*)) ,(car decl))))
 	  (t
 	   ;; array, no length spec.
 	   ;;(format t "array, no length spec = ~A~%" decl)
-           `(declare (type (simple-array
+           `(declare (type (,*array-type*
 			    (simple-array base-char ,(if (second type)
 							 `(,(second type))
 							 '(*)))
@@ -1306,7 +1306,7 @@
     (return
      (cond ; check if v is an array 
            ((setq dim (member v *common_array_dims*))
-            `(declare (type (simple-array ,(get_array_type v nil) ',(cadr dim)) 
+            `(declare (type (,*array-type* ,(get_array_type v nil) ',(cadr dim)) 
                             ,(check-reserved-lisp-names v))))
            ; else make ordinary declaration
            (t (make-declaration v))))))
@@ -1915,7 +1915,7 @@
 		;; type (for scalars) or a zero element array of the
 		;; appropriate dimensions for array slots.
 		(if dims
-		    `(,var ,var-init :type (simple-array ,(second var-type) ,(subst '* 0 dims)))
+		    `(,var ,var-init :type (,*array-type* ,(second var-type) ,(subst '* 0 dims)))
 		    `(,var ,var-init :type ,var-type))))
 	  varlist))
 
@@ -1989,8 +1989,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.44 2000/07/14 13:33:26 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.45 2000/07/14 14:08:26 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.45  2000/07/14 14:08:26  rtoy
+;;; Honor the user's choice of declaring arrays as array or simple-array.
+;;; Except we leave Fortran character strings still declared as
+;;; simple-array.
+;;;
 ;;; Revision 1.44  2000/07/14 13:33:26  rtoy
 ;;; Don't apply external ref fixups if the external function was also a
 ;;; parameter to the routine.  If we do, then we referring to the wrong

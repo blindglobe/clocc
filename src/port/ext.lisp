@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.20 2001/06/08 21:43:34 sds Exp $
+;;; $Id: ext.lisp,v 1.21 2001/06/08 21:58:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -74,6 +74,7 @@ This carries the function name which makes the error message more useful."))
   `(progn (declaim (type ,type ,name))
     ;; since constant redefinition must be the same under EQL, there
     ;; can be no constants other than symbols, numbers and characters
+    ;; see ANSI CL spec 3.1.2.1.1.3 "Constant Variables"
     (,(if (subtypep type '(or symbol number character)) 'defconstant 'defvar)
      ,name (the ,type ,init) ,doc)))
 
@@ -124,8 +125,7 @@ To be passed as the third arg to `read' and checked against using `eq'.")
 
 (defun eof-p (stream)
   "Return T if the stream has no more data in it."
-  (let ((cc (read-char stream nil nil)))
-    (if cc (unread-char cc stream) t)))
+  (null (peek-char nil stream nil nil)))
 
 (defun string-tokens (string &key (start 0) max)
   "Read from STRING repeatedly, starting with START, up to MAX tokens.
@@ -147,8 +147,8 @@ so that the bare symbols are read as keywords."
                           t nil :start start))))
 
 #+cmu (progn
-        (import '(ext:required-argument) :port)
-        (export '(ext:required-argument) :port))
+        (import 'ext:required-argument :port)
+        (export 'ext:required-argument :port))
 #-cmu (progn
         (proclaim '(ftype (function () nil) required-argument))
         (defun required-argument ()

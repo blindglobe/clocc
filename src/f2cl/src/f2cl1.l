@@ -35,15 +35,18 @@ block; the value is a list of all variables in the common block.")
 (defvar *common-block-initialized* '())
 (defvar *relaxed-array-decls* t
   "If T, array declarations with sizes are relaxed to be any size.")
-(defvar *coerce-assignments* nil
-  "If T, all assignments statemnts are wrapped with a coerce to the appropriate type.  Fortran 77 does this automatically.")
+(defvar *coerce-assignments* :never
+  "This controls how assignment statements are coerced.  If T or
+:always, assignments are always ccoerced.  If NIL or :never,
+assignments are never coerced.  For any other value, coercion is done
+only when needed. ")
 (defvar *default-lisp-extension* "lisp"
   "The default extension (file type) for the output file name")
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
 			(auto-save t) (relaxed-array-decls t)
-			(coerce-assigns nil)
+			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file)
   "Fortran to Common Lisp converter
@@ -59,8 +62,10 @@ INPUT-FILE               File containing Fortran code
 :AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  Default = T.
 :RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters
                          to functions.  Default = T.
-:COERCE-ASSIGNS          If T, all assignment statements automatically coerce the RHS to the
-                         appropriate type for the assignment.  Default = NIL.
+:COERCE-ASSIGNS          If T or :ALWAYS, all assignment statements automatically coerce the
+                         RHS to the appropriate type for the assignment.  If NIL or :NEVER,
+                         coercion never happens.  Otherwise, coercion happens as needed.
+                         The Default = :AS-NEEDED
 :EXTENSION               The extension to use for the output file, if needed.  Defaults to
                          *DEFAULT-LISP-EXTENSION* or \"lisp\"
 :KEEP-TEMP-FILE          If T, the temporary file is not deleted.  Default = NIL.
@@ -820,9 +825,34 @@ main-loop
        (if (listp lhs)
 	   (parse-arrayref-or-stmtfn lhs rhs)
 	   (and (check_new_vbles (list lhs))
-		(if *coerce-assignments*
-		    `((setf ,lhs (coerce ,rhs (type-of ,lhs))))
-		    `((setf ,lhs ,rhs))))))))
+		(cond ((find *coerce-assignments* '(t :always))
+		       `((setf ,lhs (coerce ,rhs (type-of ,lhs)))))
+		      ((find *coerce-assignments* '(nil :never))
+		       `((setf ,lhs ,rhs)))
+		      (t
+		       (let ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+			     (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
+			 (format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+			 ;; RHS.  Otherwise, coerce the RHS to the
+			 ;; type of the LHS.  However, we can't coerce
+			 ;; something to an integer.  Use truncate for
+			 ;; that.
+			 (cond ((or (eq t rhs-type)
+				    (eq t lhs-type)
+				    (eq lhs-type rhs-type))
+				;; No coercion is needed if the types
+				;; match, or if we can't determine the
+				;; type of the LHS or RHS.
+				`((setf ,lhs ,rhs)))
+			       ((and (subtypep lhs-type 'integer)
+				     (not (subtypep rhs-type 'integer)))
+				;; We're trying to set a integer
+				;; variable to non-integer value.  Use
+				;; truncate.
+				`((setf ,lhs (truncate ,rhs))))
+			       (t
+				;; Haven't a clue, so coerce
+				`((setf ,lhs (coerce ,rhs ',lhs-type)))))))))))))
 
 (defun parse-arrayref-or-stmtfn (lhs rhs)
   ;;lhs is either an array ref or a statement function name

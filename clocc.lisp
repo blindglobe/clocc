@@ -8,9 +8,23 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.2 2000/03/07 11:15:41 haible Exp $
+;;; $Id: clocc.lisp,v 1.3 2000/04/05 15:30:09 marcoxa Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 ;;; $Log: clocc.lisp,v $
+;;; Revision 1.3  2000/04/05 15:30:09  marcoxa
+;;; Added special translations for defsystem.
+;;; Unfortunately, the directory name chosen (defsystem-3.x) is not valid
+;;; wrt logical pathname syntax.  I.e.
+;;;
+;;;     (translate-logical-pathname "CLOCC:src;defsystem-3.x;defsystem.lisp")
+;;;
+;;; yields and error because of the dot in the directory part.
+;;;
+;;; Therefore I added two new translations for defsystem.  You can now
+;;; specify "CLOCC:src;defsystem;defsystem.lisp" or
+;;; "CLOCC:src;defsystem-3-x;defsystem.lisp" to get the 'right'
+;;; translation.
+;;;
 ;;; Revision 1.2  2000/03/07 11:15:41  haible
 ;;; Add comment about recommended CLISP version.
 ;;;
@@ -79,6 +93,9 @@
 ;; 1999-07-22 had serious bugs with logical pathnames.
 
 (setf (logical-pathname-translations "clocc")
-      '(("**;*" "/usr/local/src/clocc/**/*")))
+      '(("src;defsystem;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
+	("src;defsystem-3-x;*" "/usr/local/src/clocc/src/defsystem-3.x/*")
+	("**;*" "/usr/local/src/clocc/**/*")
+	))
 
 ;;; clocc.lisp ends here

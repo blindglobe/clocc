@@ -1,4 +1,4 @@
-;;; File: <geo.lisp - 2000-02-18 Fri 14:21:50 EST sds@ksp.com>
+;;; File: <geo.lisp - 2000-03-03 Fri 17:49:06 EST sds@ksp.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
 ;;;
@@ -9,7 +9,7 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: geo.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: geo.lisp,v 2.1 2000/03/03 22:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -321,7 +321,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 (defun view-country (&rest find-args)
   (let ((ntn (if (country-p (car find-args)) (car find-args)
 		 (car (apply #'find-country find-args)))))
-    (view-url (url (format nil *geo-info-template* (country-fips ntn))))))
+    (browse-url (url (format nil *geo-info-template* (country-fips ntn))))))
 
 (defmacro dump-find-country ((&rest find-args)
                              (&rest dump-args &key (out *standard-output*)

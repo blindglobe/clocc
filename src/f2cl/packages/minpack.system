@@ -1,8 +1,12 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.7 2002/07/02 21:32:36 rtoy Exp $
+;;; $Id: minpack.system,v 1.8 2002/07/02 22:14:09 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.8  2002/07/02 22:14:09  rtoy
+;;; o Add component for run-minpack-tests
+;;; o The tests are in the MINPACK package, not MINPACK-TESTS package.
+;;;
 ;;; Revision 1.7  2002/07/02 21:32:36  rtoy
 ;;; Add dependency to minpack.lisp to define the package.
 ;;;
@@ -83,19 +87,23 @@
 
 (mk:defsystem minpack-tests
     :source-pathname "clocc:src;f2cl;packages;minpack"
-    :depends-on ("minpack")
     :components
-    ((:module "tests"
+    ((:module "main"
+	      :source-pathname ""
+	      :package "MINPACK"
+	      :components
+	      ((:file "run-minpack-tests")))
+     (:module "tests"
 	      :source-pathname ""
 	      :source-extension "f"
-	      :package "MINPACK-TESTS"
+	      :package "MINPACK"
 	      :language :f2cl
 	      :compiler-options (:include-comments t
 				 :keep-lisp-file t
 				 :relaxed-array-decls nil
 				 :array-type :array
 				 :array-slicing t
-				 :package "MINPACK-TESTS"
+				 :package "MINPACK"
 				 :declare-common t)
 	      :components
 	      ((:file "tst-lmdif")

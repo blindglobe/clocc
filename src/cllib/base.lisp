@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-04-09 Fri 15:14:43 EDT sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-04-12 Mon 17:33:09 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.14 1999/04/09 19:15:32 sds Exp $
+;;; $Id: base.lisp,v 1.15 1999/04/12 21:34:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.15  1999/04/12 21:34:26  sds
+;;; (tz->string): new function: print the TimeZone to a string like "-0400"
+;;; (current-time): use it.
+;;;
 ;;; Revision 1.14  1999/04/09 19:15:32  sds
 ;;; Moved `*current-project*' here.
 ;;;
@@ -463,19 +467,27 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
   "*The names of the days of the week.")
 (defconst +time-zones+ list
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
-    (0 "GMT" . "GDT"))
+    (0 "GMT" . "GDT") (-2 "MET" . "MET DST"))
   "*The string representations of the time zones.")
 (defconst +whitespace+ (simple-array character (*))
   (mk-arr 'character '(#\Space #\Newline #\Tab #\Linefeed #\Return #\Page))
   "*The whitespace characters.")
 
+(defun tz->string (tz)
+  "Convert the CL timezone (rational [-24;24], multiple of 3600) to a string."
+  (declare (type rational tz))
+  (multiple-value-bind (hr mm) (floor (abs tz))
+    (let ((mi (floor (* 60 mm))))
+      (format nil "~:[+~;-~]~2,'0d~2,'0d" (minusp tz) hr mi))))
+
 (defun current-time (&optional (stream t))
   "Print the current time to the stream (defaults to t)."
   (multiple-value-bind (se mi ho da mo ye dw dst tz) (get-decoded-time)
     (declare (fixnum se mi ho da mo ye dw tz))
-    (format stream "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~a(~@d)"
+    (format stream "~4d-~2,'0d-~2,'0d ~a ~2,'0d:~2,'0d:~2,'0d ~@d (~a)"
             ye mo da (aref +week-days+ dw) ho mi se
-            (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)) tz)))
+            (tz->string (- (if dst 1 0) tz))
+            (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)))))
 
 ;;;
 ;;; }}}{{{ Function Compositions

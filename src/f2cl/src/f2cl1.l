@@ -28,6 +28,14 @@
 	      *functions-used*
 	      *vble-declaration-done*)))
 
+(defvar *common-blocks* (make-hash-table)
+  "Hash table of all common blocks.  The key is the name of the common
+block; the value is a list of all variables in the common block.")
+
+(defvar *common-block-initialized* '())
+(defvar *relaxed-array-decls* t
+  "If T, array declarations with sizes are relaxed to be any size.")
+
 ;----------------------------------------------------------------------------
 #+nil
 (defun f2cl (&rest args)
@@ -60,7 +68,7 @@
     (fortran-to-lisp (preprocess input-file) output-file)
     (values output-file)))
 
-(defun f2cl (input-file output-file &key verbose prune-labels include-comments (auto-save t))
+(defun f2cl (input-file output-file &key verbose prune-labels include-comments (auto-save t) (relaxed-array-decls t))
   "Fortran to Common Lisp converter
 
 INPUT-FILE              File containing Fortran code
@@ -70,16 +78,19 @@ VERBOSE                 verbose output. (default is nil)
 PRUNE-LABELS            Prune unused labels. (default is nil)
 INCLUDE-COMMENTS	Include comments in the Lisp output
 AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  (default = t)
+RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters to functions
 "
 
 
   (format t "Copyright(c) 92-95 University of Waikato - all rights reserved~%")
-  (format t "1997 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)")
+  (format t "1997, 1999 Many changes and fixes by Raymond Toy (toy@rtp.ericsson.se)~%")
 
   (let ((*verbose* verbose)
 	(*prune_labels* prune-labels)
 	(*comments* include-comments)
-	(*auto-save-data* auto-save))
+	(*auto-save-data* auto-save)
+	(*common-block-initialized* nil)
+	(*relaxed-array-decls* relaxed-array-decls))
     #+nil
     (when *verbose*
       (format t "~%  - compiles for VAX LISP, LUCID, ALLEGRO, CLISP + simpletest~%")
@@ -339,6 +350,7 @@ main-loop
 	   *functions-used* nil
 	   *vble-declaration-done* nil)
 
+     (clrhash *common-blocks*)
      (setq fort-fun
 	   (do ((lines prog-list (cdr lines)) 
 		(fort-fun nil (append fort-fun
@@ -365,9 +377,16 @@ main-loop
      (multiple-value-bind (spec-proc spec-decl fun)
 	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
        (when spec-proc
-	 (special-print spec-proc outport)
-	 (terpri outport)
-	 (special-print spec-decl outport)
+	 (mapc #'(lambda (s-proc s-decl)
+		   (unless (find (second s-decl) *common-block-initialized*)
+		     (special-print s-proc outport)
+		     (terpri outport)
+		     (special-print s-decl outport)
+		     (terpri outport)
+		     (terpri outport))
+		   (pushnew (second s-decl) *common-block-initialized*))
+	       spec-proc
+	       spec-decl)
 	 (terpri outport))
        (special-print fun outport))
      (print (cadr fort-fun))		;indicate which subprogram is being translated
@@ -951,37 +970,63 @@ main-loop
         (append save_vbles
                 (remove '|,| (if (eq (first (cdr x)) '/) (cddddr x) (cdr x)))))
    nil) 
-
+  
 (defun parse-common (x)
    (setq x (mapcar #'(lambda (l) (remove '|,| l))
                    (list-split '|/| (cdr x))))
    (setq x (if (null (car x)) (cdr x) (cons nil x)))
-   ; x now in form (cb nlist cb nlist ... )
-   ; pick out lists of vblenames and add to subprog_common_vars 
+   ;; x now in form (cb nlist cb nlist ... )
+
+   ;; Pick out the common blocks and variables and put them in a hash
+   ;; table for later use.  We want to associate the variables with
+   ;; the common block.
+   (do ((list x (cddr list)))
+       ((endp list))
+     (let ((varlist (mapcar #'check-t-and-pi (second list)))
+	   (block-name (or (caar list)
+			   '%BLANK%)))
+       ;; Check to see if this is another instance.  If so, the elements
+       ;; of the common block should match.
+       (multiple-value-bind (val found)
+	   (gethash block-name *common-blocks*)
+	 (cond ((not found)
+		(setf (gethash block-name *common-blocks*)
+		      varlist))
+	       (t
+		;; Found the common block
+		(unless (equalp val varlist)
+		  (format t "val = ~S~%" val)
+		  (format t "lst = ~S~%" varlist)
+		  (warn "current common block doesn't match previous occurrence")))))))
+
+   
+   ;; pick out lists of vblenames and add to subprog_common_vars
    (setq subprog_common_vars 
          (append subprog_common_vars
                  (do ((list x (cddr list))
                       (ret nil (append (extract-atoms (cadr list)) ret)))
-                     ((endp list) ret)
-                     ; look for common arrays and store dimensions of new common vars
-                     (do ((nlist (cadr list) (cdr nlist)))
-                         ((endp nlist))
-                         (cond ((and (cdr nlist) (listp (cadr nlist)))
-                                ; array dimensioned in COMMON stmt
-                                (update_cm_array_dims (car nlist) 
-                                                      (remove '|,| (cadr nlist)))
-                                (setq nlist (cdr nlist)))
-                               ; check if array dimensioned elsewhere
-                               ((member (car nlist) declared_vbles)
-                                (do ((decls explicit_vble_decls (cdr decls)))
-                                    ((null decls) nil)
-                                    (do ((vbles (cdar decls) (cdr vbles)))
-                                        ((null vbles) nil)
-                                        (if (and (eq (car nlist) (caar vbles))
-                                                 (cdar vbles))
-                                            (update_cm_array_dims (car nlist)
-                                                                  (cdar vbles))))))
-                         )))))
+                     ((endp list)
+		      (mapcar #'check-t-and-pi ret))
+		   ;; look for common arrays and store dimensions of
+		   ;; new common vars
+		   (do ((nlist (cadr list) (cdr nlist)))
+		       ((endp nlist))
+		     (cond ((and (cdr nlist) (listp (cadr nlist)))
+			    ;; array dimensioned in COMMON stmt
+			    (update_cm_array_dims (car nlist) 
+						  (remove '|,| (cadr nlist)))
+			    (setq nlist (cdr nlist)))
+			   ;; check if array dimensioned elsewhere
+			   ((member (car nlist) declared_vbles)
+			    (do ((decls explicit_vble_decls (cdr decls)))
+				((null decls) nil)
+			      (do ((vbles (cdar decls) (cdr vbles)))
+				  ((null vbles) nil)
+				(if (and (eq (car nlist) (caar vbles))
+					 (cdar vbles))
+				    (update_cm_array_dims (car nlist)
+							  (cdar vbles))))))
+			   )))))
 ;   (print common_array_dims)                
    nil)
 

@@ -249,8 +249,8 @@
 	(bot (gensym)))
     `(let ((,top ,x)
 	  (,bot ,y))
-      (if (and (typep ,top 'fixnum)
-	       (typep ,bot 'fixnum))
+      (if (and (typep ,top 'integer)
+	       (typep ,bot 'integer))
 	  (values (truncate ,top ,bot))
 	  (/ ,top ,bot)))))
 
@@ -552,6 +552,9 @@
    `(cosh ,x))
 (defmacro dtanh (x)
    `(tanh ,x))
+
+(defmacro ffloat (x)
+  `(float x 1f0))
 
 (defun process-implied-do (ido low-bnds init)
   (let* ((implied-do (remove '|,| ido))

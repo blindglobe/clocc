@@ -747,10 +747,28 @@
 (defun create-sym-macros-array (common_var_decls)
   (let ((sym-mlets '())
 	(sym-lets ()))
-    (flet
-	((process-block (key varlist)
-	   (let ((block-special-name (intern (format nil "*~A-COMMON-BLOCK*" key)))
-		 (part 0)
+    (labels
+	((create (key v var-type part posn len arrayp)
+	   #+nil
+	   (format t "var = ~A :type ~A Part ~A posn ~A~%"
+		   v var-type part posn)
+	   (let ((accessor-name
+		  (intern (format nil "~A-~A" key v)))
+		 (name
+		  (intern (format nil "*~A-COMMON-BLOCK*" key)))
+		 (part-name (intern (format nil "~A-PART-~D" key part))))
+	     (if arrayp
+		 (progn
+		   (push `(,accessor-name
+			   (make-array ,len :element-type ',(second var-type)
+				       :displaced-to (,part-name ,name)
+				       :displaced-index-offset ,posn))
+			 sym-lets)
+		   (push `(,v ,accessor-name) sym-mlets))
+		 (push `(,v (aref (,part-name ,name) ,posn))
+		       sym-mlets))))
+	 (process-block (key varlist)
+	   (let ((part 0)
 		 (prev-type nil)
 		 (total-len 0)
 		 (posn 0))
@@ -759,62 +777,22 @@
 		      (var-type (if decl (second decl) nil))
 		      (el-type (if (subtypep var-type 'array)
 				   (second var-type)
-				   var-type))
-		      (dims (cond ((and (listp var-type)
-					(subtypep var-type 'array)
-					(not (subtypep var-type 'string)))
-				   ;;(format t "array var-type = ~A ~A~%" var var-type)
-				   ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
-
-				   ;; If the dimension of the array is
-				   ;; a number, use the actual
-				   ;; dimension.  Otherwise use 0.
-				   (if (every #'numberp (third var-type))
-				       (third var-type)
-				       0))
-				  (t nil))))
+				   var-type)))
 		 (unless prev-type
 		   (setf prev-type el-type))
 		 (multiple-value-bind (len arrayp)
 		     (if (subtypep var-type 'array)
 			 (values (first (third var-type)) t)
 			 (values 1 nil))
-		   (flet ((create ()
-			    #+nil
-			    (format t "var = ~A :type ~A Part ~A posn ~A~%"
-				    v var-type part posn)
-			    (let ((accessor-name
-				   (intern (format nil "~A-~A" key v)))
-				  (name
-				   (intern (format nil "*~A-COMMON-BLOCK*" key))))
-			    (if arrayp
-				(progn
-				  (push `(,accessor-name
-					  (make-array ,len :element-type ',(second var-type)
-						      :displaced-to (,(intern (format nil "~A-PART-~D" key part))
-								      ,name)
-						      :displaced-index-offset ,posn))
-					sym-lets)
-				  (push `(,v ,accessor-name) sym-mlets))
-				(push `(,v (aref (,(intern (format nil "~A-PART-~D" key part))
-						   ,block-special-name)
-						 ,posn))
-				      sym-mlets)))))
-			      
-		     (cond ((eq prev-type el-type)
-			    ;; Same block
-			    (create)
-			    (incf total-len len)
-			    (incf posn len))
-			   (t
-			    (setf prev-type el-type)
-			    (incf part)
-			    (setf total-len 0)
-			    (setf posn 0)
-			    (create)
-			    (incf total-len len)
-			    (incf posn len)
-			    )))))))))
+		   (unless (eq prev-type el-type)
+		     (setf prev-type el-type)
+		     (incf part)
+		     (setf total-len 0)
+		     (setf posn 0))
+		       
+		   (create key v var-type part posn len arrayp)
+		   (incf total-len len)
+		   (incf posn len)))))))
       (maphash #'process-block *common-blocks*)
       (setf sym-mlets (nreverse sym-mlets))
       (setf sym-lets (nreverse sym-lets))
@@ -2790,7 +2768,7 @@
   ;; INSERT-DECLARATIONS.  We use that to determine the appropriate
   ;; initalizations for the variables.
   (if *common-blocks-as-arrays*
-      (make-common-block-vars-array-like varlist common_var_decls)
+      (make-common-block-vars-as-array varlist common_var_decls)
       (mapcar #'(lambda (var)
 		  (let* ((decl (find var (rest common_var_decls)
 				     :key #'third))
@@ -2838,7 +2816,7 @@
 			`(,var ,var-init :type ,var-type))))
 	      varlist)))
 
-(defun make-common-block-vars-array-like (varlist common_var_decls)
+(defun make-common-block-vars-as-array (varlist common_var_decls)
   (let ((part 0)
 	(prev-type nil)
 	(total-len 0)
@@ -2959,24 +2937,28 @@
   (let ((var-inits '()))
     (maphash
      #'(lambda (key val)
-	 (push `(let* ,key-params
-		 ,@key-param-decls
-		 (defparameter ,(intern (concatenate 'string
-						     "*"
-						     (symbol-name key)
-						     (symbol-name '#:-common-block*)))
-		   (,(intern (concatenate 'string
-					  (symbol-name '#:make-)
-					  (symbol-name key)))
-		     ,@(make-common-block-var-init val comm-decls))))
+	 (push `(eval-when (:compile-toplevel :load-toplevel :execute)
+		  (let* ,key-params
+		    ,@key-param-decls
+		    (defparameter ,(intern (concatenate 'string
+							"*"
+							(symbol-name key)
+							(symbol-name '#:-common-block*)))
+		      (,(intern (concatenate 'string
+					     (symbol-name '#:make-)
+					     (symbol-name key)))
+			,@(make-common-block-var-init val comm-decls)))))
 	       var-inits))
      comm-blocks)
     (nreverse var-inits)))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.119 2004/08/14 16:10:10 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.120 2004/08/14 19:27:41 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.120  2004/08/14 19:27:41  rtoy
+;;; Try to clean up code a little.
+;;;
 ;;; Revision 1.119  2004/08/14 16:10:10  rtoy
 ;;; Forgot to create the symbol-macrolet for arrays in the common block,
 ;;; when using common-blocks-as-arrays.

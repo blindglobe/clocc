@@ -6,6 +6,8 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
+# $Id: run-lisp,v 1.7 2000/03/01 20:17:02 sds Exp $
+# $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
 # one of these:
@@ -279,7 +281,7 @@ case "$1" in
     case "$LISPTYPE" in
       clisp )
           todo="(setq lisp:*load-paths* '(#P\"\")) "$todo
-          ${CLISP-clisp} ${image+"-M ${image}.mem"} -x '('"progn $todo"')'
+          ${CLISP-clisp} -norc -q ${image+"-M ${image}.mem"} -x "$todo"
           ;;
       cmucl )
           # we have to convince CMUCL to return a proper exit status.

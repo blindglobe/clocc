@@ -25,7 +25,7 @@
 ;;
 ;;(format t "~&The f2cl software has been loaded.~%")
 
-(defpackage "FORTAN-TO-LISP"
+(defpackage "FORTRAN-TO-LISP"
     (:use "CL")
   (:documentation "The package holding all symbols need by the Fortran to Lisp converter")
   (:nicknames "F2CL")
@@ -65,8 +65,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.3 2000/07/28 16:56:48 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.4 2000/07/28 22:07:44 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.4  2000/07/28 22:07:44  rtoy
+;;; It's FORTRAN, not FORTAN!
+;;;
 ;;; Revision 1.3  2000/07/28 16:56:48  rtoy
 ;;; f2cl0.l isn't the (unused) f2cl loader anymore.  Use it to define the
 ;;; package used by f2cl.

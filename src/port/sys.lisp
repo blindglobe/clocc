@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.5 2000/03/03 22:01:03 sds Exp $
+;;; $Id: sys.lisp,v 1.6 2000/03/22 23:54:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 ;;; $Log: sys.lisp,v $
+;;; Revision 1.6  2000/03/22 23:54:05  sds
+;;; use package prefixes for CMU CL and GCL
+;;;
 ;;; Revision 1.5  2000/03/03 22:01:03  sds
 ;;; fixed provide statements
 ;;;
@@ -45,7 +48,7 @@
 
 (defun getenv (var)
   "Return the value of the environment variable."
-  #+cmu (cdr (assoc (string var) *environment-list* :test #'equalp
+  #+cmu (cdr (assoc (string var) ext:*environment-list* :test #'equalp
                     :key #'string)) ; xlib::getenv
   #+(or allegro clisp) (system::getenv (string var))
   #+lispworks (lw:environment-variable (string var))
@@ -149,7 +152,7 @@ all slots are returned, otherwise only the slots with
 (defun chdir (dir)
   #+allegro (ext:chdir dir)
   #+clisp (lisp:cd dir)
-  #+cmu (setf (default-directory) dir)
+  #+cmu (setf (ext:default-directory) dir)
   #+gcl (si:chdir dir)
   #+lispworks (hcl:change-directory dir)
   #+lucid (working-directory dir)

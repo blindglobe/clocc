@@ -1369,12 +1369,13 @@
          #+TI ("lisp" . #.(string (si::local-binary-file-type)))
          #+:gclisp                            ("LSP"  . "F2S")
          #+pyramid                            ("clisp" . "o")
-         #+:coral                             ("lisp" . "pfsl")
+
 	 ;; Harlequin LispWorks
 	 #+:lispworks 	      ("lisp" . ,COMPILER:*FASL-EXTENSION-STRING*)
 ;        #+(and :sun4 :lispworks)             ("lisp" . "wfasl")
 ;        #+(and :mips :lispworks)             ("lisp" . "mfasl")
-         #+:mcl                               ("lisp" . "pfsl")
+         #+:mcl                               ("lisp" . ,(pathname-type (compile-file-pathname "foo.lisp")))
+         #+:coral                             ("lisp" . "fasl")
 
          ;; Otherwise,
          ("lisp" . ,(pathname-type (compile-file-pathname "foo.lisp")))))

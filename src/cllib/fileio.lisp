@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.16 2001/03/29 23:33:01 sds Exp $
+;;; $Id: fileio.lisp,v 1.17 2001/03/30 22:22:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -128,7 +128,7 @@ Returns the number of records and the file size."
         (format t "done [~:d record~:p] [~:d byte~:p]" len size)
         (values len size)))))
 
-(defun read-list-from-stream (stream read-function &key args
+(defun read-list-from-stream (stream read-function &key args (package +kwd+)
                               (eof +eof+) (readtable *readtable*))
   "Read the input STREAM into the list, each line becomes a list element.
 READ-FUNCTION should take a stream and a read-ahead object as its arguments
@@ -136,16 +136,23 @@ and return two values: the record read and a read-ahead object or EOF for
 end of file.  ARGS are just passed to READ-FUNCTION.
 EOF is passed to `read' and checked against with `eq'. It defaults to `+eof+'.
 Return three values - the list read, its length, and the last element.
-`*package*' is bound to KEYWORD, so bare symbols are read as keywords.
-`*readtable*' is bound to READTABLE."
-  (declare (stream stream)
+`*package*' is bound to PACKAGE, which defaults to the KEYWORD package.
+If PACKAGE is not a package, a package with a generated name is created
+and deleted at the end of the reading.
+`*readtable*' is bound to READTABLE (defaults to `*readtable*')."
+  (declare (stream stream) (readtable readtable)
            (type (function (stream t t) (values t t)) read-function))
-  (do* ((*package* +kwd+) (*readtable* readtable)
-        (ra (read stream nil eof)) new lst (len 0 (1+ len)))
-       ((eq ra eof) (values (nreverse lst) len new))
-    (declare (type index-t len))
-    (setf (values new ra) (apply read-function stream ra args))
-    (push new lst)))
+  (let ((pack (if (packagep package) package
+                  (make-package (gensym "RLFS-PACK-")))))
+    (unwind-protect
+         (do* ((*package* pack) (*readtable* readtable)
+               (ra (read stream nil eof)) new lst (len 0 (1+ len)))
+              ((eq ra eof) (values (nreverse lst) len new))
+           (declare (type index-t len))
+           (setf (values new ra) (apply read-function stream ra args))
+           (push new lst))
+      (unless (packagep package)
+        (delete-package pack)))))
 
 (defun read-list-from-file (fin read-function &rest args)
   "Read the file into the list.  Calls `read-list-from-stream'.

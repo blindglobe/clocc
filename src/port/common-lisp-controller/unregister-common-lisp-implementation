@@ -40,7 +40,7 @@ EOF
 fi
 
 # Uninstall the CLC
-sh $IMPL_BIN remove-defsystem || echo "De-installation of CLC failed" >&2
+sh $IMPL_BIN remove-clc || echo "De-installation of CLC failed" >&2
 
 clc-autobuild-impl $IMPL inherit
 

@@ -1,3 +1,4 @@
+      program tlmder
 C     **********
 C
 C     THIS PROGRAM TESTS CODES FOR THE LEAST-SQUARES SOLUTION OF
@@ -28,7 +29,7 @@ C     **********
       DOUBLE PRECISION FACTOR,FNORM1,FNORM2,ONE,TEN,TOL
       DOUBLE PRECISION FJAC(65,40),FNM(60),FVEC(65),WA(265),X(40)
       DOUBLE PRECISION DPMPAR,ENORM
-      EXTERNAL FCN
+      EXTERNAL FCNJ
       COMMON /REFNUM/ NPROB,NFEV,NJEV
 C
 C     LOGICAL INPUT UNIT IS ASSUMED TO BE NUMBER 5.
@@ -42,7 +43,32 @@ C
       LWA = 265
       IC = 0
    10 CONTINUE
-         READ (NREAD,50) NPROB,N,M,NTRIES
+c
+c     Describe the possible functions
+c
+      print *, 'Enter prob no, dimensions m, n, and the number of 
+     $     tries'
+      print *, ' 1: linear function, full rank. m >= n'
+      print *, ' 2: linear function, rank 1. m >= n'
+      print *, ' 3: linear function, rank 1, zero cols, rows. m >= n'
+      print *, ' 4: Rosenbrock, m=2, n=2'
+      print *, ' 5: Helical valley, m=3, n=3'
+      print *, ' 6: Powell singular, m=4, n=4'
+      print *, ' 7: Freudenstein and Roth, m=2, n=2'
+      print *, ' 8: Bard, m=15, n=3'
+      print *, ' 9: Kowalik and Osborne, m=11, n=4'
+      print *, '10: Meyer, m=16, n=3'
+      print *, '11: Watson, m=31, n=2-31 (6 or 9 typical)'
+      print *, '12: Box 3-D, m>=n, n=3. (m=10 typical)'
+      print *, '13: Jennrich and Sampson, m>=n, n=2. (m=10 typical)'
+      print *, '14: Brown and Dennis, m>=n, n=4. (m=20 typical)'
+      print *, '15: Chebyquad, m>=n'
+      print *, '16: Brown almost-linear, m=n'
+      print *, '17: Osborne 1 function, m=33, n=5'
+      print *, '18: Osborne 2 function, m=65, n=11'
+      print *, '-1: exit'
+
+         READ (NREAD,*) NPROB,N,M,NTRIES
          IF (NPROB .LE. 0) GO TO 30
          FACTOR = ONE
          DO 20 K = 1, NTRIES
@@ -53,7 +79,7 @@ C
             WRITE (NWRITE,60) NPROB,N,M
             NFEV = 0
             NJEV = 0
-            CALL LMDER1(FCN,M,N,X,FVEC,FJAC,LDFJAC,TOL,INFO,IWA,WA,
+            CALL LMDER1(FCNJ,M,N,X,FVEC,FJAC,LDFJAC,TOL,INFO,IWA,WA,
      *                  LWA)
             CALL SSQFCN(M,N,X,FVEC,NPROB)
             FNORM2 = ENORM(M,FVEC)
@@ -92,7 +118,7 @@ C
 C     LAST CARD OF DRIVER.
 C
       END
-      SUBROUTINE FCN(M,N,X,FVEC,FJAC,LDFJAC,IFLAG)
+      SUBROUTINE FCNJ(M,N,X,FVEC,FJAC,LDFJAC,IFLAG)
       INTEGER M,N,LDFJAC,IFLAG
       DOUBLE PRECISION X(N),FVEC(M),FJAC(LDFJAC,N)
 C     **********

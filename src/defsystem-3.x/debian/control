@@ -14,5 +14,3 @@ Description: Make system for Common Lisp Packages
  defsystem3 provides a "make" type functions for Common Lisp packages. It
  provides compilation and loading features for complex Lisp systems
  with multiple modules and files.
-
-

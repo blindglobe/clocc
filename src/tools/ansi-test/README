@@ -1,5 +1,5 @@
 This is a bunch of tests to test if a Common Lisp implementation
-conforms to Ansi standard X3J13 for Common Lisp.
+conforms to ANSI standard X3J13 for Common Lisp.
 
 It is largely based on the clisp test-suite, examples from the HyperSpec and
 bugreports.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.7 2003/07/01 21:51:22 sds Exp $
+;;; $Id: csv.lisp,v 2.8 2004/09/03 16:22:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,7 @@
 (in-package :cllib)
 
 (export '(csv-print-vector csv-parse-string csv-read-file with-csv
-          *csv-separator* *csv-whitespace* *csv-progress*))
+          *csv-separator* *csv-whitespace* *csv-progress* *csv-progress-1*))
 
 (defcustom *csv-separator* character #\,
   "The separator in the CSV file, normally the comma.")
@@ -34,6 +34,8 @@
   "The string of characters to trim from the values.")
 (defcustom *csv-progress* integer 1000
   "*How often the progress report should be made")
+(defcustom *csv-progress-1* integer 10
+  "*How often the secondary progress report should be made")
 
 (defun csv-trim (whitespace string)
   "Trim the string argument from the whitespace."
@@ -56,38 +58,59 @@
     :finally (return res)))
 
 (defmacro with-csv ((vec file &key (progress '*csv-progress*)
-                         (out '*standard-output*))
+                         (progress-1 '*csv-progress-1*) limit
+                         (out '*standard-output*) columns)
                     &body body)
-  "Open FILE and set VEC to successive vectors in it."
-  (with-gensyms ("WITH-CSV-" in fn ln len cols)
-    `(with-timing (:out ,out)
-      (let* ((,fn ,file))
-        (with-open-file (,in ,fn :direction :input)
-          (format ,out "~&Reading `~a' [~:d bytes]..."
-                  ,fn (file-length ,in))
-          (force-output ,out)
-          (loop :with ,vec :and ,cols
-            :for ,ln = (read-line ,in nil nil) :and ,len :upfrom 1
-            :while ,ln :do (setq ,vec (csv-parse-string ,ln))
-            (if ,cols
-                (assert (= ,cols (length ,vec)) (,cols ,vec)
-                        "~&~s:~:d: Wrong column count ~:d instead of ~:d:~%~s"
-                        ,fn ,len (length ,vec) ,cols ,vec)
-                (setq ,cols (length ,vec)))
-            ,@body
-            (when (and ,progress ,out (zerop (mod ,len ,progress)))
-              (princ "." ,out) (force-output ,out))
-            :finally (progn (format ,out "done [~:d record~:p, ~:d column~:p]"
-                                    (decf ,len) ,cols)
-                            (return ,len))))))))
+  "Open FILE and set VEC to successive vectors in it.
+Return 3 values:
+  number of records (lines) read,
+  number of bytes in the file,
+  fraction of bytes read"
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim)
+    `(with-timing (:out ,out :count ,len :units "records")
+       (let* ((,fn ,file) (,pro ,progress) (,pro1 ,progress-1) ,fsize
+              ,@(when limit `((,lim ,limit))))
+         (with-open-file (,in ,fn :direction :input)
+           (format ,out "~&Reading `~a' [~:d bytes]..."
+                   ,fn (setq ,fsize (file-length ,in)))
+           (force-output ,out)
+           (loop :with ,vec :and ,cols = ,columns :and ,pro1-count = 0
+             :for ,ln = (read-line ,in nil nil) :while ,ln
+             ,@(when limit
+                 `(:when (= ,len ,lim)
+                    :do (warn "reached the limit of ~:D record~:P ~
+                               at ~:D byte~:P (~4F%), aborted~%"
+                              ,len (file-position ,in)
+                              (/ (file-position ,in) ,fsize 1d-2))
+                        (loop-finish)))
+             :do (setq ,vec (csv-parse-string ,ln)) (incf ,len)
+             (if ,cols
+                 (assert (= ,cols (length ,vec)) (,cols ,vec)
+                         "~&~s:~:d: Wrong column count ~:d instead of ~:d:~%~s"
+                         ,fn ,len (length ,vec) ,cols ,vec)
+                 (setq ,cols (length ,vec)))
+             ,@body
+             (when (and ,pro ,out (zerop (mod ,len ,pro)))
+               (princ "." ,out) (force-output ,out)
+               (when (and ,pro1 (= ,pro1 (incf ,pro1-count)))
+                 (let ((pos (/ (file-position ,in) ,fsize)))
+                   (format ,out "<~:D: ~4F%~:[~;!~]>" ,len (* pos 1d2)
+                           ,(when limit `(and ,lim (> ,len (* ,lim pos))))))
+                 (force-output ,out) (setq ,pro1-count 0)))
+             :finally (format ,out "done [~:d record~:p, ~:d column~:p]"
+                              ,len ,cols)
+             :finally (return
+                        (values ,len (file-length ,in)
+                                (if (zerop ,fsize) 1
+                                    (/ (file-position ,in) ,fsize))))))))))
 
 ;;;###autoload
 (defun csv-read-file (inf)
   "Read comma-separated values into a list of vectors."
-  (let (len)
+  (let (len size)
     (values (with-collect (coll)
-              (setq len (with-csv (vec inf) (coll vec))))
-            len)))
+              (setf (values len size) (with-csv (vec inf) (coll vec))))
+            len size)))
 
 (provide :cllib-csv)
 ;;; file csv.lisp ends here

@@ -1,10 +1,10 @@
 ;; Test-Suiten ablaufen lassen: -*- mode: lisp -*-
-(in-package :cl-user)
+(in-package :user)
 
 (declaim (optimize (speed 0)
 		   (safety 3)
 		   (debug 3)))
-		   
+
 (defmacro with-ignored-errors (&rest forms)
   "This macro will evaluate the forms and return
 the returnvalues or the type of the condition used."
@@ -34,7 +34,7 @@ the returnvalues or the type of the condition used."
 				  t))
 			(format stream "~&~%format of ~S failed!"
 				string))))
-    (cond 
+    (cond
      ((eql result my-result)
       (safe-format t "~%EQL-OK: ~S" my-result))
      ((equal result my-result)
@@ -48,34 +48,34 @@ the returnvalues or the type of the condition used."
 	(safe-format t "~%TYPEP-OK, is of the expected error :~S"
 		     result))
        (t
-	(safe-format 
-	 t 
+	(safe-format
+	 t
 	 "~&~%ERROR!! Got an error ~S (~A) I expected a instance of ~S~%"
 	 condition condition
 	 result)
-	(safe-format 
-	 t 
+	(safe-format
+	 t
 	 "~%Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A)~%Why: ~S~%"
 	 form result *lisp-type*
 	 condition condition
 	 why)
 	(setf *output-generated* t)
-	(safe-format 
-	 *log* 
+	(safe-format
+	 *log*
 	 "~&~%~A Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A) ~%Why: ~S~%"
 	 mode form result *lisp-type*
 	 condition condition
 	 why))))
      (t
-      (safe-format t 
+      (safe-format t
 		   "~&~%ERROR!! Got ~S solution ~S expected!"
 		   my-result result)
-      (safe-format t 
+      (safe-format t
 		   "~%~A Form: ~S~%Should be: ~S~%~A: ~S~%Why: ~S~%"
 		   mode form result *lisp-type*
 		   my-result why)
       (setf *output-generated* t)
-      (safe-format *log* 
+      (safe-format *log*
 		   "~&~%~A Form: ~S~%Should be: ~S~%~A: ~S~%Why : ~S~%"
 		   mode form result *lisp-type*
 		   my-result why)))))
@@ -86,7 +86,7 @@ the returnvalues or the type of the condition used."
 	     ',form)
 
      ;;; first we check if it work in interpreted mode
-     
+
      (multiple-value-bind (my-result condition)
 	 (with-ignored-errors
 	  (eval ',form))
@@ -96,7 +96,7 @@ the returnvalues or the type of the condition used."
 		       ,why))
 
      (force-output)
-     
+
      ;;; now we try to compile...
      #+nil ; HACK
      (multiple-value-bind (my-result condition)
@@ -105,9 +105,9 @@ the returnvalues or the type of the condition used."
 	      (compile nil
 		       #'(lambda ()
 			   ,form))
-	    (format t "~&compiled  ~S ~S ~S" 
+	    (format t "~&compiled  ~S ~S ~S"
 		    function warnings-p failure-p)
-	    
+
 	    (multiple-value-bind (my-result condition)
 		(with-ignored-errors
 		 (funcall function))
@@ -220,7 +220,4 @@ the returnvalues or the type of the condition used."
 ;(quit)
 (run-all-tests)
 (format t "~%~%alles ok...~%")
-#+(or sbcl cmu)
 (quit)
-#+clisp
-(lisp:exit)

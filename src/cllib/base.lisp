@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.11 2001/12/06 20:34:33 sds Exp $
+;;; $Id: base.lisp,v 2.12 2001/12/07 18:30:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,10 +23,17 @@
       `(("**;*" ,(logical-pathname "clocc:src;cllib;**;*"))
         ("**;*.*" ,(logical-pathname "clocc:src;cllib;**;*.*"))))
 
+(defun mk-path (default &rest make-pathname-args)
+  "This is a helper function for portable creation of pathnames.
+If you need to create a pathnames under a specific pathname, you need
+to pass it first to `make-pathname' and than to `merge-pathnames' since
+otherwise `*default-pathname-defaults*' will get in the way."
+  (merge-pathnames (apply #'make-pathname :defaults default
+                          make-pathname-args)
+                   default))
+
 (defcustom *datadir* pathname
-  (merge-pathnames (make-pathname :directory '(:relative "data")
-                                  :name nil :defaults nil)
-                   (user-homedir-pathname))
+  (mk-path (user-homedir-pathname) :directory '(:relative "data"))
   "The directory where the data file are created by default.")
 (defcustom *mail-host-address* simple-string
   (let ((st (machine-instance))) (subseq st 0 (position #\Space st)))

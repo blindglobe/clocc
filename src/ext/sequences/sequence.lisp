@@ -1560,7 +1560,7 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
                    (eq (caar body-rest) 'declare))
             (setq declarations (revappend (cdr (pop body-rest)) declarations))
             (return)))
-        (values body-rest (nreverse declarations)))
+        (values body-rest (lisp:nreverse declarations)))
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)) (pointer (gensym)))
       `(BLOCK NIL

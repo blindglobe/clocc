@@ -400,16 +400,21 @@ is not included")
             (error "bad statement number in assigned goto"))
         (go ,i)))
 
+
+(eval-when (:load-toplevel :compile-toplevel :execute)
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
+
 
 (defun assigned-goto-aux (tag-list)
   (let ((cases nil))
     (dolist (tag tag-list)
-      (push `(,tag (go ,(make-label tag)))
+      (push `(,tag (go ,(f2cl::make-label tag)))
 	    cases))
     (push `(t (error "Unknown label for assigned goto")) cases)
     (nreverse cases)))
+)
+
 
 (defmacro assigned-goto (var tag-list)
   `(case ,var
@@ -462,7 +467,8 @@ is not included")
        (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
 				    #.(float (1- (ash 1 31)) 1d0))
 		   x))))))
-  
+
+
 (defun ifix (x)
   (int x))
 (defun idfix (x)
@@ -1303,8 +1309,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.58 2004/08/14 04:17:45 rtoy Exp $
+;;; $Id: macros.l,v 1.59 2004/08/14 22:29:16 marcoxa Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.59  2004/08/14 22:29:16  marcoxa
+;;; Added an EVAL-WHEN to silence the LW compiler.
+;;;
 ;;; Revision 1.58  2004/08/14 04:17:45  rtoy
 ;;; Need a definition for MAKE-LABEL.
 ;;;

@@ -13,7 +13,7 @@
 ;	prune-labels
 ;	cond-remove-end-label
 
-(in-package :cl-user)
+(in-package :f2cl)
 
 (defvar *prune_labels* t)
 (eval-when (compile load eval) (proclaim '(special *verbose*)))
@@ -97,8 +97,11 @@
 ;;;-----------------------------------------------------------------------
 ;;; end of f2cl7.l
 ;;;
-;;; $Id: f2cl7.l,v 1.4 2000/07/27 16:39:17 rtoy Exp $
+;;; $Id: f2cl7.l,v 1.5 2000/07/28 17:07:34 rtoy Exp $
 ;;; $Log: f2cl7.l,v $
+;;; Revision 1.5  2000/07/28 17:07:34  rtoy
+;;; o We are in the f2cl package now.
+;;;
 ;;; Revision 1.4  2000/07/27 16:39:17  rtoy
 ;;; We want to be in the CL-USER package, not the USER package.
 ;;;

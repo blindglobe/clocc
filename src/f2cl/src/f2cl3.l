@@ -22,7 +22,7 @@
 ;	      or returns nil if an ai is missing - this could be used to
 ;	      produce a syntax error.
 ;-----------------------------------------------------------------------------
-(in-package :cl-user)
+(in-package :f2cl)
 
 ;(declare (localf atomcar atomcdr))
 
@@ -160,8 +160,11 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl3.l
 ;;;
-;;; $Id: f2cl3.l,v 1.3 2000/07/27 16:39:17 rtoy Exp $
+;;; $Id: f2cl3.l,v 1.4 2000/07/28 17:02:14 rtoy Exp $
 ;;; $Log: f2cl3.l,v $
+;;; Revision 1.4  2000/07/28 17:02:14  rtoy
+;;; o We are in the f2cl package now.
+;;;
 ;;; Revision 1.3  2000/07/27 16:39:17  rtoy
 ;;; We want to be in the CL-USER package, not the USER package.
 ;;;

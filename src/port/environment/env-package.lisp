@@ -2,7 +2,7 @@
 
 ;;; env-package.lisp --
 ;;;
-;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -154,10 +154,15 @@
   ;;--------------------------------------------
   ;; Across the board utilities.
   (:export #:compiled-file-extension
+           #:source-file-extension
 	   #:binary-directory-name
 	   #:file-system-directory-separator
 	   #:current-working-directory
 	   #:cwd
+           #:print-working-directory
+           #:pwd
+           #:change-current-working-directory
+           #:cd
 	   
 	   #:system-info)
 

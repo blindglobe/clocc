@@ -1,11 +1,11 @@
-;;; n-dim statistics.
+;;; n-dim statistics, histograms &c
 ;;; for simple regression, see math.lisp
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.7 2001/11/02 22:31:15 sds Exp $
+;;; $Id: stat.lisp,v 1.8 2004/07/30 16:29:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,15 +14,17 @@
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `map-vec'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `mesg'
+  (require :cllib-log (translate-logical-pathname "cllib:log"))
   ;; `matrix-solve'
   (require :cllib-matrix (translate-logical-pathname "cllib:matrix")))
 
 (in-package :cllib)
 
-(export '(regress-n regress-poly))
+(export '(regress-n regress-poly histogram))
 
 ;;;
-;;;
+;;; n-dim statistics
 ;;;
 
 (declaim (ftype (function ((simple-array double-float (*)) simple-array fixnum
@@ -94,6 +96,27 @@
                               (type (simple-array double-float (* *)) xx))
                      (expt (aref xx ii 0) (1+ jj))))
       (concatenate 'simple-vector (nreverse vec) (list free)))))
+
+;;;
+;;; histograms
+;;;
+
+(defun histogram (list nbins &key (key #'value) (out *standard-output*))
+  "Return 2 values: vector of length NBINS, bin WIDTH and MDL.
+The vector contains the counts in the Ith bin."
+  (let* ((mdl (standard-deviation-mdl list :key key))
+         (min (mdl-mi mdl)) (max (mdl-ma mdl)))
+    (mesg :log out "~&~S: ~S~%" 'histogram mdl)
+    (assert (/= min max) (min max) "~S: min=max=~A" 'histogram min)
+    (let ((width (/ nbins (- max min))) (last (1- nbins))
+          (vec (make-array nbins :initial-element 0)))
+      (loop :for x :in list :for v = (floor (* width (- (funcall key x) min)))
+        :do (incf (aref vec (min v last))))
+      (loop :for s :across vec :minimize s :into i :maximize s :into a
+        :finally (mesg :log out "~S: bin size from ~:D to ~:D~%"
+                       'histogram i a))
+      (values vec width mdl))))
+
 
 (provide :cllib-stat)
 ;;; file stat.lisp ends here

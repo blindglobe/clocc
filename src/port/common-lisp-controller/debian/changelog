@@ -1,3 +1,9 @@
+common-lisp-controller (3.48) unstable; urgency=low
+
+  * Depend on newest version of cl-asdf
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Mon,  9 Dec 2002 10:28:25 -0700
+
 common-lisp-controller (3.47) unstable; urgency=low
 
   * Updates for new ASDF system. Get rid of 'load-compiled-op

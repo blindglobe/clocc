@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.13 2004/12/23 16:40:41 sds Exp $
+;;; $Id: matrix.lisp,v 2.14 2004/12/23 16:42:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -169,8 +169,7 @@ By default prints the contents.
   "Make the value to be returned."
   (if arr
       (if (equal (array-dimensions arr) dims)
-          (dotimes (ii (array-total-size arr) arr)
-            (setf (row-major-aref arr ii) 0))
+          arr
           (error 'dimension :proc 'array-check-return :args
                  (list (array-dimensions arr) dims)))
       (make-array dims :initial-element 0)))
@@ -229,6 +228,7 @@ The optional third argument is the place where to put the return value."
                                               (array-dimension bb 1)))
                  :for ii :from 0 :below (array-dimension aa 0) :do
                  (loop :for jj :from 0 :below (array-dimension bb 1) :do
+                   (setf (aref res ii jj) 0)
                    (loop :for kk :from 0 :below (array-dimension aa 1) :do
                      (incf (aref res ii jj)
                            (* (aref aa ii kk) (aref bb kk jj)))))
@@ -242,6 +242,7 @@ The optional third argument is the place where to put the return value."
                (loop :with res :of-type array =
                  (array-check-return re (list (array-dimension bb 1)))
                  :for ii :from 0 :below (array-dimension bb 1) :do
+                 (setf (aref res ii) 0)
                  (loop :for jj :from 0 :below (array-dimension aa 0) :do
                    (incf (aref res ii)
                          (* (aref aa jj) (aref bb jj ii))))
@@ -255,6 +256,7 @@ The optional third argument is the place where to put the return value."
                (loop :with res :of-type array =
                  (array-check-return re (list (array-dimension aa 0)))
                  :for ii :from 0 :below (array-dimension aa 0) :do
+                 (setf (aref res ii) 0)
                  (loop :for jj :from 0 :below (array-dimension bb 0) :do
                    (incf (aref res ii) (* (aref aa ii jj) (aref bb jj))))
                  :finally (return res))
@@ -270,8 +272,8 @@ The optional third argument is the place where to put the return value."
                    (setf (aref res ii jj) (* (aref aa ii) (aref bb jj))))
                  :finally (return res)))
           (t (error 'code :proc 'matrix-multiply :args (list aa bb) :mesg
-                    "cannot multiply a matrix <~:/matrix-print/> ~
-                     by a matrix <~:/matrix-print/>")))))
+                    "cannot multiply matrix <~:/matrix-print/> ~
+                     by matrix <~:/matrix-print/>")))))
 
 ;;;
 ;;; solving linear systems

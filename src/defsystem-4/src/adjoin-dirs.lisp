@@ -23,6 +23,8 @@
 The two required arguments may be strings (logical pathname strings
 too), pathnames, or logical pathnames.  They are first parsed and/or
 translated to pathnames and then merged accordingly.
+The result is always a PATHNAME object, which means that it can also be a
+LOGICAL-PATHNAME object.
 It is an error if DP1 resolves to a pathname with a valid NAME
 component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 
@@ -42,12 +44,11 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 ;;; dp1 and p2 are strings.
 ;;; First PARSE-NAMESTRING them.
 
-
+#+old-version
 (defmethod adjoin-directories ((dp1 string) (p2 string) &optional host)
   (debug-message "string string (~S ~S)~%" dp1 p2)
   (adjoin-directories (parse-namestring dp1 host) (parse-namestring p2 host)))
 
-#+not-yet
 (defmethod adjoin-directories ((dp1 string) (p2 string) &optional host)
   (debug-message "string string (~S ~S)~%" dp1 p2)
   (adjoin-directories (parse-namestring dp1 host) p2))
@@ -76,14 +77,14 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 			       &optional host)
   (declare (ignore host))
   (debug-message "logical-pathname logical-pathname (~S ~S)~%" dp1 p2)
-  (translate-logical-pathname (merge-pathnames p2 dp1)))
+  (translate-logical-pathname (merge-pathnames p2 dp1 nil)))
 
 
 (defmethod adjoin-directories ((dp1 logical-pathname) (p2 logical-pathname)
 			       &optional host)
   (declare (ignore host))
   (debug-message "logical-pathname logical-pathname (~S ~S)~%" dp1 p2)
-  (merge-pathnames p2 dp1))
+  (merge-pathnames p2 dp1 nil))
 
 
 ;;; Case 6.
@@ -98,16 +99,15 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 
 
 ;;; Case 6a:
-;;; DP1 is a LOGICAL-PATHNAME and P2 is a STRING.
-;;; Note that this would require a change in the (string string)
-;;; method. That method should PARSE-NAMESTRING DP1 only and then recur.
+;;; DP1 is a LOGICAL-PATHNAME and P2 is a STRING.  Note that this
+;;; would required a change in the (string string) method. That method
+;;; now does PARSE-NAMESTRING DP1 only and then recurs.
 
-#+not-yet
 (defmethod adjoin-directories ((dp1 logical-pathname) (p2 string)
 			       &optional host)
   (declare (ignore host))
   (debug-message "logical-pathname string (~S ~S)~%" dp1 p2)
-  (merge-pathnames p2 dp1))
+  (merge-pathnames p2 dp1 nil))
 
 
 ;;; Case 7.
@@ -119,7 +119,7 @@ component (i.e. a NAME component different from NIL or :UNSPECIFIC)."))
 			       &optional host)
   (declare (ignore host))
   (debug-message "pathname logical-pathname (~S ~S)~%" dp1 p2)
-  (translate-logical-pathname (merge-pathnames p2 dp1)))
+  (translate-logical-pathname (merge-pathnames p2 dp1 nil)))
 
 
 ;;; Case 8 and 9.

@@ -3,7 +3,6 @@
 # GNU copyright 1997 to 1999 by Joey Hess.
 
 #export DH_VERBOSE=1  # Uncomment this to turn on verbose mode.
-export DH_COMPAT=4
 
 CLC_SBIN	:= usr/sbin/
 CLC_BIN		:= usr/bin/

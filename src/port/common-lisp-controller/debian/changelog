@@ -1,8 +1,9 @@
 common-lisp-controller (3.59) unstable; urgency=low
 
-  * Added a conflict with xinetd. Not the best solution I know. 
+  * Added a conflict with xinetd. Not the best solution I know.
+  * Removed debhelper version statement from debian/rules 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  8 Apr 2003 18:33:50 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  8 Apr 2003 18:39:19 +0200
 
 common-lisp-controller (3.58) unstable; urgency=low
 

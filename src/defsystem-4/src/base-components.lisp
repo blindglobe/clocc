@@ -223,6 +223,7 @@ fields in this mixin class will be provided manually.")
 
 (defclass component (topological-sort-node-mixin
 		     component-meta-data-mixin
+		     component-language-mixin
 		     session-information
 		     )
   ((type :accessor component-type
@@ -486,14 +487,21 @@ The superclass of all components which do not allow sub-components."))
 
 (defclass standard-hierarchical-component (hierarchical-component
 					   stored-component
-					   initially-finally-component-mixin)
+					   initially-finally-component-mixin
+					   )
   ()
+  (:documentation "The Standard Hierarchical Component Class.
+Instances of this class and its sub-classes can have sub components
+organized in a `part-of' hierarchy.")
   )
 
 (defclass standard-simple-component (simple-component
 				     stored-component
-				     initially-finally-component-mixin)
+				     initially-finally-component-mixin
+				     )
   ()
+  (:documentation "The Standard Simple Component Class.
+Instances of this class and its sub-classes cannot have sub components.")
   )
 
 ;;; end of file -- base-components.lisp --

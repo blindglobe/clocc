@@ -312,7 +312,8 @@ FILENAME                 File containing Fortran code
 	       :array-slicing array-slicing
 	       :package package :declaim declaim
 	       :declare-common declare-common
-	       :float-format float-format)))
+	       :float-format float-format))
+	(*read-default-float-format* float-format))
     (multiple-value-prog1
 	#+cmu (compile-file lisp-file :output-file output-file :error-file error-file)
 	#-cmu (compile-file lisp-file :output-file output-file)
@@ -2398,8 +2399,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.110 2002/05/04 20:32:36 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.111 2002/05/05 21:09:49 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.111  2002/05/05 21:09:49  rtoy
+;;; f2cl-compile needs to bind *READ-DEFAULT-FLOAT-FORMAT* before
+;;; compiling the Lisp file so that numbers are read in the specified
+;;; format.
+;;;
 ;;; Revision 1.110  2002/05/04 20:32:36  rtoy
 ;;; If the entry for the function already exists, we don't want to smash
 ;;; it.  Just update the return-values for the entry.

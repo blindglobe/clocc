@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.23 2001/01/08 22:52:36 sds Exp $
+;;; $Id: cllib.system,v 1.24 2001/01/09 16:22:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -12,10 +12,16 @@
 
 (let (tbc)                      ; To Be Compiled
 
+(setq mk:*central-registry*
+      (nconc (list (translate-logical-pathname "clocc:src;port;")
+                   (translate-logical-pathname "clocc:src;tools;metering;"))
+             mk:*central-registry*))
+
 (mk:defsystem cllib
     :source-pathname (translate-logical-pathname "clocc:src;cllib;")
     ;; :package :cllib
     :source-extension "lisp"
+    :depends-on (port metering)
     :components
     ((:file "animals" :depends-on
             ("base" "string" "miscprint" "fileio" "closio" "symb"))

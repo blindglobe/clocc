@@ -1087,21 +1087,6 @@ INPUT-FILE               File containing Fortran code
 		     `(,fname)))
 	      arglist))))))
 
-(defun parse-function-call (x)
-  ;; X is (FUNCTION-CALL FNAME ARG1 ARG2 ARG3 ...)
-  (destructuring-bind (id fname &rest args)
-      x
-    (declare (ignore id))
-    (first (generate-call-to-routine
-	    (cond ((member fname *subprog-arglist*)
-		   ;; We want to use funcall only if the external function
-		   ;; was passed in as a parameter.  If not, then we don't
-		   ;; need to funcall it.  The user was just telling us that
-		   ;; it was external function instead an intrinsic.
-		   `(funcall ,fname)) 
-		  (t 
-		   `(,fname)))
-	    args t))))
 ;------------------------------------------------------------------------------
 (defun parse-do-loop (x)
  (let* ((limits (list-split '|,| (cddddr x))) (step (third limits)))
@@ -1800,8 +1785,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.55 2000/07/31 03:00:20 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.56 2000/07/31 04:08:35 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.56  2000/07/31 04:08:35  rtoy
+;;; Remove unused function PARSE-FUNCTION-CALL.
+;;;
 ;;; Revision 1.55  2000/07/31 03:00:20  rtoy
 ;;; o Remove the support for continuation lines in
 ;;;   READSUBPROG-EXTRACT-FORMAT-STMTS since the preprocessing handles

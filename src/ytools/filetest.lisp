@@ -292,7 +292,7 @@
 ;;; start everything from scratch. --
 
 (defun file-test (&optional (num-iters (length correct-file-test-result*)))
-   (chunk-table-clear)
+   (chunk-system-clear)
    (setq file-op-count* (+ file-op-count* 1))
    ;; Set up the chunk network --
    (setq file-l-status* ':initial)

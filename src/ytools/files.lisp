@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.23 2005/02/27 16:55:19 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.24 2005/02/28 13:55:52 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -103,8 +103,8 @@
       (loaded-chunk-set-basis loaded-chunk)
       (chunk-request-mgt loaded-chunk)
       (let ((d (Chunk-date loaded-chunk)))
-	 (format t "Updating ~s~%"
-		 loaded-chunk)
+;;;;	 (format t "Updating ~s~%"
+;;;;		 loaded-chunk)
 	 (setq postponed-file-chunks*
 	       (append (chunk-update loaded-chunk postpone-derivees)
 		       postponed-file-chunks*))
@@ -1057,7 +1057,7 @@
   `(do-fcompl ',specs))
 
 ;;; files, flags, readtable
-(defvar default-fcompl-args* (vector false ))
+(defvar default-fcompl-args* (vector !() !() false))
 
 (defun do-fcompl (specs)
   (cond ((not file-op-in-progress*)
@@ -1068,7 +1068,7 @@
 				 (lambda () default-fcompl-args*)
 				 (lambda (a)
 				   (setq default-fcompl-args* a)))
-	(apply #'filespecs-fcompl default-fcompl-args*))))
+	(apply #'filespecs-fcompl (coerce default-fcompl-args* 'list)))))
 
 (defun filespecs-fcompl (specs flags *readtable*)
    (let ((*load-verbose* false))
@@ -1085,7 +1085,7 @@
 	       (t (cerror "I will ignore it"
 			  "Illegal flag to 'fcompl': ~s" flag))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
-	   (pathname-fcompl pn
+	   (filoid-fcompl pn
 			    :force-compile force-flag
 			    :load load-flag
 			    :cease-mgt cease-mgt
@@ -1093,12 +1093,20 @@
 
 (defvar fcompl-reload* ':ask)
 
-(defgeneric pathname-fcompl (pn &key force-compile
+(defgeneric filoid-fcompl (pn &key force-compile
 				     load
 				     cease-mgt
 				     postpone-derivees))
 
-(defmethod pathname-fcompl ((pn pathname)
+(defmethod filoid-fcompl ((ytpn YTools-pathname)
+			  &key force-compile load cease-mgt postpone-derivees)
+   (filoid-fcompl (pathname-resolve ytpn false)
+		  :force-compile force-compile
+		  :load load
+		  :cease-mgt cease-mgt
+		  :postpone-derivees postpone-derivees))
+
+(defmethod filoid-fcompl ((pn pathname)
 			    &key force-compile
 				 load
 				 cease-mgt

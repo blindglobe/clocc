@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.24 2005/02/27 16:55:19 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.25 2005/02/28 13:55:52 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -302,37 +302,68 @@
 
 ;;; The number of the next chunk event (management request or update) .
 (defvar chunk-event-num* 1)
-;;; Each chunk-event is actually given two numbers, one for propagating
-;;; "down" and one for "up."  (See chunks-update, below.)
 
 ;;; A list recording events that are finished.  Format: First element
 ;;; is smallest number that is greater than all finished events.
 ;;; Remaining elements, if any, are finished events with numbers greater
-;;; than that.
-(defvar done-events* (list 0))
+;;; than that, in ascending order.
+;;; Corollary: (rest active-chunk-events*) is either empty or starts with a
+;;; number > (+ (first active-chunk-events*) 1).  
+(defvar active-chunk-events* (list 1))
 
 (defun chunk-event-discard (evnum)
-   (cond ((= evnum (+ (first done-events*) 1))
+;;;;   (format *error-output*
+;;;;      "Before discarding ~s, active-chunk-events* = ~s~%"
+;;;;     evnum active-chunk-events*)
+;;;;   (cond ((= evnum 5)
+;;;;	  (break "Discarding event 5")))
+   (cond ((< evnum (first active-chunk-events*))
+	  (error "Discarding ~s when chunk-event-num* = ~s"
+		 evnum chunk-event-num*))
+	 ((= evnum (first active-chunk-events*))
 	  ;; Opportunity to condense the list of done events
-	  (loop
-	     (setq done-events* (rest done-events*))
-	     (cond ((and (not (null done-events*))
-			 (= (first done-events*)
-			    (+ evnum 1)))
-		    (setq evnum (first done-events*)))
-		   (t
-		    (setq done-events*
-			  (cons evnum done-events*))
-		    (return)))))
+	  (let ((evnum evnum))
+	     (loop
+		;; In this loop, 'evnum' = event number for smallest
+		;; event known to be >= all discarded events except
+		;; those on 'active-chunk-events*'.
+		(setq active-chunk-events* (rest active-chunk-events*))
+		;; At this point, 'active-chunk-events*' is the list of numbers
+		;; of all discarded events > 'evnum'.
+	        ;; 'evnum' is the number that occurred just before
+	        ;; those numbers.
+	        (setq evnum (+ evnum 1))
+	        ;; Now 'evnum' is > all discarded events except those
+	        ;; on 'active-chunk-events*'.
+		(cond ((and (not (null active-chunk-events*))
+			    (= (first active-chunk-events*)
+			       evnum))
+		       (setq evnum (first active-chunk-events*)))
+		      (t
+		       (on-list evnum active-chunk-events*)
+		       ;; At this point the global invariant (above the 'defvar'
+		       ;; for active-chunk-events*) is restored.
+		       (return))))))
 	 (t
-	  (loop
-	     (cond ((or (null (rest done-events*))
-			(> (first (rest done-events*))
-			   evnum))
-		    (on-list evnum (rest done-events*))
-		    (return))
-		   (t
-		    (setq done-events* (rest done-events*))))))))
+	  ;; If not discarding the first, just put it in the proper
+	  ;; order on (rest active-chunk-events*)
+	  (let ((done active-chunk-events*))
+	     (loop
+		(cond ((null (tail done))
+		       (on-list evnum (tail done)))
+		      ((= (first (tail done))
+			  evnum)
+		       (return))
+		      ((> (first (tail done))
+			  evnum)
+		       (on-list evnum (tail done))
+		       (return))
+		      (t
+		       (setq done (tail done))))))))
+;;;;  (format *error-output*
+;;;;     "After discarding ~s, active-chunk-events* = ~s~%"
+;;;;     evnum active-chunk-events*)
+  )
 
 (defun chunk-mark (ch evnum)
    (on-list evnum (Chunk-update-marks ch)))
@@ -343,7 +374,7 @@
        ((or (null marks)
 	    (= (first marks) evnum))
 	(not (null marks)))
-      (cond ((< (first marks) (first done-events*))
+      (cond ((< (first marks) (first active-chunk-events*))
 	     (cond (prev
 		    (setf (rest prev) (rest marks)))
 		   (t
@@ -355,8 +386,12 @@
 (defun chunk-request-mgt (c)
    (cond ((or (not (Chunk-manage-request c))
 	      (not (Chunk-managed c)))
-	  (setq chunk-event-num* (+ chunk-event-num* 1))
-	  (chunk-internal-req-mgt c))
+	  (let ((evnum chunk-event-num*))
+	     (unwind-protect
+		(progn
+		   (setq chunk-event-num* (+ evnum 1))
+		   (chunk-internal-req-mgt c))
+	        (chunk-event-discard evnum))))
 	 (t true)))
 
 (defun chunk-internal-req-mgt (c)
@@ -371,8 +406,12 @@
 ;;; Any other value will cause any derivees to become unmanaged.
 ;;; Returns management state of 'c'.
 (defun chunk-terminate-mgt (c propagate)
-   (setq chunk-event-num* (+ chunk-event-num* 1))
-   (chunk-internal-term-mgt c propagate))
+   (let ((evnum chunk-event-num*))
+      (unwind-protect
+	 (progn
+	    (setq chunk-event-num* (+ evnum 1))
+	    (chunk-internal-term-mgt c propagate))
+	 (chunk-event-discard evnum))))
 
 (defun chunk-internal-term-mgt (c propagate)
    (setf (Chunk-manage-request c) false)
@@ -615,7 +654,7 @@
 			 (Chunk-basis ch)))
 		  (setq bad-ch* ch)
 		  (format nil
-		     "Out of date bases ~%~s"
+		     "Out-of-date bases ~%~s"
 		     bad-bases*)
 ;;;;		  (break "bases not up to date: ~s for chunk ~s"
 ;;;;			 bad-bases* bad-ch*)
@@ -625,7 +664,14 @@
 			       (or (chunk-is-leaf b)
 				   (chunk-up-to-date b)))
 			    (Chunk-update-basis ch)))
-		  "update-basis not up to date")
+		  (setq bad-bases*
+		     (remove-if
+			 (\\ (b)
+			     (or (chunk-is-leaf b)
+				 (chunk-up-to-date b)))
+			 (Chunk-update-basis ch)))
+		  (format nil "Out-of-date update bases~%~s"
+		              bad-bases*))
 		 (t "of a mystery"))))
 
 ;;;;(defvar postpone-updates* ':do-now)
@@ -642,7 +688,7 @@
 ;;; which will be () if postpone-derivees=false.
 (defun chunks-update (chunks postpone-derivees)
    (let* (derive-mark down-mark up-mark
-	  min-here max-here temporarily-managed
+	  max-here temporarily-managed
 	  (postponed !()))
       (labels ((chunks-leaves-up-to-date (chunkl in-progress)
 		  (let ((supporting-leaves !()))
@@ -673,13 +719,19 @@
 			 (let ((in-progress (cons ch in-progress)))
 			    (cond (chunk-update-dbg*
 				   (format *error-output*
-					   "Setting down-mark of ~s~%" ch)))
+					   "Setting down-mark of ~s to ~s~%"
+					   ch down-mark)))
 			    (chunk-mark ch down-mark)
 			    (cond ((chunk-is-leaf ch)
 				   (cond ((not (chunk-is-marked
 						  ch derive-mark))
-					  (chunk-derive-and-record ch)
+					  (cond (chunk-update-dbg*
+						 (format *error-output*
+						    "Marking [~s] and deriving leaf ~s~%  [Current marks: ~s]~%"
+						    derive-mark ch
+						    (Chunk-update-marks ch))))
 					  (chunk-mark ch derive-mark)
+					  (chunk-derive-and-record ch)
 					  (cond (chunk-update-dbg*
 						 (format *error-output*
 						    "Leaf derived: ~s~%"
@@ -802,7 +854,12 @@
 			 (report-reason-to-skip-chunk))))
 
 	       (update-interrupted ()
-		  (> chunk-event-num* max-here)))
+		  (cond ((> chunk-event-num* max-here)
+			 (cond (chunk-update-dbg*
+				(format *error-output*
+				   "Chunk update interrupted~%")))
+			 true)
+			(t false))))
 
 	 ;; The following comment describes the inner recursions 
 	 ;; of 'chunks-update' --
@@ -854,8 +911,9 @@
 		;; to avoid deriving it twice (even if the update
 		;; process is restarted) --
 		(setq derive-mark chunk-event-num*)
-		(setq chunk-event-num* (+ chunk-event-num* 1))
-		(setq min-here chunk-event-num*)
+;;;;		(setq min-here chunk-event-num*)
+		(setq max-here (+ chunk-event-num* 1))
+		(setq chunk-event-num* max-here)
 		(unwind-protect
 		   (loop 
 		      (setq down-mark chunk-event-num*)
@@ -875,12 +933,23 @@
 			 (dolist (ud-ch temporarily-managed)
 			    (cond (temp-mgt-dbg*
 				   (format t "No longer managing ~s~%" ud-ch)))
-			    (chunk-internal-term-mgt ud-ch false)))
+			    (chunk-internal-term-mgt ud-ch false))
+			 (chunk-event-discard down-mark)
+			 (chunk-event-discard up-mark))
 		      (cond ((not (update-interrupted))
-			     (return))))
-		   (do ((ev min-here (+ ev 1)))
-		       ((= ev chunk-event-num*))
-		     (chunk-event-discard ev)))))
+			     (return)))
+		      (cond (chunk-update-dbg*
+			     (format *error-output*
+				"Restarting update of ~s~%"
+				chunks))))
+;;;;		   (format *error-output*
+;;;;		      "Discarding ~s through ~s~%"
+;;;;		      min-here (- max-here 1))
+		   (chunk-event-discard derive-mark)
+;;;;		   (do ((ev min-here (+ ev 1)))
+;;;;		       ((= ev max-here))
+;;;;		     (chunk-event-discard ev))
+		   )))
 	 (nodup postponed))))
 
 (defun or-chunk-set-update-basis (orch)
@@ -943,28 +1012,46 @@
 ;;; Call 'derive', update date, and return true if date advanced (else
 ;;; false if already up to date).
 (defun chunk-derive-and-record (ch)
-   (let ((new-date (derive ch))
-	 (old-date (Chunk-date ch)))
-      (cond ((and new-date (not (is-Number new-date)))
-	     (setq new-date (get-universal-time))))
-      (cond ((or (not new-date)
-		 (= new-date old-date)
-		 (and (< new-date old-date)
-		      (progn 
-			 (cerror "I will ignore the new date"
-				 !"Chunk-deriver returned date ~s, ~
-				   which is before current date ~s"
-				   new-date (Chunk-date ch))
-			 true)))
-	     (setf (Chunk-date ch)
-		   (max (Chunk-date ch)
-			(Chunk-latest-supporter-date ch)))
-	     false)
-	    (t
-	     (setf (Chunk-date ch) new-date)
-	     true))))
+   (let ((old-date (Chunk-date ch)))
+;;;;     (cond ((and (car-eq (Chunk-name ch) ':loadable)
+;;;;		 (> old-date 1000))
+;;;;	    (setq l-ch* ch)
+;;;;	    (break "Strange date ~s" old-date)
+;;;;	    (setq old-date file-op-count*)
+;;;;	    (setf (Chunk-date ch) file-op-count*)))
+     (cond ((not (chunk-is-leaf ch))
+	    ;; Mark it provisionally with a date that will prevent
+	    ;; it from being updated by "inner" calls to chunks-update --
+	    (setf (Chunk-date ch)
+		  (reduce #'max (Chunk-basis ch)
+			  :key #'Chunk-date
+			  :initial-value (Chunk-latest-supporter-date ch)))))
+     (let ((new-date (derive ch)))
+	 (cond ((and new-date (not (is-Number new-date)))
+		(setq new-date (get-universal-time))))
+	 (cond ((or (not new-date)
+		    (= new-date old-date)
+		    (and (< new-date old-date)
+			 (progn 
+			    (cerror "I will ignore the new date"
+				    !"Chunk-deriver returned date ~s, ~
+				      which is before current date ~s"
+				      new-date old-date)
+			    true)))
+		(setf (Chunk-date ch)
+		      (max old-date
+			   (Chunk-latest-supporter-date ch)))
+		false)
+	       (t
+		(setf (Chunk-date ch) new-date)
+		true)))))
 
 (defvar chunk-table* (make-hash-table :test #'equal :size 300))
+
+(defun chunk-system-clear ()
+   (chunk-table-clear)
+   (setq chunk-event-num* 1)
+   (setq active-chunk-events* (list 1)))
 
 (defun chunk-table-clear ()
    (clrhash chunk-table*))

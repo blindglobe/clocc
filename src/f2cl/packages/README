@@ -25,5 +25,8 @@ hompack		Homotopy package
 blas		BLAS Basic Linear Algebra System
 		  (Only a subset)
 
+odepack		A set of solvers for initial value problem for
+		ordinary differential equation systems.
+
 toms		Tranactions on Mathematical Software
  715		Algorithm 715:  specfun

@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.17 2002/03/02 02:12:11 sds Exp $
+;;; $Id: cvs.lisp,v 2.18 2002/03/05 00:28:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -261,8 +261,9 @@ Suitable for `read-list-from-stream'."
   (format t "~a: " path)
   (let ((logl (cvs-read-log path)))
     (cvs-stat-files logl)
-    (format t "~& -- by the number of revisions --~%")
+    (format t "~2& -- by the number of revisions --~%")
     (top-bottom-ui logl 10 nil nil :key #'cvsf-tot-rev :label #'cvsf-work)
+    (format t "~2& -- the most recently modified --~%")
     (top-bottom-ui logl 10 nil nil :key (compose revision-time car cvsf-revs)
                    :label #'cvsf-work :klabel #'dttm->string)))
 

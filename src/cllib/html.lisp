@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.16 2001/11/02 22:31:15 sds Exp $
+;;; $Id: html.lisp,v 1.17 2002/04/21 20:08:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -244,13 +244,13 @@ Return the new buffer or NIL on EOF."
 ;;;###autoload
 (defun dump-url-tokens (url &key (fmt "~3d: ~a~%")
                         (out *standard-output*) (err *error-output*)
-                        (max-retry *url-default-max-retry*))
+                        ((:max-retry *url-max-retry*) *url-max-retry*))
   "Dump the URL token by token.
 See `dump-url' about the optional parameters.
 This is mostly a debugging function, to be called interactively."
   (declare (stream out) (simple-string fmt))
   (setq url (url url))
-  (with-open-url (sock url :rt *html-readtable* :err err :max-retry max-retry)
+  (with-open-url (sock url :rt *html-readtable* :err err)
     (do (rr (ii 0 (1+ ii)) (ts (make-text-stream :sock sock)))
         ((eq +eof+ (setq rr (read-next ts))))
       (declare (type index-t ii))
@@ -261,12 +261,11 @@ This is mostly a debugging function, to be called interactively."
                           (reset-ent (xml-default-reset-entities))
                           (resolve-namespaces *xml-read-balanced*)
                           (out *standard-output*)
-                          (max-retry *url-default-max-retry*)
-                          (timeout *url-default-timeout*))
+                          ((:max-retry *url-max-retry*) *url-max-retry*)
+                          ((:timeout *url-timeout*) *url-timeout*))
   "Read all XML objects from the stream."
   (when reset-ent (xml-init-entities :out out))
-  (let ((obj (with-open-url (sock url :err out :max-retry max-retry
-                                  :timeout timeout)
+  (let ((obj (with-open-url (sock url :err out)
                (http-parse-header sock :out out)
                (with-xml-input (xin sock)
                  (read-from-stream xin :repeat repeat)))))

@@ -2475,8 +2475,10 @@ D
 			   :name (pathname-name pathname)
 			   :type (component-extension component type)
 			   :device
-			   #+(or :sbcl (and :CMU (not (or :cmu17 :cmu18))))
+			   #+(and :CMU (not (or :cmu17 :cmu18)))
 			   :absolute
+			   #+sbcl
+			   :unspecific
 			   #-(or :sbcl (and :CMU (not (or :cmu17 :cmu18))))
 			   (let ((dev (component-device component)))
 			     (if dev

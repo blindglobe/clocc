@@ -1,4 +1,4 @@
-;;; File: <card.lisp - 1999-04-22 Thu 18:33:23 EDT sds@eho.eaglets.com>
+;;; File: <card.lisp - 1999-10-19 Tue 14:45:35 EDT sds@ksp.com>
 ;;;
 ;;; Personal Database - Rolodex (BBDB, VCARD)
 ;;; Relevant URLs:
@@ -12,41 +12,43 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: card.lisp,v 1.3 1999/04/22 22:38:09 sds Exp $
+;;; $Id: card.lisp,v 1.4 1999/10/19 18:47:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 ;;; $Log: card.lisp,v $
-;;; Revision 1.3  1999/04/22 22:38:09  sds
-;;; Added relevant URLs.
-;;; (card-print-as-vcard): fixed `tz' printing.
-;;; (name-print-as-vcard): fixed slot order.
-;;; (address-print-as-vcard): fixed `street3'.
-;;; (card-read-vcard): new function; can read vCard files now.
+;;; Revision 1.4  1999/10/19 18:47:03  sds
+;;; (define-print-method): do not call `fdefinition'.
 ;;;
-;;; Revision 1.2  1999/04/20 23:39:58  sds
-;;; BBDB input and all output methods work now.
-;;; (card-output): slots contain symbols, not functions.
-;;; (set-reading-braces): removed; use `el::make-elisp-readtable'.
-;;; (init-sans-null-args): new function for `initialize-instance'.
-;;; (initialize-instance card): primary method now.
-;;; (*card-apellations*, *card-suffixes*): new variables.
-;;; (initialize-instance name): new method.
-;;; (card-org/title, time2string): new functions for printing.
-;;; Searching:
-;;; (*user-cards*): new variable.
-;;; (object-match-p, find-card): new functions.
-;;;
-;;; Revision 1.1  1999/04/19 23:35:05  sds
-;;; Initial revision
-;;;
-;;;
+;; Revision 1.3  1999/04/22 22:38:09  sds
+;; Added relevant URLs.
+;; (card-print-as-vcard): fixed `tz' printing.
+;; (name-print-as-vcard): fixed slot order.
+;; (address-print-as-vcard): fixed `street3'.
+;; (card-read-vcard): new function; can read vCard files now.
+;;
+;; Revision 1.2  1999/04/20 23:39:58  sds
+;; BBDB input and all output methods work now.
+;; (card-output): slots contain symbols, not functions.
+;; (set-reading-braces): removed; use `el::make-elisp-readtable'.
+;; (init-sans-null-args): new function for `initialize-instance'.
+;; (initialize-instance card): primary method now.
+;; (*card-apellations*, *card-suffixes*): new variables.
+;; (initialize-instance name): new method.
+;; (card-org/title, time2string): new functions for printing.
+;; Searching:
+;; (*user-cards*): new variable.
+;; (object-match-p, find-card): new functions.
+;;
+;; Revision 1.1  1999/04/19 23:35:05  sds
+;; Initial revision
+;;
 
 (in-package :cl-user)
 
 (eval-when (load compile eval)
   (sds-require "base") (sds-require "print")
-  (sds-require "date") (sds-require "url") (sds-require "elisp")
+  (sds-require "date") (sds-require "url")
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
@@ -327,7 +329,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   `(defmethod print-object ((cc ,cs) (out stream))
     (cond ((or *print-readably* (null *card-output-type*)) (call-next-method))
           ((card-output-p *card-output-type*)
-           (funcall (fdefinition (slot-value *card-output-type* ',cs)) cc out))
+           (funcall (slot-value *card-output-type* ',cs) cc out))
           (t (error 'code :proc 'print-object :args (list *card-output-type*)
                     :mesg "Illegal value of `*card-output-type*': `~s'")))))
 
@@ -345,10 +347,11 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 (defmethod initialize-instance ((cc card) &rest args)
   (init-sans-null-args cc args)
   ;; init `label' from `name' and `emaill'
-  (unless (slot-boundp cc 'label)
+  (when (and (not (slot-boundp cc 'label))
+             (or (slot-boundp cc 'name) (slot-boundp cc 'emaill)))
     (let ((*card-output-type* +card-output-pretty+))
       (setf (card-label cc)
-            (format nil "~@[~a ~]<~@[~a~]>" (slot-val cc 'name)
+            (format nil "~@[~a ~]~@[<~a>~]" (slot-val cc 'name)
                     (car (slot-val cc 'emaill))))))
   ;; init `timestamp' and `created' from `get-universal-time'
   (unless (and (slot-boundp cc 'timestamp) (slot-boundp cc 'created))
@@ -563,7 +566,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 ;;; native i/o
 (let ((*card-output-type* nil))
   (write-to-file *user-cards* *user-native-file*))
-(let ((*readtable* *object-readtable*))
+(let ((*readtable* *clos-readtable*))
   (setq *user-cards* (read-from-file *user-native-file*)))
 
 ;;; Pretty printing
@@ -573,7 +576,6 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 ;; testing
 (let ((*card-output-type* +card-output-vcard+))
   (print (car *user-cards*)))
-
 
 )
 

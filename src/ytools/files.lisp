@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.37 2005/03/22 17:24:57 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.38 2005/03/23 14:36:35 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -234,20 +234,6 @@
 			 loaded-ch loaded-basis
 			 (Loaded-chunk-principal-bases loaded-ch))))))))
 
-;;; A loaded-chunk's basis should start with the universal-bases,
-;;; and the universal-bases should be non-empty.
-(defun loaded-chunk-bases-in-harmony (loaded-ch)
-   (let ((principals (Loaded-chunk-principal-bases loaded-ch)))
-      (and (not (null principals))
-	   (do ((pbl principals
-		     (tail pbl))
-		(bl (Loaded-chunk-basis loaded-ch)
-		    (tail bl)))
-	       ((null pbl) true)
-	     (cond ((or (null bl)
-			(not (eq (head pbl) (head bl))))
-		    (return false)))))))
-
 (defmethod derive-date ((lc Loaded-file-chunk))
    false)
 
@@ -267,13 +253,29 @@
 	        )
 	       (t
 		(return))))
-      (cond ((not (typep file-ch 'File-chunk))
+      (cond ((typep file-ch 'Compiled-file-chunk)
+	     (cond ((eq (Compiled-file-chunk-status file-ch)
+			':compile-succeeded)
+		    (file-chunk-load
+		       (Compiled-file-chunk-object-file file-ch)))
+		   (t
+		    (let* ((source-file-chunk
+			      (Loaded-file-chunk-source lc))
+			   (source-file-pn
+			      (File-chunk-pathname source-file-chunk)))
+		       (format *error-output*
+			  "Compilation of ~s failed; loading source file~%"
+			  source-file-pn)
+		       (file-chunk-load source-file-chunk)))))
+	    ((typep file-ch 'File-chunk)
+	     (file-chunk-load file-ch))
+	    (t
 	     (error "Can't extract file to load from ~s"
-		    lc)))
+		    lc)))))
+
 ;;;;      (dbg-save lc file-ch)
 ;;;;      (breakpoint file-chunk-load
-;;;;	 "About to load " lc)
-      (file-chunk-load file-ch)))
+;;;;	 "About to load " lc)))
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
@@ -393,8 +395,9 @@
 				 (File-chunk-pathname file-ch)
 				 "...")
 	       (unwind-protect
-		  (handler-bind ((error (e)
-				    (setq success false)))
+		  (handler-bind ((error
+				    (\\ (_)
+				       (setq success false))))
 		     (load (File-chunk-pathname file-ch)))
 		  (cond (success
 			 (file-op-message "...loaded"
@@ -517,6 +520,20 @@
 	 (setf (Loaded-file-chunk-selection loaded-ch)
 	       selection))))
 
+;;; A loaded-chunk's basis should start with the universal-bases,
+;;; and the universal-bases should be non-empty.
+(defun loaded-chunk-bases-in-harmony (loaded-ch)
+   (let ((principals (Loaded-chunk-principal-bases loaded-ch)))
+      (and (not (null principals))
+	   (do ((pbl principals
+		     (tail pbl))
+		(bl (Chunk-basis loaded-ch)
+		    (tail bl)))
+	       ((null pbl) true)
+	     (cond ((or (null bl)
+			(not (eq (head pbl) (head bl))))
+		    (return false)))))))
+
 ;;; Represents a source file having an up-to-date compiled version.
 ;;; Actually, an attempt to compile is good enough, because we wouldn't
 ;;; want to try to recompile before a basis chunk changes.
@@ -622,8 +639,9 @@
 	 (let ((*compile-verbose* false)
 	       (error-during-compilation false))
 	    (unwind-protect
-	       (handler-bind ((error (e)
-				 (setq error-during-compilation e)))
+	       (handler-bind ((error
+			         (\\ (e)
+				    (setq error-during-compilation e))))
 		  (cond (object-file
 			 (compile-file real-pn :output-file object-file))
 			(t

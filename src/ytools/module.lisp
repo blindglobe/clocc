@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.22 2005/03/21 13:34:03 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.23 2005/03/23 14:36:35 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -407,7 +407,20 @@ Not needed, because it's essentially identical to scan-depends-on
 (defmacro module-elements (&rest specs)
       (multiple-value-bind (files flags readtab)
 	                   (flags-separate specs filespecs-load-flags*)
-	 `(filespecs-load ',files ',flags ,readtab)))
+	 `(module-elements-load
+	      ',files ',flags
+	      (decipher-readtable ,readtab *readtable*))))
+
+(defun module-elements-load (specs flags readtab)
+   (labels ((do-it ()
+	       (filespecs-do-load specs flags readtab)))
+      (cond (file-op-in-progress*
+	     (do-it))
+	    (t
+	     (setq file-op-count* (+ file-op-count* 1))
+	     (let ((file-op-in-progress* true))
+		(catch 'fload-abort
+		   (do-it)))))))
 
 (datafun module-compile fload
    (defun :^ (form _)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.11 2004/07/01 03:12:38 airfoyle Exp $
+;;;$Id: base.lisp,v 1.12 2004/07/26 04:41:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -23,7 +23,7 @@
 	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
 	     is-Keyword is-String memq assq nodup =<
 	     is-Pair is-cons list-copy
-	     tuple pair head tail left right
+	     tuple pair head tail nthrest left right
 	     ;;;; one two three four five six seven eight nine ten
 	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
@@ -294,6 +294,8 @@
 ;;; For decomposing dot-pairs used as two-entry records (e.g., binary trees)
 (subr-synonym left car t)
 (subr-synonym right cdr t)
+
+(subr-synonym nthrest nthcdr t)
 
 ;;;;(subr-synonym one first)
 ;;;;(subr-synonym two second t)

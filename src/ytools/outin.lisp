@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.5 2004/06/02 17:50:56 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.6 2004/07/26 04:41:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -427,7 +427,7 @@
 		(return))
 	     (cond ((or (eq c eof*) (char= c #\Newline))
 		    (read-char s)
-		    (return (dreverse res)))
+		    (return (nreverse res)))
 		   (t
 		    (setq res (cons (read-preserving-whitespace s) res))
 		    (go next)))))

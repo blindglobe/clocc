@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.2 2004/06/02 17:50:56 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3 2004/07/26 04:41:40 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -10,7 +10,7 @@
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
-	     symshow =g htab-show file-show test check)))
+	     symshow =g htab-show file-show test check condition-display-string)))
 
 ;; Each entry is of the form (flag form type), where flag is a symbol,
 ;; often *.  The idea is to make it easy to munge the forms further,
@@ -470,5 +470,13 @@
 				      1 cc ,@msgstuff)))
 		       :proceed)))))))
 
-
-
+#+allegro
+(defun condition-display-string (c)
+   (with-output-to-string (srm)
+      (cond ((forall (s :in '(excl::format-control excl::format-arguments))
+		(and (slot-exists-p c s)
+		     (slot-boundp c s)))
+	     (apply #'format srm (slot-value c 'excl::format-control)
+			     (slot-value c 'excl::format-arguments)))
+	    (t
+	     (out (:to srm) "Undisplayable " (:a c) :%)))))

@@ -1286,7 +1286,7 @@
 
 (defun add-registry-location (pathname)
   "Adds a path to the central registry."
-  (pushnew pathname *central-registry* :tets #'equal))
+  (pushnew pathname *central-registry* :test #'equal))
 
 (defvar *bin-subdir* ".bin/"
   "The subdirectory of an AFS directory where the binaries are really kept.")

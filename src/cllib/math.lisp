@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-02-24 Wed 23:40:09 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-02-25 Thu 12:33:23 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.15 1999/02/25 04:40:36 sds Exp $
+;;; $Id: math.lisp,v 1.16 1999/02/25 17:33:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.16  1999/02/25 17:33:51  sds
+;;; Moved `lincom' here from date.lisp.
+;;;
 ;;; Revision 1.15  1999/02/25 04:40:36  sds
 ;;; `volatility': swapped return values.
 ;;;
@@ -845,6 +848,11 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
                               (type (simple-array double-float (* *)) xx))
                      (expt (aref xx ii 0) (1+ jj))))
       (concatenate 'simple-vector (nreverse vec) (list free)))))
+
+(defsubst lincom (c0 x0 c1 x1)
+  "Compute c0*x0+c1*x1."
+  (declare (double-float c0 x0 c1 x1) (values double-float))
+  (with-type double-float (+ (* c0 x0) (* c1 x1))))
 
 (provide "math")
 ;;; math.lisp ends here

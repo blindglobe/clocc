@@ -219,6 +219,7 @@ c
       integer neq
       double precision t, y, ydot
       dimension y(1), ydot(1)
+      dimension neq(*)
       ydot(1) = ((2.0d0*log(y(1)) + 8.0d0)/t - 5.0d0)*y(1)
       return
       end
@@ -227,6 +228,7 @@ c
       integer neq, ng
       double precision t, y, groot
       dimension y(1), groot(2)
+      dimension neq(*)
       groot(1) = ((2.0d0*log(y(1)) + 8.0d0)/t - 5.0d0)*y(1)
       groot(2) = log(y(1)) - 2.2491d0
       return
@@ -236,6 +238,7 @@ c
       integer neq
       double precision t, y, ydot
       dimension y(2), ydot(2)
+      dimension neq(*)
       ydot(1) = y(2)
       ydot(2) = 100.0d0*(1.0d0 - y(1)*y(1))*y(2) - y(1)
       return
@@ -245,6 +248,7 @@ c
       integer neq, ml, mu, nrowpd
       double precision t, y, pd
       dimension y(2), pd(nrowpd,2)
+      dimension neq(*)
       pd(1,1) = 0.0d0
       pd(1,2) = 1.0d0
       pd(2,1) = -200.0d0*y(1)*y(2) - 1.0d0
@@ -256,6 +260,7 @@ c
       integer neq, ng
       double precision t, y, groot
       dimension y(2), groot(1)
+      dimension neq(*)
       groot(1) = y(1)
       return
       end

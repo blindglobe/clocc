@@ -153,8 +153,9 @@ c Print final statistics.
       end
 
       subroutine fdem (neq, t, y, ydot)
-      integer neq,  mx, mz, mm,
+      integer neq, mx, mz, mm,
      1   iblok, iblok0, idn, iup, ileft, iright, jx, jz
+      dimension neq(*)
       double precision t, y(2,*), ydot(2,*),
      1   q1, q2, q3, q4, a3, a4, om, c3, dz, hdco, vdco, haco,
      2   c1, c1dn, c1up, c1lt, c1rt, c2, c2dn, c2up, c2lt, c2rt, 
@@ -224,6 +225,7 @@ c Load all terms into ydot.
       subroutine gdem (neq, t, y, ng, gout)
       integer neq, ng,  mx, mz, mm,
      1   iblok, iblok0, idn, iup, ileft, iright, jx, jz
+      dimension neq(*)
       double precision t, y(2,*), gout(*),
      1   q1, q2, q3, q4, a3, a4, om, c3, dz, hdco, vdco, haco,
      2   c1, c2, c2dn, c2up, c2lt, c2rt, c2dot, czdn, czup, horad2,
@@ -287,7 +289,8 @@ c Load all terms into c2dot and sum.
       external f
       integer neq, jok, ipbd(2,*), ier, mx, mz, mm,
      1    iblok, iblok0, jx, jz, lenbd
-      double precision t, y(2,*), ysv(neq), rewt(neq), f0(neq), f1(neq),
+      dimension neq(*)
+      double precision t, y(2,*), ysv(*), rewt(*), f0(*), f1(*),
      1   hl0, bd(2,2,*),
      2   q1, q2, q3, q4, a3, a4, om, c3, dz, hdco, vdco, haco,
      3   c1, c2, czdn, czup, diag, temp, zdn, zup
@@ -334,8 +337,9 @@ c Scale by -hl0, add identity matrix and LU-decompose blocks.
 
       subroutine solbd (neq, t, y, f0, wk, hl0, bd, ipbd, v, lr, ier)
       integer neq, ipbd(2,*), lr, ier,  mx, mz, mm,  i
-      double precision t, y(neq), f0(neq), wk(neq), hl0, bd(2,2,*),
+      double precision t, y(*), f0(*), wk(*), hl0, bd(2,2,*),
      2   v(2,*),  q1, q2, q3, q4, a3, a4, om, c3, dz, hdco, vdco, haco
+      dimension neq(*)
       common /pcom/ q1,q2,q3,q4,a3,a4,om,c3,dz,hdco,vdco,haco,mx,mz,mm
 c Solve the block-diagonal system Px = v using LU factors stored in bd
 c and pivot data in ipbd, and return the solution in v.

@@ -167,7 +167,8 @@ c
       subroutine f1 (neq, t, y, ydot)
       integer neq
       double precision t, y, ydot
-      dimension y(neq), ydot(neq)
+      dimension y(*), ydot(*)
+      dimension neq(*)
       ydot(1) = y(2)
       ydot(2) = 20.0d0*(1.0d0 - y(1)*y(1))*y(2) - y(1)
       return
@@ -176,7 +177,8 @@ c
       subroutine jac1 (neq, t, y, ml, mu, pd, nrowpd)
       integer neq, ml, mu, nrowpd
       double precision t, y, pd
-      dimension y(neq), pd(nrowpd,neq)
+      dimension y(*), pd(nrowpd,*)
+      dimension neq(*)
       pd(1,1) = 0.0d0
       pd(1,2) = 1.0d0
       pd(2,1) = -40.0d0*y(1)*y(2) - 1.0d0
@@ -187,7 +189,8 @@ c
       subroutine f2 (neq, t, y, ydot)
       integer neq, i, j, k, ng
       double precision t, y, ydot, alph1, alph2, d
-      dimension y(neq), ydot(neq)
+      dimension y(*), ydot(*)
+      dimension neq(*)
       data alph1/1.0d0/, alph2/1.0d0/, ng/5/
       do 10 j = 1,ng
       do 10 i = 1,ng
@@ -200,9 +203,10 @@ c
       end
 
       subroutine jac2 (neq, t, y, ml, mu, pd, nrowpd)
-      integer neq(1), ml, mu, nrowpd, j, mband, mu1, mu2, ng
+      integer neq, ml, mu, nrowpd, j, mband, mu1, mu2, ng
       double precision t, y, pd, alph1, alph2
       dimension y(*), pd(nrowpd,*)
+      dimension neq(*)
       data alph1/1.0d0/, alph2/1.0d0/, ng/5/
       mband = ml + mu + 1
       mu1 = mu + 1

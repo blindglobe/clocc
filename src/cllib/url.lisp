@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.48 2004/10/18 23:06:25 sds Exp $
+;;; $Id: url.lisp,v 2.49 2004/11/09 17:01:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -336,18 +336,17 @@ Print the appropriate message MESG to *URL-OUTPUT*."
                    :time *url-timeout*)
         :do (sleep-mesg "Error")))
 
-(let ((fin (make-array 2 :element-type 'character :initial-contents
-                       '(#\Return #\Linefeed))))
 (defun socket-send (sock messages finish-p)
-  (dolist (mesg messages)
-    (mesg :log *url-output* "[~s]~a~%" *url-caller* mesg)
-    (write-string mesg sock)
-    (write-string fin sock))
-  (when finish-p
-    (write-string fin sock)
-    (mesg :log *url-output* "[~s]<terpri>~%" *url-caller*))
-  (finish-output sock))
-)
+  (let ((fin #.(make-array 2 :element-type 'character :initial-contents
+                           '(#\Return #\Linefeed))))
+    (dolist (mesg messages)
+      (mesg :log *url-output* "[~s]~a~%" *url-caller* mesg)
+      (write-string mesg sock)
+      (write-string fin sock))
+    (when finish-p
+      (write-string fin sock)
+      (mesg :log *url-output* "[~s]<terpri>~%" *url-caller*))
+    (finish-output sock)))
 
 (defun open-url (url &key ((:err *url-error*) *url-error*)
                  ((:init *url-open-init*)  *url-open-init*)

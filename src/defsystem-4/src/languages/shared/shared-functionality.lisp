@@ -122,18 +122,18 @@
 	 )
     (loop for (option-kwd option) on options by #'cddr
 	  nconc (process-option option-kwd option) into result
-	  finally (values (delete-duplicates result :test #'string-equal)
-			  (list :output-file
-				:cflags
-				:cppflags
-				:debug
-				:link
-				:definitions
-				:optimize
-				:include-paths
-				:library-paths
-				:libraries
-				:other-options))
+	  finally (return (values (delete-duplicates result :test #'string-equal)
+				  (list :output-file
+					:cflags
+					:cppflags
+					:debug
+					:link
+					:definitions
+					:optimize
+					:include-paths
+					:library-paths
+					:libraries
+					:other-options)))
 	  )))
 
 

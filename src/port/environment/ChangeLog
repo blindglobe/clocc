@@ -1,3 +1,16 @@
+2004-06-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* INSTALLATION, env-package.lisp, impl-dependent/allegro.lisp, impl-dependent/clisp.lisp, impl-dependent/cmucl.lisp, impl-dependent/lcl.lisp, impl-dependent/sbcl.lisp, software.lisp, system-info.lisp:
+	Made several changes to the implementation dependent files and cleaned
+	up a bit some stale code.
+
+2004-06-09  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* INSTALLATION, README, impl-dependent/corman.lisp, impl-dependent/lispworks.lisp, load-cl-environment.lisp, operating-system.lisp:
+	Fixed a few buglets and made the system more portable.
+
 2004-06-09  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* INSTALLATION, README, impl-dependent/corman.lisp, impl-dependent/lispworks.lisp, load-cl-environment.lisp, operating-system.lisp:

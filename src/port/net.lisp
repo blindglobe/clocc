@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.51 2004/04/09 20:15:31 sds Exp $
+;;; $Id: net.lisp,v 1.52 2004/08/02 23:09:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -168,6 +168,7 @@
 ;;;
 
 (deftype socket ()
+  #+abcl 'to-way-stream
   #+allegro 'excl::socket-stream
   #+clisp 'stream
   #+(or cmu scl) 'sys:fd-stream
@@ -176,7 +177,7 @@
   #+openmcl 'ccl::socket
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:stream-socket
-  #-(or allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks openmcl
 	(and sbcl (or db-sockets net.sbcl.sockets)) scl) 'stream)
 
 (defun open-socket (host port &optional bin)
@@ -185,6 +186,9 @@
   (let ((host (etypecase host
                 (string host)
                 (integer (hostent-name (resolve-host-ipaddr host))))))
+    #+abcl (ext:get-socket-stream
+            (sys:make-socket host port)
+            :element-type (if bin '(unsigned-byte 8) 'character))
     #+allegro (socket:make-socket :remote-host host :remote-port port
                                   :format (if bin :binary :text))
     #+clisp (#+lisp=cl ext:socket-connect #-lisp=cl lisp:socket-connect
@@ -216,7 +220,7 @@
          'net.sbcl.sockets:binary-stream-socket
          'net.sbcl.sockets:character-stream-socket)
      :port port :host host)
-    #-(or allegro clisp cmu gcl lispworks mcl
+    #-(or abcl allegro clisp cmu gcl lispworks mcl
           (and sbcl (or net.sbcl.sockets db-sockets)) scl)
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 
@@ -285,6 +289,7 @@
 #+lispworks (defstruct socket-server proc mbox port)
 #-lispworks
 (deftype socket-server ()
+  #+abcl 'ext:javaobject
   #+allegro 'acl-socket::socket-stream-internet-passive
   #+(and clisp      lisp=cl)   'ext:socket-server
   #+(and clisp (not lisp=cl)) 'lisp:socket-server
@@ -293,12 +298,13 @@
   #+openmcl 'ccl::listener-socket
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:passive-socket
-  #-(or allegro clisp cmu gcl openmcl
+  #-(or abcl allegro clisp cmu gcl openmcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl) t)
 
 (defun open-socket-server (&optional port)
   "Open a `generic' socket server."
   (declare (type (or null integer #-sbcl socket) port))
+  #+abcl (ext:make-server-socket port)
   #+allegro (socket:make-socket :connect :passive :local-port
                                 (when (integerp port) port))
   #+clisp (#+lisp=cl ext:socket-server #-lisp=cl lisp:socket-server port)
@@ -321,7 +327,7 @@
     (sockets:socket-bind socket (vector 0 0 0 0) (or port 0)))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:make-socket 'net.sbcl.sockets:passive-socket :port port)
-  #-(or allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks openmcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'open-socket-server port)))
 
@@ -335,6 +341,9 @@ Returns a socket stream or NIL."
   (declare (type socket-server serv)
            #+(or (and allegro (version>= 6)) openmcl)
            (ignore bin))
+  #+abcl (ext:get-socket-stream
+          (ext:socket-accept serv)
+          :element-type (if bin '(unsigned-byte 8) 'character))
   #+allegro (let* ((fmt (if bin :binary :text))
                    #+allegro-v5.0
                    (excl:*default-external-format* fmt)
@@ -386,13 +395,14 @@ Returns a socket stream or NIL."
        'net.sbcl.sockets:binary-stream-socket
        'net.sbcl.sockets:character-stream-socket)
    :wait wait)
-  #-(or allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks openmcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-accept serv bin)))
 
 (defun socket-server-close (server)
   "Close the server."
   (declare (type socket-server server))
+  #+abcl (ext:server-socket-close server)
   #+allegro (close server)
   #+clisp (#+lisp=cl  ext:socket-server-close
            #-lisp=cl lisp:socket-server-close server)
@@ -402,7 +412,7 @@ Returns a socket stream or NIL."
   #+openmcl (close server)
   #+(and sbcl db-sockets) (sockets:socket-close server)
   #+(and sbcl net.sbcl.sockets) (close server)
-  #-(or allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks openmcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-server-close server)))
 

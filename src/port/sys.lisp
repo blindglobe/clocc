@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.35 2001/09/26 15:51:50 sds Exp $
+;;; $Id: sys.lisp,v 1.36 2001/10/11 21:28:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -200,21 +200,31 @@ but there is a TYPE slot, move TYPE into NAME."
 
 (defun probe-directory (filename)
   "Check whether the file name names an existing directory."
-  #+allegro (excl::probe-directory filename)
-  #+clisp (values
-           (ignore-errors
-             (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
-                        filename)))
-  #+cmu (eq :directory (unix:unix-file-kind (namestring filename)))
-  #+lispworks (lw:file-directory-p filename)
-  #+sbcl (eq :directory (sb-unix:unix-file-kind (namestring filename)))
-  #-(or allegro clisp cmu lispworks sbcl)
+  ;; based on
   ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
   ;; Date: Wed, 5 May 1999 11:51:19 -0500
+  ;; fold the name.type into directory
   (let* ((path (pathname filename))
-         (dir (pathname-directory path))
-         (name (pathname-name path)))
-    (when name (setq dir (append dir (list name))))
+         (name (pathname-name path))
+         (type (pathname-type path))
+         (new-dir
+          (cond ((and name type) (list (concatenate 'string name "." type)))
+                (name (list name))
+                (type (list type))
+                (t nil))))
+    (when new-dir
+      (setq path (make-pathname
+                  :directory (append (pathname-directory path) new-dir)
+                  :name nil :type nil :defaults path)))
+    #+allegro (excl::probe-directory path)
+    #+clisp (values
+             (ignore-errors
+               (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
+                          path)))
+    #+cmu (eq :directory (unix:unix-file-kind (namestring path)))
+    #+lispworks (lw:file-directory-p path)
+    #+sbcl (eq :directory (sb-unix:unix-file-kind (namestring path)))
+    #-(or allegro clisp cmu lispworks sbcl)
     (probe-file (make-pathname :directory dir))))
 
 (defun default-directory ()

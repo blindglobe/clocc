@@ -1,10 +1,15 @@
 INSTALLATION OF CLOCC
 
+You have two options:
+ + using GNU Make or
+ + doing everything from your lisp prompt
+It is entirely up to you what path to take.
+
 * Using GNU Make (<http://www.gnu.org/software/make/make.html>)
 
 1. Set the environment variable LISPTYPE appropriately
    (currently supported types: acl43, acl5, clisp, cmucl, gcl).
-   Set the environment variable CLOCC_DUMP to the space-sepated list of
+   Set the environment variable CLOCC_DUMP to the space-separated list of
    your lisps for which you want to dump images.
    E.g., ACL/Linux trial version cannot dump images,
    and CMU CL dumps multi-megabyte images,
@@ -56,11 +61,19 @@ INSTALLATION OF CLOCC
 (mk:oos "f2cl" :compile)
 ...
 
-;; * add to your init file (~/.clisprc for CLISP, ~/.cmucl-init.lisp for
-;;   CMUCL or ~/.clinit.cl for Allegro)
+========================================================================
+Finally, now that the portions of CLOCC that you are interested
+in are compiled, you should make them available on startup.
+You should either dump your own images or edit init files:
+
+;; * add to your init file:
+;;   ~/.clisprc for CLISP,
+;;   ~/.cmucl-init.lisp for CMUCL or
+;;   ~/.clinit.cl for Allegro
 (setq *clocc-root* "c:/gnu/clocc/") ; or whatever ...
 (load (concatenate 'string *clocc-root* "clocc"))
 (load (translate-logical-pathname "clocc:src;cllib;base")) ; or whatever ...
 ...
+
 
 * Please report bugs and ask for help on <clocc-list@lists.sourceforge.net>.

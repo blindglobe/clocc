@@ -691,3 +691,35 @@
 	       (make-string ,@len :initial-element #\Space)))
        ,init)))
 
+;; This macro is supposed to set LHS to the RHS assuming that the LHS
+;; is a Fortran CHARACTER type of length LEN.
+;;
+;; Currently, converts the RHS to the appropriate length string and
+;; assigns it to the LHS.  However, this can generate quite a bit of
+;; garbage.  We might want to be a bit smarter and use loops to
+;; replace the individual characters of the LHS with the appropriate
+;; characters from the RHS.
+(defmacro f2cl-set-string (lhs rhs (string len))
+  (etypecase lhs
+    (symbol
+     ;; Assignment to a simple string.
+     `(setf ,lhs (f2cl-string ,rhs ,len)))
+    (list
+     ;; Assignment to an array
+     `(fset ,lhs (f2cl-string ,rhs ,len)))))
+
+(defun f2cl-string (string len)
+  ;; Create a string of the desired length by either appending spaces
+  ;; or truncating the string.
+  (let ((slen (length string)))
+    (cond ((= slen len)
+	   ;; Need to make a copy of the string, so we don't have
+	   ;; duplicated structure.
+	   (copy-seq string))
+	  ((> slen len)
+	   ;; Truncate the string
+	   (subseq string 0 len))
+	  (t
+	   ;; String is too short, so append some spaces
+	   (concatenate 'string string (make-string (- len slen) :initial-element #\Space))))))
+  

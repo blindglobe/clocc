@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.17 2000/11/10 19:59:57 sds Exp $
+;;; $Id: url.lisp,v 2.18 2001/06/11 19:44:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -815,7 +815,7 @@ This is mostly a debugging function, to be called interactively."
   (format out "Opening URL: `~a'...~%" url)
   (with-open-url (sock url :err err :timeout timeout :max-retry max-retry)
     (loop :for ii :of-type index-t :from  1
-          :and rr = (read-line sock nil +eof+) :until (eq +eof+ rr)
+          :and rr = (read-line sock nil nil) :until (null rr)
           :do (format out fmt ii
                       (funcall proc (string-right-trim +whitespace+ rr))))))
 

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-06-19 Fri 16:29:46 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-07-10 Fri 16:36:38 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.5 1998/06/19 21:41:40 sds Exp $
+;;; $Id: math.lisp,v 1.6 1998/07/10 21:11:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.6  1998/07/10 21:11:35  sds
+;;; Added `regress-n' and `regress-poly'.
+;;; Ditched `regress2' and `det3'.
+;;;
 ;;; Revision 1.5  1998/06/19 21:41:40  sds
 ;;; Use `defmethod' to print structures.
 ;;;
@@ -32,7 +36,8 @@
 (in-package :cl-user)
 
 (eval-when (load compile eval)
-  (sds-require "base") (sds-require "list") (sds-require "print")
+  (sds-require "base") (sds-require "list")
+  (sds-require "print") (sds-require "matrix")
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (define-modify-macro mulf (mult) * "Multiply the arg by a number.")
@@ -128,7 +133,7 @@ Return the value and the derivative, suitable for `newton'."
   (case order
     (0 (reduce #'max seq :key (compose abs 'key)))
     (1 (reduce #'+ seq :key (compose abs 'key)))
-    (2 (sqrt (reduce #'+ seq :key (compose sqr abs 'key))))
+    (2 (sqrt (reduce #'+ seq :key (compose sqr 'key))))
     (t (expt (reduce #'+ seq :key
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
 	     (/ 1.0d0 (double-float order))))))
@@ -139,7 +144,7 @@ Return the value and the derivative, suitable for `newton'."
   (setq seq (delete nil seq))
   (let ((nn (funcall norm seq)))
     (declare (double-float nn))
-    (assert (> nn 0) (seq) (error "Zero norm vector: ~a" seq))
+    (assert (> nn 0) (seq) "Zero norm vector: ~a" seq)
     (map-in (lambda (rr) (declare (double-float rr)) (/ rr nn)) seq)))
 
 (defun rel-dist (seq1 seq2 &key (key #'value) (start1 0) (start2 0) depth)
@@ -242,68 +247,6 @@ Meaningful only if all the numbers are of the same sign."
 	(/ (standard-deviation seq :len len :key key :mean mean)
 	   (abs mean)))))
 
-(defun det3 (c0 c1 c2)
-  "Compute the determinant of a 3x3 matrix."
-  (declare (type (simple-array double-float (3)) c0 c1 c2)
-	   (values double-float))
-  (- (+ (* (aref c0 0) (aref c1 1) (aref c2 2))
-	(* (aref c0 1) (aref c1 2) (aref c2 0))
-	(* (aref c0 2) (aref c1 0) (aref c2 1)))
-     (* (aref c0 0) (aref c1 2) (aref c2 1))
-     (* (aref c0 1) (aref c1 0) (aref c2 2))
-     (* (aref c0 2) (aref c1 1) (aref c2 0))))
-
-(defun regress2 (seq &key (xkey #'car) (ykey #'cdr))
-  "Quadratic regression."
-  (declare (sequence seq) (type (function (t) double-float) xkey ykey)
-	   (values (simple-array double-float (3)) double-float))
-  (let ((c0 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
-	(c1 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
-	(c2 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
-	(c3 (make-array 3 :element-type 'double-float :initial-element 0.0d0))
-	(re (make-array 3 :element-type 'double-float :initial-element 0.0d0))
-	(det 0.0d0) (nn 0) (inv 0.0d0) (y2b 0.0d0))
-    (declare (type (simple-array double-float (3)) c0 c1 c2 c3 re)
-	     (double-float det inv y2b) (fixnum nn))
-    (map nil (lambda (el)
-	       (let* ((xx (funcall xkey el)) (yy (funcall ykey el))
-		      (x2 (sqr xx)))
-		 (declare (double-float xx yy x2))
-		 (incf nn) (incf y2b (sqr yy))
-		 (incf (aref c0 0) x2)
-		 (incf (aref c0 1) (* xx x2))
-		 (incf (aref c0 2) (sqr x2))
-		 (incf (aref c1 0) xx)
-		 (incf (aref c3 0) yy)
-		 (incf (aref c3 1) (* yy xx))
-		 (incf (aref c3 2) (* yy x2))))
-	 seq)
-    (assert (> nn 2) (nn) "Too few (~d) points are given to regress2!" nn)
-    (setq inv (/ 1.0d0 nn)) (mulf (aref c1 0) inv) (mulf (aref c0 0) inv)
-    (mulf (aref c0 1) inv) (mulf (aref c0 2) inv) (mulf y2b inv)
-    (mulf (aref c3 0) inv) (mulf (aref c3 1) inv) (mulf (aref c3 2) inv)
-    (setf (aref c2 0) 1.0d0
-	  (aref c2 1) (aref c1 0)
-	  (aref c2 2) (aref c0 0)
-	  (aref c1 1) (aref c0 0)
-	  (aref c1 2) (aref c0 1)
-	  det (det3 c0 c1 c2))
-    (assert (not (zerop det)) (det)
-	    "regress2: zero determinant~%~a~%~a~%~a~%~a~%~a" seq c0 c1 c2 c3)
-    (setq re (make-array 3 :element-type 'double-float :initial-contents
-			 (list (/ (det3 c3 c1 c2) det)
-			       (/ (det3 c0 c3 c2) det)
-			       (/ (det3 c0 c1 c3) det))))
-    (values re (sqrt (/ (+ y2b (* (sqr (aref re 0)) (aref c0 2))
-			   (* (sqr (aref re 1)) (aref c0 0)) (sqr (aref re 2))
-			   (* -2.0d0 (aref re 0) (aref c3 2))
-			   (* -2.0d0 (aref re 1) (aref c3 1))
-			   (* -2.0d0 (aref re 2) (aref c3 0))
-			   (* 2.0d0 (aref re 0) (aref re 1) (aref c0 1))
-			   (* 2.0d0 (aref re 0) (aref re 2) (aref c0 0))
-			   (* 2.0d0 (aref re 1) (aref re 2) (aref c1 0)))
-			y2b)))))
-
 (defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
   "Compute the covariation between the data in the two sequences.
 Return 6 values: covariation, mean0, mean1, dispersion0,
@@ -311,11 +254,12 @@ dispersion1, number of elements considered.
 Uses the fast but numerically unstable algorithm
 without pre-computing the means."
   (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
-	   (values double-float double-float double-float double-float
-		   double-float fixnum))
+	   (values double-float double-float double-float (double-float 0.0 *)
+                   (double-float 0.0 *) fixnum))
   (let ((xb 0.0d0) (yb 0.0d0) (x2b 0.0d0) (xyb 0.0d0) (y2b 0.0d0)
-        (nn 0) (co 0.0d0))
-    (declare (double-float xb yb x2b xyb y2b co) (fixnum nn))
+        (nn 0) (c0 0.0d0) (c1 0.0d0))
+    (declare (double-float xb yb x2b xyb y2b c0 c1)
+             (type (unsigned-byte 20) nn))
     (map nil (lambda (r0 r1)
 	       (let ((xx (funcall key0 r0)) (yy (funcall key1 r1)))
 		 (declare (double-float xx yy))
@@ -323,9 +267,13 @@ without pre-computing the means."
 		 (incf xyb (* xx yy)) (incf x2b (sqr xx))))
 	 seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariation!" nn)
-    (setq co (/ 1.0d0 (double-float nn))) ; (-1 nn) !!!
-    (mulf xb co) (mulf yb co) (mulf xyb co) (mulf x2b co) (mulf y2b co)
-    (values (- xyb (* xb yb)) xb yb (- x2b (sqr xb)) (- y2b (sqr yb)) nn)))
+    (setq c0 (/ 1.0d0 (double-float nn)) c1 (/ 1.0d0 (double-float (1- nn))))
+    (values (with-type double-float (* (- xyb (* xb yb c0)) c1))
+            (with-type double-float (* xb c0))
+            (with-type double-float (* yb c0))
+            (with-type double-float (* (- x2b (* (sqr xb) c0)) c1))
+            (with-type double-float (* (- y2b (* (sqr yb) c0)) c1))
+            nn)))
 
 (defun covariation1 (seq0 seq1 &key (key0 #'value) (key1 #'value))
   "Compute the covariation between the data in the two sequences.
@@ -351,7 +299,7 @@ Uses the numerically stable algorithm with pre-computing the means."
     (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
-  "Interface tp `covariation' with one sequence."
+  "Interface to `covariation' with one sequence."
   (covariation seq seq :key0 xkey :key1 ykey))
 
 (defun volatility (lst split-key &key (key #'value))
@@ -371,12 +319,14 @@ and the average annual volatility for US Dollar Index."
 (defsubst below-p (x0 y0 x1 y1 x2 y2)
   "Check whether (x0 y0) is below the line (x1 y1) -- (x2 y2)."
   (declare (double-float x0 y0 x1 y1 x2 y2))
-  (< y0 (/ (+ (* y1 (- x2 x0)) (* y2 (- x0 x1))) (- x2 x1))))
+  (< y0 (with-type double-float
+          (/ (+ (* y1 (- x2 x0)) (* y2 (- x0 x1))) (- x2 x1)))))
 
 (defsubst linear (x0 y0 x1 y1 tt)
   "Compute the linear function through (x0 y0) and (x1 y1) at tt."
   (declare (double-float x0 y0 x1 y1 tt) (values double-float))
-  (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0)))
+  (with-type double-float
+    (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0))))
 
 (defun safe-/ (aa &rest bb)
   "Safe division."
@@ -390,7 +340,15 @@ and the average annual volatility for US Dollar Index."
   "Fast safe division; only 2 arguments are allowed."
   (declare (number aa bb) (values number))
   (if (zerop bb) (cond ((zerop aa) 1) ((plusp aa) most-positive-fixnum)
-		       ((- most-positive-fixnum)))
+		       (most-negative-fixnum))
+      (/ aa bb)))
+
+(defsubst d/ (aa bb)
+  "Double float fast safe division; only 2 arguments are allowed."
+  (declare (double-float aa bb) (values double-float))
+  (if (zerop bb) (cond ((zerop aa) 1.0d0)
+                       ((plusp aa) most-positive-double-float)
+		       (most-negative-double-float))
       (/ aa bb)))
 
 (defun convex-hull1 (lst up &key (xkey #'car) (ykey #'cdr))
@@ -420,16 +378,18 @@ The accessor keys XKEY and YKEY default to CAR and CDR.
 Return the modified LST. 20% faster than `convex-hull1'."
   (declare (list lst) (type (function (t) double-float) xkey ykey))
   (do* ((ll lst (cdr ll)) (ts (if up #'> #'<)) (x0 0.0d0) (y0 0.0d0)
-	(sl (lambda (pp)	; has to be s/!!!
-	      (s/ (- (funcall ykey pp) y0) (abs (- (funcall xkey pp) x0))))))
+	(sl (lambda (pp)	; has to be d/!!!
+              (d/ (the double-float (- (funcall ykey pp) y0))
+                  (abs (the double-float (- (funcall xkey pp) x0)))))))
        ((null (cddr ll)) lst)
-    (declare (double-float x0 y0) (type function ts))
+    (declare (double-float x0 y0) (type function ts)
+             (type (function (t) double-float) sl))
     (setf x0 (funcall xkey (car ll)) y0 (funcall ykey (car ll))
 	  (cdr ll)
 	  (do ((l1 (cddr ll) (cdr l1)) (top (cdr ll)) (csl 0.0d0)
 	       (tsl (funcall sl (cadr ll))))
 	      ((null l1) top)
-	    (declare (double-float csl))
+	    (declare (double-float csl tsl))
 	    (setq csl (funcall sl (car l1)))
 	    (when (funcall ts csl tsl) (setq tsl csl top l1))))))
 
@@ -446,7 +406,6 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
   (declare (sequence seq))
   (multiple-value-bind (mm len) (mean seq :key key)
     (s/ mm (standard-deviation seq :mean mm :len len :key key))))
-
 
 (defmacro to-percent (vv)
   "1.234 ==> 23.4%"
@@ -467,7 +426,7 @@ If the optional DAYS is given, return the annualized change too."
 This function is commutative, and puts the smallest number into the
 denominator.  Sign is ignored."
   (declare (double-float v0 v1) (values double-float))
-  (double-float (s/ (abs (- v1 v0)) (min (abs v0) (abs v1)))))
+  (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
 
 (defcustom *relative-tolerance* double-float 1.0e-3
   "*The default relative tolerance for `same-num-p'.")
@@ -528,25 +487,24 @@ and the number of iterations made."
 #+cmu
 (defun print-line (ln &optional (stream t) (depth 1))
   "Print the line."
-  (declare (type line ln))	; "#S(LINE :SL ~g :CO ~g)"
+  (declare (type line ln) (ignore depth)) ; "#S(LINE :SL ~g :CO ~g)"
   (if *print-readably* (funcall (print-readably line) ln stream)
-      (format stream (case depth (1 "Slope: ~,3f; Constant: ~,3f")
-			   (t "{~,3f ~,3f}")) (line-sl ln) (line-co ln))))
+      (format stream "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
 #-cmu
 (defmethod print-object ((ln line) stream)
   (if *print-readably* (call-next-method)
-      (format stream "{~,3f ~,3f}" (line-sl ln) (line-co ln))))
+      (format stream "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
 (defsubst line-val (ln par)
   "Evaluate the line at point."
   (declare (type line ln) (double-float par) (values double-float))
-  (+ (* par (line-sl ln)) (line-co ln)))
+  (with-type double-float (+ (* par (line-sl ln)) (line-co ln))))
 
 (defsubst line-rsl (ln)
   "Return the relative slope of the line."
   (declare (type line ln) (values double-float))
-  (double-float (s/ (line-sl ln) (line-co ln))))
+  (d/ (line-sl ln) (line-co ln)))
 
 (defsubst line-below-p (ln xx yy)
   "Return T if the point (xx yy) is below the line LN."
@@ -576,7 +534,7 @@ point (XX YY) up to tolerance TOL.  Similar to FORTRAN's arithmetic IF."
 (defsubst line-adjust (ln xx yy)
   "Adjust the line LN to pass through the point, keeping the slope intact."
   (declare (double-float xx yy) (type line ln) (values line))
-  (setf (line-co ln) (- yy (* (line-sl ln) xx))) ln)
+  (setf (line-co ln) (with-type double-float (- yy (* (line-sl ln) xx)))) ln)
 
 (defun line-adjust-dir (ln xx yy up)
   "Adjust the line LN to be above (if UP) or below (otherwise) of (xx yy)."
@@ -596,11 +554,12 @@ keeping the slope intact."
     (setq xx (funcall xkey (car ll)) yy (funcall ykey (car ll)))
     (when (funcall ff ln xx yy) (line-adjust ln xx yy))))
 
-(defun line-thru-points (x0 y0 x1 y1)
+(defsubst line-thru-points (x0 y0 x1 y1)
   "Make a new line, passing through these 2 points.
 If (= x0 x1), an error will be signaled."
   (declare (double-float x0 y0 x1 y1) (values line))
-  (line-adjust (make-line :sl (/ (- y0 y1) (- x0 x1))) x0 y0))
+  (make-line :co (with-type double-float (/ (- (* y0 x1) (* y1 x0)) (- x1 x0)))
+             :sl (with-type double-float (/ (- y1 y0) (- x1 x0)))))
 
 (defun regress (seq &key (xkey #'car) (ykey #'cdr))
   "Return the regression line for the sequence of 2d points.
@@ -608,12 +567,87 @@ The second value returned is the deviation from the line.
 The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   (declare (sequence seq) (type (function (t) double-float) xkey ykey)
 	   (values line (double-float 0.0d0 *)))
-  (multiple-value-bind (co xm ym xd yd nn sl err)
+  (multiple-value-bind (co xm ym xd yd nn)
       (cov seq :xkey xkey :ykey ykey)
     (declare (double-float co xm ym xd yd) (fixnum nn))
-    (setq sl (/ co xd) err (if (= nn 2) 0.0d0 (s/ (- yd (* sl co)) yd)))
-    (assert (>= err 0) (err) "REGRESS: error is negative: ~f~%" err)
-    (values (make-line :sl sl :co (- ym (* xm sl))) (sqrt err))))
+    (let* ((sl (/ co xd)) (err (if (= nn 2) 0.0d0 (d/ (- yd (* sl co)) yd))))
+      (declare (double-float sl err))
+      (assert (>= err 0) (err) "REGRESS: error is negative: ~f~%" err)
+      (values (make-line :sl sl :co (with-type double-float (- ym (* xm sl))))
+              (sqrt err)))))
+
+(defun regress-n (yy xx nx &key (func #'aref))
+  "Returns: vector [b1 ... bn], free term, Rmult, Ftest."
+  (declare (type (simple-array double-float (*)) yy)
+           (type simple-array xx) (fixnum nx)
+           (type (function (array fixnum fixnum) double-float) func)
+           (values (simple-array double-float (*)) double-float
+                   (double-float 0.0 1.0) (double-float 0.0 *)))
+  (let ((mx (make-array (list nx nx) :element-type 'double-float
+                        :initial-element 0.0d0))
+        (cfs (make-array nx :element-type 'double-float ; coeffs
+                         :initial-element 0.0d0))
+        (rhs (make-array nx :element-type 'double-float ; right hand sides
+                         :initial-element 0.0d0))
+        (mms (make-array nx :element-type 'double-float ; means
+                         :initial-element 0.0d0))
+        (len (length yy)) (yyb (mean yy)) (yys 0.0d0) (free 0.0d0) (rr 0.0d0)
+        (ff 0.0d0))
+    (declare (type (simple-array double-float (* *)) mx) (fixnum len)
+             (type (simple-array double-float (*)) cfs rhs mms)
+             (double-float yyb yys free rr ff))
+    (loop for kk of-type (unsigned-byte 20) upfrom 0 and yk across yy do
+          (incf yys (sqr (- yk yyb)))
+          (dotimes (ii nx)          ; compute X
+            (declare (fixnum ii))
+            (setf (aref cfs ii) (funcall func xx kk ii))
+            (incf (aref mms ii) (aref cfs ii)))
+          (dotimes (ii nx)
+            (declare (fixnum ii))
+            (incf (aref rhs ii) (* yk (aref cfs ii)))
+            (loop for jj of-type fixnum from 0 to ii do
+                  (incf (aref mx ii jj) (* (aref cfs ii) (aref cfs jj))))))
+    (dotimes (ii nx)            ; subtract the means
+      (declare (fixnum ii))
+      (decf (aref rhs ii) (* (aref mms ii) yyb))
+      (divf (aref mms ii) len))
+    (dotimes (ii nx)
+      (declare (fixnum ii))
+      (loop for jj of-type fixnum from 0 to ii do
+            (decf (aref mx ii jj) (* len (aref mms ii) (aref mms jj)))
+            (setf (aref mx jj ii) (aref mx ii jj))))
+    (handler-case (matrix-solve mx (replace cfs rhs))
+      (division-by-zero (co)
+        (format t "regress-n: `matrix-solve' failed on:~%~/matrix-print/~a"
+                mx co)
+        (let ((det (matrix-inverse mx)))
+          (assert (not (zerop det)) (mx)
+                  "the matrix is degenerate (det = 0)~%")
+          (format t "det == ~f; using `matrix-inverse'.~%" det)
+          (matrix-multiply-mat-col mx rhs cfs))))
+    (setq free (- yyb (dot cfs mms))
+          rr (/ (dot cfs rhs) yys)
+          ff (d/ (* rr (- len nx 1)) (* (- 1 rr) nx)))
+    (assert (<= 0.0d0 rr 1.0d0) (rr) "Rmult (~f) outside [0.0; 1.0]" rr)
+    (assert (<= 0.0d0 ff) (ff) "Ftest (~f) is negative" ff)
+    (values cfs free rr ff)))
+
+(defun regress-poly (seq deg &key (xkey #'car) (ykey #'cdr))
+  "Polynomial regression."
+  (declare (sequence seq) (fixnum deg)
+           (type (function (t) double-float) xkey ykey))
+  (let* ((len (length seq)) (ii 0) (yy (map-vec 'double-float len ykey seq))
+         (xx (make-array (list len 1) :element-type 'double-float)))
+    (declare (type (unsigned-byte 20) len ii))
+    (map nil (lambda (el) (setf (aref xx ii 0) (funcall xkey el)) (incf ii))
+         seq)
+    (multiple-value-bind (vec free)
+        (regress-n yy xx deg :func
+                   (lambda (xx ii jj)
+                     (declare (type (unsigned-byte 20) ii jj)
+                              (type (simple-array double-float (* *)) xx))
+                     (expt (aref xx ii 0) (1+ jj))))
+      (concatenate 'vector (nreverse vec) (list free)))))
 
 (provide "math")
 ;;; math.lisp ends here

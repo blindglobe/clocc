@@ -15,10 +15,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.4 2004/06/08 14:55:03 sds Exp $
+;;; $Id: munkres.lisp,v 2.5 2004/06/09 15:31:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
-(defpackage :cllib)
+(eval-when (compile load eval)
+  (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
+
 (in-package :cllib)
 (export '(assignment))
 

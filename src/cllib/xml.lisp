@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.21 2000/06/29 19:39:46 sds Exp $
+;;; $Id: xml.lisp,v 2.22 2000/08/07 19:35:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -733,15 +733,17 @@ The first character to be read is #\T."
 (defmacro with-xml-file ((var file &key reset-ent (out '*standard-output*))
                          &body body)
   "Open the XML stream to file."
-  `(with-timing (:out ,out)
-    (when ,reset-ent (xml-init-entities))
-    (with-xml-input (,var (open ,file :direction :input))
-      (mesg :xml ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
-       file (file-length (car (xmlis-all ,var))))
-      (unwind-protect (progn ,@body)
-        (mesg :xml ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
-              (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
-              (xmlis-size ,var))))))
+  (with-gensyms ("WXF-" ff)
+    `(with-timing (:out ,out)
+      (when ,reset-ent (xml-init-entities))
+      (let ((,ff ,file))
+        (with-xml-input (,var (open ,ff :direction :input))
+          (mesg :xml ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-file
+                ,ff (file-length (car (xmlis-all ,var))))
+          (unwind-protect (progn ,@body)
+            (mesg :xml ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
+                  (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
+                  (xmlis-size ,var))))))))
 
 ;;;###autoload
 (defun xml-read-from-file (file &key (repeat t) (reset-ent *xml-read-entities*)

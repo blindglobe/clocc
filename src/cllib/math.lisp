@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1998-06-16 Tue 10:37:19 EDT sds@mute.eaglets.com>
+;;; File: <math.lisp - 1998-06-18 Thu 14:49:59 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.3 1998/06/16 14:38:30 sds Exp $
+;;; $Id: math.lisp,v 1.4 1998/06/19 20:10:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.4  1998/06/19 20:10:38  sds
+;;; Made `normalize' work with arbitrary sequences.
+;;; Many minor declarations for CMUCL added.
+;;;
 ;;; Revision 1.3  1998/06/16 14:38:30  sds
 ;;; Replaced division with recursion in `!!'.
 ;;;
@@ -43,10 +47,11 @@
 
 (defun ! (nn)
   "Compute the factorial: n! = n * (n-1) * (n-2) * ..."
-  (declare (fixnum nn))
+  (declare (fixnum nn) (values integer))
   #+clisp (lisp:! nn)
   #-clisp
   (labels ((ff (aa bb)
+             (declare (fixnum aa bb) (values integer))
 	     (case (- bb aa)
 	       (1 bb) (2 (* (- bb 1) bb)) (3 (* (- bb 2) (- bb 1) bb))
 	       (4 (* (- bb 3) (- bb 2) (- bb 1) bb))
@@ -55,10 +60,12 @@
 
 (defun !! (nn)
   "Compute the double factorial: n!! = n * (n-2) * (n-4) * ..."
-  (declare (fixnum nn))
+  (declare (fixnum nn) (values integer))
   (multiple-value-bind (kk rr) (floor nn 2)
-    (if (zerop rr) (* (! kk) (expt 2 kk))
+    (declare (fixnum kk rr))
+    (if (zerop rr) (* (! kk) (ash 1 kk))
         (labels ((ff (aa bb)
+                   (declare (fixnum aa bb) (values integer))
                    (case (- bb aa)
                      (2 bb) (4 (* bb (- bb 2))) (6 (* bb (- bb 2) (- bb 4)))
                      (8 (* bb (- bb 2) (- bb 4) (- bb 6)))
@@ -123,14 +130,14 @@ Return the value and the derivative, suitable for `newton'."
 		     (lambda (xx) (expt (abs (funcall key xx)) order)))
 	     (/ 1.0d0 (double-float order))))))
 
-(defun normalize (lst &optional (norm #'norm))
-  "Make the list have unit norm. Drop nils."
-  (declare (list lst) (type (function (t) double-float) norm))
-  (setq lst (delete nil lst))
-  (let ((nn (funcall norm lst)))
+(defun normalize (seq &optional (norm #'norm))
+  "Make the SEQ have unit norm. Drop nils."
+  (declare (sequence seq) (type (function (t) double-float) norm))
+  (setq seq (delete nil seq))
+  (let ((nn (funcall norm seq)))
     (declare (double-float nn))
-    (when (zerop nn) (error "Zero list: ~a" lst))
-    (map-in (lambda (rr) (declare (double-float rr)) (/ rr nn)) lst)))
+    (assert (> nn 0) (seq) (error "Zero norm vector: ~a" seq))
+    (map-in (lambda (rr) (declare (double-float rr)) (/ rr nn)) seq)))
 
 (defun rel-dist (seq1 seq2 &key (key #'value) (start1 0) (start2 0) depth)
   "Return the square of the relative mismatch between the 2 sequences."
@@ -228,7 +235,7 @@ Meaningful only if all the numbers are of the same sign."
 	   (values double-float))
   (multiple-value-bind (mean len) (mean seq :key key)
     (declare (fixnum len) (double-float mean))
-    (if (or (<= len 1) (zerop mean)) 0
+    (if (or (<= len 1) (zerop mean)) 0.0d0
 	(/ (standard-deviation seq :len len :key key :mean mean)
 	   (abs mean)))))
 
@@ -373,7 +380,7 @@ and the average annual volatility for US Dollar Index."
   (declare (number aa) (list bb) (values number))
   (if (some #'zerop bb)
       (cond ((zerop aa) 1) ((plusp aa) most-positive-fixnum)
-	    (- most-positive-fixnum))
+	    ((- most-positive-fixnum)))
       (apply #'/ aa bb)))
 
 (defsubst s/ (aa bb)
@@ -445,8 +452,9 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 (defun percent-change (v0 v1 &optional days)
   "Return the percent change in values, from V0 to V1.
 If the optional DAYS is given, return the annualized change too."
-  (declare (number v0 v1) (values number))
-  (let ((pers (/ v1 v0)))
+  (declare (number v0 v1) (type (or null number) days)
+           (values double-float (or null double-float)))
+  (let ((pers (double-float (/ v1 v0))))
     (if days
 	(values (to-percent pers) (to-percent (expt pers (/ 365.25d0 days))))
 	(to-percent pers))))
@@ -456,7 +464,7 @@ If the optional DAYS is given, return the annualized change too."
 This function is commutative, and puts the smallest number into the
 denominator.  Sign is ignored."
   (declare (double-float v0 v1) (values double-float))
-  (s/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
+  (double-float (s/ (abs (- v1 v0)) (min (abs v0) (abs v1)))))
 
 (defcustom *relative-tolerance* double-float 1.0e-3
   "*The default relative tolerance for `same-num-p'.")
@@ -493,7 +501,7 @@ IVAL is the initial approximation, and it better be good!
 MAX-IT is the maximum number of iterations. If -1 (default), unlimited.
 Returns the solution, the last change (more or less the error),
 and the number of iterations made."
-  (declare (type (function (number) number number) ff)
+  (declare (type (function (number) (values number number)) ff)
 	   (number val ival) (fixnum max-it) (values number number fixnum))
   (do ((xx ival) f0 f1 (del 10) (it 0 (1+ it)))
       ((or (< (abs del) tol) (= max-it it)) (values xx del it))
@@ -529,7 +537,7 @@ and the number of iterations made."
 (defsubst line-rsl (ln)
   "Return the relative slope of the line."
   (declare (type line ln) (values double-float))
-  (s/ (line-sl ln) (line-co ln)))
+  (double-float (s/ (line-sl ln) (line-co ln))))
 
 (defsubst line-below-p (ln xx yy)
   "Return T if the point (xx yy) is below the line LN."
@@ -595,7 +603,7 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
       (cov seq :xkey xkey :ykey ykey)
     (declare (double-float co xm ym xd yd) (fixnum nn))
     (setq sl (/ co xd) err (if (= nn 2) 0.0d0 (s/ (- yd (* sl co)) yd)))
-    (assert (not (minusp err)) (err) "REGRESS: error is negative: ~f~%" err)
+    (assert (>= err 0) (err) "REGRESS: error is negative: ~f~%" err)
     (values (make-line :sl sl :co (- ym (* xm sl))) (sqrt err))))
 
 (provide "math")

@@ -212,15 +212,12 @@ Returns nothing"
         ;; then the patches:
         (compile-and-load  "common-lisp-controller" "post-sysdef-install.lisp")
         ;; register ourselves:
-	(let ((systems (merge-pathnames
-			(make-pathname :directory '(:relative "systems"))
-			source-root)))
-	  (push systems
-		(symbol-value (intern (symbol-name :*central-registry*)
-				      (find-package :make))))
-	  (push systems
-		(symbol-value (intern (symbol-name :*central-registry*)
-				      (find-package :asdf)))))))
+	(push *systems-root*
+	      (symbol-value (intern (symbol-name :*central-registry*)
+				    (find-package :make))))
+	(push *systems-root*
+	      (symbol-value (intern (symbol-name :*central-registry*)
+				    (find-package :asdf))))))
     (values)))
 
 (defun add-project-directory (source-root fasl-root projects &optional system-directory)

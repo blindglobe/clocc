@@ -1,3 +1,9 @@
+common-lisp-controller (3.69) unstable; urgency=low
+
+  * Push correct directory onto system registry (closes:202713)
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 24 Jul 2003 09:49:27 -0600
+
 common-lisp-controller (3.68) unstable; urgency=low
 
   * common-lisp-controller.lisp: eliminate internal dependence on

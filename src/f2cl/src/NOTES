@@ -2,6 +2,20 @@
 
 Changes:
 
+Sep 9, 2001
+-----------
+
+o Fixed a bug that caused 
+      y = 1.5d0 - exp(x) * top
+  to be incorrectly preprocessed as
+      y = 1.5d0 - e xp(x) * top
+
+o Handle Hollerith strings in FORMAT statements by converting the
+  Hollerith strings into real strings during preprocessing by looking
+  at FORMAT statements.  FIND-QUOTE needs some work to handle
+  Fortran-style quoting better.  This should work much better than
+  whatever I did on Aug 02, 2000 below.
+
 Jun 3, 2001
 -----------
 
@@ -25,7 +39,7 @@ o Statement functions should coerce the result to the right type.
 
 Added the MINPACK package, which highlighted some of the bugs above.
 (Cool!)  Note:  the MINPACK package appears to have some lines that
-exceed column 72.  This isn't a problem for f2cl, but you compiler
+exceed column 72.  This isn't a problem for f2cl, but your compiler
 might drop those characters past column 72.
 
 

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.9 2000/07/31 17:51:25 sds Exp $
+;;; $Id: proc.lisp,v 1.10 2001/06/08 14:13:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -407,7 +407,7 @@ and reapply its initial function to its arguments."
 (defun get-lock (lock)
   "Claims a lock, blocking until the current process can get it."
   #+Allegro    (mp:process-lock lock)
-  #+CMU        (mp::lock-wait lock)
+  #+CMU        (mp::lock-wait lock (mp:process-whostate mp:*current-process*))
   #+CormanLisp FIXME
   #+Genera     FIXME
   #+LispWorks  (mp:claim-lock lock)

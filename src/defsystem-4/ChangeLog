@@ -1,3 +1,116 @@
+2002-07-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/languages/c/c.lisp:
+	Added preliminary support for generic C compilers.
+
+	* src/syntax.lisp: Fixed a few minor nuisances in the syntax handling.
+
+	* src/registry.lisp: Fixed the registry handling.
+
+	* src/predefined-specialized-components.lisp:
+	Changed the hierarchy structure to reflect changes in the predefined
+	components.
+
+	* src/predefined-components.lisp:
+	Added a few new classes (OBJECT-FILE, EXECUTABLE-FILE, etc etc) and
+	fixed a few minor things.
+
+	* src/load-defsystem.lisp:
+	Added loading of "MAKE-DEFSYSTEM:utilities:split-sequence.*" if
+	needed. This is the SPLIT-SEQUENCE from ccLan.
+
+	* src/language-support.lisp:
+	Preliminary definitions for foreign language support.
+
+	* src/defsystem-protocol.lisp:
+	A lot of changed exploring different ways to support foreign
+	languages. Plus fixes to FIND-SYSTEM so that now does the right thing
+	w.r.t. the system registry.
+
+	* src/defsystem-pkg.lisp: Added several mising exports.
+
+	* src/actions.lisp:
+	Added ACTION class and added a preliminary DEFINE-ACTION macro.
+
+	* src/utilities/split-sequence.lisp:
+	Added file 'split-sequence.lisp' from ccLan.
+
+	* src/versions.lisp:
+	Several changes made to make version objects complete. Added
+	PARSE-VERSION-STRING function and fixed other inconsistencies.
+
+2002-05-23  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/adjoin-dirs.lisp:
+	Fixed problem with merging of logical pathnames yielding a versioned
+	pathname (with :newest).
+	Now the calls to MERGE-PATHNAMES have the optional `version' argument
+	set to NIL whenever a logical pathname is involved.
+	This fix should open make hierarchical composition much easier.
+
+2002-05-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* src/adjoin-dirs.lisp:
+	Rearranged code in minor way to make it more readable.  Test
+	translations are now at the bottom of the file.
+
+2002-05-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* adjoin-dirs.lisp:
+	Rearranged code in minor way to make it more readable.  Test
+	translations are now at the bottom of the file.
+
+2002-05-22  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* adjoin-dirs.lisp:
+	Rearranged code in minor way to make it more readable.  Test
+	translations are now at the bottom of the file.
+
+2002-03-26  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* languages/c/c.lisp, languages/fortran/fortran.lisp, utilities/ambler/ambler.lisp, utilities/run-os-program.lisp:
+	Reinstate NO-APPLICABLE-=METHOD technique now that Lispworks 4.2 has patch available
+
+2002-03-23  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* load-defsystem.lisp: Updated logical pathnames so that CLISP is happy
+
+	* generic-function-classes.lisp, languages/c/c.lisp, languages/fortran/fortran.lisp, load-defsystem.lisp, utilities/ambler/ambler-pkg.lisp, utilities/ambler/ambler.lisp, utilities/run-os-program.lisp:
+	Change NO-APPLICABLE-METHOD technique to more compatible, less powerful technique
+
+	* impl-dependent/lispworks.lisp: Add compile-file-internal function
+
+	* defsystem-pkg.lisp, generic-function-classes.lisp, languages/c/c.lisp, languages/fortran/fortran.lisp, load-defsystem.lisp, utilities/ambler/ambler-pkg.lisp, utilities/ambler/ambler.lisp, utilities/run-os-program.lisp:
+	Added specialized generic function classes to support NO-APPLICABLE-METHOD
+
+2002-03-14  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* load-defsystem.lisp, registry.lisp, defsystem-pkg.lisp:
+	Added exported function add-registy-location.
+	Added code to load registry.lisp during library load.
+
+2002-03-13  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* defsystem-protocol.lisp: Change editor mode line from CLtL to Lisp
+	Added reader *feature* switch :mk4-breakpoints to enable breaks
+
+2002-03-12  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem-protocol.lisp:
+	Fixed a missing OTHER-COMPONENTS binding in a MULTIPLE-VALUE-BIND in
+	EXECUTE-ACTION-ON-SUBCOMPONENTS.
+
+2002-03-10  kevinrosenberg  <kevinrosenberg@tapulon>
+
+	* impl-dependent/lispworks.lisp:
+	Removed unecessary #+unix commands, updated foreign: package call to system:
+
+2002-03-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* defsystem-protocol.lisp:
+	Added ENSURE-DIRECTORIES-EXIST to COMPILE-ACTION to fix a (stupid) bug
+	found by Kevin Rosenberg.
+
 2002-03-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-4/src/defsystem-protocol.lisp:

@@ -3671,7 +3671,7 @@ D
 ;;; we might add a COMPILER-OPTIONS slot to the component defstruct.
 
 (defparameter *c-compiler* "gcc")
-#-(or symbolics (and :lispworks :harlequin-pc-lisp))
+#-(or symbolics (and :lispworks :harlequin-pc-lisp (not :unix)))
 
 (defun run-unix-program (program arguments)
   ;; arguments should be a list of strings, where each element is a
@@ -3682,13 +3682,14 @@ D
 		      program arguments))
   #+KCL (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+:cmu (extensions:run-program program arguments)
-  #+:lispworks (foreign:call-system-showing-output
+  #+:lispworks (#.(or (find-symbol "CALL-SYSTEM-SHOWING-OUTPUT" "FOREIGN")
+		      (find-symbol "CALL-SYSTEM-SHOWING-OUTPUT" "SYSTEM"))
 		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+clisp (#+lisp=cl ext:run-program #-lisp=cl lisp:run-program
                      program :arguments arguments)
   )
 
-#+(or symbolics (and :lispworks :harlequin-pc-lisp))
+#+(or symbolics (and :lispworks :harlequin-pc-lisp (not :unix)))
 (defun run-unix-program (program arguments)
   (error "MK::RUN-UNIX-PROGRAM: this does not seem to be a UN*X system.")
   )
@@ -3934,15 +3935,24 @@ D
 
     (cond ((and must-compile (probe-file source-pname))
 	   (with-tell-user ("Compiling source" component :source)
-	     (or *oos-test*
-		 (apply (compile-function component)
+	     (let ((output-file
+		    #+:lucid
+		     (unmunge-lucid (component-full-pathname component
+							     :binary))
+		     #-:lucid
+		     (component-full-pathname component :binary)))
+	       
+	       ;; make certain the directory we need to write to
+	       ;; exists [pvaneynd@debian.org 20001114]
+               ;; #+common-lisp-controller
+	       (ensure-directories-exist 
+		(make-pathname :directory (pathname-directory output-file)))
+	       
+	       (or *oos-test*
+		   (apply (compile-function component)
 			  source-pname
 			  :output-file
-			  #+:lucid
-			  (unmunge-lucid (component-full-pathname component
-								  :binary))
-			  #-:lucid
-			  (component-full-pathname component :binary)
+			  output-file
 			  #+CMU :error-file
 			  #+CMU (and *cmu-errors-to-file*
 				     (component-full-pathname component
@@ -3952,7 +3962,7 @@ D
 			  #+(and CMU (not :new-compiler))
 			  *cmu-errors-to-terminal*
 			  (component-compiler-options component)
-			  )))
+			  ))))
 	   must-compile)
 	  (must-compile
 	   (tell-user "Source file not found. Not compiling"

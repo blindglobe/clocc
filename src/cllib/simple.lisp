@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.8 2004/06/28 18:31:53 sds Exp $
+;;; $Id: simple.lisp,v 1.9 2004/07/12 15:47:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -77,13 +77,14 @@ AKA `remove-if-not':
 determined by the FUNCTIONS"
   (labels ((l (fl)
              (let ((first (first fl)) (rest (rest fl)))
+               (setq first (if (symbolp first) `(,first) `(funcall ,first)))
                (if rest
                    (let ((x1 (gensym "X")) (y1 (gensym "Y")))
-                     `(let ((,x1 (,first x)) (,y1 (,first y)))
+                     `(let ((,x1 (,@first x)) (,y1 (,@first y)))
                         (or (,gt ,x1 ,y1)
                             (and (,eq ,x1 ,y1)
                                  ,(l rest)))))
-                   `(,ge (,first x) (,first y))))))
+                   `(,ge (,@first x) (,@first y))))))
     `(lambda (x y) ,(l functions))))
 
 ;;;

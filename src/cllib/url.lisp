@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.33 2002/03/30 23:23:27 sds Exp $
+;;; $Id: url.lisp,v 2.34 2002/04/03 19:39:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -42,7 +42,7 @@
           ftp-list url-send-mail url-get-news url-time
           browse-url *browsers* *browser*
           *nntp-server* *url-replies* *url-errors*
-          dump-url url-get whois finger))
+          dump-url url-get whois finger flush-http))
 
 ;;;
 ;;; {{{ URL handling
@@ -95,18 +95,19 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
 
 (defun url-get-port (url)
   "Get the correct port of the URL - if the port is not recorded there,
-guess from the protocol."
+guess from the protocol; save the guessed value."
   (declare (type url url))
   (if (zerop (url-port url))
-      (flet ((ssp (st) (ignore-errors
-                         (servent-port (socket-service-port st)))))
-        (or (ssp (string-downcase (string (url-prot url))))
-            (ssp (case (url-prot url)
-                   (:mailto "smtp") (:news "nntp") (:www "http")))
-            ;; yuk!! Solaris 2.5.1 does not have http in /etc/services
-            (and (eq (url-prot url) :http) 80)
-            (error 'code :proc 'url-get-port :args (list url)
-                   :mesg "Cannot guess the port for ~s")))
+      (setf (url-port url)
+            (flet ((ssp (st) (ignore-errors
+                               (servent-port (socket-service-port st)))))
+              (or (ssp (string-downcase (string (url-prot url))))
+                  (ssp (case (url-prot url)
+                         (:mailto "smtp") (:news "nntp") (:www "http")))
+                  ;; yuk!! Solaris 2.5.1 does not have http in /etc/services
+                  (and (eq (url-prot url) :http) 80)
+                  (error 'code :proc 'url-get-port :args (list url)
+                         :mesg "Cannot guess the port for ~s"))))
       (url-port url)))
 
 (defcustom *nntp-server* simple-string
@@ -420,8 +421,7 @@ ERR is the stream for information messages or NIL for none."
 (defun url-open-http (sock url err)
   "Open the socket to the HTTP url."
   (declare (type socket sock) (type url url) (type (or null stream) err))
-  (format sock "GET ~a HTTP/1.0" ; http://host == http://host/
-          (if (zerop (length (url-path url))) "/" (url-path url)))
+  (format sock "GET ~a HTTP/1.0" url)
   (socket-send sock 2)
   (do ((sk sock) (stat 302) sym res (*package* +kwd+))
       ((not (eql stat 302)) sk)
@@ -897,6 +897,13 @@ This is mostly a debugging function, to be called interactively."
           :do (format out fmt ii
                       (funcall proc (string-right-trim +whitespace+ rr))))))
 
+(defun flush-http (sock)
+  "Read everything from the HTTP socket SOCK, until a blank line."
+  (loop :for line = (read-line sock nil nil)
+        :while (and line (plusp (length line))
+                    #+cmu (not (string= line (string #\Return))))
+        :collect line))
+
 ;;;###autoload
 (defun url-get (url loc &key (timeout *url-default-timeout*)
                 (max-retry *url-default-max-retry*)
@@ -915,6 +922,10 @@ Keywords: `timeout', `max-retry', `out', `err'."
             (bt (get-float-time nil))
             (size (with-open-url (sock url :err err :timeout timeout
                                        :max-retry max-retry)
+                    (flush-http sock)
+                    ;; FIXME: sock is a character stream,
+                    ;; and socket-to-file expects a byte stream
+                    #+clisp (setf (stream-element-type sock) 'unsigned-byte)
                     (socket-to-file sock path :out out))))
        (declare (type file-size-t size))
        (multiple-value-bind (el st) (elapsed bt nil t)

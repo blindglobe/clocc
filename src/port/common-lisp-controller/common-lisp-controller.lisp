@@ -1,32 +1,32 @@
 ;;; -*- Mode: Lisp; Package: COMMON-LISP-CONTROLLER -*-
+;;;
+
 
 (in-package :cl-user)
 
-(defpackage "COMMON-LISP-CONTROLLER"
-    (:use "COMMON-LISP")
-    (:export "INIT-COMMON-LISP-CONTROLLER"
-             "ADD-PROJECT-DIRECTORY"
-             "ADD-TRANSLATION"
-             "SEND-CLC-COMMAND")
-    (:nicknames "C-L-C"))
+(defpackage :common-lisp-controller
+    (:use :common-lisp)
+    (:export #:init-common-lisp-controller
+             #:add-project-directory
+             #:add-translation
+             #:send-clc-command
+	     #:make-send-clc-command-sting
+	     #:*clc-send-command-filename*)
+    (:nicknames :c-l-c))
 
 (in-package :common-lisp-controller)
 
 ;; Some general utilities to make the
 ;; descriptions shorter
 
-(defvar *source-extentions* (list "CL" "LISP"
-                                  "L" "LSP"
-                                  "C" "H"
-             			  #+openmcl "cl" #+openmcl "lisp"
-                                  #+openmcl "l" #+openmcl "lsp"
-                                  #+openmcl "c" #+openmcl "h"))
+(defparameter *source-extentions* (list "cl" "lisp"
+					"l" "lsp"
+					"c" "h"))
 
 (defvar *fasl-type*
   (load-time-value
    (pathname-type
-    (compile-file-pathname "foo.lisp")
-    :case :common))
+    (compile-file-pathname "foo.lisp")))
   "This is the type of compiled lisp files.")
 
 
@@ -40,63 +40,56 @@ For example
                              :type *fasl-type*
                                  :case :common))
 should add a translation (in CMUCL) that
-cl-library:;hemlock;**;*.x86f.* -> /home/pvaneynd/junk-pile/hemlock/**/*.x86f
+cl-library:hemlock;**;*.x86f.* -> /home/pvaneynd/junk-pile/hemlock/**/*.x86f
 
 This function returns nothing."
   (let ((lp-host (ecase for
                    (:cl-library
-                    "CL-LIBRARY")
+                    "cl-library")
                    (:cl-systems
-                    "CL-SYSTEMS")))
+                    "cl-systems")))
         ;; force to pathnames
         (new-root (pathname new-root))
         (new-part (pathname new-part)))
-
+    
     (assert (eq (first (pathname-directory new-part))
                 :relative)
             (new-part)
             "The NEW-PART parameter ~S is not relative to something, it has to be"
             new-part)
-
+    
     (let ((new-source
 	   ;; construct based on new-part but in the right logical pathname
-           (make-pathname :defaults new-part
-                          :host lp-host
-                          :case :common))
+           (namestring (make-pathname :defaults new-part
+				      :name :wild
+				      :host lp-host)))
           ;; construct the destination, based on all this
           (new-dest
-           (make-pathname :defaults new-part
-                          ;; but under new-root
-                          :directory (append (pathname-directory new-root
-                                                                 :case :common)
-                                             ;; skip the relative
-                                             (rest (pathname-directory new-part
-                                                                       :case :common)))
-                          :case :common)))
+	   (make-pathname :defaults new-part
+			  :name :wild
+			  ;; but under new-root
+			  :directory (append (pathname-directory new-root)
+					     ;; skip the relative
+					     (rest (pathname-directory new-part))))))
       (push (list new-source
-                  new-dest)
-            (logical-pathname-translations lp-host)))
+		  new-dest)
+	    (logical-pathname-translations lp-host)))
     ;; also support the old way
     (let ((new-source
-           ;; construct based on new-part but in the right logical pathname
-           (make-pathname :defaults new-part
-                          :directory (cons :absolute
-                                           (rest
-                                            (pathname-directory new-part
-                                                                :case :common)))
-                          :case :common
-                          :host lp-host))
+	   ;; construct based on new-part but in the right logical pathname
+           (namestring (make-pathname :defaults new-part
+				      :directory (cons :absolute
+						       (rest
+							(pathname-directory new-part)))
+				      :host lp-host)))
           ;; construct the destination, based on all this
-          (new-dest
-           (make-pathname :defaults new-part
-                          ;; but under new-root
-                          :directory (append (pathname-directory new-root
-                                                                 :case :common)
-                                             ;; skip the relative
-                                             (rest (pathname-directory new-part
-                                                                       :case :common)))
-                          :case :common)))
-      (push (list new-source
+	  (new-dest
+	   (make-pathname :defaults new-part
+			  ;; but under new-root
+			  :directory (append (pathname-directory new-root)
+					     ;; skip the relative
+					     (rest (pathname-directory new-part))))))
+	  (push (list new-source
                   new-dest)
             (logical-pathname-translations lp-host)))
     (values)))
@@ -116,80 +109,52 @@ if (>= version 3): load defsystem and patch require.
 
 Returns nothing"
   ;; force both parameters to directories...
-  (let* ((fasl-root (make-pathname :name nil :type nil :version nil
-                                   :defaults (pathname fasl-root)))
+  (let* ((fasl-root (make-pathname :name nil :type nil
+                                   :directory (pathname-directory fasl-root)))
          (s-root (pathname source-root))
          (source-root (make-pathname
-                       :defaults s-root
-                       :case :common
-                       :directory (append (pathname-directory s-root
-                                                              :case :common)
-                                          '("SOURCE"))))
+		       :type :wild
+		       :name :wild
+                       :directory (append (pathname-directory s-root)
+                                          '("source"))))
          (system-root (make-pathname
-                       :defaults s-root
-                       :case :common
-                       :directory (append (pathname-directory s-root
-                                                              :case :common)
-                                          '("SYSTEMS")))))
-    (setf (logical-pathname-translations "CL-LIBRARY")
+		       :type :wild
+		       :name :wild
+                       :directory (append (pathname-directory s-root)
+                                          '("systems")))))
+    (setf (logical-pathname-translations "cl-library")
           nil)
-    (setf (logical-pathname-translations "CL-SYSTEMS")
+    (setf (logical-pathname-translations "cl-systems")
           nil)
         ;;; by default everything is in the fasl tree...
-    (setf (logical-pathname-translations "CL-LIBRARY")
-          (list
-           (list (make-pathname :directory '(:relative :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-LIBRARY:"))
-                                :case :common)
-                 ;; ;**;*.*.*
-                 ;; to
-                 (make-pathname :directory (append (pathname-directory fasl-root)
-                                                   (list :wild-inferiors))
-                                :defaults fasl-root))
-           (list (make-pathname :directory '(:absolute :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-LIBRARY:"))
-                                :case :common)
-                 ;; ;**;*.*.*
-                 ;; to
-                 (make-pathname :directory (append (pathname-directory fasl-root)
-                                                   (list :wild-inferiors))
-                                :defaults fasl-root))))
+    (setf (logical-pathname-translations "cl-library")
+	  `(("cl-library:;**;*.*.*" ,(make-pathname :directory (append (pathname-directory fasl-root)
+								       (list :wild-inferiors))
+						    :name :wild
+						    :type :wild))
+	    ("cl-library:**;*.*.*" ,(make-pathname :directory (append (pathname-directory fasl-root)
+								      (list :wild-inferiors))
+						   :name :wild
+						   :type :wild))))
     ;;; add common source extentions:
     (loop for extention in *source-extentions*
-          do
+	do
           (add-translation :cl-library
                            source-root
                            (make-pathname :directory '(:relative :wild-inferiors)
-                                          :type extention
-                                          :case :common)))
+					  :name :wild
+                                          :type extention)))
     ;; now cl-systems:
     ;; by default everything is in the fasl tree...
-    (setf (logical-pathname-translations "CL-SYSTEMS")
-         (list
-           (list (make-pathname :directory '(:relative :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-SYSTEMS:"))
-                                :type "SYSTEM"
-                                :case :common)
-                 ;; ;**;*.*.*
-                 ;; to
-                 (make-pathname :directory (append (pathname-directory system-root
-                                                                       :case :common)
-                                                   (list :wild-inferiors))
-                                :type "SYSTEM"
-                                :case :common
-                                :defaults system-root))
-           (list (make-pathname :directory '(:absolute :wild-inferiors)
-                                :host (pathname-host (logical-pathname "CL-SYSTEMS:"))
-                                :type "SYSTEM"
-                                :case :common)
-                 ;; ;**;*.*.*
-                 ;; to
-                 (make-pathname :directory (append (pathname-directory system-root
-                                                                       :case :common)
-                                                   (list :wild-inferiors))
-                                :type "SYSTEM"
-                                :case :common
-                                :defaults system-root))))
+    (setf (logical-pathname-translations "cl-systems")
+	  `(("cl-systems:;**;*.system" ,(make-pathname :directory (append (pathname-directory system-root)
+									  (list :wild-inferiors))
+						       :type "system"
+						       :name :wild))
+	    ("cl-systems:**;*.system" ,(make-pathname :directory (append (pathname-directory system-root)
+									 (list :wild-inferiors))
+						      :name :wild
+						      :type "system"))))
     (when (>= version 3)
       (flet ((compile-and-load (file)
                ;; first make the target directory:
@@ -206,14 +171,15 @@ Returns nothing"
                ;; then load it:
                (load (compile-file-pathname file))))
         ;; first ourselves:
-        (compile-and-load  "cl-library:;common-lisp-controller;common-lisp-controller.lisp")
+        (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
         ;; then defsystem:
-        (compile-and-load  "cl-library:;defsystem;defsystem.lisp")
+        (compile-and-load  "cl-library:defsystem;defsystem.lisp")
         ;; then the patches:
-        (compile-and-load  "cl-library:;common-lisp-controller;common-lisp-controller-post-defsystem.lisp")
+        (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller-post-defsystem.lisp")
         ;; register ourselves:
-        (push "cl-systems:"
-              (symbol-value (intern "*CENTRAL-REGISTRY*"
+        (push (make-pathname :directory (pathname-directory 
+					 (translate-logical-pathname "cl-systems:dummy.system")))
+              (symbol-value (intern (symbol-name :*central-registry*)
                                     (find-package :make))))))
     (values)))
 
@@ -229,18 +195,18 @@ Returns nothing"
           (add-translation
            :cl-library fasl-root
            (make-pathname :directory (list :relative project :wild-inferiors)
-                          :type :wild
-                          :case :common))
+			  :name :wild
+                          :type :wild))
           (loop for extention in *source-extentions* do
                 (add-translation
                  :cl-library source-root
                  (make-pathname :directory (list :relative project :wild-inferiors)
-                                :type extention
-                                :case :common)))))
+				:name :wild
+                                :type extention)))))
   (when system-directory
     (pushnew  system-directory
               (symbol-value
-               (intern "*CENTRAL-REGISTRY*"
+               (intern (symbol-name :*central-registry*)
                        (find-package :make)))
               :test #'equalp))
   (values))
@@ -248,6 +214,14 @@ Returns nothing"
 (eval-when (:load-toplevel :execute :compile-toplevel)
   (pushnew :common-lisp-controller *features*))
 
+
+(defvar *clc-send-command-filename* "/usr/bin/clc-send-command"
+ "Filename of clc-send-command executable")
+
+(defun make-clc-send-command-string (command package)
+  "Function returns a string suitable to pass to the operating
+system to execute the clc-send-command program"
+  (format nil "~A ~A ~A --quiet" *clc-send-command-filename* command package))
 
 (defun send-clc-command (command package)
   "Function to be overrided by the implementation.

@@ -1,3 +1,10 @@
+KMR 23-JULY-2002 (Kevin M. Rosenberg)
+    * common-lisp-controller.lisp:
+	 - Changes to logical pathname translations to support Lispworks
+	   and AllegroCL. Tested okay with CMUCL and SBCL.
+	 - Added *clc-send-command-filename* and make-clc-send-command-string 
+	 - Modifications to support case-sensitive AllegroCL.
+
 PVE 15-MAY-2002
     Created version 3 with a build daemon!
     Changes:

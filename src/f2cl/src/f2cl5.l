@@ -129,7 +129,6 @@
 	       ((eq exprs 'PAUSE)
 		)
 	       (t
-		(format t "adding unknown var ~A~%" exprs)
 		(pushnew (check-t-and-pi exprs) *undeclared_vbles*))))
 	((listp exprs)
 	 (mapc #'check_new_vbles exprs)

@@ -76,7 +76,7 @@ void pipeerror(int dummy)
   exit(0);
 }
 
-#define MAX_LINES 30
+#define MAX_LINES 600
 char *line=NULL; /* read line */
 char *lines[MAX_LINES+1];
 int  current_line=0;

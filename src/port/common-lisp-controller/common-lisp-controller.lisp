@@ -11,7 +11,8 @@
              #:add-translation
              #:send-clc-command
 	     #:make-clc-send-command-string
-	     #:*clc-send-command-filename*)
+	     #:*clc-send-command-filename*
+             #:compile-library)
     (:nicknames :c-l-c))
 
 (in-package :common-lisp-controller)

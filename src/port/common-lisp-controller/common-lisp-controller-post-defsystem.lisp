@@ -95,3 +95,28 @@
   (excl:without-package-locks
    (setf (symbol-function 'lisp:require)
 	 (symbol-function 'clc-require))))
+
+
+(defun compile-library (library)
+  "Recompiles the give library"
+
+  (cond
+    ((and  ;; is the system in the clc root?
+      (ignore-errors
+        ;; probing is for weenies: just do
+        ;; it and ignore the errors :-)
+        (equalp
+         (pathname-host
+          (make::component-source-root-dir
+           (mk:find-system library
+                           :load-or-nil)))
+         ;; the clc root:
+         (pathname-host
+          (pathname
+           "cl-library:")))))
+     ;; if in the clc root:
+     (mk:oos library :compile :verbose nil))
+    (t
+     (format t "~%Package ~S not found... ignoring~%"
+             library)))
+  (values))

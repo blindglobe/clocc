@@ -1,3 +1,11 @@
+common-lisp-controller (3.13) unstable; urgency=low
+
+  * added common-lisp-controller:compile-library as placeholder for future
+    asdf and defsystem-v4 packages and to fix the "no such system" problem.
+  * increased recorded line length as sbcl gives very verbose errormessages. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  6 Aug 2002 23:11:40 +0200
+
 common-lisp-controller (3.12) unstable; urgency=high
 
   * When compiling a package, first compile it sub-systems!

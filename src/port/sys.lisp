@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.10 2000/04/07 17:02:27 sds Exp $
+;;; $Id: sys.lisp,v 1.11 2000/04/10 18:48:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -62,8 +62,8 @@
                     (symbol fn)
                     (function (si:compiled-function-name fn)))))
           (get fn 'si:debug))
-  ;; ??? #+lispworks (walker::walk-arglist symbol nil nil)
-  #-(or allegro clisp cmu gcl)
+  #+lispworks (lw:function-lambda-list fn)
+  #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'arglist fn)))
 
 (defun class-slot-list (class &optional (all t))

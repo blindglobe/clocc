@@ -293,8 +293,7 @@ INPUT-FILE               File containing Fortran code
 		(format outport "~2%")))
 	    (translate-and-write-subprog 
 	     (introduce-continue (readsubprog-extract-format-stmts inport)) 
-	     outport
-	     :declaim declaim :package package :options options)))
+	     outport)))
         ))
     t))
 ;-----------------------------------------------------------------------------
@@ -367,7 +366,7 @@ main-loop
   (if (eq (caadr margin-line) 'do) (cadadr margin-line) nil))
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
-(defun translate-and-write-subprog (prog-list outport &key declaim package options)
+(defun translate-and-write-subprog (prog-list outport)
   (prog (fort-fun *external_function_names*
 		  *undeclared_vbles* *declared_vbles* *implicit_vble_decls* *explicit_vble_decls*
 		  *save_vbles* *key_params* *subprog_common_vars* 
@@ -425,25 +424,6 @@ main-loop
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
      ;;     (format t "~%after translation : ~A" fort-fun)
 
-     #+nil
-     (let ((*print-case* :downcase))
-       (when options
-	 (pprint-logical-block (outport options :per-line-prefix ";;; ")
-	   (format outport "~&Options: ~S" options))
-	 (format outport "~2%"))
-       (when package
-	 (format outport "~&(in-package ~S)~%" (cond ((keywordp package)
-						      package)
-						     ((symbolp package)
-						      (string package))
-						     ((packagep package)
-						      (package-name package))
-						     (t
-						      package))))
-       (when declaim
-	 (format outport "(declaim ~S)~%" declaim))
-       (when (or package declaim)
-	 (format outport "~2%")))
      (multiple-value-bind (spec-proc spec-decl fun)
 	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
        ;;(format t "spec-proc = ~S~%" spec-proc)
@@ -1805,8 +1785,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.43 2000/07/19 13:47:06 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.44 2000/07/19 22:16:34 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.44  2000/07/19 22:16:34  rtoy
+;;; o TRANSLATE-AND-WRITE-SUBPROG doesn't have the :declaim, :package, and
+;;;   :options arguments anymore.
+;;; o Clean out unused code.
+;;;
 ;;; Revision 1.43  2000/07/19 13:47:06  rtoy
 ;;; o Only print out one banner and version number, not one for each
 ;;;   subprog!

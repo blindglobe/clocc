@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.22 2000/08/07 19:35:11 sds Exp $
+;;; $Id: xml.lisp,v 2.23 2000/08/10 20:53:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -747,9 +747,10 @@ The first character to be read is #\T."
 
 ;;;###autoload
 (defun xml-read-from-file (file &key (repeat t) (reset-ent *xml-read-entities*)
-                           (resolve-namespaces *xml-read-balanced*))
+                           (resolve-namespaces *xml-read-balanced*)
+                           (out *standard-output*))
   "Read all XML objects from the file."
-  (let ((obj (with-xml-file (str file :reset-ent reset-ent)
+  (let ((obj (with-xml-file (str file :reset-ent reset-ent :out out)
                (read-from-stream str :repeat repeat))))
     (if resolve-namespaces
         (xml-resolve-namespaces obj)

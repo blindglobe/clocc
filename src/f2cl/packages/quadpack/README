@@ -13,5 +13,7 @@ is in Lisp.  Hence, we convert the code from Fortran to Lisp.
 The directory Fortran contains the Fortran source.  This is a useful
 test for f2cl since it's a fairly large and complete package.
 
-
-
+To test for proper conversion, try compiling tst-dqagse.lisp and
+running the tests therein.  These are some simple test integrals taken
+from the Quadpack book and were designed to show how well quadpack
+works and where it fails.

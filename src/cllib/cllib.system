@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.12 2000/05/02 14:42:34 sds Exp $
+;;; $Id: cllib.system,v 1.13 2000/05/04 18:13:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -35,6 +35,7 @@
      (:file "fin" :depends-on ("base" "math" "tilsla" "withtype"))
      (:file "geo" :depends-on
             ("base" "withtype" "symb" "fileio" "html" "tilsla" "url"))
+     (:file "getopt" :depends-on ("base" "symb"))
      (:file "gnuplot" :depends-on ("base" "date" "datedl" "math" "stat"))
      (:file "gq" :depends-on ("base""withtype" "html" "url" "gnuplot"))
      (:file "h2lisp" :depends-on ("base" "withtype" "html"))

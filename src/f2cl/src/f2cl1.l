@@ -465,8 +465,30 @@ FILENAME                 File containing Fortran code
 	(if (and (eq (car input-list) 'end) (null (cdr input-list)))
 	    (return (nreverse output-list))))))
 
+;; An extended DO statement is a DO statement without the following
+;; line number.
+(defun id-extended-do (line)
+  (and (eq (first line) 'do)
+       (not (numberp (second line)))))
+
+(defun rewrite-extended-do (label line)
+  `(,(first line) ,label ,@(rest line)))
+
+;; Find an END DO or ENDDO statement
+(defun id-end-do (x)
+  (or (eq (car x) 'enddo)
+      (and (eq (car x) 'end)
+	   (eq (cadr x) 'do))))
+
+;; Find a WRITE statement where the format is not a statement number
+;; but a string giving the format itself.
+(defun id-write-format (input-list)
+  (and (eq (car input-list) 'write)
+       (stringp (fifth input-list))))
+
 (defun readsubprog-extract-format-stmts (inport)
-  (let ((write-label 9000000)
+  (let ((extended-label 100000)		; Must be bigger than any possible valid Fortran label.
+	(extended-do-label-stack '())
 	input-list output-list margin *current_label* )
     (when *verbose*
       (format t "~&extracting format statements ...~%"))
@@ -480,46 +502,74 @@ FILENAME                 File containing Fortran code
 	      (let ((label (read-from-string (coerce margin 'string) nil)))
 		(if (integerp label)
 		    label)))
-        ;; Make sure we aren't hosed if we break out of this!
-	(unwind-protect
-	     (progn
-	       (set-fortran-read)
-	       ;; read body of a line
-	       (setq input-list (lineread inport))
-	       ;; read newline character
-	       (read-char inport nil 'EOF t)
+      ;; Make sure we aren't hosed if we break out of this!
+      (unwind-protect
+	   (progn
+	     (set-fortran-read)
+	     ;; read body of a line
+	     (setq input-list (lineread inport))
+	     ;; read newline character
+	     (read-char inport nil 'EOF t)
 
-	       ;;(format t "~% input-list: ~S" input-list)
-	       )
-	  (setlispread))
-        ;; extract format-stmts
-        ;;(format t "extract format-stmts~%")
-	;;(format t "~S~%" input-list)
-	(when (and (eq (car input-list) 'write)
-		   (stringp (fifth input-list)))
-	  ;;(format t "Found desired write statement ~D~% ~S~%" write-label input-list)
-	  (let ((new `(write |(| ,(third input-list) |,| ,write-label |)|
-		       ,@(nthcdr 6 input-list))))
-	    ;;(format t "new = ~S~%" new)
-	    (push `(,margin ,new) output-list))
-	  (setf *current_label* write-label)
-	  (incf write-label)
-	  ;;(format t "~D format(~A)" *current_label* (fifth input-list))
-	  (let ((fmt (unwind-protect
-			  (progn
-			    (set-fortran-read)
-			    ;; read body of a line
-			    (lineread (make-string-input-stream (fifth input-list)))
-			    )
-		       (setlispread))))
-	    (setf input-list `(format ,@fmt))))
+	     ;;(format t "~% input-list: ~S" input-list)
+	     )
+	(setlispread))
+      ;; extract format-stmts
+      ;;(format t "extract format-stmts~%")
 	       
-	(if (eq (car input-list) 'FORMAT)
-	    (parse-format (brackets-check (concat-operators input-list)))
-	    (push (list *current_label* input-list) output-list))
-	;; Check for end of subprogram
-	(if (and (eq (car input-list) 'end) (null (cdr input-list)))
-	    (return (nreverse output-list))))))
+      (cond ((id-extended-do input-list)
+	     ;; Handle extended DO statements.  These are DO
+	     ;; statements that do not have a line number.  The DO
+	     ;; statement is ended with an END-DO statement.
+	     ;;
+	     ;; We handle these by faking it. We create a standard
+	     ;; DO statement with a new label.  The matching ENDDO
+	     ;; statement is converted into a corresponding CONTINUE
+	     ;; statement with the correct label.  The label is just
+	     ;; an integer bigger than any allowable Fortran label
+	     ;; (99999), since Fortran labels are limited to 5
+	     ;; digits.
+
+	     (push extended-label extended-do-label-stack)
+	     (push `(,margin ,(rewrite-extended-do extended-label input-list))
+		   output-list)
+	     (incf extended-label))
+	    ((id-end-do input-list)
+	     ;; The end of the extended DO statement.  Convert to a
+	     ;; standard continue statement with the correct label.
+	     (push `(,(pop extended-do-label-stack) (continue))
+		   output-list))
+	    ((id-write-format input-list)
+	     ;; We have a write statement where the format isn't a
+	     ;; label but a string.  Convert this to a label and add
+	     ;; a format statement.
+	     (let ((new `(write |(| ,(third input-list) |,| ,extended-label |)|
+			  ,@(nthcdr 6 input-list))))
+	       ;;(format t "new = ~S~%" new)
+	       (push `(,margin ,new) output-list))
+	     (setf *current_label* extended-label)
+	     (incf extended-label)
+	     ;; Convert the string format into the appropriate format
+	     (let ((fmt (unwind-protect
+			     (progn
+			       (set-fortran-read)
+			       ;; read body of a line
+			       (lineread (make-string-input-stream (fifth input-list)))
+			       )
+			  (setlispread))))
+	       (setf input-list `(format ,@fmt))
+	       (parse-format (brackets-check (concat-operators input-list)))))
+	    ((eq (car input-list) 'FORMAT)
+	     (parse-format (brackets-check (concat-operators input-list))))
+	    (t
+	     (push (list *current_label* input-list) output-list)))
+	
+      ;; Check for end of subprogram
+      (when (and (eq (car input-list) 'end) (null (cdr input-list)))
+	(when extended-do-label-stack
+	  (warn "An extended DO statement is missing its matching ENDDO statement"))
+	(return (nreverse output-list))))))
+
 ;------------------------------------------------------------------------------
 (defun introduce-continue (prog-list) ; ((margin line) (margin line) ...)
  (prog (ret labels next rest)
@@ -541,51 +591,6 @@ FILENAME                 File containing Fortran code
   (if (eq (caadr margin-line) 'do)
       (cadadr margin-line)
       nil))
-
-;; Routines to handle extended DO statements.  These are DO statements
-;; that do not have a line number.  The DO statement is ended with an
-;; END-DO statement.
-;;
-;; We handle these by faking it. We create a standard DO statement
-;; with a new label.  The matching ENDDO statement is converted into a
-;; corresponding CONTINUE statement with the correct label.  The label
-;; is just an integer bigger than any allowable Fortran label (99999),
-;; since Fortran labels are limited to 5 digits.
-
-(defun id-extended-do (line)
-  (and (eq (first line) 'do)
-       (not (numberp (second line)))))
-
-(defun rewrite-extended-do (label line)
-  `(,(first line) ,label ,@(rest line)))
-
-(defun id-end-do (x)
-  (or (eq (car x) 'enddo)
-      (and (eq (car x) 'end)
-	   (eq (cadr x) 'do))))
-
-(defun handle-extended-do (prog-list)
-  ;; prog-list is ((margin line) (margin line) ...)
-  (let* ((extended-do-label-stack '())
-	 (current-extended-do-label 100000)
-	 (result (mapcar
-		  #'(lambda (full-line)
-		      (destructuring-bind (margin line)
-			  full-line
-			(cond ((id-extended-do line)
-			       (push current-extended-do-label extended-do-label-stack)
-			       (prog1
-				   `(,margin ,(rewrite-extended-do current-extended-do-label line))
-				 (incf current-extended-do-label)))
-			      ((id-end-do line)
-			       `(,(pop extended-do-label-stack) (continue)))
-			      (t
-			       full-line))
-			))
-		  prog-list)))
-    (unless (null extended-do-label-stack)
-      (warn "Extended DO statement without matching ENDDO statement?"))
-    result))
 
 ;; Now look through the tree of code and replace every symbol in the
 ;; f2cl library with the symbol actually from the library.  (This is
@@ -1229,7 +1234,13 @@ FILENAME                 File containing Fortran code
 					 ;; We're trying to set a integer
 					 ;; variable to non-integer value.  Use
 					 ;; truncate.
-					 `(truncate ,rhs))
+					 `(int ,rhs))
+					((and (subtypep rhs-type 'integer)
+					      (subtypep lhs-type 'float))
+					 ;; We're trying to set a
+					 ;; float to an integer value.
+					 ;; Convert to a float.
+					 `(coerce (the integer4 ,rhs) ',lhs-type))
 					(t
 					 ;; Haven't a clue, so coerce
 					 `(coerce ,rhs ',lhs-type)))))))
@@ -2194,8 +2205,18 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.96 2002/03/07 05:19:59 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.97 2002/03/07 19:00:39 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.97  2002/03/07 19:00:39  rtoy
+;;; o Merge the extended DO handling with the
+;;;   write-statement-with-format-string handling into one place.
+;;;   Reorderd the code a bit too.
+;;; o Instead of using truncate to convert a float to an int for
+;;;   assignement, use the Fortran INT.
+;;; o When coercing a integer type to a float for assignment, declare the
+;;;   int to be an INTEGER4 to help the coercion use a single
+;;;   instruction.
+;;;
 ;;; Revision 1.96  2002/03/07 05:19:59  rtoy
 ;;; o Comment out some debugging print statements.
 ;;; o Wasn't rewriting the write statement correctly.  This works much

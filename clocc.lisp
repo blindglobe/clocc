@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.10 2000/11/16 18:29:39 sds Exp $
+;;; $Id: clocc.lisp,v 1.11 2000/11/17 15:52:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -18,16 +18,16 @@
 ;;;
 
 #+allegro
-(progn
-  ;; All code here is supposed to be ANSI CL compliant,
-  ;; so there is no use in this annoying warning
-  (setq comp:*cltl1-compile-file-toplevel-compatibility-p* nil)
-  ;; Duane Rettig <duane@franz.com>:
-  ;; TIME reports 32 other bytes too many CL unless tuned with
-  (setq excl::time-other-base 32))
+(setq
+ ;; All code here is supposed to be ANSI CL compliant,
+ ;; so there is no use in this annoying warning
+ comp:*cltl1-compile-file-toplevel-compatibility-p* nil
+ ;; Duane Rettig <duane@franz.com>:
+ ;; TIME reports 32 other bytes too many CL unless tuned with
+ excl::time-other-base 32)
 ;; From Erik Naggum <erik@naggum.no> [22 Feb 1999 10:27:45 +0000]
 ;; fixes the (read-from-string "[#\\x]") problem
-#+(and allegro (not (version>= 6)))
+#+allegro
 (loop with readtables = (excl::get-objects 11)
       for i from 1 to (aref readtables 0)
       for readtable = (aref readtables i) do
@@ -42,11 +42,21 @@
             (unread-char backslash stream)
             (let* ((charstring (excl::read-extended-token stream)))
               (unless *read-suppress*
-                (or (character charstring)
-                    (name-char charstring)
-                    (excl::internal-reader-error
-                     stream "Meaningless character name ~A"
-                     (string-upcase charstring)))))))
+                (or
+                 ;; the original code by Erik
+                 #+(and allegro (not (version>= 6)))
+                 (or (character charstring)
+                     (name-char charstring))
+                 ;; From: cox@franz.com (Charles A. Cox)
+                 ;; Subject: Re: [spr22970]
+                 ;; Date: Thu, 16 Nov 2000 18:43:13 -0800
+                 #+(and allegro (version>= 6))
+                 (if (= 1 (length charstring))
+                     (char charstring 0)
+                     (name-char charstring))
+                 (excl::internal-reader-error
+                  stream "Meaningless character name ~A"
+                  (string-upcase charstring)))))))
          readtable)))
 #+allegro-v4.3                  ; From Erik Naggum <erik@naggum.no>
 (unless (member :key (excl:arglist #'reduce) :test #'string=)

@@ -1293,10 +1293,11 @@ main-loop
 (defun parse-data (x)
   ;;(format t "parse-data:  ~S~%" x)
   (setq x (list-split '|/| (cdr x)))
+  ;;(format t "parse-data post-split:  ~S~%" x)
   (do ((list x (cddr list))
-       (ret nil (let* ((var (remove '|,| (car list)))
+       (ret nil (let* ((var (list-split '|,| (car list)))
 		       (vals (list-split '|,| (cadr list)))
-		       (result (parse-data1 var vals)))
+		       (result (mapcar #'parse-data1 var vals)))
 		  ;;(format t "list = ~a~%" list)
 		  ;;(format t "var = ~a~%" var)
 		  ;;(format t "vals = ~a~%" vals)
@@ -1317,7 +1318,7 @@ main-loop
 	     (cond ((numberp x)
 		    x)
 		   (t
-		    (let ((ex (id-expression x)))
+		    (let ((ex (id-expression (if (atom x) (list x) x))))
 		      (if (listp ex)
 			  (- (second ex))
 			  ex)))))
@@ -1785,8 +1786,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.44 2000/07/19 22:16:34 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.45 2000/07/20 13:40:52 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.45  2000/07/20 13:40:52  rtoy
+;;; o PARSE-DATA was not correctly handling data statements of the form:
+;;;
+;;; 	data x(1),x(2),x(3)/n1, n2, n3/
+;;;
+;;; o FIX-UP-NEGATIVE-NUMBER in PARSE-DATA1 didn't handle the case when
+;;;   passed a value like 1.0d%1 which f2cl had converted from 1.0d-1.
+;;;
 ;;; Revision 1.44  2000/07/19 22:16:34  rtoy
 ;;; o TRANSLATE-AND-WRITE-SUBPROG doesn't have the :declaim, :package, and
 ;;;   :options arguments anymore.

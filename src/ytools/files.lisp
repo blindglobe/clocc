@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.11 2004/10/03 15:32:08 airfoyle Exp $
+;;;$Id: files.lisp,v 1.12 2004/10/04 21:09:07 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -269,7 +269,7 @@
 			   (t (format *query-io* "???~%")))))
 		    (t
 		     (format *query-io*
-			     "The object version of has apparently been deleted~%"
+			     "The object version of has apparently been deleted ~s%"
 			     src-version)
 		     (ask-if-compile))))))
 
@@ -315,7 +315,7 @@
       (let ((action
 	       (cond (src-version
 		      (cond ((and (not must-ask)
-				  (or (memq why '(:just-do-it :no-reason))
+				  (or (eq why ':just-do-it)
 				      (and compilable
 					   (cond ((or (not whether-compile)
 						      (eq whether-compile
@@ -341,7 +341,8 @@
 				          fload-compile*)
 				    fload-compile*)
 				   (t whether-compile)))
-			    (compilable
+			    ((and compilable
+				  (not (eq why ':no-reason)))
 			     ;; Ask
 			     (ask-whether-compile
 			        lprec src-version obj-version-exists
@@ -373,7 +374,8 @@
 		  src-version))
 	 ((eq why ':have-to-ask)
 	  (format *query-io*
-		  "~&Should I compile ~s? (y/n, or: + = always, - = never, \\\\ to abort) "))
+		  "~&Should I compile ~s? (y/n, or: + = always, - = never, \\\\ to abort) "
+		  src-version))
 	 (t
 	  (format *query-io*
 		   "~&~a~% ~s~%Compile it now? (y/n, or: + = always, - = never, \\\\ to abort) "

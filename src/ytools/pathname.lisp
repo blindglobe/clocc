@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.8 2004/10/01 13:29:16 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9 2004/10/05 22:15:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -401,7 +401,9 @@
    name)
 
 (defun ytools-logical-pathname-def (name)
-   (href ytools-logical-names-table* name))
+   (let ((pn (href ytools-logical-names-table* name)))
+      (values pn
+	      (pathname-prop 'obj-version pn))))
 
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
 (defun place-relative-pathname (pn dir-list suff ensure-existence)

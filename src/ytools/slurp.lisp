@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.6 2004/06/02 17:50:56 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.7 2004/10/05 22:15:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -30,6 +30,10 @@
 
 (defun printable-as-string (s)
    (make-Printable (\\ (srm) (format srm "~a" s))))
+
+(defmethod make-load-form ((p Printable) &optional env)
+                          (declare (ignore env))
+   `(make-Printable ',(Printable-printer p)))
 )
 
 (defvar eof* (printable-as-string "#<End of file>"))

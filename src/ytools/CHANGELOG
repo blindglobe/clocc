@@ -1,9 +1,12 @@
-$Id: CHANGELOG,v 1.27 2004/10/05 17:41:08 airfoyle Exp $
+$Id: CHANGELOG,v 1.28 2004/10/05 22:15:57 airfoyle Exp $
 	
 2004-10-05: One more tweak to logic of 'compilable' in
             lprec-check-compile. (Version 1.4.8.3)
 
-2004-10-04: Fixed bugs introduced by fixes of 10-02. (Version 1.4.8.1)
+2004-10-04: Fixed bugs introduced by fixes of 10-02. 
+	    Added second value returned by
+            'ytools-logical-pathname-def' (the bin directory)
+	    (Version 1.4.8.2)
 
 2004-10-02: Replaced 'lisp:' with 'cl:' in a couple of files.
             Stopped 'fload' from trying to compile files with types

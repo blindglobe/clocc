@@ -1,3 +1,9 @@
+common-lisp-controller (3.61) unstable; urgency=low
+
+  * Fix off by one error in beneath-source-root
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 24 Apr 2003 22:20:00 -0600
+
 common-lisp-controller (3.60) unstable; urgency=low
 
   * register-common-lisp-implementation: Rebuild .asd-based packages

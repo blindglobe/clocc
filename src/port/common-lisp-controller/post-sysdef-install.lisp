@@ -72,7 +72,7 @@
     (and c
 	 (equalp root-dir
 		 (subseq (pathname-directory (asdf:component-pathname c))
-			 0 (length root-dir))))))
+			 0 (1- (length root-dir)))))))
 
   
 (defun system-in-source-root? (c)

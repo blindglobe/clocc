@@ -511,9 +511,17 @@ is not included")
   (if (>= y 0)
       (abs x)
       (- (abs x))))
+;; Fortran 77 says SIGN is a generic!
 (defun sign (x y)
-  (declare (type single-float x y))
-  (float-sign y x))
+  (declare (type (or integer4 single-float double-float) x y))
+  (etypecase x
+    (integer4
+     (isign x y))
+    (single-float
+     (float-sign y x))
+    (double-float
+     (float-sign y x))))
+
 (defun dsign (x y)
   (declare (type double-float x y))
   (float-sign y x))
@@ -522,9 +530,17 @@ is not included")
 (defun idim (x y)
   (declare (type integer4 x y))
   (abs (- x y)))
+;; Fortran 77 says DIM is a generic! 
 (defun dim (x y)
-  (declare (type single-float x y))
-  (abs (- x y)))
+  (declare (type (or integer4 single-float double-float) x y))
+  (etypecase x
+    (integer4
+     (abs (- x y)))
+    (single-float
+     (abs (- x y)))
+    (double-float
+     (abs (- x y)))))
+
 (defun ddim (x y)
   (declare (type double-float x y))
   (abs (- x y)))
@@ -942,13 +958,47 @@ is not included")
 	  (t
 	   ;; String is too short, so append some spaces
 	   (concatenate 'string string (make-string (- len slen) :initial-element #\Space))))))
-  
+
+
+;;; Strictly speaking, this is not part of Fortran, but so many
+;;; Fortran packages use these routines, we're going to add them here.
+;;; They're much easier to implement in Lisp than in Fortran!
+
+;;
+;;  DOUBLE-PRECISION MACHINE CONSTANTS
+;;  D1MACH( 1) = B**(EMIN-1), THE SMALLEST POSITIVE MAGNITUDE.
+;;  D1MACH( 2) = B**EMAX*(1 - B**(-T)), THE LARGEST MAGNITUDE.
+;;  D1MACH( 3) = B**(-T), THE SMALLEST RELATIVE SPACING.
+;;  D1MACH( 4) = B**(1-T), THE LARGEST RELATIVE SPACING.
+;;  D1MACH( 5) = LOG10(B)
+;;
+(defun d1mach (i)
+  (ecase i
+    (1 least-positive-normalized-double-float)
+    (2 most-positive-double-float)
+    (3 double-float-epsilon)
+    (4 (scale-float double-float-epsilon 1))
+    (5 (log (float-radix 1d0) 10d0))))
+
+(defun r1mach (i)
+  (ecase i
+    (1 least-positive-normalized-single-float)
+    (2 most-positive-single-float)
+    (3 single-float-epsilon)
+    (4 (scale-float single-float-epsilon 1))
+    (5 (log (float-radix 1d0) 10d0))))
+
 
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.31 2001/02/26 15:38:23 rtoy Exp $
+;;; $Id: macros.l,v 1.32 2001/04/26 17:49:19 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.32  2001/04/26 17:49:19  rtoy
+;;; o SIGN and DIM are Fortran generic instrinsics.  Make it so.
+;;; o Added D1MACH and R1MACH because they're very common in Fortran
+;;;   libraries.
+;;;
 ;;; Revision 1.31  2001/02/26 15:38:23  rtoy
 ;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
 ;;; code refers to it.  Export this variable too.

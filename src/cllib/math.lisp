@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.29 2003/07/11 20:31:09 sds Exp $
+;;; $Id: math.lisp,v 2.30 2003/12/04 20:38:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,6 +34,7 @@
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl
+   count-all entropy-sequence entropy-distribution
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
@@ -968,6 +969,38 @@ if this is not the case, the result will be a complex number."
                  (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
          seq)
     (values (sqrt (max 0d0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
+
+(defun entropy-distribution (seq &key (count #'value))
+  "Compute the entropy of the distribution with the given density.
+Each element should be the count: how many time the corresponding element
+occurs, i.e., the normalized sequence should be the probability distribution."
+  (let* ((tot 0)
+         (sum (reduce #'+ seq
+                      :key (lambda (el)
+                             (let ((num (funcall count el)))
+                               (incf tot num)
+                               (if (zerop num) 0 (* num (log num 2))))))))
+    (- (log tot 2) (/ sum tot))))
+
+(defun count-all (seq &key (test 'eql) (key #'value)
+                  &aux (ht (make-hash-table :test test)))
+  "Return the hash table with counts for values of the sequence."
+  (map nil (lambda (el) (incf (gethash (funcall key el) ht 0))) seq)
+  ht)
+
+(defun entropy-sequence (seq &key (key #'value) (test 'eql))
+  "Compute the entropy of the given distribution.
+The values are counted and the result is used as a probability distribution.
+ (multiple-value-bind (entropy ht) (entropy-sequence seq)
+   (assert (= entropy
+              (entropy-distribution
+               (loop :for v :being :each :hash-value :of ht :collect v)))))"
+  (let* ((ht (count-all seq :key key :test test))
+         (tot 0) (sum 0))
+    (loop :for num :being :each :hash-value :of ht :do
+      (incf tot num)
+      (incf sum (* num (log num 2)))) ; we know num>0
+    (values (- (log tot 2) (/ sum tot)) ht)))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."

@@ -65,7 +65,7 @@ Long Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)~%"
             (exdi most-positive-long-float)
             (float-digits most-positive-long-float)))
   #+clisp (format out "[CLISP] long-float-digits:~44t~3d~%"
-                  (lisp:long-float-digits))
+                  (ext:long-float-digits))
   (dolist (sy '(array-total-size-limit
 		array-rank-limit
 		array-dimension-limit

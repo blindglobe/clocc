@@ -10,7 +10,7 @@
 (in-package "CL.ENV")
 
 (defmethod current-directory-pathname ((cl-implementation cl.env:clisp))
-  (pathname (lisp:default-directory)))
+  (pathname (ext:default-directory)))
 
 ;;; DEFSYSTEM utilities
 

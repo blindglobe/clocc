@@ -1,0 +1,62 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;Confidential Trade Secret and Copyright (c) University of Waikato;;;;;
+;;;;;;;;;;Hamilton, New Zealand 92-95 - all rights reserved;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+Welcome to f2cl - a Fortran to Common Lisp Translator
+
+Contained in this directory are source code files and some documentation.
+The translator is written in Common Lisp making installation simple.
+
+To install f2cl:
+
+1.  Edit the file f2cl0.l to suit your installation (necessary changes are
+    indicated in that file).
+
+2 . Run a Common Lisp interpreter and use the function "compile-file" to
+    compile each of the source files:
+		f2cl1.l
+		f2cl2.l
+		f2cl3.l
+		f2cl4.l
+		f2cl5.l
+		f2cl6.l
+		f2cl7.l
+		macros.l
+
+3. Now use 
+           (load "f2cl0.l")
+   to load all the compiled files.
+
+
+
+To use f2cl:
+
+If <infile> is a file containing Fortran code then the s-expression
+
+		(f2cl <infile> <outfile>)
+
+will translate that code into Common Lisp putting the output in <outfile>.
+
+See f2cldoc.latex  for documentation about the translator's
+capabilites and the translation process.  
+
+For those anxious to use the translator without studying the documentation 
+here is a short list of restrictions that may result in obscure errors:
+ - input code is assumed to be valid Fortran 77
+ - no tabs are permitted in the source, 
+ - $comments should only be turned on if the Fortran code has comments
+   exclusively within subroutines,
+ - linebreaks must occur within whitespace,
+ - spaces are required to seperate symbols.
+Note also that an intermediate file called "prep.tmp" is produced by the
+preprocessing stage of the translation.
+
+
+
+Acknowledgements:
+
+The translator was written by Kevin Broughan and Diane Koorey Willcock at the University of Waikato. Reports should be sent to kab@waikato.ac.nz and
+should include examples of Fortran code which fails to translate or which
+translates incorrectly.
+

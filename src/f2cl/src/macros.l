@@ -293,6 +293,7 @@
     sinh dsinh cosh dcosh tanh dtanh))
 
 ; some macros for intrinsic functions
+#-cmu
 (defmacro int (x)
   (let ((xval (gensym)))
     ;; We use fixnum here because f2cl thinks Fortran integers are
@@ -310,12 +311,32 @@
 	 (truncate (the (double-float #.(float most-negative-fixnum 1d0)
 				       #.(float most-positive-fixnum 1d0))
 		      ,xval)))))))
+
+#+cmu
+(defmacro int (x)
+  (let ((xval (gensym)))
+    ;; We use fixnum here because f2cl thinks Fortran integers are
+    ;; fixnums.  If this should change, we need to change the ranges
+    ;; here as well.
+    `(let ((,xval ,x))
+      (etypecase ,xval
+	(integer
+	 ,xval)
+	(single-float
+	 (truncate (the (single-float #.(float (- (ash 1 31)))
+				       #.(float (1- (ash 1 31))))
+		      ,xval)))
+	(double-float
+	 (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				       #.(float (1- (ash 1 31)) 1d0))
+		      ,xval)))))))
   
 (defmacro ifix (x)
   `(int ,x))
 (defmacro idfix (x)
   `(int ,x))
 
+#-cmu
 (defmacro aint (x)
   (let ((xval (gensym)))
     `(let ((,xval ,x))
@@ -327,6 +348,19 @@
 	(double-float
 	 (ftruncate (the (double-float #.(float most-negative-fixnum 1d0)
 				       #.(float most-positive-fixnum 1d0))
+		      ,xval)))))))
+#+cmu
+(defmacro aint (x)
+  (let ((xval (gensym)))
+    `(let ((,xval ,x))
+      (etypecase ,xval
+	(single-float
+	 (ftruncate (the (single-float #.(float (- (ash 1 31)))
+				       #.(float (1- (ash 1 31))))
+		      ,xval)))
+	(double-float
+	 (ftruncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				       #.(float (1- (ash 1 31)) 1d0))
 		      ,xval)))))))
 
 (defmacro dint (x)
@@ -417,10 +451,8 @@
 (defmacro len (s)
    `(length ,s))
 
-(defmacro index (s1 s2)
- (declare (ignore s1 s2))
-   `(error "macro for intrinsic INDEX not yet implemented"))
-
+(defun index (s1 s2)
+  (or (search s1 s2) 0))
 
 ;; These string operations need some work!
 (defmacro lge (s1 s2)

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.9 2004/12/18 17:59:09 sds Exp $
+;;; $Id: matrix.lisp,v 2.10 2004/12/18 18:20:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -77,16 +77,20 @@ By default prints the contents.
     :for ii :from 0 :below nn :do (setf (aref matrix ii ii) 1)
     :finally (return matrix)))
 
+(defun displace-to (array &optional (size (array-total-size array))
+                    (element-type (array-element-type array)))
+  (make-array size :displaced-to array :element-type element-type))
+
 (defun array-copy (aa &optional bb)
   "Copy an arbitrary array."
   (declare (type array aa))
   (case (array-rank aa)
     (1 (if bb (replace bb aa) (copy-seq aa)))
-    (t (let* ((res (or bb (make-array (array-dimensions aa)
-                                      :element-type (array-element-type aa))))
+    (t (let* ((el (array-element-type aa))
+              (res (or bb (make-array (array-dimensions aa) :element-type el)))
               (tot (array-total-size aa))
-              (v0 (make-array tot :displaced-to aa))
-              (v1 (make-array tot :displaced-to res)))
+              (v0 (displace-to aa tot el))
+              (v1 (displace-to res tot el)))
          (declare (dynamic-extent v0 v1))
          (replace v1 v0)
          res))))
@@ -131,10 +135,8 @@ By default prints the contents.
   "Make the value to be returned."
   (if arr
       (if (equal (array-dimensions arr) dims)
-          (let* ((tot (array-total-size arr))
-                 (cp (make-array tot :displaced-to arr
-                                 :element-type (array-element-type arr))))
-            (fill cp 0)
+          (progn
+            (fill (displace-to arr) 0)
             arr)
           (error 'dimension :proc 'array-check-return :args
                  (list (array-dimensions arr) dims)))
@@ -149,9 +151,9 @@ By default prints the contents.
              :args (list dims (array-dimensions a1))))
     (let* ((ret (array-check-return res dims))
            (tot (array-total-size ret))
-           (v0 (make-array tot :displaced-to a0))
-           (v1 (make-array tot :displaced-to a1))
-           (v2 (make-array tot :displaced-to ret)))
+           (v0 (displace-to a0 tot))
+           (v1 (displace-to a1 tot))
+           (v2 (displace-to ret tot)))
       (declare (dynamic-extent v0 v1 v2))
       (dotimes (ii tot ret)
         (setf (aref v2 ii) (+ (* l0 (aref v0 ii)) (* l1 (aref v1 ii))))))))
@@ -183,8 +185,8 @@ The optional third argument is the place where to put the return value."
   (flet ((num-arr (num input dim)   ; scalar X any array
            (loop :with res :of-type array = (array-check-return re dim)
              :with tot :of-type index-t = (array-total-size res)
-             :with to = (make-array tot :displaced-to res)
-             :with fr = (make-array tot :displaced-to input)
+             :with to = (displace-to res tot)
+             :with fr = (displace-to input tot)
              :for ii :of-type index-t :from 0 :below tot
              :do (setf (aref to ii) (* num (aref fr ii)))
              :finally (return res))))

@@ -1,4 +1,4 @@
-;;; -*- Lisp -*-
+;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
 ;;; DEFSYSTEM 3.2 Interim.
@@ -3668,13 +3668,16 @@ D
 (defparameter *c-compiler* "gcc")
 #-(or symbolics (and :lispworks :harlequin-pc-lisp))
 (defun run-unix-program (program arguments)
+  ;; arguments should be a list of strings, where each element is a
+  ;; command-line option to send to the program.
   #+:lucid (run-program program :arguments arguments)
-  #+:allegro (excl:run-shell-command (format nil "~A~@[ ~A~]"
-					     program arguments))
-  #+KCL (system (format nil "~A~@[ ~A~]" program arguments))
+  #+:allegro (excl:run-shell-command
+	      (format nil "~A~@[ ~{~A~^ ~}~]"
+		      program arguments))
+  #+KCL (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+:cmu (extensions:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
-		(format nil "~A~@[ ~A~]" program arguments))
+		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+clisp (lisp:run-program program :arguments arguments)
   )
 
@@ -3683,13 +3686,24 @@ D
   (error "MK::RUN-UNIX-PROGRAM: this does not seem to be a UN*X system.")
   )
 
-(defun c-compile-file (filename &rest args &key output-file)
+#||
+(defun c-compile-file (filename &rest args &key output-file error-file)
   ;; gcc -c foo.c -o foo.o
   (declare (ignore args))
   (run-unix-program *c-compiler*
 		    (format nil "-c ~A~@[ -o ~A~]"
 			    filename
 			    output-file)))
+||#
+
+(defun c-compile-file (filename &rest args &key output-file error-file)
+  ;; gcc -c foo.c -o foo.o
+  (declare (ignore args))
+  (run-unix-program *c-compiler*
+		    `("-c" ,filename ,@(if output-file `("-o" ,output-file)))))
+
+
+
 
 (define-language :c
   :compiler #'c-compile-file

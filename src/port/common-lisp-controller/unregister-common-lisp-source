@@ -60,7 +60,7 @@ EOF
      echo Removing package $0 for \$i
      sh  \"\$compiler\" remove \"$1\"
      echo
-     echo Done rebuilding
+     echo Done removing
     fi
 done" nobody || echo Installation failed
 

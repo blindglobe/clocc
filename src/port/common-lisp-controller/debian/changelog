@@ -1,3 +1,9 @@
+common-lisp-controller (2.12) unstable; urgency=low
+
+  * Fixed "Done " message for u-c-l-s 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat, 29 Dec 2001 20:59:54 +0100
+
 common-lisp-controller (2.11) unstable; urgency=low
 
   * Now u-c-l-i also calls remove-defsystem. Closes: #123617

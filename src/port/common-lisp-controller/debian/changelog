@@ -1,8 +1,9 @@
 common-lisp-controller (3.66) unstable; urgency=low
 
-  * Fixed error reporting script: forgot a `. 
+  * Fixed error reporting script: forgot a `.
+  * make the daemon report the failed package. 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 17 Jun 2003 01:52:49 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 17 Jun 2003 03:00:23 +0200
 
 common-lisp-controller (3.65) unstable; urgency=low
 

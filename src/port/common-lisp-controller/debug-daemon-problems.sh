@@ -7,6 +7,9 @@ Hello
 
 This is the clc-send-command reporting a system failure.
 
+I got called as 
+$0 "$@"
+
 I tried to contact  the clc-build-daemon that should be listed
 in /etc/inetd.conf as a daemon for port 8990/tcp, but this failed.
 
@@ -30,7 +33,7 @@ ls -l /etc/inetd.conf:
 `ls -l /etc/inetd.conf 2>&1`
 
 dpkg -l netkit-inetd common-lisp-controller  cl-reversi acl-alisp8 cl-rt cl-csv cl-odcl cl-geodesics cl-scribble quick-arrays cl-ssl cl-uffi-tests cl-infix acl-mlisp cl-statistics cl-xptest clue cl-sdl-opengl cl-sdl-img cl-aserve cl-tester cl-memoization cl-unit cl-imho cl-pipes cmucl-source cl-png cl-integrate cil cl-lexer cl-regex acl-installer cl-acl-compat cl-environment cl-uffi series cl-metering cl-quick-arrays cl-lml cl-sdl cl-inflate cl-f2cl lw-pro-installer cl-sdl-demos cl-parse-number acl-alisp cl-postoffice cl-screamer cl-pubmed cl-sdl-ttf cl-jpeg cl-cil cl-readline cl-ftp cl-series cl-split-sequence cl-sql-base cl-uncommonsql cl-aima cl-binary-types cl-units cl-tclink cl-sql-uffi cl-awk onlisp-code cl-htmlgen clisp cl-db-sockets cl-net-telent-date cl-port cl-pg cl-pdf cl-ppcre cl-meta cl-md5 cl-sdl-mix cl-local-time cl-kmrcl cl-base64 langband-engine cl-ansi-tests cl-hyperobject acl-mlisp8
-`dpkg -l netkit-inetd common-lisp-controller  cl-reversi acl-alisp8 cl-rt cl-csv cl-odcl cl-geodesics cl-scribble quick-arrays cl-ssl cl-uffi-tests cl-infix acl-mlisp cl-statistics cl-xptest clue cl-sdl-opengl cl-sdl-img cl-aserve cl-tester cl-memoization cl-unit cl-imho cl-pipes cmucl-source cl-png cl-integrate cil cl-lexer cl-regex acl-installer cl-acl-compat cl-environment cl-uffi series cl-metering cl-quick-arrays cl-lml cl-sdl cl-inflate cl-f2cl lw-pro-installer cl-sdl-demos cl-parse-number acl-alisp cl-postoffice cl-screamer cl-pubmed cl-sdl-ttf cl-jpeg cl-cil cl-readline cl-ftp cl-series cl-split-sequence cl-sql-base cl-uncommonsql cl-aima cl-binary-types cl-units cl-tclink cl-sql-uffi cl-awk onlisp-code cl-htmlgen clisp cl-db-sockets cl-net-telent-date cl-port cl-pg cl-pdf cl-ppcre cl-meta cl-md5 cl-sdl-mix cl-local-time cl-kmrcl cl-base64 langband-engine cl-ansi-tests cl-hyperobject acl-mlisp8 2>&1 1
+`dpkg -l netkit-inetd common-lisp-controller  cl-reversi acl-alisp8 cl-rt cl-csv cl-odcl cl-geodesics cl-scribble quick-arrays cl-ssl cl-uffi-tests cl-infix acl-mlisp cl-statistics cl-xptest clue cl-sdl-opengl cl-sdl-img cl-aserve cl-tester cl-memoization cl-unit cl-imho cl-pipes cmucl-source cl-png cl-integrate cil cl-lexer cl-regex acl-installer cl-acl-compat cl-environment cl-uffi series cl-metering cl-quick-arrays cl-lml cl-sdl cl-inflate cl-f2cl lw-pro-installer cl-sdl-demos cl-parse-number acl-alisp cl-postoffice cl-screamer cl-pubmed cl-sdl-ttf cl-jpeg cl-cil cl-readline cl-ftp cl-series cl-split-sequence cl-sql-base cl-uncommonsql cl-aima cl-binary-types cl-units cl-tclink cl-sql-uffi cl-awk onlisp-code cl-htmlgen clisp cl-db-sockets cl-net-telent-date cl-port cl-pg cl-pdf cl-ppcre cl-meta cl-md5 cl-sdl-mix cl-local-time cl-kmrcl cl-base64 langband-engine cl-ansi-tests cl-hyperobject acl-mlisp8 2>&1 1`
 
 grep 8990 /etc/inetd.conf:
 `grep 8990 /etc/inetd.conf 2>&1`

@@ -213,10 +213,15 @@ int main(int argc, char *argv[])
 
   if (connect( socketfd, &addr, sizeof(addr)) != 0)
     {
+      char command[4097];
       /* This cannot be. but I've seen error messages during a from-scratch reinstall,
 	 so we add logging to this to provoke bugreports */
-      if ( (system("/usr/lib/common-lisp-controller/debug-daemon-problems.sh"))
-	   == -1)
+      snprintf(command,4096,"/usr/lib/common-lisp-controller/debug-daemon-problems.sh %s %s",
+	       arguments.args[0],
+	       arguments.args[1]);
+      command[4096]=(char)0;
+      
+      if ( (system(command)) == -1)
 	reportsystemerror("Could not start the debug-daemon-problems reporter to report a failure to connect to the daemon");
       else
 	reportsystemerror("Could not connect to the daemon, I've send a report to root via email!");

@@ -7,18 +7,10 @@
 ; functions
 ;	id-expression 
 ;	parse
-;	expression-preparse
-;	inner-preparse
-;	id-assignment
-;	comma-sep-listp  - within scope of restrict non-local
 ;	symbol-listp
 ;	id-term
 ;	id-factor 
 ;       id-factor1
-;	gen-list-split
-;       id-expression-list-ifthen
-;	id-array-store - check args eval to integers in range at eval time
-;	restore-negative-numbers
 ;------------------------------------------------------------------------------
 (in-package :f2cl)
 (eval-when (compile load eval)
@@ -81,7 +73,10 @@
 
 
 ;----------------------------------------------------------------------------- 
-(defun symbol-listp (x) (and (listp x) (symbolp (car x)) (null (cdr x))))
+(defun symbol-listp (x)
+  (and (listp x)
+       (symbolp (car x))
+       (null (cdr x))))
 ;------------------------------------------------------------------------------
 (defun check-tags-go (x)
   (prog (tags gos)
@@ -103,21 +98,6 @@ Tag being parsed:| (cadr x))))
         (list (cadr x)))
        (t (append (find-gos (car x)) (find-gos (cdr x))))))
     
-;------------------------------------------------------------------------------
-
-; this didn't solve the fortify problem:
- (defun restore-negative-numbers (x)
-  (prog (rest ret next)
-   (cond ((not (memberq '- x)) (return x)))
-   (setq rest x)
-   loop
-   (cond ((null rest) (return (reverse ret))))
-   (setq next (car rest) rest (cdr rest))
-   (cond ((and (eq '- next) (numberp (car rest)))
-          (setq ret (cons (minus (car rest)) (cons '+ ret))
-                    rest (cdr rest)))
-         (t (setq ret (cons next ret))))
-     (go loop)))
 ;----------------------------------------------------------------------------- 
 
 (defun id-expression (larg)
@@ -177,18 +157,6 @@ Tag being parsed:| (cadr x))))
 	(second res))))
   (error "Cannot find array bounds for ~S!" v))
 
-
-#+nil
-(defun update-called-functions-list (name args)
-  (let ((fcn (member name *functions-used* :key #'caar)))
-    (cond (fcn
-	   ;; Found it.  Let's add the arguments to the arg list
-	   (setf (second (first fcn))
-		 (mapcar #'cons
-			 args (second (first fcn)))))
-	  (t
-	   ;; A new function.  Let's add it and the args to the list.
-	   (push (list name (mapcar #'list args)) *functions-used*)))))
 
 ;; NAME should be a list.  For functions, it's just a list of the name
 ;; itself.  For subroutines, it should be a list of the name and the
@@ -404,6 +372,7 @@ Tag being parsed:| (cadr x))))
      (princ-reset '|f2cl syntax error| l))
     ))
 
+#||
 ;-------------------------------------------------------------------------------
 
 ; (a0 |,| a1 |,| a2 ..... |,| an) is checked:
@@ -447,12 +416,15 @@ definition.| l) ))
 '|f2cl syntax error: failure to parse a list.| l) ))
   (setq rest (cddr rest))
   (go loop)))
-
+||#
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.24 2000/07/30 05:56:26 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.25 2000/07/31 04:21:28 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.25  2000/07/31 04:21:28  rtoy
+;;; Remove some unused functions.
+;;;
 ;;; Revision 1.24  2000/07/30 05:56:26  rtoy
 ;;; Function calls need to be handled like subroutine calls because
 ;;; functions can modify their parameters.

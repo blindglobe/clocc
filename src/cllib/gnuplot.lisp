@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.19 2004/07/30 19:37:03 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.20 2004/08/30 14:21:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -120,10 +120,10 @@ according to the given backend")
   (format out " '~A' ~D" (pltm-font-family pt) (pltm-font-size pt))
   (terpri out)
   (let ((target (pltm-target pt)))
-    (typecase target
+    (etypecase target
       (null (format out "set output~%"))
       (symbol (format out "set output '~a'~%" (symbol-value target)))
-      ((string pathname)
+      ((or string pathname)
        (format out "set output '~a'~%"
                (make-pathname :type (if (string= "postscript"
                                                  (pltm-terminal pt))

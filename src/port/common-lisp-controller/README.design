@@ -1,4 +1,4 @@
-		Design of the Common Lisp controller
+		Design of the Common Lisp controller, v3
 
 	Introduction
 
@@ -35,7 +35,7 @@ The main idea is the following:
 Put the source trees under:
 /usr/share/common-lisp/source/<package-name>
 
-This can, and in  most cases will be a symbolic link to
+This can, and in most cases will be a symbolic link to
 a directory in
 /usr/share/common-lisp/repositories/...
 
@@ -83,6 +83,14 @@ binaries in the bin directory and then register with:
 register-common-lisp-implementation <name>
 
 The name should be the name of the implementation, eg. "cmucl-safe".
+
+New in version 3 is that the system administrator has the option of
+delaying rebuilding the libraries and wait until a user wants to use
+a package. In this event the lisp implementation will signal the
+request to the clc-build-daemon which will try to rebuild the library
+for that implementation. All former calls of the implementations shell
+scripts have been replaced with invocations of clc-do-build which
+calls clc-build-daemon to do the dirty work.
 
 The script should be a shell script or binary accepting the following
 commands:

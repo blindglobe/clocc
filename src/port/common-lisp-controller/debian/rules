@@ -13,8 +13,7 @@ export DESTDIR=`pwd`/debian/tmp
 configure: configure-stamp
 configure-stamp:
 	dh_testdir
-	# Add here commands to configure the package.
-	
+	# Add here commands to configure the package.	
 
 	touch configure-stamp
 
@@ -24,6 +23,7 @@ build-stamp:
 
 	# Add here commands to compile the package.
 	#/usr/bin/docbook-to-man debian/common-lisp-controller.sgml > common-lisp-controller.1
+	-$(MAKE) 
 
 	touch build-stamp
 
@@ -33,7 +33,7 @@ clean:
 	rm -f build-stamp configure-stamp
 
 	# Add here commands to clean up after the build process.
-	#-$(MAKE) clean
+	-$(MAKE) clean
 	rm *~  || true
 	dh_clean
 

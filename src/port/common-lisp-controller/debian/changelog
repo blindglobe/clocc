@@ -2,8 +2,10 @@ common-lisp-controller (2.15) unstable; urgency=low
 
   * Small fix from  Frederic Dumont <frederic.dumont@easynet.be> for
     add-project-directory.
+  * Included patch from Christophe Rhodes for defsystem 
+    Closes: #146504
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 24 Apr 2002 21:06:43 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 14 May 2002 16:15:49 +0200
 
 common-lisp-controller (2.14) unstable; urgency=low
 

@@ -9,35 +9,18 @@ script. Like:
 
 (format t "Hello Peter!~%")
 
-(add-translation :cl-library
-                 "/home/pvaneynd/hemlock/"
-                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
-                                             :wild-inferiors)
-                                :type "FASL"
-                                :case :common))
-(add-translation :cl-library
-                 "/home/pvaneynd/hemlock/"
-                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
-                                             :wild-inferiors)
-                                :type "X86F"
-                                :case :common))
-(add-translation :cl-library
-                 "/home/pvaneynd/hemlock/"
-                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
-                                             :wild-inferiors)
-                                :type "ERR"
-                                :case :common))
-(add-translation :cl-library
-                 "/home/pvaneynd/hemlock/"
-                 (make-pathname :directory '(:relative "CMUCL-HEMLOCK"
-                                             :wild-inferiors)
-                                :type "BIN"
-                                :case :common))
+(common-lisp-controller:add-project-directory
+ "/home/pvaneynd/common-lisp/src/"
+ "/home/pvaneynd/common-lisp/fasl/"
+ '("CLIM" "MCCLIM" "CLX" #+nil "CLOCC-PORT"
+   "ECLIPSE"
+   "HEMLOCK" #+nil "CMUCL-CLX" "CMUCL")
+ "/home/pvaneynd/common-lisp/systems/")
 
 Q2: This sucks: register-common-lisp-source foo worked, but now
 (require :foo) doesn't!
 
-A2: Maybe the build failed. Make your lisp stop on errror. For cmucl
+A2: Maybe the build failed. Make your lisp stop on errors. For cmucl
 comment the "-batch -quiet" parameters out in
 /usr/lib/common-lisp/bin/cmucl-*.sh. Then you'll be droped in the
 debugger.

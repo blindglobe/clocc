@@ -39,33 +39,14 @@ Maybe you already uninstalled it?
 EOF
     exit 0
 fi
-# now recompile the stuff
-chown -R nobody /usr/lib/common-lisp/
 
-su --shell=/bin/sh --command="
-umask 022
 for compiler in /usr/lib/common-lisp/bin/*.sh ; do
-    if [ -f \$compiler -a -r \$compiler ] ; then
-     i=\${compiler##.*/}
-     i=\${i%.sh}
-     echo Removing for \${i##*/}
-     if [ ! -x \"\$compiler\" ] ; then
-	cat <<EOF
-$0: to recompile $1 with \$(basename \$compiler)
-I should use \$compiler, but that script does not
-exist or is not executable for me
-EOF
-	exit 4
-     fi
-     echo Removing package $0 for \$i
-     sh  \"\$compiler\" remove \"$1\"
-     echo
-     echo Done removing
+    if [ -f $compiler -a -r $compiler ] ; then
+     i=${compiler##.*/}
+     i=${i%.sh}
+     /usr/sbin/clc-send-command --quiet remove $0 $i
     fi
-done" nobody || echo Installation failed
-
-chown -R root.root /usr/lib/common-lisp/
-chmod a+r,a+X,og-w,-s -R /usr/lib/common-lisp/
+done
 
 cat <<EOF
 $0: Package $1 uninstalled

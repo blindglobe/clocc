@@ -7,3 +7,4 @@ usr/share/common-lisp/source/defsystem
 usr/share/common-lisp/source/common-lisp-controller
 usr/lib/common-lisp
 usr/lib/common-lisp/bin
+var/lib/common-lisp

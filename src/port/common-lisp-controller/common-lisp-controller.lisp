@@ -9,6 +9,57 @@
   	   "ADD-TRANSLATION")
   (:nicknames "C-L-C"))
 
+(in-package :make)
+
+;; we need to hack the require to
+;; call clc-send-command on load failure...
+
+(defun new-require (module-name &optional pathname definition-pname
+				default-action (version *version*))
+  ;; If the pathname is present, this behaves like the old require.
+  (unless (and module-name
+	       (find #-CMU (string module-name)
+		     #+CMU (string-downcase (string module-name))
+		     *modules* :test #'string=))
+    (cond (pathname
+	   (funcall *old-require* module-name pathname))
+	  ;; If the system is defined, load it.
+	  ((find-system module-name :load-or-nil definition-pname)
+           (or
+            ;; try to load the binary first
+            (operate-on-system module-name :load
+                               :force *force*
+                               :version version
+                               :test *oos-test*
+                               :verbose *oos-verbose*
+                               :load-source-if-no-binary nil
+                               :bother-user-if-no-binary nil
+                               :compile-during-load nil
+                               :load-source-instead-of-binary nil
+                               :minimal-load *minimal-load*)
+           (operate-on-system module-name :load
+	     :force *force*
+	     :version version
+	     :test *oos-test*
+	     :verbose *oos-verbose*
+	     :load-source-if-no-binary *load-source-if-no-binary*
+	     :bother-user-if-no-binary *bother-user-if-no-binary*
+	     :compile-during-load *compile-during-load*
+	     :load-source-instead-of-binary *load-source-instead-of-binary*
+	     :minimal-load *minimal-load*)
+           )
+	  ;; If there's a default action, do it. This could be a progn which
+	  ;; loads a file that does everything.
+	  ((and default-action
+		(eval default-action)))
+	  ;; If no system definition file, try regular require.
+	  ;; had last arg  PATHNAME, but this wasn't really necessary.
+	  ((funcall *old-require* module-name))
+	  ;; If no default action, print a warning or error message.
+	  (t
+	   (format t "~&Warning: System ~A doesn't seem to be defined..."
+		   module-name)))))
+
 (in-package :common-lisp-controller)
 
 ;; Some general utilities to make the

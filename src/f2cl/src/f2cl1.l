@@ -1117,20 +1117,52 @@ main-loop
         (ret nil (if (atom (car l)) (cons (car l) ret) ret)))
        ((endp l) ret)))
 
+;; Parse Fortran character declarations. These are rather complicated
+;; and we need to be able to handle things like:
+;;
+;; character*10 a, b, c
+;; character a*10, b*20, c*30
+;; character*10 x(10), y(20), z(3,4)
+;; character x(10)*10, y(20)*7, z(3,4)*8
+;;
+;; By the time we get these, the line looks something like the
+;; following, respectively:
+;;
+;; character * 10 a |,| b |,| c
+;; character a * 10 |,| b * 20 |,| c * 30
+;; character * 10 x(10) |,| y(20) |,| z(3 |,| 4)
+;; character x(10) * 10 |,| y(20) * 7 |,| z(3 |,| 4) * 8
+
 (defun parse-char-decl (x)
+  ;; x is the line.
   (prog (first-bit decl-list)
      (cond ((eq (second x) '*)
+	    ;; The length was given explicitly as part of the
+	    ;; character declaration.
             (setq first-bit `(character ,(third x))
                   decl-list (list-split '|,| (cdddr x))))
-           (t 
+           (t
+	    ;; The length may have been given as part of the variable.
+	    ;; Treat these as if they're a single character.
             (setq first-bit `(character 1)
                   decl-list (list-split '|,| (cdr x)))))
      (setq *explicit_vble_decls* 
            (cons
 	    `(,first-bit
-	      ,@(mapcar #'(lambda (decl) (remove '* decl))
+	      ,@(mapcar #'(lambda (decl)
+			    (let ((dcl (remove '* decl)))
+			      ;; (format t "  decl = ~A~%" dcl)
+			      (destructuring-bind (name &optional len-or-dim &rest len)
+				  dcl
+				(if (and len-or-dim (listp len-or-dim))
+				    ;; An array of characters
+				    `(,name ,(parse_dimension_specs len-or-dim) ,@len)
+				    ;; A simple character string
+				    dcl))))
 			decl-list))
-	    *explicit_vble_decls*))))
+	    *explicit_vble_decls*))
+     ;; (format t "explicit_vble_decls* = ~A~%" *explicit_vble_decls*)
+     ))
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
 ; restricted to 

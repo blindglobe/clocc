@@ -34,14 +34,6 @@
 (defvar eof* (printable-as-string "#<End of file>"))
 ;;;;(make-Printable (\\ (srm) (format srm "~a" "#<End of file>")))
 
-(defun note-load-status-if-not-achieved (lprec status)
-   (cond ((not (achieved-load-status lprec status))
-;;;;	  (out "not already achieved " status 1 lprec :%)
-	  (note-load-status lprec status))
-	 (t
-;;;;	  (out "already achieved " status 1 lprec :%)
-	  )))	 
-
 (defun place-load-progress-rec (pn)
    (setq pn (pathname-resolve pn true))
    (let ((lpr (pathname-prop 'load-progress-rec pn)))
@@ -245,7 +237,7 @@
 	    (let ((slurp-status 
 		     (pathname-finally-slurp real-pn lprec pn howmuch)))
 	       (cond ((not (achieved-load-status lprec slurp-status))
-		      (note-load-status-if-not-achieved
+		      (note-load-status   ;;;; -if-not-achieved
 		         lprec slurp-status))))))))
 
 (defmacro cleanup-after-file-transduction (&body b)

@@ -675,9 +675,14 @@
 					(not (memq (pathname-version dir-pn)
 						   '(nil :unspecific :newest)))))))
 			 (cond ((not (eq input-was-dir output-is-dir))
-				(cerror "I'll ignore the discrepancy"
-					"Resolving YTools pathname ~s~% changes syntactic status in result~% ~s"
-					pn dir-pn))))
+				(cond (input-was-dir
+				       (cerror "I'll ignore the discrepancy"
+					  "YTools directory pathname ~s resolves to nondirectory ~% ~s"
+					  pn dir-pn))
+				      (t
+				       (cerror "I'll ignore the discrepancy"
+					  "YTools file pathname ~s~% resolves to directory~%  ~s"
+					pn dir-pn))))))
 		      (maybe-ensure-dirs
 			 (cond ((and (YTools-pathname-is-absolute pn)
 				     (not (pn-is-absolute dir-pn)))

@@ -145,4 +145,4 @@
 
 (setq *features* (adjoin ':ytools *features*))
 
-(defconstant +ytools-version+ "1.0.1")
+(defconstant +ytools-version+ "1.1")

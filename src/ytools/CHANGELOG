@@ -1,3 +1,5 @@
+2003-11-08: Slight change to an error message in pathname.lisp.	    
+	
 2003-10-28: Changed ytload.lisp to allow .lmd files to be in arbitrary places
 	
 2003-10-27: Eliminated Allegro check in depend.lisp"

@@ -159,49 +159,86 @@
 ;;;;(defvar write-time-calls* 0)
 ;;;;(defvar redundant-write-time-calls* 0)
 
+;;; Return < boolean, time >
+;;; If boolean is true, and time is a number, then it's the time the status
+;;; was reached.
 (defun achieved-load-status (lprec status)
    (let ((tl (memq (Load-progress-rec-status lprec)
 		   load-progress-progression*)))
       (cond (tl
-	     (and (not (memq status (cdr tl)))
-		  (or (not can-get-write-times*)
-		      (let ((rpn (Load-progress-rec-pathname lprec)))
-			 (or (is-Pseudo-pathname rpn)
-			     (let ((sv (or (pathname-source-version rpn)
-					   (pathname-object-version rpn true))))
-				(or (not sv)
-				    (let ((stamp (Load-progress-rec-status-timestamp
+	     (cond ((memq status (cdr tl))
+		    (values false nil))
+		   ((-- can-get-write-times*)
+		    (cond ((= (Load-progress-rec-status-timestamp lprec)
+			      file-op-count*)
+			   (values true (Load-progress-rec-when-reached lprec)))
+			  (t
+			   (let ((rpn (Load-progress-rec-pathname lprec)))
+			      (cond ((is-Pseudo-pathname rpn)
+				     (values true false))
+				    (t
+				     (let ((ur-version
+					      (or (pathname-source-version rpn)
+						  (pathname-object-version rpn true))))
+				        (let ((ur-write-time
+					         (pathname-write-time ur-version))
+					      (reach-time
+						 (Load-progress-rec-when-reached
 						    lprec)))
-;;;;				       (incf write-time-calls*)
-;;;;				       (cond ((= stamp file-op-count*)
-;;;;					      (incf redundant-write-time-calls*)))
-				       (or (= stamp file-op-count*)
-					   (prog1
-					      (cond ((< (pathname-write-time sv)
-							(Load-progress-rec-when-reached
-							   lprec))
-						     true)
-						    (t
-						     (note-load-status lprec false)
-						     false))
-					     (setf (Load-progress-rec-status-timestamp
+					   (cond ((> ur-write-time reach-time)
+						  (setf (Load-progress-rec-status lprec)
+						        false)
+						  (setf (Load-progress-rec-when-reached
+							    lprec)
+						        ur-write-time)
+						  (setf (Load-progress-rec-status-timestamp
 							   lprec)
-					           file-op-count*)))))))))))
+						        file-op-count*)
+						  (values false ur-write-time))
+						 (t
+						  (values true reach-time)))))))))))
+		   (t
+		    (values true nil))))
 	    (t
 	     (error "Illegal Load-progress-rec status ~s"
 		    status)))))
 
 (defun note-load-status (lprec status)
-   (setf (Load-progress-rec-status lprec)
-	 status)
-   (let ((time (get-universal-time)))
-      (setf (Load-progress-rec-status-timestamp lprec)
-	    file-op-count*)
-      (setf (Load-progress-rec-when-reached lprec)
-            time)
-      (cond ((eq status ':loaded)
-	     (setf (Load-progress-rec-when-loaded lprec)
-		   time)))))
+   (let (;;;;(time (get-universal-time))
+	 (reach-time (Load-progress-rec-when-reached lprec))
+	 (tl (memq (Load-progress-rec-status lprec)
+		   load-progress-progression*)))
+      (cond ((memq status (cdr tl))
+	     (setf (Load-progress-rec-status lprec)
+		   status)))
+;;;;      (format t "file-op-count* = ~s~%rec-timestamp = ~s~%"
+;;;;	        file-op-count*
+;;;;		(Load-progress-rec-status-timestamp lprec))
+;;;;      (format t "** reach-time = ~s~%** rec-reach-time = ~s~%"
+;;;;	      reach-time
+;;;;	      (Load-progress-rec-when-reached lprec))
+      (cond ((and can-get-write-times*
+		  (> file-op-count*
+		     (Load-progress-rec-status-timestamp lprec)))
+	     (let ((rpn (Load-progress-rec-pathname lprec)))
+		(let ((ur-version 
+			 (or (pathname-source-version rpn)
+			     (pathname-object-version rpn true))))
+;;;;		   (break "lprec = ~s" lprec)
+		   (let ((write-time (pathname-write-time ur-version)))
+;;;;		      (format t "write-time = ~s~%reach-time = ~s~%rec-reach-time = ~s~%"
+;;;;			      write-time reach-time
+;;;;			      (Load-progress-rec-when-reached lprec))
+		      (cond ((> write-time reach-time)
+			     (format t "Changing reach-time to ~s~%" write-time)
+			     (setf reach-time write-time)
+			     (setf (Load-progress-rec-when-reached lprec)
+				   reach-time)
+			     (cond ((eq status ':loaded)
+				    (setf (Load-progress-rec-when-loaded lprec)
+					  reach-time)))))
+		      (setf (Load-progress-rec-status-timestamp lprec)
+			    file-op-count*))))))))
 
 (defun note-module-def-time (ytmod)
    (note-load-status (YT-module-rec ytmod) false))
@@ -364,3 +401,7 @@
 	 (t
 	  (error "~s does not designate a package"
 		 exporting-pkg-desig)))))
+
+(defun pn-ur-version (pn)
+   (or (pathname-source-version pn)
+       (pathname-object-version pn true)))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.35 2004/07/27 20:38:53 sds Exp $
+;;; $Id: fileio.lisp,v 1.36 2004/07/30 16:20:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -189,8 +189,9 @@ Set `*print-pretty*' to the third argument NICE (default T).
 Uses `with-standard-io-syntax'."
   (declare (stream str))
   (with-standard-io-syntax
-    (let ((*package* #.(make-package "FORCE-PACKAGE-PREFIXES" :use NIL)))
-      (write obj :stream str :pretty nice)))
+    (let ((*package* (make-package (gensym "FORCE-PACKAGE-PREFIXES") :use NIL)))
+      (unwind-protect (write obj :stream str :pretty nice)
+        (delete-package *package*))))
   (values))
 
 ;;;###autoload

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.4 2002/12/22 20:10:52 sds Exp $
+;;; $Id: clhs.lisp,v 3.5 2003/01/08 19:02:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -156,7 +156,7 @@
                                ("*" . "star") ("**" . "st2") ("***" . "st3")
                                ("/" . "slash") ("//" . "sl2") ("///" . "sl3")
                                ("+" . "plus") ("++" . "pl2") ("+++" . "pl3")
-                               ("-" . "sub") ("1+" . "pl1") ("1-" . "su1"))
+                               ("-" . "subt") ("1+" . "pl1") ("1-" . "su1"))
                              :test #'string=))
                  (string-downcase name)))
         (xml-name name)

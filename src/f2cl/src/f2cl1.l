@@ -37,21 +37,31 @@ block; the value is a list of all variables in the common block.")
   "If T, array declarations with sizes are relaxed to be any size.")
 (defvar *coerce-assignments* nil
   "If T, all assignments statemnts are wrapped with a coerce to the appropriate type.  Fortran 77 does this automatically.")
+(defvar *default-lisp-extension* "lisp"
+  "The default extension (file type) for the output file name")
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
 			(auto-save t) (relaxed-array-decls t)
-			(coerce-assigns t))
+			(coerce-assigns nil)
+			(extension (or *default-lisp-extension* "lisp"))
   "Fortran to Common Lisp converter
 
-INPUT-FILE              File containing Fortran code
-OUTPUT-FILE             File to contain Lisp code
+INPUT-FILE               File containing Fortran code
 
-VERBOSE                 verbose output. (default is nil)
-PRUNE-LABELS            Prune unused labels. (default is nil)
-INCLUDE-COMMENTS	Include comments in the Lisp output
-AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  (default = t)
-RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters to functions
+:OUTPUT-FILE             File to contain Lisp code
+
+:VERBOSE                 verbose output. Default = NIL.
+:PRUNE-LABELS            Prune unused labels. Default = NIL.
+:INCLUDE-COMMENTS        Include Fortran comments in the Lisp output (May be buggy.)
+                         Default = NIL
+:AUTO-SAVE               Variables in DATA statements are automatically SAVE'd.  Default = T.
+:RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parameters
+                         to functions.  Default = T.
+:COERCE-ASSIGNS          If T, all assignment statements automatically coerce the RHS to the
+                         appropriate type for the assignment.  Default = NIL.
+:EXTENSION               The extension to use for the output file, if needed.  Defaults to
+                         *DEFAULT-LISP-EXTENSION* or \"lisp\"
 "
 
 
@@ -72,7 +82,7 @@ RELAXED-ARRAY-DECLS     Declarations of array sizes are relaxed in formal parame
 					 :device (pathname-device input-path)
 					 :directory (pathname-directory input-path)
 					 :name (pathname-name input-path)
-					 :type "lisp"))))
+					 :type extension))))
 
     (fortran-to-lisp (preprocess input-file) output-file)
     (values output-file)))

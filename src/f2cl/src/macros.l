@@ -292,177 +292,180 @@
     cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
     sinh dsinh cosh dcosh tanh dtanh))
 
-; some macros for intrinsic functions
+;; Define the intrinsic functions.
 #-cmu
-(defmacro int (x)
-  (let ((xval (gensym)))
-    ;; We use fixnum here because f2cl thinks Fortran integers are
-    ;; fixnums.  If this should change, we need to change the ranges
-    ;; here as well.
-    `(let ((,xval ,x))
-      (etypecase ,xval
-	(integer
-	 ,xval)
-	(single-float
-	 (truncate (the (single-float #.(float most-negative-fixnum)
-				       #.(float most-positive-fixnum))
-		      ,xval)))
-	(double-float
-	 (truncate (the (double-float #.(float most-negative-fixnum 1d0)
-				       #.(float most-positive-fixnum 1d0))
-		      ,xval)))))))
+(defun int (x)
+  ;; We use fixnum here because f2cl thinks Fortran integers are
+  ;; fixnums.  If this should change, we need to change the ranges
+  ;; here as well.
+  (etypecase x
+    (integer
+     x)
+    (single-float
+     (truncate (the (single-float #.(float most-negative-fixnum)
+				  #.(float most-positive-fixnum))
+		 x)))
+    (double-float
+     (truncate (the (double-float #.(float most-negative-fixnum 1d0)
+				  #.(float most-positive-fixnum 1d0))
+		 x)))))
 
 #+cmu
-(defmacro int (x)
-  (let ((xval (gensym)))
-    ;; We use fixnum here because f2cl thinks Fortran integers are
-    ;; fixnums.  If this should change, we need to change the ranges
-    ;; here as well.
-    `(let ((,xval ,x))
-      (etypecase ,xval
-	(integer
-	 ,xval)
-	(single-float
-	 (truncate (the (single-float #.(float (- (ash 1 31)))
-				       #.(float (1- (ash 1 31))))
-		      ,xval)))
-	(double-float
-	 (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
-				       #.(float (1- (ash 1 31)) 1d0))
-		      ,xval)))))))
+(defun int (x)
+  ;; We use fixnum here because f2cl thinks Fortran integers are
+  ;; fixnums.  If this should change, we need to change the ranges
+  ;; here as well.
+  (etypecase x
+    (integer
+     x)
+    (single-float
+     (truncate (the (single-float #.(float (- (ash 1 31)))
+				  #.(float (1- (ash 1 31))))
+		 x)))
+    (double-float
+     (truncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				  #.(float (1- (ash 1 31)) 1d0))
+		 x)))))
   
-(defmacro ifix (x)
-  `(int ,x))
-(defmacro idfix (x)
-  `(int ,x))
+(defun ifix (x)
+  (int x))
+(defun idfix (x)
+  (int x))
 
 #-cmu
-(defmacro aint (x)
-  (let ((xval (gensym)))
-    `(let ((,xval ,x))
-      (etypecase ,xval
-	(single-float
-	 (ftruncate (the (single-float #.(float most-negative-fixnum)
-				       #.(float most-positive-fixnum))
-		      ,xval)))
-	(double-float
-	 (ftruncate (the (double-float #.(float most-negative-fixnum 1d0)
-				       #.(float most-positive-fixnum 1d0))
-		      ,xval)))))))
+(defun aint (x)
+  (etypecase x
+    (single-float
+     (ftruncate (the (single-float #.(float most-negative-fixnum)
+				   #.(float most-positive-fixnum))
+		  x)))
+    (double-float
+     (ftruncate (the (double-float #.(float most-negative-fixnum 1d0)
+				   #.(float most-positive-fixnum 1d0))
+		  x)))))
 #+cmu
-(defmacro aint (x)
-  (let ((xval (gensym)))
-    `(let ((,xval ,x))
-      (etypecase ,xval
-	(single-float
-	 (ftruncate (the (single-float #.(float (- (ash 1 31)))
-				       #.(float (1- (ash 1 31))))
-		      ,xval)))
-	(double-float
-	 (ftruncate (the (double-float #.(float (- (ash 1 31)) 1d0)
-				       #.(float (1- (ash 1 31)) 1d0))
-		      ,xval)))))))
+(defun aint (x)
+  (etypecase x
+    (single-float
+     (ftruncate (the (single-float #.(float (- (ash 1 31)))
+				   #.(float (1- (ash 1 31))))
+		  x)))
+    (double-float
+     (ftruncate (the (double-float #.(float (- (ash 1 31)) 1d0)
+				   #.(float (1- (ash 1 31)) 1d0))
+		  x)))))
 
-(defmacro dint (x)
-  `(aint ,x))
+(defun dint (x)
+  (aint x))
 
-(defmacro anint (x)
-  (let ((xval (gensym)))
-    `(let ((,xval ,x))
-      (coerce (round ,xval) (type-of ,xval)))))
-(defmacro dnint (x)
-   `(values (fround ,x)))
-(defmacro nint (x)
-   `(values (round ,x)))
-(defmacro idnint (x)
-   `(values (round ,x)))
+(defun anint (x)
+  (coerce (round x) (type-of x)))
+(defun dnint (x)
+  (values (fround x)))
+(defun nint (x)
+  (values (round x)))
+(defun idnint (x)
+  (values (round x)))
 
-(defmacro real (x)
-   `(coerce (realpart ,x) 'single-float))
+(defun real (x)
+  (coerce (realpart x) 'single-float))
 
-(defmacro sngl (x)
-   `(coerce (realpart ,x) 'single-float))
+(defun sngl (x)
+  (coerce (realpart x) 'single-float))
 
-(defmacro dble (x)
-  `(coerce (realpart ,x) 'double-float))
+(defun dble (x)
+  (coerce (realpart x) 'double-float))
 
-(defmacro cmplx (x &optional y)
-   `(complex ,x ,(if y y 0)))
+(defun cmplx (x &optional y)
+  (complex x (if y y 0)))
 
-(defmacro ichar (c)
-   `(char-int ,c))
-(defmacro fchar (i)  ;intrinsic function char
-   `(char-int ,i))
+(defun ichar (c)
+  (char-int c))
+(defun fchar (i)			;intrinsic function char
+  (char-int i))
 
 #-aclpc
-(defmacro iabs (x)
-  `(abs ,x))
-(defmacro dabs (x)
-   `(abs ,x))
-(defmacro cabs (x)
-   `(abs ,x))
+(defun iabs (x)
+  (declare (type integer4 x))
+  (abs x))
+(defun dabs (x)
+  (declare (type double-float x))
+  (abs x))
+(defun cabs (x)
+  (declare (type complex x))
+  (abs x))
 
-(defmacro amod (x y)
-  `(mod ,x ,y))
-(defmacro dmod (x y)
-  `(mod ,x ,y))
-
-
-(defmacro isign (x y)
-  `(if (>= ,y 0) (abs ,x) (- (abs ,x))))
-(defmacro sign (x y)
-  `(float-sign ,y ,x))
-(defmacro dsign (x y)
-  `(float-sign ,y ,x))
+(defun amod (x y)
+  (declare (type single-float x y))
+  (mod x y))
+(defun dmod (x y)
+  (declare (type double-float x y))
+  (mod x y))
 
 
-(defmacro idim (x y)
-  `(abs (- ,x ,y)))
-(defmacro dim (x y)
-  `(abs (- ,x ,y)))
-(defmacro ddim (x y)
-  `(abs (- ,x ,y)))
+(defun isign (x y)
+  (declare (type integer4 x y))
+  (if (>= y 0)
+      (abs x)
+      (- (abs x))))
+(defun sign (x y)
+  (declare (type single-float x y))
+  (float-sign y x))
+(defun dsign (x y)
+  (declare (type double-float x y))
+  (float-sign y x))
 
-(defmacro dprod (x y)
-  `(coerce (* ,x ,y) `double-float))
 
-(defmacro max0 (&rest x)
-  `(max ,@x))
-(defmacro amax1 (&rest x)
-  `(max ,@x))
-(defmacro dmax1 (&rest x)
-  `(max ,@x))
-(defmacro amax0 (&rest x)
-  `(values (float (max ,@x))))
-(defmacro max1 (&rest x)
-  `(values (float (max ,@x))))
+(defun idim (x y)
+  (declare (type integer4 x y))
+  (abs (- x y)))
+(defun dim (x y)
+  (declare (type single-float x y))
+  (abs (- x y)))
+(defun ddim (x y)
+  (declare (type double-float x y))
+  (abs (- x y)))
 
-(defmacro min0 (&rest x)
-  `(min ,@x))
-(defmacro amin1 (&rest x)
-  `(min ,@x))
-(defmacro dmin1 (&rest x)
-  `(min ,@x))
-(defmacro amin0 (&rest x)
-  `(values (float (min ,@x))))
-(defmacro min1 (&rest x)
-  `(values (float (min ,@x))))
+(defun dprod (x y)
+  (coerce (* x y) `double-float))
 
-(defmacro len (s)
-   `(length ,s))
+(defun max0 (&rest x)
+  (apply #'max x))
+(defun amax1 (&rest x)
+  (apply #'max x))
+(defun dmax1 (&rest x)
+  (apply #'max x))
+(defun amax0 (&rest x)
+  (values (float (apply #'max x))))
+(defun max1 (&rest x)
+  (values (float (apply #'max x))))
+
+(defun min0 (&rest x)
+  (apply #'min x))
+(defun amin1 (&rest x)
+  (apply #'min x))
+(defun dmin1 (&rest x)
+  (apply #'min x))
+(defun amin0 (&rest x)
+  (values (float (apply #'min x))))
+(defun min1 (&rest x)
+  (values (float (apply #'min x))))
+
+(defun len (s)
+  (length s))
 
 (defun index (s1 s2)
   (or (search s1 s2) 0))
 
 ;; These string operations need some work!
-(defmacro lge (s1 s2)
-   `(string>= ,s1 ,s2))
-(defmacro lgt (s1 s2)
-   `(string> ,s1 ,s2))
-(defmacro lle (s1 s2)
-   `(string<= ,s1 ,s2))
-(defmacro llt (s1 s2)
-   `(string< ,s1 ,s2))
+(defun lge (s1 s2)
+  (string>= s1 s2))
+(defun lgt (s1 s2)
+  (string> s1 s2))
+(defun lle (s1 s2)
+  (string<= s1 s2))
+(defun llt (s1 s2)
+  (string< s1 s2))
 
 (defun fstring-/= (s1 s2)
   (not (string= s1 s2)))
@@ -478,10 +481,10 @@
   (string<= s1 s2))
 
 
-(defmacro aimag (c)
-   `(imagpart ,c))
-(defmacro conjg (c)
-   `(conjugate ,c))
+(defun aimag (c)
+  (imagpart c))
+(defun conjg (c)
+  (conjugate c))
 
 ;; This creates macros for fsqrt and flog.  These macros essentially
 ;; tell Lisp that the arguments are always non-negative so that the
@@ -493,15 +496,13 @@
 ;; smart.
 
 (macrolet ((frob (ftn lsp)
-	     `(defmacro ,ftn (x)
-	       (let ((xval (gensym)))
-		 `(let ((,xval ,x))
-		   (cond ((typep ,xval 'single-float)
-			  (,',lsp (the (single-float 0.0f0) ,xval)))
-			 ((typep ,xval 'double-float)
-			  (,',lsp (the (double-float 0.0d0) ,xval)))
-			 (t
-			  (,',lsp ,xval))))))))
+	     `(defun ,ftn (x)
+	       (cond ((typep x 'single-float)
+		      (,lsp (the (single-float 0.0f0) x)))
+		     ((typep x 'double-float)
+		      (,lsp (the (double-float 0.0d0) x)))
+		     (t
+		      (,lsp x))))))
   (frob fsqrt sqrt)
   (frob flog log))
 
@@ -509,71 +510,85 @@
 ;; this is not true, the original Fortran code was broken anyway, so
 ;; GIGO (garbage in, garbage out).
 
-(defmacro dsqrt (x)
-   `(sqrt (the (double-float 0d0) ,x)))
-(defmacro csqrt (x)
-   `(sqrt ,x))
-(defmacro alog (x)
-   `(log (the (single-float 0f0) ,x)))
-(defmacro dlog (x)
-   `(log (the (double-float 0d0) ,x)))
-(defmacro clog (x)
-   `(log ,x))
-(defmacro alog10 (x)
-   `(log (the (single-float 0f0),x) 10.0))
-(defmacro dlog10 (x)
-   `(log (the (double-float 0d0) ,x) 10.0d0))
-(defmacro log10 (x)
-  (let ((xval (gensym)))
-    `(let ((,xval ,x))
-      (cond ((typep ,xval 'single-float)
-	     (log (the (single-float 0.0f0) ,xval) 10.0))
-	    ((typep ,xval 'double-float)
-	     (log (the (double-float 0.0d0) ,xval) 10d0))
-	    (t
-	     (/ (log ,xval)
-		(float 10 (type-of (realpart ,xval)))))))))
+(defun dsqrt (x)
+  (sqrt (the (double-float 0d0) x)))
+(defun csqrt (x)
+  (sqrt x))
+(defun alog (x)
+  (log (the (single-float 0f0) x)))
+(defun dlog (x)
+  (log (the (double-float 0d0) x)))
+(defun clog (x)
+  (log x))
+(defun alog10 (x)
+  (log (the (single-float 0f0) x) 10f0))
+(defun dlog10 (x)
+  (log (the (double-float 0d0) x) 10.0d0))
+(defun log10 (x)
+  (cond ((typep x 'single-float)
+	 (log (the (single-float 0.0f0) x) 10f0))
+	((typep x 'double-float)
+	 (log (the (double-float 0.0d0) x) 10d0))
+	(t
+	 (/ (log x)
+	    (float 10 (type-of (realpart x)))))))
 
-(defmacro dexp (x)
-   `(exp ,x))
-(defmacro cexp (x)
-   `(exp ,x))
+(defun dexp (x)
+  (declare (type double-float x))
+  (exp x))
+(defun cexp (x)
+  (declare (type complex x))
+  (exp x))
 
-(defmacro dsin (x)
-   `(sin ,x))
-(defmacro csin (x)
-   `(sin ,x))
+(defun dsin (x)
+  (declare (type double-float x))
+  (sin x))
+(defun csin (x)
+  (declare (type complex x))
+  (sin x))
 
-(defmacro dcos (x)
-   `(cos ,x))
-(defmacro ccos (x)
-   `(cos ,x))
+(defun dcos (x)
+  (declare (type double-float x))
+  (cos x))
+(defun ccos (x)
+  (declare (type complex x))
+  (cos x))
 
-(defmacro dtan (x)
-   `(tan ,x))
-(defmacro ctan (x)
-   `(tan ,x))
+(defun dtan (x)
+  (declare (type double-float x))
+  (tan x))
+(defun ctan (x)
+  (declare (type complex x))
+  (tan x))
 
-(defmacro dasin (x)
-   `(asin ,x))
-(defmacro dacos (x)
-   `(acos ,x))
-(defmacro datan (x)
-   `(atan ,x))
-(defmacro atan2 (x y)
-  `(atan ,x ,y))
-(defmacro datan2 (x y)
-  `(atan ,x ,y))
+(defun dasin (x)
+  (declare (type double-float x))
+  (asin x))
+(defun dacos (x)
+  (declare (type double-float x))
+  (acos x))
+(defun datan (x)
+  (declare (type double-float x))
+  (atan x))
+(defun atan2 (x y)
+  (declare (type double-float x))
+  (atan x y))
+(defun datan2 (x y)
+  (declare (type double-float x y))
+  (atan x y))
 
-(defmacro dsinh (x)
-   `(sinh ,x))
-(defmacro dcosh (x)
-   `(cosh ,x))
-(defmacro dtanh (x)
-   `(tanh ,x))
+(defun dsinh (x)
+  (declare (type double-float x))
+  (sinh x))
+(defun dcosh (x)
+  (declare (type double-float x))
+  (cosh x))
+(defun dtanh (x)
+  (declare (type double-float x))
+  (tanh x))
 
-(defmacro ffloat (x)
-  `(coerce ,x 'single-float))
+(defun ffloat (x)
+  (coerce x 'single-float))
 
 (defun process-implied-do (ido low-bnds init)
   (let* ((implied-do (remove '|,| ido))

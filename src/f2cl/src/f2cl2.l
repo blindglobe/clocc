@@ -268,9 +268,17 @@ Tag being parsed:| (cadr x))))
 			     (list-split '|,| (cadr l))))
 	    (bounds (lookup-array-bounds vname)))
 
+       ;; If all of the lower bounds are 1, don't need to pass that
+       ;; on.  The fref macro already handles this situation.  Doesn't
+       ;; affect the behavior, but makes the Lisp code look a bit
+       ;; cleaner.
        (append (list 'fref vname)
 	       (list indices)
-	       (list (mapcar #'car bounds)))))
+	       (let ((blist (mapcar #'car bounds)))
+		 (unless (every #'(lambda (x)
+				(= x 1))
+			    blist)
+		   (list (mapcar #'car bounds)))))))
 
 					; function call:
     ((and (symbolp (car l))

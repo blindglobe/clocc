@@ -1,3 +1,16 @@
+clue (20010602-3) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:45:55 +0200
+
+clue (20010602-2) unstable; urgency=low
+
+  * Fixed upgrade bug: now should remove pictures and clio.
+  * Rebuild for dpkg-dev bug. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  3 Jul 2001 08:07:16 +0200
+
 clue (20010602-1) unstable; urgency=low
 
   * Now with common-lisp-controller support

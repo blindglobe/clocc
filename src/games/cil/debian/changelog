@@ -1,3 +1,21 @@
+cil (200100227-5) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:46:00 +0200
+
+cil (200100227-4) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:45:58 +0200
+
+cil (200100227-3) unstable; urgency=low
+
+  * Rebuild for dpkg-dev problem.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  3 Jul 2001 08:09:02 +0200
+
 cil (200100227-2) unstable; urgency=low
 
   * Now for 'all' architectures

@@ -1,8 +1,14 @@
+memoization (1.0-5) unstable; urgency=low
+
+  * 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:45:47 +0200
+
 memoization (1.0-4) unstable; urgency=low
 
   * Now uses common-lisp-controller.
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 27 Jun 2001 14:09:51 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue,  3 Jul 2001 08:06:34 +0200
 
 memoization (1.0-3) unstable; urgency=low
 

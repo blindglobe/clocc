@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.20 2002/05/29 19:58:46 sds Exp $
+;;; $Id: cvs.lisp,v 2.21 2002/05/30 17:48:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,7 @@
 
 (in-package :cllib)
 
-(export '(cvs-diff2patch cvs-stat-log cvs-change-root))
+(export '(cvs-diff2patch cvs-stat-log cvs-change-root read-all-changelogs))
 
 ;;;
 ;;; CVS diff ---> patch
@@ -304,6 +304,108 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
       (dolist (dir (directory root-subdirs))
         (unless (string-equal "CVS" (car (last (pathname-directory dir))))
           (cvs-change-root dir substitutions :dry-run dry-run :log log))))))
+
+;;;
+;;; stat ChangeLog files
+;;;
+;; e.g:
+;; (read-all-changelogs "/usr/local/src/clisp/current/")
+;; (sort *known-developers* #'> :key #'developer-hit)
+
+(eval-when (compile load eval)  ; CMUCL
+(defstruct (developer #+cmu (:print-function print-struct-object))
+  (nick "" :type string)
+  (hit 1 :type integer)
+  (names nil :type list)
+  (emails nil :type list))
+)
+(defconst +bad-developer+ developer (make-developer)
+  "*The convenient constant for init.")
+
+(defcustom *known-developers* list nil
+  "The list of all known developers so far.")
+
+(defun find-dev (id)
+  "Find the ID in `*known-developers*'."
+  (find id *known-developers* :test
+        (lambda (id dev)
+          (or (string-equal id (developer-nick dev))
+              (find id (developer-names dev) :test
+                    (lambda (x y) (search x y :test #'char-equal)))
+              (find id (developer-emails dev) :test
+                    (lambda (x y) (search x y :test #'char-equal
+                                          :end2 (position #\@ y))))))))
+
+(eval-when (compile load eval)  ; CMUCL
+(defstruct (changelog-entry (:conc-name chlen-)
+                            #+cmu (:print-function print-struct-object))
+  (date +bad-date+ :type date)
+  (id "" :type string)
+  (name "" :type string)
+  (email "" :type string)
+  (developer +bad-developer+ :type developer))
+)
+
+(defun string->chlen (str)
+  "Parse a string like \"2002-05-29  John D. Doe  <jdd@foo.org>\"
+from a ChangeLog file into
+  #S(changelog-entry :date 2002-05-29 :id \"jdd\" :name \"John D. Doe\"
+     :email \"<jdd@foo.org>\")"
+  (let* ((e-start (1+ (position #\space str :from-end t)))
+         (n-end (position #\space str :from-end t :test #'char/= :end e-start))
+         (sep1 (search "  " str :from-end t :end2 n-end))
+         (n-start (if sep1 (+ 2 sep1) (1+ (position #\space str))))
+         (d-end (position #\space str :from-end t :test #'char/= :end n-start))
+         (date (time2date (string->dttm (subseq str 0 (1+ d-end)))))
+         (email (string-trim "(<>)" (subseq str e-start)))
+         (id (subseq email (if (find (char email 0) "<(") 1 0)
+                     (position #\@ email)))
+         (name (subseq str n-start (1+ n-end)))
+         (lname-pos (position #\space name :from-end t))
+         (lname (if lname-pos (subseq name (1+ lname-pos)) name))
+         (developer (or (find-dev id) (find-dev lname))))
+    (cond (developer
+           (incf (developer-hit developer))
+           (pushnew name (developer-names developer) :test #'string=)
+           (pushnew email (developer-emails developer) :test #'string=)
+           (unless (string-equal id (developer-nick developer))
+             (pushnew id (developer-names developer) :test #'string=)))
+          ((setq developer (make-developer :nick id :names (list name)
+                                           :emails (list email)))
+           (push developer *known-developers*)))
+    (make-changelog-entry :date date :id id :name name :email email
+                          :developer developer)))
+
+(defun read-chlen (in ra)
+  "Read a single `changelog-entry'.
+Suitable for `read-list-from-stream'."
+  (declare (stream in) (string ra))
+  (loop :for str = (read-line in nil +eof+)
+    :while (and (stringp str)
+                (or (zerop (length str)) (whitespace-char-p (char str 0))))
+    :finally (return (values (string->chlen ra)
+                             (if (and (stringp str)
+                                      (or (search
+                                           ;; avoid Emacs recognizing this
+                                           #.(concatenate 'string "Local"
+                                                          " Variables:")
+                                           str)
+                                          (search "See ChangeLog" str)))
+                                 +eof+ str)))))
+
+(defun read-changelog (fn)
+  "Read the ChangeLog file, returning the list of records."
+  (read-list-from-file fn #'read-chlen :read-ahead-function #'read-line))
+
+(defun read-all-changelogs (dir)
+  "Read all ChangeLog files under the directory DIR."
+  (setq *known-developers* nil)
+  (labels ((one-dir (dd)
+             (nconc
+              (mapcan #'read-changelog (directory (merge-pathnames
+                                                   dd "ChangeLog")))
+              (mapcan #'one-dir (directory (merge-pathnames "*/" dd))))))
+    (one-dir dir)))
 
 (provide :cllib-cvs)
 ;;; file cvs.lisp ends here

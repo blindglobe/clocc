@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.26 2003/01/08 19:08:08 sds Exp $
+;;; $Id: fileio.lisp,v 1.27 2003/01/08 19:45:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
 (in-package :cllib)
 
 (export '(file-size-t file-size rename-files save-restore
-          count-sexps code-complexity load-compile-maybe
+          count-sexps code-complexity load-compile-maybe file-equal-p
           write-list-to-stream write-list-to-file
           read-list-from-stream read-list-from-file
           pr write-to-file read-from-file read-from-stream append-to-file

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1998-03-20 Fri 16:52:03 EST sds@mute.eaglets.com>
+;;; File: <date.lisp - 1998-04-03 Fri 13:40:33 EST sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.7 1998/03/23 15:52:12 sds Exp $
+;;; $Id: date.lisp,v 1.8 1998/04/03 18:41:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.8  1998/04/03 18:41:12  sds
+;;; Added DD (days since epoch) to the date structure.
+;;; Ditched *century*.
+;;;
 ;;; Revision 1.7  1998/03/23 15:52:12  sds
 ;;; Fixed to work with ACL and CMU CL.
 ;;;
@@ -32,11 +36,13 @@
 ;;; Added `regress-dl'.
 ;;;
 
-(eval-when (load compile eval)
-  (sds-require "util")
+(in-package "CL-USER")
 
-  (defconst *century* fixnum 1900 "The current century - to fix dates.")
-  (defconst *day-sec* fixnum (* 24 60 60) "The number of seconds per day."))
+(eval-when (load compile eval)
+  (sds-require "base") (sds-require "print") (sds-require "math")
+  (sds-require "list") (sds-require "util"))
+
+(defconst *day-sec* fixnum (* 24 60 60) "The number of seconds per day.")
 
 ;;;
 ;;; Date
@@ -47,8 +53,8 @@
   "The date structure -- year, month, and day."
   (ye 1 :type fixnum)
   (mo 1 :type (integer 1 12))
-  (da 1 :type (integer 1 31)))
-)
+  (da 1 :type (integer 1 31))
+  (dd nil :type (or null fixnum))) ; number of days since the epoch (1900-1-1)
 
 (defconst *bad-date* date (make-date) "*The convenient constant for init.")
 
@@ -58,6 +64,8 @@
   (if *print-readably* (funcall (print-readably date) dt str depth)
       (format str "~4,'0d-~2,'0d-~2,'0d"
 	      (date-ye dt) (date-mo dt) (date-da dt))))
+;; "~:[~; [~:d]~]" (zerop depth) (date-dd dt)
+)
 
 (defun print-date-month (dt &optional (str t) (depth 1))
   "Print the date to the STREAM, month and year only."
@@ -68,37 +76,50 @@
 
 (defsubst date2num (dt)
   "Convert the date to the numerical format YYYYMMDD."
-  (declare (type date dt))
+  (declare (type date dt) (values fixnum))
   (+ (* 10000 (date-ye dt)) (* 100 (date-mo dt)) (date-da dt)))
 
 (defsubst date2time (dt)
   "Call `encode-universal-time' on the date.
 Returns the number of seconds since the epoch (1900-01-01)."
-  (declare (type date dt))
+  (declare (type date dt) (values integer))
   (encode-universal-time 0 0 0 (date-da dt) (date-mo dt) (date-ye dt)))
 
 (defun time2date (num)
   "Convert the universal time NUM to date."
-  (declare (real num))
+  (declare (real num) (values date))
   (multiple-value-bind (se mi ho da mo ye) (decode-universal-time num)
     (declare (ignore se mi ho))
-    (make-date :ye ye :mo mo :da da)))
+    (make-date :ye ye :mo mo :da da :dd (floor num *day-sec*))))
+
+(defsubst fix-date (dt)
+  "Make sure the date is correct."
+  (declare (type date dt) (values date))
+  (let ((tm (date2time dt)))
+    (declare (integer tm))
+    (setf (date-dd dt) (floor tm *day-sec*)
+	  (date-ye dt) (nth-value 5 (decode-universal-time tm))))
+  dt)
+
+(defsubst mk-date (&key (ye 1) (mo 1) (da 1))
+  "Make date, fixing everything."
+  (declare (fixnum ye mo da) (values date))
+  (fix-date (make-date :ye ye :mo mo :da da)))
 
 (defsubst date2days (dt)
   "Convert the date to the number of days since the epoch (1900-01-01)."
-  (declare (type date dt))
-  (round (/ (date2time dt) *day-sec*)))
+  (declare (type date dt) (values fixnum))
+  (or (date-dd dt) (setf (date-dd dt) (floor (date2time dt) *day-sec*))))
 
-(defun days2date (days)
+(defsubst days2date (days)
   "Convert the number of days since the epoch (1900-01-01) to the date."
-  (declare (fixnum days))
-  (time2date (* (1+ days) *day-sec*)))
+  (declare (fixnum days) (values date)) (time2date (* (1+ days) *day-sec*)))
 
 (defun num2date (num)
   "Get the date from the number."
-  (declare (number num))
-  (make-date :ye (floor (/ num 10000)) :mo (mod (floor (/ num 100)) 100)
-	     :da (mod num 100)))
+  (declare (number num) (values date))
+  (mk-date :ye (floor (/ num 10000)) :mo (mod (floor (/ num 100)) 100)
+	   :da (mod num 100)))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."
@@ -108,7 +129,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
 		      (string-equal s0 s1 :start1 0 :end1 2
 				    :start2 0 :end2 2))))))
 
+;;;
 ;;; generic
+;;;
 
 (eval-when (load compile eval)
   (defgeneric date (xx) (:documentation "Convert to or extract a date."))
@@ -119,84 +142,77 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (let ((str (nsubstitute #\space #\- xx)))
     (multiple-value-bind (ye n0) (read-from-string str)
       (multiple-value-bind (mo n1) (read-from-string str nil 0 :start n0)
-	(make-date :ye (or ye 0) :mo mo :da
-		   (read-from-string str nil 0 :start n1))))))
+	(mk-date :ye (or ye 0) :mo mo :da
+		 (read-from-string str nil 0 :start n1))))))
 (defmethod date ((xx null)) *bad-date*) ; (error "Cannot convert NIL to date")
 (defmethod date ((xx symbol)) (date (string xx)))
 (defmethod date ((xx real)) (time2date xx))
 (defmethod date ((xx stream))
   "Read date in format MONTH DAY YEAR."
-  (make-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
+  (mk-date :mo (infer-month (read xx)) :da (read xx) :ye (read xx)))
 (defmethod date ((xx cons)) (date (car xx)))
 
+;;;
 ;;; utilities
+;;;
 
-(declaim (ftype (function ((function (t) date) t) (function (t) fixnum))
-		days-since))
 (defun days-since (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a fixnum. KEY should return a date."
-  (declare (type (function (t) date) key))
+  (declare (type (function (t) date) key) (values (function (t) fixnum)))
   (unless (realp beg) (setq beg (date2days (date beg))))
   (lambda (rr) (- (date2days (funcall key rr)) beg)))
 
-(declaim (ftype (function ((function (t) date) t)
-			  (function (t) double-float)) days-since-f))
 (defun days-since-f (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a double-float. KEY should return a date."
-  (declare (type (function (t) date) key))
+  (declare (type (function (t) date) key) (values (function (t) double-float)))
   (unless (realp beg) (setq beg (date2days (date beg))))
   (lambda (rr) (double-float (- (date2days (funcall key rr)) beg))))
 
 (defun today ()
   "Return today's date."
-  (time2date (get-universal-time)))
+  (declare (values date)) (time2date (get-universal-time)))
 
 (defun timestamp (&optional (time (get-universal-time)))
   "Return the current time as a string without blanks."
+  (declare (integer time) (values simple-string))
   (multiple-value-bind (se mi ho da mo ye) (decode-universal-time time)
     (format nil "~4,'0d-~2,'0d-~2,'0d--~2,'0d-~2,'0d-~2,'0d"
 	    ye mo da ho mi se)))
 
-(defun date-fix-year (dt)
-  "Fix the year to be from C.E., not from the beginning of the century."
-  (declare (type date dt))
-  (let ((ye (date-ye dt)))
-    (if (< ye *century*) (setf (date-ye dt) (+ ye *century*)))) dt)
-
 (defun date= (d0 d1)
   "Check that the dates are the same. Like equalp, but works with children."
-  (declare (type date d0 d1))
-  (and (= (date-ye d0) (date-ye d1))
-       (= (date-mo d0) (date-mo d1))
-       (= (date-da d0) (date-da d1))))
+  (declare (type date d0 d1)) (= (date2days d0) (date2days d1)))
+;; (and (= (date-ye d0) (date-ye d1))
+;;     (= (date-mo d0) (date-mo d1))
+;;     (= (date-da d0) (date-da d1))))
 
 (defun date< (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1))
-  (let ((dd (- (date-ye d0) (date-ye d1))))
-    (cond ((plusp dd) nil) ((minusp dd) t)
-	  ((setq dd (- (date-mo d0) (date-mo d1)))
-	   (cond ((plusp dd) nil) ((minusp dd) t)
-		 ((minusp (- (date-da d0) (date-da d1)))))))))
+  (declare (type date d0 d1)) (< (date2days d0) (date2days d1)))
+;;  (let ((dd (- (date-ye d0) (date-ye d1))))
+;;    (cond ((plusp dd) nil) ((minusp dd) t)
+;;	  ((setq dd (- (date-mo d0) (date-mo d1)))
+;;	   (cond ((plusp dd) nil) ((minusp dd) t)
+;;		 ((minusp (- (date-da d0) (date-da d1)))))))))
 
 (defun date> (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1))
-  (let ((dd (- (date-ye d0) (date-ye d1))))
-    (cond ((plusp dd) t) ((minusp dd) nil)
-	  ((setq dd (- (date-mo d0) (date-mo d1)))
-	   (cond ((plusp dd) t) ((minusp dd) nil)
-		 ((plusp (- (date-da d0) (date-da d1)))))))))
+  (declare (type date d0 d1)) (> (date2days d0) (date2days d1)))
+;;  (let ((dd (- (date-ye d0) (date-ye d1))))
+;;    (cond ((plusp dd) t) ((minusp dd) nil)
+;;	  ((setq dd (- (date-mo d0) (date-mo d1)))
+;;	   (cond ((plusp dd) t) ((minusp dd) nil)
+;;		 ((plusp (- (date-da d0) (date-da d1)))))))))
 
 (defsubst latest-date (d0 d1)
   "Return the latest date."
-  (declare (type date d0 d1)) (if (date< d0 d1) d1 d0))
+  (declare (type date d0 d1) (values date)) (if (date< d0 d1) d1 d0))
 
 (defsubst earliest-date (d0 d1)
   "Return the earliest date."
-  (declare (type date d0 d1)) (if (date> d0 d1) d1 d0))
+  (declare (type date d0 d1) (values date)) (if (date> d0 d1) d1 d0))
 
 (defun next-month-p (d0 d1)
   "True if D1 is the next month of D0."
@@ -232,22 +248,19 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 
 (defun days-between (d0 &optional (d1 (today)))
   "Return the number of days between the two dates.
-Arguments can be dates, objects parsable with `date',
-or numbers returned by `encode-universal-time'."
-  (setq d0 (if (realp d0) d0 (date2time (date d0)))
-	d1 (if (realp d1) d1 (date2time (date d1))))
-  (round (/ (- d1 d0) *day-sec*))) ; DST intervenes!
+Arguments can be dates or objects parsable with `date'."
+  (- (date2days (date d1)) (date2days (date d0))))
 
 (defsubst tomorrow (dd &optional (skip 1))
   "Return the next day.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
-  (declare (type date dd) (fixnum skip))
-  (time2date (+ (date2time dd) (* *day-sec* skip))))
+  (declare (type date dd) (fixnum skip) (values date))
+  (days2date (+ (date2days dd) skip)))
 
 (defsubst yesterday (dd &optional (skip 1))
   "Return the previous day.  Calls tomorrow."
-  (declare (type date dd) (fixnum skip)) (tomorrow dd (- skip)))
+  (declare (type date dd) (fixnum skip) (values date)) (tomorrow dd (- skip)))
 
 (defun date-in-list (dt lst &optional (key #'date) last)
   "Return the tail of LST starting with DT.
@@ -266,7 +279,7 @@ If you need to check more than one value for jumps, you can resort
 to `check-list-values'.
 Return T if any errors are detected."
   (declare (type (function (t) date) date) (stream stream)
-	   (type (or null fixnum) gap)
+	   (type (or null fixnum) gap jump)
 	   (type (function (t) double-float) val))
   (format stream "~&Checking the list~:[~; `~:*~a'~] for:~%~5t~?.~%"
 	  (if (dated-list-p lst) (dated-list-name lst) nil)
@@ -443,17 +456,17 @@ CKEY and AKEY values of nil are the same as #'identity.
 
 (defsubst dl-date (dl)
   "Return the DATE function of the dated list DL."
-  (declare (type dated-list dl))
+  (declare (type dated-list dl) (values (function (t) date)))
   (let ((ff (dated-list-date dl))) (if (symbolp ff) (symbol-function ff) ff)))
 
 (defsubst dl-val (dl)
   "Return the VAL function of the dated list DL."
-  (declare (type dated-list dl))
+  (declare (type dated-list dl) (values (function (t) double-float)))
   (let ((ff (dated-list-val dl))) (if (symbolp ff) (symbol-function ff) ff)))
 
 (defsubst dl-chg (dl)
   "Return the CHG function of the dated list DL."
-  (declare (type dated-list dl))
+  (declare (type dated-list dl) (values (function (t) double-float)))
   (let ((ff (dated-list-chg dl))) (if (symbolp ff) (symbol-function ff) ff)))
 
 (defsubst dl-misc (dl)
@@ -463,7 +476,7 @@ CKEY and AKEY values of nil are the same as #'identity.
 
 (defsubst dl-len (dl)
   "Return the length of the dated list."
-  (declare (type dated-list dl)) (length (dated-list-ll dl)))
+  (declare (type dated-list dl) (values fixnum)) (length (dated-list-ll dl)))
 
 (defsubst dl-endp (dl)
   "Check for the end of the dated list."
@@ -754,10 +767,10 @@ Must not assume that the list is properly ordered!"
 (eval-when (load compile eval)
 (defstruct (change (:print-function print-change))
   "Change structure - for computing difference derivatives."
-  (date (make-date) :type date)
-  (val 0.0d0 :type double-float) ; value
-  (chf 0.0d0 :type double-float) ; change forward
-  (chb 0.0d0 :type double-float)) ; change backward
+  (date *bad-date* :type date)
+  (val 0.0 :type double-float)	; value
+  (chf 0.0 :type double-float)	; change forward
+  (chb 0.0 :type double-float)) ; change backward
 )
 
 (defmethod date ((xx change)) (change-date xx))
@@ -823,7 +836,7 @@ ch[bf], and dl-extrema will not be idempotent."
 (eval-when (load compile eval)
 (defstruct (diff (:print-function print-diff))
   "A dated diff."
-  (date (make-date) :type date)
+  (date *bad-date* :type date)
   (di 0.0 :type real)			; difference
   (ra 1.0 :type real))			; ratio
 )

@@ -86,6 +86,10 @@
 			  ,@(ambler:amble-expression keys context))))
 
 
+;;; :FILE clause.
+;;; The NIL default for the LANGUAGE keyword is needed not to force
+;;; prematurely the type of the component to a specific language.
+
 (ambler:def-form-ambler :file (file-form defsystem-ambler-context)
   (destructuring-bind (kwd-file name
 				&rest keys

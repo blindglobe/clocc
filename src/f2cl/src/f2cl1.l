@@ -356,7 +356,9 @@ main-loop
 (defun special-print (x o)
    (write x :escape t :stream o :pretty t :case :downcase))
 ;------------------------------------------------------------------------------
-(defun princ-reset (x &optional (y "")) (print x) (princ  y))
+(defun princ-reset (x &optional (y ""))
+  (print x)
+  (princ y))
 
 (defun translate-label (label)
    (if label 
@@ -817,6 +819,9 @@ main-loop
   (cond ((eq (car lhs) 'fref)
 	 ;;array_ref 
 	 `((fset ,lhs ,rhs)))
+	((eq (car lhs) 'fref-string)
+	 ;; Fortran string ref
+	 `((fset-string ,lhs ,rhs)))
 	(t
 	 ;;statement_function
 	 (progn
@@ -1007,7 +1012,7 @@ main-loop
        ((endp l) ret)))
 
 (defun parse-char-decl (x)
-   (prog (first-bit decl-list)
+  (prog (first-bit decl-list)
      (cond ((eq (second x) '*)
             (setq first-bit `(character ,(third x))
                   decl-list (list-split '|,| (cdddr x))))
@@ -1016,11 +1021,10 @@ main-loop
                   decl-list (list-split '|,| (cdr x)))))
      (setq *explicit_vble_decls* 
            (cons
-              `(,first-bit
-                      ,@(mapcar #'(lambda (decl) (remove '* decl))
-                           decl-list))
-              *explicit_vble_decls*))))
-
+	    `(,first-bit
+	      ,@(mapcar #'(lambda (decl) (remove '* decl))
+			decl-list))
+	    *explicit_vble_decls*))))
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
 ; restricted to 
@@ -1179,6 +1183,15 @@ Senac syntax: ... | op '| ... | op '| ... OR
 Senac syntax:... | op '| ...|)))
           (t (return  (car ret))))))
 
+(defun list-split-multi-string (op lis)
+  (prog (ret)
+    (setq ret (match-separated op lis))
+    (cond ((null ret) (princ-reset (concat
+'|Senac syntax error: failure to parse an expression
+                   using the operator "| op '|"
+Senac syntax:... | op '| ...|)))
+          (t (return  (car ret))))))
+
 (defun concat-operators (x) 
  (prog (next rest done)
   (setq next (car x) rest (cdr x)) 
@@ -1186,13 +1199,21 @@ Senac syntax:... | op '| ...|)))
   (cond ((null rest) (return (reverse (cons next done)))))
   (cond 
       ((and (eq next '*) (eq (car rest) '*))
-       (setq rest (cdr rest) done (cons '^ done))) 
+       (setq rest (cdr rest)
+	     done (cons '^ done))) 
       ((and (eq next '>) (eq (car rest) '=))
-       (setq rest (cdr rest) done (cons '>= done))) 
+       (setq rest (cdr rest)
+	     done (cons '>= done))) 
       ((and (eq next '<) (eq (car rest) '=))
-       (setq rest (cdr rest) done (cons '<= done))) 
+       (setq rest (cdr rest)
+	     done (cons '<= done))) 
       ((and (eq next '>) (eq (car rest) '<))
-       (setq rest (cdr rest) done (cons '>< done))) ; needs to be defined
+       (setq rest (cdr rest)
+	     done (cons '>< done))) ; needs to be defined
+      ((and (eq next '/) (eq (car rest) '/))
+       ;; Fortran string concat operator
+       (setq rest (cdr rest)
+	     done (cons '// done)))
 ;---->
       (t 
        (setq done (cons next done))))

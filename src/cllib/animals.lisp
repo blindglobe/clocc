@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.8 2001/04/02 16:38:30 sds Exp $
+;;; $Id: animals.lisp,v 2.9 2001/04/02 17:03:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -137,7 +137,7 @@ Returnes a fresh string."
     (if *animals-debug-use-built-in-data*
         (print "used built-in data -- no save!")
         (if animals-data-modified
-            (save-restore-animals *animals-data*)
+            (save-restore-animals t)
             (format t "You taught me no new animals this time...~%"))))
   (when (y-or-n-p "Exit lisp?") (quit)))
 
@@ -192,8 +192,8 @@ Returnes a fresh string."
   (mknode 'root "Is is a living being?" 'living 'object)
   "*The root node, from which the search starts by default.")
 
-(defun save-restore-network (&optional file)
-  (save-restore file :name "network.dat"
+(defun save-restore-network (&optional what)
+  (save-restore what :name "network.dat"
                 :var '*network* :basedir *datadir*
                 :voidp (lambda (ht) (>= 1 (hash-table-count ht)))
                 :readtable +clos-readtable+
@@ -296,7 +296,8 @@ Returnes a fresh string."
                               (list 'name name 'symbol 'string))))
                   (format t "I won!~%")
                   (add-node name node)))
-        :while (y-or-n-p "One more game?")))
+        :while (y-or-n-p "One more game?"))
+  (save-restore-network t))
 
 (provide :animals)
 ;;; animals.lisp ends here

@@ -146,7 +146,8 @@
 
   ;;--------------------------------------------
   ;; Across the board utilities.
-  (:export "COMPILED-FILE-EXTENSION")
+  (:export "COMPILED-FILE-EXTENSION"
+	   "FILE-SYSTEM-DIRECTORY-SEPARATOR")
   )
 	   
 

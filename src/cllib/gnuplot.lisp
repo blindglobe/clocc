@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1999-01-06 Wed 22:59:06 EST sds@eho.eaglets.com>
+;;; File: <gnuplot.lisp - 1999-01-26 Tue 17:44:23 EST sds@eho.eaglets.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.23 1999/01/07 03:59:28 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.24 1999/01/26 22:45:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.24  1999/01/26 22:45:28  sds
+;;; Added `plot-msg'.
+;;;
 ;;; Revision 1.23  1999/01/07 03:59:28  sds
 ;;; Use `index-t' instead of (unsigned-byte 20).
 ;;; Use `close-pipe'.
@@ -126,6 +129,15 @@
   (declare (type date dt) (values integer))
   (* +day-sec+ (days-between +gnuplot-epoch+ dt)))
 
+(defun plot-msg (&rest args)
+  "Write a status message to `*gnuplot-msg-stream*'."
+  (fresh-line *gnuplot-msg-stream*)
+  (write-string "[" *gnuplot-msg-stream*)
+  (current-time *gnuplot-msg-stream*)
+  (write-string "] " *gnuplot-msg-stream*)
+  (apply #'format *gnuplot-msg-stream* args)
+  (force-output *gnuplot-msg-stream*))
+
 (defmacro with-plot-stream ((str plot &rest header) &body body)
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream PLOT &rest HEADER) body).
@@ -155,36 +167,30 @@ PLOT means:
         #+win32
         (ecase ,plot
           ((t :plot)
-           (fresh-line *gnuplot-msg-stream*)
-           (princ "Starting gnuplot..." *gnuplot-msg-stream*)
-           (force-output *gnuplot-msg-stream*)
+           (plot-msg "Starting gnuplot...")
            (close-pipe (pipe-output *gnuplot-path* "/noend" *gnuplot-file*))
            (format *gnuplot-msg-stream* "done.~%"))
           (:wait
-           (fresh-line *gnuplot-msg-stream*)
-           (princ "Waiting for gnuplot to terminate..." *gnuplot-msg-stream*)
-           (force-output *gnuplot-msg-stream*)
+           (plot-msg "Waiting for gnuplot to terminate...")
            (format *gnuplot-msg-stream* "gnuplot returned ~a.~%"
                    (run-prog *gnuplot-path* :args
                              (list "/noend" *gnuplot-file*))))
-          (:print (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
-                          *gnuplot-printer*))
-          (:file (format *gnuplot-msg-stream* "~&Wrote `~a'.
-Type \"load '~a'\" at the gnuplot prompt.~%"
-                         *gnuplot-file* *gnuplot-file*)))
+          (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*))
+          (:file (plot-msg
+                  "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
+                  *gnuplot-file* *gnuplot-file*)))
         #+unix
         (ecase ,plot
-          ((t :plot) (format *gnuplot-msg-stream* "~&Done plotting.~%"))
+          ((t :plot) (plot-msg "Done plotting.~%"))
           (:wait
-           (fresh-line *gnuplot-msg-stream*)
+           (fresh-line *terminal-io*)
            (princ "Press <enter> to continue..." *terminal-io*)
            (force-output *terminal-io*) (read-line *terminal-io* nil nil))
-          (:print (format *gnuplot-msg-stream* "~&Sent the plot to `~a'.~%"
-                          *gnuplot-printer*)
+          (:print (plot-msg "Sent the plot to `~a'.~%" *gnuplot-printer*)
                   (format ,str "set output~%"))
-          (:file (format *gnuplot-msg-stream* "~&Wrote `~a'.
-Type \"load '~a'\" at the gnuplot prompt.~%"
-                         *gnuplot-file* *gnuplot-file*)))
+          (:file (plot-msg
+                  "Wrote `~a'.~%Type \"load '~a'\" at the gnuplot prompt.~%"
+                  *gnuplot-file* *gnuplot-file*)))
         #+unix (force-output ,str)))))
 
 (defun plot-header (str plot &key (xlabel "x") (ylabel "y") data-style
@@ -223,9 +229,8 @@ The rest is passed to `plot-dated-lists'."
         (endd (apply #'max (mapcar (compose date2days channel-endd) chs))))
     (incf endd (floor (- endd begd) 4))
     (setq begd (date begd) endd (date endd))
-    (format *gnuplot-msg-stream*
-            "~&Plotting ~d channel~:p and ~d dated list~:p in [~a -- ~a].~%"
-            (length chs) (length dls) begd endd)
+    (plot-msg "Plotting ~d channel~:p and ~d dated list~:p in [~a -- ~a].~%"
+              (length chs) (length dls) begd endd)
     (apply #'plot-dated-lists begd endd dls :channels chs opts)))
 
 (defun plot-data-style (num-ls)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.25 2004/10/27 22:24:32 sds Exp $
+;;; $Id: log.lisp,v 1.26 2004/10/27 22:32:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -88,36 +88,33 @@ This has to be a macro to avoid needless evaluating the args."
 Within the body you can call a local function ETA of one argument -
 the current relative position which returns 2 values:
 the expected remaining run and real times."
-  (with-gensyms ("TIMING-" bt bt1 %out el last-pos last-time last-time1)
-    `(let* ((,bt (get-int-time)) (,bt1 (get-int-time nil)) ,el
+  (with-gensyms ("TIMING-" bt b1 %out el last-pos last-time last-tim1)
+    `(let* ((,bt (get-int-time)) (,b1 (get-int-time nil)) ,el
             (,%out (and (print-log-p ,type) ,out))
-            (,last-time ,bt) (,last-time1 ,bt1) (,last-pos 0)
+            (,last-time ,bt) (,last-tim1 ,b1) (,last-pos 0)
             ,@(when count `((,count 0))))
       (unwind-protect
            (flet ((eta (pos) ; pos is the current relative position
                     (if (zerop pos) (values 0 0)
-                      (let* ((now (get-int-time)) (now1 (get-int-time nil))
-                             (lt ,last-time) (lt1 ,last-time1)
+                      (let* ((now (get-int-time)) (no1 (get-int-time nil))
+                             (lt ,last-time) (l1 ,last-tim1)
                              (eta (linear 0 ,bt pos now 1))
-                             (eta1 (linear 0 ,bt1 pos now1 1)))
-                        (setq ,last-time now ,last-time1 now1)
+                             (et1 (linear 0 ,b1 pos no1 1)))
+                        (setq ,last-time now ,last-tim1 no1)
                         (if (= ,last-pos pos)
-                          (values (time-diff eta now) (time-diff eta1 now1))
-                          (let ((lp ,last-pos))
+                          (values (time-diff eta now) (time-diff et1 no1))
+                          (let ((eta* (linear ,last-pos lt pos now 1))
+                                (et1* (linear ,last-pos l1 pos no1 1)))
                             (setq ,last-pos pos)
-                            (values
-                             (time-diff
-                              (/ (+ eta (linear lp lt pos now 1)) 2) now)
-                             (time-diff
-                              (/ (+ eta1 (linear lp lt1 pos now1 1)) 2) now1)
-                             )))))))
+                            (values (time-diff (/ (+ eta eta*) 2) now)
+                                    (time-diff (/ (+ et1 et1*) 2) no1))))))))
              (declare (ignorable (function eta)))
              ,@body)
         (when ,%out
           (when ,done (princ "done" ,%out))
           (when (or ,run ',count) (setq ,el (elapsed ,bt t)))
           (when ,run (format ,%out " [run: ~/pr-secs/]" ,el))
-          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,b1 nil)))
           ,(when count
              `(unless (zerop ,el)
                 (format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units)))

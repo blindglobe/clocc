@@ -125,7 +125,8 @@
 						   ))))
 				      (car g))))
 			(dolist (pn pnl)
-	  ;;;;		   (format *error-output* "Processing ~s~%" pn)
+;;;;	  		   (format *error-output* "Processing ~s howmuch = ~s~%"
+;;;;				   pn slurping-how-much*)
 			   (dolist (h pathname-handlers)
 			      (funcall h pn))
 			   (cond ((is-Pseudo-pathname pn)
@@ -250,6 +251,11 @@
 			  (cond ((memq modname module-trace*)
 				 (format *error-output*
 				    "Module ~s already slurped~%" modname))))
+			 ((eq howmuch ':header-only)
+			  (cond ((memq modname module-trace*)
+				 (format *error-output*
+				    "Not looking inside module ~s for supporters"
+				    modname))))
 			 (t
 			  (setf (Load-progress-rec-run-time-depends-on
 				   slurping-lprec*)

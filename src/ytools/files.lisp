@@ -714,8 +714,13 @@
 			 (pathname-source-version lprec-pn))))))))
 
 (defun always-slurp ()
+;;;;   (trace-around always-slurp
+;;;;      (:> "(always-slurp: now-loading* = " now-loading*
+;;;;	  " loading-src-or-obj* = " loading-src-or-obj* ")")
    (cond ((and now-loading* (eq loading-src-or-obj* ':source))
-	  (pathname-slurp now-loading* false ':whole-file))))
+	  (pathname-slurp now-loading* false ':whole-file)))
+;;;;      (:< (val &rest _) "always-slurp: " val))
+   )
 
 ;;;;(defmacro always-slurp ()
 ;;;;   (breakpoint always-slurp "okay")
@@ -730,11 +735,15 @@
 	  
 (datafun to-slurp always-slurp
    (defun :^ (_ _)
+;;;;      (trace-around always-slurp-to-slurp
+;;;;	 (:> "(always-slurp-to-slurp: " ")")
       (cond ((not (eq slurping-how-much* ':header-only))
 	     (setq slurp-whole-file* true)))
 ;;;;      (format t "slurp-whole-file* = ~s // slurping-how-much* = ~s~%"
 ;;;;	      slurp-whole-file* slurping-how-much*)
-      false))
+      false
+;;;;	 (:< (val &rest _) "always-slurp-to-slurp: " val))
+      ))
 
 (defun keyword-if-sym (x)
    (cond ((is-Symbol x)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.12 2002/04/21 19:58:27 sds Exp $
+;;; $Id: miscprint.lisp,v 1.13 2004/03/23 22:53:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,7 +16,7 @@
 
 (export
  '(hash-table-keys hash-table->alist alist->hash-table make-ht-readtable
-   print-all-ascii print-all-packages plist->alist alist->plist))
+   print-all-ascii print-all-packages plist->alist alist->plist plist= alist=))
 
 ;;;
 ;;; characters
@@ -163,6 +163,25 @@ The inverse is `hash-table->alist'."
             (cdr co) (car co)
             (car co) (car ll)
             (car ll) co))))
+
+(defun plist= (p1 p2 &key (test #'eql))
+  "Check that the two property lists have the same properties."
+  (macrolet ((p= (a b)
+               `(do ((tail ,a (cddr tail)))
+                    ((endp tail) t)
+                  (unless (funcall test (second tail)
+                                   (getf ,b (first tail) ,b))
+                    (return nil)))))
+    (and (p= p1 p2) (p= p2 p1))))
+
+(defun alist= (a1 a2 &key (test #'eql))
+  "Check that the two association lists have the same values."
+  (macrolet ((a= (a b)
+               `(every (lambda (pair)
+                         (let ((other (assoc (car pair) ,b :test test)))
+                           (and other (funcall test (cdr pair) (cdr other)))))
+                       ,a)))
+    (and (a= a1 a2) (a= a2 a1))))
 
 (provide :cllib-miscprint)
 ;;; file miscprint.lisp ends here

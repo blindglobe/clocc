@@ -1,7 +1,8 @@
 common-lisp-controller (3.20) unstable; urgency=low
 
   * Add type of ".*" to source namestring for logical pathnames
-
+  * Add reregister-common-lisp-implementations function and manpage
+  
  -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 11 Sep 2002 14:02:53 -0600
 
 common-lisp-controller (3.19) unstable; urgency=low

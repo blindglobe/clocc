@@ -1,3 +1,6 @@
+KMR 14-SEP-2002 (Kevin M. Rosenberg)
+    - Add reregister-common-lisp-implementations function
+
 KMR 06-SEP-2002 (Kevin M. Rosenberg)
     - Remove defsystem.lisp from this package and now depend on Debian package
       cl-defsystem3.

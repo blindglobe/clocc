@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.5 2000/03/27 20:02:54 sds Exp $
+;;; $Id: string.lisp,v 1.6 2000/04/04 21:32:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -112,7 +112,7 @@ Therefore, `substitute-subseq' could be implemented as
 Is is implemented separately for (non-existent :-) performance reasons."
   (declare (sequence seq) (type index-t start)
            (type (function (sequence index-t t) (or null index-t)) begf)
-           (type (function (sequence index-t) index-t) endf)
+           (type (function (sequence index-t t) index-t) endf)
            (type (function (sequence index-t t symbol) sequence) repf))
   (loop :with type =
         (typecase seq (string 'string) (vector 'vector) (list 'list)
@@ -120,6 +120,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
                             (list 'seq seq 'string 'vector 'list))))
         :and last :of-type index-t = start
         :for next = (funcall begf seq last end)
+        :unless (or next all) :return seq
         :collect (subseq seq last next) :into all
         :while next
         :do (setq last (funcall endf seq next end))
@@ -131,7 +132,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
                           (test #'eql) (key #'identity))
   "Substitute all subsequences in a sequence with a replacement sequence.
 The result is of the same type as SEQ.
-  (substitute-subseq SEQ SUB REPL &key START END TEST KEY)"
+  (substitute-subseq SEQ SUB REP &key START END TEST KEY)"
   (declare (sequence seq sub rep) (type index-t start))
   (loop :with type =
         (typecase seq (string 'string) (vector 'vector) (list 'list)
@@ -140,6 +141,7 @@ The result is of the same type as SEQ.
         :and olen :of-type index-t = (length sub)
         :and last :of-type index-t = start
         :for next = (search sub seq :start2 last :end2 end :test test :key key)
+        :unless (or next all) :return seq
         :collect (subseq seq last next) :into all
         :while next :collect rep :into all :do (setq last (+ next olen))
         :finally (return (reduce (lambda (s0 s1) (concatenate type s0 s1))

@@ -26,9 +26,10 @@ A3: Have a look in /usr/share/common-lisp/systems/
 
 Q4: What is the best way to use a ASDF definition filea
 
-A4: Install the <pkg>.asd file with the source code in
+A4: Install the <pkg>.asd file with the source code in the
 /usr/share/common-lisp/source/<pkg>/ directory. Then, add a symlink
-for <pkg>.asd to /usr/share/common-lisp/systems/<pkg>.asd. Don't use
-any :pathname in the .asd file. ASDF will be able to follow the
-symlink to the source code.
+from that <pkg>.asd file to
+/usr/share/common-lisp/systems/<pkg>.asd. Don't use any :pathname in
+the .asd file. ASDF will be able to follow the symlink from the
+systems directory to the source code directory
 

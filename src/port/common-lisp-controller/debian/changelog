@@ -1,7 +1,9 @@
-common-lisp-controller (3.20.1) unstable; urgency=low
+common-lisp-controller (3.21) unstable; urgency=low
   
+  * NMU
   * Change handling of asdf files to that they don't require :pathname
   to be specified.
+  * Add information to FAQ.txt about using ASDF system definitions
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 16 Sep 2002 08:40:36 -0600
 

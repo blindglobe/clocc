@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.34 2004/06/25 15:30:15 sds Exp $
+;;; $Id: fileio.lisp,v 1.35 2004/07/27 20:38:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -188,7 +188,9 @@ defaults to `read' and is called with 3 arguments - STREAM, NIL and EOF.
 Set `*print-pretty*' to the third argument NICE (default T).
 Uses `with-standard-io-syntax'."
   (declare (stream str))
-  (with-standard-io-syntax (write obj :stream str :pretty nice))
+  (with-standard-io-syntax
+    (let ((*package* #.(make-package "FORCE-PACKAGE-PREFIXES" :use NIL)))
+      (write obj :stream str :pretty nice)))
   (values))
 
 ;;;###autoload
@@ -203,7 +205,7 @@ Return the size of the file."
       (declare (stream str))
       (format str ";; File: <~a - " file) (current-time str)
       (format str " ~a>~%;; Created by: ~a [~a]
-;; *print-circle* = *print-pretty* = ~:[false~;true~]~%~{~a~}~2%"
+;; *print-pretty* = ~:[false~;true~]~%~{~a~}~2%"
               (getenv "USER") (lisp-implementation-type)
               (lisp-implementation-version) nice comments)
       (pr obj str nice)

@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-05-05 Wed 10:53:34 EDT sds@goems.com>
+;;; File: <list.lisp - 1999-05-20 Thu 13:29:20 EDT sds@goems.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.10 1999/05/05 20:59:40 sds Exp $
+;;; $Id: list.lisp,v 1.11 1999/05/24 20:51:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.11  1999/05/24 20:51:44  sds
+;;; (flatten, filter): new functions.
+;;; (call-on-split): use filter.
+;;;
 ;;; Revision 1.10  1999/05/05 20:59:40  sds
 ;;; (nsplit-list): use the `case-error' condition.
 ;;;
@@ -76,6 +80,14 @@ The indexing starts from 0, so (nsublist '(1 2 3 4 5) nil 2) ==> (1 2 3)."
   "If ZZ is a list, return (car ZZ), otherwise return ZZ."
   (if (listp zz) (car zz) zz))
 
+(defun flatten (ll)
+  "atom -> (atom); (1 (2) (3 (4) (5 (6) 7) 8) 9) -> (1 2 3 4 5 6 7 8 9)"
+  (labels ((fl (ll acc)
+             (cond ((null ll) acc)
+                   ((atom ll) (cons ll acc))
+                   (t (fl (car ll) (fl (cdr ll) acc))))))
+    (fl ll nil)))
+
 (defun zero-len-p (seq)
   "Returns T iff the sequence has zero length.
 Works in constant time even with lists."
@@ -132,6 +144,14 @@ on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
                          collectors ret tail tmp)
         ,@forms
         (values ,@ret)))))
+
+(defun filter (lst test collect &key (key #'identity))
+  "COLLECT those elements of LST which satisfy TEST."
+  (declare (list lst) (type (function (t) t) test collect key))
+  (with-collect (coll)
+    (dolist (el lst)
+      (let ((kk (funcall key el)))
+        (when (funcall test kk) (coll (funcall collect kk)))))))
 
 (defun jumps (seq &key (pred #'eql) (key #'value) args (what :next))
   "Return the list of elements of the sequence SEQ whose KEY differs
@@ -370,11 +390,10 @@ Also, do NOT try to return a cons from NEWL.  You'd be surprised!"
   (with-nsplit (nl lst :key split-key :pred split-pred)
     (let ((ii -1) (cnt? (typep split-key 'fixnum)))
       (declare (type (signed-byte 21) ii))
-      (mapcan (lambda (ll)
-                (when (or (null min-len) (> (length ll) min-len))
-                  (list (cons (if cnt? (incf ii) (funcall split-key (car ll)))
-                              (apply func ll args)))))
-              nl))))
+      (filter nl (lambda (ll) (or (null min-len) (> (length ll) min-len)))
+              (lambda (ll)
+                (cons (if cnt? (incf ii) (funcall split-key (car ll)))
+                      (apply func ll args)))))))
 
 (provide "list")
 ;;; list.lisp ends here

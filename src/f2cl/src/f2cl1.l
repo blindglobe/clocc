@@ -61,9 +61,6 @@ only when needed. ")
 (defvar *fortran-extensions* '("f" "for")
   "A list of possible extensions for Fortran files.")
 (defvar *f2cl-trace* nil)
-(defvar *check-array-bounds* nil
-  "If non-NIL, generated code checks for array bounds.  If NIL, checking
-is not included")
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
@@ -1975,8 +1972,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.69 2000/09/01 16:33:25 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.70 2001/02/26 15:38:23 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.70  2001/02/26 15:38:23  rtoy
+;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
+;;; code refers to it.  Export this variable too.
+;;;
 ;;; Revision 1.69  2000/09/01 16:33:25  rtoy
 ;;; MAYBE-CONVERT-ARRAY-REF-TO-SLICE: the expression isn't always a list!
 ;;; Check for that.  Fix a typo too.

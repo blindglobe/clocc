@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.18 2004/11/09 22:00:30 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.19 2004/11/10 18:00:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
 (eval-when (compile load eval)
@@ -66,10 +66,10 @@ Both print a tag but the second one does not do a `terpri' afterwards."
     `(let ((,raw ,stream)
            (,mailto (concatenate 'string "mailto:" *user-mail-address*)))
       (macrolet ((with-tag ((tag &rest options) &body forms)
-                   `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)
+                   `(progn (format ,',raw "<~a~@{ ~a=\"~a\"~}>" ,tag ,@options)
                      ,@forms (format ,',raw "</~a>~%" ,tag)))
                  (with-tagl ((tag &rest options) &body forms)
-                   `(progn (format ,',raw "<~a~@{ ~a=~s~}>" ,tag ,@options)
+                   `(progn (format ,',raw "<~a~@{ ~a=\"~a\"~}>" ,tag ,@options)
                      ,@forms (format ,',raw "</~a>" ,tag))))
         (with-open-stream (,var (make-instance 'html-stream-out :stream ,raw))
           (format ,raw "<!DOCTYPE~{ ~a~}>~%" ,doctype)

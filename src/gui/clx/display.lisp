@@ -19,13 +19,40 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.2 2002/03/29 00:51:35 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/display.lisp,v 1.3 2002/08/06 07:59:38 pvaneynd Exp $")
 
 (in-package :xlib)
 
 ;;; Authorizaton
 ;;; shamelessly stolen from the cmucl sources:
+;;; integrated patches by Hannu Rummukainen and Scott Fahlman
+;;; X11 Authorization: to prevent malicious users from snooping on an
+;;; display, X servers may require connection requests to be
+;;; authorized. The X server (or display manager) will create a random
+;;; key on startup, and store it as an entry in a file generally named
+;;; $HOME/.Xauthority (see the function AUTHORITY-PATHNAME). Clients
+;;; must extract from this file the "magic cookie" that corresponds to
+;;; the server they wish to connect to, and send it as authorization
+;;; data when opening the display.
 ;;;
+;;; Users can manipulate the contents of their .Xauthority file using
+;;; the xauth command. 
+;;;
+;;; The function GET-BEST-AUTHORIZATION is responsible for parsing the
+;;; .Xauthority file and extracting the cookie for DISPLAY on HOST.
+;;; The HOST argument is the hostname of the target display as a
+;;; string, and DISPLAY is a number. The PROTOCOL argument determines
+;;; whether the server connection is using an Internet protocol
+;;; (values of :tcp or :internet) or a non-network protocol such as
+;;; Unix domain sockets (value of :unix). GET-BEST-AUTHORITY returns
+;;; two strings: an authorization name (very likely the string
+;;; "MIT-MAGIC-COOKIE-1") and an authorization key, represented as
+;;; fixnums in a vector. If the function fails to find an appropriate
+;;; cookie, it returns two empty strings.
+;;;
+;;; The format of the .Xauthority file is documented in the XFree
+;;; sources, in the file xc/lib/Xau/README.
+
 
 (defparameter *known-authorizations* '("MIT-MAGIC-COOKIE-1"))
 
@@ -345,10 +372,39 @@ returns best-name and best-data it could find"
 		      ,@(and timeout `(:timeout ,timeout)))
 	 ,@body))))
 
+(defun guess-display ()
+  "This tried to gues what display you need to use.
+Returns the host,the display and the screen
+or NIL if it failed"
+  (let* ((where (port:getenv "DISPLAY"))
+         (parts  (when where
+                   (split-sequence:split-sequence #\: where)))
+         (host (when parts
+                 (first parts)))
+         (parts2 (when (and parts
+                            (stringp (second parts)))
+                   (split-sequence:split-sequence #\. (second parts))))
+         (display (when (and parts2
+                             (stringp (first parts2)))
+                    (ignore-errors
+                      (parse-integer
+                       (first parts2)))))
+         (screen (when  (and parts2
+                             (stringp (second parts2)))
+                   (ignore-errors
+                     (parse-integer
+                      (second parts2))))))
+    (when (and host
+               display
+               screen)
+      (values host
+              display
+              screen))))
+    
 (defun open-display (host &key (display 0) protocol authorization-name authorization-data)
   ;; Implementation specific routine to setup the buffer for a specific host and display.
   ;; This must interface with the local network facilities, and will probably do special
-  ;; things to circumvent the nework when displaying on the local host.
+  ;; things to circumvent the network when displaying on the local host.
   ;;
   ;; A string must be acceptable as a host, but otherwise the possible types
   ;; for host and protocol are not constrained, and will likely be very

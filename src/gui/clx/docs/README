@@ -1,45 +1,24 @@
-This directory contains the CLX Programmer's Reference Manual, in
-Postscript format (roughly 230 pages).
+These are the sources for the HTML version of the CLX manual and the
+converter program used to generate it.
 
+To regenerate the manual load 'run.lisp' and call '(run)', the manual
+will then be generated to the 'clxman' directory. If you want to
+generate different looking versions (e.g. a framed version) tweak the
+DEFPARAMETERs near the head of clxman.lisp.
 
-For convenience, the sections can be printed separately as follows:
+The sources of the manual itself can be found in the 'source'
+directory, you'll find some additional notes in the head of the
+clxman.sgml file.
 
- contents.ps       ; Cover, table of contents
- s01.ps            ; Introduction to CLX
- s02.ps            ; Displays 
- s03.ps            ; Screens
- s04.ps            ; Windows and pixmaps
- s05.ps            ; Graphics contexts
- s06.ps            ; Graphic operations
- s07.ps            ; Images
- s08.ps            ; Fonts and characters
- s09.ps            ; Colors
- s10.ps            ; Cursors
- s11.ps            ; Atoms, properties, and selections
- s12.ps            ; Events and input
- s13.ps            ; Resources
- s14.ps            ; Control functions
- s15.ps            ; Extensions
- s16.ps            ; Errors
- appa.ps           ; Protocol vs CLX function cross-ref
- glossary.ps       ; Glossary
- general.ps        ; Index - general
- condition.ps      ;         conditions
- functions.ps      ;         functions
- types.ps          ;         types
+Unfortunatly the code currently only runs with CMUCL, since it makes
+use of EXT:RUN-PROGRAM.
 
+The nifty index applet was written by Deliana Foutekova
+<unjm@rz.uni-karlsruhe.de> and uses a clever kludge to load the index
+in form of an '.class' file at run time. This '.class' file is
+generated, which implies that you'll need a java compiler for
+successful regeneration of the CLX Manual unless you turn the index
+applet off, in which case the applet will be replaced by a boring link
+to the manual's index.
 
---------------------------------------------------------------------
-
- I originally got these files with CMU-CL.  They had no document
-structuring (page number) comments in them, and `gv' wouldn't let me
-page around in them.  Additionally, they had been printed back to
-front, making it very difficult to read them on-screen, the way I
-prefer.
-
- I've added the page numbers.  These are all numbered; the .el file is
-the XEmacs lisp program I used to number them, in case anyone wants it
-for an example. :-) The `Makefile' is set up to create a DEC SRC
-Lectern file from the postscript.
-
-Karl M. Hegbloom <karlheg@inetarena.com>  1997
+-- 2002-06-18, Gilbert Baumann <unk6@rz.uni-karlsruhe.de>

@@ -12,7 +12,7 @@
 ;;; written prior permission.
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/package.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/package.lisp,v 1.2 2002/08/06 07:59:38 pvaneynd Exp $")
 
 ;;; The ANSI Common Lisp way
 
@@ -108,7 +108,7 @@
     merge-resources min-char-ascent min-char-attributes min-char-descent
     min-char-left-bearing min-char-right-bearing min-char-width
     missing-parameter modifier-key modifier-mapping modifier-mask
-    motion-events name-error no-operation open-display open-font
+    motion-events name-error no-operation guess-display open-display open-font
     pixarray pixel pixmap pixmap-display pixmap-equal
     pixmap-error pixmap-format pixmap-format-bits-per-pixel
     pixmap-format-depth pixmap-format-p pixmap-format-scanline-pad

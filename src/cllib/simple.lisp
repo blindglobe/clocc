@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.3 2000/03/27 20:02:54 sds Exp $
+;;; $Id: simple.lisp,v 1.4 2000/04/10 21:00:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -132,14 +132,12 @@ The second value is the last atom (i.e., `dotted-p')."
        (fast list (cddr fast))
        (slow list (cdr slow)))
       (nil)
+    (declare (type (integer 0) nn))
     (when (atom fast) (return (values nn fast)))
     (when (atom (cdr fast)) (return (values (1+ nn) (cdr fast))))
     (when (eq (cdr fast) slow) (return nil))))
 
-;;;
-;;; }}}{{{ use with-collect
-;;;
-
 ;;; }}}
+
 (provide :simple)
 ;;; file simple.lisp ends here

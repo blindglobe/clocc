@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.21 2002/05/30 17:48:49 sds Exp $
+;;; $Id: cvs.lisp,v 2.22 2002/06/17 21:40:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -249,7 +249,7 @@ Suitable for `read-list-from-stream'."
 (defun cvs-stat-log (path)
   "Generate and print some statistics of the CVS repository.
 Careful - this will return a huge list!"
-  (when (char= #\/ (char path (1- (length path))))
+  (when (probe-directory path)
     (with-timing ()
       (format t "~&~s: ~a is a directory, running `cvs log`..."
               'cvs-stat-log path)

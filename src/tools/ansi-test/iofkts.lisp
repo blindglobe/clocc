@@ -327,7 +327,7 @@ out of sync")
   (get-output-stream-string a)
   #+xcl ""
   #-xcl "
-\"yyy\" 
+\"yyy\"
 \"zzz\" ")
 
 (check-for-bug :iofkts-legacy-333
@@ -894,7 +894,7 @@ XXX ")
           (string= a
                    "1234567890A"))
         T))
-  T(q
+  T
   "All 10 characters are up. But:
 Body/m_w_out_.htm#with-output-to-string
 ...
@@ -904,7 +904,7 @@ incrementally appended to string as if by use of vector-push-extend.
 
 See also Issues/iss365_w.htm
 
-On the other hand: (Sam Steingold) 
+On the other hand: (Sam Steingold)
 
 the example in the issue 365 clearly indicates that the error should be
 signalled when the string is not adjustable.

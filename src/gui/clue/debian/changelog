@@ -1,8 +1,9 @@
 clue (20010602-3) unstable; urgency=low
 
-  * 
+  * Shorted package descr.
+    Closes: #109847
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed,  4 Jul 2001 08:45:55 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Tue, 28 Aug 2001 15:13:21 +0200
 
 clue (20010602-2) unstable; urgency=low
 

@@ -47,7 +47,7 @@
 ;      fix-slashes
 
 ;;-----------------------------------------------------------------------------
-;;(in-package :user)   
+(in-package :user)
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -67,45 +67,6 @@
     OPEN REWIND FORMAT AND OR NOT))
 
 
-
-#+nil
-(defun check_new_vbles (prog_list)
-  (format t "check_new ~S~%" prog_list)
-  (do ((exprs prog_list (cdr exprs))
-       (vble_list nil
-		  (append vble_list
-			  (cond ((listp (car exprs))
-				 (format t "c-n-v 1 = ~S~%" (car exprs))
-				 (check_new_vbles (car exprs)))
-				((or (not (symbolp (car exprs)))
-				     (numberp (car exprs))
-				     #+nil(member (car exprs) 
-					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
-				     (member (car exprs) *fortran-keywords*)
-				     (member (car exprs) *intrinsic_function_names*)
-				     (member (car exprs) *key_params* :key #'car)
-				     (member (car exprs) *external_function_names*)
-				     (member (car exprs) *declared_vbles*)
-				     (member (car exprs) *undeclared_vbles*)
-				     (sym-is-fun-name exprs)
-				     (numberp (id-expression (list (car exprs)))))
-				 (format t "c-n-v 2 = ~S~%" (car exprs))
-				 nil)
-				;; special case of error messages
-				((eq (car exprs) 'PAUSE)
-				 (return prog_list))
-				((member (car exprs) 
-					     '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
-				 nil)
-				(t
-				 (format t "adding unknown ~S~%" (car exprs))
-				 (setq *undeclared_vbles*
-				       (cons (check-t-and-pi (car exprs))
-					     *undeclared_vbles*)))))))
-      ((null exprs)
-       (format t "check-new returns ~S~%" prog_list)
-       prog_list)
-    (format t "expr = ~S~%" exprs)))
 
 (defun check_new_vbles (exprs)
   (cond ((or (null exprs)
@@ -183,10 +144,12 @@
 	       type-hash)
       `((declare ,@dec)))))
 
-(defun lookup-vble-type (vble)
+(defun lookup-vble-type (vble &optional (arrayp t))
   ;;(format t "lookup-vble: ~a~%" vble)
   (cond ((member vble *declared_vbles*)
 	 ;;(format t "  is declared var~%")
+	 ;;(format t "  explicit_vbld_decls = ~A~%" *explicit_vble_decls*)
+	 
 	 ;; First for declared variables
 	 (do* ((type-clauses *explicit_vble_decls*
 			     (rest type-clauses))
@@ -195,9 +158,12 @@
 	      ((or type
 		   (null type-clauses))
 	       (let ((v-type (caar type-clauses)))
-		 (cond ((eq v-type 'array)
+		 (cond ((and (eq v-type 'array) arrayp)
 			;; Hmm, an array declaration, but no type?
-			(cond ((get-implicit-type vble))
+			;; Try to lookup the type but skip over array
+			;; types.  Then use an implicit type, if possible.
+			(cond ((lookup-vble-type vble nil))
+			      ((get-implicit-type vble))
 			      ((default-int-p vble)
 			       'integer4)
 			      (t 'single-float)))

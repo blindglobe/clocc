@@ -10,7 +10,7 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.14 2000/05/22 18:50:33 sds Exp $
+# $Id: clocc.mk,v 1.15 2000/06/20 15:41:22 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
@@ -82,7 +82,7 @@ $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
 	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA));
 
 clean-all: force
-	$(RM) $(FASLFILES) core *.core *.mem *.dxl
+	$(RM) $(FASLFILES) core *.core *.mem *.dxl TAGS *.list
 
 clean:
 	$(RM) *.$(FASLEXT) core

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.13 2000/05/09 18:51:26 sds Exp $
+;;; $Id: sys.lisp,v 1.14 2000/05/22 17:51:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,7 @@
 (in-package :port)
 
 (export
- '(getenv variable-special-p arglist class-slot-list
+ '(getenv finalize variable-special-p arglist class-slot-list
    probe-directory default-directory chdir sysinfo
    +month-names+ +week-days+ +time-zones+ tz->string current-time))
 
@@ -36,6 +36,15 @@
   #+lucid (lcl:environment-variable (string var))
   #-(or allegro clisp cmu gcl lispworks lucid)
   (error 'not-implemented :proc (list 'getenv var)))
+
+(defun finalize (obj func)
+  "When OBJ is GCed, FUNC is called on it."
+  #+allegro (excl:schedule-finalization obj func)
+  #+clisp (lisp:finalize obj func)
+  #+cmu (ext:finalize obj func)
+  #+cormanlisp (cl::register-finalization obj func)
+  #-(or allegro clisp cmu cormanlisp)
+  (error 'not-implemented :proc (list 'finalize obj func)))
 
 ;;;
 ;;; Introspection
@@ -58,12 +67,14 @@
   #+cmu (values (let ((st (kernel:%function-arglist fn)))
                   (if (stringp st) (read-from-string st)
                       (eval:interpreted-function-arglist fn))))
+  #+cormanlisp (ccl:function-lambda-list
+                (typecase fn (symbol (fdefinition fn)) (t fn)))
   #+gcl (let ((fn (etypecase fn
                     (symbol fn)
                     (function (si:compiled-function-name fn)))))
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
-  #-(or allegro clisp cmu gcl lispworks)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks)
   (error 'not-implemented :proc (list 'arglist fn)))
 
 (defun class-slot-list (class &optional (all t))

@@ -54,12 +54,17 @@ file or :asdf if found asdf file"
    ;; probing is for weenies: just do
    ;; it and ignore the errors :-)
    ((ignore-errors
-      (equalp
-       (pathname-directory
-	(asdf:component-pathname
-	 (asdf:find-system module-name)))
-       (pathname-directory *systems-root*)))
-    :asdf)
+      (let ((system (asdf:find-system module-name)))
+	(when (and system
+		   (equalp (pathname-directory
+			    (asdf:component-pathname system))
+			   (pathname-directory
+			    (merge-pathnames
+			     (make-pathname
+			      :directory (list :relative
+					       (asdf:component-name system)))
+			     c-l-c::*source-root*))))
+	  :asdf))))
    ((ignore-errors
       (equalp
        (pathname-host
@@ -113,25 +118,12 @@ file or :asdf if found asdf file"
        t))))
 
 
-(defun clc-asdf-oos (op-class system &rest args)
-  (let ((op (apply #'make-instance op-class
-		   :original-initargs args args))
-	(system (if (typep system 'asdf:component) system (asdf:find-system system))))
-    (setf (slot-value system 'asdf::relative-pathname)
-	  (merge-pathnames
-	   (make-pathname :directory (list :relative
-					   (asdf:component-name system)))
-	   *source-root*))
-    (with-compilation-unit ()
-      (asdf::traverse op system 'asdf::perform))))
-
-    
 (defun require-asdf (module-name)
   ;; if in the clc root:
   (let ((system (asdf:find-system module-name)))
     (or
      ;; try to load it
-     (ignore-errors (clc-asdf-oos 'asdf::load-only-compiled-op module-name))
+     (ignore-errors (asdf:oos 'asdf::load-only-compiled-op module-name))
      ;; if not: try to compile it
      (progn
        (format t "~&;;;Please wait, recompiling library...")
@@ -149,7 +141,7 @@ file or :asdf if found asdf file"
 						   (symbol-name
 						    module-name))))
        (terpri)
-       (clc-asdf-oos 'asdf::load-only-compiled-op module-name) 
+       (asdf:oos 'asdf::load-only-compiled-op module-name) 
        t))))
 
 
@@ -187,7 +179,7 @@ file or :asdf if found asdf file"
       (:defsystem3
        (mk:oos library :compile :verbose nil))
       (:asdf
-       (clc-asdf-oos 'asdf:clc-compile-op library))
+       (asdf:oos 'asdf:clc-compile-op library))
       (t
        (format t "~%Package ~S not found... ignoring~%"
 	       library))))

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.19 2000/08/14 19:25:05 sds Exp $
+;;; $Id: sys.lisp,v 1.20 2000/08/19 21:32:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -111,8 +111,7 @@
              #+cormanlisp `(getf ,slot :initargs)
              #+lispworks `(hcl::slot-definition-initargs ,slot)
              #+lucid `(clos:slot-definition-initargs ,slot))
-           (slot-one-initarg (slot)
-             `(or (car (slot-initargs ,slot)) (slot-name ,slot)))
+           (slot-one-initarg (slot) `(car (slot-initargs ,slot)))
            (slot-alloc (slot)
              #+allegro `(clos::slotd-allocation ,slot)
              #+clisp `(clos::slotdef-allocation ,slot)

@@ -248,6 +248,10 @@
 		  ;; Basic arithmetic operations.
 		  (fortran-contagion (get-fun-arg-type (second arg))
 				     (get-fun-arg-type (third arg))))
+		 ((member fun '(conjg))
+		  ;; Complex conjugate
+		  (fortran-contagion (get-fun-arg-type (second arg))
+				     'complex8))
 		 ((member fun '(sin cos tan
 				asin acos atan atan2
 				exp flog alog10

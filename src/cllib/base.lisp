@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-01-12 Tue 18:19:17 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-01-28 Thu 09:37:27 EST sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.9 1999/01/12 23:19:48 sds Exp $
+;;; $Id: base.lisp,v 1.10 1999/01/28 14:37:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.10  1999/01/28 14:37:36  sds
+;;; Moved `with-open-pipe' here.
+;;; Renamed `current-environment' to `sysinfo'.
+;;;
 ;;; Revision 1.9  1999/01/12 23:19:48  sds
 ;;; Added `excl::time-other-base' for ACL's `time'.
 ;;;
@@ -72,7 +76,10 @@
   #+clisp (setq lisp:*warn-on-floating-point-contagion* t
                 lisp:*floating-point-contagion-ansi* t
                 lisp:*ansi* t
-                lisp:*pprint-first-newline* nil
+                clos::*gf-warn-on-removing-all-methods* nil
+                clos::*warn-if-gf-already-called* nil
+                clos::*gf-warn-on-replacing-method* nil
+                ;; lisp:*pprint-first-newline* nil
                 ;; sys::*source-file-types* '(#".lisp") ; default
                 lisp:*default-float-format* 'double-float)
   #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
@@ -183,9 +190,19 @@
   #+clisp (lisp:make-pipe-input-stream (format nil "~a~{ ~a~}" prog args)))
 
 (defun close-pipe (stream)
+  "Close the pipe stream.
+The trouble is with ACL: a simple `close' doesn't get rid of the process.
+This function takes care of that."
   (declare (stream stream))
   (close stream)
   #+allegro (sys:reap-os-subprocess))
+
+(defmacro with-open-pipe ((pipe open) &body body)
+  "Open the pipe, do something, then close it."
+  `(let ((,pipe ,open))
+    (declare (stream ,pipe))
+    (unwind-protect (progn ,@body)
+      (close-pipe ,pipe))))
 
 ;;;
 ;;; }}}{{{ Environment
@@ -203,14 +220,13 @@
 
 #-(or clisp allegro)
 (eval-when (eval load compile)
-(define-setf-expander values (&rest places &environment env)
-  (loop for pl in places with te and va and ne and se and ge do
-        (multiple-value-setq (te va ne se ge) (get-setf-expansion pl env))
-        append te into te1 append va into va1 append ne into ne1
-        collect se into se1 collect ge into ge1
-        finally (return (values te1 va1 ne1 (cons 'values se1)
-                                (cons 'values ge1)))))
-)
+  (define-setf-expander values (&rest places &environment env)
+    (loop :for pl :in places :with te :and va :and ne :and se :and ge :do
+          (multiple-value-setq (te va ne se ge) (get-setf-expansion pl env))
+          :append te :into te1 :append va :into va1 :append ne :into ne1
+          :collect se :into se1 :collect ge :into ge1
+          :finally (return (values te1 va1 ne1 (cons 'values se1)
+                                   (cons 'values ge1))))))
 
 (eval-when (load compile eval)
   (unless (boundp '*require-table*)
@@ -223,7 +239,7 @@
       (declare (simple-string mo))
       (setf (gethash mo *require-table*)
             (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-    (dolist (mo '("gq" "url" "rpm" "geo" "animals"))
+    (dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs"))
       (declare (simple-string mo))
       (setf (gethash mo *require-table*)
             (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
@@ -278,10 +294,9 @@
   #+gcl (truename "."))
 #+allegro (defsetf default-directory chdir "Change the current directory.")
 #+gcl (defsetf default-directory si:chdir "Change the current directory.")
-#+clisp (defsetf default-directory lisp:cd "Change the current directory.")
 #-allegro (defun chdir (dir) (setf (default-directory) dir))
 
-(defun current-environment ()
+(defun sysinfo ()
   "Print the current environment to a stream."
   (format t "~&~%~75~~%~75,,,'-:@<<{[ The current environment ]}>~>~%~
 Implementation:~20t~a~%~7tversion:~20t~a~%Machine:  type:~20t~a
@@ -289,9 +304,22 @@ Implementation:~20t~a~%~7tversion:~20t~a~%Machine:  type:~20t~a
           (lisp-implementation-type) (lisp-implementation-version)
           (machine-type) (machine-version) (machine-instance))
   #+win32
-  (if (system::registry "SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
-                        "ProductName")
-      (win95-sysinfo) (winnt-sysinfo))
+  (if (system::registry
+       "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" "ProductName")
+      (flet ((env (str)
+               (system::registry
+                "SOFTWARE\\Microsoft\\Windows\\CurrentVersion" str)))
+        (format t " ~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
+                (env "ProductName") (env "Version") (env "VersionNumber")
+                (env "BootCount") (env "RegisteredOwner")
+                (env "RegisteredOrganization") (env "ProductId")))
+      (flet ((env (str)
+               (system::registry
+                "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" str)))
+        (format t " WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
+                (env "CurrentVersion") (env "CurrentBuildNUmber")
+                (env "CSDVersion") (env "CurrentType") (env "RegisteredOwner")
+                (env "RegisteredOrganization") (env "ProductId"))))
   #+os/2 (princ " OS/2")
   #+unix (princ " Unix")
   #+dos (princ " DOS")
@@ -354,28 +382,6 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
             ye mo da (aref +week-days+ dw) ho mi se
             (funcall (if dst #'cadr #'cddr) (assoc tz +time-zones+)) tz)))
 
-#+win32
-(defun win95-sysinfo ()
-  "Print the MS Windows system information."
-  (flet ((env (str)
-           (system::registry "SOFTWARE\\Microsoft\\Windows\\CurrentVersion"
-                             str)))
-    (format t " ~a (~a - ~a; boot: ~a)~%Registered to: ~a, ~a [~a]"
-            (env "ProductName") (env "Version") (env "VersionNumber")
-            (env "BootCount") (env "RegisteredOwner")
-            (env "RegisteredOrganization") (env "ProductId"))))
-
-#+win32
-(defun winnt-sysinfo ()
-  "Print the WinNT system information."
-  (flet ((env (str)
-           (system::registry "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion"
-                             str)))
-    (format t " WinNT ~a (build ~a: ~a) ~a~%Registered to: ~a, ~a [~a]"
-            (env "CurrentVersion") (env "CurrentBuildNUmber")
-            (env "CSDVersion") (env "CurrentType") (env "RegisteredOwner")
-            (env "RegisteredOrganization") (env "ProductId"))))
-
 ;;;
 ;;; }}}{{{ Function Compositions
 ;;;
@@ -413,11 +419,11 @@ All the values from nth function are fed to the n-1th."
 ;;; }}}{{{ generic
 ;;;
 
-(eval-when (load compile eval)
-  (defgeneric value (xx) (:documentation "Get the value."))
-  (declaim (ftype (function (t) number) value)))
-(defmethod value ((xx number)) xx)
-(defmethod value ((xx cons)) (value (cdr xx)))
+(defgeneric value (xx)
+  (:documentation "Get the value.")
+  (:method ((xx number)) xx)
+  (:method ((xx cons)) (value (cdr xx))))
+(declaim (ftype (function (t) number) value))
 
 ;;;
 ;;; }}}{{{ autoloads

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
+;;; $Id: simple.lisp,v 1.6 2000/09/26 16:53:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,7 +56,11 @@ on other lisps (which is 1.5-2 times as fast as push/nreverse there)."
         (values ,@ret)))))
 
 (defun filter (lst test collect &key (key #'identity))
-  "COLLECT those elements of LST which satisfy TEST."
+  "COLLECT those elements of LST which satisfy TEST.
+AKA `remove-if-not':
+ (filter lst test collect :key key) ==
+ (let ((res (remove-if-not test lst :key key)))
+   (map-into res (compose collect key) res))"
   (declare (list lst) (type (function (t) t) test collect key))
   (with-collect (coll)
     (dolist (el lst)

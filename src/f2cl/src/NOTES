@@ -2,6 +2,15 @@
 
 Changes:
 
+Jun 3, 2001
+-----------
+
+Can handle extended DO loops like:
+
+    DO K = 1, 10
+      PRINT *, K
+    END DO
+
 Aug 29, 2000 or so
 ------------
 

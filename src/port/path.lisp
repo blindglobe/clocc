@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.8 2004/07/16 16:30:24 sds Exp $
+;;; $Id: path.lisp,v 1.9 2004/07/29 20:34:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,7 @@
 
 (defun pathname-ensure-name (path)
   "Make sure that the pathname has a name slot.
-Call `pathname' on it argument and, if there is no NAME slot,
+Call `pathname' on the argument and, if there is no NAME slot,
 but there is a TYPE slot, move TYPE into NAME."
   (let ((path (pathname path)))
     (if (or (un-unspecific (pathname-name path))

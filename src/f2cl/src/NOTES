@@ -2,6 +2,21 @@
 
 Changes:
 
+Jun 29, 2000
+------------
+
+Some systems appear to have a broken peek-char function.  Versions of
+CMUCL as of this date appear to have this problem.  If you're using
+this, add :broken-peek-char to your features to work around this
+problem.  There may be other problems with this hack, so please try to
+upgrade to some (currently unknown) later version that has this fixed.
+
+
+Jun 7, 2000
+-----------
+
+Everything added as a part of CLOCC on sourceforge.
+
 Aug 5, 1999
 -------------
 

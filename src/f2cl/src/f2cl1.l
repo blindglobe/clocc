@@ -1240,6 +1240,19 @@ FILENAME                 File containing Fortran code
    nil) 
   
 (defun parse-common (x)
+  (when (member 'f2cl-// x)
+    ;; In preprocessing '//' got converted to f2cl-//.  We undo that
+    ;; here by converting f2cl-// to '(/ /).
+    (let ((result '()))
+      (mapc #'(lambda (item)
+		(cond ((eq item 'f2cl-//)
+		       (push '/ result)
+		       (push '/ result))
+		      (t
+		       (push item result))))
+	    x)
+      (setf x (nreverse result))))
+	  
    (setq x (mapcar #'(lambda (l) (remove '|,| l))
                    (list-split '|/| (cdr x))))
    (setq x (if (null (car x)) (cdr x) (cons nil x)))
@@ -1861,8 +1874,18 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.61 2000/08/09 18:50:30 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.62 2000/08/09 22:33:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.62  2000/08/09 22:33:27  rtoy
+;;; The preprocessor converted // to f2cl-//.  We need to undo that
+;;; because // in a COMMON statement really means the blank common block.
+;;; For example:
+;;;
+;;; 	COMMON /c1/a, b//d, e
+;;;
+;;; The variables d and e are in the blank common block.  The file
+;;; val/commontest.for should now be converted correctly.
+;;;
 ;;; Revision 1.61  2000/08/09 18:50:30  rtoy
 ;;; Fortran says I can build up the elements of a common block in pieces
 ;;; by specifying the pieces in several separate common statements.

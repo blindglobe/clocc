@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.20 2001/07/16 16:10:44 sds Exp $
+;;; $Id: url.lisp,v 2.21 2001/09/05 18:13:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -35,6 +35,8 @@
 (in-package :cllib)
 
 (export '(url url-ask url-eta protocol-rfc
+          url-prot url-user url-pass url-host url-port url-path
+          url-get-host url-get-port url-path-dir url-path-file
           open-socket-retry open-url with-open-url
           ftp-list url-send-mail url-get-news url-time
           browse-url *browsers* *browser*

@@ -1,10 +1,10 @@
 ;;; RPM updates
 ;;;
-;;; Copyright (C) 1998-2002 by Sam Steingold
+;;; Copyright (C) 1998-2003 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.16 2003/06/07 00:25:51 sds Exp $
+;;; $Id: rpm.lisp,v 2.17 2003/06/10 02:17:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -125,6 +125,26 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
               (rpm-name rpm) (rpm-vers rpm) (rpm-rels rpm) (rpm-arch rpm)
               *print-escape*)))
 
+(define-condition rpm-error (file-error code) ()
+  (:report (lambda (cc out)
+             (format out "[~s/~s]~@[ ~?~]" (port:code-proc cc)
+                     (file-error-pathname cc)
+                     (port:code-mesg cc) (port:code-args cc)))))
+
+(defun del-file (file &optional (out *standard-output*))
+  "Delete the file (no error!) and print a message"
+  (multiple-value-bind (tt co) (ignore-errors (delete-file file))
+    (format out "~:[failed: ~a~;done~*~]~%" tt co)))
+
+(defun rpm-file (rpm &optional dir)
+  "Return the file name on disk that corresponds to this RPM object."
+  (declare (type rpm rpm) (type (or pathname null) dir))
+  (let ((note (rpm-note rpm)))
+    (if (and (consp note) (pathnamep (car note)))
+        (if dir (merge-pathnames (car note) dir) (car note))
+        (make-pathname :name (format nil "~a" rpm)
+                       :type "rpm" :defaults dir))))
+
 (defsubst rpm-pos (name)
   "Find the position of the RPM in `*rpm-present*'."
   (declare (simple-string name))
@@ -148,7 +168,9 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
   (declare (simple-string name))
   (let* ((len (length name)) (p0 (position #\- name :from-end t))
          (p1 (position #\- name :from-end t :end (1- p0)))
-         (p2 (if (string= ".rpm" name :start2 (- len 4)) (- len 4) len))
+         (p2 (cond ((string= ".rpm" name :start2 (- len 4)) (- len 4))
+                   ((position #\Space name)) ; for `rpm-path-valid-p' output
+                   (len)))
          (p3 (or (position #\. name :from-end t :start p0 :end p2) p2)))
     (make-rpm :name (subseq name 0 p1) :vers (subseq name (1+ p1) p0)
               :rels (subseq name (1+ p0) p3) :arch (subseq name (1+ p3) p2))))
@@ -161,7 +183,20 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
     (unintern obj)
     (short-string-to-rpm (symbol-name obj)))
   (:method ((path pathname))
-    (let ((rr (short-string-to-rpm (pathname-name path))))
+    (let ((rr (or (unless (member "apt" (pathname-directory path)
+                                  :test #'equal)
+                    ;; apt-get saves RPMs under some garbled names;
+                    ;; in fact, it would probably be a good idea to
+                    ;; always rely on RPM-PATH-VALID-P, but this
+                    ;; would be rather expensive
+                    (ignore-errors (short-string-to-rpm (pathname-name path))))
+                  (short-string-to-rpm
+                   (or (rpm-path-valid-p path)
+                       (cerror "delete the file" 'rpm-error :proc 'rpm
+                               :mesg "invalid file" :pathname path)
+                       (progn (format t "~&removing ~s..." path)
+                              (del-file path)
+                              (return-from rpm nil)))))))
       (setf (rpm-note rr) (list path)
             (rpm-size rr) (file-size path)
             (rpm-ftime rr) (file-write-date path))
@@ -205,6 +240,16 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
                       (encode-universal-time  0 mi ho day mon (1- ye)))))))
     rpm))
 
+(defun rpm= (r0 r1)
+  "Are these RPMs the same?"
+  (declare (type rpm r0 r1))
+  (and (string= (rpm-name r0) (rpm-name r1))
+       (string= (rpm-vers r0) (rpm-vers r1))
+       (string= (rpm-rels r0) (rpm-rels r1))
+       (string= (rpm-arch r0) (rpm-arch r1))
+       (or (and (null (rpm-note r0)) (null (rpm-note r1)))
+           (file-equal-p (car (rpm-note r0)) (car (rpm-note r1))))))
+
 (defun rpm< (r0 r1)
   "Sorting order on RPMs."
   (declare (type rpm r0 r1))
@@ -215,6 +260,17 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
                     (or (release< (rpm-rels r0) (rpm-rels r1))
                         (and (string= (rpm-rels r0) (rpm-rels r1))
                              (string< (rpm-arch r0) (rpm-arch r1)))))))))
+
+(defun rpm=< (r0 r1)
+  "Sorting order on RPMs."
+  (declare (type rpm r0 r1))
+  (or (string< (rpm-name r0) (rpm-name r1))
+      (and (string= (rpm-name r0) (rpm-name r1))
+           (or (version< (rpm-vers r0) (rpm-vers r1))
+               (and (string= (rpm-vers r0) (rpm-vers r1))
+                    (or (release< (rpm-rels r0) (rpm-rels r1))
+                        (and (string= (rpm-rels r0) (rpm-rels r1))
+                             (string<= (rpm-arch r0) (rpm-arch r1)))))))))
 
 (defun version< (v0 v1)
   "Sorting order for versions."
@@ -470,7 +526,7 @@ Then generate the list to download."
                           (url-eta all))
               :if (rpm< (svref *rpm-present* pos) rpm) :do
               (multiple-value-bind (tot el st path)
-                  (ftp-get-file sock (format nil "~a.rpm" rpm)
+                  (ftp-get-file sock (rpm-file rpm)
                                 *rpm-local-target* :err err :out out :bin t)
                 (declare (type file-size-t tot) (double-float el)
                          (simple-string st) (type pathname path))
@@ -483,8 +539,8 @@ Then generate the list to download."
                        (setf (svref *rpm-present* pos)
                              (rpm-merge-notes rpm (svref *rpm-present* pos))))
                       (t (format out " *** file `~a' is corrupted:~%" path)
-                         (with-open-pipe (st (pipe-input "rpm -K" path)))
-                         (delete-file path))))
+                         (run-prog "rpm" :args (list "-K" path))
+                         (del-file path))))
               :else :do (format out " *** already have~25t`~a'.~%" rpm)
               :end :finally (return got)))
     (network (co)
@@ -549,15 +605,13 @@ available in `*rpm-locations*'."
             (format out " *** ~a:~%" dld)
             (ftp-list sock :name name :err err :out out))))))
 
-;;(defgeneric rpm-clean-up (&optional (dirs *rpm-local-paths*))
-;;  (:documentation "Remove old RPM files."))
-;; (rpm-clean-up "/var/tmp/")
+;; (rpm-clean-up :dirs "/var/tmp/")
 ;; (rpm-clean-up)
-;; (rpm-clean-up "/var/tmp/o/")
+;; (rpm-clean-up :dirs "/var/tmp/o/")
 
 (defun rpm-clean-hdr (dir &optional (out *standard-output*))
-  (format out " ***** HDR Cleaning up `~a'~%" dir)
-  (do ((fl (directory (merge-pathnames "*.hdr" dir)) (cdr fl))
+  (format out "~& ***** HDR Cleaning up `~a'~%" dir)
+  (do ((fl (directory (merge-pathnames "**/*.hdr" dir)) (cdr fl))
        (nn 0) (tot 0 (1+ tot)) (fs 0) (tfs 0) (sz 0))
       ((null fl)
        (format out " ***** ~:d/~:d HDR file~:p (~:d/~:d byte~:p) deleted~%"
@@ -567,62 +621,76 @@ available in `*rpm-locations*'."
     (unless (probe-file (make-pathname :type "rpm" :defaults (car fl)))
       (format out " ~3d * removing ~a (~:d bytes) (no RPM)..."
               (incf nn) (car fl) sz)
-      (multiple-value-bind (tt co) (ignore-errors (delete-file (car fl)))
-        (format out "~:[failed: ~a~;done~*~]~%" tt co))
+      (del-file (car fl))
       (incf fs sz))))
 
 ;;;###autoload
-(defun rpm-clean-up (&optional
+(defun rpm-clean-up (&key (out *standard-output*) total-list
                      (dirs (remove *rpm-local-target* *rpm-local-paths*
-                                   :test #'equalp))
-                     (out *standard-output*))
-  "Remove old RPM files."
+                                   :test #'equalp)))
+  "Remove old RPM files.
+This will remove the RPM files for which there is a newer version,
+as well as corrupt RPM files.
+If you are using both up2date and apt-get, you should pass the up2date
+cache directory before the apt-get one:
+  (rpm-clean-up :dirs '(\"/var/spool/up2date/\" \"/var/cache/apt/archives/\"))
+Then the up2date files will be kept even when there is a newer apt-get
+package, because we can assume that apt-get collects packages from less
+trustworthy sites than up2date (which uses only redhat.com)."
   (declare (stream out))
   (etypecase dirs
     ((or string pathname)
-     (format out " ***** RPM Cleaning up `~a'~%" dirs)
-     (flet ((to-file (rpm) (merge-pathnames (format nil "~a.rpm" rpm) dirs)))
-       (do* ((fl (sort (map-in #'rpm (directory (merge-pathnames
-                                                 "*.rpm" dirs)))
-                       #'rpm<)
-                 (cdr fl))
-             (nn 0) (tot 0 (1+ tot)) (fs 0) (tfs 0) (sz 0) nfile (rm nil nil)
-             (file (to-file (car fl)) nfile) (good (rpm-path-valid-p file)))
-            ((null fl)
-             (format
-              out " ***** ~:d/~:d RPM file~:p (~:d/~:d byte~:p) deleted~%"
-              nn tot fs tfs)
-             (multiple-value-bind (nn1 fs1 tot1 tfs1) (rpm-clean-hdr dirs out)
-               (incf nn nn1) (incf fs fs1) (incf tot tot1) (incf tfs tfs1))
-             (format out " ===== ~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
-                     nn tot fs tfs)
-             (values nn fs tot tfs))
-         (declare (type index-t nn tot) (type file-size-t sz fs tfs))
-         (setq sz (file-size file) tfs (+ sz tfs))
-         (unless good (setq rm "corruption"))
-         (when (cdr fl)
-           (setq nfile (to-file (cadr fl)) good (rpm-path-valid-p nfile))
-           (unless good (with-open-pipe (st (pipe-input "rpm -K" nfile))))
-           (when (and good (string= (rpm-name (car fl)) (rpm-name (cadr fl))))
-             (setq rm (cadr fl))))
-         (when rm
-           (format out " ~3d * removing ~a (~:d bytes) because of ~a..."
-                   (incf nn) (car fl) sz rm)
-           (multiple-value-bind (tt co) (ignore-errors (delete-file file))
-             (format out "~:[failed: ~a~;done~*~]~%" tt co))
-           (incf fs sz)))))
+     (format out "~& ***** RPM Cleaning up `~a'~%" dirs)
+     (do* ((all (sort (delete nil (map-in #'rpm (directory (merge-pathnames
+                                                            "**/*.rpm" dirs))))
+                     #'rpm<))
+           (nn 0) (tot 0 (1+ tot)) (fs 0) (tfs 0) (sz 0) nfile (rm nil nil)
+           (fl all (cdr fl)) (file (rpm-file (car fl) dirs) nfile)
+           (good (rpm-path-valid-p file)))
+          ((null fl)
+           (format out " ***** ~:d/~:d RPM file~:p (~:d/~:d byte~:p) deleted~%"
+                   nn tot fs tfs)
+           (multiple-value-bind (nn1 fs1 tot1 tfs1) (rpm-clean-hdr dirs out)
+             (incf nn nn1) (incf fs fs1) (incf tot tot1) (incf tfs tfs1))
+           (format out " ===== ~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
+                   nn tot fs tfs)
+           (values nn fs tot tfs (merge 'list (delete nil all)
+                                        total-list #'rpm<)))
+       (declare (type index-t nn tot) (type file-size-t sz fs tfs))
+       (setq sz (file-size file) tfs (+ sz tfs))
+       (unless good (setq rm "corruption"))
+       (when (cdr fl)
+         (setq nfile (rpm-file (cadr fl) dirs) good (rpm-path-valid-p nfile))
+         (unless good (run-prog "rpm" :args (list "-K" nfile)))
+         (when (and good (string= (rpm-name (car fl)) (rpm-name (cadr fl))))
+           (setq rm (cadr fl))))
+       (unless rm
+         (setq rm (binary-member (car fl) total-list :test #'rpm=<))
+         (if (and rm
+                  (or (rpm= (car rm) (car fl))
+                      (and (string= (rpm-name (car rm)) (rpm-name (car fl)))
+                           (rpm< (car fl) (car rm)))))
+             (setq rm (rpm-file (car rm)))
+             (setq rm nil)))
+       (when rm
+         (format out " ~3d * removing ~a[~s] (~:d bytes) because of ~a..."
+                 (incf nn) (car fl) file sz rm)
+         (del-file file) (incf fs sz)
+         (setf (car fl) nil)))) ; remove (car fl)
     (sequence
      (let ((nnt 0) (fst 0) (tott 0) (tfst 0))
        (declare (type index-t nnt tott) (type file-size-t fst tfst))
        (map nil (lambda (dd)
-                  (multiple-value-bind (nn fs tot tfs) (rpm-clean-up dd out)
+                  (multiple-value-bind (nn fs tot tfs all-rpms)
+                      (rpm-clean-up :dirs dd :out out :total-list total-list)
                     (declare (type index-t nn tot) (type file-size-t fs tfs))
+                    (setq total-list all-rpms)
                     (incf nnt nn) (incf fst fs)
                     (incf tott tot) (incf tfst tfs)))
             dirs)
-       (format out " Total ~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
-               nnt tott fst tfst)
-       (values nnt fst tott tfst)))))
+       (format out " Total ~:d/~:d/~:d file~:p (~:d/~:d byte~:p) deleted~%"
+               nnt tott (length total-list) fst tfst)
+       (values nnt fst tott tfst total-list)))))
 
 ;;; active mode ftp - doesn't work - why?!
 

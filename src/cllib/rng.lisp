@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.13 2005/03/08 21:33:26 sds Exp $
+;;;; $Id: rng.lisp,v 1.14 2005/03/08 22:50:54 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.14  2005/03/08 22:50:54  sds
+;;;;  export the interface functions
+;;;;
 ;;;;  Revision 1.13  2005/03/08 21:33:26  sds
 ;;;;  use #+(or) instead of #+nil for portability
 ;;;;
@@ -111,6 +114,27 @@
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
 
 (in-package :cllib)
+
+(export '(gen-exponential-variate-log-method gen-exponential-variate-algo-s
+          gen-exponential-variate-sa gen-exponential-variate-algorithm-ma
+          gen-exponential-variate-ea gen-exponential-variate-ea-2
+          gen-exponential-variate-ratio gen-exponential-variate-ziggurat
+          gen-exponential-variate
+          gen-std-laplacian-variate
+          gen-cauchy-variate-tan gen-cauchy-variate
+          gen-cauchy-variate-algorithm-ca
+          gen-gaussian-variate-polar gen-gaussian-variate-algorithm-na
+          gen-gaussian-variate-box-trig gen-gaussian-variate-ratio
+          gen-gaussian-variate-ziggurat gen-gaussian-variate
+          gen-gamma-variate-squeeze gen-gamma-variate-gn
+          gen-gamma-variate-algo-a gen-gamma-variate-algo-a-2
+          gen-gamma-variate-small-order gen-gamma-variate-direct
+          gen-gamma-variate-algo-go gen-gamma-variate-ratio
+          gen-gamma-variate
+          gen-geometric-variate
+          gen-beta-variate
+          gen-binomial-variate
+          gen-poisson-variate))
 
 ;; CLOCC should not do this, IMO:
 ;; (eval-when (compile)

@@ -1,5 +1,5 @@
 ;;; Typed variable syntax for Common Lisp
-;;; Bruno Haible 2004-07-31
+;;; Bruno Haible 2004-08-05
 ;;; This file is put in the public domain by its authors.
 
 ;;; A typed variable is a variable whose value at any time is guaranteed
@@ -61,6 +61,10 @@
 ;;;   (defmethod foo ((x integer)) (declare (type integer x)) ...)
 ;;; It would be bad style anyway to assign a non-integer value to x inside
 ;;; the method.
+;;;
+;;; Note: When a return type declaration and documentation string are both
+;;; specified together, the type declaration should come first:
+;;;   (defun foo (x) [integer] "comment" ...)
 
 ;; ============================ Package Setup ============================
 
@@ -467,6 +471,18 @@
           `(the ,ftype (cl:function ,@named (cl:lambda ,@pure-lambdabody)))
           `(cl:function ,@named (cl:lambda ,@(cdr arg)))))
     `(cl:function ,@(cdr whole)))))
+(setf (find-class 'function) (find-class 'cl:function))
+(deftype function (&rest args) `(cl:function ,@args))
+(cl:defmethod documentation (x (doc-type (eql 'function)))
+  (documentation x 'cl:function))
+(cl:defmethod (setf documentation) (new-value x (doc-type (eql 'function)))
+  ((setf documentation) new-value x 'cl:function))
+(set-dispatch-macro-character #\# #\'
+  (cl:function
+    (cl:lambda (stream sub-char n)
+      (when (and n (not *read-suppress*))
+        (error "no number allowed between # and '"))
+      (list 'function (read stream t nil t)))))
 
 #| TODO: (defmacro handler-case |#
 

@@ -25,7 +25,7 @@ set -e
 case "$1" in
     configure)
     for compiler in /usr/lib/common-lisp/bin/*.sh ; do
-	if [[ -f "$compiler" -a -r "$compiler" ]] ; then
+	if [ -f "$compiler" -a -r "$compiler" ] ; then
 	 i=${compiler##.*/}
 	 i=${i%.sh}
 	 if [ -x "$compiler" ] ; then
@@ -41,7 +41,7 @@ case "$1" in
 
     abort-upgrade|abort-remove|abort-deconfigure)
 	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
-	    if [[ -f "$compiler" -a -r "$compiler" ]] ; then
+	    if [ -f "$compiler" -a -r "$compiler" ] ; then
 	     i=${compiler##.*/}
 	     i=${i%.sh}
 	     if [ -x "$compiler" ] ; then

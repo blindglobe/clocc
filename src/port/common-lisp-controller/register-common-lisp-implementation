@@ -1,13 +1,13 @@
 #!/bin/sh
 
-if [[ "$UID" != 0 ]] ; then
+if [ "$UID" != 0 ] ; then
  echo You need to be root to run $0
  exit 1
 fi
 
 # first check if there is at least a compiler-name:
 
-if [[ -z "$1"  ]] ; then
+if [ -z "$1"  ] ; then
  cat <<EOF
 $0 compiler-name 
 
@@ -19,9 +19,16 @@ fi
 
 FILE="/usr/lib/common-lisp/bin/$1.sh"
 
-if [[ ! -r "$FILE" ]] ; then
+if [ ! -f "$FILE" ] ; then
   cat <<EOF
 $0: I cannot find the script $FILE for the implementation $1
+EOF
+  exit 2
+fi
+
+if [ ! -r "$FILE" ] ; then
+  cat <<EOF
+$0: I cannot read the script $FILE for the implementation $1
 EOF
   exit 2
 fi
@@ -36,7 +43,7 @@ chown -R nobody /usr/lib/common-lisp/
 su --shell=/bin/sh --command="
 umask 022
 for i  in /usr/share/common-lisp/systems/*.system  ; do
-    if [[ -f \$i -a -r \$i ]] ; then
+    if [ -f \$i -a -r \$i ] ; then
      i=\${i%.system}
      package=\${i##*/}
      echo Recompiling package \$package for $1
@@ -44,9 +51,9 @@ for i  in /usr/share/common-lisp/systems/*.system  ; do
      echo
      echo Done rebuilding
    fi
-done" nobody || (echo Installation failed ; exit 3)
+done" nobody || echo Installation failed 
 chown -R root.root /usr/lib/common-lisp/
-chmod a+r,-s -R /usr/lib/common-lisp/
+chmod a+r,a+X,og-w,-s -R /usr/lib/common-lisp/
 cat <<EOF
 $0: Compiler $1 installed
 EOF

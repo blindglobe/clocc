@@ -1,11 +1,11 @@
 #!/bin/sh
 
-if [[ "$UID" != 0 ]] ; then
+if [ "$UID" != 0 ] ; then
  echo You need to be root to run $0
  exit 1
 fi
 
-if [[ -z "$1" ]] ; then
+if [ -z "$1" ] ; then
  cat <<EOF
 $0 compiler-name 
 
@@ -18,16 +18,24 @@ fi
 
 FILE="/usr/lib/common-lisp/bin/$1.sh"
 
-if [[ ! -r "$FILE" ]] ; then
+if [ ! -f "$FILE" ] ; then
   cat <<EOF
 $0: No implementation of the name $1 is registered 
+Cannot find the file $FILE
+EOF
+  exit 2
+fi
+if [ ! -r "$FILE" ] ; then
+  cat <<EOF
+$0: No implementation of the name $1 is registered 
+Cannot read the file $FILE
 EOF
   exit 2
 fi
 
 # Just remove the damn subtree
 
-rm -rf /usr/lib/common-lisp/${1}/
+(cd / ; rm -rf "/usr/lib/common-lisp/${1}/" )
 
 cat <<EOF
 $0: Compiler $1 uninstalled

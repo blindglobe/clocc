@@ -1,3 +1,9 @@
+cl-defsystem3 (3.3i+cvs.2003.04.30) unstable; urgency=low
+
+  * New upstream: changes for CMU 18e+  
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 30 Apr 2003 06:56:14 -0600
+
 cl-defsystem3 (3.3i+cvs.2003.03.20) unstable; urgency=low
 
   * New upstream: fix bug in add-registry-location

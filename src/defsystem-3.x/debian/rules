@@ -1,8 +1,5 @@
 #!/usr/bin/make -f
 
-# This is the debhelper compatibility version to use.
-export DH_COMPAT=4
-
 pkg=cl-defsystem3
 clc-base=usr/share/common-lisp
 clc-src=$(clc-base)/source

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.62 2004/12/20 16:18:37 sds Exp $
+;;; $Id: math.lisp,v 2.63 2004/12/24 19:20:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -35,7 +35,7 @@
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
-   count-all find-duplicates entropy-sequence entropy-distribution
+   entropy-sequence entropy-distribution
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    mdl-normalize mdl-denormalize mdl-normalize-function
@@ -1017,24 +1017,6 @@ occurs, i.e., the normalized sequence should be the probability distribution."
                                (incf tot num)
                                (if (zerop num) 0 (* num (log num 2))))))))
     (- (log tot 2) (/ sum tot))))
-
-(defun count-all (seq &key (test 'eql) (key #'value) append weight
-                  &aux (ht (or append (make-hash-table :test test))))
-  "Return the hash table with counts for values of the sequence."
-  (map nil (if weight
-               (lambda (el)
-                 (incf (gethash (funcall key el) ht 0)
-                       (funcall weight el)))
-               (lambda (el) (incf (gethash (funcall key el) ht 0))))
-       seq)
-  ht)
-
-(defun find-duplicates (seq &key (test 'eql) (key #'value))
-  "Find all duplicate elements in the sequence:
-call `count-all' and remove elements with count 1."
-  (let ((ht (count-all seq :key key :test test)))
-    (maphash (lambda (key val) (when (= val 1) (remhash key ht))) ht)
-    ht))
 
 (defun entropy-sequence (seq &key (key #'value) (test 'eql) weight)
   "Compute the entropy of the given distribution.

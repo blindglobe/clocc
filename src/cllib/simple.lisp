@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.12 2004/10/30 14:43:08 sds Exp $
+;;; $Id: simple.lisp,v 1.13 2004/12/24 19:20:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,6 +14,7 @@
 
 (export '(ppprint-list nsublist fix-list to-list from-list zero-len-p paste
           lexicographic-comparison ensure below-p linear
+          count-all find-duplicates
           skip-to-new flatten with-collect filter list-length-dotted set=))
 
 ;;;
@@ -182,6 +183,24 @@ The second value is the last atom (i.e., `dotted-p')."
   (declare (ignore key test test-not))
   (and (apply #'subsetp set1 set2 rest)
        (apply #'subsetp set2 set1 rest)))
+
+(defun count-all (seq &key (test 'eql) (key #'value) append weight
+                  &aux (ht (or append (make-hash-table :test test))))
+  "Return the hash table with counts for values of the sequence."
+  (map nil (if weight
+               (lambda (el)
+                 (incf (gethash (funcall key el) ht 0)
+                       (funcall weight el)))
+               (lambda (el) (incf (gethash (funcall key el) ht 0))))
+       seq)
+  ht)
+
+(defun find-duplicates (seq &key (test 'eql) (key #'value))
+  "Find all duplicate elements in the sequence:
+call `count-all' and remove elements with count 1."
+  (let ((ht (count-all seq :key key :test test)))
+    (maphash (lambda (key val) (when (= val 1) (remhash key ht))) ht)
+    ht))
 
 ;;; }}}
 

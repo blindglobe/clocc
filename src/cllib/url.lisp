@@ -1,10 +1,10 @@
-;;; Url.lisp - handle url's and parse HTTP
+;;; url - handle url's and parse HTTP
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.9 2000/05/01 20:13:43 sds Exp $
+;;; $Id: url.lisp,v 2.10 2000/05/02 15:41:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -33,9 +33,6 @@
   (require :net (translate-logical-pathname "port:net")))
 
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(url url-ask url-eta protocol-rfc
           open-socket-retry open-url with-open-url
@@ -170,8 +167,13 @@ guess from the protocol."
        (or (alphanumericp char)
            (find char *url-special-chars* :test #'char=))))
 
+(defcustom *url-guess-protocol* list
+  '(("www" . :http) ("web" . :http) ("w3" . :http)
+    ("ftp" . :ftp) ("news" . :news) ("nntp" . :nntp))
+  "*The alist of (\"string\" . protocol) to guess the protocol from the host.")
+
 (eval-when (compile load eval) (fmakunbound 'url))
-(fmakunbound 'url)
+(declaim (ftype (function (t) url) url))
 ;;;###autoload
 (defgeneric url (xx)
   (:documentation "Convert the object into URL.
@@ -188,54 +190,52 @@ The argument can be:
            (loop :for zz :of-type character = (read-char xx)
                  :while (url-constituent-p zz)
                  :do (write zz :stream st)))))
-  (:method ((xx pathname)) (make-url :prot :file :path (namestring xx))))
-(declaim (ftype (function (t) url) url))
-(defcustom *url-guess-protocol* list
-  '(("www" . :http) ("web" . :http) ("w3" . :http)
-    ("ftp" . :ftp) ("news" . :news) ("nntp" . :nntp))
-  "*The alist of (\"string\" . protocol) to guess the protocol from the host.")
-(defmethod url ((xx string))
-  (let* ((string (string-trim +whitespace+ xx)) (url (make-url)) slashp
-         (idx (position #\: string :test #'char=)) (start 0) idx0
-         (end (position #\? string :test #'char=)))
-    (declare (simple-string string) (type index-t start) (type url url)
-             (type (or null index-t) idx))
-    (when (char= #\/ (char string 0))
-      (return-from url
-        (progn (setf (url-prot url) :file (url-path url) string) url)))
-    (when idx
-      (setf (url-prot url) (kwd (nstring-upcase (subseq string 0 idx))))
-      (setq start (position #\/ string :start (1+ idx) :test #'char/= :end end)
-            slashp (/= (1+ idx) start)))
-    (setq idx (position #\@ string :start start :test #'char= :end end))
-    (when idx
-      (setq idx0 (position #\# string :start start :test #'char= :end end))
-      (if idx0 (setf (url-pass url) (subseq string (1+ idx0) idx)
-                     (url-user url) (subseq string start idx0))
-          (setf (url-user url) (subseq string start idx)))
-      (setq start (1+ idx)))
-    (setq idx (position #\: string :start start :test #'char= :end end))
-    (setq idx0 (position #\/ string :start start :test #'char= :end end))
-    (when idx
-      (setf (url-port url) (parse-integer string :start (1+ idx) :end idx0)))
-    (when idx0
-      (setf (url-path url) (subseq string idx0)))
-    (if (and (not slashp)
-             (or (eq :nntp (url-prot url)) (eq :news (url-prot url))))
-        (setf (url-path url)
-              (concatenate 'string (subseq string start (or idx idx0))
-                           (url-path url)))
-        (setf (url-host url) (subseq string start (or idx idx0))))
-    (unless (url-prot url)
-      (cond ((let ((pa (assoc (url-host url) *url-guess-protocol* :test
-                              (lambda (ho st)
-                                (declare (simple-string ho st))
-                                (string-beg-with st ho)))))
-               (when pa (setf (url-prot url) (cdr pa)))))
-            ((position #\@ string :test #'char= :end end)
-             (setf (url-prot url) :mailto))
-            ((error "url: `~a': no protocol specified" string))))
-    url))
+  (:method ((xx pathname)) (make-url :prot :file :path (namestring xx)))
+  (:method ((xx string))
+    (let* ((string (string-trim +whitespace+ xx)) (url (make-url)) slashp
+           (idx (position #\: string :test #'char=)) (start 0) idx0
+           (end (position #\? string :test #'char=)))
+      (declare (simple-string string) (type index-t start) (type url url)
+               (type (or null index-t) idx))
+      (when (char= #\/ (char string 0))
+        (return-from url
+          (progn (setf (url-prot url) :file (url-path url) string)
+                 url)))
+      (when idx
+        (setf (url-prot url) (kwd (nstring-upcase (subseq string 0 idx)))
+              start (position #\/ string :start (1+ idx) :test #'char/=
+                              :end end)
+              slashp (/= (1+ idx) start)))
+      (setq idx (position #\@ string :start start :test #'char= :end end))
+      (when idx
+        (setq idx0 (position #\# string :start start :test #'char= :end end))
+        (if idx0 (setf (url-pass url) (subseq string (1+ idx0) idx)
+                       (url-user url) (subseq string start idx0))
+            (setf (url-user url) (subseq string start idx)))
+        (setq start (1+ idx)))
+      (setq idx (position #\: string :start start :test #'char= :end end))
+      (setq idx0 (position #\/ string :start start :test #'char= :end end))
+      (when idx
+        (setf (url-port url) (parse-integer string :start (1+ idx) :end idx0)))
+      (when idx0
+        (setf (url-path url) (subseq string idx0)))
+      (if (and (not slashp)
+               (or (eq :nntp (url-prot url)) (eq :news (url-prot url))))
+          (setf (url-path url)
+                (concatenate 'string (subseq string start (or idx idx0))
+                             (url-path url)))
+          (setf (url-host url) (subseq string start (or idx idx0))))
+      (unless (url-prot url)
+        (cond ((let ((pa (assoc (url-host url) *url-guess-protocol* :test
+                                (lambda (ho st)
+                                  (declare (simple-string ho st))
+                                  (string-beg-with st ho)))))
+                 (when pa (setf (url-prot url) (cdr pa)))))
+              ((position #\@ string :test #'char= :end end)
+               (setf (url-prot url) :mailto))
+              ((error "url: `~a': no protocol specified" string))))
+      url)))
+
 
 (defcustom *url-default-sleep* (real 0) 30
   "*The number of seconds to sleep when necessary.")

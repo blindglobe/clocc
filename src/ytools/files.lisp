@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.25 2005/03/01 14:09:24 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.26 2005/03/03 05:34:19 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -174,9 +174,9 @@
       (setf (File-chunk-callers clee)
 	    (adjoin file-ch (File-chunk-callers clee)))))
 
-(defmethod derive ((fc File-chunk))
+(defmethod derive-date ((fc File-chunk))
    (let ((v (File-chunk-alt-version fc)))
-      (cond (v (derive v))
+      (cond (v (derive-date v))
 	    (t
 	     (let ((pn (File-chunk-pathname fc)))
 	        (cond ((probe-file pn)
@@ -184,6 +184,9 @@
 		      (t
 		       (error "File-chunk corresponds to nonexistent file: ~s"
 			      fc))))))))
+
+(defmethod derive ((fc File-chunk))
+   false)
 
 (defun File-chunk-pn (file-ch)
    (or (File-chunk-yt-pathname file-ch)
@@ -748,7 +751,7 @@
 	    
 (defvar debuggability* 1)
 
-(defmethod derive ((cf-ch Compiled-file-chunk))
+(defmethod derive-date ((cf-ch Compiled-file-chunk))
    (let ((pn (File-chunk-pn
 		(Compiled-file-chunk-source-file cf-ch))))
       (let ((ov (pathname-object-version pn false)))
@@ -766,18 +769,54 @@
 			 !"Warning -- file ~s apparently compiled outside ~
                            control of ~s~%"
 			 real-ov cf-ch)))
-	       (cond ((or (not old-obj-write-time)
-			  (< old-obj-write-time
-			     (Chunk-latest-supporter-date cf-ch)))
-		      (let ((now-compiling*    pn)
-			    (now-loading* false)
-			    (now-slurping* false)
-			    (debuggability* debuggability*)
-			    (fload-indent* (+ 3 fload-indent*)))
-			 (compile-and-record pn real-pn real-ov
-					     cf-ch old-obj-write-time)))
-		     (t
-		      old-obj-write-time)))))))
+	       old-obj-write-time)))))
+
+;;; We can assume that derive-date has already set the date to the old write
+;;; time, and that some supporter has a more recent time.
+(defmethod derive ((cf-ch Compiled-file-chunk))
+   (let ((now-compiling*    pn)
+	 (now-loading* false)
+	 (now-slurping* false)
+	 (debuggability* debuggability*)
+	 (fload-indent* (+ 3 fload-indent*)))
+      (compile-and-record pn real-pn real-ov
+			  cf-ch old-obj-write-time)))
+
+;;;;(defmethod derive ((cf-ch Compiled-file-chunk))
+;;;;   (let ((pn (File-chunk-pn
+;;;;		(Compiled-file-chunk-source-file cf-ch))))
+;;;;      (let ((ov (pathname-object-version pn false)))
+;;;;	 (let ((real-pn (pathname-resolve pn true))
+;;;;	       (real-ov (and (not (eq ov ':none))
+;;;;			     (pathname-resolve ov false)))
+;;;;	       (prev-time (Compiled-file-chunk-last-compile-time cf-ch)))
+;;;;	    (let  ((old-obj-write-time
+;;;;		      (and real-ov
+;;;;			   (probe-file real-ov)
+;;;;			   (pathname-write-time real-ov))))
+;;;;	       (cond ((and (> prev-time 0)
+;;;;			   (< prev-time old-obj-write-time))
+;;;;		      (format *error-output*
+;;;;			 !"Warning -- file ~s apparently compiled outside ~
+;;;;                           control of ~s~%"
+;;;;			 real-ov cf-ch)))
+;;;;	       (cond ((or (not old-obj-write-time)
+;;;;			  (< old-obj-write-time
+;;;;			     (Chunk-latest-supporter-date cf-ch)))
+;;;;		      (setq cf-ch* cf-ch
+;;;;			    owt* old-obj-write-time)
+;;;;		      (break "Compiling ~s"
+;;;;			     pn)
+;;;;		      (let ((now-compiling*    pn)
+;;;;			    (now-loading* false)
+;;;;			    (now-slurping* false)
+;;;;			    (debuggability* debuggability*)
+;;;;			    (fload-indent* (+ 3 fload-indent*)))
+;;;;			 (compile-and-record pn real-pn real-ov
+;;;;					     cf-ch old-obj-write-time)))
+;;;;		     (t
+;;;;		      ;; Up to date
+;;;;		      false)))))))
 
 (defun compile-and-record (pn real-pn object-file cf-ch old-obj-write-time)
    (prog2
@@ -880,7 +919,10 @@
 		;; There's nothing to derive for the subfile; as long as the
 		;; underlying file is up to date, so is the subfile.	     
 		(defmethod derive ((ch ,subfile-class-name))
-		   true)
+		   false)
+
+		(defmethod derive-date ((ch ,subfile-class-name))
+		   (file-write-date (,sub-pathname-read-fcn ch)))
 
 		(defmethod initialize-instance :after
 				     ((ch ,subfile-class-name)
@@ -955,7 +997,7 @@
 		   :default ,default-handler^
 		   :file->state-fcn ,file->state-fcn^)
 
-		(defmethod derive ((x ,slurped-sym-class-name))
+ 		(defmethod derive ((x ,slurped-sym-class-name))
 		   (let ((file (,sub-pathname-read-fcn
 				  (,slurped-subfile-read-fcn
 				     x))))

@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 1.31.2.1 2005/02/27 16:55:19 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.2 2005/03/03 05:34:19 airfoyle Exp $
 	
+2005-03-02: Split derivers into two generic functions, derive-date and
+            derive.  Leaf chunks can be out of date.  'derive' is
+            called the same way for leaves and non-leaves. (Version
+            1.4.11) 
+
 2005-02-27: Yet another scheme for controlling chunk updates triggered
             by chunk derivers: The interrupt is detected by the outer
             update, which is then restarted.  The inner update does

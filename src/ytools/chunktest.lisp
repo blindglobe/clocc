@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: chunktest.lisp,v 1.1.2.8 2005/02/27 16:55:19 airfoyle Exp $
+;;; $Id: chunktest.lisp,v 1.1.2.9 2005/03/03 05:34:19 airfoyle Exp $
 
 (defclass Num-reg (Chunk)
    ((cont :accessor Num-reg-contents
@@ -21,9 +21,15 @@
 
 (defvar num-num-ops* 0)
 
-(defmethod derive ((r Num-reg))
+(defmethod derive-date ((r Num-reg))
    (cond ((not (slot-boundp r 'fcn))
 	  num-num-ops*)
+	 (t
+	  false)))
+
+(defmethod derive ((r Num-reg))
+   (cond ((not (slot-boundp r 'fcn))
+	  false)
 	 (t
 	  (let ((new-val 
 		   (funcall (Num-reg-fcn r)
@@ -46,6 +52,10 @@
     (cont2 :accessor Num-pair-reg-two
 	   :initarg :two
 	   :type number)))
+
+;;; Must override Num-reg version!
+(defmethod derive-date ((npr Num-pair-reg))
+   false)
 
 (defmethod derive ((npr Num-pair-reg))
    (let ((basis (Chunk-basis npr)))
@@ -88,6 +98,9 @@
 ;;; is equal to the second element of the pair
 (defclass Denom-or-chunk (Or-chunk Num-reg)
    ())
+
+(defmethod derive-date ((npr Denom-or-chunk))
+   false)
 
 (defmethod derive ((rc Denom-or-chunk))
    (let ((disjuncts (Or-chunk-disjuncts rc)))

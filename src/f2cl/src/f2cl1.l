@@ -329,13 +329,23 @@ main-loop
 					      (translate-line 
 					       (brackets-check (concat-operators
 								(cadar lines))))))))
-	       ((null (cdr lines)) 
+	       ((null (cdr lines))
 		(append fort-fun
-			(cond (*function-flag* 
+			(cond (*function-flag*
+			       ;; A function.  Return the value of the
+			       ;; function, the value of the variable
+			       ;; with the same name as the function.
 			       `(end_label (return ,(cadr fort-fun))))
-			      (*program-flag*
+			      ((or *program-flag*
+				   (not (eq (car fort-fun) 'defun)))
+			       ;; Return nil if this is the main
+			       ;; program, indicated by either having
+			       ;; a PROGRAM statement (*program-flag*
+			       ;; set) or no DEFUN in FORT-FUN.
 			       `(end_label (return nil)))
 			      (t
+			       ;; A subroutine definition.  Return the
+			       ;; arguments of the subroutine.
 			       `(end_label (return (values 
 						    ,@(caddr fort-fun))))))))))
      ;; check for missing PROGRAM stmt

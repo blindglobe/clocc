@@ -89,4 +89,6 @@
 	   #:save-working-image)
   )
 
+(in-package :mk4)
+
 ;;; end of file -- defsystem-pkg.lisp --

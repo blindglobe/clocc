@@ -59,6 +59,7 @@
     "MAKE-DEFSYSTEM:adjoin-dirs"
     
     "MAKE-DEFSYSTEM:defsystem-pkg"
+    "MAKE-DEFSYSTEM:generic-function-classes"
     ;; "MAKE-DEFSYSTEM:conditions"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler-pkg"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler"
@@ -99,6 +100,7 @@
 
     "MAKE-DEFSYSTEM:syntax"
     ))
+
 
 (defparameter *mk-defsystem-load-debug-only-p* nil)
 

@@ -19,6 +19,7 @@
 		     (os-program-error-reason cnd))))
   )
 
+
 (defgeneric run-os-program (program
 			    &key
 			    (arguments ())
@@ -26,6 +27,7 @@
 			    (output *standard-output*)
 			    (error-output *error-output*)
 			    &allow-other-keys)
+  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Runs a `command' in the underlying Operating System."))
 

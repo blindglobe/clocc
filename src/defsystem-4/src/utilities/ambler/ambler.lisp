@@ -32,10 +32,18 @@
 ;;;===========================================================================
 ;;; Functional interface.
 
+(defclass ambler-gf-class (standard-generic-function)
+  ()
+  (:metaclass funcallable-standard-class)
+  (:documentation "Generic function class so that EQL specializer can be
+used with NO-APPLICABLE-METHOD"))
+
+
 (defgeneric amble-expression (expression
 			      ambling-context
 			      &key environment
 			      &allow-other-keys)
+  (:generic-function-class ambler-gf-class)
   (:documentation
    "Traverses a Common Lisp `expression'.
 For the purpose of this package a `Common Lisp expression' is either
@@ -53,6 +61,7 @@ the (possibly modified) AMBLING-CONTEXT."))
 			ambling-context
 			&key environment
 			&allow-other-keys)
+  (:generic-function-class ambler-gf-class)
   (:documentation "Traverses a Common Lisp `form'.
 For the purpose of this package a `Common Lisp form' (held in
 WHOLE-FORM) is a LIST, whose FIRST element is FORM-OPERATOR.

@@ -65,7 +65,9 @@
 (defgeneric fortran-compile-file (compiler file-pathname
 					   &rest args
 					   &key output-file
-					   &allow-other-keys))
+				  &allow-other-keys)
+  (:generic-function-class mk4-generic-function-class)
+  )
 
 (defmethod no-applicable-method ((lcf (eql #'fortran-compile-file))
 				 &rest arguments)
@@ -214,6 +216,7 @@
 			       (verbose *load-verbose*)
 			       (libraries '("c"))
 			       )
+  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Loads a Fortran object file (or similar) into the CL environment."))
 

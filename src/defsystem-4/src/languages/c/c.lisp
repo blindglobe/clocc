@@ -221,6 +221,7 @@
 			 (verbose *load-verbose*)
 			 (libraries '("c"))
 			 )
+  (:generic-function-class mk4-generic-function-class)
   (:documentation
    "Loads a C object file (or similar) into the CL environment."))
 

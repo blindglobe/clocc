@@ -9,11 +9,11 @@
 ;;; which relies on BLAS (http://www.netlib.org/blas) and
 ;;; LAPACK (http://www.netlib.org/lapack) for heavy-duty computations.
 ;;;
-;;; Copyright (C) 2000 by Sam Steingold
+;;; Copyright (C) 2000-2003 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.5 2001/11/02 22:31:15 sds Exp $
+;;; $Id: matrix.lisp,v 2.6 2003/07/09 20:43:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -26,7 +26,7 @@
   (require :cllib-math (translate-logical-pathname "cllib:math")))
 
 (export '(matrix-print matrix-multiply array-copy array-lin-comb dimension
-          matrix-id matrix-id-p matrix-symmetric-p bilinear
+          matrix-id matrix-id-p matrix-transpose matrix-symmetric-p bilinear
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
           matrix-solve matrix-inverse))
 (import '(matrix-print) :cl-user) ; format ~//
@@ -111,6 +111,14 @@ By default prints the contents.
                                   :return nil :finally (return t))
                             (= 1 (aref mx ii ii)))
                :return nil :finally (return t)))))
+
+(defun matrix-transpose (mx)
+  "Transpose the matrix."
+  (declare (type array mx))
+  (let ((mxt (make-array (reverse (array-dimensions mx)))))
+    (dotimes (ii (array-dimension mx 0) mxt)
+      (dotimes (jj (array-dimension mx 1))
+        (setf (aref mxt jj ii) (aref mx ii jj))))))
 
 ;;;
 ;;; linear combinations

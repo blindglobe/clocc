@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.32 2002/03/30 17:16:20 sds Exp $
+;;; $Id: url.lisp,v 2.33 2002/03/30 23:23:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -315,7 +315,7 @@ Print the appropriate message MESG to OUT."
         :do (sleep-mesg sleep err "[open-socket-retry] Error")))
 
 (let ((fin (make-array 2 :element-type 'character :initial-contents
-                       '(#\Return #\Newline))))
+                       '(#\Return #\Linefeed))))
   (defun socket-send (sock &optional (count 1))
     (loop :repeat count :do (write-string fin sock))
     (finish-output sock)))

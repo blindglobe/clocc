@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.2 2000/05/19 19:14:22 sds Exp $
+;;; $Id: tests.lisp,v 2.3 2000/05/23 20:20:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -56,7 +56,7 @@
                (incf num-err)
                (format t " ### FAILED: ~s --> ~d, not ~d~2%"
                        st (string->dttm st) nn))))
-      (ts 3126896578 "Mon Feb  1 17:22:58 1999 EST")
+      (ts 3126878578 "1999/02/01 17:22:58")
       (ts 3126896578 "Mon Feb  1 17:22:58 1999 EST")
       (ts 3126878578 "Feb  1 Mon 17:22:58 1999 GMT")
       (ts 3126878578 "Feb  1 Mon 17:22:58 1999")

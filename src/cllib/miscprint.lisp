@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.7 2000/06/06 16:13:13 sds Exp $
+;;; $Id: miscprint.lisp,v 1.8 2000/06/12 18:37:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,7 +15,7 @@
 (in-package :cllib)
 
 (export '(hash-table-keys hash-table->alist alist->hash-table print-hash-table
-          print-all-ascii print-all-packages))
+          print-all-ascii print-all-packages plist->alist alist->plist))
 
 ;;;
 ;;; characters
@@ -124,6 +124,31 @@ This is the inverse of `hash-table->alist'."
   (declare (hash-table ht))
   (format out "#S(hash-table :test '~s :size ~d ~s)" (hash-table-test ht)
           (hash-table-count ht) (cdr (hash-table->alist ht))))
+
+;;;
+;;; property lists
+;;;
+
+;; since neither `rotatef' nor `psetf' guarantee the order of
+;; assignment, neither can be used here
+
+(defun alist->plist (al)
+  "Destructively transform an ALIST to a PLIST.  Non-consing."
+  (do ((ll al (cddr ll))) ((null ll) al)
+    (let ((co (car ll)))
+      (setf (car ll) (car co)
+            (car co) (cdr co)
+            (cdr co) (cdr ll)
+            (cdr ll) co))))
+
+(defun plist->alist (pl)
+  "Destructively transform a PLIST to an ALIST.  Non-consing."
+  (do ((ll pl (cdr ll))) ((null (cdr ll)) pl)
+    (let ((co (cdr ll)))
+      (setf (cdr ll) (cdr co)
+            (cdr co) (car co)
+            (car co) (car ll)
+            (car ll) co))))
 
 (provide :miscprint)
 ;;; file miscprint.lisp ends here

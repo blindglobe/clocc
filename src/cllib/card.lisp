@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.11 2001/12/07 18:32:09 sds Exp $
+;;; $Id: card.lisp,v 2.12 2002/01/26 19:37:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,7 @@
   (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `substitute-subseq', `string-beg-with', `string-end-with', `split-string'
   (require :cllib-string (translate-logical-pathname "cllib:string"))
-  ;; `date2time'
+  ;; `date2time', `string->dttm', `dttm->string'
   (require :cllib-date (translate-logical-pathname "cllib:date"))
   ;; `url'
   (require :cllib-url (translate-logical-pathname "cllib:url")))
@@ -196,13 +196,6 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
             (and (slot-boundp cc 'org) (slot-boundp cc 'title))
             (slot-val cc 'title))))
 
-(defun time2string (ut &optional brief)
-  "YYYY-MM-DDTHH:MM:SS"
-  (multiple-value-bind (se mi ho da mo ye) (decode-universal-time ut)
-    (if brief (format nil "~d-~2,'0d-~2,'0d" ye mo da)
-        (format nil "~d-~2,'0d-~2,'0dT~2,'0d:~2,'0d:~2,'0d"
-                ye mo da ho mi se))))
-
 (defun card-print-as-bbdb (cc out)
   (declare (type card cc) (stream out))
   (let ((*print-right-margin* nil) (*print-pretty* nil))
@@ -218,13 +211,17 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
     (when (slot-boundp cc 'note) (format out "(notes . ~s) " (card-note cc)))
     (format out "~@[(url . \"~{~a~^, ~}\") ~]~
 \(creation-date . \"~a\") (timestamp . \"~a\")) nil]"
-            (slot-val cc 'urll) (time2string (card-created cc) t)
-            (time2string (card-timestamp cc) t))))
+            (slot-val cc 'urll) (dttm->string (card-created cc) :format :date)
+            (dttm->string (card-timestamp cc) :format :date))))
+
+(defconstant +card-vcard-begin+ "BEGIN:VCARD")
+(defconstant +card-vcard-end+ "END:VCARD")
 
 (defun card-print-as-vcard (cc out)
   (declare (type card cc) (stream out))
-  (format out "~&BEGIN:VCARD~%FN:~a~%~@[N:~a~%~]~{ADR:~a~%~}~{TEL:~a~%~}~
+  (format out "~&~a~%FN:~a~%~@[N:~a~%~]~{ADR:~a~%~}~{TEL:~a~%~}~
 ~{EMAIL:~a~%~}~{URL:~a~%~}~@[TITLE:~a~%~]~@[ORG:~a~%~]~@[NOTE:~a~%~]"
+          +card-vcard-begin+
           (card-label cc) (slot-val cc 'name) (slot-val cc 'addrl)
           (slot-val cc 'phonel) (slot-val cc 'emaill) (slot-val cc 'urll)
           (slot-val cc 'title) (slot-val cc 'org) (slot-val cc 'note))
@@ -233,9 +230,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
   (when (slot-boundp cc 'geo)
     (format out "GEO:~f:~f~%"
             (realpart (card-geo cc)) (imagpart (card-geo cc))))
-  (format out "REV:~a~%CRE:~a~%~@[CLASS:~a~%~]END:VCARD~%"
-          (time2string (card-timestamp cc)) (time2string (card-created cc))
-          (slot-val cc 'security)))
+  (format out "REV:~a~%CRE:~a~%~@[CLASS:~a~%~]~a~%"
+          (dttm->string (card-timestamp cc) :format :datetime)
+          (dttm->string (card-created cc) :format :datetime)
+          (slot-val cc 'security) +card-vcard-end+))
 
 (defun card-print-as-pretty (cc out)
   (declare (type card cc) (stream out))
@@ -247,7 +245,8 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
     (format out "[URL:~10t~{~<~%~9t ~1,74:; <~a>~>~^,~}.]~%" (card-urll cc)))
   (format out "~{~a~%~}~{~a~%~}~@[[~a]~%~]{~a  ~a}~2%"
           (slot-val cc 'phonel) (slot-val cc 'addrl) (slot-val cc 'note)
-          (time2string (card-created cc)) (time2string (card-timestamp cc))))
+          (dttm->string (card-created cc) :format :datetime)
+          (dttm->string (card-timestamp cc) :format :datetime)))
 
 (defun name-print-as-bbdb (nm out)
   (declare (type name nm) (stream out))
@@ -465,7 +464,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 
 (defun card-read-vcard (in ra)
   "Read CARD from a vCard stream.  Suitable for `read-list-from-stream'."
-  (declare (stream in) (ignore ra))
+  (declare (stream in))
+  (unless (string= ra +card-vcard-begin+)
+    (warn "~s: a VCARD should start with ~s, not with ~s"
+          'card-read-vcard +card-vcard-begin+ ra))
   (macrolet ((pushslot (val obj slot)
                `(if (slot-boundp ,obj ',slot)
                  (push ,val (slot-value ,obj ',slot))
@@ -473,7 +475,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
     (loop :with cc :of-type card = (make-instance 'card)
           :for str :of-type (or null simple-string) = (read-line in nil nil)
           :for len :of-type index-t = (length str)
-          :while (and str (not (string= str "END:VCARD")))
+          :while (and str (not (string= str +card-vcard-end+)))
           :do
           (cond ((string-beg-with "FN:" str len)
                  (setf (card-label cc) (subseq str 3)))
@@ -519,15 +521,21 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
                  (setf (card-title cc) (subseq str 6)))
                 ((string-beg-with "NOTE:" str len)
                  (setf (card-note cc) (subseq str 5)))
-                (t (format t " *** UNKNOWN: ~s~%" str)))
+                ((string-beg-with "REV:" str len)
+                 (setf (card-timestamp cc) (string->dttm (subseq str 4))))
+                ((string-beg-with "CRE:" str len)
+                 (setf (card-created cc) (string->dttm (subseq str 4))))
+                (t (warn "~s: unknown field: ~s~%" 'card-read-vcard str)))
           :finally (dolist (slot '(addrl urll emaill phonel))
                      (when (slot-boundp cc slot)
                        (setf (slot-value cc slot)
                              (nreverse (slot-value cc slot)))))
           :finally (loop :for str = (read-line in nil nil)
-                         :until (or (null str) (string= str "BEGIN:VCARD"))
+                         :until (or (null str)
+                                    (string= str +card-vcard-begin+))
                          :finally (return-from card-read-vcard
-                                    (values (initialize-instance cc) str))))))
+                                    (values (initialize-instance cc)
+                                            (or str +eof+)))))))
 
 #+nil (progn
 
@@ -539,8 +547,13 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 
 ;;; vCard i/o
 (let ((*card-output-type* +card-output-vcard+))
+  (print *user-cards*)
   (write-list-to-file *user-cards* *user-vcard-file*))
-(setq *user-cards* (read-list-from-file *user-vcard-file* #'card-read-vcard))
+(setq *user-cards* (read-list-from-file *user-vcard-file* #'card-read-vcard
+                                        :read-ahead-function #'read-line))
+(setq *user-cards* (read-list-from-file
+                    (mk-path (user-homedir-pathname) :name ".vcard")
+                    #'card-read-vcard :read-ahead-function #'read-line))
 
 ;;; native i/o
 (let ((*card-output-type* nil))

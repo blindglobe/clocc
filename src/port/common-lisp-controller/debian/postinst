@@ -29,9 +29,9 @@ case "$1" in
     update-inetd --add "8990\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 
     db_get common-lisp-controller/long-site-name
-    long="${RET//\"/\\\"}"
+    long=$(printf "%s" "$RET" | sed -e 's/[\"]/\\\0/g')
     db_get common-lisp-controller/short-site-name
-    short="${RET//\"/\\\"}"
+    short=$(printf "%s" "$RET" | sed -e 's/[\"]/\\\0/g')
     umask 0022
     cat > /etc/lisp-config.lisp <<EOF
 (in-package :common-lisp-user)

@@ -1,3 +1,16 @@
+common-lisp-controller (3.7) unstable; urgency=low
+
+  * added REPORTING-BUGS file 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 18 Jul 2002 21:09:08 +0200
+
+common-lisp-controller (3.6) unstable; urgency=low
+
+  * Better fix for bug 152508 thanks to Kalle Olavi Niemitalo.
+  * Also escape \ Closes: #152508 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 15 Jul 2002 08:57:15 +0200
+
 common-lisp-controller (3.5) unstable; urgency=low
 
   * Fixed typos in installation scripts. Closes: #152419

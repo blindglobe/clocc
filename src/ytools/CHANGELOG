@@ -2,6 +2,7 @@
 	    names of YTools logical pathnames.  Fixed bug in 'repeat'
 	    for var notation (v e0 :then e1) so it's the same as (v =
 	    e0 :then e1).  Got 'fload-recheck' working correctly.
+	    Version 1.4
 	
 2004-06-24: Improved definition of 'alref.' so it allows specification
             of equality test, access method, and new-entry builder.

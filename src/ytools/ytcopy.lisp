@@ -9,7 +9,13 @@
    (let ((source-pn (->pathname source-dir))
 	 (target-pn (->pathname target-dir)))
       (repeat :for ((fname :in '("ytload" "ytfm.lmd" "ytools.lmd")))
-	 (dirs-file-copy source-pn target-pn fname))))
+	 (dirs-file-copy source-pn target-pn fname "lmd"))))
+
+(defun extra-lmds-copy (source-dir target-dir)
+   (let ((source-pn (->pathname source-dir))
+	 (target-pn (->pathname target-dir)))
+      (repeat :for ((fname :in '("ynisp" "lisplang" "opt" "optop")))
+	 (dirs-file-copy source-pn target-pn fname "lmd"))))
 
 (defun ytools-copy (source-dir target-dir)
    (let ((source-pn (->pathname source-dir))
@@ -19,17 +25,22 @@
 				 "binders" "bq" "fileutils" "mapper"
 				 "misc" "multilet" "nilscompat"
 				 "object" "outin" "repeat" "setter"
-				 "signal" "ytools.lsy")))
-	 (dirs-file-copy source-pn target-pn fname))))
+				 "signal" "debug" "tracearound"
+				 "ytools.system" "ytools.lsy")))
+	 (dirs-file-copy source-pn target-pn fname "lisp"))
+      (dir-pns-file-copy source-pn target-pn "CHANGELOG")))
 
-(defun dirs-file-copy (source-dir target-dir fname)
+(defun dirs-file-copy (source-dir target-dir fname type)
    (let ((source-dpn (merge-pathnames
-			(make-pathname :type "lisp")
+			(make-pathname :type type)
 			source-dir))
 	 (target-dpn (merge-pathnames
-			(make-pathname :type "lisp")
-			target-dir))
-	 (file-pn (parse-namestring fname)))
+			(make-pathname :type type)
+			target-dir)))
+      (dir-pns-file-copy source-dpn target-dpn fname)))
+	   
+(defun dir-pns-file-copy (source-dpn target-dpn fname)
+   (let ((file-pn (parse-namestring fname)))
       (let ((from-pn (merge-pathnames file-pn source-dpn))
 	    (to-pn (merge-pathnames file-pn target-dpn)))
 	 (cond (really-copy-ytools*

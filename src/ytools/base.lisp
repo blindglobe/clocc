@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.10 2004/06/30 20:47:17 airfoyle Exp $
+;;;$Id: base.lisp,v 1.11 2004/07/01 03:12:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -414,7 +414,7 @@
       (cond (p (second p))
 	    (t (and initializer (funcall initializer))))))
 
-(define-setf-expander alist-entry-def (x l &optional initializer)
+(define-setf-expander alist-entry-def (x l initializer)
    (multiple-value-bind (ltemps lvals lstores lset lacc)
                         (get-setf-expansion l)
       (let ((entry-var (gensym))
@@ -454,7 +454,7 @@
 (define-setf-expander alref. (alist^ key^ &optional (default^ 'false)
 					  &key ((:test test^) '#'eq)
 					       ((:acc acc^) '#'right)
-					       ((:new-entry new-entry^)))
+					       ((:new-entry new-entry^) 'nil))
    (multiple-value-bind (altemps alvals alstores alist-set alist-acc)
                         (get-setf-expansion alist^)
       (let ((key-var (gensym)) (new-var (gensym)) (alist-var (gensym))
@@ -483,7 +483,7 @@
 ;;; Most common special case.
 (defmacro alref (alist^ key^ &optional (default^ 'false)
 			     &key ((:test test^) '#'eq))
-   `(alref. ,alist^ ,key^ ,default^ :test ,test^ :acc #'second))
+   `(alref. ,alist^ ,key^ ,default^ :test ,test^ :acc #'second :new-entry (list nil)))
 
 ;;;;   (let ((entryvar (gensym)))
 ;;;;      `(let ((,entryvar (assoc ,key^ ,alist^ :test ,test^)))

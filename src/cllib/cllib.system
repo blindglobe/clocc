@@ -50,7 +50,8 @@
      (:file "tilsla" :depends-on ("base" "withtype"))
      (:file "url" :depends-on ("base" "withtype" "symb" "string" "fileio"
                                       "log" "simple" "tilsla" "date"))
-     (:file "withtype" :depends-on ("base")))
+     (:file "withtype" :depends-on ("base"))
+     (:file "xml" :depends-on ("base")))
     :finally-do
     (progn (funcall (intern "AUTOLOAD-GENERATE" :cllib)
                     (mk:files-in-system :cllib) "auto.lisp")

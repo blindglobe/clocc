@@ -1,11 +1,11 @@
-# $Id: Makefile,v 2.7 2000/03/09 18:57:44 sds Exp $
+# $Id: Makefile,v 2.8 2000/03/21 22:39:21 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 TOP := $(shell cd ../..; pwd)
 LISPEXT := lisp
 SOURCES := animals base card check clhs closio date datedl doall elisp fileio \
 	fin geo gnuplot gq h2lisp html iter laser list log math miscprint \
 	octave rpm server simple sorted stat string symb tilsla url withtype \
-	inspect autoload htmlgen
+	inspect autoload htmlgen xml
 BASE = base auto
 NET = base url gq
 SYSTEM := cllib

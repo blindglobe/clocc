@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.45 2004/05/10 03:52:59 sds Exp $
+;;; $Id: math.lisp,v 2.46 2004/05/20 17:33:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -37,6 +37,7 @@
    count-all find-duplicates entropy-sequence entropy-distribution
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
+   mdl-normalize mdl-denormalize
    kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
@@ -1151,6 +1152,9 @@ When the distribution is not discreet, entropy is not available."
           (make-mdl :sd (dfloat std) :mn (dfloat mean) :le len :mi min :ma max
                     :en (when discreet
                           (entropy-sequence seq :key key :weight weight)))))))
+
+(defun mdl-normalize (value mdl)   (/ (- value (mdl-mn mdl)) (mdl-sd mdl)))
+(defun mdl-denormalize (value mdl) (+ (* value (mdl-sd mdl)) (mdl-mn mdl)))
 
 ;;;
 ;;; information-theoretic and statistical measures of prediction performance

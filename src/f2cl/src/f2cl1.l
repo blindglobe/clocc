@@ -135,11 +135,13 @@ INPUT-FILE               File containing Fortran code
       
     (unless output-file
       (let ((input-path (pathname input-file)))
-	(setf output-file (make-pathname :host (pathname-host input-path)
-					 :device (pathname-device input-path)
-					 :directory (pathname-directory input-path)
-					 :name (pathname-name input-path)
-					 :type extension))))
+	(setf output-file (merge-pathnames
+			   (make-pathname :host (pathname-host input-path)
+					  :device (pathname-device input-path)
+					  :directory (pathname-directory input-path)
+					  :name (pathname-name input-path)
+					  )
+			   (make-pathname :type extension)))))
     (format t ";; ~S -> ~S~%" input-file output-file)
     (let ((processed-file (preprocess input-file)))
       (fortran-to-lisp processed-file output-file
@@ -1949,8 +1951,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.76 2001/06/04 17:20:10 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.77 2001/09/11 14:29:14 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.77  2001/09/11 14:29:14  rtoy
+;;; Try to do a better job of figuring out the extension for the output
+;;; file.
+;;;
 ;;; Revision 1.76  2001/06/04 17:20:10  rtoy
 ;;; CONVERT-DATA-TYPE was incorrectly returning T instead of '(LOGICAL)
 ;;; for LOGICAL Fortran types.

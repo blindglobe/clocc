@@ -1,4 +1,4 @@
-;;; File: <list.lisp - 1999-02-22 Mon 17:56:34 EST sds@eho.eaglets.com>
+;;; File: <list.lisp - 1999-04-09 Fri 14:47:08 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Additional List Operations
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.7 1999/02/22 22:56:53 sds Exp $
+;;; $Id: list.lisp,v 1.8 1999/04/09 18:48:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.8  1999/04/09 18:48:18  sds
+;;; Added `collecting'.
+;;;
 ;;; Revision 1.7  1999/02/22 22:56:53  sds
 ;;; `call-on-split': new key `:min-len'.
 ;;;
@@ -136,6 +139,25 @@ The alist is sorted by decreasing frequencies. TEST defaults to `eql'."
                  (cond (fi (incf (cdr fi)) res) ((acons el 1 res)))))
              seq :key key :initial-value nil)
      #'> :key #'cdr)))
+
+(defmacro collecting (&body forms)
+  "Evaluate forms, collecting objects into a list.
+Within the FORMS, you can use a local macro `collect'."
+  #+clisp                       ; this is faster in CLISP
+  (let ((ret (gensym "COLLECTING")))
+    `(let ((,ret nil))
+      (macrolet ((collect (form) `(push ,form ,',ret)))
+        ,@forms
+        (nreverse ,ret))))
+  #-clisp                       ; this is faster in natively compiling lisps
+  (let ((ret (gensym "COLLECTING")) (tail (gensym "COLLECTING")))
+    `(let ((,ret nil) (,tail nil))
+      (macrolet ((collect (form)
+                   `(if ,',ret
+                     (setf (cdr ,',tail) (setf ,',tail (list ,form)))
+                     (setf ,',ret (setf ,',tail (list ,form))))))
+        ,@forms
+        ,ret))))
 
 ;;;
 ;;; Sorted

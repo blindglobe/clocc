@@ -1373,19 +1373,31 @@
    (and (string>= (string vble) "I")
         (string< (string vble) "O")))
 
-;; test whether or not a given symbol has been defined as an array
+;; Test whether or not a given symbol has been defined as an array.
 (defun vble-is-array-p (v)
-  ;; check to see if v is explicitly declared and dimensioned
-  (if (member v *declared_vbles*)
-      (do ((decls *explicit_vble_decls* (cdr decls)))
-	  ((null decls) nil)
-	(if (do ((vbles (cdar decls) (cdr vbles)))
-		((null vbles) nil)
-	      (if (and (eq v (caar vbles)) (cdar vbles))
-		  (return t)))
-	    (return t)))
-      ;; else check if v is a common variable and an array
-      (member v *common_array_dims*)))
+  ;;(format t "common_array_dims = ~A~%" *common_array_dims*)
+  ;;(format t "declard_vbles     = ~A~%" *declared_vbles*)
+
+  ;; If it's an explicitly declared name, look through the
+  ;; declarations to see if there are dimensions associated.
+  ;;
+  ;; If it's not, try to see if it's in the list of comman arrays that
+  ;; have been dimensioned.
+  ;;
+  ;; ### This is pretty gross!  Why can't we keep this info all in one
+  ;; place?
+  (when (member v *declared_vbles*)
+    (do ((decls *explicit_vble_decls* (cdr decls)))
+	((null decls) nil)
+      (if (do ((vbles (cdar decls) (cdr vbles)))
+	      ((null vbles) nil)
+	    (if (and (eq v (caar vbles)) (cdar vbles))
+		(return-from vble-is-array-p t)))
+	  (return-from vble-is-array-p t))))
+  ;; else check if v is a common variable and an array
+  (member v *common_array_dims*))
+
+
 
 ; test if a symbol is a function call rather than an undeclared vble
 ; used in check_new_vbles
@@ -2144,8 +2156,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.77 2002/02/07 03:58:45 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.78 2002/02/07 22:16:19 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.78  2002/02/07 22:16:19  rtoy
+;;; If an array was declared but actually dimensioned in a common block
+;;; like
+;;;
+;;; 	double precison c
+;;; 	common /foo/ c(42)
+;;;
+;;; VBLE-IS-ARRAY-P didn't think it was an array.  Fix it.
+;;;
 ;;; Revision 1.77  2002/02/07 03:58:45  rtoy
 ;;; o The previous change messed up the parsing of the format number of a
 ;;;   write statement.  Fix it.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.5 2000/05/16 22:40:03 sds Exp $
+;;; $Id: animals.lisp,v 2.6 2000/05/22 17:20:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -144,12 +144,14 @@ Returnes a fresh string."
 ;;; Network implementation
 ;;;
 
+(eval-when (compile load eval)  ; ACL: for `*root-node*'
 (defclass node ()
   ((name :type symbol :accessor node-name :initarg name)
    (info :type simple-string :accessor node-info :initarg info)
    (yes :type symbol :accessor node-yes :initarg yes)
    (no :type symbol :accessor node-no :initarg no))
   (:documentation "The information node."))
+)
 
 (defmethod print-object ((nd node) (out stream))
   (if *print-readably* (call-next-method)

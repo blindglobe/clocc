@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.44 2002/08/14 22:06:00 sds Exp $
+;;; $Id: xml.lisp,v 2.45 2002/11/30 22:51:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -192,8 +192,8 @@ Add it to `*xml-pre-namespaces*' and `*xml-uri-namespaces*'."
         (xml-namespace (values uri t))
         (string (gethash uri *xml-uri-namespaces*)))
     (unless oldp
-      (remf opts :pre-tmp) (remf opts :out)
-      (setq ns (apply #'make-xml-namespace :uri uri opts))
+      (setq ns (apply #'make-xml-namespace :uri uri
+                      (remove-plist opts :pre-tmp :out)))
       ;; only newly created namespaces have to be reported to the user
       (mesg :xml out "~& * added XML namespace: ~s~@[ [prefix ~s]~]~%"
             ns pre-tmp))

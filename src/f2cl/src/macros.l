@@ -250,7 +250,7 @@
 ;-----------------------------------------------------------------------------       
 ; set up a list of intrinsic function names
 ;real xxx
-(defvar intrinsic_function_names
+(defvar *intrinsic_function_names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
     idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1

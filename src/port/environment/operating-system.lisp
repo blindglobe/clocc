@@ -67,6 +67,17 @@
   (:documentation "The CL.ENVIRONMENT Genera Operating System Class.")
   (:default-initargs :type "Genera" :version "8.x" :feature-tag :genera))
 
+(defclass Amiga (operating-system)
+  ()
+  (:documentation "The CL.ENVIRONMENT Amiga Operating System Class.")
+  (:default-initargs :type "Amiga" :version "" :feature-tag :amiga))
+
+(defclass OS/2 (operating-system)
+  ()
+  (:documentation "The CL.ENVIRONMENT OS/2 Operating System Class.")
+  (:default-initargs :type "OS/2" :version "" :feature-tag :os/2))
+
+
 (defclass MS-DOS (operating-system)
   ()
   (:documentation "The CL.ENVIRONMENT MS-DOS Operating System Class.")

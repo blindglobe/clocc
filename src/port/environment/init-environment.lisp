@@ -62,8 +62,8 @@
 
 	((featurep :mswindows)
 	 (if (featurep :windows-32)
-	     (setf *operating-system* (make-instance 'w32))
-	     (setf *operating-system* (make-instance 'windows))))
+	     (setf *operating-system* (make-instance 'MS-Windows-32))
+	     (setf *operating-system* (make-instance 'MS-Windows))))
 
 	(t)				; do nothing?
 	)
@@ -73,7 +73,26 @@
 	 (setf *operating-system* (make-instance 'Unix)))
 
 	((featurep :win32)
-	 (setf *operating-system* (make-instance 'w32)))
+	 (setf *operating-system* (make-instance 'MS-Windows-32)))
+
+	(t)				; do nothing?
+	)
+
+  #+clisp
+  (cond ((featurep :unix)
+	 (setf *operating-system* (make-instance 'Unix)))
+
+	((featurep :os/2)
+	 (setf *operating-system* (make-instance 'OS/2)))
+
+	((featurep :ms-dos)
+	 (setf *operating-system* (make-instance 'MS-DOS)))
+
+	((featurep :win32)
+	 (setf *operating-system* (make-instance 'MS-Windows)))
+
+	((featurep :amiga)
+	 (setf *operating-system* (make-instance 'Amiga)))
 
 	(t)				; do nothing?
 	)

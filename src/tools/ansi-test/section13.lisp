@@ -16,7 +16,7 @@
 (my-assert
  (subtypep 'extended-char 'character)
  t
- "Type EXTENDED-CHAR 
+ "Type EXTENDED-CHAR
 
 Supertypes:
 
@@ -525,7 +525,7 @@ extended-char, character, t")
 (my-assert
  (char-name #\a)
  #+(or cmu sbcl) nil
- #+clisp "U0061"
+ #+clisp "LATIN_SMALL_LETTER_A"
  #-(or cmu sbcl clisp) fill-this-in)
 ;; NIL OR "LOWERCASE-a" OR  "Small-A" OR  "LA01"
 
@@ -533,7 +533,7 @@ extended-char, character, t")
 (my-assert
  (char-name #\A)
  #+(or cmu sbcl) nil
- #+clisp "U0041"
+ #+clisp "LATIN_CAPITAL_LETTER_A"
  #-(or cmu sbcl clisp) fill-this-in)
 ;;  NIL OR "UPPERCASE-A" OR  "Capital-A" OR  "LA02"
 

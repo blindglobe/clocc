@@ -1648,6 +1648,7 @@ component."
 			   &key
 			   (output-file (compile-file-pathname source))
 			   (error-log-file nil))
+  (ensure-directories-exist output-file)
   (compile-file-internal source
 			 :output-file output-file
 			 :error-file error-log-file

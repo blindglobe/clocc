@@ -645,13 +645,16 @@ these are not rationals, so we get a complex number back.
 
 
 (check-for-bug :cmucl-bugs-unread-from-string
-  (let* ((input (make-file-input-stream "xy"))
+  (let* ((input (make-string-input-stream "xy"))
          (concat (make-concatenated-stream input)))
-    (let* ((x (read-char concat))
-           (unread-x (unread-char x concat))
-           (x2 (read-char concat))
-           (y (read-char concat nil :EOF)))
-      (list x unread-x x2 y)) (close input))
+    (prog1
+        (let* ((x (read-char concat))
+               (unread-x (unread-char x concat))
+               (x2 (read-char concat))
+               (y (read-char concat nil :EOF)))
+          (list x unread-x x2 y))
+      (close input)
+      (close concat)))
   (#\x NIL #\x #\y)
   "From Gilbert Baumann")
 
@@ -688,7 +691,7 @@ these are not rationals, so we get a complex number back.
 
 
 (check-for-bug :cmucl-compilation-error-with-labels
-  (functionp 
+  (functionp
    (compile
     nil
     (lambda (final-indices &rest tensors+indices)
@@ -702,7 +705,7 @@ these are not rationals, so we get a complex number back.
              ;; index ranges are compatible.
              (if (null rest-tensors+indices)
                  (let ((bad-indices nil))
-                   (maphash 
+                   (maphash
                     #'(lambda (k v)
                         (if (i/= v 2)
                             (ppush bad-indices k)))
@@ -741,7 +744,7 @@ these are not rationals, so we get a complex number back.
                                        (setf (aref v-indices-after-fixations nonfixed-index-pos) idx-j)
                                        (incf nonfixed-index-pos)))))
                              (let* ((fixated (sp-permute-fix-indices tensor (v-int-range nr-indices-after-fixations)))
-                                    (contraction-permutation 
+                                    (contraction-permutation
                                      (map '(simple-array * (*))
                                           #'(lambda (idx)
                                               (position idx final-indices :test #'equalp))
@@ -751,7 +754,7 @@ these are not rationals, so we get a complex number back.
                                contracted)))
                           ((i= 0 nr-contractions)
                            ;; (possibly) fixations, but no contractions.
-                           (let ((indices-old-to-new 
+                           (let ((indices-old-to-new
                                   (map '(simple-array * (*))
                                        #'(lambda (idx)
                                            (if (and (consp idx) (eq (car idx) :fix))
@@ -772,7 +775,7 @@ these are not rationals, so we get a complex number back.
                                    (sp-permute-fix-indices tensor indices-old-to-new)))))
                           (t
                            ;; remaining case: contractions, but no fixations.
-                           (let ((v-permutation 
+                           (let ((v-permutation
                                   (map '(simple-array fixnum (*))
                                        #'(lambda (idx) (position idx final-indices :test #'equalp))
                                        li-rest-indices)))
@@ -851,13 +854,4 @@ number output.")
   (foo-bar-cmucl-bugs-1-p nil)
   nil
   "From Fernando D. Mato Mira")
-
-
-  
-  
-    
-
-
-  
-
 

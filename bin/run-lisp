@@ -151,7 +151,7 @@ case "$1" in
     shift 1
     case "$LISPTYPE" in
         clisp)
-            ${CLISP-clisp} -M "$1".mem -x '(run)'
+            ${CLISP-clisp} -M "$1".mem
         ;;
         cmucl )
             ${CMUCL-lisp} -core "$1".core -eval '(run)'
@@ -279,7 +279,7 @@ case "$1" in
     case "$LISPTYPE" in
       clisp )
           todo="(setq lisp:*load-paths* '(#P\"\")) "$todo
-          echo "$todo" | ${CLISP-clisp} ${image+"-M ${image}.mem"} -
+          ${CLISP-clisp} ${image+"-M ${image}.mem"} -x '('"progn $todo"')'
           ;;
       cmucl )
           # we have to convince CMUCL to return a proper exit status.

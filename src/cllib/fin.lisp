@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
+;;; $Id: fin.lisp,v 2.3 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,9 +22,6 @@
           black-scholes-call black-scholes-eput
           solow solow-next-year
           lognormal luhn))
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; Mortgage calculator
@@ -87,7 +84,7 @@ Prepay: ~2:/comma/~35t  --> ~2,9:/comma/ --> ~5,2f years~%"
 
 (defun mgg-interest (principal term apr &optional monthly)
   "Calculate the total interest that will ever be paid on the mortgage."
-  (declare (number principal term rate))
+  (declare (number principal term apr))
   (- (* term (/ principal (mgg-discount term apr monthly))) principal))
 
 ;;;
@@ -138,25 +135,25 @@ Returns: new capital and new k/y."
   (let ((kk (* kap (- (1+ (/ sav k-y)) dgn))))
     (values kk (expt kk (- 1 alpha)))))
 
-(defun k/k (sav dng alpha)
+(defun k/k (sav dgn alpha)
   "Returns a function (suitable for `newton'), which computes
 the ratio K_{n+1}/K_n from K_n/K_{n-1}."
   (declare (double-float sav dgn alpha))
-  (lambda (zz) (values (- zz (- 1 dng) (* sav (expt zz (- 1 alpha))))
+  (lambda (zz) (values (- zz (- 1 dgn) (* sav (expt zz (- 1 alpha))))
 		       (- 1 (* sav (- 1 alpha) (expt zz (- alpha)))))))
 
 ;;;###autoload
-(defun solow (k-y-0 dng alpha)
+(defun solow (k-y-0 dgn alpha)
   "Show the economy evolution from the steady state with saving rate SAV
 and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
-  (declare (double-float k-y-0 sav dgn alpha))
+  (declare (double-float k-y-0 dgn alpha))
   (format t "~&year capital  income     k/y consumption~%")
-  (let* ((kk0 (expt k-y-0 (/ 1.0 (- 1 alpha)))) (sav (* dng k-y-0))
+  (let* ((kk0 (expt k-y-0 (/ 1.0 (- 1 alpha)))) (sav (* dgn k-y-0))
 	 (yy0 (expt kk0 alpha)) (cc0 (* (- 1 sav) yy0)))
     (format t "    ~8,3f~8,3f~8,3f~8,3f~%" kk0 yy0 k-y-0 cc0)
     (do ((del 1.0) yy cc (nn 1 (1+ nn)) (kk kk0) (ky k-y-0))
 	((or (< del *num-tolerance*) (> nn 100)))
-      (multiple-value-setq (kk ky) (solow-next-year kk ky alpha dng alpha))
+      (multiple-value-setq (kk ky) (solow-next-year kk ky alpha dgn alpha))
       (setq yy (/ kk ky) cc (* (- 1 alpha) yy))
       (format t "~4:d~8,3f~8,3f~8,3f~8,3f" nn kk yy ky cc)
       (when (and cc0 (> cc cc0)) (setq cc0 nil) (format t " <---!!!!"))
@@ -198,7 +195,8 @@ instead."
            :sum rr :into su :of-type index-t
            :while (plusp vv)
            :do (setf (values vv rr) (floor vv 10))
-           :sum (let ((rr (* 2 rr))) (if (> rr 9) (- rr 9) rr)) :into su
+           :sum (let ((rr (* 2 rr))) (if (> rr 9) (- rr 9) rr))
+           :into su :of-type index-t
            :while (plusp vv)
            :finally (when out (format out "Luhn[~,,' ,4:d] = ~d" cn su))
            (when (zerop (mod su 10))

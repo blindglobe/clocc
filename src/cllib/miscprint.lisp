@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.4 2000/05/01 20:13:43 sds Exp $
+;;; $Id: miscprint.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,9 +16,6 @@
 
 (export '(hash-table-keys hash-table->alist alist->hash-table print-hash-table
           print-all-ascii print-all-packages))
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; characters

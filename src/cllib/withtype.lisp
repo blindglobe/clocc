@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: withtype.lisp,v 1.3 2000/03/27 20:02:54 sds Exp $
+;;; $Id: withtype.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/withtype.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,9 +13,6 @@
   (require :ext (translate-logical-pathname "port:ext")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(index-t map-vec dfloat with-type +whitespace+ whitespace-char-p))
 

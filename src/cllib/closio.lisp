@@ -6,16 +6,13 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.4 2000/04/10 21:00:05 sds Exp $
+;;; $Id: closio.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(*clos-readtable* make-clos-readtable macroexpand-r))
 

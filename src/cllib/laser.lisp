@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: laser.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: laser.lisp,v 1.3 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/laser.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,9 +15,6 @@
   (require :shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(print-files with-printing))
 

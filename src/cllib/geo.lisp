@@ -1,10 +1,10 @@
-;;; Geo.lisp - geographical data processing
+;;; geo - geographical data processing
 ;;;
 ;;; Copyright (C) 1998-2000 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.4 2000/05/01 20:13:43 sds Exp $
+;;; $Id: geo.lisp,v 2.5 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,9 +27,6 @@
 
 (export '(cite-info *weather-url* weather-report
           find-country *country-list* fetch-country-list))
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; {{{ Georgaphic Coordinates

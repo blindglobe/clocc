@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.5 2000/05/01 20:13:43 sds Exp $
+;;; $Id: log.lisp,v 1.6 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,9 +15,6 @@
   (require :tilsla (translate-logical-pathname "cllib:tilsla")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(get-float-time elapsed with-timing *print-log* mesg list-format))
 
@@ -35,7 +32,8 @@ Taken from CLtL2 p602."
 ;;; {{{ progress reporting
 ;;;
 
-;;(declaim (ftype (function (t) (values (double-float 0.0d0))) get-float-time))
+(declaim (ftype (function (&optional t) (values (double-float 0.0d0)))
+                get-float-time))
 (defun get-float-time (&optional (run t))
   "Return the run (or real) time counter, as a double float."
   (dfloat (if run (get-internal-run-time) (get-internal-real-time))))

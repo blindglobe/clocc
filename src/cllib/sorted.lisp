@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: sorted.lisp,v 1.3 2000/04/10 20:58:16 sds Exp $
+;;; $Id: sorted.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/sorted.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,9 +15,6 @@
   (require :math (translate-logical-pathname "cllib:math")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(map-sorted reduce-sorted sorted-map delete-duplicate-entries
           top-bottom top-bottom-ui top-bottom-fl

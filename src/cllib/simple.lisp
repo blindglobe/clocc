@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.4 2000/04/10 21:00:37 sds Exp $
+;;; $Id: simple.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,10 +14,6 @@
 
 (export '(ppprint-list nsublist fix-list to-list from-list zero-len-p paste
           skip-to-new flatten with-collect filter list-length-dotted))
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
-
 
 ;;;
 ;;; {{{ `with-collect'

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.3 2000/05/01 20:13:43 sds Exp $
+;;; $Id: rpm.lisp,v 2.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,9 +17,6 @@
 
 (export '(*rpm-locations* rpm show-rpms rpm-to-be-installed rpm-get-list
           rpm-get-new-rpms rpm-list-rpm rpm-clean-up))
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; download data

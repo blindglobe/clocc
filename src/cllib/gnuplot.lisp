@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.3 2000/05/01 20:13:43 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,15 +22,6 @@
   (require :shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  ;; the only way to have a good optimization here is to ditch
-  ;; flexibility and stick to floats.
-  (declaim (optimize (speed 1) (space 0) (safety 3) (debug 3))))
-
-#+cmu
-(eval-when (compile)
-  (format t " *** `optimize' compile quality is set to 1.~%"))
 
 (export '(*gnuplot-path* #+win32 *gnuplot-path-console* *gnuplot-printer*
           with-plot-stream plot-dated-lists plot-dated-lists-depth

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.3 2000/04/27 22:33:52 sds Exp $
+;;; $Id: matrix.lisp,v 2.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -30,9 +30,6 @@
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
           matrix-solve matrix-inverse))
 (import '(matrix-print) :cl-user) ; format ~//
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 ;;;
 ;;; printing
@@ -149,7 +146,7 @@ By default prints the contents.
 
 (defun bilinear (mx v0 v1)
   "Compute the bilinear form (Ax,y)."
-  (declare (type (array * (* *)) mx) (type (array * (*)) v0 v2))
+  (declare (type (array * (* *)) mx) (type (array * (*)) v0 v1))
   (unless (and (= (array-dimension v0 0) (array-dimension mx 0))
                (= (array-dimension v0 0) (array-dimension mx 0)))
     (error 'dimension :proc 'bilinear :args

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: list.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
+;;; $Id: list.lisp,v 2.3 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 
 (eval-when (compile load eval)
@@ -12,9 +12,6 @@
   ;; `with-collect', `zero-len-p', `to-list', `filter'
   (require :simple (translate-logical-pathname "cllib:simple")))
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(jumps count-jumps freqs
           check-list-type check-list-values out-of-bounds-p

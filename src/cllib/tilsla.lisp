@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tilsla.lisp,v 1.3 2000/05/01 20:13:43 sds Exp $
+;;; $Id: tilsla.lisp,v 1.4 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tilsla.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,9 +13,6 @@
   (require :withtype (translate-logical-pathname "cllib:withtype")))
 
 (in-package :cllib)
-
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(commas pr-secs pr-arr print-seqs))
 (import '(comma pr-secs pr-arr) :cl-user)

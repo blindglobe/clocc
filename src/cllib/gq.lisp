@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.5 2000/05/01 20:13:43 sds Exp $
+;;; $Id: gq.lisp,v 2.6 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,9 +21,6 @@
   (require :gnuplot (translate-logical-pathname "cllib:gnuplot")))
 
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export '(update-quotes))
 

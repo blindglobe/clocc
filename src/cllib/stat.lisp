@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.4 2000/05/01 20:13:43 sds Exp $
+;;; $Id: stat.lisp,v 1.5 2000/05/02 15:39:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,17 +21,17 @@
 
 (export '(regress-n regress-poly))
 
-(eval-when (load compile eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
-
 ;;;
 ;;;
 ;;;
 
-;(declaim (ftype (function (??) (values (simple-array double-float (*))
-;                                       double-float (double-float 0.0d0 1.0d0)
-;                                       (double-float 0.0d0)))
-;                regress-n))
+(declaim (ftype (function ((simple-array double-float (*)) simple-array fixnum
+                           &key (:func (function (array fixnum fixnum)
+                                                 double-float)))
+                          (values (simple-array double-float (*))
+                                  double-float (double-float 0.0d0 1.0d0)
+                                  (double-float 0.0d0)))
+                regress-n))
 (defun regress-n (yy xx nx &key (func #'aref))
   "Returns: vector [b1 ... bn], free term, Rmult, Ftest."
   (declare (type (simple-array double-float (*)) yy)

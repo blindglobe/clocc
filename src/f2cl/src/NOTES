@@ -5,6 +5,13 @@ Changes:
 May 04, 2002
 ------------
 
+We've made some corrections and added very, very rudimentary support
+for creating an FFI and wrapper.  See the new file f2cl8.l for this.
+Doesn't yet work, but it could. :-)
+
+May 04, 2002
+------------
+
 We've added an experimental feature to help f2cl generate better
 function calls.  Remember that Fortran is call-by-reference so that
 the routine can modify the value of its input parameters.  This

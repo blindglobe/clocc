@@ -3031,7 +3031,8 @@ the system definition, if provided."
   ;; Pass along the host and devices
   (setf (component-host component)
 	(or (component-host component)
-	    (when parent (component-host parent))))
+	    (when parent (component-host parent))
+	    (pathname-host *default-pathname-defaults*)))
   (setf (component-device component)
 	(or (component-device component)
 	    (when parent (component-device parent))))

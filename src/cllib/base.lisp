@@ -4,34 +4,21 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.16 2004/11/12 18:56:52 sds Exp $
+;;; $Id: base.lisp,v 2.17 2004/12/23 14:49:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   (require :port-sys (translate-logical-pathname "port:sys")))
 
-(defpackage "CLLIB"
-  (:use "COMMON-LISP" "PORT")
-  (:nicknames "ORG.CONS.CLOCC/SDS/CLLIB")
-  #+cmu (:shadow defstruct)
-  (:export "VALUE" "CODE" "DEFSTRUCT"
-           "*DATADIR*" "*MAIL-HOST-ADDRESS*" "*USER-MAIL-ADDRESS*"))
+(defpackage #:cllib
+  (:use #:common-lisp #:port)
+  (:nicknames #:org.cons.clocc/sds/cllib)
+  #+cmu (:shadowing-import-from #:port #:defstruct)
+  (:export #:value #:code #:*datadir* #:*mail-host-address*
+           #:*user-mail-address*))
 
 (in-package :cllib)
-
-;;;
-;;; {{{CMUCL structure hack - make them externalizable
-;;;
-
-#+cmu
-(defmacro defstruct (name &rest slots)
-  `(progn
-     (eval-when (compile load eval) (cl:defstruct ,name ,@slots))
-     ,(unless (and (consp name) (assoc :type (cdr name)))
-       `(defmethod make-load-form ((self ,(if (consp name) (first name) name))
-                                   &optional environment)
-          (make-load-form-saving-slots self :environment environment)))))
 
 ;;;
 ;;; }}}{{{paths

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.14 2004/07/14 20:28:11 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.15 2004/07/15 00:23:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -177,6 +177,18 @@ according to the given backend")
   (logscale nil :type (or null (eql t) (real (1))))
   (range nil :type (or null cons)))
 
+(defstruct coordinate
+  (system :first :type symbol)
+  (pos (port:required-argument) :type real))
+(defstruct point
+  (x (port:required-argument) :type coordinate)
+  (y (port:required-argument) :type coordinate))
+(defstruct arrow
+  (beg (port:required-argument) :type point)
+  (end (port:required-argument) :type point)
+  (head 0 :type (integer 0 2))
+  (width 1 :type (integer 1 10)))
+
 (defstruct (plot-spec (:conc-name plsp-))
   (term +plot-term-screen+ :type plot-term)
   (timestamp +plot-timestamp+ :type (or null plot-timestamp))
@@ -188,10 +200,27 @@ according to the given backend")
   (title "" :type string)
   (legend nil :type list)
   (grid nil :type boolean)
+  (arrows nil :type list)
   (data nil :type (or list function))))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
-  (declare (ignorable pt out backend)))
+  (declare (ignorable pt out)))
+
+(defmethod plot-output ((cr coordinate) (out stream) (backend (eql :gnuplot)))
+  (write (coordinate-system cr)  :escape nil :case :downcase :stream out)
+  (format out " ~F" (coordinate-pos cr)))
+(defmethod plot-output ((pt point) (out stream) (backend (eql :gnuplot)))
+  (plot-output (point-x pt) out backend)
+  (write-char #\, out)
+  (plot-output (point-y pt) out backend))
+(defmethod plot-output ((arw arrow) (out stream) (backend (eql :gnuplot)))
+  (write-string "set arrow from " out)
+  (plot-output (arrow-beg arw) out backend)
+  (write-string " to " out)
+  (plot-output (arrow-end arw) out backend)
+  (write-char #\Space out)
+  (write-string (aref #("nohead" "head" "heads") (arrow-head arw)) out)
+  (format out " lw ~D~%" (arrow-width arw)))
 
 (defun %plotout (xx)
   (typecase xx
@@ -236,6 +265,9 @@ according to the given backend")
     (set-opt "title" (plsp-title ps))
     (set-opt "key" (plsp-legend ps))
     (set-opt "grid" (plsp-grid ps))
+    (set-opt "arrow" nil)       ; reset arrows
+    (dolist (arrow (plsp-arrows ps))
+      (plot-output arrow out backend))
     (if (functionp (plsp-data ps))
         (funcall (plsp-data ps) out)
         (dolist (set (plsp-data ps))
@@ -243,7 +275,7 @@ according to the given backend")
             (format out "~{~a~^ ~}~%" datum))))))
 
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
-                  (xlabel "x") (ylabel "y")
+                  (xlabel "x") (ylabel "y") arrows
                   (data-style :lines) (border t)
                   timefmt xb xe yb ye (title "plot") legend
                   (xtics t) (ytics t) grid xlogscale ylogscale
@@ -256,7 +288,7 @@ according to the given backend")
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
                            :range (when (and yb ye) (cons yb ye))
                            :logscale ylogscale)
-   :grid grid :legend legend :title title :border border))
+   :grid grid :legend legend :title title :border border :arrows arrows))
 
 (defgeneric make-plot-stream (directive)
   (:documentation "Create the stream appropriate for the directive.")
@@ -496,26 +528,45 @@ OPTS is passed to `plot-lists-arg'."
          opts))
 
 ;;;###autoload
-(defun plot-histogram (list nbins &rest opts &key (title "histogram")
+(defun plot-histogram (list nbins &rest opts &key (title "histogram") (mean t)
                        (key #'value) &allow-other-keys)
-  "Plot the data in the list as a histogram"
+  "Plot the data in the list as a histogram.
+When :MEAN is non-NIL (default), show mean and mean+-standard deviation
+ with vertical lines."
   (multiple-value-bind (min max count)
       (loop :for x :in list :for v = (funcall key x) :for c :upfrom 1
         :minimize v :into i :maximize v :into a
         :finally (return (values i a c)))
     (mesg :plot *gnuplot-msg-stream*
-          "~&~S: ~:D point~:P from ~S to ~S~%" 'plot-histogram count min max)
+          "~&~S: ~:D point~:P from ~S to ~S" 'plot-histogram count min max)
     (assert (/= min max) (min max) "~S: min=max=~A" 'plot-histogram min)
     (let ((scale (/ nbins (- max min))) (last (1- nbins))
+          (mdl (and mean (standard-deviation-mdl list :key key))) arrows
           (vec (make-array nbins :initial-element 0)))
       (loop :for x :in list :for v = (floor (* scale (- (funcall key x) min)))
         :do (incf (aref vec (min v last))))
       (loop :for s :across vec :minimize s :into i :maximize s :into a
         :finally (mesg :plot *gnuplot-msg-stream*
-                       "~S: bin size from ~:D to ~:D~%"
-                       'plot-histogram i a))
-      (with-plot-stream (str :title title :data-style :histeps
-                             (remove-plist opts :key))
+                       ", bin size from ~:D to ~:D~%" i a))
+      (when mean
+        (flet ((vertical (x width)
+                 (make-arrow
+                  :beg (make-point
+                        :x (make-coordinate :pos x)
+                        :y (make-coordinate :system :graph :pos 0))
+                  :end (make-point
+                        :x (make-coordinate :pos x)
+                        :y (make-coordinate :system :graph :pos 1))
+                  :width width)))
+          (setq arrows (list (vertical (mdl-mn mdl) 4)))
+          (let ((lo (- (mdl-mn mdl) (mdl-sd mdl))))
+            (when (>= lo min)
+              (push (vertical lo 2) arrows)))
+          (let ((hi (+ (mdl-mn mdl) (mdl-sd mdl))))
+            (when (<= hi max)
+              (push (vertical hi 2) arrows)))))
+      (with-plot-stream (str :title title :data-style :histeps :arrows arrows
+                             (remove-plist opts :key :mean))
         (format str "plot '-' using 1:2~%")
         (dotimes (i nbins)
           (format str "~F~20T~F~%" (+ min (/ (1+ (* 2 i)) scale 2))

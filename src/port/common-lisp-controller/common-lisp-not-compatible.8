@@ -1,17 +1,16 @@
 .\" 	-*- Mode: Nroff -*-
-.TH "common-lisp-source-compatible" "8" "" "" ""
+.TH "common-lisp-not-compatible" "8" "" "" ""
 
 .SH "NAME"
-common-lisp-source-compatible \- Sets autobuilding based on Common Lisp source ompatibility
+common-lisp-not-compatible \- Sets autobuilding based on Common Lisp source ompatibility
 
 .SH "SYNOPSIS"
-.B common-lisp-source-compatible source-pkg-name [impl ...] [OPTIONS]
+.B common-lisp-not-compatible source-pkg-name [impl ...] [OPTIONS]
 
 .SH "DESCRIPTION"
 This command sets compatibility for a Common Lisp source package.
 This function will set the package's autobuild to "no" for
-all known implementations except for the implementations supplied
-on the command line.
+all implementations supplied on the command line.
 .PP
 This command also accepts these "virtual" implementation names
 .BR

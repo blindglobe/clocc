@@ -44,7 +44,8 @@ install: build
 	dh_install unregister-common-lisp-implementation $(CLC_SBIN)
 	dh_install reregister-common-lisp-implementations $(CLC_SBIN)
 	dh_install check-common-lisp-autobuild $(CLC_SBIN)
-	dh_install common-lisp-source-compatible $(CLC_SBIN)	
+	dh_install common-lisp-only-compatible $(CLC_SBIN)	
+	dh_install common-lisp-not-compatible $(CLC_SBIN)	
 	dh_install clc-build-daemon $(CLC_SBIN)
 	dh_install clc-send-command $(CLC_BIN)
 	dh_install common-lisp-controller.lisp $(CLC_SRC)
@@ -76,7 +77,8 @@ binary-arch: build install
 #	dh_undocumented
 	dh_installman clc-send-command.1 clc-build-daemon.8 register-common-lisp-implementation.8 register-common-lisp-source.8 \
                 unregister-common-lisp-implementation.8 unregister-common-lisp-source.8 reregister-common-lisp-implementations.8 \
-		common-lisp-source-compatible.8 check-common-lisp-autobuild.8
+		common-lisp-only-compatible.8 check-common-lisp-autobuild.8 \
+		common-lisp-not-compatible.8
 	dh_link
 	dh_strip
 	dh_compress

@@ -1,0 +1,33 @@
+.\" 	-*- Mode: Nroff -*-
+.TH "common-lisp-only-compatible" "8" "" "" ""
+
+.SH "NAME"
+common-lisp-only-compatible \- Sets autobuilding based on Common Lisp source ompatibility
+
+.SH "SYNOPSIS"
+.B common-lisp-only-compatible source-pkg-name [impl ...] [OPTIONS]
+
+.SH "DESCRIPTION"
+This command sets compatibility for a Common Lisp source package.
+This function will set the package's autobuild to "no" for
+all known implementations except for the implementations supplied
+on the command line.
+.PP
+This command also accepts these "virtual" implementation names
+.BR
+  cmucl    (equivalent to "cmucl-normal cmucl-safe cmucl-safe")
+.BR
+  allegro  (equivalent to "acl alisp alisp8 mlisp mlisp8")
+
+.SH "OPTIONS"
+.TP 16
+.B \-h
+Print short help message
+
+.SH "BUGS"
+
+Bug reports should be sent to the debian BTS, preferably with
+reportbug.
+
+.SH "AUTHOR"
+Kevin M. Rosenberg <kmr@debian.org>, Sep 2002

@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.4 $'
+pversion='$Revision: 1.1 $'
 
 # This is a list of all known CLC-compatible implementation
 known_impl="cmucl-normal cmucl-safe cmucl-small sbcl clisp acl alisp alisp8 mlisp mlisp8 lispworks openmcl"
@@ -15,8 +15,7 @@ usage()
 Usage: $progname package-name [implementation ...] [OPTIONS]
 $progname sets compatibility for a Common Lisp source package.
 This function will set the package's autobuild to "no" for
-all known implementations except for the implementations supplied
-on the command line.
+all implementations supplied on the command line.
 
 This command also accepts these "virtual" implementation names
   cmucl    (equivalent to "cmucl-normal cmucl-safe cmucl-safe")
@@ -40,7 +39,7 @@ fi
 source=$1
 shift
 
-compatible_impl=""
+uncompatible_impl=""
 # Command line
 while [ $# != 0 ]; do
     case "$1" in
@@ -53,15 +52,15 @@ while [ $# != 0 ]; do
 	    elif [ "$arg" = "allegro" ]; then
 		arg="acl alisp alisp8 mlisp mlisp8"
 	    fi
-	    compatible_impl="$arg $compatible_impl"
+	    uncompatible_impl="$arg $uncompatible_impl"
 	    ;;
     esac
     shift
 done
 
 for impl in $known_impl; do
-    expr=$(expr "$compatible_impl" : ".*\($impl\).*") || true
-    if [ ! "$expr" ]; then
+    expr=$(expr "$uncompatible_impl" : ".*\($impl\).*") || true
+    if [ "$expr" ]; then
 	mkdir -p /etc/common-lisp/$impl/$source
 	echo "no" > /etc/common-lisp/$impl/$source/autobuild
     fi

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.4 2000/05/12 18:36:09 sds Exp $
+;;; $Id: animals.lisp,v 2.5 2000/05/16 22:40:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,7 +15,7 @@
   (require :miscprint (translate-logical-pathname "cllib:miscprint"))
   ;; `write-to-file', `save-restore'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
-  ;; `*clos-readtable*'
+  ;; `+clos-readtable+'
   (require :closio (translate-logical-pathname "cllib:closio"))
   ;; `symbol-concat'
   (require :symb (translate-logical-pathname "cllib:symb")))
@@ -193,7 +193,7 @@ Returnes a fresh string."
   (save-restore file :name "network.dat"
                 :var '*network* :basedir *datadir*
                 :voidp (lambda (ht) (>= 1 (hash-table-count ht)))
-                :readtable *clos-readtable*
+                :readtable +clos-readtable+
                 :pre-save #'hash-table->alist
                 :post-read #'alist->hash-table))
 

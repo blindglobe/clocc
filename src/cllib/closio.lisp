@@ -1,12 +1,12 @@
 ;;; Read/Write CLOS objects
 ;;; Load this file and you will be able to print CLOS objects with #[] format,
-;;; bind `*readtable*' to `*clos-readtable*' and `read' will read #[]
+;;; bind `*readtable*' to `+clos-readtable+' and `read' will read #[]
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.6 2000/05/12 18:36:16 sds Exp $
+;;; $Id: closio.lisp,v 1.7 2000/05/16 22:40:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,7 +14,7 @@
 
 (in-package :cllib)
 
-(export '(*clos-readtable* make-clos-readtable macroexpand-r))
+(export '(+clos-readtable+ make-clos-readtable macroexpand-r))
 
 ;;;
 ;;; {{{ print structure in CMUCL via `print-object'
@@ -32,7 +32,7 @@
 ;;; }}}{{{ read CLOS objects
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL for `*clos-readtable*'
+(eval-when (compile load eval)  ; CMUCL for `+clos-readtable+'
 (defun read-object (st char arg)
   "Read an instance of a CLOS class printed as #[name{ slot val}]"
   (declare (ignore char arg))
@@ -48,7 +48,7 @@
     rt))
 )
 
-(defconst *clos-readtable* readtable (make-clos-readtable)
+(defconst +clos-readtable+ readtable (make-clos-readtable)
   "The readtable for reading CLOS objects printed readably with #[].")
 
 ;;;

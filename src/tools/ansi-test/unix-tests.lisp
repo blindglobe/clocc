@@ -23,6 +23,11 @@
  (#+cmu unix:unix-access #+sbcl sb-unix:unix-access "test-dir" #+cmu unix:f_ok #+sbcl sb-unix:f_ok)
  T)
 
+(with-open-file (file "test-dir/a"
+		      :direction :output
+		      :if-exists :supersede)
+  (princ "hello world" file))
+		      
 (my-assert
  (#+cmu unix:unix-access #+sbcl sb-unix:unix-access "test-dir/a" #+cmu unix:r_ok #+sbcl sb-unix:r_ok)
  T)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.10 2001/11/02 22:31:15 sds Exp $
+;;; $Id: autoload.lisp,v 1.11 2003/07/01 19:26:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,16 +27,18 @@
   (declare (symbol symb) (type (or simple-string null) comment))
   (export (list symb))
   (unless (fboundp symb)
-    (setf (fdefinition symb)
-          (lambda (&rest args)
-            (setf (documentation symb 'function) nil)
-            (fmakunbound symb)
-            (format t "; ~s is being autoloaded from `~a'~%" symb file)
-            (require file (translate-logical-pathname
-                           (concatenate 'string "cllib:" file)))
-            (apply (fdefinition symb) args))
-          (documentation symb 'function)
-          (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment))))
+    (let ((path (translate-logical-pathname
+                 (concatenate 'string "cllib:" file))))
+      (setf (fdefinition symb)
+            (lambda (&rest args)
+              (setf (documentation symb 'function) nil)
+              (fmakunbound symb)
+              (format t "; ~s is being autoloaded from `~a'~%" symb file)
+              (require file path)
+              (apply (fdefinition symb) args))
+            #+clisp (documentation symb 'sys::file) #+clisp path
+            (documentation symb 'function)
+            (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment)))))
 
 )
 

@@ -1,3 +1,24 @@
+2004-06-09  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* INSTALLATION, README, impl-dependent/corman.lisp, impl-dependent/lispworks.lisp, load-cl-environment.lisp, operating-system.lisp:
+	Fixed a few buglets and made the system more portable.
+
+2004-01-21  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* README: Updated slightly.
+
+	* load-cl-environment.lisp:
+	Changed the installation procedure.  Now CL-ENVIRONMENT loads just by
+	loading the `loader' file.
+
+	* INSTALLATION: Changed the INSTALLATION instructions.
+
+	* env.system:
+	Cleaned up the definition to reflect the newest MK:DEFSYSTEM features.
+	Also changed the copyright notice.
+
 2004-01-21  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* README: Updated slightly.

@@ -1,0 +1,131 @@
+2002-02-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/README:
+	README file updated.
+
+2001-10-19  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/feature-tagged-type-class.lisp:
+	Added file containing the mixin class FEATURE-TAGGED-TYPE-CLASS.
+
+2001-10-09  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	Changed 'tag' slot declaration back to SYMBOL. (KEYWORD is causing
+	unforseen problems in CMUCL).
+
+2001-10-08  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/utilities.lisp:
+	Added `inline' declamation for CWD.
+
+	* /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	Added tags to some CL definition classes.
+
+	* /cvsroot/clocc/clocc/src/port/environment/impl-dependent/corman.lisp:
+	Added file for Corman Lisp dependencies.
+
+2001-08-29  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/env.system:
+	Changed dependencies for file "system-info".
+
+	* /cvsroot/clocc/clocc/src/port/environment/utilities.lisp:
+	Added CURRENT-WORKING-DIRECTORY and CWD.
+
+	* /cvsroot/clocc/clocc/src/port/environment/system-info.lisp:
+	Changed to use CURRENT-WORKING-DIRECTORY.
+
+	* /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Added definitions for Windows-XP and Windows-ME.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Fixed some translations ad added loading of implementation dependent
+	files.
+
+	* /cvsroot/clocc/clocc/src/port/environment/impl-dependent/lispworks.lisp, /cvsroot/clocc/clocc/src/port/environment/impl-dependent/lcl.lisp, /cvsroot/clocc/clocc/src/port/environment/impl-dependent/cmucl.lisp, /cvsroot/clocc/clocc/src/port/environment/impl-dependent/clisp.lisp, /cvsroot/clocc/clocc/src/port/environment/impl-dependent/allegro.lisp:
+	File added.
+
+	* /cvsroot/clocc/clocc/src/port/environment/environment.lisp, /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Updated copyright notice.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Added several exports "CURRENT-DIRECTORY-PATHNAME",
+	"CURRENT-WORKING-DIRECTORY", "CWD", etc etc.
+
+2001-08-14  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Added loading of "utilities" file.
+
+	* /cvsroot/clocc/clocc/src/port/environment/README: Updated.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Added export of FILE-SYSTEM-DIRECTORY-SEPARATOR.
+
+	* /cvsroot/clocc/clocc/src/port/environment/utilities.lisp: File added.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env.system:
+	Added file "utilities".
+
+	* /cvsroot/clocc/clocc/src/port/environment/system-info.lisp, /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	Cleaned up a bit.
+
+	* /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Added the :feature-tag initialization.
+
+	* /cvsroot/clocc/clocc/src/port/environment/machine.lisp:
+	Added the :feature-tag slot.
+
+	* /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp:
+	Cleaned up a bit.
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp:
+	Added definitions for variables *OS* and *CL*.
+	Note that the conditionalization for CMU will disappear soon (as a
+	matter of fact the latest CMUCL does contain DEFINE-SYMBOL-MACRO).
+
+	* /cvsroot/clocc/clocc/src/port/environment/env.system:
+	Tweaked a bit the definition of the system.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp:
+	Added a few exports, including COMPILED-FILE-EXTENSION.
+
+2000-10-11  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/env.system:
+	Added "lisp" :source-extension to DEFSYSTEM spec.
+
+2000-10-10  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+2000-09-02  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/INSTALLATION, /cvsroot/clocc/clocc/src/port/environment/README:
+	Corrected some minor spelling mistakes.
+
+2000-03-23  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp:
+	Added some new OPERATING-SYSTEMs definitions and fixed initializations
+	for ACL and LW under MS-Windows and added completely new
+	initializations for CLisp.
+
+2000-02-26  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp, /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+
+2000-02-08  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/port/environment/COPYING, /cvsroot/clocc/clocc/src/port/environment/environment.lisp, /cvsroot/clocc/clocc/src/port/environment/INSTALLATION, /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/README, /cvsroot/clocc/clocc/src/port/environment/system-info.lisp:
+	First checkin of CL.ENVIRONMENT package.
+
+	* /cvsroot/clocc/clocc/src/port/environment/COPYING, /cvsroot/clocc/clocc/src/port/environment/environment.lisp, /cvsroot/clocc/clocc/src/port/environment/INSTALLATION, /cvsroot/clocc/clocc/src/port/environment/load-cl-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/README, /cvsroot/clocc/clocc/src/port/environment/system-info.lisp:
+	New file.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/env.system, /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/machine.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp, /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	First checkin of CL.ENVIRONMENT package.
+
+	* /cvsroot/clocc/clocc/src/port/environment/env-package.lisp, /cvsroot/clocc/clocc/src/port/environment/env.system, /cvsroot/clocc/clocc/src/port/environment/init-environment.lisp, /cvsroot/clocc/clocc/src/port/environment/machine.lisp, /cvsroot/clocc/clocc/src/port/environment/operating-system.lisp, /cvsroot/clocc/clocc/src/port/environment/software.lisp:
+	New file.
+

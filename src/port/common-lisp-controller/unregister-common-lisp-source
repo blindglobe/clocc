@@ -21,7 +21,7 @@ FILE="/usr/share/common-lisp/systems/$1.system"
 SOURCENAME="/usr/share/common-lisp/source/$1"
 if [ ! -h "$SOURCENAME" ] ; then
     cat <<EOF
-$0: synlink $SOURCENAME does not exist.
+$0: symlink $SOURCENAME does not exist.
 
 This is where I expected package $1 to be.
 

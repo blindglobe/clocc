@@ -20,7 +20,7 @@ fi
 FILE="/usr/share/common-lisp/systems/$1.system"
 SOURCENAME="/usr/share/common-lisp/source/$1"
 
-if [ ! -d "$SOURCENAME" -o  ! -h "$SOURCENAME" ] ; then    
+if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then    
     cat <<EOF
 $0: directory or symlink $SOURCENAME does not exist.
 

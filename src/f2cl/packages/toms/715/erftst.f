@@ -340,11 +340,11 @@ C-----------------------------------------------------------------
      1    10X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number'//)
- 1021 FORMAT(' The maximum relative error of',E15.4,' = ',I4,' **',
-     1    F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1    F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1    ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
      1    ' = ',I4,' **',F7.2)
  1025 FORMAT('1Special Tests'//)
  1030 FORMAT(7X,'Estimated loss of base',i3,'significant digits in'//
@@ -352,21 +352,21 @@ C-----------------------------------------------------------------
      1       3X,'Erfcx(x)-exp(x*x)*erfc(x)'/)
  1031 FORMAT(F7.3,3F16.2)
  1040 FORMAT(//' Test of special arguments'//)
- 1041 FORMAT('   ERF (',E13.6,') = ',E13.6//)
- 1042 FORMAT('  ERFC (',E13.6,') = ',E13.6//)
+ 1041 FORMAT('   ERF (',E13.6E3,') = ',E13.6E3//)
+ 1042 FORMAT('  ERFC (',E13.6E3,') = ',E13.6E3//)
  1050 FORMAT(' Test of Error Returns'///)
- 1052 FORMAT(' ERFC will be called with the argument',E13.6,/
+ 1052 FORMAT(' ERFC will be called with the argument',E13.6E3,/
      1    ' This should not underflow'//)
- 1053 FORMAT(' ERFC will be called with the argument',E13.6,/
+ 1053 FORMAT(' ERFC will be called with the argument',E13.6E3,/
      1    ' This may underflow'//)
- 1054 FORMAT(' ERFCX will be called with the argument',E13.6,/
+ 1054 FORMAT(' ERFCX will be called with the argument',E13.6E3,/
      1    ' This should not underflow'//)
- 1055 FORMAT(' ERFCX will be called with the argument',E13.6,/
+ 1055 FORMAT(' ERFCX will be called with the argument',E13.6E3,/
      1    ' This should not overflow'//)
- 1056 FORMAT(' ERFCX will be called with the argument',E13.6,/
+ 1056 FORMAT(' ERFCX will be called with the argument',E13.6E3,/
      1    ' This may overflow'//)
- 1062 FORMAT(' ERFC returned the value',E13.6///)
- 1064 FORMAT(' ERFCX returned the value',E13.6///)
+ 1062 FORMAT(' ERFC returned the value',E13.6E3///)
+ 1064 FORMAT(' ERFCX returned the value',E13.6E3///)
  1100 FORMAT(' This concludes the tests')
 C---------- Last line of ERF test program ----------
       END

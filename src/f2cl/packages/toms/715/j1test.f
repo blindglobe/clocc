@@ -62,7 +62,7 @@ C--------------------------------------------------------------------
 CS    DATA ZERO,ONE,FOUR,DELTA/0.0E0,1.0E0,4.0E0,0.0625E0/,
 CS   1   EIGHT,TWENTY,ALL9,TWO56/8.0E0,20.0E0,-999.0E0,256.0E0/,
 CS   2   TWO,THRTEN,SIXTEN,ELEV/2.0E0,13.0E0,16.0E0,11.0E0/
-      DATA ZERO,ONE,FOUR,DELTA/0.0D0,1.0D0,4.0E0,0.0625D0/,
+      DATA ZERO,ONE,FOUR,DELTA/0.0D0,1.0D0,4.0D0,0.0625D0/,
      1   EIGHT,TWENTY,ALL9,TWO56/8.0D0,20.0D0,-999.0D0,256.0D0/,
      2   TWO,THRTEN,SIXTEN,ELEV/2.0D0,13.0D0,16.0D0,11.0D0/
 C--------------------------------------------------------------------
@@ -115,8 +115,8 @@ CS    DATA XI/981.0E0,1796.0E0/
 CS    DATA YX(1)/-1.3100 39300 13279 72376 E-4/,
 CS   1     YX(2)/ 1.1503 46070 23016 98285 E-5/
       DATA XI/981.0D0,1796.0D0/
-      DATA YX(1)/-1.3100 39300 13279 72376 D-4/,
-     1     YX(2)/ 1.1503 46070 23016 98285 D-5/
+      DATA YX(1)/-1.3100393001327972376D-4/,
+     1     YX(2)/ 1.1503460702301698285D-5/
 C--------------------------------------------------------------------
 C  Statement functions for conversion between integer and float
 C--------------------------------------------------------------------
@@ -301,26 +301,26 @@ C--------------------------------------------------------------------
  1000 FORMAT('1Test of J1(X) VS Maclaurin expansion'  //)
  1001 FORMAT('1Test of J1(X) VS local Taylor expansion'  //)
  1010 FORMAT(I7,' random arguments were tested from the interval ',
-     1 1H(,F5.1,1H,,F5.1,1H)//)
+     1 '(',F5.1,',',F5.1,')'//)
  1011 FORMAT(' ABS(J1(X)) was larger',I6,' times', /
      1     15X,' agreed',I6,' times, and'/
      1   11X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number.' //)
- 1021 FORMAT(' The maximum relative error of',E15.4,3H = ,I4,3H **,
-     1  F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1  F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1  ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
-     1    3H = ,I4,3H **,F7.2)
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
+     1    ' = ',I4,' **',F7.2)
  1030 FORMAT('1Special Tests'//)
  1031 FORMAT(' Accuracy near zeros'//10X,'X',15X,'BESJ1(X)',
      1    13X,'Loss of base',I3,' digits'/)
- 1032 FORMAT(E20.10,E25.15,8X,F7.2/)
+ 1032 FORMAT(E20.10E3,E25.15E3,8X,F7.2/)
  1033 FORMAT(//' Test with extreme arguments'///)
- 1034 FORMAT(' J1 will be called with the argument ',E17.10/
+ 1034 FORMAT(' J1 will be called with the argument ',E17.10E3/
      1     ' This may stop execution.'//)
- 1036 FORMAT(' J1 returned the value',E25.17/)
+ 1036 FORMAT(' J1 returned the value',E25.17E3/)
  1100 FORMAT(' This concludes the tests.')
 C---------- Last card of BESJ1 test program ----------
       END

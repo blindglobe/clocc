@@ -478,22 +478,22 @@ C----------------------------------------------------------------------
      1    11X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number'//)
- 1021 FORMAT(' The maximum relative error of',E15.4,' = ',I4,' **',
-     1    F7.2/4X,'occurred for X =',E13.6,' and NU =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1    F7.2/4X,'occurred for X =',E13.6E3,' and NU =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1    ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
      1    ' = ',I4,' **',F7.2)
  2006 FORMAT('1Check of Error Returns'///
      1    ' The following summarizes calls with indicated parameters'//
      2    ' NCALC different from MB indicates some form of error'//
      3    ' See documentation for RIBESL for details'//
      4    7X,'ARG',12X,'ALPHA',6X,'MB',3X,'IZ',7X,'RES',6X,'NCALC'//)
- 2011 FORMAT(2E15.7,2I5,E15.7,I5//)
- 2012 FORMAT(' RIBESL will be called with the argument',E13.6)
+ 2011 FORMAT(2E15.7E3,2I5,E15.7E3,I5//)
+ 2012 FORMAT(' RIBESL will be called with the argument',E13.6E3)
  2013 FORMAT(' This should trigger an error message.')
  2014 FORMAT(' NCALC returned the value',I5/
-     1    ' and RIBESL returned the value',E13.6/)
+     1    ' and RIBESL returned the value',E13.6E3/)
  2015 FORMAT(' Tests near the largest argument for scaled functions'/)
  2016 FORMAT(' Tests near the largest argument for unscaled functions'/)
  2020 FORMAT(' This concludes the tests.')

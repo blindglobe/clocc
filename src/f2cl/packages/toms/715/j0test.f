@@ -62,7 +62,7 @@ C--------------------------------------------------------------------
 CS    DATA ZERO,ONE,FOUR,DELTA/0.0E0,1.0E0,4.0E0,0.0625E0/,
 CS   1   EIGHT,TWENTY,ALL9,TWO56/8.0E0,20.0E0,-999.0E0,256.0E0/,
 CS   2   SIXTEN,ELEV/16.0E0,11.0E0/
-      DATA ZERO,ONE,FOUR,DELTA/0.0D0,1.0D0,4.0E0,0.0625D0/,
+      DATA ZERO,ONE,FOUR,DELTA/0.0D0,1.0D0,4.0D0,0.0625D0/,
      1   EIGHT,TWENTY,ALL9,TWO56/8.0D0,20.0D0,-999.0D0,256.0D0/,
      2   SIXTEN,ELEV/16.0D0,11.0D0/
 C--------------------------------------------------------------------
@@ -115,8 +115,8 @@ CS    DATA XI/616.0E0,1413.0E0/
 CS    DATA YX(1)/-7.3927 64822 17001 92757 E-4/,
 CS   1     YX(2)/-1.8608 65179 75735 03393 E-4/
       DATA XI/616.0D0,1413.0D0/
-      DATA YX(1)/-7.3927 64822 17001 92757 D-4/,
-     1     YX(2)/-1.8608 65179 75738 79013 D-4/
+      DATA YX(1)/-7.3927648221700192757D-4/,
+     1     YX(2)/-1.8608651797573879013D-4/
 C--------------------------------------------------------------------
 C  Statement functions for conversion between integer and float
 C--------------------------------------------------------------------
@@ -285,20 +285,20 @@ C--------------------------------------------------------------------
      1   11X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number.' //)
- 1021 FORMAT(' The maximum relative error of',E15.4,3H = ,I4,3H **,
-     1  F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1  F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1  ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
      1    3H = ,I4,3H **,F7.2)
  1030 FORMAT('1Special Tests'//)
  1031 FORMAT(' Accuracy near zeros'//10X,'X',15X,'BESJ0(X)',
      1    13X,'Loss of base',I3,' digits'/)
- 1032 FORMAT(E20.10,E25.15,8X,F7.2/)
+ 1032 FORMAT(E20.10E3,E25.15E3,8X,F7.2/)
  1033 FORMAT(//' Test with extreme arguments'///)
- 1034 FORMAT(' J0 will be called with the argument ',E17.10/
+ 1034 FORMAT(' J0 will be called with the argument ',E17.10E3/
      1     ' This may stop execution.'//)
- 1036 FORMAT(' J0 returned the value',E25.17/)
+ 1036 FORMAT(' J0 returned the value',E25.17E3/)
  1100 FORMAT(' This concludes the tests.')
 C---------- Last card of BESJ0 test program ----------
       END

@@ -268,22 +268,22 @@ C--------------------------------------------------------------------
      1    16X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number.'//)
- 1021 FORMAT(' The maximum relative error of',E15.4,' = ',I4,' **',
-     1    F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1    F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1    ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
      1    ' = ',I4,' **',F7.2)
- 1024 FORMAT(' The maximum absolute error of',E15.4,' = ',I4,' **',
-     1    F7.2/4X,'occurred for X =',E13.6)
- 1025 FORMAT(' The root mean square absolute error was',E15.4,
+ 1024 FORMAT(' The maximum absolute error of',E15.4E3,' = ',I4,' **',
+     1    F7.2/4X,'occurred for X =',E13.6E3)
+ 1025 FORMAT(' The root mean square absolute error was',E15.4E3,
      1    ' = ',I4,' **',F7.2)
  1030 FORMAT('1Special Tests'//)
  1031 FORMAT(//' Test with extreme arguments'/)
- 1032 FORMAT(' K1(XLEAST) = ',E24.17/)
- 1033 FORMAT(' K1(',I1,') = ',E24.17/)
- 1034 FORMAT(' K1(',E24.17,' ) = ',E24.17/)
- 1035 FORMAT(' E**X * K1(XMAX) = ',E24.17/)
- 1036 FORMAT(' K1(XMIN) = ',E24.17/)
+ 1032 FORMAT(' K1(XLEAST) = ',E24.17E3/)
+ 1033 FORMAT(' K1(',I1,') = ',E24.17E3/)
+ 1034 FORMAT(' K1(',E24.17E3,' ) = ',E24.17E3/)
+ 1035 FORMAT(' E**X * K1(XMAX) = ',E24.17E3/)
+ 1036 FORMAT(' K1(XMIN) = ',E24.17E3/)
 C---------- Last line of BESK0 test program ----------
       END

@@ -58,7 +58,7 @@ CS   1   HALF,EIGHT,TWENTY,ALL9/0.5E0,8.0E0,20.0E0,-999.0E0/,
 CS   2   XL2/6.9314718055994530942E-1/,
 CS   3   ONE7,ONE6/-17.625E0,-16.875E0/,
 CS   4   X0,X01,V0/374.0E0,256.0E0,-6.7240239024288040437E-04/
-      DATA ZERO,ONE,THREE/0.0E0,1.0E0,3.0E0/,
+      DATA ZERO,ONE,THREE/0.0D0,1.0D0,3.0D0/,
      1   HALF,EIGHT,TWENTY,ALL9/0.5D0,8.0D0,20.0D0,-999.0D0/,
      2   XL2/6.9314718055994530942D-1/,
      3   ONE7,ONE6/-17.625D0,-16.875D0/,
@@ -214,21 +214,21 @@ C--------------------------------------------------------------------
      1   17X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number.' //)
- 1021 FORMAT(' The maximum relative error of',E15.4,3H = ,I4,3H **,
-     1  F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,3H = ,I4,3H **,
+     1  F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1  ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
      1    3H = ,I4,3H **,F7.2)
  1030 FORMAT('1Special Tests'//)
- 1031 FORMAT(' Accuracy near positive zero'//' PSI(',E14.7,') = ',
-     1    E24.17/13X,'Loss of base',I3,' digits = ',F7.2/)
+ 1031 FORMAT(' Accuracy near positive zero'//' PSI(',E14.7E3,') = ',
+     1    E24.17E3/13X,'Loss of base',I3,' digits = ',F7.2/)
  1033 FORMAT(//' Test with extreme arguments'/)
- 1034 FORMAT(' PSI will be called with the argument ',E17.10/
+ 1034 FORMAT(' PSI will be called with the argument ',E17.10E3/
      1     ' This may stop execution.'/)
- 1035 FORMAT(' PSI will be called with the argument ',E17.10/
+ 1035 FORMAT(' PSI will be called with the argument ',E17.10E3/
      1     ' This should not stop execution.'/)
- 1036 FORMAT(' PSI returned the value',E25.17//)
+ 1036 FORMAT(' PSI returned the value',E25.17E3//)
  1037 FORMAT(//' Test of error returns'//)
  1100 FORMAT(' This concludes the tests.')
 C---------- Last card of PSI test program ----------

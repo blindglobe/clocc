@@ -64,7 +64,7 @@ C--------------------------------------------------------------------
 CS    DATA ZERO,ONE,FOUR/0.0E0,1.0E0,4.0E0/,
 CS   1   EIGHT,TWENTY,ALL9,TWO56/8.0E0,20.0E0,-999.0E0,256.0E0/,
 CS   2   HALF,SIXTEN,XLAM,HUND/0.5E0,16.0E0,0.9375E0,100.0E0/
-      DATA ZERO,ONE,FOUR/0.0D0,1.0D0,4.0E0/,
+      DATA ZERO,ONE,FOUR/0.0D0,1.0D0,4.0D0/,
      1   EIGHT,TWENTY,ALL9,TWO56/8.0D0,20.0D0,-999.0D0,256.0D0/,
      2   HALF,SIXTEN,XLAM,HUND/0.5D0,16.0D0,0.9375D0,100.0D0/
 C--------------------------------------------------------------------
@@ -74,8 +74,8 @@ CS    DATA XI/562.0E0,1390.0E0/
 CS    DATA YX(1)/-9.5282 39309 77227 03132 E-4/
 CS   1     YX(2)/-2.1981 83008 05980 02741 E-6/
       DATA XI/562.0D0,1390.0D0/
-      DATA YX(1)/-9.5282 39309 77227 03132 D-4/,
-     1     YX(2)/-2.1981 83008 05980 02741 D-6/
+      DATA YX(1)/-9.5282393097722703132D-4/,
+     1     YX(2)/-2.1981830080598002741D-6/
 C--------------------------------------------------------------------
 C  Statement functions for conversion between integer and float
 C--------------------------------------------------------------------
@@ -267,32 +267,32 @@ C--------------------------------------------------------------------
 C--------------------------------------------------------------------
  1000 FORMAT('1Test of Y1(X) VS Multiplication Theorem'  //)
  1010 FORMAT(I7,' random arguments were tested from the interval ',
-     1 1H(,F5.1,1H,,F5.1,1H)//)
+     1 '(',F5.1,',',F5.1,')'//)
  1011 FORMAT(' ABS(Y1(X)) was larger',I6,' times', /
      1     15X,' agreed',I6,' times, and'/
      1   11X,'was smaller',I6,' times.'//)
  1020 FORMAT(' There are',I4,' base',I4,
      1    ' significant digits in a floating-point number.' //)
- 1021 FORMAT(' The maximum relative error of',E15.4,3H = ,I4,3H **,
-     1  F7.2/4X,'occurred for X =',E13.6)
+ 1021 FORMAT(' The maximum relative error of',E15.4E3,' = ',I4,' **',
+     1  F7.2/4X,'occurred for X =',E13.6E3)
  1022 FORMAT(' The estimated loss of base',I4,
      1  ' significant digits is',F7.2//)
- 1023 FORMAT(' The root mean square relative error was',E15.4,
-     1    3H = ,I4,3H **,F7.2)
- 1024 FORMAT(' The maximum absolute error of',E15.4,3H = ,I4,3H **,
-     1  F7.2/4X,'occurred for X =',E13.6)
- 1025 FORMAT(' The root mean square absolute error was',E15.4,
-     1    3H = ,I4,3H **,F7.2)
+ 1023 FORMAT(' The root mean square relative error was',E15.4E3,
+     1    ' = ',I4,' **',F7.2)
+ 1024 FORMAT(' The maximum absolute error of',E15.4E3,' = ',I4,' **',
+     1  F7.2/4X,'occurred for X =',E13.6E3)
+ 1025 FORMAT(' The root mean square absolute error was',E15.4E3,
+     1    ' = ',I4,' **',F7.2)
  1030 FORMAT('1Special Tests'//)
- 1031 FORMAT(' Accuracy near zeros'//10X,'X',15X,'BESY1(X)',
+ 1031 FORMAT(' Accuracy near zeros',//,10X,'X',15X,'BESY1(X)',
      1    13X,'Loss of base',I3,' digits'/)
- 1032 FORMAT(E20.10,E25.15,8X,F7.2/)
+ 1032 FORMAT(E20.10E3,E25.15E3,8X,F7.2/)
  1033 FORMAT(//' Test with extreme arguments'///)
- 1034 FORMAT(' Y1 will be called with the argument ',E17.10/
+ 1034 FORMAT(' Y1 will be called with the argument ',E17.10E3/
      1     ' This may stop execution.'//)
- 1035 FORMAT(' Y1 will be called with the argument ',E17.10/
+ 1035 FORMAT(' Y1 will be called with the argument ',E17.10E3/
      1     ' This should not stop execution.'//)
- 1036 FORMAT(' Y1 returned the value',E25.17/)
+ 1036 FORMAT(' Y1 returned the value',E25.17E3/)
  1100 FORMAT(' This concludes the tests.')
 C---------- Last card of BESY1 test program ----------
       END

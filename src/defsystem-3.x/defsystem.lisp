@@ -1041,6 +1041,9 @@
 (eval-when (compile load eval)
   (in-package "MAKE"))
 
+#+ecl
+(in-package "MAKE")
+
 ;;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu> 19970105
 ;;; 'provide' is not esternal in 'CLTL1' in Allegro v 4.1
 #+(and :excl :allegro-v4.0 :cltl2)
@@ -3317,7 +3320,7 @@ D
 	  ;; CL implementations may uniformly default this to nil
 	  (let ((*load-verbose* #-common-lisp-controller t
 				#+common-lisp-controller nil) ; nil
-		#-(or MCL CMU CLISP :sbcl lispworks)
+		#-(or MCL CMU CLISP ECL :sbcl lispworks)
 		(*compile-file-verbose* t) ; nil
 		#+common-lisp-controller
 		(*compile-print* nil)
@@ -3880,7 +3883,7 @@ D
   #+:allegro (excl:run-shell-command
 	      (format nil "~A~@[ ~{~A~^ ~}~]"
 		      program arguments))
-  #+KCL (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
+  #+(or :kcl :ecl) (system (format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
   #+:cmu (extensions:run-program program arguments)
   #+:sbcl (sb-ext:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.50 2004/11/09 20:24:49 sds Exp $
+;;; $Id: url.lisp,v 2.51 2004/11/09 21:57:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -62,14 +62,14 @@
 (defconst +bad-url+ url (make-url) "*The convenient constant for init.")
 
 (defcustom *rfc-base* (or null string)
-  "http://www.cis.ohio-state.edu/htbin/rfc/rfc~d.html"
+  "http://www.faqs.org/rfcs/rfc~d.html"
   "*The format string used to generate the URL in `protocol-rfc'.
 When NIL, just the RFC numbers are returned.")
 
 (defun protocol-rfc (protocol)
   "Return the RFC url for the given protocol.
 See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
-<http://www.internic.net/wp>, <ftp://ds.internic.net/rfc> and `*rfc-base*'."
+<http://www.faqs.org/rfcs/> and `*RFC-BASE*'."
   (let* ((prot (typecase protocol
                  (symbol (if (keywordp protocol) protocol (kwd protocol)))
                  (string (kwd protocol))
@@ -87,11 +87,9 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
                  ((:nntp :news) '(977))
                  (t (error 'code :proc 'protocol-rfc :args (list prot)
                            :mesg "Cannot handle protocol ~s")))))
-    (maplist (lambda (cc)
-               (setf (car cc)
-                     (if *rfc-base*
-                         (url (format nil *rfc-base* (car cc))) (car cc))))
-             rfcs)))
+    (if *rfc-base*
+        (mapcar (lambda (cc) (url (format nil *rfc-base* cc))) rfcs)
+        rfcs)))
 
 (defun url-get-port (url)
   "Get the correct port of the URL - if the port is not recorded there,

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-05-24 Mon 15:21:13 EDT sds@goems.com>
+;;; File: <math.lisp - 1999-10-13 Wed 11:40:43 EDT sds@ksp.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,75 +9,78 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.19 1999/05/24 21:06:04 sds Exp $
+;;; $Id: math.lisp,v 1.20 1999/10/13 15:40:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
-;;; Revision 1.19  1999/05/24 21:06:04  sds
-;;; (volatility): `dev-fn' keyword argument.
-;;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
+;;; Revision 1.20  1999/10/13 15:40:47  sds
+;;; (percent-change): handle 0 arguments.
 ;;;
-;;; Revision 1.18  1999/04/17 22:34:17  sds
-;;; (safe-fun): use `values-list'.
-;;; (safe-fun1): new macro.
-;;;
-;;; Revision 1.17  1999/03/17 21:37:32  sds
-;;; Added `eval-cont-fract' and `fract-approx'.
-;;;
-;;; Revision 1.16  1999/02/25 17:33:51  sds
-;;; Moved `lincom' here from date.lisp.
-;;;
-;;; Revision 1.15  1999/02/25 04:40:36  sds
-;;; `volatility': swapped return values.
-;;;
-;;; Revision 1.14  1999/02/22 22:56:10  sds
-;;; Use `:min-len' key in the `call-on-split' call in `volatility'.
-;;;
-;;; Revision 1.13  1999/01/13 23:37:56  sds
-;;; Replaced CMUCL-specific print functions with a call to
-;;; `print-struct-object'.
-;;;
-;;; Revision 1.12  1999/01/07 04:07:34  sds
-;;; Use `index-t' instead of (unsigned-byte 20).
-;;;
-;;; Revision 1.11  1998/11/23 21:22:13  sds
-;;; Added MDL structure.
-;;;
-;;; Revision 1.10  1998/11/13 20:16:58  sds
-;;; Added `mean-some'.
-;;;
-;;; Revision 1.9  1998/10/29 21:57:17  sds
-;;; Fixed `standard-deviation-relative' to compute the actual volatility.
-;;;
-;;; Revision 1.8  1998/09/03 13:54:08  sds
-;;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
-;;; `make-primes-list', `*primes*', `*primes-file*'.
-;;; Special case 2 point regression in `regress'; don't signal error on
-;;; negative error, just print a message and assume 0.
-;;;
-;;; Revision 1.7  1998/07/31 16:41:24  sds
-;;; Declare `stream' as a stream in `print-*'.
-;;; Take `sqrt' of the correlation in `regress-n'.
-;;;
-;;; Revision 1.6  1998/07/10 21:11:35  sds
-;;; Added `regress-n' and `regress-poly'.
-;;; Ditched `regress2' and `det3'.
-;;;
-;;; Revision 1.5  1998/06/19 21:41:40  sds
-;;; Use `defmethod' to print structures.
-;;;
-;;; Revision 1.4  1998/06/19 20:10:38  sds
-;;; Made `normalize' work with arbitrary sequences.
-;;; Many minor declarations for CMUCL added.
-;;;
-;;; Revision 1.3  1998/06/16 14:38:30  sds
-;;; Replaced division with recursion in `!!'.
-;;;
-;;; Revision 1.2  1998/05/27 21:24:47  sds
-;;; Added :key to `freqs' and moved it to list.lisp.
-;;;
-;;; Revision 1.1  1998/03/23 16:33:17  sds
-;;; Initial revision
-;;;
+;; Revision 1.19  1999/05/24 21:06:04  sds
+;; (volatility): `dev-fn' keyword argument.
+;; (integrate-simpson): fixed `sum-odd' loop `:sum' type statement.
+;;
+;; Revision 1.18  1999/04/17 22:34:17  sds
+;; (safe-fun): use `values-list'.
+;; (safe-fun1): new macro.
+;;
+;; Revision 1.17  1999/03/17 21:37:32  sds
+;; Added `eval-cont-fract' and `fract-approx'.
+;;
+;; Revision 1.16  1999/02/25 17:33:51  sds
+;; Moved `lincom' here from date.lisp.
+;;
+;; Revision 1.15  1999/02/25 04:40:36  sds
+;; `volatility': swapped return values.
+;;
+;; Revision 1.14  1999/02/22 22:56:10  sds
+;; Use `:min-len' key in the `call-on-split' call in `volatility'.
+;;
+;; Revision 1.13  1999/01/13 23:37:56  sds
+;; Replaced CMUCL-specific print functions with a call to
+;; `print-struct-object'.
+;;
+;; Revision 1.12  1999/01/07 04:07:34  sds
+;; Use `index-t' instead of (unsigned-byte 20).
+;;
+;; Revision 1.11  1998/11/23 21:22:13  sds
+;; Added MDL structure.
+;;
+;; Revision 1.10  1998/11/13 20:16:58  sds
+;; Added `mean-some'.
+;;
+;; Revision 1.9  1998/10/29 21:57:17  sds
+;; Fixed `standard-deviation-relative' to compute the actual volatility.
+;;
+;; Revision 1.8  1998/09/03 13:54:08  sds
+;; Ditched `sqr'.  Added `fibonacci', `primes-to', `divisors', `primep',
+;; `make-primes-list', `*primes*', `*primes-file*'.
+;; Special case 2 point regression in `regress'; don't signal error on
+;; negative error, just print a message and assume 0.
+;;
+;; Revision 1.7  1998/07/31 16:41:24  sds
+;; Declare `stream' as a stream in `print-*'.
+;; Take `sqrt' of the correlation in `regress-n'.
+;;
+;; Revision 1.6  1998/07/10 21:11:35  sds
+;; Added `regress-n' and `regress-poly'.
+;; Ditched `regress2' and `det3'.
+;;
+;; Revision 1.5  1998/06/19 21:41:40  sds
+;; Use `defmethod' to print structures.
+;;
+;; Revision 1.4  1998/06/19 20:10:38  sds
+;; Made `normalize' work with arbitrary sequences.
+;; Many minor declarations for CMUCL added.
+;;
+;; Revision 1.3  1998/06/16 14:38:30  sds
+;; Replaced division with recursion in `!!'.
+;;
+;; Revision 1.2  1998/05/27 21:24:47  sds
+;; Added :key to `freqs' and moved it to list.lisp.
+;;
+;; Revision 1.1  1998/03/23 16:33:17  sds
+;; Initial revision
+;;
 
 (in-package :cl-user)
 
@@ -91,7 +94,7 @@
 (defmacro sqr (xx)
   "Compute the square of a number, taking care to eval only once."
   (if (atom xx) `(* ,xx ,xx)
-      (let ((var (gensym "SQR"))) `(let ((,var ,xx)) (* ,var ,var)))))
+      (with-gensyms ("SQR-" var) `(let ((,var ,xx)) (* ,var ,var)))))
 
 ;;;
 ;;; Integers
@@ -506,10 +509,8 @@ Uses the numerically stable algorithm with pre-computing the means."
   "Return volatilities for the terms corresponding to SPLIT-KEY.
 The first value returned is the mean of the volatilities,
 the second - the volatilities themselves.
-E.g., (volatility (currency-hist (find-currency 'dx))
-                  (compose date-ye currency-rec-date)
-                  :key #'currency-rec-avg)
-will return the average annual volatility for US Dollar Index
+E.g., (volatility dated-list (compose date-ye date) :key #'value)
+will return the average annual volatility for the value in the dated-list
 and the list of the volatilities for each year."
   (declare (type (or function fixnum) split-key) (list lst)
            (type (function (sequence) double-float) dev-fn))
@@ -654,10 +655,13 @@ Return the modified LST. 20% faster than `convex-hull1'."
 If the optional DAYS is given, return the annualized change too."
   (declare (number v0 v1) (type (or null number) days)
            (values double-float (or null double-float)))
-  (let ((pers (dfloat (/ v1 v0))))
-    (if days
-        (values (to-percent pers) (to-percent (expt pers (/ 365.25d0 days))))
-        (to-percent pers))))
+  (if (zerop v0) (values 0.0 0.0)
+      (let ((pers (dfloat (/ v1 v0))))
+        (if (and days (not (zerop days)))
+            (values (to-percent pers)
+                    (if (zerop days) 0.0
+                        (to-percent (expt pers (/ 365.25d0 days)))))
+            (to-percent pers)))))
 
 (defun rel-diff (v0 v1)
   "Return the relative difference between the two numbers.
@@ -774,7 +778,7 @@ sides of the LINE. Call: (intersect LINE X0 Y0 X1 Y1)"
                      &optional (tol *num-tolerance*))
   "Eval ABOVE/BELOW/UPON depending on the relative position of line LN and
 point (XX YY) up to tolerance TOL.  Similar to FORTRAN's arithmetic IF."
-  (let ((di (gensym "WL")))
+  (with-gensyms ("WL-" di)
     `(let ((,di (- (line-val ,ln ,xx) ,yy)))
       (declare (double-float ,di))
       (cond ((> ,di ,tol) ,below) ((< ,di (- ,tol)) ,above) (t ,upon)))))

@@ -49,9 +49,9 @@
 
 (defclass allegro (generic-common-lisp-implementation)
   ((case-sensitive :type boolean :initarg :case-sensitive
-		   :accessor software-case-sensitive)
+		   :reader software-case-sensitive)
    (characters-16bits :type boolean :initarg :characters-16bits
-		      :accessor software-characters-16bits))
+		      :reader software-characters-16bits))
   (:default-initargs :feature-tag :allegro))
 
 (defclass lispworks (generic-common-lisp-implementation)
@@ -87,7 +87,7 @@
 
 ;; The default binary directory name is the lowercase of the feature tag
 
-(defgeneric software-binary-directory-name ((software software)))
+(defgeneric software-binary-directory-name (software))
 
 (defmethod software-binary-directory-name ((software software))
   (string-downcase (symbol-name (cl-feature-tag software))))

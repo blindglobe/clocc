@@ -88,9 +88,10 @@
 ;;;       CMU Common Lisp (M2.9 15-Aug-90, Compiler M1.8 15-Aug-90)
 ;;;       Macintosh Allegro Common Lisp (1.3.2)
 ;;;       Macintosh Common Lisp (2.0)
-;;;       ExCL (Franz Allegro CL 3.1.12 [DEC 3100] 11/19/90) :allegro-v3.1
-;;;       ExCL (Franz Allegro CL 4.0.1 [Sun4] 2/8/91)       :allegro-v4.0
+;;;       ExCL (Franz Allegro CL 3.1.12 [DEC 3100] 11/19/90)   :allegro-v3.1
+;;;       ExCL (Franz Allegro CL 4.0.1 [Sun4] 2/8/91)          :allegro-v4.0
 ;;;       ExCL (Franz Allegro CL 4.1 [SPARC R1] 8/28/92 14:06) :allegro-v4.1
+;;;       ExCL (Franz ACL 5.0.1 [Linux/X86] 6/29/99 16:11)     :allegro-v5.0.1
 ;;;       Lucid CL (Version 2.1 6-DEC-87)
 ;;;       Lucid Common Lisp (3.0)
 ;;;       Lucid Common Lisp (4.0.1 HP-700 12-Aug-91)
@@ -365,7 +366,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; Let's be smart about CLtL2 compatible Lisps:
 (eval-when (compile load eval)
-  #+(or (and :excl (or :allegro-v4.0 :allegro-v4.1))
+  #+(or (and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
         :mcl
         (and :cmu :new-compiler))
   (pushnew :cltl2 *features*))
@@ -379,7 +380,7 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; For CLtL2 compatible lisps
 
-#+(and :excl (or :allegro-v4.0 :allegro-v4.1))
+#+(and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from cltl1 provide require))
 #+:mcl
@@ -388,7 +389,7 @@ Estimated total monitoring overhead: 0.88 seconds
 #+(or :clisp (and :cmu :new-compiler))
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP"))
 #+(and :cltl2
-       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1))
+       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1))
                 :mcl :clisp
                 (and :cmu :new-compiler))))
 (unless (find-package "MONITOR")
@@ -400,12 +401,12 @@ Estimated total monitoring overhead: 0.88 seconds
 
 #+(and :excl :allegro-v4.0)
 (cltl1:provide "monitor")
-#+(and :excl :allegro-v4.1)
+#+(and :excl (or :allegro-v4.1 :allegro-v5.0.1))
 (provide "monitor")
 #+:mcl
 (ccl:provide "monitor")
 #+(and :cltl2
-       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1))
+       (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1  :allegro-v5.0.1))
                 :mcl
                 (and :cmu :new-compiler))))
 (provide "monitor")
@@ -463,8 +464,8 @@ Estimated total monitoring overhead: 0.88 seconds
 
 (progn
   #-(or :cmu
-        CLISP
-        :allegro-v3.1 :allegro-v4.0 :allegro-v4.1
+        :clisp
+        :allegro-v3.1 :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1
         :mcl :mcl1.3.2
         :lcl3.0 :lcl4.0)
   (eval-when (compile eval)
@@ -521,11 +522,11 @@ Estimated total monitoring overhead: 0.88 seconds
 
 ;;; Allegro V4.0/1. SYS::GSGC-MAP takes one argument, and returns an
 ;;; array representing the memory state.
-#+(or :allegro-v4.0 :allegro-v4.1)
+#+(or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1)
 (defvar *gc-space-array* (make-array 4 :element-type '(unsigned-byte 32)))
-#+(or :allegro-v4.0 :allegro-v4.1)
+#+(or :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1)
 (defun bytes-consed ()
-  (system:gsgc-totalloc *gc-space-array* t)
+  (system::gsgc-totalloc *gc-space-array* t)
   (aref *gc-space-array* 0))
 
 #+:allegro-v3.1
@@ -538,7 +539,7 @@ Estimated total monitoring overhead: 0.88 seconds
          sum)))
   )
 
-#+(or :allegro-v3.1 :allegro-v4.0 :allegro-v4.1)
+#+(or :allegro-v3.1 :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1)
 (defmacro get-cons () `(the consing-type (bytes-consed)))
 
 ;;; Macintosh Allegro Common Lisp 1.3.2
@@ -637,9 +638,9 @@ Estimated total monitoring overhead: 0.88 seconds
 
 
 #-(or :cmu
-      CLISP
+      :clisp
       :lcl3.0 :lcl4.0
-      :allegro-v3.1 :allegro-v4.0 :allegro-v4.1
+      :allegro-v3.1 :allegro-v4.0 :allegro-v4.1 :allegro-v5.0.1
       :mcl1.3.2 :mcl)
 (progn
   (eval-when (compile eval)

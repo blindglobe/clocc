@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.3 2000/03/27 20:02:54 sds Exp $
+;;; $Id: prompt.lisp,v 2.4 2000/05/16 17:07:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
@@ -51,6 +51,7 @@
                     ee bb (incf sys::*command-index*) ee))))
   #+allegro
   (multiple-value-bind (bb ib ee) (beg-end)
+    (declare (ignore ib))
     (setq tpl:*prompt* (concatenate 'string bb tpl:*prompt* ee))))
 
 (provide :prompt)

@@ -14,25 +14,25 @@
 ;;;
 ;;; Please see the file COPYING for licensing information.
 ;;;
-;;; Copyright (c) 2001, Marco Antoniotti
+;;; Copyright (c) 2001-2002 Marco Antoniotti
 
 (defpackage "CL.UTILITIES.AMBLER" (:use "COMMON-LISP")
-  (:nicknames "AMBLER")
+  (:nicknames "AMBLER" "ambler")
 
-  (:export "STANDARD-AMBLING-CONTEXT"
-	   "COPYING-AMBLING-CONTEXT"
-	   "IDENTITY-AMBLING-CONTEXT"
+  (:export #:standard-ambling-context
+	   #:copying-ambling-context
+	   #:identity-ambling-context
 
-	   "*IDENTITY-AMBLING-CONTEXT*"
-	   "*COPYING-AMBLING-CONTEXT*"
+	   #:*identity-ambling-context*
+	   #:*copying-ambling-context*
 
-	   "AMBLE-FORM"
-	   "AMBLE-EXPRESSION"
+	   #:amble-form
+	   #:amble-expression
 
-	   "NO-AMBLER-DEFINED"
+	   #:no-ambler-defined
 
-	   "DEF-EXPRESSION-AMBLER"
-	   "DEF-FORM-AMBLER"
+	   #:def-expression-ambler
+	   #:def-form-ambler
 	   ))
 
 ;;; end of file -- ambler-pkg.lisp --

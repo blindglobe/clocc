@@ -1026,16 +1026,14 @@ program-error is signaled.")
  (oddp 3.5)
  type-error)
 
+#+UNIX
 (my-assert
- #+UNIX
  (progn (open "/etc/passwd" :direction :input :if-exists :error) (/ 0))
- #+UNIX
  division-by-zero)
 
+#+UNIX
 (my-assert
- #+UNIX
  (progn (open "/etc/nonexistent" :direction :input :if-exists :error) (/ 0))
- #+UNIX
  file-error)
 
 (my-assert
@@ -1046,10 +1044,9 @@ program-error is signaled.")
  (open "/tmp/*" :direction :input)
  file-error)
 
+#+UNIX
 (my-assert
- #+UNIX
  (open "/etc/mtab" :direction :input :external-format 'mtab-entries)
- #+UNIX
  error)
 
 (my-assert

@@ -50,14 +50,14 @@
       (setf (logical-pathname-translations "CL-ENV-LIBRARY")
 	    `(("**;*.*.*"
 	       ,(make-pathname
-		 :host (pathname-host *cl-environment-pathname*)
-		 :device (pathname-device *cl-environment-pathname*)
+		 :host (pathname-host *cl-environment-directory*)
+		 :device (pathname-device *cl-environment-directory*)
 		 :directory (append (pathname-directory directory)
 				    (list :wild-inferiors))))
 	      ("**;*.*"
 	       ,(make-pathname
-		 :host (pathname-host *cl-environment-pathname*)
-		 :device (pathname-device *cl-environment-pathname*)
+		 :host (pathname-host *cl-environment-directory*)
+		 :device (pathname-device *cl-environment-directory*)
 		 :directory (append (pathname-directory directory)
 				    (list :wild-inferiors))))))
 

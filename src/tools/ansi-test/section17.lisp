@@ -213,8 +213,7 @@
  "AAAA")
 
 (my-assert
- (let ((seq (mapc 
-	     'list #'copy-seq
+ (let ((seq (map 'list #'copy-seq
 		 '("lower" "UPPER" "" "123"))))
    seq)
  ("lower" "UPPER" "" "123"))

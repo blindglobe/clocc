@@ -21,10 +21,10 @@
 			  do (print i)
 			  ) )
  "
-1
-2
-3
-4
+1 
+2 
+3 
+4 
 5 ")
 
 (my-assert
@@ -33,9 +33,9 @@
 			  do (print i)
 			  ) )
  "
-10
-7
-4
+10 
+7 
+4 
 1 ")
 
 (my-assert
@@ -44,10 +44,10 @@
 			  do (print i)
 			  ) )
  "
-0
-1
-2
-3
+0 
+1 
+2 
+3 
 4 ")
 
 (my-assert
@@ -56,10 +56,10 @@
 			  do (print item)
 			  ) )
  "
-1
-2
-3
-4
+1 
+2 
+3 
+4 
 5 ")
 
 (my-assert
@@ -68,8 +68,8 @@
 			  do (print item)
 			  ) )
  "
-1
-3
+1 
+3 
 5 ")
 
 (my-assert
@@ -90,8 +90,8 @@
 			  do (print item)
 			  ) )
  "
-1
-2
+1 
+2 
 3 ")
 
 (my-assert
@@ -100,8 +100,8 @@
 			  do (print item)
 			  ) )
  "
-1
-2
+1 
+2 
 3 ")
 
 (my-assert
@@ -415,11 +415,11 @@ February 17
     results
     ) )
  ("
-3
+3 
 
-1
+1 
 
-7
+7 
 "
   (3 1 7) (2 4 6 8)))
 
@@ -457,7 +457,7 @@ February 17
 			  ) )
  "
 0  a b c
-1
+1 
 2  a
 3 ")
 
@@ -476,7 +476,7 @@ February 17
 			  ) )
  "
 0  a b c
-1
+1 
 2  a c
 3 ")
 
@@ -486,10 +486,10 @@ February 17
 			  do (print i)
 			  ) )
  "
-1
-2
-3
-4
+1 
+2 
+3 
+4 
 5 ")
 
 (my-assert
@@ -499,13 +499,13 @@ February 17
 			  (print (* i i))
 			  ) )
  "
-1
-1
-2
-4
-3
-9
-4
+1 
+1 
+2 
+4 
+3 
+9 
+4 
 16 ")
 
 (my-assert

@@ -8,9 +8,14 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.8 2000/03/28 18:24:45 sds Exp $
+;;; $Id: net.lisp,v 1.9 2000/03/29 15:32:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.9  2000/03/29 15:32:51  sds
+;;; cannot use `call-next-method' in `define-condition' :report.
+;;; (report-network-condition): new function
+;;; (network, timeout): use it
+;;;
 ;;; Revision 1.8  2000/03/28 18:24:45  sds
 ;;; (servent): new defstruct
 ;;; (socket-service-port): return it
@@ -245,24 +250,26 @@
 ;;; }}}{{{ conditions
 ;;;
 
+(defun report-network-condition (cc out)
+  (declare (stream out))
+  (format out "[~s] ~s:~d~@[ ~?~]"
+          (net-proc cc) (net-host cc) (net-port cc)
+          (and (slot-boundp cc 'mesg) (net-mesg cc))
+          (and (slot-boundp cc 'args) (net-args cc))))
+
 (define-condition network (error)
   ((proc :type symbol :reader net-proc :initarg :proc)
    (host :type simple-string :reader net-host :initarg :host)
    (port :type (unsigned-byte 16) :reader net-port :initarg :port)
    (mesg :type simple-string :reader net-mesg :initarg :mesg)
    (args :type list :reader net-args :initarg :args))
-  (:report (lambda (cc out)
-             (declare (stream out))
-             (format out "[~s] ~s:~d~@[ ~?~]"
-                     (net-proc cc) (net-host cc) (net-port cc)
-                     (and (slot-boundp cc 'mesg) (net-mesg cc))
-                     (and (slot-boundp cc 'args) (net-args cc))))))
+  (:report report-network-condition))
 
 (define-condition timeout (network)
   ((time :type (real 0) :reader timeout-time :initarg :time))
   (:report (lambda (cc out)
              (declare (stream out))
-             (call-next-method)
+             (report-network-condition cc out)
              (when (slot-boundp cc 'time)
                (format out " [timeout ~a sec]" (timeout-time cc))))))
 

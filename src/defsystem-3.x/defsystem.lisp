@@ -3160,10 +3160,15 @@ D
 				*bother-user-if-no-binary*)
 			       (compile-during-load *compile-during-load*)
 			       dribble
-			       (minimal-load *minimal-load*))
+			       (minimal-load *minimal-load*)
+			       (override-compilation-unit t)
+			       )
+  (declare #-(or :cltl2 :ansi-cl) (ignore override-compilation-unit))
   (unwind-protect
       ;; Protect the undribble.
-      (progn
+      (#+(or :cltl2 :ansi-cl) with-compilation-unit
+	 #+(or :cltl2 :ansi-cl) (:override override-compilation-unit)
+	 #-(or :cltl2 :ansi-cl) progn
 	(when *reset-full-pathname-table* (clear-full-pathname-tables))
 	(when dribble (dribble dribble))
 	(when test (setq verbose t))

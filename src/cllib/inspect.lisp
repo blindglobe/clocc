@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.9 2000/04/19 16:47:55 sds Exp $
+;;; $Id: inspect.lisp,v 1.10 2000/05/12 18:33:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
 
 (in-package :cllib)
 
-(export '(inspect *inspect-frontend* *inspect-print-lines*
+(export '(inspect-cllib *inspect-frontend* *inspect-print-lines*
           *inspect-print-level* *inspect-print-length* *inspect-length*))
 
 ;;;
@@ -46,6 +46,7 @@
 ;;; backend
 ;;;
 
+(eval-when (compile load eval)  ; CMUCL
 (defstruct (inspection (:conc-name insp-))
   self                          ; the object being inspected
   (id (fill-pointer *inspect-all*) :type fixnum) ; unique in a session
@@ -56,6 +57,7 @@
   (pos nil :type (or null fixnum)) ; pos in parent
   (nth-slot nil :type (or null (function (integer) (t t)))) ; value & name
   (set-slot nil :type (or null (function (integer t) t)))) ; set Nth slot
+)
 
 (defun insp-check (insp)
   ;; this should always be okay
@@ -395,7 +397,6 @@
                 (return (values socket id com))))))))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
-  (declare (ignore backend))
   (do ((server (let ((server (open-socket-server)))
                  (browse-url (format nil "http://~a/0/:s"
                                      (socket-server-string server))
@@ -425,8 +426,8 @@
 ;;;
 
 ;;;###autoload
-(defun inspect (object &key (frontend *inspect-frontend*)
-                (browser *inspect-browser*))
+(defun inspect-cllib (object &key (frontend *inspect-frontend*)
+                      (browser *inspect-browser*))
   (let ((*print-array* nil) (*print-pretty* t)
         (*print-circle* t) (*print-escape* t)
         #-clisp (*print-lines* *inspect-print-lines*)

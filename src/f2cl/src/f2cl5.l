@@ -2264,10 +2264,14 @@
   (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
 	  (mapcar #'(lambda (var)
 		      (let ((expr (id-expression var)))
-			(if (and (listp expr)
+			(cond ((and (listp expr)
 				 (eq (first expr) 'fref))
-			    `(fset ,expr (read))
-			    `(setf ,expr (read)))))
+			       `(fset ,expr (read)))
+			      ((and (symbolp expr)
+				    (subtypep (lookup-vble-type expr) 'string))
+			       `(f2cl-set-string ,expr (read) ,(lookup-vble-type expr)))
+			      (t
+			       `(setf ,expr (read))))))
 		  (remove nil (list-split '|,| (cddr x))))
 	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
   
@@ -2817,8 +2821,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.115 2003/11/15 05:02:07 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.116 2003/11/15 14:16:45 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.116  2003/11/15 14:16:45  rtoy
+;;; When parsing READ, if the variable has type STRING, we need to use
+;;; f2cl-set-string to make sure strings get the right length.
+;;;
 ;;; Revision 1.115  2003/11/15 05:02:07  rtoy
 ;;; Some simple fixups for READ when reading into arrays.  We need to
 ;;; identify the expression to generate the correct form for setting the

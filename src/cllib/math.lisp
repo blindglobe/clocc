@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.30 2003/12/04 20:38:20 sds Exp $
+;;; $Id: math.lisp,v 2.31 2003/12/10 15:38:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
 (in-package :cllib)
 
 (export
- '(mulf divf sqr ! !! stirling fibonacci primes-to divisors primep
+ '(mulf divf sqr ! !! stirling fibonacci ruler primes-to divisors primep
    product-from-to binomial *primes* *primes-file*
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
@@ -138,6 +138,13 @@
                        (+ (* f0 f0) (* f1 f1)))
                (values (+ (* f0 f0) (sqr (+ f0 f1)))
                        (* f0 (+ (* f1 2) f0)))))))))
+
+(defun ruler (n)
+  "The exponent of the largest power of 2 which divides the given number.
+See <http://mathworld.wolfram.com/RulerFunction.html>.
+See also <http://www.podval.org/~sds/notes.html#ruler-runction>
+for the explanation of the (logand n (- n)) part."
+  (1- (integer-length (logand n (- n)))))
 
 (defcustom *primes* list nil "The list of primes.
 The first element is the upper bound.")

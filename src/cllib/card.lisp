@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.5 2000/05/16 22:40:03 sds Exp $
+;;; $Id: card.lisp,v 2.6 2000/05/23 22:21:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -458,7 +458,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
             '(www ftp gopher telnet)))))
 
 (defun card-read-bbdb (in ra)
-  "Read CARD from a BBDB stream.  Suitable for `read-list-from-file'."
+  "Read CARD from a BBDB stream.  Suitable for `read-list-from-stream'."
   (declare (stream in) (simple-vector ra))
   (handler-case (values (vector-to-card ra) (read in nil +eof+))
     (error (co)
@@ -466,7 +466,7 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
       (error co))))
 
 (defun card-read-vcard (in ra)
-  "Read CARD from a vCard stream.  Suitable for `read-list-from-file'."
+  "Read CARD from a vCard stream.  Suitable for `read-list-from-stream'."
   (declare (stream in) (ignore ra))
   (macrolet ((pushslot (val obj slot)
                `(if (slot-boundp ,obj ',slot)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.32 2001/06/29 18:03:21 sds Exp $
+;;; $Id: sys.lisp,v 1.33 2001/09/09 19:55:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,6 +17,9 @@
   (require :ole))
 
 (in-package :port)
+
+#+sbcl (eval-when (compile load eval)
+         (shadow '(getenv finalize)))
 
 (export
  '(getenv finalize variable-special-p arglist
@@ -37,7 +40,8 @@
   #+gcl (si:getenv (string var))
   #+lispworks (lw:environment-variable (string var))
   #+lucid (lcl:environment-variable (string var))
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #+sbcl (sb-ext:posix-getenv var)
+  #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'getenv var)))
 
 (defun (setf getenv) (val var)
@@ -61,7 +65,8 @@
   #+clisp (#+lisp=cl ext:finalize #-lisp=cl lisp:finalize obj func)
   #+cmu (ext:finalize obj func)
   #+cormanlisp (cl::register-finalization obj func)
-  #-(or allegro clisp cmu cormanlisp)
+  #+sbcl (sb-ext:finalize obj func)
+  #-(or allegro clisp cmu cormanlisp sbcl)
   (error 'not-implemented :proc (list 'finalize obj func)))
 
 ;;;
@@ -77,7 +82,8 @@
   #+gcl (si:specialp symbol)
   #+lispworks (eq :special (hcl:variable-information symbol))
   #+lucid (system:proclaimed-special-p symbol)
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #+sbcl (sb-walker:variable-globally-special-p symbol)
+  #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
 
 (defun arglist (fn)
@@ -95,11 +101,14 @@
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
   #+lucid (lcl:arglist fn)
-  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid)
+  #+sbcl (values (let ((st (sb-kernel:%function-arglist fn)))
+                  (if (stringp st) (read-from-string st)
+                      #+ignore(eval:interpreted-function-arglist fn))))
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'arglist fn)))
 
 ;; implementations with MOP-ish CLOS
-#+(or allegro clisp cmu cormanlisp lispworks lucid)
+#+(or allegro clisp cmu cormanlisp lispworks lucid sbcl)
 ;; we use `macrolet' for speed - so please be careful about double evaluations
 ;; and mapping (you cannot map or funcall a macro, you know)
 (macrolet ((class-slots* (class)
@@ -108,7 +117,8 @@
              #+cmu `(pcl::class-slots ,class)
              #+cormanlisp `(cl:class-slots ,class)
              #+lispworks `(hcl::class-slots ,class)
-             #+lucid `(clos:class-slots ,class))
+             #+lucid `(clos:class-slots ,class)
+             #+sbcl `(sb-pcl::class-slots ,class))
            (class-slots1 (obj)
              `(class-slots*
                (typecase ,obj
@@ -122,7 +132,8 @@
              #+cmu `(slot-value ,slot 'pcl::name)
              #+cormanlisp `(getf ,slot :name)
              #+lispworks `(hcl::slot-definition-name ,slot)
-             #+lucid `(clos:slot-definition-name ,slot))
+             #+lucid `(clos:slot-definition-name ,slot)
+             #+sbcl `(slot-value ,slot 'sb-pcl::name))
            (slot-initargs (slot)
              #+(and allegro (not (version>= 6))) `(clos::slotd-initargs ,slot)
              #+(and allegro (version>= 6))
@@ -131,7 +142,8 @@
              #+cmu `(slot-value ,slot 'pcl::initargs)
              #+cormanlisp `(getf ,slot :initargs)
              #+lispworks `(hcl::slot-definition-initargs ,slot)
-             #+lucid `(clos:slot-definition-initargs ,slot))
+             #+lucid `(clos:slot-definition-initargs ,slot)
+             #+sbcl `(slot-value ,slot 'sb-pcl::initargs))
            (slot-one-initarg (slot) `(car (slot-initargs ,slot)))
            (slot-alloc (slot)
              #+(and allegro (not (version>= 6)))
@@ -142,7 +154,8 @@
              #+cmu `(pcl::slot-definition-allocation ,slot)
              #+cormanlisp `(getf ,slot :allocation)
              #+lispworks `(hcl::slot-definition-allocation ,slot)
-             #+lucid `(clos:slot-definition-allocation ,slot)))
+             #+lucid `(clos:slot-definition-allocation ,slot)
+             #+sbcl `(sb-pcl::slot-definition-allocation ,slot)))
 
   (defun class-slot-list (class &optional (all t))
     "Return the list of slots of a CLASS.
@@ -193,7 +206,8 @@ but there is a TYPE slot, move TYPE into NAME."
                         filename)))
   #+cmu (eq :directory (unix:unix-file-kind (namestring filename)))
   #+lispworks (lw:file-directory-p filename)
-  #-(or allegro clisp cmu lispworks)
+  #+sbcl (eq :directory (sb-unix:unix-file-kind (namestring filename)))
+  #-(or allegro clisp cmu lispworks sbcl)
   ;; From: Bill Schelter <wfs@fireant.ma.utexas.edu>
   ;; Date: Wed, 5 May 1999 11:51:19 -0500
   (let* ((path (pathname filename))
@@ -230,7 +244,8 @@ but there is a TYPE slot, move TYPE into NAME."
   #+clisp (#+lisp=cl ext:make-dir #-lisp=cl lisp:make-dir dir)
   #+cmu (unix:unix-mkdir (directory-namestring dir) #o777)
   #+lispworks (system:make-directory dir)
-  #-(or allegro clisp cmu lispworks)
+  #+sbcl (sb-unix:unix-mkdir (directory-namestring dir) #o777)
+  #-(or allegro clisp cmu lispworks sbcl)
   (error 'not-implemented :proc (list 'mkdir dir)))
 
 (defun rmdir (dir)

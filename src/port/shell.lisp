@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.13 2001/07/09 17:13:30 sds Exp $
+;;; $Id: shell.lisp,v 1.14 2001/09/09 19:55:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -41,7 +41,8 @@
                      (format nil "~a~{ '~a'~}~@[ &~]" prog args (not wait))
                      opts)
   #+lucid (apply #'lcl:run-program prog :wait wait :arguments args opts)
-  #-(or allegro clisp cmu gcl liquid lispworks lucid)
+  #+sbcl (apply #'sb-ext:run-program prog args :wait wait opts)
+  #-(or allegro clisp cmu gcl liquid lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'run-prog prog opts)))
 
 (defun pipe-output (prog &rest args)
@@ -57,7 +58,9 @@
   #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
                               :direction :output)
   #+lucid (lcl:run-program prog :arguments args :wait nil :output :stream)
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #+sbcl (sb-ext:process-input (sb-ext:run-program prog args :input :stream
+                                                   :output t :wait nil))
+  #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'pipe-output prog args)))
 
 (defun pipe-input (prog &rest args)
@@ -73,7 +76,9 @@
   #+lispworks (sys::open-pipe (format nil "~a~{ ~a~}" prog args)
                               :direction :input)
   #+lucid (lcl:run-program prog :arguments args :wait nil :input :stream)
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #+sbcl (sb-ext:process-output (sb-ext:run-program prog args :output :stream
+                                                    :error t :input t :wait nil))
+  #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'pipe-input prog args)))
 
 ;;; Allegro CL: a simple `close' does NOT get rid of the process.

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.13 2004/10/05 17:39:38 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14 2004/10/05 18:47:17 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -315,7 +315,7 @@
       (let ((action
 	       (cond (src-version
 		      (cond ((and (not must-ask)
-				  (or (eq why ':just-do-it)
+				  (or (memq why '(:just-do-it :no-reason))
 				      (cond ((or (not whether-compile)
 						 (eq whether-compile
 						     ':ask))

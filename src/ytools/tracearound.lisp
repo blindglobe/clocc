@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: tracearound.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: tracearound.lisp,v 1.3 2004/09/29 17:32:04 airfoyle Exp $
 
 (depends-on %module/ ytools %ytools/ nilscompat)
 
@@ -65,7 +65,7 @@
 	       (t
 		(bind ((*print-level* 3))
 		   (out (:to *error-output*) "Trace: " args :%))))
-	 (letrec ()
+	 (let-fun ()
 	    `(progn
 
 		(bind ((trace-around-level* (+ trace-around-level* 1)))

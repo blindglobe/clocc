@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.7 2000/03/21 22:32:41 sds Exp $
+;;; $Id: inspect.lisp,v 1.8 2000/03/23 00:10:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -59,17 +59,21 @@
 
 (defun insp-check (insp)
   ;; this should always be okay
+  ;; we use `warn' instead of `assert' or `error' because
+  ;; the objects being inspected could possibly be modified
+  ;; in another thread
   (let ((up (insp-up insp)) (pos (insp-pos insp)) (id (insp-id insp)))
-    (assert (eq insp (aref *inspect-all* id)) (insp)
-            "~s: ~s is corrupted (~d->~d):~%~s~%~s~%"
+    (unless (eq insp (aref *inspect-all* id))
+      (warn "~s: ~s appears corrupted (~d->~d):~%~s~%~s~%"
             'get-insp '*inspect-all* id (insp-id (aref *inspect-all* id))
-            insp (aref *inspect-all* id))
+            insp (aref *inspect-all* id)))
     (when up
-      (assert (< -1 pos (insp-num-slots up)) (insp)
-              "~s: pos out of range: ~d ~d" 'insp-check pos
-              (insp-num-slots up))
-      (assert (eq (funcall (insp-nth-slot up) pos) (insp-self insp)) (insp)
-              "~s: wrong pos [~d]:~%~s~%~s" 'insp-check pos insp up))))
+      (unless (< -1 pos (insp-num-slots up))
+        (warn "~s: pos out of range: ~d ~d~%" 'insp-check pos
+              (insp-num-slots up)))
+      (unless (eq (funcall (insp-nth-slot up) pos) (insp-self insp))
+        (warn "~s: slot ~d of the ~s has changed:~%~s~%"
+              'insp-check pos (insp-self up) up)))))
 
 (defun insp-last-slot (insp)
   (1- (insp-num-slots insp)))
@@ -392,7 +396,7 @@
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
   (declare (ignore backend))
-  (do ((server (let ((server (open-socket-server 17356)))
+  (do ((server (let ((server (open-socket-server)))
                  (browse-url (format nil "http://~a:~d/0/:s"
                                      (socket-server-host server)
                                      (socket-server-port server))

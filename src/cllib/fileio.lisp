@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.27 2003/01/08 19:45:52 sds Exp $
+;;; $Id: fileio.lisp,v 1.28 2003/10/19 20:47:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,7 +20,7 @@
 
 (export '(file-size-t file-size rename-files save-restore
           count-sexps code-complexity load-compile-maybe file-equal-p
-          write-list-to-stream write-list-to-file
+          write-list-to-stream write-list-to-file file-cmp
           read-list-from-stream read-list-from-file
           pr write-to-file read-from-file read-from-stream append-to-file
           read-trim skip-to-line skip-search skip-blanks read-non-blanks))
@@ -334,15 +334,37 @@ Non-existent files are assumed to be VERY old."
 (let ((buf1 (make-array 1024 :element-type '(unsigned-byte 8)))
       (buf2 (make-array 1024 :element-type '(unsigned-byte 8))))
 ;;;###autoload
-(defun file-equal-p (file1 file2)
+(defun file-equal-p (file1 file2 &key offset1 offset2)
   "Check whether the two files are identical, like cmp(1)."
   (with-open-file (f1 file1 :element-type '(unsigned-byte 8))
+    (when offset1 (file-position f1 offset1))
     (with-open-file (f2 file2 :element-type '(unsigned-byte 8))
+      (when offset2 (file-position f2 offset2))
       (when (= (file-length f1) (file-length f2))
         (loop :for l1 = (read-sequence buf1 f1)
               :and l2 = (read-sequence buf2 f2)
           :until (or (zerop l1) (zerop l2))
           :always (and (= l1 l2) (equalp buf1 buf2)))))))
+;;;###autoload
+(defun file-cmp (file1 file2 &key offset1 offset2)
+  "Find out how different the files are.
+Returns the fraction of different 8-bit bytes."
+  (with-open-file (f1 file1 :element-type '(unsigned-byte 8))
+    (when offset1 (file-position f1 offset1))
+    (with-open-file (f2 file2 :element-type '(unsigned-byte 8))
+      (when offset2 (file-position f2 offset2))
+      (when (= (file-length f1) (file-length f2))
+        (loop :for l1 = (read-sequence buf1 f1)
+              :and l2 = (read-sequence buf2 f2)
+          :for ll = (min l1 l2)
+          :until (zerop ll)
+          :sum ll :into total
+          :sum (let ((s 0))
+                 (dotimes (i ll s)
+                   (unless (= (aref buf1 i) (aref buf2 i))
+                     (incf s))))
+          :into bad
+          :finally (return (values bad total)))))))
 )
 
 (defun latest-file (path &optional (nth 0))

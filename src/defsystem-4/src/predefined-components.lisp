@@ -45,7 +45,7 @@
    )
   (:default-initargs
     :type :standard-system
-    :source-extension "system") ; For the time being.
+    :language :common-lisp) ; For the time being.
   )
 
 (defgeneric standard-system-p (x)
@@ -123,8 +123,7 @@ operated on in a `serial' way."))
 (defun modulep (x) (module-p x))
 
 
-(defclass file (standard-simple-component
-		component-language-mixin)
+(defclass file (standard-simple-component)
   ((type :accessor component-type
 	 :type (member :file))
    (private :accessor private-file-p
@@ -165,6 +164,9 @@ operated on in a `serial' way."))
   (:method ((x t)) nil))
 
 #|| It makes more sense to add the `private' slot to `file'.
+Moreover, the :private-file has been used only to supersede the
+pathname inheritance machinery.
+
 (defclass private-file (file)
   ((type :accessor component-type
 	 :initform :private-file))

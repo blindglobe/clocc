@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 2.3 2000/03/30 20:16:54 sds Exp $
+;;; $Id: clhs.lisp,v 2.4 2000/04/27 15:39:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,6 +15,8 @@
   (require :string (translate-logical-pathname "cllib:string"))
   ;; `skip-search'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
+  ;; `with-timing'
+  (require :log (translate-logical-pathname "cllib:log"))
   ;; `html-translate-specials'
   (require :html (translate-logical-pathname "cllib:html")))
 
@@ -1090,7 +1092,7 @@
 
 (defun clhs-write-entities (file)
   "Write the CLHS entities into the file."
-  (let ((bt (get-float-time)))
+  (with-timing ()
     (with-open-file (str file :direction :output :if-exists :supersede)
       (format t "~s: writing ~s..." 'clhs-write-entities file)
       (force-output)
@@ -1098,7 +1100,7 @@
       (dolist (el +clhs-alist+)
         (dolist (html (cdr el))
           (clhs-write-entity (car el) html str)))
-      (format t "done [~:d bytes, ~a]~%" (file-length str) (elapsed-1 bt t)))))
+      (format t "done [~:d bytes]" (file-length str)))))
 
 (defconst +clhs-hashtable+ hash-table
   (let ((ht (make-hash-table :test #'eq :size 1000)))

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-2-1 Mon 14:33:10 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-2-1 Mon 17:53:50 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.27 1999/02/01 19:34:04 sds Exp $
+;;; $Id: date.lisp,v 1.28 1999/02/02 00:03:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.28  1999/02/02 00:03:24  sds
+;;; Added `to-string', fixed `string->dttm'.
+;;;
 ;;; Revision 1.27  1999/02/01 19:34:04  sds
 ;;; Added `purge-string' and `*string-junk*'.
 ;;; Fixed `string->dttm' for the case when the date starts with a weekday.
@@ -206,11 +209,17 @@ Returns the number of seconds since the epoch (1900-01-01)."
   (mk-date :ye (floor num 10000) :mo (mod (floor num 100) 100)
            :da (mod num 100)))
 
+(defun to-string (obj)
+  "Unintern if symbol and return string."
+  (declare (type (or symbol string) obj))
+  (etypecase obj (string obj) (symbol (unintern obj) (symbol-name obj))))
+
 (defun infer-timezone (obj)
   "Guess the timezone."
   (etypecase obj
-    ((or symbol string)
-     (or (car (find (string obj) +time-zones+ :test
+    (symbol (unintern obj) (infer-timezone (symbol-name obj)))
+    (string
+     (or (car (find obj +time-zones+ :test
                     (lambda (st el) (or (string-equal st (cadr el))
                                         (string-equal st (cddr el))))))
          0))
@@ -243,28 +252,25 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (let ((tokens (string-tokens (purge-string xx) :max 8)))
-    (multiple-value-bind (ye mo da dd ho mi se zo)
-        (values-list (if (symbolp (car tokens)) (cdr tokens) tokens))
-      (cond ((and (numberp ye) (numberp da)
-                  (or (numberp mo) (setq mo (or (infer-month mo) mo))))
-             (if (symbolp dd)
-                 (encode-universal-time (or se 0) (or mi 0) (or ho 0)
-                                        (min ye da) mo (max ye da)
-                                        (infer-timezone zo))
-                 (encode-universal-time (or mi 0) (or ho 0) (or dd 0)
-                                        (min ye da) mo (max ye da)
-                                        (infer-timezone se))))
-            ((and (symbolp ye) (numberp mo) (numberp dd)
-                  (or (numberp da) (setq da (or (infer-month da) da))))
-             (encode-universal-time (or se 0) (or mi 0) (or ho 0)
-                                    mo da dd (infer-timezone zo)))
-            ((error "string->dttm: ~s: cannot parse" xx))))))
+  (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6)
+      (values-list
+       (delete-if (lambda (st)
+                    (and (symbolp st)
+                         (find (to-string st) +week-days+ :test
+                               #'string-equal)))
+                  (string-tokens (purge-string xx) :max 8)))
+    (if (numberp v0)
+        (encode-universal-time (or v5 0) (or v4 0) (or v3 0)
+                               (min v0 v2) (infer-month v1) (max v0 v2)
+                               (infer-timezone v6))
+        (encode-universal-time (or v4 0) (or v3 0) (or v2 0)
+                               v1 (infer-month v0) v5
+                               (infer-timezone v6)))))
 
 (defun infer-month (mon)
   "Get the month from the object, number or name."
   (if (numberp mon) mon
-      (let ((pos (position (string mon) +month-names+ :test
+      (let ((pos (position (to-string mon) +month-names+ :test
                            (lambda (s0 s1)
                              (string-equal s0 s1 :start1 0 :end1 3
                                            :start2 0 :end2 3)))))

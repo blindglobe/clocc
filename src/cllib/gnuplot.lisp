@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.10 2004/02/26 19:50:29 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.11 2004/04/09 20:20:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -74,7 +74,7 @@ This must be either a full path or a name of an executable in your PATH.")
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream :plot PLOT &rest OPTIONS) body).
 OPTIONS are gnuplot(1) options, the following are accepted:
- XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND GRID TERM
+ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE GRID TERM
  BORDER LEGEND (key in gnuplot)
 PLOT means:
   :plot     => plot;
@@ -248,7 +248,7 @@ according to the given backend")
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y")
                   (data-style :lines) (border t)
-                  timefmt xb xe (title "plot") legend
+                  timefmt xb xe yb ye (title "plot") legend
                   (xtics t) (ytics t) grid xlogscale ylogscale
                   (xfmt (or timefmt "%g")) (yfmt "%g"))
   (make-plot-spec
@@ -257,6 +257,7 @@ according to the given backend")
                            :range (when (and xb xe) (cons xb xe))
                            :logscale xlogscale :time-p (not (null timefmt)))
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
+                           :range (when (and yb ye) (cons yb ye))
                            :logscale ylogscale)
    :grid grid :legend legend :title title :border border))
 
@@ -268,8 +269,8 @@ according to the given backend")
   (:method ((directive stream)) directive)
   (:method ((directive (eql :file))) (make-plot-stream *gnuplot-file*))
   (:method ((directive (eql :wait))) (make-plot-stream :plot))
-  (:method ((directive string)) (make-plot-stream :plot))
-  (:method ((directive pathname)) (make-plot-stream :plot))
+  (:method ((directive string)) (open directive :direction :output))
+  (:method ((directive pathname)) (open directive :direction :output))
   (:method ((directive (eql :print))) (make-plot-stream :plot))
   (:method ((directive (eql :plot)))
     (setq *gnuplot-stream*
@@ -403,7 +404,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
 (defun plot-lists-arg (lss &rest opts &key (key #'identity)
                        (title "Arg List Plot") (xlabel "nums") rel lines
                        (ylabel (if rel "relative value" "value"))
-                       data-style quads xbeg xend &allow-other-keys)
+                       data-style quads xb xe &allow-other-keys)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the list
@@ -417,15 +418,16 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
     (setq quads (mapcar (lambda (ls)
                           (regress-poly (cdr ls) 2 :xkey (compose car 'key)
                                         :ykey (compose cdr 'key))) lss)))
-  (setq xbeg (or xbeg (reduce #'min lss :key (compose car 'key cadr)))
-        xend (or xend (reduce #'max lss :key (compose car 'key car last))))
-  (with-plot-stream (str :xlabel xlabel :ylabel ylabel
+  (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style (or data-style (plot-data-style lss))
-                     :xb xbeg :xe xend :title title
-                     (remove-plist opts :key :rel :lines :quads :xbeg :xend))
+                     :xb (or xb (reduce #'min lss
+                                        :key (compose car 'key cadr)))
+                     :xe (or xe (reduce #'max lss
+                                        :key (compose car 'key car last)))
+                     (remove-plist opts :key :rel :lines :quads))
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}" (mapcar #'car lss))
-    (dolist (ln lines) (plot-line-str ln xbeg xend str))
-    (dolist (qu quads) (plot-quad-str qu xbeg xend str))
+    (dolist (ln lines) (plot-line-str ln xb xe str))
+    (dolist (qu quads) (plot-quad-str qu xb xe str))
     (terpri str)
     (let* (bv (val (if rel (lambda (kk) (/ kk bv)) #'identity)))
       (dolist (ls lss)

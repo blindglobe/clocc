@@ -530,15 +530,6 @@ NOT USED BY ANYONE (oddly enough)
 ;;;;	       (pathname-fload ctsupp false false))
 	    )
 
-(datafun to-slurp datafun
-  (defun :^ (e slurp-if-substantive)
-    (cond ((and slurp-if-substantive
-		(eq (cadr e) 'attach-datafun))
-	   (eval e)))
-    true))
-;;;;	  (t
-;;;;	   (form-slurp (macroexpand-1 e) slurp-if-substantive)))))
-
 (defun forms-slurp (explist slurp-if-substantive)
      (let ((substantive false))
         (block through-forms
@@ -589,6 +580,13 @@ NOT USED BY ANYONE (oddly enough)
 	 (forms-slurp (cdr form) slurp-if-substantive))))
 
 (datafun to-slurp subr-synonym #'slurp-eval)
+
+(datafun to-slurp datafun
+  (defun :^ (e slurp-if-substantive)
+    (cond ((and slurp-if-substantive
+		(eq (cadr e) 'attach-datafun))
+	   (eval e)))
+    true))
 
 ;;; For debugging:
 

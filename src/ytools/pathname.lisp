@@ -380,10 +380,11 @@
 			       (eq (car obj-dir)
 				   ':relative))
 			  (place-relative-pathname
-			     pn (cdr obj-dir) lisp-object-extn* true))
+			     pn (append (cdr obj-dir) bin-idio-dir*)
+			     lisp-object-extn* true))
 			 (t
 			  (make-Pathname
-			     :directory obj-dir
+			     :directory (append obj-dir bin-idio-dir*)
 			     :type lisp-object-extn*)))))))
    ;;;;(format t "name = ~s~%" name)
    (setf (table-entry ytools-logical-names-table*
@@ -1099,9 +1100,12 @@
 
 ;;;;(define-ytools-log-pname 'ytools (->pathname ytools-home-dir*) "../bin/")
 
-(defparameter ytools-bin-path* (strings-concat standard-bin-path* bin-idio*))
+;;;;(defparameter ytools-bin-path* (strings-concat standard-bin-path* bin-idio*))
 
-(def-ytools-logical-pathname ytools  (->pathname ytools-home-dir*) ytools-bin-path*)
+(def-ytools-logical-pathname ytools
+    (->pathname ytools-home-dir*)
+;;;;    standard-bin-path*
+    ytools-bin-path*)
 
 (defstruct (Perform-pseudo-pn (:include Pseudo-pathname)
 	                       (:predicate is-Perform-pseudo-pn)

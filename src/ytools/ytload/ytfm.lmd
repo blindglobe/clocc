@@ -18,14 +18,15 @@
 
 ;;; A string like "../bin/" or "../binansi/" that says where Lisp bin files are
 ;;; standardly found relative to source files.
-(declare-config-var standard-bin-path*)
-;;; An extra directory layer (e.g., "ansi/") that goes after the standard bin path
+(declare-config-var ytools-bin-path*)
+;;; An extra directory layer (e.g., "ansi/") that is inserted in bin paths
+;;;   to keep different Lisps' bin files from colliding.
 (declare-config-var bin-idio*)
 
 
 (defparameter lisp-readtable* *readtable*)
 (defparameter ytools-readtable* (copy-readtable nil))
-(defparameter default-standard-bin-path* "../bin/")
+(defparameter default-ytools-bin-path* "../../bin/")
 
 (defun install-ytfm (sto)
    (format t "I will install YTFM.  I may ask you some questions to fill in gaps~%")
@@ -51,16 +52,17 @@
 	  (cond ((member (read-line-trim) '("y" "yes" "t") :test #'equal)
 		 ':upper)
 		(t ':lower)))
-   (set-config-var standard-bin-path* sto
-	  (format t "Where should binary files be located relative to source files~% (e.g., \"bin/\" or \"../bin/\" (default)? ")
+   (set-config-var ytools-bin-path* sto
+	  (format t "Where should YTools binary files be located relative to source files~% (e.g., \"bin/\" or ~s (default)? "
+		  default-ytools-bin-path*)
 	  (let ((path (read-line-trim)))
 	        (cond ((string= path "")
-		       default-standard-bin-path*)
+		       default-ytools-bin-path*)
 		      (t (dirname-with-delimiter path)))))
    (set-config-var bin-idio* sto
 	  (format t "For some implementations or compilers, you may want to provide~%~
 an extra directory layer (e.g., \"cmucl/\" or \"modern/\") to appear between~%~
-the standard bin path and its subdirectories.~%~
+a bin path and its subdirectories.~%~
 If so, type it here (blank line for no extra layer): ")
 	  (let ((bi (read-line-trim)))
 	     (cond ((and (not (string= bi ""))

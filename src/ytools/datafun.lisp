@@ -96,3 +96,5 @@
 ;;;;      (setf (table-entry datafun-attachers* ',ind)
 ;;;;	    (\\ (_ sym funame)
 ;;;;	       (setf (table-entry ,name sym) 
+
+

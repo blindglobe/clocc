@@ -46,8 +46,23 @@
 (defparameter ytools-core-files*
     '("base" "datafun" "pathname" "module" "slurp" "files" "depend"))
 
+(defparameter bin-idio-dir*
+   (cond ((equal bin-idio* "")
+	  '())
+	 (t
+	  (let ((pn (parse-namestring bin-idio*)))
+	     (let ((dir (pathname-directory pn)))
+		(cond ((and (consp dir)
+			    (eq (car dir) ':relative))
+		       (cdr dir))
+		      (t
+		       (cerror "I will assume there is no special bin subdirectory for this Lisp"
+			       "Illegal as bin subdirectory: ~s"
+			       bin-idio)
+		       '())))))))
+
 (defparameter ytools-bin-relative*
-              (append (pathname-directory (parse-namestring standard-bin-path*))
+              (append (pathname-directory (parse-namestring ytools-bin-path*))
 		      (cond ((string= bin-idio* "") '())
 			    (t (cdr (pathname-directory (parse-namestring bin-idio*)))))
 		      '("ytools")))
@@ -71,7 +86,7 @@
               (parse-namestring ytools-home-dir*))
 
 (defparameter ytools-bin-dir-pathname*
-   (let ((dirs (pathname-directory (pathname standard-bin-path*))))
+(let ((dirs (pathname-directory (pathname ytools-bin-path*))))
       (cond ((and (not (null dirs)) (eq (car dirs) ':relative))
 	     (setq dirs (cdr dirs))
 	     (let ((down-layers '())
@@ -80,16 +95,21 @@
 		   (cond ((or (null yt-dirs)
 			      (member (car yt-dirs) '(:relative :absolute)))
 			  (error "Can't build ytools-bin-dir-pathname* from ~s and ~s"
-				 ytools-dir-pathname* (pathname standard-bin-path*))))
-;;;;		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
-;;;;			    down-layers yt-dirs dirs)
+				 ytools-dir-pathname* (pathname ytools-bin-path*))))
+		  (format t "down-layers = ~s~%  yt-dirs = ~s~%   dirs = ~S~%"
+			    down-layers yt-dirs dirs)
 		   (cond ((or (null dirs)
 			      (not (member (car dirs) '(:up :back))))
 			  (let ((final-dirs
 				   (append (reverse yt-dirs)
 					   dirs
+					   (cond ((string= bin-idio* "")
+						  '())
+						 (t (cdr (pathname-directory
+							    (parse-namestring
+							       bin-idio*)))))
 					   down-layers)))
-;;;;			     (format t "Final dirs = ~S~%" final-dirs)
+			     (format t "Final dirs = ~S~%" final-dirs)
 			     (return
 				(ensure-directories-exist
 				   (merge-pathnames
@@ -101,26 +121,18 @@
 		  (setq dirs (cdr dirs)))))
 	    (t
 	     (error "Can't build ytools-bin-dir-pathname* from ~s"
-		    (pathname standard-bin-path*))))))
+		    (pathname ytools-bin-path*))))))
 
 (setq *features* (adjoin ':ytools *features*))
 
 (cl:defun load-core ()
-   (flet ((load-if-there (filename)
-	     (cond ((probe-file filename)
-		    (load filename)))))
       (dolist (bf ytools-core-files*)
 	 (load (merge-pathnames
 		  (make-pathname :name bf)
 		  ytools-bin-dir-pathname*)))
 ;;;;      (format t "Before loading ytinit, config-directory* = ~s~%"
 ;;;;	      config-directory*)
-      (load-if-there (concatenate 'string
-			     ytools-home-dir*
-			     (short-site-name)
-			     directory-delimiter*
-			     "ytinit.lisp"))
-      (load-if-there (strings-concat config-directory* "ytinit.lisp"))))
+)
      
 (cl:defun compile-core ()
    (dolist (bf ytools-core-files*)

@@ -72,6 +72,7 @@
 
 (defun lprec-load (lprec force-flag force-compile must-ask)
    (let ()   ;;;;(lprec-pn (Load-progress-rec-pathname lprec))
+;;;;      (setq lprecs* (cons lprec lprecs*))
       (let ((supporters (lprec-find-supporters lprec))
 	    (when-reached-status (Load-progress-rec-when-reached lprec))
 	    )
@@ -83,6 +84,7 @@
 			   (t !()))))
 	       (cond ((or force-flag
 			  (not (achieved-load-status lprec ':loaded))
+			  (> ur-mod-time when-reached-status)
 		      ;;; This is not necessary, because calling 'achieved-load-status'
 		      ;;; above did the check already.--
 ;;;;			  (or (> ur-mod-time ldble-mod-time)
@@ -119,8 +121,12 @@
 							':no-reason))
 						 changed-supporters
 						 must-ask)
+			    (cond (version-to-load
 				   (pathname-really-fload
-				      version-to-load src-or-obj lprec))))
+				      version-to-load src-or-obj lprec))
+				  (t
+				   (format *error-output*
+					   "Nothing to load~%"))))))
 		     (t
 		      (dolist (pn changed-supporters)
 			 (fload-if-recompile (car pn))))
@@ -142,18 +148,20 @@
 			 (setf (Load-progress-rec-compile-time-depends-on lpr)
 			       !())
 			 (lprec-slurp lprec false ':header-only)
-			 (setf (Load-progress-rec-supporters lpr) !())
-			 ;; -- Set to harmless value in case we come across
-			 ;; this same lprec during the recursive walk.
-			 (setf (Load-progress-rec-supporters lpr)
-			       (pns-nodups
-				  (nconc
-				      (walk-down
-					 (Load-progress-rec-run-time-depends-on
-					     lpr))
-				      (walk-down
-					 (Load-progress-rec-compile-time-depends-on
-					     lpr))))))))
+			 (let ((curr-supps (Load-progress-rec-supporters lpr)))
+			    (setf (Load-progress-rec-supporters lpr) !())
+			    ;; -- Set to harmless value in case we come across
+			    ;; this same lprec during the recursive walk.
+			    (setf (Load-progress-rec-supporters lpr)
+				  (pns-nodups
+				     (nconc
+					 (walk-down
+					    (Load-progress-rec-run-time-depends-on
+						lpr))
+					 (walk-down
+					    (Load-progress-rec-compile-time-depends-on
+						lpr))
+					 curr-supps)))))))
 ;;;;		  (:< (val &rest _) "walk-through: " val))
 	       )
 	    (walk-down (immediate-supporters)
@@ -198,7 +206,6 @@
 		  (> (lprec-find-version-modtimes lprec)
 		     (Load-progress-rec-when-reached lprec)))
 	     (loop
-
 		(format *query-io*
 		   "Source file older than loaded version of ~s~% Reload it now (recompiling if appropriate)? (y/n, \\\\ to abort) "
 		   src-version)
@@ -336,7 +343,8 @@
 					 (values src-version ':source))))
 				 (:source
 				  (values src-version ':source)))
-	     (note-load-status lprec ':maybe-compiled)
+	     (cond (file-version
+		    (note-load-status lprec ':maybe-compiled)))
 	     (values file-version which)))))
 
 ;;; Returns :compile, :source, :object
@@ -584,25 +592,31 @@
 (defvar fcompl-always* false)
 
 (defun pathname-with-suffix-fcompl (src-version lprec)
-;;;;     (cond (obj-version
-;;;;	    (setq obj-version (maybe-delete-stale-file obj-version))))
-   (pathname-really-fcompl src-version)
-;;;;   (incf file-op-count*)   ??? What the hell was this doing here?
-   (let ((obj-version (pathname-object-version src-version true)))
-      (let ((success
-	        (and obj-version
-		     (> (pathname-write-time obj-version)
-			(pathname-write-time src-version)))))
-	 (fcompl-log src-version (and success obj-version))
-	 (cond (success
-		(note-load-status lprec ':maybe-compiled)
-		(lprec-recompute-version-modtimes lprec)
-		(ask-next-time lprec)
-		obj-version)
-	       (t
-		(format *error-output*
-			"Recompiling failed to produce object file~%")
-		false)))))
+      (let ((old-obj-write-time
+	       (let ((old-obj-version (pathname-object-version src-version true)))
+		  (and old-obj-version
+		       (pathname-write-time old-obj-version)))))
+	 (pathname-really-fcompl src-version)
+	 (let ((new-obj-version (pathname-object-version src-version true)))
+	    (let ((success
+		      (and new-obj-version
+			   (or (not old-obj-write-time)
+			       (> (pathname-write-time new-obj-version)
+				  old-obj-write-time)))))
+	       (fcompl-log src-version (and success new-obj-version))
+	       (cond (success
+		      (note-load-status lprec ':maybe-compiled)
+		      (lprec-recompute-version-modtimes lprec)
+		      (ask-next-time lprec)
+		      new-obj-version)
+		     (t
+		      (format *error-output*
+			      "Recompiling failed to produce object file~%")
+;;;;		      (dbg-save old-obj-version new-obj-version src-version lprec)
+;;;;		      (breakpoint pathname-with-suffix-fcompl
+;;;;			 "Recompilation failure "
+;;;;			 old-obj-version " => " new-obj-version)
+		      false))))))
 
 (defun ask-next-time (lprec)
    (cond ((not (eq (Load-progress-rec-whether-compile lprec)
@@ -627,8 +641,13 @@
 	   (with-post-file-transduction-hooks
 	      (cleanup-after-file-transduction
 		 (let ((*compile-verbose* false))
+;;;;		    (out :% " ov = " ov :% :%)
 		    (cond (ov 
-			   (compile-file real-pn :output-file real-ov))
+;;;;			   (trace-around compile-it
+;;;;			      (:> "(compile-file: output: " real-ov ")")
+			   (compile-file real-pn :output-file real-ov)
+;;;;			      (:< (val &rest _) "compile-file: " val))
+			   )
 			  (t (compile-file real-pn)))))))
 	(fload-op-message "...compiled to" real-ov false ""))))
 

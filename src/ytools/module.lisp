@@ -78,7 +78,7 @@
       (cond ((not p)
 	     (setq p (tuple name (make-YT-module name '(values))))
 	     (let ((pn (make-Pathname :directory
-				      '(:relative "%ytools:module")
+				      '(:relative "%ytools#module")
 				      :name
 				      (symbol-name name))))
 	        (let ((lpr (make-Load-progress-rec
@@ -291,11 +291,11 @@
 			     src-version)))
 		   (loadable-version
 		      (cond ((and src-version
-				  (eq whether-compile ':source))
+				  (or (eq whether-compile ':source)
+				      (eq obj-version ':none)
+				      (not (probe-file obj-version))))
 			     src-version)
 			    (t
-			     ;; We know from lprec-guess-whether-compile
-			     ;; that either the source or the object exists
 			     obj-version))))
 		(setf (Load-progress-rec-ur-mod-time lprec)
 		      (file-write-date ur-version))
@@ -452,17 +452,17 @@
 	           (adjoin vl (YT-module-postponed ytm)
 			   :test #'equal))))))
 
-;;; Returns the insertable actions associated with the named module.
-(defun module-insert (mod-pspn)
-   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-      (let ((module (find-YT-module modname)))
-	 (cond (module
-		(YT-module-expansion module))
-	       (t
-		(cerror "I will ignore it"
-		   "Undefined module ~s" modname))))))
+;;;; Returns the insertable actions associated with the named module.
+;;;;(defun module-insert (mod-pspn)
+;;;;   (let ((modname (Module-pseudo-pn-module mod-pspn)))
+;;;;      (let ((module (find-YT-module modname)))
+;;;;	 (cond (module
+;;;;		(YT-module-expansion module))
+;;;;	       (t
+;;;;		(cerror "I will ignore it"
+;;;;		   "Undefined module ~s" modname))))))
 
-(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
+;;;;(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
 
 (defun import-export (from-pkg-desig strings &optional (exporting-pkg-desig *package*))
    (let ((from-pkg 

@@ -76,7 +76,7 @@
 	  (let ((,indent-var (Out-stream-indent ,srmvar)))
 	     (unwind-protect
 		(progn
-		   ,@(include-if (not (= ind^ '0))
+		   ,@(include-if (not (eql ind^ '0))
 			`(setf (Out-stream-indent ,srmvar)
 			       (+ ,indent-var ,ind^)))
 		   ,@body)
@@ -252,6 +252,9 @@
    `(setf (Out-stream-indent ,srm)
           (- (Out-stream-indent ,srm) ,(cadr cmd))))
 
+(define-out-operator (:i= cmd srm)
+   `(setf (Out-stream-indent ,srm)
+          ,(cadr cmd)))
 
 ;;;;(defmacro out-indent (space &rest body)
 ;;;;   `(let ((out-indent* (+ out-indent* ,space)))

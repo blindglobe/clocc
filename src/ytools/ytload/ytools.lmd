@@ -18,5 +18,14 @@
 (defun load-ytools ()      
    (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
 	  (ytools-module-load 'ytools t)
+	  (flet ((load-if-there (filename)
+		    (cond ((probe-file filename)
+			   (load filename)))))
+	     (load-if-there (concatenate 'string
+				    ytools-home-dir*
+				    (short-site-name)
+				    directory-delimiter*
+				    "ytinit.lisp"))
+	     (load-if-there (strings-concat config-directory* "ytinit.lisp")))
 	  (list ytools-package*
 		ytools-readtable*))))

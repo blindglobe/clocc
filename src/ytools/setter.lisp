@@ -536,7 +536,7 @@
    `(match-cond ,datum
        ,(make-Qvar pattern body)
        (t
-	(error "match-bind failed to match ~s to ~s" ',pattern  ',datum))))
+	(error "match-let failed to match ~s to ~s" ',pattern  ',datum))))
 
 (defmacro match-cond (datum &rest clauses)
    (multiple-value-let (decls match-vars clauses)

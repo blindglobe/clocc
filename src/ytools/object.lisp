@@ -271,7 +271,8 @@
 		   (cond ((eq printer-name 'print)
 			  (!= printer-name ':print-object))
 			 (t
-			  (!= printer-name (intern *-* keyword-package*))))
+			  (!= printer-name (intern (symbol-name *-*)
+						   keyword-package*))))
 		   (setf clauses (remove printer clauses :count 1))
 		   (match-cond printer-args
 		      ?( ((?var ?,name) ?@rem)

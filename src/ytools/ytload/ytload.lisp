@@ -293,7 +293,7 @@
 
 (defun prompt-for-dir-name (message)
    (loop
-      (format t "~a" message)
+      (format t message)
       (let ((dir (clear-read-line)))
          (cond ((< (length dir) (length directory-delimiter*))
 		(format t "You must type a directory name~%"))
@@ -314,6 +314,13 @@
    (let ((dir-pn (pathname dir))
 	 (sub-pn (make-pathname :directory `(:relative ,subdir))))
       (probe-file (merge-pathnames sub-pn dir-pn))))
+
+(defun dir-string-concat-sub (dir sub)
+   (concatenate 'string
+      dir
+      (cond ((eq filename-case* ':upper)
+	     (string-upcase sub))
+	    (t sub))))
 
 (defun dump-yt-config-file ()
    (cond ((not (null new-config-variables*))

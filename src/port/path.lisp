@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.9 2004/07/29 20:34:28 sds Exp $
+;;; $Id: path.lisp,v 1.10 2004/10/18 23:03:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -121,11 +121,11 @@ but there is a TYPE slot, move TYPE into NAME."
   "Like TRUENAME, but handle non-existing files.
 Note that the directory must exist."
   (or (ignore-errors (truename path))
-      (let ((dir (make-pathname :name nil :type nil :version nil
-                                :defaults path)))
-        (make-pathname :name (pathname-name path) :type (pathname-type path)
-                       :version (pathname-version path)
-                       :defaults (or (truename dir) dir)))))
+      (make-pathname :name (pathname-name path) :type (pathname-type path)
+                     :version (pathname-version path)
+                     :defaults (truename (make-pathname
+                                          :name nil :type nil :version nil
+                                          :defaults path)))))
 
 ;;;
 ;;; logical pathnames

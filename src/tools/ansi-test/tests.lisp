@@ -1,4 +1,6 @@
 ;; Test-Suiten ablaufen lassen: -*- mode: lisp -*-
+;; based on version 1.9
+
 (in-package :cl-user)
 
 (declaim (optimize (speed 0)

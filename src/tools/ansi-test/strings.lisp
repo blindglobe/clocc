@@ -1,4 +1,4 @@
-;;; based on v1.5 -*- mode: lisp -*-
+;;; based on v1.6 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :strings-legacy-4
@@ -1625,6 +1625,23 @@
     (elt x 7))
   error)
 
+(check-for-bug :strings-added-3.1
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (setf (char x 7) #\H))
+  #\H)
+
+(check-for-bug :strings-added-3.2
+  (let ((x (make-array 10
+                       :fill-pointer 5
+                       :element-type 'character
+                       :initial-contents "abcdefghij")))
+    (setf (char x 7) #\H)
+    (char x 7))
+  #\H)
+
 (check-for-bug :strings-added-4
   (let ((x (make-array 10
                        :fill-pointer 5
@@ -1660,3 +1677,12 @@
     (nreverse x)
     x)
   "edcba")
+
+(check-for-bug :strings-added-8
+  (let* ((x (make-array 10 :fill-pointer 4 :element-type 'character
+                        :initial-element #\space :adjustable t))
+         (y (make-array 10 :fill-pointer 4 :element-type 'character
+                        :displaced-to x)))
+    (adjust-array x '(5))
+    (char y 5))
+  error)

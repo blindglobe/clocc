@@ -1,4 +1,4 @@
-;;; based on v1.5 -*- mode: lisp -*-
+;;; based on v1.7 -*- mode: lisp -*-
 (in-package :user)
 
 (defun check-xgcd (a b)

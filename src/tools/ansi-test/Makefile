@@ -29,7 +29,7 @@ POST_TEST=$(MV) *.erg $@ ; \
 
 clisp:
 	$(PRE_TEST)
-	time $(CLISP) -i tests.lisp < /dev/null && true
+	time $(CLISP) -C -i tests.lisp < /dev/null && true
 	$(RM) *.fas *.lib ;
 	$(POST_TEST)
 

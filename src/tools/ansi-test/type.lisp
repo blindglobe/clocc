@@ -1,4 +1,4 @@
-;;; based on v1.8 -*- mode: lisp -*-
+;;; based on v1.13 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :type-legacy-4
@@ -191,6 +191,11 @@
 (check-for-bug :type-legacy-191
   (typep '#(a b c d) (quote (vector * 4)))
   t)
+
+(check-for-bug :type-legacy-191.1
+  (typep #C(0 1) '(complex (eql 0)))
+  #.(subtypep (type-of 0)
+              (upgraded-complex-part-type '(eql 0))))
 
 #|                                      ;
 ;;
@@ -534,6 +539,26 @@
 (check-for-bug :type-added-5
   (multiple-value-list (subtypep 'atom 'list))
   (nil t))
+
+(check-for-bug :type-added-5.1
+ (multiple-value-list (subtypep 'cons 'atom))
+  (nil t))
+
+(check-for-bug :type-added-5.2
+ (multiple-value-list (subtypep 'list 'atom))
+  (nil t))
+
+(check-for-bug :type-added-5.3
+ (multiple-value-list (subtypep 'stream 'atom))
+  (t t))
+
+(check-for-bug :type-added-5.4
+ (multiple-value-list (subtypep 'string 'atom))
+  (t t))
+
+(check-for-bug :type-added-5.5
+ (multiple-value-list (subtypep 'vector 'atom))
+  (t t))
 
 (check-for-bug :type-added-6
   (multiple-value-list (subtypep nil nil))

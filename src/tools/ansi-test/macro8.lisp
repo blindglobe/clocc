@@ -1,8 +1,8 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.7 -*- mode: lisp -*-
 (in-package :cl-user)
 
-;; testen der macrofunktionen kapitel 8
-;; ------------------------------------
+;; test the macro functions; chapter 8
+;; -----------------------------------
 
 
 ;; 8.1

@@ -1,4 +1,4 @@
-;;; based on v1.2 -*- mode: lisp -*-
+;;; based on v1.3 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :lists154-legacy-4
@@ -251,6 +251,23 @@
           '(i (a) a)
           :key #'(lambda (x) (if (listp x) (car x))))
   (i ii . ii))				; key wird angewandt auf: x ein blatt des baumes
+
+(check-for-bug :lists154-legacy-249-bis-1
+  (sublis '((1 . 2) (2 . 4) (3 . 6) (a . aa) (b . bb) (c . cc) (d . dd))
+          '((a b (c (d 1) 2 (3)))))
+  ((aa bb (cc (dd 2) 4 (6)))))
+
+(check-for-bug :lists154-legacy-249-bis-2
+  (sublis '((1 . 2) (2 . 4) (3 . 6) (a . aa) (b . bb) (c . cc) (d . dd))
+          '((a b (c (d 1) 2 (3))))
+          :test #'(lambda (x y) (and (numberp x) (numberp y) (= x y))))
+  ((a b (c (d 2) 4 (6)))))
+
+(check-for-bug :lists154-legacy-249-bis-3
+  (sublis '((1 . 2) (2 . 4) (3 . 6) (a . aa) (b . bb) (c . cc) (d . dd))
+         '((a b (c (d 1) 2 (3))))
+         :test #'equalp :key #'(lambda (x) (and (symbolp x) x)))
+  ((aa bb (cc (dd 1) 2 (3)))))
 
 (check-for-bug :lists154-legacy-255
   (sublis '(((a) . uu) (a . ii))

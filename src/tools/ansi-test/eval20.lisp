@@ -1,8 +1,7 @@
-;; based on v1.4 -*- mode: lisp -*-
+;; based on v1.5 -*- mode: lisp -*-
 (in-package :cl-user)
 
-;; testen abschitt 20
-
+;; CLtL2 20; ANSI CL 3.1
 
 ;;  eval
 

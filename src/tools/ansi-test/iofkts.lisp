@@ -1,4 +1,4 @@
-;;; based on v1.9 -*- mode: lisp -*-
+;;; based on v1.10 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;; ****************************************************************************
@@ -970,4 +970,10 @@ so it could work, provided the string is adjustable...")
 (makunbound 'j)
 (makunbound 's1)
 (makunbound 'str1)
+
+(check-for-bug :iofkts-strange-symbol-names
+  (let ((st (string (code-char 27))))
+    (string= st (symbol-name (read-from-string
+                              (prin1-to-string (make-symbol st))))))
+  t)
 

@@ -1,4 +1,4 @@
-;;; based on v1.23 -*- mode: lisp -*-
+;;; based on v1.25 -*- mode: lisp -*-
 ;;; the trick is that the tests that come with CLISP are run in the
 ;;; traditional mode, when symbols are recognized as pathname
 ;;; designators, while these tests are run in the ansi mode, where the
@@ -631,6 +631,18 @@
 (check-for-bug :path-added-6
   (translate-pathname "uufoobarbazquuxfff" "u?foo*baz*f?" "**baq*zot*")
   #P"ubarbaqquuxfzotf")
+
+(check-for-bug :path-added-6-1
+ (translate-pathname "test.txt" "*.txt" "*.text")
+ #P"test.text")
+
+(check-for-bug :path-added-6-2
+ (translate-pathname "foo/bar" "*/bar" "*/baz")
+ #P"foo/baz")
+
+(check-for-bug :path-added-6-3
+ (translate-pathname "bar/foo" "bar/*" "baz/*")
+ #P"baz/foo")
 
 (check-for-bug :path-added-7
   (make-pathname :defaults "**/*.FASL" :host "CL-LIBRARY")

@@ -1,4 +1,4 @@
-;;; based clisp version 1.10 -*- mode: lisp -*-
+;;; based clisp version 1.12 -*- mode: lisp -*-
 (in-package :cl-user)
 
 ;;; Test "Exceptional situations" as specified by CLHS
@@ -313,7 +313,7 @@ an error of type error is signaled. ")
   error)
 
 (check-for-bug :excepsit-legacy-315
-  (compile-file "/tmp/12836123.lsp")
+  (compile-file "./12836123.lsp")
   file-error)
 
 (check-for-bug :excepsit-legacy-319
@@ -646,22 +646,22 @@ program-error is signaled.")
   type-error)
 
 (check-for-bug :excepsit-legacy-649
-  (with-open-file (s "/tmp/foo35.tmp" :direction :output)
+  (with-open-file (s "./foo35.tmp" :direction :output)
     (file-position s 0.0))
   error)
 
 (check-for-bug :excepsit-legacy-654
-  (with-open-file (s "/tmp/foo35.tmp" :direction :output)
+  (with-open-file (s "./foo35.tmp" :direction :output)
     (file-position s -1))
   error)
 
 (check-for-bug :excepsit-legacy-659
-  (with-open-file (s "/tmp/foo35.tmp" :direction :input)
+  (with-open-file (s "./foo35.tmp" :direction :input)
     (file-position s (+ (file-length s) 1000)))
   error)
 
 (check-for-bug :excepsit-legacy-664
-  (not (delete-file "/tmp/foo35.tmp"))
+  (not (delete-file "./foo35.tmp"))
   nil)
 
 (check-for-bug :excepsit-legacy-668
@@ -853,7 +853,7 @@ program-error is signaled.")
   type-error)
 
 (check-for-bug :excepsit-legacy-859
-  (load "/tmp/128347234.lsp")
+  (load "./128347234.lsp")
   file-error)
 
 (check-for-bug :excepsit-legacy-863
@@ -1035,11 +1035,11 @@ program-error is signaled.")
   file-error)
 
 (check-for-bug :excepsit-legacy-1041
-  (open "/tmp/foo44nonexistent" :direction :input :if-does-not-exist :error)
+  (open "./foo44nonexistent" :direction :input :if-does-not-exist :error)
   file-error)
 
 (check-for-bug :excepsit-legacy-1045
-  (open "/tmp/*" :direction :input)
+  (open "./*" :direction :input)
   file-error)
 
 #+UNIX
@@ -1192,7 +1192,7 @@ end-of-file
  error)
 
 (check-for-bug :excepsit-legacy-1205
- (let ((filename "/tmp/foo51.bin"))
+ (let ((filename "./foo51.bin"))
    (with-open-file (s filename :direction :output
 		      :if-exists :overwrite
 		      :if-does-not-exist :create))
@@ -1202,11 +1202,11 @@ end-of-file
  end-of-file)
 
 (check-for-bug :excepsit-legacy-1215
- (not (delete-file "/tmp/foo51.bin"))
+ (not (delete-file "./foo51.bin"))
  nil)
 
 (check-for-bug :excepsit-legacy-1219
- (let ((filename "/tmp/foo52.txt"))
+ (let ((filename "./foo52.txt"))
    (with-open-file (s filename :direction :output
 		      :if-exists :overwrite
 		      :if-does-not-exist :create))
@@ -1215,11 +1215,11 @@ end-of-file
  end-of-file)
 
 (check-for-bug :excepsit-legacy-1228
- (not (delete-file "/tmp/foo52.txt"))
+ (not (delete-file "./foo52.txt"))
  nil)
 
 (check-for-bug :excepsit-legacy-1232
- (let ((filename "/tmp/foo53.txt"))
+ (let ((filename "./foo53.txt"))
    (with-open-file (s filename :direction :output
 		      :if-exists :overwrite
 		      :if-does-not-exist :create))
@@ -1228,7 +1228,7 @@ end-of-file
  end-of-file)
 
 (check-for-bug :excepsit-legacy-1241
- (not (delete-file "/tmp/foo53.txt"))
+ (not (delete-file "./foo53.txt"))
  nil)
 
 (check-for-bug :excepsit-legacy-1245
@@ -1453,11 +1453,11 @@ end-of-file
  error)
 
 (check-for-bug :excepsit-legacy-1465
- (truename "/tmp/foo62nonexistent")
+ (truename "./foo62nonexistent")
  file-error)
 
 (check-for-bug :excepsit-legacy-1469
- (truename "/tmp/*/x")
+ (truename "./*/x")
  file-error)
 
 (check-for-bug :excepsit-legacy-1473

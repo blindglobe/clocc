@@ -1,4 +1,4 @@
-;;; based on v1.5 -*- mode: lisp -*-
+;;; based on v1.6 -*- mode: lisp -*-
 (in-package :cl-user)
 
 #+xcl
@@ -34,16 +34,30 @@
   (print "test broadcast satz 3" b1)
   "test broadcast satz 3")
 
+;; CLOSE should not delete information about
+;; element type, direction, and external format
+(defun close-1 (s)
+  (let* ((i (input-stream-p s))
+         (o (output-stream-p s))
+         (e (stream-element-type s))
+         (f (stream-external-format s))
+         (c (close s)))
+    (and (eq i (input-stream-p s))
+         (eq o (output-stream-p s))
+         (equal e (stream-element-type s))
+         (equal f (stream-external-format s))
+         c)))
+
 (check-for-bug :streams-legacy-37
-  (close s1)
+  (close-1 s1)
   t)
 
 (check-for-bug :streams-legacy-41
-  (close s2)
+  (close-1 s2)
   t)
 
 (check-for-bug :streams-legacy-45
-  (close s3)
+  (close-1 s3)
   t)
 
 (check-for-bug :streams-legacy-49
@@ -63,7 +77,7 @@
   "test broadcast satz 3")
 
 (check-for-bug :streams-legacy-65
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-69
@@ -83,7 +97,7 @@
   "test broadcast satz 3")
 
 (check-for-bug :streams-legacy-85
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-89
@@ -103,7 +117,7 @@
   "test broadcast satz 3")
 
 (check-for-bug :streams-legacy-105
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-109
@@ -119,7 +133,7 @@
   read2)
 
 (check-for-bug :streams-legacy-121
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-125
@@ -199,35 +213,35 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-201
-  (close inptw)
+  (close-1 inptw)
   t)
 
 (check-for-bug :streams-legacy-205
-  (close s1)
+  (close-1 s1)
   t)
 
 (check-for-bug :streams-legacy-209
-  (close s2)
+  (close-1 s2)
   t)
 
 (check-for-bug :streams-legacy-213
-  (close s3)
+  (close-1 s3)
   t)
 
 (check-for-bug :streams-legacy-217
-  (close s4)
+  (close-1 s4)
   t)
 
 (check-for-bug :streams-legacy-221
-  (close s5)
+  (close-1 s5)
   t)
 
 (check-for-bug :streams-legacy-225
-  (close s6)
+  (close-1 s6)
   t)
 
 (check-for-bug :streams-legacy-229
-  (close s7)
+  (close-1 s7)
   t)
 
 (check-for-bug :streams-legacy-233
@@ -267,7 +281,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-269
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-273
@@ -311,7 +325,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-313
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-317
@@ -355,7 +369,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-357
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-361
@@ -403,7 +417,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-405
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-409
@@ -447,7 +461,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-449
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-453
@@ -491,7 +505,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-493
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-497
@@ -535,7 +549,7 @@
   "w to b2 8.satz")
 
 (check-for-bug :streams-legacy-537
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-541
@@ -551,7 +565,7 @@
   "2.satz t1")
 
 (check-for-bug :streams-legacy-553
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-557
@@ -567,7 +581,7 @@
   "2.satz t2")
 
 (check-for-bug :streams-legacy-569
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-573
@@ -583,7 +597,7 @@
   "2.satz t3")
 
 (check-for-bug :streams-legacy-585
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-589
@@ -599,7 +613,7 @@
   "2.satz t4")
 
 (check-for-bug :streams-legacy-601
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-605
@@ -615,7 +629,7 @@
   "2.satz t5")
 
 (check-for-bug :streams-legacy-617
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-621
@@ -631,7 +645,7 @@
   "2.satz t6")
 
 (check-for-bug :streams-legacy-633
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-637
@@ -647,7 +661,7 @@
   "2.satz t7")
 
 (check-for-bug :streams-legacy-649
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-653
@@ -663,7 +677,7 @@
   "2.satz t8")
 
 (check-for-bug :streams-legacy-665
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-669
@@ -679,7 +693,7 @@
   "2.satz t9")
 
 (check-for-bug :streams-legacy-681
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-685
@@ -695,7 +709,7 @@
   "2.satz t10")
 
 (check-for-bug :streams-legacy-697
-  (close s)
+  (close-1 s)
   t)
 
 (check-for-bug :streams-legacy-701
@@ -747,23 +761,23 @@
   "2.satz t5")
 
 (check-for-bug :streams-legacy-749
-  (close s1)
+  (close-1 s1)
   t)
 
 (check-for-bug :streams-legacy-753
-  (close s2)
+  (close-1 s2)
   t)
 
 (check-for-bug :streams-legacy-757
-  (close s3)
+  (close-1 s3)
   t)
 
 (check-for-bug :streams-legacy-761
-  (close s4)
+  (close-1 s4)
   t)
 
 (check-for-bug :streams-legacy-765
-  (close s5)
+  (close-1 s5)
   t)
 
 (check-for-bug :streams-legacy-769
@@ -860,43 +874,43 @@
   "2.satz t10")
 
 (check-for-bug :streams-legacy-862
-  (close s1)
+  (close-1 s1)
   t)
 
 (check-for-bug :streams-legacy-866
-  (close s2)
+  (close-1 s2)
   t)
 
 (check-for-bug :streams-legacy-870
-  (close s3)
+  (close-1 s3)
   t)
 
 (check-for-bug :streams-legacy-874
-  (close s4)
+  (close-1 s4)
   t)
 
 (check-for-bug :streams-legacy-878
-  (close s5)
+  (close-1 s5)
   t)
 
 (check-for-bug :streams-legacy-882
-  (close s6)
+  (close-1 s6)
   t)
 
 (check-for-bug :streams-legacy-886
-  (close s7)
+  (close-1 s7)
   t)
 
 (check-for-bug :streams-legacy-890
-  (close s8)
+  (close-1 s8)
   t)
 
 (check-for-bug :streams-legacy-894
-  (close s9)
+  (close-1 s9)
   t)
 
 (check-for-bug :streams-legacy-898
-  (close s10)
+  (close-1 s10)
   t)
 
 (check-for-bug :streams-legacy-902
@@ -954,7 +968,7 @@ we will (wrongly!) see #\4 or #\a")
   "Likewise the unread-char should have failed")
 
 (check-for-bug :streams-legacy-956
-  (close s1)
+  (close-1 s1)
   t)
 
 (check-for-bug :streams-legacy-960
@@ -1238,7 +1252,7 @@ E")
   "'(a b #.(format nil  \"3.zwischenwert\") c d)")
 
 (check-for-bug :streams-legacy-1240
-  (close is)
+  (close-1 is)
   t)
 
 (check-for-bug :streams-legacy-1244
@@ -1275,11 +1289,11 @@ E")
   "ausgabe os1")
 
 (check-for-bug :streams-legacy-1277
-  (close is)
+  (close-1 is)
   t)
 
 (check-for-bug :streams-legacy-1281
-  (close os)
+  (close-1 os)
   t)
 
 (check-for-bug :streams-legacy-1285
@@ -1299,11 +1313,11 @@ E")
   (quote (a b "3.zwischenwert" c d)))
 
 (check-for-bug :streams-legacy-1301
-  (close is)
+  (close-1 is)
   t)
 
 (check-for-bug :streams-legacy-1305
-  (close os1)
+  (close-1 os1)
   t)
 
 (check-for-bug :streams-legacy-1309
@@ -1335,7 +1349,7 @@ E")
   "1.zwischenwert")
 
 (check-for-bug :streams-legacy-1337
-  (close is)
+  (close-1 is)
   t)
 
 (check-for-bug :streams-legacy-1341

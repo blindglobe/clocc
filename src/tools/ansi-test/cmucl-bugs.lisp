@@ -860,3 +860,72 @@ number output.")
   nil
   "From Fernando D. Mato Mira")
 
+(check-for-bug :clisp-bugs-flet-part-1
+  (defun test12 ()
+    (flet ((test12-o ()
+             (flet ((test12-i () (return-from test12 nil)))
+               (test12-i))))
+      (test12-o)))
+  test12
+  "clisp bug:
+http://sf.net/tracker/index.php?func=detail&aid=550864&group_id=1355&atid=101355")
+
+(check-for-bug :clisp-bugs-flet-part-2
+  (test12)
+  nil)
+
+(check-for-bug :clisp-bugs-flet-part-3
+  (compile 'test12)
+  test12)
+
+(check-for-bug :clisp-bugs-flet-part-4
+  (test12)
+  nil)
+
+(makunbound 'test12)
+
+(check-for-bug :clisp-compiled-closure-crash
+  (progn
+    (defun stem (&key (obj (error "missing OBJ")))
+      (with-open-file (stream obj :direction :output)
+        (truename stream)))
+    (compile 'stem)
+    (delete-file (stem :obj "foo-bar-zot"))
+    t)
+  t
+  " a crash compiling sbcl, reported by Christophe Rhodes
+ (Corrupted STACK in #<COMPILED-CLOSURE STEM> at byte 45)
+ the bug was fixed by bruno in compiler.lisp 1.80")
+
+
+
+(check-for-bug :clisp-repeated-keywords-part-1
+  (defparameter x 1)
+  x)
+  
+(check-for-bug :clisp-repeated-keywords-part-2
+  (defun test-key () (find 1 #(0 1 2 3) :test #'= :test (incf x)))
+  test-key)
+
+(check-for-bug :clisp-repeated-keywords-part-3
+  (test-key)
+  1)
+
+(check-for-bug :clisp-repeated-keywords-part-4
+  x
+  2)
+
+(check-for-bug :clisp-repeated-keywords-part-5
+  (compile 'test-key)
+  test-key)
+
+(check-for-bug :clisp-repeated-keywords-part-6
+  (test-key)
+  1)
+
+(check-for-bug :clisp-repeated-keywords-part-7
+  x
+  3
+" bug in compiled repeated keywords
+ fixed by sds in compiler.lisp 1.92")
+

@@ -2,6 +2,59 @@
 
 Changes:
 
+Nov 13, 2003
+------------
+
+Some major changes have been done in the last few days.  Assigned
+gotos now actually work (code was there but was wrong).  We've also
+corrected some bugs generating function calls so we can determine much
+more accurately whether to slice an array or just extract the one
+element.  We've made this work for statement functions as well.
+
+For this to work, you have to compile the functions in the right
+order, starting at the bottom of the call tree.  Or just compile the
+whole thing twice.
+
+Also corrected some bugs in handling of ENTRY points to functions.
+
+Currently we only handle ENTRY points if they have exactly the same
+arg list as the main function.  However, that's not required by
+Fortran.  I think we can actually emulate this and here's how.
+
+Currently, entry points are done by creating a LABELS function that is
+the body.  It takes an extra parameter denoting the actual entry
+point, and this is used to jump to the right place in the body.  This
+works great if the arg lists are the same for all entry points.  
+
+When the arglists are different, we do something else.  The layout
+would be something like:
+
+    (let ((avar1 ainit1) (avar2 ainit2) <other arg vars>)
+      (labels ((main-entry (entry-name)
+                 (case  entry-name
+	           (%entry-1 (go entry-1))
+		   (%entry-2 (go entry-2)))
+                 <stuff>
+		 entry-1
+		 <stuff>
+		 entry-2
+		 <stuff>
+		 ...
+		 ))
+         (defun entry-1 (a1 a2 ...)
+	   (setf avar1 a1)
+	   (setf avar2 a2)
+	   ...
+           (main-entry '%entry-1))
+
+         (defun entry-2 (a1 a2 ...)
+	   (setf avar1 a1)
+	   (setf avar2 a2)
+	   ...
+           (main-entry '%entry-2))))
+
+I think this will work, but I'm not really motivated to do this.
+
 May 04, 2002
 ------------
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.21 2001/09/05 18:13:26 sds Exp $
+;;; $Id: url.lisp,v 2.22 2001/09/05 21:34:02 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -36,7 +36,8 @@
 
 (export '(url url-ask url-eta protocol-rfc
           url-prot url-user url-pass url-host url-port url-path
-          url-get-host url-get-port url-path-dir url-path-file
+          url-get-host url-get-port url-path-parse
+          url-path-dir url-path-file url-path-args
           open-socket-retry open-url with-open-url
           ftp-list url-send-mail url-get-news url-time
           browse-url *browsers* *browser*
@@ -117,17 +118,28 @@ guess from the protocol."
   (if (plusp (length (url-host url))) (url-host url)
       (case (url-prot url) ((:news :nntp) *nntpserver*))))
 
-(defun url-path-dir (url)
-  "Return the dir part of the url's path, dropping the file name."
+(defun url-path-parse (url)
+  "Parse the path of URL, returning 3 values: DIR, FILE and ARGS."
   (setq url (url url))
-  (subseq (url-path url) 0
-          (1+ (or (position #\/ (url-path url) :from-end t) -1))))
+  (let* ((path (url-path url))
+         (?pos (position #\? path))
+         (/pos (1+ (or (position #\/ path :from-end t :end ?pos) -1))))
+    (values
+     (subseq path 0 /pos)       ; path
+     (subseq path /pos ?pos)    ; file
+     (if ?pos (subseq path ?pos) "")))) ; args
 
-(defun url-path-file (url)
-  "Return the file part of the url's path, dropping the dir."
-  (setq url (url url))
-  (subseq (url-path url)
-          (1+ (or (position #\/ (url-path url) :from-end t) -1))))
+(defsubst url-path-dir (url)
+  "Return the dir part of the URL's path."
+  (value (url-path-parse url)))
+
+(defsubst url-path-file (url)
+  "Return the file part of the URL's path."
+  (nth-value 1 (url-path-parse url)))
+
+(defsubst url-path-args (url)
+  "Return the args part of the URL's path."
+  (nth-value 2 (url-path-parse url)))
 
 (defmethod print-object ((url url) (out stream))
   "Print the URL in the standard form."

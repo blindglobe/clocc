@@ -8,9 +8,12 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.5 2000/03/07 20:28:00 sds Exp $
+;;; $Id: net.lisp,v 1.6 2000/03/08 20:51:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 ;;; $Log: net.lisp,v $
+;;; Revision 1.6  2000/03/08 20:51:40  sds
+;;; (socket-server-host, socket-server-port): exported
+;;;
 ;;; Revision 1.5  2000/03/07 20:28:00  sds
 ;;; (socket-server-host, socket-server-port): new functions
 ;;; (socket-host, socket-accept): fixed for CMUCL
@@ -41,7 +44,7 @@
  '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr hostent
    socket open-socket socket-host socket-port socket-server
    socket-accept open-socket-server socket-server-close
-   socket-service-port
+   socket-service-port socket-server-host socket-server-port
    network timeout login))
 
 ;;;
@@ -226,7 +229,7 @@
 (defun socket-server-port (server)
   "Return the local port on which the server is running."
   #+allegro (socket:local-port server)
-  #+clisp (lisp:socket-server-host server)
+  #+clisp (lisp:socket-server-port server)
   #+cmu server
   #-(or allegro clisp cmu)
   (error 'not-implemented :proc (list 'socket-server-port server)))

@@ -125,6 +125,9 @@ only when needed. ")
   "List of ENTRY points")
 
 (defvar *f2cl-trace* nil)
+
+(defvar *float-format* 'single-float)
+
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
@@ -136,7 +139,8 @@ only when needed. ")
 			(array-slicing t)
 			package
 			declaim
-			declare-common)
+			declare-common
+			(float-format *read-default-float-format*))
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -169,6 +173,8 @@ INPUT-FILE               File containing Fortran code
                          (declaim <declaim>) at the top.)
 :DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
                          Otherwise, the structures for the common blocks are not declared.
+:FLOAT-FORMAT            Float format to use when printing the result.  Default is
+                         *READ-DEFAULT-FLOAT-FORMAT*
 "
 
 
@@ -196,7 +202,8 @@ INPUT-FILE               File containing Fortran code
 	(*apply-array-slice* nil)
 	(*declare-common-blocks* declare-common)
 	(*assigned-variables* nil)
-	(*entry-points* nil))
+	(*entry-points* nil)
+	(*float-format* float-format))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -226,7 +233,9 @@ INPUT-FILE               File containing Fortran code
 				  (:relaxed-array-decls ,relaxed-array-decls)
 				  (:coerce-assigns ,coerce-assigns)
 				  (:array-type ',array-type)
-				  (:array-slicing ,array-slicing)))
+				  (:array-slicing ,array-slicing)
+				  (:declare-common ,declare-common)
+				  (:float-format ,float-format)))
       (unless keep-temp-file
 	(delete-file processed-file))
       (values output-file))))
@@ -241,7 +250,8 @@ INPUT-FILE               File containing Fortran code
 			      (array-slicing t)
 			      package
 			      declaim
-			      declare-common)
+			      declare-common
+			      (float-format *read-default-float-format*))
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
 FILENAME                 File containing Fortran code
@@ -272,6 +282,8 @@ FILENAME                 File containing Fortran code
                          (declaim <declaim>) at the top.)
 :DECLARE-COMMON          When non-NIL, any structures for common blocks are declared here.
                          Otherwise, the structures for the common blocks are not declared.
+:FLOAT-FORMAT            Float format to use when printing the result.  Default is
+                         *READ-DEFAULT-FLOAT-FORMAT*
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -280,7 +292,8 @@ FILENAME                 File containing Fortran code
 	       :array-type array-type
 	       :array-slicing array-slicing
 	       :package package :declaim declaim
-	       :declare-common declare-common)))
+	       :declare-common declare-common
+	       :float-format float-format)))
     (multiple-value-prog1
 	#+cmu (compile-file lisp-file :output-file output-file :error-file error-file)
 	#-cmu (compile-file lisp-file :output-file output-file)
@@ -709,7 +722,8 @@ FILENAME                 File containing Fortran code
 	  (*print-pretty* t)
 	  (*print-case* :downcase)
 	  (*print-circle* nil)
-	  (*print-readably* t))
+	  (*print-readably* t)
+	  (*read-default-float-format* *float-format*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y ""))
@@ -2260,8 +2274,16 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.106 2002/03/22 23:00:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.107 2002/04/18 13:05:19 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.107  2002/04/18 13:05:19  rtoy
+;;; Added :FLOAT-FORMAT option to F2CL and F2CL-COMPILE so that the user
+;;; can specify how to print out numbers in case the user is going to
+;;; read/compile the file using some other setting for
+;;; *READ-DEFAULT-FLOAT-FORMAT*.  (This is a simple hack to get around the
+;;; problem of not having a portable way to specify all numbers should be
+;;; printed with an exponent marker.)
+;;;
 ;;; Revision 1.106  2002/03/22 23:00:12  rtoy
 ;;; When generating the call to a routine, we don't have to have a setter
 ;;; if the same arg is used multiple times in the arglist.  This is

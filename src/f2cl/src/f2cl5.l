@@ -1591,18 +1591,23 @@
 ;;           or  '(WRITE (* |,| *) |,| J |,| K)
 ;;
 ;; Note that the unit can be any arbitrary expression, so be careful.
+
 (defun parse-write (x)
   ;; check for comma before arguments
   (if (and (third x) (not (eq (third x) '|,|)))
       (setq x (append (list (first x) (second x) '|,|) (cddr x))))
-  ;; The logical unit number is in the second element.  If the second element
-  (let ((lun-part (second x)))
-    `((fformat ,(parse_format_dest (if (null (rest lun-part))
-				       lun-part
-				       (butlast lun-part 2)))
-       ,(if (null (second (second x))) 
+  ;; As shown above, (second x) will contain the unit number and the
+  ;; format number, if any.  Split this at the comma to get the unit
+  ;; part and the format part.
+  (destructuring-bind (lun-part fmt-part)
+      (list-split '|,| (second x))
+    ;;(format t "lun-part = ~A~%" lun-part)
+    ;;(format t "fmt-part = ~A~%" fmt-part)
+    
+    `((fformat ,(parse_format_dest lun-part)
+       ,(if (null fmt-part) 
 	    '(("~A~%"))
-	    (get_format_stmt (nthcdr 2 (second x))))
+	    (get_format_stmt fmt-part))
        ,@(mapcar #'parse-output-argument 
 		 (list-split '|,| (cdddr x)))))))
 
@@ -1642,7 +1647,8 @@
 	   '(("~A~%")))
 	  (t
 	   (do ((lis *format_stmts* (cdr lis)))
-	       ((null lis) (error "format stmt ~A not found" fmt-num))
+	       ((null lis)
+		(error "Format statement ~A not found" fmt-num))
 	     (if (equal fmt-num (caar lis))
 		 (return (cadar lis))))))))
 
@@ -1651,7 +1657,7 @@
 ;; DEST can be any arbitrary expression, so we need to parse it. 
 (defun parse_format_dest (dest)
   (cond ((null (rest dest))
-	 (if (eq dest '*) t dest))
+	 (if (eq (first dest) '*) t (first dest)))
 	(t
 	 (id-expression dest))))
 
@@ -1853,6 +1859,8 @@
           (parse-format-descriptor-X left))
          ((pattern-match-and-bind '((> left) #\S (> right)) x)
           (parse-format-descriptor-S right))
+	 ((pattern-match-and-bind '((> left) #\A (+ right)) x)
+	  (parse-format-descriptor-A left right))
          ((equal (cadr x) '#\/)
           (parse-format-descriptor-/))
          (t (parse-default-format-descriptor x))
@@ -1860,6 +1868,13 @@
 
 (defun fixnum-string (x)
    (princ-to-string x))
+
+(defun parse-format-descriptor-A (a w)
+  (let* ((width (if (listp w)
+		   (car w)
+		   w))
+	(directive (list (format nil "~~~DA" width))))
+    (list a (list directive))))
 
 (defun parse-format-descriptor-I (a w)
   (let* ((width (if (listp w)
@@ -2129,8 +2144,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.76 2002/02/04 03:22:31 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.77 2002/02/07 03:58:45 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.77  2002/02/07 03:58:45  rtoy
+;;; o The previous change messed up the parsing of the format number of a
+;;;   write statement.  Fix it.
+;;; o The previous change also messed up the unit number for
+;;;   PARSE_FORMAT_DEST. Fix it.
+;;; o Add a parser for Fortran's A format descriptor.
+;;;
 ;;; Revision 1.76  2002/02/04 03:22:31  rtoy
 ;;; Handle the case where the unit number for a write statement can be an
 ;;; arbitrary expression.

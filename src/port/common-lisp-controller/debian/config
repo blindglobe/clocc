@@ -16,6 +16,10 @@ db_go
 db_input high common-lisp-controller/auto-build || true
 db_go
 
+# queue only?
+db_input medium common-lisp-controller/queue-only || true
+db_go
+
 #show note..
 db_input high  common-lisp-controller/how-to-control || true
 db_go

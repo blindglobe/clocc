@@ -54,6 +54,13 @@ EOF
 	else
 	    echo "no" > /etc/common-lisp/autobuild 
 	fi
+	# should we queue only?
+	db_get common-lisp-controller/queue-only
+	if [ "$RET" = "true" ] ; then
+	    touch /etc/common-lisp/queue-only
+	else
+	    rm -f /etc/common-lisp/queue-only  || true
+	fi
     # in any case we rebuild with defsystem loaded...
 	for compiler in /usr/lib/common-lisp/bin/*.sh ; do
 	    if [ -f "$compiler" -a -r "$compiler" ] ; then

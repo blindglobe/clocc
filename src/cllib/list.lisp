@@ -1,17 +1,22 @@
-;;; File: <list.lisp - 1998-04-21 Tue 19:31:18 EDT sds@mute.eaglets.com>
+;;; File: <list.lisp - 1998-05-27 Wed 17:20:58 EDT sds@mute.eaglets.com>
 ;;;
 ;;; Additional List Operations
 ;;;
 ;;; Copyright (C) 1997 by Sam Steingold.
-;;; This is free software.
+;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: list.lisp,v 1.2 1998/04/21 23:31:40 sds Exp $
+;;; $Id: list.lisp,v 1.3 1998/05/27 21:23:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 ;;; $Log: list.lisp,v $
+;;; Revision 1.3  1998/05/27 21:23:41  sds
+;;; Moved the sorted stuff from date.lisp here.
+;;; Moved `freqs' from math.lisp here.
+;;; Added `zero-len-p'.
+;;;
 ;;; Revision 1.2  1998/04/21 23:31:40  sds
 ;;; Added `with-nsplit' and `call-on-split'.
 ;;;
@@ -19,7 +24,7 @@
 ;;; Initial revision
 ;;;
 
-(in-package "CL-USER")
+(in-package :cl-user)
 
 (eval-when (load compile eval) (sds-require "base"))
 
@@ -44,33 +49,20 @@ The indexing starts from 0, so (nsublist '(1 2 3 4 5) nil 2) ==> (1 2 3)."
   "If ZZ is a list, return ZZ, otherwise return (list ZZ)."
   (if (listp zz) zz (list zz)))
 
-(defsubst paste (new ls)
-  "Like PUSH, but do not modify LS."
-  (declare (cons ls)) (setf (cdr ls) (cons (car ls) (cdr ls)) (car ls) new))
+(defsubst from-list (zz)
+  "If ZZ is a list, return (car ZZ), otherwise return ZZ."
+  (if (listp zz) (car zz) zz))
 
-(defun nsplit-list (lst &key (pred #'eql) (key #'value))
-  "Return the list of sublists of LST, separated using PRED. Destructive.
-When (funcall pred a0 a1) is nil, a1 starts another sublist,
-i.e., in all sublists KEY is the same according to PRED."
-  (declare (list lst) (type (function (t t) t) pred)
-	   (type (or function fixnum symbol) key))
-  (when (symbolp key) (setq key (symbol-function key)))
-  (typecase key
-    (function
-     (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))
-	 ((endp (cdr ll)) (nreverse res))
-       (setq k1 (funcall key (second ll)))
-       (cond ((not (funcall pred k0 k1))
-	      (push (cdr ll) res)
-	      (setf (cdr ll) nil)
-	      (setq ll (car res)))
-	     (t (setq ll (cdr ll))))))
-    (fixnum
-     (decf key)
-     (do* ((ll lst) ta res) ((endp ll) (nreverse res))
-       (push ll res) (setq ta (nthcdr key ll) ll (cdr ta))
-       (when ta (setf (cdr ta) nil))))
-    (t (error "nsplit-list: wrong type of key: `~s' (~s)" key (type-of key)))))
+(defun zero-len-p (seq)
+  "Returns T iff the sequence has zero length.
+Works in constant time even with lists."
+  (declare (sequence seq))
+  (or (null seq) (and (vectorp seq) (zerop (length seq)))))
+
+(defsubst paste (new ls)
+  "Like `push', but do not modify LS."
+  (declare (cons ls))
+  (setf (cdr ls) (cons (car ls) (cdr ls)) (car ls) new) ls)
 
 (defun skip-to-new (lst &key (test #'eql) (key #'value))
   "Return the tail of the list LST with the KEY different by TEST
@@ -118,6 +110,102 @@ Thus, (apply #'count-jumps args) == (length (apply #'jumps args))."
 	 seq)
     res))
 
+(defun freqs (seq &key (test #'eql) (key #'identity))
+  "Return an alist of (num . freq) of elements of the SEQ.
+The alist is sorted by decreasing frequencies. TEST defaults to `eql'."
+  (declare (sequence seq) (type (function (t t) t) test)
+           (type (function (t) t) key))
+  (unless (zero-len-p seq)
+    (sort
+     (reduce (lambda (res el)
+               (let ((fi (assoc el res :test test)))
+		 (cond (fi (incf (cdr fi)) res) ((acons el 1 res)))))
+             seq :key key :initial-value nil)
+     #'> :key #'cdr)))
+
+;;;
+;;; Sorted
+;;;
+
+(defmacro process-and-shift (pred akey ckey t0 e0 k0 t1 e1 k1)
+  "Used in *-sorted."
+  `(cond ((or (null k1) (and k0 (funcall ,pred ,k0 ,k1)))
+	  (multiple-value-prog1 (values (funcall ,akey ,e0) nil)
+	    (setq ,t0 (cdr ,t0) ,e0 (car ,t0)
+		  ,k0 (and ,t0 (funcall ,ckey ,e0)))))
+    ((or (null k0) (and k1 (funcall ,pred ,k1 ,k0)))
+     (multiple-value-prog1 (values nil (funcall ,akey ,e1))
+       (setq ,t1 (cdr ,t1) ,e1 (car ,t1) ,k1 (and ,t1 (funcall ckey ,e1)))))
+    (t (multiple-value-prog1 (values (funcall ,akey ,e0) (funcall ,akey ,e1))
+	 (setq ,t0 (cdr ,t0) ,e0 (car ,t0) ,k0 (and ,t0 (funcall ,ckey ,e0))
+	       ,t1 (cdr ,t1) ,e1 (car ,t1)
+	       ,k1 (and ,t1 (funcall ,ckey ,e1)))))))
+
+(defun map-sorted (type func pred l0 l1
+		   &key (ckey #'identity) (akey #'identity))
+  "Operate on two sorted lists. Call FUNC on the elements of the lists
+that are `same' according to PRED. If TYPE is 'LIST, return the list
+of whatever FUNC returns."
+  (declare (function func pred ckey akey) (list l0 l1) (symbol type))
+  (do ((t0 l0) (t1 l1) (e0 (car l0)) (e1 (car l1)) el res
+       (k0 (and l0 (funcall ckey (car l0))))
+       (k1 (and l1 (funcall ckey (car l1)))))
+      ((and (null t0) (null t1)) (nreverse res))
+    (setq el (multiple-value-call func
+	       (process-and-shift pred akey ckey t0 e0 k0 t1 e1 k1)))
+    (when type (push el res))))
+
+(defun reduce-sorted (rfunc func2 pred l0 l1
+		      &key (ckey #'identity) (akey #'identity) initial-value)
+  "Reduce a pair of sorted sequences."
+  (declare (function rfunc func2 pred ckey akey) (list l0 l1))
+  (let ((res initial-value) (t0 l0) (t1 l1) (e0 (car l0)) (e1 (car l1))
+	(k0 (and l0 (funcall ckey (car l0))))
+	(k1 (and l1 (funcall ckey (car l1)))))
+    (unless res
+      (setq res
+	    (if (or l0 l1)
+		(multiple-value-call func2
+		  (process-and-shift pred akey ckey t0 e0 k0 t1 e1 k1))
+		(funcall rfunc))))
+    (do () ((and (null t0) (null t1)) res)
+      (setq res (funcall rfunc res
+			 (multiple-value-call func2
+			   (process-and-shift pred akey ckey
+					      t0 e0 k0 t1 e1 k1)))))))
+
+(defun sorted-map (type func pred missing ckey akey &rest lists)
+  "Operate on the corresponding elements of the sorted lists.  Each list
+in LISTS is assumed to be sorted according to the predicate PRED applied
+to keys CKEY.  Apply function FUNC to the AKEYs of the elements of the
+lists with the same CKEYs.  When a list doesn't have an element with the
+particular CKEY, function gets nil (if MISSING is nil) or the previous
+AKEY (if MISSING is non-nil).
+CKEY and AKEY values of nil are the same as #'identity.
+  (sorted-map type func pred missing ckey akey &rest lists)"
+  (declare (function func pred) (symbol type))
+  (unless ckey (setq ckey #'identity))
+  (unless akey (setq akey #'identity))
+  (do ((sec (copy-list lists)) (akeys (make-list (length lists)))
+       begck ck fnn res)
+      ((every #'null sec) (nreverse res))
+    ;; get the current ckey
+    (setq fnn (member nil sec :test-not #'eq)
+	  begck (funcall ckey (caar fnn)))
+    (dolist (ls (rest fnn))
+      (when ls (setq ck (funcall ckey (car ls)))
+	    (when (funcall pred ck begck) (setq begck ck))))
+    ;; shift and operate
+    (mapl (lambda (ls ak)
+	    (cond ((and (car ls)
+			(not (funcall pred begck (funcall ckey (caar ls)))))
+		   (setf (car ak) (funcall akey (caar ls)))
+		   (pop (car ls)))
+		  (t (if missing nil (setf (car ak) nil)))))
+	  sec akeys)
+    (cond ((eq type 'list) (push (apply func akeys) res))
+	  (t (apply func akeys)))))
+
 (defun delete-duplicate-entries (lst &key (key #'identity) (test #'eql)
 				 keep-first)
   "Like `delete-duplicates', but assumes that the list LST is ordered.
@@ -129,6 +217,10 @@ Keeps the last entry, or the first if KEEP-FIRST non-nil."
     (if (funcall test kk (setq k1 (funcall key (second ls))))
 	(setf (car ls) (if keep-first (car ls) (cadr ls)) (cdr ls) (cddr ls))
 	(setq ls (cdr ls)))))
+
+;;;
+;;; Checking
+;;;
 
 (defun check-list-type (lst pred &key (key #'value) (out *standard-output*))
   "Check that all the elements of the list satisfy the predicate.
@@ -148,6 +240,35 @@ Like (every lst pred), but prints a message."
 	(format out "No errors.~%")
 	(format out "~d records failed the test.~%" err))
     err))
+
+;;;
+;;; splitting, sublists
+;;;
+
+(defun nsplit-list (lst &key (pred #'eql) (key #'value))
+  "Return the list of sublists of LST, separated using PRED. Destructive.
+When (funcall pred a0 a1) is nil, a1 starts another sublist,
+i.e., in all sublists KEY is the same according to PRED."
+  (declare (list lst) (type (function (t t) t) pred)
+	   (type (or function fixnum symbol) key))
+  (when (symbolp key) (setq key (symbol-function key)))
+  (unless lst (return-from nsplit-list nil))
+  (typecase key
+    (function
+     (do ((ll lst) (k0 (funcall key (first lst)) k1) k1 (res (list lst)))
+	 ((endp (cdr ll)) (nreverse res))
+       (setq k1 (funcall key (second ll)))
+       (cond ((not (funcall pred k0 k1))
+	      (push (cdr ll) res)
+	      (setf (cdr ll) nil)
+	      (setq ll (car res)))
+	     (t (setq ll (cdr ll))))))
+    (fixnum
+     (decf key)
+     (do* ((ll lst) ta res) ((endp ll) (nreverse res))
+       (push ll res) (setq ta (nthcdr key ll) ll (cdr ta))
+       (when ta (setf (cdr ta) nil))))
+    (t (error "nsplit-list: wrong type of key: `~s' (~s)" key (type-of key)))))
 
 (defmacro with-sublist ((newl oldl e0 e1 &key (key '#'identity) (test '#'eql))
 			&body body)

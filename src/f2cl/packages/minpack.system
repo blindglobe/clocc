@@ -1,8 +1,11 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.4 2002/01/08 03:29:09 rtoy Exp $
+;;; $Id: minpack.system,v 1.5 2002/01/08 04:03:09 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.5  2002/01/08 04:03:09  rtoy
+;;; Fix some typos and replace a file that we deleted.
+;;;
 ;;; Revision 1.4  2002/01/08 03:29:09  rtoy
 ;;; o Correct and change the compiler options.  We need array-slicing.
 ;;; o Add some more routines.
@@ -57,12 +60,13 @@
 	       (:file "lmder1" :depends-on ("lmder"))
 	       (:file "dogleg" :depends-on ("dpmpar" "enorm"))
 	       (:file "qform")
+	       (:file "r1mpyq")
 	       (:file "r1updt" :depends-on ("dpmpar"))
-	       (:file "hybrd1" :depends-on ("dogleg" "dpmpar" "enorm" "fdjac1"
-					   "qform" "qrfac" "r1mpyq" "r1updt")
-	       (:file "hybrd" :depends-on ("hybrd"))
+	       (:file "hybrd" :depends-on ("dogleg" "dpmpar" "enorm" "fdjac1"
+					   "qform" "qrfac" "r1mpyq" "r1updt"))
+	       (:file "hybrd1" :depends-on ("hybrd"))
 	       (:file "hybrj" :depends-on ("dogleg" "dpmpar" "enorm" "qform" "qrfac"
-					  "r1mpyq" "r1updt"))
+						    "r1mpyq" "r1updt"))
 	       (:file "hybrj1" :depends-on ("hybrj"))
 	       ))))
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.10 2004/09/09 20:49:47 sds Exp $
+;;; $Id: csv.lisp,v 2.11 2004/09/13 19:06:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -77,7 +77,7 @@ Return 3 values:
            (loop :with ,vec :and ,cols = ,columns :and ,pro1-count = 0
              :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit
-                 `(:when (= ,len ,lim)
+                 `(:when (and ,lim (= ,len ,lim))
                     :do (warn "reached the limit of ~:D record~:P ~
                                at ~:D byte~:P (~4F%), aborted~%"
                               ,len (file-position ,in)

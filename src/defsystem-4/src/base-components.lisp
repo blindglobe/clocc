@@ -20,6 +20,32 @@
 		  )))
 
 
+;;; component-meta-data-mixin --
+
+(defclass component-meta-data-mixin ()
+  ((author :accessor component-author
+	   :initarg :author
+	   :type string)
+   (affiliation :accessor component-author-affiliation
+		:initarg :author-affiliation
+		:type string)
+   (edit-date :accessor component-edit-date
+	      :initarg :date
+	      :type string)
+   (license :accessor component-license
+	    :initarg :license
+	    :type :string))
+  (:documentation "The Component Meta Data Mixin Class.
+Some minimal information about a component. It is assumed that all the
+fields in this mixin class will be provided manually.")
+  (:default-initargs
+    :author ""
+    :author-affiliation ""
+    :edit-date ""
+    :license "Private Personal Use. Do not distribute!"))
+   
+
+
 ;;; topological-sort-node-mixin --
 
 (defclass topological-sort-node-mixin ()
@@ -195,7 +221,10 @@
 
 ;;; component --
 
-(defclass component (topological-sort-node-mixin)
+(defclass component (topological-sort-node-mixin
+		     component-meta-data-mixin
+		     session-information
+		     )
   ((type :accessor component-type
 	 :initarg :type
 	 :type (or null
@@ -298,7 +327,7 @@
    ;; If load-only is T, will not compile the file on operation :compile.
    ;; In other words, for files which are :load-only T, loading the file
    ;; satisfies any demand to recompile.
-   (load-only :accessor component-load-only
+   (load-only :accessor component-load-only-p
 	      :initarg :load-only)	; If T, will not compile this
 					; file on operation :compile.
 
@@ -308,7 +337,7 @@
    ;; for PCL defmethod and defclass definitions, which wrap a 
    ;; (eval-when (compile load eval) ...) around the body of the definition.
    ;; This saves time in some lisps.
-   (compile-only :accessor component-compile-only
+   (compile-only :accessor component-compile-only-p
 		 :initarg :compile-only) ; If T, will not load this
 					 ; file on operation :compile.
    #| ISI Extension |#
@@ -383,7 +412,7 @@
   )
 
 (deftype dependency ()
-  (or string symbol component list structured-dependency))
+  '(or string symbol component list structured-dependency))
 
 #||
 (defclass dependency ()
@@ -413,7 +442,7 @@ unconditional on any of the actions."
     ((or string symbol) ())))
 
 (defun dependency-component (d)
-  (declare (type depenency d))
+  (declare (type dependency d))
   (etypecase d
     (list (first d))
     (structured-dependency (structured-dependency-component d))

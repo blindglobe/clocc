@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.18 2003/04/17 12:07:07 sds Exp $
+;;; $Id: clocc.lisp,v 1.19 2003/05/09 15:11:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -86,7 +86,15 @@
 
 #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
 
-#-(or allegro clisp cmucl mcl)
+(eval-when (:compile-toplevel :execute)
+  (let (x y)
+    (handler-case
+        (progn
+          (setf (values x y) (values 1 2))
+          (unless (and (= x 1) (= y 2))
+            (pushnew :broken-setf-values *features*)))
+      (error () (pushnew :broken-setf-values *features*)))))
+#+broken-setf-values
 (define-setf-expander values (&rest places &environment env)
   (loop :for pl :in places :with te :and va :and ne :and se :and ge :do
         (multiple-value-setq (te va ne se ge) (get-setf-expansion pl env))

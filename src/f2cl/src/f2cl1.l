@@ -1544,7 +1544,7 @@ FILENAME                 File containing Fortran code
               (return (list `(,(tail-chop sym lis)
                  ,@(list-split sym (head-chop sym lis))) ops))))))
 
-#||
+
 #+cmu
 (defun concat (&rest syms)
   (cond ((null syms)
@@ -1552,7 +1552,7 @@ FILENAME                 File containing Fortran code
 	(t
 	 (concatenate 'string (symbol-name (first syms))
 		      (apply #'concat (rest syms))))))
-||#
+
 
 (defun list-split-multi (op lis)
   (prog (ret)
@@ -1881,8 +1881,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.63 2000/08/10 13:50:42 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.64 2000/08/13 04:16:53 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.64  2000/08/13 04:16:53  rtoy
+;;; Oops!  CONCAT is still being used!  Reinstate it.
+;;;
 ;;; Revision 1.63  2000/08/10 13:50:42  rtoy
 ;;; o UPDATE_CM_ARRAY_DIMS was not handling the new method of storing
 ;;;   dimensions.  Fix it.

@@ -1,3 +1,4 @@
+*.zip
 *.fas
 *.lib
 *.axpf
@@ -10,3 +11,6 @@
 *.data
 *.ufsl
 *.mem
+*.core
+*.dxl
+*.err

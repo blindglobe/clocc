@@ -14,4 +14,6 @@ auto.lisp
 *.data
 *.ufsl
 *.mem
+*.core
+*.dxl
 *.err

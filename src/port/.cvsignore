@@ -13,4 +13,6 @@ port.list
 *.data
 *.ufsl
 *.mem
+*.core
+*.dxl
 *.err

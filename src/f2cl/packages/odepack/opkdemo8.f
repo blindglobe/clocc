@@ -51,6 +51,7 @@ c-----------------------------------------------------------------------
      1   rtol, rwork, six, t, tinit, tlast, tout, tols, two, y, ydoti
       dimension eta(3), y(297), ydoti(297), tout(4), tols(2)
       dimension rwork(7447), iwork(317)
+      dimension neq(1), rtol(1), atol(1)
 c Pass problem parameters in the common block par.
       common /par/ r6d, eodsq(3), ncomp, nip, nm1
 c
@@ -69,7 +70,7 @@ c Set mesh parameters nint, dxc etc.
       do 10 i = 1,ncomp
  10     eodsq(i) = eta(i)/dx**2
       nip = nint - 1
-      neq = ncomp*nip
+      neq(1) = ncomp*nip
       nm1 = nip - 1
       iwork(1) = ncomp
       iwork(2) = nip
@@ -81,14 +82,14 @@ c Set the initial conditions (for output purposes only).
 c
       write (lout,1000)
       write (lout,1100) (eta(i),i=1,ncomp), tinit, tlast, nint,
-     1      ncomp, nip, neq
+     1      ncomp, nip, neq(1)
       write (lout,1200)
       call edit (y, ncomp, nip, lout)
 c
 c The jtol loop is over error tolerances.
       do 200 jtol = 1,2
-      rtol = tols(jtol)
-      atol = rtol
+      rtol(1) = tols(jtol)
+      atol(1) = rtol(1)
 c
 c The meth/miter loops cover 4 values of method flag mf.
       do 100 meth = 1,2
@@ -100,7 +101,7 @@ c Set the initial conditions.
         t = tinit
         istate = 0
 c
-        write (lout,1500)  rtol, atol, mf
+        write (lout,1500)  rtol(1), atol(1), mf
 c
 c Loop over output times for each case
         do 80 io = 1,nout
@@ -223,7 +224,8 @@ c No changes need to be made to this routine if nip is changed.
 c
       integer ires, n,  ncomp, nip, nm1
       double precision t, y, v, r, r6d, eodsq
-      dimension y(n), v(n), r(n)
+      dimension y(*), v(*), r(*)
+      dimension n(*)
       common /par/ r6d, eodsq(3), ncomp, nip, nm1
 c
       call gfun (t, y, r, ncomp)
@@ -277,6 +279,7 @@ c right-most interior point (k = nip)
      1           - eodsq(i)*(y(i,nip) + dli)
  30     continue
 c
+        t = t
       return
 c end of subroutine gfun
       end

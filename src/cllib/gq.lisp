@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.12 2000/11/16 18:34:03 sds Exp $
+;;; $Id: gq.lisp,v 2.13 2000/11/20 17:41:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -588,7 +588,7 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
 ;;;###autoload
 (defun update-quotes (&key (plot nil plotp) server debug
                       (log #+(or win32 mswindows) *gq-log*
-                           #-(win32 mswindows) nil))
+                           #-(or win32 mswindows) nil))
   "Read the history. Update quotes. Plot (optionally),
 if PLOT is non-nil, or if it is not given but there was new data.
 If PLOT is T, just plot, do not try to update quotes.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.9 2000/06/14 17:49:28 sds Exp $
+;;; $Id: miscprint.lisp,v 1.10 2000/10/02 17:17:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -30,6 +30,7 @@
 
 ;;;###autoload
 (defun print-all-ascii (&optional (str *standard-output*))
+  "Print all ASCII characters with their names and codes."
   (declare (type (or null stream) str))
   (loop :with *print-pretty* = nil
         :with st :of-type stream = (or str (make-string-output-stream))

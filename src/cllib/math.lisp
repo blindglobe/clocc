@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.10 2000/05/15 18:43:26 sds Exp $
+;;; $Id: math.lisp,v 2.11 2000/09/12 21:57:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -222,6 +222,23 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
           (incf found)
           (format t "~& * ~:d --~d--> ~s~%" sum (length new) new))
         (setf (gethash sum ht) new)))))
+
+;;;
+;;; Random sequences
+;;;
+
+(defun vector-shuffle (vec)
+  "Generate a random permutation of the vector in place.
+If the argument is a number, return a new random vector of this length."
+  (etypecase vec
+    (vector (loop :for ii :downfrom (1- (length vec)) :to 0
+                  :for jj = (random (1+ ii))
+                  :unless (= jj ii)
+                  :do (rotatef (aref vec ii) (aref vec jj)))
+            vec)
+    (number (vector-shuffle (let ((vv (make-array vec)))
+                              (dotimes (ii vec vv)
+                                (setf (aref vv ii) ii)))))))
 
 ;;;
 ;;; Ratios

@@ -1,17 +1,20 @@
-;;; File: <base.lisp - 1999-03-27 Sat 14:08:35 EST sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-04-09 Fri 15:14:43 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
-;;; Copyright (C) 1997, 1998 by Sam Steingold.
+;;; Copyright (C) 1997-1999 by Sam Steingold.
 ;;; This is open-source software.
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.13 1999/03/27 19:24:36 sds Exp $
+;;; $Id: base.lisp,v 1.14 1999/04/09 19:15:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.14  1999/04/09 19:15:32  sds
+;;; Moved `*current-project*' here.
+;;;
 ;;; Revision 1.13  1999/03/27 19:24:36  sds
 ;;; Added condition `provide-require' and function `require-name-to-file'.
 ;;; Use the latter in `sds-require' and `autoload'.
@@ -264,7 +267,7 @@ This function takes care of that."
   `(map-into (make-array ,len :element-type ,type) ,@args))
 
 ;;;
-;;; }}}{{{ Environment
+;;; }}}{{{ Provide/Require
 ;;;
 
 (eval-when (load compile eval)
@@ -338,6 +341,29 @@ This function takes care of that."
             (sds-require file) (apply (fdefinition symb) args))
           (documentation symb 'function)
           (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment))))
+
+(defcustom *current-project* list
+  '(("base") ("print" "base") ("list" "base") ("matrix" "base" "print")
+    ("math" "base" "list" "print" "matrix") #-gcl ("monitor")
+    ("util" "base" "list" "math" "print" #-gcl "monitor")
+    ("date" "base" "util") ("channel" "base" "date") ("futures" "base" "date")
+    ("signal" "base" "date" "channel" "futures")
+    ("gnuplot" "base" "date" "channel" "signal")
+    ("rules" "base" "date" "channel" "futures" "signal" "gnuplot")
+    ("work" "base" "date" "channel" "futures" "signal" "gnuplot" "rules")
+    ("report" "base" "date" "print" "math" ) ("currency" "base" "date")
+    ("fx" "base" "util" "date" "currency" "futures" "report")
+    #+clisp ("octave" "base" "date" "currency")
+    ("url" "base" "util" "date") ("geo" "base" "url")
+    ("gq" "base" "url" "date") ("rpm" "base" "url" "date")
+    ("h2lisp" "base" "url") #+nil ("clhs" "base" "url")
+    ("elisp" "base" "list") ("tests" "base" "date" "url" "rpm" "elisp"))
+  "*The alist of files to work with, in the order of loading.
+Key: name for `sds-require', value - the list of dependencies.")
+
+;;;
+;;; }}}{{{ Environment
+;;;
 
 (defun probe-directory (filename)
   "Check whether the file name names an existsing directory."
@@ -504,21 +530,13 @@ All the values from nth function are fed to the n-1th."
 ;;;
 
 (autoload 'all-docs "print" "Print all docs for a symbol.")
-(autoload 'best-pars "work" "Get the best parameters.")
 (autoload 'cite-info "geo" "Look at U.S. Gazetteer.")
 (autoload 'date "date" "Convert an object to `date'.")
 (autoload 'dump-url "url" "Dump the contents of this URL.")
 (autoload 'fetch-country-list "geo" "Load the country list via the WWW.")
-(autoload 'load-all-currencies "currency" "Load all the currencies.")
-(autoload 'load-all-futures "rules" "Load all futures data.")
 (autoload 'make "util" "Recompile the files.")
-(autoload 'make-all-contracts "futures" "Init `*contract-list*'.")
-(autoload 'make-all-sig-stat "rules" "Generate all `sig-stat' files.")
-(autoload 'make-emas-channels "rules" "Get the EMAs and channels.")
-(autoload 'make-sig-stat "rules" "Generate `*sig-stat*'.")
 (autoload 'play-animals "animals" "Play the game of animals.")
 (autoload 'plot-dated-lists "gnuplot" "Plot dated lists.")
-(autoload 'plot-dl-channels "gnuplot" "Plot dated lists with channels.")
 (autoload 'plot-error-bars "gnuplot" "Plot the list with errorbars.")
 (autoload 'plot-functions "gnuplot" "Plot functions.")
 (autoload 'plot-lists "gnuplot" "Plot the given lists of numbers.")
@@ -530,12 +548,21 @@ All the values from nth function are fed to the n-1th."
 (autoload 'rpm-get-present "rpm" "Get the present RPMs.")
 (autoload 'rpm-get-new-rpms "rpm" "Update RPMs.")
 (autoload 'save-restore-country-list "geo" "Load the country list from disk.")
-(autoload 'set-depth "signal" "Set the depth and load `*sig-stat*'.")
-(autoload 'test-par "work" "Test run.")
 (autoload 'update-quotes "gq" "Update the quote log.")
 (autoload 'url "url" "Convert an object to a URL.")
 (autoload 'view-url "url" "Launch a browser on this URL.")
 (autoload 'weather-report "geo" "Get the weather forecast.")
+
+(autoload 'best-pars "work" "Get the best parameters.")
+(autoload 'load-all-currencies "currency" "Load all the currencies.")
+(autoload 'load-all-futures "rules" "Load all futures data.")
+(autoload 'make-all-contracts "futures" "Init `*contract-list*'.")
+(autoload 'make-all-sig-stat "rules" "Generate all `sig-stat' files.")
+(autoload 'make-emas-channels "rules" "Get the EMAs and channels.")
+(autoload 'make-sig-stat "rules" "Generate `*sig-stat*'.")
+(autoload 'plot-dl-channels "gnuplot" "Plot dated lists with channels.")
+(autoload 'set-depth "signal" "Set the depth and load `*sig-stat*'.")
+(autoload 'test-par "work" "Test run.")
 
 (provide "base")
 ;;; }}} base.lisp ends here

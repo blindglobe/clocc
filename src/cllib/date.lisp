@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-01-08 Fri 15:00:04 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-01-13 Wed 18:21:49 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.24 1999/01/08 20:00:39 sds Exp $
+;;; $Id: date.lisp,v 1.25 1999/01/13 23:37:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.25  1999/01/13 23:37:56  sds
+;;; Replaced CMUCL-specific print functions with a call to
+;;; `print-struct-object'.
+;;;
 ;;; Revision 1.24  1999/01/08 20:00:39  sds
 ;;; Replaced calls to `date2days' with calls to `date-dd'.
 ;;; Speedups expected.
@@ -106,7 +110,7 @@
 
 (eval-when (load compile eval)
 (deftype days-t () '(signed-byte 20))
-(defstruct (date #+cmu (:print-function print-date))
+(defstruct (date #+cmu (:print-function print-struct-object))
   "The date structure -- year, month, and day."
   (ye 1 :type days-t)
   (mo 1 :type (integer 1 12))
@@ -114,15 +118,6 @@
   (dd nil :type (or null days-t))) ; days since the epoch (1900-1-1 == 0)
 )
 
-#+cmu
-(defun print-date (dt stream depth)
-  "Print the date to the STREAM."
-  (declare (type date dt) (stream stream) (fixnum depth))
-  (if *print-readably* (funcall (print-readably date) dt stream)
-      (format stream "~4,'0d-~2,'0d-~2,'0d~:[~; [~:d]~]" (date-ye dt)
-              (date-mo dt) (date-da dt) (minusp depth) (date-dd dt))))
-
-#-cmu
 (defmethod print-object ((dt date) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~4,'0d-~2,'0d-~2,'0d" (date-ye dt)
@@ -339,7 +334,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   "Return the current time as a string without blanks."
   (declare (integer time) (values simple-string))
   (multiple-value-bind (se mi ho da mo ye) (decode-universal-time time)
-    (format nil "~4,'0d-~2,'0d-~2,'0d--~2,'0d-~2,'0d-~2,'0d"
+    (format nil "~4,'0d-~2,'0d-~2,'0d_~2,'0d:~2,'0d:~2,'0d"
             ye mo da ho mi se)))
 
 (defun date= (d0 d1)
@@ -538,7 +533,7 @@ previous record when SKIP is non-nil and nil otherwise.
 ;;;
 
 (eval-when (load compile eval)
-(defstruct (dated-list #+cmu (:print-function print-dlist))
+(defstruct (dated-list #+cmu (:print-function print-struct-object))
   "A dated list of records."
   (ll nil :type list)           ; the actual list
   (code nil :type symbol)       ; the code (2 letter symbol)
@@ -620,20 +615,6 @@ so that -1 corresponds to the last record."
   (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (slot-value dl slot) bb))))
 
-#+cmu
-(defun print-dlist (dl stream depth)
-  "Print the dated list record."
-  (declare (type dated-list dl) (stream stream) (fixnum depth))
-  (when (minusp depth)
-    (format t "~%date:~10t~a~%val:~10t~a~%chg:~10t~a~%misc:~10t~a~%"
-            (dated-list-date dl) (dated-list-val dl) (dated-list-chg dl)
-            (dated-list-misc dl)))
-  (if *print-readably* (funcall (print-readably dated-list) dl stream)
-      (format stream "~:d~:[ ~a~;~*~] [~:@(~a~)] [~a -- ~a]"
-              (dl-len dl) (> depth 1) (dated-list-name dl) (dated-list-code dl)
-              (dl-nth-date dl) (dl-nth-date dl -1))))
-
-#-cmu
 (defmethod print-object ((dl dated-list) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~:d ~a [~:@(~a~)] [~a -- ~a]"
@@ -907,14 +888,12 @@ Must not assume that the list is properly ordered!"
 ;;; Change
 ;;;
 
-(eval-when (load compile eval)
-(defstruct (change #+cmu (:print-function print-change))
+(defstruct (change #+cmu (:print-function print-struct-object))
   "Change structure - for computing difference derivatives."
   (date +bad-date+ :type date)
   (val 0.0d0 :type double-float) ; value
   (chf 0.0d0 :type double-float) ; change forward
   (chb 0.0d0 :type double-float)) ; change backward
-)
 
 (defmethod date ((xx change)) (change-date xx))
 (defmethod value ((xx change)) (change-val xx))
@@ -939,15 +918,6 @@ Must not assume that the list is properly ordered!"
   (declare (type change ch1 ch2))
   (eq (change-type ch1) (change-type ch2)))
 
-#+cmu
-(defun print-change (chg stream depth)
-  "Print the change structure."
-  (declare (type change chg) (stream stream) (ignore depth))
-  (if *print-readably* (funcall (print-readably change) chg stream)
-      (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
-              (change-chb chg) (change-val chg) (change-chf chg))))
-
-#-cmu
 (defmethod print-object ((chg change) (stream stream))
   (if *print-readably* (call-next-method)
       (format stream "~a [~7,3f <- ~8,3f -> ~7,3f]" (change-date chg)
@@ -979,13 +949,11 @@ ch[bf], and dl-extrema will not be idempotent."
 ;;; Diff
 ;;;
 
-(eval-when (load compile eval)
-(defstruct (diff #+cmu (:print-function print-diff))
+(defstruct (diff #+cmu (:print-function print-struct-object))
   "A dated diff."
   (date +bad-date+ :type date)
   (di 0.0 :type real)           ; difference
   (ra 1.0 :type real))          ; ratio
-)
 
 (defmethod date ((xx diff)) (diff-date xx))
 (defmethod value ((xx diff)) (diff-di xx))
@@ -995,19 +963,10 @@ ch[bf], and dl-extrema will not be idempotent."
 Sets ll, date, val, and passes the rest directly to make-dated-list."
   (apply #'make-dated-list :ll dl :date 'diff-date :val 'diff-di args))
 
-#+cmu
-(defun print-diff (df stream depth)
-  "Print the diff record."
-  (declare (type diff df) (stream stream) (ignore depth))
-  (if *print-readably* (funcall (print-readably diff) df stream)
-      (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
-              (diff-ra df))))
-
-#-cmu
 (defmethod print-object ((df diff) (stream stream))
   (if *print-readably* (call-next-method)
-      (format stream "~a ~15,6f ~15,6f" (diff-date df) (diff-di df)
-              (diff-ra df))))
+      (format stream "~a ~15,6f ~15,6f" (diff-date df)
+              (diff-di df) (diff-ra df))))
 
 (defun diff-lists (ls0 ls1 &key (date0 #'date) (date1 #'date)
                    (val0 #'value) (val1 #'value))

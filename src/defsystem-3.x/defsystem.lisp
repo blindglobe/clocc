@@ -4063,7 +4063,17 @@ D
   :loader #+:lucid #'load-foreign-files
           #+:allegro #'load
           #+:cmu #'alien:load-foreign
-          #-(or :lucid :allegro :cmu) #'load
+          #+:sbcl #'sb-alien:load-foreign
+	  #+(and :lispworks4.2 :unix) #'link-load:read-foreign-modules
+	  #+(and :lispworks4.2 :win32) #'fli:register-modules
+          #+(or :ecl :gcl :kcl) #'load ; should be enough.
+          #-(or :lucid :allegro :cmu :sbcl) #'load
+	  (lambda (&rest args)
+	    (declare (ignore args))
+	    (cerror "Continue returning NIL."
+		    "Loader not defined for C foreign libraries in ~A ~A."
+		    (lisp-implementation-type)
+		    (lisp-implementation-version)))
   :source-extension "c"
   :binary-extension "o")
 
@@ -4146,11 +4156,13 @@ D
 
 	       ;; make certain the directory we need to write to
 	       ;; exists [pvaneynd@debian.org 20001114]
+	       ;; Added PATHNAME-HOST following suggestion by John
+	       ;; DeSoi [marcoxa@sourceforge.net 20020529]
+
 	       (ensure-directories-exist
 		(make-pathname
-		 :directory
-		 (pathname-directory
-		  output-file)))
+		 :host (pathname-host output-file)
+		 :directory (pathname-directory output-file)))
 
 	       (or *oos-test*
 		   (apply (compile-function component)

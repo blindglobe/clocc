@@ -184,7 +184,10 @@
  #+XCL
  #S(PATHNAME SYSTEM::HOST NIL SYSTEM::DEVICE NIL
 	     DIRECTORY NIL SYSTEM::NAME NIL TYPE "lsp" SYSTEM::VERSION :NEWEST)
- #+CLISP
+ #+(and CLISP (or win32 os2))
+ #S(PATHNAME :HOST NIL :DEVICE "C" :DIRECTORY (:RELATIVE)
+	     :NAME NIL :TYPE NIL :VERSION NIL)
+ #+(and CLISP unix)
  #S(PATHNAME :HOST NIL :DEVICE NIL :DIRECTORY (:RELATIVE)
 	     :NAME NIL :TYPE NIL :VERSION NIL))
 
@@ -569,7 +572,7 @@
 (my-assert
  (progn
    (setf (logical-pathname-translations "clocc")
-	 '(("**;*" "/usr/local/src/clocc/**/*")))
+	 '(("**;*" "c:/usr/local/src/clocc/**/*")))
    nil)
  nil)
 

@@ -145,7 +145,9 @@ than the maximum file-write-date of output-files, return T."
    (t
     nil)))
 
-     
+
+(defvar *recompiling-from-daemon* nil
+  "T if we are recompiling on orders of the clc-build-daemon")
 
 (defun require-defsystem3 (module-name)
   ;; if in the clc root:
@@ -153,25 +155,34 @@ than the maximum file-write-date of output-files, return T."
 				:load-or-nil)))
     (or
      ;; try to load it
-     (mk:oos  module-name
-	      :load
-	      :load-source-instead-of-binary nil
-	      :load-source-if-no-binary nil
-	      :bother-user-if-no-binary nil
-	      :compile-during-load nil)
+     (progn
+       (mk:oos  module-name
+                :load
+                :load-source-instead-of-binary nil
+                :load-source-if-no-binary nil
+                :bother-user-if-no-binary nil
+                :compile-during-load nil)
+       ;; did we load it?
+       (find module-name mk::*modules* :test #'string=))
      (progn
        (format t "~&;;;Please wait, recompiling library...")
-       ;; first compile the sub-components!
-       (dolist (sub-system (make::component-depends-on system))
-	 (when (stringp sub-system)
-	   (setf sub-system (intern sub-system (find-package :keyword))))
-	 (clc-require sub-system))
-       (common-lisp-controller:send-clc-command :recompile
-						(if (stringp module-name)
-						    module-name
-						  (string-downcase
-						   (symbol-name
-						    module-name))))
+       (cond
+         (*recompiling-from-daemon*
+          (mk:oos module-name
+                  :compile
+                  :verbose nil))
+         (t
+          ;; first compile the sub-components!
+          (dolist (sub-system (make::component-depends-on system))
+            (when (stringp sub-system)
+              (setf sub-system (intern sub-system (find-package :keyword))))
+            (clc-require sub-system))
+          (common-lisp-controller:send-clc-command :recompile
+                                                   (if (stringp module-name)
+                                                       module-name
+                                                       (string-downcase
+                                                        (symbol-name
+                                                         module-name))))))
        (terpri)
        (mk:oos  module-name
 		:load
@@ -189,19 +200,23 @@ than the maximum file-write-date of output-files, return T."
 	(asdf:oos 'asdf:load-compiled-op module-name)	; try to load it
 	(error ()
 	       (format t "~&;;;Please wait, recompiling library...")
-	       ;; first compile the depends-on
-	       (dolist (sub-system
-			;; skip asdf:load-op at beginning of first list
-			(cdar (asdf:component-depends-on
-			      (make-instance 'asdf:compile-op) system)))
-		 (clc-require sub-system))
-	       (let ((module-name-str
-		      (if (stringp module-name)
-			  module-name
-			(string-downcase (symbol-name module-name)))))
-		 (common-lisp-controller:send-clc-command :recompile module-name-str))
-	       (terpri)
-	       (asdf:oos 'asdf:load-compiled-op module-name) 
+               (cond
+                 (*recompiling-from-daemon*
+                  (asdf:oos 'asdf:compile-op module-name))
+                 (t
+                  ;; first compile the depends-on
+                  (dolist (sub-system
+                            ;; skip asdf:load-op at beginning of first list
+                            (cdar (asdf:component-depends-on
+                                   (make-instance 'asdf:compile-op) system)))
+                    (clc-require sub-system))
+                  (let ((module-name-str
+                         (if (stringp module-name)
+                             module-name
+                             (string-downcase (symbol-name module-name)))))
+                    (common-lisp-controller:send-clc-command :recompile module-name-str))))
+               (terpri)
+	       (asdf:oos 'asdf:load-compiled-op module-name)
 	       t)
 	(:no-error (res)
 		   (declare (ignore res))
@@ -223,7 +238,9 @@ than the maximum file-write-date of output-files, return T."
 
 (defun compile-library (library)
   "Recompiles the given library"
-  (let ((system (find-system library)))
+  (let ((system (find-system library))
+        ;; this is because of clc-build-daemon
+        (*recompiling-from-daemon* t))
     (case system
       (:defsystem3
        (mk:oos library :compile :verbose nil))

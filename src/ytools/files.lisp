@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.7 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: files.lisp,v 1.8 2004/06/02 17:50:56 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -83,6 +83,13 @@
 		     (cond (ldble-mod-time
 			    (files-changed-since supporters ldble-mod-time))
 			   (t !()))))
+;;;;	       (out "Contemplating loading " :% 1 lprec
+;;;;		    :% " Status: " (Load-progress-rec-status lprec) :%)
+;;;;		    (achieved-load-status lprec ':loaded)
+;;;;		    " ur-mod-time = " ur-mod-time " <> " when-reached-status
+;;;;		    " = when-reached-status"
+;;;;		    :% "# of changed supporters = " (len changed-supporters)
+;;;;		    :%
 	       (cond ((or force-flag
 			  (not (achieved-load-status lprec ':loaded))
 			  (> ur-mod-time when-reached-status)
@@ -148,8 +155,9 @@
 			 (setf (Load-progress-rec-run-time-depends-on lpr) !())
 			 (setf (Load-progress-rec-compile-time-depends-on lpr)
 			       !())
-			 (lprec-slurp lprec false ':header-only)
+			 (lprec-slurp lprec true ':header-only)
 			 (let ((curr-supps (Load-progress-rec-supporters lpr)))
+;;;;			    (out "curr-supps = " curr-supps :%)
 			    (setf (Load-progress-rec-supporters lpr) !())
 			    ;; -- Set to harmless value in case we come across
 			    ;; this same lprec during the recursive walk.

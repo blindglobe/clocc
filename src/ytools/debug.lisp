@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.1 2004/03/13 04:06:05 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.2 2004/06/02 17:50:56 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -10,7 +10,7 @@
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
-	     symshow =g htab-show file-show)))
+	     symshow =g htab-show file-show test check)))
 
 ;; Each entry is of the form (flag form type), where flag is a symbol,
 ;; often *.  The idea is to make it easy to munge the forms further,
@@ -120,7 +120,7 @@
 			  (signal-problem dbg-push
 			     "Dbg-stack exceeds " dbg-stack-max-len*
 			     " elements: "
-			     (<# car dbg-stack*)
+			     (<# Dbg-entry-label dbg-stack*)
 			     (:prompt-for "New stack length (default: no change): "
 					  dbg-stack-max-len*))))
 		    (cond ((> newlen (len dbg-stack*))
@@ -416,3 +416,59 @@
 		       :then :again))
        :until (eq r eof*)
           (out (:to *query-io*) r :% :%))))
+
+(define-condition Test-failure (error)
+   ((description :reader Test-failure-description
+		 :initarg :description))
+   (:report (lambda (tf srm)
+	       (out (:to srm) "TEST FAILURE " (Test-failure-description tf)))))
+
+(defvar break-on-test-failure* true)
+
+(defvar check-count*)
+
+;;; (test id-string  -forms-)
+;;; The forms include calls to the 'check' macro, below
+(defmacro test (string &rest body)
+   (let ((block-label (gensym)))
+      `(block ,block-label
+	  (let ((check-count* 0))
+	     (handler-bind ((Test-failure
+			       (\\ (tf)
+				  (cond ((not break-on-test-failure*)
+					 ;; We have to do this because
+					 ;; the :report clause doesn't seem
+					 ;; to work right --
+					 (bind ((*print-escape* false))
+					    (out (:to *error-output*)
+					       "TEST FAILURE"
+					       (Test-failure-description tf)
+					       :% " *** " ,string " test FAILED ***" :%))
+					 (return-from ,block-label))))))
+		  (progn (out (:to *error-output*) "Beginning " ,string " test" :%)
+			 ,@body
+			 (out (:to *error-output*) 5 ,string " test succeeded " :%)))))))
+
+;;; (check form -out-stuff-) runs form.  If it returns false, 'out' the
+;;; out-stuff and break.
+(defmacro check (form &rest msgstuff)
+   (!= msgstuff (remove ':else *-*))
+   (cond ((not (null msgstuff))
+	  (!= msgstuff `(": " ,@*-*))))
+   (let ((srmvar (gensym)))
+      `(progn
+	  (!= check-count* (+ *-* 1))
+;;;;	  (out "check-count* = " check-count* :%)
+	  (cond ((not ,form)
+		 (let ((cc check-count*))
+		    (signal-problem :noplace
+		       :class Test-failure
+		       :description
+			   (make-Printable
+			       (\\ (,srmvar)
+				  (out (:to ,srmvar)
+				      1 cc ,@msgstuff)))
+		       :proceed)))))))
+
+
+

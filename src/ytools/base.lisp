@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.5 2004/04/24 23:01:24 airfoyle Exp $
+;;;$Id: base.lisp,v 1.6 2004/06/02 17:50:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -260,13 +260,13 @@
 
 (defun nodup (l &key (test #'eql))
    (declare (type list l))
-   (do ((tl (reverse l) (cdr tl))
-	(res '()))
-       ((null tl) res)
-     (cond ((not (member (car tl) (cdr tl) :test test))
+   (remove-duplicates l :test test))
 
-
-	    (setq res (cons (car tl) res))))))
+;;;;   (do ((tl (reverse l) (cdr tl))
+;;;;	(res '()))
+;;;;       ((null tl) res)
+;;;;     (cond ((not (member (car tl) (cdr tl) :test test))
+;;;;	    (setq res (cons (car tl) res))))))
 
 (subr-synonym =< <=)
 

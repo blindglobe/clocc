@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3 2004/06/02 17:50:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -178,7 +178,7 @@
 	    (nest auxvars ign-auxvars bindspecs)))))
       
 (defun ignore-if-not-null (ign)
-   (include-if (not (null ign)) `(ignore ,@ign)))
+   (include-if (not (null ign)) `(declare (ignore ,@ign))))
 
 (defun value-list-check (vals vars form)
    (cond ((= (len vals) (len vars))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.4 2004/05/05 15:55:20 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.5 2004/06/02 17:50:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,7 +8,7 @@
 ;;; License.  See file COPYING for details.
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(out in out-indent read-string read-y-or-n)))
+   (export '(out in out-indent read-string read-y-or-n lineread)))
 
 (eval-when (:compile-toplevel :load-toplevel :slurp-toplevel)
    (datafun-table out-ops* out-operator)
@@ -413,3 +413,21 @@
 
 (defmacro read-y-or-n (&rest out-stuff)
   `(y-or-n-p "~s" (make-Printable (\\ (srm) (out ,@out-stuff)))))
+
+(defun lineread (&optional (s *standard-input*))
+	  (prog ((res nil) c)
+	   next
+	     (prog ()
+	      gobble-space
+		(setq c (peek-char false s false eof*))
+		(cond ((and (is-Char c)
+			    (char= c #\Space))
+		       (read-char s)
+		       (go gobble-space)))
+		(return))
+	     (cond ((or (eq c eof*) (char= c #\Newline))
+		    (read-char s)
+		    (return (dreverse res)))
+		   (t
+		    (setq res (cons (read-preserving-whitespace s) res))
+		    (go next)))))

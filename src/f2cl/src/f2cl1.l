@@ -14,7 +14,8 @@
 (in-package :f2cl)
 (defvar *verbose* nil)
 (defvar *comments* nil)
-(defparameter *f2cl-version* "2.0 beta 2002-05-06")
+(defparameter *f2cl-version*
+  (remove #\$ "2.0 beta $Date: 2004/08/11 19:00:33 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -2535,8 +2536,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.132 2003/11/18 19:33:47 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.133 2004/08/11 19:00:33 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.133  2004/08/11 19:00:33  rtoy
+;;; Set the f2cl version to include the RCS Date.
+;;;
 ;;; Revision 1.132  2003/11/18 19:33:47  rtoy
 ;;; Push the function name onto the calls list, not a list of the function
 ;;; name.

@@ -327,10 +327,7 @@ FILENAME                 File containing Fortran code
 	      (format outport ";;; Compiled by f2cl version ~A on ~4d/~2,'0d/~2,'0d at ~2,'0d:~2,'0d:~2,'0d~%"
 		      *f2cl-version*
 		      year month date hour minute second))
-	    (let ((*print-case* :downcase)
-		  (*package* (if package
-				 (find-package package)
-				 (find-package "CL-USER"))))
+	    (let ((*print-case* :downcase)))
 	      ;; Insert in-package and declaim, if needed
 	      #-clisp
 	      (when options
@@ -1972,8 +1969,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.70 2001/02/26 15:38:23 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.71 2001/04/30 15:37:34 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.71  2001/04/30 15:37:34  rtoy
+;;; Add in-package statement, just like the comments say instead of trying
+;;; to compile everything in the given package.
+;;;
 ;;; Revision 1.70  2001/02/26 15:38:23  rtoy
 ;;; Move *check-array-bounds* from f2cl1.l to macros.l since the generated
 ;;; code refers to it.  Export this variable too.

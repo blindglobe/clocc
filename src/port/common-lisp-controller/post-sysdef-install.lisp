@@ -238,9 +238,9 @@ than the maximum file-write-date of output-files, return T."
 
 (defun compile-library (library)
   "Recompiles the given library"
-  (let ((system (find-system library))
-        ;; this is because of clc-build-daemon
-        (*recompiling-from-daemon* t))
+  (let* (;; this is because of clc-build-daemon
+         (*recompiling-from-daemon* t)
+	 (system (find-system library)))
     (case system
       (:defsystem3
        (mk:oos library :compile :verbose nil))

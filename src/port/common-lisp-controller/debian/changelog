@@ -1,3 +1,10 @@
+common-lisp-controller (3.43) unstable; urgency=low
+
+  * Strange bugfix needed to get asdf to play nice with the fix for
+    bug #163990.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 17 Oct 2002 23:05:29 +0200
+
 common-lisp-controller (3.42) unstable; urgency=low
 
   * Add SCL reader conditional to /etc/lisp-config.lisp
@@ -176,39 +183,26 @@ common-lisp-controller (3.21) unstable; urgency=low
 
 common-lisp-controller (3.20) unstable; urgency=low
 
-<<<<<<< changelog
-<<<<<<< changelog
   * Add type of ".*" to source namestring for logical pathnames (Kevin M.
     Rosenberg)
 
  -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 12 Sep 2002 11:43:31 +0200
-=======
-=======
+
   * NMU
->>>>>>> 1.42
   * Add type of ".*" to source namestring for logical pathnames
   * Add reregister-common-lisp-implementations function and manpage
   * Fix bug with compiling mk-defsystem3 based packages
   * Remove obsolete variables from changelog
   * Add version to Build-Depends: for debhelper
   
-<<<<<<< changelog
- -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 11 Sep 2002 14:02:53 -0600
->>>>>>> 1.39
-=======
  -- Kevin M. Rosenberg <kmr@debian.org>  Mon, 16 Sep 2002 08:21:13 -0600
->>>>>>> 1.42
 
 common-lisp-controller (3.19) unstable; urgency=low
 
   * Add cl-defsystem3 as a Depends (critital fault, found and fixed by Kevin
     Rosenberg)
 
-<<<<<<< changelog
- -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 11 Sep 2002 17:47:58 +0200
-=======
  -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 11 Sep 2002 11:23:36 +0200
->>>>>>> 1.42
 
 common-lisp-controller (3.18) unstable; urgency=low
 

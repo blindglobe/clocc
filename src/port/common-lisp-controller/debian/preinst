@@ -17,6 +17,9 @@ set -e
 
 case "$1" in
     install|upgrade)
+        update-inetd --remove "^8990@localhost\t.*"
+	update-inetd --remove "^8990\t.*"
+
         adduser --system --home /usr/lib/common-lisp --shell /bin/false --no-create-home \
                 --disabled-password --disabled-login --group cl-builder 
         

@@ -1207,10 +1207,11 @@ FILENAME                 File containing Fortran code
 ;; arg expression.
 (defun maybe-convert-array-ref-to-slice (arg-list)
   (if (not *array-slicing*)
-      expr
+      arg-list
       (mapcar #'(lambda (expr)
 		  ;;(format t "expr = ~A~%" expr)
-		  (if (eq (first expr) 'fref)
+		  (if (and (listp expr)
+			   (eq (first expr) 'fref))
 		      `(array-slice ,(second expr) ,(lookup-vble-type (second expr)) ,@(cddr expr))
 		      expr))
 	      arg-list)))
@@ -1974,8 +1975,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.68 2000/09/01 13:54:26 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.69 2000/09/01 16:33:25 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.69  2000/09/01 16:33:25  rtoy
+;;; MAYBE-CONVERT-ARRAY-REF-TO-SLICE: the expression isn't always a list!
+;;; Check for that.  Fix a typo too.
+;;;
 ;;; Revision 1.68  2000/09/01 13:54:26  rtoy
 ;;; o F2CL-COMPILE:  not all COMPILE-FILE's have the :ERROR-FILE option.
 ;;; o Added MAYBE-CONVERT-ARRAY-REF-TO-SLICE to convert array refs to

@@ -1680,14 +1680,25 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 	 (abs-directory (directory-to-list (pathname-directory abs-dir)))
 	 (abs-keyword (when (keywordp (car abs-directory))
 			(pop abs-directory)))
-	 (abs-name (file-namestring abs-dir)) ; was pathname-name
+	 ;; Stig (July 2001):
+	 ;; Somehow CLISP dies on the next line, but NIL is ok.
+	 (abs-name (ignore-errors (file-namestring abs-dir))) ; was pathname-name
 	 (rel-directory (directory-to-list (pathname-directory rel-dir)))
 	 (rel-keyword (when (keywordp (car rel-directory))
 			(pop rel-directory)))
 	 (rel-file (file-namestring rel-dir))
-	 #+(or :MCL :sbcl) (rel-name (pathname-name rel-dir))
-         #+(or :MCL :sbcl) (rel-type (pathname-type rel-dir))
+	 ;; Stig (July 2001);
+	 ;; These values seems to help clisp as well
+	 #+(or :MCL :sbcl clisp) (rel-name (pathname-name rel-dir))
+         #+(or :MCL :sbcl clisp) (rel-type (pathname-type rel-dir))
 	 (directory nil))
+
+    ;; Stig (July 2001):
+    ;; CLISP seems to have a bug and only accepts upcased types
+    #+clisp
+    (when rel-type
+        (setq rel-type (string-upcase rel-type)))
+
     ;; TI Common Lisp pathnames can return garbage for file names because
     ;; of bizarreness in the merging of defaults.  The following code makes
     ;; sure that the name is a valid name by comparing it with the
@@ -1740,8 +1751,12 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
                     directory
 		    #+(and :cmu (not (or :cmu17 :cmu18)))
                     (coerce directory 'simple-vector)
-		    :name #-(or :sbcl :MCL) rel-file #+(or :sbcl :MCL) rel-name
-		    #+(or :sbcl :MCL) :type #+(or :sbcl :MCL) rel-type
+		    :name
+		    #-(or :sbcl :MCL :clisp) rel-file
+		    #+(or :sbcl :MCL :clisp) rel-name
+		    
+		    #+(or :sbcl :MCL :clisp) :type
+		    #+(or :sbcl :MCL :clisp) rel-type
 		    ))))
 
 (defun directory-to-list (directory)
@@ -1944,7 +1959,10 @@ ABS: NIL          REL: NIL               Result: ""
 
 (defun append-logical-pnames (absolute relative)
   (declare (type (or null string pathname) absolute relative))
-  (let ((abs (if absolute (namestring absolute) ""))
+  (let ((abs (if absolute
+		 #-clisp (namestring absolute) 
+		 #+clisp absolute ;; Stig (July 2001): hack to avoid CLISP from translating the whole string
+		 ""))
 	(rel (if relative (namestring relative) ""))
 	)
     ;; Make sure the absolute directory ends with a semicolon unless

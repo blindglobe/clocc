@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.14 2001/11/02 22:31:15 sds Exp $
+;;; $Id: cvs.lisp,v 2.15 2001/12/06 20:33:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -275,13 +275,21 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
                                     :external-format :unix
                                     :if-exists :supersede)
                  (write-line line out))))))
-    (when (probe-directory (merge-pathnames "CVS/" root))
-      (change-one-line (merge-pathnames "CVS/Repository" root) substitutions)
-      (change-one-line (merge-pathnames "CVS/Root" root) substitutions))
-    ;; CMUCL's `directory' is buggy - won't work!
-    (dolist (dir (directory (merge-pathnames "*/" root)))
-      (unless (string-equal "CVS" (car (last (pathname-directory dir))))
-        (cvs-change-root dir substitutions :dry-run dry-run :log log)))))
+    (let ((root-cvs (merge-pathnames
+                     (make-pathname :directory '(:relative "CVS")
+                                    :name nil :defaults nil)
+                     root))
+          (root-subdirs (merge-pathnames
+                         (make-pathname :directory '(:relative "*")
+                                        :name nil :defaults nil)
+                         root)))
+      (when (probe-directory root-cvs)
+        (change-one-line (merge-pathnames "Repository" root-cvs) substitutions)
+        (change-one-line (merge-pathnames "Root" root-cvs) substitutions))
+      ;; CMUCL's `directory' is buggy - won't work!
+      (dolist (dir (directory root-subdirs))
+        (unless (string-equal "CVS" (car (last (pathname-directory dir))))
+          (cvs-change-root dir substitutions :dry-run dry-run :log log))))))
 
 (provide :cllib-cvs)
 ;;; file cvs.lisp ends here

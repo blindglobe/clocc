@@ -51,6 +51,7 @@
       (load-and-or-compile "CL-ENV-LIBRARY:environment.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:init-environment.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:system-info.lisp")
+      (load-and-or-compile "CL-ENV-LIBRARY:utilities.lisp")
       )))
 
 

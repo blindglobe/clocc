@@ -1145,7 +1145,7 @@ component."
 				       :load
 				       policy
 				       changed-subcomponents)))
-	(multiple-value-bind (result warning-p failure-p)
+	(multiple-value-bind (result warning-p failure-p other-components)
 	    (execute-action c :load :policy policy-for-subcomponent)
 	  (when (and result (not failure-p))
 	    (setf changed-subcomponents

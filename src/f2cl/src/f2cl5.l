@@ -1760,18 +1760,18 @@
 
 
 (defun get-implicit-type (vble)
-   (do ((decls *implicit_vble_decls* (cdr decls))
-        (vble-str (string vble)))
-       ((null decls) nil)
-       (if
-        (do ((vble-ranges (cdar decls) (cdr vble-ranges)))
-           ((null vble-ranges) nil)
-           (if (or (and (cdar vble-ranges)
-                        (string>= vble-str (string (caar vble-ranges)))
-                        (string<= vble-str (string (cadar vble-ranges))))
-                   (string= vble-str (string (caar vble-ranges))))
-               (return t)))
-        (return (caar decls)))))
+  (do ((decls *implicit_vble_decls* (cdr decls))
+       (vble-str (aref (string vble) 0)))
+      ((null decls) nil)
+    (if
+     (do ((vble-ranges (cdar decls) (cdr vble-ranges)))
+	 ((null vble-ranges) nil)
+       (if (or (and (cdar vble-ranges)
+		    (string>= vble-str (string (caar vble-ranges)))
+		    (string<= vble-str (string (cadar vble-ranges))))
+	       (string= vble-str (string (caar vble-ranges))))
+	   (return t)))
+     (return (caar decls)))))
 
 
 (defun get_array_type (decl vble-is-formal-arg) 
@@ -2616,8 +2616,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.93 2002/03/18 23:34:16 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.94 2002/03/18 23:46:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.94  2002/03/18 23:46:48  rtoy
+;;; Was not correctly handling implicit variable declarations.  We just
+;;; want to compare the first character of the variable agains the given
+;;; ranges, not the whole variable name!
+;;;
 ;;; Revision 1.93  2002/03/18 23:34:16  rtoy
 ;;; Was not correctly handling some implied do loops containing multiple
 ;;; variables in the loop in data statements.  Fix that and clean up some

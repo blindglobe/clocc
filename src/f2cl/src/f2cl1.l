@@ -824,7 +824,40 @@ main-loop
   ;;lhs is either an array ref or a statement function name
   (cond ((eq (car lhs) 'fref)
 	 ;;array_ref 
-	 `((fset ,lhs ,rhs)))
+	 (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
+		(rhs-type (first (get-upgraded-fun-arg-type (list (list rhs)))))
+		(new-rhs
+		 (cond ((find *coerce-assignments* '(t :always))
+			(if (subtypep rhs-type 'string)
+			    `(copy-seq ,rhs)
+			    `(coerce ,rhs (type-of ,lhs))))
+		       ((find *coerce-assignments* '(nil :never))
+			`((setf ,lhs ,rhs)))
+		       (t
+			;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+			;; RHS.  Otherwise, coerce the RHS to the
+			;; type of the LHS.  However, we can't coerce
+			;; something to an integer.  Use truncate for
+			;; that.
+			(cond ((or (eq t rhs-type)
+				   (eq t lhs-type)
+				   (eq lhs-type rhs-type))
+			       ;; No coercion is needed if the types
+			       ;; match, or if we can't determine the
+			       ;; type of the LHS or RHS.
+			       rhs)
+			      ((and (subtypep lhs-type 'integer)
+				    (not (subtypep rhs-type 'integer)))
+			       ;; We're trying to set a integer
+			       ;; variable to non-integer value.  Use
+			       ;; truncate.
+			       `(truncate ,rhs))
+			      (t
+			       ;; Haven't a clue, so coerce
+			       (if (subtypep rhs-type 'string)
+				   `(copy-seq ,rhs)
+				   `(coerce ,rhs ',lhs-type))))))))
+	 `((fset ,lhs ,new-rhs))))
 	((eq (car lhs) 'fref-string)
 	 ;; Fortran string ref
 	 `((fset-string ,lhs ,rhs)))

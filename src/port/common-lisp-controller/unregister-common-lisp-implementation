@@ -1,13 +1,15 @@
 #!/bin/bash
 
+PROGNAME=$(basename $0)
+
 if [ `id -u` != 0 ] ; then
- echo You need to be root to run $0
+ echo You need to be root to run $PROGNAME
  exit 1
 fi
 
 if [ -z "$1" ] ; then
  cat <<EOF
-$0 compiler-name 
+usage: $PROGNAME compiler-name 
 
 un-registers a Common Lisp compiler to the 
 Common-Lisp-Controller system.
@@ -15,35 +17,33 @@ EOF
     exit 1
 fi
 
+IMPL_BIN="/usr/lib/common-lisp/bin/$1.sh"
 
-FILE="/usr/lib/common-lisp/bin/$1.sh"
-
-if [ ! -f "$FILE" ] ; then
+if [ ! -f "$IMPL_BIN" ] ; then
   cat <<EOF
-$0: No implementation of the name $1 is registered 
-Cannot find the file $FILE
+$PROGNAME: No implementation of the name $1 is registered 
+Cannot find the file $IMPL_BIN
 
 Maybe you already removed it?
 EOF
   exit 0
 fi
-if [ ! -r "$FILE" ] ; then
+if [ ! -r "$IMPL_BIN" ] ; then
   cat <<EOF
-$0: No implementation of the name $1 is registered 
-Cannot read the file $FILE
+$PROGNAME: No implementation of the name $1 is registered 
+Cannot read the file $IMPL_BIN
 
 Maybe you already removed it?
 EOF
   exit 0
 fi
 
-#uninstall CLC
-sh "$FILE" remove-defsystem || echo "De-installation of CLC failed" >&2  
+# Uninstall the CLC
+sh $IMPL_BIN remove-defsystem || echo "De-installation of CLC failed" >&2
 
 # Just remove the damn subtree
 
 (cd / ; rm -rf "/usr/lib/common-lisp/${1}/" ; true )
 
-cat <<EOF
-$0: Compiler $1 uninstalled
-EOF
+echo "$PROGNAME: Common Lisp implementation $1 uninstalled"
+

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: elisp.lisp,v 2.3 2000/05/02 15:02:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,9 +14,6 @@
   ;; `from-list'
   (require :list (translate-logical-pathname "cllib:list")))
 (in-package :cllib)
-
-(eval-when (compile load eval)
-  (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (defpackage emacs-lisp
   #-allegro
@@ -130,7 +127,9 @@
   (declare (real sec ms) (ignore nodisp))
   (sleep (+ sec (/ ms 1000))))
 (defun el::string-to-number (string &optional (base 10))
-  (parse-integer string :radix base))
+  (if (= base 10)
+      (read-from-string string)
+      (parse-integer string :radix base)))
 (defun el::/ (&rest args)
   (if (every #'integerp args)
       (reduce #'floor (cdr args) :initial-value (car args))
@@ -163,19 +162,18 @@
 (defmacro el::save-window-excursion (&rest body) `(progn ,@body))
 (defmacro el::save-excursion (&rest body) `(progn ,@body))
 (defmacro el::with-output-to-temp-buffer (&rest body) `(progn ,@body))
-
-(setf (fdefinition 'el::number-to-string) #'prin1-to-string)
-(setf (fdefinition 'el::int-to-string) #'el::number-to-string)
-(setf (fdefinition 'el::char-to-string) #'string)
-(setf (fdefinition 'el::string-to-int) #'el::string-to-number)
-(setf (fdefinition 'el::file-truename) #'truename)
-(setf (fdefinition 'el::file-exists-p) #'probe-file)
-(setf (fdefinition 'el::substring) #'subseq)
-(setf (fdefinition 'el::%) #'rem)
-(setf (fdefinition 'el::file-directory-p) #'probe-directory)
-(setf (fdefinition 'el::sref) #'aref)
-(setf (fdefinition 'el::set-default) #'set)
-(setf (fdefinition 'el::default-value) #'symbol-value)
+(defsubst el::number-to-string (number) (write-to-string number :radix 10))
+(defsubst el::int-to-string (number) (el::number-to-string number))
+(defsubst el::char-to-string (char) (string char))
+(defsubst el::string-to-int (&rest args) (apply #'el::string-to-number args))
+(defsubst el::file-truename (file) (truename file))
+(defsubst el::file-exists-p (file) (probe-file file))
+(defsubst el::substring (seq from &optional to) (subseq seq from to))
+(defsubst el::% (x y) (rem x y))
+(defsubst el::file-directory-p (ff) (probe-directory ff))
+(defsubst el::sref (ar ix) (aref ar ix))
+(defsubst el::set-default (sy va) (set sy va))
+(defsubst el::default-value (sy) (symbol-value sy))
 
 (defun el::run-hooks (&rest hooks)
   (labels ((rh (hook)
@@ -206,15 +204,33 @@
   (pushnew el (symbol-value list) :test #'equal))
 
 ;;; tmp hacks
-(setf (fdefinition 'el::define-key) #'el::ignore)
-(setf (fdefinition 'el::make-sparse-keymap) #'el::ignore)
-(setf (fdefinition 'el::substitute-key-definition) #'el::ignore)
-;; (setf (fdefinition 'el::) #'el::ignore)
-(setf (fdefinition 'el::interactive) #'el::ignore)
-(setf (fdefinition 'el::make-help-screen) #'el::ignore)
-(setf (fdefinition 'el::help-for-help) #'el::ignore)
-(setf (fdefinition 'el::start-kbd-macro) #'el::ignore)
-(setf (fdefinition 'el::substitute-command-keys) #'identity)
+(defun el::define-key (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::define-key args)
+  (values-list args))
+(defun el::make-sparse-keymap (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::make-sparse-keymap args)
+  (values-list args))
+(defun el::substitute-key-definition (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet"
+        'el::substitute-key-definition args)
+  (values-list args))
+(defun el::interactive (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::interactive args)
+  (values-list args))
+(defun el::make-help-screen (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::make-help-screen args)
+  (values-list args))
+(defun el::help-for-help (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::help-for-help args)
+  (values-list args))
+(defun el::start-kbd-macro (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet" 'el::start-kbd-macro args)
+  (values-list args))
+(defun el::substitute-command-keys (&rest args)
+  (warn "~s [~{~s~^ ~}]: not implemented yet"
+        'el::substitute-command-keys args)
+  (values-list args))
+
 (defvar el::global-map (el::make-sparse-keymap))
 (defvar el::help-char (code-char 8))
 (defvar el::help-form nil)

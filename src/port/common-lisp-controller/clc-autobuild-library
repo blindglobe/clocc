@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.1 $'
+pversion='$Revision: 1.2 $'
 
 if [ `id -u` != 0 ] ; then
  echo $progname: you need to be root to run this program
@@ -14,12 +14,16 @@ fi
 usage()
 {
         cat >&2 <<END
-Usage: $progname library value [OPTIONS]
+Usage: $progname library value [impl ...] [OPTIONS]
+
 $progname sets the autobuilding for a Common Lisp
 library. The autobuild value can be "yes", "no",
 or "inherit". If it is "inherit", then the library's
 status will be inherited from the default autobuild status
 for each implementation
+
+If no implementations are specified on the command line, then
+autobuilding is set for all known implementations.
 
 Options: 
   -h                  Print this short help message
@@ -34,6 +38,8 @@ if [ $(expr "$1" : "\(\-\)") ]; then
   exit 1
 fi
 
+known_impl="cmucl-normal cmucl-safe cmucl-small sbcl clisp acl alisp alisp8 mlisp mlisp8 lispworks openmcl"
+
 library=$1
 shift
 autobuild=$(echo $1 | tr "[A-Z]" "[a-z]")
@@ -46,20 +52,27 @@ if [ "$autobuild" != "yes" -a "$autobuild" != "no" -a "$autobuild" != "inherit" 
 fi
 
 # Command line
+impls=""
 while [ $# != 0 ]; do
     case "$1" in
         -h) usage; exit 0         ;;
 	-*) usage; exit 1         ;;
-	*)  usage; exit 1;        ;;
+	*)  impls="$1 $impls"       ;;
     esac
     shift
 done
 
-mkdir -p /etc/common-lisp/$impl/$library
-if [ "$autobuild" = "yes" ]; then
-    echo "yes" > /etc/common-lisp/$impl/$library/autobuild
-elif [ "$autobuild" = "no" ]; then
-    echo "no" > /etc/common-lisp/$impl/$library/autobuild
-else
-    rm -f /etc/common-lisp/$impl/$library/autobuild
+if [ ! "$impls" ]; then
+  impls="$known_impl"
 fi
+
+for impl in $impls; do
+    mkdir -p /etc/common-lisp/$impl/$library
+    if [ "$autobuild" = "yes" ]; then
+	echo "yes" > /etc/common-lisp/$impl/$library/autobuild
+    elif [ "$autobuild" = "no" ]; then
+	echo "no" > /etc/common-lisp/$impl/$library/autobuild
+    else
+	rm -f /etc/common-lisp/$impl/$library/autobuild
+    fi
+done

@@ -4,10 +4,11 @@ common-lisp-controller (3.27) unstable; urgency=low
   * Change clc-build-daemon.c so it will try to recompile files
   if the binary directory exists, but has no files in it 
   * New autobuilding system, described in README.autobuild
-  * Add new commands: check-common-lisp-autobuild and
-  common-lisp-source-compatible.
+  * Add new commands: clc-check-autobuild, clc-only-compatible,
+  clc-not-compatible, clc-autobuild-library, clc-autobuild-implementation
+  * Rename reregister-common-lisp-implementations to clc-reregister-all-impl
   * Rename some "defsystem" strings to "clc"
-  * Change sh to bash in postinst
+  * Change sh to bash invocation in postinst
   * Rework rules file to use dh_install rather than install
   * Remove copyright-defsystem and defsystem.text from package
   

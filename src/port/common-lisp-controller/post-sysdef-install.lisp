@@ -206,30 +206,17 @@ than the maximum file-write-date of output-files, return T."
 
 ;; we need to hack the require to
 ;; call clc-send-command on load failure...
-(defun clc-require (module-name &optional pathname definition-pname
-				default-action)
-  (let ((system-type (find-system module-name)))
-    (case system-type
-      (:defsystem3
-       (if (not (or pathname
-		    definition-pname
-		    default-action ))
-	   ;; no advanced stuff
-	   (require-defsystem3 module-name)
-	 ;; ifnot, let original require deal with it..
-	 (original-require module-name pathname)))
-     (:asdf
-      (if (not (or pathname
-		   definition-pname
-		   default-action ))
-	  ;; no advanced stuff
-	  (require-asdf module-name)
-	;; ifnot, let original require deal with it..
-	(original-require module-name pathname)))
-     ;; Call original require if can't find system file
-     (otherwise
-      (original-require module-name pathname)))))
-
+(defun clc-require (module-name &optional (pathname 'c-l-c::unspecified))
+  (if (not (eq pathname 'c-l-c::unspecified))
+      (original-require module-name pathname)
+    (let ((system-type (find-system module-name)))
+      (case system-type
+	(:defsystem3
+	 (require-defsystem3 module-name))
+	(:asdf
+	 (require-asdf module-name))
+	(otherwise
+	 (original-require module-name))))))
 
 (defun compile-library (library)
   "Recompiles the given library"

@@ -6,6 +6,7 @@
     :source-pathname 
     #+common-lisp-controller "cl-library:pictures;"
     #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;pictures;")
+    :source-extension "lisp"
     :depends-on (clue )
     :components
     ((:file "package")

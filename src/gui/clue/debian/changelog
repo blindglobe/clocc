@@ -1,8 +1,11 @@
 clue (20011231) unstable; urgency=low
 
-  * 
+  * Hacked the system file so it doesn't prevent cmucl-graystream from
+    rebuilding anymore. Hint: don't modify pcl parameters in the system file!
+  * Possibly works now with acl. Cannot test due to limitations of the trial
+    version :-(
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Mon, 31 Dec 2001 15:47:13 +0100
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun, 25 Aug 2002 12:21:34 +0200
 
 clue (20011230) unstable; urgency=high
 

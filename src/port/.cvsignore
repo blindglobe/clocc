@@ -16,3 +16,5 @@ port.list
 *.core
 *.dxl
 *.err
+*.log
+*.fsl

@@ -17,3 +17,5 @@ auto.lisp
 *.core
 *.dxl
 *.err
+*.log
+*.fsl

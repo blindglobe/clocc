@@ -1,5 +1,6 @@
 ChangeLog
 metering.list
+*.zip
 *.fas
 *.lib
 *.axpf
@@ -12,3 +13,8 @@ metering.list
 *.data
 *.ufsl
 *.mem
+*.core
+*.dxl
+*.err
+*.log
+*.fsl

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.13 2003/02/14 17:23:54 sds Exp $
+;;; $Id: proc.lisp,v 1.14 2003/03/12 18:06:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -398,7 +398,7 @@ and reapply its initial function to its arguments."
   #+Allegro    (mp:make-process-lock :name name)
   #+CMU        (mp:make-lock name)
   #+CormanLisp FIXME
-  #+Genera     FIXME
+  #+Genera     (process:make-lock name)
   #+LispWorks  (mp:make-lock :name name)
   #+Lucid      FIXME
   #+MCL        (ccl:make-process-queue name)
@@ -432,7 +432,7 @@ and reapply its initial function to its arguments."
   #+Allegro    `(mp:with-process-lock (,lock) ,@body)
   #+CMU        `(mp:with-lock-held (,lock) ,@body)
   #+CormanLisp FIXME
-  #+Genera     FIXME
+  #+Genera     `(process:with-lock (,lock) ,@body)
   #+LispWorks  `(mp:with-lock (,lock) ,@body)
   #+Lucid      `(lcl:with-process-lock (,lock) ,@body)
   #+MCL        `(ccl:with-process-enqueued (,lock) ,@body)

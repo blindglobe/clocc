@@ -2149,7 +2149,7 @@ ABS: NIL          REL: NIL               Result: ""
                                 :type nil)
                  ))
 	)
-    (namestring (merge-pathnames rel abs))
+    (namestring (merge-pathnames abs rel))
     ))
 
 #||

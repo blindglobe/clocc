@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1997-12-04 Thu 15:02:08 EST - sds@wintermute.eagle>
+;;; File: <date.lisp - 1998-01-14 Wed 17:13:25 EST sds@mute.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.3 1997/12/04 20:02:53 sds Exp $
+;;; $Id: date.lisp,v 1.4 1998/01/14 22:17:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.4  1998/01/14 22:17:46  sds
+;;; Portability: runs under CMU CL and ACL.
+;;;
 ;;; Revision 1.3  1997/12/04 20:02:53  sds
 ;;; Moved `channel' to channel.lisp.
 ;;; Made printing respect *print-readably*.
@@ -28,11 +31,13 @@
 ;;; Date
 ;;;
 
+(eval-when (load compile eval)
 (defstruct (date (:print-function print-date))
   "The date structure -- year, month, and day."
   (ye 1 :type fixnum)
   (mo 1 :type (integer 1 12))
   (da 1 :type (integer 1 31)))
+)
 
 (defun print-date (date &optional (stream t) (depth 1))
   "Print the date to the STREAM, using `*print-date-format*'."
@@ -47,12 +52,12 @@
   (format stream "~a ~d" (aref *month-names* (1- (date-mo date)))
 	  (date-ye date)))
 
-(defsubst date2num (dt)
+(defun date2num (dt)
   "Convert the date to the numerical format YYYYMMDD."
   (declare (type date dt))
   (+ (* 10000 (date-ye dt)) (* 100 (date-mo dt)) (date-da dt)))
 
-(defsubst date2time (dt)
+(defun date2time (dt)
   "Call `encode-universal-time' on the date.
 Returns the number of seconds since the epoch (1900-01-01)."
   (declare (type date dt))
@@ -61,15 +66,19 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defun time2date (num)
   "Convert the universal time NUM to date."
   (declare (real num))
-  (multiple-value-bind (se mi ho da mo ye)
-      (decode-universal-time num)
+  (multiple-value-bind (se mi ho da mo ye) (decode-universal-time num)
     (declare (ignore se mi ho))
     (make-date :ye ye :mo mo :da da)))
 
-(defsubst date2days (dt)
+(defun date2days (dt)
   "Convert the date to the number of days since the epoch (1900-01-01)."
   (declare (type date dt))
   (round (/ (date2time dt) *day-sec*)))
+
+(defun days2date (days)
+  "Convert the number of days since the epoch (1900-01-01) to the date."
+  (declare (fixnum days))
+  (time2date (* (1+ days) *day-sec*)))
 
 (defun days-since (key beg)
   "Return a function that will return the number of days between BEG
@@ -78,11 +87,17 @@ and (funcall KEY arg). KEY should return a date."
   (unless (realp beg) (setq beg (date2days (date beg))))
   (lambda (rr) (- (date2days (funcall key rr)) beg)))
 
-(defsubst today ()
+(defun today ()
   "Return today's date."
   (time2date (get-universal-time)))
 
-(defsubst date-fix-year (dt)
+(defun timestamp (&optional (time (get-universal-time)))
+  "Return the current time as a string without blanks."
+  (multiple-value-bind (se mi ho da mo ye) (decode-universal-time time)
+    (format nil "~4,'0d-~2,'0d-~2,'0d--~2,'0d-~2,'0d-~2,'0d"
+	    ye mo da ho mi se)))
+
+(defun date-fix-year (dt)
   "Fix the year to be from C.E., not from the beginning of the century."
   (declare (type date dt))
   (let ((ye (date-ye dt)))
@@ -90,7 +105,8 @@ and (funcall KEY arg). KEY should return a date."
 
 (defun read-date (stream)
   "Read date in format MONTH DAY YEAR."
-  (make-date :mo (read stream) :da (read stream) :ye (read stream)))
+  (make-date :mo (infer-month (read stream)) :da (read stream)
+	     :ye (read stream)))
 
 (defun parse-date (st-sy)
   "Get the date out of a string `1969-12-07' or a similar symbol."
@@ -100,47 +116,56 @@ and (funcall KEY arg). KEY should return a date."
 	(make-date :ye (or ye 0) :mo mo :da
 		   (read-from-string str nil 0 :start n1))))))
 
-(defsubst date (dt)
+(defun infer-month (mon)
+  "Get the month from the object, number or name."
+  (if (numberp mon) mon
+      (1+ (position mon *month-names* :test
+		    (lambda (s0 s1)
+		      (string-equal s0 s1 :start1 0 :end1 2
+				    :start2 0 :end2 2))))))
+
+(defun date (dt)
   "Make a date out of the object."
   (cond ((date-p dt) dt)
-	((realp dt)
-	 (if (eq (type-of dt) 'fixnum) (num2date dt) (time2date dt)))
-	(t (parse-date dt))))
+	((realp dt) (if (typep dt 'fixnum) (num2date dt) (time2date dt)))
+	((or (symbolp dt) (stringp dt)) (parse-date dt))
+	((streamp dt) (read-date dt))
+	((error "Cannot infer a date from `~s'.~%"))))
 
-(defsubst num2date (num)
+(defun num2date (num)
   "Get the date from the number."
   (declare (number num))
   (make-date :ye (floor (/ num 10000)) :mo (mod (floor (/ num 100)) 100)
 	     :da (mod num 100)))
 
-(defsubst same-date-p (d0 d1)
+(defun same-date-p (d0 d1)
   "Check that the dates are the same. Like equalp, but works with children."
   (setq d0 (date d0) d1 (date d1))
   (and (= (date-ye d0) (date-ye d1))
        (= (date-mo d0) (date-mo d1))
        (= (date-da d0) (date-da d1))))
 
-(defsubst date-less-p (d0 d1)
+(defun date-less-p (d0 d1)
   "Check the precedence of the two dates."
   (setq d0 (date d0) d1 (date d1))
   (< (date2num d0) (date2num d1)))
 
-(defsubst date-more-p (d0 d1)
+(defun date-more-p (d0 d1)
   "Check the precedence of the two dates."
   (setq d0 (date d0) d1 (date d1))
   (> (date2num d0) (date2num d1)))
 
-(defsubst latest-date (d0 d1)
+(defun latest-date (d0 d1)
   "Return the latest date."
   (setq d0 (date d0) d1 (date d1))
   (if (date-less-p d0 d1) d1 d0))
 
-(defsubst earliest-date (d0 d1)
-  "Return the latest date."
+(defun earliest-date (d0 d1)
+  "Return the earliest date."
   (setq d0 (date d0) d1 (date d1))
   (if (date-more-p d0 d1) d1 d0))
 
-(defsubst next-month-p (d0 d1)
+(defun next-month-p (d0 d1)
   "True if D1 is the next month of D0."
   (declare (type date d0 d1))
   (let ((y0 (date-ye d0)) (y1 (date-ye d1))
@@ -148,12 +173,12 @@ and (funcall KEY arg). KEY should return a date."
     (or (and (= (1+ m0) m1) (= y0 y1))
 	(and (= m0 12) (= m1 1) (= (1+ y0) y1)))))
 
-(defsubst same-month-p (d0 d1)
+(defun same-month-p (d0 d1)
   "Return t if the dates are in the same month."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1)) (= (date-mo d0) (date-mo d1))))
 
-(defsubst next-quarter-p (d0 d1)
+(defun next-quarter-p (d0 d1)
   "True if D1 is the next quarter of D0."
   (declare (type date d0 d1))
   (let ((y0 (date-ye d0)) (y1 (date-ye d1))
@@ -161,12 +186,12 @@ and (funcall KEY arg). KEY should return a date."
     (or (and (= m1 1) (= (1+ y0) y1) (> m0 9))
 	(and (= y0 y1) (< m0 m1) (> (+ 4 m0) m1) (member m1 '(1 4 7 10))))))
 
-(defsubst date-quarter (dt)
+(defun date-quarter (dt)
   "Return the quarter of the date."
   (declare (type date dt))
   (1+ (floor (1- (date-mo dt)) 3)))
 
-(defsubst same-quarter-p (d0 d1)
+(defun same-quarter-p (d0 d1)
   "Return t if the dates are in the same quarter."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1))
@@ -187,10 +212,29 @@ I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd))
   (time2date (+ (date2time dd) (* *day-sec* skip))))
 
-(defsubst date-in-list (dt lst &optional (key #'identity))
-  "Return the tail of LST starting with DT."
+(defun date-in-list (dt lst &optional (key #'identity) last)
+  "Return the tail of LST starting with DT.
+If LAST is non-nil, make sure that the next date is different."
   (declare (function key) (list lst))
-  (member (date dt) lst :key key :test (complement #'date-more-p)))
+  (let ((ll (member (date dt) lst :key key :test (complement #'date-more-p))))
+    (if (and last ll (cdr ll)) (skip-to-new ll :key key :test #'equalp) ll)))
+
+(defmacro with-sublist ((newl oldl e0 e1 &key (key '#'identity) (test '#'eql))
+			&body body)
+  "Execute BODY, binding the NEWL to the sublist of OLDL from E0 to E1
+inclusively. KEY and TEST have the usual meaning and default.
+BODY may not modify the list structure of NEWL, or else!
+Also, do NOT try to return a cons from NEWL. You'd be surprised!"
+  (let ((tt (gensym "WSL")) (kk (gensym "WSL")))
+    `(let* (,kk (,newl (member-if (lambda (el) (setq ,kk (funcall ,key el))
+					  (or (funcall ,test ,kk ,e0)
+					      (funcall ,test ,kk ,e1))) ,oldl))
+	    (,tt (member (if (funcall ,test ,kk ,e0) ,e1 ,e0) ,newl :key
+			 ,key :test ,test)))
+      (unwind-protect
+	   (progn (when ,tt (setq ,kk (cdr ,tt)) (setf (cdr ,tt) nil))
+		  ,@body)
+	(when ,tt (setf (cdr ,tt) ,kk))))))
 
 (defun check-dates (lst order-p same-p jump gap &key (date #'car)
 		    (val #'cdr) (stream t))
@@ -336,7 +380,7 @@ CKEY and AKEY values of nil are the same as #'identity.
   (unless ckey (setq ckey #'identity))
   (unless akey (setq akey #'identity))
   (do ((sec (copy-list lists)) (akeys (make-list (length lists)))
-       begck ck fnn (err nil nil) res)
+       begck ck fnn res)
       ((every #'null sec) (nreverse res))
     ;; get the current ckey
     (setq fnn (member nil sec :test-not #'eq)
@@ -355,20 +399,24 @@ CKEY and AKEY values of nil are the same as #'identity.
     (cond ((eq type 'list) (push (apply func akeys) res))
 	  (t (apply func akeys)))))
 
-
 ;;;
 ;;; Dated List
 ;;;
 
+(eval-when (load compile eval)
 (defstruct (dated-list (:print-function print-dlist))
   "A dated list of records."
-  (ll nil :type list)			; the actual list
-  (code nil :type symbol)		; the code (2 letter symbol)
-  (name "??" :type string)		; the name of the data
-  (date #'identity :type (function date)) ; the date accessor
-  (val #'identity :type (function float)) ; the value accessor
-  (chg #'identity :type (function float)) ; the change accessor
-  (misc #'identity :type function))	; the miscellaneous accessor
+  (ll nil :type list)		; the actual list
+  (code nil :type symbol)	; the code (2 letter symbol)
+  (name "??" :type string)	; the name of the data
+  (date 'identity :type		; the date accessor
+	(or symbol (function (t) date)))
+  (val 'identity :type		; the value accessor
+       (or symbol (function (t) double-float)))
+  (chg 'identity :type		; the change accessor
+       (or symbol (function (t) double-float)))
+  (misc 'identity :type (or symbol function))) ; the miscellaneous accessor
+)
 
 (defsubst dl-len (dl)
   "Return the length of the dated list."
@@ -380,33 +428,33 @@ CKEY and AKEY values of nil are the same as #'identity.
   (declare (type dated-list dl))
   (endp (dated-list-ll dl)))
 
-(defsubst dl-nth (dl &optional (nn 0))
+(defun dl-nth (dl &optional (nn 0))
   "Return the Nth record of the dated list.
 Optional second arg defaults to 0. NIL means the last record."
   (declare (type dated-list dl))
   (if nn (nth nn (dated-list-ll dl)) (car (last (dated-list-ll dl)))))
 
-(defsubst dl-nth-date (dl &optional (nn 0))
+(defun dl-nth-date (dl &optional (nn 0))
   "Return the Nth date of the dated list."
   (declare (type dated-list dl))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dated-list-date dl) bb))))
 
-(defsubst dl-nth-val (dl &optional (nn 0))
+(defun dl-nth-val (dl &optional (nn 0))
   "Return the Nth value of the dated list."
   (declare (type dated-list dl))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dated-list-val dl) bb))))
 
-(defsubst dl-nth-chg (dl &optional (nn 0))
+(defun dl-nth-chg (dl &optional (nn 0))
   "Return the Nth change of the dated list."
   (declare (type dated-list dl))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dated-list-chg dl) bb))))
 
-(defsubst dl-nth-misc (dl &optional (nn 0))
+(defun dl-nth-misc (dl &optional (nn 0))
   "Return the Nth MISC of the dated list."
   (declare (type dated-list dl))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dated-list-misc dl) bb))))
 
-(defsubst dl-nth-slot (dl slot &optional (nn 0))
+(defun dl-nth-slot (dl slot &optional (nn 0))
   "Return the Nth SLOT of the dated list."
   (declare (type dated-list dl))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (slot-value dl slot) bb))))
@@ -425,18 +473,30 @@ Optional second arg defaults to 0. NIL means the last record."
 		(dl-len dl) (dated-list-name dl) (dated-list-code dl)
 		(dl-nth-date dl) (dl-nth-date dl nil)))))
 
-(defsubst date-in-dated-list (dt dl)
-  "Call `date-in-list' on the dated list."
-  (declare (list dl))
-  (if dt (date-in-list dt (dated-list-ll dl) (dated-list-date dl))
+(defun date-in-dated-list (dt dl &optional last)
+  "Call `date-in-list' on the dated list.
+If  LAST is non-nil, make sure that the next date is different."
+  (declare (type dated-list dl))
+  (if dt (date-in-list dt (dated-list-ll dl) (dated-list-date dl) last)
       (dated-list-ll dl)))
 
-(defsubst dl-shift (dl &optional dt)
+(defun dl-double-date-p (dt dl)
+  "Return T if the date DT is present in DL twice."
+  (declare (type dated-list dl))
+  (setq dt (date dt))
+  (equalp dt (funcall (dated-list-date dl)
+		      (second (date-in-dated-list dt dl)))))
+
+(defun dl-shift (dl &optional dt last)
   "Make DL start from DT. Return the new DL.
-If dt is omitted, skip one record."
+If dt is omitted, skip one record.
+If LAST is non-nil, make sure that the next date is different."
   (declare (type dated-list dl))
   (setf (dated-list-ll dl)
-	(if dt (date-in-dated-list dt dl) (cdr (dated-list-ll dl))))
+	(if dt (date-in-dated-list dt dl last)
+	    (cdr (if last (skip-to-new (dated-list-ll dl) :test #'equalp
+				       :key (dated-list-date dl))
+		     (dated-list-ll dl)))))
   dl)
 
 (defun dl-copy-shift (dl &key shift date)
@@ -458,7 +518,7 @@ to the end (set tge list to NIL)."
 		    shift date)))
     cdl))
 
-(defsubst dl-next-chg (dl)
+(defun dl-next-chg (dl)
   "Shift dl to the next date, return the change in val.
 Can be used with chain contracts, where there are double records for
 roll-over dates."
@@ -496,7 +556,7 @@ roll-over dates."
 	      nu me (standard-deviation (cdr jj) :len nu :mean me :key #'car)))
     (top-bottom-ui (cdr jj) 5 5 t :stream out :key #'car :label #'cdr)))
 
-(defsubst skip-dl-to-date (dl dt &optional stlog)
+(defun skip-dl-to-date (dl dt &optional stlog)
   "Skip (shift) the dated list DL to the date DT.
 Signal error if DL ends before DT.
 Print messages for: missing DT in DL and double date in DL.
@@ -552,10 +612,10 @@ Key defaults to VAL; split defaults to `date-ye'."
 
 (defun exp-mov-avg (coeff seq &rest args &key (key #'identity) date
 		    &allow-other-keys)
-  "Return the dated list of the exponential moving averages with
-the given coefficient for the given sequence. If :date is not given,
-no dated list is created and just the list of numbers is returned."
-  (declare (sequence seq) (function key) (float coeff))
+  "Return the list of the exponential moving averages with the given
+coefficient for the given sequence. If :date is not given, no dated
+list object is created and just the list of numbers is returned."
+  (declare (sequence seq) (function key) (double-float coeff))
   (let* ((ema (funcall key (elt seq 0)))
 	 (ll
 	  (map 'list
@@ -568,7 +628,7 @@ no dated list is created and just the list of numbers is returned."
 	       seq)))
     (cond (date
 	   (remf args :key) (remf args :date)
-	   (apply #'make-dated-list :ll ll :date #'cdr :val #'car args))
+	   (apply #'make-dated-list :ll ll :date 'cdr :val 'car args))
 	  (t ll))))
 
 (defun exp-mov-avg-dl (coeff dl &optional (slot 'val))
@@ -583,28 +643,26 @@ no dated list is created and just the list of numbers is returned."
 (defun regress-dl (dl &optional begd endd)
   "Regress the dated list in the given interval.
 When a boundary is omitted, the end (or the beginning) is used.
-Return the line object and the deviation therefrom."
+Return the line object and the deviation therefrom.
+Must not assume that the list is properly ordered!"
   (declare (type dated-list dl))
   (setq begd (if begd (date begd)) endd (if endd (date endd)))
-  (let ((ll (date-in-dated-list begd dl))
-	de ln tl tl0 (d0 (or begd (dl-nth-date dl))))
-    (when endd
-      (setq tl (date-in-list endd ll (dated-list-date dl))
-	    tl0 (cdr tl))
-      (when tl (setf (cdr tl) nil)))
-    (multiple-value-setq (ln de)
-      (regress ll :xkey (days-since (dated-list-date dl) d0)
-	       :ykey (dated-list-val dl)))
-    (when tl (setf (cdr tl) tl0))
-    (values ln de)))
+  (with-sublist (ll (dated-list-ll dl) begd endd :key (dated-list-date dl)
+		 :test #'equalp)
+    (regress ll :ykey (dated-list-val dl)
+	     :xkey (days-since
+		    (dated-list-date dl)
+		    (earliest-date (funcall (dated-list-date dl) (car ll))
+				   (funcall (dated-list-date dl)
+					    (car (last ll))))))))
 
 (defsubst mean-dl (dl &key (slot 'val))
   "Apply `mean' to the dated list."
   (declare (type dated-list dl))
   (mean (dated-list-ll dl) :key (slot-value dl slot)))
 
-(defsubst standard-deviation-dl (dl &rest opts &key (slot 'val)
-				 &allow-other-keys)
+(defun standard-deviation-dl (dl &rest opts &key (slot 'val)
+			      &allow-other-keys)
   "Apply `standard-deviation' to the dated list."
   (declare (type dated-list dl))
   (remf opts :slot)
@@ -625,12 +683,14 @@ Return the line object and the deviation therefrom."
 ;;; Change
 ;;;
 
+(eval-when (load compile eval)
 (defstruct (change (:print-function print-change))
   "Change structure - for computing difference derivatives."
   (date (make-date) :type date)
-  (val 0.0d0 :type float)		; value
-  (chf 0.0d0 :type float)		; change forward
-  (chb 0.0d0 :type float))		; change backward
+  (val 0.0d0 :type double-float) ; value
+  (chf 0.0d0 :type double-float) ; change forward
+  (chb 0.0d0 :type double-float)) ; change backward
+)
 
 (defsubst change-max-p (chg)
   "Is this a local maximum?"
@@ -665,8 +725,8 @@ Return the line object and the deviation therefrom."
 
 (defun change-list-to-dated-list (chl &rest args)
   "Make a dated list containing this change list."
-  (apply #'make-dated-list :ll chl :date #'change-date :val #'change-val
-	 :chg #'change-chf :misc #'change-chb args))
+  (apply #'make-dated-list :ll chl :date 'change-date :val 'change-val
+	 :chg 'change-chf :misc 'change-chb args))
 
 (defun dl-extrema (dl)
   "Return a dated list of changes, each recording a local extremum.
@@ -689,16 +749,18 @@ ch[bf], and dl-extrema will not be idempotent."
 ;;; Diff
 ;;;
 
+(eval-when (load compile eval)
 (defstruct (diff (:print-function print-diff))
   "A dated diff."
   (date (make-date) :type date)
   (di 0.0 :type real)			; difference
   (ra 1.0 :type real))			; ratio
+)
 
 (defun diff-list-to-dated-list (dl &rest args)
   "Wrap a list of diff's into a dated-list.
 Sets ll, date, val, and passes the rest directly to make-dated-list."
-  (apply #'make-dated-list :ll dl :date #'diff-date :val #'diff-di args))
+  (apply #'make-dated-list :ll dl :date 'diff-date :val 'diff-di args))
 
 (defun print-diff (df &optional (stream t) (depth 1))
   "Print the diff record."
@@ -736,6 +798,6 @@ the value by (funcall val* rec)."
 	       (format t " -> Missing record in the 1st list on ~a~%" d1))
 	   (setq l1 (cdr l1) c1 (car l1))))
     (push (make-diff :date cd :di (- (funcall val0 c0) (funcall val1 c1))
-		     :ra (// (funcall val0 c0) (funcall val1 c1))) ll)))
+		     :ra (s/ (funcall val0 c0) (funcall val1 c1))) ll)))
 
 ;;; date.lisp ends here

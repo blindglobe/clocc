@@ -886,10 +886,15 @@ XXX ")
     (with-output-to-string (s a) (princ 4567 s))
     (with-output-to-string (s a)
       (princ 890 s))
-    (with-output-to-string (s a)
-      (princ (quote a) s))
-    a)
-  "1234567890A"
+    (if (adjustable-array-p a)
+        (progn
+          (with-output-to-string (s a)
+            (princ (quote a)
+                   s))
+          (string= a
+                   "1234567890A"))
+        T))
+  T(q
   "All 10 characters are up. But:
 Body/m_w_out_.htm#with-output-to-string
 ...
@@ -899,7 +904,12 @@ incrementally appended to string as if by use of vector-push-extend.
 
 See also Issues/iss365_w.htm
 
-so it should work!")
+On the other hand: (Sam Steingold) 
+
+the example in the issue 365 clearly indicates that the error should be
+signalled when the string is not adjustable.
+
+so it could work, provided the string is adjustable...")
 
 (check-for-bug :iofkts-legacy-908
   (setq a

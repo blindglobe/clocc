@@ -581,7 +581,6 @@ leaving the character in the buffer.  If no character is available, return NIL."
 ;; may 12/14/89 Fix cosmetics.
 (defun draw-lozenged-string (window gcontext x0 y0 string font)
   "Display string inside a lozenge at X0 Y0."
-  (declare (values right-coordinate bottom-coordinate))
   (multiple-value-bind (width ascent descent)	;; may 12/14/89 
       (text-extents font string)
     (let* (;; Put some pixels to the top and bottom of the string and still stay inside lineheight.

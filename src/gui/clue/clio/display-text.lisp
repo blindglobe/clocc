@@ -275,7 +275,6 @@ then the mark is also changed to clear the current selection."))
 
 (defun display-selection-owner (display selection)
   "Return the owner window and time of ownership for the SELECTION."
-  (declare (values window timestamp))
   (let ((entry (getf (getf (display-plist display) 'selections) selection)))
     (values
       (first entry)		  ; Owner window
@@ -285,7 +284,6 @@ then the mark is also changed to clear the current selection."))
   `(setf-display-selection-owner ,display ,selection ,timestamp ,owner))
 
 (defun setf-display-selection-owner (display selection timestamp owner)
-  (declare (values window timestamp))
   (assert (or (not owner) timestamp) nil
 	  "Must give non-NIL timestamp for ~a to own ~s selection."
 	  owner selection)
@@ -345,7 +343,6 @@ then the mark is also changed to clear the current selection."))
     property-name))
 
 (defgeneric text-convert-selection (text selection property target time)
-  (declare (values property value format transform))
   (:documentation "Convert SELECTION (if owned by TEXT), to the given
 TARGET type. TIME is the time of the conversion request. PROPERTY 
 is the name of the property where the converted value should be stored.
@@ -443,7 +440,6 @@ to be used with change-property."))
 
 
 (defgeneric text-selection-string (text selection)
-  (declare (values string))
   (:documentation "Return the TEXT string for the given SELECTION."))
 
 (defmethod text-selection-string ((text select-text) (selection (eql :primary)))
@@ -455,7 +451,6 @@ to be used with change-property."))
 
 
 (defgeneric text-own-selection (text selection time)
-  (declare (values own-p))
   (:documentation "Assert TEXT (non)ownership of the SELECTION at the given TIME.
 This function should call (setf selection-owner) with owner as TEXT or nil, 
 as needed."))
@@ -739,8 +734,7 @@ as needed."))
 	       *current-ascent* *current-descent*)
       (compute-text-geometry text)))
 
-(defgeneric compute-text-geometry (text)
-  (declare (values left top width height ascent descent)))
+(defgeneric compute-text-geometry (text))
 
 (defmethod compute-text-geometry ((text display-text-field)) 
   (with-slots (gravity) (the display-text-field text)
@@ -1292,7 +1286,6 @@ characters are refreshed only if they lie in the exposed area."))
   "Return the left edge of the START position of the LINE in the TEXT."
   (declare (type display-text text)
 	   (type integer     line))
-  (declare (values int16))
 
   ;; Ensure extent is defined.
   (text-geometry text)
@@ -1312,7 +1305,6 @@ characters are refreshed only if they lie in the exposed area."))
   "Return the baseline position of the LINE in the TEXT."
   (declare (type display-text text)
 	   (type integer     line))
-  (declare (values integer))
 
   ;; Ensure extent is defined.
   (text-geometry text) 

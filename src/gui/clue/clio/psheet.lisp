@@ -165,7 +165,6 @@
 
 (defun make-property-sheet (&rest initargs &key default-control &allow-other-keys)
   "Creates and returns a property-sheet instance."
-  (declare (values property-sheet))
   (when default-control
     (assert (symbolp default-control) nil "~s is not a symbol name."))
   (apply #'make-contact 'property-sheet initargs))

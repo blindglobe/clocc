@@ -207,8 +207,7 @@
 (defun directory-append (pathname sub-directory)
   ;; Return PATHNAME with sub-directory appended to its directory list.
   (declare (type (or string pathname) pathname)
-	   (type string sub-directory)
-	   (values pathname))
+	   (type string sub-directory))
   ;; This assumes that #'pathname-directory returns a list of sub-directory strings
   (make-pathname
     :defaults pathname

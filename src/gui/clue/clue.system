@@ -44,30 +44,28 @@
        (when (probe-file obj)
 	 (load obj))))))
 
-(mk:defsystem
- clue
- :source-pathname "cl-library:clue;"
- :depends-on (:cmucl-clx)
- :components
- ((:file "clue")		; Define packages
-  (:module clue-precom-load
-	   :load-form (hack-precom "cl-library:clue;" :load)
-	   :compile-form t)
-  (:file "defgeneric")		; pw adds 
-  (:file "event-parse")		; Utilities for event translation
-  (:file "defcontact")		; CLOS for resources and type conversion
-  (:file "intrinsics")		; The "guts"
-  (:file "caches")		; Support for gcontext, pixmap, cursor cacheing
-  (:file "resource")		; Resource and type conversion
-  (:file "gray")		; Gray stipple patterns
-  (:file "cursor")		; Standard cursor names
-  (:file "events")		; Event handling
-  (:file "virtual")		; Support for windowless contacts
-  (:file "shells")		; Support for top-level window/session mgr.
-  (:file "root-gmgmt")		; Geometry management methods for root contacts
-  (:file "package")		; External cluei symbols exported from clue
-  (:module clue-precom-com
-	   :load-form t
-	   :compile-only t
-	   :compile-form (hack-precom "cl-library:clue;" :compile))
-  ))
+(mk:defsystem clue
+    :source-pathname "cl-library:clue;"
+    :depends-on (:cmucl-clx)
+    :components
+    ((:file "clue")                     ; Define packages
+     (:module clue-precom-load
+              :load-form (hack-precom "cl-library:clue;" :load)
+              :compile-form t)
+     (:file "defgeneric")		; pw adds 
+     (:file "event-parse")		; Utilities for event translation
+     (:file "defcontact")		; CLOS for resources and type conversion
+     (:file "intrinsics")		; The "guts"
+     (:file "caches")                   ; Support for gcontext, pixmap, cursor cacheing
+     (:file "resource")                 ; Resource and type conversion
+     (:file "gray")                     ; Gray stipple patterns
+     (:file "cursor")                   ; Standard cursor names
+     (:file "events")                   ; Event handling
+     (:file "virtual")                  ; Support for windowless contacts
+     (:file "shells")                   ; Support for top-level window/session mgr.
+     (:file "root-gmgmt")		; Geometry management methods for root contacts
+     (:file "package")                  ; External cluei symbols exported from clue
+     (:module clue-precom-com
+              :load-form t
+              :compile-only t
+              :compile-form (hack-precom "cl-library:clue;" :compile))))

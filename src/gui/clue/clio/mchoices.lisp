@@ -62,7 +62,6 @@ where N >= M >= 0."))
 
 
 (DEFUN make-multiple-choices (&rest initargs &key &allow-other-keys)
-  (DECLARE (VALUES multiple-choices))
   (APPLY #'make-contact 'multiple-choices initargs))
 
 
@@ -186,7 +185,6 @@ where N >= M >= 0."))
 (DEFMETHOD (SETF choice-selection) (children-to-be-selected (choices multiple-choices))
 
   (DECLARE (TYPE list children-to-be-selected))
-  (DECLARE (VALUES children-to-be-selected))
   
   (with-slots (children selection) choices
     (let

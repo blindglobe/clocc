@@ -333,7 +333,6 @@ X-WIDTH is the width in x-direction that must be changed into a y-offset."
 	 ))))
 
 (defun drag-box-position (slider &optional (scale-value (scale-value slider)))
-  (declare (values x y width height))
   (with-slots (orientation ) slider
     ;; Return values describing area of drag-box for SCALE-VALUE
     (let* ((drag-min-edge (drag-box-min-x slider scale-value))
@@ -806,7 +805,6 @@ and (possibly) cause the slider to be updated."
 (defun choose-indicator-size (slider)
   "Returns TICK-LIMIT = the number of ticks to draw."
   ;; Called when indicator-size eq :off to automatic tick-marks
-  (declare (values tick-limit increments-in-tick))
 
   (with-slots (maximum minimum increment) slider
     (let* ((tick-mark-thickness (slider-tick-mark-thickness slider))

@@ -60,7 +60,6 @@
   "Make a rectangle with the with the given X-MIN, Y-MIN, WIDTH and HEIGHT.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES rectangle))
 
   (APPLY #'MAKE-INSTANCE 'rectangle
 	 :point-seq (complete-rectangle
@@ -72,7 +71,6 @@ The following keyword OPTIONS are allowed:
   "Make a filled-rectangle with with the given X-MIN, Y-MIN, WIDTH and HEIGHT.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES filled-rectangle))
 
   (APPLY #'MAKE-INSTANCE 'filled-rectangle
 	 :point-seq (complete-rectangle
@@ -84,7 +82,6 @@ The following keyword OPTIONS are allowed:
   "Make a filled-rectangle-edge with the given X-MIN, Y-MIN, WIDTH and HEIGHT. 
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST EDGE-GSTATE"
-  (DECLARE (VALUES filled-rectangle-edge))
 
   (APPLY #'MAKE-INSTANCE 'filled-rectangle-edge
 	 :point-seq (complete-rectangle
@@ -97,7 +94,6 @@ The following keyword OPTIONS are allowed:
 ; Graphic methods for rectangle graphics
 
 (DEFMETHOD rectangle-origin-x ((rectangle rectangle))
-  (DECLARE (VALUES (type ocoord x)))
   (vertex-x rectangle 0)
   )
 
@@ -108,7 +104,6 @@ The following keyword OPTIONS are allowed:
       (SETF (vertex-x rectangle pos) (+ difference (vertex-x rectangle pos)) ))))
 
 (DEFMETHOD rectangle-origin-y ((rectangle rectangle))
-  (DECLARE (VALUES (type ocoord y)))
   (vertex-y rectangle 0))
 
 (DEFMETHOD (SETF rectangle-origin-y) (origin-y (rectangle rectangle) )
@@ -320,7 +315,6 @@ The following keyword OPTIONS are allowed:
                             &optional (fixed-x 0) (fixed-y 0))
   (declare (type (or (satisfies plusp) (satisfies zerop)) scale-x scale-y))
   (declare (type ocoord fixed-x fixed-y))
-  (declare (values transform))
   (graphic-damage graphic)				; Damage from old graphic
   
 	    

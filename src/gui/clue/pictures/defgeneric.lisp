@@ -24,27 +24,24 @@
 (defgeneric find-font (font-family size)
   (:documentation
  "Returns or (with setf) changes the font from the FONT-FAMILY
-  that is closest to the SIZE")
-  (DECLARE (VALUES font)))
+  that is closest to the SIZE"))
 (defgeneric (setf find-font)(new-value font-family size))
 
 (defgeneric find-family-members ( font-family display)
   (:documentation
    "Returns or (with setf) changes the family-members of the FONT-FAMILY
-    for a given DISPLAY")
-  (DECLARE (VALUES family-members)))
+    for a given DISPLAY"))
 (defgeneric (setf find-family-members)(new-value font-family display))
 
 (defgeneric vertex-y (polypoint  position)
   (:documentation
-   "Get or setf the y coordinate of a polypoint at the given position")
-  (DECLARE (VALUES local-y)))
+   "Get or setf the y coordinate of a polypoint at the given position"))
+
 (defgeneric (setf vertex-y)(new-value polypoint position))
 
 (defgeneric vertex-y (polypoint  position)
   (:documentation
-   "Get or setf the y coordinate of a polypoint at the given position")
-  (DECLARE (VALUES local-y)))
+   "Get or setf the y coordinate of a polypoint at the given position"))
 (defgeneric (setf vertex-y)(new-value polypoint position))
 
 (defgeneric vertex-i (sequence index)
@@ -64,10 +61,7 @@
    with the GRAPHIC or GSTATE.
    This specifies the color that will be displayed when a GRAPHIC
    is drawn on the screen. The type  pixel points to a position in
-   the color map. ")
-  (DECLARE (VALUES (OR (type symbol foreground)
-		       (type stringable foreground)
-		       (type pixel foreground) null))))
+   the color map. "))
 (defgeneric (setf gstate-value) (new-value gstate keyword))
 
 (defgeneric gstate-background (gstate )
@@ -76,20 +70,14 @@
    with the GRAPHIC or GSTATE.
    This specifies the color that will be displayed when no graphic
    is being displayed on the screen.  It is used with tiles or stipples.
-   The type pixel points to a position in the color map.")
-  (DECLARE (VALUES (OR (type symbol background)
-		       (type stringable background)
-		       (type pixel background) null))))
+   The type pixel points to a position in the color map."))
 (defgeneric (setf gstate-background)(new-value gstate))
 
 (defgeneric gstate-dashes (gstate )
  (:documentation
   "Returns or (with setf) changes the DASH value associated
    with the GRAPHIC or GSTATE.
-   This sequence determines the pattern of the DASHES for a dashed line.")
-  (DECLARE (VALUES (OR (type card8 dashes)
-		       (type sequence dashes)
-		       null))))
+   This sequence determines the pattern of the DASHES for a dashed line."))
 (defgeneric (setf gstate-dashes)(new-value gstate))
 
 (defgeneric gstate-function (gstate )
@@ -97,40 +85,33 @@
   "Returns or (with setf) changes the boolen-constant FUNCTION
    value associated with the GRAPHIC or GSTATE.
    The FUNCTION detemines how pixels on the screen are displayed
-   when one pixel is drawn on another.")
-  (DECLARE (VALUES (OR (type boole-constant function)
-		       null))))
+   when one pixel is drawn on another."))
 (defgeneric (setf gstate-function) (new-value gstate ))
 
 (defgeneric gstate-line-width (gstate )
  (:documentation
   "Returns or (with setf) changes the LINE-WIDTH value associated
-   with the GRAPHIC or GSTATE. The LINE-WIDTH is in world-coordinate units.")
-  (DECLARE (VALUES (OR number null))))
+   with the GRAPHIC or GSTATE. The LINE-WIDTH is in world-coordinate units."))
 (defgeneric (setf gstate-line-width) (new-value gstate))
 
 (defgeneric gstate-line-style (gstate )
  (:documentation
   "Returns or (with setf) changes the line-style value associated
-   with the GRAPHIC or GSTATE.")
-  (DECLARE (VALUES (or (type (member :solid :dash :double-dash)) null))))
+   with the GRAPHIC or GSTATE."))
 (defgeneric (setf gstate-line-style)(new-value gstate))
 
 (defgeneric gstate-cap-style (gstate )
  (:documentation
   "Returns or (with setf) changes the CAP-STYLE value associated
    with the GRAPHIC  or GSTATE.
-   The CAP STYLE  determines how the end of a line is drawn.")
-  (DECLARE (VALUES (OR (Type (member :not-last :butt :round :projecting))
-		       null))))
+   The CAP STYLE  determines how the end of a line is drawn."))
 (defgeneric (setf gstate-cap-style) (new-value gstate))
 
 (defgeneric gstate-join-style (gstate )
  (:documentation
   "Returns or (with setf) changes the JOIN-STYLE value associated
    with the GRAPHIC or GSTATE.
-   The JOIN STYLE  defines how two lines will be joined together.")
-  (DECLARE (VALUES (OR (Type (member :miter :round :bevel)) null))))
+   The JOIN STYLE  defines how two lines will be joined together."))
 (defgeneric (setf gstate-join-style)(new-value gstate))
 
 (defgeneric gstate-fill-style (gstate )
@@ -138,9 +119,7 @@
   "Returns or (with setf) changes the FILL-STYLE value associated
    with the GRAPHIC or GSTATE.
    The FILL SYLE will determine the color or pattern that will be
-   drawn with a filled GRAPHIC.")
-  (DECLARE (VALUES (OR (Type (member :solid :tiled :opaque-stippled :stippled))
-		       null))))
+   drawn with a filled GRAPHIC."))
 (defgeneric (setf gstate-fill-style)(new-value gstate))
 
 (defgeneric gstate-fill-rule (gstate )
@@ -148,16 +127,14 @@
   "Returns or (with setf) changes the FILL-RULE value associated with
    the GRAPHIC or GSTATE.
    The FILL RULE is used to determine how non-convex filled polygon
-   will be filled.")
-  (DECLARE (VALUES (OR (Type (member :even-odd :winding)) null))))
+   will be filled."))
 (defgeneric (setf gstate-fill-rule)(new-value gstate))
 
 (defgeneric gstate-tile (gstate )
  (:documentation
   "Returns or (with setf) changes the TILE value associated with
    the GRAPHIC or GSTATE.
-   A image may be chosen to use as a pattern when a filled graphic is drawn.")
-  (DECLARE (VALUES (type (symbol tile)(image tile) null))))
+   A image may be chosen to use as a pattern when a filled graphic is drawn."))
 (defgeneric (setf gstate-tile) (new-value gstate))
 
 (defgeneric gstate-stipple (gstate )
@@ -165,45 +142,39 @@
   "Returns or (with setf) changes the STIPPLE value associated
    with the GRAPHIC or GSTATE.
    A stipple is a bitmap that has a depth of one.  It can be used
-   to create a foreground or background pattern.")
-  (DECLARE (VALUES (OR (type symbol)(type image) null))))
+   to create a foreground or background pattern."))
 (defgeneric (setf gstate-stipple) (new-value gstate))
 
 (defgeneric move-transform (transform delta-x delta-y)
   (:DOCUMENTATION
    "Destructivly modify the TRANSFORM, translating the previous
     transformation by the given distances DELTA-X, DELTA-Y.
-    The new value of the TRANSFORM is returned.")
-  (DECLARE (VALUES transform)))
+    The new value of the TRANSFORM is returned."))
 
 (defgeneric rotate-transform (transform angle &optional  fixed-x  fixed-y )
  (:documentation
   "Rotate the GRAPHIC or TRANSFORM by the given ANGLE (in radians) around
    the given fixed point.
    Rotation allows the programmer to change the display angle of a GRAPHIC.
-   The default value is 0 for FIXED-X and FIXED-Y")
-  (DECLARE (VALUES transform)))
+   The default value is 0 for FIXED-X and FIXED-Y"))
 
 (defgeneric scale-transform (transform scale-x scale-y &optional fixed-x fixed-y )
   (:documentation
     "Modify the TRANSFORM, scaling the previous transformation by the given
      SCALE-X and SCALE-Y around the given FIXED-X and FIXED-Y.
-     Default value for FIXED-X and FIXED-Y is 0")
-  (DECLARE (VALUES transform)))
+     Default value for FIXED-X and FIXED-Y is 0"))
 
 (defgeneric scale-point (transform x-distance y-distance))
 
 (defgeneric graphic-transform (graphic)
  (:documentation
   "Returns or (with setf) changes the  TRANSFORM associated with the GRAPHIC.
-   A nil transform represents the common case of the identity transform.")
-  (DECLARE (VALUES transform )))
+   A nil transform represents the common case of the identity transform."))
 (defgeneric (setf graphic-transform) (new-value graphic))
 
 (defgeneric graphic (graphic) 
   (:documentation
-   "compute the extent-rectangel of a GRAPHIC in object coordinates.")
-  (DECLARE (VALUES (type extent-rect extent))))
+   "compute the extent-rectangel of a GRAPHIC in object coordinates."))
 
 (defgeneric editable-p (graphic))
 (defgeneric viewable-p (graphic))
@@ -222,28 +193,24 @@
   (:documentation
    "Return the object coordinates of the given FIXED-POINT on the GRAPHIC
     extent. If WORLD-COORDINATE is true the coordinates are returned
-    as world coordinates")
-  (DECLARE (VALUES (ocoord fixed-x fixed-y)(wcoord fixed-x fixed-y))))
+    as world coordinates"))
 
 (defgeneric graphic-combined-gstate (graphic)
  (:documentation 
   "Return the fully combined gstate for the given graphic.
-   The method is used when writing draw-graphic methods.")
-  (DECLARE (VALUES gstate)))
+   The method is used when writing draw-graphic methods."))
 
 (defgeneric graphic-combined-edge-gstate (graphic)
  (:documentation
   "Return the fully combined edge gstate for the given graphic.
-   The method is used when writing draw-graphic methods.")
-  (DECLARE (VALUES gstate)))
+   The method is used when writing draw-graphic methods."))
 
 (defgeneric combine-into (gstate1 gstate2))
 
 (defgeneric graphic-contains-p (graphic x y &optional arpeture)
   (:documentation
     "Determines whether a given world coordinate (X, Y) lies on the GRAPHIC.
-   ARPETURE increasing the area for picking")
-  (DECLARE (VALUES (boolean))))
+   ARPETURE increasing the area for picking"))
 
 (defgeneric draw-graphic (graphic view &optional min-x min-y width height)
  (:documentation
@@ -259,63 +226,53 @@
 (defgeneric graphic-intersects-p (graphic  min-x min-y width height)
  (:documentation
    "If the given GRAPHIC intersects the rectangle - MIN-X MIN-Y WIDTH HEIGHT
-    - given in world coordinates, then return true,  otherwise, return nil.")
-  (DECLARE (VALUES boolean)))
+    - given in world coordinates, then return true,  otherwise, return nil."))
 
 (defgeneric graphic-plist (graphic)
  (:documentation
-  "Returns a list of properties for the given graphic.")
-  (DECLARE (VALUES list)))
+  "Returns a list of properties for the given graphic."))
 
 (defgeneric graphic-parent ( graphic)
  (:documentation
   "Returns or (with setf) changes the parent of the GRAPHIC .
    If a GRAPHIC  is inserted into a scene, the scene becomes
-   the graphic-parent.")
-  (DECLARE (VALUES scene)))
+   the graphic-parent."))
 (defgeneric (setf graphic-parent)(new-value graphic))
 
 (defgeneric graphic-gstate ( graphic)
  (:documentation
-  " Returns or (with setf) changes the graphics state of the given graphic.")
-   (DECLARE (VALUES gstate)))
+  " Returns or (with setf) changes the graphics state of the given graphic."))
 (defgeneric (setf graphic-gstate)(new-value graphic))
 
 (defgeneric graphic-view ( graphic)
  (:documentation
-  "Returns or (with setf) changes the first VIEW associated with the GRAPHIC.")
-  (DECLARE (VALUES view)))
+  "Returns or (with setf) changes the first VIEW associated with the GRAPHIC."))
 (defgeneric (setf graphic-view)(new-value graphic))
 
 (defgeneric graphic-within-p ( graphic min-x min-y width height)
  (:documentation
   "If the given GRAPHIC lies completely within the rectangle
    - MIN-X MIN-Y WIDTH HEIGHT - given in world coordinates,
-   then return true,  otherwise, return nil.")
-  (DECLARE (VALUES boolean)))
+   then return true,  otherwise, return nil."))
 
 (defgeneric world-extent (graphic  &optional result-extent)
  (:documentation
   "Returns the EXTENT of the given GRAPHIC in world coordinates.
    The extent is placed in RESULT-EXTENT if provided, otherwise
-   a new EXTENT rectangle is returned.")
-  (DECLARE (VALUES extent)))
+   a new EXTENT rectangle is returned."))
 
 (defgeneric graphic-world-transform (graphic)
  (:documentation
   "Returns the fully-composed TRANSFORM to compute world coordinates
-   for the GRAPHIC.")
-  (DECLARE (VALUES transform)))
+   for the GRAPHIC."))
 
 (defgeneric graphic-extent (graphic )
  (:documentation
-   "Return the extent-rectangle for the GRAPHIC in  object coordinates and caches the extent. ")
-  (DECLARE (VALUES extent-rect)))
+   "Return the extent-rectangle for the GRAPHIC in  object coordinates and caches the extent. "))
 
 (defgeneric extent-compute (graphic )
  (:documentation
-   "Return the extent-rectangle for the GRAPHIC in  object coordinates. ")
-  (DECLARE (VALUES extent-rect)))
+   "Return the extent-rectangle for the GRAPHIC in  object coordinates. "))
 
 (defgeneric extent-changed (extent-cache))
 
@@ -323,16 +280,14 @@
   (:documentation
    " Returns a list of the scene elements in a GRAPHIC.
     A return value of nil could mean the scene
-    is empty of the GRAPHIC is not a scene ")
-  (DECLARE (VALUES list )))
+    is empty of the GRAPHIC is not a scene "))
 (defgeneric (setf scene-elements)(new-value graphic))
 
 (defgeneric  graphic-sensitivity (graphic ) 
   (:documentation
    " Returns or (with setf) changes the sensitivity of the given GRAPHIC.
     The sensitivity of the GRAPHIC determines both the display and
-    the editing states of a GRAPHIC.")
-  (DECLARE (VALUES (member :hidden :viewable :editable))))
+    the editing states of a GRAPHIC."))
 (defgeneric (setf graphic-sensitivity)(new-value graphic))
 
 (defgeneric   scene-insert ( scene   graphic &optional position )
@@ -340,23 +295,19 @@
    " Inserts the GRAPHIC at the given POSITION in the SCENE when
     POSITION is a number.  If POSITION  is a graphic, then GRAPHIC
     is inserted immediately after it.  If POSITION   nil, then
-    GRAPHIC is inserted at the end of the elements sequence.")
-  (DECLARE (VALUES (type  graphic))))
+    GRAPHIC is inserted at the end of the elements sequence."))
 
 (defgeneric scene-delete (scene pos)
   (:documentation
-   " Removes the graphic at the given POSition from the SCENE. ")
-  (DECLARE (VALUES (TYPE graphic graphic))))
+   " Removes the graphic at the given POSition from the SCENE. "))
 
 (defgeneric scene-graphic ( scene position)
   (:documentation
-   "return the graphic in the scene at the give position")
-  (DECLARE (VALUES graphic)))
+   "return the graphic in the scene at the give position"))
 
 (defgeneric   scene-reparent ( scene   new-parent &rest elements)
   (:documentation
-   "Move each of the SCENE-elements and ELEMENTS into the NEW-PARENT scene. ")
-  (DECLARE (VALUES list)))
+   "Move each of the SCENE-elements and ELEMENTS into the NEW-PARENT scene. "))
 
 (defgeneric scene-restack (scene old-position new-position)
   (:documentation
@@ -369,8 +320,7 @@
 (defgeneric gravity-point (view gravity)
   (:documentation 
    "Return the world coordinates of the given gravity point on
-    the VIEW's  world extent")
-  (DECLARE (VALUES (ocoord gravity-x gravity-y))))
+    the VIEW's  world extent"))
 
 (defgeneric repair-view (view)   
   (:documentation
@@ -382,8 +332,7 @@
    " Records a DAMAGED-REGION of the VIEW for later repair.
     The DAMAGED-REGION contains either a single graphic object
     the damaged region being the object's extent) or a world
-    coordinate sequence of the form (min-x min-y width height.")
-  (DECLARE (VALUES )))
+    coordinate sequence of the form (min-x min-y width height."))
 
 (defgeneric view-gravity (view))
 (defgeneric view-pan (view x y &optional gravity))
@@ -407,36 +356,30 @@
 (DEFgeneric  transform-point (view  window-x window-y )
   (:documentation
    "Convert the given X and Y world coordinates to view
-    coordinates for the  given VIEW." )
-  (DECLARE (VALUES (type (X view-coordinate)(Y view-coordinate)))))
+    coordinates for the  given VIEW." ))
 
 (DEFgeneric  transform-x (view  window-x  )
   (:documentation
    "Convert the given X  world coordinate to a view coordinate for
-    the  given VIEW." )
-  (DECLARE (VALUES (type (X view-coordinate)))))
+    the  given VIEW." ))
 
 (DEFgeneric  transform-y (view  window-y  )
   (:documentation 
    "Convert the given Y  world coordinate to a view coordinate 
-    for the  given VIEW." )
-  (DECLARE (VALUES (type (Y view-coordinate)))))
+    for the  given VIEW." ))
 
 (DEFgeneric  view-untransform-point (view  window-x window-y )
  (:documentation
   "Convert the given X and Y view coordinates to world coordinates
-   for the  given VIEW." )
-  (DECLARE (VALUES (type (X woorld-coordinate)(Y world-coordinate)))))
+   for the  given VIEW." ))
 
 (defgeneric view-scale (view)
-  (:documentation "Return the present scale factor of a VIEW ")
-  (DECLARE (VALUES number)))
+  (:documentation "Return the present scale factor of a VIEW "))
 (defgeneric (setf view-scale) (new-value view))
 
 (defgeneric view-pixel-size (view)
   (:documentation
-   "Return the world-coordinate size of a pixel for the given VIEW. ")
-  (DECLARE (VALUES wcoord)))
+   "Return the world-coordinate size of a pixel for the given VIEW. "))
 
 (defgeneric view-scale-point (view  x-distance y-distance
 				    &optional graphic-world-transform)  
@@ -444,42 +387,36 @@
    " Convert the given X-DISTANCE and Y-DISTANCE to equivalent
     distances in the  VIEW coordinate system. 
     If GRAPHIC-WORLD-TRANSFORM is given, apply it to the
-    distances before converting to view coordinates.")
-  (DECLARE (VALUES (type ( wcoord x y)))))
+    distances before converting to view coordinates."))
 
 (defgeneric view-transform-vector (view  vertices &optional round)  
   (:documentation
    "This method destructively changes the value of VERTICES by
     applying the VIEW transform to them. ROUND is a boolean value
     signals the use of round function instead of the floor function
-    be used on the values being returned.")
-  (DECLARE (VALUES (type vector vertices))))
+    be used on the values being returned."))
 
 (DEFgeneric  untransform-point (view  window-x window-y )
  (:documentation
   "Convert the given X and Y view coordinates to world coordinates
-   for the  given VIEW." )
-  (DECLARE (VALUES (type (X woorld-coordinate)(Y world-coordinate)))))
+   for the  given VIEW." ))
 
 
 (DEFgeneric  view-untransform-x (view  window-x  )
  (:documentation
   "   Convert the given X  view coordinate to a world coordinate for the
-   given VIEW." )
-  (DECLARE (VALUES (type (X woorld-coordinate)))))
+   given VIEW." ))
 
 
 (DEFgeneric  view-untransform-y (view  window-y  )
  (:documentation
   "   Convert the given Y  view coordinate to a world coordinate
-   for the  given VIEW." )
-  (DECLARE (VALUES (type (Y woorld-coordinate)))))
+   for the  given VIEW." ))
 
 
 (DEFgeneric  view-selection (view)
  (:documentation
-  "Return the list of selected graphics in the VIEW")
-  (DECLARE (VALUES (type list graphic))))
+  "Return the list of selected graphics in the VIEW"))
 
 (DEFgeneric  view-add-selection (view graphic)
  (:documentation
@@ -546,58 +483,47 @@
 
 (defgeneric vertex-x (polypoint  position)
   (:documentation
-   "Get or setf the x coordinate of a polypoint at the given position")
-  (DECLARE (VALUES local-x)))
+   "Get or setf the x coordinate of a polypoint at the given position"))
 (defgeneric (setf vertex-x)(new-value polypoint position))
 
 (defgeneric vertex-y (polypoint  position)
   (:documentation
-   "Get or setf the y coordinate of a polypoint at the given position")
-  (DECLARE (VALUES local-y)))
+   "Get or setf the y coordinate of a polypoint at the given position"))
 (defgeneric (setf vertex-y)(new-value polypoint position))
 
 (defgeneric rectangle-origin-x (rectangle)
- (:documentation "Return or set the x value for the origin of the rectangle.")
-  (DECLARE (VALUES (type ocoord x))))
+ (:documentation "Return or set the x value for the origin of the rectangle."))
 (defgeneric (setf rectangle-origin-x)(new-value rectangle))
 
 (defgeneric rectangle-origin-y (rectangle)
- (:documentation "Return or set the y value for the origin of the rectangle.")
-  (DECLARE (VALUES (type ocoord y))))
+ (:documentation "Return or set the y value for the origin of the rectangle."))
 (defgeneric (setf rectangle-origin-y)(new-value rectangle))
 
 (defgeneric rectangle-width (rectangle)
- (:documentation "Return or set the width the rectangle.")
-  (DECLARE (VALUES (type ocoord width))))
+ (:documentation "Return or set the width the rectangle."))
 (defgeneric (setf rectangle-width)(new-value rectangle))
 
 (defgeneric rectangle-height (rectangle)
- (:documentation "Return or set the height the rectangle.")
-  (DECLARE (VALUES (type ocoord height))))
+ (:documentation "Return or set the height the rectangle."))
 (defgeneric (setf rectangle-height)(new-value rectangle))
 
 (defgeneric rectangle-size (rectangle)
- (:documentation "Return width and height the rectangle.")
-  (DECLARE (VALUES (type ocoord width height))))
+ (:documentation "Return width and height the rectangle."))
 
 (defgeneric ellipse-origin-x (ellipse)
- (:documentation "Return or set the x value for the origin of the ellipse.")
-  (DECLARE (VALUES (type ocoord x))))
+ (:documentation "Return or set the x value for the origin of the ellipse."))
 (defgeneric (setf ellipse-origin-x)(new-value ellipse))
 
 (defgeneric ellipse-origin-y (ellipse)
- (:documentation "Return or set the y value for the origin of the ellipse.")
-  (DECLARE (VALUES (type ocoord y))))
+ (:documentation "Return or set the y value for the origin of the ellipse."))
 (defgeneric (setf ellipse-origin-y)(new-value ellipse))
 
 (defgeneric ellipse-width (ellipse)
- (:documentation "Return or set the width the ellipse.")
-  (DECLARE (VALUES (type ocoord width))))
+ (:documentation "Return or set the width the ellipse."))
 (defgeneric (setf ellipse-width)(new-value ellipse))
 
 (defgeneric ellipse-height (ellipse)
- (:documentation "Return or set the height the ellipse.")
-  (DECLARE (VALUES (type ocoord height))))
+ (:documentation "Return or set the height the ellipse."))
 (defgeneric (setf ellipse-height)(new-value ellipse))
 
 (DEFGENERIC  label-reverse-p (label)
@@ -622,8 +548,7 @@
 (defgeneric view-label-extents (label scale view))
 
 (defgeneric grabber-graphic (grabber-rect)
-  (:documentation "Get or set  the graphic associated with a grabber rectangle")
-  (DECLARE (VALUES (type graphic))))
+  (:documentation "Get or set  the graphic associated with a grabber rectangle"))
 (defgeneric (setf grabber-graphic)(new-value grabber-rect))
 
 (defgeneric view-transform-graphic (grabber view &key event)

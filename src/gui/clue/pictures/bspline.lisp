@@ -40,7 +40,6 @@
   "Make a bspline with the coordinates contained in POINT-SEQ.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
 
   (APPLY #'MAKE-INSTANCE 'bspline
 	 :point-seq point-seq
@@ -57,7 +56,6 @@
   "Make a bspline with the coordinates contained in POINT-SEQ.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
 
   (APPLY #'MAKE-INSTANCE 'closed-bspline
 	 :point-seq point-seq
@@ -73,7 +71,6 @@
   "Make a bspline with the coordinates contained in POINT-SEQ.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
 
   (APPLY #'MAKE-INSTANCE 'filled-bspline
 	 :point-seq point-seq
@@ -89,7 +86,6 @@
   "Make a bspline-edge with the coordinates contained in POINT-SEQ.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
 
   (APPLY #'MAKE-INSTANCE 'filled-bspline-edge
 	 :point-seq point-seq

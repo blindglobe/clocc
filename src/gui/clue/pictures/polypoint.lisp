@@ -52,7 +52,6 @@
   "Make a polypoint with the coordinates contained in POINT-SEQ.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polypoint))
   (APPLY #'MAKE-INSTANCE 'polypoint
 	 :point-seq point-seq
 	 options))
@@ -86,26 +85,22 @@ The following keyword OPTIONS are allowed:
 
 
 (DEFMETHOD vertex-x ((polypoint polypoint) position)
-  (DECLARE (VALUES local-x))
   (with-slots (vertices) polypoint
     (WHEN (< position  (length-vertices polypoint))
 	(ELT vertices (* position 2)))))
 
 (DEFMETHOD (SETF vertex-x) (x (polypoint polypoint) position)
-  (DECLARE (VALUES local-x))
   (with-slots (vertices) polypoint
     (SETF (vertex-x vertices position) x)
     (extent-changed polypoint)
     (vertex-x vertices position)))
 
 (DEFMETHOD vertex-y ((polypoint polypoint) position)
-  (DECLARE (VALUES local-y))
     (IF (< position  (length-vertices polypoint))
 	(with-slots (vertices) polypoint
 	  (ELT vertices (+ (* position 2) 1)))))
 
 (DEFMETHOD (SETF vertex-y) (y (polypoint polypoint) position)
-  (DECLARE (VALUES local-y))
   (with-slots (vertices) polypoint
     (SETF (vertex-y vertices position) y)
     (extent-changed polypoint)
@@ -119,7 +114,7 @@ The following keyword OPTIONS are allowed:
 ;  its computed extent before returning it.
 
 (defmethod extent-compute ((polypoint polypoint))
-  (declare (values (or null extent-rect)))
+
   (LET (extent-rectangle)
     (with-slots (vertices transform) polypoint
       (with-vector temp-vector
@@ -237,7 +232,6 @@ The following keyword OPTIONS are allowed:
   "Make a polygon with the coordinates contained in POINT-SEQ.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
   
   (APPLY #'MAKE-INSTANCE 'polyline
 	 :point-seq point-seq

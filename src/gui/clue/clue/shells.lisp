@@ -1168,8 +1168,7 @@ after the BODY."
 
 (defmethod manage-geometry ((parent shell) (child contact) x y width height border-width &key) 
   (declare (type (or null int16) x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))  
+	   (type (or null card16) width height border-width))  
   
   (let* ((child-bw     (or border-width (contact-border-width child)))
 	 (required-pos (- child-bw)))
@@ -1208,8 +1207,7 @@ after the BODY."
 
 (defmethod manage-priority ((parent shell) child priority sibling &key)  
   (declare (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
+	   (type (or null contact) sibling))
   (declare (ignore child priority sibling))
   ;; Never approved since shell has only one child
   nil)

@@ -248,8 +248,7 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
   "Create and open a new contact-display."
   (declare (type stringable application-name host)
 	   (type (or null integer) display)
-	   (type (or null (integer 0)) default-screen)
-	   (values contact-display))
+	   (type (or null (integer 0)) default-screen))
   (declare (ignore protocol));; not included because of CLX bugs
   
   (unless *default-host* ;; Set default if none defined
@@ -492,8 +491,7 @@ is given by its mode-stack. The mode-stack is an alist containing entries of the
 (defgeneric find-contact (parent &key name class)
   (:documentation "Return contact with given NAME and CLASS in the hierarchy starting with PARENT.
 PARENT may be a contact or a contact-display. If a NAME or CLASS is not specified,
-it is ignored.")
-  (declare (values (or null contact))))
+it is ignored."))
 
 (flet
   ((test  (contact name class)
@@ -971,7 +969,6 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 (proclaim '(inline contact-event-translations-mask))
 (defun contact-event-translations-mask (contact)
   "Return the event mask from the event translations (class and instance) for CONTACT."
-  (declare (values mask32))
   (with-slots (event-translations) (the basic-contact contact)
     (logior
       ;; Instance translations    
@@ -1242,15 +1239,13 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
 
 (defmethod contact-root ((contact contact))
   ;; Return the root contact associated with CONTACT
-  (declare (values root))
   (do* ((root contact parent)
 	(parent (contact-parent contact) (contact-parent root)))
        ((null parent) root)))
 
 (defun contact-screen (contact)
   ;; Return the xlib:screen associated with CONTACT
-  (declare (type contact contact)
-	   (values screen))
+  (declare (type contact contact))
   (slot-value (the root (contact-root contact)) 'screen))
 
 (defun contact-top-level (contact)
@@ -1262,7 +1257,6 @@ If FULL-P is true, then the full list is returned; otherwise, a list of names is
   "Translate the position given by FROM-X and FROM-Y relative to the FROM contact 
 into a position relative to the TO contact. By default, TO is (contact-root FROM).
 If FROM and TO are on different screens, then nil is returned."
-  (declare (values to-x to-y))
   (if to
       (when (eq (contact-root from) (contact-root to))
         ;; Translate both to position and from position to mutual root coordinate system
@@ -1383,8 +1377,7 @@ If FROM and TO are on different screens, then nil is returned."
 
 (defmethod manage-geometry ((parent composite) (contact contact) x y width height border-width &key)  
   (declare (type (or null int16) x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))
+	   (type (or null card16) width height border-width))
   (with-slots ((contact-x x)
 	       (contact-y y)
 	       (contact-width width)
@@ -1414,8 +1407,7 @@ If FROM and TO are on different screens, then nil is returned."
 				    x y width height border-width &key)
   (declare (type contact          contact)
 	   (type (or null int16)  x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))
+	   (type (or null card16) width height border-width))
 
   ;; Approve immediately?
   (if (and (realized-p parent) (realized-p contact) (managed-p contact))
@@ -1480,8 +1472,7 @@ If FROM and TO are on different screens, then nil is returned."
    If ACCEPT-P, then any compromise request is performed immediately."
   (declare (type contact           contact)
 	   (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
+	   (type (or null contact) sibling))
 
   ;; Refuse request, with no compromise, if unrealized
   (when (and (realized-p contact) (not (destroyed-p contact)))
@@ -1518,14 +1509,12 @@ If FROM and TO are on different screens, then nil is returned."
   "Change the stacking order of CONTACT relative to SIBLING.
    PRIORITY is one of :above :below :top-if :bottom-if :opposite."
   (declare (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
+	   (type (or null contact) sibling))
   self contact ;; not used
   (values t priority sibling))
 
 (defmethod accept-focus-p ((contact contact))
   "Returns non-nil when CONTACT is willing to become the keyboard input focus"
-  (declare (values boolean))
   (and (viewable-p contact)
        (plusp (logand (contact-event-mask contact)
 		      #.(make-event-mask :key-press :key-release)))
@@ -1537,8 +1526,7 @@ If FROM and TO are on different screens, then nil is returned."
  Returns the new focus contact or NIL if no contacts will accept the
  focus (see accept-focus-p)."
   (declare (type (member :next :previous :set) direction)
-	   (type (or null contact) start)
-	   (values (or null focus-contact)))
+	   (type (or null contact) start))
 
   (let* ((start (or start (composite-focus composite)))
 	 (focus (or start (first (composite-children composite)))))
@@ -1567,7 +1555,6 @@ If FROM and TO are on different screens, then nil is returned."
 
 (defmethod preferred-size ((contact contact) &key width height border-width)
   "Return preferred size, based on given changes to current values."
-  (declare (values width height border-width))
   ;; Primary method is compliant
   (with-slots ((current-width width)
 	       (current-height height)
@@ -1586,8 +1573,7 @@ If FROM and TO are on different screens, then nil is returned."
   (declare (type contact          contact)
 	   (type (or null int16)  x y)
 	   (type (or null card16) width height border-width)
-	   (type boolean          accept-p)
-	   (values success-p x y width height border-width))
+	   (type boolean          accept-p))
   
   (unless (destroyed-p contact)
     (with-slots

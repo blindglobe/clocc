@@ -86,11 +86,10 @@
 (defgeneric graphic-pick (graphic x y &optional arpeture)
   (:documentation
    "Return the graphic if the world coordinate x,y is on the graphic
-or return nil")
-  (DECLARE (VALUES graphic nil)))
+or return nil"))
 
 (DEFMETHOD graphic-pick ((graphic graphic) x y &optional (pixel 1))
-  (DECLARE (VALUES (type graphic))) 
+
   (AND
    (NOT (EQ (graphic-sensitivity graphic) :viewable)) ; is the graphic not viewable or hidden?  
     (NOT (EQ (graphic-sensitivity graphic) :hidden))
@@ -169,11 +168,10 @@ or return nil")
   (:documentation "Return the graphic if it is within the rectangle defined by X,
  Y, Width and Height or return nil.
    If a scene is subselectable a list of selectable graphics in the scene
- is returned.")
-  (DECLARE (VALUES (OR  graphic (LIST of graphics) nil))))
+ is returned."))
 
 (DEFMETHOD graphic-within ((graphic graphic) x y width height)
-  (DECLARE (VALUES (type graphic))) 
+
   (AND
    ; is the graphic not viewable or hidden?  
     (NOT (EQ (graphic-sensitivity graphic) :viewable))

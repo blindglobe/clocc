@@ -1,3 +1,4 @@
 usr/share/common-lisp/repositories/clue/clue  usr/share/common-lisp/source/clue
 usr/share/common-lisp/repositories/clue/clio  usr/share/common-lisp/source/clio
 usr/share/common-lisp/repositories/clue/pictures usr/share/common-lisp/source/pictures
+usr/share/common-lisp/repositories/clue/clio/examples usr/share/common-lisp/source/clio-examples

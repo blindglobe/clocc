@@ -328,8 +328,7 @@ attributes for each scale.")
 
 
 (defmethod find-font ((contact core) fontname)
-  (declare (type fontable fontname)
-	   (values (or null font)))
+  (declare (type fontable fontname))
   (flet
     ((find-font-attributes (attributes fontnames)
         ;; Assert:

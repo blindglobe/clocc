@@ -90,7 +90,6 @@
 
 (defun parse-event-translation (event-spec actions)
   "Return a canonical form of an event translation."
-  (declare (values list))
   
   (cons
     (typecase event-spec

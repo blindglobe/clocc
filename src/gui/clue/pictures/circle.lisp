@@ -1,4 +1,4 @@
-;;;-*- Mode:Common-Lisp; Package:PICTURES; Base:10 -*-
+;;;-*- Mode:Lisp; Package:PICTURES; Base:10 -*-
 ;;;
 ;;;
 ;;;
@@ -84,7 +84,6 @@
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
   
   (declare (type wcoord center-x center-y radius))
-  (declare (values circle))
 
   (apply #'make-instance 'circle
          :center-x center-x
@@ -107,7 +106,6 @@
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
   
   (declare (type wcoord center-x center-y radius))
-  (declare (values filled-circle))
 
   (apply #'make-instance 'filled-circle
          :center-x center-x
@@ -126,7 +124,6 @@
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
 
   (declare (type wcoord center-x center-y radius))
-  (declare (values filled-circle-edge))
 
   (apply #'make-instance 'filled-circle-edge
          :center-x center-x
@@ -137,7 +134,7 @@
 ;Method: circle-radius
 ;  Returns or changes the object coordinates for the radius of the CIRCLE.
 
-(defmethod :after circle-radius (new-radius (circle circle))
+(defmethod (setf circle-radius)  :after (new-radius (circle circle))
   (declare (ignore new-radius))
   (extent-changed circle))
 
@@ -146,7 +143,6 @@
 ;  Returns or changes the object coordinates of the center of the CIRCLE.
 
 (defmethod circle-center ((circle circle))
-  (declare (values center-x center-y))
 
   (with-slots (center-x center-y) circle
     (values center-x center-y)))
@@ -170,7 +166,6 @@
 ;  its computed extent before returning it.
 
 (defmethod extent-compute ((circle circle))
-  (declare (values (or null extent-rect)))
 
   (with-slots (center-x center-y radius transform) circle
     (let (new-center-x new-center-y new-radius-x new-radius-y new-radius)
@@ -302,7 +297,6 @@
 ;  given CIRCLE is inscribed.
 
 (defun square-bounding-circle (circle)
-  (declare (values x-min y-min width))
 
   (with-slots (center-x center-y radius) circle
     (let (new-center-x new-center-y new-radius-x new-radius-y new-radius)

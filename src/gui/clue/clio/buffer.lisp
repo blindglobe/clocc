@@ -80,7 +80,6 @@ second return value is the (possibly adjusted) vector."
   (declare (type vector           vector)
 	   (type (or null vector) from)
 	   (type (integer 0 *)    start from-start count))
-  (declare (values end vector))
   (let* ((start      (min (max start 0) (fill-pointer vector)))
 	 (new-length (+ (fill-pointer vector) count))
 	 (end        (+ start count)))
@@ -349,7 +348,6 @@ and the result of MARK-EQUAL."))
        between the first and last #\newline's.
     3. The index behind the last #\newline."
   (declare (type string source))
-  (declare (values first-end buffer-lines tail-start))
 
   (let ((first-end (or (position #\newline source :start start :end end) end)))
     (cond
@@ -548,7 +546,6 @@ at the given POSITION and returns the updated POSITION."))
    is given, then it is updated and returned; otherwise a new mark is returned."
   (declare (type buffer                  buffer)
 	   (type (or null (integer 0 *)) position))
-  (declare (values mark))
   (check-type position (or null (integer 0 *)))
   (check-type buffer buffer)
   

@@ -1,4 +1,4 @@
-;;;-*- Mode:Common-Lisp; Package:PICTURES; Base:10 -*-
+;;;-*- Mode:Lisp; Package:PICTURES; Base:10 -*-
 ;;;
 ;;;
 ;;;
@@ -91,7 +91,6 @@
 (defmethod  gstate-value ((gstate gstate) keyword)
   "Return the value of a gstate keyword. Return nil if not defined"
   (declare (type keyword keyword))
-  (declare (values value))
   (with-slots ((ga gstate-array)) gstate
     (with-gstate-value-place
      (declare (type simple-array ga))
@@ -747,7 +746,6 @@
 
 (defun  gstate-copy ( gstate-1 gstate-2)
   (declare (type (or null gstate) gstate-1 gstate-2))
-  (declare (values gstate))
 
   (cond ((eq gstate-1 gstate-2))		; They are already identical!
         (gstate-1				; G-1 is not the empty gstate

@@ -1,3 +1,11 @@
+clue (20011230) unstable; urgency=high
+
+  * Fixed declarations, now compiles with safe core!
+  * Demo's now work and are c-l-c'ed!
+  * Now native package. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sun, 30 Dec 2001 10:43:22 +0100
+
 clue (20010602-4) unstable; urgency=high
 
   * Changed architecture so it can get into testing, I hope...

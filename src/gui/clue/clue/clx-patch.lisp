@@ -61,7 +61,6 @@
 	   (type (or null (member :on :off)) save-under override-redirect)
 	   (type (or null (member :copy) colormap) colormap)
 	   (type (or null (member :none) cursor) cursor))
-  (declare (values window))
   (let* ((display (window-display parent))
 	 (window  (or window (make-window :display display)))
 	 (wid (allocate-resource-id display window 'window))

@@ -71,7 +71,6 @@
 
 
 (DEFUN make-choices (&rest initargs &key &allow-other-keys)
-  (DECLARE (VALUES choices))
   (APPLY #'make-contact 'choices initargs))
 
 ;;  Add our callbacks to each child as it is added, before anybody else gets in ahead of us...
@@ -218,7 +217,6 @@
 
 (defun change-choices-selection (choices child-to-be-selected)
   (declare (type (or null contact) child-to-be-selected))
-  (declare (values child-to-be-selected))
   
   (with-slots (children selection) (the choices choices)
     (unless (eq selection child-to-be-selected)   

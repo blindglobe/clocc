@@ -334,7 +334,6 @@
 
 
 (DEFMETHOD (SETF button-label) (new-label (button button))
-  (DECLARE (VALUES (OR pixmap string)))
   (with-slots (label parent preferred-width width height border-width) button
 
     (let ((converted-label (convert button new-label '(or pixmap label-string))))
@@ -361,7 +360,6 @@
 
 
 (defmethod (setf button-font) (new-font (button button))
-  (declare (values font))
   (check-type new-font fontable) 
   (with-slots (font label) button
     (setf font (find-font button new-font))
@@ -416,7 +414,6 @@
 ;;; =================================================================================== ;;;
 
 (defmethod (setf choice-item-highlight-default-p) (new-value (button button))
-  (declare (values new-highlight-default-p-value))
   (with-slots (highlight-default-p) button
     (let ((new-value (when new-value t)))
       (unless (eq new-value highlight-default-p)
@@ -437,13 +434,11 @@
 
 
 (defmethod choice-item-highlight-selected-p ((button button))
-  (declare (values highlight-selected-p))
   (with-slots (last-displayed-as) button
     (eq last-displayed-as :highlighted)))
 
 
 (defmethod (setf choice-item-highlight-selected-p) (new-value (button button))
-  (declare (values highlight-selected-p))
   (let ((highlight-selected-p (choice-item-highlight-selected-p button))
 	(new-value            (when new-value t)))
     (unless (eq highlight-selected-p new-value)
@@ -459,7 +454,6 @@
 
 
 (defmethod (setf choice-item-selected-p) (new-value (button button))
-  (declare (values new-value))
   (let ((new-value (when new-value t)))
     (unless (eq new-value (choice-item-selected-p button))
       (with-slots (selected) button 
@@ -680,9 +674,6 @@
 (DEFMETHOD preferred-size ((toggle-button toggle-button) &key width height border-width)
     (declare (ignore width height border-width))
 
-  (DECLARE (VALUES preferred-width preferred-height
-		   preferred-border-width))
-
   ;;  A toggle-button must draw its border within its window so it can be dimmed if the button
   ;;  becomes insensitive.  So its border-width is zero.
   ;;  Its preferred height is that dictated by its scale slot.
@@ -758,7 +749,6 @@
 
 (DEFMETHOD (SETF choice-item-selected-p) (new-value (toggle-button toggle-button))
   ;; Identical to (SETF button-switch) except returns boolean on/off indicator.
-  (DECLARE (VALUES new-value))
   (EQ (SETF (button-switch toggle-button) (if new-value :on :off)) :on))
 
 
@@ -972,7 +962,6 @@
 
 
 (DEFMETHOD (SETF choice-item-selected-p) (new-value (action-button action-button))
-  (DECLARE (VALUES new-value))
   (with-slots (last-displayed-as) action-button
     ;; For an unselected action button and a new-value of T, this method must act like a button
     ;; press followed immediately by a button release.  If the button is already
@@ -1266,9 +1255,6 @@
 (DEFMETHOD preferred-size ((action-button action-button) &key width height border-width)
     (declare (ignore width height border-width))
 
-  (DECLARE (VALUES preferred-width preferred-height
-		   preferred-border-width))
-
   ;;  An action button always wants a border-width of zero.
   ;;  Its preferred height is that dictated by its scale slot.
   ;;  Given a text label, its preferred width is the width of its label in the font
@@ -1490,9 +1476,6 @@
 
 (DEFMETHOD preferred-size ((action-item action-item) &key width height border-width)
     (declare (ignore width height border-width))
-
-  (DECLARE (VALUES preferred-width preferred-height
-		   preferred-border-width))
 
   ;;  An action button always wants a border-width of zero.
   ;;  Its preferred height is that dictated by its scale slot.

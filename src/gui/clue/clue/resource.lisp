@@ -118,8 +118,7 @@
   
   (declare (type list arglist)
 	   (type contact parent)
-	   (type list full-name full-class)
-	   (values (list values) full-name full-type))
+	   (type list full-name full-class))
   
   (do* ((table (get-search-table *database* full-name full-class))
 	(resources resources (cdr resources))
@@ -307,7 +306,6 @@
     (otherwise  nil)))
 
 (defun stringable-value (stringable type)
-  (declare (values value symbol))
   (let ((symbol (if (symbolp stringable)
 		    stringable
 		    (let ((*package* (find-package "CLUE")))

@@ -40,7 +40,6 @@
   "Make a polygon with the coordinates contained in POINT-SEQ.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES polygon))
 
   (APPLY #'MAKE-INSTANCE 'polygon
 	 :point-seq point-seq
@@ -89,7 +88,6 @@ The following keyword OPTIONS are allowed:
   "Make a filled-polygon with the coordinates contained in POINT-SEQ.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES filled-polygon))
 
   (APPLY #'MAKE-INSTANCE 'filled-polygon
 	 :point-seq point-seq
@@ -189,7 +187,6 @@ The following keyword OPTIONS are allowed:
 (defun make-filled-polygon-edge (point-seq  &rest options )
   "Make a filled-polygon-edge with the coordinates contained in POINT-SEQ.
 The following keyword OPTIONS are allowed: GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES filled-polygon-edge))
 
   (APPLY #'MAKE-INSTANCE 'filled-polygon-edge
 	 :point-seq point-seq

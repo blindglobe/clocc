@@ -130,7 +130,6 @@
 
 	
 (DEFUN make-font-family (family-name display &rest members)
-  (DECLARE (VALUES (type font-family)))
   (DECLARE (LIST members))
   (funcall #'make-instance 'font-family
 	   :display display
@@ -171,7 +170,6 @@
 
 (DEFUN find-font-family (family-name display)
   "Returns the font-family of the FAMILY-NAME for the DISPLAY"
-  (DECLARE (VALUES (type font-family or nil)))
   (SECOND (ASSOC family-name 
 		 (GETF (display-plist display) 'font-families)
 		 :test #'STRING-EQUAL ))

@@ -1,4 +1,4 @@
-;;;-*- Mode:Common-Lisp; Package:PICTURES; Base:10 -*-
+;;;-*- Mode:Lisp; Package:PICTURES; Base:10 -*-
 ;;;
 ;;;
 ;;;
@@ -71,7 +71,6 @@
                     &rest options
                     )
   (declare (type wcoord start-x start-y end-x end-y))
-  (declare (values line))
 
   (apply #'make-instance 'line
          :start-x start-x
@@ -85,7 +84,6 @@
 ;  Return the coordinates of the START-POINT of the given LINE.
 
 (defmethod line-start-point ((line line))
-  (declare (values start-x start-y))
 
   (with-slots (start-x start-y) line
     (values start-x start-y)))
@@ -113,7 +111,6 @@
 ;  Return the coordinates of the END-POINT of the given LINE.
 
 (defmethod line-end-point ((line line))
-  (declare (values end-x end-y))
 
   (with-slots (end-x end-y) line
     (values end-x end-y)))
@@ -151,7 +148,6 @@
 ;  its computed extent before returning it.
 
 (defmethod extent-compute ((line line))
-  (declare (values (or null extent-rect)))
 
   (with-slots (start-x start-y end-x end-y transform) line
     (let (new-start-x new-start-y new-end-x new-end-y)
@@ -266,7 +262,6 @@
   (DECLARE (IGNORE fixed-x fixed-y))
   (declare (type (or (satisfies plusp) (satisfies zerop)) scale-x scale-y))
   (declare (type ocoord fixed-x fixed-y))
-  (declare (values transform))
   (graphic-damage graphic) ; Damage from old graphic
   
   (with-slots (transform start-x start-y end-x end-y) graphic

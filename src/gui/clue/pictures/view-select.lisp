@@ -38,7 +38,7 @@
 
 (defmethod view-add-selection ((view view) graphic )
   (declare (type (or graphic list) graphic))
-  (declare (values (or graphic list)))
+
   (WHEN  graphic 			;When "graphic" is equal to nil, ignore it.
     (IF (ATOM graphic)			;view-drag-select
 					;will call view-add-selection with a list
@@ -85,7 +85,7 @@
 
 (defmethod view-remove-selection ((view view) graphic )
   (declare (type (or graphic list) graphic))
-  (declare (values (or graphic list)))
+
   (IF (ATOM graphic)
 	(remove-from-selection view graphic)
 	(DOTIMES (pos (LENGTH graphic))

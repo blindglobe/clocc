@@ -53,7 +53,6 @@
 
 (proclaim '(inline graphic-stack-empty-p))
 (defun graphic-stack-empty-p (graphic-stack)
-  (declare (values boolean))
 
   (zerop (fill-pointer (slot-value graphic-stack 'stack))))
 
@@ -64,7 +63,6 @@
 ;  ancestor and ending with GRAPHIC itself.
   
 (defmethod graphic-stack-fill ((graphic-stack graphic-stack) graphic)
-  (declare (values graphic-stack))
   ;;(format t "gs-fill ~a~%" graphic)
   (graphic-stack-purge graphic-stack)	; Empty the stack
   (when graphic				; Nil graphic means end of recursion
@@ -84,7 +82,6 @@
 ;  the GRAPHIC itself.  Return the pair containing the GRAPHIC.
   
 (defmethod graphic-stack-find ((graphic-stack graphic-stack) graphic)
-  (declare (values (or null consp)))
   ;;(format t "gsf <~a> ~a~%" graphic-stack graphic)(finish-output)
   (do ((parent (graphic-parent graphic))	; Find the parent (for speed)
        (top-graphic				; Loop variable
@@ -108,7 +105,6 @@
 ;  effect.
 
 (defmethod graphic-stack-pop ((graphic-stack graphic-stack))
-  (declare (values graphic-stack))
 
   (with-slots (stack) graphic-stack
     (unless (graphic-stack-empty-p graphic-stack)
@@ -123,7 +119,6 @@
 ;  results in clearing everything off the stack.
 
 (defmethod graphic-stack-purge ((graphic-stack graphic-stack) &optional graphic)
-  (declare (values graphic-stack))
 
   (if (graphic-stack-empty-p graphic-stack)	; For an empty stack,
       graphic-stack				; just return it.
@@ -140,8 +135,7 @@
 ;  pushed pair.
 
 (defmethod graphic-stack-push ((graphic-stack graphic-stack) graphic)
-  (declare (values consp)
-	   (type graphic graphic))
+  (declare (type graphic graphic))
 
   (with-slots (stack) graphic-stack
     (let* ((stack-pointer (fill-pointer stack))	; Locals for stack pointer
@@ -195,7 +189,6 @@
 ; Return the top entry on the given GRAPHIC-STACK
 
 (defun graphic-stack-top (graphic-stack)
-  (declare (values (or null consp)))
   
   (with-slots (stack) graphic-stack
     (let ((stack-pointer (fill-pointer stack)))		; Local for stack pointer
@@ -209,7 +202,6 @@
 ; Return the graphic part of the top entry on the given GRAPHIC-STACK
 
 (defun graphic-stack-top-graphic (graphic-stack)
-  (declare (values (or null graphic)))
   
   (with-slots (stack) graphic-stack
     (let ((stack-pointer (fill-pointer stack)))		; Local for stack pointer
@@ -247,7 +239,6 @@
 ;  pushed pair.
 
 (defmethod graphic-stack-push :around ((transform-stack transform-stack) graphic)
-  (declare (values consp))
 
   (let* ((current-transform			; Get top transform from stack
            (cdr (graphic-stack-top transform-stack)))
@@ -293,7 +284,6 @@
 ;  pair.
 
 (defmethod graphic-stack-push :around ((gstate-stack gstate-stack) graphic)
-  (declare (values consp))
   ;;(format t "gsp :around <~a> ~a entered.~%" gstate-stack graphic)
   (let* ((current-gstate			; Get top gstate from stack
            (cdr (graphic-stack-top gstate-stack)))
@@ -315,7 +305,6 @@
 
 (defmethod graphic-stack-push
 	   :around ((gstate-stack edge-gstate-stack) graphic)
-  (declare (values consp))
 
   (let* ((current-gstate			; Get top gstate from stack
            (cdr (graphic-stack-top gstate-stack)))

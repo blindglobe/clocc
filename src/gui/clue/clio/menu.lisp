@@ -86,8 +86,6 @@
 (DEFMETHOD preferred-size ((self pushpin-button) &key width height border-width)
   (declare (ignore width height border-width))
   
-  (DECLARE (VALUES preferred-width preferred-height
-		   preferred-border-width))
   (let*
     ((menu-spec (get-OL-menu-spec self))
      (pushpin-spec (OL-menu-spec-pushpin menu-spec)))
@@ -241,7 +239,6 @@
 
 (DEFMETHOD (SETF choice-item-selected-p) (new-value (self pushpin-button))
    ;; Identical to (SETF button-switch) except returns boolean in/out indicator.
-   (DECLARE (VALUES new-value))
    (EQ (SETF (button-switch self) (if new-value :in :out)) :in))
 
 ;;; ========================================================================== ;;;
@@ -311,7 +308,6 @@
 
 (defun make-menu (&rest initargs)
   "Creates and returns a menu instance."
-  (declare (values menu)) 
   (apply #'make-contact 'menu initargs))
 
 (defmethod initialize-instance :after ((menu menu) &rest args
@@ -394,8 +390,6 @@
 (defmethod preferred-size ((self menu) &key width height border-width)
   (declare (ignore width height border-width))
 
-  (declare (values preferred-width preferred-height
-		   preferred-border-width))
   (preferred-size (first (composite-children self))))
 
 

@@ -133,7 +133,7 @@
 ;  SCENE's transform to the resulting extent.
 
 (DEFMETHOD extent-compute ((scene scene))
-  (declare (values (or null extent-rect)))
+
   (with-slots (elements) scene
     (IF (/= (FILL-POINTER elements) 0) ; Is this an empty scene?
 	(let ((first-child-extent ; No, get the first child's extent
@@ -166,7 +166,7 @@
 
 (defmethod scene-delete ((scene scene) pos)
   (declare (type scene-position pos))
-  (declare (values graphic))
+
   (extent-changed scene)
   (with-slots (elements) scene			;from a scene
     (when elements
@@ -206,7 +206,6 @@
 ;  Return the list of elements contained by SCENE.
 
 (defmethod scene-elements ((scene scene))
-  (declare (values elements))
 
   (slot-value scene 'elements))
 
@@ -228,7 +227,7 @@
 
 (defmethod scene-insert ((scene scene) (graphic graphic) &optional pos )
   (declare (type scene-position pos))
-  (declare (values graphic)(optimize (safety 3)))
+  (declare (optimize (safety 3)))
 
   ;;(format t "scene-insert ~a ~a ~a~%" scene graphic pos)
   (extent-changed scene)
@@ -257,7 +256,7 @@
 
 (defmethod scene-insert ((scene scene) (graphic scene) &optional pos )
   (declare (type scene-position pos))
-  (declare (values graphic))
+
   ;(format t "scene-insert ~a ~a ~a~%" scene graphic pos)
   (extent-changed scene)
   (UNLESS (EQL   scene graphic)

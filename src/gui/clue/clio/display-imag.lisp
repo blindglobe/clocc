@@ -165,7 +165,6 @@
 ;;;----------------------------------------------------------------------------+
 
 (defun make-display-image (&rest initargs &key &allow-other-keys)
-  (declare (values display-image))
   (apply #'make-contact 'display-image initargs))
 
 
@@ -188,7 +187,6 @@
 ;;;----------------------------------------------------------------------------+
 
 (defmethod preferred-size ((display-image display-image) &key width height border-width)
-  (declare (values preferred-width preferred-height preferred-border-width))
 
   (with-slots
     ((current-border-width border-width) (current-height height) (current-width width) gravity

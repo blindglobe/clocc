@@ -56,8 +56,7 @@ to search the gcontext cache for the DRAWABLE. The second return value
 is the cache to be searched."
     (declare
       (type drawable           drawable)
-      (type (or null gcontext) default)
-      (values gcontext list))
+      (type (or null gcontext) default))
     (let*
       ((display  (drawable-display drawable)) 
 
@@ -299,8 +298,7 @@ attributes used to create a matching gcontext."
   "Returns a pixmap for the given IMAGE. The image must have the same depth as
    the given CONTACT."
   (declare (type   image   image)
-	   (type   contact contact)
-	   (values pixmap))
+	   (type   contact contact))
   (or
     (contact-pixmap contact image)
 
@@ -378,8 +376,7 @@ attributes used to create a matching gcontext."
   (declare (type   image             image)
 	   (type   contact           contact)
 	   (type   (or null pixel)   foreground background)
-	   (type   (or null card32)  depth)
-	   (values pixmap))
+	   (type   (or null card32)  depth))
   
   (let ((depth (or depth (slot-value contact 'depth)))
 	(fg    (or foreground 1))
@@ -446,7 +443,6 @@ attributes used to create a matching gcontext."
 	   (type (or null pixmap image) image mask)
 	   (type int16 x y)
 	   (type (or null color) foreground background))
-  (declare (values cursor))
 
   (let ((display (contact-display contact)))
     (or (display-cursor display image)
@@ -472,7 +468,6 @@ attributes used to create a matching gcontext."
   "Returns and caches a cursor for the glyph given by the INDEX in the cursor font."
   (declare (type card8 index)
 	   (type contact contact))
-  (declare (values cursor))
 
   (let ((display (contact-display contact)))
     (or (display-cursor display index )

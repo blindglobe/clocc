@@ -208,7 +208,6 @@
 
 
 (DEFMETHOD extent-compute ((graphic-image graphic-image))
-  (DECLARE (VALUES (OR null extent-rect)))
   
   (LET ((scale-x (view-scale-x (graphic-view graphic-image)))
 	(scale-y (view-scale-y (graphic-view graphic-image))))
@@ -348,7 +347,6 @@
 
 (DEFUN compute-base-origin (graphic-image view)
   "Return the  baseline coordinate of the graphic-image"
-  (DECLARE (VALUES (type ocoord x y)))
   (with-slots (graphic-image-gravity
 	       transform image-content extent graphic) graphic-image
     (LET ((world-extent

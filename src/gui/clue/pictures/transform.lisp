@@ -126,7 +126,7 @@
 #+nil ;; pw--handled by defstruct
 (defun make-transform (&rest initargs
                          &key &allow-other-keys)
-  (declare (values transform))
+
   (apply #'make-instance 'transform initargs))
 
 
@@ -165,7 +165,6 @@
   (declare (type transform x)
 	   (type (or null transform) result))
   (declare (type single-float y11 y12 y21 y22 y31 y32))
-  (declare (values transform))
   (let ((result (or result (make-transform))))
     (declare (type transform result))
     (with-defstruct-slots
@@ -205,8 +204,6 @@
 (defun compose-transform (transform-1 transform-2
                           &optional (result transform-2))
   (declare (type (or null transform) transform-1 transform-2 result))
-  (declare (values transform))
-
   (cond ((null transform-1)			; T-1 is the identity
          (copy-transform transform-2 result))	;   Just use T-2
         ((null transform-2)			; T-2 is the identity
@@ -262,8 +259,6 @@
 #+nil
 (defun copy-transform (transform-1 transform-2)
   (declare (type (or null transform) transform-1 transform-2))
-  (declare (values transform-2))
-
   (cond ((eq transform-1 transform-2))		; They are already identical!
         (transform-1				; T-1 is not identity
          (unless transform-2
@@ -314,8 +309,7 @@
   transform-2)
 
 (defmethod move-transform ((transform transform) delta-x delta-y)
-  (declare (type transform transform)
-	   (values transform))
+  (declare (type transform transform))
 
   (with-slots (t31 t32) transform		; Just translate the transform
     (psetq t31 (+ t31 delta-x)
@@ -327,7 +321,6 @@
 ;   Print a transform object
 
 (defmethod print-object :after ((transform transform) stream)
-  (declare (values transform))
   (with-slots (t11 t12 t21 t22 t31 t32) transform
     (format 
      stream
@@ -351,7 +344,6 @@
 (defmethod rotate-transform ((transform transform) angle
                                &optional (fixed-x 0) (fixed-y 0))
   (declare (type transform transform)
-	   (values transform)
 	   (inline post-mult))
 
   (let* ((cos-angle (cos angle))	; Implementation note:
@@ -377,8 +369,7 @@
 
 (defmethod scale-transform ((transform transform) scale-x scale-y
                   &optional (fixed-x 0s0) (fixed-y 0s0))
-  (declare (values transform)
-	   (inline post-mult))
+  (declare (inline post-mult))
   (with-coercion ((scale-x scale-y fixed-x fixed-y) single-float)
     (let* ((origin-fixed
 	    ; Translate only if fixed point is not origin
@@ -408,7 +399,7 @@
 (defmethod scale-point ((transform transform) x-distance y-distance)
   (declare (type transform transform))
   (declare (type wcoord x-distance y-distance))
-  (declare (values single-float single-float))
+
   (with-coercion ((x-distance y-distance) single-float)
     (with-slots (t11 t12 t21 t22) transform
       (let ((x-scale (sqrt (+ (* t11 t11) (* t12 t12))))
@@ -424,7 +415,7 @@
 (DEFMETHOD  transform-point ((transform transform) x y)
   (declare (type transform transform))
   (declare (type wcoord x y))
-  (declare (values single-float single-float))
+
   (with-coercion ((x y) single-float)
     (with-slots (t11 t12 t21 t22 t31 t32) transform
       (values (+ (* x t11) (* y t21) t31)
@@ -432,7 +423,7 @@
 
 (DEFMETHOD  transform-point ((transform t) x y)
   (declare (type wcoord x y))
-  (declare (values single-float single-float))
+
   ;; Identity transform
   (with-coercion ((x y) single-float)
     (values x y)))

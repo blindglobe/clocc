@@ -247,7 +247,6 @@
   ;;  Returns the first (newest) wis found with width/height.
   ;;  If no wis satisfying width/height exists, create a new one unless DONT-CREATE-P
   ;;  is true, in which case return NIL.
-  (DECLARE (VALUES (OR what-if-structure NULL)))
   (LET ((old-wis-list (GETF (window-plist table) :what-if-structures)) wis)
     (SETF wis (FIND-IF #'(lambda (wis)
 			   (AND (EQL (what-if-width wis) width)
@@ -272,7 +271,6 @@
 
 
 (defun table-row (member)
-  (declare (values (or null (integer 0 *))))
   (contact-constraint member :row))
 
 (defsetf table-row setf-table-row)
@@ -281,7 +279,6 @@
   (setf (contact-constraint member :row) row))
 
 (defun table-column (member)
-  (declare (values (or null (integer 0 *))))
   (contact-constraint member :column))
 
 (defsetf table-column setf-table-column)
@@ -391,16 +388,14 @@
 ;;;	   to be half the height of the row it follows.
   
   (DEFMETHOD table-separator ((table table) row-number)
-    (DECLARE (type integer row-number)
-	     (VALUES (MEMBER :on :off)))
+    (DECLARE (type integer row-number))
     (check-type row-number (integer 0 *))
     (with-slots (separators) table
       (IF (MEMBER row-number separators) :on :off)))
   
   
   (DEFMETHOD (SETF table-separator) (on-or-off (table table) row-number)
-    (DECLARE (type integer row-number)
-	     (VALUES (MEMBER :on :off)))
+    (DECLARE (type integer row-number))
     (check-type row-number (integer 0 *))
     (with-slots (separators) table
       (LET ((already-there-p (MEMBER row-number separators)))
@@ -422,7 +417,6 @@
   
   (DEFMETHOD table-member ((table table) row column)
     ;;  Return NIL if there is no child at position row/column.
-    (DECLARE (VALUES (OR contact NULL)))
     (LET ((wis (check-for-existing-wis table (contact-width table) (contact-height table)
 				       (contact-border-width table))))
       (WHEN wis
@@ -857,7 +851,6 @@
 
 (DEFUN put-kids-into-specified-number-of-columns (table wis)
 
-  (DECLARE (VALUES widths-for-columns))
   
   (with-slots (column-width columns children) (THE table table)
     (LET* (fixed-width-for-this-column total-kid-width 
@@ -1038,7 +1031,6 @@
   ;; space it'll end up with extra slack space around it.  A slack-space-smoothing routine should
   ;; be written to improve this.
   
-  (DECLARE (VALUES nrows ncolumns column-widths))
   
   (with-slots (children column-width) (THE table table)
     

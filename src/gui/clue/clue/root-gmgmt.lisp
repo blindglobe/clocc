@@ -39,8 +39,7 @@
 (defmethod manage-geometry ((parent root) (shell wm-shell) x y width height border-width &key) 
   (declare (type contact          shell)
 	   (type (or null int16)  x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))
+	   (type (or null card16) width height border-width))
   
   (with-slots ((contact-x x)
 	       (contact-y y)
@@ -104,8 +103,7 @@
 (defmethod manage-geometry :around ((parent root) (shell override-shell) x y width height border-width &key) 
   (declare (type contact shell)
 	   (type (or null int16) x y)
-	   (type (or null card16) width height border-width)
-	   (values success-p x y width height border-width))
+	   (type (or null card16) width height border-width))
 
   ;; Approve and perform change immediately. We could let change-geometry do the
   ;; move/resize normally, but doing them here allows change-geometry to assume
@@ -138,8 +136,7 @@
 
 (defmethod manage-priority ((parent root) (shell wm-shell) priority sibling &key)  
   (declare (type (member :above :below :top-if :bottom-if :opposite) priority)
-	   (type (or null contact) sibling)
-	   (values success-p priority sibling))
+	   (type (or null contact) sibling))
   
   ;; Shrug..just return approval, because ICCCM doesn't require the window manager
   ;; to report the result of an attempt to change priority. Besides, even if we did get

@@ -36,7 +36,6 @@
 (defun contact-current-background (contact)
   "Returns the current CONTACT background, searching upward through
    the contact hierarchy to resolve :parent-relative."
-  (declare (values (or (member :none) pixel pixmap)))
   (declare (type contact contact))
   
   (do ((contact contact (contact-ancestor contact))
@@ -75,7 +74,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun pixel-points (screen &optional (number 1) (dimension :vertical))
   "Return the number of points represented by NUMBER pixels, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values number))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -85,7 +83,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun point-pixels (screen &optional (number 1) (dimension :vertical))
   "Return the number of pixels represented by NUMBER points, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values integer))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -95,7 +92,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun pixel-inches (screen &optional (number 1) (dimension :vertical))
   "Return the number of inches represented by NUMBER pixels, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values number))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -105,7 +101,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun inch-pixels (screen &optional (number 1) (dimension :vertical))
   "Return the number of pixels represented by NUMBER inches, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values integer))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -114,7 +109,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun pixel-millimeters (screen &optional (number 1) (dimension :vertical))
   "Return the number of millimeters represented by NUMBER pixels, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values number))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -130,7 +124,6 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
 (defun millimeter-pixels (screen &optional (number 1) (dimension :vertical))
   "Return the number of pixels represented by NUMBER millimeters, in either
    the :vertical or :horzontal DIMENSION of the SCREEN."
-  (declare (values integer))
   (declare (type screen screen)
 	   (type number number)
 	   (type (member :horizontal :vertical) dimension))
@@ -149,8 +142,7 @@ a non-pixel value, then the (converted) value of DEFAULT-PIXEL is returned."
   "Return an open font for the CONTACT. The FONTNAME represents a R3 fontname string
    specifying the requested font properties. Nil is returned if no such font can be
    opened."
-  (declare (type stringable fontname)
-	   (values (or null font)))
+  (declare (type stringable fontname))
 
   ;; Default method does no font negotiation
   (open-font (contact-display contact) fontname))

@@ -92,7 +92,6 @@
 
 (defmethod scene-insert  ((scene selection-scene) graphic &optional pos )
  (DECLARE (IGNORE pos))
-  (declare (values graphic))
   (with-slots (elements parent) scene                           ;to a scene
  	 (VECTOR-PUSH-EXTEND graphic elements 1) ;insert after last graphic
 	 )			; Set its new parent
@@ -209,7 +208,6 @@
 
 (defmethod graphic-contains-p ((grabber background-grabber) x y &optional pixel)
   (declare (type wcoord x y ))
-  (declare (values boolean))
   (graphic-contains-p (grabber-graphic (graphic-parent grabber)) x y pixel))
 
 (DEFMETHOD graphic-contains-p ((filled-polygon grabber) x y &optional pixel)
@@ -247,7 +245,6 @@
 		     &rest options
 		     &key &allow-other-keys)
   (declare (type wcoord x y ))
-  (declare (values rectangle))
   (apply #'make-instance 'grabber
 	 :allow-other-keys t
 	 :grabber-name name
@@ -756,7 +753,6 @@
 ;  (defined below).
 
 (defmethod extent-compute ((grabber-rect grabber-rect))
-  (declare (values (or null extent-rect)))
   
   (with-slots (graphic  extent) grabber-rect
     (WHEN  graphic
@@ -817,7 +813,6 @@
 
 
 (defmethod extent-compute ((grabber grabber))
-  (declare (values (or null extent-rect)))
   (with-slots (vertices) grabber
     (LET  ((x-min (rectangle-origin-x grabber))
 	   (y-min (rectangle-origin-y grabber)))

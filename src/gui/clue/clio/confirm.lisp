@@ -144,7 +144,6 @@
 
 (defun make-confirm (&rest initargs)
   "Creates and returns a confirm instance."
-  (declare (values confirm)) 
   (apply #'make-contact 'confirm initargs))
 
 

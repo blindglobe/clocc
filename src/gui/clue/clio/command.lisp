@@ -69,7 +69,6 @@
 
 (defun make-command (&rest initargs &key &allow-other-keys)
   "Creates and returns a command instance."
-  (declare (values command)) 
   (apply #'make-contact 'command initargs))
 
 

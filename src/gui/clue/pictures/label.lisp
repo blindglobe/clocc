@@ -1,4 +1,4 @@
-;;;-*- Mode:Common-Lisp; Package:PICTURES; Base:10 -*-
+;;;-*- Mode:Lisp; Package:PICTURES; Base:10 -*-
 ;;;
 ;;;
 ;;;
@@ -370,7 +370,6 @@
 (defmethod graphic-contains-p ((label label)  x y &optional pixel-size)
   (declare (type wcoord x y))
   (DECLARE (IGNORE pixel-size))
-  (declare (values boolean))
   (IF (label-angle-extent label)
       (inside-p (label-angle-extent label) (make-point :x x :y y)) 
       (let* ((extent (world-extent label)))
@@ -643,7 +642,6 @@
 
 (DEFUN compute-baseline-origin (label  scale-x scale-y)
   "Return the  baseline coordinate of the label"
-  (DECLARE (VALUES (type ocoord x y)))
   (with-slots (extent label-gravity label-extent-x label-extent-y
 	      (label-extent-height extent-height)
 	      (label-extent-width extent-width) label-font label-string) label

@@ -104,8 +104,6 @@
 (defun make-view (&rest options &key &allow-other-keys)
   "Make a new view.
 The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-X ORIGIN-Y GRAPHIC"
-
-  (declare (values view))
   (apply #'make-contact 'view options))
 
 ;Basic contact methods:
@@ -244,18 +242,10 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 ;  (in world coordinates) after the view window is resized.
 
 (defmethod view-gravity ((view view))
-  (declare (values (member :northwest :north  :northeast
-                           :west      :center :east
-                           :southwest :south  :southeast)))
-
   (with-slots (gravity) view
     gravity))
 
 (defmethod (setf view-gravity) (gravity (view view))
-  (declare (values (member :northwest :north  :northeast
-                           :west      :center :east
-                           :southwest :south  :southeast)))
-
   (with-slots ((view-gravity gravity)) view
     (setf view-gravity gravity)))
 
@@ -441,16 +431,12 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 ;  previous damage is ignored; otherwise, the new value is ignored.
 
 (defmethod view-damaged-p ((view view))
-  (declare (values boolean))
-
   (with-slots (damage-count) view
     (plusp damage-count)))
 
 
 (defmethod (setf view-damaged-p) (damaged (view view))
   (declare (type boolean damaged))
-  (declare (values boolean))
-
   (with-slots (damage-count) view
     (unless damaged (setf damage-count 0))))
 
@@ -462,7 +448,6 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 
 (defmethod  (setf view-graphic)  :after (view-graphic (view view)  )
   (declare (type (or null graphic) view-graphic))
-  (declare (values view-graphic))
   (with-slots ((graphic view-graphic) )  view
     (SETF graphic view-graphic)
     (with-slots (views) view-graphic
@@ -473,8 +458,6 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 ;  Return the world-coordinate size of a pixel for the given VIEW.
 
 (defmethod view-pixel-size ((view view))
-  (declare (values pixel-size))
-
   (LET ( (scale (view-scale view)))
     (/ 1 scale)))
 
@@ -553,7 +536,6 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 (defmethod view-scale-point ((view view) x-distance y-distance
                                        &optional graphic-world-transform)
   (declare (type (or null transform) graphic-world-transform))
-  (declare (values (new-x-distance new-y-distance)))
 
   (with-slots ( height) view
     (LET ((scale-x (view-scale-x view))
@@ -569,20 +551,18 @@ The following keyword OPTIONS are allowed: GRAVITY RESIZE-EXTENT-P SCALE ORIGIN-
 ;  given VIEW.  If GRAPHIC-WORLD-TRANSFORM is given, apply it to the point
 ;  before converting to view coordinates.
 (defmethod transform-point ((view view) x y )
-  (declare (values new-x new-y))
-
   (with-slots (origin-x origin-y scale-x scale-y height) view
 
       (values (floor (* (- x origin-x) scale-x))
               (FLOOR (- height  (* (- y origin-y) scale-y))))))
 
 (defmethod transform-x ((view view) x  )
-  (declare (values new-x new-y))
+
   (with-slots (origin-x origin-y scale-x height) view
      (floor (* (- x origin-x) scale-x))))
 
 (defmethod transform-y ((view view)  y )
-  (declare (values  new-y))
+
   (with-slots (origin-x origin-y scale-y height) view
     (floor (- height (* (- y origin-y) scale-y)))))
 
@@ -609,7 +589,7 @@ by applying the view transform to them"
 
 
 (defmethod view-untransform-point ((view view) window-x  window-y)
-  (DECLARE (VALUES world-x world-y))
+
   (VALUES 
     (+ (origin-x view)
        (/ window-x (view-scale-x view))) ;change to world coordinates
@@ -618,7 +598,7 @@ by applying the view transform to them"
   ) ;coordinates to 1st quadrant world coordinate
 
 (defmethod untransform-point ((view view) window-x  window-y)
-  (DECLARE (VALUES world-x world-y))
+
   (VALUES 
     (+ (origin-x view)
        (/ window-x (view-scale-x view))) ;change to world coordinates
@@ -628,7 +608,7 @@ by applying the view transform to them"
 
 
 (defmethod view-untransform-x ((view view) window-x )
-  (DECLARE (VALUES world-x )) ;change to X world coordinates
+         ;change to X world coordinates
     (+ (origin-x view)
        (/ window-x (view-scale-x view)))
   ;change from 4th quadrant view coordinates
@@ -637,7 +617,7 @@ by applying the view transform to them"
 
 
 (defmethod view-untransform-y ((view view) window-y )
-  (DECLARE (VALUES world-y ))
+
     (- (+ (origin-y view)
 	  (/ (contact-height view)
 	     (view-scale-y view)))	;change to Y world coordinates
@@ -686,7 +666,6 @@ by applying the view transform to them"
 
 (defmethod world-extent ((view view) &optional result-extent)
   (declare (type (or null extent-rect) result-extent))
-  (declare (values (or null extent-rect)))
 
   (with-slots (origin-x origin-y  width height) view
     (unless (or (zerop width) (zerop height))

@@ -381,8 +381,7 @@
 (defun delete-mode (contact)
   "Pop CONTACT (and everything above CONTACT) off the mode-stack
    Returns T when found and removed, else NIL"
-  (declare (type contact contact)
-	   (values boolean))
+  (declare (type contact contact))
   (let* ((display (contact-display contact))
 	 (mode-stack (display-mode-stack display)))
     (when mode-stack
@@ -708,8 +707,7 @@ with a direct reference to the ACTION function."
 
 
 (defmethod event-actions ((contact basic-contact) event-spec)
-  "Return the list of actions for EVENT-SPEC."
-  (declare (values action-list)) 
+  "Return the list of actions for EVENT-SPEC." 
 
   ;; Check instance translations
   (let ((event-binding (car (parse-event-translation event-spec nil))))
@@ -843,8 +841,7 @@ with a direct reference to the ACTION function."
 
 (defun encode-clue-modifier-mask (modifiers)
   ;; Make a state-mask from modifiers
-  (declare (type (or mask16 state-mask-key (member :meta :super :hyper) list) modifiers)
-	   (values mask16))
+  (declare (type (or mask16 state-mask-key (member :meta :super :hyper) list) modifiers))
   (typecase modifiers
     (fixnum (ldb (byte meta-shift 0) modifiers))
     (cons (let ((mask 0))
@@ -1278,7 +1275,6 @@ with a direct reference to the ACTION function."
   (declare (type display display)
 	   (type (or null number) timeout)
 	   (type boolean update-state-p)
-	   (values boolean)
 	   #+cmu (optimize (ext:inhibit-warnings 3)))
 
   ;; Ensure consistent contact states
@@ -1760,7 +1756,7 @@ with a direct reference to the ACTION function."
   ;; Timers are automatically removed when CONTACT is destroyed
   (declare (type contact contact)
 	   (type number interval) ;; in seconds
-	   (values timer))
+           )
   (delete-timer contact name)
   (insert-timer (make-timer
 		  :name name

@@ -63,7 +63,6 @@
   "   Make a ellipse with the with the given X-MIN, Y-MIN, WIDTH and HEIGHT.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES ellipse))
 
   (APPLY #'MAKE-INSTANCE 'ellipse
 	 :point-seq 
@@ -74,7 +73,6 @@
   "   Make a filled-ellipse with the given X-MIN, Y-MIN, WIDTH and HEIGHT.
    The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES filled-ellipse))
 
   (APPLY #'MAKE-INSTANCE 'filled-ellipse
 	 :point-seq
@@ -85,7 +83,6 @@
   "Make a filled-ellipse-edge with the given X-MIN, Y-MIN, WIDTH and HEIGHT.
 The following keyword OPTIONS are allowed:
    GSTATE PARENT SENESITIVITY TRANSFORM PLIST"
-  (DECLARE (VALUES filled-ellipse-edge))
 
   (APPLY #'MAKE-INSTANCE 'filled-ellipse-edge
 	 :point-seq
@@ -93,7 +90,6 @@ The following keyword OPTIONS are allowed:
 	 options))
 
 (DEFMETHOD ellipse-origin-x ((ellipse ellipse))
-  (DECLARE (VALUES (type ocoord x)))
   (vertex-x ellipse 0)
   )
 
@@ -104,7 +100,6 @@ The following keyword OPTIONS are allowed:
       (SETF (vertex-x ellipse pos) (+ difference (vertex-x ellipse pos)) ))))
 
 (DEFMETHOD ellipse-origin-y ((ellipse ellipse))
-  (DECLARE (VALUES (type ocoord y)))
   (vertex-y ellipse 0))
 
 (DEFMETHOD (SETF ellipse-origin-y) (origin-y (ellipse ellipse) )

@@ -141,7 +141,6 @@
 
 (defun graphic-parse-event-spec (event-translation)
   "Return a canonical form of the EVENT-TRANSLATION."
-  (declare (values canonical-event-translation))
   
   (cons
     (let ((event-spec (first event-translation)))
@@ -192,8 +191,7 @@
 (defun encode-clue-modifier-mask (modifiers)
   ;; Make a state-mask from modifiers
   (declare (type (or mask16 state-mask-key (member :meta :super :hyper) list)
-		 modifiers)
-	   (values mask16))
+		 modifiers))
   (typecase modifiers
     (fixnum (ldb (byte cluei::meta-shift 0) modifiers))
     (cons (let ((mask 0))

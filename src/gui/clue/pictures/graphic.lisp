@@ -159,14 +159,12 @@
 (DEFPARAMETER  *working-gstate* (make-gstate))
 
 (defmethod graphic-combined-gstate ((graphic graphic))
-  (declare (values gstate))
   (clear-gstate  *working-gstate*)
   (IF (graphic-parent graphic) ;added the test for a standalone graphic 3-10-90 HTH
       (graphic-stack-gstate (graphic-stack-find *gstate-stack* graphic))
       (graphic-gstate graphic)))
 
 (defmethod graphic-combined-edge-gstate ((graphic graphic))
-  (declare (values gstate))
   (IF (graphic-parent graphic) ;added the test for a standalone graphic 3-10-90 HTH
       (graphic-stack-gstate (graphic-stack-find *edge-gstate-stack* graphic))
       (edge-gstate graphic)))
@@ -176,7 +174,6 @@
 
 (DEFMETHOD  editable-p ((graphic graphic))
   (declare (type graphic graphic))
-  (declare (values boolean))
 
   (and (eq (graphic-sensitivity graphic) :editable)
        (or (null (graphic-parent graphic))
@@ -206,7 +203,6 @@
 ;  (defined below).
 
 (defmethod extent-compute ((graphic graphic))
-  (declare (values (or null extent-rect)))
 
   nil)			; Instances of the base class have undefined extent
 
@@ -258,7 +254,6 @@
 ;  extent.
 
 (defmethod graphic-extent ((graphic graphic))
-  (declare (values (or null extent-rect)))
 
   (extent-compute graphic)) ; Go compute the extent and return the result
 
@@ -287,7 +282,6 @@
 (defmethod graphic-contains-p ((graphic graphic)  x y &optional pixel-size)
   (declare (type wcoord x y))
   (DECLARE (IGNORE pixel-size))
-  (declare (values boolean))
   (let* ((extent (world-extent graphic)))
     (and (>= x (extent-rect-xmin extent))
          (>= y (extent-rect-ymin extent))
@@ -373,7 +367,6 @@
 
 (defmethod graphic-intersects-p ((graphic graphic) min-x min-y width height)
   (declare (type wcoord min-x min-y width height))
-  (declare (values boolean))
 
   (let* ((extent (world-extent graphic))
          (max-x  (+ min-x width))
@@ -393,7 +386,6 @@
 
 (defmethod (setf graphic-transform) (new-transform (graphic graphic))
   (declare (type (or null transform) new-transform))
-  (declare (values (or null transform)))
   (PROG1
     (setf (slot-value graphic 'transform) new-transform)
     (graphic-stack-purge
@@ -416,12 +408,10 @@
 ;  Return or change the parent of a graphic
 
 (defmethod graphic-parent ((graphic graphic))
-  (declare (values (or null graphic)))
   (slot-value graphic 'parent))
 
 (defmethod (setf graphic-parent) (new-parent (graphic graphic))
   (declare (type (or null graphic) new-parent))
-  (declare (values (or null graphic)))
   (with-slots (parent) graphic
     (when parent
       (extent-changed parent)
@@ -439,11 +429,9 @@
 ;  Return or change the graphics state of the given graphic.
 
 (defmethod graphic-gstate ((graphic graphic))
-  (declare (values (or null gstate)))
   (slot-value graphic 'gstate))
 
 (defmethod (setf graphic-gstate) (new-gstate (graphic graphic))
-  (declare (values (or null gstate)))
   (setf (slot-value graphic 'gstate) new-gstate)
   (graphic-stack-purge *gstate-stack* graphic)
   new-gstate)		; Notify the gstate stack
@@ -456,7 +444,6 @@
 
 (defun graphic-views (graphic &optional view-list)
   "Returns the  VIEW-LIST associated with the GRAPHIC."
-  (DECLARE (VALUES (type list view-list)))
   (with-slots (views) graphic
     (WHEN views
       (DOLIST (aview views)
@@ -467,7 +454,6 @@
 
 (DEFMETHOD  graphic-view ((graphic graphic))
   "Returns or (with setf) changes the first VIEW associated with the GRAPHIC."
-  (DECLARE (VALUES view))
   (FIRST (graphic-views graphic)))
 
 (DEFMETHOD (SETF graphic-view) (view (graphic graphic))
@@ -484,7 +470,6 @@
 
 (defmethod graphic-within-p ((graphic graphic) min-x min-y width height)
   (declare (type wcoord min-x min-y width height))
-  (declare (values boolean))
 
   (let* ((extent (world-extent graphic))
          (max-x  (+ min-x width))
@@ -520,7 +505,6 @@
 
 (defmethod move-transform ((graphic graphic) delta-x delta-y)
   (declare (type wcoord delta-x delta-y))
-  (declare (values transform))
 
   (with-slots (transform) graphic
     (graphic-damage graphic) 	; Damage from old graphic
@@ -555,7 +539,6 @@
                              &optional (fixed-x 0) (fixed-y 0))
   (declare (type angle angle))
   (declare (type wcoord fixed-x fixed-y))
-  (declare (values transform))
 
   (with-slots (transform) graphic
     (graphic-damage graphic)	; Damage from old graphic
@@ -578,7 +561,6 @@
                             &optional (fixed-x 0) (fixed-y 0))
   (declare (type (or (satisfies plusp) (satisfies zerop)) scale-x scale-y))
   (declare (type ocoord fixed-x fixed-y))
-  (declare (values transform))
   (graphic-damage graphic)	; Damage from old graphic
   (with-slots (transform) graphic
     (when (null transform)	; If no transform
@@ -596,7 +578,6 @@
 
 (DEFMETHOD  selectable-p ((graphic graphic))
   (declare (type graphic graphic))
-  (declare (values boolean))
 
   (and (member (graphic-sensitivity graphic) '(:selectable :editable))
        (or (null (graphic-parent graphic))
@@ -604,7 +585,6 @@
 
 (defun subselectable-p (graphic)
   (declare (type graphic graphic))
-  (declare (values boolean))
 
   (and (member (graphic-sensitivity graphic) '(:subselectable ))
        (or (null (graphic-parent graphic))
@@ -619,7 +599,6 @@
 (defmethod (setf graphic-sensitivity) (how-sensitive (graphic graphic))
   (declare (type (member :hidden :viewable :selectable :subselectable :editable)
 		 how-sensitive))
-  (declare (values (member :hidden :viewable :selectable :editable)))
   (ASSERT  (MEMBER how-sensitive 
 		   '(:hidden :viewable :selectable  :subselectable :editable))
 	   (how-sensitive)
@@ -633,7 +612,6 @@
 
 (DEFMETHOD  viewable-p ((graphic graphic))
   (declare (type graphic graphic))
-  (declare (values boolean))
 
   (and (member (graphic-sensitivity graphic)
 	       '(:viewable :subselectable :selectable :editable))
@@ -648,7 +626,6 @@
 
 (defmethod world-extent ((graphic graphic) &optional result-extent)
   (declare (type (or null extent-rect) result-extent))
-  (declare (values (or null extent-rect)))
 
   (let ((parent (graphic-parent graphic))) ; Get graphic's parent
     (if parent			; Does it have one?
@@ -664,7 +641,6 @@
 (DEFUN graphic-combined-world-extents ( graphic &rest graphics)
   "Combine the extents of the GRAPHICS in world coordinates and
 return the combined extent"
-  (DECLARE (VALUES extent-rect))
   (LET ((extent (world-extent graphic)))
     (DOLIST (graph graphics)
       (extent-combine (world-extent graph) extent))
@@ -681,7 +657,6 @@ return the combined extent"
 ;	4. Off-the-wall references to unrelated graphics are not too slow.
 
 (defmethod graphic-world-transform ((graphic graphic))
-  (declare (values transform))
 
   (graphic-stack-transform (graphic-stack-find *transform-stack* graphic)))
 

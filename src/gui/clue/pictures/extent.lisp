@@ -86,7 +86,6 @@
 
 (defun extent-combine (extent-1 extent-2)
   (declare (type (or null extent-rect) extent-1 extent-2))
-  (declare (values (or null extent-rect)))
 
     (if (and extent-1 extent-2)	; Are they both there?
 	(if (and (extent-rect-valid extent-1)(extent-rect-valid extent-2))
@@ -131,7 +130,6 @@
 ;  returned and the cache remains invalid.
 
 (defmethod graphic-extent ((extent-cache extent-cache))
-  (declare (values (or null extent-rect)))
 
   (with-slots ((cache extent) extent-valid-p) extent-cache
     (if extent-valid-p				; Is the cache valid?
@@ -160,7 +158,6 @@
                             &optional (result (make-extent-rect)))
   (declare (type (or null transform) transform))
   (declare (type (or null extent-rect) extent-rect))
-  (declare (values (or null extent-rect)))
   (SETF (FILL-POINTER *extent-vector*) 8)
   (when extent-rect		; "Undefined" transformed is still "undefined"
     (if transform		; Is it the identity transform?

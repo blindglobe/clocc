@@ -4,13 +4,14 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.7 2000/03/27 20:02:54 sds Exp $
+;;; $Id: html.lisp,v 1.8 2000/04/27 22:31:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; "Gray streams"
   (require :gray (translate-logical-pathname "port:gray"))
+  ;; `xml-read-comment'
+  (require :xml (translate-logical-pathname "cllib:xml"))
   ;; `with-open-url' in `dump-url-tokens'
   (require :url (translate-logical-pathname "cllib:url")))
 
@@ -20,7 +21,7 @@
   (declaim (optimize (speed 3) (space 0) (safety 3) (debug 3))))
 
 (export
- '(*html-parse-tags* *html-readtable* html-translate-specials
+ '(*html-readtable* html-translate-specials
    text-stream *ts-kill* read-next next-token next-number dump-url-tokens))
 
 ;;;
@@ -30,8 +31,6 @@
 ;; (setq *read-eval* nil *read-suppress* t) ; for parsing
 ;; (setq *read-eval* t *read-suppress* nil) ; original
 
-(defcustom *html-parse-tags* (member t nil) nil
-  "*If non-nil, parse tags, if nil - return nil for all tags.")
 (defstruct html-tag data)
 
 ;; ftp://ftp.unicode.org/Public/MAPPINGS/VENDORS/MISC/SGML.TXT
@@ -87,18 +86,19 @@ optional argument SPACE is non-nil."
   (declare (stream stream) (character char))
   (ecase char
     (#\; #\;) (#\, #\,) (#\: #\:)
-    (#\< (make-html-tag
-          :data (if *html-parse-tags* (read-delimited-list #\> stream t)
-                    (do () ((char= (read-char stream t nil t) #\>))))))
+    (#\< (let ((obj (read stream t nil t)))
+           (make-html-tag
+            :data (if (eq :!-- obj) (xml-read-comment stream)
+                      ;; FIXME - there might be comments!
+                      (cons obj (read-delimited-list #\> stream t))))))
     (#\&
      (do ((cc (read-char stream nil nil t) (read-char stream nil nil t)) rr)
          ((or (null cc) (char= cc #\;) (char= cc #\#))
           (if (null cc) (error "`&' must be terminated with `;' or `#'")
-              (or (and *html-parse-tags*
-                       (cdr (assoc (coerce (nreverse rr) 'string)
-                                   *html-specials* :test #'string-equal)))
+              (or (cdr (assoc (coerce (nreverse rr) 'string)
+                              *html-specials* :test #'string-equal))
                   #\Space)))
-       (when *html-parse-tags* (push cc rr))))))
+       (push cc rr)))))
 
 (defun make-html-readtable ()
   "Make the readtable for parsing HTML."
@@ -192,7 +192,7 @@ Return the new buffer or NIL on EOF."
         :and *read-default-float-format* = 'double-float
         :when (and (or (typep pos 'error)
                        (>= (ts-posn ts) (length (ts-buff ts))))
-                   (null (ts-pull-next ts (typep pos 'error) kill)))
+                   (null (ts-pull-next ts nil kill))) ; (typep pos 'error)
         :do (if (typep pos 'error) (error pos)
                 (if errorp (error "EOF on ~a" ts)
                     (return-from read-next +eof+)))
@@ -208,12 +208,12 @@ Return the new buffer or NIL on EOF."
 (defun ts-skip-scripts (ts)
   "Read from the text stream one script."
   (declare (type text-stream ts))
-  (let ((*html-parse-tags* t) pos)
-    (do ((tok (read-next ts) (read-next ts)))
-        ((and (html-tag-p tok) (eq :script (car (html-tag-data tok))))))
-    (do () ((setq pos (search "</script>" (ts-buff ts) :test #'char-equal)))
-      (ts-pull-next ts))
-    (setf (ts-buff ts) (subseq (ts-buff ts) (+ pos (length "</script>"))))))
+  (do ((tok (read-next ts) (read-next ts)))
+      ((and (html-tag-p tok) (eq :script (car (html-tag-data tok))))))
+  (do (pos)
+      ((setq pos (search "</script>" (ts-buff ts) :test #'char-equal))
+       (setf (ts-buff ts) (subseq (ts-buff ts) (+ pos (length "</script>")))))
+    (ts-pull-next ts)))
 
 (defun next-token (ts &key (num 1) type dflt (kill *ts-kill*))
   "Get the next NUM-th non-tag token from the HTML stream TS."

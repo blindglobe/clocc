@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.41 2002/03/14 16:09:23 sds Exp $
+;;; $Id: xml.lisp,v 2.42 2002/08/13 17:25:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -139,10 +139,15 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
   "*Set to non-NIL to print XML-OBJ for future parsing.
 Note that the Unicode characters will NOT be printed as &#nnnn;.
 If this is `:sgml', use maximum SGML compatibility.
-If this is `:readably', print for Lisp reader.")
+If this is `:readably', print for the Lisp reader
+  (you must also set `*print-circle*' to non-nil).")
 
 (defsubst xml-print-readably-p ()
-  (or *print-readably* (eq :readably *xml-print-xml*)))
+  (or *print-readably*
+      (and (eq :readably *xml-print-xml*)
+           (or *print-circle*
+               (error "~s is set to ~s, but ~s is ~s"
+                      '*xml-print-xml* :readably '*print-circle* nil)))))
 
 (defmethod print-object ((xm xml-misc) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))

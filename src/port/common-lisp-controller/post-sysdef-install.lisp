@@ -352,10 +352,15 @@
 (defun user-package-list ()
   "Returns user package list from cache, updates cached version if needed."
   (let* ((path (user-packages-path))
-	 (file-date (when (probe-file path)
-			 (file-write-date path))))
-    (when (and file-date
-	       (or (null *cached-user-packages-date*)
-		   (> file-date *cached-user-packages-date*)))
-      (setq *cached-user-packages-date* file-date)
-      (setq *cached-user-packages* (load-user-package-list)))))
+	 (exists (probe-file path))
+	 (file-date (when exists
+		      (file-write-date path))))
+    (when exists
+      (if file-date
+	  (if (or (null *cached-user-packages-date*)
+		  (> file-date *cached-user-packages-date*))
+	      (progn
+		(setq *cached-user-packages-date* file-date)
+		(setq *cached-user-packages* (load-user-package-list)))
+	      *cached-user-packages*)
+	  (load-user-packages-list)))))

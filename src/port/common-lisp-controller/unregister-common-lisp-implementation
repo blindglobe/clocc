@@ -3,7 +3,7 @@
 PROGNAME=$(basename $0)
 
 if [ `id -u` != 0 ] ; then
- echo You need to be root to run $PROGNAME
+ echo $PROGNAME: you need to be root to run this program
  exit 1
 fi
 
@@ -17,11 +17,12 @@ EOF
     exit 1
 fi
 
-IMPL_BIN="/usr/lib/common-lisp/bin/$1.sh"
+IMPL=$1
+IMPL_BIN="/usr/lib/common-lisp/bin/$IMPL.sh"
 
 if [ ! -f "$IMPL_BIN" ] ; then
   cat <<EOF
-$PROGNAME: No implementation of the name $1 is registered 
+$PROGNAME: No implementation of the name $IMPL is registered 
 Cannot find the file $IMPL_BIN
 
 Maybe you already removed it?
@@ -30,7 +31,7 @@ EOF
 fi
 if [ ! -r "$IMPL_BIN" ] ; then
   cat <<EOF
-$PROGNAME: No implementation of the name $1 is registered 
+$PROGNAME: No implementation of the name $IMPL is registered 
 Cannot read the file $IMPL_BIN
 
 Maybe you already removed it?
@@ -41,9 +42,11 @@ fi
 # Uninstall the CLC
 sh $IMPL_BIN remove-defsystem || echo "De-installation of CLC failed" >&2
 
+autobuild-cl-impl $IMPL default
+
 # Just remove the damn subtree
 
-(cd / ; rm -rf "/usr/lib/common-lisp/${1}/" ; true )
+(cd / ; rm -rf "/usr/lib/common-lisp/$IMPL/" ; true )
 
-echo "$PROGNAME: Common Lisp implementation $1 uninstalled"
+echo "$PROGNAME: Common Lisp implementation $IMPL uninstalled"
 

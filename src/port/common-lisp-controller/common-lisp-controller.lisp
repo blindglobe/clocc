@@ -196,14 +196,14 @@ Returns nothing"
         ;; first ourselves:
         (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller.lisp")
         ;; then the patches before defsystem:
-        (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller-pre-defsystem.lisp")
+        (compile-and-load  "cl-library:common-lisp-controller;pre-sysdef-install.lisp")
         ;; then defsystem:
         (compile-and-load  "cl-library:defsystem;defsystem.lisp")
 	;; then asdf:
         (compile-and-load  "cl-library:asdf;asdf.lisp")
         (compile-and-load  "cl-library:asdf;wild-modules.lisp")
         ;; then the patches:
-        (compile-and-load  "cl-library:common-lisp-controller;common-lisp-controller-post-defsystem.lisp")
+        (compile-and-load  "cl-library:common-lisp-controller;post-sysdef-install.lisp")
         ;; register ourselves:
         (push (make-pathname :directory (pathname-directory 
 					 (translate-logical-pathname "cl-systems:dummy.system")))

@@ -1,7 +1,9 @@
 #!/bin/bash
 
+PROGNAME=`basename $0`
+
 if [ `id -u` != 0 ] ; then
- echo You need to be root to run $0
+ echo "$PROGNAME: you need to be root this program" >&2
  exit 1
 fi
 
@@ -9,7 +11,7 @@ fi
 
 if [ -z "$1" ] ; then
  cat <<EOF
-$0 package-name
+usage: $PROGNAME package-name
 
 unregisters a Common Lisp source tree to the 
 Common-Lisp-Controller system.
@@ -17,14 +19,16 @@ EOF
     exit 1
 fi
 
-DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$1.system"
-ASDF_FILE="/usr/share/common-lisp/systems/$1.asd"
-SOURCENAME="/usr/share/common-lisp/source/$1"
+PKG_NAME=$1
+
+DEFSYSTEM3_FILE="/usr/share/common-lisp/systems/$PKG_NAME.system"
+ASDF_FILE="/usr/share/common-lisp/systems/$PKG_NAME.asd"
+SOURCENAME="/usr/share/common-lisp/source/$PKG_NAME"
 if [ ! \( -d "$SOURCENAME" -o  -h "$SOURCENAME" \) ] ; then 
     cat <<EOF
-$0: symlink $SOURCENAME does not exist.
+$PROGNAME: symlink $SOURCENAME does not exist.
 
-This is where I expected package $1 to be.
+This is where I expected package $PKG_NAME to be.
 
 Maybe you already uninstalled it?
 EOF
@@ -34,8 +38,8 @@ fi
 if [ \( ! -e "$DEFSYSTEM3_FILE" -a ! -h "$DEFSYSTEM3_FILE" \) ] && \
     [ \( ! -e "$ASDF_FILE" -a ! -h "$ASDF_FILE" \) ]; then
     cat <<EOF
-$0: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE  exists. 
-One of these are needed to unregister the $1 package.
+$PROGNAME: Neither $DEFSYSTEM3_FILE nor $ASDF_FILE  exists. 
+One of these are needed to unregister the $PKG_NAME package.
 
 Perhaps you already uninstalled it?
 EOF
@@ -46,12 +50,13 @@ for compiler in /usr/lib/common-lisp/bin/*.sh ; do
     if [ -f $compiler -a -r $compiler ] ; then
      i=${compiler##*/}
      i=${i%.sh}
-     if [ -d /usr/lib/common-lisp/$i/$1 ]; then
-	 /usr/bin/clc-send-command --quiet remove $1 $i
+     if [ -d /usr/lib/common-lisp/$i/$PKG_NAME ]; then
+	 /usr/bin/clc-send-command --quiet remove $PKG_NAME $i
      fi
     fi
 done
 
-cat <<EOF
-$0: Package $1 uninstalled
-EOF
+# Remove all autobuild directories for this package
+rm -rf /etc/common-lisp/*/$PKG_NAME
+
+echo "$PROGNAME: Package $$PKG_NAME uninstalled" >&2

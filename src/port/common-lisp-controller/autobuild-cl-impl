@@ -1,0 +1,63 @@
+#!/bin/bash -e
+# Sets the compatibility for a Common Lisp Source
+# Written by Kevin Rosenberg <kmr@debian.org>
+# GPL-2 license
+
+progname="$(basename $0)"
+pversion='$Revision: 1.1 $'
+
+if [ `id -u` != 0 ] ; then
+ echo $progname: you need to be root to run this program
+ exit 1
+fi
+
+usage()
+{
+        cat >&2 <<END
+Usage: $progname impl value [OPTIONS]
+$progname sets the default autobuilding for a Common Lisp
+implementation. The autobuild value can be "yes", "no",
+or "inherit". If it is "inherit", then the implementation's
+autobuild status will be inherited from the global default.
+Options: 
+  -h                  Print this short help message
+END
+}
+
+if [ $# -lt 2 ]; then usage; exit 1; fi
+
+# make sure that first argument is not an option switch
+if [ $(expr "$1" : "\(\-\)") ]; then
+  usage
+  exit 1
+fi
+
+impl=$1
+shift
+autobuild=$(echo $1 | tr "[A-Z]" "[a-z]")
+shift
+
+if [ "$autobuild" != "yes" -a "$autobuild" != "no" -a "$autobuild" != "inherit" ]; then
+    echo "$PROGNAME: the autobuild status must be \"yes\", \"no\", or \"ignore\"." >&2
+    usage
+    exit 1
+fi
+
+# Command line
+while [ $# != 0 ]; do
+    case "$1" in
+        -h) usage; exit 0         ;;
+	-*) usage; exit 1         ;;
+	*)  usage; exit 1;        ;;
+    esac
+    shift
+done
+
+mkdir -p /etc/common-lisp/$impl
+if [ "$autobuild" = "yes" ]; then
+    echo "yes" > /etc/common-lisp/$impl/autobuild
+elif [ "$autobuild" = "no" ]; then
+    echo "no" > /etc/common-lisp/$impl/autobuild
+else
+    rm -f /etc/common-lisp/$impl/autobuild
+fi

@@ -1433,65 +1433,6 @@ FILENAME                 File containing Fortran code
 ;;
 ;; If RETURN is T, we are generating a call to a function which
 ;; returns the value of the function in addition to the parameters.
-#+nil
-(defun generate-call-to-routine (routine arglist &optional return)
-  (multiple-value-bind (all-setters vnames)
-      ;; Figure out if and how to set the parameters to the returned values.
-      (do ((dups (find-duplicates arglist))
-	   (v nil)
-	   (count 0 (+ count 1))
-	   (vnames nil)
-	   (args arglist (rest args)))
-	  ((null args)
-	   (values (nreverse v) (nreverse vnames)))
-	(let* ((arg (first args))
-	       (var (intern (concatenate 'string "VAR-" (princ-to-string count)))))
-	  (push var vnames)
-	  (push (cond ((or (vble-is-array-p arg)
-			   (member arg *external-function-names*)
-			   (member arg *intrinsic-function-names*)
-			   (member arg '(%true% %false%))
-			   (member arg dups))
-		       ;; Fortran can't return whole arrays or
-		       ;; functions, so don't try to assign the value
-		       ;; to arrays or functions.  Also, we don't want
-		       ;; to assign to constants like %true% and
-		       ;; %false%.
-		       ;;
-		       ;; Also, if the same var is used as an arg more
-		       ;; than once, it can't be set either.  (Because
-		       ;; the value would depend on who set it last,
-		       ;; and that's illegal in Fortran (I think).
-		       nil)
-		      ((symbolp arg)
-		       ;; A simple variable
-		       (pushnew arg *assigned-variables*)
-		       `(when ,var (setf ,arg ,var)))
-		      ((and (listp arg)
-			    (eq (first arg) 'fref))
-		       ;; A reference to a single element of an array.
-		       `(when ,var (fset ,arg ,var)))
-		      (t
-		       ;; This means it's either a number or some
-		       ;; expression, so obviously we can't modify
-		       ;; that.  (The original Fortran code was broken
-		       ;; if the routine is trying to modify this.)
-		       nil))
-		v)))
-    (let ((ignored-vars
-	   ;; A variable is ignored if no setter for it is given.
-	   (remove nil (mapcar #'(lambda (varname setter)
-				   (if (not setter)
-				       varname))
-			       vnames all-setters)))
-	  (setters (remove nil all-setters)))
-      (if setters
-	  `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-		(,@routine ,@arglist)
-	      (declare (ignore ,@ignored-vars))
-	      ,@setters
-	      ,@(if return (list 'ret-val))))
-	  `((,@routine ,@arglist))))))
 
 (defun generate-call-to-routine (routine arglist &optional return)
   (let ((finfo (gethash (first routine) *f2cl-function-info*)))
@@ -1505,6 +1446,13 @@ FILENAME                 File containing Fortran code
     ;; (format t "ret-info = ~A~%" finfo)
     (multiple-value-bind (all-setters vnames)
 	;; Figure out if and how to set the parameters to the returned values.
+	;;
+	;; Note that if the same arg appears more than once, we assume
+	;; that only one use actually sets the variable.  If this is
+	;; not true, I think the original Fortran was broken anyway.
+	;; We don't check for this here.  Should we?  We can't in
+	;; general unless *f2cl-function-info* tells us the return
+	;; values for the function.
 	(do ((v nil)
 	     (count 0 (+ count 1))
 	     (vnames nil)
@@ -1527,22 +1475,24 @@ FILENAME                 File containing Fortran code
 			 ;; to assign to constants like %true% and
 			 ;; %false%.
 			 ;;
-			 ;; Also, if the same var is used as an arg more
-			 ;; than once, it can't be set either.  (Because
-			 ;; the value would depend on who set it last,
-			 ;; and that's illegal in Fortran (I think).
 			 nil)
 			((symbolp arg)
 			 ;; A simple variable
-			 (pushnew arg *assigned-variables*)
 			 (cond ((eq (first ret-info) :unknown)
-				;; Don't know anything about this
+				;; Don't know anything about this, so
+				;; we need to check.  Also assume
+				;; worst case that the variable is
+				;; assigned to.
+				(pushnew arg *assigned-variables*)
 				`(when ,var (setf ,arg ,var)))
 			       ((eq (first ret-info) nil)
 				;; Definitely isn't returned
 				nil)
 			       (t
-				;; Definitely returned
+				;; Definitely returned.  Update
+				;; *assigned-variables* with this new
+				;; arg.
+				(pushnew arg *assigned-variables*)
 				`(setf ,arg ,var))))
 			((and (listp arg)
 			      (eq (first arg) 'fref))
@@ -2414,8 +2364,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.114 2002/05/07 03:06:17 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.115 2002/05/07 03:26:10 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.115  2002/05/07 03:26:10  rtoy
+;;; o With the function info changes, we were incorrectly saying a
+;;;   variable was set when it might not have been.  Fix it.
+;;; o Clean up/add a few comments
+;;;
 ;;; Revision 1.114  2002/05/07 03:06:17  rtoy
 ;;; o Include a date on the version string.
 ;;; o Don't print out the date in the generated file.

@@ -58,12 +58,13 @@ C
       END 
 C
       SUBROUTINE subr4
-      INTEGER TESTARR(5)
-      DO 200 I=1,5
+      parameter (nsize = 100)
+      INTEGER TESTARR(nsize)
+      DO 200 I=1,nsize
         TESTARR(I) = I
   200 CONTINUE
       WRITE(*,*), "ARRAY ELEMENTS:"
-      DO 300 I=1,5
+      DO 300 I=1,nsize
         WRITE(*, *) TESTARR(I)
   300 CONTINUE
       WRITE(*, *) "ARRAY:"
@@ -73,8 +74,8 @@ C
       WRITE(*,*) "SUBARRAY:"
       WRITE(*, 400) (TESTARR(i), I=2,4)
   400 FORMAT(I4)
-  410 format(i3)
-c  410 format(3(i4, i3), 4(i2, i8))
+c  410 format(i3)
+  410 format(3(i4, i3), 4(i2, i8))
       END
       
 

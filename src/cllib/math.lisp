@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.38 2004/04/09 20:18:21 sds Exp $
+;;; $Id: math.lisp,v 2.39 2004/04/13 20:59:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -45,7 +45,10 @@
    binary-search newton integrate-simpson add-probabilities
    line make-line line-val line-rsl line-below-p line-above-p intersect
    with-line line-adjust line-adjust-dir line-adjust-list
-   line-thru-points regress lincom))
+   line-thru-points regress lincom
+   plf make-plf plf-x plf-y plf-extend-left plf-extend-right plf-size
+   monotonic-p plf-monotonic-p plf-val plf->function plf-simplify
+   increasify *increasify-step*))
 
 ;;;
 ;;;
@@ -1527,6 +1530,113 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
   "Compute c0*x0+c1*x1."
   (declare (double-float c0 x0 c1 x1))
   (with-type double-float (+ (* c0 x0) (* c1 x1))))
+
+
+;;;
+;;; piecewise linear functions
+;;;
+
+(defstruct plf
+  "piecewise linear function"
+  (extend-left :error)  ; out of range behavior: :linear/:constant/:error
+  (extend-right :error) ; separate for right and left
+  x y)                          ; x & y vectors
+
+(defun plf-val (plf par)
+  "Evaluate the piecewise linear function at a point."
+  (let* ((xv (plf-x plf)) (yv (plf-y plf)) (len (length xv))
+         (box (position par xv :test #'<=)))
+    (macrolet ((val (i)
+                 `(let* ((next ,i) (here (1- next)))
+                    (linear (aref xv here) (aref yv here)
+                            (aref xv next) (aref yv next) par))))
+      (if box
+          (if (= par (aref xv box))
+              (aref yv box)
+              (if (zerop box)
+                  (ecase (plf-extend-left plf)
+                    (:constant (aref yv 0))
+                    (:linear (val 1))
+                    (:error (error "~S: ~F is out of left range for ~S"
+                                   'plf-val par plf)))
+                  (val box)))
+          (ecase (plf-extend-right plf)
+            (:constant (aref yv (1- len)))
+            (:linear (val (1- len)))
+            (:error (error "~S: ~F is out of right range for ~S"
+                           'plf-val par plf)))))))
+
+(defun monotonic-p (vec &key (key #'value))
+  "return a symbol - <,>,<=,>= or NIL which describes argument's monotonicity"
+  (loop :with <? = t :and =? = nil :and >? = t ; init strict monotonic
+    :for pos :from 1 :to (1- (length vec))
+    :for next = (funcall key (aref vec pos))
+    :and prev = (funcall key (aref vec 0)) :then next
+    :unless =? :do (setq =? (= prev next))
+    :when <? :do (setq <? (<= prev next))
+    :when >? :do (setq >? (>= prev next))
+    :unless (or >? <?) :return nil
+    :finally (return (if <? (if =? '<= '<) (if =? '>= '>)))))
+
+(defun plf-monotonic-p (plf) (monotonic-p (plf-y plf) :key #'identity))
+
+(defun plf->function (plf) (lambda (x) (plf-val plf x)))
+
+(defun plf-size (plf &aux (size (length (plf-x plf))))
+  (assert (= size (length (plf-y plf))) (plf)
+          "~S: invalid PLF: ~:D /= ~:D: ~S"
+          'plf-size size (length (plf-y plf)) plf)
+  size)
+
+(defun remove-elements (pos-list vec)
+  "remove the elements at these positions from the vector"
+  (let* ((vec-size (length vec))
+         (ret (make-array (- vec-size (length pos-list)))))
+    (loop :with ret-pos = 0 :with rem = (pop pos-list)
+      :for vec-pos :upfrom 0 :while rem
+      :if (= rem vec-pos) :do (setq rem (pop pos-list))
+      :else :do (setf (aref ret ret-pos) (aref vec vec-pos)) (incf ret-pos)
+      :end
+      :finally (replace ret vec :start1 ret-pos :start2 vec-pos))
+    ret))
+
+(defun plf-simplify (plf)
+  "Destructively remove unnecessary nodes."
+  (let* ((size (plf-size plf)) (xv (plf-x plf)) (yv (plf-y plf))
+         (to-be-removed
+          (loop :for pos :from 2 :to (- size 1)
+            :for y2 = (aref yv pos)
+            :and y1 = (aref yv 1) :then y2
+            :for y0 = (aref yv 0) :then y1
+            ;; although the first case (= y0 y1 y2) is covered by the second
+            ;; one mathematically, it is necessary due to roundoff errors
+            :when (or (= y0 y1 y2)
+                      (= y1 (linear (aref xv (- pos 2)) y0
+                                    (aref xv pos) y2
+                                    (aref xv (1- pos)))))
+            :collect (1- pos))))
+    (setf (plf-x plf) (remove-elements to-be-removed xv)
+          (plf-y plf) (remove-elements to-be-removed yv))
+    (values plf to-be-removed)))
+
+(defcustom *increasify-step* (real 0 (1/2)) 3d-1
+  "*The parameter which determines how aggressive INCREASIFY is.")
+(defun increasify (vec &key (step *increasify-step*))
+  "make the vector increasing, preserving the sum of elements"
+  (loop :with keep-going = t :while keep-going :do
+    (setq keep-going nil)
+    (loop :for pos :from 1 :to (1- (length vec))
+      :for next = (aref vec pos) :and prev = (aref vec 0) :then next
+      :unless (<= prev next)
+      :do (setf prev (- prev next)
+                (aref vec (1- pos)) (+ next (* step prev))
+                next (+ next (* (- 1 step) prev))
+                (aref vec pos) next
+                keep-going t)))
+  (assert (case (monotonic-p vec :key #'identity) ((< <=) t)) (vec)
+          "~S: result is not monotonic: ~S" 'increasify vec)
+  vec)
+
 
 (provide :cllib-math)
 ;;; math.lisp ends here

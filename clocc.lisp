@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.5 2000/05/12 18:12:18 sds Exp $
+;;; $Id: clocc.lisp,v 1.6 2000/05/12 20:53:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -54,7 +54,8 @@
           (remf (cddr excl:arglist) :key)
           (setf (second excl:arglist)
                 (map 'vector key (second excl:arglist)))))))
-  #+clisp (setq clos::*warn-if-gf-already-called* nil)
+  #+clisp (setq clos::*warn-if-gf-already-called* nil
+                clos::*gf-warn-on-replacing-method* nil)
   #+cmu (progn
           (pushnew 'compile pcl::*defclass-times*)
           (pushnew 'compile pcl::*defgeneric-times*)

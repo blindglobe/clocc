@@ -557,7 +557,7 @@
    `(tanh ,x))
 
 (defmacro ffloat (x)
-  `(float x 1f0))
+  `(coerce ,x 'single-float))
 
 (defun process-implied-do (ido low-bnds init)
   (let* ((implied-do (remove '|,| ido))

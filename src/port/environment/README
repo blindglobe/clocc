@@ -17,8 +17,8 @@ The system has been tested on
     Allegro CL Lite 5.01 Windows
     Lispworks Personal Edition 4.1 Windows
 
-Please see the files INSTALLATION and COPYRIGHT for more information.
+Please see the files INSTALLATION and COPYING for more information.
 The package is currently released under the LGPL and all the files
 should be considered to include such Copyright notice.
 
-2000-06-19 Marco Antoniotti
+2001-08-14 Marco Antoniotti

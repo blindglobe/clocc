@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.8 2001/11/02 22:31:15 sds Exp $
+;;; $Id: prompt.lisp,v 2.9 2004/03/04 21:36:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,11 +14,12 @@
 
 (in-package :cllib)
 
-(export '(package-short-name set-cllib-prompt))
+#+(and clisp lisp=cl)
+(eval-when (compile load eval) (import 'ext:package-short-name :cllib))
 
-;; CLISP defines but does not export this function
-;; #+clisp (import 'sys::package-short-name)
-;; #-clisp
+(export '(ext:package-short-name set-cllib-prompt))
+
+#-(and clisp lisp=cl)
 (defun package-short-name (pkg)
   "Return the shortest (nick)name of the package."
   (declare (type package pkg))
@@ -50,7 +51,10 @@
                          (package-short-name *package*)
                          end-all beg-bold (incf cmd-idx) end-all))))
     #+allegro (declare (ignore cmd-idx))
-    #+clisp (setq #+lisp=cl ext:*prompt* #-lisp=cl lisp:*prompt* func)
+    #+clisp
+    (let ((symbol (or (find-symbol "*PROMPT*" #+lisp=cl "EXT" #-lisp=cl "LISP")
+                      (find-symbol "*PROMPT-BODY*" "CUSTOM"))))
+      (setf (symbol-value symbol) func))
     #+cmu (setq lisp::*prompt* func)
     #+allegro
     (setq tpl:*prompt* (concatenate 'string beg-bold tpl:*prompt* end-all)))

@@ -2,8 +2,11 @@ common-lisp-controller (3.8) unstable; urgency=low
 
   * Added workaround for eof on read problem.
   * Fixed escapes again. Now with compatible syntax.
+  * Added patches from Kevin Rosenberg <kevin@rosenberg.net>
+    for lwl and acl compatibility.
+  * Now depends on netbase. Closes: #154285 
 
- -- Peter Van Eynde <pvaneynd@debian.org>  Thu, 25 Jul 2002 12:24:49 +0200
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 26 Jul 2002 13:47:08 +0200
 
 common-lisp-controller (3.7) unstable; urgency=low
 

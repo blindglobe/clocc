@@ -26,6 +26,9 @@ set -e
 
 case "$1" in
     configure)
+     if [ -d /usr/doc -a ! -e /usr/doc/common-lisp-controller -a -d /usr/share/doc/common-lisp-controller ]; then
+          ln -sf ../share/doc/common-lisp-controller /usr/doc/common-lisp-controller
+     fi
     update-inetd --add "8990\tstream\ttcp\tnowait\troot\t/usr/sbin/clc-build-daemon"
 
     db_get common-lisp-controller/long-site-name

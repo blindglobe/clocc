@@ -849,7 +849,7 @@
 ;;; Now that ANSI CL includes PROVIDE and REQUIRE again, is this code
 ;;; necessary?
 
-#-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks
+#-(or (and :CMU (not :new-compiler)) :vms :mcl :lispworks :clisp
       (and allegro-version>= (version>= 4 1)))
 (eval-when #-(or :lucid :cmu17) (:compile-toplevel :load-toplevel :execute)
 	   #+(or :lucid :cmu17) (compile load eval)

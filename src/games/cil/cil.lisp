@@ -26,19 +26,19 @@
 (defconstant c-v 2) ; vacant
 (defconstant c-x 3) ; extra
 
-(defconstant c-strings
+(defparameter c-strings
   (make-array c-limit
                :initial-contents '("w" "b" " " "?")))
 
-(defconstant color-strings
+(defparameter color-strings
   (make-array rc-limit
              :initial-contents '("white" "black")))
 
-(defconstant player-strings
+(defparameter player-strings
   (make-array rc-limit
               :initial-contents '("White" "Black")))
 
-(defconstant invc-v
+(defparameter invc-v
   (make-array rc-limit
               :element-type 'fixnum
               :initial-contents `(,c-b ,c-w)))
@@ -58,16 +58,16 @@
 (defconstant p-v 6) ; vacant
 (defconstant p-x 7) ; extra
 
-(defconstant p-strings
+(defparameter p-strings
   (make-array p-limit
               :initial-contents '("P" "N" "B" "R" "Q" "K" " " "?")))
 
-(defconstant piece-strings
+(defparameter piece-strings
   (make-array rp-limit
                :initial-contents
                '("pawn" "knight" "bishop" "rook" "queen" "king")))
 
-(defconstant lcp-strings
+(defparameter lcp-strings
   (make-array p-limit
               :initial-contents '("p" "n" "b" "r" "q" "k" " " "?")))
 
@@ -94,14 +94,14 @@
 (defconstant cp-x1  14) ; extra extra
 (defconstant cp-x2  15) ; extra extra extra
 
-(defconstant cp-strings
+(defparameter cp-strings
   (make-array cp-limit
               :initial-contents
               '("wP" "wN" "wB" "wR" "wQ" "wK"
                 "bP" "bN" "bB" "bR" "bQ" "bK"
                 "  " "??" "?1" "?2")))
 
-(defconstant mapv-c
+(defparameter mapv-c
   (make-array cp-limit
               :element-type 'fixnum
               :initial-contents
@@ -109,7 +109,7 @@
                      ,c-b ,c-b ,c-b ,c-b ,c-b ,c-b
                      ,c-v ,c-x ,c-x ,c-x)))
 
-(defconstant mapv-p
+(defparameter mapv-p
   (make-array cp-limit
               :element-type 'fixnum
               :initial-contents
@@ -117,14 +117,14 @@
                      ,p-p ,p-n ,p-b ,p-r ,p-q ,p-k
                      ,p-v ,p-x ,p-x ,p-x)))
 
-(defconstant mapv-cp
+(defparameter mapv-cp
   (make-array `(,rc-limit ,rp-limit)
               :element-type 'fixnum
               :initial-contents
               `((,cp-wp ,cp-wn ,cp-wb ,cp-wr ,cp-wq ,cp-wk)
                 (,cp-bp ,cp-bn ,cp-bb ,cp-br ,cp-bq ,cp-bk))))
 
-(defconstant sweeper-cp
+(defparameter sweeper-cp
   (make-array rcp-limit
               :element-type 'fixnum
               :initial-contents
@@ -132,11 +132,11 @@
 
 ;; Edge limit
 
-(defconstant edge-limit 8)
+(defparameter edge-limit 8)
 
 ;; Ranks
 
-(defconstant rank-limit edge-limit)
+(defparameter rank-limit edge-limit)
 (defconstant rank-nil -1)
 
 (defconstant rank-1 0) ; first rank
@@ -148,13 +148,13 @@
 (defconstant rank-7 6) ; seventh rank
 (defconstant rank-8 7) ; eighth rank
 
-(defconstant rank-strings
+(defparameter rank-strings
   (make-array rank-limit
               :initial-contents '("1" "2" "3" "4" "5" "6" "7" "8")))
 
 ;; Files
 
-(defconstant file-limit edge-limit)
+(defparameter file-limit edge-limit)
 (defconstant file-nil -1)
 
 (defconstant file-a 0) ; queen rook file
@@ -166,88 +166,88 @@
 (defconstant file-g 6) ; king knight file
 (defconstant file-h 7) ; king rook file
 
-(defconstant file-strings
+(defparameter file-strings
   (make-array file-limit
               :initial-contents '("a" "b" "c" "d" "e" "f" "g" "h")))
 
 ;; Squares
 
-(defconstant sq-limit (* rank-limit file-limit))
+(defparameter sq-limit (* rank-limit file-limit))
 (defconstant sq-nil -1)
 
-(defconstant sq-a1 (+ file-a (* rank-1 file-limit)))
-(defconstant sq-b1 (+ file-b (* rank-1 file-limit)))
-(defconstant sq-c1 (+ file-c (* rank-1 file-limit)))
-(defconstant sq-d1 (+ file-d (* rank-1 file-limit)))
-(defconstant sq-e1 (+ file-e (* rank-1 file-limit)))
-(defconstant sq-f1 (+ file-f (* rank-1 file-limit)))
-(defconstant sq-g1 (+ file-g (* rank-1 file-limit)))
-(defconstant sq-h1 (+ file-h (* rank-1 file-limit)))
+(defparameter sq-a1 (+ file-a (* rank-1 file-limit)))
+(defparameter sq-b1 (+ file-b (* rank-1 file-limit)))
+(defparameter sq-c1 (+ file-c (* rank-1 file-limit)))
+(defparameter sq-d1 (+ file-d (* rank-1 file-limit)))
+(defparameter sq-e1 (+ file-e (* rank-1 file-limit)))
+(defparameter sq-f1 (+ file-f (* rank-1 file-limit)))
+(defparameter sq-g1 (+ file-g (* rank-1 file-limit)))
+(defparameter sq-h1 (+ file-h (* rank-1 file-limit)))
 
-(defconstant sq-a2 (+ file-a (* rank-2 file-limit)))
-(defconstant sq-b2 (+ file-b (* rank-2 file-limit)))
-(defconstant sq-c2 (+ file-c (* rank-2 file-limit)))
-(defconstant sq-d2 (+ file-d (* rank-2 file-limit)))
-(defconstant sq-e2 (+ file-e (* rank-2 file-limit)))
-(defconstant sq-f2 (+ file-f (* rank-2 file-limit)))
-(defconstant sq-g2 (+ file-g (* rank-2 file-limit)))
-(defconstant sq-h2 (+ file-h (* rank-2 file-limit)))
+(defparameter sq-a2 (+ file-a (* rank-2 file-limit)))
+(defparameter sq-b2 (+ file-b (* rank-2 file-limit)))
+(defparameter sq-c2 (+ file-c (* rank-2 file-limit)))
+(defparameter sq-d2 (+ file-d (* rank-2 file-limit)))
+(defparameter sq-e2 (+ file-e (* rank-2 file-limit)))
+(defparameter sq-f2 (+ file-f (* rank-2 file-limit)))
+(defparameter sq-g2 (+ file-g (* rank-2 file-limit)))
+(defparameter sq-h2 (+ file-h (* rank-2 file-limit)))
 
-(defconstant sq-a3 (+ file-a (* rank-3 file-limit)))
-(defconstant sq-b3 (+ file-b (* rank-3 file-limit)))
-(defconstant sq-c3 (+ file-c (* rank-3 file-limit)))
-(defconstant sq-d3 (+ file-d (* rank-3 file-limit)))
-(defconstant sq-e3 (+ file-e (* rank-3 file-limit)))
-(defconstant sq-f3 (+ file-f (* rank-3 file-limit)))
-(defconstant sq-g3 (+ file-g (* rank-3 file-limit)))
-(defconstant sq-h3 (+ file-h (* rank-3 file-limit)))
+(defparameter sq-a3 (+ file-a (* rank-3 file-limit)))
+(defparameter sq-b3 (+ file-b (* rank-3 file-limit)))
+(defparameter sq-c3 (+ file-c (* rank-3 file-limit)))
+(defparameter sq-d3 (+ file-d (* rank-3 file-limit)))
+(defparameter sq-e3 (+ file-e (* rank-3 file-limit)))
+(defparameter sq-f3 (+ file-f (* rank-3 file-limit)))
+(defparameter sq-g3 (+ file-g (* rank-3 file-limit)))
+(defparameter sq-h3 (+ file-h (* rank-3 file-limit)))
 
-(defconstant sq-a4 (+ file-a (* rank-4 file-limit)))
-(defconstant sq-b4 (+ file-b (* rank-4 file-limit)))
-(defconstant sq-c4 (+ file-c (* rank-4 file-limit)))
-(defconstant sq-d4 (+ file-d (* rank-4 file-limit)))
-(defconstant sq-e4 (+ file-e (* rank-4 file-limit)))
-(defconstant sq-f4 (+ file-f (* rank-4 file-limit)))
-(defconstant sq-g4 (+ file-g (* rank-4 file-limit)))
-(defconstant sq-h4 (+ file-h (* rank-4 file-limit)))
+(defparameter sq-a4 (+ file-a (* rank-4 file-limit)))
+(defparameter sq-b4 (+ file-b (* rank-4 file-limit)))
+(defparameter sq-c4 (+ file-c (* rank-4 file-limit)))
+(defparameter sq-d4 (+ file-d (* rank-4 file-limit)))
+(defparameter sq-e4 (+ file-e (* rank-4 file-limit)))
+(defparameter sq-f4 (+ file-f (* rank-4 file-limit)))
+(defparameter sq-g4 (+ file-g (* rank-4 file-limit)))
+(defparameter sq-h4 (+ file-h (* rank-4 file-limit)))
 
-(defconstant sq-a5 (+ file-a (* rank-5 file-limit)))
-(defconstant sq-b5 (+ file-b (* rank-5 file-limit)))
-(defconstant sq-c5 (+ file-c (* rank-5 file-limit)))
-(defconstant sq-d5 (+ file-d (* rank-5 file-limit)))
-(defconstant sq-e5 (+ file-e (* rank-5 file-limit)))
-(defconstant sq-f5 (+ file-f (* rank-5 file-limit)))
-(defconstant sq-g5 (+ file-g (* rank-5 file-limit)))
-(defconstant sq-h5 (+ file-h (* rank-5 file-limit)))
+(defparameter sq-a5 (+ file-a (* rank-5 file-limit)))
+(defparameter sq-b5 (+ file-b (* rank-5 file-limit)))
+(defparameter sq-c5 (+ file-c (* rank-5 file-limit)))
+(defparameter sq-d5 (+ file-d (* rank-5 file-limit)))
+(defparameter sq-e5 (+ file-e (* rank-5 file-limit)))
+(defparameter sq-f5 (+ file-f (* rank-5 file-limit)))
+(defparameter sq-g5 (+ file-g (* rank-5 file-limit)))
+(defparameter sq-h5 (+ file-h (* rank-5 file-limit)))
 
-(defconstant sq-a6 (+ file-a (* rank-6 file-limit)))
-(defconstant sq-b6 (+ file-b (* rank-6 file-limit)))
-(defconstant sq-c6 (+ file-c (* rank-6 file-limit)))
-(defconstant sq-d6 (+ file-d (* rank-6 file-limit)))
-(defconstant sq-e6 (+ file-e (* rank-6 file-limit)))
-(defconstant sq-f6 (+ file-f (* rank-6 file-limit)))
-(defconstant sq-g6 (+ file-g (* rank-6 file-limit)))
-(defconstant sq-h6 (+ file-h (* rank-6 file-limit)))
+(defparameter sq-a6 (+ file-a (* rank-6 file-limit)))
+(defparameter sq-b6 (+ file-b (* rank-6 file-limit)))
+(defparameter sq-c6 (+ file-c (* rank-6 file-limit)))
+(defparameter sq-d6 (+ file-d (* rank-6 file-limit)))
+(defparameter sq-e6 (+ file-e (* rank-6 file-limit)))
+(defparameter sq-f6 (+ file-f (* rank-6 file-limit)))
+(defparameter sq-g6 (+ file-g (* rank-6 file-limit)))
+(defparameter sq-h6 (+ file-h (* rank-6 file-limit)))
 
-(defconstant sq-a7 (+ file-a (* rank-7 file-limit)))
-(defconstant sq-b7 (+ file-b (* rank-7 file-limit)))
-(defconstant sq-c7 (+ file-c (* rank-7 file-limit)))
-(defconstant sq-d7 (+ file-d (* rank-7 file-limit)))
-(defconstant sq-e7 (+ file-e (* rank-7 file-limit)))
-(defconstant sq-f7 (+ file-f (* rank-7 file-limit)))
-(defconstant sq-g7 (+ file-g (* rank-7 file-limit)))
-(defconstant sq-h7 (+ file-h (* rank-7 file-limit)))
+(defparameter sq-a7 (+ file-a (* rank-7 file-limit)))
+(defparameter sq-b7 (+ file-b (* rank-7 file-limit)))
+(defparameter sq-c7 (+ file-c (* rank-7 file-limit)))
+(defparameter sq-d7 (+ file-d (* rank-7 file-limit)))
+(defparameter sq-e7 (+ file-e (* rank-7 file-limit)))
+(defparameter sq-f7 (+ file-f (* rank-7 file-limit)))
+(defparameter sq-g7 (+ file-g (* rank-7 file-limit)))
+(defparameter sq-h7 (+ file-h (* rank-7 file-limit)))
 
-(defconstant sq-a8 (+ file-a (* rank-8 file-limit)))
-(defconstant sq-b8 (+ file-b (* rank-8 file-limit)))
-(defconstant sq-c8 (+ file-c (* rank-8 file-limit)))
-(defconstant sq-d8 (+ file-d (* rank-8 file-limit)))
-(defconstant sq-e8 (+ file-e (* rank-8 file-limit)))
-(defconstant sq-f8 (+ file-f (* rank-8 file-limit)))
-(defconstant sq-g8 (+ file-g (* rank-8 file-limit)))
-(defconstant sq-h8 (+ file-h (* rank-8 file-limit)))
+(defparameter sq-a8 (+ file-a (* rank-8 file-limit)))
+(defparameter sq-b8 (+ file-b (* rank-8 file-limit)))
+(defparameter sq-c8 (+ file-c (* rank-8 file-limit)))
+(defparameter sq-d8 (+ file-d (* rank-8 file-limit)))
+(defparameter sq-e8 (+ file-e (* rank-8 file-limit)))
+(defparameter sq-f8 (+ file-f (* rank-8 file-limit)))
+(defparameter sq-g8 (+ file-g (* rank-8 file-limit)))
+(defparameter sq-h8 (+ file-h (* rank-8 file-limit)))
 
-(defconstant sq-strings
+(defparameter sq-strings
   (make-array sq-limit
               :initial-contents
               '(
@@ -302,7 +302,7 @@
 (defconstant dr-e -2)
 (defconstant dr-f -1)
 
-(defconstant mapv-dr
+(defparameter mapv-dr
   (make-array dx-limit
               :element-type 'fixnum
               :initial-contents
@@ -328,7 +328,7 @@
 (defconstant df-e  1)
 (defconstant df-f  2)
 
-(defconstant mapv-df
+(defparameter mapv-df
   (make-array dx-limit
               :element-type 'fixnum
               :initial-contents
@@ -337,24 +337,24 @@
 
 ;; Directional offsets
 
-(defconstant dv-0 (+ df-0 (* rank-limit dr-0)))
-(defconstant dv-1 (+ df-1 (* rank-limit dr-1)))
-(defconstant dv-2 (+ df-2 (* rank-limit dr-2)))
-(defconstant dv-3 (+ df-3 (* rank-limit dr-3)))
-(defconstant dv-4 (+ df-4 (* rank-limit dr-4)))
-(defconstant dv-5 (+ df-5 (* rank-limit dr-5)))
-(defconstant dv-6 (+ df-6 (* rank-limit dr-6)))
-(defconstant dv-7 (+ df-7 (* rank-limit dr-7)))
-(defconstant dv-8 (+ df-8 (* rank-limit dr-8)))
-(defconstant dv-9 (+ df-9 (* rank-limit dr-9)))
-(defconstant dv-a (+ df-a (* rank-limit dr-a)))
-(defconstant dv-b (+ df-b (* rank-limit dr-b)))
-(defconstant dv-c (+ df-c (* rank-limit dr-c)))
-(defconstant dv-d (+ df-d (* rank-limit dr-d)))
-(defconstant dv-e (+ df-e (* rank-limit dr-e)))
-(defconstant dv-f (+ df-f (* rank-limit dr-f)))
+(defparameter dv-0 (+ df-0 (* rank-limit dr-0)))
+(defparameter dv-1 (+ df-1 (* rank-limit dr-1)))
+(defparameter dv-2 (+ df-2 (* rank-limit dr-2)))
+(defparameter dv-3 (+ df-3 (* rank-limit dr-3)))
+(defparameter dv-4 (+ df-4 (* rank-limit dr-4)))
+(defparameter dv-5 (+ df-5 (* rank-limit dr-5)))
+(defparameter dv-6 (+ df-6 (* rank-limit dr-6)))
+(defparameter dv-7 (+ df-7 (* rank-limit dr-7)))
+(defparameter dv-8 (+ df-8 (* rank-limit dr-8)))
+(defparameter dv-9 (+ df-9 (* rank-limit dr-9)))
+(defparameter dv-a (+ df-a (* rank-limit dr-a)))
+(defparameter dv-b (+ df-b (* rank-limit dr-b)))
+(defparameter dv-c (+ df-c (* rank-limit dr-c)))
+(defparameter dv-d (+ df-d (* rank-limit dr-d)))
+(defparameter dv-e (+ df-e (* rank-limit dr-e)))
+(defparameter dv-f (+ df-f (* rank-limit dr-f)))
 
-(defconstant mapv-dv
+(defparameter mapv-dv
   (make-array dx-limit
               :element-type 'fixnum
               :initial-contents
@@ -371,7 +371,7 @@
 
 ;; Flank castling strings
 
-(defconstant fc-strings
+(defparameter fc-strings
   (make-array flank-limit
               :initial-contents '("O-O" "O-O-O")))
 
@@ -460,7 +460,7 @@
 (defconstant tag-name-black  5) ; PGN Black
 (defconstant tag-name-result 6) ; PGN Result
 
-(defconstant tag-name-strings
+(defparameter tag-name-strings
   (make-array tag-name-limit
                :initial-contents
               `("Event" "Site" "Date" "Round" "White" "Black" "Result")))
@@ -475,7 +475,7 @@
 (defconstant gtim-draw    2) ; drawn
 (defconstant gtim-unknown 3) ; unknown or not specified
 
-(defconstant gtim-strings
+(defparameter gtim-strings
   (make-array gtim-limit
                :initial-contents '("1-0" "0-1" "1/2-1/2" "*")))
 
@@ -498,7 +498,7 @@
 
 ;; The null bitboard
 
-(defconstant null-bb
+(defparameter null-bb
   (make-array sq-limit
               :element-type 'bit
               :initial-element 0))
@@ -572,13 +572,13 @@
 (defconstant cpe-q 900) ; queen
 (defconstant cpe-k   0) ; king
 
-(defconstant cpe-pv
+(defparameter cpe-pv
   (make-array rp-limit
               :element-type 'fixnum
               :initial-contents
               `(,cpe-p ,cpe-n ,cpe-b ,cpe-r ,cpe-q ,cpe-k)))
 
-(defconstant cpe-cpv
+(defparameter cpe-cpv
   (make-array rcp-limit
               :element-type 'fixnum
               :initial-contents

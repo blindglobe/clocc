@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2004/08/13 21:16:27 $"))
+  (remove #\$ "2.0 beta $Date: 2004/08/14 13:44:37 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -885,6 +885,8 @@ FILENAME                 File containing Fortran code
        (return (parse-comp-goto x)))
      (when (id-comp-go-to x)
        (return (parse-comp-go-to x)))
+     (when (id-assign x)
+       (return (parse-assign x)))
      (when (id-assgn-goto x)
        (return (parse-assgn-goto x)))
      (setq bindings (id-goto x))
@@ -1093,6 +1095,10 @@ FILENAME                 File containing Fortran code
   (and (eq (car x) 'goto)
        (id-assgn-go-to-core (cdr x))))
 
+(defun id-assign (x)
+  ;; assign num to var
+  (and (eq (car x) 'assign)
+       (eq (third x) 'to)))
 
 ;integer x,y,z,...
 (defun id-declaration (x) 
@@ -1195,6 +1201,7 @@ FILENAME                 File containing Fortran code
                  (princ-to-string (variable-value '%label bindings))) 
             nil))) )
 ;------------------------------------------------------------------------------
+#+nil
 (defun make-label (n) 
   (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
 
@@ -1265,6 +1272,12 @@ FILENAME                 File containing Fortran code
   (let* ((expr (remove '|,| x))
 	 (labels (remove '|,| (third expr))))
     `((assigned-goto ,(second expr) ,(or labels (reverse *statement-labels*))))))
+
+(defun parse-assign (x)
+  ;; assign num to var
+  (let ((label (second x))
+	(var (fourth x)))
+    `((setf ,var ,label))))
 
 ;------------------------------------------------------------------------------
 
@@ -2542,8 +2555,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.134 2004/08/13 21:16:27 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.135 2004/08/14 13:44:37 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.135  2004/08/14 13:44:37  rtoy
+;;; Add support for ASSIGN statement.
+;;;
 ;;; Revision 1.134  2004/08/13 21:16:27  rtoy
 ;;; First pass at creating common blocks as arrays.  Intent is to allow
 ;;; odepack to be converted via f2cl.

@@ -31,9 +31,11 @@ RECURSION-DEPTH limits the depth of this recursion (its NIL default
 means that no limit should be imposed on this recursion)."))
 
 
-(defgeneric execute-action (component operation &key))
+(defgeneric execute-action (component operation &key policy &allow-other-keys))
 
-(defgeneric execute-action-on-subcomponents (component operation &key))
+(defgeneric execute-action-on-subcomponents (component operation
+						       &key policy
+						       &allow-other-keys))
 
 (defgeneric load-action (component component-pathname))
 

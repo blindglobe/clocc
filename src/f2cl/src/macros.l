@@ -3,7 +3,7 @@
 ;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;Hamilton, New Zeland 1992-95 - all rights reserved;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(in-package :f2cl)
+(in-package :f2cl-lib)
 
 ; macros:
 ;	rexpt
@@ -34,7 +34,6 @@
 ;	assigned-goto
 ;	eqv
 ;	constant-list
-;       Fortran intrinsic functions imax, dabs,...
 ;----------------------------------------------------------------------------
 
 (eval-when (compile load eval) (proclaim '(special *verbose*)))
@@ -46,6 +45,10 @@
   "If non-NIL, generated code checks for array bounds.  If NIL, checking
 is not included")
 
+;;------------------------------------------------------------------------------
+;;
+;; Define the equivalent types between Fortran and Lisp.  This MUST
+;; match the types given in f2cl1.l so keep it in sync!
 (deftype logical ()
   `(member t nil))
 
@@ -88,52 +91,9 @@ is not included")
 
 (defconstant %false% nil)
 (defconstant %true% t)
+;;------------------------------------------------------------------------------
 
-#+nil
-(progn
-(defmacro fexport (x) `(eval-when (compile load eval) (export ,x)))
-
-(defmacro fproclaim (x) `(eval-when (compile load eval) (proclaim ,x)))
-
-(defmacro fin-package (x)
-  `(prog nil 
-     (defpackage ,x)
-     (in-package ,x)))
-
-(defmacro fuse-package (x) `(eval-when (compile load eval) ,x))
-;-------------------------------------------------------------------------
-
-(defmacro apply! (fun args) (eval `(cons ,fun ,args)))
-;-----------------------------------------------------------------------------
-
-(defmacro do! (var init step end &rest body)
-   `(do ((,var ,init ,step)) (,end) ,@body))
-
-; the body is an unquoted list of the terms of the actual body
-(defmacro do1 (var end body)
-   `(do ((,var 1 (1+ i))) ((> ,var ,end)) ,@body))
-
-(defmacro double-cdr (lis)
-   `(mapcar #'cdr (cdr ,lis)))
-
-(defun putproperty (a b c) (setf (get a c) b))
-
-(defmacro defprop (sym prop ind)
-  `(putproperty ',sym ',prop ',ind))
-
-(defmacro def (name body) `(defun ,name ,(cadr body) ,(caddr body)))
-
-(defmacro array-cl (name type &rest dims)
- `(set ',name 
-        (make-array ',(mapcar #'eval dims) 
-           :element-type ,(cond ((equal type 'fixnum-block) ''integer)
-                                ((equal type 'flonum-block)  ''flonum) ;###
-                                ((equal type t) t)))))
-
-(defmacro store-cl (name-indices val)
-  `(setf (aref ,(car name-indices) ,@(cdr name-indices)) ,val))
-);
-;-----------------------------------------------------------------------------
+;;-----------------------------------------------------------------------------
 
 ;; Array dimensions are (d1, d2, d3, ...)
 ;;
@@ -244,11 +204,6 @@ is not included")
   (declare (ignore args)))
 
 ;----------------------------------------------------------------------------
-(defun reset-vble (pred-clause) ; ((> i 4) nil)
-   `(,(first pred-clause)
-          (setq ,(second (first pred-clause)) ,(third (first pred-clause)))
-          ,(second pred-clause)))
-
 ; fdo has similar syntax as do except there will only be one do_vble
 
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
@@ -311,13 +266,6 @@ is not included")
 ;                        '((go loop))))))))
 
 ;----------------------------------------------------------------------------
-(defun constant-list (x n)
-  (do  ((i 1 (1+ i)) 
-        (ret nil (cons x ret))) 
-       ((> i n) ret)))
-     
-
-;----------------------------------------------------------------------------
 ;; macro for division 
 
 (defmacro f2cl/ (x y)
@@ -358,17 +306,9 @@ is not included")
             (error "bad statement number in assigned goto"))
         (go ,i)))
 
-;-----------------------------------------------------------------------------       
-; set up a list of intrinsic function names
-;real xxx
-(defvar *intrinsic-function-names*
-  '(int ifix idint real float sngl dble cmplx ichar char aint dint
-    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
-    idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
-    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
-    exp dexp cexp log alog dlog clog log10 alog10 dlog10 sin dsin csin
-    cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
-    sinh dsinh cosh dcosh tanh dtanh))
+;;-----------------------------------------------------------------------------
+;;
+;; Define the intrinsic functions
 
 (declaim (inline truncate-towards-zero ftruncate-towards-zero))
 
@@ -391,7 +331,6 @@ is not included")
 
 (declaim (inline int ifix idfix))
 
-;; Define the intrinsic functions.
 #-cmu
 (defun int (x)
   ;; We use fixnum here because f2cl thinks Fortran integers are
@@ -449,12 +388,12 @@ is not included")
   (etypecase x
     (single-float
      (ftruncate-towards-zero (the (single-float #.(float (- (ash 1 31)))
-					     #.(float (1- (ash 1 31))))
-			    x)))
+						#.(float (1- (ash 1 31))))
+			       x)))
     (double-float
      (ftruncate-towards-zero (the (double-float #.(float (- (ash 1 31)) 1d0)
-					     #.(float (1- (ash 1 31)) 1d0))
-			    x)))))
+						#.(float (1- (ash 1 31)) 1d0))
+			       x)))))
 
 (defun dint (x)
   (aint x))
@@ -1107,8 +1046,13 @@ is not included")
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.34 2002/01/06 23:11:04 rtoy Exp $
+;;; $Id: macros.l,v 1.35 2002/01/13 16:29:00 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.35  2002/01/13 16:29:00  rtoy
+;;; o This file is in the f2cl-lib package now
+;;; o Deleted some unused code.
+;;; o Moved *INTRINSIC-FUNCTION-NAMES* to f2cl1.l
+;;;
 ;;; Revision 1.34  2002/01/06 23:11:04  rtoy
 ;;; o Rename *intrinsic_function_names* to use dashes.
 ;;; o Comment out some unused functions and macros.

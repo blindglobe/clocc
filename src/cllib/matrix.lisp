@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.15 2004/12/23 16:47:26 sds Exp $
+;;; $Id: matrix.lisp,v 2.16 2004/12/23 16:50:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -428,53 +428,63 @@ If one of the principal minors of A is 0, `matrix-solve-lu'
 ;;; matrix inversion
 ;;;
 
+;; <garnet:/src/gesture/matrix.lisp>
 (defun matrix-inverse (mx)
   "Invert the matrix in-place.
-Return the determinant of the matrix."
-  (unless (and (= 2 (array-rank mx))
-               (= (array-dimension mx 0) (array-dimension mx 1)))
-    (error 'dimension :proc 'matrix-inverse :args
-           (list (array-dimensions mx))))
-  (labels ((pivot (aa nn kk pivot)
-             (declare (type (array * (* *)) aa)
-                      (type index-t nn kk) (type number pivot))
-             (dotimes (ii nn)   ; divide column by minus pivot
-               (declare (type index-t ii))
-               (divf (aref aa kk ii) (- pivot)))
-             (setf (aref aa kk kk) pivot)
-             (dotimes (ii nn)   ; reduce matrix
-               (declare (type index-t ii))
-               (unless (= ii kk)
-                 (loop :with ki = (aref aa kk ii)
-                   :for jj :of-type index-t :from 0 :below nn
-                   :unless (= jj kk) :do
-                   (setf (aref aa jj ii)
-                         (+ (* ki (aref aa jj kk)) (aref aa jj ii))))))
-             (dotimes (jj nn)   ; divide row by pivot
-               (declare (type index-t jj))
-               (divf (aref aa jj kk) pivot))
-             ;; replace pivot by reciprocal
-             (setf (aref aa kk kk) (/ pivot))
-             (values))
-           (inv (mx nn kk)
-             (declare (type (array * (* *)) mx) (type index-t nn kk))
-             (if (>= kk nn) 1
-                 (let ((ii kk) (jj kk) (max (abs (aref mx kk kk))) pivot)
-                   (declare (type index-t ii jj))
-                   (loop :for i0 :of-type index-t :from kk :below nn :do
-                     (loop :for j0 :of-type index-t :from kk :below nn
-                       :when (> (abs (aref mx i0 j0)) max) :do
-                       (setq ii i0 jj j0 max (abs (aref mx i0 j0)))))
-                   (setq pivot (aref mx ii jj))
-                   (when (= pivot 0) (return-from matrix-inverse 0))
-                   (mx-swap-rows mx nn ii kk)
-                   (mx-swap-cols mx nn jj kk)
-                   (pivot mx nn kk pivot)
-                   ;; determinant is the recursive product of pivots
-                   (prog1 (* pivot (inv mx nn (1+ kk)))
-                     (mx-swap-rows mx nn jj kk)
-                     (mx-swap-cols mx nn ii kk))))))
-    (inv mx (array-dimension mx 0) 0)))
+Return the log determinant of the matrix, parity, and the matrix argument."
+  (let* ((dim (array-dimension mx 0))
+         (logdet 1) (parity 1)  ; log determinant & its sign
+         (l (make-array dim))   ; row permutation vector
+         (m (make-array dim)))  ; column permutation vector
+    (unless (and (= 2 (array-rank mx)) (= dim (array-dimension mx 1)))
+      (error 'dimension :proc 'matrix-inverse
+             :args (list (array-rank mx) (array-dimensions mx))))
+    (loop :with biga = 0 :for k :from 0 :below dim :do
+      (setf (aref l k) k
+            (aref m k) k
+            biga (aref mx k k))
+      ;; find the biggest element in the submatrix
+      (loop :for i :from k :below dim :do
+        (loop :for j :from k :below dim :do
+          (when (> (abs (aref mx i j)) (abs biga))
+            (setf biga (aref mx i j)
+                  (aref l k) i
+                  (aref m k) j))))
+      ;; interchange rows
+      (when (> (aref l k) k)
+        (mx-swap-rows mx (aref l k) k))
+      ;; interchange columns
+      (when (> (aref m k) k)
+        (mx-swap-cols mx (aref m k) k))
+      ;; divide column by minus pivot (pivot is in biga)
+      (when (zerop biga)
+        (error 'division-by-zero :operation 'matrix-inverse
+               :operands (list mx)))
+      (let ((/biga (/ biga)))
+        (loop :for i :from 0 :below dim :do
+          (when (/= i k)
+            (mulf (aref mx i k) (- /biga))))
+        ;; reduce matrix
+        (loop :for i :from 0 :below dim :do
+          (when (/= i k)
+            (let ((temp (aref mx i k)))
+              (loop :for j :from 0 :below dim :do
+                (when (/= j k)
+                  (incf (aref mx i j) (* temp (aref mx k j))))))))
+        ;; divide row by pivot
+        (loop :for j :from 0 :below dim :do
+          (when (/= j k)
+            (mulf (aref mx k j) /biga)))
+        (incf logdet (log (abs biga))) ; DET is the product of pivots
+        (when (minusp biga) (setq parity (- parity)))
+        (setf (aref mx k k) /biga)))
+    ;; final row & column interchanges
+    (loop :for k :downfrom (1- dim) :to 0 :do
+      (when (> (aref l k) k)
+        (mx-swap-cols mx (aref l k) k))
+      (when (> (aref m k) k)
+        (mx-swap-rows mx (aref m k) k)))
+    (values logdet parity mx)))
 
 ;;;
 ;;; `matrix-solve' - all in one

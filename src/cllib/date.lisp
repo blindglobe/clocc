@@ -1,10 +1,10 @@
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997-2000 by Sam Steingold.
+;;; Copyright (C) 1997-2001 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.13 2001/04/22 03:55:42 sds Exp $
+;;; $Id: date.lisp,v 2.14 2001/04/22 04:58:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -222,7 +222,14 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (date-formatter format se mi ho da mo ye dd)))
 
 (defgeneric date-formatter (format se mi ho da mo ye dd)
-  (:documentation "Return the formatter function for the given format spec.")
+  (:documentation "Return the formatter function for the given format spec.
+The supported specs are:
+  function -- run it
+  string   -- assume it's a format string for the other arguments
+  :short   -- \"2001-04-22 Sun 04:53:44\"
+  :long    -- \"2001-04-22 Sun 04:53:44 +0000 (GMT)\"
+  :mbox    -- \"Sun Apr 22 04:53:44 2001\"
+  :usa     -- \"Sun, 22 Apr 2001 04:53:44 +0000 (GMT)\"")
   (:method ((format function) se mi ho da mo ye dd)
     (funcall format se mi ho da mo ye dd))
   (:method ((format string) se mi ho da mo ye dd)

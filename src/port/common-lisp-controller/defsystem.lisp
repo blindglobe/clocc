@@ -1169,7 +1169,7 @@
     #+ACLPC      (current-directory)
     #+:ALLEGRO   (excl:current-directory)
     #+:CMU       (ext:default-directory)
-    #+:sbcl      *default-pathname-defaults*
+    #+:sbcl      (progn *default-pathname-defaults*)
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>
     ;; Somehow it is better to qualify default-directory in CMU with
     ;; the appropriate package (i.e. "EXTENSIONS".)
@@ -1193,6 +1193,7 @@
     #+:lispworks4
     (hcl:get-working-directory)
     ;; Home directory
+    #-sbcl
     (mk::home-subdirectory "lisp/systems/")
 
     ;; Global registry

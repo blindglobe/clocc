@@ -142,12 +142,6 @@ Returns nothing"
                                                    (list :wild-inferiors))
                                 :case :common
                                 :defaults fasl-root))))
-    ;;; cmucl-hemlock stuff is in the source tree...
-    (add-translation :cl-library
-                     fasl-root
-                     (make-pathname :directory '(:relative "CMUCL-HEMLOCK" :wild-inferiors)
-                                    :type "TEXT"
-                                    :case :common))    
     ;;; add common source extentions:
     (loop for extention in *source-extentions*
           do
@@ -211,7 +205,7 @@ Returns nothing"
     (pushnew  "/home/pvaneynd/common-lisp/systems/"
               (symbol-value
                (intern "*CENTRAL-REGISTRY*"
-                       (find-package :make)))
+                      (find-package :make)))
               :test #'equalp))
   (values))
 

@@ -27,7 +27,14 @@
 	      *auto-save-data*
 	      *functions-used*
 	      *vble-declaration-done*
-	      *array-type*)))
+	      ;; Specifies how Fortran arrays should be declared (array or simple-array)
+	      *array-type*
+	      ;; If non-NIL, treat all array references in calls to
+	      ;; routines as a slice of the array.  Thus, we create a
+	      ;; displaced array.  (Implies *array-type* is array.)
+	      *array-slicing*
+	      ;; If non-NIL, apply array slicing (in ID-FACTOR)
+	      *apply-array-slice*)))
 
 (defvar *common-blocks* (make-hash-table)
   "Hash table of all common blocks.  The key is the name of the common
@@ -53,7 +60,8 @@ only when needed. ")
 			(coerce-assigns :as-needed)
 			(extension (or *default-lisp-extension* "lisp"))
 			keep-temp-file
-			(array-type 'simple-array))
+			(array-type 'simple-array)
+			(array-slicing t))
   "Fortran to Common Lisp converter
 
 INPUT-FILE               File containing Fortran code
@@ -77,6 +85,9 @@ INPUT-FILE               File containing Fortran code
 :KEEP-TEMP-FILE          If T, the temporary file is not deleted.  Default = NIL.
 :ARRAY-TYPE              The type of array f2cl should use.  Should be 'simple-array or
                          'array.
+:ARRAY-SLICING           When non-NIL, f2cl assumes that, whenever we do an array reference
+                         in a call to a subroutine or function, we are really passing a
+                         subarray to the routine instead of just the single value.
 "
 
 
@@ -94,7 +105,10 @@ INPUT-FILE               File containing Fortran code
 	(*common-block-initialized* nil)
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns)
-	(*array-type* array-type))
+	(*array-type* (if array-slicing 'array
+			  array-type))
+	(*array-slicing* array-slicing)
+	(*apply-array-slice* nil))
 
     (unless (probe-file input-file)
       ;; Can't find it, so look for some other possibilities
@@ -946,14 +960,17 @@ main-loop
 (defun parse-subroutine-call (x)
   ;; X looks like (CALL SUBNAME (comma-separated list of args, if any))
   (let ((arglist (if (third x)
-		     (mapcar  #'id-expression 
-			      (list-split '|,| (check_new_vbles (third x))))
+		     (mapcar #'(lambda (expr)
+				 (let ((*apply-array-slice* t))
+				   (id-expression expr)))
+			     (list-split '|,| (check_new_vbles (third x))))
 		     nil)))
     ;; Note that this is not a variable.
     (update-called-functions-list (second x) arglist)
     (cond ((null arglist)
 	   ;; No args to the subroutine
 	   `((,(second x))))
+	  #+nil
 	  ((every #'symbolp arglist)
 	   ;; If every argument is a simple variable (or array), use m-v-setq to
 	   ;; set the simple variables to the correct values.
@@ -1717,8 +1734,38 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.39 2000/07/14 14:05:45 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.40 2000/07/14 15:44:46 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.40  2000/07/14 15:44:46  rtoy
+;;; o Added keyword :array-slicing to f2cl to support array slicing.
+;;; o Preliminary support for array slicing.  That is,
+;;;
+;;; 	real x(100)
+;;; 	call sub(x(4))
+;;;
+;;;   means the subroutine sub actually gets an array of size 96 starting
+;;;   from x(4).
+;;;
+;;;   There are some problems with this.  If sub actually wanted a simple
+;;;   real variable, we'll be passing the wrong thing to sub.  f2cl in
+;;;   general doesn't know what type of parameters sub wants.
+;;;
+;;;   To work around this problem, either run f2cl with :array-slicing set
+;;;   to NIL, or change the call to something like:
+;;;
+;;; 	real x(100)
+;;; 	real tmp
+;;;
+;;; 	tmp = x(4)
+;;; 	call sub(tmp)
+;;; 	x(4) = tmp
+;;;
+;;;   (That last assignment needed only if sub is modifies the parameter.)
+;;;
+;;; o In parsing a subroutine call, don't use the multiple-value-setq
+;;;   version at all anymore.  Use the multiple-value-bind version
+;;;   instead.
+;;;
 ;;; Revision 1.39  2000/07/14 14:05:45  rtoy
 ;;; Allow the user to specify whether he wants f2cl to declare arrays as
 ;;; type array or simple-array.

@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.3 Interim.
+;;; DEFSYSTEM 3.4 Interim.
 
 ;;; defsystem.lisp --
 

@@ -171,15 +171,6 @@
 	       (t
 		'single-float)))))
 
-#+nil
-(defun get-fun-arg-types (args)
-  (let ((res '()))
-    (dolist (arg args res)
-      (push (if (symbolp arg)
-		(lookup-vble-type arg)
-		(type-of arg))
-	    res))))
-
 (defun fortran-contagion (t1 t2)
   (type-of (+ (coerce 0 t1) (coerce 0 t2))))
 
@@ -1271,17 +1262,6 @@
 ; x is of form: '(WRITE (* |,| 8000) |,| J |,| K)
 ;           or  '(WRITE (*) |,| J |,| K)
 ;           or  '(WRITE (* |,| *) |,| J |,| K)
-#+nil
-(defun parse-write (x)
-   ; check for comma before arguments
-   (if (and (third x) (not (eq (third x) '|,|)))
-       (setq x (append (list (first x) (second x) '|,|) (cddr x))))
-   `((fformat ,(parse_format_dest (first (second x)))
-             (quote ,(if (null (second (second x))) 
-                         '("~A~%")
-                         (get_format_stmt (nthcdr 2 (second x)))))
-             (list ,@(mapcar #'parse-output-argument 
-                             (list-split '|,| (cdddr x)))))))
 (defun parse-write (x)
   ;; check for comma before arguments
   (if (and (third x) (not (eq (third x) '|,|)))
@@ -1302,29 +1282,6 @@
      ,@(mapcar #'parse-output-argument 
 		       (list-split '|,| (cdddr x))))))
      
-#+nil
-(progn
-;; Map Fortran logical unit numbers to Lisp streams
-
-(defvar *lun-hash*
-  (let ((table (make-hash-table)))
-    (setf (gethash 6 table) *standard-output*)
-    (setf (gethash t table) *standard-output*)
-    table))
-
-(defun lun->stream (lun)
-  (let ((stream (gethash lun *lun-hash*)))
-    (if stream
-	stream
-	(setf (gethash lun *lun-hash*)
-	      (open (format nil "fort~d.dat" lun)
-		    :direction :output
-		    :if-exists :rename)))))
-
-(declaim (ftype (function (t) stream) lun->stream))
-
-)
-
 #+nil
 (defmacro fformat (dest cilist args)
    `(if (equal ,cilist '("~A~%")) 
@@ -1407,19 +1364,6 @@
 		     res)
 	       (setq arglist (cdr arglist)))))))
 )
-
-;(defmacro fformat1 (dest directive arg)
-;   `(if (arrayp ,arg)
-;        (print ,arg)
-;        (format ,dest ,directive ,(eval arg))))
-
-#+nil
-(defun get_format_stmt (label) 
-  (if (or (eq label '*) (not (numberp label)))
-    '("~A~%")
-    (do ((lis *format_stmts* (cdr lis)))
-        ((null lis) (error "format stmt ~A not found" label))
-        (if (equal label (caar lis)) (return (cadar lis))))))
 
 ;; Handle things like FMT = number
 (defun get_format_stmt (label)

@@ -146,3 +146,43 @@
 	    :depends-on ("ixsav"))
      (:file "xsetf")
      (:file "xsetun")))
+
+(mk:defsystem odedemo-lsode
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
+    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t)
+    :depends-on ("odepack")
+    :components
+    ((:file "opkdemo1")))
+
+(mk:defsystem odedemo-lsoda
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
+    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t)
+    :depends-on ("odepack")
+    :components
+    ((:file "opkdemo3")))
+
+(mk:defsystem odedemo-lsodar
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
+    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t)
+    :depends-on ("odepack")
+    :components
+    ((:file "opkdemo4")))
+
+(mk:defsystem odedemo-lsodpk
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
+    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t :declare-common t)
+    :depends-on ("odepack")
+    :components
+    ((:file "opkdemo5")))

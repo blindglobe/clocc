@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.4 2005/03/26 14:30:06 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.5 2005/03/27 05:29:29 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,7 @@
 
 (eval-when (:load-toplevel)
    (export '(fload filespecs-load fcompl filespecs-compile
-	      fcompl-reload*
+	     fcompl-reload* fload-compile*
 	     fload-versions postponed-files-update
 funktion
 	     debuggable debuggability*)))
@@ -368,7 +368,8 @@ funktion
                            type 'n' or 'no' to use that value once, ~
                            ask again next;~%~
                            type 'd' or 'defer' to use value of ~
-                           'fload-compile* to decide each time.~%"))))))))
+                           'fload-compile* to decide each time.~%"
+			  manip old-manip))))))))
   manip)
 
 (defun ask-if-generalize (manip)
@@ -542,27 +543,6 @@ funktion
 			  (force-compile)
 			  (chunk-derive-and-record compiled-chunk)))
 		   (consider-loading)))))))
-
-(defun monitor-filoid-basis (loaded-filoid-ch)
-   (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
-	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
-		 loaded-filoid-ch)))
-   (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
-		(loaded-filoids-to-be-monitored* !()))
-	     (loop
-	        (dolist (loadable-ch controllers)
-		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false false)
-	        (cond ((null loaded-filoids-to-be-monitored*)
-		       (return))
-		      (t
-		       (setq controllers 
-			     (mapcar #'Loaded-chunk-controller
-				     loaded-filoids-to-be-monitored*))
-		       (setq loaded-filoids-to-be-monitored* !()))))))
-	 (t
-	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve

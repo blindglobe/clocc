@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.10 2005/03/24 12:58:58 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.11 2005/03/27 05:29:29 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -331,19 +331,8 @@
    (cond ((stringp pn)
 	  (setq pn (->pathname pn))))
    (cond ((stringp obj-version)
-	  (setq obj-version (->pathname obj-version))
 	  (setq obj-version
-		(let ((obj-dir (Pathname-directory obj-version)))
-		   (cond ((and (not (atom obj-dir))
-			       (eq (car obj-dir)
-				   ':relative))
-			  (place-relative-pathname
-			     pn (append (cdr obj-dir) bin-idio-dir*)
-			     lisp-object-extn* true))
-			 (t
-			  (make-Pathname
-			     :directory (append obj-dir bin-idio-dir*)
-			     :type lisp-object-extn*)))))))
+		(string->obj-pn obj-version pn bin-idio-dir*))))
    ;;;;(format t "name = ~s~%" name)
    (set-ytools-logical-pathname name pn)
    (cond (obj-version
@@ -353,6 +342,19 @@
 			obj-version pn)
 		     true))))
    name)
+
+(defun string->obj-pn (obj-dir src-pn idio)
+   (setq obj-dir (Pathname-directory (->pathname obj-dir)))
+   (cond ((and (not (atom obj-dir))
+	       (eq (car obj-dir)
+		   ':relative))
+	  (place-relative-pathname
+	     src-pn (append (cdr obj-dir) idio)
+	     lisp-object-extn* true))
+	 (t
+	  (make-Pathname
+	     :directory (append obj-dir idio)
+	     :type lisp-object-extn*))))
 
 (defun ytools-logical-pathname-def (name)
    (let ((pn (href ytools-logical-names-table* name)))
@@ -1093,9 +1095,21 @@
 	       (some-upper ':upper)
 	       (t ':lower))))
 
-(def-ytools-logical-pathname ytools
-    (->pathname ytools-home-dir*)
-    ytools-bin-path*)
+(let ((ytfm-pn (->pathname ytools-home-dir*)))
+   (set-ytools-logical-pathname 'ytools ytfm-pn)
+   (setf (pathname-prop 'obj-version ytfm-pn)
+	 (string->obj-pn ytools-bin-path* ytfm-pn !())))
+
+;;; We CANNOT define %ytools/ using def-ytools-logical-pathname
+;;; because we don't want that "bin-idio*" segment included in the
+;;; object version.  If we allowed that, then YTFM and YTools would
+;;; have two different bin directories, which would mean that you
+;;; couldn't use 'fload' to compile YTFM files (because they would
+;;; wind up in the YTools bin directory, not the YTFM bin directory
+;;; where they belong).
+;;;;(def-ytools-logical-pathname ytools
+;;;;    (->pathname ytools-home-dir*)
+;;;;    ytools-bin-path*)
 
 (defun dir-pn (pn)
    (make-Pathname :host (Pathname-host pn)

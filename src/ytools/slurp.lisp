@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.24 2005/03/24 12:58:58 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.25 2005/03/27 05:29:29 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -390,11 +390,17 @@ after YTools file transducers finish.")
 ;;; They return two values: the remaining tasks, and their states.
 (datafun-table general-slurp-handlers* general-slurper :size 50)
 
+(defvar slurp-dbg* false)
+
 ;;; Each element of 'slurp-tasks' is something like :macros, or :header-info
 ;;; Handler returns t if the task should stop.  So 'form-slurp'
 ;;; returns the tasks that should continue, plus their corresponding
 ;;; states.
 (defun form-slurp (r slurp-tasks slurp-states)
+   (cond (slurp-dbg*
+	  (format *error-output*
+	     "Slurping ~s ~%  wrt tasks ~s and states ~s~%"
+	     r slurp-tasks slurp-states)))
    (flet ((form-fcn-sym (e)
 	     (cond ((and (consp e)
 			(is-Symbol (car e)))
@@ -402,30 +408,61 @@ after YTools file transducers finish.")
 		  (t false))))
       (let ((continuing-tasks !())
 	    (continuing-states !())
+	    ;; -- tasks and states for which a handler has declare
+	    ;; "not done."  Once this happens no further handlers are tried
+	    ;; and the task/state pair will be returned by 'form-slurp'.
 	    (asym (form-fcn-sym r))
 	    (form r))
 	 (loop
-;;;;	    (format t "tasks = ~s form = ~s ~%"
-;;;;		    (mapcar #'Slurp-task-label slurp-tasks) form)
 	   ;; Macro-expand until handled generally or
 	   ;; handled by all
+	   ;; At this point 'slurp-tasks' and 'slurp-states' are
+	   ;; those that remain unhandled after (zero or more)
+	   ;; attempts at macro expansion.
 	   (cond
 	     ((or (null slurp-tasks)
 		  (not asym))
-	      (return (values continuing-tasks continuing-states)))
+	      (cond (slurp-dbg*
+		     (format *error-output*
+			"form-slurp exits~a~a~%  "
+			(cond ((null slurp-tasks)
+			       "/Reason: no slurp tasks remain to figure out")
+			      (t ""))
+			(cond ((not asym)
+			       "/Reason: no asym")))))
+	      (setq slurp-tasks
+		    (nconc slurp-tasks continuing-tasks))
+	      (setq slurp-states
+		    (nconc slurp-states continuing-states))
+	      (cond (slurp-dbg*
+		     (format *error-output*
+			"Tasks still alive: ~s with states ~s~%"
+			slurp-tasks slurp-states)))
+	      (return (values slurp-tasks slurp-states)))
 	     (t
 	      (let ((h (href general-slurp-handlers*
 			     asym)))
 		 (cond (h
+			(cond (slurp-dbg*
+			       (format *error-output*
+				  "Got general slurp handler for ~s~%"
+				  asym)))
 			(multiple-value-bind
 				      (tl sl)
 				      (funcall h form slurp-tasks slurp-states)
 			   ;; Odd situation: Some specific
 			   ;; handler may have run before
 			   ;; the general one was found.
+			   (setq slurp-tasks
+				 (nconc tl continuing-tasks))
+			   (setq slurp-states
+				 (nconc sl continuing-states))
+			   (cond (slurp-dbg*
+				  (format *error-output*
+				     "form-slurp exits after form handled generally~%  Tasks still alive: ~s with states ~s~%"
+				     slurp-tasks slurp-states)))
 			   (return
-			      (values (nconc continuing-tasks tl)
-				      (nconc continuing-states sl)))))
+			      (values slurp-tasks slurp-states))))
 		       (t
 			(do ((tasks slurp-tasks (cdr tasks))
 			     (states slurp-states (cdr states))
@@ -440,16 +477,27 @@ after YTools file transducers finish.")
 			   (let ((task (first tasks))
 				 (state (first states))
 				 (task-done false)
+				 (handled-by-default false)
 				 (handled-by-task false) h)
 			      (setq h (href (Slurp-task-handler-table task)
 					    asym))
 			      (cond ((not h)
 				     (setq h (Slurp-task-default-handler
-					      task))))
+					      task))
+				     (cond (h
+					    (setq handled-by-default true)))))
 			      (cond (h
 				     (setq handled-by-task true)
 				     (setq task-done (funcall h form state))))
 			      (cond (handled-by-task
+				     (cond (slurp-dbg*
+					    (format *error-output*
+					       "Task ~s handled~a Done? ~s~%"
+					       task
+					       (cond (handled-by-default
+						      " [by default]")
+						     (t ""))
+					       task-done)))
 				     (cond ((not task-done)
 					    (on-list task
 						     continuing-tasks)
@@ -461,13 +509,26 @@ after YTools file transducers finish.")
 			(cond ((and (not (null slurp-tasks))
 				    (macro-function asym))
 			       (setq form (macroexpand-1 form))
-			       (setq asym (form-fcn-sym form)))
+			       (setq asym (form-fcn-sym form))
+			       (cond (slurp-dbg*
+				      (format *error-output*
+					 "Macro-expanding to ~s~%"
+					 form))))
 			      (t
+			       (setq slurp-tasks
+				     (nconc slurp-tasks
+					    continuing-tasks))
+                               (setq slurp-states
+				     (nconc slurp-states
+					    continuing-states))
+			       (cond (slurp-dbg*
+				      (format *error-output*
+					 "form-slurp exits with tasks ~s and states ~s still active~%"
+					 slurp-tasks
+					 slurp-states)))
 			       (return
-				   (values (nconc continuing-tasks
-						  slurp-tasks)
-					   (nconc continuing-states
-						  slurp-states))))))))))))))
+				   (values slurp-tasks
+					   slurp-states)))))))))))))
 
 ;;; The idea is that almost every slurp task will treat 'progn'
 ;;; the same way, so we shouldn't have to create many replicas of

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.35 2005/03/26 14:30:05 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.36 2005/03/27 05:29:26 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1307,6 +1307,7 @@
      (cond ((not (chunk-is-leaf ch))
 	    ;; Mark it provisionally with a date that will prevent
 	    ;; it from being updated by "inner" calls to chunks-update --
+;;;;	    (setq old-date* old-date)
 	    (setf (Chunk-date ch)
 		  (reduce #'max (Chunk-basis ch)
 			  :key #'Chunk-date

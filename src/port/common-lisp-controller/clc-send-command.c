@@ -215,42 +215,11 @@ int main(int argc, char *argv[])
     {
       /* This cannot be. but I've seen error messages during a from-scratch reinstall,
 	 so we add logging to this to provoke bugreports */
-      /* fork yourself and drop priv. to send email */
-      if ( (fork())  == 0)
-	{
-	  FILE *mail_pipe;
-	  char command[4097];
-	  
-	  snprintf(command,4096,
-		   "/usr/bin/mail -s \"clc system failure during rebuilding\" root -e");
-	  command[4096]=(char) 0;
-	  
-	  mail_pipe = popen(command,"w");
-	  
-	  if (mail_pipe == NULL)
-	    reportsystemerror("Could not open a pipe to /usr/bin/mail");
-	  else
-	    {
-	      fprintf(mail_pipe,"
-Hello
-
-This is the clc-send-command reporting a system failure.
-
-I tried to contact  the clc-build-daemon that should be listed
-in /etc/inetd.conf as a daemon for port 8990/tcp, but this failed.
-
-This indicates a general system failure of the clc build system,
-could you please report this as a bug against common-lisp-controller
-and include your /etc/inetd.conf file and the output of the 
-command \"netstat -nvlpt |  grep 8990\" run as root.
-
-Thanks in advance, the clc maintainers.\n");
-	      fflush(mail_pipe);
-	      pclose(mail_pipe);
-	      exit(0);
-	    }
-	}
-      reportsystemerror("Could not connect!");
+      if ( (system("/usr/lib/common-lisp-controller/debug-daemon-problems.sh"))
+	   == -1)
+	reportsystemerror("Could not start the debug-daemon-problems reporter to report a failure to connect to the daemon");
+      else
+	reportsystemerror("Could not connect to the daemon, I've send a report to root via email!");
     }
 
   stream = fdopen(socketfd, "r+");

@@ -4,3 +4,4 @@ usr/bin
 usr/share/common-lisp/systems
 usr/share/common-lisp/source/common-lisp-controller
 usr/lib/common-lisp/bin
+usr/lib/common-lisp-controller

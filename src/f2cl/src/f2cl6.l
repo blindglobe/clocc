@@ -200,6 +200,7 @@
          (t nil)))
 ;------------------------------------------------------------------------------
 ;inport
+#+nil
 (defun parse-number (prev-char char outport)
   (flet ((my-digit-char-p (char)
 	   (and (characterp char)
@@ -277,6 +278,11 @@
 	     ((or (my-char= char '#\-) (my-char= char '#\+))
 	      (write-char char str) 
 	      (go loop))
+	     ((my-char= char #\Space)
+	      ;; Spaces embedded within a number don't terminate the
+	      ;; number so skip over the space.  (Spaces in Fortran
+	      ;; are "invisible".)
+	      (go loop))
 	     (t				;number complete
 	      #+clisp 
 	      (if (equal (peek-char nil *inp* nil 'EOF t) 'EOF)
@@ -287,12 +293,142 @@
 	      #-clisp (unread-char char *inp*)
 	      (write (get-output-stream-string str) :stream outport :escape nil)
 	      (write-char '#\space outport)
-	      (return t)))))) 
+	      (return t))))))
+
+(defun parse-number (prev-char char outport)
+  (labels ((my-digit-char-p (char)
+	     (and (characterp char)
+		  (digit-char-p char)))
+	   (my-char= (char1 char2)
+	     (and (characterp char1)
+		  (characterp char2)
+		  (char= char1 char2)))
+	   (skip-spaces ()
+	     (do ((nxt (peek-char nil *inp* nil 'EOF)
+		       (peek-char nil *inp* nil 'EOF)))
+		 ((not (my-char= nxt #\Space))
+		  nxt)
+	       (read-char *inp* nil 'EOF t))))
+    #-clisp(declare (inline my-digit-char-p my-char=))
+    ;; first check prev-char suitable to precede a number
+    (unless (member prev-char 
+		    '(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, ))
+      (return-from parse-number nil))
+    (let ((str (make-string-output-stream))
+	  ;; examine first char and peek at second to ascertain this
+	  ;; is a number.  Skip over spaces if this looks like it
+	  ;; starts a number.
+	  (nxt-char (when (or (my-digit-char-p char)
+			      (member char '(#\. #\+ #\-)))
+		      (skip-spaces)
+		      (peek-char nil *inp* nil 'EOF #+broken-peek-char t))))
+      (cond ((and (my-digit-char-p char) 
+		  (or (and (not (eql nxt-char 'EOF))
+			   (my-digit-char-p nxt-char))
+		      (member nxt-char '(#\. #\D #\E))))
+	     (write-char char str))
+	    ((and (or (my-char= char '#\+)
+		      (my-char= char '#\-))
+		  (my-char= nxt-char '#\.))
+	     (write-char char str)
+	     (write-char '#\0 str))
+	    ((and (or (my-char= char '#\+)
+		      (my-char= char '#\-))
+		  (my-digit-char-p nxt-char))
+	     (write-char char str))
+	    ((and (my-char= char '#\.)
+		  (my-digit-char-p nxt-char))
+	     (write-char '#\0 str)
+	     (write-char '#\. str) )
+	    (t
+	     (return-from parse-number nil)))
+      ;; parse rest of number;EOF
+      (loop
+	(skip-spaces)
+	(setq char (read-char *inp* nil 'EOF t)
+	      nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
+	;; Skip over spaces if the current character is a part of a number.
+	(when (and (eql nxt-char #\Space)
+		   (or (my-digit-char-p char)
+		       (member char '(#\E #\D #\- #\+ #\e #\d #\.))))
+	  (skip-spaces)
+	  (setq nxt-char (peek-char nil *inp* nil 'EOF)))
+	(when (eql nxt-char 'EOF)
+	  (setq nxt-char `#\space))
+	(cond ((eql char 'EOF)
+	       ;; Assume number is complete.
+	       (write (get-output-stream-string str) :stream outport :escape nil)
+	       (write-char '#\space outport)
+	       (return-from parse-number t))
+	      ((my-digit-char-p char)
+	       (write-char char str))
+	      ((and (my-char= char '#\.)
+		    (not (or (my-digit-char-p nxt-char)
+			     (my-char= nxt-char '#\D)
+			     (my-char= nxt-char '#\E))))
+	       ;; Convert "n." to "n.0" if there's no following number.
+
+	       ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+	       (write-char '#\. str)
+	       (write-char '#\0 str))
+	      ((and (my-char= char '#\.)
+		    (my-digit-char-p nxt-char))
+	       ;; We have "n.n"
+	       (write-char '#\. str))
+	      ((and (my-char= char '#\.)
+		    (not (my-digit-char-p nxt-char)))
+	       ;; We have "." followed by some non-digit or non-space.
+	       ;; Append a 0 to the number.
+
+	       ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+	       (write-char '#\. str)
+	       (write-char '#\0 str))
+	      ((char-equal char '#\E)
+	       (write-char '#\e str)
+	       ;; Process exponent, skip over white space.
+	       (when (my-char= nxt-char #\Space)
+		 (skip-spaces)
+		 (setf nxt-char (peek-char nil *inp* nil 'EOF)))
+	       (cond ((my-char= nxt-char '#\+)
+		      (read-char *inp* nil 'EOF t))
+		     ((my-char= nxt-char '#\-)
+		      (read-char *inp* nil 'EOF t)
+		      (write-char '#\% str))))
+	      ((char-equal char '#\D) 
+	       (write-char '#\d str)
+	       (when (my-char= nxt-char #\Space)
+		 (skip-spaces)
+		 (setf nxt-char (peek-char nil *inp* nil 'EOF)))
+	       (cond ((my-char= nxt-char '#\+)
+		      (read-char *inp* nil 'EOF t))
+		     ((my-char= nxt-char '#\-)
+		      (read-char *inp* nil 'EOF t)
+		      (write-char '#\% str))))
+	      ((or (my-char= char '#\-)
+		   (my-char= char '#\+))
+	       (write-char char str))
+	      (t			;number complete
+	       ;; Clisp doesn't have unread-char?!?
+	       #+(and nil clisp)
+	       (if (equal (peek-char nil *inp* nil 'EOF t) 'EOF)
+		   (setq *inp* (make-string-input-stream (string char)))
+		   (setq *inp* 
+			 (make-string-input-stream
+			  (concatenate 'string (string char) (read-line *inp*)))))
+	       #-(and nil clisp) (unread-char char *inp*)
+	       (write (get-output-stream-string str) :stream outport :escape nil)
+	       (write-char '#\space outport)
+	       (return-from parse-number t)))))))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.17 2000/08/01 23:02:36 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.18 2000/08/13 04:18:44 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.18  2000/08/13 04:18:44  rtoy
+;;; Make PARSE-NUMBER handle sapces within numbers, which is perfectly
+;;; acceptable Fortran.  (May be a bit buggy still; probably should
+;;; rewrite PARSE-NUMBER.)
+;;;
 ;;; Revision 1.17  2000/08/01 23:02:36  rtoy
 ;;; We were messing up the printing of comments after we changed
 ;;; PREPROCESS to handle continuation lines.  We need to accumulate

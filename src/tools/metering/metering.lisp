@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: monitor; Syntax: Common-lisp; Base: 10.;  -*- 
+;;; -*- Mode: LISP; Package: monitor; Syntax: Common-lisp; Base: 10.;  -*-
 ;;; Tue Jan 25 18:32:28 1994 by Mark Kantrowitz <mkant@GLINDA.OZ.CS.CMU.EDU>
 ;;; metering.cl -- 56711 bytes
 
@@ -7,24 +7,24 @@
 ;;; ****************************************************************
 ;;;
 ;;; The Metering System is a portable Common Lisp code profiling tool.
-;;; It gathers timing and consing statistics for specified functions 
+;;; It gathers timing and consing statistics for specified functions
 ;;; while a program is running.
 ;;;
-;;; The Metering System is a combination of 
+;;; The Metering System is a combination of
 ;;;   o  the Monitor package written by Chris McConnell
 ;;;   o  the Profile package written by Skef Wholey and Rob MacLachlan
 ;;; The two systems were merged and extended by Mark Kantrowitz.
-;;; 
+;;;
 ;;; Address: Carnegie Mellon University
 ;;;          School of Computer Science
 ;;;          Pittsburgh, PA 15213
 ;;;
 ;;; This code is in the public domain and is distributed without warranty
-;;; of any kind. 
+;;; of any kind.
 ;;;
 ;;; Bug reports, comments, and suggestions should be sent to mkant@cs.cmu.edu.
-;;; 
-;;; 
+;;;
+;;;
 
 ;;; ********************************
 ;;; Change Log *********************
@@ -43,19 +43,19 @@
 ;;;                     Franz Allegro CL, and MACL 1.3.2.
 ;;; 25-JAN-91  mk       Now uses fdefinition if available.
 ;;; 25-JAN-91  mk       Replaced (and :allegro (not :coral)) with :excl.
-;;;                     Much better solution for the fact that both call 
+;;;                     Much better solution for the fact that both call
 ;;;                     themselves :allegro.
-;;;  5-JUL-91 mk        Fixed warning to occur only when file is loaded 
+;;;  5-JUL-91 mk        Fixed warning to occur only when file is loaded
 ;;;                     uncompiled.
-;;;  5-JUL-91 mk        When many unmonitored functions, print out number 
+;;;  5-JUL-91 mk        When many unmonitored functions, print out number
 ;;;                     instead of whole list.
-;;; 24-MAR-92 mk        Updated for CLtL2 compatibility. space measuring 
-;;;                     doesn't work in MCL, but fixed so that timing 
+;;; 24-MAR-92 mk        Updated for CLtL2 compatibility. space measuring
+;;;                     doesn't work in MCL, but fixed so that timing
 ;;;                     statistics do.
-;;; 26-MAR-92 mk        Updated for Lispworks. Replaced :ccl with 
+;;; 26-MAR-92 mk        Updated for Lispworks. Replaced :ccl with
 ;;;                     (and :ccl (not :lispworks)).
 ;;; 27-MAR-92 mk        Added get-cons for Allegro-V4.0.
-;;; 01-JAN-93 mk  v2.0  Support for MCL 2.0, CMU CL 16d, Allegro V3.1/4.0/4.1, 
+;;; 01-JAN-93 mk  v2.0  Support for MCL 2.0, CMU CL 16d, Allegro V3.1/4.0/4.1,
 ;;;                     Lucid 4.0, ibcl
 ;;; 25-JAN-94 mk  v2.1  Patches for CLISP from Bruno Haible.
 
@@ -67,7 +67,7 @@
 ;;;
 ;;;    - Need get-cons for Allegro, AKCL.
 ;;;    - Speed up monitoring code. Replace use of hash tables with an embedded
-;;;      offset in an array so that it will be faster than using gethash. 
+;;;      offset in an array so that it will be faster than using gethash.
 ;;;      (i.e., svref/closure reference is usually faster than gethash).
 ;;;    - Beware of (get-internal-run-time) overflowing. Yikes!
 ;;;    - Check robustness with respect to profiled functions.
@@ -85,7 +85,7 @@
 ;;;
 ;;;    METERING has been tested (successfully) in the following lisps:
 ;;;       CMU Common Lisp (16d, Python Compiler 1.0 ) :new-compiler
-;;;       CMU Common Lisp (M2.9 15-Aug-90, Compiler M1.8 15-Aug-90) 
+;;;       CMU Common Lisp (M2.9 15-Aug-90, Compiler M1.8 15-Aug-90)
 ;;;       Macintosh Allegro Common Lisp (1.3.2)
 ;;;       Macintosh Common Lisp (2.0)
 ;;;       ExCL (Franz Allegro CL 3.1.12 [DEC 3100] 11/19/90) :allegro-v3.1
@@ -111,12 +111,12 @@
 ;;; Documentation **************************************************
 ;;; ****************************************************************
 ;;;
-;;; This system runs in any valid Common Lisp. Four small 
+;;; This system runs in any valid Common Lisp. Four small
 ;;; implementation-dependent changes can be made to improve performance
 ;;; and prettiness. In the section labelled "Implementation Dependent
 ;;; Changes" below, you should tailor the functions REQUIRED-ARGUMENTS,
 ;;; GET-CONS, GET-TIME, and TIME-UNITS-PER-SECOND to your implementation
-;;; for the best results. If GET-CONS is not specified for your 
+;;; for the best results. If GET-CONS is not specified for your
 ;;; implementation, no consing information will be reported. The other
 ;;; functions will default to working forms, albeit inefficient, in
 ;;; non-CMU implementations. If you tailor these functions for a particular
@@ -126,11 +126,11 @@
 ;;; ****************************************************************
 ;;; Usage Notes ****************************************************
 ;;; ****************************************************************
-;;; 
+;;;
 ;;; SUGGESTED USAGE:
-;;; 
+;;;
 ;;; Start by monitoring big pieces of the program, then carefully choose
-;;; which functions close to, but not in, the inner loop are to be 
+;;; which functions close to, but not in, the inner loop are to be
 ;;; monitored next. Don't monitor functions that are called by other
 ;;; monitored functions: you will only confuse yourself.
 ;;;
@@ -142,39 +142,39 @@
 ;;; The easiest way to use this package is to load it and execute either
 ;;;     (mon:with-monitoring (names*) ()
 ;;;         your-forms*)
-;;; or                      
+;;; or
 ;;;     (mon:monitor-form your-form)
 ;;; The former allows you to specify which functions will be monitored; the
 ;;; latter monitors all functions in the current package. Both automatically
 ;;; produce a table of statistics. Other variants can be constructed from
 ;;; the monitoring primitives, which are described below, along with a
 ;;; fuller description of these two macros.
-;;; 
+;;;
 ;;; For best results, compile this file before using.
 ;;;
-;;; 
+;;;
 ;;; CLOCK RESOLUTION:
-;;; 
+;;;
 ;;; Unless you are very lucky, the length of your machine's clock "tick" is
 ;;; probably much longer than the time it takes a simple function to run.
 ;;; For example, on the IBM RT, the clock resolution is 1/50th of a second.
 ;;; This means that if a function is only called a few times, then only the
 ;;; first couple of decimal places are really meaningful.
 ;;;
-;;; 
+;;;
 ;;; MONITORING OVERHEAD:
 ;;;
 ;;; The added monitoring code takes time to run every time that the monitored
-;;; function is called, which can disrupt the attempt to collect timing 
+;;; function is called, which can disrupt the attempt to collect timing
 ;;; information. In order to avoid serious inflation of the times for functions
 ;;; that take little time to run, an estimate of the overhead due to monitoring
-;;; is subtracted from the times reported for each function. 
-;;; 
+;;; is subtracted from the times reported for each function.
+;;;
 ;;; Although this correction works fairly well, it is not totally accurate,
 ;;; resulting in times that become increasingly meaningless for functions
 ;;; with short runtimes. For example, subtracting the estimated overhead
 ;;; may result in negative times for some functions. This is only a concern
-;;; when the estimated profiling overhead is many times larger than 
+;;; when the estimated profiling overhead is many times larger than
 ;;; reported total CPU time.
 ;;;
 ;;; If you monitor functions that are called by monitored functions, in
@@ -203,11 +203,11 @@
 ;;;      (get-internal-run-time).
 ;;;    - Swapping.  If you have enough memory, execute your form once
 ;;;      before monitoring so that it will be swapped into memory. Otherwise,
-;;;      get a bigger machine! 
+;;;      get a bigger machine!
 ;;;    - Resolution of internal-time-units-per-second.  If this value is
 ;;;      too low, then the timings become wild. You can try executing more
 ;;;      of whatever your test is, but that will only work if some of your
-;;;      paths do not match the timer resolution. 
+;;;      paths do not match the timer resolution.
 ;;;      internal-time-units-per-second is so coarse -- on a Symbolics it is
 ;;;      977, in MACL it is 60.
 ;;;
@@ -218,7 +218,7 @@
 ;;; ****************************************************************
 ;;;
 ;;; WITH-MONITORING (&rest functions)                         [Macro]
-;;;                 (&optional (nested :exclusive) 
+;;;                 (&optional (nested :exclusive)
 ;;;                            (threshold 0.01)
 ;;;                            (key :percent-time))
 ;;;                 &body body
@@ -232,7 +232,7 @@
 ;;;                         (key :percent-time)
 ;;; All functions in the current package are set up for monitoring while
 ;;; the form is executed, and automatically unmonitored after a table of
-;;; results has been printed. The nested, threshold, and key arguments 
+;;; results has been printed. The nested, threshold, and key arguments
 ;;; are passed to report-monitoring below.
 ;;;
 ;;; *MONITORED-FUNCTIONS*                                     [Variable]
@@ -243,13 +243,13 @@
 ;;; their function definitions with code that gathers statistical information
 ;;; about code performance. As with the TRACE macro, the function names are
 ;;; not evaluated. Calls the function MON::MONITORING-ENCAPSULATE on each
-;;; function name. If no names are specified, returns a list of all 
+;;; function name. If no names are specified, returns a list of all
 ;;; monitored functions.
-;;; 
+;;;
 ;;; If name is not a symbol, it is evaled to return the appropriate
 ;;; closure. This allows you to monitor closures stored anywhere like
-;;; in a variable, array or structure. Most other monitoring packages 
-;;; can't handle this. 
+;;; in a variable, array or structure. Most other monitoring packages
+;;; can't handle this.
 ;;;
 ;;; MONITOR-ALL &optional (package *package*)                 [Function]
 ;;; Monitors all functions in the specified package, which defaults to
@@ -261,15 +261,15 @@
 ;;;
 ;;; RESET-MONITORING-INFO name                                [Function]
 ;;; Resets the monitoring statistics for the specified function.
-;;; 
+;;;
 ;;; RESET-ALL-MONITORING                                      [Function]
 ;;; Resets the monitoring statistics for all monitored functions.
 ;;;
 ;;; MONITORED name                                            [Function]
 ;;; Predicate to test whether a function is monitored.
-;;; 
+;;;
 ;;; REPORT-MONITORING &optional names                         [Function]
-;;;                             (nested :exclusive) 
+;;;                             (nested :exclusive)
 ;;;                             (threshold 0.01)
 ;;;                             (key :percent-time)
 ;;; Creates a table of monitoring information for the specified list
@@ -343,31 +343,31 @@ Estimated total monitoring overhead: 0.88 seconds
   ;; The *features* list for Macintosh Allegro Common Lisp 1.3.2
   ;; isn't really unambiguous, so we add the :mcl1.3.2 feature.
   (when (or (and (string-equal (lisp-implementation-type)
-			       "Macintosh Allegro Common Lisp")
-		 (string-equal (lisp-implementation-version)
-			       "1.3.2"))
-	    (and (find :ccl *features*)
-		 (not (find :lispworks *features*))
-		 (not (find :mcl *features*))))
+                               "Macintosh Allegro Common Lisp")
+                 (string-equal (lisp-implementation-version)
+                               "1.3.2"))
+            (and (find :ccl *features*)
+                 (not (find :lispworks *features*))
+                 (not (find :mcl *features*))))
     (pushnew :mcl1.3.2 *features*))
   ;; We assume that :mcl means version 2.0 or greater. If it doesn't,
   ;; use :mcl2.0 which is defined by:
   (when (or (and (string-equal (lisp-implementation-type)
-			       "Macintosh Common Lisp")
-		 (string-equal (lisp-implementation-version)
-			       "Version 2.0"))
-	    (and (find :ccl *features*)
-		 (find :ccl-2 *features*)
-		 (not (find :lispworks *features*))
-		 (find :mcl *features*)))
+                               "Macintosh Common Lisp")
+                 (string-equal (lisp-implementation-version)
+                               "Version 2.0"))
+            (and (find :ccl *features*)
+                 (find :ccl-2 *features*)
+                 (not (find :lispworks *features*))
+                 (find :mcl *features*)))
     (pushnew :mcl2.0 *features*))
   )
 
 ;;; Let's be smart about CLtL2 compatible Lisps:
 (eval-when (compile load eval)
-  #+(or (and :excl (or :allegro-v4.0 :allegro-v4.1)) 
-	:mcl
-	(and :cmu :new-compiler))
+  #+(or (and :excl (or :allegro-v4.0 :allegro-v4.1))
+        :mcl
+        (and :cmu :new-compiler))
   (pushnew :cltl2 *features*))
 
 ;;; ********************************
@@ -380,18 +380,18 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; For CLtL2 compatible lisps
 
 #+(and :excl (or :allegro-v4.0 :allegro-v4.1))
-(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP") 
+(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from cltl1 provide require))
-#+:mcl                                  
-(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP") 
+#+:mcl
+(defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP")
   (:import-from ccl provide require))
 #+(and :cmu :new-compiler)
 (defpackage "MONITOR" (:nicknames "MON") (:use "COMMON-LISP"))
 #+(and :cltl2
        (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1))
-		:mcl
-		(and :cmu :new-compiler))))   
-(unless (find-package "MONITOR") 
+                :mcl
+                (and :cmu :new-compiler))))
+(unless (find-package "MONITOR")
   (make-package "MONITOR" :nicknames '("MON") :use '("COMMON-LISP")))
 
 #+:cltl2
@@ -406,20 +406,20 @@ Estimated total monitoring overhead: 0.88 seconds
 (ccl:provide "monitor")
 #+(and :cltl2
        (not (or (and :excl (or :allegro-v4.0 :allegro-v4.1))
-		:mcl
-		(and :cmu :new-compiler))))
+                :mcl
+                (and :cmu :new-compiler))))
 (provide "monitor")
 #-:cltl2
 (provide "monitor")
 
 (export '(*monitored-functions*
-	  monitor monitor-all unmonitor monitor-form
-	  with-monitoring
-	  reset-monitoring-info reset-all-monitoring
-	  monitored
-	  report-monitoring
-	  display-monitoring-results
-	  monitoring-encapsulate monitoring-unencapsulate))
+          monitor monitor-all unmonitor monitor-form
+          with-monitoring
+          reset-monitoring-info reset-all-monitoring
+          monitored
+          report-monitoring
+          display-monitoring-results
+          monitoring-encapsulate monitoring-unencapsulate))
 
 
 ;;; Warn user if they're loading the source instead of compiling it first.
@@ -462,17 +462,17 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; to seconds.
 
 (progn
-  #-(or :cmu 
+  #-(or :cmu
         CLISP
-	:allegro-v3.1 :allegro-v4.0 :allegro-v4.1
-	:mcl :mcl1.3.2
-	:lcl3.0 :lcl4.0)
+        :allegro-v3.1 :allegro-v4.0 :allegro-v4.1
+        :mcl :mcl1.3.2
+        :lcl3.0 :lcl4.0)
   (eval-when (compile eval)
     (warn
      "You may want to supply implementation-specific get-time functions."))
 
   (defconstant time-units-per-second internal-time-units-per-second)
-  
+
   (defmacro get-time ()
     `(the time-type (get-internal-run-time)))
 )
@@ -484,11 +484,11 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;;       the user run without GC on. If the application is so big that
 ;;;       it requires GC to complete, then the GC times are part of the
 ;;;       cost of doing business, and will average out in the long run.
-;;;       If it seems really important to a user that GC times not be 
+;;;       If it seems really important to a user that GC times not be
 ;;;       counted, then uncomment the following three lines and read-time
 ;;;       conditionalize the definition of get-time above with #-:mcl.
-;#+:mcl 
-;(defmacro get-time () 
+;#+:mcl
+;(defmacro get-time ()
 ;  `(the time-type (- (get-internal-run-time) (ccl:gctime))))
 
 ;;; ********************************
@@ -531,11 +531,11 @@ Estimated total monitoring overhead: 0.88 seconds
 #+:allegro-v3.1
 (defun bytes-consed ()
   (let ((gs (sys::gsgc-map)))
-    (+ (aref gs 3)			; new space
-       (let ((sum 0))			; old space
-	 (dotimes (i (1+ (floor (/ (- (length gs) 13) 10))))
-	   (incf sum (aref gs (+ (* i 10) 13))))
-	 sum)))
+    (+ (aref gs 3)                      ; new space
+       (let ((sum 0))                   ; old space
+         (dotimes (i (1+ (floor (/ (- (length gs) 13) 10))))
+           (incf sum (aref gs (+ (* i 10) 13))))
+         sum)))
   )
 
 #+(or :allegro-v3.1 :allegro-v4.0 :allegro-v4.1)
@@ -578,7 +578,7 @@ Estimated total monitoring overhead: 0.88 seconds
               (prog1
                 (funcall old-gc)
                 (incf *bytes-consed-chkpt*
-		      (- old-consing (total-bytes-consed))))))))
+                      (- old-consing (total-bytes-consed))))))))
 
 #+:mcl1.3.2
 (defun total-bytes-consed (&aux pages fp)
@@ -586,10 +586,10 @@ Estimated total monitoring overhead: 0.88 seconds
   (let* ((a5 (%get-ptr $currentA5))
          (ptr (%inc-ptr a5 $pagecounts)))
     (%ilsr 3 (%i+ (%i- (%ilsl 12 (%i- (setq pages (%get-word ptr 0)) 1))
-		       (%i* pages $consfirstob))
+                       (%i* pages $consfirstob))
                    (if (eq 0 (setq fp (%get-long a5 $lstFP)))
-		       $pagesize
-		     (%ilogand2 #xfff fp))))))
+                       $pagesize
+                     (%ilogand2 #xfff fp))))))
 
 #+:mcl1.3.2
 (in-package "MONITOR")
@@ -619,12 +619,12 @@ Estimated total monitoring overhead: 0.88 seconds
 ;(let ((old-gc (symbol-function 'gc))
 ;      (ccl:*warn-if-redefine-kernel* nil))
 ;  (setf (symbol-function 'gc)
-;	#'(lambda ()
-;	    (let ((old-consing (total-bytes-consed)))
-;	      (prog1
-;		(funcall old-gc)
-;		(incf *bytes-consed-chkpt*
-;		      (- old-consing (total-bytes-consed))))))))
+;       #'(lambda ()
+;           (let ((old-consing (total-bytes-consed)))
+;             (prog1
+;               (funcall old-gc)
+;               (incf *bytes-consed-chkpt*
+;                     (- old-consing (total-bytes-consed))))))))
 ;#+:mcl
 ;(defun total-bytes-consed ()
 ;  "Returns number of conses (8 bytes each)"
@@ -636,9 +636,9 @@ Estimated total monitoring overhead: 0.88 seconds
 ;  (the consing-type (+ (ccl::total-bytes-consed) ccl::*bytes-consed-chkpt*)))
 
 
-#-(or :cmu 
+#-(or :cmu
       CLISP
-      :lcl3.0 :lcl4.0 
+      :lcl3.0 :lcl4.0
       :allegro-v3.1 :allegro-v4.0 :allegro-v4.1
       :mcl1.3.2 :mcl)
 (progn
@@ -665,66 +665,66 @@ Estimated total monitoring overhead: 0.88 seconds
   (defun required-arguments (name)
     (let ((function (symbol-function name)))
       (if (eql (system:%primitive get-type function) system:%function-type)
-	  (let ((min (ldb system:%function-min-args-byte
-			  (system:%primitive header-ref function
-					     system:%function-min-args-slot)))
-		(max (ldb system:%function-max-args-byte
-			  (system:%primitive header-ref function
-					     system:%function-max-args-slot)))
-		(rest (ldb system:%function-rest-arg-byte
-			   (system:%primitive header-ref function
-					      system:%function-rest-arg-slot)))
-		(key (ldb system:%function-keyword-arg-byte
-			  (system:%primitive
-			   header-ref function
-			   system:%function-keyword-arg-slot))))
-	    (values min (or (/= min max) (/= rest 0) (/= key 0))))
-	  (values 0 t))))
+          (let ((min (ldb system:%function-min-args-byte
+                          (system:%primitive header-ref function
+                                             system:%function-min-args-slot)))
+                (max (ldb system:%function-max-args-byte
+                          (system:%primitive header-ref function
+                                             system:%function-max-args-slot)))
+                (rest (ldb system:%function-rest-arg-byte
+                           (system:%primitive header-ref function
+                                              system:%function-rest-arg-slot)))
+                (key (ldb system:%function-keyword-arg-byte
+                          (system:%primitive
+                           header-ref function
+                           system:%function-keyword-arg-slot))))
+            (values min (or (/= min max) (/= rest 0) (/= key 0))))
+          (values 0 t))))
 
   #| #+new-compiler
   (defun required-arguments (name)
     (let* ((function (symbol-function name))
-	   (stype (system:%primitive get-vector-subtype function)))
+           (stype (system:%primitive get-vector-subtype function)))
       (if (eql stype system:%function-entry-subtype)
-	  (let* ((args (cadr (system:%primitive
-			      header-ref
-			      function
-			      system:%function-entry-type-slot)))
-		 (pos (position-if #'(lambda (x)
-				       (and (symbolp x)
-					    (let ((name (symbol-name x)))
-					      (and (>= (length name) 1)
-						   (char= (schar name 0)
-							  #\&)))))
-				   args)))
-	    (if pos
-		(values pos t)
-		(values (length args) nil)))
-	  (values 0 t)))))|#
+          (let* ((args (cadr (system:%primitive
+                              header-ref
+                              function
+                              system:%function-entry-type-slot)))
+                 (pos (position-if #'(lambda (x)
+                                       (and (symbolp x)
+                                            (let ((name (symbol-name x)))
+                                              (and (>= (length name) 1)
+                                                   (char= (schar name 0)
+                                                          #\&)))))
+                                   args)))
+            (if pos
+                (values pos t)
+                (values (length args) nil)))
+          (values 0 t)))))|#
 
   #+new-compiler
   (defun required-arguments (name)
     (let ((type (ext:info function type name)))
       (cond ((not (kernel:function-type-p type))
-	     (warn "No argument count information available for:~%  ~S~@
-		  Allow for &rest arg consing."
-		   name)
-	     (values 0 t))
-	    (t
-	     (values (length (kernel:function-type-required type))
-		     (if (or (kernel:function-type-optional type)
-			     (kernel:function-type-keyp type)
-			     (kernel:function-type-rest type))
-			 t nil))))))
+             (warn "No argument count information available for:~%  ~S~@
+                  Allow for &rest arg consing."
+                   name)
+             (values 0 t))
+            (t
+             (values (length (kernel:function-type-required type))
+                     (if (or (kernel:function-type-optional type)
+                             (kernel:function-type-keyp type)
+                             (kernel:function-type-rest type))
+                         t nil))))))
 )
 
 ;;; Lucid, Allegro, and Macintosh Common Lisp
-#+(OR :lcl3.0 :lcl4.0 :excl :mcl) 
+#+(OR :lcl3.0 :lcl4.0 :excl :mcl)
 (defun required-arguments (name)
   (let* ((function (symbol-function name))
          (args #+:excl(excl::arglist function)
-	       #+:mcl(ccl:arglist function)
-	       #-(or :excl :mcl)(arglist function))
+               #+:mcl(ccl:arglist function)
+               #-(or :excl :mcl)(arglist function))
          (pos (position-if #'(lambda (x)
                                (and (symbolp x)
                                     (let ((name (symbol-name x)))
@@ -742,21 +742,21 @@ Estimated total monitoring overhead: 0.88 seconds
   (let ((arguments-string
          (let ((the-string
                 (with-output-to-string (*standard-output*)
-		    (ccl:arglist-to-stream name *standard-output*))))
+                    (ccl:arglist-to-stream name *standard-output*))))
            (cond ((and (>=  (length the-string) 23)
                        (string-equal (subseq the-string 0 22)
                                      "Can't find arglist for")) nil)
                  ((position  #\( the-string :test 'char-equal) the-string)
                  (T  (concatenate 'string "(" the-string ")"))))))
     (if (null arguments-string)
-	(values 0 t)
+        (values 0 t)
       (let* ((pos (position #\& arguments-string))
              (args (length (read-from-string
                             (concatenate 'string
-					 (subseq arguments-string 0 pos)
-					 ")")))))
+                                         (subseq arguments-string 0 pos)
+                                         ")")))))
         (if pos
-	    (values args t)
+            (values args t)
           (values args nil))))))
 
 #+CLISP
@@ -765,28 +765,28 @@ Estimated total monitoring overhead: 0.88 seconds
     (case (type-of function)
       (FUNCTION
        (if (compiled-function-p function)
-	   (multiple-value-bind (req-anz opt-anz rest-p key-p
-					 keyword-list allow-other-keys-p)
-	       (sys::signature function)
-	     (declare (ignore keyword-list allow-other-keys-p))
-	     (values req-anz (or (plusp opt-anz) rest-p key-p)))
-	   (let ((lambdalist (car (sys::%record-ref function 1))))
-	     (values (or (position-if #'(lambda (x) 
-					  (member x lambda-list-keywords))
-				      lambdalist)
-			 (length lambdalist))
-		     (and (intersection lambdalist lambda-list-keywords) t)))))
+           (multiple-value-bind (req-anz opt-anz rest-p key-p
+                                         keyword-list allow-other-keys-p)
+               (sys::signature function)
+             (declare (ignore keyword-list allow-other-keys-p))
+             (values req-anz (or (plusp opt-anz) rest-p key-p)))
+           (let ((lambdalist (car (sys::%record-ref function 1))))
+             (values (or (position-if #'(lambda (x)
+                                          (member x lambda-list-keywords))
+                                      lambdalist)
+                         (length lambdalist))
+                     (and (intersection lambdalist lambda-list-keywords) t)))))
       (COMPILED-FUNCTION
        (multiple-value-bind (name req-anz opt-anz rest-p
-				  keywords allow-other-keys)
-	   (sys::subr-info function)
-	 (declare (ignore allow-other-keys))
-	 (if name
-	     (values req-anz (or (plusp opt-anz) rest-p keywords))
-	     (values 0 t))))
+                                  keywords allow-other-keys)
+           (sys::subr-info function)
+         (declare (ignore allow-other-keys))
+         (if name
+             (values req-anz (or (plusp opt-anz) rest-p keywords))
+             (values 0 t))))
       (T (values 0 t)))))
 
-#-(or :cmu CLISP :lcl3.0 :lcl4.0 :mcl1.3.2 :mcl :excl) 
+#-(or :cmu CLISP :lcl3.0 :lcl4.0 :mcl1.3.2 :mcl :excl)
 (progn
  (eval-when (compile eval)
    (warn
@@ -812,7 +812,7 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; ********************************
 ;;; Fdefinition ********************
 ;;; ********************************
-;;; fdefinition is a CLtL2 addition. 
+;;; fdefinition is a CLtL2 addition.
 #+(and :cmu (not (or new-compiler :new-compiler)))
 (eval-when (compile eval)
   ;; Need to worry about extensions:encapsulate in CMU CL
@@ -862,22 +862,22 @@ variables/arrays/structures."
   ;; is a macro, which is what we want.
   (if (fboundp 'fdefinition)
       `(if (fboundp ,function-place)
-	   (fdefinition ,function-place)
-	   (eval ,function-place))
+           (fdefinition ,function-place)
+           (eval ,function-place))
       `(if (symbolp ,function-place)
-	   (symbol-function ,function-place)
-	   (eval ,function-place))))
+           (symbol-function ,function-place)
+           (eval ,function-place))))
 
 (defsetf PLACE-FUNCTION (function-place) (function)
   "Set the function in FUNCTION-PLACE to FUNCTION."
   (if (fboundp 'fdefinition)
       ;; If we're conforming to CLtL2, use fdefinition here.
       `(if (fboundp ,function-place)
-	   (setf (fdefinition ,function-place) ,function) 
-	   (eval '(setf ,function-place ',function)))
+           (setf (fdefinition ,function-place) ,function)
+           (eval '(setf ,function-place ',function)))
       `(if (symbolp ,function-place)
-	   (setf (symbol-function ,function-place) ,function) 
-	   (eval '(setf ,function-place ',function)))))
+           (setf (symbol-function ,function-place) ,function)
+           (eval '(setf ,function-place ',function)))))
 
 #|
 ;;; before using fdefinition
@@ -898,7 +898,7 @@ variables/arrays/structures."
 
 (defun PLACE-FBOUNDP (function-place)
   "Test to see if FUNCTION-PLACE is a function."
-  ;; probably should be 
+  ;; probably should be
   #|(or (and (symbolp function-place)(fboundp function-place))
       (functionp (place-function function-place)))|#
   (if (symbolp function-place)
@@ -923,32 +923,32 @@ variables/arrays/structures."
 (defstruct metering-functions
   (name nil)
   (old-definition #-(and :cmu :new-compiler) nil
-		  #+(and :cmu :new-compiler) 
-		  (error "Missing required keyword argument :old-definition")
-		  :type function)
+                  #+(and :cmu :new-compiler)
+                  (error "Missing required keyword argument :old-definition")
+                  :type function)
   (new-definition #-(and :cmu :new-compiler) nil
-		  #+(and :cmu :new-compiler) 
-		  (error "Missing required keyword argument :new-definition")
-		  :type function)
+                  #+(and :cmu :new-compiler)
+                  (error "Missing required keyword argument :new-definition")
+                  :type function)
   (read-metering #-(and :cmu :new-compiler) nil
-		  #+(and :cmu :new-compiler) 
-		  (error "Missing required keyword argument :read-metering")
-		  :type function)
+                  #+(and :cmu :new-compiler)
+                  (error "Missing required keyword argument :read-metering")
+                  :type function)
   (reset-metering #-(and :cmu :new-compiler) nil
-		  #+(and :cmu :new-compiler) 
-		  (error "Missing required keyword argument :reset-metering")
-		  :type function))
+                  #+(and :cmu :new-compiler)
+                  (error "Missing required keyword argument :reset-metering")
+                  :type function))
 
 ;;; In general using hash tables in time-critical programs is a bad idea,
 ;;; because when one has to grow the table and rehash everything, the
 ;;; timing becomes grossly inaccurate. In this case it is not an issue
 ;;; because all inserting of entries in the hash table occurs before the
-;;; timing commences. The only circumstance in which this could be a 
+;;; timing commences. The only circumstance in which this could be a
 ;;; problem is if the lisp rehashes on the next reference to the table,
-;;; instead of when the entry which forces a rehash was inserted. 
+;;; instead of when the entry which forces a rehash was inserted.
 ;;;
 ;;; Note that a similar kind of problem can occur with GC, which is why
-;;; one should turn off GC when monitoring code. 
+;;; one should turn off GC when monitoring code.
 ;;;
 (defvar *monitor* (make-hash-table :test #'equal)
   "Hash table in which METERING-FUNCTIONS structures are stored.")
@@ -959,7 +959,7 @@ variables/arrays/structures."
 
 (defun MONITORED (function-place)
   "Test to see if a FUNCTION-PLACE is monitored."
-  (and (place-fboundp function-place)	; this line necessary?
+  (and (place-fboundp function-place)   ; this line necessary?
        (get-monitor-info function-place)))
 
 (defun reset-monitoring-info (name)
@@ -967,11 +967,11 @@ variables/arrays/structures."
   (let ((finfo (get-monitor-info name)))
     (when finfo
       (funcall (metering-functions-reset-metering finfo)))))
-(defun reset-all-monitoring () 
+(defun reset-all-monitoring ()
   "Reset monitoring info for all functions."
   (setq *total-time* 0
-	*total-cons* 0
-	*total-calls* 0)
+        *total-cons* 0
+        *total-calls* 0)
   (dolist (symbol *monitored-functions*)
     (when (monitored symbol)
       (reset-monitoring-info symbol))))
@@ -981,36 +981,36 @@ variables/arrays/structures."
 adjusted for overhead."
   (let ((finfo (get-monitor-info name)))
     (if finfo
-	(multiple-value-bind (inclusive-time inclusive-cons
-					     exclusive-time exclusive-cons
-					     calls nested-calls)
-	    (funcall (metering-functions-read-metering finfo))
-	  (unless (or (null warn)
-		      (eq (place-function name)
-			  (metering-functions-new-definition finfo)))
-	    (warn "Funtion ~S has been redefined, so times may be inaccurate.~@
+        (multiple-value-bind (inclusive-time inclusive-cons
+                                             exclusive-time exclusive-cons
+                                             calls nested-calls)
+            (funcall (metering-functions-read-metering finfo))
+          (unless (or (null warn)
+                      (eq (place-function name)
+                          (metering-functions-new-definition finfo)))
+            (warn "Funtion ~S has been redefined, so times may be inaccurate.~@
                    MONITOR it again to record calls to the new definition."
-		  name))
-	  (case nested
-	    (:exclusive (values calls
-				nested-calls
-				(- exclusive-time 
-				   (* calls *monitor-time-overhead*))
-				(- exclusive-cons 
-				   (* calls *monitor-cons-overhead*))))
-	    ;; In :inclusive mode, subtract overhead for all the
-	    ;; called functions as well. Nested-calls includes the
-	    ;; calls of the function as well. [Necessary 'cause of
-	    ;; functions which call themselves recursively.]
-	    (:inclusive (values calls
-				nested-calls
-				(- inclusive-time 
-				   (* nested-calls ;(+ calls)
-				      *monitor-time-overhead*))
-				(- inclusive-cons 
-				   (* nested-calls ;(+ calls)
-				      *monitor-cons-overhead*))))))
-	(values 0 0 0 0))))
+                  name))
+          (case nested
+            (:exclusive (values calls
+                                nested-calls
+                                (- exclusive-time
+                                   (* calls *monitor-time-overhead*))
+                                (- exclusive-cons
+                                   (* calls *monitor-cons-overhead*))))
+            ;; In :inclusive mode, subtract overhead for all the
+            ;; called functions as well. Nested-calls includes the
+            ;; calls of the function as well. [Necessary 'cause of
+            ;; functions which call themselves recursively.]
+            (:inclusive (values calls
+                                nested-calls
+                                (- inclusive-time
+                                   (* nested-calls ;(+ calls)
+                                      *monitor-time-overhead*))
+                                (- inclusive-cons
+                                   (* nested-calls ;(+ calls)
+                                      *monitor-cons-overhead*))))))
+        (values 0 0 0 0))))
 
 ;;; ********************************
 ;;; Encapsulate ********************
@@ -1029,105 +1029,105 @@ adjusted for overhead."
     (dotimes (i min-args) (push (gensym) required-args))
     `(lambda (name)
        (let ((inclusive-time 0)
-	     (inclusive-cons 0)
-	     (exclusive-time 0)
-	     (exclusive-cons 0)
-	     (calls 0)
-	     (nested-calls 0)
-	     (old-definition (place-function name)))
-	 (declare (type time-type inclusive-time)
-		  (type time-type exclusive-time)
-		  (type consing-type inclusive-cons)
-		  (type consing-type exclusive-cons)
-		  (fixnum calls)
-		  (fixnum nested-calls))
-	 (pushnew name *monitored-functions*)
+             (inclusive-cons 0)
+             (exclusive-time 0)
+             (exclusive-cons 0)
+             (calls 0)
+             (nested-calls 0)
+             (old-definition (place-function name)))
+         (declare (type time-type inclusive-time)
+                  (type time-type exclusive-time)
+                  (type consing-type inclusive-cons)
+                  (type consing-type exclusive-cons)
+                  (fixnum calls)
+                  (fixnum nested-calls))
+         (pushnew name *monitored-functions*)
 
-	 (setf (place-function name)
-	       #'(lambda (,@required-args
-			  ,@(when optionals-p `(&rest optional-args)))
-		   (let ((prev-total-time *total-time*)
-			 (prev-total-cons *total-cons*)
-			 (prev-total-calls *total-calls*)
-;			 (old-time inclusive-time)
-;			 (old-cons inclusive-cons)
-;			 (old-nested-calls nested-calls)
-			 (start-time (get-time))
-			 (start-cons (get-cons)))
-		     (declare (type time-type prev-total-time)
-			      (type time-type start-time)
-			      (type consing-type prev-total-cons)
-			      (type consing-type start-cons)
-			      (fixnum prev-total-calls))
-		     (multiple-value-prog1
-			 ,(if optionals-p
-			      `(apply old-definition 
-				      ,@required-args optional-args)
-			      `(funcall old-definition ,@required-args))
-		       (let ((delta-time (- (get-time) start-time))
-			     (delta-cons (- (get-cons) start-cons)))
-			 ;; Calls
-			 (incf calls)
-			 (incf *total-calls*)
-			    ;;; nested-calls includes this call
-			 (incf nested-calls (the fixnum 
-						 (- *total-calls*
-						    prev-total-calls)))
-;			 (setf nested-calls (+ old-nested-calls
-;					       (- *total-calls*
-;						  prev-total-calls)))
-			 ;; Time
-			    ;;; Problem with inclusive time is that it
-			    ;;; currently doesn't add values from recursive
-			    ;;; calls to the same function. Change the
-			    ;;; setf to an incf to fix this?
-			 (incf inclusive-time (the time-type delta-time))
-;			 (setf inclusive-time (+ delta-time old-time))
-			 (incf exclusive-time (the time-type
-						   (+ delta-time
-						      (- prev-total-time 
-							 *total-time*))))
-			 (setf *total-time* (the time-type
-						 (+ delta-time
-						    prev-total-time)))
-			 ;; Consing
-			 (incf inclusive-cons (the consing-type delta-cons))
-;			 (setf inclusive-cons (+ delta-cons old-cons))
-			 (incf exclusive-cons (the consing-type 
-						   (+ delta-cons
-						      (- prev-total-cons 
-							 *total-cons*))))
-			 (setf *total-cons* 
-			       (the consing-type 
-				    (+ delta-cons prev-total-cons))))))))
-	 (setf (get-monitor-info name)
-	       (make-metering-functions
-		:name name
-		:old-definition old-definition
-		:new-definition (place-function name)
-		:read-metering #'(lambda ()
-				   (values inclusive-time
-					   inclusive-cons
-					   exclusive-time
-					   exclusive-cons
-					   calls
-					   nested-calls))
-		:reset-metering #'(lambda ()
-				    (setq inclusive-time 0
-					  inclusive-cons 0
-					  exclusive-time 0 
-					  exclusive-cons 0
-					  calls 0
-					  nested-calls 0)
-				    t)))))))
+         (setf (place-function name)
+               #'(lambda (,@required-args
+                          ,@(when optionals-p `(&rest optional-args)))
+                   (let ((prev-total-time *total-time*)
+                         (prev-total-cons *total-cons*)
+                         (prev-total-calls *total-calls*)
+;                        (old-time inclusive-time)
+;                        (old-cons inclusive-cons)
+;                        (old-nested-calls nested-calls)
+                         (start-time (get-time))
+                         (start-cons (get-cons)))
+                     (declare (type time-type prev-total-time)
+                              (type time-type start-time)
+                              (type consing-type prev-total-cons)
+                              (type consing-type start-cons)
+                              (fixnum prev-total-calls))
+                     (multiple-value-prog1
+                         ,(if optionals-p
+                              `(apply old-definition
+                                      ,@required-args optional-args)
+                              `(funcall old-definition ,@required-args))
+                       (let ((delta-time (- (get-time) start-time))
+                             (delta-cons (- (get-cons) start-cons)))
+                         ;; Calls
+                         (incf calls)
+                         (incf *total-calls*)
+                            ;;; nested-calls includes this call
+                         (incf nested-calls (the fixnum
+                                                 (- *total-calls*
+                                                    prev-total-calls)))
+;                        (setf nested-calls (+ old-nested-calls
+;                                              (- *total-calls*
+;                                                 prev-total-calls)))
+                         ;; Time
+                            ;;; Problem with inclusive time is that it
+                            ;;; currently doesn't add values from recursive
+                            ;;; calls to the same function. Change the
+                            ;;; setf to an incf to fix this?
+                         (incf inclusive-time (the time-type delta-time))
+;                        (setf inclusive-time (+ delta-time old-time))
+                         (incf exclusive-time (the time-type
+                                                   (+ delta-time
+                                                      (- prev-total-time
+                                                         *total-time*))))
+                         (setf *total-time* (the time-type
+                                                 (+ delta-time
+                                                    prev-total-time)))
+                         ;; Consing
+                         (incf inclusive-cons (the consing-type delta-cons))
+;                        (setf inclusive-cons (+ delta-cons old-cons))
+                         (incf exclusive-cons (the consing-type
+                                                   (+ delta-cons
+                                                      (- prev-total-cons
+                                                         *total-cons*))))
+                         (setf *total-cons*
+                               (the consing-type
+                                    (+ delta-cons prev-total-cons))))))))
+         (setf (get-monitor-info name)
+               (make-metering-functions
+                :name name
+                :old-definition old-definition
+                :new-definition (place-function name)
+                :read-metering #'(lambda ()
+                                   (values inclusive-time
+                                           inclusive-cons
+                                           exclusive-time
+                                           exclusive-cons
+                                           calls
+                                           nested-calls))
+                :reset-metering #'(lambda ()
+                                    (setq inclusive-time 0
+                                          inclusive-cons 0
+                                          exclusive-time 0
+                                          exclusive-cons 0
+                                          calls 0
+                                          nested-calls 0)
+                                    t)))))))
 );; End of EVAL-WHEN
 
 ;;; For efficiency reasons, we precompute the encapsulation functions
-;;; for a variety of combinations of argument structures 
+;;; for a variety of combinations of argument structures
 ;;; (min-args . optional-p). These are stored in the following hash table
 ;;; along with any new ones we encounter. Since we're now precomputing
 ;;; closure functions for common argument signatures, this eliminates
-;;; the former need to call COMPILE for each monitored function.  
+;;; the former need to call COMPILE for each monitored function.
 (eval-when (compile eval)
    (defconstant precomputed-encapsulations 8))
 
@@ -1135,55 +1135,55 @@ adjusted for overhead."
 (defun find-encapsulation (min-args optionals-p)
   (or (gethash (cons min-args optionals-p) *existing-encapsulations*)
       (setf (gethash (cons min-args optionals-p) *existing-encapsulations*)
-	    (compile nil
-		     (make-monitoring-encapsulation min-args optionals-p)))))
+            (compile nil
+                     (make-monitoring-encapsulation min-args optionals-p)))))
 
 (macrolet ((frob ()
-	     (let ((res ()))
-	       (dotimes (i precomputed-encapsulations)
-		 (push `(setf (gethash '(,i . nil) *existing-encapsulations*)
-			      #',(make-monitoring-encapsulation i nil))
-		       res)
-		 (push `(setf (gethash '(,i . t) *existing-encapsulations*)
-			      #',(make-monitoring-encapsulation i t))
-		       res))
-	       `(progn ,@res))))
+             (let ((res ()))
+               (dotimes (i precomputed-encapsulations)
+                 (push `(setf (gethash '(,i . nil) *existing-encapsulations*)
+                              #',(make-monitoring-encapsulation i nil))
+                       res)
+                 (push `(setf (gethash '(,i . t) *existing-encapsulations*)
+                              #',(make-monitoring-encapsulation i t))
+                       res))
+               `(progn ,@res))))
   (frob))
 
 (defun monitoring-encapsulate (name &optional warn)
   "Monitor the function Name. If already monitored, unmonitor first."
   ;; Saves the current definition of name and inserts a new function which
-  ;; returns the result of evaluating body. 
-  (cond ((not (place-fboundp name))	; not a function
-	 (when warn
-	   (warn "Ignoring undefined function ~S." name)))
-	((place-macrop name)		; a macro
-	 (when warn
-	   (warn "Ignoring macro ~S." name)))
-	(t				; tis a function
-	 (when (get-monitor-info name) ; monitored
-	   (when warn
-	     (warn "~S already monitored, so unmonitoring it first." name))
-	   (monitoring-unencapsulate name))
-	 (multiple-value-bind (min-args optionals-p)
-	     (required-arguments name)
-	   (funcall (find-encapsulation min-args optionals-p) name)))))
+  ;; returns the result of evaluating body.
+  (cond ((not (place-fboundp name))     ; not a function
+         (when warn
+           (warn "Ignoring undefined function ~S." name)))
+        ((place-macrop name)            ; a macro
+         (when warn
+           (warn "Ignoring macro ~S." name)))
+        (t                              ; tis a function
+         (when (get-monitor-info name) ; monitored
+           (when warn
+             (warn "~S already monitored, so unmonitoring it first." name))
+           (monitoring-unencapsulate name))
+         (multiple-value-bind (min-args optionals-p)
+             (required-arguments name)
+           (funcall (find-encapsulation min-args optionals-p) name)))))
 
 (defun monitoring-unencapsulate (name &optional warn)
   "Removes monitoring encapsulation code from around Name."
   (let ((finfo (get-monitor-info name)))
-    (when finfo				; monitored
+    (when finfo                         ; monitored
       (remprop name 'metering-functions)
-      (setq *monitored-functions* 
-	    (remove name *monitored-functions* :test #'equal))
+      (setq *monitored-functions*
+            (remove name *monitored-functions* :test #'equal))
       (if (eq (place-function name)
-	      (metering-functions-new-definition finfo))
-	  (setf (place-function name)
-		(metering-functions-old-definition finfo))
-	  (when warn
-	    (warn "Preserving current definition of redefined function ~S."
-		  name))))))
-    
+              (metering-functions-new-definition finfo))
+          (setf (place-function name)
+                (metering-functions-old-definition finfo))
+          (when warn
+            (warn "Preserving current definition of redefined function ~S."
+                  name))))))
+
 ;;; ********************************
 ;;; Main Monitoring Functions ******
 ;;; ********************************
@@ -1191,55 +1191,55 @@ adjusted for overhead."
   "Monitor the named functions. As in TRACE, the names are not evaluated.
    If a function is already monitored, then unmonitor and remonitor (useful
    to notice function redefinition). If a name is undefined, give a warning
-   and ignore it. See also unmonitor, report-monitoring, 
+   and ignore it. See also unmonitor, report-monitoring,
    display-monitoring-results and reset-time."
   `(progn
      ,@(mapcar #'(lambda (name) `(monitoring-encapsulate ',name)) names)
      *monitored-functions*))
 
 (defmacro UNMONITOR (&rest names)
-  "Remove the monitoring on the named functions. 
+  "Remove the monitoring on the named functions.
    Names defaults to the list of all currently monitored functions."
   `(dolist (name ,(if names `',names '*monitored-functions*) (values))
-     (monitoring-unencapsulate name)))		 
+     (monitoring-unencapsulate name)))
 
 (defun MONITOR-ALL (&optional (package *package*))
   "Monitor all functions in the specified package."
   (let ((package (if (symbolp package)
-		     (find-package package)
-		     package)))
+                     (find-package package)
+                     package)))
     (do-symbols (symbol package)
       (when (eq (symbol-package symbol) package)
-	(monitoring-encapsulate symbol)))))
+        (monitoring-encapsulate symbol)))))
 
-(defmacro MONITOR-FORM (form 
-			&optional (nested :exclusive) (threshold 0.01)
-			(key :percent-time))
+(defmacro MONITOR-FORM (form
+                        &optional (nested :exclusive) (threshold 0.01)
+                        (key :percent-time))
   "Monitor the execution of all functions in the current package
 during the execution of FORM.  All functions that are executed above
 THRESHOLD % will be reported."
   `(unwind-protect
        (progn
-	 (monitor-all)
-	 (reset-all-monitoring)
-	 (prog1
-	     (time ,form)
-	   (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)))
+         (monitor-all)
+         (reset-all-monitoring)
+         (prog1
+             (time ,form)
+           (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)))
      (unmonitor)))
 
 (defmacro WITH-MONITORING ((&rest functions)
-			   (&optional (nested :exclusive) 
-				      (threshold 0.01)
-				      (key :percent-time))
-			   &body body)
+                           (&optional (nested :exclusive)
+                                      (threshold 0.01)
+                                      (key :percent-time))
+                           &body body)
   "Monitor the specified functions during the execution of the body."
   `(unwind-protect
        (progn
-	 (dolist (fun ',functions)
-	   (monitoring-encapsulate fun))
-	 (reset-all-monitoring)
-	 ,@body
-	 (report-monitoring :all ,nested ,threshold ,key))
+         (dolist (fun ',functions)
+           (monitoring-encapsulate fun))
+         (reset-all-monitoring)
+         ,@body
+         (report-monitoring :all ,nested ,threshold ,key))
      (unmonitor)))
 
 ;;; ********************************
@@ -1256,9 +1256,9 @@ THRESHOLD % will be reported."
 
 (defun SET-MONITOR-OVERHEAD ()
   "Determines the average overhead of monitoring by monitoring the execution
-of an empty function many times." 
+of an empty function many times."
   (setq *monitor-time-overhead* 0
-	*monitor-cons-overhead* 0)
+        *monitor-cons-overhead* 0)
   (stub-function nil)
   (monitor stub-function)
   (reset-all-monitoring)
@@ -1269,10 +1269,10 @@ of an empty function many times."
 ;    (stub-function nil))
   (let ((fiter (float overhead-iterations)))
     (multiple-value-bind (calls nested-calls time cons)
-	(monitor-info-values 'stub-function)
+        (monitor-info-values 'stub-function)
       (declare (ignore calls nested-calls))
       (setq *monitor-time-overhead* (/ time fiter)
-	    *monitor-cons-overhead* (/ cons fiter))))
+            *monitor-cons-overhead* (/ cons fiter))))
   (unmonitor stub-function))
 (set-monitor-overhead)
 
@@ -1286,12 +1286,12 @@ of an empty function many times."
 (defvar *estimated-total-overhead* 0)
 (proclaim '(type time-type *estimated-total-overhead*))
 
-(defstruct (monitoring-info 
-	    (:conc-name m-info-)
-	    (:constructor make-monitoring-info
-			  (name calls time cons
-				percent-time percent-cons
-				time-per-call cons-per-call)))
+(defstruct (monitoring-info
+            (:conc-name m-info-)
+            (:constructor make-monitoring-info
+                          (name calls time cons
+                                percent-time percent-cons
+                                time-per-call cons-per-call)))
   name
   calls
   time
@@ -1301,11 +1301,11 @@ of an empty function many times."
   time-per-call
   cons-per-call)
 
-(defun REPORT-MONITORING (&optional names 
-				    (nested :exclusive) 
-				    (threshold 0.01)
-				    (key :percent-time)
-				    ignore-no-calls)
+(defun REPORT-MONITORING (&optional names
+                                    (nested :exclusive)
+                                    (threshold 0.01)
+                                    (key :percent-time)
+                                    ignore-no-calls)
   "Report the current monitoring state.
 The percentage of the total time spent executing unmonitored code
 in each function (:exclusive mode), or total time (:inclusive mode)
@@ -1315,134 +1315,134 @@ below THRESHOLD % of the time will not be reported."
   (when (or (null names) (eq names :all)) (setq names *monitored-functions*))
 
   (let ((total-time 0)
-	(total-cons 0)
-	(total-calls 0))
+        (total-cons 0)
+        (total-calls 0))
     ;; Compute overall time and consing.
     (dolist (name names)
       (multiple-value-bind (calls nested-calls time cons)
-	  (monitor-info-values name nested :warn)
-	(declare (ignore nested-calls))
-	(incf total-calls calls)
-	(incf total-time time)
-	(incf total-cons cons)))
+          (monitor-info-values name nested :warn)
+        (declare (ignore nested-calls))
+        (incf total-calls calls)
+        (incf total-time time)
+        (incf total-cons cons)))
     ;; Total overhead.
-    (setq *estimated-total-overhead* 	    
-	  (/ (* *monitor-time-overhead* total-calls)
-	     time-units-per-second))
+    (setq *estimated-total-overhead*
+          (/ (* *monitor-time-overhead* total-calls)
+             time-units-per-second))
     ;; Assemble data for only the specified names (all monitored functions)
     (if (zerop total-time)
-	(format *trace-output* "Not enough execution time to monitor.")
-	(progn
-	  (setq *monitor-results* nil *no-calls* nil)
-	  (dolist (name names)
-	    (multiple-value-bind (calls nested-calls time cons)
-		(monitor-info-values name nested)
-	      (declare (ignore nested-calls))
-	      (when (minusp time) (setq time 0.0))
-	      (when (minusp cons) (setq cons 0.0))
-	      (if (zerop calls)
-		  (push (if (symbolp name) 
-			    (symbol-name name)
-			    (format nil "~S" name))
-			*no-calls*)
-		  (push (make-monitoring-info
-			 (format nil "~S" name) ; name
-			 calls		; calls
-			 (/ time (float time-units-per-second)) ; time in secs
-			 (round cons)	; consing
-			 (/ time (float total-time)) ; percent-time
-			 (if (zerop total-cons) 0
-			     (/ cons (float total-cons))) ; percent-cons
-			 (/ (/ time (float calls)) ; time-per-call
-			    time-units-per-second) ; sec/call
-			 (round (/ cons (float calls)))) ; cons-per-call
-			*monitor-results*))))
-	  (display-monitoring-results threshold key ignore-no-calls)))))
+        (format *trace-output* "Not enough execution time to monitor.")
+        (progn
+          (setq *monitor-results* nil *no-calls* nil)
+          (dolist (name names)
+            (multiple-value-bind (calls nested-calls time cons)
+                (monitor-info-values name nested)
+              (declare (ignore nested-calls))
+              (when (minusp time) (setq time 0.0))
+              (when (minusp cons) (setq cons 0.0))
+              (if (zerop calls)
+                  (push (if (symbolp name)
+                            (symbol-name name)
+                            (format nil "~S" name))
+                        *no-calls*)
+                  (push (make-monitoring-info
+                         (format nil "~S" name) ; name
+                         calls          ; calls
+                         (/ time (float time-units-per-second)) ; time in secs
+                         (round cons)   ; consing
+                         (/ time (float total-time)) ; percent-time
+                         (if (zerop total-cons) 0
+                             (/ cons (float total-cons))) ; percent-cons
+                         (/ (/ time (float calls)) ; time-per-call
+                            time-units-per-second) ; sec/call
+                         (round (/ cons (float calls)))) ; cons-per-call
+                        *monitor-results*))))
+          (display-monitoring-results threshold key ignore-no-calls)))))
 
 (defun display-monitoring-results (&optional (threshold 0.01) (key :percent-time)
-					     (ignore-no-calls t))
-  (let ((max-length 8)			; Function header size
-	(total-time 0.0)
-	(total-consed 0)
-	(total-calls 0)
-	(total-percent-time 0)
-	(total-percent-cons 0))			
+                                             (ignore-no-calls t))
+  (let ((max-length 8)                  ; Function header size
+        (total-time 0.0)
+        (total-consed 0)
+        (total-calls 0)
+        (total-percent-time 0)
+        (total-percent-cons 0))
     (sort-results key)
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
-		(> (m-info-percent-time result) threshold))
-	(setq max-length
-	      (max max-length
-		   (length (m-info-name result))))))
+                (> (m-info-percent-time result) threshold))
+        (setq max-length
+              (max max-length
+                   (length (m-info-name result))))))
     (incf max-length 2)
     (format *trace-output*
-	    "~&        ~VT                              Cons~
-	     ~&        ~VT%     %                       Per      Total   Total~
-	     ~&Function~VTTime  Cons  Calls  Sec/Call   Call     Time    Cons~
+            "~&        ~VT                              Cons~
+             ~&        ~VT%     %                       Per      Total   Total~
+             ~&Function~VTTime  Cons  Calls  Sec/Call   Call     Time    Cons~
              ~&~V,,,'-A"
-	    max-length max-length max-length
-	    (+ max-length 53) "-")	
+            max-length max-length max-length
+            (+ max-length 53) "-")
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
-		(> (m-info-percent-time result) threshold))
-	(format *trace-output* 
-		"~&~A:~VT~,2F  ~,2F  ~5D  ~,6F  ~5D  ~,6F  ~6D"
-		(m-info-name result)
-		max-length
-		(m-info-percent-time result)
-		(m-info-percent-cons result)
-		(m-info-calls result)
-		(m-info-time-per-call result)
-		(m-info-cons-per-call result)
-		(m-info-time result)
-		(m-info-cons result))
-	(incf total-time (m-info-time result))
-	(incf total-consed (m-info-cons result))
-	(incf total-calls (m-info-calls result))
-	(incf total-percent-time (m-info-percent-time result))
-	(incf total-percent-cons (m-info-percent-cons result))))
-    (format *trace-output* 
-	    "~&~V,,,'-A~
-	    ~&TOTAL:~VT~,2F  ~,2F  ~5D                   ~,6F  ~6D~
+                (> (m-info-percent-time result) threshold))
+        (format *trace-output*
+                "~&~A:~VT~,2F  ~,2F  ~5D  ~,6F  ~5D  ~,6F  ~6D"
+                (m-info-name result)
+                max-length
+                (m-info-percent-time result)
+                (m-info-percent-cons result)
+                (m-info-calls result)
+                (m-info-time-per-call result)
+                (m-info-cons-per-call result)
+                (m-info-time result)
+                (m-info-cons result))
+        (incf total-time (m-info-time result))
+        (incf total-consed (m-info-cons result))
+        (incf total-calls (m-info-calls result))
+        (incf total-percent-time (m-info-percent-time result))
+        (incf total-percent-cons (m-info-percent-cons result))))
+    (format *trace-output*
+            "~&~V,,,'-A~
+            ~&TOTAL:~VT~,2F  ~,2F  ~5D                   ~,6F  ~6D~
             ~&Estimated monitoring overhead: ~4,2F seconds~
             ~&Estimated total monitoring overhead: ~4,2F seconds"
-	    (+ max-length 53) "-"
-	    max-length 
-	    total-percent-time total-percent-cons 
-	    total-calls total-time total-consed
-	    (/ (* *monitor-time-overhead* total-calls)
-	       time-units-per-second)
-	    *estimated-total-overhead*)
+            (+ max-length 53) "-"
+            max-length
+            total-percent-time total-percent-cons
+            total-calls total-time total-consed
+            (/ (* *monitor-time-overhead* total-calls)
+               time-units-per-second)
+            *estimated-total-overhead*)
     (when (and (not ignore-no-calls) *no-calls*)
       (setq *no-calls* (sort *no-calls* #'string<))
       (let ((num-no-calls (length *no-calls*)))
-	(if (> num-no-calls 20)
-	    (format *trace-output*
-		    "~%~@(~r~) monitored functions were not called. ~
+        (if (> num-no-calls 20)
+            (format *trace-output*
+                    "~%~@(~r~) monitored functions were not called. ~
                       ~%See the variable mon::*no-calls* for a list."
-		    num-no-calls)
-	    (format *trace-output*
-		    "~%The following monitored functions were not called:~
+                    num-no-calls)
+            (format *trace-output*
+                    "~%The following monitored functions were not called:~
                 ~%~{~<~%~:; ~A~>~}~%"
-		    *no-calls*))))
+                    *no-calls*))))
     (values)))
 
 (defun sort-results (&optional (key :percent-time))
-  (setq *monitor-results* 
-	(case key
-	  (:function             (sort *monitor-results* #'string>
-				       :key #'m-info-name))
-	  ((:percent-time :time) (sort *monitor-results* #'>
-				       :key #'m-info-time))
-	  ((:percent-cons :cons) (sort *monitor-results* #'>
-				       :key #'m-info-cons))
-	  (:calls	         (sort *monitor-results* #'>
-				       :key #'m-info-calls))
-	  (:time-per-call	 (sort *monitor-results* #'> 
-				       :key #'m-info-time-per-call))
-	  (:cons-per-call        (sort *monitor-results* #'>
-				       :key #'m-info-cons-per-call)))))  
+  (setq *monitor-results*
+        (case key
+          (:function             (sort *monitor-results* #'string>
+                                       :key #'m-info-name))
+          ((:percent-time :time) (sort *monitor-results* #'>
+                                       :key #'m-info-time))
+          ((:percent-cons :cons) (sort *monitor-results* #'>
+                                       :key #'m-info-cons))
+          (:calls                (sort *monitor-results* #'>
+                                       :key #'m-info-calls))
+          (:time-per-call        (sort *monitor-results* #'>
+                                       :key #'m-info-time-per-call))
+          (:cons-per-call        (sort *monitor-results* #'>
+                                       :key #'m-info-cons-per-call)))))
 
 ;;; *END OF FILE*
 
-  
+

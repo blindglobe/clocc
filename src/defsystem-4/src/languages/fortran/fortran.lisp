@@ -1,4 +1,4 @@
-;;; -*- Mode: CLtL -*-
+;;; -*- Mode: Lisp -*-
 
 ;;; DEFSYSTEM 4.0
 
@@ -11,33 +11,41 @@
 (in-package "MK4")
 
 
-(defstruct (fortran-language-compiler (:include language-compiler))
-  (command-line "g77" :type string))
+;;; Fortran language definition.
 
-(defstruct (g77-language-compiler (:include fortran-language-compiler)))
+(defclass fortran-language-loader (language-loader object-loader)
+  ()
+  (:default-initargs :name "CL external Fortran object file loader."))
+
+
+(defclass fortran-language-compiler (language-compiler
+				     external-language-processor)
+  ()
+  (:default-initargs :name "Generic Fortran Compiler" :command "f77" :tag :f77))
+
+
+;;; The following classes should be singleton ones.
+
+(defclass g77-language-compiler (fortran-language-compiler
+				 gnu-language-compiler)
+  ()
+  (:default-initargs :name "GNU Fortran Compiler" :command "g77" :tag :g77))
+
+
 (defvar *g77-language-compiler*
-  (setf (find-language-processor :g77)
-	(make-g77-language-compiler :name "g77"
-				    :command-line "g77")))
-
-;;; Example.  To be fixed.
-(defstruct (sunpro-fortran-language-compiler
-	     (:include fortran-language-compiler)))
-(defvar *sunpro-fortran-language-compiler*
-  (setf (find-language-processor :sunpro-fortran)
-	(make-sunpro-fortran-language-compiler :name "SunPRO cc")))
+  (make-instance 'g77-language-compiler))
 
 
-;;; Example.  To be fixed.
-(defstruct (microsoft-fortran-language-compiler
-	     (:include fortran-language-compiler)))
-(defvar *microsoft-fortran-language-compiler*
-  (setf (find-language-processor :fl)
-	(make-microsoft-fortran-language-compiler :name "Microsoft Fortran"
-						  :command-line "fl")))
-
+;;; Notes.
+;;;
+;;; 20020725 Marco Antoniotti
+;;;
+;;; Fill in the missing classes following the scheme in
+;;; "MAKE-DEFSYSTEM:languages;c;c.lisp".
 
 (defparameter *fortran-compiler* *g77-language-compiler*)
+
+(defparameter *fortran-loader* *cl-foreign-object-loader*)
 
 
 ;;; The set of functions below may or may not be useful.  It is here
@@ -55,238 +63,45 @@
   (:method ((os cl.env:ms-windows)) "obj"))
 
 (defun fortran-file-default-binary-extension ()
-  (c-file-os-default-binary-extension cl.env:*os*))
+  (fortran-file-os-default-binary-extension cl.env:*os*))
 
 
+(defun fortran-file-default-object-pathanme ()
+  (make-pathname :type (fortran-file-default-binary-extension)))
+
+(defun fortran-file-default-error-pathanme ()
+  (make-pathname :type *compile-error-file-type*))
+
+(defun fortran-file-default-log-pathanme ()
+  (make-pathname :type "log"))
+
+
+;;; THE FOLLOWING CALLS FOR A SUPERCLASS: GNU-COMPILER! The code is
+;;; repeated too much between this and the code for gcc.
 
 ;;; Generic interface to the Fortran Compiler.
 ;;; Add other compilers as appropriate.
 
-(defgeneric fortran-compile-file (compiler file-pathname
-					   &rest args
-					   &key output-file
-					   &allow-other-keys))
-
-(defmethod no-applicable-method ((lcf (eql #'fortran-compile-file))
-				 &rest arguments)
-  (error "MK4: FORTRAN-COMPILE-FILE undefined for arguments ~S." arguments))
-
-(defmethod fortran-compile-file ((fortran-compiler g77-language-compiler)
-				 (file pathname)
-				 &rest args
-				 &key
-				 (output-file t)
-				 (error-file t)
-				 (error-output t)
-				 (verbose *compile-verbose*)
-				 debug
-				 link
-				 optimize
-				 cflags
-				 definitions
-				 include-paths
-				 library-paths
-				 libraries
-				 (error t))
-  (declare (ignore args))
-
-  (flet ((map-options (flag options &optional (func #'identity))
-	   (mapcar #'(lambda (option)
-		       (format nil "~A~A" flag (funcall func option)))
-		   options))
-	 )
-    (let* ((output-file (default-output-pathname output-file filename "o"))
-	   (arguments
-	    `(,@(when (not link) '("-c"))
-		,@(when debug '("-g"))
-		,@(when optimize (list (format nil "-O~D" optimize)))
-		,@cflags
-		,@(map-options
-		   "-D" definitions
-		   #'(lambda (definition)
-		       (if (atom definition)
-			   definition
-			   (apply #'format nil "~A=~A" definition))))
-		,@(map-options "-I" include-paths #'truename)
-		,(namestring (truename filename))
-		"-o"
-		,(namestring (translate-logical-pathname output-file))
-		,@(map-options "-L" library-paths #'truename)
-		,@(map-options "-l" libraries))))
-
-      (multiple-value-bind (output-file warnings fatal-errors)
-	  (run-fortran-compiler (fortran-language-compiler-command-line fortran-compiler)
-				arguments
-				output-file
-				error-file
-				error-output
-				verbose)
-	(if (and error (or (not output-file) fatal-errors))
-	    (error "Compilation failed")
-	    (values output-file warnings fatal-errors))))))
+(defmethod invoke-compiler ((fortran-compiler fortran-language-compiler)
+			    (file pathname)
+			    &rest args
+			    &key
+			    (output-pathname
+			     (output-file-pathname
+			      file
+			      :output-file
+			      (fortran-file-default-object-pathanme)))
+			    &allow-other-keys)
+  (apply #'invoke-processor-external fortran-compiler file args))
 
 
-
-;;; run-fortran-compiler --
-
-(defun run-fortran-compiler (program
-			     arguments
-			     output-file
-			     error-file
-			     error-output
-			     verbose)
-  (flet ((make-useable-stream (&rest streams)
-	   (apply #'make-broadcast-stream (delete nil streams)))
-	 )
-    (let ((error-file error-file)
-	  (error-file-stream nil)
-	  (verbose-stream nil)
-	  (old-timestamp (file-write-date output-file))
-	  (fatal-error nil)
-	  (output-file-written nil)
-	  )
-      (unwind-protect
-	   (progn
-	     (setf error-file
-		   (when error-file
-		     (default-output-pathname error-file
-			 output-file
-		       *compile-error-file-type*))
-
-		   error-file-stream
-		   (and error-file
-			(open error-file
-			      :direction :output
-			      :if-exists :supersede)))
-
-	     (setf verbose-stream
-		   (make-useable-stream error-file-stream
-					(and verbose *trace-output*)))
-
-	     (format verbose-stream "Running ~A~@[ ~{~A~^ ~}~]~%"
-		     program
-		     arguments)
-
-	     (setf fatal-error
-		   (let* ((error-output
-			   (make-useable-stream error-file-stream
-						(if (eq error-output t)
-						    *error-output*
-						    error-output)))
-			  (process-status
-			   (run-os-program program
-					   :arguments arguments
-					   :error error-output)))
-		     (not (zerop process-status))))
-
-	     (setf output-file-written-p
-		   (and (probe-file output-file)
-			(not (= old-timestamp
-				(file-write-date output-file)))))
-
-
-	     (when output-file-written
-	       (format verbose-stream "~A written~%" output-file))
-	     
-	     (format verbose-stream "Running of ~A finished~%"
-		     program)
-
-	     (values (and output-file-written output-file)
-		     fatal-error
-		     fatal-error))
-
-	(when error-file
-	  (close error-file-stream)
-	  (unless (or fatal-error (not output-file-written))
-	    (delete-file error-file)))
-
-	(values (and output-file-written-p (truename output-file))
-		fatal-error
-		fatal-error)))))
-
-
-
-;;; loader --
-
-(defgeneric load-fortran-file (loadable-fortran-pahtname
-			       &key
-			       (print *load-print*)
-			       (verbose *load-verbose*)
-			       (libraries '("c"))
-			       )
-  (:documentation
-   "Loads a Fortran object file (or similar) into the CL environment."))
-
-
-(defmethod no-applicable-method ((lcf (eql #'load-fortran-file))
-				 &rest arguments)
-  (error "MK4: LOAD-FORTRAN-FILE undefined for arguments ~S." arguments))
-  
-
-
-;;; DEFINE-LANGUAGE and the mixin really provide the same
-;;; functionality.
-;;; Probably the mixin is better and DEFINE-LANGUAGE and stuff will
-;;; just go away.
+;;; Language definition.
 
 (define-language :fortran
-  :compiler #'fortran-compile-file
-  :loader #+:lucid #'load-foreign-files 
-          #+:allegro #'load
-          #-(or :lucid :allegro) #'load
+  :compiler *fortran-compiler*
+  :loader *fortran-loader*
   :source-extension "f"
   :binary-extension "o")
 
 
-(defclass fortran-language-mixin (component-language-mixin)
-  ((compiler :accessor c-file-compiler)
-   (compilation-error-p :accessor c-file-compilation-error-p
-			:initarg :compilation-error-p)
-   (debug :accessor c-file-compile-debug
-	  :initarg :debug)
-   (link :accessor c-file-compile-link
-	 :initarg :link)
-   (optimize :accessor c-file-compile-optimize
-	     :initarg :optimize)
-   (cflags :accessor c-file-compile-cflags
-	   :initarg :cflags
-	   :type string)
-   (cppflags :accessor c-file-compile-cppflags
-	     :initarg :cppflags
-	     :type string)
-   (include-paths :accessor c-file-compile-include-paths
-		  :initarg :include-paths
-		  :type (or string
-			    pathname
-			    list ; (satisfies (every #'(lambda (x)
-				 ;                        (or (stringp x)
-				 ;                            (pathnamep x)))
-				 ;                   list)
-			    ))
-   (library-paths :accessor c-file-compile-library-paths
-		  :initarg :library-paths
-		  :type (or string pathname list))
-   (libraries :accessor c-file-compile-libraries
-	      :initarg :libraries
-	      :type list)		; (list string).
-   )
-  (:default-initargs
-    :language :c
-    :source-extension (c-file-default-source-extension)
-    :binary-extension (c-file-default-binary-extension)
-    :compiler *fortran-compiler*
-    :loader #'load-fortran-file
-    :compilation-error-p nil
-    :debug t
-    :link nil
-    :optimize nil
-    :cflags ""
-    :cppflags ""
-    :include-paths '()
-    :library-paths '()
-    ;; :libraries '("c")
-    :libraries '()
-    ))
-
-
-;;; end of file -- c.lisp --
+;;; end of file -- fortran.lisp --

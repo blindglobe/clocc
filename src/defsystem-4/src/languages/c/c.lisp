@@ -10,64 +10,51 @@
 
 (in-package "MK4")
 
-;;; loader --
-;;; #+:lucid #'load-foreign-files 
-;;; #+:allegro #'load
-;;; #-(or :lucid :allegro) #'load
-
-(defgeneric load-c-file (loadable-c-pahtname
-			 &key
-			 (print *load-print*)
-			 (verbose *load-verbose*)
-			 (libraries '("c"))
-			 )
-  (:documentation
-   "Loads a C object file (or similar) into the CL environment."))
-
-
-;;; compiler --
-
-(defgeneric c-compile-file (compiler file-pathname
-				     &rest args
-				     &key output-file
-				     &allow-other-keys)
-  (:documentation
-   "Compiles a C file using a spcific compiler."))
-
 
 ;;; C language definition.
 
-(define-language :c
-  :compiler #'c-compile-file
-  :loader #'load-c-file
-  :source-extension "c"
-  :binary-extension "o")
+(defclass c-language-loader (language-loader object-loader)
+  ()
+  (:default-initargs :name "CL external C object file loader"))
 
 
+(defclass c-language-compiler (language-compiler external-language-processor)
+  ()
+  (:default-initargs :name "Generic C Compiler" :command "cc" :tag :cc))
 
-(defstruct (c-language-compiler (:include language-compiler))
-  (command-line "cc" :type string))
 
-(defstruct (gcc-language-compiler (:include c-language-compiler)))
+;;; The following classes should be singleton ones.
+
+(defclass gcc-language-compiler (c-language-compiler
+				 gnu-language-compiler)
+  ()
+  (:default-initargs :name "GNU C Compiler" :command "gcc" :tag :gcc))
+  
 (defvar *gcc-language-compiler*
-  (setf (find-language-processor :gcc)
-	(make-gcc-language-compiler :name "gcc"
-				    :command-line "gcc")))
+  (make-instance 'gcc-language-compiler))
 
-(defstruct (sunpro-cc-language-compiler (:include c-language-compiler)))
+
+(defclass sunpro-cc-language-compiler (c-language-compiler)
+  ()
+  (:default-initargs :name "SunPRO C Compiler" :command "cc" :tag :sunpro-cc))
+  
 (defvar *sunpro-cc-language-compiler*
-  (setf (find-language-processor :sunpro-cc)
-	(make-sunpro-cc-language-compiler :name "SunPRO cc")))
+  (make-instance 'sunpro-cc-language-compiler))
 
 
-(defstruct (microsoft-c-language-compiler (:include c-language-compiler)))
+(defclass microsoft-c-language-compiler (c-language-compiler)
+  ()
+  (:default-initargs :name "Microsoft C Compiler"
+    :command "cl"
+    :tag :msc))
+
 (defvar *microsoft-c-language-compiler*
-  (setf (find-language-processor :msc)
-	(make-microsoft-c-language-compiler :name "Microsoft C"
-					    :command-line "cl")))
+  (make-instance 'microsoft-c-language-compiler))
 
 
 (defparameter *c-compiler*  *gcc-language-compiler*)
+
+(defparameter *c-loader* *cl-foreign-object-loader*)
 
 
 ;;; The set of functions below may or may not be useful.  It is here
@@ -104,26 +91,49 @@
   (shared-library-os-extension cl.env:*os*))
 
 
-;;; Generic interface to the C Compiler.
-;;; Add other compilers as appropriate.
+(defun c-file-default-object-pathanme ()
+  (make-pathname :type (c-file-default-binary-extension)))
 
-(defmethod c-compile-file ((c-compiler gcc-language-compiler)
-			   (file pathname)
-			   &rest args
-			   &key
-			   (output-file t)
-			   (error-file t)
-			   (error-output t)
-			   (verbose *compile-verbose*)
-			   debug
-			   link
-			   optimize
-			   cflags
-			   definitions
-			   include-paths
-			   library-paths
-			   libraries
-			   (error t))
+(defun c-file-default-error-pathanme ()
+  (make-pathname :type *compile-error-file-type*))
+
+(defun c-file-default-log-pathanme ()
+  (make-pathname :type "log"))
+  
+
+;;; invoke-compiler --
+
+(defmethod invoke-compiler ((c-compiler c-language-compiler)
+			    (file pathname)
+			    &rest args
+			    &key
+			    (output-pathname
+			     (output-file-pathname
+			      file
+			      :output-file
+			      (c-file-default-object-pathanme)))
+			    &allow-other-keys)
+  (apply #'invoke-processor-external c-compiler file args))
+
+
+#|| Old code
+(defmethod invoke-compiler ((c-compiler gcc-language-compiler)
+			    (file pathname)
+			    &rest args
+			    &key
+			    (output-file t)
+			    (error-file t)
+			    (error-output t)
+			    (verbose *compile-verbose*)
+			    debug
+			    link
+			    optimize
+			    cflags
+			    definitions
+			    include-paths
+			    library-paths
+			    libraries
+			    (error t))
   (declare (ignore args))
 
   (flet ((map-options (flag options &optional (func #'identity))
@@ -151,20 +161,21 @@
 		,@(map-options "-l" libraries))))
 
       (multiple-value-bind (output-file warnings fatal-errors)
-	  (run-c-compiler (c-language-compiler-command-line c-compiler)
-			  arguments
-			  output-file
-			  error-file
-			  error-output
-			  verbose)
+	  (run-processor-command (c-language-compiler-command-line c-compiler)
+				 arguments
+				 output-file
+				 error-file
+				 error-output
+				 verbose)
 	(if (and error (or (not output-file) fatal-errors))
 	    (error "Compilation failed")
 	    (values output-file warnings fatal-errors))))))
-
+||#
 
 
 ;;; run-c-compiler --
 
+#|| Old code
 (defun run-c-compiler (program
 		       arguments
 		       output-file
@@ -186,8 +197,8 @@
 	     (setf error-file
 		   (when error-file
 		     (default-output-pathname error-file
-			 output-file
-		       *compile-error-file-type*))
+ 			                      output-file
+		                              *compile-error-file-type*))
 
 		   error-file-stream
 		   (and error-file
@@ -230,6 +241,7 @@
 	     (values (and output-file-written output-file)
 		     fatal-error
 		     fatal-error))
+	
 
 	(when error-file
 	  (close error-file-stream)
@@ -239,22 +251,24 @@
 	(values (and output-file-written-p (truename output-file))
 		fatal-error
 		fatal-error)))))
-
+||#
 
 
 ;;; Loader.
-
-(defmethod no-applicable-method ((lcf (eql #'load-c-file)) &rest arguments)
-  (error "MK4: LOAD-C-FILE undefined for arguments ~S." arguments))
-
-
-;;; DEFINE-LANGUAGE and the mixin really provide the same
-;;; functionality.
-;;; Probably the mixin is better and DEFINE-LANGUAGE and stuff will
-;;; just go away.
+;;; No loader defined. See INVOKE-LOADER on OBJECT-LOADER in
+;;; "MAKE-DEFSYSTEM:;language-support.lisp".
 
 
+;;; C Language definition.
 
+(define-language :c
+    :compiler *c-compiler*
+    :loader *c-loader*
+    :source-extension "c"
+    :binary-extension "o")
+
+
+#| Old code
 
 (defclass c-language-mixin (component-language-mixin)
   ((compiler :accessor c-file-compiler)
@@ -304,6 +318,8 @@
     :library-paths '()
     :libraries '("c")
     ))
+
+|#
 
 
 ;;; end of file -- c.lisp --

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.13 2000/05/15 18:43:26 sds Exp $
+;;; $Id: url.lisp,v 2.14 2000/07/24 20:26:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -406,7 +406,7 @@ ERR is the stream for information messages or NIL for none."
 (defcustom *url-replies* hash-table
   (let ((ht (make-hash-table :test 'eq)))
     (dolist (cc '(((:user) 331 332) ((:pass) 230 332) ((:acct) 230 202)
-                  ((:syst) 215) ((:stat) 211 212 213) ((:abor) 225 226)
+                  ((:syst) 215) ((:stat :mdtm) 211 212 213) ((:abor) 225 226)
                   ((:cwd :rnto :dele :rmd) 250) ((:mkd :pwd) 257)
                   ((:cdup :mode :type :stru :port :noop) 200) ((:quit) 221)
                   ((:help) 211 214) ((:smnt) 202 250) ((:rein) 120 220)
@@ -494,11 +494,13 @@ Some ftp servers do not like `user@host' if `host' is not what they expect.")
     (ignore-errors (url-ask sock err nil "syst")) ; :syst
     ;; (url-ask sock err :type "type i")
     (ignore-errors (url-ask sock err nil "stat")) ; :stat
-    (handler-bind ((network (lambda (co)
-                              (error 'login :proc 'url-login-ftp :host host
-                                     :port port :mesg "CWD error:~% - ~a"
-                                     :args (list (port::net-mesg co))))))
-      (url-ask sock err :cwd "cwd ~a" (url-path-dir url)))))
+    (let ((dir (url-path-dir url)))
+      (unless (zerop (length dir))
+        (handler-bind ((network (lambda (co)
+                                  (error 'login :proc 'url-login-ftp :host host
+                                         :port port :mesg "CWD error:~% - ~a"
+                                         :args (list (port::net-mesg co))))))
+          (url-ask sock err :cwd "cwd ~a" dir))))))
 
 (defcustom *buffer* (simple-array (unsigned-byte 8) (10240))
   (make-array 10240 :element-type '(unsigned-byte 8))

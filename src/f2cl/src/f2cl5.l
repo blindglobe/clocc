@@ -259,13 +259,17 @@
 		   'complex8))
 		 ((member fun '(sin cos tan
 				asin acos atan atan2
-				exp flog alog10
+				sinh cosh tanh
+				exp flog alog10 log10
 				fsqrt aint sign dim max min))
-		  ;; Generic functions.  Note thate SIGN and DIM are
-		  ;; intrinsics that take two args, and MAX and MIN
-		  ;; take man args.  However, Fortran says all args
-		  ;; should be of same type, so we just look at the
-		  ;; type of the first.
+		  ;; Generic functions.  These generics always return
+		  ;; a number of the same type as its args.  Some
+		  ;; functions take more than one arg, but Fortran
+		  ;; says they are supposed to be the same type, so we
+		  ;; only need to look at the first.  Also, some of
+		  ;; them only take real-type arguments.  We don't
+		  ;; check for that because Fortran says you're
+		  ;; supposed to make sure they are anyway.
 		  (get-fun-arg-type (second arg)))
 		 ((member fun '(dsin dcos dtan
 				dasin dacos datan datan2
@@ -2242,8 +2246,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.83 2002/02/09 16:08:49 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.84 2002/02/14 14:36:16 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.84  2002/02/14 14:36:16  rtoy
+;;; Add sinh, cosh, tanh to the list of generics we need to handle.
+;;; Expand on the comments.
+;;;
 ;;; Revision 1.83  2002/02/09 16:08:49  rtoy
 ;;; o GET-FUN-ARG-TYPE:  We forgot to handle the AINT, SIGN, DIM, MAX, and
 ;;;   MIN intrinsics.

@@ -58,8 +58,9 @@
   '(
     "MAKE-DEFSYSTEM:;adjoin-dirs"
     
-    "MAKE-DEFSYSTEM:;defsystem-pkg"
-    ;; "MAKE-DEFSYSTEM:;conditions"
+    "MAKE-DEFSYSTEM:defsystem-pkg"
+    ;; "MAKE-DEFSYSTEM:conditions"
+    ;; "MAKE-DEFSYSTEM:utilities;split-sequence" ; Loaded separatedly.
     "MAKE-DEFSYSTEM:utilities;ambler;ambler-pkg"
     "MAKE-DEFSYSTEM:utilities;ambler;ambler"
     ;; "MAKE-DEFSYSTEM:;directory-processing"
@@ -231,6 +232,10 @@
        :directory (translate-logical-pathname "MAKE-DEFSYSTEM:cl-environment;")
        :load-verbose nil))
     (let ((*load-verbose* t))
+
+      (unless (find-package "SPLIT-SEQUENCE")
+	(load-compiling-if-needed "MAKE-DEFSYSTEM:utilities;split-sequence"))
+
       (dolist (f *mk-defsystem-lp-filenames*)
 	(load-compiling-if-needed f)))
 

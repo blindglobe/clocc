@@ -909,10 +909,17 @@ February 17
  (1 3 5 7 9))
 
 (check-for-bug :loop-legacy-912
- (let ((x 1)) (loop for i by (incf x) from x to 10 collect i))
- (2 4 6 8 10)
+  (let ((x 1))
+    (loop for i by (incf x) from x to 10
+          collect i))
+  (2 4 6 8 10)
  "This should be the same as:
-(let ((x 1)) (loop for i from x to 10 by (incf x)  collect i))
+(let* ((x 1)
+       (y (incf x)))
+  (loop for i from x to 10 by y
+        collect i))
+
+Because left-to-right evalution is preserved.
 it is legal to have by first:
 arithmetic-up::= [[{from | upfrom} form1 |   {to | upto | below} form2 |   by form3]]+ ")
 

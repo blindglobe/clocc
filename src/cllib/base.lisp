@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.9 2001/11/02 22:31:15 sds Exp $
+;;; $Id: base.lisp,v 2.10 2001/12/06 20:33:55 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,9 @@
         ("**;*.*" ,(logical-pathname "clocc:src;cllib;**;*.*"))))
 
 (defcustom *datadir* pathname
-  (merge-pathnames "data/" (user-homedir-pathname))
+  (merge-pathnames (make-pathname :directory '(:relative "data")
+                                  :defaults nil)
+                   (user-homedir-pathname))
   "The directory where the data file are created by default.")
 (defcustom *mail-host-address* simple-string
   (let ((st (machine-instance))) (subseq st 0 (position #\Space st)))

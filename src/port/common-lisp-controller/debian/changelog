@@ -1,3 +1,9 @@
+common-lisp-controller (3.40) unstable; urgency=low
+
+  * Export clc-require from c-l-c package
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed,  9 Oct 2002 05:27:10 -0600
+
 common-lisp-controller (3.39) unstable; urgency=low
 
   * Remove the :cltl2 item that mk-defsystem3 pushes onto cl:*features*

@@ -10,7 +10,9 @@
              #:send-clc-command
 	     #:make-clc-send-command-string
 	     #:*clc-send-command-filename*
-             #:compile-library)
+             #:compile-library
+	     #:original-require
+	     #:clc-require)
     (:nicknames :c-l-c))
 
 (in-package :common-lisp-controller)

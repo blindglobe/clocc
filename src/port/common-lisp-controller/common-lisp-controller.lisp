@@ -179,8 +179,14 @@ Returns nothing"
 				       :type (pathname-type file)
 				       :directory (list :relative pkg))
 			source-root))
-			(compiled-file-pathname
-			 (compile-file-pathname file-path)))
+		      (output-path
+		       (merge-pathnames
+			(make-pathname :name (pathname-name file)
+				       :type (pathname-type file)
+				       :directory (list :relative pkg))
+			fasl-root))
+		      (compiled-file-pathname
+		       (compile-file-pathname output-path)))
 		  ;; first make the target directory:
 		  (ensure-directories-exist compiled-file-pathname)
 		  ;; now compile it:

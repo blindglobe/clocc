@@ -48,6 +48,7 @@
 	   "OS-TAG-COMPATIBLE-P"	; Abbreviation
 
 	   "OS-FILE-SYSTEM-DIRECTORY-SEPARATOR"
+	   "CURRENT-DIRECTORY-PATHNAME"
 
 	   
 	   "COMMON-LISP-IMPLEMENTATION-TYPE"
@@ -61,8 +62,6 @@
 
 	   "VERSION"
 	   "VERSION-CASE"
-
-	   "SYSTEM-INFO"
 	   )
 
   ;;---------------------------------------------
@@ -128,6 +127,7 @@
 	   "MS-WINDOWS-NT"
 	   "MS-WINDOWS-NT-TSE"
 	   "MS-WINDOWS-2000"
+	   "MS-WINDOWS-XP"
 	   )
 
   ;; Mac.
@@ -147,9 +147,12 @@
   ;;--------------------------------------------
   ;; Across the board utilities.
   (:export "COMPILED-FILE-EXTENSION"
-	   "FILE-SYSTEM-DIRECTORY-SEPARATOR")
-  )
+	   "FILE-SYSTEM-DIRECTORY-SEPARATOR"
+	   "CURRENT-WORKING-DIRECTORY"
+	   "CWD"
 	   
+	   "SYSTEM-INFO")
 
+  )
 
 ;;; end of file -- env-package.lisp

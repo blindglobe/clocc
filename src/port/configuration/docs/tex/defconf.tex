@@ -1,0 +1,725 @@
+%% -*- Mode: LaTeX -*-
+
+% defconf.tex --
+
+% $Id: defconf.tex,v 1.1 2000/02/28 15:05:33 marcoxa Exp $
+
+\documentclass[a4paper]{article}
+
+\usepackage{latexsym}
+%\usepackage{epsfig}
+\usepackage{alltt}
+\usepackage{html}
+
+%\input{progr-macros}
+
+%\addtolength{\textwidth}{4cm}
+%\addtolength{\textheight}{1cm}
+
+\newcommand{\CL}{\textsc{Common Lisp}}
+\newcommand{\CLOS}{\textsc{CLOS}}
+\newcommand{\Java}{\textsc{Java}}
+
+\newcommand{\DEFCONFIGURATION}{\texttt{DEFCONFIGURATION}}
+\newcommand{\defconfiguration}{\texttt{defconfiguration}}
+
+\newcommand{\checkcite}[1]{{\textbf{[Missing Citation: #1]}}}
+\newcommand{\checkref}[1]{{\textbf{[Missing Reference: #1]}}}
+
+\newcommand{\missingpart}[1]{{\ }\vspace{2mm}\\
+{\textbf{[Still Missing: #1]}}\\
+\vspace{2mm}}
+
+\newcommand{\specialnote}[1]{{\ }\vspace{2mm}\\
+\emph{Note: #1}\\
+\vspace{2mm}}
+
+\newcommand{\notimpl}{\ddag}
+
+
+\newcommand{\cfr}{\textit{cf.}}
+
+\newcommand{\marginnote}[1]{%
+\marginpar{\begin{small}\begin{em}
+\raggedright #1
+\end{em}\end{small}}}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\object}[1]{\texttt{\textit{#1}}} % 'object' of discourse.
+\newcommand{\clobject}[1]{\texttt{\textit{#1}}} % A CL 'object'.
+\newcommand{\clhsterm}[1]{\texttt{\textit{#1}}} % A CLHS 'term'.
+\newcommand{\syntaxnt}[1]{\emph{<#1>}}
+
+\newcommand{\tm}{$^\mathsf{tm}$}
+
+
+\title{
+\DEFCONFIGURATION{}\\
+{\normalsize A configuration tool for \CL{} programming.}\\
+(Draft 1)
+}
+
+\author{Marco Antoniotti}
+
+%\date{}
+
+
+%\includeonly{}
+
+\begin{document}
+
+% HTML color directive
+
+\bodytext{BGCOLOR="\#FFFFFF"
+	  TEXT="\#000000"
+	  LINK="\#0099ff"
+	  % VLINK="\#00ff99"
+	  ALINK="\#FF00FF"}
+
+\maketitle
+
+\section{Introduction}
+
+\CL{} applications have been traditionally distributed with a variety
+of \texttt{defsystem}\footnote{The \texttt{defsystem} issue is a sore
+one within the \CL{} community.  A variety of incompatible versions of
+the \code{defsystem} (or \texttt{defsys}) macro has been floating
+around for years. Some of the major packages (e.g. \texttt{PCL})
+provide their own version, and the vendors distribute proprietary
+versions of this ``application''.} definitions, or, worse, with a set
+of \emph{script-like} files (usually named \texttt{build.lisp},
+\texttt{load-foo.lisp}, and so on).  Of course there is nothing wrong
+with this situation, but it would be nicer to make life easier for the
+\CL{} programmer, by providing some basic tools that have become
+common within other programming communities, most notably the C/C++
+one and its descendants.
+
+\subsection{Download, Install?}.
+
+For the purpose of this introduction, let's consider what happens when
+a piece of software is acquired and copied to your mass storage
+device. Let's consider four more ``mainstream'' cases than ``\CL{}
+programming''
+\begin{enumerate}
+\item	MS~Windows
+\item	Mac
+\item	\Java{} applications
+\item	UN*X applications
+\end{enumerate}
+
+Cases 1 and 2 are very similar.  You usually have a self-extracting
+archive, and/or a \texttt{setup} program that launches something like
+the \textsf{InstallShield} application\checkref{missing reference}.
+
+Case 3 (\Java{}) starts to appear more and more similar to cases~1
+and~2 (especially on the MS~Windows platform).
+
+These cases are interesting, because, with a minimum of insight, they
+obviously exploit the relative homogeneity of the underlying platform
+and provide a simple way to configure an application in a more or
+less ``natural'' way\footnote{Of course the picture may not be so
+rosy, but from the point of view of the user, not the configurer's, it
+is the way things look like.}. In other words, installation and
+configuration of your software are relatively easy.
+
+Case 4 is more interesting, mostly because the underlying platform is
+much more heterogeneous, both in executable and library formats, and
+in installation location conventions (i.e. \texttt{/opt/\ldots},
+versus \texttt{/usr/local/\ldots}, etc.).
+
+The C/C++ and UN*X community has solved this problem with tools like
+\texttt{imake} and \texttt{automake}/\texttt{autoconf}.  Whenever a
+piece of software is acquired, the person in charge of installation
+usually has just to issue the following command sequence at the shell
+prompt.
+\begin{verbatim}
+  configure
+  make
+  make install
+\end{verbatim}
+The various options to \code{configure} (most notably the
+\code{--prefix} option) allow the user to tailor the installation and
+the check for required and conflicting packages.
+
+The \CL{} does not have anything similar to the tools provided in the
+four cases just discussed.  This is both unfortunate and strange, both
+because the standard leaves some things ``up to the implementation'',
+and because \CL{} implementations do not vary as much among themselves
+after all.
+
+This document describes a tool, \defconfiguration{}, which aims to
+provide a way to ease the set up of a \CL{} application.
+
+
+\section{A Tool for Configuring \CL{} Applications}
+
+There are a number of reasons to provide a tool capable of configuring
+a \CL{} application. Let's discuss two small cases.
+
+\paragraph{Setting up Logical Pathnames.} \CL{} provides \emph{logical
+pathnames} \cite{pitman96:_common_lisp_hyper} as a rather
+nice\footnote{Sometimes it may be a little cumbersome, but generally
+the idea works nicely.}  way to set up a ``canonicalized'' location
+for various pieces of an application.
+
+Unfortunately, the standard provides only an \emph{implementation
+dependent} function to load the logical pathname
+translations\footnote{I.e. \code{LOAD-LOGICAL-PATHNAME-TRANSLATIONS}.}
+necessary for an application. In alternative the user can \code{SETF}
+the \code{LOGICAL-PATHNAME-TRANSLATION} for a given ``logical host''.
+
+In other words, either the user must know about the conventions of the
+underlying implementation regarding the location of the default
+translations, or s/he must resort to writing a piece of code doing the
+needed \code{SETF}.  Hence the proliferation of \texttt{build.lisp}
+files.
+
+
+\paragraph{Generating ``Images''.} It seems to be common practice to
+generate a \CL{} \emph{image} with a given application loaded in order
+to produce an easily startable executable on either a UN*X, a
+MS~Windows, or a Mac platform.
+
+The process of creating an image is currently implementation dependent
+(e.g. by using the function \code{SAVE-IMAGE} from the
+\code{EXTENSIONS} package in CMUCL).  Moreover it has some (rather
+minor in the year 2000) drawbacks: it uses up more disk
+space (\CL{} images are not particularly small), and it tends to make
+the software development cycle a little longer (i.e. it is the opinion
+of the writer that an image should be used only to \emph{freeze} and
+application and to avoid their use during the development cycle).
+
+In other words, the use of images impairs the modular development of
+libraries and applications\footnote{A personal
+opinion, but with some logic.}. It would be worthwhile to make the
+process of image generation ``localized'' and well constrained.
+
+% say why this may or may not be desirable and why the lack of a
+% configure makes the process cumbersome.
+
+\subsection{Going \emph{declarative}: the \defconfiguration{} utility}
+
+The tasks of specifying system dependencies and logical pathname
+translations are the key steps to be performed to configure a \CL{}
+system/application.  The \defconfiguration{} utility tries to ease and
+centralize this tasks and to put them under user control (e.g. the
+actual location of the \clobject{} translations is kept in
+\emph{implementation dependent} places and formats
+\cite{pitman96:_common_lisp_hyper}).
+
+ The \defconfiguration{} utility solves a number of issues (but not
+all). Mostly it gives the developer a centralized place where to keep
+diverse requirements for a given \CL{} system/application, indexed on
+the basis of the underlying operating system and \CL{} implementation.
+
+Moreover, the \defconfiguration{} utility is
+\emph{declarative}. I.e. it does not specify \emph{how} a
+configuration is to be ``built''. It only specifies what is its
+structure with respect to the underlying platform (that is: the
+combination of operating system, \CL{} implementation, and, possibly,
+specific machine).  The \defconfiguration{} utility will be described
+in the following. Passages marked with a ``\notimpl{}'' should be checked
+against Appendix~\ref{appendix:unimplemented} for their implementation
+status.
+
+With respect to the \code{autoconf} utility, \defconfiguration{} is more
+rigid.  \code{autoconf} allows you to use the complete power of a
+\emph{shell} to write configuration scripts. The claim is that
+\defconfiguration{} needs not be as flexible, since \CL{} is generally
+more portable than the regular C/C++ (or other language) application.
+
+\defconfiguration{} appears as a pretty standard \CL{} \code{def...}
+macro. All of its supporting code and the macro itself are defined in
+the \code{CONF} package\footnote{\code{CONF} is a nickname.  The real
+package name is \code{CL.EXT.CONFIGURATION}.} Its generic syntax is
+
+\begin{alltt}
+(\textbf{defconfiguration} \emph{<system-name>} \emph{<slot-list>}
+   &rest  \emph{<configuration-clauses>})
+\end{alltt}
+
+\noindent
+Figure~\ref{fig:defconf-example} shows a very simple configuration
+form.
+\begin{figure}
+\begin{verbatim}
+(defconfiguration "CONFIGURATION" ()
+  (:library-location "/projects/lang/cl/CONFIGURATION/"
+		     :os-type :unix)
+  (:library-location "d:\\langs\\cl\\configuration\\"
+		     :os-type :ms-windows)
+  (:logical-pathname-host "CONF")
+  (:required-package "cl.ext.properties")
+  (:required-system "ENVIRONMENT")
+  (:required-module a-standard-module
+		    :pathnames-components ("ASM:f1" "ASM:f2" "ASM:d;f3"))
+
+  (:special-translations
+   :host "ASM"
+   ("*.*.*" "/projects/lang/cl/modules/a-standard-module/"
+    :os-type :unix)
+   ("*.*.*" "/projects/lang/cl/modules/a-standard-module/"
+    :os-type :ms-windows))
+     
+  (:special-translations
+   ("CONF-PKG.*.*" "CONF-pkg.*.*")
+
+   ("impl-dependent;cmucl-motif;*.*.*"
+    "impl-dependent/cmucl-motif/*.*.*"
+    :prefix "/projects/lang/cl/CONFIGURATION/special-stuff/"
+    :prefix-configuration-key :cmucl-motif-location
+    :os-type :unix)
+
+   ("UTILITIES;*.*.*"
+    "utilities/*.*.*"
+    :os-type :unix))
+
+  (:finally (configure-format *standard-output*
+			      "done configuring CONFIGURATION.")))
+
+\end{verbatim}
+\caption{A simple \defconfiguration{} form.}
+\label{fig:defconf-example}
+\end{figure}
+
+\noindent
+The evaluation of a \defconfiguration{} form, results in the
+definition of a \code{conf:setup} method which is specialized on the
+configuration name\footnote{In reality, the evaluation also generates
+an instance of the the \code{conf:configuration-template} class which
+is ``registered'' under the \code{\emph{<system-name>}} key.
+This machinery is in place for future development, in order to allow
+the generation of different configurations for various platforms.}.
+The guaranteed signature is
+
+\begin{alltt}
+(defgeneric setup (system-name &rest keys
+                               &key
+                               (logical-pathname-host "")
+                               (library-location "")
+                               (source-location "")
+                               &allow-other-keys))
+\end{alltt}
+
+\noindent
+The \code{system-name} parameter can be either a \clobject{symbol} or
+a \clobject{string}.  The \defconfiguration{} macro may set up other
+keyword arguments, and it may change the default of the
+\code{logical-pathname-host}, \code{library-location}, and
+\code{source-location}.  These changes depend on the structure of the
+configuration clauses.
+
+When executed, the \code{conf:setup} function will set up the computed
+logical pathname translations and will ensure the presence of the
+required packages, modules and systems in the current \CL{} session.
+
+The configuration clauses are roughly divided in two logical groups:
+clauses which deal with logical pathname setup, and clauses which deal
+with ``other library'' dependencies.  Each clause has the form
+
+\begin{alltt}
+(\emph{<clause-keyword>} &rest \emph{<clause-arguments>})
+\end{alltt}
+
+\begin{itemize}
+\item	\emph{logical pathname setup clauses}\\
+	these clauses specify the logical pathname configuration for
+	the system. They have the following
+	\code{\emph{<clause-keyword>}}s (see Section~\ref{sect:dictionary} for
+	a detailed description of each clause form).
+	\begin{itemize}
+	\item	\code{:logical-pathname-host}: specifies the overall
+		system logical host (if not present, the
+		\code{\emph{<system-name>}} is used after being
+		stringified and capitalized).
+
+	\item	\code{:source-location}: specifies the location of the
+		source code for the system (a \clobject{string} or a
+		\clobject{pathname} \notimpl{}).
+
+	\item	\code{:library-location}: specifies the location of the
+		library code for the system (a \clobject{string} or a
+		\clobject{pathname} \notimpl{}). I.e. this is akin to
+		the ``binary'' compilation results will be held.
+
+	\item	\code{:special-translations}: these clauses specify
+		other translations which may be needed for the
+		correct functioning of the system.  Their syntax is
+		more elaborated and it will be explained elsewhere in
+		this document.
+	\end{itemize}
+
+\item	\emph{dependencies clauses}\\
+	these clauses specify various requirements that must be met in
+	order to have a ``good'' environment in which compile or run
+	the application/system being configured.  The aim here is to
+	take into account all the possible (read: known) ways in which
+	a \CL{} system may be built and run.  The clauses are listed
+	hereafter and they are ``dependent'' on the definitions set up
+	by the logical pathname setup clauses.
+	\begin{itemize}
+	\item	\code{:required-package}\\
+		this clause simply states that a given package (whose
+		name is the sole argument in this clause) must be
+		available in the current \CL{} session.  Otherwise an
+		error is signaled.
+
+	\item	\code{:required-module}\\
+		this clause gets translated into a call to
+		\code{REQUIRE}, which is executed by the
+		\code{conf:setup} method.
+
+	\item	\code{:required-system}\\
+		this clause gets translated into a \emph{load
+		operation} for the specified \clobject{system}, as
+		defined by one of the many \code{DEFSYSTEM} or
+		\code{DEFSYS} utilities available in the underlying
+		\CL{} session.
+	\end{itemize}
+
+\end{itemize}
+
+The code resulting from the processing of the clauses is executed in
+the following order: logical pathname setup code, required module
+forms, required system forms, required packages forms.  There is also
+a \code{:finally} clause which contains an arbitrary form that can be
+executed at the end of the execution of the \code{conf:setup} method.
+
+\subsection{Extending \DEFCONFIGURATION{}}
+
+New clause \emph{kinds} can be defined for \DEFCONFIGURATION{}.  The
+system provides two generic functions (\code{CONF:PARSE-CONF-CLAUSE}}
+and \code{CONF:BUILD-CONF-CLAUSE-CODE}) which can be used to extend
+the behavior of \DEFCONFIGURATION{}.  The extra clause will be
+processed last (w.r.t. the ``standard'' ones) and a the special clause
+key \code{:CONFIGURATION-KEY} will be treated in a special way.
+
+\paragraph{Implementation Note:} \emph{Please check the code for an
+understanding of this machinery, which is now implemented in a very rough way}.
+
+\section{\defconfiguration{} Dictionary}
+\label{sect:dictionary}
+
+\subsection*{Package \code{CL.EXT.CONFIGURATION}}
+
+\subsubsection*{Uses:}
+
+\code{COMMON-LISP}.
+
+\subsubsection*{Nicknames:}
+
+\code{CONF}.
+
+\subsubsection*{Exports:}
+
+\code{defconfiguration}, \code{setup}, \code{configure-format}.
+
+\subsubsection*{Description:}
+
+The package \code{CL.EXT.CONFIGURATION} contains all the symbols
+related to the definition and the functioning of the
+\defconfiguration{} macro, and of the \code{conf:setup} generic
+function.
+
+\subsection*{Macro \DEFCONFIGURATION{}}
+
+\subsubsection*{Syntax:}
+
+\textbf{defconfiguration} \emph{system-name} \emph{slots}
+[[\emph{configuration-clause}]] $\Rightarrow$ \emph{system-name}
+
+\begin{alltt}
+slots ::= \emph{<defclass slots>}
+configuration-clause ::= (:logical-pathname-host \emph{host}) |
+                         (:source-location \emph{location}
+                                           [[location-option]]) |
+                         (:library-location \emph{location}
+                                            [[location-option]]) |
+                         (:special-translations [:host \emph{host}]
+                                                [[special-translation]]) |
+                         (:required-package \emph{package-name}) |
+                         (:required-module \emph{module-name}
+                                           [:pathname-components
+                                            \emph{pathname-list}]) |
+                         (:required-system \emph{required-sys-name}
+                                           [:system-file-namestring
+                                            \emph{namestring}]
+                                           [:system-location
+                                            \emph{logical-namestring}]
+                                           [:system-type
+                                            \emph{system-type-tag}]) |
+                         (:documentation \emph{string}) |
+                         (:finally \emph{form}+)
+location-option ::= :os-type \emph{operating-system-designator}
+special-translation ::= (\emph{logical-pathname-translation}
+                         \emph{translation}
+                         [[special-translation-option]])
+special-translation-option ::= location-option |
+                               :prefix \emph{translation} |
+                               :prefix-configuration-key \emph{keyword}
+\end{alltt}
+
+
+\subsubsection*{Arguments and Values:}
+
+\begin{description}
+\item[{\emph{system-name}}] --- a \clhsterm{string designator}.
+\item[{\emph{defclass slots}}] --- a \clhsterm{list} of slot
+	definitions as in \clobject{defclass}.
+\item[{\emph{host}}] --- a \clhsterm{logical host designator}.
+\item[{\emph{location}}] --- a \clhsterm{string}
+	% or a
+	%\clhsterm{pathname designator}
+	 to be interpreted as a
+	\emph{to-wildcard} in a logical pathname translation.
+\item[{\emph{logical-pathname-translation}}] --- a
+	\emph{from-wildcard} part of a logical pathname translation
+	(\cfr{} \code{(SETF LOGICAL-PATHNAME-TRANSLATIONS)}).
+\item[{\emph{translation}}] --- anything coercible to a \clhsterm{pathname}.
+\item[{\emph{prefix}}] --- anything coercible to a \clhsterm{pathname}
+	with \emph{name} either \code{nil} or \code{:UNSPECIFIC} (i.e
+	a pathname denoting a \emph{directory}).
+\item[{\emph{operating-system-designator}}] --- a \clhsterm{symbol} (a
+	\clhsterm{keyword}).
+\item[{\emph{module-name}}] --- a \clhsterm{string designator}.
+\item[{\emph{pathname-list}}] --- a list of \clhsterm{pathname designator}s.
+\item[{\emph{package-name}}] --- a \clhsterm{package designator}.
+\item[{\emph{system-type-tag}}] --- a \clhsterm{keyword} indicating a
+	specific \code{DEFSYSTEM} or \code{DEFSYS} implementation.
+\end{description}
+
+
+\subsubsection*{Description:}
+
+\defconfiguration{} processes each \emph{configuration-clause} and
+builds a method for the \code{conf:setup} generic function.  The
+method discriminates on \emph{system-name}.
+
+Each clause admitting the \code{:os-type} option is processed by first
+checking the associated \emph{operating-system-designator}. If
+present, then its value is compared against the value of the
+\code{cl.env:*operating-system*} variable. If not ``compatible''
+(e.g. the clause contains \code{:os-type :mac-os}, and the value of
+\code{cl.env:*operating-system*} is a subclass of \code{cl.env:unix}),
+then the clause is \emph{discarded}, otherwise it is further processed. If
+not present, then the \emph{operating-system-designator} is assumed to
+be ``compatible'' with \code{cl.env:*operating-system*}.
+
+The clauses which do not admit the \code{:os-type} option are
+\emph{not discarded}.
+
+If a clause is not discarded, then it is processed as follows,
+according to its kind.
+\begin{description}
+\item	\code{:logical-pathname-host}\\
+	the \clhsterm{host} is used as the ``main'' logical pathname
+	host for the configuration.
+
+\item	\code{:source-location}\\
+	if the \emph{location} specified in this clause is not the
+	empty string (\code{""}), it must denote a
+	directory in the underlying file system. The \emph{location}
+	is augmented with a wildcard \code{"**"} and used to set up
+	the \code{system-name:source;**;*.*.*} translation
+	\notimpl{}. Otherwise, the translation is set up using the
+	\code{:library-location} clause. I.e. the
+	\code{system-name:source;**;*.*.*} translation will be set to
+	be the same of the ``library'' translation.
+
+\item	\code{:library-location}\\
+	if \emph{location} specified in this clause is not the
+	empty string (\code{""}), it must denote a
+	directory in the underlying file system. The \emph{location}
+	is augmented with a wildcard \code{"**"} and used to set up
+	the \code{system-name:**;*.*.*} translation. If the
+	\emph{location} is the empty string, then the translation will
+	be set using the ``current working directory'' (See ``Notes:''
+	section).
+
+\item	\code{:special-translations}\\
+	if present, this clause contains some extra translations which
+	must be set up for the benefit of all the the
+	\code{:required-}xxx clauses.
+	It may contain a \code{:host} option. If so, then the
+	associated \emph{host} is used to set up a new logical host
+	with the translations specified in the list of
+	\emph{special-translation}s.  If not present, the list of
+	\emph{special-translation}s is added to the list of
+	translations of the \emph{host} specified for the
+	\code{:logical-pathname-host} clause.
+
+	Each \emph{special-translation} is used as follows. The
+	\emph{logical-pathname-translation} and the \emph{translation}
+	are used as \emph{from-wildcard} and \emph{to-wildcard} when
+	setting up the translation for the \emph{host} (which has been
+	determined as per the description in the previous paragraph).
+	However, the \code{:prefix} and the
+	\code{:prefix-configuration-key} options change the way the
+	\emph{translation} in transformed into the \emph{to-wildcard}.
+
+	If the \code{:prefix-configuration-key} option is present,
+	then the \emph{translation} is prepended with the value of the
+	\emph{keyword} argument, which is added to the
+	\code{conf:setup} argument list.  The default of such
+	\emph{keyword} argument is either the empty string (\code{""})
+	\notimpl, or the value of the \code{:prefix} option.
+	If the \code{:prefix-configuration-key} option is not present,
+	the keyword argument for \code{conf:setup} is not generated.
+
+	If the the \code{:prefix} is present, and the
+	\code{:prefix-configuration-key} option is not present, then
+	the value associated to it is prepended to the
+	\emph{translation} according to the following rules:
+	\begin{itemize}
+	\item	the value is \code{:source-location}\\
+		the value prepended is the one associated with the
+		\code{:source-location} clause.
+	\item	the value is \code{:library-location}\\
+		the value prepended is the one associated with the
+		\code{:library-location} clause.
+	\item	the value associated is a \clhsterm{pathname
+		designator} denoting a directory\\
+		the value is prepended to the directory component of
+		\emph{translation}. (This operation may be rather involved).
+	\end{itemize}
+
+\item	\code{:required-package}\\
+	the package specified is looked for with \code{FIND-PACKAGE}.
+	If not found an error is signaled.
+
+\item	\code{:required-module}\\
+	the clause is transformed into a \code{REQUIRE} form which is
+	executed in the context of the logical pathname translations
+	set up by the translation clauses.  The full form is
+	\code{(apply \#'require \emph{module-name} \emph{pathname-list})}.
+	
+\item	\code{:required-system}\\
+	this clause checks whether a ``system'' (as defined by any of
+	the ``known'' \code{DEFSYSTEM} or \code{DEFSYS}
+	implementation) named \emph{required-system-name} is
+	available on the computing platform.
+
+	The ``availability test'' is performed based on the value of
+	the \code{:system-type} option \notimpl{}.  This option can
+	assume any of the following values\footnote{The list is
+	currently incomplete.}: \code{:mk}, \code{:allegro}, \code{:lispworks},
+	\code{:lcl}, \code{:genera}, \code{:pcl}, and \code{:mcl}.
+	Where \code{:mk} denotes \code{MK:DEFSYSTEM}, \code{:pcl}
+	denotes the \code{DEFSYS} implementation of \code{PCL}, and
+	the remaining ones denote the other implementation dependent
+	\code{DEFSYSTEM}.
+
+	Each \code{defsystem} is assumed to provide a \emph{find} and
+	a \emph{load} operation.  The \emph{find} operation is assumed
+	to return a \clobject{system object} or \code{NIL}.
+	The \emph{load} operation is assumed to be used to load a
+	``defined'' system.
+
+	The code resulting from the processing of this clause will
+	perform the following algorithm.  If the system is not
+	``found'' then the ``system file'' (i.e. the file presumably
+	containing the \emph{defsystem} macro call) is loaded using
+	the pathname resulting from the concatenation of the values of
+	the \code{:system-location} option and of the
+	\code{:system-file-namestring} option (which default to the
+	\emph{logical-pathname-host} translation, and to the the
+	\emph{system-name}\code{.system}, respectively). Of course, an
+	error may be signaled by \code{LOAD} in this case.
+
+	If a system definition has been loaded (hence the system can be
+	``found'') then the appropriate \emph{load} operation is
+	executed, trying to make the system effectively present in the
+	\CL{} session\footnote{This sort of operation may also be
+	performed by many \code{defsystem} utilities.  It is an
+	intended -- and limited -- overlap in functionality.}.
+\end{description}
+
+\subsubsection*{Examples:}
+
+See Figure~\ref{fig:defconf-example}.
+
+\subsubsection*{Affected By:}
+
+None.
+
+\subsubsection*{Exceptional Situations:}
+
+Many... All the underlying machinery for modules, packages, and
+``systems'' does affect the behavior of \defconfiguration{}.
+
+\subsubsection*{See Also:}
+
+Logical Pathnames. \code{conf:setup}. The package
+\code{CL.ENVIRONMENT} (\textbf{missing reference}).
+
+\subsubsection*{Notes:}
+
+The \defconfiguration{} macro uses the \code{CL.ENVIRONMENT} package to
+abstract form the underlying computing platform and reliably define
+notions like ``current working directory'', which are left in an
+``implementation dependent'' state in the CLHS
+\cite{pitman96:_common_lisp_hyper}.  (See
+Appendix~\ref{appendix:unimplemented} for a list of unimplemented
+features.)
+
+
+
+%\subsection*{Generic Function \code{SETUP}}
+
+\section{Conclusion}
+
+Setting up a \CL{} application has not been a ``standardized'' (for an
+appropriate definition of the term) task.  The tasks of specifying
+system dependencies and logical pathname translations are the key
+steps to be performed to configure a \CL{} system/application.  The
+\defconfiguration{} utility tries to ease and centralize this tasks
+and to put them under user control.
+
+It is the author's hope that this code will be useful for any person
+who wants to write \CL{} applications and systems.
+
+
+\subsection{License Information}
+
+The code is released under the LGPL.  Please refer to the GNU Web site
+for more information -- \texttt{http://www.gnu.org}.
+
+
+
+\bibliographystyle{plain}
+\bibliography{General,Programming,Reactive}
+
+\appendix
+
+\section{Unimplemented features list}
+\label{appendix:unimplemented}
+
+There are many unimplemented features.  Here is a partial list.
+\begin{enumerate}
+\item	Clause discrimination checks only the operating system
+	information; the \CL{} implementation information is
+	effectively ignored.
+\item	Running the \code{conf:setup} method is a one-shot
+	operation. The system could be setup in such a way to interact
+	with the user in order to fill in missing pieces of
+	information.
+\item	The \code{:source-location} and \code{:library-location}
+	clauses (as well as the corresponding keyword arguments to the
+	\code{conf:setup} method) cannot be \clobject{pathname}s
+	yet. They should be.
+\item	The \code{:source-location} clause is partially ignored in the
+	current code setup.
+\item	The defaulting behavior for the
+	\code{:prefix-configuration-key} generated keyword argument
+	(the empty string \code{""}) is to be implemented.
+\item	The treatment of the \code{:system-type} option in the
+	\code{:required-system} clause is far from complete. In
+	particular a \CLOS{} based system to discriminate among the
+	various \code{FIND-SYSTEM} could be easily set up.
+\item	If the system in a \code{:required-system} clause is is not
+	``found'' no error is signalled yet.
+\end{enumerate}
+
+\end{document}
+
+% end of file -- defconf.tex --

@@ -1,7 +1,7 @@
 # -*- Makefile -*-
 # Common Makefile rules.
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
-# $Id: clocc.mk,v 1.6 2000/03/08 18:14:37 sds Exp $
+# $Id: clocc.mk,v 1.7 2000/03/08 19:05:34 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
@@ -13,7 +13,7 @@ FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
 LISPFILES = $(addsuffix .$(LISPEXT),$(SOURCES))
 DOCFILES += ChangeLog $(SYSTEM).list
 MAKEFILES = Makefile $(SYSTEM).system
-ZIPEXTRA = $(TOP)/clocc.mk $(TOP)/clocc.lisp
+ZIPEXTRA += $(TOP)/clocc.mk $(TOP)/clocc.lisp
 RM  = /bin/rm -f
 LN  = /bin/ln
 ZIP = /usr/local/bin/zip -9uD

@@ -6,8 +6,8 @@
 ;; ****************************************************************************
 
 (check-for-bug :readtable-legacy-8
- (prin1-to-string (setq *readtable* (copy-readtable nil)))
- "#<SYSTEM::%TYPE-READTABLE #<SYSTEM::%TYPE-SIMPLE-VECTOR SYSTEM::%TYPE-UNSIGNED-WORD-POINTER
+  (prin1-to-string (setq *readtable* (copy-readtable nil)))
+  "#<SYSTEM::%TYPE-READTABLE #<SYSTEM::%TYPE-SIMPLE-VECTOR SYSTEM::%TYPE-UNSIGNED-WORD-POINTER
  00000000 00000000 00000000 00000000 00040001 00000004 00040004 00000000
  00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
  00010004 011E0075 00010001 02250001 00A50395 0C010401 14010535 00010B41
@@ -19,104 +19,104 @@
 NIL>")
 
 (check-for-bug :readtable-legacy-21
- (setq $ 23)
- 23)
+  (setq $ 23)
+  23)
 
 (check-for-bug :readtable-legacy-25
- (defun single-dollar-reader (stream char)
-   (declare (ignore stream))
-   (intern (string char)))
- SINGLE-DOLLAR-READER)
+  (defun single-dollar-reader (stream char)
+    (declare (ignore stream))
+    (intern (string char)))
+  SINGLE-DOLLAR-READER)
 
 (check-for-bug :readtable-legacy-31
- (set-macro-character #\$ #'single-dollar-reader)
- T)
+  (set-macro-character #\$ #'single-dollar-reader)
+  T)
 
 (check-for-bug :readtable-legacy-35
- $
- 23)
+  $
+  23)
 
 (check-for-bug :readtable-legacy-39
- 45
- 45
- ;;  => 23 => 45
- (prin1-to-string (get-macro-character #\$))
- "#<SYSTEM::%TYPE-CLOSURE SINGLE-DOLLAR-READER
+  45
+  45
+  ;;  => 23 => 45
+  (prin1-to-string (get-macro-character #\$))
+  "#<SYSTEM::%TYPE-CLOSURE SINGLE-DOLLAR-READER
 NIL
 NIL
 (LAMBDA (STREAM CHAR) (DECLARE (IGNORE STREAM)) (INTERN (STRING CHAR)))>")
 
 
 (check-for-bug :readtable-legacy-50
- (progn (setq *readtable* (copy-readtable nil)) t)
- t)
+  (progn (setq *readtable* (copy-readtable nil)) t)
+  t)
 
 (check-for-bug :readtable-legacy-54
- (sys::rt-bitmask-char #\" )
- 117)
+  (sys::rt-bitmask-char #\" )
+  117)
 
 (check-for-bug :readtable-legacy-58
- (sys::rt-bitmask-char #\( )
- 917)
+  (sys::rt-bitmask-char #\( )
+  917)
 
 (check-for-bug :readtable-legacy-62
- (sys::rt-bitmask-char #\) )
- 165)
+  (sys::rt-bitmask-char #\) )
+  165)
 
 (check-for-bug :readtable-legacy-66
- (sys::rt-bitmask-char #\\ )
- 2306)
+  (sys::rt-bitmask-char #\\ )
+  2306)
 
 (check-for-bug :readtable-legacy-70
- (sys::rt-bitmask-char #\x )
- 4097)
+  (sys::rt-bitmask-char #\x )
+  4097)
 
 (check-for-bug :readtable-legacy-74
- (sys::rt-bitmask-char #\y )
- 1)
+  (sys::rt-bitmask-char #\y )
+  1)
 
 (check-for-bug :readtable-legacy-78
- (set-syntax-from-char #\" #\( )
- T)
+  (set-syntax-from-char #\" #\( )
+  T)
 
 (check-for-bug :readtable-legacy-82
- (sys::rt-bitmask-char #\" )
- 917)
+  (sys::rt-bitmask-char #\" )
+  917)
 
 (check-for-bug :readtable-legacy-86
- (sys::rt-bitmask-char #\( )
- 917)
+  (sys::rt-bitmask-char #\( )
+  917)
 
 (check-for-bug :readtable-legacy-90
- (sys::rt-bitmask-char #\) )
- 165)
+  (sys::rt-bitmask-char #\) )
+  165)
 
 (check-for-bug :readtable-legacy-94
- (sys::rt-bitmask-char #\\ )
- 2306
- ;;  *readtable* nil
- ;;  *readtable* cl-standard
- (progn (setq doppelquote-liston-readtable (copy-readtable)) t)
- t)
+  (sys::rt-bitmask-char #\\ )
+  2306
+  ;;  *readtable* nil
+  ;;  *readtable* cl-standard
+  (progn (setq doppelquote-liston-readtable (copy-readtable)) t)
+  t)
 
 (check-for-bug :readtable-legacy-102
- (sys::rt-bitmask-char #\" doppelquote-liston-readtable )
- 917)
+  (sys::rt-bitmask-char #\" doppelquote-liston-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-106
- (sys::rt-bitmask-char #\( doppelquote-liston-readtable )
- 917)
+  (sys::rt-bitmask-char #\( doppelquote-liston-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-110
- (sys::rt-bitmask-char #\) doppelquote-liston-readtable )
- 165)
+  (sys::rt-bitmask-char #\) doppelquote-liston-readtable )
+  165)
 
 (check-for-bug :readtable-legacy-114
- (sys::rt-bitmask-char #\\ doppelquote-liston-readtable )
- 2306)
+  (sys::rt-bitmask-char #\\ doppelquote-liston-readtable )
+  2306)
 
 (check-for-bug :readtable-legacy-118
- '"1 2 3)
+  '"1 2 3)
 (1 2 3))
 
 (check-for-bug :readtable-legacy-122
@@ -161,114 +161,114 @@ T)
 
 (check-for-bug :readtable-legacy-162
  #"<
- #\<)
+  #\<)
 
 (check-for-bug :readtable-legacy-166
- (progn (setq 2.-doppelquote-backslash-readtable
-	      (copy-readtable doppelquote-backslash-readtable)) t)
- t)
+  (progn (setq 2.-doppelquote-backslash-readtable
+               (copy-readtable doppelquote-backslash-readtable)) t)
+  t)
 
 (check-for-bug :readtable-legacy-171
- (sys::rt-bitmask-char #\" 2.-doppelquote-backslash-readtable )
- 2306)
+  (sys::rt-bitmask-char #\" 2.-doppelquote-backslash-readtable )
+  2306)
 
 (check-for-bug :readtable-legacy-175
- (sys::rt-bitmask-char #\\ 2.-doppelquote-backslash-readtable )
- 2306)
+  (sys::rt-bitmask-char #\\ 2.-doppelquote-backslash-readtable )
+  2306)
 
 (check-for-bug :readtable-legacy-179
- (sys::rt-bitmask-char #\( 2.-doppelquote-backslash-readtable )
- 917)
+  (sys::rt-bitmask-char #\( 2.-doppelquote-backslash-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-183
- (sys::rt-bitmask-char #\) 2.-doppelquote-backslash-readtable )
- 165)
+  (sys::rt-bitmask-char #\) 2.-doppelquote-backslash-readtable )
+  165)
 
 (check-for-bug :readtable-legacy-187
- (progn (setq 2.-doppelquote-liston-readtable
-	      (copy-readtable doppelquote-liston-readtable)) t)
- t)
+  (progn (setq 2.-doppelquote-liston-readtable
+               (copy-readtable doppelquote-liston-readtable)) t)
+  t)
 
 (check-for-bug :readtable-legacy-192
- (sys::rt-bitmask-char #\" 2.-doppelquote-liston-readtable )
- 917)
+  (sys::rt-bitmask-char #\" 2.-doppelquote-liston-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-196
- (sys::rt-bitmask-char #\( 2.-doppelquote-liston-readtable )
- 917)
+  (sys::rt-bitmask-char #\( 2.-doppelquote-liston-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-200
- (sys::rt-bitmask-char #\) 2.-doppelquote-liston-readtable )
- 165)
+  (sys::rt-bitmask-char #\) 2.-doppelquote-liston-readtable )
+  165)
 
 (check-for-bug :readtable-legacy-204
- (sys::rt-bitmask-char #\\ 2.-doppelquote-liston-readtable )
- 2306)
+  (sys::rt-bitmask-char #\\ 2.-doppelquote-liston-readtable )
+  2306)
 
 (check-for-bug :readtable-legacy-208
- (progn (setq cl-standard-readtable
-	      (copy-readtable nil))
-	(setq *readtable* cl-standard-readtable) t)
- t)
+  (progn (setq cl-standard-readtable
+               (copy-readtable nil))
+         (setq *readtable* cl-standard-readtable) t)
+  t)
 
 (check-for-bug :readtable-legacy-214
- (sys::rt-bitmask-char #\" cl-standard-readtable )
- 117)
+  (sys::rt-bitmask-char #\" cl-standard-readtable )
+  117)
 
 (check-for-bug :readtable-legacy-218
- (sys::rt-bitmask-char #\( cl-standard-readtable )
- 917)
+  (sys::rt-bitmask-char #\( cl-standard-readtable )
+  917)
 
 (check-for-bug :readtable-legacy-222
- (sys::rt-bitmask-char #\) cl-standard-readtable )
- 165)
+  (sys::rt-bitmask-char #\) cl-standard-readtable )
+  165)
 
 (check-for-bug :readtable-legacy-226
- (sys::rt-bitmask-char #\\ cl-standard-readtable )
- 2306)
+  (sys::rt-bitmask-char #\\ cl-standard-readtable )
+  2306)
 
 (check-for-bug :readtable-legacy-230
- (sys::rt-bitmask-char #\" )
- 117)
+  (sys::rt-bitmask-char #\" )
+  117)
 
 (check-for-bug :readtable-legacy-234
- (sys::rt-bitmask-char #\( )
- 917)
+  (sys::rt-bitmask-char #\( )
+  917)
 
 (check-for-bug :readtable-legacy-238
- (sys::rt-bitmask-char #\) )
- 165)
+  (sys::rt-bitmask-char #\) )
+  165)
 
 (check-for-bug :readtable-legacy-242
- (sys::rt-bitmask-char #\\ )
- 2306)
+  (sys::rt-bitmask-char #\\ )
+  2306)
 
 (check-for-bug :readtable-legacy-246
- "1234"
- "1234")
+  "1234"
+  "1234")
 
 (check-for-bug :readtable-legacy-250
- (progn (setq *readtable* 2.-doppelquote-liston-readtable) t)
- t)
+  (progn (setq *readtable* 2.-doppelquote-liston-readtable) t)
+  t)
 
 (check-for-bug :readtable-legacy-254
- (sys::rt-bitmask-char #\" )
- 917)
+  (sys::rt-bitmask-char #\" )
+  917)
 
 (check-for-bug :readtable-legacy-258
- (sys::rt-bitmask-char #\( )
- 917)
+  (sys::rt-bitmask-char #\( )
+  917)
 
 (check-for-bug :readtable-legacy-262
- (sys::rt-bitmask-char #\) )
- 165)
+  (sys::rt-bitmask-char #\) )
+  165)
 
 (check-for-bug :readtable-legacy-266
- (sys::rt-bitmask-char #\\ )
- 2306)
+  (sys::rt-bitmask-char #\\ )
+  2306)
 
 (check-for-bug :readtable-legacy-270
- '"1 2 3)
+  '"1 2 3)
 (1 2 3)
 
 (progn (setq *readtable* doppelquote-backslash-readtable) t)
@@ -287,11 +287,11 @@ T
 2306
 
 #"<
- #\<)
+  #\<)
 
 (check-for-bug :readtable-legacy-292
- (readtablep 2.-doppelquote-backslash-readtable )
- T)
+  (readtablep 2.-doppelquote-backslash-readtable )
+  T)
 
 (readtablep 1)
 NIL

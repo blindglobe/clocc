@@ -2,151 +2,151 @@
 (in-package :cl-user)
 
 (check-for-bug :loop-legacy-4
- (loop for x from 1 to 9
-   for y = nil then x
-   collect (list x y)
-   )
- ((1 NIL) (2 2) (3 3) (4 4) (5 5) (6 6) (7 7) (8 8) (9 9)))
+  (loop for x from 1 to 9
+        for y = nil then x
+        collect (list x y)
+        )
+  ((1 NIL) (2 2) (3 3) (4 4) (5 5) (6 6) (7 7) (8 8) (9 9)))
 
 (check-for-bug :loop-legacy-11
- (loop for x from 1 to 9
-   and y = nil then x
-   collect (list x y)
-   )
- ((1 NIL) (2 1) (3 2) (4 3) (5 4) (6 5) (7 6) (8 7) (9 8)))
+  (loop for x from 1 to 9
+        and y = nil then x
+        collect (list x y)
+        )
+  ((1 NIL) (2 1) (3 2) (4 3) (5 4) (6 5) (7 6) (8 7) (9 8)))
 
 (check-for-bug :loop-legacy-18
- (with-output-to-string (*standard-output*)
-			(loop as i from 1 to 5
-			  do (print i)
-			  ) )
- "
-1 
-2 
-3 
-4 
+  (with-output-to-string (*standard-output*)
+    (loop as i from 1 to 5
+          do (print i)
+          ) )
+  "
+1
+2
+3
+4
 5 ")
 
 (check-for-bug :loop-legacy-30
- (with-output-to-string (*standard-output*)
-			(loop for i from 10 downto 1 by 3
-			  do (print i)
-			  ) )
- "
-10 
-7 
-4 
+  (with-output-to-string (*standard-output*)
+    (loop for i from 10 downto 1 by 3
+          do (print i)
+          ) )
+  "
+10
+7
+4
 1 ")
 
 (check-for-bug :loop-legacy-41
- (with-output-to-string (*standard-output*)
-			(loop as i below 5
-			  do (print i)
-			  ) )
- "
-0 
-1 
-2 
-3 
+  (with-output-to-string (*standard-output*)
+    (loop as i below 5
+          do (print i)
+          ) )
+  "
+0
+1
+2
+3
 4 ")
 
 (check-for-bug :loop-legacy-53
- (with-output-to-string (*standard-output*)
-			(loop for item in '(1 2 3 4 5)
-			  do (print item)
-			  ) )
- "
-1 
-2 
-3 
-4 
+  (with-output-to-string (*standard-output*)
+    (loop for item in '(1 2 3 4 5)
+          do (print item)
+          ) )
+  "
+1
+2
+3
+4
 5 ")
 
 (check-for-bug :loop-legacy-65
- (with-output-to-string (*standard-output*)
-			(loop for item in '(1 2 3 4 5) by #'cddr
-			  do (print item)
-			  ) )
- "
-1 
-3 
+  (with-output-to-string (*standard-output*)
+    (loop for item in '(1 2 3 4 5) by #'cddr
+          do (print item)
+          ) )
+  "
+1
+3
 5 ")
 
 (check-for-bug :loop-legacy-75
- (loop for (item . x) (t . fixnum) in '((A . 1) (B . 2) (C . 3))
-   unless (eq item 'B) sum x
-   )
- 4)
+  (loop for (item . x) (t . fixnum) in '((A . 1) (B . 2) (C . 3))
+        unless (eq item 'B) sum x
+        )
+  4)
 
 (check-for-bug :loop-legacy-81
- (loop for sublist on '(a b c d)
-   collect sublist
-   )
- ((A B C D) (B C D) (C D) (D)))
+  (loop for sublist on '(a b c d)
+        collect sublist
+        )
+  ((A B C D) (B C D) (C D) (D)))
 
 (check-for-bug :loop-legacy-87
- (with-output-to-string (*standard-output*)
-			(loop for (item) on '(1 2 3)
-			  do (print item)
-			  ) )
- "
-1 
-2 
+  (with-output-to-string (*standard-output*)
+    (loop for (item) on '(1 2 3)
+          do (print item)
+          ) )
+  "
+1
+2
 3 ")
 
 (check-for-bug :loop-legacy-97
- (with-output-to-string (*standard-output*)
-			(loop for item in '(1 2 3)
-			  do (print item)
-			  ) )
- "
-1 
-2 
+  (with-output-to-string (*standard-output*)
+    (loop for item in '(1 2 3)
+          do (print item)
+          ) )
+  "
+1
+2
 3 ")
 
 (check-for-bug :loop-legacy-107
- (loop for i below 5
-   for j = 10 then i
-   collect j
-   )
- (10 1 2 3 4))
+  (loop for i below 5
+        for j = 10 then i
+        collect j
+        )
+  (10 1 2 3 4))
 
 (check-for-bug :loop-legacy-114
- (loop for i below 5
-   for j = i
-   collect j
-   )
- (0 1 2 3 4))
+  (loop for i below 5
+        for j = i
+        collect j
+        )
+  (0 1 2 3 4))
 
 (check-for-bug :loop-legacy-121
- (loop for item = 1 then (+ item 10)
-   repeat 5
-   collect item
-   )
- (1 11 21 31 41))
+  (loop for item = 1 then (+ item 10)
+        repeat 5
+        collect item
+        )
+  (1 11 21 31 41))
 
 (check-for-bug :loop-legacy-128
- (loop for char across (the simple-string "Hello")
-   collect char
-   )
- (#\H #\e #\l #\l #\o))
+  (loop for char across (the simple-string "Hello")
+        collect char
+        )
+  (#\H #\e #\l #\l #\o))
 
 (check-for-bug :loop-legacy-134
- (with-output-to-string (*standard-output*)
-			(loop repeat 3
-			  do (write-line "What I say three times is true")
-			  ) )
- "What I say three times is true
+  (with-output-to-string (*standard-output*)
+    (loop repeat 3
+      do (write-line "What I say three times is true")
+      ) )
+  "What I say three times is true
 What I say three times is true
 What I say three times is true
 ")
 
 (check-for-bug :loop-legacy-144
- (with-output-to-string (*standard-output*)
-			(loop repeat -15
-			  do (write-line "What you see is what you expect")
-			  ) )
- "")
+  (with-output-to-string (*standard-output*)
+    (loop repeat -15
+      do (write-line "What you see is what you expect")
+      ) )
+  "")
 
 #|;; FOR clauses should come before WHILE clauses
 (let ((stack '(a b c d e f)))
@@ -415,11 +415,11 @@ February 17
     results
     ) )
  ("
-3 
+3
 
-1 
+1
 
-7 
+7
 "
   (3 1 7) (2 4 6 8)))
 
@@ -457,7 +457,7 @@ February 17
 			  ) )
  "
 0  a b c
-1 
+1
 2  a
 3 ")
 
@@ -476,7 +476,7 @@ February 17
 			  ) )
  "
 0  a b c
-1 
+1
 2  a c
 3 ")
 
@@ -486,10 +486,10 @@ February 17
 			  do (print i)
 			  ) )
  "
-1 
-2 
-3 
-4 
+1
+2
+3
+4
 5 ")
 
 (check-for-bug :loop-legacy-495
@@ -499,13 +499,13 @@ February 17
 			  (print (* i i))
 			  ) )
  "
-1 
-1 
-2 
-4 
-3 
-9 
-4 
+1
+1
+2
+4
+3
+9
+4
 16 ")
 
 (check-for-bug :loop-legacy-511

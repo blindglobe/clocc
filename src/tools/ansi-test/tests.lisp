@@ -23,12 +23,12 @@ the returnvalues or the type of the condition used."
   (let ((tag (gensym)))
     `(block ,tag
        (handler-bind
-	((serious-condition
-	  #'(lambda (condition)
-	      (return-from ,tag
-		(values :ERROR
-			condition)))))
-	,@forms))))
+           ((serious-condition
+             #'(lambda (condition)
+                 (return-from ,tag
+                   (values :ERROR
+                           condition)))))
+         ,@forms))))
 
 (defvar *log* nil)
 (defvar *output-generated* nil)
@@ -40,57 +40,57 @@ the returnvalues or the type of the condition used."
 
 (defun check-and-puke (bugid mode form result my-result condition why)
   (flet ((safe-format (stream string &rest args)
-		      (unless (ignore-errors
-				(progn
-				  (apply #'format stream string args)
-				  t))
-			(format stream "~&~%format of ~S failed!"
-				string))))
+           (unless (ignore-errors
+                     (progn
+                       (apply #'format stream string args)
+                       t))
+             (format stream "~&~%format of ~S failed!"
+                     string))))
     (cond
-     ((eql result my-result)
-      (safe-format t "~%EQL-OK: ~S" my-result))
-     ((equal result my-result)
-      (safe-format t "~%EQUAL-OK: ~S" my-result))
-     ((equalp result my-result)
-      (safe-format t "~%EQUALP-OK: ~S" my-result))
-     ((eq my-result :ERROR)
-      (cond
-       ((ignore-errors
-	  (typep condition result))
-	(safe-format t "~%TYPEP-OK, is of the expected error :~S"
-		     result))
-       (t
-	(safe-format
-	 t
-	 "~&~%ERROR!! (BUGID=~S) Got an error ~S (~A) I expected a instance of ~S~%"
-	 bugid condition condition
-	 result)
-	(safe-format
-	 t
-	 "~%Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A)~%Why: ~S~%"
-	 form result *lisp-type*
-	 condition condition
-	 why)
-	(setf *output-generated* t)
-	(safe-format
-	 *log*
-	 "~&~%Bugid: ~S ~A Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A) ~%Why: ~S~%"
-	 bugid mode form result *lisp-type*
-	 condition condition
-	 why))))
-     (t
-      (safe-format t
-		   "~&~%ERROR!! (BUGID=~S) Got ~S solution ~S expected!"
-		   bugid my-result result)
-      (safe-format t
-		   "~%~A Form: ~S~%Should be: ~S~%~A: ~S~%Why: ~S~%"
-		   mode form result *lisp-type*
-		   my-result why)
-      (setf *output-generated* t)
-      (safe-format *log*
-		   "~&~%Bugid: ~S ~A Form: ~S~%Should be: ~S~%~A: ~S~%Why : ~S~%"
-		   bugid mode form result *lisp-type*
-		   my-result why)))))
+      ((eql result my-result)
+       (safe-format t "~%EQL-OK: ~S" my-result))
+      ((equal result my-result)
+       (safe-format t "~%EQUAL-OK: ~S" my-result))
+      ((equalp result my-result)
+       (safe-format t "~%EQUALP-OK: ~S" my-result))
+      ((eq my-result :ERROR)
+       (cond
+         ((ignore-errors
+            (typep condition result))
+          (safe-format t "~%TYPEP-OK, is of the expected error :~S"
+                       result))
+         (t
+          (safe-format
+           t
+           "~&~%ERROR!! (BUGID=~S) Got an error ~S (~A) I expected a instance of ~S~%"
+           bugid condition condition
+           result)
+          (safe-format
+           t
+           "~%Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A)~%Why: ~S~%"
+           form result *lisp-type*
+           condition condition
+           why)
+          (setf *output-generated* t)
+          (safe-format
+           *log*
+           "~&~%Bugid: ~S ~A Form: ~S~%Should be an error of type: ~S~%~A: ~S (~A) ~%Why: ~S~%"
+           bugid mode form result *lisp-type*
+           condition condition
+           why))))
+      (t
+       (safe-format t
+                    "~&~%ERROR!! (BUGID=~S) Got ~S solution ~S expected!"
+                    bugid my-result result)
+       (safe-format t
+                    "~%~A Form: ~S~%Should be: ~S~%~A: ~S~%Why: ~S~%"
+                    mode form result *lisp-type*
+                    my-result why)
+       (setf *output-generated* t)
+       (safe-format *log*
+                    "~&~%Bugid: ~S ~A Form: ~S~%Should be: ~S~%~A: ~S~%Why : ~S~%"
+                    bugid mode form result *lisp-type*
+                    my-result why)))))
 
 ;;; Test for bug of given BUGID by executing FORM, expecting RESULT.
 ;;;
@@ -124,41 +124,41 @@ the returnvalues or the type of the condition used."
 	    (format t "~&~%testing ~S: ~S~%" ',bugid ',form)
 
 	    ;; First, we check whether it works in interpreted mode.
-     (multiple-value-bind (my-result condition)
-	 (with-ignored-errors
-	  (eval ',form))
+            (multiple-value-bind (my-result condition)
+                (with-ignored-errors
+                    (eval ',form))
 	      (check-and-puke ',bugid
 			      "interpreted"
-		       ',form ',result
-		       my-result condition
-		       ,why))
+                              ',form ',result
+                              my-result condition
+                              ,why))
 
-     (force-output)
+            (force-output)
 
 	    ;; Now we try to compile.
-     #+nil ; HACK
-     (multiple-value-bind (my-result condition)
-	 (with-ignored-errors
-	  (multiple-value-bind (function warnings-p failure-p)
-	      (compile nil
-		       #'(lambda ()
-			   ,form))
-	    (format t "~&compiled  ~S ~S ~S"
-		    function warnings-p failure-p)
+            #+nil                       ; HACK
+            (multiple-value-bind (my-result condition)
+                (with-ignored-errors
+                    (multiple-value-bind (function warnings-p failure-p)
+                        (compile nil
+                                 #'(lambda ()
+                                     ,form))
+                      (format t "~&compiled  ~S ~S ~S"
+                              function warnings-p failure-p)
 
-	    (multiple-value-bind (my-result condition)
-		(with-ignored-errors
-		 (funcall function))
-		     (check-and-puke ',bugid
-				     "compiled"
-			      ',form ',result
-			      my-result condition
-			      ,why))))
-       (when (eq my-result :error)
+                      (multiple-value-bind (my-result condition)
+                          (with-ignored-errors
+                              (funcall function))
+                        (check-and-puke ',bugid
+                                        "compiled"
+                                        ',form ',result
+                                        my-result condition
+                                        ,why))))
+              (when (eq my-result :error)
 		(check-and-puke ',bugid
 				"while compiling"
-			 ',form ',result
-			 my-result condition
+                                ',form ',result
+                                my-result condition
 				,why)))))))
 
 (defun run-test (testname)
@@ -179,9 +179,9 @@ the returnvalues or the type of the condition used."
 
     (with-open-file (*log* (format nil "~a.erg" testname)
 			   :direction :output)
-		    (setf *output-generated* nil)
-		    (load (format nil "~a.lisp" testname))
-		    (force-output *log*))
+      (setf *output-generated* nil)
+      (load (format nil "~a.lisp" testname))
+      (force-output *log*))
     (unless *output-generated*
       (delete-file (format nil "~a.erg"
 			   testname))))

@@ -4,542 +4,542 @@
 ;;erzeuge ein feld mit doppeltgenauen zahlen
 
 (check-for-bug :array-legacy-6
- (setq da1
-       (make-array
-	(list 4 2 3)
-	:initial-contents
-	(list
-	 (list (list 1.0d0 2.0d0 3.0d0)
-	       (list 4.0d0 5.0d0 6.0d0))
-	 (list (list 7.0d0 8.0d0 9.0d0)
-	       (list 10.0d0 11.0d0 12.0d0))
-	 (list (list 13.0d0 14.0d0 15.0d0)
-	       (list 16.0d0 17.0d0 18.0d0))
-	 (list (list 19.0d0 20.0d0 21.0d0)
-	       (list 22.0d0 23.0d0 24.0d0)))
-	:element-type
-	(quote double-float)))
- #3a(((1.0d0 2.0d0 3.0d0)   (4.0d0 5.0d0 6.0d0))
-     ((7.0d0 8.0d0 9.0d0)   (10.0d0 11.0d0 12.0d0))
-     ((13.0d0 14.0d0 15.0d0)(16.0d0 17.0d0 18.0d0))
-     ((19.0d0 20.0d0 21.0d0)(22.0d0 23.0d0 24.0d0))))
+  (setq da1
+        (make-array
+         (list 4 2 3)
+         :initial-contents
+         (list
+          (list (list 1.0d0 2.0d0 3.0d0)
+                (list 4.0d0 5.0d0 6.0d0))
+          (list (list 7.0d0 8.0d0 9.0d0)
+                (list 10.0d0 11.0d0 12.0d0))
+          (list (list 13.0d0 14.0d0 15.0d0)
+                (list 16.0d0 17.0d0 18.0d0))
+          (list (list 19.0d0 20.0d0 21.0d0)
+                (list 22.0d0 23.0d0 24.0d0)))
+         :element-type
+         (quote double-float)))
+  #3a(((1.0d0 2.0d0 3.0d0)   (4.0d0 5.0d0 6.0d0))
+      ((7.0d0 8.0d0 9.0d0)   (10.0d0 11.0d0 12.0d0))
+      ((13.0d0 14.0d0 15.0d0)(16.0d0 17.0d0 18.0d0))
+      ((19.0d0 20.0d0 21.0d0)(22.0d0 23.0d0 24.0d0))))
 
 (check-for-bug :array-legacy-27
- (aref da1 0 0 0)
- 1.0d0)
+  (aref da1 0 0 0)
+  1.0d0)
 
 (check-for-bug :array-legacy-31
- (aref da1 0 0 1)
- 2.0d0)
+  (aref da1 0 0 1)
+  2.0d0)
 
 (check-for-bug :array-legacy-35
- (aref da1 0 0 2)
- 3.0d0)
+  (aref da1 0 0 2)
+  3.0d0)
 
 (check-for-bug :array-legacy-39
- (aref da1 0 1 0)
- 4.0d0)
+  (aref da1 0 1 0)
+  4.0d0)
 
 (check-for-bug :array-legacy-43
- (aref da1 0 1 1)
- 5.0d0)
+  (aref da1 0 1 1)
+  5.0d0)
 
 (check-for-bug :array-legacy-47
- (aref da1 0 1 2)
- 6.0d0)
+  (aref da1 0 1 2)
+  6.0d0)
 
 (check-for-bug :array-legacy-51
- (aref da1 1 0 0)
- 7.0d0)
+  (aref da1 1 0 0)
+  7.0d0)
 
 (check-for-bug :array-legacy-55
- (aref da1 1 0 1)
- 8.0d0)
+  (aref da1 1 0 1)
+  8.0d0)
 
 (check-for-bug :array-legacy-59
- (aref da1 1 0 2)
- 9.0d0)
+  (aref da1 1 0 2)
+  9.0d0)
 
 (check-for-bug :array-legacy-63
- (aref da1 1 1 0)
- 10.0d0)
+  (aref da1 1 1 0)
+  10.0d0)
 
 (check-for-bug :array-legacy-67
- (aref da1 1 1 1)
- 11.0d0)
+  (aref da1 1 1 1)
+  11.0d0)
 
 (check-for-bug :array-legacy-71
- (aref da1 1 1 2)
- 12.0d0)
+  (aref da1 1 1 2)
+  12.0d0)
 
 (check-for-bug :array-legacy-75
- (aref da1 2 0 0)
- 13.0d0)
+  (aref da1 2 0 0)
+  13.0d0)
 
 (check-for-bug :array-legacy-79
- (aref da1 2 0 1)
- 14.0d0)
+  (aref da1 2 0 1)
+  14.0d0)
 
 (check-for-bug :array-legacy-83
- (aref da1 2 0 2)
- 15.0d0)
+  (aref da1 2 0 2)
+  15.0d0)
 
 (check-for-bug :array-legacy-87
- (aref da1 2 1 0)
- 16.0d0)
+  (aref da1 2 1 0)
+  16.0d0)
 
 (check-for-bug :array-legacy-91
- (aref da1 2 1 1)
- 17.0d0)
+  (aref da1 2 1 1)
+  17.0d0)
 
 (check-for-bug :array-legacy-95
- (aref da1 2 1 2)
- 18.0d0)
+  (aref da1 2 1 2)
+  18.0d0)
 
 (check-for-bug :array-legacy-99
- (aref da1 3 0 0)
- 19.0d0)
+  (aref da1 3 0 0)
+  19.0d0)
 
 (check-for-bug :array-legacy-103
- (aref da1 3 0 1)
- 20.0d0)
+  (aref da1 3 0 1)
+  20.0d0)
 
 (check-for-bug :array-legacy-107
- (aref da1 3 0 2)
- 21.0d0)
+  (aref da1 3 0 2)
+  21.0d0)
 
 (check-for-bug :array-legacy-111
- (aref da1 3 1 0)
- 22.0d0)
+  (aref da1 3 1 0)
+  22.0d0)
 
 (check-for-bug :array-legacy-115
- (aref da1 3 1 1)
- 23.0d0)
+  (aref da1 3 1 1)
+  23.0d0)
 
 (check-for-bug :array-legacy-119
- (aref da1 3 1 1)
- 23.0d0)
+  (aref da1 3 1 1)
+  23.0d0)
 
 ;;erzeuge ein feld mit einfachgenauen zahlen
 
 (check-for-bug :array-legacy-125
- (setq fa1
-       (make-array
-	(list 4 2 3)
-	:initial-contents
-	(list
-	 (list (list 1.0d0 2.0d0 3.0d0)
-	       (list 4.0d0 5.0d0 6.0d0))
-	 (list (list 7.0d0 8.0d0 9.0d0)
-	       (list 10.0d0 11.0d0 12.0d0))
-	 (list (list 13.0d0 14.0d0 15.0d0)
-	       (list 16.0d0 17.0d0 18.0d0))
-	 (list (list 19.0d0 20.0d0 21.0d0)
-	       (list 22.0d0 23.0d0 24.0d0)))
-	:element-type 'double-float))
- #3a(((1.0 2.0 3.0)(4.0 5.0 6.0))
-     ((7.0 8.0 9.0)(10.0 11.0 12.0))
-     ((13.0 14.0 15.0)(16.0 17.0 18.0))
-     ((19.0 20.0 21.0)(22.0 23.0 24.0))))
+  (setq fa1
+        (make-array
+         (list 4 2 3)
+         :initial-contents
+         (list
+          (list (list 1.0d0 2.0d0 3.0d0)
+                (list 4.0d0 5.0d0 6.0d0))
+          (list (list 7.0d0 8.0d0 9.0d0)
+                (list 10.0d0 11.0d0 12.0d0))
+          (list (list 13.0d0 14.0d0 15.0d0)
+                (list 16.0d0 17.0d0 18.0d0))
+          (list (list 19.0d0 20.0d0 21.0d0)
+                (list 22.0d0 23.0d0 24.0d0)))
+         :element-type 'double-float))
+  #3a(((1.0 2.0 3.0)(4.0 5.0 6.0))
+      ((7.0 8.0 9.0)(10.0 11.0 12.0))
+      ((13.0 14.0 15.0)(16.0 17.0 18.0))
+      ((19.0 20.0 21.0)(22.0 23.0 24.0))))
 
 (check-for-bug :array-legacy-145
- (aref fa1 0 0 0)
- 1.0)
+  (aref fa1 0 0 0)
+  1.0)
 
 (check-for-bug :array-legacy-149
- (aref fa1 0 0 1)
- 2.0)
+  (aref fa1 0 0 1)
+  2.0)
 
 (check-for-bug :array-legacy-153
- (aref fa1 0 0 2)
- 3.0)
+  (aref fa1 0 0 2)
+  3.0)
 
 (check-for-bug :array-legacy-157
- (aref fa1 0 1 0)
- 4.0)
+  (aref fa1 0 1 0)
+  4.0)
 
 (check-for-bug :array-legacy-161
- (aref fa1 0 1 1)
- 5.0)
+  (aref fa1 0 1 1)
+  5.0)
 
 (check-for-bug :array-legacy-165
- (aref fa1 0 1 2)
- 6.0)
+  (aref fa1 0 1 2)
+  6.0)
 
 (check-for-bug :array-legacy-169
- (aref fa1 1 0 0)
- 7.0)
+  (aref fa1 1 0 0)
+  7.0)
 
 (check-for-bug :array-legacy-173
- (aref fa1 1 0 1)
- 8.0)
+  (aref fa1 1 0 1)
+  8.0)
 
 (check-for-bug :array-legacy-177
- (aref fa1 1 0 2)
- 9.0)
+  (aref fa1 1 0 2)
+  9.0)
 
 (check-for-bug :array-legacy-181
- (aref fa1 1 1 0)
- 10.0)
+  (aref fa1 1 1 0)
+  10.0)
 
 (check-for-bug :array-legacy-185
- (aref fa1 1 1 1)
- 11.0)
+  (aref fa1 1 1 1)
+  11.0)
 
 (check-for-bug :array-legacy-189
- (aref fa1 1 1 2)
- 12.0)
+  (aref fa1 1 1 2)
+  12.0)
 
 (check-for-bug :array-legacy-193
- (aref fa1 2 0 0)   13.0)
+  (aref fa1 2 0 0)   13.0)
 
 (check-for-bug :array-legacy-196
- (aref fa1 2 0 1)
- 14.0)
+  (aref fa1 2 0 1)
+  14.0)
 
 (check-for-bug :array-legacy-200
- (aref fa1 2 0 2)
- 15.0)
+  (aref fa1 2 0 2)
+  15.0)
 
 (check-for-bug :array-legacy-204
- (aref fa1 2 1 0)   16.0)
+  (aref fa1 2 1 0)   16.0)
 
 (check-for-bug :array-legacy-207
- (aref fa1 2 1 1)
- 17.0)
+  (aref fa1 2 1 1)
+  17.0)
 
 (check-for-bug :array-legacy-211
- (aref fa1 2 1 2)
- 18.0)
+  (aref fa1 2 1 2)
+  18.0)
 
 (check-for-bug :array-legacy-215
- (aref fa1 3 0 0)
- 19.0)
+  (aref fa1 3 0 0)
+  19.0)
 
 (check-for-bug :array-legacy-219
- (aref fa1 3 0 1)
- 20.0)
+  (aref fa1 3 0 1)
+  20.0)
 
 (check-for-bug :array-legacy-223
- (aref fa1 3 0 2)
- 21.0)
+  (aref fa1 3 0 2)
+  21.0)
 
 (check-for-bug :array-legacy-227
- (aref fa1 3 1 0)
- 22.0)
+  (aref fa1 3 1 0)
+  22.0)
 
 (check-for-bug :array-legacy-231
- (aref fa1 3 1 1)
- 23.0)
+  (aref fa1 3 1 1)
+  23.0)
 
 (check-for-bug :array-legacy-235
- (aref fa1 3 1 1)
- 23.0)
+  (aref fa1 3 1 1)
+  23.0)
 
 
 ;; limits fuer felder
 
 (check-for-bug :array-legacy-242
- (let ((s (prin1-to-string array-rank-limit )))
-   (or #+xcl (equal s "256")
-       #+clisp (equal s "4294967296")
-       #+clisp (equal s "65536")
-       #+akcl (equal s "64")
-       #+gcl (equal s "63")
-       #+allegro (equal s "65536")
-       #+(or cmu sbcl) (equal s "65529")
-       #+ecls (equal s "64")
-       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
-       ) )
- t)
+  (let ((s (prin1-to-string array-rank-limit )))
+    (or #+xcl (equal s "256")
+        #+clisp (equal s "4294967296")
+        #+clisp (equal s "65536")
+        #+akcl (equal s "64")
+        #+gcl (equal s "63")
+        #+allegro (equal s "65536")
+        #+(or cmu sbcl) (equal s "65529")
+        #+ecls (equal s "64")
+        #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
+        ) )
+  t)
 
 (check-for-bug :array-legacy-256
- (let ((s (prin1-to-string array-dimension-limit )))
-   (or #+xcl (equal s "17920")
-       #+akcl (equal s "16777216")
-       #+gcl (equal s "2147483647")
-       #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
-       #+allegro (equal s "16777216")
-       #+(or cmu sbcl) (equal s "536870911")
-       #+ecls (equal s "16777216")
-       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
-       ) )
- t)
+  (let ((s (prin1-to-string array-dimension-limit )))
+    (or #+xcl (equal s "17920")
+        #+akcl (equal s "16777216")
+        #+gcl (equal s "2147483647")
+        #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
+        #+allegro (equal s "16777216")
+        #+(or cmu sbcl) (equal s "536870911")
+        #+ecls (equal s "16777216")
+        #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
+        ) )
+  t)
 
 (check-for-bug :array-legacy-269
- (let ((s (prin1-to-string array-total-size-limit )))
-   (or #+xcl (equal s "17920")
-       #+akcl (equal s "16777216")
-       #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
-       #+allegro (equal s "16777216")
-       #+(or cmu sbcl) (equal s "536870911")
-       #+ecls (equal s "16777216")
-       #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
-       ) )
- t)
+  (let ((s (prin1-to-string array-total-size-limit )))
+    (or #+xcl (equal s "17920")
+        #+akcl (equal s "16777216")
+        #+clisp (equal s (prin1-to-string (1+ most-positive-fixnum)))
+        #+allegro (equal s "16777216")
+        #+(or cmu sbcl) (equal s "536870911")
+        #+ecls (equal s "16777216")
+        #-(or xcl clisp akcl allegro cmu sbcl ecls) "unknown"
+        ) )
+  t)
 
 ;;erzeuge einen einfachen (simple) vector
 
 (check-for-bug :array-legacy-283
- (equalp (setq sv (vector (quote a) (quote b) (quote c) 1.0s0 3.7d0
-			  4.1))
-	 #(a b c 1.0s0 3.7d0 4.1))   t)
+  (equalp (setq sv (vector (quote a) (quote b) (quote c) 1.0s0 3.7d0
+                           4.1))
+          #(a b c 1.0s0 3.7d0 4.1))   t)
 
 (check-for-bug :array-legacy-288
- (svref sv 0)   a)
+  (svref sv 0)   a)
 
 (check-for-bug :array-legacy-291
- (svref sv 1)   b)
+  (svref sv 1)   b)
 
 (check-for-bug :array-legacy-294
- (svref sv 2)   c)
+  (svref sv 2)   c)
 
 (check-for-bug :array-legacy-297
- (svref sv 3)   1.0s0)
+  (svref sv 3)   1.0s0)
 
 (check-for-bug :array-legacy-300
- (svref sv 4)   3.7d0)
+  (svref sv 4)   3.7d0)
 
 ;;pruefe setzen eines elements
 
 (check-for-bug :array-legacy-305
- (setf (svref sv 0) (quote test))   test)
+  (setf (svref sv 0) (quote test))   test)
 
 (check-for-bug :array-legacy-308
- (equalp sv #(test b c 1.0s0 3.7d0 4.1))   t)
+  (equalp sv #(test b c 1.0s0 3.7d0 4.1))   t)
 
 ;;test array-element-typ ... da2 nicht def.
 
 (check-for-bug :array-legacy-313
- (array-element-type sv)   t)
+  (array-element-type sv)   t)
 
 (unintern 'sv)
 
 (check-for-bug :array-legacy-318
- (array-element-type da1)
- #+(or xcl allegro cmu sbcl) double-float
- #+clisp t
- #+(or akcl ecls) long-float
- #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
+  (array-element-type da1)
+  #+(or xcl allegro cmu sbcl) double-float
+  #+clisp t
+  #+(or akcl ecls) long-float
+  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 ;;test rang
 
 (check-for-bug :array-legacy-327
- (array-rank da1)   3)
+  (array-rank da1)   3)
 
 (check-for-bug :array-legacy-330
- (array-rank fa1)   3)
+  (array-rank fa1)   3)
 
 (unintern 'fa1)
 
 ;;test der einzelnen dimensionen
 
 (check-for-bug :array-legacy-337
- (array-dimension da1 0)   4)
+  (array-dimension da1 0)   4)
 
 (check-for-bug :array-legacy-340
- (array-dimension da1 1)   2)
+  (array-dimension da1 1)   2)
 
 (check-for-bug :array-legacy-343
- (array-dimension da1 2)   3)
+  (array-dimension da1 2)   3)
 
 (check-for-bug :array-legacy-346
- (array-dimension da1 3)   error)
+  (array-dimension da1 3)   error)
 
 (unintern 'da1)
 ;;erzeuge ein 0-dim. feld (pseudoscalar) mit inhalt mod 5
 
 (check-for-bug :array-legacy-352
- (progn
-   (setq zero
-	 (make-array (quote nil)
-		     :element-type '(mod 5)))
-   t)
- t)
+  (progn
+    (setq zero
+          (make-array (quote nil)
+                      :element-type '(mod 5)))
+    t)
+  t)
 
 (check-for-bug :array-legacy-360
- (array-rank zero)   0)
+  (array-rank zero)   0)
 
 (check-for-bug :array-legacy-363
- (setf (aref zero) 4)   4)
+  (setf (aref zero) 4)   4)
 
 (check-for-bug :array-legacy-366
- (setf (aref zero) 1.0)
- #+(or xcl clisp akcl allegro cmu sbcl ecls) type-error
- #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
+  (setf (aref zero) 1.0)
+  #+(or xcl clisp akcl allegro cmu sbcl ecls) type-error
+  #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
 
 (unintern 'zero)
 
 ;;erzeuge ein 3-dim gen. feld
 
 (check-for-bug :array-legacy-375
- (setq a1
-       (make-array (list 4 2 3)
-		   :initial-contents
-		   (list
-		    (list (list 'a 'b 'c)
-			  (list 1 2 3))
-		    (list (list 'd 'e 'f)
-			  (list 3 1 2))
-		    (list (list 'g 'h 'i)
-			  (list 2 3 1))
-		    (list (list 'j 'k 'l)
-			  (list 0 0 0)))))
- #3a(((a b c)(1 2 3))
-     ((d e f)(3 1 2))
-     ((g h i)(2 3 1))
-     ((j k l)(0 0 0))))
+  (setq a1
+        (make-array (list 4 2 3)
+                    :initial-contents
+                    (list
+                     (list (list 'a 'b 'c)
+                           (list 1 2 3))
+                     (list (list 'd 'e 'f)
+                           (list 3 1 2))
+                     (list (list 'g 'h 'i)
+                           (list 2 3 1))
+                     (list (list 'j 'k 'l)
+                           (list 0 0 0)))))
+  #3a(((a b c)(1 2 3))
+      ((d e f)(3 1 2))
+      ((g h i)(2 3 1))
+      ((j k l)(0 0 0))))
 
 (check-for-bug :array-legacy-393
- (aref a1 0 0 0)   a)
+  (aref a1 0 0 0)   a)
 
 (check-for-bug :array-legacy-396
- (aref a1 0 0 1)   b)
+  (aref a1 0 0 1)   b)
 
 (check-for-bug :array-legacy-399
- (aref a1 0 0 2)   c)
+  (aref a1 0 0 2)   c)
 
 (check-for-bug :array-legacy-402
- (aref a1 0 1 0)   1)
+  (aref a1 0 1 0)   1)
 
 (check-for-bug :array-legacy-405
- (aref a1 0 1 1)   2)
+  (aref a1 0 1 1)   2)
 
 (check-for-bug :array-legacy-408
- (aref a1 0 1 2)   3)
+  (aref a1 0 1 2)   3)
 
 (check-for-bug :array-legacy-411
- (aref a1 1 0 0)   d)
+  (aref a1 1 0 0)   d)
 
 (check-for-bug :array-legacy-414
- (aref a1 1 0 1)   e)
+  (aref a1 1 0 1)   e)
 
 (check-for-bug :array-legacy-417
- (aref a1 1 0 2)   f)
+  (aref a1 1 0 2)   f)
 
 (check-for-bug :array-legacy-420
- (aref a1 1 1 0)   3)
+  (aref a1 1 1 0)   3)
 
 (check-for-bug :array-legacy-423
- (aref a1 1 1 1)   1)
+  (aref a1 1 1 1)   1)
 
 (check-for-bug :array-legacy-426
- (aref a1 1 1 2)   2)
+  (aref a1 1 1 2)   2)
 
 (check-for-bug :array-legacy-429
- (aref a1 2 0 0)   g)
+  (aref a1 2 0 0)   g)
 
 (check-for-bug :array-legacy-432
- (aref a1 2 0 1)   h)
+  (aref a1 2 0 1)   h)
 
 (check-for-bug :array-legacy-435
- (aref a1 2 0 2)   i)
+  (aref a1 2 0 2)   i)
 
 (check-for-bug :array-legacy-438
- (aref a1 2 1 0)   2)
+  (aref a1 2 1 0)   2)
 
 (check-for-bug :array-legacy-441
- (aref a1 2 1 1)   3)
+  (aref a1 2 1 1)   3)
 
 (check-for-bug :array-legacy-444
- (aref a1 2 1 2)   1)
+  (aref a1 2 1 2)   1)
 
 (check-for-bug :array-legacy-447
- (aref a1 3 0 0)   j)
+  (aref a1 3 0 0)   j)
 
 (check-for-bug :array-legacy-450
- (aref a1 3 0 1)   k)
+  (aref a1 3 0 1)   k)
 
 (check-for-bug :array-legacy-453
- (aref a1 3 0 2)   l)
+  (aref a1 3 0 2)   l)
 
 (check-for-bug :array-legacy-456
- (aref a1 3 1 0)   0)
+  (aref a1 3 1 0)   0)
 
 (check-for-bug :array-legacy-459
- (aref a1 3 1 1)   0)
+  (aref a1 3 1 1)   0)
 
 (check-for-bug :array-legacy-462
- (aref a1 3 1 1)   0)
+  (aref a1 3 1 1)   0)
 
 (unintern 'a1)
 
 ;;erzeuge ein 2-dim adj.feld, das ueberlagert wird
 
 (check-for-bug :array-legacy-469
- (progn (setq m (make-array (list 4 4)
-			    :adjustable t
-			    :initial-contents
-			    (list
-			     (list 'alpha 'beta 'gamma 'delta)
-			     (list 'epsilon 'zeta 'eta 'theta)
-			     (list 'iota 'kappa 'lambda 'mu)
-			     (list 'nu 'xi 'omicron 'pi))))
-	t)
- t)
+  (progn (setq m (make-array (list 4 4)
+                             :adjustable t
+                             :initial-contents
+                             (list
+                              (list 'alpha 'beta 'gamma 'delta)
+                              (list 'epsilon 'zeta 'eta 'theta)
+                              (list 'iota 'kappa 'lambda 'mu)
+                              (list 'nu 'xi 'omicron 'pi))))
+         t)
+  t)
 
 (check-for-bug :array-legacy-481
- (aref m 0 0)   alpha)
+  (aref m 0 0)   alpha)
 
 (check-for-bug :array-legacy-484
- (aref m 0 1)   beta)
+  (aref m 0 1)   beta)
 
 (check-for-bug :array-legacy-487
- (aref m 0 2)   gamma)
+  (aref m 0 2)   gamma)
 
 (check-for-bug :array-legacy-490
- (aref m 0 3)   delta)
+  (aref m 0 3)   delta)
 
 (check-for-bug :array-legacy-493
- (aref m 1 0)   epsilon)
+  (aref m 1 0)   epsilon)
 
 (check-for-bug :array-legacy-496
- (aref m 1 1)   zeta)
+  (aref m 1 1)   zeta)
 
 (check-for-bug :array-legacy-499
- (aref m 1 2)   eta)
+  (aref m 1 2)   eta)
 
 (check-for-bug :array-legacy-502
- (aref m 1 3)   theta)
+  (aref m 1 3)   theta)
 
 (check-for-bug :array-legacy-505
- (aref m 2 0)   iota)
+  (aref m 2 0)   iota)
 
 (check-for-bug :array-legacy-508
- (aref m 2 1)   kappa)
+  (aref m 2 1)   kappa)
 
 (check-for-bug :array-legacy-511
- (aref m 2 2)   lambda)
+  (aref m 2 2)   lambda)
 
 (check-for-bug :array-legacy-514
- (aref m 2 3)   mu)
+  (aref m 2 3)   mu)
 
 (check-for-bug :array-legacy-517
- (aref m 3 0)   nu)
+  (aref m 3 0)   nu)
 
 (check-for-bug :array-legacy-520
- (aref m 3 1)   xi)
+  (aref m 3 1)   xi)
 
 (check-for-bug :array-legacy-523
- (aref m 3 2)   omicron)
+  (aref m 3 2)   omicron)
 
 (check-for-bug :array-legacy-526
- (aref m 3 3)   pi)
+  (aref m 3 3)   pi)
 
 ;;erzeuge ueberl. der zeilen
 
 (check-for-bug :array-legacy-531
- (equalp (setq md0 (make-array 4 :displaced-to m))   #(alpha beta gamma
-							     delta)) t)
+  (equalp (setq md0 (make-array 4 :displaced-to m))   #(alpha beta gamma
+                                                        delta)) t)
 
 (check-for-bug :array-legacy-535
- (equalp (setq md1 (make-array 4 :displaced-to m :displaced-index-offset4))
-	 #(epsilon zeta eta theta)) t)
+  (equalp (setq md1 (make-array 4 :displaced-to m :displaced-index-offset4))
+          #(epsilon zeta eta theta)) t)
 
 
 (check-for-bug :array-legacy-540
- (equalp (setq md2 (make-array 4 :displaced-to m :displaced-index-offset8))
-	 #(iota kappa lambda mu)) t)
+  (equalp (setq md2 (make-array 4 :displaced-to m :displaced-index-offset8))
+          #(iota kappa lambda mu)) t)
 
 
 (unintern 'md0)
@@ -550,58 +550,58 @@
 ;;adjustiere feld m
 
 (check-for-bug :array-legacy-552
- (progn (adjust-array m (quote (3 5)) :initial-element (quote baz))
-	t)   t)
+  (progn (adjust-array m (quote (3 5)) :initial-element (quote baz))
+         t)   t)
 
 (check-for-bug :array-legacy-556
- (aref m 0 0)   alpha)
+  (aref m 0 0)   alpha)
 
 (check-for-bug :array-legacy-559
- (aref m 0 1)   beta)
+  (aref m 0 1)   beta)
 
 (check-for-bug :array-legacy-562
- (aref m 0 2)   gamma)
+  (aref m 0 2)   gamma)
 
 (check-for-bug :array-legacy-565
- (aref m 0 3)   delta)
+  (aref m 0 3)   delta)
 
 (check-for-bug :array-legacy-568
- (aref m 0 4)   baz)
+  (aref m 0 4)   baz)
 
 (check-for-bug :array-legacy-571
- (aref m 1 0)   epsilon)
+  (aref m 1 0)   epsilon)
 
 (check-for-bug :array-legacy-574
- (aref m 1 1)   zeta)
+  (aref m 1 1)   zeta)
 
 (check-for-bug :array-legacy-577
- (aref m 1 2)   eta)
+  (aref m 1 2)   eta)
 
 (check-for-bug :array-legacy-580
- (aref m 1 3)   theta)
+  (aref m 1 3)   theta)
 
 (check-for-bug :array-legacy-583
- (aref m 1 4)   baz)
+  (aref m 1 4)   baz)
 
 (check-for-bug :array-legacy-586
- (aref m 2 0)   iota)
+  (aref m 2 0)   iota)
 
 (check-for-bug :array-legacy-589
- (aref m 2 1)   kappa)
+  (aref m 2 1)   kappa)
 
 (check-for-bug :array-legacy-592
- (aref m 2 2)   lambda)
+  (aref m 2 2)   lambda)
 
 (unintern 'm)
 
 ;;teste zusammenspiel der schluesselworte
 
 (check-for-bug :array-legacy-599
- (progn
-   (setq dv (make-array 10 :element-type (quote double-float)
-			:initial-contents(quote (0.0d0 1.0d0 2.0d0 3.0d0 4.0d0 5.0d0 6.0d0 7.0d0 8.0d0 9.0d0))))
-   t)
- t)
+  (progn
+    (setq dv (make-array 10 :element-type (quote double-float)
+                         :initial-contents(quote (0.0d0 1.0d0 2.0d0 3.0d0 4.0d0 5.0d0 6.0d0 7.0d0 8.0d0 9.0d0))))
+    t)
+  t)
 
 #| *************************************************************************** ;
 

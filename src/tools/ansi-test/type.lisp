@@ -2,197 +2,197 @@
 (in-package :cl-user)
 
 (check-for-bug :type-legacy-4
- (typep (quote a) (quote symbol))
- t)
+  (typep (quote a) (quote symbol))
+  t)
 
 (check-for-bug :type-legacy-8
- (typep (quote nil) (quote symbol))
- t)
+  (typep (quote nil) (quote symbol))
+  t)
 
 (check-for-bug :type-legacy-12
- (typep (quote (nil)) (quote symbol))
- nil)
+  (typep (quote (nil)) (quote symbol))
+  nil)
 
 (check-for-bug :type-legacy-16
- (typep 3 (quote integer))
- t)
+  (typep 3 (quote integer))
+  t)
 
 (check-for-bug :type-legacy-20
- (typep 3 (quote (integer 0 4)))
- t)
+  (typep 3 (quote (integer 0 4)))
+  t)
 
 (check-for-bug :type-legacy-24
- (typep 3 (quote (integer 0 3)))
- t)
+  (typep 3 (quote (integer 0 3)))
+  t)
 
 (check-for-bug :type-legacy-28
- (typep 3 (quote (integer 0 2)))
- nil)
+  (typep 3 (quote (integer 0 2)))
+  nil)
 
 (check-for-bug :type-legacy-32
- (typep 3 (quote (float 0.0 2.0)))
- nil)
+  (typep 3 (quote (float 0.0 2.0)))
+  nil)
 
 (check-for-bug :type-legacy-36
- (typep 3 (quote (float 0.0 2.0)))
- nil)
+  (typep 3 (quote (float 0.0 2.0)))
+  nil)
 
 (check-for-bug :type-legacy-40
- (typep 3 (quote (float 0.0 4.0)))
- nil)
+  (typep 3 (quote (float 0.0 4.0)))
+  nil)
 
 (check-for-bug :type-legacy-44
- (typep 3.2 (quote (float 0.0 4.0)))
- t)
+  (typep 3.2 (quote (float 0.0 4.0)))
+  t)
 
 (check-for-bug :type-legacy-48
- (typep 3.2 (quote (float 0.0 3.2)))
- t)
+  (typep 3.2 (quote (float 0.0 3.2)))
+  t)
 
 (check-for-bug :type-legacy-52
- (typep 3.2 (quote (float 0.0 (3.2))))
- nil)
+  (typep 3.2 (quote (float 0.0 (3.2))))
+  nil)
 
 (check-for-bug :type-legacy-56
- (typep 3.2 (quote (short-float 0.0s0 3.2s0)))
- #+(or allegro cmu sbcl) t
- #-(or allegro cmu sbcl) nil)
+  (typep 3.2 (quote (short-float 0.0s0 3.2s0)))
+  #+(or allegro cmu sbcl) t
+  #-(or allegro cmu sbcl) nil)
 
 (check-for-bug :type-legacy-61
- (typep 3.2 (quote (single-float 0.0f0 3.2f0)))
- t)
+  (typep 3.2 (quote (single-float 0.0f0 3.2f0)))
+  t)
 
 (check-for-bug :type-legacy-65
- (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
- nil)
+  (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
+  nil)
 
 (check-for-bug :type-legacy-69
- (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
- nil)
+  (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
+  nil)
 
 (check-for-bug :type-legacy-73
- (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
- nil)
+  (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
+  nil)
 
 (check-for-bug :type-legacy-77
- (typep 3.2s0 (quote (double-float 0.0d0 3.2d0)))
- nil)
+  (typep 3.2s0 (quote (double-float 0.0d0 3.2d0)))
+  nil)
 
 (check-for-bug :type-legacy-81
- (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
- nil)
+  (typep 3.2 (quote (double-float 0.0d0 3.2d0)))
+  nil)
 
 (check-for-bug :type-legacy-85
- (typep 3.2 (quote (float 0.0 3.2)))
- t)
+  (typep 3.2 (quote (float 0.0 3.2)))
+  t)
 
 (check-for-bug :type-legacy-89
- (typep 3.2s0 (quote (float 0.0s0 3.2s0)))
- t)
+  (typep 3.2s0 (quote (float 0.0s0 3.2s0)))
+  t)
 
 (check-for-bug :type-legacy-93
- (typep 2.0s0 (quote (short-float 0.0s0 3.0s0)))
- t)
+  (typep 2.0s0 (quote (short-float 0.0s0 3.0s0)))
+  t)
 
 (check-for-bug :type-legacy-97
- (typep 2.0s0 (quote (single-float 0.0f0 3.0f0)))
- #+(or allegro cmu sbcl) t
- #-(or allegro cmu sbcl) nil)
+  (typep 2.0s0 (quote (single-float 0.0f0 3.0f0)))
+  #+(or allegro cmu sbcl) t
+  #-(or allegro cmu sbcl) nil)
 
 (check-for-bug :type-legacy-102
- (typep 2.0 (quote (single-float 0.0f0 3.0f0)))
- t)
+  (typep 2.0 (quote (single-float 0.0f0 3.0f0)))
+  t)
 
 (check-for-bug :type-legacy-106
- (typep 2.0d0 (quote (double-float 0.0d0 3.0d0)))
- t)
+  (typep 2.0d0 (quote (double-float 0.0d0 3.0d0)))
+  t)
 
 (check-for-bug :type-legacy-110
- (typep 3.0d0 (quote (double-float 0.0d0 3.0d0)))
- t)
+  (typep 3.0d0 (quote (double-float 0.0d0 3.0d0)))
+  t)
 
 (check-for-bug :type-legacy-114
- (typep 3.0d0 (quote (double-float 0.0d0 (3.0d0))))
- nil)
+  (typep 3.0d0 (quote (double-float 0.0d0 (3.0d0))))
+  nil)
 
 (check-for-bug :type-legacy-118
- (typep 4 (quote (mod 4)))
- nil)
+  (typep 4 (quote (mod 4)))
+  nil)
 
 (check-for-bug :type-legacy-122
- (typep 4 (quote (mod 5)))
- t)
+  (typep 4 (quote (mod 5)))
+  t)
 
 (check-for-bug :type-legacy-126
- (typep 4 (quote (rational 2 5)))
- t)
+  (typep 4 (quote (rational 2 5)))
+  t)
 
 (check-for-bug :type-legacy-130
- (typep 4 (quote (rational 2 7/2)))
- nil)
+  (typep 4 (quote (rational 2 7/2)))
+  nil)
 
 (check-for-bug :type-legacy-134
- (typep 4 (quote (rational 2 9/2)))
- t)
+  (typep 4 (quote (rational 2 9/2)))
+  t)
 
 (check-for-bug :type-legacy-138
- (typep 4 (quote (rational 2 4)))
- t)
+  (typep 4 (quote (rational 2 4)))
+  t)
 
 (check-for-bug :type-legacy-142
- (typep 4/3 (quote (rational 2 4)))
- nil)
+  (typep 4/3 (quote (rational 2 4)))
+  nil)
 
 (check-for-bug :type-legacy-146
- (typep 2 (quote (rational 2 4)))
- t)
+  (typep 2 (quote (rational 2 4)))
+  t)
 
 (check-for-bug :type-legacy-150
- (typep "abcd" (quote string))
- t)
+  (typep "abcd" (quote string))
+  t)
 
 (check-for-bug :type-legacy-154
- (typep "abcd" (quote (string 4)))
- t)
+  (typep "abcd" (quote (string 4)))
+  t)
 
 (check-for-bug :type-legacy-158
- (typep "abcd" (quote (string 43)))
- nil)
+  (typep "abcd" (quote (string 43)))
+  nil)
 
 (check-for-bug :type-legacy-162
- (typep '#(2 3) (quote (complex integer)))
- nil)
+  (typep '#(2 3) (quote (complex integer)))
+  nil)
 
 (check-for-bug :type-legacy-166
- (typep '#(2 3) (quote complex))
- nil)
+  (typep '#(2 3) (quote complex))
+  nil)
 
 (check-for-bug :type-legacy-170
- (typep #c(2 3) (quote complex))
- t)
+  (typep #c(2 3) (quote complex))
+  t)
 
 (check-for-bug :type-legacy-174
- (typep #c(2 3) (quote (complex integer)))
- t)
+  (typep #c(2 3) (quote (complex integer)))
+  t)
 
 (check-for-bug :type-legacy-178
- (typep #c(2 3) (quote (complex float)))
- nil)
+  (typep #c(2 3) (quote (complex float)))
+  nil)
 
 (check-for-bug :type-legacy-182
- (typep #c(2 3) (quote (complex symbol)))
- #+(or cmu sbcl) error
- #-(or cmu sbcl) nil)
+  (typep #c(2 3) (quote (complex symbol)))
+  #+(or cmu sbcl) error
+  #-(or cmu sbcl) nil)
 
 (check-for-bug :type-legacy-187
- (typep '#(a b c d) (quote vector))
- t)
+  (typep '#(a b c d) (quote vector))
+  t)
 
 (check-for-bug :type-legacy-191
- (typep '#(a b c d) (quote (vector * 4)))
- t)
+  (typep '#(a b c d) (quote (vector * 4)))
+  t)
 
-#|
+#|                                      ;
 ;;
 ;; hängt von (upgraded-array-element-type 'symbol) ab!
 (typep '#(a b c d) (quote (vector symbol 4)))

@@ -12,33 +12,33 @@
 ;;an error whenever it's used:
 
 (check-for-bug :cmucl-bugs-legacy-14
- (defparameter foo '((setf . sqrt)))
- FOO)
+  (defparameter foo '((setf . sqrt)))
+  FOO)
 
 
 (check-for-bug :cmucl-bugs-legacy-19
- foo
- ((SETF . SQRT)))
+  foo
+  ((SETF . SQRT)))
 
 
 (check-for-bug :cmucl-bugs-legacy-24
- (setq foo '((zut . 4)))
- ((ZUT . 4)))
+  (setq foo '((zut . 4)))
+  ((ZUT . 4)))
 
 
 (check-for-bug :cmucl-bugs-legacy-29
- foo
- ((ZUT . 4)))
+  foo
+  ((ZUT . 4)))
 
 
 (check-for-bug :cmucl-bugs-legacy-34
- (setq foo '((setf . 3)))
- ((SETF . 3)))
+  (setq foo '((setf . 3)))
+  ((SETF . 3)))
 
 
 (check-for-bug :cmucl-bugs-legacy-39
- '(setq . 2)
- (setq . 2))
+  '(setq . 2)
+  (setq . 2))
 
 (unintern 'foo)
 
@@ -46,269 +46,269 @@
 
 
 (check-for-bug :cmucl-bugs-legacy-48
- (* 10000000000000000000000000000000000000000
-    10000000000000000000000000000000000000000)
+  (* 10000000000000000000000000000000000000000
+     10000000000000000000000000000000000000000)
 
- 100000000000000000000000000000000000000000000000000000000000000000000000000000000)
+  100000000000000000000000000000000000000000000000000000000000000000000000000000000)
 
 
 (check-for-bug :cmucl-bugs-legacy-55
- (time (+ 2 2))
- 4)
+  (time (+ 2 2))
+  4)
 
 ;; cltl2 p 727
 
 
 (check-for-bug :cmucl-bugs-legacy-62
- (let ((stack (copy-list '(a b c d e f))))
-   (loop for item = (length stack) then (pop stack) while stack
-     collect item))
- (6 A B C D E))
+  (let ((stack (copy-list '(a b c d e f))))
+    (loop for item = (length stack) then (pop stack) while stack
+          collect item))
+  (6 A B C D E))
 
 ;; p 737
 
 (check-for-bug :cmucl-bugs-legacy-70
- (loop with (a b c) of-type (float integer float)
-   return (list a b c))
- (0.0 0 0.0))
+  (loop with (a b c) of-type (float integer float)
+        return (list a b c))
+  (0.0 0 0.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-76
- (loop with ( a b c) float
-   return (list a b c))
- (0.0 0.0 0.0))
+  (loop with ( a b c) float
+        return (list a b c))
+  (0.0 0.0 0.0))
 
 
 ;; printing arrays
 
 
 (check-for-bug :cmucl-bugs-legacy-85
- (make-array '(22) :element-type 'single-float :initial-element 0.0)
- #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
+  (make-array '(22) :element-type 'single-float :initial-element 0.0)
+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-90
- (make-array '(2 2))
- #-clisp
- #2A((0 0) (0 0))
- #+clisp
- #2A((NIL NIL) (NIL NIL)))
+  (make-array '(2 2))
+  #-clisp
+  #2A((0 0) (0 0))
+  #+clisp
+  #2A((NIL NIL) (NIL NIL)))
 
 
 (check-for-bug :cmucl-bugs-legacy-98
- (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
- #2A((0.0 0.0) (0.0 0.0)))
+  (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
+  #2A((0.0 0.0) (0.0 0.0)))
 
 ;; without pretty-print?
 
 (check-for-bug :cmucl-bugs-legacy-104
- (make-array '(22) :element-type 'single-float :initial-element 0.0)
- #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
+  (make-array '(22) :element-type 'single-float :initial-element 0.0)
+  #(0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-109
- (make-array '(2 2))
- #-clisp
- #2A((0 0) (0 0))
- #+clisp
- #2A((NIL NIL) (NIL NIL)))
+  (make-array '(2 2))
+  #-clisp
+  #2A((0 0) (0 0))
+  #+clisp
+  #2A((NIL NIL) (NIL NIL)))
 
 (check-for-bug :cmucl-bugs-legacy-116
- (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
- #2A((0.0 0.0) (0.0 0.0)))
+  (make-array '(2 2) :element-type 'single-float :initial-element 0.0)
+  #2A((0.0 0.0) (0.0 0.0)))
 
 ;; bignums
 
 
 (check-for-bug :cmucl-bugs-legacy-123
- (defun factorial (n &optional (i 1))
-   (if (plusp n) (factorial (1- n) (* i n)) i))
- FACTORIAL)
+  (defun factorial (n &optional (i 1))
+    (if (plusp n) (factorial (1- n) (* i n)) i))
+  FACTORIAL)
 
 
 (check-for-bug :cmucl-bugs-legacy-129
- (/ (factorial 100) (factorial 99))
- 100)
+  (/ (factorial 100) (factorial 99))
+  100)
 
 
 (check-for-bug :cmucl-bugs-legacy-134
- (/ (factorial 1000) (factorial 999))
- 1000)
+  (/ (factorial 1000) (factorial 999))
+  1000)
 
 (unintern 'factorial)
 
 (check-for-bug :cmucl-bugs-legacy-140
- 1e-37
- 10.0e-38)
+  1e-37
+  10.0e-38)
 
 
 (check-for-bug :cmucl-bugs-legacy-145
- 1L-38
- 10.0L-39)
+  1L-38
+  10.0L-39)
 
 
 (check-for-bug :cmucl-bugs-legacy-150
- (flet ((print-result (x)
-	  (format nil "~&x is ~F (a ~S)." x (type-of x))))
-   (print-result "non-number"))
- "x is non-number (a (SIMPLE-BASE-STRING 10))."
- "Notice that ~3,2F does work.")
+  (flet ((print-result (x)
+           (format nil "~&x is ~F (a ~S)." x (type-of x))))
+    (print-result "non-number"))
+  "x is non-number (a (SIMPLE-BASE-STRING 10))."
+  "Notice that ~3,2F does work.")
 
 (check-for-bug :cmucl-bugs-legacy-157
- (defun sigmoid (x)
-   (/ 1 (1+ (exp (- x)))))
- SIGMOID)
+  (defun sigmoid (x)
+    (/ 1 (1+ (exp (- x)))))
+  SIGMOID)
 
 
 (check-for-bug :cmucl-bugs-legacy-163
- (compile 'sigmoid)			; in CMU Common Lisp 17f
- SIGMOID)
+  (compile 'sigmoid)			; in CMU Common Lisp 17f
+  SIGMOID)
 
 #-clisp
 (check-for-bug :cmucl-bugs-legacy-168
- (sigmoid 100)
- 1.0)
+  (sigmoid 100)
+  1.0)
 
 
 (unintern 'sigmoid)
 
 (check-for-bug :cmucl-bugs-legacy-175
- (setq X (copy-list '((1 2) (1 2 3) (3))))
- ((1 2) (1 2 3) (3)))
+  (setq X (copy-list '((1 2) (1 2 3) (3))))
+  ((1 2) (1 2 3) (3)))
 
 
 (check-for-bug :cmucl-bugs-legacy-180
- (remove-duplicates X :test #'subsetp)
- ((1 2 3) (3)))
+  (remove-duplicates X :test #'subsetp)
+  ((1 2 3) (3)))
 
 
 (check-for-bug :cmucl-bugs-legacy-185
- (delete-duplicates X :test #'subsetp)
- ((1 2 3) (3)))
+  (delete-duplicates X :test #'subsetp)
+  ((1 2 3) (3)))
 
 
 (unintern 'X)
 
 (check-for-bug :cmucl-bugs-legacy-192
- (progn
-   (run-program "/bin/date" '() :output t :error :stream)
-   t)
- t)
+  (progn
+    (run-program "/bin/date" '() :output t :error :stream)
+    t)
+  t)
 ;; #<process 780 :EXITED>
 
 
 
 (check-for-bug :cmucl-bugs-legacy-201
- (- 0.0 #C( 1.0 1.0))
- #C(-1.0 -1.0))
+  (- 0.0 #C( 1.0 1.0))
+  #C(-1.0 -1.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-206
- (- #C(.5 .866) 0.0)
- #C(0.5 0.866))
+  (- #C(.5 .866) 0.0)
+  #C(0.5 0.866))
 
 
 
 (check-for-bug :cmucl-bugs-legacy-212
- (/ 2.0 #C(-1.0 -1.0))
- #C(-1.0 1.0))
+  (/ 2.0 #C(-1.0 -1.0))
+  #C(-1.0 1.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-217
- (* 2.0 #C(-1.0 -1.0))
- #C(-2.0 -2.0))
+  (* 2.0 #C(-1.0 -1.0))
+  #C(-2.0 -2.0))
 
 
 
 (check-for-bug :cmucl-bugs-legacy-223
- (with-open-file
-  (foo "/tmp/foocl"
-       :direction :output
-       :element-type
-       (list 'signed-byte (1+ (integer-length
-			       most-positive-fixnum))))
-  (write-byte 17 foo)
-  (write-byte -17 foo)
-  (write-byte 4517 foo)
-  (write-byte -1217 foo))
- -1217)
+  (with-open-file
+      (foo "/tmp/foocl"
+           :direction :output
+           :element-type
+           (list 'signed-byte (1+ (integer-length
+                                   most-positive-fixnum))))
+    (write-byte 17 foo)
+    (write-byte -17 foo)
+    (write-byte 4517 foo)
+    (write-byte -1217 foo))
+  -1217)
 
 
 (check-for-bug :cmucl-bugs-legacy-237
- (with-open-file
-  (foo "/tmp/foocl"
-       :direction :input
-       :element-type
-       (list 'signed-byte (1+ (integer-length
-			       most-positive-fixnum))))
-  (list (read-byte foo)
-	(read-byte foo)
-	(read-byte foo)
-	(read-byte foo)))
- (17 -17 4517 -1217))
+  (with-open-file
+      (foo "/tmp/foocl"
+           :direction :input
+           :element-type
+           (list 'signed-byte (1+ (integer-length
+                                   most-positive-fixnum))))
+    (list (read-byte foo)
+          (read-byte foo)
+          (read-byte foo)
+          (read-byte foo)))
+  (17 -17 4517 -1217))
 
 
 (check-for-bug :cmucl-bugs-legacy-251
- (unless (ignore-errors (error "grr"))
-   (print "hi"))
- "hi")
+  (unless (ignore-errors (error "grr"))
+    (print "hi"))
+  "hi")
 
 
 (check-for-bug :cmucl-bugs-legacy-257
- (setf (elt '(a b c d) 2) 'x)
- x)
+  (setf (elt '(a b c d) 2) 'x)
+  x)
 
 
 (check-for-bug :cmucl-bugs-legacy-262
- (acos 1.00001)
- #+(or cmu sbcl)
- #C(0.0 0.004475168)
- #+clisp
- #C(0 0.0044751023)
- #-(or clisp cmu sbcl)
- fill-this-in)
+  (acos 1.00001)
+  #+(or cmu sbcl)
+  #C(0.0 0.004475168)
+  #+clisp
+  #C(0 0.0044751023)
+  #-(or clisp cmu sbcl)
+  fill-this-in)
 
 
 (check-for-bug :cmucl-bugs-legacy-272
- (parse-namestring (make-pathname :defaults "tst"))
- #p"tst")
+  (parse-namestring (make-pathname :defaults "tst"))
+  #p"tst")
 
 
 (check-for-bug :cmucl-bugs-legacy-277
- (string< "abcd" "012abcz" :start2 3 :end2 6)
- NIL)
+  (string< "abcd" "012abcz" :start2 3 :end2 6)
+  NIL)
 
 
 (check-for-bug :cmucl-bugs-legacy-282
- (string> "abcd" "012abcd" :start2 3 :end2 5)
- 2)
+  (string> "abcd" "012abcd" :start2 3 :end2 5)
+  2)
 
 
 (check-for-bug :cmucl-bugs-legacy-287
- (defun (setf foo) () t)
- (setf foo))
+  (defun (setf foo) () t)
+  (setf foo))
 
 
 (check-for-bug :cmucl-bugs-legacy-292
- (compile '(setf foo))
- (setf foo))
+  (compile '(setf foo))
+  (setf foo))
 
 
 (check-for-bug :cmucl-bugs-legacy-297
- (typep '(setf cons)
-	'generic-function)
- NIL)
+  (typep '(setf cons)
+         'generic-function)
+  NIL)
 
 
 (check-for-bug :cmucl-bugs-legacy-303
- (make-sequence '(vector float) 4  :initial-element 0.0)
- #(0.0 0.0 0.0 0.0))
+  (make-sequence '(vector float) 4  :initial-element 0.0)
+  #(0.0 0.0 0.0 0.0))
 
 
 (check-for-bug :cmucl-bugs-legacy-308
- (typep (complex 0.0d0) '(complex double-float))
- t
- "complex returns a number whose real part is realpart
+  (typep (complex 0.0d0) '(complex double-float))
+  t
+  "complex returns a number whose real part is realpart
 and whose imaginary part is imagpart.
 
 If realpart is a rational and imagpart is the rational
@@ -329,20 +329,20 @@ these are not rationals, so we get a complex number back.
 
 ;; From: Gary Bunting <gbunting@cantor.une.edu.au>
 (check-for-bug :cmucl-bugs-legacy-331
- (setf xx (expt 3 32))
- 1853020188851841)
+  (setf xx (expt 3 32))
+  1853020188851841)
 
 (check-for-bug :cmucl-bugs-legacy-335
- (* xx xx)
- 3433683820292512484657849089281)
+  (* xx xx)
+  3433683820292512484657849089281)
 
 
 #|					;
 (defun bugged (x)
   (labels ((f (y &optional trouble)	;  <<< or &key or &rest ..
-	      (if y
-		  (let ((a (pop y)))
-		    (f a)))))
+             (if y
+                 (let ((a (pop y)))
+                   (f a)))))
 
 ;;;; (f x) <<<
 ;;;; Error in function COMMON-LISP::ASSERT-ERROR:

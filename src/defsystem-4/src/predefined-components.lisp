@@ -58,6 +58,9 @@
 	:reader referenced-system
 	:type (or null standard-system)
 	:initform nil))
+  (:documentation "The System Reference class.
+This class is to be used as a place-holder for system specifications
+within dependency lists or component lists.")
   (:default-initargs :type :system-reference))
 
 (defgeneric system-reference-p (x)
@@ -136,6 +139,15 @@ operated on in a `serial' way."))
 
 (declaim (inline filep))
 (defun filep (x) (file-p x))
+
+
+(defclass object-file (file)
+  ()
+  )
+
+(defclass executable-file (file)
+  ()
+  )
 
 
 (defclass common-lisp-file (file)

@@ -547,6 +547,8 @@
 ;;;                 imported in the COMMON-LISP-USER package.
 ;;;                 Cfr. the definitions of *EXPORTS* and
 ;;;                 *SPECIAL-EXPORTS*.
+;;; 2000-07-21 rlt  Add COMPILER-OPTIONS to defstruct to allow user to
+;;;                 specify special compiler options for a particular component.
 ;;;
 
 ;;;---------------------------------------------------------------------------
@@ -2061,6 +2063,11 @@ D
   (language nil :type (or null symbol))
   (compiler nil :type (or null function))
   (loader   nil :type (or null function))
+  (compiler-options nil :type list)	; A list of compiler options to
+                                        ; use for compiling this
+                                        ; component.  These must be
+                                        ; keyword options supported by
+                                        ; the compiler.
 
   (components () :type list)		; A list of components
 					; comprising this component's
@@ -3773,7 +3780,7 @@ D
     (cond ((and must-compile (probe-file source-pname))
 	   (with-tell-user ("Compiling source" component :source)
 	     (or *oos-test*
-		 (funcall (compile-function component)
+		 (apply (compile-function component)
 			  source-pname
 			  :output-file
 			  #+:lucid
@@ -3789,6 +3796,7 @@ D
 			  :errors-to-terminal
 			  #+(and CMU (not :new-compiler))
 			  *cmu-errors-to-terminal*
+			  (component-compiler-options component)
 			  )))
 	   must-compile)
 	  (must-compile

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.11 2001/04/25 18:57:24 sds Exp $
+;;; $Id: shell.lisp,v 1.12 2001/04/25 21:44:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,9 +29,7 @@
   #+allegro (apply #'excl:run-shell-command (apply #'vector prog prog args)
                    :wait wait opts)
   #+(and clisp      lisp=cl)
-  (if wait
-      (apply #'ext:run-program prog :arguments args opts)
-      (ext:shell (format nil "~a~{ '~a'~} &" prog args)))
+  (apply #'ext:run-program prog :arguments args :wait wait opts)
   #+(and clisp (not lisp=cl))
   (if wait
       (apply #'lisp:run-program prog :arguments args opts)

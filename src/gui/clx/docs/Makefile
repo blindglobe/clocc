@@ -1,4 +1,5 @@
 all:
+	mkdir clxman/docIndex/ || true
 	lisp -noinit -load run.lisp -eval '(progn (run) (quit))'
 
 clean:

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-04-21 Wed 16:44:58 EDT sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-05-11 Tue 13:55:40 EDT sds@goems.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -7,11 +7,15 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.35 1999/04/21 20:35:00 sds Exp $
+;;; $Id: date.lisp,v 1.36 1999/05/11 17:57:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.36  1999/05/11 17:57:30  sds
+;;; (infer-timezone): use error 'case-error.
+;;; (date<3, date>3): new functions.
+;;;
 ;;; Revision 1.35  1999/04/21 20:35:00  sds
 ;;; (dttm->string): print the (zero) offset.
 ;;; (date): added a sample (commented out) CLOS implementation.
@@ -284,7 +288,7 @@ Returns the number of seconds since the epoch (1900-01-01)."
 
 (defun infer-timezone (obj)
   "Guess the timezone."
-  (etypecase obj
+  (typecase obj
     (symbol (unintern obj) (infer-timezone (symbol-name obj)))
     (string
      (or (car (find obj +time-zones+ :test
@@ -294,7 +298,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (number
      (cond ((< -24 obj 24) obj)
            ((multiple-value-bind (ho mi) (floor obj 100)
-              (+ ho (/ mi 60))))))))
+              (+ ho (/ mi 60))))))
+    (t (error 'case-error :proc 'infer-timezone :args
+              (list 'obj obj 'symbol 'string 'number)))))
 
 (defcustom +unix-epoch+ integer (encode-universal-time 0 0 0 1 1 1970 0)
   "The start of the UNIX epoch - 1970-01-01.")
@@ -367,7 +373,7 @@ The second optional argument can be 1 (default) for `after' and
 ;;; generic
 ;;;
 
-(fmakunbound 'date)
+(eval-when (load compile eval) (fmakunbound 'date))
 (defgeneric date (xx)
   (:documentation "Convert to or extract a date.
 The argument can be:
@@ -452,6 +458,11 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type date d0 d1 d2))
   (<= (date-dd d0) (date-dd d1) (date-dd d2)))
 
+(defun date<3 (d0 d1 d2)
+  "Check the precedence of the three dates."
+  (declare (type date d0 d1 d2))
+  (< (date-dd d0) (date-dd d1) (date-dd d2)))
+
 (defun date>= (d0 d1)
   "Check the precedence of the two dates."
   (declare (type date d0 d1)) (>= (date-dd d0) (date-dd d1)))
@@ -460,6 +471,11 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   "Check the precedence of the three dates."
   (declare (type date d0 d1 d2))
   (>= (date-dd d0) (date-dd d1) (date-dd d2)))
+
+(defun date>3 (d0 d1 d2)
+  "Check the precedence of the three dates."
+  (declare (type date d0 d1 d2))
+  (> (date-dd d0) (date-dd d1) (date-dd d2)))
 
 (defun date=*1 (&rest dates)
   "Check any number of dates for being the same."

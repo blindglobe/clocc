@@ -1,3 +1,10 @@
+common-lisp-controller (3.67) unstable; urgency=low
+
+  * Now clc-send-command can handle a clc-build-daemon 
+    that is being reconfigured. Closes: #188132
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Fri, 20 Jun 2003 09:22:59 +0200
+
 common-lisp-controller (3.66) unstable; urgency=low
 
   * Fixed error reporting script: forgot a `.

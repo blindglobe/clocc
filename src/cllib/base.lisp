@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.15 2003/07/01 20:13:31 sds Exp $
+;;; $Id: base.lisp,v 2.16 2004/11/12 18:56:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
 (eval-when (compile load eval)
@@ -14,10 +14,28 @@
 (defpackage "CLLIB"
   (:use "COMMON-LISP" "PORT")
   (:nicknames "ORG.CONS.CLOCC/SDS/CLLIB")
-  (:export "VALUE" "CODE"
+  #+cmu (:shadow defstruct)
+  (:export "VALUE" "CODE" "DEFSTRUCT"
            "*DATADIR*" "*MAIL-HOST-ADDRESS*" "*USER-MAIL-ADDRESS*"))
 
 (in-package :cllib)
+
+;;;
+;;; {{{CMUCL structure hack - make them externalizable
+;;;
+
+#+cmu
+(defmacro defstruct (name &rest slots)
+  `(progn
+     (eval-when (compile load eval) (cl:defstruct ,name ,@slots))
+     ,(unless (and (consp name) (assoc :type (cdr name)))
+       `(defmethod make-load-form ((self ,(if (consp name) (first name) name))
+                                   &optional environment)
+          (make-load-form-saving-slots self :environment environment)))))
+
+;;;
+;;; }}}{{{paths
+;;;
 
 (setf (logical-pathname-translations "cllib")
       `(("**;*" ,(logical-pathname "clocc:src;cllib;**;*"))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.23 2001/09/06 13:22:22 sds Exp $
+;;; $Id: url.lisp,v 2.24 2001/09/07 15:37:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -416,6 +416,24 @@ ERR is the stream for information messages or NIL for none."
         (format err " *** redirected to `~a' [~a]~%" sym res)
         (close sk) (setq sk (open-url sym :err err))
         (format sk "GET ~a HTTP/1.0~2%" (url-path sym))))))
+
+(defun http-parse-header (sock &key (out *standard-output*))
+  "Read the headers, when there there is none, return nil,
+when the first line is OK, return the hash-table of headers,
+otherwise return the first line."
+  (unless (char= #\< (peek-char t sock))
+    (let ((ret (make-hash-table :test 'equal)) pos
+          (line (read-line sock)))
+      (if (string-equal "ok" line)
+          (loop (setq line (read-line sock))
+                (when (zerop (length line)) (return ret))
+                (mesg :log out "[*] ~s~%" line)
+                (setq pos (position #\: line))
+                (if pos
+                    (setf (gethash (subseq line 0 pos) ret)
+                          (subseq line (+ 2 pos)))
+                    (warn "~s: invalid header: ~s" 'http-parse-header line)))
+          line))))
 
 (defcustom *url-replies* hash-table
   (let ((ht (make-hash-table :test 'eq)))

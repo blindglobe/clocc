@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.23 2002/05/20 13:38:50 sds Exp $
+;;; $Id: date.lisp,v 2.24 2002/05/20 13:50:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,7 @@
           unix-date infer-timezone infer-month
           days-week-day date-week-day black-days working-day-p
           days-to-next-working-day next-working-day previous-working-day
-          days-since days-since-f
+          days-since days-since-f *y2k-cut*
           date= date/= date< date> date<= date<=3 date<3 date>= date>=3 date>3
           date=*1 date=* date-max date-min date-earliest date-latest
           next-month-p date-month= next-quarter-p date-quarter days-between
@@ -304,6 +304,16 @@ The supported specs are:
             (aref +week-days+ dd) da (aref +month-names+ (1- mo))
             ye ho mi se (tz->string tz dst))))
 
+(defcustom *y2k-cut* (mod 100) 50
+  "*The first year which goes to the 21st century in `fix-y2k'.")
+(defun fix-y2k (ye)
+  "Fix the `Y2K'-buggy year; cuts at `*y2k-cut*'.
+You can redefine this function to your taste.
+You can disable Y2K fixing with (setf (fdefinition 'fix-y2k) #'identity)"
+  (cond ((< ye *y2k-cut*) (+ ye 2000))
+        ((<= *y2k-cut* ye 99) (+ ye 1900))
+        (t ye)))
+
 (defun string->dttm (xx)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
@@ -322,10 +332,11 @@ The supported specs are:
                        :max 9)))
         (if (numberp v0)
             (encode-universal-time (round (or v5 0)) (or v4 0) (or v3 0)
-                                   (min v0 v2) (infer-month v1) (max v0 v2)
+                                   (min v0 v2) (infer-month v1)
+                                   (fix-y2k (max v0 v2))
                                    (infer-timezone v6 v7))
             (encode-universal-time (round (or v4 0)) (or v3 0) (or v2 0)
-                                   v1 (infer-month v0) v5
+                                   v1 (infer-month v0) (fix-y2k v5)
                                    (infer-timezone v6 v7))))))
 
 (defun infer-month (mon)

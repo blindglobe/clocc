@@ -11,6 +11,11 @@
 (declare-config-var lisp-object-extn*)
 (declare-config-var filename-case*)
 (declare-config-var lisp-preferred-case*)
+(declare-config-var constant-condtests-silent*)
+;;; True if cond (+constant+ ...) (t ...)) doesn't cause annoying
+;;; messages about unreachable code.
+(setq constant-condtests-silent* nil)
+
 ;;; A string like "../bin/" or "../binansi/" that says where Lisp bin files are
 ;;; standardly found relative to source files.
 (declare-config-var standard-bin-path*)
@@ -23,10 +28,10 @@
 (defparameter default-standard-bin-path* "../bin/")
 
 (defun install-ytfm (sto)
-   (format t "I will install YTFM.  I will ask you some pertinent~%")
-   (format t " questions.  After I am done, please quit Lisp and restart~%")
+   (format t "I will install YTFM.  I may ask you some questions to fill in gaps~%")
+   (format t " in the ytconfig file.  After I am done, please quit Lisp and restart~%")
    (set-config-var ytools-home-dir* sto
-	        (prompt-for-dir-name  "Type the directory YTools resides in: "))
+	        (prompt-for-dir-name  "Type the directory ytools resides in~% (the directory containing the files 'base.lisp' and 'ytools.lsy'): "))
    (set-config-var lisp-source-extn* sto
 	  (format t "What extension do Lisp source files have in your system (e.g., lisp or lsp)? ")
 	  (let ((extn (read-line-trim)))
@@ -62,9 +67,9 @@ If so, type it here (blank line for no extra layer): ")
 			 (not (string-ends-with bi directory-delimiter*)))
 		    (strings-concat bi directory-delimiter*))
 		   (t bi))))
-   (install-ytools-after-queries))
+   (install-ytfm-after-queries))
 
-(defun install-ytools-after-queries ()
+(defun install-ytfm-after-queries ()
    (load-yt-config-file)
    (load (strings-concat ytools-home-dir* "ytools.lsy"))
    (let ((*readtable* (intern-eval :ytools ytools-readtable* :ytools)))

@@ -1,3 +1,9 @@
+cl-defsystem3 (3.3i+cvs.2003.03.20) unstable; urgency=low
+
+  * New upstream: fix bug in add-registry-location
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Thu, 20 Mar 2003 20:41:16 -0700
+
 cl-defsystem3 (3.3i+cvs.2003.02.05) unstable; urgency=low
 
   * Fix upstream author header to eliminate lintian warning

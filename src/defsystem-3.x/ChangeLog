@@ -1,3 +1,44 @@
+2004-04-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed a problem with APPEND_LOGICAL_PNAMES that caused Matlisp not to
+	compile properly.  The problem stemmed from the different settings of
+	PATHNAME-HOST on CMUCL and LW.  The fix should be transparent across
+	implementations.
+
+	This replaces the patch by Kevin Rosenberg and Jochen Jost.
+
+2004-04-20  kevinrosenberg  <kevinrosenberg@vault>
+
+	* debian/control, debian/changelog: new debian package
+
+2004-03-30  kevinrosenberg  <kevinrosenberg@vault>
+
+	* debian/changelog, defsystem.lisp:
+	argument order switch by Jochen Jost
+
+2004-03-11  kevinrosenberg  <kevinrosenberg@vault>
+
+	* debian/changelog:
+	Automated commit for debian_version_3_3i+cvs_2004_03_10
+
+2004-03-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Made some changed to APPEND-DIRECTORIES, APPEND-LOGICAL-PNAMES and
+	TRANSLATE-VERSION to circumvent a bug in Lispworks MERGE-PATHNAMES.
+	As a result the system is altogether safer because now we operate on
+	pathnames more consistently.
+
+2004-02-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Fixed glitch in NEEDS-COMPILATION that made it too eager in
+	conjunction with repeated LOAD operations.  Thanks to Raymond Toy for
+	noting this.
+
 2004-02-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

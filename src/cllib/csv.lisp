@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.5 2003/07/01 19:29:35 sds Exp $
+;;; $Id: csv.lisp,v 2.6 2003/07/01 20:05:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,16 +19,17 @@
 (export '(csv-print-vector csv-parse-string csv-read-file with-csv
           *csv-separator* *csv-whitespace* *csv-progress*))
 
+(defcustom *csv-separator* character #\,
+  "The separator in the CSV file, normally the comma.")
+
 (defun csv-print-vector (vec &optional (out *standard-output*))
   "Print a vector as a comma-separated line."
   (declare (type vector vec) (stream out))
   (loop :with len = (length vec) :for val :across vec :and ii :from 1
         :when val :do (write val :stream out)
-        :unless (= ii len) :do (write-char #\, out))
+        :unless (= ii len) :do (write-char *csv-separator* out))
   (terpri out))
 
-(defcustom *csv-separator* character #\,
-  "The separator in the CSV file, normally the comma.")
 (defcustom *csv-whitespace* (or null string) +whitespace+
   "The string of characters to trim from the values.")
 (defcustom *csv-progress* integer 1000

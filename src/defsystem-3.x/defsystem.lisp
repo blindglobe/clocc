@@ -86,6 +86,7 @@
 ;;; jk   = John_Kolojejchick@MORK.CIMDS.RI.CMU.EDU
 ;;; kt   = Kevin Thompson <kthompso@ptolemy.arc.nasa.gov>
 ;;; kc   = Kaelin Colclasure <kaelin@bridge.com>
+;;; kmr  = Kevin M. Rosenberg <kevin@rosenberg.net>
 ;;; lmh  = Liam M. Healy <Liam.Healy@nrl.navy.mil>
 ;;; mc   = Matthew Cornell <cornell@unix1.cs.umass.edu>
 ;;; oc   = Oliver Christ <oli@adler.ims.uni-stuttgart.de>
@@ -870,7 +871,7 @@
 
     ;; Documentation strings taken almost literally from CLtL1.
 
-    (defvar *MODULES* ()
+    (defvar *modules* ()
       "List of names of the modules that have been loaded into Lisp so far.
      It is used by PROVIDE and REQUIRE.")
 
@@ -905,7 +906,7 @@
     (defun module-files (name)
       (gethash name *module-files*))
 
-    (defun PROVIDE (name)
+    (defun provide (name)
       "Adds a new module name to the list of modules maintained in the
      variable *modules*, thereby indicating that the module has been
      loaded. Name may be a string or symbol -- strings are case-senstive,
@@ -918,7 +919,7 @@
 	  (push module *modules*)
 	  t)))
 
-    (defun REQUIRE (name &optional pathname)
+    (defun require (name &optional pathname)
       "Tests whether a module is already present. If the module is not
      present, loads the appropriate file or set of files. The pathname
      argument, if present, is a single pathname or list of pathnames
@@ -973,17 +974,17 @@
 
 ;;; For CLtL2 compatible lisps...
 #+(and :excl :allegro-v4.0 :cltl2)
-(defpackage "MAKE" (:nicknames "MK") (:use "COMMON-LISP")
+(defpackage "MAKE" (:nicknames "MK" "make" "mk") (:use :common-lisp)
 	    (:import-from cltl1 *modules* provide require))
 
 ;;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu> 19970105
 ;;; In Allegro 4.1, 'provide' and 'require' are not external in
 ;;; 'CLTL1'.  However they are in 'COMMON-LISP'.  Hence the change.
 #+(and :excl :allegro-v4.1 :cltl2)
-(defpackage "MAKE" (:nicknames "MK") (:use "COMMON-LISP") )
+(defpackage "MAKE" (:nicknames "MK" "make" "mk") (:use :common-lisp) )
 
 #+(and :excl :allegro-version>= (version>= 4 2))
-(defpackage "MAKE" (:nicknames "MK") (:use "COMMON-LISP"))
+(defpackage "MAKE" (:nicknames "MK" "make" "mk") (:use :common-lisp))
 
 #+:lispworks
 (defpackage "MAKE" (:nicknames "MK") (:use "COMMON-LISP")
@@ -1428,7 +1429,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
   #+:lispworks (concatenate 'string
 		"lispworks" " " (lisp-implementation-version))
   #+excl      (concatenate 'string
-		"excl" " " EXCL::*COMMON-LISP-VERSION-NUMBER*)
+		"excl" " " excl::*common-lisp-version-number*)
   #+sbcl      (concatenate 'string
 			   "sbcl" " " (lisp-implementation-version))
   #+cmu       (concatenate 'string
@@ -2281,23 +2282,23 @@ D
    Otherwise first tries to find the system definition in the current
    environment.")
 
-(defun FIND-SYSTEM (system-name &optional (mode :ask) definition-pname)
+(defun find-system (system-name &optional (mode :ask) definition-pname)
   "Returns the system named SYSTEM-NAME. If not already loaded, loads it.
    This allows operate-on-system to work on non-loaded as well as
    loaded system definitions. DEFINITION-PNAME is the pathname for
    the system definition, if provided."
   (ecase mode
-    (:ASK
+    (:ask
      (or (get-system system-name)
 	 (when (y-or-n-p-wait
 		#\y 20
 		"System ~A not loaded. Shall I try loading it? "
 		system-name)
 	   (find-system system-name :load definition-pname))))
-    (:ERROR
+    (:error
      (or (get-system system-name)
 	 (error "Can't find system named ~s." system-name)))
-    (:LOAD-OR-NIL
+    (:load-or-nil
      (let ((system (get-system system-name)))
        (or (unless *reload-systems-from-disk* system)
 	   ;; If SYSTEM-NAME is a symbol, it will lowercase the
@@ -2322,7 +2323,7 @@ D
 		       (file-write-date path))))
 	     system)
 	   system)))
-    (:LOAD
+    (:load
      (or (unless *reload-systems-from-disk* (get-system system-name))
 	 (or (find-system system-name :load-or-nil definition-pname)
 	     (error "Can't find system named ~s." system-name))))))
@@ -3209,7 +3210,7 @@ D
 	    (operate-on-component system operation force))))
     (when dribble (dribble))))
 
-(defun COMPILE-SYSTEM (name &key force
+(defun compile-system (name &key force
 			    (version *version*)
 			    (test *oos-test*) (verbose *oos-verbose*)
 			    (load-source-instead-of-binary
@@ -3235,7 +3236,7 @@ D
    :dribble dribble
    :minimal-load minimal-load))
 
-(defun LOAD-SYSTEM (name &key force
+(defun load-system (name &key force
 			 (version *version*)
 			 (test *oos-test*) (verbose *oos-verbose*)
 			 (load-source-instead-of-binary
@@ -3259,7 +3260,7 @@ D
    :dribble dribble
    :minimal-load minimal-load))
 
-(defun CLEAN-SYSTEM (name &key (force :all)
+(defun clean-system (name &key (force :all)
 			 (version *version*)
 			 (test *oos-test*) (verbose *oos-verbose*)
 			 dribble)
@@ -3273,7 +3274,7 @@ D
    :verbose verbose
    :dribble dribble))
 
-(defun EDIT-SYSTEM
+(defun edit-system
     (name &key force
 	       (version *version*)
 	       (test *oos-test*)
@@ -3288,7 +3289,7 @@ D
    :verbose verbose
    :dribble dribble))
 
-(defun HARDCOPY-SYSTEM
+(defun hardcopy-system
     (name &key force
 	       (version *version*)
 	       (test *oos-test*)

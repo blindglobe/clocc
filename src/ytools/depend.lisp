@@ -1,6 +1,6 @@
-;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
+!;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.5 2004/12/13 03:26:36 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.6 2004/12/17 21:49:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -52,7 +52,7 @@
 		   `(eval-when (:load-toplevel :execute)
 		       (fload ,@run-time-deps))))))))
 
-(datafun :compute-file-basis depends-on
+(datafun compute-file-basis depends-on
   (defun :^ (e file-ch)
      (cond (depends-on-enabled*
 	    (let ((groups (depends-on-args-group (cdr e)))
@@ -75,9 +75,9 @@
 				     (union
 					file-chunks
 					(Chunk-basis compiled-ch)))
-			       (setf (File-chunk-update-basis compiled-ch)
+			       (setf (Chunk-update-basis compiled-ch)
 				     (union loaded-file-chunks
-					    (File-chunk-update-basis
+					    (Chunk-update-basis
 					       compiled-ch)))))
 			(cond ((memq ':run-time (first g))
 			       (setf (File-chunk-callees file-ch)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.7 2004/12/13 03:26:36 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.8 2004/12/17 21:49:01 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -129,11 +129,17 @@
 
 (defgeneric derive (chunk))
 ;;; Recomputes chunk
-;;;   and returns time when it changed (usually current time)
+;;;   and returns time when it changed (usually current universal time)
 ;;;   or false if it's up to date.
+;;;   If it returns t, that's equivalent to returning (get-universal-time).
 ;;; Important: 'derive' works purely locally, and in particular
 ;;; never calls 'chunk-update'; someone else is assumed
 ;;; to have done that.
+;;; Subtlety: What I mean is, that it should never alter any chunk
+;;; _in the same network_, i.e., one that might be connected to this
+;;; one.  It's possible to have one network (N0) of chunks whose purpose
+;;; is to manage another network (N1) of chunks.  A 'derive' in N0 
+;;; can change the topology of N1, update a chunk in N1, etc.
 
 (defmethod initialize-instance :after ((ch Chunk) &rest initargs)
    (declare (ignore initargs))
@@ -399,7 +405,7 @@
 			    (setf (Chunk-update-mark ch) down-mark)
 			    (cond ((null (Chunk-basis ch))
 				   ;; Reached a leaf
-				   (derive ch)
+				   (chunk-derive-and-record ch)
 ;;;;				   (format t "Leaf derived: ~s~%" ch)
 				   (cons ch
 					 (check-from-new-starting-points
@@ -466,27 +472,14 @@
 			    (cond ((and (or down-marked
 					    (Chunk-managed ch))
 					(not (chunk-up-to-date ch)))
-				   (let ((new-date (derive ch)))
-				      (cond ((and new-date
-						  (> new-date
-						     (Chunk-date ch)))
-					     (setf (Chunk-date ch)
-					           new-date)
-					     (dolist (d (Chunk-derivees ch))
-						(derivees-update
-						   d in-progress))
-					     (dolist (d (Chunk-update-derivees
-							   ch))
-					        (derivees-update d in-progress)
-					     ))
-					    (t
-					     (cond ((or (not new-date)
-							(< new-date
-							   (Chunk-date ch)))
-						    (setf (Chunk-date ch)
-							  (Chunk-latest-supporter-date
-							     ch))))
-					    ))))
+				   (cond ((chunk-derive-and-record ch)
+					  (dolist (d (Chunk-derivees ch))
+					     (derivees-update
+						d in-progress))
+					  (dolist (d (Chunk-update-derivees
+							ch))
+					     (derivees-update
+					        d in-progress)))))
 ;;;;				  ((not (or down-marked (Chunk-managed ch)))
 ;;;;				   (format t "Not down marked or managed~%"))
 ;;;;				  (t
@@ -521,6 +514,24 @@
 		   (dolist (leaf leaves)
 		      (dolist (d (Chunk-derivees leaf))
 			 (derivees-update d !())))))))))
+
+;;; Run 'derive', update ch's date, and return t if date has moved 
+;;; forward -- 
+(defun chunk-derive-and-record (ch)
+   (let ((new-date (derive ch)))
+      (cond ((and new-date (not (is-Number new-date)))
+	     (setq new-date (get-universal-time))))
+      (cond ((and new-date
+		  (> new-date
+		     (Chunk-date ch)))
+	     (setf (Chunk-date ch)
+		   new-date)
+	     true)
+	    (t
+	     (setf (Chunk-date ch)
+		   (max (Chunk-date ch)
+			(Chunk-latest-supporter-date ch)))
+	     false))))
 
 (defmethod derive ((orch Or-chunk))
    (dolist (d (Or-chunk-disjuncts orch)

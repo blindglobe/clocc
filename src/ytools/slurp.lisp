@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.7 2004/12/16 16:34:23 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.8 2004/12/17 21:49:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -144,7 +144,10 @@ after YTools file transducers finish.")
 			       (t files))
 			 (cond ((and (null flags) (null files))
 				(aref defaults 1))
-			       (t flags))
+			       ((memq '- flags)
+				!())
+			       (t
+				flags))
 			 (decipher-readtable readtab (aref defaults 2)))))))
 
 (defun decipher-readtable (readtab default-readtab)
@@ -283,7 +286,8 @@ after YTools file transducers finish.")
 					(form-slurp form tasks states))
 				  (null tasks)))
 			   slurp-states)
-			(format t "Slurped form ~s~%" form)))))))
+;;;;			(format t "Slurped form ~s~%" form)
+			))))))
 	 (t !())))
 
 (defun forms-slurp (forms tasks states)
@@ -347,7 +351,7 @@ after YTools file transducers finish.")
 				 (task-done false)
 				 (handled-by-task false) h)
 			      (setq h (href (Slurp-task-handler-table task)
-					    asym ':missing))
+					    asym))
 			      (cond (h
 				     (setq handled-by-task true)
 				     (setq task-done (funcall h form state)))
@@ -400,6 +404,56 @@ after YTools file transducers finish.")
       (with-packages-unlocked
 	 (forms-slurp (cdr form) tasks states))))
 
+(defconstant can-get-write-times*
+    #.(not (not (file-write-date
+		    (concatenate 'string ytools-home-dir* "files.lisp")))))
+
+(defun pathname-source-version (pn)
+  (cond ((is-Pseudo-pathname pn) false)
+	(t
+	 (let ((rpn (cond ((is-Pathname pn) pn)
+			  (t (pathname-resolve pn false)))))
+	    (let ((pn-type (Pathname-type rpn)))
+	       (cond (pn-type
+		      (cond ((equal pn-type obj-suffix*)
+			     (get-pathname-with-suffixes
+				rpn source-suffixes*))
+			    ((probe-file rpn)
+			     rpn)
+			    (t false)))
+		     ((probe-file rpn) rpn)
+		     (t (get-pathname-with-suffixes
+			   rpn source-suffixes*))))))))
+
+(defun pathname-object-version (pn only-if-exists)
+   (let ((ob-pn
+	    (pathname-find-associate pn 'obj-version obj-suffix*
+				     only-if-exists)))
+      (cond ((and (not only-if-exists)
+		  (not ob-pn))
+	     (cerror "I will treat it as :unknown"
+		     "Pathname has no object version: ~s" ob-pn)
+	     ':none)
+	    (t ob-pn))))
+
+(defun pathname-write-time (pname)
+  (setq pname (pathname-resolve pname false))
+  (and can-get-write-times*
+       (probe-file pname)
+       (file-write-date pname)))
+
+;;; pn must be a resolved Pathname, not a YTools Pathname.
+(defun get-pathname-with-suffixes (pn suffixes)
+   (do ((sfl suffixes (cdr sfl))
+	(found false)
+	newpn)
+       ((or found (null sfl))
+	(and found newpn))
+      (setq newpn (merge-pathnames
+		     (make-Pathname :type (car sfl))
+		     pn))
+      (cond ((probe-file newpn)
+	     (setq found true)))))
 
 
 

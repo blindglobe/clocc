@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.5 2004/12/13 03:26:36 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.6 2004/12/17 21:49:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -997,14 +997,14 @@
 ;;  then the pathname of the first file found in the same directory as pn with
 ;;  a suffix in suffixes is returned.  
 ;; E.g., suppose we call 
-;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '("bbb") true)
-;; and the pathname has a bbb-file prop, to wit #p"high/low/f3.bbb", but
+;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '("sss") true)
+;; and the pathname has a bbb-file prop, to wit #p"high/low/f3.sss", but
 ;; this file doesn't exist.  And #p"high/low/" has a bbb-file prop, namely
-;; #p"high/bbb/low/???.bbb"  (This is a pathname with no :name field, and
+;; #p"high/bbb/low/???.sss"  (This is a pathname with no :name field, and
 ;; is probably unprintable in most Lisps.)
-;; And there is a file high/bbb/low/fff.bbb.
+;; And there is a file high/bbb/low/fff.sss.
 ;; Then pathname-find-associate returns its pathname, i.e.,
-;; #p"high/bbb/low/fff.bbb"
+;; #p"high/bbb/low/fff.sss"
 
 (defun pathname-find-associate (pn assoc-prop suffix only-if-exists)
    (labels ((check-existence (opn)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.7 2000/04/19 16:32:35 sds Exp $
+;;; $Id: ext.lisp,v 1.8 2000/05/09 18:49:50 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage port
@@ -33,7 +33,7 @@
 ;;;
 
 (define-condition code (error)
-  ((proc :type symbol :reader code-proc :initarg :proc)
+  ((proc :reader code-proc :initarg :proc)
    (mesg :type simple-string :reader code-mesg :initarg :mesg)
    (args :type list :reader code-args :initarg :args))
   (:report (lambda (cc out)

@@ -7,12 +7,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.12 2001/05/07 20:34:10 sds Exp $
+;;; $Id: cvs.lisp,v 2.13 2001/05/23 20:01:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `string-beg-with'
+  ;; `string-beg-with', `substitute-subseq'
   (require :string (translate-logical-pathname "cllib:string"))
   ;; `skip-to-line', `read-list-from-stream', `file-size-t'
   (require :fileio (translate-logical-pathname "cllib:fileio"))
@@ -20,14 +20,14 @@
   (require :date (translate-logical-pathname "cllib:date"))
   ;; `hash-table->alist'
   (require :miscprint (translate-logical-pathname "cllib:miscprint"))
-  ;; `default-directory', `pathname-ensure-name'
+  ;; `default-directory', `pathname-ensure-name', `probe-directory'
   (require :sys (translate-logical-pathname "port:sys"))
   ;; `with-open-pipe'
   (require :shell (translate-logical-pathname "port:shell")))
 
 (in-package :cllib)
 
-(export '(cvs-diff2patch cvs-stat-log))
+(export '(cvs-diff2patch cvs-stat-log cvs-change-root))
 
 ;;;
 ;;; CVS diff ---> patch
@@ -258,6 +258,30 @@ Suitable for `read-list-from-stream'."
           (setf (default-directory) old-path)))))
   (format t "~a: " path)
   (cvs-stat-files (cvs-read-log path)))
+
+;;;###autoload
+(defun cvs-change-root (root substitutions &key (dry-run nil) (log t))
+  "Change Root and Repository files in the CVS directories under ROOT.
+When `DRY-RUN' is non-NIL, no actual changes are done."
+  (flet ((change-one-line (file substitutions)
+           (let ((line (with-open-file (in file) (read-line in))))
+             (mesg :log log "~s:~%" file)
+             (dolist (subst substitutions)
+               (mesg :log log " - ~s:~%" line)
+               (setq line (substitute-subseq line (car subst) (cdr subst))))
+             (mesg :log log " * ~s~%" line)
+             (unless dry-run
+               (with-open-file (out file :direction :output
+                                    :external-format :unix
+                                    :if-exists :supersede)
+                 (write-line line out))))))
+    (when (probe-directory (merge-pathnames "CVS/" root))
+      (change-one-line (merge-pathnames "CVS/Repository" root) substitutions)
+      (change-one-line (merge-pathnames "CVS/Root" root) substitutions))
+    ;; CMUCL's `directory' is buggy - won't work!
+    (dolist (dir (directory (merge-pathnames "*/" root)))
+      (unless (string-equal "CVS" (car (last (pathname-directory dir))))
+        (cvs-change-root dir substitutions :dry-run dry-run :log log)))))
 
 (provide :cvs)
 ;;; file cvs.lisp ends here

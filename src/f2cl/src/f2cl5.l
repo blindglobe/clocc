@@ -62,7 +62,7 @@
 )
 
 (defvar *fortran-keywords*
-  '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE RETURN
+  '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE ELSEIF RETURN
     STOP PRINT READ WRITE BACKSPACE CLOSE ENDFILE INQUIRE
     OPEN REWIND FORMAT AND OR NOT))
 
@@ -108,10 +108,13 @@
     (format t "expr = ~S~%" exprs)))
 
 (defun check_new_vbles (exprs)
-  (cond ((or (null exprs) (numberp exprs))
-	 )
+  (cond ((or (null exprs)
+	     (numberp exprs)
+	     (typep exprs 'string))
+	 nil)
 	((symbolp exprs)
-	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< FREF F2CL/))
+	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
+				    FREF FREF-STRING F2CL/ ))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *intrinsic_function_names*)
 		    (member exprs *key_params* :key #'car)
@@ -161,7 +164,15 @@
 		     (member vble (cdar type-clauses) :key #'car)))
 	      ((or type
 		   (null type-clauses))
-	       (caar type-clauses))))
+	       (if (eq (caar type-clauses) 'array)
+		   ;; Hmm, an array declaration, but no type?
+		   (cond ((get-implicit-type vble))
+			 ((default-int-p vble)
+			  'fixnum)
+			 (t 'single-float))
+		   (caar type-clauses)))
+	   ;;(format t  "type-clause = ~S~%" type-clauses)
+	   ))
 	(t
 	 ;;(format t "  is not declared. Implicit type = ~a~%" (get-implicit-type vble))
 	 ;;(format t "implicit ~a~%" *implicit_vble_decls*)
@@ -184,7 +195,7 @@
 	    (let ((var-type (lookup-vble-type arg)))
 	      (cond ((eq var-type 'array)
 		     ;; Look up the type of the array
-		     (destructuring-bind (decl1 decl2)
+		     (destructuring-bind (&optional decl1 decl2)
 			 (vble-declared-twice-p arg *explicit_vble_decls*)
 		       (declare (ignorable decl2))
 		       (first decl1)))
@@ -238,7 +249,6 @@
 	     (push (get-fun-arg-type (second arg)) res))
 	    (t
 	     (let ((arg-types (mapcar #'get-fun-arg-type arg)))
-	       ;;(format t "arg = ~A~%types = ~a~%" arg arg-types)
 	       (push (cond ((every #'(lambda (x)
 				       (eq x (first arg-types)))
 				   arg-types)
@@ -356,8 +366,8 @@
 	   ;; Fixup the expressions for the index.
 	   `(fref ,(second expr) ,(mapcar #'fixup-expression (third expr))))
 	  ((is-neg (second expr))
-	   ;; We have (F (- Z) X).  If F is '+,
-	   ;; make it (- X Z).  If Z is a number, make it (F -Z X)
+	   ;; We have (F (- Z) X ...).  If F is '+,
+	   ;; make it (- X Z).  If Z is a number, make it (F -Z X ...)
 	   (cond ((eq (first expr) '+)
 		  `(- ,@(mapcar #'fixup-expression (rest (rest expr)))
 		    ,(second (second expr))))
@@ -367,16 +377,17 @@
 		 (t
 		  expr)))
 	  ((is-neg (third expr))
-	   ;; We have (F X (- Z)).  If F is '+, convert to (- X Z).
-	   ;; If not, but Z is a number, convert to (F X -Z).
+	   ;; We have (F X (- Z) ...).  If F is '+, convert to (- X Z).
+	   ;; If not, but Z is a number, convert to (F X -Z ...).
 	   (cond ((eq '+ (first expr))
 		  ;; We have '(+ X (- Z)).  Make that '(- X Z)
 		  `(- ,@(mapcar #'fixup-expression (list (second expr)))
 		      ,@(mapcar #'fixup-expression (list (second (third expr))))))
 		 ((numberp (second (third expr)))
-		  ;; We have (F X (- N)).  Make that (F X -N)
+		  ;; We have (F X (- N) ...).  Make that (F X -N ...)
 		  `(,(first expr) ,@(mapcar #'fixup-expression (list (second expr)))
-		                  ,(- (second (third expr)))))
+		                  ,(- (second (third expr)))
+		                  ,@(mapcar #'fixup-expression (nthcdr 3 expr))))
 		 (t
 		  ;; Process the X and (- Z) parts now
 		  `(,(first expr) ,(fixup-expression (second expr))
@@ -652,6 +663,7 @@
 
      ;; Do some common fixups to make the code faster (for compilers
      ;; not sufficiently smart) and prettier
+
      (setf prog-bit (fixup-expression (fixup-expr-mul prog-bit)))
 
      ;; Try to optimize out calls to f2cl/.

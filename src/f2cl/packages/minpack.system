@@ -1,8 +1,12 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.3 2002/01/07 18:13:53 rtoy Exp $
+;;; $Id: minpack.system,v 1.4 2002/01/08 03:29:09 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.4  2002/01/08 03:29:09  rtoy
+;;; o Correct and change the compiler options.  We need array-slicing.
+;;; o Add some more routines.
+;;;
 ;;; Revision 1.3  2002/01/07 18:13:53  rtoy
 ;;; Set better compiler options for building minpack.
 ;;;
@@ -36,26 +40,29 @@
 	      :compiler-options (:include-comments t
 				 :keep-lisp-file t
 				 :relaxed-array-decls nil
-				 :array-type :simple-array
-				 :array-slicing nil
-				 :package "MINPACK"
-				 :declaim (optimize (speed 3)))
+				 :array-type :array
+				 :array-slicing t
+				 :package "MINPACK")
 	      :components
 	      ((:file "dpmpar")
 	       (:file "enorm")
-	       (:file "fdjac2")
+	       (:file "fdjac1" :depends-on ("dpmpar"))
+	       (:file "fdjac2" :depends-on ("dpmpar"))
 	       (:file "qrsolv")
-	       (:file "lmpar")
-	       (:file "qrfac")
-	       (:file "lmdif")
-	       (:file "lmdif1")
-	       (:file "lmder")
-	       (:file "lmder1")
-	       (:file "dogleg")
+	       (:file "lmpar" :depends-on ("dpmpar" "enorm" "qrsolv"))
+	       (:file "qrfac" :depends-on ("dpmpar" "enorm"))
+	       (:file "lmdif" :depends-on ("dpmpar" "enorm" "fdjac2" "lmpar" "qrfac"))
+	       (:file "lmdif1" :depends-on ("lmdif"))
+	       (:file "lmder" :depends-on ("dpmpar" "enorm" "lmpar" "qrfac"))
+	       (:file "lmder1" :depends-on ("lmder"))
+	       (:file "dogleg" :depends-on ("dpmpar" "enorm"))
 	       (:file "qform")
-	       (:file "r1mpyq")
-	       (:file "r1updt")
-	       (:file "hybrj" :depends-on ("dogleg" "qform" "r1mpyq" "r1updt"))
+	       (:file "r1updt" :depends-on ("dpmpar"))
+	       (:file "hybrd1" :depends-on ("dogleg" "dpmpar" "enorm" "fdjac1"
+					   "qform" "qrfac" "r1mpyq" "r1updt")
+	       (:file "hybrd" :depends-on ("hybrd"))
+	       (:file "hybrj" :depends-on ("dogleg" "dpmpar" "enorm" "qform" "qrfac"
+					  "r1mpyq" "r1updt"))
 	       (:file "hybrj1" :depends-on ("hybrj"))
 	       ))))
 

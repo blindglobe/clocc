@@ -1,7 +1,8 @@
 common-lisp-controller (3.23) unstable; urgency=low
 
   * NMU
-  * Rework asdf loading of compiled-only files 
+  * Rework asdf loading of compiled-only files. Now loads asdf
+    sub-systems.
 
  -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 18 Sep 2002 12:40:58 -0600
 

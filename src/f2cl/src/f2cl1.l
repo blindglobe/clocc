@@ -128,6 +128,23 @@ only when needed. ")
 
 (defvar *float-format* 'single-float)
 
+;; Hash table of all known converted functions.  
+(defvar *f2cl-function-info*
+  (make-hash-table))
+
+(defvar *use-function-info*
+  t
+  "If non-NIL, the database of function return values is used in
+generating function calls and setting the argument values
+correctly. If the database is incorrect, the function call will be
+incorrect, so use caution.")
+
+(defstruct f2cl-finfo
+  arg-types return-values)
+
+(defun clear-f2cl-finfo ()
+  (clrhash *f2cl-function-info*))
+
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key output-file verbose prune-labels include-comments
@@ -633,6 +650,7 @@ FILENAME                 File containing Fortran code
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
 
+#+nil
 (defun maybe-nullify-returns (ret-values)
   ;; If the return values are not members of *assigned-variables*,
   ;; that means the var was never assigned, so we can return NIL
@@ -642,6 +660,23 @@ FILENAME                 File containing Fortran code
 		  v
 		  nil))
 	  ret-values))
+
+(defun maybe-nullify-returns (fcn-name arg-names)
+  ;; If the return values are not members of *assigned-variables*,
+  ;; that means the var was never assigned, so we can return NIL
+  ;; instead of the variable.
+  (let ((arg-types nil)
+	(ret-vals nil))
+    (dolist (v arg-names)
+      (push (if (member v *assigned-variables*)
+		v
+		nil)
+	    ret-vals))
+    (setf ret-vals (nreverse ret-vals))
+    (setf (gethash fcn-name *f2cl-function-info*)
+	  (make-f2cl-finfo :return-values ret-vals))
+    ret-vals))
+
 
 (defun translate-and-write-subprog (prog-list outport)
   (clrhash *common-blocks*)
@@ -671,7 +706,7 @@ FILENAME                 File containing Fortran code
 			       `(end_label
 				 (return (values ,(cadr fort-fun)
 						 ,@(mapcar #'first *entry-points*)
-						 ,@(maybe-nullify-returns (caddr fort-fun))))))
+						 ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun))))))
 			      ((or *program-flag*
 				   (not (eq (car fort-fun) 'defun)))
 			       ;; Return nil if this is the main
@@ -683,7 +718,7 @@ FILENAME                 File containing Fortran code
 			       ;; A subroutine definition.  Return the
 			       ;; arguments of the subroutine.
 			       `(end_label (return (values 
-						    ,@(maybe-nullify-returns (caddr fort-fun)))))))))))
+						    ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun)))))))))))
      ;; check for missing PROGRAM stmt
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
@@ -1384,6 +1419,7 @@ FILENAME                 File containing Fortran code
 ;;
 ;; If RETURN is T, we are generating a call to a function which
 ;; returns the value of the function in addition to the parameters.
+#+nil
 (defun generate-call-to-routine (routine arglist &optional return)
   (multiple-value-bind (all-setters vnames)
       ;; Figure out if and how to set the parameters to the returned values.
@@ -1442,6 +1478,87 @@ FILENAME                 File containing Fortran code
 	      ,@setters
 	      ,@(if return (list 'ret-val))))
 	  `((,@routine ,@arglist))))))
+
+(defun generate-call-to-routine (routine arglist &optional return)
+  (let ((finfo (gethash (first routine) *f2cl-function-info*)))
+    (setf finfo (if (and *use-function-info* finfo)
+		    (f2cl-finfo-return-values finfo)
+		    (make-list (length arglist) :initial-element :unknown)))
+      
+    (multiple-value-bind (all-setters vnames)
+	;; Figure out if and how to set the parameters to the returned values.
+	(do ((dups (find-duplicates arglist))
+	     (v nil)
+	     (count 0 (+ count 1))
+	     (vnames nil)
+	     (args arglist (rest args))
+	     (ret-info finfo (rest ret-info)))
+	    ((null args)
+	     (values (nreverse v) (nreverse vnames)))
+	  (let* ((arg (first args))
+		 (var (intern (concatenate 'string "VAR-" (princ-to-string count)))))
+	    (push var vnames)
+	    (push (cond ((or (vble-is-array-p arg)
+			     (member arg *external-function-names*)
+			     (member arg *intrinsic-function-names*)
+			     (member arg '(%true% %false%))
+			     (member arg dups))
+			 ;; Fortran can't return whole arrays or
+			 ;; functions, so don't try to assign the value
+			 ;; to arrays or functions.  Also, we don't want
+			 ;; to assign to constants like %true% and
+			 ;; %false%.
+			 ;;
+			 ;; Also, if the same var is used as an arg more
+			 ;; than once, it can't be set either.  (Because
+			 ;; the value would depend on who set it last,
+			 ;; and that's illegal in Fortran (I think).
+			 nil)
+			((symbolp arg)
+			 ;; A simple variable
+			 (pushnew arg *assigned-variables*)
+			 (cond ((eq (first ret-info) :unknown)
+				;; Don't know anything about this
+				`(when ,var (setf ,arg ,var)))
+			       ((eq (first ret-info) nil)
+				;; Definitely isn't returned
+				nil)
+			       (t
+				;; Definitely returned
+				`(setf ,arg ,var))))
+			((and (listp arg)
+			      (eq (first arg) 'fref))
+			 ;; A reference to a single element of an array.
+			 (cond ((eq (first ret-info) :unknown)
+			       ;; Don't know anything about this
+			       `(when ,var (fset ,arg ,var)))
+			       ((eq (first ret-info) nil)
+				;; Definitely isn't returned
+				nil)
+			       (t
+				;; Definitely is returned
+				`(fset ,arg ,var))))
+			(t
+			 ;; This means it's either a number or some
+			 ;; expression, so obviously we can't modify
+			 ;; that.  (The original Fortran code was broken
+			 ;; if the routine is trying to modify this.)
+			 nil))
+		  v)))
+      (let ((ignored-vars
+	     ;; A variable is ignored if no setter for it is given.
+	     (remove nil (mapcar #'(lambda (varname setter)
+				     (if (not setter)
+					 varname))
+				 vnames all-setters)))
+	    (setters (remove nil all-setters)))
+	(if setters
+	    `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
+		  (,@routine ,@arglist)
+		(declare (ignore ,@ignored-vars))
+		,@setters
+		,@(if return (list 'ret-val))))
+	    `((,@routine ,@arglist)))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -2276,8 +2393,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.108 2002/05/03 17:42:13 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.109 2002/05/04 17:00:06 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.109  2002/05/04 17:00:06  rtoy
+;;; We now keep a hash table of all functions and their return values and
+;;; use that, if available, for generating calls to that function.
+;;;
+;;; This is experimental, but seems to work so far, and generates better code.
+;;;
 ;;; Revision 1.108  2002/05/03 17:42:13  rtoy
 ;;; Allow other keys for f2cl and f2cl-compile.
 ;;;

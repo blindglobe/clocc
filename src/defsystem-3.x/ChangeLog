@@ -1,4 +1,13 @@
+2004-02-27  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed glitch in NEEDS-COMPILATION that made it too eager in
+	conjunction with repeated LOAD operations.  Thanks to Raymond Toy for
+	noting this.
+
 2004-02-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
 
 	* defsystem.lisp:
 	Fixed initialization of extensions in presence (or not) of language

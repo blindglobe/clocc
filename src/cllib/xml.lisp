@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.19 2000/06/16 16:34:55 sds Exp $
+;;; $Id: xml.lisp,v 2.20 2000/06/26 15:44:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -137,11 +137,13 @@ See <http://www.w3.org/TR/WD-html40-970708/sgml/entities.html>.")
 Note that the Unicode characters will NOT be printed as &#nnnn;.
 If this is `:sgml', use maximum SGML compatibility.")
 
+(eval-when (compile load eval)  ; ACL
 (defcustom *xml-pre-namespaces* hash-table (make-hash-table :test 'equal)
   "The mapping from prefixes to namespaces.")
 
 (defcustom *xml-uri-namespaces* hash-table (make-hash-table :test 'equal)
   "The mapping from URIs to namespaces.")
+)
 
 (eval-when (compile load eval)  ; CMUCL
 (defstruct (xml-comment #+cmu (:print-function print-struct-object))

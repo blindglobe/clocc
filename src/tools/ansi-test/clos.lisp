@@ -1,4 +1,4 @@
-;;; based on v1.7 -*- mode: lisp -*-
+;;; based on v1.9 -*- mode: lisp -*-
 (in-package :cl-user)
 
 
@@ -63,6 +63,33 @@
 (check-for-bug :clos-legacy-62
   (x-val a)
   10)
+
+(check-for-bug :clos-added-1
+  (with-slots (x y) a (+ x y))
+11
+
+(check-for-bug :clos-added-2
+  (defun foo (z)
+    (with-slots (x y)
+        z
+      (+ x y)))
+  foo
+
+(check-for-bug :clos-added-3
+  (foo a)
+  11)
+
+(check-for-bug :clos-added-4
+  (compile 'foo)
+ foo)
+
+(check-for-bug :clos-added-5
+  (foo a)
+  11)
+
+(check-for-bug :clos-added-6
+  (fmakunbound 'foo)
+  foo)
 
 (check-for-bug :clos-legacy-66
   (defparameter b (make-instance (find-class '<C2>) :x 10 :y 20 :z 30))

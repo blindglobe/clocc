@@ -1,5 +1,5 @@
-;;; Based on 1.1.1.1 -*- mode: lisp -*-
-;;; testen von backquote
+;;; Based on 1.2 -*- mode: lisp -*-
+;;; tests for backquote
 (in-package :cl-user)
 
 (check-for-bug :backquot-legacy-5
@@ -32,3 +32,7 @@
   `#(1 2 3 4)
   #(1 2 3 4))
 
+(check-for-bug :backquot-expansion-into-vector
+  (let ((x (list 'a 'b 'c)))
+    `#(,@x))
+  #(a b c))

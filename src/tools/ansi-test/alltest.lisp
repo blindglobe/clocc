@@ -1,22 +1,27 @@
-;;; based on v1.10 -*- mode: lisp -*-
-;; ****************************************************************************
-;; *                      kurztest        xcl                                 *
-;; ****************************************************************************
-;; kap. 1 einfuehrung
-;; ----------------------------------------------------------------------------
-;; kap. 2  datentypen
-;; ----------------------------------------------------------------------------
-;; kap. 3  gueltigkeitsbereiche
-;; ----------------------------------------------------------------------------
-;; kap. 4  typspezifier
-;; ----------------------------------------------------------------------------
-;;
-;; deftype, coerce, type-of
-;;
-;; kap. 5  programmstrukturen
-;; ----------------------------------------------------------------------------
-;;
-;; lambda-listen
+;;; based on v1.12 -*- mode: lisp -*-
+;;*****************************************************************************
+;;*                    short test      XCL                                    *
+;;*****************************************************************************
+
+;; Chapter 1  Introduction
+;; -----------------------
+
+;; Chapter 2  Data Types
+;; ---------------------
+
+;; Chapter 3  Valid Values
+;; -----------------------
+
+;; Chapter 4  Type specifiers
+;; --------------------------
+;; deftype, COERCE, TYPE-OF
+
+;; Chapter 5  Program Structure
+;; ----------------------------
+
+
+;; lambda lists
+
 (in-package :cl-user)
 
 (check-for-bug :alltest-legacy-22
@@ -1065,6 +1070,50 @@
   #+akcl "6.1230317691118863E-17"
   #+(or allegro cmu sbcl sbcl ecls) "6.123031769111886d-17"
   #-(or xcl clisp akcl allegro cmu sbcl ecls) unknown)
+
+
+;; http://www.lisp.org/HyperSpec/Body/convar_short-_tive-epsilon.html
+(check-for-bug :alltest-test-pos-epsilon
+  (defun test-pos-epsilon (<EPSILON>)
+    (= (float 1 <EPSILON>) (+ (float 1 <EPSILON>) <EPSILON>)))
+  test-pos-epsilon)
+
+(check-for-bug :alltest-test-pos-epsilon-1
+  (test-pos-epsilon short-float-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-pos-epsilon-2
+  (test-pos-epsilon single-float-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-pos-epsilon-3
+  (test-pos-epsilon double-float-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-pos-epsilon-4
+  (test-pos-epsilon long-float-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-neg-epsilon
+  (defun test-new-epsilon (<EPSILON>)
+    (= (float 1 <EPSILON>) (- (float 1 <EPSILON>) <EPSILON>)))
+  test-neg-epsilon)
+
+(check-for-bug :alltest-test-new-epsilon-1
+  (test-neg-epsilon short-float-negative-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-new-epsilon-2
+  (test-neg-epsilon single-float-negative-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-new-epsilon-3
+  (test-neg-epsilon double-float-negative-epsilon)
+  nil)
+
+(check-for-bug :alltest-test-new-epsilon-4
+  (test-neg-epsilon long-float-negative-epsilon)
+  nil)
 
 (check-for-bug :alltest-legacy-1069
   (prin1-to-string (tan 1) )

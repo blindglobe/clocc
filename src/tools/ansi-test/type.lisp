@@ -1,4 +1,4 @@
-;;; based on v1.3 -*- mode: lisp -*-
+;;; based on v1.8 -*- mode: lisp -*-
 (in-package :cl-user)
 
 (check-for-bug :type-legacy-4
@@ -539,3 +539,6 @@ nil
   (multiple-value-list (subtypep nil nil))
   (t t))
 
+(check-for-bug :type-added-7
+  (multiple-value-list (subtypep 'extended-char 'character))
+  (t t))

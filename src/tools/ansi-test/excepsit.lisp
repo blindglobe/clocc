@@ -7,7 +7,7 @@
 ;; specifications which have the wording "an error is signalled" or
 ;; "an error should be signalled".
 
-#-(or cmu sbcl);; XXXX
+#-(or cmu sbcl lispworks);; XXXX
 (check-for-bug :excepsit-legacy-11
   (abort)
   control-error)
@@ -1256,7 +1256,8 @@ end-of-file
  type-error)
 
 (check-for-bug :excepsit-legacy-1269
- (setf (readtable-case *readtable*) ':unknown)
+  (let ((*readtable* (copy-read-table)))
+    (setf (readtable-case *readtable*) ':unknown))
  type-error)
 
 (check-for-bug :excepsit-legacy-1273
@@ -1560,4 +1561,6 @@ end-of-file
 (check-for-bug :excepsit-legacy-1571
  (read-from-string "31e300")
  reader-error)				; not floating-point-overflow!
+
+
 

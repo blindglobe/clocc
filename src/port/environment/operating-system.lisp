@@ -142,6 +142,13 @@
                      :version ""
 		     :feature-tag :ms-windows-me))
 
+(defclass MS-Windows-XP (MS-Windows-2000)
+  ()
+  (:documentation "The CL.ENVIRONMENT MS Windows XP Operating System Class.")
+  (:default-initargs :type "Windows XP"
+                     :version ""
+		     :feature-tag :ms-windows-xp))
+
 
 ;;; Special operating system related functionalities.
 
@@ -211,6 +218,10 @@
 
 (defmethod os-tag-compatible-p ((os cl.env:ms-windows)
 				(tag (eql :ms-windows-me)))
+  t)
+
+(defmethod os-tag-compatible-p ((os cl.env:ms-windows)
+				(tag (eql :ms-windows-xp)))
   t)
 
 

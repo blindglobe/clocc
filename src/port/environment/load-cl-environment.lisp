@@ -2,15 +2,23 @@
 
 ;;; load-cl-environment.lisp --
 ;;;
-;;; Copyright (c) 2000 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2002 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
+;;; Thanks to Kevin Rosemberg for his suggestions to make the loading
+;;; of this file more portable.
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defparameter *cl-environment-directory*
+    (make-pathname :host (pathname-host *load-pathname*)
+		   :device (pathname-device *load-pathname*)
+		   :directory (pathname-directory *load-pathname*)
+		   ;; :case :common ; Do we need this?
+		   )))
+
 (defun load-cl-environment-library (&key
-				    (directory (make-pathname
-						:directory
-						(pathname-directory
-						 *default-pathname-defaults*)))
+				    (directory *cl-environment-directory*)
 				    (compile-first-p nil)
 				    (load-verbose *load-verbose*)
 				    (print-herald t)
@@ -19,7 +27,7 @@
     (format *standard-output*
 	    "~&;;; CL.ENV: Loading CL.ENVIRONMENT package from directory~@
                ;;;         \"~A\"~2%"
-	    directory))
+	    (namestring (pathname directory))))
   (let ((directory (pathname directory)))
     (flet ((load-and-or-compile (file)
 	     (if compile-first-p
@@ -42,10 +50,14 @@
       (setf (logical-pathname-translations "CL-ENV-LIBRARY")
 	    `(("**;*.*.*"
 	       ,(make-pathname
+		 :host (pathname-host *cl-environment-pathname*)
+		 :device (pathname-device *cl-environment-pathname*)
 		 :directory (append (pathname-directory directory)
 				    (list :wild-inferiors))))
 	      ("**;*.*"
 	       ,(make-pathname
+		 :host (pathname-host *cl-environment-pathname*)
+		 :device (pathname-device *cl-environment-pathname*)
 		 :directory (append (pathname-directory directory)
 				    (list :wild-inferiors))))))
 

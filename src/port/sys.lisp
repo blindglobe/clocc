@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.33 2001/09/09 19:55:06 sds Exp $
+;;; $Id: sys.lisp,v 1.34 2001/09/26 15:10:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -348,7 +348,7 @@ Current time:~25t" (/ internal-time-units-per-second) *gensym-counter*)
 
 (defconst +time-zones+ list
   '((5 "EDT" . "EST") (6 "CDT" . "CST") (7 "MDT" . "MST") (8 "PDT" . "PST")
-    (0 "GMT" . "GDT") (-2 "MET" . "MET DST"))
+    (0 "GMT" . "BST") (-2 "MET" . "MET DST"))
   "*The string representations of the time zones.")
 
 (defun tz->string (tz)

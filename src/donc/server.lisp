@@ -26,7 +26,7 @@ with the obvious substitutions:
  ==== introductory documentation ====
 
  note: this implementation requires either 
- clisp as of > 2001/6/17
+ clisp 2.31 + as of 2003/9/19 with (ext:write-byte-sequence :no-hang)
    packages changed to socket, ext
    uses SOCKET-STATUS, READ-BYTE-WILL-HANG-P, READ-BYTE-NO-HANG
     socket-stream-peer with second argument
@@ -179,6 +179,7 @@ code.
      (if *ignore-errs-p* (ignore-errors (f)) (f))))
 
 (defvar *debug* nil) ;; set to T for debugging output [***]
+(defvar *debug2* nil) ;; more selective debugging
 
 (defvar *last-dbg-real-time* 0)
 (defvar *last-dbg-run-time* 0)
@@ -314,7 +315,7 @@ code.
 	      (setf done-anything t))
 	(loop for c in *connections* do
 	      (if (process-connection c)
-		  ;; should return t if it reads any input
+		  ;; should return t if it stops with more to do
 		  (setf done-anything t))
 	      (when (connection-close-p c)
 		(disconnect-connection c)))
@@ -387,24 +388,30 @@ code.
 (defvar *cycle-io-limit* 10000) ;; [***]
 ;; don't do more than this many characters of input or output per cycle
 ;; related to single thread (so other connections get a chance)
+(defparameter *byte-io-vector*
+  (make-array *cycle-io-limit* :element-type '(unsigned-byte 8)))
+;; Note this must be reinitialized if *cycle-io-limit* ever changes.
 
 ;; This can be used to get the effect of force-output to the connection.
 
+;; return t if there's reason not to sleep (more output and it won't hang)
 (defun process-output (connection)
   (multiple-value-bind (val err)
     (ignore-errs
-       (loop while (output connection) do
+       (when (output connection)
 	(let* ((stream (sstream connection))
 	       (out (car (output connection)))
 	       (type (car out))
 	       (output (cadr out))
 	       (start (max 0 (or (third out) 0)))
 	       end) ;; end computed differently for different cases
-	  (dbg "process-output ~A" out)
+	  (let ((*debug* *debug2*))(dbg "process-output ~A" out))
 	  (ecase type ;; beginning to look like we should move to methods
 	    (:string
 	     (setf end (min (length output) (or (fourth out) (length output))))
 	     #+clisp (setf (stream-element-type stream) 'character)
+	     ;; assume that strings are small, hence not worth using
+	     ;; write-byte-sequence
 	     (loop for i from start below end
 		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
@@ -412,11 +419,12 @@ code.
 		   finally
 		   (force-output stream)
 		   (setf (third out) i)
-		   (if (>= i end) (pop (output connection))
-		     (return-from process-output nil))))
+		   (when (>= i end) (pop (output connection)))))
 	    (:byte-vector
 	     (setf end (min (length output) (or (fourth out) (length output))))
 	     #+clisp (setf (stream-element-type stream) '(unsigned-byte 8))
+	     ;; assume that strings are small, hence not worth using
+	     ;; write-byte-sequence
 	     (loop for i from start below end
 		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
@@ -424,8 +432,7 @@ code.
 		   finally
 		   (force-output stream)
 		   (setf (third out) i)
-		   (if (>= i end) (pop (output connection))
-		     (return-from process-output nil))))
+		   (when (>= i end) (pop (output connection)))))
 	    (:file
 	     (when (and *temp-stream* (open-stream-p *temp-stream*))
 	       (close *temp-stream*))
@@ -434,6 +441,23 @@ code.
 	     (setf end (min (file-length output)
 			    (or (fourth out) (file-length output))))
 	     #+clisp (setf (stream-element-type stream) '(unsigned-byte 8))
+	     #+clisp ;; relies on presence of write-byte-sequence :no-hang
+	     (let* ((nread (ext:read-byte-sequence
+			    *byte-io-vector* output
+			    :end (min end *cycle-io-limit*) :no-hang t))
+		    (nwrite (cadr (multiple-value-list
+				   (ext:write-byte-sequence
+				    *byte-io-vector* stream
+				    :end nread :no-hang t)))))
+	       (force-output stream)
+	       (setf (third out) (+ start nwrite))
+	       (close output)
+	       (setf *temp-stream*
+		     ;; really need this :create if file is in /tmp !!
+		     ;; (how do you *think* I know?)
+		     (open *temp-file* :if-does-not-exist :create))
+	       (when (>= (third out) end) (pop (output connection))))
+	     #-clisp
 	     (loop for i from start below end
 		 for char-number below *cycle-io-limit*
 		 while (output-possible stream) do
@@ -443,20 +467,43 @@ code.
 		   (force-output stream)
 		   (setf (third out) i)
 		   (close output)
-		   (setf *temp-stream* (open *temp-file*))
-		   (if (>= i end) (pop (output connection))
-		     (return-from process-output nil))))))))
+		   (setf *temp-stream*
+			 (open *temp-file* :if-does-not-exist :create))
+		   (when (>= i end) (pop (output connection))))))
+	  (return-from process-output
+	    (and (output connection) (output-possible stream))))))
     (when err
       (dbg "process-output closing stream due to error: ~A" err)
       (close (sstream connection)))
     val))
 
 ;; not to be called by external code
+;; return t if there's reason not to sleep (more input waiting)
 (defun process-input (c)
   #+clisp ;; all input will be in binary
   (setf (stream-element-type (sstream c)) '(unsigned-byte 8))
   (ignore-errs;; in case stream closes while reading
    ;; Luckily read-char-no-hang on a closed stream => eof
+   #+clisp
+   (loop with stream = (sstream c)
+       with already = (slot-value c 'nchars)
+       with limit = (min *cycle-io-limit* (- (max-input-size c) already))
+       for i below
+       (ext:read-byte-sequence
+	*byte-io-vector* (sstream c) :no-hang t
+	:end limit)
+       do (vector-push-extend (code-char (aref *byte-io-vector* i)) (input c))
+       finally
+       (let ((*debug* *debug2*))(dbg "read-byte-sequence read ~A bytes" i))
+       (when (member (socket:SOCKET-STATUS stream 0) '(:eof :append))
+	 (close stream))
+       (incf (slot-value c 'nchars) i)
+       (setf (slot-value c 'new-input) t)
+       (when (= (slot-value c 'nchars) (max-input-size c))
+	 (max-input-reached c))
+       ;; maybe more to read if we read the limit
+       (return-from process-input (= i limit)))
+   #-clisp
    (loop with char = t with stream = (sstream c)
        with already = (slot-value c 'nchars)
        for i below (- (max-input-size c) already)
@@ -468,12 +515,14 @@ code.
 	      #+allegro;; allegro has the wrong default here
 	      ;; clisp is significantly faster without the argument
 	      (max 20 (length (input c)))))
-	 finally (when (and (= 0 i) (not (slot-value c 'new-input)))
-		   (return-from process-input nil))
-		 (incf (slot-value c 'nchars) i)
-		 (setf (slot-value c 'new-input) t)
-		 (when (= (slot-value c 'nchars) (max-input-size c))
-		   (max-input-reached c)))))
+	 finally
+	 ;; above code seems better - return t if you read the limit
+	 (when (and (= 0 i) (not (slot-value c 'new-input)))
+	   (return-from process-input nil))
+	 (incf (slot-value c 'nchars) i)
+	 (setf (slot-value c 'new-input) t)
+	 (when (= (slot-value c 'nchars) (max-input-size c))
+	   (max-input-reached c)))))
 
 (defun next-char (stream)
   ;; stream is a socket stream
@@ -605,7 +654,7 @@ function is also error protected.
 
 ;; You could just define a method for your connection class,
 ;; but I hope that won't be the normal thing to do.
-(defmethod process-connection ((c connection))
+(defmethod process-connection ((c connection) &aux more2do)
   ;; read pending input
   (unless (open-stream-p (sstream c))
 	  (disconnect-connection c)
@@ -614,15 +663,16 @@ function is also error protected.
   ;; If the disconnect happens while reading below
   ;; we give the client one last chance to eval
   ;; (if his reader succeeds).
-  (process-output c) ;; write whatever pending output we can
+  (setf more2do (process-output c)) ;; write whatever pending output we can
   (when (and (slot-value c 'done) (null (output c)))
     ;; redhat 6.2 closes with rst instead of fin if there's unread input !
     ;; this process-input just reduces the chance that this will happen
     (process-input c)
     (disconnect-connection c))
   (unless (slot-value c 'done)
-    (process-input c)) ;; read whatever characters are waiting
-  (unless (slot-value c 'new-input) (return-from process-connection nil))
+    (setf more2do (or (process-input c) more2do)))
+    ;; read whatever characters are waiting
+  (unless (slot-value c 'new-input) (return-from process-connection more2do))
   (progv ;; read, eval, print - all in context of bindings
    (loop for varval in (bindings c) collect (car varval))
    (loop for varval in (bindings c) collect (cdr varval))
@@ -679,8 +729,9 @@ function is also error protected.
 	     (error (err)
 		    (format *trace-output*
 			    "~&error in printer: ~a" err))))
-	   t ;; to indicate that some input was processed
-	   ))))
+	   (setf more2do t) ;; to indicate that some input was processed
+	   )))
+  more2do)
 
 (defun bind (symbol value)
   (declare (special connection))
@@ -921,4 +972,21 @@ Real time: 1.487881 sec.
 Run time: 1.47 sec.
 Space: 2800000 Bytes
 GC: 5, GC time: 0.09 sec.
+
+(with-open-file (in "/tmp/1MB" :buffered nil :element-type '(unsigned-byte 8))
+ (with-open-file (out "/tmp/foobar" :direction :output :if-exists :append
+                      :if-does-not-exist :create :buffered nil
+		      :element-type '(unsigned-byte 8))
+   (let ((n (time (ext:read-byte-sequence *byte-io-vector* in :end *nbytes*
+					  :no-hang t))))
+     (cdr (multiple-value-list
+	   (time (ext:write-byte-sequence *byte-io-vector* out :end n
+					  :no-hang t)))))))
+=> for 1 byte ~150, 130 usec
+read: Real time: 1.48E-4 sec.; Run time: 0.0 sec.; Space: 0 Bytes
+write:Real time: 1.28E-4 sec.; Run time: 0.0 sec.; Space: 0 Bytes
+=> for 100KB ~3000, 2000 usec
+read: Real time: 0.002894 sec.;Run time: 0.0 sec.; Space: 0 Bytes
+write:Real time: 0.001943 sec.;Run time: 0.0 sec.; Space: 0 Bytes
+
 |#

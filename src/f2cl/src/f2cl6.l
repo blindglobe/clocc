@@ -117,6 +117,8 @@
       (setf outfile-name
 	    (translate-pathname compiled-path
 				(make-pathname :host (pathname-host compiled-path)
+					       :directory (pathname-directory compiled-path)
+					       :name (pathname-name compiled-path)
 					       :type (pathname-type compiled-path))
 				(make-pathname :host (pathname-host compiled-path)
 					       :type "p")))))
@@ -605,8 +607,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.35 2002/09/13 17:50:19 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.36 2003/07/12 18:44:04 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.36  2003/07/12 18:44:04  rtoy
+;;; Include directory and name when computing the name of the output file.
+;;;
 ;;; Revision 1.35  2002/09/13 17:50:19  rtoy
 ;;; From Douglas Crosher:
 ;;;

@@ -2149,8 +2149,24 @@ ABS: NIL          REL: NIL               Result: ""
                                 :type nil)
                  ))
 	)
-    (namestring (merge-pathnames abs rel))
-    ))
+    ;; The following is messed up because CMUCL and LW use different
+    ;; defaults for host (in particular LW uses NIL).  Thus
+    ;; MERGE-PATHNAMES has legitimate different behaviors on both
+    ;; implementations. Of course this is disgusting, but that is the
+    ;; way it is and the rest tries to circumvent this crap.
+    (etypecase abs
+      (logical-pathname
+       (etypecase rel
+	 (logical-pathname
+	  (namestring (merge-pathnames rel abs)))
+	 (pathname
+	  ;; The following potentially translates the logical pathname
+	  ;; very early, but we cannot avoid it.
+	  (namestring (merge-pathnames rel (translate-logical-pathname abs))))
+	 ))
+      (pathname
+       (namestring (merge-pathnames rel abs)))
+      )))
 
 #||
 ;;; This was a try at appending a subdirectory onto a directory.

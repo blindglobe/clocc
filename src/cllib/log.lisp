@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.15 2001/11/02 22:31:15 sds Exp $
+;;; $Id: log.lisp,v 1.16 2004/02/27 17:39:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -72,17 +72,22 @@ This has to be a macro to avoid needless evaluating the args."
         (force-output (if (eq t ,out) *standard-output* ,out))))))
 
 (defmacro with-timing ((&key (terpri t) (done nil) (run t) (real t)
+                             (count nil) (units "bytes")
                              (type t) (out '*standard-output*))
                        &body body)
   "Evaluate the body, then print the timing."
-  (with-gensyms ("TIMING-" bt bt1 %out)
-    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil))
-           (,%out (and (print-log-p ,type) ,out)))
+  (with-gensyms ("TIMING-" bt bt1 %out el)
+    `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)) ,el
+           (,%out (and (print-log-p ,type) ,out))
+           ,@(when count `((,count 0))))
       (unwind-protect (progn ,@body)
         (when ,%out
           (when ,done (princ "done" ,%out))
-          (when ,run (format ,%out " [run: ~/pr-secs/]" (elapsed ,bt t)))
+          (when (or ,run ',count) (setq ,el (elapsed ,bt t)))
+          (when ,run (format ,%out " [run: ~/pr-secs/]" ,el))
           (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+          ,(when count
+            `(format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units))
           (when ,terpri (terpri ,%out)))))))
 
 ;;; }}}

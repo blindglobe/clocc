@@ -718,7 +718,7 @@ these are not rationals, so we get a complex number back.
                    bad-indices)
                  (progn
                    (dolist (ix (cdar rest-tensors+indices))
-                     (if (not (and (consp ix)) (eql (car ix :fix)))
+                     (if (not (and (consp ix)) (eql (car ix) :fix))
                          (hv-inc seen-so-far-hash ix)))
                    (find-buggy-indices (cdr rest-tensors+indices) seen-so-far-hash))))
            ;;

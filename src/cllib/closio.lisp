@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.9 2000/06/14 16:26:26 sds Exp $
+;;; $Id: closio.lisp,v 1.10 2000/06/14 16:35:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -38,14 +38,13 @@
   (declare (ignore char arg))
   (apply #'make-instance (read-delimited-list #\] st t)))
 
-(defun make-clos-readtable ()
+(defun make-clos-readtable (&optional (rt (copy-readtable)))
   "Return the readtable for reading #[]."
-  (let ((rt (copy-readtable)))
-    (set-syntax-from-char #\[ #\( rt)
-    (set-syntax-from-char #\] #\) rt)
-    (set-macro-character #\] (get-macro-character #\) rt) nil rt)
-    (set-dispatch-macro-character #\# #\[ #'read-object rt)
-    rt))
+  (set-syntax-from-char #\[ #\( rt)
+  (set-syntax-from-char #\] #\) rt)
+  (set-macro-character #\] (get-macro-character #\) rt) nil rt)
+  (set-dispatch-macro-character #\# #\[ #'read-object rt)
+  rt)
 )
 
 (defconst +clos-readtable+ readtable (make-clos-readtable)

@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.4 2000/05/22 19:28:42 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.5 2000/06/14 16:35:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -63,27 +63,26 @@
        (#\/ (make-c-cmt :data (concatenate 'string "/" (read-line stream))))
        (t '/)))))
 
-(defun make-c-readtable ()
+(defun make-c-readtable (&optional (rt (copy-readtable)))
   "Make the readtable for parsing C."
-  (let ((rt (copy-readtable)))
-    (set-macro-character #\/ #'read-c-junk nil rt)
-    (set-macro-character #\| #'read-c-junk nil rt)
-    (set-macro-character #\# #'read-c-junk nil rt)
-    (set-syntax-from-char #\; #\a rt)
-    (set-macro-character #\; #'read-c-junk nil rt)
-    (set-syntax-from-char #\# #\a rt)
-    (set-macro-character #\# #'read-c-junk nil rt)
-    (set-syntax-from-char #\: #\a rt)
-    (set-macro-character #\: #'read-c-junk nil rt)
-    (set-syntax-from-char #\, #\a rt)
-    (set-macro-character #\, #'read-c-junk nil rt)
-    (set-macro-character #\* #'read-c-junk nil rt)
-    (set-macro-character #\{ #'read-c-junk nil rt)
-    (set-macro-character #\} (get-macro-character #\)) nil rt)
-    (set-macro-character #\[ #'read-c-junk nil rt)
-    (set-macro-character #\] (get-macro-character #\)) nil rt)
-    (setf (readtable-case rt) :preserve)
-    rt))
+  (set-macro-character #\/ #'read-c-junk nil rt)
+  (set-macro-character #\| #'read-c-junk nil rt)
+  (set-macro-character #\# #'read-c-junk nil rt)
+  (set-syntax-from-char #\; #\a rt)
+  (set-macro-character #\; #'read-c-junk nil rt)
+  (set-syntax-from-char #\# #\a rt)
+  (set-macro-character #\# #'read-c-junk nil rt)
+  (set-syntax-from-char #\: #\a rt)
+  (set-macro-character #\: #'read-c-junk nil rt)
+  (set-syntax-from-char #\, #\a rt)
+  (set-macro-character #\, #'read-c-junk nil rt)
+  (set-macro-character #\* #'read-c-junk nil rt)
+  (set-macro-character #\{ #'read-c-junk nil rt)
+  (set-macro-character #\} (get-macro-character #\)) nil rt)
+  (set-macro-character #\[ #'read-c-junk nil rt)
+  (set-macro-character #\] (get-macro-character #\)) nil rt)
+  (setf (readtable-case rt) :preserve)
+  rt)
 
 (defparameter *c-readtable* (make-c-readtable) "The readtable for C parsing.")
 

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.10 2000/05/11 21:20:49 sds Exp $
+;;; $Id: html.lisp,v 1.11 2000/06/14 16:35:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -97,20 +97,19 @@ optional argument SPACE is non-nil."
                   #\Space)))
        (push cc rr)))))
 
-(defun make-html-readtable ()
+(defun make-html-readtable (&optional (rt (copy-readtable)))
   "Make the readtable for parsing HTML."
-  (let ((rt (copy-readtable)))
-    (set-macro-character #\< #'read-html-markup nil rt)
-    (set-macro-character #\& #'read-html-markup nil rt)
-    (set-macro-character #\> (get-macro-character #\)) nil rt)
-    (set-syntax-from-char #\; #\a rt)
-    ;;(set-macro-character #\; #'read-html-markup nil rt)
-    (set-syntax-from-char #\# #\a rt)
-    (set-syntax-from-char #\: #\a rt)
-    (set-macro-character #\: #'read-html-markup nil rt)
-    (set-syntax-from-char #\, #\a rt)
-    (set-macro-character #\, #'read-html-markup nil rt)
-    rt))
+  (set-macro-character #\< #'read-html-markup nil rt)
+  (set-macro-character #\& #'read-html-markup nil rt)
+  (set-macro-character #\> (get-macro-character #\)) nil rt)
+  (set-syntax-from-char #\; #\a rt)
+  ;;(set-macro-character #\; #'read-html-markup nil rt)
+  (set-syntax-from-char #\# #\a rt)
+  (set-syntax-from-char #\: #\a rt)
+  (set-macro-character #\: #'read-html-markup nil rt)
+  (set-syntax-from-char #\, #\a rt)
+  (set-macro-character #\, #'read-html-markup nil rt)
+  rt)
 
 (defcustom *html-readtable* readtable (make-html-readtable)
   "The readtable for HTML parsing.")

@@ -117,13 +117,14 @@
 (defmacro fset (a b) 
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
 
-(defmacro rfref (arr &rest indices)
-  `(aref ,arr ,@(mapcar #'(lambda (x) (list '1- x)) (reverse indices))))
+(defmacro fref-string (s range)
+  `(subseq ,s ,(1- (first range)) ,(second range)))
 
-(defmacro rfset (a b) 
-  `(setf (rfref ,(second a) ,@(cddr a)) ,b))
+(defmacro fset-string (a b)
+  `(setf (fref-string ,(second a) ,(third a)) ,b))
 
-
+(defmacro // (a b)
+  `(concatenate 'string ,a ,b))
 ;----------------------------------------------------------------------------
 
 #-aclpc (defmacro while (con &rest body)

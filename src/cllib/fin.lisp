@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: fin.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -166,8 +166,9 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
 ;;; Lognormal distribution
 ;;;
 
+(declaim (ftype (function (double-float) (values double-float)) lognormal))
 (defun lognormal (xx)
-  (declare (double-float xx) (values double-float))
+  (declare (double-float xx))
   (if (plusp xx)
       (/ (exp (let ((ll (log xx))) (* ll ll -0.5)))
          (dfloat (sqrt (* 2 pi))) xx)

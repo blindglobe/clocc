@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.3 2000/04/27 15:59:26 sds Exp $
+;;; $Id: stat.lisp,v 1.4 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -28,13 +28,15 @@
 ;;;
 ;;;
 
+;(declaim (ftype (function (??) (values (simple-array double-float (*))
+;                                       double-float (double-float 0.0d0 1.0d0)
+;                                       (double-float 0.0d0)))
+;                regress-n))
 (defun regress-n (yy xx nx &key (func #'aref))
   "Returns: vector [b1 ... bn], free term, Rmult, Ftest."
   (declare (type (simple-array double-float (*)) yy)
            (type simple-array xx) (fixnum nx)
-           (type (function (array fixnum fixnum) double-float) func)
-           (values (simple-array double-float (*)) double-float
-                   (double-float 0.0d0 1.0d0) (double-float 0.0d0)))
+           (type (function (array fixnum fixnum) double-float) func))
   (let ((mx (make-array (list nx nx) :element-type 'double-float
                         :initial-element 0.0d0))
         (cfs (make-array nx :element-type 'double-float ; coeffs

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: list.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: list.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 
 (eval-when (compile load eval)
@@ -49,7 +49,7 @@ the jump). Default is :NEXT."
   "Like `jumps', but only count the jumps.
 Thus, (apply #'count-jumps args) == (length (apply #'jumps args))."
   (declare (sequence seq) (type (function (t t) t) pred)
-           (type (function (t) t) key) (values index-t))
+           (type (function (t) t) key))
   (let (pkey (res 0))
     (declare (type index-t res))
     (map nil (lambda (rec)

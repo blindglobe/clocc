@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.8 2000/04/10 18:55:11 sds Exp $
+;;; $Id: url.lisp,v 2.9 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -267,8 +267,7 @@ Print the appropriate message MESG to OUT."
                           (timeout *url-default-timeout*))
   "Open a socket connection, retrying until success."
   (declare (simple-string host) (fixnum port) (type (or null stream) err)
-           (type (or null index-t) max-retry) (type (real 0) sleep timeout)
-           (values socket))
+           (type (or null index-t) max-retry) (type (real 0) sleep timeout))
   (loop :with begt = (get-universal-time) :and err-cond
         :for ii :of-type index-t :upfrom 1
         :for sock :of-type (or null socket) =
@@ -458,7 +457,7 @@ See RFC959 (FTP) &c.")
 
 (defun ftp-get-passive-socket (sock err bin timeout)
   "Get a passive socket."
-  (declare (type socket sock) (type (or null stream) err) (values socket))
+  (declare (type socket sock) (type (or null stream) err))
   (multiple-value-call #'open-socket-retry
     (ftp-parse-sextuple (url-ask sock err :pasv "pasv"))
     :err err :max-retry 5 :bin bin :timeout timeout))
@@ -528,10 +527,11 @@ Read until the end, then close the socket."
 writing it into the local directory LOC.  Log to OUT.
 Append if the file exists and REGET is non-nil.
 Use binary mode if BIN is non-nil (default).
-Retry (+ 1 RETRY) times if the file length doesn't match the expected."
+Retry (+ 1 RETRY) times if the file length doesn't match the expected.
+Return the file size, elapsed time as number and string, and the
+pathname of the downloaded file."
   (declare (type socket sock) (type index-t retry)
-           (type (or null stream) out err) (simple-string rmt)
-           (values file-size-t double-float simple-string pathname))
+           (type (or null stream) out err) (simple-string rmt))
   (let* ((data (ftp-get-passive-socket sock err t timeout)) (tot 0)
          (bt (get-float-time nil)) (path (merge-pathnames rmt loc))
          (rest (when (and reget (probe-file path))

@@ -9,7 +9,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: card.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
 (eval-when (compile load eval)
@@ -398,9 +398,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
 ;;; }}}{{{ input
 ;;;
 
+(declaim (ftype (function (simple-vector) (values phone)) vector-to-phone))
 (defun vector-to-phone (vec)
   "Convert the vector (from BBDB) to a PHONE instance."
-  (declare (simple-vector vec) (values phone))
+  (declare (simple-vector vec))
   (make-instance 'phone 'loc (aref vec 0) 'nmb
                  (typecase (aref vec 1)
                    (string (aref vec 1))
@@ -408,9 +409,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
                                    (aref vec 1) (aref vec 2) (aref vec 3)
                                    (zerop (aref vec 4)) (aref vec 4))))))
 
+(declaim (ftype (function (simple-vector) (values address)) vector-to-address))
 (defun vector-to-address (vec)
   "Convert the vector (from BBDB) to an ADDRESS  instance."
-  (declare (simple-vector vec) (values address))
+  (declare (simple-vector vec))
   (let ((ad (make-instance 'address 'loc (aref vec 0))))
     (macrolet ((putslot (nn slot)
                  `(unless (zerop (length (the simple-string (aref vec ,nn))))
@@ -428,9 +430,10 @@ See constants `+card-output-bbdb+', `+card-output-vcard+',
               (list (format nil "~5,'0d-~4,'0d" (first zip) (second zip))))))
     ad))
 
+(declaim (ftype (function (simple-vector) (values card)) vector-to-card))
 (defun vector-to-card (vec)
   "Convert the vector (as in BBDB) to a CARD."
-  (declare (simple-vector vec) (values card))
+  (declare (simple-vector vec))
   (let ((nts (aref vec 7)) tmp)
     (make-instance
      'card

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.4 2000/04/27 18:42:42 sds Exp $
+;;; $Id: datedl.lisp,v 1.5 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
 (eval-when (compile load eval)
@@ -79,39 +79,47 @@
   (let ((dl (apply #'make-dated-list :fl ll others)))
     (dl-reset dl)))
 
+(declaim (ftype (function (dated-list) (values date-f-t)) dl-date))
 (defsubst dl-date (dl)
   "Return the DATE function of the dated list DL."
-  (declare (type dated-list dl) (values date-f-t))
+  (declare (type dated-list dl))
   (fdefinition (dated-list-date dl)))
 
+(declaim (ftype (function (dated-list) (values (function (t) double-float)))
+                dl-date dl-chg))
 (defsubst dl-val (dl)
   "Return the VAL function of the dated list DL."
-  (declare (type dated-list dl) (values (function (t) double-float)))
+  (declare (type dated-list dl))
   (fdefinition (dated-list-val dl)))
 
 (defsubst dl-chg (dl)
   "Return the CHG function of the dated list DL."
-  (declare (type dated-list dl) (values (function (t) double-float)))
+  (declare (type dated-list dl))
   (fdefinition (dated-list-chg dl)))
 
+(declaim (ftype (function (dated-list) (values function)) dl-misc))
 (defsubst dl-misc (dl)
   "Return the MISC function of the dated list DL."
-  (declare (type dated-list dl) (values function))
+  (declare (type dated-list dl))
   (fdefinition (dated-list-misc dl)))
 
+(declaim (ftype (function (dated-list symbol)
+                          (values (function (t) double-float)))
+                dl-slot))
 (defsubst dl-slot (dl slot)
   "Return the SLOT function of the dated list DL."
-  (declare (type dated-list dl) (type (member val chg) slot)
-           (values (function (t) double-float)))
+  (declare (type dated-list dl) (type (member val chg) slot))
   (fdefinition (slot-value dl slot)))
 
+(declaim (ftype (function (dated-list) (values fixnum)) dl-len dl-full-len))
 (defsubst dl-len (dl)
   "Return the length of the dated list."
-  (declare (type dated-list dl) (values fixnum)) (length (dl-ll dl)))
+  (declare (type dated-list dl))
+  (length (dl-ll dl)))
 
 (defun dl-full-len (dl)
   "Return the full length of the dated list."
-  (declare (type dated-list dl) (values fixnum))
+  (declare (type dated-list dl))
   (reduce #'+ (dated-list-fl dl) :key (compose length cdr)))
 
 (defsubst dl-endp (dl)
@@ -126,19 +134,23 @@ so that -1 corresponds to the last record."
   (declare (type dated-list dl) (fixnum nn))
   (if (minusp nn) (car (last (dl-ll dl) (- nn))) (nth nn (dl-ll dl))))
 
+(declaim (ftype (function (dated-list fixnum) (values (or null date)))
+                dl-nth-date))
 (defun dl-nth-date (dl &optional (nn 0))
   "Return the Nth date of the dated list."
-  (declare (type dated-list dl) (fixnum nn) (values (or null date)))
+  (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dl-date dl) bb))))
 
+(declaim (ftype (function (dated-list fixnum) (values (or null double-float)))
+                dl-nth-val dl-nth-chg))
 (defun dl-nth-val (dl &optional (nn 0))
   "Return the Nth value of the dated list."
-  (declare (type dated-list dl) (fixnum nn) (values (or null double-float)))
+  (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dl-val dl) bb))))
 
 (defun dl-nth-chg (dl &optional (nn 0))
   "Return the Nth change of the dated list."
-  (declare (type dated-list dl) (fixnum nn) (values (or null double-float)))
+  (declare (type dated-list dl) (fixnum nn))
   (let ((bb (dl-nth dl nn))) (and bb (funcall (dl-chg dl) bb))))
 
 (defun dl-nth-misc (dl &optional (nn 0))
@@ -226,9 +238,10 @@ so that -1 corresponds to the last record."
   "*What to do in `rollover' when the first date is bigger than the last.
 One of NIL (nothing), :ERROR and :WARN.")
 
+(declaim (ftype (function (list date-f-t) (values date)) rollover))
 (defun rollover (list &optional (datef #'date))
   "Return the rollover date for the list."
-  (declare (list list) (type date-f-t datef) (values date))
+  (declare (list list) (type date-f-t datef))
   (let ((ld (funcall datef (car (last (car list))))) (fd (caar list)))
     (if (date-p fd)
         (if (or (null (cdr list)) (date> ld fd)) fd
@@ -243,11 +256,13 @@ One of NIL (nothing), :ERROR and :WARN.")
                                    :error :warn nil)))))
         ld)))
 
+(declaim (ftype (function (dated-list (or null date) t) (values list))
+                date-in-dated-list))
 (defun date-in-dated-list (dt dl &optional last)
   "Call `date-in-list' on the dated list.
 If  LAST is non-nil, make sure that the next date is different.
 No side effects.  Returns CP and CL for `dl-shift'."
-  (declare (type dated-list dl) (type (or null date) dt) (values list))
+  (declare (type dated-list dl) (type (or null date) dt))
   (if (null dt) (dl-ll dl)
       (do ((dd (dl-date dl)) (ls (dated-list-cl dl) (cdr ls)))
           ((or (null (cdar ls)) (date<= dt (rollover ls dd)))
@@ -340,9 +355,10 @@ roll-over dates."
           (- (dl-nth-val dl) v0))
         (- (dl-nth-val dl) (if ro (funcall (dl-val dl) (car ro)) v0)))))
 
+;;(declaim (ftype (function (dated-list ??) (values fixnum)) dl-count-jumps))
 (defun dl-count-jumps (dl &optional (key #'date-ye) (test #'eql))
   "Return the number of years in the dated list."
-  (declare (type dated-list dl) (type (function (date) t) key) (values fixnum))
+  (declare (type dated-list dl) (type (function (date) t) key))
   (with-saved-dl dl
     (loop :with kk :of-type function = (compose 'key (dl-date dl))
           :with kp = (funcall kk (dl-nth dl))
@@ -491,11 +507,12 @@ It is is replaced with (X . EMA)."
                 el))
             seq)))
 
+;; (declaim (ftype (function (double-float dated-list) (values dated-list)) exp-mov-avg-dl))
 (defun exp-mov-avg-dl (coeff idl &optional double (slot 'val))
   "UI for `exp-mov-avg' when the argument is a dated list itself.
 When DOUBLE is given, compute 2 averages, with COEFF and COEFF/2,
 and make the latter accessible through MISC."
-  (declare (double-float coeff) (type dated-list idl) (values dated-list))
+  (declare (double-float coeff) (type dated-list idl))
   (let* ((c2 (/ coeff 2.0d0)) (dd (dl-date idl)) (kk (dl-slot idl slot))
          (dl (make-dated-list
               :date 'car :val 'cdr :name
@@ -643,7 +660,7 @@ and the ratio of the values.
 The date is accessed by (funcall date* rec),
 the value by (funcall val* rec)."
   (declare (list ls0 ls1) (type date-f-t date0 date1)
-           (type (function (t) real) val0 val1) (values list))
+           (type (function (t) real) val0 val1))
   (do* ((bd (date-max (funcall date0 (car ls0))
                       (funcall date1 (car ls1)))) ll c0 c1 d0 d1 cd
         (pd nil cd)             ; prev date

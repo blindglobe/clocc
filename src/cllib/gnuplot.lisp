@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.3 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 (eval-when (compile load eval)
@@ -62,9 +62,10 @@
 (defcustom *gnuplot-msg-stream* (or stream null t) *standard-output*
   "*The message stream of gnuplot functions.")
 
+(declaim (ftype (function (date) (values integer)) plot-sec-to-epoch))
 (defsubst plot-sec-to-epoch (dt)
   "Return the number of seconds from date DT to `+gnuplot-epoch+'."
-  (declare (type date dt) (values integer))
+  (declare (type date dt))
   (- (date2time dt) +gnuplot-epoch+))
 
 (defun plot-msg (&rest args)
@@ -356,7 +357,7 @@ DEPTH out of the dated list."
 
 (defun line-day2sec (ln begd)
   "Make a new line, converting from days to seconds."
-  (declare (type line ln) (type integer begd) (values line))
+  (declare (type line ln) (type integer begd))
   (make-line :sl (/ (line-sl ln) +day-sec+) :co
              (- (line-co ln) (* (line-sl ln) (/ begd +day-sec+)))))
 

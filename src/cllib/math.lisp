@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.5 2000/04/27 18:42:25 sds Exp $
+;;; $Id: math.lisp,v 2.6 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -57,9 +57,11 @@
 ;;; Integers
 ;;;
 
+(declaim (ftype (function (integer integer) (values integer))
+                product-from-to binomial))
 (defun product-from-to (aa bb)
   "Compute the product of integers from AA (EXclusive) to BB (INclusive)."
-  (declare (integer aa bb) (values integer))
+  (declare (integer aa bb))
   (when (> aa bb)
     (error "~s (~:d ~:d): the first argument must be smaller"
            'product-from-to aa bb))
@@ -79,7 +81,7 @@
 
 (defun binomial (nn kk)
   "Compute the binomial coefficient for two integers."
-  (declare (integer nn kk) (values integer))
+  (declare (integer nn kk))
   ;; we do not use the double recursion a la `product-from-to'
   ;; because it would take us outside the realm of the integers
   (loop :with res = 1
@@ -88,20 +90,21 @@
         :do (mulf res (/ jj ii))
         :finally (return res)))
 
+(declaim (ftype (function (integer) (values integer)) ! !!))
 (defun ! (nn)
   "Compute the factorial: n! = n * (n-1) * (n-2) * ..."
-  (declare (integer nn) (values integer))
+  (declare (integer nn))
   #+clisp (lisp:! nn)           ; CLISP has a built-in fast factorial
   #-clisp (product-from-to 1 nn))
 
 (defun !! (nn)
   "Compute the double factorial: n!! = n * (n-2) * (n-4) * ..."
-  (declare (fixnum nn) (values integer))
+  (declare (integer nn))
   (multiple-value-bind (kk rr) (floor nn 2)
     (declare (fixnum kk) (type (integer 0 1) rr))
     (if (zerop rr) (ash (! kk) kk)
         (labels ((ff (aa bb)
-                   (declare (fixnum aa bb) (values integer))
+                   (declare (fixnum aa bb))
                    (case (- bb aa)
                      (2 bb) (4 (* bb (- bb 2))) (6 (* bb (- bb 2) (- bb 4)))
                      (8 (* bb (- bb 2) (- bb 4) (- bb 6)))
@@ -115,9 +118,11 @@
     (declare (double-float dd))
     (* (sqrt (* 2 pi dd)) (expt (/ dd (exp 1)) dd))))
 
+(declaim (ftype (function ((integer 0)) (values (integer 0) (integer 0)))
+                fibonacci))
 (defun fibonacci (nn)
   "Return 2 consecutive Fibonacci numbers."
-  (declare (type (integer 0) nn) (values (integer 0) (integer 0)))
+  (declare (type (integer 0) nn))
   (case nn
     (0 (values 0 0)) (1 (values 1 0)) (2 (values 1 1)) (3 (values 2 1))
     (t (multiple-value-bind (mm rr) (floor nn 2)
@@ -269,8 +274,7 @@ E.g.: (number-sum-split 10 (lambda (x) (* x x)) 'isqrt) => ((1 . 3))"
 (defun dot (l0 l1 &key (key #'value) (key0 key) (key1 key))
   "Compute the dot-product of the two sequences,
 presumed to be of the same size."
-  (declare (sequence l0 l1) (type (function (t) double-float) key key0 key1)
-           (values double-float))
+  (declare (sequence l0 l1) (type (function (t) double-float) key key0 key1))
   (let ((res 0.0d0))
     (declare (double-float res))
     (map nil (lambda (r0 r1)
@@ -282,7 +286,7 @@ presumed to be of the same size."
   "Compute the polynomial with the given coefficients. Use the Horner scheme.
 COEFFS are (a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly1 10 1 2 3 4 5) ==> 12345."
-  (declare (double-float var) (list coeffs) (values double-float))
+  (declare (double-float var) (list coeffs))
   (let ((res 0.0d0))
     (declare (double-float res))
     (dolist (cc coeffs res)
@@ -293,8 +297,7 @@ so that (poly1 10 1 2 3 4 5) ==> 12345."
   "Compute the polynomial with the given coefficients. Use the Horner scheme.
 COEFFS are #(a0 a1 a2 ...) for a0*x^n + a1*x^{n-1} + a2*x^{n-2}...
 so that (poly 10 1 2 3 4 5) ==> 12345."
-  (declare (double-float var) (type simple-vector coeffs)
-           (values double-float))
+  (declare (double-float var) (type simple-vector coeffs))
   (loop :with res :of-type double-float = 0.0d0
         :for cc :of-type double-float :across coeffs
         :do (setq res (+ cc (* var res))) :finally (return res)))
@@ -305,7 +308,7 @@ The same as
   (+ 0.5 (/ (integrate-simpson (lambda (tt) (exp (* tt tt -0.5))) 0 xx)
             (sqrt (* 2 pi))))
 Return the value and the derivative, suitable for `newton'."
-  (declare (double-float xx) (values double-float double-float))
+  (declare (double-float xx))
   (let* ((der (/ (exp (* -0.5d0 (expt xx 2))) (dfloat (sqrt (* 2 pi)))))
          (val (- 1 (* der (poly (/ (1+ (* (abs xx) 0.2316419d0)))
                                 #(1.330274429d0 -1.821255978d0 1.781477937d0
@@ -358,22 +361,21 @@ Return the value and the derivative, suitable for `newton'."
   "Compute the mean of the sequence of real numbers.
 Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (type (function (t) double-float) key)
-           (fixnum len) (values double-float fixnum))
+           (fixnum len))
   (values (/ (reduce #'+ seq :key key) len) len))
 
 (defun mean-cx (seq &key (key #'value) (len (length seq)))
   "Compute the mean of the sequence of complex numbers.
 Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (type (function (t) (complex double-float)) key)
-           (fixnum len) (values (complex double-float) fixnum))
+           (fixnum len))
   (values (/ (reduce #'+ seq :key key) len) len))
 
 (defun mean-weighted (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
   (declare (sequence seq wts) (type (function (t) double-float) value)
-           (type (function (t) number) weight)
-           (values double-float number))
+           (type (function (t) number) weight))
   (let ((twt (reduce #'+ wts :key weight)))
     (values (/ (dot seq wts :key0 value :key1 weight) twt)
             twt)))
@@ -381,16 +383,14 @@ with weights WTS (not necessarily normalized)."
 (defun mean-geometric (seq &key (key #'value))
   "Compute the geometric mean of the sequence of numbers.
 Returns 2 values: the mean and the length of the sequence."
-  (declare (sequence seq) (values double-float fixnum)
-           (type (function (t) double-float) key))
+  (declare (sequence seq) (type (function (t) double-float) key))
   (let ((len (length seq)))
     (values (expt (reduce #'* seq :key key) (/ len)) len)))
 
 (defun mean-geometric-weighted (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted geometric mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
-  (declare (sequence seq wts) (type (function (t) double-float) value weight)
-           (values double-float))
+  (declare (sequence seq wts) (type (function (t) double-float) value weight))
   (let ((twt (reduce #'+ wts :key weight)) (res 1.0d0))
     (declare (double-float res twt))
     (map nil (lambda (rr wt)
@@ -403,8 +403,7 @@ with weights WTS (not necessarily normalized)."
   "Compute the mean of the sequence of real numbers.
 NULLs are ignored, so this is like (mean (remove nil seq :key key) :key key).
 Return 2 values: the mean and the length of the sequence."
-  (declare (sequence seq) (type (function (t) (or null double-float)) key)
-           (values double-float fixnum))
+  (declare (sequence seq) (type (function (t) (or null double-float)) key))
   (let ((len 0))
     (declare (type index-t len))
     (values (s/ (reduce #'+ seq :key (lambda (rr)
@@ -419,8 +418,7 @@ Return 2 values: the mean and the length of the sequence."
   "Compute the standard deviation of the sequence SEQ.
 The mean and the length can be pre-computed for speed."
   (declare (sequence seq) (fixnum len) (double-float mean)
-           (type (function (t) double-float) key)
-           (values double-float double-float fixnum))
+           (type (function (t) double-float) key))
   (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
   (values
    (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
@@ -431,8 +429,7 @@ The mean and the length can be pre-computed for speed."
                                     (value #'value) (weight #'value))
   "Compute the standard deviation of the sequence with weights."
   (declare (sequence seq wts) (type (function (t) double-float) value)
-           (type (function (t) number) weight)
-           (values double-float double-float number))
+           (type (function (t) number) weight))
   (multiple-value-bind (mn twt)
       (mean-weighted seq wts :value value :weight weight)
     (let ((sum 0.0d0))
@@ -444,7 +441,6 @@ The mean and the length can be pre-computed for speed."
 
 (defsubst standard-deviation-cx (&rest args)
   "Return the `standard-deviation' of SEQ as #C(mean stdd)."
-  (declare (values (complex double-float)))
   (multiple-value-bind (stdd mean) (apply #'standard-deviation args)
     (complex mean stdd)))
 
@@ -452,8 +448,7 @@ The mean and the length can be pre-computed for speed."
   "Compute the relative standard deviation (StD(log(x[i+1]/x[i]))).
 Meaningful only if all the numbers are of the same sign,
 if this is not the case, the result will be a complex number."
-  (declare (sequence seq) (type (function (t) double-float) key)
-           (values double-float))
+  (declare (sequence seq) (type (function (t) double-float) key))
   (let (pr (sq 0.0d0) (su 0.0d0) (nn 0))
     (declare (double-float sq su) (type (or null double-float) pr)
              (type index-t nn))
@@ -502,9 +497,7 @@ Return 6 values: covariation, mean0, mean1, dispersion0,
 dispersion1, number of elements considered.
 Uses the fast but numerically unstable algorithm
 without pre-computing the means."
-  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
-           (values double-float double-float double-float (double-float 0.0d0)
-                   (double-float 0.0d0) fixnum))
+  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
   (let ((xb 0.0d0) (yb 0.0d0) (x2b 0.0d0) (xyb 0.0d0) (y2b 0.0d0)
         (nn 0) (c0 0.0d0) (c1 0.0d0))
     (declare (double-float xb yb x2b xyb y2b c0 c1) (type index-t nn))
@@ -528,9 +521,7 @@ without pre-computing the means."
 Return 6 values: covariation, mean0, mean1, dispersion0,
 dispersion1, number of elements considered.
 Uses the numerically stable algorithm with pre-computing the means."
-  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
-           (values double-float double-float double-float double-float
-                   double-float fixnum))
+  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
   (let ((m0 (dfloat (mean seq0 :key key0)))
         (m1 (dfloat (mean seq1 :key key1)))
         (nn 0) (d0 0.0d0) (d1 0.0d0) (rr 0.0d0) (co 0.0d0))
@@ -602,7 +593,7 @@ and the list of the volatilities for each year."
 
 (defsubst linear (x0 y0 x1 y1 tt)
   "Compute the linear function through (x0 y0) and (x1 y1) at tt."
-  (declare (double-float x0 y0 x1 y1 tt) (values double-float))
+  (declare (double-float x0 y0 x1 y1 tt))
   (with-type double-float
     (/ (+ (* y0 (- x1 tt)) (* y1 (- tt x0))) (- x1 x0))))
 
@@ -624,7 +615,7 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 
 (defun safe-/ (aa &rest bb)
   "Safe division."
-  (declare (number aa) (list bb) (values number))
+  (declare (number aa) (list bb))
   (if (some #'zerop bb)
       (cond ((zerop aa) 1) ((plusp aa) most-positive-fixnum)
             (most-negative-fixnum))
@@ -632,14 +623,14 @@ If PRED is NIL return DEFAULT or the arguments if DEFAULT is omitted."
 
 (defsubst s/ (aa bb)
   "Fast safe division; only 2 arguments are allowed."
-  (declare (number aa bb) (values number))
+  (declare (number aa bb))
   (if (zerop bb) (cond ((zerop aa) 1) ((plusp aa) most-positive-fixnum)
                        (most-negative-fixnum))
       (/ aa bb)))
 
 (defsubst d/ (aa bb)
   "Double float fast safe division; only 2 arguments are allowed."
-  (declare (double-float aa bb) (values double-float))
+  (declare (double-float aa bb))
   (if (zerop bb) (cond ((zerop aa) 1.0d0)
                        ((plusp aa) most-positive-double-float)
                        (most-negative-double-float))
@@ -700,8 +691,7 @@ Return the modified LST. 20% faster than `convex-hull1'."
 (defun percent-change (v0 v1 &optional days)
   "Return the percent change in values, from V0 to V1.
 If the optional DAYS is given, return the annualized change too."
-  (declare (number v0 v1) (type (or null number) days)
-           (values double-float (or null double-float)))
+  (declare (number v0 v1) (type (or null number) days))
   (if (zerop v0) (values 0.0d0 0.0d0)
       (let ((pers (dfloat (/ v1 v0))))
         (if (and days (not (zerop days)))
@@ -714,7 +704,7 @@ If the optional DAYS is given, return the annualized change too."
   "Return the relative difference between the two numbers.
 This function is commutative, and puts the smallest number into the
 denominator.  Sign is ignored."
-  (declare (double-float v0 v1) (values double-float))
+  (declare (double-float v0 v1))
   (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
 
 (defsubst approx=-abs (f0 f1 &optional (tol *num-tolerance*))
@@ -746,7 +736,7 @@ MAX-IT is the maximum number of iterations. If -1 (default), unlimited.
 Returns the solution, the last change (more or less the error),
 and the number of iterations made."
   (declare (type (function (number) (values number number)) ff)
-           (number val ival) (fixnum max-it) (values number number fixnum))
+           (number val ival) (fixnum max-it))
   (do ((xx ival) f0 f1 (del 10) (it 0 (1+ it)))
       ((or (< (abs del) tol) (= max-it it)) (values xx del it))
     (declare (type index-t it))
@@ -795,14 +785,16 @@ Returns the probability of at least one event happening."
   (if *print-readably* (call-next-method)
       (format out "{~6f ~6f}" (line-sl ln) (line-co ln))))
 
+(declaim (ftype (function (line double-float) (values double-float)) line-val))
 (defsubst line-val (ln par)
   "Evaluate the line at point."
-  (declare (type line ln) (double-float par) (values double-float))
+  (declare (type line ln) (double-float par))
   (with-type double-float (+ (* par (line-sl ln)) (line-co ln))))
 
+(declaim (ftype (function (line) (values double-float)) line-rsl))
 (defsubst line-rsl (ln)
   "Return the relative slope of the line."
-  (declare (type line ln) (values double-float))
+  (declare (type line ln))
   (d/ (line-sl ln) (line-co ln)))
 
 (defsubst line-below-p (ln xx yy)
@@ -830,16 +822,21 @@ point (XX YY) up to tolerance TOL.  Similar to FORTRAN's arithmetic IF."
       (declare (double-float ,di))
       (cond ((> ,di ,tol) ,below) ((< ,di (- ,tol)) ,above) (t ,upon)))))
 
+(declaim (ftype (function (line double-float double-float) (values line))
+                line-adjust))
 (defsubst line-adjust (ln xx yy)
   "Adjust the line LN to pass through the point, keeping the slope intact."
-  (declare (double-float xx yy) (type line ln) (values line))
+  (declare (double-float xx yy) (type line ln))
   (setf (line-co ln) (with-type double-float (- yy (* (line-sl ln) xx)))) ln)
 
+(declaim (ftype (function (line double-float double-float t) (values line))
+                line-adjust-dir))
 (defun line-adjust-dir (ln xx yy up)
   "Adjust the line LN to be above (if UP) or below (otherwise) of (xx yy)."
   (declare (double-float xx yy) (type line ln))
   (if (funcall (if up #'line-above-p #'line-below-p) ln xx yy)
-      (line-adjust ln xx yy) ln))
+      (line-adjust ln xx yy)
+      ln))
 
 (defun line-adjust-list (ln ls up &key (xkey #'car) (ykey #'cdr))
   "Adjust the line LN to pass above (if UP) or below (otherwise) of LS,
@@ -853,10 +850,13 @@ keeping the slope intact."
     (setq xx (funcall xkey (car ll)) yy (funcall ykey (car ll)))
     (when (funcall ff ln xx yy) (line-adjust ln xx yy))))
 
+(declaim (ftype (function (double-float double-float double-float double-float)
+                          (values line))
+                line-thru-points))
 (defsubst line-thru-points (x0 y0 x1 y1)
   "Make a new line, passing through these 2 points.
 If (= x0 x1), an error will be signaled."
-  (declare (double-float x0 y0 x1 y1) (values line))
+  (declare (double-float x0 y0 x1 y1))
   (make-line :co (with-type double-float (/ (- (* y0 x1) (* y1 x0)) (- x1 x0)))
              :sl (with-type double-float (/ (- y1 y0) (- x1 x0)))))
 
@@ -864,8 +864,7 @@ If (= x0 x1), an error will be signaled."
   "Return the regression line for the sequence of 2d points.
 The second value returned is the deviation from the line.
 The accessor keys XKEY and YKEY default to CAR and CDR respectively."
-  (declare (sequence seq) (type (function (t) double-float) xkey ykey)
-           (values line (double-float 0.0d0)))
+  (declare (sequence seq) (type (function (t) double-float) xkey ykey))
   (case (length seq)
     ((0 1) (error "regress: too few points: ~s~%" seq))
     (2 (values (line-thru-points (funcall xkey (elt seq 0))
@@ -886,9 +885,13 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
                               (with-type double-float (- ym (* xm sl))))
                    (sqrt err)))))))
 
+
+(declaim (ftype (function (double-float double-float double-float double-float)
+                          (values double-float))
+                lincom))
 (defsubst lincom (c0 x0 c1 x1)
   "Compute c0*x0+c1*x1."
-  (declare (double-float c0 x0 c1 x1) (values double-float))
+  (declare (double-float c0 x0 c1 x1))
   (with-type double-float (+ (* c0 x0) (* c1 x1))))
 
 (provide :math)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: iter.lisp,v 1.3 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
 (eval-when (compile load eval)
@@ -33,7 +33,7 @@
   "Lexicographic comparison of vectors."
   (declare (type (simple-array * (*)) s0 s1)
            (type (function (t t) boolean) test lessp)
-           (type (function (t) t) key) (values boolean))
+           (type (function (t) t) key))
   (loop for v0 across s0 for v1 across s1 with z0 and z1 do
         (setq z0 (funcall key v0) z1 (funcall key v1))
         unless (funcall test z0 z1) return (funcall lessp z0 z1)))
@@ -115,9 +115,12 @@ Returns the list of the 2^dim points, less if the set was degenerate."
     (setq mid (apply #'map-into mid
                      (lambda (&rest nums) (/ (apply #'+ nums) len)) ll))
     (flet ((sub (v0 v1)
-             (declare (type (simple-array double-float (*)) v0 v1)
-                      (values (simple-array double-float (*))))
+             (declare (type (simple-array double-float (*)) v0 v1))
              (map-vec 'double-float dim #'- v0 v1)))
+      (declare (ftype (function ((simple-array double-float (*))
+                                 (simple-array double-float (*)))
+                                (values (simple-array double-float (*))))
+                      sub))
       (if (every #'approx=-abs mid new) ll
           (let ((dir (normalize (sub mid new))))
             (declare (type (simple-array double-float (*)) dir))
@@ -135,17 +138,17 @@ Returns the list of the 2^dim points, less if the set was degenerate."
   (declare (type (function ((simple-array double-float)) double-float) func)
            (type (simple-array double-float (*)) pars steps)
            (type (simple-array fixnum (*)) nns) (type index-t ni de)
-           (type (or null double-float) add) (values t double-float fixnum))
+           (type (or null double-float) add))
   (labels ((it (ar)             ; progress report
-             (declare (type (simple-array fixnum (*)) ar) (values fixnum))
+             (declare (type (simple-array fixnum (*)) ar))
              (let ((prod (reduce #'* ar :key
                                  (lambda (nn)
-                                   (declare (type index-t nn) (values fixnum))
+                                   (declare (type index-t nn))
                                    (1+ (* 2 nn))))))
                (declare (fixnum prod))
                (+ (if (every #'zerop ar) 0
                       (it (map-in (lambda (nn)
-                                    (declare (type index-t nn) (values fixnum))
+                                    (declare (type index-t nn))
                                     (max 0 (1- nn))) ar)))
                   prod))))
     (mesg :opt out
@@ -154,20 +157,17 @@ Returns the list of the 2^dim points, less if the set was degenerate."
           de ni (1- (it (copy-seq nns))) pars steps nns))
   (let* ((dim (length pars)) rr ma op
          (dims (map-vec 'fixnum dim
-                        (lambda (nn) (declare (fixnum nn) (values fixnum))
-                                (1+ (* 2 nn))) nns))
+                        (lambda (nn) (declare (fixnum nn)) (1+ (* 2 nn))) nns))
          (ndim (map-vec 'fixnum dim
-                        (lambda (nn) (declare (fixnum nn) (values fixnum))
-                                (max 0 (1- nn))) nns))
+                        (lambda (nn)
+                          (declare (fixnum nn)) (max 0 (1- nn))) nns))
          (nsteps (if (every #'zerop ndim) nil
                      (map-vec
                       'double-float dim
                       (if add
+                          (lambda (xx) (declare (double-float xx)) (* add xx))
                           (lambda (xx)
-                            (declare (double-float xx) (values double-float))
-                            (* add xx))
-                          (lambda (xx)
-                            (declare (double-float xx) (values double-float))
+                            (declare (double-float xx))
                             (* 0.5d0 (1+ xx)))) steps)))
          (pps (make-array dim :element-type 'double-float))
          (pin (map-vec 'double-float dim

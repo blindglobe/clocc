@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.4 2000/04/27 22:37:31 sds Exp $
+;;; $Id: gq.lisp,v 2.5 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -73,9 +73,9 @@ change:~15t~7,2f~35thigh:~45t~7,2f
               (dd-nav dd) (dd-bid dd) (dd-pre dd) (dd-ask dd)
               (dd-chg dd) (dd-hgh dd) (dd-prc dd) (dd-low dd))))
 
+(declaim (ftype (function () (values date)) gq-guess-date))
 (defun gq-guess-date ()
   "Guess the date: the last date when the quote could be available."
-  (declare (values date))
   (multiple-value-bind (se mi ho da mo ye wd) (get-decoded-time)
     (declare (ignore se mi) (fixnum ho da mo ye wd))
     (let ((td (mk-date :ye ye :mo mo :da da)))

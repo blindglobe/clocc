@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.2 2000/04/27 15:41:45 sds Exp $
+;;; $Id: rpm.lisp,v 2.3 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -146,7 +146,7 @@ If nil, retry ad infinitum, otherwise a positive fixnum.")
 (defun short-string-to-rpm (name)
   "Convert the short string like `pack-1.2-3.i386.rpm' to RPM.
 Do not use it!!!  Use the generic function `rpm' instead!!!"
-  (declare (simple-string name) (values rpm))
+  (declare (simple-string name))
   (let* ((len (length name)) (p0 (position #\- name :from-end t))
          (p1 (position #\- name :from-end t :end (1- p0)))
          (p2 (if (string= ".rpm" name :start2 (- len 4)) (- len 4) len))
@@ -247,7 +247,7 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
 
 (defun rpm-merge-notes (r0 r1)
   "Put the notes from r1 into r0."
-  (declare (type rpm r0 r1) (values rpm))
+  (declare (type rpm r0 r1))
   (setf (rpm-note r0) (nconc (rpm-note r0) (rpm-note r1)
                              (when (rpm-itime r1)
                                (list (cons (time2date (rpm-itime r1))
@@ -425,7 +425,7 @@ Then generate the list to download."
 
 (defun rpm-current (name)
   "Return the rpm corresponding to this name."
-  (declare (simple-string name) (values (or null rpm)))
+  (declare (simple-string name))
   (with-open-pipe (st (pipe-input *rpm-command-line* "-q" name))
     (let ((ln (read-line st nil nil))) (when ln (rpm ln)))))
 

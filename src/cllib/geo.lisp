@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: geo.lisp,v 2.3 2000/04/27 15:45:53 sds Exp $
+;;; $Id: geo.lisp,v 2.4 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
 
 (eval-when (compile load eval)
@@ -250,7 +250,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 
 (defun str-core (rr)
   "Get the substring of the string from the first `>' to the last `<'."
-  (declare (simple-string rr) (values (or null simple-string)))
+  (declare (simple-string rr))
   (let ((cc (subseq rr (1+ (position #\> rr))
 		    (position #\< rr :from-end t :start 2))))
     (cond ((string= "-" cc) "NIL") ((string= "<BR>" cc) nil)
@@ -258,7 +258,7 @@ is a float, such as the GDP, VALUE is a cons with the range.
 
 (defun read-some-lines (st)
   "Read some lines from tag to tag."
-  (declare (stream st) (values (or null simple-string)))
+  (declare (stream st))
   (do* ((rr (read-line st) (read-line st))
 	(cp (position #\< rr :from-end t :start 2) (position #\< rr))
 	(cc (subseq rr (1+ (position #\> rr)) cp)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tilsla.lisp,v 1.2 2000/03/27 20:02:54 sds Exp $
+;;; $Id: tilsla.lisp,v 1.3 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tilsla.lisp,v $
 
 (eval-when (compile load eval)
@@ -28,7 +28,7 @@
   "Commify a number into a string.
 The two optional arguments are the number of digits
 after and before the decimal point."
-  (declare (fixnum dd di) (number num) (values simple-string))
+  (declare (fixnum dd di) (number num))
   (setq num (dfloat num))
   (multiple-value-bind (inum dnum) (truncate num)
     (declare (integer inum))

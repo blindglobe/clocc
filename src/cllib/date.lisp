@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.1 2000/03/27 20:02:54 sds Exp $
+;;; $Id: date.lisp,v 2.2 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -105,14 +105,16 @@
 
 (defconst +bad-date+ date (make-date) "*The convenient constant for init.")
 
+(declaim (ftype (function (date) (values simple-string)) date-mon-name))
 (defun date-mon-name (dt)
   "Return the name of the month."
-  (declare (type date dt) (values simple-string))
+  (declare (type date dt))
   (aref +month-names+ (1- (date-mo dt))))
 
+(declaim (ftype (function (date) (values (unsigned-byte 10))) date-mon-offset))
 (defun date-mon-offset (dt)
   "Return the number of characters printed for the previous months."
-  (declare (type date dt) (values (unsigned-byte 10)))
+  (declare (type date dt))
   (let ((pos (1- (date-mo dt))))
     (reduce #'+ +month-names+ :key #'length :end pos :initial-value pos)))
 
@@ -123,27 +125,30 @@
 
 ;;; converters
 
+(declaim (ftype (function (date) (values integer)) date2num date2time))
 (defsubst date2num (dt)
   "Convert the date to the numerical format YYYYMMDD."
-  (declare (type date dt) (values integer))
+  (declare (type date dt))
   (+ (* 10000 (date-ye dt)) (* 100 (date-mo dt)) (date-da dt)))
 
 (defsubst date2time (dt)
   "Call `encode-universal-time' on the date.
 Returns the number of seconds since the epoch (1900-01-01)."
-  (declare (type date dt) (values integer))
+  (declare (type date dt))
   (encode-universal-time 0 0 0 (date-da dt) (date-mo dt) (date-ye dt) 0))
 
+(declaim (ftype (function (real) (values date)) time2date))
 (defun time2date (num)
   "Convert the universal time (GMT) to date."
-  (declare (real num) (values date))
+  (declare (real num))
   (multiple-value-bind (se mi ho da mo ye) (decode-universal-time num 0)
     (declare (ignore se mi ho))
     (make-date :ye ye :mo mo :da da :dd (floor num +day-sec+))))
 
+(declaim (ftype (function (date) (values date)) fix-date))
 (defun fix-date (dt)
   "Make sure the date is correct."
-  (declare (type date dt) (values date))
+  (declare (type date dt))
   (let ((tm (date2time dt)))
     (declare (integer tm))
     (setf (date-dd dt) (floor tm +day-sec+)
@@ -154,20 +159,24 @@ Returns the number of seconds since the epoch (1900-01-01)."
   "Make date, fixing DD and then YE."
   `(fix-date (make-date ,@args)))
 
+(declaim (ftype (function (date) (values days-t)) date2days))
 (defsubst date2days (dt)
   "Convert the date to the number of days since the epoch (1900-01-01)."
-  (declare (type date dt) (values days-t))
+  (declare (type date dt))
   (or (date-dd dt)
       (progn (format t "~& *** Fixed date ~a~%" dt)
              (date-dd (fix-date dt)))))
 
+(declaim (ftype (function (days-t) (values date)) days2date))
 (defsubst days2date (days)
   "Convert the number of days since the epoch (1900-01-01) to the date."
-  (declare (type days-t days) (values date)) (time2date (* days +day-sec+)))
+  (declare (type days-t days))
+  (time2date (* days +day-sec+)))
 
+(declaim (ftype (function (integer) (values date)) num2date))
 (defun num2date (num)
   "Get the date from the number."
-  (declare (integer num) (values date))
+  (declare (integer num))
   (mk-date :ye (floor num 10000) :mo (mod (floor num 100) 100)
            :da (mod num 100)))
 
@@ -197,9 +206,10 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defcustom +unix-epoch+ integer (encode-universal-time 0 0 0 1 1 1970 0)
   "The start of the UNIX epoch - 1970-01-01.")
 
+(declaim (ftype (function ((unsigned-byte 32)) (values date)) unix-date))
 (defun unix-date (nn)
   "Convert UNIX time_t number to date."
-  (declare (type (unsigned-byte 32) nn) (values date))
+  (declare (type (unsigned-byte 32) nn))
   (time2date (+ nn +unix-epoch+)))
 
 (defun dttm->string (dttm &optional old)
@@ -240,14 +250,16 @@ Returns the number of seconds since the epoch (1900-01-01)."
                                            :start2 0 :end2 3)))))
         (when pos (1+ pos)))))
 
+(declaim (ftype (function (days-t) (values (integer 0 6))) days-week-day))
 (defun days-week-day (days)
   "Return the week day of the date DAYS from the epoch."
-  (declare (type days-t days) (values (integer 0 6)))
+  (declare (type days-t days))
   (nth-value 6 (decode-universal-time (* days +day-sec+) 0)))
 
+(declaim (ftype (function (date) (values (integer 0 6))) date-week-day))
 (defsubst date-week-day (date)
   "Return the week day of the date."
-  (declare (type date date) (values (integer 0 6)))
+  (declare (type date date))
   (days-week-day (date-dd date)))
 
 (defun previous-working-day (&optional (dd (today)))
@@ -258,11 +270,12 @@ Returns the number of seconds since the epoch (1900-01-01)."
     (6 (yesterday dd 2))
     (0 (yesterday dd 3))))
 
+;; (declaim (ftype (function (??) (values date)) next-bad-day))
 (defun next-bad-day (&optional (date (today)) (dir 1))
   "Return the next Friday the 13th after (before) DATE.
 The second optional argument can be 1 (default) for `after' and
 -1 for `before'."
-  (declare (type date date) (type (member 1 -1) dir) (values date))
+  (declare (type date date) (type (member 1 -1) dir))
   (do* ((dd (date-dd date)) (step (* dir 7))
         (fri (+ dd (mod (- 4 (days-week-day dd)) step)) (+ fri step))
         (dt (days2date fri) (days2date fri)))
@@ -308,25 +321,30 @@ The argument can be:
 ;;; utilities
 ;;;
 
+(declaim (ftype (function (date-f-t t) (values (function (t) days-t)))
+                days-since))
 (defun days-since (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a fixnum. KEY should return a date."
-  (declare (type date-f-t key) (values (function (t) days-t)))
+  (declare (type date-f-t key))
   (let ((dd (date-dd (date beg))))
     (declare (type days-t dd))
     (lambda (rr) (- (date-dd (funcall key rr)) dd))))
 
+(declaim (ftype (function (date-f-t t) (values (function (t) double-float)))
+                days-since-f))
 (defun days-since-f (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a double-float. KEY should return a date."
-  (declare (type date-f-t key) (values (function (t) double-float)))
+  (declare (type date-f-t key))
   (let ((dd (dfloat (date-dd (date beg)))))
     (declare (double-float dd))
     (lambda (rr) (dfloat (- (date-dd (funcall key rr)) dd)))))
 
+(declaim (ftype (function () (values date)) today))
 (defun today ()
   "Return today's date."
-  (declare (values date)) (time2date (get-universal-time)))
+  (time2date (get-universal-time)))
 
 (defun date= (d0 d1)
   "Check that the two dates are the same."
@@ -384,13 +402,16 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
     (every (lambda (dd) (declare (type date dd)) (= d1 (date-dd dd)))
            dates)))
 
+(declaim (ftype (function (date date) (values date)) date-max date-min))
 (defsubst date-max (d0 d1)
   "Return the latest date."
-  (declare (type date d0 d1) (values date)) (if (date< d0 d1) d1 d0))
+  (declare (type date d0 d1))
+  (if (date< d0 d1) d1 d0))
 
 (defsubst date-min (d0 d1)
   "Return the earliest date."
-  (declare (type date d0 d1) (values date)) (if (date> d0 d1) d1 d0))
+  (declare (type date d0 d1))
+  (if (date> d0 d1) d1 d0))
 
 (defun date-latest (ll &key (key #'date))
   "Return the last date in the list thereof."
@@ -423,9 +444,10 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
     (or (and (= m1 1) (= (1+ y0) y1) (> m0 9))
         (and (= y0 y1) (< m0 m1) (> (+ 4 m0) m1) (member m1 '(1 4 7 10))))))
 
+(declaim (ftype (function (date) (values (integer 1 4))) date-quarter))
 (defun date-quarter (dt)
   "Return the quarter of the date."
-  (declare (type date dt) (values (integer 1 4)))
+  (declare (type date dt))
   (1+ (floor (1- (date-mo dt)) 3)))
 
 (defun date-quarter= (d0 d1)
@@ -433,21 +455,23 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type date d0 d1))
   (and (= (date-ye d0) (date-ye d1)) (= (date-quarter d0) (date-quarter d1))))
 
+(declaim (ftype (function (date date) (values fixnum)) days-between))
 (defsubst days-between (d0 &optional (d1 (today)))
   "Return the number of days between the two dates."
-  (declare (type date d0 d1) (values fixnum))
+  (declare (type date d0 d1))
   (- (date-dd d1) (date-dd d0)))
 
+(declaim (ftype (function (date days-t) (values date)) tomorrow yesterday))
 (defun tomorrow (&optional (dd (today)) (skip 1))
   "Return the next day in a new date structure.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
-  (declare (type date dd) (type days-t skip) (values date))
+  (declare (type date dd) (type days-t skip))
   (days2date (+ (date-dd dd) skip)))
 
 (defsubst yesterday (&optional (dd (today)) (skip 1))
   "Return the previous day.  Calls tomorrow."
-  (declare (type date dd) (type days-t skip) (values date))
+  (declare (type date dd) (type days-t skip))
   (tomorrow dd (- skip)))
 
 (defun date-next-year (dd &optional (skip 1))
@@ -468,11 +492,12 @@ I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd) (type days-t skip))
   (date-next-year (date-next-month (tomorrow dd skip) skip) skip))
 
+;;(declaim (ftype (function (??) (values list)) date-in-list))
 (defun date-in-list (dt lst &optional (key #'date) last)
   "Return the tail of LST starting with DT.
 If LAST is non-nil, make sure that the next date is different.
 *Important*: assumes that the list is ordered according to `date>'."
-  (declare (list lst) (type date-f-t key) (values list))
+  (declare (list lst) (type date-f-t key))
   (let ((ll (binary-member (date dt) lst :key key :test #'date<=)))
     (if (and last ll (cdr ll)) (skip-to-new ll :key key :test #'date=) ll)))
 

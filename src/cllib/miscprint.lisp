@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.3 2000/03/27 20:02:54 sds Exp $
+;;; $Id: miscprint.lisp,v 1.4 2000/05/01 20:13:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -48,9 +48,10 @@
 
 (defun print-package (pp &optional (out *standard-output*) verbose)
   "Print the package information.
-Return 2 values: the number of accessible symbols and that of external ones."
-  (declare (type (or symbol string package) pp) (stream out)
-           (values index-t index-t index-t))
+Return 3 values: the number of accessible symbols,
+the number of external symbols, and
+the number of symbols without any bindings."
+  (declare (type (or symbol string package) pp) (stream out))
   (let ((pa (if (packagep pp) pp
                 (or (find-package pp)
                     (find-package (string-upcase (string pp))))))

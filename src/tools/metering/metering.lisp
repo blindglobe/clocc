@@ -694,26 +694,36 @@ Estimated total monitoring overhead: 0.88 seconds
 (defmacro delta4-cons (new-cons1 new-cons2 old-cons1 old-cons2)
   `(dpb (- ,new-cons1 ,old-cons1) (byte 24 24) (- ,new-cons2 ,old-cons2)))
 
+#+:clisp
+(if (< internal-time-units-per-second 1000000)
+    (defmacro merge-time (time time1) `(dpb ,time (byte 16 16) ,time1))
+    (defmacro merge-time (time time1)
+      `(+ (* internal-time-units-per-second ,time) ,time1)))
+
+#+:clisp
+(defmacro merge-cons (cons cons1) `(dpb ,cons (byte 24 24) ,cons1))
+
 ;; avoid consing: when the application conses a lot,
 ;; get-cons may return a bignum, so we really should not use it.
 #+:clisp
-(defmacro with-time/cons ((delta-time delta-cons) form &body post-process)
-  (let ((beg-cons1 (gensym "BEG-CONS1-")) (end-cons1 (gensym "END-CONS1-"))
-        (beg-cons2 (gensym "BEG-CONS2-")) (end-cons2 (gensym "END-CONS2-"))
-        (beg-time1 (gensym "BEG-TIME1-")) (end-time1 (gensym "END-TIME1-"))
-        (beg-time2 (gensym "BEG-TIME2-")) (end-time2 (gensym "END-TIME2-"))
-        (re1 (gensym)) (re2 (gensym)) (gc1 (gensym)) (gc2 (gensym)))
-    `(multiple-value-bind (,re1 ,re2 ,beg-time1 ,beg-time2
-                           ,gc1 ,gc2 ,beg-cons1 ,beg-cons2) (sys::%%time)
-       (declare (ignore ,re1 ,re2 ,gc1 ,gc2))
+(defmacro with-time/cons ((delta-time delta-time1 delta-cons delta-cons1)
+                          form &body post-process)
+  (let ((beg-cons (gensym "BEG-CONS-")) (beg-cons1 (gensym "BEG-CONS1-"))
+        (end-cons (gensym "END-CONS-")) (end-cons1 (gensym "END-CONS1-"))
+        (beg-time (gensym "BEG-TIME-")) (beg-time1 (gensym "BEG-TIME1-"))
+        (end-time (gensym "END-TIME-")) (end-time1 (gensym "END-TIME1-"))
+        (re (gensym)) (re1 (gensym)) (gc (gensym)) (gc1 (gensym)))
+    `(multiple-value-bind (,re ,re1 ,beg-time ,beg-time1
+                           ,gc ,gc1 ,beg-cons ,beg-cons1) (sys::%%time)
+       (declare (ignore ,re ,re1 ,gc ,gc1))
        (multiple-value-prog1 ,form
-         (multiple-value-bind (,re1 ,re2 ,end-time1 ,end-time2
-                               ,gc1 ,gc2 ,end-cons1 ,end-cons2) (sys::%%time)
-           (declare (ignore ,re1 ,re2 ,gc1 ,gc2))
-           (let ((,delta-time (delta4-time ,end-time1 ,end-time2
-                                           ,beg-time1 ,beg-time2))
-                 (,delta-cons (delta4-cons ,end-cons1 ,end-cons2
-                                           ,beg-cons1 ,beg-cons2)))
+         (multiple-value-bind (,re ,re1 ,end-time ,end-time1
+                               ,gc ,gc1 ,end-cons ,end-cons1) (sys::%%time)
+           (declare (ignore ,re ,re1 ,gc ,gc1))
+           (let ((,delta-time  (- ,end-time  ,beg-time))
+                 (,delta-time1 (- ,end-time1 ,beg-time1))
+                 (,delta-cons  (- ,end-cons  ,beg-cons))
+                 (,delta-cons1 (- ,end-cons1 ,beg-cons1)))
              ,@post-process))))))
 
 ;;; ********************************
@@ -888,12 +898,11 @@ Estimated total monitoring overhead: 0.88 seconds
 (defvar *MONITOR-CONS-OVERHEAD* nil
   "The amount of cons an empty monitored function costs.")
 
-(defvar *TOTAL-TIME* 0
-  "Total amount of time monitored so far.")
-(defvar *TOTAL-CONS* 0
-  "Total amount of consing monitored so far.")
-(defvar *TOTAL-CALLS* 0
-  "Total number of calls monitored so far.")
+(defvar *TOTAL-TIME* 0 "Total amount of time monitored so far.")
+(defvar *TOTAL-CONS* 0 "Total amount of consing monitored so far.")
+#+clisp (defvar *TOTAL-TIME1* 0 "CLISP-specific - hi bytes of total time.")
+#+clisp (defvar *TOTAL-CONS1* 0 "CLISP-specific - hi bytes of total space.")
+(defvar *TOTAL-CALLS* 0 "Total number of calls monitored so far.")
 (proclaim '(type time-type *total-time*))
 (proclaim '(type consing-type *total-cons*))
 (proclaim '(fixnum *total-calls*))
@@ -1021,6 +1030,7 @@ variables/arrays/structures."
   (setq *total-time* 0
         *total-cons* 0
         *total-calls* 0)
+  #+clisp (setq *total-time1* 0 *total-cons1* 0)
   (dolist (symbol *monitored-functions*)
     (when (monitored symbol)
       (reset-monitoring-info symbol))))
@@ -1077,15 +1087,15 @@ adjusted for overhead."
   (let (required-args)
     (dotimes (i min-args) (push (gensym) required-args))
     `(lambda (name)
-       (let ((inclusive-time 0)
-	     (inclusive-cons 0)
-	     (exclusive-time 0)
-	     (exclusive-cons 0)
+       (let ((inclusive-time 0) #+clisp (inclusive-time1 0)
+             (inclusive-cons 0) #+clisp (inclusive-cons1 0)
+             (exclusive-time 0) #+clisp (exclusive-time1 0)
+             (exclusive-cons 0) #+clisp (exclusive-cons1 0)
 	     (calls 0)
 	     (nested-calls 0)
 	     (old-definition (place-function name)))
 	 (declare (type time-type inclusive-time)
-		  (type time-type exclusive-time)
+                  (type time-type exclusive-time)
 		  (type consing-type inclusive-cons)
 		  (type consing-type exclusive-cons)
 		  (fixnum calls)
@@ -1103,11 +1113,13 @@ adjusted for overhead."
 			 ;; (old-time inclusive-time)
 			 ;; (old-cons inclusive-cons)
 			 ;; (old-nested-calls nested-calls)
-			 )
+			 #+clisp (prev-total-time1 *total-time1*)
+			 #+clisp (prev-total-cons1 *total-cons1*))
 		     (declare (type time-type prev-total-time)
 			      (type consing-type prev-total-cons)
 			      (fixnum prev-total-calls))
-                     (with-time/cons (delta-time delta-cons)
+                     (with-time/cons (delta-time #+clisp delta-time1
+                                      delta-cons #+clisp delta-cons1)
                        ;; form
                        ,(if optionals-p
                             #+cmu `(multiple-value-call
@@ -1136,34 +1148,57 @@ adjusted for overhead."
                        ;; calls to the same function. Change the
                        ;; setf to an incf to fix this?
                        (incf inclusive-time (the time-type delta-time))
+                       #+clisp (incf inclusive-time1 delta-time1)
                        ;; (setf inclusive-time (+ delta-time old-time))
                        (incf exclusive-time (the time-type
                                               (+ delta-time
                                                  (- prev-total-time
                                                     *total-time*))))
+                       #+clisp (incf exclusive-time1
+                                     (+ delta-time1 (- prev-total-time1
+                                                       *total-time1*)))
                        (setf *total-time* (the time-type
-                                            (+ delta-time
-                                               prev-total-time)))
+                                            (+ delta-time prev-total-time)))
+                       #+clisp (setf *total-time1*
+                                     (+ delta-time1 prev-total-time1))
                        ;; Consing
                        (incf inclusive-cons (the consing-type delta-cons))
+                       #+clisp (incf inclusive-cons1 delta-cons1)
                        ;; (setf inclusive-cons (+ delta-cons old-cons))
                        (incf exclusive-cons (the consing-type
                                               (+ delta-cons
                                                  (- prev-total-cons
                                                     *total-cons*))))
+                       #+clisp (incf exclusive-cons1
+                                     (+ delta-cons1
+                                        (- prev-total-cons1 *total-cons1*)))
                        (setf *total-cons*
                              (the consing-type
-                               (+ delta-cons prev-total-cons)))))))
+                               (+ delta-cons prev-total-cons)))
+                       #+clisp (setf *total-cons1*
+                                     (+ delta-cons1 prev-total-cons1))))))
 	 (setf (get-monitor-info name)
 	       (make-metering-functions
 		:name name
 		:old-definition old-definition
 		:new-definition (place-function name)
 		:read-metering #'(lambda ()
+                                   #-clisp
 				   (values inclusive-time
 					   inclusive-cons
 					   exclusive-time
 					   exclusive-cons
+					   calls
+					   nested-calls)
+                                   #+clisp
+				   (values (merge-time inclusive-time
+                                                       inclusive-time1)
+					   (merge-cons inclusive-cons
+                                                       inclusive-cons1)
+					   (merge-time exclusive-time
+                                                       exclusive-time1)
+                                           (merge-cons exclusive-cons
+                                                       exclusive-cons1)
 					   calls
 					   nested-calls))
 		:reset-metering #'(lambda ()
@@ -1173,6 +1208,11 @@ adjusted for overhead."
 					  exclusive-cons 0
 					  calls 0
 					  nested-calls 0)
+                                    #+clisp
+                                    (setq inclusive-time1 0
+                                          inclusive-cons1 0
+                                          exclusive-time1 0
+                                          exclusive-cons1 0)
 				    t)))))))
 );; End of EVAL-WHEN
 

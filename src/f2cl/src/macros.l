@@ -451,9 +451,13 @@ is not included")
   ;; ftruncate is exactly what we want.
   (etypecase x
     (single-float
-     (ftruncate (the single-float x)))
+     (locally 
+       (declare (optimize (space 0) (speed 3)))
+       (values (ftruncate (the single-float x)))))
     (double-float
-     (ftruncate (the double-float x)))))
+     (locally 
+       (declare (optimize (space 0) (speed 3)))
+       (values (ftruncate (the double-float x)))))))
 
 (defun dint (x)
   (aint x))
@@ -1197,8 +1201,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.50 2002/05/05 23:41:17 rtoy Exp $
+;;; $Id: macros.l,v 1.51 2002/06/30 13:08:51 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.51  2002/06/30 13:08:51  rtoy
+;;; Add some declarations to AINT so that CMUCL can completely inline the
+;;; call to ftruncate.
+;;;
 ;;; Revision 1.50  2002/05/05 23:41:17  rtoy
 ;;; Typo: extra paren.
 ;;;

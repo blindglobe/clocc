@@ -1,3 +1,37 @@
+2002-02-20  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added some initial support for CormanLisp.  Not quite working yet.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Updated copyright notice to include 2001 and 2002.
+
+2002-02-20  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Updated copyright notice to include 2001 and 2002.
+
+2002-02-12  sds  <sds@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp (new-append-directories):
+	avoid binding REL-FILE when it is not used
+
+2002-02-11  stig  <stig@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	minor case-change of the symbol T to t, to correspond to other case-changes done recently.
+
+2002-02-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog: ChangeLog updated.
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Added patches by Kevin Rosenberg and Arthur Lemmens.
+	ACL case-sensitivity should not cause any problems now
+	and LW warning should disappear.
+	Also, support for the newer compilers and binaries for
+	ACL 6.1 and LW 4.2 is in (thanks again to Kevin Rosenberg).
+
 2002-02-06  Marco Antoniotti  <marcoxa@cs.nyu.edu>
 
 	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:

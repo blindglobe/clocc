@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.22 2000/11/09 19:10:26 sds Exp $
+;;; $Id: inspect.lisp,v 1.23 2000/11/10 20:04:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,12 +39,12 @@ The possible values are
   :http   use a web browser (see `*inspect-browser*')
 To define a frontend, one has to define methods for
  `print-inspection' and `inspect-frontend'.")
-(defcustom *inspect-browser* symbol nil
+(defcustom *inspect-browser* (or symbol list) nil
   "*The default browser to use with the `:http' `*inspect-frontend*'.
-If nil, no browser is stared - you will have to point your browser to
+If nil, no browser is started - you will have to point your browser to
 a URL supplied by `inspect-frontend'.
 This way the browser and Lisp can run on different machines.
-See `browse-url' and `*browsers*'.")
+See `browse-url', `*browser*', and `*browsers*'.")
 (defcustom *inspect-print-lines* fixnum 5
   "*The default value for `*print-lines*'.")
 (defcustom *inspect-print-level* fixnum 5
@@ -450,12 +450,11 @@ This is useful for frontends which provide an eval/modify facility."
           (when (> *inspect-debug* 0)
             (format t "~&~s [~s]: server: ~s~%"
                     'inspect-frontend frontend server))
-          (if *inspect-browser*
-              (browse-url (format nil "http://127.0.0.1:~d/0/:s" port)
-                          :browser *inspect-browser*)
-              (format
-               t "~& * please point your browser at <http://~a:~d/0/:s>~%"
-               *mail-host-address* port))
+          (browse-url (format nil "http://~a:~d/0/:s"
+                              (if *inspect-browser*
+                                  "127.0.0.1" *mail-host-address*)
+                              port)
+                      :browser *inspect-browser*)
           server))
        sock id com keep-alive)
       ((eq com :q) (socket-server-close server)

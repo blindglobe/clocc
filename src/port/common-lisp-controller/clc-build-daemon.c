@@ -86,7 +86,7 @@ int linelength=MAX_LINES; /* length of the line read */
 int showoutput=1; /* do we show the compilation output? */
 
 /* characters allowed in the package and compiler names: */
-char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-";
+char allowedcharacters[]="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-.";
 /* delimiters: */
 char delim[]=" \t\n\r";
 

@@ -46,7 +46,7 @@
 (defparameter *mk-defsystem-absolute-directory-pathname*
   (parse-namestring
    "/home/marcoxa/lang/cl/defsystem/make/"))
-#|
+|#
 
 ;;; The following three parameters are tested IN SEQUENCE and
 ;;; exclusively.  The first one found true one will cause the

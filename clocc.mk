@@ -3,7 +3,7 @@
 # The variables TOP, SYSTEM, SOURCES and LISPEXT must already have been set.
 # This file requires GNU Make
 #
-# $Id: clocc.mk,v 1.10 2000/05/02 15:46:15 sds Exp $
+# $Id: clocc.mk,v 1.11 2000/05/04 15:56:55 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 RUNLISP := $(TOP)/bin/run-lisp
@@ -52,7 +52,7 @@ $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
 	@$(LN) -s . extra;
 	@$(LN) -s $(ZIPEXTRA) .;
 	@echo ...updating zip file $@...;
-	@$(ZIP) $@ $(patsubst %,$(SYSTEM)/%,$^) \
+	@$(ZIP) $@ $(patsubst %,$(SYSTEM)/%,$^) $(ZIPEXTRANOLINK) \
 		$(patsubst %,$(SYSTEM)/extra/%,$(notdir $(ZIPEXTRA)));
 	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA));
 

@@ -20,11 +20,16 @@
  If this file does not exist, the package default will be
  the same as the implementation default.
 
-There is a new shell function: common-lisp-source-compatible.
-The syntax is
- 
-  common-lisp-source-compatible <pkg> [impl ...]
+There are two new shell functions: common-lisp-only-compatible and
+common-lisp-not-compatible.
 
+Usage:
+   common-lisp-only-compatible <pkg> [impl ...]
 This is designed to be called by a package's installation program. It
 sets package's autobuild to "no" for all implementations except
 for the implementations supplied on the command-line.
+
+   common-lisp-not-compatible <pkg> [impl ...]
+This is designed to be called by a package's installation program. It
+sets package's autobuild to "no" for all implementations supplied
+on the command-line.

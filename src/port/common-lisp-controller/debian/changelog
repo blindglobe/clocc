@@ -1,6 +1,8 @@
 common-lisp-controller (3.27) unstable; urgency=low
 
   * NMU
+  * Change clc-build-daemon.c so it will try to recompile files
+  if the binary directory exists, but has no files in it 
   * New autobuilding system, described in README.autobuild
   * Add new commands: check-common-lisp-autobuild and
   common-lisp-source-compatible.

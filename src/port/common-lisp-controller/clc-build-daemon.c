@@ -186,6 +186,31 @@ int probe_directory(char *pathname)
     }
 }
 
+int directory_has_files (char *pathname)
+{
+  /* returns 1 if directory exists and contains files */
+  int empty = 1; /* true if directory is empty */
+  DIR *dir = opendir(pathname);
+  struct dirent *entry;
+  
+  if (dir == (DIR *) NULL)
+    return 0;
+  else
+    {
+      while ((entry = readdir(dir)) != NULL)
+	{
+	  if (strcmp(entry->d_name, ".") != 0 &&
+	      strcmp(entry->d_name, "..") != 0) {
+	    empty = 0; 
+	    break;
+	  }
+	}
+      if (closedir(dir) != 0)
+	reporterror("Could not close directory stream!?");
+      return ! empty;
+    }
+}
+
 void  nuke_package(char *package,char *compiler)
 {
   char command[4097];
@@ -402,7 +427,7 @@ int main(int argc, char *argv[])
                        compiler);
               base_directory[4096]=(char)0;
 
-              if (probe_directory(directory))
+              if (directory_has_files(directory))
                 {
                   printf("550 package %s for compiler %s already compiled!\n", package, compiler);
                 }
@@ -441,15 +466,17 @@ int main(int argc, char *argv[])
                             }
                         }
 
-                      if ( mkdir(directory, S_IREAD | S_IWRITE | S_IEXEC | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
-                        {
-                          char command[4097];
-
-                          snprintf(command,4096,"while creating directory: /usr/lib/common-lisp/%s/%s",
-                                   compiler,package);
-                          command[4096]=(char)0;
-                          reporterror(command);
-                        }
+		      if (! probe_directory (directory)) {
+			if ( mkdir(directory, S_IREAD | S_IWRITE | S_IEXEC | S_IXGRP | S_IRGRP | S_IROTH | S_IXOTH) != 0)
+			  {
+			    char command[4097];
+			    
+			    snprintf(command,4096,"while creating directory: /usr/lib/common-lisp/%s/%s",
+				     compiler,package);
+			    command[4096]=(char)0;
+			    reporterror(command);
+			  }
+		      }
 
                       login_data = getpwnam("cl-builder");
 

@@ -1,4 +1,4 @@
-;;; File: <math.lisp - 1999-02-22 Mon 17:54:09 EST sds@eho.eaglets.com>
+;;; File: <math.lisp - 1999-02-24 Wed 23:40:09 EST sds@eho.eaglets.com>
 ;;;
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: math.lisp,v 1.14 1999/02/22 22:56:10 sds Exp $
+;;; $Id: math.lisp,v 1.15 1999/02/25 04:40:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 ;;; $Log: math.lisp,v $
+;;; Revision 1.15  1999/02/25 04:40:36  sds
+;;; `volatility': swapped return values.
+;;;
 ;;; Revision 1.14  1999/02/22 22:56:10  sds
 ;;; Use `:min-len' key in the `call-on-split' call in `volatility'.
 ;;;
@@ -453,7 +456,7 @@ and the average annual volatility for US Dollar Index."
            (type (function (t) double-float) key))
   (let ((vols (call-on-split lst #'standard-deviation-relative
                              :split-key split-key :key key :min-len 2)))
-    (values vols (mean vols :key #'cdr))))
+    (values (mean vols :key #'cdr) vols)))
 
 ;;; Mean / Deviation / Length
 

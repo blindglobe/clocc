@@ -1,10 +1,10 @@
 ;;; RPM updates
 ;;;
-;;; Copyright (C) 1998-2000 by Sam Steingold
+;;; Copyright (C) 1998-2002 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.11 2001/11/02 22:31:15 sds Exp $
+;;; $Id: rpm.lisp,v 2.12 2002/04/21 20:02:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -295,13 +295,14 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
    :test #'string= :key #'rpm-name))
 
 (defun rpm-available (url &key (out *standard-output*) (err *error-output*)
+                      ((:max-retry *url-max-retry*) *rpm-max-retry*)
+                      ((:timeout *url-timeout*) *rpm-timeout*)
                       (retry 2))
   "Return the list of all available RPMs."
   (declare (type url url) (type (or null stream) err out) (type index-t retry))
   (handler-case
-      (with-open-url (sock url :err err :timeout *rpm-timeout*
-                           :max-retry *rpm-max-retry*)
-        (let ((data (ftp-get-passive-socket sock err nil *rpm-timeout*)))
+      (with-open-url (sock url :err err)
+        (let ((data (ftp-get-passive-socket sock err nil)))
           (when (ignore-errors (url-ask sock err :list "list *.rpm")) ; 150
             (prog1 (map-in (lambda (rr) (setf (rpm-note rr) (list url)) rr)
                            (rpm-read data))
@@ -345,6 +346,8 @@ The elements matching `*rpm-skip*' are removed, too."
           (rpm-note rpm)))
 
 (defun rpm-get-available (&key force (out *standard-output*)
+                          ((:max-retry *url-max-retry*) *rpm-max-retry*)
+                          ((:timeout *url-timeout*) *rpm-timeout*)
                           (err *error-output*))
   "Get the list of all RPMs in `*rpm-locations*' and put it there.
 Then generate the list to download."
@@ -357,9 +360,7 @@ Then generate the list to download."
     (with-timing (:out out)
       (let ((na 0) (le 0)
             #+clisp (#+lisp=cl  ext:*pprint-first-newline*
-                     #-lisp=cl lisp:*pprint-first-newline* nil)
-            (*url-default-timeout* *rpm-timeout*)
-            (*url-default-max-retry* *rpm-max-retry*))
+                     #-lisp=cl lisp:*pprint-first-newline* nil))
         (declare (type index-t na le))
         (dolist (dld *rpm-locations*)
           (declare (type download-data dld))
@@ -449,13 +450,14 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-get-list (url rpms &key (out *standard-output*) (err *error-output*)
+                      ((:max-retry *url-max-retry*) *rpm-max-retry*)
+                      ((:timeout *url-timeout*) *rpm-timeout*)
                      (len (length rpms)) (retry 2))
   "Get the list of RPMS from URL."
   (declare (type url url) (list rpms) (type (or null stream) out err)
            (type index-t len retry))
   (handler-case
-      (with-open-url (sock url :err err :timeout *rpm-timeout*
-                           :max-retry *rpm-max-retry*)
+      (with-open-url (sock url :err err)
         (url-ask sock err :type "type i") ; 200
         (loop :for rpm :in rpms
               :and ii :of-type index-t :upfrom 1
@@ -496,6 +498,8 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-get-new-rpms (&key force (out *standard-output*)
+                         ((:max-retry *url-max-retry*) *rpm-max-retry*)
+                         ((:timeout *url-timeout*) *rpm-timeout*)
                          (err *error-output*))
   ;; (rpm-get-new-rpms)
   "Download the RPMs from `*rpm-locations*'."
@@ -506,9 +510,7 @@ Then generate the list to download."
   (rpm-get-available :force force :out out :err err)
   (let ((bt (get-float-time nil)) (glob 0)
         #+clisp (#+lisp=cl  ext:*pprint-first-newline*
-                 #-lisp=cl lisp:*pprint-first-newline* nil)
-        (*url-default-timeout* *rpm-timeout*)
-        (*url-default-max-retry* *rpm-max-retry*))
+                 #-lisp=cl lisp:*pprint-first-newline* nil))
     (declare (double-float bt) (type file-size-t glob))
     (dolist (dld *rpm-locations*)
       (declare (type download-data dld))
@@ -531,6 +533,8 @@ Then generate the list to download."
 
 ;;;###autoload
 (defun rpm-list-rpm (name &key (out *standard-output*) (err *error-output*)
+                     ((:max-retry *url-max-retry*) *rpm-max-retry*)
+                     ((:timeout *url-timeout*) *rpm-timeout*)
                      local)
   "Look for the RPM on all sites.
 If `local' keyword argument is non-nil, use only the data already
@@ -542,8 +546,7 @@ available in `*rpm-locations*'."
               :when (search name (rpm-name rpm))
               :do (format out "~3d: ~a~%" (incf ii) rpm))
         (ignore-errors
-          (with-open-url (sock (dld-url dld) :err err :timeout *rpm-timeout*
-                               :max-retry *rpm-max-retry*)
+          (with-open-url (sock (dld-url dld) :err err)
             (format out " *** ~a:~%" dld)
             (ftp-list sock :name name :err err :out out))))))
 

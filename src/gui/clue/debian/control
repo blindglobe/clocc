@@ -1,0 +1,27 @@
+Source: clue
+Section: libs
+Priority: optional
+Build-Depends: debhelper, cmucl (>= 2.4.21)
+Maintainer: Peter Van Eynde <pvaneynd@debian.org>
+Standards-Version: 3.2.0.0
+
+Package: clue
+Architecture: i386
+Depends: cmucl (>= 2.4.21),cmucl-clx
+Description: An xlib like library for interfacing Lisp with X.
+ Clue is to lisp what xlib is to C. It's basic, but
+ close to the metal.
+
+Package: clio
+Architecture: i386
+Depends: clue
+Description: An intrinsics like library for Lisp.
+ clio is to Lisp what Xt is to C.
+ .
+ It uses CLOS to give an OO interface to X.
+
+Package: pictures
+Architecture: i386
+Depends: clue
+Description: An imaging-system for clue.
+ It lets people use constraints and such to draw pictures.

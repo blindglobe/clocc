@@ -1,0 +1,1515 @@
+% -*- Mode:TeX -*-
+%%%----------------------------------------------------------------------------------+
+%%%                                                                                  |
+%%%                          TEXAS INSTRUMENTS INCORPORATED                          |
+%%%                                  P.O. BOX 149149                                 |
+%%%                             AUSTIN, TEXAS 78714-9149                             |
+%%%                                                                                  |
+%%%                Copyright (C) 1989 Texas Instruments Incorporated.                |
+%%%                                                                                  |
+%%% Permission is granted to any individual or institution to use, copy, modify, and |
+%%% distribute this document, provided that  this complete copyright and  permission |
+%%% notice is maintained, intact, in all copies.                                     |
+%%%                                                                                  |
+%%% Texas Instruments Incorporated provides this document "as is" without express or |
+%%% implied warranty.                                                                |
+%%%                                                                                  |
+%%%----------------------------------------------------------------------------------+
+\documentstyle[twoside,12pt]{article} 
+\pagestyle{plain} 
+%%
+%% Inserted from home:/usr/local/hacks/tex/setmargins.tex:
+%%
+%%    Original: Glenn Manuel 12-17-86
+%%    Added optional [printer-offset]: Glenn Manuel 2-27-87
+%% Sets the margins, taking into account the fact that LaTex
+%% likes to start the left margin 1.0 inch from the left edge
+%% of the paper.
+%%   This macro prints on the screen and in the log file
+%%   the values it sets for:
+%%     Textwidth, Odd Page Left Margin, Even Page Left Margin,
+%%     Marginparwidth, Printer Offset
+%%     (the values are in points: 72.27 pts/inch).
+%%     The Odd and Even Page Left Margins include LaTeX's
+%%     built-in 1.0in offset, but NOT the [printer-offset],
+%%     so these values always indicate what the actual
+%%     printout SHOULD measure.
+%%
+%% USAGE:  Place the following between the
+%%         \documentstyle   and  \begin{document} commands:
+%% \input{this-file's-name}
+%% \setmargins[printer-offset]{line-length}{inside-margin-width}
+%%
+%%   where ALL arguments to \setmargins are DIMENSIONS
+%%           like {6.5in}, {65pt}, {23cm}, etc.
+%%   The units MUST BE SUPPLIED, even if the dimension is zero {0in}.
+%%
+%%   [printer-offset] is optional.  Default is zero.
+%%
+%%   Examples:
+%% \setmargins{0in}{0in}         % default line length & default margins
+%% \setmargins[-.12in]{0in}{0in} % compensate for printer offset
+%% \setmargins{0in}{1in}         % default line length, 1 inch inner margin
+%% \setmargins{6.5in}{0in}       % 6.5 inch line length & default margins
+%% \setmargins{5in}{1.5in}       % 5 inch line length & 1.5 inch inner margin
+%%
+%%   {inside-margin-width} is defined as follows:
+%%       For 1-sided printing: left margin for all pages.
+%%       For 2-sided printing: left  margin for odd pages,
+%%                             right margin for even pages.
+%%
+%%   Defaults:
+%%   Each argument has a default if {0in} is used as the argument:
+%%      line-length default = 6.0in
+%%      inside-margin-width default:
+%%         For 1-sided printing, text is centered on the page
+%%                     (each margin = [1/2]*[8.5in - line length]);
+%%         For 2-sided printing, inside margin is twice the outside margin
+%%                     (inside  margin = [2/3]*[8.5in - line length],
+%%                      outside margin = [1/3]*[8.5in - line length]).
+%%      printer-offset default = 0in
+%%
+%%  For all cases, the outside margin (and marginparwidth, the
+%%  width of margin notes) is just whatever is left over after
+%%  accounting for the inside margin and the line length.
+%%
+%% Note: LaTeX's built-in offset of 1.0 inch can vary somewhat,
+%%       depending upon the alignment of the Laser printer.
+%%       If you need it to be EXACT, you will have to supply
+%%       the optional [printer-offset] argument.
+%%       Subtract the actual measured left margin on an
+%%       odd-numbered page from the printed Odd Page Left Margin
+%%       value, and use the result as the [printer-offset].
+%%       Positive values shift everything to the right,
+%%       negative values shift everything to the left.
+%%
+\makeatletter
+\def\setmargins{\@ifnextchar[{\@setmargins}{\@setmargins[0in]}}
+\def\@setmargins[#1]#2#3{
+%%%  Uses temporary dimension registers \dimen0, \dimen2, \dimen3, \dimen1
+    \dimen1=#1                         % 1st argument [printer offset]
+    \dimen2=#2                         % 2nd argument (line length)
+    \dimen3=#3                         % 3rd argument (inner margin)
+     \advance\dimen1 by -1.0in         % for LaTeX built-in offset
+    \ifdim\dimen2=0in 
+        \textwidth=6in  \dimen2=6in
+    \else \textwidth=\dimen2
+    \fi
+    \dimen0=8.5in
+    \advance\dimen0 by -\dimen2         % 8.5in - line length
+    \if@twoside
+       \ifdim\dimen3=0in  % use defaults: 2/3 inside, 1/3 outside
+          \divide\dimen0 by 3           % (8.5in-line length)/3
+          \dimen2=2\dimen0              % (2/3)*(8.5in-line length)
+          \oddsidemargin=\dimen2
+          \advance\oddsidemargin by \dimen1   % add in offset
+          \dimen2=\dimen0               % (8.5in-line length)/3
+          \evensidemargin=\dimen2
+          \advance\evensidemargin by \dimen1  % add in offset
+%  allow for space on each side of marginal note
+          \advance\dimen0 by -2\marginparsep
+          \marginparwidth=\dimen0
+       \else            % use supplied 2-sided value
+          \oddsidemargin=\dimen3             % inside-margin-width
+          \advance\oddsidemargin by \dimen1  % add in offset
+          \advance\dimen0 by -\dimen3   % 8.5in-line length-inside margin
+          \evensidemargin=\dimen0
+          \advance\evensidemargin by \dimen1 % add in offset
+%  allow for space on each side of marginal note
+          \advance\dimen0 by -2\marginparsep
+          \marginparwidth=\dimen0
+       \fi
+%  one-sided
+    \else \ifdim\dimen3=0in  % use defaults: center text 
+              \divide\dimen0 by 2         % (8.5in-line length)/2
+              \oddsidemargin=\dimen0      % (8.5in-line length)/2
+              \advance\oddsidemargin by \dimen1   % add in offset
+              \evensidemargin=\dimen0     % (8.5in-line length)/2
+              \advance\evensidemargin by \dimen1  % add in offset
+%  allow for space on each side of marginal note
+              \advance\dimen0 by -2\marginparsep
+              \marginparwidth=\dimen0
+          \else  % use supplied values
+              \advance\dimen0 by -\dimen3  % 8.5in-line length-left margin
+%  allow for space on each side of marginal note
+              \advance\dimen0 by -2\marginparsep
+              \marginparwidth=\dimen0
+              \advance\dimen3 by \dimen1   % add in offset
+              \oddsidemargin=\dimen3
+              \evensidemargin=\dimen3
+          \fi
+    \fi
+  \immediate\write16{Textwidth = \the\textwidth}
+  \dimen0=1.0in
+  \advance\dimen0 by \oddsidemargin
+  \immediate\write16{Odd Page Left Margin = \the\dimen0}
+  \dimen0=1.0in
+  \advance\dimen0 by \evensidemargin
+  \immediate\write16{Even Page Left Margin = \the\dimen0}
+  \immediate\write16{Marginparwidth = \the\marginparwidth}
+  \dimen0=#1
+  \immediate\write16{Printer Offset = \the\dimen0}
+ }
+%
+\def\@outputpage{\begingroup\catcode`\ =10 \if@specialpage 
+     \global\@specialpagefalse\@nameuse{ps@\@specialstyle}\fi
+     \if@twoside 
+       \ifodd\count\z@ \let\@thehead\@oddhead \let\@thefoot\@oddfoot
+                       \let\@themargin\oddsidemargin
+% treat page 0 (title page) as if it is an odd-numbered page
+        \else \ifnum\count\z@=0 \let\@thehead\@oddhead \let\@thefoot\@oddfoot
+                                \let\@themargin\oddsidemargin
+              \else \let\@thehead\@evenhead
+                    \let\@thefoot\@evenfoot \let\@themargin\evensidemargin
+     \fi\fi\fi
+     \shipout
+     \vbox{\normalsize \baselineskip\z@ \lineskip\z@
+           \vskip \topmargin \moveright\@themargin
+           \vbox{\setbox\@tempboxa
+                   \vbox to\headheight{\vfil \hbox to\textwidth{\@thehead}}
+                 \dp\@tempboxa\z@
+                 \box\@tempboxa
+                 \vskip \headsep
+                 \box\@outputbox
+                 \baselineskip\footskip
+                 \hbox to\textwidth{\@thefoot}}}\global\@colht\textheight
+           \endgroup\stepcounter{page}\let\firstmark\botmark}
+%
+\makeatother
+%%
+%% End of home:/usr/local/hacks/tex/setmargins.tex:
+%%
+\setmargins{6.5in}{1in}
+\topmargin = 0in
+\headheight = 0mm
+\headsep = 0mm
+\textheight = 9in
+\makeindex
+\begin{document}
+\setlength{\parskip}{6 mm}
+\setlength{\parindent}{0 in}
+
+\title{A Quick and Dirty Guide to CLUE}
+\author{Kerry Kimbrough}
+\date{Version 6.0 \\
+July, 1989\\[2 in]
+\copyright 1989\  Texas Instruments Incorporated\\[.5in]
+\parbox{3.5in}{
+     Permission is granted to any individual or institution to use,
+     copy, modify and distribute this document, provided that  this
+     complete  copyright  and   permission  notice   is maintained,
+     intact, in  all  copies  and  supporting documentation.  Texas
+     Instruments Incorporated  makes  no  representations about the
+     suitability of the software described herein for any  purpose.
+     It is provided ``as is'' without express or implied warranty.
+}}
+\maketitle
+
+This guide is a no-frills introduction to programming with  the Common Lisp User
+Interface Environment (CLUE). CLUE is a high-level programming interface to the
+X Window System which extends (but does not supersede) the basic CLX\index{CLX} interface.
+CLUE is also an object-oriented programming system based on the Common Lisp
+Object System (CLOS\index{CLOS}). Moreover, CLUE is a ``toolkit'' for constructing X user
+interfaces. As a result, CLUE is modelled closely on the standard toolkit used
+by C programmers, commonly known as Xt\index{Xt}, or the X Toolkit.
+
+All of these related systems are described in separate documents (these
+references are listed at the end of the guide), but we won't spend much time on
+them here. Read this guide and take the plunge into CLUE; you can dry off with
+the details later.
+
+\section{The Big Picture}
+Before you can understand CLUE, you have to look at three ideas about how
+to build an interactive application. 
+
+
+\subsection{The Application Is Event-Driven} 
+An interactive application is controlled by a human user. Typically, nothing
+happens until the user lifts his finger to the side of his mouse and causes
+an input {\bf event}.  There are two implications here.
+\index{event} 
+
+First, the fundamental
+application control structure is an {\bf event loop}: wait for an event, figure
+out how to handle it, process the event, then go back and wait for the next one.
+The {\em structure} of the event loop is generic; there is nothing
+application-specific about it. 
+\index{event, loop}
+
+Second, the application is passive. It knows how to do certain things, but it's
+waiting for the user's command to do them. You can imagine programs that do
+things on their own, without waiting for user instruction (for example, a
+nuclear reactor control system). But, the {\em interactive} part of such a
+program is still an event loop, which must synchronize with the separate
+background task(s) to provide the user control.
+
+
+\subsection{The UI Is Separate} 
+The user interface part has nothing to do with the essential function of the
+application. An oft-cited analogy is linguistic communication, which has
+independent modules for lexical, syntactic, and semantic processing. You can
+understand me whether I speak to you or whether I write to you, because these
+are merely two different lexical forms (e.g. sound patterns or marks) for the
+same language.  Also, you can express the same idea either in French or in
+English; the lexical and syntactic elements of each language are distinct from
+their corresponding meaning, or semantics. 
+
+An interactive application can be modularized along the same lines. The UI
+contains the lexical and syntactic components, while the application {\em per
+se} is the semantic component. Take some application command, say, ``Stop
+Nuclear Reactor.'' The user interface to this command could use various lexical
+forms (press the {\tt STOP} key or type the string ``{\tt stop}'') and
+various syntactic forms (prompt with ``{\tt Are you sure you want to stop?}'' or
+not), but the application semantics remain the same (hopefully!). From here on,
+we will
+acknowledge this modularization by referring to the whole application program as
+``the program,'' to the user interface
+components as ``the UI,'' and to the application semantic components as ``the
+application.''
+
+Separating the UI and semantic modules of an interactive program is good
+programming technique. This allows you to more easily create a new UI for an
+existing application. Or to apply an existing set of UI techniques to a new
+application, so that it is consistent in style with others. Or to divide the
+programming effort more efficiently; a domain expert can write the application
+semantics while a human factors specialist can design the UI and a window system
+hacker can implement it. 
+
+\subsection{The UI Is Object-Oriented} This idea is more recent than the
+other two, because it wasn't until a few years ago that graphical user
+interfaces and window systems came along.  When they did, UI's began to
+be composed of multiple user activities represented by visually-distinct
+and physically-manipulable objects on the screen.  Object-oriented
+programming (OOP) is thus a natural programming style which has been
+associated with UI since its beginning\footnotemark\footnotetext{In
+fact, true OOP and window systems were invented at the same time at
+Xerox PARC in the Smalltalk system.}.  For several reasons, OOP is a
+nice fit for UI programming.  UI's tend to generate profuse variation of
+detail around a basic theme (consider, for example, menus); that is,
+they demonstrate several subclasses of a basic class.  The modularity
+of objects also helps to separate the UI from the semantics; that is,
+the implementation of UI methods from the program which simply calls
+them.
+
+The OOP methodology leads to a UI which is composed of user interface objects
+(command lines, messages, menus, scroll bars, dialogs, etc.). Each of these UI
+objects is an ``agent'' for some portion of the  underlying application.
+Each UI object is responsible for presenting some ``view'' of the application to
+the user. It is also responsible for receiving the users events which are
+directed to it and for translating these into the appropriate application
+responses. 
+
+
+\subsection{How CLUE Works\label{sec:how-clue-works}} 
+CLUE combines all of these ideas. A CLUE program consists of an event loop, a
+set of UI objects called {\bf contacts}, and a set of application functions
+called {\bf callbacks}. All CLUE programs look pretty much like this:
+\index{event, loop}
+
+\begin{verbatim}
+;; Open a connection to the X server.
+(let ((display (open-contact-display 'my-application :host "server-host" ...)))
+  ;; Initialize UI objects and callbacks.  
+  (setf c (make-contact ... ))
+  (add-callback c ... )
+       ...
+  ;; Process events until the event loop is terminated.
+  (catch :event-loop
+    (loop
+      (process-next-event display)))  
+  (close-display display))
+\end{verbatim}
+
+A CLUE program creates a {\bf contact-display} object which
+\index{contact-display}
+represents a connection to a specific X server.  This {\tt contact-display} then
+becomes a two-way channel through which the program requests the creation and
+display of contact windows and receives input events sent to its contacts. 
+
+Each contact is a UI ``agent'' that is prepared to present some
+application information, to accept user
+events which manipulate this information, and then to report the results back to
+the application. This reporting action is the critical connection between the UI
+and the application, and it's done using {\bf callbacks}.\index{callback}
+\index{callback, name}\index{callback, function}
+A callback consists of
+a {\bf callback name} and an associated {\bf callback function}. A contact is programmed
+to associate a specific result with a callback name, which it reports by calling
+the associated callback function (with a predefined argument list). 
+
+Here is where CLUE contributes to the separation of UI and application. 
+\index{application programmer}\index{contact programmer}
+Every
+CLUE program usually has two programmers! A {\bf contact programmer} is one
+who defines a contact class and implements its methods. An {\bf application
+programmer} is one who decides to create a contact instance and employ it for a
+particular UI role. The contact programmer decides what callback names his
+contact class will use and what the argument lists to the associated callback
+functions have to be. The application programmer defines callback functions to
+perform specific jobs and plugs them into the appropriate contact callback.
+The contact programmer will frequently use the basic CLX\index{CLX} interface, typically to
+display the contact's information. The application programmer will use CLUE
+interfaces but will almost never need to call CLX functions directly.
+
+Now we can see the operation of a CLUE program in a bit more detail. The {\tt
+make-contact} function is used to create and initialize contacts. 
+\index{make-contact}
+The {\tt
+add-callback} function \index{add-callback} associates application semantics
+(i.e. callback
+functions) with each contact. Then, the program enters the event loop. Each call
+to {\tt process-next-event} \index{process-next-event} reads the next input event and dispatches it to the
+contact to which it belongs. This contact then goes through a process of {\bf
+event translation}\index{event translation}, which determines which
+contact {\bf action}\index{action} functions will be
+executed. Contact action functions, in turn, perform all the details of input
+feedback and display. Finally, if the user event has completed an application
+result, the action function will look up and call the associated callback
+function. What has happened? CLUE has provided all the machinery, the contact
+programmer has defined the detailed UI behavior, and the application programmer has
+furnished the real results.
+
+The rest of this guide will be a closer look at each of these parts of a CLUE
+program.
+
+\section{The Contact Display\label{sec:contact-display}}
+\index{contact-display}
+\index{open-contact-display} 
+A {\tt contact-display} is created by the {\tt
+open-contact-display} function.  {\tt op\-en\--con\-tact\-dis\-play} has one required
+argument: a symbol which acts as the name of your program.  Technically, this is
+a {\bf resource name}\index{resource, name} which is used to access the values of
+{\bf resources}\index{resource} associated with your program.  CLUE resource
+management is explained later in Section~\ref{sec:resources}.  Generally
+speaking, this program resource name is used to distinguish your program from
+other application programs that may also be running. {\tt open-contact-display}
+has several optional keyword arguments (mainly the same ones used by the CLX\index{CLX}
+{\tt open-display} function), but the most frequently used is the {\tt host}, a
+string which gives the network name for the X server host to which you are
+connecting.
+
+\begin{verbatim}
+(setf display
+      (open-contact-display
+        'blink                    ; Application name
+        :host "server-host"))     ; Server host name
+\end{verbatim}
+
+{\tt contact-display} objects are really a subclass of the {\tt display} data
+type defined by CLX\index{CLX}\footnotemark\footnotetext{However, neither {\tt display}
+objects nor {\tt contact-display} objects are actually implemented as CLOS
+classes. There's no reason to define {\tt contact-display} methods or
+subclasses.}.
+\index{display}
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+Any CLX\index{CLX} function which takes a {\tt display} argument can be called with a {\tt
+contact-display} argument instead.}
+\hspace*{\fill}}
+\end{center}
+
+The CLX function {\tt close-display}\index{close-display} should always be used
+to close the server connection when the program terminates.
+
+\section{Contacts\label{sec:contacts}}
+In simplest terms, a {\tt contact} is a kind of window. The behavior of a window
+object,
+which is represented in CLX\index{CLX} as an instance of the
+{\tt window} data type,
+is completely specified by the X Window System
+protocol.  In CLUE, the class of {\tt contact} objects is defined to be
+a subclass of the class of {\tt window} objects\footnotemark\footnotetext{To do
+this, CLUE actually changes the definition of the CLX {\tt window} type to
+make it a CLOS class.}.  Thus, all CLX {\tt window} functions
+apply to any {\tt contact}. 
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+Any \index{CLX}CLX function which takes a {\tt window} argument can be called with a {\tt
+contact} argument instead.}
+\hspace*{\fill}}
+\end{center}
+
+
+As a window, a contact inherits several basic attributes,
+such as a
+rectangular geometry (given by the position of its upper left corner, its width,
+and its height in
+pixel coordinates), a border width and border color/pattern, a depth (i.e.
+bits per pixel), and a background color/pattern.
+\index{contact, attributes}
+Contacts possess a few additional attributes (or {\bf slots}) not shared
+by ordinary windows. 
+\begin{itemize}
+\index{contact, name}
+\item {\tt name}: The name of
+the contact is a
+symbol  which can be used to access contact resources
+stored in a resource database. See Section~\ref{sec:resources}.
+
+\index{contact, parent}
+\item {\tt parent}: All
+contacts have a parent contact (except for a {\bf root}\index{root} contact, which is
+created automatically by CLUE and which is the ancestor of all contacts on a
+single display screen).  The parent-child relationship
+is fundamentally one between two windows, as defined by the X
+Window System. For example, a child window is always visually
+contained
+by its parent window, and its position is specified relative to its
+parent's upper-left corner. However, in CLUE this relationship is
+extended, with the parent assuming additional responsibilities, such as
+geometry management (see Section~\ref{sec:composites}).
+
+\index{contact, state}
+\item {\tt state}: A switch which controls the visual effect of the contact on
+the UI. If the {\tt state} is {\tt :withdrawn}, then the contact is invisible and
+unavailable for input. If the {\tt state} is {\tt :mapped}, then the contact is
+``viewable'' (i.e. visible unless it is covered by other windows) and available
+for input. The {\tt state} can also have a third value --- {\tt :managed} ---
+which is discussed in
+Section~\ref{sec:resources}. The default {\tt state} is {\tt :mapped}.
+
+
+\index{contact, event-translations}
+\item {\tt event-translations}: A list which associates
+different types of input events with contact actions. This is discussed in more
+detail in Section~\ref{sec:events}.
+
+\index{contact, callbacks}
+\item {\tt callbacks}: An association list of callback name/function pairs.
+\index{callback}
+\end{itemize}
+
+\subsection{Using Contacts}
+\index{contact, application programmer interface}
+If you are an application programmer, your basic view of a contact --- the generic
+contact protocol --- is quite simple and consists of only a few functions.
+\index{contact, generic protocol}
+
+{\tt make-contact} 
+\index{make-contact}
+creates a new instance of any con\-tact subclass. This function is a
+syn\-tac\-ti\-cal\-ly-identical extension of the basic CLOS\index{CLOS} {\tt make-instance}
+function. Keyword arguments to  {\tt make-contact}  provide initial slot values
+for the new instance, most of which can be defaulted. However, a {\tt parent}
+argument must be given; specifying a {\tt contact-display} as the {\tt parent}
+creates a {\bf top-level contact}\index{contact, top-level}. 
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+A contact ``belongs'' to the {\tt contact-display} connection on which it is
+created. More precisely, since a contact must have a top-level ancestor, it
+belongs to the {\tt contact-display} given as this ancestor's {\tt parent}.
+This {\tt contact-display} connection receives all requests and events related
+to the contact; it is also available as the value of the contact's {\tt display}
+slot.} \hspace*{\fill}} \end{center}
+
+
+Usually (and always
+for top-level contacts), you must also specify the contact's {\tt width} and {\tt
+height}. A non-top-level contact may find that its initial values for 
+{\tt x}, {\tt y}, {\tt width}, {\tt
+height}, and {\tt border-width} have been modified by the geometry management
+policy of its parent (see Section~\ref{sec:composites}).
+
+\begin{verbatim}
+(setf a-blinker
+      (make-contact
+        'blinker                  ; Make an instance of the blinker class
+        :parent display           ; Required argument
+        :width  300               ; Usually required
+        :height 400               ; Usually required
+        :background 0))           ; Optional, defaults to parent's
+\end{verbatim}
+
+
+
+The {\tt (setf contact-state)} function 
+changes the {\tt state} value of the contact.
+\index{contact, state}
+
+\begin{verbatim}
+(setf (contact-state a-blinker) :mapped)    ; Make it viewable
+(setf (contact-state a-blinker) :withdrawn) ; Make it invisible
+\end{verbatim}
+
+{\tt change-geometry} 
+\index{change-geometry} 
+requests a change to one or more components of the contact's geometry.
+The keyword
+arguments to {\tt change-geometry} --- {\tt x}, {\tt y}, {\tt width}, {\tt
+height}, and {\tt border-width} --- specify the changed component(s); omitting a
+keyword means ``Leave the current value unchanged.'' But the actual effect of
+the request depends on the geometry management\index{geometry management}
+policy applied to the contact (See Section~\ref{sec:composites}). If the
+request is refused, then the return values give  acceptable alternatives for {\tt x}, {\tt y}, {\tt width}, {\tt
+height}, and {\tt border-width}.  You may want to give an {\tt accept-p} keyword
+value of {\tt t}, which means ``Go ahead and replace my request with whatever
+alternative geometry may be returned.''
+
+\begin{verbatim}
+(change-geometry a-blinker
+                 :x 100           ; Request new upper-left position...
+                 :y 200
+                 :accept-p t)     ; ...but accept closest alternative
+
+(change-geometry b :accept-p t)   ; Just validate current values
+\end{verbatim}
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+There are no accessor functions for {\tt setf}'ing a contact's {\tt x}, {\tt y}, {\tt width}, {\tt
+height}, and {\tt bor\-der\--width} slots. Never modify these slots directly. Always
+use {\tt change-geometry} instead.} 
+\hspace*{\fill}}
+\end{center}
+
+
+The {\tt change-priority} function \index{change-priority}
+requests a change to the contact's stacking priority relative to other
+windows.  The stacking priority determines which window is ``on top'' of other
+windows. This request is also subject to geometry management policy. 
+
+The {\tt destroy} function is called \index{destroy}
+only when the contact will no longer be referenced. This frees any display
+resources allocated to the contact.
+
+In addition to the generic protocol, the application programmer interface to a
+contact includes its callback protocol, plus any special class-dependent functions (typically, for
+initialization).
+
+\subsection{Defining Contacts}
+
+If you are a contact programmer, you will use the {\tt defcontact} macro to
+define a new contact class.  The syntax of {\tt defcontact} is nearly identical
+to that of the basic CLOS\index{CLOS} {\tt defclass} macro.  The only difference is the
+additional {\tt :resources} option for specifying contact resources (see
+Section~\ref{sec:resources}).
+
+\begin{verbatim}
+(defcontact
+  blinker                         ; Class name  
+  (contact)                       ; Superclasses  
+  ((color                         ; Slot specs, with name...
+     :type     pixel              ; ...data type...
+     :accessor blinker-color      ; ...accessor function name ...
+     :initarg  :color             ; ...initarg keyword for make-contact...
+     :initform 0)                 ; ...and default initial value.
+   (on-p
+     :type     boolean
+     :accessor blinker-on-p
+     :initform nil))  
+  (:resources color))             ; Resource specs
+\end{verbatim}
+
+A contact programmer must also define a {\tt display} method for a new contact
+class. CLUE calls the {\tt display} function automatically whenever any portion
+\index{display}\index{contact, exposure}\index{exposure}
+of the contact image must be (re)displayed. In particular, {\tt display} is
+called whenever an invisible contact is changed to the {\tt :mapped} state, or
+when some previously-hidden part of a {\tt :mapped} contact is exposed.
+
+\begin{verbatim}
+(defmethod                        ; Define a method ...
+  display                         ; ... for the display function...
+  ((contact blinker)              ; ... when the contact arg is a blinker.
+   &optional x y width height)    ; Defines the rectangular piece exposed.
+  ...)
+\end{verbatim}
+
+\section{Composites and Geometry Management\label{sec:composites}}
+A contact which is the parent of another contact is known as a
+{\bf composite}\index{composite} and is an instance of the {\tt composite}
+subclass of {\tt contact} objects. A {\tt composite} may be the parent of another
+{\tt composite},
+leading to a tree-structured contact hierarchy. A contact is said to be an
+{\bf ancestor}\index{ancestor} of another contact (its 
+{\bf descendant}\index{descendant}) when
+it is its parent or an ancestor of its parent. 
+
+A {\tt composite} represents a set of contacts which can be manipulated
+(positioned, presented,
+etc.) as a unit.  A {\tt composite} is useful whenever several contacts act in
+concert to provide a
+single component of the UI.  Typical examples include
+``control panels'' and ``dialog boxes'' --- groups of contacts that are presented
+together and are used to make related adjustments to application data.  
+The fundamental aspects of the contact parent-child relationship are the same as
+those of the window hierarchy defined by the X Window System. 
+\index{geometry management}
+But in CLUE, a {\tt composite} is also expected to act as the {\bf geometry
+manager}\index{geometry manager} for its child contacts; that is, to
+implement a style of layout for its children. 
+
+
+Here is how it works.  A request to change the geometry of a contact is
+forwarded to the contact's parent, which actually performs the resulting change.
+It is important to understand that, due to its constraints, a geometry manager
+may not be able to perform a change as requested.  For example, a request to
+increase the size of a contact might be refused if its geometry manager enforces
+a maximum size.  Even if a requested change cannot be done, a geometry manager
+may be able to suggest a slightly different change which would be acceptable.
+
+Placing geometry control in the hands of a geometry manager in this way
+has several advantages.
+\begin{itemize}
+\item   A geometry manager can arbitrate the competing geometry change requests
+        of several contacts in order to implement contraints among them.
+        
+\item   A given layout style can be applied to any collection of contacts.
+        
+\item   Contact layout style can be changed without the knowledge of individual
+        contacts.
+\end{itemize}
+
+
+A composite's geometry management policy applies only to the set of its children
+which are {\bf managed}. \index{contact, managed}
+An unmanaged child is ignored by its geometry manager. Any
+geometry change to an unmanaged child is performed immediately as requested. 
+However, changes to a managed child are arbitrated by its parent's geometry
+management policy. This can mean, for example, that a change to one child's
+position/size/priority can affect that of other children. Indeed, requesting a
+bigger size for a child might result in the parent asking {\em its} geometry
+manager to become bigger, leading to a ripple of geometry changes throughout
+the contact hierarchy.
+
+How do you know if a contact is managed? This is determined by its {\tt
+state}.\index{contact, state}
+A contact is managed if and only if its {\tt state} is not {\tt :withdrawn}. This means
+that a {\tt :mapped} (and viewable) contact is managed. But there is also
+another possibility: a contact's {\tt state} may also be {\tt :managed}. This
+value represents the (rather rare) case of a contact which is not visible, but
+which is nevertheless taken into account by its geometry manager. 
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+An
+unmanaged child can {\em never} be visible.}
+\hspace*{\fill}}
+\end{center}
+
+
+Implementing geometry management is a topic for contact programmers only. If you
+define a new {\tt composite} subclass, you will usually need to implement
+methods for the following three functions.
+\begin{itemize} 
+\item {\tt change-layout}: 
+\index{change-layout}
+This function is called whenever a composite's set of
+managed children changes (e.g. by creating or destroying a managed child or by
+changing the {\tt state} of a child).
+
+\item {\tt manage-geometry}: 
+\index{manage-geometry}
+This function is called by {\tt change-geometry} to
+approve a geometry request. It must either approve the change or return a set of
+alternative geometry values which will be acceptable.
+
+\item {\tt manage-priority}: 
+\index{manage-priority}
+This function is called by {\tt change-priority} to
+approve a stacking priority request. It must either approve the change or return
+an alternative priority which will be acceptable.
+
+\end{itemize}
+
+\section{Events\label{sec:events}}
+\index{event}\index{input}
+Handling input events is CLUE's main job, and it's an area where CLUE does a lot
+of the work for programmers automatically. Application programmers don't have to
+worry about much more than setting up an event loop, as shown in
+Section~\ref{sec:how-clue-works}. Contact programmers need to know how to use
+CLUE's {\bf event translation}\index{event translation} mechanism in order to
+implement the details of a contact's input behavior.
+
+What exactly are these events we're talking about? Fundamentally, an event is
+a message to the program from the X server, a packet of data describing
+some occurrence that the program ought to be interested in.
+Most events
+represent an action performed by the user with  the X server's 
+\index{input, devices}
+keyboard or pointing device (i.e. mouse, tablet,
+etc.). Keyboard
+actions, for example, can generate {\tt :key-press} and {\tt :key-release}
+events. The pointer may be used to generate {\tt :button-press} and {\tt
+:button-release} (when the user presses one of the mouse buttons) and {\tt
+:motion-notify} events (when the user changes the pointer position). These kind of
+{\bf user events}\index{event, user} contain data for the button or key
+involved, the coordinates of the pointer position, and other useful things, such as
+the up/down state of {\tt :shift}, {\tt :control}, and the other modifier keys.
+In addition to user events, there is another important group of {\bf side-effect
+events},\index{event, side-effect}
+events which occur as an indirect result of other user actions. For example,
+when the user causes part of an obscured window to become visible, an {\tt
+:exposure}\index{exposure} event may be sent. Other side-effect events include
+{\tt :enter-notify}, which signifies that the user has moved the pointer cursor
+inside a particular window, and {\tt :focus-in}, which happens when the user has
+identified a particular window as the {\bf focus} for keyboard
+events.\index{focus}\index{input, focus}
+This is just the beginning, but the definition and meaning for all of the events
+received by CLUE contacts can be found by reading the X Protocol Specification.
+
+
+To understand CLUE event processing, let's start with the basic program event
+loop\index{event, loop} and follow its operation, step by step.
+A call to {\tt
+process-next-event} \index{process-next-event}\index{timeout}
+gets the ball rolling. {\tt
+process-next-event} causes CLUE to read
+the next event from the given {\tt contact-display} connection. By default,
+{\tt pro\-cess\--next\--ev\-ent} does not return until the next event has been
+completely processed. This means that if no event is yet available, then {\tt
+process-next-event} will generally wait until one finally comes along. However,
+an optional {\tt timeout} argument may be given, which says how long {\tt
+process-next-event} will wait before giving up. Set the {\tt timeout} to {\tt 0}
+if you don't want {\tt process-next-event} to wait at all. {\tt
+process-next-event} returns {\tt nil} if a timeout occurred; otherwise, it
+returns {\tt t}.
+
+\begin{verbatim}
+(catch :event-loop
+  (loop
+    (unless 
+      (process-next-event display 5)  ; Timeout after waiting 5 sec.
+
+      ;; No events yet -- do something useful
+      (do-background-task))))
+\end{verbatim}
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+{\tt process-next-event} does not return any result of the actual processing of
+an event. This means
+that all responses of a CLUE program to user input  --- even the termination
+of the event loop --- occur as ``side-effects'' of contact event handling.
+Always escape the event loop by {\tt throw}'ing to some well-defined tag.}
+\hspace*{\fill}}
+\end{center}
+
+Inside {\tt process-next-event}, the next thing that happens is that the event is
+{\bf dispatched}\index{event,
+dispatching}. In other words, CLUE figures out which contact is supposed to
+handle the event. This is fairly easy because almost every event message
+contains an identifier for the {\tt window} object which is the
+``addressee'' of the
+event. CLUE knows how to convert this identifier into the corresponding {\tt
+contact} object. At this point, the event
+is {\bf handled}\index{event, handling} by calling the {\tt handle-event}
+function\index{handle-event} with the receiving {\tt contact} and the event as
+its arguments. {\tt handle-event} then implements the process of event
+translation, i.e. figuring out which methods of the receiving {\tt contact} to
+call in response to the event\footnotemark\footnotetext{{\tt
+handle-event} is also the function which automatically calls the
+contact's {\tt display} method, if the event is an {\tt :exposure}.\index{display}\index{exposure}}.
+What happens next is of interest only to contact programmers.
+
+\subsection{Event Translation}
+Event translation involves searching through one or more association lists,
+looking for an entry that matches the event. Each such entry is called an {\bf
+event translation}, and it is a list containing an {\bf event
+specification}\index{event, specification} and one or more {\bf
+action}\index{action} names. An event specification describes a certain sort of
+event, and an action name is simply the name of a special kind of function
+--- 
+an action function. So, during event translation, the event is compared with an
+event
+specification, and when it matches, then each of the corresponding action functions are
+invoked in sequence. When all of them have completed, then event
+translation is done; {\tt handle-event} returns and the event is said to
+be ``handled.'' The {\tt process-next-event} function also returns, and we
+go back to the top of the event loop to deal with the next event.
+But where are these event translations and how are they created? There are two
+different ways to create event translations: the {\tt add-event} function and
+the {\tt defevent} macro.
+
+{\tt add-event}\index{add-event}
+creates an event translation and adds it to the association list
+found in the {\tt event-translations} slot of a specific contact. This kind of
+event translation is thus an {\bf instance event
+translation}\index{event translation,
+instance} which affects only one contact instance. An instance event
+translation says ``When an event is dispatched to {\em this} contact and it
+matches {\em this} event specification, then call {\em these} actions.''
+
+\begin{verbatim}
+(add-event a-blinker                 ; When this contact gets...
+           '(:key-press #\ctrl-b)    ; ...this character event ...
+           'beep)                    ; ...call the beep action.
+
+(add-event a-blinker                 ; When this contact gets...
+           '(:key-release #\ctrl-b)  ; ...this character event ...
+           '(beep 1))                ; ...call the beep action with an arg.
+\end{verbatim}
+
+Note that in place of a simple action name, an event translation can also give a
+list containing the action name plus a list of arguments to pass.
+The process of event translation starts with the instance event translations in
+the {\tt event-translations} slot of the receiving contact. Each entry is
+examined in order, until a match is found. What happens if no match is found? In
+this case, the process continues to search the event translations defined by the
+{\tt defevent} macro.
+
+{\tt defevent}\index{defevent}
+creates a  {\bf class event translation}\index{event translation, class}
+that applies to every instance of a given class.  A class event
+translation says  ``When an event is dispatched to a contact of {\em this} class
+and it matches {\em this} event specification, then call {\em these} actions.''
+
+\begin{verbatim}
+(defevent blinker                    ; When any blinker gets...
+          (:button-press :button-1)  ; ...this button event...
+          (blink t))                 ; ...blink on.
+
+(defevent blinker                    ; When any blinker gets...
+          (:button-release :button-1); ...this button event...
+          (blink nil))               ; ...blink off.
+\end{verbatim}
+
+Class event translations are searched for each contact superclass of the
+receiving contact, starting with the class of the contact, then continuing back
+up the {\bf class precedence list}\index{class precedence list} which this
+contact inherits\footnotemark\footnotetext{See the CLOS\index{CLOS} specification for a precise definition of the
+class precedence list.}.  The idea is to match a class event translation
+for the
+most specific class possible.  However, if a matching event translation is {\em
+still} not found, then CLUE gives up, and the event is ignored. After
+all this, it couldn't be a very important event anyway!
+
+\subsection{Event Specifications}
+\index{event, specification}
+As you may have noticed, an event specification is usually a list
+composed of an event type keyword and some other qualifiers. In fact, an event
+type keyword alone is also a valid event specification.
+The exact syntax for event specifications is fairly complex. A sophisticated
+programmer can even define his own event specification syntax. All of this is
+completely spelled out in the CLUE specification. But for now, you can get an
+idea of what an event specification is by looking at the following examples.
+
+\begin{verbatim} 
+:enter-notify         ; Matches any :enter-notify event
+
+(:motion-notify       ; Matches a :motion-notify event..
+  :button-1)          ; ...if :button-1 is down.
+
+(:button-press        ; Matches a :button-press...
+  :button-1           ; ...if it's :button-1...
+  :shift)             ; ...and the shift key is down.
+
+(:button-release      ; Matches a :button-release...
+  :button-3           ; ...if it's :button-3...
+  (:shift :control)   ; ...and the shift,control keys are down...
+  :all)               ; ...and all other modifiers are up.
+
+(:key-press           ; Matches a :key-press...
+  :any                ; ...for any key...
+  (:control :hyper))  ; ...when the control,hyper keys are down.
+
+(:button-press        ; Matches a :button-press...
+  :button-3           ; ...if it's :button-3...
+  :double-click)      ; ...and it's a double-click.
+\end{verbatim}
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{A contact will receive {\em only} the types of events described
+by
+its event specifications, i.e. by event specifications in its instance and class
+event translations. CLUE automatically sets the 
+{\bf event mask}\index{event, mask} of the contact window, based on the
+contact's event specifications. Event masks are a detail of CLUE internals, but
+you can find more information about them in the X Protocol
+Specification and the CLUE specification.}\hspace*{\fill}} \end{center}
+
+\subsection{Actions and Callbacks}
+\index{action}
+An action is a  function which is designed to handle an input
+event.  An action therefore implements a particular input behavior exhibited by
+each instance of a certain contact class. 
+In fact, an action function is typically a CLOS generic function, and actions
+usually are defined as methods of a particular contact class. 
+
+\begin{verbatim} 
+(defmethod blink ((contact blinker) blink-on-p)
+  (with-slots (on-p) contact
+    ;; Set internal state variable on/off
+    (setf on-p blink-on-p)
+    ;; Redisplay based on new on-p state
+    (display contact)
+    ;; Invoke callback with new state
+    (apply-callback contact :blink on-p))
+\end{verbatim}
+
+In general, an action represents a well-defined contact behavior that
+could be done in
+response to {\em any} event. In fact, it's possible to personalize an existing UI by
+modifying its event translations so that contact actions are rebound to
+the types of events (i.e. event specifications) which
+are more to your taste.  In some cases,
+however, an action may be designed to handle a very specific event type.
+
+When an action computes a result that is important to an application, it invokes
+a callback.\index{callback}
+This is done via the {\tt apply-callback} macro.\index{apply-callback}
+The example above shows that a {\tt blinker} contact has a callback whose name
+is {\tt :blink}, which is called with a single argument, i.e. a boolean
+representing the new on/off state of the {\tt blinker}. What significance
+this has to the application is unknown to the contact programmer who wrote this
+action; it all depends on what callback function the application programmer has
+associated with {\tt :blink} for this {\tt blinker} instance.
+In fact, the application programmer may have decided not to define a callback
+function for {\tt :blink}, in which case {\tt :blink} has no application meaning
+at all (and {\tt apply-callback} simply does nothing).
+As shown in the {\tt :blink} example,
+{\tt apply-callback} is usually (although not
+necessarily)
+called directly by an action method or somewhere within its dynamic extent.
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+Callback names are shared by a class, i.e. referenced by the class's
+action methods.  But
+callback name/function pairs are instance data and are recorded in a contact's
+{\tt callbacks} slot. In our example, every {\tt blinker} is
+expected to have a {\tt :blink} callback function, but each {\tt blinker}
+usually has a different {\tt :blink} callback function. That is, each {\tt
+blinker} usually has different application semantics.} \hspace*{\fill}}
+\end{center}
+
+In the previous example, the {\tt blink} action method does not depend on the
+event which causes it to be invoked.  But what happens when an action's behavior
+depends on information contained in the event?  CLUE handles this by
+representing an event as an instance of the {\tt event} class.  An {\tt event}
+object has slots which contact various kind of interesting information about the
+event.  Since there are many types of X events, there are many different {\tt
+event} slots, even though for a given event some slots are irrelevant and
+therefore have a {\tt nil} value. You can look in the X Protocol Specification for
+a complete description of event slots (and look in the CLX specification to find
+out how these slot values are represented in Lisp).
+
+But how does an action access an event object? This is done by using a special
+CLUE macro called {\tt with-event}. For example:
+
+\begin{verbatim}
+(defmethod beep ((contact blinker) &optional (per-cent-volume 0))
+  (with-event (state)
+    ;; Was the shift key down?
+    (when (member :shift (make-state-keys state))
+      ;; Ring server's chime!
+      (bell (contact-display contact) per-cent-volume)  
+      ;; Invoke callback
+      (apply-callback contact :beep))))
+\end{verbatim}
+
+The {\tt beep} action will beep only if it determines that the shift key was
+down when the event occurred.  It does this by examining the {\tt state} slot of
+the event, which defines which modifier keys were pressed at the time of the
+event.  Notice the use of the {\tt with-event} macro.\index{with-event} This is
+similar to the {\tt with-slots} macro of CLOS\index{CLOS}.  {\tt with-event}
+binds slots of the ``current'' event argument within its lexical extent, so that
+the action code can refer to them.  But why is the current event object hidden
+in this way?  Because this allows for a much more efficient implementation of
+{\tt event} objects than would be possible if their structure was fully exposed
+to programmers.  So, there!
+
+\subsection{Advanced Input}
+\index{input}
+Input events are a subject so dear to the heart of CLUE that it
+contains many more input programming functions than can be
+covered in this guide. Here's a quick list of CLUE's special input
+features, all of which are discussed in complete detail in the CLUE
+specification.
+\begin{itemize}
+\item {\bf Before actions},\index{before action}\index{action, before}
+action functions which can be set to execute for {\em every} event
+dispatched to a contact of a certain class, before event translation begins. 
+
+\item {\bf Timers},\index{timer}
+which send special {\tt :timer} events to a contact at a regular,
+specified rate.
+
+\item {\bf Synchronizing}\index{event, synchronizing}
+event processing, so that a program can stop to process all pending
+events before continuing.
+
+\item {\bf
+Sensitivity},\index{contact,
+sensitivity} which allows a contact's input to be temporarily ``switched
+off'' without changing its visibility.
+
+\item {\bf Event compression},\index{event, compression}
+which removes certain redundant events for faster performance.
+\end{itemize}
+
+\section{Resources\label{sec:resources}}
+Imagine that you are the user of an interactive program. Maybe you are
+not a programmer, but there are certain things about the UI that you
+wish you could change ever so slightly. For example, maybe you wish you
+could make the program use a different set of colors for various
+objects. Or maybe you're left-handed, and you'd prefer to use the right
+mouse button in place of the left one. Or maybe you can't read Japanese,
+which happens to be the language all the menu items are written in.
+Although most of the UI is defined by programmers  --- contact
+programmers who designed the various UI objects and application
+programmers who placed them neatly on the screen --- the truth is that
+some aspects of the UI ought to be up to the {\em user}. Programmers,
+keep your hands off!
+
+Nowadays, thoughtful UI programmers recognize this problem, so CLUE
+allows  programmers and users to cooperate in
+defining the UI. The basis for this cooperation is {\bf resource
+management}. A user can store various UI values as {\bf
+resources}\index{resource} in a {\bf resource database}\index{resource,
+database}, and CLUE contacts can read these resource values and modify
+the UI accordingly. 
+
+\subsection{The Resource Database}
+Before a user can assign a resource value to a particular UI object, he
+must have a way of identifying it, some kind of  name which
+can be referenced outside of the program which creates the object.
+Remember that a contact has a {\tt name} slot\index{contact, name}; this
+is a symbol that could certainly help identify the contact. Consider
+also that a contact is generally part of a nested hierarchy of UI
+objects. For example, a paint program might have pattern choice
+contact which contains several button contact children, one for each available
+pattern style. A more complete name for a button child would be a
+list which also includes its parent's name, e.g. {\tt '(pattern-choice
+checkered)}. We can extend this notion all the way up the hierarchy to
+come up with a {\bf complete resource name}\index{resource, complete
+name} for the {\tt checkered} pattern button. This would be a list of
+resource name symbols, starting with the resource name for the program
+itself (i.e. the required argument to {\tt
+open-contact-display}\index{open-contact-display}) and continuing with
+symbols for the {\tt root}\index{root} ancestor, the top-level ancestor,
+and so on:\index{resource, name}
+
+\begin{verbatim}
+    '(paint screen-1 pattern-choice checkered)
+\end{verbatim}
+
+Assuming that the {\tt checkered} button has a resource for its label
+string named {\tt label} and another resource for the label font named
+{\tt font,}
+then the complete names for these resources would obviously be:
+
+
+\begin{verbatim}
+    '(paint screen-1 pattern-choice checkered label)
+    '(paint screen-1 pattern-choice checkered font)
+\end{verbatim}
+
+As you might expect when dealing with long path names like these, it's
+often useful to insert ``wildcards'' in the places where you don't want
+to be so specific. For example, the following resource name would refer to
+the {\tt font} of {\em everything} in the pattern choice contact, regardless of
+the screen where it appears:
+
+\begin{verbatim}
+    '(paint * pattern-choice * font)
+\end{verbatim}
+
+Another way of identifying a contact is by its object class. So, for
+example, you could refer to the font of {\em every} {\tt button} object in the
+paint program with the following resource name.
+
+\begin{verbatim}
+    '(paint * button font)
+\end{verbatim}
+
+By associating values with these sorts of resource names in {\bf
+resource bindings}\index{resource, binding}, a user can
+create a resource database which represents his UI preferences.
+CLUE\index{CLUE} provides a {\tt define-resources} macro for adding
+resource bindings to the database.\index{define-resources}
+\begin{verbatim}
+(define-resources
+  (paint * button background)               white
+  (paint * pattern-choice * font)           helvetica-12
+  (paint * pattern-choice checkered label) "Checkered")
+\end{verbatim}
+
+CLUE automatically reads the resource database whenever a contact is
+created. A contact has a class and possibly other contact superclasses
+on its class precedence list\index{class precedence list}. Each such
+(super)class has a list of resource names that it uses (defined by the
+{\tt :resources} option of the defining {\tt
+defcontact}\index{defcontact}
+form). Together, these form the set of contact resources that are looked
+up in the resource database. Of course, finding a resource value is rather complicated,
+because names in the database may not be complete resource
+names and may contain a mixture of resource names and class symbols.
+Nevertheless, during initialization,
+CLUE will find the resource binding that is the closest match for each
+contact resource. In general, a contact gets its resource values  first
+from the user's resource database, then from programmer-specified
+defaults when no user value is found.
+
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+The contact programmer decides which values a contact will look up in
+the resource database; the user decides what values it will find there.
+The contact programmer identifies resources by listing them in the {\tt
+:resources} option of the {\tt defcontact} form for his contact class.\index{defcontact}}
+\hspace*{\fill}} \end{center}
+
+\subsection{Converting Resource Values} 
+\index{resource, conversion}
+\index{resource, types}
+Another convenient feature of
+CLUE resource management is automatic resource type conversion.  Often
+the type of value specified by the user in the resource database is not
+the data type actually used by the program.  For example, a user might
+identify a font by a string such as ``{\tt helvetica},'' but the program
+must convert this name into a CLX {\tt font} object before text is
+displayed.  Another example is color: where a user might specify ``{\tt
+red},'' a program must somehow determine a colormap and pixel value that
+will yield this hue.
+
+CLUE automatically converts user values out of the user's resource
+database into the correct target data type (as specified in the {\tt
+:resources} option of a {\tt defcontact}\index{defcontact} form). This
+is done by calling the {\tt convert} function\index{convert}. For
+example:
+
+\begin{verbatim}
+(setf color (convert         ; Convert a resource...
+              a-blinker      ; ...for a blinker...            
+              "red"          ; ...from a string value...              
+              'pixel))       ; ...to a pixel target type.
+\end{verbatim}
+
+CLUE defines a number of {\tt convert} methods for various combinations
+of source and target data types. Contact programmers can extend
+this mechanism by defining their own special {\tt convert} methods.
+
+\section{Programming Tips\label{sec:tips}}
+\subsection*{Managing the Server Connection}
+You'll get into trouble if you aren't careful to close down the X server
+connection when your program terminates. The reason? Most X servers have a limit
+to the number of client connections which they can serve at one time. When the
+limit is reached, the server simply refuses to open any new connections, and
+you'll end up in the error handler staring at an ``Unable to connect'' message.  Make
+sure your program
+{\em always} terminates with a call to {\tt close-display},\index{close-display}
+even when it aborts unexpectedly. The best way is to put your event loop inside
+an {\tt unwind-protect} form:
+
+\begin{verbatim}
+...
+(unwind-protect 
+  (catch :event-loop
+    (loop
+      (process-next-event display)))  
+  (close-display display))
+...
+\end{verbatim}
+
+One nifty thing about using this technique is that it's always safe to
+abort out of a damaged program and start over.
+
+Also, you should generally avoid binding {\em global} special variables
+to {\tt contact-display} objects representing open server connections. It's too
+easy to lose track of a global variable or, even worse, to garbage a {\tt
+contact-display} while it's still open.\index{contact-display}
+
+\subsection*{Debugging}
+\index{debugging}
+Debugging a CLUE program (or, indeed, any program using the X Window System)
+requires an awareness of a simple fact of life: {\bf client-server communication
+is buffered}. Just calling the CLX {\tt draw-line} function won't necessarily
+cause a line to appear on the screen. Instead, CLX places the corresponding
+server request into an output buffer and moves on; the request is sent to the
+server and executed later, when the output buffer is flushed. Normally, you
+don't have to worry about this because CLX will automatically flush the output
+buffer at the ``right'' time\footnotemark\footnotetext{When the output buffer is
+full and (by default) before reading the next input event.}. However, during
+debugging, you may want requests to be executed immediately. There are
+two ways to do this.
+
+\begin{enumerate}
+\item Call {\tt display-force-output} manually at the appropriate time.
+\index{display-force-output}
+\item Invoke {\tt (setf (dis\-play-af\-ter-func\-tion dis\-play)
+\#'dis\-play-force-out\-put)}. \\
+This tells CLX to flush the
+output buffer automatically as soon as each request
+is made.
+\index{display-after-function} 
+\end{enumerate}
+
+\index{errors}
+Output buffering also means that when a request is in error, you won't
+see the error immediately. The X server reports an error by sending an {\bf
+error reply} back to the program (in this sense, an error reply is another kind
+of input ``event'').
+The error will be reported after the invalid
+request is sent to the server, but by this time, your program has usually sent a
+number of other requests, too. The result? When you arrive at the error handler,
+you almost never be anywhere close to the real scene of the crime.
+Using the {\tt display-after-function}\index{display-after-function} for
+``single-step'' output, as shown above, can help to mitigate this problem. But
+at any rate, you will need to pay careful attention to the contents of the error
+reply which is printed out in CLX's error message. Sometimes, your best recourse
+is to compare the error
+reply with the error behavior defined by the X Protocol Specification for the
+offending request and thereby deduce the cause of the bug.
+
+Another useful debugging technique is to (locally) bind your {\tt
+contact-display} and important {\tt contact} objects to special variables within
+your program. This makes it easier to {\tt break} at a convenient
+point (say, while the program is idle, waiting for an event to occur) and then
+examine the state of various contacts or make server requests to return
+interesting data.
+
+\section{Getting Started\label{sec:getting-started}}
+\subsection{Building CLUE}
+If you're an Explorer user, you'll want to use an Explorer Release 6 load
+band. This band has the latest versions of CLOS, CLX, and CLUE already built in.
+If this applies to you, you can stop here --- you're ready to go!
+
+But if your system doesn't come with CLUE built in, you'll need to go through
+the following procedures to get things properly loaded.
+Three systems need to be loaded: CLOS\index{CLOS}, CLX\index{CLX}, and CLUE
+itself. CLX needs to be loaded specially  --- a small patch to the standard X11
+R3 version of CLX is needed to make it work with CLUE.
+
+\begin{enumerate}
+\item Decide which version of CLOS you want. Possible choices include:
+
+\begin{itemize}
+\item {\tt PCL}, the Portable Common Loops implementation from Xerox that has
+recently been made compatible with the CLOS specification. See CLUE release
+notes for more details.\index{PCL}
+\item {\tt clos-kludge}, a simple implementation of a CLOS subset which comes
+with
+the other CLUE software and which is sufficient for getting started with CLUE.
+See the {\tt defsystem} file in the {\tt clos-kludge} directory.\index{clos-kludge}
+{\tt clos-kludge} works but beware: you should use this only as a temporary
+stop-gap until you have a ``real'' CLOS in place.
+\item Something else. Maybe you've done a CLOS implementation yourself! Or maybe
+you've gotten one from the vendor of your Common Lisp.
+\end{itemize}
+
+\item Compile and load your preferred CLOS.
+
+\begin{center} \framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+Make sure that before both CLX and CLUE are {\em compiled}, you have loaded your
+preferred version of CLOS. If you switch CLOS versions later, be sure to
+recompile both CLX and CLUE.} \hspace*{\fill}} \end{center}
+
+
+\item Compile and load CLX, with the special CLUE patches with are included with
+the other CLUE software.  See the CLUE {\tt defsystem} file.  Lisp machine
+users may find it convenient to perform {\tt (make-system 'clx-clos)}.
+
+\item Compile and load CLUE. See the CLUE {\tt defsystem} file.  Lisp machine
+users may find it convenient to perform {\tt (make-system 'clue)}
+
+\end{enumerate}
+
+     
+  
+\subsection{Packages}
+\index{packages, CLUE}
+\index{packages, CLUEI}\index{intrinsics}
+All symbols defined by the CLUE ``intrinsics'' are external in the {\tt
+CLUEI} package.  The {\tt CLUE} package exports all symbols defined by the
+standard contact set, 
+\index{contact, standard set}
+in addition to all of the
+``intrinsics'' in {\tt CLUEI}\footnotemark\footnotetext{For now, the standard
+contact set is undefined so using either the {\tt CLUE} or {\tt CLUEI}
+package is effectively equivalent. Similarly, the CLUE specification currently
+describes
+only the intrinsics and the CLUE package, and does not yet mention the
+standard contact set.}.
+
+All symbols defined by CLX\index{CLX} are external in the {\tt XLIB} package. The {\tt
+CLUE} and {\tt CLUEI} packages both use {\tt XLIB}.
+
+The package containing CLOS\index{CLOS} symbols may vary, depending on which
+implementation of CLOS you are using. Usually, you will want to use the {\tt
+CLOS} package which exports the Explorer CLOS system. 
+
+\index{packages, CLOS}\index{packages, LISP}\index{packages, TICL}
+\begin{center}
+\framebox[5.5in]{
+\hspace*{\fill}
+{\bf Note}
+\hspace*{\fill}
+\parbox[t]{4.5in}{
+If you are using the Explorer {\tt CLOS} package, be sure to
+also use only {\tt LISP}, the standard Common Lisp package, not {\tt TICL}.
+Using both {\tt TICL} and {\tt CLOS} together will result in some nasty name
+collisions (for example, on {\tt make-instance} and {\tt defmethod}.)}
+\hspace*{\fill}} \end{center}
+
+
+Application programmers should define a separate package for application symbols
+which uses either:
+\begin{itemize}
+\item {\tt LISP}, {\tt CLOS} and {\tt CLUE}, or
+\item {\tt LISP}, {\tt CLOS}, {\tt CLUEI}, and a non-standard contact package.
+\end{itemize}
+
+Contact programmers should define a separate package for each set of
+related contacts, which uses either: 
+\begin{itemize}
+\item {\tt LISP}, {\tt CLOS}, {\tt XLIB}, and {\tt CLUE}, (if using standard
+contacts), or 
+\item {\tt LISP}, {\tt CLOS}, {\tt XLIB}, and {\tt CLUEI}.
+\end{itemize}
+
+\subsection{Warming Up}
+Here are some CLUE calisthenics to limber you up. Some of them
+will require further study of CLUE, CLX, and the X Window System. Some of them
+are rather challenging.
+
+\begin{enumerate}
+\item Complete the {\tt blinker} contact example. Write a {\tt display} method
+that will fill the {\tt blinker} with its {\tt color} when its {\tt on-p}
+state is
+true and fill it with its {\tt background} otherwise. Ensure
+that the {\tt blinker-on-p} accessor updates the display correctly.
+
+\item Create two  {\tt blinker} instances --- one that will print out either
+``{\tt Off!}'' when
+its {\tt :blink} callback is called with a {\tt nil} argument or ``{\tt On!}''
+otherwise, and another which will make a funny noise on your Explorer {\em only}
+when its {\tt :blink} callback is called with a non-{\tt nil} argument.
+
+\item Try out different contact attributes on your {\tt blinker}. For example,
+try a different {\tt border-width}, {\tt border}, and {\tt background}. Try
+initializing the {\tt background} to a {\tt '(float 0 1)} value. What happened?
+Why?
+
+\item Define resources to change initial {\tt blinker} attributes.
+
+\item Create two ``funny noise'' {\tt blinker} instances, as in the previous
+exercise, but give them different funny noises. Do {\em not} change the
+definition of the {\tt blinker} class.
+
+\item Change the {\tt blinker} class so that whenever the cursor enters a {\tt
+blinker}, it turns into a picture of Gumby. Hint: use the {\tt xfd} program
+(font displayer) to find an appropriate element of the {\tt cursor} font.
+Another hint: Use ``{\tt man xfd}'' to learn how to use {\tt xfd}.
+
+\item Change the {\tt blinker} class to include a {\tt string} slot, containing
+a string which can be displayed in any font. Display the string so that it
+appears in the {\tt blinker}'s {\tt color}, is centered horizontally and
+vertically within the {\tt blinker}'s current interior size, and is visible
+regardless of the {\tt blinker}'s {\tt on-p} state. Ensure that the {\tt string}
+remains centered when the user changes the font or the size of the {\tt
+blinker}.
+
+\item Define a {\tt composite} class that {\em always} has a single {\tt blinker}
+child, which is always centered horizontally and vertically within the {\tt
+composite}. Ensure that the {\tt blinker} child
+remains centered when the user changes the size of the {\tt composite}.
+
+\item Define an {\tt etch-a-sketch} contact that will:
+\begin{itemize}
+\item 
+Rubberband a horizontal
+line as the user moves the pointer with {\tt :button-1} down, then
+snap it into place when the button is released.
+\item Rubberband a vertical
+line as the user moves the pointer with {\tt :button-2} down, then
+snap it into place when the button is released.
+\item Print out a copy of its current line drawing on the Imagen
+when the {\tt \#$\backslash$return} key is pressed.
+
+\end{itemize}
+
+\end{enumerate}
+\pagebreak
+\begin{thebibliography}{9}
+
+\bibitem{clos} Bobrow, Daniel G., et al. The Common Lisp Object System
+Specification (X3J13-88-002). American National Standards Institute, June,
+1988. 
+
+{\em [The definition of CLOS. Start with Chapter 1, which is a thorough and
+readable explanation of all concepts. Then consult with Chapter 2 for
+programming details.]}
+
+\bibitem{clos-guide} Keene, Sonya E. {\em Object Oriented Programming in Common
+Lisp}. Addison-Wesley (1989).
+
+{\em [A textbook-style guide to CLOS, written by a member of its ANSI
+development team. Discusses all CLOS features, with examples.]}
+
+\bibitem{Xt} McCormack, Joel, et al. The X-Toolkit Intrinsics, Version
+11, Revision 2 (March, 1988).
+
+{\em [Xt, the C language counterpart to CLUE. This is important because
+CLUE will tend to evolve in the same direction as Xt.]}
+
+\bibitem{x-protocol} Scheifler, Robert W. The X Window System Protocol, Version
+11, Revision 3 (December, 1988).
+
+{\em [The X Bible. The definitive word on how X works. A reference manual with
+no tutorials or examples.]}
+
+\bibitem{x-window-system} Scheifler, Robert W. and Gettys, Jim. The X Window
+System. {\em ACM Transactions on Graphics}, Vol. 5, No. 2 (April 1986).
+
+{\em [An excellent technical overview of the design and features of the X Window
+System. Somewhat obsolete (written before X Version 11) but still informative.]} 
+
+\bibitem{clx} Scheifler, Robert W., et al. CLX Interface
+Specification, Version 4 (September 1987).
+
+{\em [Terse, but this is the definition of CLX. Describes only the language
+binding, so it must be read in conjunction with the X Protocol Specification.]}
+
+\end{thebibliography}
+
+
+\pagebreak
+\begin{theindex}
+\input{turbo-clue.index}
+\end{theindex}
+
+\end{document}
+

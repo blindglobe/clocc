@@ -227,7 +227,7 @@ Tag being parsed:| (cadr x))))
 
 					; symbol:
     ((symbolp l)
-     (check-t-and-pi l))
+     (check-reserved-lisp-names l))
      
 					;number: 
     ((and (null (cdr l)) (numberp (car l)))
@@ -265,7 +265,7 @@ Tag being parsed:| (cadr x))))
     ;; array reference:
     ((and (symbolp (car l))
 	  (listp (cadr l))
-	  (vble-is-array-p (check-t-and-pi (car l))))
+	  (vble-is-array-p (check-reserved-lisp-names (car l))))
      (when (cddr l)
        (princ-reset
 	'|f2cl error: missing +, *, /, or ^ operator following a function call.| l))
@@ -273,7 +273,7 @@ Tag being parsed:| (cadr x))))
      ;; Given the array name and indices, look up the the bounds for
      ;; this array and construct the appropriate expression to access
      ;; the array correctly.
-     (let* ((vname (check-t-and-pi (car l)))
+     (let* ((vname (check-reserved-lisp-names (car l)))
 	    (indices (mapcar #'id-expression
 			     (list-split '|,| (cadr l))))
 	    (bounds (lookup-array-bounds vname)))
@@ -295,7 +295,7 @@ Tag being parsed:| (cadr x))))
     ((and (symbolp (car l))
 	  (listp (cadr l))
 	  (subtypep (lookup-vble-type (car l)) 'string))
-     (let* ((vname (check-t-and-pi (car l)))
+     (let* ((vname (check-reserved-lisp-names (car l)))
 	    (indices (mapcar #'id-expression
 			     (list-split '|:| (cadr l)))))
 

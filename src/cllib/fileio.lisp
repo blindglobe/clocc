@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.12 2000/05/08 19:59:14 sds Exp $
+;;; $Id: fileio.lisp,v 1.13 2000/05/12 18:31:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,7 +29,9 @@
 ;;; {{{ file misc
 ;;;
 
+(eval-when (compile load eval)  ; ACL
 (deftype file-size-t () '(unsigned-byte 32))
+)
 
 (declaim (ftype (function (t) file-size-t) file-size))
 ;;;###autoload

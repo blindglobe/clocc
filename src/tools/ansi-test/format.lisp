@@ -321,7 +321,7 @@ but it makes more sense to print non-numeric arguments properly alighned")
 
 (my-assert
  (format nil "~1f" 10)
- "10.0"
+ "10."
  "22.3.3.1 Tilde F: Fixed-Format Floating-Point
 
 If it is impossible to print the value in the required format in a
@@ -333,7 +333,7 @@ as many more as may be needed.")
 
 (my-assert
  (format nil "~0f" 10)
- "10.0"
+ "10."
  "22.3.3.1 Tilde F: Fixed-Format Floating-Point
 
 If it is impossible to print the value in the required format in a

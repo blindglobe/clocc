@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
-  "$Header: /cvsroot/clocc/clocc/src/gui/clx/text.lisp,v 1.1 2001/07/05 14:45:09 pvaneynd Exp $")
+  "$Header: /cvsroot/clocc/clocc/src/gui/clx/text.lisp,v 1.2 2001/08/02 17:44:37 pvaneynd Exp $")
 
 (in-package :xlib)
 
@@ -64,36 +64,43 @@
   ;; (returns values: ending-index
   ;;                  (OR null horizontal-motion font)
   ;;                  (OR null translated-width))
+(defun translate (src src-start src-end afont dst dst-start)
+  ;; This is for replacing the clx-translate-default-function
+  ;; who does'nt know about accentated characters because
+  ;; of a call to cl:graphic-char-p that return nil with accentated characters.
+  ;; For further informations, on a clx-translate-function, see the clx-man.
   (declare (type sequence src)
-	   (type array-index src-start src-end dst-start)
-	   (type (or null font) font)
-	   (type vector dst)
-	   (inline graphic-char-p))
-  (declare (clx-values integer (or null integer font) (or null integer)))
-  font ;;not used
-  (if (stringp src)
-      (do ((i src-start (index+ i 1))
-	   (j dst-start (index+ j 1))
-	   (char))
-	  ((index>= i src-end)
-	   i)
-	(declare (type array-index i j))
-	(if (graphic-char-p (setq char (char src i)))
-	    (setf (aref dst j) (char->card8 char))
-	  (return i)))
-      (do ((i src-start (index+ i 1))
-	   (j dst-start (index+ j 1))
-	   (elt))
-	  ((index>= i src-end)
-	   i)
-	(declare (type array-index i j))
-	(setq elt (elt src i))
-	(cond ((and (characterp elt) (graphic-char-p elt))
-	       (setf (aref dst j) (char->card8 elt)))
-	      ((integerp elt)
-	       (setf (aref dst j) elt))
-	      (t
-	       (return i))))))
+           (type xlib:array-index src-start src-end dst-start)
+           (type (or null xlib:font) afont)
+           (type vector dst))
+  (declare (xlib::clx-values integer (or null integer xlib:font) (or null integer)))
+  (let ((min-char-index (xlib:font-min-char afont))
+        (max-char-index (xlib:font-max-char afont)))
+    afont
+    (if (stringp src)
+        (do ((i src-start (xlib::index+ i 1))
+             (j dst-start (xlib::index+ j 1))
+             (char))
+            ((xlib::index>= i src-end)
+             i)
+            (declare (type xlib:array-index i j))
+            (setq char (xlib:char->card8 (char src i)))
+            (if (or (< char min-char-index) (> char max-char-index))
+                (return i)
+                (setf (aref dst j) char)))
+        (do ((i src-start (xlib::index+ i 1))
+             (j dst-start (xlib::index+ j 1))
+             (elt))
+            ((xlib::index>= i src-end)
+             i)
+            (declare (type xlib:array-index i j))
+            (setq elt (elt src i))
+            (when (characterp elt) (setq elt (xlib:char->card8 elt)))
+            (if (or (not (integerp elt))
+                    (< elt min-char-index)
+                    (> elt max-char-index))
+                (return i)
+                (setf (aref dst j) elt))))))
 
 ;; There is a question below of whether translate should always be required, or
 ;; if not, what the default should be or where it should come from.  For
@@ -127,7 +134,7 @@
 	 (descent 0)
 	 (overall-ascent (font-ascent font))
 	 (overall-descent (font-descent font))
-	 (overall-direction (font-direction font))	 
+	 (overall-direction (font-direction font))
 	 (next-start nil)
 	 (display (font-display font)))
     (declare (type int16 ascent descent overall-ascent overall-descent)
@@ -160,7 +167,7 @@
 	(setq buf-end (- buf-end src-start))
 	(cond ((null new-font) (setq stop-p t))
 	      ((integerp new-font) (incf width (the int32 new-font))))
-	
+
 	(let (w a d l r)
 	  (if (or (font-char-infos-internal font) (font-local-only-p font))
 	      ;; Calculate text extents locally
@@ -197,7 +204,7 @@
 			    (setq overall-direction nil)))
 	  (:right-to-left (unless (eq font-direction :right-to-left)
 			    (setq overall-direction nil))))))
-    
+
     (values width
 	    ascent
 	    descent
@@ -249,7 +256,7 @@
 	(setq buf-end (- buf-end src-start))
 	(cond ((null new-font) (setq stop-p t))
 	      ((integerp new-font) (incf width (the int32 new-font))))
-	
+
 	(incf width
 	      (if (or (font-char-infos-internal font) (font-local-only-p font))
 		  (text-extents-local font wbuf 0 buf-end :width-only)
@@ -329,7 +336,7 @@
 		    font-descent
 		    (max-char-left-bearing font)
 		    (+ width (- font-width) (max-char-right-bearing font)))))
-      
+
       ;; Variable-width font
       (let* ((first-col (font-info-min-byte2 font-info))
 	     (num-cols (1+ (- (font-info-max-byte2 font-info) first-col)))
@@ -339,7 +346,7 @@
 	(declare (type card8 first-col first-row last-row)
 		 (type card16 num-cols num-rows))
 	(if (or (plusp first-row) (plusp last-row))
-	    
+
 	    ;; Matrix (16 bit) font
 	    (macrolet ((char-info-elt (sequence elt)
 			 `(let* ((char (the card16 (elt ,sequence ,elt)))
@@ -380,7 +387,7 @@
 		      (incf width (aref char-infos (index+ 2 n)))
 		      (setq ascent (max ascent (aref char-infos (index+ 3 n))))
 		      (setq descent (max descent (aref char-infos (index+ 4 n)))))))))
-	  
+
 	  ;; Non-matrix (8 bit) font
 	  ;; The code here is identical to the above, except for the following macro:
 	  (macrolet ((char-info-elt (sequence elt)
@@ -469,7 +476,7 @@
 	  (funcall (or translate #'translate-default)
 		   vector 0 1 (gcontext-font gcontext t) vector 1)
 	;; Allow translate to set a new font
-	(when (type? new-font 'font) 
+	(when (type? new-font 'font)
 	  (setf (gcontext-font gcontext) new-font)
 	  (multiple-value-setq (new-start new-font translate-width)
 	    (funcall translate vector 0 1 new-font vector 1)))
@@ -490,7 +497,7 @@
 	(card8 (ldb (byte 8 0) elt))
 	(card8 (ldb (byte 8 8) elt)))
       (values t width))))
-  
+
 (defun draw-glyphs (drawable gcontext x y sequence
 		    &key (start 0) end translate width (size :default))
   ;; First result is new start, if end was not reached.  Second result is
@@ -525,7 +532,7 @@
 	   (type (or null int32) width))
   (declare (clx-values (or null array-index) (or null int32)))
   (declare (type translation-function translate)
-	   (dynamic-extent translate)) 
+	   (dynamic-extent translate))
   (let* ((src-start start)
 	 (src-end (or end (length sequence)))
 	 (next-start nil)
@@ -686,7 +693,7 @@
 	      (setq offset 0)
 	      (cond ((null new-font)
 		     ;; Don't stop if translate copied whole chunk
-		     (unless (index= src-chunk dst-chunk) 
+		     (unless (index= src-chunk dst-chunk)
 		       (setq stop-p t)))
 		    ((integerp new-font) (setq offset new-font))
 		    ((type? new-font 'font)
@@ -738,7 +745,7 @@
 	  (funcall (or translate #'translate-default)
 		   vector 0 1 (gcontext-font gcontext t) vector 1)
 	;; Allow translate to set a new font
-	(when (type? new-font 'font) 
+	(when (type? new-font 'font)
 	  (setf (gcontext-font gcontext) new-font)
 	  (multiple-value-setq (new-start new-font translate-width)
 	    (funcall translate vector 0 1 new-font vector 1)))
@@ -801,7 +808,7 @@
 	   (type array-index start)
 	   (type sequence sequence)
 	   (type (or null array-index) end)
-	   (type (or null int32) width)) 
+	   (type (or null int32) width))
   (declare (type (or null translation-function) translate)
 	   (dynamic-extent translate))
   (declare (clx-values (or null array-index) (or null int32)))
@@ -815,7 +822,7 @@
     (declare (type display display)
 	     (type array-index length)
 	     (type (or null array-index) new-start chunk))
-    
+
     (when font-change
       (setf (gcontext-font gcontext) font))
     (block change-font
@@ -832,7 +839,7 @@
 	      (funcall (or translate #'translate-default) sequence start end
 		       font buffer-bbuf (index+ buffer-boffset 16)))
 	    ;; Number of glyphs translated
-	    (setq chunk (index- new-start start))		
+	    (setq chunk (index- new-start start))
 	    ;; Check for initial font change
 	    (when (and (index-zerop chunk) (type? font 'font))
 	      (setq font-change t) ;; Loop around changing font
@@ -871,12 +878,12 @@
   (do* ((display (gcontext-display gcontext))
 	(length (index- end start))
 	;; Should metrics-p be T?  Don't want to pass a NIL font into translate...
-	(font (gcontext-font gcontext t)) 
+	(font (gcontext-font gcontext t))
 	(font-change nil)
 	(new-start) (translated-width) (chunk)
 	(buffer (buffer-tbuf16 display)))
        (nil) ;; forever
-    
+
     (declare (type display display)
 	     (type array-index length)
 	     (type (or null array-index) new-start chunk)
@@ -1018,7 +1025,7 @@
 	      ((index>= j keysyms-per-keycode))
 	    (declare (type array-index j))
 	    (card29-put (index* w 4) (aref keysyms i j))
-	    (index-incf w))))))) 
+	    (index-incf w)))))))
 
 (defun keyboard-mapping (display &key first-keycode start end data)
   ;; First-keycode specifies which keycode to start at (defaults to min-keycode).

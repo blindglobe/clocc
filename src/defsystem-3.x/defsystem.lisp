@@ -4162,7 +4162,7 @@ the system definition, if provided."
       (when (mk:find-system module-name :load-or-nil)
 	(mk:load-system module-name
 			:compile-during-load t
-			:verbose nil)))
+			:verbose nil))))
 
 (pushnew 'sbcl-mk-defsystem-module-provider sb-ext:*module-provider-functions*)
 )

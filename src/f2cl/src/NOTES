@@ -2,6 +2,20 @@
 
 Changes:
 
+Jul 20, 2000
+------------
+
+HURRAY!  I think I've made all the necessary changes to make arrays
+1-dimensional in column major order.
+
+With these changes, QUADPACK actually compiles and runs mostly
+correctly.  Still need to run a few tests to be sure, but looks good!
+I think only one minor change was really needed (dqk15w) because f2cl
+was slicing an array when it didn't really need to.  (Could have run
+f2cl with array-slicing off for this file, but didn't test this.)
+
+Few bug fixes were done too.
+
 Jul 19, 2000
 ------------
 

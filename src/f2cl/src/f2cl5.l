@@ -1424,7 +1424,7 @@
 	 ;; If array-slicing is not used and the array-type is
 	 ;; :simple-array, we don't need the with-array-data stuff
 	 ;; because we couldn't have sliced the array.
-	 (when (eq *array-type* 'lisp:array)
+	 (when (eq *array-type* 'common-lisp:array)
 	   (setf prog-bit (grovel-frefs prog-bit))
 	   ;;(format t "new-prog-bit = ~A~%" prog-bit)
 
@@ -2757,8 +2757,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.107 2003/01/08 18:37:58 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.108 2003/01/08 18:41:47 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.108  2003/01/08 18:41:47  rtoy
+;;; Reference symbols in the common-lisp package with "common-lisp:",
+;;; instead of "lisp:".
+;;;
 ;;; Revision 1.107  2003/01/08 18:37:58  rtoy
 ;;; Checking of reserved lisp names was rather weak.  Now check to see if
 ;;; the symbol is an external symbol in the common-lisp package.  If so,

@@ -225,8 +225,8 @@ INPUT-FILE               File containing Fortran code
 	(*common-block-initialized* nil)
 	(*relaxed-array-decls* relaxed-array-decls)
 	(*coerce-assignments* coerce-assigns)
-	(*array-type* (cdr (assoc array-type '((:simple-array . lisp:simple-array)
-					       (:array . lisp:array)))))
+	(*array-type* (cdr (assoc array-type '((:simple-array . common-lisp:simple-array)
+					       (:array . common-lisp:array)))))
 	(*array-slicing* array-slicing)
 	(*apply-array-slice* nil)
 	(*declare-common-blocks* declare-common)
@@ -2380,8 +2380,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.120 2003/01/08 18:19:00 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.121 2003/01/08 18:41:46 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.121  2003/01/08 18:41:46  rtoy
+;;; Reference symbols in the common-lisp package with "common-lisp:",
+;;; instead of "lisp:".
+;;;
 ;;; Revision 1.120  2003/01/08 18:19:00  rtoy
 ;;; Was incorrectly converting things like
 ;;;

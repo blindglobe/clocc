@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.28 2001/03/14 19:02:26 sds Exp $
+;;; $Id: xml.lisp,v 2.29 2001/03/20 23:54:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -401,7 +401,7 @@ the second is `file size' (including tags)."
 (defun stream-length (st)
   "A wrap around for `file-stream'."
   (etypecase st
-    ((or file-stream #+allegro excl:file-simple-stream)
+    ((or file-stream #+allegro-v6.0 excl:file-simple-stream)
      (file-length st))
     (list (reduce #'+ st :key #'stream-length))
     (concatenated-stream (stream-length (concatenated-stream-streams st)))
@@ -442,7 +442,7 @@ the second is `file size' (including tags)."
             (xmlis-all str) (concatenated-stream-streams (xmlis-st str))))
   (dolist (st (concatenated-stream-streams (xmlis-st str)))
     (when (or (typep st 'file-stream)
-              #+allegro (typep st 'excl:file-simple-stream))
+              #+allegro-v6.0 (typep st 'excl:file-simple-stream))
       (when debug-p (format t " == ~s -> ~s~%" st (truename st)))
       (return (truename st)))))
 

@@ -76,8 +76,12 @@ void pipeerror(int dummy)
   exit(0);
 }
 
+#define MAX_LINES 30
 char *line=NULL; /* read line */
-int linelength=0; /* length of the line read */
+char *lines[MAX_LINES+1];
+int  current_line=0;
+
+int linelength=MAX_LINES; /* length of the line read */
 
 int showoutput=1; /* do we show the compilation output? */
 
@@ -106,15 +110,20 @@ void readaline (void)
   ssize_t length;
   size_t max_length;
 
+  current_line++;
+  if (current_line > MAX_LINES)
+    current_line = 0;
+
+  
   max_length = 4096;
-  if (line == (char *) NULL)
+  if (lines[current_line] == (char *) NULL)
     {
-      line = (char *) malloc( sizeof(char)*4097);
-      if (line == (char *) NULL)
+      lines[current_line] = (char *) malloc( sizeof(char)*4097);
+      if (lines[current_line] == (char *) NULL)
         reporterror("Could not allocate space for the line");
     }
 
-  length = getline( &line, &max_length, stdin );
+  length = getline( &(lines[current_line]), &max_length, stdin );
 
   if (length == -1)
     reporterror("eof on read");
@@ -122,6 +131,7 @@ void readaline (void)
   if (max_length != 4096)
     reporterror("Line read was too long, possible attack?");
 
+  line=lines[current_line];
   return;
 }
 
@@ -152,7 +162,8 @@ int delete_directories(const char *filename, const struct stat *stat, int flag)
   /* just a directory? */
   if (flag == FTW_D)
     {
-      if (rmdir(filename) != 0)
+      if ((rmdir(filename) != 0) &&
+          (errno != ENOTEMPTY))
         {
           char command[4097];
 
@@ -204,7 +215,9 @@ void  nuke_package(char *package,char *compiler)
            compiler,package);
   command[4096]=(char)0;
   ftw(command, &delete_stuff, 150);
-  ftw(command, &delete_directories, 150);
+  while (probe_directory(command)) {
+      ftw(command, &delete_directories, 150);
+   }
 }
 
 int main(int argc, char *argv[])
@@ -215,6 +228,23 @@ int main(int argc, char *argv[])
   socklen_t socklen = sizeof(peer);
 
   openlog("clc-build-daemon",LOG_ODELAY,LOG_DAEMON);
+
+  /* get the lock on /etc/lisp-config.lisp */
+  {
+    struct flock flock;
+    int fd;
+
+    if ((fd=open("/etc/lisp-config.lisp",O_RDWR)) == -1)
+      reporterror("Cannot open /etc/lisp-config.lisp");
+
+    flock.l_type = F_WRLCK;
+    flock.l_whence=SEEK_SET;
+    flock.l_start=0;
+    flock.l_len=0;
+
+    if (fcntl(fd, F_SETLKW, &flock) == -1)
+      reporterror("Cannot lock /etc/lisp-config.lisp!");
+  }
 
   /* timeout after 30 seconds */
   signal(SIGALRM, timeout);
@@ -561,12 +591,38 @@ int main(int argc, char *argv[])
                                 reporterror("Could not open a pipe to /usr/bin/mail");
                               else
                                 {
-                                  fprintf(mail_pipe,"Hello\nThis is the clc-build-daemon reporting a build failure.\n\n");
-                                  fprintf(mail_pipe,"While recompiling package %s for compiler %s I got the error code %i\n",
-                                          package,compiler,WEXITSTATUS(status));
-                                  fprintf(mail_pipe,"If you want to retry the compilation and possibly report this as a bug\n");
-                                  fprintf(mail_pipe,"then please read /usr/share/doc/common-lisp-controller/REPORTING-BUGS\n");
-                                  fprintf(mail_pipe,"\nThanks for your attention\n");
+                                  int line_offset;
+                                  
+                                  fprintf(mail_pipe,"
+Hello
+
+This is the clc-build-daemon reporting a build failure.
+
+
+While recompiling package %s for compiler %s I got the error code %i
+If you want to retry the compilation and possibly report this as a bug
+then please read /usr/share/doc/common-lisp-controller/REPORTING-BUGS
+
+The command to retry the recompilation is:
+clc-send-command --verbose remove %s %s ; echo returns: $?
+clc-send-command --verbose recompile %s %s ; echo returns: $?
+
+After this message I will append the last few lines of output.
+
+Thanks for your attention\n",
+                                          package,compiler,WEXITSTATUS(status),
+                                          package,compiler,
+                                          package,compiler);
+                                  fflush(mail_pipe);
+                                  for(line_offset=0;line_offset <= MAX_LINES;line_offset++)
+                                    {
+				      char *line;
+
+				      line=lines[(current_line+1+line_offset) % MAX_LINES];
+
+				      if (line != (char *) NULL)
+                                        fprintf(mail_pipe,"%s\n", line);
+                                    }
                                   fflush(mail_pipe);
                                   pclose(mail_pipe);
                                 }

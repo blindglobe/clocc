@@ -1037,6 +1037,7 @@
    (export (setq *exports*
 		 '(operate-on-system 
 		   oos 
+		   find-system
 		   afs-binary-directory afs-source-directory
 		   files-in-system)))
    (export (setq *special-exports* 

@@ -10,24 +10,33 @@
 
 (provide 'sequences)
 
-(defpackage "SEQUENCES" (:nicknames "SEQ"))
+(defpackage "SEQUENCES" (:nicknames "SEQ")
+  (:export .
+       (elt subseq copy-seq length list-reverse reverse list-nreverse
+        nreverse make-sequence concatenate map some every notany notevery
+        reduce fill replace remove remove-if remove-if-not delete delete-if
+        delete-if-not remove-duplicates delete-duplicates substitute
+        substitute-if substitute-if-not nsubstitute nsubstitute-if
+        nsubstitute-if-not find find-if find-if-not position position-if
+        position-if-not count count-if count-if-not mismatch search sort
+        stable-sort merge coerce))
+  (:export do-sequence define-sequence))
 (in-package "SEQUENCES")
-
-(export '(elt subseq copy-seq length list-reverse reverse list-nreverse
-          nreverse make-sequence concatenate map some every notany notevery
-          reduce fill replace remove remove-if remove-if-not delete delete-if
-          delete-if-not remove-duplicates delete-duplicates substitute
-          substitute-if substitute-if-not nsubstitute nsubstitute-if
-          nsubstitute-if-not find find-if find-if-not position position-if
-          position-if-not count count-if count-if-not mismatch search sort
-          stable-sort merge coerce do-sequence define-sequence))
 
 (setf (symbol-function 'list-reverse) (symbol-function 'reverse))
 (setf (symbol-function 'list-nreverse) (symbol-function 'nreverse))
 
 ;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
 (defmacro do-sequence ((var sequenceform &optional (resultform nil)) &body body)
-  (multiple-value-bind (body-rest declarations) (system::parse-body body)
+  (multiple-value-bind (body-rest declarations)
+      (let ((body-rest body) (declarations nil))
+        (loop
+          (if (and (consp body-rest)
+                   (consp (car body-rest))
+                   (eq (caar body-rest) 'declare))
+            (setq declarations (revappend (cdr (pop body-rest)) declarations))
+            (return)))
+        (values body-rest (nreverse declarations)))
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)))
       `(BLOCK NIL

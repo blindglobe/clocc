@@ -10,29 +10,22 @@
 
 (provide 'sequences)
 
-(defpackage "SEQUENCES" #-lispworks (:nicknames "SEQ"))
+(defpackage "SEQUENCES" #-lispworks (:nicknames "SEQ")
+  (:shadow .
+    #1=(elt subseq copy-seq length list-reverse reverse list-nreverse
+        nreverse make-sequence concatenate map some every notany notevery
+        reduce fill replace remove remove-if remove-if-not delete delete-if
+        delete-if-not remove-duplicates delete-duplicates substitute
+        substitute-if substitute-if-not nsubstitute nsubstitute-if
+        nsubstitute-if-not find find-if find-if-not position position-if
+        position-if-not count count-if count-if-not mismatch search sort
+        stable-sort merge coerce))
+  (:export . #1#)
+  (:export do-sequence define-sequence))
 (in-package "SEQUENCES")
 
 (eval-when (load compile eval)
   (defvar *seq-package* (find-package "SEQUENCES")))
-
-(shadow '(elt subseq copy-seq length list-reverse reverse list-nreverse
-          nreverse make-sequence concatenate map some every notany notevery
-          reduce fill replace remove remove-if remove-if-not delete delete-if
-          delete-if-not remove-duplicates delete-duplicates substitute
-          substitute-if substitute-if-not nsubstitute nsubstitute-if
-          nsubstitute-if-not find find-if find-if-not position position-if
-          position-if-not count count-if count-if-not mismatch search sort
-          stable-sort merge coerce))
-
-(export '(elt subseq copy-seq length list-reverse reverse list-nreverse
-          nreverse make-sequence concatenate map some every notany notevery
-          reduce fill replace remove remove-if remove-if-not delete delete-if
-          delete-if-not remove-duplicates delete-duplicates substitute
-          substitute-if substitute-if-not nsubstitute nsubstitute-if
-          nsubstitute-if-not find find-if find-if-not position position-if
-          position-if-not count count-if count-if-not mismatch search sort
-          stable-sort merge coerce do-sequence define-sequence))
 
 #|
    Targets:
@@ -1557,11 +1550,17 @@ formulated for the search of S[0]...S[m-1] in T[0]...T[n-1] starting at T[0]...:
           (coerce result result-type))))))
 
 ;; (do-sequence (var sequenceform [resultform]) {declaration}* {tag|statement}*)
-#+CLISP ; uses sys::parse-body
 (defmacro do-sequence ((var sequenceform &optional (resultform nil))
-                       &body body &environment env)
+                       &body body)
   (multiple-value-bind (body-rest declarations)
-      (system::parse-body body nil env)
+      (let ((body-rest body) (declarations nil))
+        (loop
+          (if (and (consp body-rest)
+                   (consp (car body-rest))
+                   (eq (caar body-rest) 'declare))
+            (setq declarations (revappend (cdr (pop body-rest)) declarations))
+            (return)))
+        (values body-rest (nreverse declarations)))
     (setq declarations (if declarations `((DECLARE ,declarations)) '()))
     (let ((seqvar (gensym)) (pointer (gensym)))
       `(BLOCK NIL

@@ -1,4 +1,3 @@
-
 /* clc-build-daemon  -*- Mode:C -*-
 
    written by Peter Van Eynde, copyright 2002
@@ -167,20 +166,6 @@ int delete_directories(const char *filename, const struct stat *stat, int flag)
           reporterror(command);
           return 1;
         }
-    }
-  return 0;
-}
-
-int chown_to_root(const char *filename, const struct stat *stat, int flag)
-{
-  if ( chown(filename, 0, 0) != 0)
-    {
-      char command[4097];
-
-      snprintf(command,4096,"While chowing the file: %s with %i: %i %i",filename,flag,(flag & FTW_F),(flag & FTW_SL));
-      command[4096]=(char)0;
-      reporterror(command);
-      return 1;
     }
   return 0;
 }
@@ -447,10 +432,10 @@ int main(int argc, char *argv[])
                           reporterror(command);
                         }
 
-                      login_data = getpwnam("nobody");
+                      login_data = getpwnam("cl-builder");
 
                       if (login_data == NULL)
-                        reporterror("Could not know who is nobody");
+                        reporterror("Could not know who is cl-builder");
 
                       if ( chown(directory, login_data->pw_uid, login_data->pw_gid) != 0)
                         {
@@ -463,13 +448,13 @@ int main(int argc, char *argv[])
                         }
 
                       if (setgid(login_data->pw_gid) != 0)
-                        reporterror("could not become nogroup");
+                        reporterror("could not become cl-builder group");
 
                       if (setgroups(0,NULL) != 0)
                         reporterror("Could not give up groups");
 
                       if (setuid(login_data->pw_uid) != 0)
-                        reporterror("could not become nobody");
+                        reporterror("could not become  cl-builder");
 
                       if (setsid() == -1)
                         reporterror("could not create a session");
@@ -493,7 +478,7 @@ int main(int argc, char *argv[])
 
                           env[0] = "PATH=/bin:/usr/bin:/usr/local/bin:";
                           env[1] = "HOME=/tmp";
-                          env[2] = "USER=nobody";
+                          env[2] = "USER=cl-builder";
                           env[3] = "TERM=vt100";
                           env[4] = (char *) NULL;
 
@@ -560,19 +545,19 @@ int main(int argc, char *argv[])
                             {
                               struct passwd *login_data;
 
-                              login_data = getpwnam("nobody");
+                              login_data = getpwnam("cl-builder");
                               
                               if (login_data == NULL)
-                                reporterror("Could not know who is nobody");
+                                reporterror("Could not know who is cl-builder");
                               
                               if (setgid(login_data->pw_gid) != 0)
-                                reporterror("could not become nogroup");
+                                reporterror("could not become cl-builder group");
                               
                               if (setgroups(0,NULL) != 0)
                                 reporterror("Could not give up groups");
                               
                               if (setuid(login_data->pw_uid) != 0)
-                                reporterror("could not become nobody");
+                                reporterror("could not become cl-builder");
 
                               if (setsid() == -1)
                                 reporterror("could not create a session");
@@ -625,16 +610,7 @@ Thanks for your attention\n",
                         }
                       else
                       if ( WIFEXITED(status) != 0)
-                        {
-                          char command[4097];
-
-                          snprintf(command,4096,"/usr/lib/common-lisp/%s/%s",
-                                   compiler,package);
-                          command[4096]=(char)0;
-                          ftw(command, &chown_to_root, 150);
-
-                          printf("251 DONE\n");
-                        }
+                        printf("251 DONE\n");
                     }
                 }
             }

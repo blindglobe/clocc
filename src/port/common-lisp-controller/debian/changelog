@@ -1,3 +1,21 @@
+common-lisp-controller (3.12) unstable; urgency=high
+
+  * When compiling a package, first compile it sub-systems!
+    A rather critical bug that breaks a lot of packages!
+    The problem is like this: we need to recompile package A.
+    So we mkdir and chown /usr/lib/common-lisp/<impl>/A
+    Then we become nobody. But system A :depends-on B.
+    B is not compiled yet, so we need to recompile it.
+    So we try to mkdir /usr/lib/common-lisp/<impl>/B _as
+    nobody_. Oeps. (example: cmucl-clm depends-on cmucl-clx)
+
+    To solve this we introduct the cl-builder user that owns all
+    the files.
+  * Patch from Kevin Rosenberg to avoid getting killed by inetd's 
+    DoS protection.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon,  5 Aug 2002 09:17:29 +0200
+
 common-lisp-controller (3.11) unstable; urgency=low
 
   * Oeps. 10 seconds after upload: unregister-common-lisp-source should not

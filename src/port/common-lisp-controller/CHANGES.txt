@@ -1,10 +1,5 @@
-KMR 04-AUG-2002
-    * debian/postrm
-        Add .max field for inetd configuration, fixes problem with inetd
-	disable service on fast machines.
-    * debian/prerm
-        Changed update-inetd to use several regular expressions to ensure any
-	previous service is removed
+PVE 05-AUG-2002 (Peter Van Eynde)
+    Introduced cl-builder user to solve build problems.
 
 KMR 23-JULY-2002 (Kevin M. Rosenberg)
     * common-lisp-controller.lisp:

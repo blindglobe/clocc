@@ -87,11 +87,11 @@ commands:
 
 	<name>.sh rebuild <package-name>+
 The should load and recompile the given packages.  It should also if
-possible create the libraries for that implementation.  <run as nobody>
+possible create the libraries for that implementation.  <run as cl-builder>
 
 	<name>.sh remove <package-name>*
 This should remove all fasl, log and other files belonging to the
-package <run as nobody>
+package <run as cl-builder>
 	
 	<name>.sh install-defsystem
 This should compile and install defsystem in the default image.
@@ -123,13 +123,12 @@ something as powerful as a common lisp compiler running as root, but
 we need to have root as the owner of the fasl's for obvious
 reasons. The solution is to re-chown the
 /usr/lib/common-lisp/<implementation>/<package> hierarchy to the user
-"nobody", compile the stuff as user "nobody" and then re-chown the
-hierarchy back to root. In this was we run the compiler as a user who
-can do little harm, and at the same time the resulting files will be
-safe. Notice that we should change the umask to 077 to avoid
-generating writable files.
+"cl-builder", compile the stuff as user "cl-bilder"t. In this was we
+run the compiler as a user who can do little harm, and at the same
+time the resulting files will be safe. Notice that we should change
+the umask to 077 to avoid generating writable files.
 
-All of these commands are run as 'nobody', except install-defsystem
+All of these commands are run as 'cl-builder', except install-defsystem
 and remove-defsystem because they modify files outside of the
 control of common-lisp-controller.
 

@@ -27,31 +27,41 @@
                (pathname
                 "cl-library:")))))
       ;; if in the clc root:
-      (or
-       ;; try to load it
-       (mk:oos  module-name
-                :load
-                :load-source-instead-of-binary nil
-                :load-source-if-no-binary nil
-                :bother-user-if-no-binary nil
-                :compile-during-load nil)
-       ;; if not: try to compile it
-       (progn
-         (format t "~&;;;Please wait, recompiling library...")
-         (common-lisp-controller:send-clc-command :recompile
-                                                  (if (stringp module-name)
-                                                      module-name
-                                                      (string-downcase
-                                                       (symbol-name
-                                                        module-name))))
-         (terpri)
+      (let ((system (mk:find-system module-name
+                                    :load-or-nil)))
+        (or
+         ;; try to load it
          (mk:oos  module-name
                   :load
                   :load-source-instead-of-binary nil
                   :load-source-if-no-binary nil
                   :bother-user-if-no-binary nil
                   :compile-during-load nil)
-         t))
+         ;; if not: try to compile it
+         (progn
+           (format t "~&;;;Please wait, recompiling library...")
+           ;; first compile the sub-components!
+           (dolist (sub-system (make::component-depends-on
+                                system))
+             (when (stringp sub-system)
+               (setf sub-system
+                     (intern sub-system
+                             (find-package :keyword)))
+               (clc-require sub-system)))
+           (common-lisp-controller:send-clc-command :recompile
+                                                    (if (stringp module-name)
+                                                        module-name
+                                                        (string-downcase
+                                                         (symbol-name
+                                                          module-name))))
+           (terpri)
+           (mk:oos  module-name
+                  :load
+                  :load-source-instead-of-binary nil
+                  :load-source-if-no-binary nil
+                  :bother-user-if-no-binary nil
+                  :compile-during-load nil)
+           t)))
       ;; ifnot, let mk deal with it..
       (mk::new-require module-name
                        pathname

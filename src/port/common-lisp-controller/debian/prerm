@@ -17,9 +17,6 @@ set -e
 
 case "$1" in
     remove|upgrade|deconfigure)
-        if [ -L /usr/doc/common-lisp-controller ]; then
-          rm -f /usr/doc/common-lisp-controller
-        fi
 	# Updates by KMR to make sure any previous form of service is removed
         update-inetd --remove "^8990@localhost\t.*"
         update-inetd --remove "^8990\t.*"

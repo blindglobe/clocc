@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: h2lisp.lisp,v 2.5 2000/06/14 16:35:34 sds Exp $
+;;; $Id: h2lisp.lisp,v 2.6 2001/03/29 22:17:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/h2lisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,7 +32,6 @@
   (ecase char
     (#\{ (read-delimited-list #\} stream t))
     (#\[ (make-c-dim :dim (car (read-delimited-list #\] stream t))))
-    (#\; #\;) (#\, #\,) (#\: #\:) (#\* #\*) (#\| #\|)
     (#\#
      (let ((com (read stream t nil t)))
        (ecase com
@@ -66,17 +65,17 @@
 (defun make-c-readtable (&optional (rt (copy-readtable)))
   "Make the readtable for parsing C."
   (set-macro-character #\/ #'read-c-junk nil rt)
-  (set-macro-character #\| #'read-c-junk nil rt)
+  (set-macro-character #\| #'read-standalone-char nil rt)
   (set-macro-character #\# #'read-c-junk nil rt)
   (set-syntax-from-char #\; #\a rt)
-  (set-macro-character #\; #'read-c-junk nil rt)
+  (set-macro-character #\; #'read-standalone-char nil rt)
   (set-syntax-from-char #\# #\a rt)
   (set-macro-character #\# #'read-c-junk nil rt)
   (set-syntax-from-char #\: #\a rt)
-  (set-macro-character #\: #'read-c-junk nil rt)
+  (set-macro-character #\: #'read-standalone-char nil rt)
   (set-syntax-from-char #\, #\a rt)
-  (set-macro-character #\, #'read-c-junk nil rt)
-  (set-macro-character #\* #'read-c-junk nil rt)
+  (set-macro-character #\, #'read-standalone-char nil rt)
+  (set-macro-character #\* #'read-standalone-char nil rt)
   (set-macro-character #\{ #'read-c-junk nil rt)
   (set-macro-character #\} (get-macro-character #\)) nil rt)
   (set-macro-character #\[ #'read-c-junk nil rt)

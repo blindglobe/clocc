@@ -1,10 +1,14 @@
-;;; File: <gnuplot.lisp - 1997-10-01 Wed 16:19:19 EDT - sds@WINTERMUTE.eagle>
+;;; File: <gnuplot.lisp - 1997-10-15 Wed 11:43:41 EDT - sds@WINTERMUTE.eagle>
 ;;;
 ;;; Gnuplot
 ;;;
-;;; $Id: gnuplot.lisp,v 1.3 1997/10/01 20:48:12 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.4 1997/10/15 15:44:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.4  1997/10/15 15:44:17  sds
+;;; Added plot-lists.
+;;; Made plot-dated-lists plot exponential moving averages.
+;;;
 ;;; Revision 1.3  1997/10/01 20:48:12  sds
 ;;; Added plot-dated-lists.
 ;;;
@@ -20,57 +24,84 @@
 ;(make-pipe-io-stream)
 ;(make-pipe-output-stream)
 
-(defvar *gnuplot-path* "c:\\bin\\wgnuplot\\wgnuplot.exe"
+(defvar *gnuplot-path* (pathname "c:/bin/wgnuplot/wgnuplot.exe")
   "*The path to the gnuplot executable")
 (defvar *gnuplot-stream* nil "The current gnuplot output stream.")
 (defvar *gnuplot-file* (merge-pathnames "plot.tmp" *fin-dir*)
   "*The tmp file for gnuplot.")
 
-(defvar *gnuplot-init*
-  "set xdata time
-set xlabel 'time'
-set ylabel 'value, $'
-set data style lines
-set timefmt '%Y-%m-%d'
-" "*The initial string to be sent to gnuplot.")
-
-(defun plot-dated-lists (begd endd title &rest dls)
-  "Plot the dated lists from BEGD to ENDD."
-  (declare (type date begd endd))
+(defun plot-dated-lists (begd endd dls &key (title "Plot") (xlabel "time")
+			 (ylabel "value, $") (data-style "lines")
+			 (timefmt "%Y-%m-%d") ema rel)
+  "Plot the dated lists from BEGD to ENDD.
+Most of the keys are the gnuplot set commands.
+REL means plot everything relative to the first value.
+EMA is the list of parameters for Exponential Moving Averages."
+  (setq begd (cond ((date-p begd) begd)
+		   ((null begd) (dl-beg-date (car dls)))
+		   (t (parse-date begd)))
+	endd (cond ((date-p endd) endd)
+		   ((null endd) (dl-beg-date (car dls)))
+		   (t (parse-date endd))))
   (unless dls (error "nothing to plot for `~a'~%" title))
   (with-open-file (str *gnuplot-file* :direction :output :if-exists :supersede)
-    (princ *gnuplot-init* str)
-    (format str "set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
-	    title (mapcar #'dated-list-name dls))
-    (dolist (dl dls)
-      (do ((td (shift-dl (copy-dated-list dl) begd) (shift-dl td)))
-	  ((date-more-p (dl-beg-date td) endd) (format str "e~%"))
-	(format str "~a ~f~%" (dl-beg-date td) (dl-beg-misc td)))))
-  (format t "File `~a' for gnuplot is prepared.
-Type \"load '~a'\" at the gnuplot prompt.~%" *gnuplot-file* *gnuplot-file*))
+    (format str "set xdata time~%set xlabel '~a'~%set ylabel '~a'
+set data style ~a~%set timefmt '~a'~%set xrange ['~a':'~a']
+set title '~a'~%plot~{ '-' using 1:2 title '~a'~^,~}~%"
+	    xlabel ylabel data-style timefmt begd endd title
+	    ;; Ugly. But gnuplot requires a comma *between* plots,
+	    ;; and this is the easiest way to do that.
+	    (mapcan (lambda (dl)
+		      (cons (dated-list-name dl)
+			    (mapcar (lambda (ee)
+				      (format nil "~a - EMA [~f]"
+					      (dated-list-name dl) ee))
+				    ema)))
+		    dls))
+    (let* ((emal (make-list (length ema))) bv
+	   (val (if rel (lambda (dl) (/ (dl-beg-misc dl) bv)) #'dl-beg-misc)))
+      (dolist (dl dls)
+	(setq bv (dl-beg-misc dl))
+	(do* ((td (shift-dl (copy-dated-list dl) begd) (shift-dl td)))
+	     ((or (null (dated-list-ll td))
+		  (date-more-p (dl-beg-date td) endd))
+	      (format str "e~%"))
+	  (mapl (lambda (e c)
+		  (let ((v (funcall val td)))
+		    (push (cons (dl-beg-date td)
+				(+ (* (car c) v)
+				   (* (- 1 (car c)) (or (cdaar e) v))))
+			  (car e))))
+		emal ema)
+	  (format str "~a ~f~%" (dl-beg-date td) (funcall val td)))
+	(dolist (em emal)
+	  (dolist (ee (nreverse em) (format str "e~%"))
+	    (format str "~a ~f~%" (car ee) (cdr ee))))
+	;; clean EMAL for the next pass
+	(mapl (lambda (ee) (setf (car ee) nil)) emal))))
+  (format t "Prepared file `~a'. Type \"load '~a'\" at the gnuplot prompt.~%"
+	  *gnuplot-file* *gnuplot-file*))
 
-(defun plot-contract (ctr title &optional (use-old t))
-  "Plot contract history using gnuplot.
-Try to use the existing gnuplot id use-old is non-nil (default)."
-  (unless (and use-old *gnuplot-stream* (open-stream-p *gnuplot-stream*))
-    (setq *gnuplot-stream* (make-pipe-output-stream *gnuplot-path*)))
-  (unless *gnuplot-stream*
-    (princ
-     (concat "set xdata time\nset ylabel 'value'\nset title '" title
-	     "'\nset data style lines\nset timefmt '%Y-%m-%d'\n"
-	     "plot '-' using 1:5 title 'contract value'\n") *gnuplot-stream*)
-    (loop for rec across ctr
-	  do (princ (concat (print-contract rec) "\n") *gnuplot-stream*))
-    (princ "e\n" *gnuplot-stream*)))
+(defun plot-lists (lss &key (key #'identity) (title "Plot") (xlabel "nums")
+		   (ylabel "value") (data-style "linespoints") rel depth)
+  "Plot the given lists of numbers.
+LSS is a list of lists, car of each list is the title, cdr is the numbers."
+  (declare (list lss))
+  (unless depth
+    (setq depth (apply #'min (mapcar (compose #'length #'rest) lss))))
+  (with-open-file (str *gnuplot-file* :direction :output :if-exists :supersede)
+    (format str "set xdata~%set xlabel '~a'~%set ylabel '~a'
+set xrange [0:~d]~%set data style ~a~%set title '~a'
+plot~{ '-' using 1:2 title '~a'~^,~}~%"
+	    xlabel ylabel (1- depth) data-style title (mapcar #'car lss))
+    (let* (bv (val (if rel
+		       (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
+		       (lambda (ll) (if ll (funcall key (car ll)) bv)))))
+      (dolist (ls lss)
+	(setq bv (funcall key (cadr ls)))
+	(do ((ll (cdr ls) (cdr ll)) (ix 0 (1+ ix)))
+	    ((= ix depth) (format str "e~%"))
+	  (format str "~f~10t~f~%" ix (funcall val ll))))))
+  (format t "Prepared file `~a'. Type \"load '~a'\" at the gnuplot prompt.~%"
+	  *gnuplot-file* *gnuplot-file*))
 
-(defun plot-contract-file (file title &optional (use-old t))
-  "Plot a contract file, using gnuplot.
-The file must be saved with `clean' dates.
-Try to use the existing gnuplot id use-old is non-nil (default)."
-  (unless (and use-old *gnuplot-stream* (open-stream-p *gnuplot-stream*))
-    (setq *gnuplot-stream* (make-pipe-output-stream *gnuplot-path*)))
-  (princ
-   (concat "set xdata time\nset ylabel 'value'\nset title '" title
-	   "'\nset data style lines\nset timefmt '%Y-%m-%d'\n"
-	   "set format x '%Y %b %e'\nplot '" file
-	   "' using 1:5 title 'contract value'\n") *gnuplot-stream*))

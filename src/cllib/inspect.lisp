@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.17 2000/07/20 15:32:38 sds Exp $
+;;; $Id: inspect.lisp,v 1.18 2000/07/20 18:18:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -36,11 +36,14 @@
   "*The default inspect frontend.
 The possible values are
   :tty    use the text-only interface
-  :http   use your web browser (see `*inspect-browser*')
+  :http   use a web browser (see `*inspect-browser*')
 To define a frontend, one has to define methods for
  `print-inspection' and `inspect-frontend'.")
-(defcustom *inspect-browser* symbol :netscape
+(defcustom *inspect-browser* symbol nil
   "*The default browser to use with the `:http' `*inspect-frontend*'.
+If nil, no browser is stared - you will have to point your browser to
+a URL supplied by `inspect-frontend'.
+This way the browser and Lisp can run on different machines.
 See `browse-url' and `*browsers*'.")
 (defcustom *inspect-print-lines* fixnum 5
   "*The default value for `*print-lines*'.")
@@ -427,14 +430,18 @@ This is useful for frontends which provide an eval/modify facility."
                 (return (values socket id com))))))))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
-  (do ((server (let ((server (open-socket-server)))
-                 (when (> *inspect-debug* 0)
-                   (format t "~&%s: server: ~s~%" 'inspect-frontend server))
-                 (browse-url
-                  (format nil "http://127.0.0.1:~d/0/:s"
-                          (nth-value 1 (socket-server-host/port server)))
-                  :browser *inspect-browser*)
-                 server))
+  (do ((server
+        (let* ((server (open-socket-server))
+               (port (nth-value 1 (socket-server-host/port server))))
+          (when (> *inspect-debug* 0)
+            (format t "~&%s: server: ~s~%" 'inspect-frontend server))
+          (if *inspect-browser*
+              (browse-url (format nil "http://127.0.0.1:~d/0/:s" port)
+                          :browser *inspect-browser*)
+              (format
+               t "~& * please point your browser at <http://~a:~d/0/:s>~%"
+               *mail-host-address* port))
+          server))
        sock id com)
       ((eq com :q) (socket-server-close server))
     (setf (values sock id com) (http-command server))

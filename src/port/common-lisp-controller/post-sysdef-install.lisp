@@ -304,8 +304,9 @@
 
 (defun append-dir-terminator-if-needed (path)
   (check-type path string)
-  (unless (char= #\/ (char path (1- (length path))))
-    (concatenate 'string path "/")))
+  (if (char= #\/ (char path (1- (length path))))
+      path
+      (concatenate 'string path "/")))
 
 (defun user-clc-path ()
   "Returns the path of the user's local clc directory, NIL if directory does not exist."

@@ -1,3 +1,9 @@
+common-lisp-controller (3.79) unstable; urgency=low
+
+  * Fix bug when HOME environmental variable has a terminal /
+
+ -- Kevin M. Rosenberg <kmr@debian.org>  Fri, 12 Dec 2003 23:41:43 -0700
+
 common-lisp-controller (3.78) unstable; urgency=low
 
   * Add ~/.clc/systems/ to asdf:central-registry*

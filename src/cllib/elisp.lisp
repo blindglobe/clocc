@@ -1,10 +1,8 @@
-;;; File: <elisp.lisp - 2000-02-17 Thu 19:35:20 EST sds@ksp.com>
-;;;
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
 ;;; Copyright (C) 1999-2000 by Sam Steingold
 ;;;
-;;; $Id: elisp.lisp,v 2.0 2000/02/18 20:21:58 sds Exp $
+;;; $Id: elisp.lisp,v 2.1 2000/03/21 22:33:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -59,10 +57,10 @@
                 :for this-char = (read-char stream t nil t)
                 :until (char= this-char #\")
                 :if (char= this-char #\\)
-                :do  (setq char-to-add
-                           (case (setq next-char (read-char stream t nil t))
-                             (#\n #\Newline) (#\r #\Return) (#\f #\Page)
-                             (#\t #\Tab) (#\v #\Linefeed) (t next-char)))
+                :do (setq char-to-add
+                          (case (setq next-char (read-char stream t nil t))
+                            (#\n #\Newline) (#\r #\Return) (#\f #\Page)
+                            (#\t #\Tab) (#\v #\Linefeed) (t next-char)))
                 :else :do (setq char-to-add this-char)
                 :collect char-to-add)
           'string))

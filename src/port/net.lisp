@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.53 2004/11/09 16:31:20 sds Exp $
+;;; $Id: net.lisp,v 1.54 2005/01/26 19:32:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,6 +24,7 @@
  '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr
    hostent hostent-name hostent-aliases hostent-addr-list hostent-addr-type
    socket open-socket socket-host/port socket-string socket-server
+   set-socket-stream-format
    socket-accept open-socket-server socket-server-close socket-server-host/port
    socket-service-port servent-name servent-aliases servent-port servent-proto
    servent-p servent network timeout login net-path))
@@ -223,6 +224,13 @@
     #-(or abcl allegro clisp cmu gcl lispworks mcl
           (and sbcl (or net.sbcl.sockets db-sockets)) scl)
     (error 'not-implemented :proc (list 'open-socket host port bin))))
+
+(defun set-socket-stream-format (socket format)
+  "switch between binary and text output"
+  #+clisp (setf (stream-element-type socket) format)
+  #+(or acl lispworks) (declare (ignore socket format)) ; bivalent streams
+  #-(or acl clisp lispworks)
+  (error 'not-implemented :proc (list 'set-socket-stream-format socket format)))
 
 (defun socket-host/port (sock)
   "Return the remote and local host&port, as 4 values."

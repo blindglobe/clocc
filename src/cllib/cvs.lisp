@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.2 2000/05/23 22:13:44 sds Exp $
+;;; $Id: cvs.lisp,v 2.3 2000/05/23 23:01:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,6 +29,7 @@
 ;;; CVS diff ---> patch
 ;;;
 
+(eval-when (compile load eval) (fmakunbound 'cvs-diff2patch))
 ;;;###autoload
 (defgeneric cvs-diff2patch (in out)
   (:documentation "Convert a CVS diff to a patchable diff.")

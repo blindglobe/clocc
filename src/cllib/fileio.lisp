@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.19 2001/04/02 17:09:51 sds Exp $
+;;; $Id: fileio.lisp,v 1.20 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -182,9 +182,7 @@ Set `*print-circle*' and `*print-pretty*' to the third argument
 NICE (default T).  Uses `with-standard-io-syntax'."
   (declare (stream str))
   (with-standard-io-syntax
-    (let (#+clisp (lisp:*print-indent-lists* 1)
-          #+clisp (lisp:*print-rpars* nil))
-      (write obj :stream str :case :downcase :circle nice :pretty nice)))
+    (write obj :stream str :case :downcase :circle nice :pretty nice))
   (values))
 
 ;;;###autoload

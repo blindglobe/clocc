@@ -965,6 +965,9 @@
 ;;; MAKE package. A nice side-effect is that the short nickname
 ;;; MK is my initials.
 
+#+clisp
+(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
+
 #-(or :cltl2 :lispworks)
 (in-package "MAKE" :nicknames '("MK"))
 
@@ -1002,10 +1005,6 @@
 (eval-when (compile load eval)
   (unless (find-package "MAKE")
     (make-package "MAKE" :nicknames '("MK") :use '("COMMON-LISP"))))
-
-;;; sds
-#+:clisp
-(defpackage "MAKE" (:use "COMMON-LISP") (:nicknames "MK"))
 
 ;;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu> 19951012
 ;;; Here I add the proper defpackage for CMU
@@ -3685,7 +3684,8 @@ D
   #+:cmu (extensions:run-program program arguments)
   #+:lispworks (foreign:call-system-showing-output
 		(format nil "~A~@[ ~{~A~^ ~}~]" program arguments))
-  #+clisp (lisp:run-program program :arguments arguments)
+  #+clisp (#+lisp=cl ext:run-program #-lisp=cl lisp:run-program
+                     program :arguments arguments)
   )
 
 #+(or symbolics (and :lispworks :harlequin-pc-lisp))

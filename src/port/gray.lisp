@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gray.lisp,v 1.2 2000/04/05 23:58:24 sds Exp $
+;;; $Id: gray.lisp,v 1.3 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/gray.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,8 @@
   (require :ext (translate-logical-pathname "clocc:src;port;ext")))
 
 (in-package #+allegro :excl
-            #+clisp :lisp
+            #+(and clisp      lisp=cl)  :ext
+            #+(and clisp (not lisp=cl)) :lisp
             #+cmu :ext
             #+lispworks :stream)
 

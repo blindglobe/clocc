@@ -383,7 +383,7 @@ Estimated total monitoring overhead: 0.88 seconds
 ;;; Packages ***********************
 ;;; ********************************
 
-#-:cltl2
+#-(or cltl2 ansi-cl)
 (in-package "MONITOR" :nicknames '("MON"))
 
 ;;; For CLtL2 compatible lisps
@@ -403,7 +403,7 @@ Estimated total monitoring overhead: 0.88 seconds
 (unless (find-package "MONITOR")
   (make-package "MONITOR" :nicknames '("MON") :use '("COMMON-LISP")))
 
-#+:cltl2
+#+(or cltl2 ansi-cl)
 (in-package "MONITOR")
 
 
@@ -1079,7 +1079,7 @@ adjusted for overhead."
 				       (c:%more-arg-values arg-context
 							   0
 							   arg-count))
-			      #-cmu `(apply old-definition 
+			      #-cmu `(apply old-definition
 				      ,@required-args optional-args)
 			      `(funcall old-definition ,@required-args))
 		       (let ((delta-time (- (get-time) start-time))
@@ -1088,7 +1088,7 @@ adjusted for overhead."
 			 (incf calls)
 			 (incf *total-calls*)
 			    ;;; nested-calls includes this call
-			 (incf nested-calls (the fixnum 
+			 (incf nested-calls (the fixnum
 						 (- *total-calls*
 						    prev-total-calls)))
 ;			 (setf nested-calls (+ old-nested-calls
@@ -1103,7 +1103,7 @@ adjusted for overhead."
 ;			 (setf inclusive-time (+ delta-time old-time))
 			 (incf exclusive-time (the time-type
 						   (+ delta-time
-						      (- prev-total-time 
+						      (- prev-total-time
 							 *total-time*))))
 			 (setf *total-time* (the time-type
 						 (+ delta-time
@@ -1111,12 +1111,12 @@ adjusted for overhead."
 			 ;; Consing
 			 (incf inclusive-cons (the consing-type delta-cons))
 ;			 (setf inclusive-cons (+ delta-cons old-cons))
-			 (incf exclusive-cons (the consing-type 
+			 (incf exclusive-cons (the consing-type
 						   (+ delta-cons
-						      (- prev-total-cons 
+						      (- prev-total-cons
 							 *total-cons*))))
-			 (setf *total-cons* 
-			       (the consing-type 
+			 (setf *total-cons*
+			       (the consing-type
 				    (+ delta-cons prev-total-cons))))))))
 	 (setf (get-monitor-info name)
 	       (make-metering-functions
@@ -1133,7 +1133,7 @@ adjusted for overhead."
 		:reset-metering #'(lambda ()
 				    (setq inclusive-time 0
 					  inclusive-cons 0
-					  exclusive-time 0 
+					  exclusive-time 0
 					  exclusive-cons 0
 					  calls 0
 					  nested-calls 0)
@@ -1331,8 +1331,8 @@ of an empty function many times."
 	   (type (member :inclusive :exclusive) nested))
   (report-monitoring names nested threshold sort-key ignore-no-calls))
 
-(defun REPORT-MONITORING (&optional names 
-				    (nested :exclusive) 
+(defun REPORT-MONITORING (&optional names
+				    (nested :exclusive)
 				    (threshold 0.01)
 				    (key :percent-time)
 				    ignore-no-calls)
@@ -1398,7 +1398,7 @@ functions set NAMES to be either NIL or :ALL."
 	(total-consed 0)
 	(total-calls 0)
 	(total-percent-time 0)
-	(total-percent-cons 0))			
+	(total-percent-cons 0))
     (sort-results key)
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
@@ -1427,7 +1427,7 @@ functions set NAMES to be either NIL or :ALL."
     (dolist (result *monitor-results*)
       (when (or (zerop threshold)
 		(> (m-info-percent-time result) threshold))
-	(format *trace-output* 
+	(format *trace-output*
 		"~%~A:~VT~6,2F  ~6,2F  ~7D  ~,6F  ~VD  ~8,3F  ~10D"
 		(m-info-name result)
 		max-length
@@ -1444,13 +1444,13 @@ functions set NAMES to be either NIL or :ALL."
 	(incf total-calls (m-info-calls result))
 	(incf total-percent-time (m-info-percent-time result))
 	(incf total-percent-cons (m-info-percent-cons result))))
-    (format *trace-output* 
+    (format *trace-output*
 	    "~%~V,,,'-A~
 	    ~%TOTAL:~VT~6,2F  ~6,2F  ~7D  ~9@T ~VA  ~8,3F  ~10D~
             ~%Estimated monitoring overhead: ~5,2F seconds~
             ~%Estimated total monitoring overhead: ~5,2F seconds"
 	    (+ max-length 62 (max 0 (- max-cons-length 5))) "-"
-	    max-length 
+	    max-length
 	    (* 100 total-percent-time)
 	    (* 100 total-percent-cons)
 	    total-calls

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: prompt.lisp,v 2.6 2000/06/02 16:58:33 sds Exp $
+;;; $Id: prompt.lisp,v 2.7 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/prompt.lisp,v $
 
 (eval-when (compile load eval)
@@ -44,14 +44,14 @@
          (beg-bold (if fontp "" "[1m"))
          #-allegro
          (beg-it   (if fontp "" "[7m"))
-         (end-all  (if fontp "" "[m")))
+         (end-all  (if fontp "" "[m"))
+         (func (lambda ()
+                 (format nil "~a~a~a~a[~:d]:~a " beg-it
+                         (package-short-name *package*)
+                         end-all beg-bold (incf cmd-idx) end-all))))
     #+allegro (declare (ignore cmd-idx))
-    #+(or cmu clisp)
-    (setq lisp::*prompt*
-          (lambda ()
-            (format nil "~a~a~a~a[~:d]:~a " beg-it
-                    (package-short-name *package*)
-                    end-all beg-bold (incf cmd-idx) end-all)))
+    #+clisp (setq #+lisp=cl ext:*prompt* #-lisp=cl lisp:*prompt* func)
+    #+cmu (setq lisp::*prompt* func)
     #+allegro
     (setq tpl:*prompt* (concatenate 'string beg-bold tpl:*prompt* end-all)))
   #-(or allegro clisp cmu)

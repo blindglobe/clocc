@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.30 2001/03/17 19:56:38 sds Exp $
+;;; $Id: net.lisp,v 1.31 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -118,8 +118,9 @@
                 (integer (hostent-name (resolve-host-ipaddr host))))))
     #+allegro (socket:make-socket :remote-host host :remote-port port
                                   :format (if bin :binary :text))
-    #+clisp (lisp:socket-connect port host :element-type
-                                 (if bin '(unsigned-byte 8) 'character))
+    #+clisp (#+lisp=cl ext:socket-connect #-lisp=cl lisp:socket-connect
+                       port host :element-type
+                       (if bin '(unsigned-byte 8) 'character))
     #+cmu (sys:make-fd-stream (ext:connect-to-inet-socket host port)
                               :input t :output t :element-type
                               (if bin '(unsigned-byte 8) 'character))
@@ -137,8 +138,12 @@
                     (socket:ipaddr-to-dotted (socket:local-host sock))
                     (socket:local-port sock))
   #+clisp (flet ((ip (ho) (subseq ho 0 (position #\Space ho :test #'char=))))
-            (multiple-value-bind (ho1 po1) (lisp:socket-stream-peer sock)
-              (multiple-value-bind (ho2 po2) (lisp:socket-stream-local sock)
+            (multiple-value-bind (ho1 po1)
+                (#+lisp=cl  ext:socket-stream-peer
+                 #-lisp=cl lisp:socket-stream-peer sock)
+              (multiple-value-bind (ho2 po2)
+                  (#+lisp=cl  ext:socket-stream-local
+                   #-lisp=cl lisp:socket-stream-local sock)
                 (values (ip ho1) po1
                         (ip ho2) po2))))
   #+cmu (let ((fd (sys:fd-stream-fd sock)))
@@ -174,7 +179,8 @@
 #-lispworks
 (deftype socket-server ()
   #+allegro 'acl-socket::socket-stream-internet-passive
-  #+clisp 'lisp:socket-server
+  #+(and clisp      lisp=cl)   'ext:socket-server
+  #+(and clisp (not lisp=cl)) 'lisp:socket-server
   #+cmu 'integer
   #+gcl 'si:socket-stream
   #-(or allegro clisp cmucl gcl) t)
@@ -184,7 +190,7 @@
   (declare (type (or null integer socket) port))
   #+allegro (socket:make-socket :connect :passive :local-port
                                 (when (integerp port) port))
-  #+clisp (lisp:socket-server port)
+  #+clisp (#+lisp=cl ext:socket-server #-lisp=cl lisp:socket-server port)
   #+cmu (ext:create-inet-listener (or port 0))
   #+gcl (si:make-socket-pair port) ; FIXME
   #+lispworks (let ((mbox (mp:make-mailbox :size 1)))
@@ -229,9 +235,11 @@ Returns a socket stream or NIL."
                 (socket:set-socket-format sock fmt)
                 sock))
   #+clisp (multiple-value-bind (sec usec) (floor (or wait 0))
-            (when (lisp:socket-wait serv (and wait sec) (round usec 1d-6))
-              (lisp:socket-accept serv :element-type
-                                  (if bin '(unsigned-byte 8) 'character))))
+            (when (#+lisp=cl ext:socket-wait #-lisp=cl lisp:socket-wait
+                             serv (and wait sec) (round usec 1d-6))
+              (#+lisp=cl ext:socket-accept #-lisp=cl lisp:socket-accept
+                         serv :element-type
+                         (if bin '(unsigned-byte 8) 'character))))
   #+cmu (when (sys:wait-until-fd-usable serv :input wait)
           (sys:make-fd-stream (ext:accept-tcp-connection serv)
                               :input t :output t :element-type
@@ -248,7 +256,8 @@ Returns a socket stream or NIL."
   "Close the server."
   (declare (type socket-server server))
   #+allegro (close server)
-  #+clisp (lisp:socket-server-close server)
+  #+clisp (#+lisp=cl  ext:socket-server-close
+           #-lisp=cl lisp:socket-server-close server)
   #+cmu (unix:unix-close server)
   #+lispworks (mp:process-kill (socket-server-proc server))
   #+gcl (close server)
@@ -260,8 +269,10 @@ Returns a socket stream or NIL."
   (declare (type socket-server server))
   #+allegro (values (socket:ipaddr-to-dotted (socket:local-host server))
                     (socket:local-port server))
-  #+clisp (values (lisp:socket-server-host server)
-                  (lisp:socket-server-port server))
+  #+(and clisp      lisp=cl)  (values  (ext:socket-server-host server)
+                                       (ext:socket-server-port server))
+  #+(and clisp (not lisp=cl)) (values (lisp:socket-server-host server)
+                                      (lisp:socket-server-port server))
   #+cmu (values (ipaddr-to-dotted (car (ext:host-entry-addr-list
                                         (ext:lookup-host-entry "localhost"))))
                 (nth-value 1 (ext:get-socket-host-and-port server)))

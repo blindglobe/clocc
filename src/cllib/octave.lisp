@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: octave.lisp,v 2.5 2000/11/16 18:34:03 sds Exp $
+;;; $Id: octave.lisp,v 2.6 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/octave.lisp,v $
 
 (eval-when (compile load eval)
@@ -40,7 +40,8 @@ Send the data to Octave, get the answer."
 	     (array-dimension vec 0)) ()
              "solve-lin: the matrix must be N x N, and vector - N")
   (multiple-value-bind (oc-io oc-in oc-ou dim ans endstr les)
-      (lisp:make-pipe-io-stream *octave-program*)
+      (#+lisp=cl ext:make-pipe-io-stream #-lisp=cl lisp:make-pipe-io-stream
+                 *octave-program*)
     (setq dim (array-dimension mx 0)
 	  ans (make-array dim :element-type 'double-float
 			  :initial-element 0d0 :adjustable nil)

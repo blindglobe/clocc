@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.7 2000/05/22 19:28:42 sds Exp $
+;;; $Id: rpm.lisp,v 2.8 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
 (eval-when (compile load eval)
@@ -356,7 +356,8 @@ Then generate the list to download."
     (format out " *** Getting the list of new packages...~%")
     (with-timing (:out out)
       (let ((na 0) (le 0)
-            #+clisp (lisp:*pprint-first-newline* nil)
+            #+clisp (#+lisp=cl  ext:*pprint-first-newline*
+                     #-lisp=cl lisp:*pprint-first-newline* nil)
             (*url-default-timeout* *rpm-timeout*)
             (*url-default-max-retry* *rpm-max-retry*))
         (declare (type index-t na le))
@@ -390,7 +391,8 @@ Then generate the list to download."
   (if local (rpm-get-present) (rpm-get-available))
   (let ((nrpm (if local (length *rpm-present*)
                   (reduce #'+ *rpm-locations* :key (compose length dld-all))))
-        #+clisp (lisp:*pprint-first-newline* nil)
+        #+clisp (#+lisp=cl  ext:*pprint-first-newline*
+                 #-lisp=cl lisp:*pprint-first-newline* nil)
         (nf 0))
     (declare (type index-t nf))
     (if (zerop (length what))
@@ -503,7 +505,8 @@ Then generate the list to download."
   (format out " *** ~d package~:p present~%" (length *rpm-present*))
   (rpm-get-available :force force :out out :err err)
   (let ((bt (get-float-time nil)) (glob 0)
-        #+clisp (lisp:*pprint-first-newline* nil)
+        #+clisp (#+lisp=cl  ext:*pprint-first-newline*
+                 #-lisp=cl lisp:*pprint-first-newline* nil)
         (*url-default-timeout* *rpm-timeout*)
         (*url-default-max-retry* *rpm-max-retry*))
     (declare (double-float bt) (type file-size-t glob))
@@ -603,12 +606,12 @@ available in `*rpm-locations*'."
 (progn
 
 (defun local-host (sock)
-  #+clisp (let ((ho (lisp:socket-stream-local sock)))
+  #+clisp (let ((ho (ext:socket-stream-local sock)))
             (subseq ho 0 (position #\Space ho :test #'char=)))
   #+allegro (socket:ipaddr-to-dotted (socket:local-host sock)))
 
 (defun local-port (serv)
-  (#+clisp lisp:socket-server-port #+allegro socket:local-port serv))
+  (#+clisp ext:socket-server-port #+allegro socket:local-port serv))
 
 (defun ftp-port-command (sock serv &optional (out *standard-output*))
   (let ((port (local-port serv)))
@@ -634,13 +637,13 @@ available in `*rpm-locations*'."
 (close sock)
 (close serv)
 (close sk)
-(setq serv (lisp:socket-server 3288))
-(lisp:socket-server-close serv)
-(lisp:socket-stream-handle sock)
-(lisp:socket-stream-host sock)
-(lisp:socket-stream-port sock)
-(lisp:socket-stream-peer sock)
-(lisp:socket-stream-local sock)
+(setq serv (ext:socket-server 3288))
+(ext:socket-server-close serv)
+(ext:socket-stream-handle sock)
+(ext:socket-stream-host sock)
+(ext:socket-stream-port sock)
+(ext:socket-stream-peer sock)
+(ext:socket-stream-local sock)
 
 (ftp-get-file sock "wn.README" "/var/tmp/" )
 (ftp-list sock)
@@ -651,11 +654,11 @@ available in `*rpm-locations*'."
 (ftp-list sock)
 (show-rpms "print")
 
-(setq serv (lisp:socket-server 0))
-(lisp:socket-server-close serv)
-(setq sock (lisp:socket-connect 21 "ftp.gnu.org"))
-(setq serv (lisp:socket-server sock))
-(setq sock (lisp:socket-connect 21 "mute"))
+(setq serv (ext:socket-server 0))
+(ext:socket-server-close serv)
+(setq sock (ext:socket-connect 21 "ftp.gnu.org"))
+(setq serv (ext:socket-server sock))
+(setq sock (ext:socket-connect 21 "mute"))
 
 ;socket.d:fill_hostname
 ;    printf ("#(%lu \"%s\" \"%s\" %u)\n", hd->host, hd->hostname,

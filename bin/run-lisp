@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.12 2000/05/16 13:47:08 sds Exp $
+# $Id: run-lisp,v 1.13 2001/04/11 14:40:21 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -226,7 +226,7 @@ case "$1" in
             arg=`echo "$1" | sed -e "$backslashify"`
             case "$LISPTYPE" in
               clisp )
-                  todo=$todo" (lisp:saveinitmem \"${arg}.mem\")"
+                  todo=$todo" (#+lisp=cl ext:saveinitmem #-lisp=cl lisp:saveinitmem \"${arg}.mem\")"
                   ;;
               cmucl )
                   todo=$todo" (ext:save-lisp \"${arg}.core\")"
@@ -279,7 +279,7 @@ case "$1" in
 
     case "$LISPTYPE" in
       clisp )
-          todo="(progn (setq lisp:*load-paths* '(#P\"\")) ${todo})"
+          todo="(progn (setq #+lisp=cl ext:*load-paths* #-lisp=cl lisp:*load-parhs* '(#P\"\")) ${todo})"
           test -z "$image" || image="-M ${image}.mem";
           exec ${CLISP-clisp} -norc -q ${image} -x "$todo"
           ;;

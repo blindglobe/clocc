@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.16 2001/01/23 23:13:39 sds Exp $
+;;; $Id: math.lisp,v 2.17 2001/04/11 14:40:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -96,7 +96,7 @@
 (defun ! (nn)
   "Compute the factorial: n! = n * (n-1) * (n-2) * ..."
   (declare (integer nn))
-  #+clisp (lisp:! nn)           ; CLISP has a built-in fast factorial
+  #+clisp (#+lisp=cl ext:! #-lisp=cl lisp:! nn) ; CLISP has built-in factorial
   #-clisp (product-from-to 1 nn))
 
 (defun !! (nn)

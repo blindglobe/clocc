@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.27 2001/03/21 00:31:51 sds Exp $
+;;; $Id: sys.lisp,v 1.28 2001/04/11 14:40:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -41,7 +41,7 @@
 (defun finalize (obj func)
   "When OBJ is GCed, FUNC is called on it."
   #+allegro (excl:schedule-finalization obj func)
-  #+clisp (lisp:finalize obj func)
+  #+clisp (#+lisp=cl ext:finalize #-lisp=cl lisp:finalize obj func)
   #+cmu (ext:finalize obj func)
   #+cormanlisp (cl::register-finalization obj func)
   #-(or allegro clisp cmu cormanlisp)
@@ -170,7 +170,8 @@ but there is a TYPE slot, move TYPE into NAME."
 (defun probe-directory (filename)
   "Check whether the file name names an existing directory."
   #+allegro (excl::probe-directory filename)
-  #+clisp (lisp:probe-directory filename)
+  #+clisp (#+lisp=cl ext:probe-directory #-lisp=cl lisp:probe-directory
+                     filename)
   #+cmu (eq :directory (unix:unix-file-kind filename))
   #+lispworks (lw:file-directory-p filename)
   #-(or allegro clisp cmu lispworks)
@@ -185,7 +186,7 @@ but there is a TYPE slot, move TYPE into NAME."
 (defun default-directory ()
   "The default directory."
   #+allegro (excl:current-directory)
-  #+clisp (lisp:default-directory)
+  #+clisp (#+lisp=cl ext:default-directory #-lisp=cl lisp:default-directory)
   #+cmucl (ext:default-directory)
   #+cormanlisp (ccl:get-current-directory)
   #+lispworks (hcl:get-working-directory)
@@ -194,7 +195,7 @@ but there is a TYPE slot, move TYPE into NAME."
 
 (defun chdir (dir)
   #+allegro (excl:chdir dir)
-  #+clisp (lisp:cd dir)
+  #+clisp (#+lisp=cl ext:cd #-lisp=cl lisp:cd dir)
   #+cmu (setf (ext:default-directory) dir)
   #+cormanlisp (ccl:set-current-directory dir)
   #+gcl (si:chdir dir)
@@ -207,7 +208,7 @@ but there is a TYPE slot, move TYPE into NAME."
 
 (defun mkdir (dir)
   #+allegro (excl:make-directory dir)
-  #+clisp (lisp:make-dir dir)
+  #+clisp (#+lisp=cl ext:make-dir #-lisp=cl lisp:make-dir dir)
   #+cmu (unix:unix-mkdir (directory-namestring dir) #o777)
   #+lispworks (system:make-directory dir)
   #-(or allegro clisp cmu lispworks)
@@ -215,7 +216,7 @@ but there is a TYPE slot, move TYPE into NAME."
 
 (defun rmdir (dir)
   #+allegro (excl:delete-directory dir)
-  #+clisp (lisp:delete-dir dir)
+  #+clisp (#+lisp=cl ext:delete-dir #-lisp=cl lisp:delete-dir dir)
   #+cmu (unix:unix-rmdir dir)
   #+lispworks
   ;; `lw:delete-directory' is present in LWW 4.1.20 but not on LWL 4.1.0
@@ -290,7 +291,8 @@ Long Floats:~25t~3d bits exponent, ~3d bits significand (mantissa)~%"
             (exdi most-positive-long-float)
             (float-digits most-positive-long-float)))
   #+clisp (format out "[CLISP] long-float-digits:~44t~3d~%"
-                  (lisp:long-float-digits))
+                  #+lisp=cl (ext:long-float-digits)
+                  #-lisp=cl (lisp:long-float-digits))
   (dolist (sy '(array-total-size-limit array-rank-limit array-dimension-limit
                 lambda-parameters-limit call-arguments-limit
                 multiple-values-limit char-code-limit))

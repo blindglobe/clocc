@@ -4,7 +4,7 @@
 ;;;
 ;;; Copyright (C) 1997-2000 by Sam Steingold
 ;;;
-;;; $Id: html.lisp,v 1.2 2000/03/03 17:22:38 sds Exp $
+;;; $Id: html.lisp,v 1.3 2000/03/09 19:00:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,8 +19,7 @@
 
 (export
  '(*html-parse-tags* *html-readtable* html-translate-specials
-   text-stream *ts-kill* read-next next-token next-number dump-url-tokens
-   *html-output* with-tag with-open-html directory-index))
+   text-stream *ts-kill* read-next next-token next-number dump-url-tokens))
 
 ;;;
 ;;; {{{ HTML parsing via `read'

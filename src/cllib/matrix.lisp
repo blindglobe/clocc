@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.2 2000/04/27 19:46:45 sds Exp $
+;;; $Id: matrix.lisp,v 2.3 2000/04/27 22:33:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (in-package :cllib)
@@ -152,7 +152,7 @@ By default prints the contents.
   (declare (type (array * (* *)) mx) (type (array * (*)) v0 v2))
   (unless (and (= (array-dimension v0 0) (array-dimension mx 0))
                (= (array-dimension v0 0) (array-dimension mx 0)))
-    (error 'dimension :proc bilinear :args
+    (error 'dimension :proc 'bilinear :args
            (list (array-dimensions mx) (array-dimensions v0)
                  (array-dimensions v1))))
   (loop :for ii :of-type index-t :from 0 :to (1- (array-dimension mx 0))
@@ -390,6 +390,7 @@ If `matrix-solve-lu' fails, the matrix is inverted.  In this case,
         xx (array-check-return xx (array-dimensions bb)))
   (handler-case (matrix-solve-lu mx bb tm xx)
     (division-by-zero (co)
+      (declare (ignore co))
       (let ((det (matrix-inverse (array-copy mx tm))))
         (when (zerop det)
           (error "the matrix is degenerate (det = 0):~%~/matrix-print/" mx))

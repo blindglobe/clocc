@@ -16,22 +16,22 @@ c-----------------------------------------------------------------------
      2   ml, mu, neq, nerr, nfe, nfea, nje, nout, nqu, nst
       double precision atol, dtout, dtout0, dtout1, er, erm, ero, hu,
      1     rtol, rwork, t, tout, tout1, tsw, y
-      dimension y(25), rwork(522), iwork(45)
+      dimension y(25), rwork(522), iwork(45), neq(1), atol(1), rtol(1)
       data lout/6/, tout1/16.921743d0/, dtout/17.341162d0/
 c
       nerr = 0
       itol = 1
-      rtol = 0.0d0
-      atol = 1.0d-8
+      rtol(1) = 0.0d0
+      atol(1) = 1.0d-8
       lrw = 522
       liw = 45
       iopt = 0
 c
 c First problem
 c
-      neq = 2
+      neq(1) = 2
       nout = 4
-      write (lout,110) neq,itol,rtol,atol
+      write (lout,110) neq(1),itol,rtol(1),atol(1)
  110  format(/'Demonstration program for DLSODA package'////
      1  ' Problem 1:   Van der Pol oscillator:'/
      2  '              xdotdot - 20*(1 - x**2)*xdot + x = 0, ',
@@ -82,7 +82,7 @@ c
       lenrw = iwork(17)
       leniw = iwork(18)
       nfea = nfe
-      if (jt .eq. 2) nfea = nfe - neq*nje
+      if (jt .eq. 2) nfea = nfe - neq(1)*nje
       write (lout,180) lenrw,leniw,nst,nfe,nfea,nje,ero
  180  format(//' Final statistics for this run:'/
      1  ' rwork size =',i4,'   iwork size =',i4/
@@ -95,15 +95,15 @@ c
 c
 c Second problem
 c
-      neq = 25
+      neq(1) = 25
       ml = 5
       mu = 0
       iwork(1) = ml
       iwork(2) = mu
       mband = ml + mu + 1
-      atol = 1.0d-6
+      atol(1) = 1.0d-6
       nout = 5
-      write (lout,210) neq,ml,mu,itol,rtol,atol
+      write (lout,210) neq(1),ml,mu,itol,rtol(1),atol(1)
  210  format(///80('-')///
      1  ' Problem 2: ydot = A * y , where',
      2  '  A is a banded lower triangular matrix'/
@@ -116,7 +116,7 @@ c
      1       '     t             max.err.     meth   ',
      2       'nq      h            tsw'//)
       t = 0.0d0
-      do 230 i = 2,neq
+      do 230 i = 2,neq(1)
  230    y(i) = 0.0d0
       y(1) = 1.0d0
       itask = 1
@@ -134,7 +134,7 @@ c
         write (lout,240) t,erm,mused,nqu,hu,tsw
  240    format(d15.5,d14.3,2i6,2d14.3)
         if (istate .lt. 0) go to 275
-        er = erm/atol
+        er = erm/atol(1)
         ero = max(ero,er)
         if (er .gt. 1000.0d0) then
           write (lout,150)
@@ -200,18 +200,18 @@ c
       end
 
       subroutine jac2 (neq, t, y, ml, mu, pd, nrowpd)
-      integer neq, ml, mu, nrowpd, j, mband, mu1, mu2, ng
+      integer neq(1), ml, mu, nrowpd, j, mband, mu1, mu2, ng
       double precision t, y, pd, alph1, alph2
-      dimension y(neq), pd(nrowpd,neq)
+      dimension y(*), pd(nrowpd,*)
       data alph1/1.0d0/, alph2/1.0d0/, ng/5/
       mband = ml + mu + 1
       mu1 = mu + 1
       mu2 = mu + 2
-      do 10 j = 1,neq
+      do 10 j = 1,neq(1)
         pd(mu1,j) = -2.0d0
         pd(mu2,j) = alph1
  10     pd(mband,j) = alph2
-      do 20 j = ng,neq,ng
+      do 20 j = ng,neq(1),ng
  20     pd(mu2,j) = 0.0d0
       return
       end

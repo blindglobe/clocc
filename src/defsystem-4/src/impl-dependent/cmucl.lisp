@@ -12,8 +12,14 @@
 			      error-file
 			      (print *compile-print*)
 			      (verbose *compile-verbose*)
-			      (external-format :default))
+			      (external-format :default)
+			      ;; old 18c did not have :external format
+			      &allow-other-keys)
   (declare (ignore output-file error-file print verbose external-format))
+
+  ;; Remove the next line when CMUCL will be fixed.
+  (remf keys :external-format)
+  
   (apply #'compile-file input-file :load nil keys))
 
 

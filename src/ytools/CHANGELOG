@@ -1,5 +1,11 @@
-$Id: CHANGELOG,v 1.29 2004/10/26 22:15:56 airfoyle Exp $
+$Id: CHANGELOG,v 1.30 2004/11/01 14:01:08 airfoyle Exp $
 	
+2004-10-30: Changed output for warning message in 'decipher-readtable'
+            (slurp.lisp). (Version 1.4.8.6)
+
+2004-10-29: Wrapped #+openmcl around code referring to ccl
+            package. (Version 1.4.8.5.)
+
 2004-10-26: Fixed bug in outin whereby nonstreams were making it into
             the variable 'out-streams*' (probably because Allegro does
             something odd to streams when it closes them).  (Version

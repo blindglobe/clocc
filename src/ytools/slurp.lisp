@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.7 2004/10/05 22:15:57 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8 2004/11/01 14:01:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -140,7 +140,8 @@
 				  (cond ((and default-readtab
 					      (not (eq default-readtab
 						       *readtable*)))
-					 (format t "Readtable ~s will be used for this file operation~%"
+					 (format *error-output*
+						 "Readtable ~s will be used for this file operation~%"
 						 default-readtab)
 					 default-readtab)
 					(t

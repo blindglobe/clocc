@@ -41,7 +41,7 @@
    #:array-double-float #:array-single-float #:array-integer4 #:array-strings
    #:logical
    ;; macros
-   #:fref #:fset #:with-array-data
+   #:fref #:fset #:with-array-data #:with-multi-array-data
    #:f2cl-init-string #:fref-string #:fset-string #:f2cl-set-string
    #:f2cl-// #:fstring-/= #:fstring-= #:fstring-> #:fstring->= #:fstring-< #:fstring-<=
    #:fortran_comment #:fdo #:f2cl/ #:arithmetic-if #:computed-goto
@@ -81,8 +81,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.15 2002/09/13 17:50:18 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.16 2003/11/13 05:37:31 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.16  2003/11/13 05:37:31  rtoy
+;;; Export WITH-MULTI-ARRAY-DATA.
+;;;
 ;;; Revision 1.15  2002/09/13 17:50:18  rtoy
 ;;; From Douglas Crosher:
 ;;;

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.12 2000/04/10 18:42:24 sds Exp $
+;;; $Id: net.lisp,v 1.13 2000/04/19 16:39:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,9 +19,9 @@
 
 (export
  '(resolve-host-ipaddr ipaddr-to-dotted dotted-to-ipaddr hostent
-   socket open-socket socket-host/port socket-server
+   socket open-socket socket-host/port socket-string socket-server
    socket-accept open-socket-server socket-server-close
-   socket-service-port socket-server-host socket-server-port
+   socket-service-port socket-server-host/port socket-server-string
    network timeout login))
 
 ;;;
@@ -82,7 +82,8 @@
   #+gcl (make-hostent :name (or (si:hostid-to-hostname host) host)
                       :addr-list (list (si:hostname-to-hostid host)))
   #+lispworks
-  (multiple-value-bind (name addr aliases) (comm:get-host-entry host)
+  (multiple-value-bind (name addr aliases)
+      (comm:get-host-entry host :fields '(:name :address :aliases))
     (make-hostent :name name :addr-list (list (ipaddr-to-dotted addr))
                   :aliases aliases))
   #-(or allegro (and clisp syscalls) cmu gcl lispworks)
@@ -142,7 +143,7 @@
   (multiple-value-bind (ho po) (socket-host/port sock)
     (format nil "~s:~d" ho po)))
 
-#+lispworks (defstruct socket-server proc mbox)
+#+lispworks (defstruct socket-server proc mbox port)
 #-lispworks
 (deftype socket-server ()
   #+allegro 'acl-socket::socket-stream-internet-passive
@@ -161,7 +162,7 @@
   #+gcl (si:make-socket-pair port) ; FIXME
   #+lispworks (let ((mbox (mp:make-mailbox :size 1)))
                 (make-socket-server
-                 :mbox mbox
+                 :mbox mbox :port port
                  :proc (comm:start-up-server-and-mp
                         :function (lambda (sock) (mp:mailbox-send mbox sock))
                         :service port)))
@@ -200,27 +201,28 @@
   #-(or allegro clisp cmu gcl lispworks)
   (error 'not-implemented :proc (list 'socket-server-close server)))
 
-(defun socket-server-host (server)
-  "Return the host on which the server is running."
-  #+cmu (declare (ignore server))
-  #+allegro (socket:ipaddr-to-dotted (socket:local-host server))
-  #+clisp (lisp:socket-server-host server)
-  #+cmu (ipaddr-to-dotted (car (ext:host-entry-addr-list
-                                (ext:lookup-host-entry "localhost"))))
-  #+gcl (car (si:getsockname sock))
-  #+lispworks FIXME
+(defun socket-server-host/port (server)
+  "Return the local host&port on which the server is running, as 2 values."
+  (declare (type socket-server server))
+  #+allegro (values (socket:ipaddr-to-dotted (socket:local-host server))
+                    (socket:local-port server))
+  #+clisp (values (lisp:socket-server-host server)
+                  (lisp:socket-server-port server))
+  #+cmu (values (ipaddr-to-dotted (car (ext:host-entry-addr-list
+                                        (ext:lookup-host-entry "localhost"))))
+                server)
+  #+gcl (let ((sock (si:getsockname server)))
+          (values (car sock) (caddr sock)))
+  #+lispworks (values (ipaddr-to-dotted (comm:get-host-entry
+                                         "localhost" :fields '(:address)))
+                      (socket-server-port server))
   #-(or allegro clisp cmu gcl lispworks)
-  (error 'not-implemented :proc (list 'socket-server-host server)))
+  (error 'not-implemented :proc (list 'socket-server-host/port server)))
 
-(defun socket-server-port (server)
-  "Return the local port on which the server is running."
-  #+allegro (socket:local-port server)
-  #+clisp (lisp:socket-server-port server)
-  #+cmu server
-  #+gcl (caddr (si:getsockname sock))
-  #+lispworks FIXME
-  #-(or allegro clisp cmu gcl lispworks)
-  (error 'not-implemented :proc (list 'socket-server-port server)))
+(defun socket-server-string (server)
+  "Print the socket server host and port to a string."
+  (multiple-value-bind (ho po) (socket-server-host/port server)
+    (format nil "~s:~d" ho po)))
 
 ;;;
 ;;; }}}{{{ conditions
@@ -260,7 +262,7 @@
   (name "" :type simple-string) ; official name of service
   (aliases nil :type list)      ; alias list
   (port -1 :type fixnum)        ; port service resides at
-  (proto "" :type simple-string)) ; protocol to use
+  (proto "tcp" :type simple-string)) ; protocol to use
 
 (defun socket-service-port (&optional service (protocol "tcp"))
   "Return the SERVENT structure corresponding to the SERVICE.

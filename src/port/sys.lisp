@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.45 2002/10/27 17:01:33 kevinrosenberg Exp $
+;;; $Id: sys.lisp,v 1.46 2003/05/16 16:12:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -37,39 +37,42 @@
   "Return the value of the environment variable."
   #+allegro (sys::getenv (string var))
   #+clisp (sys::getenv (string var))
-  #+cmu (cdr (assoc (string var) ext:*environment-list* :test #'equalp
-                    :key #'string))
+  #+(or cmu scl)
+  (cdr (assoc (string var) ext:*environment-list* :test #'equalp
+              :key #'string))
   #+gcl (si:getenv (string var))
   #+lispworks (lw:environment-variable (string var))
   #+lucid (lcl:environment-variable (string var))
   #+mcl (ccl::getenv var)
   #+sbcl (sb-ext:posix-getenv var)
-  #-(or allegro clisp cmu gcl lispworks lucid mcl sbcl)
+  #-(or allegro clisp cmu gcl lispworks lucid mcl sbcl scl)
   (error 'not-implemented :proc (list 'getenv var)))
 
 (defun (setf getenv) (val var)
   "Set an environment variable."
   #+allegro (setf (sys::getenv (string var)) (string val))
   #+clisp (setf (sys::getenv (string var)) (string val))
-  #+cmu (let ((cell (assoc (string var) ext:*environment-list* :test #'equalp
-                           :key #'string)))
-          (if cell
-              (setf (cdr cell) (string val))
-              (push (cons (intern (string var) "KEYWORD") (string val)) ext:*environment-list*)))
+  #+(or cmu scl)
+  (let ((cell (assoc (string var) ext:*environment-list* :test #'equalp
+                     :key #'string)))
+    (if cell
+        (setf (cdr cell) (string val))
+        (push (cons (intern (string var) "KEYWORD") (string val))
+              ext:*environment-list*)))
   #+gcl (si:setenv (string var) (string val))
   #+lispworks (setf (lw:environment-variable (string var)) (string val))
   #+lucid (setf (lcl:environment-variable (string var)) (string val))
-  #-(or allegro clisp cmu gcl lispworks lucid)
+  #-(or allegro clisp cmu gcl lispworks lucid scl)
   (error 'not-implemented :proc (list '(setf getenv) var)))
 
 (defun finalize (obj func)
   "When OBJ is GCed, FUNC is called on it."
   #+allegro (excl:schedule-finalization obj func)
   #+clisp (#+lisp=cl ext:finalize #-lisp=cl lisp:finalize obj func)
-  #+cmu (ext:finalize obj func)
+  #+(or cmu scl) (ext:finalize obj func)
   #+cormanlisp (cl::register-finalization obj func)
   #+sbcl (sb-ext:finalize obj func)
-  #-(or allegro clisp cmu cormanlisp sbcl)
+  #-(or allegro clisp cmu cormanlisp sbcl scl)
   (error 'not-implemented :proc (list 'finalize obj func)))
 
 ;;;
@@ -93,9 +96,10 @@
   "Return the signature of the function."
   #+allegro (excl:arglist fn)
   #+clisp (sys::arglist fn)
-  #+cmu (values (let ((st (kernel:%function-arglist fn)))
-                  (if (stringp st) (read-from-string st)
-                      (eval:interpreted-function-arglist fn))))
+  #+(or cmu scl)
+  (values (let ((st (kernel:%function-arglist fn)))
+            (if (stringp st) (read-from-string st)
+                (eval:interpreted-function-arglist fn))))
   #+cormanlisp (ccl:function-lambda-list
                 (typecase fn (symbol (fdefinition fn)) (t fn)))
   #+gcl (let ((fn (etypecase fn
@@ -107,11 +111,11 @@
   #+sbcl (values (let ((st (sb-kernel:%simple-fun-arglist fn)))
                   (if (stringp st) (read-from-string st)
                       #+ignore(eval:interpreted-function-arglist fn))))
-  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
+  #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl scl)
   (error 'not-implemented :proc (list 'arglist fn)))
 
 ;; implementations with MOP-ish CLOS
-#+(or allegro clisp cmu cormanlisp lispworks lucid sbcl)
+#+(or allegro clisp cmu cormanlisp lispworks lucid sbcl scl)
 ;; we use `macrolet' for speed - so please be careful about double evaluations
 ;; and mapping (you cannot map or funcall a macro, you know)
 (macrolet ((class-slots* (class)
@@ -121,7 +125,8 @@
              #+cormanlisp `(cl:class-slots ,class)
              #+lispworks `(hcl::class-slots ,class)
              #+lucid `(clos:class-slots ,class)
-             #+sbcl `(sb-pcl::class-slots ,class))
+             #+sbcl `(sb-pcl::class-slots ,class)
+             #+scl `(clos:class-slots ,class))
            (class-slots1 (obj)
              `(class-slots*
                (typecase ,obj
@@ -136,7 +141,8 @@
              #+cormanlisp `(getf ,slot :name)
              #+lispworks `(hcl::slot-definition-name ,slot)
              #+lucid `(clos:slot-definition-name ,slot)
-             #+sbcl `(slot-value ,slot 'sb-pcl::name))
+             #+sbcl `(slot-value ,slot 'sb-pcl::name)
+             #+scl `(clos:slot-definition-name ,slot))
            (slot-initargs (slot)
              #+(and allegro (not (version>= 6))) `(clos::slotd-initargs ,slot)
              #+(and allegro (version>= 6))
@@ -146,7 +152,8 @@
              #+cormanlisp `(getf ,slot :initargs)
              #+lispworks `(hcl::slot-definition-initargs ,slot)
              #+lucid `(clos:slot-definition-initargs ,slot)
-             #+sbcl `(slot-value ,slot 'sb-pcl::initargs))
+             #+sbcl `(slot-value ,slot 'sb-pcl::initargs)
+             #+scl `(clos:slot-definition-initargs ,slot))
            (slot-one-initarg (slot) `(car (slot-initargs ,slot)))
            (slot-alloc (slot)
              #+(and allegro (not (version>= 6)))
@@ -158,7 +165,8 @@
              #+cormanlisp `(getf ,slot :allocation)
              #+lispworks `(hcl::slot-definition-allocation ,slot)
              #+lucid `(clos:slot-definition-allocation ,slot)
-             #+sbcl `(sb-pcl::slot-definition-allocation ,slot)))
+             #+sbcl `(sb-pcl::slot-definition-allocation ,slot)
+             #+scl `(clos:slot-definition-allocation ,slot)))
 
   (defun class-slot-list (class &optional (all t))
     "Return the list of slots of a CLASS.

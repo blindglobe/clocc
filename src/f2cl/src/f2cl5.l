@@ -807,8 +807,12 @@
      ;;(format t "save-inits = ~a~%" save-inits)
      ;;(format t "prog-bit = ~a~%" prog-bit)
 
-     ;; Replace all references to external functions with #'
-     (setf prog-bit (fixup-external-function-refs prog-bit *external_function_names*))
+     ;; Replace all references to external functions with #'.
+     ;; However, if the external function was on the parameter list,
+     ;; we don't need to do that.
+     (setf prog-bit (fixup-external-function-refs
+		     prog-bit
+		     (set-difference *external_function_names* arglist)))
      ;; Do the same for intrinsic function names, but be sure to
      ;; remove any variables whose name might match an intrinsic
      ;; function name.
@@ -1985,8 +1989,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.43 2000/07/13 16:55:34 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.44 2000/07/14 13:33:26 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.44  2000/07/14 13:33:26  rtoy
+;;; Don't apply external ref fixups if the external function was also a
+;;; parameter to the routine.  If we do, then we referring to the wrong
+;;; thing!
+;;;
 ;;; Revision 1.43  2000/07/13 16:55:34  rtoy
 ;;; To satisfy the Copyright statement, we have placed the RCS logs in
 ;;; each source file in f2cl.  (Hope this satisfies the copyright.)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.6 2000/05/16 22:41:41 sds Exp $
+;;; $Id: elisp.lisp,v 2.7 2000/05/23 17:03:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,8 +20,8 @@
   #-allegro
   (:documentation "The package for loading Emacs-Lisp code into Common Lisp")
   (:nicknames elisp el) (:use cl cllib)
-  (:shadow let let* if member delete load require defcustom defconst provide
-           ignore format /))
+  (:shadow let let* if member delete load require provide ignore format /
+           defcustom defconst autoload))
 
 (defconst +elisp-pack+ package (find-package :el)
   "The Emacs-Lisp package.")

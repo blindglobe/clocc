@@ -1196,7 +1196,8 @@
 (defvar *dont-redefine-require*
   #+cmu (if (find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") t nil)
   #+(or clisp sbcl) t
-  #-(or cmu sbcl clisp) nil
+  #+allegro t
+  #-(or cmu sbcl clisp allegro) nil
   "If T, prevents the redefinition of REQUIRE. This is useful for
    lisps that treat REQUIRE specially in the compiler.")
 
@@ -3618,6 +3619,7 @@ the system definition, if provided."
 		     #-openmcl (optimize (inhibit-warnings 3)))
 	    (unless (component-operation operation)
 	      (error "Operation ~A undefined." operation))
+
 	    (operate-on-component system operation force))))
     (when dribble (dribble))))
 

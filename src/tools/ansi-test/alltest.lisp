@@ -1095,23 +1095,23 @@
   nil)
 
 (check-for-bug :alltest-test-neg-epsilon
-  (defun test-new-epsilon (<EPSILON>)
+  (defun test-neg-epsilon (<EPSILON>)
     (= (float 1 <EPSILON>) (- (float 1 <EPSILON>) <EPSILON>)))
   test-neg-epsilon)
 
-(check-for-bug :alltest-test-new-epsilon-1
+(check-for-bug :alltest-test-neg-epsilon-1
   (test-neg-epsilon short-float-negative-epsilon)
   nil)
 
-(check-for-bug :alltest-test-new-epsilon-2
+(check-for-bug :alltest-test-neg-epsilon-2
   (test-neg-epsilon single-float-negative-epsilon)
   nil)
 
-(check-for-bug :alltest-test-new-epsilon-3
+(check-for-bug :alltest-test-neg-epsilon-3
   (test-neg-epsilon double-float-negative-epsilon)
   nil)
 
-(check-for-bug :alltest-test-new-epsilon-4
+(check-for-bug :alltest-test-neg-epsilon-4
   (test-neg-epsilon long-float-negative-epsilon)
   nil)
 

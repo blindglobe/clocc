@@ -1,3 +1,14 @@
+2002-01-18  Marco Antoniotti  <marcoxa@cs.nyu.edu>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/defsystem.lisp:
+	Modified some definitions to accommodate ACL case sensitivity according
+	to suggestions by Kevin Rosenberg.
+
+2002-01-09  rtoy  <rtoy@tapulon>
+
+	* /cvsroot/clocc/clocc/src/defsystem-3.x/ChangeLog:
+	*** empty log message ***
+
 2002-01-09  Raymond Toy  <toy@rtp.ericsson.se>
 
 	* defsystem.lisp (create-component): Let :compiler-options be

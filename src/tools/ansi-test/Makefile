@@ -1,4 +1,4 @@
-CLISP=clisp -a -norc
+CLISP=clisp -ansi -norc
 CMUCL_SAFE=/usr/lib/cmucl/lisp-safe.core
 CMUCL_NORMAL=/usr/lib/cmucl/lisp-normal.core
 RM=rm -fr

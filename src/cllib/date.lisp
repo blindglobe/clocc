@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-01-06 Wed 23:02:29 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-01-08 Fri 15:00:04 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,13 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.23 1999/01/07 04:03:05 sds Exp $
+;;; $Id: date.lisp,v 1.24 1999/01/08 20:00:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.24  1999/01/08 20:00:39  sds
+;;; Replaced calls to `date2days' with calls to `date-dd'.
+;;; Speedups expected.
+;;;
 ;;; Revision 1.23  1999/01/07 04:03:05  sds
 ;;; Use `index-t' instead of (unsigned-byte 20).
 ;;;
@@ -179,7 +183,8 @@ Returns the number of seconds since the epoch (1900-01-01)."
   "Convert the date to the number of days since the epoch (1900-01-01)."
   (declare (type date dt) (values days-t))
   (or (date-dd dt)
-      (progn (format t "~& *** Fixed date ~d~%" dt) (date-dd (fix-date dt)))))
+      (progn (format t "~& *** Fixed date ~a~%" dt)
+             (date-dd (fix-date dt)))))
 
 (defsubst days2date (days)
   "Convert the number of days since the epoch (1900-01-01) to the date."
@@ -254,14 +259,14 @@ Returns the number of seconds since the epoch (1900-01-01)."
 (defsubst date-week-day (date)
   "Return the week day of the date."
   (declare (type date date) (values (integer 0 6)))
-  (days-week-day (date2days date)))
+  (days-week-day (date-dd date)))
 
 (defun next-bad-day (&optional (date (today)) (dir 1))
   "Return the next Friday the 13th after (before) DATE.
 The second optional argument can be 1 (default) for `after' and
 -1 for `before'."
   (declare (type date date) (type (member 1 -1) dir) (values date))
-  (do* ((dd (date2days date)) (step (* dir 7))
+  (do* ((dd (date-dd date)) (step (* dir 7))
         (fri (+ dd (mod (- 4 (days-week-day dd)) step)) (+ fri step))
         (dt (days2date fri) (days2date fri)))
       ((= 13 (date-da dt)) dt)
@@ -314,17 +319,17 @@ The argument can be:
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a fixnum. KEY should return a date."
   (declare (type (function (t) date) key) (values (function (t) days-t)))
-  (let ((dd (date2days (date beg))))
+  (let ((dd (date-dd (date beg))))
     (declare (type days-t dd))
-    (lambda (rr) (- (date2days (funcall key rr)) dd))))
+    (lambda (rr) (- (date-dd (funcall key rr)) dd))))
 
 (defun days-since-f (key beg)
   "Return a function that will return the number of days between BEG
 and (funcall KEY arg), as a double-float. KEY should return a date."
   (declare (type (function (t) date) key) (values (function (t) double-float)))
-  (let ((dd (dfloat (date2days (date beg)))))
+  (let ((dd (dfloat (date-dd (date beg)))))
     (declare (double-float dd))
-    (lambda (rr) (dfloat (- (date2days (funcall key rr)) dd)))))
+    (lambda (rr) (dfloat (- (date-dd (funcall key rr)) dd)))))
 
 (defun today ()
   "Return today's date."
@@ -339,38 +344,38 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
 
 (defun date= (d0 d1)
   "Check that the two dates are the same."
-  (declare (type date d0 d1)) (= (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (= (date-dd d0) (date-dd d1)))
 
 (defun date/= (d0 d1)
   "Check that the two dates are not the same."
-  (declare (type date d0 d1)) (/= (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (/= (date-dd d0) (date-dd d1)))
 
 (defun date< (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1)) (< (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (< (date-dd d0) (date-dd d1)))
 
 (defun date> (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1)) (> (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (> (date-dd d0) (date-dd d1)))
 
 (defun date<= (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1)) (<= (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (<= (date-dd d0) (date-dd d1)))
 
 (defun date>= (d0 d1)
   "Check the precedence of the two dates."
-  (declare (type date d0 d1)) (>= (date2days d0) (date2days d1)))
+  (declare (type date d0 d1)) (>= (date-dd d0) (date-dd d1)))
 
 (defun date=*1 (&rest dates)
   "Check any number of dates for being the same."
   (declare (dynamic-extent dates))
-  (apply #'= (map-into dates #'date2days dates)))
+  (apply #'= (map-into dates #'date-dd dates)))
 
 (defun date=* (date1 &rest dates)
   "Check any number of dates for being the same."
-  (let ((d1 (date2days date1)))
+  (let ((d1 (date-dd date1)))
     (declare (type days-t d1))
-    (every (lambda (dd) (declare (type date dd)) (= d1 (date2days dd)))
+    (every (lambda (dd) (declare (type date dd)) (= d1 (date-dd dd)))
            dates)))
 
 (defsubst date-max (d0 d1)
@@ -416,14 +421,14 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   "Return the number of days between the two dates.
 Arguments can be dates or objects parsable with `date'."
   (declare (type date d0 d1) (values fixnum))
-  (- (date2days d1) (date2days d0)))
+  (- (date-dd d1) (date-dd d0)))
 
 (defun tomorrow (&optional (dd (today)) (skip 1))
   "Return the next day.
 With the optional second argument (defaults to 1) skip as many days.
 I.e., (tomorrow (today) -1) is yesterday."
   (declare (type date dd) (type days-t skip) (values date))
-  (days2date (+ (date2days dd) skip)))
+  (days2date (+ (date-dd dd) skip)))
 
 (defsubst yesterday (&optional (dd (today)) (skip 1))
   "Return the previous day.  Calls tomorrow."

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.5 2000/04/04 17:04:29 sds Exp $
+;;; $Id: fileio.lisp,v 1.6 2000/04/04 21:31:33 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -165,6 +165,7 @@ EOF defaults to `+eof+'.
 ;;; }}}{{{ Read/Write object
 ;;;
 
+;;;###autoload
 (defun write-to-file (obj file &optional (nice t) &rest comments)
   "Write the object to the file, readably.
 The optional third argument is passed to `pr'."

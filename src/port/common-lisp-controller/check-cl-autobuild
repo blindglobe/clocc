@@ -4,7 +4,7 @@
 # GPL-2 license
 
 progname="$(basename $0)"
-pversion='$Revision: 1.2 $'
+pversion='$Revision: 1.3 $'
 
 usage()
 {
@@ -24,7 +24,7 @@ ab_file_yes()
 {
     file=$1
     # file exists and is empty, equivalent to yes
-    if [ -f $file -a \( ! -s $file \) ]; then
+    if [[ -f $file && ! -s $file ]]; then
 	true
 	return
     fi

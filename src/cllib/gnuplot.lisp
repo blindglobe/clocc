@@ -4,8 +4,11 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 2.8 2001/04/26 21:13:01 sds Exp $
+;;; $Id: gnuplot.lisp,v 2.9 2001/04/26 22:56:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
+
+;;; the main entry point is WITH-PLOT-STREAM
+;;; (see also other exported functions)
 
 (eval-when (compile load eval)
   (require :base (translate-logical-pathname "clocc:src;cllib;base"))
@@ -75,7 +78,8 @@
   "Execute body, with STR bound to the gnuplot stream.
 Usage: (with-plot-stream (stream PLOT &rest OPTIONS) body).
 OPTIONS are gnuplot(1) options, the following are accepted:
- XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND LEGEND GRID TERM
+ XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XBEG XEND GRID TERM
+ BORDER LEGEND (key in gnuplot)
 PLOT means:
   T, :plot => plot;
   :print   => print;
@@ -86,10 +90,14 @@ PLOT means:
     `(flet ((,body-function (,str) ,@body))
       ;; this cannot be replaced with a simple inline funcall since
       ;; OPTIONS are not necessarily known at compile time
-      (apply #'internal-with-plot-stream ,plot #',body-function ,@options))))
+      ,(if (oddp (length options))
+           `(apply #'internal-with-plot-stream ,plot #',body-function
+             ,@options)
+           `(internal-with-plot-stream ,plot #',body-function ,@options)))))
 
 (defun internal-with-plot-stream (plot body-function
-                                  &key (xlabel "x") (ylabel "y") data-style
+                                  &key (xlabel "x") (ylabel "y")
+                                  (data-style :lines) (border t)
                                   timefmt xb xe (title "plot") legend
                                   (xtics t) (ytics t) grid term
                                   (xfmt (or timefmt "%g")) (yfmt "%g"))
@@ -131,9 +139,12 @@ set output '~a'~%" *gnuplot-printer*)
                          #+unix "x11" #+(or win32 mswindows) "windows" term))
              (format plot-str
                      "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
-set xdata~@[ time~%set timefmt '~a'~]~%set format x '~a'
-~@[set format y '~a'~%~]~%set border~%set xrange [~a:~a]~%"
-                     timefmt xfmt yfmt (pp xb) (pp xe))
+set xdata~@[ time~%set timefmt '~a'~]~%" timefmt)
+             (plot-set "format x" xfmt)
+             (plot-set "format y" yfmt)
+             (when (and xb xe)
+               (format plot-str "set xrange [~a:~a]~%" (pp xb) (pp xe)))
+             (plot-set "border" border)
              (plot-set "xlabel" xlabel)
              (plot-set "ylabel" ylabel)
              (plot-set "data style" data-style)

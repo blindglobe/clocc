@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: closio.lisp,v 1.7 2000/05/16 22:40:03 sds Exp $
+;;; $Id: closio.lisp,v 1.8 2000/05/19 19:35:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/closio.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
 #+cmu
 (progn
   (defmethod print-object ((xx structure-object) (out stream))
-      (kernel:default-structure-print xx out 1))
+    (kernel:default-structure-print xx out 1))
   (defun print-struct-object (xx out depth)
     (declare (ignore depth))
     (print-object xx out)))
@@ -67,6 +67,7 @@
 ;;; }}}{{{ macroexpand-r
 ;;;
 
+;;;###autoload
 (defun macroexpand-r (form)
   "Recursive macroexpand - unreliable because of `macrolet' &c."
   (if (atom form) form

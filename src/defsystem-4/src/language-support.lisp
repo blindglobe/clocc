@@ -236,30 +236,18 @@ object file into a running CL."))
 ;;; #'load. Unlike fdmm's SET-LANGUAGE macro, this allows a defsystem to 
 ;;; mix languages.
 
-#||
-(defclass component-language-mixin ()
-  ((language :accessor component-language
-	     :initarg :language
-	     :type (or null symbol))
-   (compiler :accessor component-compiler
-	     :initarg :compiler
-	     :type (or null function))
-   (loader   :accessor component-loader
-	     :initarg :loader
-	     :type (or null function))
-   )
-  (:default-initargs :language :common-lisp)
-  (:documentation
-   "A 'mixin' class used to specify a component language other than CL."))
-||#
-
-
 (defclass component-language-mixin ()
   ((language :accessor component-language
 	     :initarg :language
 	     :type (or null symbol language))
    )
-  (:default-initargs :language :common-lisp)
+  (:default-initargs :language nil)	; We are agnostic about the
+					; language. Note however that
+					; this default *must* be NIL
+					; to make the overriding
+					; machinery to work at
+					; definition time.
+  
   (:documentation
    "The Language Mixin Class.
 A 'mixin' class used to specify the (progamming) `language' of the content."))
@@ -344,9 +332,11 @@ options that are passed to it when invoked."))
 ;;; Language Mixin and Processors Mixin Initialization and Access Protocols.
 
 (defmethod initialize-instance :after ((c component-language-mixin)
-				       &key (language :common-lisp))
-  (let ((language (find-language language)))
-    (when language (setf (component-language c) language))))
+				       &key language)
+  (when language
+    ;; Not necessarily we supply the language.
+    (let ((language (find-language language)))
+      (when language (setf (component-language c) language)))))
 
 (defmethod component-language :before ((c component-language-mixin))
   (unless (languagep (slot-value c 'language))

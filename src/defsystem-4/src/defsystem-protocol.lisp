@@ -80,6 +80,16 @@
 (defgeneric get-component-error-log-pathname (component))
 (defgeneric get-component-error-log-directory (component))
 
+;;; This is from ASDF.  It is a good idea.
+;;; OUTPUT-PATHNAMES is a better name.
+
+(defgeneric output-files (component operation))
+(defgeneric output-pathnames (component operation))
+
+;;; However, it can be generalized
+(defgeneric output-components (component operation))
+
+
 
 
 ;;;---------------------------------------------------------------------------
@@ -195,10 +205,27 @@ hash table, so the case of the string does not matter."
 (defvar *defined-systems* (make-hash-table :test #'equalp)
   "Hash table containing the definitions of all known systems.")
 
+(define-condition system-not-found (simple-error)
+  ((name :reader system-not-found-system-name
+	 :initarg :system-name)
+   )
+  (:report (lambda (cnd stream)
+	     (format stream
+		     "MK4: system ~S was not found anywhere."
+		     (system-not-found-system-name cnd))))
+  )
 
-(defun get-system (name)
+
+(defun get-system (name &optional not-found-error-p not-found-value)
   "Returns the definition of the system named NAME."
-  (gethash (canonicalize-system-name name) *defined-systems*))
+  (multiple-value-bind (sys foundp)
+      (gethash (canonicalize-system-name name)
+	       *defined-systems*
+	       not-found-value)
+    (when (and not-found-error-p (not foundp))
+      (error 'system-not-found
+	     :system-name (canonicalize-system-name name)))
+    sys))
 
 
 (defsetf get-system (name) (value)
@@ -222,10 +249,19 @@ hash table, so the case of the string does not matter."
 					 (symbol (symbol-name cn)))))))))
 
 
+
+
+
 (defun find-system (system-name
 		    &optional
 		    (mode :error)
-		    system-definition-pathname)
+		    system-definition-pathname
+		    &key
+		    (reload-systems-definitions-from-fs
+		     *reload-systems-from-disk*)
+		    (current-directory-p t)
+		    (user-homedir-pathname-p t)
+		    )
   "Returns the system named SYSTEM-NAME.
 If the system is not already loaded, it loads it.  This allows
 EXECUTE-ACTION to work on non-loaded as well as loaded system
@@ -253,47 +289,51 @@ No other values are allowed (with the exception of :ASK - a synonim for
 		#\y 20
 		"System ~A not loaded. Shall I try loading it? "
 		system-name)
-	   (find-system system-name :load system-definition-pathname))))
+	   (find-system system-name
+			:load
+			system-definition-pathname
+			reload-system-definitions-from-fs
+			))))
     (:error
      (or (get-system system-name)
-	 (error "Can't find system named ~s." system-name)))
+	 (error 'system-not-found :system-name system-name)))
     (:load-or-nil
      (let ((system (get-system system-name)))
-       (or (unless *reload-systems-from-disk* system)
-	   ;; If SYSTEM-NAME is a symbol, it will lowercase the
-	   ;; symbol's string.
-	   ;; If SYSTEM-NAME is a string, it doesn't change the case of the
-	   ;; string. So if case matters in the filename, use strings, not
-	   ;; symbols, wherever the system is named.
-	   (let ((path (compute-system-definition-file
-			system-name
-			:definition-pathname
-			system-definition-pathname)))
+       (unless reload-system-definitions-from-fs
+	 (when system
+	   (return-from find-system system)))
 
-	     ;; SUN CHI!
-	     ;; Problema: nel vecchio defsystem, COMPONENT-LOAD-TIME
-	     ;; operava su COMPONENTs *e* PATHNAMEs.
-	     ;; Io speravo di cambiare questa cosa.
-	     (when (and path
-			(or (null system)
-			    (null (component-changed-timestamp path))
-			    (< (component-load-time path)
-			       (file-write-date path))))
-	       (tell-user-generic
-		(format nil "Loading system ~A from file ~A"
-			system-name
-			path))
-	       (load path)
-	       (setf system (get-system system-name))
-	       (when system
-		 (setf (component-load-time path)
-		       (file-write-date path))))
-	     system)
-	   system)))
+       ;; If SYSTEM-NAME is a symbol, it will lowercase the
+       ;; symbol's string.
+       ;; If SYSTEM-NAME is a string, it doesn't change the case of the
+       ;; string. So if case matters in the filename, use strings, not
+       ;; symbols, wherever the system is named.
+       (let ((path
+	      (ignore-errors (compute-system-definition-file
+			      system-name
+			      :definition-pathname system-definition-pathname
+			      :if-does-not-exist nil)))
+	     (freshly-loaded-system nil)
+	     )
+	 (when (and path
+		    (or (null system)
+			(< (component-changed-timestamp path)
+			   (file-write-date path))))
+	   (tell-user-generic
+	    (format nil "Loading system ~A from file ~A"
+		    system-name
+		    path))
+	   (load path)
+	   (setf freshly-loaded-system (get-system system-name))
+	   (when freshly-loaded-system
+	     (setf (component-changed-timestamp freshly-loaded-system)
+		   (file-write-date path))
+	     (return-from find-system freshly-loaded-system))))
+       (return-from find-system system)))
     (:load
-     (or (unless *reload-systems-from-disk* (get-system system-name))
+     (or (unless reload-system-definitions-from-fs (get-system system-name))
 	 (or (find-system system-name :load-or-nil system-definition-pathname)
-	     (error "Can't find system named ~s." system-name))))))
+	     (error 'system-not-found :system-name system-name))))))
 
 
 ;;;---------------------------------------------------------------------------
@@ -599,7 +639,8 @@ component."
 				       :test #'string-equal)))
 			(if dep
 			    dep
-			    ;; make it more intelligent about the following.
+			    ;; make it more intelligent about the
+			    ;; following.
 			    (warn "Dependency ~S of component ~S not found."
 				  dependency c))))
 		  (component-depends-on c)))))
@@ -982,6 +1023,21 @@ component."
 (defparameter *known-system-operations* (list :load :compile :clean :describe))
 
 (defvar *trace-action-execution* nil)
+
+
+(defmethod output-pathnames ((c component) (action (eql :load)))
+  '())
+
+(defmethod output-pathnames ((c component) (action (eql :compile)))
+  '())
+
+(defmethod output-pathnames ((c file) (action (eql :compile)))
+  (list (get-component-binary-pathname c)))
+
+(defmethod output-files ((c component) (action symbol))
+  (output-pathnames c action))
+
+
 
 (defmethod execute-action :around ((s system) (operation symbol)
 				   &key
@@ -1404,24 +1460,24 @@ component."
   (declare (type pathname source-pathname)
 	   (type (or null pathname) binary-pathname))
 
-  (let* ((null-dependencies-p (null (component-depends-on f)))
-	 (must-compile-p
-	  ;; For files which are :load-only T, loading the file
-	  ;; satisfies the demand to recompile.
-	  (and (not (component-load-only f)) ; not load-only
-	       (or (find policy '(:always
-				  :subcomponent-dependencies-also-changed
-				  ;; Backward compatibility.
-				  :all
-				  :new-source-all)
-			 :test #'eq)
-		   (and (member policy '(:dependencies-changed
-					 :new-source
-					 :new-source-and-dependents)
-				:test #'eq)
-			(or null-dependencies-p (dependencies-changed-p f))
-			(needs f :compile)))))
-	 )
+  (let ((must-compile-p
+	 ;; For files which are :load-only T, loading the file
+	 ;; satisfies the demand to recompile.
+	 (and (not (component-load-only f)) ; not load-only
+	      (or (find policy '(:always
+				 :subcomponent-dependencies-also-changed
+				 ;; Backward compatibility.
+				 :all
+				 :new-source-all)
+			:test #'eq)
+		  (and (member policy '(:dependencies-changed
+					:new-source
+					:new-source-and-dependents)
+			       :test #'eq)
+		       (or (null (component-depends-on f))
+			   (dependencies-changed-p f))
+		       (needs f :compile)))))
+	)
     (cond ((and must-compile-p (source-exists-p f source-pathname))
 	   (multiple-value-bind (output-truename
 				 warnings-p
@@ -1868,6 +1924,13 @@ component."
 		 :policy policy
 		 :compile-during-load compile-during-load
 		 :trace trace)))
+
+(defun operate-on-system (sys action &rest keys)
+  (funcall #'execute-action sys action keys))
+
+(defun oos (sys action &rest keys)
+  (funcall #'operate-on-system sys action keys))
+
 
 ;;;---------------------------------------------------------------------------
 ;;; C support.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.5 2000/05/02 14:38:57 sds Exp $
+;;; $Id: autoload.lisp,v 1.6 2000/05/12 18:36:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -40,7 +40,6 @@
 
 )
 
-(eval-when (compile load eval)
 (defgeneric autoload-stream (in out log)
   (:documentation "Generate the autoloads writing into a stream.")
   (:method ((in string) (out stream) (log t))
@@ -67,7 +66,6 @@
                       name (pathname-name in) doc))
             :finally (progn (format log "~d autoload~:p~%" total) (terpri out)
                             (return total))))))
-)
 
 (defun autoload-generate (in out &optional (log t))
   "Generate the autoloads, indicated by ';;;###autoload'."

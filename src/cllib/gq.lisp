@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gq.lisp,v 2.15 2001/03/29 23:35:06 sds Exp $
+;;; $Id: gq.lisp,v 2.16 2001/04/26 21:13:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gq.lisp,v $
 
 (eval-when (compile load eval)
@@ -567,8 +567,8 @@ previous day:~15t~{~7,2f~}~%Added an extra record~%~5t~{~a~}~%"
                      "Total Value" :misc 'hist-totl)
               (nreverse res))
         :rel t :slot 'misc :grid t
-        :title "Portfolio History" :data-style "linespoints"
-        :ylabel "Relative Value" :plot plot :legend "top left box"))
+        :title "Portfolio History" :data-style :linespoints
+        :ylabel "Relative Value" :plot plot :legend '(:top :left :box)))
     (declare (fixnum ii))
     (push (mk-dl (list (cons :all hist)) :date 'hist-date
                  :name (pfl-name (car hl))

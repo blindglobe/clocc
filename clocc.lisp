@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: clocc.lisp,v 1.14 2002/12/21 23:03:29 sds Exp $
+;;; $Id: clocc.lisp,v 1.15 2003/04/16 13:50:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/clocc.lisp,v $
 
 (in-package :cl-user)
@@ -81,7 +81,7 @@
 
 #+gcl (defmacro lambda (bvl &body forms) `#'(lambda ,bvl ,@forms))
 
-#-(or allegro clisp mcl)
+#-(or allegro clisp cmucl mcl)
 (define-setf-expander values (&rest places &environment env)
   (loop :for pl :in places :with te :and va :and ne :and se :and ge :do
         (multiple-value-setq (te va ne se ge) (get-setf-expansion pl env))
@@ -96,9 +96,6 @@
 ;;;
 ;;; Path
 ;;;
-
-;; When using CLISP, you need version 2000-03-06 or newer. The older version
-;; 1999-07-22 had serious bugs with logical pathnames.
 
 (defvar *clocc-root*
   #-(or win32 mswindows) "/usr/local/src/clocc/"

@@ -47,7 +47,7 @@
 ;      fix-slashes
 
 ;;-----------------------------------------------------------------------------
-(in-package :user)
+(in-package :cl-user)
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -264,7 +264,7 @@
 		  (get-fun-arg-type fun)))))
 	(t
 	 ;; If we have a fixnum, return integer4 instead.
-	 (if (fixnump arg)
+	 (if (typep arg 'integer)
 	     'integer4
 	     (type-of arg)))))
 
@@ -2084,8 +2084,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.52 2000/07/21 17:47:20 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.53 2000/07/27 16:42:01 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.53  2000/07/27 16:42:01  rtoy
+;;; o We want to be in the CL-USER package, not the USER package.
+;;; o Use (typep x 'integer) instead of (fixnump x) in GET-FUN-ARG-TYPE.
+;;;
 ;;; Revision 1.52  2000/07/21 17:47:20  rtoy
 ;;; o FIXUP-EXPRESSION:  add a case to convert (- N) to just -N, when N is
 ;;;   a number.

@@ -9,7 +9,7 @@
 	    fexport fproclaim fuse-package fin-package fdo arithmetic-if
 	    computed-goto assigned-goto
 	    fref fset f2cl/
-	    int ifix idint real float sngl dble cmplx ichar char aint dint
+	    int ifix idint real ffloat sngl dble cmplx ichar char aint dint
 	    anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
 	    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
 	    min1 len index lge lgt lle llt aimag conjg sqrt dsqrt fsqrt csqrt 
@@ -59,6 +59,9 @@
 
 (defvar *dummy_var* nil
   "Used by f2cl for dummy return values")
+
+(deftype logical ()
+  `(member t nil))
 
 (defconstant %false% nil)
 (defconstant %true% t)
@@ -118,7 +121,7 @@
   `(setf (fref ,(second a) ,@(cddr a)) ,b))
 
 (defmacro fref-string (s range)
-  `(subseq ,s ,(1- (first range)) ,(second range)))
+  `(subseq ,s (1- ,(first range)) ,(second range)))
 
 (defmacro fset-string (a b)
   `(setf (fref-string ,(second a) ,(third a)) ,b))
@@ -255,7 +258,7 @@
 (defvar *intrinsic_function_names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
-    idim dim ddim dprod max max0 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
+    idim dim ddim dprod max max0 max1 amax1 dmax1 amax0 amax1 min min0 amin1 dmin1
     min1 len index lge lgt lle llt aimag conjg sqrt dsqrt csqrt 
     exp dexp cexp log alog dlog clog log10 alog10 dlog10 sin dsin csin
     cos dcos ccos tan dtan asin dasin acos dacos atan datan atan2 datan2
@@ -312,7 +315,7 @@
 (defmacro idnint (x)
    `(values (round ,x)))
 
-(defmacro real_ (x)
+(defmacro real (x)
    `(coerce (realpart ,x) 'single-float))
 
 (defmacro sngl (x)
@@ -390,6 +393,8 @@
  (declare (ignore s1 s2))
    `(error "macro for intrinsic INDEX not yet implemented"))
 
+
+;; These string operations need some work!
 (defmacro lge (s1 s2)
    `(string>= ,s1 ,s2))
 (defmacro lgt (s1 s2)
@@ -399,6 +404,20 @@
 (defmacro llt (s1 s2)
    `(string< ,s1 ,s2))
 
+(defun fstring-/= (s1 s2)
+  (not (string= s1 s2)))
+(defun fstring-= (s1 s2)
+  (string= s1 s2))
+(defun fstring-> (s1 s2)
+  (string> s1 s2))
+(defun fstring->= (s1 s2)
+  (string>= s1 s2))
+(defun fstring-< (s1 s2)
+  (string< s1 s2))
+(defun fstring-<= (s1 s2)
+  (string<= s1 s2))
+
+
 (defmacro aimag (c)
    `(imagpart ,c))
 (defmacro conjg (c)

@@ -2492,7 +2492,7 @@ D
          (file-pathname
 	  (make-pathname :name module-string-name
 			 :type *system-extension*))
-         
+
          (lib-file-pathname
 	  (make-pathname :directory (list :relative module-string-name)
                          :name module-string-name
@@ -2542,8 +2542,8 @@ D
           (values system-def-pathname
                   (probe-file system-def-pathname)))
         (values nil nil))))
-         
-         
+
+
 
 
 #|
@@ -3513,8 +3513,8 @@ the system definition, if provided."
 	      (finish-output *query-io*)))))))
 
 #||
-(y-or-n-p-wait #\y 20 "What? ")
-(progn (format t "~&hi") (finish-output)
+ (y-or-n-p-wait #\y 20 "What? ")
+ (progn (format t "~&hi") (finish-output)
        (y-or-n-p-wait #\y 10 "1? ")
        (y-or-n-p-wait #\n 10 "2? "))
 ||#
@@ -3851,7 +3851,7 @@ the system definition, if provided."
 			    ;; (or (eq force :all) (eq force t))
 			    (find (canonicalize-system-name system)
 				  *modules* :test #'string-equal))
-                 
+
 		 (operate-on-system system operation :force force)))
 
 	      ((listp system)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.29 2002/06/18 14:01:30 sds Exp $
+;;; $Id: ext.lisp,v 1.30 2002/11/28 20:24:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage "PORT"
@@ -88,8 +88,11 @@ This carries the function name which makes the error message more useful."))
 (defmacro with-gensyms (syms &body body)
   "Bind symbols to gensyms.  First sym is a string - `gensym' prefix.
 Inspired by Paul Graham, <On Lisp>, p. 145."
-  `(let (,@(mapcar (lambda (sy) `(,sy (gensym ,(car syms)))) (cdr syms)))
-    ,@body))
+  `(let (,@(mapcar (lambda (sy)
+                     `(,sy (gensym ,(concatenate 'string (car syms)
+                                                 (symbol-name sy) "-"))))
+                   (cdr syms)))
+     ,@body))
 
 (defmacro map-in (fn seq &rest seqs)
   "`map-into' the first sequence, evaluating it once.

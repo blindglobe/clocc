@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.15 2001/12/06 20:33:08 sds Exp $
+;;; $Id: cvs.lisp,v 2.16 2001/12/07 18:31:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -275,14 +275,8 @@ When `DRY-RUN' is non-NIL, no actual changes are done."
                                     :external-format :unix
                                     :if-exists :supersede)
                  (write-line line out))))))
-    (let ((root-cvs (merge-pathnames
-                     (make-pathname :directory '(:relative "CVS")
-                                    :name nil :defaults nil)
-                     root))
-          (root-subdirs (merge-pathnames
-                         (make-pathname :directory '(:relative "*")
-                                        :name nil :defaults nil)
-                         root)))
+    (let ((root-cvs (mk-path root :directory '(:relative "CVS")))
+          (root-subdirs (mk-path root :directory '(:relative "*"))))
       (when (probe-directory root-cvs)
         (change-one-line (merge-pathnames "Repository" root-cvs) substitutions)
         (change-one-line (merge-pathnames "Root" root-cvs) substitutions))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.32 2001/04/26 21:09:21 sds Exp $
+;;; $Id: xml.lisp,v 2.33 2001/06/22 17:18:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -695,7 +695,8 @@ The first character to be read is #\T."
                                 (read-delimited-list #\> stream t))))))))
          (t (unread-char ch stream)
             (xml-read-tag stream)))))
-    (#\[ (xml-list-to-alist (read-delimited-list #\] stream t)))
+    ;; do not need `xml-list-to-alist' in <!DOCTYPE foo [...]>
+    (#\[ (read-delimited-list #\] stream t)) ;
     ;;(#\> (funcall (get-macro-character #\)) stream char)
     ;;     (xml-read-text stream #\<))
     ((#\& #\%)
@@ -740,14 +741,15 @@ The first character to be read is #\T."
   (set-macro-character #\] (get-macro-character #\)) nil rt)
   ;; this is a hack, but it works under Allegro, CLISP and CMUCL
   (set-macro-character #\' (get-macro-character #\") nil rt)
-  ;; handle namespaces
-  (set-syntax-from-char #\: #\Space rt)
-  (set-macro-character #\: #'read-standalone-char nil rt)
-  ;; attribute="value"
-  (set-syntax-from-char #\= #\Space rt)
-  (set-macro-character #\= #'read-standalone-char nil rt)
+  (flet ((single-char (char)
+           (set-syntax-from-char char #\Space rt)
+           (set-macro-character char #'read-standalone-char nil rt)))
+    (single-char #\:)           ; handle namespaces
+    (single-char #\|)           ; selector
+    (single-char #\*)           ; repeater
+    (single-char #\=))          ; attribute="value"
   (set-syntax-from-char #\; #\Space rt) ; for HTML documents
-  (set-syntax-from-char #\, #\Space rt) ; for HTML documents
+  (set-syntax-from-char #\, #\Space rt) ; for (a, b, c) in preamble
   (set-syntax-from-char #\# #\Space rt) ; for HTML documents
   (setf (readtable-case rt) :preserve)
   rt)

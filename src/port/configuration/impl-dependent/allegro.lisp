@@ -12,7 +12,7 @@
 ;;; Directory utilities
 
 (defmethod current-directory-namestring ((cl-implementation cl.env:allegro))
-  (namestring (pwd)))
+  (namestring (excl:current-directory)))
 
 
 ;;; DEFSYSTEM utilities

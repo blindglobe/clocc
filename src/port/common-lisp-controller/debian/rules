@@ -22,8 +22,7 @@ CLC_SRC_FILES	:= common-lisp-controller.lisp pre-sysdef-install.lisp \
 
 MAN_FILES := man/clc-send-command.1 man/clc-build-daemon.8 \
 	man/register-common-lisp-implementation.8 \
-	man/register-common-lisp-source.8 man/unregister-common-lisp-implementation.8 \
-	man/unregister-common-lisp-source.8 man/clc-reregister-all-impl.8 \
+	man/clc-reregister-all-impl.8 \
 	man/clc-autobuild-only.1 man/clc-autobuild-check.1 man/clc-autobuild-impl.1 \
 	man/clc-autobuild-library.1
 

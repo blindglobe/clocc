@@ -40,7 +40,7 @@ for i  in /usr/share/common-lisp/systems/*.system  ; do
     if [ -f $i -a -r $i ] ; then
      i=${i%.system}
      package=${i##*/}
-     clc-check-autobuild $IMPL $package
+     clc-autobuild-check $IMPL $package
      if [ $? = 0 ]; then
 	 echo recompiling package $package for implementation $IMPL
 	 /usr/bin/clc-send-command --quiet recompile $package $IMPL

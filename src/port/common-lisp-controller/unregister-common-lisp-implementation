@@ -42,7 +42,7 @@ fi
 # Uninstall the CLC
 sh $IMPL_BIN remove-defsystem || echo "De-installation of CLC failed" >&2
 
-autobuild-cl-impl $IMPL default
+clc-autobuild-impl $IMPL inherit
 
 # Just remove the damn subtree
 

@@ -1,3 +1,11 @@
+common-lisp-controller (3.30) unstable; urgency=low
+
+  * NMU
+  * Fix a few typographical errors in command invocations
+  * Rework manpage symlinks to get rid of lintian warnings
+  
+ -- Kevin M. Rosenberg <kmr@debian.org>  Wed, 25 Sep 2002 17:09:17 -0600
+
 common-lisp-controller (3.29) unstable; urgency=low
 
   * NMU

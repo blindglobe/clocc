@@ -360,7 +360,7 @@ null, symbol, list, sequence, t")
 (check-for-bug :clos-legacy-365
   (subtypep (class-of *standard-input*)
             (find-class 'stream))
-  NIL)
+  T)
 
 (check-for-bug :clos-legacy-370
   (subtypep (class-of (lambda (x) x))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.8 2000/05/02 15:40:20 sds Exp $
+;;; $Id: xml.lisp,v 2.9 2000/05/08 17:56:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -406,17 +406,18 @@ the first character to be read is #\T"
   `(with-open-stream (,var (make-instance 'xml-stream-in :input ,stream))
     (let ((*readtable* (make-xml-readtable))) ,@body)))
 
-(defmacro with-xml-file ((var file &key reset-ent) &body body)
+(defmacro with-xml-file ((var file &key reset-ent (out '*standard-output*))
+                         &body body)
   "Open the XML stream to file."
-  `(with-timing ()
+  `(with-timing (:out ,out)
     (when ,reset-ent (xml-init-entities))
     (with-xml-input (,var (open ,file :direction :input))
-      (format t "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
+      (format ,out "~&[~s]~% * [~a ~:d bytes]..." 'with-xml-input
        file (file-length (car (xmlis-all ,var))))
-      (force-output)
+      (force-output ,out)
       (let ((*readtable* (make-xml-readtable)))
         (prog1 (progn ,@body)
-          (format t "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
+          (format ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
                   (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
                   (xmlis-size ,var)))))))
 

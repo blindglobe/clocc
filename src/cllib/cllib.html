@@ -1,6 +1,6 @@
 <!doctype html public "-//W3C//DTD HTML 3.2//EN">
 <!--
- $Id: cllib.html,v 2.16 2000/09/29 16:10:07 sds Exp $
+ $Id: cllib.html,v 2.17 2001/01/08 23:03:50 sds Exp $
  $Source: /cvsroot/clocc/clocc/src/cllib/cllib.html,v $
  -->
 <html>
@@ -43,9 +43,9 @@ as well as my cross-implementation portability package <a
 <a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/cllib/?cvsroot=clocc"><code>src/cllib</code></a>),
 and, as such, is accessible via anonymous CVS
 and FTP, as explained on the <code>CLOCC</code> homepage.
-<code>CLLIB</code> uses
+<code>CLLIB</code> can be compiled using
 <a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/src/defsystem-3.x/defsystem.lisp?cvsroot=clocc"><code>mk:defsystem</code></a>,
-which is a part of <code>CLOCC</code>, as well as
+which is a part of <code>CLOCC</code>, and it relies on
 <a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/clocc/src/port/?cvsroot=clocc"><code>src/port</code></a>,
 (<a href="ftp://cellar.goems.com/pub/clocc/port.zip">download</a>)
 which was actually a part of <code>CLLIB</code> before.</p>
@@ -183,6 +183,10 @@ Then you can dump your images.</p>
 <p>See also the general <a href="http://clocc.sourceforge.net">CLOCC</a>
 <a href="http://cvs.sourceforge.net/cgi-bin/cvsweb.cgi/~checkout~/clocc/INSTALL?cvsroot=clocc"><code>INSTALL</code></a>
 instructions.</p>
+
+<p>Note that this library depends on <code>port</code> and
+<code>metering</code>, so you should compile those packages before
+compiling this one.</code>
 
 <h2>Comments</h2>
 

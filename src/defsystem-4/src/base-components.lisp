@@ -173,6 +173,26 @@
 		     (component-of cnaos)))))
 
 
+;;; session-information --
+;;; Mixin class holding all the informations that previously depended
+;;; on the session.  E.g. the variable `*compile-during-load*'.
+;;; Keeping them global may be confusing.  Now they will be part of
+;;; the system component and accessed by approprate accessors.
+
+(defclass session-information ()
+  ((load-source-instead-of-binary :accessor load-source-istead-of-binary
+				  :initform nil)
+   (load-source-if-no-binary :accessor load-source-if-no-binary
+			     :initform nil)
+   (bother-user-if-no-binary :accessor bother-user-if0no-binary
+			     :initform t)
+   (compile-during-load :accessor compile-during-load
+			:initform :query)
+   (compile-and-load :accessor compile-and-load
+		     :initform t)
+   ))
+
+
 ;;; component --
 
 (defclass component (topological-sort-node-mixin)

@@ -1,4 +1,4 @@
-; -*- Mode: lisp; package: CL-USER -*-
+; -*- Mode: lisp; package: F2CL -*-
 ; f2cl5.l
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;Copyright (c) University of Waikato;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -92,8 +92,12 @@
 	       (t
 		(pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
 	((listp exprs)
-	 (mapc #'check_new_vbles exprs)
-	 )
+	 ;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
+	 ;; the only possible place for variables is the arg list for
+	 ;; the function.
+	 (if (eq (first exprs) 'multiple-value-bind)
+	     (mapc #'check_new_vbles (cddr (third exprs)))
+	     (mapc #'check_new_vbles exprs)))
 	(t
 	 (Error "What happened?")))
   exprs)
@@ -2097,8 +2101,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.54 2000/07/28 17:05:01 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.55 2000/07/30 05:58:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.55  2000/07/30 05:58:48  rtoy
+;;; Don't check for new variables inside of multiple-value-bind's that
+;;; were created for function calls.  We only need to check in the
+;;; arguments of the function call.
+;;;
 ;;; Revision 1.54  2000/07/28 17:05:01  rtoy
 ;;; o We are in the f2cl package now.
 ;;; o We convert // to f2cl-//, even in format statements so fix

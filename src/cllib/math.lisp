@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.4 2000/04/27 15:51:37 sds Exp $
+;;; $Id: math.lisp,v 2.5 2000/04/27 18:42:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -29,9 +29,10 @@
    eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
    dot poly1 poly erf norm normalize rel-dist
-   mean mean-cx weighted-mean geometric-mean weighted-geometric-mean mean-some
-   standard-deviation standard-deviation-cx weighted-standard-deviation
+   mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
+   standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl mdl
+   kurtosis-skewness kurtosis-skewness-weighted
    covariation covariation1 cov volatility
    below-p linear safe-fun safe-fun1 safe-/ s/ d/
    convex-hull1 convex-hull sharpe-ratio to-percent percent-change
@@ -367,7 +368,7 @@ Returns 2 values: the mean and the length of the sequence."
            (fixnum len) (values (complex double-float) fixnum))
   (values (/ (reduce #'+ seq :key key) len) len))
 
-(defun weighted-mean (seq wts &key (value #'value) (weight #'value))
+(defun mean-weighted (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
   (declare (sequence seq wts) (type (function (t) double-float) value)
@@ -377,7 +378,7 @@ with weights WTS (not necessarily normalized)."
     (values (/ (dot seq wts :key0 value :key1 weight) twt)
             twt)))
 
-(defun geometric-mean (seq &key (key #'value))
+(defun mean-geometric (seq &key (key #'value))
   "Compute the geometric mean of the sequence of numbers.
 Returns 2 values: the mean and the length of the sequence."
   (declare (sequence seq) (values double-float fixnum)
@@ -385,7 +386,7 @@ Returns 2 values: the mean and the length of the sequence."
   (let ((len (length seq)))
     (values (expt (reduce #'* seq :key key) (/ len)) len)))
 
-(defun weighted-geometric-mean (seq wts &key (value #'value) (weight #'value))
+(defun mean-geometric-weighted (seq wts &key (value #'value) (weight #'value))
   "Compute the weighted geometric mean of the sequence SEQ
 with weights WTS (not necessarily normalized)."
   (declare (sequence seq wts) (type (function (t) double-float) value weight)
@@ -423,16 +424,17 @@ The mean and the length can be pre-computed for speed."
   (when (<= len 1) (return-from standard-deviation (values 0.0d0 mean len)))
   (values
    (sqrt (/ (reduce #'+ seq :key (lambda (yy) (sqr (- (funcall key yy) mean))))
-            (1- len))) mean len))
+            (1- len)))
+   mean len))
 
-(defun weighted-standard-deviation (seq wts &key
+(defun standard-deviation-weighted (seq wts &key
                                     (value #'value) (weight #'value))
   "Compute the standard deviation of the sequence with weights."
   (declare (sequence seq wts) (type (function (t) double-float) value)
            (type (function (t) number) weight)
            (values double-float double-float number))
   (multiple-value-bind (mn twt)
-      (weighted-mean seq wts :value value :weight weight)
+      (mean-weighted seq wts :value value :weight weight)
     (let ((sum 0.0d0))
       (map nil (lambda (xx ww)
                  (incf sum (* (funcall weight ww)
@@ -463,6 +465,36 @@ if this is not the case, the result will be a complex number."
                  (when vv (incf sq (sqr vv)) (incf su vv) (incf nn))))
          seq)
     (values (sqrt (max 0.0d0 (/ (- sq (/ (sqr su) nn)) (1- nn)))) nn)))
+
+(defun kurtosis-skewness (seq &key (key #'value) std mean len)
+  "Compute the skewness and kurtosis (3rd & 4th centered momenta)."
+  (declare (sequence seq) (type (function (t) double-float) key))
+  (unless std (setf (values std mean len) (standard-deviation seq :key key)))
+  (let ((skew 0.0d0) (kurt 0.0d0))
+    (map nil (lambda (rr)
+               (let* ((cc (/ (- (funcall key rr) mean) std))
+                      (c3 (* cc cc cc)))
+                 (incf skew c3)
+                 (incf kurt (* cc c3))))
+         seq)
+    (values (/ kurt (1- len)) (/ skew (1- len)) std mean len)))
+
+(defun kurtosis-skewness-weighted (seq wts &key std mean tot
+                                   (value #'value) (weight #'value))
+  "Compute the skewness and kurtosis (3rd & 4th centered momenta)."
+  (declare (sequence seq) (type (function (t) double-float) key))
+  (unless std
+    (setf (values std mean tot)
+          (standard-deviation-weighted seq wts :value value :weight weight)))
+  (let ((skew 0.0d0) (kurt 0.0d0))
+    (map nil (lambda (rr ww)
+               (let* ((cc (/ (- (funcall value rr) mean) std))
+                      (wt (funcall weight ww))
+                      (c3 (* wt cc cc cc)))
+                 (incf skew c3)
+                 (incf kurt (* c3 cc))))
+         seq wts)
+    (values (/ kurt (1- tot)) (/ skew (1- tot)) std mean tot)))
 
 (defun covariation (seq0 seq1 &key (key0 #'value) (key1 #'value))
   "Compute the covariation between the data in the two sequences.

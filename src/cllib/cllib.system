@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.17 2000/06/07 13:57:14 sds Exp $
+;;; $Id: cllib.system,v 1.18 2000/06/14 22:42:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -67,7 +67,8 @@
      (:file "url" :depends-on ("base" "withtype" "symb" "string" "fileio"
                                "log" "simple" "tilsla" "date"))
      (:file "withtype" :depends-on ("base"))
-     (:file "xml" :depends-on ("base" "string" "withtype" "closio" "log")))
+     (:file "xml" :depends-on
+            ("base" "string" "withtype" "closio" "log" "fileio")))
     :initially-do
     (progn (mk:system-source-size :cllib :all)
            (setq tbc (mk:system-source-size

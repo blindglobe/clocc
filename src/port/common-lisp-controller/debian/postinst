@@ -30,6 +30,9 @@ case "$1" in
     # DEBIAN_HAS_FRONTEND added of bug #183960
 	# DEBIAN_HAS_FRONTEND= update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
 	DEBIAN_HAS_FRONTEND= update-inetd --add "8990\tstream\ttcp\tnowait.400\troot\t/usr/sbin/clc-build-daemon\tclc-build-daemon"
+
+	# cleanup fasl files:
+	find  /usr/share/common-lisp/source/defsystem /usr/share/common-lisp/source/asdf /usr/share/common-lisp/source/common-lisp-controller -type f -not -name "*.lisp" -print0 | sudo xargs --null rm --force
 	
 	db_get common-lisp-controller/long-site-name
 	long=$(printf "%s" "$RET" | sed -e 's/[\"]/\\&/g')

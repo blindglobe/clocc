@@ -1,3 +1,16 @@
+common-lisp-controller (3.84) unstable; urgency=medium
+
+  * The spool directory should be world-writable to be any good! 
+    This could cause problems for real users and possibly build daemons.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Mon,  2 Feb 2004 16:40:31 +0100
+
+common-lisp-controller (3.83) unstable; urgency=low
+
+  * cleanup wrongfully compiled files from previus versions. 
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 24 Dec 2003 14:35:00 +0100
+
 common-lisp-controller (3.82) unstable; urgency=high
 
   * Improved validation of the spool files. Could be a securtity problem I

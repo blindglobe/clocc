@@ -41,7 +41,7 @@
    "ARRAY-DOUBLE-FLOAT" "ARRAY-SINGLE-FLOAT" "ARRAY-INTEGER4" "ARRAY-STRINGS"
    "LOGICAL"
    ;; Macros
-   "FREF" "FSET"
+   "FREF" "FSET" "WITH-ARRAY-DATA"
    "F2CL-INIT-STRING" "FREF-STRING" "FSET-STRING" "F2CL-SET-STRING"
    "F2CL-//" "FSTRING-/=" "FSTRING-=" "FSTRING->" "FSTRING->=" "FSTRING-<" "FSTRING-<="
    "FORTRAN_COMMENT" "FDO" "F2CL/" "ARITHMETIC-IF" "COMPUTED-GOTO"
@@ -80,8 +80,11 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.11 2002/02/10 03:41:53 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.12 2002/02/17 15:50:17 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.12  2002/02/17 15:50:17  rtoy
+;;; Export with-array-data.
+;;;
 ;;; Revision 1.11  2002/02/10 03:41:53  rtoy
 ;;; Export ARRAY-STRINGS type.
 ;;;

@@ -1,4 +1,4 @@
-;;; File: <url.lisp - 1999-10-19 Tue 14:44:09 EDT sds@ksp.com>
+;;; File: <url.lisp - 2000-01-19 Wed 13:06:43 EST sds@ksp.com>
 ;;;
 ;;; Url.lisp - handle url's and parse HTTP
 ;;;
@@ -9,154 +9,157 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: url.lisp,v 1.32 1999/10/19 18:47:57 sds Exp $
+;;; $Id: url.lisp,v 1.33 2000/01/19 18:08:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 ;;; $Log: url.lisp,v $
+;;; Revision 1.33  2000/01/19 18:08:47  sds
+;;; (resolve-host-ipaddr): fixed for CLISP/syscalls
+;;;
 ;;; Revision 1.32  1999/10/19 18:47:57  sds
 ;;; (ts-skip-scripts): new function.
 ;;;
-;; Revision 1.31  1999/10/12  15:44:04  sds
-;; (socket-service-port): corrected `services' path under win32.
-;; (url-ask): use `*url-replies*'.
-;; (url-login-ftp): fixed the error message.
-;; (html-stream): new Gray stream.
-;; (next-token, next-number): more verbose.
-;;
-;; Revision 1.30  1999/06/03 20:41:11  sds
-;; (+bad-url+): new constant.
-;; (*rfc-base*): new variable.
-;; (protocol-rfc): renamed from `url-rfc'.
-;; (socket-server &c): support CMUCL & LispWorks.
-;; (*url-replies*): new variable.
-;; (url-ask): use it; `END' can be symbolic now.
-;; (cl-server): nascent CL server stuff (ripped from CMUCL).
-;;
-;; Revision 1.29  1999/05/05 21:04:22  sds
-;; LispWorks compatibility:
-;; (open-socket, resolve-host-ipaddr, open-socket-server):
-;; work with LispWorks; added the `not-implemented' condition.
-;; (socket-host, socket-port): added the `not-implemented' condition.
-;; (code, case-error): moved to base.lisp.
-;;
-;; Revision 1.28  1999/05/03 18:20:40  sds
-;; (login): new `network' condition.
-;; (open-socket-retry): return a socket or signal an error.
-;; (open-url): simplified.
-;; (url-ask): signal an error.
-;; (ftp-get-passive-socket): removed the loop.
-;; (*ftp-anonymous-passwords*): new variable.
-;; (url-login-ftp): use it; signal a `login' error on falure.
-;;
-;; Revision 1.27  1999/04/26 17:18:10  sds
-;; (with-open-html): moved `meta' to `head'; added `link'.
-;;
-;; Revision 1.26  1999/04/20 16:21:08  sds
-;; (url string): handle URL with cgi having confusing arguments.
-;;
-;; Revision 1.25  1999/04/19 23:40:28  sds
-;; (url-time): print the time difference.
-;; (open-url, url-get): fixed the call to (error 'code).
-;;
-;; Revision 1.24  1999/04/19 15:56:12  sds
-;; (*url-default-max-retry*): new user variable, the
-;; default for the `max-retry' key.
-;;
-;; Revision 1.23  1999/04/16 16:01:18  sds
-;; (with-tag): added `value' key; better default for `terpri'.
-;; (with-open-html): added `head', `comment' and `footer' keys;
-;; fixed `doctype' key.
-;; (directory-index): added `&rest opts' for comment.
-;; use `value' key when calling `with-tag'.
-;;
-;; Revision 1.22  1999/04/11 19:58:00  sds
-;; Added `*html-output*' and `with-tag'.
-;; (with-open-html): bind `*html-output*'.  use `with-tag'.
-;; (directory-index): use `with-tag'.
-;;
-;; Revision 1.21  1999/04/06 21:57:33  sds
-;; Added `directory-index' and `with-open-html'.
-;;
-;; Revision 1.20  1999/03/24 17:01:54  sds
-;; More `*html-specials*'.  Added `url-rfc'.
-;; `socket-service-port' returns 4 values now.
-;; Added `*url-bytes-transferred*', `*url-opening-time*' and `url-eta'.
-;; Added two new keyword arguments to `ftp-list' - :name and :log.
-;;
-;; Revision 1.19  1999/02/09 23:19:58  sds
-;; Removed `throw-timeout'.
-;; Added `socket-host', `socket-port' and a condition `timeout'.
-;;
-;; Revision 1.18  1999/02/08 20:45:37  sds
-;; Updated for cmucl 18b.
-;;
-;; Revision 1.17  1999/02/02 00:02:33  sds
-;; Moved `html-translate-specials' &c to clhs.lisp
-;; Expanded `url-time'.
-;;
-;; Revision 1.16  1999/01/13 20:43:24  sds
-;; Replaced top-level `*html-readtable*' creation forms with a new
-;; function, `make-html-readtable'.
-;;
-;; Revision 1.15  1999/01/13 18:27:03  sds
-;; `read-html-markup' now handles #\;, #\: and #\, so it is not necessary
-;; now to remove these characters from buffer in `ts-pull-next'.
-;;
-;; Revision 1.14  1999/01/09 22:15:42  sds
-;; Extracted `ts-pull-next' from `read-next'.
-;;
-;; Revision 1.13  1999/01/08 17:15:25  sds
-;; Made `read-html-markup' skip `*html-specials*'.
-;; Added `with-timeout' for CMUCL, `socket-to-file', `*ts-kill*' (used in
-;; `read-next'), `url-get' (unifies all `url-get-*' functions).
-;;
-;; Revision 1.12  1999/01/07 03:58:08  sds
-;; Use `index-t' instead of (unsigned-byte 20).
-;; Use `file-size-t' instead of (unsigned-byte 32).
-;;
-;; Revision 1.11  1998/12/29 17:12:14  sds
-;; Added `*nntpserver*', `url-get-host', `*url-default-sleep*',
-;; `*url-default-timeout*', `sleep-mesg', `with-timeout',
-;; `y-or-n-p-timeout', `finger'.
-;; Added news URL handling.
-;; Added `bin' argument to `ftp-get-passive-socket'.
-;;
-;; Revision 1.10  1998/12/07 16:53:22  sds
-;; Added MAILTO handling; made :prot a keyword.
-;; New function: `send-mail'.
-;; Renamed `ftp-ask' to `url-ask'.
-;;
-;; Revision 1.9  1998/11/21 21:01:43  sds
-;; Added `throw-timeout' to `open-socket-retry' and `open-url'.
-;;
-;; Revision 1.8  1998/11/20 21:52:11  sds
-;; Added reget functionality to `ftp-get-file'.
-;;
-;; Revision 1.7  1998/11/20 03:15:50  sds
-;; Added `open-socket-retry'.
-;;
-;; Revision 1.6  1998/11/19 20:19:37  sds
-;; Added ftp handling: `ftp-ask', `ftp-parse-sextuple', `url-open-ftp',
-;; `ftp-get-passive-socket', `ftp-get-file', `*buf-size*', `ftp-list'.
-;; Separated `open-url' from `open-socket' and made sure that the former
-;; does indeed opens a socket.
-;;
-;; Revision 1.5  1998/10/30 20:55:40  sds
-;; Replaced `parse-url' with a generic function.
-;; Added `*html-specials*', `html-translate-specials',
-;; `*hyperspec-root*' and `hyperspec-snarf-examples'.
-;;
-;; Revision 1.4  1998/07/31 16:53:21  sds
-;; Declared `stream' as a stream in `print-*'.
-;;
-;; Revision 1.3  1998/06/30 13:48:08  sds
-;; Switched to `print-object'.
-;;
-;; Revision 1.2  1998/05/26 20:19:35  sds
-;; Adopted to work with ACL 5beta.
-;;
-;; Revision 1.1  1998/03/10 18:31:44  sds
-;; Initial revision
-;;
+;;; Revision 1.31  1999/10/12  15:44:04  sds
+;;; (socket-service-port): corrected `services' path under win32.
+;;; (url-ask): use `*url-replies*'.
+;;; (url-login-ftp): fixed the error message.
+;;; (html-stream): new Gray stream.
+;;; (next-token, next-number): more verbose.
+;;;
+;;; Revision 1.30  1999/06/03 20:41:11  sds
+;;; (+bad-url+): new constant.
+;;; (*rfc-base*): new variable.
+;;; (protocol-rfc): renamed from `url-rfc'.
+;;; (socket-server &c): support CMUCL & LispWorks.
+;;; (*url-replies*): new variable.
+;;; (url-ask): use it; `END' can be symbolic now.
+;;; (cl-server): nascent CL server stuff (ripped from CMUCL).
+;;;
+;;; Revision 1.29  1999/05/05 21:04:22  sds
+;;; LispWorks compatibility:
+;;; (open-socket, resolve-host-ipaddr, open-socket-server):
+;;; work with LispWorks; added the `not-implemented' condition.
+;;; (socket-host, socket-port): added the `not-implemented' condition.
+;;; (code, case-error): moved to base.lisp.
+;;;
+;;; Revision 1.28  1999/05/03 18:20:40  sds
+;;; (login): new `network' condition.
+;;; (open-socket-retry): return a socket or signal an error.
+;;; (open-url): simplified.
+;;; (url-ask): signal an error.
+;;; (ftp-get-passive-socket): removed the loop.
+;;; (*ftp-anonymous-passwords*): new variable.
+;;; (url-login-ftp): use it; signal a `login' error on falure.
+;;;
+;;; Revision 1.27  1999/04/26 17:18:10  sds
+;;; (with-open-html): moved `meta' to `head'; added `link'.
+;;;
+;;; Revision 1.26  1999/04/20 16:21:08  sds
+;;; (url string): handle URL with cgi having confusing arguments.
+;;;
+;;; Revision 1.25  1999/04/19 23:40:28  sds
+;;; (url-time): print the time difference.
+;;; (open-url, url-get): fixed the call to (error 'code).
+;;;
+;;; Revision 1.24  1999/04/19 15:56:12  sds
+;;; (*url-default-max-retry*): new user variable, the
+;;; default for the `max-retry' key.
+;;;
+;;; Revision 1.23  1999/04/16 16:01:18  sds
+;;; (with-tag): added `value' key; better default for `terpri'.
+;;; (with-open-html): added `head', `comment' and `footer' keys;
+;;; fixed `doctype' key.
+;;; (directory-index): added `&rest opts' for comment.
+;;; use `value' key when calling `with-tag'.
+;;;
+;;; Revision 1.22  1999/04/11 19:58:00  sds
+;;; Added `*html-output*' and `with-tag'.
+;;; (with-open-html): bind `*html-output*'.  use `with-tag'.
+;;; (directory-index): use `with-tag'.
+;;;
+;;; Revision 1.21  1999/04/06 21:57:33  sds
+;;; Added `directory-index' and `with-open-html'.
+;;;
+;;; Revision 1.20  1999/03/24 17:01:54  sds
+;;; More `*html-specials*'.  Added `url-rfc'.
+;;; `socket-service-port' returns 4 values now.
+;;; Added `*url-bytes-transferred*', `*url-opening-time*' and `url-eta'.
+;;; Added two new keyword arguments to `ftp-list' - :name and :log.
+;;;
+;;; Revision 1.19  1999/02/09 23:19:58  sds
+;;; Removed `throw-timeout'.
+;;; Added `socket-host', `socket-port' and a condition `timeout'.
+;;;
+;;; Revision 1.18  1999/02/08 20:45:37  sds
+;;; Updated for cmucl 18b.
+;;;
+;;; Revision 1.17  1999/02/02 00:02:33  sds
+;;; Moved `html-translate-specials' &c to clhs.lisp
+;;; Expanded `url-time'.
+;;;
+;;; Revision 1.16  1999/01/13 20:43:24  sds
+;;; Replaced top-level `*html-readtable*' creation forms with a new
+;;; function, `make-html-readtable'.
+;;;
+;;; Revision 1.15  1999/01/13 18:27:03  sds
+;;; `read-html-markup' now handles #\;, #\: and #\, so it is not necessary
+;;; now to remove these characters from buffer in `ts-pull-next'.
+;;;
+;;; Revision 1.14  1999/01/09 22:15:42  sds
+;;; Extracted `ts-pull-next' from `read-next'.
+;;;
+;;; Revision 1.13  1999/01/08 17:15:25  sds
+;;; Made `read-html-markup' skip `*html-specials*'.
+;;; Added `with-timeout' for CMUCL, `socket-to-file', `*ts-kill*' (used in
+;;; `read-next'), `url-get' (unifies all `url-get-*' functions).
+;;;
+;;; Revision 1.12  1999/01/07 03:58:08  sds
+;;; Use `index-t' instead of (unsigned-byte 20).
+;;; Use `file-size-t' instead of (unsigned-byte 32).
+;;;
+;;; Revision 1.11  1998/12/29 17:12:14  sds
+;;; Added `*nntpserver*', `url-get-host', `*url-default-sleep*',
+;;; `*url-default-timeout*', `sleep-mesg', `with-timeout',
+;;; `y-or-n-p-timeout', `finger'.
+;;; Added news URL handling.
+;;; Added `bin' argument to `ftp-get-passive-socket'.
+;;;
+;;; Revision 1.10  1998/12/07 16:53:22  sds
+;;; Added MAILTO handling; made :prot a keyword.
+;;; New function: `send-mail'.
+;;; Renamed `ftp-ask' to `url-ask'.
+;;;
+;;; Revision 1.9  1998/11/21 21:01:43  sds
+;;; Added `throw-timeout' to `open-socket-retry' and `open-url'.
+;;;
+;;; Revision 1.8  1998/11/20 21:52:11  sds
+;;; Added reget functionality to `ftp-get-file'.
+;;;
+;;; Revision 1.7  1998/11/20 03:15:50  sds
+;;; Added `open-socket-retry'.
+;;;
+;;; Revision 1.6  1998/11/19 20:19:37  sds
+;;; Added ftp handling: `ftp-ask', `ftp-parse-sextuple', `url-open-ftp',
+;;; `ftp-get-passive-socket', `ftp-get-file', `*buf-size*', `ftp-list'.
+;;; Separated `open-url' from `open-socket' and made sure that the former
+;;; does indeed opens a socket.
+;;;
+;;; Revision 1.5  1998/10/30 20:55:40  sds
+;;; Replaced `parse-url' with a generic function.
+;;; Added `*html-specials*', `html-translate-specials',
+;;; `*hyperspec-root*' and `hyperspec-snarf-examples'.
+;;;
+;;; Revision 1.4  1998/07/31 16:53:21  sds
+;;; Declared `stream' as a stream in `print-*'.
+;;;
+;;; Revision 1.3  1998/06/30 13:48:08  sds
+;;; Switched to `print-object'.
+;;;
+;;; Revision 1.2  1998/05/26 20:19:35  sds
+;;; Adopted to work with ACL 5beta.
+;;;
+;;; Revision 1.1  1998/03/10 18:31:44  sds
+;;; Initial revision
+;;;
 
 (in-package :cl-user)
 
@@ -475,7 +478,10 @@ The argument can be:
          (values host nil (socket:lookup-hostname host) 2)))
     (integer (values (socket:ipaddr-to-hostname host) nil
                      (ipaddr-to-dotted host) 2)))
-  ;; #+clisp (lisp:resolve-host-ipaddr host)
+  #+(and clisp syscalls)
+  (let ((he (posix:resolve-host-ipaddr host)))
+    (values (posix::hostent-name he) (posix::hostent-aliases he)
+            (posix::hostent-addr-list he) (posix::hostent-addrtype he)))
   #+cmu (let ((he (ext:lookup-host-entry host)))
           (values (ext:host-entry-name he)
                   (ext:host-entry-aliases he)
@@ -498,7 +504,7 @@ The argument can be:
             (fli:foreign-slot-value he 'comm::h_addrtype)
             (fli:foreign-slot-value he 'comm::h_length)))
   ;; #+gcl
-  #-(or allegro cmu lispworks)
+  #-(or allegro cmu lispworks (and clisp syscalls))
   (error 'not-implemented :proc (list 'resolve-host-ipaddr host)))
 
 (defun ipaddr-to-dotted (ipaddr)

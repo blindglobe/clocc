@@ -1,9 +1,9 @@
 #| http server using server.lsp
 
-Mail to donc@compsvcs.com (,donc@isi.edu, donc@ap5.com)
+Mail to don@isis.cs3-inc.com (then read the bounce).
 
 ==== license ====
-Copyright (c) 2000 CS3 (see http://www.compsvcs.com/)
+Copyright (c) 2000 CS3
 All rights reserved.
 
 This program is distributed under the terms of
@@ -276,7 +276,7 @@ At this point the method is executed and then, finally, we're done.
   (sss:done c))
 
 (defun connection-local-port (c)
-  #+clisp (lisp:socket-stream-local (sss:sstream c))
+  #+clisp (socket:socket-stream-local (sss:sstream c))
   #+allegro (socket:remote-host (sss:sstream c))
   #-(or allegro clisp) (error "connection-local-port not yet implemented"))
 

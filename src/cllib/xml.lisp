@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.43 2002/08/13 22:02:44 sds Exp $
+;;; $Id: xml.lisp,v 2.44 2002/08/14 22:06:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -144,10 +144,13 @@ If this is `:readably', print for the Lisp reader
 
 (defun xml-print-readably-p ()
   (or *print-readably*
-      (and (eq :readably *xml-print-xml*)
-           (or *print-circle*
-               (error "~s is set to ~s, but ~s is ~s"
-                      '*xml-print-xml* :readably '*print-circle* nil)))))
+      (eq :readably *xml-print-xml*)))
+;; do not check that *PRINT-CIRCLE* is non-NIL: when there are no
+;; circularities, CLISP will reset *PRINT-CIRCLE* to NIL internally for
+;; speedup, thus breaking this code gratuitously
+;;           (or *print-circle*
+;;               (error "~s is set to ~s, but ~s is ~s"
+;;                      '*xml-print-xml* :readably '*print-circle* nil))
 
 (defmethod print-object ((xm xml-misc) (out stream))
   (cond ((xml-print-readably-p) (call-next-method))

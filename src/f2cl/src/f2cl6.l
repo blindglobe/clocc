@@ -429,7 +429,7 @@
 		  nxt)
 	       (read-char *inp* nil 'EOF t))))
     #-clisp(declare (inline my-digit-char-p my-char=))
-    (let ((exponent-found-p nil))
+    (let ((in-number-p nil))
       ;; first check prev-char suitable to precede a number
       (unless (member prev-char 
 		      '(#\newline #\space #\. #\= #\+ #\- #\* #\/ #\( #\, ))
@@ -463,38 +463,32 @@
 	       ;;(format t "parse-number done!?~%")
 	       (return-from parse-number nil)))
 	;; parse rest of number;EOF
+	;;(format t "parse rest~%")
 	(loop
 	    (skip-spaces)
 	  (setq char (read-char *inp* nil 'EOF t)
 		nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
-	  ;; (format t "char, nxt-char = ~S ~S~%" char nxt-char)
+	  ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
 	  ;; Skip over spaces if the current character is a part of a number.
 	  (when (and (eql nxt-char #\Space)
 		     (or (my-digit-char-p char)
-			 (member char '(#\E #\D #\- #\+ #\e #\d #\.))))
+			 (member char (if in-number-p
+					  '(#\E #\D #\e #\d)
+					  '(#\E #\D #\- #\+ #\e #\d #\.)))))
 	    (skip-spaces)
 	    (setq nxt-char (peek-char nil *inp* nil 'EOF))
 	    ;;(format t "nxt-char = ~S~%" nxt-char)
 	    )
 	  (when (eql nxt-char 'EOF)
 	    (setq nxt-char `#\space))
-	  ;;(format t "char, nxt-char = ~S ~S~%" char nxt-char)
+	  ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
 	  (cond ((eql char 'EOF)
 		 ;; Assume number is complete.
 		 (write (get-output-stream-string str) :stream outport :escape nil)
 		 (write-char '#\space outport)
 		 (return-from parse-number t))
-		((and exponent-found-p (not (my-digit-char-p nxt-char)))
-		 ;; Assume number is complete because we found an
-		 ;; exponent and the next character isn't a digit.
-		 ;; Output the current character (which should be a
-		 ;; digit and hence part of the exponent).
-		 (write (get-output-stream-string str) :stream outport :escape nil)
-		 (write-char char outport)
-		 (write-char '#\space outport)
-		 (return-from parse-number t))
-
 		((my-digit-char-p char)
+		 (setf in-number-p t)
 		 (write-char char str))
 		((and (my-char= char '#\.)
 		      (not (or (my-digit-char-p nxt-char)
@@ -503,11 +497,13 @@
 		 ;; Convert "n." to "n.0" if there's no following number.
 
 		 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+		 (setf in-number-p t)
 		 (write-char '#\. str)
 		 (write-char '#\0 str))
 		((and (my-char= char '#\.)
 		      (my-digit-char-p nxt-char))
 		 ;; We have "n.n"
+		 (setf in-number-p t)
 		 (write-char '#\. str))
 		((and (my-char= char '#\.)
 		      (not (my-digit-char-p nxt-char)))
@@ -515,36 +511,27 @@
 		 ;; Append a 0 to the number.
 
 		 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
+
+		 (setf in-number-p t)
 		 (write-char '#\. str)
 		 (write-char '#\0 str))
-		((char-equal char '#\E)
-		 (setf exponent-found-p t)
-		 (write-char '#\e str)
+		((or (char-equal char '#\E)
+		     (char-equal char #\D))
+		 ;;(format t "got exponent ~S~%" char)
+		 (setf in-number-p t)
+		 (write-char char str)
 		 ;; Process exponent, skip over white space.
 		 (when (my-char= nxt-char #\Space)
 		   (skip-spaces)
 		   (setf nxt-char (peek-char nil *inp* nil 'EOF)))
+		 ;;(format t " nxt = ~S~%" nxt-char)
 		 (cond ((my-char= nxt-char '#\+)
 			(read-char *inp* nil 'EOF t))
 		       ((my-char= nxt-char '#\-)
 			(read-char *inp* nil 'EOF t)
 			(write-char '#\% str))))
-		((char-equal char '#\D)
-		 (setf exponent-found-p t)
-		 (write-char '#\d str)
-		 (when (my-char= nxt-char #\Space)
-		   (skip-spaces)
-		   (setf nxt-char (peek-char nil *inp* nil 'EOF)))
-		 (cond ((my-char= nxt-char '#\+)
-			(read-char *inp* nil 'EOF t))
-		       ((my-char= nxt-char '#\-)
-			(read-char *inp* nil 'EOF t)
-			(write-char '#\% str))))
-		((and (or (my-char= char '#\-)
-			  (my-char= char '#\+))
-		      )
-		 (write-char char str))
 		(t			;number complete
+		 ;;(format t "complete char, nxt = ~S ~S~%" char nxt-char)
 		 ;; We want to unread CHAR, but, according to the CLHS,
 		 ;; unread-char must push back the last character that
 		 ;; was read.  Because of skip-spaces above, this CHAR
@@ -563,8 +550,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.24 2001/09/09 04:34:07 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.25 2001/09/09 21:05:50 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.25  2001/09/09 21:05:50  rtoy
+;;; Undo rev 1.23.  This one should work better.
+;;;
 ;;; Revision 1.24  2001/09/09 04:34:07  rtoy
 ;;; An attempt at handling Fortran Hollerith strings in FORMAT
 ;;; statements.  During preprocessing, look for a FORMAT statement and

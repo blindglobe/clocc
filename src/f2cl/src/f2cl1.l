@@ -1253,19 +1253,18 @@ FILENAME                 File containing Fortran code
      (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
 	   (block-name (or (caar list)
 			   '%BLANK%)))
-       ;; Check to see if this is another instance.  If so, the elements
-       ;; of the common block should match.
+       ;; Check to see if this is another instance.  If so, Fortran
+       ;; says these elements are a member of the common block.
        (multiple-value-bind (val found)
 	   (gethash block-name *common-blocks*)
-	 (cond ((not found)
-		(setf (gethash block-name *common-blocks*)
-		      varlist))
-	       (t
-		;; Found the common block
-		(unless (equalp val varlist)
-		  (format t "val = ~S~%" val)
-		  (format t "lst = ~S~%" varlist)
-		  (warn "current common block doesn't match previous occurrence")))))))
+	 (declare (ignore found))
+	 ;;(format t "block = ~S~%" block-name)
+	 ;;(format t "  val = ~S~%" val)
+	 ;;(format t "  vars = ~S~%" varlist)
+	 ;;(format t "  varlst = ~S~%" (append val (remove-if-not #'symbolp varlist)))
+	 (setf (gethash block-name *common-blocks*)
+	       (append val (remove-if-not #'symbolp varlist)))
+	 )))
 
    
    ;; pick out lists of vblenames and add to *subprog_common_vars*
@@ -1282,7 +1281,9 @@ FILENAME                 File containing Fortran code
 		     (cond ((and (cdr nlist) (listp (cadr nlist)))
 			    ;; array dimensioned in COMMON stmt
 			    (update_cm_array_dims (car nlist) 
-						  (remove '|,| (cadr nlist)))
+						  #+nil
+						  (remove '|,| (cadr nlist))
+						  (cadr nlist))
 			    (setq nlist (cdr nlist)))
 			   ;; check if array dimensioned elsewhere
 			   ((member (car nlist) *declared_vbles*)
@@ -1295,7 +1296,7 @@ FILENAME                 File containing Fortran code
 				    (update_cm_array_dims (car nlist)
 							  (cdar vbles))))))
 			   )))))
-;   (print *common_array_dims*)                
+   ;;(format t "*common_array_dims* = ~A~%" *common_array_dims*)
    nil)
 
 ; append list of vble and dims to *common_array_dims* if vble not already in list
@@ -1860,8 +1861,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.60 2000/08/07 13:02:21 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.61 2000/08/09 18:50:30 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.61  2000/08/09 18:50:30  rtoy
+;;; Fortran says I can build up the elements of a common block in pieces
+;;; by specifying the pieces in several separate common statements.
+;;; Support that.
+;;;
 ;;; Revision 1.60  2000/08/07 13:02:21  rtoy
 ;;; Make :keep-lisp-file default to T.
 ;;;

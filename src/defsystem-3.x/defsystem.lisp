@@ -1195,8 +1195,8 @@
 
 (defvar *dont-redefine-require*
   #+cmu (if (find-symbol "*MODULE-PROVIDER-FUNCTIONS*" "EXT") t nil)
-  #+sbcl t
-  #-(or cmu sbcl) nil
+  #+(or clisp sbcl) t
+  #-(or cmu sbcl clisp) nil
   "If T, prevents the redefinition of REQUIRE. This is useful for
    lisps that treat REQUIRE specially in the compiler.")
 

@@ -1,20 +1,24 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;Confidential Trade Secret and Copyright (c) University of Waikato;;;;;
-;;;;;;;;;;Hamilton, New Zealand 92-95 - all rights reserved;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 Welcome to f2cl - a Fortran to Common Lisp Translator
 
 Contained in this directory are source code files and some documentation.
 The translator is written in Common Lisp making installation simple.
 
-To install f2cl:
+Installation
+------------
 
-1.  Edit the file f2cl0.l to suit your installation (necessary changes are
-    indicated in that file).
+If this has been extracted as a part of CLOCC, the way to build f2cl
+is to simply run "make system" from a shell, as is usual with CLOCC
+packages.
 
-2 . Run a Common Lisp interpreter and use the function "compile-file" to
+A second method is to use defsystem from CLOCC.  Then load
+f2cl.system, and then finally run (mk:oos "f2cl" :compile).
+
+Finally, a third method if you have none of the above is to manually
+run everything as follows:
+
+1 . Run a Common Lisp interpreter and use the function "compile-file" to
     compile each of the source files:
+		f2cl0.l
 		f2cl1.l
 		f2cl2.l
 		f2cl3.l
@@ -24,22 +28,28 @@ To install f2cl:
 		f2cl7.l
 		macros.l
 
-3. Now use 
+3. Load up all of the files
            (load "f2cl0.l")
    to load all the compiled files.
 
 
+Usage
+-----
 
 To use f2cl:
 
-If <infile> is a file containing Fortran code then the s-expression
+(f2cl:f2cl "<path>/fortran.f")
 
-		(f2cl <infile> <outfile>)
+will convert the file "<path>/fortran.f" to Lisp code and places the
+result in the file "<path>/fortran.lisp".
 
-will translate that code into Common Lisp putting the output in <outfile>.
+Alternatively,
 
-See f2cldoc.latex  for documentation about the translator's
-capabilites and the translation process.  
+(f2cl:f2cl "<path>/fortran.f")
+
+will also run compile-file on the Lisp file so you can load it
+directly into your lisp.
+
 
 For those anxious to use the translator without studying the documentation 
 here is a short list of restrictions that may result in obscure errors:
@@ -56,7 +66,15 @@ preprocessing stage of the translation.
 
 Acknowledgements:
 
-The translator was written by Kevin Broughan and Diane Koorey Willcock at the University of Waikato. Reports should be sent to kab@waikato.ac.nz and
-should include examples of Fortran code which fails to translate or which
-translates incorrectly.
+The translator was written by Kevin Broughan and Diane Koorey Willcock
+at the University of Waikato. Reports should be sent to
+kab@waikato.ac.nz and should include examples of Fortran code which
+fails to translate or which translates incorrectly.
 
+Major changes have be written by Raymond Toy and the entire translator
+is now part of CLOCC, with permission from Kevin Broughan.  Send bug
+reports and other comments to http://clocc.sourceforge.net.
+
+The code is also placed under the GPL, by permission of Kevin
+Broughan.  The exception is macros.l which is released under the LGPL
+so that it can be incorporated into other packages.

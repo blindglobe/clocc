@@ -532,9 +532,11 @@ these are not rationals, so we get a complex number back.
 
 ;;; From: lyle@cogni.iaf.cnrs-gif.fr (Lyle Borg-Graham)
 
-(defun foo ()
-  (loop for x from 1.0 to 10.0
-    maximize x into max single-float))
+(check-for-bug :cmucl-bugs-already-compile-foo
+  (defun foo ()
+    (loop for x from 1.0 to 10.0
+          maximize x into max single-float))
+  foo)
 
 (check-for-bug :cmucl-bugs-legacy-539
  (compile 'foo)
@@ -632,9 +634,62 @@ these are not rationals, so we get a complex number back.
  T
  "change-class (instance t) (new-class symbol) &rest initargs")
 
-;;; From the clisp CHANGES file:
+
+;; From Geddis@Cadabra.Com (Don Geddis)
+
+(check-for-bug :cmucl-bugs-equalp-hash-table
+  (let ((ht (make-hash-table :test #'equalp)))
+    (setf (gethash 4.0 ht) 'four)
+    (gethash 4 ht))
+  FOUR)
 
 
+(check-for-bug :cmucl-bugs-unread-from-string
+  (let* ((input (make-file-input-stream "xy"))
+         (concat (make-concatenated-stream input)))
+    (let* ((x (read-char concat))
+           (unread-x (unread-char x concat))
+           (x2 (read-char concat))
+           (y (read-char concat nil :EOF)))
+      (list x unread-x x2 y)) (close input))
+  (#\x NIL #\x #\y)
+  "From Gilbert Baumann")
 
+(check-for-bug :cmucl-bugs-unread-from-file
+  (progn
+    (with-open-file (sink "/tmp/tmp"
+                          :direction :output
+                          :if-exists :new-version)
+      (write-string "xy" sink))
+    (with-open-file (input "/tmp/tmp"
+                           :direction :input)
+      (let* ((concat (make-concatenated-stream input))
+             (x (read-char concat))
+             (unread-x (unread-char x concat))
+             (x2 (read-char concat))
+             (y (read-char concat nil :EOF)))
+        (list x unread-x x2 y))))
+  (#\x NIL #\x #\y)
+  "From Gilbert Baumann")
+
+(check-for-bug  :cmucl-bugs-loop-destructuring
+  (loop with (a . b) of-type float = (list 0.0 . 1.0)
+        and (c . d) of-type float = (list 2.0 . 3.0)
+        return (list a b c d))
+  (0.0 1.0 2.0 3.0)
+  "From: Wolfhard Buss")
+
+(check-for-bug :cmucl-bug-log-using-wrong-floats
+  (progn
+    (log #c(0.4 0.5))
+    nil)
+  nil
+  "From Michael A. Koerber")
+
+
+    
+
+
+  
 
 

@@ -1259,9 +1259,8 @@ THRESHOLD % will be reported."
        (progn
          (monitor-all)
          (reset-all-monitoring)
-         (prog1
-             (time ,form)
-           (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)))
+         (time ,form))
+     (report-monitoring :all ,nested ,threshold ,key :ignore-no-calls)
      (unmonitor)))
 
 (defmacro WITH-MONITORING ((&rest functions)
@@ -1275,8 +1274,8 @@ THRESHOLD % will be reported."
          (dolist (fun ',functions)
            (monitoring-encapsulate fun))
          (reset-all-monitoring)
-         ,@body
-         (report-monitoring :all ,nested ,threshold ,key))
+         ,@body)
+     (report-monitoring :all ,nested ,threshold ,key)
      (unmonitor)))
 
 ;;; ********************************

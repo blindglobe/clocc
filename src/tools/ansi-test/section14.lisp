@@ -1574,8 +1574,8 @@
 ;;; intersection
 
 (my-assert
- (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" "B" "C" "d"))
-       (list2 (list 1 4 5 'b 'c 'd "a" "B" "c" "D")))
+ (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" (string #\B) "C" "d"))
+       (list2 (list 1 4 5 'b 'c 'd "a" (string #\B) "c" "D")))
    (intersection list1 list2))
  #-clisp
  (C B 4 1 1)
@@ -1583,8 +1583,8 @@
  (1 1 4 B C))
 
 (my-assert
- (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" "B" "C" "d"))
-       (list2 (list 1 4 5 'b 'c 'd "a" "B" "c" "D")))
+ (let ((list1 (list 1 1 2 3 4 'a 'b 'c "A" (string #\B) "C" "d"))
+       (list2 (list 1 4 5 'b 'c 'd "a" (string #\B) "c" "D")))
    (intersection list1 list2 :test 'equal))
  #-clisp
  ("B" C B 4 1 1)

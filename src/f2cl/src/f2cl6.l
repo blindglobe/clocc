@@ -80,12 +80,13 @@
 		    ;; first character of this line is a punctuation,
 		    ;; strip off leading spaces.  Otherwise, leave a
 		    ;; space between.
-		    (let ((new-line (string-left-trim '(#\Space) (subseq line 6))))
+		    (let ((punc-list '(#\. #\/))
+			  (new-line (string-left-trim '(#\Space) (subseq line 6))))
 		      (setf prev-line
 			    (concatenate 'string prev-line
 					 (if (and prev-line
-						  (or (member (aref prev-line (1- (length prev-line))) '(\#.))
-						      (member (aref new-line 0) '(\#.))))
+						  (or (member (aref prev-line (1- (length prev-line))) punc-list)
+						      (member (aref new-line 0) punc-list)))
 					     ""
 					     " ")
 					 new-line))))))))))))
@@ -276,8 +277,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.13 2000/07/21 17:43:17 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.14 2000/07/21 21:15:17 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.14  2000/07/21 21:15:17  rtoy
+;;; Fix a typo in the punctuation list and add "/" to the list.
+;;;
 ;;; Revision 1.13  2000/07/21 17:43:17  rtoy
 ;;; Need to be more careful about continuation lines.  We now leave a
 ;;; space between lines when concatenating them, except when the previous

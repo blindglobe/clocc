@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.6 2000/06/02 20:03:15 sds Exp $
+;;; $Id: cvs.lisp,v 2.7 2000/06/02 20:26:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -245,7 +245,8 @@
         (setq path (merge-pathnames "cvs.log" path))
         (unwind-protect
             (with-open-pipe (pipe (pipe-input "cvs" "log"))
-              (with-open-file (log path :direction :output)
+              (with-open-file (log path :direction :output
+                                   :if-exists :supersede)
                 (loop :for line = (read-line pipe nil nil)
                       :while line :do (write-line line log))
                 (format t "done [~:d byte~:p]" (file-length log))))

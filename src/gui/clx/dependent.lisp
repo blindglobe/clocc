@@ -19,7 +19,7 @@
 ;;;
 #+cmu
 (ext:file-comment
- "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.12 2004/04/23 15:11:55 sds Exp $")
+ "$Header: /cvsroot/clocc/clocc/src/gui/clx/dependent.lisp,v 1.13 2004/09/21 15:32:11 haible Exp $")
 
 (in-package :xlib)
 
@@ -966,9 +966,10 @@
 
 (defun get-host-name ()
   "Return the same hostname as gethostname(3) would"
-  ;; machine-instance probably works on a lot of lisps, but clisp is not
-  ;; one of them
+  ;; machine-instance probably works on a lot of lisps
   #+(or cmu sbcl) (machine-instance)
+  ;; clisp's machine-instance returns also the IP address; don't need it here.
+  #+clisp (let ((s (machine-instance))) (subseq s 0 (position #\Space s)))
   ;; resources-pathname was using short-site-name for this purpose
   #+excl (short-site-name)
   #-(or excl cmu sbcl) (error "get-host-name not implemented"))

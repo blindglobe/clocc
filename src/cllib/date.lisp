@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-02-24 Wed 23:40:12 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-02-25 Thu 16:23:10 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,14 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.30 1999/02/25 04:45:39 sds Exp $
+;;; $Id: date.lisp,v 1.31 1999/02/25 21:50:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.31  1999/02/25 21:50:25  sds
+;;; Added constant `+bad-dl+'.
+;;; Added macros `with-saved-dl' and `with-saved-dls'.
+;;; Macro `with-truncated-dl' uses `with-saved-dl' now.
+;;;
 ;;; Revision 1.30  1999/02/25 04:45:39  sds
 ;;; Added `date-f-t', `date<=3', `date>=3', `dl-reset', `mk-dl', `rollover'.
 ;;; Removed `dl-copy-shift'.  Fixed `dl-shift', `dl-overlap'.
@@ -200,9 +205,9 @@ Returns the number of seconds since the epoch (1900-01-01)."
           (date-ye dt) (nth-value 5 (decode-universal-time tm 0))))
   dt)
 
-(defsubst mk-date (&rest args)
+(defmacro mk-date (&rest args)
   "Make date, fixing DD and then YE."
-  (declare (values date)) (fix-date (apply #'make-date args)))
+  `(fix-date (make-date ,@args)))
 
 (defsubst date2days (dt)
   "Convert the date to the number of days since the epoch (1900-01-01)."
@@ -392,7 +397,7 @@ and (funcall KEY arg), as a double-float. KEY should return a date."
   "Check the precedence of the two dates."
   (declare (type date d0 d1)) (>= (date-dd d0) (date-dd d1)))
 
-(defun date<=3 (d0 d1 d2)
+(defun date>=3 (d0 d1 d2)
   "Check the precedence of the three dates."
   (declare (type date d0 d1 d2))
   (>= (date-dd d0) (date-dd d1) (date-dd d2)))
@@ -626,19 +631,19 @@ previous record when SKIP is non-nil and nil otherwise.
   (cp nil :type list))          ; the current position (sublist of (cdar cl))
 )
 
+(defconst +bad-dl+ dated-list (make-dated-list)
+  "*The convenient constant for init.")
+
 (defsubst dl-ll (dl)
   "The current list."
   (declare (type dated-list dl)) (dated-list-cp dl))
-  ;; (cdar (dated-list-cl dl)))
 
 (defsetf dl-ll (dl) (ls)
   "Set the dated list's current list."
-  (declare (type dated-list dl))
   `(setf (dated-list-cp ,dl) ,ls))
 
 (defsetf dl-fl (dl) (ls)
   "Init FL and CL."
-  (declare (type dated-list dl))
   (let ((xx (gensym "DL-FL")) (yy (gensym "DL-FL")))
     `(let ((,xx ,dl) (,yy ,ls))
       (setf (dated-list-cl ,xx) ,yy (dated-list-fl ,xx) ,yy
@@ -734,11 +739,13 @@ so that -1 corresponds to the last record."
 
 (defmethod print-object ((dl dated-list) (stream stream))
   (if *print-readably* (call-next-method)
-      (let ((fl (dated-list-fl dl)) (dd (dl-date dl)))
-        (format stream "~:d/~d ~a [~:@(~a~)] [~a -- ~a]"
+      (let ((fl (dated-list-fl dl)) (dd (dl-date dl))
+            (cc (car (dated-list-cp dl))))
+        (format stream "~:d/~d ~a [~:@(~a~)] [~a -- ~a] [~a/~a]"
                 (dl-full-len dl) (length fl) (dated-list-name dl)
                 (dated-list-code dl) (if fl (funcall dd (cadar fl)) nil)
-                (if fl (funcall dd (car (last (car (last fl))))) nil)))))
+                (if fl (funcall dd (car (last (car (last fl))))) nil)
+                (caar (dated-list-cl dl)) (and cc (funcall dd cc))))))
 
 (defmethod describe-object ((dl dated-list) (stream stream))
   (let ((f (dated-list-fl dl)) (c (dated-list-cl dl)) (p (dated-list-cp dl)))
@@ -759,7 +766,7 @@ so that -1 corresponds to the last record."
 (defun date-in-dated-list (dt dl &optional last)
   "Call `date-in-list' on the dated list.
 If  LAST is non-nil, make sure that the next date is different.
-No side effects."
+No side effects.  Returns CP and CL for `dl-shift'."
   (declare (type dated-list dl) (type (or null date) dt) (values list))
   (if (null dt) (dl-ll dl)
       (do ((dd (dl-date dl)) (ls (dated-list-fl dl) (cdr ls)))
@@ -810,14 +817,13 @@ Defaults to 1."
   (etypecase dt
     (date (setf (values (dated-list-cp dl) (dated-list-cl dl))
                 (date-in-dated-list dt dl)))
-    (fixnum
-     (loop :repeat dt :with dd :of-type date-f-t = (dl-date dl)
+    (integer
+     (loop :repeat dt :with dd :of-type function = (dl-date dl)
            :with rd :of-type date = (rollover (car (dated-list-cl dl)) dd)
            :if (and (cdr (dated-list-cp dl))
                     (date<= (funcall dd (cadr (dated-list-cp dl))) rd))
            :do (pop (dated-list-cp dl))
-           :else :do
-             (pop (dated-list-cl dl)) :and
+           :else :do (pop (dated-list-cl dl)) :and
              :if (dated-list-cl dl)
              :do (setf (dated-list-cp dl)
                        (cdr (date-in-list rd (cdar (dated-list-cl dl)) dd))
@@ -946,11 +952,6 @@ it should return a short symbol or string."
         (dolist (yv lv) (format out " ~5,3f" (cdr yv)))
         (terpri out)))))
 
-(defsubst lincom (c0 x0 c1 x1)
-  "Compute c0*x0+c1*x1."
-  (declare (double-float c0 x0 c1 x1) (values double-float))
-  (with-type double-float (+ (* c0 x0) (* c1 x1))))
-
 (defun exp-mov-avg (coeff seq &optional (key #'value) date)
   "Return the list of the exponential moving averages with the given
 coefficient for the given sequence."
@@ -1040,12 +1041,41 @@ Must not assume that the list is properly ordered!"
   (declare (type dated-list dl))
   (weighted-mean (dl-ll dl) wts :key (dl-slot dl slot)))
 
+(defmacro with-saved-dl (dl &body body)
+  "Save FL, CL, CP, do BODY, restore FL, CL, CP."
+  (let ((fl (gensym "WSDL")) (cl (gensym "WSDL"))
+        (cp (gensym "WSDL")) (ll (gensym "WSDL")))
+    `(let* ((,ll ,dl) (,fl (dated-list-fl ,ll))
+            (,cl (dated-list-cl ,ll)) (,cp (dated-list-cp ,ll)))
+      (unwind-protect (progn ,@body)
+        (setf (dated-list-fl ,ll) ,fl (dated-list-cl ,ll) ,cl
+              (dated-list-cp ,ll) ,cp)))))
+
 (defmacro with-truncated-dl ((dt dl) &body body)
   "Evaluate BODY when DL is truncated by the date DT."
-  (let ((ll (gensym "WTD")) (tt (gensym "WTD")))
-    `(let* ((,ll (date-in-dated-list ,dt ,dl)) (,tt (cdr ,ll)))
-      (unwind-protect (progn (when ,ll (setf (cdr ,ll) nil)) ,@body)
-        (when ,ll (setf (cdr ,ll) ,tt))))))
+  (let ((ta (gensym "WTDL")) (ll (gensym "WTDL")) (cp (gensym "WTDL")))
+    `(let ((,ll ,dl))
+      (with-saved-dl ,ll
+        (dl-shift ,ll ,dt)
+        (let* ((,cp (dated-list-cp ,ll)) (,ta (cdr ,cp)))
+          (unwind-protect (progn (when ,cp (setf (cdr ,cp) nil)) ,@body)
+            (when ,cp (setf (cdr ,cp) ,ta))))))))
+
+(defmacro with-saved-dls ((&rest dls) &body body)
+  "Save several dated lists, line nested `with-saved-dl'."
+  (let* ((nn (length dls))
+         (ll (map-into (make-list nn) #'gensym))
+         (fl (map-into (make-list nn) #'gensym))
+         (cl (map-into (make-list nn) #'gensym))
+         (cp (map-into (make-list nn) #'gensym)))
+    `(let* (,@(mapcar #'list ll dls)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-fl ,dd))) fl ll)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cl ,dd))) cl ll)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cp ,dd))) cp ll))
+      (unwind-protect (progn ,@body)
+        (setf ,@(mapcan (lambda (sy dd) `((dated-list-fl ,dd) ,sy)) fl ll)
+              ,@(mapcan (lambda (sy dd) `((dated-list-cl ,dd) ,sy)) cl ll)
+              ,@(mapcan (lambda (sy dd) `((dated-list-cp ,dd) ,sy)) cp ll))))))
 
 ;;;
 ;;; Change

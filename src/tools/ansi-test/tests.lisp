@@ -196,15 +196,15 @@ the returnvalues or the type of the condition used."
   (mapc #'run-test
 	'(
 	  "symboltest"
-	  #-akcl "alltest"
+          "alltest"
 	  "array"
 	  "backquot"
-	  #-akcl "characters"
-	  #+(or CLISP ALLEGRO CMU SBCL)"clos"
+          "characters"
+	  #+(or ALLEGRO CLISP CMU GCL SBCL)"clos"
 	  "cmucl-bugs"
-	  #+(or CLISP ALLEGRO CMU SBCL) "conditions"
+	  #+(or ALLEGRO CLISP CMU GCL SBCL) "conditions"
 	  "eval20"
-	  "excepsit"
+	  #-gcl "excepsit"
 	  "format"
 	  #+xcl "hash"
 	  "hashlong"
@@ -233,7 +233,7 @@ the returnvalues or the type of the condition used."
 	  "section15"
 	  "section16"
 	  "section17"
-	  "section18-errors"
+	  #-gcl "section18-errors"
 	  "section18"
 	  "section19"
 	  "section2"
@@ -250,11 +250,11 @@ the returnvalues or the type of the condition used."
 	  "setf"
 	  "steele7"
 	  #-allegro "streams"
-	  "streamslong"
+	  #-gcl "streamslong"
 	  "strings"
-	  #-akcl "symbol10"
+	  "symbol10"
 	  "symbols"
-	  "type"
+          #-gcl "type"
 	  #+(or sbcl cmu)
 	  "unix-tests"
 	  ))
@@ -273,9 +273,9 @@ the returnvalues or the type of the condition used."
                        'software-version)
           do
           (format *log* "~A: ~A~%" item (funcall item)
-                  (lisp-implementation-version)))	
-    
-    
+                  (lisp-implementation-version)))
+
+
     (maphash (lambda (bugid ignored-knownp)
                (declare (ignore ignored-knownp))
                (unless (gethash bugid *bugid->seenp*)
@@ -286,7 +286,7 @@ the returnvalues or the type of the condition used."
                          "~&~%ERROR!! KNOWNP BUGID=~S corresponds to no test."
                          bugid)))
              *bugid->knownp*))
-    
+
   ;; Voila.
   t)
 

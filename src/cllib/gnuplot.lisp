@@ -1,4 +1,4 @@
-;;; File: <gnuplot.lisp - 1999-04-09 Fri 15:14:36 EDT sds@eho.eaglets.com>
+;;; File: <gnuplot.lisp - 1999-05-12 Wed 10:20:25 EDT sds@goems.com>
 ;;;
 ;;; Gnuplot interface
 ;;;
@@ -7,11 +7,14 @@
 ;;; GNU General Public License v.2 (GPL2) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
-;;; for details and precise copyright document.
+;;; for details and the precise copyright document.
 ;;;
-;;; $Id: gnuplot.lisp,v 1.25 1999/04/09 19:20:41 sds Exp $
+;;; $Id: gnuplot.lisp,v 1.26 1999/05/12 14:23:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 ;;; $Log: gnuplot.lisp,v $
+;;; Revision 1.26  1999/05/12 14:23:14  sds
+;;; (plot-header): new options `xfmt' and `yfmt'.
+;;;
 ;;; Revision 1.25  1999/04/09 19:20:41  sds
 ;;; `+gnuplot-epoch+' is now an integer, not a date.
 ;;;
@@ -107,8 +110,9 @@
 (eval-when (compile)
   (format t " *** `optimize' compile quality is set to 1.~%"))
 
-(defcustom *gnuplot-path* simple-string #+win32 "c:/bin/gnuplot/wgnuplot.exe"
-        #+unix "/usr/local/bin/gnuplot"
+(defcustom *gnuplot-path* simple-string
+  #+win32 "c:/bin/gnuplot/wgnuplot.exe"
+  #+unix "/usr/bin/gnuplot"
   "*The path to the windows gnuplot executable.")
 (defconst +gnuplot-epoch+ integer (encode-universal-time 0 0 0 1 1 2000 0)
   "*The gnuplot epoch - 2000-1-1.")
@@ -198,7 +202,7 @@ PLOT means:
 
 (defun plot-header (str plot &key (xlabel "x") (ylabel "y") data-style
                     timefmt xb xe (title "plot") legend (xtics t) (ytics t)
-                    grid term)
+                    grid term (xfmt (or timefmt "%g")) (yfmt "%g"))
   "Print the header stuff into the stream.
 This can be called ONLY by `with-plot-stream'.
 The following gnuplot options are accepted:
@@ -216,10 +220,11 @@ set output '~a'~%" *gnuplot-printer*)
         (format str "set terminal ~a~@[ ~a~]~%set output~%" #+unix "x11"
                 #+win32 "windows" term))
     (format str "set timestamp '%Y-%m-%d %a %H:%M:%S %Z' 0,0 'Helvetica'
-set xdata~:[~%set format x '%g'~; time~%set timefmt ~:*'~a'
-set format x ~:*'~a'~]~%set xlabel '~a'~%set ylabel '~a'~%set border
+set xdata~@[ time~%set timefmt '~a'~]~%set format x '~a'
+~@[set format y '~a'~%~]set xlabel '~a'~%set ylabel '~a'~%set border
 set data style ~a~%set xrange [~a:~a]~%set title \"~a\"~%~@[set key ~a~%~]"
-            timefmt xlabel ylabel data-style (pp xb) (pp xe) title legend)
+            timefmt xfmt yfmt xlabel ylabel data-style (pp xb) (pp xe)
+            title legend)
     (tt "xtics" xtics) (tt "ytics" ytics) (tt "grid" grid)))
 
 (defun plot-dl-channels (dls chs &rest opts)

@@ -1,7 +1,8 @@
 ;;; -*- Mode: lisp -*-
 
 ;; A sample defsystem.
-(defsystem f2cl
+(mk:defsystem f2cl
+    :source-pathname "clocc:src;f2cl;"
     :source-extension "l"
     :depends-on nil
     :components

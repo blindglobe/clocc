@@ -39,6 +39,8 @@
 	 (setf *machine* (make-instance 'intel-x86-machine)))
 	((or (featurep :sparc))
 	 (setf *machine* (make-instance 'sparc-machine)))
+	((or (featurep :sparcv9) (featurep :sparc-v9) (featurep :sparc9))
+	 (setf *machine* (make-instance 'sparc-v9-machine)))
 	((or (featurep :ppc))
 	 (setf *machine* (make-instance 'sparc-machine)))
 	((or (featurep :alpha))

@@ -1,6 +1,14 @@
-;;; File: <geo.lisp - 1998-03-10 Tue 13:26:49 EST sds@mute.eaglets.com>
+;;; File: <geo.lisp - 1998-03-10 Tue 13:30:58 EST sds@mute.eaglets.com>
 ;;;
 ;;; Geo.lisp - geographical data processing
+;;;
+;;; $Id: geo.lisp,v 1.2 1998/03/10 18:31:03 sds Exp $
+;;; $Source: /cvsroot/clocc/clocc/src/cllib/geo.lisp,v $
+;;; $Log: geo.lisp,v $
+;;; Revision 1.2  1998/03/10 18:31:03  sds
+;;; Replaced `multiple-value-set*' with `(setf (values ))'.
+;;;
+
 
 (eval-when (load compile eval) (sds-require 'util) (sds-require 'url))
 

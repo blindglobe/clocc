@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.13 2001/09/05 18:05:22 sds Exp $
+;;; $Id: log.lisp,v 1.14 2001/09/19 13:36:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -53,7 +53,7 @@ If FMT is non-NIL, return the corresponding string too."
 ;;; }}}{{{ logging
 ;;;
 
-(defcustom *print-log* 'simple-vector
+(defcustom *print-log* simple-vector
   '#(:log :logv :date :plot :head :res :opt :err :test :xml)
   "The list of message types which are being printed.")
 

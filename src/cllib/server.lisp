@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: server.lisp,v 1.3 2000/04/03 21:15:01 sds Exp $
+;;; $Id: server.lisp,v 1.4 2000/04/10 18:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/server.lisp,v $
 
 (eval-when (compile load eval)
@@ -37,6 +37,11 @@ Set to NIL to disable.")
 (defcustom *cl-server-quit* list '("bye" "quit" "exit")
   "*The list of `quit' commands.")
 
+(defun cl-server-mesg (sock fmt &rest args)
+  (princ "[") (current-time) (princ "]")
+  (apply #'format t fmt args)
+  (format t "~60t~a~%" (socket-string sock)))
+
 (defun cl-server (&key (port *cl-server-port*) (password *cl-server-password*))
   "Establish a connection and answer questions."
   (declare (integer port))
@@ -44,8 +49,7 @@ Set to NIL to disable.")
     (declare (type socket-server serv))
     (unwind-protect
        (loop :for sock :of-type socket = (socket-accept serv) :with pwd :do
-             (format t "[~a] connected:~60t~s:~d~%"
-                     (current-time nil) (socket-host sock) (socket-port sock))
+             (cl-server-mesg sock "connected:")
              (let ((*standard-output* sock)) (sysinfo))
              :if (or (null password)
                      (progn
@@ -70,11 +74,9 @@ Set to NIL to disable.")
                      (error (co)
                        (format sock "error:~%~a~%...flushed...~%" co))))
              (format sock "goodbye~%")
-             (format t "[~a] connection closed:~60t~s:~d~%" (current-time nil)
-                     (socket-host sock) (socket-port sock))
+             (cl-server-mesg sock "connection closed:")
              :else :do (format sock "wrong password~%")
-             (format t "[~a] access denied [~a]:~60t~s:~d~%" (current-time nil)
-                     pwd (socket-host sock) (socket-port sock))
+             (cl-server-mesg sock "access denied [~a]:" pwd)
              :end :do (close sock))
       (socket-server-close serv))))
 
@@ -127,10 +129,8 @@ is not given then one will be generated and reported."
 		       ;; Wait for new connections.
                        (let ((sock (socket-accept serv)))
                          (make-process #'(lambda () (start-top-level sock))
-                                       :name (format
-                                              nil "Lisp session from ~s:~d"
-                                              (socket-host sock)
-                                              (socket-port sock))))))
+                                       :name (format nil "Lisp session from ~a"
+                                                     (socket-string sock))))))
 		 ;; Close the listener stream.
 		 (when serv (socket-server-close serv))))))
     ;; Make the listening thread.

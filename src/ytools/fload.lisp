@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.2 2005/03/21 13:34:03 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.3 2005/03/24 12:58:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -226,7 +226,7 @@ funktion
       ;; If force = :load, load object if it exists --
       (cond ((eq force ':load)
 	     (setq force
-		   (cond ((probe-file (File-chunk-pathname obj-file-chunk))
+		   (cond ((probe-file (Code-file-chunk-pathname obj-file-chunk))
 			  ':object)
 			 (t
 			  ':source)))))
@@ -243,7 +243,7 @@ funktion
 	(file-ops-maybe-postpone
 	   (chunk-update operative-chunk true postpone-derivees)))))
 
-;;;;   (pathname-is-source (File-chunk-pathname file-ch))
+;;;;   (pathname-is-source (Code-file-chunk-pathname file-ch))
 
 ;;;;(defvar final-load* false)
 ;;;; When building systems, bind to true to minimize soul-searching later.
@@ -255,7 +255,7 @@ funktion
 	 (format *query-io*
 	    !"Do you want to load the object or source version of ~
               ~% of ~s~% (o[bject]/s[ource]/+/-, \\\\ to abort)? "
-	      (File-chunk-pn (Loaded-chunk-loadee loaded-ch)))
+	      (Code-file-chunk-pn (Loaded-chunk-loadee loaded-ch)))
 	 (multiple-value-bind
 	          (manip general)
 		  (case (keyword-if-sym (read *query-io*))
@@ -365,7 +365,7 @@ funktion
 	  (setq fload-compile* manip))))
 
 ;;;;(defmethod derive ((cf-ch Compiled-file-chunk))
-;;;;   (let ((pn (File-chunk-pn
+;;;;   (let ((pn (Code-file-chunk-pn
 ;;;;		(Compiled-file-chunk-source-file cf-ch))))
 ;;;;      (let ((ov (pathname-object-version pn false)))
 ;;;;	 (let ((real-pn (pathname-resolve pn true))
@@ -487,13 +487,13 @@ funktion
 	  (object-file-chunk
 	     (Compiled-file-chunk-object-file compiled-chunk))
 	  (object-pathname
-	     (File-chunk-pathname object-file-chunk))
+	     (Code-file-chunk-pathname object-file-chunk))
 	  (object-file-date
 	     (and (probe-file object-pathname)
 		  (file-write-date object-pathname)))
 ;;;;	  (comp-date
 ;;;;	     (pathname-write-time
-;;;;	        (File-chunk-pathname compiled-chunk)))
+;;;;	        (Code-file-chunk-pathname compiled-chunk)))
 	  )
       (labels ((force-compile ()
 		  (file-ops-maybe-postpone
@@ -645,14 +645,14 @@ funktion
 	 (do ((oldl (filespecs->ytools-pathnames set-olds) (cdr oldl))
 	      (newl (filespecs->ytools-pathnames set-news) (cdr newl)))
 	     ((null oldl))
-	    (let ((fc (place-File-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
-		     (place-File-chunk (car newl)))
+	    (let ((fc (place-Code-file-chunk (car oldl))))
+	       (setf (Code-file-chunk-alt-version fc)
+		     (place-Code-file-chunk (car newl)))
 	       (on-list fc changing-chunks)))
 	 (do ((oldl (filespecs->ytools-pathnames reset-olds) (cdr oldl)))
 	     ((null oldl))
-	    (let ((fc (place-File-chunk (car oldl))))
-	       (setf (File-chunk-alt-version fc)
+	    (let ((fc (place-Code-file-chunk (car oldl))))
+	       (setf (Code-file-chunk-alt-version fc)
 		     false)
 	       (on-list fc changing-chunks)))
 	 (chunks-update changing-chunks false false)

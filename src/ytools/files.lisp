@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.39 2005/03/23 20:07:07 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.40 2005/03/24 12:58:57 airfoyle Exp $
 	     
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,42 +12,54 @@
 	     always-slurp
 	     debuggable debuggability* def-sub-file-type)))
 
-;;; The name of a File-chunk is always its yt-pathname if non-nil,
+;;; A piece (maybe a multi-file piece) of code that can be executed
+(defclass Code-chunk (Chunk)
+  (;; Code-chunks that must be loaded when this one is --
+   (callees :accessor Code-chunk-callees
+	    :initform !())
+   ;; Inverse of 'callees' --
+   (callers :accessor Code-chunk-callers
+	    :initform !())))
+
+;; These two methods ensure that 'callers' is the inverse of 'callees' --
+(defmethod (setf Code-chunk-callees) :before (_ file-ch)
+   (dolist (clee (Code-chunk-callees file-ch))
+      (setf (Code-chunk-callers clee)
+	    (remove file-ch (Code-chunk-callers clee)))))
+
+(defmethod (setf Code-chunk-callees) :after (_ file-ch)
+   (dolist (clee (Code-chunk-callees file-ch))
+      (setf (Code-chunk-callers clee)
+	    (adjoin file-ch (Code-chunk-callers clee)))))
+
+;;; The name of a Code-file-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.
 ;;; This represents a primitive file, not one whose contents are
 ;;; managed by the file/chunk system itself (e.g., an object file
 ;;; whose compilation is handled by a Compiled-file-chunk).
-(defclass File-chunk (Chunk)
-  ((pathname :reader File-chunk-pathname
+(defclass Code-file-chunk (Code-chunk)
+  ((pathname :reader Code-file-chunk-pathname
 	     :initarg :pathname
 	     :type pathname)
-   (yt-pathname :reader File-chunk-yt-pathname
+   (yt-pathname :reader Code-file-chunk-yt-pathname
 		:initarg :yt-pathname
 		:initform false)
    ;;  -- Either false or a YTools pathname, in which case
    ;; 'pathname' is its resolution
-   (kind :reader File-chunk-kind
+   (kind :reader Code-file-chunk-kind
 	 :initarg :kind)
    ;; -- :source, :object, :data (":data" can include files of
    ;; of source code that won't be compiled).
-   (readtable :accessor File-chunk-readtable
+   (readtable :accessor Code-file-chunk-readtable
 	      :initarg :readtable
 	      :initform false)
-   (alt-version :accessor File-chunk-alt-version
+   (alt-version :accessor Code-file-chunk-alt-version
 		:initarg :alt-version
 		:initform false)
-   ;; - If not nil, the File-chunk for the alternative version.
-   ;; Perhaps the next two should be associated with this file's
-   ;; Loaded-chunk, because they don't make sense for a data file.--
-   ;; Files that must be loaded when this one is --
-   (callees :accessor File-chunk-callees
-	    :initform !())
-   ;; Inverse of 'callees' --
-   (callers :accessor File-chunk-callers
-	    :initform !())
+   ;; - If not nil, the Code-file-chunk for the alternative version.
    ;; Files that must be loaded when this one is read
    ;;  (not currently used) --
-   (read-basis :accessor File-chunk-read-basis
+   (read-basis :accessor Code-file-chunk-read-basis
 	       :initform false))
 )
 ;; -- Files are the finest grain we allow.  If a file is out of date,
@@ -55,40 +67,29 @@
 ;; date.  More than one chunk can be associated with a file.  For now,
 ;; don't allow a chunk to be associated with more than one file.
 
-;; These two methods ensure that 'callers' is the inverse of 'callees' --
-(defmethod (setf File-chunk-callees) :before (_ file-ch)
-   (dolist (clee (File-chunk-callees file-ch))
-      (setf (File-chunk-callers clee)
-	    (remove file-ch (File-chunk-callers clee)))))
-
-(defmethod (setf File-chunk-callees) :after (_ file-ch)
-   (dolist (clee (File-chunk-callees file-ch))
-      (setf (File-chunk-callers clee)
-	    (adjoin file-ch (File-chunk-callers clee)))))
-
-(defmethod derive-date ((fc File-chunk))
-   (let ((v (File-chunk-alt-version fc)))
+(defmethod derive-date ((fc Code-file-chunk))
+   (let ((v (Code-file-chunk-alt-version fc)))
       (cond (v (derive-date v))
 	    (t
-	     (let ((pn (File-chunk-pathname fc)))
+	     (let ((pn (Code-file-chunk-pathname fc)))
 	        (cond ((probe-file pn)
 		       (file-write-date pn))
 		      (t
-		       (error "File-chunk corresponds to nonexistent file: ~s"
+		       (error "Code-file-chunk corresponds to nonexistent file: ~s"
 			      fc))))))))
 
-(defmethod derive ((fc File-chunk))
+(defmethod derive ((fc Code-file-chunk))
    false)
 
-(defun File-chunk-pn (file-ch)
-   (or (File-chunk-yt-pathname file-ch)
-       (File-chunk-pathname file-ch)))
+(defun Code-file-chunk-pn (file-ch)
+   (or (Code-file-chunk-yt-pathname file-ch)
+       (Code-file-chunk-pathname file-ch)))
 
 (defun file-chunk-is-source (file-ch)
-   (eq (File-chunk-kind file-ch) ':source))
+   (eq (Code-file-chunk-kind file-ch) ':source))
 
 (defun file-chunk-is-object (file-ch)
-   (eq (File-chunk-kind file-ch) ':object))
+   (eq (Code-file-chunk-kind file-ch) ':object))
 
 ;;; 'pn' could be a Pseudo-pathname (see module.lisp)
 (defgeneric pathname-denotation-chunk (pn))
@@ -103,9 +104,9 @@
 		 (error "No source file corresponding to ~s"
 			pn)))
 	  (setq pn source-pn))))
-   (place-File-chunk pn))
+   (place-Code-file-chunk pn))
 
-(defun place-File-chunk (pn &key kind)
+(defun place-Code-file-chunk (pn &key kind)
    (multiple-value-bind (yt-pathname l-pathname)
 			(cond ((is-YTools-pathname pn)
 			       (values pn (pathname-resolve pn true)))
@@ -122,7 +123,7 @@
       (chunk-with-name
 	 `(:file ,(or yt-pathname l-pathname))
 	 (\\ (e)
-	    (make-instance 'File-chunk
+	    (make-instance 'Code-file-chunk
 	       :name e
 	       :kind kind
 	       :yt-pathname yt-pathname
@@ -162,7 +163,7 @@
       (error "No way to make a Loaded-chunk for ~s" ch)))
 
 (defclass Loaded-file-chunk (Loaded-chunk)
-   (;; The variant currently selected, either a File-chunk, or
+   (;; The variant currently selected, either a Code-file-chunk, or
     ;; a Loaded-file-chunk if we're indirecting through an alt-version --
     (selection :accessor Loaded-file-chunk-selection
 	  :initform false)
@@ -254,20 +255,24 @@
 	       (t
 		(return))))
       (cond ((typep file-ch 'Compiled-file-chunk)
-	     (cond ((eq (Compiled-file-chunk-status file-ch)
-			':compile-succeeded)
+	     (cond ((and (eq (Compiled-file-chunk-status file-ch)
+			     ':compile-succeeded)
+			 (probe-file
+			    (Code-file-chunk-pathname
+			       (Compiled-file-chunk-object-file
+				        file-ch))))
 		    (file-chunk-load
 		       (Compiled-file-chunk-object-file file-ch)))
 		   (t
 		    (let* ((source-file-chunk
 			      (Loaded-file-chunk-source lc))
 			   (source-file-pn
-			      (File-chunk-pathname source-file-chunk)))
+			      (Code-file-chunk-pathname source-file-chunk)))
 		       (format *error-output*
 			  "Compilation of ~s failed; loading source file~%"
 			  source-file-pn)
 		       (file-chunk-load source-file-chunk)))))
-	    ((typep file-ch 'File-chunk)
+	    ((typep file-ch 'Code-file-chunk)
 	     (file-chunk-load file-ch))
 	    (t
 	     (error "Can't extract file to load from ~s"
@@ -315,11 +320,11 @@
 ;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
 
-(defmethod place-Loaded-chunk ((file-ch File-chunk) manip)
+(defmethod place-Loaded-chunk ((file-ch Code-file-chunk) manip)
    (place-Loaded-file-chunk file-ch manip))
 
 (defun place-Loaded-file-chunk (file-chunk file-manip)
-   (let ((lc (chunk-with-name `(:loaded ,(File-chunk-pathname file-chunk))
+   (let ((lc (chunk-with-name `(:loaded ,(Code-file-chunk-pathname file-chunk))
 		(\\ (name)
 		  (let ((is-source (file-chunk-is-source file-chunk))
 			(is-object (file-chunk-is-object file-chunk)))
@@ -337,8 +342,8 @@
 						    (is-object file-chunk)
 						    (t false))
 				    :object (cond (is-source
-						   (place-File-chunk
-						      (File-chunk-pathname
+						   (place-Code-file-chunk
+						      (Code-file-chunk-pathname
 							 compiled-chunk)))
 						  (is-object file-chunk)
 						  (t false)))))
@@ -390,18 +395,18 @@
 		  (fload-indent* ;;;;(+ 3 fload-indent*)
 		      (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
-				 (File-chunk-pn
+				 (Code-file-chunk-pn
 				     file-ch)
-				 (File-chunk-pathname file-ch)
+				 (Code-file-chunk-pathname file-ch)
 				 "...")
 	       (unwind-protect
 		  (handler-bind ((error
 				    (\\ (_)
 				       (setq success false))))
-		     (load (File-chunk-pathname file-ch)))
+		     (load (Code-file-chunk-pathname file-ch)))
 		  (cond (success
 			 (file-op-message "...loaded"
-					   (File-chunk-pn
+					   (Code-file-chunk-pn
 					       file-ch)
 					   false ""))
 			(t
@@ -437,17 +442,17 @@
 	  (obj-file-chunk (Loaded-file-chunk-object loaded-ch))
 	  (object-exists
 	     (and obj-file-chunk
-		  (probe-file (File-chunk-pathname obj-file-chunk)))))
+		  (probe-file (Code-file-chunk-pathname obj-file-chunk)))))
       (cond (loaded-manip-dbg*
 	     (format t !"Setting loaded chunk basis, ~
                          manip initially = ~s~%" manip)))
       (cond ((not (or source-exists object-exists))
 	     (error "No source or object file can be found for ~s"
 		    loaded-ch)))
-      (cond ((File-chunk-alt-version file-ch)
+      (cond ((Code-file-chunk-alt-version file-ch)
 	     (setf (Chunk-basis loaded-ch)
 		   (list (place-Loaded-file-chunk
-			    (File-chunk-alt-version file-ch)
+			    (Code-file-chunk-alt-version file-ch)
 			    ':nochoice))))
 	    ((not source-exists)
 	     (setq manip ':object))
@@ -476,7 +481,7 @@
 ;;;;		    (cerror "I will compile the source file"
 ;;;;			    !"Request to load nonexistent ~
 ;;;;			      object file for ~s"
-;;;;			    (File-chunk-pathname file-ch))
+;;;;			    (Code-file-chunk-pathname file-ch))
 		    (setq manip ':compile)))
 	     ;; At this point manip is either :object, :source, or
 	     ;; :compile
@@ -490,7 +495,7 @@
 			loaded-ch 
 			(mapcar (\\ (callee)
 				   (place-Loaded-chunk callee false))
-				(File-chunk-callees file-ch))))
+				(Code-chunk-callees file-ch))))
 		   (t
 		    (setf (Loaded-chunk-principal-bases loaded-ch)
 			  (list (ecase manip
@@ -506,14 +511,16 @@
 				  (mapcar
 				      (\\ (callee)
 					 (place-Loaded-chunk callee false))
-				      (File-chunk-callees file-ch))))))))
+				      (Code-chunk-callees file-ch))))))))
       (let ((selection 
-	       (cond ((eq manip ':compile)
-		      (place-File-chunk
-			 (File-chunk-pathname
-			    (head (Chunk-basis loaded-ch)))))
-		     (t
-		      (head (Chunk-basis loaded-ch))))))
+	       (head (Chunk-basis loaded-ch))
+;;;;	       (cond ((eq manip ':compile)
+;;;;		      (place-Code-file-chunk
+;;;;			 (Code-file-chunk-pathname
+;;;;			    (head (Chunk-basis loaded-ch)))))
+;;;;		     (t
+;;;;		      (head (Chunk-basis loaded-ch))))
+	       ))
 	 (cond (loaded-manip-dbg*
 		(format t "Setting selection of ~s~% to ~s~%"
 			loaded-ch selection)))
@@ -537,13 +544,13 @@
 ;;; Represents a source file having an up-to-date compiled version.
 ;;; Actually, an attempt to compile is good enough, because we wouldn't
 ;;; want to try to recompile before a basis chunk changes.
-(defclass Compiled-file-chunk (File-chunk)
+(defclass Compiled-file-chunk (Code-file-chunk)
   ((source-file :initarg :source-file
 		:reader Compiled-file-chunk-source-file
-		:type File-chunk)
+		:type Code-file-chunk)
    (object-file :initarg :object-file
 		 :accessor Compiled-file-chunk-object-file
-		 :type File-chunk)
+		 :type Code-file-chunk)
    (status :initform ':uncompiled
 	   :accessor Compiled-file-chunk-status)
    ;; -- values :compile-succeeded or :compile-failed
@@ -555,8 +562,8 @@
 
 (defgeneric place-compiled-chunk (ch))
 
-(defmethod place-compiled-chunk ((source-file-chunk File-chunk))
-   (let* ((filename (File-chunk-pathname source-file-chunk))
+(defmethod place-compiled-chunk ((source-file-chunk Code-file-chunk))
+   (let* ((filename (Code-file-chunk-pathname source-file-chunk))
 	  (ov (pathname-object-version filename false))
 	  (real-ov (and (not (eq ov ':none))
 			(pathname-resolve ov false))))
@@ -567,7 +574,7 @@
 		      (let ((new-chunk
 			       (make-instance 'Compiled-file-chunk
 				  :source-file source-file-chunk
-				  :object-file (place-File-chunk
+				  :object-file (place-Code-file-chunk
 						  real-ov
 						  :kind ':object)
 				  :pathname (pathname-object-version
@@ -589,7 +596,7 @@
 (defvar debuggability* 1)
 
 (defmethod derive-date ((cf-ch Compiled-file-chunk))
-   (let ((pn (File-chunk-pn
+   (let ((pn (Code-file-chunk-pn
 		(Compiled-file-chunk-source-file cf-ch))))
       (let ((ov (pathname-object-version pn false)))
 	 (let ((real-ov (and (not (eq ov ':none))
@@ -607,15 +614,29 @@
                            control of ~s~%"
 			 real-ov cf-ch)))
 	       (or old-obj-write-time
-		   prev-time))))))
+		   (cond (real-ov
+			  (cond ((eq (Compiled-file-chunk-status cf-ch)
+				     ':compile-succeeded)
+				 (format *error-output*
+				    !"Warning -- object file ~s apparently ~
+			              deleted outside control of ~s~%"
+				    real-ov cf-ch)
+				 +no-info-date+)
+				(t
+				 prev-time)))
+			 (t
+			  (format *error-output*
+			     !"Warning -- no object file associated with ~s~%"
+			     cf-ch)
+			  prev-time))))))))
 
 ;;; We can assume that derive-date has already set the date to the old write
 ;;; time, and that some supporter has a more recent time.
 (defmethod derive ((cf-ch Compiled-file-chunk))
-   (let* ((pn (File-chunk-pn
+   (let* ((pn (Code-file-chunk-pn
 		 (Compiled-file-chunk-source-file cf-ch)))
 	  (real-pn (pathname-resolve pn true))
-	  (real-ov (File-chunk-pathname
+	  (real-ov (Code-file-chunk-pathname
 		      (Compiled-file-chunk-object-file cf-ch)))
 	  (old-obj-write-time
 		   (and real-ov
@@ -791,7 +812,7 @@
 				     ((ch ,subfile-class-name)
 				      &rest _)
 		   (setf (Chunk-basis ch)
-			 (list (place-File-chunk
+			 (list (place-Code-file-chunk
 				  (,sub-pathname-read-fcn ch)))))
 
 		(defclass ,slurped-sym-class-name (Chunk)
@@ -844,7 +865,7 @@
 				 :pathname pn)))
 		       :initializer
 			  (\\ (new-ch)
-			     (let* ((file-ch (place-File-chunk pn))
+			     (let* ((file-ch (place-Code-file-chunk pn))
 				    (loaded-file-chunk
 				       (place-Loaded-chunk file-ch false)))
 				(setf (,loaded-class-loaded-file-acc new-ch)
@@ -898,7 +919,7 @@
 (defun compiled-ch-sub-file-link (compiled-ch callee-ch sub-file-type load)
       (pushnew (funcall
 		  (Sub-file-type-chunker sub-file-type)
-		  (File-chunk-pathname callee-ch))
+		  (Code-file-chunk-pathname callee-ch))
 	       (Chunk-basis compiled-ch))
       (pushnew (funcall (cond (load
 			       (Sub-file-type-load-chunker
@@ -906,7 +927,7 @@
 			      (t
 			       (Sub-file-type-slurp-chunker
 				  sub-file-type)))
-			 (File-chunk-pathname callee-ch))
+			 (Code-file-chunk-pathname callee-ch))
 	       (Chunk-update-basis compiled-ch)))
 
 (eval-when (:compile-toplevel :load-toplevel)
@@ -970,5 +991,5 @@
 ;;; For debugging --
 (defun flchunk (pn)
    (let ((pn (->pathname pn)))
-      (place-Loaded-file-chunk (place-File-chunk pn)
+      (place-Loaded-file-chunk (place-Code-file-chunk pn)
 			       false)))

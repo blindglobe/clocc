@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-(defclass Test-file-chunk (File-chunk)
+(defclass Test-file-chunk (Code-file-chunk)
    ((callee :accessor Test-file-chunk-callee
 	    :initarg :callee)
     (slurpee :accessor Test-file-chunk-slurpee
@@ -27,7 +27,7 @@
 	  (c (Test-file-chunk-callee file-ch))
 	  (s (Test-file-chunk-slurpee file-ch)))
       (cond (c
-	     (setf (File-chunk-callees file-ch) (list c))
+	     (setf (Code-chunk-callees file-ch) (list c))
 	     (loaded-chunk-change-basis
 	        loaded-ch (list (place-Loaded-file-chunk c false)))
 	     (compiled-ch-sub-file-link compiled-ch c macros-sub-file-type*
@@ -275,7 +275,7 @@
 (defun sml-check ()
    (setq sml-ch*
      (chunk-with-name
-	 `(:slurped (:macros ,(File-chunk-pathname file-chunk-l*)))
+	 `(:slurped (:macros ,(Code-file-chunk-pathname file-chunk-l*)))
 	 false))
    (cond ((and sml-ch*
 	       (Chunk-managed sml-ch*)
@@ -312,7 +312,7 @@
    (setq file-chunk-c* false)
    (labels ((set-em-up (name-chars callee slurpee manip)
 	       (let ((file-ch
-		        (place-File-chunk
+		        (place-Code-file-chunk
 			   (merge-pathnames
 			       (concatenate 'string
 				  "tezt-" name-chars ".lisp")
@@ -372,7 +372,7 @@
 			  (2 (chunk-update file-chunk-s* false false)
 			     (setq sms-ch*
 			           (chunk-with-name
-				      `(:slurped (:macros ,(File-chunk-pathname
+				      `(:slurped (:macros ,(Code-file-chunk-pathname
 							      file-chunk-s*)))
 				      false))
 			     (sms-check "at end of iter 2"))
@@ -448,15 +448,15 @@
    (dolist (ssfty standard-sub-file-types*)
 ;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
 ;;;;	      (Sub-file-type-name ssfty)
-;;;;	      (File-chunk-pathname file-ch))
+;;;;	      (Code-file-chunk-pathname file-ch))
       (pushnew (funcall
 		  (Sub-file-type-chunker ssfty)
-		  (File-chunk-pathname file-ch))
+		  (Code-file-chunk-pathname file-ch))
 	       (Chunk-basis compiled-ch))
       (pushnew (funcall
 		  (Sub-file-type-load-chunker
 		     ssfty)
-		  (File-chunk-pathname file-ch))
+		  (Code-file-chunk-pathname file-ch))
 	       (Chunk-update-basis
 		    compiled-ch))))
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.9 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.10 2005/03/24 12:58:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -25,6 +25,12 @@
 
 (defmethod make-load-form ((pspn Pseudo-pathname) &optional env)
    (declare (ignore env))
+   (cerror "I'll make some useless generic Pseudo-pathname"
+	   !"Attempt to make load form for Pseudo-pathname object~
+             ~% ~s ~
+             ~% for which no specific 'make-load-form' method was ~
+             provided"
+	   pspn)
    `(make-Pseudo-pathname :name ',(Pseudo-pathname-name pspn)))
 
 (defstruct (YTools-pathname
@@ -1021,9 +1027,9 @@
 ;;  corresponding pathname is returned.  If the property is not found, or
 ;;  the property is there but the file is not, and only-if-exists=true,
 ;;  then the pathname of the first file found in the same directory as pn with
-;;  a suffix in suffixes is returned.  
+;;  suffix 'suffix' is returned.  
 ;; E.g., suppose we call 
-;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '("sss") true)
+;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '"sss" true)
 ;; and the pathname has a bbb-file prop, to wit #p"high/low/f3.sss", but
 ;; this file doesn't exist.  And #p"high/low/" has a bbb-file prop, namely
 ;; #p"high/bbb/low/???.sss"  (This is a pathname with no :name field, and

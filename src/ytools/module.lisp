@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.23 2005/03/23 14:36:35 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.24 2005/03/24 12:58:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -37,6 +37,17 @@
 
 (defstruct (Module-pseudo-pn (:include Pseudo-pathname))
    module)
+
+(defmethod make-load-form ((mpspn Module-pseudo-pn) &optional env)
+   (declare (ignore env))
+   (let ((modname (YT-module-name
+			   (Module-pseudo-pn-module mpspn))))
+      `(make-Module-pseudo-pn
+	  :name ',(Module-pseudo-pn-name mpspn)
+	  :module (or (lookup-YT-module
+			 ',modname)
+		      (error "Can't find YT-module named ~s"
+			     ',modname)))))
 
 (defmethod pathname-expansion ((mpspn Module-pseudo-pn))
    (mapcan (\\ (c)
@@ -103,7 +114,7 @@
    (let ((e (assq name ytools-modules*)))
       (and e (second e))))
 
-(defclass YT-module-chunk (Chunk)
+(defclass YT-module-chunk (Code-chunk)
    ((module :reader YT-module-chunk-module
 	    :initarg :module
 	    :type YT-module)))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.23 2005/03/21 13:34:03 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.24 2005/03/24 12:58:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -300,6 +300,8 @@ after YTools file transducers finish.")
 	     (cond ((typep rt 'readtable)
 		    rt)
 		   (t (error "in-readtable: ~s is not a readtable" rt)))))
+	 ((readtablep name)
+	  name)
 	 (t
 	  (error "in-readtable: ~s is not the name of a readtable"
 		 name))))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.20 2005/03/21 13:34:02 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.21 2005/03/24 12:58:53 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -29,7 +29,7 @@
    :file->state-fcn     
 		    (\\ (pn)
 		       (make-Scan-depends-on-state
-			  :file-chunk (place-File-chunk pn)
+			  :file-chunk (place-Code-file-chunk pn)
 ;;;;			  :expect-only-run-time-dependencies false
 			  :sub-file-types (list macros-sub-file-type*)
 		        )))
@@ -60,16 +60,16 @@
 		 (file-ch (Loaded-chunk-loadee loaded-ch))
 ;;;;		 (comp-ch (place-compiled-chunk file-ch))
 		 )
-	     (setf (File-chunk-callees file-ch) !())
+	     (setf (Code-chunk-callees file-ch) !())
 ;;;;	     (setf (File-chunk-self-compile-dep file-ch)
 ;;;;		   false)
-	     (file-slurp (File-chunk-pathname file-ch)
+	     (file-slurp (Code-file-chunk-pathname file-ch)
 			 (list scan-depends-on*)
 			 (\\ (srm)
 			    (let ((readtab
 				     (modeline-extract-readtab srm)))
 			       (cond (readtab
-				      (setf (File-chunk-readtable
+				      (setf (Code-file-chunk-readtable
 					       file-ch)
 					    readtab))))))
 	     file-op-count*))))
@@ -122,7 +122,7 @@
 			  (subseq str rpos))))))
 	    (t false))))
 
-(defmethod create-loaded-controller ((file-ch File-chunk)
+(defmethod create-loaded-controller ((file-ch Code-file-chunk)
 				     (loaded-ch Loaded-file-chunk))
    (chunk-with-name
        `(:loadable ,(Chunk-name file-ch))
@@ -176,12 +176,12 @@
    (defun :^ (form sdo-state)
       (let* ((readtab (name->readtable (cadr form)))
 	     (file-ch (Sds-file-chunk sdo-state))
-	     (prev-readtab (File-chunk-readtable file-ch)))
+	     (prev-readtab (Code-file-chunk-readtable file-ch)))
 	 (cond ((not (eq readtab prev-readtab))
 		(format *error-output*
 		   "Changing readtable of ~s from ~s to ~s = ~s~%"
 		   file-ch prev-readtab (cadr form) readtab)
-		(setf (File-chunk-readtable file-ch)
+		(setf (Code-file-chunk-readtable file-ch)
 		      readtab)))
 	 ;; for the duration of the slurp --
 	 (setq *readtable* readtab)
@@ -206,7 +206,7 @@
   (defun :^ (e sdo-state)
      (cond (depends-on-enabled*
 	    (let* ((file-ch (Sds-file-chunk sdo-state))
-		   ;; -- If it's not a real File-chunk, it's something
+		   ;; -- If it's not a real Code-file-chunk, it's something
 		   ;; like a module chunk.
 		   (groups (depends-on-args-group (cdr e)))
 		   (compiled-ch (place-compiled-chunk file-ch))
@@ -242,12 +242,12 @@
 			   (cond (slurp-dep
 				  (pathnames-note-slurp-support
 					  pnl file-ch which-slurp-types)
-				  (setf (File-chunk-read-basis file-ch)
+				  (setf (Code-file-chunk-read-basis file-ch)
 					(union
 					  (mapcar
 					     #'pathname-denotation-chunk
 					     pnl)
-					  (File-chunk-read-basis
+					  (Code-file-chunk-read-basis
 					     file-ch))))))
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn))
@@ -339,11 +339,11 @@
       (multiple-value-bind (bl lbl)
 			   (pathname-run-support pn)
 	 (cond (filoid-ch
-		(let ((fbl (retain-if (\\ (b) (typep b 'File-chunk))
+		(let ((fbl (retain-if (\\ (b) (typep b 'Code-file-chunk))
 				      bl)))
-		   (setf (File-chunk-callees filoid-ch)
+		   (setf (Code-chunk-callees filoid-ch)
 			 (union fbl
-				(File-chunk-callees filoid-ch))))))
+				(Code-chunk-callees filoid-ch))))))
 	 (loaded-chunk-augment-basis loaded-filoid-ch lbl))))
 
 ;;; Create link that requires sub-files of all pathnames in 'pnl'
@@ -355,7 +355,7 @@
 			   (pathname-run-support pn)
 			   (declare (ignore lbl))
 	 (dolist (callee-ch bl)
-	    (cond ((typep callee-ch 'File-chunk)
+	    (cond ((typep callee-ch 'Code-file-chunk)
 		   (dolist (sfty sub-file-types)
 		      (compiled-ch-sub-file-link
 			 compiled-ch callee-ch sfty true))))))))
@@ -364,7 +364,7 @@
    (dolist (pn pnl)
       (let* ((dep-ch (pathname-denotation-chunk pn))
 	     (loaded-dep-ch (place-Loaded-chunk dep-ch false))
-	     (filename (File-chunk-pathname file-ch)))
+	     (filename (Code-file-chunk-pathname file-ch)))
 	 (dolist (sfty (cond ((null sub-file-type-names)
 			      ;; Use 'em all
 			      sub-file-types*)
@@ -416,7 +416,7 @@
    (defun :^ (e sdo-state)
       (let* ((file-ch (Sds-file-chunk sdo-state))
 	     (compiled-ch (place-compiled-chunk file-ch)))
-;;;;	 (cond ((equal (Pathname-name (File-chunk-pathname file-ch))
+;;;;	 (cond ((equal (Pathname-name (Code-file-chunk-pathname file-ch))
 ;;;;		       "intypes")
 ;;;;		(dbg-save e sdo-state file-ch compiled-ch)
 ;;;;		(breakpoint self-compile-dep-scan-depends-on

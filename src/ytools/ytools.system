@@ -2,20 +2,15 @@
 ;;;
 ;;; YTools --- more than a library of useful utilities; a way of life.
 ;;;
-;;; $Id: ytools.system,v 1.1 2003/08/21 20:49:37 airfoyle Exp $
+;;; $Id: ytools.system,v 1.2 2003/08/31 18:00:55 airfoyle Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/ytools/ytools.system,v $
 ;;;
 
 (in-package :cl-user)
 
-(setq mk:*central-registry*
-      (nconc (list (translate-logical-pathname "clocc:src;port;")
-                   (translate-logical-pathname "clocc:src;tools;metering;"))
-             mk:*central-registry*))
-
-(defvar lisp-object-extn* "fasl")
-
-(setq mk:*reload-systems-from-disk* nil)
+(defmacro set-yt-global (name val)
+  `(set (intern (symbol-string ',name) (find-package :ytools))
+	,val))
 
 (mk:defsystem "YTOOLS"
     :source-pathname "clocc:src;ytools"
@@ -23,6 +18,23 @@
 ;;;;    :source-pathname (translate-logical-pathname "clocc:src;ytools;")
 ;;;;    :binary-pathname (translate-logical-pathname "clocc:bin;ytools;")
     :source-extension "lisp"
+
+    :initially-do
+    (progn (load (translate-logical-pathname "clocc:src;ytload;ytload.lisp"))
+	   (set-yt-global config-directory*
+			  (translate-logical-pathname "clocc:src;ytools;"))
+	   (set-yt-global ytload-directory*
+			  (translate-logical-pathname "clocc:src;ytools;ytload;"))
+	   ;;; Preset some config variables --
+	   (set-yt-global ytools-home-dir*
+			  (namestring (translate-logical-pathname
+				          "clocc:src;ytools;")))
+	   (set-yt-global standard-bin-path* "../../bin/")
+	   (set-yt-global bin-idio* "")
+	   (yt-install :ytfm :if-installed nil)
+	   (yt-install :ytools :if-installed nil)
+	   (setq *readtable* (eval (intern (symbol-name ':ytools-readtable*)
+					   (find-package :ytools)))))
 
     :components
     ((:system "YTFM"
@@ -32,14 +44,6 @@
 	;;;;    :binary-pathname (translate-logical-pathname "clocc:bin;ytload;")
 	:source-extension "lisp"
 
-	:initially-do
-	(progn (load (translate-logical-pathname "clocc:src;ytload;ytload.lisp"))
-	       (load (translate-logical-pathname "clocc:src;ytload;ytconfig.lisp"))
-	       (load (translate-logical-pathname "clocc:src;ytload;ytfm.lmd"))
-	       (load (translate-logical-pathname "clocc:src;ytools;ytools.lsy"))
-	       (setq *readtable* (eval (intern (symbol-name ':ytools-readtable*)
-					       (find-package :ytools)))))
-
 	:components
 	((:file "base")
 	 (:file "datafun" :depends-on ("base"))
@@ -47,7 +51,8 @@
 	 (:file "module" :depends-on ("base" "datafun" "pathname"))
 	 (:file "slurp" :depends-on ("base" "datafun" "pathname" "module"))
 	 (:file "files" :depends-on ("base" "datafun" "pathname" "module" "slurp"))
-	 (:file "depend" :depends-on ("base" "datafun" "pathname" "module" "slurp" "files")))
+	 (:file "depend" :depends-on ("base" "datafun" "pathname"
+				      "module" "slurp" "files")))
 
 	:finally-do
 	(progn (depends-on-disable)))
@@ -70,32 +75,3 @@
      (:file "bq" :depends-on ("core-ytools"))))
 
 
-#|
-This apparently doesn't work because YTFM must be defined under YTOOLS.
-(mk:defsystem "YTFM"
-    :source-pathname "~/UNIfied/prog/ytools"
-    :binary-pathname "~/UNIfied/prog/bin/ytools"
-;;;;    :source-pathname (translate-logical-pathname "clocc:src;ytload;")
-;;;;    :binary-pathname (translate-logical-pathname "clocc:bin;ytload;")
-    :source-extension "lisp"
-
-    :initially-do
-    (progn (load (translate-logical-pathname "clocc:src;ytload;ytload.lisp"))
-	   (load (translate-logical-pathname "clocc:src;ytload;ytconfig.lisp"))
-	   (load (translate-logical-pathname "clocc:src;ytload;ytfm.lmd"))
-	   (load (translate-logical-pathname "clocc:src;ytools;ytools.lsy"))
-)
-
-    :components
-    ((:file "base")
-     (:file "datafun" :depends-on ("base"))
-     (:file "pathname" :depends-on ("base" "datafun"))
-     (:file "module" :depends-on ("base" "datafun" "pathname"))
-     (:file "slurp" :depends-on ("base" "datafun" "pathname" "module"))
-     (:file "files" :depends-on ("base" "datafun" "pathname" "module" "slurp"))
-     (:file "depend" :depends-on ("base" "datafun" "pathname" "module" "slurp" "files")))
-
-    :finally-do
-    (progn (depends-on-disable))
-    )
-|#

@@ -196,23 +196,6 @@ INPUT-FILE               File containing Fortran code
 ;	match - returns multiple values or nil
 ;	maybe-extend-bindings
 ;------------------------------------------------------------------------------
-#+xxxx
-(defun fortran-to-lisp (file ofile)
-  (prog (inport outport  *common_array_dims* *format_stmts*)
-     (if *verbose* (format t "beginning the main translation ...~%"))
-     (setq inport (infile file)
-           outport (outfile ofile)
-           *common_array_dims* nil)
-     (do ((char (peek-char nil inport nil 'EOF) 
-                (peek-char nil inport nil 'EOF)))
-         ((eq char 'EOF) )
-       (setq *format_stmts* nil)
-       (translate-and-write-subprog 
-	(introduce-continue (readsubprog-extract-format-stmts inport)) outport))
-     (close inport)
-     (close outport)
-     (return t)))
-;-----------------------------------------------------------------------------
 
 (defun fortran-to-lisp (file ofile)
   (let (*common_array_dims* *format_stmts*)
@@ -371,12 +354,7 @@ main-loop
 
 ;=============================================================================
 (defun special-print (x o)
-  #+nil
-  (system:without-gcing
    (write x :escape t :stream o :pretty t :case :downcase))
-  
-   (write x :escape t :stream o :pretty t :case :downcase)
-   )
 ;------------------------------------------------------------------------------
 (defun princ-reset (x &optional (y "")) (print x) (princ  y))
 
@@ -682,28 +660,6 @@ main-loop
 )))
 
 ;------------------------------------------------------------------------------
-#+nil
-(defun parse-comp-goto (x)
-  (if (cddr x)
-      `((computed-goto 
-            ,(cadr x)
-            ',(mapcar #'(lambda (l) 
-                            (read-from-string 
-                                  (concatenate 'string "label" (princ-to-string l))))
-                     (remove '|,| (cadddr x)))))
-      `((computed-goto ,(cadr x)))))
-
-#+nil
-(defun parse-comp-goto (x)
-  (if (cddr x)
-      `((computed-goto 
-            ,(cadr x)
-            ',(mapcar #'(lambda (l) 
-                            (read-from-string 
-                                  (concatenate 'string "label" (princ-to-string l))))
-                     (remove '|,| (second x)))))
-      `((computed-goto ,(cadr x)))))
-
 (defun parse-comp-goto (x)
   (if (cddr x)
       `((computed-goto 
@@ -713,17 +669,6 @@ main-loop
 		  (remove '|,| (second x)))
 	 ,(third x)))
       `((computed-goto ,(cadr x)))))
-
-#+nil
-(defun parse-comp-go-to (x)
-  (if (cdddr x)
-      `((computed-goto 
-            ,(caddr x)
-            ',(mapcar #'(lambda (l) 
-                            (read-from-string 
-                                  (concatenate 'string "label" (princ-to-string l))))
-                     (remove '|,| (car (cddddr x))))))
-      `((computed-goto ,(caddr x)))))
 
 (defun parse-comp-go-to (x)
   (if (fourth x)
@@ -827,49 +772,15 @@ main-loop
 
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:
-#+nil
-(defun parse-assignment (x)
-  (prog ((lhs (parse-expression (tail-chop '= x)))
-         (rhs (parse-expression (head-chop '= x))))
-     (return
-       (if (listp lhs)
-	   (parse-arrayref-or-stmtfn lhs rhs)
-	   (and (check_new_vbles (list lhs))
-		(cond ((find *coerce-assignments* '(t :always))
-		       `((setf ,lhs (coerce ,rhs (type-of ,lhs)))))
-		      ((find *coerce-assignments* '(nil :never))
-		       `((setf ,lhs ,rhs)))
-		      (t
-		       (let ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
-			     (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-			 ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-			 ;; RHS.  Otherwise, coerce the RHS to the
-			 ;; type of the LHS.  However, we can't coerce
-			 ;; something to an integer.  Use truncate for
-			 ;; that.
-			 (cond ((or (eq t rhs-type)
-				    (eq t lhs-type)
-				    (eq lhs-type rhs-type))
-				;; No coercion is needed if the types
-				;; match, or if we can't determine the
-				;; type of the LHS or RHS.
-				`((setf ,lhs ,rhs)))
-			       ((and (subtypep lhs-type 'integer)
-				     (not (subtypep rhs-type 'integer)))
-				;; We're trying to set a integer
-				;; variable to non-integer value.  Use
-				;; truncate.
-				`((setf ,lhs (truncate ,rhs))))
-			       (t
-				;; Haven't a clue, so coerce
-				`((setf ,lhs (coerce ,rhs ',lhs-type)))))))))))))
 (defun parse-assignment (x)
   (let ((lhs (parse-expression (tail-chop '= x)))
 	(rhs (parse-expression (head-chop '= x))))
     (cond ((listp lhs)
+	   ;; Look for undeclared variables in the rhs
 	   (check_new_vbles rhs)
 	   (parse-arrayref-or-stmtfn lhs rhs))
 	  (t
+	   ;; Look for undeclared variables in the lhs or rhs.
 	   (check_new_vbles (list lhs))
 	   (check_new_vbles (list rhs))
 	   (cond ((find *coerce-assignments* '(t :always))
@@ -1120,24 +1031,6 @@ main-loop
 ;; rlt:  also handles
 ;;	data var1, var2, var3/val1, val2, val3/
 
-#+nil
-(defun parse-data (x)
-  ;;(format t "parse-data:  ~S~%" x)
-  (setq x (list-split '|/| (cdr x)))
-  ;;(format t "parse-data:  ~S~%" x)
-  (do ((list x (cddr list))
-       (ret nil (let ((result (parse-data1 (remove '|,| (car list))
-					   (list-split '|,| (cadr list)))))
-		  (if (atom (first result))
-		      (cons result
-			    ret)
-		      (append result ret)))))
-      ((null (cdr list))
-       ;;(format t "parse-data returns:  ~S~%" ret)
-       ret)
-    ;;(format t "parse-data: list = ~S~%" list)
-    ))
-
 (defun parse-data (x)
   ;;(format t "parse-data:  ~S~%" x)
   (setq x (list-split '|/| (cdr x)))
@@ -1158,22 +1051,6 @@ main-loop
 
 ; parse a (vble_name data1 data2 ...) list
 ;    or a (vble_name n*x) list
-#+nil
-(defun parse-data1 (v l)
-   (cond ((and (listp (car l)) (eq (second (car l)) '*))
-          `(fill ,v ,(id-expression (cddar l)) :end ,(1- (first (car l)))))
-         (t (if (vble-is-array-p v)
-                `(replace ,v ',(mapcar #'id-expression l) :end,(1- (length l)))
-                `(setq ,v ,(id-expression (first l)))))))
-
-#+nil
-(defun parse-data1 (v l)
-   (cond ((and (listp (car l)) (eq (second (car l)) '*))
-          `(fill ,v ,(id-expression (cddar l)) :end ,(1- (first (car l)))))
-         (t (if (vble-is-array-p v)
-                `(replace ,v ',(mapcar #'id-expression l))
-                `(setq ,v ,(id-expression (first l)))))))
-
 (defun parse-data1 (v l)
   ;;(format t "parse-data1:  v = ~S~%" v)
   ;;(format t "parse-data1:  l = ~S~%" l)

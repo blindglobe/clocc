@@ -6,14 +6,14 @@ This is the MK:DEFSYSTEM installation guide.
 
 Since MK:DEFSYSTEM is a 'build' tool for Common Lisp, we cannot rely
 on it to actually load and compile itself.  Moreover, starting from
-release 4.0, MK:DEFSYSTEM comes split in several files, to easy its
-maintanance and modification.  This caused a minor construction
+release 4.0, MK:DEFSYSTEM comes split in several files, to ease its
+maintenance and modification.  This caused a minor construction
 headache.
 
-To somewhat ease things I provide a first cut "load-defsystem.lisp" file
-which will load and compile the system.
+To mitigate I provide a first cut "load-defsystem.lisp" file which
+will load and compile the system.
 
-Once you have done that, you simply need to start you favourite Common
+Once you have done that, you simply need to start you favorite Common
 Lisp, load the "load-defsystem.lisp" and see what happens.  I.e. you
 should be able to just do
 

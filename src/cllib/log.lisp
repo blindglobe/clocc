@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.8 2000/05/08 17:52:54 sds Exp $
+;;; $Id: log.lisp,v 1.9 2000/05/08 20:00:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -56,10 +56,11 @@ If FMT is non-NIL, return the corresponding string too."
   (with-gensyms ("TIMING-" bt bt1)
     `(let ((,bt (get-float-time)) (,bt1 (get-float-time nil)))
       (unwind-protect (progn ,@body)
-        (when ,done (princ "done" ,out))
-        (when ,run (format ,out " [run: ~/pr-secs/]" (elapsed ,bt t)))
-        (when ,real (format ,out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
-        (when ,terpri (terpri ,out))))))
+        (when ,out
+          (when ,done (princ "done" ,out))
+          (when ,run (format ,out " [run: ~/pr-secs/]" (elapsed ,bt t)))
+          (when ,real (format ,out " [real: ~/pr-secs/]" (elapsed ,bt1 nil)))
+          (when ,terpri (terpri ,out)))))))
 
 ;;;
 ;;; }}}{{{ logging

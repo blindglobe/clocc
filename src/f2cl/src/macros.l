@@ -60,10 +60,10 @@ is not included")
 ;; If you change this, you may need to change some of the macros
 ;; below, such as INT and AINT!
 
-#+cmu
+#+(or cmu scl)
 (deftype integer4 ()
   `(signed-byte 32))
-#-cmu
+#-(or cmu scl)
 (deftype integer4 ()
   'fixnum)
 
@@ -251,8 +251,8 @@ is not included")
 ; fdo has similar syntax as do except there will only be one do_vble
 
 (defmacro fdo (do_vble_clause predicate_clause &rest body)
-  (let ((step (gensym "STEP-"))
-	(iteration_count (gensym "CNT-")))
+  (let ((step (gensym (symbol-name '#:step-)))
+	(iteration_count (gensym (symbol-name '#:cnt-))))
     `(prog* ((,step ,(third (third do_vble_clause)))
 	     (,iteration_count 
 	      (max 0 (the integer4
@@ -392,7 +392,7 @@ is not included")
 
 (declaim (inline int ifix idfix))
 
-#-cmu
+#-(or cmu scl)
 (defun int (x)
   ;; We use fixnum here because f2cl thinks Fortran integers are
   ;; fixnums.  If this should change, we need to change the ranges
@@ -409,7 +409,7 @@ is not included")
 				  #.(float most-positive-fixnum 1d0))
 		 x)))))
 
-#+cmu
+#+(or cmu scl)
 (defun int (x)
   ;; For CMUCL, we support the full 32-bit integer range, so INT can
   ;; return a full 32-bit integer.  Tell CMUCL that this is true so we
@@ -598,7 +598,7 @@ is not included")
   (declare (single-float x y))
   (int (apply #'max x y z)))
 (defun amax0 (x y &rest z)
-  (declare (integer4 x y))
+  (declare (type integer4 x y))
   (float (apply #'max x y z) 1f0))
 
 (defun min0 (x y &rest z)
@@ -614,7 +614,7 @@ is not included")
   (nint (apply #'min x y z)))
 
 ;; Define some compile macros for these max/min functions.
-#+cmu
+#+(or cmu scl)
 (progn
 (define-compiler-macro max0 (&rest args)
   `(max ,@args))
@@ -815,12 +815,12 @@ is not included")
     (cond ((atom array)
 	   `(do ((,do-var ,start (+ ,do-var ,step)))
 	     ((> ,do-var ,end))
-	     (declare (integer4 ,do-var))
+	     (declare (type integer4 ,do-var))
 	     (fset (fref ,array ,(remove '|,| (second implied-do)) ,low-bnds) (pop ,init))))
 	  (t
 	   `(do ((,do-var ,start (+ ,do-var ,step)))
 	     ((> ,do-var ,end))
-	     (declare (integer4 ,do-var))
+	     (declare (type integer4 ,do-var))
 	     ,(process-implied-do (remove '|,| array) low-bnds init))))))
 
 (defun process-implied-do (ido low-bnds var-types init)
@@ -1201,8 +1201,15 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.51 2002/06/30 13:08:51 rtoy Exp $
+;;; $Id: macros.l,v 1.52 2002/09/13 17:50:19 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.52  2002/09/13 17:50:19  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.51  2002/06/30 13:08:51  rtoy
 ;;; Add some declarations to AINT so that CMUCL can completely inline the
 ;;; call to ftruncate.

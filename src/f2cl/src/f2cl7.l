@@ -44,7 +44,9 @@
      (t (+ (count-go-end (car x))
            (count-go-end (cdr x))))))
 ;-----------------------------------------------------------------------
-(defun labelp (x) (and (symbolp x) (eq 5 (string-lessp "LABEL" (string x)))))
+(defun labelp (x)
+  (and (symbolp x)
+       (eq 5 (string-lessp (symbol-name :label) (string x)))))
 ;------------------------------------------------------------------------
 (defun find-all-labels (x)
   (cond
@@ -97,8 +99,15 @@
 ;;;-----------------------------------------------------------------------
 ;;; end of f2cl7.l
 ;;;
-;;; $Id: f2cl7.l,v 1.5 2000/07/28 17:07:34 rtoy Exp $
+;;; $Id: f2cl7.l,v 1.6 2002/09/13 17:50:19 rtoy Rel $
 ;;; $Log: f2cl7.l,v $
+;;; Revision 1.6  2002/09/13 17:50:19  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.5  2000/07/28 17:07:34  rtoy
 ;;; o We are in the f2cl package now.
 ;;;

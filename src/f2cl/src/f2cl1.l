@@ -40,10 +40,10 @@
 ;; If you change this, you may need to change some of the macros
 ;; below, such as INT and AINT!
 
-#+cmu
+#+(or cmu scl)
 (deftype integer4 ()
   `(signed-byte 32))
-#-cmu
+#-(or cmu scl)
 (deftype integer4 ()
   'fixnum)
 
@@ -326,8 +326,8 @@ FILENAME                 File containing Fortran code
 	       :float-format float-format))
 	(*read-default-float-format* float-format))
     (multiple-value-prog1
-	#+cmu (compile-file lisp-file :output-file output-file :error-file error-file)
-	#-cmu (compile-file lisp-file :output-file output-file)
+	#+(or cmu scl) (compile-file lisp-file :output-file output-file :error-file error-file)
+	#-(or cmu scl) (compile-file lisp-file :output-file output-file)
       (unless keep-lisp-file
 	(delete-file lisp-file)))))
 ;---------------------------------------------------------------------------
@@ -429,7 +429,7 @@ FILENAME                 File containing Fortran code
 ;------------------------------------------------------------------------------
 
 (defun fortran-to-lisp (file ofile &key declaim package options)
-  (let ((*package* (find-package "F2CL"))
+  (let ((*package* (find-package :f2cl))
 	*common_array_dims* *format_stmts*)
     (when *verbose*
       (format t "beginning the main translation ...~%"))
@@ -437,9 +437,9 @@ FILENAME                 File containing Fortran code
       (with-open-file (outport ofile :direction :output 
 			       :if-exists :rename-and-delete)
         (setq *common_array_dims* nil)
-        (do ((char (peek-char nil inport nil 'EOF) 
-                   (peek-char nil inport nil 'EOF)))
-            ((eq char 'EOF) )
+        (do ((char (peek-char nil inport nil 'eof) 
+                   (peek-char nil inport nil 'eof)))
+            ((eq char 'eof) )
           (setq *format_stmts* nil)
 	  (let ((*print-level* nil)
 		(*print-length* nil))
@@ -448,7 +448,7 @@ FILENAME                 File containing Fortran code
 	    ;; Include the options used to compile the file.
 	    (format outport ";;; Compiled by f2cl version ~A~%"
 		    *f2cl-version*)
-	    (let ((*print-case* :downcase)))
+	    (let ((*print-case* :downcase))
 	      ;; Insert in-package and declaim, if needed
 	      (when options
 		(pprint-logical-block (outport options :per-line-prefix ";;; ")
@@ -473,9 +473,55 @@ FILENAME                 File containing Fortran code
 	    (translate-and-write-subprog 
 	     (introduce-continue
 	      (readsubprog-extract-format-stmts inport))
-	     outport)))
-        ))
-    t)
+	     outport))))))
+  t)
+
+;---------------------------------------------------------------------------
+
+(defun single-macro-character (stream char)
+  (declare (ignore stream))
+  (let ((x (intern (string char)))) x))
+
+(defvar *fortran-readtable*
+  (let ((*readtable* (copy-readtable nil)))
+    #+scl
+    (ecase ext:*case-mode*
+      (:upper (setf (readtable-case *readtable*) :upcase))
+      (:lower (setf (readtable-case *readtable*) :downcase)))
+    (flet ((setsyntax (x)
+	     (set-macro-character x #'single-macro-character)))
+      (setsyntax #\,)
+      (setsyntax #\:)
+      (setsyntax #\*)
+      (setsyntax #\=)
+      (setsyntax #\/)
+      (setsyntax #\+)
+      (setsyntax #\-)
+      (setsyntax #\^)
+      (setsyntax #\<)
+      (setsyntax #\>)
+      (setsyntax #\[)
+      (setsyntax #\])
+      (setsyntax #\()
+      (setsyntax #\))
+      (setsyntax #\{)
+      (setsyntax #\})
+      (setsyntax #\!)
+      ;; reserved characters:
+      (setsyntax #\$)
+      (setsyntax #\@) 
+      (setsyntax #\&) 
+      (setsyntax #\~) 
+      (setsyntax #\')
+      (setsyntax #\|)
+      (setsyntax #\`)
+      (setsyntax #\\))
+    *readtable*))
+
+(defmacro with-fortran-syntax (&body body)
+  `(let ((*readtable* *fortran-readtable*))
+     ,@body))
+
 ;-----------------------------------------------------------------------------
 #+nil
 (defun readsubprog-extract-format-stmts (inport)
@@ -493,20 +539,16 @@ FILENAME                 File containing Fortran code
 		(if (integerp label)
 		    label)))
         ;; Make sure we aren't hosed if we break out of this!
-	(unwind-protect
-	     (progn
-	       (set-fortran-read)
-	       ;; read body of a line
-	       (setq input-list (lineread inport))
-	       ;; read newline character
-	       (read-char inport nil 'EOF t)
-
-	       ;;(format t "~% input-list: ~S" input-list)
-	       )
-	  (setlispread))
+	(with-fortran-syntax
+	  ;; read body of a line
+	  (setq input-list (lineread inport))
+	  ;; read newline character
+	  (read-char inport nil 'eof t)
+	  ;; (format t "~% input-list: ~S" input-list)
+	  )
         ;; extract format-stmts
         ;;(format t "extract format-stmts~%")
-	(if (eq (car input-list) 'FORMAT)
+	(if (eq (car input-list) 'format)
 	    (parse-format (brackets-check (concat-operators input-list)))
 	    (push (list *current_label* input-list) output-list))
 	;; Check for end of subprogram
@@ -550,18 +592,14 @@ FILENAME                 File containing Fortran code
 	      (let ((label (read-from-string (coerce margin 'string) nil)))
 		(if (integerp label)
 		    label)))
-      ;; Make sure we aren't hosed if we break out of this!
-      (unwind-protect
-	   (progn
-	     (set-fortran-read)
-	     ;; read body of a line
-	     (setq input-list (lineread inport))
-	     ;; read newline character
-	     (read-char inport nil 'EOF t)
-
-	     ;;(format t "~% input-list: ~S" input-list)
-	     )
-	(setlispread))
+	;; Make sure we aren't hosed if we break out of this!
+	(with-fortran-syntax
+	  ;; read body of a line
+	  (setq input-list (lineread inport))
+	  ;; read newline character
+	  (read-char inport nil 'eof t)
+	  ;;(format t "~% input-list: ~S" input-list)
+	  )
       ;; extract format-stmts
       ;;(format t "extract format-stmts~%")
 	       
@@ -598,16 +636,13 @@ FILENAME                 File containing Fortran code
 	     (setf *current_label* extended-label)
 	     (incf extended-label)
 	     ;; Convert the string format into the appropriate format
-	     (let ((fmt (unwind-protect
-			     (progn
-			       (set-fortran-read)
-			       ;; read body of a line
-			       (lineread (make-string-input-stream (fifth input-list)))
-			       )
-			  (setlispread))))
+	     (let ((fmt (with-fortran-syntax
+			    ;; read body of a line
+			    (lineread (make-string-input-stream
+				       (fifth input-list))))))
 	       (setf input-list `(format ,@fmt))
 	       (parse-format (brackets-check (concat-operators input-list)))))
-	    ((eq (car input-list) 'FORMAT)
+	    ((eq (car input-list) 'format)
 	     (parse-format (brackets-check (concat-operators input-list))))
 	    (t
 	     (push (list *current_label* input-list) output-list)))
@@ -626,7 +661,7 @@ FILENAME                 File containing Fortran code
   loop
   (if (and (member (car next) labels)
            (multiple-do-labelp 
-              (concatenate 'string "LABEL" 
+              (concatenate 'string (symbol-name :label)
                            (princ-to-string (car next))) labels))
       (setq ret (append  (list (list (car next) '(continue)))
                          (list (list nil (second next)))  ret))
@@ -648,7 +683,7 @@ FILENAME                 File containing Fortran code
 ;; to see if this really matters.)
 
 (defun fixup-f2cl-lib (tree)
-  (do-external-symbols (lib-sym "F2CL-LIB")
+  (do-external-symbols (lib-sym :f2cl-lib)
     (setf tree (subst lib-sym lib-sym tree
 		      :test #'(lambda (a b)
 				(and (symbolp a)
@@ -784,8 +819,8 @@ FILENAME                 File containing Fortran code
 (defun translate-label (label)
    (if label 
        (list (read-from-string
-                  (concatenate 'string "label" (princ-to-string label))
-                   nil))
+                  (concatenate 'string (symbol-name :label) (princ-to-string label))
+		  nil))
        nil))
 
 ;------------------------------------------------------------------------------
@@ -946,7 +981,7 @@ FILENAME                 File containing Fortran code
 			  (t
 			   nil)))
 	      (bdname (if name
-			  (intern (concatenate 'string "/BLOCKDATA-" name "/"))
+			  (intern (concatenate 'string (symbol-name '#:/blockdata-) name "/"))
 			  '/blockdata/)))
 	 (setq bindings (id-definition-sub `(subroutine ,bdname)))
 	 (return (parse-subr-definition bindings))))
@@ -1105,12 +1140,12 @@ FILENAME                 File containing Fortran code
 ;goto
 (defun parse-goto (bindings) 
    `((go ,(read-from-string 
-            (concatenate 'string "label" 
+            (concatenate 'string (symbol-name :label)
                  (princ-to-string (variable-value '%label bindings))) 
             nil))) )
 ;------------------------------------------------------------------------------
 (defun make-label (n) 
-  (read-from-string (concatenate 'string "label" (princ-to-string n))))
+  (read-from-string (concatenate 'string (symbol-name :label) (princ-to-string n))))
 
 (defun parse-assgn-goto (x)
  (prog (labels len)
@@ -1138,7 +1173,7 @@ FILENAME                 File containing Fortran code
 	`((computed-goto 
 	   ,(mapcar #'(lambda (l) 
 			(read-from-string 
-			 (concatenate 'string "label" (princ-to-string l))))
+			 (concatenate 'string (symbol-name :label) (princ-to-string l))))
 		    (remove '|,| (second x)))
 	   ,(third x)))
 	`((computed-goto ,(second x))))))
@@ -1151,7 +1186,7 @@ FILENAME                 File containing Fortran code
 	`((computed-goto 
 	   ,(mapcar #'(lambda (l) 
 			(read-from-string 
-			 (concatenate 'string "label" (princ-to-string l))))
+			 (concatenate 'string (symbol-name :label) (princ-to-string l))))
 		    (remove '|,| (third x)))
 	   ,(fourth x)))
 	`((computed-goto ,(caddr x))))))
@@ -1474,7 +1509,8 @@ FILENAME                 File containing Fortran code
 	    ((null args)
 	     (values (nreverse v) (nreverse vnames)))
 	  (let* ((arg (first args))
-		 (var (intern (concatenate 'string "VAR-" (princ-to-string count)))))
+		 (var (intern (concatenate 'string (symbol-name '#:var-)
+					   (princ-to-string count)))))
 	    (push var vnames)
 	    ;; (format t "arg = ~A~%" arg)
 	    ;;(format t "ret-info = ~A~%" (first ret-info))
@@ -1607,7 +1643,7 @@ FILENAME                 File containing Fortran code
 	    (+ ,(third x) ,(if (null step) 1 (id-expression step))))
        ((> ,(third x) ,(id-expression (second limits))) nil)
        ,(read-from-string 
-	 (concatenate 'string "fdo_body_label" 
+	 (concatenate 'string (symbol-name :fdo_body_label)
 		      (princ-to-string (second x))) nil)
        ))))
 
@@ -1633,7 +1669,7 @@ FILENAME                 File containing Fortran code
 (defun parse-if-goto (bindings) 
    `((if ,(id-predicate (variable-value '%pred bindings) )
          (go ,(read-from-string 
-            (concatenate 'string "label" 
+            (concatenate 'string (symbol-name :label)
                  (princ-to-string (variable-value '%label bindings))) nil)))))
 
 (defun parse-if (x)
@@ -1644,15 +1680,15 @@ FILENAME                 File containing Fortran code
           `((arithmetic-if ,(id-predicate (second x)) 
                            (go ,(read-from-string
                                  (concatenate 'string 
-                                              "label" 
+                                              (symbol-name :label)
                                               (princ-to-string (first (cddr x))))))
                            (go ,(read-from-string
                                  (concatenate 'string 
-                                              "label" 
+                                              (symbol-name :label)
                                               (princ-to-string (third (cddr x))))))
                            (go ,(read-from-string
                                  (concatenate 'string 
-                                              "label" 
+                                              (symbol-name :label)
                                               (princ-to-string (fifth (cddr x)))))))))
          ;logical if
          (t `((if ,(id-predicate (second x)) ,@(translate-line (cddr x)))))))
@@ -1708,7 +1744,7 @@ FILENAME                 File containing Fortran code
     (do ((list x (cddr list)))
 	((endp list))
       (let ((varlist (mapcar #'check-reserved-lisp-names (second list)))
-	    (block-name (or (caar list) '%BLANK%)))
+	    (block-name (or (caar list) '%blank%)))
 	;; Check to see if this is another instance.  If so, Fortran
 	;; says these elements are a member of the common block.
 	(multiple-value-bind (val found)
@@ -2172,59 +2208,17 @@ Senac syntax:... | op '| ...|)))
 ; no occurs check !
        (acons variable value bindings)))) 
 
-;---------------------------------------------------------------------------
-(defun setsyntax (x y) 
- (declare (ignore y))
- (set-macro-character x #'single-macro-character))
-
-(defun single-macro-character (stream char)
-  (declare (ignore stream))
-  (let ((x (intern (string char)))) x))
-
-(defun set-fortran-read nil
-  (prog (vcs)
-     (setq vcs 'vsingle-character-symbol)
-     (setsyntax #\, vcs)
-     (setsyntax #\: vcs)
-     (setsyntax #\*  vcs)
-     (setsyntax #\=  vcs)
-     (setsyntax #\/  vcs)
-     (setsyntax #\+  vcs)
-     (setsyntax #\-  vcs)
-     (setsyntax #\^  vcs)
-     (setsyntax #\<  vcs)
-     (setsyntax #\>  vcs)
-     (setsyntax #\[  vcs)
-     (setsyntax #\]  vcs)
-     (setsyntax #\(  vcs)
-     (setsyntax #\)  vcs)
-     (setsyntax #\{  vcs)
-     (setsyntax #\}  vcs)
-     (setsyntax #\!  vcs)
-     ;; reserved characters:
-     (setsyntax #\$  vcs)
-     (setsyntax #\@  vcs) 
-     (setsyntax #\&  vcs) 
-     (setsyntax #\~  vcs) 
-     (setsyntax #\' vcs)
-     (setsyntax #\| vcs)
-     (setsyntax #\` vcs)
-     (setsyntax #\\ vcs)
-     (return t)))
-
-(defun setlispread ()
-  (setq *readtable* (copy-readtable nil)))
 ;-----------------------------------------------------------------------------
 (defun lineread (stream)
   (prog (ans rans next-char)
 loop1 
     (setq ans (cons 
-	       (read-preserving-whitespace stream nil 'EOF nil) ans))
+	       (read-preserving-whitespace stream nil 'eof nil) ans))
 loop2  
-    (setq next-char (peek-char nil stream nil 'EOF nil))
+    (setq next-char (peek-char nil stream nil 'eof nil))
     (cond ((eql next-char #\Space)
-	   (read-char stream nil 'EOF t) (go loop2)))
-    (cond ((member next-char '(#\Newline EOF) :test #'eql)
+	   (read-char stream nil 'eof t) (go loop2)))
+    (cond ((member next-char '(#\Newline eof) :test #'eql)
 	   (setq rans (nreverse ans))
 	   (return rans)))
     (go loop1)))
@@ -2232,12 +2226,12 @@ loop2
 (defun read-six-chars (stream)
 ; (make-array '(6) :element-type 'string-char :initial-contents
     (list
-       (read-char stream nil 'EOF t)
-       (read-char stream nil 'EOF t)
-       (read-char stream nil 'EOF t)
-       (read-char stream nil 'EOF t)
-       (read-char stream nil 'EOF t)
-       (read-char stream nil 'EOF t)))
+       (read-char stream nil 'eof t)
+       (read-char stream nil 'eof t)
+       (read-char stream nil 'eof t)
+       (read-char stream nil 'eof t)
+       (read-char stream nil 'eof t)
+       (read-char stream nil 'eof t)))
 
 ;------------------------------------------------------------------------------	
 
@@ -2377,8 +2371,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.118 2002/07/02 21:33:24 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.119 2002/09/13 17:50:18 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.119  2002/09/13 17:50:18  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.118  2002/07/02 21:33:24  rtoy
 ;;; Always start output on a newline when printing the name of the source
 ;;; and output files.

@@ -124,7 +124,7 @@
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (let ((*package* (find-package "F2CL"))
+      (let ((*package* (find-package :f2cl))
 	    (collected-comments nil))
 	(do ((prev-line nil)
 	     (line (read-line inport nil 'eof)
@@ -202,16 +202,16 @@
 ;--------------------------------------------------------------------------
 (defun write-comment-line (line outport)
  (if *verbose* 
-   (format t "      FORTRAN_COMMENT ~S~%" (string-downcase (subsequence line 1))))
- (format outport "      FORTRAN_COMMENT ~S~%" (string-downcase (subsequence line 1))))
+   (format t "      fortran_comment ~S~%" (string-downcase (subsequence line 1))))
+ (format outport "      fortran_comment ~S~%" (string-downcase (subsequence line 1))))
 
 (defun replace_logl_ops  (line)
    (prog (inport outport char)
      (setq inport (make-string-input-stream line)
            outport (make-string-output-stream))
      loop
-     (setq char (read-char inport nil 'EOF t))
-     (cond ((eql char 'EOF) 
+     (setq char (read-char inport nil 'eof t))
+     (cond ((eql char 'eof) 
             (return (get-output-stream-string outport)))
            ((char= char '#\.) 
             (parse-logl-op inport outport)
@@ -227,15 +227,15 @@
            *inp* (make-string-input-stream line)
            outport (make-string-output-stream))
      loop
-     (setq char (read-char *inp* nil 'EOF t))
-     (cond ((eql char 'EOF) )
+     (setq char (read-char *inp* nil 'eof t))
+     (cond ((eql char 'eof) )
 
            ; check for single quote and pass over all char until next one
            ((char= char '#\')
             (setq prev-char '#\space)
             (write-char '#\" outport)
-            (do ((char (read-char *inp* nil 'EOF t) 
-                       (read-char *inp* nil 'EOF t)))
+            (do ((char (read-char *inp* nil 'eof t) 
+                       (read-char *inp* nil 'eof t)))
                 ((char= char '#\') (write-char '#\" outport))
                 (write-char char outport))
             (go loop))
@@ -260,13 +260,13 @@
     ;; (Don't want PARSE-NUMBER to mangle the spacing.)
     (let ((maybe-line-number (read-six-chars *inp*)))
       (dolist (char maybe-line-number)
-	(when (not (eq char 'EOF))
+	(when (not (eq char 'eof))
 	  (write-char char outport)))
-      (when (member 'EOF maybe-line-number)
+      (when (member 'eof maybe-line-number)
 	(return-from adjust_nrs (get-output-stream-string outport))))
     (loop
-	(let ((char (read-char *inp* nil 'EOF t)))
-	  (cond ((eql char 'EOF)
+	(let ((char (read-char *inp* nil 'eof t)))
+	  (cond ((eql char 'eof)
 		 (return-from adjust_nrs (get-output-stream-string outport)))
 
 		;; check for single quote and pass over all characters
@@ -277,13 +277,13 @@
 		 (setq prev-char #\space)
 		 (write-char #\" outport)
 		 (loop
-		     (setf char (read-char *inp* nil 'EOF t))
+		     (setf char (read-char *inp* nil 'eof t))
 		     (let ((nxt (peek-char nil *inp* nil nil)))
 		       (cond ((and (char= char #\')
 				   (and nxt (char= nxt #\')))
 			      (write-char #\' outport)
 			      ;; Skip over the quote
-			      (read-char *inp* nil 'EOF t))
+			      (read-char *inp* nil 'eof t))
 			     ((char= char #\')
 			      (write-char #\" outport)
 			      (return))
@@ -303,20 +303,20 @@
 
 (defun parse-logl-op (inport outport)
    (prog (str nxt-char logl-op)
-      (setq nxt-char (peek-char nil inport nil 'EOF #+broken-peek-char t))
-      (if (or (member nxt-char `(EOF #\space #\' #\.)) 
+      (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
+      (if (or (member nxt-char `(eof #\space #\' #\.)) 
               (digit-char-p nxt-char))
           (and (write-char '#\. outport)
                (return)))
       (setq str (make-string-output-stream))
       loop
-        (write-char (read-char inport nil 'EOF t) str)
-        (setq nxt-char (peek-char nil inport nil 'EOF #+broken-peek-char t))
-        (if (and (not (eql nxt-char 'EOF)) 
+        (write-char (read-char inport nil 'eof t) str)
+        (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
+        (if (and (not (eql nxt-char 'eof)) 
                       (char/= nxt-char `#\.)) (go loop))
       (cond ((setq str (get-output-stream-string str)
                    logl-op (replace-str str))
-             (read-char inport nil 'EOF t) ; read final dot
+             (read-char inport nil 'eof t) ; read final dot
              (write-char '#\space outport)
              (write logl-op :stream outport) ; write the converted string with spaces
              (write-char '#\space outport))
@@ -326,21 +326,21 @@
 
 ;------------------------------------------------------------------------------
 (defun replace-str (str)
-   (cond ((equalp str "GT")    '>)
-         ((equalp str "GE")    '>=)
-         ((equalp str "EQ")    'equal)
-         ((equalp str "LE")    '<=)
-         ((equalp str "LT")    '<)
-         ((equalp str "NE")    '><)
-         ((equalp str "NOT")   'NOT)
-         ((equalp str "AND")   'AND)
-         ((equalp str "OR")    'OR)
-         ((equalp str "TRUE")  '%TRUE%)
-         ((equalp str "T")     '%TRUE%)
-         ((equalp str "FALSE") '%FALSE%)
-         ((equalp str "F")     '%FALSE%)
-         ((equalp str "EQV")   'logeqv)
-         ((equalp str "NEQV")  'logxor)
+   (cond ((equalp str "gt")    '>)
+         ((equalp str "ge")    '>=)
+         ((equalp str "eq")    'equal)
+         ((equalp str "le")    '<=)
+         ((equalp str "lt")    '<)
+         ((equalp str "ne")    '><)
+         ((equalp str "not")   'not)
+         ((equalp str "and")   'and)
+         ((equalp str "or")    'or)
+         ((equalp str "true")  '%true%)
+         ((equalp str "t")     '%true%)
+         ((equalp str "false") '%false%)
+         ((equalp str "f")     '%false%)
+         ((equalp str "eqv")   'logeqv)
+         ((equalp str "neqv")  'logxor)
          (t nil)))
 ;------------------------------------------------------------------------------
 ;inport
@@ -361,12 +361,12 @@
 	   (return nil))
        (setq str (make-string-output-stream))
        ;; examine first char and peek at second to ascertain this is a number
-       (setq nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
+       (setq nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
        ;; (format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
        (cond ((and (my-digit-char-p char) 
-		   (or (and (not (eql nxt-char 'EOF)) 
+		   (or (and (not (eql nxt-char 'eof)) 
 			    (my-digit-char-p nxt-char))
-		       (member nxt-char '(#\. #\D #\E))))
+		       (member nxt-char '(#\. #\D #\d #\E #\e))))
 	      (write-char char str) )
 	     ((and (or (my-char= char '#\+) (my-char= char '#\-))
 		   (my-char= nxt-char '#\.))
@@ -377,14 +377,14 @@
 	     ((and (my-char= char '#\.) (my-digit-char-p nxt-char))
 	      (write-char '#\0 str) (write-char '#\. str) )
 	     (t (return nil)))
-       ;; parse rest of number;EOF
+       ;; parse rest of number;eof
        loop
-       (setq char (read-char *inp* nil 'EOF t)
-	     nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
-       (when (eql nxt-char 'EOF)
+       (setq char (read-char *inp* nil 'eof t)
+	     nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
+       (when (eql nxt-char 'eof)
 	 (setq nxt-char `#\space))
        ;; (format t "char, nxt-char = ~S ~S~%" char nxt-char)
-       (cond ((eql char 'EOF)
+       (cond ((eql char 'eof)
 	      ;; Assume number is complete.
 	      (write (get-output-stream-string str) :stream outport :escape nil)
 	      (write-char '#\space outport)
@@ -395,7 +395,9 @@
 	     ((and (my-char= char '#\.)
 		   (not (or (my-digit-char-p nxt-char)
 			    (my-char= nxt-char '#\D)
-			    (my-char= nxt-char '#\E))))
+			    (my-char= nxt-char '#\e)
+			    (my-char= nxt-char '#\E)
+			    (my-char= nxt-char '#\e))))
 	      ;; Convert "0." to "0.0"
 	      (write-char '#\. str) (write-char '#\0 str)
 	      (go loop))
@@ -410,16 +412,16 @@
 	      ;; to the number.
 	      (write-char '#\. str) (write-char '#\0 str)
 	      (go loop))
-	     ((char-equal char '#\E)
+	     ((or (char-equal char '#\E) (char-equal char '#\e))
 	      (write-char '#\e str)
-	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'EOF t))
-		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'EOF t)
+	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
+		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
 		     (write-char '#\% str)))
 	      (go loop))
-	     ((char-equal char '#\D) 
+	     ((or (char-equal char '#\D) (char-equal char '#\d))
 	      (write-char '#\d str)
-	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'EOF t))
-		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'EOF t)
+	      (cond ((my-char= nxt-char '#\+) (read-char *inp* nil 'eof t))
+		    ((my-char= nxt-char '#\-) (read-char *inp* nil 'eof t)
 		     (write-char '#\% str)))
 	      (go loop))
 	     ((or (my-char= char '#\-) (my-char= char '#\+))
@@ -432,7 +434,7 @@
 	      (go loop))
 	     (t				;number complete
 	      #+clisp 
-	      (if (equal (peek-char nil *inp* nil 'EOF t) 'EOF)
+	      (if (equal (peek-char nil *inp* nil 'eof t) 'eof)
 		  (setq *inp* (make-string-input-stream (string char)))
 		  (setq *inp* 
 			(make-string-input-stream
@@ -451,11 +453,11 @@
 		  (characterp char2)
 		  (char= char1 char2)))
 	   (skip-spaces ()
-	     (do ((nxt (peek-char nil *inp* nil 'EOF)
-		       (peek-char nil *inp* nil 'EOF)))
+	     (do ((nxt (peek-char nil *inp* nil 'eof)
+		       (peek-char nil *inp* nil 'eof)))
 		 ((not (my-char= nxt #\Space))
 		  nxt)
-	       (read-char *inp* nil 'EOF t))))
+	       (read-char *inp* nil 'eof t))))
     #-clisp(declare (inline my-digit-char-p my-char=))
     (let ((in-number-p nil))
       ;; first check prev-char suitable to precede a number
@@ -467,10 +469,10 @@
 	    ;; is a number.  Don't try to skip over spaces here because
 	    ;; it confuses later stages of the parser.  (In particular,
 	    ;; the Fortran "6.or." gets mangled into the symbol "6OR".)
-	    (nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t)))
+	    (nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t)))
 	;;(format t "prev, char, nxt = ~S ~S ~S~%" prev-char char nxt-char)
 	(cond ((and (my-digit-char-p char) 
-		    (or (and (not (eql nxt-char 'EOF))
+		    (or (and (not (eql nxt-char 'eof))
 			     (my-digit-char-p nxt-char))
 			(member nxt-char '(#\. #\D #\E #\d #\e))))
 	       (write-char char str))
@@ -490,12 +492,12 @@
 	      (t
 	       ;;(format t "parse-number done!?~%")
 	       (return-from parse-number nil)))
-	;; parse rest of number;EOF
+	;; parse rest of number;eof
 	;;(format t "parse rest~%")
 	(loop
 	    (skip-spaces)
-	  (setq char (read-char *inp* nil 'EOF t)
-		nxt-char (peek-char nil *inp* nil 'EOF #+broken-peek-char t))
+	  (setq char (read-char *inp* nil 'eof t)
+		nxt-char (peek-char nil *inp* nil 'eof #+broken-peek-char t))
 	  ;;(format t "    char, nxt-char = ~S ~S~%" char nxt-char)
 	  ;; Skip over spaces if the current character is a part of a number.
 	  (when (and (eql nxt-char #\Space)
@@ -504,13 +506,13 @@
 					  '(#\E #\D #\e #\d)
 					  '(#\E #\D #\- #\+ #\e #\d #\.)))))
 	    (skip-spaces)
-	    (setq nxt-char (peek-char nil *inp* nil 'EOF))
+	    (setq nxt-char (peek-char nil *inp* nil 'eof))
 	    ;;(format t "nxt-char = ~S~%" nxt-char)
 	    )
-	  (when (eql nxt-char 'EOF)
+	  (when (eql nxt-char 'eof)
 	    (setq nxt-char `#\space))
 	  ;;(format t "new char, nxt-char = ~S ~S~%" char nxt-char)
-	  (cond ((eql char 'EOF)
+	  (cond ((eql char 'eof)
 		 ;; Assume number is complete.
 		 (write (get-output-stream-string str) :stream outport :escape nil)
 		 (write-char '#\space outport)
@@ -521,7 +523,9 @@
 		((and (my-char= char '#\.)
 		      (not (or (my-digit-char-p nxt-char)
 			       (my-char= nxt-char '#\D)
-			       (my-char= nxt-char '#\E))))
+			       (my-char= nxt-char '#\d)
+			       (my-char= nxt-char '#\E)
+			       (my-char= nxt-char '#\e))))
 		 ;; Convert "n." to "n.0" if there's no following number.
 
 		 ;;(format t "inserting 0: char, nxt = ~S ~S~%" char nxt-char)
@@ -543,26 +547,26 @@
 		 (setf in-number-p t)
 		 (write-char '#\. str)
 		 (write-char '#\0 str))
-		((or (char-equal char '#\E)
-		     (char-equal char #\D))
+		((or (char-equal char #\E) (char-equal char #\e)
+		     (char-equal char #\D) (char-equal char #\d))
 		 ;;(format t "got exponent ~S~%" char)
 		 (setf in-number-p t)
 		 ;; Process exponent, skip over white space.
 		 (when (my-char= nxt-char #\Space)
 		   (skip-spaces)
-		   (setf nxt-char (peek-char nil *inp* nil 'EOF)))
+		   (setf nxt-char (peek-char nil *inp* nil 'eof)))
 		 ;;(format t " nxt = ~S~%" nxt-char)
 		 (cond ((my-char= nxt-char '#\+)
 			;; Write the exponent char out, read and
 			;; discard the "+" char
 			(write-char char str)
-			(read-char *inp* nil 'EOF t))
+			(read-char *inp* nil 'eof t))
 		       ((my-char= nxt-char '#\-)
 			;; Write the exponent char out, read and
 			;; discard "-" char, and send a "%" out
 			;; instead.
 			(write-char char str)
-			(read-char *inp* nil 'EOF t)
+			(read-char *inp* nil 'eof t)
 			(write-char '#\% str))
 		       ((my-digit-char-p nxt-char)
 			;; Exponent followed by a digit.  Write the
@@ -587,8 +591,8 @@
 		 ;; was read.  Because of skip-spaces above, this CHAR
 		 ;; is not necessarily the last character read anymore.
 		 ;; We have to modify the stream directly now.
-		 (let ((p (peek-char nil *inp* nil 'EOF t)))
-		   (if (equal p 'EOF)
+		 (let ((p (peek-char nil *inp* nil 'eof t)))
+		   (if (equal p 'eof)
 		       (setq *inp* (make-string-input-stream (string char)))
 		       (setq *inp* 
 			     (make-string-input-stream
@@ -601,8 +605,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.34 2002/03/11 17:57:32 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.35 2002/09/13 17:50:19 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.35  2002/09/13 17:50:19  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.34  2002/03/11 17:57:32  rtoy
 ;;; Compute the output temp file name better.  (Was failing for logical
 ;;; pathnames.)

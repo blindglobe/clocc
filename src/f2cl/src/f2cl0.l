@@ -27,62 +27,69 @@
 
 (in-package :common-lisp-user)
 
-(defpackage "F2CL-LIB"
-  (:use "CL")
-  (:documentation "The package holding all symbols used by the Fortran to Lisp library")
-  (:nicknames "FORTRAN-TO-LISP-LIBRARY")
+(defpackage :f2cl-lib
+  (:use :cl)
+  (:documentation "The package holding all symbols used by the fortran to lisp library.")
+  (:nicknames :fortran-to-lisp-library)
   (:export
-   ;; Constants
-   "%FALSE%" "%TRUE%"
-   ;; User-settable runtime options
-   "*CHECK-ARRAY-BOUNDS*"
-   ;; Types
-   "INTEGER4" "INTEGER2" "INTEGER1" "REAL8" "REAL4" "COMPLEX8" "COMPLEX16"
-   "ARRAY-DOUBLE-FLOAT" "ARRAY-SINGLE-FLOAT" "ARRAY-INTEGER4" "ARRAY-STRINGS"
-   "LOGICAL"
-   ;; Macros
-   "FREF" "FSET" "WITH-ARRAY-DATA"
-   "F2CL-INIT-STRING" "FREF-STRING" "FSET-STRING" "F2CL-SET-STRING"
-   "F2CL-//" "FSTRING-/=" "FSTRING-=" "FSTRING->" "FSTRING->=" "FSTRING-<" "FSTRING-<="
-   "FORTRAN_COMMENT" "FDO" "F2CL/" "ARITHMETIC-IF" "COMPUTED-GOTO"
-   "ASSIGNED-GOTO"
-   "FFORMAT"
-   "DATA-IMPLIED-DO"
-   "INT-ADD" "INT-SUB" "INT-MUL"
-   ;; Utilities
-   "ARRAY-SLICE" "ARRAY-INITIALIZE"
-   ;; Intrinsic functions
-   "ABS" "ACOS" "AIMAG" "AINT" "ALOG" "ALOG10" "AMAX0" "AMAX1"
-   "AMIN1" "AMOD" "ANINT" "ASIN" "ATAN" "ATAN2"
-   "CABS" "CEXP" "FCHAR" "CLOG" "CMPLX" "CONJG" "CCOS"
-   "CSIN" "CSQRT" "DABS" "DACOS" "DASIN"
-   "DATAN" "DATAN2" "DBLE" "DCOS" "DCOSH" "DEXP" "DIM"
-   "DINT" "DLOG" "DLOG10" "DMAX1" "DMIN1" "DMOD"
-   "DNINT" "DPROD" "DSIGN" "DSIN" "DSINH" "DSQRT" "DTAN"
-   "DTANH" "FFLOAT" "IABS" "ICHAR" "IDIM" "IDINT"
-   "IDNINT" "IFIX" "INDEX" "INT" "ISIGN" "LE" "LEN"
-   "LGE" "LGT" "FLOG" "LOG10" "LT" "MAX" "MAX0"
-   "MAX1" "MIN0" "MIN1" "NINT" "FREAL"
-   "SIGN" "SNGL" "FSQRT"
-   ;; Other functions
-   "D1MACH" "R1MACH" "I1MACH"
+   ;; constants
+   #:%false% #:%true%
+   ;; user-settable runtime options
+   #:*check-array-bounds*
+   ;; types
+   #:integer4 #:integer2 #:integer1 #:real8 #:real4 #:complex8 #:complex16
+   #:array-double-float #:array-single-float #:array-integer4 #:array-strings
+   #:logical
+   ;; macros
+   #:fref #:fset #:with-array-data
+   #:f2cl-init-string #:fref-string #:fset-string #:f2cl-set-string
+   #:f2cl-// #:fstring-/= #:fstring-= #:fstring-> #:fstring->= #:fstring-< #:fstring-<=
+   #:fortran_comment #:fdo #:f2cl/ #:arithmetic-if #:computed-goto
+   #:assigned-goto
+   #:fformat
+   #:data-implied-do
+   #:int-add #:int-sub #:int-mul
+   ;; utilities
+   #:array-slice #:array-initialize
+   ;; intrinsic functions
+   #:abs #:acos #:aimag #:aint #:alog #:alog10 #:amax0 #:amax1
+   #:amin1 #:amod #:anint #:asin #:atan #:atan2
+   #:cabs #:cexp #:fchar #:clog #:cmplx #:conjg #:ccos
+   #:csin #:csqrt #:dabs #:dacos #:dasin
+   #:datan #:datan2 #:dble #:dcos #:dcosh #:dexp #:dim
+   #:dint #:dlog #:dlog10 #:dmax1 #:dmin1 #:dmod
+   #:dnint #:dprod #:dsign #:dsin #:dsinh #:dsqrt #:dtan
+   #:dtanh #:ffloat #:iabs #:ichar #:idim #:idint
+   #:idnint #:ifix #:index #:int #:isign #:le #:len
+   #:lge #:lgt #:flog #:log10 #:lt #:max #:max0
+   #:max1 #:min0 #:min1 #:nint #:freal
+   #:sign #:sngl #:fsqrt
+   ;; other functions
+   #:d1mach #:r1mach #:i1mach
    ))
 
-(defpackage "FORTRAN-TO-LISP"
-    (:use "CL")
-  (:documentation "The package holding all symbols need by the Fortran to Lisp converter")
-  (:nicknames "F2CL")
+(defpackage :fortran-to-lisp
+    (:use :cl)
+  (:documentation "the package holding all symbols need by the fortran to lisp converter")
+  (:nicknames :f2cl)
   (:export
-   ;; Main routines
-   "F2CL"
-   "F2CL-COMPILE"
+   ;; main routines
+   #:f2cl
+   #:f2cl-compile
    ))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.14 2002/04/18 13:03:29 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.15 2002/09/13 17:50:18 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.15  2002/09/13 17:50:18  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.14  2002/04/18 13:03:29  rtoy
 ;;; Forgot to export I1MACH.
 ;;;

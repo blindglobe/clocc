@@ -1,4 +1,4 @@
-(in-package "MINPACK")
+(in-package :minpack)
 
 (defun run-minpack-tests ()
   (dolist (f '(tlmdif tlmder))

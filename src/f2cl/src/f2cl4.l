@@ -73,8 +73,8 @@
 
 
 ; equality:
-            ((memberq 'EQUAL l)
-             (setq tmplist (list-split-bin 'EQUAL l))
+            ((memberq 'equal l)
+             (setq tmplist (list-split-bin 'equal l))
              (setq lhs (id-expression (car tmplist)))
              (setq rhs (id-expression (cadr tmplist)))
              `(= ,lhs ,rhs))
@@ -110,8 +110,15 @@
 ;;;------------------------------------------------------------------------------
 ;;; end of f2cl4.l
 ;;;
-;;; $Id: f2cl4.l,v 1.4 2000/07/28 17:03:40 rtoy Exp $
+;;; $Id: f2cl4.l,v 1.5 2002/09/13 17:50:19 rtoy Exp $
 ;;; $Log: f2cl4.l,v $
+;;; Revision 1.5  2002/09/13 17:50:19  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.4  2000/07/28 17:03:40  rtoy
 ;;; o We are in the f2cl package now.
 ;;;

@@ -1,3 +1,3 @@
-(defpackage "MINPACK"
-  (:use "COMMON-LISP")
-  (:export "LMDER" "LMDER1" "LMDIF" "LMDIF1"))
+(defpackage :minpack
+  (:use :common-lisp)
+  (:export #:lmder #:lmder1 #:lmdif #:lmdif1))

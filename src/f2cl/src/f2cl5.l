@@ -62,9 +62,9 @@
 )
 
 (defvar *fortran-keywords*
-  '(ASSIGN IF THEN GO TO GOTO CALL CONTINUE DO FDO ELSE ELSEIF RETURN
-    STOP PRINT READ WRITE BACKSPACE CLOSE ENDFILE INQUIRE
-    OPEN REWIND FORMAT AND OR NOT))
+  '(assign if then go to goto call continue do fdo else elseif return
+    stop print read write backspace close endfile inquire
+    open rewind format and or not))
 
 
 
@@ -74,12 +74,12 @@
 	     (typep exprs 'string))
 	 nil)
 	((symbolp exprs)
-	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = EQUAL > < >= <= >< |:|
-				    FREF FREF-STRING F2CL/
-				    FLOG FSQRT FFLOAT FREAL
-				    EXPT
-				    %FALSE% %TRUE%
-				    FUNCALL))
+	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = equal > < >= <= >< |:|
+				    fref fref-string f2cl/
+				    flog fsqrt ffloat freal
+				    expt
+				    %false% %true%
+				    funcall))
 		    (member exprs *fortran-keywords*)
 		    (member exprs *key_params* :key #'car)
 		    (member exprs *external-function-names*)
@@ -88,7 +88,7 @@
 		    (sym-is-fun-name (list exprs))
 		    (sym-is-number-p exprs))
 		nil)
-	       ((eq exprs 'PAUSE)
+	       ((eq exprs 'pause)
 		)
 	       (t
 		(pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
@@ -100,7 +100,7 @@
 	     (mapc #'check_new_vbles (cddr (third exprs)))
 	     (mapc #'check_new_vbles exprs)))
 	(t
-	 (Error "What happened?")))
+	 (error "What happened?")))
   exprs)
 
 ;; This takes a list of individual Lisp declarations and combines them
@@ -347,9 +347,9 @@
 			  (cond (arrayp
 				 (if (subtypep type 'string)
 				     ;; An array of strings
-				     (intern (concatenate 'string "ARRAY-STRINGS"))
+				     (intern (concatenate 'string (symbol-name '#:array-strings)))
 				     ;; Some other type of array
-				     (intern (concatenate 'string "ARRAY-" (string type)))))
+				     (intern (concatenate 'string (symbol-name '#:array-) (string type)))))
 				((subtypep type 'string)
 				 'string)
 				((subtypep type 'integer4)
@@ -673,7 +673,7 @@
 	     (atom expr)
 	     (typep expr 'string))
 	 expr)
-	((member (first expr) '(|>=| |<=| EQUAL |/=| < > =))
+	((member (first expr) '(|>=| |<=| equal |/=| < > =))
 	 ;; If one arguments is a string, replace operation with the
 	 ;; appropriate string operation.
 	 (let ((lhs (get-fun-arg-type (list (second expr))))
@@ -681,7 +681,7 @@
 	   (cond ((or (subtypep lhs 'string)
 		      (subtypep rhs 'string))
 		  (let ((op (intern (concatenate 'string
-						 "FSTRING-"
+						 (symbol-name '#:fstring-)
 						 (symbol-name (first expr))))))
 		    `(,op ,(second expr) ,(third expr))))
 		 (t
@@ -725,7 +725,7 @@
 			  (intern (concatenate 'string
 					       "*"
 					       (symbol-name key)
-					       "-COMMON-BLOCK*"))))
+					       (symbol-name '#:-common-block*)))))
 		     (if (vble-is-array-p var)
 			 (progn
 			   (push `(,accessor-name (,accessor-name ,name)) sym-lets)
@@ -1272,7 +1272,7 @@
 				 (when (member x array-args)
 				   (list (intern (concatenate 'string
 							      (symbol-name x)
-							      "-OFFSET"))
+							      (symbol-name '#:-offset)))
 					 0)))
 			     arglist)))
        ;;(format t "additional args = ~A~%" additional-args)
@@ -1291,7 +1291,7 @@
 	   ((array-offset-name (name)
 	      (intern (concatenate 'string
 				   (symbol-name name)
-				   "-OFFSET")))
+				   (symbol-name '#:-offset))))
 	    (grovel-call (p)
 	      ;;(format t "grovel-call = ~A~%" p)
 	      (let* ((offsets '())
@@ -1381,11 +1381,11 @@
 	   ((array-offset-name (name)
 	      (intern (concatenate 'string
 				   (symbol-name name)
-				   "-%OFFSET%")))
+				   (symbol-name '#:-%offset%))))
 	    (array-data-name (name)
 	      (intern (concatenate 'string
 				   (symbol-name name)
-				   "-%DATA%")))
+				   (symbol-name '#:-%data%))))
 	    (grovel-frefs (p)
 	      (cond ((or (atom p) (null p))
 		     p)
@@ -1499,7 +1499,8 @@
 	;; Handle entry points.
 	(let* ((defun (if *entry-points* 'labels 'defun))
 	       (defun-name (if *entry-points*
-			       (intern (concatenate 'string "MULTI-ENTRY-" (string (cadr defun-bit))))
+			       (intern (concatenate 'string (symbol-name '#:multi-entry-)
+						    (string (cadr defun-bit))))
 			       (cadr defun-bit)))
 	       (defun-stuff (if *entry-points*
 				`(,defun ((,defun-name (%name% ,@arglist)
@@ -1582,7 +1583,7 @@
 	       decl1
 	     ;; Remember that we have done this already
 	     (pushnew vble *vble-declaration-done*)
-	     (if (eq (car decl1) 'ARRAY)
+	     (if (eq (car decl1) 'array)
 		 `(,vble_name ,(make_make-array_stmt (cdadr decl1)
 						     (car decl2)
 						     init-val vble_name))
@@ -1607,11 +1608,11 @@
 	   ;;(format t "type-clauses = ~S~%" type-clauses)
 	   ;;(format t "looping: type = ~A~%" type)
 	   (cond ((and (listp type)
-		       (eq (car type) 'CHARACTER))
+		       (eq (car type) 'character))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return `(,vble_name ,
 				(make-char-init (car decl) type)))))
-		 ((eq type 'ARRAY)
+		 ((eq type 'array)
 		  ;;(format t "array type-clauses = ~S~%" (cdar type-clauses))
 		  ;;(format t "array decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
@@ -1622,7 +1623,7 @@
 			    (get_array_type (caar decl) nil)
 			    init-val
 			    vble_name)))))
-		 ((eq type 'LOGICAL)
+		 ((eq type 'logical)
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return
 			(if (cdar decl) 
@@ -1787,10 +1788,10 @@
 	  ((null type-clauses) )
 	(setq type (caar type-clauses))
 	(cond ((and (listp type)
-		    (eq (car type) 'CHARACTER))
+		    (eq (car type) 'character))
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return (make-char-decl (car decl) type))))
-	      ((eq type 'ARRAY)
+	      ((eq type 'array)
 	       (when (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return `(declare (type (,*array-type*
 					    ,(get_array_type (caar decl) 
@@ -1799,7 +1800,7 @@
 					    )
 				      ,vble_name)))
 		   ))
-	      ((eq type 'LOGICAL)
+	      ((eq type 'logical)
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
@@ -1819,7 +1820,7 @@
      ;; here?  I'm taking it out.)
      ((and #+nil (not vble-is-formal-arg)
 	   (setq type (get-implicit-type vble)))
-      (if (and (listp type) (eq (car type) 'CHARACTER))
+      (if (and (listp type) (eq (car type) 'character))
 	  (make-char-decl (list vble_name) type)
 	  (progn
 	    (when (eq type :none)
@@ -1918,8 +1919,8 @@
 	      'single-float)))))
 
 (defun default-int-p (vble)
-   (and (string>= (string vble) "I")
-        (string< (string vble) "O")))
+   (and (string>= (string vble) (symbol-name :i))
+        (string< (string vble) (symbol-name :o))))
 
 ;; Test whether or not a given symbol has been defined as an array.
 (defun vble-is-array-p (v)
@@ -1965,7 +1966,7 @@
       ;; m.mmmD%xx Make sure the character before "%" is D or E, and
       ;; then make sure that the stuff before the exponent and after
       ;; the "%" is a valid number.
-      (and (member (aref s (1- neg)) '(#\d #\e) :test #'char-equal)
+      (and (member (aref s (1- neg)) '(#\d #\D #\e #\E) :test #'char-equal)
 	   (numberp (read-from-string (subseq s 0 (1- neg))))
 	   (numberp (read-from-string (subseq s (1+ neg))))))))
       
@@ -2059,9 +2060,9 @@
 
 ; given (go labelx) does it match with current fdo_body_labely
 (defun label-matches-dolabel-p (label do_label)
-   (and (eq 5 (string-lessp "LABEL" (string label)))
-        (equal (string-left-trim "LABEL" label)
-               (string-left-trim "FDO_BODY_LABEL" do_label))))
+   (and (eq 5 (string-lessp (symbol-name :label) (string label)))
+        (equal (string-left-trim (symbol-name :label) label)
+               (string-left-trim (symbol-name :fdo_body_label) do_label))))
 
 ;------------------------------------------------------------------------------
 
@@ -2119,11 +2120,13 @@
 	  (t (setq subclause (car exprs)
 		   exprs (cdr exprs))))))
 
-(defun remove-prefix (x) (string-left-trim "FDO_BODY_" x))
+(defun remove-prefix (x) (string-left-trim (symbol-name '#:fdo_body_) x))
 
 (defun multiple-do-labelp (labelnnn labels)
- (< 1 (length (remove-if-not #'(lambda (x) (label-matches-dolabel-p labelnnn 
-          (princ-to-string x))) labels))))
+  (< 1 (length (remove-if-not #'(lambda (x)
+				  (label-matches-dolabel-p labelnnn 
+							   (princ-to-string x)))
+			      labels))))
 
 ;------------------------------------------------------------------------------
 
@@ -2302,7 +2305,7 @@
 		   (list (car dl)))
 		  ((listp (car dl))
 		   ;; Repeat group forever, as signaled by the rep factor of T.
-		   (append  '(T) (list (parse-format1 (car dl) nil))))
+		   (append  '(t) (list (parse-format1 (car dl) nil))))
 		  ((and (numberp (car dl))
 			(listp (cadr dl)))
 		   ;; Repetition of a group
@@ -2321,8 +2324,9 @@
 
 ;--------------------------------------------------------------------------------
 
-; given a symbol e.g I4 or P2G10.4E2 this function seperates it into numbers and
-; symbols eg (#\I 4) or (#\P 2 #\G 10 4 #\E 2)
+;;; Given a symbol e.g I4 or P2G10.4E2 this function seperates it into
+;;; numbers and symbols eg (#\I 4) or (#\P 2 #\G 10 4 #\E 2).  The characters
+;;; are converted to upper case.
 
 (defun destruct-descriptor-list (x)
   (let (descriptor-list char atm)
@@ -2347,15 +2351,15 @@
 	     (read-char x)
 	     (setq atm nil))
 	    (t
-	     (setq atm (read-char x))))
+	     (setq atm (char-upcase (read-char x)))))
       (when atm
 	(setq descriptor-list (cons atm descriptor-list))))))
 
 (defun read-number-from-stream (x)
    (prog ((number-str "") char)
      loop
-   (setq char (peek-char nil x nil 'EOF nil))
-   (if (equal char 'EOF) (return (values (read-from-string number-str) x)))
+   (setq char (peek-char nil x nil 'eof nil))
+   (if (equal char 'eof) (return (values (read-from-string number-str) x)))
    (if (or (digit-char-p char) (member char '(#\+ #\-)))
        (setq number-str (concatenate `string number-str (string (read-char x))))
        (return (values (read-from-string number-str) x)))
@@ -2671,9 +2675,9 @@
 		 ;; is an array, the following tiem in varlist gives
 		 ;; the dimensions of the array.
 		 (push `(defstruct (,key (:predicate ,(intern (concatenate 'string
-									   "IS-"
+									   (symbol-name '#:is-)
 									   (symbol-name key)
-									   "-P"))))
+									   (symbol-name '#:-p)))))
 			 ,@(make-common-block-vars varlist common_var_decls))
 		       res))
 	     *common-blocks*)
@@ -2713,7 +2717,7 @@
 				(coerce 0 var-type)))))
 	  (when (and dims var-init)
 	    (setf initializer (append initializer
-				      `(,(intern (symbol-name var) "KEYWORD") ,var-init))))))
+				      `(,(intern (symbol-name var) :keyword) ,var-init))))))
       initializer)))
 
 ;; This assigns the common block structure to a global variable.  The
@@ -2734,9 +2738,9 @@
 		 (defparameter ,(intern (concatenate 'string
 						     "*"
 						     (symbol-name key)
-						     "-COMMON-BLOCK*"))
+						     (symbol-name '#:-common-block*)))
 		   (,(intern (concatenate 'string
-					  "MAKE-"
+					  (symbol-name '#:make-)
 					  (symbol-name key)))
 		     ,@(make-common-block-var-init val comm-decls))))
 	       var-inits))
@@ -2745,8 +2749,15 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.105 2002/05/05 21:10:10 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.106 2002/09/13 17:50:19 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.106  2002/09/13 17:50:19  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.105  2002/05/05 21:10:10  rtoy
 ;;; Comment out extraneous print.
 ;;;

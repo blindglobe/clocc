@@ -1,8 +1,15 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.8 2002/07/02 22:14:09 rtoy Exp $
+;;; $Id: minpack.system,v 1.9 2002/09/13 17:50:18 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.9  2002/09/13 17:50:18  rtoy
+;;; From Douglas Crosher:
+;;;
+;;; o Make this work with lower-case Lisps
+;;; o Fix a few typos
+;;; o Make a safer fortran reader.
+;;;
 ;;; Revision 1.8  2002/07/02 22:14:09  rtoy
 ;;; o Add component for run-minpack-tests
 ;;; o The tests are in the MINPACK package, not MINPACK-TESTS package.
@@ -52,14 +59,14 @@
      (:module "minpack"
 	      :source-pathname ""
 	      :source-extension "f"
-	      :package "MINPACK"
+	      :package :minpack
 	      :language :f2cl
 	      :compiler-options (:include-comments t
 				 :keep-lisp-file t
 				 :relaxed-array-decls nil
 				 :array-type :array
 				 :array-slicing t
-				 :package "MINPACK")
+				 :package :minpack)
 	      :components
 	      (
 	       (:file "dpmpar")
@@ -90,20 +97,20 @@
     :components
     ((:module "main"
 	      :source-pathname ""
-	      :package "MINPACK"
+	      :package :minpack
 	      :components
 	      ((:file "run-minpack-tests")))
      (:module "tests"
 	      :source-pathname ""
 	      :source-extension "f"
-	      :package "MINPACK"
+	      :package :minpack
 	      :language :f2cl
 	      :compiler-options (:include-comments t
 				 :keep-lisp-file t
 				 :relaxed-array-decls nil
 				 :array-type :array
 				 :array-slicing t
-				 :package "MINPACK"
+				 :package :minpack
 				 :declare-common t)
 	      :components
 	      ((:file "tst-lmdif")

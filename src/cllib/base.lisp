@@ -1,4 +1,4 @@
-;;; File: <base.lisp - 1999-04-18 Sun 01:09:28 EDT sds@eho.eaglets.com>
+;;; File: <base.lisp - 1999-04-19 Mon 19:49:19 EDT sds@eho.eaglets.com>
 ;;;
 ;;; Basis functionality, required everywhere
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: base.lisp,v 1.17 1999/04/18 05:10:33 sds Exp $
+;;; $Id: base.lisp,v 1.18 1999/04/20 01:10:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 ;;; $Log: base.lisp,v $
+;;; Revision 1.18  1999/04/20 01:10:51  sds
+;;; Handle the new file card.lisp.
+;;;
 ;;; Revision 1.17  1999/04/18 05:10:33  sds
 ;;; Shut up CMUCL GC.
 ;;;
@@ -311,7 +314,8 @@ This function takes care of that."
   (declare (simple-string mo))
   (setf (gethash mo *require-table*)
         (merge-pathnames (concatenate 'string mo ".lisp") *source-dir*)))
-(dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests" "elisp"))
+(dolist (mo '("gq" "url" "rpm" "geo" "animals" "h2lisp" "clhs" "tests" "elisp"
+              "card"))
   (declare (simple-string mo))
   (setf (gethash mo *require-table*)
         (merge-pathnames (concatenate 'string mo ".lisp") *lisp-dir*)))
@@ -369,6 +373,7 @@ This function takes care of that."
     ("url" "base" "util" "date") ("geo" "base" "url")
     ("gq" "base" "url" "date") ("rpm" "base" "url" "date")
     ("h2lisp" "base" "url") #+nil ("clhs" "base" "url")
+    ("card" "base" "print" "date" "url")
     ("elisp" "base" "list") ("tests" "base" "date" "url" "rpm" "elisp"))
   "*The alist of files to work with, in the order of loading.
 Key: name for `sds-require', value - the list of dependencies.")

@@ -1,4 +1,4 @@
-;;; File: <date.lisp - 1999-03-02 Tue 13:15:30 EST sds@eho.eaglets.com>
+;;; File: <date.lisp - 1999-03-20 Sat 17:43:17 EST sds@eho.eaglets.com>
 ;;;
 ;;; Date-related structures
 ;;;
@@ -9,9 +9,12 @@
 ;;; conditions with the source code. See <URL:http://www.gnu.org>
 ;;; for details and precise copyright document.
 ;;;
-;;; $Id: date.lisp,v 1.32 1999/03/02 18:16:57 sds Exp $
+;;; $Id: date.lisp,v 1.33 1999/03/20 22:43:30 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 ;;; $Log: date.lisp,v $
+;;; Revision 1.33  1999/03/20 22:43:30  sds
+;;; Added `+unix-epoch+' and `unix-date'.
+;;;
 ;;; Revision 1.32  1999/03/02 18:16:57  sds
 ;;; Added `dl-last-date'.  Fixed `dl-next-chg'.
 ;;; Remove the first list when it is too short in `(setf dl-overlap)'.
@@ -146,7 +149,7 @@
 ;; properly init DD.
 ;; Unfortunately, this would mean that we will have to define our own
 ;; print/read procedures.  While the former is doable, the latter would
-;; apparently require make-load-form, which is missing from CLISP.
+;; apparently require `make-load-form', which is missing from CLISP.
 
 (defstruct (date #+cmu (:print-function print-struct-object))
   "The date structure -- year, month, and day."
@@ -248,6 +251,14 @@ Returns the number of seconds since the epoch (1900-01-01)."
      (cond ((< -24 obj 24) obj)
            ((multiple-value-bind (ho mi) (floor obj 100)
               (+ ho (/ mi 60))))))))
+
+(defcustom +unix-epoch+ integer (encode-universal-time 0 0 0 1 1 1970 0)
+  "The start of the UNIX epoch - 1970-01-01.")
+
+(defun unix-date (nn)
+  "Convert UNIX time_t number to date."
+  (declare (type (unsigned-byte 32) nn) (values date))
+  (time2date (+ nn +unix-epoch+)))
 
 (defun dttm->string (dttm &optional old)
   "Print the date/time as returned by `encode-universal-time'."
@@ -636,6 +647,8 @@ previous record when SKIP is non-nil and nil otherwise.
   (cp nil :type list))          ; the current position (sublist of (cdar cl))
 )
 
+(defmethod code ((dl dated-list)) (dated-list-code dl))
+
 (defconst +bad-dl+ dated-list (make-dated-list)
   "*The convenient constant for init.")
 
@@ -706,10 +719,6 @@ previous record when SKIP is non-nil and nil otherwise.
   (declare (type dated-list dl))
   (and (endp (dl-ll dl)) (endp (cdr (dated-list-cl dl)))))
 
-(defsubst dl-code (dl)
-  "Get the code of the dated list."
-  (if (dated-list-p dl) (dated-list-code dl) dl))
-
 (defun dl-nth (dl &optional (nn 0))
   "Return the Nth record of the dated list.
 Optional second arg defaults to 0. If it is negative, count from the end,
@@ -749,13 +758,14 @@ so that -1 corresponds to the last record."
 
 (defmethod print-object ((dl dated-list) (stream stream))
   (if *print-readably* (call-next-method)
-      (let ((fl (dated-list-fl dl)) (dd (dl-date dl))
-            (cc (car (dated-list-cp dl))))
+      (let* ((fl (dated-list-fl dl)) (dd (dl-date dl))
+             (lr (car (last (cdar (last fl))))) (fr (cadar fl))
+             (cc (car (dated-list-cp dl))))
         (format stream "~:d/~d ~a [~:@(~a~)] [~a -- ~a] [~a/~a]"
                 (dl-full-len dl) (length fl) (dated-list-name dl)
-                (dated-list-code dl) (if fl (funcall dd (cadar fl)) nil)
-                (if fl (funcall dd (car (last (car (last fl))))) nil)
-                (caar (dated-list-cl dl)) (and cc (funcall dd cc))))))
+                (dated-list-code dl) (and fr (funcall dd fr))
+                (and lr (funcall dd lr)) (caar (dated-list-cl dl))
+                (and cc (funcall dd cc))))))
 
 (defmethod describe-object ((dl dated-list) (stream stream))
   (let ((f (dated-list-fl dl)) (c (dated-list-cl dl)) (p (dated-list-cp dl)))
@@ -767,6 +777,42 @@ so that -1 corresponds to the last record."
       (format stream " * ~a (~d)~%   ~a~%   ~a~%" (car f1) (length f1)
               (cadr f1) (car (last f1))))
     (format stream "cl: ~a~%cp: ~a~%" (caar c) (car p))))
+
+(defmacro with-saved-dl (dl &body body)
+  "Save FL, CL, CP, do BODY, restore FL, CL, CP."
+  (let ((fl (gensym "WSDL")) (cl (gensym "WSDL"))
+        (cp (gensym "WSDL")) (ll (gensym "WSDL")))
+    `(let* ((,ll ,dl) (,fl (dated-list-fl ,ll))
+            (,cl (dated-list-cl ,ll)) (,cp (dated-list-cp ,ll)))
+      (unwind-protect (progn ,@body)
+        (setf (dated-list-fl ,ll) ,fl (dated-list-cl ,ll) ,cl
+              (dated-list-cp ,ll) ,cp)))))
+
+(defmacro with-truncated-dl ((dt dl) &body body)
+  "Evaluate BODY when DL is truncated by the date DT."
+  (let ((ta (gensym "WTDL")) (ll (gensym "WTDL")) (cp (gensym "WTDL")))
+    `(let ((,ll ,dl))
+      (with-saved-dl ,ll
+        (dl-shift ,ll ,dt)
+        (let* ((,cp (dated-list-cp ,ll)) (,ta (cdr ,cp)))
+          (unwind-protect (progn (when ,cp (setf (cdr ,cp) nil)) ,@body)
+            (when ,cp (setf (cdr ,cp) ,ta))))))))
+
+(defmacro with-saved-dls ((&rest dls) &body body)
+  "Save several dated lists, line nested `with-saved-dl'."
+  (let* ((nn (length dls))
+         (ll (map-into (make-list nn) #'gensym))
+         (fl (map-into (make-list nn) #'gensym))
+         (cl (map-into (make-list nn) #'gensym))
+         (cp (map-into (make-list nn) #'gensym)))
+    `(let* (,@(mapcar #'list ll dls)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-fl ,dd))) fl ll)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cl ,dd))) cl ll)
+            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cp ,dd))) cp ll))
+      (unwind-protect (progn ,@body)
+        (setf ,@(mapcan (lambda (sy dd) `((dated-list-fl ,dd) ,sy)) fl ll)
+              ,@(mapcan (lambda (sy dd) `((dated-list-cl ,dd) ,sy)) cl ll)
+              ,@(mapcan (lambda (sy dd) `((dated-list-cp ,dd) ,sy)) cp ll))))))
 
 (defun rollover (list &optional (datef #'date))
   "Return the rollover date for the list."
@@ -780,8 +826,8 @@ No side effects.  Returns CP and CL for `dl-shift'."
   (declare (type dated-list dl) (type (or null date) dt) (values list))
   (if (null dt) (dl-ll dl)
       (do ((dd (dl-date dl)) (ls (dated-list-cl dl) (cdr ls)))
-          ((date<= dt (rollover (car ls) dd))
-           (values (date-in-list dt (cdar ls) dd last) ls))
+          ((or (null (cdar ls)) (date<= dt (rollover (car ls) dd)))
+           (values (and (cdar ls) (date-in-list dt (cdar ls) dd last)) ls))
         (declare (type date-f-t dd)))))
 
 (defun dl-double-date-p (dt dl)
@@ -1061,42 +1107,6 @@ Must not assume that the list is properly ordered!"
   "Apply `weighted-mean' to the dated list."
   (declare (type dated-list dl))
   (weighted-mean (dl-ll dl) wts :key (dl-slot dl slot)))
-
-(defmacro with-saved-dl (dl &body body)
-  "Save FL, CL, CP, do BODY, restore FL, CL, CP."
-  (let ((fl (gensym "WSDL")) (cl (gensym "WSDL"))
-        (cp (gensym "WSDL")) (ll (gensym "WSDL")))
-    `(let* ((,ll ,dl) (,fl (dated-list-fl ,ll))
-            (,cl (dated-list-cl ,ll)) (,cp (dated-list-cp ,ll)))
-      (unwind-protect (progn ,@body)
-        (setf (dated-list-fl ,ll) ,fl (dated-list-cl ,ll) ,cl
-              (dated-list-cp ,ll) ,cp)))))
-
-(defmacro with-truncated-dl ((dt dl) &body body)
-  "Evaluate BODY when DL is truncated by the date DT."
-  (let ((ta (gensym "WTDL")) (ll (gensym "WTDL")) (cp (gensym "WTDL")))
-    `(let ((,ll ,dl))
-      (with-saved-dl ,ll
-        (dl-shift ,ll ,dt)
-        (let* ((,cp (dated-list-cp ,ll)) (,ta (cdr ,cp)))
-          (unwind-protect (progn (when ,cp (setf (cdr ,cp) nil)) ,@body)
-            (when ,cp (setf (cdr ,cp) ,ta))))))))
-
-(defmacro with-saved-dls ((&rest dls) &body body)
-  "Save several dated lists, line nested `with-saved-dl'."
-  (let* ((nn (length dls))
-         (ll (map-into (make-list nn) #'gensym))
-         (fl (map-into (make-list nn) #'gensym))
-         (cl (map-into (make-list nn) #'gensym))
-         (cp (map-into (make-list nn) #'gensym)))
-    `(let* (,@(mapcar #'list ll dls)
-            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-fl ,dd))) fl ll)
-            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cl ,dd))) cl ll)
-            ,@(mapcar (lambda (sy dd) `(,sy (dated-list-cp ,dd))) cp ll))
-      (unwind-protect (progn ,@body)
-        (setf ,@(mapcan (lambda (sy dd) `((dated-list-fl ,dd) ,sy)) fl ll)
-              ,@(mapcan (lambda (sy dd) `((dated-list-cl ,dd) ,sy)) cl ll)
-              ,@(mapcan (lambda (sy dd) `((dated-list-cp ,dd) ,sy)) cp ll))))))
 
 ;;;
 ;;; Change

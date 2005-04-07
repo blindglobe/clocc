@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.8 2005/04/06 16:43:38 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.9 2005/04/07 03:02:19 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -146,7 +146,7 @@ funktion
 		    :ask-ask :ask-once :ask-every))
 	  (cond ((not (eq v fload-compile-flag*))
 		 (format *error-output*
-		    !"Change of fload-compile* from ~s to ~s triggers ~
+		    !"Change of fload-compile* from ~s to ~s ~% triggers ~
                       file-chunk rescan~%"
 		    fload-compile-flag* v)
 		 (setq fload-compile-flag* v)

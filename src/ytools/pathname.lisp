@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.12 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.13 2005/04/07 03:02:19 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -572,9 +572,9 @@
 		     specl))))
 
 ;;; Returns <pathnames, new-default, remainder>
-;;; where 'pathnames' are (possibly Pseudo-) pathnames extracted from 'operands',
-;;; and 'remainder' is a list of everything after the last element of 'operands'
-;;; that 'sym' was interested in.
+;;; where 'pathnames' are (possibly Pseudo-) pathnames extracted from
+;;; 'operands', and 'remainder' is a list of everything after the last
+;;; element of 'operands' that 'sym' was interested in.
 ;;; If 'new-default' is false, that means reset to blank pathname.
 ;;; 'default' is pathname from stuff to the left of the logical name.
 ;;; 'new-default' is the new default to pass on to the right.

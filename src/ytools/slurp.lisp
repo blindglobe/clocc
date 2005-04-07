@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.26 2005/03/28 03:23:56 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.27 2005/04/07 03:02:19 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -623,7 +623,7 @@ after YTools file transducers finish.")
 	   (t
 	    (on-list (car fl) eval-forms)))))
 
-;;; This has no effect when evaluated.  I
+;;; This has no effect when evaluated.
 (defmacro :slurp-filter (&whole e &rest _)
    `',e)
 
@@ -635,6 +635,11 @@ after YTools file transducers finish.")
 (defun slurp-eval (e _)
    (eval e)
    false)
+
+(datafun general-slurper in-package
+   (defun :^ (form tasks states)
+      (eval form)
+      (values tasks states)))
 
 ;;; For use by slurp tasks 
 (defun slurp-ignore (_ _) false)

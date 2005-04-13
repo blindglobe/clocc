@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.9 2005/04/07 03:02:19 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.10 2005/04/13 20:52:34 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -206,34 +206,35 @@ funktion
 (defvar postponed-file-chunks* !())
 
 (defun loaded-chunk-fload (loaded-chunk force-load postpone-derivees)
-      (monitor-filoid-basis loaded-chunk)
-      (loaded-chunk-set-basis loaded-chunk)
-      (chunk-request-mgt loaded-chunk)
-      (let ((d (Chunk-date loaded-chunk)))
-;;;;	 (format t "Updating ~s~%"
-;;;;		 loaded-chunk)
-	 (cond ((eq force-load ':compile)
-		(let ((src-file-chunk
-		         (Loaded-file-chunk-source loaded-chunk)))
-		   (cond (src-file-chunk
-			  (filoid-fcompl
-			     (Code-file-chunk-pathname src-file-chunk)
-			     :force-compile true
-			     :load false
-			     :postpone-derivees postpone-derivees))
-			 (t
-			  (format *error-output*
-			     "Ignoring request to compile ~s;~% there is no source file"
-			     loaded-chunk))))))
-	 (file-ops-maybe-postpone
-	    (chunk-update loaded-chunk false postpone-derivees))
-	 (cond ((and force-load
-		     (= (Chunk-date loaded-chunk)
-			d))
-		;; It was apparently already up to date,
-		;; so forcing makes sense
-		(loaded-chunk-force
-		   loaded-chunk force-load)))))
+   (cond ((eq force-load ':compile)
+	  ;; Treat (fload -c <file>) as = (fcompl -f -l <file>)
+	  (let ((src-file-chunk
+		   (Loaded-file-chunk-source loaded-chunk)))
+	     (cond (src-file-chunk
+		    (filoid-fcompl
+		       (Code-file-chunk-pathname src-file-chunk)
+		       :force-compile true
+		       :load true
+		       :postpone-derivees postpone-derivees))
+		   (t
+		    (format *error-output*
+		       !"Ignoring request to compile ~s;~
+                         ~% there is no source file"
+		       loaded-chunk)))))
+	 (t
+	  (monitor-filoid-basis loaded-chunk)
+	  (loaded-chunk-set-basis loaded-chunk)
+	  (chunk-request-mgt loaded-chunk)
+	  (let ((d (Chunk-date loaded-chunk)))
+	     (file-ops-maybe-postpone
+		(chunk-update loaded-chunk false postpone-derivees))
+	     (cond ((and force-load
+			 (= (Chunk-date loaded-chunk)
+			    d))
+		    ;; It was apparently already up to date,
+		    ;; so forcing makes sense
+		    (loaded-chunk-force
+		       loaded-chunk force-load)))))))
 
 (defgeneric loaded-chunk-force (loaded-chunk force))
 
@@ -377,7 +378,9 @@ funktion
                            ask again next;~%~
                            type 'd' or 'defer' to use value of ~
                            'fload-compile* to decide each time.~%"
-			  manip old-manip))))))))
+			  manip old-manip)))))
+	       (t
+		(format *query-io* "[~s]~%" old-manip)))))
   manip)
 
 (defun ask-if-generalize (manip)

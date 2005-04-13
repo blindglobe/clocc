@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.46 2005/04/06 16:43:37 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.47 2005/04/13 20:52:34 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -42,28 +42,30 @@
 ;; These two ensure that 'alt-version' is the inverse of 'alt-version-of'.
 ;; The first also makes sure no cycle of 'alt-version' links is created.
 (defmethod (setf Code-chunk-alt-version) :before (new-v code-ch)
-   (labels ((check-for-cycle (ch)
-	       (cond ((eq ch code-ch)
-		      (error !"About to create a cycle of alt-version ~
-                               pointers from ~s to ~s and around"
-			     new-v code-ch))
-		     ((Code-chunk-alt-version ch)
-		      (check-for-cycle (Code-chunk-alt-version ch)))
-		     (t nil))))
-     (check-for-cycle new-v))
-   (let ((current-version (Code-chunk-alt-version code-ch)))
-      (cond (current-version
-	     (setf (Code-chunk-alt-version-of current-version)
-		   (remove code-ch (Code-chunk-alt-version-of
-				      current-version)))))))
+   (cond (new-v
+	  (labels ((check-for-cycle (ch)
+		      (cond ((eq ch code-ch)
+			     (error !"About to create a cycle of alt-version ~
+				      pointers from ~s to ~s and around"
+				    new-v code-ch))
+			    ((Code-chunk-alt-version ch)
+			     (check-for-cycle (Code-chunk-alt-version ch)))
+			    (t nil))))
+	    (check-for-cycle new-v))
+	  (let ((current-version (Code-chunk-alt-version code-ch)))
+	     (cond (current-version
+		    (setf (Code-chunk-alt-version-of current-version)
+			  (remove code-ch (Code-chunk-alt-version-of
+					     current-version)))))))))
 
 (defgeneric Code-chunk-pathname (cp)
    (:method ((x Code-chunk))
        false))
 
 (defmethod (setf Code-chunk-alt-version) :after (new-v code-ch)
-      (setf (Code-chunk-alt-version-of new-v)
-	    (adjoin code-ch (Code-chunk-alt-version-of new-v))))
+   (cond (new-v
+	  (setf (Code-chunk-alt-version-of new-v)
+		(adjoin code-ch (Code-chunk-alt-version-of new-v))))))
 
 ;;; The name of a Code-file-chunk is always its yt-pathname if non-nil,
 ;;; else its pathname.

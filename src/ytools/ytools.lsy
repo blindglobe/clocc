@@ -164,4 +164,6 @@
    (setq *readtable* ytools-readtable*)
    (in-package :ytools))
 
+(pushnew ':pre-chunk *features*)
+
 (defconstant +ytools-version+ "1.4.9")

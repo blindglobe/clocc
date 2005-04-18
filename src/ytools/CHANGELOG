@@ -1,5 +1,12 @@
-$Id: CHANGELOG,v 1.31.2.13 2005/04/18 01:25:15 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.14 2005/04/18 01:44:17 airfoyle Exp $
 	
+2005-04-17: Eliminated double-compilation bug in (fload -c ...).
+            Suppressed annoying message about chunk times differing by
+            1 second.  Fixed bug preventing proper reset of basis by
+            'loaded-chunk-set-basis'.  Made sure scan-depends-on is
+            preceded by reset of bases of all relevant
+            chunks. (Version 2.0.03)
+
 2005-04-16: Eliminated bug in logic in 'loaded-chunk-set-basis'.
             (Version 2.0.02)
 

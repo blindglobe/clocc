@@ -211,4 +211,4 @@
    (setq *readtable* ytools-readtable*)
    (in-package :ytools))
 
-(defconstant +ytools-version+ "2.0.02")
+(defconstant +ytools-version+ "2.0.03")

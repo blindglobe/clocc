@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.47 2005/04/13 20:52:34 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.48 2005/04/18 01:25:16 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -634,7 +634,8 @@
 			 (Loaded-file-chunk-source loaded-ch)))
 		     (:object
 		      (Loaded-file-chunk-object loaded-ch)))))
-      (cond ((loaded-chunk-bases-in-harmony loaded-ch)
+;;;;      (out (:to *error-output*) "callee-chunks = " callee-chunks :%)
+      (cond ((loaded-chunk-bases-in-harmony loaded-ch callee-chunks)
 	     (loaded-chunk-change-basis
 		 loaded-ch 
 		 callee-chunks)
@@ -664,14 +665,17 @@
 
 ;;; A loaded-chunk's basis should start with the universal-bases,
 ;;; and the universal-bases should be non-empty.
-(defun loaded-chunk-bases-in-harmony (loaded-ch)
+;;; And, of course, the non-principal bases should be well-founded
+(defun loaded-chunk-bases-in-harmony (loaded-ch callees)
    (let ((principals (Loaded-chunk-principal-bases loaded-ch)))
       (and (not (null principals))
 	   (do ((pbl principals
 		     (tail pbl))
 		(bl (Chunk-basis loaded-ch)
 		    (tail bl)))
-	       ((null pbl) true)
+	       ((null pbl)
+		(every (\\ (b) (memq b callees))
+		       bl))
 	     (cond ((or (null bl)
 			(not (eq (head pbl) (head bl))))
 		    (return false)))))))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.38 2005/03/28 14:13:17 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.39 2005/04/18 01:25:15 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1369,10 +1369,18 @@
 ;;;;			  new-date old-date ch)))
 		true)
 	       ((< new-date old-date)
-		(cerror "I will set the date to the new date"
-			!"Chunk deriver or dater returned date ~s, ~
-			  which is before current date ~s"
-			  new-date old-date)
+		;; For some reason universal-time dates sometimes
+		;; slip by a second here or there ...
+		(cond ((and (> old-date 100000000)
+			    (= new-date (- old-date 1)))
+		       (format *error-output*
+			  !"Universal-time slips by 1 sec; ~
+                            alert Mr. Hawking~%"))
+		      (t
+		       (cerror "I will set the date to the new date"
+			       !"Chunk deriver or dater returned date ~s, ~
+				 which is before current date ~s"
+				 new-date old-date)))
 ;;; Just ignoring the new date usually causes the bug to recur --
 ;;;;		false
 		(setf (Chunk-date ch) new-date))

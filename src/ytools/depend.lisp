@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.25 2005/04/06 16:43:36 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.26 2005/04/18 01:25:16 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -53,6 +53,8 @@
 ;;;;      (Chunk-date fb)
 ;;;;      file-op-count*
 ;;;;      (Loaded-chunk-loadee (Loadable-chunk-controllee fb)))
+;;;;   (trace-around Loadable-file-chunk-from-scan/derive
+;;;;      (:> "(Loadable-file-chunk-from-scan/derive: " fb ")")
    (cond ((= (Chunk-date fb) file-op-count*)
 	  false)
 	 (t
@@ -60,21 +62,37 @@
 	                       (loaded-file-chunk-current-version
 				   (Loadable-chunk-controllee fb))
 	                       (declare (ignore loaded-ch))
-	     (cond ((typep file-ch 'Compiled-file-chunk)
-		    (setq file-ch (Compiled-file-chunk-source-file file-ch))))
-	     (setf (Code-chunk-callees file-ch) !())
-;;;;	     (setf (File-chunk-self-compile-dep file-ch)
-;;;;		   false)
-	     (file-slurp (Code-file-chunk-pathname file-ch)
-			 (list scan-depends-on*)
-			 (\\ (srm)
-			    (let ((readtab
-				     (modeline-extract-readtab srm)))
-			       (cond (readtab
-				      (setf (Code-file-chunk-readtable
-					       file-ch)
-					    readtab))))))
-	     file-op-count*))))
+	     (multiple-value-bind 
+		       (source-ch compiled-ch)
+		       (cond ((typep file-ch 'Compiled-file-chunk)
+			      (values (Compiled-file-chunk-source-file file-ch)
+						 file-ch))
+					(t
+					 (values file-ch
+						 (place-compiled-chunk
+						     file-ch))))
+		(setf (Code-chunk-callees file-ch) !())
+		(cond (compiled-ch
+		       (cond ((not (memq source-ch (Chunk-basis compiled-ch)))
+			      (cerror "I will put it back in"
+				      !"Chunk for source file ~s~
+                                        ~% not found in basis of ~s"
+				      source-ch compiled-ch)))
+		       (setf (Chunk-basis compiled-ch)
+			     (list source-ch))
+		       (setf (Chunk-update-basis compiled-ch) !())))
+		(file-slurp (Code-file-chunk-pathname source-ch)
+			    (list scan-depends-on*)
+			    (\\ (srm)
+			       (let ((readtab
+					(modeline-extract-readtab srm)))
+				  (cond (readtab
+					 (setf (Code-file-chunk-readtable
+						  source-ch)
+					       readtab))))))
+		file-op-count*))))
+;;;;      (:< (val &rest _) "Loadable-file-chunk-from-scan/derive: " val))
+   )
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
 ;;; from first line, returning false if it can't be found.

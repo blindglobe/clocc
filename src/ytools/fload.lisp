@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.10 2005/04/13 20:52:34 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.11 2005/04/18 01:25:16 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,7 @@
 
 (eval-when (:load-toplevel)
    (export '(fload filespecs-load fcompl filespecs-compile
-	     fcompl-reload* fload-compile*
+	     fcompl-reload* fload-compile* bind-fload-compile*
 	     fload-versions postponed-files-update
 funktion
 	     debuggable debuggability*)))
@@ -33,7 +33,6 @@ funktion
 			       (values 2 1 1 2))
 			      (t
 			       (values 3 1 2 0)))
-;;;;      (out (:to *error-output*) "debug = " debug :%)
       `(eval-when (:compile-toplevel :execute)
 
 	  (declaim (optimize (speed ,speed) (safety ,safety)
@@ -550,7 +549,8 @@ funktion
 				  comp-date))
 			  ;; Hasn't been compiled yet
 			  (force-compile)
-			  (chunk-derive-and-record compiled-chunk)))
+;;;;			  (chunk-derive-and-record compiled-chunk)
+			  ))
 		   (consider-loading)))))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)

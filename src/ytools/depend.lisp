@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.26 2005/04/18 01:25:16 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.27 2005/04/20 21:45:28 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -78,6 +78,7 @@
 				      !"Chunk for source file ~s~
                                         ~% not found in basis of ~s"
 				      source-ch compiled-ch)))
+		       (compiled-chunk-set-obj-version compiled-ch)
 		       (setf (Chunk-basis compiled-ch)
 			     (list source-ch))
 		       (setf (Chunk-update-basis compiled-ch) !())))

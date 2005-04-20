@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.48 2005/04/18 01:25:16 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.49 2005/04/20 21:45:28 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -705,10 +705,7 @@
 (defgeneric place-compiled-chunk (ch))
 
 (defmethod place-compiled-chunk ((source-file-chunk Code-file-chunk))
-   (let* ((filename (Code-file-chunk-pathname source-file-chunk))
-	  (ov (pathname-object-version filename false))
-	  (real-ov (and (not (eq ov ':none))
-			(pathname-resolve ov false))))
+   (let* ((filename (Code-file-chunk-pathname source-file-chunk)))
       (let ((compiled-chunk
 	       (chunk-with-name
 		   `(:compiled ,filename)
@@ -716,9 +713,6 @@
 		      (let ((new-chunk
 			       (make-instance 'Compiled-file-chunk
 				  :source-file source-file-chunk
-				  :object-file (place-Code-file-chunk
-						  real-ov
-						  :kind ':object)
 				  :pathname (pathname-object-version
 					       filename
 					       false)
@@ -730,6 +724,7 @@
 				  ;; it must always include the
 				  ;; source-file chunk --
 				  :basis (list source-file-chunk))))
+			 (compiled-chunk-set-obj-version new-chunk)
 			 (setf (Chunk-basis new-chunk)
 			       (list source-file-chunk))
 			 new-chunk))
@@ -739,6 +734,15 @@
 			    (place-Loaded-chunk source-file-chunk false))))))
 	 compiled-chunk)))
 	    
+(defun compiled-chunk-set-obj-version (compiled-ch)
+   (let* ((source-ch (Compiled-file-chunk-source-file compiled-ch))
+	  (filename (Code-file-chunk-pathname source-ch))
+	  (ov (pathname-object-version filename false))
+	  (real-ov (and (not (eq ov ':none))
+			(pathname-resolve ov false))))
+      (setf (Compiled-file-chunk-object-file compiled-ch)
+	    (and real-ov (place-Code-file-chunk real-ov :kind ':object)))))
+
 (defvar debuggability* 1)
 
 (defmethod derive-date ((cf-ch Compiled-file-chunk))

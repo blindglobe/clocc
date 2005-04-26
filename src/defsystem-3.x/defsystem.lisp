@@ -2355,6 +2355,10 @@ D
   (banner nil :type (or null string))
 
   (documentation nil :type (or null string)) ; Optional documentation slot
+
+  ;; Added AUTHOR and LICENCE slots.
+  (author nil :type (or null string))
+  (licence nil :type (or null string))
   )
 
 

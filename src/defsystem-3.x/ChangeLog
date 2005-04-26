@@ -1,5 +1,22 @@
 2005-04-26  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
+	* docs/defsystem.text:
+	Added :author, :licence and :description to simple component grammar.
+
+	* docs/defsystem.html:
+	Added :author, :licence and :description to simple grammar.
+
+	* README: Changed version number to 3.5i.
+
+	* defsystem.lisp: Changed version number to 3.5i.
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Added AUTHOR and LICENCE slots to COMPONENT definition.
+
+2005-04-26  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
 	* defsystem.lisp:
 	Added AUTHOR and LICENCE slots to COMPONENT definition.
 

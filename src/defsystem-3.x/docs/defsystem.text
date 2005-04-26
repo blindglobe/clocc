@@ -193,7 +193,11 @@ The general format of a component's definition is:
                                 [:components (<definition>*)]
                                 [:depends-on (<name>*)]
                                 [:compile-form <form>]
-                                [:load-form <form>])
+                                [:load-form <form>]
+                                [:author <string>]
+                                [:licence <string>]
+                                [:documentation <string>]
+                  )
 <type> ::= :system | :module | :file
 
 The toplevel defsystem form substitutes defsystem for :system.

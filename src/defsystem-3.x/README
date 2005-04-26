@@ -1,9 +1,9 @@
-This is MK:DEFSYSTEM 3.4i, a 'make' utility for Common Lisp.
+This is MK:DEFSYSTEM 3.5i, a 'make' utility for Common Lisp.
 
 The current distribution contains a file `defsystem.lisp', a `docs'
 directory, a `debian' directory, and this README file.
 
-MK:DEFSYSTEM 3.4i works on most Common Lisp implementations and it is
+MK:DEFSYSTEM 3.5i works on most Common Lisp implementations and it is
 used by a wide variety of projects.
 
 
@@ -17,7 +17,7 @@ putting the appropriate LOAD statement in you CL initialization file
 
 DOCUMENTATION
 
-The documentation for MK:DEFSYSTEM 3.4i is part of a the following CMU TR
+The documentation for MK:DEFSYSTEM 3.5i is part of a the following CMU TR
 
     Mark Kantrowitz, "Portable Utilities for Common Lisp, User Guide
     and Implementation Notes", Tech Report CMU-CS-91-143, School of
@@ -36,5 +36,4 @@ correspondence.
 =======
 Enjoy.
 
-Marco Antoniotti, 2004-02-01
-
+Marco Antoniotti, 2005-04-26

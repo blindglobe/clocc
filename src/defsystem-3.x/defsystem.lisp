@@ -1,7 +1,7 @@
 ;;; -*- Mode: Lisp; Package: make -*-
 ;;; -*- Mode: CLtL; Syntax: Common-Lisp -*-
 
-;;; DEFSYSTEM 3.4 Interim 4.
+;;; DEFSYSTEM 3.5 Interim.
 
 ;;; defsystem.lisp --
 
@@ -28,7 +28,7 @@
 ;;; Originally written by Mark Kantrowitz, School of Computer Science,
 ;;; Carnegie Mellon University, October 1989.
 
-;;; MK:DEFSYSTEM 3.4 Interim 3
+;;; MK:DEFSYSTEM 3.5 Interim
 ;;;
 ;;; Copyright (c) 1989 - 1999 Mark Kantrowitz. All rights reserved.
 ;;;               1999 - 2005 Mark Kantrowitz and Marco Antoniotti. All
@@ -1186,7 +1186,7 @@
 ;;; ********************************
 ;;; Defsystem Version **************
 ;;; ********************************
-(defparameter *defsystem-version* "3.4 Interim 3, 2004-06-10"
+(defparameter *defsystem-version* "3.5 Interim, 2005-04-26"
   "Current version number/date for MK:DEFSYSTEM.")
 
 ;;; ********************************

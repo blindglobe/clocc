@@ -1,3 +1,17 @@
+2005-04-26  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added AUTHOR and LICENCE slots to COMPONENT definition.
+
+2005-03-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	After a suggestion by David Tolpin, the code is simplified even more,
+	and the logic should be now more clear: use the user supplied pieces
+	of the pathname if non NIL.
+
 2005-03-10  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

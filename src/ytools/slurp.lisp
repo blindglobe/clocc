@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.27 2005/04/07 03:02:19 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.28 2005/05/03 21:19:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -644,10 +644,6 @@ after YTools file transducers finish.")
 ;;; For use by slurp tasks 
 (defun slurp-ignore (_ _) false)
 
-(defconstant can-get-write-times*
-    #.(not (not (file-write-date
-		    (concatenate 'string ytools-home-dir* "files.lisp")))))
-
 (defun pathname-source-version (pn)
   (cond ((is-Pseudo-pathname pn) false)
 	(t
@@ -676,12 +672,6 @@ after YTools file transducers finish.")
 	     ':none)
 	    (t ob-pn))))
 
-(defun pathname-write-time (pname)
-  (setq pname (pathname-resolve pname false))
-  (and can-get-write-times*
-       (probe-file pname)
-       (file-write-date pname)))
-
 ;;; pn must be a resolved Pathname, not a YTools Pathname.
 (defun get-pathname-with-suffixes (pn suffixes)
    (do ((sfl suffixes (cdr sfl))
@@ -694,6 +684,18 @@ after YTools file transducers finish.")
 		     pn))
       (cond ((probe-file newpn)
 	     (setq found true)))))
+
+(defconstant can-get-write-times*
+    #.(not (not (file-write-date
+		    (concatenate 'string ytools-home-dir* "files.lisp")))))
+
+(defun pathname-write-time (pname)
+  (setq pname (pathname-resolve pname false))
+  (and can-get-write-times*
+       (probe-file pname)
+       (file-write-date pname)))
+
+
 
 
 

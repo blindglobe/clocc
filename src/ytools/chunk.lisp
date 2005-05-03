@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.39 2005/04/18 01:25:15 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.40 2005/05/03 21:19:06 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1375,7 +1375,7 @@
 			    (= new-date (- old-date 1)))
 		       (format *error-output*
 			  !"Universal-time slips by 1 sec; ~
-                            alert Mr. Hawking~%"))
+                            alert Prof. Hawking!~%"))
 		      (t
 		       (cerror "I will set the date to the new date"
 			       !"Chunk deriver or dater returned date ~s, ~
@@ -1413,6 +1413,8 @@
 (defun chunk-with-name (exp creator &key initializer)
        ;; The kernel is the first atom in a non-car position,
        ;; which is often a pathname, but need not be.
+       ;; (Which is good, because the file pathname.lisp now
+       ;; depends on this one.)
    (labels ((chunk-name-kernel (e piecefn)
 	       (dolist (x (funcall piecefn e) false)
 		  (cond ((atom x) (return x))

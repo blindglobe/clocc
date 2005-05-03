@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.13 2005/04/07 03:02:19 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.14 2005/05/03 21:19:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -324,6 +324,38 @@
 
 (defsetf pathname-prop set-pathname-prop)
 
+;;; Represents that a pathname (or no pathname) is associated with
+;;; a directory under a property label.
+(defclass Dir-associate-chunk (Chunk)
+  (;; Pathname for the directory --
+   (directory :initarg :directory :reader Dir-associate-chunk-directory)
+   ;; Property name -- 
+   (prop :initarg :prop :reader Dir-associate-chunk-prop)
+   ;; The directory associated with 'directory' under the given 'prop'
+   (linked-dir :initform 'false
+	      :accessor Dir-associate-chunk-linked-dir)))
+   
+;;; If third arg = :keep, then existing association is not changed.
+(defun place-Dir-associate-chunk (directory prop linked-dir)
+   (chunk-with-name `(:dir-associate ,prop ,directory)
+      (\\ (exp)
+	 (make-instance 'Dir-associate-chunk
+	    :name exp
+	    :directory directory
+	    :prop prop))
+      :initializer
+      (\\ (ch)
+	 (setf (Chunk-date ch) (get-universal-time))
+	 (cond ((not (eq linked-dir ':keep))
+		(setf (Dir-associate-chunk-linked-dir ch)
+		      linked-dir))))))
+
+(defmethod derive-date ((da-ch Dir-associate-chunk))
+   (Chunk-date da-ch))
+
+(defmethod derive ((da-ch Dir-associate-chunk))
+   (Chunk-date da-ch))
+
 (defmacro def-ytools-logical-pathname (name ^pn &optional ^obj-version)
    `(define-ytools-log-pname ',name ,^pn ,^obj-version))
  
@@ -333,14 +365,21 @@
    (cond ((stringp obj-version)
 	  (setq obj-version
 		(string->obj-pn obj-version pn bin-idio-dir*))))
-   ;;;;(format t "name = ~s~%" name)
    (set-ytools-logical-pathname name pn)
-   (cond (obj-version
-	  (setf (pathname-prop 'obj-version pn)
-	        (pathname-resolve
-		     (merge-pathnames
-			obj-version pn)
-		     true))))
+   ;;;;(format t "name = ~s~%" name)
+   (declare-pathname-associate 'obj-version pn obj-version lisp-object-extn*)
+
+;;; This stuff is subsumed by 'declare-pathname-associate' --
+;;;;   (let ((dp-ch (place-Dir-associate-chunk pn 'obj-version obj-version)))
+;;;;      (setf (pathname-prop 'obj-version pn)
+;;;;	    (cond (obj-version
+;;;;		   (pathname-resolve
+;;;;			(merge-pathnames
+;;;;			   obj-version pn)
+;;;;			true))
+;;;;		  (t false)))
+;;;;      (setf (Chunk-date dp-ch) (get-universal-time)))
+
    name)
 
 (defun string->obj-pn (obj-dir src-pn idio)
@@ -1047,7 +1086,8 @@
 			    (check-existence
 			       (make-Pathname :host (Pathname-host ov)
 					      :device (Pathname-device ov)
-					      :directory (Pathname-directory ov)
+					      :directory (Pathname-directory
+							    ov)
 					      :name (Pathname-name pn)
 					      :type (or suffix
 							(Pathname-type pn)))))
@@ -1055,23 +1095,36 @@
 			    (check-existence 
 			       (make-Pathname :host (Pathname-host pn)
 					      :device (Pathname-device pn)
-					      :directory (Pathname-directory pn)
+					      :directory (Pathname-directory
+							   pn)
 					      :name (Pathname-name pn)
 					      :type suffix))))))))))
 
-;;E.g., (declare-pathname-associate 'checked "C:/prog/opt/" "../chk" ".chk")
+;;;E.g., (declare-pathname-associate 'checked "C:/prog/opt/" "../chk" ".chk")
+;;; If 'where' is false, there is no associate, and the value of 'suff'
+;;; is irrelevant.
 (defun declare-pathname-associate (assoc-prop pn where suff)
    (setq pn (->pathname pn))
-   (let ((whdir
-	    (Pathname-directory (->pathname where))))
-      (setf (pathname-prop assoc-prop pn)
-	    (cond ((car-eq whdir ':absolute)
-		   (make-Pathname 
-		      :directory whdir
-		      :type suff))
-		  (t
-		   (place-relative-pathname
-		       pn (cdr whdir) suff true))))))
+   (let* ((whdir
+	     (and where
+		  (Pathname-directory (->pathname where))))
+	  (assoc-dir 
+	     (cond ((not where) false)
+		   ((car-eq whdir ':absolute)
+		    (make-Pathname 
+		       :directory whdir
+		       :type suff))
+		   (t
+		    (place-relative-pathname
+			pn (cdr whdir) suff true)))))
+      (cond ((not (equal (pathname-prop assoc-prop pn)
+			 assoc-dir))
+	     (setf (pathname-prop assoc-prop pn)
+		   assoc-dir)
+	     (let ((dp-ch (place-Dir-associate-chunk
+			     pn assoc-prop assoc-dir)))
+		(setf (Chunk-date dp-ch) (get-universal-time))
+		(chunk-update dp-ch false false))))))
 
 (defun string-case-analyze (str)
    (declare (string str))

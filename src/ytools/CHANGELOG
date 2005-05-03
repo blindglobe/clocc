@@ -1,5 +1,11 @@
-$Id: CHANGELOG,v 1.31.2.15 2005/04/20 21:45:27 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.16 2005/05/03 21:19:06 airfoyle Exp $
 	
+2005-05-03: Introduced chunk for pathname associates.
+            Dir-associate-chunk (pathname.lisp) keeps track of the
+            association of a property with a pathname.
+            Compiled-file-chunks depend on association of 'bin'
+            properties with directories. (Version 2.0.05)
+
 2005-04-20: Ensured that if bin directory of a source directory
             changes, fload will notice that the next time it compiles
             a file in the source directory.  (Version 2.0.04)            

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.49 2005/04/20 21:45:28 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.50 2005/05/03 21:19:06 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -109,7 +109,8 @@
 	        (cond ((probe-file pn)
 		       (file-write-date pn))
 		      (t
-		       (error "Code-file-chunk corresponds to nonexistent file: ~s"
+		       (error !"Code-file-chunk corresponds to ~
+                                nonexistent file: ~s"
 			      fc))))))))
 
 (defmethod derive ((fc Code-file-chunk))
@@ -318,11 +319,15 @@
 		      (t
 		       (let* ((source-file-chunk
 				 (Loaded-file-chunk-source lc))
-			      (source-file-pn
-				 (Code-file-chunk-pathname source-file-chunk)))
-			  (format *error-output*
-			     "Compilation of ~s failed; loading source file~%"
-			     source-file-pn)
+;;;;			      (source-file-pn
+;;;;				 (Code-file-chunk-pathname source-file-chunk))
+			      )
+;;;;			  (format *error-output*
+;;;;			     "Compilation of ~s failed; loading source file~%"
+;;;;			     source-file-pn)
+;;;;			  (dbg-save lc source-file-chunk)
+;;;;			  (breakpoint Loaded-file-chunk/derive
+;;;;			      "Damn")
 			  (file-chunk-load source-file-chunk))))))
 	    ((typep file-ch 'Code-file-chunk)
 	     (file-chunk-load file-ch))
@@ -730,6 +735,22 @@
 			 new-chunk))
 		   :initializer
 		   (\\ (new-chunk)
+		      (setf (Chunk-basis new-chunk)
+			    (adjoin
+			       (place-Dir-associate-chunk
+				  (dir-pn
+				     (Code-file-chunk-pathname
+					(Compiled-file-chunk-source-file
+					   new-chunk)))
+				  'obj-version
+				  (let ((ofch (Compiled-file-chunk-object-file
+					       new-chunk)))
+				     (and ofch
+					  (dir-pn
+					     (Code-file-chunk-pathname
+					        ofch)))))
+			       (Chunk-basis new-chunk)
+			       :test #'eq))
 		      (setf (Compiled-file-chunk-loaded-file new-chunk)
 			    (place-Loaded-chunk source-file-chunk false))))))
 	 compiled-chunk)))
@@ -783,6 +804,7 @@
 ;;; We can assume that derive-date has already set the date to the old write
 ;;; time, and that some supporter has a more recent time.
 (defmethod derive ((cf-ch Compiled-file-chunk))
+   (compiled-chunk-set-obj-version cf-ch)
    (let* ((old-obj-pn (Code-file-chunk-pathname
 			 (Compiled-file-chunk-object-file cf-ch)))
 	  (old-obj (and old-obj-pn

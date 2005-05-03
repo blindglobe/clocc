@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.5 2005/02/03 05:18:43 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.6 2005/05/03 21:19:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -186,15 +186,18 @@
 	  (intern "!"))
 	 (t
 	  (labels ((nonmacro ()
-		      (cond ((member ch '(#\space #\tab #\newline #\return #\linefeed
+		      (cond ((member ch '(#\space #\tab #\newline
+					  #\return #\linefeed
 					  #\page #\( #\))
 				     :test #'char=)
 			     (intern "!"))
 			    (t
-			     ;; if any problems here, could try UNREAD-CHAR + (VALUES)
+			     ;; if any problems here, could try
+			     ;; UNREAD-CHAR + (VALUES)
 			     (values
 			      (intern (concatenate 'string
-					    "!" (string (read srm t nil t)))))))))
+					    "!"
+					    (string (read srm t nil t)))))))))
 	     (let ((e (assoc ch excl-handlers* :test #'eq)))
 		(cond (e
 		       (let ((handler

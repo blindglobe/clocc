@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.14 2005/05/03 21:19:07 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.15 2005/05/04 14:35:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1117,12 +1117,30 @@
 		   (t
 		    (place-relative-pathname
 			pn (cdr whdir) suff true)))))
-      (cond ((not (equal (pathname-prop assoc-prop pn)
-			 assoc-dir))
-	     (setf (pathname-prop assoc-prop pn)
-		   assoc-dir)
-	     (let ((dp-ch (place-Dir-associate-chunk
-			     pn assoc-prop assoc-dir)))
+;;;;      (out (:to *error-output*)
+;;;;	"pathname-prop " assoc-prop " of " pn
+;;;;	" is " (pathname-prop assoc-prop pn)
+;;;;	:% "  Change to " assoc-dir "?" :%)
+      (let ((dp-ch (place-Dir-associate-chunk
+		      pn assoc-prop assoc-dir)))
+	 (setq dp-ch* dp-ch)
+	 (cond ((equal (pathname-prop assoc-prop pn)
+			    assoc-dir)
+		(cond ((not (equal (Dir-associate-chunk-linked-dir dp-ch)
+				   assoc-dir))
+		       (format *error-output*
+			  !"Dir-associate-chunk linked-dir out of synch; ~
+                            correcting~%  ~s~%  ~s => ~s~%"
+			  (Dir-associate-chunk-directory dp-ch)
+			  (Dir-associate-chunk-linked-dir dp-ch)
+			  assoc-dir)
+		       (setf (Dir-associate-chunk-linked-dir dp-ch)
+			     assoc-dir))))
+	       (t
+		(setf (pathname-prop assoc-prop pn)
+		      assoc-dir)
+		(setf (Dir-associate-chunk-linked-dir dp-ch)
+		      assoc-dir)
 		(setf (Chunk-date dp-ch) (get-universal-time))
 		(chunk-update dp-ch false false))))))
 

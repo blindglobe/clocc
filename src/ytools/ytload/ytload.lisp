@@ -1,4 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
+;;;$Id: ytload.lisp,v 1.7.2.2 2005/05/04 14:35:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -15,7 +16,6 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
-;;;$Id: ytload.lisp,v 1.7.2.1 2005/01/17 17:49:56 airfoyle Exp $
 
 (defvar tools-version* "1.3")
 
@@ -191,6 +191,17 @@
 			 (pathname ytload-directory* ))))))
 	 (cond ((probe-file mod-file)
 		(load mod-file))
+	       ((and (not (check-loaded ':ytools))
+		     (not (string= module 
+				   (cond ((eq filename-case* ':upper)
+					  "YTOOLS")
+					 (t
+					  "ytools"))))
+		     (y-or-n-p "Can't find file for module ~a; load ytools and repeat search? "
+			       module))
+		
+		(yt-load :ytools)
+		(load-module-file module))
 	       (t
 		(error "Can't find file for module ~s" module)))))
    module)

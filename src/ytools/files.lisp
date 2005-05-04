@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.50 2005/05/03 21:19:06 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.51 2005/05/04 14:35:46 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -312,23 +312,34 @@
 	     ;; Up to date, nothing to do
 	     false)
 	    ((typep file-ch 'Compiled-file-chunk)
-	     (let ((obj-file-ch
-		      (freshly-compiled-object file-ch)))
-	        (cond (obj-file-ch
-		       (file-chunk-load obj-file-ch))
-		      (t
-		       (let* ((source-file-chunk
-				 (Loaded-file-chunk-source lc))
-;;;;			      (source-file-pn
-;;;;				 (Code-file-chunk-pathname source-file-chunk))
-			      )
-;;;;			  (format *error-output*
-;;;;			     "Compilation of ~s failed; loading source file~%"
-;;;;			     source-file-pn)
-;;;;			  (dbg-save lc source-file-chunk)
-;;;;			  (breakpoint Loaded-file-chunk/derive
-;;;;			      "Damn")
-			  (file-chunk-load source-file-chunk))))))
+	     (loop
+		(let ((obj-file-ch
+			 (freshly-compiled-object file-ch)))
+		   (cond (obj-file-ch
+			  (return (file-chunk-load obj-file-ch)))
+			 (t
+			  (let* ((source-file-chunk
+				    (Loaded-file-chunk-source lc))
+				 (source-file-pn
+				    (Code-file-chunk-pathname
+				       source-file-chunk)))
+			     (restart-case
+				(error 
+				   "Compilation of ~s apparently failed"
+				   source-file-pn)
+			       (skip ()
+				:report !"Skip compilation (it will ~
+					  probably come back to haunt you"
+				  (return (get-universal-time)))
+			       (load-source ()
+				:report "Load source version"
+				  (return
+				      (file-chunk-load source-file-chunk)))
+			       (compile-anyway ()
+				:report !"Compile again in spite of ~
+					  apparent failure"
+				  (chunks-update (list file-ch)
+						 true false)))))))))
 	    ((typep file-ch 'Code-file-chunk)
 	     (file-chunk-load file-ch))
 	    (t
@@ -735,26 +746,33 @@
 			 new-chunk))
 		   :initializer
 		   (\\ (new-chunk)
-		      (setf (Chunk-basis new-chunk)
+		      (compiled-chunk-include-dir-basis
+		         new-chunk)
+		      (format *error-output*
+			 "After adjoining, compiled chunk basis = ~s~%"
+			 (Chunk-basis new-chunk))
+		      (setf (Compiled-file-chunk-loaded-file new-chunk)
+			    (place-Loaded-chunk source-file-chunk false))))))
+	 compiled-chunk)))
+	    
+(defun compiled-chunk-include-dir-basis (compiled-ch)
+		      (setf (Chunk-basis compiled-ch)
 			    (adjoin
 			       (place-Dir-associate-chunk
 				  (dir-pn
 				     (Code-file-chunk-pathname
 					(Compiled-file-chunk-source-file
-					   new-chunk)))
+					   compiled-ch)))
 				  'obj-version
 				  (let ((ofch (Compiled-file-chunk-object-file
-					       new-chunk)))
+					       compiled-ch)))
 				     (and ofch
 					  (dir-pn
 					     (Code-file-chunk-pathname
 					        ofch)))))
-			       (Chunk-basis new-chunk)
-			       :test #'eq))
-		      (setf (Compiled-file-chunk-loaded-file new-chunk)
-			    (place-Loaded-chunk source-file-chunk false))))))
-	 compiled-chunk)))
-	    
+			       (Chunk-basis compiled-ch)
+			       :test #'eq)))
+
 (defun compiled-chunk-set-obj-version (compiled-ch)
    (let* ((source-ch (Compiled-file-chunk-source-file compiled-ch))
 	  (filename (Code-file-chunk-pathname source-ch))
@@ -1183,3 +1201,10 @@
    (let ((pn (->pathname pn)))
       (place-Loaded-file-chunk (place-Code-file-chunk pn)
 			       false)))
+
+;;; (file loaded compiled)-chunk list
+(defun f-l-c-chunk (pn)
+   (let ((l-ch (flchunk pn)))
+      (let ((f-ch (Loaded-chunk-loadee l-ch)))
+	 (let ((c-ch (place-compiled-chunk f-ch)))
+	    (list f-ch l-ch c-ch)))))

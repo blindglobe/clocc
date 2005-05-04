@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.27 2005/04/20 21:45:28 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.28 2005/05/04 14:35:46 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -81,6 +81,7 @@
 		       (compiled-chunk-set-obj-version compiled-ch)
 		       (setf (Chunk-basis compiled-ch)
 			     (list source-ch))
+		       (compiled-chunk-include-dir-basis compiled-ch)
 		       (setf (Chunk-update-basis compiled-ch) !())))
 		(file-slurp (Code-file-chunk-pathname source-ch)
 			    (list scan-depends-on*)

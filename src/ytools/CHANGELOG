@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.16 2005/05/03 21:19:06 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.17 2005/05/04 14:38:42 airfoyle Exp $
 	
+2005-05-04: Gave user options in case fload reports that previous
+            attempt to compile a file failed.  (Version 2.0.06)
+
 2005-05-03: Introduced chunk for pathname associates.
             Dir-associate-chunk (pathname.lisp) keeps track of the
             association of a property with a pathname.

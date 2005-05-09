@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: path.lisp,v 1.10 2004/10/18 23:03:39 sds Exp $
+;;; $Id: path.lisp,v 1.11 2005/05/09 13:47:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/path.lisp,v $
 
 (eval-when (compile load eval)
@@ -177,8 +177,10 @@ STYLE can be either :CMU or :ALLEGRO."
   "Check whether this word has already been defined as a logical host."
   #+(or clisp lispworks)
   (gethash (string-upcase word) SYSTEM::*LOGICAL-PATHNAME-TRANSLATIONS*)
-  #+(or cmucl sbcl)
+  #+cmucl
   (gethash (string-upcase word) LISP::*LOGICAL-HOSTS*)
+  #+sbcl
+  (gethash (string-upcase word) SB-IMPL::*LOGICAL-HOSTS*)
   #-(or clisp cmucl lispworks sbcl)
   (ignore-errors (logical-pathname-translations word)))
 

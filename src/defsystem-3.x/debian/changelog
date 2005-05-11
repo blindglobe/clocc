@@ -1,3 +1,9 @@
+cl-defsystem3 (3.5i+2005.05.11) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Wed, 11 May 2005 11:55:56 +0200
+
 cl-defsystem3 (3.4i+cvs.2005.03.03.1) unstable; urgency=low
 
   * New upstream release.  

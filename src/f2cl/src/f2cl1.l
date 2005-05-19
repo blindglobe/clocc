@@ -15,8 +15,8 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2004/11/09 18:37:12 $"))
-
+  (remove #\$ "2.0 beta $Date: 2005/05/19 15:09:32 $"))
+ 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
@@ -2569,8 +2569,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.137 2004/11/09 18:37:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.138 2005/05/19 15:09:32 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.138  2005/05/19 15:09:32  rtoy
+;;; Gratuitous change to update the rev date.
+;;;
 ;;; Revision 1.137  2004/11/09 18:37:12  rtoy
 ;;; o Use compile-file-pathname for the output-file instead of T, because
 ;;;   that's a CMUCL extension.

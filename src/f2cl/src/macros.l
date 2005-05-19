@@ -409,7 +409,7 @@ is not included")
 (defun assigned-goto-aux (tag-list)
   (let ((cases nil))
     (dolist (tag tag-list)
-      (push `(,tag (go ,(f2cl::make-label tag)))
+      (push `(,tag (go ,(f2cl-lib::make-label tag)))
 	    cases))
     (push `(t (error "Unknown label for assigned goto")) cases)
     (nreverse cases)))
@@ -1326,8 +1326,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.62 2005/05/16 15:50:25 rtoy Exp $
+;;; $Id: macros.l,v 1.63 2005/05/19 15:06:24 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.63  2005/05/19 15:06:24  rtoy
+;;; Oops.  make-label is in the f2cl-lib package.
+;;;
 ;;; Revision 1.62  2005/05/16 15:50:25  rtoy
 ;;; o Replace single semicolons with multiple semicolons as appropriate.
 ;;; o GCL apparently doesn't like some declarations, so comment them out

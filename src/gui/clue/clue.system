@@ -18,10 +18,12 @@
        (when (probe-file obj)
 	 (load obj))))))
 
+(defparameter *source-pathname*
+  #+common-lisp-controller "cl-library:clue;"
+  #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;clue;"))
+
 (mk:defsystem clue
-    :source-pathname 
-    #+common-lisp-controller "cl-library:clue;"
-    #-common-lisp-controller (translate-logical-pathname "clocc:src;gui;clue;clue;")
+    :source-pathname *source-pathname*
     :depends-on ( #+cmu :cmucl-clx #-cmu :clx)
     :source-extension "lisp"
     :components
@@ -29,7 +31,7 @@
      (:module clue-precom-load
               :load-form (hack-precom "cl-library:clue;" :load)
               :compile-form t)
-     (:file "defgeneric")		; pw adds 
+     (:file "defgeneric")		; pw adds
      (:file "event-parse")		; Utilities for event translation
      (:file "defcontact")		; CLOS for resources and type conversion
      (:file "intrinsics")		; The "guts"
@@ -45,5 +47,5 @@
      (:module clue-precom-com
               :load-form t
               :compile-only t
-              :compile-form (hack-precom "cl-library:clue;" :compile))))
+              :compile-form (hack-precom *source-pathname* :compile))))
 

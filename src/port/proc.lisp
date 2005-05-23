@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.16 2003/06/07 22:01:13 sds Exp $
+;;; $Id: proc.lisp,v 1.17 2005/05/23 15:18:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -316,7 +316,8 @@ and reapply its initial function to its arguments."
   #+LispWorks  (and (mp:process-run-reasons process)
                     (not (mp:process-arrest-reasons process)))
   #+Lucid      (lcl:process-active-p process)
-  #+MCL        (ccl:process-active-p process)
+  #+(and MCL (not OpenMCL))        (ccl:process-active-p process)
+  #+OpenMCL    (string-equal (ccl:process-whostate process) "active")
   #+scl        (let (activep)
                  (thread::map-over-threads
                   (lambda (thread)
@@ -342,10 +343,10 @@ and reapply its initial function to its arguments."
   #+CMU        (mp:process-state process)
   #+CormanLisp FIXME
   #+Genera     (process:process-state process)
-  #+LispWorks  (mp:process-state process)
+  #+LispWorks  (mp:process-run-reasons process)
   #+Lucid      (lcl:process-state process)
   #+(and MCL (not openmcl)) (ccl:process-state process)
-  #+openmcl    (ccl:process-run-reasons process)
+  #+openmcl    (intern (ccl:process-whostate process))
   #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'process-state process)))
 
@@ -369,7 +370,8 @@ and reapply its initial function to its arguments."
   #+Genera     process:*all-processes*
   #+LispWorks  (mp:list-all-processes)
   #+Lucid      lcl:*all-processes*
-  #+MCL        ccl:*all-processes*
+  #+(and MCL (not OpenMCL))        ccl:*all-processes*
+  #+OpenMCL    (ccl:all-processes)
   #+scl        (let (threads)
                  (thread:map-over-threads
                   (lambda (thread)
@@ -429,7 +431,8 @@ and reapply its initial function to its arguments."
   #+Genera     (process:make-lock name)
   #+LispWorks  (mp:make-lock :name name)
   #+Lucid      FIXME
-  #+MCL        (ccl:make-process-queue name)
+  #+(and MCL (not OpenMCL))        (ccl:make-process-queue name)
+  #+OpenMCL    (ccl:make-lock name)
   #+scl        (thread:make-lock name)
   #-threads    (error 'not-implemented :proc (list 'make-lock name)))
 
@@ -441,7 +444,8 @@ and reapply its initial function to its arguments."
   #+Genera     FIXME
   #+LispWorks  (mp:claim-lock lock)
   #+Lucid      (lcl:process-lock lock)
-  #+MCL        (ccl:process-enqueue lock)
+  #+(and MCL (not OpenMCL))        (ccl:process-enqueue lock)
+  #+OpenMCL    (ccl:grab-lock lock)
   #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'get-lock lock)))
 
@@ -453,7 +457,8 @@ and reapply its initial function to its arguments."
   #+Genera     FIXME
   #+LispWorks  (mp:release-lock lock)
   #+Lucid      (lcl:process-unlock lock)
-  #+MCL        (ccl:process-dequeue lock)
+  #+(and MCL (not OpenMCL))        (ccl:process-dequeue lock)
+  #+OpenMCL    (ccl:release-lock lock)
   #+scl        FIXME
   #-threads    (error 'not-implemented :proc (list 'giveup-lock lock)))
 
@@ -466,7 +471,8 @@ and reapply its initial function to its arguments."
   #+Genera     `(process:with-lock (,lock) ,@body)
   #+LispWorks  `(mp:with-lock (,lock) ,@body)
   #+Lucid      `(lcl:with-process-lock (,lock) ,@body)
-  #+MCL        `(ccl:with-process-enqueued (,lock) ,@body)
+  #+(and MCL (not OpenMCL))    `(ccl:with-process-enqueued (,lock) ,@body)
+  #+OpenMCL    `(ccl:with-lock-grabbed (,lock) ,@body)
   #+scl        `(thread:with-lock-held (,lock) ,@body)
   #-threads    `(progn ,@body))
 

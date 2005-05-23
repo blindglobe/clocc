@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.56 2005/01/27 23:16:44 sds Exp $
+;;; $Id: net.lisp,v 1.57 2005/05/23 15:12:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -204,7 +204,7 @@
     #+lispworks (comm:open-tcp-stream host port :direction :io :element-type
                                       (if bin 'unsigned-byte 'base-char))
     #+mcl (ccl:make-socket :remote-host host :remote-port port
-                           :format (if binary-p :binary :text))
+                           :format (if bin :binary :text))
     #+(and sbcl db-sockets)
     (let ((socket (make-instance 'sockets:inet-socket
                                  :type :stream :protocol :tcp)))
@@ -264,7 +264,7 @@
     (multiple-value-bind (ho2 po2) (comm:socket-stream-address sock)
       (values (ipaddr-to-dotted ho1) po1
               (ipaddr-to-dotted ho2) po2)))
-  #+openmcl
+  #+mcl
   (values (ccl:ipaddr-to-dotted (ccl:remote-host sock))
           (ccl:remote-port sock)
           (ccl:ipaddr-to-dotted (ccl:local-host sock))
@@ -279,7 +279,7 @@
                 local-port))))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:socket-host-port sock)
-  #-(or allegro clisp cmu gcl lispworks openmcl
+  #-(or allegro clisp cmu gcl lispworks mcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 
@@ -304,10 +304,10 @@
   #+(and clisp (not lisp=cl)) 'lisp:socket-server
   #+(or cmu scl) 'integer
   #+gcl 'si:socket-stream
-  #+openmcl 'ccl::listener-socket
+  #+mcl 'ccl::listener-socket
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:passive-socket
-  #-(or abcl allegro clisp cmu gcl openmcl
+  #-(or abcl allegro clisp cmu gcl mcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl) t)
 
 (defun open-socket-server (&optional port)
@@ -325,7 +325,7 @@
                  :proc (comm:start-up-server-and-mp
                         :function (lambda (sock) (mp:mailbox-send mbox sock))
                         :service port)))
-  #+openmcl
+  #+mcl
   (ccl:make-socket :connect :passive
                    :type :stream
                    :reuse-address t
@@ -336,7 +336,7 @@
     (sockets:socket-bind socket (vector 0 0 0 0) (or port 0)))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:make-socket 'net.sbcl.sockets:passive-socket :port port)
-  #-(or abcl allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks mcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'open-socket-server port)))
 
@@ -392,7 +392,7 @@ Returns a socket stream or NIL."
                'comm:socket-stream :direction :io
                :socket (mp:mailbox-read (socket-server-mbox serv))
                :element-type (if bin 'unsigned-byte 'base-char))
-  #+openmcl (ccl:accept-connection serv :wait wait)
+  #+mcl (ccl:accept-connection serv :wait wait)
   #+(and sbcl db-sockets)
   (let ((new-connection (sockets:socket-accept serv)))
     ;; who needs WAIT and BIN anyway :-S
@@ -404,7 +404,7 @@ Returns a socket stream or NIL."
        'net.sbcl.sockets:binary-stream-socket
        'net.sbcl.sockets:character-stream-socket)
    :wait wait)
-  #-(or abcl allegro clisp cmu gcl lispworks openmcl
+  #-(or abcl allegro clisp cmu gcl lispworks mcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-accept serv bin)))
 

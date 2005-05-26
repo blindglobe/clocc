@@ -1028,7 +1028,6 @@
 	     (setf (f2cl-finfo-arg-types entry) var-type-list)
 	     (setf (gethash (second defun-bit) *f2cl-function-info*)
 		   (make-f2cl-finfo :arg-types var-type-list))))
-       (format t "var-decls        = ~A~%" var-decls)
        (setq formal-arg-decls
 	   (pretty-decls
 	    (append
@@ -1040,8 +1039,7 @@
 	     var-decls))))
        
 
-     (format t "formal-arg-decls = ~A~%" formal-arg-decls)
-     (format t "arg-fcn-decls    = ~A~%" arg-fcn-decls)
+     ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
      (when *relaxed-array-decls*
        ;; Old Fortran practice often declared arrays to functions to
        ;; have length 1.  Since Fortran didn't check array bounds,
@@ -2958,8 +2956,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.123 2005/05/26 16:00:40 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.124 2005/05/26 19:18:00 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.124  2005/05/26 19:18:00  rtoy
+;;; Oops.  Remove some extraneous debugging outputs.
+;;;
 ;;; Revision 1.123  2005/05/26 16:00:40  rtoy
 ;;; Don't create a declaration for a subprogram parameter if that
 ;;; parameter is also used as a function.  This happens if the function

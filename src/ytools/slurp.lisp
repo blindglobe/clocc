@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.28 2005/05/03 21:19:07 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.29 2005/05/31 03:42:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -180,7 +180,7 @@ after YTools file transducers finish.")
 	                   (flags-separate specs possible-flags)
 	 (let ((new-vec
 		  (vector (cond ((null files) (aref defaults 0))
-				 (t files))
+				(t files))
 			  (cond ((and (null flags) (null files))
 				 (aref defaults 1))
 				((memq '- flags)
@@ -192,7 +192,7 @@ after YTools file transducers finish.")
 	    (funcall set-defaults new-vec)
 	    (cond ((and show-file-ops* (null files))
 		   (format *error-output*
-		       "File op ~s [flags: ~s] ~s ~%    [readtable: ~s]~%"
+		       "File op ~s [flags: ~a] ~s ~%    [readtable: ~s]~%"
 		       op
 		       (aref new-vec 1)
 		       (aref new-vec 0)
@@ -221,7 +221,8 @@ after YTools file transducers finish.")
        (dolist (h (nreverse post-file-transduce-hooks*))
 	  (funcall h))))
 
-;;; Returns three values: filespecs, flags, and readtable
+;;; Returns three values: filespecs, flags, and readtable.
+;;; 'flags' is a list of characters.
 ;;; If readtable is missing, the value is :missing.
 (defun flags-separate (args possible-flags)
    (let ((flags !())
@@ -232,20 +233,22 @@ after YTools file transducers finish.")
 	     (setq readtab (cadr readtab)))
 	    (t (setq readtab ':missing)))
       (do ((al args (cond (flags-done al) (t (cdr al))))
-	   (flags-done false))
+	   (flags-done false)
+	   symname)
 	  ((or flags-done (null al))
 	   (values al
 		   (flags-check (reverse flags) possible-flags)
 		   readtab))
          (cond ((is-Symbol (car al))
+		(setq symname (symbol-name (car al)))
 		(setq flags-done
-		      (not (char= (elt (symbol-name (car al))
-				       0)
-				  #\-))))
+		      (not (char= (elt symname 0)
+				  #\-)))
+		(cond ((not flags-done)
+		       (setq flags (nreconc (rest (coerce symname 'list))
+					    flags)))))
 	       (t
-		(setq flags-done true)))
-	 (cond ((not flags-done)
-		(setq flags (cons (car al) flags)))))))
+		(setq flags-done true))))))
 
 ;;;;		(setq interned-flag
 ;;;;		      (intern fname ytools-package*))
@@ -260,21 +263,17 @@ after YTools file transducers finish.")
 ;;;;						 *package*))
 ;;;;				      possible-flags)))))))))
 
-;;; Intern in ytools package and reject if unexpected
+;;; Return flags (characters) that are legal in this context.
 (defun flags-check (flags expected)
    (mapcan (\\ (flag)
-	      (let ((flag (intern (Symbol-name flag) ytools-package*)))
-		 (cond ((memq flag expected)
-			(list flag))
-		       (t
-			(cerror "I'll ignore it"
-			   "Unexpected flag ~s; expected one of ~a"
-			      flag
-			      (mapcar (lambda (flag)
-					 (intern (symbol-name flag)
-						 *package*))
-				      expected))
-			!()))))
+	         ;;;; (let ((flag (intern (Symbol-name flag) ytools-package*))) ...)
+	      (cond ((member flag expected :test #'char=)
+		     (list flag))
+		    (t
+		     (cerror "I'll ignore it"
+			"Unexpected flag '~a'; expected one of ~a"
+			   flag expected)
+		     !())))
 	   flags))
 
 (defvar fload-show-actual-pathnames* true)

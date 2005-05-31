@@ -1,21 +1,21 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.40 2005/05/03 21:19:06 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.41 2005/05/31 03:42:56 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(Chunk Or-chunk Form-chunk Chunk-basis derive print-innards
-	     chunk-with-name chunk-destroy
+	     find-chunk chunk-with-name chunk-destroy
 	     chunk-request-mgt chunk-terminate-mgt
-	     chunk-up-to-date chunk-update chunks-update dutl)))
+	     chunk-up-to-date chunk-declare-updated chunk-update chunks-update dutl)))
 
 ;;;;; Some of the code in this file is referred to in the following
 ;;;;; paper:
 #| <<<< :eval
     (referring-paper "McDermott05"
-                      ~/UNIfied/word/pub/Lisp2005/lisp05.txl 
+                      "~/UNIfied/word/pub/Lisp2005/lisp05.txl"
                       :default true)
    >>>> :eval
 |#
@@ -152,7 +152,7 @@
 		     "~")
 		    ((Chunk-managed c) "=")
 		    (t "_"))
-	      (Chunk-name c))
+	      (chunk-name-abbrev-pathnames (Chunk-name c)))
       (print-innards c srm)
       (format srm "~a~a~a"
 	      (cond ((and (slot-boundp c 'basis)
@@ -167,6 +167,27 @@
 			  (chunk-date-up-to-date c))
 		     "!")
 		    (t "?")))))
+
+(defun chunk-name-abbrev-pathnames (name)
+   (cond ((typep name 'pathname)
+	  (printed-snip name -20))
+	 ((atom name) name)
+	 (t
+	  (mapcar #'chunk-name-abbrev-pathnames name))))
+
+;;; Return the printed representation of 'x', snipped
+(defun printed-snip (x n)
+   (string-snip (format nil "~a" x) n))
+
+;;; Discard all but the first n (or last -n if n<0) characters of s
+(defun string-snip (s n)
+   (let ((l (length s)))
+      (cond ((> l n)
+	     (cond ((< n 0)
+		    (concatenate 'string "..." (subseq s (+ l n))))
+		   (t
+		    (concatenate 'string (subseq s 0 n) "..."))))
+	    (t s))))
 
 (defmethod print-innards :before ((orch Or-chunk) srm)
    (cond ((slot-boundp orch 'disjuncts)
@@ -229,14 +250,16 @@
       (format *error-output*
 	 "No derive method found for ~s; assuming up to date~%"
 	 c)
+;;;;; <<<< _
       (setq bad-ch* c)
       (break "Underivable chunk")
+;;;;; >>>> _
       false))
 ;;; Recomputes chunk
 ;;;   and returns time when it changed (usually current universal time)
 ;;;   or false if it's up to date.
-;;;   If it returns t, that's equivalent to returning (get-universal-time).
 ;;;;; >>>> derive
+;;;   If it returns t, that's equivalent to returning (get-universal-time).
 
 (defmethod initialize-instance :after ((ch Chunk) &rest initargs)
    (declare (ignore initargs))
@@ -388,7 +411,7 @@
 (defvar chunk-update-dbg* false)
 
 ;;; A list recording events that are finished.  Format: First element
-;;; is smallest number that is greater than all finished events.
+;;; is smallest number such that all numbers less are for finished events.
 ;;; Remaining elements, if any, are finished events with numbers greater
 ;;; than that, in ascending order.
 ;;; Corollary: (rest active-chunk-events*) is either empty or starts with a
@@ -582,7 +605,7 @@
 					 !"Should I really stop managing ~
 					   (keeping up to date) all of ~
 					   the following chunks?~
-					   --~%  ~s?"
+					   --~%  ~s (yes/no)? "
 					 all-derivees)))))
 		   (chunk-gather-derivees (ch dvl)
 		      (dolist (d (Chunk-derivees ch))
@@ -642,7 +665,6 @@
 (defun chunk-manage (chunk)
    (cond ((Chunk-managed chunk)
 	  ;;;;; <<<< _ 
-	  ;; Omitted because in the paper we prove the check unnecessary!
 	  (cond ((eq (Chunk-managed chunk)
 		     ':in-transition)
 		 (error
@@ -679,12 +701,13 @@
 	        ;; Normally this just sets (chunk-managed chunk)
 	        ;; to true, but not if an interrupt occurred --
 		(progn
-		    (setf (Chunk-managed chunk)
-			  (and (every #'Chunk-managed
-				      (Chunk-basis chunk))
-			       (or (not its-an-or)
-				   (some #'Chunk-managed
-					 (Or-chunk-disjuncts chunk)))))
+		    (setf (Chunk-managed chunk) (reason-to-manage chunk))
+;;; What was I thinking when I wrote this?
+;;;;			  (and (every #'Chunk-managed
+;;;;				      (Chunk-basis chunk))
+;;;;			       (or (not its-an-or)
+;;;;				   (some #'Chunk-managed
+;;;;					 (Or-chunk-disjuncts chunk)))))
 ;;;;		    (format t "chunk-managed? ~s : ~s~%"
 ;;;;			    chunk (Chunk-managed chunk))
 ;;;;		    (cond ((not (Chunk-managed chunk))
@@ -693,7 +716,7 @@
 		 ))
 	     (Chunk-managed chunk)))))
 
-;;; Returns management state of 'c' --
+;;; Returns management state of 'c' -- 
 (defun chunk-unmanage (c)
    ;; This is called only by 'chunk-terminate-mgt' and 'chunk-manage',
    ;; and only after verifying that 'c' has no managed derivees --
@@ -829,6 +852,22 @@
 
 ;;;;(defvar postpone-updates* ':do-now)
 
+(defun chunk-declare-updated (chunk time)
+   (cond ((and (is-Number time)
+	       (not (> time 0)))
+	  (error "Illegal time '~s' in update declaration~%  for chunk ~s"
+		 time chunk)))
+   (!= (Chunk-date chunk)
+       (or time (get-universal-time)))
+   (cond ((chunk-up-to-date chunk)
+	  true)
+	 (t
+	  (cerror "I'll pretend it is"
+		  !"Chunk date set to time ~s that is before latest supporter date ~s~
+                    ~% for chunk ~s"
+		  (Chunk-date chunk)
+		  (Chunk-latest-supporter-date chunk)
+		  chunk))))
 
 (defun chunk-update (ch force postpone-derivees)
     (chunks-update (list ch) force postpone-derivees))
@@ -921,6 +960,13 @@
 			       ;; via 'set-latest-support-date' --
 			       (cond ((and (still-must-derive ch)
 					   (not (update-interrupted)))
+				      (cond ((and temp-mgt-dbg*
+						  (some (lambda (ch)
+						           (not (Chunk-managed ch)))
+							(Chunk-update-basis ch)))
+					     (format *error-output*
+						"To handle update basis of ~s ... ~%"
+						ch)))
 				      (temporarily-manage
 					 (Chunk-update-basis ch))
 				      (chunks-leaves-up-to-date
@@ -964,13 +1010,17 @@
 				     updatees !()))))))
 
 	       (temporarily-manage (update-chunks)
+;;;;		  (trace-around temporarily-manage
+;;;;		     (:> "(temporarily-manage: " update-chunks ")")
 		  (dolist (ud-ch update-chunks)
 		     (cond ((not (Chunk-managed ud-ch))
 			    (cond (temp-mgt-dbg*
 				   (format t "Temporarily managing ~s~%"
 					   ud-ch)))
 			    (on-list ud-ch temporarily-managed)
-			    (chunk-internal-req-mgt ud-ch)))))
+			    (chunk-internal-req-mgt ud-ch))))
+;;;;		     (:< (&rest _) "temporarily-manage: "))
+		  )
 
 	       (derivees-update (ch in-progress)
 		  (cond (chunk-update-dbg*
@@ -1119,7 +1169,8 @@
 	 ;; all over again, but 'derive' is _not_ rerun on any chunk it
 	 ;; was previously run on.
 
-	 (cond ((or force (some #'Chunk-managed chunks))
+	 (cond ((or (and force (not (null chunks)))
+		    (some #'Chunk-managed chunks))
 		(cond ((> chunk-update-depth* chunk-depth-error-thresh*)
 		       (cerror "I will continue, with threshold depth doubled"
 			       "Depth of recursive calls to 'chunks-update' exceeds ~s"
@@ -1152,6 +1203,14 @@
 		      (unwind-protect
 			 (progn
 			    (cond (force
+				   (cond ((and temp-mgt-dbg*
+					       (some (lambda (ch)
+						        (not (Chunk-managed ch)))
+						     chunks))
+					  (format *error-output*
+					     "Because it's being forced ...~%")
+;;;;					  (break "Forced!")
+					  ))
 				   (temporarily-manage chunks)))
 			    (let ((chunks-needing-update
 				      (chunks-leaves-up-to-date chunks !())))
@@ -1226,7 +1285,7 @@
 ;;; There is no independent content of an Or-chunk to check the date of --
 (defmethod derive-date ((orch Or-chunk))
    (cond ((slot-boundp orch 'disjuncts)
-	  (earliest-up-to-date-disjunct orch false))
+	  (earliest-up-to-date-disjunct-date orch false))
 	 (t
 	  +no-info-date+)))
 
@@ -1240,9 +1299,9 @@
 	 ((not (slot-truly-filled orch 'default))
 	  (error "Deriving Or-chunk with no default disjunct: ~s"
 		  orch)))
-   (earliest-up-to-date-disjunct orch true))
+   (earliest-up-to-date-disjunct-date orch true))
 
-(defun earliest-up-to-date-disjunct (orch must-exist)
+(defun earliest-up-to-date-disjunct-date (orch must-exist)
    (let ((date nil))
       (dolist (d (Or-chunk-disjuncts orch)
 		(or date
@@ -1291,7 +1350,7 @@
 ;;; false, it means that there is no way to tell what the date should be; 
 ;;; only the deriver can tell.  If the (content) deriver returns false, it
 ;;; means that the chunk is up to date without further computation.
-;;; In either case, the date should be left unchanged; but in the
+;;; In either case, the date should usually be left unchanged; but in the
 ;;; latter case, if some supporter has a later date, then the date
 ;;; should be set to the date of the latest supporter.
 
@@ -1405,6 +1464,12 @@
   (:method ((l cons))
      (mapcar #'chunk-name->list-structure l)))
 
+(defun find-chunk (exp must-exist)
+   (or (chunk-with-name exp false)
+       (cond (must-exist
+	      (error "Can't find chunk with name ~s" exp))
+	     (t false))))
+
 ;;; IMPORTANT: All chunks should be created using the following function --
 
 ;;; Index chunks by first pathname in their names, if any
@@ -1496,11 +1561,16 @@
 	      )))))
 
 (defun chunk-destroy (ch)
-   (walk-table
-      (\\ (k ch1)
-	 (cond ((eq ch1 ch)
-		(remhash k chunk-table*))))
-      chunk-table*)
+   (block seek-and-destroy
+      (walk-table
+	 (\\ (k chunks-with-kernel-k)
+	    (cond ((memq ch chunks-with-kernel-k)
+		   (setf (gethash k chunk-table*)
+			 (delete ch chunks-with-kernel-k))
+		   (return-from seek-and-destroy))))
+	 chunk-table*)
+      (cerror "I'll assume this is not a problem, since I'm destroying it anyway"
+	      "Chunk not in chunk table: ~s" ch))
   (dolist (b (Chunk-basis ch))
      (setf (Chunk-derivees b) (delete ch (Chunk-derivees b))))
   (dolist (d (Chunk-derivees ch))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.15 2005/05/04 14:35:48 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.16 2005/05/31 03:42:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -337,18 +337,23 @@
    
 ;;; If third arg = :keep, then existing association is not changed.
 (defun place-Dir-associate-chunk (directory prop linked-dir)
-   (chunk-with-name `(:dir-associate ,prop ,directory)
-      (\\ (exp)
-	 (make-instance 'Dir-associate-chunk
-	    :name exp
-	    :directory directory
-	    :prop prop))
-      :initializer
-      (\\ (ch)
-	 (setf (Chunk-date ch) (get-universal-time))
-	 (cond ((not (eq linked-dir ':keep))
-		(setf (Dir-associate-chunk-linked-dir ch)
-		      linked-dir))))))
+   (let ((da-chunk
+	    (chunk-with-name `(:dir-associate ,prop ,directory)
+	       (\\ (exp)
+		  (make-instance 'Dir-associate-chunk
+		     :name exp
+		     :directory directory
+		     :prop prop))
+	       :initializer
+	       (\\ (ch)
+		  ;; The default is +no-info-date+, but we want
+		  ;; a more specific hallucination -- that the
+		  ;; association has existed forever.
+		  (setf (Chunk-date ch) 0)
+		  (cond ((not (eq linked-dir ':keep))
+			 (setf (Dir-associate-chunk-linked-dir ch)
+			       linked-dir)))))))
+      da-chunk))
 
 (defmethod derive-date ((da-ch Dir-associate-chunk))
    (Chunk-date da-ch))
@@ -1100,6 +1105,8 @@
 					      :name (Pathname-name pn)
 					      :type suffix))))))))))
 
+(declaim (special ap* pn* dp-ch* ad* wh* old-ad*))
+
 ;;;E.g., (declare-pathname-associate 'checked "C:/prog/opt/" "../chk" ".chk")
 ;;; If 'where' is false, there is no associate, and the value of 'suff'
 ;;; is irrelevant.
@@ -1122,10 +1129,11 @@
 ;;;;	" is " (pathname-prop assoc-prop pn)
 ;;;;	:% "  Change to " assoc-dir "?" :%)
       (let ((dp-ch (place-Dir-associate-chunk
-		      pn assoc-prop assoc-dir)))
-	 (setq dp-ch* dp-ch)
-	 (cond ((equal (pathname-prop assoc-prop pn)
-			    assoc-dir)
+		      pn assoc-prop assoc-dir))
+	    (prev-assoc (pathname-prop assoc-prop pn)))
+;;;;	 (setq dp-ch* dp-ch)
+	 (setq old-ad* prev-assoc)
+	 (cond ((equal prev-assoc assoc-dir)
 		(cond ((not (equal (Dir-associate-chunk-linked-dir dp-ch)
 				   assoc-dir))
 		       (format *error-output*
@@ -1141,7 +1149,12 @@
 		      assoc-dir)
 		(setf (Dir-associate-chunk-linked-dir dp-ch)
 		      assoc-dir)
-		(setf (Chunk-date dp-ch) (get-universal-time))
+		(cond (prev-assoc
+		       (setq ap* assoc-prop pn* pn dp-ch*
+			     dp-ch ad* assoc-dir wh* where)
+		       (break !"declare-pathname-associate-> ~
+                                about to change date of ~s" dp-ch)
+		       (setf (Chunk-date dp-ch) (get-universal-time))))
 		(chunk-update dp-ch false false))))))
 
 (defun string-case-analyze (str)

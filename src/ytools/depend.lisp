@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.28 2005/05/04 14:35:46 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.29 2005/05/31 03:42:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -15,7 +15,6 @@
 
 (defstruct (Scan-depends-on-state (:conc-name Sds-))
    file-chunk  ; for the file whose basis is being found
-;;;;   expect-only-run-time-dependencies
    sub-file-types)
 ;; -- A list of sub-file types L such that all antecedents found
 ;; after this will be slurped with respect to every element of L.
@@ -108,7 +107,7 @@
 	    (t false))))
 
 (defun string-extract-readtab (str)
-   (let ((rpos (search "Readtable: " str))
+   (let ((rpos (search "readtable: " (string-downcase str)))
 	 (strlen (length str)))
       (cond (rpos
 	     (let ((pos (+ rpos (length "Readtable: "))))
@@ -266,16 +265,17 @@
 			   (cond (slurp-dep
 				  (pathnames-note-slurp-support
 					  pnl file-ch which-slurp-types)
-				  (cond ((typep file-ch 'Code-file-chunk)
-					 (setf (Code-file-chunk-read-basis file-ch)
-					       (union
-						 (mapcar
-						    (\\ (pn)
-						       (pathname-denotation-chunk
-							  pn true))
-						    pnl)
-						 (Code-file-chunk-read-basis
-						    file-ch))))))))
+;;;;				  (cond ((typep file-ch 'Code-file-chunk)
+;;;;					 (setf (Code-file-chunk-read-basis file-ch)
+;;;;					       (union
+;;;;						 (mapcar
+;;;;						    (\\ (pn)
+;;;;						       (pathname-denotation-chunk
+;;;;							  pn true))
+;;;;						    pnl)
+;;;;						 (Code-file-chunk-read-basis
+;;;;						    file-ch)))))
+				  )))
 			(dolist (pn pnl)
 			   (let* ((pchunk (pathname-denotation-chunk pn true))
 				  (lpchunk (place-Loaded-chunk pchunk false)))

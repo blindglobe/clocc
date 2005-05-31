@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.11 2005/04/18 01:25:16 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.12 2005/05/31 03:42:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -41,14 +41,15 @@ funktion
 
 (defvar file-op-count* 0)
 
-(defparameter fload-flags* '(- -f -c -a -s -o -x -z))
-(defparameter filespecs-load-flags* '(-c -s -o -z))
-;;; -  -> "Clear sticky flags"
+(defparameter fload-flags* '(#\f #\c #\a #\s #\o #\n #\x #\z))
+(defparameter filespecs-load-flags* '(#\c #\s #\o #\z))
+     ;;;; ;;; -  -> "Clear sticky flags"
 ;;; -f -> "Force load even if apparently up to date"
 ;;; -c -> "Compile and load each file even if apparently up to date"
 ;;; -a -> "Ask whether to compile each file"
 ;;; -s -> "Load source, ignoring possibility of loading object"
 ;;; -o -> "Load object, without recompiling"
+;;; -n -> "Do whatever fload-compile* says" ("normal" case)
 ;;; -x -> "Stop managing loaded file (i.e., stop loading)"
 ;;; -z -> "Postpone update of chunks for files supported by this one"
 
@@ -89,41 +90,83 @@ funktion
 	 (labels ((set-manip (v force-too flag)
 		     (cond (file-manip
 			    (format *error-output*
-			       "Ignoring redundant flag ~s to fload"
+			       "Ignoring contradictory flag '~a' to fload"
 			       flag))
 			   (t
 			    (setq file-manip v)
 			    (cond (force-too
-				   (setq force-flag v)))))))
+				   (setq force-flag v))))))
+		  (set-force (v flag)
+		     (cond (force-flag
+			    (format *error-output*
+			       "Ignoring contradictory flag '~a' to fload"
+			       flag))
+			   (t
+			    (setq force-flag v))))
+		  (ask-user-to-resolve-load-flags (stated-manip stated-force-flag)
+		     (let (choice)
+			(loop 
+			   (format *query-io*
+			      "Which do you really mean: ~s or ~s? "
+			      stated-manip stated-force-flag)
+			   (setq choice (read *query-io*))
+			   (cond ((eq choice stated-manip)
+				  (return (lambda () 
+					     (setq force-flag false))))
+				 ((eq choice stated-force-flag)
+				  (return (lambda ()
+					     (setq file-manip false)))))))))
 	    (dolist (flag flags)
-	       (cond ((eq flag '-z)
+	       (cond ((eql flag '#\z)
 		      (setq postpone-derivees true))
-		     (file-manip
-		      (format *error-output*
-			 "Ignoring redundant flag to fload: ~s~%"
-			 flag))
 		     (t
 		      (case flag
-			 (-x
-			  (set-manip ':noload false '-x))
-			 (-s
-			  (set-manip ':source true '-s))
-			 (-o
-			  (set-manip ':object true '-o))
-			 (-f
-			  (setq force-flag ':load))
-			 (-c
-			  (set-manip ':compile true '-c))
-			 (-a
-			  (set-manip ':ask-ask false '-a))
+			 (#\s
+			  (set-manip ':source false '#\s))
+			 (#\o
+			  (set-manip ':object false '#\o))
+			 (#\n
+			  (set-manip ':defer false '#\n))
+			 (#\a
+			  (set-manip ':ask-ask false '#\a))
+			 (#\f
+			  (set-force ':load '#\f))
+			 (#\c
+			  (set-force ':compile '#\c))
+			 (#\x
+			  (set-force ':noload false '#\x))
 			 (t
 			  (cerror "I will ignore it"
-				  "Illegal flag to 'fload': ~s" flag)))))))
+				  "Illegal flag to 'fload': '~a'" flag))))))
+	    ;; Complain about various contradictory pairings --
+	   (cond ((and (or file-manip postpone-derivees)
+		       (eq force-flag ':noload))
+		  (cerror "I will ignore it"
+			  "Flag '-x' contradicts presence of other flags")
+		  (setq force-flag false))
+		 ((and force-flag
+		       (memq file-manip '(:defer :ask)))
+		  (cerror "I will ignore it"
+			  "Forcing flag '~a' contradicts file-manip instructions"
+			  (cond ((eq force-flag ':load) '#\f)
+				(t '#\c))))
+		 ((member (list file-manip force-flag)
+			  '((:source :compile))
+			  :test #'equal)
+		  (restart-case
+		      (error "Contradictory instructions ~s/~s derived from flags"
+			     file-manip force-flag)
+		    (error (resolver)
+		     :report "I will prompt for which to do"
+		     :interactive (lambda ()
+				     (ask-user-to-resolve-load-flags
+					  file-manip force-flag))
+		       (funcall resolver))))))
 	(dolist (pn (filespecs->ytools-pathnames specs))
   	   (filoid-fload pn :force-load force-flag
 			    :manip file-manip
 			    :postpone-derivees postpone-derivees)
-	  ))))
+	 ))))
 
 ;;; A class with just one instance, representing the fload-compile-flag*'s
 ;;; being set to the user's desired value --
@@ -220,6 +263,8 @@ funktion
 		       !"Ignoring request to compile ~s;~
                          ~% there is no source file"
 		       loaded-chunk)))))
+	 ((eq force-load ':noload)
+	  (chunk-terminate-mgt loaded-chunk ':ask))
 	 (t
 	  (monitor-filoid-basis loaded-chunk)
 	  (loaded-chunk-set-basis loaded-chunk)
@@ -379,7 +424,9 @@ funktion
                            'fload-compile* to decide each time.~%"
 			  manip old-manip)))))
 	       (t
-		(format *query-io* "[~s]~%" old-manip)))))
+		(format *query-io*
+		     "[~s -becomes-> ~s]~%"
+		     old-manip manip)))))
   manip)
 
 (defun ask-if-generalize (manip)
@@ -424,8 +471,8 @@ funktion
 ;;;;		      ;; Up to date
 ;;;;		      false)))))))
 
-(defparameter fcompl-flags* '(- -f -x -l -z))
-(defparameter filespecs-compile-flags* '(-l -z))
+(defparameter fcompl-flags* '(#\f #\x #\l #\z))
+(defparameter filespecs-compile-flags* '(#\l #\z))
 ;;; -x -> "Stop managing compiled file (i.e., stop compiling)"
 ;;; -l -> "Load after compile" (from now on, unless -x)
 ;;; -f -> "Force compile even if apparently up to date"
@@ -468,10 +515,10 @@ funktion
 	    (postpone-derivees false))
 	(dolist (flag flags)
 	    (case flag
-	       (-f (setq force-flag true))
-	       (-l (setq load-flag true))
-	       (-x (setq cease-mgt true))
-	       (-z (setq postpone-derivees true))
+	       (#\f (setq force-flag true))
+	       (#\l (setq load-flag true))
+	       (#\x (setq cease-mgt true))
+	       (#\z (setq postpone-derivees true))
 	       (t (cerror "I will ignore it"
 			  "Illegal flag to 'fcompl': ~s" flag))))
 	(dolist (pn (filespecs->ytools-pathnames specs))

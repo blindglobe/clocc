@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.29 2005/05/31 03:42:56 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.30 2005/06/13 12:56:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -16,8 +16,9 @@
 (defstruct (Scan-depends-on-state (:conc-name Sds-))
    file-chunk  ; for the file whose basis is being found
    sub-file-types)
-;; -- A list of sub-file types L such that all antecedents found
-;; after this will be slurped with respect to every element of L.
+;;; -- A list of sub-file types L such that all antecedents found
+;;; after this will be slurped with respect to every element of L.
+;;; Always includes at least macros-sub-file-type*.
 
 ;;; State for task is an Sdo-state for the file chunk we're scanning.
 ;;; We're scanning it to figure out its basis (and callees)

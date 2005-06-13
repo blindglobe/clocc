@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.16 2005/05/31 03:42:57 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.17 2005/06/13 12:56:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -14,7 +14,8 @@
 	     pathname->string pathname-equal pathname-get
 	     ->pathname filespecs->pathnames filespecs->ytools-pathnames
 	     def-ytools-logical-pathname ytools-logical-pathname-def
-	     ytools def-ytools-pathname-control)))
+	     ytools def-ytools-pathname-control
+	     string-is-ytools-logical-pathname)))
 
 ;;; Some logical names really name special modes of "file" handling.
 
@@ -549,8 +550,8 @@
 	    (setq specl (cdr specl))
 	    (let ((pnx (cond ((is-Symbol spec)
 			      (let ((symname (symbol-name spec)))
-				 (cond ((and (> (length symname) 0)
-					     (char= (elt symname 0) #\%))
+				 (cond ((string-is-ytools-logical-pathname
+					   symname)
 					(multiple-value-bind 
 					               (sym remainder)
 					               (%-factor
@@ -780,9 +781,7 @@
 
 (defun dirstring-as-logname (dirstring)
    (declare (type string dirstring))
-   (cond ((and (> (length dirstring) 1)
-	       (char= (elt dirstring 0)
-		      #\%))
+   (cond ((string-is-ytools-logical-pathname dirstring)
 	  (multiple-value-bind (sym pos)
 			       (read-from-string dirstring false false
 						 :start 1)
@@ -1194,6 +1193,6 @@
 		  :directory (Pathname-directory pn)
 		  :version #+allegro ':unspecific #-allegro ':newest))
 
-
-
-		  
+(defun string-is-ytools-logical-pathname (s)
+   (and (> (length s) 0)
+	(char= (elt s 0) #\%)))

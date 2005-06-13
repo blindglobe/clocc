@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.41 2005/05/31 03:42:56 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.42 2005/06/13 12:56:06 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -818,13 +818,17 @@
 		  "not managed")
 	         ((Chunk-derive-in-progress ch)
 		  "derivation already in progress")
+	         ((not (chunk-is-marked ch down-mark))
+		  "never marked with down-mark")
 		 ((chunk-is-marked ch up-mark)
-		  "marked")
-		 ((chunk-date-up-to-date ch)
+		  "already marked with up-mark")
+		 ((and (chunk-date-up-to-date ch)
+		       (or (not force)
+			   (not (memq ch must-derive))))
 ;;;;		  (cond ((eq ch (elt input-chunks* 3))
 ;;;;			 (setq ch* ch)
 ;;;;			 (break "Got input 3")))
-		  "up to date")
+		  "up to date and not forced")
 		 ((not
 		      (every #'chunk-up-to-date
 			     (Chunk-basis ch)))
@@ -889,7 +893,8 @@
 	  (must-derive (cond (force (list-copy chunks))
 			     (t !())))
 	  (postponed !())
-	  (chunk-update-depth* (+ chunk-update-depth* 1)))
+	  (chunk-update-depth* (+ chunk-update-depth* 1))
+	  interrupt-noted)
       (labels ((chunks-leaves-up-to-date (chunkl in-progress)
 		  (let ((need-updating !()))
 		     (dolist (ch chunkl need-updating)
@@ -1023,6 +1028,8 @@
 		  )
 
 	       (derivees-update (ch in-progress)
+;;;;		  (trace-around derivees-update
+;;;;		     (:> "(derivees-update: " ch ")")
 		  (cond (chunk-update-dbg*
 			 (format *error-output*
 			    "Considering ~s~%  [after ~s] [depth ~s]~%"
@@ -1073,31 +1080,38 @@
 					      (format *error-output*
 						      " ...Deriving!~%")))
 				       (chunk-mark ch derive-mark)
-;;;;				       (setq l-ch* ch)
-;;;;				       (break "About to derive ~s"
-;;;;					      ch)
 				       (do-derive ch)))
-				(cond ((not (update-interrupted))
-				       (let ((in-progress
-						(cons ch in-progress)))
-					  (chunk-mark ch up-mark)
-					  (derivees-derivees-update
-					     (Chunk-derivees ch)
-					     in-progress)
-					  (cond ((not (update-interrupted))
-						 (derivees-derivees-update
-						    (Chunk-update-derivees ch)
-						    in-progress)))))))))
+				(let ((to-explore
+				         (append (Chunk-update-derivees ch)
+						 (Chunk-derivees ch)))
+				      (in-progress
+					  (cons ch in-progress)))
+				   (chunk-mark ch up-mark)
+				   (setq to-explore
+					 (mapcan #'set-latest-support-date
+						 to-explore))
+				   (do ((el to-explore (tail el)))
+				       ((or (null el)
+					    (update-interrupted)))
+				     (derivees-update (head el) in-progress)
+				     ;;; If interrupted, it's vital to
+				     ;;; add the derivees remaining to be updated
+				     ;;; to the list of chunks, so they'll be
+				     ;;; handled when we resume.--
+				     (cond ((update-interrupted)
+					    (setq chunks (nconc el chunks)))))))))
 			(chunk-update-dbg*
-			 (report-reason-to-skip-chunk))))
+			 (report-reason-to-skip-chunk)))
+;;;;		     (:< (&rest _) "derivees-update: "))
+		  )
 
-	       (derivees-derivees-update (l in-progress)
-		  (block dd-update
-		     (dolist (d l)
-			(dolist (c (set-latest-support-date d))
-		           (derivees-update c in-progress)
-			   (cond ((update-interrupted)
-				  (return-from dd-update)))))))
+;;;;	       (derivees-derivees-update (l in-progress)
+;;;;		  (block dd-update
+;;;;		     (dolist (d l)
+;;;;			(dolist (c (set-latest-support-date d))
+;;;;		           (derivees-update c in-progress)
+;;;;			   (cond ((update-interrupted)
+;;;;				  (return-from dd-update)))))))
 
 	       (still-must-derive (ch)
 		  (and (not (Chunk-derive-in-progress ch))
@@ -1117,13 +1131,15 @@
 			      (delete ch must-derive)))))
 
 	       (update-interrupted ()
-		  (cond ((> chunk-event-num* max-here)
+		  (cond (interrupt-noted true)
+			((> chunk-event-num* max-here)
 ;;;;			 (format *error-output*
 ;;;;"~%*** UPDATE INTERRUPTED *** max-here = ~s chunk-event-num* = ~s~%   during update triggered by ~s~%"
 ;;;;			    max-here chunk-event-num* chunks)
 			 (cond (chunk-update-dbg*
 				(format *error-output*
 				   "Chunk update interrupted~%")))
+			 (setq interrupt-noted true)
 			 true)
 			(t false)))
 
@@ -1200,6 +1216,11 @@
 		      (setq max-here (+ up-mark 1))
 		      (setq chunk-event-num* max-here)
 		      (setq temporarily-managed !())
+		      ;; This is the only place 'interrupt-noted' is reset. --
+		      (setq interrupt-noted false)
+		      ;; -- Once the body of this loop is interrupted, all attention
+		      ;; is devoted to packaging up the state so we can restart by
+		      ;; going around the loop again.
 		      (unwind-protect
 			 (progn
 			    (cond (force
@@ -1214,12 +1235,13 @@
 				   (temporarily-manage chunks)))
 			    (let ((chunks-needing-update
 				      (chunks-leaves-up-to-date chunks !())))
-				(cond (chunk-update-dbg*
-				       (format *error-output*
-					  "Updating derivees of chunks ~s~%"
-					  chunks-needing-update)))
-				(dolist (ch chunks-needing-update)
-				   (derivees-update ch !()))))
+				(cond ((not (update-interrupted))
+				       (cond (chunk-update-dbg*
+					      (format *error-output*
+						 "Updating derivees of chunks ~s~%"
+						 chunks-needing-update)))
+				       (dolist (ch chunks-needing-update)
+					  (derivees-update ch !()))))))
 			 (dolist (ud-ch temporarily-managed)
 			    (cond (temp-mgt-dbg*
 				   (format t "No longer managing ~s~%" ud-ch)))
@@ -1396,10 +1418,10 @@
 		     ;; its supporters.
 		     (max 0 old-date (Chunk-latest-supporter-date ch)))
 		 old-date)
-	      (cond (chunk-update-dbg*
-		     (format *error-output*
-			"Date set to ~s for chunk ~s~%"
-			(Chunk-date ch) ch)))
+;;;;	      (cond (chunk-update-dbg*
+;;;;		     (format *error-output*
+;;;;			"Date set to ~s for chunk ~s~%"
+;;;;			(Chunk-date ch) ch)))
 	      (setq successful true)))
        (setf (Chunk-derive-in-progress ch) false))
      successful))

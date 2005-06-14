@@ -2052,10 +2052,11 @@
 	 (macro-function (first form) #-(or poplog akcl) environment)))
    (walk-macro-call
     map-function reduce-function screamer? partial? nested? form environment))
-  ((#+(not (or lucid ansi-90 ansi-cl allegro cmu)) special-form-p
-      #+lucid lisp:special-form-p
-      #+(or ansi-90 ansi-cl allegro cmu) special-operator-p
-      (first form))
+  ((and (symbolp (first form))
+        (#+(not (or lucid ansi-90 ansi-cl allegro cmu)) special-form-p
+         #+lucid lisp:special-form-p
+         #+(or ansi-90 ansi-cl allegro cmu) special-operator-p
+         (first form)))
    (error "Cannot (currently) handle the special form ~S" (first form)))
   (t (walk-function-call
       map-function reduce-function screamer? partial? nested? form

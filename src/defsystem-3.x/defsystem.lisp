@@ -1287,7 +1287,8 @@
     (mk::home-subdirectory "lisp/systems/")
 
     ;; Global registry
-    "/usr/local/lisp/Registry/")
+    #+unix (pathname "/usr/local/lisp/Registry/")
+    )
   "Central directory of system definitions. May be either a single
    directory pathname, or a list of directory pathnames to be checked
    after the local directory.")
@@ -1296,6 +1297,25 @@
 (defun add-registry-location (pathname)
   "Adds a path to the central registry."
   (pushnew pathname *central-registry* :test #'equal))
+
+
+(defun print-central-registry-directories (&optional (stream *standard-output*))
+  (dolist (d *central-registry*)
+    (typecase d
+      (string (print (pathname d) stream))
+      (pathname (print d stream))
+      (otherwise (print (pathname (eval d)) stream)))))
+
+
+(defun list-central-registry-directories ()
+  (loop for d in *central-registry*
+        collect (typecase d
+                  (string (pathname d))
+                  (pathname d)
+                  (otherwise (pathname (eval d))))))
+
+
+
 
 (defvar *bin-subdir* ".bin/"
   "The subdirectory of an AFS directory where the binaries are really kept.")
@@ -1754,7 +1774,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 
 (defun undefsystem (name)
   "Removes the definition of the system named NAME."
-  (setf (get-system name) nil))
+  (remhash (canonicalize-system-name name) *defined-systems*))
 
 (defun defined-systems ()
   "Returns a list of defined systems."
@@ -1764,6 +1784,14 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 		 (push value result))
 	     *defined-systems*)
     result))
+
+
+(defun defined-names-and-systems ()
+  "Returns a a-list of defined systems along with their names."
+  (loop for sname being the hash-key of *defined-systems*
+        using (hash-value s)
+        collect (cons sname s)))
+
 
 ;;; ********************************
 ;;; Directory Pathname Hacking *****
@@ -2359,6 +2387,11 @@ D
   ;; Added AUTHOR and LICENCE slots.
   (author nil :type (or null string))
   (licence nil :type (or null string))
+
+  ;; Added NON-REQUIRED-P slot.  Useful for optional items.
+  (non-required-p nil :type boolean)	; If T a missing file or
+					; sub-directory will not cause
+					; an error.
   )
 
 
@@ -2544,8 +2577,9 @@ D
   (let ((system (ignore-errors (find-system system-name :error))))
     (if system
         (let ((system-def-pathname
-               (make-pathname :type "system"
-                              :defaults (pathname (component-full-pathname system :source))))
+               (make-pathname
+		:type "system"
+		:defaults (pathname (component-full-pathname system :source))))
               )
           (values system-def-pathname
                   (probe-file system-def-pathname)))
@@ -2610,6 +2644,7 @@ the system definition, if provided."
 	 (error 'missing-system :name system-name)))
     (:load-or-nil
      (let ((system (get-system system-name)))
+       ;; (break "System ~S ~S." system-name system)
        (or (unless *reload-systems-from-disk* system)
 	   ;; If SYSTEM-NAME is a symbol, it will lowercase the
 	   ;; symbol's string.
@@ -2803,6 +2838,10 @@ the system definition, if provided."
     ;; more, and the logic should be now more clear: use the user
     ;; supplied pieces of the pathname if non nil.
 
+    ;; 20050613 Marco Antoniotti
+    ;; Added COMPONENT-NAME extraction to :NAME part, in case the
+    ;; PATHNAME-NAME is NIL.
+
     (cond ((pathname-logical-p pathname) ; See definition of test above.
 	   (setf pathname
 		 (merge-pathnames pathname
@@ -2821,10 +2860,11 @@ the system definition, if provided."
 							  #+scl :common
 							  )
 
-			   :name (pathname-name pathname
-						#+scl :case
-						#+scl :common
-						)
+			   :name (or (pathname-name pathname
+                                                    #+scl :case
+                                                    #+scl :common
+                                                    )
+                                     (component-name component))
 
 			   :type
 			   #-scl (component-extension component type)
@@ -3751,7 +3791,8 @@ the system definition, if provided."
   (assert (member (component-type component)
 		  '(:subsystem :system)))
   (when (null (component-components component))
-    (let ((cname (component-name component)))
+    (let* ((cname (component-name component)))
+      (declare (ignorable cname))
       ;; First we ensure that we reload the system definition.
       (undefsystem cname)
       (let* ((*reload-systems-from-disk* t)

@@ -1,3 +1,33 @@
+2005-06-15  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Added a few utilities functions and fixed a couple of minor glitches
+	in UNDEFSYSTEM and FIND-SYSTEM.
+
+2005-05-11  pvaneynd  <pvaneynd@vault>
+
+	* debian/changelog, debian/prepare-build.sh:
+	commit for debian version 3.5i+2005.05.11
+
+2005-04-26  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* docs/defsystem.text:
+	Added :author, :licence and :description to simple component grammar.
+
+	* docs/defsystem.html:
+	Added :author, :licence and :description to simple grammar.
+
+	* README: *** empty log message ***
+
+	* defsystem.lisp: Changed version number to 3.5i.
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Added AUTHOR and LICENCE slots to COMPONENT definition.
+
 2005-04-26  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* docs/defsystem.text:

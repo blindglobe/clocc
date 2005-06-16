@@ -1,3 +1,18 @@
+2005-06-16  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Fixed warnings and messages in FIND-SYSTEM when dealing with foreign
+	systems.
+	Thanks to Cyrus Harmon for signalling this.
+
+2005-06-15  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Added a few utilities functions and fixed a couple of minor glitches
+	in UNDEFSYSTEM and FIND-SYSTEM.
+
 2005-06-15  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

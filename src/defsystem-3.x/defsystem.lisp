@@ -2652,7 +2652,8 @@ the system definition, if provided."
 	   ;; string. So if case matters in the filename, use strings, not
 	   ;; symbols, wherever the system is named.
            (when (foreign-system-p system)
-             (warn "Foreing system ~S cannot be reloaded by MK:DEFSYSTEM.")
+             (warn "Foreign system ~S cannot be reloaded by MK:DEFSYSTEM."
+		   system)
              (return-from find-system nil))
 	   (let ((path (compute-system-path system-name definition-pname)))
 	     (when (and path
@@ -2674,7 +2675,8 @@ the system definition, if provided."
     (:load
      (or (unless *reload-systems-from-disk* (get-system system-name))
          (when (foreign-system-p (get-system system-name))
-           (warn "Foreign system ~S cannot be reloaded by MK:DEFSYSTEM.")
+           (warn "Foreign system ~S cannot be reloaded by MK:DEFSYSTEM."
+		 (get-system system-name))
            (return-from find-system nil))
 	 (or (find-system system-name :load-or-nil definition-pname)
 	     (error "Can't find system named ~s." system-name))))))

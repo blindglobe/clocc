@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.22 2004/11/12 19:00:44 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.23 2005/06/16 19:05:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -533,7 +533,7 @@ OPTS is passed to `plot-lists-arg'."
 
 ;;;###autoload
 (defun plot-histogram (list nbins &rest opts &key (title "histogram") (mean t)
-                       (key #'value) (xlabel nil) (ylabel nil)
+                       (key #'value) (xlabel "x") (ylabel "count")
                        &allow-other-keys)
   "Plot the data in the list as a histogram.
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;; $Id: ytools.lsy,v 1.27.2.18 2005/05/31 03:42:57 airfoyle Exp $
+;;; $Id: ytools.lsy,v 1.27.2.19 2005/06/16 19:25:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -169,7 +169,7 @@
 		(error "Can't take relative directory with respect to relative directory ~s"
 		       pn))))))
 
-(setq *features* (adjoin ':ytools *features*))
+(setq *features* (adjoin ':pre-chunks :ytools *features*))
 
 (cl:defun load-core ()
       (dolist (bf ytools-core-files*)

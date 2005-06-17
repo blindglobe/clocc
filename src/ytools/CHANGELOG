@@ -1,7 +1,8 @@
-$Id: CHANGELOG,v 1.33 2005/06/17 04:34:12 airfoyle Exp $
+$Id: CHANGELOG,v 1.34 2005/06/17 14:39:22 airfoyle Exp $
 	
 2005-06-17: Add feature pre-chunk, so that .lsy files can run under
-            either old YTools or YTools 2. (Version 1.4.9)
+            either old YTools or YTools 2. Added file
+            multvalhacks.lisp. (Version 1.4.9)
 
 2005-01-25: Add utility 'stream-indent' to outin.lisp            
 

@@ -38,6 +38,9 @@ One side-effect of this change is that CMUCL compiles the SLATEC
 routines much more quickly now.  Probably because it doesn't have to
 compile all the fset forms.  Nice!
 
+If this causes problems, set *enable-merging-data-and-save-init* to
+NIL.
+
 Aug 14, 2004
 ------------
 

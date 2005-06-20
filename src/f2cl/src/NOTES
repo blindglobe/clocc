@@ -2,6 +2,42 @@
 
 Changes:
 
+Jun 19, 2005
+------------
+
+Try to create nice array initializers in idiomatic Lisp.  In some
+Fortran code, we have data statements like 
+
+      DOUBLE PRECISION ERFCS(21)
+      DATA ERFCS(  1) / -.4904612123 4691808039 9845440333 76 D-1     /
+      DATA ERFCS(  2) / -.1422612051 0371364237 8247418996 31 D+0     /
+      DATA ERFCS(  3) / +.1003558218 7599795575 7546767129 33 D-1     /
+      ...
+
+to initialize a local variable.  This was getting converted in Lisp
+code like
+
+     (let ((erfcs (make-array 21 :element-type 'double-float)))
+       (fset (fref erfcs 1 ((1 29))) -.49046121234691808039984544033376D-1)
+       (fset (fref erfcs 2 ((1 29))) -.14226120510371364237824741899631D+0)
+       ...
+       (defun foo ...))
+
+This can be written more nicely as
+
+     (let ((erfcs (make-array 21 :element-type 'double-float
+                    :initial-contents '(-.49046121234691808039984544033376D-1
+				        -.14226120510371364237824741899631D+0
+					...))))
+       (defun foo ...))
+
+We try to do that now.  We currently only handle the case of 1D
+arrays.  Multidimensional arrays will have to wait for another day.
+
+One side-effect of this change is that CMUCL compiles the SLATEC
+routines much more quickly now.  Probably because it doesn't have to
+compile all the fset forms.  Nice!
+
 Aug 14, 2004
 ------------
 

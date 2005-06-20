@@ -912,6 +912,80 @@
 			      (values ,@vlist)))))
 		    *entry-points*)))))
 
+
+(defvar *enable-merging-data-and-save-init* t)
+
+;; This is kind of experimental (and a very, very gross
+;; implementation!).  What we're trying to do is move all of the data
+;; initialization statements for arrays (from DATA statements) into
+;; the initialization of the variable itself.  This makes the code
+;; look like more idiomatic Lisp and it seems to help out compilers
+;; quite a bit.
+(defun merge-data-and-save-inits (saves data)
+  (flet ((find-inits (name)
+	   ;; Look through the data init statements to find an array
+	   ;; initializer for our specified variable NAME.  The
+	   ;; initializer will look something like (FSET (FREF VAR
+	   ;; index limits) value).  Return a list of all matches.
+	   (let ((inits '()))
+	     (dolist (item data)
+	       (when (eq 'fset (first item))
+		 (destructuring-bind (fset (fref var-name indices &rest dims) value)
+		     item
+		   (declare (ignore fset fref dims value))
+		   (when (and (eq var-name name)
+			      ;; Currently, we only handle 1D arrays.
+			      (= 1 (length indices)))
+		     (push item inits)))))
+	     (nreverse inits))))
+    (let ((new-saves '())
+	  (new-data '()))
+      ;; First, save all non-array data initializers.
+      (dolist (item data)
+	(unless (eq 'fset (first item))
+	  (push item new-data)))
+      ;; Now look through all the saved vars
+      (dolist (item saves)
+	(cond ((and (listp (second item))
+		    (eq 'make-array (first (second item))))
+	       ;; Got an array.  Look for initializers in DATA.
+	       (let ((type (second (fourth (second item))))
+		     (inits (find-inits (first item))))
+		 (cond ((and inits (= (length inits) (second (second item))))
+			;; Got enough initializers.
+			(let ((init (make-array (length inits)
+						:element-type type
+						:initial-element
+						(coerce 0 type))))
+			  ;; Gather up the values into an array to be
+			  ;; used for initializing the variable.  The
+			  ;; array is initialized to zero (of the
+			  ;; appropriate type).  If the original code
+			  ;; didn't initialize it, then it didn't
+			  ;; care.
+			  (dolist (i inits)
+			    (destructuring-bind (fset (fref var (index) ((lo hi))) val)
+				i
+			      (declare (ignore fset fref var hi))
+			      (setf (aref init (- index lo)) val)))
+			  (push (list (car item)
+				      (append (copy-list (second item))
+					      `(:initial-contents ',(coerce init 'list))))
+				new-saves)))
+		       (t
+			;; Didn't match.  Save the item, and whatever
+			;; initializers we found that matched the name
+			;; but not the dimension.
+			(push item new-saves)
+			(dolist (i inits)
+			  (push i new-data))))))
+	      (t
+	       ;; Not an array
+	       (push item new-saves))))
+	(values (nreverse new-saves)
+		(nreverse new-data)))))
+
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -1336,6 +1410,14 @@
      ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
      ;;(format t "*data-init*  = ~a~%" *data-init*)
      ;;(format t "save-inits = ~a~%" save-inits)
+
+     (when *enable-merging-data-and-save-init*
+       (multiple-value-setq (save-inits *data-init*)
+	 (merge-data-and-save-inits save-inits *data-init*)))
+     
+     ;;(format t "new *data-init*  = ~a~%" *data-init*)
+     ;;(format t "new save-inits = ~a~%" save-inits)
+     
      ;;(format t "prog-bit = ~a~%" prog-bit)
 
      ;; Replace all references to external functions with #'.
@@ -2956,8 +3038,24 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.124 2005/05/26 19:18:00 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.125 2005/06/20 01:53:39 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.125  2005/06/20 01:53:39  rtoy
+;;; Add code to try to merge the data statement initializers into the
+;;; declaration of the saved variable itself instead of generating a bunch
+;;; of fset forms.
+;;;
+;;; See NOTES for more detail.
+;;;
+;;; src/NOTES:
+;;; o Describe change
+;;;
+;;; src/f2cl5.l:
+;;; o (Gross) Implementation
+;;;
+;;; src/f2cl1.l:
+;;; o Update version.
+;;;
 ;;; Revision 1.124  2005/05/26 19:18:00  rtoy
 ;;; Oops.  Remove some extraneous debugging outputs.
 ;;;

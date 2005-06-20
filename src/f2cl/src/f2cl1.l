@@ -15,8 +15,8 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/06/01 15:29:41 $"))
- 
+  (remove #\$ "2.0 beta $Date: 2005/06/20 01:53:39 $"))
+
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
@@ -2581,8 +2581,24 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.139 2005/06/01 15:29:41 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.140 2005/06/20 01:53:39 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.140  2005/06/20 01:53:39  rtoy
+;;; Add code to try to merge the data statement initializers into the
+;;; declaration of the saved variable itself instead of generating a bunch
+;;; of fset forms.
+;;;
+;;; See NOTES for more detail.
+;;;
+;;; src/NOTES:
+;;; o Describe change
+;;;
+;;; src/f2cl5.l:
+;;; o (Gross) Implementation
+;;;
+;;; src/f2cl1.l:
+;;; o Update version.
+;;;
 ;;; Revision 1.139  2005/06/01 15:29:41  rtoy
 ;;; o Shorten the length of some lines in docstrings.
 ;;; o As part of the header, print out the lisp implementation type and

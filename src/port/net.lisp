@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.57 2005/05/23 15:12:32 sds Exp $
+;;; $Id: net.lisp,v 1.58 2005/06/24 16:16:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -173,7 +173,7 @@
   #+abcl 'to-way-stream
   #+allegro 'excl::socket-stream
   #+clisp 'stream
-  #+(or cmu scl) 'stream:socket-simple-stream
+  #+(or cmu scl) 'stream ; '(or stream:socket-simple-stream sys:fd-stream)
   #+gcl 'stream
   #+lispworks 'comm:socket-stream
   #+openmcl 'ccl::socket

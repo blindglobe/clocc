@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.36 2004/12/22 19:56:13 sds Exp $
+;;; $Id: cllib.system,v 1.37 2005/06/27 18:07:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -55,6 +55,7 @@
             ("base" "simple" "closio" "url" "string" "htmlgen"))
      (:file "iter" :depends-on ("base" "simple" "withtype" "log" "math"))
      (:file "laser" :depends-on ("base" "log"))
+     (:file "lift" :depends-on ("base" "math" "gnuplot"))
      (:file "list" :depends-on ("base" "simple"))
      (:file "log" :depends-on ("base" "withtype" "tilsla" "simple"))
      (:file "math" :depends-on

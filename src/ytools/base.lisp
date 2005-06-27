@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.6 2005/05/03 21:19:06 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.7 2005/06/27 14:39:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -600,6 +600,8 @@
 
 ;;;;(set-dispatch-macro-character #\! #\( #'lpar-exclmac ytools-readtable*)
 
+;;; Function will be called after char has been read.  'args'
+;;; are stream + the character.
 (defmacro def-excl-dispatch (char args &body b)
    (multiple-value-bind (b rt)
                         (let ((tl (member ':readtable b)))

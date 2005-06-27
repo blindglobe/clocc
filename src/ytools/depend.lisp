@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.30 2005/06/13 12:56:06 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.31 2005/06/27 14:39:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(depends-on module scan-depends-on self-compile-dep
-	     end-header)))
+	     in-header end-header)))
 
 (eval-when (:compile-toplevel :load-toplevel)
 
@@ -494,6 +494,13 @@
 ;;;;   (defun :^ (form sdo-state)
 ;;;;      ()))
 
+
+;;; Just ignore anything wrapped in 'in-header'.
+(datafun scan-depends-on in-header
+   (defun :^ (_ _)
+      false))
+
+(defmacro in-header (&body forms) `(progn ,@forms))
 
 (datafun scan-depends-on end-header
    (defun :^ (form sdo-state)

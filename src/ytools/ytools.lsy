@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;; $Id: ytools.lsy,v 1.27.2.19 2005/06/16 19:25:57 airfoyle Exp $
+;;; $Id: ytools.lsy,v 1.27.2.20 2005/06/27 14:39:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -210,4 +210,4 @@
    (setq *readtable* ytools-readtable*)
    (in-package :ytools))
 
-(defconstant +ytools-version+ "2.0.06")
+(defconstant +ytools-version+ "2.0.09")

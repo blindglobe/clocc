@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.13 2005/06/13 12:56:06 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.14 2005/06/27 14:39:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -133,7 +133,7 @@
 			 (#\c
 			  (set-force ':compile '#\c))
 			 (#\x
-			  (set-force ':noload false '#\x))
+			  (set-force ':noload '#\x))
 			 (t
 			  (cerror "I will ignore it"
 				  "Illegal flag to 'fload': '~a'" flag))))))

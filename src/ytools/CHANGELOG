@@ -1,5 +1,11 @@
-$Id: CHANGELOG,v 1.31.2.18 2005/05/31 03:42:56 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.19 2005/06/27 14:39:40 airfoyle Exp $
 	
+2005-06-24: Moved keyword-args-extract to misc.lisp.  Add 'in-header'
+            (file depend.lisp). Fixed bug in fload (so -x flag
+            works). (Version 2.0.09.)
+
+2005-06-17: Added file multvalhacks.lisp .  (Version 2.0.08)
+
 2005-05-30: Added 'find-chunk'.  Fixed bug in 'chunk-destroy'.  Fixed
             bugs in request-mgt logic.  Added some debugging
             statements.  Changed chunk printer.

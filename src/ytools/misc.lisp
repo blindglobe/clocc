@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 1.6 2004/07/12 22:28:02 airfoyle Exp $
+;;;$Id: misc.lisp,v 1.6.2.1 2005/06/27 14:39:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,8 @@
    (export '(out-to-string dbg-out dbg-out-indent
 	     err-out cons-if-new plev plen
 	     classify shorter list-splice is-list-of boole-eq eqn
-	     mod-load val-or-initialize memoize-val gen-var)))
+	     mod-load val-or-initialize memoize-val gen-var
+	     keyword-args-extract)))
 
 (defmacro out-to-string (&rest outargs)
    `(with-output-to-string (string-stream) (out (:to string-stream) ,@outargs)))
@@ -142,3 +143,21 @@
 
 (defun gen-var (sym)
    (build-symbol (:package false) (< sym) - (++ symno*)))
+
+;;; Returns alist of keywords and vals, plus what's left over
+;;; In order: < leftovers, alist >
+(defun keyword-args-extract (args keywords)
+   (repeat :for ((al args)
+		 :collector pairs remainder)
+    :until (null al)
+    :result (values remainder pairs)
+    :within
+      (let ((a (car al)))
+	 (cond ((memq a keywords)
+		(:continue
+		 :collect (:into pairs (list a (cadr al)))
+		   (!= al (cddr al))))
+	       (t
+		(:continue
+		 :collect (:into remainder a)
+		   (!= al (cdr al))))))))

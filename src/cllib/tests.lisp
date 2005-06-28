@@ -4,13 +4,15 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.34 2005/03/02 22:00:28 sds Exp $
+;;; $Id: tests.lisp,v 2.35 2005/06/28 19:44:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `mesg'
   (require :cllib-log (translate-logical-pathname "cllib:log"))
+  ;; `with-collect'
+  (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; these files will be tested:
   (require :cllib-string (translate-logical-pathname "cllib:string"))
   (require :cllib-matrix (translate-logical-pathname "cllib:matrix"))
@@ -20,6 +22,7 @@
   (require :cllib-rpm (translate-logical-pathname "cllib:rpm"))
   (require :cllib-elisp (translate-logical-pathname "cllib:elisp"))
   (require :cllib-xml (translate-logical-pathname "cllib:xml"))
+  (require :cllib-iter (translate-logical-pathname "cllib:iter"))
   (require :cllib-munkres (translate-logical-pathname "cllib:munkres"))
   (require :cllib-cvs (translate-logical-pathname "cllib:cvs")))
 
@@ -316,9 +319,30 @@
       (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-base64 num-err)
       num-err)))
 
+(defun test-iter (&key (out *standard-output*))
+  (let ((num-err 0) actual expected)
+    (setq expected '(#(0 0) #(0 1) #(0 2) #(1 0) #(1 1) #(1 2))
+          actual (with-collect (c)
+                   (do-iter (z #(2 3))
+                     (c (copy-seq z)))))
+    (unless (equalp expected actual)
+      (mesg :test out "~& * error in ~S:~% actual:   ~S~% expected: ~S~%"
+            'do-iter actual expected)
+      (incf num-err))
+    (setq expected '((0 0) (0 1) (0 2) (1 0) (1 1) (1 2))
+          actual (with-collect (c)
+                   (do-iter-ls (z (nreverse '(2 3)))
+                     (c (copy-seq z)))))
+    (unless (equalp expected actual)
+      (mesg :test out "~& * error in ~S:~% actual:   ~S~% expected: ~S~%"
+            'do-iter-ls actual expected)
+      (incf num-err))
+    (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-iter num-err)
+    num-err))
+
 (defun test-all (&key (out *standard-output*)
                  (what '(string math date rpm url elisp xml munkres cvs base64
-                         matrix))
+                         iter matrix))
                  (disable-network-dependent-tests t))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)

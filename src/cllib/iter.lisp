@@ -1,10 +1,10 @@
 ;;; itaration: collecting and multi-dim
 ;;;
-;;; Copyright (C) 1997-2001 by Sam Steingold
+;;; Copyright (C) 1997-2001, 2005 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.7 2005/01/27 23:02:47 sds Exp $
+;;; $Id: iter.lisp,v 1.8 2005/06/28 19:44:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
 (eval-when (compile load eval)
@@ -35,30 +35,33 @@
         (setq z0 (funcall key v0) z1 (funcall key v1))
         unless (funcall test z0 z1) return (funcall lessp z0 z1)))
 
-(defsubst maj2ind (ls ix)
-  "Convert the row-major index IX to the list of indeces.
-E.g.: (maj2ind (reverse (array-dimensions ARRAY)) INDEX)"
-  (declare (list ls) (fixnum ix))
-  (let ((vv 0) res)
-    (declare (type (unsigned-byte 15) vv) (list res))
-    (dolist (dim ls res)
-      (declare (type (unsigned-byte 15) dim))
-      (setf (values ix vv) (floor ix dim)) (push vv res))))
+(defsubst maj2ind (ls ix &optional (ii (make-list (length ls))))
+  "Convert the row-major index IX to the list of indexes.
+E.g.: (maj2ind (reverse (array-dimensions ARRAY)) INDEX LIST)"
+  (declare (list ls ii) (fixnum ix))
+  (map-into ii
+            (lambda (dim)
+              (declare (type (unsigned-byte 15) dim))
+              (multiple-value-bind (xx vv) (floor ix dim)
+                (setq ix xx)
+                vv))
+            ls)
+  (nreverse ii))
 
-(defmacro do-iter-ls ((ii idx) &body body)
-  "Iterate over several indeces at once.
-E.g.: (do-iter (z '(2 3)) (princ z))
+(defmacro do-iter-ls ((ii idx &optional ret) &body body)
+  "Iterate over several indexes at once.
+E.g.: (do-iter-ls (z (reverse '(2 3))) (princ z))
 will print (0 0)(0 1)(0 2)(1 0)(1 1)(1 2)
-In the body, II is a *NEW* list of indeces.
+In the body, II is the *SAME* list of indexes.
 IDX is a list of fixnums."
   (declare (list idx) (symbol ii))
-  (with-gensyms ("ITERATE-LS-" sz ix ls rev)
-    `(let* ((,ls ,idx) (,sz (reduce #'* ,ls)) (,rev (reverse ,ls)))
-      (declare (fixnum ,sz) (list ,ls ,rev))
-      (dotimes (,ix ,sz)
+  (with-gensyms ("ITERATE-LS-" sz ix ls)
+    `(let* ((,ls ,idx) (,sz (reduce #'* ,ls)) (,ii (make-list (length ,ls))))
+      (declare (fixnum ,sz) (list ,ls))
+      (dotimes (,ix ,sz ,ret)
         (declare (fixnum ,ix))
-        (let ((,ii (maj2ind ,ix)))
-          ,@body)))))
+        (setq ,ii (maj2ind ,ls ,ix ,ii))
+        ,@body))))
 
 (defmacro do-iter ((ii idx &optional ret) &body body)
   "Iterate over several indexes at once.

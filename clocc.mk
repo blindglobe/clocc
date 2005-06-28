@@ -10,7 +10,7 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.19 2003/07/03 15:41:18 sds Exp $
+# $Id: clocc.mk,v 1.20 2005/06/28 13:40:12 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 ifndef CLOCC_MK
@@ -23,7 +23,7 @@ FASLEXT := $(shell $(RUNLISP) -faslext)
 DUMPEXT := $(shell $(RUNLISP) -dumpext)
 DO_DUMP := $(filter $(LISPTYPE),$(CLOCC_DUMP))
 FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
-	*.o *.data *.ufsl
+	*.o *.data *.ufsl *.abcl
 LISPFILES = $(addsuffix .$(LISPEXT),$(SOURCES))
 DOCFILES += ChangeLog $(SYSTEM).list
 MAKEFILES = Makefile $(SYSTEM).system

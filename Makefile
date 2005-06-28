@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.11 2000/07/12 18:21:03 sds Exp $
+# $Id: Makefile,v 1.12 2005/06/28 14:08:57 sds Exp $
 # $Source: /cvsroot/clocc/clocc/Makefile,v $
 
 TOP := $(shell pwd)
@@ -41,3 +41,11 @@ cvs-stat: cvs.log
 	@fgrep "author:" cvs.log | wc -l;
 	$(RUNLISP) -i clocc -i src/cllib/base -i src/cllib/cvs \
 		-x '(funcall (intern "CVS-STAT-LOG" :cllib) "cvs.log")'
+
+tarname=clocc
+TARFILES=INSTALL Makefile README bin clocc.lisp clocc.mk etc src
+$(tarname).tgz: force
+	$(RM) $(tarname); $(LN) -s . $(tarname)
+	tar -zvhcf $@ $(addprefix $(tarname)/,$(TARFILES)) \
+		$(addprefix --exclude=,$(FASLFILES) $(JUNK) CVS .cvsignore)
+	$(RM) $(tarname)

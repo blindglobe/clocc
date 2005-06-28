@@ -10,7 +10,7 @@
 # SYSTEM     - the system name for defsystem (usually the dir name)
 # TOP        - the path to the top-level CLOCC directory
 #
-# $Id: clocc.mk,v 1.20 2005/06/28 13:40:12 sds Exp $
+# $Id: clocc.mk,v 1.21 2005/06/28 14:08:09 sds Exp $
 # $Source: /cvsroot/clocc/clocc/clocc.mk,v $
 
 ifndef CLOCC_MK
@@ -24,6 +24,7 @@ DUMPEXT := $(shell $(RUNLISP) -dumpext)
 DO_DUMP := $(filter $(LISPTYPE),$(CLOCC_DUMP))
 FASLFILES = *.fas *.lib *.axpf *.x86f *.hpf *.sgif *.sparcf *.fasl \
 	*.o *.data *.ufsl *.abcl
+JUNK = core *.core *.mem *.dxl *.list *~ *.log
 LISPFILES = $(addsuffix .$(LISPEXT),$(SOURCES))
 DOCFILES += ChangeLog $(SYSTEM).list
 MAKEFILES = Makefile $(SYSTEM).system
@@ -87,7 +88,7 @@ $(SYSTEM).zip: $(DOCFILES) $(LISPFILES) $(MAKEFILES)
 	@$(RM) $(SYSTEM) extra $(notdir $(ZIPEXTRA)) $(notdir $(ZIPEXTRALINK));
 
 clean-all: force
-	$(RM) $(FASLFILES) core *.core *.mem *.dxl TAGS *.list
+	$(RM) $(FASLFILES) TAGS $(JUNK)
 
 clean:
 	$(RM) *.$(FASLEXT) core

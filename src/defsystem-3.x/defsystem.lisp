@@ -1788,7 +1788,7 @@ s/^[^M]*IRIX Execution Environment 1, *[a-zA-Z]* *\\([^ ]*\\)/\\1/p\\
 
 (defun defined-names-and-systems ()
   "Returns a a-list of defined systems along with their names."
-  (loop for sname being the hash-key of *defined-systems*
+  (loop for sname being the hash-keys of *defined-systems*
         using (hash-value s)
         collect (cons sname s)))
 

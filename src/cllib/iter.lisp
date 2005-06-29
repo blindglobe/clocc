@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.9 2005/06/28 19:47:20 sds Exp $
+;;; $Id: iter.lisp,v 1.10 2005/06/29 18:34:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,14 +39,11 @@
   "Convert the row-major index IX to the list of indexes.
 E.g.: (maj2ind (reverse (array-dimensions ARRAY)) INDEX LIST)"
   (declare (list ls ii) (fixnum ix))
-  (map-into ii
-            (lambda (dim)
-              (declare (type (unsigned-byte 15) dim))
-              (multiple-value-bind (xx vv) (floor ix dim)
-                (setq ix xx)
-                vv))
-            ls)
-  (nreverse ii))
+  (do ((ir ii (cdr ir)) (lr ls (cdr lr)))
+      ((endp lr) (nreverse ii))
+    (multiple-value-bind (xx vv) (floor ix (car lr))
+      (setq ix xx)
+      (setf (car ir) vv))))
 
 (defmacro do-iter-ls ((ii idx &optional ret) &body body)
   "Iterate over several indexes at once.

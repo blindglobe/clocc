@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.66 2005/03/08 20:40:23 sds Exp $
+;;; $Id: math.lisp,v 2.67 2005/06/30 14:30:09 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -28,8 +28,8 @@
    product-from-to binomial *primes* *primes-file*
    make-primes-list number-sum-split all-num-split
    vector-shuffle permutation with-permutations-shuffle
-   with-permutations-swap with-permutations-lex permutations-list subsets pick
-   sample eval-cont-fract fract-approx
+   with-permutations-swap with-permutations-lex permutations-list subsets
+   draw pick sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
    dot poly1 poly erf cndf norm normalize rel-dist
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
@@ -415,14 +415,40 @@ The order in which the permutations are listed is either
                          others)))
         (list nil (list first)))))
 
-(defun pick (seq)
+(defun draw (distrib)
+  "Return a random index from the distribution."
+  (declare (type sequence distrib))
+  (let ((len (length distrib)))
+    (case len
+      (0 (error "~S: no elements in the empty sequence ~S" 'draw distrib))
+      (1
+       (unless (= 1 (elt distrib 0))
+         (error "~S: ~S is not a probability distribution" 'draw distrib))
+       0)
+      (t (let ((random (random 1s0)) (sum 0) (pos 0) (ret nil))
+           (map nil (lambda (prob)
+                      (incf sum prob)
+                      (when (and (null ret) (< random sum))
+                        (setq ret pos))
+                      (incf pos))
+                distrib)
+           (unless (= 1 sum)
+             (error "~S: ~S is not a probability distribution" 'draw distrib))
+           ret)))))
+
+(defun pick (seq &optional distrib)
   "Return a random element from the sequence."
   (declare (type sequence seq))
   (let ((len (length seq)))
     (case len
       (0 (error "~S: no elements in the empty sequence ~S" 'pick seq))
       (1 (elt seq 0))
-      (t (elt seq (random len))))))
+      (t (if distrib
+             (progn
+               (unless (= len (length distrib))
+                 (error "~S: length mismatch: ~S ~S" 'pick seq distrib))
+               (elt seq (draw distrib)))
+             (elt seq (random len)))))))
 
 (defun sample (seq count &key complement)
   "Return a random subset of size COUNT from sequence SEQ.
@@ -431,7 +457,7 @@ When :COMPLEMENT is non-NIL, the second value is the complement of the sample."
          (prob (float (/ count len) 0s0)))
     (cond ((minusp leeway)
            (error "~S(~S ~S): too few elements: ~:D"
-                  'pick-subset seq count len))
+                  'sample seq count len))
           ((zerop leeway) (values (coerce seq 'list) '()))
           ((zerop count) (values '() (and complement (coerce seq 'list))))
           (t

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.68 2005/06/30 21:01:08 sds Exp $
+;;; $Id: math.lisp,v 2.69 2005/06/30 22:03:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -915,7 +915,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
   (case order
     (0 (reduce #'max seq :key (compose abs 'key)))
     (1 (reduce #'+ seq :key (compose abs 'key)))
-    (2 (sqrt (reduce #'+ seq :key (lambda (xx) (expt (funcall key xx) 2)))))
+    (2 (sqrt (reduce #'+ seq :key (lambda (xx) (sqr (funcall key xx))))))
     (t (expt (reduce #'+ seq :key
                      (lambda (xx) (expt (abs (funcall key xx)) order)))
              (/ order)))))
@@ -943,7 +943,7 @@ so that (poly 10 '(1 2 3 4 5)) ==> 12345."
     (mismatch seq1 seq2 :key key :start1 (1+ start1) :start2 (1+ start2)
               :end1 (+ start1 depth) :end2 (+ start2 depth) :test
               (lambda (k1 k2) (declare (double-float k1 k2))
-                      (incf dist (expt (- (/ k1 b1) (/ k2 b2)) 2))))
+                      (incf dist (sqr (- (/ k1 b1) (/ k2 b2))))))
     dist))
 
 ;;;
@@ -1128,8 +1128,8 @@ without pre-computing the means."
     (map nil (lambda (r0 r1)
                (let ((xx (funcall key0 r0)) (yy (funcall key1 r1)))
                  (declare (double-float xx yy))
-                 (incf nn) (incf xb xx) (incf yb yy) (incf y2b (expt yy 2))
-                 (incf xyb (* xx yy)) (incf x2b (expt xx 2))))
+                 (incf nn) (incf xb xx) (incf yb yy) (incf y2b (sqr yy))
+                 (incf xyb (* xx yy)) (incf x2b (sqr xx))))
          seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariance!" nn)
     (setq c0 (/ (dfloat nn)) c1 (/ (dfloat (1- nn))))
@@ -1154,7 +1154,7 @@ Uses the numerically stable algorithm with pre-computing the means."
                (let ((xx (- (funcall key0 r0) m0))
                      (yy (- (funcall key1 r1) m1)))
                  (declare (double-float xx yy))
-                 (incf nn) (incf d0 (expt xx 2)) (incf d1 (expt yy 2))
+                 (incf nn) (incf d0 (sqr xx)) (incf d1 (sqr yy))
                  (incf rr (* xx yy))))
          seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariance!" nn)

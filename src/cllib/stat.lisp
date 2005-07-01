@@ -1,11 +1,11 @@
 ;;; n-dim statistics, histograms &c
 ;;; for simple regression, see math.lisp
 ;;;
-;;; Copyright (C) 2000-2004 by Sam Steingold
+;;; Copyright (C) 2000-2005 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.9 2004/07/30 18:28:22 sds Exp $
+;;; $Id: stat.lisp,v 1.10 2005/07/01 23:29:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,7 +21,7 @@
 
 (in-package :cllib)
 
-(export '(regress-n regress-poly histogram))
+(export '(regress-n regress-poly histogram chi2))
 
 ;;;
 ;;; n-dim statistics
@@ -117,6 +117,21 @@ The vector contains the counts in the Ith bin."
                        'histogram i a))
       (values vec width mdl))))
 
+;;;
+;;; Chi square
+;;;
+
+(defun chi2 (seq1 seq2)
+  "Return the chi^2 score & the degree of freedom."
+  (let* ((chi2 0) (df -1) (s1 (reduce #'+ seq1)) (s2 (reduce #'+ seq2))
+         (sum (+ s1 s2)))
+    (map nil (lambda (v1 v2)
+               (incf df)
+               (let* ((p (/ (+ v1 v2) sum)) (e1 (* s1 p)) (e2 (* s2 p)))
+                 (incf chi2 (/ (sqr (- v1 e1)) e1))
+                 (incf chi2 (/ (sqr (- v2 e2)) e2))))
+         seq1 seq2)
+    (values chi2 df)))
 
 (provide :cllib-stat)
 ;;; file stat.lisp ends here

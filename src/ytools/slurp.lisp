@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.29 2005/05/31 03:42:57 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.30 2005/07/01 13:50:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -16,7 +16,7 @@
 	     slurp-eval slurp-ignore
 	     now-loading* now-compiling* now-slurping*)))
 
-(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
+(defvar source-suffixes* (adjoin lisp-source-extn* '("lsy" "lisp") :test #'equal))
 (defvar obj-suffix* lisp-object-extn*)
 (defvar object-suffixes* `(,lisp-object-extn*))
 

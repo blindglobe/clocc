@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.27 2005/03/28 14:13:25 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.28 2005/07/01 13:50:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -225,12 +225,18 @@
 		    (Form-chunk-form fop-ch))))
       file-op-count*))
 
-(defun place-Form-timed-file-op-chunk (form)
-   (chunk-with-name `(:form ,form :timed-by-file-ops)
+;;; It's dangerous to use the form as the name-kernel, because then there's
+;;; no way to change the form without destroying the old chunk.
+;;; (Just as for Form-chunks, defined in chunk.lisp.)
+(defun place-Form-timed-file-op-chunk (form &optional (name-kernel form))
+   (chunk-with-name `(:form ,name-kernel :timed-by-file-ops)
       (\\ (name)
 	 (make-instance 'Form-timed-file-op-chunk
-	    :name name
-	    :form form))))
+	    :name name))
+      :initializer
+      (\\ (new-form-chunk)
+         (setf (Form-chunk-form new-form-chunk)
+	       form))))
 
 (defun module-form-chunks (mod which)
 	   (let ((rforms
@@ -243,7 +249,8 @@
 		     (list (place-Form-timed-file-op-chunk
 			      `(progn ,@(mapcan (\\ (e)
 						   (list-copy (rest e)))
-						rforms))))))))
+						rforms))
+			      `(,which ,(YT-module-name mod))))))))
 
 (defun module-loaded-prereqs (mod)
    (let ((loaded-ch (place-Loaded-module-chunk

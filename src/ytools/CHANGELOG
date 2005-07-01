@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.19 2005/06/27 14:39:40 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.20 2005/07/01 13:50:25 airfoyle Exp $
 	
+2005-06-30: Changed naming convention for form chunks derived from
+            modules, so that redefining module erases the old form
+            chunk rather than just adding a new one.
+
 2005-06-24: Moved keyword-args-extract to misc.lisp.  Add 'in-header'
             (file depend.lisp). Fixed bug in fload (so -x flag
             works). (Version 2.0.09.)

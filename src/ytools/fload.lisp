@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.14 2005/06/27 14:39:40 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.15 2005/07/01 13:50:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -290,7 +290,9 @@
       ;; If force = :load, load object if it exists --
       (cond ((eq force ':load)
 	     (setq force
-		   (cond ((probe-file (Code-file-chunk-pathname obj-file-chunk))
+		   (cond ((and obj-file-chunk
+			       (probe-file
+				  (Code-file-chunk-pathname obj-file-chunk)))
 			  ':object)
 			 (t
 			  ':source)))))

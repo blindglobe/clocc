@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.42 2005/06/13 12:56:06 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.43 2005/07/01 13:50:36 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -628,6 +628,9 @@
 		       (cond ((null all-derivees)
 			      (chunk-unmanage c))
 			     (t
+			      (dolist (d all-derivees)
+				 (setf (Chunk-manage-request d)
+				       false))
 			      (dolist (d all-derivees)
 				 (cond ((chunk-has-no-managed-derivees d)
 					(chunk-unmanage d))))
@@ -1614,15 +1617,19 @@
 
 ;;; A chunk the derivation of which consists of evaluating 'form' --
 (defclass Form-chunk (Chunk)
-   ((form :reader Form-chunk-form
+   ((form :accessor Form-chunk-form
 	  :initarg :form)))
 
-(defun place-Form-chunk (form)
-   (chunk-with-name `(:form ,form)
+;;; It's dangerous to use the form as the name-kernel, because then there's
+;;; no way to change the form without destroying the old chunk.
+(defun place-Form-chunk (form &optional (name-kernel form))
+   (chunk-with-name `(:form ,name-kernel)
       (\\ (name)
 	 (make-instance 'Form-chunk
-	    :name name
-	    :form form))))
+	    :name name))
+      (\\ (new-form-chunk)
+         (setf (Form-chunk-form new-form-chunk)
+	       form))))
 
 (defmethod derive-date ((fc Form-chunk))
    false)

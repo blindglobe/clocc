@@ -7,3 +7,5 @@ http://clocc.sourceforge.net.
 
 To load Defsystem3 into your Lisp system, give the command
 (load "/usr/share/common-lisp/source/cl-defsystem3/defsystem.lisp")
+This package is build using darcs-buildpackage and the darcs archives can be
+downloaded from http://people.debian.org/~pvaneynd/repository/

@@ -1,3 +1,11 @@
+cl-defsystem3 (3.5i+2005.07.01) unstable; urgency=low
+
+  * New upstream release
+  * Move to darcs
+  * Updated policy standard
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat,  2 Jul 2005 22:07:00 +0200
+
 cl-defsystem3 (3.5i+2005.05.11) unstable; urgency=low
 
   * New upstream release.

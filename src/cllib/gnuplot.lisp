@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.24 2005/06/16 19:07:06 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.25 2005/07/05 18:52:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -514,10 +514,12 @@ E.g.:
                      :data-style (or data-style (plot-data-style numpts)) opts)
     (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
     (dolist (fn fnl)
+      (mesg :plot *gnuplot-msg-stream* "~&Plotting ~S..." (car fn))
       (dotimes (ii (1+ numpts) (format str "e~%"))
         (declare (type index-t ii))
         (let ((xx (dfloat (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts))))
-          (format str "~f~20t~f~%" xx (funcall (cdr fn) xx)))))))
+          (format str "~f~20t~f~%" xx (funcall (cdr fn) xx))))
+      (mesg :plot *gnuplot-msg-stream* "done~%"))))
 
 ;;;###autoload
 (defun plot-dated-lists-depth (depth dls slot &rest opts)

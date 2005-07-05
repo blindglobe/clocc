@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.43 2005/07/01 13:50:36 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.44 2005/07/05 16:13:21 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1317,7 +1317,7 @@
 ;;; Run 'derive', update ch's date, and return t if date has moved 
 ;;; forward -- 
 ;;;;; <<<< Or-chunk/derive
-(defmethod derive ((orch Or-chunk))
+(defmethod Or-chunk/derive ((orch Or-chunk))
    (cond ((not (slot-truly-filled orch 'disjuncts))
 	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
 		 orch))

@@ -1,3 +1,12 @@
+cl-cil (1:20050701-1) unstable; urgency=low
+
+  * Now uses darcs
+  * Updated standard version
+  * Now debhelper v4
+  * Now no longer a native package
+
+ -- Peter Van Eynde <pvaneynd@debian.org>  Sat,  2 Jul 2005 10:04:33 +0200
+
 cl-cil (1:20050302) unstable; urgency=low
 
   * Now native package

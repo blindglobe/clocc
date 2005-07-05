@@ -3,7 +3,7 @@ Section: doc
 Priority: optional
 Build-Depends-Indep: debhelper
 Maintainer: Peter Van Eynde <pvaneynd@debian.org>
-Standards-Version: 3.6.1.0
+Standards-Version: 3.6.2.1
 
 Package: cl-cil
 Architecture: all

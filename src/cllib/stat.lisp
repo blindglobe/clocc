@@ -5,12 +5,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.10 2005/07/01 23:29:37 sds Exp $
+;;; $Id: stat.lisp,v 1.11 2005/07/05 21:15:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `mean', `divf', `dot', `d/'
+  ;; `mean', `divf', `dot', `d/', `incomplete-gamma'
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `map-vec'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -21,7 +21,7 @@
 
 (in-package :cllib)
 
-(export '(regress-n regress-poly histogram chi2))
+(export '(regress-n regress-poly histogram chi2 chi2-prob))
 
 ;;;
 ;;; n-dim statistics
@@ -132,6 +132,10 @@ The vector contains the counts in the Ith bin."
                  (incf chi2 (/ (sqr (- v2 e2)) e2))))
          seq1 seq2)
     (values chi2 df)))
+
+(defun chi2-prob (chi2 df)
+  "Return the probability that this CHI2/DF score is NOT a random fluke."
+  (incomplete-gamma (/ df 2) (/ chi2 2)))
 
 (provide :cllib-stat)
 ;;; file stat.lisp ends here

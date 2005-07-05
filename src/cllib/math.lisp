@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.72 2005/07/05 16:43:16 sds Exp $
+;;; $Id: math.lisp,v 2.73 2005/07/05 21:08:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,8 @@
    with-permutations-swap with-permutations-lex permutations-list subsets
    draw pick sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
-   dot poly1 poly erf cndf log-gamma beta norm normalize rel-dist
+   dot poly1 poly norm normalize rel-dist
+   erf cndf log-gamma beta incomplete-gamma *max-iterations*
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
@@ -927,6 +928,95 @@ Numerical Recipes 6.1."
   "Beta function = G(x)G(y)/G(x+y)"
   (exp (- (+ (log-gamma x) (log-gamma y)) (log-gamma (+ x y)))))
 
+(defun incomplete-gamma (a x &optional (log-gamma-a (log-gamma a)))
+  "Incomplete gamma function int(G,0,x)/G(a).
+Also accepts (and returns) ln(G(a)) for speedup.
+The 3rd value returned is the number of iterations.
+Numerical Recipes 6.2 (modified Lentz's method, 5.2)."
+  (unless (plusp a)
+    (error "~S(~S,~S): non-positive A" 'incomplete-gamma a x))
+  (when (minusp x)
+    (error "~S(~S,~S): negative X" 'incomplete-gamma a x))
+  (if (or (< x (+ a 2)) (< x (* a 2)))
+      (incomplete-gamma-series a x log-gamma-a)
+      (incomplete-gamma-continued-fraction a x log-gamma-a)))
+
+(defvar *max-iterations* 1000 "The maximum permitted number of iterations.")
+(defun incomplete-gamma-error (f a x log-gamma-a n v delta)
+  (error "~S(~S ~S ~S): exceeded max number of iterations (~:D); intermediate value=~S; termination expression ~S"
+         f a x log-gamma-a n v delta))
+
+(defun incomplete-gamma-series (a x &optional (log-gamma-a (log-gamma a)))
+  (if (zerop x)
+      (values 0 log-gamma-a 0)
+      (do* ((a+ (+ a 1d0) (1+ a+)) (sum (/ 1d0 a)) (term sum) (n 1 (1+ n)))
+           ((< term (* sum *num-tolerance*))
+            (values (* sum (exp (- (* a (log x)) x log-gamma-a)))
+                    log-gamma-a n))
+        (when (= n *max-iterations*)
+          (incomplete-gamma-error 'incomplete-gamma-series
+                                  a x log-gamma-a n sum term))
+        (mulf term (/ x a+))
+        (incf sum term))))
+
+(defun incomplete-gamma-continued-fraction
+    (a x &optional (log-gamma-a (log-gamma a)))
+  (if (zerop x)
+      (values 0 log-gamma-a 0)
+      (do* ((n 1 (1+ n)) (an (* (- a n) n) (* (- a n) n))
+            (b (- x a -1d0) (+ 2 b))
+            (c #1=#.(/ (* double-float-epsilon double-float-epsilon))
+               (let ((tmp (+ b (/ an c))))
+                 (if (< (abs tmp) #2=#.(* double-float-epsilon
+                                          double-float-epsilon))
+                     #2# tmp)))
+            (d (if (zerop b) #1# (/ b))
+               (let ((tmp (+ b (* an d))))
+                 (if (< (abs tmp) #2#)
+                     #1# (/ tmp))))
+            (delta (* c d) (* c d))
+            (h d (* h delta)))
+           ((< (abs (- delta 1)) *num-tolerance*)
+            (values (- 1 (* h (exp (- (* a (log x)) x log-gamma-a))))
+                    log-gamma-a n))
+        (when (= n *max-iterations*)
+          (incomplete-gamma-error 'incomplete-gamma-continued-fraction
+                                  a x log-gamma-a n h delta)))))
+
+;;; the continued-fraction and series approximations are very different,
+;;; especially close to X=0 where series is (correctly) 0 while
+;;; continued-fraction is 1(!); thus I am reluctant to use the CF
+;;; approximation for anything but very large values of X
+
+#+(or)
+(plot-functions
+ (loop :for n :in '(1 2 4 8 16)
+   :collect (let ((nn n))
+              (cons nn (lambda (x) (incomplete-gamma nn x (log-gamma nn))))))
+ 0 15 100 :title "incomplete-gamma"
+ :legend '(:top :left :box))
+
+#+(or)
+(plot-functions
+ (loop :for n :in '(4 8 16)
+   :collect (let* ((nn n) (g (log-gamma nn)))
+              (cons nn (lambda (x)
+                         (or (ignore-errors
+                               (- (incomplete-gamma-continued-fraction nn x g)
+                                  (incomplete-gamma-series nn x)))
+                             0)))))
+ 0 15 100 :title "incomplete-gamma: cf-series"
+ :legend '(:bot :right :box))
+
+#+(or)
+(let* ((a 5) (lg (log-gamma a)))
+  (plot-functions
+   (list (cons 'cf (lambda (x) (incomplete-gamma-continued-fraction a x lg)))
+         (cons 'ser (lambda (x) (incomplete-gamma-series a x lg))))
+   0 10 100 :title (format nil "incomplete-gamma(~S)" a)
+   :legend '(:bot :right :box)))
+
+
 
 (defun norm (seq &key (key #'value) (order 1))
   "Compute the ORDERth norm of the SEQ. ORDER of 0 means infinity."
@@ -1496,7 +1586,8 @@ To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC."
     :return (values beg end vb ve)
     :do (if (eql vm vb) (setq beg mid) (setq end mid))))
 
-(defun newton (ff &key (val 0) (ival val) (tol *num-tolerance*) (max-it -1))
+(defun newton (ff &key (val 0) (ival val) (tol *num-tolerance*)
+               (max-it *max-iterations*))
   "Solve the equation FF(x)=VAL using the Newton's method.
 FF should return its derivative as the second value.
 IVAL is the initial approximation, and it better be good!

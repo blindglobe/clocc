@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.71 2005/07/05 16:39:20 sds Exp $
+;;; $Id: math.lisp,v 2.72 2005/07/05 16:43:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,7 @@
    with-permutations-swap with-permutations-lex permutations-list subsets
    draw pick sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
-   dot poly1 poly erf cndf log-gamma norm normalize rel-dist
+   dot poly1 poly erf cndf log-gamma beta norm normalize rel-dist
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
@@ -922,6 +922,10 @@ Numerical Recipes 6.1."
                      (/ -0.5395239384953d-5 (+ x 6))))
                x))
        (- tmp) (* (+ x 0.5d0) (log tmp)))))
+
+(defun beta (x y)
+  "Beta function = G(x)G(y)/G(x+y)"
+  (exp (- (+ (log-gamma x) (log-gamma y)) (log-gamma (+ x y)))))
 
 
 (defun norm (seq &key (key #'value) (order 1))

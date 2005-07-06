@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.12 2005/07/06 19:24:31 sds Exp $
+;;; $Id: stat.lisp,v 1.13 2005/07/06 21:41:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,8 +21,8 @@
 
 (in-package :cllib)
 
-(export '(regress-n regress-poly histogram chi2-1 chi2-2 chi2-1-ui chi2-2-ui
-          chi2-prob))
+(export '(regress-n regress-poly histogram check-distrib
+          chi2-1 chi2-2 chi2-1-ui chi2-2-ui chi2-prob))
 
 ;;;
 ;;; n-dim statistics
@@ -122,6 +122,17 @@ The vector contains the counts in the Ith bin."
 ;;; Chi square
 ;;;
 
+(defun check-distrib (distrib)
+  "Check the probability distribution vector."
+  (let ((sum (reduce #'+ distrib)))
+    (unless (cllib:approx=-abs 1 sum)
+      (error "~S(~S): total probability is not 1: ~A"
+             'check-distrib distrib sum))
+    (when (some #'minusp distrib)
+      (error "~S(~S): negative probabilities: ~S"
+             'check-distrib distrib (remove-if-not #'minusp distrib)))
+    distrib))
+
 (defun chi2-1 (seq distrib)
   "Return the chi^2 score & the degree of freedom.
 Arguments are a sequence of counts instantiating a distribution
@@ -154,22 +165,22 @@ Arguments are 2 sequences instantiating the same (or different?) distributions."
   "Return the probability that this CHI2/DF score is NOT a random fluke."
   (incomplete-gamma (/ df 2) (/ chi2 2)))
 
-(defun chi2-1-ui (seq distrib &key (out *standard-output*))
+(defun chi2-1-ui (sample distrib &key (out *standard-output*)
+                  (sample-name "Sample") (distrib-name "Distribution"))
   "Pretty output for CHI2-1."
-  (multiple-value-bind (chi2 df) (chi2-1 seq distrib)
+  (multiple-value-bind (chi2 df) (chi2-1 sample distrib)
     (let ((prob (chi2-prob chi2 df)))
-      (format out "~&Distribution:~15T~S~%Sample:~15T~S~%~
-                     Chi^2=~5F  df=~:D  P=~5F%~%"
-              distrib seq chi2 df (* 100 prob))
+      (format out "~&~A:~15T~S~%~A:~15T~S~%Chi^2=~5F  df=~:D  P=~5F%~%"
+              distrib-name distrib sample-name sample chi2 df (* 100 prob))
       (values chi2 df prob))))
 
-(defun chi2-2-ui (seq1 seq2 &key (out *standard-output*))
+(defun chi2-2-ui (sample1 sample2 &key (out *standard-output*)
+                  (sample1-name "Sample#1") (sample2-name "Sample#2"))
   "Pretty output for CHI2-2."
-  (multiple-value-bind (chi2 df) (chi2-2 seq1 seq2)
+  (multiple-value-bind (chi2 df) (chi2-2 sample1 sample2)
     (let ((prob (chi2-prob chi2 df)))
-      (format out "~&Sample#1:~15T~S~%Sample#2:~15T~S~%~
-                     Chi^2=~5F  df=~:D  P=~5F%~%"
-              seq1 seq2 chi2 df (* 100 prob))
+      (format out "~&~A:~15T~S~%~A:~15T~S~%Chi^2=~5F  df=~:D  P=~5F%~%"
+              sample1-name sample1 sample2-name sample2 chi2 df (* 100 prob))
       (values chi2 df prob))))
 
 (provide :cllib-stat)

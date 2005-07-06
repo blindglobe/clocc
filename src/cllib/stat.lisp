@@ -5,12 +5,12 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.11 2005/07/05 21:15:21 sds Exp $
+;;; $Id: stat.lisp,v 1.12 2005/07/06 19:24:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
-  ;; `mean', `divf', `dot', `d/', `incomplete-gamma'
+  ;; `mean', `divf', `dot', `d/', `incomplete-gamma', `approx=-abs'
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `map-vec'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -21,7 +21,8 @@
 
 (in-package :cllib)
 
-(export '(regress-n regress-poly histogram chi2 chi2-prob))
+(export '(regress-n regress-poly histogram chi2-1 chi2-2 chi2-1-ui chi2-2-ui
+          chi2-prob))
 
 ;;;
 ;;; n-dim statistics
@@ -121,8 +122,24 @@ The vector contains the counts in the Ith bin."
 ;;; Chi square
 ;;;
 
-(defun chi2 (seq1 seq2)
-  "Return the chi^2 score & the degree of freedom."
+(defun chi2-1 (seq distrib)
+  "Return the chi^2 score & the degree of freedom.
+Arguments are a sequence of counts instantiating a distribution
+and a distribution which the instantiation is checked against."
+  (let ((chi2 0) (df -1) (sum (reduce #'+ seq)) (s2 (reduce #'+ distrib)))
+    (unless (approx=-abs 1 s2)
+      (error "~S: not a probability distribtion: ~S /= 1: ~S"
+             'chi2-1 s2 distrib))
+    (map nil (lambda (count prob)
+               (incf df)
+               (let ((expected (* sum prob)))
+                 (incf chi2 (/ (sqr (- count expected)) expected))))
+         seq distrib)
+    (values chi2 df)))
+
+(defun chi2-2 (seq1 seq2)
+  "Return the chi^2 score & the degree of freedom.
+Arguments are 2 sequences instantiating the same (or different?) distributions."
   (let* ((chi2 0) (df -1) (s1 (reduce #'+ seq1)) (s2 (reduce #'+ seq2))
          (sum (+ s1 s2)))
     (map nil (lambda (v1 v2)
@@ -136,6 +153,24 @@ The vector contains the counts in the Ith bin."
 (defun chi2-prob (chi2 df)
   "Return the probability that this CHI2/DF score is NOT a random fluke."
   (incomplete-gamma (/ df 2) (/ chi2 2)))
+
+(defun chi2-1-ui (seq distrib &key (out *standard-output*))
+  "Pretty output for CHI2-1."
+  (multiple-value-bind (chi2 df) (chi2-1 seq distrib)
+    (let ((prob (chi2-prob chi2 df)))
+      (format out "~&Distribution:~15T~S~%Sample:~15T~S~%~
+                     Chi^2=~5F  df=~:D  P=~5F%~%"
+              distrib seq chi2 df (* 100 prob))
+      (values chi2 df prob))))
+
+(defun chi2-2-ui (seq1 seq2 &key (out *standard-output*))
+  "Pretty output for CHI2-2."
+  (multiple-value-bind (chi2 df) (chi2-2 seq1 seq2)
+    (let ((prob (chi2-prob chi2 df)))
+      (format out "~&Sample#1:~15T~S~%Sample#2:~15T~S~%~
+                     Chi^2=~5F  df=~:D  P=~5F%~%"
+              seq1 seq2 chi2 df (* 100 prob))
+      (values chi2 df prob))))
 
 (provide :cllib-stat)
 ;;; file stat.lisp ends here

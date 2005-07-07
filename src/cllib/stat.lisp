@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.13 2005/07/06 21:41:53 sds Exp $
+;;; $Id: stat.lisp,v 1.14 2005/07/07 21:17:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -162,8 +162,8 @@ Arguments are 2 sequences instantiating the same (or different?) distributions."
     (values chi2 df)))
 
 (defun chi2-prob (chi2 df)
-  "Return the probability that this CHI2/DF score is NOT a random fluke."
-  (incomplete-gamma (/ df 2) (/ chi2 2)))
+  "Return the probability that this CHI2/DF score is just a random fluke."
+  (- 1 (incomplete-gamma (/ df 2) (/ chi2 2))))
 
 (defun chi2-1-ui (sample distrib &key (out *standard-output*)
                   (sample-name "Sample") (distrib-name "Distribution"))

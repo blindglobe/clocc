@@ -1,10 +1,10 @@
 ;;; Symbols & Keywords
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold
+;;; Copyright (C) 1997-2005 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: symb.lisp,v 1.9 2004/12/22 17:08:52 sds Exp $
+;;; $Id: symb.lisp,v 1.10 2005/07/08 17:30:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/symb.lisp,v $
 
 (eval-when (compile load eval)
@@ -12,8 +12,8 @@
 
 (in-package :cllib)
 
-(export '(symbol-concat +kwd+ kwd keyword-concat read-key keyword= kill-symbol
-          reset-package))
+(export '(symbol-concat symbol-append re-intern
+          +kwd+ kwd keyword-concat read-key keyword= kill-symbol reset-package))
 
 ;;(defmacro symbol-concat (&rest args)
 ;;  (let ((lst (mapcar (lambda (zz) (if (stringp zz) zz `(string ,zz))) args)))
@@ -22,6 +22,19 @@
 (defsubst symbol-concat (&rest args)
   "Concatenate objects into a symbol."
   (intern (apply #'concatenate 'string (mapcar #'string args))))
+
+(defun symbol-append (symbol &rest args)
+  "Append ARGS to SYMBOL and INTERN the result in SYMBOL's package."
+  (intern (apply #'concatenate 'string (symbol-name symbol)
+                 (mapcar #'string args))
+          (symbol-package symbol)))
+
+(defun re-intern (symbol)
+  "Ensure that the symbol is new by UNINTERNing it and INTERNing it again."
+  (let ((pack (symbol-package symbol)))
+    (when pack
+      (unintern symbol pack)
+      (intern (symbol-name symbol) pack))))
 
 (defconst +kwd+ package (find-package :keyword) "The KEYWORD package.")
 

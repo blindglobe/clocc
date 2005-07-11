@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.14 2005/07/07 21:17:04 sds Exp $
+;;; $Id: stat.lisp,v 1.15 2005/07/11 20:31:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -133,11 +133,11 @@ The vector contains the counts in the Ith bin."
              'check-distrib distrib (remove-if-not #'minusp distrib)))
     distrib))
 
-(defun chi2-1 (seq distrib)
+(defun chi2-1 (sample distrib)
   "Return the chi^2 score & the degree of freedom.
 Arguments are a sequence of counts instantiating a distribution
 and a distribution which the instantiation is checked against."
-  (let ((chi2 0) (df -1) (sum (reduce #'+ seq)) (s2 (reduce #'+ distrib)))
+  (let ((chi2 0) (df -1) (sum (reduce #'+ sample)) (s2 (reduce #'+ distrib)))
     (unless (approx=-abs 1 s2)
       (error "~S: not a probability distribtion: ~S /= 1: ~S"
              'chi2-1 s2 distrib))
@@ -145,20 +145,20 @@ and a distribution which the instantiation is checked against."
                (incf df)
                (let ((expected (* sum prob)))
                  (incf chi2 (/ (sqr (- count expected)) expected))))
-         seq distrib)
+         sample distrib)
     (values chi2 df)))
 
-(defun chi2-2 (seq1 seq2)
+(defun chi2-2 (sample1 sample2)
   "Return the chi^2 score & the degree of freedom.
 Arguments are 2 sequences instantiating the same (or different?) distributions."
-  (let* ((chi2 0) (df -1) (s1 (reduce #'+ seq1)) (s2 (reduce #'+ seq2))
+  (let* ((chi2 0) (df -1) (s1 (reduce #'+ sample1)) (s2 (reduce #'+ sample2))
          (sum (+ s1 s2)))
     (map nil (lambda (v1 v2)
                (incf df)
                (let* ((p (/ (+ v1 v2) sum)) (e1 (* s1 p)) (e2 (* s2 p)))
                  (incf chi2 (/ (sqr (- v1 e1)) e1))
                  (incf chi2 (/ (sqr (- v2 e2)) e2))))
-         seq1 seq2)
+         sample1 sample2)
     (values chi2 df)))
 
 (defun chi2-prob (chi2 df)

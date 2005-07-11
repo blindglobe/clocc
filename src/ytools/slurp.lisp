@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.30 2005/07/01 13:50:36 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.31 2005/07/11 14:58:47 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -405,7 +405,7 @@ after YTools file transducers finish.")
 (defun form-slurp (r slurp-tasks slurp-states)
    (cond (slurp-dbg*
 	  (format *error-output*
-	     "Slurping ~s ~%  wrt tasks ~s and states ~s~%"
+	     "Slurping ~s ~%  wrt tasks ~s~% and states ~s~%"
 	     r slurp-tasks slurp-states)))
    (flet ((form-fcn-sym (e)
 	     (cond ((and (consp e)
@@ -442,7 +442,7 @@ after YTools file transducers finish.")
 		    (nconc slurp-states continuing-states))
 	      (cond (slurp-dbg*
 		     (format *error-output*
-			"Tasks still alive: ~s with states ~s~%"
+			"Tasks still alive: ~s~% with states ~s~%"
 			slurp-tasks slurp-states)))
 	      (return (values slurp-tasks slurp-states)))
 	     (t

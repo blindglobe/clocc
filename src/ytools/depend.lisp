@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.31 2005/06/27 14:39:40 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.32 2005/07/11 14:58:45 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,14 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
 
-(defstruct (Scan-depends-on-state (:conc-name Sds-))
+(defstruct (Scan-depends-on-state (:conc-name Sds-)
+	    (:print-object
+	        (lambda (sdo-state srm)
+		   (format srm "#<Scan-depends-on-state [file: ~s] sub-files: ~s>"
+			   (chunk-name-abbrev-pathnames
+			      (Chunk-name (Sds-file-chunk sdo-state)))
+			   (mapcar #'Sub-file-type-name
+				   (Sds-sub-file-types sdo-state))))))
    file-chunk  ; for the file whose basis is being found
    sub-file-types)
 ;;; -- A list of sub-file types L such that all antecedents found
@@ -117,7 +124,11 @@
 			     (setq pos (+ pos 1)))
 			    (t (return))))
 		(cond ((< pos strlen)
-		       (let ((end (position #\; str :start pos)))
+		       (let ((end (position-if
+				      (\\ (ch)
+					 (or (char= ch #\;)
+					     (is-whitespace ch)))
+				      str :start pos)))
 			  (cond (end
 				 ;; Finally!  A readtable name
 				 (let* ((readtab-name
@@ -468,9 +479,13 @@
 (datafun scan-depends-on self-compile-dep
    (defun :^ (e sdo-state)
       (let* ((file-ch (Sds-file-chunk sdo-state))
-	     (compiled-ch (place-compiled-chunk file-ch)))
-;;;;	 (cond ((equal (Pathname-name (Code-file-chunk-pathname file-ch))
-;;;;		       "intypes")
+	     (compiled-ch (place-compiled-chunk file-ch))
+	     (pathname-kernel
+	        (Pathname-name (Code-file-chunk-pathname file-ch))))
+	 (declare (ignorable pathname-kernel))
+;;;;	 (out (:to *query-io*) pathname-kernel "/")
+;;;;	 (cond ((equal pathname-kernel
+;;;;		       "cause-intern")
 ;;;;		(dbg-save e sdo-state file-ch compiled-ch)
 ;;;;		(breakpoint self-compile-dep-scan-depends-on
 ;;;;		   "Self-compile dependency of sort(s) " e)))

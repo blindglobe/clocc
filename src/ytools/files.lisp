@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.52 2005/05/31 03:42:56 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.53 2005/07/11 14:58:46 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1005,7 +1005,11 @@
 ;;; The Or-chunk has disjuncts (union L {(slurped (N f))}), default
 ;;; (slurped (N f)).
 
-(defstruct (Sub-file-type)
+(defstruct (Sub-file-type
+	    (:print-object
+	       (lambda (sfty srm)
+		  (format srm "#<Sub-file-type ~s>"
+			  (Sub-file-type-name sfty)))))
    name
    chunker
    ;; -- Function to produce chunk (N F) for file F (N= name of Sub-file-type)

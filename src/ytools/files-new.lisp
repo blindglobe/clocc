@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.7 2005/07/12 14:41:11 airfoyle Exp $
+;;;$Id: files-new.lisp,v 1.1.2.8 2005/07/12 14:48:59 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -26,7 +26,11 @@
    ;; - If not nil, the Code-file-chunk for the alternative version.
    ;; Inverse --
    (alt-version-of :accessor Code-chunk-alt-version-of
-		   :initform !())))
+		   :initform !())
+   ;; All the chunks this one "depends on" (e.g., may need to be
+   ;; loaded before this one is compiled or loaded)
+   (depends-on :accessor Code-chunk-depends-on
+	       :initform !())))
 
 ;; These two methods ensure that 'callers' is the inverse of 'callees' --
 (defmethod (setf Code-chunk-callees) :before (_ code-ch)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend-new.lisp,v 1.1.2.7 2005/07/12 14:41:11 airfoyle Exp $
+;;;$Id: depend-new.lisp,v 1.1.2.8 2005/07/12 14:48:59 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -288,15 +288,19 @@
 ;;;;						 (Code-file-chunk-read-basis
 ;;;;						    file-ch)))))
 				  )))
+			(setf (Code-chunk-depends-on file-ch)
+			      (union
+			         (mapcar #'pathname-denotation-chunk pnl)
+				 (Code-chunk-depends-on file-ch)))
 			(dolist (pn pnl)
-			   (let* ((pchunk (pathname-denotation-chunk pn true))
-				  (lpchunk (place-Loaded-chunk pchunk false)))
-			      (monitor-filoid-basis lpchunk)
-			      (loaded-chunk-set-basis lpchunk)
+;;;;			   (let* ((pchunk (pathname-denotation-chunk pn true))
+;;;;				  (lpchunk (place-Loaded-chunk pchunk false)))
+;;;;			      (monitor-filoid-basis lpchunk)
+;;;;			      (loaded-chunk-set-basis lpchunk)
 			      (let ((expansion (pathname-expansion pn)))
 				 (forms-slurp expansion
 					      (list scan-depends-on*)
-					      (list sdo-state)))))))))))
+					      (list sdo-state))))))))))
     false))
 
 ;;; Returns < read-or-slurp-dependency, slurp-types >

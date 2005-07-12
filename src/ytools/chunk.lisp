@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.44 2005/07/05 16:13:21 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.45 2005/07/12 14:41:11 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1082,7 +1082,6 @@
 				       (cond (chunk-update-dbg*
 					      (format *error-output*
 						      " ...Deriving!~%")))
-				       (chunk-mark ch derive-mark)
 				       (do-derive ch)))
 				(let ((to-explore
 				         (append (Chunk-update-derivees ch)
@@ -1122,6 +1121,7 @@
 			   (and force (memq ch must-derive)))))
 
 	       (do-derive (ch)
+		 (chunk-mark ch derive-mark)
 		 (chunk-derive-and-record ch)
 		 (cond ((not (chunk-up-to-date ch))
 			(error "Chunk not up to date after deriving:~%  ~s"
@@ -1372,8 +1372,8 @@
 
 ;;; Date derivers and derivers both return false if the chunk is up to date.
 ;;; But the interpretations are subtly different.  If a date deriver returns
-;;; false, it means that there is no way to tell what the date should be; 
-;;; only the deriver can tell.  If the (content) deriver returns false, it
+;;; false, it means that there is no way to tell what the date should be, 
+;;; except by calling the deriver.  If the (content) deriver returns false, it
 ;;; means that the chunk is up to date without further computation.
 ;;; In either case, the date should usually be left unchanged; but in the
 ;;; latter case, if some supporter has a later date, then the date

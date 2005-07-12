@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.8 2005/07/12 14:48:59 airfoyle Exp $
+;;;$Id: files-new.lisp,v 1.1.2.9 2005/07/12 15:50:20 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -450,6 +450,13 @@
      (error "No way supplied to create controllers for objects of type ~s~%"
 	    (type-of x))))
 
+;;; This chunk is the "transitive closure" of Loadable-chunk.
+;;; It manages: "The tree of 'depends-on's below 'controllee' is
+;;; up to date."
+(defclass Code-dep-chunk (Chunk)
+   ((controllee :reader Code-dep-chunk-controllee
+		:initarg :controllee)))
+
 (defvar all-loaded-file-chunks* !())
 
 (defmethod derive ((lc Loadable-chunk))
@@ -585,19 +592,27 @@
 	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
 		 loaded-filoid-ch)))
    (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
-		(loaded-filoids-to-be-monitored* !()))
+	  (let ((controllees (list loaded-filoid-ch))
+		loaded-filoids-to-be-monitored*
+		controllers next-controllees)
 	     (loop
+		(setq loaded-filoids-to-be-monitored* !())	       
+		(setq controllers 
+		      (mapcar #'Loaded-chunk-controller
+			      controllees))
 	        (dolist (loadable-ch controllers)
 		   (chunk-request-mgt loadable-ch))
 	        (chunks-update controllers false false)
-	        (cond ((null loaded-filoids-to-be-monitored*)
+	        ;; Now the immediate 'depends-on's are okay.
+	        (setq next-controllees loaded-filoids-to-be-monitored*)
+	        (dolist (l-ch controllees)
+	           (dolist (c-ch (Code-chunk-depends-on
+				    (Loaded-chunk-loadee l-ch)))
+		      (on-list c-ch next-controllees)))
+	        (cond ((null next-controllees)
 		       (return))
 		      (t
-		       (setq controllers 
-			     (mapcar #'Loaded-chunk-controller
-				     loaded-filoids-to-be-monitored*))
-		       (setq loaded-filoids-to-be-monitored* !()))))))
+		       (setq controllees next-controllees))))))
 	 (t
 	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 

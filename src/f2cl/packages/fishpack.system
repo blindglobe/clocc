@@ -1,0 +1,33 @@
+;;; -*- Mode: lisp -*-
+;;;
+;;; This defsystem converts the FISHPACK Fortran routines
+;;; to Lisp and compiling the result.
+;;;
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem fishpack
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;")
+  :source-extension "f"
+  :language :f2cl
+  :components
+  ((:file "pimach")
+   (:file "merge")
+   (:file "cosgen"
+	  :depends-on ("pimach"))
+   (:file "genbun"
+	  :depends-on ("pimach" "poisd2" "poisp2" "poisn2"))
+   (:file "tri3")
+   (:file "trix")
+   (:file "hwscrt"
+	  :depends-on ("trix" "tri3" "pimach"))
+   (:file "poisd2"
+	  :depends-on ("cosgen" "trix" "merge"))
+   (:file "poisn2"
+	  :depends-on ("cosgen" "trix" "tri3" "merge"))
+   (:file "poisp2"
+	  :depends-on ("cosgen" "trix" "tri3" "merge"
+				"poisd2"))))

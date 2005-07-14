@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/07/14 21:38:58 $"))
+  (remove #\$ "2.0 beta $Date: 2005/07/14 21:44:09 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -260,6 +260,7 @@ INPUT-FILE               File containing Fortran code
 	(*declare-common-blocks* declare-common)
 	(*assigned-variables* nil)
 	(*entry-points* nil)
+	(*equivalenced-vars* nil)
 	(*float-format* float-format)
 	(*common-blocks-as-arrays* common-as-array))
 
@@ -2654,8 +2655,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.142 2005/07/14 21:38:58 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.143 2005/07/14 21:44:09 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.143  2005/07/14 21:44:09  rtoy
+;;; Oops.  Need to clear out *equivalenced-vars* on every call to f2cl, so
+;;; we don't get old info!
+;;;
 ;;; Revision 1.142  2005/07/14 21:38:58  rtoy
 ;;; o Change default array-type in F2CL to be the same as F2CL-COMPILE.
 ;;;

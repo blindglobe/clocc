@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/06/20 01:53:39 $"))
+  (remove #\$ "2.0 beta $Date: 2005/07/14 17:29:28 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -983,7 +983,7 @@ FILENAME                 File containing Fortran code
        (return (parse-common x)))
      ;;stop
      (when (eq (car x) 'stop)
-       (return nil))			; 
+       (return nil))
 
      ;; Handle Fortran comments that were converted by the
      ;; preprocessor to be (fortran_comment "comment string").
@@ -1564,6 +1564,40 @@ FILENAME                 File containing Fortran code
 		 (member (first head) tail :test 'eq))
 	(pushnew (first head) dups)))
     dups))
+
+
+;; This routine takes the actual arglist and the saved function
+;; information about the arg types and tries to convert array-slicing
+;; to array reference if necessary.
+;;
+;; That is if the actual arg is an array slice, but the function wants
+;; a simple variable, we convert the array slice to an array
+;; reference.  I think this is really nice.
+(defun massage-arglist (arglist info)
+  ;;(format t "info = ~A~%" info)
+  (let ((arg-types (f2cl-finfo-arg-types info))
+	new-arglist)
+    (do ((arg-type arg-types (cdr arg-type))
+	 (arg arglist (cdr arg)))
+	((null arg-type))
+      ;;(format t "~A -> ~A~%" (car arg-type) (car arg))
+      (cond ((and (symbolp (car arg-type))
+		  (listp (car arg))
+		  (eq (caar arg) 'array-slice))
+	     ;; This means the expected arg type is a variable.  If
+	     ;; the actual arg is is an array slice, we can replace
+	     ;; the slice with the actual value.
+	     (destructuring-bind (slice var type indices limits)
+		 (car arg)
+	       (push `(fref ,var ,indices ,limits)
+		     new-arglist))
+	     )
+	    (t
+	     (push (car arg) new-arglist))))
+    (setf new-arglist (nreverse new-arglist))
+    ;;(format t "new arglist = ~A~%" new-arglist)
+    new-arglist))
+
 ;; Subroutines and functions can modify the values of input
 ;; parameters.  We handle this in Lisp by returning the input
 ;; parameters to the caller as multiple values.  This function
@@ -1577,8 +1611,9 @@ FILENAME                 File containing Fortran code
   (multiple-value-bind (routine-name finfo)
       (if (eq (first routine) 'funcall)
 	  (values routine (gethash (second routine) *f2cl-function-info*))
-	  (values (list (check-reserved-lisp-names (first routine)))
-		  (gethash (first routine) *f2cl-function-info*)))
+	  (let ((checked (check-reserved-lisp-names (first routine))))
+	    (values (list checked)
+		    (gethash checked *f2cl-function-info*))))
     (if (and finfo (f2cl-finfo-return-values finfo))
 	(let ((this (gethash *subprog_name* *f2cl-function-info*)))
 	  (unless this
@@ -1589,99 +1624,102 @@ FILENAME                 File containing Fortran code
 		   (f2cl-finfo-calls (gethash *subprog_name*
 					      *f2cl-function-info*))))
 	(warn "Generating call to unknown function ~A.  Check generated call!" routine-name))
-    
-    (setf finfo (if (and *use-function-info* finfo)
-		    (f2cl-finfo-return-values finfo)
-		    (make-list (length arglist) :initial-element :unknown)))
 
-    ;; (format t "ret-info = ~A~%" finfo)
-    (multiple-value-bind (all-setters vnames)
-	;; Figure out if and how to set the parameters to the returned values.
-	;;
-	;; Note that if the same arg appears more than once, we assume
-	;; that only one use actually sets the variable.  If this is
-	;; not true, I think the original Fortran was broken anyway.
-	;; We don't check for this here.  Should we?  We can't in
-	;; general unless *f2cl-function-info* tells us the return
-	;; values for the function.
-	(do ((v nil)
-	     (count 0 (+ count 1))
-	     (vnames nil)
-	     (args arglist (rest args))
-	     (ret-info finfo (rest ret-info)))
-	    ((null args)
-	     (values (nreverse v) (nreverse vnames)))
-	  (let* ((arg (first args))
-		 (var (intern (concatenate 'string (symbol-name '#:var-)
-					   (princ-to-string count)))))
-	    (push var vnames)
-	    ;; (format t "arg = ~A~%" arg)
-	    ;;(format t "ret-info = ~A~%" (first ret-info))
-	    (push (cond ((or (vble-is-array-p arg)
-			     (member arg *external-function-names*)
-			     (member arg *intrinsic-function-names*)
-			     (member arg '(%true% %false%)))
-			 ;; Fortran can't return whole arrays or
-			 ;; functions, so don't try to assign the value
-			 ;; to arrays or functions.  Also, we don't want
-			 ;; to assign to constants like %true% and
-			 ;; %false%.
-			 ;;
-			 nil)
-			((symbolp arg)
-			 ;; A simple variable
-			 (cond ((eq (first ret-info) :unknown)
-				;; Don't know anything about this, so
-				;; we need to check.  Also assume
-				;; worst case that the variable is
-				;; assigned to.
-				(pushnew arg *assigned-variables*)
-				`(when ,var (setf ,arg ,var)))
-			       ((eq (first ret-info) nil)
-				;; Definitely isn't returned
-				nil)
-			       (t
-				;; Definitely returned.  Update
-				;; *assigned-variables* with this new
-				;; arg.
-				(pushnew arg *assigned-variables*)
-				`(setf ,arg ,var))))
-			((and (listp arg)
-			      (eq (first arg) 'fref))
-			 ;; A reference to a single element of an array.
-			 (cond ((eq (first ret-info) :unknown)
-			       ;; Don't know anything about this
-			       `(when ,var (fset ,arg ,var)))
-			       ((eq (first ret-info) nil)
-				;; Definitely isn't returned
-				nil)
-			       (t
-				;; Definitely is returned
-				`(fset ,arg ,var))))
-			(t
-			 ;; This means it's either a number or some
-			 ;; expression, so obviously we can't modify
-			 ;; that.  (The original Fortran code was broken
-			 ;; if the routine is trying to modify this.)
-			 nil))
-		  v)))
-      ;; (format t "all-setters = ~A~%" all-setters)
-      (let ((ignored-vars
-	     ;; A variable is ignored if no setter for it is given.
-	     (remove nil (mapcar #'(lambda (varname setter)
-				     (if (not setter)
-					 varname))
-				 vnames all-setters)))
-	    (setters (remove nil all-setters)))
-	;;(format t "ignored-vars = ~A~%" ignored-vars)
-	;;(format t "setters = ~A~%" setters)
-	(if setters
-	    `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
-		  (,@routine-name ,@arglist)
-		(declare (ignore ,@ignored-vars))
-		,@setters
-		,@(if return (list 'ret-val))))
-	    `((,@routine-name ,@arglist)))))))
+    (let ((ret-finfo (if (and *use-function-info* finfo)
+			 (f2cl-finfo-return-values finfo)
+			 (make-list (length arglist) :initial-element :unknown))))
+
+      ;; (format t "ret-info = ~A~%" ret-finfo)
+      (multiple-value-bind (all-setters vnames)
+	  ;; Figure out if and how to set the parameters to the returned values.
+	  ;;
+	  ;; Note that if the same arg appears more than once, we assume
+	  ;; that only one use actually sets the variable.  If this is
+	  ;; not true, I think the original Fortran was broken anyway.
+	  ;; We don't check for this here.  Should we?  We can't in
+	  ;; general unless *f2cl-function-info* tells us the return
+	  ;; values for the function.
+	  (do ((v nil)
+	       (count 0 (+ count 1))
+	       (vnames nil)
+	       (args arglist (rest args))
+	       (ret-info ret-finfo (rest ret-info)))
+	      ((null args)
+	       (values (nreverse v) (nreverse vnames)))
+	    (let* ((arg (first args))
+		   (var (intern (concatenate 'string (symbol-name '#:var-)
+					     (princ-to-string count)))))
+	      (push var vnames)
+	      ;; (format t "arg = ~A~%" arg)
+	      ;;(format t "ret-info = ~A~%" (first ret-info))
+	      (push (cond ((or (vble-is-array-p arg)
+			       (member arg *external-function-names*)
+			       (member arg *intrinsic-function-names*)
+			       (member arg '(%true% %false%)))
+			   ;; Fortran can't return whole arrays or
+			   ;; functions, so don't try to assign the value
+			   ;; to arrays or functions.  Also, we don't want
+			   ;; to assign to constants like %true% and
+			   ;; %false%.
+			   ;;
+			   nil)
+			  ((symbolp arg)
+			   ;; A simple variable
+			   (cond ((eq (first ret-info) :unknown)
+				  ;; Don't know anything about this, so
+				  ;; we need to check.  Also assume
+				  ;; worst case that the variable is
+				  ;; assigned to.
+				  (pushnew arg *assigned-variables*)
+				  `(when ,var (setf ,arg ,var)))
+				 ((eq (first ret-info) nil)
+				  ;; Definitely isn't returned
+				  nil)
+				 (t
+				  ;; Definitely returned.  Update
+				  ;; *assigned-variables* with this new
+				  ;; arg.
+				  (pushnew arg *assigned-variables*)
+				  `(setf ,arg ,var))))
+			  ((and (listp arg)
+				(eq (first arg) 'fref))
+			   ;; A reference to a single element of an array.
+			   (cond ((eq (first ret-info) :unknown)
+				  ;; Don't know anything about this
+				  `(when ,var (fset ,arg ,var)))
+				 ((eq (first ret-info) nil)
+				  ;; Definitely isn't returned
+				  nil)
+				 (t
+				  ;; Definitely is returned
+				  `(fset ,arg ,var))))
+			  (t
+			   ;; This means it's either a number or some
+			   ;; expression, so obviously we can't modify
+			   ;; that.  (The original Fortran code was broken
+			   ;; if the routine is trying to modify this.)
+			   nil))
+		    v)))
+	;; (format t "all-setters = ~A~%" all-setters)
+	(let ((ignored-vars
+	       ;; A variable is ignored if no setter for it is given.
+	       (remove nil (mapcar #'(lambda (varname setter)
+				       (if (not setter)
+					   varname))
+				   vnames all-setters)))
+	      (setters (remove nil all-setters)))
+	  ;;(format t "ignored-vars = ~A~%" ignored-vars)
+	  ;;(format t "setters = ~A~%" setters)
+	  ;;(format t "arglist = ~A~%" arglist)
+	  (when (and *use-function-info* finfo)
+	    (setf arglist (massage-arglist arglist finfo)))
+	  (if setters
+	      `((multiple-value-bind ,(if return (append '(ret-val) vnames) vnames)
+		    (,@routine-name ,@arglist)
+		  (declare (ignore ,@ignored-vars))
+		  ,@setters
+		  ,@(if return (list 'ret-val))))
+	      `((,@routine-name ,@arglist))))))))
 
 ;; Convert array references to an array slice, as appropriate. That
 ;; is, the array reference must be the actual arg. No arithmetic
@@ -2581,8 +2619,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.140 2005/06/20 01:53:39 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.141 2005/07/14 17:29:28 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.141  2005/07/14 17:29:28  rtoy
+;;; Make f2cl a little smarter when calling functions if f2cl knows the
+;;; expected arg types of the function.  If the arg type is a simple
+;;; variable and the actual arg is an array slice, convert the slice to an
+;;; array reference.
+;;;
 ;;; Revision 1.140  2005/06/20 01:53:39  rtoy
 ;;; Add code to try to merge the data statement initializers into the
 ;;; declaration of the saved variable itself instead of generating a bunch

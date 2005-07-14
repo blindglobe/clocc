@@ -2,6 +2,30 @@
 
 Changes:
 
+Jul 14, 2005
+------------
+Added a new feature to help f2cl generate better code when calling
+functions.  f2cl keeps track of the function "prototype" so it knows
+the types of the args and the possible return values.  So if the
+function is known at compile time we can generate better calls.  For
+example,
+
+     subroutine foo (x)
+     real x
+     end
+
+     real x(10), y(10)
+     call foo (x(3))
+     end
+
+With default options (array-slicing enabled), the call to foo will
+slice the array x.  This is wrong because foo wants x to be a simple
+variable.  But at compile time, we know foo wants a simple variable,
+so we can arrange it so that we don't slice x, but just pass x(3).
+
+So this makes it even more important to compile all the files in the
+right order so that f2cl has the function information.
+
 Jun 19, 2005
 ------------
 

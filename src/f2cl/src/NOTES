@@ -4,6 +4,16 @@ Changes:
 
 Jul 14, 2005
 ------------
+
+Added some support for handling EQUIVALENCE statements.  What we can
+handle is the equivalence an array to a simple variable of the same
+type.  If we get an equivalence that we can't handle, we now produce
+an error message instead of silently putting a "not-translated" string
+into the generated code.
+
+Jul 14, 2005
+------------
+
 Added a new feature to help f2cl generate better code when calling
 functions.  f2cl keeps track of the function "prototype" so it knows
 the types of the args and the possible return values.  So if the

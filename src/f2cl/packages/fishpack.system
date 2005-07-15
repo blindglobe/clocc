@@ -22,12 +22,65 @@
 	  :depends-on ("pimach" "poisd2" "poisp2" "poisn2"))
    (:file "tri3")
    (:file "trix")
-   (:file "hwscrt"
-	  :depends-on ("trix" "tri3" "pimach"))
    (:file "poisd2"
 	  :depends-on ("cosgen" "trix" "merge"))
    (:file "poisn2"
 	  :depends-on ("cosgen" "trix" "tri3" "merge"))
    (:file "poisp2"
 	  :depends-on ("cosgen" "trix" "tri3" "merge"
-				"poisd2"))))
+				"poisd2" "poisn2"))
+   ;; standard Helmholtz 5-point approximation in Cartesian
+   ;; coordinates using a centered finite difference grid
+   (:file "hwscrt"
+	  :depends-on ("trix" "tri3" "pimach"))
+
+   ;; Helmholtz 5-point approximation in polar coordinates using a
+   ;; centered finite difference grid
+   (:file "hwsplr"
+	  :depends-on ("genbun"))
+
+   ;; modified Helmholtz 5-point approximation in cylindrical
+   ;; coordinates using a centered finite difference grid
+   (:file "hwscyl"
+	  :depends-on ("genbun"))
+
+   ;; Helmholtz 5-point approximation in spherical coordinates and on
+   ;; the surface of the unit sphere using a centered fin
+   (:file "hwsss1")
+   (:file "hwsssp"
+	  :depends-on ("hwsss1"))
+
+   ;; modified Helmholtz 5-point approximation in spherical coordinate
+   ;; assuming axis symmetry and using a centered finite difference
+   ;; grid
+   (:file "hwscs1"
+	  :depends-on ("pimach" "epmach" "blktri"))
+   (:file "epmach"
+	  :compiler-options (:declare-common t)
+	  :depends-on ("store"))
+   (:file "hwscsp"
+	  :depends-on ("hwscs1" "epmach"))
+   (:file "indxa"
+	  :compiler-options (:declare-common t))
+   (:file "indxb")
+   (:file "blktr1"
+	  :depends-on ("indxa" "indxb" "indxc"))
+   (:file "blktri"
+	  :depends-on ("compb" "blktr1"))
+   (:file "bsrh")
+   (:file "compb"
+	  :depends-on ("tevls" "ppadd" "indxb"))
+   (:file "cprod")
+   (:file "cprodp")
+   (:file "indxc")
+   (:file "ppadd"
+	  :depends-on ("psgf" "bsrh" "ppsgf"))
+   (:file "ppsgf")
+   (:file "ppspf")
+   (:file "prod")
+   (:file "prodp")
+   (:file "psgf")
+   (:file "store")
+   (:file "tevls")
+
+   ))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.10 2005/07/15 15:05:03 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.3 2005/07/15 15:05:03 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -423,24 +423,45 @@
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
-;;; Corresponds to information gleaned from file header (or elsewhere)
-;;; about what
-;;; other files (and modules, ...) are necessary in order to load or
-;;; compile and load, the given file.  This information forms the basis
-;;; of the corresponding Loaded-chunk.
-;;; This is a rudimentary chunk, which has no basis or derivees.  The only
-;;; reason to use the chunk apparatus is to keep track of the date, which
-;;; uses the file-op-count* instead of actual time.
-(defclass Loadable-chunk (Chunk)
-   ((controllee :reader Loadable-chunk-controllee
-	  :initarg :controllee
-	  :type Loaded-chunk))
+;;; It manages: "The tree of 'depends-on's below 'controllee' is
+;;; up to date."
+(defclass Code-dep-chunk (Chunk)
+   ((controllee :reader Code-dep-chunk-controllee
+		:initarg :controllee
+		:type Loaded-chunk))
+   ;; The basis of this chunk is the empty list because it's a
+   ;; meta-chunk, which can't be connected to any chunk whose basis it
+   ;; might affect.--
    (:default-initargs :basis !()))
-;;; -- The basis of this chunk is the empty list because it's a
-;;; meta-chunk, which can't be connected to any chunk whose basis it
-;;; might affect.
 
-;;; Creates a Loadable-chunk to act as a controller for this filoid
+(defun place-Code-dep-chunk (code-ch)
+   (chunk-with-name `(:dep-tree-known ,(Chunk-name code-ch))
+      (\\ (exp)
+	 (make-instance 'Code-dep-chunk
+	    :name exp
+	    :controllee code-ch))))
+
+(defmethod derive ((cd Code-dep-chunk))
+   (error "No method supplied for figuring out what entities ~s depends on"
+	  (Code-dep-chunk-controllee lc)))
+;;; -- We must subclass Code-dep-chunk to supply methods for figuring
+;;; out file dependencies.  See depend.lisp for the YTFM approach.
+
+;;; However, the actual derivers should always end by calling this,
+;;; after updating the 'depends-on' slot --
+(defun code-deps-derive (cd-ch)
+   (let ((code-chunk (Code-dep-chunk-controllee cd-ch)))
+     ;; It's okay to call 'chunks-update' from 'derive', normally
+     ;; a no-no, because we're at the meta level.--
+      (chunks-update
+          (mapcar (\\ (supporter)
+		     (Code-chunk-controller
+		         (place-Loaded-chunk supporter false)))
+		  (Code-chunk-depends-on code-chunk))
+	  false false)
+      file-op-count*))
+
+;;; Creates a Code-dep-chunk to act as a controller for this filoid
 ;;; and the chunk corresponding to its being loaded.
 ;;; In depend.lisp we'll supply the standard controller for ordinary files
 ;;; following YTools rules.  
@@ -450,20 +471,7 @@
      (error "No way supplied to create controllers for objects of type ~s~%"
 	    (type-of x))))
 
-;;; This chunk is the "transitive closure" of Loadable-chunk.
-;;; It manages: "The tree of 'depends-on's below 'controllee' is
-;;; up to date."
-(defclass Code-dep-chunk (Chunk)
-   ((controllee :reader Code-dep-chunk-controllee
-		:initarg :controllee)))
-
 (defvar all-loaded-file-chunks* !())
-
-(defmethod derive ((lc Loadable-chunk))
-   (error "No method supplied for figuring out what entities ~s depends on"
-	  (Loadable-chunk-controllee lc)))
-;;; -- We must subclass Loadable-chunk to supply methods for figuring
-;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
 
 (defmethod place-Loaded-chunk ((file-ch Code-file-chunk) manip)
@@ -620,29 +628,29 @@
 	        (dolist (cee controllees)
 		   (cond ((not (memq cee handled))
 			  (loaded-chunk-set-basis cee)
-			  (on-list cee handled))))
+			  (
+			  (on-list cee handled)
 ;;;;	        (dbg-out monitor-basis-dbg* " handled = " handled :%)
 	        ;; Now the immediate 'depends-on's are okay.
 	        (setq next-controllees loaded-filoids-to-be-monitored*)
 	        (dolist (l-ch controllees)
-	           (dolist (c-ch (Code-chunk-depends-on
-				    (Loaded-chunk-loadee l-ch)))
-		      (let ((l-ch (place-Loaded-chunk c-ch false)))
-;;;;			 (dbg-out monitor-basis-dbg* ">> " l-ch :%)
-			 (cond ((memq l-ch handled)
-;;;;				(dbg-out monitor-basis-dbg* "XXX" :%)
-				)
-			       (t
-				(on-list l-ch next-controllees))))))
+;;;;	           (dolist (c-ch (Code-chunk-depends-on
+;;;;				    (Loaded-chunk-loadee l-ch)))
+;;;;		      (let ((l-ch (place-Loaded-chunk c-ch false)))
+;;;;			 (cond ((memq l-ch handled)
+;;;;				)
+;;;;			       (t
+;;;;				(on-list l-ch next-controllees)))))
+		  )
 	        (cond ((null next-controllees)
 		       (return))
 		      (t
 		       (setq controllees next-controllees))))))
 	 (t
-;;;;	  (cond ((> (len loaded-filoids-to-be-monitored*)
-;;;;		    200)
-;;;;		 (signal-problem monitor-filoid-basis
-;;;;		    "Too many filoids to be monitored")))
+	  (cond ((> (len loaded-filoids-to-be-monitored*)
+		    200)
+		 (signal-problem monitor-filoid-basis
+		    "Too many filoids to be monitored")))
 	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
 
 (defvar user-manip-asker* false)

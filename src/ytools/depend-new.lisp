@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend-new.lisp,v 1.1.2.8 2005/07/12 14:48:59 airfoyle Exp $
+;;;$Id: depend-new.lisp,v 1.1.2.9 2005/07/15 15:05:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -44,27 +44,33 @@
    
 (setq hidden-slurp-tasks* (adjoin 'scan-depends-on hidden-slurp-tasks*))
 
-(defclass Loadable-file-chunk-from-scan (Loadable-chunk) ())
+(defclass File-scanned-for-deps (Loadable-chunk) ())
 
-(defmethod derive-date ((fb Loadable-file-chunk-from-scan))
-;;;;   (format *error-output*
-;;;;      "[D]Loadable chunk date = ~s file-op-count* = ~s~%"
-;;;;      (Chunk-date fb) file-op-count*)
-   (cond ((= (Chunk-date fb) file-op-count*)
-	  false)
-	 (t +no-info-date+)))
+(defmethod derive-date ((fb File-scanned-for-deps))
+   false)
 
-(defmethod derive ((fb Loadable-file-chunk-from-scan))
+;;;;   (let* ((cee (Loadable-chunk-controllee fb))
+;;;;	  (file-ch (Loaded-chunk-loadee cee))
+;;;;	  (file-pn (Code-file-chunk-pathname file-ch)))
+;;;;      (cond ((probe-file file-pn)
+;;;;	     (file-write-date file-pn))
+;;;;	    (t
+;;;;	     (error !"File disappeared: ~s, ~% [controlled by ~s]"
+;;;;		    file-pn fb)))))
+
+(defmethod derive ((fb File-scanned-for-deps))
 ;;;;   (format *error-output*
 ;;;;      "Loadable chunk date = ~s file-op-count* = ~s~%  file: ~s~%"
 ;;;;      (Chunk-date fb)
 ;;;;      file-op-count*
 ;;;;      (Loaded-chunk-loadee (Loadable-chunk-controllee fb)))
-;;;;   (trace-around Loadable-file-chunk-from-scan/derive
-;;;;      (:> "(Loadable-file-chunk-from-scan/derive: " fb ")")
-   (cond ((= (Chunk-date fb) file-op-count*)
-	  false)
-	 (t
+;;;;   (trace-around File-scanned-for-deps/derive
+;;;;      (:> "(File-scanned-for-deps/derive: " fb ")")
+;;;;
+;;;;   (cond ((= (Chunk-date fb) file-op-count*)
+;;;;	  false)
+;;;;	 (t ...))
+
 	  (multiple-value-bind (file-ch loaded-ch)
 	                       (loaded-file-chunk-current-version
 				   (Loadable-chunk-controllee fb))
@@ -90,17 +96,20 @@
 			     (list source-ch))
 		       (compiled-chunk-include-dir-basis compiled-ch)
 		       (setf (Chunk-update-basis compiled-ch) !())))
-		(file-slurp (Code-file-chunk-pathname source-ch)
-			    (list scan-depends-on*)
-			    (\\ (srm)
-			       (let ((readtab
-					(modeline-extract-readtab srm)))
-				  (cond (readtab
-					 (setf (Code-file-chunk-readtable
-						  source-ch)
-					       readtab))))))
-		file-op-count*))))
-;;;;      (:< (val &rest _) "Loadable-file-chunk-from-scan/derive: " val))
+		(let ((file-pn (Code-file-chunk-pathname source-ch)))
+		   (file-slurp file-pn
+			       (list scan-depends-on*)
+			       (\\ (srm)
+				  (let ((readtab
+					   (modeline-extract-readtab srm)))
+				     (cond (readtab
+					    (setf (Code-file-chunk-readtable
+						     source-ch)
+						  readtab))))))
+		   (get-universal-time)
+;;;;		   (file-write-date file-pn)
+		   )))
+;;;;      (:< (val &rest _) "File-scanned-for-deps/derive: " val))
    )
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
@@ -160,9 +169,13 @@
    (chunk-with-name
        `(:loadable ,(Chunk-name file-ch))
        (\\ (name)
-	  (make-instance 'Loadable-file-chunk-from-scan
+	  (make-instance 'File-scanned-for-deps
 	     :name name
-	     :controllee loaded-ch))))
+	     :controllee loaded-ch))
+       :initializer
+       (\\ (fsd-ch)
+	  (!= (Chunk-basis fsd-ch)
+	      (list file-ch)))))
 
 (defvar depends-on-enabled* true)
 (defvar depends-on-loads-files* false)
@@ -290,7 +303,10 @@
 				  )))
 			(setf (Code-chunk-depends-on file-ch)
 			      (union
-			         (mapcar #'pathname-denotation-chunk pnl)
+			         (mapcar (\\ (pn)
+					    (pathname-denotation-chunk
+					        pn true))
+					 pnl)
 				 (Code-chunk-depends-on file-ch)))
 			(dolist (pn pnl)
 ;;;;			   (let* ((pchunk (pathname-denotation-chunk pn true))

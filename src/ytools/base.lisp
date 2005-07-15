@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.7 2005/06/27 14:39:40 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.8 2005/07/15 15:05:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -33,7 +33,7 @@
 	     eval-when condense
 	     assoc= alist-entry alist-entry-set alref. alref
 	     include-if series car-eq take drop occurs-in empty-list
-	     on-list off-list --)))
+	     on-list off-list -- loading-bogus)))
 
 ;;;;(eval-when (:compile-toplevel)
 ;;;;   (format t "shadow-export done"))
@@ -807,3 +807,8 @@
        (defmacro -- (x) `(rv ,x))))
 
 (defun rv (v) v)
+
+(defmacro loading-bogus (&rest whatever)
+   `(eval-when (:compile-toplevel :load-toplevel)
+       (error "Loading bogus file: ~s"
+	      ',whatever)))

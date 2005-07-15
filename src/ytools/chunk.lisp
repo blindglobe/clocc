@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.45 2005/07/12 14:41:11 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.46 2005/07/15 15:05:02 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -182,12 +182,14 @@
 ;;; Discard all but the first n (or last -n if n<0) characters of s
 (defun string-snip (s n)
    (let ((l (length s)))
-      (cond ((> l n)
-	     (cond ((< n 0)
+      (cond ((< n 0)
+	     (cond ((> l (- n))
 		    (concatenate 'string "..." (subseq s (+ l n))))
-		   (t
-		    (concatenate 'string (subseq s 0 n) "..."))))
-	    (t s))))
+		   (t s)))
+	    (t
+	     (cond ((> l n)
+		    (concatenate 'string (subseq s 0 n) "..."))
+		   (t s))))))
 
 (defmethod print-innards :before ((orch Or-chunk) srm)
    (cond ((slot-boundp orch 'disjuncts)
@@ -231,6 +233,9 @@
 
 ;;; Report  the last time the chunk became derived or
 ;;; false if it has never been derived. 
+;;; This is not just the default behavior; it is the correct behavior
+;;; for almost all non-leaf chunks, because whatever date was last recorded
+;;; is the only date there is.
 ;;;;; <<<< derive-date
 (defgeneric derive-date (chunk)
    ;; Default dater marks "no info" for a leaf;
@@ -864,8 +869,8 @@
 	       (not (> time 0)))
 	  (error "Illegal time '~s' in update declaration~%  for chunk ~s"
 		 time chunk)))
-   (!= (Chunk-date chunk)
-       (or time (get-universal-time)))
+   (setf (Chunk-date chunk)
+	 (or time (get-universal-time)))
    (cond ((chunk-up-to-date chunk)
 	  true)
 	 (t
@@ -1317,7 +1322,7 @@
 ;;; Run 'derive', update ch's date, and return t if date has moved 
 ;;; forward -- 
 ;;;;; <<<< Or-chunk/derive
-(defmethod Or-chunk/derive ((orch Or-chunk))
+(defmethod derive ((orch Or-chunk))
    (cond ((not (slot-truly-filled orch 'disjuncts))
 	  (error "Attempt to derive Or-chunk with no disjuncts: ~s"
 		 orch))

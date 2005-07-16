@@ -1036,6 +1036,33 @@
 		      (first equiv) (second equiv)))))
       (values (nreverse res) (nreverse simple)))))
 
+(defun get-var-types (arglist &key declare-vars)
+  "Compute the types of each variable in ARGLIST and also an
+  appropriate declaration for each variable, if DECLARE-VARS is
+  non-NIL."
+  (let ((var-decls nil)
+	(var-type-list nil))
+    (dolist (vble arglist)
+      (if (or (member vble *external-function-names*)
+	      (member vble *functions-used*
+		      :key #'caar))
+	  (push t var-type-list)
+	(let ((decl
+	       (if declare-vars
+		   (make-declaration vble :vble-is-formal-arg t)
+		   nil)))
+	  (destructuring-bind (declare-sym (type-sym type var))
+	      decl
+	    (declare (ignore declare-sym type-sym var))
+	    (when declare-vars
+	      (push decl var-decls))
+	    (setf *declared_vbles*
+		  (remove vble *declared_vbles*))
+	    (setf *undeclared_vbles*
+		  (remove vble *undeclared_vbles*))
+	    (push type var-type-list)))))
+    (values (nreverse var-type-list)
+	    (nreverse var-decls))))
 
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
@@ -1418,11 +1445,25 @@
 		      *entry-points*)
 	 (warn "Some ENTRY points don't match the expected signature ~A~%"
 	       arglist))
+
+       ;; Add entry points to the function database
+
+       (dolist (f *entry-points*)
+	 (destructuring-bind (name args)
+	     f
+	   (let ((entry (gethash name *f2cl-function-info*))
+		 (var-type-list (get-var-types args)))
+	     (if entry
+		 (setf (f2cl-finfo-arg-types entry) var-type-list)
+	       (setf (gethash name *f2cl-function-info*)
+		     (make-f2cl-finfo :arg-types var-type-list))))))
+       
        (setf entry-points
 	     (mapcar #'(lambda (x)
 			 (let ((name (first x)))
-			 `(if (eq %name% ',name) (go ,name))))
+			   `(if (eq %name% ',name) (go ,name))))
 		     *entry-points*)))
+     
      ;;(format t "entry-points = ~A~%" entry-points)
        
      (setq prog-bit
@@ -3112,8 +3153,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.127 2005/07/16 21:00:19 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.128 2005/07/16 22:43:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.128  2005/07/16 22:43:48  rtoy
+;;; Make sure entry points are also entered into the function database.
+;;;
 ;;; Revision 1.127  2005/07/16 21:00:19  rtoy
 ;;; In CHECK_NEW_VBLES, we need to add a special case for an expression
 ;;; containing ARRAY-SLICE because we don't want to add ARRAY-SLICE and

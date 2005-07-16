@@ -3,8 +3,11 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.2 2003/11/15 04:59:32 rtoy Exp $
+;;; $Id: hompack.system,v 1.3 2005/07/16 15:07:32 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.3  2005/07/16 15:07:32  rtoy
+;;; o File "f" isn't really part of system.  Remove it.
+;;;
 ;;; Revision 1.2  2003/11/15 04:59:32  rtoy
 ;;; Add the files and dependencies for the POLSYS stuff that we
 ;;; accidentally left out.  (But files were already there.)
@@ -26,18 +29,17 @@
     (
      (:file "dcpose")
      (:file "divp")
-     (:file "f")
      (:file "fjac")
      (:file "fjacs")
      (:file "ffunp" :depends-on ("mulp" "powp"))
-     (:file "fixpdf" :depends-on ("rhoa" "steps" "sintrp" "root" "f"))
-     (:file "fixpds" :depends-on ("rhoa" "stepds" "sintrp" "root" "f"))
+     (:file "fixpdf" :depends-on ("rhoa" "steps" "sintrp" "root"))
+     (:file "fixpds" :depends-on ("rhoa" "stepds" "sintrp" "root"))
      (:file "fixpnf" :depends-on ("stepnf" "rootnf"))
      (:file "fixpns" :depends-on ("stepns" "rootns"))
      (:file "fixpqf" :depends-on ("stepqf" "rootqf"))
      (:file "fixpqs" :depends-on ("stepqs" "rootqs"))
-     (:file "fode" :depends-on ("rhojac" "f" "fjac"))
-     (:file "fodeds" :depends-on ("rhojs" "pcgds" "f" "fjacs"))
+     (:file "fode" :depends-on ("rhojac" "fjac"))
+     (:file "fodeds" :depends-on ("rhojs" "pcgds" "fjacs"))
      (:file "gfunp" :depends-on ("powp" "mulp"))
      (:file "gmfads")
      (:file "hfun1p" :depends-on ("gfunp"))
@@ -63,24 +65,24 @@
      (:file "root")
      (:file "rootnf" :depends-on ("tangnf"))
      (:file "rootns" :depends-on ("tangns"))
-     (:file "rootqf" :depends-on ("upqrqf" "rho" "qrslqf" "f" "fjac"))
-     (:file "rootqs" :depends-on ("rhojs" "rho" "pcgqs" "f" "fjacs"))
+     (:file "rootqf" :depends-on ("upqrqf" "rho" "qrslqf" "fjac"))
+     (:file "rootqs" :depends-on ("rhojs" "rho" "pcgqs" "fjacs"))
      (:file "sclgnp")
      (:file "sintrp")
      (:file "solvds")
-     (:file "stepds" :depends-on ("f"))
+     (:file "stepds")
      (:file "stepnf" :depends-on ("tangnf"))
      (:file "stepns" :depends-on ("tangns"))
-     (:file "stepqf" :depends-on ("tangqf" "upqrqf" "rho" "rhojac" "qrslqf" "f" "fjac"))
-     (:file "stepqs" :depends-on ("tangqs" "rhojs" "pcgqs" "f" "fjacs"))
-     (:file "steps" :depends-on ("f"))
+     (:file "stepqf" :depends-on ("tangqf" "upqrqf" "rho" "rhojac" "qrslqf" "fjac"))
+     (:file "stepqs" :depends-on ("tangqs" "rhojs" "pcgqs" "fjacs"))
+     (:file "steps")
      (:file "strptp")
      (:file "otputp")
      (:file "r1upqf")
-     (:file "tangnf" :depends-on ("rhojac" "rho" "f" "fjac"))
-     (:file "tangns" :depends-on ("rhojac" "rho" "pcgns" "rhojs" "pcgds" "f" "fjac"))
-     (:file "tangqf" :depends-on ("rhojac" "qrfaqf" "qrslqf" "r1upqf" "f" "fjac"))
-     (:file "tangqs" :depends-on ("rhojs" "pcgqs" "f" "fjac"))
+     (:file "tangnf" :depends-on ("rhojac" "rho" "fjac"))
+     (:file "tangns" :depends-on ("rhojac" "rho" "pcgns" "rhojs" "pcgds" "fjac"))
+     (:file "tangqf" :depends-on ("rhojac" "qrfaqf" "qrslqf" "r1upqf" "fjac"))
+     (:file "tangqs" :depends-on ("rhojs" "pcgqs" "fjac"))
      (:file "upqrqf" :depends-on ("r1upqf"))
      ))
 

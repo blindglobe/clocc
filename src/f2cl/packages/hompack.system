@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.3 2005/07/16 15:07:32 rtoy Exp $
+;;; $Id: hompack.system,v 1.4 2005/07/16 15:20:37 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.4  2005/07/16 15:20:37  rtoy
+;;; Split the tests into 3 separate systems because they use the same name
+;;; for some functions so the tests can't all be loaded at the same time
+;;; and still work.
+;;;
 ;;; Revision 1.3  2005/07/16 15:07:32  rtoy
 ;;; o File "f" isn't really part of system.  Remove it.
 ;;;
@@ -93,7 +98,25 @@
     :depends-on ("hompack")
     :components
     (
-     (:file "mainf")
+     (:file "mainf" :compiler-options (:declare-common t))
+     ))
+
+(mk:defsystem hompack-test-mainp
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-extension "f"
+    :language :f2cl
+    :depends-on ("hompack")
+    :components
+    (
      (:file "mainp")
+     ))
+
+(mk:defsystem hompack-test-mains
+    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-extension "f"
+    :language :f2cl
+    :depends-on ("hompack")
+    :components
+    (
      (:file "mains")
      ))

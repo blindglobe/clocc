@@ -93,12 +93,18 @@
 	       (t
 		(pushnew (check-reserved-lisp-names exprs) *undeclared_vbles*))))
 	((listp exprs)
-	 ;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
-	 ;; the only possible place for variables is the arg list for
-	 ;; the function.
-	 (if (eq (first exprs) 'multiple-value-bind)
-	     (mapc #'check_new_vbles (cddr (third exprs)))
-	     (mapc #'check_new_vbles exprs)))
+	 (cond ((eq (first exprs) 'multiple-value-bind)
+		;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
+		;; the only possible place for variables is the arg list for
+		;; the function.
+		(mapc #'check_new_vbles (cddr (third exprs))))
+	       ((eq (first exprs) 'array-slice)
+		;; The only place for variables is the array name or
+		;; the indices
+		(check_new_vbles (second exprs))
+		(mapc #'check_new_vbles (cdddr exprs)))
+	       (t
+		(mapc #'check_new_vbles exprs))))
 	(t
 	 (error "What happened?")))
   exprs)
@@ -3106,8 +3112,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.126 2005/07/14 21:38:58 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.127 2005/07/16 21:00:19 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.127  2005/07/16 21:00:19  rtoy
+;;; In CHECK_NEW_VBLES, we need to add a special case for an expression
+;;; containing ARRAY-SLICE because we don't want to add ARRAY-SLICE and
+;;; the array type as new variables.  Are there other special cases?
+;;;
 ;;; Revision 1.126  2005/07/14 21:38:58  rtoy
 ;;; o Change default array-type in F2CL to be the same as F2CL-COMPILE.
 ;;;

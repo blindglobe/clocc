@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.46 2005/07/15 15:05:02 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.47 2005/07/16 15:20:37 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -243,6 +243,8 @@
    (:method ((c Chunk))
        (cond ((chunk-is-leaf c)
 	      +no-info-date+)
+	     ((chunk-up-to-date c)
+	      (Chunk-date c))
 	     (t
 	      false))))
 ;;;;; >>>> derive-date
@@ -942,18 +944,16 @@
 				(check-date-and-descend ch in-progress))))))
 
 	       (check-date-and-descend (ch in-progress)
-		  (chunk-derive-date-and-record ch)
-		  (cond (chunk-update-dbg*
-			 (chunk-date-note ch "Dated chunk ")))
-		  (cond ((and (chunk-is-leaf ch)
-			      (= (Chunk-date ch) +no-info-date+))
-			 (do-derive ch)
+		  (cond ((not (chunk-is-marked ch derive-mark))
+			 (chunk-derive-date-and-record ch)
 			 (cond (chunk-update-dbg*
-				(chunk-date-note
-				   ch " Leaf chunk; derived")))))
-;;;;			 (cond ((eq ch (elt input-chunks* 3))
-;;;;				(setq ch* ch)
-;;;;				(break "Got input 3")))
+				(chunk-date-note ch "Dated chunk ")))
+			 (cond ((and (chunk-is-leaf ch)
+				     (= (Chunk-date ch) +no-info-date+))
+				(do-derive ch)
+				(cond (chunk-update-dbg*
+				       (chunk-date-note
+					  ch " Leaf chunk; derived")))))))
 		  (let* ((in-progress (cons ch in-progress))
 			 (to-be-derived
 			      (check-from-derivees ch in-progress)))
@@ -1437,7 +1437,10 @@
 ;;; Returns true if the new date is later than the old one.  (No one uses
 ;;; the return value at this point.)
 (defun chunk-date-record (ch new-date old-date)
-	 (cond ((not (is-Number new-date))
+	 (cond ((not new-date)
+		(error "Attempt to record false date for ~s"
+		       ch))
+	       ((not (is-Number new-date))
 ;;;;		(setq ch* ch)
 ;;;;		(break 
 ;;;;		    "Date = ~s [old ~s] for chunk = ~s~%"

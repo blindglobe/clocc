@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.4 2005/03/06 01:23:35 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.5 2005/07/16 15:20:37 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -43,12 +43,31 @@
 	    (make-pathname :name fname :type lisp-object-extn*)
 	    ytools-bin-dir-pathname*)))
 
-;;; There is no particular need for this.  Just do (yt-install :ytfm)
-;;; and answer "y" when it asks if you mean to reinstall.
-(defun yt-recompile ()
-   (dolist (fname ytools-core-files*)
-      (yt-comp fname)
-      (yt-bload fname)))
+;;; Load ytfm (ytools-core-files*).  Compile the ones in the 'new-files'
+;;; alist (each entry is (old-file-name temp-new-file-name)).
+;;; If 'cautious', then after a replacement like that recompile all
+;;; the remaining files.
+(defun yt-recompile (new-files cautious
+		     &key (start-with nil) (stop-after nil))
+   (let ((compiling nil)
+	 (files (cond (start-with
+		       (member start-with ytools-core-files*
+			       :test #'string=))
+		      (t ytools-core-files*))))
+      (dolist (fname files)
+	 (let ((e (assoc fname new-files :test #'string=)))
+	    (cond (e
+		   (setq compiling t)
+		   (yt-comp (second e))
+		   (yt-bload))
+		  ((and compiling cautious)
+		   (yt-comp fname)
+		   (yt-bload))
+		  (t
+		   (yt-bload fname)))
+	    (cond ((and stop-after
+			(string= fname stop-after))
+		   (return)))))))
 
 ;;; More variations on the same theme.
 ;;; This is all ad-hoc, and contains various directory names hard-wired. --

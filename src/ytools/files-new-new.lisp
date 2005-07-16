@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new-new.lisp,v 1.1.2.3 2005/07/15 15:05:03 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.4 2005/07/16 15:20:37 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -241,7 +241,7 @@
 ;;; or some other facility (simple 'load', for instance).  The former is
 ;;; knottier.  YTFM wants to figure out dependencies by slurping, but 
 ;;; 'fload'/'fcompl' should be able to decipher dependencies declared by
-;;; some version of 'defsystem.'  That's where Loadable-chunks come in (qv).
+;;; some version of 'defsystem.'  That's where Code-dep-chunks come in (qv).
 
 ;;; An entity as (having the appropriate variant) loaded into primary
 ;;; memory --
@@ -257,7 +257,7 @@
 	    :accessor Loaded-chunk-status)
    ;; -- values :load-succeeded or :load-failed
    ;; once load has been attempted
-    ;; The Loadable-chunk that computes the basis of this one --
+    ;; The Code-dep-chunk that computes the basis of this one --
     (controller :accessor Loaded-chunk-controller
 		:initarg :controller)))
 
@@ -443,23 +443,48 @@
 
 (defmethod derive ((cd Code-dep-chunk))
    (error "No method supplied for figuring out what entities ~s depends on"
-	  (Code-dep-chunk-controllee lc)))
+	  cd))
 ;;; -- We must subclass Code-dep-chunk to supply methods for figuring
 ;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
-;;; However, the actual derivers should always end by calling this,
-;;; after updating the 'depends-on' slot --
-(defun code-deps-derive (cd-ch)
-   (let ((code-chunk (Code-dep-chunk-controllee cd-ch)))
-     ;; It's okay to call 'chunks-update' from 'derive', normally
-     ;; a no-no, because we're at the meta level.--
-      (chunks-update
-          (mapcar (\\ (supporter)
-		     (Code-chunk-controller
-		         (place-Loaded-chunk supporter false)))
-		  (Code-chunk-depends-on code-chunk))
-	  false false)
-      file-op-count*))
+;;; A useful check for those methods is that they must return the
+;;; value of the "meta-clock"; for files being managed by 'fload', 
+;;; this is the file-op-count*.   For the sake of a bit of cleanliness, 
+;;; we avoid using that variable here, because so far we're talking
+;;; about some kind Code-chunk, and we haven't committed to using
+;;; 'fload' to manage those chunks.  (There might well be an alternative
+;;; meta-clock for packages managed using 'defsystem' or asdf.)
+
+(defgeneric Code-dep-chunk-meta-clock-val (cd)
+  (:method ((cd Code-dep-chunk))
+     (error "No meta-clock defined for ~s" cd)))
+
+(defmethod derive :around ((cd Code-dep-chunk))
+   (let ((d (call-next-method)))
+      (cond ((not (and (is-Integer d)
+		       (= d )))
+	     (cerror
+	        "I will force the correct value"
+		!"Deriving Code-dep-chunk failed to get proper clock val~
+                  :~s~%" cd)
+	     (setq d (Code-dep-chunk-meta-clock-val cd))))
+      (let* ((loaded-code-chunk (Code-dep-chunk-controllee cd))
+	     (code-chunk (Loaded-chunk-loadee loaded-code-chunk))
+	     (supporting-controllers !()))
+	;; It's okay to call 'chunks-update' from 'derive', normally
+	;; a no-no, because we're at the meta level.--
+	(dolist (supporter (Code-chunk-depends-on code-chunk))
+	   (let* ((lc (place-Loaded-chunk supporter false))
+		  (controller
+			(verify-loaded-chunk-controller lc true)))
+	      (cond (controller
+		     (chunk-request-mgt controller)
+		     (on-list controller supporting-controllers)))))
+	(chunks-update
+	     supporting-controllers false false)
+	;; Get the meta-clock-val again, because it might have changed
+	;; (although not in the case of file-op-count*).
+	(Code-dep-chunk-meta-clock-val cd))))
 
 ;;; Creates a Code-dep-chunk to act as a controller for this filoid
 ;;; and the chunk corresponding to its being loaded.
@@ -593,65 +618,23 @@
 (defgeneric loaded-chunk-set-basis (loaded-ch)
    (:method ((lch t)) nil))
 
-(defvar loaded-filoids-to-be-monitored* ':global)
-
-(defvar monitor-basis-dbg* false)
-
 (defun monitor-filoid-basis (loaded-filoid-ch)
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
 	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
 		 loaded-filoid-ch)))
-   (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllees (list loaded-filoid-ch))
-		loaded-filoids-to-be-monitored*
-		controllers next-controllees
-;;;;		(i 0)
-		(handled !())) ;;;; (fop file-op-count*)
-	     (loop
-	        (setq loaded-filoids-to-be-monitored* !())
-;;;;	        (dbg-out monitor-basis-dbg*
-;;;;		   i 1 (len controllees) " / "
-;;;;		     "Controllees = " controllees
-;;;;		     :%)
-;;;;		(setq i (+ i 1))
-;;;;	        (cond ((not (= file-op-count* fop))
-;;;;		       (breakpoint monitor-filoid-basis
-;;;;			  "file-op-count* " fop " => " file-op-count*)
-;;;;		       (!= fop file-op-count*)))
-		(setq loaded-filoids-to-be-monitored* !())	       
-		(setq controllers 
-		      (mapcar #'Loaded-chunk-controller
-			      controllees))
-	        (dolist (loadable-ch controllers)
-		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false false)
-	        (dolist (cee controllees)
-		   (cond ((not (memq cee handled))
-			  (loaded-chunk-set-basis cee)
-			  (
-			  (on-list cee handled)
-;;;;	        (dbg-out monitor-basis-dbg* " handled = " handled :%)
-	        ;; Now the immediate 'depends-on's are okay.
-	        (setq next-controllees loaded-filoids-to-be-monitored*)
-	        (dolist (l-ch controllees)
-;;;;	           (dolist (c-ch (Code-chunk-depends-on
-;;;;				    (Loaded-chunk-loadee l-ch)))
-;;;;		      (let ((l-ch (place-Loaded-chunk c-ch false)))
-;;;;			 (cond ((memq l-ch handled)
-;;;;				)
-;;;;			       (t
-;;;;				(on-list l-ch next-controllees)))))
-		  )
-	        (cond ((null next-controllees)
-		       (return))
-		      (t
-		       (setq controllees next-controllees))))))
-	 (t
-	  (cond ((> (len loaded-filoids-to-be-monitored*)
-		    200)
-		 (signal-problem monitor-filoid-basis
-		    "Too many filoids to be monitored")))
-	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
+   (let ((controller (verify-loaded-chunk-controller loaded-filoid-ch false)))
+      (chunk-request-mgt controller)
+      (chunk-update controller false false)))
+
+(defun verify-loaded-chunk-controller (lc allow-null)
+   (let ((controller (Loaded-chunk-controller lc)))
+      (cond (controller controller)
+	    (allow-null
+	     (cerror "I'll do without it, but something's wrong"
+		     "Loaded-chunk has no controller: ~s" lc)
+	     false)
+	    (t
+	     (error "Loaded-chunk has no controller: ~s" lc)))))
 
 (defvar user-manip-asker* false)
 ;;; -- Function to call to ask how file should be handled.
@@ -1252,14 +1235,6 @@
 
 (datafun :slurp-macros defmacro #'macros-slurp-eval)
 
-(defmacro needed-by-macros (&body l)
-   `(progn ,@l))
-
-(datafun :slurp-macros needed-by-macros
-   (defun :^ (exp _)
-      (dolist (e exp) (eval e))
-      false))
-
 (datafun :slurp-macros defsetf  #'macros-slurp-eval)
 
 (datafun :slurp-macros defstruct #'macros-slurp-eval)
@@ -1295,6 +1270,10 @@
       (dolist (e (cdr form))
 	 (eval e))
       false))
+
+(defmacro needed-by-macros (&body l)
+   `(eval-when (:compile-toplevel :load-toplevel :execute)
+       ,@l))
 
 (datafun :slurp-macros needed-by-macros eval-when-slurping)
 

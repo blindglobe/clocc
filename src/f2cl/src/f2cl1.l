@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/07/15 15:28:07 $"))
+  (remove #\$ "2.0 beta $Date: 2005/07/16 15:11:55 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -1629,7 +1629,7 @@ FILENAME                 File containing Fortran code
 (defun generate-call-to-routine (routine arglist &optional return)
   (multiple-value-bind (routine-name finfo)
       (if (eq (first routine) 'funcall)
-	  (values routine (gethash (second routine) *f2cl-function-info*))
+	  (values routine nil)
 	  (let ((checked (check-reserved-lisp-names (first routine))))
 	    (values (list checked)
 		    (gethash checked *f2cl-function-info*))))
@@ -2664,8 +2664,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.144 2005/07/15 15:28:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.145 2005/07/16 15:11:55 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.145  2005/07/16 15:11:55  rtoy
+;;; In GENERATE-CALL-TO-ROUTINE, if the routine is a parameter, we don't
+;;; really know anything about it even if we know the info about a routine
+;;; of the same name.  Thus, there's nothing we can do except just call it
+;;; and hope it's right.  (We warn the user, though!)
+;;;
 ;;; Revision 1.144  2005/07/15 15:28:07  rtoy
 ;;; Make the parser for IF statements a little smarter.  "IF =" is not an
 ;;; IF statement.

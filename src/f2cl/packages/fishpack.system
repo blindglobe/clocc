@@ -58,6 +58,7 @@
    (:file "epmach"
 	  :compiler-options (:declare-common t)
 	  :depends-on ("store"))
+   
    (:file "hwscsp"
 	  :depends-on ("hwscs1" "epmach"))
    (:file "indxa"
@@ -66,7 +67,8 @@
    (:file "blktr1"
 	  :depends-on ("indxa" "indxb" "indxc"))
    (:file "blktri"
-	  :depends-on ("compb" "blktr1"))
+	  :depends-on ("compb" "blktr1")
+	  :compiler-options (:declare-common t))
    (:file "bsrh")
    (:file "compb"
 	  :depends-on ("tevls" "ppadd" "indxb"))
@@ -82,6 +84,12 @@
    (:file "psgf")
    (:file "store")
    (:file "tevls")
+
+   (:file "hstcrt"
+	  :depends-on ("poistg"))
+   (:file "poistg"
+	  :depends-on ("postg2"))
+   (:file "postg2")
    ))
 
 (mk:defsystem tst-fishpack-hwscrt
@@ -119,3 +127,23 @@
   :depends-on ("fishpack")
   :components
   ((:file "tsthwsssp")))
+
+;; Warning!  This test doesn't pass!  It gets a bad index error
+;; accessing element 0 of an array.
+(mk:defsystem tst-fishpack-hwscsp
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthwscsp")))
+
+(mk:defsystem tst-fishpack-hstcrt
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthstcrt")))

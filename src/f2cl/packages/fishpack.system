@@ -90,6 +90,9 @@
    (:file "poistg"
 	  :depends-on ("postg2"))
    (:file "postg2")
+
+   (:file "hstplr"
+	  :depends-on ("poistg" "genbun"))
    ))
 
 (mk:defsystem tst-fishpack-hwscrt
@@ -147,3 +150,12 @@
   :depends-on ("fishpack")
   :components
   ((:file "tsthstcrt")))
+
+(mk:defsystem tst-fishpack-hstplr
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthstplr")))

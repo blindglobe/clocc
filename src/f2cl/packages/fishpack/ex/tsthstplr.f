@@ -51,6 +51,7 @@ c     the theta-interval.
 c
       dimension       f(51,50)   ,bdb(48)    ,bdc(50)    ,bdd(50)    ,
      1                w(1092)    ,r(50)      ,theta(48)
+      dimension bda(1)
 c
 c     from dimension statement we get value of idimf.  also note that w
 c     is dimensioned (13 + log2(n))*m + 4*n .

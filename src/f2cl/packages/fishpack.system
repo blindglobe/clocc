@@ -104,6 +104,38 @@
 	  :depends-on ("hstcs1"))
    (:file "hstcs1"
 	  :depends-on ("blktri"))
+
+   ;; This package requires FFTPACK.
+   #||
+   (:file "hw3crt"
+	  :depends-on ("pois3d"))
+   (:file "pois3d"
+	  :depends-on ("pos3d1"))
+   (:file "pos3d1"
+	  :depends-on ("sinti" "costi" "rffti" "sinqi" "cosqi"
+		       "rfftf" "rfftb" "sint" "sinqf" "sinqb"
+		       "cost" "cosqf" "cosqb" "trid"))
+   (:file "trid")
+   
+   ||#
+
+   (:file "sepx4"
+    :depends-on ("chkpr4" "speli4"))
+   (:file "chkpr4"
+	  :depends-on ("cofx"))
+   (:file "chksn4"
+	  :depends-on ("cofx"))
+   (:file "defe4"
+	  :depends-on ("cofx" "dx4" "dy4"))
+   (:file "dx4"
+	  :compiler-options (:declare-common t))
+   (:file "dy4")
+   (:file "minso4")
+   (:file "ortho4")
+   (:file "speli4"
+	  :depends-on ("cofx" "chksn4" "tris4" "ortho4" "genbun" "minso4" "defe4"))
+   (:file "tris4")
+   (:file "cofx")
    ))
 
 (mk:defsystem tst-fishpack-hwscrt
@@ -199,3 +231,25 @@
   :depends-on ("fishpack")
   :components
   ((:file "tsthstcsp")))
+
+(mk:defsystem tst-fishpack-hw3crt
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthw3crt")))
+
+;; Warning!  This test doesn't pass!  It seems to be in an infinite
+;; loop trying to print out results, but just the text is printed.
+(mk:defsystem tst-fishpack-sepx4
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tstsepx4" :depends-on ("cofx4"))
+   (:file "cofx4")
+   ))

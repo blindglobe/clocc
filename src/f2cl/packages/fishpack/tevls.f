@@ -10,7 +10,7 @@ C
 C
 C     REAL SQRT,ABS,SIGN
 C
-      COMMON /CBLKT/  NPP        ,K          ,MACHEP     ,CNV        ,
+      COMMON /CBLKT/  NPP        ,K          ,EPS     ,CNV        ,
      1                NM         ,NCMPLX     ,IK
 C
 C     THIS SUBROUTINE IS A MODIFICATION OF THE EISPACK SUBROUTINE TQLRAT
@@ -46,7 +46,7 @@ C     QUESTIONS AND COMMENTS SHOULD BE DIRECTED TO B. S. GARBOW,
 C     APPLIED MATHEMATICS DIVISION, ARGONNE NATIONAL LABORATORY
 C
 C
-C     ********** MACHEP IS A MACHINE DEPENDENT PARAMETER SPECIFYING
+C     ********** EPS IS A MACHINE DEPENDENT PARAMETER SPECIFYING
 C                THE RELATIVE PRECISION OF FLOATING POINT ARITHMETIC.
 C
 C                **********
@@ -64,7 +64,7 @@ C
 C
       DO 112 L=1,N
          J = 0
-         H = MACHEP*(ABS(D(L))+SQRT(E2(L)))
+         H = EPS*(ABS(D(L))+SQRT(E2(L)))
          IF (B .GT. H) GO TO 102
          B = H
          C = B*B

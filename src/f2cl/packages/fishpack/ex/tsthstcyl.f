@@ -50,6 +50,7 @@ c     contain 52 unknowns.
 c
       dimension       f(51,52)   ,bdb(52)    ,bdc(50)    ,bdd(50)    ,
      1                w(1108)    ,r(50)      ,z(52)
+      dimension bda(1)
 c
 c     from dimension statement we get value of idimf.  also note that w
 c     is dimensioned (13 + int(log2(n)))*m + 4*n .

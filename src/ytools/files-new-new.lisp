@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new-new.lisp,v 1.1.2.4 2005/07/16 15:20:37 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.5 2005/07/17 19:08:52 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,7 +12,8 @@
 	     always-slurp
 	     debuggable debuggability* def-sub-file-type)))
 
-;;; A piece (maybe a multi-file piece) of code that can be executed
+;;; A piece (maybe a multi-file piece) of code that can be executed.
+;;; The word "filoid" is synonymous with "Code-chunk."
 (defclass Code-chunk (Chunk)
   (;; Code-chunks that must be loaded when this one is --
    (callees :accessor Code-chunk-callees
@@ -423,16 +424,32 @@
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
-;;; It manages: "The tree of 'depends-on's below 'controllee' is
-;;; up to date."
+;;; It manages: "The tree of 'depends-on's above 'controllee' is
+;;; up to date."  
+;;; More precisely: Let C be the controller for 'controllee', a
+;;; Loaded-chunk managing "Code-chunk F is loaded."  Let L be the set
+;;; of Code-chunks that F requires.  Then C manages "For each
+;;; Code-chunk H in L, and each Code-chunk G that requires* F , there
+;;; is a chain of 'depends-on' links from G to H."
+;;; Here "A requires B" means that B must be loaded before 
+;;; A.  This is not a metaphysical statement, but is determined by
+;;; the 'derive' method for the kind of Code-chunks involved, 
+;;; presumably by inspecting various data structures, file headers, and
+;;; the like.
+;;; Then "requires*" is the transitive closure of "requires."  (Which 
+;;; means that there is some notion of "immediacy" implied by the
+;;; definition of "requires," but it's not necessary that this be
+;;; formalized; "requires" and "requires*" might be the same.)
+
 (defclass Code-dep-chunk (Chunk)
    ((controllee :reader Code-dep-chunk-controllee
 		:initarg :controllee
 		:type Loaded-chunk))
-   ;; The basis of this chunk is the empty list because it's a
-   ;; meta-chunk, which can't be connected to any chunk whose basis it
-   ;; might affect.--
    (:default-initargs :basis !()))
+;;; -- basis doesn't stay empty.  A Code-dep-chunk has as derivees 
+;;; all the Code-dep-chunks for files that it depends on.  (Note
+;;; reverse flow: If file A depends on file B, then (:loaded A) is
+;;; a base of (:loaded B), but (:code-dep A) is a derivee of (:code-dep B).
 
 (defun place-Code-dep-chunk (code-ch)
    (chunk-with-name `(:dep-tree-known ,(Chunk-name code-ch))
@@ -449,8 +466,8 @@
 
 ;;; A useful check for those methods is that they must return the
 ;;; value of the "meta-clock"; for files being managed by 'fload', 
-;;; this is the file-op-count*.   For the sake of a bit of cleanliness, 
-;;; we avoid using that variable here, because so far we're talking
+;;; this is the file-op-count*.   
+;;; We avoid using that variable here, because so far we're talking
 ;;; about some kind Code-chunk, and we haven't committed to using
 ;;; 'fload' to manage those chunks.  (There might well be an alternative
 ;;; meta-clock for packages managed using 'defsystem' or asdf.)
@@ -460,31 +477,16 @@
      (error "No meta-clock defined for ~s" cd)))
 
 (defmethod derive :around ((cd Code-dep-chunk))
-   (let ((d (call-next-method)))
+   (let ((d (call-next-method))
+	 (date (Code-dep-chunk-meta-clock-val cd)))
       (cond ((not (and (is-Integer d)
-		       (= d )))
+		       (= d date)))
 	     (cerror
 	        "I will force the correct value"
 		!"Deriving Code-dep-chunk failed to get proper clock val~
                   :~s~%" cd)
-	     (setq d (Code-dep-chunk-meta-clock-val cd))))
-      (let* ((loaded-code-chunk (Code-dep-chunk-controllee cd))
-	     (code-chunk (Loaded-chunk-loadee loaded-code-chunk))
-	     (supporting-controllers !()))
-	;; It's okay to call 'chunks-update' from 'derive', normally
-	;; a no-no, because we're at the meta level.--
-	(dolist (supporter (Code-chunk-depends-on code-chunk))
-	   (let* ((lc (place-Loaded-chunk supporter false))
-		  (controller
-			(verify-loaded-chunk-controller lc true)))
-	      (cond (controller
-		     (chunk-request-mgt controller)
-		     (on-list controller supporting-controllers)))))
-	(chunks-update
-	     supporting-controllers false false)
-	;; Get the meta-clock-val again, because it might have changed
-	;; (although not in the case of file-op-count*).
-	(Code-dep-chunk-meta-clock-val cd))))
+	     date)
+	    (t d))))
 
 ;;; Creates a Code-dep-chunk to act as a controller for this filoid
 ;;; and the chunk corresponding to its being loaded.

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.47 2005/07/16 15:20:37 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.48 2005/07/17 19:08:51 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -374,8 +374,9 @@
    (chunk-propagate-height ch)
    (set-latest-support-date ch))
 
-;;; Returns a list starting with 'ch' and containing all derivees* of 'ch'
-;;; whose 'latest-supporter-date' gets updated.
+;;; Update the 'latest-supporter-date' of derivees* of ch.
+;;; Return all the chunks are found to be out of date (which is
+;;; not the same as the chunks whose 'latest-supporter-date' change).
 (defun set-latest-support-date (ch)
    (let ((latest-supporter-date +no-supporters-date+))
       (dolist (b (Chunk-basis ch))
@@ -389,16 +390,22 @@
 ;;;;		    (setq bad-ch* ch)
 ;;;;		    (break "Chunk ~s has suspicious latest supporter-date ~s"
 ;;;;			   ch latest-supporter-date)))			   
-	     (setf (Chunk-latest-supporter-date ch) latest-supporter-date)))
-      (cons ch
-	    (let ((ch-date (Chunk-date ch)))
-	       (mapcan (\\ (d)
-			  (let ((d-date (Chunk-latest-supporter-date d)))
-			     (cond ((or (> ch-date d-date)
-					(> latest-supporter-date d-date))
-				    (set-latest-support-date d))
-				   (t !()))))
-		       (Chunk-derivees ch))))))
+	     (setf (Chunk-latest-supporter-date ch)
+		   latest-supporter-date)))
+      (let ((ch-date (Chunk-date ch)))
+	 (let ((from-derivees
+		  (mapcan (\\ (d)
+			     (let ((d-date (Chunk-latest-supporter-date d)))
+ 			        (cond ((or (> ch-date d-date)
+					   (> latest-supporter-date d-date))
+				       (set-latest-support-date d))
+				      (t !()))))
+			  (Chunk-derivees ch))))
+	    (cond ((> latest-supporter-date
+		      ch-date)
+		   (cons ch from-derivees))
+		  (t
+		   from-derivees))))))
 
 (defmethod (setf Chunk-update-basis) :before (new-update-basis ch)
    (cond ((not (eq new-update-basis (Chunk-update-basis ch)))
@@ -950,6 +957,7 @@
 				(chunk-date-note ch "Dated chunk ")))
 			 (cond ((and (chunk-is-leaf ch)
 				     (= (Chunk-date ch) +no-info-date+))
+				;; See note on 'do-derive', below
 				(do-derive ch)
 				(cond (chunk-update-dbg*
 				       (chunk-date-note
@@ -990,7 +998,7 @@
 
                (check-from-derivees (ch in-progress)
 		  (let ((updatees
-			   (retain-if
+			   (retain-if-x
 			      (\\ (c)
 				 (and (not (chunk-up-to-date c))
 				      (not (memq c in-progress))
@@ -1087,6 +1095,7 @@
 				       (cond (chunk-update-dbg*
 					      (format *error-output*
 						      " ...Deriving!~%")))
+				       ;; See note on 'do-derive', below
 				       (do-derive ch)))
 				(let ((to-explore
 				         (append (Chunk-update-derivees ch)
@@ -1095,8 +1104,9 @@
 					  (cons ch in-progress)))
 				   (chunk-mark ch up-mark)
 				   (setq to-explore
-					 (mapcan #'set-latest-support-date
-						 to-explore))
+				         (nconc to-explore
+						(mapcan #'set-latest-support-date
+							to-explore)))
 				   (do ((el to-explore (tail el)))
 				       ((or (null el)
 					    (update-interrupted)))
@@ -1125,6 +1135,11 @@
 		       (or (not (chunk-date-up-to-date ch))
 			   (and force (memq ch must-derive)))))
 
+	       ;; This is called in two places above.  In each case,
+	       ;; we will pursue the derivees of 'ch' after deriving it.
+	       ;; The deriver for 'ch' is allowed to change its derivees!
+	       ;; So in both places where 'do-derive' is called, the
+	       ;; derivees are obtained only after it returns.
 	       (do-derive (ch)
 		 (chunk-mark ch derive-mark)
 		 (chunk-derive-and-record ch)
@@ -1668,3 +1683,7 @@
 	     (chunk-zap-dates u)))))
 
 (defun dutl (ut) (values->list (decode-universal-time ut)))
+
+;;; For debugging (it's traceable)
+(defun retain-if-x (pred l)
+   (retain-if pred l))

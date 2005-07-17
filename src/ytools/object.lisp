@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 1.4.2.1 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: object.lisp,v 1.4.2.2 2005/07/17 19:08:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,7 +11,7 @@
 
 (depends-on %ytools/ mapper repeat)
 
-(depends-on :at-run-time %ytools/ outin)
+(depends-on :at-run-time %ytools/ outin setter)
 
 (end-header)   ;;;; :continue-slurping
 
@@ -27,8 +27,8 @@
 	     initialize +unbound-slot-val+
 	     max-no-key-slots* max-no-key-classes*)))
 
-(eval-when (:slurp-toplevel)
-   (fslurp %ytools/ setter))
+;;;;(eval-when (:slurp-toplevel)
+;;;;   (fslurp %ytools/ setter))
 
 (defstruct (YTools-class-descriptor (:conc-name ytd-))
    medium

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module-new-new.lisp,v 1.1.2.1 2005/07/16 15:20:37 airfoyle Exp $
+;;;$Id: module-new-new.lisp,v 1.1.2.2 2005/07/17 19:08:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -311,6 +311,9 @@
 	 (make-instance 'Module-dep-chunk
 	    :controllee loaded-ch
 	    :name name))))
+
+(defmethod Code-dep-chunk-meta-clock-val ((mod-dep Module-dep-chunk))
+   file-op-count*)
 
 (defmethod derive ((mod-controller Module-dep-chunk))
    (let* ((loaded-mod-chunk

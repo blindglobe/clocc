@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.5 2005/07/16 15:20:37 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.6 2005/07/17 19:08:52 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -43,10 +43,13 @@
 	    (make-pathname :name fname :type lisp-object-extn*)
 	    ytools-bin-dir-pathname*)))
 
-;;; Load ytfm (ytools-core-files*).  Compile the ones in the 'new-files'
-;;; alist (each entry is (old-file-name temp-new-file-name)).
-;;; If 'cautious', then after a replacement like that recompile all
-;;; the remaining files.
+;;; Load ytfm (ytools-core-files*).  Substitute some of the
+;;; files as indicated in the 'new-files'
+;;; alist (each entry is (old-file-name temp-new-file-name compile)).
+;;; If 'cautious', then compile such replacements,
+;;; then recompile all files after the first replacement.
+;;; Otherwise, the third slot of the alist entry determines
+;;; whether to compile.
 (defun yt-recompile (new-files cautious
 		     &key (start-with nil) (stop-after nil))
    (let ((compiling nil)
@@ -57,9 +60,13 @@
       (dolist (fname files)
 	 (let ((e (assoc fname new-files :test #'string=)))
 	    (cond (e
-		   (setq compiling t)
-		   (yt-comp (second e))
-		   (yt-bload))
+		   (cond (cautious
+			  (setq compiling t)))
+		   (cond ((or compiling (third e))
+			  (yt-comp (second e))
+			  (yt-bload))
+			 (t
+			  (yt-bload (second e)))))
 		  ((and compiling cautious)
 		   (yt-comp fname)
 		   (yt-bload))

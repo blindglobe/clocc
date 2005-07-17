@@ -32,6 +32,7 @@ c     program to illustrate the use of hwscsp
 c
       dimension       f(48,33)   ,bdtf(33)   ,w(775)     ,r(33)      ,
      1                theta(48)
+      dimension bdts(1), bdrs(1), bdrf(1)
 c
       pi = pimach(dum)
       intl = 0

@@ -2,6 +2,35 @@
 
 Changes:
 
+Jul 16, 2005
+------------
+
+Lots of little fixes:
+
+o F2cl erroneously initialized and declared ARRAY-SLICE as a variable,
+  along with the type associated with ARRAY-SLICE.
+o F2cl was not entering entry point functions into the function database.
+
+Also, hompack now compiles and passes the 3 test programs.  Yay!  The
+mainp test, however needs some hand modification to work because it
+reads the data from unit 7.  F2cl doesn't support the OPEN statement
+and also doesn't support Fortran's READ very well.
+
+So to make mainp work, you need to take the converted lisp and
+basically change all (read) to (read-from-string (read-line)).  This
+works because the code only reads one parameter per line.  Then, to
+run the test (called testp), you need to do
+
+    (with-open-file (*standard-input* "innhp.dat" :direction :input)
+      (testp))
+
+The output should match the sample output in mainp.f and innhp.dat.
+There are some differences, though.
+
+Also, parts of FISHPACK have been added as a package for F2cl.  (This
+was the reason for adding simple EQUIVALENCE support).  The tests we
+currently have for FISHPACK all pass.  We should add more of FISHPACK.
+
 Jul 14, 2005
 ------------
 

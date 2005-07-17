@@ -45,7 +45,6 @@ c     in the y-interval.
 c
       dimension       f(50,53)   ,bda(53)    ,bdb(53)    ,w(1076)    ,
      1                x(48)      ,y(53)
-      dimension bdc(1), bdd(1), bdc(1)
 c
 c     from the dimension statement we get idimf = 50.  also note that
 c     w is dimensioned (13 + int(log2(n))*m + 4*n.

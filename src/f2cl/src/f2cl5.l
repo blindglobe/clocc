@@ -417,7 +417,12 @@
 	  (cond ((member fname *subprog-stmt-fns*)
 		 (push `(declare (ftype ,decl ,fname)) stmt-fcns))
 		((member fname arglist)
+		 ;; What can we really do for a function that appears
+		 ;; in the arglist?  We don't really know anything
+		 ;; about it, so don't try to declare the function.
+		 
 		 ;;(format t "arglist fcn = ~A~%" `(declare (type ,decl ,fname)))
+		 #+nil
 		 (push `(declare (type ,decl ,fname)) arg-fcns))
 		((member fname *intrinsic-function-names*)
 		 ;; We don't need declarations for intrinsic functions
@@ -3153,8 +3158,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.128 2005/07/16 22:43:48 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.129 2005/07/17 02:17:42 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.129  2005/07/17 02:17:42  rtoy
+;;; Don't try to declare a function if the function was a parameter.  We don't really know anything about the function.
+;;;
 ;;; Revision 1.128  2005/07/16 22:43:48  rtoy
 ;;; Make sure entry points are also entered into the function database.
 ;;;

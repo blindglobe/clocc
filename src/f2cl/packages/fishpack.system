@@ -82,5 +82,40 @@
    (:file "psgf")
    (:file "store")
    (:file "tevls")
-
    ))
+
+(mk:defsystem tst-fishpack-hwscrt
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthwscrt")))
+
+(mk:defsystem tst-fishpack-hwscyl
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthwscyl")))
+
+(mk:defsystem tst-fishpack-hwsplr
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthwsplr")))
+
+(mk:defsystem tst-fishpack-hwsssp
+  :source-pathname (translate-logical-pathname
+		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-extension "f"
+  :language :f2cl
+  :depends-on ("fishpack")
+  :components
+  ((:file "tsthwsssp")))

@@ -48,6 +48,7 @@ c     in the r-interval.
 c
       dimension       f(47,16)   ,bdd(45)    ,w(615)     ,theta(45)  ,
      1                r(15)      ,cost(45)
+      dimension bda(1), bdb(1), bdc(1)
 c
 c     note that from dimension statement we get that idimf = 47  and
 c     that w is dimensioned according to the statement in the

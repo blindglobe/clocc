@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new-new.lisp,v 1.1.2.5 2005/07/17 19:08:52 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.6 2005/07/18 15:31:21 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -582,17 +582,18 @@
 (defun file-chunk-load (file-ch)
       (with-post-file-transduction-hooks
 	 (cleanup-after-file-transduction
-	    (let ((*package* *package*)
-		  (*readtable* *readtable*)
-		  (now-loading* (Code-file-chunk-pathname file-ch))
-		  (loading-stack* (cons (Code-file-chunk-pathname file-ch)
-					loading-stack*))
-		  (now-slurping* false)
-		  (now-compiling* false)
-		  (success false)
-		  (errors-during-load !())
-		  (fload-indent* ;;;;(+ 3 fload-indent*)
-		      (* 3 (Chunk-depth file-ch))))
+	    (let* ((sourcetab (code-file-chunk-readtable-if-known file-ch))
+		   (*package* *package*)
+		   (*readtable* (or sourcetab *readtable*))
+		   (now-loading* (Code-file-chunk-pathname file-ch))
+		   (loading-stack* (cons (Code-file-chunk-pathname file-ch)
+					 loading-stack*))
+		   (now-slurping* false)
+		   (now-compiling* false)
+		   (success false)
+		   (errors-during-load !())
+		   (fload-indent* ;;;;(+ 3 fload-indent*)
+		       (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
 				 (Code-file-chunk-pn
 				     file-ch)
@@ -616,6 +617,22 @@
 			 (file-op-message "...load attempt failed!"
 					  false false "")))))))
       (get-universal-time))
+
+(defun code-file-chunk-readtable-if-known (file-ch)
+   (let ((source-readtab
+	    (Code-file-chunk-readtable file-ch)))
+      (cond (source-readtab
+	     (cond ((not (eq source-readtab *readtable*))
+		    (format *error-output*
+		       !"Source file readtable (from mode line) = ~s~
+			 ~%   *readtable* = ~s~
+			 ~%   The former will be used to load or compile ~
+			     ~s~%"
+		       source-readtab
+		       *readtable*
+		       (Code-file-chunk-pathname file-ch))))
+	     source-readtab)
+	    (t false))))
 
 (defgeneric loaded-chunk-set-basis (loaded-ch)
    (:method ((lch t)) nil))
@@ -914,11 +931,13 @@
 	  (old-obj (and old-obj-pn
 			(probe-file old-obj-pn)))
 	  (loaded-ch (Compiled-file-chunk-loaded-file cf-ch))
+	  (source-ch (Compiled-file-chunk-source-file cf-ch))
 	  (loaded-ch-manip (Loaded-file-chunk-manip loaded-ch)))
       (labels ((compile-by-any-other-name ()
-		  (let* ((pn (Code-file-chunk-pn
-				(Compiled-file-chunk-source-file cf-ch)))
+		  (let* ((pn (Code-file-chunk-pn source-ch))
 			 (real-pn (pathname-resolve pn true))
+			 (source-readtab
+			     (code-file-chunk-readtable-if-known source-ch))
 			 (old-obj-write-time
 				  (and old-obj
 				       (pathname-write-time old-obj-pn))))
@@ -926,6 +945,7 @@
 			   (now-loading* false)
 			   (now-slurping* false)
 			   (debuggability* debuggability*)
+			   (*readtable* (or source-readtab *readtable*))
 			   (fload-indent*
 			      (* 3 (Chunk-depth cf-ch))))
 			(compile-and-record pn real-pn old-obj-pn

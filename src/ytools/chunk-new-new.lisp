@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk-new-new.lisp,v 1.1.2.1 2005/07/17 19:09:43 airfoyle Exp $
+;;; $Id: chunk-new-new.lisp,v 1.1.2.2 2005/07/18 15:31:21 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -984,9 +984,28 @@
 					 1))))
 			 (chunk-mark ch down-mark)
 			 (cond ((Chunk-derive-in-progress ch)
-				;; -- if derive in progress, treat as
-				;; "virtual leaf"
-			        !())
+				;; Oops -- "meta-circularity"
+				;; In updating 'ch', 'chunks-update'
+				;; got called and is now trying to update
+				;; 'ch' again.
+				;; We can still survive if 'ch' is
+				;; postponable
+				(cond (postpone-derivees
+				       ;; Guess not
+				       (cerror "I'll just skip it, but ..."
+					       !"Apparent need to update ~s~
+                                                 ~% during its own derivation"
+					       ch)
+				       !())
+				      (t
+				       (setq postpone-derivees true)
+				       (cond (chunk-update-dbg*
+					  (format *error-output*
+					     !"Apparent need to update ~s~
+                                               ~% during its own derivation; ~
+                                               switching to postpone mode~%"
+					     ch)))
+				       (throw 'update-interrupted nil))))
 			       (t
 				(check-date-and-descend ch in-progress))))))
 
@@ -1327,7 +1346,7 @@
 		  (cerror "I will pretend everything is fine"
 			  !"After chunks-update, the following chunks ~
 			    failed to update:~
-			    ~% 3 ~s"
+			    ~%   ~s"
 			  unsuccessful))))
 	 (cond (chunk-update-dbg*
 		(format *error-output*

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.31 2005/07/11 14:58:47 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.32 2005/07/18 15:31:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -187,7 +187,9 @@ after YTools file transducers finish.")
 				 !())
 				(t
 				 flags))
-			  (decipher-readtable readtab (aref defaults 2)))))
+			  (cond ((and (null flags) (null files))
+				 (decipher-readtable readtab
+						     (aref defaults 2)))))))
 ;;;;	    (out "new-vec = " new-vec :%)
 	    (funcall set-defaults new-vec)
 	    (cond ((and show-file-ops* (null files))

@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.4 2005/07/16 15:20:37 rtoy Exp $
+;;; $Id: hompack.system,v 1.5 2005/07/18 16:37:17 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.5  2005/07/18 16:37:17  rtoy
+;;; Make some of the files :compile-only because the user is supposed to
+;;; supply the definitions, and these are just templates for the user to
+;;; fill in.
+;;;
 ;;; Revision 1.4  2005/07/16 15:20:37  rtoy
 ;;; Split the tests into 3 separate systems because they use the same name
 ;;; for some functions so the tests can't all be loaded at the same time
@@ -32,10 +37,24 @@
     :depends-on ("blas")
     :components
     (
+     ;; The following are :compile-only here because HOMPACK only
+     ;; gives skeletons for them.  We make them :compile-only so that
+     ;; f2cl will get the function definitions so it can generate
+     ;; calls to them appropriately.
+     ;;
+     ;; The user is supposed to provide appropriate definitions for
+     ;; them.  Also, rho and rhojac are supposed to be user-defined,
+     ;; but the versions in HOMPACK are used for POLSYS.
+     (:file "f" :compile-only t)
+     (:file "fjac" :compile-only t)
+     (:file "fjacs" :compile-only t)
+     (:file "rhojs"  :compile-only t)
+     (:file "rhoa" :compile-only t)
+     (:file "rho")
+     (:file "rhojac" :depends-on ("hfunp"))
+
      (:file "dcpose")
      (:file "divp")
-     (:file "fjac")
-     (:file "fjacs")
      (:file "ffunp" :depends-on ("mulp" "powp"))
      (:file "fixpdf" :depends-on ("rhoa" "steps" "sintrp" "root"))
      (:file "fixpds" :depends-on ("rhoa" "stepds" "sintrp" "root"))
@@ -63,10 +82,6 @@
      (:file "qimuds" :depends-on ("solvds"))
      (:file "qrfaqf")
      (:file "qrslqf")
-     (:file "rho")
-     (:file "rhoa")
-     (:file "rhojac" :depends-on ("hfunp"))
-     (:file "rhojs")
      (:file "root")
      (:file "rootnf" :depends-on ("tangnf"))
      (:file "rootns" :depends-on ("tangns"))

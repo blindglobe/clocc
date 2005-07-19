@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.1 2005/06/27 18:07:20 sds Exp $
+;;; $Id: lift.lisp,v 2.2 2005/07/19 20:30:20 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,7 @@
            #:detector-statistics #:ds-recall #:ds-precision #:ds-lift
            #:ds-data-reduction #:ds-dependency #:ds-proficiency
            #:bucket #:bucket-size #:bucket-true #:bucket-beg #:bucket-end
-           #:bucket-probability #:thresholds
+           #:bucket-probability #:bucket-inside-p #:bucket-distance #:thresholds
            #:par-proc-vec #:ppv-1st #:ppv-2nd #:ppv-name1 #:ppv-name2
            #:ppv-thresholds #:ppv-precision #:ppv-size
            #:ppv-target-count #:ppv-total-count
@@ -77,8 +77,35 @@
   "the default granularity `discretize'")
 
 (defstruct bucket (size 0) (true 0) beg end)
-(defun bucket-probability (b) (/ (bucket-true b) (bucket-size b)))
+
+(defun bucket-probability (b)
+  "Return the probability of a bucket element to be `true'."
+  (/ (bucket-true b) (bucket-size b)))
+
 (defun check-bucket (b) (<= (bucket-beg b) (bucket-end b)))
+
+(defun bucket-inside-p (number bucket)
+  "Return true when the number is inside the bucket."
+  (<= (bucket-beg bucket) number (bucket-end bucket)))
+
+(defun bucket-distance (number bucket)
+  "Return the distance from the number to the bucket.
+Inside ==> 0; distance is scaled by the bucket length."
+  (let ((b (bucket-beg bucket)) (e (bucket-end bucket)))
+    (cond ((< number e) (/ (- e number) (- e b)))
+          ((< b number) (/ (- number b) (- e b)))
+          (t 0))))
+
+(defun bucket (number bucket-list)
+  "Return ..."
+  (loop :with best-pos :and best-bucket :and best-dist
+    :for bucket :in bucket-list :and pos :upfrom 0 :do
+    (when (bucket-inside-p number bucket) (return (values pos bucket)))
+    (let ((dist (bucket-distance number bucket)))
+      (when (or (null best-dist) (< dist best-dist))
+        (setq best-dist dist best-pos pos best-bucket bucket)))
+    :finally (return (values best-pos best-bucket best-dist))))
+
 (defun discretize (seq &key (buckets *default-buckets*) (key #'identity)
                    true-value)
   "discretize the sequence into (approximately) equal-height buckets"

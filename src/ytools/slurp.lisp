@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.32 2005/07/18 15:31:21 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.33 2005/07/19 04:26:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -29,7 +29,7 @@
    (member (Pathname-type pn)
 	   object-suffixes*))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 ;;; Useful for constructing "marker" objects that have nothing but their
 ;;; identity: none of them is EQ to anything encountered in an ordinary
@@ -187,9 +187,9 @@ after YTools file transducers finish.")
 				 !())
 				(t
 				 flags))
-			  (cond ((and (null flags) (null files))
-				 (decipher-readtable readtab
-						     (aref defaults 2)))))))
+			  (decipher-readtable readtab
+					      (aref defaults 2)
+					      flags files))))
 ;;;;	    (out "new-vec = " new-vec :%)
 	    (funcall set-defaults new-vec)
 	    (cond ((and show-file-ops* (null files))
@@ -201,9 +201,11 @@ after YTools file transducers finish.")
 		       (aref new-vec 2))))
 	    new-vec))))
 
-(defun decipher-readtable (readtab default-readtab)
+(defun decipher-readtable (readtab default-readtab flags files)
    (cond ((eq readtab ':missing)
 	  (cond ((and default-readtab
+		      (null flags)
+		      (null files)
 		      (not (eq default-readtab
 			       *readtable*)))
 		 (format *error-output*

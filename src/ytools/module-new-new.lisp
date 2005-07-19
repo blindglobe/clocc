@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module-new-new.lisp,v 1.1.2.2 2005/07/17 19:08:52 airfoyle Exp $
+;;;$Id: module-new-new.lisp,v 1.1.2.3 2005/07/19 04:26:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -413,7 +413,7 @@
 	                   (flags-separate specs filespecs-load-flags*)
 	 `(module-elements-load
 	      ',files ',flags
-	      (decipher-readtable ,readtab *readtable*))))
+	      (decipher-readtable ,readtab *readtable* ',files ',flags))))
 
 (defun module-elements-load (specs flags readtab)
    (labels ((do-it ()

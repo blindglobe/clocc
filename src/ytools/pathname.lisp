@@ -1,13 +1,13 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.17 2005/06/13 12:56:06 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.18 2005/07/19 04:26:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(eval-when (:load-toplevel)
+(eval-when (:load-toplevel :execute)
    (export '(make-Pathname is-Pathname
 	     Pathname-host Pathname-device Pathname-directory
 	     Pathname-name Pathname-type Pathname-version
@@ -242,7 +242,7 @@
 
 (declaim (special lisp-object-extn* lisp-source-extn* dir-delim*))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
    (subr-synonym is-Pathname pathnamep)
    (subr-synonym make-Pathname make-pathname)
    (subr-synonym Pathname-host pathname-host)

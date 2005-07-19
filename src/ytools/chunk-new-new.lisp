@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk-new-new.lisp,v 1.1.2.2 2005/07/18 15:31:21 airfoyle Exp $
+;;; $Id: chunk-new-new.lisp,v 1.1.2.3 2005/07/19 04:26:21 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -923,17 +923,20 @@
 ;;; The number of calls to chunks-update so far --
 (defvar chunk-update-count* 0)
 
+(defvar restart-if-detect-derive-in-progress* false)
+
 ;;; 'force' is true if the 'chunks' must be derived, even if
 ;;; up to date.
 ;;; 'postpone-derivees' is true if the only chunks to be updated are the
 ;;; supportive descendents of 'chunks'.
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
-(defun chunks-update (chunks force postpone-derivees)
+(defun chunks-update (orig-chunks force postpone-derivees)
 ;;;;   (dbg-save (cl1 chunks))
 ;;;;   (breakpoint "boing")
    (let* (derive-mark down-mark up-mark
 	  max-here temporarily-managed
+	  (chunks orig-chunks)
 	  (must-derive (cond (force (list-copy chunks))
 			     (t !())))
 	  (postponed !())
@@ -948,22 +951,40 @@
       (labels ((down-then-up (chunks)
 		  (let ((chunks-needing-update
 			    (chunks-leaves-up-to-date chunks !())))
+		     (cond ((memq ':meta-cycle chunks-needing-update)
+			    (error "Found chunk meta-cycle(s) for ~%  ~s"
+				   (mapcan (\\ (ch r)
+					      (cond ((eq r ':meta-cycle)
+						     (list ch))
+						    (t !())))
+					   chunks
+					   chunks-needing-update))))
+		     ;; No :meta-cycles, so we can combine all the
+		     ;; lists.--
+		     (setq chunks-needing-update
+			   (apply #'nconc chunks-needing-update))
 		     (cond (chunk-update-dbg*
 			    (format *error-output*
-			       "Updating derivees of chunks ~s~%  found-chunks = ~s~%"
+			       !"Updating derivees of chunks ~s~
+                                 ~%  found-chunks = ~s~%"
 			       chunks-needing-update found-chunks)))
 		     (dolist (ch chunks-needing-update)
 			(derivees-update ch !()))))
 
+	       ;; DOWN Phase
+	       ;; Returns (Lst (Alt (Lst Chunk) (Const :meta-cycle))) 
+	       ;; i.e., a list of lists of chunks, with the occasional
+	       ;; :meta-cycle thrown in, which is deadly if encountered
+	       ;; below the original chunks, but harmless elsewhere.
 	       (chunks-leaves-up-to-date (chunkl in-progress)
-		  (let ((need-updating !()))
-		     (dolist (ch chunkl need-updating)
-			(let ((sl (check-leaves-up-to-date ch in-progress)))
-			   (setq need-updating
-				 (nconc sl need-updating))))))
+		  (mapcar (\\ (ch)
+			     (check-leaves-up-to-date ch in-progress))
+			  chunkl))
 
-	       ;; Return all derivees that need to be updated (or at least
-	       ;; supporters* of those derivees) --
+	       ;; Return all derivees that need to be updated (plus 
+	       ;; supporters* of those derivees).
+	       ;; If some supporter of 'ch' has a derivation already
+	       ;; in progress, then return :meta-cycle.
 	       (check-leaves-up-to-date (ch in-progress)
 		  ;; Also marks all derivees* of those leaves with proper
 		  ;; latest-supporter-date.
@@ -983,29 +1004,19 @@
 				      (+ (Chunk-depth (first in-progress))
 					 1))))
 			 (chunk-mark ch down-mark)
-			 (cond ((Chunk-derive-in-progress ch)
+			 (cond ((found-meta-cycle-at ch)
+				(cond (chunk-update-dbg*
+				       (format *error-output*
+					   !"Encountered chunk with derive ~
+                                             in progress: ~s~%"
+					   ch)))
 				;; Oops -- "meta-circularity"
-				;; In updating 'ch', 'chunks-update'
-				;; got called and is now trying to update
-				;; 'ch' again.
-				;; We can still survive if 'ch' is
-				;; postponable
-				(cond (postpone-derivees
-				       ;; Guess not
-				       (cerror "I'll just skip it, but ..."
-					       !"Apparent need to update ~s~
-                                                 ~% during its own derivation"
-					       ch)
-				       !())
+				(cond (restart-if-detect-derive-in-progress*
+				       ;; Plan A: Start again in postpone mode
+				       (start-again-in-postpone-mode ch))
 				      (t
-				       (setq postpone-derivees true)
-				       (cond (chunk-update-dbg*
-					  (format *error-output*
-					     !"Apparent need to update ~s~
-                                               ~% during its own derivation; ~
-                                               switching to postpone mode~%"
-					     ch)))
-				       (throw 'update-interrupted nil))))
+				       ;; Plan B: Ignore this whole subtree
+				       ':meta-cycle)))
 			       (t
 				(check-date-and-descend ch in-progress))))))
 
@@ -1028,7 +1039,7 @@
 		     (cond ((chunk-is-leaf ch)
 			    to-be-derived)
 			   (t
-			    (nconc
+			    (reachables-combine
 			       to-be-derived
 			       (chunks-leaves-up-to-date
 					     (Chunk-basis ch)
@@ -1059,6 +1070,7 @@
 			      (\\ (c)
 				 (and (not (chunk-up-to-date c))
 				      (not (memq c in-progress))
+				      (not (found-meta-cycle-at c))
 				      (or (eq c ch)
 					  (and (Chunk-managed c)
 					       (not (chunk-is-marked
@@ -1089,8 +1101,30 @@
 					(append updatees found-chunks))
 				  ;; Otherwise, start from those
 				  ;; chunks as if new-- 
-				  (chunks-leaves-up-to-date
-				     updatees !()))))))
+				  (mapcan
+				     (\\ (upd-supporters)
+					(cond ((eq upd-supporters ':meta-cycle)
+					       ;; A cycle detected "off to the
+					       ;; side" just means we shouldn't
+					       ;; have tried that updatee
+					       !())
+					      (t
+					       upd-supporters)))
+				     (chunks-leaves-up-to-date
+					updatees !())))))))
+
+	       ;; Three groups of chunks reachable from a single chunk
+	       ;; (which happens to be the first element of 'from-derivees').
+	       ;; The second and third are as returned by
+	       ;; 'chunks-leaves-up-to-date'.
+	       (reachables-combine (from-derivees from-basis from-upd-basis)
+		  (cond ((or (memq ':meta-cycle from-basis)
+			     (memq ':meta-cycle from-upd-basis))
+			 ':meta-cycle)
+			(t
+			 (nconc from-derivees
+				(apply #'nconc from-basis)
+				(apply #'nconc from-upd-basis)))))
 
 	       (temporarily-manage (update-chunks)
 ;;;;		  (trace-around temporarily-manage
@@ -1105,6 +1139,43 @@
 ;;;;		     (:< (&rest _) "temporarily-manage: "))
 		  )
 
+	       ;; The term "meta-cycle" refers to the fact that in the
+	       ;; process of deriving 'ch' we triggered an update that
+	       ;; is now considering deriving 'ch'.
+	       (found-meta-cycle-at (ch)
+		  (let ((found-it (Chunk-derive-in-progress ch)))
+		     (cond ((and found-it chunk-update-dbg*)
+			    (format *error-output*
+			       !"Encountered chunk with derive in progress: ~s~%"
+			       ch)))
+		     found-it))
+
+	       (start-again-in-postpone-mode (stumble-ch)
+		  ;; In updating 'stumble-ch', 'chunks-update' got
+		  ;; called and is now trying to update 'stumble-ch'
+		  ;; again.  We can still survive if 'stumble-ch' is
+		  ;; postponable
+		  (cond (postpone-derivees
+			 ;; Guess not
+			 (cerror "I'll just skip it, but ..."
+				 !"Apparent need to update ~s~
+				   ~% during its own derivation"
+				 stumble-ch)
+			 !())
+			(t
+			 (setq postpone-derivees true)
+			 (setq chunks orig-chunks)
+			 (setq found-chunks !())
+			 (cond (chunk-update-dbg*
+				(format *error-output*
+				   !"Apparent need to update ~s~
+				     ~% during its own ~
+				     derivation; switching ~
+				     to postpone mode~%"
+				   stumble-ch)))
+			 (throw 'update-interrupted nil))))
+
+	       ;; UP Phase
 	       (derivees-update (ch in-progress)
 ;;;;		  (trace-around derivees-update
 ;;;;		     (:> "(derivees-update: " ch ")")
@@ -1289,9 +1360,8 @@
 			 (progn
 			    (cond (force
 				   (cond ((and temp-mgt-dbg*
-					       (some (lambda (ch)
-						        (not (Chunk-managed ch)))
-						     chunks))
+					       (not (every #'Chunk-managed
+							   chunks)))
 					  (format *error-output*
 					     "Because it's being forced ...~%")
 ;;;;					  (break "Forced!")

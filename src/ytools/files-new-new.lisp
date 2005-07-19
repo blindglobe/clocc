@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new-new.lisp,v 1.1.2.6 2005/07/18 15:31:21 airfoyle Exp $
+;;;$Id: files-new-new.lisp,v 1.1.2.7 2005/07/19 04:26:21 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -643,6 +643,12 @@
 		 loaded-filoid-ch)))
    (let ((controller (verify-loaded-chunk-controller loaded-filoid-ch false)))
       (chunk-request-mgt controller)
+      ;; We postpone the derivees because the controller may fiddle
+      ;; with object-level (as opposed to meta-level) chunks, and we
+      ;; don't want to start an uncontrolled wave of object-level
+      ;; updating.  We don't need to save the chunks that get
+      ;; postponed, because after updating the controller we're going
+      ;; to do things at the object level. --
       (chunk-update controller false false)))
 
 (defun verify-loaded-chunk-controller (lc allow-null)
@@ -1046,7 +1052,7 @@
 			(file-op-message "...compilation failed!"
 					 false false "")))))))))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defvar sub-file-types* !())
 
@@ -1248,7 +1254,7 @@
 			 (Code-file-chunk-pathname callee-ch))
 	       (Chunk-update-basis compiled-ch)))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
    (def-sub-file-type :macros)
 
 ;;;;   (defparameter standard-sub-file-types* (list macros-sub-file-type*))

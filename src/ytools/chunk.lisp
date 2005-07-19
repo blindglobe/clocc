@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.48 2005/07/17 19:08:51 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.49 2005/07/19 22:25:24 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -377,35 +377,38 @@
 ;;; Update the 'latest-supporter-date' of derivees* of ch.
 ;;; Return all the chunks are found to be out of date (which is
 ;;; not the same as the chunks whose 'latest-supporter-date' change).
+;;; This returns a fresh list you can nconc things onto...
 (defun set-latest-support-date (ch)
-   (let ((latest-supporter-date +no-supporters-date+))
-      (dolist (b (Chunk-basis ch))
-	 (let ((late (max (Chunk-date b)
-			  (Chunk-latest-supporter-date b))))
-	    (cond ((> late latest-supporter-date)
-		   (setf latest-supporter-date late)))))
-      (cond ((> latest-supporter-date
-		(Chunk-latest-supporter-date ch))
-;;;;	     (cond ((> latest-supporter-date 10000)
-;;;;		    (setq bad-ch* ch)
-;;;;		    (break "Chunk ~s has suspicious latest supporter-date ~s"
-;;;;			   ch latest-supporter-date)))			   
-	     (setf (Chunk-latest-supporter-date ch)
-		   latest-supporter-date)))
-      (let ((ch-date (Chunk-date ch)))
-	 (let ((from-derivees
-		  (mapcan (\\ (d)
-			     (let ((d-date (Chunk-latest-supporter-date d)))
- 			        (cond ((or (> ch-date d-date)
-					   (> latest-supporter-date d-date))
-				       (set-latest-support-date d))
-				      (t !()))))
-			  (Chunk-derivees ch))))
-	    (cond ((> latest-supporter-date
-		      ch-date)
-		   (cons ch from-derivees))
-		  (t
-		   from-derivees))))))
+   (let ((checked !())
+	 (out-of-date !()))
+      (labels ((walk-thru-derivees (ch)
+		  (on-list ch checked)
+		  (let ((latest-supporter-date +no-supporters-date+))
+		     (dolist (b (Chunk-basis ch))
+			(let ((late (max (Chunk-date b)
+					 (Chunk-latest-supporter-date b))))
+			   (cond ((> late latest-supporter-date)
+				  (setf latest-supporter-date late)))))
+		     (cond ((> latest-supporter-date
+			       (Chunk-latest-supporter-date ch))
+			    (setf (Chunk-latest-supporter-date ch)
+				  latest-supporter-date)))
+		     (let ((ch-date (Chunk-date ch)))
+			(dolist (d (Chunk-derivees ch))
+			   (cond ((not (memq d checked))
+				  (let ((d-latest (Chunk-latest-supporter-date d))
+					(d-date (Chunk-date d)))
+				     (cond ((or (> ch-date d-latest)
+						(> latest-supporter-date d-latest)
+						(= d-date +no-info-date+)
+						(> ch-date d-date)
+						(> latest-supporter-date d-date))
+					    (walk-thru-derivees d)))))))
+			(cond ((> latest-supporter-date
+				  ch-date)
+			       (on-list ch out-of-date)))))))
+	 (walk-thru-derivees ch)
+	 out-of-date)))
 
 (defmethod (setf Chunk-update-basis) :before (new-update-basis ch)
    (cond ((not (eq new-update-basis (Chunk-update-basis ch)))
@@ -498,6 +501,12 @@
 (defun chunk-mark (ch evnum)
    (on-list evnum (Chunk-update-marks ch)))
 
+;;; This is *not* the right way to undo 'chunk-mark', except
+;;; in the kludgy case in 'derivee-cycle-check'.
+(defun chunk-unmark (ch evnum)
+   (setf (Chunk-update-marks ch)
+	 (remove evnum (Chunk-update-marks ch) :test #'= :count 1)))
+
 (defun chunk-is-marked (ch evnum)
    (do ((marks (Chunk-update-marks ch) (rest marks))
 	(splice false)
@@ -520,15 +529,23 @@
    (let ((evnum chunk-event-num*))
       (unwind-protect
 	 (progn
-	    (setq chunk-event-num* (+ evnum 1))
-	    (cond (chunk-update-dbg*
-		   (format *error-output*
-		      !"Incrementing chunk-event-num* to ~s in ~
-                        derivee-cycle-check~%"
-		      chunk-event-num*)
+	    ;; Kludge alert -- This is one place where allocating
+	    ;; a new chunk event _cannot_ cause any change to the
+	    ;; chunk network, and hence should not cause chunks-udpate
+	    ;; to restart.  (Such a restart is harmless, but wasteful.)
+	    ;; Hence we "deallocate" it by not allocating it in the
+	    ;; first place, that is, by not incrementing chunk-event-num*.
+	    ;; The "orthodox" way of doing things is commented out,
+	    ;; but has a double-asterisk (**) flagging the code.
+;;;;**	    (setq chunk-event-num* (+ evnum 1))
+;;;;**	    (cond (chunk-update-dbg*
+;;;;**		   (format *error-output*
+;;;;**		      !"Incrementing chunk-event-num* to ~s in ~
+;;;;**                        derivee-cycle-check~%"
+;;;;**		      chunk-event-num*)
 ;;;;		   (setq bad-ch* ch)
 ;;;;		   (break "Cycle check for ~s" ch)
-		   ))
+;;;;**		   ))
 	    (labels ((pursue (trail)
 		        (let ((derivee (first trail)))
 			   (cond ((memq derivee potential-supporters)
@@ -540,7 +557,14 @@
 				  (dolist (d (Chunk-derivees derivee))
 				     (pursue (cons d trail))))))))
 	       (pursue (list ch))))
-	 (chunk-event-discard evnum))))
+	 (labels ((pursue-erasing (derivee)
+		     (cond ((chunk-is-marked derivee evnum)
+			    (chunk-unmark derivee evnum)
+			    (dolist (d (Chunk-derivees derivee))
+			       (pursue-erasing d))))))
+	    (pursue-erasing ch))
+;;;;**	 (chunk-event-discard evnum)
+      )))
 
 ;;; Is there a cycle to 'ch' through one of 'new-chunks', following
 ;;; links provided by accessor 'acc'?
@@ -896,34 +920,71 @@
 (defvar chunk-update-depth* 0)
 (defvar chunk-depth-error-thresh* 10)
 
+;;; The number of calls to chunks-update so far --
+(defvar chunk-update-count* 0)
+
+(defvar restart-if-detect-derive-in-progress* false)
+
 ;;; 'force' is true if the 'chunks' must be derived, even if
 ;;; up to date.
 ;;; 'postpone-derivees' is true if the only chunks to be updated are the
 ;;; supportive descendents of 'chunks'.
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
-(defun chunks-update (chunks force postpone-derivees)
+(defun chunks-update (orig-chunks force postpone-derivees)
 ;;;;   (dbg-save (cl1 chunks))
 ;;;;   (breakpoint "boing")
    (let* (derive-mark down-mark up-mark
 	  max-here temporarily-managed
+	  (chunks orig-chunks)
 	  (must-derive (cond (force (list-copy chunks))
 			     (t !())))
 	  (postponed !())
 	  (chunk-update-depth* (+ chunk-update-depth* 1))
-	  interrupt-noted)
-      (labels ((chunks-leaves-up-to-date (chunkl in-progress)
-		  (let ((need-updating !()))
-		     (dolist (ch chunkl need-updating)
-			(let ((sl (check-leaves-up-to-date ch in-progress)))
-			   (cond ((update-interrupted)
-				  (return !()))
-				 (t
-				  (setq need-updating
-					(nconc sl need-updating))))))))
+	  ;; This is a list of chunks found along the way that
+	  ;; need to be considered for update.  They are unimportant
+	  ;; unless we need to restart, in which case they get added
+	  ;; to the 'chunks' list; i.e., they become seeds from which
+	  ;; the update propagates --
+	  (found-chunks !())
+	  update-interrupted)
+      (labels ((down-then-up (chunks)
+		  (let ((chunks-needing-update
+			    (chunks-leaves-up-to-date chunks !())))
+		     (cond ((memq ':meta-cycle chunks-needing-update)
+			    (error "Found chunk meta-cycle(s) for ~%  ~s"
+				   (mapcan (\\ (ch r)
+					      (cond ((eq r ':meta-cycle)
+						     (list ch))
+						    (t !())))
+					   chunks
+					   chunks-needing-update))))
+		     ;; No :meta-cycles, so we can combine all the
+		     ;; lists.--
+		     (setq chunks-needing-update
+			   (apply #'nconc chunks-needing-update))
+		     (cond (chunk-update-dbg*
+			    (format *error-output*
+			       !"Updating derivees of chunks ~s~
+                                 ~%  found-chunks = ~s~%"
+			       chunks-needing-update found-chunks)))
+		     (dolist (ch chunks-needing-update)
+			(derivees-update ch !()))))
 
-	       ;; Return all derivees that need to be updated (or at least
-	       ;; supporters* of those derivees) --
+	       ;; DOWN Phase
+	       ;; Returns (Lst (Alt (Lst Chunk) (Const :meta-cycle))) 
+	       ;; i.e., a list of lists of chunks, with the occasional
+	       ;; :meta-cycle thrown in, which is deadly if encountered
+	       ;; below the original chunks, but harmless elsewhere.
+	       (chunks-leaves-up-to-date (chunkl in-progress)
+		  (mapcar (\\ (ch)
+			     (check-leaves-up-to-date ch in-progress))
+			  chunkl))
+
+	       ;; Return all derivees that need to be updated (plus 
+	       ;; supporters* of those derivees).
+	       ;; If some supporter of 'ch' has a derivation already
+	       ;; in progress, then return :meta-cycle.
 	       (check-leaves-up-to-date (ch in-progress)
 		  ;; Also marks all derivees* of those leaves with proper
 		  ;; latest-supporter-date.
@@ -943,10 +1004,19 @@
 				      (+ (Chunk-depth (first in-progress))
 					 1))))
 			 (chunk-mark ch down-mark)
-			 (cond ((Chunk-derive-in-progress ch)
-				;; -- if derive in progress, treat as
-				;; "virtual leaf"
-			        !())
+			 (cond ((found-meta-cycle-at ch)
+				(cond (chunk-update-dbg*
+				       (format *error-output*
+					   !"Encountered chunk with derive ~
+                                             in progress: ~s~%"
+					   ch)))
+				;; Oops -- "meta-circularity"
+				(cond (restart-if-detect-derive-in-progress*
+				       ;; Plan A: Start again in postpone mode
+				       (start-again-in-postpone-mode ch))
+				      (t
+				       ;; Plan B: Ignore this whole subtree
+				       ':meta-cycle)))
 			       (t
 				(check-date-and-descend ch in-progress))))))
 
@@ -955,22 +1025,21 @@
 			 (chunk-derive-date-and-record ch)
 			 (cond (chunk-update-dbg*
 				(chunk-date-note ch "Dated chunk ")))
+			 (check-interrupt)
 			 (cond ((and (chunk-is-leaf ch)
 				     (= (Chunk-date ch) +no-info-date+))
 				;; See note on 'do-derive', below
-				(do-derive ch)
 				(cond (chunk-update-dbg*
 				       (chunk-date-note
-					  ch " Leaf chunk; derived")))))))
+					  ch " Leaf chunk; deriving!")))
+				(do-derive ch)))))
 		  (let* ((in-progress (cons ch in-progress))
 			 (to-be-derived
 			      (check-from-derivees ch in-progress)))
-		     (cond ((update-interrupted)
-			    !())
-			   ((chunk-is-leaf ch)
+		     (cond ((chunk-is-leaf ch)
 			    to-be-derived)
 			   (t
-			    (nconc
+			    (reachables-combine
 			       to-be-derived
 			       (chunks-leaves-up-to-date
 					     (Chunk-basis ch)
@@ -979,8 +1048,7 @@
 			       ;; works because the leaves supporting
 			       ;; ch have passed their dates up
 			       ;; via 'set-latest-support-date' --
-			       (cond ((and (still-must-derive ch)
-					   (not (update-interrupted)))
+			       (cond ((still-must-derive ch)
 				      (cond ((and temp-mgt-dbg*
 						  (some (lambda (ch)
 						           (not (Chunk-managed ch)))
@@ -1002,8 +1070,11 @@
 			      (\\ (c)
 				 (and (not (chunk-up-to-date c))
 				      (not (memq c in-progress))
-				      (or (Chunk-managed c)
-					  (chunk-is-marked c down-mark))))
+				      (not (found-meta-cycle-at c))
+				      (or (eq c ch)
+					  (and (Chunk-managed c)
+					       (not (chunk-is-marked
+						       c down-mark))))))
 			      (set-latest-support-date ch))))
 		     (cons ch
 			   (cond ((null updatees)
@@ -1026,9 +1097,34 @@
 					 (format *error-output*
 						 "New starting points = ~s~%"
 						 updatees)))
-				  ;; Otherwise, start from those chunks as if new-- 
-				  (chunks-leaves-up-to-date
-				     updatees !()))))))
+				  (setq found-chunks
+					(append updatees found-chunks))
+				  ;; Otherwise, start from those
+				  ;; chunks as if new-- 
+				  (mapcan
+				     (\\ (upd-supporters)
+					(cond ((eq upd-supporters ':meta-cycle)
+					       ;; A cycle detected "off to the
+					       ;; side" just means we shouldn't
+					       ;; have tried that updatee
+					       !())
+					      (t
+					       upd-supporters)))
+				     (chunks-leaves-up-to-date
+					updatees !())))))))
+
+	       ;; Three groups of chunks reachable from a single chunk
+	       ;; (which happens to be the first element of 'from-derivees').
+	       ;; The second and third are as returned by
+	       ;; 'chunks-leaves-up-to-date'.
+	       (reachables-combine (from-derivees from-basis from-upd-basis)
+		  (cond ((or (memq ':meta-cycle from-basis)
+			     (memq ':meta-cycle from-upd-basis))
+			 ':meta-cycle)
+			(t
+			 (nconc from-derivees
+				(apply #'nconc from-basis)
+				(apply #'nconc from-upd-basis)))))
 
 	       (temporarily-manage (update-chunks)
 ;;;;		  (trace-around temporarily-manage
@@ -1043,6 +1139,43 @@
 ;;;;		     (:< (&rest _) "temporarily-manage: "))
 		  )
 
+	       ;; The term "meta-cycle" refers to the fact that in the
+	       ;; process of deriving 'ch' we triggered an update that
+	       ;; is now considering deriving 'ch'.
+	       (found-meta-cycle-at (ch)
+		  (let ((found-it (Chunk-derive-in-progress ch)))
+		     (cond ((and found-it chunk-update-dbg*)
+			    (format *error-output*
+			       !"Encountered chunk with derive in progress: ~s~%"
+			       ch)))
+		     found-it))
+
+	       (start-again-in-postpone-mode (stumble-ch)
+		  ;; In updating 'stumble-ch', 'chunks-update' got
+		  ;; called and is now trying to update 'stumble-ch'
+		  ;; again.  We can still survive if 'stumble-ch' is
+		  ;; postponable
+		  (cond (postpone-derivees
+			 ;; Guess not
+			 (cerror "I'll just skip it, but ..."
+				 !"Apparent need to update ~s~
+				   ~% during its own derivation"
+				 stumble-ch)
+			 !())
+			(t
+			 (setq postpone-derivees true)
+			 (setq chunks orig-chunks)
+			 (setq found-chunks !())
+			 (cond (chunk-update-dbg*
+				(format *error-output*
+				   !"Apparent need to update ~s~
+				     ~% during its own ~
+				     derivation; switching ~
+				     to postpone mode~%"
+				   stumble-ch)))
+			 (throw 'update-interrupted nil))))
+
+	       ;; UP Phase
 	       (derivees-update (ch in-progress)
 ;;;;		  (trace-around derivees-update
 ;;;;		     (:> "(derivees-update: " ch ")")
@@ -1070,7 +1203,8 @@
 				     (Chunk-update-basis ch)))
 			 (dolist (ub (Chunk-update-basis ch))
 			    (cond ((not (Chunk-managed ub))
-				   (error "Managed chunk ~s~%  has unmanaged update-basis element ~s"
+				   (error !"Managed chunk ~s~%  has ~
+                                            unmanaged update-basis element ~s"
 					  ch ub))))
 			 (cond ((and postpone-derivees
 				     (not (chunk-is-marked ch down-mark)))
@@ -1085,7 +1219,8 @@
 				(cond ((chunk-is-marked ch derive-mark)
 				       (cond (chunk-update-dbg*
 					      (format *error-output*
-						 "...Already marked with derive-mark~%")))
+						 !"...Already marked with ~
+                                                   derive-mark~%")))
 				       (cond ((not (chunk-up-to-date ch))
 					      (error !"Chunk has derive ~
                                                        mark set but is not up ~
@@ -1100,35 +1235,25 @@
 				(let ((to-explore
 				         (append (Chunk-update-derivees ch)
 						 (Chunk-derivees ch)))
+				      ;; -- [don't nconc! shares structure
+				      ;; with derivees list on ch]
 				      (in-progress
 					  (cons ch in-progress)))
 				   (chunk-mark ch up-mark)
-				   (setq to-explore
-				         (nconc to-explore
-						(mapcan #'set-latest-support-date
-							to-explore)))
-				   (do ((el to-explore (tail el)))
-				       ((or (null el)
-					    (update-interrupted)))
-				     (derivees-update (head el) in-progress)
-				     ;;; If interrupted, it's vital to
-				     ;;; add the derivees remaining to be updated
-				     ;;; to the list of chunks, so they'll be
-				     ;;; handled when we resume.--
-				     (cond ((update-interrupted)
-					    (setq chunks (nconc el chunks)))))))))
+				   (let ((updatees 
+					    (nodup
+					       (mapcan #'set-latest-support-date
+						       to-explore))))
+				      (setq found-chunks
+					    (append updatees found-chunks))
+				      (setq to-explore
+					    (nconc updatees to-explore)))
+				   (dolist (upd to-explore)
+				      (derivees-update upd in-progress))))))
 			(chunk-update-dbg*
 			 (report-reason-to-skip-chunk)))
 ;;;;		     (:< (&rest _) "derivees-update: "))
 		  )
-
-;;;;	       (derivees-derivees-update (l in-progress)
-;;;;		  (block dd-update
-;;;;		     (dolist (d l)
-;;;;			(dolist (c (set-latest-support-date d))
-;;;;		           (derivees-update c in-progress)
-;;;;			   (cond ((update-interrupted)
-;;;;				  (return-from dd-update)))))))
 
 	       (still-must-derive (ch)
 		  (and (not (Chunk-derive-in-progress ch))
@@ -1151,24 +1276,16 @@
 			       (Chunk-date ch) ch)))
 		 (cond (force
 			(setq must-derive
-			      (delete ch must-derive)))))
-
-	       (update-interrupted ()
-		  (cond (interrupt-noted true)
-			((> chunk-event-num* max-here)
-;;;;			 (format *error-output*
-;;;;"~%*** UPDATE INTERRUPTED *** max-here = ~s chunk-event-num* = ~s~%   during update triggered by ~s~%"
-;;;;			    max-here chunk-event-num* chunks)
-			 (cond (chunk-update-dbg*
-				(format *error-output*
-				   "Chunk update interrupted~%")))
-			 (setq interrupt-noted true)
-			 true)
-			(t false)))
+			      (delete ch must-derive))))
+		 (check-interrupt))
 
 	       (chunk-failed-to-update (ch)
 		  (and (Chunk-managed ch)
-		       (not (chunk-up-to-date ch)))))
+		       (not (chunk-up-to-date ch))))
+
+	       (check-interrupt ()
+		  (cond ((> chunk-event-num* max-here)
+			 (throw 'update-interrupted nil)))))
 
 	 ;; The following comment describes the inner recursions 
 	 ;; of 'chunks-update' --
@@ -1239,44 +1356,51 @@
 		      (setq max-here (+ up-mark 1))
 		      (setq chunk-event-num* max-here)
 		      (setq temporarily-managed !())
-		      ;; This is the only place 'interrupt-noted' is reset. --
-		      (setq interrupt-noted false)
-		      ;; -- Once the body of this loop is interrupted, all attention
-		      ;; is devoted to packaging up the state so we can restart by
-		      ;; going around the loop again.
 		      (unwind-protect
 			 (progn
 			    (cond (force
 				   (cond ((and temp-mgt-dbg*
-					       (some (lambda (ch)
-						        (not (Chunk-managed ch)))
-						     chunks))
+					       (not (every #'Chunk-managed
+							   chunks)))
 					  (format *error-output*
 					     "Because it's being forced ...~%")
 ;;;;					  (break "Forced!")
 					  ))
 				   (temporarily-manage chunks)))
-			    (let ((chunks-needing-update
-				      (chunks-leaves-up-to-date chunks !())))
-				(cond ((not (update-interrupted))
-				       (cond (chunk-update-dbg*
-					      (format *error-output*
-						 "Updating derivees of chunks ~s~%"
-						 chunks-needing-update)))
-				       (dolist (ch chunks-needing-update)
-					  (derivees-update ch !()))))))
+			    (setq update-interrupted true)
+			    (setq found-chunks !())
+			    (catch 'update-interrupted
+			       (down-then-up chunks)
+			       (setq update-interrupted false))
+			    (cond (update-interrupted
+				   (cond (chunk-update-dbg*
+					  (format *error-output*
+					      "Chunk update interrupted~%"))))))
 			 (dolist (ud-ch temporarily-managed)
 			    (cond (temp-mgt-dbg*
 				   (format t "No longer managing ~s~%" ud-ch)))
 			    (chunk-internal-term-mgt ud-ch false))
 			 (chunk-event-discard down-mark)
 			 (chunk-event-discard up-mark))
-		      (cond ((not (update-interrupted))
+		      (cond ((not update-interrupted)
 			     (return)))
+		      ;; Make sure 'found-chunks' has no duplicates or
+		      ;; chunks that are already being explored --
+		      (let ((l !()))
+			 (dolist (fc found-chunks)
+			    (cond ((and (not (memq fc l))
+					(not (memq fc chunks)))
+				   (on-list fc l))))
+			 (setq found-chunks l))
 		      (cond (chunk-update-dbg*
 			     (format *error-output*
 				"Restarting update of ~s~%"
-				chunks))))
+				chunks)
+			     (cond ((not (null found-chunks))
+				    (format *error-output*
+				       "  Plus found chunks ~s~%"
+				       found-chunks)))))
+		      (setq chunks (nconc found-chunks chunks)))
 		   (chunk-event-discard derive-mark)
 		   )))
 	 (cond (force
@@ -1292,7 +1416,7 @@
 		  (cerror "I will pretend everything is fine"
 			  !"After chunks-update, the following chunks ~
 			    failed to update:~
-			    ~% 3 ~s"
+			    ~%   ~s"
 			  unsuccessful))))
 	 (cond (chunk-update-dbg*
 		(format *error-output*

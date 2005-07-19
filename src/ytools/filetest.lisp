@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: filetest.lisp,v 1.1.2.14 2005/03/25 14:38:00 airfoyle Exp $
+;;; $Id: filetest.lisp,v 1.1.2.15 2005/07/19 22:25:25 airfoyle Exp $
 
 (defclass Test-file-chunk (Code-file-chunk)
    ((callee :accessor Test-file-chunk-callee
@@ -8,21 +8,24 @@
     (slurpee :accessor Test-file-chunk-slurpee
 	     :initarg :slurpee)))
 
-(defclass Test-loadable-chunk (Loadable-chunk)
+(defclass Test-code-dep-chunk (Code-dep-chunk)
    ())
-
-(defmethod create-loaded-controller ((tfc Test-file-chunk)
-				     (lc Loaded-file-chunk))
-   (chunk-with-name `(:loadable ,tfc)
-      (\\ (name)
-	 (make-instance 'Test-loadable-chunk
-	    :name name
-	    :controllee lc))))
 
 (defvar file-op-count* 0)
 
-(defmethod derive ((tlc Test-loadable-chunk))
-   (let* ((loaded-ch (Loadable-chunk-controllee tlc))
+(defmethod Code-dep-chunk-meta-clock-val ((tcd Test-code-dep-chunk))
+   file-op-count*)
+
+(defmethod create-loaded-controller ((tfc Test-file-chunk)
+				     (lc Loaded-file-chunk))
+   (chunk-with-name `(:test-dep ,tfc)
+      (\\ (name)
+	 (make-instance 'Test-code-dep-chunk
+	    :name name
+	    :controllee lc))))
+
+(defmethod derive ((tlc Test-code-dep-chunk))
+   (let* ((loaded-ch (Code-dep-chunk-controllee tlc))
 	  (file-ch (Loaded-chunk-loadee loaded-ch))
 	  (compiled-ch (place-compiled-chunk file-ch))
 	  (c (Test-file-chunk-callee file-ch))
@@ -42,7 +45,6 @@
 	     (compiled-ch-sub-file-link
 	         compiled-ch
 		 s macros-sub-file-type* true)))
-;;;;	     (compiled-chunk-note-sub-file-bases compiled-ch s)))
       file-op-count*))
 
 (defvar file-chunk-l*)
@@ -62,6 +64,11 @@
 (defvar file-c-status*)
 (defvar file-d-status*)
 
+;;; This is of type (Lst (Lst (Lrcd String String)))
+;;; The i'th element of 'file-contents*', call it Ci, describes
+;;; the contents of the test files on iteration 'i' of the 'mapcar'
+;;; iteration in file-test.  Every element of Ci is a pair
+;;; (filename file-contents).
 (defparameter file-contents*
    (list 
 ;;; Iteration 0 --
@@ -426,39 +433,3 @@
 	       (not (reason-to-manage sms-ch*)))
 	  (break "Unreasonable management ~a" label))))
 
-#|
-(defvar trace-setf-managed* false)
-
-(defvar oops-ch* false)
-
-(defmethod (setf Chunk-managed) :before (new-val (ch Loaded-chunk))
-   (cond (trace-setf-managed*
-	  (format t "About to set managed to ~s for chunk ~s~%"
-		  new-val ch)
-	  (cond ((and (not new-val)
-		      loaded-file-chunk-c*
-		      (Chunk-managed loaded-file-chunk-c*)
-		      (memq ch (Chunk-basis loaded-file-chunk-c*)))
-		 (setq oops-ch* ch)
-		 (break "About to clobber ~s" ch))))))
-
-;;; Refactored out of existence--
-(defun compiled-chunk-note-sub-file-bases (compiled-ch file-ch)
-;;;;   (format t "Setting up subfiles that ~s depends on...~%"
-;;;;	   compiled-ch)
-   (dolist (ssfty standard-sub-file-types*)
-;;;;      (format t "   Creating sub-file '~s' chunks ~%    for pathname ~s~%"
-;;;;	      (Sub-file-type-name ssfty)
-;;;;	      (Code-file-chunk-pathname file-ch))
-      (pushnew (funcall
-		  (Sub-file-type-chunker ssfty)
-		  (Code-file-chunk-pathname file-ch))
-	       (Chunk-basis compiled-ch))
-      (pushnew (funcall
-		  (Sub-file-type-load-chunker
-		     ssfty)
-		  (Code-file-chunk-pathname file-ch))
-	       (Chunk-update-basis
-		    compiled-ch))))
-
-|#

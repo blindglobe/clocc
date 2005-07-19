@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.28 2005/07/01 13:50:36 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.29 2005/07/19 22:25:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -301,43 +301,23 @@
 		   lc)
 	     lc))))
 
-(defclass Loadable-module-chunk (Loadable-chunk)
+(defclass Module-dep-chunk (Code-dep-chunk)
    ())
 
 (defmethod create-loaded-controller ((mod-ch YT-module-chunk)
 				     (loaded-ch Loaded-module-chunk))
-   (chunk-with-name `(:loadable ,(Chunk-name mod-ch))
+   (chunk-with-name `(:module-dep ,(Chunk-name mod-ch))
       (\\ (name)
-	 (make-instance 'Loadable-module-chunk
+	 (make-instance 'Module-dep-chunk
 	    :controllee loaded-ch
 	    :name name))))
 
-#|
-Not needed, because it's essentially identical to scan-depends-on
-(def-slurp-task module-scan
-   :default (\\ (form state)
-	       (let ((dos-handler
-		        (href
-		           (Slurp-task-handler-table
-			      scan-depends-on*)
-			   (car form))))
-		  (cond (dos-handler
-			 (funcall dos-handler form state))
-			(t true))))
-   :file->state-fcn (\\ (mod)
-		       (cond ((is-YT-module mod)
-			      (make-Scan-depends-on-state
-				 :file-chunk (place-YT-module-chunk mod)
-;;;;				 :expect-only-run-time-dependencies true
-				 :sub-file-types (list macros-sub-file-type*)))
-			     (t
-			      (error "Attempt to scan non-module ~s"
-				     mod)))))
-|#
+(defmethod Code-dep-chunk-meta-clock-val ((mod-dep Module-dep-chunk))
+   file-op-count*)
 
-(defmethod derive ((mod-controller Loadable-module-chunk))
+(defmethod derive ((mod-controller Module-dep-chunk))
    (let* ((loaded-mod-chunk
-		(Loadable-chunk-controllee mod-controller))
+		(Code-dep-chunk-controllee mod-controller))
 	  (mod-chunk
 	     (Loaded-chunk-loadee loaded-mod-chunk))
 	  (module (YT-module-chunk-module mod-chunk))
@@ -433,7 +413,7 @@ Not needed, because it's essentially identical to scan-depends-on
 	                   (flags-separate specs filespecs-load-flags*)
 	 `(module-elements-load
 	      ',files ',flags
-	      (decipher-readtable ,readtab *readtable*))))
+	      (decipher-readtable ,readtab *readtable* ',files ',flags))))
 
 (defun module-elements-load (specs flags readtab)
    (labels ((do-it ()

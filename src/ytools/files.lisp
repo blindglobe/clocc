@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.53 2005/07/11 14:58:46 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.54 2005/07/19 22:25:25 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,7 +12,8 @@
 	     always-slurp
 	     debuggable debuggability* def-sub-file-type)))
 
-;;; A piece (maybe a multi-file piece) of code that can be executed
+;;; A piece (maybe a multi-file piece) of code that can be executed.
+;;; The word "filoid" is synonymous with "Code-chunk."
 (defclass Code-chunk (Chunk)
   (;; Code-chunks that must be loaded when this one is --
    (callees :accessor Code-chunk-callees
@@ -26,7 +27,11 @@
    ;; - If not nil, the Code-file-chunk for the alternative version.
    ;; Inverse --
    (alt-version-of :accessor Code-chunk-alt-version-of
-		   :initform !())))
+		   :initform !())
+   ;; All the chunks this one "depends on" (e.g., may need to be
+   ;; loaded before this one is compiled or loaded)
+   (depends-on :accessor Code-chunk-depends-on
+	       :initform !())))
 
 ;; These two methods ensure that 'callers' is the inverse of 'callees' --
 (defmethod (setf Code-chunk-callees) :before (_ code-ch)
@@ -237,7 +242,7 @@
 ;;; or some other facility (simple 'load', for instance).  The former is
 ;;; knottier.  YTFM wants to figure out dependencies by slurping, but 
 ;;; 'fload'/'fcompl' should be able to decipher dependencies declared by
-;;; some version of 'defsystem.'  That's where Loadable-chunks come in (qv).
+;;; some version of 'defsystem.'  That's where Code-dep-chunks come in (qv).
 
 ;;; An entity as (having the appropriate variant) loaded into primary
 ;;; memory --
@@ -253,7 +258,7 @@
 	    :accessor Loaded-chunk-status)
    ;; -- values :load-succeeded or :load-failed
    ;; once load has been attempted
-    ;; The Loadable-chunk that computes the basis of this one --
+    ;; The Code-dep-chunk that computes the basis of this one --
     (controller :accessor Loaded-chunk-controller
 		:initarg :controller)))
 
@@ -419,24 +424,71 @@
 
 ;;; This is a "meta-chunk," which keeps the network of Loaded-chunks 
 ;;; up to date.
-;;; Corresponds to information gleaned from file header (or elsewhere)
-;;; about what
-;;; other files (and modules, ...) are necessary in order to load or
-;;; compile and load, the given file.  This information forms the basis
-;;; of the corresponding Loaded-chunk.
-;;; This is a rudimentary chunk, which has no basis or derivees.  The only
-;;; reason to use the chunk apparatus is to keep track of the date, which
-;;; uses the file-op-count* instead of actual time.
-(defclass Loadable-chunk (Chunk)
-   ((controllee :reader Loadable-chunk-controllee
-	  :initarg :controllee
-	  :type Loaded-chunk))
-   (:default-initargs :basis !()))
-;;; -- The basis of this chunk is the empty list because it's a
-;;; meta-chunk, which can't be connected to any chunk whose basis it
-;;; might affect.
+;;; It manages: "The tree of 'depends-on's above 'controllee' is
+;;; up to date."  
+;;; More precisely: Let C be the controller for 'controllee', a
+;;; Loaded-chunk managing "Code-chunk F is loaded."  Let L be the set
+;;; of Code-chunks that F requires.  Then C manages "For each
+;;; Code-chunk H in L, and each Code-chunk G that requires* F , there
+;;; is a chain of 'depends-on' links from G to H."
+;;; Here "A requires B" means that B must be loaded before 
+;;; A.  This is not a metaphysical statement, but is determined by
+;;; the 'derive' method for the kind of Code-chunks involved, 
+;;; presumably by inspecting various data structures, file headers, and
+;;; the like.
+;;; Then "requires*" is the transitive closure of "requires."  (Which 
+;;; means that there is some notion of "immediacy" implied by the
+;;; definition of "requires," but it's not necessary that this be
+;;; formalized; "requires" and "requires*" might be the same.)
 
-;;; Creates a Loadable-chunk to act as a controller for this filoid
+(defclass Code-dep-chunk (Chunk)
+   ((controllee :reader Code-dep-chunk-controllee
+		:initarg :controllee
+		:type Loaded-chunk))
+   (:default-initargs :basis !()))
+;;; -- basis doesn't stay empty.  A Code-dep-chunk has as derivees 
+;;; all the Code-dep-chunks for files that it depends on.  (Note
+;;; reverse flow: If file A depends on file B, then (:loaded A) is
+;;; a base of (:loaded B), but (:code-dep A) is a derivee of (:code-dep B).
+
+(defun place-Code-dep-chunk (code-ch)
+   (chunk-with-name `(:dep-tree-known ,(Chunk-name code-ch))
+      (\\ (exp)
+	 (make-instance 'Code-dep-chunk
+	    :name exp
+	    :controllee code-ch))))
+
+(defmethod derive ((cd Code-dep-chunk))
+   (error "No method supplied for figuring out what entities ~s depends on"
+	  cd))
+;;; -- We must subclass Code-dep-chunk to supply methods for figuring
+;;; out file dependencies.  See depend.lisp for the YTFM approach.
+
+;;; A useful check for those methods is that they must return the
+;;; value of the "meta-clock"; for files being managed by 'fload', 
+;;; this is the file-op-count*.   
+;;; We avoid using that variable here, because so far we're talking
+;;; about some kind Code-chunk, and we haven't committed to using
+;;; 'fload' to manage those chunks.  (There might well be an alternative
+;;; meta-clock for packages managed using 'defsystem' or asdf.)
+
+(defgeneric Code-dep-chunk-meta-clock-val (cd)
+  (:method ((cd Code-dep-chunk))
+     (error "No meta-clock defined for ~s" cd)))
+
+(defmethod derive :around ((cd Code-dep-chunk))
+   (let ((d (call-next-method))
+	 (date (Code-dep-chunk-meta-clock-val cd)))
+      (cond ((not (and (is-Integer d)
+		       (= d date)))
+	     (cerror
+	        "I will force the correct value"
+		!"Deriving Code-dep-chunk failed to get proper clock val~
+                  :~s~%" cd)
+	     date)
+	    (t d))))
+
+;;; Creates a Code-dep-chunk to act as a controller for this filoid
 ;;; and the chunk corresponding to its being loaded.
 ;;; In depend.lisp we'll supply the standard controller for ordinary files
 ;;; following YTools rules.  
@@ -447,12 +499,6 @@
 	    (type-of x))))
 
 (defvar all-loaded-file-chunks* !())
-
-(defmethod derive ((lc Loadable-chunk))
-   (error "No method supplied for figuring out what entities ~s depends on"
-	  (Loadable-chunk-controllee lc)))
-;;; -- We must subclass Loadable-chunk to supply methods for figuring
-;;; out file dependencies.  See depend.lisp for the YTFM approach.
 
 
 (defmethod place-Loaded-chunk ((file-ch Code-file-chunk) manip)
@@ -536,17 +582,18 @@
 (defun file-chunk-load (file-ch)
       (with-post-file-transduction-hooks
 	 (cleanup-after-file-transduction
-	    (let ((*package* *package*)
-		  (*readtable* *readtable*)
-		  (now-loading* (Code-file-chunk-pathname file-ch))
-		  (loading-stack* (cons (Code-file-chunk-pathname file-ch)
-					loading-stack*))
-		  (now-slurping* false)
-		  (now-compiling* false)
-		  (success false)
-		  (errors-during-load !())
-		  (fload-indent* ;;;;(+ 3 fload-indent*)
-		      (* 3 (Chunk-depth file-ch))))
+	    (let* ((sourcetab (code-file-chunk-readtable-if-known file-ch))
+		   (*package* *package*)
+		   (*readtable* (or sourcetab *readtable*))
+		   (now-loading* (Code-file-chunk-pathname file-ch))
+		   (loading-stack* (cons (Code-file-chunk-pathname file-ch)
+					 loading-stack*))
+		   (now-slurping* false)
+		   (now-compiling* false)
+		   (success false)
+		   (errors-during-load !())
+		   (fload-indent* ;;;;(+ 3 fload-indent*)
+		       (* 3 (Chunk-depth file-ch))))
 	       (file-op-message "Loading"
 				 (Code-file-chunk-pn
 				     file-ch)
@@ -571,31 +618,48 @@
 					  false false "")))))))
       (get-universal-time))
 
+(defun code-file-chunk-readtable-if-known (file-ch)
+   (let ((source-readtab
+	    (Code-file-chunk-readtable file-ch)))
+      (cond (source-readtab
+	     (cond ((not (eq source-readtab *readtable*))
+		    (format *error-output*
+		       !"Source file readtable (from mode line) = ~s~
+			 ~%   *readtable* = ~s~
+			 ~%   The former will be used to load or compile ~
+			     ~s~%"
+		       source-readtab
+		       *readtable*
+		       (Code-file-chunk-pathname file-ch))))
+	     source-readtab)
+	    (t false))))
+
 (defgeneric loaded-chunk-set-basis (loaded-ch)
    (:method ((lch t)) nil))
-
-(defvar loaded-filoids-to-be-monitored* ':global)
 
 (defun monitor-filoid-basis (loaded-filoid-ch)
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
 	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
 		 loaded-filoid-ch)))
-   (cond ((eq loaded-filoids-to-be-monitored* ':global)
-	  (let ((controllers (list (Loaded-chunk-controller loaded-filoid-ch)))
-		(loaded-filoids-to-be-monitored* !()))
-	     (loop
-	        (dolist (loadable-ch controllers)
-		   (chunk-request-mgt loadable-ch))
-	        (chunks-update controllers false false)
-	        (cond ((null loaded-filoids-to-be-monitored*)
-		       (return))
-		      (t
-		       (setq controllers 
-			     (mapcar #'Loaded-chunk-controller
-				     loaded-filoids-to-be-monitored*))
-		       (setq loaded-filoids-to-be-monitored* !()))))))
-	 (t
-	  (on-list loaded-filoid-ch loaded-filoids-to-be-monitored*))))
+   (let ((controller (verify-loaded-chunk-controller loaded-filoid-ch false)))
+      (chunk-request-mgt controller)
+      ;; We postpone the derivees because the controller may fiddle
+      ;; with object-level (as opposed to meta-level) chunks, and we
+      ;; don't want to start an uncontrolled wave of object-level
+      ;; updating.  We don't need to save the chunks that get
+      ;; postponed, because after updating the controller we're going
+      ;; to do things at the object level. --
+      (chunk-update controller false false)))
+
+(defun verify-loaded-chunk-controller (lc allow-null)
+   (let ((controller (Loaded-chunk-controller lc)))
+      (cond (controller controller)
+	    (allow-null
+	     (cerror "I'll do without it, but something's wrong"
+		     "Loaded-chunk has no controller: ~s" lc)
+	     false)
+	    (t
+	     (error "Loaded-chunk has no controller: ~s" lc)))))
 
 (defvar user-manip-asker* false)
 ;;; -- Function to call to ask how file should be handled.
@@ -873,11 +937,13 @@
 	  (old-obj (and old-obj-pn
 			(probe-file old-obj-pn)))
 	  (loaded-ch (Compiled-file-chunk-loaded-file cf-ch))
+	  (source-ch (Compiled-file-chunk-source-file cf-ch))
 	  (loaded-ch-manip (Loaded-file-chunk-manip loaded-ch)))
       (labels ((compile-by-any-other-name ()
-		  (let* ((pn (Code-file-chunk-pn
-				(Compiled-file-chunk-source-file cf-ch)))
+		  (let* ((pn (Code-file-chunk-pn source-ch))
 			 (real-pn (pathname-resolve pn true))
+			 (source-readtab
+			     (code-file-chunk-readtable-if-known source-ch))
 			 (old-obj-write-time
 				  (and old-obj
 				       (pathname-write-time old-obj-pn))))
@@ -885,6 +951,7 @@
 			   (now-loading* false)
 			   (now-slurping* false)
 			   (debuggability* debuggability*)
+			   (*readtable* (or source-readtab *readtable*))
 			   (fload-indent*
 			      (* 3 (Chunk-depth cf-ch))))
 			(compile-and-record pn real-pn old-obj-pn
@@ -985,7 +1052,7 @@
 			(file-op-message "...compilation failed!"
 					 false false "")))))))))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defvar sub-file-types* !())
 
@@ -1187,7 +1254,7 @@
 			 (Code-file-chunk-pathname callee-ch))
 	       (Chunk-update-basis compiled-ch)))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
    (def-sub-file-type :macros)
 
 ;;;;   (defparameter standard-sub-file-types* (list macros-sub-file-type*))
@@ -1195,14 +1262,6 @@
    (defun macros-slurp-eval (e _) (eval e) false))
 
 (datafun :slurp-macros defmacro #'macros-slurp-eval)
-
-(defmacro needed-by-macros (&body l)
-   `(progn ,@l))
-
-(datafun :slurp-macros needed-by-macros
-   (defun :^ (exp _)
-      (dolist (e exp) (eval e))
-      false))
 
 (datafun :slurp-macros defsetf  #'macros-slurp-eval)
 
@@ -1239,6 +1298,10 @@
       (dolist (e (cdr form))
 	 (eval e))
       false))
+
+(defmacro needed-by-macros (&body l)
+   `(eval-when (:compile-toplevel :load-toplevel :execute)
+       ,@l))
 
 (datafun :slurp-macros needed-by-macros eval-when-slurping)
 

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.6 2005/07/17 19:08:52 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.7 2005/07/19 22:25:26 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -50,9 +50,10 @@
 ;;; then recompile all files after the first replacement.
 ;;; Otherwise, the third slot of the alist entry determines
 ;;; whether to compile.
+;;; Special case: If 'new-files' is (), recompile everything.
 (defun yt-recompile (new-files cautious
 		     &key (start-with nil) (stop-after nil))
-   (let ((compiling nil)
+   (let ((compiling (null new-files))
 	 (files (cond (start-with
 		       (member start-with ytools-core-files*
 			       :test #'string=))

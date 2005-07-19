@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.32 2005/07/11 14:58:45 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.33 2005/07/19 22:25:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,7 +11,7 @@
    (export '(depends-on module scan-depends-on self-compile-dep
 	     in-header end-header)))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 (defstruct (Scan-depends-on-state (:conc-name Sds-)
 	    (:print-object
@@ -44,64 +44,151 @@
    
 (setq hidden-slurp-tasks* (adjoin 'scan-depends-on hidden-slurp-tasks*))
 
-(defclass Loadable-file-chunk-from-scan (Loadable-chunk) ())
+(defclass Code-file-dep (Code-dep-chunk)
+   ;; Keeps a File-scanned-for-deps chunk to reread the file's
+   ;; header when necessary --
+   ((scanner :accessor Code-file-dep-scanner)))
 
-(defmethod derive-date ((fb Loadable-file-chunk-from-scan))
-;;;;   (format *error-output*
-;;;;      "[D]Loadable chunk date = ~s file-op-count* = ~s~%"
-;;;;      (Chunk-date fb) file-op-count*)
-   (cond ((= (Chunk-date fb) file-op-count*)
-	  false)
-	 (t +no-info-date+)))
+(defclass File-scanned-for-deps (Chunk)
+  ((file :accessor File-scanned-for-deps-file
+	 :initarg :file)
+   (loaded-file :accessor File-scanned-for-deps-loaded-file
+		:initarg :loaded-file)))
 
-(defmethod derive ((fb Loadable-file-chunk-from-scan))
-;;;;   (format *error-output*
-;;;;      "Loadable chunk date = ~s file-op-count* = ~s~%  file: ~s~%"
-;;;;      (Chunk-date fb)
-;;;;      file-op-count*
-;;;;      (Loaded-chunk-loadee (Loadable-chunk-controllee fb)))
-;;;;   (trace-around Loadable-file-chunk-from-scan/derive
-;;;;      (:> "(Loadable-file-chunk-from-scan/derive: " fb ")")
-   (cond ((= (Chunk-date fb) file-op-count*)
-	  false)
-	 (t
-	  (multiple-value-bind (file-ch loaded-ch)
-	                       (loaded-file-chunk-current-version
-				   (Loadable-chunk-controllee fb))
-	                       (declare (ignore loaded-ch))
-	     (multiple-value-bind 
-		       (source-ch compiled-ch)
-		       (cond ((typep file-ch 'Compiled-file-chunk)
-			      (values (Compiled-file-chunk-source-file file-ch)
-						 file-ch))
-					(t
-					 (values file-ch
-						 (place-compiled-chunk
-						     file-ch))))
-		(setf (Code-chunk-callees file-ch) !())
-		(cond (compiled-ch
-		       (cond ((not (memq source-ch (Chunk-basis compiled-ch)))
-			      (cerror "I will put it back in"
-				      !"Chunk for source file ~s~
-                                        ~% not found in basis of ~s"
-				      source-ch compiled-ch)))
-		       (compiled-chunk-set-obj-version compiled-ch)
-		       (setf (Chunk-basis compiled-ch)
-			     (list source-ch))
-		       (compiled-chunk-include-dir-basis compiled-ch)
-		       (setf (Chunk-update-basis compiled-ch) !())))
-		(file-slurp (Code-file-chunk-pathname source-ch)
-			    (list scan-depends-on*)
-			    (\\ (srm)
-			       (let ((readtab
-					(modeline-extract-readtab srm)))
-				  (cond (readtab
-					 (setf (Code-file-chunk-readtable
-						  source-ch)
-					       readtab))))))
-		file-op-count*))))
-;;;;      (:< (val &rest _) "Loadable-file-chunk-from-scan/derive: " val))
-   )
+(defmethod create-loaded-controller ((file-ch Code-file-chunk)
+				     (loaded-ch Loaded-file-chunk))
+   (let ((controller
+	    (chunk-with-name
+	       `(:code-file-dep ,(Chunk-name file-ch))
+	       (\\ (exp)
+		  (make-instance 'Code-file-dep
+		     :name exp
+		     :controllee loaded-ch))))
+	 (scanner
+	    (chunk-with-name
+	       `(:file-header-scanned ,(Chunk-name file-ch))
+	       (\\ (exp)
+		  (make-instance 'File-scanned-for-deps
+		     :name exp
+		     :file file-ch
+		     :loaded-file loaded-ch))
+;;; This seems elegant, but connecting the meta-level to the
+;;;  object level through the code file leads to an incurable
+;;;  tangle --
+;;;;	       :initializer
+;;;;	       (\\ (fsd-ch)
+;;;;		  (setf (Chunk-basis fsd-ch)
+;;;;			(list file-ch)))
+	       )))
+      (setf (Code-file-dep-scanner controller)
+	    scanner)
+      controller))
+
+(defmethod Code-dep-chunk-meta-clock-val ((file-dep Code-file-dep))
+   file-op-count*)
+
+(defmethod derive ((file-dep Code-file-dep))
+   (cond ((< (Chunk-date file-dep) file-op-count*)
+	  (let ((scanner (Code-file-dep-scanner file-dep)))
+	     (chunk-request-mgt scanner)
+	     (chunk-update scanner false false))))
+   file-op-count*)
+
+(defmethod derive-date ((fb File-scanned-for-deps))
+   (cond ((>= (Chunk-date fb)
+	      (file-write-date
+	          (Code-file-chunk-pathname
+		     (File-scanned-for-deps-file fb))))
+	  (Chunk-date fb))
+	 (t false)))
+
+(defmethod derive ((fb File-scanned-for-deps))
+   (let ((loaded-file-ch (File-scanned-for-deps-loaded-file fb)))
+      (multiple-value-bind (file-ch lfc)
+			   (loaded-file-chunk-current-version
+			       loaded-file-ch)
+	 (multiple-value-bind 
+		   (source-ch compiled-ch)
+		   (cond ((typep file-ch 'Compiled-file-chunk)
+			  (values (Compiled-file-chunk-source-file file-ch)
+				  file-ch))
+			 (t
+			  (values file-ch
+				  (place-compiled-chunk file-ch))))
+	    (let ((cached-file-ch (File-scanned-for-deps-file fb)))
+	       (cond ((not (eq source-ch cached-file-ch))
+		      (cerror "I'll soldier on"
+			      !"File-scanned-for-deps has different cached ~
+				file-ch and recovered source-ch :~
+				~%  cached-file-ch = ~s
+				~%  current-version = ~s"
+			      cached-file-ch source-ch))))
+;;;;	    (format *error-output* 
+;;;;	       "Comparing date of ~s ~% and write date of ~s~
+;;;;                ~%   chunk-date = ~s~
+;;;;                ~%   file-date = ~s~%"
+;;;;	       fb (Code-file-chunk-pathname source-ch)
+;;;;	       (Chunk-date fb)
+;;;;	       (file-write-date
+;;;;			  (Code-file-chunk-pathname source-ch)))
+;;;;	    (setq chx* file-ch)
+	    (cond ((>= (Chunk-date fb)
+		       (file-write-date
+			  (Code-file-chunk-pathname source-ch)))
+		   ;; No need to do anything
+		   (Chunk-date fb))
+		  (t
+		   (setf (Code-chunk-callees source-ch) !())
+		   (setf (Code-chunk-depends-on source-ch) !())
+		   (cond (compiled-ch
+			  (cond ((not (memq source-ch
+					    (Chunk-basis compiled-ch)))
+				 (cerror "I will put it back in"
+					 !"Chunk for source file ~s~
+					   ~% not found in basis of ~s"
+					 source-ch compiled-ch)))
+			  (compiled-chunk-set-obj-version compiled-ch)
+			  (setf (Chunk-basis compiled-ch)
+				(list source-ch))
+			  (compiled-chunk-include-dir-basis compiled-ch)
+			  (setf (Chunk-update-basis compiled-ch) !())))
+		   (let ((dep-chunk (verify-loaded-chunk-controller lfc false))
+			 ;; -- A Code-file-dep
+			 (file-pn (Code-file-chunk-pathname source-ch)))
+		      ;; In what follows we are setting the derivees of
+		      ;; 'dep-chunk'.  However, we can't set them directly,
+		      ;; because (see chunk.lisp) they are maintained only
+		      ;; as the inverse of 'Chunk-basis'.  
+		      ;; One purpose of the slurp is to reconstruct the
+		      ;; derivees of 'dep-chunk'.  So we clean the slate
+		      ;; first --
+		      (dolist (dc (Chunk-derivees dep-chunk))
+			 (setf (Chunk-basis dc)
+			       (remove dep-chunk (Chunk-basis dc))))
+		      (file-slurp file-pn
+				  (list scan-depends-on*)
+				  (\\ (srm)
+				     (let ((readtab
+					      (modeline-extract-readtab srm)))
+					(cond (readtab
+					       (setf (Code-file-chunk-readtable
+							source-ch)
+						     readtab))))))
+       ;;;;	       (out "For " dep-chunk
+       ;;;;		    :%  " [" source-ch "]"
+       ;;;;		    :% "  got depends-on: " (Code-chunk-depends-on source-ch)
+       ;;;;		    :%)
+		      (dolist (new-controller-derivee
+				 (nodup
+				    (mapcar (\\ (fc)
+					       (verify-loaded-chunk-controller
+						  (place-Loaded-chunk fc false)
+						  false))
+					    (Code-chunk-depends-on source-ch))))
+			 (on-list-if-new
+			    dep-chunk (Chunk-basis new-controller-derivee))
+			 (chunk-request-mgt new-controller-derivee))
+		      (get-universal-time))))))))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
 ;;; from first line, returning false if it can't be found.
@@ -154,15 +241,6 @@
                            ~%   \"...~a\"~%"
 			  (subseq str rpos))))))
 	    (t false))))
-
-(defmethod create-loaded-controller ((file-ch Code-file-chunk)
-				     (loaded-ch Loaded-file-chunk))
-   (chunk-with-name
-       `(:loadable ,(Chunk-name file-ch))
-       (\\ (name)
-	  (make-instance 'Loadable-file-chunk-from-scan
-	     :name name
-	     :controllee loaded-ch))))
 
 (defvar depends-on-enabled* true)
 (defvar depends-on-loads-files* false)
@@ -288,15 +366,25 @@
 ;;;;						 (Code-file-chunk-read-basis
 ;;;;						    file-ch)))))
 				  )))
+			(setf (Code-chunk-depends-on file-ch)
+			      (union
+			         (mapcar (\\ (pn)
+					    (pathname-denotation-chunk
+					        pn true))
+					 pnl)
+				 (Code-chunk-depends-on file-ch)))
+;;;;			(out "Setting depends-on of " file-ch
+;;;;			     :% "  to " (Code-chunk-depends-on file-ch)
+;;;;			     :%)
 			(dolist (pn pnl)
-			   (let* ((pchunk (pathname-denotation-chunk pn true))
-				  (lpchunk (place-Loaded-chunk pchunk false)))
-			      (monitor-filoid-basis lpchunk)
-			      (loaded-chunk-set-basis lpchunk)
+;;;;			   (let* ((pchunk (pathname-denotation-chunk pn true))
+;;;;				  (lpchunk (place-Loaded-chunk pchunk false)))
+;;;;			      (monitor-filoid-basis lpchunk)
+;;;;			      (loaded-chunk-set-basis lpchunk)
 			      (let ((expansion (pathname-expansion pn)))
 				 (forms-slurp expansion
 					      (list scan-depends-on*)
-					      (list sdo-state)))))))))))
+					      (list sdo-state))))))))))
     false))
 
 ;;; Returns < read-or-slurp-dependency, slurp-types >

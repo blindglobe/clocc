@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.2 2005/07/19 20:30:20 sds Exp $
+;;; $Id: lift.lisp,v 2.3 2005/07/20 20:49:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,8 @@
            #:detector-statistics #:ds-recall #:ds-precision #:ds-lift
            #:ds-data-reduction #:ds-dependency #:ds-proficiency
            #:bucket #:bucket-size #:bucket-true #:bucket-beg #:bucket-end
-           #:bucket-probability #:bucket-inside-p #:bucket-distance #:thresholds
+           #:bucket-probability #:bucket-inside-p #:bucket-distance
+           #:bucket-midpoint #:thresholds
            #:par-proc-vec #:ppv-1st #:ppv-2nd #:ppv-name1 #:ppv-name2
            #:ppv-thresholds #:ppv-precision #:ppv-size
            #:ppv-target-count #:ppv-total-count
@@ -96,15 +97,26 @@ Inside ==> 0; distance is scaled by the bucket length."
           ((< b number) (/ (- number b) (- e b)))
           (t 0))))
 
-(defun bucket (number bucket-list)
-  "Return ..."
-  (loop :with best-pos :and best-bucket :and best-dist
-    :for bucket :in bucket-list :and pos :upfrom 0 :do
-    (when (bucket-inside-p number bucket) (return (values pos bucket)))
-    (let ((dist (bucket-distance number bucket)))
-      (when (or (null best-dist) (< dist best-dist))
-        (setq best-dist dist best-pos pos best-bucket bucket)))
-    :finally (return (values best-pos best-bucket best-dist))))
+(defun bucket-midpoint (bucket)
+  "Return the midpoint between bucket beg and end."
+  (/ (+ (bucket-beg bucket) (bucket-end bucket)) 2))
+
+(defun bucket (number bucket-seq)
+  "Search for the appropriate bucket
+for the NUMBER among the elements of BUCKET-SEQ.
+Returns 3 values: the bucket number, the bucket object
+and the distance from the number to the bucket
+\(0 when the number is inside the bucket)."
+  (let (best-pos best-bucket best-dist (pos 0))
+    (map nil (lambda (bucket)
+               (when (bucket-inside-p number bucket)
+                 (return-from bucket (values pos bucket 0)))
+               (let ((dist (bucket-distance number bucket)))
+                 (when (or (null best-dist) (< dist best-dist))
+                   (setq best-dist dist best-pos pos best-bucket bucket)))
+               (incf pos))
+         bucket-seq)
+    (values best-pos best-bucket best-dist)))
 
 (defun discretize (seq &key (buckets *default-buckets*) (key #'identity)
                    true-value)

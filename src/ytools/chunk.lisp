@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.49 2005/07/19 22:25:24 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.50 2005/07/21 14:44:39 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1409,10 +1409,12 @@
 			       "Forced derivations of ~s did not occur"
 			       must-derive)))))
 	 (cond ((some #'chunk-failed-to-update
-		      chunks)
+		      (cond (postpone-derivees orig-chunks)
+			    (t chunks)))
 		(let ((unsuccessful
 			 (retain-if #'chunk-failed-to-update
-				    chunks)))
+				    (cond (postpone-derivees orig-chunks)
+					  (t chunks)))))
 		  (cerror "I will pretend everything is fine"
 			  !"After chunks-update, the following chunks ~
 			    failed to update:~

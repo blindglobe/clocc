@@ -1,5 +1,7 @@
-$Id: CHANGELOG,v 1.31.2.20 2005/07/01 13:50:25 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.21 2005/07/21 14:44:39 airfoyle Exp $
 	
+2005-07-21: Replaced <- and *undef with :<- and :*undef in filedeps.lisp.
+
 2005-06-30: Changed naming convention for form chunks derived from
             modules, so that redefining module erases the old form
             chunk rather than just adding a new one.

@@ -83,7 +83,7 @@
 					    run-time-deps)))
 				 (cons `(,(file-ch-name code-file-ch)
 					 ,@(include-if is-special '*)
-					 <- ,@dep-names)
+					 :<- ,@dep-names)
 				       (list-walk-and-collect
 					  run-time-deps is-special)))))
 ;;;;			  (:< (val &rest _) "walk-deps: " val))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.2 2005/03/06 01:23:33 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.3 2005/07/21 14:44:40 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -331,8 +331,7 @@
    (elt dbg-stack* n))
 
 ;; !^pkg sym returns pkg::sym, but imports sym to current package.
-(!= (get '\^ 'excl-reader)
-    (\\ (srm _)
+(def-excl-dispatch #\^ (srm _)
        (let ((pkgname (read srm)))
 	  (let ((x (let ((*package* (find-package (symbol-name pkgname))))
 		      (read srm))))
@@ -340,13 +339,13 @@
 		    (cond ((eq (find-symbol (symbol-name x)
 					    *package*)
 			       x)
-			   (out x " already in " t 3 *package* t))
+			   (out x " already in " :% 3 *package* :%))
 			  (t
-			   (out "Importing " x " into " t 3 *package* t)
+			   (out "Importing " x " into " :% 3 *package* :%)
 			   (import x))))
 		   (t
-		    (out "???" t)))
-	     x))))
+		    (out "???" :%)))
+	     x)))
 
 ;;; Push first subform of exp beginning with sym onto dbg-stack*
 (defun seek (sym &optional (num 0) (exp (g *)) (label '*))

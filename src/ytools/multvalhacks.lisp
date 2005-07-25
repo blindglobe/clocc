@@ -4,7 +4,7 @@
 (depends-on %module/ ytools)
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-   (export '(control-nest track-extra-vals extra-vals)))
+   (export '(control-nest track-extra-vals extra-vals with-open-files)))
 
 ;;; The form (track-extra-vals :extra <bdgs>
 ;;;			       [:principal <vars>] 
@@ -148,4 +148,14 @@
 			(+ tot (count-occs sym x)))
 		     0 e))))))
 
-
+(defmacro with-open-files (bdgs &body body)
+   (let-fun ((build-it (bdgs)
+		(cond ((null bdgs) body)
+		      (t
+		       (let ((inner (build-it (cdr bdgs))))
+			  `((with-open-file ,(car bdgs)
+			       ,@inner)))))))
+      (let ((e (build-it bdgs)))
+	 (cond ((= (len e) 1)
+		(car e))
+	       (t `(progn ,@e))))))

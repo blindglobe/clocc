@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.33 2005/07/19 22:25:25 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.34 2005/07/25 15:23:22 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -29,12 +29,18 @@
 
 ;;; State for task is an Sdo-state for the file chunk we're scanning.
 ;;; We're scanning it to figure out its basis (and callees)
+
+(defvar header-slurp-count* 0)
+(defvar headers-slurped* !())
+
 (def-slurp-task scan-depends-on
    :default (\\ (_ _) true)
 ;;; -- The idea is that anything we didn't anticipate takes us
 ;;; out of the header.
    :file->state-fcn     
 		    (\\ (pn)
+		       (incf header-slurp-count*)
+		       (incf (alref headers-slurped* pn 0 :test #'equal))
 		       (make-Scan-depends-on-state
 			  :file-chunk (place-Code-file-chunk pn)
 ;;;;			  :expect-only-run-time-dependencies false

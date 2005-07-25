@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.3 2005/07/21 14:44:40 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.4 2005/07/25 15:23:22 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -342,7 +342,7 @@
 			   (out x " already in " :% 3 *package* :%))
 			  (t
 			   (out "Importing " x " into " :% 3 *package* :%)
-			   (import x))))
+			   (shadowing-import x))))
 		   (t
 		    (out "???" :%)))
 	     x)))

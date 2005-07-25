@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.21 2005/07/21 14:44:39 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.22 2005/07/25 15:23:22 airfoyle Exp $
 	
+2005-07-24: Added 'with-open-files' to multvalhacks.lisp.
+	    Revamped the way file-header slurping is related to chunk
+            for file being slurped.  (Version 2.0.10)
+
 2005-07-21: Replaced <- and *undef with :<- and :*undef in filedeps.lisp.
 
 2005-06-30: Changed naming convention for form chunks derived from

@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/07/16 15:11:55 $"))
+  (remove #\$ "2.0 beta $Date: 2005/07/26 12:37:15 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -72,7 +72,7 @@
 ;;------------------------------------------------------------------------------
 
 (eval-when (compile load eval)
-  (proclaim '(special *readtable* *sentable*))
+  (proclaim '(special *sentable*))
   (proclaim '(special *external-function-names*
 	      *undeclared_vbles* *declared_vbles* *implicit_vble_decls*
 	      *subprog-arglist* *data-init*
@@ -2664,8 +2664,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.145 2005/07/16 15:11:55 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.146 2005/07/26 12:37:15 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.146  2005/07/26 12:37:15  rtoy
+;;; Don't proclaim *readtable* as special, because it's already in the CL
+;;; package and special.  (For sbcl.)
+;;;
 ;;; Revision 1.145  2005/07/16 15:11:55  rtoy
 ;;; In GENERATE-CALL-TO-ROUTINE, if the routine is a parameter, we don't
 ;;; really know anything about it even if we know the info about a routine

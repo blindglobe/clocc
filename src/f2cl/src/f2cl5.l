@@ -1052,10 +1052,7 @@
 	      (member vble *functions-used*
 		      :key #'caar))
 	  (push t var-type-list)
-	(let ((decl
-	       (if declare-vars
-		   (make-declaration vble :vble-is-formal-arg t)
-		   nil)))
+	(let ((decl (make-declaration vble :vble-is-formal-arg t)))
 	  (destructuring-bind (declare-sym (type-sym type var))
 	      decl
 	    (declare (ignore declare-sym type-sym var))
@@ -3158,8 +3155,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.129 2005/07/17 02:17:42 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.130 2005/07/26 12:45:53 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.130  2005/07/26 12:45:53  rtoy
+;;; Oops.  Need to make the declaration anyway because we need to figure
+;;; out the type of the variable.
+;;;
 ;;; Revision 1.129  2005/07/17 02:17:42  rtoy
 ;;; Don't try to declare a function if the function was a parameter.  We don't really know anything about the function.
 ;;;

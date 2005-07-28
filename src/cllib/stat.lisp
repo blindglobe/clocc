@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.15 2005/07/11 20:31:24 sds Exp $
+;;; $Id: stat.lisp,v 1.16 2005/07/28 18:45:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -163,7 +163,28 @@ Arguments are 2 sequences instantiating the same (or different?) distributions."
 
 (defun chi2-prob (chi2 df)
   "Return the probability that this CHI2/DF score is just a random fluke."
-  (- 1 (incomplete-gamma (/ df 2) (/ chi2 2))))
+  #| (let* ((df 300) (sigma (sqrt (* 2 df))) (num-points 1000))
+    (loop :for m :from 0 :to num-points :for x = (/ (* m 2 df) num-points)
+      :for chi2 = (- 1 (incomplete-gamma (/ df 2) (/ x 2)))
+      :for norm = (cllib:cndf-tail (/ (- x df) sigma))
+      :maximize (- chi2 norm) :into chi2-norm
+      :maximize (- norm chi2) :into norm-chi2
+      :finally (format t "~&max(chi2-norm)=~F~%max(norm-chi2)=~F~%"
+                       chi2-norm norm-chi2))
+    ;; df = 100
+    ;; max(chi2-norm)=0.009514491419175819
+    ;; max(norm-chi2)=0.0188083821279712
+    ;; df = 200
+    ;; max(chi2-norm)=0.00648072330152305
+    ;; max(norm-chi2)=0.01330323702263625
+    ;; df = 300 ==> floating point underflow
+    (plot-functions
+     `((cndf . ,(lambda (x) (- 1 (cndf-tail (/ (- x df) sigma)))))
+       (chi2 . ,(lambda (x) (incomplete-gamma (/ df 2) (/ x 2)))))
+     0 (* 2 df) num-points :legend '(:top :left :box) :grid t)) |#
+  (if (> df 100)                ; use normal
+      (cndf-tail (/ (- chi2 df) 2 df))
+      (- 1 (incomplete-gamma (/ df 2) (/ chi2 2)))))
 
 (defun chi2-1-ui (sample distrib &key (out *standard-output*)
                   (sample-name "Sample") (distrib-name "Distribution"))

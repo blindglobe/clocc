@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.22 2005/07/25 15:23:22 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.23 2005/07/28 10:06:37 airfoyle Exp $
 	
+2005-07-28: Allowed derivers and date-derivers to terminate management
+            of their chunks if found to be defective in some way;
+            chunks-update will then skip any further handling of them.
+
 2005-07-24: Added 'with-open-files' to multvalhacks.lisp.
 	    Revamped the way file-header slurping is related to chunk
             for file being slurped.  (Version 2.0.10)

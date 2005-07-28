@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.15 2005/07/01 13:50:36 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.16 2005/07/28 10:06:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,7 +11,9 @@
    (export '(fload filespecs-load fcompl filespecs-compile
 	     fcompl-reload* fload-compile* bind-fload-compile*
 	     fload-versions postponed-files-update funktion
-	     debuggable debuggability*)))
+	     debuggable debuggability*
+	     warn-about-postponed-file-chunks
+	     warn-about-postponed-file-chunks*)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
@@ -71,9 +73,19 @@
 	     (do-it))
 	    (t
 	     (setq file-op-count* (+ file-op-count* 1))
-	     (let ((file-op-in-progress* true))
-		(catch 'fload-abort
-		   (do-it)))))))
+	     (let ((before-num-postponed (len postponed-file-chunks*)))
+		(cond ((not (= before-num-postponed 0))
+		       (warn-about-postponed-file-chunks
+			   before-num-postponed)))
+		(let ((file-op-in-progress* true))
+		   (catch 'fload-abort
+		      (do-it)))
+		(let ((after-num-postponed (len postponed-file-chunks*)))
+		   (cond ((not (= after-num-postponed
+				  before-num-postponed))
+			  (warn-about-postponed-file-chunks
+			     after-num-postponed)))
+		   after-num-postponed))))))
 
 (defun filespecs-load (specs &optional (flags !()) (rt *readtable*))
    (filespecs-do-load
@@ -498,9 +510,19 @@
 	     (do-it))
 	    (t
 	     (setq file-op-count* (+ file-op-count* 1))
-	     (let ((file-op-in-progress* true))
-		(catch 'fload-abort
-		   (do-it)))))))
+	     (let ((before-num-postponed (len postponed-file-chunks*)))
+		(cond ((not (= before-num-postponed 0))
+		       (warn-about-postponed-file-chunks
+			   before-num-postponed)))
+		(let ((file-op-in-progress* true))
+		   (catch 'fload-abort
+		      (do-it)))
+		(let ((after-num-postponed (len postponed-file-chunks*)))
+		   (cond ((not (= after-num-postponed
+				  before-num-postponed))
+			  (warn-about-postponed-file-chunks
+			     after-num-postponed)))
+		   after-num-postponed))))))
 
 (defun filespecs-compile (specs flags rt)
    (filespecs-do-compile
@@ -600,6 +622,16 @@
 ;;;;			  (chunk-derive-and-record compiled-chunk)
 			  ))
 		   (consider-loading)))))))
+
+(defvar warn-about-postponed-file-chunks* true)
+
+(defun warn-about-postponed-file-chunks
+          (&optional (num-postponed (len postponed-file-chunks*)))
+   (cond (warn-about-postponed-file-chunks*
+	  (format *error-output*
+	      !"There are ~s file chunks waiting to be updated ~
+                ~%   [by calling (file-ops-maybe-postpone)]~%"
+	     num-postponed))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
   (let ((log-pn (pathname-resolve
@@ -765,7 +797,7 @@
 ;;; produced it.--
 (defun file-ops-maybe-postpone (chunks)
    (setq postponed-file-chunks*
-	 (append chunks postponed-file-chunks*)))
+	 (nodup (append chunks postponed-file-chunks*))))
 
 (defun postponed-files-update ()
    (chunks-update postponed-file-chunks* false false))

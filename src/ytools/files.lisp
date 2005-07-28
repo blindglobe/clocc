@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.54 2005/07/19 22:25:25 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.55 2005/07/28 10:06:40 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -121,9 +121,14 @@
       (cond ((probe-file pn)
 	     (file-write-date pn))
 	    (t
-	     (error !"Code-file-chunk corresponds to ~
-		      nonexistent file: ~s"
-		    fc)))))
+	     (restart-case
+		(error !"Code-file-chunk corresponds to ~
+			 nonexistent file: ~s"
+		       fc)
+	       (unmanage-chunk ()
+		   :report !"I'll stop managing the chunk"
+		  (chunk-terminate-mgt fc ':ask)
+		  (get-universal-time)))))))
 
 (defmethod derive ((fc Code-file-chunk))
    false)

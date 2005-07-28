@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.75 2005/07/14 22:43:09 sds Exp $
+;;; $Id: math.lisp,v 2.76 2005/07/28 18:44:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -32,7 +32,8 @@
    draw pick sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
    dot poly1 poly norm normalize rel-dist
-   erf cndf log-gamma beta incomplete-gamma *max-iterations*
+   erf erfc erfcx cndf cndf-tail
+   log-gamma beta incomplete-gamma *max-iterations*
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max

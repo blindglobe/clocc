@@ -1,5 +1,7 @@
-$Id: CHANGELOG,v 1.31.2.23 2005/07/28 10:06:37 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.24 2005/07/29 15:59:52 airfoyle Exp $
 	
+2005-07-29: Added 'on-list-if-new', *current-case-mode*
+
 2005-07-28: Allowed derivers and date-derivers to terminate management
             of their chunks if found to be defective in some way;
             chunks-update will then skip any further handling of them.

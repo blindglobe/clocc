@@ -6,7 +6,7 @@
 #   License: LGPL (See file GNU-LGPL for details)
 # -----------------------------------------------------------------------------
 #  (c) copyright 1999 by Gilbert Baumann, Sam Steingold, Bruno Haible
-# $Id: run-lisp,v 1.16 2005/07/30 02:57:34 sds Exp $
+# $Id: run-lisp,v 1.17 2005/07/30 16:08:52 sds Exp $
 # $Source: /cvsroot/clocc/clocc/bin/run-lisp,v $
 
 # Prior to invocation the LISPTYPE environment variable must been set to
@@ -304,7 +304,7 @@ case "$1" in
                     (multiple-value-setq (.res .cond)
                        (ignore-errors (progn $todo
                                         (fresh-line) (finish-output))))
-                    (when .cond (princ .cond))
+                    (when .cond (princ .cond) (terpri))
                     (unix:unix-exit (if .cond 1 0))))"
           test -z "$image" || image="-core ${image}.core";
           exec ${CMUCL-lisp} -noinit ${image} -eval "$todo"
@@ -326,7 +326,7 @@ case "$1" in
                     (multiple-value-setq (.res .cond)
                        (ignore-errors (progn $todo
                                         (fresh-line) (finish-output))))
-                    (when .cond (princ .cond))
+                    (when .cond (princ .cond) (terpri))
                     (sb-ext:quit :unix-status (if .cond 1 0))))"
           test -z "$image" || image="-core ${image}.core";
           exec ${SBCL:-sbcl} --userinit /dev/null ${image} --eval "$todo"

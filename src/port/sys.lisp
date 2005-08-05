@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.60 2005/08/05 18:31:26 sds Exp $
+;;; $Id: sys.lisp,v 1.61 2005/08/05 19:42:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -85,7 +85,7 @@ or does not contain valid compiled code."
   (with-open-file (in file-name :direction :input :if-does-not-exist nil)
     (handler-bind ((error (lambda (c) (declare (ignore c))
                                   (return-from compiled-file-p nil))))
-      (and in (char= #\( (peek-char nil in))
+      (and in (char= #\( (peek-char nil in nil #\a))
            (let ((form (read in nil nil)))
              (and (consp form)
                   (eq (car form) 'SYSTEM::VERSION)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.36 2005/08/12 21:55:17 sds Exp $
+;;; $Id: tests.lisp,v 2.37 2005/08/12 22:22:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -249,10 +249,17 @@
       (ts "slice" (array-slice #2A((1 2) (3 4)) '(NIL 1)) #(2 4))
       (ts "slice" (array-slice #2A((1 2) (3 4)) '(0 0)) #0A1)
       (ts "slice" (array-slice #2A((1 2) (3 4)) '(0 1)) #0A2)
+      (ts "marginal" (array-marginal #2A((1 2) (3 4)) '(0)) #(3 7))
+      (ts "marginal" (array-marginal #2A((1 2) (3 4)) '(1)) #(4 6))
       (let ((arr (make-array '(3 4 5 6))))
         (dotimes (i (array-total-size arr)) (setf (row-major-aref arr i) i))
         (ts "slice" (array-slice arr '(nil 1 nil 5))
-            #2A((35 41 47 53 59) (155 161 167 173 179) (275 281 287 293 299))))
+            #2A((35 41 47 53 59) (155 161 167 173 179) (275 281 287 293 299)))
+        (ts "marginal" (array-marginal arr '(1 3))
+            #2A((1980 1995 2010 2025 2040 2055)
+                (2430 2445 2460 2475 2490 2505)
+                (2880 2895 2910 2925 2940 2955)
+                (3330 3345 3360 3375 3390 3405))))
       (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count))))
 
 (defun test-munkres (&key (out *standard-output*))

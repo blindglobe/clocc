@@ -9,32 +9,35 @@
 ;;; which relies on BLAS (http://www.netlib.org/blas) and
 ;;; LAPACK (http://www.netlib.org/lapack) for heavy-duty computations.
 ;;;
-;;; Copyright (C) 2000-2004 by Sam Steingold
+;;; Copyright (C) 2000-2005 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.17 2004/12/23 19:11:21 sds Exp $
+;;; $Id: matrix.lisp,v 2.18 2005/08/12 21:54:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
-
-(in-package :cllib)
 
 (eval-when (compile load eval)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-type', `index-t'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
+  ;; `do-iter-ls'
+  (require :cllib-iter (translate-logical-pathname "cllib:iter"))
   ;; `divf'
   (require :cllib-math (translate-logical-pathname "cllib:math")))
+
+(in-package :cllib)
 
 (export '(matrix-print matrix-to-file matrix-from-file random-matrix
           matrix-multiply array-copy array-lin-comb dimension
           matrix-id matrix-id-p matrix-transpose matrix-symmetric-p bilinear
+          array-slice
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
           matrix-solve-lup matrix-lup
           matrix-solve matrix-inverse))
 (import '(matrix-print) :cl-user) ; format ~//
 
 ;;;
-;;; printing
+;;; i/o
 ;;;
 
 (defun matrix-print (out aa colp atp &optional fmt-arg)
@@ -161,6 +164,22 @@ By default prints the contents.
     (dotimes (ii (array-dimension mx 0) mxt)
       (dotimes (jj (array-dimension mx 1))
         (setf (aref mxt jj ii) (aref mx ii jj))))))
+
+(defun array-slice (arr index-list)
+  "Extract the sub-array with the supplied indexes.
+Similar to Matlab `:'."
+  (let* ((dims (delete nil (mapcar (lambda (dim index) (if index nil dim))
+                                   (array-dimensions arr) index-list)))
+         (idx (copy-seq index-list)) ; running index into ARR
+         (ret (make-array dims)))
+    (do-iter-ls (ii (nreverse dims) ret)
+      (let ((tail ii))          ; update running index
+        (mapl (lambda (idx-r index-r)
+                (unless (car index-r)
+                  (setf (car idx-r) (pop tail))))
+              idx index-list)
+        (when tail (error "~S: ~S should be ~S" 'array-slice tail nil)))
+      (setf (apply #'aref ret ii) (apply #'aref arr idx)))))
 
 ;;;
 ;;; linear combinations

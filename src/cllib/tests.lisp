@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.35 2005/06/28 19:44:56 sds Exp $
+;;; $Id: tests.lisp,v 2.36 2005/08/12 21:55:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -217,9 +217,8 @@
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-cvs num-err)
     num-err))
 
-(defun test-matrix (&key (out *standard-output*) (num-test 10)
-                    (dim 10) (max 10))
-  (mesg :test out "~& ** ~S...~%" 'test-matrix)
+(defun test-matrix-inverse (&key (out *standard-output*) (num-test 10)
+                            (dim 10) (max 10))
   (loop :repeat num-test :with det :with i1 = (make-array (list dim dim))
     :with error-count = 0 :for err = 0
     :for mx = (random-matrix dim dim max) :for m1 = (array-copy mx) :do
@@ -237,8 +236,24 @@
     (if (> err 0.001)
         (warn " ###~:D### ERROR: ~F~%~S~%==>~%~S" (incf error-count) err mx m1)
         (mesg :test out "    err = ~S~%" err))
-    :finally (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count)
     :finally (return error-count)))
+
+(defun test-matrix (&key (out *standard-output*))
+  (mesg :test out "~& ** ~S...~%" 'test-matrix)
+  (let ((error-count (test-matrix-inverse :out out)))
+    (flet ((ts (name actual expected)
+             (mesg :test out " ** ~A: ~S~%" name expected)
+             (unless (equalp actual expected)
+               (warn "###~:D### ERROR: ~S is not ~S" (incf error-count)
+                     actual expected))))
+      (ts "slice" (array-slice #2A((1 2) (3 4)) '(NIL 1)) #(2 4))
+      (ts "slice" (array-slice #2A((1 2) (3 4)) '(0 0)) #0A1)
+      (ts "slice" (array-slice #2A((1 2) (3 4)) '(0 1)) #0A2)
+      (let ((arr (make-array '(3 4 5 6))))
+        (dotimes (i (array-total-size arr)) (setf (row-major-aref arr i) i))
+        (ts "slice" (array-slice arr '(nil 1 nil 5))
+            #2A((35 41 47 53 59) (155 161 167 173 179) (275 281 287 293 299))))
+      (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count))))
 
 (defun test-munkres (&key (out *standard-output*))
   (let ((num-err 0)

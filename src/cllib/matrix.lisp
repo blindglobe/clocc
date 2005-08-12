@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.18 2005/08/12 21:54:21 sds Exp $
+;;; $Id: matrix.lisp,v 2.19 2005/08/12 22:22:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (eval-when (compile load eval)
@@ -30,7 +30,7 @@
 (export '(matrix-print matrix-to-file matrix-from-file random-matrix
           matrix-multiply array-copy array-lin-comb dimension
           matrix-id matrix-id-p matrix-transpose matrix-symmetric-p bilinear
-          array-slice
+          array-slice array-marginal
           matrix-solve-lower matrix-solve-upper matrix-solve-lu
           matrix-solve-lup matrix-lup
           matrix-solve matrix-inverse))
@@ -180,6 +180,25 @@ Similar to Matlab `:'."
               idx index-list)
         (when tail (error "~S: ~S should be ~S" 'array-slice tail nil)))
       (setf (apply #'aref ret ii) (apply #'aref arr idx)))))
+
+(defun array-marginal (arr index-list)
+  "Return the marginal array keeping the INDEX-LIST."
+  (let* ((dims (mapcar (lambda (i) (array-dimension arr i)) index-list))
+         (idx (make-list (length index-list))) ; running index into ret
+         (index-sorted (sort (copy-seq index-list) #'<))
+         (ret (make-array dims :initial-element 0)))
+    ;; take first difference derivative of index-sorted
+    (do* ((tail index-sorted (cdr tail)) (prev 0)) ((endp tail))
+      (let ((curr (car tail)))
+        (setf (car tail) (- curr prev)
+              prev curr)))
+    (do-iter-ls (ii (reverse (array-dimensions arr)) ret)
+      (let ((tail ii))
+        (mapl (lambda (idx-tail skip-tail)
+                (setf tail (nthcdr (car skip-tail) tail)
+                      (car idx-tail) (car tail)))
+              idx index-sorted))
+      (incf (apply #'aref ret idx) (apply #'aref arr ii)))))
 
 ;;;
 ;;; linear combinations

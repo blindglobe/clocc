@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.77 2005/08/15 21:19:41 sds Exp $
+;;; $Id: math.lisp,v 2.78 2005/08/15 21:38:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1027,20 +1027,20 @@ Numerical Recipes 6.2 (modified Lentz's method, 5.2)."
    :legend '(:bot :right :box)))
 
 
-(defun norm-functions (order key)
+(defun norm-functions (order)
   "Return a triple PRE COMBINE POST for computing NORM and ARRAY-DIST."
   (case order
-    (0 (values (compose abs 'key) #'max #'identity))
-    (1 (values (compose abs 'key) #'+ #'identity))
-    (2 (values (lambda (xx) (sqr (funcall key xx))) #'+ #'sqrt))
-    (t (values (lambda (xx) (expt (abs (funcall key xx)) order)) #'+
+    (0 (values #'abs #'max #'identity))
+    (1 (values #'abs #'+ #'identity))
+    (2 (values (lambda (xx) (* xx xx)) #'+ #'sqrt))
+    (t (values (lambda (xx) (expt (abs xx) order)) #'+
                (lambda (xx) (expt xx (/ order)))))))
 
 (defun norm (seq &key (key #'value) (order 1))
   "Compute the ORDERth norm of the SEQ. ORDER of 0 means infinity."
   (declare (sequence seq) (real order) (type (function (t) double-float) key))
-  (multiple-value-bind (pre combine post) (norm-functions order key)
-    (funcall post (reduce combine seq :key pre))))
+  (multiple-value-bind (pre combine post) (norm-functions order)
+    (funcall post (reduce combine seq :key (compose 'pre 'key)))))
 
 (defun normalize (seq &optional (norm #'norm))
   "Make sure the SEQ have unit NORM.

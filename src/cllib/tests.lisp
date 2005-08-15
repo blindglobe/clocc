@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.37 2005/08/12 22:22:40 sds Exp $
+;;; $Id: tests.lisp,v 2.38 2005/08/15 16:16:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -260,7 +260,8 @@
                 (2430 2445 2460 2475 2490 2505)
                 (2880 2895 2910 2925 2940 2955)
                 (3330 3345 3360 3375 3390 3405))))
-      (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count))))
+      (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count))
+    error-count))
 
 (defun test-munkres (&key (out *standard-output*))
   (let ((num-err 0)

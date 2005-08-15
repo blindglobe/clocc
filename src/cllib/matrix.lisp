@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.19 2005/08/12 22:22:18 sds Exp $
+;;; $Id: matrix.lisp,v 2.20 2005/08/15 19:43:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (eval-when (compile load eval)
@@ -184,21 +184,14 @@ Similar to Matlab `:'."
 (defun array-marginal (arr index-list)
   "Return the marginal array keeping the INDEX-LIST."
   (let* ((dims (mapcar (lambda (i) (array-dimension arr i)) index-list))
-         (idx (make-list (length index-list))) ; running index into ret
-         (index-sorted (sort (copy-seq index-list) #'<))
+         (idx-ret (make-list (length index-list))) ; running index into ret
+         (idx-arr (make-list (array-rank arr)))    ; running index into arr
          (ret (make-array dims :initial-element 0)))
-    ;; take first difference derivative of index-sorted
-    (do* ((tail index-sorted (cdr tail)) (prev 0)) ((endp tail))
-      (let ((curr (car tail)))
-        (setf (car tail) (- curr prev)
-              prev curr)))
-    (do-iter-ls (ii (reverse (array-dimensions arr)) ret)
-      (let ((tail ii))
-        (mapl (lambda (idx-tail skip-tail)
-                (setf tail (nthcdr (car skip-tail) tail)
-                      (car idx-tail) (car tail)))
-              idx index-sorted))
-      (incf (apply #'aref ret idx) (apply #'aref arr ii)))))
+    (do-iter (ii (coerce (array-dimensions arr) 'vector) ret)
+      (replace idx-arr ii)
+      ;; this AREF in LAMBDA means that we must use DO-ITER and not DO-ITER-LS
+      (map-into idx-ret (lambda (idx) (aref ii idx)) index-list)
+      (incf (apply #'aref ret idx-ret) (apply #'aref arr idx-arr)))))
 
 ;;;
 ;;; linear combinations

@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.22 2005/08/15 21:21:36 sds Exp $
+;;; $Id: matrix.lisp,v 2.23 2005/08/15 21:38:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (eval-when (compile load eval)
@@ -199,12 +199,13 @@ Similar to Matlab `:'."
     (error 'dimension :proc 'array-dist :args
            (list (array-dimensions arr1) (array-dimensions arr2))))
   (let ((dist 0) (norm1 0) (norm2 0))
-    (multiple-value-bind (pre combine post) (norm-functions order key)
+    (multiple-value-bind (pre combine post) (norm-functions order)
       (dotimes (ii (array-total-size arr1))
-        (let ((v1 (row-major-aref arr1 ii)) (v2 (row-major-aref arr2 ii)))
+        (let ((v1 (funcall key (row-major-aref arr1 ii)))
+              (v2 (funcall key (row-major-aref arr2 ii))))
           (setq dist (funcall combine dist (funcall pre (- v1 v2)))
-                norm1 (funcall combine dist (funcall pre v1))
-                norm2 (funcall combine dist (funcall pre v2)))))
+                norm1 (funcall combine norm1 (funcall pre v1))
+                norm2 (funcall combine norm2 (funcall pre v2)))))
       (values (funcall post dist) (funcall post norm1) (funcall post norm2)))))
 
 ;;;

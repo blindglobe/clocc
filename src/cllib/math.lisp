@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.76 2005/07/28 18:44:25 sds Exp $
+;;; $Id: math.lisp,v 2.77 2005/08/15 21:19:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,7 @@
    with-permutations-swap with-permutations-lex permutations-list subsets
    draw pick sample eval-cont-fract fract-approx
    *num-tolerance* *relative-tolerance* *absolute-tolerance*
-   dot poly1 poly norm normalize rel-dist
+   dot poly1 poly norm-functions norm normalize rel-dist
    erf erfc erfcx cndf cndf-tail
    log-gamma beta incomplete-gamma *max-iterations*
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
@@ -1027,17 +1027,20 @@ Numerical Recipes 6.2 (modified Lentz's method, 5.2)."
    :legend '(:bot :right :box)))
 
 
+(defun norm-functions (order key)
+  "Return a triple PRE COMBINE POST for computing NORM and ARRAY-DIST."
+  (case order
+    (0 (values (compose abs 'key) #'max #'identity))
+    (1 (values (compose abs 'key) #'+ #'identity))
+    (2 (values (lambda (xx) (sqr (funcall key xx))) #'+ #'sqrt))
+    (t (values (lambda (xx) (expt (abs (funcall key xx)) order)) #'+
+               (lambda (xx) (expt xx (/ order)))))))
 
 (defun norm (seq &key (key #'value) (order 1))
   "Compute the ORDERth norm of the SEQ. ORDER of 0 means infinity."
   (declare (sequence seq) (real order) (type (function (t) double-float) key))
-  (case order
-    (0 (reduce #'max seq :key (compose abs 'key)))
-    (1 (reduce #'+ seq :key (compose abs 'key)))
-    (2 (sqrt (reduce #'+ seq :key (lambda (xx) (sqr (funcall key xx))))))
-    (t (expt (reduce #'+ seq :key
-                     (lambda (xx) (expt (abs (funcall key xx)) order)))
-             (/ order)))))
+  (multiple-value-bind (pre combine post) (norm-functions order key)
+    (funcall post (reduce combine seq :key pre))))
 
 (defun normalize (seq &optional (norm #'norm))
   "Make sure the SEQ have unit NORM.

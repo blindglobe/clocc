@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.38 2005/08/15 16:16:12 sds Exp $
+;;; $Id: tests.lisp,v 2.39 2005/08/15 17:02:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -255,11 +255,14 @@
         (dotimes (i (array-total-size arr)) (setf (row-major-aref arr i) i))
         (ts "slice" (array-slice arr '(nil 1 nil 5))
             #2A((35 41 47 53 59) (155 161 167 173 179) (275 281 287 293 299)))
+        (ts "slice" (aref (array-slice arr '(1 2 3 4))) (aref arr 1 2 3 4))
         (ts "marginal" (array-marginal arr '(1 3))
             #2A((1980 1995 2010 2025 2040 2055)
                 (2430 2445 2460 2475 2490 2505)
                 (2880 2895 2910 2925 2940 2955)
-                (3330 3345 3360 3375 3390 3405))))
+                (3330 3345 3360 3375 3390 3405)))
+        (ts "marginal" (aref (array-marginal arr nil))
+            (let ((sz (array-total-size arr))) (/ (* sz (1- sz)) 2))))
       (mesg :test out " ** ~S: ~:D error~:P~2%" 'test-matrix error-count))
     error-count))
 

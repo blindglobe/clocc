@@ -1299,22 +1299,20 @@
   "Adds a path to the central registry."
   (pushnew pathname *central-registry* :test #'equal))
 
+(defun registry-pathname (registry)
+  "Return the pathname represented by the element of *CENTRAL-REGISTRY*."
+  (typecase registry
+    (string (pathname registry))
+    (pathname registry)
+    (otherwise (pathname (eval registry)))))
 
 (defun print-central-registry-directories (&optional (stream *standard-output*))
-  (dolist (d *central-registry*)
-    (typecase d
-      (string (print (pathname d) stream))
-      (pathname (print d stream))
-      (otherwise (print (pathname (eval d)) stream)))))
+  (dolist (registry *central-registry*)
+    (print (registry-pathname registry) stream)))
 
 
 (defun list-central-registry-directories ()
-  (loop for d in *central-registry*
-        collect (typecase d
-                  (string (pathname d))
-                  (pathname d)
-                  (otherwise (pathname (eval d))))))
-
+  (mapcar #'registry-pathname *central-registry*))
 
 
 
@@ -2547,18 +2545,13 @@ D
 	(cond (*central-registry*
 	       (if (listp *central-registry*)
 		   (dolist (registry *central-registry*)
-		     (let ((file (or (probe-file
-				      (append-directories (if (consp registry)
-							      (eval registry)
-							      registry)
-						          file-pathname))
-                                     (probe-file
-				      (append-directories (if (consp registry)
-							      (eval registry)
-							      registry)
-						          lib-file-pathname))
-                                     ))
-                           )
+		     (let* ((reg-path (registry-pathname registry))
+                            (file (or (probe-file
+                                       (append-directories
+                                        reg-path file-pathname))
+                                      (probe-file
+                                       (append-directories
+                                        reg-path lib-file-pathname)))))
 		       (when file (return file))))
 		   (or (probe-file (append-directories *central-registry*
 						       file-pathname))
@@ -2591,7 +2584,7 @@ D
 
 #|
 
-(defun compute-system-path (module-name definition-pname)
+ (defun compute-system-path (module-name definition-pname)
   (let* ((filename (format nil "~A.~A"
 			   (if (symbolp module-name)
 			       (string-downcase (string module-name))
@@ -2605,10 +2598,8 @@ D
 	       (if (listp *central-registry*)
 		   (dolist (registry *central-registry*)
 		     (let ((file (probe-file
-				  (append-directories (if (consp registry)
-							  (eval registry)
-							registry)
-						      filename))))
+				  (append-directories
+                                   (registry-pathname registry) filename))))
 		       (when file (return file))))
 		 (probe-file (append-directories *central-registry*
 						 filename))))

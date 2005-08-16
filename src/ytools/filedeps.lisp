@@ -1,5 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
+;$Id: filedeps.lisp,v 1.1.2.3 2005/08/16 16:32:42 airfoyle Exp $
 
 (depends-on %module/ ytools)
 
@@ -13,6 +14,22 @@
 	  (signal-problem module-deps
 	     "Illegal module " module)))
    (files-scan-for-deps
+      (module-pathnames module support-kinds)
+      (code-file-chunk-in-directories directories)
+      special-test))
+
+;;;;      (repeat :for ((c :in (YT-module-contents module)))
+;;;;       :when (or (null support-kinds)
+;;;;		 (not (null (intersection (first c)
+;;;;					  support-kinds))))
+;;;;       :nconc (repeat :for ((e :in (rest c)))
+;;;;	       :when (car-eq e 'module-elements)
+;;;;	       :nconc (multi-let (((files _ _)
+;;;;				   (flags-separate
+;;;;				         (cdr e) filespecs-load-flags*)))
+;;;;			 (filespecs->pathnames files))))
+
+(defun module-pathnames (module support-kinds)
       (repeat :for ((c :in (YT-module-contents module)))
        :when (or (null support-kinds)
 		 (not (null (intersection (first c)
@@ -22,9 +39,7 @@
 	       :nconc (multi-let (((files _ _)
 				   (flags-separate
 				         (cdr e) filespecs-load-flags*)))
-			 (filespecs->pathnames files))))
-      (code-file-chunk-in-directories directories)
-      special-test))
+			 (filespecs->pathnames files)))))
 
 (defun code-file-chunk-in-directories (directories)
    (!= directories
@@ -40,7 +55,7 @@
       ))
 
 (defun files-scan-for-deps (filenames filter-pred special-test)
-   (!= filenames (->pathname-list *-*))
+   (!= filenames (filespecs->pathnames *-*))
    (let ((file-chunks (<# (\\ (fn) (pathname-denotation-chunk fn true))
 			  filenames)))
       (repeat :for ((f-ch :in file-chunks))
@@ -96,22 +111,24 @@
 (defun ->pathname-list (x)
    (cond ((atom x)
 	  (!= x (list x))))
-   (!= x (<# (\\ (fn)
-		(cond ((or (is-Pathname fn) (is-String fn))
-		       fn)
-		      ((is-Symbol fn)
-		       (symbol-name-as-file-name (Symbol-name fn)))
-		      (t (signal-problem ->pathname-list
-			    "Undecipherable as pathname: " fn))))
-	     *-*))
-   (cond ((exists (fn :in x) (is-Pathname fn))
-	  (<# ->pathname x))
-	 ((forall (fn :in x)
-	     (or (is-Pathname fn)
-		 (string-is-ytools-logical-pathname fn)))
-	  (<# ->pathname x))
-	 (t
-	  (filespecs->pathnames x))))
+   (<# (\\ (fnm)
+	  (->pathname
+	     (cond ((or (is-Pathname fnm) (is-String fnm))
+		    fnm)
+		   ((is-Symbol fnm)
+		    (symbol-name-as-file-name (Symbol-name fnm)))
+		   (t (signal-problem ->pathname-list
+			 "Undecipherable as pathname: " fnm)))))
+       x))
+;;;;   (cond ((exists (fn :in x) (is-Pathname fn))
+;;;;	  (<# ->pathname x))
+;;;;	 ((forall (fn :in x)
+;;;;	     (or (is-Pathname fn)
+;;;;		 (string-is-ytools-logical-pathname fn)))
+;;;;	  (<# ->pathname x))
+;;;;	 (t
+;;;;	  (filespecs->pathnames x)))
+
 
 ;;; More general than we need --
 (defun strings->syms (e)

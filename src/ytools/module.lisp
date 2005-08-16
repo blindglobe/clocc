@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.29 2005/07/19 22:25:25 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.30 2005/08/16 16:32:42 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -349,7 +349,7 @@
 		   (eval e)))))))
 
 (defmethod loaded-chunk-set-basis ((mod-loaded-ch Loaded-module-chunk))
-   !())
+   true)
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-module-chunk)
 			       _)

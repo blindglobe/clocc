@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.16 2005/07/28 10:06:40 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.17 2005/08/16 16:32:42 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -60,6 +60,8 @@
 ;;; files, flags, readtable
 (defvar default-fload-args* (vector !() !() nil))
 
+(defvar postponed-file-chunks* !())
+
 (defun do-fload (specs)
    (labels ((do-it ()
 	       (with-compilation-unit ()
@@ -73,14 +75,16 @@
 	     (do-it))
 	    (t
 	     (setq file-op-count* (+ file-op-count* 1))
-	     (let ((before-num-postponed (len postponed-file-chunks*)))
+	     (let ((before-num-postponed
+		       (num-out-of-date-postponed-file-chunks)))
 		(cond ((not (= before-num-postponed 0))
 		       (warn-about-postponed-file-chunks
 			   before-num-postponed)))
 		(let ((file-op-in-progress* true))
 		   (catch 'fload-abort
 		      (do-it)))
-		(let ((after-num-postponed (len postponed-file-chunks*)))
+		(let ((after-num-postponed
+		         (num-out-of-date-postponed-file-chunks)))
 		   (cond ((not (= after-num-postponed
 				  before-num-postponed))
 			  (warn-about-postponed-file-chunks
@@ -256,8 +260,6 @@
       (cond ((not (eq manip ':noload))
 	     (loaded-chunk-fload lpchunk force-load postpone-derivees)))))
 
-(defvar postponed-file-chunks* !())
-
 (defun loaded-chunk-fload (loaded-chunk force-load postpone-derivees)
    (cond ((eq force-load ':compile)
 	  ;; Treat (fload -c <file>) as = (fcompl -f -l <file>)
@@ -268,7 +270,7 @@
 		       (Code-file-chunk-pathname src-file-chunk)
 		       :force-compile true
 		       :load true
-		       :postpone-derivees postpone-derivees))
+		       :postpone-derivees true))
 		   (t
 		    (format *error-output*
 		       !"Ignoring request to compile ~s;~
@@ -278,18 +280,18 @@
 	  (chunk-terminate-mgt loaded-chunk ':ask))
 	 (t
 	  (monitor-filoid-basis loaded-chunk)
-	  (loaded-chunk-set-basis loaded-chunk)
-	  (chunk-request-mgt loaded-chunk)
-	  (let ((d (Chunk-date loaded-chunk)))
-	     (file-ops-maybe-postpone
-		(chunk-update loaded-chunk false postpone-derivees))
-	     (cond ((and force-load
-			 (= (Chunk-date loaded-chunk)
-			    d))
-		    ;; It was apparently already up to date,
-		    ;; so forcing makes sense
-		    (loaded-chunk-force
-		       loaded-chunk force-load)))))))
+	  (cond ((loaded-chunk-set-basis loaded-chunk)
+		 (chunk-request-mgt loaded-chunk)
+		 (let ((d (Chunk-date loaded-chunk)))
+		    (file-ops-maybe-postpone
+		       (chunk-update loaded-chunk false postpone-derivees))
+		    (cond ((and force-load
+				(= (Chunk-date loaded-chunk)
+				   d))
+			   ;; It was apparently already up to date,
+			   ;; so forcing makes sense
+			   (loaded-chunk-force
+			      loaded-chunk force-load)))))))))
 
 (defgeneric loaded-chunk-force (loaded-chunk force))
 
@@ -333,8 +335,13 @@
       (loop 
 	 (format *query-io*
 	    !"Do you want to load the object or source version of ~
-              ~% of ~s~% (o[bject]/s[ource]/+/-, \\\\ to abort)? "
+              ~% of ~s~% (o[bject]/s[ource]/+/-, ~
+              \\! to cancel \\\\ to abort)? "
 	      (Code-file-chunk-pn (Loaded-chunk-loadee loaded-ch)))
+;;;;	 (cond ((is-lsy-loaded-ch loaded-ch)
+;;;;		(dbg-save loaded-ch obj-exists)
+;;;;		(signal-problem ask-user-for-manip
+;;;;		   "Asking about " loaded-ch)))
 	 (multiple-value-bind
 	          (manip general)
 		  (case (keyword-if-sym (read *query-io*))
@@ -355,12 +362,16 @@
 		      (values ':compile false))
 		     ((:\\)
 		      (throw 'fload-abort 'fload-aborted))
+		     ((:\!)
+		      (values ':cancel false))
 		     (t
 		      (values false nil)))
 ;;;;	    (format *query-io* "manip = ~s general = ~s~%"
 ;;;;		    manip general)
 	    (cond (manip
-		   (cond (general 
+		   (cond ((eq manip ':cancel)
+			  (return ':cancel))
+			 (general 
 			  (setf (Loaded-file-chunk-manip loaded-ch)
 				manip)
 			  (return manip))
@@ -373,9 +384,20 @@
                            type '+' to recompile this and every subsequent ~
                            file from now on;~%~
                            type '-' to load object files without recompiling ~
-                           whenever possible, from now on.~%")))))))
+                           whenever possible, from now on.~%~
+                           type \! to stop trying to load this file~%")))))))
 
 (setq user-manip-asker* !'ask-user-for-manip)
+
+(defun is-lsy-loaded-ch (loaded-ch)
+   (let* ((file-ch (Loaded-chunk-loadee loaded-ch))
+	  (pn (Code-file-chunk-pathname file-ch)))
+      (cond ((not pn)
+	     (cerror "I'll go on"
+		     "File chunk has no pathname: " file-ch)
+	     false)
+	    (t
+	     (string= (Pathname-type pn) "lsy")))))			     
 
 (defun manip-refine-remember (manip loaded-ch)
    (cond ((eq manip ':object)
@@ -510,14 +532,16 @@
 	     (do-it))
 	    (t
 	     (setq file-op-count* (+ file-op-count* 1))
-	     (let ((before-num-postponed (len postponed-file-chunks*)))
+	     (let ((before-num-postponed
+		      (num-out-of-date-postponed-file-chunks)))
 		(cond ((not (= before-num-postponed 0))
 		       (warn-about-postponed-file-chunks
 			   before-num-postponed)))
 		(let ((file-op-in-progress* true))
 		   (catch 'fload-abort
 		      (do-it)))
-		(let ((after-num-postponed (len postponed-file-chunks*)))
+		(let ((after-num-postponed
+		          (num-out-of-date-postponed-file-chunks)))
 		   (cond ((not (= after-num-postponed
 				  before-num-postponed))
 			  (warn-about-postponed-file-chunks
@@ -611,6 +635,8 @@
 	       (t
 		(let ((comp-date
 			 (Chunk-date compiled-chunk)))
+		   (setf (Loaded-file-chunk-manip lpchunk)
+			 ':compile)
 		   (chunk-request-mgt compiled-chunk)
 		   (file-ops-maybe-postpone
 		      (chunk-update compiled-chunk false postpone-derivees))
@@ -623,6 +649,13 @@
 			  ))
 		   (consider-loading)))))))
 
+(defun num-out-of-date-postponed-file-chunks ()
+   (reduce (\\ (tot ch)
+	      (cond ((chunk-up-to-date ch) tot)
+		    (t (+ tot 1))))
+	   postponed-file-chunks*
+	   :initial-value 0))
+
 (defvar warn-about-postponed-file-chunks* true)
 
 (defun warn-about-postponed-file-chunks
@@ -630,7 +663,7 @@
    (cond (warn-about-postponed-file-chunks*
 	  (format *error-output*
 	      !"There are ~s file chunks waiting to be updated ~
-                ~%   [by calling (file-ops-maybe-postpone)]~%"
+                ~%   [by calling (postponed-files-update)]~%"
 	     num-postponed))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)
@@ -800,7 +833,8 @@
 	 (nodup (append chunks postponed-file-chunks*))))
 
 (defun postponed-files-update ()
-   (chunks-update postponed-file-chunks* false false))
+   (chunks-update postponed-file-chunks* false false)
+   (setq postponed-file-chunks* !()))
 
 (defun keyword-if-sym (x)
    (cond ((is-Symbol x)

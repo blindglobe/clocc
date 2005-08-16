@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.55 2005/07/28 10:06:40 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.56 2005/08/16 16:32:42 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -352,7 +352,10 @@
 (defmethod derive ((lc Loaded-file-chunk))
    (multiple-value-bind (file-ch loaded-ch)
                         (loaded-file-chunk-current-version lc)
-      (cond ((and (not (eq loaded-ch lc))
+      (cond ((not file-ch)
+	     ;; User canceled
+	     false)
+	    ((and (not (eq loaded-ch lc))
 		  (chunk-up-to-date loaded-ch))
 	     ;; Up to date, nothing to do
 	     false)
@@ -410,15 +413,19 @@
 ;;; Follow indirection links to Loaded-file-chunk 
 ;;;   and the contents of its 'selection' field
 ;;; Returns both of them (selection first).
+;;; If attempt to find basis results in user canceling the management
+;;; of the loaded chunk, then return false.
 (defun loaded-file-chunk-current-version (lf-ch)
    (let (file-ch)
       (loop 
 	 (setq file-ch
 	       (Loaded-file-chunk-selection lf-ch))
 	 (cond ((not file-ch)
-		(loaded-chunk-set-basis lf-ch)
-		(setq file-ch
-		      (Loaded-file-chunk-selection lf-ch))))
+		(cond ((loaded-chunk-set-basis lf-ch)
+		       (setq file-ch
+			     (Loaded-file-chunk-selection lf-ch)))
+		      (t
+		       (return (values false nil))))))
 	 (cond ((typep file-ch 'Loaded-file-chunk)
 		;; This "feature" is not actually used, is it?
 		(setq lf-ch file-ch))
@@ -639,8 +646,10 @@
 	     source-readtab)
 	    (t false))))
 
+;;; Returns true unless user tells us to cancel the management of this
+;;; chunk.
 (defgeneric loaded-chunk-set-basis (loaded-ch)
-   (:method ((lch t)) nil))
+   (:method ((lch t)) true))
 
 (defun monitor-filoid-basis (loaded-filoid-ch)
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
@@ -722,16 +731,25 @@
 		       (setq manip ':ask-ask)))
 		(cond ((eq prev-manip ':follow)
 		       (setf (Loaded-file-chunk-manip loaded-ch)
-			     manip))))))
-      (cond ((eq manip ':fresh-object)
+			     manip)))))) 
+     (cond ((eq manip ':fresh-object)
 	     ;; We might not really mean :compile, but there's no
 	     ;; way to tell if the object file is "fresh" without
 	     ;; getting to the brink of compiling it, inside
 	     ;; Compiled-file-chunk/derive --
 	     (setq manip ':compile)))
       (cond ((memq manip '(:ask-once :ask-every :ask-ask))
-	     (setq manip
-		   (try-ask-user-for-manip loaded-ch object-exists)))
+	     (loop 
+		(setq manip
+		      (try-ask-user-for-manip loaded-ch object-exists))
+	        (cond ((eq manip ':cancel)
+		       (cond ((not (chunk-terminate-mgt loaded-ch ':ask))
+			      (return)))
+		       ;; If chunk still managed, user must have had
+		       ;; second thoughts about canceling, so go around
+		       ;; loop again
+		       )
+		      (t (return)))))
 	    ((and (eq manip ':object)
 		  (not object-exists))
 ;;;;		    (cerror "I will compile the source file"
@@ -739,15 +757,23 @@
 ;;;;			      object file for ~s"
 ;;;;			    (Code-file-chunk-pathname file-ch))
 	     (setq manip ':compile)))
-      ;; At this point manip is either :object, :source,
-      ;; or :compile
-      (cond (loaded-manip-dbg*
-	     (format *error-output*
-		     !"Now manip = ~s ~
-			 [should be :object, :source, or :compile]~
-			 ~%  loaded-ch = ~s~%"
-		     manip loaded-ch)))
-      (loaded-chunk-set-basis-after-query loaded-ch manip)))
+      (cond ((eq manip ':cancel)
+	     (cond (loaded-manip-dbg*
+		    (format *error-output*
+		       "Management terminated for loaded chunk~%  ~s~%"
+		       loaded-ch)))
+	     false)
+	    (t
+	     ;; At this point manip is either :object, :source,
+	     ;; or :compile
+	     (cond (loaded-manip-dbg*
+		    (format *error-output*
+			    !"Now manip = ~s ~
+				[should be :object, :source, or :compile]~
+				~%  loaded-ch = ~s~%"
+			    manip loaded-ch)))
+	     (loaded-chunk-set-basis-after-query loaded-ch manip)
+	     true))))
 
 ;;; 'manip' is either :object,:source, or :compile.
 (defun loaded-chunk-set-basis-after-query (loaded-ch manip)
@@ -977,6 +1003,7 @@
 			 (t
 			  (loaded-chunk-set-basis-after-query
 			     loaded-ch manip)
+			  (chunk-event-discard chunk-event-num*)
 			  ;; This should cause an interrupt to chunks-update
 			  ;; Act nonchalant --
 			  false))))
@@ -1091,6 +1118,8 @@
    ;; -- Function to produce chunk (:loaded (N F)) 
 )
 
+;;; Creates a slurp-task whose name is :slurp-<sub-file-type-name>,
+;;; which is the value of slurp-<sub-file-type-name>*
 (defmacro def-sub-file-type (sym
 			     &key
 			     ((:default default-handler^)

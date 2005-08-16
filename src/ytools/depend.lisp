@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.35 2005/07/28 10:06:40 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.36 2005/08/16 16:32:42 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -93,12 +93,22 @@
 (defmethod Code-dep-chunk-meta-clock-val ((file-dep Code-file-dep))
    file-op-count*)
 
+(defmethod derive-date ((file-dep Code-file-dep))
+   (cond ((= (Chunk-date file-dep)
+	     file-op-count*)
+	  file-op-count*)
+	 (t false)))
+
 (defmethod derive ((file-dep Code-file-dep))
+;;;;(trace-around Code-file-dep/derive
+;;;;   (:> "(Code-file-dep/derive: " file-dep ")")
    (cond ((< (Chunk-date file-dep) file-op-count*)
 	  (let ((scanner (Code-file-dep-scanner file-dep)))
 	     (chunk-request-mgt scanner)
 	     (chunk-update scanner false false))))
-   file-op-count*)
+   file-op-count*
+;;;;   (:< (val &rest _) "Code-file-dep/derive: " val))
+)
 
 (defmethod derive-date ((fb File-scanned-for-deps))
    (let ((pn (Code-file-chunk-pathname
@@ -116,6 +126,16 @@
 		(multiple-value-bind (file-ch lfc)
 				     (loaded-file-chunk-current-version
 					 loaded-file-ch)
+		   (cond (file-ch
+			  (file-find-source-for-deps file-ch lfc
+						     cached-file-ch fb))
+			 (t
+			  ;; User canceled
+			  (chunk-terminate-mgt fb true))))))
+	    (t
+	     (max 0 (Chunk-date fb))))))
+
+(defun file-find-source-for-deps (file-ch lfc cached-file-ch fb)
 		   (multiple-value-bind 
 			     (source-ch compiled-ch)
 			     (cond ((typep file-ch 'Compiled-file-chunk)
@@ -141,9 +161,7 @@
 			    (t
 			     (set-deps-by-slurping
 			        source-ch compiled-ch lfc)
-			     (get-universal-time)))))))
-	    (t
-	     (max 0 (Chunk-date fb))))))
+			     (get-universal-time)))))
 
 (defun set-deps-by-slurping (source-ch compiled-ch loaded-file-ch)
    (setf (Code-chunk-callees source-ch) !())

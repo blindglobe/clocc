@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.52 2005/07/28 10:06:40 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.53 2005/08/16 16:32:42 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -608,6 +608,10 @@
 	 (t true)))
 
 (defun chunk-internal-req-mgt (c)
+;;;;   (cond ((eq c (g c1))
+;;;;	  (dbg-save c)
+;;;;	  (breakpoint chunk-request-mgt
+;;;;	     "About to re-manage " c)))
 	  (setf (Chunk-manage-request c) true)
 	  (chunk-manage c))
 
@@ -925,6 +929,16 @@
 
 (defvar restart-if-detect-derive-in-progress* false)
 
+;;; Don't even try checking derivees in recursive calls
+;;; to 'chunks-update', because experience shows they will
+;;; produce meta-cycles and cause a lot of trouble --
+(defvar postpone-derivees-in-inner-updates* true)
+
+(defvar update-fail-dbg* 1)
+;;; 0 means Ignore; 1 means Print warning; 2 means break
+
+(defvar last-meta-cycle* nil)
+
 ;;; 'force' is true if the 'chunks' must be derived, even if
 ;;; up to date.
 ;;; 'postpone-derivees' is true if the only chunks to be updated are the
@@ -932,8 +946,12 @@
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
 (defun chunks-update (orig-chunks force postpone-derivees)
+   (incf chunk-update-count*)
 ;;;;   (dbg-save (cl1 chunks))
 ;;;;   (breakpoint "boing")
+   (cond ((and postpone-derivees-in-inner-updates*
+	       (> chunk-update-depth* 0))
+	  (setq postpone-derivees true)))
    (let* (derive-mark down-mark up-mark
 	  max-here temporarily-managed
 	  (chunks orig-chunks)
@@ -947,19 +965,30 @@
 	  ;; to the 'chunks' list; i.e., they become seeds from which
 	  ;; the update propagates --
 	  (found-chunks !())
+	  (found-meta-cycle false)
 	  update-interrupted)
       (labels ((down-then-up (chunks)
 		  (let ((chunks-needing-update
 			    (chunks-leaves-up-to-date chunks !())))
 		     (cond ((memq ':meta-cycle chunks-needing-update)
-			    (error "Found chunk meta-cycle(s) for ~%  ~s"
-				   (mapcan (\\ (ch r)
-					      (cond ((eq r ':meta-cycle)
-						     (list ch))
-						    (t !())))
-					   chunks
-					   chunks-needing-update))))
-		     ;; No :meta-cycles, so we can combine all the
+			    (do ((cl chunks (cdr cl))
+				 (ul chunks-needing-update (cdr ul))
+				 (non-cyclical !())
+				 (bad !()))
+				((null ul)
+				 (cond ((not (null bad))
+					(error !"Found chunk meta-cycle(s) ~
+                                                 for ~%  ~s"
+					       bad)))
+				 (setq chunks-needing-update
+				       non-cyclical))
+			       (cond ((eq (car ul) ':meta-cycle)
+				      (cond ((memq (car cl) orig-chunks)
+					     (on-list-if-new (car cl)
+							     bad))))
+				     (t
+				      (on-list (car ul) non-cyclical))))))
+		     ;; No fatal :meta-cycles, so we can combine all the
 		     ;; lists.--
 		     (setq chunks-needing-update
 			   (apply #'nconc chunks-needing-update))
@@ -1009,7 +1038,7 @@
 				      (+ (Chunk-depth (first in-progress))
 					 1))))
 			 (chunk-mark ch down-mark)
-			 (cond ((found-meta-cycle-at ch)
+			 (cond ((found-meta-cycle-at ch in-progress)
 				(cond (chunk-update-dbg*
 				       (format *error-output*
 					   !"Encountered chunk with derive ~
@@ -1075,7 +1104,7 @@
 			      (\\ (c)
 				 (and (not (chunk-up-to-date c))
 				      (not (memq c in-progress))
-				      (not (found-meta-cycle-at c))
+				      (not (found-meta-cycle-at c in-progress))
 				      (or (eq c ch)
 					  (and (Chunk-managed c)
 					       (not (chunk-is-marked
@@ -1147,12 +1176,16 @@
 	       ;; The term "meta-cycle" refers to the fact that in the
 	       ;; process of deriving 'ch' we triggered an update that
 	       ;; is now considering deriving 'ch'.
-	       (found-meta-cycle-at (ch)
+	       (found-meta-cycle-at (ch in-progress)
 		  (let ((found-it (Chunk-derive-in-progress ch)))
-		     (cond ((and found-it chunk-update-dbg*)
-			    (format *error-output*
-			       !"Encountered chunk with derive in progress: ~s~%"
-			       ch)))
+		     (cond (found-it
+			    (setq found-meta-cycle true)
+			    (setq last-meta-cycle* (cons ch in-progress))
+			    (cond (chunk-update-dbg*
+				   (format *error-output*
+				      !"Encountered chunk with derive in ~
+					progress: ~s~%"
+				      ch)))))
 		     found-it))
 
 	       (start-again-in-postpone-mode (stumble-ch)
@@ -1414,24 +1447,29 @@
 			       "Forced derivations of ~s did not occur"
 			       must-derive)))))
 	 (cond ((some #'chunk-failed-to-update
-		      (cond (postpone-derivees orig-chunks)
+		      (cond ((or postpone-derivees
+				 found-meta-cycle)
+			     orig-chunks)
 			    (t chunks)))
 		(let ((unsuccessful
 			 (retain-if #'chunk-failed-to-update
-				    (cond (postpone-derivees orig-chunks)
+				    (cond ((or postpone-derivees
+					       found-meta-cycle)
+					   orig-chunks)
 					  (t chunks)))))
-		   (cond ((= chunk-update-depth* 1)
+		   (cond ((or (= chunk-update-depth* 1)
+			      (> update-fail-dbg* 1))
 			  (cerror "I will pretend everything is fine"
 				  !"After chunks-update, the following chunks ~
 				    failed to update:~
 				    ~%   ~s"
 				  unsuccessful))
-			 (t
+			 ((> update-fail-dbg* 0)
 			  (format *error-output*
 				  !"Warning!!! After chunks-update, the ~
                                     following chunks ~
 				    failed to update:~
-				    ~%   ~s"
+				    ~%   ~s~%"
 				  unsuccessful))))))
 	 (cond (chunk-update-dbg*
 		(format *error-output*

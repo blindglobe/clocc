@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.4 2005/07/25 15:23:22 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.5 2005/08/16 16:32:42 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -331,7 +331,14 @@
    (elt dbg-stack* n))
 
 ;; !^pkg sym returns pkg::sym, but imports sym to current package.
+;; !^^ means "shadowing import."
 (def-excl-dispatch #\^ (srm _)
+   (let ((shadow
+	    (cond ((char= (peek-char false srm)
+			  #\^)
+		   (read-char srm)
+		   true)
+		  (t false))))
        (let ((pkgname (read srm)))
 	  (let ((x (let ((*package* (find-package (symbol-name pkgname))))
 		      (read srm))))
@@ -342,10 +349,13 @@
 			   (out x " already in " :% 3 *package* :%))
 			  (t
 			   (out "Importing " x " into " :% 3 *package* :%)
-			   (shadowing-import x))))
+			   (cond (shadow
+				  (shadowing-import x))
+				 (t
+				  (import x))))))
 		   (t
 		    (out "???" :%)))
-	     x)))
+	     x))))
 
 ;;; Push first subform of exp beginning with sym onto dbg-stack*
 (defun seek (sym &optional (num 0) (exp (g *)) (label '*))

@@ -1258,6 +1258,7 @@
     #+:LUCID     (working-directory)
     #+ACLPC      (current-directory)
     #+:allegro   (excl:current-directory)
+    #+:clisp     (ext:default-directory)
     #+:sbcl      (progn *default-pathname-defaults*)
     #+(or :cmu :scl)       (ext:default-directory)
     ;; *** Marco Antoniotti <marcoxa@icsi.berkeley.edu>

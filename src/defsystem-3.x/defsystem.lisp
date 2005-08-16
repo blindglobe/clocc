@@ -4716,11 +4716,13 @@ Return NIL when the file does not exist, or is not readable,
 or does not contain valid compiled code."
   #+clisp
   (with-open-file (in file-name :direction :input :if-does-not-exist nil)
-    (and in (char= #\( (peek-char nil in))
-         (let ((form (ignore-errors (read in nil nil))))
-           (and (consp form)
-                (eq (car form) 'SYSTEM::VERSION)
-                (null (nth-value 1 (ignore-errors (eval form))))))))
+    (handler-bind ((error (lambda (c) (declare (ignore c))
+                                  (return-from compiled-file-p nil))))
+      (and in (char= #\( (peek-char nil in nil #\a))
+           (let ((form (read in nil nil)))
+             (and (consp form)
+                  (eq (car form) 'SYSTEM::VERSION)
+                  (null (eval form)))))))
   #-clisp t))
 
 (defun needs-compilation (component force)
@@ -4742,7 +4744,7 @@ or does not contain valid compiled code."
       (< (file-write-date binary-pname)
          (file-write-date source-pname))
       ;; invalid binary
-      #+clisp (not (compiled-file-p binary-pname))))))
+      (not (compiled-file-p binary-pname))))))
 
 
 (defun needs-loading (component &optional (check-source t) (check-binary t))

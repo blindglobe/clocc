@@ -2294,6 +2294,11 @@ D
   ;; time
   )
 
+(defparameter *component-evaluated-slots*
+  '(:source-root-dir :source-pathname :source-extension
+    :binary-root-dir :binary-pathname :binary-extension))
+(defparameter *component-form-slots*
+  '(:initially-do :finally-do :compile-form :load-form))
 (defstruct (component (:include topological-sort-node)
                       (:print-function print-component))
   (type :file     ; to pacify the CMUCL compiler (:type is alway supplied)
@@ -2352,11 +2357,10 @@ D
 					; one.
   proclamations				; Compiler options, such as
 					; '(optimize (safety 3)).
-  initially-do				; Form to evaluate before the
-					; operation.
-  finally-do				; Form to evaluate after the operation.
-  compile-form				; For foreign libraries.
-  load-form				; For foreign libraries.
+  (initially-do (lambda ()))    ; Form to evaluate before the operation.
+  (finally-do (lambda ()))      ; Form to evaluate after the operation.
+  (compile-form (lambda ()))    ; For foreign libraries.
+  (load-form (lambda ()))       ; For foreign libraries.
 
   ;; load-time				; The file-write-date of the
 					; binary/source file loaded.
@@ -3047,7 +3051,18 @@ the system definition, if provided."
 			               :type nil
 			               :defaults *load-pathname*))
 		 definition-body)))
-  `(create-component :defsystem ',name ',definition-body nil 0))
+  `(create-component :defsystem ',name
+                     (nconc
+                      ,@(loop :for slot :in *component-evaluated-slots*
+                          :for value = (getf definition-body slot)
+                          :when value
+                          :collect `(LIST ,slot ,value))
+                      ,@(mapcar (lambda (slot)
+                                  `(LIST ,slot (lambda ()
+                                                 ,(getf definition-body slot))))
+                                *component-form-slots*)
+                      ',definition-body)
+                     nil 0))
 
 (defun create-component-pathnames (component parent)
   ;; Set up language-specific defaults
@@ -3065,18 +3080,6 @@ the system definition, if provided."
 	(or (component-loader component) ; for local defaulting
 	    (when parent		; parent's default
 	      (component-loader parent))))
-
-  ;; Evaluate the root dir arg
-  (setf (component-root-dir component :source)
-	(eval (component-root-dir component :source)))
-  (setf (component-root-dir component :binary)
-	(eval (component-root-dir component :binary)))
-
-  ;; Evaluate the pathname arg
-  (setf (component-pathname component :source)
-	(eval (component-pathname component :source)))
-  (setf (component-pathname component :binary)
-	(eval (component-pathname component :binary)))
 
   ;; Pass along the host and devices
   (setf (component-host component)
@@ -3877,7 +3880,7 @@ the system definition, if provided."
 	    (tell-user-generic (format nil "Doing initializations for ~A"
 				       (component-name component)))
 	    (or *oos-test*
-		(eval (component-initially-do component))))
+		(funcall (component-initially-do component))))
 
 	  ;; If operation is :compile and load-only is T, this would change
 	  ;; the operation to load. Only, this would mean that a module would
@@ -3906,7 +3909,7 @@ the system definition, if provided."
 	    (tell-user-generic (format nil "Doing finalizations for ~A"
 				       (component-name component)))
 	    (or *oos-test*
-		(eval (component-finally-do component))))
+		(funcall (component-finally-do component))))
 
 	  ;; add the banner if needed
 	  #+(or cmu scl)
@@ -4041,9 +4044,9 @@ the system definition, if provided."
 	    (push module changed)))
 	(case operation
 	  ((compile :compile)
-	   (eval (component-compile-form component)))
+	   (funcall (component-compile-form component)))
 	  ((load :load)
-	   (eval (component-load-form component))))))
+	   (funcall (component-load-form component))))))
   ;; This is only used as a boolean.
   changed)
 

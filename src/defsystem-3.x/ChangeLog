@@ -1,3 +1,43 @@
+2005-08-16  sds  <sds@vault>
+
+	* defsystem.lisp (*component-evaluated-slots*, *component-form-slots*):
+	new parameters
+	(component): init INITIALLY-DO, FINALLY-DO, COMPILE-FORM, LOAD-FORM to a NOP
+	(defsystem): make sure that *COMPONENT-EVALUATED-SLOTS* and
+	*COMPONENT-FORM-SLOTS* are evaluated at the EXECUTE time
+	(create-component-pathnames): no need to EVAL the *COMPONENT-EVALUATED-SLOTS*
+	(operate-on-component, operate-on-components): use FUNCALL
+	instead of EVAL for *COMPONENT-FORM-SLOTS*
+
+	* defsystem.lisp (registry-pathname): new function
+	(print-central-registry-directories, list-central-registry-directories)
+	(compute-system-path): use it
+
+	* defsystem.lisp:
+	(*central-registry*) [CLISP]: use (EXT:DEFAULT-DIRECTORY)
+
+	* defsystem.lisp (compiled-file-p): sync with CLOCC/PORT/sys.lisp
+	(needs-compilation): always call COMPILED-FILE-P
+
+2005-07-02  pvaneynd  <pvaneynd@vault>
+
+	* debian/README.Debian, debian/changelog, debian/control, debian/prepare-build.sh:
+	new release with darcs
+
+2005-06-29  sds  <sds@vault>
+
+	* defsystem.lisp (defined-names-and-systems):
+	use plural keyword for the aesthetic reasons
+
+2005-06-16  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
+	* defsystem.lisp:
+	Fixed warnings and messages in FIND-SYSTEM when dealing with foreign
+	systems.
+	Thanks to Cyrus Harmon for signalling this.
+
 2005-06-16  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
 
 	* defsystem.lisp:

@@ -61,13 +61,20 @@
 		 :host (pathname-host directory)
 		 :device (pathname-device directory)
 		 :directory (append (pathname-directory directory)
-				    (list :wild-inferiors))))
+				    (list :wild-inferiors))
+		 :name :wild
+		 :type :wild
+		 :version :wild
+		 ))
 	      ("**;*.*"
 	       ,(make-pathname
 		 :host (pathname-host directory)
 		 :device (pathname-device directory)
 		 :directory (append (pathname-directory directory)
-				    (list :wild-inferiors))))))
+				    (list :wild-inferiors))
+		 :name :wild
+		 :type :wild
+		 ))))
 
       (load-and-or-compile "CL-ENV-LIBRARY:env-package.lisp")
       (load-and-or-compile "CL-ENV-LIBRARY:feature-tagged-type-class.lisp")
@@ -92,6 +99,9 @@
 
       #+lispworks
       (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;lispworks.lisp")
+
+      #+ecl
+      (load-and-or-compile "CL-ENV-LIBRARY:impl-dependent;ecls.lisp")
 
       ;; First usage of the above definitions.
       (load-and-or-compile "CL-ENV-LIBRARY:utilities.lisp")

@@ -4,7 +4,7 @@
 ;;; A random collection of interfaces to some general functionalities which
 ;;; tur out to be useful across the board.
 ;;;
-;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2005 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 

@@ -2,7 +2,7 @@
 
 ;;; operating-system.lisp --
 ;;;
-;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2005 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -156,6 +156,22 @@
 		     :feature-tag :ms-windows-xp))
 
 
+(defclass vms (operating-system)
+  ()
+  (:documentation "The CL.ENVIRONMENT VMS Operating System Class.")
+  (:default-initargs :type "VMS"
+                     :version ""
+		     :feature-tag :vms))
+
+
+(defclass openvms (vms)
+  ()
+  (:documentation "The CL.ENVIRONMENT OPENVMS Operating System Class.")
+  (:default-initargs :type "OPENVMS"
+                     :version ""
+		     :feature-tag :openvms))
+
+
 ;;; Special operating system related functionalities.
 
 (declaim (inline find-os-class find-operating-system-class))
@@ -257,6 +273,8 @@ The string is usually one character long."))
 (defmethod os-file-system-directory-separator ((os ms-dos)) "\\")
 
 (defmethod os-file-system-directory-separator ((os ms-windows)) "\\")
+
+(defmethod os-file-system-directory-separator ((os vms)) ".")
 
 
 ;;; end of file -- operating-system.lisp

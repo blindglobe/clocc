@@ -2,7 +2,7 @@
 
 ;;; software.lisp --
 ;;;
-;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2005 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -16,6 +16,7 @@
 
 
 ;;; Known CL implementations.
+;;; The hierarchy is rather arbitrary, representing "derivation".
 
 (defclass generic-common-lisp-implementation (software
 					      feature-tagged-type-class)
@@ -37,6 +38,7 @@
 ;;; CLISP       :clisp
 ;;; LW		:lispworks
 ;;; Corman Lisp	:corman-lisp
+;;; ECLS	:ecl
 ;;; etc etc
 ;;; See below!!!
 

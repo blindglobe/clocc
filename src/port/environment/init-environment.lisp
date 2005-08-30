@@ -7,7 +7,7 @@
 ;;; This is the only file with #+/#- (well... almost).
 ;;; Anyway, I am open for suggestions.
 ;;;
-;;; Copyright (c) 2000-2004 Marco Antoniotti, all rights reserved.
+;;; Copyright (c) 2000-2005 Marco Antoniotti, all rights reserved.
 ;;; This software is released under the terms of the GNU Lesser General
 ;;; Public License (LGPL, see file COPYRIGHT for details).
 
@@ -34,6 +34,8 @@
   ;; Setup Machine Info.
 
   (cond ((or (featurep :x86))		; Works for CMUCL and ACL
+	 (setf *machine* (make-instance 'intel-x86-machine)))
+	((or (featurep :pentium4))	; Works for ECL
 	 (setf *machine* (make-instance 'intel-x86-machine)))
 	((or (featurep :sparc))
 	 (setf *machine* (make-instance 'sparc-machine)))
@@ -94,7 +96,7 @@
 	 (setf *operating-system* (make-instance 'unix)))
 
 	((featurep :win32)
-	 (setf *operating-system* (make-instance 'ms-windows-32)))
+	 (setf *operating-system* (make-instance 'ms-windows)))
 
 	(t)				; do nothing?
 	)
@@ -114,6 +116,19 @@
 
 	((featurep :amiga)
 	 (setf *operating-system* (make-instance 'amiga)))
+
+	(t)				; do nothing?
+	)
+
+  #+ecl
+  (cond ((and (featurep :unix) (featurep :linux))
+	 (setf *operating-system* (make-instance 'linux)))
+
+	((featurep :unix)
+	 (setf *operating-system* (make-instance 'unix)))
+
+	((featurep :win32)
+	 (setf *operating-system* (make-instance 'ms-windows)))
 
 	(t)				; do nothing?
 	)
@@ -165,6 +180,10 @@
   #+ecolisp
   (setf *common-lisp-implementation*
 	(make-instance 'ecolisp :feature-tag :ecolisp))
+
+  #+ecl
+  (setf *common-lisp-implementation*
+	(make-instance 'ecl :feature-tag :ecl))
 
   #+gcl
   (setf *common-lisp-implementation*

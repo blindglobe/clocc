@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.36 2005/08/16 16:32:42 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.37 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -117,7 +117,9 @@
 		 (>= (Chunk-date fb)
 		     (file-write-date pn)))
 	     (Chunk-date fb))
-	    (t false))))
+	    (t ;;;; +no-info-date+
+	     false
+	       ))))
 
 (defmethod derive ((fb File-scanned-for-deps))
    (let ((cached-file-ch (File-scanned-for-deps-file fb)))

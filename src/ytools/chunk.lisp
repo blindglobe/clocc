@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.53 2005/08/16 16:32:42 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.54 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -9,7 +9,8 @@
    (export '(Chunk Or-chunk Form-chunk Chunk-basis derive print-innards
 	     find-chunk chunk-with-name chunk-destroy
 	     chunk-request-mgt chunk-terminate-mgt
-	     chunk-up-to-date chunk-declare-updated chunk-update chunks-update dutl)))
+	     chunk-up-to-date chunk-declare-updated
+	     chunk-update chunks-update dutl)))
 
 ;;;;; Some of the code in this file is referred to in the following
 ;;;;; paper:
@@ -924,8 +925,18 @@
 (defvar chunk-update-depth* 0)
 (defvar chunk-depth-error-thresh* 10)
 
-;;; The number of calls to chunks-update so far --
-(defvar chunk-update-count* 0)
+;;; The number of calls to chunks-update so far, sorted by
+;;; depth --
+(defvar chunk-update-count* !())
+(defvar chunk-restart-count* !())
+
+;;; If you are several levels down in chunk-update's, restarting
+;;; an inner one will eventually require you to restart the outermost
+;;; one, which will then restart the inner ones, etc., costing an
+;;; exponential amount of time (k^d, where d is the depth).
+;;; If this flag is true, we always just restart at the top.
+(defvar long-distance-chunk-restart* false)
+;;; -- which turns out not to work, so leave this false!
 
 (defvar restart-if-detect-derive-in-progress* false)
 
@@ -946,7 +957,7 @@
 ;;; Returns list of postponed derivees, 
 ;;; which will be () if postpone-derivees=false.
 (defun chunks-update (orig-chunks force postpone-derivees)
-   (incf chunk-update-count*)
+   (incf (alref chunk-update-count* chunk-update-depth* 0 :test #'=))
 ;;;;   (dbg-save (cl1 chunks))
 ;;;;   (breakpoint "boing")
    (cond ((and postpone-derivees-in-inner-updates*
@@ -1061,7 +1072,8 @@
 				(chunk-date-note ch "Dated chunk ")))
 			 (check-interrupt)
 			 (cond ((and (chunk-is-leaf ch)
-				     (= (Chunk-date ch) +no-info-date+))
+				     (= (Chunk-date ch)
+					+no-info-date+))
 				;; See note on 'do-derive', below
 				(cond (chunk-update-dbg*
 				       (chunk-date-note
@@ -1211,7 +1223,7 @@
 				     derivation; switching ~
 				     to postpone mode~%"
 				   stumble-ch)))
-			 (throw 'update-interrupted nil))))
+			 (throw 'update-interrupted true))))
 
 	       ;; UP Phase
 	       (derivees-update (ch in-progress)
@@ -1260,10 +1272,13 @@
 						 !"...Already marked with ~
                                                    derive-mark~%")))
 				       (cond ((not (chunk-up-to-date ch))
-					      (error !"Chunk has derive ~
-                                                       mark set but is not up ~
-                                                       to date:~%  ~s"
-						     ch))))
+					      (cerror
+						 "I will re-derive it"
+						 !"Chunk has derive ~
+                                                   mark set but is not up ~
+                                                   to date:~%  ~s"
+						 ch)
+					      (do-derive ch))))
 				      (t 
 				       (cond (chunk-update-dbg*
 					      (format *error-output*
@@ -1280,10 +1295,17 @@
 				   (chunk-mark ch up-mark)
 				   (let ((updatees 
 					    (nodup
-					       (mapcan #'set-latest-support-date
-						       to-explore))))
-				      (setq found-chunks
-					    (append updatees found-chunks))
+					       (mapcan
+						  #'set-latest-support-date
+						  to-explore))))
+				      (cond (postpone-derivees
+					     (setq postponed
+						   (append updatees
+							   postponed)))
+					    (t
+					     (setq found-chunks
+						   (append updatees
+							   found-chunks))))
 				      (setq to-explore
 					    (nconc updatees to-explore)))
 				   (dolist (upd to-explore)
@@ -1323,7 +1345,7 @@
 
 	       (check-interrupt ()
 		  (cond ((> chunk-event-num* max-here)
-			 (throw 'update-interrupted nil)))))
+			 (throw 'update-interrupted true)))))
 
 	 ;; The following comment describes the inner recursions 
 	 ;; of 'chunks-update' --
@@ -1405,15 +1427,25 @@
 ;;;;					  (break "Forced!")
 					  ))
 				   (temporarily-manage chunks)))
-			    (setq update-interrupted true)
 			    (setq found-chunks !())
-			    (catch 'update-interrupted
-			       (down-then-up chunks)
-			       (setq update-interrupted false))
+			    (setq update-interrupted 
+			       (catch 'update-interrupted
+			          (down-then-up chunks)
+				  false))
 			    (cond (update-interrupted
 				   (cond (chunk-update-dbg*
 					  (format *error-output*
-					      "Chunk update interrupted~%"))))))
+					      !"Chunk update ~
+                                                interrupted~%")))
+				   (cond ((and long-distance-chunk-restart*
+					       (> chunk-update-depth* 1))
+					  (cond (chunk-update-dbg*
+						 (format *error-output*
+						    !"Aborting from ~
+                                                      chunk-update level ~s~%"
+						    chunk-update-depth*)))
+					  (throw 'update-interrupted
+					         true))))))
 			 (dolist (ud-ch temporarily-managed)
 			    (cond (temp-mgt-dbg*
 				   (format t "No longer managing ~s~%" ud-ch)))
@@ -1430,14 +1462,21 @@
 					(not (memq fc chunks)))
 				   (on-list fc l))))
 			 (setq found-chunks l))
+;;;;		      (cond ((and postpone-derivees
+;;;;				  (not (null found-chunks)))
+;;;;			     (format *error-output* "Postpone bogosity!~%")
+;;;;			     (setq chunk-update-dbg* true)))
 		      (cond (chunk-update-dbg*
 			     (format *error-output*
-				"Restarting update of ~s~%"
-				chunks)
+				"Restarting update [~s] of ~s~%"
+				chunk-update-depth* chunks)
 			     (cond ((not (null found-chunks))
 				    (format *error-output*
 				       "  Plus found chunks ~s~%"
 				       found-chunks)))))
+		      (incf (alref chunk-restart-count*
+				   chunk-update-depth*
+				   0 :test #'=))
 		      (setq chunks (nconc found-chunks chunks)))
 		   (chunk-event-discard derive-mark)
 		   )))
@@ -1567,26 +1606,15 @@
    (chunk-derive-date-and-record leaf-ch)
    true)
 
-;;; Date derivers and derivers both return false if the chunk is up to date.
-;;; But the interpretations are subtly different.  If a date deriver returns
-;;; false, it means that there is no way to tell what the date should be, 
-;;; except by calling the deriver.  If the (content) deriver returns false, it
-;;; means that the chunk is up to date without further computation.
-;;; In either case, the date should usually be left unchanged; but in the
-;;; latter case, if some supporter has a later date, then the date
-;;; should be set to the date of the latest supporter.
-
 (defun chunk-derive-date-and-record (ch)
    (let ((old-date (Chunk-date ch)))
       (let ((new-date (derive-date ch)))
 	 (cond (new-date
 		(chunk-date-record
-		   ch
-		   new-date
-		   old-date))
-	       (t
-		;; If new-date is false, record nothing.
-		false)))))
+		    ch
+		    new-date
+		    old-date)))
+	 new-date)))
 
 ;;; The key fact is that *** after a deriver runs, the chunk is up to
 ;;; date ***, or as up to date as it's ever gonna be (until its basis

@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.2 2005/05/04 14:35:48 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.3 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -133,7 +133,7 @@
 				     module))))
 		    (cond ((really-install module nil)
 			   (setq loadable
-				 (y-or-n-p "Do you want to proceed to load ~a now?"
+				 (y-or-n-p "Do you want to proceed to load ~a now? "
 					   module))))))
 	     (cond (loadable
 		    (let ((lr (call-installer-or-loader ':load module nil)))

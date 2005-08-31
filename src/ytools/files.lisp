@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.56 2005/08/16 16:32:42 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.57 2005/08/31 14:09:04 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -349,6 +349,8 @@
 (defmethod derive-date ((lc Loaded-file-chunk))
    false)
 
+(defvar compilation-failure-paranoia* 1)
+
 (defmethod derive ((lc Loaded-file-chunk))
    (multiple-value-bind (file-ch loaded-ch)
                         (loaded-file-chunk-current-version lc)
@@ -371,23 +373,34 @@
 				 (source-file-pn
 				    (Code-file-chunk-pathname
 				       source-file-chunk)))
-			     (restart-case
-				(error 
-				   "Compilation of ~s apparently failed"
-				   source-file-pn)
-			       (skip ()
-				:report !"Skip compilation (it will ~
-					  probably come back to haunt you)"
-				  (return (get-universal-time)))
-			       (load-source ()
-				:report "Load source version"
-				  (return
-				      (file-chunk-load source-file-chunk)))
-			       (compile-anyway ()
-				:report !"Compile again in spite of ~
-					  apparent failure"
-				  (chunks-update (list file-ch)
-						 true false)))))))))
+			     (cond ((> compilation-failure-paranoia* 1)
+				    (restart-case
+				       (error 
+					  "Compilation of ~s apparently failed"
+					  source-file-pn)
+				      (skip ()
+				       :report !"Skip compilation (it will ~
+						 probably come back to haunt you)"
+					 (return (get-universal-time)))
+				      (load-source ()
+				       :report "Load source version"
+					 (return
+					     (file-chunk-load source-file-chunk)))
+				      (compile-anyway ()
+				       :report !"Compile again in spite of ~
+						 apparent failure"
+					 (chunks-update (list file-ch)
+							true false))))
+				   (t
+				    (cond ((> compilation-failure-paranoia*
+					      0)
+					   (format *error-output*
+					      !"Compilation of ~s~% ~
+                                                apparently ~
+                                                failed, but do you care?~%"
+					      source-file-pn)))
+				    (chunks-update (list file-ch)
+							true false)))))))))
 	    ((typep file-ch 'Code-file-chunk)
 	     (file-chunk-load file-ch))
 	    (t

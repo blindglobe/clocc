@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.17 2005/08/16 16:32:42 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.18 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,7 @@
 	     fload-versions postponed-files-update funktion
 	     debuggable debuggability*
 	     warn-about-postponed-file-chunks
-	     warn-about-postponed-file-chunks*)))
+	     warn-about-postponed-file-chunks* ask-about-fload-version-mgt*)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 
@@ -614,7 +614,7 @@
       (labels ((force-compile ()
 		  (file-ops-maybe-postpone
 		     (chunks-update (list compiled-chunk)
-				    true postpone-derivees)))
+				    true true)))
 	       (consider-loading ()
 		  (cond ((and (not (chunk-up-to-date lpchunk))
 			      (probe-file object-pathname)
@@ -633,20 +633,24 @@
 		       (force-compile)
 		       (consider-loading))))
 	       (t
-		(let ((comp-date
-			 (Chunk-date compiled-chunk)))
+		(let (
+;;;;		      (comp-date
+;;;;			 (Chunk-date compiled-chunk))
+		      )
 		   (setf (Loaded-file-chunk-manip lpchunk)
 			 ':compile)
 		   (chunk-request-mgt compiled-chunk)
+		   (cond (force-compile
+			  (force-compile)))
 		   (file-ops-maybe-postpone
 		      (chunk-update compiled-chunk false postpone-derivees))
-		   (cond ((and force-compile
-			       (= (Chunk-date compiled-chunk)
-				  comp-date))
-			  ;; Hasn't been compiled yet
-			  (force-compile)
+;;;;		   (cond ((and force-compile
+;;;;			       (= (Chunk-date compiled-chunk)
+;;;;				  comp-date))
+;;;;			  ;; Hasn't been compiled yet
+;;;;			  (force-compile)
 ;;;;			  (chunk-derive-and-record compiled-chunk)
-			  ))
+;;;;			  ))
 		   (consider-loading)))))))
 
 (defun num-out-of-date-postponed-file-chunks ()
@@ -742,14 +746,21 @@
                                         (build-symbol
 					   (:< (car x))
 					   (:< fload-version-suffix*)))
-                                       ((or (is-String (cadr x))
-					    (is-Keyword (cadr x)))
-                                        (build-symbol
-					   (:< (car x)) (:< (cadr x))))
-                                       (t (cadr x))))
+				       (t
+					(let ((delta (cadr x)))
+					   (cond ((or (is-String delta)
+						      (is-Keyword delta)
+						      (and (is-Symbol delta)
+							   (not (symbol-package
+								    delta))))
+						  (build-symbol
+						     (:< (car x)) (:< delta)))
+						 (t delta))))))
 				(t x)))
 		       specs)))
       `(fload-versions-setup ',olds ',news)))
+
+(defvar ask-about-fload-version-mgt* true)
 
 (defun fload-versions-setup (olds news)
    (multiple-value-bind (set-olds set-news reset-olds)
@@ -791,15 +802,17 @@
 			    new-cfc)
 		      (cond ((and old-av
 				  (Chunk-manage-request old-av)
-				  (y-or-n-p !"Cancel request to manage ~s ~
-                                              [probably yes]?"
-					    old-av))
+				  (or (not ask-about-fload-version-mgt*)
+				      (y-or-n-p !"Cancel request to manage ~s ~
+						 [probably yes]?"
+					       old-av)))
 			     (on-list old-av changing-chunks)))
 		      (cond ((and (Chunk-managed old-cfc)
 				  (not (Chunk-manage-request new-cfc))
-				  (y-or-n-p !"Begin management of ~s ~
-                                              ~%     [probably yes]? "
-					    old-cfc))
+				  (or (not ask-about-fload-version-mgt*)
+				      (y-or-n-p !"Begin management of ~s ~
+						  ~%     [probably yes]? "
+						old-cfc)))
 			     (on-list new-cfc changing-chunks)))))))
 	 (do ((oldl (filespecs->ytools-pathnames reset-olds)
 		    (tail oldl)))

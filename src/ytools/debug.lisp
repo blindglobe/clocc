@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.5 2005/08/16 16:32:42 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.6 2005/08/31 14:09:04 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -416,13 +416,15 @@
 
 (defun htab-show (htab)
    (with-hash-table-iterator (ht-iter htab)
-      (repeat 
+      (repeat :for ((i = 0 :by 1))
        :within
 	 (multiple-value-let (found key value)
 			     (ht-iter)
 	    (:continue
 	     :while found
-	     (out key " -- " (condense value) :%))))))
+	     (out key " -- " (condense value) :%)
+	     :result (out i " entries" :%)))))
+  htab)
 
 (defun file-show (filespecs)
    (with-open-file (srm (car (filespecs->pathnames filespecs)) :direction ':input)

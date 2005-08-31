@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytfm.lmd,v 1.6.2.1 2004/12/09 12:55:36 airfoyle Exp $
+;;;$Id: ytfm.lmd,v 1.6.2.2 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -54,7 +54,7 @@
 		 ':upper)
 		(t ':lower)))
    (set-config-var ytools-bin-path* sto
-	  (format t "Where should YTools binary files be located relative to source files~% (e.g., \"bin/\" or ~s (default)? "
+	  (format t "Where should YTools binary files be located relative to source files~% (e.g., \"bin/\" or ~s (default))? "
 		  default-ytools-bin-path*)
 	  (let ((path (read-line-trim)))
 	        (cond ((string= path "")

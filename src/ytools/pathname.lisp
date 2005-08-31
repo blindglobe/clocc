@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.18 2005/07/19 04:26:21 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.19 2005/08/31 14:09:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1149,10 +1149,10 @@
 		(setf (Dir-associate-chunk-linked-dir dp-ch)
 		      assoc-dir)
 		(cond (prev-assoc
-		       (setq ap* assoc-prop pn* pn dp-ch*
-			     dp-ch ad* assoc-dir wh* where)
-		       (break !"declare-pathname-associate-> ~
-                                about to change date of ~s" dp-ch)
+;;;;		       (setq ap* assoc-prop pn* pn dp-ch*
+;;;;			     dp-ch ad* assoc-dir wh* where)
+;;;;		       (break !"declare-pathname-associate-> ~
+;;;;                                about to change date of ~s" dp-ch)
 		       (setf (Chunk-date dp-ch) (get-universal-time))))
 		(chunk-update dp-ch false false))))))
 

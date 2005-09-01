@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.52 2005/09/01 23:14:43 sds Exp $
+;;; $Id: xml.lisp,v 2.53 2005/09/01 23:37:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -33,7 +33,7 @@
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
    xml-xhtml-tidy xml-purge-data xmlize-string with-tag
    with-xml-input with-xml-file xml-read-from-file read-standalone-char
-   xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data
+   xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data do-xmlo-data
    xmlo-name-check xmlo-nm xmlo-tag
    xml-name xml-name-p xmln-ln xmln-ns xmln=
    xml-namespace xml-namespace-p xmlns-uri xmlns-pre xmlns-nht))
@@ -459,6 +459,26 @@ The third value is the number of sub-elements"
               (list 'new new 'xml-obj 'xml-decl 'string 'xml-comment 'cons))))
   xml)
 
+(defmacro do-xmlo-data ((var obj &optional ret) &body forms)
+  "Iterate over the elements in the DATA of OBJ:
+ (do-xmlo-data (v zz)
+    (\"foo\" bar)
+    (\"zot\" baz))"
+  (let (names got-t)
+    `(dolist (,var (xmlo-data ,obj) ,ret)
+       (cond
+         ,@(mapcar (lambda (form)
+                     (let ((name (car form)))
+                       (cond ((stringp name)
+                              (push name names)
+                              (cons `(string-equal ,name (xmlo-nm ,var))
+                                    (cdr form)))
+                             (t (setq got-t t) form))))
+                   forms)
+         ,@(unless got-t
+             `((t (cerror "ignore" "~S in ~S, expected one of ~S"
+                          ,var ,obj ',names))))))))
+
 ;;;
 ;;; XML streams
 ;;;
@@ -867,6 +887,7 @@ The first character to be read is #\T."
 (defmacro with-tag ((tag &key options (out '*standard-output*) (terpri t)
                          (fresh-line nil))
                     &body body)
+  "Print the tag with options and body."
   (with-gensyms ("WT-" str tg)
     `(let ((,str ,out) (,tg ,tag))
        (when ,fresh-line (fresh-line ,str))

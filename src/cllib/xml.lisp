@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.51 2005/01/27 23:02:45 sds Exp $
+;;; $Id: xml.lisp,v 2.52 2005/09/01 23:14:43 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,7 @@
 
 (export
  '(*xml-readtable* *xml-print-xml* *xml-read-balanced* *xml-read-entities*
-   xml-xhtml-tidy xml-purge-data xmlize-string
+   xml-xhtml-tidy xml-purge-data xmlize-string with-tag
    with-xml-input with-xml-file xml-read-from-file read-standalone-char
    xml-obj xml-obj-p xmlo-args xmlo-name xmlo-data
    xmlo-name-check xmlo-nm xmlo-tag
@@ -863,6 +863,19 @@ The first character to be read is #\T."
             (mesg :xml ,out "done [entities(%/&): ~:d/~:d] [bytes: ~:d]"
                   (hash-table-count *xml-per*) (hash-table-count *xml-amp*)
                   (xmlis-size ,var))))))))
+
+(defmacro with-tag ((tag &key options (out '*standard-output*) (terpri t)
+                         (fresh-line nil))
+                    &body body)
+  (with-gensyms ("WT-" str tg)
+    `(let ((,str ,out) (,tg ,tag))
+       (when ,fresh-line (fresh-line ,str))
+       ,@(if body
+             `((format ,str "<~A~{ ~A=\"~A\"~}>" ,tg ,options)
+               ,@body
+               (format ,str "</~A>" ,tg))
+             `((format ,str "<~A~@{ ~A=\"~A\"~}/>" ,tg ,@options)))
+       (when ,terpri (terpri ,str)))))
 
 (defun xml-default-reset-entities ()
   "Check whether the entities need to be initialized."

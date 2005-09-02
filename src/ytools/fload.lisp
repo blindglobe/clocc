@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.18 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.19 2005/09/02 15:50:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -803,9 +803,10 @@
 		      (cond ((and old-av
 				  (Chunk-manage-request old-av)
 				  (or (not ask-about-fload-version-mgt*)
-				      (y-or-n-p !"Cancel request to manage ~s ~
-						 [probably yes]?"
-					       old-av)))
+				      (y-or-n-p
+					    !"Cancel request to manage ~s ~
+					      [probably yes]?"
+					    old-av)))
 			     (on-list old-av changing-chunks)))
 		      (cond ((and (Chunk-managed old-cfc)
 				  (not (Chunk-manage-request new-cfc))
@@ -823,9 +824,10 @@
 		      (setf (Code-chunk-alt-version rfc)
 			    false)
 		      (cond ((and (Chunk-manage-request old-av)
-				  (y-or-n-p !"Cancel request to manage ~s ~
-                                              [probably yes]?"
-					    old-av))
+				  (or (not ask-about-fload-version-mgt*)
+				      (y-or-n-p !"Cancel request to manage ~s ~
+						  [probably yes]?"
+						old-av)))
 			     (on-list old-av changing-chunks)))))))
 	 (do ((ccl changing-chunks (tail ccl))
 	      cc)

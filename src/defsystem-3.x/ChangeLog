@@ -1,3 +1,20 @@
+2005-09-05  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* defsystem.lisp:
+	Made several changes to ensure that Sam Steingold modifications to
+	control evaluation of definition slots do not interfere with
+	subcomponents.
+
+	Cleaned up the code in several places.
+
+	Added RUN-SHELL-COMMAND (modified from UFFI and ASDF to make it
+	more portable).
+	The original versions were by Dan Barlow and Kevin Rosenberg.
+
+2005-08-18  Marco Antoniotti  <marcoxa@vault.valis.nyu.edu>
+
+	* ChangeLog: ChangeLog updated.
+
 2005-08-16  sds  <sds@vault>
 
 	* defsystem.lisp (*component-evaluated-slots*, *component-form-slots*):

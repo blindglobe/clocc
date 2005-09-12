@@ -1,12 +1,17 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.11 2005/09/02 15:50:08 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.12 2005/09/12 13:48:11 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
+
+
+#+allegro (eval-when (:compile-toplevel :load-toplevel :execute)
+	     (shadowing-import 'excl:*current-case-mode*))
+#-allegro (defvar *current-case-mode* ':case-insensitive-upper)
 
 (cl:eval-when (:compile-toplevel :load-toplevel :execute)
    (shadow '(#:defun #:defmacro #:eval-when #:defmethod)))
@@ -816,7 +821,3 @@
    `(eval-when (:compile-toplevel :load-toplevel)
        (error "Loading bogus file: ~s"
 	      ',whatever)))
-
-#+allegro (eval-when (:compile-toplevel :load-toplevel :execute)
-	     (shadowing-import 'excl:*current-case-mode*))
-#-allegro (defvar *current-case-mode* ':case-insensitive-upper)

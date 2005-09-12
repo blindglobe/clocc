@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 1.31.2.25 2005/08/16 16:32:42 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.26 2005/09/12 13:48:11 airfoyle Exp $
 	
+2005-09-03: Inserted :before method for (setf Chunk-date) on
+            Code-file-chunk to try to catch the mysterious culprit
+            that occasionally tries to set a Code-file-chunk's date to
+            something before its file's write date.  No hit so far.
+
 2005-07-29: Added 'on-list-if-new', *current-case-mode*
 
 2005-07-28: Allowed derivers and date-derivers to terminate management

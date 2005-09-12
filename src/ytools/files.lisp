@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.57 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.58 2005/09/12 13:48:11 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -112,6 +112,18 @@
 ;; then every chunk associated with the file is assumed to be out of
 ;; date.  More than one chunk can be associated with a file.  For now,
 ;; don't allow a chunk to be associated with more than one file.
+
+;;; Tracking down strange bug--
+(defmethod (setf Chunk-date) :before (new-date (fc Code-file-chunk))
+   (let ((file-date (file-write-date (Code-file-chunk-pathname fc))))
+      ;; The file-date can be nil if the file got renamed or deleted
+      (cond ((and file-date
+		  (> new-date
+		     (+ file-date 1)))
+	     (cerror "Just try to proceed"
+		  !"Changing code file chunk date to ~s, which is ~
+                    after its write date ~s"
+		  new-date file-date)))))
 
 (defmethod derive-date ((fc Code-file-chunk))
 ;;;;   (let ((v (Code-file-chunk-obs-alt-version fc)))

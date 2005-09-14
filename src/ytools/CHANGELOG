@@ -1,5 +1,7 @@
-$Id: CHANGELOG,v 1.31.2.26 2005/09/12 13:48:11 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.27 2005/09/14 23:43:12 airfoyle Exp $
 	
+2005-09-13: Moved facilities of multvalhacks.lisp into multilet.lisp.
+
 2005-09-03: Inserted :before method for (setf Chunk-date) on
             Code-file-chunk to try to catch the mysterious culprit
             that occasionally tries to set a Code-file-chunk's date to

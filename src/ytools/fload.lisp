@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.19 2005/09/02 15:50:08 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.20 2005/09/14 23:43:12 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -235,9 +235,17 @@
 		   "  File-chunk rescan nets ~s~%"
 		   lc)
 		(on-list lc loadeds-needing-checking))))
-      (chunks-update (cons fload-compile-flag-chunk*
-			   loadeds-needing-checking)
-		     false false)))
+      (cond ((= chunk-update-depth* 0)
+	     (chunks-update (cons fload-compile-flag-chunk*
+				  loadeds-needing-checking)
+			    false false))
+	    (t
+	     ;; If update is already in progress, then we are quite
+	     ;; likely to get a meta-cycle if we call 'chunks-update'
+	     ;; immediately.
+	     (file-ops-maybe-postpone
+	        (cons fload-compile-flag-chunk*
+		      loadeds-needing-checking))))))
 
 ;;; 'filoid-fload' is the entry point to declare that a filoid
 ;;; should be loaded, figure out its basis, and tell the chunk

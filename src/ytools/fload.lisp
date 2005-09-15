@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.20 2005/09/14 23:43:12 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.21 2005/09/15 13:51:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -226,6 +226,8 @@
 
 (defvar fload-compile-flag-chunk* (make-instance 'Fload-compile-flag-set))
 
+(defvar postpone-recursive-rescans* true)
+
 (defun loadeds-check-bases ()
    (let ((loadeds-needing-checking !()))
       (dolist (lc all-loaded-file-chunks*)
@@ -235,7 +237,8 @@
 		   "  File-chunk rescan nets ~s~%"
 		   lc)
 		(on-list lc loadeds-needing-checking))))
-      (cond ((= chunk-update-depth* 0)
+      (cond ((or (not postpone-recursive-rescans*)
+		 (= chunk-update-depth* 0))
 	     (chunks-update (cons fload-compile-flag-chunk*
 				  loadeds-needing-checking)
 			    false false))

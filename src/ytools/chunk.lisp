@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.54 2005/08/31 14:09:04 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.55 2005/09/15 13:51:17 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1406,9 +1406,11 @@
 		      (cond (chunk-update-dbg*
 			     (format *error-output*
 				     !"chunks-update [~s] ~s~
+                                       ~%  force: ~s postpone: ~s~
                                        ~%  Derive mark: ~s down mark: ~
                                        ~s up mark: ~s~%"
 				     chunk-update-depth* chunks
+				     force postpone-derivees
 				     derive-mark down-mark up-mark)))
 		      ;; If a chunk event occurs while we're updating,
 		      ;; we must restart.  We detect that if

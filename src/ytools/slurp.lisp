@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.36 2005/09/15 02:18:11 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.37 2005/09/15 13:51:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -614,14 +614,21 @@ after YTools file transducers finish.")
 		    (let ((eval-slurp-task* (car stskl))
 			  (eval-slurp-state* (car stl)))
 		       (dolist (ev-form eval-forms)
-			  (multiple-value-bind
-			               (val-matters val)
-				       (cond ((car-eq ev-form ':stop-slurp-if)
-					      (values true
-						      (eval (cadr ev-form))))
-					     (t
-					      (values false
-						      (eval ev-form))))
+			  (let (val-matters val)
+			     (cond ((car-eq ev-form ':stop-slurp-if)
+				    (setq val-matters true)
+				    (setq val (eval (cadr ev-form))))
+				   (t
+				    (setq val-matters false)
+				    (setq val (eval ev-form))))
+;;;;			  (multiple-value-bind
+;;;;			               (val-matters val)
+;;;;				       (cond ((car-eq ev-form ':stop-slurp-if)
+;;;;					      (values true
+;;;;						      (eval (cadr ev-form))))
+;;;;					     (t
+;;;;					      (values false
+;;;;						      (eval ev-form))))
 			     (cond ((not (and val-matters val))
 				    ;; If a :stop-slurp-if form
 				    ;; returns true, the task is done

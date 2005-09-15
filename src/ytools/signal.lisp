@@ -1,13 +1,13 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: signal.lisp,v 1.3.2.1 2005/02/05 02:38:26 airfoyle Exp $
+;;;$Id: signal.lisp,v 1.3.2.2 2005/09/15 02:18:11 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(depends-on %ytools/ object setter)
+(depends-on %ytools/ object setter repeat)
 
 (needed-by-macros
    (export '(signal-problem signal-condition

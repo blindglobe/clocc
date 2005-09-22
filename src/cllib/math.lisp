@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.78 2005/08/15 21:38:08 sds Exp $
+;;; $Id: math.lisp,v 2.79 2005/09/22 16:08:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -503,12 +503,33 @@ When :COMPLEMENT is non-NIL, the second value is the complement of the sample."
   ;;       (values (+ (car fract) (/ v0)) (+ (car fract) (/ v1))))
   ;;     (values (car fract) (1+ (car fract)))))
 
+(defcustom *num-tolerance* double-float #.(sqrt double-float-epsilon)
+  "*The default numerical tolerance for `approx=-[abs|rel]'.")
+
+(defsubst approx=-abs (f0 f1 &optional (tol *num-tolerance*))
+  "Return T if the args are the same within TOL,
+which defaults to *num-tolerance*."
+  (declare (number f0 f1 tol))
+  (< (abs (- f0 f1)) tol))
+
+(defsubst approx=-rel (f0 f1 &optional (tol *num-tolerance*))
+  "Return T if the args are the same relatively within TOL,
+which defaults to *num-tolerance*. The first number goes to the
+denominator."
+  (declare (number f0 f1 tol))
+  (< (abs (- f0 f1)) (abs (* f0 tol))))
+
 (defcustom *relative-tolerance* double-float 1d-3
   "*The default relative tolerance for `approx='.")
 (defcustom *absolute-tolerance* double-float 1d0
   "*The default absolute tolerance for `approx='.")
-(defcustom *num-tolerance* double-float 1d-6
-  "*The default numerical tolerance for `approx=-[abs|rel]'.")
+(defsubst approx= (v0 v1 &optional (rt *relative-tolerance*)
+                   (at *absolute-tolerance*))
+  "Check whether the two numbers are the same within the relative and
+absolute tolerances (which default to *relative-tolerance* and
+*absolute-tolerance*)."
+  (declare (number v0 v1 rt at))
+  (and (> at (abs (- v0 v1))) (> rt (rel-diff v0 v1))))
 
 (defun fract-approx (xx &optional (eps *num-tolerance*))
   "Find an approximation via continous fractions."
@@ -986,7 +1007,7 @@ Numerical Recipes 6.2 (modified Lentz's method, 5.2)."
                      #1# (/ tmp))))
             (delta (* c d) (* c d))
             (h d (* h delta)))
-           ((< (abs (- delta 1)) *num-tolerance*)
+           ((approx=-abs delta 1)
             (values (- 1 (* h (exp (- (* a (log x)) x log-gamma-a))))
                     log-gamma-a n))
         (when (= n *max-iterations*)
@@ -1571,27 +1592,6 @@ denominator.  Sign is ignored."
   (declare (double-float v0 v1))
   (d/ (abs (- v1 v0)) (min (abs v0) (abs v1))))
 
-(defsubst approx=-abs (f0 f1 &optional (tol *num-tolerance*))
-  "Return T if the args are the same within TOL,
-which defaults to *num-tolerance*."
-  (declare (number f0 f1 tol))
-  (< (abs (- f0 f1)) tol))
-
-(defsubst approx=-rel (f0 f1 &optional (tol *num-tolerance*))
-  "Return T if the args are the same relatively within TOL,
-which defaults to *num-tolerance*. The first number goes to the
-denominator."
-  (declare (number f0 f1 tol))
-  (< (abs (- f0 f1)) (abs (* f0 tol))))
-
-(defsubst approx= (v0 v1 &optional (rt *relative-tolerance*)
-                   (at *absolute-tolerance*))
-  "Check whether the two numbers are the same within the relative and
-absolute tolerances (which default to *relative-tolerance* and
-*absolute-tolerance*)."
-  (declare (number v0 v1 rt at))
-  (and (> at (abs (- v0 v1))) (> rt (rel-diff v0 v1))))
-
 (defun binary-search (beg end func)
   "Find the point where FUNC's value changes between BEG and END.
 To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC."
@@ -1601,7 +1601,7 @@ To look for a zero, use (COMPOSE PLUSP MY-FUNC) as FUNC."
     :return (values beg end vb ve)
     :do (if (eql vm vb) (setq beg mid) (setq end mid))))
 
-(defun newton (ff &key (val 0) (ival val) (tol *num-tolerance*)
+(defun newton (ff &key (val 0) (ival val) (*num-tolerance* *num-tolerance*)
                (max-it *max-iterations*))
   "Solve the equation FF(x)=VAL using the Newton's method.
 FF should return its derivative as the second value.
@@ -1612,15 +1612,15 @@ and the number of iterations made."
   (declare (type (function (number) (values number number)) ff)
            (number val ival) (fixnum max-it))
   (do ((xx ival) f0 f1 (del 10) (it 0 (1+ it)))
-      ((or (< (abs del) tol) (= max-it it)) (values xx del it))
+      ((or (approx=-abs del 0) (= max-it it)) (values xx del it))
     (declare (type index-t it))
     (setf (values f0 f1) (funcall ff xx))
-    (incf xx (setq del (/ (- val f0) (if (zerop f1) tol f1))))))
+    (incf xx (setq del (/ (- val f0) (if (zerop f1) *num-tolerance* f1))))))
 
-(defun integrate-simpson (ff x0 xm &optional (eps *num-tolerance*))
+(defun integrate-simpson (ff x0 xm &optional (*num-tolerance* *num-tolerance*))
   "Compute an integral of a real-valued function with a given precision.
 Returns the integral, the last approximation, and the number of points."
-  (declare (double-float x0 xm eps)
+  (declare (double-float x0 xm)
            (type (function (double-float) double-float) ff))
   (do* ((f0 (funcall ff x0)) (f1 (funcall ff (* 0.5d0 (+ x0 xm))))
         (fm (funcall ff xm)) (hh (* 0.5d0 (- xm x0)) (* hh 0.5d0))
@@ -1633,7 +1633,7 @@ Returns the integral, the last approximation, and the number of points."
         (int-last 0d0 int)
         (int (* (/ hh 3d0) (+ f0 (* 4d0 f1) fm))
              (* (/ hh 3d0) (+ f0 (* 4d0 sum-odd) (* 2d0 sum-even) fm))))
-       ((< (abs (- int int-last)) eps) (values int int-last mm))
+       ((approx=-abs int int-last) (values int int-last mm))
     (declare (double-float sum-odd sum-even hh f0 f1 fm int int-last)
              (type index-t mm))))
 

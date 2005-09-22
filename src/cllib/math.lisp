@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.79 2005/09/22 16:08:19 sds Exp $
+;;; $Id: math.lisp,v 2.80 2005/09/22 16:33:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -37,7 +37,7 @@
    mean mean-cx mean-weighted mean-geometric mean-geometric-weighted mean-some
    standard-deviation standard-deviation-cx standard-deviation-weighted
    standard-deviation-relative standard-deviation-mdl min+max
-   entropy-sequence entropy-distribution
+   entropy-sequence entropy-distribution kullback-leibler
    information mutual-information dependency proficiency correlation
    mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
    mdl-normalize mdl-denormalize mdl-normalize-function
@@ -1229,6 +1229,27 @@ The values are counted and the result is used as a probability distribution.
       (incf tot num)
       (incf sum (* num (log (dfloat num) 2)))) ; we know num>0
     (values (- (log (dfloat tot) 2) (/ sum tot)) ht)))
+
+(defun kullback-leibler (seq1 seq2 &key (key1 #'value) (key2 #'value))
+  "Compute the Kullback-Leibler distance (aka relative entropy) of the
+two probability distributions, as well as both of their individual entropies.
+NIL result stands for infinity."
+  (let ((kl 0) (ent1 0) (ent2 0) (sum1 0) (sum2 0))
+    (map nil (lambda (e1 e2)
+               (let ((p1 (funcall key1 e1)) (p2 (funcall key2 e2)))
+                 (incf sum1 p1) (incf sum2 p2)
+                 (when (plusp p1)
+                   (decf ent1 (* p1 (log p1 2)))
+                   (if (plusp p2)
+                       (when kl (incf kl (* p1 (log (/ p1 p2) 2))))
+                       (setq kl nil)))
+                 (when (plusp p2) (decf ent2 (* p2 (log p2 2))))))
+         seq1 seq2)
+    (unless (approx=-abs sum1 1)
+      (error "~S: total probability is ~S /= 1" 'kullback-leibler sum1))
+    (unless (approx=-abs sum2 1)
+      (error "~S: total probability is ~S /= 1" 'kullback-leibler sum2))
+    (values kl ent1 ent2)))
 
 (defun kurtosis-skewness (seq &key (key #'value) std mean len)
   "Compute the skewness and kurtosis (3rd & 4th centered momenta)."

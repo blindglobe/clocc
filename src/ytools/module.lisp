@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.30 2005/08/16 16:32:42 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.31 2005/10/07 13:58:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -77,7 +77,7 @@
 ;;; distinction.  If F depends-on a module :at-compile-time, that
 ;;; means that the :run-support actions of F are executed when F is
 ;;; compiled.
-(defmacro def-ytools-module (name &rest actions &whole dym-exp)
+(defmacro def-ytools-module (&whole dym-exp name &rest actions)
    (labels ((is-timespec (x)
 	        (memq x '(:run-support :compile-support :expansion))))
       (setq actions

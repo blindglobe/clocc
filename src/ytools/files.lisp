@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.58 2005/09/12 13:48:11 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.59 2005/10/07 13:58:38 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -292,8 +292,8 @@
     ;; The criterion (supplied by user) for how to make the selection --
     (manip :accessor Loaded-file-chunk-manip
 	   :initarg :manip
-	   :type (member :compile :source :object
-			 :ask-once :ask-every :ask-ask :defer))
+	   :type (member :source :object :fresh-object :compile
+			 :ask-once :ask-every :ask-ask :defer :follow))
     ;; -- Meanings:
     ;;   :source -> don't compile, load source;
     ;;   :object -> compile only if no object; load object
@@ -870,10 +870,10 @@
 		:type Code-file-chunk)
    (loaded-file  :accessor Compiled-file-chunk-loaded-file
 		 :initform false
-		 :type Loaded-file-chunk)
+		 :type (or null Loaded-file-chunk))
    (object-file :initarg :object-file
 		 :accessor Compiled-file-chunk-object-file
-		 :type Code-file-chunk)
+		 :type (or null Code-file-chunk))
    (status :initform ':unknown
 	   :accessor Compiled-file-chunk-status)
    ;; -- values :compile-succeeded or :compile-failed

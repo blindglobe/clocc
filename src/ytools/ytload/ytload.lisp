@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.3 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.4 2005/10/07 13:58:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -23,8 +23,9 @@
 ;; nil if unknown.
 (defvar config-directory* nil)
 (defvar ytload-directory* "")
+(defvar config-file* "ytconfig.lisp")
 
-(defvar bin-bit* "")
+;;;;(defvar bin-bit* "")
 
 (defmacro intern-call (pkg fcn &rest args)
    `(funcall (intern ',(string fcn) (find-package ',(string pkg)))
@@ -236,11 +237,11 @@
       (let ((filename (yt-config-file-name)))
 	 (cond ((probe-file filename)
 		(load filename))
-	       ((y-or-n-p "No ytconfig.lisp file; ~% config-variables* so far = ~s ~% shall I create one in ~a ? "
-			  config-variables* config-directory*)
+	       ((y-or-n-p "No ~s file; ~% config-variables* so far = ~s ~% shall I create one in ~a ? "
+			  config-file* config-variables* config-directory*)
 		(dump-yt-config-file))
 	       (t
-		(error "No ytconfig.lisp file")))
+		(error "No ~s file" config-file*)))
 	 (cond ((ensure-filename-case)
 		;; changed something
 		(dump-yt-config-file)))
@@ -253,11 +254,12 @@
       (cond ((and config-directory* (is-set directory-delimiter*))
 	     (return)))
       (cond ((not config-directory*)
-	     (format t "Directory containing ytconfig.lisp (end with slash or other directory delimiter): ")
+	     (format t "Directory containing ~s (end with slash or other directory delimiter): "
+		       confile-file*)
 	     (setq config-directory* (clear-read-line)))
 	    (t
-	     (format t "Assuming ytconfig.lisp is in ~a~%"
-		       config-directory*)))
+	     (format t "Assuming ~s is in ~a~%"
+		       config-file* config-directory*)))
       (setq directory-delimiter*
 	   (nth-value 1 (peel-last-non-whitespace
 				     config-directory*)))
@@ -383,7 +385,13 @@
    (read-line))
 
 (defun yt-config-file-name ()
-   (strings-concat config-directory* "ytconfig.lisp"))
+   (strings-concat config-directory* config-file*))
+
+;;;;		   "ytconfig"
+;;;;		   (cond ((boundp ytconfig-name*)
+;;;;			  ytconfig-name*)
+;;;;			 (t ""))
+;;;;		   ".lisp"))
 
 (defun strings-concat (&rest strings)
   (apply #'concatenate 'string strings))
@@ -393,8 +401,8 @@
 
 (defvar lisp-standard-readtable* *readtable*)
 
-(defun bin-subdirectory (dir)
-  (strings-concat dir bin-bit* "bin"))
+;;;;(defun bin-subdirectory (dir)
+;;;;  (strings-concat dir bin-bit* "bin"))
 
 (defun cl-user::yt ()
    (in-package :ytools)
@@ -413,8 +421,8 @@
 		(cond ((probe-file okcpn)
 		       (let ((p (compare-files cpn okcpn)))
 			  (cond ((numberp p)
-				 (error "Current ytconfig.lisp differs from ytconfig-ok.lisp at position ~s"
-					p)))))))))))
+				 (error "Current ~s differs from ytconfig-ok.lisp at position ~s"
+					config-file* p)))))))))))
 
 (defun compare-files (pn1 pn2)
    (with-open-file (srm1 pn1 :direction ':input)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.12 2005/09/12 13:48:11 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.13 2005/10/07 13:58:37 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -122,7 +122,7 @@
 			(ignore-smooth args body)
       `(cl:defmacro ,name ,args ,@body)   ))
 
-(cl:defmacro defmethod (name &rest stuff &whole dm-exp)
+(cl:defmacro defmethod (&whole dm-exp name &rest stuff)
    (let ((qualifiers '())
 	 args body)
       (do ((sl stuff (cdr sl)))

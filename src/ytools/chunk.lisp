@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.55 2005/09/15 13:51:17 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.56 2005/10/07 13:58:37 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -45,10 +45,9 @@
    ;; -- true if user has declared that this chunk should be
    ;; managed.
    (managed :accessor Chunk-managed
-	    :initform false
-	    :type boolean)
+	    :initform false)
     ;; -- A chunk is being kept up to date if and only if its 'managed'
-    ;; field is true.  
+    ;; field is non-false.
     ;; Global invariant: c is managed if and only if either its
     ;; manage-request is t or some derivee is managed.
                     ;;;;; >>>> Mgt-stuff

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.19 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.20 2005/10/07 13:58:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -14,6 +14,7 @@
 	     pathname->string pathname-equal pathname-get
 	     ->pathname filespecs->pathnames filespecs->ytools-pathnames
 	     def-ytools-logical-pathname ytools-logical-pathname-def
+	     lookup-ytools-logical-pathname
 	     ytools def-ytools-pathname-control
 	     string-is-ytools-logical-pathname)))
 

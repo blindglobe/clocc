@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.28 2005/09/15 13:51:17 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.29 2005/10/07 13:58:37 airfoyle Exp $
 	
+2005-10-07: Allowed names of config files to be something other than
+            "ytconfig.lisp".  Broadened declarations of allowed values
+            of fields in chunks to make openmcl compiler happy.
+
 2005-09-13: Moved facilities of multvalhacks.lisp into multilet.lisp.
             Changed 'loadeds-check-bases' so it postpones rescans if
             chunk update is already in progress.

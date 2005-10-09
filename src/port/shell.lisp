@@ -1,6 +1,6 @@
 ;;; Shell Access
 ;;;
-;;; Copyright (C) 1999-2003 by Sam Steingold
+;;; Copyright (C) 1999-2005 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.17 2003/06/07 22:01:13 sds Exp $
+;;; $Id: shell.lisp,v 1.18 2005/10/09 03:57:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
 (eval-when (compile load eval)
@@ -86,11 +86,20 @@
 ;;; define the `close' method and use `with-open-stream'.
 ;;; Unfortunately, not every implementation supports Gray streams, so we
 ;;; have to stick with this to further the portability.
+;;; [2005] actually, all implementations support Gray streams (see gray.lisp)
+;;; but Gray streams may be implemented inefficiently
 
 (defun close-pipe (stream)
   "Close the pipe stream."
   (declare (stream stream))
   (close stream)
+  ;; CLOSE does not close constituent streams
+  ;; CLOSE-CONSTRUCTED-STREAM:ARGUMENT-STREAM-ONLY
+  ;; http://www.lisp.org/HyperSpec/Issues/iss052.html
+  (typecase stream
+    (two-way-stream
+     (close (two-way-stream-input-stream stream))
+     (close (two-way-stream-output-stream stream))))
   #+allegro (sys:reap-os-subprocess))
 
 (defmacro with-open-pipe ((pipe open) &body body)

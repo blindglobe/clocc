@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.60 2005/10/10 02:46:06 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.61 2005/10/10 14:39:27 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,6 +11,8 @@
    (export '(postponed-files-update
 	     always-slurp
 	     debuggable debuggability* def-sub-file-type)))
+
+(declaim (special fload-indent* now-compiling* now-slurping* now-loading*))
 
 ;;; A piece (maybe a multi-file piece) of code that can be executed.
 ;;; The word "filoid" is synonymous with "Code-chunk."
@@ -108,10 +110,12 @@
 ;;;;		:initarg :obs-version
 ;;;;		:initform false))
   ))
-;; -- Files are the finest grain we allow.  If a file is out of date,
-;; then every chunk associated with the file is assumed to be out of
-;; date.  More than one chunk can be associated with a file.  For now,
+;; --  For now,
 ;; don't allow a chunk to be associated with more than one file.
+
+(defvar fc*)
+
+(defvar fd*)
 
 ;;; Tracking down strange bug--
 (defmethod (setf Chunk-date) :before (new-date (fc Code-file-chunk))
@@ -120,6 +124,7 @@
       (cond ((and file-date
 		  (> new-date
 		     (+ file-date 1)))
+	     (setq fc* fc fd* file-date)
 	     (cerror "Just try to proceed"
 		  !"Changing code file chunk date to ~s, which is ~
                     after its write date ~s"
@@ -277,12 +282,54 @@
    ;; once load has been attempted
     ;; The Code-dep-chunk that computes the basis of this one --
     (controller :accessor Loaded-chunk-controller
-		:initarg :controller)))
+		:initarg :controller)
+    ;; Value is Ever-loaded-chunk --
+    (ever :accessor Loaded-chunk-ever
+	  :initform false)))
 
 (defgeneric place-Loaded-chunk (ch variant)
    (:method ((ch t) variant)
 	    (declare (ignore variant))
       (error "No way to make a Loaded-chunk for ~s" ch)))
+
+;;; An Ever-loaded-chunk is parasitic on a Loaded-chunk, and
+;;; manages "the Loaded-chunk has loaded successfully at least once."
+;;; THIS ISN'T QUITE RIGHT, and nothing depends on it.
+;;; The goal is to avoid reloading every file B that depends-on A
+;;; at run time whenever A is reloaded.
+(defclass Ever-loaded-chunk (Chunk)
+  ((host :initarg :host
+	 :reader Ever-loaded-chunk-host)
+   (made-it :initform false
+	    :accessor Ever-loaded-chunk-made-it)))
+;;; We can't make the Ever-loaded-chunk be a derivee of its
+;;; host, because the date of the Ever-loaded-chunk ceases
+;;; to advance once the load is achieved.
+
+(defun place-Ever-loaded-chunk (lc)
+   (or (Loaded-chunk-ever lc)
+       (chunk-with-name
+	  `(:ever ,(Chunk-name lc))
+	  (\\ (exp)
+	     (let ((new-elc 
+		      (make-instance 'Ever-loaded-chunk
+			 :name exp
+			 :host lc)))
+		(setf (Loaded-chunk-ever lc)
+		      new-elc)
+		(cond ((eq (Loaded-chunk-status lc) ':load-succeeded)
+		       (setf (Ever-loaded-chunk-made-it new-elc)
+			     true)
+		       (setf (Chunk-date new-elc)
+			     (Chunk-date lc)))
+		      (t
+		       (setf (Chunk-date new-elc)
+			     (get-universal-time))))
+		new-elc)))))
+
+
+(defmethod derive ((elc Ever-loaded-chunk))
+   (Chunk-date elc))
 
 (defclass Loaded-file-chunk (Loaded-chunk)
    (;; The variant currently selected, either a Code-file-chunk, or
@@ -378,7 +425,7 @@
 		(let ((obj-file-ch
 			 (freshly-compiled-object file-ch)))
 		   (cond (obj-file-ch
-			  (return (file-chunk-load obj-file-ch)))
+			  (return (file-chunk-load obj-file-ch lc)))
 			 (t
 			  (let* ((source-file-chunk
 				    (Loaded-file-chunk-source lc))
@@ -392,12 +439,15 @@
 					  source-file-pn)
 				      (skip ()
 				       :report !"Skip compilation (it will ~
-						 probably come back to haunt you)"
+						 probably come back to haunt ~
+                                                 you)"
 					 (return (get-universal-time)))
 				      (load-source ()
 				       :report "Load source version"
 					 (return
-					     (file-chunk-load source-file-chunk)))
+					     (file-chunk-load
+					         source-file-chunk
+						 lc)))
 				      (compile-anyway ()
 				       :report !"Compile again in spite of ~
 						 apparent failure"
@@ -412,9 +462,9 @@
                                                 failed, but do you care?~%"
 					      source-file-pn)))
 				    (chunks-update (list file-ch)
-							true false)))))))))
+						   true false)))))))))
 	    ((typep file-ch 'Code-file-chunk)
-	     (file-chunk-load file-ch))
+	     (file-chunk-load file-ch lc))
 	    (t
 	     (error "Can't extract file to load from ~s"
 		    lc)))))
@@ -597,7 +647,7 @@
 ;;; that can map into different versions depending on user decisions.
 ;;; This class is just a simple loaded-or-not-loaded affair.
 ;;; The file doesn't have to be a source file (!?)
-(defclass Loaded-source-chunk (Chunk)
+(defclass Loaded-source-chunk (Loaded-chunk)
    ((file-ch :accessor Loaded-source-chunk-file
 	     :initarg :file)))
 	  
@@ -612,11 +662,12 @@
    false)
 
 (defmethod derive ((l-source Loaded-source-chunk))
-   (file-chunk-load (Loaded-source-chunk-file l-source)))
+   (file-chunk-load (Loaded-source-chunk-file l-source)
+		    l-source))
 
 (defvar loading-stack* !())
 
-(defun file-chunk-load (file-ch)
+(defun file-chunk-load (file-ch loaded-ch)
       (with-post-file-transduction-hooks
 	 (cleanup-after-file-transduction
 	    (let* ((sourcetab (code-file-chunk-readtable-if-known file-ch))
@@ -645,15 +696,31 @@
 				       (on-list e errors-during-load))))
 		     (load (Code-file-chunk-pathname file-ch))
 		     (setq success true))
-		  (cond (success
-			 (file-op-message "...loaded"
-					   (Code-file-chunk-pn
-					       file-ch)
-					   false ""))
-			(t
-			 (file-op-message "...load attempt failed!"
-					  false false "")))))))
-      (get-universal-time))
+		  (let ((time-now (get-universal-time)))
+		     (cond (success
+			    (cond (loaded-ch
+				   (setf (Loaded-chunk-status loaded-ch)
+					 ':load-succeeded)
+				   (let ((ever-lc (place-Ever-loaded-chunk
+						     loaded-ch)))
+				      (cond ((not (Ever-loaded-chunk-made-it
+						     ever-lc))
+					     (setf (Ever-loaded-chunk-made-it
+						      ever-lc)
+						   true)
+					     (setf (Chunk-date ever-lc)
+						   time-now))))))
+			    (file-op-message "...loaded"
+					      (Code-file-chunk-pn
+						  file-ch)
+					      false ""))
+			   (t
+			    (cond (loaded-ch
+				   (setf (Loaded-chunk-status loaded-ch)
+					 ':load-failed)))
+			    (file-op-message "...load attempt failed!"
+					     false false "")))
+		     time-now))))))
 
 (defun code-file-chunk-readtable-if-known (file-ch)
    (let ((source-readtab
@@ -1087,11 +1154,12 @@
 			(and apparent-success
 			     object-file
 			     (probe-file object-file)))
+		     (time-now (get-universal-time))
 		     (new-compile-time
 			(cond (success
 			       (pathname-write-time object-file))
 			      (t
-			       (get-universal-time)))))
+			       time-now))))
 		 (cond ((not success)
 			(format *error-output*
 			    "Error(s) during compilation: ~s~%"
@@ -1102,12 +1170,11 @@
 			(format *error-output*
 			   "Object-file write-time anomaly ~s~%"
 			   object-file)
-			(setq success false)
-			(setq new-compile-time (get-universal-time))))
-		 (setf (Compiled-file-chunk-last-compile-time
-			       cf-ch)
-		       new-compile-time)
+			(setq success false)))
 		 (cond (success
+			(setf (Compiled-file-chunk-last-compile-time
+				      cf-ch)
+			      new-compile-time)
 			(cond (fcompl-logger*
 			       (funcall fcompl-logger*
 					real-pn object-file)))
@@ -1117,13 +1184,17 @@
 					 object-file false "")
 			new-compile-time)
 		       (t
+			(setf (Compiled-file-chunk-last-compile-time
+				      cf-ch)
+			      time-now)
 			(cond (fcompl-logger*
 			       (funcall fcompl-logger*
 					real-pn false)))
 			(setf (Compiled-file-chunk-status cf-ch)
 			      ':compile-failed)
 			(file-op-message "...compilation failed!"
-					 false false "")))))))))
+					 false false "")
+			time-now))))))))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 

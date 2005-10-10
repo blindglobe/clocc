@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.11.2.1 2005/01/17 17:49:47 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.11.2.2 2005/10/10 14:39:27 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -52,20 +52,16 @@
    (cond ((Out-stream-p srm)
 	  srm)
 	 ((is-Stream srm)
-	  #+openmcl
-	  (cond ((typep srm 'ccl::xp-stream)
-		 (dbg-save srm)
-		 (breakpoint stream-outify
-		    "Got odd stream: " srm)))
 	  (cond ((some #'(lambda (p)
 			    (or (not (streamp (car p)))
-				(not (open-stream-p (car p)))))
+				(not (stream-is-open (car p) false))))
 		       out-streams*)
 		 ;; clean up table
 		 (setq out-streams*
 		       (delete-if #'(lambda (p)
 				       (or (not (streamp (car p)))
-					   (not (open-stream-p (car p)))))
+					   (not (stream-is-open (car p)
+								false))))
 				  out-streams*))))
 	  (let ((p (assq srm out-streams*)))
 	     (cond (p (cadr p))
@@ -73,12 +69,26 @@
 		    (let ((newsrm (make-Out-stream :state 'unindented
 						   :indent 0
 						   :stream srm)))
+		       (stream-is-open srm true)
 		       (setq out-streams*
 			     (cons (list srm newsrm) out-streams*))
 		       newsrm)))))
 	 (t
 	  (error "Attempt to outify nonstream ~s" srm))))
 
+(defun stream-is-open (srm warn)
+   (declare (ignorable warn))
+   #+openmcl
+   (handler-case (open-stream-p srm)
+      (error ()
+	 (cond (warn
+		(format *error-output*
+		    "Warning -- unintelligible stream ~s~%"
+		    srm)))
+	 true))
+   #-openmcl
+   (open-stream-p srm))
+	  
 (eval-when (:compile-toplevel :load-toplevel)
    (defvar default-out-stream-var* '*standard-output*))
 

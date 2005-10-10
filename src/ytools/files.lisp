@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.59 2005/10/07 13:58:38 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.60 2005/10/10 02:46:06 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -680,15 +680,31 @@
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
 	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
 		 loaded-filoid-ch)))
-   (let ((controller (verify-loaded-chunk-controller loaded-filoid-ch false)))
-      (chunk-request-mgt controller)
-      ;; We postpone the derivees because the controller may fiddle
-      ;; with object-level (as opposed to meta-level) chunks, and we
-      ;; don't want to start an uncontrolled wave of object-level
-      ;; updating.  We don't need to save the chunks that get
-      ;; postponed, because after updating the controller we're going
-      ;; to do things at the object level. --
-      (chunk-update controller false false)))
+   (let ((controllers
+	    (list (verify-loaded-chunk-controller loaded-filoid-ch false)))
+	 under-new-management prev-derivees)
+      (loop
+	 (dolist (c controllers)
+	   (chunk-request-mgt c))
+	 (setq prev-derivees (mapcar #'Chunk-derivees controllers))
+	 ;; We expect this call to find new filoids this one depends on.
+	 ;; Their controllers become derivees of the 'controllers'.
+	 (chunks-update controllers false false)
+	 ;; We find those derivees, turn them on, and repeat the
+	 ;; cycle --
+	 (setq under-new-management
+	      (mapcan (\\ (c prev-dl)
+			 (mapcan (\\ (new-d)
+				    (cond ((or (Chunk-managed new-d)
+					       (memq new-d prev-dl))
+					   !())
+					  (t (list new-d))))
+				 (Chunk-derivees c)))
+		      controllers
+		      prev-derivees))
+	(cond ((null under-new-management)
+	       (return)))
+	(setq controllers under-new-management))))
 
 (defun verify-loaded-chunk-controller (lc allow-null)
    (let ((controller (Loaded-chunk-controller lc)))

@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.4 2005/10/07 13:58:38 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.5 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -255,7 +255,7 @@
 	     (return)))
       (cond ((not config-directory*)
 	     (format t "Directory containing ~s (end with slash or other directory delimiter): "
-		       confile-file*)
+		       config-file*)
 	     (setq config-directory* (clear-read-line)))
 	    (t
 	     (format t "Assuming ~s is in ~a~%"
@@ -276,7 +276,7 @@
 		       (cond (delim
 			      (setq directory-delimiter* delim)
 			      (setq config-directory*
-				    (concatenate 'string config-directory
+				    (concatenate 'string config-directory*
 						 directory-delimiter*))
 			      (return)))))))
 	    (t (setq directory-delimiter* nil)))))

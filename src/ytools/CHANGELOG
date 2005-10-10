@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.29 2005/10/07 13:58:37 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.30 2005/10/10 02:46:06 airfoyle Exp $
 	
+2005-10-09: Creating Ever-loaded chunks; not integrated yet (or
+            working correctly, for that matter).  Corrected various
+            technicalities to get Open MCL to compile YTools.
+
 2005-10-07: Allowed names of config files to be something other than
             "ytconfig.lisp".  Broadened declarations of allowed values
             of fields in chunks to make openmcl compiler happy.

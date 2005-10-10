@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;; $Id: ytools.lsy,v 1.27.2.24 2005/08/16 16:32:42 airfoyle Exp $
+;;; $Id: ytools.lsy,v 1.27.2.25 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -48,6 +48,12 @@
     '("base" "datafun" "chunk" "pathname" "slurp"
       "files" "fload" "depend" "module"))
 
+(cond ((and (boundp 'subst-core-files*)
+	    subst-core-files*)
+       (setq ytools-core-files*
+	     (subst "files-new" "files" ytools-core-files*
+		    :test #'equal))))
+
 (defparameter bin-idio-dir*
    (cond ((equal bin-idio* "")
 	  '())
@@ -60,7 +66,7 @@
 		      (t
 		       (cerror "I will assume there is no special bin subdirectory for this Lisp"
 			       "Illegal as bin subdirectory: ~s"
-			       bin-idio)
+			       bin-idio*)
 		       '())))))))
 
 (defparameter ytools-bin-relative*
@@ -87,87 +93,104 @@
 (defparameter ytools-dir-pathname*
               (parse-namestring ytools-home-dir*))
 
+(defun place-relative-pathname (pn dir-list suff ensure-existence)
+   (cond ((stringp dir-list)
+	  (setq dir-list (pathname-directory (parse-namestring dir-list)))))
+   (cond ((not (listp dir-list))
+	  (error "place-relative-pathname can't handle directory: ~s~%"
+		 dir-list)))
+   (cond ((eq (car dir-list) ':relative)
+	  (setq dir-list (cdr dir-list)))
+	 (t
+	  (error "Unsuitable for specifying relative pathname: ~s"
+		 dir-list)))
+   (let ((start (pathname-directory pn)))
+      (cond ((and (consp start) (eq (car start) ':absolute))
+	     (let ((above-dirs (reverse (cdr start)))
+		   (below-dirs '())
+		   (from-dir-list '()))
+	        ;; We use 'dir-list' as a set of instructions for arriving
+		;; at a relative directory.
+	        ;; As we go, the three variables above represent the
+	        ;; directories traversed so far, leaving us in the "current
+	        ;; directory."
+		;; 'above-dirs' is list (in ascending order) of directories
+	        ;; above (and including) the current dir.
+	        ;; 'below-dirs' is list (in descending order)
+	        ;; of directories we passed on the way up to current dir.
+	        ;; 'from-dir-list' is a list (in ascending order) of
+	        ;; directories copied from 'dir-list'.
+		(dolist (d dir-list)
+		   (cond ((eq d ':relative)
+			  (error "relative! dir-list = ~s" dir-list)))
+;;;;		   (format t "above-dirs = ~s from-dir-list = ~s d = ~s below-dirs = ~s~%"
+;;;;			   above-dirs from-dir-list d below-dirs)
+		   (cond ((or (member d '(:back :up)) (equal d ".."))
+			  (cond ((null from-dir-list)
+				 ;; Go up one layer, recording in 'below-dirs'
+				 ;; the directory passed.--
+				 (cond ((null above-dirs)
+					(error "Relative directory ~s undefined wrt ~s"
+					       dir-list pn))
+				       (t
+					(push (pop above-dirs) below-dirs))))
+			      ;; But once we've started recording
+			      ;; directories in 'from-dir-list', a
+			      ;; ".." directory is a puzzle. --
+				((null above-dirs)
+				 ;; We either go up and leave
+				 ;; 'from-dir-list' alone, or, if we
+				 ;; can't go up, we interpret ".." as
+				 ;; perversely instructing us to undo
+				 ;; the last addition to
+				 ;; 'from-dir-list' --
+				 (pop from-dir-list))
+				(t
+				 ;; This is the case where we can 
+				 ;; go up (pop 'above-dirs') and leave
+				 ;; 'from-dir-list' and 'below-dirs'
+				 ;; alone --
+				 (pop above-dirs))))
+			 ((member d '(-- "--") :test #'equal)
+			  ;; Special flag that means *don't* record in
+			  ;; 'below-dirs' the last layer we passed.
+			  ;; This makes sense only if this layer does
+			  ;; not help discriminate subdirectories.
+			  ;; Useful for purging "src" layers from "bin"
+			  ;; directories (assuming *all* "bin"
+			  ;; subdirectories come from "src"
+			  ;; subdirectories).--
+			  (pop below-dirs))
+			 (t
+			  ;; A normal directory gets copied to
+			  ;; 'from-dir-list' --
+			  (push d from-dir-list))))
+;;;;		(format t "above-dirs = ~s~%from-dir-list = ~s~%below-dirs = ~s~%"
+;;;;			above-dirs from-dir-list below-dirs)
+;;;;		(setq above* above-dirs from* from-dir-list below* below-dirs)
+		(let ((res-pn
+		          (make-pathname
+			      :directory
+			         `(:absolute ,@(reverse above-dirs)
+					     ,@(reverse from-dir-list)
+					     ,@below-dirs)
+			      :type suff)))
+		   (cond (ensure-existence
+			  (ensure-directories-exist res-pn)))
+		   res-pn)))
+	    (t
+	     (error "Can't take relative directory with respect to relative directory ~s"
+		    pn)))))
+
 (defparameter ytools-bin-dir-pathname*
-   (let ((dir-list (pathname-directory (pathname ytools-bin-path*)))
-	 (pn (pathname ytools-dir-pathname*)))
-      ;; This mimic code in ytools/pathname.lisp --
-      (cond ((not (listp dir-list))
-	     (error "Unexpected non-list directory for ~s"
-		    ytools-bin-path*)))
-      (cond ((eq (car dir-list) ':relative)
-	     (setq dir-list (cdr dir-list))))
-      (let ((start (pathname-directory pn)))
-	 (cond ((and (consp start) (eq (car start) ':absolute))
-		(let ((above-dirs (reverse (cdr start)))
-		      (below-dirs '())
-		      (from-dir-list '()))
-		   ;; We use 'dir-list' as a set of instructions for arriving
-		   ;; at a relative directory.
-		   ;; As we go, the three variables above represent the
-		   ;; directories traversed so far, leaving us in the "current
-		   ;; directory."
-		   ;; 'above-dirs' is list (in ascending order) of directories
-		   ;; above (and including) the current dir.
-		   ;; 'below-dirs' is list (in descending order)
-		   ;; of directories we passed on the way up to current dir.
-		   ;; 'from-dir-list' is a list (in ascending order) of
-		   ;; directories copied from 'dir-list'.
-		   (dolist (d dir-list)
-		      (cond ((or (member d '(:back :up)) (equal d ".."))
-			     (cond ((null from-dir-list)
-				    ;; Go up one layer, recording in
-				    ;; 'below-dirs' the directory
-				    ;; passed.--
-				    (cond ((null above-dirs)
-					   (error "Relative directory ~s undefined wrt ~s"
-						  dir-list pn))
-					  (t
-					   (push (pop above-dirs) below-dirs))))
-				 ;; But once we've started recording
-				 ;; directories in 'from-dir-list', a
-				 ;; ".." directory is a puzzle. --
-				   ((null above-dirs)
-				    ;; We either go up and leave
-				    ;; 'from-dir-list' alone, or, if we
-				    ;; can't go up, we interpret ".." as
-				    ;; perversely instructing us to undo
-				    ;; the last addition to
-				    ;; 'from-dir-list' --
-				    (pop from-dir-list))
-				   (t
-				    ;; This is the case where we can 
-				    ;; go up (pop 'above-dirs') and leave
-				    ;; 'from-dir-list' and 'below-dirs'
-				    ;; alone --
-				    (pop above-dirs))))
-			    ((member d '(-- "--") :test #'equal)
-			     ;; Special flag that means *don't* record in
-			     ;; 'below-dirs' the last layer we passed.
-			     ;; This makes sense only if this layer does
-			     ;; not help discriminate subdirectories.
-			     ;; Useful for purging "src" layers from "bin"
-			     ;; directories (assuming *all* "bin"
-			     ;; subdirectories come from "src"
-			     ;; subdirectories).--
-			     (pop below-dirs))
-			    (t
-			     ;; A normal directory gets copied to
-			     ;; 'from-dir-list' --
-			     (push d from-dir-list))))
-		(format t "above-dirs = ~s~%from-dir-list = ~s~%below-dirs = ~s~%"
-			above-dirs from-dir-list below-dirs)
-		   (let ((res-pn
-			     (make-pathname
-				 :directory
-				    `(:absolute ,@(reverse above-dirs)
-						,@(reverse from-dir-list)
-						,@below-dirs)
-				 :type lisp-object-extn*)))
-		      (ensure-directories-exist res-pn)
-		      res-pn)))
-	       (t
-		(error "Can't take relative directory with respect to relative directory ~s"
-		       pn))))))
+   (place-relative-pathname
+      (pathname ytools-dir-pathname*)
+      (append (pathname-directory (pathname ytools-bin-path*))
+	      (cond ((string= bin-idio* "") '())
+		    (t (cdr (pathname-directory
+			       (parse-namestring bin-idio*))))))
+      lisp-object-extn*
+      t))
 
 ;;;;(setq *features* (adjoin ':pre-chunk *features*))
 

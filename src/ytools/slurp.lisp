@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.37 2005/09/15 13:51:17 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.38 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -271,8 +271,8 @@ after YTools file transducers finish.")
 (defun flags-check (flags expected)
    (mapcan (\\ (flag)
 	         ;;;; (let ((flag (intern (Symbol-name flag) ytools-package*))) ...)
-	      (cond ((member flag expected :test #'char=)
-		     (list flag))
+	      (cond ((member flag expected :test #'char-equal)
+		     (list (char-downcase flag)))
 		    (t
 		     (cerror "I'll ignore it"
 			"Unexpected flag '~a'; expected one of ~a"

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.20 2005/10/07 13:58:38 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.21 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -395,7 +395,7 @@
 	       (eq (car obj-dir)
 		   ':relative))
 	  (place-relative-pathname
-	     src-pn (append (cdr obj-dir) idio)
+	     src-pn (append obj-dir idio)
 	     lisp-object-extn* true))
 	 (t
 	  (make-Pathname
@@ -427,7 +427,9 @@
 		  sym)
 	    new-val)))
 
+#|
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
+;;; MOVED to ytools.lsy, which isn't compiled, so (below) we compile it
 (defun place-relative-pathname (pn dir-list suff ensure-existence)
    (cond ((stringp dir-list)
 	  (setq dir-list (Pathname-directory (parse-namestring dir-list)))
@@ -513,6 +515,10 @@
 	    (t
 	     (error "Can't take relative directory with respect to relative directory ~s"
 		    pn)))))
+|#
+
+(eval-when (:load-toplevel :execute)
+   (compile 'place-relative-pathname))
 
 (defun ups-to-updowns (dir-list)
    (do ((dl (reverse dir-list) (cdr dl))
@@ -1172,11 +1178,14 @@
 	       (some-upper ':upper)
 	       (t ':lower))))
 
-(let ((ytfm-pn (->pathname ytools-home-dir*)))
-   (set-ytools-logical-pathname 'ytools ytfm-pn)
-   (setf (pathname-prop 'obj-version ytfm-pn)
-	 (string->obj-pn ytools-bin-path* ytfm-pn !())))
+(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
 
+;;;;(let ((ytfm-pn (->pathname ytools-home-dir*)))
+;;;;   (set-ytools-logical-pathname 'ytools ytfm-pn)
+;;;;   (setf (pathname-prop 'obj-version ytfm-pn)
+;;;;	 (string->obj-pn ytools-bin-path* ytfm-pn !())))
+
+;;; Yes, we CAN --
 ;;; We CANNOT define %ytools/ using def-ytools-logical-pathname
 ;;; because we don't want that "bin-idio*" segment included in the
 ;;; object version.  If we allowed that, then YTFM and YTools would
@@ -1187,6 +1196,7 @@
 ;;;;(def-ytools-logical-pathname ytools
 ;;;;    (->pathname ytools-home-dir*)
 ;;;;    ytools-bin-path*)
+;;; Instead of "dumbing %ytools down," we switched to "smarting ytfm up."
 
 (defun dir-pn (pn)
    (make-Pathname :host (Pathname-host pn)

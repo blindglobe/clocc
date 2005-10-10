@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.37 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.38 2005/10/10 02:46:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -97,7 +97,8 @@
    (cond ((= (Chunk-date file-dep)
 	     file-op-count*)
 	  file-op-count*)
-	 (t false)))
+	 (t
+	  +no-info-date+)))
 
 (defmethod derive ((file-dep Code-file-dep))
 ;;;;(trace-around Code-file-dep/derive
@@ -117,8 +118,8 @@
 		 (>= (Chunk-date fb)
 		     (file-write-date pn)))
 	     (Chunk-date fb))
-	    (t ;;;; +no-info-date+
-	     false
+	    (t
+	     +no-info-date+
 	       ))))
 
 (defmethod derive ((fb File-scanned-for-deps))
@@ -202,16 +203,20 @@
 			(cond (readtab
 			       (setf (Code-file-chunk-readtable source-ch)
 				     readtab))))))
-      (dolist (new-controller-derivee
-		 (nodup
+      (let ((new-controller-derivees
+	       (nodup
 		    (mapcar (\\ (fc)
 			       (verify-loaded-chunk-controller
 				  (place-Loaded-chunk fc false)
 				  false))
-			    (Code-chunk-depends-on source-ch))))
-	 (on-list-if-new
-	    dep-chunk (Chunk-basis new-controller-derivee))
-	 (chunk-request-mgt new-controller-derivee))))
+			    (Code-chunk-depends-on source-ch)))))
+	 (dolist (nc-derivee new-controller-derivees)
+	    (on-list-if-new
+	       dep-chunk (Chunk-basis nc-derivee))
+	 ;;; Rather than do this here, we let 'monitor-filoid-basis'
+	 ;;; find the new derivees and update them --
+	    ;;;;(chunk-request-mgt nc-derivee)
+	   ))))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
 ;;; from first line, returning false if it can't be found.
@@ -227,43 +232,58 @@
 (defun string-extract-readtab (str)
    (let ((rpos (search "readtable: " (string-downcase str)))
 	 (strlen (length str)))
+     (labels ((find-readtable-string ()
+	      	 (let ((pos (+ rpos (length "Readtable: "))))
+		    (loop (cond ((and (< pos strlen)
+				      (is-whitespace (elt str pos)))
+				 (setq pos (+ pos 1)))
+				(t (return))))
+		    (cond ((< pos strlen)
+			   (let ((end (position-if
+					  (\\ (ch)
+					     (or (char= ch #\;)
+						 (is-whitespace ch)))
+					  str :start pos)))
+			      (values pos end)))
+			  (t
+			   (format *error-output*
+			      "Can't find readtable name in mode line ~
+			       ~%   \"...~a\"~%"
+			      (subseq str rpos))
+			   (values false false)))))
+
+	      (read-readtable-name (pos end)
+		  (let ((readtab-name
+			   (handler-case
+			      (read-from-string str false false
+						:start pos :end end)
+			      (error () false))))
+		     (cond ((and readtab-name
+				 (symbolp readtab-name))
+			    (setq readtab-name
+				  (intern (symbol-name readtab-name)
+					  keyword-package*))
+			    (let ((readtab (named-readtable
+					      readtab-name)))
+			       (or readtab
+				   (progn
+				      (format *error-output*
+					 "Undefined readtable ~s~%"
+					 readtab-name)
+				      false))))
+			   (t
+			    (format *error-output*
+			       !"Can't find end of readtable name in ~
+				 mode line~
+				 ~%   \"...~a\"~%"
+			       (subseq str rpos)))))))
       (cond (rpos
-	     (let ((pos (+ rpos (length "Readtable: "))))
-		(loop (cond ((and (< pos strlen)
-				  (is-whitespace (elt str pos)))
-			     (setq pos (+ pos 1)))
-			    (t (return))))
-		(cond ((< pos strlen)
-		       (let ((end (position-if
-				      (\\ (ch)
-					 (or (char= ch #\;)
-					     (is-whitespace ch)))
-				      str :start pos)))
-			  (cond (end
-				 ;; Finally!  A readtable name
-				 (let* ((readtab-name
-					     (intern (subseq str pos end)
-						     keyword-package*))
-					(readtab (named-readtable
-						     readtab-name)))
-				    (or readtab
-					(progn
-					   (format *error-output*
-					      "Undefined readtable ~s~%"
-					      readtab-name)
-					   false))))
-				(t
-				 (format *error-output*
-				    !"Can't find end of readtable name in ~
-                                      mode line~
-                                      ~%   \"...~a\"~%"
-				    (subseq str rpos))))))
-		      (t
-		       (format *error-output*
-			  "Can't find readtable name in mode line ~
-                           ~%   \"...~a\"~%"
-			  (subseq str rpos))))))
-	    (t false))))
+	     (multiple-value-bind (pos end)
+		                  (find-readtable-string)
+	        (cond (pos
+		       (read-readtable-name pos end))
+		      (t false))))
+	    (t false)))))
 
 (defvar depends-on-enabled* true)
 (defvar depends-on-loads-files* false)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytfm.lmd,v 1.6.2.2 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: ytfm.lmd,v 1.6.2.3 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -27,7 +27,7 @@
 
 (defparameter lisp-readtable* *readtable*)
 (defparameter ytools-readtable* (copy-readtable nil))
-(defparameter default-ytools-bin-path* "../bin/")
+(defparameter default-ytools-bin-path* "../../bin/--/")
 
 (defun install-ytfm (sto)
    (format t "I will install YTFM.  I may ask you some questions to fill in gaps~%")

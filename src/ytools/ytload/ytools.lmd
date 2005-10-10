@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytools.lmd,v 1.4.2.2 2005/05/31 03:42:57 airfoyle Exp $
+;;;$Id: ytools.lmd,v 1.4.2.3 2005/10/10 02:46:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,7 +11,7 @@
                       (declare (ignore start-over))
    (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
 	  (format t "Compiling all YTools~%")
-	  (let ((fload-compile* ':compile))
+	  (let ((fload-compile-flag* ':compile))
 	     (ytools-module-load 'ytools))
 	  t)
 	 (t nil)))

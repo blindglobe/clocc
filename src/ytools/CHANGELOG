@@ -1,8 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.30 2005/10/10 02:46:06 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.31 2005/10/10 02:47:51 airfoyle Exp $
 	
 2005-10-09: Creating Ever-loaded chunks; not integrated yet (or
             working correctly, for that matter).  Corrected various
-            technicalities to get Open MCL to compile YTools.
+            technicalities to get Open MCL to compile YTools.  Created
+            simple repl (repl.lisp) for use in slime debugger.
 
 2005-10-07: Allowed names of config files to be something other than
             "ytconfig.lisp".  Broadened declarations of allowed values

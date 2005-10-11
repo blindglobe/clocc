@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.11.2.2 2005/10/10 14:39:27 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.11.2.3 2005/10/11 13:48:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -34,9 +34,10 @@
 (defun out-prepare (stream)
    (let ((curstate (Out-stream-state stream))
 	 (real-stream (Out-stream-stream stream)))
+;;;;      (setq real-stream* real-stream)
       (cond ((eq curstate 'unindented)
 #+allegro    (format real-stream "~V,0T" (Out-stream-indent stream))
-#-allegro    (progn (fresh-line real-stream)
+#-allegro    (progn #-openmcl (fresh-line real-stream)
 		    (print-spaces (Out-stream-indent stream)
 				  real-stream))
 	     (setf (Out-stream-state stream) 'indented)))
@@ -317,6 +318,7 @@
    (multiple-value-bind (prefix cmd suffix)
                         (pp-block-analyze cmd)
 	 (let (
+	       #+openmcl (save-srm-var (gensym))
 ;;;;	       (pp-srmvar (gensym))
 ;;;;	       (outified-pp-srmvar (gensym))
 ;;;;	       (srmvar (gensym))
@@ -327,18 +329,29 @@
 ;;;;		   (,srmvar ,stream))
 
 	    `(let ((,stream ;;;; ,pp-srmvar
-		    (out-prepare ,stream)))
-		(pprint-logical-block
-			       (,stream nil ;;;; ,pp-srmvar nil ;;;; ,realsrmvar nil
-				,@(cond (prefix `(:prefix ,prefix))
-					(t '()))
-				,@(cond (suffix `(:suffix ,suffix))
-				  (t '())))
-		      (let ((,stream  ;;;; ,outified-pp-srmvar
-			       (stream-outify ,stream ;;;; ,pp-srmvar   ;;;; ,realsrmvar
-			       )))
-			 ,@(expand-out-body cmd stream ;;;; outified-pp-srmvar
-			   )))))))
+		    (out-prepare ,stream))
+		    #+openmcl (,save-srm-var nil)
+		    )
+		(unwind-protect
+		   (pprint-logical-block
+				  (,stream nil 
+				   ,@(cond (prefix `(:prefix ,prefix))
+					   (t '()))
+				   ,@(cond (suffix `(:suffix ,suffix))
+				     (t '())))
+		         #+openmcl (setq ,save-srm-var ,stream)
+			 (let ((,stream  
+				  (stream-outify ,stream)))
+			    ,@(expand-out-body cmd stream)))
+		  #+openmcl (cond (,save-srm-var
+				   (openmcl-out-stream-cleanup ,save-srm-var)))
+               )))))
+
+(defun openmcl-out-stream-cleanup (pp-srm)
+   (cond ((assoc pp-srm out-streams*)
+	  (setq out-streams*
+		(delete-if (\\ (e) (eq (first e) pp-srm))
+			   out-streams*)))))
 
 (defun pp-block-analyze (pp-block-body)
    (let ((pre (car pp-block-body)) (prefix false))

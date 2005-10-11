@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.56 2005/10/07 13:58:37 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.57 2005/10/11 19:10:01 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1856,6 +1856,7 @@
       (\\ (name)
 	 (make-instance 'Form-chunk
 	    :name name))
+    :initializer
       (\\ (new-form-chunk)
          (setf (Form-chunk-form new-form-chunk)
 	       form))))

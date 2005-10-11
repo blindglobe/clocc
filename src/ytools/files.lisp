@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.61 2005/10/10 14:39:27 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.62 2005/10/11 19:10:01 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -656,7 +656,9 @@
       (\\ (name)
 	 (make-instance 'Loaded-source-chunk
 	    :name name
-	    :file file-ch))))
+	    :file file-ch
+	    :loadee file-ch
+	    ))))
 
 (defmethod derive-date ((l-source Loaded-source-chunk))
    false)

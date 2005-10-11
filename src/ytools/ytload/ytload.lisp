@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.5 2005/10/10 02:46:07 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.6 2005/10/11 19:10:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -204,7 +204,9 @@
 		(yt-load :ytools)
 		(load-module-file module))
 	       (t
-		(error "Can't find file for module ~s" module)))))
+;;;;		(format nil "Can't load ~s" module)
+		(error "Can't find file for module ~s" module)
+		))))
    module)
 
    ;;;;		   :directory `(:relative

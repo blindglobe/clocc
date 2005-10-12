@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.62 2005/10/11 19:10:01 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.63 2005/10/12 06:39:05 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -119,7 +119,7 @@
 
 ;;; Tracking down strange bug--
 (defmethod (setf Chunk-date) :before (new-date (fc Code-file-chunk))
-   (let ((file-date (file-write-date (Code-file-chunk-pathname fc))))
+   (let ((file-date (pathname-write-time (Code-file-chunk-pathname fc))))
       ;; The file-date can be nil if the file got renamed or deleted
       (cond ((and file-date
 		  (> new-date
@@ -1273,7 +1273,7 @@
 			      :type pathname)))
 
 		(defmethod derive-date ((ch ,subfile-class-name))
-		   (file-write-date (,sub-pathname-read-fcn ch)))
+		   (pathname-write-time (,sub-pathname-read-fcn ch)))
 
 		;; There's nothing to derive for the subfile; as long as the
 		;; underlying file is up to date, so is the subfile.	     

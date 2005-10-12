@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.32 2005/10/11 13:48:48 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.33 2005/10/12 06:39:05 airfoyle Exp $
 	
+2005-10-11: Replaced calls to 'file-write-date' with calls to
+            'pathname-write-time' in cases where file is not known to exist.
+
 2005-10-10: Workarounds for bugs in Open MCL.
 
 2005-10-09: Creating Ever-loaded chunks; not integrated yet (or

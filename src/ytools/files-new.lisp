@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.11 2005/10/10 02:46:06 airfoyle Exp $
+;;;$Id: files-new.lisp,v 1.1.2.12 2005/10/19 20:28:20 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -119,7 +119,7 @@
 
 ;;; Tracking down strange bug--
 (defmethod (setf Chunk-date) :before (new-date (fc Code-file-chunk))
-   (let ((file-date (file-write-date (Code-file-chunk-pathname fc))))
+   (let ((file-date (pathname-write-time (Code-file-chunk-pathname fc))))
       ;; The file-date can be nil if the file got renamed or deleted
       (cond ((and file-date
 		  (> new-date
@@ -293,7 +293,10 @@
       (error "No way to make a Loaded-chunk for ~s" ch)))
 
 ;;; An Ever-loaded-chunk is parasitic on a Loaded-chunk, and
-;;; records whether the load it governs was ever successful.
+;;; manages "the Loaded-chunk has loaded successfully at least once."
+;;; THIS ISN'T QUITE RIGHT, and nothing depends on it.
+;;; The goal is to avoid reloading every file B that depends-on A
+;;; at run time whenever A is reloaded.
 (defclass Ever-loaded-chunk (Chunk)
   ((host :initarg :host
 	 :reader Ever-loaded-chunk-host)
@@ -324,8 +327,7 @@
 			     (get-universal-time))))
 		new-elc)))))
 
-;;; 'derive' can't really set the date, because it doesn't
-;;; know when the host got loaded.
+
 (defmethod derive ((elc Ever-loaded-chunk))
    (Chunk-date elc))
 
@@ -470,18 +472,24 @@
 ;;; If 'compiled-ch' is up to date, and the object file it is supposed
 ;;; to produce exists, return its chunk; else return false.
 (defun freshly-compiled-object (compiled-ch)
-   (chunk-derive-date-and-record compiled-ch)
-   (cond ((and (chunk-up-to-date compiled-ch)
-	       (not (eq (Compiled-file-chunk-status compiled-ch)
-			':compile-failed)))
+   ;;; This should be redundant (and is verboten anyway) --
+   ;;;;(chunk-derive-date-and-record compiled-ch)
+   (cond ((not (chunk-up-to-date compiled-ch))
+	  (cerror "I'll rederive the date"
+		  "Compiled-file chunk unexpectedly out of date: ~s"
+		  compiled-ch)
+	  (chunk-derive-date-and-record compiled-ch)))
+   (cond ((eq (Compiled-file-chunk-status compiled-ch)
+	      ':compile-failed)
+	  false)
+	 (t
 	  (let* ((obj-file-ch (Compiled-file-chunk-object-file
 				 compiled-ch))
 		 (object-file
 		   (Code-file-chunk-pathname obj-file-ch)))
 	     (cond ((probe-file object-file)
 		    obj-file-ch)
-		   (t false))))
-	 (t false)))
+		   (t false))))))
 
 ;;; Follow indirection links to Loaded-file-chunk 
 ;;;   and the contents of its 'selection' field
@@ -501,6 +509,7 @@
 		       (return (values false nil))))))
 	 (cond ((typep file-ch 'Loaded-file-chunk)
 		;; This "feature" is not actually used, is it?
+                ;; >>> So the "loop" is never executed more than once.
 		(setq lf-ch file-ch))
 		       ;; -- Indirection; go around again looking
 		       ;; for an actual file.
@@ -654,7 +663,9 @@
       (\\ (name)
 	 (make-instance 'Loaded-source-chunk
 	    :name name
-	    :file file-ch))))
+	    :file file-ch
+	    :loadee file-ch
+	    ))))
 
 (defmethod derive-date ((l-source Loaded-source-chunk))
    false)
@@ -1269,7 +1280,7 @@
 			      :type pathname)))
 
 		(defmethod derive-date ((ch ,subfile-class-name))
-		   (file-write-date (,sub-pathname-read-fcn ch)))
+		   (pathname-write-time (,sub-pathname-read-fcn ch)))
 
 		;; There's nothing to derive for the subfile; as long as the
 		;; underlying file is up to date, so is the subfile.	     

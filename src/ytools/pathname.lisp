@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.21 2005/10/10 02:46:07 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.22 2005/10/19 14:33:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1129,7 +1129,7 @@
 		       :type suff))
 		   (t
 		    (place-relative-pathname
-			pn (cdr whdir) suff true)))))
+			pn whdir suff true)))))
 ;;;;      (out (:to *error-output*)
 ;;;;	"pathname-prop " assoc-prop " of " pn
 ;;;;	" is " (pathname-prop assoc-prop pn)

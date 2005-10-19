@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.63 2005/10/12 06:39:05 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.64 2005/10/19 14:33:48 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -503,6 +503,7 @@
 		       (return (values false nil))))))
 	 (cond ((typep file-ch 'Loaded-file-chunk)
 		;; This "feature" is not actually used, is it?
+                ;; >>> So the "loop" is never executed more than once.
 		(setq lf-ch file-ch))
 		       ;; -- Indirection; go around again looking
 		       ;; for an actual file.

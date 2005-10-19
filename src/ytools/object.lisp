@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 1.4.2.2 2005/07/17 19:08:52 airfoyle Exp $
+;;;$Id: object.lisp,v 1.4.2.3 2005/10/19 14:33:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -208,23 +208,41 @@
 		       :clauses clauses :slots slots)))))))
 
 (defun class-kind-parse (l classname)
-   (let ((storage-class false) (is-testable true) (already-defined false))
+   (let ((storage-class false)
+         (explicit-testability false)
+         is-testable
+         (already-defined false))
       (repeat :for ((x :in l))
          (cond ((memq x '(:already-defined :built-in built-in))
 		(!= already-defined true))
 	       ((memq x '(:ordinary :nondescript :as-shown :slots-only :named))
+                (!= explicit-testability true)
 		(!= is-testable (eq x ':named)))
 	       ((memq x '(:structure :object :list :vector))
 		(cond (storage-class
 		       (error "I'll ignore all but the first"
-			  "'def-class' medium specified more than once in: ~s for class ~s"
-			  l classname))
+			      !"'def-class' medium specified more than once ~
+                                 in: ~s for class ~s"
+                              l classname))
 		      (t
 		       (!= storage-class x))))
 	       (t
 		(cerror "I'll ignore it"
 		   "Illegal :medium in def-class: ~s for class ~s"
 		   x classname))))
+      (cond (explicit-testability
+             (cond ((memq storage-class '(:structure :object))
+                    (cond ((not is-testable)
+                           (cerror "I'll ignore it"
+                                   "Attempt to declare ~s ~s :slots-only"
+                                   storage-class classname)
+                           (!= is-testable true))))))
+            (t
+             (!= is-testable true)
+;;; This would be the built-in Lisp behavior, but why should we have to
+;;; remember different defaults for different cases? --
+;;;;                 (memq storage-class '(:structure :object))
+                 ))
       (values storage-class is-testable already-defined)))
 
 ;;;;(datafun to-slurp declare-ytools-class #'slurp-eval)
@@ -337,10 +355,10 @@
 					       ,(cond ((eq storage-class ':list)
 						       'list)
 						      (t 'vector))))
-					,@(include-if
-					     (and is-testable
-						  (not (eq storage-class ':structure)))
-					     ':named)
+					,@(cond (is-testable
+                                                 `(:named
+                                                   (:predicate ,(build-symbol is- (< name)))))
+                                                (t !()))
 					,@(cond ((and key-cons
 						      (not (eq key-cons ':noway)))
 						 `((:constructor ,uninit-conser
@@ -352,7 +370,6 @@
 							`(:constructor
 							    ,uninit-extra-key-conser
 							    (&key ,@key-consargs))))))
-					(:predicate ,(build-symbol is- (< name)))
 					,@printer)
 				       ,@slots)
 				      ,@(cond ((and key-cons

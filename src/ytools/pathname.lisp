@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.22 2005/10/19 14:33:48 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.23 2005/10/20 18:00:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -823,7 +823,7 @@
 	  (error "Can't coerce ~s to YTools pathname"
 		 x))))
 
-(defconstant +empty-pathname+ (parse-namestring ""))
+(defvar +empty-pathname+ (parse-namestring ""))
 
 ;;; In spite of its name, this can return an ordinary pathname if no 
 ;;; %'s are encountered in 'x'.

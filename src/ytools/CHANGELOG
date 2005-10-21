@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 1.31.2.35 2005/10/19 14:33:48 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.36 2005/10/21 13:27:26 airfoyle Exp $
 	
+2005-10-21: Added calls to 'force-output' to make queries work
+            properly under SBCL.  Changed parameter
+            ytools-bin-dir-pathname* in ytools.lsy to allow
+            non-relative bin directory for YTools.
+            
 2005-10-19: Fixed bug in 'declare-pathname-associate'
 
 2005-10-11: Replaced calls to 'file-write-date' with calls to

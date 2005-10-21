@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.6 2005/10/11 19:10:01 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.7 2005/10/21 13:29:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -146,7 +146,8 @@
 		   (t nil))))
 	 (t
 	  (cond ((eq if-loaded ':warn)
-		 (format t "System ~a already loaded; to force re-load, ~% give yt-load keyword argument \":if-loaded ':force\"~%"
+		 (format *query-io*
+			 "System ~a already loaded; to force re-load, ~% give yt-load keyword argument \":if-loaded ':force\"~%"
 			 module)))
 	  '(nil nil))))
 
@@ -256,11 +257,11 @@
       (cond ((and config-directory* (is-set directory-delimiter*))
 	     (return)))
       (cond ((not config-directory*)
-	     (format t "Directory containing ~s (end with slash or other directory delimiter): "
+	     (query "Directory containing ~s (end with slash or other directory delimiter): "
 		       config-file*)
 	     (setq config-directory* (clear-read-line)))
 	    (t
-	     (format t "Assuming ~s is in ~a~%"
+	     (format *query-io* "Assuming ~s is in ~a~%"
 		       config-file* config-directory*)))
       (setq directory-delimiter*
 	   (nth-value 1 (peel-last-non-whitespace
@@ -270,7 +271,7 @@
 			    '(#\/ #\\ #\:))
 		    (return))
 		   (t
-		    (format *query-io*
+		    (query
 			    "Is '~a' really the directory delimiter ~% (type blank line if so, else correct delimiter): "
 			    directory-delimiter*)
 		    (let ((delim (nth-value 1 (peel-last-non-whitespace
@@ -286,11 +287,11 @@
 (defun ensure-filename-case ()
 	 (cond ((is-set filename-case*) nil)
 	       (t
-		(format t "What is the usual case for file names on your system (upper or lower)? ")
+		(query "What is the usual case for file names on your system (upper or lower)? ")
 		(loop
 		   (let ((case (clear-read-line)))
 		      (cond ((= (length case) 0)
-			     (format t "Assuming lower case~%")
+			     (format *query-io* "Assuming lower case~%")
 			     (setq filename-case* ':lower)
 			     (return))
 			    (t
@@ -300,7 +301,7 @@
 			     (cond ((member case '(:upper :lower))
 				    (setq filename-case* case)
 				    (return)))))
-		      (format t "Type 'upper' or 'lower': ")))
+		      (query "Type 'upper' or 'lower': ")))
 		t)))
 
 (defparameter space-bag* " 	")  ; <-- space & tab
@@ -315,15 +316,15 @@
 	     (values nil nil)))))
 
 (defun better-restart-message ()
-  (format t "It's probably better to quit Lisp before loading any module~%")
+  (format *query-io* "It's probably better to quit Lisp before loading any module~%")
   t)
 
 (defun prompt-for-dir-name (message)
    (loop
-      (format t message)
+      (query message)
       (let ((dir (clear-read-line)))
          (cond ((< (length dir) (length directory-delimiter*))
-		(format t "You must type a directory name~%"))
+		(format *query-io* "You must type a directory name~%"))
 	       (t
 		(return (dirname-with-delimiter dir)))))))
 
@@ -384,7 +385,9 @@
 (defun clear-read-line ()
    #+lispworks
    (clear-input)
-   (read-line))
+   #+sbcl
+   (finish-output *query-io*)
+   (read-line *query-io*))
 
 (defun yt-config-file-name ()
    (strings-concat config-directory* config-file*))
@@ -446,6 +449,12 @@
 		     (t
 		      (return t)))
 	       (setq i (+ i 1)))))))
+
+(defun query (&rest format-args)
+   (apply #'format *query-io* format-args)
+#+sbcl
+   (finish-output *query-io*)
+ )
 
 (defmacro set-config-var (var even-if-set &rest body)
    `(cond ((or ,even-if-set (not (boundp ',var)))

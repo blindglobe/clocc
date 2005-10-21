@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;; $Id: ytools.lsy,v 1.27.2.26 2005/10/14 14:46:22 airfoyle Exp $
+;;; $Id: ytools.lsy,v 1.27.2.27 2005/10/21 13:27:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -183,14 +183,24 @@
 		    pn)))))
 
 (defparameter ytools-bin-dir-pathname*
-   (place-relative-pathname
-      (pathname ytools-dir-pathname*)
-      (append (pathname-directory (pathname ytools-bin-path*))
-	      (cond ((string= bin-idio* "") '())
-		    (t (cdr (pathname-directory
-			       (parse-namestring bin-idio*))))))
-      lisp-object-extn*
-      t))
+   (let ((bin-dir-list 
+            (append (pathname-directory (pathname ytools-bin-path*))
+                    (cond ((string= bin-idio* "") '())
+                          (t (cdr (pathname-directory
+                                     (parse-namestring bin-idio*))))))))
+      (cond ((eq (car bin-dir-list)
+                 ':absolute)
+             (merge-pathnames
+                (make-pathname
+                   :directory bin-dir-list
+                   :type lisp-object-extn*)
+                ytools-dir-pathname*))
+            (t
+             (place-relative-pathname
+                (pathname ytools-dir-pathname*)
+                bin-dir-list
+                lisp-object-extn*
+                t)))))
 
 ;;;;(setq *features* (adjoin ':pre-chunk *features*))
 

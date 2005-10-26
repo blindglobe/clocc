@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.57 2005/10/11 19:10:01 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.58 2005/10/26 14:32:30 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -1016,9 +1016,23 @@
 	       ;; :meta-cycle thrown in, which is deadly if encountered
 	       ;; below the original chunks, but harmless elsewhere.
 	       (chunks-leaves-up-to-date (chunkl in-progress)
-		  (mapcar (\\ (ch)
-			     (check-leaves-up-to-date ch in-progress))
-			  chunkl))
+                  (cond ((and chunk-update-dbg*
+                              (not (null in-progress)))
+                         (format *error-output*
+                            !"Looking at supporters of ~s~%"
+                            (car in-progress))
+;;;;                         (cond ((eq (car in-progress) c-s)
+;;;;                                (break "Got it")))
+                         ))
+                  (prog1
+		     (mapcar (\\ (ch)
+                                (check-leaves-up-to-date ch in-progress))
+                             chunkl)
+                     (cond ((and chunk-update-dbg*
+                                 (not (null in-progress)))
+                            (format *error-output*
+                               !"Done with supporters of ~s~%"
+                               (car in-progress))))))
 
 	       ;; Return all derivees that need to be updated (plus 
 	       ;; supporters* of those derivees).
@@ -1175,10 +1189,24 @@
 ;;;;		  (trace-around temporarily-manage
 ;;;;		     (:> "(temporarily-manage: " update-chunks ")")
 		  (dolist (ud-ch update-chunks)
-		     (cond ((not (Chunk-managed ud-ch))
+		     (cond ((not (Chunk-manage-request ud-ch))
+                            ;; -- This used to be (not (Chunk-managed ud-ch)).
+                            ;; But, because of nonmonotonicity, a chunk
+                            ;; can become unmanaged when another chunk
+                            ;; gets temporarily managed.  So we have to
+                            ;; put in the request even if it seems redundant.
 			    (cond (temp-mgt-dbg*
 				   (format t "Temporarily managing ~s~%"
-					   ud-ch)))
+					   ud-ch)
+;;;;                                   (cond ((and c-s-break*
+;;;;                                               (eq update-chunks
+;;;;                                                   (Chunk-update-basis
+;;;;                                                      c-s)))
+;;;;                                          (setq ud-ch* ud-ch
+;;;;                                                ud-ch-l* update-chunks)
+;;;;                                          (break "got update-chunks ~s"
+;;;;                                                 ud-ch-l*)))
+                                   ))
 			    (on-list ud-ch temporarily-managed)
 			    (chunk-internal-req-mgt ud-ch))))
 ;;;;		     (:< (&rest _) "temporarily-manage: "))

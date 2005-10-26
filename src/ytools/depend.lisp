@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.39 2005/10/21 13:27:26 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.40 2005/10/26 14:32:30 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -513,7 +513,9 @@
 		   (setf (Code-chunk-callees filoid-ch)
 			 (union fbl
 				(Code-chunk-callees filoid-ch))))))
-	 (loaded-chunk-augment-basis loaded-filoid-ch lbl))))
+;;; The basis will be reset by 'loaded-chunk-set-basis' --
+;;;;	 (loaded-chunk-augment-basis loaded-filoid-ch lbl)
+         )))
 
 ;;; Create link that requires sub-files of all pathnames in 'pnl'
 ;;; to be loaded or slurped before file handled by 'compiled-ch'

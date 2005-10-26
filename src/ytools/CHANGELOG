@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.36 2005/10/21 13:27:26 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.37 2005/10/26 14:32:30 airfoyle Exp $
 	
+2005-10-26: Changed 'temporarily-manage' in chunks-update so it makes
+            management request even if a chunk is already managed.
+            (See comment in that function.)
+
 2005-10-21: Added calls to 'force-output' to make queries work
             properly under SBCL.  Changed parameter
             ytools-bin-dir-pathname* in ytools.lsy to allow

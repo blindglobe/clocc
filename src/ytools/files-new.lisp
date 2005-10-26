@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files-new.lisp,v 1.1.2.12 2005/10/19 20:28:20 airfoyle Exp $
+;;;$Id: files-new.lisp,v 1.1.2.13 2005/10/26 14:32:30 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -416,10 +416,22 @@
       (cond ((not file-ch)
 	     ;; User canceled
 	     false)
-	    ((and (not (eq loaded-ch lc))
-		  (chunk-up-to-date loaded-ch))
-	     ;; Up to date, nothing to do
-	     false)
+	    ((not (eq loaded-ch lc))
+             (error !"Loaded-file-chunk current version screwed up: ~
+                      ~%  chunk: ~s~%  version: ~s"
+                    lc loaded-ch))
+            ((and (eq (Loaded-chunk-status lc) ':load-succeeded)
+;;;;                  (progn
+;;;;                     (dbg-save lc)
+;;;;                     (breakpoint Loaded-file-chunk/derive
+;;;;                        "Does it really need deriving? " lc)
+;;;;                    t)
+                  (every (\\ (pb) (=< (Chunk-date pb)
+                                      (Chunk-date lc)))
+                         (Loaded-chunk-principal-bases lc)))
+             ;; Out-of-date-ness is only apparent; the file is loaded
+             ;; and some file it depends on has been reloaded.
+             false)
 	    ((typep file-ch 'Compiled-file-chunk)
 	     (loop
 		(let ((obj-file-ch

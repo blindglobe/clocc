@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.64 2005/10/19 14:33:48 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.65 2005/10/31 13:49:15 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -416,10 +416,22 @@
       (cond ((not file-ch)
 	     ;; User canceled
 	     false)
-	    ((and (not (eq loaded-ch lc))
-		  (chunk-up-to-date loaded-ch))
-	     ;; Up to date, nothing to do
-	     false)
+	    ((not (eq loaded-ch lc))
+             (error !"Loaded-file-chunk current version screwed up: ~
+                      ~%  chunk: ~s~%  version: ~s"
+                    lc loaded-ch))
+            ((and (eq (Loaded-chunk-status lc) ':load-succeeded)
+;;;;                  (progn
+;;;;                     (dbg-save lc)
+;;;;                     (breakpoint Loaded-file-chunk/derive
+;;;;                        "Does it really need deriving? " lc)
+;;;;                    t)
+                  (every (\\ (pb) (=< (Chunk-date pb)
+                                      (Chunk-date lc)))
+                         (Loaded-chunk-principal-bases lc)))
+             ;; Out-of-date-ness is only apparent; the file is loaded
+             ;; and some file it depends on has been reloaded.
+             false)
 	    ((typep file-ch 'Compiled-file-chunk)
 	     (loop
 		(let ((obj-file-ch
@@ -472,18 +484,24 @@
 ;;; If 'compiled-ch' is up to date, and the object file it is supposed
 ;;; to produce exists, return its chunk; else return false.
 (defun freshly-compiled-object (compiled-ch)
-   (chunk-derive-date-and-record compiled-ch)
-   (cond ((and (chunk-up-to-date compiled-ch)
-	       (not (eq (Compiled-file-chunk-status compiled-ch)
-			':compile-failed)))
+   ;;; This should be redundant (and is verboten anyway) --
+   ;;;;(chunk-derive-date-and-record compiled-ch)
+   (cond ((not (chunk-up-to-date compiled-ch))
+	  (cerror "I'll rederive the date"
+		  "Compiled-file chunk unexpectedly out of date: ~s"
+		  compiled-ch)
+	  (chunk-derive-date-and-record compiled-ch)))
+   (cond ((eq (Compiled-file-chunk-status compiled-ch)
+	      ':compile-failed)
+	  false)
+	 (t
 	  (let* ((obj-file-ch (Compiled-file-chunk-object-file
 				 compiled-ch))
 		 (object-file
 		   (Code-file-chunk-pathname obj-file-ch)))
 	     (cond ((probe-file object-file)
 		    obj-file-ch)
-		   (t false))))
-	 (t false)))
+		   (t false))))))
 
 ;;; Follow indirection links to Loaded-file-chunk 
 ;;;   and the contents of its 'selection' field

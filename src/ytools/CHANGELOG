@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.37 2005/10/26 14:32:30 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.38 2005/10/31 13:49:15 airfoyle Exp $
 	
+2005-10-31: Export 'fload-version-suffix*' because it's mentioned in
+            the manual.
+
 2005-10-26: Changed 'temporarily-manage' in chunks-update so it makes
             management request even if a chunk is already managed.
             (See comment in that function.)

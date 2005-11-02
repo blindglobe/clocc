@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.40 2005/10/26 14:32:30 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.41 2005/11/02 01:18:14 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -216,7 +216,8 @@
 	 ;;; Rather than do this here, we let 'monitor-filoid-basis'
 	 ;;; find the new derivees and update them --
 	    ;;;;(chunk-request-mgt nc-derivee)
-	   ))))
+	   )
+         (loaded-chunk-set-basis loaded-file-ch)))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name
 ;;; from first line, returning false if it can't be found.

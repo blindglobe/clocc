@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.42 2005/11/02 17:15:09 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.43 2005/11/03 20:51:49 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -183,16 +183,11 @@
    (let ((dep-chunk (verify-loaded-chunk-controller loaded-file-ch false))
 	 ;; -- A Code-file-dep
 	 (file-pn (Code-file-chunk-pathname source-ch)))
-      ;; In what follows we are setting the
-      ;; derivees of 'dep-chunk'.  However,
-      ;; we can't set them directly, because
-      ;; (see chunk.lisp) they are
-      ;; maintained only as the inverse of
-      ;; 'Chunk-basis'.
-      ;; One purpose of the slurp is to
-      ;; reconstruct the derivees of
-      ;; 'dep-chunk'.  So we clean the slate
-      ;; first --
+      ;; In what  follows we are setting the  derivees of 'dep-chunk'.
+      ;; However, we can't set them directly, because (see chunk.lisp)
+      ;; they  are maintained  only as  the inverse  of 'Chunk-basis'.
+      ;; One purpose  of the slurp  is to reconstruct the  derivees of
+      ;; 'dep-chunk'.  So we clean the slate first --
       (dolist (dc (Chunk-derivees dep-chunk))
 	 (setf (Chunk-basis dc)
 	       (remove dep-chunk (Chunk-basis dc))))
@@ -203,6 +198,7 @@
 			(cond (readtab
 			       (setf (Code-file-chunk-readtable source-ch)
 				     readtab))))))
+      (loaded-chunk-set-basis loaded-file-ch)
       (let ((new-controller-derivees
 	       (nodup
 		    (mapcar (\\ (fc)

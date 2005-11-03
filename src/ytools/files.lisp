@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.65 2005/10/31 13:49:15 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.66 2005/11/03 20:51:49 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -764,7 +764,11 @@
 (defgeneric loaded-chunk-set-basis (loaded-ch)
    (:method ((lch t)) true))
 
+(defvar basis-monitor-dbg* false)
+
 (defun monitor-filoid-basis (loaded-filoid-ch)
+   (cond (basis-monitor-dbg*
+          (format *error-output* "Monitoring basis of ~s~%" loaded-filoid-ch)))
    (cond ((not (typep loaded-filoid-ch 'Loaded-chunk))
 	  (error "Attempt to monitor basis of non-Loaded-chunk: ~s"
 		 loaded-filoid-ch)))
@@ -772,6 +776,8 @@
 	    (list (verify-loaded-chunk-controller loaded-filoid-ch false)))
 	 under-new-management prev-derivees)
       (loop
+         (cond (basis-monitor-dbg*
+                (format *error-output* "Checking controllers ~s~%" controllers)))
 	 (dolist (c controllers)
 	   (chunk-request-mgt c))
 	 (setq prev-derivees (mapcar #'Chunk-derivees controllers))
@@ -780,11 +786,25 @@
 	 (chunks-update controllers false false)
 	 ;; We find those derivees, turn them on, and repeat the
 	 ;; cycle --
+         (cond (basis-monitor-dbg*
+                (format *error-output* "Considering derivees beyond ~s~%"
+                        prev-derivees)))
 	 (setq under-new-management
 	      (mapcan (\\ (c prev-dl)
+                         (cond (basis-monitor-dbg*
+                                (format *error-output*
+                                    "Controller ~s~%" c)))
 			 (mapcan (\\ (new-d)
 				    (cond ((or (Chunk-managed new-d)
 					       (memq new-d prev-dl))
+                                           (cond (basis-monitor-dbg*
+                                                  (format *error-output*
+                                                    "   Ignoring ~s because ~a~%"
+                                                    new-d
+                                                    (cond ((Chunk-managed new-d)
+                                                           " already managed")
+                                                          (t
+                                                           " already a derivee")))))
 					   !())
 					  (t (list new-d))))
 				 (Chunk-derivees c)))
@@ -792,7 +812,9 @@
 		      prev-derivees))
 	(cond ((null under-new-management)
 	       (return)))
-	(setq controllers under-new-management))))
+	(setq controllers under-new-management))
+      (cond (basis-monitor-dbg*
+             (format *error-output* "Monitor-filoid-basis done~%")))))
 
 (defun verify-loaded-chunk-controller (lc allow-null)
    (let ((controller (Loaded-chunk-controller lc)))

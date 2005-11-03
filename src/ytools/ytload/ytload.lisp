@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.7 2005/10/21 13:29:36 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.8 2005/11/03 14:32:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -35,8 +35,8 @@
 ;; at different times, so we can't control the package in effect when the
 ;; first format is called.
 (defmacro intern-eval (pkg expression orig-pkg)
-   `(let ((_ss_ ,(let ((*package* (find-package orig-pkg)))
-		    (format nil "~a" expression))))
+   `(let ((_ss_ (let ((*package* (find-package ',orig-pkg)))
+		    (format nil "~a" ',expression))))
        (let ((*package* (find-package ',pkg)))
 	  ;;(declare (special *package*))
 	  (let ((xx (with-input-from-string (_srm_ _ss_)

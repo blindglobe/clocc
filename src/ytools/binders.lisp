@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: binders.lisp,v 1.4.2.1 2005/11/03 20:51:49 airfoyle Exp $
+;;;$Id: binders.lisp,v 1.4.2.2 2005/11/03 21:00:30 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 Drew McDermott and Yale University. 
 ;;; This software is released under the terms of the Modified BSD
@@ -35,7 +35,7 @@
       `(let ,vars-n-vals
          ;; if bindings, declare variables to be special
          ,@(include-if (not (null touchables))
-              (cl:declare (special ,touchables)))
+              `(cl:declare (special ,@touchables)))
          ,@body)))
 
 (defmacro letrec (&body b) `(let-fun ,@b))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.13 2005/10/07 13:58:37 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.14 2005/11/08 22:32:41 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -33,7 +33,8 @@
 	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
 	     is-Fixnum is-Ratio is-sublist is-whitespace
-	     is-Stream list->values values->list lastelt len string-length
+	     is-Stream list->values values->list lastelt len
+             string-length string-concat
 	     build-symbol symno* true false keyword-package*
 	     eval-when condense
 	     assoc= alist-entry alist-entry-set alref. alref
@@ -421,6 +422,13 @@
 
 (defun len (l) (length (the list l))   )
 (defun string-length (s) (length (the string s)))
+
+(defun string-concat (&rest vl)
+  (apply #'concatenate 'string vl))
+
+(define-compiler-macro string-concat (&rest vl)
+   `(concatenate 'string ,@(<# (\\ (v) `(the string ,v))
+			       vl)))
 
 ;; Macro for building new symbols.
 ;; (BUILD-SYMBOL [(:package <p>)] -specs-) creates a symbol

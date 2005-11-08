@@ -1,6 +1,6 @@
 ;;; Environment & System access
 ;;;
-;;; Copyright (C) 1999-2004 by Sam Steingold
+;;; Copyright (C) 1999-2005 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.61 2005/08/05 19:42:34 sds Exp $
+;;; $Id: sys.lisp,v 1.62 2005/11/08 15:18:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
          (shadow '(getenv finalize)))
 
 (export
- '(getenv finalize variable-special-p arglist
+ '(getenv finalize variable-special-p variable-not-special arglist
    compiled-file-p
    class-slot-list class-slot-initargs
    +month-names+ +week-days+ +time-zones+ tz->string string->tz
@@ -108,6 +108,21 @@ or does not contain valid compiled code."
   #+sbcl (sb-walker:var-globally-special-p symbol)
   #-(or allegro clisp cmu gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'variable-special-p symbol)))
+
+(defun variable-not-special (symbol)
+  "Undo the global special declaration.
+This returns a _new_ symbol with the same name, package,
+fdefinition, and plist as the argument.
+This can be confused by imported symbols.
+Also, (FUNCTION-LAMBDA-EXPRESSION (FDEFINITION NEW))
+will return the OLD (uninterned!) symbol as its 3rd value.
+BEWARE!"
+  (let ((pack (symbol-package symbol)) var)
+    (unintern symbol)
+    (setq var (intern (symbol-name symbol) pack))
+    (setf (fdefinition var) (fdefinition symbol)
+          (symbol-plist var) (symbol-plist symbol))
+    var))
 
 (defun arglist (fn)
   "Return the signature of the function."

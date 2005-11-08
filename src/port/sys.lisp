@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.62 2005/11/08 15:18:14 sds Exp $
+;;; $Id: sys.lisp,v 1.63 2005/11/08 20:52:24 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -120,8 +120,8 @@ BEWARE!"
   (let ((pack (symbol-package symbol)) var)
     (unintern symbol)
     (setq var (intern (symbol-name symbol) pack))
-    (setf (fdefinition var) (fdefinition symbol)
-          (symbol-plist var) (symbol-plist symbol))
+    (when (fboundp symbol) (setf (fdefinition var) (fdefinition symbol)))
+    (setf (symbol-plist var) (symbol-plist symbol))
     var))
 
 (defun arglist (fn)

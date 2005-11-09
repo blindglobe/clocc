@@ -1,5 +1,7 @@
-$Id: CHANGELOG,v 1.31.2.40 2005/11/08 22:32:41 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.41 2005/11/09 00:44:02 airfoyle Exp $
 	
+2005-11-08: Small change to raw-ytfm-load.
+
 2005-11-06: Switched order of loading init files so that
             config-directory ytinit (if any) is loaded before home-dir
             ytinit (if any).

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.14 2005/11/08 22:32:41 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.15 2005/11/09 15:17:06 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -427,8 +427,8 @@
   (apply #'concatenate 'string vl))
 
 (define-compiler-macro string-concat (&rest vl)
-   `(concatenate 'string ,@(<# (\\ (v) `(the string ,v))
-			       vl)))
+   `(concatenate 'string ,@(mapcar (\\ (v) `(the string ,v))
+                                   vl)))
 
 ;; Macro for building new symbols.
 ;; (BUILD-SYMBOL [(:package <p>)] -specs-) creates a symbol

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.9.2.23 2005/10/20 18:00:07 airfoyle Exp $
+;;;$Id: pathname.lisp,v 1.9.2.24 2005/11/14 04:08:42 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -363,8 +363,11 @@
 (defmethod derive ((da-ch Dir-associate-chunk))
    (Chunk-date da-ch))
 
-(defmacro def-ytools-logical-pathname (name ^pn &optional ^obj-version)
-   `(define-ytools-log-pname ',name ,^pn ,^obj-version))
+(defmacro def-ytools-logical-pathname
+                        (name ^pn
+                         &optional (^obj-version ':retain))
+   `(define-ytools-log-pname
+        ',name ,^pn ,^obj-version))
  
 (defun define-ytools-log-pname (name pn &optional obj-version)
    (cond ((stringp pn)
@@ -374,19 +377,9 @@
 		(string->obj-pn obj-version pn bin-idio-dir*))))
    (set-ytools-logical-pathname name pn)
    ;;;;(format t "name = ~s~%" name)
-   (declare-pathname-associate 'obj-version pn obj-version lisp-object-extn*)
-
-;;; This stuff is subsumed by 'declare-pathname-associate' --
-;;;;   (let ((dp-ch (place-Dir-associate-chunk pn 'obj-version obj-version)))
-;;;;      (setf (pathname-prop 'obj-version pn)
-;;;;	    (cond (obj-version
-;;;;		   (pathname-resolve
-;;;;			(merge-pathnames
-;;;;			   obj-version pn)
-;;;;			true))
-;;;;		  (t false)))
-;;;;      (setf (Chunk-date dp-ch) (get-universal-time)))
-
+   (cond ((not (eq obj-version ':retain))
+          (declare-pathname-associate
+             'obj-version pn obj-version lisp-object-extn*)))
    name)
 
 (defun string->obj-pn (obj-dir src-pn idio)

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.10 2005/11/09 00:28:31 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.11 2005/11/17 15:27:40 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -59,7 +59,7 @@
 		       (member start-with ytools-core-files*
 			       :test #'string=))
 		      (t ytools-core-files*))))
-      (dolist (fname files)
+      (dolist (fname files (push :ytfm all-loaded*))
 	 (let ((e (assoc fname new-files :test #'string=)))
 	    (cond (e
 		   (cond (cautious

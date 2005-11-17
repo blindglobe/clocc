@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.58 2005/10/26 14:32:30 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.59 2005/11/17 15:27:39 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -231,8 +231,9 @@
 				      d (cons ch sofar))))))))))
       (propagate ch !())))
 
-;;; Report  the last time the chunk became derived or
-;;; false if it has never been derived. 
+;;; For non-leaf chunks, report the last time the chunk became derived or
+;;; false if it is out of date.  (In the latter case 'chunk-date-record'
+;;; will not be called.)
 ;;; This is not just the default behavior; it is the correct behavior
 ;;; for almost all non-leaf chunks, because whatever date was last recorded
 ;;; is the only date there is.
@@ -976,7 +977,7 @@
 	  ;; the update propagates --
 	  (found-chunks !())
 	  (found-meta-cycle false)
-	  update-interrupted)
+	  update-interrupted iter)
       (labels ((down-then-up (chunks)
 		  (let ((chunks-needing-update
 			    (chunks-leaves-up-to-date chunks !())))
@@ -1426,19 +1427,21 @@
 		(setq derive-mark chunk-event-num*)
 		(setq max-here (+ chunk-event-num* 1))
 		(setq chunk-event-num* max-here)
+                (setq iter 0)
 		(unwind-protect
 		   (loop 
 		      (setq down-mark chunk-event-num*)
 		      (setq up-mark (+ chunk-event-num* 1))
 		      (cond (chunk-update-dbg*
 			     (format *error-output*
-				     !"chunks-update [~s] ~s~
+				     !"chunks-update [~s][~s] ~s~
                                        ~%  force: ~s postpone: ~s~
                                        ~%  Derive mark: ~s down mark: ~
                                        ~s up mark: ~s~%"
-				     chunk-update-depth* chunks
+				     chunk-update-depth* iter chunks
 				     force postpone-derivees
 				     derive-mark down-mark up-mark)))
+                      (incf iter)
 		      ;; If a chunk event occurs while we're updating,
 		      ;; we must restart.  We detect that if
 		      ;; chunk-event-num* ever exceeds 'max-here' --

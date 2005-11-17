@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.22 2005/10/31 13:49:15 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.23 2005/11/17 15:27:40 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -482,42 +482,6 @@
 		  "Should the same decision apply to all other files? "))
 	  (setq fload-compile* manip))))
 
-;;;;(defmethod derive ((cf-ch Compiled-file-chunk))
-;;;;   (let ((pn (Code-file-chunk-pn
-;;;;		(Compiled-file-chunk-source-file cf-ch))))
-;;;;      (let ((ov (pathname-object-version pn false)))
-;;;;	 (let ((real-pn (pathname-resolve pn true))
-;;;;	       (real-ov (and (not (eq ov ':none))
-;;;;			     (pathname-resolve ov false)))
-;;;;	       (prev-time (Compiled-file-chunk-last-compile-time cf-ch)))
-;;;;	    (let  ((old-obj-write-time
-;;;;		      (and real-ov
-;;;;			   (probe-file real-ov)
-;;;;			   (pathname-write-time real-ov))))
-;;;;	       (cond ((and (> prev-time 0)
-;;;;			   (< prev-time old-obj-write-time))
-;;;;		      (format *error-output*
-;;;;			 !"Warning -- file ~s apparently compiled outside ~
-;;;;                           control of ~s~%"
-;;;;			 real-ov cf-ch)))
-;;;;	       (cond ((or (not old-obj-write-time)
-;;;;			  (< old-obj-write-time
-;;;;			     (Chunk-latest-supporter-date cf-ch)))
-;;;;		      (setq cf-ch* cf-ch
-;;;;			    owt* old-obj-write-time)
-;;;;		      (break "Compiling ~s"
-;;;;			     pn)
-;;;;		      (let ((now-compiling*    pn)
-;;;;			    (now-loading* false)
-;;;;			    (now-slurping* false)
-;;;;			    (debuggability* debuggability*)
-;;;;			    (fload-indent* (+ 3 fload-indent*)))
-;;;;			 (compile-and-record pn real-pn real-ov
-;;;;					     cf-ch old-obj-write-time)))
-;;;;		     (t
-;;;;		      ;; Up to date
-;;;;		      false)))))))
-
 (defparameter fcompl-flags* '(#\f #\x #\l #\z))
 (defparameter filespecs-compile-flags* '(#\l #\z))
 ;;; -x -> "Stop managing compiled file (i.e., stop compiling)"
@@ -679,7 +643,7 @@
    (cond (warn-about-postponed-file-chunks*
 	  (format *error-output*
 	      !"There are ~s file chunks waiting to be updated ~
-                ~%   [by calling (postponed-files-update)]~%"
+                ~%   [when you call (postponed-files-update)]~%"
 	     num-postponed))))
 
 (defun fcompl-log (src-pn obj-pn-if-succeeded)

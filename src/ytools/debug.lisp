@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.6 2005/08/31 14:09:04 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.7 2005/11/17 15:27:39 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -48,17 +48,18 @@
 ;;;;(defun sv (v &optional )
 ;;;;   (dbg-push '* (macroexpand-1 v) 'Sexp false))
 
-;; evalute form and push on stack if not atomic.
-(defmacro ev (form &optional (label '*) (type false))
-   (let ((vvar (gensym)) (tyvar (gensym)))
-      `(multi-let (((,vvar ,tyvar)
-		    (ev-process ',form ,(cond (type `',type) (t 'false)))))
-	  (dbg-push ',label ,vvar ,tyvar))))
+;; evaluate form and push on stack if not atomic.
+(defmacro ev (form &rest stuff)
+   (let ((vl-var (gensym)) (ll-var (gensym)) (tl-var (gensym)))
+      `(multi-let (((,vl-var ,ll-var ,tl-var)
+		    (ev-process ',form ',stuff)))
+          (list->values
+             (list-dbg-push ,ll-var ,vl-var ,tl-var)))))
 
 ;; Like ev, but print nonprettily and don't put on stack
 (defmacro ev-ugly (form)
    `(ev-process '(bind ((*print-pretty* false) (out ,form :%) (values)))
-		'Void))
+		'()))
 
 ;;; If * (value of last thing printed) is an Allegro-style function-call 
 ;;; display (i.e., (function-name val-of-arg-1 ... val-of-arg-N)),
@@ -81,16 +82,24 @@
 
 (datafun attach-datafun ev-process
    (defun :^ (_ sym fname)
-      (!= (alist-entry sym ev-process-tab*)
+      (!= (alref ev-process-tab* sym)
 	  (symbol-function fname))))
 
-(defun ev-process (form td)
+;;; Returns the form, perhaps tidied up some way, plus a list of
+;;; labels for the values, plus a list of type designators,
+;;; one per value the form will produce. 
+(defun ev-process (form stuff)
    (let ((h (and (consp form) (alist-entry (car form) ev-process-tab*))))
       (cond (h
 ;;;;	     (out "Calling handler for " form " & " td :%)
-	     (funcall h form td))
+	     (funcall h form stuff))
 	    (t
-	     (values (eval (subst-with-stack-vars form)) td)))))
+             (cond ((null stuff)
+                    (!= stuff '(*))))
+	     (values (values->list (eval (subst-with-stack-vars form)))
+                     stuff
+                     (<# (\\ (_) 'nil)
+                         stuff))))))
 
 (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
@@ -110,6 +119,14 @@
 (defvar dbg-stack-max-len* 200)
 
 (defvar dbg-stack-trap-labels* '())
+
+(defun list-dbg-push (labels vals types)
+   (repeat :for ((lab :in labels)
+                 (val :in vals)
+                 (ty :in types))
+    :when (not (eq lab '_))
+    :collect val
+      (dbg-push lab val ty)))
 
 (defun dbg-push (label x &optional (type false) (even-trivia true))
    (cond ((or even-trivia

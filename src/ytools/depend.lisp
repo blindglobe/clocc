@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.43 2005/11/03 20:51:49 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.44 2005/11/17 15:27:39 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -127,7 +127,7 @@
       (cond ((probe-file (Code-file-chunk-pathname cached-file-ch))
 	     (let ((loaded-file-ch (File-scanned-for-deps-loaded-file fb)))
 		(multiple-value-bind (file-ch lfc)
-				     (loaded-file-chunk-current-version
+				     (loaded-file-chunk-and-selection
 					 loaded-file-ch)
 		   (cond (file-ch
 			  (file-find-source-for-deps file-ch lfc
@@ -570,12 +570,9 @@
 		      (let* ((slurped-sub-file-ch
 				(funcall (Sub-file-type-slurp-chunker sfty)
 					 filename)))
-			 (cond ((not (memq loaded-dep-ch
-					   (Chunk-basis slurped-sub-file-ch)))
-				(setf (Chunk-basis slurped-sub-file-ch)
-				      (cons loaded-dep-ch
-					    (Chunk-basis
-					       slurped-sub-file-ch)))))))))))))
+                         (on-list-if-new 
+			     loaded-dep-ch
+                             (Chunk-basis slurped-sub-file-ch))))))))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).

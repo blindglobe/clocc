@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.59 2005/11/17 15:27:39 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.60 2005/11/21 05:25:21 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -122,6 +122,24 @@
 ;;; in the update-basis.  Every chunk in the update basis is a function
 ;;; of a subset of the basis, so if we updated it it wouldn't change the
 ;;; the output of 'derive'.
+
+#| Used to pursue anomalous behavior --
+(defmethod (setf Chunk-date) :before (new-date (ch Chunk))
+   (cond ((and (> new-date 10000)
+               (< new-date (Chunk-latest-supporter-date ch)))
+          (break "Chunk ~s~% date ~s --> ~s~% latest supp date = ~s"
+                 ch (Chunk-date ch) new-date
+                 (Chunk-latest-supporter-date ch)))))
+
+(defmethod (setf Chunk-latest-supporter-date) :before (new-date (ch Chunk))
+   (cond ((and (> (Chunk-date ch) 0)
+               (> new-date 10000)
+               (> new-date (Chunk-date ch)))
+          (break "Chunk ~s~% supp date ~s --> ~s~% date = ~s"
+                 ch
+                 (Chunk-latest-supporter-date ch) new-date
+                 (Chunk-date ch)))))
+|#
 
 ;;; These are used purely temporarily, during chunk construction.
 ;;; Finding one is an error.
@@ -1294,25 +1312,18 @@
 					  ch)))
 				(on-list ch postponed))
 			       (t
-				(cond ((chunk-is-marked ch derive-mark)
-				       (cond (chunk-update-dbg*
-					      (format *error-output*
-						 !"...Already marked with ~
-                                                   derive-mark~%")))
-				       (cond ((not (chunk-up-to-date ch))
-					      (cerror
-						 "I will re-derive it"
-						 !"Chunk has derive ~
-                                                   mark set but is not up ~
-                                                   to date:~%  ~s"
-						 ch)
-					      (do-derive ch))))
-				      (t 
-				       (cond (chunk-update-dbg*
-					      (format *error-output*
-						      " ...Deriving!~%")))
-				       ;; See note on 'do-derive', below
-				       (do-derive ch)))
+                                (cond (chunk-update-dbg*
+                                       (format *error-output*
+                                               " ...Deriving!")
+                                       (cond ((chunk-is-marked ch derive-mark)
+                                              (format *error-output*
+                                                 !" -- even though already ~
+                                                   marked with ~
+                                                   derive-mark~%"))
+                                             (t
+                                              (format *error-output* "~%")))))
+                                ;; See note on 'do-derive', below
+                                (do-derive ch)
 				(let ((to-explore
 				         (append (Chunk-update-derivees ch)
 						 (Chunk-derivees ch)))
@@ -1925,3 +1936,13 @@
 ;;; For debugging (it's traceable)
 (defun retain-if-x (pred l)
    (retain-if pred l))
+
+;;; Find a chunk path from chunk 'ch' to chunk 'd' through
+;;; derivees links
+(defun find-in-derivees (d ch)
+   (cond ((eq d ch) (list d))
+         (t
+          (dolist (x (Chunk-derivees ch) false)
+             (let ((l (find-in-derivees d x)))
+                (cond (l
+                       (return (cons ch l)))))))))

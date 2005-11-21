@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: binders.lisp,v 1.4.2.3 2005/11/08 21:12:39 airfoyle Exp $
+;;;$Id: binders.lisp,v 1.4.2.4 2005/11/21 05:25:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 Drew McDermott and Yale University. 
 ;;; This software is released under the terms of the Modified BSD
@@ -21,7 +21,7 @@
 ;;;;    '(*print-level* *print-length* *print-circle*
 ;;;;      *package* *readtable* *print-case*))
 
-(defparameter lisp-package* (find-package :common-lisp))
+;;;;(defparameter lisp-package* (find-package :common-lisp))
 
 (defmacro bind (vars-n-vals &body body)
    ;; Some Lisps (SBCL in particular) object to declarations of

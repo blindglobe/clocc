@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 1.7.2.44 2005/11/17 15:27:39 airfoyle Exp $
+;;;$Id: depend.lisp,v 1.7.2.45 2005/11/21 05:25:21 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -77,15 +77,7 @@
 		  (make-instance 'File-scanned-for-deps
 		     :name exp
 		     :file file-ch
-		     :loaded-file loaded-ch))
-;;; This seems elegant, but connecting the meta-level to the
-;;;  object level through the code file leads to an incurable
-;;;  tangle --
-;;;;	       :initializer
-;;;;	       (\\ (fsd-ch)
-;;;;		  (setf (Chunk-basis fsd-ch)
-;;;;			(list file-ch)))
-	       )))
+		     :loaded-file loaded-ch)))))
       (setf (Code-file-dep-scanner controller)
 	    scanner)
       controller))
@@ -125,61 +117,24 @@
 (defmethod derive ((fb File-scanned-for-deps))
    (let ((cached-file-ch (File-scanned-for-deps-file fb)))
       (cond ((probe-file (Code-file-chunk-pathname cached-file-ch))
-	     (let ((loaded-file-ch (File-scanned-for-deps-loaded-file fb)))
-		(multiple-value-bind (file-ch lfc)
-				     (loaded-file-chunk-and-selection
-					 loaded-file-ch)
-		   (cond (file-ch
-			  (file-find-source-for-deps file-ch lfc
-						     cached-file-ch fb))
-			 (t
-			  ;; User canceled
-			  (chunk-terminate-mgt fb true))))))
+	     (let* ((loaded-file-ch (File-scanned-for-deps-loaded-file fb))
+                    (source-file-ch (Loaded-file-chunk-source loaded-file-ch)))
+                (cond ((and source-file-ch
+                            (< (Chunk-date fb)
+                               (file-write-date
+				    (Code-file-chunk-pathname
+                                       source-file-ch))))
+                       (set-deps-by-slurping source-file-ch loaded-file-ch)
+                       (get-universal-time))
+                      (t
+                       ;; No need to do anything
+                       (max 0 (Chunk-date fb))))))
 	    (t
 	     (max 0 (Chunk-date fb))))))
 
-(defun file-find-source-for-deps (file-ch lfc cached-file-ch fb)
-		   (multiple-value-bind 
-			     (source-ch compiled-ch)
-			     (cond ((typep file-ch 'Compiled-file-chunk)
-				    (values (Compiled-file-chunk-source-file
-					        file-ch)
-					    file-ch))
-				   (t
-				    (values file-ch
-					    (place-compiled-chunk file-ch))))
-		      (cond ((not (eq source-ch cached-file-ch))
-			     (cerror "I'll soldier on"
-				     !"File-scanned-for-deps has different ~
-                                       cached ~
-				       file-ch and recovered source-ch :~
-				       ~%  cached-file-ch = ~s
-				       ~%  current-version = ~s"
-				     cached-file-ch source-ch)))
-		      (cond ((>= (Chunk-date fb)
-				 (file-write-date
-				    (Code-file-chunk-pathname source-ch)))
-			     ;; No need to do anything
-			     (Chunk-date fb))
-			    (t
-			     (set-deps-by-slurping
-			        source-ch compiled-ch lfc)
-			     (get-universal-time)))))
-
-(defun set-deps-by-slurping (source-ch compiled-ch loaded-file-ch)
+(defun set-deps-by-slurping (source-ch loaded-file-ch)
    (setf (Code-chunk-callees source-ch) !())
    (setf (Code-chunk-depends-on source-ch) !())
-   (cond (compiled-ch
-	  (cond ((not (memq source-ch (Chunk-basis compiled-ch)))
-		 (cerror "I will put it back in"
-			 !"Chunk for source file ~s~
-			   ~% not found in basis of ~s"
-			 source-ch compiled-ch)))
-	  (compiled-chunk-set-obj-version compiled-ch)
-	  (setf (Chunk-basis compiled-ch)
-		(list source-ch))
-	  (compiled-chunk-include-dir-basis compiled-ch)
-	  (setf (Chunk-update-basis compiled-ch) !())))
    (let ((dep-chunk (verify-loaded-chunk-controller loaded-file-ch false))
 	 ;; -- A Code-file-dep
 	 (file-pn (Code-file-chunk-pathname source-ch)))
@@ -208,11 +163,7 @@
 			    (Code-chunk-depends-on source-ch)))))
 	 (dolist (nc-derivee new-controller-derivees)
 	    (on-list-if-new
-	       dep-chunk (Chunk-basis nc-derivee))
-	 ;;; Rather than do this here, we let 'monitor-filoid-basis'
-	 ;;; find the new derivees and update them --
-	    ;;;;(chunk-request-mgt nc-derivee)
-	   )
+	       dep-chunk (Chunk-basis nc-derivee)))
          (loaded-chunk-set-basis loaded-file-ch))))
 
 ;;; 'srm' is stream of freshly opened file.  Try to get readtable name

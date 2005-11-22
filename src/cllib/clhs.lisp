@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.7 2005/01/27 23:02:50 sds Exp $
+;;; $Id: clhs.lisp,v 3.8 2005/11/22 23:06:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -226,7 +226,7 @@
     (when (member ent '("pi") :test #'string=)
       (setq ent (concatenate 'string ent "-v"))) ; variable
     (format
-     out "<!ENTITY ~a \"<ulink url='&clhs;/Body/~a'><~a>~a</~a></ulink>\">~%"
+     out "<!ENTITY ~a '<ulink url=\"&clhs;/Body/~a\"><~a>~a</~a></ulink>'>~%"
      ent html font xml-name font)))
 
 (defun clhs-write-entities (file)
@@ -247,7 +247,7 @@
         (dolist (il *clhs-issues*)
           (incf count-i)
           (let ((path (second il)))
-            (format str "<!ENTITY ~A \"<ulink url='&clhs;~A'>~A</ulink>\">~%"
+            (format str "<!ENTITY ~A '<ulink url=\"&clhs;~A\">~A</ulink>'>~%"
                     (subseq path (1+ (position #\/ path :from-end t))
                             (position #\. path :from-end t))
                     path (xmlize-string (first il)))))

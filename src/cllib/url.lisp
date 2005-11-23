@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.58 2005/01/27 23:02:46 sds Exp $
+;;; $Id: url.lisp,v 2.59 2005/11/23 17:47:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,10 +25,14 @@
   (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
   ;; `dttm->string', `string->dttm'
   (require :cllib-date (translate-logical-pathname "cllib:date"))
+  ;; `base64-encode'
+  (require :cllib-base64 (translate-logical-pathname "cllib:base64"))
   ;; `run-prog'
   (require :port-shell (translate-logical-pathname "port:shell"))
   ;; `with-timeout'
   (require :port-proc (translate-logical-pathname "port:proc"))
+  ;; `getenv'
+  (require :port-sys (translate-logical-pathname "port:sys"))
   ;; `socket', `network', `socket-service-port', `open-socket'
   (require :port-net (translate-logical-pathname "port:net")))
 
@@ -39,7 +43,7 @@
           url-get-host url-get-port url-string-p url-path-parse
           url-path-dir url-path-file url-path-args
           open-socket-retry open-url with-open-url
-          ftp-list url-send-mail url-get-news url-time
+          ftp-list url-send-mail url-get-news url-time *http-proxy* http-proxy
           browse-url *browsers* *browser* *url-output* *url-error*
           *nntp-server* *url-replies* *url-errors* *url-user-agent*
           dump-url url-get whois finger flush-http))
@@ -89,21 +93,53 @@ See <http://www.cis.ohio-state.edu/hypertext/information/rfc.html>
         (mapcar (lambda (cc) (url (format nil *rfc-base* cc))) rfcs)
         rfcs)))
 
+(defun protocol-port (proto)
+  (flet ((ssp (st) (ignore-errors (servent-port (socket-service-port st)))))
+    (or (ssp (string-downcase (string proto)))
+        (ssp (case proto (:mailto "smtp") (:news "nntp") (:www "http")))
+        ;; yuk!! Solaris 2.5.1 does not have http in /etc/services
+        (and (eq proto :http) 80)
+        (error 'code :proc 'protocol-port :args (list proto)
+               :mesg "Cannot guess the port for ~s"))))
+
+(defcustom *url-output* (or null stream) *standard-output*
+  "*Where the logs go.")
+
+(defstruct (proxy (:type list)) user-pass host port)
+(defcustom *http-proxy* list nil
+  "*A list of 3 elements (user:password host port), parsed from $HTTP_PROXY
+proxy-user:proxy-password@proxy-host:proxy-port
+by `http-proxy'.")
+
+(defun http-proxy (&optional (proxy-string (getenv "HTTP_PROXY") proxy-p))
+  "When the argument is supplied or `*http-proxy*' is NIL, parse the argument,
+set `*http-proxy*', and return it; otherwise just return `*http-proxy*'."
+  (when (or proxy-p (and (null *http-proxy*) proxy-string))
+    (check-type proxy-string string)
+    (let* ((start (if (string-equal #1="http://" proxy-string
+                                    :end2 (min (length proxy-string)
+                                               #2=#.(length #1#)))
+                      #2# 0))
+           (at (position #\@ proxy-string :start start))
+           (colon (position #\: proxy-string :start (or at start))))
+      (setq *http-proxy*
+            (make-proxy :user-pass (and at (subseq proxy-string start at))
+                        :host (subseq proxy-string (if at (1+ at) start) colon)
+                        :port (if colon
+                                  (parse-integer proxy-string :start (1+ colon))
+                                  (protocol-port "http"))))
+      (mesg :log *url-output* "~&;; ~S=~S~%" '*http-proxy* *http-proxy*)))
+  *http-proxy*)
+
 (defun url-get-port (url)
   "Get the correct port of the URL - if the port is not recorded there,
 guess from the protocol; save the guessed value."
   (declare (type url url))
+  (case (url-prot url)
+    (:http (when *http-proxy*
+             (return-from url-get-port (proxy-port *http-proxy*)))))
   (if (zerop (url-port url))
-      (setf (url-port url)
-            (flet ((ssp (st) (ignore-errors
-                               (servent-port (socket-service-port st)))))
-              (or (ssp (string-downcase (string (url-prot url))))
-                  (ssp (case (url-prot url)
-                         (:mailto "smtp") (:news "nntp") (:www "http")))
-                  ;; yuk!! Solaris 2.5.1 does not have http in /etc/services
-                  (and (eq (url-prot url) :http) 80)
-                  (error 'code :proc 'url-get-port :args (list url)
-                         :mesg "Cannot guess the port for ~s"))))
+      (setf (url-port url) (protocol-port (url-prot url)))
       (url-port url)))
 
 (defun url-string-p (string)
@@ -121,8 +157,12 @@ guess from the protocol; save the guessed value."
 (defun url-get-host (url)
   "Get the right host for the URL: if it is a `news', use `*nntp-server*'."
   (declare (type url url))
-  (if (plusp (length (url-host url))) (url-host url)
-      (case (url-prot url) ((:news :nntp) *nntp-server*))))
+  (case (url-prot url)
+    (:http (if *http-proxy* (proxy-host *http-proxy*) (url-host url)))
+    ((:news :nntp)
+     (let ((host (url-host url)))
+       (if (plusp (length host)) *nntp-server* host)))
+    (t (url-host url))))
 
 (defun url-path-parse (url)
   "Parse the path of URL, returning 3 values: DIR, FILE and ARGS."
@@ -279,8 +319,6 @@ The argument can be:
 If nil, retry ad infinitum, otherwise a positive fixnum.")
 (defcustom *url-open-init* boolean t
   "*Issue the initial commands in `open-url' (default :init argument).")
-(defcustom *url-output* (or null stream) *standard-output*
-  "*Where the logs go.")
 (defcustom *url-error* (or null stream) *error-output*
   "*Where the errors go.")
 (defvar *url-caller*)
@@ -364,9 +402,11 @@ issue the appropriate initial commands:
 If timeout is non-nil, it specifies the number of seconds before
 the error `timeout' is signaled."
   (declare (type url url))
-  (when (eq :file (url-prot url))
-    (return-from open-url (open (url-path url) :direction :input)))
-  (loop :with begt = (get-universal-time) :and host = (url-get-host url)
+  (case (url-prot url)
+    (:file (return-from open-url (open (url-path url) :direction :input)))
+    (:http (http-proxy)))
+  (loop :with begt = (get-universal-time)
+    :and host = (url-get-host url)
      :and port = (url-get-port url)
      :for sock :of-type socket =
      (open-socket-retry host port :bin (url-prot-bin (url-prot url)))
@@ -450,13 +490,21 @@ ERR is the stream for information messages or NIL for none."
   "Open the socket to the HTTP url.
 Sends the request, returns an open socket on success or signals an error."
   (declare (type socket sock) (type url url))
+  (http-proxy)
   (let ((code 0) (status "")
-        (request (list (format nil "GET ~a HTTP/1.0"
-                               (if (zerop (length (url-path url)))
-                                   "/" (url-path url)))
-                       (format nil "User-Agent: ~a" *url-user-agent*)
-                       (format nil "Host: ~a" (url-host url))
-                       "Accept: */*" "Connection: close")))
+        (request (list* (format nil "GET ~a HTTP/1.0"
+                                (if *http-proxy* url
+                                    (if (zerop (length (url-path url)))
+                                        "/" (url-path url))))
+                        (format nil "User-Agent: ~a" *url-user-agent*)
+                        (format nil "Host: ~a" (url-host url))
+                        "Accept: */*" "Connection: close"
+                        (and (first *http-proxy*)
+                             (list
+                              (format nil "Authorization: Basic ~A~%"
+                                      (base64-encode
+                                       (map 'vector #'char-code
+                                            (first *http-proxy*)))))))))
     (socket-send sock request t)
     (setq status (read-line sock))
     (unless (string-beg-with "http/" status)

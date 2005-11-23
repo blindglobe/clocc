@@ -1,12 +1,11 @@
 ;;; Base64 encoding and decoding
-;;; <http://rfc.net/rfc1421.html>
 ;;; <http://rfc.net/rfc2045.html>
 ;;;
 ;;; Copyright (C) 2004 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base64.lisp,v 2.1 2004/11/11 22:17:35 sds Exp $
+;;; $Id: base64.lisp,v 2.2 2005/11/23 17:47:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base64.lisp,v $
 
 (eval-when (compile load eval)
@@ -68,6 +67,7 @@
 
 ;;;###autoload
 (defun base64-decode (str &optional buffer)
+  "Decode the string into a vector of bytes."
   (let* ((str-len (length str)) quotient remainder vec vec-len full-top
          (=count
           (if (and (> str-len 0) (char= #\= (char str (- str-len 1))))
@@ -107,5 +107,5 @@
         (0))                    ; golden!
       vec)))
 
-(provide :base64)
+(provide :cllib-base64)
 ;;; file base64.lisp ends here

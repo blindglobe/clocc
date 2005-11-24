@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.45 2005/11/24 01:54:02 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.46 2005/11/24 01:56:00 airfoyle Exp $
 	
 2005-11-23: Allow extra atoms at front of 'control-nest' as comments.
+            Slight tuning of inititialization protocol.  New
+            quasi-public routine 'new-source-suffix' for adding
+            strings to 'source-suffixes*'.
 
 2005-11-20: Added debugging aid in chunk. Eliminated error break in
             'chunks-update' after careful experimentation showed that

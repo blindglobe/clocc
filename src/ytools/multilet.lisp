@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.3.2.3 2005/09/15 13:51:17 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3.2.4 2005/11/24 01:54:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -352,6 +352,9 @@
 		       (subst (fold (cddr lbes))
 			      (cadr lbes)
 			      (car lbes))))))
+      ;; Atoms at front are assumed to be comments
+      (repeat :until (not (atom (car labeled-binding-exps)))
+         (!= labeled-binding-exps (cdr *-*)))
       (cond ((null labeled-binding-exps)
 	     (signal-problem control-next :fatal
 		"control-nest has no forms to combine"))

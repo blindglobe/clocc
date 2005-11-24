@@ -1,5 +1,7 @@
-$Id: CHANGELOG,v 1.31.2.44 2005/11/21 05:25:21 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.45 2005/11/24 01:54:02 airfoyle Exp $
 	
+2005-11-23: Allow extra atoms at front of 'control-nest' as comments.
+
 2005-11-20: Added debugging aid in chunk. Eliminated error break in
             'chunks-update' after careful experimentation showed that
             it is perfectly possible for 'set-latest-supporter-date'

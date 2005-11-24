@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: raw-ytfm-load.lisp,v 1.3.2.11 2005/11/17 15:27:40 airfoyle Exp $
+;;;$Id: raw-ytfm-load.lisp,v 1.3.2.12 2005/11/24 01:54:02 airfoyle Exp $
 
 ;;; This file is for recompiling a subset of ytools-core-files* 
 ;;; (in the proper order) when debugging YTFM.
@@ -10,12 +10,12 @@
 (load-yt-config-file)
 
 (setq *default-pathname-defaults*
-      (pathname ytools-directory*))
+      (pathname ytools-home-dir*))
 
-(load (concatenate 'string ytools-directory* "ytload/ytfm.lmd"))
+(load (concatenate 'string ytools-home-dir* "ytload/ytfm.lmd"))
 
 (cond ((boundp 'bin-idio*)
-       (load (concatenate 'string ytools-directory* "ytools.lsy"))))
+       (load (concatenate 'string ytools-home-dir* "ytools.lsy"))))
 
 (setq *readtable* ytools-readtable*)
 

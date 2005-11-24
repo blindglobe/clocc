@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8.2.38 2005/10/10 02:46:07 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.8.2.39 2005/11/24 01:54:02 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -16,7 +16,8 @@
 	     slurp-eval slurp-ignore
 	     now-loading* now-compiling* now-slurping*)))
 
-(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp" "lsy") :test #'equal))
+(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp" "lsy")
+                                 :test #'string=))
 (defvar obj-suffix* lisp-object-extn*)
 (defvar object-suffixes* `(,lisp-object-extn*))
 
@@ -28,6 +29,20 @@
 (defun pathname-is-object (pn)
    (member (Pathname-type pn)
 	   object-suffixes*))
+
+;;; Make sure .lisp files are found before odder ducks.
+(defun new-source-suffix (suff)
+   (cond ((not (member suff ytools::source-suffixes* :test #'string=))
+          (let ((tl (member "lisp" source-suffixes* :test #'string=)))
+             (cond ((null tl)
+                    (signal-problem new-source-suffix
+                       "\".lisp\" missing from source-suffixes* list"
+                       (:proceed "I will put it back"))
+                    (!= source-suffixes*
+                        (cons "lisp" *-*))
+                    (!= tl source-suffixes*)))
+             (!= (rest tl) (cons suff *-*)))))
+  source-suffixes*)
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
 

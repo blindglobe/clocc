@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.11.2.3 2005/10/11 13:48:48 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.11.2.4 2005/11/28 16:50:05 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -466,7 +466,15 @@
 ;;;;     (format nil "~a" obj)))
 
 (defmacro read-y-or-n (&rest out-stuff)
-  `(y-or-n-p "~s" (make-Printable (\\ (srm) (out ,@out-stuff)))))
+   (multiple-value-bind (y-or-n-fn out-stuff)
+                        (cond ((memq ':yes-no out-stuff)
+                               (values 'yes-or-no-p
+                                       (remove ':yes-no out-stuff)))
+                              (t
+                               (values 'y-or-n-p
+                                       out-stuff)))
+
+      `(,y-or-n-fn "~s" (make-Printable (\\ (srm) (out ,@out-stuff))))))
 
 (defun lineread (&optional (s *standard-input*))
 	  (prog ((res nil) c)

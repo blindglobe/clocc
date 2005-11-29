@@ -1,6 +1,6 @@
-;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
+;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.15 2005/11/09 15:17:06 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.16 2005/11/29 13:59:27 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved

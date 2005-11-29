@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.3.2.4 2005/11/24 01:54:02 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3.2.5 2005/11/29 14:09:29 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -267,11 +267,13 @@
 ;;;;	     :% " Should be of form (track-extra-vals <vars> :extra <bdgs>"
 ;;;;	        " expression --body--)"))))
 
-;;; (extra-vals <vars> e (v1 e1) ... (vK eK))
+;;; (extra-vals <vars> e [:+] (v1 e1) ... (vK eK))
 ;;; evaluates 'e', and binds the <vars> to all but the first value
 ;;; returned.  (These are the "extra" values.)  All the vI are then
 ;;; updated by reassigning them to eI.  The first value returned by 'e'
 ;;; is then the value returned by the 'extra-vals' expression.
+;;; The :+ is purely optional; any other keywords can be sprinkled in
+;;; amongst the vI updates.
 (defmacro extra-vals (extra-vars exp^ &rest accums)
    (let ((main-res-var (gen-var 'r)))
       (!= accums (<? neg is-Keyword *-*))

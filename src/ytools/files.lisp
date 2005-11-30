@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 1.14.2.68 2005/11/21 05:25:21 airfoyle Exp $
+;;;$Id: files.lisp,v 1.14.2.69 2005/11/30 15:45:35 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -113,6 +113,7 @@
 ;; --  For now,
 ;; don't allow a chunk to be associated with more than one file.
 
+(defvar nd*)
 (defvar fc*)
 (defvar fd*)
 
@@ -123,7 +124,7 @@
       (cond ((and file-date
 		  (> new-date
 		     (+ file-date 1)))
-	     (setq fc* fc fd* file-date)
+	     (setq nd* new-date fc* fc fd* file-date)
 	     (cerror "Just try to proceed"
 		  !"Changing code file chunk date to ~s, which is ~
                     after its write date ~s"

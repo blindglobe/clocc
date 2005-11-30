@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;; $Id: ytools.lsy,v 1.27.2.31 2005/11/14 04:08:42 airfoyle Exp $
+;;; $Id: ytools.lsy,v 1.27.2.32 2005/11/30 15:45:35 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -233,9 +233,9 @@
    (use-package :ytools pkg))
 
 (eval-when (:load-toplevel :execute)
-  (export '(use-ytools named-readtable in-ytools)))
+  (export '(use-ytools named-readtable in-ytools lisp-package* lisp-readtable*)))
 
-;;;;(setq *features* (adjoin ':ytools *features*))
+(setq *features* (adjoin ':ytools *features*))
 
 (shadowing-import 'ytools :cl-user)
 

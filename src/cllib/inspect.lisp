@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: inspect.lisp,v 1.36 2005/01/27 23:02:47 sds Exp $
+;;; $Id: inspect.lisp,v 1.37 2005/12/05 15:16:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/inspect.lisp,v $
 
 (eval-when (compile load eval)
@@ -465,47 +465,50 @@ This is useful for frontends which provide an eval/modify facility."
     (values socket id com keep-alive)))
 
 (defmethod inspect-frontend ((insp inspection) (frontend (eql :http)))
-  (do ((server
-        (let* ((server (open-socket-server))
-               (port (nth-value 1 (socket-server-host/port server))))
-          (when (> *inspect-debug* 0)
-            (format t "~&~s [~s]: server: ~s~%"
-                    'inspect-frontend frontend server))
-          (browse-url (format nil "http://~a:~d/0/:s"
-                              (if *inspect-browser*
-                                  "127.0.0.1" *mail-host-address*)
-                              port)
-                      :browser *inspect-browser*)
-          server))
-       sock id com keep-alive)
-      ((eq com :q) (socket-server-close server)
-       (when (open-stream-p sock)
-         (do () ((null (read-char-no-hang sock))))
-         (close sock)))
-    (setf (values sock id com keep-alive) (http-command server :socket sock))
-    (when (> *inspect-debug* 0)
-      (format t "~s [~s]: socket: ~s; id: ~s; com: ~s; keep-alive: ~s~%"
-              'inspect-frontend frontend sock id com keep-alive))
-    (when id
-      (if (eq com :q)
-          (with-http-output (out sock :keep-alive keep-alive
-                                 :debug *inspect-debug*
-                                 :title "inspect" :footer nil)
-            (with-tag (:h1) (princ "thanks for using inspect" out))
-            (with-tag (:p) (princ "you may close this window now" out)))
-          (if (setq insp (get-insp id com))
-              (print-inspection insp sock frontend :keep-alive keep-alive)
-              (with-http-output (out sock :keep-alive keep-alive
-                                     :debug *inspect-debug*
-                                     :title "inspect" :footer nil)
-                (with-tag (:h1)
-                  (format out "error: wrong command: ~:d/~s" id com))
-                (with-tag (:p)
-                  (princ "either this is an old inspect session, or a " out)
-                  (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (princ "bug" out))))))
-      (when (> *inspect-debug* 0)
-        (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend frontend
-                id com (insp-id insp))))))
+  (let ((server
+         (let* ((server (open-socket-server))
+                (port (nth-value 1 (socket-server-host/port server))))
+           (when (> *inspect-debug* 0)
+             (format t "~&~s [~s]: server: ~s~%"
+                     'inspect-frontend frontend server))
+           (browse-url (format nil "http://~a:~d/0/:s"
+                               (if *inspect-browser*
+                                 "127.0.0.1" *mail-host-address*)
+                               port)
+                       :browser *inspect-browser*)
+           server))
+        sock id com keep-alive)
+    (unwind-protect
+         (loop (when (eq com :q) (return))
+           (setf (values sock id com keep-alive)
+                 (http-command server :socket sock))
+           (when (> *inspect-debug* 0)
+             (format t "~s [~s]: socket: ~s; id: ~s; com: ~s; keep-alive: ~s~%"
+                     'inspect-frontend frontend sock id com keep-alive))
+           (when id
+             (if (eq com :q)
+               (with-http-output (out sock :keep-alive keep-alive
+                                      :debug *inspect-debug*
+                                      :title "inspect" :footer nil)
+                 (with-tag (:h1) (princ "thanks for using inspect" out))
+                 (with-tag (:p) (princ "you may close this window now" out)))
+               (if (setq insp (get-insp id com))
+                 (print-inspection insp sock frontend :keep-alive keep-alive)
+                 (with-http-output (out sock :keep-alive keep-alive
+                                        :debug *inspect-debug*
+                                        :title "inspect" :footer nil)
+                   (with-tag (:h1)
+                     (format out "error: wrong command: ~:d/~s" id com))
+                   (with-tag (:p)
+                     (princ "either this is an old inspect session, or a " out)
+                     (with-tag (:a :href "https://sourceforge.net/bugs/?func=addbug&group_id=1802") (princ "bug" out))))))
+             (when (> *inspect-debug* 0)
+               (format t "~s [~s]: cmd:~d/~s id:~d~%" 'inspect-frontend
+                       frontend id com (insp-id insp)))))
+      (socket-server-close server)
+      (when (open-stream-p sock)
+        (do () ((null (read-char-no-hang sock))))
+        (close sock)))))
 
 ;;;
 ;;; the juice

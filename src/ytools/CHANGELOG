@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.47 2005/11/30 15:45:35 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.48 2005/12/05 04:56:15 airfoyle Exp $
 	
+2005-12-04: !' now records symbols it is used with in list
+            syms-used-as-funktions*
+
 2005-11-30: Added feature :ytools back to *features* (somehow it had
             disappeared at some point).
 

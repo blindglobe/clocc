@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.8 2005/11/22 23:06:22 sds Exp $
+;;; $Id: clhs.lisp,v 3.9 2005/12/06 20:55:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
 (eval-when (compile load eval)
@@ -210,7 +210,7 @@
             ((type-is 'dec) ; declaratons
              (setq font "literal" ent (concatenate 'string ent "-dec")))
             ((type-is 'glo) ; glossary
-             (setq font "literal" ent (concatenate 'string ent "-glo")))
+             (setq font "replaceable" ent (concatenate 'string ent "-glo")))
             ((type-is 'any) ; selection
              (setq font "literal" ent (concatenate 'string ent "-any")))
             ((char= #\& (char ent 0))

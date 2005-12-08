@@ -1,5 +1,8 @@
-$Id: CHANGELOG,v 1.31.2.48 2005/12/05 04:56:15 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.49 2005/12/08 17:01:15 airfoyle Exp $
 	
+2005-12-06: Added instrumentation to tell when 'multilet' expands to
+            simple or complex version.
+
 2005-12-04: !' now records symbols it is used with in list
             syms-used-as-funktions*
 

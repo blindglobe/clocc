@@ -1,24 +1,33 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.3.2.5 2005/11/29 14:09:29 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3.2.6 2005/12/08 17:01:15 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(depends-on %ytools/ setter signal)
+(depends-on %ytools/ setter signal misc)
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(multi-let with-open-files gen-var 
 	     keyword-args-extract
 	     control-nest track-extra-vals extra-vals)))
 
-;;;;(needed-by-macros
-;;;;   (export '(multi-let multi-let-careful*)))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+   (defvar multi-let-notify* false)
 
-;;;;(needed-by-macros
-;;;;   (defvar multi-let-careful* true))
+   (defvar macro-exp-level* 5)
+
+   (defun macro-exp-notify (macro-announce exp gate)
+      (bind ((*print-pretty* true)
+             (*print-level* macro-exp-level*))
+         (dbg-out gate
+            (:a macro-announce)
+            :% exp :%))
+      exp)
+
+)
 
 ;;; (multi-let (((v v v ...) form)
 ;;;                   ((v v v ...) form)
@@ -34,9 +43,12 @@
 			b)
 		(setq b b1)))
 	 (cond ((or (>= debuggability* 0) (= (len bindspecs) 1))
-		(simple-multi-let bvars bindspecs explicit-ignores b))
+                (simple-multi-let bvars bindspecs explicit-ignores b))
 	       (t
-		(hairy-multi-let bvars bindspecs explicit-ignores b))))))
+                (macro-exp-notify
+                   "multi-let expands to hairy, optimized version: "
+                   (hairy-multi-let bvars bindspecs explicit-ignores b)
+                   multi-let-notify*))))))
 
 (needed-by-macros
 
@@ -92,32 +104,40 @@
 					   (cons iga igd))))))))
 	     (bvars-elim-underscores bvars-with-underscores))
       (cond ((>= debuggability* 0)
-	     `(<< (\\ ,(<< append bvars) 
-		      ,@(let ((all-ign (append (<< nconc ign)
-					       explicit-ignores)))
-			   (ignore-if-not-null all-ign))
-		      ,@b)
-		  (nconc ,@(<# (\\ (m vl)
-				  `(value-list-check
-				      (multiple-value-list ,m)
-				      ',vl ',m))
-			       (<# cadr bindspecs)
-			       bvars-with-underscores))))
+             (let ((expansion
+	              `(<< (\\ ,(<< append bvars) 
+                               ,@(let ((all-ign (append (<< nconc ign)
+                                                        explicit-ignores)))
+                                    (ignore-if-not-null all-ign))
+                               ,@b)
+                           (nconc ,@(<# (\\ (m vl)
+                                           `(value-list-check
+                                               (multiple-value-list ,m)
+                                               ',vl ',m))
+                                        (<# cadr bindspecs)
+                                        bvars-with-underscores)))))
+                (macro-exp-notify
+                   "multi-let expands to simple, debuggable version: "
+                   expansion multi-let-notify*)))
 	    ;; Go for efficiency.  (We know there's just one bindspec.)
 	    (t
-	     (let ((vl (car bvars))
-		   (arg (cadar bindspecs))
-		   (ign1 (ignore-if-not-null
-			    (append explicit-ignores (car ign)))))
-		(cond ((= (len vl) 1)
-		       `(let ((,(car vl)
-			       ,arg))
-			     ,@ign1
-			   ,@b))
-		      (t
-		       `(multiple-value-let ,vl ,arg
-			      ,@ign1
-			   ,@b))))))))
+             (let ((expansion
+	              (let ((vl (car bvars))
+                            (arg (cadar bindspecs))
+                            (ign1 (ignore-if-not-null
+                                     (append explicit-ignores (car ign)))))
+                         (cond ((= (len vl) 1)
+                                `(let ((,(car vl)
+                                        ,arg))
+                                      ,@ign1
+                                    ,@b))
+                               (t
+                                `(multiple-value-let ,vl ,arg
+                                       ,@ign1
+                                    ,@b))))))
+               (macro-exp-notify
+                  "multi-let expands to optimized version"
+                  expansion multi-let-notify*))))))
 
 (defun hairy-multi-let (bvars-with-underscores bindspecs explicit-ignores b)
    (let ((auxvars (<# (\\ (vl)
@@ -370,7 +390,6 @@
 		 (</ (\\ (tot x)
 			(+ tot (count-occs sym x)))
 		     0 e))))))
-
 
 (defun gen-var (sym)
    (build-symbol (:package false) (< sym) - (++ symno*)))

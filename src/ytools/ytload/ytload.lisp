@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.8 2005/11/03 14:32:26 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.9 2005/12/08 17:03:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -468,3 +468,57 @@
 	  ,@body
 	  (setq fl-finished t))
        fl-finished))
+
+(defun revnum-from-changelog (base-version direc)
+   (let ((revnum (or (find-revision-num (strings-concat direc "CHANGELOG"))
+                     "??")))
+      (strings-concat base-version "." revnum)))
+
+;;; Find string "$Id" in file, following by num.num.....num, and
+;;; return the last num, or nil if none can be found
+(defun find-revision-num (pn)
+   (cond ((fboundp '->pathname)
+          ;; Kludge
+          (setq pn (->pathname pn))))
+   (with-open-file (insrm pn :direction ':input)
+      (labels ((advance-to-$Id ()
+                  (loop
+                     (let ((r (read-char insrm nil nil)))
+                        (cond (r
+                               (cond ((char= r #\$)
+                                      (return t))))
+                              (t
+                               (return nil))))))
+
+               (advance-to-revision-nums ()
+                  (loop
+                     (let ((r (read-char insrm nil nil)))
+                        (cond (r
+                               (cond ((char= r #\.)
+                                      (return t))))
+                              (t
+                               (return nil))))))
+
+               (get-last-num ()
+                  (let ((numchars '()))
+                     (loop
+                        (let ((r (read-char insrm nil nil)))
+                           (cond (r
+                                  (cond ((char= r #\.)
+                                         (setq numchars '()))
+                                        ((digit-char-p r)
+                                         (setq numchars (cons r numchars)))
+                                        (t
+                                         (return
+                                            (cond ((null numchars)
+                                                   nil)
+                                                  (t
+                                                   (coerce (reverse numchars)
+                                                           'string)))))))
+                                 (t
+                                  (return nil))))))))
+         (cond ((advance-to-$Id)
+                (cond ((advance-to-revision-nums)
+                       (get-last-num))
+                      (t nil)))
+               (t nil)))))

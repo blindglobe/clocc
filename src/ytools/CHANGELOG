@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 1.31.2.49 2005/12/08 17:01:15 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.50 2005/12/08 17:03:04 airfoyle Exp $
 	
+2005-12-08: New numbering scheme: Minor version number of software
+            package = last version number for CHANGELOG of package
+            E.g., this entry bumps the YTools CHANGELOG to version
+            1.31.2.50, so this produces version 2.0.50 of YTools.
+
 2005-12-06: Added instrumentation to tell when 'multilet' expands to
             simple or complex version.
 
@@ -10,9 +15,9 @@ $Id: CHANGELOG,v 1.31.2.49 2005/12/08 17:01:15 airfoyle Exp $
             disappeared at some point).
 
 2005-11-23: Allow extra atoms at front of 'control-nest' as comments.
-            Slight tuning of inititialization protocol.  New
+            Slight tuning of initialization protocol.  New
             quasi-public routine 'new-source-suffix' for adding
-            strings to 'source-suffixes*'.
+            strings to 'source-suffixes*'.  
 
 2005-11-20: Added debugging aid in chunk. Eliminated error break in
             'chunks-update' after careful experimentation showed that

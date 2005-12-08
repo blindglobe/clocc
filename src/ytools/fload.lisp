@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.24 2005/12/05 04:56:16 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.25 2005/12/08 17:03:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -25,7 +25,7 @@
 
 (defmacro funktion (f)
    (let  ((quoter
-             (cond ((and (atom f) (> debuggabilitY* 0))
+             (cond ((and (atom f) (> debuggability* 0))
                     'quote)
                    (t 'function))))
       (cond ((atom f)

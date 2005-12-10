@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.7 2005/11/17 15:27:39 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.8 2005/12/10 02:16:01 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -29,8 +29,12 @@
 (defvar dbg-stack* '())
 
 ;; Macro expand arg or arg applied to something on dbg-stack*
-(defmacro s (&optional (form nil form-supp) (flag '*))
-   `(sv ,(cond (form-supp `',form)
+(defmacro s (&optional (form nil form-supp) (num 0) (flag '*))
+   `(sv ,(cond (form-supp
+                (cond ((atom form)
+                       `(g ,form ,num))
+                      (t
+                       `',form)))
 	       (t '(g *)))
 	,flag))
 	

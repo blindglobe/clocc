@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 1.4.2.3 2005/10/19 14:33:48 airfoyle Exp $
+;;;$Id: object.lisp,v 1.4.2.4 2005/12/10 02:16:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -122,7 +122,7 @@
 		       (cond ((memq ':key options)
 			      (values true (remove ':key options)))
 			     ((memq ':nokey options)
-			      (values ':noway (remove ':nokey options)))
+			      (values ':nokey (remove ':nokey options)))
 			     (t
 			      (values false options)))
       (repeat :for ((opt :in options))
@@ -263,19 +263,22 @@
 
 (needed-by-macros
 
-(defun struct-defclass (&key name storage-class is-testable already-defined component
-			(slotmethods false) key-cons clauses slots)
+(defun struct-defclass (&key name storage-class is-testable
+                             already-defined component
+			     (slotmethods false) key-cons clauses slots)
    (cond (slotmethods
 	  (error ":slotmethods not allowed in :structure ~s" name)))
    (cond (already-defined
           (!= key-cons true)
           (cond ((or component (not (null clauses)))
-                 (error "Already-defined class ~s may not acquire handler or components"
+                 (error !"Already-defined class ~s may not acquire ~
+                          handler or components"
 			name)))))
    (let ()
       (!= clauses (<? neg #'is-Symbol clauses))
       (let ((printer
-	       (assoc-if (\\ (c) (memq c '(print :print-object :print-function)))
+	       (assoc-if (\\ (c)
+                            (memq c '(print :print-object :print-function)))
 			 clauses))
 	    (slotnames (repeat :for (s :in slots)
 			:collect (cond ((atom s) s)
@@ -325,7 +328,8 @@
 			    name)
 	    (let ((conser (build-symbol make- (< name)))
 		  (extra-key-conser
-		      (cond ((not key-cons)
+		      (cond ((or (not key-cons)
+                                 (eq key-cons ':nokey))
 			     (build-symbol make- (< name) -key))
 			    (t false))))
 	       (let ((uninit-conser (build-symbol (< conser) -uninit))
@@ -334,65 +338,69 @@
 			     (build-symbol (< extra-key-conser) -uninit))))
 		  (let ((key-consargs
 			   `(,@(<# tuple slot-arg-names slot-arg-initforms))))
-		   `(progn (eval-when (:compile-toplevel :load-toplevel :execute
-				       :slurp-toplevel)
-			      (declare-ytools-class
-				 ',name ',storage-class
-				 ',(cond (component `(,component))
-					 (t false))
-				 ',slotnames
-				 ',slot-initforms
-				 ',key-cons
-				 ',(or extra-key-conser conser)))
-			   ,@(cond ((not already-defined)
-				    `((defstruct
-				       (,name
-					,@(include-if component
-					     `(:include ,component))
-					,@(include-if (not (eq storage-class
-								':structure))
-					     `(:type
-					       ,(cond ((eq storage-class ':list)
-						       'list)
-						      (t 'vector))))
-					,@(cond (is-testable
-                                                 `(:named
-                                                   (:predicate ,(build-symbol is- (< name)))))
-                                                (t !()))
-					,@(cond ((and key-cons
-						      (not (eq key-cons ':noway)))
-						 `((:constructor ,uninit-conser
-						      (&key ,@key-consargs))))
-						(t
-						 `((:constructor ,uninit-conser
-							  (,@slot-arg-names))
-						   ,@(include-if (not key-cons)
-							`(:constructor
-							    ,uninit-extra-key-conser
-							    (&key ,@key-consargs))))))
-					,@printer)
-				       ,@slots)
-				      ,@(cond ((and key-cons
-						    (not (eq key-cons ':noway)))
-					       `((defun ,conser (&key ,@key-consargs)
-						   (initialize
-						     (,uninit-conser
-						      ,@(key-args->call-form
-							   key-consargs))))))
-					      (t
-					       `((defun ,conser (,@slot-arg-names)
-						    (initialize
-						       (,uninit-conser
-							  ,@slot-arg-names)))
-						 ,@(include-if (not key-cons)
-						      `(defun ,extra-key-conser
-							     (&key ,@key-consargs)
-							(initialize
-							  (,uninit-extra-key-conser
-							   ,@(key-args->call-form
-								key-consargs))))))))
-				      ,@(clauses-ensure-class clauses name)
-				      ',name)))))))))))
+		   `(progn
+                       (eval-when (:compile-toplevel :load-toplevel
+                                   :execute :slurp-toplevel)
+                          (declare-ytools-class
+                             ',name ',storage-class
+                             ',(cond (component `(,component))
+                                     (t false))
+                             ',slotnames
+                             ',slot-initforms
+                             ',key-cons
+                             ',(or extra-key-conser conser)))
+		       ,@(cond ((not already-defined)
+                                `((defstruct
+                                   (,name
+                                    ,@(include-if component
+                                         `(:include ,component))
+                                    ,@(include-if (not (eq storage-class
+                                                            ':structure))
+                                         `(:type
+                                           ,(cond ((eq storage-class
+                                                       ':list)
+                                                   'list)
+                                                  (t 'vector))))
+                                    ,@(cond (is-testable
+                                             `(:named
+                                               (:predicate
+                                                  ,(build-symbol
+                                                      is- (< name)))))
+                                            (t !()))
+                                    ,@(cond ((and key-cons
+                                                  (not (eq key-cons
+                                                           ':nokey)))
+                                             `((:constructor ,uninit-conser
+                                                  (&key ,@key-consargs))))
+                                            (t
+                                             `((:constructor ,uninit-conser
+                                                      (,@slot-arg-names))
+                                               (:constructor
+                                                  ,uninit-extra-key-conser
+                                                  (&key ,@key-consargs)))))
+                                    ,@printer)
+                                   ,@slots)
+                                  ,@(cond ((and key-cons
+                                                (not (eq key-cons
+                                                         ':nokey)))
+                                           `((defun ,conser (&key ,@key-consargs)
+                                               (initialize
+                                                 (,uninit-conser
+                                                  ,@(key-args->call-form
+                                                       key-consargs))))))
+                                          (t
+                                           `((defun ,conser (,@slot-arg-names)
+                                                (initialize
+                                                   (,uninit-conser
+                                                      ,@slot-arg-names)))
+                                             (defun ,extra-key-conser
+                                                    (&key ,@key-consargs)
+                                                (initialize
+                                                   (,uninit-extra-key-conser
+                                                    ,@(key-args->call-form
+                                                        key-consargs)))))))
+                                  ,@(clauses-ensure-class clauses name)
+                                  ',name)))))))))))
 
 (defun all-slot-names (sc)
    (cond (sc
@@ -464,7 +472,12 @@
 	       (all-components
 		  (nodup (<$ class-all-components components)
 			 :test #'eq))
-	       (maker-name (build-symbol make- (< name))))
+	       (maker-name (build-symbol make- (< name)))
+	       (extra-key-conser
+                   (cond ((or (not key-cons)
+                              (eq key-cons ':nokey))
+                          (build-symbol make- (< name) -key))
+                         (t false))))
 	    (cond ((exists (c :in all-components)
 		      (ytd-key-cons (get-ytools-class-descriptor c)))
 		   (!= key-cons true)))
@@ -478,14 +491,17 @@
 	       (!= components
 		   `(,@*-* YTools-object))
 	       `(progn
-		  (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-		     (declare-ytools-class ',name ':object ',components
-					   ',local-slotnames ',local-initforms
-					   ',key-cons
-					   ,(cond ((eq key-cons ':noway)
-						   'false)
-						  (t
-						   `',(build-symbol make- (< name))))))
+		  (eval-when (:compile-toplevel :load-toplevel
+                              :execute :slurp-toplevel)
+		     (declare-ytools-class
+                        ',name ':object ',components
+                        ',local-slotnames ',local-initforms
+                        ',key-cons
+                        ,(cond ((or (not key-cons)
+                                    (eq key-cons ':nokey))
+                                `',extra-key-conser)
+                               (t
+                                `',maker-name))))
 		  ,@(include-if (not already-defined)
 		      `(common-lisp::defclass ,name ,components
 			                      ,local-slotspecs))
@@ -493,28 +509,44 @@
 						all-components)
 ;;;;		  ,@(slot-method-definitions slotmethods name local-slotnames)
 		  ,@(clauses-ensure-class clauses name)
-		  ,(cond ((and key-cons (not (eq key-cons ':noway)))
-			  (let ((params (<# (\\ (s i) `(,s ,i))
-					    all-slotnames
-					    all-initforms)))
-			     (cond ((exists (inf :in all-initforms)
-				      (eq inf '+unbound-slot-val+))
-				    ;;; We'd rather have a true CLOS unbound slot, even
-				    ;;; though there's a cost to having it
-				    `(defun ,maker-name (&rest pl &key ,@params)
-					(ignore ,@all-slotnames)
-				        (apply #'make-instance
-					       ',name
-					       (remove-absent-args pl))))
-				   (t
-				    `(defun ,maker-name (&key ,@params)
-					 (make-instance ',name ,@initargs))))))
-			 (t
-			  `(defun ,maker-name ,all-slotnames
-			      (make-instance ',name ,@initargs))))
+		  ,@(cond ((and key-cons (not (eq key-cons ':nokey)))
+;;;;                           (let ((params (<# (\\ (s i) `(,s ,i))
+;;;;                                             all-slotnames
+;;;;                                             all-initforms))) ...)
+                           `(,(clos-key-conser-defn
+                                 maker-name name
+                                 all-slotnames all-initforms)))
+                          (t
+			   `((defun ,maker-name ,all-slotnames
+			        (make-instance ',name ,@initargs))
+                             ,(clos-key-conser-defn
+                                 extra-key-conser name
+                                 all-slotnames all-initforms))))
 		  (defun ,(build-symbol is- (< name)) (x) (typep x ',name))
-		  ',name
-		  ))))))
+		  ',name))))))
+
+(defun clos-key-conser-defn (maker-name classname all-slotnames all-initforms)
+   (let ((initargs
+            (repeat :for (sn :in all-slotnames)
+             :nconc
+                  (list (intern (symbol-name sn)
+                                keyword-package*)
+                        sn)))
+         (params (<# (\\ (s i) `(,s ,i))
+                     all-slotnames
+                     all-initforms)))
+      (cond ((exists (inf :in all-initforms)
+               (eq inf '+unbound-slot-val+))
+             ;;; We'd rather have a true CLOS unbound slot, even
+             ;;; though there's a cost to having it
+             `(defun ,maker-name (&rest pl &key ,@params)
+                 (ignore ,@all-slotnames)
+                 (apply #'make-instance
+                        ',classname
+                        (remove-absent-args pl))))
+            (t
+             `(defun ,maker-name (&key ,@params)
+                  (make-instance ',classname ,@initargs))))))
 
 (defun key-cons-check (key-cons all-slot-names all-components classname)
    (cond ((not key-cons)

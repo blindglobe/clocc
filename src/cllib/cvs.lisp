@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.26 2005/01/27 23:02:50 sds Exp $
+;;; $Id: cvs.lisp,v 2.27 2005/12/12 16:33:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -280,7 +280,10 @@ Careful - this will return a huge list!"
 ;;;###autoload
 (defun cvs-change-root (root substitutions &key (dry-run nil) (log t))
   "Change Root and Repository files in the CVS directories under ROOT.
-When `DRY-RUN' is non-NIL, no actual changes are done."
+When `DRY-RUN' is non-NIL, no actual changes are done.
+This is a Lisp version of
+  find -path '.*/CVS/Root' -print0 | xargs -0 perl -i -p -e 's/from/to/'
+with some trivial bells and whistles."
   (flet ((change-one-line (file substitutions)
            (let ((line (with-open-file (in file) (read-line in))))
              (mesg :log log "~s:~%" file)

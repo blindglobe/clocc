@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 1.7.2.9 2005/12/08 17:03:04 airfoyle Exp $
+;;;$Id: ytload.lisp,v 1.7.2.10 2005/12/12 16:26:36 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -17,7 +17,7 @@
 		   
 (in-package :ytools)
 
-(defvar tools-version* "1.3")
+;;;;(defvar tools-version* "1.3")
 
 ;; Directory ending in system-specific directory delimiter.
 ;; nil if unknown.
@@ -472,7 +472,7 @@
 (defun revnum-from-changelog (base-version direc)
    (let ((revnum (or (find-revision-num (strings-concat direc "CHANGELOG"))
                      "??")))
-      (strings-concat base-version "." revnum)))
+     (strings-concat base-version "." revnum)))
 
 ;;; Find string "$Id" in file, following by num.num.....num, and
 ;;; return the last num, or nil if none can be found
@@ -518,7 +518,43 @@
                                  (t
                                   (return nil))))))))
          (cond ((advance-to-$Id)
-                (cond ((advance-to-revision-nums)
-                       (get-last-num))
+                (cond ((advance-to-revision-nums insrm)
+                       (get-last-num insrm))
                       (t nil)))
                (t nil)))))
+
+(defun version-num-from-changelog (direc)
+   (or (find-version-num (strings-concat direc "CHANGELOG"))
+       "??"))
+
+(defvar version-header* "[- Version ")
+
+(defun find-version-num (pn)
+   (cond ((fboundp '->pathname)
+          ;; Kludge
+          (setq pn (->pathname pn))))
+   (with-open-file (insrm pn :direction ':input)
+      (labels ((find-version-in-line (line startpos)
+;;;;                  (trace-around find-version-in-line
+;;;;                     (:> "(find-version-in-line: " startpos 1 line ")")
+                  (let ((q (position
+                              #\Space line
+                              :start startpos)))
+                     (cond (q
+                            (subseq line startpos q))
+                           (t "??.??")))
+;;;;                     (:< (val &rest _) "find-version-in-line: " val))
+                  ))
+         (loop
+            (let ((r (read-line insrm nil nil)))
+               (cond (r
+                      (let ((p (search version-header*
+                                       r)))
+                        (cond (p
+                               (return
+                                  (find-version-in-line
+                                     r (+ p (length version-header*))))))))
+                     (t (return "??.??"))))))))
+
+
+

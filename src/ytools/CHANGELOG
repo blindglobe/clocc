@@ -1,11 +1,12 @@
-$Id: CHANGELOG,v 1.31.2.51 2005/12/10 02:16:01 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.52 2005/12/12 16:26:35 airfoyle Exp $
 	
+            [- Version 2.52 -]
 2005-12-09: Changed def-class so that a "key-conser" is always
             defined, even if the option :nokey was given.  That option
             was undocumented, and has now been emasculated, that is,
             made equivalent to the absence of :key.
 
-            [Version 2.0 Id: 1.31.2.50 2005/12/08 17:03:04 airfoyle Exp]
+            [- Version 2.0 Id: 1.31.2.50 2005/12/08 17:03:04 airfoyle Exp -]
 2005-12-08: New numbering scheme: Minor version number of software
             package = last version number for CHANGELOG of package
             E.g., this entry bumps the YTools CHANGELOG to version

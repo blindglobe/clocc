@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 1.8.2.2 2005/05/03 21:19:07 airfoyle Exp $
+;;;$Id: repeat.lisp,v 1.8.2.3 2005/12/14 20:30:42 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -242,7 +242,9 @@
 		     (null local-fundefs)
 		     (forall (v :in standard-vars)
 			(and (eq (Rep-var-mode v) '*throughlist)
-			     (let ((p (lookup-rep-var-prop ':tail (Rep-var-alist v))))
+                             (not (lookup-rep-var-prop ':init (Rep-var-alist v)))
+			     (let ((p (lookup-rep-var-prop
+                                         ':tail (Rep-var-alist v))))
 			        (cond (p
 				       (= (Rep-var-prop-position p)
 					  -1))
@@ -268,7 +270,8 @@
      (\\ ,(mapcar #'Rep-var-name vars)
 	,@decls
 	,(cadr (Rep-clause-stuff clause)))
-     ,@(mapcar (\\ (v) (Rep-var-prop-val (lookup-rep-var-prop 'init (Rep-var-alist v))))
+     ,@(mapcar (\\ (v) (Rep-var-prop-val
+                          (lookup-rep-var-prop 'init (Rep-var-alist v))))
 	       vars)))
 
 ;;; It's important that the :type be list because we use 'assq' to search
@@ -861,16 +864,26 @@
 	    ((*simple *reset)
 	     `((,varname ,init)))
 	    (*throughlist
-	     (let ((tailvar (Rep-var-prop-val (lookup-rep-var-prop ':tail alist)))
-		   (initexp (let ((rvp (lookup-rep-var-prop ':initbind alist)))
-			       (cond (rvp
-				      (Rep-var-prop-val rvp))
-				     (t 'false)))))
+	     (let* ((tailvar (Rep-var-prop-val
+                                 (lookup-rep-var-prop ':tail alist)))
+                    (initexp
+                        (let ((rvp (lookup-rep-var-prop ':initbind alist)))
+                          (cond (rvp
+                                 (cond ((eq varname '_)
+                                        (cerror "I'll ignore the initialization"
+                                                  !":init field supplied for ~
+                                                    don't-care var _: ~s"
+                                                  (Rep-var-prop-val rvp))
+                                        nil)
+                                       (t
+                                        (Rep-var-prop-val rvp))))
+                                (t 'false)))))
 	        `((,tailvar ,init)
 		  ,@(include-if (not (eq varname '_))
 		       `(,varname ,initexp)))))
 	    (*each-iter
-	     (let ((iterfcnvar (Rep-var-prop-val (lookup-rep-var-prop 'iterfcnvar alist))))
+	     (let ((iterfcnvar (Rep-var-prop-val
+                                  (lookup-rep-var-prop 'iterfcnvar alist))))
 	        `((,iterfcnvar (\\ () ,init))
 		  (,varname nil))))
 	    (t

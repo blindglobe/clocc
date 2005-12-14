@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 1.31.2.53 2005/12/12 16:27:12 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.55 2005/12/14 15:21:38 airfoyle Exp $
 	
-            [- Version 2.0.52 -]
+            [- Version 2.0.55 -]
+2005-12-13: Made 'track-extra-vals' more complex for no real reason.
+
+            [- Version 2.0.54 2005/12/12 16:27:42 airfoyle Exp]
 2005-12-09: Changed def-class so that a "key-conser" is always
             defined, even if the option :nokey was given.  That option
             was undocumented, and has now been emasculated, that is,

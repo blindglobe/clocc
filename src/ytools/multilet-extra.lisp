@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet-extra.lisp,v 1.1.2.1 2005/12/14 04:10:55 airfoyle Exp $
+;;;$Id: multilet-extra.lisp,v 1.1.2.2 2005/12/14 15:21:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -260,9 +260,9 @@
 	       (t `(progn ,@e))))))
 
 
-;;; The form (track-extra-vals :extra <bdgs>
+;;; The form (track-extra-vals :extra-vars <bdgs>
 ;;;			       [:principal <vars>] 
-;;;			       [:values <exps>])
+;;;			       [:values <exps>]
 ;;;            -body-)
 ;;; where <bdgs> is a list ((var1 val1) ... (varK valK))
 ;;; <vars> is a list of variables (default: a new variable)
@@ -278,6 +278,7 @@
 		       (keyword-args-extract stuff '(:extra-vars :extra
                                                      :principal-values
                                                      :principal
+                                                     :num-principal-values
                                                      :extra-values
                                                      :values))
 ;;;;      (macrolet (((
@@ -338,13 +339,6 @@
 ;;;;	     :% " Should be of form (track-extra-vals <vars> :extra <bdgs>"
 ;;;;	        " expression --body--)"))))
 
-;;; (extra-vals <vars> e [:+] (v1 e1) ... (vK eK))
-;;; evaluates 'e', and binds the <vars> to all but the first value
-;;; returned.  (These are the "extra" values.)  All the vI are then
-;;; updated by reassigning them to eI.  The first value returned by 'e'
-;;; is then the value returned by the 'extra-vals' expression.
-;;; The :+ is purely optional; any other keywords can be sprinkled in
-;;; amongst the vI updates.
 (defmacro extra-vals (&whole form exp^ &rest stuff)
 ;;;;   (out "exp^ = " exp^ " stuff = " stuff :%)
    (multiple-value-let (stuff alist)

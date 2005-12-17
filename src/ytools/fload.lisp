@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.25 2005/12/08 17:03:04 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.26 2005/12/17 15:49:41 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -9,7 +9,7 @@
 
 (eval-when (:load-toplevel)
    (export '(fload filespecs-load fcompl filespecs-compile
-	     fcompl-reload* fload-compile* bind-fload-compile*
+	     fcompl-load* fload-compile* bind-fload-compile*
 	     fload-versions fload-version-suffix*
              postponed-files-update funktion
 	     debuggable debuggability*
@@ -175,7 +175,8 @@
 		  (cerror "I will ignore it"
 			  "Forcing flag '~a' contradicts file-manip instructions"
 			  (cond ((eq force-flag ':load) '#\f)
-				(t '#\c))))
+				(t '#\c)))
+                  (setq force-flag false))
 		 ((member (list file-manip force-flag)
 			  '((:source :compile))
 			  :test #'equal)
@@ -317,7 +318,7 @@
 
 (defgeneric loaded-chunk-force (loaded-chunk force))
 
-(defvar fcompl-reload* ':ask)
+(defvar fcompl-load* ':ask)
 
 (defmethod loaded-chunk-force ((loaded-chunk Loaded-file-chunk)
 			       force)
@@ -342,7 +343,7 @@
 			     src-file-chunk))))
 		  ((:compile)
 		   (Loaded-file-chunk-compiled loaded-chunk)))))
-	(let ((fcompl-reload* true))
+	(let ((fcompl-load* true))
 	   (file-ops-maybe-postpone
 	      (chunk-update operative-chunk true true))))))
 
@@ -451,10 +452,10 @@
 			  (let ((q (keyword-if-sym (read *query-io*))))
 			     (case q
 			        ((:n :no)
-				 (setf (Loaded-file-chunk-manip loaded-ch)
-				       ':ask-every)
 				 (return-from dialogue))
 				((:y :yes)
+				 (setf (Loaded-file-chunk-manip loaded-ch)
+				       ':ask-every)
 				 (return-from dialogue))
 				((:\\)
 				 (throw 'fload-abort 'fload-aborted))
@@ -710,8 +711,8 @@
 	      day yr))))
 
 (defun load-after-compile ()
-   (and fcompl-reload*
-	(or (not (eq fcompl-reload* ':ask))
+   (and fcompl-load*
+	(or (not (eq fcompl-load* ':ask))
 	    (progn
 	       (format *query-io*
 		    "Load newly compiled file? ")

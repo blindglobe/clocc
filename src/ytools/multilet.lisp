@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.3.2.6 2005/12/08 17:01:15 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3.2.7 2005/12/17 15:49:41 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -27,7 +27,25 @@
             :% exp :%))
       exp)
 
+   (defun gen-var (sym)
+      (build-symbol (:package false) (< sym) - (++ symno*)))
 )
+
+(defmacro redundant-args-check (arg-alist-var form^)
+   (cond ((not (is-Symbol arg-alist-var))
+          (out (:to *error-output*)
+             "Warning -- first argument '" arg-alist-var
+             "' to 'redundant-args-check' should be a variable!" :%)))
+   (let ((form-var (gen-var 'form)))
+      `(cond ((not (null (tail ,arg-alist-var)))
+              (let ((,form-var ,form^))
+                 (signal-problem :noplace
+                    "The following args to '" (car ,form-var)
+                    " are not supposed to occur at the same"
+                    " time: " (<# first ,arg-alist-var)
+                    (:proceed "I'll ignore all but "
+                              (first (head ,arg-alist-var)))))))))
+
 
 ;;; (multi-let (((v v v ...) form)
 ;;;                   ((v v v ...) form)
@@ -244,9 +262,9 @@
 	       (t `(progn ,@e))))))
 
 
-;;; The form (track-extra-vals :extra <bdgs>
+;;; The form (track-extra-vals :extra-vars <bdgs>
 ;;;			       [:principal <vars>] 
-;;;			       [:values <exps>])
+;;;			       [:values <exps>]
 ;;;            -body-)
 ;;; where <bdgs> is a list ((var1 val1) ... (varK valK))
 ;;; <vars> is a list of variables (default: a new variable)
@@ -257,21 +275,85 @@
 ;;; 'extra-vals' (see below).
 ;;; The keywords can come anywhere; in particular, :values can come
 ;;; after the body.
-(defmacro track-extra-vals (&rest stuff)
-   (multi-let (((remainder alist)
-		(keyword-args-extract stuff '(:principal :extra :values))))
-      (let ((p-vars (alref alist ':principal (list (gen-var 'prin))))
-	    (e-bdgs (alref alist ':extra
-			   (signal-problem track-extra-vals
-			       "Required :extra arg missing in "
-			       `(track-extra-vals ,@stuff)))))
-	 (cond ((and (atom p-vars)
-		     (not (eq p-vars 'nil)))
-		(!= p-vars (list *-*))))
-	 (let ((vals (alref alist ':values `(,@p-vars ,@(<# car e-bdgs)))))
-	    `(let ,e-bdgs
-		(multi-let ((,p-vars (progn ,@remainder)))
-		   (values ,@vals)))))))
+(defmacro track-extra-vals (&whole form &rest stuff)
+   (multiple-value-let (remainder alist)
+		       (keyword-args-extract stuff '(:extra-vars :extra
+                                                     :principal-values
+                                                     :principal
+                                                     :num-principal-values
+                                                     :extra-values
+                                                     :values))
+;;;;      (macrolet (((
+
+      (let ((p-entries (all-alist-entries '(:principal-values :principal
+                                            :num-principal-values)
+                                          alist))
+            (r-entries (all-alist-entries '(:extra-vars :extra)
+                                          alist))
+            (l-entries (all-alist-entries '(:extra-values :values)
+                                          alist)))
+         (let* ((specified-vals 
+                   (cond ((null l-entries) ':unspecified)
+                         (t
+                          (second (head l-entries)))))
+                (p-vars (cond ((null p-entries)
+                               (cond ((and (not (null l-entries))
+                                           (null (second (head l-entries))))
+                                      !())
+                                     (t (list (gen-var 'p)))))
+                              (t
+                               (redundant-args-check p-entries form)
+                               (cond ((eq (first (head p-entries))
+                                          ':num-principal-values)
+                                      (<# (\\ (_) (gen-var 'p))
+                                          (series (second (head p-entries)))))
+                                     (t
+                                      (second (head p-entries)))))))
+                (e-bdgs (cond ((null r-entries)
+                               (signal-problem track-extra-vals
+                                  "No :extra-vars specified"
+                                  (:proceed "I'll proceed, but you probably don't"
+                                            " need 'track-extra-vals'"))
+                               '())
+                              (t
+                               (redundant-args-check r-entries form)
+                               (second (head r-entries)))))
+                (vals (cond ((eq specified-vals ':unspecified)
+                             (cond ((null p-vars)
+                                    ':hide)
+                                   (t
+                                    (append p-vars
+                                            (<# (\\ (b) (cond ((consp b) (first b))
+                                                              (t b)))
+                                                e-bdgs)))))
+                            (t
+                             (redundant-args-check l-entries form)
+                             (ecase (first (head l-entries))
+                                (:extra-values
+                                 (cond ((and (null specified-vals)
+                                             (null p-vars))
+                                        ':hide)
+                                       (t
+                                        (append p-vars specified-vals))))
+                                (:values
+                                 specified-vals))))))
+;;;            (out "specified-vals = " specified-vals " vals = " vals :%)
+            (let ((exp (cond ((= (len remainder) 1)
+                              (car remainder))
+                             (t 
+                              `(progn ,@remainder))))
+                  (val-exp-list (cond ((eq vals ':hide) !())
+                                      (t `((values ,@vals))))))
+	       `(let ,e-bdgs
+		   ,@(case (len p-vars)
+                        (0 `(,exp ,@val-exp-list))
+                        (1 `(let ((,(first p-vars)
+                                   ,exp))
+                               (declare (ignorable ,@p-vars))
+                               ,@val-exp-list))
+                        (t `(multi-let ((,p-vars ,exp))
+                               (declare (ignorable ,@p-vars))
+                               ,@val-exp-list)))))))))
 
 ;;;;(defmacro track-extra-vals (&whole tev-exp
 ;;;;			    resvar\(s\) k init-bindings expr^ &body body^)
@@ -287,27 +369,98 @@
 ;;;;	     :% " Should be of form (track-extra-vals <vars> :extra <bdgs>"
 ;;;;	        " expression --body--)"))))
 
-;;; (extra-vals <vars> e [:+] (v1 e1) ... (vK eK))
-;;; evaluates 'e', and binds the <vars> to all but the first value
-;;; returned.  (These are the "extra" values.)  All the vI are then
-;;; updated by reassigning them to eI.  The first value returned by 'e'
-;;; is then the value returned by the 'extra-vals' expression.
-;;; The :+ is purely optional; any other keywords can be sprinkled in
-;;; amongst the vI updates.
-(defmacro extra-vals (extra-vars exp^ &rest accums)
-   (let ((main-res-var (gen-var 'r)))
-      (!= accums (<? neg is-Keyword *-*))
-      `(multi-let (((,main-res-var ,@extra-vars)
-		    ,exp^))
-	  ,@(<# (\\ (acc)
-		   (match-cond acc
-		      (:? (!= ?@_) acc)
-		      (:? (?(:+ ?v is-Symbol) ?e)
-			 `(!= ,v ,e))
-		      (t (signal-problem extra-vals
-			    "Ill-formed 'extra-vals' clause " acc))))
-		accums)
-	  ,main-res-var)))
+(defmacro extra-vals (&whole form exp^ &rest stuff)
+;;;;   (out "exp^ = " exp^ " stuff = " stuff :%)
+   (multiple-value-let (stuff alist)
+                       (keyword-args-extract stuff '(:after))
+;;;;      (out "stuff = " stuff  
+;;;;           " alist = " alist :%)
+      (multiple-value-let (stuff explicit-accums)
+                          (repeat :for ((e :in stuff :tail stl))
+                           :result (values stuff false)
+                           :until (memq e '(:+ :&))
+                           :result (values (ldiff stuff stl)
+                                           (cdr stl)))
+;;;;         (out "stuff = " stuff " explicit-accums = " explicit-accums
+;;;;              " alist = " alist :%)
+         (cond ((> (len stuff) 2)
+                (signal-problem extra-vals
+                   "Ill-formed (too much stuff): " form
+                   (:proceed "I'll ignore the extra stuff"))))
+         (multiple-value-let (vars exp^ accums)
+                             (cond ((null stuff)
+                                    (values !() exp^ false))
+                                   (t
+                                    (values exp^
+                                            (first stuff)
+                                            (cond ((= (len stuff) 1)
+                                                   false)
+                                                  (t (second stuff))))))
+            (cond ((not (null explicit-accums))
+                   (cond (accums
+                          (signal-problem extra-vals
+                             "Ill-formed (meaningless occurrence of " accums
+                             :% " in " form
+                             (:proceed "I'll ignore that meaningless occurrence"))))
+                   (!= accums explicit-accums)))
+            (let ((main-res-vars
+                     (<# (\\ (_) (gen-var 'r))
+                         (series (alref alist ':after 1))))
+                  (extra-vars
+                     (cond ((null vars)
+                            (<# (\\ (_) (gen-var 'extra))
+                                accums))
+                           (t
+                            vars)))
+                  (update-vars (<# (\\ (_) (gen-var 'u))
+                                   accums)))
+;;;;              (out "extra-vars = " extra-vars
+;;;;                   "accums = " accums " update-vars = " update-vars :%)
+               ;; Get all accums in form (var [new-val])
+               (!= accums (<# (\\ (a)
+                                 (cond ((atom a)
+                                        `(,a))
+                                       ((is-Keyword (car a))
+                                        (cdr a))
+                                       (t a)))
+                              *-*))
+               ;; If new-val is missing, it defaults to the corresponding
+               ;; extra-var.  Make sure this makes sense --
+;;;;               (out "accums = " accums " extra-vars = " extra-vars :%)
+               (cond ((and (> (len accums) (len extra-vars))
+                           (exists (acc :in (drop (len extra-vars)
+                                                  accums))
+                              (null (cdr acc))))
+                      (signal-problem extra-vals
+                         "Extra vars have ill-defined updaters: "
+                         (<? (\\ (acc) (null (cdr acc)))
+                             (drop (len extra-vars)
+                                   accums)))))
+               (let ((accum-vars (<# car accums))
+                     (new-vals
+                        (<# (\\ (a exv)
+                               (cond ((null (cdr a))
+                                      exv)
+                                     (t (cadr a))))
+                            accums extra-vars)))
+                  `(multi-let (((,@main-res-vars ,@extra-vars)
+                                ,exp^))
+                      (let ,(<# (\\ (upd-var new-val) `(,upd-var ,new-val))
+                                update-vars
+                                new-vals)
+                         ,@(<# (\\ (acc-var upd-var)
+                                  `(!= ,acc-var ,upd-var))
+                               accum-vars
+                               update-vars)
+                         (values ,@main-res-vars)))))))))
+
+;;;;                      (match-cond acc
+;;;;                         (:? (!= ?@_) acc)
+;;;;                         (:? (?(:+ ?v is-Symbol) ?e)
+;;;;                            `(!= ,v ,e))
+;;;;                         (t (signal-problem extra-vals
+;;;;                               "Ill-formed 'extra-vals' clause " acc)))
+
 
 ;;;;   (cond ((forall (a :in accums) (= (len a) 3))
 ;;;;	  ;; -- Each is of form (newval accumval accumulator)
@@ -391,14 +544,12 @@
 			(+ tot (count-occs sym x)))
 		     0 e))))))
 
-(defun gen-var (sym)
-   (build-symbol (:package false) (< sym) - (++ symno*)))
-
 ;;; Returns alist of keywords and vals, plus what's left over
 ;;; In order: < leftovers, alist >
 (defun keyword-args-extract (args keywords)
    (repeat :for ((al args)
 		 :collector pairs remainder)
+;;;;      (out "al = " al :%)
     :until (null al)
     :result (values remainder pairs)
     :within
@@ -411,4 +562,27 @@
 		(:continue
 		 :collect (:into remainder a)
 		   (!= al (cdr al))))))))
+
+(defun all-alist-entries (syms alist)
+   (repeat :for ((s :in syms))
+    :within (let ((e (assq s alist)))
+               (:continue
+                :when e
+                :collect e))))
+
+
+;;;;   (let ((occurs (<? (\\ (s) (assq s alist)))))
+;;;;      (cond ((null occurs)
+;;;;             (funcall if-absent))
+;;;;                    (signal-problem check-for-duplicate-alist-entries
+;;;;                       "In " context
+;;;;                       :% "  one of the following must occur: " syms))
+;;;;                   (t false)))
+;;;;            (t
+;;;;             (cond ((not (null (tail occurs)))
+;;;;                    (signal-problem check-for-duplicate-alist-entries
+;;;;                       "In " context
+;;;;                       :% "  you can't have occurrences of all of: "occurs
+;;;;                       (:proceed "I'll ignore all but the first"))))
+;;;;             (funcall if-found (head occurs))))))
 

@@ -1,6 +1,12 @@
-$Id: CHANGELOG,v 1.31.2.56 2005/12/14 20:30:42 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.57 2005/12/17 15:49:41 airfoyle Exp $
 	
-            [- Version 2.0.56 -]
+            [- Version 2.0.57 -]
+2005-12-15: Rewrite of 'track-extra-vals/extra-vals' for greater
+            flexibility, adding keyword args :num-principal-values,
+            :after; and allowing 'vars' in 'extra-vals' to be omitted
+            in simple cases.  Manual and implementation now agree.
+
+            [- Version 2.0.56 2005/12/14 20:30:42 airfoyle Exp]
 2005-12-14: Altered 'cons-funcall' to allow (lambda ...) as well as
             (\\ ...).  Changed name of 'mapeltreduce' to 'mapreduce',
             and made it macroexpand to 'reduce' in the usual case.

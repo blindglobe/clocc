@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.11.2.4 2005/11/28 16:50:05 airfoyle Exp $
+;;;$Id: outin.lisp,v 1.11.2.5 2005/12/21 17:44:33 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -474,7 +474,7 @@
                                (values 'y-or-n-p
                                        out-stuff)))
 
-      `(,y-or-n-fn "~s" (make-Printable (\\ (srm) (out ,@out-stuff))))))
+      `(,y-or-n-fn "~s" (make-Printable (\\ (srm) (out (:to srm) ,@out-stuff))))))
 
 (defun lineread (&optional (s *standard-input*))
 	  (prog ((res nil) c)

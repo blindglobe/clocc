@@ -1,9 +1,13 @@
-$Id: CHANGELOG,v 1.31.2.58 2005/12/21 17:44:33 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.59 2005/12/23 05:59:18 airfoyle Exp $
 	
-            [- Version 2.0.58 -]
+            [- Version 2.0.59 -]
+2005-12-22: Made 'fcompl' work with modules --- sort of.
+
 2005-12-21: Fixed bug in 'read-y-or-n' (outin.lisp) where output was
             going to standard output instead of 'srm'. 
             
+2005-12-17: Corrected anachronisms in slurp.lisp (use of != and *-*).
+
             [- Version 2.0.57 2005/12/17 15:49:41 airfoyle Exp -]
 2005-12-15: Rewrite of 'track-extra-vals/extra-vals' for greater
             flexibility, adding keyword args :num-principal-values,

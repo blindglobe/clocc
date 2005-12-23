@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.3.2.8 2005/12/10 02:16:01 airfoyle Exp $
+;;;$Id: debug.lisp,v 1.3.2.9 2005/12/23 05:59:18 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -360,23 +360,29 @@
 		   (read-char srm)
 		   true)
 		  (t false))))
-       (let ((pkgname (read srm)))
-	  (let ((x (let ((*package* (find-package (symbol-name pkgname))))
-		      (read srm))))
-	     (cond ((is-Symbol x)
-		    (cond ((eq (find-symbol (symbol-name x)
-					    *package*)
-			       x)
-			   (out x " already in " :% 3 *package* :%))
-			  (t
-			   (out "Importing " x " into " :% 3 *package* :%)
-			   (cond (shadow
-				  (shadowing-import x))
-				 (t
-				  (import x))))))
-		   (t
-		    (out "???" :%)))
-	     x))))
+       (let* ((pkgname (read srm))
+              (pkg (and (is-Symbol pkgname)
+                        (find-package (Symbol-name pkgname)))))
+          (cond (pkg
+                 (let ((x (let ((*package* pkg))
+                             (read srm))))
+                    (cond ((is-Symbol x)
+                           (cond ((eq (find-symbol (symbol-name x)
+                                                   *package*)
+                                      x)
+                                  (out x " already in " :% 3 *package* :%))
+                                 (t
+                                  (out "Importing " x " into " :% 3 *package*
+                                       :%)
+                                  (cond (shadow
+                                         (shadowing-import x))
+                                        (t
+                                         (import x))))))
+                          (t
+                           (out x " is not a symbol" :%)))
+                    x))
+                (t
+                 (out pkgname " is not the name of a package" :%))))))
 
 ;;; Push first subform of exp beginning with sym onto dbg-stack*
 (defun seek (sym &optional (num 0) (exp (g *)) (label '*))

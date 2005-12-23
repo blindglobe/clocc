@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.31 2005/10/07 13:58:38 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.32 2005/12/23 05:59:18 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -134,7 +134,11 @@
 
 (defclass Compiled-module-chunk (Chunk)
    ((module :reader Compiled-module-chunk-module
-	    :initarg :module)))
+	    :initarg :module)
+    ;; (fcompl -q -q foo...) results in the flags
+    ;; being stored in the chunk for foo -- 
+    (flags :accessor Compiled-module-chunk-flags
+            :initform !())))
 
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
@@ -366,18 +370,29 @@
 	  (loaded-mod-ch (place-Loaded-chunk mod-ch false))
 	  (compiled-mod-ch (place-compiled-chunk mod-ch)))
       (monitor-filoid-basis loaded-mod-ch)
-      (cond (force-compile
-	     (format *error-output*
-		!"Warning: Ignoring :force-compile argument to 'filoid-fcompl ~
-                  ~% for module chunk ~s~%"
-		mod-ch)))
+;;;;      (cond (force-compile
+;;;;	     (format *error-output*
+;;;;		!"Warning: Ignoring :force-compile argument to 'filoid-fcompl ~
+;;;;                  ~% for module chunk ~s~%"
+;;;;		mod-ch)))
       (cond (cease-mgt
 	     (chunk-terminate-mgt compiled-mod-ch  ':ask))
 	    (t
+             (setf (Compiled-module-chunk-flags compiled-mod-ch)
+                   !())
+             (cond (force-compile
+                    (on-list '#\f (Compiled-module-chunk-flags
+                                     compiled-mod-ch))))
+             (cond (load
+                    (on-list '#\l (Compiled-module-chunk-flags
+                                     compiled-mod-ch))))
 	     (let (;;;;(comp-date
 		   ;;;;   (Chunk-date compiled-mod-ch))
 		   )
 		(chunk-request-mgt compiled-mod-ch)
+;;;;                (dbg-save loaded-mod-ch compiled-mod-ch)
+;;;;                (breakpoint Module-pseudo-pn/filoid-fcompl
+;;;;                   "Ready to update")
 		(file-ops-maybe-postpone
 		   (chunk-update compiled-mod-ch false postpone-derivees))
 		(cond ((and (not (chunk-up-to-date loaded-mod-ch))
@@ -406,7 +421,8 @@
 	 (cond ((not (equal (first c) '(:expansion)))
 		(forms-slurp (rest c)
 			     (list module-compile*)
-			     (list false)))))))
+			     (list (Compiled-module-chunk-flags
+                                       comp-mod))))))))
 
 (defmacro module-elements (&rest specs)
       (multiple-value-bind (files flags readtab)
@@ -426,22 +442,30 @@
 		(catch 'fload-abort
 		   (do-it)))))))
 
-(datafun module-compile fload
-   (defun :^ (form _)
+(datafun module-compile module-elements
+   (defun :^ (form inh-flags)
       (multiple-value-bind (files flags readtab)
 	                   (flags-separate (cdr form) filespecs-load-flags*)
-	 (compile-if-flags-say-so files flags readtab))))
+         (setq readtab
+               (decipher-readtable readtab false !() !()))
+         (let ((flags (flags-check flags filespecs-load-flags*)))
+            (cond ((not (member '#\s flags))
+;;;;                   (dbg-save form flags inh-flags readtab)
+;;;;                   (breakpoint module-elements-module-compile
+;;;;                      "form = " form)
+                   (filespecs-do-compile
+                      files
+                      `(,@(retain-if (\\ (g) (char= g '#\z))
+                                     flags)
+                        ,@inh-flags)
+                      readtab)))))))
 
-(datafun module-compile module-elements fload)
-
-(defun compile-if-flags-say-so (files flags readtab)
-      (let ((flags (flags-check flags filespecs-load-flags*)))
-	 (cond ((or (memq '-c flags) (memq '-o flags))
-		(filespecs-do-compile
-		   files
-		   (retain-if (\\ (g) (eq g '-z))
-			      flags)
-		   readtab)))))
+;;;;	 (compile-if-flags-and-manip-say-so files flags readtab manip))))
+;;;;
+;;;;(datafun module-compile module-elements fload)
+;;;;
+;;;;(defun compile-if-flags-and-manip-say-so (files flags readtab manip)
+;;;;)
 
 (defun import-export (from-pkg-desig strings
 		      &optional (exporting-pkg-desig *package*))

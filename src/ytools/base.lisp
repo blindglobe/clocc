@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17.2.16 2005/11/29 13:59:27 airfoyle Exp $
+;;;$Id: base.lisp,v 1.17.2.17 2005/12/23 05:59:18 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -25,7 +25,8 @@
 	     make-eq-hash-table table-entry href walk-table clear-table
 	     make-Array make-Symbol
 	     Array-dimension Array-dimensions
-	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
+	     is-Vector is-Array is-Symbol
+             Symbol-name Symbol-plist Symbol-function Symbol-value
 	     is-Keyword is-String memq assq nodup =< retain-if
 	     is-Pair is-cons list-copy is-list
 	     tuple pair head tail nthrest nthtail left right
@@ -334,6 +335,8 @@
 (subr-synonym is-Symbol symbolp)
 (subr-synonym Symbol-name symbol-name)
 (subr-synonym Symbol-plist symbol-plist)
+(subr-synonym Symbol-function symbol-function)
+(subr-synonym Symbol-value symbol-value)
 
 (subr-synonym is-Keyword keywordp)
 
@@ -777,6 +780,7 @@
 	  (or (occurs-in x (car tr))
 	      (occurs-in x (cdr tr))))))
 
+#|
 (def-excl-dispatch #\? (srm _)
   (labels ((read-like-sym (chars)
 	      (let ((*package* keyword-package*))
@@ -807,6 +811,7 @@
 			     (read-char srm)))
 			 (t
 			  (error "Package not found: ~s" pkg-name))))))))))
+|#
 
 (defmacro on-list (x^ l^) `(push ,x^ ,l^))
 

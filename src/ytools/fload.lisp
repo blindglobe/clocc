@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.26 2005/12/17 15:49:41 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.27 2005/12/23 05:59:18 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -29,13 +29,28 @@
                     'quote)
                    (t 'function))))
       (cond ((atom f)
-             `(let ((exp '(,quoter ,f)))
-                 (on-list-if-new exp syms-used-as-funktions*
-                            :test #'equal)
-                 (,quoter ,f)))
+             `(progn
+                 (eval-when (:load-toplevel :execute)
+                    (note-funktion ',f ',quoter))
+                 (,quoter ,f))
+;;;;             `(let ((exp '(,quoter ,f)))
+;;;;                 (on-list-if-new exp syms-used-as-funktions*
+;;;;                            :test #'equal)
+;;;;                 (,quoter ,f))
+             )
             (t 
              `(,quoter ,f)))))
 )
+
+(defun note-funktion (fun-sym quoter)
+   (let ((e (assq fun-sym syms-used-as-funktions*)))
+      (cond ((not e)
+             (setq e (tuple fun-sym quoter !()))))
+      (cond ((eq quoter 'function)
+             (setf (second e) quoter)
+             (cond (now-loading*
+                    (on-list-if-new now-loading* (third e))))))
+      fun-sym))
 
 (defmacro debuggable (n)
    (multiple-value-bind (speed safety space debug)
@@ -496,7 +511,7 @@
 (defparameter fcompl-flags* '(#\f #\x #\l #\z))
 (defparameter filespecs-compile-flags* '(#\l #\z))
 ;;; -x -> "Stop managing compiled file (i.e., stop compiling)"
-;;; -l -> "Load after compile" (from now on, unless -x)
+;;; -l -> "Load after compile" (just this time)
 ;;; -f -> "Force compile even if apparently up to date"
 ;;; -z -> "Postpone update of chunks for files supported by this one"
 
@@ -542,6 +557,9 @@
       rt))
 
 (defun filespecs-do-compile (specs flags *readtable*)
+;;;;   (dbg-save specs flags)
+;;;;   (breakpoint filespecs-do-compile
+;;;;      "specs = " specs)
    (let ((*load-verbose* false))
       (let ((force-flag false)
 	    (load-flag false)

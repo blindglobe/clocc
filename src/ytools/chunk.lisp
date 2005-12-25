@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 1.1.2.60 2005/11/21 05:25:21 airfoyle Exp $
+;;; $Id: chunk.lisp,v 1.1.2.61 2005/12/25 15:56:34 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp and datafun.lisp
@@ -415,19 +415,23 @@
 		     (let ((ch-date (Chunk-date ch)))
 			(dolist (d (Chunk-derivees ch))
 			   (cond ((not (memq d checked))
-				  (let ((d-latest (Chunk-latest-supporter-date d))
+				  (let ((d-latest (Chunk-latest-supporter-date
+                                                     d))
 					(d-date (Chunk-date d)))
 				     (cond ((or (> ch-date d-latest)
-						(> latest-supporter-date d-latest)
+						(> latest-supporter-date
+                                                   d-latest)
 						(= d-date +no-info-date+)
 						(> ch-date d-date)
-						(> latest-supporter-date d-date))
+						(> latest-supporter-date
+                                                   d-date))
 					    (walk-thru-derivees d)))))))
 			(cond ((> latest-supporter-date
 				  ch-date)
 			       (on-list ch out-of-date)))))))
 	 (walk-thru-derivees ch)
 	 out-of-date)))
+
 
 (defmethod (setf Chunk-update-basis) :before (new-update-basis ch)
    (cond ((not (eq new-update-basis (Chunk-update-basis ch)))

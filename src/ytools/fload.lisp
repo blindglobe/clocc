@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 1.1.2.27 2005/12/23 05:59:18 airfoyle Exp $
+;;;$Id: fload.lisp,v 1.1.2.28 2005/12/25 15:56:34 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -734,9 +734,14 @@
 	    (progn
 	       (format *query-io*
 		    "Load newly compiled file? ")
-	       (memq (keyword-if-sym
-			(read *query-io* false false))
-		     '(:y :yes :t))))))				
+               (let ((r (keyword-if-sym
+			   (read *query-io* false false))))
+                  (cond ((memq r '(:-))
+                         (setq fcompl-load* false))
+                        ((memq r '(:+))
+                         (setq fcompl-load* true))
+                        (t
+                         (memq r '(:y :yes :t)))))))))
 
 (defvar fload-version-suffix* ':-new)
 

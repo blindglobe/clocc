@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 1.3.2.7 2005/12/17 15:49:41 airfoyle Exp $
+;;;$Id: multilet.lisp,v 1.3.2.8 2005/12/25 15:56:35 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -347,13 +347,13 @@
 	       `(let ,e-bdgs
 		   ,@(case (len p-vars)
                         (0 `(,exp ,@val-exp-list))
-                        (1 `(let ((,(first p-vars)
-                                   ,exp))
-                               (declare (ignorable ,@p-vars))
-                               ,@val-exp-list))
-                        (t `(multi-let ((,p-vars ,exp))
-                               (declare (ignorable ,@p-vars))
-                               ,@val-exp-list)))))))))
+                        (1 `((let ((,(first p-vars)
+                                    ,exp))
+                                (declare (ignorable ,@p-vars))
+                                ,@val-exp-list)))
+                        (t `((multi-let ((,p-vars ,exp))
+                                (declare (ignorable ,@p-vars))
+                                ,@val-exp-list))))))))))
 
 ;;;;(defmacro track-extra-vals (&whole tev-exp
 ;;;;			    resvar\(s\) k init-bindings expr^ &body body^)

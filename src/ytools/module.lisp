@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9.2.32 2005/12/23 05:59:18 airfoyle Exp $
+;;;$Id: module.lisp,v 1.9.2.33 2005/12/25 15:56:34 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -529,7 +529,8 @@ when scanning a sub-file for nisp types, the scan *dies* if you don't see
 
 (def-ytools-module ytools
    ((:run-support :compile-support)
-    (module-elements %ytools/ multilet signal misc setter object mapper
+    (module-elements %ytools/ outin binders repeat mapper setter
+                              object signal multilet misc
 		     :readtable ytools-readtable*)))
 
 (defun ytools-module-load (name)

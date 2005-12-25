@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.58 2005/06/24 16:16:31 sds Exp $
+;;; $Id: net.lisp,v 1.59 2005/12/25 23:53:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -322,7 +322,7 @@
   #+lispworks (let ((mbox (mp:make-mailbox :size 1)))
                 (make-socket-server
                  :mbox mbox :port port
-                 :proc (comm:start-up-server-and-mp
+                 :proc (comm:start-up-server
                         :function (lambda (sock) (mp:mailbox-send mbox sock))
                         :service port)))
   #+mcl

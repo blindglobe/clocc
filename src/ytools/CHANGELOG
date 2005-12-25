@@ -1,8 +1,11 @@
-$Id: CHANGELOG,v 1.31.2.60 2005/12/25 15:56:34 airfoyle Exp $
+$Id: CHANGELOG,v 1.31.2.61 2005/12/25 16:05:44 airfoyle Exp $
 	
-            [- Version 2.0.60 -]
+            [- Version 2.0.61 -]
 2005-12-24: Allow '+' or '-' as responses to question about whether a
-            file should be loaded after being compiled.
+            file should be loaded after being compiled.  Fix paren
+            error in 'track-extra-vals' (multilet.lisp).  To make
+            "fcompl -f" work correctly for ytools module, added every
+            component of the module to the definition in module.lisp.
 
             [- Version 2.0.59 2005/12/23 05:59:18 airfoyle Exp]
 2005-12-22: Made 'fcompl' work with modules --- sort of.

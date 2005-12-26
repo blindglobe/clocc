@@ -209,7 +209,9 @@ File .smtp.pw
 
 File .smtp.ac
 
-;; I leave this in case it turns out to be still useful
+;; I leave this in case it turns out to be still useful.
+;; It is written by the server only when in training mode.
+;; It is read, as usual, with one lisp READ.
 (;; again lisp syntax, one form containing a list
  ;;  of entries of form (ip-addr-list mail-addr-list), as in
  ((1 2 3 T) ("sender" "foo" "com")) ;; ip address, from address,
@@ -371,19 +373,28 @@ from line will be in the message delivered to each user.
 
 (defvar *log* nil) ;; log file [***]
 ;; If you want to log the inputs, set *log* to the name of a log file
-(defun logform (string)
+;; Naturally this file should belong to root and users shouldn't
+;; be able to change it to arbitrary symlinks.
+(defun logform (string &optional (show-connection t))
   (if (stringp *log*)
     (with-open-file (log *log* :direction :output
 		     :if-does-not-exist :create :if-exists :append)
-      (terpri log) (print-current-time log) (show-connection log)
+      (terpri log) (print-current-time log)
+      (when show-connection (show-connection log))
       (format log "~% ~A" string))
     (progn (terpri) (print-current-time)
-	   (show-connection) (format t "~% ~A" string))))
+	   (when show-connection (show-connection))
+	   (format t "~% ~A" string))))
 
-(defun show-connection (&optional (stream t) &aux (c sss::connection))
+(defun sss:log-err (string) ;; redefine from server
+  (logform string nil))
+
+(defun show-connection (&optional (stream t) &aux c)
   (declare (special sss::connection reverse-path forward-path))
   ;; sss::connection is special bound by process-connection
-  (format stream " ~A" (list-bytes (sss:connection-ipaddr c)))
+  (setf c sss::connection)
+  (ignore-errors ;; in case no longer connected
+    (format stream " ~A" (list-bytes (sss:connection-ipaddr c))))
   ;; look at bindings rather than just variables
   ;; in case they were bound by this invocation of process-connection
   (let ((b (assoc 'reverse-path (sss:bindings c))))
@@ -397,6 +408,12 @@ from line will be in the message delivered to each user.
 ;; *** after loading this file, something like
 ;; (setf esmtp:*mydomain*
 ;;       (read-line (run-shell-command "hostname" :output :stream)))
+
+(defvar *tmp-err-file* "/root/sendmail-error")
+;; *** the file where we put error messages from delivery
+;; (Since we only deliver one at a time we can get away with one file.)
+;; Since we write this as root, it should belong to root and
+;; no user should be able to e.g., change it to a symlink.
 
 (defvar crlf (format nil "~C~C" #.(code-char 13) #.(code-char 10)))
 
@@ -641,6 +658,7 @@ has been an helo/ehlo since they were last set
       ;; illegal return path can mess us up at delivery time
       (unless (> (length rp) 2) (setf rp "<nobody>")) ;; <>
       (unless (and (eql (char rp 0) #\<) (eql (char rp (1- (length rp))) #\>))
+	(logform (format nil "replaced bad return path: ~A" rp))
 	(setf rp "<bad-return-path>"))
       ;; rfc822 has a long spec of legal addresses containin words which can
       ;; contain quoted strings with almost any character following a \
@@ -742,7 +760,9 @@ has been an helo/ehlo since they were last set
 	       (return-from rcpt nil)))
       ;; &&& It would be worth while to check whether this is a legal user.
       ;; current solution: end file *user-translations* with ("" "unknown")
-      (when (equal user "unknown") (setf accept nil))
+      (when (equal user "unknown")
+	(logform (format nil "failed to translate to user: ~A" to))
+	(setf accept nil))
       (when accept
 	(logform (format nil "accept mail to ~A" to))
 	(unless (member user forward-path :key 'car :test 'equal)
@@ -824,16 +844,26 @@ has been an helo/ehlo since they were last set
 ;; The reason not to is that often the ip address varies a lot.
 ;; That's one reason to abandon the old approach.
 
+;; writing user files - dangerous to just open and write cause
+;; the user could, e.g., ln -s /etc/passwd .smtp.adr
+(defun write-user-file (user filetype data
+			     &aux (file (user-file user filetype)))
+  (ignore-errors (delete-file file)) ;; possible error if not there
+  (with-open-file (f file :direction :output
+		     :if-does-not-exist :create :if-exists :error)
+    (print data f))
+  ;; make it readable by user
+  (shell-command
+   (with-standard-io-syntax ;; no #1= ...
+     (format nil "chown ~A ~A; chmod 400 ~A" user file file))))
+
 ;; used only when in training mode
 (defun add-accept (user data domain-ip reverse-path)
   (let ((newac
 	 (append data
 		 (list (list (and *training-record-ip* (list-bytes domain-ip))
 			     (parse-addr reverse-path))))))
-    (with-open-file (f (user-file user "ac") :direction :output
-		     :if-does-not-exist :create :if-exists :supersede)
-      ;; we'll refresh it on next use
-      (print newac f))))
+    (write-user-file user "ac" newac)))
 
 (defun test-accept (data)
   ;; return :accept, :reject or nil to go on to the password check
@@ -970,9 +1000,7 @@ has been an helo/ehlo since they were last set
   (send-string-crlf con "554- "))
 
 (defun write-pw (data user)
-  (with-open-file (f (user-file user "pw") :direction :output
-		   :if-does-not-exist :create :if-exists :supersede)
-    (print data f)))
+  (write-user-file user "pw" data))
 
 ;; rfc821 except that rfc1123 says no 2 digit years
 (defvar months '("JAN" "FEB" "MAR" "APR" "MAY" "JUN"
@@ -1141,17 +1169,15 @@ Notice that sendmail to a local address does not go through our demon.
 			  :if-does-not-exist :create :if-exists :error)
 	   (return nil) ;; leave loop with the file created
 	   )))
-  (shell-command
-   (with-standard-io-syntax ;; no #1= ...
-     (format nil "chown ~A ~A; chmod 400 ~A" user file file)))
   (with-open-file (f file :direction :output
 		   :if-does-not-exist :error :if-exists :append)
     (write-mail f body))
+  ;; Sunday 2005/12/04 - write it before allowing user to change it
+  ;; otherwise he might change it to a symlink
+  (shell-command
+   (with-standard-io-syntax ;; no #1= ...
+     (format nil "chown ~A ~A; chmod 400 ~A" user file file)))
   file)
-
-(defvar *tmp-err-file* "/tmp/sendmail-error")
-;; *** the file where we put error messages from delivery
-;; (Since we only deliver one at a time we can get away with one file.)
 
 (defun filecontents (file)
   (with-open-file (f file)
@@ -1260,8 +1286,10 @@ the mail for that user, e.g. put this in /root/smtp/feedback/.smtp.deliver
 
 (defun vrfy (c string)
   (declare (ignore string))
-  (logform "error 502 - vrfy command not implemented")
-  (send-string-crlf+ c "502 Command not implemented "))
+  ;; changed Friday 2005/09/23 cause sourceforge insists on verifying
+  ;; that sender accepts mail to postmaster
+  (logform "(error) 252 - vrfy command not implemented")
+  (send-string-crlf+ c "252 I pretend to accept everything"))
 
 (defun expn (c string)
   (declare (ignore string))

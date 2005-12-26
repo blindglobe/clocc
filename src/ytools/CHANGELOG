@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 2.2 2005/12/26 15:21:44 airfoyle Exp $
+$Id: CHANGELOG,v 2.3 2005/12/26 15:33:18 airfoyle Exp $
 
-            [- Version 2.1.2 -]
+            [- Version 2.1.3 -]
+2005-12-26: Add 'sym-val' to debug.lisp.
+
+            [- Version 2.1.2 2005/12/26 15:21:44 airfoyle Exp -]
 2005-12-25: Merge chunk-based YTools into main line!
             
             [- Version 2.0.61 -]

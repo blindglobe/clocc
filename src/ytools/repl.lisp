@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repl.lisp,v 1.2 2005/12/26 00:15:01 airfoyle Exp $
+;;;$Id: repl.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
 
 (defun simp-repl ()
    (let (r*

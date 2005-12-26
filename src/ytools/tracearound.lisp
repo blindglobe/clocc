@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: tracearound.lisp,v 1.4 2005/12/26 00:15:01 airfoyle Exp $
+;;;$Id: tracearound.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
 
 (depends-on %module/ ytools %ytools/ nilscompat)
 

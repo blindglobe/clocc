@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: binders.lisp,v 1.5 2005/12/26 00:15:01 airfoyle Exp $
+;;;$Id: binders.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 Drew McDermott and Yale University. 
 ;;; This software is released under the terms of the Modified BSD

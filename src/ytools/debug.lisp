@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 1.5 2005/12/26 00:15:01 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)

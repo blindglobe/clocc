@@ -1,6 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: outin.lisp,v 1.12 2005/01/25 14:56:49 airfoyle Exp $
+
+;;;$Id: outin.lisp,v 1.13 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -34,9 +35,10 @@
 (defun out-prepare (stream)
    (let ((curstate (Out-stream-state stream))
 	 (real-stream (Out-stream-stream stream)))
+;;;;      (setq real-stream* real-stream)
       (cond ((eq curstate 'unindented)
 #+allegro    (format real-stream "~V,0T" (Out-stream-indent stream))
-#-allegro    (progn (fresh-line real-stream)
+#-allegro    (progn #-openmcl (fresh-line real-stream)
 		    (print-spaces (Out-stream-indent stream)
 				  real-stream))
 	     (setf (Out-stream-state stream) 'indented)))
@@ -52,20 +54,16 @@
    (cond ((Out-stream-p srm)
 	  srm)
 	 ((is-Stream srm)
-	  #+openmcl
-	  (cond ((typep srm 'ccl::xp-stream)
-		 (dbg-save srm)
-		 (breakpoint stream-outify
-		    "Got odd stream: " srm)))
 	  (cond ((some #'(lambda (p)
 			    (or (not (streamp (car p)))
-				(not (open-stream-p (car p)))))
+				(not (stream-is-open (car p) false))))
 		       out-streams*)
 		 ;; clean up table
 		 (setq out-streams*
 		       (delete-if #'(lambda (p)
 				       (or (not (streamp (car p)))
-					   (not (open-stream-p (car p)))))
+					   (not (stream-is-open (car p)
+								false))))
 				  out-streams*))))
 	  (let ((p (assq srm out-streams*)))
 	     (cond (p (cadr p))
@@ -73,12 +71,26 @@
 		    (let ((newsrm (make-Out-stream :state 'unindented
 						   :indent 0
 						   :stream srm)))
+		       (stream-is-open srm true)
 		       (setq out-streams*
 			     (cons (list srm newsrm) out-streams*))
 		       newsrm)))))
 	 (t
 	  (error "Attempt to outify nonstream ~s" srm))))
 
+(defun stream-is-open (srm warn)
+   (declare (ignorable warn))
+   #+openmcl
+   (handler-case (open-stream-p srm)
+      (error ()
+	 (cond (warn
+		(format *error-output*
+		    "Warning -- unintelligible stream ~s~%"
+		    srm)))
+	 true))
+   #-openmcl
+   (open-stream-p srm))
+	  
 (eval-when (:compile-toplevel :load-toplevel)
    (defvar default-out-stream-var* '*standard-output*))
 
@@ -307,6 +319,7 @@
    (multiple-value-bind (prefix cmd suffix)
                         (pp-block-analyze cmd)
 	 (let (
+	       #+openmcl (save-srm-var (gensym))
 ;;;;	       (pp-srmvar (gensym))
 ;;;;	       (outified-pp-srmvar (gensym))
 ;;;;	       (srmvar (gensym))
@@ -317,18 +330,29 @@
 ;;;;		   (,srmvar ,stream))
 
 	    `(let ((,stream ;;;; ,pp-srmvar
-		    (out-prepare ,stream)))
-		(pprint-logical-block
-			       (,stream nil ;;;; ,pp-srmvar nil ;;;; ,realsrmvar nil
-				,@(cond (prefix `(:prefix ,prefix))
-					(t '()))
-				,@(cond (suffix `(:suffix ,suffix))
-				  (t '())))
-		      (let ((,stream  ;;;; ,outified-pp-srmvar
-			       (stream-outify ,stream ;;;; ,pp-srmvar   ;;;; ,realsrmvar
-			       )))
-			 ,@(expand-out-body cmd stream ;;;; outified-pp-srmvar
-			   )))))))
+		    (out-prepare ,stream))
+		    #+openmcl (,save-srm-var nil)
+		    )
+		(unwind-protect
+		   (pprint-logical-block
+				  (,stream nil 
+				   ,@(cond (prefix `(:prefix ,prefix))
+					   (t '()))
+				   ,@(cond (suffix `(:suffix ,suffix))
+				     (t '())))
+		         #+openmcl (setq ,save-srm-var ,stream)
+			 (let ((,stream  
+				  (stream-outify ,stream)))
+			    ,@(expand-out-body cmd stream)))
+		  #+openmcl (cond (,save-srm-var
+				   (openmcl-out-stream-cleanup ,save-srm-var)))
+               )))))
+
+(defun openmcl-out-stream-cleanup (pp-srm)
+   (cond ((assoc pp-srm out-streams*)
+	  (setq out-streams*
+		(delete-if (\\ (e) (eq (first e) pp-srm))
+			   out-streams*)))))
 
 (defun pp-block-analyze (pp-block-body)
    (let ((pre (car pp-block-body)) (prefix false))
@@ -443,7 +467,15 @@
 ;;;;     (format nil "~a" obj)))
 
 (defmacro read-y-or-n (&rest out-stuff)
-  `(y-or-n-p "~s" (make-Printable (\\ (srm) (out ,@out-stuff)))))
+   (multiple-value-bind (y-or-n-fn out-stuff)
+                        (cond ((memq ':yes-no out-stuff)
+                               (values 'yes-or-no-p
+                                       (remove ':yes-no out-stuff)))
+                              (t
+                               (values 'y-or-n-p
+                                       out-stuff)))
+
+      `(,y-or-n-fn "~s" (make-Printable (\\ (srm) (out (:to srm) ,@out-stuff))))))
 
 (defun lineread (&optional (s *standard-input*))
 	  (prog ((res nil) c)

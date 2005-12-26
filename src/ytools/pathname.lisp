@@ -1,85 +1,40 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: pathname.lisp,v 1.10 2004/11/09 14:38:26 airfoyle Exp $
+
+;;;$Id: pathname.lisp,v 1.11 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
-(eval-when (:load-toplevel)
+(eval-when (:load-toplevel :execute)
    (export '(make-Pathname is-Pathname
 	     Pathname-host Pathname-device Pathname-directory
 	     Pathname-name Pathname-type Pathname-version
 	     pathname->string pathname-equal pathname-get
 	     ->pathname filespecs->pathnames filespecs->ytools-pathnames
 	     def-ytools-logical-pathname ytools-logical-pathname-def
-	     ytools)))
+	     lookup-ytools-logical-pathname
+	     ytools def-ytools-pathname-control
+	     string-is-ytools-logical-pathname)))
 
 ;;; Some logical names really name special modes of "file" handling.
 
 ;;;;(defvar pathname-traps* !())
 
-;;; The slots are functions that obey the same calling conventions
-;;; as the operations (slurping, etc.) that they implement
-;;; The 'parser' is a function that takes a list of "operands" from
-;;; a filespec, and the default pathname extracted from filespecs to 
-;;; the left of the point where the File-op-vector's name occurred.
-;;; The 'parser' returns a list of pathnames, a new default, and
-;;; the operands it didn't want.
-;;; The 'expander', if non-false, is a function that extracts from a "name"
-;;; the forms to be inserted into a file when it contains
-;;; (depends-on ... %foo/ name), where %foo/ is the control-pathname
-;;; associated with this File-op-vector.
-(defstruct (File-op-vector (:predicate is-File-op-vector))
-   parser
-   slurper 
-   loader
-   compiler
-   expander)
-
-;;; The control is a symbol associated with a File-op-vector.
 (defstruct (Pseudo-pathname (:predicate is-Pseudo-pathname))
-   control
-   opvec ;; a File-op-vector
-   )
-;;; Most Pseudo-pathname are actually subclasses of this "class."
-
-(defun place-pseudo-pathname-opvec (pspn)
-   (or (Pseudo-pathname-opvec pspn)
-       (let ((opvec (lookup-ytools-logical-pathname
-		        (Pseudo-pathname-control pspn))))
-	  (cond ((is-File-op-vector opvec)
-		 (setf (Pseudo-pathname-opvec pspn)
-		       opvec)
-		 opvec)
-		(t
-		 (error "Pseudo-pathname control ~s is not associated with a File-op-vector [~s]"
-			(Pseudo-pathname-control pspn)
-			opvec))))))
-
-(defun Pseudo-pathname-parser (pspn)
-   (File-op-vector-parser (place-pseudo-pathname-opvec pspn)))
-
-(defun Pseudo-pathname-slurper (pspn)
-   (File-op-vector-slurper (place-pseudo-pathname-opvec pspn)))
-
-(defun Pseudo-pathname-loader (pspn)
-   (File-op-vector-loader (place-pseudo-pathname-opvec pspn)))
-
-(defun Pseudo-pathname-compiler (pspn)
-  (File-op-vector-compiler (place-pseudo-pathname-opvec pspn)))
-
-(defun Pseudo-pathname-expander (pspn)
-   (File-op-vector-expander (place-pseudo-pathname-opvec pspn)))
+   name)
 
 (defmethod make-load-form ((pspn Pseudo-pathname) &optional env)
    (declare (ignore env))
-   `(make-Pseudo-pathname :control ',(Pseudo-pathname-control pspn)
-			  :opvec false))
-;;; The opvec will be reconstructed later
-;;; VERY IMPORTANT that all subclasses of Pseudo-pathname have their
-;;; own make-load-forms.
+   (cerror "I'll make some useless generic Pseudo-pathname"
+	   !"Attempt to make load form for Pseudo-pathname object~
+             ~% ~s ~
+             ~% for which no specific 'make-load-form' method was ~
+             provided"
+	   pspn)
+   `(make-Pseudo-pathname :name ',(Pseudo-pathname-name pspn)))
 
 (defstruct (YTools-pathname
 	       (:predicate is-YTools-pathname)
@@ -95,7 +50,7 @@
 			 ((null dl))
 		        (cond ((symbolp (car dl))
 			       (format srm "%~s" (car dl)))
-			      (t
+			      ((not (listp (car dl)))
 			       (cond ((not firstiter)
 				      (format srm "/")))
 			       (format srm "~a" (car dl)))))
@@ -287,7 +242,7 @@
 
 (declaim (special lisp-object-extn* lisp-source-extn* dir-delim*))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(eval-when (:compile-toplevel :load-toplevel :execute)
    (subr-synonym is-Pathname pathnamep)
    (subr-synonym make-Pathname make-pathname)
    (subr-synonym Pathname-host pathname-host)
@@ -316,18 +271,22 @@
 
 ;;;;(defvar ytools-logical* "YTOOLS")
 
-(defvar ytools-logical-names-table* (make-eq-hash-table :size 10))
-;;; -- Each entry is the pathname the logical-name names.  Logical
-;;; name is just a symbol at this point.
-;;; Reserved logical names like 'module' have non-pn definitions, which
-;;; cause an error if someone tries to resolve them into actual pns.
-
-(defun Pseudo-pathname-op-vector (pspn)
-   (or (table-entry ytools-logical-names-table*
-		    (Pseudo-pathname-control pspn))
-       (error "Fumbled File-op-vector for pathname control ~s in ~s"
-	      (Pseudo-pathname-control pspn)
-	      pspn)))
+(defvar ytools-logical-names-table* (make-hash-table :size 10 :test #'eq))
+;;; -- Each entry is the pathname the logical-name names, or
+;;; the symbol :pathname-parse-controller if that's what it is.
+;;; (In which case the code to do the parsing is associated to
+;;; this symbol using 
+;;;   (datafun :pn-parse
+;;;      (defun sym :^ (operands default) 
+;;;         ...))
+;;; where operands are the operands to the right of the symbol in
+;;; a filespecs list, and default is the directory established by
+;;; stuff to the left of the symbol.  The datafun must return three
+;;; values: the pathnames extracted from the operands, the new default
+;;; established by them (or false if there is to be no default), and
+;;; the operands left over after this one did its extraction.
+;;; Logical name is just a symbol at this point.
+;;; See def-ytools-pathname-control, below.
 
 (defvar pathname-prop-table* (make-hash-table :test #'equalp :size 100))
 
@@ -366,44 +325,103 @@
 
 (defsetf pathname-prop set-pathname-prop)
 
-(defmacro def-ytools-logical-pathname (name ^pn &optional ^obj-version)
-   `(define-ytools-log-pname ',name ,^pn ,^obj-version))
+;;; Represents that a pathname (or no pathname) is associated with
+;;; a directory under a property label.
+(defclass Dir-associate-chunk (Chunk)
+  (;; Pathname for the directory --
+   (directory :initarg :directory :reader Dir-associate-chunk-directory)
+   ;; Property name -- 
+   (prop :initarg :prop :reader Dir-associate-chunk-prop)
+   ;; The directory associated with 'directory' under the given 'prop'
+   (linked-dir :initform 'false
+	      :accessor Dir-associate-chunk-linked-dir)))
+   
+;;; If third arg = :keep, then existing association is not changed.
+(defun place-Dir-associate-chunk (directory prop linked-dir)
+   (let ((da-chunk
+	    (chunk-with-name `(:dir-associate ,prop ,directory)
+	       (\\ (exp)
+		  (make-instance 'Dir-associate-chunk
+		     :name exp
+		     :directory directory
+		     :prop prop))
+	       :initializer
+	       (\\ (ch)
+		  ;; The default is +no-info-date+, but we want
+		  ;; a more specific hallucination -- that the
+		  ;; association has existed forever.
+		  (setf (Chunk-date ch) 0)
+		  (cond ((not (eq linked-dir ':keep))
+			 (setf (Dir-associate-chunk-linked-dir ch)
+			       linked-dir)))))))
+      da-chunk))
+
+(defmethod derive-date ((da-ch Dir-associate-chunk))
+   (Chunk-date da-ch))
+
+(defmethod derive ((da-ch Dir-associate-chunk))
+   (Chunk-date da-ch))
+
+(defmacro def-ytools-logical-pathname
+                        (name ^pn
+                         &optional (^obj-version ':retain))
+   `(define-ytools-log-pname
+        ',name ,^pn ,^obj-version))
  
 (defun define-ytools-log-pname (name pn &optional obj-version)
    (cond ((stringp pn)
 	  (setq pn (->pathname pn))))
    (cond ((stringp obj-version)
-	  (setq obj-version (->pathname obj-version))
 	  (setq obj-version
-		(let ((obj-dir (Pathname-directory obj-version)))
-		   (cond ((and (not (atom obj-dir))
-			       (eq (car obj-dir)
-				   ':relative))
-			  (place-relative-pathname
-			     pn (append (cdr obj-dir) bin-idio-dir*)
-			     lisp-object-extn* true))
-			 (t
-			  (make-Pathname
-			     :directory (append obj-dir bin-idio-dir*)
-			     :type lisp-object-extn*)))))))
+		(string->obj-pn obj-version pn bin-idio-dir*))))
+   (set-ytools-logical-pathname name pn)
    ;;;;(format t "name = ~s~%" name)
-   (setf (table-entry ytools-logical-names-table*
-		      name)
-         pn)
-   (cond (obj-version
-	  (setf (pathname-prop 'obj-version pn)
-	        (pathname-resolve
-		     (merge-pathnames
-			obj-version pn)
-		     true))))
+   (cond ((not (eq obj-version ':retain))
+          (declare-pathname-associate
+             'obj-version pn obj-version lisp-object-extn*)))
    name)
+
+(defun string->obj-pn (obj-dir src-pn idio)
+   (setq obj-dir (Pathname-directory (->pathname obj-dir)))
+   (cond ((and (not (atom obj-dir))
+	       (eq (car obj-dir)
+		   ':relative))
+	  (place-relative-pathname
+	     src-pn (append obj-dir idio)
+	     lisp-object-extn* true))
+	 (t
+	  (make-Pathname
+	     :directory (append obj-dir idio)
+	     :type lisp-object-extn*))))
 
 (defun ytools-logical-pathname-def (name)
    (let ((pn (href ytools-logical-names-table* name)))
       (values pn
-	      (pathname-prop 'obj-version pn))))
+	      (and pn (pathname-prop 'obj-version pn)))))
 
+(defun lookup-ytools-logical-pathname (sym)
+   (href ytools-logical-names-table* sym))
+
+(defun set-ytools-logical-pathname (sym new-val)
+   (let ((old-val (href ytools-logical-names-table*
+			sym)))
+      (cond ((and old-val
+		  (not (eq (eq old-val ':pathname-parse-controller)
+			   (eq new-val ':pathname-parse-controller))))
+	     (format *error-output*
+		     "Warning: ~s changing from ~s~%"
+		     sym
+		     (cond ((eq old-val ':pathname-parse-controller)
+			    "logical-name parser to logical pathname")
+			   (t
+			    "logical pathname to logical-name parser")))))
+      (setf (href ytools-logical-names-table*
+		  sym)
+	    new-val)))
+
+#|
 ;;; Produce pathname that bears relation 'dir-list' to 'pn'.  
+;;; MOVED to ytools.lsy, which isn't compiled, so (below) we compile it
 (defun place-relative-pathname (pn dir-list suff ensure-existence)
    (cond ((stringp dir-list)
 	  (setq dir-list (Pathname-directory (parse-namestring dir-list)))
@@ -417,33 +435,71 @@
 		 dir-list)))
    (let ((start (Pathname-directory pn)))
       (cond ((and (consp start) (eq (car start) ':absolute))
-	     (let ((pn-dir (reverse (cdr start)))
-		   (resid !())
-		   (res !()))
+	     (let ((above-dirs (reverse (cdr start)))
+		   (below-dirs !())
+		   (from-dir-list !()))
+	        ;; We use 'dir-list' as a set of instructions for arriving
+		;; at a relative directory.
+	        ;; As we go, the three variables above represent the
+	        ;; directories traversed so far, leaving us in the "current
+	        ;; directory."
+		;; 'above-dirs' is list (in ascending order) of directories
+	        ;; above (and including) the current dir.
+	        ;; 'below-dirs' is list (in descending order)
+	        ;; of directories we passed on the way up to current dir.
+	        ;; 'from-dir-list' is a list (in ascending order) of
+	        ;; directories copied from 'dir-list'.
 		(dolist (d dir-list)
+;;;;		   (format t "above-dirs = ~s from-dir-list = ~s d = ~s below-dirs = ~s~%"
+;;;;			   above-dirs from-dir-list d below-dirs)
 		   (cond ((or (memq d '(:back :up)) (equal d ".."))
-			  (cond ((null res)
-				 (cond ((null pn-dir)
+			  (cond ((null from-dir-list)
+				 ;; Go up one layer, recording in 'below-dirs'
+				 ;; the directory passed.--
+				 (cond ((null above-dirs)
 					(error "Relative directory ~s undefined wrt ~s"
 					       dir-list pn))
 				       (t
-					;;(setq res (cons ':up res))
-					(setq resid
-					      (cons (car pn-dir) resid))
-					(setq pn-dir (cdr pn-dir)))))
-				((null pn-dir)
-				 (setq res (cdr res)))
+					(push (pop above-dirs) below-dirs))))
+			      ;; But once we've started recording
+			      ;; directories in 'from-dir-list', a
+			      ;; ".." directory is a puzzle. --
+				((null above-dirs)
+				 ;; We either go up and leave
+				 ;; 'from-dir-list' alone, or, if we
+				 ;; can't go up, we interpret ".." as
+				 ;; perversely instructing us to undo
+				 ;; the last addition to
+				 ;; 'from-dir-list' --
+				 (pop from-dir-list))
 				(t
-				 (setq pn-dir (cdr pn-dir)))))
+				 ;; This is the case where we can 
+				 ;; go up (pop 'above-dirs') and leave
+				 ;; 'from-dir-list' and 'below-dirs'
+				 ;; alone --
+				 (pop above-dirs))))
+			 ((member d '(-- "--") :test #'equal)
+			  ;; Special flag that means *don't* record in
+			  ;; 'below-dirs' the last layer we passed.
+			  ;; This makes sense only if this layer does
+			  ;; not help discriminate subdirectories.
+			  ;; Useful for purging "src" layers from "bin"
+			  ;; directories (assuming *all* "bin"
+			  ;; subdirectories come from "src"
+			  ;; subdirectories).--
+			  (pop below-dirs))
 			 (t
-			  (setq res (cons d res)))))
-;;;;		(format t "pn-dir = ~s~%res = ~s~%resid = ~s~%"
-;;;;			pn-dir res resid)
+			  ;; A normal directory gets copied to
+			  ;; 'from-dir-list' --
+			  (push d from-dir-list))))
+;;;;		(format t "above-dirs = ~s~%from-dir-list = ~s~%below-dirs = ~s~%"
+;;;;			above-dirs from-dir-list below-dirs)
 		(let ((res-pn
 		          (make-Pathname
 			      :directory
-			         `(:absolute,@(reverse pn-dir)
-					     ,@(reverse res) ,@resid)
+			         `(:absolute ,@(reverse above-dirs)
+					     ,@(reverse from-dir-list)
+					     ,@below-dirs)
 			      :type suff)))
 		   (cond (ensure-existence
 			  (ensure-directories-exist res-pn)))
@@ -451,6 +507,10 @@
 	    (t
 	     (error "Can't take relative directory with respect to relative directory ~s"
 		    pn)))))
+|#
+
+(eval-when (:load-toplevel :execute)
+   (compile 'place-relative-pathname))
 
 (defun ups-to-updowns (dir-list)
    (do ((dl (reverse dir-list) (cdr dl))
@@ -459,27 +519,15 @@
 	    (not (memq (car dl) '(:up :back))))
 	(reverse (nconc updnl dl)))))
 
-(defmacro def-ytools-pathname-control (sym
-				       &key slurper loader compiler expander parser)
-   (cond ((and slurper loader compiler)
-	  `(setf (table-entry ytools-logical-names-table* ',sym)
-	         (make-File-op-vector
-		     :parser ,parser
-		     :slurper ,slurper
-		     :loader ,loader
-		     :compiler ,compiler
-		     :expander ,expander)))
-	 (t
-	  (error "Must specify slurper, loader, and compiler in 'def-ytools-pathname-control' ~s"
-		 sym))))
+(defmacro def-ytools-pathname-control (sym parser-defn)
+   `(progn
+         (set-ytools-logical-pathname
+	     ',sym
+	     ':pathname-parse-controller) ;;;;(make-Pseudo-pathname ',sym)
+	 (datafun :pn-parse ,sym
+	    ,parser-defn)))
 
-(defun lookup-ytools-logical-pathname (sym)
-   (table-entry ytools-logical-names-table* sym))
-
-;;;======================================================================
-;;; turn a list of fload-style filespecs into a list of pathnames. the
-;;; file extension will be added later if necessary.
-;;;======================================================================
+(datafun-alist pn-parsers* :pn-parse)
 
 (defun filespecs->pathnames (specs)
   (mapcar (\\ (pn) (pathname-resolve pn true))
@@ -501,12 +549,13 @@
 	    (setq specl (cdr specl))
 	    (let ((pnx (cond ((is-Symbol spec)
 			      (let ((symname (symbol-name spec)))
-				 (cond ((and (> (length symname) 0)
-					     (char= (elt symname 0) #\%))
+				 (cond ((string-is-ytools-logical-pathname
+					   symname)
 					(multiple-value-bind 
 					               (sym remainder)
 					               (%-factor
-							  symname spec specl specs)
+							  symname
+							  spec specl specs)
 					   (setq specl remainder)
 					   sym))
 				       (t
@@ -534,7 +583,8 @@
 				    (setq default (make-Pathname)))
 				   (t
 				    (on-list
-				       (merge-with-default-given-name pnx default)
+				       (merge-with-default-given-name
+					  pnx default)
 				       pathnames))))
 			    ((pn-is-absolute pnx)
 			     (setq default pnx))
@@ -566,9 +616,9 @@
 		     specl))))
 
 ;;; Returns <pathnames, new-default, remainder>
-;;; where 'pathnames' are (possibly Pseudo-) pathnames extracted from 'operands',
-;;; and 'remainder' is a list of everything after the last element of 'operands'
-;;; that 'sym' was interested in.
+;;; where 'pathnames' are (possibly Pseudo-) pathnames extracted from
+;;; 'operands', and 'remainder' is a list of everything after the last
+;;; element of 'operands' that 'sym' was interested in.
 ;;; If 'new-default' is false, that means reset to blank pathname.
 ;;; 'default' is pathname from stuff to the left of the logical name.
 ;;; 'new-default' is the new default to pass on to the right.
@@ -583,10 +633,15 @@
 			 (intern (subseq name 0 (- namelen 1))
 				 (symbol-package sym)))
 			(t sym))))
-	    (let ((opvec-or-pn (lookup-ytools-logical-pathname sym-kernel)))
-	       (cond ((is-File-op-vector opvec-or-pn)
-		      (funcall (File-op-vector-parser opvec-or-pn)
-			       operands default))
+	    (let ((possibly-pseudo-pn
+		     (lookup-ytools-logical-pathname sym-kernel)))
+	       (cond ((eq possibly-pseudo-pn ':pathname-parse-controller)
+		      (let ((h (alref pn-parsers* sym-kernel)))
+			 (cond (h
+				(funcall h operands default))
+			       (t
+				(error "Undefined logical-names parser ~s"
+				       possibly-pseudo-pn)))))
 		     (t
 		      ;; Just go back to thinking of it as a YTools-pathname
 		      (let ((ytpn
@@ -603,7 +658,8 @@
 					       false
 					       operands))
 				      (t
-				       (values (list (merge-with-default-given-name
+				       (values (list
+						 (merge-with-default-given-name
 							ytpn default))
 					       default
 					       operands))))
@@ -631,7 +687,8 @@
 					 (make-pathname
 					    :name (pathname-name pnx)
 					    :type (pathname-type pnx)
-					    :version (pathname-version pnx))))))
+					    :version
+					       (pathname-version pnx))))))
 			(t
 			 (merge-pathnames pnx default))))
 
@@ -723,9 +780,7 @@
 
 (defun dirstring-as-logname (dirstring)
    (declare (type string dirstring))
-   (cond ((and (> (length dirstring) 1)
-	       (char= (elt dirstring 0)
-		      #\%))
+   (cond ((string-is-ytools-logical-pathname dirstring)
 	  (multiple-value-bind (sym pos)
 			       (read-from-string dirstring false false
 						 :start 1)
@@ -760,7 +815,7 @@
 	  (error "Can't coerce ~s to YTools pathname"
 		 x))))
 
-(defconstant +empty-pathname+ (parse-namestring ""))
+(defvar +empty-pathname+ (parse-namestring ""))
 
 ;;; In spite of its name, this can return an ordinary pathname if no 
 ;;; %'s are encountered in 'x'.
@@ -926,15 +981,6 @@
 				    (or spkg *package*))))
 		      trim-sym)))))))
 
-#|
-;;; This doesn't care what the value of the logical name is, it just
-;;; prints it back out to a string as '%pkg::name' .
-(defun sym-logname (sym spkg)
-   (cond ((lookup-ytools-logical-pathname sym)
-	  (concatenate 'string "%" (sym-print-with-package sym spkg)))
-	 (t false)))
-|#
-
 ;;;;(defun symbol-as-file-name (sym spkg)
 ;;;;   (symbol-name-as-file-name (symbol-name sym) spkg))
 
@@ -1005,44 +1051,6 @@
   (or (null str)
       (and (is-String str) (= 0 (length (the string str))))))
 
-#|
-(defun pathname-file-handler (pn)
-   (let ((dir (Pathname-directory pn)))
-      (and (= (length dir) 2)
-	   (eq (car dir) ':relative)
-	   (is-String (cadr dir))
-	   (> (length (cadr dir)) 1)
-	   (char= (elt (cadr dir) 0) #\%) 
-	   (let ((sym (string-read-as-sym (cadr dir) 1)))
-	      (let ((h (table-entry ytools-logical-names-table*
-				    sym)))
-		 (and (File-op-vector-p h)
-		      h))))))
-
-;;;;	      (let ((p (assq sym pathname-traps*)))
-;;;;		 (and p (cadr p)))))))
-
-(defun (setf pathname-file-handler) (h sym)
-   (setf (table-entry ytools-logical-names-table* sym)
-         ;;;;(alist-entry sym pathname-traps* false)
-         h))
-
-(defun string-read-as-sym (str start)
-   (declare (string str))
-   (let ((l (length str)))
-      (and (> l (+ start 1))
-	   (multiple-value-bind
-			    (sym pos)
-			    (read-from-string
-			       str false false :start start :end l)
-	      (cond ((and sym
-			  (is-Symbol sym)
-			  (= pos (length str)))
-		     sym)
-	   	    (t false))))))
-
-|#
-
 ;;;;(datafun attach-datafun pathname-file-handler
 ;;;;   (defun :^ (_ sym fun-name)
 ;;;;      (setf (alist-entry sym pathname-traps* false)
@@ -1056,16 +1064,16 @@
 ;;  corresponding pathname is returned.  If the property is not found, or
 ;;  the property is there but the file is not, and only-if-exists=true,
 ;;  then the pathname of the first file found in the same directory as pn with
-;;  a suffix in suffixes is returned.  
+;;  suffix 'suffix' is returned.  
 ;; E.g., suppose we call 
-;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '("bbb") true)
-;; and the pathname has a bbb-file prop, to wit #p"high/low/f3.bbb", but
+;;   (pathname-find-associate #p"high/low/fff.aaa" 'bbb-file '"sss" true)
+;; and the pathname has a bbb-file prop, to wit #p"high/low/f3.sss", but
 ;; this file doesn't exist.  And #p"high/low/" has a bbb-file prop, namely
-;; #p"high/bbb/low/???.bbb"  (This is a pathname with no :name field, and
+;; #p"high/bbb/low/???.sss"  (This is a pathname with no :name field, and
 ;; is probably unprintable in most Lisps.)
-;; And there is a file high/bbb/low/fff.bbb.
+;; And there is a file high/bbb/low/fff.sss.
 ;; Then pathname-find-associate returns its pathname, i.e.,
-;; #p"high/bbb/low/fff.bbb"
+;; #p"high/bbb/low/fff.sss"
 
 (defun pathname-find-associate (pn assoc-prop suffix only-if-exists)
    (labels ((check-existence (opn)
@@ -1081,7 +1089,8 @@
 			    (check-existence
 			       (make-Pathname :host (Pathname-host ov)
 					      :device (Pathname-device ov)
-					      :directory (Pathname-directory ov)
+					      :directory (Pathname-directory
+							    ov)
 					      :name (Pathname-name pn)
 					      :type (or suffix
 							(Pathname-type pn)))))
@@ -1089,23 +1098,62 @@
 			    (check-existence 
 			       (make-Pathname :host (Pathname-host pn)
 					      :device (Pathname-device pn)
-					      :directory (Pathname-directory pn)
+					      :directory (Pathname-directory
+							   pn)
 					      :name (Pathname-name pn)
 					      :type suffix))))))))))
 
-;;E.g., (declare-pathname-associate 'checked "C:/prog/opt/" "../chk" ".chk")
+(declaim (special ap* pn* dp-ch* ad* wh* old-ad*))
+
+;;;E.g., (declare-pathname-associate 'checked "C:/prog/opt/" "../chk" ".chk")
+;;; If 'where' is false, there is no associate, and the value of 'suff'
+;;; is irrelevant.
 (defun declare-pathname-associate (assoc-prop pn where suff)
    (setq pn (->pathname pn))
-   (let ((whdir
-	    (Pathname-directory (->pathname where))))
-      (setf (pathname-prop assoc-prop pn)
-	    (cond ((car-eq whdir ':absolute)
-		   (make-Pathname 
-		      :directory whdir
-		      :type suff))
-		  (t
-		   (place-relative-pathname
-		       pn (cdr whdir) suff true))))))
+   (let* ((whdir
+	     (and where
+		  (Pathname-directory (->pathname where))))
+	  (assoc-dir 
+	     (cond ((not where) false)
+		   ((car-eq whdir ':absolute)
+		    (make-Pathname 
+		       :directory whdir
+		       :type suff))
+		   (t
+		    (place-relative-pathname
+			pn whdir suff true)))))
+;;;;      (out (:to *error-output*)
+;;;;	"pathname-prop " assoc-prop " of " pn
+;;;;	" is " (pathname-prop assoc-prop pn)
+;;;;	:% "  Change to " assoc-dir "?" :%)
+      (let ((dp-ch (place-Dir-associate-chunk
+		      pn assoc-prop assoc-dir))
+	    (prev-assoc (pathname-prop assoc-prop pn)))
+;;;;	 (setq dp-ch* dp-ch)
+	 (setq old-ad* prev-assoc)
+	 (cond ((equal prev-assoc assoc-dir)
+		(cond ((not (equal (Dir-associate-chunk-linked-dir dp-ch)
+				   assoc-dir))
+		       (format *error-output*
+			  !"Dir-associate-chunk linked-dir out of synch; ~
+                            correcting~%  ~s~%  ~s => ~s~%"
+			  (Dir-associate-chunk-directory dp-ch)
+			  (Dir-associate-chunk-linked-dir dp-ch)
+			  assoc-dir)
+		       (setf (Dir-associate-chunk-linked-dir dp-ch)
+			     assoc-dir))))
+	       (t
+		(setf (pathname-prop assoc-prop pn)
+		      assoc-dir)
+		(setf (Dir-associate-chunk-linked-dir dp-ch)
+		      assoc-dir)
+		(cond (prev-assoc
+;;;;		       (setq ap* assoc-prop pn* pn dp-ch*
+;;;;			     dp-ch ad* assoc-dir wh* where)
+;;;;		       (break !"declare-pathname-associate-> ~
+;;;;                                about to change date of ~s" dp-ch)
+		       (setf (Chunk-date dp-ch) (get-universal-time))))
+		(chunk-update dp-ch false false))))))
 
 (defun string-case-analyze (str)
    (declare (string str))
@@ -1122,57 +1170,32 @@
 	       (some-upper ':upper)
 	       (t ':lower))))
 
-;;;;(define-ytools-log-pname 'ytools (->pathname ytools-home-dir*) "../bin/")
+(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
 
-;;;;(defparameter ytools-bin-path* (strings-concat standard-bin-path* bin-idio*))
+;;;;(let ((ytfm-pn (->pathname ytools-home-dir*)))
+;;;;   (set-ytools-logical-pathname 'ytools ytfm-pn)
+;;;;   (setf (pathname-prop 'obj-version ytfm-pn)
+;;;;	 (string->obj-pn ytools-bin-path* ytfm-pn !())))
 
-(def-ytools-logical-pathname ytools
-    (->pathname ytools-home-dir*)
-;;;;    standard-bin-path*
-    ytools-bin-path*)
-
-(defstruct (Perform-pseudo-pn (:include Pseudo-pathname)
-	                       (:predicate is-Perform-pseudo-pn)
-	      (:print-object
-	         (lambda (pf-pspn srm)
-		    (format srm "#<Perform-pseudo-pn ~s>"
-			    (mapcar #'condense (Perform-pseudo-pn-actions pf-pspn))))))
-   actions)
-
-(defmethod make-load-form ((perform-pspn Perform-pseudo-pn) &optional env)
-   (declare (ignore env))
-   `(make-Perform-pseudo-pn
-        :control ',(Pseudo-pathname-control perform-pspn)
-	:opvec false
-	:actions ',(Perform-pseudo-pn-actions perform-pspn)))
-
-(defmethod pn-equal ((pn1 Perform-pseudo-pn) (pn2 Perform-pseudo-pn))
-   (equal (Perform-pseudo-pn-actions pn1)
-	  (Perform-pseudo-pn-actions pn2)))
-
-(defun perform-pspn-parse (operands _)
-   (let ((remainder (or (member-if #'atom operands)
-			!())))
-      (values (list (make-Perform-pseudo-pn
-		       :control 'Perform
-		       :actions (ldiff operands remainder)))
-	      false
-	      remainder)))
-
-(defun perform-pspn-execute (perform-pspn &rest _)
-  (dolist (a (Perform-pseudo-pn-actions perform-pspn))
-     (eval a)))
-
-(def-ytools-pathname-control Perform
-   :parser #'perform-pspn-parse
-   :slurper #'perform-pspn-execute
-   :loader #'perform-pspn-execute
-   :compiler #'perform-pspn-execute
-   :expander false)
+;;; Yes, we CAN --
+;;; We CANNOT define %ytools/ using def-ytools-logical-pathname
+;;; because we don't want that "bin-idio*" segment included in the
+;;; object version.  If we allowed that, then YTFM and YTools would
+;;; have two different bin directories, which would mean that you
+;;; couldn't use 'fload' to compile YTFM files (because they would
+;;; wind up in the YTools bin directory, not the YTFM bin directory
+;;; where they belong).
+;;;;(def-ytools-logical-pathname ytools
+;;;;    (->pathname ytools-home-dir*)
+;;;;    ytools-bin-path*)
+;;; Instead of "dumbing %ytools down," we switched to "smarting ytfm up."
 
 (defun dir-pn (pn)
    (make-Pathname :host (Pathname-host pn)
 		  :device (Pathname-device pn)
 		  :directory (Pathname-directory pn)
 		  :version #+allegro ':unspecific #-allegro ':newest))
-		  
+
+(defun string-is-ytools-logical-pathname (s)
+   (and (> (length s) 0)
+	(char= (elt s 0) #\%)))

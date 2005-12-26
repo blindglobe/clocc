@@ -1,482 +1,474 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: module.lisp,v 1.9 2004/09/12 14:40:05 airfoyle Exp $
+;;;$Id: module.lisp,v 1.10 2005/12/26 00:15:01 airfoyle Exp $
 
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(def-ytools-module import-export module-trace*)))
+   (export '(def-ytools-module module-elements
+	     import-export module-trace*)))
 
 (defstruct (YT-module
 	      (:constructor make-YT-module
 			    (name contents
-			     &aux (rec false) (loaded false) (postponed !())))
-	      (:predicate is-YT-module))
+			     &aux (chunk false) (loaded-chunk false)))
+	      (:predicate is-YT-module)
+	      (:print-object 
+	          (lambda (mod srm)
+		     (format srm "#<YT-module ~s>" (YT-module-name mod)))))
    name
+   ;; A list of lists, each of the form
+   ;;    ((-time-specs-) -acts-)
+   ;; meaning, insert or execute the -acts- at times matching one of
+   ;; the time-specs.  A time-spec is :run-support, :compile-support,
+   ;; or :expansion. -- 
    contents     
-   expansion
-   rec    ; Load-progress-rec
-   loaded
-   postponed) 
+   chunk
+   loaded-chunk)
+
+;;; Note that YT-module-chunk is the name of the accessor of the 'chunk'
+;;; slot of 'YT-module', and also the name of a class.  Have fun keeping
+;;; track of them.
 
 ;;; An alist of <name, yt-module> pairs.
 (defvar ytools-modules* !())
 
-;;; (def-ytools-module name ---acts--- (:insert ---acts---))
-;;; The first group of acts becomes a (run-time or compile-time) supporter
-;;; of the file C containing the 'def-ytools-module' form.  The ':insert'
-;;; acts are treated as if inserted at this point in C.
-(defmacro def-ytools-module (name &rest actions)
-   (multiple-value-bind (contents expansion)
-		        (do ((al actions (cdr al))
-			     e
-			     (conts !())
-			     (expans !()))
-			    ((null al)
-			     (values (mapcan #'list-copy (reverse conts))
-				     (mapcan #'list-copy (reverse expans))))
-			  (setq e (car al))
-			  (cond ((atom e)
-				 (on-list (list e) conts))
-				((eq (car e) ':contents)
-				 (on-list (cdr e) conts))
-				((memq (car e) '(:insert :expansion))
-				 (on-list (cdr e) expans))
-				(t
-				 (on-list (list e) conts))))
-      `(let ((mod (place-YT-module ',name)))
-	  (setf (YT-module-contents mod)
-		',(cond ((= (length contents) 1)
-			 (car contents))
-			(t `(progn ,@contents))))
-	  (setf (YT-module-expansion mod) ',expansion)
-;;;;	  (note-module-def-time mod)
-	  )))
-
-(defstruct (Module-pseudo-pn (:include Pseudo-pathname)
-	       (:print-object
-		   (lambda (mod-pspn srm)
-		      (format srm "#<Module-pseudo-pn ~s>"
-			      (Module-pseudo-pn-module mod-pspn)))))
+(defstruct (Module-pseudo-pn (:include Pseudo-pathname))
    module)
 
-(defmethod make-load-form ((module-pspn Module-pseudo-pn) &optional env)
+(defmethod make-load-form ((mpspn Module-pseudo-pn) &optional env)
    (declare (ignore env))
-   `(make-Module-pseudo-pn
-        :control ',(Pseudo-pathname-control module-pspn)
-	:opvec false
-	:module ',(Module-pseudo-pn-module module-pspn)))
+   (let ((modname (YT-module-name
+			   (Module-pseudo-pn-module mpspn))))
+      `(make-Module-pseudo-pn
+	  :name ',(Module-pseudo-pn-name mpspn)
+	  :module (or (lookup-YT-module
+			 ',modname)
+		      (error "Can't find YT-module named ~s"
+			     ',modname)))))
 
-(defmethod pn-equal ((pn1 Module-pseudo-pn) (pn2 Module-pseudo-pn))
-   (eq (Module-pseudo-pn-module pn1)
-       (Module-pseudo-pn-module pn2)))
+(defmethod pathname-expansion ((mpspn Module-pseudo-pn))
+   (mapcan (\\ (c)
+	      (cond ((memq ':expansion (first c))
+		     (list-copy (rest c)))
+		    (t !())))
+	   (YT-module-contents
+	      (Module-pseudo-pn-module mpspn))))
+
+;;; (def-ytools-module name 
+;;;     -act-specs-)
+;;; Where act-spec is (timespec -acts-)
+;;; timespec is a list of symbols drawn from 
+;;; :run-support, :compile-support, :expansion,
+
+;;; Let F be a file that depends-on this module.
+;;; :expansion: The acts are (as it were) inserted in the
+;;;    top level of F.
+;;; :run-support: The acts are executed when F is loaded
+;;; :compile-support: The acts are executed when F is compiled
+;;; If act-spec is not of the form (timespec -acts-), it is treated 
+;;; as ((:run-support :compile-support) act-spec).
+;;; If timespec is one the three symbols above, it is treated as a 
+;;; singleton list of that symbol.
+;;; Note that this is orthogonal to the :at-run-time/:at-compile-time
+;;; distinction.  If F depends-on a module :at-compile-time, that
+;;; means that the :run-support actions of F are executed when F is
+;;; compiled.
+(defmacro def-ytools-module (&whole dym-exp name &rest actions)
+   (labels ((is-timespec (x)
+	        (memq x '(:run-support :compile-support :expansion))))
+      (setq actions
+	    (mapcan (\\ (a)
+		       (cond ((atom a)
+			      (format *error-output*
+				 !"Ignoring meaningless actspec ~s in ~
+				   'def-ytools-module': ~s"
+				 a dym-exp)
+			      (list))
+			     ((listp (car a))
+			      (cond ((every #'is-timespec (car a))
+				     (list a))
+				    (t
+				     (list `((:run-support :compile-support)
+					     ,@a)))))
+			     ((is-timespec (car a))
+			      (list `((,(car a)) ,@(cdr a))))
+			     (t
+			      (list `((:run-support :compile-support)
+				      ,a)))))
+		    actions))
+      `(let ((mod (place-YT-module ',name)))
+	  (setf (YT-module-contents mod)
+		',actions))))
 
 (defun place-YT-module (name)
-   (let ((p (assq name ytools-modules*)))
-      (cond ((not p)
-	     (setq p (tuple name (make-YT-module name '(values))))
-	     (let ((pn (make-Pathname :directory
-				      '(:relative "%ytools#module")
-				      :name
-				      (symbol-name name))))
-	        (let ((lpr (make-Load-progress-rec
-			      :pathname (make-Module-pseudo-pn
-					   :control 'module
-					   :module name))))
-		   (setf (YT-module-rec (cadr p))
-		         lpr)
-		   (setf (pathname-prop 'load-progress-rec pn)
-		         lpr)))
-	     (setq ytools-modules* (cons p ytools-modules*))))
-      (cadr p)))
+   (or (lookup-YT-module name)
+       (let ((mod (make-YT-module name false)))
+	  (on-list (tuple name mod)
+		   ytools-modules*)
+	  mod)))
 
-(defun find-YT-module (name)
-   (let ((p (assq name ytools-modules*)))
-      (and p (cadr p))))
+(defun lookup-YT-module (name)
+   (let ((e (assq name ytools-modules*)))
+      (and e (second e))))
 
-(defvar loaded-ytools-modules* !())
+(defclass YT-module-chunk (Code-chunk)
+   ((module :reader YT-module-chunk-module
+	    :initarg :module
+	    :type YT-module)))
 
-;;; Number of "fload episodes," that is, top-level calls to 'fload' (or 'fcompl')
-(defvar file-op-count* 0)
-;;; 'fload' won't be defined until files.lisp .
+(defmethod derive ((yt-mod YT-module-chunk))
+   0)
+;;;;   false
+;;;    -- wrong because it makes any file dependent on a module
+;;;        out of date, because the YT-module-chunk's time will
+;;;        be set to the current universal-time, which is usually
+;;;        later than the file's write date.
 
-(defstruct (Load-progress-rec
-	      (:print-function
-	         (lambda (lpr srm lev)
-		    (declare (ignore lev))
-		    (let ((pn (Load-progress-rec-pathname lpr)))
-		       (format srm "#<Load-progress-rec ~a: ~s~a>"
-			       (Load-progress-rec-status lpr)
-			       pn
-			       (cond ((= (Load-progress-rec-status-timestamp lpr)
-					 file-op-count*)
-				      "*")
-				     (t ""))))))
-	    (:predicate is-Load-progress-rec))
-   pathname ; Pathname, some with artificial directory names like "%module"
-   (source-pathname ':unknown)  ; :none, :undef, or source pathanme
-   (object-pathname ':unknown)  ; ditto
+;;; loadee is a YT-module
+(defclass Loaded-module-chunk (Loaded-chunk)
+   ())
 
-   (status ':unseen) ; See parameter +load-progress-progression+ below
-   (when-reached -1 :type integer) ; date when status was reached
-   (status-timestamp 0 :type integer)
-   ;; -- Value of file-op-count* the last time the status of this
-   ;; Load-progress-rec was set or checked.
-
-   ;; The "ur-version" is the source, or the object if there is no
-   ;; source.  The "loadable version" is the object, or the source if
-   ;; the file is not to be compiled.
-   ;; These are the last times the files in question were modified --
-   (ur-mod-time -1 :type integer)
-   (loadable-mod-time -1 :type integer)
-   ;; The number of the last file-op-episode where these
-   ;; mod times were calculated --
-   (file-mod-timestamp 0 :type integer)
-
-   (run-time-depends-on !())
-   (compile-time-depends-on !())
-   ;; -- lists of pathnames, one per entity this one
-   (supporters !())
-   ;; -- transitive closure of run-time- and compile-time-depends-on's,
-   ;; EXCEPT that supporters includes only real pn's not Pseudo's.
-   ;; depends on
-   (supp-timestamp 0 :type integer)
-   ;; -- Value of file-op-count* the last time the supporters
-   ;; were computed.
-
-   ;; Answers question: If this were to be reloaded, should we recompile-reload
-   ;; or do something else? -- 
-   (whether-compile ':unknown)
-   ;; -- :unknown, :compile, :object, :source, :ask
-   ;; See comment before defvar of fload-compile*, below
-
-)
-;;; Timestamp schemes assume that no one but us writes files during a
-;;; "file-op episode," that is, during a top-level call to fload,
-;;; fcompl, or fslurp.  E.g., you don't save a file buffer for a file
-;;; that might get loaded.  Of course, if you do save such a buffer,
-;;; you don't know which version will actually get loaded, so the
-;;; assumption is reasonable.  Another reason it's reasonable is that
-;;; fload episodes are short (a few seconds).
-
-(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp") :test #'equal))
-(defvar obj-suffix* lisp-object-extn*)
-
-(defconstant +load-progress-progression+
-    '(:unseen :header-checked :slurped :slurped-all
-      :maybe-compiled :loaded :frozen))
-;;; -- :maybe-compiled usually means "compiled," but if a file is not
-;;; supposed to be compiled, it means we checked whether it was supposed to
-;;; be and noted that it wasn't.  
-;;; :frozen means that the file was loaded as part of building a core image
-;;; Any attempt to change it should cause alarms to go off.
-
-(defconstant can-get-write-times*
-    #.(not (not (file-write-date
-		    (concatenate 'string ytools-home-dir* "files.lisp")))))
-
-;;;;(defvar write-time-calls* 0)
-;;;;(defvar redundant-write-time-calls* 0)
-
-(defun achieved-load-status (lprec status)
-;;;;   (out "status = " (Load-progress-rec-status lprec)
-;;;;	" timestamp = " (Load-progress-rec-status-timestamp lprec)
-;;;;	" file-op-count* = " file-op-count* :%)
-   (let ((tl (memq (lprec-get-load-status lprec)
-		   +load-progress-progression+)))
-      (cond (tl
-	     (not (memq status (cdr tl))))
-	    (t
-	     (error "Illegal Load-progress-rec status ~s"
-		    (Load-progress-rec-status lprec))))))
-
-(defun lprec-get-load-status (lprec)
-   (let ((stat-time (Load-progress-rec-status-timestamp lprec)))
-      (cond ((not (= stat-time file-op-count*))
-	     (cond ((not (eq (Load-progress-rec-status lprec)
-			     ':unseen))
-		    (setf (Load-progress-rec-status lprec)
-			  (recompute-load-status lprec))))
-	     (setf (Load-progress-rec-status-timestamp lprec)
-	           file-op-count*)))
-;;;;      (out " timestamp = " (Load-progress-rec-status-timestamp lprec)
-;;;;	   :%)
-      (Load-progress-rec-status lprec)))
-
-(defun recompute-load-status (lprec)
-   (multiple-value-bind (ur-mod-time ldble-mod-time)
-                        (lprec-find-version-modtimes lprec)
-      (let ((stat-time
-	       (Load-progress-rec-when-reached lprec)))
-	 (cond ((> ur-mod-time stat-time)
-		':unseen)
-	       ((and ldble-mod-time
-		     (> ldble-mod-time stat-time)
-		     (eq (Load-progress-rec-status lprec)
-			 ':loaded))
-		':maybe-compiled)
-	       (t (Load-progress-rec-status lprec))))))
-
-(defun note-load-status (lprec status)
-   (cond ((not (achieved-load-status lprec status))
-	  (cond ((and (eq (Load-progress-rec-status lprec)
-			  ':frozen)
-		      (not (eq status ':frozen)))
-		 (cerror "I'll continue, but please don't try to save a core image"
-			 "Attempt to change status of frozen Load-progress-rec to ~s"
-			 status)))
-
-	  (setf (Load-progress-rec-status lprec)
-		status)
-	  (setf (Load-progress-rec-when-reached lprec)
-		(get-universal-time))
-	  (setf (Load-progress-rec-status-timestamp lprec)
-		 file-op-count*))))
-
-;;;;   (let ((tl (memq (Load-progress-rec-status lprec)
-;;;;		   +load-progress-progression+)))
-;;;;      (cond (tl
-;;;;	     (cond ((memq status (cdr tl))
-;;;;		    (setf (Load-progress-rec-status lprec)
-;;;;			  status)
-;;;;		    (setf (Load-progress-rec-when-reached lprec)
-;;;;			  (get-universal-time))))
-;;;;	     (setf (Load-progress-rec-status-timestamp lprec)
-;;;;		   file-op-count*))
-;;;;	    (t
-;;;;	     (error "Illegal Load-progress-rec status ~s"
-;;;;		    status)))))
-
-;;; Principle: You ask whether to compile a file only if a "yes" answer
-;;; will cause it to be compiled.  On other occasions, you guess.
-(defun lprec-guess-whether-compile (lprec)
-   (let ((wc (Load-progress-rec-whether-compile lprec)))
-      (cond ((eq wc ':unknown)
-	     (cond ((not (memq (lprec-find-source-pathname lprec)
-			       '(:none :undef)))
-		    ':compile)
-		   (t
-		    (let ((obj-pn
-			     (lprec-find-object-pathname lprec)))
-		       (cond ((and (not (member obj-pn '(:undef :none)))
-				   (probe-file obj-pn))
-			      ':object)
-			     (t
-			      (error "Load-progress-rec ~s~% corresponds to neither source nor object file"
-				     lprec)))))))
-	    (t wc))))
-
-;;; Returns < ur-mod-time, loadable-mod-time >
-(defun lprec-find-version-modtimes (lprec)
-   (cond ((and (not (is-Pseudo-pathname (Load-progress-rec-pathname lprec)))
-	       (not (= (Load-progress-rec-file-mod-timestamp lprec)
-		       file-op-count*)))
-	  (lprec-recompute-version-modtimes lprec)))
-   (values (Load-progress-rec-ur-mod-time lprec)
-	   (Load-progress-rec-loadable-mod-time lprec)))
-
-
-(defun lprec-recompute-version-modtimes (lprec)
-	  (let ((src-version (lprec-find-source-pathname lprec))
-		(obj-version (lprec-find-object-pathname lprec))
-		(whether-compile (lprec-guess-whether-compile lprec)))
-	     (let ((ur-version
-		      (cond ((and (not (eq src-version ':none))
-				  (not (eq whether-compile ':object)))
-			     src-version)
-			    ((and (not (eq obj-version ':none))
-				  (probe-file obj-version))
-			     obj-version)
-			    (t
-			     (cerror "I will assume it is to be compiled"
-				"Inconsistent instructions regarding whether to compile ~s"
-				lprec)
-			     (setf (Load-progress-rec-whether-compile lprec)
-			           ':compile)
-			     src-version)))
-		   (loadable-version
-		      (cond ((and src-version
-				  (or (eq whether-compile ':source)
-				      (eq obj-version ':none)
-				      (not (probe-file obj-version))))
-			     src-version)
-			    (t
-			     obj-version))))
-		(setf (Load-progress-rec-ur-mod-time lprec)
-		      (file-write-date ur-version))
-		(setf (Load-progress-rec-loadable-mod-time lprec)
-		      (file-write-date loadable-version))
-		(setf (Load-progress-rec-file-mod-timestamp lprec)
-		      file-op-count*))))
-
-(defun lprec-find-source-pathname (lprec)
-   (let ((spn (Load-progress-rec-source-pathname lprec)))
-      (cond ((or (not spn) (eq spn ':unknown))
-	     (let ((src (pathname-source-version (Load-progress-rec-pathname lprec))))
-		(setf (Load-progress-rec-source-pathname lprec)
-		      (or src ':none))))
-	    (t spn))))
-
-(defun lprec-find-object-pathname (lprec)
-   (let ((opn (Load-progress-rec-object-pathname lprec)))
-      (cond ((or (not opn) (eq opn ':unknown))
-	     (let ((obj (pathname-object-version (Load-progress-rec-pathname lprec)
-						 false)))
-		(setf (Load-progress-rec-object-pathname lprec)
-		      (or obj ':none))))
-	    (t opn))))
-
-(defun pathname-source-version (pn)
-  (cond ((is-Pseudo-pathname pn) false)
-	(t
-	 (let ((rpn (cond ((is-Pathname pn) pn)
-			  (t (pathname-resolve pn false)))))
-	    (let ((pn-type (Pathname-type rpn)))
-	       (cond (pn-type
-		      (cond ((equal pn-type obj-suffix*)
-			     (get-pathname-with-suffixes
-				rpn source-suffixes*))
-			    ((probe-file rpn)
-			     rpn)
-			    (t false)))
-		     ((probe-file rpn) rpn)
-		     (t (get-pathname-with-suffixes rpn source-suffixes*))))))))
-
-(defun pathname-object-version (pn only-if-exists)
-   (let ((ob-pn
-	    (pathname-find-associate pn 'obj-version obj-suffix* only-if-exists)))
-      (cond ((and (not only-if-exists)
-		  (not ob-pn))
-	     (cerror "I will treat it as :unknown"
-		     "Pathname has no object version: ~s" ob-pn)
-	     ':none)
-	    (t ob-pn))))
-
-(defun pathname-write-time (pname)
-  (setq pname (pathname-resolve pname false))
-  (and can-get-write-times*
-       (probe-file pname)
-       (file-write-date pname)))
-
-;;; pn must be a resolved Pathname, not a YTools Pathname.
-(defun get-pathname-with-suffixes (pn suffixes)
-   (do ((sfl suffixes (cdr sfl))
-	(found false)
-	newpn)
-       ((or found (null sfl))
-	(and found newpn))
-      (setq newpn (merge-pathnames
-		     (make-Pathname :type (car sfl))
-		     pn))
-      (cond ((probe-file newpn)
-	     (setq found true)))))
-
-(defvar module-now-loading* false)
-
-(defvar now-loading-lprec* false)
-   ;; -- Load-progress-rec for file being loaded (usually the
-   ;; value of now-loading*, or for its ytools version).
+(defclass Compiled-module-chunk (Chunk)
+   ((module :reader Compiled-module-chunk-module
+	    :initarg :module)
+    ;; (fcompl -q -q foo...) results in the flags
+    ;; being stored in the chunk for foo -- 
+    (flags :accessor Compiled-module-chunk-flags
+            :initform !())))
 
 ;;; List of names of modules we're interested in --
 (defvar module-trace* !())
 
-;;; Possible values: 
-;;;  Just like values of Load-progress-rec-whether-compile, except that
-;;;  the latter can be :unknown.
-;;;  The local whether-compile for an lprec dominates the global flag,
-;;;  unless it's :unknown.
+(def-ytools-pathname-control module
+   (defun :^ (operands _)
+      (do ((opl operands (cdr opl))
+	   mod
+	   (mods !()))
+	  ((or (null opl)
+	       (not (setq mod (lookup-YT-module (car opl)))))
+	   (let ((remainder opl))
+	      (cond ((not (null module-trace*))
+		     (format *error-output*
+			 "Preparing to process modules ~s~%"
+			 mods)))
+	      (values (mapcar (\\ (mod)
+				 (make-Module-pseudo-pn
+				    :name (YT-module-name mod)
+				    :module mod))
+			      mods)
+		      false
+		      remainder)))
+         (on-list mod mods))))
 
-;;; :compile -- always compile when object file is missing or out of date)
-;;; :object, :source -- always load object or source without compiling
-;;;     Even if :object, if object doesn't exist source will be loaded
-;;;     with no questions asked.
-;;;     (Unlikely you would ever want one of these globally; they can be
-;;;     useful in a Load-progress-rec.)
-;;; :ask -- ask user what to do
-(defvar fload-compile* ':ask) 
+(defmethod pathname-denotation-chunk ((mod-pspn Module-pseudo-pn) _)
+   (place-YT-module-chunk (Module-pseudo-pn-module mod-pspn)))
 
-(defun ytools-module-load (name force-flag)
-;;;;  (breakpoint ytools-module-load
-;;;;     "Loading module " name)
-   (let ((ytm (find-YT-module name)))
-      (cond (ytm
-	     (let ((module-now-loading* name)
-		   (now-loading-lprec* (YT-module-rec ytm)))
-		(cond ((or force-flag
-			   (not (achieved-load-status now-loading-lprec* ':loaded)))
-		       (cond ((memq name module-trace*)
-			      (format *error-output*
-				 "Loading module ~s Compiling? ~a~%"
-				 name (cond ((eq fload-compile* ':compile)
-					     "Yes")
-					    ((memq fload-compile*
-						   '(:object :source))
-					     "No")
-					    (t
-					     "Maybe")))))
-		       (with-compilation-unit ()
-			  (eval (YT-module-contents ytm))
-			  (dolist (e (YT-module-expansion ytm))
-			     (eval e)))
-		       (note-load-status now-loading-lprec* ':loaded))
-		      ((memq name module-trace*)
-		       (format *error-output*
-			  "Not loading module ~s, because it's already loaded~%"
-			  name))))
-	     `("Module" ,name "loaded"))
+(defun place-YT-module-chunk (mod)
+   (or (YT-module-chunk mod)
+       (let ((mod-ch 
+		(chunk-with-name `(:YT-module ,(YT-module-name mod))
+		   (\\ (name)
+		      (make-instance 'YT-module-chunk
+			 :name name
+			 :module mod)))))
+	  (setf (YT-module-chunk mod)
+		mod-ch)
+	  mod-ch)))
+
+;;; The key hack in the following two items is that a YT-module's
+;;; dependencies are a subset of the files it will load, possibly
+;;; an empty subset.
+;;; But if there's some other reason to reload or recompile,
+;;; all the relevant forms from its contents must be updated,
+;;; and in general they will load several files-- 
+
+(defmethod pathname-compile-support ((pspn Module-pseudo-pn))
+   (let ((mod (Module-pseudo-pn-module pspn)))
+      (values
+           (module-loaded-prereqs mod)
+	   (module-form-chunks mod ':compile-support))))
+
+(defmethod pathname-run-support ((pspn Module-pseudo-pn))
+   (let ((mod (Module-pseudo-pn-module pspn)))
+      (values
+           (module-loaded-prereqs mod)
+	   (list (place-Loaded-module-chunk
+		    (place-YT-module-chunk mod)
+		    false)))))
+
+;;; A Form-chunk that is clocked using file-op-count*.
+(defclass Form-timed-file-op-chunk (Form-chunk)
+   ())
+
+(defmethod derive-date ((fop-ch Form-timed-file-op-chunk))
+   (cond ((> (Chunk-date fop-ch) 0)
+	  (Chunk-date fop-ch))
+	 (t +no-info-date+)))
+
+(defmethod derive :around ((fop-ch Form-timed-file-op-chunk))
+   (cond ((not file-op-in-progress*)
+	  (setq file-op-count* (+ file-op-count* 1))))
+   (let ((file-op-in-progress* true)
+	 (initial-count file-op-count*)
+	 (initial-chunk-event-count chunk-event-num*))
+      ;; Binding file-op-in-progress* keeps file-op-count* from
+      ;; being incremented.
+      (call-next-method fop-ch)
+      (cond ((and chunk-update-dbg*
+		  (not (= initial-chunk-event-count
+			  chunk-event-num*)))
+	     (format *error-output*
+		"Chunk event count changed during form evaluation, from ~s to ~s~%"
+		initial-chunk-event-count chunk-event-num*)))
+      (cond ((not (= file-op-count* initial-count))
+	     (error "file-op-count* changed unexpectedly while evaluating ~s~%"
+		    (Form-chunk-form fop-ch))))
+      file-op-count*))
+
+;;; It's dangerous to use the form as the name-kernel, because then there's
+;;; no way to change the form without destroying the old chunk.
+;;; (Just as for Form-chunks, defined in chunk.lisp.)
+(defun place-Form-timed-file-op-chunk (form &optional (name-kernel form))
+   (chunk-with-name `(:form ,name-kernel :timed-by-file-ops)
+      (\\ (name)
+	 (make-instance 'Form-timed-file-op-chunk
+	    :name name))
+      :initializer
+      (\\ (new-form-chunk)
+         (setf (Form-chunk-form new-form-chunk)
+	       form))))
+
+(defun module-form-chunks (mod which)
+	   (let ((rforms
+		    (retain-if
+		       (\\ (e) (memq which (first e)))
+		       (YT-module-contents mod))))
+	      (cond ((null rforms)
+		     !())
+		    (t
+		     (list (place-Form-timed-file-op-chunk
+			      `(progn ,@(mapcan (\\ (e)
+						   (list-copy (rest e)))
+						rforms))
+			      `(,which ,(YT-module-name mod))))))))
+
+(defun module-loaded-prereqs (mod)
+   (let ((loaded-ch (place-Loaded-module-chunk
+		        (place-YT-module-chunk mod)
+			false)))
+      (loaded-chunk-verify-basis loaded-ch)))
+
+(defvar loaded-ytools-modules* !())
+
+(defmethod filoid-fload ((yt-mod Module-pseudo-pn)
+			 &key force-load manip postpone-derivees)
+   (let* ((module (Module-pseudo-pn-module yt-mod))
+	  (mod-chunk (place-YT-module-chunk module))
+	  (lmod-chunk (place-Loaded-module-chunk
+		         mod-chunk manip)))
+;;;;      (setq lmod-ch* lmod-chunk)
+;;;;      (break "In filoid-fload, got module ~s" module)
+      (cond ((not (eq manip ':noload))
+	     (loaded-chunk-fload lmod-chunk force-load postpone-derivees)))))
+
+(defmethod place-Loaded-chunk ((mod-ch YT-module-chunk) mod-manip)
+   (place-Loaded-module-chunk mod-ch mod-manip))
+
+(defun place-Loaded-module-chunk (mod-chunk mod-manip)
+   (let ((module (YT-module-chunk-module mod-chunk)))
+      (or (YT-module-loaded-chunk module)
+	  (let ((lc (chunk-with-name `(:loaded ,module)
+		       (\\ (name)
+			  (let ((new-lc
+				   (make-instance 'Loaded-module-chunk
+				      :name name
+				      :loadee mod-chunk)))
+			     new-lc))
+		       :initializer
+			  (\\ (new-lc)
+			     (cond ((not (slot-truly-filled
+					      new-lc 'controller))
+				    (setf (Loaded-chunk-controller new-lc)
+					  (create-loaded-controller
+					     mod-chunk new-lc))))))))
+	     (cond ((eq mod-manip ':noload)
+		    (chunk-terminate-mgt lc ':ask))
+       ;;;;	    ((and mod-manip
+       ;;;;		  (not (eq mod-manip (Loaded-chunk-manip lc))))
+       ;;;;	     (setf (Loaded-chunk-manip lc) mod-manip))
+	      )
+	     (setf (YT-module-loaded-chunk module)
+		   lc)
+	     lc))))
+
+(defclass Module-dep-chunk (Code-dep-chunk)
+   ())
+
+(defmethod create-loaded-controller ((mod-ch YT-module-chunk)
+				     (loaded-ch Loaded-module-chunk))
+   (chunk-with-name `(:module-dep ,(Chunk-name mod-ch))
+      (\\ (name)
+	 (make-instance 'Module-dep-chunk
+	    :controllee loaded-ch
+	    :name name))))
+
+(defmethod Code-dep-chunk-meta-clock-val ((mod-dep Module-dep-chunk))
+   file-op-count*)
+
+(defmethod derive ((mod-controller Module-dep-chunk))
+   (let* ((loaded-mod-chunk
+		(Code-dep-chunk-controllee mod-controller))
+	  (mod-chunk
+	     (Loaded-chunk-loadee loaded-mod-chunk))
+	  (module (YT-module-chunk-module mod-chunk))
+	  (clal (YT-module-contents module)))
+      (dolist (al clal)
+	 (cond ((not (equal (car al)
+			    '(:expansion)))
+		(let ((acts (rest al)))
+		   (forms-slurp
+		      acts
+		      (list scan-depends-on*)     ;;;;module-scan*
+		      (list (make-Scan-depends-on-state
+			       :file-chunk mod-chunk
+			       :sub-file-types !()))))))))
+   file-op-count*)
+
+(defvar module-now-loading* false)
+
+(defmethod derive ((lmod-ch Loaded-module-chunk))
+   (let ((module
+	    (YT-module-chunk-module
+	       (Loaded-chunk-loadee lmod-ch))))
+      (dolist (c (YT-module-contents module))
+	 (cond ((memq ':run-support (first c))
+;;;;		(setq mod* module)
+;;;;		(break "In Loaded-module-chunk/derive, evaluating ~s"
+;;;;		       c)
+		(dolist (e (rest c))
+		   (eval e)))))))
+
+(defmethod loaded-chunk-set-basis ((mod-loaded-ch Loaded-module-chunk))
+   true)
+
+(defmethod loaded-chunk-force ((loaded-chunk Loaded-module-chunk)
+			       _)
+   (cerror "Proceed without forced compilation"
+	   "Not implemented: Forcing compilation of module ~s"
+	   (Loaded-chunk-loadee loaded-chunk)))
+
+(defmethod filoid-fcompl ((mod-pspn Module-pseudo-pn)
+			  &key force-compile
+			       load
+			       cease-mgt
+			       postpone-derivees)
+   (let* ((mod-ch (pathname-denotation-chunk mod-pspn true))
+	  (loaded-mod-ch (place-Loaded-chunk mod-ch false))
+	  (compiled-mod-ch (place-compiled-chunk mod-ch)))
+      (monitor-filoid-basis loaded-mod-ch)
+;;;;      (cond (force-compile
+;;;;	     (format *error-output*
+;;;;		!"Warning: Ignoring :force-compile argument to 'filoid-fcompl ~
+;;;;                  ~% for module chunk ~s~%"
+;;;;		mod-ch)))
+      (cond (cease-mgt
+	     (chunk-terminate-mgt compiled-mod-ch  ':ask))
 	    (t
-	     (cerror "The non-module will be ignored"
-		     "Attempt to load nonexistent module ~s"
-		     name)))))
+             (setf (Compiled-module-chunk-flags compiled-mod-ch)
+                   !())
+             (cond (force-compile
+                    (on-list '#\f (Compiled-module-chunk-flags
+                                     compiled-mod-ch))))
+             (cond (load
+                    (on-list '#\l (Compiled-module-chunk-flags
+                                     compiled-mod-ch))))
+	     (let (;;;;(comp-date
+		   ;;;;   (Chunk-date compiled-mod-ch))
+		   )
+		(chunk-request-mgt compiled-mod-ch)
+;;;;                (dbg-save loaded-mod-ch compiled-mod-ch)
+;;;;                (breakpoint Module-pseudo-pn/filoid-fcompl
+;;;;                   "Ready to update")
+		(file-ops-maybe-postpone
+		   (chunk-update compiled-mod-ch false postpone-derivees))
+		(cond ((and (not (chunk-up-to-date loaded-mod-ch))
+			    (or load (load-after-compile)))
+		       (file-ops-maybe-postpone
+			     (chunks-update (list loaded-mod-ch)
+					    true postpone-derivees)))))))))
 
-(defun note-ytools-module (ytm)
-   (let ((name (YT-module-name ytm)))
-     (cond ((not (null (YT-module-postponed ytm)))
-	    (note-module-postponement
-	       `(check-module-postponed ',name))))
-     (setq loaded-ytools-modules*
-           (adjoin name loaded-ytools-modules* :test #'eq))))
+(defmethod place-compiled-chunk ((source-mod-ch YT-module-chunk))
+   (chunk-with-name `(:compiled ,(YT-module-chunk-module source-mod-ch))
+      (\\ (name)
+	 (make-instance 'Compiled-module-chunk
+	    :module (YT-module-chunk-module source-mod-ch)
+	    :name name))))
 
-(defun check-module-postponed (name)
-  (let ((ytm (place-YT-module name)))
-    (let ((p (YT-module-postponed ytm)))
-     (cond ((not (null p))
-	    (setf (YT-module-postponed ytm) !())
-	    (let ((module-now-loading* name))
-	       (dolist (e (reverse p))
-		  (eval e)))
-	    (cond ((null (YT-module-postponed ytm))
-		   `("Finished loading module" ,name))
-		  (t
-		   (note-module-postponement
-		      `(check-module-postponed ',name))
-		   `("Module postponed" ,name))))
-	 (t
-	  `("Already loaded module" ,name))))))
+(eval-when (:load-toplevel :compile-toplevel :execute)
 
-(defun note-module-postponement (vl)
-   (cond (module-now-loading*
-	  (let ((ytm (place-YT-module module-now-loading*)))
-	     (setf (YT-module-postponed ytm)
-	           (adjoin vl (YT-module-postponed ytm)
-			   :test #'equal))))))
+(def-slurp-task module-compile
+   :default (\\ (_ _) false))
+)
 
-;;;; Returns the insertable actions associated with the named module.
-;;;;(defun module-insert (mod-pspn)
-;;;;   (let ((modname (Module-pseudo-pn-module mod-pspn)))
-;;;;      (let ((module (find-YT-module modname)))
-;;;;	 (cond (module
-;;;;		(YT-module-expansion module))
-;;;;	       (t
-;;;;		(cerror "I will ignore it"
-;;;;		   "Undefined module ~s" modname))))))
+(defmethod derive ((comp-mod Compiled-module-chunk))
+   (let ((module
+	    (Compiled-module-chunk-module comp-mod)))
+      (dolist (c (YT-module-contents module))
+	 (cond ((not (equal (first c) '(:expansion)))
+		(forms-slurp (rest c)
+			     (list module-compile*)
+			     (list (Compiled-module-chunk-flags
+                                       comp-mod))))))))
 
-;;;;(def-ytools-logical-pathname ytools ytools-home-dir* ytools-bin-path*)
+(defmacro module-elements (&rest specs)
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate specs filespecs-load-flags*)
+	 `(module-elements-load
+	      ',files ',flags
+	      (decipher-readtable ,readtab *readtable* ',files ',flags))))
 
-(defun import-export (from-pkg-desig strings &optional (exporting-pkg-desig *package*))
+(defun module-elements-load (specs flags readtab)
+   (labels ((do-it ()
+	       (filespecs-do-load specs flags readtab)))
+      (cond (file-op-in-progress*
+	     (do-it))
+	    (t
+	     (setq file-op-count* (+ file-op-count* 1))
+	     (let ((file-op-in-progress* true))
+		(catch 'fload-abort
+		   (do-it)))))))
+
+(datafun module-compile module-elements
+   (defun :^ (form inh-flags)
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate (cdr form) filespecs-load-flags*)
+         (setq readtab
+               (decipher-readtable readtab false !() !()))
+         (let ((flags (flags-check flags filespecs-load-flags*)))
+            (cond ((not (member '#\s flags))
+;;;;                   (dbg-save form flags inh-flags readtab)
+;;;;                   (breakpoint module-elements-module-compile
+;;;;                      "form = " form)
+                   (filespecs-do-compile
+                      files
+                      `(,@(retain-if (\\ (g) (char= g '#\z))
+                                     flags)
+                        ,@inh-flags)
+                      readtab)))))))
+
+;;;;	 (compile-if-flags-and-manip-say-so files flags readtab manip))))
+;;;;
+;;;;(datafun module-compile module-elements fload)
+;;;;
+;;;;(defun compile-if-flags-and-manip-say-so (files flags readtab manip)
+;;;;)
+
+(defun import-export (from-pkg-desig strings
+		      &optional (exporting-pkg-desig *package*))
    (let ((from-pkg 
 	    (cond ((or (is-Symbol from-pkg-desig)
 		       (is-String from-pkg-desig))
@@ -511,6 +503,42 @@
 	  (error "~s does not designate a package"
 		 exporting-pkg-desig)))))
 
-(defun pn-ur-version (pn)
-   (or (pathname-source-version pn)
-       (pathname-object-version pn true)))
+#|
+;;; Example: 
+(def-ytools-module nisp
+   (:run-support
+      (depends-on %ytools/ nilscompat)
+      (depends-on %module/ ydecl-kernel))
+   (:compile-support (depends-on %ydecl/ compnisp))
+   (:expansion
+       (self-compile-dep :macros)
+       (callees-get-nisp-type-slurp))
+   )
+
+(datafun scan-depends-on callees-get-nisp-type-slurp
+   (defun :^ (d sdo-state)
+      (setf (Sds-sub-file-types sdo-state)
+	    (adjoin nisp-type-slurp*
+		    (Sds-sub-file-types sdo-state)))))
+
+
+when scanning a sub-file for nisp types, the scan *dies* if you don't see
+(depends-on %module/ nisp) before the end of the header
+
+|#
+
+(def-ytools-module ytools
+   ((:run-support :compile-support)
+    (module-elements %ytools/ outin binders repeat mapper setter
+                              object signal multilet misc
+		     :readtable ytools-readtable*)))
+
+(defun ytools-module-load (name)
+   (let ((yt-mod (lookup-YT-module name)))
+      (cond (yt-mod
+	     (let ((chl (module-form-chunks yt-mod ':run-support)))
+	        (dolist (ch chl)
+		   (chunk-request-mgt ch))
+		(chunks-update chl false false)))
+	    (t
+	     (error "Can't load YTools module -- undefined")))))

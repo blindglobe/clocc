@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytools.lmd,v 1.4 2004/04/24 23:01:24 airfoyle Exp $
+;;;$Id: ytools.lmd,v 1.5 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -10,30 +10,38 @@
 (defun install-ytools (start-over)
                       (declare (ignore start-over))
    (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
-	  (format t "Compiling all YTools")
-	  (let ((fload-compile* ':compile))
-	     (ytools-module-load 'ytools t))
+	  (format *query-io* "Compiling all YTools~%")
+	  (let ((fload-compile-flag* ':compile))
+	     (ytools-module-load 'ytools))
 	  t)
 	 (t nil)))
 
 (defun load-ytools ()      
    (cond ((yt-load :ytfm :if-loaded nil :if-not-installed ':install)
-	  (ytools-module-load 'ytools t)
-	  (flet ((load-if-there (filename)
-		    (cond ((probe-file filename)
-			   (load filename)))))
-	     (load-if-there (concatenate 'string
-				    ytools-home-dir*
-				    (short-site-name)
-				    directory-delimiter*
-				    "ytinit.lisp"))
-	     (load-if-there (merge-pathnames
-			       "ytinit.lisp"
-			       (user-homedir-pathname)))
-	     (let ((config-dir-pathname
-		      (pathname config-directory*)))
-	        (cond ((not (equal config-dir-pathname (user-homedir-pathname)))
-		       (load-if-there
-			  (merge-pathnames "ytinit.lisp" config-dir-pathname))))))
-	  (list ytools-package*
-		ytools-readtable*))))
+	  (cond ((eq (catch 'fload-abort
+			(ytools-module-load 'ytools))
+		     'fload-aborted)
+		 nil)
+		(t
+		 (flet ((load-if-there (filename)
+			   (cond ((probe-file filename)
+				  (load filename)))))
+		    (load-if-there (concatenate 'string
+					   ytools-home-dir*
+					   (short-site-name)
+					   directory-delimiter*
+					   "ytinit.lisp"))
+		    (let ((config-dir-pathname
+			     (pathname config-directory*)))
+		       (cond ((not (equal config-dir-pathname
+					  (user-homedir-pathname)))
+			      (load-if-there
+				 (merge-pathnames
+				    "ytinit.lisp"
+				    config-dir-pathname)))))
+		    (load-if-there (merge-pathnames
+				      "ytinit.lisp"
+				      (user-homedir-pathname))))
+		 (list ytools-package*
+		       ytools-readtable*))))
+	 (t nil)))

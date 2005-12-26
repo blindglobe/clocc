@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 1.8 2004/09/20 03:49:57 airfoyle Exp $
+;;;$Id: datafun.lisp,v 1.9 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,39 +12,39 @@
 	     datafun-table datafun-alist datafun-from-plist
 	     attach-datafun datafun-on-plist)))
 
-; (DATAFUN master sym def) defines a new procedure and puts it
-; on the property list of sym under the indicator master.
-; master is used by some function (often with the name master)
-; for data-driven hacks.  def is an ordinary function definition,
-; with the name omitted, or replaced by the placeholder :^ .  
-; E.g., (DATAFUN PRINTMACRO COND (DEFUN ...)).
-; If the def is just another symbol, then that means that the
-; two symbols behave equivalently.
-; If it is of the form (FUNCTION name), then that function is
-; used.
-; Some of the complexity of this machinery is wasted, but we'll
-; leave it as is in case we ever need it.
+;;; (DATAFUN master sym def) defines a new procedure and associates
+;;; it with sym under the indicator master.
+;;; master is used by some function (often with the name master)
+;;; for data-driven hacks.  def is an ordinary function definition,
+;;; with the name omitted, or replaced by the placeholder :^ .  
+;;; E.g., (DATAFUN PRINTMACRO COND (DEFUN ...)).
+;;; If the def is just another symbol, then that means that the
+;;; two symbols behave equivalently.
+;;; If it is of the form (FUNCTION name), then that function is
+;;; used.
+;;; Some of the complexity of this machinery is wasted, but we'll
+;;; leave it as is in case we ever need it.
 
 (defmacro datafun (master sym def)
    (let (funame)
-      `(eval-when (:compile-toplevel :load-toplevel :execute
-		   :slurp-toplevel)
-	  ,(cond ((atom def)
-		  (setf funame (build-symbol (< def) - (< master)))
-		  `(declare-datafun ',funame ',master ',sym nil))
-		 ((memq (car def) '(function funktion))
-		  `(declare-datafun ',(cadr def) ',master ',sym nil))
-		 (t
-		  (setf funame (build-symbol (< sym) - (< master)))
-		  (let ((definer (car def))
-			(definiens
-			   (cond ((eq (cadr def) ':^)
-				  (cddr def))
-				 (t (cdr def)))))
-		  `(progn
-		     (,definer ,funame ,@definiens)
-		     (declare-datafun ',funame ',master
-				      ',sym t))))))))
+;;;;      `(eval-when (:compile-toplevel :load-toplevel :execute
+;;;;		   :slurp-toplevel)  ... )
+       (cond ((atom def)
+	      (setf funame (build-symbol (< def) - (< master)))
+	      `(declare-datafun ',funame ',master ',sym nil))
+	     ((memq (car def) '(function funktion))
+	      `(declare-datafun ',(cadr def) ',master ',sym nil))
+	     (t
+	      (setf funame (build-symbol (< sym) - (< master)))
+	      (let ((definer (car def))
+		    (definiens
+		       (cond ((eq (cadr def) ':^)
+			      (cddr def))
+			     (t (cdr def)))))
+	      `(progn
+		 (,definer ,funame ,@definiens)
+		 (declare-datafun ',funame ',master
+				  ',sym t)))))))
 
 (defvar datafun-attachers* (make-eq-hash-table :size 100))
 
@@ -75,7 +75,7 @@
 		   "I will place the function name on the property list of the symbol"
 		   "No attach function for symbol ~s and task ~s~%"
 		   sym  master)
-		(setf (get sym master) (symbol-function funame)))   ))))
+		(setf (get sym master) (symbol-function funame)))))))
 
 (defmacro datafun-table (name ind &key (size 100))
   `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)

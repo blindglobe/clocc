@@ -1,4 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
+;;;$Id: ytload.lisp,v 1.9 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -15,16 +16,16 @@
    (:import-from :cl-user cl-user::mcd-install cl-user::mcd-load))
 		   
 (in-package :ytools)
-;;;$Id: ytload.lisp,v 1.8 2005/02/21 14:10:02 airfoyle Exp $
 
-(defvar tools-version* "1.3")
+;;;;(defvar tools-version* "1.3")
 
 ;; Directory ending in system-specific directory delimiter.
 ;; nil if unknown.
 (defvar config-directory* nil)
 (defvar ytload-directory* "")
+(defvar config-file* "ytconfig.lisp")
 
-(defvar bin-bit* "")
+;;;;(defvar bin-bit* "")
 
 (defmacro intern-call (pkg fcn &rest args)
    `(funcall (intern ',(string fcn) (find-package ',(string pkg)))
@@ -34,8 +35,8 @@
 ;; at different times, so we can't control the package in effect when the
 ;; first format is called.
 (defmacro intern-eval (pkg expression orig-pkg)
-   `(let ((_ss_ ,(let ((*package* (find-package orig-pkg)))
-		    (format nil "~a" expression))))
+   `(let ((_ss_ (let ((*package* (find-package ',orig-pkg)))
+		    (format nil "~a" ',expression))))
        (let ((*package* (find-package ',pkg)))
 	  ;;(declare (special *package*))
 	  (let ((xx (with-input-from-string (_srm_ _ss_)
@@ -133,7 +134,7 @@
 				     module))))
 		    (cond ((really-install module nil)
 			   (setq loadable
-				 (y-or-n-p "Do you want to proceed to load ~a now?"
+				 (y-or-n-p "Do you want to proceed to load ~a now? "
 					   module))))))
 	     (cond (loadable
 		    (let ((lr (call-installer-or-loader ':load module nil)))
@@ -145,7 +146,8 @@
 		   (t nil))))
 	 (t
 	  (cond ((eq if-loaded ':warn)
-		 (format t "System ~a already loaded; to force re-load, ~% give yt-load keyword argument \":if-loaded ':force\"~%"
+		 (format *query-io*
+			 "System ~a already loaded; to force re-load, ~% give yt-load keyword argument \":if-loaded ':force\"~%"
 			 module)))
 	  '(nil nil))))
 
@@ -203,7 +205,9 @@
 		(yt-load :ytools)
 		(load-module-file module))
 	       (t
-		(error "Can't find file for module ~s" module)))))
+;;;;		(format nil "Can't load ~s" module)
+		(error "Can't find file for module ~s" module)
+		))))
    module)
 
    ;;;;		   :directory `(:relative
@@ -236,11 +240,11 @@
       (let ((filename (yt-config-file-name)))
 	 (cond ((probe-file filename)
 		(load filename))
-	       ((y-or-n-p "No ytconfig.lisp file; ~% config-variables* so far = ~s ~% shall I create one in ~a ? "
-			  config-variables* config-directory*)
+	       ((y-or-n-p "No ~s file; ~% config-variables* so far = ~s ~% shall I create one in ~a ? "
+			  config-file* config-variables* config-directory*)
 		(dump-yt-config-file))
 	       (t
-		(error "No ytconfig.lisp file")))
+		(error "No ~s file" config-file*)))
 	 (cond ((ensure-filename-case)
 		;; changed something
 		(dump-yt-config-file)))
@@ -253,29 +257,41 @@
       (cond ((and config-directory* (is-set directory-delimiter*))
 	     (return)))
       (cond ((not config-directory*)
-	     (format t "Directory containing ytconfig.lisp (end with slash or other directory delimiter): ")
+	     (query "Directory containing ~s (end with slash or other directory delimiter): "
+		       config-file*)
 	     (setq config-directory* (clear-read-line)))
 	    (t
-	     (format t "Assuming ytconfig.lisp is in ~a~%"
-		       config-directory*)))
+	     (format *query-io* "Assuming ~s is in ~a~%"
+		       config-file* config-directory*)))
       (setq directory-delimiter*
 	   (nth-value 1 (peel-last-non-whitespace
 				     config-directory*)))
-      (cond ((or (member (elt directory-delimiter* 0)
-			 '(#\/ #\\ #\:))
-		 (y-or-n-p "Is '~a' really the directory delimiter (type blank line if so, else delimiter): "
-			   directory-delimiter*))
-	     (return)))
-      (setq directory-delimiter* nil)))
+      (cond ((stringp directory-delimiter*)
+	     (cond ((member (elt directory-delimiter* 0)
+			    '(#\/ #\\ #\:))
+		    (return))
+		   (t
+		    (query
+			    "Is '~a' really the directory delimiter ~% (type blank line if so, else correct delimiter): "
+			    directory-delimiter*)
+		    (let ((delim (nth-value 1 (peel-last-non-whitespace
+						 (read-line *query-io*)))))
+		       (cond (delim
+			      (setq directory-delimiter* delim)
+			      (setq config-directory*
+				    (concatenate 'string config-directory*
+						 directory-delimiter*))
+			      (return)))))))
+	    (t (setq directory-delimiter* nil)))))
 		    
 (defun ensure-filename-case ()
 	 (cond ((is-set filename-case*) nil)
 	       (t
-		(format t "What is the usual case for file names on your system (upper or lower)? ")
+		(query "What is the usual case for file names on your system (upper or lower)? ")
 		(loop
 		   (let ((case (clear-read-line)))
 		      (cond ((= (length case) 0)
-			     (format t "Assuming lower case~%")
+			     (format *query-io* "Assuming lower case~%")
 			     (setq filename-case* ':lower)
 			     (return))
 			    (t
@@ -285,7 +301,7 @@
 			     (cond ((member case '(:upper :lower))
 				    (setq filename-case* case)
 				    (return)))))
-		      (format t "Type 'upper' or 'lower': ")))
+		      (query "Type 'upper' or 'lower': ")))
 		t)))
 
 (defparameter space-bag* " 	")  ; <-- space & tab
@@ -300,15 +316,15 @@
 	     (values nil nil)))))
 
 (defun better-restart-message ()
-  (format t "It's probably better to quit Lisp before loading any module~%")
+  (format *query-io* "It's probably better to quit Lisp before loading any module~%")
   t)
 
 (defun prompt-for-dir-name (message)
    (loop
-      (format t message)
+      (query message)
       (let ((dir (clear-read-line)))
          (cond ((< (length dir) (length directory-delimiter*))
-		(format t "You must type a directory name~%"))
+		(format *query-io* "You must type a directory name~%"))
 	       (t
 		(return (dirname-with-delimiter dir)))))))
 
@@ -369,10 +385,18 @@
 (defun clear-read-line ()
    #+lispworks
    (clear-input)
-   (read-line))
+   #+sbcl
+   (finish-output *query-io*)
+   (read-line *query-io*))
 
 (defun yt-config-file-name ()
-   (strings-concat config-directory* "ytconfig.lisp"))
+   (strings-concat config-directory* config-file*))
+
+;;;;		   "ytconfig"
+;;;;		   (cond ((boundp ytconfig-name*)
+;;;;			  ytconfig-name*)
+;;;;			 (t ""))
+;;;;		   ".lisp"))
 
 (defun strings-concat (&rest strings)
   (apply #'concatenate 'string strings))
@@ -382,8 +406,8 @@
 
 (defvar lisp-standard-readtable* *readtable*)
 
-(defun bin-subdirectory (dir)
-  (strings-concat dir bin-bit* "bin"))
+;;;;(defun bin-subdirectory (dir)
+;;;;  (strings-concat dir bin-bit* "bin"))
 
 (defun cl-user::yt ()
    (in-package :ytools)
@@ -402,8 +426,8 @@
 		(cond ((probe-file okcpn)
 		       (let ((p (compare-files cpn okcpn)))
 			  (cond ((numberp p)
-				 (error "Current ytconfig.lisp differs from ytconfig-ok.lisp at position ~s"
-					p)))))))))))
+				 (error "Current ~s differs from ytconfig-ok.lisp at position ~s"
+					config-file* p)))))))))))
 
 (defun compare-files (pn1 pn2)
    (with-open-file (srm1 pn1 :direction ':input)
@@ -426,6 +450,12 @@
 		      (return t)))
 	       (setq i (+ i 1)))))))
 
+(defun query (&rest format-args)
+   (apply #'format *query-io* format-args)
+#+sbcl
+   (finish-output *query-io*)
+ )
+
 (defmacro set-config-var (var even-if-set &rest body)
    `(cond ((or ,even-if-set (not (boundp ',var)))
 	   (setq ,var (progn ,@body))
@@ -438,3 +468,93 @@
 	  ,@body
 	  (setq fl-finished t))
        fl-finished))
+
+(defun revnum-from-changelog (base-version direc)
+   (let ((revnum (or (find-revision-num (strings-concat direc "CHANGELOG"))
+                     "??")))
+     (strings-concat base-version "." revnum)))
+
+;;; Find string "$Id" in file, following by num.num.....num, and
+;;; return the last num, or nil if none can be found
+(defun find-revision-num (pn)
+   (cond ((fboundp '->pathname)
+          ;; Kludge
+          (setq pn (->pathname pn))))
+   (with-open-file (insrm pn :direction ':input)
+      (labels ((advance-to-$Id ()
+                  (loop
+                     (let ((r (read-char insrm nil nil)))
+                        (cond (r
+                               (cond ((char= r #\$)
+                                      (return t))))
+                              (t
+                               (return nil))))))
+
+               (advance-to-revision-nums ()
+                  (loop
+                     (let ((r (read-char insrm nil nil)))
+                        (cond (r
+                               (cond ((char= r #\.)
+                                      (return t))))
+                              (t
+                               (return nil))))))
+
+               (get-last-num ()
+                  (let ((numchars '()))
+                     (loop
+                        (let ((r (read-char insrm nil nil)))
+                           (cond (r
+                                  (cond ((char= r #\.)
+                                         (setq numchars '()))
+                                        ((digit-char-p r)
+                                         (setq numchars (cons r numchars)))
+                                        (t
+                                         (return
+                                            (cond ((null numchars)
+                                                   nil)
+                                                  (t
+                                                   (coerce (reverse numchars)
+                                                           'string)))))))
+                                 (t
+                                  (return nil))))))))
+         (cond ((advance-to-$Id)
+                (cond ((advance-to-revision-nums insrm)
+                       (get-last-num insrm))
+                      (t nil)))
+               (t nil)))))
+
+(defun version-num-from-changelog (direc)
+   (or (find-version-num (strings-concat direc "CHANGELOG"))
+       "??"))
+
+(defvar version-header* "[- Version ")
+
+(defun find-version-num (pn)
+   (cond ((fboundp '->pathname)
+          ;; Kludge
+          (setq pn (->pathname pn))))
+   (with-open-file (insrm pn :direction ':input)
+      (labels ((find-version-in-line (line startpos)
+;;;;                  (trace-around find-version-in-line
+;;;;                     (:> "(find-version-in-line: " startpos 1 line ")")
+                  (let ((q (position
+                              #\Space line
+                              :start startpos)))
+                     (cond (q
+                            (subseq line startpos q))
+                           (t "??.??")))
+;;;;                     (:< (val &rest _) "find-version-in-line: " val))
+                  ))
+         (loop
+            (let ((r (read-line insrm nil nil)))
+               (cond (r
+                      (let ((p (search version-header*
+                                       r)))
+                        (cond (p
+                               (return
+                                  (find-version-in-line
+                                     r (+ p (length version-header*))))))))
+                     (t (return "??.??"))))))))
+
+
+

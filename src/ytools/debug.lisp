@@ -1,17 +1,22 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: debug.lisp,v 1.4 2005/02/21 14:10:02 airfoyle Exp $
+
+;;;$Id: debug.lisp,v 1.5 2005/12/26 00:15:01 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
 
-(end-header :continue-slurping)
+(self-compile-dep :macros)
+
+(end-header)
 
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
 	     symshow =g htab-show file-show test check
 	     condition-display-string)))
+
+(needed-by-macros
 
 ;; Each entry is of the form (flag form type), where flag is a symbol,
 ;; often *.  The idea is to make it easy to munge the forms further,
@@ -21,12 +26,17 @@
    label
    object
    type)
+)
 
 (defvar dbg-stack* '())
 
 ;; Macro expand arg or arg applied to something on dbg-stack*
-(defmacro s (&optional (form nil form-supp) (flag '*))
-   `(sv ,(cond (form-supp `',form)
+(defmacro s (&optional (form nil form-supp) (num 0) (flag '*))
+   `(sv ,(cond (form-supp
+                (cond ((atom form)
+                       `(g ,form ,num))
+                      (t
+                       `',form)))
 	       (t '(g *)))
 	,flag))
 	
@@ -44,17 +54,18 @@
 ;;;;(defun sv (v &optional )
 ;;;;   (dbg-push '* (macroexpand-1 v) 'Sexp false))
 
-;; evalute form and push on stack if not atomic.
-(defmacro ev (form &optional (label '*) (type false))
-   (let ((vvar (gensym)) (tyvar (gensym)))
-      `(multi-let (((,vvar ,tyvar)
-		    (ev-process ',form ,(cond (type `',type) (t 'false)))))
-	  (dbg-push ',label ,vvar ,tyvar))))
+;; evaluate form and push on stack if not atomic.
+(defmacro ev (form &rest stuff)
+   (let ((vl-var (gensym)) (ll-var (gensym)) (tl-var (gensym)))
+      `(multi-let (((,vl-var ,ll-var ,tl-var)
+		    (ev-process ',form ',stuff)))
+          (list->values
+             (list-dbg-push ,ll-var ,vl-var ,tl-var)))))
 
 ;; Like ev, but print nonprettily and don't put on stack
 (defmacro ev-ugly (form)
    `(ev-process '(bind ((*print-pretty* false) (out ,form :%) (values)))
-		'Void))
+		'()))
 
 ;;; If * (value of last thing printed) is an Allegro-style function-call 
 ;;; display (i.e., (function-name val-of-arg-1 ... val-of-arg-N)),
@@ -77,16 +88,26 @@
 
 (datafun attach-datafun ev-process
    (defun :^ (_ sym fname)
-      (!= (alist-entry sym ev-process-tab*)
+      (!= (alref ev-process-tab* sym)
 	  (symbol-function fname))))
 
-(defun ev-process (form td)
+;;; Returns the form, perhaps tidied up some way, plus a list of
+;;; labels for the values, plus a list of type designators,
+;;; one per value the form will produce. 
+(defun ev-process (form stuff)
    (let ((h (and (consp form) (alist-entry (car form) ev-process-tab*))))
       (cond (h
 ;;;;	     (out "Calling handler for " form " & " td :%)
-	     (funcall h form td))
+	     (funcall h form stuff))
 	    (t
-	     (values (eval (subst-with-stack-vars form)) td)))))
+             (cond ((null stuff)
+                    (!= stuff '(*))))
+	     (values (values->list (eval (subst-with-stack-vars form)))
+                     stuff
+                     (<# (\\ (_) 'nil)
+                         stuff))))))
+
+(defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
 (defun subst-with-stack-vars (exp)
    (cond ((and (is-Symbol exp)
@@ -104,6 +125,14 @@
 (defvar dbg-stack-max-len* 200)
 
 (defvar dbg-stack-trap-labels* '())
+
+(defun list-dbg-push (labels vals types)
+   (repeat :for ((lab :in labels)
+                 (val :in vals)
+                 (ty :in types))
+    :when (not (eq lab '_))
+    :collect val
+      (dbg-push lab val ty)))
 
 (defun dbg-push (label x &optional (type false) (even-trivia true))
    (cond ((or even-trivia
@@ -265,8 +294,6 @@
 	  (!= sym '*)))
    `(Dbg-entry-type (nth-dbg-entry dbg-stack* ',sym ,n)))
 
-(defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
-
 (defsetf g-set (&optional (sym '*) (n 0)) (val)
    `(set-dbg-entry-object ',sym ',n ,val))
 
@@ -327,22 +354,37 @@
    (elt dbg-stack* n))
 
 ;; !^pkg sym returns pkg::sym, but imports sym to current package.
-(!= (get '\^ 'excl-reader)
-    (\\ (srm _)
-       (let ((pkgname (read srm)))
-	  (let ((x (let ((*package* (find-package (symbol-name pkgname))))
-		      (read srm))))
-	     (cond ((is-Symbol x)
-		    (cond ((eq (find-symbol (symbol-name x)
-					    *package*)
-			       x)
-			   (out x " already in " t 3 *package* t))
-			  (t
-			   (out "Importing " x " into " t 3 *package* t)
-			   (import x))))
-		   (t
-		    (out "???" t)))
-	     x))))
+;; !^^ means "shadowing import."
+(def-excl-dispatch #\^ (srm _)
+   (let ((shadow
+	    (cond ((char= (peek-char false srm)
+			  #\^)
+		   (read-char srm)
+		   true)
+		  (t false))))
+       (let* ((pkgname (read srm))
+              (pkg (and (is-Symbol pkgname)
+                        (find-package (Symbol-name pkgname)))))
+          (cond (pkg
+                 (let ((x (let ((*package* pkg))
+                             (read srm))))
+                    (cond ((is-Symbol x)
+                           (cond ((eq (find-symbol (symbol-name x)
+                                                   *package*)
+                                      x)
+                                  (out x " already in " :% 3 *package* :%))
+                                 (t
+                                  (out "Importing " x " into " :% 3 *package*
+                                       :%)
+                                  (cond (shadow
+                                         (shadowing-import x))
+                                        (t
+                                         (import x))))))
+                          (t
+                           (out x " is not a symbol" :%)))
+                    x))
+                (t
+                 (out pkgname " is not the name of a package" :%))))))
 
 ;;; Push first subform of exp beginning with sym onto dbg-stack*
 (defun seek (sym &optional (num 0) (exp (g *)) (label '*))
@@ -403,13 +445,15 @@
 
 (defun htab-show (htab)
    (with-hash-table-iterator (ht-iter htab)
-      (repeat 
+      (repeat :for ((i = 0 :by 1))
        :within
 	 (multiple-value-let (found key value)
 			     (ht-iter)
 	    (:continue
 	     :while found
-	     (out key " -- " (condense value) :%))))))
+	     (out key " -- " (condense value) :%)
+	     :result (out i " entries" :%)))))
+  htab)
 
 (defun file-show (filespecs)
    (with-open-file (srm (car (filespecs->pathnames filespecs)) :direction ':input)

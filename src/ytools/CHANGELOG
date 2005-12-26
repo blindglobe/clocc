@@ -1,10 +1,230 @@
-$Id: CHANGELOG,v 1.34 2005/06/17 14:39:22 airfoyle Exp $
-	
-2005-06-17: Add feature pre-chunk, so that .lsy files can run under
+$Id: CHANGELOG,v 1.35 2005/12/26 00:15:01 airfoyle Exp $
+
+2005-12-25: Merge chunk-based YTools into main line!
+            
+            [- Version 2.0.61 -]
+2005-12-24: Allow '+' or '-' as responses to question about whether a
+            file should be loaded after being compiled.  Fix paren
+            error in 'track-extra-vals' (multilet.lisp).  To make
+            "fcompl -f" work correctly for ytools module, added every
+            component of the module to the definition in module.lisp.
+
+            [- Version 2.0.59 2005/12/23 05:59:18 airfoyle Exp]
+2005-12-22: Made 'fcompl' work with modules --- sort of.
+
+2005-12-21: Fixed bug in 'read-y-or-n' (outin.lisp) where output was
+            going to standard output instead of 'srm'. 
+            
+2005-12-17: Corrected anachronisms in slurp.lisp (use of != and *-*).
+
+            [- Version 2.0.57 2005/12/17 15:49:41 airfoyle Exp -]
+2005-12-15: Rewrite of 'track-extra-vals/extra-vals' for greater
+            flexibility, adding keyword args :num-principal-values,
+            :after; and allowing 'vars' in 'extra-vals' to be omitted
+            in simple cases.  Manual and implementation now agree.
+
+            [- Version 2.0.56 2005/12/14 20:30:42 airfoyle Exp]
+2005-12-14: Altered 'cons-funcall' to allow (lambda ...) as well as
+            (\\ ...).  Changed name of 'mapeltreduce' to 'mapreduce',
+            and made it macroexpand to 'reduce' in the usual case.
+
+            [- Version 2.0.55 2005/12/14 15:21:38 airfoyle Exp -]
+2005-12-13: Made 'track-extra-vals' more complex for no real reason.
+
+            [- Version 2.0.54 2005/12/12 16:27:42 airfoyle Exp]
+2005-12-09: Changed def-class so that a "key-conser" is always
+            defined, even if the option :nokey was given.  That option
+            was undocumented, and has now been emasculated, that is,
+            made equivalent to the absence of :key.
+
+            [- Version 2.0.50 Id: 1.31.2.50 2005/12/08 17:03:04 airfoyle Exp -]
+2005-12-08: New numbering scheme: Minor version number of software
+            package = last version number for CHANGELOG of package
+            E.g., this entry bumps the YTools CHANGELOG to version
+            1.31.2.50, so this produces version 2.0.50 of YTools.
+
+2005-12-06: Added instrumentation to tell when 'multilet' expands to
+            simple or complex version.
+
+2005-12-04: !' now records symbols it is used with in list
+            syms-used-as-funktions*
+
+2005-11-30: Added feature :ytools back to *features* (somehow it had
+            disappeared at some point).
+
+2005-11-23: Allow extra atoms at front of 'control-nest' as comments.
+            Slight tuning of initialization protocol.  New
+            quasi-public routine 'new-source-suffix' for adding
+            strings to 'source-suffixes*'.  
+
+2005-11-20: Added debugging aid in chunk. Eliminated error break in
+            'chunks-update' after careful experimentation showed that
+            it is perfectly possible for 'set-latest-supporter-date'
+            to make a chunk out of date after it has been derived.
+
+2005-11-13: Fixed bug in 'def-ytools-logical-pathname' that caused old
+            bin-directory association to be discarded if no
+            association was specified.
+
+            Moved fileseg into ytools directory.
+            (Version 2.0.17)
+
+2005-11-09: Corrected error in compiler macro for 'string-concat'.
+            (Version 2.0.16)
+
+2005-11-08: Small change to raw-ytfm-load.
+
+2005-11-06: Switched order of loading init files so that
+            config-directory ytinit (if any) is loaded before home-dir
+            ytinit (if any).
+
+2005-11-03: Changed 'bind' so it doesn't declare built-in globals as
+            special.  'string-concat' moved from nilscompat.lisp to base.lisp
+            (Version 2.0.15)
+
+2005-10-31: Export 'fload-version-suffix*' because it's mentioned in
+            the manual.
+
+2005-10-26: Changed 'temporarily-manage' in chunks-update so it makes
+            management request even if a chunk is already managed.
+            (See comment in that function.)
+
+2005-10-21: Added calls to 'force-output' to make queries work
+            properly under SBCL.  Changed parameter
+            ytools-bin-dir-pathname* in ytools.lsy to allow
+            non-relative bin directory for YTools.
+            
+2005-10-19: Fixed bug in 'declare-pathname-associate'
+
+2005-10-11: Replaced calls to 'file-write-date' with calls to
+            'pathname-write-time' in cases where file is not known to
+            exist.  (Version 2.0.13.)
+
+2005-10-10: Workarounds for bugs in Open MCL.
+
+2005-10-09: Creating Ever-loaded chunks; not integrated yet (or
+            working correctly, for that matter).  Corrected various
+            technicalities to get Open MCL to compile YTools.  Created
+            simple repl (repl.lisp) for use in slime debugger.
+
+2005-10-07: Allowed names of config files to be something other than
+            "ytconfig.lisp".  Broadened declarations of allowed values
+            of fields in chunks to make openmcl compiler happy.
+
+2005-09-13: Moved facilities of multvalhacks.lisp into multilet.lisp.
+            Changed 'loadeds-check-bases' so it postpones rescans if
+            chunk update is already in progress. (Version 2.0.12)
+
+2005-09-03: Inserted :before method for (setf Chunk-date) on
+            Code-file-chunk to try to catch the mysterious culprit
+            that occasionally tries to set a Code-file-chunk's date to
+            something before its file's write date.  No hit so far.
+
+2005-07-29: Added 'on-list-if-new', *current-case-mode*
+
+2005-07-28: Allowed derivers and date-derivers to terminate management
+            of their chunks if found to be defective in some way;
+            chunks-update will then skip any further handling of them.
+	    This is used in the case of code-file chunks for
+            nonexistent files.
+	    'fload' and 'fcompl' now remind user if there are
+            postponed file ops. (Version 2.0.11)
+
+2005-07-24: Added 'with-open-files' to multvalhacks.lisp.
+	    Revamped the way file-header slurping is related to chunk
+            for file being slurped.  (Version 2.0.10)
+
+2005-07-21: Replaced <- and *undef with :<- and :*undef in filedeps.lisp.
+
+2005-06-30: Changed naming convention for form chunks derived from
+            modules, so that redefining module erases the old form
+            chunk rather than just adding a new one.
+
+2005-06-24: Moved keyword-args-extract to misc.lisp.  Add 'in-header'
+            (file depend.lisp). Fixed bug in fload (so -x flag
+            works). (Version 2.0.09.)
+
+2005-06-17: Added file multvalhacks.lisp .  (Version 2.0.08)
+            Add feature pre-chunk, so that .lsy files can run under
             either old YTools or YTools 2. Added file
             multvalhacks.lisp. (Version 1.4.9)
 
-2005-01-25: Add utility 'stream-indent' to outin.lisp            
+2005-05-30: Added 'find-chunk'.  Fixed bug in 'chunk-destroy'.  Fixed
+            bugs in request-mgt logic.  Added some debugging
+            statements.  Changed chunk printer.
+
+2005-05-28: Made flags in 'fload' and 'fcompl' characters, not symbols
+            interned in the yt package.  Added -n flag (force
+            "normality"). 
+
+2005-05-27: Made scan for "Readtable: " in mode line case-insensitive.
+
+2005-05-04: Gave user options in case fload reports that previous
+            attempt to compile a file failed.  (Version 2.0.06)
+
+2005-05-03: Introduced chunk for pathname associates.
+            Dir-associate-chunk (pathname.lisp) keeps track of the
+            association of a property with a pathname.
+            Compiled-file-chunks depend on association of 'bin'
+            properties with directories. (Version 2.0.05)
+
+2005-04-20: Ensured that if bin directory of a source directory
+            changes, fload will notice that the next time it compiles
+            a file in the source directory.  (Version 2.0.04)            
+
+2005-04-17: Eliminated double-compilation bug in (fload -c ...).
+            Suppressed annoying message about chunk times differing by
+            1 second.  Fixed bug preventing proper reset of basis by
+            'loaded-chunk-set-basis'.  Made sure scan-depends-on is
+            preceded by reset of bases of all relevant
+            chunks. (Version 2.0.03)
+
+2005-04-16: Eliminated bug in logic in 'loaded-chunk-set-basis'.
+            (Version 2.0.02)
+
+2005-04-06: Added slurp handlers for various forms. (Version 2.0.01)
+
+2005-03-27: Rethink of alt-version hack for Code-file-chunks.
+            Reintroduced idea from old YTools of having lightweight
+            version control apply purely at the file-list-parsing
+            level (e.g., in parsing the arguments to 'fload').
+
+            Got slurp dependencies right (or more nearly right) in
+            file chunks.
+
+2005-03-16: Rethink of what it means to slurp a module definition.            
+	    Corrected bug in implementation of -x flag to 'fload'.
+
+2005-03-13: Debugged interaction between 'depends-on' and
+            'self-compile-dep'. More tuning of ynisp to new chunk
+            system.  
+
+2005-03-12: Better cycle detection in chunk network.  Implemented
+            'at-slurp-time' dependencies.
+
+2005-03-06: Further debugging of flags to fload and fcompl.  (Version 1.5.1)
+
+2005-03-05: One more retune of derive-date/derive ritual.  
+	    Made interrogation about what version of files to load
+            more intelligible.  Began work on getting force flags to
+            work correctly.  (Version 1.5)
+
+2005-03-02: Split derivers into two generic functions, derive-date and
+            derive.  Leaf chunks can be out of date.  'derive' is
+            called the same way for leaves and non-leaves. (Version
+            1.4.11) 
+
+2005-02-27: Yet another scheme for controlling chunk updates triggered
+            by chunk derivers: The interrupt is detected by the outer
+            update, which is then restarted.  The inner update does
+            not happen again because derivers are called only once at
+            a particular level.
+
+	    Added ability to postpone updates of derivees, to avoid
+            repeated updates of the same irrelevant downstream derivee
+            during debugging of upstream chunk. (Version 1.4.10)
+
+2005-01-25: Add utility 'stream-indent' to outin.lisp
 
 2004-11-07: Resurrected 'intercept' and 'pass' with improved type
             checking.  Altered 'ytools-logical-pathname-def' so it

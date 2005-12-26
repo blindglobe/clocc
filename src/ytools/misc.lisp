@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 1.6 2004/07/12 22:28:02 airfoyle Exp $
+;;;$Id: misc.lisp,v 1.7 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,7 @@
    (export '(out-to-string dbg-out dbg-out-indent
 	     err-out cons-if-new plev plen
 	     classify shorter list-splice is-list-of boole-eq eqn
-	     mod-load val-or-initialize memoize-val gen-var)))
+	     mod-load val-or-initialize memoize-val)))
 
 (defmacro out-to-string (&rest outargs)
    `(with-output-to-string (string-stream) (out (:to string-stream) ,@outargs)))
@@ -140,5 +140,3 @@
 				         " :store-as argument")))
    `(val-or-initialize ,store-place^ :init ,exp^ :missing-if ,uncached-val^))
 
-(defun gen-var (sym)
-   (build-symbol (:package false) (< sym) - (++ symno*)))

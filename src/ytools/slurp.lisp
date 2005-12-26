@@ -1,22 +1,48 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 1.8 2004/11/01 14:01:08 airfoyle Exp $
+;;;$Id: slurp.lisp,v 1.9 2005/12/26 00:15:01 airfoyle Exp $
 
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.
 
 (eval-when (:load-toplevel)
-   (export '(fslurp in-readtable in-regime slurp-whole-file needed-by-macros
-	     find-lprec with-post-file-transduction-hooks after-file-transduction
-	     during-file-transduction setf-during-file-transduction end-header
-	     to-slurp fload-verbose* in-header eval-when-slurping
-	     make-Printable printable-as-string eof*)))
+   (export '(in-readtable in-regime needed-by-macros
+	     with-post-file-transduction-hooks after-file-transduction
+	     during-file-transduction setf-during-file-transduction 
+	     fload-verbose* eval-when-slurping
+	     make-Printable printable-as-string eof*
+	     slurp-eval slurp-ignore
+	     now-loading* now-compiling* now-slurping*)))
 
+(defvar source-suffixes* (adjoin lisp-source-extn* '("lisp" "lsy")
+                                 :test #'string=))
+(defvar obj-suffix* lisp-object-extn*)
 (defvar object-suffixes* `(,lisp-object-extn*))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(defun pathname-is-source (pn)
+   (member (Pathname-type pn)
+	   source-suffixes*
+	   :test #'string=))
+
+(defun pathname-is-object (pn)
+   (member (Pathname-type pn)
+	   object-suffixes*))
+
+;;; Make sure .lisp files are found before odder ducks.
+(defun new-source-suffix (suff)
+   (cond ((not (member suff ytools::source-suffixes* :test #'string=))
+          (let ((tl (member "lisp" source-suffixes* :test #'string=)))
+             (cond ((null tl)
+                    (cerror "I will put it back"
+                       "\".lisp\" missing from source-suffixes* list")
+                    (on-list "lisp" source-suffixes*)
+                    (setq tl source-suffixes*)))
+             (on-list suff (rest tl)))))
+  source-suffixes*)
+
+(eval-when (:compile-toplevel :load-toplevel :execute)
 
 ;;; Useful for constructing "marker" objects that have nothing but their
 ;;; identity: none of them is EQ to anything encountered in an ordinary
@@ -26,56 +52,87 @@
 			         (declare (ignore d))
 			    (funcall (Printable-printer me) str)))
 	              (:constructor make-Printable (printer)))
-   printer)
+   printer
+   (sym nil))
 
 (defun printable-as-string (s)
-   (make-Printable (\\ (srm) (format srm "~a" s))))
+   ;; We resort to these strange devices so that this sort of
+   ;; Printable is uniquified, but only relative to the current
+   ;; package --
+   (let ((sym (intern s)))
+      (let ((p (make-Printable (\\ (srm) (format srm "~a" s)))))
+	 (setf (Printable-sym p) sym)
+	 (setf (get sym 'printable) p)
+	 p)))
 
 (defmethod make-load-form ((p Printable) &optional env)
                           (declare (ignore env))
-   `(make-Printable ',(Printable-printer p)))
+   (let ((sym (Printable-sym p)))
+      (cond ((and sym (get sym 'printable))
+	     `(or (get ',sym 'printable)
+		  (printable-as-string ',(symbol-name sym))))
+	    (t
+	     `(make-Printable ',(Printable-printer p))))))
 )
 
 (defvar eof* (printable-as-string "#<End of file>"))
 ;;;;(make-Printable (\\ (srm) (format srm "~a" "#<End of file>")))
 
-(defun place-load-progress-rec (pn)
-   (setq pn (pathname-resolve pn true))
-   (let ((typeless-pn
-	    (make-Pathname
-	       :type (cond ((member (Pathname-type pn) source-suffixes*
-				    :test #'string=)
-			    false)
-			   (t (Pathname-type pn)))
-	       :defaults pn)))
-      (let ((lpr (pathname-prop 'load-progress-rec typeless-pn)))
-	 (or lpr
-	     (let ((lpr (make-Load-progress-rec
-			   :pathname typeless-pn)))
-		(setf (pathname-prop 'load-progress-rec typeless-pn)
-		      lpr)
-		(setf (pathname-prop 'load-progress-rec pn)
-		      lpr)
-		lpr)))))
-	     
-(defmacro find-lprec (&rest filespecs)
-   `(do-find-lprec ',filespecs))
+(defstruct (Slurp-task
+;;;;	      (:constructor make-Slurp-task (label default-handler))
+	      (:print-object
+	          (lambda (slurp-tsk srm)
+		     (print-unreadable-object (slurp-tsk srm)
+			(format srm "Slurp-task ~s~a"
+				(Slurp-task-label slurp-tsk)
+				(cond ((Slurp-task-default-handler
+					  slurp-tsk)
+				       " [has default handler]")
+				      (t ""))
+			(print-innards slurp-tsk srm))))))
+   label
+   (handler-table (make-hash-table :test #'eq :size 100))
+;;; -- handler-table maps symbols to functions of one argument that
+;;; handle forms beginning with that symbol
+   default-handler
+;;; -- default-handler is for all other forms.  If it's false, then
+;;; there isn't a default handler.  
+   file->state-fcn) 
+;;; -- file->state-fcn takes a pathname and returns the state object
+;;; for the slurp task (default: return nil).
+;;; Actually, its argument is not necessarily a pathname, because
+;;; we may want to slurp non-file entities.  (E.g., modules.)
 
-(defun do-find-lprec (filespecs)
-   (let ((pnl (filespecs->ytools-pathnames filespecs)))
-      (cond ((null pnl) "?")
-	    (t
-	     (prog1 (pathname-prop 'load-progress-rec (car pnl))
-	            (cond ((not (null (cdr pnl)))
-			   (format *error-output* "Ignoring ~s" (cdr pnl)))))))))
+(defvar all-slurp-tasks* !())
 
-;;;;(defun Load-progress-rec-src-pathname (lpr)
-;;;;   (pathname-source-version (Load-progress-rec-pathname lpr)))
+(defmacro def-slurp-task (name
+			  &key ((:default default-handler^)
+				'nil)
+			       ((:file->state-fcn file->state-fcn^)
+				'(\\ (_) nil)))
+   (let ((task-var (build-symbol (:< name) *)))
+      `(progn
+	  (defparameter ,task-var
+	      (make-Slurp-task :label ',name
+			       :default-handler ,default-handler^
+			       :file->state-fcn ,file->state-fcn^))
+	  (datafun attach-datafun ,name
+	     (defun :^ (_ sym fname)
+	        (setf (href (Slurp-task-handler-table ,task-var)
+			    sym)
+		      (symbol-function fname))))
+	  (setq all-slurp-tasks*
+		(cons ,task-var
+		      (delete-if (\\ (stask)
+				    (eq (Slurp-task-label stask)
+					',name))
+				 all-slurp-tasks*))))))
 
-;;;;(defun load-progress-rec-src-write-time (lpr)
-;;;;   (let ((src-pn (load-progress-rec-src-pathname lpr)))
-;;;;      (or (and src-pn (pathname-write-time src-pn))
-;;;;	  (get-universal-time))))
+(defun lookup-slurp-task (name)
+   (dolist (stask all-slurp-tasks* false)
+      (cond ((eq (Slurp-task-label stask)
+		 name)
+	     (return stask)))))
 
 (defvar fload-verbose*            true)		
 ;;; -- true for message during FLOAD and related ops.
@@ -83,7 +140,8 @@
 (defvar fload-indent*     0)
 
 (defvar post-file-transduce-hooks* '*not-transducing
-  "A list of things to do (i.e., functions of no arguments to call) after YTools file transducers finish.")
+  "A list of things to do (i.e., functions of no arguments to call) 
+after YTools file transducers finish.")
 
 (defmacro with-post-file-transduction-hooks (&body b)
    `(let ((post-file-transduce-hooks* '()))
@@ -91,7 +149,7 @@
 
 (defmacro after-file-transduction (&body b)
    `(cond ((check-file-transduction ',b)
-	   (push (\\ () ,@b) post-file-transduce-hooks*))))
+	   (on-list (\\ () ,@b) post-file-transduce-hooks*))))
 
 (defun during-file-transduction ()
    (not (eq post-file-transduce-hooks* '*not-transducing)))
@@ -110,275 +168,79 @@
 	     b)
 	  false)))
 
-;; --Pathname of file ...
+;; Pathname of file ...
 (defvar now-loading*     nil)  ; ... being loaded by 'fload'
 (defvar now-compiling* false)  ; ... being compiled by 'fcompl'
-(defvar now-slurping*   '())   ; ... being slurped by 'fslurp'
+;; -- we declare these here because they have to be bound to false
+;; when we're slurping.
+
+
+;; List (pathname -slurp-tasks-) if slurping, else false.
+(defvar now-slurping* false)
 
 (defvar slurping-stack* '())
 ;;;; (defvar previous-slurp-speclist* '())
 
-;;; Why the hell is this a macro?
-(defmacro file-op-defaults-update (specs possible-flags
-				   acc-defaults set-defaults)
-   (let ((default-var (gensym)))
-      `(let ((,default-var (,acc-defaults)))
-	  (multiple-value-bind (files flags readtab)
-	                       (flags-separate ,specs ,possible-flags)
-	     (,set-defaults
-		 (tuple (cond ((null files)
-			       (car ,default-var))
-			      (t files))
-			(cond ((and (null flags) (null files))
-			       (cadr ,default-var))
-			      (t flags))
-			(decipher-readtable readtab ,default-var)))))))
+(defvar show-file-ops* true)
 
-(defun decipher-readtable (readtab defaults)
-			(cond ((eq readtab '*missing)
-			       (let ((default-readtab (caddr defaults)))
-				  (cond ((and default-readtab
-					      (not (eq default-readtab
-						       *readtable*)))
-					 (format *error-output*
-						 "Readtable ~s will be used for this file operation~%"
-						 default-readtab)
-					 default-readtab)
-					(t
-					 *readtable*))))
-			      (t
-			       (name->readtable readtab))))
+;;; The default args for a file-op (such as 'fload' or 'fcompl') are
+;;; stored in a vector #(files flags readtable).
 
+(defun file-op-defaults-update (op specs possible-flags
+				acc-defaults set-defaults)
+   (let ((defaults (funcall acc-defaults)))
+      (multiple-value-bind (files flags readtab)
+	                   (flags-separate specs possible-flags)
+	 (let ((new-vec
+		  (vector (cond ((null files) (aref defaults 0))
+				(t files))
+			  (cond ((and (null flags) (null files))
+				 (aref defaults 1))
+				((memq '- flags)
+				 !())
+				(t
+				 flags))
+			  (decipher-readtable readtab
+					      (aref defaults 2)
+					      flags files))))
+;;;;	    (out "new-vec = " new-vec :%)
+	    (funcall set-defaults new-vec)
+	    (cond ((and show-file-ops* (null files))
+		   (format *error-output*
+		       "File op ~s [flags: ~a] ~s ~%    [readtable: ~s]~%"
+		       op
+		       (aref new-vec 1)
+		       (aref new-vec 0)
+		       (aref new-vec 2))))
+	    new-vec))))
 
-(defmacro fslurp (&rest specs)
-  `(do-fslurp ',specs))
-
-(defvar fslurp-flags* '(-f))
-
-(defvar default-fslurp-args* (tuple !() !() nil))
-
-;;; True if we're in the midst of an 'fload', 'fcompl', or 'fslurp'.
-(defvar file-op-in-progress* false)
-
-(defun do-fslurp (specs)
-  (cond ((not file-op-in-progress*)
-	 (setq file-op-count* (+ file-op-count* 1))))
-  (let ((file-op-in-progress* true))
-     (file-op-defaults-update specs fslurp-flags*
-			      (lambda () default-fslurp-args*)
-			      (lambda (a)
-				 (setq default-fslurp-args* a)))
-     (apply #'filespecs-slurp default-fslurp-args*)))
-
-(defun filespecs-slurp (specs flags *readtable*)
-  (let ((force-flag false))
-    (dolist (flag flags)
-       (cond ((eq flag '-f)
-	      (setq force-flag true))))
-    (dolist (pn (filespecs->ytools-pathnames specs))
-      (pathname-slurp pn force-flag ':whole-file))))
-
-(defun pathname-slurp (pn force-flag howmuch)
-;;;;   (breakpoint pathname-slurp "Hup!")
-   (cond ((is-Pseudo-pathname pn)
-	  (funcall (Pseudo-pathname-slurper pn)
-		   pn
-		   force-flag howmuch))
+(defun decipher-readtable (readtab default-readtab flags files)
+   (cond ((eq readtab ':missing)
+	  (cond ((and default-readtab
+		      (null flags)
+		      (null files)
+		      (not (eq default-readtab
+			       *readtable*)))
+		 (format *error-output*
+			 "Readtable ~s will be used for this file operation~%"
+			 default-readtab)
+		 default-readtab)
+		(t
+		 *readtable*)))
 	 (t
-	  (let ((v (pathname-prop 'version pn)))
-	     (cond (v
-		    (pathname-slurp v force-flag howmuch))
-		   (t
-		    (let ((lprec (place-load-progress-rec pn)))
-		       (lprec-slurp lprec force-flag howmuch))))))))
+	  (name->readtable readtab))))
 
-;;; Important fact about 'lprec-slurp': When it slurps the 'depends-on's in 
-;;; the header of a source file, it sets 'run-time-depends-on' and
-;;; 'compile-time-depends-on' fields of 'lprec'.  The code that does
-;;; this won't be defined until the file depend.lisp is loaded.
-
-(defun lprec-slurp (lprec force-flag howmuch)
-   (let ((pn (Load-progress-rec-pathname lprec)))
-      (let ((src-version (pathname-source-version pn)))
-	 (cond (src-version
-		(let ((up-to-date
-			 (and (achieved-load-status
-				 lprec
-				 (ecase howmuch
-				    (:header-only ':header-checked)
-				    (:at-least-header ':slurped)
-				    (:whole-file ':slurped-all)))
-			      (= (Load-progress-rec-status-timestamp lprec)
-				 file-op-count*))))
-;;;;		   (out "[" file-op-count* "] lprec-slurp finds up-to-date status "
-;;;;			up-to-date
-;;;;			" for amount " howmuch " of "
-;;;;			:% lprec :%)
-		   (cond ((or force-flag (not up-to-date))
-			  (pathname-really-slurp
-			     src-version lprec howmuch)
-			  false)
-			 (t true))))
-	       (t
-		(cerror "I will ignore this file"
-			"No source file to slurp for ~s"
-			pn))))))
-
-;;;;(defvar slurping-modes* '(:all :dependencies))
-
-(defun pathname-really-slurp (pn lprec howmuch)
-  (if (member pn slurping-stack* :test #'pathname-equal)
-      (if fload-verbose*
-	  (format *error-output*
-	     "Warning -- ~s already being slurped~%" pn))
-      (let ((real-pn (pathname-resolve pn false)))
-         (let  ((fload-indent*  0)
-		(now-loading*  false)
-		(now-compiling* false)
-		(now-loading-lprec* false)
-		(now-slurping*   pn)
-		(slurping-stack* (cons pn slurping-stack*))
-		#+:excl (excl:*source-pathname* real-pn)
-		#+:excl (excl:*record-source-file-info* nil)
-		(*package* *package*)
-		(*readtable* *readtable*))
-	    (let ((slurp-status 
-		     (pathname-finally-slurp real-pn lprec pn howmuch)))
-	       (note-load-status lprec slurp-status))))))
+;;; True if we're in the midst of an 'fload' or 'fcompl'
+(defvar file-op-in-progress* false)
 
 (defmacro cleanup-after-file-transduction (&body b)
    `(unwind-protect (progn ,@b)
-       (dolist (h post-file-transduce-hooks*)
+       (dolist (h (nreverse post-file-transduce-hooks*))
 	  (funcall h))))
 
-(defvar slurp-whole-file* true)
-(defvar slurping-lprec* false)
-(defvar slurping-how-much* nil)
-
-(defvar end-header-dbg* false)
-
-;;; Returns :header-checked, :slurped, or :slurped-all
-;;; May have side effect on lprec, in particular, setting
-;;; the 'depends-on' fields.
-(defun pathname-finally-slurp (pn lprec ytools-pn howmuch)
-;;;;   (cond ((equal (Pathname-name pn) "trecycle")
-;;;;	  (dbg-save pn lprec)
-;;;;	  (breakpoint pathname-finally-slurp
-;;;;	     "Slurping " lprec)))
-   (let ((out-of-header false)
-	 (slurp-whole-file* (eq howmuch ':whole-file))
-	 (slurping-how-much* howmuch)
-	 (slurping-lprec* lprec))
-      (setf (Load-progress-rec-run-time-depends-on lprec)
-	    !())
-      (setf (Load-progress-rec-compile-time-depends-on lprec)
-	    !())
-      (labels ((end-header-note (form)
-		  (cond (end-header-dbg*
-			 (format *error-output*
-			    "End of header on file ~s~%" pn)
-			 (cond ((eq form eof*)
-				(cond ((not slurp-whole-file*)
-				       (format *error-output*
-					       "  -- Header is entire file~%"))))
-			       ((and (not slurp-whole-file*)
-				     (not (car-eq form 'end-header)))
-				(format *error-output*
-					"  -- Header ends at ~s~%"
-					form)))))))
-	 (let ((post-file-transduce-hooks* !()))
-	    (with-open-file (s pn :direction ':input)
-	       (cleanup-after-file-transduction
-		  (do ((form (read s false eof*) (read s false eof*)))
-		      ((or (eq form eof*)
-			   (and out-of-header
-				(case howmuch
-				   (:header-only true)
-				   (:at-least-header 
-   ;;;;				 (breakpoint pathname-finally-slurp
-   ;;;;				    "leaving header, slurp-whole-file* = "
-   ;;;;				    slurp-whole-file*)
-				    (not slurp-whole-file*))
-				   (t false))))
-		       (cond ((eq form eof*)
-			      (end-header-note form))))
-		     (cond ((form-slurp form slurp-whole-file*)
-			    ;; Substantive
-			    (cond ((not out-of-header)
-				   (setq out-of-header true)
-				   (end-header-note form)
-				   (cond (slurp-whole-file*
-					  (fload-op-message
-					       "Slurping"
-					       ytools-pn pn "...")))))))))))
-	 (cond ((and out-of-header slurp-whole-file*)
-		(fload-op-message "...slurped" pn false "")))
-	 (case howmuch
-	    (:header-only ':header-checked)
-	    (:at-least-header
-	     (cond (slurp-whole-file*
-		    ':slurped-all)
-		   (t
-		    (supporting-files-in)
-		    ':slurped)))
-	    (t ':slurped-all)))))
-
-(datafun-table slurp-handlers* to-slurp :size 200)
-
-(defvar file-headers* '(in-package depends-on export))
-
-;;; Returns true if form is "substantive," i.e., part of the file's
-;;; content.  Returns false if form is "header material," such as 
-;;; 'in-package', 'depends-on', and such.
-;;; 'slurp-if-substantive' might better be called 'past-header'.
-(defun form-slurp (form slurp-if-substantive)
-  (cond ((atom form)
-	 false)
-	((and (is-Symbol (car form))
-	      (table-entry slurp-handlers* (car form)))
-;;;;	 (format t "Found handler for ~s~%" form)
-	 (funcall (table-entry slurp-handlers* (car form))
-		  form slurp-if-substantive))
-	((macro-function (car form))
-;;;;	 (format t "Macro ~s being expanded to ~s~%" form (macroexpand-1 form))
-	 (prog1 (form-slurp (macroexpand-1 form)
-			    slurp-if-substantive)
-	     ;;;;(format t "Mission accomplished~%")
-	     ))
-	(t true)))
-
-(defvar fload-show-actual-pathnames* false)
-
-#|
-NOT USED BY ANYONE (oddly enough)
-(defun ytools-module-slurp (name force-flag)
-   (cond ((or force-flag (not (memq name loaded-ytools-modules*)))
-	  (let ((ytm (find-YT-module name)))
-	     (cond (ytm
-		    (form-slurp (YT-module-action ytm) false))
-		   (t
-		    (cerror "I will ignore it"
-			    "Attempt to slurp nonexistent module '~s'"
-			    name)))))
-	 (t
-	  (let ((ytm (place-YT-module name)))
-	     (let ((p (YT-module-postponed ytm)))
-	        (cond ((not (null p))
-		       (setf (YT-module-postponed ytm) !())
-		       (let ((module-now-loading* name))
-			  (dolist (e (reverse p))
-			     (form-slurp e false)))
-		       (cond ((null (YT-module-postponed ytm))
-			      `("Finished slurping module" ,name))
-			     (t
-			      (note-module-postponement
-				 `(check-module-postponed ',name))
-			      `("Postponed slurping module " ,name))))
-		      (t `("Load blocks slurp" ,name))))))))
-|#
-
-;;; Returns three values: filespecs, flags, and readtable
-;;; If readtable is missing, the value is *missing.
+;;; Returns three values: filespecs, flags, and readtable.
+;;; 'flags' is a list of characters.
+;;; If readtable is missing, the value is :missing.
 (defun flags-separate (args possible-flags)
    (let ((flags !())
 	 (readtab (memq ':readtable args)))
@@ -386,33 +248,54 @@ NOT USED BY ANYONE (oddly enough)
 	     (setq args (nconc (ldiff args readtab)
 			       (cddr readtab)))
 	     (setq readtab (cadr readtab)))
-	    (t (setq readtab '*missing)))
+	    (t (setq readtab ':missing)))
       (do ((al args (cond (flags-done al) (t (cdr al))))
 	   (flags-done false)
-	   fname interned-flag)
+	   symname)
 	  ((or flags-done (null al))
-	   (values al (reverse flags) readtab))
+	   (values al
+		   (flags-check (reverse flags) possible-flags)
+		   readtab))
          (cond ((is-Symbol (car al))
-		(setq fname
-		      (symbol-name (car al)))
-		(setq flags-done (not (char= (elt fname 0) #\-))))
+		(setq symname (symbol-name (car al)))
+		(setq flags-done
+		      (not (char= (elt symname 0)
+				  #\-)))
+		(cond ((not flags-done)
+		       (setq flags (nreconc (rest (coerce symname 'list))
+					    flags)))))
 	       (t
-		(setq flags-done true)))
-	 (cond ((not flags-done)
-		(setq interned-flag
-		      (intern fname ytools-package*))
-		(cond ((memq interned-flag possible-flags)
-		       (setq flags (cons interned-flag flags)))
-		      (t
-		       (cerror "I'll ignore it"
-			   "Unexpected flag ~s; expected one of ~a"
-			      (car al)
-			      (mapcar (lambda (flag)
-					 (intern (symbol-name flag)
-						 *package*))
-				      possible-flags)))))))))
+		(setq flags-done true))))))
 
-(defun fload-op-message (beg-message pn real-pn end-message)
+;;;;		(setq interned-flag
+;;;;		      (intern fname ytools-package*))
+;;;;		(cond ((memq interned-flag possible-flags)
+;;;;		       (setq flags (cons interned-flag flags)))
+;;;;		      (t
+;;;;		       (cerror "I'll ignore it"
+;;;;			   "Unexpected flag ~s; expected one of ~a"
+;;;;			      (car al)
+;;;;			      (mapcar (lambda (flag)
+;;;;					 (intern (symbol-name flag)
+;;;;						 *package*))
+;;;;				      possible-flags)))))))))
+
+;;; Return flags (characters) that are legal in this context.
+(defun flags-check (flags expected)
+   (mapcan (\\ (flag)
+	         ;;;; (let ((flag (intern (Symbol-name flag) ytools-package*))) ...)
+	      (cond ((member flag expected :test #'char-equal)
+		     (list (char-downcase flag)))
+		    (t
+		     (cerror "I'll ignore it"
+			"Unexpected flag '~a'; expected one of ~a"
+			   flag expected)
+		     !())))
+	   flags))
+
+(defvar fload-show-actual-pathnames* true)
+
+(defun file-op-message (beg-message pn real-pn end-message)
    (if fload-verbose*
        (progn
 	  (print-spaces fload-indent* *query-io*)
@@ -440,6 +323,8 @@ NOT USED BY ANYONE (oddly enough)
 	     (cond ((typep rt 'readtable)
 		    rt)
 		   (t (error "in-readtable: ~s is not a readtable" rt)))))
+	 ((readtablep name)
+	  name)
 	 (t
 	  (error "in-readtable: ~s is not the name of a readtable"
 		 name))))
@@ -448,156 +333,402 @@ NOT USED BY ANYONE (oddly enough)
    `(progn (in-package ,pkg)
 	   (in-readtable ,(or rt pkg))))
 
-;;;======================================================================
-;;; TO-SLURP datafuns for basic forms.  to-slurp's for other forms
-;;; are introduced when the forms are.
-;;;======================================================================
+(defvar hidden-slurp-tasks* !())
 
-(datafun to-slurp in-package
-   (defun :^ (e _)
-      (eval e)
-      false))
+;;; 'stream-init', if not false, is
+;;; a function to apply to the stream when it is opened.
+;;; The order of the slurp-tasks is irrelevant, and may change
+;;; as the process progresses.
+(defun file-slurp (pn slurp-tasks stream-init)   ;;;; states
+   (cond ((not (null slurp-tasks))
+	  (let ((post-file-transduce-hooks* !()))
+	     (with-open-file (s pn :direction ':input)
+		(cleanup-after-file-transduction
+		   (let (;;;;(fload-indent*  0)
+			 (now-loading*  false)
+			 (now-compiling* false)
+			 (now-slurping*  (cons pn slurp-tasks))
+			 (slurping-stack* (cons pn slurping-stack*))
+			 #+:excl (excl:*source-pathname* pn)
+			 #+:excl (excl:*record-source-file-info* nil)
+			 (*package* *package*)
+			 (*readtable* *readtable*)
+			 (slurp-states
+			    (mapcar
+			       (\\ (slurp-task)
+				  (funcall (Slurp-task-file->state-fcn
+						   slurp-task)
+					   pn))
+			       slurp-tasks))
+			 ;;; -- 'slurp-states' is a list of data
+			 ;;; structures, the same length as
+			 ;;; 'slurp-tasks'.  Each element of
+			 ;;; 'slurp-states' serves as a blackboard for
+			 ;;; the corresponding task.
+			 (vis-tasks
+			       (remove-if (\\ (k)
+					     (memq (Slurp-task-label
+						      k)
+						   hidden-slurp-tasks*))
+					  slurp-tasks)))
+		      (cond ((not (null vis-tasks))
+			     (file-op-message
+				 (format nil "Slurping ~s"
+					     (mapcar #'Slurp-task-label
+						     vis-tasks))
+				 pn false "...")))
+;;;;		      (cond ((equal slurped-pn*
+;;;;				    (->pathname "tezt-s.lisp"))
+;;;;			     (setq slurped-pn* pn slurp-tasks* slurp-tasks)
+;;;;			     (break "Slurping")))
+		      (cond (stream-init
+			     (funcall stream-init s)))
+		      (do ((form (read s false eof*) (read s false eof*))
+			   (tasks slurp-tasks)
+			   (states slurp-states))
+			  ((or (eq form eof*)
+			       (progn
+				  (multiple-value-setq
+					(tasks states)
+					(form-slurp form tasks states))
+				  (null tasks)))
+			   slurp-states)
+			(setq now-slurping*
+			      (cons pn tasks))
+;;;;			(format t "Slurped form ~s~%" form)
+			)
+		      (cond ((not (null vis-tasks))
+			     (file-op-message "...slurped" pn false ""))))))))
+	 (t !())))
 
-(datafun to-slurp in-readtable
-   (defun :^ (e _)
-      (eval e)
-      false))
+(defun forms-slurp (forms tasks states)
+      (do ((l forms (cdr l)))
+	  ((or (null l)
+	       (null tasks))
+	   (values tasks states))
+	 (multiple-value-setq (tasks states)
+	                      (form-slurp (car l) tasks states))))
 
-(datafun to-slurp defpackage in-package)
-(datafun to-slurp declaim in-package)
+;;; General slurpers take 3 args: the form, the task, and the slurp state
+;;; They return two values: the remaining tasks, and their states.
+(datafun-table general-slurp-handlers* general-slurper :size 50)
 
-(datafun to-slurp eval-when-slurping
-   (defun :^ (form _)
-      (dolist (e (cdr form))
-	 (eval e))
-      false))
+(defvar slurp-dbg* false)
 
-(defmacro needed-by-macros (&rest l)
-   `(eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-      ,@l))
+;;; Each element of 'slurp-tasks' is something like :macros, or :header-info
+;;; Handler returns t if the task should stop.  So 'form-slurp'
+;;; returns the tasks that should continue, plus their corresponding
+;;; states.
+(defun form-slurp (r slurp-tasks slurp-states)
+   (cond (slurp-dbg*
+	  (format *error-output*
+	     "Slurping ~s ~%  wrt tasks ~s~% and states ~s~%"
+	     r slurp-tasks slurp-states)))
+   (flet ((form-fcn-sym (e)
+	     (cond ((and (consp e)
+			(is-Symbol (car e)))
+		   (car e))
+		  (t false))))
+      (let ((continuing-tasks !())
+	    (continuing-states !())
+	    ;; -- tasks and states for which a handler has declare
+	    ;; "not done."  Once this happens no further handlers are tried
+	    ;; and the task/state pair will be returned by 'form-slurp'.
+	    (asym (form-fcn-sym r))
+	    (form r))
+	 (loop
+	   ;; Macro-expand until handled generally or
+	   ;; handled by all
+	   ;; At this point 'slurp-tasks' and 'slurp-states' are
+	   ;; those that remain unhandled after (zero or more)
+	   ;; attempts at macro expansion.
+	   (cond
+	     ((or (null slurp-tasks)
+		  (not asym))
+	      (cond (slurp-dbg*
+		     (format *error-output*
+			"form-slurp exits~a~a~%  "
+			(cond ((null slurp-tasks)
+			       "/Reason: no slurp tasks remain to figure out")
+			      (t ""))
+			(cond ((not asym)
+			       "/Reason: no asym")))))
+	      (setq slurp-tasks
+		    (nconc slurp-tasks continuing-tasks))
+	      (setq slurp-states
+		    (nconc slurp-states continuing-states))
+	      (cond (slurp-dbg*
+		     (format *error-output*
+			"Tasks still alive: ~s~% with states ~s~%"
+			slurp-tasks slurp-states)))
+	      (return (values slurp-tasks slurp-states)))
+	     (t
+	      (let ((h (href general-slurp-handlers*
+			     asym)))
+		 (cond (h
+			(cond (slurp-dbg*
+			       (format *error-output*
+				  "Got general slurp handler for ~s~%"
+				  asym)))
+			(multiple-value-bind
+				      (tl sl)
+				      (funcall h form slurp-tasks slurp-states)
+			   ;; Odd situation: Some specific
+			   ;; handler may have run before
+			   ;; the general one was found.
+			   (setq slurp-tasks
+				 (nconc tl continuing-tasks))
+			   (setq slurp-states
+				 (nconc sl continuing-states))
+			   (cond (slurp-dbg*
+				  (format *error-output*
+				     "form-slurp exits after form handled generally~%  Tasks still alive: ~s with states ~s~%"
+				     slurp-tasks slurp-states)))
+			   (return
+			      (values slurp-tasks slurp-states))))
+		       (t
+			(do ((tasks slurp-tasks (cdr tasks))
+			     (states slurp-states (cdr states))
+			     (unclear-tasks !())
+			     (unclear-states !()))
+			    ((null tasks)
+			     ;; We will try again after
+			     ;; macro-expansion --
+			     (setq slurp-tasks unclear-tasks)
+			     (setq slurp-states unclear-states))
+			   ;; Try to run handler --
+			   (let ((task (first tasks))
+				 (state (first states))
+				 (task-done false)
+				 (handled-by-default false)
+				 (handled-by-task false) h)
+			      (setq h (href (Slurp-task-handler-table task)
+					    asym))
+			      (cond ((not h)
+				     (setq h (Slurp-task-default-handler
+					      task))
+				     (cond (h
+					    (setq handled-by-default true)))))
+			      (cond (h
+				     (setq handled-by-task true)
+				     (setq task-done (funcall h form state))))
+			      (cond (handled-by-task
+				     (cond (slurp-dbg*
+					    (format *error-output*
+					       "Task ~s handled~a Done? ~s~%"
+					       task
+					       (cond (handled-by-default
+						      " [by default]")
+						     (t ""))
+					       task-done)))
+				     (cond ((not task-done)
+					    (on-list task
+						     continuing-tasks)
+					    (on-list state
+						     continuing-states))))
+				    (t
+				     (on-list task unclear-tasks)
+				     (on-list state unclear-states)))))
+			(cond ((and (not (null slurp-tasks))
+				    (macro-function asym))
+			       (setq form (macroexpand-1 form))
+			       (setq asym (form-fcn-sym form))
+			       (cond (slurp-dbg*
+				      (format *error-output*
+					 "Macro-expanding to ~s~%"
+					 form))))
+			      (t
+			       (setq slurp-tasks
+				     (nconc slurp-tasks
+					    continuing-tasks))
+                               (setq slurp-states
+				     (nconc slurp-states
+					    continuing-states))
+			       (cond (slurp-dbg*
+				      (format *error-output*
+					 "form-slurp exits with tasks ~s and states ~s still active~%"
+					 slurp-tasks
+					 slurp-states)))
+			       (return
+				   (values slurp-tasks
+					   slurp-states)))))))))))))
 
-(datafun to-slurp needed-by-macros eval-when-slurping)
+;;; The idea is that almost every slurp task will treat 'progn'
+;;; the same way, so we shouldn't have to create many replicas of
+;;; this pattern --
+(datafun general-slurper progn
+   (defun :^ (form tasks states)
+      (forms-slurp (cdr form) tasks states)))
 
-(datafun to-slurp eval-when
-   (defun :^ (form _)
+(datafun general-slurper prog1 progn)
+(datafun general-slurper prog2 progn)
+
+(defvar eval-slurp-task* false)
+(defvar eval-slurp-state* false)
+
+(datafun general-slurper eval-when-slurping
+   (defun :^ (forms tasks states)
+      (eval-forms-for-slurp-tasks (cdr forms) tasks states)))
+
+(datafun general-slurper eval-when
+   (defun :^ (form tasks states)
       (cond ((memq ':slurp-toplevel (cadr form))
-	     (dolist (e (cddr form))
-	        (eval e))
-	     false)
-	    (t true))))
+	     (eval-forms-for-slurp-tasks (cddr form) tasks states))
+	    ((memq ':compile-toplevel (cadr form))
+	     (forms-slurp (cddr form) tasks states))
+	    (t
+	     (values tasks states)))))
 
-(defmacro in-header (&body b)
-  `(progn ,@b))
+(defun eval-forms-for-slurp-tasks (forms tasks states)
+   (do ((fl forms (cdr fl))
+	(filter-forms !())
+	(eval-forms !()))
+       ((null fl)
+	(setq eval-forms (nreverse eval-forms))
+	;; If the filter-forms are missing, this is just a plain-
+	;; vanilla 'eval-when', and we assume the values returned
+	;; have nothing to do with whether some slurp tasks should cease.
+	(cond ((null filter-forms)
+	       (dolist (evf eval-forms)
+		  (eval evf))
+	       (values tasks states))
+	      (t
+	       (multiple-value-bind
+			 (selected-tasks their-states)
+			 (let ((selected-names
+				  (mapcan (\\ (ff) (list-copy (cdr ff)))
+					  filter-forms)))
+			    (let ((select-zip
+				     (mapcan
+				        (\\ (task state)
+					   (cond ((memq (Slurp-task-label task)
+							selected-names)
+						  (list (tuple task state)))
+						 (t !())))
+					tasks states)))
+			      (values (mapcar #'first select-zip)
+				      (mapcar #'second select-zip))))
+		  ;; Now we do something a little odd, which is to
+		  ;; evaluate exactly the same code for each task.
+		  ;; To keep this from being meaningless, the variables
+		  ;; eval-slurp-task* and eval-slurp-state* are bound to the
+		  ;; current task and state.
+		  (do ((stskl selected-tasks (rest stskl))
+		       (stl their-states (rest stl))
+		       ;; Being "selected" means a task can be eliminated.
+		       ;; The unselected ones must therefore always
+		       ;; continue. --
+		       (continuing-tasks
+			   (set-difference tasks selected-tasks))
+		       (continuing-states
+			   (set-difference states their-states)))
+		      ((null stskl)
+		       (values continuing-tasks continuing-states))
+		    (let ((eval-slurp-task* (car stskl))
+			  (eval-slurp-state* (car stl)))
+		       (dolist (ev-form eval-forms)
+			  (let (val-matters val)
+			     (cond ((car-eq ev-form ':stop-slurp-if)
+				    (setq val-matters true)
+				    (setq val (eval (cadr ev-form))))
+				   (t
+				    (setq val-matters false)
+				    (setq val (eval ev-form))))
+;;;;			  (multiple-value-bind
+;;;;			               (val-matters val)
+;;;;				       (cond ((car-eq ev-form ':stop-slurp-if)
+;;;;					      (values true
+;;;;						      (eval (cadr ev-form))))
+;;;;					     (t
+;;;;					      (values false
+;;;;						      (eval ev-form))))
+			     (cond ((not (and val-matters val))
+				    ;; If a :stop-slurp-if form
+				    ;; returns true, the task is done
+				    ;; Otherwise,we keep it on
+				    ;; 'continuing-tasks'.
+				    (on-list eval-slurp-task*
+					     continuing-tasks)
+				    (on-list eval-slurp-state*
+					     continuing-states)))))))))))
+     (cond ((car-eq (car fl) ':slurp-filter)
+	    (on-list (car fl) filter-forms))
+	   (t
+	    (on-list (car fl) eval-forms)))))
 
-;;; Evaluate if encountered in header, without terminating header.
-(datafun to-slurp in-header eval-when-slurping)
+;;; This has no effect when evaluated.
+(defmacro :slurp-filter (&whole e &rest _)
+   `',e)
 
-(defmacro end-header (&rest _)
-   '(values))
-	 
-(datafun to-slurp end-header
-   (defun :^ (form _)
-      (cond ((and (memq ':continue-slurping (cdr form))
-		  (eq slurping-how-much* ':at-least-header))
-	     (setq slurp-whole-file* true)))
-      (supporting-files-in)
-      (cond ((memq ':no-compile (cdr form))
-	     (setf (Load-progress-rec-whether-compile slurping-lprec*)
-		   ':source)))
-      (cond (end-header-dbg*
-	     (format *error-output*
-		     "Executing ~s~%  slurp-whole-file* = ~s whether-compile = ~s~%"
-		     form
-		     slurp-whole-file*
-		     (Load-progress-rec-whether-compile slurping-lprec*))))
-      true))
-
-(defmacro slurp-whole-file ()
-   (format nil "Whole file ~s will be slurped" now-slurping*))
-
-(datafun to-slurp slurp-whole-file
-   (defun :^ (_ _)
-;;;;     (breakpoint slurp-whole-file-to-slurp
-;;;;	"slurping-how-much* = " slurping-how-much*)
-     (cond ((not (eq slurping-how-much* ':header-only))
-	    (setq slurp-whole-file* true)))
-     (supporting-files-in)
-     false))
-
-(defun supporting-files-in ()
-   (values)
-;;;;	    (dolist (rtsupp
-;;;;			(Load-progress-rec-run-time-depends-on
-;;;;			 slurping-lprec*))
-;;;;	       (format *error-output*
-;;;;		       "Not slurping ~s~%" rtsupp)
-;;;;	       (pathname-slurp rtsupp false ':whole-file)
-;;;;	      )
-;;;;	    (dolist (ctsupp
-;;;;			(Load-progress-rec-compile-time-depends-on
-;;;;			     slurping-lprec*))
-;;;;	       (pathname-fload ctsupp false false))
-	    )
-
-(defun forms-slurp (explist slurp-if-substantive)
-     (let ((substantive false))
-        (block through-forms
-	   (dolist (exp explist)
-	      (cond ((form-slurp exp slurp-if-substantive)
-		     (setq substantive true)))
-	      (cond ((and substantive (not slurp-if-substantive))
-		     (return-from through-forms)))))
-	substantive))
-
-(datafun to-slurp progn
-  (defun (e slurp-if-substantive)
-     (forms-slurp (cdr e) slurp-if-substantive)))
-
-(datafun to-slurp prog1    progn)
-(datafun to-slurp prog2    progn)
-
-;;; Maybe evaluate 'e' and report that it was substantive.
-(eval-when (:compile-toplevel :load-toplevel :execute)
-   (defun slurp-eval (e slurp-if-substantive)
-      (cond (slurp-if-substantive
-	     (eval e)))
-      true))
-
-(datafun to-slurp defmacro #'slurp-eval)
-(datafun to-slurp cl:defmacro #'slurp-eval)
-
-(datafun to-slurp defsetf  #'slurp-eval)
-
-(datafun to-slurp defstruct #'slurp-eval)
-
-(datafun to-slurp defvar
-   (defun :^ (form _)
-      ;;;;(format *error-output* "defvar-ing ~s~%" (cadr form))
-      (eval `(defvar ,(cadr form)))
-      true))
-
-(datafun to-slurp defconstant
-   (defun :^ (form slurp-if-substantive)
-      (cond (slurp-if-substantive
-	     (cond ((not (boundp (cadr form)))
-		    (eval form)))))
-      true))
-
-(datafun to-slurp with-packages-unlocked
-   (defun :^ (form slurp-if-substantive)
+(datafun general-slurper with-packages-unlocked
+   (defun :^ (form tasks states)
       (with-packages-unlocked
-	 (forms-slurp (cdr form) slurp-if-substantive))))
+	 (forms-slurp (cdr form) tasks states))))
 
-(datafun to-slurp subr-synonym #'slurp-eval)
+(defun slurp-eval (e _)
+   (eval e)
+   false)
 
-(datafun to-slurp datafun
-  (defun :^ (e slurp-if-substantive)
-    (cond ((and slurp-if-substantive
-		(eq (cadr e) 'attach-datafun))
-	   (eval e)))
-    true))
+(datafun general-slurper in-package
+   (defun :^ (form tasks states)
+      (eval form)
+      (values tasks states)))
 
-;;; For debugging:
+;;; For use by slurp tasks 
+(defun slurp-ignore (_ _) false)
 
-(defun filespec-lprec (fs)
-   (place-load-progress-rec (car (filespecs->ytools-pathnames fs))))
+(defun pathname-source-version (pn)
+  (cond ((is-Pseudo-pathname pn) false)
+	(t
+	 (let ((rpn (cond ((is-Pathname pn) pn)
+			  (t (pathname-resolve pn false)))))
+	    (let ((pn-type (Pathname-type rpn)))
+	       (cond (pn-type
+		      (cond ((equal pn-type obj-suffix*)
+			     (get-pathname-with-suffixes
+				rpn source-suffixes*))
+			    ((probe-file rpn)
+			     rpn)
+			    (t false)))
+		     ((probe-file rpn) rpn)
+		     (t (get-pathname-with-suffixes
+			   rpn source-suffixes*))))))))
+
+(defun pathname-object-version (pn only-if-exists)
+   (let ((ob-pn
+	    (pathname-find-associate pn 'obj-version obj-suffix*
+				     only-if-exists)))
+      (cond ((and (not only-if-exists)
+		  (not ob-pn))
+	     (cerror "I will treat it as :unknown"
+		     "Pathname has no object version: ~s" ob-pn)
+	     ':none)
+	    (t ob-pn))))
+
+;;; pn must be a resolved Pathname, not a YTools Pathname.
+(defun get-pathname-with-suffixes (pn suffixes)
+   (do ((sfl suffixes (cdr sfl))
+	(found false)
+	newpn)
+       ((or found (null sfl))
+	(and found newpn))
+      (setq newpn (merge-pathnames
+		     (make-Pathname :type (car sfl))
+		     pn))
+      (cond ((probe-file newpn)
+	     (setq found true)))))
+
+(defconstant can-get-write-times*
+    #.(not (not (file-write-date
+		    (concatenate 'string ytools-home-dir* "files.lisp")))))
+
+(defun pathname-write-time (pname)
+  (setq pname (pathname-resolve pname false))
+  (and can-get-write-times*
+       (probe-file pname)
+       (file-write-date pname)))
+
+
+
+
+

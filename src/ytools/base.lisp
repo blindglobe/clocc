@@ -1,6 +1,6 @@
-;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools-*-
+;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 1.17 2004/10/02 19:36:47 airfoyle Exp $
+;;;$Id: base.lisp,v 1.18 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -8,8 +8,13 @@
 ;;; License.  See file COPYING for details.
 
 
+
+#+allegro (eval-when (:compile-toplevel :load-toplevel :execute)
+	     (shadowing-import 'excl:*current-case-mode*))
+#-allegro (defvar *current-case-mode* ':case-insensitive-upper)
+
 (cl:eval-when (:compile-toplevel :load-toplevel :execute)
-   (shadow '(#:defun #:defmacro #:eval-when)))
+   (shadow '(#:defun #:defmacro #:eval-when #:defmethod)))
 
 ;;; These have to be separate because if the following is
 ;;; *read* before the 'shadow' is *evaluated*, then there will
@@ -20,20 +25,23 @@
 	     make-eq-hash-table table-entry href walk-table clear-table
 	     make-Array make-Symbol
 	     Array-dimension Array-dimensions
-	     is-Vector is-Array is-Symbol Symbol-name Symbol-plist
-	     is-Keyword is-String memq assq nodup =<
+	     is-Vector is-Array is-Symbol
+             Symbol-name Symbol-plist Symbol-function Symbol-value
+	     is-Keyword is-String memq assq nodup =< retain-if
 	     is-Pair is-cons list-copy is-list
 	     tuple pair head tail nthrest nthtail left right
 	     ;;;; one two three four five six seven eight nine ten
 	     is-Char is-Integer is-Number
 	     is-Float is-Single-float is-Double-float
 	     is-Fixnum is-Ratio is-sublist is-whitespace
-	     is-Stream list->values values->list lastelt len string-length
+	     is-Stream list->values values->list lastelt len
+             string-length string-concat
 	     build-symbol symno* true false keyword-package*
 	     eval-when condense
 	     assoc= alist-entry alist-entry-set alref. alref
 	     include-if series car-eq take drop occurs-in empty-list
-	     on-list off-list --)))
+	     on-list on-list-if-new off-list -- loading-bogus
+	     *current-case-mode*)))
 
 ;;;;(eval-when (:compile-toplevel)
 ;;;;   (format t "shadow-export done"))
@@ -67,14 +75,33 @@
 
 (cl:defun underscores-elim (args)
    (let ((realargs '())
-	 (new-ignores '()))
+	 (new-ignores '())
+	 (keyargs nil))
       (dolist (a args)
-	 (cond ((eq a '_)
-		(let ((new (gensym)))
-		   (push new new-ignores)
-		   (push new realargs)))
-	       (t
-		(push a realargs))))
+	 (labels ((got-underscore ()
+		   (let ((new (gensym)))
+		      (push new new-ignores)
+		      (push (subst new '_ a)
+			    realargs))))
+	    (cond ((eq a '_)
+		   (got-underscore))
+		  ((consp a)
+		   (cond (keyargs
+			  (cond ((or (eq (car a) '_)
+				     (and (consp (car a))
+					  (eq (cadr (car a))
+					      '_)))
+				 (got-underscore))
+				(t
+				 (push a realargs))))
+			 ((eq (car a) '_)
+			  (got-underscore))
+			 (t
+			  (push a realargs))))
+		  (t
+		   (cond ((eq a '&key)
+			  (setq keyargs t)))
+		   (push a realargs)))))
       (values (reverse realargs)
 	      new-ignores)))
 
@@ -96,6 +123,22 @@
    (multiple-value-bind (args body)
 			(ignore-smooth args body)
       `(cl:defmacro ,name ,args ,@body)   ))
+
+(cl:defmacro defmethod (&whole dm-exp name &rest stuff)
+   (let ((qualifiers '())
+	 args body)
+      (do ((sl stuff (cdr sl)))
+	  ((or (null sl)
+	       (listp (car sl)))
+	   (cond ((null sl)
+		  (error "Unintelligible: ~s" dm-exp))
+		 (t
+		  (setq args (car sl))
+		  (setq body (cdr sl)))))
+	(push (car sl) qualifiers))
+      (multiple-value-bind (args body)
+	                   (ignore-smooth args body)
+	 `(cl:defmethod ,name ,@(reverse qualifiers) ,args ,@body))))
 
 (cl:defmacro \\ (args &rest body)
    (multiple-value-bind (args body)
@@ -151,15 +194,18 @@
 	  (intern "!"))
 	 (t
 	  (labels ((nonmacro ()
-		      (cond ((member ch '(#\space #\tab #\newline #\return #\linefeed
+		      (cond ((member ch '(#\space #\tab #\newline
+					  #\return #\linefeed
 					  #\page #\( #\))
 				     :test #'char=)
 			     (intern "!"))
 			    (t
-			     ;; if any problems here, could try UNREAD-CHAR + (VALUES)
+			     ;; if any problems here, could try
+			     ;; UNREAD-CHAR + (VALUES)
 			     (values
 			      (intern (concatenate 'string
-					    "!" (string (read srm t nil t)))))))))
+					    "!"
+					    (string (read srm t nil t)))))))))
 	     (let ((e (assoc ch excl-handlers* :test #'eq)))
 		(cond (e
 		       (let ((handler
@@ -289,6 +335,8 @@
 (subr-synonym is-Symbol symbolp)
 (subr-synonym Symbol-name symbol-name)
 (subr-synonym Symbol-plist symbol-plist)
+(subr-synonym Symbol-function symbol-function)
+(subr-synonym Symbol-value symbol-value)
 
 (subr-synonym is-Keyword keywordp)
 
@@ -305,6 +353,8 @@
 (defun nodup (l &key (test #'eql))
    (declare (type list l))
    (remove-duplicates l :test test))
+
+(subr-synonym retain-if remove-if-not)
 
 ;;;;   (do ((tl (reverse l) (cdr tl))
 ;;;;	(res '()))
@@ -375,6 +425,13 @@
 
 (defun len (l) (length (the list l))   )
 (defun string-length (s) (length (the string s)))
+
+(defun string-concat (&rest vl)
+  (apply #'concatenate 'string vl))
+
+(define-compiler-macro string-concat (&rest vl)
+   `(concatenate 'string ,@(mapcar (\\ (v) `(the string ,v))
+                                   vl)))
 
 ;; Macro for building new symbols.
 ;; (BUILD-SYMBOL [(:package <p>)] -specs-) creates a symbol
@@ -560,6 +617,8 @@
 
 ;;;;(set-dispatch-macro-character #\! #\( #'lpar-exclmac ytools-readtable*)
 
+;;; Function will be called after char has been read.  'args'
+;;; are stream + the character.
 (defmacro def-excl-dispatch (char args &body b)
    (multiple-value-bind (b rt)
                         (let ((tl (member ':readtable b)))
@@ -618,8 +677,40 @@
 
 (def-excl-dispatch #\" (srm _)
    (unread-char #\" srm)
-   (let ((fstr (read srm)))
-      (format nil fstr)))
+   (let* ((fstr (read srm))
+	  (slen (length fstr)))
+      (do ((squig (position #\~ fstr)
+		  (position #\~ fstr :start postskip))
+	   (prev 0 postskip)
+	   postskip
+	   (seg "" "")
+	   (res ""
+		(concatenate 'string
+		             res (subseq fstr prev squig) seg)))
+	  ((or (null squig)
+	       (>= squig (- slen 1)))
+	   (concatenate 'string res
+		    (subseq fstr prev
+			    (or squig slen))))
+	(let ((ch (elt fstr (+ squig 1))))
+	   (cond ((char= ch #\~)
+		  (setq seg "~")
+		  (setq postskip (+ squig 2)))
+		 ((char= ch #\%)
+		  (setq seg (string #\Newline))
+		  (setq postskip (+ squig 2)))
+		 ((is-whitespace ch)
+		  (setq postskip (position-if-not #'is-whitespace fstr
+					      :start (+ squig 2)))
+		  (cond ((not postskip)
+			 ;; This shouldn't happen, so do something
+			 ;; inelegant to avoid trouble
+			 (setq postskip slen))))
+		 (t
+		  (setq seg "~")
+		  (setq postskip (+ squig 1))))))))
+	 
+;;;;(format nil fstr)))
 
 ;;;;(set-dispatch-macro-character #\! #\" #'quote-funmac ytools-readtable*)
 
@@ -689,6 +780,7 @@
 	  (or (occurs-in x (car tr))
 	      (occurs-in x (cdr tr))))))
 
+#|
 (def-excl-dispatch #\? (srm _)
   (labels ((read-like-sym (chars)
 	      (let ((*package* keyword-package*))
@@ -719,8 +811,12 @@
 			     (read-char srm)))
 			 (t
 			  (error "Package not found: ~s" pkg-name))))))))))
+|#
 
 (defmacro on-list (x^ l^) `(push ,x^ ,l^))
+
+(defmacro on-list-if-new (&rest whatever) `(pushnew ,@whatever))
+;;;;(defmacro on-list-if-new (x^ l^) `(pushnew ,x^ ,l^))
 
 (defmacro off-list (l^) `(pop ,l^))
 
@@ -733,3 +829,8 @@
        (defmacro -- (x) `(rv ,x))))
 
 (defun rv (v) v)
+
+(defmacro loading-bogus (&rest whatever)
+   `(eval-when (:compile-toplevel :load-toplevel)
+       (error "Loading bogus file: ~s"
+	      ',whatever)))

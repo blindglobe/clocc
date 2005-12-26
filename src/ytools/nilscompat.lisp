@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: nilscompat.lisp,v 1.2 2004/03/10 04:41:23 airfoyle Exp $
+;;;$Id: nilscompat.lisp,v 1.3 2005/12/26 00:15:01 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -14,7 +14,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(dreverse symbol->string symbol->fun
 	     remove1q dremove1 dremove1q adjoinq complementq
-	     lrecord string-concat selq nodupq prop is-fun-name one-value
+	     lrecord selq nodupq prop is-fun-name one-value
 	     string-elt
 ;;;;	     fx+ fx- fx* fx/ fx= fx< fx> fx=< fx>=
 ;;;;	     fl+ fl- fl* fl/ fl= fl< fl> fl=< fl>=
@@ -39,13 +39,6 @@
 (defun nodupq (l) (remove-duplicates (the list l) :test #'eq)   )
 
 (subr-synonym lrecord list)
-
-(defun string-concat (&rest vl)
-  (apply #'concatenate 'string vl))
-
-(define-compiler-macro string-concat (&rest vl)
-   `(concatenate 'string ,@(<# (\\ (v) `(the string ,v))
-			       vl)))
 
 (defmacro selq (&rest stuff) `(case ,@stuff))
 

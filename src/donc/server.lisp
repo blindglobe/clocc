@@ -155,7 +155,8 @@ code.
 	     "*WAIT-TIME*"  ;; how long to sleep when nothing's going on
 	     "*DEBUG*"  ;; set to T to get debug output
 	     "*IGNORE-ERRS-P*"  ;; set to nil to stop catching errors
-
+	     "LOG-ERR" ;; function for reporting ignored errors
+	     
 	     ;; functions to use in the evaler
 	     "BIND"
 	     "UNBIND"
@@ -176,7 +177,17 @@ code.
 (defvar *ignore-errs-p* t) ;; [***] set to nil for serious debugging
 (defmacro ignore-errs (&rest forms)
   `(flet ((f () .,forms))
-     (if *ignore-errs-p* (ignore-errors (f)) (f))))
+     (if *ignore-errs-p*
+	 ;; it's dangerous to ignore errors without even logging
+	 (multiple-value-bind
+	   (ans err)
+	   (ignore-errors (multiple-value-list (f)))
+	   (when err (log-err (format nil "ignore error ~a" err)))
+	   (values-list ans))
+       (f))))
+
+(defun log-err (string) ;; [***] meant to be replaced by application
+  (format t "~%~a" string))
 
 (defvar *debug* nil) ;; set to T for debugging output [***]
 (defvar *debug2* nil) ;; more selective debugging
@@ -495,7 +506,7 @@ code.
        do (vector-push-extend (code-char (aref *byte-io-vector* i)) (input c))
        finally
        (let ((*debug* *debug2*))(dbg "read-byte-sequence read ~A bytes" i))
-       (when (member (socket:SOCKET-STATUS stream 0) '(:eof :append))
+       (when (member (socket:SOCKET-STATUS stream 0) '(:eof #+ignore :append))
 	 (close stream))
        (incf (slot-value c 'nchars) i)
        (setf (slot-value c 'new-input) t)

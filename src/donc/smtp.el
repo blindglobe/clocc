@@ -373,7 +373,7 @@
 ;; you can set this before you start to the name of your adr file 
 (defvar *adr-file* ".smtp.adr")
 ;; or if you want to use one not in your homedir then set this one 
-(defvar *user-adr-file* nil)
+(defvar *user-adr-file* "/root/smtp/don/.smtp.adr")
 
 (defvar from-line-suffix "")
 ;; or something like " (Don Cohen)"
@@ -485,9 +485,68 @@
 (defun find-recipients (min max)
   (setq smtpmail-address-buffer (generate-new-buffer "*smtp-mail*"))
   (prog1 (ignore-errors
-	  (smtpmail-deduce-address-list (current-buffer) min max))
+	  (xxsmtpmail-deduce-address-list (current-buffer) min max))
     (kill-buffer smtpmail-address-buffer)))
 
+;; taken from smtpmail.el, seems to have disappeared in more recent version
+(defun xxsmtpmail-deduce-address-list (smtpmail-text-buffer header-start header-end)
+  "Get address list suitable for smtp RCPT TO: <address>."
+  (require 'mail-utils)  ;; pick up mail-strip-quoted-names
+    
+  (unwind-protect
+      (save-excursion
+	(set-buffer smtpmail-address-buffer) (erase-buffer)
+	(let
+	    ((case-fold-search t)
+	     (simple-address-list "")
+	     this-line
+	     this-line-end
+	     addr-regexp)
+	  (insert-buffer-substring smtpmail-text-buffer header-start header-end)
+	  (goto-char (point-min))
+	  ;; RESENT-* fields should stop processing of regular fields.
+	  (save-excursion
+	    (if (re-search-forward "^Resent-\\(to\\|cc\\|bcc\\):" header-end t)
+		(setq addr-regexp "^Resent-\\(to\\|cc\\|bcc\\):")
+	      (setq addr-regexp  "^\\(To:\\|Cc:\\|Bcc:\\)")))
+
+	  (while (re-search-forward addr-regexp header-end t)
+	    (replace-match "")
+	    (setq this-line (match-beginning 0))
+	    (forward-line 1)
+	    ;; get any continuation lines
+	    (while (and (looking-at "^[ \t]+") (< (point) header-end))
+	      (forward-line 1))
+	    (setq this-line-end (point-marker))
+	    (setq simple-address-list
+		  (concat simple-address-list " "
+			  (mail-strip-quoted-names (buffer-substring this-line this-line-end))))
+	    )
+	  (erase-buffer)
+	  (insert-string " ")
+	  (insert-string simple-address-list)
+	  (insert-string "\n")
+	  (subst-char-in-region (point-min) (point-max) 10 ?  t);; newline --> blank
+	  (subst-char-in-region (point-min) (point-max) ?, ?  t);; comma   --> blank
+	  (subst-char-in-region (point-min) (point-max)  9 ?  t);; tab     --> blank
+
+	  (goto-char (point-min))
+	  ;; tidyness in case hook is not robust when it looks at this
+	  (while (re-search-forward "[ \t]+" header-end t) (replace-match " "))
+
+	  (goto-char (point-min))
+	  (let (recipient-address-list)
+	    (while (re-search-forward " \\([^ ]+\\) " (point-max) t)
+	      (backward-char 1)
+	      (setq recipient-address-list (cons (buffer-substring (match-beginning 1) (match-end 1))
+						 recipient-address-list))
+	      )
+	    (setq smtpmail-recipient-address-list recipient-address-list))
+
+	  )
+	)
+    )
+  )
 
 ;; already called from inside save-excursion
 (defun replace-call-to-sendmail (errbuf resend-to-addresses)
@@ -529,7 +588,8 @@
 		       "/usr/lib/sendmail")
 		     nil errbuf nil "-oi" ;; oi related to dots
 		     *sendmail-config*
-		     "-O" (concat "DoubleBounceAddress=" (user-login-name))
+		     ;; postfix doesn't like this arg
+		     ;; "-O" (concat "DoubleBounceAddress=" (user-login-name))
 		     "-f" sender
 		     (append
 		      (if (null mail-interactive)
@@ -584,6 +644,8 @@
 ;; modified from
 ;; /usr/local/lib/xemacs-21.1.14/xemacs-packages/lisp/vm/vm-reply.el
 ;; changes marked with "Don"
+;; Friday 2005/09/09 RH8.0 errors loading vm-reply from this symbol
+(or (boundp 'vm-fsfemacs-mule-p) (setf vm-fsfemacs-mule-p nil))
 (require 'vm-reply) ;; otherwise this is overwritten when we first reply.
 (defun vm-do-reply (to-all include-text count)
     (let ((mlist (vm-select-marked-or-prefixed-messages count))

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: repeat.lisp,v 2.2 2005/12/29 17:45:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -533,7 +533,8 @@
 			 alist)))))))
 
 (defun repeat-=-analyze (v)
-   (let ((var (car v))
+   (let ((var (cond ((eq (car v) '_) (gensym))
+                    (t (car v))))
 	 (alist
 	    (cons (make-Rep-var-prop 'init (caddr v) 2)
 		  (keyword-args->alist

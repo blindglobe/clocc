@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: tracearound.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: tracearound.lisp,v 2.2 2005/12/30 19:16:24 airfoyle Exp $
 
 (depends-on %module/ ytools %ytools/ nilscompat)
 
@@ -179,14 +179,14 @@
 		(out (:to *query-io*) "Already on: " name t))
 	       (t
 		(!= active-trace-arounds* (cons name *-*))
-		(set (trace-blocker-sym name) false))))
+		(!= (Symbol-value (trace-blocker-sym name)) false))))
       active-trace-arounds*))
 
 (defun trace-around-off (names)
    (repeat :for ((name :in names))
       (cond ((is-Symbol name)
 	     (cond ((memq name active-trace-arounds*)
-		    (set (trace-blocker-sym name) true)
+		    (!= (Symbol-value (trace-blocker-sym name)) true)
 		    (!= active-trace-arounds* (dremove1q name *-*))
 		    (out (:to *query-io*)
 			 name " deactivated" t))
@@ -207,7 +207,7 @@
 	  (format *error-output* "Trace-around: ~s~%" name)
 	  (!= all-trace-arounds* (cons name *-*))
 	  (!= active-trace-arounds* (cons name *-*))
-	  (set sym false)
+	  (!= (Symbol-value sym) false)
 	  true)
 	 (t
 	  (not (eval sym)))))

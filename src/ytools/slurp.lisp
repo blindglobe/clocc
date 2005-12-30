@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: slurp.lisp,v 2.2 2005/12/30 19:16:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -235,7 +235,7 @@ after YTools file transducers finish.")
 
 (defmacro cleanup-after-file-transduction (&body b)
    `(unwind-protect (progn ,@b)
-       (dolist (h (nreverse post-file-transduce-hooks*))
+       (dolist (h post-file-transduce-hooks*)
 	  (funcall h))))
 
 ;;; Returns three values: filespecs, flags, and readtable.

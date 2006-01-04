@@ -2,6 +2,15 @@
 
 Changes:
 
+Jan 4, 2006
+-----------
+o Add some support for parsing logical operations that have spaces
+  around the dots and the operation, like ". AND   ."
+
+o We were not correctly processing initialization of string arrays in
+  data statements.  This was noted in Bug 1396221 "f2cl fails on
+  TOMS-717 translation".  I think this is fixed now.
+
 Jul 16, 2005
 ------------
 

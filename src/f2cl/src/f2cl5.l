@@ -990,6 +990,13 @@
 			(push item new-saves)
 			(dolist (i inits)
 			  (push i new-data))))))
+	      ((and (listp (second item))
+		    (eq 'f2cl-init-string (first (second item))))
+	       ;; Initializing an array of strings.  We don't do
+	       ;; anything special right now.
+	       (push item new-saves)
+	       (dolist (i (find-inits (first item)))
+		 (push i new-data)))
 	      (t
 	       ;; Not an array
 	       (push item new-saves))))
@@ -1409,10 +1416,15 @@
 				  init
 				(declare (ignore ido))
 				`(data-implied-do ,loop ,(get-dims var) ,(get-types var)
-				   ,vals)))
+						  ,vals)))
+			     ((eq 'replace (first init))
+			      ;; These are initialized by f2cl-init-string (I hope).
+			      nil)
 			     (t
 			      init))))
 		   *data-init*))
+     ;;(format t "*data-init* after : ~S~%" *data-init*)
+     (setf *data-init* (delete nil *data-init*))
      ;;(format t "*data-init* after : ~S~%" *data-init*)
      
      (setq arglist (mapcar #'check-reserved-lisp-names arglist))
@@ -1502,15 +1514,15 @@
      ;;(format t "after opt int:~%~A~%" prog-bit)
      ;;(format t "opt prog = ~%~S~%" prog-bit)
      ;;(format t "*save_vbles* = ~a~%" *save_vbles*)
-     ;;(format t "*data-init*  = ~a~%" *data-init*)
-     ;;(format t "save-inits = ~a~%" save-inits)
+     ;;(format t "*data-init* = ~S~%" *data-init*)
+     ;;(format t "save-inits  = ~S~%" save-inits)
 
      (when *enable-merging-data-and-save-init*
        (multiple-value-setq (save-inits *data-init*)
 	 (merge-data-and-save-inits save-inits *data-init*)))
      
-     ;;(format t "new *data-init*  = ~a~%" *data-init*)
-     ;;(format t "new save-inits = ~a~%" save-inits)
+     ;;(format t "new *data-init* = ~S~%" *data-init*)
+     ;;(format t "new save-inits  = ~S~%" save-inits)
      
      ;;(format t "prog-bit = ~a~%" prog-bit)
 
@@ -1798,7 +1810,7 @@
 	      (create-sym-macros)
 	    (setf prog-bit `(let ,sym-lets
 			      (symbol-macrolet ,sym-macs ,prog-bit)))))
-	
+
 	;; Handle entry points.
 	(let* ((defun (if *entry-points* 'labels 'defun))
 	       (defun-name (if *entry-points*
@@ -1914,7 +1926,7 @@
 		       (eq (car type) 'character))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return `(,vble_name ,
-				(make-char-init (car decl) type)))))
+				(make-char-init (car decl) type init-val)))))
 		 ((eq type 'array)
 		  ;;(format t "array type-clauses = ~S~%" (cdar type-clauses))
 		  ;;(format t "array decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
@@ -2169,7 +2181,7 @@
 							 '(*)))
 			    ,(decl-bounds (rest decl))) ,(car decl)))))))
 
-(defun make-char-init (decl type)
+(defun make-char-init (decl type &optional init)
   (cond ((equal (cadr type) '(*))	; unspecified length spec
 	 ;;(format t "make-char-init unspecified length spec (*)~%")
 	 "")
@@ -2189,7 +2201,7 @@
 				       `(+ 1 (- ,hi ,lo)))))
 			     (remove '|,| (rest decl)))))
 	   ;;(format t "dims = ~A~%" dims)
-	   `(f2cl-init-string ,dims ,(cdr type))))))
+	   `(f2cl-init-string ,dims ,(cdr type) ,init)))))
 
 
 (defun get-implicit-type (vble)
@@ -3155,8 +3167,24 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.130 2005/07/26 12:45:53 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.131 2006/01/04 17:53:40 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.131  2006/01/04 17:53:40  rtoy
+;;; We were not correctly processing intialization of string arrays in
+;;; data statements.
+;;;
+;;; src/f2cl1.l:
+;;; o In PARSE-DATA1, return the entire list of initializers instead of
+;;;   just the first, in case we have an array of initializers.
+;;;
+;;; src/f2cl5.l:
+;;; o In MERGE-DATA-AND-SAVE-INITS, we need to recognize the
+;;;   initialization of strings and such.  We don't do anything special
+;;;   right now, like we do for arrays of numbers.
+;;; o In INSERT-DECLARATIONS, we need to handle the case of REPLACE in the
+;;;   *data-init*'s.  We assume it's been handled somewhere else, so
+;;;   there's nothing to do here.
+;;;
 ;;; Revision 1.130  2005/07/26 12:45:53  rtoy
 ;;; Oops.  Need to make the declaration anyway because we need to figure
 ;;; out the type of the variable.

@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2005/07/26 12:37:15 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/04 17:53:40 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -2228,8 +2228,8 @@ FILENAME                 File containing Fortran code
 		  ;;
 		  ;; FIXME: We should probably do this when we declare
 		  ;; the array instead.
-		  `(replace ,(check-reserved-lisp-names (first v))
-		            ,(first l)))
+		  `(replace ,(check-reserved-lisp-names (first v)) ,l)
+		  )
 		 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
 			(null (rest v)))
 		  `(replace ,(check-reserved-lisp-names (first v))
@@ -2664,8 +2664,24 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.146 2005/07/26 12:37:15 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.147 2006/01/04 17:53:40 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.147  2006/01/04 17:53:40  rtoy
+;;; We were not correctly processing intialization of string arrays in
+;;; data statements.
+;;;
+;;; src/f2cl1.l:
+;;; o In PARSE-DATA1, return the entire list of initializers instead of
+;;;   just the first, in case we have an array of initializers.
+;;;
+;;; src/f2cl5.l:
+;;; o In MERGE-DATA-AND-SAVE-INITS, we need to recognize the
+;;;   initialization of strings and such.  We don't do anything special
+;;;   right now, like we do for arrays of numbers.
+;;; o In INSERT-DECLARATIONS, we need to handle the case of REPLACE in the
+;;;   *data-init*'s.  We assume it's been handled somewhere else, so
+;;;   there's nothing to do here.
+;;;
 ;;; Revision 1.146  2005/07/26 12:37:15  rtoy
 ;;; Don't proclaim *readtable* as special, because it's already in the CL
 ;;; package and special.  (For sbcl.)

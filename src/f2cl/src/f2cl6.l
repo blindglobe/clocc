@@ -300,16 +300,18 @@
 ;------------------------------------------------------------------------------
 
 (defun parse-logl-op (inport outport)
-   (prog (str nxt-char logl-op)
-      (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
-      (if (or (member nxt-char `(eof #\space #\' #\.)) 
+  (prog (str nxt-char logl-op)
+      ;; Skip over whitespace in case the code has whitespace
+      ;; surrounding the logical operator, like "ZERO. AND . ONE"
+      (setq nxt-char (peek-char t inport nil 'eof #+broken-peek-char t))
+      (if (or (member nxt-char `(eof #+nil #\space #\' #\.)) 
               (digit-char-p nxt-char))
           (and (write-char '#\. outport)
                (return)))
       (setq str (make-string-output-stream))
       loop
         (write-char (read-char inport nil 'eof t) str)
-        (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
+        (setq nxt-char (peek-char t inport nil 'eof #+broken-peek-char t))
         (if (and (not (eql nxt-char 'eof)) 
                       (char/= nxt-char `#\.)) (go loop))
       (cond ((setq str (get-output-stream-string str)
@@ -605,8 +607,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.38 2004/08/11 15:53:31 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.39 2006/01/04 17:39:56 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.39  2006/01/04 17:39:56  rtoy
+;;; src/f2cl6.l:
+;;; o Skip over whitespace when parsing logical operations.  This is meant
+;;;   to handle things like "ZERO. AND . ONE", which Fortran says is the
+;;;   same as "ZERO .AND. ONE".
+;;;
+;;; val/tst-parse.f:
+;;; o Test file for parsing logical operations with spaces.
+;;;
 ;;; Revision 1.38  2004/08/11 15:53:31  rtoy
 ;;; This bit of Fortran code
 ;;;

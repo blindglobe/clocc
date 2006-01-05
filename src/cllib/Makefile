@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.25 2005/06/27 18:07:23 sds Exp $
+# $Id: Makefile,v 2.26 2006/01/05 23:03:22 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -30,18 +30,18 @@ image-script:	image-script$(DUMPEXT)
 endif
 
 image$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(BASE))
-	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image
+	$(RUNLISP) $(patsubst %,-i %,$^) -d image
 
 image-net$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(NET))
-	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image-net
+	$(RUNLISP) $(patsubst %,-i %,$^) -d image-net
 
 image-script$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(SCRIPT))
-	$(TOP)/bin/run-lisp $(patsubst %,-i %,$^) -d image-script
+	$(RUNLISP) $(patsubst %,-i %,$^) -d image-script
 
 auto.$(LISPEXT):	$(addsuffix .$(LISPEXT),$(SOURCES))
 	touch $@
-	$(TOP)/bin/run-lisp $(patsubst %,-i %,$(BASE)) -i autoload -x \
-		"(funcall (intern \"AUTOLOAD-GENERATE\" \"CLLIB\") \
+	$(RUNLISP) $(CLOCC_TOP) -x '(mk:load-system "cllib")'
+	     -x "(funcall (intern \"AUTOLOAD-GENERATE\" \"CLLIB\") \
 			  '($(patsubst %,\"%\",$^)) \"$@\")"
 
 auto.$(FASLEXT):	auto.$(LISPEXT)

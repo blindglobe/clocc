@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.26 2006/01/05 23:03:22 sds Exp $
+# $Id: Makefile,v 2.27 2006/01/05 23:04:24 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -40,7 +40,7 @@ image-script$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(SCRIPT))
 
 auto.$(LISPEXT):	$(addsuffix .$(LISPEXT),$(SOURCES))
 	touch $@
-	$(RUNLISP) $(CLOCC_TOP) -x '(mk:load-system "cllib")'
+	$(RUNLISP) $(CLOCC_TOP) -x '(mk:load-system "cllib")' \
 	     -x "(funcall (intern \"AUTOLOAD-GENERATE\" \"CLLIB\") \
 			  '($(patsubst %,\"%\",$^)) \"$@\")"
 

@@ -164,14 +164,17 @@
 		      ;; any, and save this line for later.
 		      (when prev-line
 			;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
-			;; (format t "prev-line = ~S~%" prev-line)
+			;;(format t "prev-line = ~S~%" prev-line)
 
 			;; Handle FORMAT statements carefully.  If we
-			;; have a format statement, to replace any
-			;; Hollerith strings in it with real strings.
-			(if (string-equal prev-line "format" :start1 6 :end1 (min (+ 6 6) (length prev-line)))
-			    (write-line (process-format-line prev-line) outport)
-			    (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))
+			;; have a format statement, we want to replace
+			;; any Hollerith strings in it with real
+			;; strings.
+			(let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
+			  (if (string-equal maybe-format "format"
+					    :end1 (min 6 (length maybe-format)))
+			      (write-line (process-format-line prev-line) outport)
+			      (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))))
 		      (setf prev-line (copy-seq line))
 		      ;; Print out the collected comments, if any
 		      (when collected-comments
@@ -607,8 +610,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.39 2006/01/04 17:39:56 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.40 2006/01/08 16:51:22 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.40  2006/01/08 16:51:22  rtoy
+;;; We were (stupidly) not recognizing FORMAT statements that didn't start
+;;; in column 7, so we weren't converting any Hollerith strings to strings
+;;; in the format.
+;;;
 ;;; Revision 1.39  2006/01/04 17:39:56  rtoy
 ;;; src/f2cl6.l:
 ;;; o Skip over whitespace when parsing logical operations.  This is meant

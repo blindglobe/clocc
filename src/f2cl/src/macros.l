@@ -1328,12 +1328,25 @@ causing all pending operations to be flushed"
 	  (- exp 1)))
     ))
      
+(defun stop (&optional arg)
+  (when arg
+    (format cl::*error-output* "~A~%" arg))
+  (error "STOP reached"))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.65 2006/01/09 00:37:43 rtoy Exp $
+;;; $Id: macros.l,v 1.66 2006/01/09 03:08:13 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.66  2006/01/09 03:08:13  rtoy
+;;; src/f2cl1.l:
+;;; o Translate a Fortran STOP to be the stop function.  Was just
+;;;   returning NIL, and this doesn't work so well.
+;;;
+;;; src/macros.l:
+;;; o Add STOP function.  It prints out the any arg, and then signals an
+;;;   error.
+;;;
 ;;; Revision 1.65  2006/01/09 00:37:43  rtoy
 ;;; src/f2cl5.l:
 ;;; o When looking for initializers, don't just remove initializers when

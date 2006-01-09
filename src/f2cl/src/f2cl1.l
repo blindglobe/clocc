@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/04 17:53:40 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/09 03:08:13 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -989,7 +989,8 @@ FILENAME                 File containing Fortran code
        (return (parse-common x)))
      ;;stop
      (when (eq (car x) 'stop)
-       (return nil))
+       ;; Translate STOP as the stop function.
+       (return `((f2cl-lib::stop ,(rest x)))))
 
      ;; Equivalence
      (when (eq (car x) 'equivalence)
@@ -2664,8 +2665,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.147 2006/01/04 17:53:40 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.148 2006/01/09 03:08:13 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.148  2006/01/09 03:08:13  rtoy
+;;; src/f2cl1.l:
+;;; o Translate a Fortran STOP to be the stop function.  Was just
+;;;   returning NIL, and this doesn't work so well.
+;;;
+;;; src/macros.l:
+;;; o Add STOP function.  It prints out the any arg, and then signals an
+;;;   error.
+;;;
 ;;; Revision 1.147  2006/01/04 17:53:40  rtoy
 ;;; We were not correctly processing intialization of string arrays in
 ;;; data statements.

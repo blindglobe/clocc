@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/09 03:08:13 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/09 19:19:17 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -551,7 +551,9 @@ FILENAME                 File containing Fortran code
       (setsyntax #\')
       (setsyntax #\|)
       (setsyntax #\`)
-      (setsyntax #\\))
+      ;; Why do we have to handle \ specially here?
+      #+nil (setsyntax #\\)
+      )
     *readtable*))
 
 (defmacro with-fortran-syntax (&body body)
@@ -2495,6 +2497,7 @@ loop2
 	   (setq rans (nreverse ans))
 	   (return rans)))
     (go loop1)))
+
 ;------------------------------------------------------------------------------
 (defun read-six-chars (stream)
 ; (make-array '(6) :element-type 'string-char :initial-contents
@@ -2665,8 +2668,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.148 2006/01/09 03:08:13 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.149 2006/01/09 19:19:17 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.149  2006/01/09 19:19:17  rtoy
+;;; Don't add \ to the Fortran readtable.
+;;;
+;;; I don't know why we do that, but it breaks parsing of strings that
+;;; contain embedded double-quote marks.  I hope removing this doesn't
+;;; break something else, but more testing definitely needed.
+;;;
 ;;; Revision 1.148  2006/01/09 03:08:13  rtoy
 ;;; src/f2cl1.l:
 ;;; o Translate a Fortran STOP to be the stop function.  Was just

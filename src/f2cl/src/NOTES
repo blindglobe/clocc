@@ -2,6 +2,26 @@
 
 Changes:
 
+Jan 8, 2006
+-----------
+o We were stupidly not recognizing FORMAT statements if the FORMAT
+  statement were indented.  This should be fixed now.
+o We were not correctly handling multidimensional character arrays
+  because were not converting them to 1-D arrays.
+o Initializers for multidimensional arrays were getting dropped.
+o Added TOMS 717 as a test package.  Many of the issues we've found
+  and fixed were discovered when converting TOMS 717.  Besides, TOMS
+  717 sounds like a really interesting and useful package.
+o F2CL currently gets confused if a string contains a double-quote
+  character.  The work-around is to remove the double-quote
+  character.  Strictly speaking, I don't think a double-quote is a
+  valid Fortran 77 character.
+o TOMS 717 also illustrates that we should handle equivalences of
+  arrays.  But how?  An easy way would be to make one array displaced
+  to another.  But for that to work, we need to make the shorter array
+  displaced to the longer.  This works if the dimensions are numbers,
+  but sometimes they might be PARAMETER vars.
+
 Jan 4, 2006
 -----------
 o Add some support for parsing logical operations that have spaces

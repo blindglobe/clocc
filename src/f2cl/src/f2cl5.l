@@ -937,18 +937,21 @@
 	   ;; Look through the data init statements to find an array
 	   ;; initializer for our specified variable NAME.  The
 	   ;; initializer will look something like (FSET (FREF VAR
-	   ;; index limits) value).  Return a list of all matches.
-	   (let ((inits '()))
+	   ;; index limits) value).  Return a list of all matches as
+	   ;; the first value.  The scond value indicates if this is a
+	   ;; 1D array.
+	   (let ((inits '())
+		 (1d-array-p t))
 	     (dolist (item data)
 	       (when (eq 'fset (first item))
 		 (destructuring-bind (fset (fref var-name indices &rest dims) value)
 		     item
 		   (declare (ignore fset fref dims value))
-		   (when (and (eq var-name name)
-			      ;; Currently, we only handle 1D arrays.
-			      (= 1 (length indices)))
-		     (push item inits)))))
-	     (nreverse inits))))
+		   (when (and (eq var-name name))
+		     (push item inits)
+		     (unless (= 1 (length indices))
+		       (setf 1d-array-p nil))))))
+	     (values (nreverse inits) 1d-array-p))))
     (let ((new-saves '())
 	  (new-data '()))
       ;; First, save all non-array data initializers.
@@ -1044,6 +1047,8 @@
 	       (push `(,(second equiv) ,(gen-fref (first equiv))) res)
 	       (push (second equiv) simple))
 	      (t
+	       (format t "~S~%" (first equiv))
+	       (format t "~S~%" (second equiv))
 	       (error "f2cl cannot handle EQUIVALENCE of ~A and ~A~%"
 		      (first equiv) (second equiv)))))
       (values (nreverse res) (nreverse simple)))))
@@ -2149,13 +2154,17 @@
 
 (defun make-char-decl (decl type)
   (flet ((decl-bounds (bounds)
-	   (mapcar #'(lambda (b)
-		       (destructuring-bind (lo hi)
-			   b
-			 (if (and (numberp lo) (numberp hi))
-			     (+ 1 (- hi lo))
-			     '*)))
-		   bounds)))
+	   (let ((dims 
+		  (mapcar #'(lambda (b)
+			      (destructuring-bind (lo hi)
+				  b
+				(if (and (numberp lo) (numberp hi))
+				    (+ 1 (- hi lo))
+				    '*)))
+			  bounds)))
+	     (if (every #'numberp dims)
+		 (list (reduce #'* dims))
+		 '*))))
     (cond ((null (cdr decl))
 	   ;; scalar, no length spec.
 	   ;;(format t "scalar, no length spec = ~A~%" decl)
@@ -2175,6 +2184,8 @@
 	  (t
 	   ;; array, no length spec.
 	   ;;(format t "array, no length spec = ~A~%" decl)
+	   ;;(format t "type = ~S~%" type)
+	   ;;(format t "decl-bounds = ~S~%" (decl-bounds (rest decl)))
            `(declare (type (,*array-type*
 			    (simple-array character ,(if (second type)
 							 `(,(second type))
@@ -3167,8 +3178,21 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.131 2006/01/04 17:53:40 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.132 2006/01/09 00:37:43 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.132  2006/01/09 00:37:43  rtoy
+;;; src/f2cl5.l:
+;;; o When looking for initializers, don't just remove initializers when
+;;;   the array is not a 1-D array.  Keep them, and return a second value
+;;;   indicating if the array is 1-D or not.
+;;; o MAKE-CHAR-DECL was not properly declaring and initializing 2-D
+;;;   arrays as 1-D arrays like we're supposed to.  Compute the total size
+;;;   of the array if we can.
+;;;
+;;; src/macros.l:
+;;; o F2CL-INIT-STRING needs to make a 1-D array, even if the string array
+;;;   is multi-dimensional.
+;;;
 ;;; Revision 1.131  2006/01/04 17:53:40  rtoy
 ;;; We were not correctly processing intialization of string arrays in
 ;;; data statements.

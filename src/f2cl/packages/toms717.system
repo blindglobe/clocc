@@ -1,0 +1,84 @@
+;;; -*- Mode: lisp -*-
+;;;
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem toms717
+    :source-pathname (merge-pathnames (make-pathname :directory '(:relative "toms"))
+				      (make-pathname :directory (pathname-directory *load-pathname*)))
+    :source-extension "f"
+    :language :f2cl
+    :components
+    ((:module "717"
+	      :binary-pathname ""
+	      :components
+	      (
+	       ;;(:file "dglfg")
+	       (:file "df7hes")
+	       (:file "dg2lrd")
+	       (:file "dg7lit")
+	       (:file "dglf")
+	       (:file "dglg")
+	       (:file "dl7nvr")
+	       (:file "dl7tsq")
+	       (:file "dn3rdp")
+	       
+	       ;;(:file "dglfgb")
+	       ;;(:file "dgletc")
+	       (:file "da7sst")
+	       (:file "dd7tpr")
+	       (:file "dd7up5")
+	       (:file "dg7qts")
+	       (:file "ditsum")
+	       (:file "divset")
+	       (:file "dl7itv")
+	       (:file "dl7ivm")
+	       (:file "dl7mst")
+	       (:file "dl7sqr")
+	       (:file "dl7srt")
+	       (:file "dl7svn")
+	       (:file "dl7svx")
+	       (:file "dl7tvm")
+	       (:file "dl7vml")
+	       (:file "do7prd")
+	       (:file "dparck")
+	       (:file "dq7adr")
+	       (:file "drldst")
+	       (:file "ds7lup")
+	       (:file "ds7lvm")
+	       (:file "dv2axy")
+	       (:file "dv2nrm")
+	       (:file "dv7cpy")
+	       (:file "dv7dfl")
+	       (:file "dv7scl")
+	       (:file "dv7scp")
+	       (:file "dvsum")
+	       (:file "stopx")
+
+	       ;;(:file "mecdf")
+	       ;;(:file "mnpsubs")
+	       ))))
+
+(mk:defsystem toms717-tests
+    :source-pathname (merge-pathnames (make-pathname :directory '(:relative "toms"))
+				      (make-pathname :directory (pathname-directory *load-pathname*)))
+    :source-extension "f"
+    :language :f2cl
+    :depends-on ("toms717")
+    :components
+    ((:module "tests"
+	      :source-pathname "717"
+	      :binary-pathname ""
+	      :source-extension "f"
+	      :language :f2cl
+	      :components
+	      (
+	       ;;(:file "madsen")
+	       ;;(:file "madsenb")
+	       (:file "dpmain")
+	       ;;(:file "mlmnp")
+	       ;;(:file "mlmnpb")
+	       ))))
+

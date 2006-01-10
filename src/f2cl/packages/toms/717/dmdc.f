@@ -108,11 +108,20 @@ cC
 c 60   DR7MDC = BIG
 cC
 c 999  RETURN
-      if (k .eq. 6) then
+      if (k .eq. 1) then
+         dr7mdc = d1mach(1)
+      else if (k .eq. 2) then
+         dr7mdc = sqrt(d1mach(1))
+      else if (k .eq. 3) then
+         dr7mdc = d1mach(3)
+      else if (k .eq. 4) then
+         dr7mdc = sqrt(d1mach(3))
+      else if (k .eq. 5) then
+         dr7mdc = sqrt(d1mach(2))
+      else if (k .eq. 6) then
          dr7mdc = d1mach(2)
-      else
-         dr7mdc = d1mach(k)
       endif
+      
 C  ***  LAST LINE OF DR7MDC FOLLOWS  ***
       END
       INTEGER FUNCTION I7MDCN(K)

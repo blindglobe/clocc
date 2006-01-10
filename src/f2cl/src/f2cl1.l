@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/09 19:19:17 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/10 21:20:59 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -778,6 +778,7 @@ FILENAME                 File containing Fortran code
 	*function-flag* *program-flag*
 	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
 	*parsing-lhs*
+	*equivalenced-vars*
 	)
 
      (setq fort-fun
@@ -2668,8 +2669,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.149 2006/01/09 19:19:17 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.150 2006/01/10 21:20:59 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.150  2006/01/10 21:20:59  rtoy
+;;; Oops.  Need to clear out *equivalenced-vars* for every subprogram.
+;;;
 ;;; Revision 1.149  2006/01/09 19:19:17  rtoy
 ;;; Don't add \ to the Fortran readtable.
 ;;;

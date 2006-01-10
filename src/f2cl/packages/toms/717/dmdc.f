@@ -20,10 +20,10 @@ C  ***        K = 4... SQUARE ROOT OF MACHEP.
 C  ***        K = 5... SQUARE ROOT OF BIG (SEE K = 6).
 C  ***        K = 6... LARGEST MACHINE NO. BIG SUCH THAT -BIG EXISTS.
 C
-      DOUBLE PRECISION BIG, ETA, MACHEP, ZERO
-      INTEGER BIGI(2), ETAI(2), MACHEI(2)
-      EQUIVALENCE (BIG,BIGI(1)), (ETA,ETAI(1)), (MACHEP,MACHEI(1))
-      PARAMETER (ZERO=0.D+0)
+c      DOUBLE PRECISION BIG, ETA, MACHEP, ZERO
+c      INTEGER BIGI(2), ETAI(2), MACHEI(2)
+c      EQUIVALENCE (BIG,BIGI(1)), (ETA,ETAI(1)), (MACHEP,MACHEI(1))
+c      PARAMETER (ZERO=0.D+0)
 C
 C  +++ IEEE ARITHMETIC MACHINES IN WHICH THE MOST SIGNIFICANT BYTE
 C  +++ IS STORED FIRST, SUCH AS THE AT&T 3B SERIES AND MACHINES
@@ -37,9 +37,9 @@ C  +++ IEEE ARITHMETIC MACHINES IN WHICH THE LEAST SIGNIFICANT BYTE
 C  +++ IS STORED FIRST, SUCH AS MACHINES BASED ON INTEL PROCESSORS,
 C  +++ E.G. PERSONAL COMPUTERS WITH AN INTEL 80X87.
 C
-      DATA BIGI(1),BIGI(2)     / -1, 2146435071 /
-      DATA ETAI(1),ETAI(2)     /  0,    1048576 /
-      DATA MACHEI(1),MACHEI(2) /  0, 1017118720 /
+c      DATA BIGI(1),BIGI(2)     / -1, 2146435071 /
+c      DATA ETAI(1),ETAI(2)     /  0,    1048576 /
+c      DATA MACHEI(1),MACHEI(2) /  0, 1017118720 /
 C
 C  +++  IBM, AMDAHL, OR XEROX MAINFRAME  +++
 C
@@ -84,30 +84,35 @@ C  +++ END OF PORT +++
 C
 C-------------------------------  BODY  --------------------------------
 C
-      IF (MACHEP .LE. ZERO) THEN
-         WRITE(*,*) 'Edit DR7MDC to activate the appropriate statements'
-         STOP 987
-         ENDIF
-      GO TO (10, 20, 30, 40, 50, 60), K
-C
- 10   DR7MDC = ETA
-      GO TO 999
-C
- 20   DR7MDC = SQRT(256.D+0*ETA)/16.D+0
-      GO TO 999
-C
- 30   DR7MDC = MACHEP
-      GO TO 999
-C
- 40   DR7MDC = SQRT(MACHEP)
-      GO TO 999
-C
- 50   DR7MDC = SQRT(BIG/256.D+0)*16.D+0
-      GO TO 999
-C
- 60   DR7MDC = BIG
-C
- 999  RETURN
+c      IF (MACHEP .LE. ZERO) THEN
+c         WRITE(*,*) 'Edit DR7MDC to activate the appropriate statements'
+c         STOP 987
+c         ENDIF
+c      GO TO (10, 20, 30, 40, 50, 60), K
+cC
+c 10   DR7MDC = ETA
+c      GO TO 999
+cC
+c 20   DR7MDC = SQRT(256.D+0*ETA)/16.D+0
+c      GO TO 999
+cC
+c 30   DR7MDC = MACHEP
+c      GO TO 999
+cC
+c 40   DR7MDC = SQRT(MACHEP)
+c      GO TO 999
+cC
+c 50   DR7MDC = SQRT(BIG/256.D+0)*16.D+0
+c      GO TO 999
+cC
+c 60   DR7MDC = BIG
+cC
+c 999  RETURN
+      if (k .eq. 6) then
+         dr7mdc = d1mach(2)
+      else
+         dr7mdc = d1mach(k)
+      endif
 C  ***  LAST LINE OF DR7MDC FOLLOWS  ***
       END
       INTEGER FUNCTION I7MDCN(K)

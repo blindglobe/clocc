@@ -12,7 +12,6 @@
     :language :f2cl
     :components
     ((:module "717"
-	      :binary-pathname ""
 	      :components
 	      (
 	       ;;(:file "dglfg")
@@ -102,8 +101,13 @@
 	      :language :f2cl
 	      :components
 	      (
-	       (:file "madsen")
-	       (:file "madsenb")
+	       (:file "madsen"
+		      :depends-on ("madrj" "rhols"))
+	       (:file "madrj")
+	       (:file "rhols")
+	       
+	       (:file "madsenb"
+		      :depends-on ("madrj" "rhols"))
 	       ;;(:file "dpmain")
 	       ;;(:file "mlmnp")
 	       ;;(:file "mlmnpb")

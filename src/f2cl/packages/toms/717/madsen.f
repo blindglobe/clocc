@@ -1,5 +1,6 @@
 C  ***  SIMPLE TEST PROGRAM FOR DGLG AND DGLF  ***
 C
+      program madsen
       INTEGER IV(92), LIV, LV, NOUT, UI(1)
       DOUBLE PRECISION V(200), X(2), UR(1)
       EXTERNAL I7MDCN, MADRJ, RHOLS

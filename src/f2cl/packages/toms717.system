@@ -153,6 +153,29 @@
 	       ;; o mlmnpb uses an implied-do loop in a read statement,
 	       ;;   which isn't supported.
 	       ;;(:file "dpmain")
+
+	       ;; dpmain.f split into 1 file per function.
+	       (:file "pmain")
+	       (:file "brj")
+	       (:file "brj1")
+	       (:file "chkder")
+	       (:file "rpoil0")
+	       (:file "devian")
+	       (:file "dzero")
+	       (:file "invcn"
+		      :compiler-options (:declare-common t))
+	       (:file "cnerr")
+	       (:file "louchk")
+	       (:file "pnorms")
+	       (:file "poisx0")
+	       (:file "poix0")
+	       (:file "pregrh")
+	       (:file "pregrv")
+	       (:file "prgrh1")
+	       (:file "rhpoil"
+		      :compiler-options (:declare-common t))
+	       (:file "lpn")
+
 	       ;;(:file "mlmnp")
 	       ;;(:file "mlmnpb")
 	       ))))

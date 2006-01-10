@@ -4,7 +4,7 @@ C     MADRJ
 C
 C***********************************************************************
       SUBROUTINE MADRJ(N, P, X, NF, NEED, R, RP, UI, UR, UF)
-      INTEGER N, P, NF, NEED, UI(1)
+      INTEGER N, P, NF, NEED(2), UI(1)
       DOUBLE PRECISION X(P), R(N), RP(P,N), UR(1)
       EXTERNAL UF
       DOUBLE PRECISION TWO, ZERO
@@ -12,7 +12,7 @@ C***********************************************************************
 C
 C *** BODY ***
 C
-      IF (NEED .EQ. 2) GO TO 10
+      IF (NEED(1) .EQ. 2) GO TO 10
       R(1) = X(1)**2 + X(2)**2 + X(1)*X(2)
       R(2) = SIN(X(1))
       R(3) = COS(X(2))

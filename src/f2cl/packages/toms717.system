@@ -36,6 +36,7 @@
 	       
 	       ;;(:file "dglfgb")
 	       ;;(:file "dgletc")
+	       ;; dgletc split into one function per file
 	       (:file "da7sst")
 	       (:file "dd7tpr")
 	       (:file "dd7up5")
@@ -85,6 +86,36 @@
 		      :depends-on ("dv7scl" "dq7adr" "dl7vml" "dl7svx" "do7prd"
 					    "dvsum" "dd7up5" "dl7nvr" "dl7tsq"
 					    "ditsum" "dn3rdp"))
+	       ;; dglgf split into 1 function per file.
+	       (:file "dglgb"
+		      :depends-on ("drglgb"))
+	       (:file "dglfb"
+		      :depends-on ("drglgb"))
+	       (:file "drglgb"
+		      :depends-on ("dg7itb"))
+	       (:file "dd7mlp")
+	       (:file "df7dhb")
+	       (:file "dg7itb"
+		      :depends-on ("i7shft" "dq7rsh" "dv7vmp" "dv7ipr" "ds7ipr"
+					    "dl7msb" "i7copy" "ds7dmp" "dg7qsb"))
+	       (:file "dg7qsb"
+		      :depends-on ("dv7ipr" "dv7vmp" "ds7bqn"))
+	       (:file "dh2rfa")
+	       (:file "dh2rfg")
+	       (:file "dl7msb"
+		      :depends-on ("dv7ipr" "dv7vmp" "ds7bqn" "dq7rsh"))
+	       (:file "dq7rsh")
+	       (:file "ds7bqn"
+		      :depends-on ("i7shft" "dv7shf" "dv7ipr"))
+	       (:file "ds7dmp")
+	       (:file "ds7ipr")
+	       (:file "dv7ipr")
+	       (:file "dv7shf")
+	       (:file "dv7vmp")
+	       (:file "i7copy")
+	       (:file "i7pnvr")
+	       (:file "i7shft")
+
 	       ))))
 
 (mk:defsystem toms717-tests

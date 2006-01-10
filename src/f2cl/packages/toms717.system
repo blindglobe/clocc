@@ -132,13 +132,26 @@
 	      :language :f2cl
 	      :components
 	      (
+	       ;; This test appears to work and matches madsen.sgi,
+	       ;; more or less.
 	       (:file "madsen"
 		      :depends-on ("madrj" "rhols"))
 	       (:file "madrj")
 	       (:file "rhols")
-	       
+
+	       ;; This test appears to work and matches madsen.sgi,
+	       ;; more or less.
 	       (:file "madsenb"
 		      :depends-on ("madrj" "rhols"))
+
+	       ;; The following tests don't work with f2cl for the following reasons:
+	       ;;
+	       ;; o dpmain uses an equivalence of 2 arrays (of the
+	       ;;   same type).  This isn't supported by f2cl.
+	       ;; o mlmnp uses an implied-do loop in a read statement,
+	       ;;   which isn't supported.
+	       ;; o mlmnpb uses an implied-do loop in a read statement,
+	       ;;   which isn't supported.
 	       ;;(:file "dpmain")
 	       ;;(:file "mlmnp")
 	       ;;(:file "mlmnpb")

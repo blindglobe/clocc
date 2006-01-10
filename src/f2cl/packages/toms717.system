@@ -16,11 +16,21 @@
 	      :components
 	      (
 	       ;;(:file "dglfg")
-	       (:file "df7hes")
-	       (:file "dg2lrd")
-	       (:file "dg7lit")
-	       (:file "dglf")
-	       (:file "dglg")
+	       (:file "df7hes"
+		      :depends-on ("dv7cpy"))
+	       (:file "dg2lrd"
+		      :depends-on ("dl7sqr" "dv7cpy" "dv2axy" "dl7srt" "dv7scp"
+					    "dl7ivm" "dl7itv" "ds7lvm" "dd7tpr"
+					    ))
+	       (:file "dg7lit"
+		      :depends-on ("dparck" "dv7scp" "dv2nrm" "dv2axy" "dl7sqr"
+					    "dv7cpy" "stopx" "dl7mst" "dl7sqr"
+					    "dg7qts" "drldst" "da7sst" "ditsum"
+					    "dl7tvm" "dl7vml" "ds7lup" "dl7svx"))
+	       (:file "dglf"
+		      :depends-on ("divset" "drglg" "dv7cpy" "dv7scp"))
+	       (:file "dglg"
+		      :depends-on ("divset" "drglg"))
 	       (:file "dl7nvr")
 	       (:file "dl7tsq")
 	       (:file "dn3rdp")
@@ -30,35 +40,52 @@
 	       (:file "da7sst")
 	       (:file "dd7tpr")
 	       (:file "dd7up5")
-	       (:file "dg7qts")
+	       (:file "dg7qts"
+		      :depends-on ("dmdc" "dv2nrm" "dl7srt" "dl7itv"))
 	       (:file "ditsum")
-	       (:file "divset")
+	       (:file "divset"
+		      :depends-on ("dmdc" "dv7dfl"))
 	       (:file "dl7itv")
-	       (:file "dl7ivm")
-	       (:file "dl7mst")
+	       (:file "dl7ivm"
+		      :depends-on ("dd7tpr"))
+	       (:file "dl7mst"
+		      :depends-on ("dmdc" "dl7svn" "dv2nrm" "dv7cpy"))
 	       (:file "dl7sqr")
 	       (:file "dl7srt")
-	       (:file "dl7svn")
-	       (:file "dl7svx")
+	       (:file "dl7svn"
+		      :depends-on ("dv2axy" "dv2nrm"))
+	       (:file "dl7svx"
+		      :depends-on ("dv2axy" "dv2nrm"))
 	       (:file "dl7tvm")
 	       (:file "dl7vml")
 	       (:file "do7prd")
-	       (:file "dparck")
+	       (:file "dparck"
+		      :depends-on ("dv7dfl" "dmdc" "dv7cpy" "divset"))
 	       (:file "dq7adr")
 	       (:file "drldst")
-	       (:file "ds7lup")
-	       (:file "ds7lvm")
+	       (:file "ds7lup"
+		      :depends-on ("dv2nrm" "ds7lvm"))
+	       (:file "ds7lvm"
+		      :depends-on ("dd7tpr"))
 	       (:file "dv2axy")
-	       (:file "dv2nrm")
+	       (:file "dv2nrm"
+		      :depends-on ("dmdc"))
 	       (:file "dv7cpy")
-	       (:file "dv7dfl")
+	       (:file "dv7dfl"
+		      :depends-on ("dmdc"))
 	       (:file "dv7scl")
 	       (:file "dv7scp")
 	       (:file "dvsum")
 	       (:file "stopx")
 
+	       (:file "dmdc")
+	       
 	       ;;(:file "mecdf")
 	       ;;(:file "mnpsubs")
+	       (:file "drglg"
+		      :depends-on ("dv7scl" "dq7adr" "dl7vml" "dl7svx" "do7prd"
+					    "dvsum" "dd7up5" "dl7nvr" "dl7tsq"
+					    "ditsum" "dn3rdp"))
 	       ))))
 
 (mk:defsystem toms717-tests
@@ -70,14 +97,14 @@
     :components
     ((:module "tests"
 	      :source-pathname "717"
-	      :binary-pathname ""
+	      :binary-pathname "717"
 	      :source-extension "f"
 	      :language :f2cl
 	      :components
 	      (
-	       ;;(:file "madsen")
+	       (:file "madsen")
 	       ;;(:file "madsenb")
-	       (:file "dpmain")
+	       ;;(:file "dpmain")
 	       ;;(:file "mlmnp")
 	       ;;(:file "mlmnpb")
 	       ))))

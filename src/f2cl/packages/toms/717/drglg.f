@@ -218,6 +218,7 @@ C
      1        NEED1(2), NEED2(2),  PMPS, PS1, PSLEN, QTR1,
      2        RMAT1, STEP1, TEMP1, TEMP2, TEMP3, TEMP4, W, WI, Y1
       DOUBLE PRECISION RHMAX, RHTOL, RHO1, RHO2, T
+      double precision tmp
 C
       DOUBLE PRECISION ONE, ZERO
 C
@@ -326,7 +327,10 @@ C
       IF (IV(RESTOR) .NE. 3) GO TO 70
          CALL DV7CPY(N, R, RD)
          IV(NF1) = IV(NF0)
- 70   CALL RHO(NEED2, T, N, IV(NFGCAL), X(PS1), R, RD, RHOI, RHOR, V(W))
+   70 itmp = iv(nfgcal)
+      CALL RHO(NEED2, T, N, itmp, X(PS1), R, RD, RHOI, RHOR,
+     $     V(W))
+      iv(nfgcal) = itmp
       IF (IV(NFGCAL) .GT. 0) GO TO 90
  80      IV(TOOBIG) = 1
          GO TO 40
@@ -339,7 +343,9 @@ C  ***  COMPUTE F(X)  ***
 C
  110  I = IV(NFCALL)
       NEED1(2) = IV(NFGCAL)
-      CALL RHO(NEED1, V(F), N, I, X(PS1), R, RD, RHOI, RHOR, V(W))
+      tmp = v(f)
+      CALL RHO(NEED1, tmp, N, I, X(PS1), R, RD, RHOI, RHOR, V(W))
+      v(f) = tmp
       IV(NF1) = I
       IF (I .LE. 0) GO TO 80
       GO TO 40

@@ -2564,20 +2564,47 @@
 		  (remove nil (list-split '|,| (cddr x))))
 	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
 
+;; x is of the form (read (lun , fmt) <var-or-implied-do>)
 (defun parse-read (x)
-  (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
-	  (mapcar #'(lambda (var)
-		      (let ((expr (id-expression var)))
-			(cond ((and (listp expr)
-				 (eq (first expr) 'fref))
-			       `(fset ,expr (read)))
-			      ((and (symbolp expr)
-				    (subtypep (lookup-vble-type expr) 'string))
-			       `(f2cl-set-string ,expr (read) ,(lookup-vble-type expr)))
-			      (t
-			       `(setf ,expr (read))))))
-		  (remove nil (list-split '|,| (cddr x))))
-	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
+  (labels ((handle-simple-var (expr)
+	     (cond ((and (listp expr)
+			 (eq (first expr) 'fref))
+		    `(fset ,expr (read)))
+		   ((and (symbolp expr)
+			 (subtypep (lookup-vble-type expr) 'string))
+		    `(f2cl-set-string ,expr (read) ,(lookup-vble-type expr)))
+		   (t
+		    `(setf ,expr (read)))))
+	   (handle-implied-do (do-list)
+	     ;; Like parse-implied-do
+	     (let* ((ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list))
+		    (dlist (parse-dlist (ldiff do-list ctrl-vars)))
+		    (ivar (first (first ctrl-vars)))
+		    (e1 (id-expression (cdr (member '= (first ctrl-vars)))))
+		    (e2 (id-expression (second ctrl-vars)))
+		    (e3 (if (third ctrl-vars) (third ctrl-vars) 1)))
+	       ;;(format t "do-list = ~A~%" do-list)
+	       ;;(format t "dlist = ~S~%" dlist)
+	       ;;(format t "*dlist-flag* = ~A~%" *dlist-flag*)
+	       `(do ((,ivar ,e1 (+ ,ivar ,e3)))
+			((> ,ivar ,e2))
+		      (declare (type integer4 ,ivar))
+		      ,@(mapcar #'(lambda (v)
+				    `(fset ,v (read)))
+				(cdr dlist)))))
+	   (handle-var (arg)
+	     (cond ((null arg) nil)
+		   ((and (listp arg)
+			 (listp (car arg))
+			 (member '= (car arg)))
+		    ;; Implied do
+		    (handle-implied-do (list-split '|,| (car arg))))
+		   (t
+		    (handle-simple-var (id-expression arg))))))
+    (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
+	    (mapcar #'handle-var
+		    (remove nil (list-split '|,| (cddr x))))
+	    (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!")))))
   
      
 ;; Handle things like FMT = number
@@ -2613,7 +2640,7 @@
           (parse-dlist arg))
          (t (id-expression arg))))
 
-(defun parse-implied-DO (do-list)
+(defun parse-implied-do (do-list)
    (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
       (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
             dlist (parse-dlist (ldiff do-list ctrl-vars))
@@ -3178,8 +3205,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.132 2006/01/09 00:37:43 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.133 2006/01/11 16:30:00 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.133  2006/01/11 16:30:00  rtoy
+;;; Allow implied-do loops in read statements.  Still has the f2cl
+;;; limitations with read, but at least they're parsed and converted into
+;;; a loop that reads into the variables.
+;;;
 ;;; Revision 1.132  2006/01/09 00:37:43  rtoy
 ;;; src/f2cl5.l:
 ;;; o When looking for initializers, don't just remove initializers when

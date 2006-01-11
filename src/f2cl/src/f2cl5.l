@@ -2565,6 +2565,7 @@
 	  (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))
 
 ;; x is of the form (read (lun , fmt) <var-or-implied-do>)
+#+nil
 (defun parse-read (x)
   (labels ((handle-simple-var (expr)
 	     (cond ((and (listp expr)
@@ -2605,8 +2606,96 @@
 	    (mapcar #'handle-var
 		    (remove nil (list-split '|,| (cddr x))))
 	    (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!")))))
+
+(defun parse-read (x)
+  (let* ((read-opts (list-split '|,| (second x)))
+	 (lun (caar read-opts)))
+    ;;(format t "read-opts = ~S~%" read-opts)
+    (labels ((handle-simple-var (expr)
+	       (cond ((and (listp expr)
+			   (eq (first expr) 'fref))
+		      `(fset ,expr (read (f2cl-lib::lun->stream ,lun))))
+		     ((and (symbolp expr)
+			   (subtypep (lookup-vble-type expr) 'string))
+		      `(f2cl-set-string ,expr (read (f2cl-lib::lun->stream ,lun))
+					,(lookup-vble-type expr)))
+		     (t
+		      `(setf ,expr (read (f2cl-lib::lun->stream ,lun))))))
+	     (handle-implied-do (do-list)
+	       ;; Like parse-implied-do
+	       (let* ((ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list))
+		      (dlist (parse-dlist (ldiff do-list ctrl-vars)))
+		      (ivar (first (first ctrl-vars)))
+		      (e1 (id-expression (cdr (member '= (first ctrl-vars)))))
+		      (e2 (id-expression (second ctrl-vars)))
+		      (e3 (if (third ctrl-vars) (third ctrl-vars) 1)))
+		 ;;(format t "do-list = ~A~%" do-list)
+		 ;;(format t "dlist = ~S~%" dlist)
+		 ;;(format t "*dlist-flag* = ~A~%" *dlist-flag*)
+		 `(do ((,ivar ,e1 (+ ,ivar ,e3)))
+		      ((> ,ivar ,e2))
+		    (declare (type integer4 ,ivar))
+		    ,@(mapcar #'(lambda (v)
+				  `(fset ,v (read (f2cl-lib::lun->stream ,lun))))
+			      (cdr dlist)))))
+	     (handle-var (arg)
+	       (cond ((null arg) nil)
+		     ((and (listp arg)
+			   (listp (car arg))
+			   (member '= (car arg)))
+		      ;; Implied do
+		      (handle-implied-do (list-split '|,| (car arg))))
+		     (t
+		      (handle-simple-var (id-expression arg))))))
+      ;; Only handle the simple case of read(<lun>,...)
+      (append (list '(fortran_comment "***WARNING:  READ statement may not be translated correctly!"))
+	      (mapcar #'handle-var
+		      (remove nil (list-split '|,| (cddr x))))
+	      (list '(fortran_comment "***WARNING: Preceding READ statements may not be correct!"))))))
   
-     
+
+;; x is (OPEN (lun |,| <open-keywords)
+;;   or (OPEN (unit = <x> |,| <open-keywords>))
+(defun parse-open (x)
+  (let ((options (list-split '|,| (second x))))
+    (when (= (length (car options)) 1)
+      ;; We have just a unit number, instead of "unit = lun".  Convert
+      ;; it to the latter form.
+      (setf (car options) `(unit = ,(caar options))))
+    ;; Convert the list of options into Lisp-style keyword options.
+    `((f2cl-lib::open-file
+       ,@(flatten-list
+	  (mapcar #'(lambda (opt)
+		      (destructuring-bind (key = val)
+			  opt
+			`(,(intern (string-upcase (string key)) :keyword)
+			   ,val)))
+		  options))))))
+
+(defun parse-rewind (x)
+  (let ((options (if (listp (second x))
+		     (flatten-list
+		      (mapcar #'(lambda (opt)
+				  (destructuring-bind (key = val)
+				      opt
+				    `(,(intern (string-upcase (string key)) :keyword)
+				       ,val)))
+			      (list-split '|,| (second x))))
+		     `(:unit ,(second x)))))
+    `((f2cl-lib::rewind ,@options))))
+
+(defun parse-close (x)
+  (let ((options (if (= (length (second x)) 1)
+		     `(:unit ,(first (second x)))
+		     (flatten-list
+		      (mapcar #'(lambda (opt)
+				  (destructuring-bind (key = val)
+				      opt
+				    `(,(intern (string-upcase (string key)) :keyword)
+				       ,val)))
+			      (list-split '|,| (second x)))))))
+    `((f2cl-lib::close$ ,@options))))
+
 ;; Handle things like FMT = number
 (defun get_format_stmt (label)
   (let ((fmt-num (first label)))
@@ -3205,8 +3294,23 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.133 2006/01/11 16:30:00 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.134 2006/01/11 22:57:58 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.134  2006/01/11 22:57:58  rtoy
+;;; Add rudimentary support for opening files and reading from files.
+;;;
+;;; src/f2cl1.l:
+;;; o Recognize and handle open, rewind, and close statements.
+;;;
+;;; src/f2cl5.l:
+;;; o Update parser for read to handle unit numbers.  Rudimentary support
+;;;   for implied-do lists too.
+;;; o Add parser for open, rewind, and close statements.
+;;;
+;;; src/macros.l:
+;;; o Add functions and macros to handle opening, rewinding,
+;;;   and closing files.  Needs more work still.
+;;;
 ;;; Revision 1.133  2006/01/11 16:30:00  rtoy
 ;;; Allow implied-do loops in read statements.  Still has the f2cl
 ;;; limitations with read, but at least they're parsed and converted into

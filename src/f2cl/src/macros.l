@@ -993,7 +993,7 @@ is not included")
 	(cond ((integerp lun)
 	       (setf (gethash lun *lun-hash*)
 		     (open (format nil "fort~d.dat" lun)
-			   :direction :output
+			   :direction :io
 			   :if-exists :rename)))
 	      ((stringp lun)
 	       (setf (gethash lun *lun-hash*)
@@ -1017,6 +1017,56 @@ causing all pending operations to be flushed"
 		 (format t "Closing unit ~A: ~A~%" key val)
 		 (close val)))
 	       *lun-hash*))
+
+(defun %open-file (&key unit file status access form recl blank)
+  ;; We should also check for values of access, form that we don't support.
+  (when recl
+    (error "F2CL-LIB does not support record lengths"))
+  (when blank
+    (error "F2CL-LIB does not support any BLANK mode for files"))
+  (when (and access (not (string-equal "sequential"
+				       (string-right-trim " " access))))
+    (error "F2CL-LIB does not support ACCESS mode ~S" access))
+  (let ((s (and status (string-right-trim " " status))))
+    (finish-output)
+    (cond ((or (null s) (string-equal s "unknown"))
+	   (open file :direction :io :if-exists :append
+		 :if-does-not-exist nil))
+	  ((string-equal s "old")
+	   (open file :direction :io :if-does-not-exist nil))
+	  ((string-equal s "new")
+	   (open file :direction :io :if-exists nil))
+	  (t
+	   (error "F2CL-LIB does not support this mode for OPEN: ~S~%"
+		  s)))))
+
+(defmacro open-file (&key unit iostat err file status access form recl blank)
+  (let ((result (gensym)))
+    `(prog ((,result (%open-file :unit ,unit :file ,file :status ,status
+				 :access ,access :form ,form :recl ,recl :blank ,blank)))
+	(when ,result
+	  (setf (gethash ,unit *lun-hash*) ,result))
+	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
+	,(if iostat `(setf ,iostat (if ,result 0 1))))))
+
+(defun %rewind (unit)
+  (file-position (lun->stream unit) :start))
+
+(defmacro rewind (&key unit iostat err)
+  (let ((result (gensym)))
+    `(prog ((,result (%rewind ,unit)))
+	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
+	,(if iostat `(setf ,iostat (if ,result 0 1))))))
+	  
+
+(defun %close (&key unit status)
+  (cl:close (lun->stream unit)))
+
+(defmacro close$ (&key unit iostat err status)
+  (let ((result (gensym)))
+    `(prog ((,result (%close :unit ,unit  :status ,status)))
+	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
+	,(if iostat `(setf ,iostat (if ,result 0 1))))))
 
 #-gcl
 (declaim (ftype (function (t) stream) lun->stream))
@@ -1336,8 +1386,23 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.66 2006/01/09 03:08:13 rtoy Exp $
+;;; $Id: macros.l,v 1.67 2006/01/11 22:57:58 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.67  2006/01/11 22:57:58  rtoy
+;;; Add rudimentary support for opening files and reading from files.
+;;;
+;;; src/f2cl1.l:
+;;; o Recognize and handle open, rewind, and close statements.
+;;;
+;;; src/f2cl5.l:
+;;; o Update parser for read to handle unit numbers.  Rudimentary support
+;;;   for implied-do lists too.
+;;; o Add parser for open, rewind, and close statements.
+;;;
+;;; src/macros.l:
+;;; o Add functions and macros to handle opening, rewinding,
+;;;   and closing files.  Needs more work still.
+;;;
 ;;; Revision 1.66  2006/01/09 03:08:13  rtoy
 ;;; src/f2cl1.l:
 ;;; o Translate a Fortran STOP to be the stop function.  Was just

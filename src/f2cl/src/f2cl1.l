@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/10 21:20:59 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/11 16:32:15 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -1046,6 +1046,7 @@ FILENAME                 File containing Fortran code
        (return (parse-entry-definition bindings)))
 
      ;;fall out the bottom:
+     (warn "F2CL did not translate: ~S" (write-to-string (check_new_vbles x)))
      (return (list (list 'quote (concatenate ' string  "****NOT TRANSLATED: " 
 					       (write-to-string (check_new_vbles x))))))
      ))
@@ -2669,8 +2670,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.150 2006/01/10 21:20:59 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.151 2006/01/11 16:32:15 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.151  2006/01/11 16:32:15  rtoy
+;;; Print a warning (as well) if we failed to translate something.  (We
+;;; were just leaving a comment in the translated code.)
+;;;
 ;;; Revision 1.150  2006/01/10 21:20:59  rtoy
 ;;; Oops.  Need to clear out *equivalenced-vars* for every subprogram.
 ;;;

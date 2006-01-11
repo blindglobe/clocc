@@ -81,6 +81,12 @@
 	       (:file "dmdc")
 	       
 	       ;;(:file "mecdf")
+	       ;; mecdf split into 1 function/file
+	       (:file "alnorm")
+	       (:file "phi")
+	       (:file "mecdf"
+		      :depends-on ("alnorm" "phi"))
+	       
 	       ;;(:file "mnpsubs")
 	       (:file "drglg"
 		      :depends-on ("dv7scl" "dq7adr" "dl7vml" "dl7svx" "do7prd"

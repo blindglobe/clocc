@@ -1088,6 +1088,29 @@ Previous changes:
 
 To Do:
 
+* Handle EQUIVALENCE
+
+  I think I know how to handle equivalences of arrays now.  Here's the
+  idea.  Let's say we have an equivalence between a(4) and b(1).  We
+  make a new array, say ab whose size is the maximum of the size of a
+  and b.  Then we make displaced arrays for a and b.  So b is
+  displaced to element 4 of ab, and a is displaced to element 1 of ab.
+
+  Of course, this can be optimized.  Since a isn't really displaced,
+  we don't need to make the array at all.  A symbol-macro will take
+  care of a for us.
+
+  Things to watch out for:
+  o We can have a(4) equivalenced to b(1) and also c(1) equivalenced
+    to a(10).  We need to keep track of all the arrays that are
+    mutually equivalenced.
+
+  Of course, we can't really handle equivalences if the types of the
+  variables are different.  We just have to give up on those.
+  However, if we're using cmucl, we could actually do this.  However,
+  we'd have to replace the array references with sap-ref-<foo> to
+  access the raw memory.  Not very nice, and not portable.
+
 Bugs:
 
 * Hollerith formats are broken.  The parser never even sees them!

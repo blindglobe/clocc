@@ -1,3 +1,4 @@
+      program opkdemo8
 c-----------------------------------------------------------------------
 c Demonstration program for the DLSOIBT package.
 c This is the version of 14 June 2001.
@@ -138,7 +139,7 @@ c Estimate final error and print result.
  200  continue
 c
       write (lout,6000) nerr
-      stop
+c      stop
 c
  1000 format(/20x,' Demonstration Problem for DLSOIBT'//
      1   10x,'Galerkin method solution of system of 3 PDEs:'//

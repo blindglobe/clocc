@@ -1,3 +1,4 @@
+      program opkdemo1
 c-----------------------------------------------------------------------
 c Demonstration program for the DLSODE package.
 c This is the version of 14 June 2001.
@@ -153,7 +154,7 @@ c
  295  continue
       write (lout,300) nerr
  300  format(////' Number of errors encountered =',i3)
-      stop
+c      stop
       end
 
       subroutine f1 (neq, t, y, ydot)

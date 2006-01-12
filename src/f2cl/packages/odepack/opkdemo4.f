@@ -1,3 +1,4 @@
+      program opkdemo4
 c-----------------------------------------------------------------------
 c Demonstration program for the DLSODAR package.
 c This is the version of 14 June 2001.
@@ -212,7 +213,7 @@ c Problem complete.  Print final statistics.
 c
       write (lout,300) nerr
  300  format(///' Total number of errors encountered =',i3)
-      stop
+c      stop
       end
 
       subroutine f1 (neq, t, y, ydot)

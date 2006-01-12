@@ -1,3 +1,4 @@
+      program opkdemo5
 c-----------------------------------------------------------------------
 c Demonstration program for DLSODPK.
 c ODE system from ns-species interaction pde in 2 dimensions.
@@ -256,7 +257,7 @@ c
      7   i5,' nonlinear conv. failures,',i5,' linear conv. failures')
 c
  90   continue
-      stop
+c      stop
 c------  end of main program for DLSODPK demonstration program ----------
       end
 

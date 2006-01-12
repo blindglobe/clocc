@@ -1,3 +1,4 @@
+      program opkdemo6
 c-----------------------------------------------------------------------
 c Demonstration program for the DLSODKR package.
 c This is the version of 15 June 2001.
@@ -149,7 +150,7 @@ c Print final statistics.
      6 ' number of nonl. iters. =',i5,5x,'number of lin. iters.  =',i5/
      7 ' average Krylov subspace dimension (nli/nni)  =',f8.4/
      8 ' number of conv. failures:  nonlinear =',i3,'  linear =',i3)
-      stop
+c      stop
       end
 
       subroutine fdem (neq, t, y, ydot)

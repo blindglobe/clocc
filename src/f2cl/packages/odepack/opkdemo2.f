@@ -1,3 +1,4 @@
+      program opkdemo2
 c-----------------------------------------------------------------------
 c Demonstration program for the DLSODES package.
 c This is the version of 14 June 2001.
@@ -169,7 +170,7 @@ c
       write (lout,100)
       write (lout,200) nerr
  200  format(//'Number of errors encountered =',i3)
-      stop
+c      stop
       end
 
       subroutine fdem (neq, t, y, ydot)

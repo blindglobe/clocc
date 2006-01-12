@@ -1031,7 +1031,7 @@ causing all pending operations to be flushed"
     (finish-output)
     (cond ((or (null s) (string-equal s "unknown"))
 	   (open file :direction :io :if-exists :append
-		 :if-does-not-exist nil))
+		 :if-does-not-exist :create))
 	  ((string-equal s "old")
 	   (open file :direction :io :if-does-not-exist nil))
 	  ((string-equal s "new")
@@ -1386,8 +1386,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.67 2006/01/11 22:57:58 rtoy Exp $
+;;; $Id: macros.l,v 1.68 2006/01/12 01:33:32 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.68  2006/01/12 01:33:32  rtoy
+;;; If status is not given or unknown, create the file if it doesn't
+;;; exist.
+;;;
 ;;; Revision 1.67  2006/01/11 22:57:58  rtoy
 ;;; Add rudimentary support for opening files and reading from files.
 ;;;

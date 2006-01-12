@@ -35,9 +35,9 @@ c     **********
       integer minmag(4)
       integer maxmag(4)
       double precision dmach(3)
-      equivalence (dmach(1),mcheps(1))
-      equivalence (dmach(2),minmag(1))
-      equivalence (dmach(3),maxmag(1))
+c     equivalence (dmach(1),mcheps(1))
+c     equivalence (dmach(2),minmag(1))
+c     equivalence (dmach(3),maxmag(1))
 c
 c     Machine constants for the IBM 360/370 series,
 c     the Amdahl 470/V6, the ICL 2900, the Itel AS/6,

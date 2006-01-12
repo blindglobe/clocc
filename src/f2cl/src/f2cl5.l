@@ -1032,6 +1032,17 @@
     (let (res simple)
       (dolist (equiv *equivalenced-vars*)
 	(cond ((and (symbolp (first equiv))
+		    (symbolp (second equiv)))
+	       ;; Equivalence of two simple vars.  Just make one a
+	       ;; symbol-macrolet of the other, if the types match.
+	       (let ((a-type (lookup-vble-type (first equiv)))
+		     (b-type (lookup-vble-type (second equiv))))
+		 (unless (eq a-type b-type)
+		   (error "f2cl cannot equivalence variables of different types: ~A (~A) and ~A (~A)"
+			  (first equiv) a-type (second equiv) b-type))
+		 (push (first equiv) simple)
+		 (push `(,(first equiv) ,(second equiv)) res)))
+	      ((and (symbolp (first equiv))
 		    (listp (second equiv))
 		    (eq (car (second equiv)) 'fref))
 	       ;; (simple, array)
@@ -3294,8 +3305,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.134 2006/01/11 22:57:58 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.135 2006/01/12 17:19:03 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.135  2006/01/12 17:19:03  rtoy
+;;; F2CL can handle equivalences of 2 simple variables of the same type.
+;;;
 ;;; Revision 1.134  2006/01/11 22:57:58  rtoy
 ;;; Add rudimentary support for opening files and reading from files.
 ;;;

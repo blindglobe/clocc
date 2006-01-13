@@ -356,8 +356,22 @@ At this point the method is executed and then, finally, we're done.
 
 ;; *** you may want to define methods for get-method
 
+(defvar wkdays '("Mon" "Tue" "Wed" "Thu" "Fri" "Sat" "Sun"))
+
+(defvar months '("Jan" "Feb" "Mar" "Apr" "May" "Jun"
+		 "Jul" "Aug" "Sep" "Oct" "Nov" "Dec"))
+
+;; as defined in rfc 1945 (http 1.0)
+(defun rfc1123-date (&optional (ut (get-universal-time)))
+  (multiple-value-bind
+      (second minute hour day month year wkday)
+      (decode-universal-time ut 0)
+    (format nil "~a, ~2,'0d ~a ~a ~2,'0d:~2,'0d:~2,'0d GMT"
+	    (nth wkday wkdays) day (nth (1- month) months)
+	    year hour minute second)))
+
 ;; default method tries to find the file
-(defmethod get-method (c path query &aux root file)
+(defmethod get-method (c path query &aux root file) 
   (declare (ignore path query))
   (setf root
     (if (listp *server-root*)
@@ -386,7 +400,15 @@ At this point the method is executed and then, finally, we're done.
       (setf ctype (gethash (string-downcase ptype) *mime-types* "text/plain"))
       (sss:send-string c "HTTP/1.0 200 OK") (crlf c)
       (sss:send-string c (format nil "Content-Type: ~A" ctype))
-      (crlf c) (crlf c)))
+      (crlf c)
+      (sss:send-string c (format nil "Date: ~A" (rfc1123-date)))
+      (crlf c)
+      ;; without this clients tend to get everything twice
+      (sss:send-string c (format nil "Expires: ~A"
+				 (rfc1123-date ;; 5 min from now?
+				  (+ (get-universal-time) 300))))
+      (crlf c)
+      (crlf c)))
   ;; my theory is that we can treat all data as binary here
   (sss:send-file c file)
   (sss:done c))

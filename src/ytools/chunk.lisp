@@ -1,9 +1,9 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
-;;; in base.lisp and datafun.lisp
+;;; in base.lisp
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(Chunk Or-chunk Form-chunk Chunk-basis derive print-innards

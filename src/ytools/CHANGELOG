@@ -1,6 +1,12 @@
-$Id: CHANGELOG,v 2.5 2005/12/30 19:16:24 airfoyle Exp $
+$Id: CHANGELOG,v 2.6 2006/01/13 14:35:26 airfoyle Exp $
 
-            [- Version 2.1.5 -]
+            [- Version 2.1.6 -]
+2006-01-13: Defined (<~ e -args-) as synonym for (funcall e -args-)
+
+            [- Version 2.1.6 -]
+2006-01-10: Define '_' as a symbol macro that expands to 'nil'.
+
+            [- Version 2.1.5 2005/12/30 19:16:24 airfoyle Exp -]
 2005-12-30: When installing YTools, if YTFM is not yet installed, user
             is queried whether it should be installed, but is no
             longer asked the confusing question about whether YTFM

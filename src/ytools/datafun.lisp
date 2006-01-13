@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;;;$Id: datafun.lisp,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -42,9 +42,9 @@
 			      (cddr def))
 			     (t (cdr def)))))
 	      `(progn
-		 (,definer ,funame ,@definiens)
-		 (declare-datafun ',funame ',master
-				  ',sym t)))))))
+		  (,definer ,funame ,@definiens)
+		  (declare-datafun ',funame ',master
+				   ',sym t)))))))
 
 (defvar datafun-attachers* (make-eq-hash-table :size 100))
 
@@ -63,10 +63,10 @@
    (let ((spec (get funame 'datafun)))
       (cond ((null spec)
 	     (setf spec (list master nil))
-	     (setf (get funame 'datafun) spec))   )
+	     (setf (get funame 'datafun) spec)))
       (cond (main (setf (cadr spec) sym))
 	    (t
-	     (setf (cddr spec) (adjoin sym (cddr spec))))   )
+	     (setf (cddr spec) (adjoin sym (cddr spec)))))
       (let ((attachfn (table-entry datafun-attachers* master)))
 	 (cond (attachfn
 		(funcall attachfn master sym funame))

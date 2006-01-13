@@ -2,7 +2,7 @@
 ;;;
 ;;; YTools --- more than a library of useful utilities; a way of life.
 ;;;
-;;; $Id: ytools.system,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;; $Id: ytools.system,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/ytools/ytools.system,v $
 ;;;
 
@@ -50,12 +50,17 @@
 	:components
 	((:file "base")
 	 (:file "datafun" :depends-on ("base"))
-	 (:file "pathname" :depends-on ("base" "datafun"))
-	 (:file "module" :depends-on ("base" "datafun" "pathname"))
-	 (:file "slurp" :depends-on ("base" "datafun" "pathname" "module"))
-	 (:file "files" :depends-on ("base" "datafun" "pathname" "module" "slurp"))
-	 (:file "depend" :depends-on ("base" "datafun" "pathname"
-				      "module" "slurp" "files")))
+         (:file "chunk" :depends-on ("base"))
+	 (:file "pathname" :depends-on ("base" "datafun" "chunk"))
+	 (:file "slurp" :depends-on ("base" "datafun" "chunk" "pathname"))
+	 (:file "files" :depends-on ("base" "datafun" "chunk" "pathname"
+                                     "slurp"))
+         (:file "fload" :depends-on ("base" "datafun" "chunk" "pathname"
+                                     "slurp" "files"))
+	 (:file "depend" :depends-on ("base" "datafun" "chunk" "pathname"
+                                      "slurp" "files" "fload"))
+	 (:file "module" :depends-on ("base" "datafun" "chunk" "pathname"
+                                      "slurp" "files" "fload" "depend"))))
 
 	:finally-do
 	(progn (depends-on-disable)))
@@ -68,11 +73,11 @@
 	 (:file "misc" :depends-on ("setter" "binders" "repeat" "outin"))
 	 (:file "multilet" :depends-on ("signal" "object" "misc" "setter" "binders"
 					"mapper" "repeat" "outin" "setter"))
-	 (:file "object" :depends-on ("misc" "mapper" "repeat" "outin"))
+	 (:file "object" :depends-on ("mapper" "repeat" "outin" "setter"))
 	 (:file "outin")
 	 (:file "repeat" :depends-on ("outin" "binders"))
 	 (:file "setter" :depends-on ("binders" "repeat" "outin"))
-	 (:file "signal" :depends-on ("object" "setter"))))
+	 (:file "signal" :depends-on ("object" "setter" "repeat"))))
      (:file "nilscompat" :depends-on ("core-ytools"))
      (:file "fileutils" :depends-on ("core-ytools"))
      (:file "bq" :depends-on ("core-ytools")))

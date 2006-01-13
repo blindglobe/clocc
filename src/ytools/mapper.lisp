@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: mapper.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: mapper.lisp,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,15 +13,16 @@
    (datafun attach-datafun mapmac #'datafun-on-plist))
 
 (eval-when (:load-toplevel :compile-toplevel :execute :slurp-toplevel)
-   (export '(<# <! <$ <& <v << </ <? mappend mapreduce neg mapmac)))
+   (export '(<# <! <$ <& <v </ << <~ <? mappend mapreduce neg mapmac)))
 
 (defmacro <# (&rest l) `(mapcar ,@(mapmacify l)))
 (defmacro <! (&rest l) `(mapcan ,@(mapmacify l)))
 (defmacro <$ (&rest l) `(mappend ,@(mapmacify l)))
 (defmacro <& (&rest l) `(every ,@(mapmacify l)))
 (defmacro <v (&rest l) `(some ,@(mapmacify l)))
-(defmacro << (&rest l) `(apply ,@(mapmacify l)))
 (defmacro </ (&rest l) `(mapreduce ,@(mapmacify l)))
+(defmacro << (&rest l) `(apply ,@(mapmacify l)))
+(defmacro <~ (fcn &rest l) `(funcall ,fcn ,@l))
 
 (defmacro <? (&rest l)
    (match-cond (mapmacify l)

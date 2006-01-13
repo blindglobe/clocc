@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: outin.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: outin.lisp,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -71,7 +71,7 @@
 		    (let ((newsrm (make-Out-stream :state 'unindented
 						   :indent 0
 						   :stream srm)))
-		       (stream-is-open srm true)
+		       (stream-is-open srm false)
 		       (setq out-streams*
 			     (cons (list srm newsrm) out-streams*))
 		       newsrm)))))

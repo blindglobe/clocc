@@ -1,7 +1,7 @@
-$Id: CHANGELOG,v 2.6 2006/01/13 14:35:26 airfoyle Exp $
+$Id: CHANGELOG,v 2.7 2006/01/14 04:14:21 airfoyle Exp $
 
             [- Version 2.1.6 -]
-2006-01-13: Defined (<~ e -args-) as synonym for (funcall e -args-)
+2006-01-13: Defined (>< e -args-) as synonym for (funcall e -args-)
 
             [- Version 2.1.6 -]
 2006-01-10: Define '_' as a symbol macro that expands to 'nil'.

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 2.2 2005/12/29 17:45:17 airfoyle Exp $
+;;;$Id: repeat.lisp,v 2.3 2006/01/22 15:38:12 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -427,7 +427,7 @@
 					   (t fd)))
 			    local-fundefs)
 		    fundef-poses))))
-;;;;      (:< (vars declarations rep-clauses &rest _)
+;;;;      (:< (VARS declarations rep-clauses &rest _)
 ;;;;	 "repeat-analyze: " vars 1 declarations :% 3 rep-clauses))
    )
 
@@ -722,8 +722,10 @@
 (defun rep-clauses->loop-body (clauses standard-vars collectors
 			       test-result-map)
    (let ((end-tag false))
-      (let-fun ((build (cl)
-		   (cond ((null cl)
+      (let-fun ((:def build (cl)
+;;;;		   (trace-around build
+;;;;                      (:> "(build: " cl ")")
+                   (cond ((null cl)
 			  '())
 			 (t
 			  (let ((clause (car cl))
@@ -772,8 +774,8 @@
 				   (t
 				    (error "Bizarre 'repeat' clause ~s"
 					   clause)))))))
-		   ;;("build< " (car out-vals*))))
-		   ))
+;;;;                      (:< (val &rest _) "build: " val))
+                   ))
 	 (let ((prebumps (build clauses))
 	       (bumps 
 		  (let ((setqs (mapcan #'repeat-var-implied-bump
@@ -792,7 +794,10 @@
        :where
 
 	 (:def build-test (mode stuff clause rem)
-	    `((cond (,(cond ((eq mode ':until)
+;;;;	    (trace-around build-test
+;;;;               (:> "(build-test: " mode 1 stuff 1 clause
+;;;;                   :% rem ")")
+            `((cond (,(cond ((eq mode ':until)
 			     `(not ,stuff))
 			    (t stuff))
 		     ,@rem)
@@ -802,21 +807,33 @@
 				`(return (,(t-r-match-res-fun-sym trip))))
 			       (t
 				(error "Fumbled result clause: ~s"
-				       clause))))))))
+				       clause)))))))
+;;;;               (:< (val &rest _) "build-test: " val))
+            )
 
 	 (:def within-continue-subst (sub-conts exp test-result-map collectors)
-	    (within-sublis
-	       (mapcar
-		  (\\ (wc)
-		     (list (Within-clauses-continue wc)
-			   `(labels ,(res-fun-definitions
-					test-result-map collectors
-					(Within-clauses-continue wc))
-			       ,@(build
-				    (Within-clauses-subclauses
-				     wc)))))
-		  sub-conts)
-	       exp))
+            (let ((res-val
+	             (within-sublis
+                        (mapcar
+                           (\\ (wc)
+;;;;                              (trace-around hack-sub-cont
+;;;;                                 (:> "(hack-sub-cont: " wc ")")
+                              (list (Within-clauses-continue wc)
+                                    `(labels ,(res-fun-definitions
+                                                 test-result-map collectors
+                                                 (Within-clauses-continue wc))
+                                        ,@(build
+                                             (Within-clauses-subclauses
+                                              wc))))
+;;;;                                 (:< (val &rest _) "hack-sub-cont: " val))
+                              )
+                           sub-conts)
+                        exp)))
+;;;;               (dbg-save test-result-map collectors sub-conts test-result-map
+;;;;                         exp res-val)
+;;;;               (breakpoint within-continue-subst
+;;;;                  "after within-sublist, result = " res-val)
+               res-val))
 
 	 (:def within-sublis (alist exp)
 ;;;;	     (trace-around within-sublis

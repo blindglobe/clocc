@@ -1,6 +1,6 @@
-$Id: CHANGELOG,v 2.7 2006/01/14 04:14:21 airfoyle Exp $
+$Id: CHANGELOG,v 2.8 2006/01/22 15:38:50 airfoyle Exp $
 
-            [- Version 2.1.6 -]
+            [- Version 2.1.8 -]
 2006-01-13: Defined (>< e -args-) as synonym for (funcall e -args-)
 
             [- Version 2.1.6 -]

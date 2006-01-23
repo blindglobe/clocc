@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.18 2004/12/24 19:30:38 sds Exp $
+;;; $Id: miscprint.lisp,v 1.19 2006/01/23 20:33:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -148,7 +148,8 @@ If KEY-NUMERIC-P is non-NIL, sort by KEY instead."
    (lambda (st char arg)
      (declare (ignore char arg))
      (alist->hash-table (read st t nil t)))
-   rt))
+   rt)
+  rt)
 
 ;;; beware that some lisps (e.g., CLISP and CMUCL) will not use this
 ;;; method for hash-tables.  it does work with Allegro though.

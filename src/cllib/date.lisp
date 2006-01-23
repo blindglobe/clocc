@@ -1,10 +1,10 @@
 ;;; Date-related structures
 ;;;
-;;; Copyright (C) 1997-2005 by Sam Steingold.
+;;; Copyright (C) 1997-2006 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.29 2005/01/27 23:02:49 sds Exp $
+;;; $Id: date.lisp,v 2.30 2006/01/23 20:42:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,7 +27,7 @@
           date-da date-mo date-ye unix-date infer-timezone infer-month
           days-week-day date-week-day black-days working-day-p
           days-to-next-working-day next-working-day previous-working-day
-          days-since days-since-f *y2k-cut*
+          days-since days-since-f *y2k-cut* make-date-readtable
           date= date/= date< date> date<= date<=3 date<3 date>= date>=3 date>3
           date=*1 date=* date-max date-min date-earliest date-latest
           next-month-p date-month= next-quarter-p date-quarter days-between
@@ -96,9 +96,22 @@
 (deftype date-f-t () '(function (t) date))
 
 (defmethod print-object ((dt date) (out stream))
-  (if *print-readably* (call-next-method)
-      (format out "~4,'0d-~2,'0d-~2,'0d" (date-ye dt)
-              (date-mo dt) (date-da dt))))
+  (cond (*print-readably* (call-next-method))
+        (t (when *print-escape*
+             (write-string "#D\"" out)
+             (format out "~4,'0d-~2,'0d-~2,'0d"
+                     (date-ye dt) (date-mo dt) (date-da dt))
+             (when *print-escape* (write-char #\" out))))))
+
+(defun make-date-readtable (&optional (rt (copy-readtable)))
+  "Return a readtable that will read dates as #d"
+  (set-dispatch-macro-character
+   #\# #\D
+   (lambda (stream char-d infix-arg)
+     (declare (ignore char-d infix-arg))
+     (date (read stream)))
+   rt)
+  rt)
 
 (defconst +bad-date+ date (make-date) "*The convenient constant for init.")
 

@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/11 22:57:58 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/27 14:12:55 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -850,7 +850,10 @@ FILENAME                 File containing Fortran code
 	  (*print-pretty* t)
 	  (*print-case* :downcase)
 	  (*print-circle* nil)
-	  (*print-readably* t)
+	  ;; Do we need this?  clisp basically ignores all other
+	  ;; settings and tries very, very hard to make sure what's
+	  ;; written is read back in exactly the same way.
+	  #+nil (*print-readably* t)
 	  (*read-default-float-format* *float-format*))
       (write x :stream o))))
 ;------------------------------------------------------------------------------
@@ -2276,12 +2279,13 @@ FILENAME                 File containing Fortran code
 			  (list-split '|,| l))
 		      (mapcar #'car (list-split '|,| (cdr x))))))
     ;;(format t "~A~%" *equivalenced-vars*)
-    (setf *equivalenced-vars* vars)
-    (setf *equivalenced-vars* 
-	  (mapcar #'(lambda (l)
-		      `(,(parse-expression (first l))
-			 ,(parse-expression (second l))))
-		  vars))
+    ;;(setf *equivalenced-vars* vars)
+    (setf *equivalenced-vars*
+	  (append *equivalenced-vars*
+		  (mapcar #'(lambda (l)
+			      `(,(parse-expression (first l))
+				 ,(parse-expression (second l))))
+			  vars)))
     ;;(format t "~A~%" *equivalenced-vars*)
     nil))
 
@@ -2679,8 +2683,19 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.152 2006/01/11 22:57:58 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.153 2006/01/27 14:12:55 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.153  2006/01/27 14:12:55  rtoy
+;;; o Adjust SPECIAL-PRINT so we don't try to print readably because Clisp
+;;;   tries very hard to make every truly readable, including escaping all
+;;;   symbols and including package qualifiers to make sure it's read
+;;;   exactly the same.  That's not what f2cl really wants.
+;;;
+;;; o In PARSE-EQUIVALENCES, we want to append to *equivalenced-vars*, not
+;;;   set it each time we have an equivalence statement!  Otherwise, we
+;;;   end up with just the last equivalence statement to process,
+;;;   forgetting all others.
+;;;
 ;;; Revision 1.152  2006/01/11 22:57:58  rtoy
 ;;; Add rudimentary support for opening files and reading from files.
 ;;;

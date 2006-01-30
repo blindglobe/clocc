@@ -305,18 +305,16 @@
 ;------------------------------------------------------------------------------
 
 (defun parse-logl-op (inport outport)
-  (prog (str nxt-char logl-op)
-      ;; Skip over whitespace in case the code has whitespace
-      ;; surrounding the logical operator, like "ZERO. AND . ONE"
-      (setq nxt-char (peek-char t inport nil 'eof #+broken-peek-char t))
-      (if (or (member nxt-char `(eof #+nil #\space #\' #\.)) 
+   (prog (str nxt-char logl-op)
+      (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
+      (if (or (member nxt-char `(eof #\space #\' #\.)) 
               (digit-char-p nxt-char))
           (and (write-char '#\. outport)
                (return)))
       (setq str (make-string-output-stream))
       loop
         (write-char (read-char inport nil 'eof t) str)
-        (setq nxt-char (peek-char t inport nil 'eof #+broken-peek-char t))
+        (setq nxt-char (peek-char nil inport nil 'eof #+broken-peek-char t))
         (if (and (not (eql nxt-char 'eof)) 
                       (char/= nxt-char `#\.)) (go loop))
       (cond ((setq str (get-output-stream-string str)
@@ -612,8 +610,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.41 2006/01/09 19:26:19 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.42 2006/01/30 21:23:34 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.42  2006/01/30 21:23:34  rtoy
+;;; Revert change made in 1.39 for logical operations.  This was causing
+;;; f2cl to delete all spaces after the logical operation and that really
+;;; confuses later parts because we need whitespace to separate symbols
+;;; and such.
+;;;
 ;;; Revision 1.41  2006/01/09 19:26:19  rtoy
 ;;; o We need to quote any double-quote characters that we might find in a
 ;;;   string, so that we can parse it correctly during translation.  (For

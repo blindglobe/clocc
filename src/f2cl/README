@@ -11,13 +11,17 @@ is to simply run "make system" from a shell, as is usual with CLOCC
 packages.
 
 A second method is to use defsystem from CLOCC.  Then load
-f2cl.system, and then finally run (mk:oos "f2cl" :compile).
+f2cl.system, and then finally run (mk:oos "f2cl" :compile).  
+
+A third method is to use asdf.  You can load f2cl.asd and run
+(asdf:oos 'asdf:load-op :f2cl).
 
 Finally, a third method if you have none of the above is to manually
 run everything as follows:
 
-1 . Run a Common Lisp interpreter and use the function "compile-file" to
-    compile each of the source files:
+1. Start your favorite Common Lisp implementation use the function
+   "compile-file" to compile each of the source files:
+
 		f2cl0.l
 		f2cl1.l
 		f2cl2.l
@@ -28,14 +32,26 @@ run everything as follows:
 		f2cl7.l
 		macros.l
 
-3. Load up all of the files
+2. Load up all of the files
+
            (load "f2cl0.l")
+           (load "f2cl1.l")
+           (load "f2cl2.l")
+           (load "f2cl3.l")
+           (load "f2cl4.l")
+           (load "f2cl5.l")
+           (load "f2cl6.l")
+           (load "f2cl7.l")
+	   (load "macros.l")
+
    to load all the compiled files.
 
 
 Usage
 -----
 
+Converting Fortran Code
+-----------------------
 To use f2cl:
 
 (f2cl:f2cl "<path>/fortran.f")
@@ -61,6 +77,59 @@ here is a short list of restrictions that may result in obscure errors:
  - spaces are required to separate symbols.
 Note also that an intermediate file called "prep.tmp" is produced by the
 preprocessing stage of the translation.
+
+Using Converted Code
+--------------------
+
+Once you've converted the code, you do not need to load up all of f2cl
+to use the converted code.  In fact, you only need f2cl0.l and
+macros.l to define the necessary packages and functions used by the
+converted code.  Actually, you really only need the defpackage for
+f2cl-lib in f2cl0.l.
+
+Issues
+------
+
+For a more detailed list of issues and notes, see src/NOTES.
+
+We highlight just a few issues here.
+
+o Block data statements.
+
+    In Fortran, block data statments are used to initialize common
+    blocks.  Since Fortran executables are loaded and run just once,
+    this is not a problem.  However, in Lisp, this might not be true,
+    and you may want to run the main program many times.  Thus, it is
+    up to you to run the block data initializer at the right time, as
+    needed.  f2cl cannot know when and where to call the initializer.
+
+o Common blocks.  
+
+    F2cl converts common blocks to structures.  However, common blocks
+    may be referenced in several different files, so the user must
+    tell f2cl when to define the structure.  This should be done
+    exactly once for each common block that is defined.  This should
+    also be done for the first file that is compiled and loaded, so
+    that subsequent files know about the definition.
+
+o Conversion order.
+
+    While not necessary, f2cl can do a significantly better job in
+    generating code if the functions are compiled in the correct
+    order.  This means any function, F, that is called by another
+    function, G,  should compiled first.  In this way, f2cl can
+    determine the calling conventions for F, and generate the
+    appropriate call for F in G.  This is important if F takes an
+    array argument and G passes a slice of an array to F, or
+    conversely if F takes a simple variable, and G calls F with an
+    array reference.  
+
+    If this is not done, the user may have to modify either the
+    Fortran code or the resulting Lisp code to pass arguments
+    correctly.  
+
+    F2cl cannot always determine whether a slice of an array should be
+    used or just the single element.
 
 
 

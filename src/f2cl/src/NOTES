@@ -2,6 +2,12 @@
 
 Changes:
 
+Jan 30, 2006
+------------
+o Add support for multidimensional initializers, when the number of
+  initializers matches the whole array.
+o Revert the change for spaces around logical operations (Jan 4.)
+
 Jan 8, 2006
 -----------
 o We were stupidly not recognizing FORMAT statements if the FORMAT

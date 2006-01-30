@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/27 14:12:55 $"))
+  (remove #\$ "2.0 beta $Date: 2006/01/30 22:59:51 $"))
 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -2539,55 +2539,55 @@ loop2
      (setq path-stack '((0 0 0)) ;;;stack-top '(0 0 0)
            check-list x ce (car x) ret-list nil)
      loop
-(cond ((null check-list)
-       (cond 
-         ((greaterp (caar path-stack) 0)
-              (princ-reset 
-'|Syntax error: missing right parenthesis ")"|) )
-         ((greaterp (cadar path-stack) 0)
-              (princ-reset 
-'|Syntax error: missing right bracket "]"|) )
-         ((greaterp (caddar path-stack) 0)
-              (princ-reset 
-'|Syntax error: missing right brace "}"|))
-         (t (return ret-list)))))
+     (cond ((null check-list)
+	    (cond 
+	      ((greaterp (caar path-stack) 0)
+	       (princ-reset 
+		'|Syntax error: missing right parenthesis ")"|) )
+	      ((greaterp (cadar path-stack) 0)
+	       (princ-reset 
+		'|Syntax error: missing right bracket "]"|) )
+	      ((greaterp (caddar path-stack) 0)
+	       (princ-reset 
+		'|Syntax error: missing right brace "}"|))
+	      (t (return ret-list)))))
 
-(cond 
-   ((equal ce '|(|) 
-    (push (mapcar 'plus '(1 0 0) (car path-stack)) path-stack)
-    (setq ret-list (gen-append ret-list nil (caadr path-stack))))
-   ((equal ce '|[|) 
-    (push (mapcar 'plus '(0 1 0) (car path-stack)) path-stack)
-    (setq ret-list (gen-append ret-list '|[| (caar path-stack))))
-   ((equal ce '|{|) 
-    (push (mapcar 'plus '(0 0 1) (car path-stack)) path-stack)
-    (setq ret-list (gen-append ret-list '|{| (caar path-stack))))
-   ((and (equal ce '|)|) (or (nequal (mapcar 'diff (pop path-stack) '(1 0 0))
-                               (car path-stack))
-                              (lessp (caar path-stack) 0)))
-                          (princ-reset 
-'|Syntax error: right parenthesis ")" in an invalid position or unmatched|))
-   ((equal ce '|)|))
-   ((and (equal ce '|]|) (or (nequal (mapcar 'diff (pop path-stack) '(0 1 0))
-                               (car path-stack))
-                              (lessp (caar path-stack) 0)))
-                          (princ-reset 
-'|Syntax error: right bracket "]" in an invalid position or unmatched|))
-   ((equal ce '|]|)
-    (setq ret-list (gen-append ret-list ce (caar path-stack))))
-   ((and (equal ce '|}|) (or (nequal (mapcar 'diff (pop path-stack) '(0 0 1))
-                               (car path-stack))
-                              (lessp (caar path-stack) 0)))
-                          (princ-reset 
-'|Syntax error: right brace "}" in an invalid position or unmatched|))
-   ((equal ce '|]|)
-    (setq ret-list (gen-append ret-list ce (caar path-stack))))
-   (t (setq ret-list (gen-append ret-list ce (caar path-stack))))
+     (cond 
+       ((equal ce '|(|) 
+	(push (mapcar 'plus '(1 0 0) (car path-stack)) path-stack)
+	(setq ret-list (gen-append ret-list nil (caadr path-stack))))
+       ((equal ce '|[|) 
+	(push (mapcar 'plus '(0 1 0) (car path-stack)) path-stack)
+	(setq ret-list (gen-append ret-list '|[| (caar path-stack))))
+       ((equal ce '|{|) 
+	(push (mapcar 'plus '(0 0 1) (car path-stack)) path-stack)
+	(setq ret-list (gen-append ret-list '|{| (caar path-stack))))
+       ((and (equal ce '|)|) (or (nequal (mapcar 'diff (pop path-stack) '(1 0 0))
+					 (car path-stack))
+				 (lessp (caar path-stack) 0)))
+	(princ-reset 
+	 '|Syntax error: right parenthesis ")" in an invalid position or unmatched|))
+       ((equal ce '|)|))
+       ((and (equal ce '|]|) (or (nequal (mapcar 'diff (pop path-stack) '(0 1 0))
+					 (car path-stack))
+				 (lessp (caar path-stack) 0)))
+	(princ-reset 
+	 '|Syntax error: right bracket "]" in an invalid position or unmatched|))
+       ((equal ce '|]|)
+	(setq ret-list (gen-append ret-list ce (caar path-stack))))
+       ((and (equal ce '|}|) (or (nequal (mapcar 'diff (pop path-stack) '(0 0 1))
+					 (car path-stack))
+				 (lessp (caar path-stack) 0)))
+	(princ-reset 
+	 '|Syntax error: right brace "}" in an invalid position or unmatched|))
+       ((equal ce '|]|)
+	(setq ret-list (gen-append ret-list ce (caar path-stack))))
+       (t (setq ret-list (gen-append ret-list ce (caar path-stack))))
 
-)
+       )
       
-    (setq check-list (cdr check-list) ce (car check-list))
-    (go loop)))
+     (setq check-list (cdr check-list) ce (car check-list))
+     (go loop)))
 
 ;-----------------------------------------------------------------------------
 
@@ -2683,8 +2683,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.153 2006/01/27 14:12:55 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.154 2006/01/30 22:59:51 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.154  2006/01/30 22:59:51  rtoy
+;;; o Check in to get new f2cl-version number.
+;;; o Reindented brackets-check to something more typical.
+;;;
 ;;; Revision 1.153  2006/01/27 14:12:55  rtoy
 ;;; o Adjust SPECIAL-PRINT so we don't try to print readably because Clisp
 ;;;   tries very hard to make every truly readable, including escaping all

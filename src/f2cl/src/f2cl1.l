@@ -15,8 +15,8 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/30 22:59:51 $"))
-
+  (remove #\$ "2.0 beta $Date: 2006/01/31 15:11:05 $"))
+ 
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
     anint dnint nint idnint iabs abs dabs cabs mod amod dmod isign sign dsign
@@ -2683,8 +2683,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.154 2006/01/30 22:59:51 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.155 2006/01/31 15:11:05 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.155  2006/01/31 15:11:05  rtoy
+;;; Checkin to update version id.
+;;;
 ;;; Revision 1.154  2006/01/30 22:59:51  rtoy
 ;;; o Check in to get new f2cl-version number.
 ;;; o Reindented brackets-check to something more typical.

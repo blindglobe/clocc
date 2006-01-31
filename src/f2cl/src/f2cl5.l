@@ -2192,9 +2192,12 @@
 				    (+ 1 (- hi lo))
 				    '*)))
 			  bounds)))
-	     (if (every #'numberp dims)
-		 (list (reduce #'* dims))
-		 '*))))
+	     (cond ((every #'numberp dims)
+		    (list (reduce #'* dims)))
+		   ((= 1 (length bounds))
+		    '(*))
+		   (t
+		    '*)))))
     (cond ((null (cdr decl))
 	   ;; scalar, no length spec.
 	   ;;(format t "scalar, no length spec = ~A~%" decl)
@@ -3324,8 +3327,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.136 2006/01/30 21:21:25 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.137 2006/01/31 15:09:25 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.137  2006/01/31 15:09:25  rtoy
+;;; Try to return a 1-D array declaration when possible.
+;;;
 ;;; Revision 1.136  2006/01/30 21:21:25  rtoy
 ;;; o Fix bug in MERGE-DATA-AND-SAVE-INITS.  For multidimensional arrays
 ;;;   that were fully initialized with data statements, f2cl was

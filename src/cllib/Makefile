@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.27 2006/01/05 23:04:24 sds Exp $
+# $Id: Makefile,v 2.28 2006/02/05 17:57:44 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -34,6 +34,9 @@ image$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(BASE))
 
 image-net$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(NET))
 	$(RUNLISP) $(patsubst %,-i %,$^) -d image-net
+
+image-net.exe:	$(addsuffix .$(FASLEXT),$(NET))
+	$(CLISP) -norc $(patsubst %,-i %,$^) -x '(saveinitmem "$@" :executable t)'
 
 image-script$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(SCRIPT))
 	$(RUNLISP) $(patsubst %,-i %,$^) -d image-script

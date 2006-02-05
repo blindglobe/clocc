@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.30 2006/01/23 20:42:03 sds Exp $
+;;; $Id: date.lisp,v 2.31 2006/02/05 18:01:53 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -97,11 +97,10 @@
 
 (defmethod print-object ((dt date) (out stream))
   (cond (*print-readably* (call-next-method))
-        (t (when *print-escape*
-             (write-string "#D\"" out)
-             (format out "~4,'0d-~2,'0d-~2,'0d"
-                     (date-ye dt) (date-mo dt) (date-da dt))
-             (when *print-escape* (write-char #\" out))))))
+        (t (when *print-escape* (write-string "#D\"" out))
+           (format out "~4,'0d-~2,'0d-~2,'0d"
+                   (date-ye dt) (date-mo dt) (date-da dt))
+           (when *print-escape* (write-char #\" out)))))
 
 (defun make-date-readtable (&optional (rt (copy-readtable)))
   "Return a readtable that will read dates as #d"

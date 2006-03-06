@@ -1,6 +1,6 @@
 ;;; Basic extensions: conditions, compositions &c
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2006 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.41 2005/11/14 23:36:26 sds Exp $
+;;; $Id: ext.lisp,v 1.42 2006/03/06 17:20:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage #:port
@@ -135,7 +135,7 @@ To be passed as the third arg to `read' and checked against using `eq'.")
   "Return T if the stream has no more data in it."
   (null (peek-char nil stream nil nil)))
 
-(defun string-tokens (string &key (start 0) max)
+(defun string-tokens (string &key (start 0) end max)
   "Read from STRING repeatedly, starting with START, up to MAX tokens.
 Return the list of objects read and the final index in STRING.
 Binds `*package*' to the keyword package,
@@ -144,15 +144,17 @@ so that the bare symbols are read as keywords."
   (let ((*package* (find-package :keyword)))
     (if max
         (do ((beg start) obj res (num 0 (1+ num)))
-            ((= max num) (values (nreverse res) beg))
+            ((or (= max num) (and end (>= beg end)))
+             (values (nreverse res) beg))
           (declare (fixnum beg num))
           (setf (values obj beg)
-                (read-from-string string nil +eof+ :start beg))
+                (read-from-string string nil +eof+ :start beg :end end))
           (if (eq obj +eof+)
               (return (values (nreverse res) beg))
               (push obj res)))
-        (read-from-string (concatenate 'string "(" string ")")
-                          t nil :start start))))
+        (with-input-from-string (st string :start start :end end)
+          (loop :for obj = (read st nil st)
+            :until (eq obj st) :collect obj)))))
 
 (defun remove-plist (plist &rest keys)
   "Remove the keys from the plist.

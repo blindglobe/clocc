@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.33 2006/03/06 15:55:35 sds Exp $
+;;; $Id: date.lisp,v 2.34 2006/03/06 16:20:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -332,8 +332,7 @@ You can disable Y2K fixing with (setf (fdefinition 'fix-y2k) #'identity)"
           (values-list
            (delete-if (lambda (st) ; remove week day names
                         (and (symbolp st)
-                             (find (subseq (to-string st) 0 3) +week-days+
-                                   :test #'string-equal)))
+                             (position-limit (to-string st) +week-days+ 3)))
                       (string-tokens
                        (purge-string (if (< (count #\- xx) 2) xx
                                          ;; kill #\- in yyyy-mm-dd
@@ -352,10 +351,7 @@ You can disable Y2K fixing with (setf (fdefinition 'fix-y2k) #'identity)"
 (defun infer-month (mon)
   "Get the month from the object, number or name."
   (if (numberp mon) mon
-      (let ((pos (position (to-string mon) +month-names+ :test
-                           (lambda (s0 s1)
-                             (string-equal s0 s1 :start1 0 :end1 3
-                                           :start2 0 :end2 3)))))
+      (let ((pos (position-limit (to-string mon) +month-names+ 3)))
         (when pos (1+ pos)))))
 
 (declaim (ftype (function (days-t) (values (integer 0 6))) days-week-day))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: date.lisp,v 2.34 2006/03/06 16:20:29 sds Exp $
+;;; $Id: date.lisp,v 2.35 2006/03/06 17:46:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/date.lisp,v $
 
 (eval-when (compile load eval)
@@ -324,10 +324,10 @@ You can disable Y2K fixing with (setf (fdefinition 'fix-y2k) #'identity)"
         ((<= *y2k-cut* ye 99) (+ ye 1900))
         (t ye)))
 
-(defun string->dttm (xx)
+(defun string->dttm (xx &key (start 0) end)
   "Parse the string into a date/time integer."
   (declare (simple-string xx))
-  (or (string-w3-dttm xx)
+  (or (string-w3-dttm xx :start start :end end)
       (multiple-value-bind (v0 v1 v2 v3 v4 v5 v6 v7)
           (values-list
            (delete-if (lambda (st) ; remove week day names
@@ -338,7 +338,7 @@ You can disable Y2K fixing with (setf (fdefinition 'fix-y2k) #'identity)"
                                          ;; kill #\- in yyyy-mm-dd
                                          (substitute #\Space #\- xx :count 2))
                                      ":,/|")
-                       :max 9)))
+                       :max 9 :start start :end end)))
         (flet ((eut (se mi ho da mo ye tz1 tz2)
                  (multiple-value-bind (sec ms) (floor (or se 0))
                    (+ ms (encode-universal-time sec (or mi 0) (or ho 0) da

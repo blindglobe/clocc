@@ -3136,9 +3136,9 @@ used with caution.")
                     do (remf definition-body slot)
                     and nconc `(,slot ,value))
 	  ,@(loop for slot in *component-form-slots*
+		  for form = (getf definition-body slot)
 	          do (remf definition-body slot)
-                  nconc `(,slot (lambda ()
-                                  ,(getf definition-body slot))))
+                  nconc `(,slot (lambda () ,form)))
 	  ',definition-body))
 
 
@@ -3159,7 +3159,7 @@ used with caution.")
 		 '(when #-gcl *load-pathname* #+gcl si::*load-pathname*
                     (make-pathname :name nil
                                    :type nil
-                                   :defaults 
+                                   :defaults
                                    #-gcl *load-pathname*
                                    #+gcl si::*load-pathname*
                                    ))
@@ -4584,7 +4584,7 @@ output to *trace-output*.  Returns the shell's exit code."
                          (list "-c" command)
                          :input nil
                          :output output))
-    
+
     #+(or cmu scl)
     (ext:process-exit-code
      (ext:run-program shell
@@ -4594,7 +4594,7 @@ output to *trace-output*.  Returns the shell's exit code."
 
     #+allegro
     (excl:run-shell-command command :input nil :output output)
-    
+
     #+(and lispworks win32)
     (system:call-system-showing-output (format nil "cmd /c ~A" command)
                                        :output-stream output)
@@ -4603,7 +4603,7 @@ output to *trace-output*.  Returns the shell's exit code."
     (system:call-system-showing-output command
                                        :shell-type shell
                                        :output-stream output)
-    
+
     #+clisp				;XXX not exactly *trace-output*, I know
     (ext:run-shell-command command :output :terminal :wait t)
 
@@ -4955,7 +4955,7 @@ output to *trace-output*.  Returns the shell's exit code."
 			  :error-output
 			  #+cmu
 			  *cmu-errors-to-terminal*
-			  
+
 			  (component-compiler-options component)
 			  ))))
 	   must-compile)

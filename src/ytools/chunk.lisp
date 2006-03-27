@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.2 2006/01/13 14:35:26 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.3 2006/03/27 00:19:32 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
@@ -192,22 +192,6 @@
 	 ((atom name) name)
 	 (t
 	  (mapcar #'chunk-name-abbrev-pathnames name))))
-
-;;; Return the printed representation of 'x', snipped
-(defun printed-snip (x n)
-   (string-snip (format nil "~a" x) n))
-
-;;; Discard all but the first n (or last -n if n<0) characters of s
-(defun string-snip (s n)
-   (let ((l (length s)))
-      (cond ((< n 0)
-	     (cond ((> l (- n))
-		    (concatenate 'string "..." (subseq s (+ l n))))
-		   (t s)))
-	    (t
-	     (cond ((> l n)
-		    (concatenate 'string (subseq s 0 n) "..."))
-		   (t s))))))
 
 (defmethod print-innards :before ((orch Or-chunk) srm)
    (cond ((slot-boundp orch 'disjuncts)
@@ -588,29 +572,6 @@
 	    (pursue-erasing ch))
 ;;;;**	 (chunk-event-discard evnum)
       )))
-
-;;; Is there a cycle to 'ch' through one of 'new-chunks', following
-;;; links provided by accessor 'acc'?
-;;; ('acc' takes a chunk and returns a  list of chunks.)
-;;;;(defun chunk-cycle-check (ch new-chunks acc)
-;;;;   (let ((evnum chunk-event-num*))
-;;;;      (unwind-protect
-;;;;	 (progn
-;;;;	    (setq chunk-event-num* (+ evnum 1))
-;;;;	    (labels ((pursue (nch)
-;;;;			(cond ((eq nch ch)
-;;;;			       (error
-;;;;				 !"Cycle in chunk links detected at ~s,~
-;;;;                                   starting from list~
-;;;;                                   ~%   ~s~%    [acc=~s]"
-;;;;				 ch new-chunks acc))
-;;;;			      ((not (chunk-is-marked nch evnum))
-;;;;			       (chunk-mark nch evnum)
-;;;;			       (dolist (a (funcall acc nch))
-;;;;				  (pursue a))))))
-;;;;	       (dolist (nch new-chunks)
-;;;;		  (pursue nch))))
-;;;;	(chunk-event-discard evnum))))
 
 ;;;;; <<<< chunk-requesters
 ;;; Returns management state of 'c' (normally true after this runs).
@@ -1883,13 +1844,6 @@
 (defun chunks-max-height (chunks)
    (reduce #'max chunks :key #'Chunk-height :initial-value 0))
 
-(defun slot-is-empty (obj slot)
-   (not (slot-truly-filled obj slot)))
-
-(defun slot-truly-filled (ob sl)
-   (and (slot-boundp ob sl)
-	(slot-value ob sl)))
-
 ;;; A chunk the derivation of which consists of evaluating 'form' --
 (defclass Form-chunk (Chunk)
    ((form :accessor Form-chunk-form
@@ -1923,7 +1877,6 @@
    (eval (Form-chunk-form fc))
    true)
 
-;;; For debugging --
 (defun chunk-zap-dates (c)
 ;; Zap all chunks supporting c, except inputs.
 ;; Doesn't check whether already zapped, so it's sure of getting
@@ -1934,12 +1887,6 @@
 	     (chunk-zap-dates b))
 	  (dolist (u (Chunk-update-basis c))
 	     (chunk-zap-dates u)))))
-
-(defun dutl (ut) (values->list (decode-universal-time ut)))
-
-;;; For debugging (it's traceable)
-(defun retain-if-x (pred l)
-   (retain-if pred l))
 
 ;;; Find a chunk path from chunk 'ch' to chunk 'd' through
 ;;; derivees links

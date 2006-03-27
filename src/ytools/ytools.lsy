@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: ytools.lsy,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;; $Id: ytools.lsy,v 2.2 2006/03/27 00:20:57 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -46,7 +46,7 @@
 (setf (named-readtable ':ytools) ytools-readtable*)
 
 (defparameter ytools-core-files*
-    '("base" "datafun" "chunk" "pathname" "slurp"
+    '("base" "util" "datafun" "chunk" "pathname" "slurp"
       "files" "fload" "depend" "module"))
 
 (cond ((and (boundp 'subst-core-files*)

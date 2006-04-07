@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/01/31 15:11:05 $"))
+  (remove #\$ "2.0 beta $Date: 2006/04/07 20:38:41 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -145,8 +145,12 @@ incorrect, so use caution.")
   "List of equivalenced variables.  Each entry of the list is a list
   consisting of the equivalenced variables.")
 
+;; For some reason Allegro needs this eval-when because it complains
+;; about undefined slot accessors without this.
+(eval-when (compile load eval)
 (defstruct f2cl-finfo
   arg-types return-values calls)
+)
 
 ;; Hash table of all known converted functions.  
 (defvar *f2cl-function-info*
@@ -2683,8 +2687,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.155 2006/01/31 15:11:05 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.156 2006/04/07 20:38:41 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.156  2006/04/07 20:38:41  rtoy
+;;; Wrap eval-when around the defstruct for f2cl-finfo for Allegro.  Bug
+;;; and fix reported by Richard Fateman.
+;;;
 ;;; Revision 1.155  2006/01/31 15:11:05  rtoy
 ;;; Checkin to update version id.
 ;;;

@@ -1,6 +1,6 @@
 ;;; Environment & System access
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2006 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,13 +8,15 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.63 2005/11/08 20:52:24 sds Exp $
+;;; $Id: sys.lisp,v 1.64 2006/04/07 22:09:05 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   ;; `default-directory'
   (require :port-path (translate-logical-pathname "port:path"))
+  #+sbcl
+  (require :sb-introspect)
   #+(and allegro mswindows)
   (require :ole))
 
@@ -142,8 +144,7 @@ BEWARE!"
           (get fn 'si:debug))
   #+lispworks (lw:function-lambda-list fn)
   #+lucid (lcl:arglist fn)
-  #+sbcl (progn (require :sb-introspect)
-                (sb-introspect:function-arglist fn))
+  #+sbcl (sb-introspect:function-arglist fn)
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl scl)
   (error 'not-implemented :proc (list 'arglist fn)))
 

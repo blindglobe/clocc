@@ -1,10 +1,10 @@
 ;;; Lift (ROC) curve analysis
 ;;;
-;;; Copyright (C) 2004-2005 by Sam Steingold.
+;;; Copyright (C) 2004-2006 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.3 2005/07/20 20:49:22 sds Exp $
+;;; $Id: lift.lisp,v 2.4 2006/04/07 16:48:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
            #:ds-data-reduction #:ds-dependency #:ds-proficiency
            #:bucket #:bucket-size #:bucket-true #:bucket-beg #:bucket-end
            #:bucket-probability #:bucket-inside-p #:bucket-distance
-           #:bucket-midpoint #:thresholds
+           #:bucket-midpoint #:prune-bucket-list #:thresholds
            #:par-proc-vec #:ppv-1st #:ppv-2nd #:ppv-name1 #:ppv-name2
            #:ppv-thresholds #:ppv-precision #:ppv-size
            #:ppv-target-count #:ppv-total-count
@@ -85,6 +85,8 @@
 
 (defun check-bucket (b) (<= (bucket-beg b) (bucket-end b)))
 
+(defun bucket-singleton-p (b) (= (bucket-beg b) (bucket-end b)))
+
 (defun bucket-inside-p (number bucket)
   "Return true when the number is inside the bucket."
   (<= (bucket-beg bucket) number (bucket-end bucket)))
@@ -100,6 +102,22 @@ Inside ==> 0; distance is scaled by the bucket length."
 (defun bucket-midpoint (bucket)
   "Return the midpoint between bucket beg and end."
   (/ (+ (bucket-beg bucket) (bucket-end bucket)) 2))
+
+(defun merge-buckets (b1 b2)
+  "Return a new bucket that is the union of the two bucket arguments."
+  (make-bucket :size (+ (bucket-size b1) (bucket-size b2))
+               :true (+ (bucket-true b1) (bucket-true b2))
+               :beg (min (bucket-beg b1) (bucket-beg b2))
+               :end (max (bucket-end b1) (bucket-end b2))))
+
+(defun merge-buckets-maybe (b1 b2 bsize)
+  "Merge buckets if it makes sense."
+  (let ((s1 (bucket-size b1)) (s2 (bucket-size b2)))
+    (when (or (and (< (* 3 s1) bsize) (< (* 3 s2) bsize)) ; both small
+              (and (< (+ s1 s2) bsize)           ; union reasonably small
+                   (not (bucket-singleton-p b1)) ; neither is a singleton
+                   (not (bucket-singleton-p b2))))
+      (merge-buckets b1 b2))))
 
 (defun bucket (number bucket-seq)
   "Search for the appropriate bucket
@@ -179,6 +197,18 @@ and the distance from the number to the bucket
               (bucket-list)
               "~S: bucket thresholds are not increasing:~S" 'discretize bad))
     bucket-list))
+
+(defun prune-bucket-list (blist)
+  "Reduce the number of buckets by merging small ones."
+  (let ((midsize (cllib:mean blist :key #'bucket-size)) done)
+    (loop :until done :do (setq done t)
+      (do ((tail blist (cdr tail)))
+          ((endp (cdr tail)))
+        (let ((new (merge-buckets-maybe (car tail) (cadr tail) midsize)))
+          (when new
+            (setf (car tail) new (cdr tail) (cddr tail)
+                  done nil)))))
+    blist))
 
 (defmacro check-targets (target-count fun)
   `(when (zerop ,target-count)

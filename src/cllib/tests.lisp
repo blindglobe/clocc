@@ -1,10 +1,10 @@
 ;;; Regression Testing
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.40 2005/08/15 19:43:41 sds Exp $
+;;; $Id: tests.lisp,v 2.41 2006/04/07 18:29:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -14,6 +14,7 @@
   ;; `with-collect'
   (require :cllib-simple (translate-logical-pathname "cllib:simple"))
   ;; these files will be tested:
+  (require :cllib-list (translate-logical-pathname "cllib:list"))
   (require :cllib-string (translate-logical-pathname "cllib:string"))
   (require :cllib-matrix (translate-logical-pathname "cllib:matrix"))
   (require :cllib-math (translate-logical-pathname "cllib:math"))
@@ -367,9 +368,34 @@
     (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-iter num-err)
     num-err))
 
+(defun test-list (&key (out *standard-output*))
+  (let ((num-err 0))
+    (flet ((test-jumps (list func ret)
+             (mesg :test out "~S: ~S -> ~S~%" 'test-jumps list ret)
+             (let ((z (jumps list :pred func)))
+               (unless (equal z ret)
+                 (mesg :test out " ** ~S: ERROR : ~S~%" 'test-jumps z)
+                 (incf num-err)))
+             (let ((z (count-jumps list :pred func)))
+               (unless (= z (length ret))
+                 (mesg :test out " ** ~S: ERROR : ~S~%" 'test-jumps z)
+                 (incf num-err)))))
+      (test-jumps '(1 2 10 11) (lambda (a b) (< (* 3 a) b)) '((2 . 10)))
+      (test-jumps '(12 10 11) #'> '((12 . 10))))
+    (flet ((test-freqs (list ret)
+             (mesg :test out "~S: ~S -> ~S~%" 'test-freqs list ret)
+             (let ((z (freqs list)))
+               (unless (equal z ret)
+                 (mesg :test out " ** ~S: ERROR : ~S~%" 'test-freqs z)
+                 (incf num-err)))))
+      (test-freqs '(1 2 3) '((3 . 1) (2 . 1) (1 . 1)))
+      (test-freqs '(1 1 2 2 2) '((2 . 3) (1 . 2))))
+    (mesg :test out "~& ** ~S: ~:D error~:P~%" 'test-list num-err)
+    num-err))
+
 (defun test-all (&key (out *standard-output*)
                  (what '(string math date rpm url elisp xml munkres cvs base64
-                         iter matrix))
+                         iter matrix list))
                  (disable-network-dependent-tests t))
   (mesg :test out "~& *** ~s: regression testing...~%" 'test-all)
   (let* ((num-test 0)

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: ext.lisp,v 1.42 2006/03/06 17:20:17 sds Exp $
+;;; $Id: ext.lisp,v 1.43 2006/04/07 21:59:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/ext.lisp,v $
 
 (defpackage #:port
@@ -123,7 +123,8 @@ Inspired by Paul Graham, <On Lisp>, p. 145."
   #+gcl (lisp:bye code)
   #+lispworks (lw:quit :status code)
   #+lucid (lcl:quit code)
-  #+sbcl (sb-ext:quit :unix-code (typecase code (number code) (null 0) (t 1)))
+  #+sbcl (sb-ext:quit :unix-status
+                      (typecase code ((signed-byte 32) code) (null 0) (t 1)))
   #-(or allegro clisp cmu cormanlisp gcl lispworks lucid sbcl)
   (error 'not-implemented :proc (list 'quit code)))
 

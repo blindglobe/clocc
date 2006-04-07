@@ -728,7 +728,8 @@ function is also error protected.
 	     ;; These bindings seem reasonable defaults.
 	     ;; They can be overridden by the evaler
 	     (multiple-value-setq (output err)
-	       (ignore-errs
+	       ;; This one is *NOT* ignore-errs - we need the error result
+	       (ignore-errors
 		(multiple-value-list (evaler c input))))
 	     (dbg "evaler => ~s, ~a" output err))
 	   ;; call printer

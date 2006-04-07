@@ -1,10 +1,10 @@
 ;;; Additional List Operations
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold.
+;;; Copyright (C) 1997-2002, 2006 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: list.lisp,v 2.7 2005/01/27 23:02:47 sds Exp $
+;;; $Id: list.lisp,v 2.8 2006/04/07 18:29:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/list.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,25 +22,27 @@
 ;;; {{{ misc
 ;;;
 
-(defun jumps (seq &key (pred #'eql) (key #'value) args (what :next))
+(defun jumps (seq &key (pred #'eql) (key #'value) args (what :both))
   "Return the list of elements of the sequence SEQ whose KEY differs
 from that of the previous element according to the predicate PRED.
 ARGS (list) are passed to PRED after the previous and the current KEYs.
-WHAT can be :BOTH (list of conses of the previous and the next records,
-:PREV (list of records before the jump) or :NEXT (list of records after
-the jump). Default is :NEXT."
+WHAT can be
+ :BOTH (list of conses of the previous and the next records,
+ :PREV (list of records before the jump) or
+ :NEXT (list of records after the jump).
+Default is :BOTH."
   (declare (sequence seq) (type (function (t t) t) pred)
            (type (function (t) t) key))
   (with-collect (collect)
     (let (pkey prec)
       (map nil (lambda (rec)
                  (let ((ckey (funcall key rec)))
-                   (unless (apply pred pkey ckey args)
-                     (collect (cond ((eq what :both) (cons prec rec))
-                                    ((eq what :prev) prec)
-                                    (t rec)))
-                     (setq pkey ckey))
-                   (setq prec rec)))
+                   (when (and pkey (apply pred pkey ckey args))
+                     (collect (ecase what
+                                (:both (cons prec rec))
+                                (:prev prec)
+                                (:next rec))))
+                   (setq prec rec pkey ckey)))
            seq))))
 
 (defun count-jumps (seq &key (pred #'eql) (key #'value) args)
@@ -52,8 +54,8 @@ Thus, (apply #'count-jumps args) == (length (apply #'jumps args))."
     (declare (type index-t res))
     (map nil (lambda (rec)
                (let ((ckey (funcall key rec)))
-                 (unless (apply pred pkey ckey args)
-                   (incf res) (setq pkey ckey))))
+                 (when (and pkey (apply pred pkey ckey args)) (incf res))
+                 (setq pkey ckey)))
          seq)
     res))
 

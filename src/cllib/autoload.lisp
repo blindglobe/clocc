@@ -1,10 +1,10 @@
 ;;; generate and use autoloads
 ;;;
-;;; Copyright (C) 2000-2003 by Sam Steingold
+;;; Copyright (C) 2000-2003, 2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.12 2005/01/27 23:03:05 sds Exp $
+;;; $Id: autoload.lisp,v 1.13 2006/04/07 21:51:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,8 +20,8 @@
 ;;; autoload
 ;;;
 
-(defparameter *autoload-defun* '
-  ;; this will be written into `auto.lisp'
+;; this will be written into `auto.lisp'
+(defparameter *autoload-defun* '|
 (defun autoload (symb file &optional comment)
   "Declare symbol SYMB to call a function defined in FILE."
   (declare (symbol symb) (type (or simple-string null) comment))
@@ -40,7 +40,7 @@
             (documentation symb 'function)
             (format nil "Autoloaded (from ~a)~@[:~%~a~]" file comment)))))
 
-)
+|)
 
 (defcustom *autoload-cookie* simple-string ";;;###autoload"
   "*The cookie preceeding a function to be autoloaded.")
@@ -77,7 +77,7 @@
   (with-open-file (outs out :direction :output :if-exists :supersede
                         :if-does-not-exist :create)
     (format outs ";;; autoloads generated on ~a~%;;; by ~a [~a]~2%~
-                  (in-package :cllib)~%(export '(autoload))~2%~s~2%"
+                  (in-package :cllib)~%(export '(autoload))~2%~a~2%"
             (timestamp) (lisp-implementation-type)
             (lisp-implementation-version) *autoload-defun*)
     (let ((tot (autoload-stream in outs log)))

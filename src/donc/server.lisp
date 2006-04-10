@@ -701,7 +701,7 @@ function is also error protected.
 	     ;; consider read errors as normal - print only if *debug* below
 	     (setf err e)
 	     (setf input nil pos nil)
-	     (setf (fill-pointer (input c)) 0)))
+	     (setf (fill-pointer (input c)) 0 (pos c) 0)))
      (when (> (length (input c)) 0)
 	   (if err
 	       (dbg "error in reader: ~a" err)
@@ -817,15 +817,25 @@ I guess you're really not supposed to specialize on (eql 2000) but
 
 You must supply a reader method.  It accepts as input a string and 
 starting position in that string.  
-If that contains a complete input the reader should return two values, 
-the object read (to be passed to the evaler) the position in the string
-where the next read should start, possibly the length of the string.
+If the string contains, as an initial substring, a "complete" input
+then the reader should return two values, the object read (to be passed
+to the evaler) and the position in the string where the next read should
+start, possibly the length of the string.
 
 If the reader fails, due to not enough input, it should return something 
 other than a number for the second value.  If the reader generates an 
 error, all the characters from the input stream are discarded and the 
 printer is used to report the error.  The next call to the reader will 
 see whatever characters have arrived since the call that got the error.
+
+Note the following to important special cases.  Suppose we are trying
+to read lisp forms to be evaluated.
+- an incomplete input must not cause an error, e.g., the string
+  "(+ " should simply return without a numeric second value.
+- a string that could be read but could also be extended to read as
+  something else should not return a numeric second value, e.g.,
+  the string "123" should not return a numeric second value since
+  the input might actually be "12345 ".
 
  (defmethod sss:reader ((c example-connection) string start)
    ;; if there's a newline return a value (in this case ignored) and,

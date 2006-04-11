@@ -1,6 +1,13 @@
-$Id: CHANGELOG,v 2.8 2006/01/22 15:38:50 airfoyle Exp $
+$Id: CHANGELOG,v 2.9 2006/04/11 03:35:52 airfoyle Exp $
+            
+            [- Version 2.1.9 -]
+2006-04-10: Added 'setter' to setter.lisp.  (setter <place>) returns
+            a function of two args.  (>< (setter p) v fcn) is
+            the same as (!= p (>< fcn v *-*)).  The two functions
+            <-this-val and ^-this-val are defined to be used with
+            setter; they ignore the second arg.
 
-            [- Version 2.1.8 -]
+            [- Version 2.1.8 2006/01/22 15:38:50 airfoyle Exp -]
 2006-01-13: Defined (>< e -args-) as synonym for (funcall e -args-)
 
             [- Version 2.1.6 -]

@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.2 2005/12/26 15:33:18 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.3 2006/04/11 03:35:52 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -13,7 +13,7 @@
 (eval-when (:slurp-toplevel :load-toplevel)
    (export '(s sv ps ss dbg-stack* dbg-save st g gty package seek ev ev-ugly
 	     get-frame-args
-	     symshow =g htab-show file-show test check
+	     symshow =g htab-show file-show test check break-on-test-failure*
 	     condition-display-string sym-val)))
 
 (needed-by-macros
@@ -480,7 +480,8 @@
    ((description :reader Test-failure-description
 		 :initarg :description))
    (:report (lambda (tf srm)
-	       (out (:to srm) "TEST FAILURE " (Test-failure-description tf)))))
+	       (out (:to srm) "TEST FAILURE "
+                    :% (Test-failure-description tf)))))
 
 (defvar break-on-test-failure* true)
 

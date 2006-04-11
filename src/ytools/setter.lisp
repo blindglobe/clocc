@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.2 2006/04/11 03:35:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -20,7 +20,8 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq match-cond match-let *unbound
-	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar)))
+	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
+             setter)))
 
 ;;;;(declaim (special *-*))
 
@@ -627,4 +628,13 @@
 				 (funcall within-sublis alist (Qvar-notes c))))
 			     (t
 			      (funcall within-sublis alist c))))
-		(cddr exp)))))
+                    (cddr exp)))))
+
+(defmacro setter (x)
+   `(\\ (new-val fcn)
+       (!= ,x (>< fcn new-val *-*))))
+
+;;; For use as second arg of 'setter'
+(defvar ^-this-val (\\ (new-val _) new-val))
+(defvar <-this-val ^-this-val)
+;;; E.g., (funcall set-whatever (first l323) <-this-val)

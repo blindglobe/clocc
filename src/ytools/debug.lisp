@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.3 2006/04/11 03:35:52 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.4 2006/04/14 15:15:28 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -488,10 +488,12 @@
 (defvar check-count*)
 
 ;;; (test id-string  -forms-)
-;;; The forms include calls to the 'check' macro, below
+;;; The forms include calls to the 'check' macro, below.
+;;; Returns true if all calls to 'check' threw no Test-failures (and no
+;;; one else did either).
 (defmacro test (string &rest body)
-   (let ((block-label (gensym)))
-      `(block ,block-label
+   (let () ;;;; (block-label (gensym))
+      `(catch 'test-abort
 	  (let ((check-count* 0))
 	     (handler-bind ((Test-failure
 			       (\\ (tf)
@@ -501,16 +503,24 @@
 					 ;; to work right --
 					 (bind ((*print-escape* false))
 					    (out (:to *error-output*)
-					       "TEST FAILURE"
+					       "TEST FAILURE" :%
 					       (Test-failure-description tf)
 					       :% " *** " ,string " test FAILED ***" :%))
-					 (return-from ,block-label))))))
+;;;;					 (return-from ,block-label false)
+                                         (throw 'test-abort false)
+                                         )))))
 		  (progn (out (:to *error-output*) "Beginning " ,string " test" :%)
 			 ,@body
-			 (out (:to *error-output*) 5 ,string " test succeeded " :%)))))))
+			 (out (:to *error-output*) 5 ,string " test succeeded " :%)
+                         true))))))
 
 ;;; (check form -out-stuff-) runs form.  If it returns false, 'out' the
 ;;; out-stuff and break.
+;;; If 'break-on-test-failure*' is true, then a description of the error
+;;; is printed and a break-loop is entered.  If the user returns from it then
+;;; the test goes on as if the check did not fail.  If the user executes
+;;; (throw 'test-abort [true|false]) then the innermost call to 'test'
+;;; returns with the given value.
 (defmacro check (form &rest msgstuff)
    (!= msgstuff (remove ':else *-*))
    (cond ((not (null msgstuff))

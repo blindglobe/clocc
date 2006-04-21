@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.4 2006/04/07 16:48:23 sds Exp $
+;;; $Id: lift.lisp,v 2.5 2006/04/21 21:11:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,6 +16,7 @@
 
 (defpackage :lift
   (:documentation "Lift (ROC) curve analysis")
+  (:use #:common-lisp)
   (:export #:discretize #:lift-quality #:plot-lifts #:score2prob
            #:lq-lift-quality #:lq-base-rate #:lq-base-rate-detector
            #:lq-total-count #:lq-target-count #:lq-base-more-detectors

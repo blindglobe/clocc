@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/04/26 18:38:11 $"))
+  (remove #\$ "2.0 beta $Date: 2006/04/26 19:59:51 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -671,7 +671,24 @@ FILENAME                 File containing Fortran code
       ;; extract format-stmts
       ;;(format t "extract format-stmts~%")
 	       
-      (cond ((id-do-while input-list)
+      (cond ((id-extended-do input-list)
+	     ;; Handle extended DO statements.  These are DO
+	     ;; statements that do not have a line number.  The DO
+	     ;; statement is ended with an END-DO statement.
+	     ;;
+	     ;; We handle these by faking it. We create a standard
+	     ;; DO statement with a new label.  The matching ENDDO
+	     ;; statement is converted into a corresponding CONTINUE
+	     ;; statement with the correct label.  The label is just
+	     ;; an integer bigger than any allowable Fortran label
+	     ;; (99999), since Fortran labels are limited to 5
+	     ;; digits.
+
+	     (push extended-label extended-do-label-stack)
+	     (push `(,margin ,(rewrite-extended-do extended-label input-list))
+		   output-list)
+	     (incf extended-label))
+	    ((id-do-while input-list)
 	     ;; Handle do-while statements.
 	     ;;
 	     ;; We handle this by faking it.
@@ -695,24 +712,6 @@ FILENAME                 File containing Fortran code
 	       (push (list label1 label2) extended-do-label-stack)
 	       (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
 		     output-list)))
-	    ((id-extended-do input-list)
-	     ;; Handle extended DO statements.  These are DO
-	     ;; statements that do not have a line number.  The DO
-	     ;; statement is ended with an END-DO statement.
-	     ;;
-	     ;; We handle these by faking it. We create a standard
-	     ;; DO statement with a new label.  The matching ENDDO
-	     ;; statement is converted into a corresponding CONTINUE
-	     ;; statement with the correct label.  The label is just
-	     ;; an integer bigger than any allowable Fortran label
-	     ;; (99999), since Fortran labels are limited to 5
-	     ;; digits.
-
-	     (push extended-label extended-do-label-stack)
-	     (push `(,margin ,(rewrite-extended-do extended-label input-list))
-		   output-list)
-	     (incf extended-label))
-	    
 	    ((id-end-do input-list)
 	     ;; The end of the extended DO statement.  This can either
 	     ;; be the end of an extended do loop or a do-while loop.
@@ -2749,8 +2748,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.157 2006/04/26 18:38:11 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.158 2006/04/26 19:59:51 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.158  2006/04/26 19:59:51  rtoy
+;;; Oops.  Need to check for extended DO before DO WHILE.  (This should be
+;;; fixed so it doesn't have to be that way.)
+;;;
 ;;; Revision 1.157  2006/04/26 18:38:11  rtoy
 ;;; src/Notes:
 ;;; o Update

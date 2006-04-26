@@ -1,6 +1,10 @@
 -*- Mode: text -*-
 
 Changes:
+Apr 26, 2006
+------------
+o Add support for DO WHILE statements.  This is an extension to
+  Fortran.  
 
 Jan 30, 2006
 ------------

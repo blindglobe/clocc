@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/04/07 20:38:41 $"))
+  (remove #\$ "2.0 beta $Date: 2006/04/26 18:38:11 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx ichar char aint dint
@@ -601,10 +601,34 @@ FILENAME                 File containing Fortran code
 ;; line number.
 (defun id-extended-do (line)
   (and (eq (first line) 'do)
-       (not (numberp (second line)))))
+       (not (numberp (second line)))
+       (not (eq (second line) 'while))))
+
+;; The DO-WHILE extension.  This looks something like
+;;
+;; DO <label> WHILE (<expr>)
+;;
+;; So we just make sure we have DO and WHILE and an optional label.
+(defun id-do-while (line)
+  (and (eq (first line) 'do)
+       (or (eq (second line) 'while)
+	   (and (numberp (second line))
+		(eq (third line) 'while)))))
 
 (defun rewrite-extended-do (label line)
   `(,(first line) ,label ,@(rest line)))
+
+(defun rewrite-do-while (label1 label2 line)
+  ;; "do while (cond)" becomes
+  ;; "label1 if (.not. (cond)) goto <label2>"
+  ;;
+  ;; But
+  ;;
+  ;; "do <l1> while (cond) becomes
+  ;; "label1 if (.not. (cond)) goto <l1>"
+  (if (integerp (second line))
+      `(if |(| not ,@(cdddr line) |)| goto ,label2)
+      `(if |(| not ,@(cddr line) |)| goto ,label2)))
 
 ;; Find an END DO or ENDDO statement
 (defun id-end-do (x)
@@ -647,7 +671,31 @@ FILENAME                 File containing Fortran code
       ;; extract format-stmts
       ;;(format t "extract format-stmts~%")
 	       
-      (cond ((id-extended-do input-list)
+      (cond ((id-do-while input-list)
+	     ;; Handle do-while statements.
+	     ;;
+	     ;; We handle this by faking it.
+	     ;;
+	     ;; do while (cond)
+	     ;;   <stuff>
+	     ;; end do
+	     ;;
+	     ;; <label1> if (.not. (cond)) goto <label2>
+	     ;;            <stuff>
+	     ;;          goto <label1>
+	     ;; <label2> continue
+	     ;;
+	     ;; So we need to push label1 and label2 onto our label
+	     ;; stack.  Then rewrite the line with what we want.
+	     (let ((label1 extended-label)
+		   (label2 (if (integerp (second input-list))
+			       (second input-list)
+			       (incf extended-label))))
+	       (incf extended-label)
+	       (push (list label1 label2) extended-do-label-stack)
+	       (push `(,label1 ,(rewrite-do-while label1 label2 input-list))
+		     output-list)))
+	    ((id-extended-do input-list)
 	     ;; Handle extended DO statements.  These are DO
 	     ;; statements that do not have a line number.  The DO
 	     ;; statement is ended with an END-DO statement.
@@ -664,11 +712,25 @@ FILENAME                 File containing Fortran code
 	     (push `(,margin ,(rewrite-extended-do extended-label input-list))
 		   output-list)
 	     (incf extended-label))
+	    
 	    ((id-end-do input-list)
-	     ;; The end of the extended DO statement.  Convert to a
-	     ;; standard continue statement with the correct label.
-	     (push `(,(pop extended-do-label-stack) (continue))
-		   output-list))
+	     ;; The end of the extended DO statement.  This can either
+	     ;; be the end of an extended do loop or a do-while loop.
+	     ;; Figure out what do do.  For a do-loopk, 
+	     (let ((label (pop extended-do-label-stack)))
+	       (cond ((numberp label)
+		      ;; We have a do-loop.  Convert to a standard
+		      ;; continue statement with the correct label.
+		      (push `(,label (continue))
+			    output-list))
+		     ((consp label)
+		      ;; We have a do-while loop.  We need to replace
+		      ;; this with "goto <label1>" and "<label2>
+		      ;; continue".
+		      (destructuring-bind (l1 l2)
+			  label
+			(push `(nil (goto ,l1)) output-list)
+			(push `(,l2 (continue)) output-list))))))
 	    ((id-write-format input-list)
 	     ;; We have a write statement where the format isn't a
 	     ;; label but a string.  Convert this to a label and add
@@ -2687,8 +2749,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.156 2006/04/07 20:38:41 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.157 2006/04/26 18:38:11 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.157  2006/04/26 18:38:11  rtoy
+;;; src/Notes:
+;;; o Update
+;;;
+;;; src/f2cl1.l:
+;;; o Add support for DO-WHILE statements.
+;;;
 ;;; Revision 1.156  2006/04/07 20:38:41  rtoy
 ;;; Wrap eval-when around the defstruct for f2cl-finfo for Allegro.  Bug
 ;;; and fix reported by Richard Fateman.

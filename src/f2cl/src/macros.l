@@ -599,6 +599,9 @@ is not included")
 (defun cmplx (x &optional y)
   (complex x (if y y 0)))
 
+(defun dcmplx (x &optional y)
+  (coerce (complex x (if y y 0)) '(complex double-float)))
+
 (defun ichar (c)
   (char-int c))
 (defun fchar (i)			;intrinsic function char
@@ -782,8 +785,10 @@ is not included")
 
 ;; AIMAG: imaginary part of a complex number
 ;; CONJG: conjugate of a complex number
-(declaim (inline aimag conjg))
+(declaim (inline aimag conjg dimag))
 (defun aimag (c)
+  (imagpart c))
+(defun dimag (c)
   (imagpart c))
 (defun conjg (c)
   (conjugate c))
@@ -811,11 +816,13 @@ is not included")
 ;; this is not true, the original Fortran code was broken anyway, so
 ;; GIGO (garbage in, garbage out).
 
-(declaim (inline dsqrt csqrt alog dlog clog alog10 dlog10))
+(declaim (inline dsqrt csqrt zsqrt alog dlog clog alog10 dlog10))
 (defun dsqrt (x)
   (declare (type (double-float 0d0) x))
   (sqrt  x))
 (defun csqrt (x)
+  (sqrt x))
+(defun zsqrt (x)
   (sqrt x))
 (defun alog (x)
   (declare (type (or (single-float (0f0)) (member 0f0)) x))
@@ -1386,8 +1393,29 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.68 2006/01/12 01:33:32 rtoy Exp $
+;;; $Id: macros.l,v 1.69 2006/04/27 17:44:01 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.69  2006/04/27 17:44:01  rtoy
+;;; src/f2cl0.l:
+;;; o Export dimag, dcmplx, zsqrt
+;;;
+;;; src/f2cl1.l:
+;;; o Add dcmplx, dimag, and zsqrt to the list of intrinsic function
+;;;   names.
+;;; o When parsing "implicit none" statements, we don't modify
+;;;   *IMPLICIT_VBLE_DECLS*. I don't think it's needed and it can cause
+;;;   errors later on because :none is not a Lisp type.
+;;;
+;;; src/f2cl5.l:
+;;; o Tell GET-FUN-ARG-TYPE about the result type of dcmplx, dsqrt, the
+;;;   complex*8 and complex*16 special functions.
+;;; o ABS is an allowed lisp name.  This gets rid of the spurious ABS$
+;;;   local variable whenever we use the ABS function.
+;;;
+;;; src/macros.l:
+;;; o Add implementations of dcmplx, dimag, and zsqrt.  (We need to add
+;;;   more, I think.)
+;;;
 ;;; Revision 1.68  2006/01/12 01:33:32  rtoy
 ;;; If status is not given or unknown, create the file if it doesn't
 ;;; exist.

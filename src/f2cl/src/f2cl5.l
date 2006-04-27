@@ -264,6 +264,9 @@
 		   (fortran-contagion (get-fun-arg-type (second arg))
 				      (get-fun-arg-type (third arg)))
 		   'complex8))
+		 ((member fun '(dcmplx))
+		  ;; double complex.  Always returns a complex16
+		  'complex16)
 		 ((member fun '(sin cos tan
 				asin acos atan atan2
 				sinh cosh tanh
@@ -282,10 +285,24 @@
 				dasin dacos datan datan2
 				dexp dlog dlog10
 				dabs dmax1 dmin1
-				dble
+				dble dimag
 				dsqrt))
 		  ;; Double-precision functions
 		  'double-float)
+		 ((member fun '(csin ccos ctan
+				casin cacos catan catan2
+				cexp clog clog10
+				cabs 
+				csqrt))
+		  ;; Complex functions
+		  'complex8)
+		 ((member fun '(zsin zcos ztan
+				zasin zacos zatan zatan2
+				zexp zlog zlog10
+				zabs 
+				zsqrt))
+		  ;; Complex functions
+		  'complex16)
 		 ((member fun '(and or not > >= equal <= < logeqv logxor))
 		  ;; Logical operations
 		  'logical)
@@ -2361,7 +2378,7 @@
   '(t pi nil))
 
 (defparameter +allowed-lisp-names+
-  '(sin cos tan
+  '(abs sin cos tan
     asin acos atan
     sinh cosh tanh
     exp sign max min 
@@ -3327,8 +3344,29 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.137 2006/01/31 15:09:25 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.138 2006/04/27 17:44:01 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.138  2006/04/27 17:44:01  rtoy
+;;; src/f2cl0.l:
+;;; o Export dimag, dcmplx, zsqrt
+;;;
+;;; src/f2cl1.l:
+;;; o Add dcmplx, dimag, and zsqrt to the list of intrinsic function
+;;;   names.
+;;; o When parsing "implicit none" statements, we don't modify
+;;;   *IMPLICIT_VBLE_DECLS*. I don't think it's needed and it can cause
+;;;   errors later on because :none is not a Lisp type.
+;;;
+;;; src/f2cl5.l:
+;;; o Tell GET-FUN-ARG-TYPE about the result type of dcmplx, dsqrt, the
+;;;   complex*8 and complex*16 special functions.
+;;; o ABS is an allowed lisp name.  This gets rid of the spurious ABS$
+;;;   local variable whenever we use the ABS function.
+;;;
+;;; src/macros.l:
+;;; o Add implementations of dcmplx, dimag, and zsqrt.  (We need to add
+;;;   more, I think.)
+;;;
 ;;; Revision 1.137  2006/01/31 15:09:25  rtoy
 ;;; Try to return a 1-D array declaration when possible.
 ;;;

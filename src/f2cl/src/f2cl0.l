@@ -52,10 +52,10 @@
    ;; utilities
    #:array-slice #:array-initialize
    ;; intrinsic functions
-   #:abs #:acos #:aimag #:aint #:alog #:alog10 #:amax0 #:amax1
+   #:abs #:acos #:aimag #:dimag #:aint #:alog #:alog10 #:amax0 #:amax1
    #:amin1 #:amod #:anint #:asin #:atan #:atan2
-   #:cabs #:cexp #:fchar #:clog #:cmplx #:conjg #:ccos
-   #:csin #:csqrt #:dabs #:dacos #:dasin
+   #:cabs #:cexp #:fchar #:clog #:cmplx #:dcmplx #:conjg #:ccos
+   #:csin #:csqrt #:zsqrt #:dabs #:dacos #:dasin
    #:datan #:datan2 #:dble #:dcos #:dcosh #:dexp #:dim
    #:dint #:dlog #:dlog10 #:dmax1 #:dmin1 #:dmod
    #:dnint #:dprod #:dsign #:dsin #:dsinh #:dsqrt #:dtan
@@ -81,8 +81,29 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.16 2003/11/13 05:37:31 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.17 2006/04/27 17:43:58 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.17  2006/04/27 17:43:58  rtoy
+;;; src/f2cl0.l:
+;;; o Export dimag, dcmplx, zsqrt
+;;;
+;;; src/f2cl1.l:
+;;; o Add dcmplx, dimag, and zsqrt to the list of intrinsic function
+;;;   names.
+;;; o When parsing "implicit none" statements, we don't modify
+;;;   *IMPLICIT_VBLE_DECLS*. I don't think it's needed and it can cause
+;;;   errors later on because :none is not a Lisp type.
+;;;
+;;; src/f2cl5.l:
+;;; o Tell GET-FUN-ARG-TYPE about the result type of dcmplx, dsqrt, the
+;;;   complex*8 and complex*16 special functions.
+;;; o ABS is an allowed lisp name.  This gets rid of the spurious ABS$
+;;;   local variable whenever we use the ABS function.
+;;;
+;;; src/macros.l:
+;;; o Add implementations of dcmplx, dimag, and zsqrt.  (We need to add
+;;;   more, I think.)
+;;;
 ;;; Revision 1.16  2003/11/13 05:37:31  rtoy
 ;;; Export WITH-MULTI-ARRAY-DATA.
 ;;;

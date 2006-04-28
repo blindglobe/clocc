@@ -1,6 +1,21 @@
 -*- Mode: text -*-
 
 Changes:
+Apr 27, 2006
+------------
+o F2CL was not properly parsing Fortran complex numbers of the form
+  (<re>, <im>).  This was ok if <re> was a positive number, but it was
+  majorly broken if <re> was negative.  I've changed the parser to
+  handle this better, but it may have broken parsing
+  expressions. However, compiling quadpack, minpack, and toms715 works
+  just fine. (Had to change dqawse.f because F2CL doesn't like logical
+  operators with the leading dot on a separate line from the rest of
+  the operator name.)
+o Added a few more intrinsic functions and implementations:  dcmplx,
+  dimag, zsqrt. 
+o I think I got rid of the spurious ABS$ variable that always occurred
+  whenever the ABS function was used.
+
 Apr 26, 2006
 ------------
 o Add support for DO WHILE statements.  This is an extension to

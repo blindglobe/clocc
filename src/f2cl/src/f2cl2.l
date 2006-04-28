@@ -394,13 +394,25 @@ Tag being parsed:| (cadr x))))
        ))
 
 					; expression:
-    ((and (listp (car l)) (null (cdr l)))
+    ((and (listp (car l))
+	  (null (cdr l))
+	  (not (member '|,| (car l))))
      (id-expression (car l)))
 
 					; complex number:
+    #+nil
     ((and (eq (length l) 3) (eq (second l) '|,|))
      (list 'complex (id-factor (first l)) (id-factor (third l))))
-
+    ((and (listp (car l))
+	  (null (cdr l))
+	  (member '|,| (car l)))
+     ;; Not sure this is the test for a complex number, but a Fortran
+     ;; complex number looks like (<re>, <im>) where <re> and <im> are
+     ;; numbers.  We don't check for that here.
+     (let ((split (list-split '|,| (car l))))
+       (list 'cmplx
+	     (id-expression (list (first split)))
+	     (id-expression (list (second split))))))
 					; error dropping out the bottom:
     (t 
      (princ-reset '|f2cl syntax error| l))
@@ -454,8 +466,16 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.34 2004/08/14 13:45:34 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.35 2006/04/28 00:35:29 rtoy Exp $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.35  2006/04/28 00:35:29  rtoy
+;;; Modify how expressions and Fortran complex numbers are recognized.  An
+;;; expression should not contain a comma, and a Fortran complex number
+;;; must have a comma.
+;;;
+;;; Not sure this is correct for an expression, but a complex number must
+;;; have a comma.
+;;;
 ;;; Revision 1.34  2004/08/14 13:45:34  rtoy
 ;;; Handle OR and AND expressions.  (Maybe.  This probably needs a lot
 ;;; more work.)

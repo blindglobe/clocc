@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/04/28 13:27:42 $"))
+  (remove #\$ "2.0 beta $Date: 2006/04/28 15:42:01 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -1512,6 +1512,35 @@ FILENAME                 File containing Fortran code
 		    '*
 		    (id-expression (cdr fixed-up-bds))))))))
 
+
+;; Try to coerce the RHS type to the LHS type as appropriate.  May
+;; also include taking the realpart of the RHS.
+(defun coerce-rhs-to-lhs (lhs-type rhs-type rhs)
+  (cond ((or (eq t rhs-type)
+	     (eq t lhs-type)
+	     (subtypep rhs-type lhs-type))
+	 ;; No coercion is needed if the types are compatible, or if
+	 ;; we can't determine the type of the LHS or RHS.
+	 rhs)
+	((and (subtypep lhs-type 'integer)
+	      (not (subtypep rhs-type 'integer)))
+	 ;; We're trying to set a integer variable to non-integer
+	 ;; value.  Use truncate.
+	 `(int ,rhs))
+	((and (subtypep rhs-type 'integer)
+	      (subtypep lhs-type 'float))
+	 ;; We're trying to set a float to an integer value.  Convert
+	 ;; to a float.
+	 `(coerce (the integer4 ,rhs) ',lhs-type))
+	((and (subtypep lhs-type 'real)
+	      (subtypep rhs-type 'complex))
+	 ;; Assigning a complex to a real.  We need to take the real
+	 ;; part.
+	 `(coerce (realpart ,rhs) ',lhs-type))
+	(t
+	 ;; Haven't a clue, so coerce
+	 `(coerce ,rhs ',lhs-type))))
+
 ;-----------------------------------------------------------------------------
 ; expression is algebraic with function calls:
 (defun parse-assignment (x)
@@ -1552,41 +1581,7 @@ FILENAME                 File containing Fortran code
 				 ((find *coerce-assignments* '(nil :never))
 				  rhs)
 				 (t
-				  #+nil
-				  (format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-				  ;; RHS.  Otherwise, coerce the RHS to the
-				  ;; type of the LHS.  However, we can't coerce
-				  ;; something to an integer.  Use truncate for
-				  ;; that.
-				  (cond ((or (eq t rhs-type)
-					     (eq t lhs-type)
-					     (subtypep rhs-type lhs-type))
-					 ;; No coercion is needed if the types
-					 ;; are compatible, or if we can't
-					 ;; determine the type of the LHS or
-					 ;; RHS.
-					 rhs)
-					((and (subtypep lhs-type 'integer)
-					      (not (subtypep rhs-type 'integer)))
-					 ;; We're trying to set a integer
-					 ;; variable to non-integer value.  Use
-					 ;; truncate.
-					 `(int ,rhs))
-					((and (subtypep rhs-type 'integer)
-					      (subtypep lhs-type 'float))
-					 ;; We're trying to set a
-					 ;; float to an integer value.
-					 ;; Convert to a float.
-					 `(coerce (the integer4 ,rhs) ',lhs-type))
-					((and (subtypep lhs-type 'real)
-					      (subtypep rhs-type 'complex))
-					 ;; Assigning a complex to a
-					 ;; real.  We need to take the
-					 ;; real part.
-					 `(coerce (realpart ,rhs) ',lhs-type))
-					(t
-					 ;; Haven't a clue, so coerce
-					 `(coerce ,rhs ',lhs-type)))))))
+				  (coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
 		      #+nil
 		      (when (and (listp new-rhs)
 				 (eq 'coerce (first new-rhs)))
@@ -1613,27 +1608,7 @@ FILENAME                 File containing Fortran code
 			       ((find *coerce-assignments* '(nil :never))
 				rhs)
 			       (t
-				;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
-				;; RHS.  Otherwise, coerce the RHS to the
-				;; type of the LHS.  However, we can't coerce
-				;; something to an integer.  Use truncate for
-				;; that.
-				(cond ((or (eq t rhs-type)
-					   (eq t lhs-type)
-					   (subtypep rhs-type lhs-type))
-				       ;; No coercion is needed if the types
-				       ;; match, or if we can't determine the
-				       ;; type of the LHS or RHS.
-				       rhs)
-				      ((and (subtypep lhs-type 'integer)
-					    (not (subtypep rhs-type 'integer)))
-				       ;; We're trying to set a integer
-				       ;; variable to non-integer value.  Use
-				       ;; truncate.
-				       `(int ,rhs))
-				      (t
-				       ;; Haven't a clue, so coerce
-				       `(coerce ,rhs ',lhs-type)))))))
+				(coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
 		    `((fset ,lhs ,new-rhs)))))))
 	((eq (car lhs) 'fref-string)
 	 ;; Fortran string ref
@@ -2768,8 +2743,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.160 2006/04/28 13:27:42 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.161 2006/04/28 15:42:01 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.161  2006/04/28 15:42:01  rtoy
+;;; o Forgot to apply the same change to PARSE-ARRAYREF-OR-STMTFN that was
+;;;   needed for PARSE-ASSIGNMENT for assigning a complex to a real.
+;;; o Add new common function COERCE-RHS-TO-LHS to be used by of these
+;;;   routines so we don't forget again.
+;;;
 ;;; Revision 1.160  2006/04/28 13:27:42  rtoy
 ;;; o When assigning a complex to a real variable, we need to take the
 ;;;   realpart.  We weren't doing that.

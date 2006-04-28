@@ -1,8 +1,13 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: toms715.system,v 1.4 2002/01/13 16:29:52 rtoy Exp $
+;;; $Id: toms715.system,v 1.5 2006/04/28 01:12:58 rtoy Exp $
 ;;; $Log: toms715.system,v $
+;;; Revision 1.5  2006/04/28 01:12:58  rtoy
+;;; Use *load-pathname to construct the source path (f2cl.system) or a
+;;; logical pathname to use in the defsystems so that each defsystem can
+;;; find its own files.
+;;;
 ;;; Revision 1.4  2002/01/13 16:29:52  rtoy
 ;;; Some of the dependencies were wrong.
 ;;;
@@ -26,12 +31,19 @@
 
 ||#
 
+(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
+  (setf (logical-pathname-translations "toms715")
+	(list (list "**;*.*.*"
+		    (merge-pathnames (make-pathname :directory '(:relative "toms" "715" :wild-inferiors)
+						    :name :wild :type :wild)
+				     base)))))
+
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
 (mk:defsystem toms715
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;toms;715;")
+    :source-pathname (translate-logical-pathname "toms715:")
     :source-extension "f"
     :language :f2cl
     :components
@@ -81,7 +93,7 @@
 	       ))))
 
 (mk:defsystem toms715-tests
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;toms;715;")
+    :source-pathname (translate-logical-pathname "toms715:")
     :source-extension "f"
     :language :f2cl
     :depends-on ("toms715")

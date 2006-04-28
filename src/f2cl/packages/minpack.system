@@ -1,8 +1,13 @@
 ;;; -*- Mode: lisp -*-
 ;;;
 ;;;
-;;; $Id: minpack.system,v 1.9 2002/09/13 17:50:18 rtoy Exp $
+;;; $Id: minpack.system,v 1.10 2006/04/28 01:12:58 rtoy Exp $
 ;;; $Log: minpack.system,v $
+;;; Revision 1.10  2006/04/28 01:12:58  rtoy
+;;; Use *load-pathname to construct the source path (f2cl.system) or a
+;;; logical pathname to use in the defsystems so that each defsystem can
+;;; find its own files.
+;;;
 ;;; Revision 1.9  2002/09/13 17:50:18  rtoy
 ;;; From Douglas Crosher:
 ;;;
@@ -47,12 +52,19 @@
 		      :array-type array-type)
 		:output-file output-file :error-file error-file))
 
+(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
+  (setf (logical-pathname-translations "minpack")
+	(list (list "**;*.*.*"
+		    (merge-pathnames (make-pathname :directory '(:relative "minpack" :wild-inferiors)
+						    :name :wild :type :wild)
+				     base)))))
+
 (mk:define-language :f2cl
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
 (mk:defsystem minpack
-    :source-pathname "clocc:src;f2cl;packages;minpack"
+    :source-pathname "minpack:"
     :components
     ((:file "minpack"
 		      :language :lisp)
@@ -93,7 +105,7 @@
 	       ))))
 
 (mk:defsystem minpack-tests
-    :source-pathname "clocc:src;f2cl;packages;minpack"
+    :source-pathname "minpack"
     :components
     ((:module "main"
 	      :source-pathname ""

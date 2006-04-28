@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting QUADPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: quadpack.system,v 1.6 2003/09/25 04:05:55 rtoy Exp $
+;;; $Id: quadpack.system,v 1.7 2006/04/28 01:12:58 rtoy Exp $
 ;;; $Log: quadpack.system,v $
+;;; Revision 1.7  2006/04/28 01:12:58  rtoy
+;;; Use *load-pathname to construct the source path (f2cl.system) or a
+;;; logical pathname to use in the defsystems so that each defsystem can
+;;; find its own files.
+;;;
 ;;; Revision 1.6  2003/09/25 04:05:55  rtoy
 ;;; Compute the necessary translation for the Fortran directory from the
 ;;; current translation for clocc instead of hard-wiring the path.
@@ -33,20 +38,23 @@
 ;; I (rtoy) was stupid and named the Fortran directory Fortran, which
 ;; doesn't work so well with logical pathnames.  This is an attempt to
 ;; convert that appropriately by setting up the correct translation.
-(push (list "src;f2cl;**;fortran;*.*.*"
-	    (let ((path (translate-logical-pathname "clocc:src;f2cl;**;")))
-	      (make-pathname :host (pathname-host path)
-			     :device (pathname-device path)
-			     :directory (append (pathname-directory path) '("Fortran"))
-			     :name :wild
-			     :type :wild
-			     :version :wild)))
-      (logical-pathname-translations "clocc"))
+(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
+  (setf (logical-pathname-translations "quadpack")
+	(list (list "**;fortran;*.*.*"
+		    (merge-pathnames (make-pathname :directory '(:relative "quadpack" "Fortran"
+								 :wild-inferiors)
+						    :name :wild
+						    :type :wild)
+				     base))
+	      (list "**;*.*.*"
+		    (merge-pathnames (make-pathname :directory '(:relative :wild-inferiors)
+						    :name :wild :type :wild)
+				     base)))))
 
 
 ;; Defsystem for d1mach and i1mach
 (mk:defsystem mach-par
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;")
+    :source-pathname (translate-logical-pathname "quadpack:")
     :source-extension "lisp"
     :components
     ((:file "d1mach")
@@ -89,7 +97,7 @@
 
 ;; Defsystem for quadpack.
 (mk:defsystem quadpack
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;quadpack;Fortran;")
+    :source-pathname (translate-logical-pathname "quadpack:Fortran;")
     :depends-on ("mach-par")
     :components
     ((:module Fortran
@@ -197,7 +205,7 @@
 				   "xerror"))))))
 
 (mk:defsystem quadpack-lisp
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;quadpack;Fortran;")
+    :source-pathname (translate-logical-pathname "quadpack:quadpack;Fortran;")
     :depends-on ("mach-par")
     :components
     ((:module Fortran

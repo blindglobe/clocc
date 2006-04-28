@@ -3,7 +3,8 @@
 ;; A sample defsystem.
 
 (mk:defsystem f2cl
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;src;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "src"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
     :source-extension "l"
     :depends-on nil
     :components

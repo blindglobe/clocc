@@ -1,8 +1,12 @@
 ;;;
 ;;; Some simple tests of the Quadpack routines, taken from the Quadpack book.
 ;;;
-;;; $Id: quadpack-tests.lisp,v 1.4 2002/03/19 23:12:33 rtoy Exp $
+;;; $Id: quadpack-tests.lisp,v 1.5 2006/04/28 01:35:12 rtoy Exp $
 ;;; $Log: quadpack-tests.lisp,v $
+;;; Revision 1.5  2006/04/28 01:35:12  rtoy
+;;; In TST17 for DQAWC, the absolute error criterion was too small.  It
+;;; must be strictly positive.  This test runs as expected.
+;;;
 ;;; Revision 1.4  2002/03/19 23:12:33  rtoy
 ;;; It's f2cl-lib:integer4, not just plain integer4.
 ;;;
@@ -1516,7 +1520,7 @@ Expect no non-zero error codes
 ;; DQAWC
 ;;
 ;; Failures: none
-(defun tst17 (&key (limit 200) (relerr 1d-8))
+(defun tst17 (&key (limit 200) (relerr 1d-8) (abserr 1d-15))
   (labels ((soln (alpha)
 	     (declare (type (double-float 0d0) alpha))
 	     (/ (- (* (expt 2 (- alpha))
@@ -1537,7 +1541,7 @@ Expect no non-zero error codes
 				 (+ (expt (- x 1) 2)
 				    (expt 4 (- alpha)))))
 			  0d0 5d0 2d0
-			  0d0 relerr
+			  abserr relerr
 			  0d0 0d0 0 0
 			  limit lenw 0 iwork work)
 		 (declare (ignorable junk a b c z-eps z-rel result abserr neval ier z-lim z-lenw last))

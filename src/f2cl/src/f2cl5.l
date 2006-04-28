@@ -1761,8 +1761,10 @@
 			  (o-name (array-offset-name a))
 			  (d-type (find-type a)))
 		      (push `(,a ,d-type ,d-name ,o-name) array-data-forms)))
-		  `(with-multi-array-data ,array-data-forms
-		     ,body)))))
+		  (if array-data-forms
+		      `(with-multi-array-data ,array-data-forms
+			,body)
+		      body)))))
 	 ;;(format t "formal-arg-decls = ~A~%" formal-arg-decls)
 
 	 (when *equivalenced-vars*
@@ -3344,8 +3346,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.138 2006/04/27 17:44:01 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.139 2006/04/28 01:36:13 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.139  2006/04/28 01:36:13  rtoy
+;;; If there are no array data forms, don't emit a WITH-MULTI-ARRAY-DATA
+;;; form either.
+;;;
 ;;; Revision 1.138  2006/04/27 17:44:01  rtoy
 ;;; src/f2cl0.l:
 ;;; o Export dimag, dcmplx, zsqrt

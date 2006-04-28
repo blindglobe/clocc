@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/04/27 17:44:01 $"))
+  (remove #\$ "2.0 beta $Date: 2006/04/28 13:27:42 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -1537,9 +1537,11 @@ FILENAME                 File containing Fortran code
 	     (pushnew lhs *assigned-variables*))
 	   (let* ((lhs-type (first (get-upgraded-fun-arg-type (list (list lhs)))))
 		  (rhs-type (first (get-upgraded-fun-arg-type (list (list rhs))))))
-	     ;;(format t "~&")
-	     ;;(format t "lhs = ~A, type ~A~%" lhs lhs-type)
-	     ;;(format t "rhs = ~A, type ~A~%" rhs rhs-type)
+	     #+nil
+	     (progn
+	       (format t "~&")
+	       (format t "lhs = ~A, type ~A~%" lhs lhs-type)
+	       (format t "rhs = ~A, type ~A~%" rhs rhs-type))
 	     (cond ((subtypep lhs-type 'string)
 		    ;; Strings need to be handled carefully
 		    `((f2cl-set-string ,lhs ,rhs ,lhs-type)))
@@ -1550,7 +1552,8 @@ FILENAME                 File containing Fortran code
 				 ((find *coerce-assignments* '(nil :never))
 				  rhs)
 				 (t
-				  ;;(format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
+				  #+nil
+				  (format t "rhs-type, rhs = ~S ~S~%" rhs-type rhs)
 				  ;; RHS.  Otherwise, coerce the RHS to the
 				  ;; type of the LHS.  However, we can't coerce
 				  ;; something to an integer.  Use truncate for
@@ -1575,6 +1578,12 @@ FILENAME                 File containing Fortran code
 					 ;; float to an integer value.
 					 ;; Convert to a float.
 					 `(coerce (the integer4 ,rhs) ',lhs-type))
+					((and (subtypep lhs-type 'real)
+					      (subtypep rhs-type 'complex))
+					 ;; Assigning a complex to a
+					 ;; real.  We need to take the
+					 ;; real part.
+					 `(coerce (realpart ,rhs) ',lhs-type))
 					(t
 					 ;; Haven't a clue, so coerce
 					 `(coerce ,rhs ',lhs-type)))))))
@@ -2759,8 +2768,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.159 2006/04/27 17:44:01 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.160 2006/04/28 13:27:42 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.160  2006/04/28 13:27:42  rtoy
+;;; o When assigning a complex to a real variable, we need to take the
+;;;   realpart.  We weren't doing that.
+;;; o Cleanup a compiler warning
+;;; o Simplify a few debugging prints.
+;;;
 ;;; Revision 1.159  2006/04/27 17:44:01  rtoy
 ;;; src/f2cl0.l:
 ;;; o Export dimag, dcmplx, zsqrt

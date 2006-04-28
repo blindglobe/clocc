@@ -214,8 +214,8 @@ c
       result = 0.0d+00
       abserr = 0.0d+00
       if(b.le.a.or.(epsabs.eq.0.0d+00.and.
-     *  epsrel.lt.dmax1(0.5d+02*epmach,0.5d-28)).or.alfa.le.(-0.1d+01).
-     *  or.beta.le.(-0.1d+01).or.integr.lt.1.or.integr.gt.4.or.
+     *  epsrel.lt.dmax1(0.5d+02*epmach,0.5d-28)).or.alfa.le.(-0.1d+01)
+     *  .or.beta.le.(-0.1d+01).or.integr.lt.1.or.integr.gt.4.or.
      *  limit.lt.2) go to 999
       ier = 0
 c

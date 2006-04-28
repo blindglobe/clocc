@@ -241,7 +241,7 @@
 		 ((eq 'fref fun)
 		  ;; Look up array references.
 		  (let ((result (get-fun-arg-type (second arg))))
-		    (values (get-fun-arg-type (second arg)) nil)))
+		    (values result nil)))
 		 ((member fun '(+ -))
 		  ;; Basic arithmetic operations that might be unary
 		  ;; operators.
@@ -257,6 +257,16 @@
 		  ;; Complex conjugate
 		  (fortran-contagion (get-fun-arg-type (second arg))
 				     'complex8))
+		 ((eq fun 'abs)
+		  ;; Absolute value
+		  (let ((arg-type (get-fun-arg-type (second arg))))
+		    (case arg-type
+		      (complex8
+		       'single-float)
+		      (complex16
+		       'double-float)
+		      (otherwise
+		       arg-type))))
 		 ((member fun '(cmplx))
 		  ;; Complex.  Figure out the type of complex we
 		  ;; should return.
@@ -3346,8 +3356,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.139 2006/04/28 01:36:13 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.140 2006/04/28 13:28:39 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.140  2006/04/28 13:28:39  rtoy
+;;; Add type-derivation for ABS.  Otherwise, we end up with COERCE calls
+;;; wherever ABS is used.
+;;;
 ;;; Revision 1.139  2006/04/28 01:36:13  rtoy
 ;;; If there are no array data forms, don't emit a WITH-MULTI-ARRAY-DATA
 ;;; form either.

@@ -1,6 +1,13 @@
 -*- Mode: text -*-
 
 Changes:
+Apr 28, 2006
+------------
+o Oops.  Assignment of a complex result to a real variable was not
+  taking the real part.
+o Add type-derivation for ABS so we don't have calls to coerce
+  wherever we use ABS.
+
 Apr 27, 2006
 ------------
 o F2CL was not properly parsing Fortran complex numbers of the form

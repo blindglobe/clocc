@@ -1388,13 +1388,18 @@ causing all pending operations to be flushed"
 (defun stop (&optional arg)
   (when arg
     (format cl::*error-output* "~A~%" arg))
-  (error "STOP reached"))
+  (cerror "Continue anyway" "STOP reached"))
 
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.69 2006/04/27 17:44:01 rtoy Exp $
+;;; $Id: macros.l,v 1.70 2006/05/01 17:40:05 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.70  2006/05/01 17:40:05  rtoy
+;;; Change STOP to produce a continuable error instead of an error so that
+;;; we can continue from the STOP statement, if we choose to.  It's not
+;;; necessarily an error in a converted program to reach a STOP statement.
+;;;
 ;;; Revision 1.69  2006/04/27 17:44:01  rtoy
 ;;; src/f2cl0.l:
 ;;; o Export dimag, dcmplx, zsqrt

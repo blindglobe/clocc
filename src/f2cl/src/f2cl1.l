@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/04/28 15:42:01 $"))
+  (remove #\$ "2.0 beta $Date: 2006/05/01 17:38:27 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -1609,7 +1609,7 @@ FILENAME                 File containing Fortran code
 				rhs)
 			       (t
 				(coerce-rhs-to-lhs lhs-type rhs-type rhs)))))
-		    `((fset ,lhs ,new-rhs)))))))
+		    `((setf ,lhs ,new-rhs)))))))
 	((eq (car lhs) 'fref-string)
 	 ;; Fortran string ref
 	 `((fset-string ,lhs ,rhs)))
@@ -1788,7 +1788,7 @@ FILENAME                 File containing Fortran code
 				  nil)
 				 (t
 				  ;; Definitely is returned
-				  `(fset ,arg ,var))))
+				  `(setf ,arg ,var))))
 			  (t
 			   ;; This means it's either a number or some
 			   ;; expression, so obviously we can't modify
@@ -2273,6 +2273,10 @@ FILENAME                 File containing Fortran code
 	   ;;(format t "parse-data1 array~%")
 	   (let* ((vname (check-reserved-lisp-names (first v)))
 		  (dims (lookup-array-bounds vname)))
+	     ;; FIXME: DO NOT change this to SETF.  Other code uses
+	     ;; this FSET to figure out how to initialize the DATA
+	     ;; array nicely.  When this is fixed, we can use plain
+	     ;; SETF.
 	     `(fset (fref ,vname
 		          ,(remove '|,| (second v))
 		          ,dims)
@@ -2743,8 +2747,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.161 2006/04/28 15:42:01 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.162 2006/05/01 17:38:27 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.162  2006/05/01 17:38:27  rtoy
+;;; Replace some uses of FSET with plain ol' SETF because SETF does
+;;; everything we want it to do.  But leave some FSET's around because we
+;;; need them later to generate initializers for DATA statements, and
+;;; such.
+;;;
 ;;; Revision 1.161  2006/04/28 15:42:01  rtoy
 ;;; o Forgot to apply the same change to PARSE-ARRAYREF-OR-STMTFN that was
 ;;;   needed for PARSE-ASSIGNMENT for assigning a complex to a real.

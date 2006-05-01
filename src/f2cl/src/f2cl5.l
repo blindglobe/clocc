@@ -970,6 +970,9 @@
 	     (let ((inits '())
 		   (1d-array-p t))
 	       (dolist (item data)
+		 ;; FIXME: This critically depends on FSET being used
+		 ;; to initialize the values for DATA statements.  If
+		 ;; this is changed, we need to change this!  (Gross!)
 		 (when (eq 'fset (first item))
 		   (destructuring-bind (fset (fref var-name indices &rest dims) value)
 		       item
@@ -3356,8 +3359,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.140 2006/04/28 13:28:39 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.141 2006/05/01 17:38:27 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.141  2006/05/01 17:38:27  rtoy
+;;; Replace some uses of FSET with plain ol' SETF because SETF does
+;;; everything we want it to do.  But leave some FSET's around because we
+;;; need them later to generate initializers for DATA statements, and
+;;; such.
+;;;
 ;;; Revision 1.140  2006/04/28 13:28:39  rtoy
 ;;; Add type-derivation for ABS.  Otherwise, we end up with COERCE calls
 ;;; wherever ABS is used.

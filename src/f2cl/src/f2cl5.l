@@ -1368,9 +1368,12 @@
 		   *key_params*))
      ;;(format t "key-params = ~S~%" key-params)
      
-     (setq key-params-decls (mapcar #'(lambda (param)
-				       (make-declaration (car param)))
-				   key-params))
+     (setq key-params-decls
+	   (mapcar #'(lambda (param)
+		       (destructuring-bind (v val)
+			   param
+			 (make-declaration v :parameterp (if (numberp val) val nil))))
+		   key-params))
      ;;(format t "key-params-decl = ~S~%" key-params-decls)
      
 
@@ -1951,10 +1954,12 @@
     (let* ((vble_name (check-reserved-lisp-names vble))
 	   (init-val (lookup-data-init vble))
 	   type decl1)
-      ;;(format t "*data-init* = ~A~%" *data-init*)
-      ;;(format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
-      ;;(format t "vble = ~a~%" vble)
-      ;;(format t "init-val = ~S~%" init-val)
+      #+nil
+      (progn
+	(format t "*data-init* = ~A~%" *data-init*)
+	(format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
+	(format t "vble = ~a~%" vble)
+	(format t "init-val = ~S~%" init-val))
       (cond
 	;;check for vble with two declarations i.e. an array
 	((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
@@ -2033,21 +2038,25 @@
 					((complex complex8) #c(0f0 0f0))
 					(complex16 #c(0d0 0d0)))))))))))))
 	(t
-	 (if (setq type (get-implicit-type vble))
-	     `(,vble_name ,(cond (init-val
-				  (remove-*data-init*-var vble_name)
-				  init-val)
-				 ((eq type 'fixnum) 0)
-				 ((eq type 'single-float) 0f0)
-				 ((eq type 'double-float) 0d0)
-				 ((eq type 'complex) '(complex 0f0 0f0))
-				 ((and (listp type) 
-				       (eq (car type) 'character))
-				  (make-char-init (list vble) type))
-				 (t nil)))
-	     (if (default-int-p vble) 
-		 `(,vble_name 0)
-		 `(,vble_name 0f0))))))))
+	 ;;(format t "implicit type = ~A~%" (get-implicit-type vble))
+	 (cond ((setq type (get-implicit-type vble))
+		`(,vble_name ,(cond (init-val
+				     (remove-*data-init*-var vble_name)
+				     init-val)
+				    ((eq type 'fixnum) 0)
+				    ((eq type 'single-float) 0f0)
+				    ((eq type 'double-float) 0d0)
+				    ((eq type 'complex) '(complex 0f0 0f0))
+				    ((and (listp type) 
+					  (eq (car type) 'character))
+				     (make-char-init (list vble) type))
+				    (t nil))))
+	       (t
+		(when init-val
+		  (remove-*data-init*-var vble_name))
+		(if (default-int-p vble) 
+		    `(,vble_name ,(or init-val 0))
+		    `(,vble_name ,(or init-val 0f0))))))))))
 
 
 (defun remove-*data-init*-var (vble)
@@ -2132,8 +2141,11 @@
 
 ;; make a declaration for vble which may or may not be a formal arg
 ;; vble_name is used to replace vbles called T with T_
-
-(defun make-declaration (vble &key vble-is-formal-arg)
+;;
+;; If vble is defined in a PARAMETER statement, :PARAMETERP should be
+;; set to the value of the parameter.  This will generate appropriate
+;; declarations for the parameter.
+(defun make-declaration (vble &key vble-is-formal-arg parameterp)
  (prog (vble_name type decl1)
    (setq vble_name (check-reserved-lisp-names vble))
   (return
@@ -2189,19 +2201,25 @@
 			 `(declare (type (,*array-type* logical ,(f2cl-array-total-size (cadar decl)))
 				    ,vble_name))
 			 `(declare (type logical ,vble))))))
-	      (t (when (setq decl (member vble (cdar type-clauses) :key #'car))
-		   (return 
-		       (if (cdar decl) 
-			   `(declare (type (,*array-type*
-					    ,type 
-					    ,(f2cl-array-total-size (cdar decl)))
-				      ,vble_name))
-			   `(declare (type ,type ,vble_name)))))))))
+	      (t
+	       (when (setq decl (member vble (cdar type-clauses) :key #'car))
+		 ;;(format t "declared vble ~A = ~A~%" vble parameterp)
+		 (return 
+		   (cond ((cdar decl) 
+			  `(declare (type (,*array-type*
+					   ,type 
+					   ,(f2cl-array-total-size (cdar decl)))
+					  ,vble_name)))
+			 (t
+			  (let ((limit (when parameterp
+					 `(,parameterp ,parameterp))))
+			  `(declare (type (,type ,@limit) ,vble_name)))))))))))
      ;; check implicitly declared variable.  (Why do we check to see
      ;; if the var is a formal arg?  What difference does that make
      ;; here?  I'm taking it out.)
      ((and #+nil (not vble-is-formal-arg)
 	   (setq type (get-implicit-type vble)))
+      ;;(format t "implicit decl~%")
       (if (and (listp type) (eq (car type) 'character))
 	  (make-char-decl (list vble_name) type)
 	  (progn
@@ -2210,9 +2228,12 @@
 	    `(declare (type ,type ,vble_name)))))
      ;; otherwise use default declaration
      (t
-      (if (default-int-p vble)
-	  `(declare (type integer4 ,vble_name))
-	  `(declare (type single-float ,vble_name))))))))
+      ;;(format t "default decl~%")
+      (let ((limit (when parameterp
+		     `(,parameterp ,parameterp))))
+	(if (default-int-p vble)
+	    `(declare (type (integer ,@limit) ,vble_name))
+	    `(declare (type (single-float ,@limit) ,vble_name)))))))))
 
 (defun make-char-decl (decl type)
   (flet ((decl-bounds (bounds)
@@ -3359,8 +3380,24 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.141 2006/05/01 17:38:27 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.142 2006/05/02 22:12:02 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.142  2006/05/02 22:12:02  rtoy
+;;; src/f2cl5.l:
+;;; o Try to make better declarations for variables defined in parameter
+;;;   statements.  We'll declare them as (double-float 42d0 42d0) if the
+;;;   parameter was initialized to 42d0.
+;;; o MAKE-DECLARATION updated to take an extra keyword argument to
+;;;   indicate if this is a parameter variable and to give the initial
+;;;   value of the parameter so we can make the appropriate declaration.
+;;; o When initializing simple variables in data statements, try to bind
+;;;   the variable with the initial value instead binding a default 0 zero
+;;;   and setq'ing it later.
+;;;
+;;; src/macros.l:
+;;; o Change DEFTYPE for INTEGER4 to allow parameters so we can specify
+;;;   tight bounds if desired.
+;;;
 ;;; Revision 1.141  2006/05/01 17:38:27  rtoy
 ;;; Replace some uses of FSET with plain ol' SETF because SETF does
 ;;; everything we want it to do.  But leave some FSET's around because we

@@ -61,10 +61,10 @@ is not included")
 ;; below, such as INT and AINT!
 
 #+(or cmu scl)
-(deftype integer4 ()
-  `(signed-byte 32))
+(deftype integer4 (&optional (low #x-80000000) (high #x7fffffff))
+  `(integer ,low ,high))
 #-(or cmu scl)
-(deftype integer4 ()
+(deftype integer4 (&rest p)
   'fixnum)
 
 (deftype integer2 ()
@@ -1393,8 +1393,24 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.70 2006/05/01 17:40:05 rtoy Exp $
+;;; $Id: macros.l,v 1.71 2006/05/02 22:12:02 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.71  2006/05/02 22:12:02  rtoy
+;;; src/f2cl5.l:
+;;; o Try to make better declarations for variables defined in parameter
+;;;   statements.  We'll declare them as (double-float 42d0 42d0) if the
+;;;   parameter was initialized to 42d0.
+;;; o MAKE-DECLARATION updated to take an extra keyword argument to
+;;;   indicate if this is a parameter variable and to give the initial
+;;;   value of the parameter so we can make the appropriate declaration.
+;;; o When initializing simple variables in data statements, try to bind
+;;;   the variable with the initial value instead binding a default 0 zero
+;;;   and setq'ing it later.
+;;;
+;;; src/macros.l:
+;;; o Change DEFTYPE for INTEGER4 to allow parameters so we can specify
+;;;   tight bounds if desired.
+;;;
 ;;; Revision 1.70  2006/05/01 17:40:05  rtoy
 ;;; Change STOP to produce a continuable error instead of an error so that
 ;;; we can continue from the STOP statement, if we choose to.  It's not

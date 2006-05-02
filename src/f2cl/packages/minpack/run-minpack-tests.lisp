@@ -4,7 +4,7 @@
 
 (defun run-minpack-tests ()
   (dolist (f '(tlmdif tlmder))
-    (with-open-file (input "clocc:src;f2cl;packages;minpack;lmdif-input.dat"
+    (with-open-file (input "minpack:lmdif-input.dat"
 			   :direction :input)
       (let ((old-lun (gethash 5 f2cl-lib::*lun-hash*)))
       (unwind-protect

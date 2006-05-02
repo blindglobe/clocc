@@ -1375,6 +1375,10 @@
 			 (make-declaration v :parameterp (if (numberp val) val nil))))
 		   key-params))
      ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     ;; Clean up the declarations
+     (setf key-params-decls
+	   `((declare ,@(mapcan #'cdr key-params-decls))))
+     ;;(format t "key-params-decl = ~S~%" key-params-decls)
      
 
      ;; Initialize local variables
@@ -3380,8 +3384,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.142 2006/05/02 22:12:02 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.143 2006/05/02 22:17:17 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.143  2006/05/02 22:17:17  rtoy
+;;; Clean declarations for parameters by combining all declarations int
+;;; one.
+;;;
 ;;; Revision 1.142  2006/05/02 22:12:02  rtoy
 ;;; src/f2cl5.l:
 ;;; o Try to make better declarations for variables defined in parameter

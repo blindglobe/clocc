@@ -6,7 +6,7 @@ L =
 .f.o:
 	$(F77) -c $(FFLAGS) $*.f
 
-example.out: example.c dglfgb.o dgletc.o dmdc.o
+example.out: example.c dglfgb.o dgletc.o dmdc.o d1mach.o
 	gcc -g -c example.c
 	$(F77) example.o dglfgb.o dgletc.o dmdc.o $L
 #	a.out >$@
@@ -27,24 +27,24 @@ smdc.f: smdc.f0
 	true  # Obtain dmcd.f from smdc.f0 by activating the statements
 	false # appropriate to your machine
 
-madsen.out: madsen.f dglfg.o dgletc.o dmdc.o
-	$(F77) madsen.f dglfg.o dgletc.o dmdc.o $L
+madsen.out: madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
+	$(F77) madsen.f dglfg.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
 	a.out >$@
 
-madsenb.out: madsenb.f dglfgb.o dgletc.o dmdc.o
-	$(F77) madsenb.f dglfgb.o dgletc.o dmdc.o $L
+madsenb.out: madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o
+	$(F77) madsenb.f dglfgb.o dgletc.o dmdc.o d1mach.o rhols.o madrj.o $L
 	a.out >$@
 
-pmain: dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o
+pmain: dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o d1mach.o
 	$(F77) dpmain.o mecdf.o dglfg.o dglfgb.o dgletc.o dmdc.o $L -o $@
 
 pmain.out: pmain pmain.in
 	pmain <pmain.in >$@
 
-mlmnp: mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o
+mlmnp: mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o d1mach.o
 	$(F77) mlmnp.o mecdf.o mnpsubs.o dglfg.o dgletc.o dmdc.o $L -o $@
 
-mlmnpb: mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o
+mlmnpb: mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o d1mach.o
 	$(F77) mlmnpb.o mecdf.o mnpsubs.o dglfgb.o dgletc.o dmdc.o $L -o $@
 
 mnpex1.out mnpex1b.out: mlmnp mlmnpb mnpex1.fu1 daganzo.fu2

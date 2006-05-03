@@ -117,7 +117,7 @@ C
           WRITE (6,50) Y(NP1),IFLAG,NFE,ARCLEN,DTIME,(Y(J),J=1,N)
 50        FORMAT(/' LAMBDA =',F11.8,'  FLAG =',I2,I8,' JACOBIAN ',
      +    'EVALUATIONS',/,1X,'  ARC LENGTH =',F8.3,
-     +    '   EXECUTION TIME(SECS) =',F10.2/(1X,1P,4E16.8))
+     +    '   EXECUTION TIME(SECS) =',F10.2/(1X,1P4E16.8))
 60     CONTINUE
        STOP
        END

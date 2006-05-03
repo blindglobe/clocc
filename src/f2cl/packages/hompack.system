@@ -3,8 +3,11 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.5 2005/07/18 16:37:17 rtoy Exp $
+;;; $Id: hompack.system,v 1.6 2006/05/03 02:21:48 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.6  2006/05/03 02:21:48  rtoy
+;;; Fix missing dependency.  hfun1p depends on ffunp.
+;;;
 ;;; Revision 1.5  2005/07/18 16:37:17  rtoy
 ;;; Make some of the files :compile-only because the user is supposed to
 ;;; supply the definitions, and these are just templates for the user to
@@ -66,7 +69,7 @@
      (:file "fodeds" :depends-on ("rhojs" "pcgds" "fjacs"))
      (:file "gfunp" :depends-on ("powp" "mulp"))
      (:file "gmfads")
-     (:file "hfun1p" :depends-on ("gfunp"))
+     (:file "hfun1p" :depends-on ("gfunp" "ffunp"))
      (:file "hfunp" :depends-on ("hfun1p"))
      (:file "initp" :depends-on ("sclgnp"))
      (:file "mfacds" :depends-on ("gmfads"))

@@ -1535,14 +1535,40 @@
        ;; Add entry points to the function database
 
        (dolist (f *entry-points*)
-	 (destructuring-bind (name args)
+	 ;;(format t "Adding entry point ~A to database~%" f)
+	 (destructuring-bind (name args &optional parent)
 	     f
+	   ;;(format t "name, args, parent = ~A ~A ~A~%" name args parent)
 	   (let ((entry (gethash name *f2cl-function-info*))
 		 (var-type-list (get-var-types args)))
-	     (if entry
-		 (setf (f2cl-finfo-arg-types entry) var-type-list)
-	       (setf (gethash name *f2cl-function-info*)
-		     (make-f2cl-finfo :arg-types var-type-list))))))
+	     #+nil
+	     (progn
+	       (format t "entry = ~A~%" entry)
+	       (format t "var-type-list = ~A~%" var-type-list)
+	       (format t "parent info = ~A~%" (gethash parent *f2cl-function-info*)))
+	     (cond
+	       (parent
+		;; If we know parent of the entry point function, we
+		;; copy the information from the parent to this entry.
+		;; (Because we only support entry points with the same
+		;; number and type of args.)
+		(let ((pe (gethash parent *f2cl-function-info*)))
+		  (cond
+		    (entry
+		     (setf (f2cl-finfo-arg-types entry)
+			   (f2cl-finfo-arg-types pe))
+		     (setf (f2cl-finfo-return-values entry)
+			   (f2cl-finfo-return-values pe)))
+		    (t
+		     (setf (gethash name *f2cl-function-info*)
+			   (make-f2cl-finfo :arg-types (f2cl-finfo-arg-types pe)
+					    :return-values (f2cl-finfo-return-values pe)))))))
+	       (t
+		(warn "Got entry point for which we have no parent!")
+		(if entry
+		    (setf (f2cl-finfo-arg-types entry) var-type-list)
+		    (setf (gethash name *f2cl-function-info*)
+			  (make-f2cl-finfo :arg-types var-type-list))))))))
        
        (setf entry-points
 	     (mapcar #'(lambda (x)
@@ -3384,8 +3410,29 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.143 2006/05/02 22:17:17 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.144 2006/05/03 02:31:10 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.144  2006/05/03 02:31:10  rtoy
+;;; src/f2cl1.l:
+;;; o When parsing an entry point, keep track of the actual parent
+;;;   function so we can generate the correct calling info.  (We only
+;;;   support entry points with exactly the same number and type of
+;;;   arguments so the calling info has to be the same.)
+;;;
+;;;   Do this by adding the parent to the list pushed on *entry-points*.
+;;;
+;;; o Set *subprog_name* to the function name.  (Is this right?)
+;;;
+;;; src/f2cl5.l:
+;;; o If possible, use the parent name to figure out the calling info for
+;;;   the entry point.
+;;;
+;;;
+;;; With these changes hompack can be compiled twice, successfully.
+;;; Previously polyp.f would call polynf correctly the first time, but
+;;; when everything is recompiled, polyp.f would incorrectly call polynf
+;;; with no args!
+;;;
 ;;; Revision 1.143  2006/05/02 22:17:17  rtoy
 ;;; Clean declarations for parameters by combining all declarations int
 ;;; one.

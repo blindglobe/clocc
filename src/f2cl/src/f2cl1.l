@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/05/01 17:38:27 $"))
+  (remove #\$ "2.0 beta $Date: 2006/05/03 02:31:09 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -1286,6 +1286,7 @@ FILENAME                 File containing Fortran code
               (list (list (convert-data-type (variable-value '%type bindings))
                           (list fun-name))))
    (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
+   (setf *subprog_name* fun-name)
    (return
    (list 'defun 
          fun-name 
@@ -1296,7 +1297,8 @@ FILENAME                 File containing Fortran code
    (setq *function-flag* t)
    (setq *subprog-arglist* (remove '|,| (variable-value '%arg-list bindings)))
    (list 'defun 
-         (check-reserved-lisp-names (variable-value '%name bindings))
+         (setf *subprog_name*
+	       (check-reserved-lisp-names (variable-value '%name bindings)))
          (remove '|,| (variable-value '%arg-list bindings))))
 
 
@@ -1305,7 +1307,8 @@ FILENAME                 File containing Fortran code
   (let* ((entry-name (variable-value '%name bindings))
 	 (arglist (remove '|,| (variable-value '%arg-list bindings)))
 	 (args (mapcar #'check-reserved-lisp-names arglist)))
-    (push (list entry-name args) *entry-points*)
+    ;;(format t "parent = ~A~%" *subprog_name*)
+    (push (list entry-name args *subprog_name*) *entry-points*)
     (list entry-name)))
 
 ;goto
@@ -2747,8 +2750,29 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.162 2006/05/01 17:38:27 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.163 2006/05/03 02:31:09 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.163  2006/05/03 02:31:09  rtoy
+;;; src/f2cl1.l:
+;;; o When parsing an entry point, keep track of the actual parent
+;;;   function so we can generate the correct calling info.  (We only
+;;;   support entry points with exactly the same number and type of
+;;;   arguments so the calling info has to be the same.)
+;;;
+;;;   Do this by adding the parent to the list pushed on *entry-points*.
+;;;
+;;; o Set *subprog_name* to the function name.  (Is this right?)
+;;;
+;;; src/f2cl5.l:
+;;; o If possible, use the parent name to figure out the calling info for
+;;;   the entry point.
+;;;
+;;;
+;;; With these changes hompack can be compiled twice, successfully.
+;;; Previously polyp.f would call polynf correctly the first time, but
+;;; when everything is recompiled, polyp.f would incorrectly call polynf
+;;; with no args!
+;;;
 ;;; Revision 1.162  2006/05/01 17:38:27  rtoy
 ;;; Replace some uses of FSET with plain ol' SETF because SETF does
 ;;; everything we want it to do.  But leave some FSET's around because we

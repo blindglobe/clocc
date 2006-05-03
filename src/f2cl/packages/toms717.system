@@ -161,6 +161,7 @@
 	       ;;(:file "dpmain")
 
 	       ;; dpmain.f split into 1 file per function.
+	       #||
 	       (:file "pmain")
 	       (:file "brj")
 	       (:file "brj1")
@@ -181,6 +182,7 @@
 	       (:file "rhpoil"
 		      :compiler-options (:declare-common t))
 	       (:file "lpn")
+	       ||#
 
 	       ;;(:file "mlmnp")
 	       ;;(:file "mlmnpb")

@@ -16,8 +16,8 @@ f2cl.system, and then finally run (mk:oos "f2cl" :compile).
 A third method is to use asdf.  You can load f2cl.asd and run
 (asdf:oos 'asdf:load-op :f2cl).
 
-Finally, a third method if you have none of the above is to manually
-run everything as follows:
+Finally, a fourth method, if you have none of the above, is to
+manually run everything as follows:
 
 1. Start your favorite Common Lisp implementation use the function
    "compile-file" to compile each of the source files:
@@ -61,7 +61,7 @@ result in the file "<path>/fortran.lisp".
 
 Alternatively,
 
-(f2cl:f2cl "<path>/fortran.f")
+(f2cl:f2cl-compile "<path>/fortran.f")
 
 will also run compile-file on the Lisp file so you can load it
 directly into your lisp.
@@ -107,10 +107,11 @@ o Common blocks.
 
     F2cl converts common blocks to structures.  However, common blocks
     may be referenced in several different files, so the user must
-    tell f2cl when to define the structure.  This should be done
-    exactly once for each common block that is defined.  This should
-    also be done for the first file that is compiled and loaded, so
-    that subsequent files know about the definition.
+    tell f2cl when to define the structure.  Use the :declare-common
+    parameter to tell f2cl to define the structure. This should be
+    done exactly once for each common block that is defined.  This
+    should also be done for the first file that is compiled and
+    loaded, so that subsequent files know about the definition.
 
 o Conversion order.
 
@@ -131,6 +132,9 @@ o Conversion order.
     F2cl cannot always determine whether a slice of an array should be
     used or just the single element.
 
+See also the file src/NOTES which contains a change log.  But there
+are also various notes about about restrictions and enhancements on
+various features supported by f2cl.
 
 
 Acknowledgments:

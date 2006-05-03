@@ -2228,7 +2228,7 @@
 	       (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		   (return
 		     (if (cdar decl) 
-			 `(declare (type (,*array-type* logical ,(f2cl-array-total-size (cadar decl)))
+			 `(declare (type (,*array-type* logical ,(f2cl-array-total-size (cdar decl)))
 				    ,vble_name))
 			 `(declare (type logical ,vble))))))
 	      (t
@@ -3440,8 +3440,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.146 2006/05/03 17:37:23 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.147 2006/05/03 20:06:42 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.147  2006/05/03 20:06:42  rtoy
+;;; Was not correctly handling handling the dimensions for a logical
+;;; array when computing the declaration for the array.
+;;;
 ;;; Revision 1.146  2006/05/03 17:37:23  rtoy
 ;;; o A better implementation, I think, of the separate nP edit
 ;;;   descriptor.

@@ -2899,8 +2899,7 @@
 
 (defun parse-format1 (format &optional (newlinep t))
   (let ((x (list-split '|,| (fix-slashes format)))
-	*scale-factor*
-	process-p-desc)
+	*scale-factor*)
     (declare (special *scale-factor*))
     ;; It's valid to have a format like "1p,e15.8" instead of
     ;; "1pe15.8".  So the variable *scale-factor* is used to handle
@@ -2914,11 +2913,6 @@
 	     (append directive-list '("~%"))
 	     directive-list))
       (setq dl (car desc-lists))
-      (when *scale-factor*
-	;; We previously seen a lone nP descriptor.  Make a note of
-	;; it.  This also means that the following descriptor gets a
-	;; non-NIL value for *scale-factor*.
-	(setf process-p-desc t))
       (setq directive 
 	    (cond ((null dl) nil)	;(list nil))
 		  ((stringp (car dl))
@@ -2940,12 +2934,7 @@
 		   (parse-format-descriptor-list (car dl) 
 						 (destruct-descriptor-list (cdr dl))))
 		  (t (parse-format-descriptor-list 1 
-						   (destruct-descriptor-list dl)))))
-      (when process-p-desc
-	;; We're done processing the nP descriptor.  Reset the
-	;; scale-factor and our mark.
-	(setf *scale-factor* nil)
-	(setf process-p-desc nil)))))
+						   (destruct-descriptor-list dl))))))))
 
 ;--------------------------------------------------------------------------------
 
@@ -3025,44 +3014,52 @@
                     (set (cadar p)
                          (cons (car d) (eval (cadar p)))) t)))))
 
-;--------------------------------------------------------------------------------
-; functions for parsing format stmts which are stored with their labels
-; on a global list (referenced by calls to WRITE)
+;;--------------------------------------------------------------------------------
+;; functions for parsing format stmts which are stored with their labels
+;; on a global list (referenced by calls to WRITE)
 
 (defun parse-format-descriptor-list (a x)
-  (prog (left right)
-   (declare (special left right))
-   (if (numberp (car x)) nil (setq x (cons a x)))
-   ; find most significant descriptor and parse
-   (return 
-   (cond ;((typep (cdr x) 'string)
-         ; (cdr x))
-         ((pattern-match-and-bind '((+ left) #\H (+ right)) x)
-          (parse-format-descriptor-H left right))
-         ((pattern-match-and-bind '((> left) #\I (+ right)) x)
-          (parse-format-descriptor-I left right))
-         ((pattern-match-and-bind '((+ left) #\F (+ right)) x)
-          (parse-format-descriptor-F left right))
-         ((pattern-match-and-bind '((+ left) #\G (+ right)) x)
-          (parse-format-descriptor-G left right))
-         ((pattern-match-and-bind '((+ left) #\E (+ right)) x)
-          (parse-format-descriptor-E left right))
-         ((pattern-match-and-bind '((+ left) #\D (+ right)) x)
-          (parse-format-descriptor-D left right))
-         ((pattern-match-and-bind '((> left) #\T #\R (+ right)) x)
-          (parse-format-descriptor-TR right))
-         ((pattern-match-and-bind '((> left) #\X) x)
-          (parse-format-descriptor-X left))
-         ((pattern-match-and-bind '((> left) #\P) x)
-          (parse-format-descriptor-P left))
-         ((pattern-match-and-bind '((> left) #\S (> right)) x)
-          (parse-format-descriptor-S right))
-	 ((pattern-match-and-bind '((> left) #\A (+ right)) x)
-	  (parse-format-descriptor-A left right))
-         ((equal (cadr x) '#\/)
-          (parse-format-descriptor-/))
-         (t (parse-default-format-descriptor x))
-         )))) 
+  (let ((matched-p nil)
+	left right)
+    (declare (special left right *scale-factor*))
+    (if (numberp (car x))
+	nil
+	(setq x (cons a x)))
+    ;; find most significant descriptor and parse
+    (let ((result
+	   (cond
+	     ;;((typep (cdr x) 'string)
+	     ;; (cdr x))
+	     ((pattern-match-and-bind '((+ left) #\H (+ right)) x)
+	      (parse-format-descriptor-H left right))
+	     ((pattern-match-and-bind '((> left) #\I (+ right)) x)
+	      (parse-format-descriptor-I left right))
+	     ((pattern-match-and-bind '((+ left) #\F (+ right)) x)
+	      (parse-format-descriptor-F left right))
+	     ((pattern-match-and-bind '((+ left) #\G (+ right)) x)
+	      (parse-format-descriptor-G left right))
+	     ((pattern-match-and-bind '((+ left) #\E (+ right)) x)
+	      (parse-format-descriptor-E left right))
+	     ((pattern-match-and-bind '((+ left) #\D (+ right)) x)
+	      (parse-format-descriptor-D left right))
+	     ((pattern-match-and-bind '((> left) #\T #\R (+ right)) x)
+	      (parse-format-descriptor-TR right))
+	     ((pattern-match-and-bind '((> left) #\X) x)
+	      (parse-format-descriptor-X left))
+	     ((pattern-match-and-bind '((> left) #\P) x)
+	      (setf matched-p t)
+	      (parse-format-descriptor-P left))
+	     ((pattern-match-and-bind '((> left) #\S (> right)) x)
+	      (parse-format-descriptor-S right))
+	     ((pattern-match-and-bind '((> left) #\A (+ right)) x)
+	      (parse-format-descriptor-A left right))
+	     ((equal (cadr x) '#\/)
+	      (parse-format-descriptor-/))
+	     (t (parse-default-format-descriptor x)))))
+      (unless matched-p
+	;; Need to reset *scale-factor* if this wasn't a P descriptor.
+	(setf *scale-factor* nil))
+      result)))
 
 (defun fixnum-string (x)
    (princ-to-string x))
@@ -3107,7 +3104,7 @@
 (defun parse-format-descriptor-F (left right)
   (let ((k 0)
 	(a 1))
-    (declare (special k a))
+    (declare (special k a *scale-factor*))
     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
 	(pattern-match-and-bind '((> k) #\P) left)
 	(pattern-match-and-bind '((> a)) left))
@@ -3147,7 +3144,7 @@
 
 (defun parse-format-descriptor-D (left right)
   (let ((k 0) (a 1) w d (e 2))
-    (declare (special k a w d e))
+    (declare (special k a w d e *scale-factor*))
     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
 	(pattern-match-and-bind '((> k) #\P) left)
 	(pattern-match-and-bind '((> a)) left))
@@ -3166,7 +3163,7 @@
 
 (defun parse-format-descriptor-G (left right)
   (let ((k 0) (a 1) w d (e 2))
-    (declare (special k a w d e))
+    (declare (special k a w d e *scale-factor*))
     (or (pattern-match-and-bind '((> k) #\P (> a)) left)
 	(pattern-match-and-bind '((> k) #\P) left)
 	(pattern-match-and-bind '((> a)) left))
@@ -3195,8 +3192,8 @@
 
 (defun parse-format-descriptor-P (w)
   (declare (special *scale-factor*))
+  ;; Save the scale-factor away so we can use it later.
   (setf *scale-factor* (fixnum-string w))
-  (format t "P: scale = ~A ~A~%" *scale-factor* w)
   nil)
 
 (defun parse-format-descriptor-S (right)
@@ -3443,8 +3440,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.145 2006/05/03 17:22:46 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.146 2006/05/03 17:37:23 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.146  2006/05/03 17:37:23  rtoy
+;;; o A better implementation, I think, of the separate nP edit
+;;;   descriptor.
+;;; o Forgot to declare *scale-factor* as special in the F, D, and G
+;;;   descriptor parser functions.
+;;;
 ;;; Revision 1.145  2006/05/03 17:22:46  rtoy
 ;;; src/f2cl5.l
 ;;; o We weren't handling formats like "1P,E15.8", which is the same as

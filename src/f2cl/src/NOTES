@@ -1,6 +1,20 @@
 -*- Mode: text -*-
 
 Changes:
+May 03, 2006
+------------
+o f2cl tries to declare the variables in parameter statements more
+  carefully, since the value of a parameter cannot change.
+o f2cl tries to make sure scalars initialized in data statements are
+  actually initialized with the correct value instead setting the
+  value later.
+o In many cases, f2cl will no longer generate an FSET; instead plain
+  SETF will be done, because it does the right thing anyway.
+o Some clean up of the various packages have been done, and they have
+  been tested.
+o f2cl should handle formats like "1P,E15.8", which is the same as
+  "1PE15.8". 
+
 Apr 28, 2006
 ------------
 o Oops.  Assignment of a complex result to a real variable was not

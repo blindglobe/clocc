@@ -235,8 +235,8 @@ C
       LENIWK=3413
 C
 C
-      OPEN (UNIT=7,FILE='INNHP.DAT',STATUS='UNKNOWN')
-      OPEN (UNIT=6,FILE='OUTHP.DAT',STATUS='UNKNOWN')
+      OPEN (UNIT=7,FILE='innhp.dat',STATUS='old')
+      OPEN (UNIT=6,FILE='OUTHP.DAT',STATUS='new')
 C
           SSPAR(1)=.0
           SSPAR(2)=.0

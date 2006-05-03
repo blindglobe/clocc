@@ -446,7 +446,7 @@ C
       IF (V(DST0) .LT. ZERO) GO TO 250
       I = 0
       IF ((V(NREDUC) .GT. ZERO .AND. V(NREDUC) .LE. EMAX) .OR.
-     1    (V(NREDUC) .EQ. ZERO. AND. V(PREDUC) .EQ. ZERO))  I = 2
+     1    (V(NREDUC) .EQ. ZERO .AND. V(PREDUC) .EQ. ZERO))  I = 2
       IF (V(STPPAR) .EQ. ZERO .AND. V(RELDX) .LE. V(XCTOL)
      1                        .AND. GOODX)                  I = I + 1
       IF (I .GT. 0) IV(IRC) = I + 6

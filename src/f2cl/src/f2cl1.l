@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/05/03 02:31:09 $"))
+  (remove #\$ "2.0 beta $Date: 2006/05/04 04:02:09 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -174,6 +174,18 @@ incorrect, so use caution.")
 	(make-f2cl-finfo :arg-types '(integer4) :return-values '(nil)))
   *f2cl-function-info*)
 
+(defun save-f2cl-finfo (path)
+  "Save *F2CL-FUNCTION-INFO* to PATH.  This file can be reloaded
+later to provide the function information for f2cl to compile functions
+correctly"
+  (with-open-file (s path :direction :output :if-exists :supersede)
+    (maphash #'(lambda (key val)
+		 (write `(setf (gethash ',key f2cl::*f2cl-function-info*)
+			  ,val)
+			:stream s
+			:pretty t)
+		 (terpri s))
+	     *f2cl-function-info*)))
 ;----------------------------------------------------------------------------
 
 (defun f2cl (input-file &key
@@ -2750,8 +2762,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.163 2006/05/03 02:31:09 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.164 2006/05/04 04:02:09 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.164  2006/05/04 04:02:09  rtoy
+;;; Add a function, SAVE-F2CL-FINFO to save the compiled function info to
+;;; a file which can be reloaded later.
+;;;
 ;;; Revision 1.163  2006/05/03 02:31:09  rtoy
 ;;; src/f2cl1.l:
 ;;; o When parsing an entry point, keep track of the actual parent

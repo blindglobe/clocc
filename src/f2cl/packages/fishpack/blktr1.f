@@ -18,6 +18,7 @@ C
      3                WU(1)      ,Y(IDIMY,1)
       COMMON /CBLKT/  NPP        ,K          ,EPS        ,CNV        ,
      1                NM         ,NCMPLX     ,IK
+      real dum(1)
 C
 C BEGIN REDUCTION PHASE
 C
@@ -29,6 +30,12 @@ C
          I3 = I2+I1
          I4 = I2+I2
          IRM1 = IR-1
+         im2 = 1
+         nm2 = 1
+         im3 = 1
+         nm3 = 1
+         im1 = 1
+         nm1 = 1
          CALL INDXB (I2,IR,IM2,NM2)
          CALL INDXB (I1,IRM1,IM3,NM3)
          CALL INDXB (I3,IRM1,IM1,NM1)
@@ -44,6 +51,12 @@ C
             IF (I-IF) 102,108,108
   102       CALL INDXA (I,IR,IDXA,NA)
             CALL INDXB (I-I1,IRM1,IM1,NM1)
+            ip1 = 1
+            np1 = 1
+            ip2 = 1
+            np2 = 1
+            ip3 = 1
+            np3 = 1
             CALL INDXB (IPI2,IR,IP2,NP2)
             CALL INDXB (IPI1,IRM1,IP1,NP1)
             CALL INDXB (IPI3,IRM1,IP3,NP3)
@@ -73,6 +86,8 @@ C
       I1 = I/2
       CALL INDXB (I-I1,K-2,IM1,NM1)
       CALL INDXB (I+I1,K-2,IP1,NP1)
+      iz = 1
+      nz = 1
       CALL INDXB (I,K-1,IZ,NZ)
       CALL PRDCT (NZ,B(IZ),NM1,B(IM1),NP1,B(IP1),0,DUM,Y(1,I),W1,M,AM,
      1            BM,CM,WD,WW,WU)

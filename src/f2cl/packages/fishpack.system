@@ -237,8 +237,6 @@
   :components
   ((:file "tsthw3crt")))
 
-;; Warning!  This test doesn't pass!  It seems to be in an infinite
-;; loop trying to print out results, but just the text is printed.
 (mk:defsystem tst-fishpack-sepx4
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))

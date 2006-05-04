@@ -105,7 +105,8 @@
    (:file "hstcs1"
 	  :depends-on ("blktri"))
 
-   ;; This package requires FFTPACK.
+   ;; This package requires FFTPACK, which f2cl cannot convert because
+   ;; of type punning.
    #||
    (:file "hw3crt"
 	  :depends-on ("pois3d"))
@@ -228,6 +229,9 @@
   :components
   ((:file "tsthstcsp")))
 
+;; WARNING: This test doesn't work because it requires FFTPACK.  But
+;; FFTPACK can't be translated by f2cl because it plays games like
+;; passing a real array to a routine that expects an integer array.
 (mk:defsystem tst-fishpack-hw3crt
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))

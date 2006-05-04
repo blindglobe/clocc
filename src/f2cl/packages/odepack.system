@@ -4,9 +4,17 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+;; Create a logical pathname for our files.
+(let ((base (make-pathname :directory (pathname-directory *load-pathname*))))
+  (setf (logical-pathname-translations "odepack")
+	(list (list "**;*.*.*"
+		    (merge-pathnames (make-pathname :directory '(:relative "odepack" :wild-inferiors)
+						    :name :wild :type :wild)
+				     base)))))
+
 (mk:defsystem odepack
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
@@ -53,6 +61,9 @@
      (:file "diprep"
 	    :depends-on ("dprep")
 	    :compiler-options (:common-as-array t :declare-common t))
+     ;; This routine takes a slice of a double precision array and
+     ;; passes it to dprepi as a integer array. That won't work in
+     ;; Lisp!
      (:file "diprepi"
 	    :depends-on ("dprepi"))
      (:file "dlhin"
@@ -140,7 +151,7 @@
      (:file "nroc")
      (:file "nsfc")
      (:file "odrv"
-	    :depends-on ("sro"))
+	    :depends-on ("sro" "md"))
      (:file "sro")
      (:file "xerrwd"
 	    :depends-on ("ixsav"))
@@ -149,8 +160,8 @@
 
 ;; This seems to work.
 (mk:defsystem odedemo-lsode
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
@@ -158,10 +169,23 @@
     :components
     ((:file "opkdemo1")))
 
+
+;; This won't work because opkdemo2 equivalences two arrays together.
+;; f2cl doesn't know how to handle that yet.
+(mk:defsystem odedemo-lsodes
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-extension "f"
+    :language :f2cl
+    :compiler-options (:common-as-array t)
+    :depends-on ("odepack")
+    :components
+    ((:file "opkdemo2")))
+
 ;; This seems to work.
 (mk:defsystem odedemo-lsoda
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
@@ -171,8 +195,8 @@
 
 ;; This seems to work.
 (mk:defsystem odedemo-lsodar
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
@@ -182,8 +206,8 @@
 
 ;; This seems to work.
 (mk:defsystem odedemo-lsodpk
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
@@ -193,8 +217,8 @@
 
 ;; This seems to work.
 (mk:defsystem odedemo-lsodkr
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
@@ -202,9 +226,11 @@
     :components
     ((:file "opkdemo6")))
 
+
+;; Might not be right?
 (mk:defsystem odedemo-lsodi
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
@@ -212,9 +238,10 @@
     :components
     ((:file "opkdemo7")))
 
+;; This seems to work
 (mk:defsystem odedemo-lsoibt
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
@@ -222,9 +249,12 @@
     :components
     ((:file "opkdemo8")))
 
+;; Doesn't work.  DIPREPI takes a double precision array and slices it
+;; up and passes it to DPREPI which wants integer arrays.  That ain't
+;; gonna work in Lisp!
 (mk:defsystem odedemo-lsodis
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;")
-    :binary-pathname (translate-logical-pathname "clocc:src;f2cl;packages;odepack;lib")
+    :source-pathname (translate-logical-pathname "odepack:")
+    :binary-pathname (translate-logical-pathname "odepack:lib")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)

@@ -219,8 +219,6 @@
   :components
   ((:file "tsthstssp")))
 
-;; Warning!  This test doesn't pass!  It gets a bad index error
-;; accessing element 0 of an array.
 (mk:defsystem tst-fishpack-hstcsp
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))

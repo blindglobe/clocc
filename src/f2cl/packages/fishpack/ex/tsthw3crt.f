@@ -57,6 +57,7 @@ c     u(x,y,z) = x**4*sin(y)*cos(z) .
 c
       dimension       f(11,41,16),bdzf(11,41),w(370)     ,x(11)      ,
      1                y(41)      ,z(16)
+      real dum(1)
 c
 c        from the description of the problem given above, we define
 c     the following quantities
@@ -66,7 +67,7 @@ c
       xf = 1.
       lbdcnd = 1
       ys = 0.
-      pi = pimach(dum)
+      pi = pimach(dum0)
       yf = 2.*pi
       mbdcnd = 0
       zs = 0.
@@ -139,8 +140,11 @@ c
 c
 c     call hw3crt to generate and solve the finite difference equation.
 c
-      call hw3crt (xs,xf,l,lbdcnd,bdxs,bdxf,ys,yf,m,mbdcnd,bdys,bdyf,
-     1             zs,zf,n,nbdcnd,bdzs,bdzf,elmbda,ldimf,mdimf,f,
+c      call hw3crt (xs,xf,l,lbdcnd,bdxs,bdxf,ys,yf,m,mbdcnd,bdys,bdyf,
+c     1             zs,zf,n,nbdcnd,bdzs,bdzf,elmbda,ldimf,mdimf,f,
+c     2             pertrb,ierror,w)
+      call hw3crt (xs,xf,l,lbdcnd,dum,dum,ys,yf,m,mbdcnd,dum,dum,
+     1             zs,zf,n,nbdcnd,dum,bdzf,elmbda,ldimf,mdimf,f,
      2             pertrb,ierror,w)
 c
 c     compute discretization error.  the exact solution to the

@@ -438,7 +438,7 @@ c as a computed solution at t = 0.4, using data-loaded values for
 c accurate answers (from running with much smaller tolerances).
 c
       integer mb, nb,  k
-      double precision y, abermx,  ae1, ae2, ae3, u1, u2, u3, zero,
+      double precision y, abermx,  ae1, ae2, ae3, u1, u2, u3, zero
 c     1   u1a, u1b, u1c, u1d, u1e, u1f, u1g,
 c     2   u2a, u2b, u2c, u2d, u2e, u2f, u2g,
 c     3   u3a, u3b, u3c, u3d, u3e, u3f, u3g

@@ -429,7 +429,7 @@ c The returned value is
 c elkup  =  norm of  ( y - ytrue ) / ( rtol*abs(ytrue) + atol ).
 c
       integer n, itol, i
-      double precision y, ewt, rtol, atol, y9, y99,
+      double precision y, ewt, rtol, atol, y9, y99
 c      double precision y99a, y99b, y99c,
 c     1   y99d, y99e, y99f, y99g, dvnorm
       dimension y(n), ewt(n), y9(9), y99(99)

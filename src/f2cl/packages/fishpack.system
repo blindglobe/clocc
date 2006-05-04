@@ -9,8 +9,8 @@
     :source-extension "f")
 
 (mk:defsystem fishpack
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :components
@@ -139,8 +139,8 @@
    ))
 
 (mk:defsystem tst-fishpack-hwscrt
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -148,8 +148,8 @@
   ((:file "tsthwscrt")))
 
 (mk:defsystem tst-fishpack-hwscyl
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -157,8 +157,8 @@
   ((:file "tsthwscyl")))
 
 (mk:defsystem tst-fishpack-hwsplr
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -166,19 +166,17 @@
   ((:file "tsthwsplr")))
 
 (mk:defsystem tst-fishpack-hwsssp
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
   :components
   ((:file "tsthwsssp")))
 
-;; Warning!  This test doesn't pass!  It gets a bad index error
-;; accessing element 0 of an array.
 (mk:defsystem tst-fishpack-hwscsp
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -186,8 +184,8 @@
   ((:file "tsthwscsp")))
 
 (mk:defsystem tst-fishpack-hstcrt
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -195,8 +193,8 @@
   ((:file "tsthstcrt")))
 
 (mk:defsystem tst-fishpack-hstplr
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -204,8 +202,8 @@
   ((:file "tsthstplr")))
 
 (mk:defsystem tst-fishpack-hstcyl
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -213,8 +211,8 @@
   ((:file "tsthstcyl")))
 
 (mk:defsystem tst-fishpack-hstssp
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -224,8 +222,8 @@
 ;; Warning!  This test doesn't pass!  It gets a bad index error
 ;; accessing element 0 of an array.
 (mk:defsystem tst-fishpack-hstcsp
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -233,8 +231,8 @@
   ((:file "tsthstcsp")))
 
 (mk:defsystem tst-fishpack-hw3crt
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")
@@ -244,8 +242,8 @@
 ;; Warning!  This test doesn't pass!  It seems to be in an infinite
 ;; loop trying to print out results, but just the text is printed.
 (mk:defsystem tst-fishpack-sepx4
-  :source-pathname (translate-logical-pathname
-		    "clocc:src;f2cl;packages;fishpack;ex;")
+  :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
+				    (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
   :depends-on ("fishpack")

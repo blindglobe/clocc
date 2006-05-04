@@ -822,7 +822,8 @@
 		     (if (subtypep var-type 'array)
 			 (values (first (third var-type)) t)
 			 (values 1 nil))
-		   (unless (eq prev-type el-type)
+		   (unless (and (subtypep el-type prev-type)
+				(subtypep prev-type el-type))
 		     (setf prev-type el-type)
 		     (incf part)
 		     (setf total-len 0)
@@ -3317,8 +3318,8 @@
 	     (dims (cond ((and (listp var-type)
 			       (subtypep var-type 'array)
 			       (not (subtypep var-type 'string)))
-			  ;;(format t "array var-type = ~A ~A~%" var var-type)
-			  ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+			  ;;(format t "array var-type = ~A ~A~%" v var-type)
+			  ;;(format t "lookup-array-bounds ~A = ~A~%" v (lookup-array-bounds v))
 
 			  ;; If the dimension of the array is
 			  ;; a number, use the actual
@@ -3332,7 +3333,8 @@
 	(let ((len (if (subtypep var-type 'array)
 			      (first (third var-type))
 			      1)))
-	  (cond ((eq prev-type el-type)
+	  (cond ((and (subtypep prev-type el-type)
+		      (subtypep el-type prev-type))
 		 ;; Keep accumulating
 		 (incf total-len len))
 		(t
@@ -3440,8 +3442,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.147 2006/05/03 20:06:42 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.148 2006/05/04 19:10:11 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.148  2006/05/04 19:10:11  rtoy
+;;; We were not correctly testing for the variable types in the common
+;;; block when we are using common-as-array feature.  This was caused by a
+;;; previous change where our type declarations sometimes come out as
+;;; (type (double-float) foo) instead of (type double-float foo).
+;;;
+;;; This fix allows odepack to compile and run again.
+;;;
 ;;; Revision 1.147  2006/05/03 20:06:42  rtoy
 ;;; Was not correctly handling handling the dimensions for a logical
 ;;; array when computing the declaration for the array.

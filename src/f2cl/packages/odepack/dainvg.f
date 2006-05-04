@@ -44,7 +44,7 @@ C Band matrix case -----------------------------------------------------
 C
   100 CONTINUE
       NROWPW = 2*ML + MU + 1
-      LENPW = NEQ * NROWPW
+      LENPW = NEQ(1) * NROWPW
       DO 110  I = 1, LENPW
   110    PW(I) = 0.0D0
 C

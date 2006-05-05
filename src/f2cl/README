@@ -78,6 +78,93 @@ here is a short list of restrictions that may result in obscure errors:
 Note also that an intermediate file called "prep.tmp" is produced by the
 preprocessing stage of the translation.
 
+Options
+-------
+
+These are the options available to f2cl:f2cl and f2cl:f2cl-compile
+
+:OUTPUT-FILE             
+	File to contain Lisp code
+
+:VERBOSE                
+	Verbose output. Default = NIL.  Mostly for debugging.
+
+:PRUNE-LABELS           
+	Prune unused labels. Default = NIL.
+
+:INCLUDE-COMMENTS       
+	Include Fortran comments in the Lisp output.
+        Default = NIL
+
+:AUTO-SAVE              
+	Variables in DATA statements are automatically SAVE'd. Default
+	= T.
+
+:RELAXED-ARRAY-DECLS    
+	Declarations of array sizes are relaxed in formal
+        parameters to functions. That is, any array
+        length declarations (except lower limits) are
+        ignored if possible, like old Fortran used
+        to. Default = T.
+
+:COERCE-ASSIGNS
+	If T or :ALWAYS, all assignment statements automatically
+        coerce the RHS to the appropriate type for the assignment.  If
+        NIL or :NEVER, coercion never happens.  If :AS-NEEDED, f2cl
+        applies coercion if it thinks it is needed.  Default =
+        :AS-NEEDED.
+
+:EXTENSION               
+	The extension to use for the output file, if needed.  Defaults
+        to *DEFAULT-LISP-EXTENSION* or "lisp".
+
+:KEEP-TEMP-FILE
+	If T, the temporary file is not deleted.  This is mostly for
+	debugging f2cl. Default = NIL.
+
+:ARRAY-TYPE
+	The type of array f2cl should use.  Should be :simple-array or
+        :array.  For some compilers, there can be significant speed up
+        if the array can be declared as simple-arrays.  But this is
+        incompatible with array-slicing, so care must be used if you
+        choose :simple-array. Default = :array.
+
+:ARRAY-SLICING
+	When non-NIL, f2cl assumes that, whenever we do an array
+        reference in a call to a subroutine or function, we are really
+        passing a subarray to the routine instead of just the single
+        value, unless f2cl knows the function takes a scalar arg that
+        is not modified.  Default = T.
+
+:PACKAGE
+	A string or symbol specifying what package the resulting code
+        should be in. (Basically puts a (in-package <p>) at the top.)
+        Default is COMMON-LISP-USER.
+
+:DECLAIM
+	Declaim compilation options (Basically puts a (declaim
+        <declaim>) at the top.)  Default is none.
+
+:DECLARE-COMMON
+	When non-NIL, any structures definitions for common blocks are
+        defined when converting this file. Otherwise, the structures
+        for the common blocks are expected to be defined elsewhere.
+        This should be used only once for one subprogram that will be
+        used to define the common block.  See below for more
+        information. Default is NIL.
+
+:FLOAT-FORMAT            
+	Float format to use when printing the result.  Default is
+        *READ-DEFAULT-FLOAT-FORMAT*
+
+:COMMON-AS-ARRAY
+	Instead of defining a common block as a structure with the
+	same slot names as variables in the common block, the common
+	block is defined as a set of arrays.  The actual common block
+	variables are defined as offsets into these arrays.  For more
+	information see below.  This mimics the memory layout of how
+	Fortran treats common blocks.  Default = NIL.
+
 Using Converted Code
 --------------------
 
@@ -112,6 +199,58 @@ o Common blocks.
     done exactly once for each common block that is defined.  This
     should also be done for the first file that is compiled and
     loaded, so that subsequent files know about the definition.
+
+    In addition, there is another option, :common-as-array.  This
+    changes how f2cl handles common blocks.   A rather common use of
+    common blocks has the same common block using different variable
+    names.  For example, on routine might have
+
+        COMMON /foo/ a(10), b, i(4)
+
+    and another might say
+
+        COMMON /foo/ b(9), c, d, j(2), k(2)
+
+    In Fortran, this is perfectly acceptable.  Normally, f2cl expects
+    all common blocks to use the same variable names, and then f2cl
+    creates a structure for the common block using the variable names
+    as the names of the slots.  However, for a case like the above,
+    f2cl gets confused.  Hence, :common-as-array.  We treat the common
+    block as an array of memory.  So this gets converted into a
+    structure somewhat like
+
+        (defstruct foo
+          (part-0 (make-array 11 :element-type 'real))
+          (part-1 (make-array 4 :element-type 'integer4)))
+
+    (In a more general case, we group all contiguous variables of the
+    same type into one array.  f2cl and Lisp cannot handle the case
+    where a real and integer value are allocated to the same piece of
+    memory.)
+
+    Then in the individual routines, symbol-macrolets are used to
+    create accessors for the various definitions.  Hence, for the
+    second version, we would do something like
+
+          (symbol-macrolet 
+            (b (make-array 9 :displaced-to 
+                           (foo-part-0 *foo*)
+                           :diplaced-offset 0))
+            (c (aref (foo-part-0 *foo*) 9))
+            (d (aref (foo-part-0 *foo*) 10))
+            (j (make-array 2 :displaced-to
+                           (foo-part-1 *foo*)
+                           :displaced-offset 0))
+            (k (make-array 2 :displaced-to
+                           (foo-part-1 *foo*)
+                           :displaced-offset 2))
+            ...)
+
+    Thus, we access the right parts of the common block, independent
+    of the name.  Note that this has a performance impact since we
+    used displaced arrays.
+  
+
 
 o Conversion order.
 

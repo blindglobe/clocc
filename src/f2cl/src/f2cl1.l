@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/05/04 04:02:09 $"))
+  (remove #\$ "2.0 beta $Date: 2006/05/05 20:28:21 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -249,6 +249,10 @@ INPUT-FILE               File containing Fortran code
                           elsewhere.
 :FLOAT-FORMAT            Float format to use when printing the result.
                           Default is *READ-DEFAULT-FLOAT-FORMAT*
+:COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
+                          common block variables are offsets into the arrays.
+                          This mimics Fortran common block layouts.
+                          Default = NIL.
 "
 
 
@@ -363,6 +367,10 @@ FILENAME                 File containing Fortran code
                          Otherwise, the structures for the common blocks are not declared.
 :FLOAT-FORMAT            Float format to use when printing the result.  Default is
                          *READ-DEFAULT-FLOAT-FORMAT*
+:COMMON-AS-ARRAY         Common blocks are created as a set of arrays, and the
+                         common block variables are offsets into the arrays.
+                         This mimics Fortran common block layouts.
+                         Default = NIL.
 "
   (let ((lisp-file
 	 (f2cl filename :prune-labels prune-labels :include-comments include-comments
@@ -2762,8 +2770,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.164 2006/05/04 04:02:09 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.165 2006/05/05 20:28:21 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.165  2006/05/05 20:28:21  rtoy
+;;; README:
+;;; o Document the options.
+;;; o Add some info about what the :common-as-array parameter really
+;;;   means.  (Because I couldn't remember either!)
+;;;
+;;; src/f2cl1.l:
+;;; o Add :common-as-array to the docstring for f2cl and f2cl-compile.
+;;;
 ;;; Revision 1.164  2006/05/04 04:02:09  rtoy
 ;;; Add a function, SAVE-F2CL-FINFO to save the compiled function info to
 ;;; a file which can be reloaded later.

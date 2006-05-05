@@ -99,6 +99,18 @@ and types.  Then create a single defvar with the name of the common
 block.  This means you can't use different names for the variables in
 the common block even though Fortran allows such.
 
+Thus, the common block
+
+    COMMON /foo/ a(10), b, i(4)
+
+is translated to
+
+    (defstruct foo
+      (a (make-array 10 :element-type 'single-float))
+      (b (make-array 4 :element-type 'integer4)))
+
+    (defvar *foo-common-block* (make-foo))
+
 We do not handle common blocks in exactly the same as Fortran, which
 is just essentially a named section of bytes in memory.  We could
 probably use the same ideas above for equivalences to simulate true
@@ -108,6 +120,56 @@ Also, Fortran says the definition of the elements of a common block
 can be split over several common statements.  We support that now
 (at the expense of checking for inconsistently declared common
 blocks).  You'll have to manually check this.
+
+To mimic Fortran common blocks more closely, the :common-as-array
+option can be used.  This changes how f2cl handles common blocks.  A
+rather common use of common blocks has the same common block using
+different variable names.  For example, on routine might have
+
+    COMMON /foo/ a(10), b, i(4)
+
+and another might say
+
+    COMMON /foo/ b(9), c, d, j(2), k(2)
+
+In Fortran, this is perfectly acceptable.  Normally, f2cl expects all
+common blocks to use the same variable names, and then f2cl creates a
+structure for the common block using the variable names as the names
+of the slots.  However, for a case like the above, f2cl gets confused.
+Hence, :common-as-array.  We treat the common block as an array of
+memory.  So this gets converted into a structure somewhat like
+
+    (defstruct foo
+      (part-0 (make-array 11 :element-type 'real))
+      (part-1 (make-array 4 :element-type 'integer4)))
+
+(In a more general case, we group all contiguous variables of the same
+type into one array.  f2cl and Lisp cannot handle the case where a
+real and integer value are allocated to the same piece of memory.)
+
+Then in the individual routines, symbol-macrolets are used to create
+accessors for the various definitions.  Hence, for the second version,
+we would do something like
+
+      (symbol-macrolet 
+        (b (make-array 9 :displaced-to 
+                       (foo-part-0 *foo*)
+                       :diplaced-offset 0))
+        (c (aref (foo-part-0 *foo*) 9))
+        (d (aref (foo-part-0 *foo*) 10))
+        (j (make-array 2 :displaced-to
+                       (foo-part-1 *foo*)
+                       :displaced-offset 0))
+        (k (make-array 2 :displaced-to
+                       (foo-part-1 *foo*)
+                       :displaced-offset 2))
+        ...)
+
+Thus, we access the right parts of the common block, independent of
+the name.  Note that this has a performance impact since we used
+displaced arrays.
+  
+
 
 Section 4.8
 
@@ -124,8 +186,8 @@ the array consisting of the elements x(10), x(11), ....)  For these
 slices, we create a displaced-array to the desired elements.  
 
 However, f2cl cannot determine whether to do this or not without
-knowing the subroutine, user intervention is required.  The default is
-to assume that, if such a reference is passed to a routine, array
+knowing the subroutine, so user intervention is required.  The default
+is to assume that, if such a reference is passed to a routine, array
 slicing is intended.  The called routine must have declared as an
 array and not a simple-array.  Appropriate options can be specified
 during the conversion to declare arrays as either array or
@@ -180,11 +242,20 @@ standard do loop with a statement number that exceeds the width of the
 statement number field.  Thus, there can never be an accidental re-use
 of a statement number.
 
+The do-while syntax from Fortran 90 (and Fortran 77 extensions) is
+supported too:
+
+  do while (k .lt. 10)
+    stuff
+  end do
+
+This is handled basically the same as extended-do above.
+
 Section 4.12
 
 Since Fortran is call-by-reference, all function calls must be treated
-the like subroutine calls, except there is one extra return value (the
-function value itself).
+just like subroutine calls, except there is one extra return value
+(the function value itself).
 
 Section 4.13
 
@@ -198,13 +269,26 @@ Thus
 
 becomes
 
-      (multiple-value-bind
-        (var-0 var-1 var-2)
-        (sub a n (+ n n))
-      (declare (ignore var-0 var-2))
-      (when var-1 (setf n var-1)))
+      (multiple-value-bind (var-0 var-1 var-2)
+          (sub a n (+ n n))
+        (declare (ignore var-0 var-2))
+        (when var-1 (setf n var-1)))
 
 Thus, if sub changes the second arg N, we change it as well here.
+
+Note, though, that if f2cl knows about sub already (because it was
+converted before in the same session), f2cl can be smarter.  If f2cl
+knows that sub never modifies its second arg, the generated code is
+
+      (multiple-value-bind (var-0 var-1 var-2)
+          (sub a n (+ n n))
+        (declare (ignore var-0 var-1 var-2)))
+
+Thus, we do not have to check for var-1.  For this to work, f2cl must
+convert sub appropriately.  This means that if sub doesn't modify an
+argument, it returns the value NIL.  For arrays, NIL is always
+returned.
+ 
 
 Section 4.15
 

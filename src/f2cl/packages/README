@@ -28,5 +28,13 @@ blas		BLAS Basic Linear Algebra System
 odepack		A set of solvers for initial value problem for
 		ordinary differential equation systems.
 
+fishpack	Solution of elliptic partial differential equations
+
 toms		Tranactions on Mathematical Software
  715		Algorithm 715:  specfun
+
+ 717		Algorithm 717:  Subroutines for ML and Quasi-ML
+		Estimation for Parameters in Nonlinear Regression
+		Models.
+
+ 419		Algorithm 419:  cpoly

@@ -152,7 +152,7 @@ code.
 	     "PROCESS-CONNECTION"  ;; do all the processing for a connection
 
 	     ;; variables you might want to change
-	     "*WAIT-TIME*"  ;; how long to sleep when nothing's going on
+	     "*WAIT-TIME*"  ;; max time without running hooks
 	     "*DEBUG*"  ;; set to T to get debug output
 	     "*IGNORE-ERRS-P*"  ;; set to nil to stop catching errors
 	     "LOG-ERR" ;; function for reporting ignored errors
@@ -219,6 +219,16 @@ code.
 ;; something and nil if it finds nothing to do.
 (defvar *servers* nil)
 
+;; Now that we have socket-status (in clisp, at least)
+;; we should be able to avoid sleep
+(defvar *socket-status-arg* nil)
+;; we try to maintain above and avoid consing
+;; each element is (stream direction . result)
+;; where stream is either a socket-server or a socket-stream,
+;; direction is :input, :output or :io, depending on whether we're
+;; waiting for the stream to be readable, writable or either,
+;; and result is t or nil, written by socket-status (we'll ignore it).
+
 (defun start-servers ()
   (loop for p in *ports* do (start-server p)))
 
@@ -227,13 +237,15 @@ code.
 	#+allegro(socket:make-socket :connect :passive :local-port p
 				     :format :bivalent)
 	#-(or clisp allegro) (error "no implementation for start-server")
-	*servers*))
+	*servers*)
+  (push (list (car *servers*) :input) *socket-status-arg*))
 
 ;; while we're at it
 (defun close-server (s) ;; (port:socket-server-close s)
   #+clisp (socket:socket-server-close s)
   #+allegro (close s)
   #-(or clisp allegro) (error "no implementation for close-server")
+  (setf *socket-status-arg* (remove s *socket-status-arg* :key 'car))
   (setf *servers* (delete s *servers*)))
 
 (defun close-servers ()
@@ -308,11 +320,13 @@ code.
 ;; This is only used for send-file, so if your servers don't use that
 ;; then this (and *temp-file*) can be removed.
 
-(defvar *wait-time* 1) ;; [***]
-#| If we go thru a whole round robin loop and find nothing to do
- then we wait this many seconds before the next loop.
- The idea is to not do a busy wait, but of course this has to
- be balanced with response time.
+(defvar *wait-time* nil) ;; [***]
+#| max time to wait for i/o without running server hooks
+ nil = never wake up without i/o
+ otherwise this should be a non-negative integer or float (see use below)
+ If you have hooks that should run every so often even when there's
+ nothing else going on, then make this the number of seconds you're
+ willing to wait between executing the hooks.
 |#
 
 ;; start the server
@@ -337,10 +351,31 @@ code.
 		 (when new
 		   (setf done-anything t)
 		   (if (accept-p new)
-		       (push new *connections*)
+		       (progn (push new *connections*)
+			      (push (list (sstream new) :input)
+				    *socket-status-arg*))
 		       ;; would be nice if we could send an error message ...
 		       (disconnect-connection new))))))
-	(unless done-anything (sleep *wait-time*))))
+	(unless done-anything (wait *wait-time*))))
+
+(defun wait (time)
+  #-clisp (sleep time)
+  ;; In the case above time is the max time you're willing to make someone
+  ;; wait for service.
+  ;; In the case below time is the time you're willing to wait between
+  ;; executions of hooks in *server-hooks*, generally a lot longer,
+  ;; or even infinite.
+  #+clisp
+  (progn (loop for c in *connections* do
+	   (setf (cadr (assoc (sstream c) *socket-status-arg*))
+		 (if (output c) (if (slot-value c 'done) :output :io) :input)))
+	 ;; if we have pending output then wait for the stream to be
+	 ;; either readable or writable, else just readable
+	 (if time
+	     (multiple-value-bind (a b) (floor time)
+	       (ext:socket-status *socket-status-arg* a (round (* b 1e6))))
+	   (ext:socket-status *socket-status-arg*))))
+	       
 
 ;; Support for IO
 
@@ -506,8 +541,8 @@ code.
        do (vector-push-extend (code-char (aref *byte-io-vector* i)) (input c))
        finally
        (let ((*debug* *debug2*))(dbg "read-byte-sequence read ~A bytes" i))
-       (when (member (socket:SOCKET-STATUS stream 0) '(:eof #+ignore :append))
-	 (close stream))
+       (when (member (socket:SOCKET-STATUS stream 0) '(:eof :append))
+	 (setf (slot-value c 'done) t)) ;; not (close stream)
        (incf (slot-value c 'nchars) i)
        (setf (slot-value c 'new-input) t)
        (when (= (slot-value c 'nchars) (max-input-size c))
@@ -520,7 +555,7 @@ code.
        for i below (- (max-input-size c) already)
        for char-number below *cycle-io-limit*
        while (setf char (next-char stream)) do
-	 (if (eq char :eof) (close stream)
+	 (if (eq char :eof) (setf (slot-value c 'done) t) ;; not (close stream)
 	     (vector-push-extend
 	      char (input c)
 	      #+allegro;; allegro has the wrong default here
@@ -620,6 +655,8 @@ code.
   ;; ignore errors in case you try to print to a closed connection
   ;; Of course, if you fail to close it, you're going to run out of fd's !
   (setf *connections* (delete connection *connections*))
+  (setf *socket-status-arg*
+	(remove (sstream connection) *socket-status-arg* :key 'car))
   nil)
 
 #| In order to make the disconnect function do "the right thing" for any

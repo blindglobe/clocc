@@ -302,6 +302,7 @@ At this point the method is executed and then, finally, we're done.
   #+allegro (socket:remote-host (sss:sstream c))
   #-(or allegro clisp) (error "connection-local-port not yet implemented"))
 
+#+ignore 
 (defun dotted (ip)
   (format nil "~A.~A.~A.~A"
 	  (ldb (byte 8 24) ip)
@@ -309,9 +310,18 @@ At this point the method is executed and then, finally, we're done.
 	  (ldb (byte 8 8) ip)
 	  (ldb (byte 8 0) ip)))
 
+(defun peer-ip-port (c)
+  #+clisp
+  (multiple-value-bind
+      (ip port)
+      (socket:socket-stream-peer (sss:sstream c) t)
+    (format nil "~a:~a" ip port))
+  #-clisp (error "no implementation for peer-ip-port")
+  )
+
 (defun do-get (c &aux (uri (uri c)) (pos (position #\? uri)))
   (logform (list :http (print-current-time nil)
-		 (dotted (sss:connection-ipaddr c)) :get (uri c)))
+		 (peer-ip-port c) :get (uri c)))
   (sss:dbg "http: get uri=~A" uri)
   (get-method c
 	      ;; this is supposed to let you specialize on (eql :|/foo|)
@@ -420,7 +430,7 @@ At this point the method is executed and then, finally, we're done.
 			      (when (boundary c)
 				(concatenate 'string "--" (boundary c))))))
   (logform (list :http (print-current-time nil)
-		 (dotted (sss:connection-ipaddr c)) :post uri
+		 (peer-ip-port c) :post uri
 		 (limit-print args)))
   (sss:dbg "http: post uri=~A args=~A" uri (limit-print args))
   (post-method c

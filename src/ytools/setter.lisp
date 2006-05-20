@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.2 2006/04/11 03:35:52 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.3 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -20,7 +20,7 @@
 
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq match-cond match-let *unbound
-	     make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
+	     make-Qvaroid make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
              setter)))
 
 ;;;;(declaim (special *-*))
@@ -259,7 +259,8 @@
 	 ((is-Qvaroid form)
 	  (qvaroid-match-code form dat-name))
 	 ((is-String form)
-	  `(string= ,form ,dat-name))
+	  `(and (is-String ,dat-name)
+                (string= ,form ,dat-name)))
 	 ((is-Number form)
 	  `(and (is-Number ,dat-name)
 		(= ,form ,dat-name)))
@@ -400,10 +401,13 @@
 
 ;;;;(datafun match-code \?or \|)
 
-;;; Handle ?(!! ...), which executes ... and succeeds if the value is true.
-(datafun match-code :!!
+;;; Handle ?(:check ...), which executes ... and succeeds if the value is true.
+(datafun match-code :check
    (defun (items _)
       `(progn ,@items)))
+
+;;; Does anyone actually use :!! ?
+(datafun match-code :!! :check)
 
 ;;; ?(:+ p -preds-) matches if p matches something that satisfies all
 ;;; the preds.
@@ -484,6 +488,10 @@
 	    ((= (len al) 1) (car al))
 	    (t `(,conn ,@al)))))
 
+;;; Returns false if current binding of | dat| is set inside e,
+;;; or if there are 2 or more occurrences of | dat| free in e.
+;;; Otherwise it returns
+;;; the number of free occurrences of | dat| (0 or 1).
 (defun simple-dat-match (e)
    (cond ((atom e)
 	  (cond ((eq e '\ dat) 1)
@@ -495,14 +503,16 @@
 	 ((eq (car e) 'let)
 	  (repeat :for ((bv :in (cadr e))
 			(numoccs 0)
-			bvm (found-dat false))
+			bvm
+                        ;; 'true' if | dat| is bound in this 'let' --
+                        (found-dat false))
 	   :result (cond (found-dat numoccs)
-			(t
-			 (let ((bod-r (simple-dat-match (caddr e))))
-			    (cond (bod-r
-				   (setq numoccs (+ numoccs bod-r))
-				   (< numoccs 2))
-				  (t false)))))
+                         (t
+                          (let ((bod-r (simple-dat-match (caddr e))))
+                             (cond (bod-r
+                                    (setq numoccs (+ numoccs bod-r))
+                                    (and (< numoccs 2) numoccs))
+                                   (t false)))))
 	     (cond ((eq (car bv) '\ dat)
 		    (setq found-dat true)))
 	     (setq bvm (simple-dat-match (cadr bv)))

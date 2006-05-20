@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: ytools.lsy,v 2.2 2006/03/27 00:20:57 airfoyle Exp $
+;;; $Id: ytools.lsy,v 2.3 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -246,5 +246,10 @@
    (setq *readtable* ytools-readtable*)
    (in-package :ytools))
 
-(defparameter +ytools-version+ (version-num-from-changelog ytools-home-dir*))
+(defparameter +ytools-version+
+    "2.1.9c"
+    ;; The fact that sourceforge cvs is down
+    ;; keeps us from using the CHANGELOG version-number trick
+    ;;(version-num-from-changelog ytools-home-dir*)
+    )
 

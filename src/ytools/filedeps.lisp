@@ -1,6 +1,9 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;$Id: filedeps.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;$Id: filedeps.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
+
+;;; This stuff is for use with CVSified/prog/misc/filedag.lisp.
+;;; See 'module-deps-display' in that file.
 
 (depends-on %module/ ytools)
 

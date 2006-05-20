@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: fload.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -11,60 +11,9 @@
    (export '(fload filespecs-load fcompl filespecs-compile
 	     fcompl-load* fload-compile* bind-fload-compile*
 	     fload-versions fload-version-suffix*
-             postponed-files-update funktion
-	     debuggable debuggability*
+             postponed-files-update 
 	     warn-about-postponed-file-chunks
 	     warn-about-postponed-file-chunks* ask-about-fload-version-mgt*)))
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
-(def-excl-dispatch #\' (srm _)
-   (list 'funktion (read srm true nil true)))
-
-(defvar syms-used-as-funktions* !())
-
-(defmacro funktion (f)
-   (let  ((quoter
-             (cond ((and (atom f) (> debuggability* 0))
-                    'quote)
-                   (t 'function))))
-      (cond ((atom f)
-             `(progn
-                 (eval-when (:load-toplevel :execute)
-                    (note-funktion ',f ',quoter))
-                 (,quoter ,f))
-;;;;             `(let ((exp '(,quoter ,f)))
-;;;;                 (on-list-if-new exp syms-used-as-funktions*
-;;;;                            :test #'equal)
-;;;;                 (,quoter ,f))
-             )
-            (t 
-             `(,quoter ,f)))))
-)
-
-(defun note-funktion (fun-sym quoter)
-   (let ((e (assq fun-sym syms-used-as-funktions*)))
-      (cond ((not e)
-             (setq e (tuple fun-sym quoter !()))))
-      (cond ((eq quoter 'function)
-             (setf (second e) quoter)
-             (cond (now-loading*
-                    (on-list-if-new now-loading* (third e))))))
-      fun-sym))
-
-(defmacro debuggable (n)
-   (multiple-value-bind (speed safety space debug)
-			(cond ((> n 0)
-			       (values 2 3 0 3))
-			      ((= n 0)
-			       (values 2 1 1 2))
-			      (t
-			       (values 3 1 2 0)))
-      `(eval-when (:compile-toplevel :execute)
-
-	  (declaim (optimize (speed ,speed) (safety ,safety)
-			     (space ,space) (debug ,debug)))
-	  (setq debuggability* ,n))))
 
 (defvar file-op-count* 0)
 

@@ -1,11 +1,23 @@
-$Id: CHANGELOG,v 2.10 2006/04/14 15:15:28 airfoyle Exp $
+$Id: CHANGELOG,v 2.11 2006/05/20 01:44:24 airfoyle Exp $
             
-            [- Version 2.1.10 -]
-2006-04-14: Add <expel!= as synonym for 'off-list'; allowed atom '>!='
-            to appear as meaningless flag in 'on-list'.  (Yes, I'm
-            crazy.) 
+            [- Version 2.1.9c -]
+2006-05-18  Created ytcopy.lisp: Utilities for creating tar files and copying
+            to cyndra.  (Yes, the name of the server is hard-wired.
+            Sigh.) 
 
-            [- Version 2.1.9 2006/04/11 03:35:52 airfoyle Exp -]
+            [- Version 2.1.9b -] -- sourceforge CVS site down
+2006-05-16  Streamlined "start over" hack in ytload, dispensing with
+            :start-over argument and just making :start-over a
+            possible value of :if-installed.
+
+            [- Version 2.1.9a -] 
+2006-05-15  Utilities moved from chunk-system code to util.lisp .  It
+            should be possible to avoid loading chunk system at all.
+
+            Added ?(:check e1 ... eK) to setter.  Matches if all e's
+            evaluate to true.  
+
+            [- Version 2.1.9 -]
 2006-04-10: Added 'setter' to setter.lisp.  (setter <place>) returns
             a function of two args.  (>< (setter p) v fcn) is
             the same as (!= p (>< fcn v *-*)).  The two functions

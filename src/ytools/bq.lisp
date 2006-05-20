@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: bq.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;;;$Id: bq.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -160,7 +160,7 @@
 (set-macro-character #\, #'bq-comma-reader nil ytools-readtable*)
 
 (def-excl-dispatch #\` (srm _)
-   (backquote-read srm (\\ (lev read-res) `(bq-backquote ,lev ,read-res))))
+   (backquote-read srm #'build-bq-exp))
 
 (defun backquote-read (srm builder)
   (let ((lev (or (bq-read-lev srm)
@@ -181,6 +181,21 @@
 				  "Unnumbered internal backquote !`" a
 		     (:continue "I'll assign it a number "))))
 	   (funcall builder lev a)))))
+
+;;; Inside excl-backquote handlers, we usually want to
+;;; let the backquoteness extend to some of the arguments
+;;; of the entity we're building.  This is a slightly
+;;; more optimized way of doing this than just writing
+;;; `(bq-backquote ,lev ,e)
+(defun build-bq-exp (lev e)
+   (match-cond e
+      (:? (yt::bq-comma ?,lev ?,false ?e1)
+         ;; The backquote would just cancel the
+         ;; comma out
+         e1)
+      ((atom e) `',e)
+      (t
+       `(bq-backquote ,lev ,e))))
 
 ;;;;(set-dispatch-macro-character #\! #\` #'bq-reader ytools-readtable*)
 

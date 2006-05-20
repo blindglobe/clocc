@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.4 2006/04/14 15:15:28 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.5 2006/05/20 01:44:24 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -109,9 +109,11 @@
 
 (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
+(defvar stack-subst-exempt-vars* '(*))
+
 (defun subst-with-stack-vars (exp)
    (cond ((and (is-Symbol exp)
-	       (not (eq exp '*)))
+	       (not (memq exp stack-subst-exempt-vars*)))
 	  ;; '*' still means "just typed," not (g *), by default
 	  (let ((ent (nth-dbg-entry dbg-stack* exp 0)))
 	     (cond ((eq ent absent-dbg-entry*)
@@ -492,6 +494,14 @@
 ;;; Returns true if all calls to 'check' threw no Test-failures (and no
 ;;; one else did either).
 (defmacro test (string &rest body)
+   ;; Historically the string came before the test.
+   ;; So if string can't come right after the word "test",
+   ;; padd it out --
+   (cond ((not (= (string-length string) 0))
+          (let ((ch1 (elt string 0)))
+             (cond ((and (not (is-whitespace ch1))
+                         (not (member ch1 '(#\: #\/) :test #'char=)))
+                    (!= string (string-concat " " *-*)))))))
    (let () ;;;; (block-label (gensym))
       `(catch 'test-abort
 	  (let ((check-count* 0))
@@ -509,9 +519,9 @@
 ;;;;					 (return-from ,block-label false)
                                          (throw 'test-abort false)
                                          )))))
-		  (progn (out (:to *error-output*) "Beginning " ,string " test" :%)
+		  (progn (out (:to *error-output*) "Beginning test" ,string :%)
 			 ,@body
-			 (out (:to *error-output*) 5 ,string " test succeeded " :%)
+			 (out (:to *error-output*) 5 "Test succeeded" ,string  :%)
                          true))))))
 
 ;;; (check form -out-stuff-) runs form.  If it returns false, 'out' the

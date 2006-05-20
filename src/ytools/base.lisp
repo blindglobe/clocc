@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 2.3 2006/04/14 15:15:28 airfoyle Exp $
+;;;$Id: base.lisp,v 2.4 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -40,7 +40,7 @@
 	     eval-when condense
 	     assoc= alist-entry alist-entry-set alref. alref
 	     include-if series car-eq take drop occurs-in empty-list
-	     on-list on-list-if-new off-list <expel!= -- loading-bogus
+	     on-list on-list-if-new off-list -- loading-bogus
 	     *current-case-mode*)))
 
 ;;;;(eval-when (:compile-toplevel)
@@ -816,15 +816,12 @@
 |#
 
 (defmacro on-list (&rest whatever)
-  (setq whatever (remove '>!= whatever))
   `(push ,@whatever))
 
 (defmacro on-list-if-new (&rest whatever)
-  (setq whatever (remove '>!= whatever))
   `(pushnew ,@whatever))
 
 (defmacro off-list (l^) `(pop ,l^))
-(defmacro <expel!= (l^) `(pop ,l^))
 
 (declaim (special constant-condtests-silent*))
 

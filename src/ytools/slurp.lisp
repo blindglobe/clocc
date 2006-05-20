@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: slurp.lisp,v 2.2 2005/12/30 19:16:24 airfoyle Exp $
+;;;$Id: slurp.lisp,v 2.3 2006/05/20 01:44:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2004
 ;;;     Drew McDermott and Yale University.  All rights reserved.
@@ -12,7 +12,6 @@
 	     with-post-file-transduction-hooks after-file-transduction
 	     during-file-transduction setf-during-file-transduction 
 	     fload-verbose* eval-when-slurping
-	     make-Printable printable-as-string eof*
 	     slurp-eval slurp-ignore
 	     now-loading* now-compiling* now-slurping*)))
 
@@ -41,42 +40,6 @@
                     (setq tl source-suffixes*)))
              (on-list suff (rest tl)))))
   source-suffixes*)
-
-(eval-when (:compile-toplevel :load-toplevel :execute)
-
-;;; Useful for constructing "marker" objects that have nothing but their
-;;; identity: none of them is EQ to anything encountered in an ordinary
-;;; S-expression.
-(defstruct (Printable (:print-function
-		         (lambda (me str d)
-			         (declare (ignore d))
-			    (funcall (Printable-printer me) str)))
-	              (:constructor make-Printable (printer)))
-   printer
-   (sym nil))
-
-(defun printable-as-string (s)
-   ;; We resort to these strange devices so that this sort of
-   ;; Printable is uniquified, but only relative to the current
-   ;; package --
-   (let ((sym (intern s)))
-      (let ((p (make-Printable (\\ (srm) (format srm "~a" s)))))
-	 (setf (Printable-sym p) sym)
-	 (setf (get sym 'printable) p)
-	 p)))
-
-(defmethod make-load-form ((p Printable) &optional env)
-                          (declare (ignore env))
-   (let ((sym (Printable-sym p)))
-      (cond ((and sym (get sym 'printable))
-	     `(or (get ',sym 'printable)
-		  (printable-as-string ',(symbol-name sym))))
-	    (t
-	     `(make-Printable ',(Printable-printer p))))))
-)
-
-(defvar eof* (printable-as-string "#<End of file>"))
-;;;;(make-Printable (\\ (srm) (format srm "~a" "#<End of file>")))
 
 (defstruct (Slurp-task
 ;;;;	      (:constructor make-Slurp-task (label default-handler))

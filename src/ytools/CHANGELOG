@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 2.11 2006/05/20 01:44:24 airfoyle Exp $
+$Id: CHANGELOG,v 2.12 2006/05/22 12:08:37 airfoyle Exp $
             
-            [- Version 2.1.9c -]
+            [- Version 2.1.12 -]
+2006-05-21  Introduced 'matches' = 'matchq' with args reversed
+
+            [- Version 2.1.9c 2006/05/20 01:44:24 airfoyle Exp -]
 2006-05-18  Created ytcopy.lisp: Utilities for creating tar files and copying
             to cyndra.  (Yes, the name of the server is hard-wired.
             Sigh.) 

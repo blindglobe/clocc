@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: bq.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: bq.lisp,v 2.3 2006/05/22 12:08:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -38,6 +38,7 @@
 		    (t e)))
 	     (t
 	      `(bq-comma ,lv ,spl ,(bq-expand lev e)))))
+;;; Does it really make sense to expand into Qvaroids?
       ((is-Qvaroid exp)
 ;;;;       (let ((sym-note-exp 
 ;;;;		(cond ((eq (Qvaroid-sym exp) 'bq-comma)

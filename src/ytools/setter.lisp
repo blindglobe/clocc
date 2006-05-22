@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.3 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.4 2006/05/22 12:08:38 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -19,7 +19,7 @@
 ;;;;)
 
 (eval-when (:compile-toplevel :load-toplevel)
-   (export '(!= !=/ *-* switch matchq match-cond match-let *unbound
+   (export '(!= !=/ *-* switch matchq matches match-cond match-let *unbound
 	     make-Qvaroid make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
              setter)))
 
@@ -240,6 +240,10 @@
    (match-code-cleanup
       `(let ((\ dat ,dat))
 	  ,(match-code pat '\ dat))))
+
+;;; Sometimes this is a lot more readable --
+(defmacro matches (datum pattern)
+   `(matchq ,pattern ,datum))
 
 (needed-by-macros
 

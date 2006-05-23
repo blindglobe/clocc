@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.4 2006/05/22 12:08:38 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.5 2006/05/23 21:21:51 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -645,8 +645,10 @@
                     (cddr exp)))))
 
 (defmacro setter (x)
-   `(\\ (new-val fcn)
-       (!= ,x (>< fcn new-val *-*))))
+   (let ((new-val-var (gensym))
+         (fcn-var (gensym)))
+      `(\\ (,new-val-var ,fcn-var)
+          (!= ,x (>< ,fcn-var ,new-val-var *-*)))))
 
 ;;; For use as second arg of 'setter'
 (defvar ^-this-val (\\ (new-val _) new-val))

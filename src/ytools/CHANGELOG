@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 2.12 2006/05/22 12:08:37 airfoyle Exp $
+$Id: CHANGELOG,v 2.13 2006/05/23 21:21:51 airfoyle Exp $
             
-            [- Version 2.1.12 -]
+            [- Version 2.1.13 -]
+2006-05-23: Fixed bug in definition of 'setter' (setter.lisp)
+
+            [- Version 2.1.12 2006/05/22 12:08:37 airfoyle Exp -]
 2006-05-21  Introduced 'matches' = 'matchq' with args reversed
 
             [- Version 2.1.9c 2006/05/20 01:44:24 airfoyle Exp -]

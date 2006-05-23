@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.5 2006/05/23 21:21:51 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.6 2006/05/23 21:37:54 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -648,9 +648,9 @@
    (let ((new-val-var (gensym))
          (fcn-var (gensym)))
       `(\\ (,new-val-var ,fcn-var)
-          (!= ,x (>< ,fcn-var ,new-val-var *-*)))))
+          (!= ,x (>< ,fcn-var *-* ,new-val-var)))))
 
 ;;; For use as second arg of 'setter'
-(defvar ^-this-val (\\ (new-val _) new-val))
+(defvar ^-this-val (\\ (_ new-val) new-val))
 (defvar <-this-val ^-this-val)
 ;;; E.g., (funcall set-whatever (first l323) <-this-val)

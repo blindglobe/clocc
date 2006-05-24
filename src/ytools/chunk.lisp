@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.3 2006/03/27 00:19:32 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.4 2006/05/24 16:01:44 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
@@ -350,7 +350,8 @@
 (defvar basis-inverters-dbg* false)
 
 ;;; Don't ever, ever modify the basis destructively.  Always setf the 
-;;; whole basis, so that these demons run --
+;;; whole basis ** to a fresh list ** (i.e., *not* the result of applying
+;;; 'delete' to the list!), so that these demons run --
 
 (defmethod (setf Chunk-basis) :before (new-basis ch)
                                      ;;;;(declare (ignore new-basis))
@@ -1094,10 +1095,13 @@
 			       (cond ((still-must-derive ch)
 				      (cond ((and temp-mgt-dbg*
 						  (some (lambda (ch)
-						           (not (Chunk-managed ch)))
-							(Chunk-update-basis ch)))
+						           (not (Chunk-managed
+                                                                   ch)))
+							(Chunk-update-basis
+                                                           ch)))
 					     (format *error-output*
-						"To handle update basis of ~s ... ~%"
+						!"To handle update ~
+                                                  basis of ~s ... ~%"
 						ch)))
 				      (temporarily-manage
 					 (Chunk-update-basis ch))
@@ -1832,14 +1836,26 @@
 	 chunk-table*)
       (cerror "I'll assume this is not a problem, since I'm destroying it anyway"
 	      "Chunk not in chunk table: ~s" ch))
-  (dolist (b (Chunk-basis ch))
-     (setf (Chunk-derivees b) (delete ch (Chunk-derivees b))))
+  (setf (Chunk-basis ch) !())
+  (setf (Chunk-update-basis ch) !())
   (dolist (d (Chunk-derivees ch))
-     (setf (Chunk-basis d) (delete ch (Chunk-basis d))))
-  (dolist (b (Chunk-update-basis ch))
-     (setf (Chunk-update-derivees b) (delete ch (Chunk-update-derivees b))))
+     (setf (Chunk-basis d)
+           (remove ch (Chunk-basis d))))
   (dolist (d (Chunk-update-derivees ch))
-     (setf (Chunk-update-basis d) (delete ch (Chunk-update-basis d)))))	  
+     (setf (Chunk-update-basis d)
+           (remove ch (Chunk-update-basis d)))))
+
+;;; See the note attached to the methods for (setf Chunk-basis) :before/:after
+;;; The following are either unnecessary or too risky --
+;;;;  (dolist (b (Chunk-basis ch))
+;;;;     (setf (Chunk-derivees b) (delete ch (Chunk-derivees b))))
+;;;;  (dolist (d (Chunk-derivees ch))
+;;;;     (setf (Chunk-basis d) (delete ch (Chunk-basis d))))
+;;;;  (dolist (b (Chunk-update-basis ch))
+;;;;     (setf (Chunk-update-derivees b) (delete ch (Chunk-update-derivees b))))
+;;;;  (dolist (d (Chunk-update-derivees ch))
+;;;;     (setf (Chunk-update-basis d) (delete ch (Chunk-update-basis d))))
+
 
 (defun chunks-max-height (chunks)
    (reduce #'max chunks :key #'Chunk-height :initial-value 0))

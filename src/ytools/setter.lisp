@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.6 2006/05/23 21:37:54 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.7 2006/05/24 16:01:44 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -21,7 +21,7 @@
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq matches match-cond match-let *unbound
 	     make-Qvaroid make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
-             setter)))
+             setter <-this-val ^-this-val)))
 
 ;;;;(declaim (special *-*))
 

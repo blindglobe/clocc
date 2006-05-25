@@ -1,6 +1,12 @@
-$Id: CHANGELOG,v 2.14 2006/05/23 21:37:10 airfoyle Exp $
+$Id: CHANGELOG,v 2.15 2006/05/25 14:17:12 airfoyle Exp $
             
-            [- Version 2.1.14 -]
+            [- Version 2.1.15 -]
+2005-05-25: Added code to ensure that (depends-on (:at :read-time)
+            ...) is effective; that is, that the file will be
+            slurped for macros if else.  Also altered 'f-l-c-chunk' to
+            return multiple values instead of a list.
+
+            [- Version 2.1.14 2006/05/23 21:37:10 airfoyle Exp -]
 2006-05-23: Fixed bug in definition of 'setter' (setter.lisp), and
             reversed order of args to setter (and hence to
             ^-this-val and <-this-val).

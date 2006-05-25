@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: depend.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;;;$Id: depend.lisp,v 2.2 2006/05/25 14:17:12 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -342,7 +342,8 @@
 			                     (extract-slurp-types (first g))
 			   (cond (slurp-dep
 				  (pathnames-note-slurp-support
-					  pnl file-ch which-slurp-types)
+					  pnl file-ch sdo-state
+                                          which-slurp-types)
 ;;;;				  (cond ((typep file-ch 'Code-file-chunk)
 ;;;;					 (setf (Code-file-chunk-read-basis file-ch)
 ;;;;					       (union
@@ -505,9 +506,11 @@
 			    (compiled-ch-sub-file-link
 			       compiled-ch callee-ch sfty true))))))))))
 
-(defun pathnames-note-slurp-support (pnl file-ch sub-file-type-names)
+(defun pathnames-note-slurp-support (pnl file-ch sdo-state
+                                     sub-file-type-names)
    (let ((filename (Code-chunk-pathname file-ch)))
-      (cond (filename
+      (cond ((and filename
+                  (not (null pnl)))
 	     ;; If no filename, no slurped subfile to note support of.
 	     (dolist (pn pnl)
 		(let* ((dep-ch (pathname-denotation-chunk pn true))
@@ -523,7 +526,13 @@
 					 filename)))
                          (on-list-if-new 
 			     loaded-dep-ch
-                             (Chunk-basis slurped-sub-file-ch))))))))))
+                             (Chunk-basis slurped-sub-file-ch))))))
+             ;;; Make sure the vanilla subtype (:macros) is slurped
+             (pushnew macros-sub-file-type*
+                      (Sds-sub-file-types sdo-state))
+             (compiled-ch-sub-file-link
+		 (place-compiled-chunk file-ch)
+                 file-ch macros-sub-file-type* false)))))
 
 ;;; Returns two lists of chunks that should be part of the 
 ;;; basis and update-basis [respectively] for (:compiled ...).

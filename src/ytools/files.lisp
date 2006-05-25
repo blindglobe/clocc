@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 2.1 2005/12/26 00:25:16 airfoyle Exp $
+;;;$Id: files.lisp,v 2.2 2006/05/25 14:17:12 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -1492,4 +1492,4 @@
    (let ((l-ch (flchunk pn)))
       (let ((f-ch (Loaded-chunk-loadee l-ch)))
 	 (let ((c-ch (place-compiled-chunk f-ch)))
-	    (list f-ch l-ch c-ch)))))
+	    (values f-ch l-ch c-ch)))))

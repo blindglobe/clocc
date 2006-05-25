@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: fload.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: fload.lisp,v 2.3 2006/05/25 20:01:19 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -772,7 +772,7 @@
 				  (or (not ask-about-fload-version-mgt*)
 				      (y-or-n-p !"Begin management of ~s ~
 						  ~%     [probably yes]? "
-						old-cfc)))
+						new-cfc)))
 			     (on-list new-cfc changing-chunks)))))))
 	 (do ((oldl (filespecs->ytools-pathnames reset-olds)
 		    (tail oldl)))

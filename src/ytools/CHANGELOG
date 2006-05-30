@@ -1,6 +1,13 @@
-$Id: CHANGELOG,v 2.16 2006/05/25 20:01:19 airfoyle Exp $
+$Id: CHANGELOG,v 2.17 2006/05/30 13:54:47 airfoyle Exp $
             
-            [- Version 2.1.16 -]
+            [- Version 2.1.17 -]
+2006-05-30: Defined 'with-gen-vars', around cool new convention that
+            generated-variable names in macros are of the form -x-.
+            In debug.lisp: 'g' and all other dbg-stack* searchers now
+            pull the entries they find to the front, so that 'ps' is
+            less likely to flush something useful.
+
+            [- Version 2.1.16 2006/05/25 20:01:19 airfoyle Exp -]
 2006-05-25: Changed query message in 'fload-versions'.  Hopefully
             more accurate.
 

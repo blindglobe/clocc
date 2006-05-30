@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.5 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.6 2006/05/30 13:54:47 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -109,6 +109,18 @@
 
 (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
+(defmacro get-and-pull-nth-dbg-entry (place^ sym^ n^)
+   (with-gen-vars (n entry new-stack)
+      `(let ((,-n- ,n^))
+          (multi-let (((,-entry- ,-new-stack-)
+                       (nth-dbg-entry ,place^ ,sym^ ,-n-)))
+             (cond ((not (eq ,-entry- absent-dbg-entry*))
+                    (!= ,place^
+                        (cond ((= ,-n- 0)
+                               (cons ,-entry- ,-new-stack-))
+                              (t ,-new-stack-)))))
+             ,-entry-))))
+
 (defvar stack-subst-exempt-vars* '(*))
 
 (defun subst-with-stack-vars (exp)
@@ -153,7 +165,8 @@
 			     "Dbg-stack exceeds " dbg-stack-max-len*
 			     " elements: "
 			     (<# Dbg-entry-label dbg-stack*)
-			     (:prompt-for "New stack length (default: no change): "
+			     (:prompt-for "New stack length"
+                                          " (default: no change): "
 					  dbg-stack-max-len*))))
 		    (cond ((> newlen (len dbg-stack*))
 			   (!= dbg-stack-max-len* newlen))
@@ -286,7 +299,7 @@
 	       (= n 0))
 	  (!= n sym)
 	  (!= sym '*)))
-   `(Dbg-entry-object (nth-dbg-entry dbg-stack* ',sym ,n)))
+   `(Dbg-entry-object (get-and-pull-nth-dbg-entry dbg-stack* ',sym ,n)))
 
 ;; Get the type of the nth entry
 (defmacro gty (&optional (sym '*) (n 0))
@@ -294,26 +307,56 @@
 	       (= n 0))
 	  (!= n sym)
 	  (!= sym '*)))
-   `(Dbg-entry-type (nth-dbg-entry dbg-stack* ',sym ,n)))
+   `(Dbg-entry-type (get-and-pull-nth-dbg-entry dbg-stack* ',sym ,n)))
 
-(defsetf g-set (&optional (sym '*) (n 0)) (val)
+(defsetf g (&optional (sym '*) (n 0)) (val)
    `(set-dbg-entry-object ',sym ',n ,val))
 
 (defun set-dbg-entry-object (sym n val)
-   (let ((e (nth-dbg-entry dbg-stack* sym n)))
+   (let ((e (get-and-pull-nth-dbg-entry dbg-stack* sym n)))
       (cond ((eq e absent-dbg-entry*)
 	     "?")
 	    (t
 	     (!= (Dbg-entry-object e) val)))))
 
+;;; Returns two values:
+;;;    the debug entry found (with the given 'sym' and index 'n')
+;;;    + a new version of 'a' with that entry _removed_ if n=0,
+;;;      otherwise pulled as far forward as
+;;;      possible without changing its index (vs. other entries
+;;       with same 'sym')
+;;; If none found, returns absent-dbg-entry* + original 'a' 
 (defun nth-dbg-entry (a sym n)
-   (cond ((null a) absent-dbg-entry*)
-	 ((eq (Dbg-entry-label (car a)) sym)
-	  (cond ((= n 0)
-		 (car a))
-		(t (nth-dbg-entry (cdr a) sym (- n 1)))))
-	 (t
-	  (nth-dbg-entry (cdr a) sym n))))
+   (let-fun ()
+      (cond ((null a)
+             (values absent-dbg-entry* !()))
+            ((eq (Dbg-entry-label (head a)) sym)
+             (cond ((= n 0)
+                    (values (head a) (tail a)))
+                   (t
+                    (multi-let (((e s)
+                                 (nth-dbg-entry (cdr a) sym (- n 1))))
+                       (values e
+                               (cond ((eq e absent-dbg-entry*)
+                                      a)
+                                     (t
+                                      (cons (head a)
+                                            (cond ((= n 1)
+                                                   (cons e s))
+                                                  (t s))))))))))
+            (t
+             (multi-let (((e s)
+                          (nth-dbg-entry (cdr a) sym n)))
+                (values e
+                        (cond ((eq e absent-dbg-entry*)
+                               a)
+                              (t
+                               (cons (head a)
+                                     s)))))))
+;;;;    :where
+;;;;      (:def result (e s)
+;;;;         )
+    ))
 
 (defvar dbg-stack-show* 3)
 

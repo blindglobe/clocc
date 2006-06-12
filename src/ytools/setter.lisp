@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.7 2006/05/24 16:01:44 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.8 2006/06/12 15:42:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -500,6 +500,8 @@
    (cond ((atom e)
 	  (cond ((eq e '\ dat) 1)
 		(t 0)))
+         ((eq (car e) 'quote)
+          0)
 	 ((memq (car e) '(setq setf !=))
 	  (cond ((eq (cadr e) '\ dat)
 		 false)

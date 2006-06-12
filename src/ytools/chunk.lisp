@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.4 2006/05/24 16:01:44 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.5 2006/06/12 15:42:52 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
@@ -1558,7 +1558,19 @@
 ;;; There is no independent content of an Or-chunk to check the date of --
 (defmethod derive-date ((orch Or-chunk))
    (cond ((slot-boundp orch 'disjuncts)
-	  (earliest-up-to-date-disjunct-date orch false))
+          (let ((earliest-disjunct-date
+                   (earliest-up-to-date-disjunct-date orch false))
+                (already (Chunk-date orch)))
+             ;; Let's get the logic right here (finally!): We want to
+             ;; return the date when this chunk became correct.
+             ;; If the currently active disjunct switches to a chunk
+             ;; with an older date, that's _irrelevant_ to when this
+             ;; one stabilized.  (It just means the _reason_ why this one
+             ;; is stable is now a chunk that stabilized earlier.) --
+             (cond ((and already earliest-disjunct-date
+                         (>= already earliest-disjunct-date))
+                    already)
+                   (t earliest-disjunct-date))))
 	 (t
 	  +no-info-date+)))
 

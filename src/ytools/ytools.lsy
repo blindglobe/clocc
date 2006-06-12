@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: ytools.lsy,v 2.4 2006/05/25 14:17:12 airfoyle Exp $
+;;; $Id: ytools.lsy,v 2.5 2006/06/12 15:42:52 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -229,7 +229,8 @@
 	 (load fasl-file))))
      
 (cl:defun use-ytools (&optional (pkg *package*))
-   (shadowing-import '(ytools::defun ytools::defmacro ytools::eval-when)
+   (shadowing-import '(ytools::defun ytools::defmacro
+                       ytools::defmethod ytools::eval-when)
 		     pkg)
    (use-package :ytools pkg))
 

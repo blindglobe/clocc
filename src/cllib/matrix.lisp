@@ -13,7 +13,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.24 2005/09/01 23:05:07 sds Exp $
+;;; $Id: matrix.lisp,v 2.25 2006/06/22 20:10:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (eval-when (compile load eval)
@@ -187,7 +187,7 @@ Similar to Matlab `:'."
          (idx-ret (make-list (length index-list))) ; running index into ret
          (idx-arr (make-list (array-rank arr)))    ; running index into arr
          (ret (make-array dims :initial-element 0)))
-    (do-iter (ii (coerce (array-dimensions arr) 'vector) ret)
+    (do-iter (ii (mk-arr 'fixnum (array-dimensions arr)) ret)
       (replace idx-arr ii)
       ;; this AREF in LAMBDA means that we must use DO-ITER and not DO-ITER-LS
       (map-into idx-ret (lambda (idx) (aref ii idx)) index-list)

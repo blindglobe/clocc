@@ -1,6 +1,6 @@
 ;;; Network Access
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2006 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.59 2005/12/25 23:53:47 sds Exp $
+;;; $Id: net.lisp,v 1.60 2006/06/22 20:32:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -17,7 +17,9 @@
   (require :port-sys (translate-logical-pathname "port:sys"))
   #+(or cmu scl) (require :simple-streams) ; for `set-socket-stream-format'
   #+cormanlisp (require :winsock)
-  #+lispworks (require "comm"))
+  #+lispworks (require "comm")
+  #+(and sbcl (not (or db-sockets net.sbcl.sockets)))
+  (progn (require :sb-bsd-sockets) (pushnew :sb-bsd-sockets *features*)))
 
 (in-package :port)
 
@@ -60,20 +62,20 @@
     (+ (ash (first ll) 24) (ash (second ll) 16)
        (ash (third ll) 8) (fourth ll))))
 
-;#+(and sbcl db-sockets)
+;#+(and sbcl (or db-sockets sb-bsd-sockets))
 ;(declaim (ftype (function (vector) (values (unsigned-byte 32)))
 ;                vector-to-ipaddr))
-#+(and sbcl db-sockets)
+#+(and sbcl (or db-sockets sb-bsd-sockets))
 (defun vector-to-ipaddr (vector)
   (+ (ash (aref vector 0) 24)
      (ash (aref vector 1) 16)
      (ash (aref vector 2) 8)
      (aref vector 3)))
 
-;#+(and sbcl db-sockets)
+;#+(and sbcl (or db-sockets sb-bsd-sockets))
 ;(declaim (ftype (function (vector) (values (unsigned-byte 32)))
 ;                ipaddr-to-vector))
-#+(and sbcl db-sockets)
+#+(and sbcl (or db-sockets sb-bsd-sockets))
 (defun ipaddr-to-vector (ipaddr)
   (vector (ldb (byte 8 24) ipaddr)
           (ldb (byte 8 16) ipaddr)
@@ -177,10 +179,10 @@
   #+gcl 'stream
   #+lispworks 'comm:socket-stream
   #+openmcl 'ccl::socket
-  #+(and sbcl db-sockets) 'sb-sys:fd-stream
+  #+(and sbcl (or db-sockets sb-bsd-sockets)) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:stream-socket
   #-(or abcl allegro clisp cmu gcl lispworks openmcl
-	(and sbcl (or db-sockets net.sbcl.sockets)) scl) 'stream)
+        (and sbcl (or db-sockets net.sbcl.sockets sb-bsd-sockets)) scl) 'stream)
 
 (defun open-socket (host port &optional bin)
   "Open a socket connection to HOST at PORT."
@@ -221,8 +223,18 @@
          'net.sbcl.sockets:binary-stream-socket
          'net.sbcl.sockets:character-stream-socket)
      :port port :host host)
+    #+(and sbcl sb-bsd-sockets)
+    (let ((socket (make-instance 'sb-bsd-sockets:inet-socket
+                                 :type :stream :protocol :tcp)))
+      (sb-bsd-sockets:socket-connect socket
+				     (sb-bsd-sockets::host-ent-address
+				      (sb-bsd-sockets:get-host-by-name host))
+				     port)
+      (sb-bsd-sockets:socket-make-stream
+       socket :input t :output t :buffering (if bin :none :line)
+       :element-type (if bin '(unsigned-byte 8) 'character)))
     #-(or abcl allegro clisp cmu gcl lispworks mcl
-          (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+          (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
     (error 'not-implemented :proc (list 'open-socket host port bin))))
 
 (defun set-socket-stream-format (socket format)
@@ -232,6 +244,19 @@
   (declare (ignore socket format)) ; bivalent streams
   #-(or acl clisp cmu lispworks scl)
   (error 'not-implemented :proc (list 'set-socket-stream-format socket format)))
+
+#+(and sbcl sb-bsd-sockets)
+(defun funcall-on-sock (function sock)
+  "Apply function (getsockname/getpeername) on socket, return host/port as two values"
+  (let ((sockaddr (sockint::allocate-sockaddr-in)))
+    (funcall function (sb-sys:fd-stream-fd sock) sockaddr sockint::size-of-sockaddr-in)
+    (let ((host (coerce (loop :for i :from 0 :below 4
+                          :collect (sb-alien:deref (sockint::sockaddr-in-addr sockaddr) i))
+			'(vector (unsigned-byte 8) 4)))
+	  (port (+ (* 256 (sb-alien:deref (sockint::sockaddr-in-port sockaddr) 0))
+		   (sb-alien:deref (sockint::sockaddr-in-port sockaddr) 1))))
+      (sockint::free-sockaddr-in sockaddr)
+      (values host port))))
 
 (defun socket-host/port (sock)
   "Return the remote and local host&port, as 4 values."
@@ -279,8 +304,17 @@
                 local-port))))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:socket-host-port sock)
+  #+(and sbcl sb-bsd-sockets)
+  (multiple-value-bind (remote remote-port)
+      (funcall-on-sock #'sockint::getpeername sock)
+    (multiple-value-bind (local local-port)
+	(funcall-on-sock #'sockint::getsockname sock)
+      (values (ipaddr-to-dotted (vector-to-ipaddr remote))
+	      remote-port
+	      (ipaddr-to-dotted (vector-to-ipaddr local))
+	      local-port)))
   #-(or allegro clisp cmu gcl lispworks mcl
-        (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+        (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-host/port sock)))
 
 (defun socket-string (sock)
@@ -307,6 +341,7 @@
   #+mcl 'ccl::listener-socket
   #+(and sbcl db-sockets) 'sb-sys:fd-stream
   #+(and sbcl net.sbcl.sockets) 'net.sbcl.sockets:passive-socket
+  #+(and sbcl sb-bsd-sockets) 'sb-bsd-sockets:inet-socket
   #-(or abcl allegro clisp cmu gcl mcl
         (and sbcl (or net.sbcl.sockets db-sockets)) scl) t)
 
@@ -336,8 +371,16 @@
     (sockets:socket-bind socket (vector 0 0 0 0) (or port 0)))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:make-socket 'net.sbcl.sockets:passive-socket :port port)
+  #+(and sbcl sb-bsd-sockets)
+  (let ((sock (make-instance 'sb-bsd-sockets:inet-socket
+                             :type :stream
+                             :protocol :tcp)))
+    (setf (sb-bsd-sockets:sockopt-reuse-address sock) t)
+    (sb-bsd-sockets:socket-bind sock (vector 0 0 0 0) (or port 0))
+    (sb-bsd-sockets:socket-listen sock 15)
+    sock)
   #-(or abcl allegro clisp cmu gcl lispworks mcl
-        (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+        (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'open-socket-server port)))
 
 (defun socket-accept (serv &key bin wait)
@@ -404,8 +447,18 @@ Returns a socket stream or NIL."
        'net.sbcl.sockets:binary-stream-socket
        'net.sbcl.sockets:character-stream-socket)
    :wait wait)
+  #+(and sbcl sb-bsd-sockets)
+  (progn
+    (setf (sb-bsd-sockets:non-blocking-mode serv) wait)
+    (let ((s (sb-bsd-sockets:socket-accept serv)))
+      (if s
+	  (sb-bsd-sockets:socket-make-stream
+           s :input t :output t
+           :element-type (if bin '(unsigned-byte 8) 'character)
+           :buffering (if bin :full :line))
+	  (sleep wait))))
   #-(or abcl allegro clisp cmu gcl lispworks mcl
-        (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+        (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-accept serv bin)))
 
 (defun socket-server-close (server)
@@ -421,8 +474,9 @@ Returns a socket stream or NIL."
   #+openmcl (close server)
   #+(and sbcl db-sockets) (sockets:socket-close server)
   #+(and sbcl net.sbcl.sockets) (close server)
+  #+(and sbcl sb-bsd-sockets) (sb-bsd-sockets:socket-close server)
   #-(or abcl allegro clisp cmu gcl lispworks openmcl
-        (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+        (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-server-close server)))
 
 (defun socket-server-host/port (server)
@@ -451,8 +505,11 @@ Returns a socket stream or NIL."
     (values (vector-to-ipaddr addr) port))
   #+(and sbcl net.sbcl.sockets)
   (net.sbcl.sockets:passive-socket-host-port server)
+  #+(and sbcl sb-bsd-sockets)
+  (multiple-value-bind (addr port) (sb-bsd-sockets:socket-name server)
+    (values (ipaddr-to-dotted (vector-to-ipaddr addr)) port))
   #-(or allegro clisp cmu gcl lispworks openmcl
-        (and sbcl (or net.sbcl.sockets db-sockets)) scl)
+        (and sbcl (or net.sbcl.sockets db-sockets sb-bsd-sockets)) scl)
   (error 'not-implemented :proc (list 'socket-server-host/port server)))
 
 ;;;

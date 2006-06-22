@@ -9,11 +9,11 @@
 ;;; which relies on BLAS (http://www.netlib.org/blas) and
 ;;; LAPACK (http://www.netlib.org/lapack) for heavy-duty computations.
 ;;;
-;;; Copyright (C) 2000-2005 by Sam Steingold
+;;; Copyright (C) 2000-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: matrix.lisp,v 2.25 2006/06/22 20:10:00 sds Exp $
+;;; $Id: matrix.lisp,v 2.26 2006/06/22 20:11:01 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/matrix.lisp,v $
 
 (eval-when (compile load eval)

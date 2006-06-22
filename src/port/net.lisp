@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.60 2006/06/22 20:32:12 sds Exp $
+;;; $Id: net.lisp,v 1.61 2006/06/22 20:33:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
 (eval-when (compile load eval)
@@ -600,7 +600,7 @@ Kind can be :stream or :datagram."
   (name "" :type simple-string) ; official name of service
   (aliases nil :type list)      ; alias list
   (port -1 :type fixnum)        ; port service resides at
-  (proto "tcp" :type simple-string)) ; protocol to use
+  (proto :tcp :type symbol))    ; protocol to use
 
 (defun socket-service-port (&optional service (protocol "tcp"))
   "Return the SERVENT structure corresponding to the SERVICE.

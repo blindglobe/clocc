@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.8 2006/06/12 15:42:52 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.9 2006/06/26 20:06:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -506,6 +506,8 @@
 	  (cond ((eq (cadr e) '\ dat)
 		 false)
 		(t (simple-dat-match (caddr e)))))
+         ((eq (car e) 'quote)
+          0)
 	 ((eq (car e) 'let)
 	  (repeat :for ((bv :in (cadr e))
 			(numoccs 0)

@@ -1,11 +1,11 @@
-$Id: CHANGELOG,v 2.18 2006/06/12 15:42:52 airfoyle Exp $
+$Id: CHANGELOG,v 2.19 2006/06/26 20:06:48 airfoyle Exp $
             
             [- Version 2.1.18 -]
 2006-06-11: Corrected bug in Or-chunk/derive-date: If current date is
             newer than earliest disjunct, stick with current date.
             setter.lisp: In 'simple-dat-match', any quoted expression
             should return value 0, because it can contain no free
-            occurrenes of | dat|.
+            occurrences of | dat|.
 
             [- Version 2.1.17 2006/05/30 13:54:47 airfoyle Exp -]
 2006-05-30: Defined 'with-gen-vars', around cool new convention that

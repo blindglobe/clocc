@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.80 2005/09/22 16:33:14 sds Exp $
+;;; $Id: math.lisp,v 2.81 2006/06/28 18:16:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -469,24 +469,17 @@ The order in which the permutations are listed is either
 (defun sample (seq count &key complement)
   "Return a random subset of size COUNT from sequence SEQ.
 When :COMPLEMENT is non-NIL, the second value is the complement of the sample."
-  (let* ((good '()) (drop '()) (len (length seq)) (leeway (- len count))
-         (prob (float (/ count len) 0s0)))
-    (cond ((minusp leeway)
-           (error "~S(~S ~S): too few elements: ~:D"
-                  'sample seq count len))
-          ((zerop leeway) (values (coerce seq 'list) '()))
-          ((zerop count) (values '() (and complement (coerce seq 'list))))
-          (t
-           (map nil (lambda (elt)
-                      (cond ((and (plusp count)
-                                  (or (zerop leeway)
-                                      (> prob (random 1s0))))
-                             (push elt good)
-                             (decf count))
-                            (t (when complement (push elt drop))
-                               (decf leeway))))
-                seq)
-           (values (nreverse good) (nreverse drop))))))
+  (let* ((good '()) (drop '()) (len (length seq)) (got 0) (left len))
+    (when (minusp count)
+      (error "~S(~S ~S): cannot select a negative number of elements"
+             'sample seq count))
+    (map nil (lambda (elt)
+               (cond ((> (* left (random 1s0)) (- count got))
+                      (when complement (push elt drop)))
+                     (t (push elt good) (incf got)))
+               (decf left))
+         seq)
+    (values (nreverse good) (nreverse drop))))
 
 ;;;
 ;;; Ratios

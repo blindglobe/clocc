@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.9 2006/06/26 20:06:48 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.10 2006/06/28 22:56:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -21,7 +21,7 @@
 (eval-when (:compile-toplevel :load-toplevel)
    (export '(!= !=/ *-* switch matchq matches match-cond match-let *unbound
 	     make-Qvaroid make-Qvar is-Qvar is-Qvaroid Qvar-sym Qvar-notes Qvar
-             setter <-this-val ^-this-val)))
+             setter <-this-val ^-this-val retrieve-val)))
 
 ;;;;(declaim (special *-*))
 
@@ -658,3 +658,4 @@
 (defvar ^-this-val (\\ (_ new-val) new-val))
 (defvar <-this-val ^-this-val)
 ;;; E.g., (funcall set-whatever (first l323) <-this-val)
+(defvar retrieve-val (\\ (old-val _) old-val))

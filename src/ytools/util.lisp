@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: util.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: util.lisp,v 2.3 2006/06/28 22:56:58 airfoyle Exp $
 
 ;;; Utilities beyond base.lisp, which this depends on.
 
@@ -144,10 +144,11 @@
                               (begins-with (head (tail sl))
                                            directory-delimiter*))
                          (format str-srm
+                           "~a"
                            (subseq s 0 (- (length s)
                                           (length directory-delimiter*)))))
                         (t
-                         (format str-srm s))))
+                         (format str-srm "~a" s))))
                  (t
                   (format str-srm "~a" s)
                   (cond ((or (null (tail sl))

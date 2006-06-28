@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.5 2006/06/12 15:42:52 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.6 2006/06/28 22:56:58 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
@@ -661,6 +661,7 @@
 			      (dolist (d all-derivees)
 				 (cond ((chunk-has-no-managed-derivees d)
 					(chunk-unmanage d))))
+                              (chunk-unmanage c)
 			      (cond ((Chunk-managed c)
 				     (cerror !"I'll proceed with chunk in ~
                                                unexpected state"
@@ -732,17 +733,6 @@
 	        ;; to true, but not if an interrupt occurred --
 		(progn
 		    (setf (Chunk-managed chunk) (reason-to-manage chunk))
-;;; What was I thinking when I wrote this?
-;;;;			  (and (every #'Chunk-managed
-;;;;				      (Chunk-basis chunk))
-;;;;			       (or (not its-an-or)
-;;;;				   (some #'Chunk-managed
-;;;;					 (Or-chunk-disjuncts chunk)))))
-;;;;		    (format t "chunk-managed? ~s : ~s~%"
-;;;;			    chunk (Chunk-managed chunk))
-;;;;		    (cond ((not (Chunk-managed chunk))
-;;;;			   (setq ch* chunk)
-;;;;			   (break "Bogosity for ~s" ch*)))
 		 ))
 	     (Chunk-managed chunk)))))
 

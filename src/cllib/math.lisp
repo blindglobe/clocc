@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.81 2006/06/28 18:16:10 sds Exp $
+;;; $Id: math.lisp,v 2.82 2006/06/30 21:24:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -165,7 +165,11 @@ This is equivalent to (mod (binomial nn kk) 2) but faster."
   "The exponent of the largest power of 2 which divides the given number.
 See <http://mathworld.wolfram.com/RulerFunction.html>.
 See also <http://www.podval.org/~sds/notes.html#ruler-function>
-for the explanation of the (logand n (- n)) part."
+for the explanation of the (logand n (- n)) part.
+This is ffs-1 (ffs=find first set bit):
+CLISP: (ffi:def-call-out ffs (:name \"ffs\") (:arguments (i ffi:int))
+         (:return-type ffi:int) (:language :stdc) (:library :default))
+See http://www.opengroup.org/onlinepubs/009695399/functions/ffs.html."
   (1- (integer-length (logand n (- n)))))
 
 (defcustom *primes* list nil "The list of primes.

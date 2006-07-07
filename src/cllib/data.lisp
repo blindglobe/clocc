@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.1 2006/07/07 18:49:31 sds Exp $
+;;; $Id: data.lisp,v 1.2 2006/07/07 20:11:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -46,8 +46,8 @@
           (mesg :log out "~3D ~15@A" i name)
           (if plot
               (plot-histogram lines 100 :key key :plot plot
-                              :xlabel (format nil "~A(~D)" name i))
-              (mesg :log out "~A~%"
+                              :xlabel (format nil "~A -- ~A(~D)" file name i))
+              (mesg :log out " ~A~%"
                     (standard-deviation-mdl lines :key key))))))))
 
 

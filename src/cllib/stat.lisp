@@ -1,11 +1,11 @@
 ;;; n-dim statistics, histograms &c
 ;;; for simple regression, see math.lisp
 ;;;
-;;; Copyright (C) 2000-2005 by Sam Steingold
+;;; Copyright (C) 2000-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.16 2005/07/28 18:45:13 sds Exp $
+;;; $Id: stat.lisp,v 1.17 2006/07/07 18:37:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -102,11 +102,11 @@
 ;;; histograms
 ;;;
 
-(defun histogram (list nbins &key (key #'value) (out *standard-output*))
+(defun histogram (list nbins &key (key #'value) (out *standard-output*)
+                  (mdl (standard-deviation-mdl list :key key)))
   "Return 2 values: vector of length NBINS, bin WIDTH and MDL.
 The vector contains the counts in the Ith bin."
-  (let* ((mdl (standard-deviation-mdl list :key key))
-         (min (mdl-mi mdl)) (max (mdl-ma mdl)))
+  (let ((min (mdl-mi mdl)) (max (mdl-ma mdl)))
     (mesg :log out "~&~S: ~S~%" 'histogram mdl)
     (assert (/= min max) (min max) "~S: min=max=~A" 'histogram min)
     (let ((width (/ (- max min) nbins)) (last (1- nbins))

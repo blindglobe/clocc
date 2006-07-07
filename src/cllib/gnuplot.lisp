@@ -1,10 +1,10 @@
-;;; Gnuplot (http://www.gnuplot.org/) interface
+;;; Gnuplot (http://www.gnuplot.info/) interface
 ;;;
-;;; Copyright (C) 1997-2005 by Sam Steingold.
+;;; Copyright (C) 1997-2006 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.26 2006/01/03 14:15:26 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.27 2006/07/07 18:36:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -536,38 +536,40 @@ OPTS is passed to `plot-lists-arg'."
 ;;;###autoload
 (defun plot-histogram (list nbins &rest opts &key (title "histogram") (mean t)
                        (key #'value) (xlabel "x") (ylabel "count")
+                       (mdl (standard-deviation-mdl list :key key))
                        &allow-other-keys)
   "Plot the data in the list as a histogram.
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation
  with vertical lines."
-  (multiple-value-bind (vec width mdl arrows min max)
-      (histogram list nbins :key key :out *gnuplot-msg-stream*)
-    (setq min (mdl-mi mdl) max (mdl-ma mdl))
-    (when mean
-      (flet ((vertical (x thickness)
-               (make-arrow
-                :beg (make-point
-                      :x (make-coordinate :pos x)
-                      :y (make-coordinate :system :graph :pos 0))
-                :end (make-point
-                      :x (make-coordinate :pos x)
-                      :y (make-coordinate :system :graph :pos 1))
-                :width thickness)))
-        (setq arrows (list (vertical (mdl-mn mdl) 4)))
-        (let ((lo (- (mdl-mn mdl) (mdl-sd mdl))))
-          (when (>= lo min)
-            (push (vertical lo 2) arrows)))
-        (let ((hi (+ (mdl-mn mdl) (mdl-sd mdl))))
-          (when (<= hi max)
-            (push (vertical hi 2) arrows)))))
-    (with-plot-stream (str :title title :data-style :histeps :arrows arrows
-                           :xlabel xlabel :ylabel ylabel
-                           (remove-plist opts :key :mean))
-      (format str "plot '-' using 1:2~%")
-      (loop :for height :across vec
-        :for mid :upfrom (+ (mdl-mi mdl) (/ width 2)) :by width
-        :do (format str "~F~20T~F~%" mid height))
-      (format str "e~%"))))
+  (multiple-value-bind (vec width)
+      (histogram list nbins :key key :out *gnuplot-msg-stream* :mdl mdl)
+    (let ((arrows
+           (when mean
+             (flet ((vertical (x thickness)
+                      (make-arrow
+                       :beg (make-point
+                             :x (make-coordinate :pos x)
+                             :y (make-coordinate :system :graph :pos 0))
+                       :end (make-point
+                             :x (make-coordinate :pos x)
+                             :y (make-coordinate :system :graph :pos 1))
+                       :width thickness)))
+               (let ((arrows (list (vertical (mdl-mn mdl) 4))))
+                 (let ((lo (- (mdl-mn mdl) (mdl-sd mdl))))
+                   (when (>= lo (mdl-mi mdl))
+                     (push (vertical lo 2) arrows)))
+                 (let ((hi (+ (mdl-mn mdl) (mdl-sd mdl))))
+                   (when (<= hi (mdl-ma mdl))
+                     (push (vertical hi 2) arrows)))
+                 arrows)))))
+      (with-plot-stream (str :title title :data-style :histeps :arrows arrows
+                             :xlabel xlabel :ylabel ylabel
+                             (remove-plist opts :key :mean))
+        (format str "plot '-' using 1:2~%")
+        (loop :for height :across vec
+          :for mid :upfrom (+ (mdl-mi mdl) (/ width 2)) :by width
+          :do (format str "~F~20T~F~%" mid height))
+        (format str "e~%")))))
 
 (defun dated-list-to-day-list (dl &key (slot 'val) (depth (dl-len dl)))
   "Make a list of conses (days-from-beg . value) of length

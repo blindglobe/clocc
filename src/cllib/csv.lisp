@@ -1,10 +1,10 @@
 ;;; read/write comma-separated values
 ;;;
-;;; Copyright (C) 2003-2005 by Sam Steingold
+;;; Copyright (C) 2003-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.16 2006/03/09 15:42:22 sds Exp $
+;;; $Id: csv.lisp,v 2.17 2006/07/07 18:48:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -58,7 +58,7 @@
     :finally (return res)))
 
 (defmacro with-csv ((vec file &key (progress '*csv-progress*)
-                         skip-first-line junk-allowed
+                         first-line-names junk-allowed
                          (progress-1 '*csv-progress-1*) limit
                          (out '*standard-output*) columns)
                     &body body)
@@ -66,16 +66,27 @@
 Return 3 values:
   number of records (lines) read,
   number of bytes in the file,
-  fraction of bytes read"
-  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim)
+  fraction of bytes read
+  vector of column names if FIRST-LINE-NAMES is non-NIL"
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim l1)
     `(with-timing (:out ,out :count ,len :units "records")
-       (let* ((,fn ,file) (,pro ,progress) (,pro1 ,progress-1) ,fsize
+       (let* ((,fn ,file) (,pro ,progress) (,pro1 ,progress-1) ,fsize ,l1
               ,@(when limit `((,lim ,limit))))
          (with-open-file (,in ,fn :direction :input)
            (format ,out "~&Reading `~a' [~:d bytes]..."
                    ,fn (setq ,fsize (file-length ,in)))
            (force-output ,out)
-           (when ,skip-first-line (read-line ,in))
+           (when ,first-line-names
+             (let ((line1 (read-line ,in)))
+               (if (zerop (length line1))
+                   (cerror "ignore, return NIL for names"
+                           "empty first line, names expected")
+                   (setq ,l1
+                         (csv-parse-string
+                          (if (char/= #\# (char line1 0)) line1
+                              (string-left-trim ; strip comment leader "# "
+                               #.(concatenate 'string (string #\#) +whitespace+)
+                               line1)))))))
            (loop :with ,vec :and ,cols = ,columns :and ,pro1-count = 0
              :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit
@@ -111,15 +122,18 @@ Return 3 values:
              :finally (return
                         (values ,len (file-length ,in)
                                 (if (zerop ,fsize) 1
-                                    (/ (file-position ,in) ,fsize))))))))))
+                                    (/ (file-position ,in) ,fsize))
+                                ,l1))))))))
 
 ;;;###autoload
-(defun csv-read-file (inf)
+(defun csv-read-file (inf &key first-line-names)
   "Read comma-separated values into a list of vectors."
-  (let (len size)
+  (let (len file-size complete names)
     (values (with-collect (coll)
-              (setf (values len size) (with-csv (vec inf) (coll vec))))
-            len size)))
+              (setf (values len file-size complete names)
+                    (with-csv (vec inf :first-line-names first-line-names)
+                      (coll vec))))
+            len file-size names)))
 
 (provide :cllib-csv)
 ;;; file csv.lisp ends here

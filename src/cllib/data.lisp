@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.3 2006/07/10 17:57:53 sds Exp $
+;;; $Id: data.lisp,v 1.4 2006/07/10 22:51:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,9 +20,9 @@
 
 (in-package :cllib)
 
-(export '(analyse-csv *buckets* *columns*))
+(export '(analyse-csv *buckets* *columns* evaluate-predictor))
 
-(defcustom *buckets* (list lift:bucket) ()
+(defcustom *buckets* list ()    ; of lift:bucket
   "The list of buckets to fill in `analyse-csv'.")
 (defcustom *columns* (or (eql t) (list (or fixnum string symbol))) t
   "The list of column specs to study in `analyse-csv'.")
@@ -101,6 +101,24 @@
                         (stat-column lines i *buckets* names plot file len out))
                       columns)))))
 
+(defun numeric (v i)
+  (let ((n (read-from-string (aref v i))))
+    (if (numberp n) n (error "non-number ~S in ~S at ~:D" n v i))))
+
+;;;###autoload
+(defun evaluate-predictor (file &optional (out *standard-output*))
+  "Evaluate the quality of the predictor the produced the file.
+File: CSV, 1st column: actuals, 2nd column: predicted."
+  (let ((data (with-collect (coll)
+                (with-csv (vec file)
+                  (coll (cons (numeric vec 0) (numeric vec 1)))))))
+    (multiple-value-bind (co m0 m1 d0 d1 n) (cov data)
+      (let ((s0 (sqrt d0)) (s1 (sqrt d1)))
+        (mesg :log out "actual: mean=~9f std=~9f n=~:d~%pred  : mean=~9f std=~9f corr=~f~%"
+              m0 s0 n m1 s1 (/ co (* s0 s1)))
+        (let* ((deviation (mapcar (lambda (x) (- (car x) (cdr x))) data))
+               (mdl (standard-deviation-mdl deviation)))
+          (mesg :log out "~a  r2=~f~%" mdl (/ (- s1 (mdl-sd mdl)) s1)))))))
 
 (provide :data)
 ;;; file data.lisp ends here

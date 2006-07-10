@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.5 2006/04/21 21:11:36 sds Exp $
+;;; $Id: lift.lisp,v 2.6 2006/07/10 17:57:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,8 +23,10 @@
            #:detector-statistics #:ds-recall #:ds-precision #:ds-lift
            #:ds-data-reduction #:ds-dependency #:ds-proficiency
            #:bucket #:bucket-size #:bucket-true #:bucket-beg #:bucket-end
+           #:make-bucket #:copy-bucket #:fill-buckets
            #:bucket-probability #:bucket-inside-p #:bucket-distance
            #:bucket-midpoint #:prune-bucket-list #:thresholds
+           #:buckets-overlap-p #:bucket-empty #:bucket-empty-p
            #:par-proc-vec #:ppv-1st #:ppv-2nd #:ppv-name1 #:ppv-name2
            #:ppv-thresholds #:ppv-precision #:ppv-size
            #:ppv-target-count #:ppv-total-count
@@ -78,19 +80,30 @@
 (defvar *default-buckets* 10
   "the default granularity `discretize'")
 
-(defstruct bucket (size 0) (true 0) beg end)
+(defstruct bucket (size 0) (true 0) beg (begf #'<=) end (endf #'<=))
+
+(defmethod print-object ((b bucket) (out stream))
+  (if (or *print-readably* *print-escape*) (call-next-method)
+      (format out "~:[(~;[~]~F;~F~:[)~;]~]~[~:; ~:*~:D~]~[~:; (~:*~:D)~]"
+              (eq #'<= (bucket-begf b)) (bucket-beg b) (bucket-end b)
+              (eq #'<= (bucket-endf b)) (bucket-size b) (bucket-true b))))
 
 (defun bucket-probability (b)
   "Return the probability of a bucket element to be `true'."
   (/ (bucket-true b) (bucket-size b)))
 
-(defun check-bucket (b) (<= (bucket-beg b) (bucket-end b)))
+(defun check-bucket (b)
+  (or (< (bucket-beg b) (bucket-end b))
+      (and (= (bucket-beg b) (bucket-end b))
+           (eq (bucket-begf b) #'<=)
+           (eq (bucket-endf b) #'<=))))
 
 (defun bucket-singleton-p (b) (= (bucket-beg b) (bucket-end b)))
 
 (defun bucket-inside-p (number bucket)
   "Return true when the number is inside the bucket."
-  (<= (bucket-beg bucket) number (bucket-end bucket)))
+  (and (funcall (bucket-begf bucket) (bucket-beg bucket) number)
+       (funcall (bucket-endf bucket) number (bucket-end bucket))))
 
 (defun bucket-distance (number bucket)
   "Return the distance from the number to the bucket.
@@ -104,12 +117,46 @@ Inside ==> 0; distance is scaled by the bucket length."
   "Return the midpoint between bucket beg and end."
   (/ (+ (bucket-beg bucket) (bucket-end bucket)) 2))
 
+(defun buckets-overlap-p (b1 b2)
+  "Check if two buckets overlap."
+  (or (bucket-inside-p (bucket-beg b1) b2)
+      (bucket-inside-p (bucket-end b1) b2)
+      (bucket-inside-p (bucket-beg b2) b1)
+      (bucket-inside-p (bucket-end b2) b1)))
+
+(defun bucket-empty (b)
+  "Make the bucket empty."
+  (setf (bucket-size b) 0 (bucket-true b) 0)
+  b)
+
+(defun bucket-empty-p (b)
+  "Check if the bucket is empty."
+  (zerop (bucket-size b)))
+
 (defun merge-buckets (b1 b2)
-  "Return a new bucket that is the union of the two bucket arguments."
-  (make-bucket :size (+ (bucket-size b1) (bucket-size b2))
-               :true (+ (bucket-true b1) (bucket-true b2))
-               :beg (min (bucket-beg b1) (bucket-beg b2))
-               :end (max (bucket-end b1) (bucket-end b2))))
+  "Return a new bucket that is the union of the two non-overlapping arguments.
+The possibly non-covered segment between the buckets is presumed empty."
+  (when (buckets-overlap-p b1 b2)
+    (error "cannot merge overlapping buckets ~S and ~S" b1 b2))
+  (let ((l1 (bucket-beg b1)) (l2 (bucket-beg b2))
+        (r1 (bucket-end b1)) (r2 (bucket-end b2)))
+    (multiple-value-bind (b bf)
+        (cond ((< l1 l2) (values l1 (bucket-begf b1)))
+              ((> l1 l2) (values l2 (bucket-begf b2)))
+              (t (values l1     ; l1=l2
+                         (if (and (eq #'< (bucket-begf b1))
+                                  (eq #'< (bucket-begf b2)))
+                             #'< #'<=))))
+      (multiple-value-bind (e ef)
+          (cond ((> r1 r2) (values r1 (bucket-endf b1)))
+                ((< r1 r2) (values r2 (bucket-endf b2)))
+                (t (values r1   ; r1=r2
+                           (if (and (eq #'< (bucket-endf b1))
+                                    (eq #'< (bucket-endf b2)))
+                               #'< #'<=))))
+        (make-bucket :size (+ (bucket-size b1) (bucket-size b2))
+                     :true (+ (bucket-true b1) (bucket-true b2))
+                     :beg b :begf bf :end e :endf ef)))))
 
 (defun merge-buckets-maybe (b1 b2 bsize)
   "Merge buckets if it makes sense."
@@ -137,9 +184,29 @@ and the distance from the number to the bucket
          bucket-seq)
     (values best-pos best-bucket best-dist)))
 
+(defun fill-buckets (seq bucket-seq &key (key #'identity) true-value)
+  "Fill buckets from the sequence.
+Buckets may overlap and not cover the whole range."
+  (map nil (if true-value
+               (lambda (elt)
+                 (let ((score (funcall key elt))
+                       (true (funcall true-value elt)))
+                   (map nil (lambda (bucket)
+                              (when (bucket-inside-p score bucket)
+                                (incf (bucket-size bucket))
+                                (when true (incf (bucket-true bucket)))))
+                        bucket-seq)))
+               (lambda (elt)
+                 (let ((score (funcall key elt)))
+                   (map nil (lambda (bucket)
+                              (when (bucket-inside-p score bucket)
+                                (incf (bucket-size bucket))))
+                        bucket-seq))))
+       seq))
+
 (defun discretize (seq &key (buckets *default-buckets*) (key #'identity)
                    true-value)
-  "discretize the sequence into (approximately) equal-height buckets"
+  "Discretize the sequence into (approximately) equal-height buckets."
   (setq seq (sort seq #'< :key key)) ; can we assume this?
   (let* ((total-count (length seq)) (bucket-count 1)
          (bucket-size (float (/ total-count buckets) 0d0))

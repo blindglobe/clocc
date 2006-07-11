@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.4 2006/07/10 22:51:38 sds Exp $
+;;; $Id: data.lisp,v 1.5 2006/07/11 20:35:36 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -46,6 +46,14 @@
                                         spec (1- ncol))))))
                        col-specs)))))
 
+(defun numeric (v i &aux (*read-default-float-format* 'double-float))
+  (let ((n (read-from-string (aref v i))))
+    (if (numberp n)
+        (if (< (abs n) (/ *num-tolerance*)) n
+            (cerror "drop the whole line" "extreme value ~S in ~S at ~:D"
+                    n v i))
+        (cerror "drop the whole line" "non-number ~S in ~S at ~:D" n v i))))
+
 (defun strings-to-nums (lines col-specs &optional (len (length lines))
                         (out *standard-output*))
   "Convert some strings to numbers, in place."
@@ -55,11 +63,11 @@
       (setq lines
             (delete-if-not
              (lambda (v)
-               (loop :for i :in col-specs
-                 :for num = (read-from-string (aref v i))
-                 :always (if (numberp num) (setf (aref v i) num)
-                             (warn "[~D] dropped ~S: non-number ~S at ~D"
-                                   (incf drop) v num i))))
+               (dolist (i col-specs t)
+                 (handler-bind ((error (lambda (c)
+                                         (warn "~A -- line dropped" c)
+                                         (incf drop) (return nil))))
+                   (setf (aref v i) (numeric v i)))))
              lines))
       (mesg :log out "dropped ~:D lines (out of ~:D, ~4F%)"
             drop len (/ (* 1d2 drop) len))
@@ -100,10 +108,6 @@
               (mapcar (lambda (i)
                         (stat-column lines i *buckets* names plot file len out))
                       columns)))))
-
-(defun numeric (v i)
-  (let ((n (read-from-string (aref v i))))
-    (if (numberp n) n (error "non-number ~S in ~S at ~:D" n v i))))
 
 ;;;###autoload
 (defun evaluate-predictor (file &optional (out *standard-output*))

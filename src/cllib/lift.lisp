@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.6 2006/07/10 17:57:10 sds Exp $
+;;; $Id: lift.lisp,v 2.7 2006/07/11 19:43:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -470,5 +470,5 @@ and cut-offs (x) for the given recalls (y)"
         (ppv-out y-ret mdl out)))
     (values x-ret y-ret)))
 
-(provide :lift)
+(provide :cllib-lift)
 ;;; file lift.lisp ends here

@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.29 2006/07/07 18:52:22 sds Exp $
+# $Id: Makefile,v 2.30 2006/07/11 14:23:37 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -11,9 +11,10 @@ SOURCES := animals base card check clhs closio date datedl doall elisp fileio \
 	octave rpm server simple sorted stat string symb tilsla url withtype \
 	inspect autoload htmlgen xml prompt matrix getopt tests cvs rng csv \
 	base64 lift data
-BASE = $(TOP)/clocc base auto
-NET = $(TOP)/clocc base url gq rpm
-SCRIPT = $(TOP)/clocc base getopt
+IMAGE_EXTRA = $(TOP)/clocc
+BASE = $(IMAGE_EXTRA) base auto
+NET = $(IMAGE_EXTRA) base url gq rpm
+SCRIPT = $(IMAGE_EXTRA) base getopt
 SYSTEM := cllib
 ZIPEXTRA = ../defsystem-3.x/defsystem.lisp ../tools/metering/metering.lisp \
 	$(TOP)/etc/GNU-GPL $(TOP)/bin/run-lisp
@@ -35,8 +36,13 @@ image$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(BASE))
 image-net$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(NET))
 	$(RUNLISP) $(patsubst %,-i %,$^) -d image-net
 
-image-net.exe:	$(addsuffix .$(FASLEXT),$(NET))
-	$(CLISP) -norc $(patsubst %,-i %,$^) -x '(saveinitmem "$@" :executable t)'
+cllib-net.exe:	$(addsuffix .$(FASLEXT),$(NET))
+	$(CLISP) -norc $(patsubst %,-i %,$^) \
+		-x '(saveinitmem "$@" :executable t :norc t)'
+
+cllib.exe:	$(addsuffix .$(FASLEXT),$(IMAGE_EXTRA) $(SOURCES))
+	$(CLISP) -norc $(patsubst %,-i %,$^) \
+		-x '(saveinitmem "$@" :executable t :norc t)'
 
 image-script$(DUMPEXT):	$(addsuffix .$(FASLEXT),$(SCRIPT))
 	$(RUNLISP) $(patsubst %,-i %,$^) -d image-script

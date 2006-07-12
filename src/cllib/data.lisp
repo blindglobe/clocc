@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.7 2006/07/12 20:57:30 sds Exp $
+;;; $Id: data.lisp,v 1.8 2006/07/12 20:58:44 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,7 +20,6 @@
 
 (in-package :cllib)
 
-
 (export '(analyse-csv *buckets* *columns* evaluate-predictor))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -28,24 +27,32 @@
 (defcustom *columns* (or (eql t) (cons (or fixnum string symbol))) t
   "The list of column specs to study in `analyse-csv'.")
 
-(defun unroll-column-specs (col-specs names ncol)
-  "Turn `columns' into a list of `interesting' indexes."
-  (etypecase col-specs
-    (null (error "empty column selection"))
-    ((eql t) (loop :for i :from 0 :below ncol :collect i))
-    (cons (delete
-           nil (mapcar (lambda (spec)
-                         (etypecase spec
-                           ((or string symbol)
+(defun column-spec-list (col-specs names ncol)
+  "Return the list of positions corresponding to the column specifiers."
+  (delete
+   nil (mapcar (lambda (spec)
+                 (etypecase spec
+                   ((or string symbol)
                     (assert names (names)
                             "column spec ~S requires a names line" spec)
                     (or (position spec names :test #'string-equal)
                         (cerror "drop it" "no ~S in ~S" spec names)))
                    (fixnum
-                            (if (< -1 spec ncol) spec
-                                (cerror "drop it" "~S is out of range [0:~D]"
-                                        spec (1- ncol))))))
-                       col-specs)))))
+                    (if (< -1 spec ncol) spec
+                        (cerror "drop it" "~S is out of range [0:~D]"
+                                spec (1- ncol))))))
+               col-specs)))
+
+(defun unroll-column-specs (col-specs names ncol)
+  "Turn `columns' into a list of `interesting' indexes."
+  (etypecase col-specs
+    (null (error "empty column selection"))
+    ((eql t) (loop :for i :from 0 :below ncol :collect i))
+    ((cons (eql not))           ; exclude specified columns
+     (set-difference (loop :for i :from 0 :below ncol :collect i)
+                     (column-spec-list col-specs names ncol)))
+    (cons                       ; include specified columns
+     (column-spec-list col-specs names ncol))))
 
 (defun numeric (v i &optional names
                 &aux (*read-default-float-format* 'double-float))

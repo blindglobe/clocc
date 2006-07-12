@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.5 2006/07/11 20:35:36 sds Exp $
+;;; $Id: data.lisp,v 1.6 2006/07/12 20:56:34 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,6 +19,7 @@
   (require :cllib-gnuplot (translate-logical-pathname "cllib:gnuplot")))
 
 (in-package :cllib)
+
 
 (export '(analyse-csv *buckets* *columns* evaluate-predictor))
 
@@ -36,25 +37,28 @@
            nil (mapcar (lambda (spec)
                          (etypecase spec
                            ((or string symbol)
-                            (assert names (names)
-                                    "column spec ~S requires a names line" spec)
-                            (or (position spec names :test #'string-equal)
-                                (cerror "drop it" "no ~S in ~S" spec names)))
-                           (fixnum
+                    (assert names (names)
+                            "column spec ~S requires a names line" spec)
+                    (or (position spec names :test #'string-equal)
+                        (cerror "drop it" "no ~S in ~S" spec names)))
+                   (fixnum
                             (if (< -1 spec ncol) spec
                                 (cerror "drop it" "~S is out of range [0:~D]"
                                         spec (1- ncol))))))
                        col-specs)))))
 
-(defun numeric (v i &aux (*read-default-float-format* 'double-float))
+(defun numeric (v i &optional names
+                &aux (*read-default-float-format* 'double-float))
   (let ((n (read-from-string (aref v i))))
     (if (numberp n)
         (if (< (abs n) (/ *num-tolerance*)) n
-            (cerror "drop the whole line" "extreme value ~S in ~S at ~:D"
-                    n v i))
-        (cerror "drop the whole line" "non-number ~S in ~S at ~:D" n v i))))
+            (cerror "drop the whole line"
+                    "extreme value ~S in ~S at ~:D~@[ (~A)~]"
+                    n v i (and names (aref names i))))
+        (cerror "drop the whole line" "non-number ~S in ~S at ~:D~@[ (~A)~]"
+                n v i (and names (aref names i))))))
 
-(defun strings-to-nums (lines col-specs &optional (len (length lines))
+(defun strings-to-nums (lines col-specs &key names (len (length lines))
                         (out *standard-output*))
   "Convert some strings to numbers, in place."
   (with-timing (:out out)
@@ -67,7 +71,7 @@
                  (handler-bind ((error (lambda (c)
                                          (warn "~A -- line dropped" c)
                                          (incf drop) (return nil))))
-                   (setf (aref v i) (numeric v i)))))
+                   (setf (aref v i) (numeric v i names)))))
              lines))
       (mesg :log out "dropped ~:D lines (out of ~:D, ~4F%)"
             drop len (/ (* 1d2 drop) len))
@@ -103,7 +107,8 @@
     (let ((columns (unroll-column-specs *columns* names
                                         (length (or names (car lines))))))
       (assert columns (columns) "no interesting columns left")
-      (setf (values lines len) (strings-to-nums lines columns len out))
+      (setf (values lines len) (strings-to-nums lines columns :names names
+                                                :len len :out out))
       (values lines
               (mapcar (lambda (i)
                         (stat-column lines i *buckets* names plot file len out))
@@ -116,13 +121,16 @@ File: CSV, 1st column: actuals, 2nd column: predicted."
   (let ((data (with-collect (coll)
                 (with-csv (vec file)
                   (coll (cons (numeric vec 0) (numeric vec 1)))))))
+    (mesg :log out "actual: ~a~%" (standard-deviation-mdl data :key #'car))
+    (mesg :log out "pred  : ~a~%" (standard-deviation-mdl data :key #'cdr))
     (multiple-value-bind (co m0 m1 d0 d1 n) (cov data)
       (let ((s0 (sqrt d0)) (s1 (sqrt d1)))
-        (mesg :log out "actual: mean=~9f std=~9f n=~:d~%pred  : mean=~9f std=~9f corr=~f~%"
+        (mesg :log out "actual: mean=~9f std=~9f n=~9:d~%pred  : mean=~9f std=~9f corr=~f~%"
               m0 s0 n m1 s1 (/ co (* s0 s1)))
         (let* ((deviation (mapcar (lambda (x) (- (car x) (cdr x))) data))
                (mdl (standard-deviation-mdl deviation)))
-          (mesg :log out "~a  r2=~f~%" mdl (/ (- s1 (mdl-sd mdl)) s1)))))))
+          (mesg :log out "diff  : ~a  r2=~f~%"
+                mdl (/ (- s1 (mdl-sd mdl)) s1)))))))
 
 (provide :data)
 ;;; file data.lisp ends here

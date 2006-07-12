@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.9 2006/07/12 21:34:21 sds Exp $
+;;; $Id: data.lisp,v 1.10 2006/07/12 21:35:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -84,12 +84,15 @@
             drop len (/ (* 1d2 drop) len))
       (values lines (- len drop)))))
 
+(defvar *min-name-length* 5)
 (defun stat-column (lines col buckets names plot file
-                    &optional (len (length lines)) (out *standard-output*))
+                    &key (len (length lines)) (out *standard-output*)
+                    (max-name-length (reduce #'max names :key #'length
+                                             :initial-value *min-name-length*)))
   (let* ((name (if names (aref names col) (format nil "C~D")))
          (key (lambda (v) (aref v col)))
          (mdl (standard-deviation-mdl lines :key key)))
-    (mesg :log out "~3D ~15@A" col name)
+    (mesg :log out "~3D ~V@A" col max-name-length name)
     (if plot
         (plot-histogram lines 100 :key key :plot plot :mdl mdl
                         :xlabel (format nil "~A -- ~A(~D)" file name col))
@@ -111,14 +114,21 @@
   (multiple-value-bind (lines len file-size names)
       (csv-read-file file :first-line-names first-line-names)
     (declare (ignore file-size))
-    (let ((columns (unroll-column-specs *columns* names
-                                        (length (or names (car lines))))))
+    (let* ((columns (unroll-column-specs *columns* names
+                                         (length (or names (car lines)))))
+           (max-name-length
+            (if names
+                (reduce #'max columns :key (lambda (i) (length (aref names i)))
+                        :initial-value *min-name-length*)
+                *min-name-length*)))
       (assert columns (columns) "no interesting columns left")
       (setf (values lines len) (strings-to-nums lines columns :names names
                                                 :len len :out out))
       (values lines
               (mapcar (lambda (i)
-                        (stat-column lines i *buckets* names plot file len out))
+                        (stat-column lines i *buckets* names plot file
+                                     :max-name-length max-name-length
+                                     :len len :out out))
                       columns)))))
 
 ;;;###autoload

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.18 2006/07/13 17:36:26 sds Exp $
+;;; $Id: csv.lisp,v 2.19 2006/07/13 21:19:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -57,7 +57,7 @@
                 (csv-trim *csv-whitespace* (subseq string beg end))))
     :finally (return res)))
 
-(defconst +comments+ string "#;" "Characters that start comments")
+(defconst +comments+ string "#;" "Characters that start comments.")
 (defun uncomment-line (line)
   "Remove the comment prefix from the string."
   (if (find (char line 0) +comments+)
@@ -69,8 +69,13 @@
   "Read and parse as names the first line in the file."
   (csv-parse-string (uncomment-line (with-open-file (s file) (read-line s)))))
 
+(defun csv-check-vec-len (vec cols fn pos)
+  (unless (= cols (length vec))
+    (error "~S:~:D: Wrong column count: ~:D instead of ~:D: ~S"
+           fn pos (length vec) cols vec)))
+
 (defmacro with-csv ((vec file &key (progress '*csv-progress*)
-                         first-line-names junk-allowed
+                         (first-line-names :default) junk-allowed
                          (progress-1 '*csv-progress-1*) limit
                          (out '*standard-output*) columns)
                     &body body)
@@ -79,22 +84,29 @@ Return 3 values:
   number of records (lines) read,
   number of bytes in the file,
   fraction of bytes read
-  vector of column names if FIRST-LINE-NAMES is non-NIL"
-  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim l1)
+  vector of column names if FIRST-LINE-NAMES is non-NIL
+    or if it is :DEFAULT and the first line starts with a +COMMENTS+ character."
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim
+                             l1 fln)
     `(with-timing (:out ,out :count ,len :units "records")
        (let* ((,fn ,file) (,pro ,progress) (,pro1 ,progress-1) ,fsize ,l1
+              (,fln ,first-line-names) (,cols ,columns)
               ,@(when limit `((,lim ,limit))))
          (with-open-file (,in ,fn :direction :input)
            (format ,out "~&Reading `~a' [~:d bytes]..."
                    ,fn (setq ,fsize (file-length ,in)))
            (force-output ,out)
-           (when ,first-line-names
+           (when (eq ,fln :default)
+             (setq ,fln (find (peek-char nil ,in) +comments+)))
+           (when ,fln
              (let ((line1 (read-line ,in)))
-               (if (zerop (length line1))
-                   (cerror "ignore, return NIL for names"
-                           "empty first line, names expected")
-                   (setq ,l1 (csv-parse-string (uncomment-line line1))))))
-           (loop :with ,vec :and ,cols = ,columns :and ,pro1-count = 0
+               (cond ((zerop (length line1))
+                      (cerror "ignore, return NIL for names"
+                              "empty first line, names expected"))
+                     (t (setq ,l1 (csv-parse-string (uncomment-line line1)))
+                        (if ,cols (csv-check-vec-len ,l1 ,cols ,fn 0)
+                            (setq ,cols (length ,l1)))))))
+           (loop :with ,vec :and ,pro1-count = 0
              :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit
                  `(:when (and ,lim (= ,len ,lim))
@@ -108,9 +120,7 @@ Return 3 values:
                                                     *csv-whitespace* ,ln)))))
              :do (setq ,vec (csv-parse-string ,ln)) (incf ,len)
              (if ,cols
-                 (assert (= ,cols (length ,vec)) (,cols ,vec)
-                         "~&~s:~:d: Wrong column count ~:d instead of ~:d:~%~s"
-                         ,fn ,len (length ,vec) ,cols ,vec)
+                 (csv-check-vec-len ,vec ,cols ,fn ,len)
                  (setq ,cols (length ,vec)))
              ,@body
              (when (and ,pro ,out (zerop (mod ,len ,pro)))
@@ -133,7 +143,7 @@ Return 3 values:
                                 ,l1))))))))
 
 ;;;###autoload
-(defun csv-read-file (inf &key first-line-names)
+(defun csv-read-file (inf &key (first-line-names :default))
   "Read comma-separated values into a list of vectors."
   (let (len file-size complete names)
     (values (with-collect (coll)

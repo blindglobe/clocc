@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.10 2006/07/12 21:35:07 sds Exp $
+;;; $Id: data.lisp,v 1.11 2006/07/13 17:38:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -65,11 +65,19 @@
         (cerror "drop the whole line" "non-number ~S in ~S at ~:D~@[ (~A)~]"
                 n v i (and names (aref names i))))))
 
+(defvar *min-name-length* 5)
+(defun max-name-length (names)
+  (reduce #'max names :key #'length :initial-value *min-name-length*))
+(defun column-name (names col)
+  (if names (aref names col) (format nil "C~D" col)))
+
 (defun strings-to-nums (lines col-specs &key names (len (length lines))
+                        (max-name-length (max-name-length names))
                         (out *standard-output*))
   "Convert some strings to numbers, in place."
   (with-timing (:out out)
-    (let ((drop 0))
+    (let ((dnum (make-array (1+ (reduce #'max col-specs)) :initial-element 0))
+          (drop 0))
       (mesg :log out "Converting strings to numbers...")
       (setq lines
             (delete-if-not
@@ -77,19 +85,22 @@
                (dolist (i col-specs t)
                  (handler-bind ((error (lambda (c)
                                          (warn "~A -- line dropped" c)
+                                         (incf (aref dnum i))
                                          (incf drop) (return nil))))
                    (setf (aref v i) (numeric v i names)))))
              lines))
-      (mesg :log out "dropped ~:D lines (out of ~:D, ~4F%)"
-            drop len (/ (* 1d2 drop) len))
+      (if (zerop drop) (mesg :log out "done")
+          (loop :for i :in col-specs :for d = (aref dnum i) :unless (zerop d)
+            :do (mesg :log out "~%~3D ~V@A:  ~:D lines dropped"
+                      i max-name-length (column-name names i) d)
+            :finally (mesg :log out "~%...dropped ~:D lines (out of ~:D, ~4F%)"
+                           drop len (/ (* 1d2 drop) len))))
       (values lines (- len drop)))))
 
-(defvar *min-name-length* 5)
 (defun stat-column (lines col buckets names plot file
                     &key (len (length lines)) (out *standard-output*)
-                    (max-name-length (reduce #'max names :key #'length
-                                             :initial-value *min-name-length*)))
-  (let* ((name (if names (aref names col) (format nil "C~D")))
+                    (max-name-length (max-name-length names)))
+  (let* ((name (column-name names col))
          (key (lambda (v) (aref v col)))
          (mdl (standard-deviation-mdl lines :key key)))
     (mesg :log out "~3D ~V@A" col max-name-length name)
@@ -122,14 +133,16 @@
                         :initial-value *min-name-length*)
                 *min-name-length*)))
       (assert columns (columns) "no interesting columns left")
-      (setf (values lines len) (strings-to-nums lines columns :names names
-                                                :len len :out out))
-      (values lines
-              (mapcar (lambda (i)
+      (setf (values lines len)
+            (strings-to-nums lines columns :names names
+                             :max-name-length max-name-length
+                             :len len :out out))
+      (values (mapcar (lambda (i)
                         (stat-column lines i *buckets* names plot file
                                      :max-name-length max-name-length
                                      :len len :out out))
-                      columns)))))
+                      columns)
+              lines names))))
 
 ;;;###autoload
 (defun evaluate-predictor (file &optional (out *standard-output*))

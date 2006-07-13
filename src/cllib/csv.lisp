@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.17 2006/07/07 18:48:49 sds Exp $
+;;; $Id: csv.lisp,v 2.18 2006/07/13 17:36:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,7 +16,7 @@
 
 (in-package :cllib)
 
-(export '(csv-print-vector csv-parse-string csv-read-file with-csv
+(export '(csv-print-vector csv-parse-string csv-read-file with-csv csv-names
           *csv-separator* *csv-whitespace* *csv-progress* *csv-progress-1*))
 
 (defcustom *csv-separator* character #\,
@@ -57,6 +57,18 @@
                 (csv-trim *csv-whitespace* (subseq string beg end))))
     :finally (return res)))
 
+(defconst +comments+ string "#;" "Characters that start comments")
+(defun uncomment-line (line)
+  "Remove the comment prefix from the string."
+  (if (find (char line 0) +comments+)
+      (string-left-trim +whitespace+ (string-left-trim +comments+ line))
+      line))
+
+;;;###autoload
+(defun csv-names (file)
+  "Read and parse as names the first line in the file."
+  (csv-parse-string (uncomment-line (with-open-file (s file) (read-line s)))))
+
 (defmacro with-csv ((vec file &key (progress '*csv-progress*)
                          first-line-names junk-allowed
                          (progress-1 '*csv-progress-1*) limit
@@ -81,12 +93,7 @@ Return 3 values:
                (if (zerop (length line1))
                    (cerror "ignore, return NIL for names"
                            "empty first line, names expected")
-                   (setq ,l1
-                         (csv-parse-string
-                          (if (char/= #\# (char line1 0)) line1
-                              (string-left-trim ; strip comment leader "# "
-                               #.(concatenate 'string (string #\#) +whitespace+)
-                               line1)))))))
+                   (setq ,l1 (csv-parse-string (uncomment-line line1))))))
            (loop :with ,vec :and ,cols = ,columns :and ,pro1-count = 0
              :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit

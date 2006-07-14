@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.11 2006/07/13 17:38:00 sds Exp $
+;;; $Id: data.lisp,v 1.12 2006/07/14 21:37:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -118,7 +118,8 @@
       (list* col name mdl bl))))
 
 ;;;###autoload
-(defun analyse-csv (file &key plot (first-line-names t) (out *standard-output*)
+(defun analyse-csv (file &key plot (first-line-names :default)
+                    (out *standard-output*)
                     ((:columns *columns*) *columns*)
                     ((:buckets *buckets*) *buckets*))
   "Analyse columns in the CSV file."

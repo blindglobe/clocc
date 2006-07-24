@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.6 2006/05/30 13:54:47 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.7 2006/07/24 11:43:00 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -536,36 +536,47 @@
 ;;; The forms include calls to the 'check' macro, below.
 ;;; Returns true if all calls to 'check' threw no Test-failures (and no
 ;;; one else did either).
+;;; Optional keyword arg :end-string supplies string to print when
+;;; test is finished.
 (defmacro test (string &rest body)
-   ;; Historically the string came before the test.
-   ;; So if string can't come right after the word "test",
-   ;; padd it out --
-   (cond ((not (= (string-length string) 0))
-          (let ((ch1 (elt string 0)))
-             (cond ((and (not (is-whitespace ch1))
-                         (not (member ch1 '(#\: #\/) :test #'char=)))
-                    (!= string (string-concat " " *-*)))))))
-   (let () ;;;; (block-label (gensym))
-      `(catch 'test-abort
-	  (let ((check-count* 0))
-	     (handler-bind ((Test-failure
-			       (\\ (tf)
-				  (cond ((not break-on-test-failure*)
-					 ;; We have to do this because
-					 ;; the :report clause doesn't seem
-					 ;; to work right --
-					 (bind ((*print-escape* false))
-					    (out (:to *error-output*)
-					       "TEST FAILURE" :%
-					       (Test-failure-description tf)
-					       :% " *** " ,string " test FAILED ***" :%))
-;;;;					 (return-from ,block-label false)
-                                         (throw 'test-abort false)
-                                         )))))
-		  (progn (out (:to *error-output*) "Beginning test" ,string :%)
-			 ,@body
-			 (out (:to *error-output*) 5 "Test succeeded" ,string  :%)
-                         true))))))
+   (multi-let (((body kal)
+                (keyword-args-extract body '(:end-string))))
+      ;; Historically the string came before the test.
+      ;; So if string can't come right after the word "test",
+      ;; pad it out --
+      (cond ((not (= (string-length string) 0))
+             (let ((ch1 (elt string 0)))
+                (cond ((and (not (is-whitespace ch1))
+                            (not (member ch1 '(#\: #\/) :test #'char=)))
+                       (!= string (string-concat " " *-*)))))))
+      (let ( ;;;; (block-label (gensym))
+            (end-string
+               (alref kal ':end-string "")))
+         `(catch 'test-abort
+             (let ((check-count* 0))
+                (handler-bind ((Test-failure
+                                  (\\ (tf)
+                                     (cond ((not break-on-test-failure*)
+                                            ;; We have to do this because
+                                            ;; the :report clause doesn't seem
+                                            ;; to work right --
+                                            (bind ((*print-escape* false))
+                                               (out (:to *error-output*)
+                                                  "TEST FAILURE" :%
+                                                  (Test-failure-description tf)
+                                                  :% " *** " ,string " test FAILED ***" :%))
+   ;;;;					 (return-from ,block-label false)
+                                            (throw 'test-abort false)
+                                            )))))
+                     (progn (out (:to *error-output*) "Beginning test" ,string :%)
+                            ,@body
+                            (out (:to *error-output*)
+                               5 "Test succeeded"
+                               ,(cond ((eq end-string ':same)
+                                       string)
+                                      (t end-string))
+                                :%)
+                            true)))))))
 
 ;;; (check form -out-stuff-) runs form.  If it returns false, 'out' the
 ;;; out-stuff and break.

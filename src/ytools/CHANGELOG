@@ -1,6 +1,11 @@
-$Id: CHANGELOG,v 2.20 2006/06/28 22:56:58 airfoyle Exp $
+$Id: CHANGELOG,v 2.21 2006/07/24 11:43:00 airfoyle Exp $
             
-            [- Version 2.1.20 -]
+            [- Version 2.1.21 -]
+2006-07-24: Added :end-string argument to 'test' macro.
+
+2006-07-02: Improved format of error message in 'control-nest'.
+
+            [- Version 2.1.20 2006/06/28 22:56:58 airfoyle Exp -]
 2006-06-28: util.lisp: Corrected 'format' calls that lacked control
             strings.
             chunk.lisp: 'chunk-internal-term-mgt' didn't actually call

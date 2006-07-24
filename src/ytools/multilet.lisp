@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 2.2 2006/05/30 13:54:47 airfoyle Exp $
+;;;$Id: multilet.lisp,v 2.3 2006/07/24 11:43:00 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -530,7 +530,7 @@
 			      (signal-problem control-nest
 				 "Expression should have exactly one"
 				 " occurrence of " (cadr lbes) ": "
-				 (car lbes)
+				 :% (car lbes)
 				 (:proceed "I'll replace all occurrences"))))
 		       (subst (fold (cddr lbes))
 			      (cadr lbes)

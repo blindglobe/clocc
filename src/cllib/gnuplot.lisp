@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.28 2006/07/07 18:49:22 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.29 2006/07/26 17:04:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -157,12 +157,15 @@ according to the given backend")
 
 (defstruct (plot-timestamp (:conc-name plts-))
   (fmt "%Y-%m-%d %a %H:%M:%S %Z" :type string)
+  (loc :bottom :type (member :top :bottom))
+  (rot nil :type boolean)
   (pos '(0 . 0) :type cons)
   (font "Helvetica" :type string))
 
 (defmethod plot-output ((pt plot-timestamp) (out stream)
                         (backend (eql :gnuplot)))
-  (format out "set timestamp \"~a\" ~d,~d '~a'~%" (plts-fmt pt)
+  (format out "set timestamp \"~a\" ~(~a~) ~arotate ~d,~d '~a'~%"
+          (plts-fmt pt) (plts-loc pt) (if (plts-rot pt) "" "no")
           (car (plts-pos pt)) (cdr (plts-pos pt)) (plts-font pt)))
 
 (defconst +plot-timestamp+ plot-timestamp (make-plot-timestamp)
@@ -278,7 +281,8 @@ according to the given backend")
             (format out "~{~a~^ ~}~%" datum))))))
 
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
-                  (xlabel "x") (ylabel "y") arrows multiplot timestamp
+                  (xlabel "x") (ylabel "y") arrows multiplot
+                  (timestamp +plot-timestamp+)
                   (data-style :lines) (border t)
                   timefmt xb xe yb ye (title "plot") legend
                   (xtics t) (ytics t) grid xlogscale ylogscale

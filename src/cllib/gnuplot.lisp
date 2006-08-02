@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.29 2006/07/26 17:04:15 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.30 2006/08/02 02:02:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -540,13 +540,15 @@ OPTS is passed to `plot-lists-arg'."
 ;;;###autoload
 (defun plot-histogram (list nbins &rest opts &key (mean t) (key #'value)
                        (mdl (standard-deviation-mdl list :key key))
-                       (title (princ-to-string mdl))
+                       (min (mdl-mi mdl)) (max (mdl-ma mdl))
+                       (title (princ-to-string mdl)) xlogscale
                        (xlabel "x") (ylabel "count") &allow-other-keys)
   "Plot the data in the list as a histogram.
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation
  with vertical lines."
   (multiple-value-bind (vec width)
-      (histogram list nbins :key key :out *gnuplot-msg-stream* :mdl mdl)
+      (histogram list nbins :key key :out *gnuplot-msg-stream* :mdl mdl
+                 :logscale xlogscale :min min :max max)
     (let ((arrows
            (when mean
              (flet ((vertical (x thickness)
@@ -560,18 +562,21 @@ When :MEAN is non-NIL (default), show mean and mean+-standard deviation
                        :width thickness)))
                (let ((arrows (list (vertical (mdl-mn mdl) 4))))
                  (let ((lo (- (mdl-mn mdl) (mdl-sd mdl))))
-                   (when (>= lo (mdl-mi mdl))
+                   (when (>= lo min)
                      (push (vertical lo 2) arrows)))
                  (let ((hi (+ (mdl-mn mdl) (mdl-sd mdl))))
-                   (when (<= hi (mdl-ma mdl))
+                   (when (<= hi max)
                      (push (vertical hi 2) arrows)))
                  arrows)))))
       (with-plot-stream (str :title title :data-style :histeps :arrows arrows
                              :xlabel xlabel :ylabel ylabel
-                             (remove-plist opts :key :mean))
+                             (remove-plist opts :key :mean :mdl :min :max))
         (format str "plot '-' using 1:2~%")
         (loop :for height :across vec
-          :for mid :upfrom (+ (mdl-mi mdl) (/ width 2)) :by width
+          :for mid = (if xlogscale
+                         (* min (sqrt width))
+                         (+ min (/ width 2)))
+          :then (if xlogscale (* mid width) (+ mid width))
           :do (format str "~F~20T~F~%" mid height))
         (format str "e~%")))))
 

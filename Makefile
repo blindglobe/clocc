@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.12 2005/06/28 14:08:57 sds Exp $
+# $Id: Makefile,v 1.13 2006/08/02 01:59:55 sds Exp $
 # $Source: /cvsroot/clocc/clocc/Makefile,v $
 
 TOP := $(shell pwd)
@@ -34,6 +34,12 @@ recursive-clean: force
 
 cvs.log: force
 	cvs log > $@ 2>/dev/null
+
+clocc.diff: force
+	(cvs diff > $@ && $(RM) $@) || true
+
+clocc.diff.gz: clocc.diff
+	gzip -9vf $^
 
 cvs-stat: cvs.log
 	@fgrep "author:" cvs.log | sed 's/^.*author: \([^;]*\);.*$$/\1/' | \

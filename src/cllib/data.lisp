@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.14 2006/08/02 02:01:16 sds Exp $
+;;; $Id: data.lisp,v 1.15 2006/08/04 00:47:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,8 @@
 
 (export '(analyse-csv *buckets* *columns* evaluate-predictor
           stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
-          table table-path table-lines table-stats table-names
+          table table-path table-lines table-stats table-names aref-i
+          compress-tables *tables*
           table-stats-refresh column-histogram add-column plot-columns))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -113,20 +114,13 @@
         (format out "~W ~:D~@[ ~W~]" (sc-name sc) (sc-pos sc)
                 (let ((tab (sc-table sc))) (and tab (table-path tab)))))))
 (defun aref-i (i) (lambda (v) (aref v i)))
-(defun stat-column (lines col buckets names
-                    &key (len (length lines)) (out *standard-output*)
+(defun stat-column (lines col buckets names &key (out *standard-output*)
                     (max-name-length (max-name-length names)) table)
   (let* ((name (column-name names col)) (key (aref-i col))
-         (mdl (standard-deviation-mdl lines :key key))
-         (bl (mapcar (port:compose lift:bucket-empty lift:copy-bucket)
-                      buckets)))
+         (mdl (standard-deviation-mdl lines :key key)))
     (mesg :log out "~3D ~V@A ~A~%" col max-name-length name mdl)
-      (when buckets
-        (lift:fill-buckets lines bl :key key)
-        (dolist (b bl)
-          (mesg :log out "  -  ~A  ~4F%~%"
-                b (/ (* 1d2 (lift:bucket-size b)) len))))
-    (make-stat-column :pos col :name name :mdl mdl :buckets bl :table table)))
+    (make-stat-column :pos col :name name :mdl mdl :table table
+                      :buckets (lift:bucketize lines buckets :out out))))
 
 (defstruct table
   (path "" :type (or string pathname)) ; file containing the table
@@ -188,7 +182,7 @@
             (mapcar (lambda (i)
                       (stat-column (table-lines tab) i *buckets* names
                                      :max-name-length max-name-length
-                                   :len len :out out :table tab))
+                                   :out out :table tab))
                     columns))
       tab)))
 

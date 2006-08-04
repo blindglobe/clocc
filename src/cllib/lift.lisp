@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.7 2006/07/11 19:43:47 sds Exp $
+;;; $Id: lift.lisp,v 2.8 2006/08/04 00:46:25 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
            #:detector-statistics #:ds-recall #:ds-precision #:ds-lift
            #:ds-data-reduction #:ds-dependency #:ds-proficiency
            #:bucket #:bucket-size #:bucket-true #:bucket-beg #:bucket-end
-           #:make-bucket #:copy-bucket #:fill-buckets
+           #:make-bucket #:copy-bucket #:fill-buckets #:show-buckets #:bucketize
            #:bucket-probability #:bucket-inside-p #:bucket-distance
            #:bucket-midpoint #:prune-bucket-list #:thresholds
            #:buckets-overlap-p #:bucket-empty #:bucket-empty-p
@@ -203,6 +203,18 @@ Buckets may overlap and not cover the whole range."
                                 (incf (bucket-size bucket))))
                         bucket-seq))))
        seq))
+
+(defun show-buckets (buckets total &key (out *standard-output*))
+  "Show the list of BUCKETS with the the size in percentages of TOTAL."
+  (dolist (b buckets)
+    (format out ";; ~A  ~4F%~%" b (/ (* 1d2 (bucket-size b)) total))))
+
+(defun bucketize (seq buckets &key (key #'identity) (out *standard-output*))
+  "Copy BUCKETS, fill them from SEQ, print them and return."
+  (let ((bl (mapcar (port:compose bucket-empty copy-bucket) buckets)))
+    (lift:fill-buckets seq bl :key key)
+    (lift:show-buckets bl (length seq) :out out)
+    bl))
 
 (defun discretize (seq &key (buckets *default-buckets*) (key #'identity)
                    true-value)

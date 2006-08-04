@@ -1,6 +1,9 @@
-$Id: CHANGELOG,v 2.21 2006/07/24 11:43:00 airfoyle Exp $
+$Id: CHANGELOG,v 2.22 2006/08/04 14:08:07 airfoyle Exp $
             
-            [- Version 2.1.21 -]
+            [- Version 2.1.22 -]
+2006-08-02: YTools loader and installer now print version number.
+
+            [- Version 2.1.21 2006/07/24 11:43:00 airfoyle Exp -]
 2006-07-24: Added :end-string argument to 'test' macro.
 
 2006-07-02: Improved format of error message in 'control-nest'.
@@ -21,7 +24,8 @@ $Id: CHANGELOG,v 2.21 2006/07/24 11:43:00 airfoyle Exp $
 
             [- Version 2.1.17 2006/05/30 13:54:47 airfoyle Exp -]
 2006-05-30: Defined 'with-gen-vars', around cool new convention that
-            generated-variable names in macros are of the form -x-.
+            variables bound to generated-variable names in macros are
+            of the form -x-.
             In debug.lisp: 'g' and all other dbg-stack* searchers now
             pull the entries they find to the front, so that 'ps' is
             less likely to flush something useful.

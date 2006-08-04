@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 2.3 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: ytload.lisp,v 2.4 2006/08/04 14:08:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -73,6 +73,11 @@
 
 ;;; 'start-over' = true means ignore existing settings for config vars
 ;;; Implies reinstall.
+;;; 'start-over' keyword arg has been made obsolete by :start-over value of
+;;; :'if-installed' arg
+;;; Return value = t if install was successful (including if it was
+;;; unnecessary).  This is a change (2006-08-02); previously it meant
+;;; something was actually installed.
 (defun cl-user::yt-install (module &key (if-installed ':warn)
 					(start-over nil)
 					(config-dir nil))
@@ -92,7 +97,7 @@
 		 (format t "~a is installed~%" module)
 		 t)
 		(t nil)))
-	 (t nil)))
+	 (t t)))
 
 (defun really-install (module start-over)
    (load-module-file module)   
@@ -115,7 +120,9 @@
 
 (defun cl-user::yt-load (&optional (module ':ytfm)
 			 &key (if-loaded ':warn)
+                              ;; -- or :reload or nil
 			      (if-not-installed ':ask)
+                              ;; -- or :install or :noload
 			      (config-dir nil))
 ;;;;   (format t "Ab initio, config-directory* = ~s (config-dir = ~s)~%"
 ;;;;	   config-directory* config-dir)
@@ -125,7 +132,7 @@
    (load-yt-config-file)
 ;;;;   (format t "Before attempting load, config-directory* = ~s~%"
 ;;;;	   config-directory*)
-   (cond ((or (eq if-loaded ':force)
+   (cond ((or (memq if-loaded '(:force :reload))
 	      (not (check-loaded module)))
 	  (load-module-file module)
 	  (let ((loadable (check-installed module)))

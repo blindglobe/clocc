@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
 
-;;; $Id: ytools.lsy,v 2.5 2006/06/12 15:42:52 airfoyle Exp $
+;;; $Id: ytools.lsy,v 2.6 2006/08/04 14:08:07 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -227,6 +227,17 @@
 		     ytools-bin-dir-pathname*))))
 	 (compile-file lisp-file :output-file fasl-file)
 	 (load fasl-file))))
+
+(cl:defun delete-core-files ()
+   (dolist (bf ytools-core-files*)
+      (let ((fasl-file
+	       (ensure-directories-exist
+		  (merge-pathnames
+		     (make-pathname :name bf :type lisp-object-extn*)
+		     ytools-bin-dir-pathname*))))
+         (cond ((probe-file fasl-file)
+;;;;                (out "Pretending to delete " fasl-file :%)
+                (delete-file fasl-file))))))
      
 (cl:defun use-ytools (&optional (pkg *package*))
    (shadowing-import '(ytools::defun ytools::defmacro

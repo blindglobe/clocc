@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytfm.lmd,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: ytfm.lmd,v 2.2 2006/08/04 14:08:08 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -70,12 +70,14 @@ If so, type it here (blank line for no extra layer): ")
 			 (not (string-ends-with bi directory-delimiter*)))
 		    (strings-concat bi directory-delimiter*))
 		   (t bi))))
-   (install-ytfm-after-queries))
+   (install-ytfm-after-queries sto))
 
-(defun install-ytfm-after-queries ()
+(defun install-ytfm-after-queries (sto)
    (load-yt-config-file)
    (load (strings-concat ytools-home-dir* "ytools.lsy"))
    (let ((*readtable* (intern-eval :ytools ytools-readtable* :ytools)))
+      (cond (sto
+             (intern-call ytools delete-core-files)))
       (with-compilation-unit ()
 	 (intern-call ytools compile-core)))
    t)

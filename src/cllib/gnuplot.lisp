@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.30 2006/08/02 02:02:52 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.31 2006/08/04 00:45:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -27,7 +27,7 @@
 (in-package :cllib)
 
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
-          *gnuplot-file*
+          *gnuplot-file* *gnuplot-dribble*
           plot-output *plot-term-screen* *plot-term-printer* *plot-term-file*
           plot-term make-plot-term plot-histogram
           +plot-timestamp+ directive-term make-plot-stream
@@ -59,10 +59,13 @@ This must be either a full path or a name of an executable in your PATH.")
 (eval-when (compile load eval)  ; CMUCL
 (defcustom *gnuplot-file* pathname (merge-pathnames "plot.tmp" *datadir*)
   "*The tmp file for gnuplot."))
-(defcustom *gnuplot-msg-stream* (or stream null t) *standard-output*
+(defcustom *gnuplot-msg-stream* (or stream null) *standard-output*
   "*The message stream of gnuplot functions.")
 (defcustom *gnuplot-default-directive* t :plot
   "*The default action for `with-plot-stream'.")
+(defcustom *gnuplot-dribble* (or null stream) nil
+  "*The output stream where the gnuplot commands are output
+in addition to *GNUPLOT-STREAM* or NIL for no dribbling.")
 
 (declaim (ftype (function (date) (values integer)) plot-sec-to-epoch))
 (defsubst plot-sec-to-epoch (dt)
@@ -178,7 +181,7 @@ according to the given backend")
   (fmt "%g" :type string)
   (time-p nil :type boolean)
   (logscale nil :type (or null (eql t) (real (1))))
-  (range nil :type (or null cons)))
+  (range '(* . *) :type cons))
 
 (defstruct coordinate
   (system :first :type symbol)
@@ -250,9 +253,8 @@ according to the given backend")
                   (unless (eq logscale t) logscale))
           (format out "unset logscale ~a~%" name)))
     (let ((range (plax-range pa)))
-      (when range
         (format out "set ~arange [~a:~a]~%" name
-                (%plotout (car range)) (%plotout (cdr range)))))))
+              (%plotout (car range)) (%plotout (cdr range))))))
 
 (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
   (flet ((set-opt (nm par)
@@ -283,17 +285,17 @@ according to the given backend")
 (defun make-plot (&key data (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y") arrows multiplot
                   (timestamp +plot-timestamp+)
-                  (data-style :lines) (border t)
-                  timefmt xb xe yb ye (title "plot") legend
+                  (data-style :lines) (border t) timefmt
+                  (xb '*) (xe '*) (yb '*) (ye '*) (title "plot") legend
                   (xtics t) (ytics t) grid xlogscale ylogscale
                   (xfmt (or timefmt "%g")) (yfmt "%g"))
   (make-plot-spec
    :data data :term (directive-term plot) :data-style data-style
    :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
-                           :range (when (and xb xe) (cons xb xe))
+                           :range (cons xb xe)
                            :logscale xlogscale :time-p (not (null timefmt)))
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
-                           :range (when (and yb ye) (cons yb ye))
+                           :range (cons yb ye)
                            :logscale ylogscale)
    :multiplot multiplot :timestamp (unless multiplot timestamp)
    :grid grid :legend legend :title title :border border :arrows arrows))
@@ -316,6 +318,7 @@ according to the given backend")
 
 (defun internal-with-plot-stream (body-function &rest opts
                                   &key (plot *gnuplot-default-directive*)
+                                  (dribble *gnuplot-dribble*)
                                   (backend *plot-default-backend*)
                                   &allow-other-keys)
   "The gist of `with-plot-stream' is here.
@@ -325,7 +328,10 @@ Should not be called directly but only through `with-plot-stream'."
           "~&~s: plot directive ~s is deprecated; use ~s~%"
           'internal-with-plot-stream t :plot)
     (setq plot :plot))
-  (let* ((plot-stream (make-plot-stream plot))
+  (let* ((plot-out (make-plot-stream plot))
+         (plot-stream (if dribble
+                          (make-broadcast-stream plot-out dribble)
+                          plot-out))
          (plot-spec (apply #'make-plot :data body-function :plot plot opts))
          (plot-file (typecase plot-stream
                       (file-stream (namestring plot-stream)))))

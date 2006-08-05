@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.15 2006/08/04 00:47:18 sds Exp $
+;;; $Id: data.lisp,v 1.16 2006/08/05 03:51:28 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -181,7 +181,7 @@
       (setf (table-stats tab)
             (mapcar (lambda (i)
                       (stat-column (table-lines tab) i *buckets* names
-                                     :max-name-length max-name-length
+                                   :max-name-length max-name-length
                                    :out out :table tab))
                     columns))
       tab)))

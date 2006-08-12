@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.16 2006/08/05 03:51:28 sds Exp $
+;;; $Id: data.lisp,v 1.17 2006/08/12 03:03:51 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,7 +23,7 @@
 (export '(analyse-csv *buckets* *columns* evaluate-predictor
           stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
           table table-path table-lines table-stats table-names aref-i
-          compress-tables *tables*
+          compress-tables *tables* table-lines$
           table-stats-refresh column-histogram add-column plot-columns))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()

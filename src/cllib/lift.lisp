@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: lift.lisp,v 2.8 2006/08/04 00:46:25 sds Exp $
+;;; $Id: lift.lisp,v 2.9 2006/08/16 01:49:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/lift.lisp,v $
 
 (eval-when (compile load eval)
@@ -212,8 +212,8 @@ Buckets may overlap and not cover the whole range."
 (defun bucketize (seq buckets &key (key #'identity) (out *standard-output*))
   "Copy BUCKETS, fill them from SEQ, print them and return."
   (let ((bl (mapcar (port:compose bucket-empty copy-bucket) buckets)))
-    (lift:fill-buckets seq bl :key key)
-    (lift:show-buckets bl (length seq) :out out)
+    (fill-buckets seq bl :key key)
+    (show-buckets bl (length seq) :out out)
     bl))
 
 (defun discretize (seq &key (buckets *default-buckets*) (key #'identity)

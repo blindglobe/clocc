@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.17 2006/08/12 03:03:51 sds Exp $
+;;; $Id: data.lisp,v 1.18 2006/08/16 02:01:08 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,10 +20,10 @@
 
 (in-package :cllib)
 
-(export '(analyse-csv *buckets* *columns* evaluate-predictor
+(export '(analyse-csv *buckets* *columns* evaluate-predictor ensure-buckets
           stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
           table table-path table-lines table-stats table-names aref-i
-          compress-tables *tables* table-lines$
+          compress-tables *tables* table-lines$ show-sc show-sc-list
           table-stats-refresh column-histogram add-column plot-columns))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -79,13 +79,15 @@
                         (max-name-length (max-name-length names))
                         (out *standard-output*))
   "Convert some strings to numbers, in place."
-  (with-timing (:out out)
-    (let ((dnum (make-array (1+ (reduce #'max col-specs)) :initial-element 0))
-          (drop 0))
+  (let ((dnum (make-array (1+ (reduce #'max col-specs)) :initial-element 0))
+        (drop 0) (total (length lines)))
+    (with-timing (:out out :count line :units "records"
+                  :progress *csv-progress* :progress-1 *csv-progress-1*)
       (mesg :log out "Converting strings to numbers...")
       (setq lines
             (delete-if-not
              (lambda (v)
+               (incf line) (progress (/ line total))
                (dolist (i col-specs t)
                  (handler-bind ((error (lambda (c)
                                          (warn "~A -- line dropped" c)
@@ -113,14 +115,32 @@
       (print-unreadable-object (sc out :type t)
         (format out "~W ~:D~@[ ~W~]" (sc-name sc) (sc-pos sc)
                 (let ((tab (sc-table sc))) (and tab (table-path tab)))))))
+(defun show-sc (sc &key (width 0) (out *standard-output*))
+  "Print a STAT-COLUMN nicely, on its own line or to string."
+  (format out "~:[~;~&;; ~]~3D ~V@A ~A~@[  ~F~]~:[~;~%~]"
+          out (sc-pos sc) width (sc-name sc) (sc-mdl sc) (sc-median sc) out))
+(defun show-sc-list (sc-list &key (out *standard-output*))
+  "Print a list of STAT-COLUMNs an as aligned table."
+  (let ((width (reduce #'max sc-list :key (port:compose length sc-name)
+                       :initial-value *min-name-length*)))
+    (dolist (r sc-list) (show-sc r :width width :out out))))
 (defun aref-i (i) (lambda (v) (aref v i)))
-(defun stat-column (lines col buckets names &key (out *standard-output*)
+(defun stat-column (lines col names &key (out *standard-output*)
+                    ((:buckets *buckets*) *buckets*)
                     (max-name-length (max-name-length names)) table)
   (let* ((name (column-name names col)) (key (aref-i col))
          (mdl (standard-deviation-mdl lines :key key)))
     (mesg :log out "~3D ~V@A ~A~%" col max-name-length name mdl)
     (make-stat-column :pos col :name name :mdl mdl :table table
-                      :buckets (lift:bucketize lines buckets :out out))))
+                      :buckets (lift:bucketize lines *buckets*
+                                               :key key :out out))))
+(defun ensure-buckets (sc lines &key (out *standard-output*)
+                       ((:buckets *buckets*) *buckets*))
+  "When buckets are not present in a STAT-COLUMN, add it."
+  (unless (sc-buckets sc) ; no buckets - create them!
+    (show-sc sc :out out)
+    (setf (sc-buckets sc) (lift:bucketize lines *buckets* :out out
+                                          :key (aref-i (sc-pos sc))))))
 
 (defstruct table
   (path "" :type (or string pathname)) ; file containing the table
@@ -180,7 +200,7 @@
       (push tab *tables*)
       (setf (table-stats tab)
             (mapcar (lambda (i)
-                      (stat-column (table-lines tab) i *buckets* names
+                      (stat-column (table-lines tab) i names
                                    :max-name-length max-name-length
                                    :out out :table tab))
                     columns))
@@ -191,9 +211,8 @@
   (let ((names (table-names table)) (stats (table-stats table)))
     (map-into stats
               (lambda (sc)
-                (stat-column (table-lines table) (sc-pos sc)
-                             (and stats (sc-buckets (car stats)))
-                             names :table table))
+                (stat-column (table-lines table) (sc-pos sc) names :table table
+                             :buckets (and stats (sc-buckets (car stats)))))
               stats)))
 
 (defun add-column (table1 function name)
@@ -214,10 +233,10 @@ Everything is allocated anew."
                              (setf (sc-table cs) table2)
                              cs))
                          stats)
-                 (list (stat-column (table-lines table2) len
-                                    (and stats (sc-buckets (car stats)))
-                                    (table-names table2)
-                                    :table table2))))
+                 (list (stat-column
+                        (table-lines table2) len
+                        (table-names table2) :table table2
+                        :buckets (and stats (sc-buckets (car stats)))))))
     (push table2 *tables*)
     table2))
 
@@ -228,7 +247,7 @@ Everything is allocated anew."
              (etypecase x
                (integer (values x (aref names x)))
                (string (values (position x names :test #'string=) x))
-               (stat-column (values (sc-pos x) (sc-name x))))))
+               (stat-column  (values (sc-pos x) (sc-name x))))))
       (multiple-value-bind (c1 n1) (to-col-name col1)
         (multiple-value-bind (c2 n2) (to-col-name col2)
           (apply #'plot-lists-arg

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.19 2006/07/13 21:19:51 sds Exp $
+;;; $Id: csv.lisp,v 2.20 2006/08/16 01:59:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -86,10 +86,10 @@ Return 3 values:
   fraction of bytes read
   vector of column names if FIRST-LINE-NAMES is non-NIL
     or if it is :DEFAULT and the first line starts with a +COMMENTS+ character."
-  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols pro pro1 pro1-count lim
-                             l1 fln)
-    `(with-timing (:out ,out :count ,len :units "records")
-       (let* ((,fn ,file) (,pro ,progress) (,pro1 ,progress-1) ,fsize ,l1
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols lim l1 fln pro)
+    `(with-timing (:out ,out :count ,len :units "records" :progress ,progress
+                   :progress-1 ,progress-1)
+       (let* ((,fn ,file) (,pro ,progress) ,fsize ,l1
               (,fln ,first-line-names) (,cols ,columns)
               ,@(when limit `((,lim ,limit))))
          (with-open-file (,in ,fn :direction :input)
@@ -106,8 +106,7 @@ Return 3 values:
                      (t (setq ,l1 (csv-parse-string (uncomment-line line1)))
                         (if ,cols (csv-check-vec-len ,l1 ,cols ,fn 0)
                             (setq ,cols (length ,l1)))))))
-           (loop :with ,vec :and ,pro1-count = 0
-             :for ,ln = (read-line ,in nil nil) :while ,ln
+           (loop :with ,vec :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit
                  `(:when (and ,lim (= ,len ,lim))
                     :do (warn "reached the limit of ~:D record~:P ~
@@ -123,16 +122,10 @@ Return 3 values:
                  (csv-check-vec-len ,vec ,cols ,fn ,len)
                  (setq ,cols (length ,vec)))
              ,@body
-             (when (and ,pro ,out (zerop (mod ,len ,pro)))
-               (princ "." ,out) (force-output ,out)
-               (when (and ,pro1 (= ,pro1 (incf ,pro1-count)))
-                 (let* ((pos (/ (file-position ,in) ,fsize)) (eta (eta pos))
-                        (incomplete
-                         (if ,(when limit `(and ,lim (> ,len (* ,lim pos))))
-                             "*" "")))
-                   (format ,out "<~A~:D: ~4F% ETA: ~/pr-secs/~A>"
-                           incomplete ,len (* pos 1d2) eta incomplete))
-                 (force-output ,out) (setq ,pro1-count 0)))
+             (progress (/ (file-position ,in) ,fsize)
+                       ;; print <*...*> when we expect to reach limit
+                       (if ,(when limit `(and ,lim (> ,len (* ,lim pos))))
+                           "*" ""))
              :end
              :finally (format ,out "done [~:d record~:p~@[, ~:d column~:p~]]"
                               ,len ,cols)

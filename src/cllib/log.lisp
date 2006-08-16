@@ -1,10 +1,10 @@
 ;;; logging and progress reporting
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold
+;;; Copyright (C) 1997-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.29 2005/01/27 23:02:47 sds Exp $
+;;; $Id: log.lisp,v 1.30 2006/08/16 01:58:52 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -18,7 +18,7 @@
 
 (in-package :cllib)
 
-(export '(get-int-time elapsed time-diff with-timing eta
+(export '(get-int-time elapsed time-diff with-timing eta progress
           *print-log* mesg list-format))
 
 ;;;
@@ -82,43 +82,69 @@ This has to be a macro to avoid needless evaluating the args."
 
 (defmacro with-timing ((&key (terpri t) (done nil) (run t) (real t)
                              (count nil) (units "bytes")
+                             (progress nil) (progress-1 nil)
                              (type t) (out '*standard-output*))
                        &body body)
   "Evaluate the body, then print the timing.
+:COUNT specifies a variable that will be bound inside WITH-TIMING,
+ it should be incremented on every iteration and should count :UNITS.
 Within the body you can call a local function ETA of one argument -
-the current relative position which returns 2 values:
-the expected remaining run and real times."
-  (with-gensyms ("TIMING-" bt b1 %out el last-pos last-time last-tim1)
+ the current relative position which returns 2 values:
+ the expected remaining run and real times.
+When :PROGRESS is not NIL, it should be a number indicating how often
+ a dot is printed to indicate progress.
+When :PROGRESS-1 is not NIL, it should be a number indicating after how
+ many dots the ETA is printed.
+:TYPE is the log type, see *PRINT-LOG*.
+:DONE means print \"done\" when done.
+:RUN and :REAL specify whether to print the eponymous time."
+  (with-gensyms ("TIMING-" bt b1 %out el last-pos last-time last-tim1
+                           pro pro1 pro1-count)
     `(let* ((,bt (get-int-time)) (,b1 (get-int-time nil)) ,el
+            (,pro ,progress) (,pro1 ,progress-1) (,pro1-count 0)
             (,%out (and (print-log-p ,type) ,out))
             (,last-time ,bt) (,last-tim1 ,b1) (,last-pos 0)
             ,@(when count `((,count 0))))
-      (unwind-protect
-           (flet ((eta (pos) ; pos is the current relative position
-                    (if (zerop pos) (values 0 0)
-                      (let* ((now (get-int-time)) (no1 (get-int-time nil))
-                             (lt ,last-time) (l1 ,last-tim1)
-                             (eta (linear 0 ,bt pos now 1))
-                             (et1 (linear 0 ,b1 pos no1 1)))
-                        (setq ,last-time now ,last-tim1 no1)
-                        (if (= ,last-pos pos)
-                          (values (time-diff eta now) (time-diff et1 no1))
-                          (let ((eta* (linear ,last-pos lt pos now 1))
-                                (et1* (linear ,last-pos l1 pos no1 1)))
-                            (setq ,last-pos pos)
-                            (values (time-diff (/ (+ eta eta*) 2) now)
-                                    (time-diff (/ (+ et1 et1*) 2) no1))))))))
-             (declare (ignorable (function eta)))
-             ,@body)
-        (when ,%out
-          (when ,done (princ "done" ,%out))
-          (when (or ,run ',count) (setq ,el (elapsed ,bt t)))
-          (when ,run (format ,%out " [run: ~/pr-secs/]" ,el))
-          (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,b1 nil)))
-          ,(when count
-             `(unless (zerop ,el)
-                (format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units)))
-          (when ,terpri (terpri ,%out)))))))
+       (unwind-protect
+            (labels ((eta (pos) ; pos is the current relative position
+                       (if (zerop pos) (values 0 0)
+                         (let* ((now (get-int-time)) (no1 (get-int-time nil))
+                                (lt ,last-time) (l1 ,last-tim1)
+                                (eta (linear 0 ,bt pos now 1))
+                                (et1 (linear 0 ,b1 pos no1 1)))
+                           (setq ,last-time now ,last-tim1 no1)
+                           (if (= ,last-pos pos)
+                             (values (time-diff eta now) (time-diff et1 no1))
+                             (let ((eta* (linear ,last-pos lt pos now 1))
+                                   (et1* (linear ,last-pos l1 pos no1 1)))
+                               (setq ,last-pos pos)
+                               (values (time-diff (/ (+ eta eta*) 2) now)
+                                       (time-diff (/ (+ et1 et1*) 2) no1)))))))
+                     (show-eta (pos bad)
+                       (format ,%out "<~A~@[~:D: ~]~4F% ETA: ~/pr-secs/~A>"
+                               bad ,count (* pos 1d2) (eta pos) bad)
+                       (force-output ,%out)))
+              (declare (ignorable (function eta) (function show-eta)))
+              (macrolet ((progress (pos &optional (bad ""))
+                           ;; has to be a macro to avoid computing pos too often
+                           ,(when count
+                              ``(when (and ,',%out ,',pro
+                                           (zerop (mod ,',count ,',pro)))
+                                 (princ "." ,',%out) (force-output ,',%out)
+                                 (when (and ,',pro1
+                                            (= ,',pro1 (incf ,',pro1-count)))
+                                   (show-eta ,pos ,bad)
+                                   (setq ,',pro1-count 0))))))
+                ,@body))
+         (when ,%out
+           (when ,done (princ "done" ,%out))
+           (when (or ,run ',count) (setq ,el (elapsed ,bt t)))
+           (when ,run (format ,%out " [run: ~/pr-secs/]" ,el))
+           (when ,real (format ,%out " [real: ~/pr-secs/]" (elapsed ,b1 nil)))
+           ,(when count
+              `(unless (zerop ,el)
+                 (format ,%out " [~5f ~a per second]" (/ ,count ,el) ,units)))
+           (when ,terpri (terpri ,%out)))))))
 
 ;;; }}}
 

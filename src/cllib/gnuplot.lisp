@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.32 2006/08/05 03:51:28 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.33 2006/08/16 02:02:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -328,7 +328,8 @@ Should not be called directly but only through `with-plot-stream'."
           "~&~s: plot directive ~s is deprecated; use ~s~%"
           'internal-with-plot-stream t :plot)
     (setq plot :plot))
-  (let* ((plot-out (make-plot-stream plot))
+  (let* ((*print-pretty* nil)  ; ensure no unwanted newlines in commands
+         (plot-out (make-plot-stream plot))
          (plot-stream (if dribble
                           (make-broadcast-stream plot-out dribble)
                           plot-out))

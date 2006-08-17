@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.18 2006/08/16 02:01:08 sds Exp $
+;;; $Id: data.lisp,v 1.19 2006/08/17 01:44:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,6 +24,7 @@
           stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
           table table-path table-lines table-stats table-names aref-i
           compress-tables *tables* table-lines$ show-sc show-sc-list
+          column-name-sc
           table-stats-refresh column-histogram add-column plot-columns))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -240,26 +241,44 @@ Everything is allocated anew."
     (push table2 *tables*)
     table2))
 
+(defun column-name-sc (obj table)
+  "Return two values: column position and column name in table."
+  (etypecase obj
+    (integer
+     (let ((name (aref (table-names table) obj)))
+       (values obj name
+               (find name (table-stats table) :test #'string= :key #'sc-name))))
+    (string
+     (values (position obj (table-names table) :test #'string=) obj
+             (find obj (table-stats table) :test #'string= :key #'sc-name)))
+    (stat-column
+     (unless (eq table (sc-table obj))
+       (cerror "ignore and proceed" "~S(~S): ~S /= ~S"
+               'column-name-sc obj (sc-table obj) table)
+       (let ((pos (column-name-sc (sc-name obj) table)))
+         (unless (= (sc-pos obj) pos)
+           (cerror "ignore and proceed" "~S(~S): ~D /= ~D"
+                   'column-name-sc obj (sc-pos obj) pos)))
+       (let ((name (aref (table-names table) (sc-pos obj))))
+         (unless (string= (sc-name obj) name)
+           (cerror "ignore and proceed" "~S(~S): ~S /= ~S"
+                   'column-name-sc obj (sc-name obj) name))))
+     (values (sc-pos obj) (sc-name obj) obj))))
+
 (defun plot-columns (table col1 col2 &rest options)
   "Plot one column vs the other."
-  (let ((names (table-names table)))
-    (flet ((to-col-name (x)
-             (etypecase x
-               (integer (values x (aref names x)))
-               (string (values (position x names :test #'string=) x))
-               (stat-column  (values (sc-pos x) (sc-name x))))))
-      (multiple-value-bind (c1 n1) (to-col-name col1)
-        (multiple-value-bind (c2 n2) (to-col-name col2)
-          (apply #'plot-lists-arg
-                 (list (cons (format nil "~A vs ~A" n1 n2)
-                             (mapcar (lambda (v)
-                                       (cons (aref v c1) (aref v c2)))
-                                     (table-lines table))))
-                 (append options
-                         (list :xlabel n1 :ylabel n2
-                               :data-style :points
-                               :title (format nil "~A (~:D)" (table-path table)
-                                              (table-lines$ table))))))))))
+  (multiple-value-bind (c1 n1) (column-name-sc col1 table)
+    (multiple-value-bind (c2 n2) (column-name-sc col2 table)
+      (apply #'plot-lists-arg
+             (list (cons (format nil "~A vs ~A" n1 n2)
+                         (mapcar (lambda (v)
+                                   (cons (aref v c1) (aref v c2)))
+                                 (table-lines table))))
+             (append options
+                     (list :xlabel n1 :ylabel n2
+                           :data-style :points
+                           :title (format nil "~A (~:D)" (table-path table)
+                                          (table-lines$ table))))))))
 
 ;;;###autoload
 (defun evaluate-predictor (file &optional (out *standard-output*))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.19 2006/08/17 01:44:56 sds Exp $
+;;; $Id: data.lisp,v 1.20 2006/08/18 02:29:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,6 +25,7 @@
           table table-path table-lines table-stats table-names aref-i
           compress-tables *tables* table-lines$ show-sc show-sc-list
           column-name-sc
+          table-stat-column ensure-table-stat-column table-column-pos
           table-stats-refresh column-histogram add-column plot-columns))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -149,10 +150,16 @@
   (stats () :type list)              ; of stat-column
   (names #() :type vector))          ; of column names
 (defun table-lines$ (table)
+  "Return the number of lines in the TABLE."
   (let ((lines (table-lines table)))
     (etypecase lines
       (integer lines)
       (list (length lines)))))
+(defun table-column-pos (name table)
+  "Return the position of the column NAME in the TABLE."
+  (or (position name (table-names table) :test #'string=)
+      (error "~S: no ~S in ~S" 'table-column-pos name table)))
+
 (defmethod print-object ((tab table) (out stream))
   (if *print-readably* (call-next-method)
       (print-unreadable-object (tab out :type t)
@@ -168,6 +175,24 @@
               (mesg :log t "~&removed ~:D lines from <~S>~%"
                     len (table-path tab))
               (setf (table-lines tab) len))))))
+
+(defun table-stat-column (pos-or-name table &key (out *standard-output*)
+                          (buckets
+                           (let ((stats (table-stats table)))
+                             (if stats (sc-buckets (car stats)) *buckets*)))
+                          (max-name-length
+                           (max-name-length (table-names table))))
+  "Return a freshly computed STAT-COLUMN."
+  (stat-column (table-lines table)
+               (etypecase pos-or-name
+                 (integer pos-or-name)
+                 (string (table-column-pos pos-or-name table)))
+               (table-names table) :buckets buckets
+               :out out :max-name-length max-name-length :table table))
+(defun ensure-table-stat-column (name table)
+  "Make shure that there is a STAT-COLUMN for NAME in TABLE and return it."
+  (or (find name (table-stats table) :test #'string= :key #'sc-name)
+      (car (push (table-stat-column name table) (table-stats table)))))
 
 (defun column-histogram (sc nbins &rest plot-opts)
   (apply #'plot-histogram (table-lines (sc-table sc)) nbins
@@ -201,19 +226,15 @@
       (push tab *tables*)
       (setf (table-stats tab)
             (mapcar (lambda (i)
-                      (stat-column (table-lines tab) i names
-                                   :max-name-length max-name-length
-                                   :out out :table tab))
+                      (table-stat-column tab i :out out
+                                         :max-name-length max-name-length))
                     columns))
       tab)))
 
 (defun table-stats-refresh (table)
   "Update TABLE-STATS."
-  (let ((names (table-names table)) (stats (table-stats table)))
-    (map-into stats
-              (lambda (sc)
-                (stat-column (table-lines table) (sc-pos sc) names :table table
-                             :buckets (and stats (sc-buckets (car stats)))))
+  (let ((stats (table-stats table)))
+    (map-into stats (lambda (sc) (table-stat-column table (sc-pos sc)))
               stats)))
 
 (defun add-column (table1 function name)
@@ -246,11 +267,10 @@ Everything is allocated anew."
   (etypecase obj
     (integer
      (let ((name (aref (table-names table) obj)))
-       (values obj name
-               (find name (table-stats table) :test #'string= :key #'sc-name))))
+       (values obj name (ensure-table-stat-column name table))))
     (string
      (values (position obj (table-names table) :test #'string=) obj
-             (find obj (table-stats table) :test #'string= :key #'sc-name)))
+             (ensure-table-stat-column obj table)))
     (stat-column
      (unless (eq table (sc-table obj))
        (cerror "ignore and proceed" "~S(~S): ~S /= ~S"

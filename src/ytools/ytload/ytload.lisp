@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 2.4 2006/08/04 14:08:08 airfoyle Exp $
+;;;$Id: ytload.lisp,v 2.5 2006/08/19 14:54:14 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -132,7 +132,7 @@
    (load-yt-config-file)
 ;;;;   (format t "Before attempting load, config-directory* = ~s~%"
 ;;;;	   config-directory*)
-   (cond ((or (memq if-loaded '(:force :reload))
+   (cond ((or (member if-loaded '(:force :reload))
 	      (not (check-loaded module)))
 	  (load-module-file module)
 	  (let ((loadable (check-installed module)))

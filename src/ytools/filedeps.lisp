@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;$Id: filedeps.lisp,v 2.2 2006/05/20 01:44:24 airfoyle Exp $
+;$Id: filedeps.lisp,v 2.3 2006/08/19 14:54:14 airfoyle Exp $
 
 ;;; This stuff is for use with CVSified/prog/misc/filedag.lisp.
 ;;; See 'module-deps-display' in that file.
@@ -16,6 +16,7 @@
    (cond ((not (is-YT-module module))
 	  (signal-problem module-deps
 	     "Illegal module " module)))
+
    (files-scan-for-deps
       (module-pathnames module support-kinds)
       (code-file-chunk-in-directories directories)
@@ -111,6 +112,18 @@
 	    (:def file-ch-name (file-ch)
 	       (Pathname-name (Code-file-chunk-pathname file-ch)))))))
 
+(defun pathnames-directories (pnl)
+   (repeat :for ((pn :in pnl)
+                 (directories !()))
+    :result directories
+      (let ((dir-pn (make-Pathname
+                       :host (Pathname-host pn)
+                       :device (Pathname-device pn)
+                       :directory (Pathname-directory pn)
+                       :name false
+                       :type false)))
+         (on-list-if-new dir-pn directories :test #'equal))))
+
 (defun ->pathname-list (x)
    (cond ((atom x)
 	  (!= x (list x))))
@@ -123,6 +136,7 @@
 		   (t (signal-problem ->pathname-list
 			 "Undecipherable as pathname: " fnm)))))
        x))
+
 ;;;;   (cond ((exists (fn :in x) (is-Pathname fn))
 ;;;;	  (<# ->pathname x))
 ;;;;	 ((forall (fn :in x)

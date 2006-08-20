@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.22 2006/08/20 02:21:31 sds Exp $
+;;; $Id: data.lisp,v 1.23 2006/08/20 02:23:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -24,7 +24,7 @@
           stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
           table table-path table-lines table-stats table-names aref-i
           compress-tables *tables* table-lines$ show-sc show-sc-list
-          column-name-sc
+          column-name-sc *value-boundary* table-accessor
           table-stat-column ensure-table-stat-column table-column-pos
           table-stats-refresh column-histogram add-column plot-columns))
 
@@ -60,11 +60,14 @@
     (cons                       ; include specified columns
      (column-spec-list col-specs names ncol))))
 
+(defcustom *value-boundary* (or null double-float) (/ double-float-epsilon)
+  "The upper boundary for the data values.")
+
 (defun numeric (v i &optional names
                 &aux (*read-default-float-format* 'double-float))
   (let ((n (read-from-string (aref v i))))
     (if (numberp n)
-        (if (< (abs n) (/ *num-tolerance*)) n
+        (if (< (abs n) *value-boundary*) n
             (cerror "drop the whole line"
                     "extreme value ~S in ~S at ~:D~@[ (~A)~]"
                     n v i (and names (aref names i))))
@@ -79,7 +82,8 @@
 
 (defun strings-to-nums (lines col-specs &key names (len (length lines))
                         (max-name-length (max-name-length names))
-                        (out *standard-output*))
+                        (out *standard-output*)
+                        ((:value-boundary *value-boundary*) *value-boundary*))
   "Convert some strings to numbers, in place."
   (let ((dnum (make-array (1+ (reduce #'max col-specs)) :initial-element 0))
         (drop 0) (total (length lines)))
@@ -159,6 +163,8 @@
   "Return the position of the column NAME in the TABLE."
   (or (position name (table-names table) :test #'string=)
       (error "~S: no ~S in ~S" 'table-column-pos name table)))
+(defun table-accessor (name table)
+  (aref-i (table-column-pos name table)))
 
 (defmethod print-object ((tab table) (out stream))
   (if *print-readably* (call-next-method)
@@ -204,6 +210,7 @@
 ;;;###autoload
 (defun analyse-csv (file &key (first-line-names :default)
                     (out *standard-output*)
+                    ((:value-boundary *value-boundary*) *value-boundary*)
                     ((:columns *columns*) *columns*)
                     ((:buckets *buckets*) *buckets*))
   "Analyse columns in the CSV file."

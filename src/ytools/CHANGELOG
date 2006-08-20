@@ -1,8 +1,9 @@
-$Id: CHANGELOG,v 2.23 2006/08/19 14:54:14 airfoyle Exp $
+$Id: CHANGELOG,v 2.24 2006/08/20 17:18:59 airfoyle Exp $
             
-            [- Version 2.1.23 -]
+            [- Version 2.1.24 -]
 2006-08-19: ytload/ytload.lisp: Replaced occurrence of 'memq' with
-            'member' in 'yt-load'.
+            'member' in 'yt-load'.  Added comment to clarify how
+            :if-installed ':start-over works.
 
             [- Version 2.1.22 2006/08/04 14:08:07 airfoyle Exp -]
 2006-08-02: YTools loader and installer now print version number.

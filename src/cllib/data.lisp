@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.21 2006/08/20 02:20:50 sds Exp $
+;;; $Id: data.lisp,v 1.22 2006/08/20 02:21:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -92,7 +92,7 @@
                (incf line) (progress (/ line total))
                (dolist (i col-specs t)
                  (handler-bind ((error (lambda (c)
-                                         (warn "~A -- line dropped" c)
+                                         (warn "~A -- line ~:D dropped" c line)
                                          (incf (aref dnum i))
                                          (incf drop) (return nil))))
                    (setf (aref v i) (numeric v i names)))))

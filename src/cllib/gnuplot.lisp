@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.33 2006/08/16 02:02:23 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.34 2006/08/24 04:20:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -110,17 +110,11 @@ according to the given backend")
 (defstruct (plot-term (:conc-name pltm-))
   (terminal nil :type (or null string))
   (terminal-options nil :type list)
-  (orientation :landscape :type (member :landscape :portrait))
-  (font-family "Helvetica" :type string)
-  (font-size 9 :type (integer 1 100))
   (target nil :type (or null string pathname symbol)))
 
 (defmethod plot-output ((pt plot-term) (out stream) (backend (eql :gnuplot)))
-  (format out "set terminal ~a~{ ~a~} "
+  (format out "set terminal ~a~{ ~a~}~%"
           (pltm-terminal pt) (pltm-terminal-options pt))
-  (write (pltm-orientation pt) :stream out :case :downcase :escape nil)
-  (format out " '~A' ~D" (pltm-font-family pt) (pltm-font-size pt))
-  (terpri out)
   (let ((target (pltm-target pt)))
     (etypecase target
       (null (format out "set output~%"))
@@ -132,20 +126,19 @@ according to the given backend")
                                         "ps" (pltm-terminal pt))
                               :defaults target))))))
 
+(defun ps-terminal (target)
+  (make-plot-term :target target :terminal "postscript"
+                  :terminal-options '("landscape" "'Helvetica'" 7)))
+
 (defcustom *plot-term-screen* plot-term
-  (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows")
+  (make-plot-term :terminal #+unix "x11" #+(or win32 mswindows) "windows"
+                  :terminal-options '("font 'Helvetica,6"))
   "The `plot-term' object sending the plot to the screen.")
-(defcustom *plot-term-printer* plot-term
-  (make-plot-term :terminal "postscript"
-                  :target '*gnuplot-printer*)
+(defcustom *plot-term-printer* plot-term (ps-terminal '*gnuplot-printer*)
   "The `plot-term' object sending the plot to the printer.")
-(defcustom *plot-term-file* plot-term
-  (make-plot-term :terminal "postscript"
-                  :target *gnuplot-file*)
+(defcustom *plot-term-file* plot-term (ps-terminal *gnuplot-file*)
   "The `plot-term' object sending the plot to the printer.")
 
-(defun ps-terminal (file)
-  (make-plot-term :target file :terminal "postscript"))
 (defgeneric directive-term (directive)
   (:documentation "Return the PLOT-TERM object appropriate for this directive")
   (:method ((directive t))
@@ -167,7 +160,7 @@ according to the given backend")
 
 (defmethod plot-output ((pt plot-timestamp) (out stream)
                         (backend (eql :gnuplot)))
-  (format out "set timestamp \"~a\" ~(~a~) ~arotate ~d,~d '~a'~%"
+  (format out "set timestamp ~s ~(~a~) ~arotate ~d,~d '~a'~%"
           (plts-fmt pt) (plts-loc pt) (if (plts-rot pt) "" "no")
           (car (plts-pos pt)) (cdr (plts-pos pt)) (plts-font pt)))
 
@@ -241,11 +234,11 @@ according to the given backend")
 
 (defmethod plot-output ((pa plot-axis) (out stream) (backend (eql :gnuplot)))
   (let ((name (plax-name pa)))
-    (format out "set format ~a \"~a\"~%" name (plax-fmt pa))
-    (format out "set ~alabel \"~@[~a~]\"~%" name (plax-label pa))
+    (format out "set format ~a ~s~%" name (plax-fmt pa))
+    (format out "set ~alabel ~s~%" name (or (plax-label pa) ""))
     (format out "set ~:[no~;~]~atics~%" (plax-tics pa) name)
     (if (plax-time-p pa)
-        (format out "set timefmt \"~a\"~%set ~adata time~%" (plax-fmt pa) name)
+        (format out "set timefmt ~s~%set ~adata time~%" (plax-fmt pa) name)
         (format out "set ~adata~%" name))
     (let ((logscale (plax-logscale pa)))
       (if logscale
@@ -389,7 +382,7 @@ EMA is the list of parameters for Exponential Moving Averages."
                                                  (days-between begd endd)))
                      :timefmt timefmt :xb begd :xe endd
                      (remove-plist opts :ema :rel :slot))
-    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}"
+    (format str "plot~{ '-' using 1:2 title ~s~^,~}"
             ;; Ugly.  But gnuplot requires a comma *between* plots,
             ;; and this is the easiest way to do that.
             (mapcan (lambda (dl)
@@ -434,7 +427,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style data-style :xb 0 :xe (1- depth)
                      (remove-plist opts :depth :rel :key))
-    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car lss))
+    (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car lss))
     (let* (bv (val (if rel
                        (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
                        (lambda (ll) (if ll (funcall key (car ll)) bv)))))
@@ -470,7 +463,7 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
                      :xe (or xe (reduce #'max lss
                                         :key (compose car 'key car last)))
                      (remove-plist opts :key :rel :lines :quads))
-    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}" (mapcar #'car lss))
+    (format str "plot~{ '-' using 1:2 title ~s~^,~}" (mapcar #'car lss))
     (dolist (ln lines) (plot-line-str ln xb xe str))
     (dolist (qu quads) (plot-quad-str qu xb xe str))
     (terpri str)
@@ -497,7 +490,7 @@ get x, y and ydelta with xkey, ykey and ydkey."
                      :data-style data-style :xb (funcall xkey (second ll))
                      :xe (funcall xkey (car (last ll)))
                      (remove-plist opts :xkey :ykey :ydkey))
-    (format str "plot 0 title \"\", '-' title \"~a\" with errorbars,~
+    (format str "plot 0 title \"\", '-' title ~s with errorbars,~
  '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
     (dolist (rr ll (format str "e~%"))
       (format str "~a ~a ~a~%" (funcall xkey rr)
@@ -523,7 +516,7 @@ E.g.:
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (with-plot-stream (str :xb xmin :xe xmax :title title
                      :data-style (or data-style (plot-data-style numpts)) opts)
-    (format str "plot~{ '-' using 1:2 title \"~a\"~^,~}~%" (mapcar #'car fnl))
+    (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car fnl))
     (dolist (fn fnl)
       (mesg :plot *gnuplot-msg-stream* "~&Plotting ~S..." (car fn))
       (dotimes (ii (1+ numpts) (format str "e~%"))
@@ -607,14 +600,14 @@ DEPTH out of the dated list."
   "Write the string to plot stream STR for plotting the line from BEG to END.
 This is not a complete plotting function (not a UI)!"
   (declare (type line ln) (real beg end) (stream str))
-  (format str ", ((x>~a)?((x<~a)?(~a*x+~a):1/0):1/0) title \"~a\" with lines~
+  (format str ", ((x>~a)?((x<~a)?(~a*x+~a):1/0):1/0) title ~s with lines~
 ~@[ ~d~]" beg end (line-sl ln) (line-co ln) title lt))
 
 (defun plot-quad-str (qu beg end str &optional (title "") lt)
   "Write the string to plot stream STR for plotting the parabola
 from BEG to END.  This is not a complete plotting function (not a UI)!"
   (declare (type (simple-array double-float (3)) qu) (real beg end))
-  (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title \"~a\" ~
+  (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title ~s ~
 with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
 
 (provide :cllib-gnuplot)

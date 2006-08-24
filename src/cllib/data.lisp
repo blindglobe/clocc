@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.23 2006/08/20 02:23:19 sds Exp $
+;;; $Id: data.lisp,v 1.24 2006/08/24 04:25:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -20,18 +20,23 @@
 
 (in-package :cllib)
 
-(export '(analyse-csv *buckets* *columns* evaluate-predictor ensure-buckets
-          stat-column sc-pos sc-name sc-mdl sc-median sc-buckets sc-table
-          table table-path table-lines table-stats table-names aref-i
-          compress-tables *tables* table-lines$ show-sc show-sc-list
-          column-name-sc *value-boundary* table-accessor
-          table-stat-column ensure-table-stat-column table-column-pos
-          table-stats-refresh column-histogram add-column plot-columns))
+(export '(*buckets* *columns* *levels* *value-boundary* stat-column
+          sc-table sc-pos sc-name sc-mdl sc-buckets sc-median sc-levels
+          show-sc show-sc-list aref-i ensure-buckets ensure-levels
+          table table-path table-lines table-stats table-names
+          table-accessor table-column-pos table-lines$ compress-tables *tables*
+          table-stat-column ensure-table-stat-column column-histogram
+          analyse-csv table-stats-refresh add-column column-name-sc
+          plot-columns summarize table-select
+          evaluate-predictor))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
   "The list of buckets to fill in `analyse-csv'.")
 (defcustom *columns* (or (eql t) (cons (or fixnum string (eql NOT)))) t
   "The list of column specs to study in `analyse-csv'.")
+(defcustom *levels* simple-vector
+  '(0.1 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9)
+  "The percentile levels for order statistics.")
 
 (defun column-spec-list (col-specs names ncol)
   "Return the list of positions corresponding to the column specifiers."
@@ -115,7 +120,8 @@
   (name "" :type string)
   (mdl +bad-mdl+ :type mdl)
   (buckets nil :type list)      ; of buckets
-  (median nil :type (or null real)))
+  (median nil :type (or null real))
+  (levels nil :type list))      ; of (level value)
 (defmethod print-object ((sc stat-column) (out stream))
   (if *print-readably* (call-next-method)
       (print-unreadable-object (sc out :type t)
@@ -123,8 +129,9 @@
                 (let ((tab (sc-table sc))) (and tab (table-path tab)))))))
 (defun show-sc (sc &key (width 0) (out *standard-output*))
   "Print a STAT-COLUMN nicely, on its own line or to string."
-  (format out "~:[~;~&;; ~]~3D ~V@A ~A~@[  ~F~]~:[~;~%~]"
-          out (sc-pos sc) width (sc-name sc) (sc-mdl sc) (sc-median sc) out))
+  (format out "~:[~;~&;; ~]~3D ~V@A ~A~@[  ~F~]~:{ [~F:~A]~}~:[~;~%~]"
+          out (sc-pos sc) width (sc-name sc) (sc-mdl sc) (sc-median sc)
+          (sc-levels sc) out))
 (defun show-sc-list (sc-list &key (out *standard-output*))
   "Print a list of STAT-COLUMNs an as aligned table."
   (let ((width (reduce #'max sc-list :key (port:compose length sc-name)
@@ -140,13 +147,34 @@
     (make-stat-column :pos col :name name :mdl mdl :table table
                       :buckets (lift:bucketize lines *buckets*
                                                :key key :out out))))
-(defun ensure-buckets (sc lines &key (out *standard-output*)
+(defun ensure-buckets (sc &key (out *standard-output*)
                        ((:buckets *buckets*) *buckets*))
   "When buckets are not present in a STAT-COLUMN, add it."
   (unless (sc-buckets sc) ; no buckets - create them!
     (show-sc sc :out out)
-    (setf (sc-buckets sc) (lift:bucketize lines *buckets* :out out
-                                          :key (aref-i (sc-pos sc))))))
+    (setf (sc-buckets sc) (lift:bucketize (table-lines (sc-table sc)) *buckets*
+                                          :out out :key (aref-i (sc-pos sc))))))
+(defun ensure-levels (sc &key (out *standard-output*)
+                      ((:levels *levels*) *levels*)
+                      &aux (pos (sc-pos sc))
+                      (table (or (sc-table sc)
+                                 (error "~S: ~S does not belong to a table"
+                                        'ensure-levels sc)))
+                      (max-name-length (max-name-length (table-names table))))
+  (cllib:with-timing (:out out)
+    (format t "~3D ~V@A" pos max-name-length (sc-name sc)) (force-output)
+    (let* ((lines (setf (table-lines table)
+                        (sort (table-lines table) #'< :key (aref-i pos))))
+           (len (length lines)))
+      (setf (sc-median sc) (aref (nth (ash len -1) lines) pos)
+            (sc-levels sc)
+            (mapcar (lambda (level)
+                      (let ((l (etypecase level
+                                 (cons (car level))
+                                 ((real (0) (1)) level))))
+                        (list l (aref (nth (round (* len l)) lines) pos))))
+                    *levels*))
+      (format out " ~F~:{ [~F:~A]~}" (sc-median sc) (sc-levels sc)))))
 
 (defstruct table
   (path "" :type (or string pathname)) ; file containing the table
@@ -166,11 +194,12 @@
 (defun table-accessor (name table)
   (aref-i (table-column-pos name table)))
 
+(defun write-table (tab out)
+  (format out "~W ~:Dx~:D" (table-path tab) (table-lines$ tab)
+          (length (table-names tab))))
 (defmethod print-object ((tab table) (out stream))
   (if *print-readably* (call-next-method)
-      (print-unreadable-object (tab out :type t)
-        (format out "~W ~:Dx~:D" (table-path tab) (table-lines$ tab)
-                (length (table-names tab))))))
+      (print-unreadable-object (tab out :type t) (write-table tab out))))
 (defvar *tables* nil "The list of currently loaded tables")
 (defun compress-tables ()
   (dolist (tab *tables* (port:gc))
@@ -199,6 +228,10 @@
   "Make shure that there is a STAT-COLUMN for NAME in TABLE and return it."
   (or (find name (table-stats table) :test #'string= :key #'sc-name)
       (car (push (table-stat-column name table) (table-stats table)))))
+(defun maybe-ensure-table-stat-column (pos name table)
+  "Ensure the presence of STAT-COLUMN is the column is numeric."
+  (and (numberp (aref (first (table-lines table)) pos))
+       (ensure-table-stat-column name table)))
 
 (defun column-histogram (sc nbins &rest plot-opts)
   (apply #'plot-histogram (table-lines (sc-table sc)) nbins
@@ -209,9 +242,10 @@
 
 ;;;###autoload
 (defun analyse-csv (file &key (first-line-names :default)
-                    (out *standard-output*)
+                    (out *standard-output*) medians
                     ((:value-boundary *value-boundary*) *value-boundary*)
                     ((:columns *columns*) *columns*)
+                    ((:levels *levels*) *levels*)
                     ((:buckets *buckets*) *buckets*))
   "Analyse columns in the CSV file."
   (multiple-value-bind (lines len file-size names)
@@ -236,13 +270,30 @@
                       (table-stat-column i tab :out out
                                          :max-name-length max-name-length))
                     columns))
+      (when medians
+        (cllib:with-timing (:out out)
+          (format out "computing medians & levels...~%")
+          (dolist (sc (table-stats tab)) (ensure-levels sc :out out))
+          (format out "~:D sort~:P" (length (table-stats tab)))))
       tab)))
 
 (defun table-stats-refresh (table)
   "Update TABLE-STATS."
-  (let ((stats (table-stats table)))
-    (map-into stats (lambda (sc) (table-stat-column (sc-pos sc) table))
-              stats)))
+  (cllib:with-timing ()
+    (let ((stats (table-stats table)))
+      (map-into stats (lambda (sc)
+                        (let ((nsc (table-stat-column (sc-pos sc) table)))
+                          (when (sc-median sc)
+                            (ensure-levels nsc :levels (sc-levels sc)))
+                          nsc))
+                stats))))
+
+(defun coerce-int-float (num)
+  "Ensure that the argument is either an integer or a float."
+  (typecase num
+    (integer num)
+    (float num)
+    (t (float num 0d0))))
 
 (defun add-column (table1 function name)
   "Add a new column named NAME to the table.
@@ -254,7 +305,8 @@ Everything is allocated anew."
     (setf (table-names table2) (concatenate 'vector names (vector name))
           (table-lines table2)
           (mapcar (lambda (v)
-                    (concatenate 'vector v (vector (funcall function v))))
+                    (concatenate 'vector v (vector (coerce-int-float
+                                                    (funcall function v)))))
                   (table-lines table2))
           (table-stats table2)
           (nconc (mapcar (lambda (sc)
@@ -274,10 +326,10 @@ Everything is allocated anew."
   (etypecase obj
     (integer
      (let ((name (aref (table-names table) obj)))
-       (values obj name (ensure-table-stat-column name table))))
+       (values obj name (maybe-ensure-table-stat-column obj name table))))
     (string
-     (values (position obj (table-names table) :test #'string=) obj
-             (ensure-table-stat-column obj table)))
+     (let ((pos (position obj (table-names table) :test #'string=)))
+       (values pos obj (maybe-ensure-table-stat-column pos obj table))))
     (stat-column
      (unless (eq table (sc-table obj))
        (cerror "ignore and proceed" "~S(~S): ~S /= ~S"
@@ -304,8 +356,66 @@ Everything is allocated anew."
              (append options
                      (list :xlabel n1 :ylabel n2
                            :data-style :points
-                           :title (format nil "~A (~:D)" (table-path table)
-                                          (table-lines$ table))))))))
+                           :title (princ-to-string table)))))))
+
+(defun restat-table (old-table new-table &key (out *standard-output*)
+                     (label 'restat-table))
+  "Recompute all stats present in OLD-TABLE for NEW-TABLE."
+  (cllib:with-timing (:out out :done t)
+    (mesg :log out "~S: stats...~%" label)
+    (dolist (sc (table-stats old-table))
+      (let ((nsc (table-stat-column (sc-name sc) new-table :out out)))
+        (push nsc (table-stats new-table))
+        (ensure-levels nsc :out out)))
+    (mesg :log out "~S: stats..." label)))
+
+(defun summarize (table column &key (out *standard-output*))
+  "Summarize TABLE by COLUMN returning a new table of means."
+  (cllib:with-timing (:out out :done t)
+    (mesg :log out "~S: summarizing ~S by ~S~%" 'summarize table column)
+    (let* ((pos (column-name-sc column table))
+           (stats (table-stats table)) (ncol (1+ (length stats)))
+           (ret (make-table :path (format nil "[~A]@~S"
+                                          (write-table table nil) column)
+                            :names
+                            (apply #'vector
+                                   (cons column (mapcar #'sc-name stats)))))
+           (accessors (mapcar (port:compose aref-i sc-pos) stats))
+           (ht (make-hash-table :test 'equal)))
+      (cllib:with-timing (:out out)
+        (mesg :log out "~S: filling hash table..." 'summarize)
+        (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
+        (mesg :log out "~:D entries" (hash-table-count ht)))
+      (cllib:with-timing (:out out :done t)
+        (mesg :log out "~S: filling return table lines..." 'summarize)
+        (maphash (lambda (symbol list)
+                   (let ((v (make-array ncol)))
+                     (loop :for i :upfrom 1 :for acc :in accessors
+                       :do (setf (aref v i) (coerce-int-float
+                                             (mean list :key acc))))
+                     (setf (aref v 0) symbol)
+                     (push v (table-lines ret))))
+                 ht))
+      (restat-table table ret :out out :label 'summarize)
+      (mesg :log out "~S: ~A..." 'summarize ret)
+      ret)))
+
+(defun table-select (table column value &key (out *standard-output*))
+  "Create a new table - a subset of the original."
+  (cllib:with-timing (:out out :done t)
+    (mesg :log out "~S(~A:~S=~S)~%" 'table-select table column value)
+    (let* ((pos (column-name-sc column table))
+           (ret (make-table :path
+                            (format nil "[~A]@~S=~S"
+                                    (write-table table nil) column value)
+                            :names (remove column (table-names table)
+                                           :test #'string=)
+                            :lines (loop :for v :in (table-lines table)
+                                     :when (string= (aref v pos) value)
+                                     :collect (remove-subseq v pos (1+ pos))))))
+      (restat-table table ret :out out :label 'table-select)
+      (mesg :log out "~S: ~A..." 'table-select ret)
+      ret)))
 
 ;;;###autoload
 (defun evaluate-predictor (file &optional (out *standard-output*))

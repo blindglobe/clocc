@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.24 2006/08/24 04:25:14 sds Exp $
+;;; $Id: data.lisp,v 1.25 2006/08/24 04:27:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -398,6 +398,7 @@ Everything is allocated anew."
                  ht))
       (restat-table table ret :out out :label 'summarize)
       (mesg :log out "~S: ~A..." 'summarize ret)
+      (push ret *tables*)
       ret)))
 
 (defun table-select (table column value &key (out *standard-output*))
@@ -415,6 +416,7 @@ Everything is allocated anew."
                                      :collect (remove-subseq v pos (1+ pos))))))
       (restat-table table ret :out out :label 'table-select)
       (mesg :log out "~S: ~A..." 'table-select ret)
+      (push ret *tables*)
       ret)))
 
 ;;;###autoload

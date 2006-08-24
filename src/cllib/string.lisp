@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.12 2006/03/06 16:19:21 sds Exp $
+;;; $Id: string.lisp,v 1.13 2006/08/24 04:15:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -16,7 +16,7 @@
 
 (export
  '(string-beg-with string-end-with string-beg-with-cs string-end-with-cs
-   edit-distance position-limit
+   edit-distance position-limit *string-junk* remove-subseq
    purge-string split-string split-seq substitute-subseq substitute-subseq-if))
 
 ;;;
@@ -93,9 +93,10 @@ See <http://www.merriampark.com/ld.htm>
 (defcustom *string-junk* (simple-string 5) ":-,./"
   "The characters removed from a string by `purge-string'.")
 
-(defsubst purge-string (str &optional (junk *string-junk*))
+(defsubst purge-string (str &optional (*string-junk* *string-junk*))
   "Non-destructively remove junk from string."
-  (substitute-if #\Space (lambda (cc) (find cc junk :test #'char=)) str))
+  (substitute-if #\Space (lambda (cc) (find cc *string-junk* :test #'char=))
+                 str))
 
 (defun split-seq (seq pred &key (start 0) end key strict)
   "Return a list of subseq's of SEQ, split on predicate PRED.
@@ -123,8 +124,10 @@ zero-length subsequences too.
   "Return the symbol representing the type of the sequence SEQ.
 Returns one of (string, vector or list)."
   (typecase seq
-    (string 'string) (vector 'vector) (list 'list)
-    (t (error 'case-error :proc 'substitute-type :args
+    (string 'string) (list 'list)
+    (vector (let ((eltype (array-element-type seq)))
+              (if (eq eltype t) 'vector (list 'vector eltype))))
+    (t (error 'case-error :proc 'sequence-type :args
               (list 'seq seq 'string 'vector 'list)))))
 
 (defun substitute-subseq-if (seq begf endf repf &key (start 0) end)
@@ -151,7 +154,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
            (type (function (sequence index-t t) (or null index-t)) begf)
            (type (function (sequence index-t t) index-t) endf)
            (type (function (sequence index-t t symbol) sequence) repf))
-  (loop :with type :of-type symbol = (sequence-type seq)
+  (loop :with type = (sequence-type seq)
         :and last :of-type index-t = start
         :for next = (funcall begf seq last end)
         :unless (or next all) :return seq
@@ -168,7 +171,7 @@ Is is implemented separately for (non-existent :-) performance reasons."
 The result is of the same type as SEQ.
   (substitute-subseq SEQ SUB REP &key START END TEST KEY)"
   (declare (sequence seq sub rep) (type index-t start))
-  (loop :with type :of-type symbol = (sequence-type seq)
+  (loop :with type = (sequence-type seq)
         :and olen :of-type index-t = (length sub)
         :and last :of-type index-t = start
         :for next = (search sub seq :start2 last :end2 end :test test :key key)
@@ -177,6 +180,14 @@ The result is of the same type as SEQ.
         :while next :collect rep :into all :do (setq last (+ next olen))
         :finally (return (reduce (lambda (s0 s1) (concatenate type s0 s1))
                                  all :initial-value (subseq seq 0 start)))))
+
+(defun remove-subseq (seq beg &optional end)
+  "Return a fresh sequence identical to the original one with a part removed."
+  (let ((len (length seq)))
+    (cond ((or (null end) (= end len)) (subseq seq 0 beg))
+          ((zerop beg) (subseq seq (or end len)))
+          (t (concatenate (sequence-type seq)
+                          (subseq seq 0 beg) (subseq seq end))))))
 
 (provide :cllib-string)
 ;;; }}} string.lisp ends here

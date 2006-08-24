@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.42 2006/06/22 20:10:49 sds Exp $
+;;; $Id: tests.lisp,v 2.43 2006/08/24 04:16:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -48,6 +48,17 @@
       (ts "ab123efghcda" "abcdefghcda" "cd" "123" :end 6)
       (ts "ab123efgh123a" "abcdefghcda" "cd" "123")
       (ts "abcdefghcda" "abcdefghcda" "cd" "123" :start 5 :end 6))
+    (flet ((ts (res seq from to)
+             (mesg :test out " * ~s ~s ~s -> ~s~%" seq from to res)
+             (let ((r1 (remove-subseq seq from to)))
+               (unless (equalp r1 res)
+                 (incf num-err)
+                 (warn " ### FAILED: ~s ~s ~s ->~10t~s~% /=~10t~s~%"
+                       seq from to r1 res)))))
+      (ts '(1 2 3 7 8 9) '(1 2 3 4 5 6 7 8 9) 3 6)
+      (ts #(1 2 3 7 8 9) #(1 2 3 4 5 6 7 8 9) 3 6)
+      (ts (mk-arr '(unsigned-byte 8) '(1 2 3 7 8 9))
+          (mk-arr '(unsigned-byte 8) '(1 2 3 4 5 6 7 8 9)) 3 6))
     (mesg :test out " ** ~s: ~:d error~:p~2%" 'test-string num-err)
     num-err))
 

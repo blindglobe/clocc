@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.18 2006/08/02 02:03:09 sds Exp $
+;;; $Id: stat.lisp,v 1.19 2006/08/25 00:12:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -107,8 +107,8 @@
                   (min (mdl-mi mdl)) (max (mdl-ma mdl)))
   "Return 2 values: vector of length NBINS, bin WIDTH and MDL.
 The vector contains the counts in the Ith bin."
-    (mesg :log out "~&~S: ~S~%" 'histogram mdl)
-    (assert (/= min max) (min max) "~S: min=max=~A" 'histogram min)
+  (mesg :log out "~&~S: ~S~%" 'histogram mdl)
+  (assert (/= min max) (min max) "~S: min=max=~A" 'histogram min)
   (assert (or (null logscale) (plusp (* min max))) (logscale min max)
           "~S: mixed sign data [~A;~A] incompatible with logscale=~S"
           'histogram min max logscale)
@@ -116,14 +116,18 @@ The vector contains the counts in the Ith bin."
                     (exp (/ (log (/ max min)) nbins))
                     (/ (- max min) nbins)))
          (last (1- nbins)) (vec (make-array nbins :initial-element 0))
+         ;; when min or max are supplied we need this because the actual values
+         ;; may be outside [min;max], e.g., mixed sign for logscale
+         (key1 (lambda (x) (max min (min max (funcall key x)))))
          (bin (if logscale
-                  (lambda (x) (floor (log (/ (funcall key x) min) width)))
-                  (lambda (x) (floor (- (funcall key x) min) width)))))
-    (loop :for x :in list :for v = (funcall bin x)
-      :do (incf (aref vec (min (max 0 v) last))))
+                  (lambda (x) (floor (log (/ (funcall key1 x) min) width)))
+                  (lambda (x) (floor (- (funcall key1 x) min) width)))))
+    (with-collect (:out out)
+      (mesg :log out "~S: binning..." 'histogram)
+      (loop :for x :in list :for v = (funcall bin x)
+        :do (incf (aref vec (min (max 0 v) last))))
       (loop :for s :across vec :minimize s :into i :maximize s :into a
-        :finally (mesg :log out "~S: bin size from ~:D to ~:D~%"
-                       'histogram i a))
+        :finally (mesg :log out "bin size from ~:D to ~:D~%" i a)))
     (values vec width mdl)))
 
 ;;;

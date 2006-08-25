@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.25 2006/08/24 04:27:11 sds Exp $
+;;; $Id: data.lisp,v 1.26 2006/08/25 00:11:10 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -161,7 +161,7 @@
                                  (error "~S: ~S does not belong to a table"
                                         'ensure-levels sc)))
                       (max-name-length (max-name-length (table-names table))))
-  (cllib:with-timing (:out out)
+  (with-timing (:out out)
     (format t "~3D ~V@A" pos max-name-length (sc-name sc)) (force-output)
     (let* ((lines (setf (table-lines table)
                         (sort (table-lines table) #'< :key (aref-i pos))))
@@ -271,7 +271,7 @@
                                          :max-name-length max-name-length))
                     columns))
       (when medians
-        (cllib:with-timing (:out out)
+        (with-timing (:out out)
           (format out "computing medians & levels...~%")
           (dolist (sc (table-stats tab)) (ensure-levels sc :out out))
           (format out "~:D sort~:P" (length (table-stats tab)))))
@@ -279,7 +279,7 @@
 
 (defun table-stats-refresh (table)
   "Update TABLE-STATS."
-  (cllib:with-timing ()
+  (with-timing ()
     (let ((stats (table-stats table)))
       (map-into stats (lambda (sc)
                         (let ((nsc (table-stat-column (sc-pos sc) table)))
@@ -361,7 +361,7 @@ Everything is allocated anew."
 (defun restat-table (old-table new-table &key (out *standard-output*)
                      (label 'restat-table))
   "Recompute all stats present in OLD-TABLE for NEW-TABLE."
-  (cllib:with-timing (:out out :done t)
+  (with-timing (:out out :done t)
     (mesg :log out "~S: stats...~%" label)
     (dolist (sc (table-stats old-table))
       (let ((nsc (table-stat-column (sc-name sc) new-table :out out)))
@@ -371,7 +371,7 @@ Everything is allocated anew."
 
 (defun summarize (table column &key (out *standard-output*))
   "Summarize TABLE by COLUMN returning a new table of means."
-  (cllib:with-timing (:out out :done t)
+  (with-timing (:out out :done t)
     (mesg :log out "~S: summarizing ~S by ~S~%" 'summarize table column)
     (let* ((pos (column-name-sc column table))
            (stats (table-stats table)) (ncol (1+ (length stats)))
@@ -382,11 +382,11 @@ Everything is allocated anew."
                                    (cons column (mapcar #'sc-name stats)))))
            (accessors (mapcar (port:compose aref-i sc-pos) stats))
            (ht (make-hash-table :test 'equal)))
-      (cllib:with-timing (:out out)
+      (with-timing (:out out)
         (mesg :log out "~S: filling hash table..." 'summarize)
         (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
         (mesg :log out "~:D entries" (hash-table-count ht)))
-      (cllib:with-timing (:out out :done t)
+      (with-timing (:out out :done t)
         (mesg :log out "~S: filling return table lines..." 'summarize)
         (maphash (lambda (symbol list)
                    (let ((v (make-array ncol)))
@@ -403,7 +403,7 @@ Everything is allocated anew."
 
 (defun table-select (table column value &key (out *standard-output*))
   "Create a new table - a subset of the original."
-  (cllib:with-timing (:out out :done t)
+  (with-timing (:out out :done t)
     (mesg :log out "~S(~A:~S=~S)~%" 'table-select table column value)
     (let* ((pos (column-name-sc column table))
            (ret (make-table :path

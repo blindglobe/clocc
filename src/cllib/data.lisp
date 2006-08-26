@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.26 2006/08/25 00:11:10 sds Exp $
+;;; $Id: data.lisp,v 1.27 2006/08/26 12:59:13 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -23,11 +23,11 @@
 (export '(*buckets* *columns* *levels* *value-boundary* stat-column
           sc-table sc-pos sc-name sc-mdl sc-buckets sc-median sc-levels
           show-sc show-sc-list aref-i ensure-buckets ensure-levels
-          table table-path table-lines table-stats table-names
+          table table-path table-lines table-stats table-names write-table
           table-accessor table-column-pos table-lines$ compress-tables *tables*
           table-stat-column ensure-table-stat-column column-histogram
           analyse-csv table-stats-refresh add-column column-name-sc
-          plot-columns summarize table-select
+          plot-columns table-to-hash summarize table-select
           evaluate-predictor))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -369,23 +369,28 @@ Everything is allocated anew."
         (ensure-levels nsc :out out)))
     (mesg :log out "~S: stats..." label)))
 
+(defun table-to-hash (table column &key (out *standard-output*))
+  "TABLE --> HASH-TABLE column->(list record)"
+  (let ((ht (make-hash-table :test 'equal))
+        (pos (column-name-sc column table)))
+    (with-timing (:out out)
+      (mesg :log out "~S: ~A/~S..." 'table-to-hash table column)
+      (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
+      (mesg :log out "~:D entries" (hash-table-count ht)))
+    ht))
+
 (defun summarize (table column &key (out *standard-output*))
   "Summarize TABLE by COLUMN returning a new table of means."
   (with-timing (:out out :done t)
     (mesg :log out "~S: summarizing ~S by ~S~%" 'summarize table column)
-    (let* ((pos (column-name-sc column table))
-           (stats (table-stats table)) (ncol (1+ (length stats)))
+    (let* ((stats (table-stats table)) (ncol (1+ (length stats)))
            (ret (make-table :path (format nil "[~A]@~S"
                                           (write-table table nil) column)
                             :names
                             (apply #'vector
                                    (cons column (mapcar #'sc-name stats)))))
            (accessors (mapcar (port:compose aref-i sc-pos) stats))
-           (ht (make-hash-table :test 'equal)))
-      (with-timing (:out out)
-        (mesg :log out "~S: filling hash table..." 'summarize)
-        (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
-        (mesg :log out "~:D entries" (hash-table-count ht)))
+           (ht (table-to-hash table column :out out)))
       (with-timing (:out out :done t)
         (mesg :log out "~S: filling return table lines..." 'summarize)
         (maphash (lambda (symbol list)

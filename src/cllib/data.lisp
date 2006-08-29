@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.27 2006/08/26 12:59:13 sds Exp $
+;;; $Id: data.lisp,v 1.28 2006/08/29 00:13:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,7 +13,7 @@
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `with-csv'
   (require :cllib-csv (translate-logical-pathname "cllib:csv"))
-  ;; `fill-buckets'
+  ;; `fill-buckets', `bucketize'
   (require :cllib-lift (translate-logical-pathname "cllib:lift"))
   ;; `plot-histogram'
   (require :cllib-gnuplot (translate-logical-pathname "cllib:gnuplot")))
@@ -442,5 +442,5 @@ File: CSV, 1st column: actuals, 2nd column: predicted."
           (mesg :log out "diff  : ~a  r2=~f~%"
                 mdl (/ (- s1 (mdl-sd mdl)) s1)))))))
 
-(provide :data)
+(provide :cllib-data)
 ;;; file data.lisp ends here

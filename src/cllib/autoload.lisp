@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: autoload.lisp,v 1.13 2006/04/07 21:51:11 sds Exp $
+;;; $Id: autoload.lisp,v 1.14 2006/08/29 00:13:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/autoload.lisp,v $
 
 (eval-when (compile load eval)
@@ -85,5 +85,5 @@
               tot out (file-length outs))
       tot)))
 
-(provide "autoload")
+(provide :cllib-autoload)
 ;;; file autoload.lisp ends here

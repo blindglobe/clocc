@@ -1,10 +1,10 @@
 ;;; Read from/Write to files
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold
+;;; Copyright (C) 1997-2006 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.41 2005/01/27 23:02:49 sds Exp $
+;;; $Id: fileio.lisp,v 1.42 2006/09/09 02:21:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -22,7 +22,7 @@
           count-sexps code-complexity load-compile-maybe file-equal-p
           file-newer file-newest
           write-list-to-stream write-list-to-file file-cmp
-          read-list-from-stream read-list-from-file
+          read-list-from-stream read-list-from-file skip-search-or
           pr write-to-file read-from-file read-from-stream append-to-file
           read-trim skip-to-line skip-search skip-blanks read-non-blanks))
 
@@ -307,9 +307,20 @@ By default nothing is printed."
   "Read from STREAM until STRING is found by `search.'"
   (declare (stream stream) (simple-string string))
   (mesg :head out " +++ `skip-search' --> `~a'~%" string)
-  (do ((st (read-line stream nil nil) (read-line stream nil nil)))
-      ((or (null st) (search string st :test #'char-equal)) st)
+  (do ((st (read-line stream nil nil) (read-line stream nil nil)) pos)
+      ((or (null st) (setq pos (search string st :test #'char-equal)))
+       (values st pos))
     (declare (type (or null simple-string) st))))
+
+(defun skip-search-or (stream strings &optional out)
+  "Read from STREAM until one of STRINGS is found by `search.'"
+  (declare (stream stream) (type list strings))
+  (mesg :head out " +++ `skip-search-or' --> ~a~%" strings)
+  (loop :for st = (read-line stream nil nil) :while st :do
+    (dolist (string strings)
+      (let ((pos (search string st :test #'char-equal)))
+        (when pos
+          (return-from skip-search-or (values st string pos)))))))
 
 ;;;
 ;;; }}}{{{ `save-restore'

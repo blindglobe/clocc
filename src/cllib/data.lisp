@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.28 2006/08/29 00:13:48 sds Exp $
+;;; $Id: data.lisp,v 1.29 2006/09/09 02:21:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -34,7 +34,7 @@
   "The list of buckets to fill in `analyse-csv'.")
 (defcustom *columns* (or (eql t) (cons (or fixnum string (eql NOT)))) t
   "The list of column specs to study in `analyse-csv'.")
-(defcustom *levels* simple-vector
+(defcustom *levels* list
   '(0.1 0.2 0.25 0.3 0.4 0.5 0.6 0.7 0.75 0.8 0.9)
   "The percentile levels for order statistics.")
 

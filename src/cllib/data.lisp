@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.29 2006/09/09 02:21:15 sds Exp $
+;;; $Id: data.lisp,v 1.30 2006/09/14 02:05:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,7 +27,7 @@
           table-accessor table-column-pos table-lines$ compress-tables *tables*
           table-stat-column ensure-table-stat-column column-histogram
           analyse-csv table-stats-refresh add-column column-name-sc
-          plot-columns table-to-hash summarize table-select
+          plot-columns table-to-hash summarize table-select purge-columns
           evaluate-predictor))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
@@ -54,14 +54,18 @@
                                 spec (1- ncol))))))
                col-specs)))
 
+(defun columns-complement (ncol cols)
+  "Return columns in 1..NCOL not in COLS."
+  (sort (nset-difference (loop :for i :from 0 :below ncol :collect i) cols)
+        #'<))
+
 (defun unroll-column-specs (col-specs names ncol)
   "Turn `columns' into a list of `interesting' indexes."
   (etypecase col-specs
     (null (error "empty column selection"))
     ((eql t) (loop :for i :from 0 :below ncol :collect i))
     ((cons (eql not))           ; exclude specified columns
-     (set-difference (loop :for i :from 0 :below ncol :collect i)
-                     (column-spec-list (rest col-specs) names ncol)))
+     (columns-complement ncol (column-spec-list (rest col-specs) names ncol)))
     (cons                       ; include specified columns
      (column-spec-list col-specs names ncol))))
 
@@ -406,23 +410,74 @@ Everything is allocated anew."
       (push ret *tables*)
       ret)))
 
-(defun table-select (table column value &key (out *standard-output*))
+(defun table-select (table &key column (value t) predicate
+                     (title (and column (format nil "~S=~S" column value)))
+                     (out *standard-output*))
   "Create a new table - a subset of the original."
   (with-timing (:out out :done t)
-    (mesg :log out "~S(~A:~S=~S)~%" 'table-select table column value)
-    (let* ((pos (column-name-sc column table))
-           (ret (make-table :path
-                            (format nil "[~A]@~S=~S"
-                                    (write-table table nil) column value)
-                            :names (remove column (table-names table)
-                                           :test #'string=)
-                            :lines (loop :for v :in (table-lines table)
-                                     :when (string= (aref v pos) value)
-                                     :collect (remove-subseq v pos (1+ pos))))))
+    (mesg :log out "~S(~A:~A)~%" 'table-select table title)
+    (let ((ret (make-table
+                :path (format nil "[~A]@~A" (write-table table nil) title)
+                :names (if column
+                           (remove column (table-names table) :test #'string=)
+                           (copy-seq (table-names table)))
+                :lines (if column
+                           (loop :with pos = (column-name-sc column table)
+                             :for v :in (table-lines table)
+                             :when (string= (aref v pos) value)
+                             :collect (remove-subseq v pos (1+ pos)))
+                           (loop :for v :in (table-lines table)
+                             :when (equal (funcall predicate v) value)
+                             :collect v)))))
       (restat-table table ret :out out :label 'table-select)
       (mesg :log out "~S: ~A..." 'table-select ret)
       (push ret *tables*)
       ret)))
+
+(defun list->intervals (list)
+  ;; (10 9 8 5 4 3 1) --> ((10 . 8) (5 . 3) (1 . 1))
+  (let ((beg (car list)) (end (car list)) ret)
+    (dolist (curr (cdr list) (nreverse (cons (cons beg end) ret)))
+      (if (= curr (1+ end))
+          (setq end curr)
+          (setq ret (cons (cons beg end) ret) end curr beg curr)))))
+
+(defun extract-columns (vec columns)
+  "Extract COLUMNS from VEC into a vector."
+  (let ((ret (make-array (length columns))))
+    (loop :for i :upfrom 0 :for c :in columns
+      :do (setf (aref ret i) (aref vec c)))
+    ret))
+
+(defun purge-columns (table &key (test 'equal) (out *standard-output*))
+  "Remove columns with identical values."
+  (with-timing (:out out :done t)
+    (mesg :log out "~S(~A): " 'purge-columns table)
+    (let* ((names (table-names table)) (lines (table-lines table))
+           (ncol (length names)) (delenda nil) preserva)
+      (dotimes (i ncol)
+        (let* ((tab (count-all lines :test test :key (aref-i i)))
+               (count (hash-table-count tab)))
+          (cond ((= 1 count)
+                 (mesg :log out "<~A=~S>" (aref names i)
+                       (aref (first lines) i))
+                 (push i delenda))
+                (t (mesg :log out "[~A:~:D]" (aref names i) count)))))
+      (unless delenda
+        (mesg :log out "~%~S: no delenda!" 'purge-columns)
+        (return-from purge-columns nil))
+      (setq delenda (nreverse delenda))
+      (mesg :log out "~%~S: delenda: ~:D column~:P ~S ~S~%" 'purge-columns
+            (length delenda) (list->intervals delenda)
+            (mapcar (lambda (i) (aref names i)) delenda))
+      (setq preserva (columns-complement ncol delenda))
+      (mesg :log out "~S: preserva: ~:D column~:P ~S ~S~%" 'purge-columns
+            (length preserva) (list->intervals preserva)
+            (mapcar (lambda (i) (aref names i)) preserva))
+      (setf (table-names table) (extract-columns names preserva)
+            (table-lines table)
+            (mapcar (lambda (v) (extract-columns v preserva)) lines))
+      table)))
 
 ;;;###autoload
 (defun evaluate-predictor (file &optional (out *standard-output*))

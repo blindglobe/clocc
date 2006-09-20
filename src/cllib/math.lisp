@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.83 2006/08/18 02:27:51 sds Exp $
+;;; $Id: math.lisp,v 2.84 2006/09/20 01:04:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -39,7 +39,7 @@
    standard-deviation-relative standard-deviation-mdl min+max
    entropy-sequence entropy-distribution kullback-leibler
    information mutual-information dependency proficiency correlation
-   mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma
+   mdl make-mdl +bad-mdl+ mdl-mn mdl-sd mdl-le mdl-mi mdl-ma mdl-mi$ mdl-ma$
    mdl-normalize mdl-denormalize mdl-normalize-function
    normalizer-table normalize-function-list
    kurtosis-skewness kurtosis-skewness-weighted

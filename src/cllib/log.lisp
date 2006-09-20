@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.31 2006/08/26 12:58:18 sds Exp $
+;;; $Id: log.lisp,v 1.32 2006/09/20 01:04:22 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
 (in-package :cllib)
 
 (export '(get-int-time elapsed time-diff with-timing eta progress
-          *print-log* mesg list-format))
+          *print-log* mesg list-format fmt%))
 
 ;;;
 ;;;
@@ -30,6 +30,10 @@
 See CLtL2 p602 and <http://www.lisp.org/HyperSpec/Body/sec_22-3-7-2.html>"
   (format nil "~~#[ none~~; ~a~~; ~a and ~a~~:;~~@{~~#[~~; and~~] ~a~~^,~~}~~]"
           item-fmt item-fmt item-fmt item-fmt))
+
+(defun fmt% (number)
+  "Format the number as percent."
+  (format nil "~5F%" (* 1d2 number)))
 
 ;;;
 ;;; {{{ progress reporting

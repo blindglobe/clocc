@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.30 2006/09/14 02:05:38 sds Exp $
+;;; $Id: data.lisp,v 1.31 2006/11/08 01:26:18 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -348,19 +348,36 @@ Everything is allocated anew."
                    'column-name-sc obj (sc-name obj) name))))
      (values (sc-pos obj) (sc-name obj) obj))))
 
-(defun plot-columns (table col1 col2 &rest options)
+(defun table-to-hash (table column &key (out *standard-output*))
+  "TABLE --> HASH-TABLE column->(list record)"
+  (let ((ht (make-hash-table :test 'equal))
+        (pos (column-name-sc column table)))
+    (with-timing (:out out)
+      (mesg :log out "~S: ~A/~S..." 'table-to-hash table column)
+      (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
+      (mesg :log out "~:D entries" (hash-table-count ht)))
+    ht))
+
+(defun plot-columns (table col1 col2 &rest options
+                     &key by (out *standard-output*) &allow-other-keys
+                     &aux (*gnuplot-msg-stream* out))
   "Plot one column vs the other."
   (multiple-value-bind (c1 n1) (column-name-sc col1 table)
     (multiple-value-bind (c2 n2) (column-name-sc col2 table)
-      (apply #'plot-lists-arg
-             (list (cons (format nil "~A vs ~A" n1 n2)
-                         (mapcar (lambda (v)
-                                   (cons (aref v c1) (aref v c2)))
-                                 (table-lines table))))
-             (append options
-                     (list :xlabel n1 :ylabel n2
-                           :data-style :points
-                           :title (princ-to-string table)))))))
+      (flet ((f (l) (mapcar (lambda (v) (cons (aref v c1) (aref v c2))) l)))
+        (apply #'plot-lists-arg
+               (if by
+                   (let (l)
+                     (maphash (lambda (val list)
+                                (push (cons (princ-to-string val) (f list)) l))
+                              (table-to-hash table by :out out))
+                     (nreverse l))
+                   (list (cons (format nil "~A vs ~A" n1 n2)
+                               (f (table-lines table)))))
+               (append (remove-plist options :by :out)
+                       (list :xlabel n1 :ylabel n2
+                             :data-style :points
+                             :title (princ-to-string table))))))))
 
 (defun restat-table (old-table new-table &key (out *standard-output*)
                      (label 'restat-table))
@@ -372,16 +389,6 @@ Everything is allocated anew."
         (push nsc (table-stats new-table))
         (ensure-levels nsc :out out)))
     (mesg :log out "~S: stats..." label)))
-
-(defun table-to-hash (table column &key (out *standard-output*))
-  "TABLE --> HASH-TABLE column->(list record)"
-  (let ((ht (make-hash-table :test 'equal))
-        (pos (column-name-sc column table)))
-    (with-timing (:out out)
-      (mesg :log out "~S: ~A/~S..." 'table-to-hash table column)
-      (dolist (v (table-lines table)) (push v (gethash (aref v pos) ht)))
-      (mesg :log out "~:D entries" (hash-table-count ht)))
-    ht))
 
 (defun summarize (table column &key (out *standard-output*))
   "Summarize TABLE by COLUMN returning a new table of means."

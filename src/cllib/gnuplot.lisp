@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.34 2006/08/24 04:20:45 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.35 2006/11/10 03:05:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -78,15 +78,21 @@ in addition to *GNUPLOT-STREAM* or NIL for no dribbling.")
 Usage: (with-plot-stream (stream :plot PLOT &rest OPTIONS) body).
 OPTIONS are gnuplot(1) options, the following are accepted:
  XLABEL YLABEL TIMEFMT XDATA DATA-STYLE TITLE XB XE GRID TERM
- BORDER LEGEND (key in gnuplot)
+ BORDER LEGEND MULTIPLOT (key in gnuplot)
 PLOT means:
-  :plot     => plot;
+  :plot    => plot;
   :print   => print;
   :wait    => plot and wait for gnuplot to terminate;
   :file    => write `*gnuplot-file*' and print a message;
+  :return  => return a PLOT-SPEC object for future use;
   pathname designator => write this file and print a message;
   stream   => write gnuplot commands to this stream;
-  NIL      => do nothing, print nothing, return NIL."
+  NIL      => do nothing, print nothing, return NIL.
+When MULTIPLOT is non-NIL, it should be a cons (NROW . NCOL) and
+ BODY should return a list of PLOT-SPEC objects, e.g.:
+\(with-plot-stream (out :multiplot '(1 . 2))
+  (list (plot-functions (list (cons \"cosine\" #'cos)) 0 pi 100 :plot :return)
+        (plot-functions (list (cons \"sine\" #'sin)) 0 pi 100 :plot :return)))"
   (with-gensyms ("WPS-" body-function)
     `(flet ((,body-function (,str) ,@body))
       ;; this cannot be replaced with a simple inline funcall since
@@ -148,6 +154,7 @@ according to the given backend")
   (:method ((directive (eql :wait))) *plot-term-screen*)
   (:method ((directive (eql :print))) *plot-term-printer*)
   (:method ((directive (eql :file))) *plot-term-file*)
+  (:method ((directive (eql :return))) nil)
   (:method ((directive string)) (ps-terminal directive))
   (:method ((directive pathname)) (ps-terminal directive)))
 
@@ -189,7 +196,7 @@ according to the given backend")
   (width 1 :type (integer 1 10)))
 
 (defstruct (plot-spec (:conc-name plsp-))
-  (term *plot-term-screen* :type plot-term)
+  (term *plot-term-screen* :type (or plot-term null)) ; nil for return directive
   (timestamp +plot-timestamp+ :type (or null plot-timestamp))
   (x-axis (make-plot-axis :name "x") :type plot-axis)
   (y-axis (make-plot-axis :name "y") :type plot-axis)
@@ -200,8 +207,8 @@ according to the given backend")
   (legend nil :type list)
   (grid nil :type boolean)
   (arrows nil :type list)
-  (multiplot nil :type boolean)
-  (data nil :type (or list function)))
+  (multiplot nil :type (or null (cons integer integer))) ; (nrow . ncol)
+  (data-fun #'error :type function))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
   (declare (ignorable pt out)))
@@ -226,6 +233,7 @@ according to the given backend")
   (typecase xx
     (number (format nil "~g" xx))
     (symbol (string-downcase (symbol-name xx)))
+    ((cons real real) (format nil "~f,~f" (car xx) (cdr xx)))
     (list (format nil "~{ ~(~a~)~}" xx))
     (t (concatenate 'string "\""
                     ;; quote #\":
@@ -249,33 +257,64 @@ according to the given backend")
       (format out "set ~arange [~a:~a]~%" name
               (%plotout (car range)) (%plotout (cdr range))))))
 
+(defun multiplot-row-col (mp data-fun)
+  "Compute the number of rows and columns for a multiplot."
+  (if mp
+      (let ((ncol (car mp)) (nrow (cdr mp)) len
+            (data (funcall data-fun t)))
+        (unless (every #'plot-spec-p data)
+          (error 'code :proc 'plot-output :args (list 'plot-spec data)
+                 :mesg "multiplot requires a list of ~s as data, not ~s"))
+        (setq len (length data))
+        (etypecase ncol
+          ((integer 1)
+           (etypecase nrow
+             ((integer 1)
+              (when (< (* nrow ncol) len)
+                (error 'code :proc 'plot-output :args (list nrow ncol len)
+                       :mesg "not enough slots: ~dx~d<~d")))
+             (null (setq nrow (ceiling len ncol)))))
+          (null
+           (etypecase nrow
+             ((integer 1) (setq ncol (ceiling len nrow)))
+             (null (setq ncol (isqrt len) nrow (ceiling len ncol))))))
+        (values nrow ncol data))
+      (values nil nil nil)))
+
 (defmethod plot-output ((ps plot-spec) (out stream) (backend (eql :gnuplot)))
   (flet ((set-opt (nm par)
            (case par
              ((t) (format out "set ~a~%" nm))
              ((nil) (format out "unset ~a~%" nm))
              (t (format out "set ~a ~a~%" nm (%plotout par))))))
-    (unless (plsp-multiplot ps)
-      (set-opt "multiplot" nil)
-      (plot-output (plsp-term ps) out backend))
-    (plot-output (plsp-timestamp ps) out backend)
-    (plot-output (plsp-x-axis ps) out backend)
-    (plot-output (plsp-y-axis ps) out backend)
-    (set-opt "border" (plsp-border ps))
-    (set-opt "style data" (plsp-data-style ps))
-    (set-opt "title" (plsp-title ps))
-    (set-opt "key" (plsp-legend ps))
-    (set-opt "grid" (plsp-grid ps))
-    (set-opt "arrow" nil)       ; reset arrows
-    (dolist (arrow (plsp-arrows ps))
-      (plot-output arrow out backend))
-    (if (functionp (plsp-data ps))
-        (funcall (plsp-data ps) out)
-        (dolist (set (plsp-data ps))
-          (dolist (datum set (format out "e~%"))
-            (format out "~{~a~^ ~}~%" datum))))))
+    (multiple-value-bind (nrow ncol data)
+        (multiplot-row-col (plsp-multiplot ps) (plsp-data-fun ps))
+      (plot-output (plsp-term ps) out backend)
+      (plot-output (plsp-timestamp ps) out backend)
+      (when (and nrow ncol) (set-opt "multiplot" t))
+      (plot-output (plsp-x-axis ps) out backend)
+      (plot-output (plsp-y-axis ps) out backend)
+      (set-opt "border" (plsp-border ps))
+      (set-opt "style data" (plsp-data-style ps))
+      (set-opt "title" (plsp-title ps))
+      (set-opt "key" (plsp-legend ps))
+      (set-opt "grid" (plsp-grid ps))
+      (set-opt "arrow" nil)     ; reset arrows
+      (dolist (arrow (plsp-arrows ps))
+        (plot-output arrow out backend))
+      (if (and nrow ncol)
+          (loop :initially (set-opt "size" (cons (/ nrow) (/ ncol)))
+            :for plsp :in data :for pos :upfrom 0
+            :for (row col) = (multiple-value-list (floor pos ncol))
+            :do (set-opt "origin" (cons (/ row nrow) (/ col ncol)))
+            (plot-output plsp out backend))
+          (funcall (plsp-data-fun ps) out))
+      (when (and nrow ncol)
+        (set-opt "multiplot" nil)
+        (set-opt "size" '(1 . 1))
+        (set-opt "origin" '(0 . 0))))))
 
-(defun make-plot (&key data (plot *gnuplot-default-directive*)
+(defun make-plot (&key data-fun (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y") arrows multiplot
                   (timestamp +plot-timestamp+)
                   (data-style :lines) (border t) timefmt
@@ -283,14 +322,14 @@ according to the given backend")
                   (xtics t) (ytics t) grid xlogscale ylogscale
                   (xfmt (or timefmt "%g")) (yfmt "%g"))
   (make-plot-spec
-   :data data :term (directive-term plot) :data-style data-style
+   :data-fun data-fun :term (directive-term plot) :data-style data-style
    :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
                            :range (cons xb xe)
                            :logscale xlogscale :time-p (not (null timefmt)))
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
                            :range (cons yb ye)
                            :logscale ylogscale)
-   :multiplot multiplot :timestamp (unless multiplot timestamp)
+   :multiplot multiplot :timestamp timestamp
    :grid grid :legend legend :title title :border border :arrows arrows))
 
 (defgeneric make-plot-stream (directive)
@@ -304,6 +343,7 @@ according to the given backend")
   (:method ((directive string)) (open directive :direction :output))
   (:method ((directive pathname)) (open directive :direction :output))
   (:method ((directive (eql :print))) (make-plot-stream :plot))
+  (:method ((directive (eql :return))) nil)
   (:method ((directive (eql :plot)))
     (unless (and *gnuplot-stream* (open-stream-p *gnuplot-stream*))
       (setq *gnuplot-stream* (pipe-output *gnuplot-path*)))
@@ -323,26 +363,28 @@ Should not be called directly but only through `with-plot-stream'."
     (setq plot :plot))
   (let* ((*print-pretty* nil)  ; ensure no unwanted newlines in commands
          (plot-out (make-plot-stream plot))
-         (plot-stream (if dribble
+         (plot-stream (if (and plot-out dribble)
                           (make-broadcast-stream plot-out dribble)
                           plot-out))
-         (plot-spec (apply #'make-plot :data body-function :plot plot opts))
+         (plot-spec (apply #'make-plot :data-fun body-function :plot plot
+                           (remove-plist opts :dribble :backend)))
          (plot-file (typecase plot-stream
                       (file-stream (namestring plot-stream)))))
     (declare (stream plot-stream))
     (when (or (stringp plot) (pathnamep plot)) (setq plot :file))
     (unwind-protect
-         (plot-output plot-spec plot-stream backend)
-      ;; clean up
-      (fresh-line plot-stream)
-      (force-output plot-stream)
+         (case plot
+           (:return plot-spec)
+           (t (plot-output plot-spec plot-stream backend)))
+      (when (streamp plot-stream) ; clean up
+        (fresh-line plot-stream)
+        (force-output plot-stream))
       (when (streamp plot)
         (mesg :plot *gnuplot-msg-stream*
               "~&wrote plot commands to ~s~%" plot))
       (ecase plot
-        ((t :plot)
-         (unless (plsp-multiplot plot-spec)
-           (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%")))
+        ((t :plot) (mesg :plot *gnuplot-msg-stream* "~&Done plotting.~%"))
+        (:return nil)
         (:wait
          (fresh-line *terminal-io*)
          (princ "Press <enter> to continue..." *terminal-io*)

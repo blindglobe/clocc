@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.7 2006/07/24 11:43:00 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.8 2006/11/12 02:35:07 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -100,12 +100,17 @@
 ;;;;	     (out "Calling handler for " form " & " td :%)
 	     (funcall h form stuff))
 	    (t
-             (cond ((null stuff)
-                    (!= stuff '(*))))
-	     (values (values->list (eval (subst-with-stack-vars form)))
+;;;;             (cond ((null stuff)
+;;;;                    (!= stuff '(*))))
+             (let ((vals (values->list (eval (subst-with-stack-vars form)))))
+                (cond ((shorter stuff (len vals))
+                       (!= stuff `(,@*-* ,@(<# (\\ (_) '_)
+                                               (series (- (len vals) (len stuff))))))))
+                (values
+                     vals
                      stuff
                      (<# (\\ (_) 'nil)
-                         stuff))))))
+                         stuff)))))))
 
 (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
@@ -144,9 +149,18 @@
    (repeat :for ((lab :in labels)
                  (val :in vals)
                  (ty :in types))
-    :when (not (eq lab '_))
-    :collect val
-      (dbg-push lab val ty)))
+    :within
+       (cond ((not (member lab '(_ (_))
+                           :test #'equal))
+              (dbg-push (cond ((is-Symbol lab) lab)
+                              (t (car lab)))
+                        val ty)))
+    :when (is-Symbol lab)
+    :collect val))
+       
+;;;;    :when (not (eq lab '_))
+;;;;    :collect val
+;;;;      (dbg-push lab val ty)))
 
 (defun dbg-push (label x &optional (type false) (even-trivia true))
    (cond ((or even-trivia

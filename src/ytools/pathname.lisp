@@ -1,9 +1,9 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: pathname.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: pathname.lisp,v 2.2 2006/11/12 02:35:07 airfoyle Exp $
 
-;;; Copyright (C) 1976-2003 
+;;; Copyright (C) 1976-2006
 ;;;     Drew McDermott and Yale University.  All rights reserved
 ;;; This software is released under the terms of the Modified BSD
 ;;; License.  See file COPYING for details.

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.35 2006/11/10 03:05:29 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.36 2006/11/14 02:35:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -109,8 +109,8 @@ according to the given backend")
     (unless (and (output-stream-p out) (open-stream-p out))
       (error 'code :proc 'plot-output :args (list out)
              :mesg "2nd argument must be an open output stream, got: ~s"))
-    (error 'code :proc 'plot-output :args (list backend)
-           :mesg "unknown backend: ~s")))
+    (error 'code :proc 'plot-output :args (list plot backend)
+           :mesg "unknown plot=~s backend=~s")))
 
 ;; this specifies the plot output terminal
 (defstruct (plot-term (:conc-name pltm-))
@@ -157,6 +157,20 @@ according to the given backend")
   (:method ((directive (eql :return))) nil)
   (:method ((directive string)) (ps-terminal directive))
   (:method ((directive pathname)) (ps-terminal directive)))
+
+(defstruct (plot-label (:conc-name pll-))
+  (text "" :type string)
+  (rot nil :type boolean)
+  (front t :type boolean)
+  (pos '(0 . 0) :type cons)
+  (font "Helvetica" :type string))
+
+(defmethod plot-output ((pl plot-label) (out stream)
+                        (backend (eql :gnuplot)))
+  (format out "set label ~s at screen ~f, screen ~f ~arotate ~a font '~a'~%"
+          (pll-text pl) (car (pll-pos pl)) (cdr (pll-pos pl))
+          (if (pll-rot pl) "" "no") (if (pll-front pl) "front" "back")
+          (pll-font pl)))
 
 (defstruct (plot-timestamp (:conc-name plts-))
   (fmt "%Y-%m-%d %a %H:%M:%S %Z" :type string)
@@ -208,6 +222,7 @@ according to the given backend")
   (grid nil :type boolean)
   (arrows nil :type list)
   (multiplot nil :type (or null (cons integer integer))) ; (nrow . ncol)
+  (labels nil :type list)
   (data-fun #'error :type function))
 
 (defmethod plot-output ((pt null) (out stream) (backend (eql :gnuplot)))
@@ -290,7 +305,10 @@ according to the given backend")
     (multiple-value-bind (nrow ncol data)
         (multiplot-row-col (plsp-multiplot ps) (plsp-data-fun ps))
       (plot-output (plsp-term ps) out backend)
-      (plot-output (plsp-timestamp ps) out backend)
+      (let ((timestamp (plsp-timestamp ps)))
+        (if timestamp
+            (plot-output timestamp out backend)
+            (set-opt "timestamp" nil)))
       (when (and nrow ncol) (set-opt "multiplot" t))
       (plot-output (plsp-x-axis ps) out backend)
       (plot-output (plsp-y-axis ps) out backend)
@@ -299,9 +317,6 @@ according to the given backend")
       (set-opt "title" (plsp-title ps))
       (set-opt "key" (plsp-legend ps))
       (set-opt "grid" (plsp-grid ps))
-      (set-opt "arrow" nil)     ; reset arrows
-      (dolist (arrow (plsp-arrows ps))
-        (plot-output arrow out backend))
       (if (and nrow ncol)
           (loop :initially (set-opt "size" (cons (/ nrow) (/ ncol)))
             :for plsp :in data :for pos :upfrom 0
@@ -309,18 +324,32 @@ according to the given backend")
             :do (set-opt "origin" (cons (/ row nrow) (/ col ncol)))
             (plot-output plsp out backend))
           (funcall (plsp-data-fun ps) out))
+      (dolist (arrow (plsp-arrows ps))
+        (plot-output arrow out backend))
+      (dolist (label (plsp-labels ps))
+        (plot-output label out backend))
       (when (and nrow ncol)
         (set-opt "multiplot" nil)
         (set-opt "size" '(1 . 1))
-        (set-opt "origin" '(0 . 0))))))
+        (set-opt "origin" '(0 . 0)))
+      (set-opt "arrow" nil)     ; reset arrows & labels
+      (set-opt "label" nil))))
 
 (defun make-plot (&key data-fun (plot *gnuplot-default-directive*)
                   (xlabel "x") (ylabel "y") arrows multiplot
-                  (timestamp +plot-timestamp+)
+                  (timestamp +plot-timestamp+) labels
                   (data-style :lines) (border t) timefmt
-                  (xb '*) (xe '*) (yb '*) (ye '*) (title "plot") legend
+                  (xb '*) (xe '*) (yb '*) (ye '*) legend
+                  (title (if multiplot "multiplot" "plot"))
                   (xtics t) (ytics t) grid xlogscale ylogscale
-                  (xfmt (or timefmt "%g")) (yfmt "%g"))
+                  (xfmt (or timefmt "%g")) (yfmt "%g")
+                  (ts (cond ((plot-timestamp-p timestamp) timestamp)
+                            ((or (eq timestamp t) (eq timestamp :default))
+                             +plot-timestamp+)
+                            ((null timestamp) nil)
+                            (t (error 'code :proc 'make-plot
+                                      :args (list timestamp)
+                                      :mesg "invalid timestamp: ~s")))))
   (make-plot-spec
    :data-fun data-fun :term (directive-term plot) :data-style data-style
    :x-axis (make-plot-axis :name "x" :label xlabel :tics xtics :fmt xfmt
@@ -329,7 +358,16 @@ according to the given backend")
    :y-axis (make-plot-axis :name "y" :label ylabel :tics ytics :fmt yfmt
                            :range (cons yb ye)
                            :logscale ylogscale)
-   :multiplot multiplot :timestamp timestamp
+   :multiplot multiplot :timestamp (and (null multiplot) ts)
+   :labels (if multiplot
+               (delete nil
+                       (list* (and ts (make-plot-label
+                                       :text (port:current-time nil)
+                                       :pos (plts-pos ts) :rot (plts-rot ts)
+                                       :font (plts-font ts)))
+                              (make-plot-label :text title :pos '(0 . 0.99))
+                              labels))
+               labels)
    :grid grid :legend legend :title title :border border :arrows arrows))
 
 (defgeneric make-plot-stream (directive)

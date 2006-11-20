@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.11 2006/11/20 04:43:13 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.12 2006/11/20 21:03:47 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -145,6 +145,8 @@
                                      (third trip))
                                     (t (second trip)))))))))
             (t !()))))
+;;; -- This could obviously be optimized, by moving the tests back into the loop
+;;; and avoiding constructing the unused labels in the first place.  Not worth it.
 
 (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
@@ -678,6 +680,15 @@
 				  (out (:to ,srmvar)
 				      1 cc ,@msgstuff)))
 		       :proceed)))))))
+
+(define-out-operator (:val= cmd stream)
+   (let ((format-control-string
+            (out-to-string
+                (:e (repeat :for ((sym :in (cdr cmd)))
+                       (:o sym " = ~s "))))))
+      `(format (out-prepare ,stream)
+          ,format-control-string
+          ,@(cdr cmd))))
 
 #+allegro
 (defun condition-display-string (c)

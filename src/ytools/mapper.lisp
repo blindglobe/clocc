@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: mapper.lisp,v 2.3 2006/01/14 04:14:21 airfoyle Exp $
+;;;$Id: mapper.lisp,v 2.4 2006/11/20 21:03:48 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -64,7 +64,10 @@
 
 
 (defmacro mapreduce (proc ident &rest lists)
-   (cond ((= (len lists) 1)
+   (cond ((null lists)
+          (error "mapreduce (= '</') with no lists: init = ~s, ~%  proc = ~s"
+                 ident proc))
+         ((= (len lists) 1)
           `(reduce ,(cond ((or (atom proc)
                                (not (memq (car proc)
                                           '(function funktion lambda \\))))
@@ -73,14 +76,14 @@
                    ,(car lists)
                    :initial-value ,ident))
          (t
-         (let ((listvars (mapcar (\\ (_) (gensym)) lists))
-               (resvar (gensym)))
-            `(repeat :for (,@(mapcar (\\ (v l) `(,v :in ,l))
-                                     listvars lists)
-                           (,resvar
-                            = ,ident
-                            :then ,(cons-funcall proc (cons resvar listvars))))
-              :result ,resvar)))))
+          (let ((listvars (mapcar (\\ (_) (gensym)) lists))
+                (resvar (gensym)))
+             `(repeat :for (,@(mapcar (\\ (v l) `(,v :in ,l))
+                                      listvars lists)
+                            (,resvar
+                             = ,ident
+                             :then ,(cons-funcall proc (cons resvar listvars))))
+               :result ,resvar)))))
 
 (defun cons-funcall (f argl)
    (cond ((and (is-Pair f) (memq (car f) '(function funktion quote)))

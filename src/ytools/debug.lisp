@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.9 2006/11/19 03:58:05 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.10 2006/11/20 00:42:17 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -116,15 +116,15 @@
 
 (defmacro get-and-pull-nth-dbg-entry (place^ sym^ n^)
    (with-gen-vars (n entry new-stack)
-      `(let ((,-n- ,n^))
-          (multi-let (((,-entry- ,-new-stack-)
-                       (nth-dbg-entry ,place^ ,sym^ ,-n-)))
-             (cond ((not (eq ,-entry- absent-dbg-entry*))
+      `(let ((,n$ ,n^))
+          (multi-let (((,entry$ ,new-stack$)
+                       (nth-dbg-entry ,place^ ,sym^ ,n$)))
+             (cond ((not (eq ,entry$ absent-dbg-entry*))
                     (!= ,place^
-                        (cond ((= ,-n- 0)
-                               (cons ,-entry- ,-new-stack-))
-                              (t ,-new-stack-)))))
-             ,-entry-))))
+                        (cond ((= ,n$ 0)
+                               (cons ,entry$ ,new-stack$))
+                              (t ,new-stack$)))))
+             ,entry$))))
 
 (defvar stack-subst-exempt-vars* '(*))
 

@@ -1,5 +1,10 @@
-$Id: CHANGELOG,v 2.25 2006/11/12 02:35:07 airfoyle Exp $
+$Id: CHANGELOG,v 2.26 2006/11/20 00:42:17 airfoyle Exp $
             
+            [- Version 2.1.26 -]
+2006-11-19: multilet.lisp: Convention for new variables changed: macro
+            var bound to run-time var with name #:v-27 is v$ (not -v-,
+            which looks too much like some kind of segment).
+
             [- Version 2.1.24 -]
 2006-11-09: debug.lisp: Changed conventions so all values of form in
             (ev form -vars-) are returned, except for vars enclosed in

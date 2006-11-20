@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 2.3 2006/07/24 11:43:00 airfoyle Exp $
+;;;$Id: multilet.lisp,v 2.4 2006/11/20 00:42:17 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -32,12 +32,29 @@
 
 )
 
-(defmacro with-gen-vars (varnames &body body)
-   `(let ,(<# (\\ (varname)
-                 `(,(build-symbol - (:< varname) -)
-                   (gen-var ',varname)))
-              varnames)
-      ,@body))
+;;; Because the naming convention for the new variables has changed,
+;;; with have to check for the old convention
+(defmacro with-gen-vars (var-roots &body body)
+   (let ((old-syms
+             (<# (\\ (var-root) (build-symbol - (:< var-root) -))
+                 var-roots))
+         (new-syms
+             (<# (\\ (var-root) (build-symbol (:< var-root) "$"))
+                 var-roots)))
+      (cond ((exists (old :in old-syms)
+                (occurs-in old body))
+             (out (:to *error-output*)
+                "Warning: Deprecated gen-var names " old-syms
+                :% " are being translated to new form " new-syms
+                :% " in " body :%)
+             (!= body (sublis (<# cons old-syms new-syms)
+                              *-*))))
+      `(let ,(<# (\\ (sym-var var-root)
+                    `(,sym-var
+                      (gen-var ',var-root)))
+                 new-syms
+                 var-roots)
+          ,@body)))
 
 (defmacro redundant-args-check (arg-alist-var form^)
    (cond ((not (is-Symbol arg-alist-var))

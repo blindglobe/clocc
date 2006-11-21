@@ -1,0 +1,107 @@
+;; -*- Mode: lisp -*-
+
+(mk:define-language :f2cl
+    :compiler #'f2cl:f2cl-compile
+    :source-extension "f")
+
+(mk:defsystem lapack
+  :source-pathname (directory-namestring *load-truename*)
+  :depends-on ("blas")
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls t
+		     :array-type :array
+		     :array-slicing t
+		     )
+  :components
+  (
+   (:module lapack
+	    :binary-pathname ".."
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "dgeev"
+		    :depends-on ("dgebak"
+ 				 "dgebal"
+ 				 "dgehrd"
+ 				 "dhseqr"
+ 				 "dlabad"
+ 				 "dlacpy"
+ 				 "dlamch"
+ 				 "dlange"
+ 				 "dlapy2"
+ 				 "dlartg"
+ 				 "dlascl"
+ 				 "dorghr"
+ 				 "dtrevc"
+				 ))
+	     (:file "dgebak"
+		    :depends-on ("ilaenv"
+				 "dlamch"
+				 "dlabad"
+				 "dlange"
+				 "dlascl"
+				 "dgebal"
+				 "dgehrd"
+				 "dlacpy"
+				 "dorghr"
+				 "dhseqr"
+				 "dtrevc"
+				 "dlapy2"
+				 "dlartg"
+				 ))
+ 	     (:file "dgebal")
+ 	     (:file "dgehrd"
+		    :depends-on ("dlahrd"
+				 "dlarfb"
+				 "dgehd2"))
+ 	     (:file "dhseqr"
+		    :depends-on ("dlaset"
+				 "dlahqr"
+				 "dlanhs"
+				 "dlapy2"
+				 "dlarfg"
+				 "dlarfx"))
+ 	     (:file "dlabad")
+ 	     (:file "dlacpy")
+ 	     (:file "dlamch")
+ 	     (:file "dlange"
+		    :depends-on ("dlassq"))
+ 	     (:file "dlapy2")
+ 	     (:file "dlartg")
+ 	     (:file "dlascl")
+ 	     (:file "dorghr"
+		    :depends-on ("dorgqr"))
+	     (:file "dtrevc"
+		    :depends-on ("dlaln2"))
+ 	     (:file "ilaenv"
+		    :depends-on ("ieeeck"))
+	     (:file "dlahrd"
+		    :depends-on ("dlarfg"))
+	     (:file "dlarfb")
+	     (:file "dgehd2"
+		    :depends-on ("dlarfg"
+				 "dlarf"))
+	     (:file "dlaset")
+	     (:file "dlahqr"
+		    :depends-on ("dlanhs"
+				 "dlarfg"
+				 "dlanv2"))
+	     (:file "dlanhs")
+	     (:file "dlarfg")
+	     (:file "dlarfx")
+	     (:file "dlassq")
+	     (:file "dorgqr"
+		    :depends-on ("dorg2r"
+				 "dlarft"))
+	     (:file "dlaln2"
+		    :depends-on ("dladiv"))
+	     (:file "ieeeck")
+	     (:file "dlarf")
+	     (:file "dlanv2")
+	     (:file "dorg2r")
+	     (:file "dlarft")
+	     (:file "dladiv")
+	     
+	     ;;(:file "zgeev")
+	     ))))

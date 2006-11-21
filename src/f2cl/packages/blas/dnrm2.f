@@ -38,7 +38,7 @@
 *        auxiliary routine:
 *        CALL DLASSQ( N, X, INCX, SCALE, SSQ )
 *
-         DO 10 IX = 1, 1 + ( N - 1 )*INCX, INCX
+         DO 10, IX = 1, 1 + ( N - 1 )*INCX, INCX
             IF( X( IX ).NE.ZERO )THEN
                ABSXI = ABS( X( IX ) )
                IF( SCALE.LT.ABSXI )THEN

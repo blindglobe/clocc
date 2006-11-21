@@ -161,8 +161,8 @@
       INTRINSIC          ABS, MAX
 *     ..
 *     .. Equivalences ..
-      EQUIVALENCE        ( CI( 1, 1 ), CIV( 1 ) ),
-     $                   ( CR( 1, 1 ), CRV( 1 ) )
+c      EQUIVALENCE        ( CI( 1, 1 ), CIV( 1 ) ),
+c     $                   ( CR( 1, 1 ), CRV( 1 ) )
 *     ..
 *     .. Data statements ..
       DATA               ZSWAP / .FALSE., .FALSE., .TRUE., .TRUE. /

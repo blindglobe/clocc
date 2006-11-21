@@ -4,8 +4,11 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.2 2006/11/21 18:27:25 rtoy Exp $
+;;; $Id: blas.system,v 1.3 2006/11/21 21:36:34 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.3  2006/11/21 21:36:34  rtoy
+;;; Oops.  Array declarations should be relaxed.
+;;;
 ;;; Revision 1.2  2006/11/21 18:27:25  rtoy
 ;;; o Add BLAS-HOMPACK system for supporting HOMPACK with the minial BLAS
 ;;;   routines it needs.
@@ -25,12 +28,11 @@
 		   (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
   :language :f2cl
-  :compiler-options (:include-comments t
-				       :keep-lisp-file t
-				       :relaxed-array-decls nil
-				       :array-type :array
-				       :array-slicing t
-				       )
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls nil
+		     :array-type :array
+		     :array-slicing t
+		     )
   :components
   (;; These are the ones needed for HOMPACK
    (:file "daxpy")
@@ -47,12 +49,11 @@
   :source-extension "f"
   :depends-on ("blas-hompack")
   :language :f2cl
-  :compiler-options (:include-comments t
-				       :keep-lisp-file t
-				       :relaxed-array-decls nil
-				       :array-type :array
-				       :array-slicing t
-				       )
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls t
+		     :array-type :array
+		     :array-slicing t
+		     )
   :components
   (;; Here are the rest of the BLAS routines
    (:file "dasum")

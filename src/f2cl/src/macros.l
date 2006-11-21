@@ -603,7 +603,9 @@ is not included")
   (coerce (complex x (if y y 0)) '(complex double-float)))
 
 (defun ichar (c)
-  (char-int c))
+  (if (stringp c)
+      (char-int (aref c 0))
+      (char-int c)))
 (defun fchar (i)			;intrinsic function char
   (char-int i))
 
@@ -1400,8 +1402,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.72 2006/11/21 18:21:37 rtoy Exp $
+;;; $Id: macros.l,v 1.73 2006/11/21 22:05:03 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.73  2006/11/21 22:05:03  rtoy
+;;; Fix ichar to accept either a real character or (more likely) a
+;;; string.
+;;;
 ;;; Revision 1.72  2006/11/21 18:21:37  rtoy
 ;;; o Add CDABS and DCONJG functions.
 ;;; o Add some type declarations for DIMAG

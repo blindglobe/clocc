@@ -607,7 +607,7 @@ is not included")
 (defun fchar (i)			;intrinsic function char
   (char-int i))
 
-(declaim (inline iabs dabs cabs amod dmod))
+(declaim (inline iabs dabs cabs cdabs amod dmod))
 #-aclpc
 (defun iabs (x)
   (declare (type integer4 x))
@@ -617,6 +617,9 @@ is not included")
   (abs x))
 (defun cabs (x)
   (declare (type complex x))
+  (abs x))
+(defun cdabs (x)
+  (declare (type (complex double-float) x))
   (abs x))
 
 (defun amod (x y)
@@ -785,12 +788,16 @@ is not included")
 
 ;; AIMAG: imaginary part of a complex number
 ;; CONJG: conjugate of a complex number
-(declaim (inline aimag conjg dimag))
+(declaim (inline aimag conjg dconjg dimag))
 (defun aimag (c)
   (imagpart c))
 (defun dimag (c)
+  (declare (type (complex double-float) c))
   (imagpart c))
 (defun conjg (c)
+  (conjugate c))
+(defun dconjg (c)
+  (declare (type (complex double-float) c))
   (conjugate c))
 
 (declaim (inline fsqrt flog))
@@ -1393,8 +1400,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.71 2006/05/02 22:12:02 rtoy Exp $
+;;; $Id: macros.l,v 1.72 2006/11/21 18:21:37 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.72  2006/11/21 18:21:37  rtoy
+;;; o Add CDABS and DCONJG functions.
+;;; o Add some type declarations for DIMAG
+;;;
 ;;; Revision 1.71  2006/05/02 22:12:02  rtoy
 ;;; src/f2cl5.l:
 ;;; o Try to make better declarations for variables defined in parameter

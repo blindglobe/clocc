@@ -15,7 +15,6 @@
   :components
   (
    (:module lapack
-	    :binary-pathname ".."
 	    :source-extension "f"
 	    :language :f2cl
 	    :components
@@ -34,6 +33,8 @@
  				 "dlascl"
  				 "dorghr"
  				 "dtrevc"
+				 "ilaenv"
+				 "dlabad"
 				 ))
 	     (:file "dgebak"
 		    :depends-on ("ilaenv"
@@ -54,26 +55,34 @@
  	     (:file "dgehrd"
 		    :depends-on ("dlahrd"
 				 "dlarfb"
-				 "dgehd2"))
+				 "dgehd2"
+				 ))
  	     (:file "dhseqr"
 		    :depends-on ("dlaset"
 				 "dlahqr"
 				 "dlanhs"
 				 "dlapy2"
 				 "dlarfg"
-				 "dlarfx"))
+				 "dlarfx"
+				 ))
  	     (:file "dlabad")
  	     (:file "dlacpy")
  	     (:file "dlamch")
  	     (:file "dlange"
-		    :depends-on ("dlassq"))
+		    :depends-on ("dlassq"
+				 ))
  	     (:file "dlapy2")
  	     (:file "dlartg")
  	     (:file "dlascl")
  	     (:file "dorghr"
-		    :depends-on ("dorgqr"))
+		    :depends-on ("dorgqr"
+				 ))
 	     (:file "dtrevc"
-		    :depends-on ("dlaln2"))
+		    :depends-on ("dlabad"
+				 "dlamch"
+				 
+				 "dlaln2"
+				 ))
  	     (:file "ilaenv"
 		    :depends-on ("ieeeck"))
 	     (:file "dlahrd"
@@ -81,24 +90,29 @@
 	     (:file "dlarfb")
 	     (:file "dgehd2"
 		    :depends-on ("dlarfg"
-				 "dlarf"))
+				 "dlarf"
+				 ))
 	     (:file "dlaset")
 	     (:file "dlahqr"
 		    :depends-on ("dlanhs"
 				 "dlarfg"
 				 "dlanv2"))
 	     (:file "dlanhs")
-	     (:file "dlarfg")
+	     (:file "dlarfg"
+		    :depends-on ("dlapy2"))
 	     (:file "dlarfx")
 	     (:file "dlassq")
 	     (:file "dorgqr"
 		    :depends-on ("dorg2r"
-				 "dlarft"))
+				 "dlarft"
+				 ))
 	     (:file "dlaln2"
-		    :depends-on ("dladiv"))
+		    :depends-on ("dladiv"
+				 "dlamch"))
 	     (:file "ieeeck")
 	     (:file "dlarf")
-	     (:file "dlanv2")
+	     (:file "dlanv2"
+		    :depends-on ("dlapy2"))
 	     (:file "dorg2r")
 	     (:file "dlarft")
 	     (:file "dladiv")

@@ -4,8 +4,13 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.1 2003/11/14 19:08:42 rtoy Exp $
+;;; $Id: blas.system,v 1.2 2006/11/21 18:27:25 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.2  2006/11/21 18:27:25  rtoy
+;;; o Add BLAS-HOMPACK system for supporting HOMPACK with the minial BLAS
+;;;   routines it needs.
+;;; o Add BLAS system to load all of BLAS.
+;;;
 ;;; Revision 1.1  2003/11/14 19:08:42  rtoy
 ;;; Initial revision.
 ;;;
@@ -14,16 +19,112 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+(mk:defsystem blas-hompack
+  :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;blas;")
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-extension "f"
+  :language :f2cl
+  :compiler-options (:include-comments t
+				       :keep-lisp-file t
+				       :relaxed-array-decls nil
+				       :array-type :array
+				       :array-slicing t
+				       )
+  :components
+  (;; These are the ones needed for HOMPACK
+   (:file "daxpy")
+   (:file "dcopy")
+   (:file "ddot")
+   (:file "dnrm2")
+   (:file "dscal")
+   (:file "idamax")))
+
 (mk:defsystem blas
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;blas;")
-    :source-extension "f"
-    :language :f2cl
-    :components
-    (
-     (:file "daxpy")
-     (:file "dcopy")
-     (:file "ddot")
-     (:file "dnrm2")
-     (:file "dscal")
-     (:file "idamax")
-     ))
+  :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;blas;")
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-extension "f"
+  :depends-on ("blas-hompack")
+  :language :f2cl
+  :compiler-options (:include-comments t
+				       :keep-lisp-file t
+				       :relaxed-array-decls nil
+				       :array-type :array
+				       :array-slicing t
+				       )
+  :components
+  (;; Here are the rest of the BLAS routines
+   (:file "dasum")
+   (:file "dcabs1")
+   (:file "dgbmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dgemm")
+   (:file "dgemv")
+   (:file "dger")
+   (:file "drot")
+   (:file "drotg")
+   (:file "dsbmv")
+   (:file "dspmv")
+   (:file "dspr")
+   (:file "dspr2")
+   (:file "dswap")
+   (:file "dsymm")
+   (:file "dsymv")
+   (:file "dsyr")
+   (:file "dsyr2")
+   (:file "dsyr2k")
+   (:file "dsyrk")
+   (:file "dtbmv")
+   (:file "dtbsv")
+   (:file "dtpmv")
+   (:file "dtpsv")
+   (:file "dtrmm")
+   (:file "dtrmv")
+   (:file "dtrsm")
+   (:file "dtrsv")
+   (:file "dzasum"
+	  :depends-on ("dcabs1"))
+   (:file "dznrm2")
+   (:file "icamax")
+   (:file "isamax")
+   (:file "izamax"
+	  :depends-on ("dcabs1"))
+   (:file "lsame")
+   (:file "xerbla")
+   (:file "zaxpy"
+	  :depends-on ("dcabs1"))
+   (:file "zcopy")
+   (:file "zdotc")
+   (:file "zdotu")
+   (:file "zdscal")
+   (:file "zgbmv")
+   (:file "zgemm")
+   (:file "zgemv")
+   (:file "zgerc")
+   (:file "zgeru")
+   (:file "zhbmv")
+   (:file "zhemm")
+   (:file "zhemv")
+   (:file "zher")
+   (:file "zher2")
+   (:file "zher2k")
+   (:file "zherk")
+   (:file "zhpmv")
+   (:file "zhpr")
+   (:file "zhpr2")
+   (:file "zrotg")
+   (:file "zscal")
+   (:file "zswap")
+   (:file "zsymm")
+   (:file "zsyr2k")
+   (:file "zsyrk")
+   (:file "ztbmv")
+   (:file "ztbsv")
+   (:file "ztpmv")
+   (:file "ztpsv")
+   (:file "ztrmm")
+   (:file "ztrmv")
+   (:file "ztrsm")
+   (:file "ztrsv")
+   ))

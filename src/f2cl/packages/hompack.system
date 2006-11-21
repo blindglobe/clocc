@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.6 2006/05/03 02:21:48 rtoy Exp $
+;;; $Id: hompack.system,v 1.7 2006/11/21 18:28:40 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.7  2006/11/21 18:28:40  rtoy
+;;; o Use *load-truename*
+;;; o Depend on blas-hompack instead of blas so we don't load up all of
+;;;   blas by default.
+;;;
 ;;; Revision 1.6  2006/05/03 02:21:48  rtoy
 ;;; Fix missing dependency.  hfun1p depends on ffunp.
 ;;;
@@ -34,10 +39,12 @@
     :source-extension "f")
 
 (mk:defsystem hompack
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+      (merge-pathnames (make-pathname :directory '(:relative "hompack"))
+		       (make-pathname :directory (pathname-directory *load-pathname*)))
     :source-extension "f"
     :language :f2cl
-    :depends-on ("blas")
+    :depends-on ("blas-hompack")
     :components
     (
      ;; The following are :compile-only here because HOMPACK only
@@ -120,7 +127,9 @@
      ))
 
 (mk:defsystem hompack-test-mainp
-    :source-pathname (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+    :source-pathname ;; (translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+      (merge-pathnames (make-pathname :directory '(:relative "hompack"))
+		       (make-pathname :directory (pathname-directory *load-pathname*)))
     :source-extension "f"
     :language :f2cl
     :depends-on ("hompack")

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.64 2006/04/07 22:09:05 sds Exp $
+;;; $Id: sys.lisp,v 1.65 2006/11/22 02:13:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -235,6 +235,38 @@ initargs for all slots are returned, otherwise only the slots with
                 (when (eq (slot-alloc slot) :instance)
                   (list (slot-one-initarg slot)))))
           (class-slots1 class)))
+
+(defun structure-slots (struct)
+  "Return the list of structure slot names."
+  #+clisp (mapcar #'clos:slot-definition-name (sys::structure-slots struct))
+  #-clisp (class-slot-list (find-class struct)))
+
+(defun structure-keyword-constructor (struct)
+  "Return the structure keyword constructor name."
+  #+clisp (sys::structure-keyword-constructor struct)
+  #-clisp                       ; LAME!!!
+  (intern (concatenate 'string "MAKE-" (symbol-string struct))
+          (symbol-package struct)))
+
+(defun structure-boa-constructors (struct)
+  "Return the list of structure BOA constructor names."
+  #+clisp (sys::structure-boa-constructors struct)
+  #-clisp nil)                  ; what else?
+
+(defun structure-copier (struct)
+  "Return the structure copier name."
+  #+clisp (sys::structure-copier struct)
+  #-clisp                       ; LAME!!!
+  (intern (concatenate 'string "COPY-" (symbol-string struct))
+          (symbol-package struct)))
+
+(defun structure-predicate (struct)
+  "Return the structure predicate name."
+  #+clisp (sys::structure-predicate struct)
+  #-clisp                       ; LAME!!!
+  (intern (concatenate 'string (symbol-string struct) "-P")
+          (symbol-package struct)))
+
 ) ; macrolet
 
 ;;;

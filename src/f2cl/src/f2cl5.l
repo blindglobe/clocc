@@ -1474,7 +1474,7 @@
 					    (let ((init (make-declaration v)))
 					      (second (second (second init)))))
 					vars)))
-				  
+
 		       (cond #+nil
 			     ((eq 'fset (first init))
 			      ;; We need to get the dimensions for this array
@@ -2044,13 +2044,26 @@
 		 ((eq type 'logical)
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return
-			(if (cdar decl) 
-			    `(,vble_name
-			      ,(make_make-array_stmt (cdar decl) t))
+			(if (cdar decl)
+			    (flet ((fixup-logical (init)
+				     ;; Replace %false% with NIL and
+				     ;; %true% with T so we can
+				     ;; initialize the logical array
+				     ;; correctly.
+				     (list 'quote
+					   (mapcar #'(lambda (x)
+						       (ecase x
+							 (%false% nil)
+							 (%true% t)))
+						   (cadr init)))))
+			      (let ((init (make_make-array_stmt (cdar decl) t
+								(fixup-logical (cadr init-val))
+								vble_name)))
+				`(,vble_name ,init)))
 			    `(,vble_name nil)))))
 		 (t
-		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
-		  ;;(format t "default init-val = ~S~%" init-val)
+ 		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
+ 		  ;;(format t "default init-val = ~S~%" init-val)
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return 
 			(if (cdar decl) 
@@ -3442,8 +3455,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.148 2006/05/04 19:10:11 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.149 2006/11/24 05:06:58 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.149  2006/11/24 05:06:58  rtoy
+;;; Logical arrays were not getting initialized from data statements.
+;;;
 ;;; Revision 1.148  2006/05/04 19:10:11  rtoy
 ;;; We were not correctly testing for the variable types in the common
 ;;; block when we are using common-as-array feature.  This was caused by a

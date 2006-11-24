@@ -161,6 +161,17 @@
       INTRINSIC          ABS, MAX
 *     ..
 *     .. Equivalences ..
+c
+c     *** F2CL cannot currently handle equivalences of arrays
+c     *** So we do this by hand.  Since Fortran arrays are column-major
+c     *** order, we have the following:
+c     *** 
+c     *** ci(1,1) civ(1)
+c     *** ci(2,1) civ(2)
+c     *** ci(1,2) civ(3)
+c     *** ci(2,2) civ(4)
+c     ***
+c     *** Similarly for CR.
 c      EQUIVALENCE        ( CI( 1, 1 ), CIV( 1 ) ),
 c     $                   ( CR( 1, 1 ), CRV( 1 ) )
 *     ..
@@ -259,14 +270,22 @@ c     $                   ( CR( 1, 1 ), CRV( 1 ) )
 *
 *        Compute the real part of  C = ca A - w D  (or  ca A' - w D )
 *
-         CR( 1, 1 ) = CA*A( 1, 1 ) - WR*D1
-         CR( 2, 2 ) = CA*A( 2, 2 ) - WR*D2
+c        *** F2CL original
+c         CR( 1, 1 ) = CA*A( 1, 1 ) - WR*D1
+c         CR( 2, 2 ) = CA*A( 2, 2 ) - WR*D2
+c        *** F2CL replacement
+         crv(1)  = CA*A( 1, 1 ) - WR*D1
+         crv(4)  = CA*A( 2, 2 ) - WR*D2
          IF( LTRANS ) THEN
-            CR( 1, 2 ) = CA*A( 2, 1 )
-            CR( 2, 1 ) = CA*A( 1, 2 )
+c            CR( 1, 2 ) = CA*A( 2, 1 )
+c            CR( 2, 1 ) = CA*A( 1, 2 )
+            crv( 3 ) = CA*A( 2, 1 )
+            crv( 2 ) = CA*A( 1, 2 )
          ELSE
-            CR( 2, 1 ) = CA*A( 2, 1 )
-            CR( 1, 2 ) = CA*A( 1, 2 )
+c            CR( 2, 1 ) = CA*A( 2, 1 )
+c            CR( 1, 2 ) = CA*A( 1, 2 )
+            crv( 2 ) = CA*A( 2, 1 )
+            crv( 3 ) = CA*A( 1, 2 )
          END IF
 *
          IF( NW.EQ.1 ) THEN
@@ -359,10 +378,15 @@ c     $                   ( CR( 1, 1 ), CRV( 1 ) )
 *
 *           Find the largest element in C
 *
-            CI( 1, 1 ) = -WI*D1
-            CI( 2, 1 ) = ZERO
-            CI( 1, 2 ) = ZERO
-            CI( 2, 2 ) = -WI*D2
+c           *** F2CL original
+c            CI( 1, 1 ) = -WI*D1
+c            CI( 2, 1 ) = ZERO
+c            CI( 1, 2 ) = ZERO
+c            CI( 2, 2 ) = -WI*D2
+            civ( 1 ) = -WI*D1
+            civ( 2 ) = ZERO
+            civ( 3 ) = ZERO
+            civ( 4 ) = -WI*D2
             CMAX = ZERO
             ICMAX = 0
 *

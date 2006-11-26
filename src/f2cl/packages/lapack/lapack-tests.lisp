@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.3 2006/11/26 05:31:16 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.4 2006/11/26 14:24:46 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -242,8 +242,61 @@
       ;; Display workspace info
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))  
-    
+
+(defun print-dgesv-results (n a b ipiv)
+  (format t "Solution~%")
+  (dotimes (k n)
+    (format t "~21,14e " (aref b k)))
+  (format t "~&Details of factorization~%")
+  (dotimes (r n)
+    (dotimes (c n)
+      (format t "~21,14e" (aref a (+ r (* c n)))))
+    (terpri))
+  (format t "Pivot indices~%")
+  (dotimes (k n)
+    (format t " ~d" (aref ipiv k)))
+  (terpri))
+
+(defun test-dgesv ()
+  ;;
+  ;; Matrix A:
+  ;;  1.80   2.88   2.05  -0.89
+  ;;  5.25  -2.95  -0.95  -3.80
+  ;;  1.58  -2.69  -2.90  -1.04
+  ;; -1.11  -0.66  -0.59   0.80  
+  ;;
+  ;; RHS:
+  ;; 9.52  24.35   0.77  -6.22
+  (let* ((n 4)
+	 (a-mat (make-array (* n n) :element-type 'double-float
+			    :initial-contents '(1.80d0 5.25d0 1.58d0 -1.11d0
+						2.88d0 -2.95d0 -2.69d0 -0.66d0
+						2.05d0 -0.95d0 -2.90d0 -0.59d0
+						-0.89d0 -3.80d0 -1.04d0 0.8d0)))
+	 (b (make-array n :element-type 'double-float
+			:initial-contents '(9.52d0  24.35d0   0.77d0  -6.22d0)))
+	 (ipiv (make-array n :element-type 'f2cl-lib:integer4)))
+    (multiple-value-bind (z-n z-nrhs z-a z-lda z-ipiv z-b z-ldb info)
+	(dgesv n 1 a-mat n ipiv b n 0)
+      (declare (ignore z-n z-nrhs z-a z-lda z-ipiv z-b z-ldb))
+      ;; Display solution
+      (cond ((zerop info)
+	     (print-dgesv-results n a-mat b ipiv))
+	    (t
+	     (format t "The (~D, ~D) element of the factor U is zero~%" info info))))))
+  
+  
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.4  2006/11/26 14:24:46  rtoy
+;;; packages/lapack.system:
+;;; o DGESV and dependencies
+;;;
+;;; packages/.cvsignore:
+;;; o Ignore generated dgesv.lisp and dependencies
+;;;
+;;; packages/lapack/lapack-tests.lisp:
+;;; o Test routine for DGESV
+;;;
 ;;; Revision 1.3  2006/11/26 05:31:16  rtoy
 ;;; packages/lapack.system:
 ;;; o Add DGEEVX and dependencies

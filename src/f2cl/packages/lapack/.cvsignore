@@ -5,6 +5,10 @@ dgeev.lisp
 dgeevx.lisp
 dgehd2.lisp
 dgehrd.lisp
+dgesv.lisp
+dgetf2.lisp
+dgetrf.lisp
+dgetrs.lisp
 dhseqr.lisp
 dlabad.lisp
 dlacon.lisp
@@ -29,6 +33,7 @@ dlartg.lisp
 dlascl.lisp
 dlaset.lisp
 dlassq.lisp
+dlaswp.lisp
 dlasy2.lisp
 dorg2r.lisp
 dorghr.lisp

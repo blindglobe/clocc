@@ -116,6 +116,8 @@
 	     (:file "dorg2r")
 	     (:file "dlarft")
 	     (:file "dladiv")
+
+	     ;; DGEEVX
 	     (:file "dgeevx"
 		    :depends-on ("dtrsna"))
 	     (:file "dtrsna"
@@ -127,6 +129,16 @@
 	     (:file "dlaexc"
 		    :depends-on ("dlasy2"))
 	     (:file "dlasy2")
+
+	     ;; DGESV
+	     (:file "dgesv"
+		    :depends-on ("dgetrf" "dgetrs"))
+	     (:file "dgetrf"
+		    :depends-on ("dgetf2" "dlaswp"))
+	     (:file "dgetrs"
+		    :depends-on ("dlaswp"))
+	     (:file "dgetf2")
+	     (:file "dlaswp")
 	     
 	     ;;(:file "zgeev")
 	     ))))

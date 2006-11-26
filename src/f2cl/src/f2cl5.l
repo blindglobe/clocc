@@ -2050,14 +2050,9 @@
 				     ;; %true% with T so we can
 				     ;; initialize the logical array
 				     ;; correctly.
-				     (list 'quote
-					   (mapcar #'(lambda (x)
-						       (ecase x
-							 (%false% nil)
-							 (%true% t)))
-						   (cadr init)))))
+				     (subst t '%true% (subst nil '%false% init))))
 			      (let ((init (make_make-array_stmt (cdar decl) t
-								(fixup-logical (cadr init-val))
+								(fixup-logical init-val)
 								vble_name)))
 				`(,vble_name ,init)))
 			    `(,vble_name nil)))))
@@ -3455,8 +3450,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.149 2006/11/24 05:06:58 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.150 2006/11/26 04:43:55 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.150  2006/11/26 04:43:55  rtoy
+;;; Replace %false% and %true% in a different way and fix a typo.
+;;;
 ;;; Revision 1.149  2006/11/24 05:06:58  rtoy
 ;;; Logical arrays were not getting initialized from data statements.
 ;;;

@@ -1,9 +1,10 @@
 ;;;
-;;; Simple tests for selected LAPACK routines
+;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.1 2006/11/26 04:51:05 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.2 2006/11/26 04:53:22 rtoy Exp $
 ;;;
 
+;; Convert the eigenvalues returned by DGEEV into an array
 (defun make-eigval (wr wi)
   (let ((e-val (make-array (length wr))))
     (map-into e-val #'(lambda (r i)
@@ -15,6 +16,8 @@
 	      wr wi)
     e-val))
 
+;; Convert the eigenvalues returned by DGEEV into a more typical
+;; matrix form.
 (defun make-eigvec (n vr wi)
   (let ((evec (make-array (list n n))))
     (do ((col 0 (incf col))
@@ -46,6 +49,8 @@
 	(format t "~A~%" (aref e-vec row k)))
       (terpri))))
 
+;; DGEEV example based on the example from
+;; http://www.nag.co.uk/lapack-ex/node87.html
 (defun test-dgeev ()
   ;; The matrix is
   ;;
@@ -82,6 +87,9 @@
 
     
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.2  2006/11/26 04:53:22  rtoy
+;;; Add comments
+;;;
 ;;; Revision 1.1  2006/11/26 04:51:05  rtoy
 ;;; packages/lapack.system:
 ;;; o Add defsystem for LAPACK tests

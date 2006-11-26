@@ -2,12 +2,15 @@
 dgebak.lisp
 dgebal.lisp
 dgeev.lisp
+dgeevx.lisp
 dgehd2.lisp
 dgehrd.lisp
 dhseqr.lisp
 dlabad.lisp
+dlacon.lisp
 dlacpy.lisp
 dladiv.lisp
+dlaexc.lisp
 dlahqr.lisp
 dlahrd.lisp
 dlaln2.lisp
@@ -16,6 +19,7 @@ dlange.lisp
 dlanhs.lisp
 dlanv2.lisp
 dlapy2.lisp
+dlaqtr.lisp
 dlarf.lisp
 dlarfb.lisp
 dlarfg.lisp
@@ -25,9 +29,12 @@ dlartg.lisp
 dlascl.lisp
 dlaset.lisp
 dlassq.lisp
+dlasy2.lisp
 dorg2r.lisp
 dorghr.lisp
 dorgqr.lisp
 dtrevc.lisp
+dtrexc.lisp
+dtrsna.lisp
 ieeeck.lisp
 ilaenv.lisp

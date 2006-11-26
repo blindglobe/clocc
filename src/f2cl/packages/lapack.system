@@ -119,3 +119,10 @@
 	     
 	     ;;(:file "zgeev")
 	     ))))
+
+
+(mk:defsystem "lapack-tests"
+  :source-pathname (merge-pathnames #p"./lapack/" (directory-namestring *load-truename*))
+  :depends-on ("lapack")
+  :components
+  ((:file "lapack-tests")))

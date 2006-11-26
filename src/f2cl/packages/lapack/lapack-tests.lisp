@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.4 2006/11/26 14:24:46 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.5 2006/11/26 14:26:42 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -243,6 +243,20 @@
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))  
 
+;; Expected results (from http://www.nag.co.uk/lapack-ex/examples/results/dgesv-ex.r)
+;; Solution
+;;         1.0000    -1.0000     3.0000    -5.0000
+;; 
+;;  Details of factorization
+;;              1          2          3          4
+;;  1      5.2500    -2.9500    -0.9500    -3.8000
+;;  2      0.3429     3.8914     2.3757     0.4129
+;;  3      0.3010    -0.4631    -1.5139     0.2948
+;;  4     -0.2114    -0.3299     0.0047     0.1314
+;; 
+;;  Pivot indices
+;;              2          2          3          4
+;; 
 (defun print-dgesv-results (n a b ipiv)
   (format t "Solution~%")
   (dotimes (k n)
@@ -287,6 +301,9 @@
   
   
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.5  2006/11/26 14:26:42  rtoy
+;;; Add expected results for DGESV.
+;;;
 ;;; Revision 1.4  2006/11/26 14:24:46  rtoy
 ;;; packages/lapack.system:
 ;;; o DGESV and dependencies

@@ -116,6 +116,17 @@
 	     (:file "dorg2r")
 	     (:file "dlarft")
 	     (:file "dladiv")
+	     (:file "dgeevx"
+		    :depends-on ("dtrsna"))
+	     (:file "dtrsna"
+		    :depends-on ("dtrexc" "dlacon" "dlaqtr"))
+	     (:file "dtrexc"
+		    :depends-on ("dlaexc"))
+	     (:file "dlacon")
+	     (:file "dlaqtr")
+	     (:file "dlaexc"
+		    :depends-on ("dlasy2"))
+	     (:file "dlasy2")
 	     
 	     ;;(:file "zgeev")
 	     ))))

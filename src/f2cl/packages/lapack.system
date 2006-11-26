@@ -139,6 +139,76 @@
 		    :depends-on ("dlaswp"))
 	     (:file "dgetf2")
 	     (:file "dlaswp")
+
+	     ;; DGESDD
+	     (:file "dgesdd"
+		    :depends-on ("dbdsdc" "dgebrd" "dgelqf"
+					  "dorgbr" "dorglq" "dormbr"
+					  "dgeqrf"
+					  "dgelq2"))
+	     (:file "dbdsdc"
+		    :depends-on ("dlasdq" "dlanst" "dlasd0" "dlasda" "dlasr"))
+	     (:file "dgebrd"
+		    :depends-on ("dlabrd" "dgebd2"))
+	     (:file "dgelqf"
+		    :depends-on ("dgelq2"))
+	     (:file "dorgbr")
+	     (:file "dorglq")
+	     (:file "dormbr"
+		    :depends-on ("dormqr" "dormlq"))
+	     (:file "dlasdq"
+		    :depends-on ("dlasr" "dbdsqr"))
+	     (:file "dlanst")
+	     (:file "dlasd0"
+		    :depends-on ("dlasdt" "dlasd1"))
+	     (:file "dlasda"
+		    :depends-on ("dlasd6"))
+	     (:file "dlasr")
+	     (:file "dlabrd")
+	     (:file "dgebd2")
+	     (:file "dgelq2")
+	     (:file "dormqr"
+		    :depends-on ("dorm2r"))
+	     (:file "dormlq"
+		    :depends-on ("dorml2"))
+	     (:file "dgeqrf"
+		    :depends-on ("dgeqr2"))
+	     (:file "dbdsqr"
+		    :depends-on ("dlasq1" "dlasv2" "dlas2"))
+	     (:file "dlasq1"
+		    :depends-on ("dlas2" "dlasrt" "dlasq2"))
+	     (:file "dlasv2")
+	     (:file "dlas2")
+	     (:file "dlasdt")
+	     (:file "dlasd1"
+		    :depends-on ("dlasd2" "dlasd3" "dlamrg"))
+	     (:file "dlasrt")
+	     (:file "dlasq2"
+		    :depends-on ("dlasq3"))
+	     (:file "dlasd2")
+	     (:file "dlasd3"
+		    :depends-on ("dlasd4"))
+	     (:file "dlamrg")
+	     (:file "dlasd6"
+		    :depends-on ("dlasd7" "dlasd8"))
+	     (:file "dorml2")
+	     (:file "dgeqr2")
+	     (:file "dorm2r")
+	     (:file "dlasd4"
+		    :depends-on ("dlasd5" "dlaed6"))
+	     (:file "dlasd7")
+	     (:file "dlasd8")
+	     (:file "dlasq3"
+		    :depends-on ("dlasq4" "dlasq5" "dlasq6"))
+	     (:file "dlasq4"
+		    :depends-on ("dlaed6" "dlasd5"))
+	     (:file "dlasq5")
+	     (:file "dlasq6")
+	     (:file "dlasd5")
+	     (:file "dlaed6")
+
+	     ;; For condition numbers of the singular vectors
+	     (:file "ddisna")
 	     
 	     ;;(:file "zgeev")
 	     ))))

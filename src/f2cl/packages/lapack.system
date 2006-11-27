@@ -152,8 +152,11 @@
 		    :depends-on ("dlabrd" "dgebd2"))
 	     (:file "dgelqf"
 		    :depends-on ("dgelq2"))
-	     (:file "dorgbr")
-	     (:file "dorglq")
+	     (:file "dorgbr"
+		    :depends-on ("dorglq"))
+	     (:file "dorglq"
+		    :depends-on ("dorgl2"))
+	     (:file "dorgl2")
 	     (:file "dormbr"
 		    :depends-on ("dormqr" "dormlq"))
 	     (:file "dlasdq"
@@ -185,7 +188,8 @@
 	     (:file "dlasrt")
 	     (:file "dlasq2"
 		    :depends-on ("dlasq3"))
-	     (:file "dlasd2")
+	     (:file "dlasd2"
+		    :depends-on ("dlamrg"))
 	     (:file "dlasd3"
 		    :depends-on ("dlasd4"))
 	     (:file "dlamrg")

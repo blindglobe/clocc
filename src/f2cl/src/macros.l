@@ -226,10 +226,21 @@ is not included")
   ;; change the dimensions.  Of course, for this to work in Fortran,
   ;; the common block has to contain exactly that one array, or the
   ;; array must be the last element of the common block.)
-  `(make-array (- (array-total-size ,vname) ,(col-major-index indices bounds))
+  ;;
+  ;; Note: In some places in LAPACK, an array slice is taken where the
+  ;; slice exceeds the bounds of the array.  However, the array is
+  ;; never accessed.  What are we to do?  We could modify the LAPACK
+  ;; routines (everywhere!) to check for this, or we can silently make
+  ;; array-slice make a 0-element array.  If the array is then
+  ;; accessed, we should get an error at the point of access, not the
+  ;; point of creation.
+  ;;
+  ;; This seems somewhat reasonable, so let's do that for array
+  ;; slices.
+  `(make-array (max 0 (- (array-total-size ,vname) ,(col-major-index indices bounds)))
     :element-type ',type
     :displaced-to ,vname
-    :displaced-index-offset ,(col-major-index indices bounds)))
+    :displaced-index-offset (min (array-total-size ,vname) ,(col-major-index indices bounds))))
 
 #+nil
 (defmacro array-slice (vname type indices bounds)
@@ -1402,8 +1413,16 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.73 2006/11/21 22:05:03 rtoy Exp $
+;;; $Id: macros.l,v 1.74 2006/11/27 19:09:51 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.74  2006/11/27 19:09:51  rtoy
+;;; In some places in LAPACK, an array slice is taken where the slice
+;;; exceeds the bounds of the array.  However, the array is never
+;;; accessed.  What are we to do?  We could modify the LAPACK routines
+;;; (everywhere!) to check for this, or we can silently make array-slice
+;;; make a 0-element array.  If the array is then accessed, we should get
+;;; an error at the point of access, not the point of creation.
+;;;
 ;;; Revision 1.73  2006/11/21 22:05:03  rtoy
 ;;; Fix ichar to accept either a real character or (more likely) a
 ;;; string.

@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.6 2006/11/26 23:26:47 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.7 2006/11/27 15:23:29 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -364,8 +364,17 @@
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))
   
-  
+
+(defun do-all-lapack-tests ()
+  (test-dgeev)
+  (test-dgeevx)
+  (test-dgesv)
+  (test-dgesdd))
+
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.7  2006/11/27 15:23:29  rtoy
+;;; Add function to run all the tests.
+;;;
 ;;; Revision 1.6  2006/11/26 23:26:47  rtoy
 ;;; packages/lapack.system:
 ;;; o Add DGESDD and dependencies

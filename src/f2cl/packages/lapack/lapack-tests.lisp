@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.8 2006/11/27 20:04:33 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.9 2006/11/27 22:22:23 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -299,6 +299,42 @@
 	    (t
 	     (format t "The (~D, ~D) element of the factor U is zero~%" info info))))))
 
+;; Expected results (from )
+;;
+;; It seems, however, that the result from that page are wrong.  At
+;; least they seem wrong when I run the actual test program.  The main
+;; difference is that the singular vectors have the signs of some
+;; entries wrong.
+;;
+;; The result below is what the test program actually produces.
+
+;; DGESDD Example Program Results
+;; 
+;;  Singular values
+;;      9.9966  3.6831  1.3569  0.5000
+;;  Left singular vectors
+;;           1       2       3       4
+;;  1  -0.1921  0.8030 -0.0041  0.5642
+;;  2   0.8794  0.3926  0.0752 -0.2587
+;;  3  -0.2140  0.2980 -0.7827 -0.5027
+;;  4   0.3795 -0.3351 -0.6178  0.6017
+;; 
+;;  Right singular vectors by row (first m rows of V**T)
+;;           1       2       3       4       5       6
+;;  1  -0.2774 -0.2020 -0.2918  0.0938  0.4213 -0.7816
+;;  2   0.6003  0.0301 -0.3348  0.3699 -0.5266 -0.3353
+;;  3   0.1277 -0.2805 -0.6453 -0.6781 -0.0413  0.1645
+;;  4  -0.1323 -0.7034 -0.1906  0.5399  0.0575  0.3957
+;; 
+;;  Error estimate for the singular values
+;;         1.1E-15
+;; 
+;;  Error estimates for the left singular vectors
+;;         1.8E-16    4.8E-16    1.3E-15    1.3E-15
+;; 
+;;  Error estimates for the right singular vectors
+;;         1.8E-16    4.8E-16    1.3E-15    2.2E-15
+;; 
 (defun print-dgesdd-results (m n s u a)
   (format t "Singular values~%")
   (dotimes (k m)
@@ -364,6 +400,36 @@
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))
 
+;; Expected results (from http://www.nag.co.uk/lapack-ex/examples/results/dgesvd-ex.r)
+;; DGESVD Example Program Results
+;; 
+;;  Singular values
+;;      9.9966  3.6831  1.3569  0.5000
+;;  Left singular vectors (first n columns of U)
+;;           1       2       3       4
+;;  1  -0.2774 -0.6003 -0.1277  0.1323
+;;  2  -0.2020 -0.0301  0.2805  0.7034
+;;  3  -0.2918  0.3348  0.6453  0.1906
+;;  4   0.0938 -0.3699  0.6781 -0.5399
+;;  5   0.4213  0.5266  0.0413 -0.0575
+;;  6  -0.7816  0.3353 -0.1645 -0.3957
+;; 
+;;  Right singular vectors by row (V**T)
+;;           1       2       3       4
+;;  1  -0.1921  0.8794 -0.2140  0.3795
+;;  2  -0.8030 -0.3926 -0.2980  0.3351
+;;  3   0.0041 -0.0752  0.7827  0.6178
+;;  4  -0.5642  0.2587  0.5027 -0.6017
+;; 
+;;  Error estimate for the singular values
+;;         1.1E-15
+;; 
+;;  Error estimates for the left singular vectors
+;;         1.8E-16    4.8E-16    1.3E-15    2.2E-15
+;; 
+;;  Error estimates for the right singular vectors
+;;         1.8E-16    4.8E-16    1.3E-15    1.3E-15
+;; 
 (defun print-dgesvd-results (m n s vt a)
   (format t "Singular values~%")
   (dotimes (k n)
@@ -434,9 +500,13 @@
   (test-dgeev)
   (test-dgeevx)
   (test-dgesv)
-  (test-dgesdd))
+  (test-dgesdd)
+  (test-dgesvd))
 
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.9  2006/11/27 22:22:23  rtoy
+;;; Add expected results.
+;;;
 ;;; Revision 1.8  2006/11/27 20:04:33  rtoy
 ;;; Add DGESVD and update files and tests appropriately.
 ;;;

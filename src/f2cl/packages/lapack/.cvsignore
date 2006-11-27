@@ -16,6 +16,7 @@ dgeqr2.lisp
 dgeqrf.lisp
 dgesdd.lisp
 dgesv.lisp
+dgesvd.lisp
 dgetf2.lisp
 dgetrf.lisp
 dgetrs.lisp

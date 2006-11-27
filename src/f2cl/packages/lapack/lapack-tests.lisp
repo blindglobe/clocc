@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.7 2006/11/27 15:23:29 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.8 2006/11/27 20:04:33 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -363,7 +363,72 @@
 	     (format t "Failure in DGESDD.  Info = ~D~%" info)))
       (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
       (format t "Workspace provided = ~D~%" lwork))))
-  
+
+(defun print-dgesvd-results (m n s vt a)
+  (format t "Singular values~%")
+  (dotimes (k n)
+    (format t "~20,14e" (aref s k)))
+  (format t "~2%Left singular vectors~%")
+  (dotimes (r m)
+    (dotimes (c n)
+      (format t "~16,7e" (aref a (+ r (* c m)))))
+    (terpri))
+  (format t "~%Right singular vectors (first m rows of V**T)~%")
+  (dotimes (r n)
+    (dotimes (c n)
+      (format t "~16,7e" (aref vt (+ r (* c n)))))
+    (terpri))
+  ;; Compute error estimates for the singular vectors
+  (let ((serrbd (* (aref s 0) (dlamch "Eps")))
+	(rcondu (make-array n :element-type 'double-float))
+	(rcondv (make-array n :element-type 'double-float))
+	(uerrbd (make-array n :element-type 'double-float))
+	(verrbd (make-array n :element-type 'double-float)))
+    (ddisna "Left" m n s rcondu 0)
+    (ddisna "Right" m n s rcondv 0)
+    (dotimes (k n)
+      (setf (aref uerrbd k) (/ serrbd (aref rcondu k)))
+      (setf (aref verrbd k) (/ serrbd (aref rcondv k))))
+    (format t "Error estimate for the singular values~%")
+    (format t "~20,15g~%" serrbd)
+    (format t "~%~%Error estimates for the left singular values~%")
+    (format t "~{~15,4e~^ ~}~%" (coerce uerrbd 'list))
+    (format t "~%~%Error estimates for the right singular values~%")
+    (format t "~{~15,4e~^ ~}~%" (coerce verrbd 'list))))
+
+(defun test-dgesvd ()
+  ;;
+  ;; Matrix A:
+  ;;     2.27  -1.54   1.15  -1.94
+  ;;     0.28  -1.67   0.94  -0.78
+  ;;    -0.48  -3.09   0.99  -0.21
+  ;;     1.07   1.22   0.79   0.63
+  ;;    -2.35   2.93  -1.45   2.30
+  ;;     0.62  -7.39   1.03  -2.57
+  (let* ((m 6)				; rows
+	 (n 4)				; cols
+	 (a-mat (make-array (* m n) :element-type 'double-float
+			    :initial-contents '(2.27d0 0.28d0 -0.48d0 1.07d0 -2.35d0 0.62d0
+						-1.54d0 -1.67d0 -3.09d0 1.22d0 2.93d0 -7.39d0
+						1.15d0 0.94d0 0.99d0 0.79d0 -1.45d0 1.03d0
+						-1.94d0 -0.78d0 -0.21d0 0.63d0 2.30d0 -2.57d0)))
+	 (s (make-array (min m n) :element-type 'double-float))
+	 (u (make-array (* m (min m n)):element-type 'double-float))
+	 (vt (make-array (* n n) :element-type 'double-float))
+	 (lwork (+ 10 (* 4 8)
+		   (* 64 (+ 10 8))))
+	 (work (make-array lwork :element-type 'double-float)))
+    (multiple-value-bind (z-jobz z-jobvt z-m z-n z-a z-lda z-s z-u z-ldu z-vt z-ldvt z-work z-lwork info)
+	(dgesvd "Overwrite A by U" "Singular vectors (V)"
+		m n a-mat m s u m vt n work lwork 0)
+      (declare (ignore z-jobz z-jobvt z-m z-n z-a z-lda z-s z-u z-ldu z-vt z-ldvt z-work z-lwork))
+      ;; Display solution
+      (cond ((zerop info)
+	     (print-dgesvd-results m n s vt a-mat))
+	    (t
+	     (format t "Failure in DGESDD.  Info = ~D~%" info)))
+      (format t "Optimum workspace required = ~D~%" (truncate (aref work 0)))
+      (format t "Workspace provided = ~D~%" lwork))))
 
 (defun do-all-lapack-tests ()
   (test-dgeev)
@@ -372,6 +437,9 @@
   (test-dgesdd))
 
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.8  2006/11/27 20:04:33  rtoy
+;;; Add DGESVD and update files and tests appropriately.
+;;;
 ;;; Revision 1.7  2006/11/27 15:23:29  rtoy
 ;;; Add function to run all the tests.
 ;;;

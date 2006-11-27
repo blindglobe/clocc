@@ -211,6 +211,9 @@
 	     (:file "dlasd5")
 	     (:file "dlaed6")
 
+	     ;; DGESVD
+	     (:file "dgesvd")
+
 	     ;; For condition numbers of the singular vectors
 	     (:file "ddisna")
 	     

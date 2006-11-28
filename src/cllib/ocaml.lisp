@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: ocaml.lisp,v 2.2 2006/11/28 05:14:03 sds Exp $
+;;; $Id: ocaml.lisp,v 2.3 2006/11/28 05:21:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/ocaml.lisp,v $
 
 (eval-when (compile load eval)
@@ -53,11 +53,12 @@
 (defun fix-slot (name line &key (start 0) (end (length line)))
   "Convert a `list' representation to a `string' one;
 \(NAME(.....)) --> (NAME\".....\")"
-  (loop :with term = (concatenate 'string "(" name "(")
-    :and len = (length name)
-    :for pos = (search term line :start2 start)
-    :while (and pos (< pos end)) :do
-    (incf pos (1+ len))
+  (loop :with len = (length name)
+    :for pos = (search name line :start2 start)
+    :while (and pos (< 0 pos (- end len 1))
+                (char= #\( (char line (1- pos))) ; must be '(foo('
+                (char= #\( (char line (+ pos len)))) :do
+    (incf pos len)
     (setf (aref line pos) #\"
           pos (position #\) line :start pos)
           (aref line pos) #\"

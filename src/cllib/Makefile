@@ -1,7 +1,7 @@
 # CLLIB Makefile
 # LISPTYPE should be set before using this file
 #
-# $Id: Makefile,v 2.30 2006/07/11 14:23:37 sds Exp $
+# $Id: Makefile,v 2.31 2006/11/28 05:03:08 sds Exp $
 # $Source: /cvsroot/clocc/clocc/src/cllib/Makefile,v $
 
 TOP := $(shell cd ../..; pwd)
@@ -10,7 +10,7 @@ SOURCES := animals base card check clhs closio date datedl doall elisp fileio \
 	fin geo gnuplot gq h2lisp html iter laser list log math miscprint \
 	octave rpm server simple sorted stat string symb tilsla url withtype \
 	inspect autoload htmlgen xml prompt matrix getopt tests cvs rng csv \
-	base64 lift data
+	base64 lift data ocaml
 IMAGE_EXTRA = $(TOP)/clocc
 BASE = $(IMAGE_EXTRA) base auto
 NET = $(IMAGE_EXTRA) base url gq rpm

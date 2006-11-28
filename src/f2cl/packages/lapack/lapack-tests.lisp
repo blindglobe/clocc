@@ -1,7 +1,7 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.9 2006/11/27 22:22:23 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.10 2006/11/28 15:49:01 rtoy Exp $
 ;;;
 
 ;; Convert the eigenvalues returned by DGEEV into an array
@@ -77,6 +77,7 @@
 ;;   7.2209E-01
 ;; 
 (defun print-dgeev-results (e-val e-vec)
+  (format t "~2%DGEEV Example Program Results~%")
   (let ((n (length e-val)))
     (dotimes (k n)
       (format t "Eigenvalue(~D) = ~A~%" k (aref e-val k))
@@ -184,6 +185,7 @@
 ;;  Error bound                 =  4.2E-16
 ;; 
 (defun print-dgeevx-results (tol e-val e-vec rconde rcondv)
+  (format t "~2%DGEEVX Example Program Results~%")
   (let ((n (length e-val)))
     (dotimes (k n)
       (format t "Eigenvalue(~D) = ~A~%" k (aref e-val k))
@@ -258,6 +260,7 @@
 ;;              2          2          3          4
 ;; 
 (defun print-dgesv-results (n a b ipiv)
+  (format t "~2%DGESV Example Program Results~%")
   (format t "Solution~%")
   (dotimes (k n)
     (format t "~21,14e " (aref b k)))
@@ -336,6 +339,7 @@
 ;;         1.8E-16    4.8E-16    1.3E-15    2.2E-15
 ;; 
 (defun print-dgesdd-results (m n s u a)
+  (format t "~2%DGESDD Example Program Results~%")
   (format t "Singular values~%")
   (dotimes (k m)
     (format t "~20,14e" (aref s k)))
@@ -431,6 +435,7 @@
 ;;         1.8E-16    4.8E-16    1.3E-15    1.3E-15
 ;; 
 (defun print-dgesvd-results (m n s vt a)
+  (format t "~2%DGESVD Example Program Results~%")
   (format t "Singular values~%")
   (dotimes (k n)
     (format t "~20,14e" (aref s k)))
@@ -504,6 +509,9 @@
   (test-dgesvd))
 
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.10  2006/11/28 15:49:01  rtoy
+;;; Print out short title for each test.
+;;;
 ;;; Revision 1.9  2006/11/27 22:22:23  rtoy
 ;;; Add expected results.
 ;;;

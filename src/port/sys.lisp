@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.65 2006/11/22 02:13:00 sds Exp $
+;;; $Id: sys.lisp,v 1.66 2006/11/28 05:02:23 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -243,7 +243,7 @@ initargs for all slots are returned, otherwise only the slots with
 
 (defun structure-keyword-constructor (struct)
   "Return the structure keyword constructor name."
-  #+clisp (sys::structure-keyword-constructor struct)
+  #+clisp (sys::structure-kconstructor struct)
   #-clisp                       ; LAME!!!
   (intern (concatenate 'string "MAKE-" (symbol-string struct))
           (symbol-package struct)))

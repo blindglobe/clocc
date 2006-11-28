@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/11/21 18:20:17 $"))
+  (remove #\$ "2.0 beta $Date: 2006/11/28 21:41:12 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -925,7 +925,21 @@ FILENAME                 File containing Fortran code
 
        (setf fun (fixup-f2cl-lib fun))
 
-       (special-print fun outport))
+       (special-print fun outport)
+       (format outport "~2&(in-package #:cl-user)~%#+#.(cl:if (cl:find-package '#:f2cl) '(:and) '(:or))~%")
+       (let* ((*package* (find-package '#:cl-user))
+	      (fname (second fort-fun))
+	      (info (gethash fname *f2cl-function-info*)))
+	 (write `(eval-when (:load-toplevel :compile-toplevel :execute)
+		   (setf (gethash ',fname *f2cl-function-info*)
+			 (make-f2cl-finfo :arg-types ',(f2cl-finfo-arg-types info)
+					  :return-values ',(f2cl-finfo-return-values info)
+					  :calls ',(f2cl-finfo-calls info))))
+		:stream outport
+		:pretty t
+		:case :downcase
+		:circle t
+		:readably t)))
      (print (cadr fort-fun))		;indicate which subprogram is being translated
      (write-char '#\newline outport)
      (write-char '#\newline outport)
@@ -2790,8 +2804,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.166 2006/11/21 18:20:17 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.167 2006/11/28 21:41:12 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.167  2006/11/28 21:41:12  rtoy
+;;; After each function is translated, save the function info too so that
+;;; we can reload the correct info.  This is useful when we want to
+;;; recompile just a single file that calls other functions.  Then f2cl
+;;; can do a good job compiling the new function, without warnings about
+;;; calls to unknown functions.
+;;;
 ;;; Revision 1.166  2006/11/21 18:20:17  rtoy
 ;;; o Add CDABS and DCONJG to the list of intrinsic functions.
 ;;; o Modify PARSE-DO-LOOP to be a little more forgiving to handle some

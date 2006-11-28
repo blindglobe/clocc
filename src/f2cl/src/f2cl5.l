@@ -75,7 +75,7 @@
 	 nil)
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = equal > < >= <= >< |:|
-				    f2cl-//
+				    f2cl-// cmplx fchar
 				    fref fref-string f2cl/
 				    flog fsqrt ffloat freal
 				    expt
@@ -928,15 +928,12 @@
 	     (dotimes (k n)
 	       (push (intern (format nil "V~D" k)) v))
 	     (nreverse v)))
-	 (select-vars (k n vlist)
-	   (append (list (elt vlist k))
-		   (subseq vlist n)))
+	 #+nil
 	 (make-ignore (k n vlist)
 	   (append (subseq vlist 0 k)
 		   (subseq vlist (1+ k) n)))
 	   )
     (let* ((count 0)
-	   (n-entries 1)
 	   (n-returns (length args))
 	   (vlist (make-vars n-returns)))
       (cons `(defun ,main ,args
@@ -1151,7 +1148,7 @@
 		   key-params
 		   key-params-decls
 		   all-decls
-		   additional-args
+		   #+nil additional-args
 		   entry-points equivalences)
 
      (setq defun-bit (list (car fort-fun) (cadr fort-fun))
@@ -2794,6 +2791,7 @@
 	  (mapcar #'(lambda (opt)
 		      (destructuring-bind (key = val)
 			  opt
+			(declare (ignore =))
 			`(,(intern (string-upcase (string key)) :keyword)
 			   ,val)))
 		  options))))))
@@ -2804,6 +2802,7 @@
 		      (mapcar #'(lambda (opt)
 				  (destructuring-bind (key = val)
 				      opt
+				    (declare (ignore =))
 				    `(,(intern (string-upcase (string key)) :keyword)
 				       ,val)))
 			      (list-split '|,| (second x))))
@@ -2817,6 +2816,7 @@
 		      (mapcar #'(lambda (opt)
 				  (destructuring-bind (key = val)
 				      opt
+				    (declare (ignore =))
 				    `(,(intern (string-upcase (string key)) :keyword)
 				       ,val)))
 			      (list-split '|,| (second x)))))))
@@ -3324,6 +3324,7 @@
 	     (el-type (if (subtypep var-type 'array)
 			  (second var-type)
 			  var-type))
+	     #+nil
 	     (dims (cond ((and (listp var-type)
 			       (subtypep var-type 'array)
 			       (not (subtypep var-type 'string)))
@@ -3451,8 +3452,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.151 2006/11/28 17:43:53 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.152 2006/11/28 19:04:07 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.152  2006/11/28 19:04:07  rtoy
+;;; o fchar and cmplx shouldn't be Fortran variables.
+;;; o Clean up some compiler warnings about unused vars and functions.
+;;;
 ;;; Revision 1.151  2006/11/28 17:43:53  rtoy
 ;;; f2cl-// can't be a Fortran variable.
 ;;;

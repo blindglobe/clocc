@@ -152,7 +152,7 @@ is not included")
   `(subseq ,s (1- ,(first range)) ,(second range)))
 
 (defmacro fset-string (a b)
-  `(setf (fref-string ,(second a) ,(third a)) ,b))
+  `(setf (fref-string ,(second a) ,(third a)) (string ,b)))
 
 (defmacro f2cl-// (a b)
   `(concatenate 'string ,a ,b))
@@ -618,7 +618,7 @@ is not included")
       (char-int (aref c 0))
       (char-int c)))
 (defun fchar (i)			;intrinsic function char
-  (char-int i))
+  (code-char i))
 
 (declaim (inline iabs dabs cabs cdabs amod dmod))
 #-aclpc
@@ -1101,9 +1101,10 @@ causing all pending operations to be flushed"
 (defmacro fformat (dest-lun format-cilist &rest args)
   (let ((stream (gensym)))
     `(let ((,stream (lun->stream ,dest-lun)))
-      (execute-format-main ,stream ',format-cilist ,@args)
-      (when (stringp ,dest-lun)
-	(replace ,dest-lun (get-output-stream-string ,stream))))))
+       (execute-format-main ,stream ',format-cilist ,@args)
+       ,@(unless (or (eq t dest-lun) (numberp dest-lun))
+	  `((when (stringp ,dest-lun)
+	     (replace ,dest-lun (get-output-stream-string ,stream))))))))
 
 (defun execute-format (top stream format arg-list)
   (do ((formats format (if (and top (null formats))
@@ -1413,8 +1414,16 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.74 2006/11/27 19:09:51 rtoy Exp $
+;;; $Id: macros.l,v 1.75 2006/11/28 19:06:18 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.75  2006/11/28 19:06:18  rtoy
+;;; o Make sure the second arg to FSET-STRING is a string.
+;;; o FCHAR was using the wrong function.
+;;; o Cleanup FFORMAT so there are no compiler warnings about REPLACE
+;;;   being called on constant data.  (This is probably a compiler bug in
+;;;   CMUCL, but we should get rid of the stuff ourselves, anyway, instead
+;;;   of depending on the compiler to do it for us.)
+;;;
 ;;; Revision 1.74  2006/11/27 19:09:51  rtoy
 ;;; In some places in LAPACK, an array slice is taken where the slice
 ;;; exceeds the bounds of the array.  However, the array is never

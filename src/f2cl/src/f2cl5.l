@@ -75,6 +75,7 @@
 	 nil)
 	((symbolp exprs)
 	 (cond ((or (member exprs '(\, \' + - * / ** // ^ = equal > < >= <= >< |:|
+				    f2cl-//
 				    fref fref-string f2cl/
 				    flog fsqrt ffloat freal
 				    expt
@@ -3450,8 +3451,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.150 2006/11/26 04:43:55 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.151 2006/11/28 17:43:53 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.151  2006/11/28 17:43:53  rtoy
+;;; f2cl-// can't be a Fortran variable.
+;;;
 ;;; Revision 1.150  2006/11/26 04:43:55  rtoy
 ;;; Replace %false% and %true% in a different way and fix a typo.
 ;;;

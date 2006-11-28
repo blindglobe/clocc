@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: mop.lisp,v 1.1 2006/11/28 05:02:42 sds Exp $
+;;; $Id: mop.lisp,v 1.2 2006/11/28 05:14:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/mop.lisp,v $
 
 (eval-when (compile load eval)
@@ -96,7 +96,7 @@
          ADD-DIRECT-METHOD REMOVE-DIRECT-METHOD
          ;; + Slot access:
          ;; generic functions
-         SLOT-VALUE-USING-CLASS (SETF SLOT-VALUE-USING-CLASS)
+         SLOT-VALUE-USING-CLASS
          SLOT-BOUNDP-USING-CLASS SLOT-MAKUNBOUND-USING-CLASS
          ;; functions
          STANDARD-INSTANCE-ACCESS FUNCALLABLE-STANDARD-INSTANCE-ACCESS

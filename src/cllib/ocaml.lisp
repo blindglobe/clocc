@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: ocaml.lisp,v 2.1 2006/11/28 05:03:07 sds Exp $
+;;; $Id: ocaml.lisp,v 2.2 2006/11/28 05:14:03 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/ocaml.lisp,v $
 
 (eval-when (compile load eval)
@@ -21,7 +21,7 @@
 
 (defmacro def-sexp-to (class-name)
   "Define a function `sexp-to-...'."
-  (let* ((class (find-class struct-name))
+  (let* ((class (find-class class-name))
          (slots (port:class-slots class))
          (names (mapcar #'port:slot-definition-name slots)))
     (labels ((parser-name (name) (intern (format nil "SEXP-TO-~S" name)))
@@ -31,7 +31,7 @@
              (parser-function (name)
                (let ((parser (parser-name name)))
                  (if (fboundp parser) (fdefinition parser) #'identity))))
-      `(defun ,(parser-name struct-name) (sexp)
+      `(defun ,(parser-name class-name) (sexp)
          (let ,(mapcar #'port:slot-definition-name slots)
            (dolist (pair sexp)
              (ecase (car pair)

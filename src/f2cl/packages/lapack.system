@@ -4,9 +4,9 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
-(mk:defsystem lapack
+(mk:defsystem lapack-real
   :source-pathname (directory-namestring *load-truename*)
-  :depends-on ("blas")
+  :depends-on ("blas-real")
   :compiler-options (:keep-lisp-file t
 		     :relaxed-array-decls t
 		     :array-type :array
@@ -202,6 +202,15 @@
 	     
 	     ;;(:file "zgeev")
 	     ))))
+
+(mk:defsystem lapack
+  :source-pathname (directory-namestring *load-truename*)
+  :depends-on ("lapack-real")
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls t
+		     :array-type :array
+		     :array-slicing t))
+
 
 
 (mk:defsystem "lapack-tests"

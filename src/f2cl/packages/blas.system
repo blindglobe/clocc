@@ -4,8 +4,11 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.4 2006/11/29 14:45:50 rtoy Exp $
+;;; $Id: blas.system,v 1.5 2006/11/29 16:59:10 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.5  2006/11/29 16:59:10  rtoy
+;;; Split defsystems for blas and lapack into real and complex versions.
+;;;
 ;;; Revision 1.4  2006/11/29 14:45:50  rtoy
 ;;; Update dependencies based on info saved by f2cl.
 ;;;
@@ -45,7 +48,7 @@
    (:file "dscal")
    (:file "idamax")))
 
-(mk:defsystem blas
+(mk:defsystem blas-real
   :source-pathname
   (merge-pathnames (make-pathname :directory '(:relative "blas"))
 		   (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -116,10 +119,23 @@
    (:file "izamax"
 	  :depends-on ("dcabs1"))
    (:file "lsame")
-   (:file "xerbla")
+   (:file "xerbla")))
    
-   (:file "zaxpy"
-	  :depends-on ("dcabs1"))
+(mk:defsystem blas-complex
+  :source-pathname
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-extension "f"
+  :depends-on ("blas-real")
+  :language :f2cl
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls t
+		     :array-type :array
+		     :array-slicing t
+		     )
+  :components
+  (
+   (:file "zaxpy")
    (:file "zcopy")
    (:file "zdotc")
    (:file "zdotu")
@@ -152,5 +168,17 @@
    (:file "ztrmm")
    (:file "ztrmv")
    (:file "ztrsm")
-   (:file "ztrsv")
-   ))
+   (:file "ztrsv")))
+
+(mk:defsystem blas
+  :source-pathname
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :source-extension "f"
+  :depends-on ("blas-real" "blas-complex")
+  :language :f2cl
+  :compiler-options (:keep-lisp-file t
+		     :relaxed-array-decls t
+		     :array-type :array
+		     :array-slicing t
+		     ))

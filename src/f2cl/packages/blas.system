@@ -4,8 +4,11 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.3 2006/11/21 21:36:34 rtoy Exp $
+;;; $Id: blas.system,v 1.4 2006/11/29 14:45:50 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.4  2006/11/29 14:45:50  rtoy
+;;; Update dependencies based on info saved by f2cl.
+;;;
 ;;; Revision 1.3  2006/11/21 21:36:34  rtoy
 ;;; Oops.  Array declarations should be relaxed.
 ;;;
@@ -43,7 +46,7 @@
    (:file "idamax")))
 
 (mk:defsystem blas
-  :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;blas;")
+  :source-pathname
   (merge-pathnames (make-pathname :directory '(:relative "blas"))
 		   (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
@@ -60,30 +63,51 @@
    (:file "dcabs1")
    (:file "dgbmv"
 	  :depends-on ("lsame" "xerbla"))
-   (:file "dgemm")
-   (:file "dgemv")
-   (:file "dger")
+   (:file "dgemm"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dgemv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dger"
+	  :depends-on ("xerbla"))
    (:file "drot")
    (:file "drotg")
-   (:file "dsbmv")
-   (:file "dspmv")
-   (:file "dspr")
-   (:file "dspr2")
+   (:file "dsbmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dspmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dspr"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dspr2"
+	  :depends-on ("lsame" "xerbla"))
    (:file "dswap")
-   (:file "dsymm")
-   (:file "dsymv")
-   (:file "dsyr")
-   (:file "dsyr2")
-   (:file "dsyr2k")
-   (:file "dsyrk")
-   (:file "dtbmv")
-   (:file "dtbsv")
-   (:file "dtpmv")
-   (:file "dtpsv")
-   (:file "dtrmm")
-   (:file "dtrmv")
-   (:file "dtrsm")
-   (:file "dtrsv")
+   (:file "dsymm"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dsymv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dsyr"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dsyr2"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dsyr2k"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dsyrk"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtbmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtbsv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtpmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtpsv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtrmm"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtrmv"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtrsm"
+	  :depends-on ("lsame" "xerbla"))
+   (:file "dtrsv"
+	  :depends-on ("lsame" "xerbla"))
    (:file "dzasum"
 	  :depends-on ("dcabs1"))
    (:file "dznrm2")
@@ -93,6 +117,7 @@
 	  :depends-on ("dcabs1"))
    (:file "lsame")
    (:file "xerbla")
+   
    (:file "zaxpy"
 	  :depends-on ("dcabs1"))
    (:file "zcopy")

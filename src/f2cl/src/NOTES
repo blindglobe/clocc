@@ -1,6 +1,17 @@
 -*- Mode: text -*-
 
 Changes:
+Nov 28, 2006
+------------
+o F2CL will now save relevant function information in the generated
+  lisp file.  The information is loaded only if the f2cl package
+  already exists.  
+
+  This information is useful when loading up converted files in a new
+  session and compiling a subset of the files again.  That way, f2cl
+  will know about called functions without having to recompile
+  everything from scratch again.
+
 Nov 24, 2006
 ------------
 o Added all of BLAS to the BLAS package.

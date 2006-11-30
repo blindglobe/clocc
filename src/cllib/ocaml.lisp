@@ -6,7 +6,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: ocaml.lisp,v 2.4 2006/11/29 01:14:28 sds Exp $
+;;; $Id: ocaml.lisp,v 2.5 2006/11/30 02:35:11 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/ocaml.lisp,v $
 
 (eval-when (compile load eval)
@@ -31,7 +31,13 @@
                  (if (fboundp parser) `(,parser ,arg) `(the ,name ,arg))))
              (parser-function (name)
                (let ((parser (parser-name name)))
-                 (if (fboundp parser) (fdefinition parser) #'identity))))
+                 (if (fboundp parser) (fdefinition parser) #'identity)))
+             (parser-setter (type place)
+               (if (symbolp type)
+                   (parser-form type place)
+                   (ecase (first type)
+                     (array `(map 'vector ,(parser-function (second type))
+                                  ,place))))))
       `(defun ,(parser-name class-name) (sexp)
          (let ((ret (make-instance ',class-name)))
            (dolist (pair sexp ret)
@@ -40,13 +46,8 @@
                   (lambda (slot &aux (name (port:slot-definition-name slot)))
                     `(,name
                       (setf (slot-value ret ',name)
-                            ,(let ((type (port:slot-definition-type slot)))
-                               (if (symbolp type)
-                                   (parser-form type '(second pair))
-                                   (ecase (first type)
-                                     (array `(map 'vector ,(parser-function
-                                                            (second type))
-                                                  (second pair)))))))))
+                            ,(parser-setter (port:slot-definition-type slot)
+                                            '(second pair)))))
                   slots))))))))
 
 (defun fix-slot (name line &key (start 0) (end (length line)))

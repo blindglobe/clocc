@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: util.lisp,v 2.3 2006/06/28 22:56:58 airfoyle Exp $
+;;;$Id: util.lisp,v 2.4 2006/12/01 17:46:16 airfoyle Exp $
 
 ;;; Utilities beyond base.lisp, which this depends on.
 
@@ -171,3 +171,7 @@
 
 (defmacro depends-on (&rest _)
    ''"depends-on is unimplemented")
+
+(defun gen-var (sym)
+   (build-symbol (:package false) (< sym) - (++ symno*)))
+

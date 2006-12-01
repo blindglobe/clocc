@@ -1,6 +1,15 @@
-$Id: CHANGELOG,v 2.27 2006/11/20 04:43:13 airfoyle Exp $
+$Id: CHANGELOG,v 2.28 2006/12/01 17:46:16 airfoyle Exp $
             
-            [- Version 2.1.27 -]
+            [- Version 2.1.28 -]
+2006-11-01: Moved 'gen-var' from multilet.lisp to util.lisp so it's
+            available when multilet is slurped.
+
+            [- Version 2.1.28 -]
+2006-11-26: chunk.lisp: Expanded allowable time discrepancy for that
+            elusive bug whereby some chunk deriver is returning dates
+            before the current one.
+
+            [- Version 2.1.27 2006/11/20 04:43:13 airfoyle Exp -]
 2006-11-19: multilet.lisp: Convention for new variables changed: macro
             var bound to run-time var with name #:v-27 is v$ (not -v-,
             which looks too much like some kind of segment).

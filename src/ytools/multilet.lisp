@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 2.4 2006/11/20 00:42:17 airfoyle Exp $
+;;;$Id: multilet.lisp,v 2.5 2006/12/01 17:46:16 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -26,10 +26,6 @@
             (:a macro-announce)
             :% exp :%))
       exp)
-
-   (defun gen-var (sym)
-      (build-symbol (:package false) (< sym) - (++ symno*)))
-
 )
 
 ;;; Because the naming convention for the new variables has changed,

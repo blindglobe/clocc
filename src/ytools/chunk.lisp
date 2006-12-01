@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.6 2006/06/28 22:56:58 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.7 2006/12/01 17:46:16 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
@@ -1668,6 +1668,8 @@
        (setf (Chunk-derive-in-progress ch) false))
      successful))
 
+(defparameter max-time-discrep* 2)
+
 ;;; Returns true if the new date is later than the old one.  (No one uses
 ;;; the return value at this point.)
 (defun chunk-date-record (ch new-date old-date)
@@ -1698,18 +1700,19 @@
 		;; For some reason universal-time dates sometimes
 		;; slip by a second here or there ...
 		(cond ((and (> old-date 100000000)
-			    (= new-date (- old-date 1)))
+			    (=< (- old-date new-date) max-time-discrep*))
 		       (format *error-output*
-			  !"Universal-time slips by 1 sec; ~
-                            alert Prof. Hawking!~%"))
+			  !"Universal-time slips by ~s sec; ~
+                            alert Prof. Hawking!~%"
+                           (- old-date new-date)))
 		      (t
 		       (cerror "I will set the date to the new date"
 			       !"Chunk deriver or dater returned date ~s, ~
 				 which is before current date ~s"
 				 new-date old-date)))
 ;;; Just ignoring the new date usually causes the bug to recur --
-;;;;		false
-		(setf (Chunk-date ch) new-date))
+		(setf (Chunk-date ch) new-date)
+                false)
 	       (t
 		false)))
 

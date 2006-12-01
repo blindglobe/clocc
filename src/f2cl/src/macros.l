@@ -1207,8 +1207,8 @@ causing all pending operations to be flushed"
 ;; length.  The string is initialized with #\Space because it seems
 ;; that's what Fortran initializes it to.
 (defmacro f2cl-init-string (dims len &optional inits)
-  (let ((init (gensym "ARRAY-"))
-	(k (gensym "IDX-")))
+  (let ((init (gensym (symbol-name '#:array-)))
+	(k (gensym (symbol-name '#:idx-))))
     `(let ((,init (make-array (* ,@dims)
 			      :element-type `(simple-array character (,',@len))
 			      :initial-element (make-string ,@len))))
@@ -1414,8 +1414,17 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.75 2006/11/28 19:06:18 rtoy Exp $
+;;; $Id: macros.l,v 1.76 2006/12/01 04:23:43 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.76  2006/12/01 04:23:43  rtoy
+;;; Minor cleanups
+;;;
+;;; src/f2cl0.l:
+;;; o Cosmetic changes
+;;;
+;;; src/macros.l:
+;;; o Make code work with "modern"-mode lisps.  (Ported from maxima.)
+;;;
 ;;; Revision 1.75  2006/11/28 19:06:18  rtoy
 ;;; o Make sure the second arg to FSET-STRING is a string.
 ;;; o FCHAR was using the wrong function.

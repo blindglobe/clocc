@@ -29,19 +29,20 @@
 
 (defpackage :f2cl-lib
   (:use :cl)
-  (:documentation "The package holding all symbols used by the fortran to lisp library.")
+  (:documentation "The package holding all symbols used by the Fortran to Lisp library")
   (:nicknames :fortran-to-lisp-library)
   (:export
-   ;; constants
+   ;; Constants
    #:%false% #:%true%
-   ;; user-settable runtime options
+   ;; User-settable runtime options
    #:*check-array-bounds*
-   ;; types
+   ;; Types
    #:integer4 #:integer2 #:integer1 #:real8 #:real4 #:complex8 #:complex16
    #:array-double-float #:array-single-float #:array-integer4 #:array-strings
    #:logical
-   ;; macros
-   #:fref #:fset #:with-array-data #:with-multi-array-data
+   ;; Macros
+   #:fref #:fset #:with-array-data
+   #:with-multi-array-data
    #:f2cl-init-string #:fref-string #:fset-string #:f2cl-set-string
    #:f2cl-// #:fstring-/= #:fstring-= #:fstring-> #:fstring->= #:fstring-< #:fstring-<=
    #:fortran_comment #:fdo #:f2cl/ #:arithmetic-if #:computed-goto
@@ -49,9 +50,9 @@
    #:fformat
    #:data-implied-do
    #:int-add #:int-sub #:int-mul
-   ;; utilities
+   ;; Utilities
    #:array-slice #:array-initialize
-   ;; intrinsic functions
+   ;; Intrinsic functions
    #:abs #:acos #:aimag #:dimag #:aint #:alog #:alog10 #:amax0 #:amax1
    #:amin1 #:amod #:anint #:asin #:atan #:atan2
    #:cabs #:cexp #:fchar #:clog #:cmplx #:dcmplx #:conjg #:ccos
@@ -82,8 +83,17 @@
 ;;;-------------------------------------------------------------------------
 ;;; end of f2cl0.l
 ;;;
-;;; $Id: f2cl0.l,v 1.19 2006/11/27 15:15:19 rtoy Exp $
+;;; $Id: f2cl0.l,v 1.20 2006/12/01 04:23:43 rtoy Exp $
 ;;; $Log: f2cl0.l,v $
+;;; Revision 1.20  2006/12/01 04:23:43  rtoy
+;;; Minor cleanups
+;;;
+;;; src/f2cl0.l:
+;;; o Cosmetic changes
+;;;
+;;; src/macros.l:
+;;; o Make code work with "modern"-mode lisps.  (Ported from maxima.)
+;;;
 ;;; Revision 1.19  2006/11/27 15:15:19  rtoy
 ;;; Fix typo.
 ;;;

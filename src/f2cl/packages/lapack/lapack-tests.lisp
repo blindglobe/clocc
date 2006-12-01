@@ -1,8 +1,10 @@
 ;;;
 ;;; Simple tests for selected LAPACK routines.
 ;;;
-;;; $Id: lapack-tests.lisp,v 1.10 2006/11/28 15:49:01 rtoy Exp $
+;;; $Id: lapack-tests.lisp,v 1.11 2006/12/01 04:29:29 rtoy Rel $
 ;;;
+
+(in-package "LAPACK")
 
 ;; Convert the eigenvalues returned by DGEEV into an array
 (defun make-eigval (wr wi)
@@ -509,6 +511,20 @@
   (test-dgesvd))
 
 ;;; $Log: lapack-tests.lisp,v $
+;;; Revision 1.11  2006/12/01 04:29:29  rtoy
+;;; Create packages for BLAS and LAPACK routines.
+;;;
+;;; blas.system:
+;;; o Converted files are in the BLAS package.
+;;; o Add blas-package defsystem to load the package definition.
+;;;
+;;; lapack.system:
+;;; o Converted files are in the LAPACK package.
+;;; o Add lapack-package defsystem to load the package definition.
+;;;
+;;; lapack/lapack-tests.lisp:
+;;; o Tests are in the LAPACK package
+;;;
 ;;; Revision 1.10  2006/11/28 15:49:01  rtoy
 ;;; Print out short title for each test.
 ;;;

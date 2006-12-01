@@ -11,6 +11,7 @@
 		     :relaxed-array-decls t
 		     :array-type :array
 		     :array-slicing t
+		     :package "LAPACK"
 		     )
   :components
   ((:module lapack
@@ -203,13 +204,17 @@
 	     ;;(:file "zgeev")
 	     ))))
 
+(mk:defsystem "lapack-package"
+  :source-pathname (merge-pathnames #p"./lapack/"
+				    (directory-namestring *load-truename*))
+  :depends-on ("blas-package")
+  :components
+  ((:file "lapack-package")))
+
 (mk:defsystem lapack
   :source-pathname (directory-namestring *load-truename*)
-  :depends-on ("lapack-real")
-  :compiler-options (:keep-lisp-file t
-		     :relaxed-array-decls t
-		     :array-type :array
-		     :array-slicing t))
+  :depends-on ("lapack-package" "lapack-real"))
+
 
 
 

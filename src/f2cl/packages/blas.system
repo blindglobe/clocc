@@ -4,8 +4,22 @@
 ;;; routines to Lisp and compiling the result.  These came with
 ;;; HOMPACK and are used in HOMPACK, among others.
 ;;;
-;;; $Id: blas.system,v 1.5 2006/11/29 16:59:10 rtoy Exp $
+;;; $Id: blas.system,v 1.6 2006/12/01 04:29:29 rtoy Exp $
 ;;; $Log: blas.system,v $
+;;; Revision 1.6  2006/12/01 04:29:29  rtoy
+;;; Create packages for BLAS and LAPACK routines.
+;;;
+;;; blas.system:
+;;; o Converted files are in the BLAS package.
+;;; o Add blas-package defsystem to load the package definition.
+;;;
+;;; lapack.system:
+;;; o Converted files are in the LAPACK package.
+;;; o Add lapack-package defsystem to load the package definition.
+;;;
+;;; lapack/lapack-tests.lisp:
+;;; o Tests are in the LAPACK package
+;;;
 ;;; Revision 1.5  2006/11/29 16:59:10  rtoy
 ;;; Split defsystems for blas and lapack into real and complex versions.
 ;;;
@@ -38,6 +52,7 @@
 		     :relaxed-array-decls nil
 		     :array-type :array
 		     :array-slicing t
+		     :package "BLAS"
 		     )
   :components
   (;; These are the ones needed for HOMPACK
@@ -59,6 +74,7 @@
 		     :relaxed-array-decls t
 		     :array-type :array
 		     :array-slicing t
+		     :package "BLAS"
 		     )
   :components
   (;; Here are the rest of the BLAS routines
@@ -132,6 +148,7 @@
 		     :relaxed-array-decls t
 		     :array-type :array
 		     :array-slicing t
+		     :package "BLAS"
 		     )
   :components
   (
@@ -170,15 +187,16 @@
    (:file "ztrsm")
    (:file "ztrsv")))
 
+(mk:defsystem blas-package
+  :source-pathname
+  (merge-pathnames (make-pathname :directory '(:relative "blas"))
+		   (make-pathname :directory (pathname-directory *load-pathname*)))
+  :components
+  ((:file "blas-package")))
+
 (mk:defsystem blas
   :source-pathname
   (merge-pathnames (make-pathname :directory '(:relative "blas"))
 		   (make-pathname :directory (pathname-directory *load-pathname*)))
   :source-extension "f"
-  :depends-on ("blas-real" "blas-complex")
-  :language :f2cl
-  :compiler-options (:keep-lisp-file t
-		     :relaxed-array-decls t
-		     :array-type :array
-		     :array-slicing t
-		     ))
+  :depends-on ("blas-package" "blas-real" "blas-complex"))

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.32 2006/11/09 04:48:45 sds Exp $
+;;; $Id: data.lisp,v 1.33 2006/12/07 01:24:57 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -25,7 +25,7 @@
           show-sc show-sc-list aref-i ensure-buckets ensure-levels
           table table-path table-lines table-stats table-names write-table
           table-accessor table-column-pos table-lines$ compress-tables *tables*
-          table-stat-column ensure-table-stat-column column-histogram
+          table-stat-column table-p ensure-table-stat-column column-histogram
           analyse-csv table-stats-refresh add-column column-name-sc
           plot-columns table-to-hash summarize table-select purge-columns
           evaluate-predictor))

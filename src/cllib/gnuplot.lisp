@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.36 2006/11/14 02:35:17 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.37 2006/12/20 01:39:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -596,7 +596,7 @@ E.g.:
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (with-plot-stream (str :xb xmin :xe xmax :title title
                      :data-style (or data-style (plot-data-style numpts)) opts)
-    (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car fnl))
+    (format str "plot~{ '-' using 1:2 title '~a'~^,~}~%" (mapcar #'car fnl))
     (dolist (fn fnl)
       (mesg :plot *gnuplot-msg-stream* "~&Plotting ~S..." (car fn))
       (dotimes (ii (1+ numpts) (format str "e~%"))

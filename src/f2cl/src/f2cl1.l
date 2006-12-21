@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/11/28 21:41:12 $"))
+  (remove #\$ "2.0 beta $Date: 2006/12/21 03:18:39 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -926,7 +926,7 @@ FILENAME                 File containing Fortran code
        (setf fun (fixup-f2cl-lib fun))
 
        (special-print fun outport)
-       (format outport "~2&(in-package #:cl-user)~%#+#.(cl:if (cl:find-package '#:f2cl) '(:and) '(:or))~%")
+       (format outport "~2&(in-package #-gcl #:cl-user #+gcl \"CL-USER\")~%#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
        (let* ((*package* (find-package '#:cl-user))
 	      (fname (second fort-fun))
 	      (info (gethash fname *f2cl-function-info*)))
@@ -2804,8 +2804,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.167 2006/11/28 21:41:12 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.168 2006/12/21 03:18:39 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.168  2006/12/21 03:18:39  rtoy
+;;; GCL doesn't like our IN-PACKAGE forms that we produce.  It also
+;;; doesn't like (:and) or (:or), so replace them with (and) and (or),
+;;; respectively.
+;;;
 ;;; Revision 1.167  2006/11/28 21:41:12  rtoy
 ;;; After each function is translated, save the function info too so that
 ;;; we can reload the correct info.  This is useful when we want to

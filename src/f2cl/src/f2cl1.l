@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/12/21 03:18:39 $"))
+  (remove #\$ "2.0 beta $Date: 2006/12/21 03:42:11 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -938,7 +938,7 @@ FILENAME                 File containing Fortran code
 		:stream outport
 		:pretty t
 		:case :downcase
-		:circle t
+		:circle nil
 		:readably t)))
      (print (cadr fort-fun))		;indicate which subprogram is being translated
      (write-char '#\newline outport)
@@ -2804,8 +2804,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.168 2006/12/21 03:18:39 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.169 2006/12/21 03:42:11 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.169  2006/12/21 03:42:11  rtoy
+;;; GCL doesn't like some of the circular objects printed out in the f2cl
+;;; info.  Turn off :circle t.
+;;;
 ;;; Revision 1.168  2006/12/21 03:18:39  rtoy
 ;;; GCL doesn't like our IN-PACKAGE forms that we produce.  It also
 ;;; doesn't like (:and) or (:or), so replace them with (and) and (or),

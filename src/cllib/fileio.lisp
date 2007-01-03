@@ -1,10 +1,10 @@
 ;;; Read from/Write to files
 ;;;
-;;; Copyright (C) 1997-2006 by Sam Steingold
+;;; Copyright (C) 1997-2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.42 2006/09/09 02:21:57 sds Exp $
+;;; $Id: fileio.lisp,v 1.43 2007/01/03 17:34:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,6 +13,8 @@
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
   ;; `+kwd+'
   (require :cllib-symb (translate-logical-pathname "cllib:symb"))
+  ;; `split-seq'
+  (require :cllib-string (translate-logical-pathname "cllib:string"))
   ;; `with-timing', `mesg'
   (require :cllib-log (translate-logical-pathname "cllib:log")))
 
@@ -20,7 +22,7 @@
 
 (export '(file-size-t file-size dir-size rename-files save-restore
           count-sexps code-complexity load-compile-maybe file-equal-p
-          file-newer file-newest
+          file-newer file-newest file-header-alist
           write-list-to-stream write-list-to-file file-cmp
           read-list-from-stream read-list-from-file skip-search-or
           pr write-to-file read-from-file read-from-stream append-to-file
@@ -54,6 +56,26 @@ file:/usr/doc/lisp/HyperSpec/Body/fun_translate-pathname.html"
     (let ((new (translate-pathname file from to)))
       (format t "~a --> ~a~%" file new)
       (rename-file file new))))
+
+(defun file-header-alist (file)
+  "Return the file header alist.
+Some files contain a header in the for -*- foo:bar; baz:zot -*-.
+This function finds such a header among the first 1024 bytes
+ and returns it as an alist ((\"foo\" . \"bar\") (\"baz\" . \"zot\"))."
+  (let* ((buf #.(make-string 1024))
+         (len (with-open-file (in file :direction :input)
+                (read-sequence buf in)))
+         (beg (+ (or (search #1="-*-" buf :end2 len)
+                     #2=(return-from file-header-alist nil))
+                 #.(length #1#))))
+    (mapcar (lambda (pair-string)
+              (let ((pos (or (position #\: pair-string)
+                             (error "~S: invalid header ~S"
+                                    'file-header-alist pair-string))))
+                (cons (string-trim +whitespace+ (subseq pair-string 0 pos))
+                      (string-trim +whitespace+ (subseq pair-string (1+ pos))))))
+            (split-seq buf (lambda (c) (char= c #\;)) :start beg
+                       :end (or (search #1# buf :start2 beg :end2 len) #2#)))))
 
 ;;;
 ;;; }}}{{{ `code-complexity'

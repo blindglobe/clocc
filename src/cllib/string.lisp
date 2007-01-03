@@ -1,10 +1,10 @@
 ;;; String Utilities
 ;;;
-;;; Copyright (C) 1997-2006 by Sam Steingold.
+;;; Copyright (C) 1997-2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.13 2006/08/24 04:15:38 sds Exp $
+;;; $Id: string.lisp,v 1.14 2007/01/03 17:32:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -112,7 +112,7 @@ zero-length subsequences too.
                                    :end end :key key))
         :with st1 = 0 :while (and st0 st1) :do
         (setq st1 (position-if pred seq :start st0 :end end :key key))
-        :collect (subseq seq st0 st1)))
+        :collect (subseq seq st0 (or st1 end))))
 
 (defsubst split-string (str chars &rest opts)
   "Split the string on chars."

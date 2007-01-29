@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: repeat.lisp,v 2.3 2006/01/22 15:38:12 airfoyle Exp $
+;;;$Id: repeat.lisp,v 2.4 2007/01/29 14:17:24 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -70,6 +70,8 @@
           ((or (null l)
                (atom (car l))
                (not (memq (cadar l) '(in :in))))
+           (cond ((null vars)
+                  (error "forall or exists with no vars: ~s" stuff)))
            (values (nreverse vars) (nreverse lists) l))   ))
 )
 

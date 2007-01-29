@@ -1,6 +1,10 @@
-$Id: CHANGELOG,v 2.28 2006/12/01 17:46:16 airfoyle Exp $
+$Id: CHANGELOG,v 2.29 2007/01/29 14:17:23 airfoyle Exp $
             
-            [- Version 2.1.28 -]
+            [- Version 2.1.29 -]
+2007-01-28: Added sanity check that 'forall' and 'exists' actually
+            have vars.
+            
+            [- Version 2.1.28 2006/12/01 17:46:16 airfoyle Exp -]
 2006-11-01: Moved 'gen-var' from multilet.lisp to util.lisp so it's
             available when multilet is slurped.
 

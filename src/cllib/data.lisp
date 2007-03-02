@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.33 2006/12/07 01:24:57 sds Exp $
+;;; $Id: data.lisp,v 1.34 2007/03/02 04:48:54 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -86,8 +86,11 @@
 (defvar *min-name-length* 5)
 (defun max-name-length (names)
   (reduce #'max names :key #'length :initial-value *min-name-length*))
+(defun get-column-name (col) (format nil "C~D" col))
+(defun get-column-names (column-count)
+  (loop :for col :from 0 :below column-count :collect (get-column-name col)))
 (defun column-name (names col)
-  (if names (aref names col) (format nil "C~D" col)))
+  (if names (aref names col) (get-column-name col)))
 
 (defun strings-to-nums (lines col-specs &key names (len (length lines))
                         (max-name-length (max-name-length names))
@@ -255,14 +258,15 @@
   (multiple-value-bind (lines len file-size names)
       (csv-read-file file :first-line-names first-line-names)
     (declare (ignore file-size))
-    (let* ((columns (unroll-column-specs *columns* names
-                                         (length (or names (car lines)))))
+    (let* ((column-count (length (or names (car lines))))
+           (columns (unroll-column-specs *columns* names column-count))
            (max-name-length
             (if names
                 (reduce #'max columns :key (lambda (i) (length (aref names i)))
                         :initial-value *min-name-length*)
                 *min-name-length*))
-           (tab (make-table :path file :names names)))
+           (tab (make-table
+                 :path file :names (or names (get-column-names column-count)))))
       (assert columns (columns) "no interesting columns left")
       (setf (values (table-lines tab) len)
             (strings-to-nums lines columns :names names

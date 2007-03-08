@@ -1,10 +1,10 @@
 ;;; Gnuplot (http://www.gnuplot.info/) interface
 ;;;
-;;; Copyright (C) 1997-2006 by Sam Steingold.
+;;; Copyright (C) 1997-2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.37 2006/12/20 01:39:39 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.38 2007/03/08 20:48:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -219,7 +219,7 @@ according to the given backend")
   (timefmt nil :type (or null string))
   (title "" :type string)
   (legend nil :type list)
-  (grid nil :type boolean)
+  (grid t :type boolean)
   (arrows nil :type list)
   (multiplot nil :type (or null (cons integer integer))) ; (nrow . ncol)
   (labels nil :type list)

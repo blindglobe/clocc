@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.13 2006/08/02 01:59:55 sds Exp $
+# $Id: Makefile,v 1.14 2007/03/08 22:25:53 sds Exp $
 # $Source: /cvsroot/clocc/clocc/Makefile,v $
 
 TOP := $(shell pwd)
@@ -47,6 +47,9 @@ cvs-stat: cvs.log
 	@fgrep "author:" cvs.log | wc -l;
 	$(RUNLISP) -i clocc -i src/cllib/base -i src/cllib/cvs \
 		-x '(funcall (intern "CVS-STAT-LOG" :cllib) "cvs.log")'
+
+fix-perms: force
+	find . -name \*.lisp -a -perm /+x -print0 | xargs -0 chmod -v a-x
 
 tarname=clocc
 TARFILES=INSTALL Makefile README bin clocc.lisp clocc.mk etc src

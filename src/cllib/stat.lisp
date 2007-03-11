@@ -1,11 +1,11 @@
 ;;; n-dim statistics, histograms &c
 ;;; for simple regression, see math.lisp
 ;;;
-;;; Copyright (C) 2000-2006 by Sam Steingold
+;;; Copyright (C) 2000-2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.19 2006/08/25 00:12:14 sds Exp $
+;;; $Id: stat.lisp,v 1.20 2007/03/11 02:48:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
 (eval-when (compile load eval)
@@ -102,8 +102,9 @@
 ;;; histograms
 ;;;
 
-(defun histogram (list nbins &key (key #'value) (out *standard-output*) logscale
+(defun histogram (list &key (key #'value) (out *standard-output*) logscale
                   (mdl (standard-deviation-mdl list :key key))
+                  (nbins (isqrt (mdl-le mdl)))
                   (min (mdl-mi mdl)) (max (mdl-ma mdl)))
   "Return 2 values: vector of length NBINS, bin WIDTH and MDL.
 The vector contains the counts in the Ith bin."
@@ -123,7 +124,7 @@ The vector contains the counts in the Ith bin."
                   (lambda (x) (floor (log (/ (funcall key1 x) min) width)))
                   (lambda (x) (floor (- (funcall key1 x) min) width)))))
     (with-collect (:out out)
-      (mesg :log out "~S: binning..." 'histogram)
+      (mesg :log out "~S: binning (~:D bin~:P)..." 'histogram nbins)
       (loop :for x :in list :for v = (funcall bin x)
         :do (incf (aref vec (min (max 0 v) last))))
       (loop :for s :across vec :minimize s :into i :maximize s :into a

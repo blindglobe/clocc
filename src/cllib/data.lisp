@@ -1,10 +1,10 @@
 ;;; Data Analysis and Visualization
 ;;;
-;;; Copyright (C) 2006 by Sam Steingold
+;;; Copyright (C) 2006, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.34 2007/03/02 04:48:54 sds Exp $
+;;; $Id: data.lisp,v 1.35 2007/03/11 02:48:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -240,8 +240,8 @@
   (and (numberp (aref (first (table-lines table)) pos))
        (ensure-table-stat-column name table)))
 
-(defun column-histogram (sc nbins &rest plot-opts)
-  (apply #'plot-histogram (table-lines (sc-table sc)) nbins
+(defun column-histogram (sc &rest plot-opts)
+  (apply #'plot-histogram (table-lines (sc-table sc))
          :key (aref-i (sc-pos sc)) :mdl (sc-mdl sc)
          :xlabel (format nil "~A -- ~A(~D)" (table-path (sc-table sc))
                          (sc-name sc) (sc-pos sc))

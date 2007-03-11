@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.38 2007/03/08 20:48:06 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.39 2007/03/11 02:48:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -618,8 +618,9 @@ OPTS is passed to `plot-lists-arg'."
          opts))
 
 ;;;###autoload
-(defun plot-histogram (list nbins &rest opts &key (mean t) (key #'value)
+(defun plot-histogram (list &rest opts &key (mean t) (key #'value)
                        (mdl (standard-deviation-mdl list :key key))
+                       (nbins (isqrt (mdl-le mdl)))
                        (min (mdl-mi mdl)) (max (mdl-ma mdl))
                        (title (princ-to-string mdl)) xlogscale
                        (xlabel "x") (ylabel "count") &allow-other-keys)
@@ -627,7 +628,7 @@ OPTS is passed to `plot-lists-arg'."
 When :MEAN is non-NIL (default), show mean and mean+-standard deviation
  with vertical lines."
   (multiple-value-bind (vec width)
-      (histogram list nbins :key key :out *gnuplot-msg-stream* :mdl mdl
+      (histogram list :nbins nbins :key key :out *gnuplot-msg-stream* :mdl mdl
                  :logscale xlogscale :min min :max max)
     (let ((arrows
            (when mean

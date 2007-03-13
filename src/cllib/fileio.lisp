@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fileio.lisp,v 1.43 2007/01/03 17:34:29 sds Exp $
+;;; $Id: fileio.lisp,v 1.44 2007/03/13 20:44:00 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fileio.lisp,v $
 
 (eval-when (compile load eval)
@@ -311,26 +311,27 @@ Passes REPEAT (default NIL) keyword argument to `read-from-stream'."
        ((zerop (length st)) res)
     (declare (simple-string st res))))
 
-(declaim (ftype (function (stream simple-string &optional t)
+(declaim (ftype (function (stream simple-string &key (out t) (start index-t))
                           (values (or null simple-string)))
                 skip-to-line skip-search))
-(defun skip-to-line (st ln &optional out)
+(defun skip-to-line (st ln &key out (start 0))
   "Read from stream ST until a line starting with LN.
-The optional third argument specifies where the message should go.
-By default nothing is printed."
+:START specifies the column from which the comparison starts.
+:OUT specifies where the message should go. By default nothing is printed."
   (declare (stream st) (simple-string ln))
   (mesg :head out " +++ `skip-to-line' --> `~a'~%" ln)
-  (do ((len (length ln)) (rr (read-line st) (read-line st)))
-      ((and (>= (length rr) len) (string-equal ln rr :end2 len))
-       (subseq rr len))
-    (declare (fixnum len) (simple-string rr))))
+  (do ((end (+ start (length ln))) (rr (read-line st) (read-line st)))
+      ((and (>= (length rr) end) (string-equal ln rr :start2 start :end2 end))
+       (subseq rr end))
+    (declare (type index-t end) (simple-string rr))))
 
-(defun skip-search (stream string &optional out)
+(defun skip-search (stream string &key out (start 0))
   "Read from STREAM until STRING is found by `search.'"
   (declare (stream stream) (simple-string string))
   (mesg :head out " +++ `skip-search' --> `~a'~%" string)
   (do ((st (read-line stream nil nil) (read-line stream nil nil)) pos)
-      ((or (null st) (setq pos (search string st :test #'char-equal)))
+      ((or (null st)
+           (setq pos (search string st :start2 start :test #'char-equal)))
        (values st pos))
     (declare (type (or null simple-string) st))))
 

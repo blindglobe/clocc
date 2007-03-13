@@ -7,7 +7,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.27 2005/12/12 16:33:17 sds Exp $
+;;; $Id: cvs.lisp,v 2.28 2007/03/13 20:43:04 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
 (eval-when (compile load eval)
@@ -145,12 +145,12 @@ Suitable for `read-list-from-stream'."
     (let* ((rcs (from-colon (read-line in)))
            (work (from-colon (read-line in)))
            (head (from-colon (read-line in)))
-           (tot-rev-l (skip-to-line in "total revisions:" nil))
+           (tot-rev-l (skip-to-line in "total revisions:"))
            (p0 (position #\; tot-rev-l :test #'char=))
            (p1 (position #\: tot-rev-l :test #'char= :from-end t))
            (tot-rev (parse-integer tot-rev-l :end p0))
            (sel-rev (parse-integer tot-rev-l :start (1+ p1)))
-           (revs (progn (skip-to-line in *cvs-log-sep-1* nil)
+           (revs (progn (skip-to-line in *cvs-log-sep-1*)
                         (read-list-from-stream in #'cvs-read-change)))
            (path (merge-pathnames (pathname-ensure-name work)
                                   (directory-namestring in))))

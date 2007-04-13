@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.44 2007/01/03 17:33:12 sds Exp $
+;;; $Id: tests.lisp,v 2.45 2007/04/13 04:53:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (load compile eval)
@@ -248,7 +248,7 @@
       (division-by-zero (c)
         (mesg :test out " ** degenerate matrix~%~S~%"
               (first (arithmetic-error-operands c)))))
-    (mesg :test out " ** det = ~S~%" det)
+    (mesg :test out " ** log det = ~S~%" det)
     (matrix-multiply mx m1 i1)
     (dotimes (i dim)
       (dotimes (j dim)

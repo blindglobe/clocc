@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: miscprint.lisp,v 1.21 2006/09/14 02:03:29 sds Exp $
+;;; $Id: miscprint.lisp,v 1.22 2007/04/13 04:59:14 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/miscprint.lisp,v $
 
 (eval-when (compile load eval)
@@ -127,17 +127,18 @@ The inverse is `hash-table->alist'."
     (when present-p (remhash object ht))
     (values value present-p)))
 
-(defun print-counts (seq &key (out *standard-output*) (key #'value)
-                     (key-numeric-p nil) (test 'equal)
+(defun print-counts (count-ht &key (out *standard-output*) (key-numeric-p nil)
                      (format (if key-numeric-p
-                                 (formatter ";; ~5:D --> ~5:D~%")
-                                 (formatter ";; ~5A --> ~5:D~%"))))
-  "Print counts of elements in the sequence, sorted by frequency.
-If KEY-NUMERIC-P is non-NIL, sort by KEY instead."
+                                 (formatter "~&;; ~5:D --> ~5:D~%")
+                                 (formatter "~&;; ~5A --> ~5:D~%"))))
+  "Print counts of elements, sorted by frequency.
+If KEY-NUMERIC-P is non-NIL, sort by KEY instead.
+Usage: (print-counts (count-all seq ...))"
   (when out
     (loop :for (object . count)
-      :in (sort (cdr (hash-table->alist (count-all seq :key key :test test)))
+      :in (sort (cdr (hash-table->alist count-ht))
                 #'< :key (if key-numeric-p #'car #'cdr))
+      :for line :upfrom 0 :until (and *print-lines* (> line *print-lines*))
       :do (format out format object count))))
 
 ;;;###autoload

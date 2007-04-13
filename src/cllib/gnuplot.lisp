@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.39 2007/03/11 02:48:07 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.40 2007/04/13 04:58:35 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -341,7 +341,7 @@ according to the given backend")
                   (data-style :lines) (border t) timefmt
                   (xb '*) (xe '*) (yb '*) (ye '*) legend
                   (title (if multiplot "multiplot" "plot"))
-                  (xtics t) (ytics t) grid xlogscale ylogscale
+                  (xtics t) (ytics t) (grid t) xlogscale ylogscale
                   (xfmt (or timefmt "%g")) (yfmt "%g")
                   (ts (cond ((plot-timestamp-p timestamp) timestamp)
                             ((or (eq timestamp t) (eq timestamp :default))
@@ -592,7 +592,7 @@ Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 FNL is a list of (name . function).
 E.g.:
   (plot-functions (list (cons 'sine #'sin) (cons 'cosine #'cos)) 0 pi 100
-                  :legend '(:bot :left :box) :grid t :plot :wait)"
+                  :legend '(:bot :left :box) :plot :wait)"
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (with-plot-stream (str :xb xmin :xe xmax :title title
                      :data-style (or data-style (plot-data-style numpts)) opts)
@@ -651,7 +651,8 @@ When :MEAN is non-NIL (default), show mean and mean+-standard deviation
                  arrows)))))
       (with-plot-stream (str :title title :data-style :histeps :arrows arrows
                              :xlabel xlabel :ylabel ylabel
-                             (remove-plist opts :key :mean :mdl :min :max))
+                             (remove-plist opts :key :mean :mdl :min :max
+                                                :nbins))
         (format str "plot '-' using 1:2~%")
         (loop :for height :across vec
           :for mid = (if xlogscale

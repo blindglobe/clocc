@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.35 2007/03/11 02:48:07 sds Exp $
+;;; $Id: data.lisp,v 1.36 2007/04/13 04:57:07 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -15,6 +15,8 @@
   (require :cllib-csv (translate-logical-pathname "cllib:csv"))
   ;; `fill-buckets', `bucketize'
   (require :cllib-lift (translate-logical-pathname "cllib:lift"))
+  ;; `print-counts'
+  (require :cllib-miscprint (translate-logical-pathname "cllib:miscprint"))
   ;; `plot-histogram'
   (require :cllib-gnuplot (translate-logical-pathname "cllib:gnuplot")))
 
@@ -92,13 +94,18 @@
 (defun column-name (names col)
   (if names (aref names col) (get-column-name col)))
 
+(defcustom *print-bad-number-limit* fixnum 10
+  "*The maximum number of bad numbers to print.")
 (defun strings-to-nums (lines col-specs &key names (len (length lines))
                         (max-name-length (max-name-length names))
                         (out *standard-output*)
+                        ((:print-bad-number-limit *print-bad-number-limit*)
+                         *print-bad-number-limit*)
                         ((:value-boundary *value-boundary*) *value-boundary*))
   "Convert some strings to numbers, in place."
   (let ((dnum (make-array (1+ (reduce #'max col-specs)) :initial-element 0))
-        (drop 0) (total (length lines)))
+        (drop-count 0) (drop-values (make-hash-table :test 'equal))
+        (*print-lines* *print-bad-number-limit*) (total (length lines)))
     (with-timing (:out out :count line :units "records"
                   :progress *csv-progress* :progress-1 *csv-progress-1*)
       (mesg :log out "Converting strings to numbers...")
@@ -107,19 +114,30 @@
              (lambda (v)
                (incf line) (progress (/ line total))
                (dolist (i col-specs t)
-                 (handler-bind ((error (lambda (c)
-                                         (warn "~A -- line ~:D dropped" c line)
-                                         (incf (aref dnum i))
-                                         (incf drop) (return nil))))
-                   (setf (aref v i) (numeric v i names)))))
+                 (handler-case (setf (aref v i) (numeric v i names))
+                   (error (c)
+                     (unless (and *print-bad-number-limit*
+                                  (< *print-bad-number-limit* drop-count))
+                       (warn "~A -- line ~:D dropped" c line))
+                     (when (eql drop-count *print-bad-number-limit*)
+                       (warn "~:D line~:P dropped, suppress firther warnings"
+                             drop-count))
+                     (incf (aref dnum i))
+                     (incf (gethash (aref v i) drop-values 0))
+                     (incf drop-count) (return nil)))))
              lines))
-      (if (zerop drop) (mesg :log out "done")
+      (if (zerop drop-count) (mesg :log out "done")
           (loop :for i :in col-specs :for d = (aref dnum i) :unless (zerop d)
             :do (mesg :log out "~%~3D ~V@A:  ~:D lines dropped"
                       i max-name-length (column-name names i) d)
-            :finally (mesg :log out "~%...dropped ~:D lines (out of ~:D, ~4F%)"
-                           drop len (/ (* 1d2 drop) len))))
-      (values lines (- len drop)))))
+            :finally
+            (when (print-log-p :log)
+              (format out "~&;; -- ~:D different non-number~:P"
+                      (hash-table-count drop-values))
+              (print-counts drop-values :out out))
+            (mesg :log out "~&...dropped ~:D lines (out of ~:D, ~4F%)"
+                  drop-count len (/ (* 1d2 drop-count) len))))
+      (values lines (- len drop-count)))))
 
 (defstruct (stat-column (:conc-name sc-))
   (table nil :type (or nil table))

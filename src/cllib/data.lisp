@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.37 2007/04/20 04:14:46 sds Exp $
+;;; $Id: data.lisp,v 1.38 2007/04/20 04:15:16 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -267,14 +267,15 @@
 
 ;;;###autoload
 (defun analyse-csv (file &key (first-line-names :default)
-                    (out *standard-output*) medians
+                    (out *standard-output*) medians junk-allowed
                     ((:value-boundary *value-boundary*) *value-boundary*)
                     ((:columns *columns*) *columns*)
                     ((:levels *levels*) *levels*)
                     ((:buckets *buckets*) *buckets*))
   "Analyse columns in the CSV file."
   (multiple-value-bind (lines len file-size names)
-      (csv-read-file file :first-line-names first-line-names)
+      (csv-read-file file :first-line-names first-line-names
+                     :junk-allowed junk-allowed)
     (declare (ignore file-size))
     (let* ((column-count (length (or names (car lines))))
            (columns (unroll-column-specs *columns* names column-count))

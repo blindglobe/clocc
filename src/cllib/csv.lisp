@@ -1,10 +1,10 @@
 ;;; read/write comma-separated values
 ;;;
-;;; Copyright (C) 2003-2006 by Sam Steingold
+;;; Copyright (C) 2003-2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.20 2006/08/16 01:59:17 sds Exp $
+;;; $Id: csv.lisp,v 2.21 2007/04/20 04:14:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -80,17 +80,20 @@
                          (out '*standard-output*) columns)
                     &body body)
   "Open FILE and set VEC to successive vectors in it.
+When JUNK-ALLOWED is non-NIL, lines of wrong length do not generate errors
+  but warnings, and if it is an integer, at most this many warnings.
 Return 3 values:
   number of records (lines) read,
   number of bytes in the file,
   fraction of bytes read
   vector of column names if FIRST-LINE-NAMES is non-NIL
     or if it is :DEFAULT and the first line starts with a +COMMENTS+ character."
-  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols lim l1 fln pro)
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols lim l1 fln pro drop ja)
     `(with-timing (:out ,out :count ,len :units "records" :progress ,progress
                    :progress-1 ,progress-1)
        (let* ((,fn ,file) (,pro ,progress) ,fsize ,l1
               (,fln ,first-line-names) (,cols ,columns)
+              (,ja ,junk-allowed) (,drop 0)
               ,@(when limit `((,lim ,limit))))
          (with-open-file (,in ,fn :direction :input)
            (format ,out "~&Reading `~a' [~:d bytes]..."
@@ -109,26 +112,40 @@ Return 3 values:
            (loop :with ,vec :for ,ln = (read-line ,in nil nil) :while ,ln
              ,@(when limit
                  `(:when (and ,lim (= ,len ,lim))
-                    :do (warn "reached the limit of ~:D record~:P ~
-                               at ~:D byte~:P (~4F%), aborted~%"
-                              ,len (file-position ,in)
-                              (/ (file-position ,in) ,fsize 1d-2))
-                        (loop-finish)))
-             :unless (and ,junk-allowed
-                          (zerop (length (setq ,ln (string-trim
-                                                    *csv-whitespace* ,ln)))))
-             :do (setq ,vec (csv-parse-string ,ln)) (incf ,len)
-             (if ,cols
-                 (csv-check-vec-len ,vec ,cols ,fn ,len)
-                 (setq ,cols (length ,vec)))
-             ,@body
+                   :do (warn "reached the limit of ~:D record~:P ~
+                              at ~:D byte~:P (~4F%), aborted~%"
+                             ,len (file-position ,in)
+                             (/ (file-position ,in) ,fsize 1d-2))
+                       (loop-finish)
+                   :end))
+             :do (setq ,ln (string-trim *csv-whitespace* ,ln))
+             :if (or (zerop (length ,ln)) ; empty line
+                     (find (char ,ln 0) +comments+) ; comment line
+                     (progn (setq ,vec (csv-parse-string ,ln)) (incf ,len)
+                            (if ,cols
+                                (if ,ja
+                                    (handler-case (csv-check-vec-len
+                                                   ,vec ,cols ,fn ,len)
+                                      (error (c)
+                                        (unless (eql ,ja 0)
+                                          (warn (princ-to-string c)))
+                                        (when (and (integerp ,ja) (plusp ,ja))
+                                          (decf ,ja)
+                                          (when (zerop ,ja)
+                                            (warn "Suppress further warnings")))
+                                        t))
+                                    (csv-check-vec-len ,vec ,cols ,fn ,len))
+                                (and (setq ,cols (length ,vec)) nil))))
+             :do (incf ,drop)
+             :else :do ,@body
              (progress (/ (file-position ,in) ,fsize)
                        ;; print <*...*> when we expect to reach limit
                        (if ,(when limit `(and ,lim (> ,len (* ,lim pos))))
                            "*" ""))
              :end
-             :finally (format ,out "done [~:d record~:p~@[, ~:d column~:p~]]"
-                              ,len ,cols)
+             :finally (format ,out "done [~:d record~:p~@[, ~:d column~:p~]~
+                                    ~[~:;,~:* ~:d line~:p dropped~]]"
+                              ,len ,cols ,drop)
              :finally (return
                         (values ,len (file-length ,in)
                                 (if (zerop ,fsize) 1
@@ -136,12 +153,13 @@ Return 3 values:
                                 ,l1))))))))
 
 ;;;###autoload
-(defun csv-read-file (inf &key (first-line-names :default))
+(defun csv-read-file (inf &key (first-line-names :default) junk-allowed)
   "Read comma-separated values into a list of vectors."
   (let (len file-size complete names)
     (values (with-collect (coll)
               (setf (values len file-size complete names)
-                    (with-csv (vec inf :first-line-names first-line-names)
+                    (with-csv (vec inf :first-line-names first-line-names
+                                       :junk-allowed junk-allowed)
                       (coll vec))))
             len file-size names)))
 

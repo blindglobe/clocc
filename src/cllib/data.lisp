@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.36 2007/04/13 04:57:07 sds Exp $
+;;; $Id: data.lisp,v 1.37 2007/04/20 04:14:46 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -120,7 +120,7 @@
                                   (< *print-bad-number-limit* drop-count))
                        (warn "~A -- line ~:D dropped" c line))
                      (when (eql drop-count *print-bad-number-limit*)
-                       (warn "~:D line~:P dropped, suppress firther warnings"
+                       (warn "~:D line~:P dropped, suppress further warnings"
                              drop-count))
                      (incf (aref dnum i))
                      (incf (gethash (aref v i) drop-values 0))

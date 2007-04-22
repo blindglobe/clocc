@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.38 2007/04/20 04:15:16 sds Exp $
+;;; $Id: data.lisp,v 1.39 2007/04/22 04:48:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -27,10 +27,11 @@
           show-sc show-sc-list aref-i ensure-buckets ensure-levels
           table table-path table-lines table-stats table-names write-table
           table-accessor table-column-pos table-lines$ compress-tables *tables*
-          table-stat-column table-p ensure-table-stat-column column-histogram
+          table-stat-column table-p ensure-table-stat-column
+          column-histogram column-histogram2 table-copy
           analyse-csv table-stats-refresh add-column column-name-sc
-          plot-columns table-to-hash summarize table-select purge-columns
-          evaluate-predictor))
+          plot-columns correlation-columns table-to-hash summarize
+          table-select purge-columns evaluate-predictor))
 
 (defcustom *buckets* (or null (cons lift:bucket)) ()
   "The list of buckets to fill in `analyse-csv'.")
@@ -265,6 +266,10 @@
                          (sc-name sc) (sc-pos sc))
          plot-opts))
 
+(defun column-histogram2 (name table &rest plot-opts)
+  (apply #'column-histogram (nth-value 2 (column-name-sc name table))
+         plot-opts))
+
 ;;;###autoload
 (defun analyse-csv (file &key (first-line-names :default)
                     (out *standard-output*) medians junk-allowed
@@ -321,6 +326,13 @@
     (integer num)
     (float num)
     (t (float num 0d0))))
+
+(defun table-copy (table)
+  "Deep copy - lines & stats. "
+  (let ((res (copy-table table)))
+    (setf (table-lines res) (copy-list (table-lines res))
+          (table-stats res) (copy-list (table-stats res)))
+    res))
 
 (defun add-column (table1 function name)
   "Add a new column named NAME to the table.
@@ -403,7 +415,22 @@ Everything is allocated anew."
                                :xb (mdl-mi xmdl) :xe (mdl-ma xmdl)
                                :yb (mdl-mi ymdl) :ye (mdl-ma ymdl)
                                :data-style :points
-                               :title (princ-to-string table)))))))))
+                               :title (write-to-string table :escape nil
+                                                       :pretty nil)))))))))
+
+(defun correlation-columns (table col1 col2 &key (out *standard-output*))
+  "Compute correlation between two columns."
+  (multiple-value-bind (c1 n1 s1) (column-name-sc col1 table)
+    (multiple-value-bind (c2 n2 s2) (column-name-sc col2 table)
+      (let* ((mdl1 (sc-mdl s1)) (mdl2 (sc-mdl s2))
+             (corr (/ (covariance1 (table-lines table) (table-lines table)
+                                   :key0 (aref-i c1) :mean0 (mdl-mn mdl1)
+                                   :key1 (aref-i c2) :mean1 (mdl-mn mdl2))
+                      (mdl-sd mdl1) (mdl-sd mdl2))))
+        (mesg :log out "~S(~A): ~G (~,3F%)~%~A: ~A~%~A: ~A~%"
+              'correlation-columns table corr (* corr 1d2)
+              n1 mdl1 n2 mdl2)
+        corr))))
 
 (defun restat-table (old-table new-table &key (out *standard-output*)
                      (label 'restat-table))

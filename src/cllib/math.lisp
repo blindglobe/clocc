@@ -1,10 +1,10 @@
 ;;; Math utilities (Arithmetical / Statistical functions)
 ;;;
-;;; Copyright (C) 1997-2006 by Sam Steingold.
+;;; Copyright (C) 1997-2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.84 2006/09/20 01:04:42 sds Exp $
+;;; $Id: math.lisp,v 2.85 2007/04/22 04:47:56 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -1303,26 +1303,27 @@ without pre-computing the means."
             (with-type double-float (* (- y2b (* yb yb c0)) c1))
             nn)))
 
-(defun covariance1 (seq0 seq1 &key (key0 #'value) (key1 #'value))
+(defun covariance1 (seq0 seq1 &key (key0 #'value) (key1 #'value)
+                    (mean0 (dfloat (mean seq0 :key key0)))
+                    (mean1 (dfloat (mean seq1 :key key1))))
   "Compute the covariance between the data in the two sequences.
 Return 6 values: covariance, mean0, mean1, variance0,
 variance1, number of elements considered.
 Uses the numerically stable algorithm with pre-computing the means."
-  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1))
-  (let ((m0 (dfloat (mean seq0 :key key0)))
-        (m1 (dfloat (mean seq1 :key key1)))
-        (nn 0) (d0 0d0) (d1 0d0) (rr 0d0) (co 0d0))
-    (declare (fixnum nn) (double-float m0 m1 d0 d1 rr co))
+  (declare (sequence seq0 seq1) (type (function (t) double-float) key0 key1)
+           (double-float mean0 mean1))
+  (let ((nn 0) (d0 0d0) (d1 0d0) (rr 0d0) (co 0d0))
+    (declare (fixnum nn) (double-float d0 d1 rr co))
     (map nil (lambda (r0 r1)
-               (let ((xx (- (funcall key0 r0) m0))
-                     (yy (- (funcall key1 r1) m1)))
+               (let ((xx (- (funcall key0 r0) mean0))
+                     (yy (- (funcall key1 r1) mean1)))
                  (declare (double-float xx yy))
                  (incf nn) (incf d0 (sqr xx)) (incf d1 (sqr yy))
                  (incf rr (* xx yy))))
          seq0 seq1)
     (assert (> nn 1) (nn) "Too few (~d) points are given to covariance!" nn)
     (setq co (/ (dfloat (1- nn))))
-    (values (* rr co) m0 m1 (* d0 co) (* d1 co) nn)))
+    (values (* rr co) mean0 mean1 (* d0 co) (* d1 co) nn)))
 
 (defsubst cov (seq &key (xkey #'car) (ykey #'cdr))
   "Interface to `covariance' with one sequence."

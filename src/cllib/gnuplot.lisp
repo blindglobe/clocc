@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.40 2007/04/13 04:58:35 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.41 2007/04/26 00:44:31 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -556,33 +556,34 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
           (format str "~f~20t~f~%" (car kk) (funcall val (cdr kk))))))))
 
 ;;;###autoload
-(defun plot-error-bars (ll &rest opts &key (title "Error Bar Plot")
+(defun plot-error-bars (lss &rest opts &key (title "Error Bar Plot")
                         (xlabel "nums") (ylabel "value")
-                        (data-style (plot-data-style (list ll)))
+                        (data-style (plot-data-style lss))
                         (xkey #'first) (ykey #'second) (ydkey #'third)
                         &allow-other-keys)
-  "Plot the list with errorbars.
+  "Plot the lists with error bars.
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
-The first element is the title, all other are records from which we
-get x, y and ydelta with xkey, ykey and ydkey."
-  (declare (list ll))
+The first element of each list in LSS is the title, all others are
+records from which we get X, Y and YDELTA with XKEY, YKEY and YDKEY."
+  (declare (list lss))
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
-                     :data-style data-style :xb (funcall xkey (second ll))
-                     :xe (funcall xkey (car (last ll)))
-                     (remove-plist opts :xkey :ykey :ydkey))
-    (format str "plot 0 title \"\", '-' title ~s with errorbars,~
- '-' title \"\", '-' title \"\", '-' title \"\"~%" (pop ll))
-    (dolist (rr ll (format str "e~%"))
-      (format str "~a ~a ~a~%" (funcall xkey rr)
-              (funcall ykey rr) (funcall ydkey rr)))
-    (dolist (rr ll (format str "e~%"))
-      (format str "~a ~a~%" (funcall xkey rr) (funcall ykey rr)))
-    (dolist (rr ll (format str "e~%"))
-      (format str "~a ~a~%" (funcall xkey rr)
-              (- (funcall ykey rr) (funcall ydkey rr))))
-    (dolist (rr ll (format str "e~%"))
-      (format str "~a ~a~%" (funcall xkey rr)
-              (+ (funcall ykey rr) (funcall ydkey rr))))))
+                         :data-style data-style
+                         (remove-plist opts :xkey :ykey :ydkey))
+    ;; we want the same linestype and pointtype for all 3 plots:
+    ;; middle line with error bars, top line, bottom line
+    (format str "plot~{ '-' title ~s with errorlines lt ~d pt ~:*~d,~
+ '-' title \"\" lt ~:*~d pt ~:*~d, '-' title \"\" lt ~:*~d pt ~:*~d~^,~}~%"
+            (loop :for lt :upfrom 1 :for ll :in lss :nconc (list (car ll) lt)))
+    (dolist (ll lss)
+      (dolist (rr (cdr ll) (format str "e~%"))
+        (format str "~a ~a ~a~%" (funcall xkey rr)
+                (funcall ykey rr) (funcall ydkey rr)))
+      (dolist (rr (cdr ll) (format str "e~%"))
+        (format str "~a ~a~%" (funcall xkey rr)
+                (- (funcall ykey rr) (funcall ydkey rr))))
+      (dolist (rr (cdr ll) (format str "e~%"))
+        (format str "~a ~a~%" (funcall xkey rr)
+                (+ (funcall ykey rr) (funcall ydkey rr)))))))
 
 ;;;###autoload
 (defun plot-functions (fnl xmin xmax numpts &rest opts &key data-style
@@ -596,7 +597,7 @@ E.g.:
   (declare (list fnl) (real xmin xmax) (type index-t numpts))
   (with-plot-stream (str :xb xmin :xe xmax :title title
                      :data-style (or data-style (plot-data-style numpts)) opts)
-    (format str "plot~{ '-' using 1:2 title '~a'~^,~}~%" (mapcar #'car fnl))
+    (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car fnl))
     (dolist (fn fnl)
       (mesg :plot *gnuplot-msg-stream* "~&Plotting ~S..." (car fn))
       (dotimes (ii (1+ numpts) (format str "e~%"))

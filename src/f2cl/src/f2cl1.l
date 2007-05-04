@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/05/04 17:29:50 $"))
+  (remove #\$ "2.0 beta $Date: 2007/05/04 18:56:55 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -908,6 +908,7 @@ FILENAME                 File containing Fortran code
 			       ;; arguments of the subroutine.
 			       `(end_label (return (values 
 						    ,@(maybe-nullify-returns (second fort-fun) (caddr fort-fun)))))))))))
+
      ;; check for missing PROGRAM stmt
      (if (not (eq (car fort-fun) 'defun))
          (setq fort-fun (append '(defun *main* nil) fort-fun)))
@@ -915,8 +916,11 @@ FILENAME                 File containing Fortran code
 
      (multiple-value-bind (spec-proc spec-decl fun)
 	 (insert-declarations (prune-labels (fix-structure fort-fun labels)))
-       ;;(format t "spec-proc = ~S~%" spec-proc)
-       ;;(format t "spec-decl = ~S~%" spec-decl)
+       #+nil
+       (let ((*package* (find-package '#:cl-user)))
+	 (format t "spec-proc = ~S~%" spec-proc)
+	 (format t "spec-decl = ~S~%" spec-decl)
+	 (format t "fun = ~S~%" fun))
        (when spec-proc
 	 (mapc #'(lambda (s-proc s-decl)
 		   (unless (find (caadr s-proc) *common-block-initialized*)
@@ -933,8 +937,17 @@ FILENAME                 File containing Fortran code
 	       spec-decl)
 	 (terpri outport))
 
-       (setf fun (fixup-f2cl-lib fun *external-function-names*))
-
+       #+nil
+       (let ((*package* (find-package '#:cl-user)))
+	 (format t "fun = ~S~%" fun))
+       
+       ;; Add the function name to the list of external function names
+       ;; because we don't want to mangle the function name.  This is
+       ;; to prevent some Fortran code from redefining our library
+       ;; functions, in case the Fortran code has declared them as
+       ;; external.
+       (setf fun (fixup-f2cl-lib fun (cons (cadr fort-fun) *external-function-names*)))
+       
        (special-print fun outport)
        (format outport "~2&(in-package #-gcl #:cl-user #+gcl \"CL-USER\")~%#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
        (let* ((*package* (find-package '#:cl-user))
@@ -2814,8 +2827,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.170 2007/05/04 17:29:50 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.171 2007/05/04 18:56:55 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.171  2007/05/04 18:56:55  rtoy
+;;; Oops.  We don't want to mangle the function name either in case the
+;;; Fortran code is defining its own version.
+;;;
 ;;; Revision 1.170  2007/05/04 17:29:50  rtoy
 ;;; In FIXUP-F2CL-LIB, we need to honor external declarations.  That is,
 ;;; if a function is declared external, we should not use the version from

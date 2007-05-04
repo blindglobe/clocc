@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2006/12/21 03:42:11 $"))
+  (remove #\$ "2.0 beta $Date: 2007/05/04 17:29:50 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -810,14 +810,24 @@ FILENAME                 File containing Fortran code
 ;; at each symbol to see if it needs replacing.  Should profile this
 ;; to see if this really matters.)
 
-(defun fixup-f2cl-lib (tree)
-  (do-external-symbols (lib-sym :f2cl-lib)
-    (setf tree (subst lib-sym lib-sym tree
-		      :test #'(lambda (a b)
-				(and (symbolp a)
-				     (symbolp b)
-				     (string-equal a b))))))
-  tree)
+(defun fixup-f2cl-lib (tree external-names)
+  ;; F2CL provides it's own implementation of d1mach, r1mach, and
+  ;; i1mach.  So if the Fortran code declares these as external, we
+  ;; remove them.  This assumes that d1mach and friends really is the
+  ;; standard SLATEC d1mach.
+  (let ((external-names (remove-if #'(lambda (s)
+				       (member s '(d1mach r1mach i1mach)))
+				   external-names)))
+    (do-external-symbols (lib-sym :f2cl-lib)
+      (unless (member lib-sym external-names :test #'(lambda (a b)
+						       (string-equal (symbol-name a)
+								     (symbol-name b))))
+	(setf tree (subst lib-sym lib-sym tree
+			  :test #'(lambda (a b)
+				    (and (symbolp a)
+					 (symbolp b)
+					 (string-equal a b)))))))
+    tree))
 
 ;------------------------------------------------------------------------------
 ; prog-list of form ((margin line) (margin line) ...)
@@ -910,11 +920,11 @@ FILENAME                 File containing Fortran code
        (when spec-proc
 	 (mapc #'(lambda (s-proc s-decl)
 		   (unless (find (caadr s-proc) *common-block-initialized*)
-		     (setf s-proc (fixup-f2cl-lib s-proc))
+		     (setf s-proc (fixup-f2cl-lib s-proc *external-function-names*))
 		     (special-print s-proc outport)
 		     (terpri outport)
 		     (format outport "~%~%")
-		     (setf s-decl (fixup-f2cl-lib s-decl))
+		     (setf s-decl (fixup-f2cl-lib s-decl *external-function-names*))
 		     (special-print s-decl outport)
 		     (terpri outport)
 		     (format outport "~%~%")
@@ -923,7 +933,7 @@ FILENAME                 File containing Fortran code
 	       spec-decl)
 	 (terpri outport))
 
-       (setf fun (fixup-f2cl-lib fun))
+       (setf fun (fixup-f2cl-lib fun *external-function-names*))
 
        (special-print fun outport)
        (format outport "~2&(in-package #-gcl #:cl-user #+gcl \"CL-USER\")~%#+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))~%")
@@ -2804,8 +2814,21 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.169 2006/12/21 03:42:11 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.170 2007/05/04 17:29:50 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.170  2007/05/04 17:29:50  rtoy
+;;; In FIXUP-F2CL-LIB, we need to honor external declarations.  That is,
+;;; if a function is declared external, we should not use the version from
+;;; f2cl-lib, because the Fortran code implies we're using something else.
+;;;
+;;; We make an exception for d1mach, r1mach, and i1mach, since these are
+;;; standard SLATEC functions for which f2cl-lib has its own portable Lisp
+;;; implementation.
+;;;
+;;; This change fixes an issue when compiling some SLATEC code which
+;;; declares ZSQRT external.  Previously, f2cl would use f2cl-lib:zqrt,
+;;; which was wrong; the version from SLATEC was the desired version.
+;;;
 ;;; Revision 1.169  2006/12/21 03:42:11  rtoy
 ;;; GCL doesn't like some of the circular objects printed out in the f2cl
 ;;; info.  Turn off :circle t.

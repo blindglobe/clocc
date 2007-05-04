@@ -1,6 +1,18 @@
 -*- Mode: text -*-
 
 Changes:
+May 04, 2007
+------------
+o F2CL was getting confused with functions declared as external that
+  also happened to be named the same as some f2cl-lib functions like
+  zsqrt.  F2CL would compile the code usig f2cl-lib:zsqrt instead of
+  zsqrt, and this is wrong.  zsqrt should have been used.
+
+  To fix this, when we grovel over the generated code, replacing some
+  symbols with f2cl-lib symbols, we need to skip over any functions
+  declared external.  We also need to be careful and not redefine our
+  f2cl-lib functions with Fortran code.
+
 Nov 28, 2006
 ------------
 o F2CL will now save relevant function information in the generated

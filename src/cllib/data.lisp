@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.43 2007/05/06 02:08:29 sds Exp $
+;;; $Id: data.lisp,v 1.44 2007/05/06 02:09:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -400,12 +400,14 @@ Everything is allocated anew."
     ht))
 
 (defun plot-columns (table col1 col2 &rest options
-                     &key by (out *standard-output*) &allow-other-keys
-                     &aux (*gnuplot-msg-stream* out))
+                     &key by (out *standard-output*)
+                          (key1 #'identity) (key2 #'identity)
+                     &allow-other-keys &aux (*gnuplot-msg-stream* out))
   "Plot one column vs the other."
   (multiple-value-bind (c1 n1 s1) (column-name-sc col1 table)
     (multiple-value-bind (c2 n2 s2) (column-name-sc col2 table)
-      (flet ((f (l) (mapcar (lambda (v) (cons (aref v c1) (aref v c2))) l)))
+      (flet ((f (l) (mapcar (lambda (v) (cons (funcall key1 (aref v c1))
+                                              (funcall key2 (aref v c2)))) l)))
         (apply #'plot-lists-arg
                (if by
                    (let (l)

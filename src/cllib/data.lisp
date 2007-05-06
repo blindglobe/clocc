@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.42 2007/05/06 02:07:40 sds Exp $
+;;; $Id: data.lisp,v 1.43 2007/05/06 02:08:29 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -370,7 +370,10 @@ Everything is allocated anew."
      (let ((name (aref (table-names table) obj)))
        (values obj name (maybe-ensure-table-stat-column obj name table))))
     (string
-     (let ((pos (position obj (table-names table) :test #'string=)))
+     (let (pos)
+       (assert (setq pos (position obj (table-names table) :test #'string=))
+               (obj) "No ~S in ~S (candidates: ~S)" obj (table-names table)
+               (remove obj (table-names table) :test-not #'search))
        (values pos obj (maybe-ensure-table-stat-column pos obj table))))
     (stat-column
      (unless (eq table (sc-table obj))

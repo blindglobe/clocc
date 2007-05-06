@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.44 2007/05/06 02:09:12 sds Exp $
+;;; $Id: data.lisp,v 1.45 2007/05/06 02:10:27 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -441,39 +441,57 @@ Everything is allocated anew."
         corr))))
 
 (defun restat-table (old-table new-table &key (out *standard-output*)
-                     (label 'restat-table))
+                     (label 'restat-table) (column-modifiers '(identity)))
   "Recompute all stats present in OLD-TABLE for NEW-TABLE."
   (with-timing (:out out :done t)
     (mesg :log out "~S: stats...~%" label)
     (dolist (sc (table-stats old-table))
-      (let ((nsc (table-stat-column (sc-name sc) new-table :out out)))
-        (push nsc (table-stats new-table))
-        (ensure-levels nsc :out out)))
+      (dolist (cm column-modifiers)
+        (let ((nsc (table-stat-column (funcall cm (sc-name sc)) new-table
+                                      :out out)))
+          (push nsc (table-stats new-table))
+          (ensure-levels nsc :out out))))
     (mesg :log out "~S: stats..." label)))
 
-(defun summarize (table column &key (out *standard-output*))
-  "Summarize TABLE by COLUMN returning a new table of means."
+(defun summarize (table column &key (out *standard-output*) (slots '(mn sd)))
+  "Summarize TABLE by COLUMN returning a new table of means et al.
+:SLOTS specifies which slots of MDL are kept."
   (with-timing (:out out :done t)
     (mesg :log out "~S: summarizing ~S by ~S~%" 'summarize table column)
-    (let* ((stats (table-stats table)) (ncol (1+ (length stats)))
+    (let* ((stats (table-stats table))
+           (ncol-orig (length stats))
+           (nslots (length slots))
+           (ncol (1+ (* nslots ncol-orig)))
+           (names (make-array ncol))
            (ret (make-table :path (format nil "[~A]@~S"
                                           (write-table table nil) column)
-                            :names
-                            (apply #'vector
-                                   (cons column (mapcar #'sc-name stats)))))
+                            :names names))
            (accessors (mapcar (port:compose aref-i sc-pos) stats))
            (ht (table-to-hash table column :out out)))
-      (with-timing (:out out :done t)
-        (mesg :log out "~S: filling return table lines..." 'summarize)
-        (maphash (lambda (symbol list)
-                   (let ((v (make-array ncol)))
-                     (loop :for i :upfrom 1 :for acc :in accessors
-                       :do (setf (aref v i) (coerce-int-float
-                                             (mean list :key acc))))
-                     (setf (aref v 0) symbol)
-                     (push v (table-lines ret))))
-                 ht))
-      (restat-table table ret :out out :label 'summarize)
+      (flet ((modname (name slot) (format nil "~A-~A" name slot))
+             (index (nslot nstat) (+ 1 nslot (* nstat nslots))))
+        (setf (aref names 0) column)
+        (loop :for stat :in stats :and nstat :upfrom 0 :do
+          (loop :for slot :in slots :and nslot :upfrom 0 :do
+            (setf (aref names (index nslot nstat))
+                  (modname (sc-name stat) slot))))
+        (with-timing (:out out :done t)
+          (mesg :log out "~S: filling return table lines..." 'summarize)
+          (maphash (lambda (symbol list)
+                     (let ((v (make-array ncol)))
+                       (loop :for nstat :upfrom 0 :and acc :in accessors
+                         :for mdl = (standard-deviation-mdl list :key acc) :do
+                         (loop :for slot :in slots :and nslot :upfrom 0 :do
+                           (setf (aref v (index nslot nstat))
+                                 (slot-value mdl slot))))
+                       (setf (aref v 0) symbol)
+                       (push v (table-lines ret))))
+                   ht))
+        (restat-table table ret :out out :label 'summarize
+                      :column-modifiers
+                      (mapcar (lambda (slot)
+                                (lambda (name) (modname name slot)))
+                              slots)))
       (mesg :log out "~S: ~A..." 'summarize ret)
       (push ret *tables*)
       ret)))

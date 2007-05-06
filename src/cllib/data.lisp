@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.41 2007/05/06 02:06:58 sds Exp $
+;;; $Id: data.lisp,v 1.42 2007/05/06 02:07:40 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -132,14 +132,14 @@
              lines))
       (if (zerop drop-count) (mesg :log out "done")
           (loop :for i :in col-specs :for d = (aref dnum i) :unless (zerop d)
-            :do (mesg :log out "~%~3D ~V@A:  ~:D lines dropped"
+            :do (mesg :log out "~%~3D ~V@A:  ~:D line~:P dropped"
                       i max-name-length (column-name names i) d)
             :finally
             (when (print-log-p :log)
-              (format out "~&;; -- ~:D different non-number~:P"
+              (format out "~&;; -- ~:D different bad value~:P"
                       (hash-table-count drop-values))
               (print-counts drop-values :out out))
-            (mesg :log out "~&...dropped ~:D lines (out of ~:D, ~4F%)"
+            (mesg :log out "~&...dropped ~:D line~:P (out of ~:D, ~4F%)"
                   drop-count len (/ (* 1d2 drop-count) len))))
       (values lines (- len drop-count)))))
 

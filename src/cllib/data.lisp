@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.40 2007/04/25 02:36:26 sds Exp $
+;;; $Id: data.lisp,v 1.41 2007/05/06 02:06:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -91,7 +91,10 @@
   (reduce #'max names :key #'length :initial-value *min-name-length*))
 (defun get-column-name (col) (format nil "C~D" col))
 (defun get-column-names (column-count)
-  (loop :for col :from 0 :below column-count :collect (get-column-name col)))
+  (loop :with names = (make-array column-count)
+    :for col :from 0 :below column-count
+    :do (setf (aref names col) (get-column-name col))
+    :finally (return names)))
 (defun column-name (names col)
   (if names (aref names col) (get-column-name col)))
 

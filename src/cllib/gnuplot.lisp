@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.41 2007/04/26 00:44:31 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.42 2007/05/10 02:01:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -188,6 +188,7 @@ according to the given backend")
 (defconst +plot-timestamp+ plot-timestamp (make-plot-timestamp)
   "The standard timestamp.")
 
+(deftype range-limit () '(or real (eql *)))
 (defstruct (plot-axis (:conc-name plax-))
   (name "" :type string)        ; gnuplot name: [xyz]{2}
   (label "" :type string)       ; label: "value", "time"...
@@ -195,7 +196,7 @@ according to the given backend")
   (fmt "%g" :type string)
   (time-p nil :type boolean)
   (logscale nil :type (or null (eql t) (real (1))))
-  (range '(* . *) :type cons))
+  (range '(* . *) :type (cons range-limit range-limit)))
 
 (defstruct coordinate
   (system :first :type symbol)
@@ -522,7 +523,7 @@ LSS is a list of lists, car of each list is the title, cdr is the numbers."
 (defun plot-lists-arg (lss &rest opts &key (key #'identity)
                        (title "Arg List Plot") (xlabel "nums") rel lines
                        (ylabel (if rel "relative value" "value"))
-                       data-style quads xb xe &allow-other-keys)
+                       data-style quads (xb '*) (xe '*) &allow-other-keys)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the list
@@ -538,11 +539,7 @@ of conses of abscissas and ordinates. KEY is used to extract the cons."
                                         :ykey (compose cdr 'key))) lss)))
   (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
                      :data-style (or data-style (plot-data-style lss))
-                     :xb (or xb (reduce #'min lss
-                                        :key (compose car 'key cadr)))
-                     :xe (or xe (reduce #'max lss
-                                        :key (compose car 'key car last)))
-                     (remove-plist opts :key :rel :lines :quads))
+                     :xb xb :xe xe (remove-plist opts :key :rel :lines :quads))
     (format str "plot~{ '-' using 1:2 title ~s~^,~}" (mapcar #'car lss))
     (dolist (ln lines) (plot-line-str ln xb xe str))
     (dolist (qu quads) (plot-quad-str qu xb xe str))
@@ -679,19 +676,30 @@ DEPTH out of the dated list."
   (make-line :sl (/ (line-sl ln) +day-sec+) :co
              (- (line-co ln) (* (line-sl ln) (/ begd +day-sec+)))))
 
+(defun plot-formula (formula beg end str title lt)
+  "Write the string to plot stream STR for plotting the formula from BEG to END.
+This is not a complete plotting function (not a UI)!"
+  (declare (type string formula) (type range-limit beg end) (stream str))
+  (flet ((f (lim cmp string)
+           (if (eq '* lim) string
+               (format nil "(x~A~A)?(~A):1/0" cmp lim string))))
+    (format str ", (~A) title ~s with lines~@[ ~d~]"
+            (f beg '> (f end '< formula)) title lt)))
+
 (defun plot-line-str (ln beg end str &optional (title "") lt)
   "Write the string to plot stream STR for plotting the line from BEG to END.
 This is not a complete plotting function (not a UI)!"
-  (declare (type line ln) (real beg end) (stream str))
-  (format str ", ((x>~a)?((x<~a)?(~a*x+~a):1/0):1/0) title ~s with lines~
-~@[ ~d~]" beg end (line-sl ln) (line-co ln) title lt))
+  (declare (type line ln))
+  (plot-formula (format nil "~a*x+~a" (line-sl ln) (line-co ln))
+                beg end str title lt))
 
 (defun plot-quad-str (qu beg end str &optional (title "") lt)
   "Write the string to plot stream STR for plotting the parabola
 from BEG to END.  This is not a complete plotting function (not a UI)!"
-  (declare (type (simple-array double-float (3)) qu) (real beg end))
-  (format str ", ((x>~a)?((x<~a)?(~a*x*x+~a*x+~a):1/0):1/0) title ~s ~
-with lines~@[ ~d~]" beg end (aref qu 0) (aref qu 1) (aref qu 2) title lt))
+  (declare (type (simple-vector 3) qu))
+  (plot-formula (format nil "~a*x*x+~a*x+~a"
+                        (aref qu 0) (aref qu 1) (aref qu 2))
+                beg end str title lt))
 
 (provide :cllib-gnuplot)
 ;;; gnuplot.lisp ends here

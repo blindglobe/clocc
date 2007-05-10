@@ -1,10 +1,10 @@
 ;;; Financial functions
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold.
+;;; Copyright (C) 1997-2002, 2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.9 2005/01/27 23:02:49 sds Exp $
+;;; $Id: fin.lisp,v 2.10 2007/05/10 02:05:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
 (eval-when (compile load eval)
@@ -13,6 +13,8 @@
   (require :cllib-math (translate-logical-pathname "cllib:math"))
   ;; `comma'
   (require :cllib-tilsla (translate-logical-pathname "cllib:tilsla"))
+  ;; `with-plot-stream'
+  (require :cllib-gnuplot (translate-logical-pathname "cllib:gnuplot"))
   ;; `dfloat'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
 
@@ -21,6 +23,8 @@
 (export '(mgg-monthly mgg-compare mgg-prepay mgg-payoff mgg-interest
           black-scholes-call black-scholes-eput
           solow solow-next-year
+          option make-option option-strike option-price option-pos option-type
+          plot-options option-p&l
           lognormal luhn))
 
 ;;;
@@ -189,6 +193,72 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
       (terpri))))
 
 ;;;
+;;; options
+;;;
+
+(defstruct option
+  (type (port:required-argument) :type (member :put :call))
+  (strike (port:required-argument) :type real)
+  (pos 1 :type real)
+  (price (port:required-argument) :type real))
+
+(defmethod print-object ((o option) (s stream))
+  (if *print-readably* (call-next-method)
+      (format s "~A/~A-~A*~A" (option-type o) (option-strike o)
+              (option-pos o) (option-price o))))
+
+(defun option-signed (option quantity)
+  "Signed quantity for the option: positive for CALL, negative for PUT."
+  (ecase (option-type option)
+    (:put (- quantity))
+    (:call quantity)))
+
+(defun option-p&l (option stock)
+  "The option P&L at the given stock price."
+  (* (option-pos option)
+     (- (max 0 (option-signed option (- stock (option-strike option))))
+        (option-price option)))) ; up front cost
+
+(defun option-break-even (option)
+  "The price for which P&L is 0."
+  (+ (option-strike option)
+     (option-signed option (option-price option))))
+
+;; for an option, there are two important points: strike price and the
+;; "break-even" price; the range is divided by them evenly into 3 parts
+(defun option-range-min (option)
+  "The min strike price for which the option should be plotted."
+  (let ((s (option-strike option)) (b (option-break-even option)))
+    (- (min s b) (abs (- s b)))))
+(defun option-range-max (option)
+  "The max strike price for which the option should be plotted."
+  (let ((s (option-strike option)) (b (option-break-even option)))
+    (+ (max s b) (abs (- s b)))))
+
+(defun option-p&l-formula (option)
+  "The formula for gnuplot"
+  (ecase (option-type option)
+    (:put (format nil "~A*((x>~A?0:~:*~A-x)-~A)" (option-pos option)
+                  (option-strike option) (option-price option)))
+    (:call (format nil "~A*((x<~A?0:x-~:*~A)-~A)" (option-pos option)
+                   (option-strike option) (option-price option)))))
+
+(defun plot-options (option-list &rest opts
+                     &key (title "options")
+                     (xb (* 0.9 (reduce #'min option-list
+                                        :key #'option-range-min)))
+                     (xe (* 1.1 (reduce #'max option-list
+                                        :key #'option-range-max)))
+                     &allow-other-keys)
+  "Plot P&L for several options on the same underlying."
+  (with-plot-stream (s :title title :xb xb :xe xe opts)
+    (format s "plot (~{~A~^+~}) title 'sum'"
+            (mapcar #'option-p&l-formula option-list))
+    (dolist (option option-list)
+      (format s ", ~A title '~A'" (option-p&l-formula option) option))
+    (terpri s)))
+
+;;;
 ;;; Lognormal distribution
 ;;;
 
@@ -199,6 +269,36 @@ and Capital/Income ratio K-Y-0 to the Golden Rate steady state."
       (/ (exp (let ((ll (log xx))) (* ll ll -0.5d0)))
          (dfloat (sqrt (* 2 pi))) xx)
       0d0))
+
+#+nil (progn
+
+(cllib:plot-options
+ (list (cllib:make-option :type :put :strike 12.5 :price 0.4)))
+(cllib:plot-options
+ (list (cllib:make-option :type :call :strike 12.5 :price 1.6 :pos -1)))
+(cllib:plot-options
+ (list (cllib:make-option :type :call :strike 12.5 :price 1.85 :pos 1)
+       (cllib:make-option :type :call :strike 15 :price .15 :pos -1))
+ :legend '(:top :left :box))
+(cllib:plot-options
+ (list (cllib:make-option :type :call :strike 12.5 :price 1.85)
+       (cllib:make-option :type :put :strike 12.5 :price .40))
+ :legend '(:top :left :box) :title "straddle")
+(cllib:plot-options
+ (list (cllib:make-option :type :call :strike 12.5 :price 1.85)
+       (cllib:make-option :type :put :strike 12.5 :price .40 :pos -1))
+ :legend '(:top :left :box) :title "combo")
+(cllib:plot-options
+ (list (cllib:make-option :type :put :strike 10 :price .25)
+       (cllib:make-option :type :call :strike 15 :price .30))
+ :legend '(:top :left :box) :title "strangle")
+(cllib:plot-options
+ (list (cllib:make-option :type :call :strike 10 :price 4.25)
+       (cllib:make-option :type :call :strike 12.5 :price 1.70 :pos -2)
+       (cllib:make-option :type :call :strike 15 :price .15))
+ :legend '(:top :left :box) :title "butterfly")
+
+)
 
 ;;;
 ;;; Checking Credit Card Number validity via Luhn algorithm.

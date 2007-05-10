@@ -2,7 +2,7 @@
 ;;;
 ;;; CLLIB - a library of useful utilities
 ;;;
-;;; $Id: cllib.system,v 1.45 2007/05/10 02:02:41 sds Exp $
+;;; $Id: cllib.system,v 1.46 2007/05/10 02:05:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cllib.system,v $
 ;;;
 ;;; when adding a file to CLLIB, one has to modify the following:
@@ -44,7 +44,7 @@
      (:file "doall" :depends-on ("base"))
      (:file "elisp" :depends-on ("base" "closio" "list"))
      (:file "fileio" :depends-on ("base" "withtype" "symb" "log" "string"))
-     (:file "fin" :depends-on ("base" "math" "tilsla" "withtype"))
+     (:file "fin" :depends-on ("base" "math" "tilsla" "withtype" "gnuplot"))
      (:file "geo" :depends-on
             ("base" "withtype" "symb" "fileio" "html" "tilsla" "url"))
      (:file "getopt" :depends-on ("base" "symb"))

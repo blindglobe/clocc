@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.42 2007/05/10 02:01:12 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.43 2007/05/10 02:08:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -29,7 +29,7 @@
 (export '(*gnuplot-path* *gnuplot-printer* *gnuplot-default-directive*
           *gnuplot-file* *gnuplot-dribble*
           plot-output *plot-term-screen* *plot-term-printer* *plot-term-file*
-          plot-term make-plot-term plot-histogram
+          plot-term make-plot-term plot-histogram plot-ulam
           +plot-timestamp+ directive-term make-plot-stream
           with-plot-stream plot-dated-lists plot-dated-lists-depth
           plot-lists plot-lists-arg plot-error-bars plot-functions))
@@ -602,6 +602,17 @@ E.g.:
         (let ((xx (dfloat (/ (+ (* ii xmax) (* (- numpts ii) xmin)) numpts))))
           (format str "~f~20t~f~%" xx (funcall (cdr fn) xx))))
       (mesg :plot *gnuplot-msg-stream* "done~%"))))
+
+;;;###autoload
+(defun plot-ulam (list &rest opts &key (title "Ulam spiral") &allow-other-keys)
+  "Plot the list of numbers in an Ulam spiral.
+E.g.: (plot-ulam (subseq (primes-to 10000) 0 1000))
+      (plot-ulam (loop :for i :from 1 :to 1000 :collect (isqrt (* i i i))))"
+  (with-plot-stream (str :data-style :points :title title opts)
+    (format str "plot '-' using 1:2~%")
+    (dolist (num list (format str "e~%"))
+      (multiple-value-bind (x y) (ulam-n2xy num)
+        (format str "~d ~d~%" x y)))))
 
 ;;;###autoload
 (defun plot-dated-lists-depth (depth dls slot &rest opts)

@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.45 2007/05/06 02:10:27 sds Exp $
+;;; $Id: data.lisp,v 1.46 2007/05/10 01:57:47 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -419,9 +419,12 @@ Everything is allocated anew."
                                (f (table-lines table)))))
                (append (remove-plist options :by :out)
                        (let ((xmdl (sc-mdl s1)) (ymdl (sc-mdl s2)))
+                         (declare (ignore xmdl ymdl))
                          (list :xlabel n1 :ylabel n2
-                               :xb (mdl-mi xmdl) :xe (mdl-ma xmdl)
-                               :yb (mdl-mi ymdl) :ye (mdl-ma ymdl)
+                               ;; do not pass ranges because of possible
+                               ;; logscale problems
+                               ;; :xb (mdl-mi xmdl) :xe (mdl-ma xmdl)
+                               ;; :yb (mdl-mi ymdl) :ye (mdl-ma ymdl)
                                :data-style :points :lines t :quads t
                                :title (write-to-string table :escape nil
                                                        :pretty nil)))))))))

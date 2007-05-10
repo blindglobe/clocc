@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.85 2007/04/22 04:47:56 sds Exp $
+;;; $Id: math.lisp,v 2.86 2007/05/10 02:07:59 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -53,7 +53,7 @@
    line-thru-points regress lincom
    plf make-plf plf-x plf-y plf-extend-left plf-extend-right plf-size
    monotonic-p plf-monotonic-p plf-val plf->function plf-simplify plf-integral
-   increasify *increasify-step*))
+   increasify *increasify-step* *ulam-base* ulam-n2xy ulam-xy2n show-ulam))
 
 ;;;
 ;;;
@@ -178,7 +178,7 @@ The first element is the upper bound.")
   "The file for keeping the list of primes.")
 
 (defun primes-to (nn &optional int)
-  "Return the list of primes up to N, exclusively.
+  "Return the list of primes at least up to N, exclusively.
 The optional second argument, if non-nil, is a double float
 specifying the interval for progress reports."
   (declare (fixnum nn) (type (or null double-float) int))
@@ -1899,6 +1899,39 @@ The accessor keys XKEY and YKEY default to CAR and CDR respectively."
           "~S: result is not monotonic: ~S" 'increasify vec)
   vec)
 
+;;;
+;;; Ulam spiral
+;;; http://en.wikipedia.org/wiki/Ulam_spiral
+;;;
+
+(defcustom *ulam-base* integer 0
+  "*The number one less than the number in the origin.")
+
+(defun ulam-n2xy (n &key ((:base *ulam-base*) *ulam-base*)
+                  &aux (n1 (- n *ulam-base* 1))
+                  (i (floor (1- (isqrt n1)) 2)) (2i+1 (1+ (* 2 i)))
+                  (2i+2 (1+ 2i+1)) (r (- n1 (* 2i+1 2i+1))))
+  (cond ((minusp (decf r 2i+2)) (values (1+ i) (+ r 2 i)))
+        ((minusp (decf r 2i+2)) (values (- (+ r 2 i)) (1+ i)))
+        ((minusp (decf r 2i+2)) (values (- -1 i) (- (+ r 2 i))))
+        ((minusp (decf r 2i+2)) (values (+ r 2 i) (- -1 i)))))
+
+(defun ulam-xy2n (x y &key ((:base *ulam-base*) *ulam-base*)
+                  &aux (ax (abs x)) (ay (abs y)))
+  (+ *ulam-base*
+     (cond ((< ay x) (+ (sqr (1- (* 2 x))) (+ x y)))
+           ((<= ax y) (+ (* 2 y (1- (* 2 y))) (- y x -1)))
+           ((>= (- ay) x) (+ (* 4 ax ax) (- ax y -1)))
+           ((>= (- ax) y) (+ (* 2 ay (1+ (* 2 ay))) (+ x ay 1))))))
+
+(defun show-ulam (x y &key ((:base *ulam-base*) *ulam-base*)
+                  ((:out *standard-output*) *standard-output*)
+                  &aux (width (ceiling (* 2 (log (1+ (* 2 (max x y))) 10)))))
+  "Print the spiral to :OUT."
+  (loop :for i :from (- y) :to y :do (fresh-line)
+    (loop :for j :from (- x) :to x :do
+      (format t " ~vd" width (ulam-xy2n j i)))
+    (terpri)))
 
 (provide :cllib-math)
 ;;; math.lisp ends here

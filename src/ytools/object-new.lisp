@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 2.2 2007/05/20 04:54:25 airfoyle Exp $
+;;;$Id: object-new.lisp,v 2.1 2007/05/20 04:54:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -36,8 +36,9 @@
    slots
    key-cons    ;; boolean
    key-conser  ;; function name
-;;;;   handler-fn   ;;; obsolete
-   initforms)
+   initforms
+   uninit-key-conser ;; function name
+   )
 
 ;;; It's really a constant, but cmucl issues an error after
 ;;; slurp  evaluates it and then compile evaluates it again.
@@ -47,11 +48,12 @@
 (needed-by-macros
 
 (defun declare-ytools-class (name kind components slots initforms
-				  key-cons key-conser)
+				  key-cons key-conser uninit-key-conser)
    (!= (get name 'ytools-class-descriptor)
        (make-YTools-class-descriptor
 	  :medium kind :components components :slots slots :initforms initforms
-	  :key-conser key-conser :key-cons key-cons))
+	  :key-conser key-conser :key-cons key-cons
+          :uninit-key-conser uninit-key-conser))
    (let ((unclear (<? (\\ (c) (or (not (atom c))
 				  (not (get c 'ytools-class-descriptor))
 				  (not (eq (ytd-medium
@@ -348,7 +350,8 @@
                              ',slotnames
                              ',slot-initforms
                              ',key-cons
-                             ',(or extra-key-conser conser)))
+                             ',(or extra-key-conser conser)
+                             ',(or uninit-extra-key-conser uninit-conser)))
 		       ,@(cond ((not already-defined)
                                 `((defstruct
                                    (,name
@@ -641,7 +644,19 @@
 		  (get-ytools-class-descriptor class))))
       (cond ((and nd (eq (ytd-medium nd) ':structure))
 	     (cond ((ytd-key-conser nd)
-		    `(,(ytd-key-conser nd) ,@args))
+                    (let ((blank-inst (memq '\:blank args)))
+                       (cond (blank-inst
+                              (setq args 
+                                    `(,@(ldiff args blank-inst)
+                                      ,@(cddr blank-inst)))
+                              (cond ((memq (cadr blank-inst)
+                                           '(false nil))
+                                     `(,(ytd-key-conser nd) ,@args))
+                                    (t
+                                     `(,(ytd-uninit-key-conser nd)
+                                       ,@args))))
+                             (t
+                              `(,(ytd-key-conser nd) ,@args)))))
 		   (t
 		    (error "Can't do 'make-inst' of class ~s, because it has no key-conser"
 			   class))))

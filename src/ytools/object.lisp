@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 2.2 2007/05/20 04:54:25 airfoyle Exp $
+;;;$Id: object.lisp,v 2.3 2007/05/29 18:59:23 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -36,8 +36,9 @@
    slots
    key-cons    ;; boolean
    key-conser  ;; function name
-;;;;   handler-fn   ;;; obsolete
-   initforms)
+   initforms
+   uninit-key-conser ;; function name
+   )
 
 ;;; It's really a constant, but cmucl issues an error after
 ;;; slurp  evaluates it and then compile evaluates it again.
@@ -47,11 +48,13 @@
 (needed-by-macros
 
 (defun declare-ytools-class (name kind components slots initforms
-				  key-cons key-conser)
+				  key-cons key-conser
+                                  &optional uninit-key-conser)
    (!= (get name 'ytools-class-descriptor)
        (make-YTools-class-descriptor
 	  :medium kind :components components :slots slots :initforms initforms
-	  :key-conser key-conser :key-cons key-cons))
+	  :key-conser key-conser :key-cons key-cons
+          :uninit-key-conser uninit-key-conser))
    (let ((unclear (<? (\\ (c) (or (not (atom c))
 				  (not (get c 'ytools-class-descriptor))
 				  (not (eq (ytd-medium
@@ -348,7 +351,8 @@
                              ',slotnames
                              ',slot-initforms
                              ',key-cons
-                             ',(or extra-key-conser conser)))
+                             ',(or extra-key-conser conser)
+                             ',(or uninit-extra-key-conser uninit-conser)))
 		       ,@(cond ((not already-defined)
                                 `((defstruct
                                    (,name
@@ -501,7 +505,8 @@
                                     (eq key-cons ':nokey))
                                 `',extra-key-conser)
                                (t
-                                `',maker-name))))
+                                `',maker-name))
+                        false))
 		  ,@(include-if (not already-defined)
 		      `(common-lisp::defclass ,name ,components
 			                      ,local-slotspecs))
@@ -641,7 +646,19 @@
 		  (get-ytools-class-descriptor class))))
       (cond ((and nd (eq (ytd-medium nd) ':structure))
 	     (cond ((ytd-key-conser nd)
-		    `(,(ytd-key-conser nd) ,@args))
+                    (let ((blank-inst (memq '\:blank args)))
+                       (cond (blank-inst
+                              (setq args 
+                                    `(,@(ldiff args blank-inst)
+                                      ,@(cddr blank-inst)))
+                              (cond ((memq (cadr blank-inst)
+                                           '(false nil))
+                                     `(,(ytd-key-conser nd) ,@args))
+                                    (t
+                                     `(,(ytd-uninit-key-conser nd)
+                                       ,@args))))
+                             (t
+                              `(,(ytd-key-conser nd) ,@args)))))
 		   (t
 		    (error "Can't do 'make-inst' of class ~s, because it has no key-conser"
 			   class))))
@@ -654,14 +671,31 @@
 
 (defmacro def-op (name argl &rest body)
    (!= < argl body > (ignore-smooth argl body))
-   (multiple-value-let (d body) (declarations-separate body)
-      `(defgeneric ,name ,argl
-	  ,@(include-if (not (null body))
-	       `(:method ((,(car argl) t) ,@(cdr argl))
-		  ,@d
-		  ,@body)))))
+   (multi-let (((options body)
+                (generic-options-extract body)))
+      (multiple-value-let (d body) (declarations-separate body)
+         `(defgeneric ,name ,argl
+             ,@options
+             ,@(include-if (not (null body))
+                  `(:method ((,(car argl) t) ,@(cdr argl))
+                     ,@d
+                     ,@body))))))
 
 (needed-by-macros
+
+(defun generic-options-extract (body)
+   (repeat :for (new-body option
+                 :collector options)
+    :while (matchq (?(:& (?(:|| :method-combination :argument-precedence-order
+                           :documentation)
+                          ?@_)
+                         ?option)
+                    ?@new-body)
+                   body)
+    :collect option
+       (!= body new-body)
+    :result (values options body))) 
+
 (defun make-funcall (fname argnames)
    (let ((l (memq '&rest argnames)) fn)
       (cond (l `(apply ,fname ,@(ldiff argnames l) ,(cadr l)))
@@ -705,7 +739,7 @@
 
 (defclass YTools-object () ())
 
-(declare-ytools-class 'YTools-object ':object '() '() '() false 'make-YTools-object)
+(declare-ytools-class 'YTools-object ':object '() '() '() false 'make-YTools-object 'make-YTools-object)
 
 ;;; The purpose of the 'blank' arg (with bizarre non-keyword flag)
 ;;; is to allow Nisp to produce minimal, uninitialized objects for

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: files.lisp,v 2.2 2006/05/25 14:17:12 airfoyle Exp $
+;;;$Id: files.lisp,v 2.3 2007/05/29 18:59:23 airfoyle Exp $
 	     
 ;;; Copyright (C) 2004-2005
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -130,6 +130,8 @@
                     after its write date ~s"
 		  new-date file-date)))))
 
+(defvar deleted-file-chunk-optimism* true)
+
 (defmethod derive-date ((fc Code-file-chunk))
 ;;;;   (let ((v (Code-file-chunk-obs-alt-version fc)))
 ;;;;      (cond (v (derive-date v))
@@ -137,6 +139,8 @@
    (let ((pn (Code-file-chunk-pathname fc)))
       (cond ((probe-file pn)
 	     (file-write-date pn))
+            (deleted-file-chunk-optimism*
+             (Chunk-date fc))
 	    (t
 	     (restart-case
 		(error !"Code-file-chunk corresponds to ~

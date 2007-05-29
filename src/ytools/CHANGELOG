@@ -1,6 +1,20 @@
-$Id: CHANGELOG,v 2.29 2007/01/29 14:17:23 airfoyle Exp $
+$Id: CHANGELOG,v 2.30 2007/05/29 18:59:23 airfoyle Exp $
             
-            [- Version 2.1.29 -]
+            [- Version 2.1.30 -]
+2007-05-29: files.lisp: Stopped system from asking infuriating
+            question about nonexistent files (in
+            Code-file-chunk/derive-date).            
+
+2007-05-27: object.lisp: Allowed 'def-op' to have :method-combination
+            and :argument-precedence-order options, just as
+            'defgeneric' does.
+
+2007-05-20: object.lisp: Added kludgy convention for producing "blank"
+            objects, i.e., objects that the standard 'initialize'
+            method is never applied to.  This is for internal use
+            only. 
+
+            [- Version 2.1.29 2007/01/29 14:17:23 airfoyle Exp -]
 2007-01-28: Added sanity check that 'forall' and 'exists' actually
             have vars.
             

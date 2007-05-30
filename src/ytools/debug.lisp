@@ -1,7 +1,7 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
 
-;;;$Id: debug.lisp,v 2.12 2006/11/20 21:03:47 airfoyle Exp $
+;;;$Id: debug.lisp,v 2.13 2007/05/30 20:34:56 airfoyle Exp $
 
 (depends-on %module/  ytools
 	    :at-run-time %ytools/ nilscompat)
@@ -24,9 +24,13 @@
 (def-class Dbg-entry
    (:options (:medium :list))
    label
-   object
-   type)
+   object  ;; if +absent-marker+, then it means the entry doesn't exist
+   type)  
 )
+
+(defvar +absent-marker+ (printable-as-string "#<Absent>"))
+
+(defun dbg-entry-is-absent (de) (eq (Dbg-entry-object de) +absent-marker+))
 
 (defvar dbg-stack* '())
 
@@ -148,14 +152,15 @@
 ;;; -- This could obviously be optimized, by moving the tests back into the loop
 ;;; and avoiding constructing the unused labels in the first place.  Not worth it.
 
-(defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
+;;;; (defvar absent-dbg-entry* (make-Dbg-entry nil "?" nil))
 
 (defmacro get-and-pull-nth-dbg-entry (place^ sym^ n^)
    (with-gen-vars (n entry new-stack)
       `(let ((,n$ ,n^))
           (multi-let (((,entry$ ,new-stack$)
                        (nth-dbg-entry ,place^ ,sym^ ,n$)))
-             (cond ((not (eq ,entry$ absent-dbg-entry*))
+             (cond ((not (dbg-entry-is-absent ,entry$))
+                              ;;;;(eq ,entry$ absent-dbg-entry*)
                     (!= ,place^
                         (cond ((= ,n$ 0)
                                (cons ,entry$ ,new-stack$))
@@ -169,7 +174,8 @@
 	       (not (memq exp stack-subst-exempt-vars*)))
 	  ;; '*' still means "just typed," not (g *), by default
 	  (let ((ent (nth-dbg-entry dbg-stack* exp 0)))
-	     (cond ((eq ent absent-dbg-entry*)
+	     (cond ((dbg-entry-is-absent ent)
+                              ;;;;(eq ent absent-dbg-entry*)
 		    exp)
 		   (t `(g ,exp)))))
 	 ((atom exp) exp)
@@ -391,7 +397,8 @@
 
 (defun set-dbg-entry-object (sym n val)
    (let ((e (get-and-pull-nth-dbg-entry dbg-stack* sym n)))
-      (cond ((eq e absent-dbg-entry*)
+      (cond ((dbg-entry-is-absent e)
+                              ;;;;(eq e absent-dbg-entry*)
 	     "?")
 	    (t
 	     (!= (Dbg-entry-object e) val)))))
@@ -402,11 +409,13 @@
 ;;;      otherwise pulled as far forward as
 ;;;      possible without changing its index (vs. other entries
 ;;       with same 'sym')
-;;; If none found, returns absent-dbg-entry* + original 'a' 
+;;; If none found, returns an "absent" dbg-entry + original 'a' 
 (defun nth-dbg-entry (a sym n)
    (let-fun ()
       (cond ((null a)
-             (values absent-dbg-entry* !()))
+             (values (make-Dbg-entry sym +absent-marker+ false)
+                     ;;;; absent-dbg-entry*
+                     !()))
             ((eq (Dbg-entry-label (head a)) sym)
              (cond ((= n 0)
                     (values (head a) (tail a)))
@@ -414,7 +423,8 @@
                     (multi-let (((e s)
                                  (nth-dbg-entry (cdr a) sym (- n 1))))
                        (values e
-                               (cond ((eq e absent-dbg-entry*)
+                               (cond ((dbg-entry-is-absent e)
+                                            ;;;;(eq e absent-dbg-entry*)
                                       a)
                                      (t
                                       (cons (head a)
@@ -425,7 +435,8 @@
              (multi-let (((e s)
                           (nth-dbg-entry (cdr a) sym n)))
                 (values e
-                        (cond ((eq e absent-dbg-entry*)
+                        (cond ((dbg-entry-is-absent e)
+                                       ;;;;(eq e absent-dbg-entry*)
                                a)
                               (t
                                (cons (head a)
@@ -442,7 +453,8 @@
 
 (defun dbg-entry-label-change (oldlabel n newlabel)
   (let ((e (nth-dbg-entry dbg-stack* oldlabel n)))
-     (cond ((eq e absent-dbg-entry*)
+     (cond ((dbg-entry-is-absent e)
+                           ;;;;(eq e absent-dbg-entry*)
 	    "?")
 	   (t (!= (Dbg-entry-label e) newlabel)))))
 

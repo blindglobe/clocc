@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 2.3 2007/05/29 18:59:23 airfoyle Exp $
+;;;$Id: object.lisp,v 2.4 2007/05/30 18:47:04 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -671,8 +671,8 @@
 
 (defmacro def-op (name argl &rest body)
    (!= < argl body > (ignore-smooth argl body))
-   (multi-let (((options body)
-                (generic-options-extract body)))
+   (multiple-value-let (options body)
+                      (generic-options-extract body)
       (multiple-value-let (d body) (declarations-separate body)
          `(defgeneric ,name ,argl
              ,@options

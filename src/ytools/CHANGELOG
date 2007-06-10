@@ -1,6 +1,10 @@
-$Id: CHANGELOG,v 2.32 2007/05/30 20:34:56 airfoyle Exp $
+$Id: CHANGELOG,v 2.33 2007/06/10 13:52:09 airfoyle Exp $
             
-            [- Version 2.1.32 -]
+            [- Version 2.1.33 -]
+2007-06-10: object.lisp: Allow :clos and :clos-object as synonyms for
+            :object. 
+
+            [- Version 2.1.32 2007/05/30 20:34:56 airfoyle Exp -]
 2007-05-30: object.lisp: Replaced occurrence of 'multi-let' with
             'multiple-value-let', because 'multi-let' is not defined
             until a later file.
@@ -36,6 +40,7 @@ $Id: CHANGELOG,v 2.32 2007/05/30 20:34:56 airfoyle Exp $
             before the current one.
 
             [- Version 2.1.27 2006/11/20 04:43:13 airfoyle Exp -]
+
 2006-11-19: multilet.lisp: Convention for new variables changed: macro
             var bound to run-time var with name #:v-27 is v$ (not -v-,
             which looks too much like some kind of segment).

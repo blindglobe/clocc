@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: object.lisp,v 2.4 2007/05/30 18:47:04 airfoyle Exp $
+;;;$Id: object.lisp,v 2.5 2007/06/10 13:52:09 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -221,14 +221,17 @@
 	       ((memq x '(:ordinary :nondescript :as-shown :slots-only :named))
                 (!= explicit-testability true)
 		(!= is-testable (eq x ':named)))
-	       ((memq x '(:structure :object :list :vector))
+	       ((memq x '(:structure :clos :clos-object :object :list :vector))
 		(cond (storage-class
 		       (error "I'll ignore all but the first"
 			      !"'def-class' medium specified more than once ~
                                  in: ~s for class ~s"
                               l classname))
 		      (t
-		       (!= storage-class x))))
+		       (!= storage-class
+                           (cond ((memq x '(:clos :clos-object :object))
+                                  ':object)
+                                 (t x))))))
 	       (t
 		(cerror "I'll ignore it"
 		   "Illegal :medium in def-class: ~s for class ~s"
@@ -670,12 +673,11 @@
 ;;;;   x)
 
 (defmacro def-op (name argl &rest body)
-   (!= < argl body > (ignore-smooth argl body))
-   (multiple-value-let (options body)
-                      (generic-options-extract body)
+   (multiple-value-let (op-options body)
+                       (generic-options-extract body)
+      (!= < argl body > (ignore-smooth argl body))
       (multiple-value-let (d body) (declarations-separate body)
-         `(defgeneric ,name ,argl
-             ,@options
+         `(defgeneric ,name ,argl ,@op-options
              ,@(include-if (not (null body))
                   `(:method ((,(car argl) t) ,@(cdr argl))
                      ,@d
@@ -695,6 +697,15 @@
     :collect option
        (!= body new-body)
     :result (values options body))) 
+
+;;;;(defun generic-options-extract (body)
+;;;;   (repeat :for ((b :in body :tail bt)
+;;;;                 :collector options)
+;;;;    :while (and (is-Pair b)
+;;;;                (memq (car b) '(:method-combination
+;;;;                                :argument-precedence-order)))
+;;;;    :collect b
+;;;;    :result (values options bt)))
 
 (defun make-funcall (fname argnames)
    (let ((l (memq '&rest argnames)) fn)

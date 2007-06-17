@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: signal.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: signal.lisp,v 2.2 2007/06/17 14:30:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -299,5 +299,7 @@
    (find ch str)   ) 
 )
 
+
+              
 
 

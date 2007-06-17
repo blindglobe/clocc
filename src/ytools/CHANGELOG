@@ -1,5 +1,15 @@
-$Id: CHANGELOG,v 2.33 2007/06/10 13:52:09 airfoyle Exp $
+$Id: CHANGELOG,v 2.34 2007/06/17 14:30:02 airfoyle Exp $
             
+2007-06-16: datafun.lisp, misc.lisp: Added (datafun-match exp
+            pattern -body-), which (a), at macro expansion time, makes
+            sure, if the pattern begins with a symbol, that it begins
+            with the right symbol and (b), at run time, signals a
+            standard "Ill formed" error if the pattern doesn't match.
+
+            setter.lisp: If (!=/ sym ...) finds that sym is unbound,
+            it asks the user if the intention is really to set the
+            symbol before proceeding.
+
             [- Version 2.1.33 -]
 2007-06-10: object.lisp: Allow :clos and :clos-object as synonyms for
             :object. 

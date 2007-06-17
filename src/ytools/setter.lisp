@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.10 2006/06/28 22:56:58 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.11 2007/06/17 14:30:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -88,19 +88,26 @@
 (defvar was* nil)
 (defvar now* nil)
 
-(defvar print-was* (printable-as-string "was"))
+(defvar +print-was+ (printable-as-string "was"))
 
-(defvar print-now* (printable-as-string "now"))
+(defvar +print-now+ (printable-as-string "now"))
+
+(defvar +unbound+ (printable-as-string "<Unbound>"))
+
+(defvar +cancelled+ (printable-as-string "<Cancelled>"))
 
 (defmacro !=/ (lft rgt)
    (let ((oldvalform (cond ((is-Symbol lft)
 			    `(cond ((boundp ',lft) ,lft) 
-				   (t '*unbound)))
+				   (t +unbound+)))
 			   (t lft))))
       `(progn (setq was* ,oldvalform)
-	      (setq now* ,rgt)
-	      (!= ,lft now*)
-	      `((,print-was* ,was*) (,print-now* ,now*)))))
+              (cond ((or (not (eq was* +unbound+))
+                         (y-or-n-p "Currently unbound; set anyway? "))
+                     (setq now* ,rgt)
+                     (!= ,lft now*)
+                     `((,print-was* ,was*) (,print-now* ,now*)))
+                    (t +cancelled+)))))
 
 ;; More efficient than MATCHQ when you know it will match.
 ;; Saying (!= (< var1 var2 ... >) list) sets the vars to the

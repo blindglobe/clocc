@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: misc.lisp,v 2.1 2005/12/26 00:25:17 airfoyle Exp $
+;;;$Id: misc.lisp,v 2.2 2007/06/17 14:30:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -13,7 +13,7 @@
    (export '(out-to-string dbg-out dbg-out-indent
 	     err-out cons-if-new plev plen
 	     classify shorter list-splice is-list-of boole-eq eqn
-	     mod-load val-or-initialize memoize-val)))
+	     val-or-initialize memoize-val datafun-match)))
 
 (defmacro out-to-string (&rest outargs)
    `(with-output-to-string (string-stream) (out (:to string-stream) ,@outargs)))
@@ -103,19 +103,17 @@
    (string= (symbol-name sym1)
 	    (symbol-name sym2)))
 
-;;; Convenience
-
-(defun mod-load (module-name)
-   (let ((str
-	    (cond ((is-Symbol module-name)
-		   (Symbol-name module-name))
-		  (t
-		   module-name))))
-      (do-fload `(,(concatenate 'string
-		       "../" str "/")
-		  ,(concatenate 'string
-		       str ".lsy")))
-      (do-fload `(%module/ ,(intern str (find-package str))))))
+;;;;(defun mod-load (module-name)
+;;;;   (let ((str
+;;;;	    (cond ((is-Symbol module-name)
+;;;;		   (Symbol-name module-name))
+;;;;		  (t
+;;;;		   module-name))))
+;;;;      (do-fload `(,(concatenate 'string
+;;;;		       "../" str "/")
+;;;;		  ,(concatenate 'string
+;;;;		       str ".lsy")))
+;;;;      (do-fload `(%module/ ,(intern str (find-package str))))))
 	     
 (defmacro val-or-initialize (e^ &key ((:missing-if missing^) 'false)
 				     ((:init init^)
@@ -140,3 +138,30 @@
 				         " :store-as argument")))
    `(val-or-initialize ,store-place^ :init ,exp^ :missing-if ,uncached-val^))
 
+;;; Convenience; not worth documenting, perhaps.
+(defmacro datafun-match (&whole lossage
+                         exp^ pattern^ &rest body^ 
+                         &environment env)
+   (let ((key-sym (macroexpand-1 'datafun-key-sym env))
+         (task-id (macroexpand-1 'datafun-task-id env))
+         (sym (and (is-Pair pattern^) (car pattern^))))
+      (cond ((or (eq key-sym 'datafun-key-sym)
+                 (eq task-id 'datafun-task-id))
+             (signal-problem datafun-match
+                "datafun-match used outside datafun body:"
+                :% lossage))
+            ((eq sym key-sym)
+             (let ((fun-name (build-symbol (< key-sym) - (< task-id))))
+                (with-gen-vars (exp)
+                   `(let ((,exp$ ,exp^))
+                       (match-cond (cdr ,exp$)
+                           (:? ,(cdr pattern^)
+                              ,@body^)
+                           (t (signal-problem ,fun-name
+                                 "Ill-formed: " ,exp$)))))))
+            (t
+             (signal-problem datafun-match
+                "Pattern arg to datafun-match for task " task-id
+                :% " must be S-expression beginning"
+                " with symbol: " key-sym ":"
+                :% 2 lossage)))))

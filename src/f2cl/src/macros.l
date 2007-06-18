@@ -1046,7 +1046,8 @@ causing all pending operations to be flushed"
 	       *lun-hash*))
 
 (defun %open-file (&key unit file status access form recl blank)
-  ;; We should also check for values of access, form that we don't support.
+  (declare (ignore unit))
+  ;; We should also check for values of form that we don't support.
   (when recl
     (error "F2CL-LIB does not support record lengths"))
   (when blank
@@ -1054,6 +1055,9 @@ causing all pending operations to be flushed"
   (when (and access (not (string-equal "sequential"
 				       (string-right-trim " " access))))
     (error "F2CL-LIB does not support ACCESS mode ~S" access))
+  (when (and form (not (string-equal "unformatted"
+				     (string-right-trim " " form))))
+    (error "F2CL-LIB does not support FORM ~S" form))
   (let ((s (and status (string-right-trim " " status))))
     (finish-output)
     (cond ((or (null s) (string-equal s "unknown"))
@@ -1087,6 +1091,8 @@ causing all pending operations to be flushed"
 	  
 
 (defun %close (&key unit status)
+  (when status
+    (error "F2CL-LIB does not support STATUS"))
   (cl:close (lun->stream unit)))
 
 (defmacro close$ (&key unit iostat err status)
@@ -1414,8 +1420,14 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.76 2006/12/01 04:23:43 rtoy Exp $
+;;; $Id: macros.l,v 1.77 2007/06/18 15:50:16 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.77  2007/06/18 15:50:16  rtoy
+;;; Bug [ 1709300 ] unused key parameters
+;;;
+;;; o In %open-file, ignore UNIT, and produce an error if FORM is UNFORMATTED
+;;; o In %close, produce an error if STATUS is specified.
+;;;
 ;;; Revision 1.76  2006/12/01 04:23:43  rtoy
 ;;; Minor cleanups
 ;;;

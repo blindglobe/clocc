@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.11 2007/06/17 14:30:03 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.12 2007/06/20 01:09:47 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -106,7 +106,7 @@
                          (y-or-n-p "Currently unbound; set anyway? "))
                      (setq now* ,rgt)
                      (!= ,lft now*)
-                     `((,print-was* ,was*) (,print-now* ,now*)))
+                     `((,+print-was+ ,was*) (,+print-now+ ,now*)))
                     (t +cancelled+)))))
 
 ;; More efficient than MATCHQ when you know it will match.

@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: multilet.lisp,v 2.5 2006/12/01 17:46:16 airfoyle Exp $
+;;;$Id: multilet.lisp,v 2.6 2007/06/20 01:09:47 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -12,7 +12,7 @@
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
    (export '(multi-let with-open-files gen-var with-gen-vars
 	     keyword-args-extract
-	     control-nest track-extra-vals extra-vals)))
+	     control-nest track-extra-vals extra-vals datafun-match)))
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
    (defvar multi-let-notify* false)
@@ -607,3 +607,30 @@
 ;;;;                       (:proceed "I'll ignore all but the first"))))
 ;;;;             (funcall if-found (head occurs))))))
 
+;;; Convenience; not worth documenting, perhaps.
+(defmacro datafun-match (&whole lossage
+                         exp^ pattern^ &rest body^ 
+                         &environment env)
+   (let ((key-sym (macroexpand-1 'datafun-key-sym env))
+         (task-id (macroexpand-1 'datafun-task-id env))
+         (sym (and (is-Pair pattern^) (car pattern^))))
+      (cond ((or (eq key-sym 'datafun-key-sym)
+                 (eq task-id 'datafun-task-id))
+             (signal-problem datafun-match
+                "datafun-match used outside datafun body:"
+                :% lossage))
+            ((eq sym key-sym)
+             (let ((fun-name (build-symbol (< key-sym) - (< task-id))))
+                (with-gen-vars (exp)
+                   `(let ((,exp$ ,exp^))
+                       (match-cond (cdr ,exp$)
+                           (:? ,(cdr pattern^)
+                              ,@body^)
+                           (t (signal-problem ,fun-name
+                                 "Ill-formed: " ,exp$)))))))
+            (t
+             (signal-problem datafun-match
+                "Pattern arg to datafun-match for task " task-id
+                :% " must be S-expression beginning"
+                " with symbol: " key-sym ":"
+                :% 2 lossage)))))

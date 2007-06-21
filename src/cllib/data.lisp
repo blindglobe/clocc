@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: data.lisp,v 1.47 2007/06/21 03:58:56 sds Exp $
+;;; $Id: data.lisp,v 1.48 2007/06/21 14:01:19 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/data.lisp,v $
 
 (eval-when (compile load eval)
@@ -143,13 +143,7 @@
                   drop-count len (/ (* 1d2 drop-count) len))))
       (values lines (- len drop-count)))))
 
-;; define type TABLE before it is used in STAT-COLUMN definition
-(defstruct table
-  (path "" :type (or string pathname)) ; file containing the table
-  (lines () :type (or list integer)) ; lines or line count
-  (stats () :type list)              ; of stat-column
-  (names #() :type vector))          ; of column names
-
+;; TABLE is defined later; this should not be a problem in ANSI CL
 (defstruct (stat-column (:conc-name sc-))
   (table nil :type (or nil table))
   (pos 0 :type index-t)
@@ -212,6 +206,11 @@
                     *levels*))
       (format out " ~F~:{ [~F:~A]~}" (sc-median sc) (sc-levels sc)))))
 
+(defstruct table
+  (path "" :type (or string pathname)) ; file containing the table
+  (lines () :type (or list integer)) ; lines or line count
+  (stats () :type list)              ; of stat-column
+  (names #() :type vector))          ; of column names
 (defun table-lines$ (table)
   "Return the number of lines in the TABLE."
   (let ((lines (table-lines table)))

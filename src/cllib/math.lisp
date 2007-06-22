@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: math.lisp,v 2.86 2007/05/10 02:07:59 sds Exp $
+;;; $Id: math.lisp,v 2.87 2007/06/22 21:02:26 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/math.lisp,v $
 
 (eval-when (compile load eval)
@@ -172,6 +172,14 @@ CLISP: (ffi:def-call-out ffs (:name \"ffs\") (:arguments (i ffi:int))
 See http://www.opengroup.org/onlinepubs/009695399/functions/ffs.html."
   (1- (integer-length (logand n (- n)))))
 
+(defun has-divisors (num num-list &optional (rt (isqrt num)))
+  "Return T if NUM is divisible by a number in NUM-LIST.
+NUM-LIST is assumed to be sorted in the increasing order.
+Only numbers smaller than (ISQRT NUM) are checked."
+  (dolist (nn num-list nil)
+    (when (< rt nn) (return nil))
+    (when (zerop (mod num nn)) (return t))))
+
 (defcustom *primes* list nil "The list of primes.
 The first element is the upper bound.")
 (defcustom *primes-file* pathname (merge-pathnames "primes" *datadir*)
@@ -187,16 +195,17 @@ specifying the interval for progress reports."
   (when (and *primes* (>= (car *primes*) nn))
     (return-from primes-to (cdr *primes*)))
   (do* ((ii 3 (+ 2 ii)) (res (if (> nn 2) (list 2))) (end res)
-        (rt (isqrt ii) (isqrt ii)) (bt (get-int-time)))
-       ((>= ii nn) (setq *primes* (cons nn res)) res)
+        (rt (isqrt ii) (isqrt ii)) (bt0 (get-int-time)) (bt bt0))
+       ((>= ii nn) (setq *primes* (cons nn res))
+        (when (and int (> (elapsed bt0 t) int))
+          (format t "done [run: ~A]~%" (nth-value 1 (elapsed bt0 t t))))
+        res)
     (declare (fixnum ii))
     (when (and int (= 1 (mod ii 1000)) (> (elapsed bt t) int))
       (format t "~:d..." ii) (force-output)
       (setq bt (get-int-time)))
-    (do ((mm res (cdr mm)))
-        ((or (null mm) (> (car mm) rt))
-         (setq end (cdr (nconc end (list ii)))))
-      (if (zerop (mod ii (car mm))) (return nil)))))
+    (unless (has-divisors ii res rt)
+      (setq end (cdr (nconc end (list ii)))))))
 
 (defun divisors (nn &optional (primes-list (primes-to (1+ (isqrt nn)))))
   "Return the list of prime divisors of the given number.
@@ -214,10 +223,7 @@ The optional second argument specifies the list of primes."
 (defsubst primep (nn &optional (primes-list (primes-to (1+ (isqrt nn)))))
   "Check whether the number is prime."
   (declare (integer nn) (list primes-list))
-  (do ((pp primes-list (cdr pp)) (rt (isqrt nn)))
-      ((or (null pp) (> (car pp) rt)) t)
-    (declare (fixnum rt))
-    (when (zerop (mod nn (car pp))) (return nil))))
+  (has-divisors nn primes-list (isqrt nn)))
 
 (defun make-primes-list (&optional (limit most-positive-fixnum))
   "Initialize `*primes*' and write `*primes-file*'."

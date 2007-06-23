@@ -1,5 +1,9 @@
-$Id: CHANGELOG,v 2.35 2007/06/20 01:09:47 airfoyle Exp $
+$Id: CHANGELOG,v 2.36 2007/06/23 14:52:45 airfoyle Exp $
             
+            [- Version 2.1.36 -]
+2007-06-23: datafun.lisp: Introduce "hooked macros" so the 'datafun'
+            macros can all have hooks to be used by Nisp.
+
 2007-06-19: misc.lisp, multilet.lisp: Moved 'datafun-match' from
             misc.lisp to multilet.lisp 
 

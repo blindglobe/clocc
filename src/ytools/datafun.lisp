@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 2.3 2007/06/17 14:30:03 airfoyle Exp $
+;;;$Id: datafun.lisp,v 2.4 2007/06/23 14:52:45 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -10,7 +10,69 @@
 (eval-when (:load-toplevel)
    (export '(datafun datafun-key-sym datafun-task-id
 	     datafun-table datafun-alist datafun-from-plist
-	     attach-datafun datafun-on-plist)))
+	     attach-datafun datafun-on-plist def-hooked-macro macro-hook)))
+
+;;; A way of providing a hook to allow macros to be redefined
+;;; to allow something to be done to them before they are expanded.
+
+(defmacro def-hooked-macro (name args &body body)
+;;; Premature complexification --
+;;;;   (multiple-value-bind (hookname args body)
+;;;;                        (cond ((is-Symbol args)
+;;;;                               (values args (car body) (cdr body)))
+;;;;                              (t
+;;;;                               (values name args body)))
+   ;; We have to fish out the &whole and &environment parameters
+   ;; because (a) we need to refer to them and (b) the param list
+   ;; gets recycled into a 'destructuring-bind', which doesn't allow
+   ;; an &environment param --
+   (multiple-value-bind (env-var d-args)
+                        (let ((evtl (member '&env args)))
+                           (cond (evtl
+                                  (values (cadr evtl)
+                                          (nconc (ldiff args evtl)
+                                                 (cddr evtl))))
+                                 (t
+                                  (values (gen-var 'env)
+                                          args))))
+      (let ((whole-var 
+               (cond ((car-eq d-args '&whole)
+                      (values (cadr d-args) (cddr d-args)))
+                     (t
+                      (values (gen-var 'whole) d-args))))
+            (rest-var (gen-var 'rest)))
+         `(defmacro ,name (&whole ,whole-var &rest ,rest-var
+                           &environment ,env-var)
+             (declare (ignore ,rest-var))
+             (check-for-macro-hook
+                ',name ,whole-var ,env-var
+                (\\ (,whole-var ,env-var)
+                   (declare (ignorable ,env-var))
+                   (destructuring-bind ,d-args (rest ,whole-var)
+                      ,@body)))))))
+
+;;; obsolete attempt --
+;;;;;;; 'whole^' must be a symbol that evaluates to the whole expression.
+;;;;;;;
+;;;;(defmacro hook-macro (hook-name whole^ &body body)
+;;;;   (cond ((not (is-Symbol whole^))
+;;;;          (error "Illegal hook-macro variable for %s: %s"
+;;;;                 hook-name whole^)))
+;;;;   `(check-for-macro-hook
+;;;;       ',hook-name ,whole^
+;;;;       (\\ (,whole^) ,@body)))
+
+(eval-when (:compile-toplevel :load-toplevel)
+
+   (defvar macro-hooks* !())
+
+   (defun check-for-macro-hook (name whole env expander)
+      (let ((h (alref macro-hooks* name)))
+         (cond (h
+                (funcall h whole env expander))
+               (t
+                (funcall expander whole env)))))
+)
 
 ;;; (DATAFUN master sym def) defines a new procedure and associates
 ;;; it with sym under the indicator master.
@@ -25,7 +87,7 @@
 ;;; Some of the complexity of this machinery is wasted, but we'll
 ;;; leave it as is in case we ever need it.
 
-(defmacro datafun (master sym def)
+(def-hooked-macro datafun (&whole exp master sym def)
    (let (funame)
 ;;;;      `(eval-when (:compile-toplevel :load-toplevel :execute
 ;;;;		   :slurp-toplevel)  ... )
@@ -35,18 +97,18 @@
 	     ((memq (car def) '(function funktion))
 	      `(declare-datafun ',(cadr def) ',master ',sym nil))
 	     (t
-	      (setf funame (build-symbol (< sym) - (< master)))
-	      (let ((definer (car def))
-		    (definiens
-		       (cond ((eq (cadr def) ':^)
-			      (cddr def))
-			     (t (cdr def)))))
-	      `(progn
-		  (symbol-macrolet ((datafun-key-sym ,sym)
-                                     (datafun-task-id ,master))
-                     (,definer ,funame ,@definiens))
-		  (declare-datafun ',funame ',master
-				   ',sym t)))))))
+              (setf funame (build-symbol (< sym) - (< master)))
+              (let ((definer (car def))
+                    (definiens
+                       (cond ((eq (cadr def) ':^)
+                              (cddr def))
+                             (t (cdr def)))))
+                 `(progn
+                     (symbol-macrolet ((datafun-key-sym ,sym)
+                                        (datafun-task-id ,master))
+                        (,definer ,funame ,@definiens))
+                     (declare-datafun ',funame ',master
+                                      ',sym t)))))))
 
 (defvar datafun-attachers* (make-eq-hash-table :size 100))
 
@@ -79,7 +141,7 @@
 		   sym  master)
 		(setf (get sym master) (symbol-function funame)))))))
 
-(defmacro datafun-table (name ind &key (size 100))
+(def-hooked-macro datafun-table (name ind &key (size 100))
   `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
       (defvar ,name (make-hash-table :size ',size :test #'eq))
       (datafun attach-datafun ,ind
@@ -87,7 +149,7 @@
 	    (ignore ind)
             (setf (table-entry ,name sym) (symbol-function fname))))))
 
-(defmacro datafun-alist (name ind)
+(def-hooked-macro datafun-alist (name ind)
   `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
       (defvar ,name !((Tup Symbol Obj)))
       (datafun attach-datafun ,ind
@@ -95,7 +157,7 @@
 	    (ignore ind)
             (setf (alref ,name sym) (symbol-function fname))))))
 
-(defmacro datafun-from-plist (ind)
+(def-hooked-macro datafun-from-plist (ind)
    (out "Hello from datafun-from-plist: " ind :%)
    `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
        (datafun attach-datafun ,ind #'datafun-on-plist)))
@@ -107,4 +169,5 @@
 ;;;;	    (\\ (_ sym funame)
 ;;;;	       (setf (table-entry ,name sym) 
 
-
+;;; Alist of (hook-name new-expander) pairs
+(datafun-alist macro-hooks* macro-hook)

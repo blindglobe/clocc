@@ -1,6 +1,6 @@
 ;;;; Meta-Object Protocol
 ;;;
-;;; Copyright (C) 2006 by Sam Steingold
+;;; Copyright (C) 2006-2007 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: mop.lisp,v 1.2 2006/11/28 05:14:03 sds Exp $
+;;; $Id: mop.lisp,v 1.3 2007/06/25 20:57:21 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/mop.lisp,v $
 
 (eval-when (compile load eval)
@@ -19,7 +19,7 @@
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext")))
 
 (in-package
-  #+(and allegro (not (version>= 6))) :clos
+  #+(and allegro (version>= 6)) :clos
   #+(and clisp mop) :clos
   #+cmu :pcl
   #+lucid :clos

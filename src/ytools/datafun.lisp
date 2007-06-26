@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 2.4 2007/06/23 14:52:45 airfoyle Exp $
+;;;$Id: datafun.lisp,v 2.5 2007/06/26 15:32:56 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -62,9 +62,9 @@
 ;;;;       ',hook-name ,whole^
 ;;;;       (\\ (,whole^) ,@body)))
 
-(eval-when (:compile-toplevel :load-toplevel)
+(declaim (special macro-hooks*))
 
-   (defvar macro-hooks* !())
+(eval-when (:compile-toplevel :load-toplevel)
 
    (defun check-for-macro-hook (name whole env expander)
       (let ((h (alref macro-hooks* name)))
@@ -87,7 +87,7 @@
 ;;; Some of the complexity of this machinery is wasted, but we'll
 ;;; leave it as is in case we ever need it.
 
-(def-hooked-macro datafun (&whole exp master sym def)
+(def-hooked-macro datafun (master sym def)
    (let (funame)
 ;;;;      `(eval-when (:compile-toplevel :load-toplevel :execute
 ;;;;		   :slurp-toplevel)  ... )

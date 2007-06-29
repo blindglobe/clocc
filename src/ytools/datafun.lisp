@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 2.5 2007/06/26 15:32:56 airfoyle Exp $
+;;;$Id: datafun.lisp,v 2.6 2007/06/29 16:21:03 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -62,9 +62,10 @@
 ;;;;       ',hook-name ,whole^
 ;;;;       (\\ (,whole^) ,@body)))
 
-(declaim (special macro-hooks*))
-
 (eval-when (:compile-toplevel :load-toplevel)
+
+   ;;; Alist of (hook-name new-expander) pairs
+   (defvar macro-hooks* !())
 
    (defun check-for-macro-hook (name whole env expander)
       (let ((h (alref macro-hooks* name)))
@@ -158,7 +159,6 @@
             (setf (alref ,name sym) (symbol-function fname))))))
 
 (def-hooked-macro datafun-from-plist (ind)
-   (out "Hello from datafun-from-plist: " ind :%)
    `(eval-when  (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
        (datafun attach-datafun ,ind #'datafun-on-plist)))
 
@@ -169,5 +169,7 @@
 ;;;;	    (\\ (_ sym funame)
 ;;;;	       (setf (table-entry ,name sym) 
 
-;;; Alist of (hook-name new-expander) pairs
-(datafun-alist macro-hooks* macro-hook)
+(datafun attach-datafun macro-hook
+   (defun :^ (ind sym fname)
+      (ignore ind)
+      (setf (alref macro-hooks* sym) (symbol-function fname))))

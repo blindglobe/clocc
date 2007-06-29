@@ -1,6 +1,10 @@
-$Id: CHANGELOG,v 2.36 2007/06/23 14:52:45 airfoyle Exp $
+$Id: CHANGELOG,v 2.37 2007/06/29 16:21:03 airfoyle Exp $
             
-            [- Version 2.1.36 -]
+            [- Version 2.1.37 -]
+2007-06-29: datafun.lisp: Fixed unfoundedness due to implict use of 
+            macro-hooks* before it is defined.
+
+            [- Version 2.1.36 2007/06/23 14:52:45 airfoyle Exp -]
 2007-06-23: datafun.lisp: Introduce "hooked macros" so the 'datafun'
             macros can all have hooks to be used by Nisp.
 

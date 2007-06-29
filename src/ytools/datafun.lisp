@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: datafun.lisp,v 2.6 2007/06/29 16:21:03 airfoyle Exp $
+;;;$Id: datafun.lisp,v 2.7 2007/06/29 22:25:37 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -168,6 +168,11 @@
 ;;;;      (setf (table-entry datafun-attachers* ',ind)
 ;;;;	    (\\ (_ sym funame)
 ;;;;	       (setf (table-entry ,name sym) 
+
+;;; Alist of (hook-name new-expander) pairs
+;;;(datafun-alist macro-hooks* macro-hook)
+;;; -- Can't use 'datafun-alist' because it is a hooked macro, and so
+;;; 'macro-hooks*' must be set before it is used.
 
 (datafun attach-datafun macro-hook
    (defun :^ (ind sym fname)

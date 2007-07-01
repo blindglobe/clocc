@@ -1281,7 +1281,7 @@ on the particular lisp compiler version being used.")
     ;; Somehow it is better to qualify default-directory in CMU with
     ;; the appropriate package (i.e. "EXTENSIONS".)
     ;; Same for Allegro.
-    #+(and :lispworks (not :lispworks4))
+    #+(and :lispworks (not :lispworks4) (not :lispworks5))
     ,(multiple-value-bind (major minor)
 			  #-:lispworks-personal-edition
 			  (system::lispworks-version)
@@ -1297,7 +1297,7 @@ on the particular lisp compiler version being used.")
 					 (find-package "SYSTEM")))
            (find-symbol "*CURRENT-WORKING-DIRECTORY*"
                         (find-package "LW"))))
-    #+:lispworks4
+    #+(or :lispworks4 :lispworks5)
     (hcl:get-working-directory)
     ;; Home directory
     #-sbcl

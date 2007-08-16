@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools -*-
 (in-package :ytools)
-;;;$Id: base.lisp,v 2.4 2006/05/20 01:44:24 airfoyle Exp $
+;;;$Id: base.lisp,v 2.5 2007/08/16 18:54:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -388,6 +388,11 @@
 (subr-synonym nthrest nthcdr nil)
 (subr-synonym nthtail nthcdr nil)
 
+(declaim (inline endtail))
+
+(defun endtail (n l)
+   (last l n))
+
 ;;;;(subr-synonym one first)
 ;;;;(subr-synonym two second t)
 ;;;;(subr-synonym three third t)
@@ -450,7 +455,7 @@
 	     (setq l (remove p l))))
       (let ((pkg (cond ((memq (cadr p) '(false nil))
 			false)
-		       (t `(find-package ',(cadr p))))))
+		       (t `(find-package ,(cadr p))))))
 	 (cond (p
 		(cond (pkg
 		       `(values (intern ,(symstuff l) ,pkg)))

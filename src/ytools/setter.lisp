@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: setter.lisp,v 2.12 2007/06/20 01:09:47 airfoyle Exp $
+;;;$Id: setter.lisp,v 2.13 2007/08/16 18:54:25 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -319,7 +319,7 @@
 					    `(>= (length ,dat-name) ,l))
 				       ,(qvaroid-decode-match
 						 a `(butlast ,dat-name ,l))
-				       (let ((\ dat (last ,dat-name ,l)))
+				       (let ((\ dat (endtail ,l ,dat-name)))
 					  ,(match-code d '\ dat)))))))
 		      (t
 		       `(and (is-Pair ,dat-name)

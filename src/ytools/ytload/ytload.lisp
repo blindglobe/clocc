@@ -1,5 +1,5 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
-;;;$Id: ytload.lisp,v 2.5 2006/08/19 14:54:14 airfoyle Exp $
+;;;$Id: ytload.lisp,v 2.6 2007/08/28 18:14:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -367,8 +367,8 @@
 
 (defun dump-yt-config-file ()
    (cond ((not (null new-config-variables*))
-	  (format t "Before dump, new-config-vars = ~s~%   config-vars = ~s~%"
-		  new-config-variables* config-variables*)
+;;;;	  (format t "Before dump, new-config-vars = ~s~%   config-vars = ~s~%"
+;;;;		  new-config-variables* config-variables*)
 	  (setq config-variables*
 	        (union new-config-variables*
 		       config-variables*

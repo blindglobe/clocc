@@ -1,6 +1,6 @@
 ;-*- Mode: Common-lisp; Package: ytools; -*-
 (in-package :ytools)
-;;;$Id: ytfm.lmd,v 2.2 2006/08/04 14:08:08 airfoyle Exp $
+;;;$Id: ytfm.lmd,v 2.3 2007/08/28 18:14:58 airfoyle Exp $
 
 ;;; Copyright (C) 1976-2003 
 ;;;     Drew McDermott and Yale University.  All rights reserved
@@ -54,6 +54,9 @@
 		 ':upper)
 		(t ':lower)))
    (set-config-var ytools-bin-path* sto
+          (cond ((or sto (not (boundp 'bin-idio*)))
+                 (query 
+"~%In the next two questions you will be asked about the locations of binary files~% with respect to source files.  It's assumed that binary-directory names consist~% of two parts, a basic relative path followed by a segment specialized to a~% particular compiler or implementation.~%The first question is about the basic relative path.~%")))
 	  (query "Where should YTools binary files be located relative to source files~% (e.g., \"bin/\" or ~s (default))? "
 		  default-ytools-bin-path*)
 	  (let ((path (read-line-trim)))

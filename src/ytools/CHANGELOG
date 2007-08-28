@@ -1,6 +1,10 @@
-$Id: CHANGELOG,v 2.39 2007/08/28 12:17:19 airfoyle Exp $
+$Id: CHANGELOG,v 2.40 2007/08/28 18:14:57 airfoyle Exp $
             
-            [- Version 2.1.39 -]
+            [- Version 2.1.40 -]
+2007-08-28: ytload/ytfm.lmd, ytools.lmd: Improvements to the
+              sequence of questions asked regarding bin directories.
+
+            [- Version 2.1.39 2007/08/28 12:17:19 airfoyle Exp -]
 2007-08-16: base.lisp: Fixed bug in 'build-symbol' whereby package arg
               was not evaluated!  (Manual was right, code wrong.)
               Defined 'endtail', a synonym for 'last' with args

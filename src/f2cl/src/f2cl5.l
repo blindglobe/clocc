@@ -2786,15 +2786,19 @@
       ;; it to the latter form.
       (setf (car options) `(unit = ,(caar options))))
     ;; Convert the list of options into Lisp-style keyword options.
-    `((f2cl-lib::open-file
-       ,@(flatten-list
-	  (mapcar #'(lambda (opt)
-		      (destructuring-bind (key = val)
-			  opt
-			(declare (ignore =))
-			`(,(intern (string-upcase (string key)) :keyword)
-			   ,val)))
-		  options))))))
+    (let ((res nil))
+      (dolist (opt options)
+	(destructuring-bind (key = &rest val)
+	    opt
+	  (declare (ignore =))
+	  ;; Convert the key into a keyword, and parse the value since
+	  ;; it can be an arbitrary expression.  (Well, not always,
+	  ;; but we're not going to check for that because that's not
+	  ;; valid Fortran.
+	  (push (intern (string-upcase (string key)) :keyword) res)
+	  (push (parse-expression val) res)))
+      (setf res (nreverse res))
+      `((f2cl-lib::open-file ,@res)))))
 
 (defun parse-rewind (x)
   (let ((options (if (listp (second x))
@@ -3452,8 +3456,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.152 2006/11/28 19:04:07 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.153 2007/09/19 18:28:52 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.153  2007/09/19 18:28:52  rtoy
+;;; Was not correctly handling things like
+;;;
+;;;  (OPEN UNIT = 1, FILE = path // '.dat')
+;;;
+;;; because we expected the value of each option to be a single item.  We
+;;; now parse the value to get the correct expression.
+;;;
 ;;; Revision 1.152  2006/11/28 19:04:07  rtoy
 ;;; o fchar and cmplx shouldn't be Fortran variables.
 ;;; o Clean up some compiler warnings about unused vars and functions.

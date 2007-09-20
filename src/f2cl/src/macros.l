@@ -254,7 +254,7 @@ is not included")
   (let ((data-list (gensym))
 	(data-len (length data))
 	(total-length (gensym)))
-    `(let* ((,data-list ',data)
+    `(let* ((,data-list (list ,@data))
 	    (,total-length (reduce #'* (list ,@dims))))
        (cond ((< ,data-len ,total-length)
 	      ;; Need to append some data.
@@ -1420,8 +1420,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.77 2007/06/18 15:50:16 rtoy Exp $
+;;; $Id: macros.l,v 1.78 2007/09/20 17:38:25 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.78  2007/09/20 17:38:25  rtoy
+;;; In ARRAY-INITIALIZE, we can't make a literal list of the data because
+;;; the data might not be literal.  (That is, the data might be constants
+;;; from a parameter statement.)
+;;;
 ;;; Revision 1.77  2007/06/18 15:50:16  rtoy
 ;;; Bug [ 1709300 ] unused key parameters
 ;;;

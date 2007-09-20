@@ -116,7 +116,18 @@
 		(t
 		 (write-char ch out)
 		 (incf k)))))))
-  
+
+(defun match-include (s)
+  ;; Does the string S look like an include line:
+  ;;
+  ;; INCLUDE 'file'
+  (when (string-equal s "include"
+		      :end1 (min 7 (length s)))
+    ;; Got "INCLUDE".  Look for file name
+    (with-input-from-string (stream s :start 7)
+      (let ((c (peek-char t stream)))
+	(member c '(#\' #\"))))))
+
 (defun preprocess (file &key (outfile-name nil))
   (when *verbose*
     (format t "~&preprocessing begins ...~%"))
@@ -125,77 +136,95 @@
     (let ((compiled-path (compile-file-pathname file)))
       (setf outfile-name
 	    (merge-pathnames (make-pathname :host (pathname-host compiled-path)
-					       :type "p")
+					    :type "p")
 			     compiled-path))))
   (with-open-file (inport file :direction :input)
     (with-open-file (outport outfile-name
 			     :direction :output
 			     :if-exists :rename-and-delete)
-      (let ((*package* (find-package :f2cl))
-	    (collected-comments nil))
-	(do ((prev-line nil)
-	     (line (read-line inport nil 'eof)
-		   (read-line inport nil 'eof)))
-	    ((eq line 'eof)
-	     (when prev-line
-	       (write-line prev-line outport))
-	     outfile-name)
-	  ;; Hmm, technically it might not be right to trim spaces from
-	  ;; the end of the line.  Consider what happens we are trying
-	  ;; to continue a string with trailing spaces.  The resulting
-	  ;; string is wrong.
-	  (let ((line (string-right-trim '(#\Space) (subseq line 0 (min 72 (length line))))))
-	    (cond 
-	      ((string= line "") nil)	; we leave out blank lines
-	      ((member (char line 0) *comment-line-characters*)
-	       (when *comments*
-		 ;; If we don't have anything buffered, we can print
-		 ;; out the comment now.  Otherwise, we need to save
-		 ;; the comment and print it out later, after we've
-		 ;; accumulated the continuation line, if any.
-		 (if prev-line
-		     (push line collected-comments)
-		     (write-comment-line line outport))))
-	      (t
-	       (when *verbose* (princ line) (terpri))
-	       ;; Handle tabs.  If the line begins with a tab, replace it with 6
-	       ;; spaces.
-	       (when (char-equal (aref line 0) #\Tab)
-		 (setf line (concatenate 'string "      " (subseq line 1))))
-	       ;; Do we really want to do this?  What if the tab is in a
-	       ;; string?  I think tabs are illegal in Fortran, though.
-	       (setf line (substitute #\Space #\Tab line))
-	       ;; If line is a continuation line, append it.  If not,
-	       ;; print out our buffered line.
-	       (cond ((or (< (length line) 6)
-			  (char-equal (aref line 5) #\Space))
-		      ;; Not continuation.  Print out the buffered line, if
-		      ;; any, and save this line for later.
-		      (when prev-line
-			;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
-			;;(format t "prev-line = ~S~%" prev-line)
+      (let ((*default-pathname-defaults* (make-pathname :directory
+							(pathname-directory file))))
+	(preprocess-streams inport outport)))))
+  
+(defun preprocess-streams (inport outport)
+  (let ((*package* (find-package :f2cl))
+	(collected-comments nil))
+    (do ((prev-line nil)
+	 (line (read-line inport nil 'eof)
+	       (read-line inport nil 'eof)))
+	((eq line 'eof)
+	 (when prev-line
+	   (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))
+	 outport)
+      ;; Hmm, technically it might not be right to trim spaces from
+      ;; the end of the line.  Consider what happens we are trying
+      ;; to continue a string with trailing spaces.  The resulting
+      ;; string is wrong.
+      (let ((line (string-right-trim '(#\Space) (subseq line 0 (min 72 (length line))))))
+	(cond 
+	  ((string= line "") nil)	; we leave out blank lines
+	  ((member (char line 0) *comment-line-characters*)
+	   (when *comments*
+	     ;; If we don't have anything buffered, we can print
+	     ;; out the comment now.  Otherwise, we need to save
+	     ;; the comment and print it out later, after we've
+	     ;; accumulated the continuation line, if any.
+	     (if prev-line
+		 (push line collected-comments)
+		 (write-comment-line line outport))))
+	  (t
+	   (when *verbose* (princ line) (terpri))
+	   ;; Handle tabs.  If the line begins with a tab, replace it with 6
+	   ;; spaces.
+	   (when (char-equal (aref line 0) #\Tab)
+	     (setf line (concatenate 'string "      " (subseq line 1))))
+	   ;; Do we really want to do this?  What if the tab is in a
+	   ;; string?  I think tabs are illegal in Fortran, though.
+	   (setf line (substitute #\Space #\Tab line))
+	   ;; If line is a continuation line, append it.  If not,
+	   ;; print out our buffered line.
+	   (cond ((or (< (length line) 6)
+		      (char-equal (aref line 5) #\Space))
+		  ;; Not continuation.  Print out the buffered line, if
+		  ;; any, and save this line for later.
+		  (when prev-line
+		    ;;(format t "~S~%" (adjust_nrs (replace_logl_ops prev-line)))
+		    ;;(format t "prev-line = ~S~%" prev-line)
 
-			;; Handle FORMAT statements carefully.  If we
-			;; have a format statement, we want to replace
-			;; any Hollerith strings in it with real
-			;; strings.
-			(let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
-			  (if (string-equal maybe-format "format"
-					    :end1 (min 6 (length maybe-format)))
-			      (write-line (process-format-line prev-line) outport)
-			      (write-line (adjust_nrs (replace_logl_ops prev-line)) outport))))
-		      (setf prev-line (copy-seq line))
-		      ;; Print out the collected comments, if any
-		      (when collected-comments
-			(dolist (c (nreverse collected-comments))
-			  (write-comment-line c outport))
-			(setf collected-comments nil)))
-		     (t
-		      ;; A continuation line!  Append the line to our
-		      ;; buffer, after removing any line number or
-		      ;; continuation character.
-		      (setf prev-line (concatenate 'string prev-line
-						   (subseq line 6)))))))))))))
+		    ;; Handle FORMAT statements carefully.  If we
+		    ;; have a format statement, we want to replace
+		    ;; any Hollerith strings in it with real
+		    ;; strings.
+		    (let ((maybe-format (string-left-trim " " (subseq prev-line 6))))
+		      (cond
+			((string-equal maybe-format "format"
+					:end1 (min 6 (length maybe-format)))
+			 (write-line (process-format-line prev-line) outport))
+			((match-include maybe-format)
+			 ;; Handle INCLUDE files.
+			 (let* ((start (position #\' maybe-format))
+				(end (if start
+					 (position #\' maybe-format :start (1+ start)))))
+			   (when (and start end)
+			     (let ((file (subseq maybe-format (1+ start) end)))
+			       (with-open-file (f (merge-pathnames file)
+						  :direction :input
+						  :if-does-not-exist :error)
+				 (preprocess-streams f outport))))))
+			 (t
+			  (write-line (adjust_nrs (replace_logl_ops prev-line)) outport)))))
+		  (setf prev-line (copy-seq line))
+		  ;; Print out the collected comments, if any
+		  (when collected-comments
+		    (dolist (c (nreverse collected-comments))
+		      (write-comment-line c outport))
+		    (setf collected-comments nil)))
+		 (t
+		  ;; A continuation line!  Append the line to our
+		  ;; buffer, after removing any line number or
+		  ;; continuation character.
+		  (setf prev-line (concatenate 'string prev-line
+					       (subseq line 6)))))))))))
 
 
 ;--------------------------------------------------------------------------
@@ -610,8 +639,21 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl6.l
 ;;;
-;;; $Id: f2cl6.l,v 1.42 2006/01/30 21:23:34 rtoy Exp $
+;;; $Id: f2cl6.l,v 1.43 2007/09/20 15:22:05 rtoy Exp $
 ;;; $Log: f2cl6.l,v $
+;;; Revision 1.43  2007/09/20 15:22:05  rtoy
+;;; Add support to the preprocessor to recognize INCLUDE lines.  This is
+;;; an extension of Fortran.  The included file must be relative to the
+;;; location of the current file.
+;;;
+;;; Moved the major functionality of PREPROCESS to PREPROCESS-STREAMS,
+;;; which takes stream arguments so we can do recursive INCLUDE's.  Modify
+;;; PREPROCESS-STREAMS to recognize INCLUDE so we can include them during
+;;; preprocessing and send the output to the right place.
+;;;
+;;; Fixed a bug in preprocessing where the last line never had all of the
+;;; normal processing done.  (This might need more work!)
+;;;
 ;;; Revision 1.42  2006/01/30 21:23:34  rtoy
 ;;; Revert change made in 1.39 for logical operations.  This was causing
 ;;; f2cl to delete all spaces after the logical operation and that really

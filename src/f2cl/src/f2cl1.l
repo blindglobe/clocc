@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/20 17:40:15 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/20 21:26:29 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -322,7 +322,21 @@ INPUT-FILE               File containing Fortran code
 	(delete-file processed-file))
       (values output-file))))
 
-(defun f2cl-compile (filename &key
+(defun remove-f2cl-keys (keys)
+  (do ((key keys (cddr key))
+       (result nil))
+      ((null key)
+       (nreverse result))
+    (unless (member (car key)
+		    '(:output-file :error-file :prune-labels :include-comments
+		      :auto-save :relaxed-array-decls :coerce-assigns
+		      :keep-lisp-file :array-type :array-slicing :package
+		      :declaim :declare-common :float-format :common-as-array))
+      (push (car key) result)
+      (push (second key) result))))
+
+(defun f2cl-compile (filename &rest all-keys
+		     &key
 			      (output-file (compile-file-pathname filename))
 			      error-file prune-labels include-comments
 			      (auto-save t) (relaxed-array-decls t)
@@ -334,7 +348,7 @@ INPUT-FILE               File containing Fortran code
 			      declaim
 			      declare-common
 			      (float-format *read-default-float-format*)
-                              common-as-array
+		              common-as-array
 			      &allow-other-keys)
   "Convert the Fortran to Common Lisp and compile the resulting Lisp file
 
@@ -385,11 +399,16 @@ FILENAME                 File containing Fortran code
 	       :float-format float-format
 	       :common-as-array common-as-array))
 	(*read-default-float-format* float-format))
-    (multiple-value-prog1
-	#+(or cmu scl) (compile-file lisp-file :output-file output-file :error-file error-file)
-	#-(or cmu scl) (compile-file lisp-file :output-file output-file)
-      (unless keep-lisp-file
-	(delete-file lisp-file)))))
+    (let ((compiler-keys (remove-f2cl-keys all-keys)))
+      (format t "compiler-keys = ~A~%" compiler-keys)
+      (multiple-value-prog1
+	  #+(or cmu scl)
+	  (apply #'compile-file lisp-file :output-file output-file
+		 :error-file error-file compiler-keys)
+	  #-(or cmu scl)
+	  (apply #'compile-file lisp-file :output-file output-file compiler-keys)
+	  (unless keep-lisp-file
+	    (delete-file lisp-file))))))
 ;---------------------------------------------------------------------------
 (defun process-data (x) 
    (print x)
@@ -2843,8 +2862,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.172 2007/09/20 17:40:15 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.173 2007/09/20 21:26:29 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.173  2007/09/20 21:26:29  rtoy
+;;; Simple attempt to allow passing additional keyword parameters from
+;;; f2cl-compile to compile-file.
+;;;
 ;;; Revision 1.172  2007/09/20 17:40:15  rtoy
 ;;; o Extended DO loops were erroneously causing extra labels (without a
 ;;;   label number!) to be inserted before the loop.  Fix that.

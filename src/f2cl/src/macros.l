@@ -1158,6 +1158,8 @@ causing all pending operations to be flushed"
 							(list x))
 						       ((stringp x)
 							(list x))
+						       ((atom x)
+							(list x))
 						       (t
 							(coerce x 'list))))
 				       args))))
@@ -1420,8 +1422,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.78 2007/09/20 17:38:25 rtoy Exp $
+;;; $Id: macros.l,v 1.79 2007/09/20 21:27:12 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.79  2007/09/20 21:27:12  rtoy
+;;; Was not handling atoms correctly.  This needs more work.
+;;;
 ;;; Revision 1.78  2007/09/20 17:38:25  rtoy
 ;;; In ARRAY-INITIALIZE, we can't make a literal list of the data because
 ;;; the data might not be literal.  (That is, the data might be constants

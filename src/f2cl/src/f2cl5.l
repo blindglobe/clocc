@@ -3271,21 +3271,29 @@
   (if *common-blocks-as-arrays*
       (make-common-block-vars-as-array varlist common_var_decls)
       (mapcar #'(lambda (var)
+		  #+nil
+		  (progn
+		    (format t "var = ~A~%" var)
+		    (format t "decl = ~A~%" (find var (rest common_var_decls)
+						  :key #'third)))
 		  (let* ((decl (find var (rest common_var_decls)
 				     :key #'third))
 			 (var-type (if decl (second decl) nil))
 			 (dims (cond ((and (listp var-type)
-					   (subtypep var-type 'array)
-					   (not (subtypep var-type 'string)))
-				      ;;(format t "array var-type = ~A ~A~%" var var-type)
-				      ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
+					   (subtypep var-type 'array))
+				      (cond
+					((subtypep var-type 'string)
+					 (third var-type))
+					(t
+					 ;;(format t "array var-type = ~A ~A~%" var var-type)
+					 ;;(format t "lookup-array-bounds ~A = ~A~%" var (lookup-array-bounds var))
 
-				      ;; If the dimension of the array is
-				      ;; a number, use the actual
-				      ;; dimension.  Otherwise use 0.
-				      (if (every #'numberp (third var-type))
-					  (third var-type)
-					  0))
+					 ;; If the dimension of the array is
+					 ;; a number, use the actual
+					 ;; dimension.  Otherwise use 0.
+					 (if (every #'numberp (third var-type))
+					     (third var-type)
+					     0))))
 				     (t nil)))
 			 (var-init
 			  (cond ((and (listp var-type)
@@ -3419,15 +3427,20 @@
 				;; we've already initialized the array
 				;; in the structure definition.
 				(unless (every #'numberp dims)
-				  `(make-array (list ,@dims) :element-type ',(second var-type)
-				  :initial-element ,(cond ((subtypep (second var-type) 'logical)
-							   nil)
-							  (t
-							   (coerce 0 (second var-type)))))))
+				  `(make-array (* ,@dims)
+					       :element-type ',(second var-type)
+					       :initial-element ,(cond ((subtypep (second var-type) 'logical)
+									nil)
+								       (t
+									(coerce 0 (second var-type)))))))
 			       ((subtypep var-type 'logical)
 				nil)
 			       (t
 				(coerce 0 var-type)))))
+	  #+nil
+	  (progn
+	    (format t "dims = ~A~%" dims)
+	    (format t "var-init = ~A~%" var-init))
 	  (when (and dims var-init)
 	    (setf initializer (append initializer
 				      `(,(intern (symbol-name var) :keyword) ,var-init))))))
@@ -3462,8 +3475,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.154 2007/09/20 15:18:33 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.155 2007/09/20 17:44:45 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.155  2007/09/20 17:44:45  rtoy
+;;; Was not constructing the initializer for strings in a common block
+;;; correctly.  This may need some more work.
+;;;
 ;;; Revision 1.154  2007/09/20 15:18:33  rtoy
 ;;; Was not initializing strings with the correct data.  We were trying to
 ;;; coerce 0 to a character, which doesn't work.

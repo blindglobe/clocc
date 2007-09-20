@@ -3287,16 +3287,22 @@
 					  (third var-type)
 					  0))
 				     (t nil)))
-			 (var-init (cond ((and (listp var-type)
-					       (subtypep (first var-type) 'array))
-					  `(make-array ',dims :element-type ',(second var-type)
-						       :initial-element ,(if (subtypep (second var-type) 'logical)
-									     nil
-									     (coerce 0 (second var-type)))))
-					 ((subtypep var-type 'logical)
-					  nil)
-					 (t
-					  (coerce 0 var-type)))))
+			 (var-init
+			  (cond ((and (listp var-type)
+				      (subtypep (first var-type) 'array))
+				 `(make-array ',dims :element-type ',(second var-type)
+					      :initial-element
+					      ,(cond
+						((subtypep (second var-type) 'logical)
+						 nil)
+						((subtypep (second var-type) 'character)
+						 #\space)
+						(t
+						 (coerce 0 (second var-type))))))
+				((subtypep var-type 'logical)
+				 nil)
+				(t
+				 (coerce 0 var-type)))))
 		    ;; Initialize the slot with a 0 of the appropriate
 		    ;; type (for scalars) or a zero element array of the
 		    ;; appropriate dimensions for array slots.
@@ -3456,8 +3462,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.153 2007/09/19 18:28:52 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.154 2007/09/20 15:18:33 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.154  2007/09/20 15:18:33  rtoy
+;;; Was not initializing strings with the correct data.  We were trying to
+;;; coerce 0 to a character, which doesn't work.
+;;;
 ;;; Revision 1.153  2007/09/19 18:28:52  rtoy
 ;;; Was not correctly handling things like
 ;;;

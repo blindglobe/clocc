@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/05/04 18:56:55 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/20 17:40:15 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -706,9 +706,8 @@ FILENAME                 File containing Fortran code
 	     ;; an integer bigger than any allowable Fortran label
 	     ;; (99999), since Fortran labels are limited to 5
 	     ;; digits.
-
 	     (push extended-label extended-do-label-stack)
-	     (push `(,margin ,(rewrite-extended-do extended-label input-list))
+	     (push `(,*current_label* ,(rewrite-extended-do extended-label input-list))
 		   output-list)
 	     (incf extended-label))
 	    ((id-do-while input-list)
@@ -1121,7 +1120,7 @@ FILENAME                 File containing Fortran code
      ;;stop
      (when (eq (car x) 'stop)
        ;; Translate STOP as the stop function.
-       (return `((f2cl-lib::stop ,(rest x)))))
+       (return `((f2cl-lib::stop ,@(rest x)))))
 
      ;; Equivalence
      (when (eq (car x) 'equivalence)
@@ -2336,7 +2335,20 @@ FILENAME                 File containing Fortran code
 		     ((listp v)
 		      (mapcar #'car v))
 		     (t
-		      nil))))
+		      nil)))
+	   (handle-reps (x)
+	     ;;(format t "handle-reps = ~A~%" x)
+	     (let (result)
+	       (dolist (item x)
+		 ;;(format t "item = ~S~%" item)
+		 (if (and (listp item)
+			  (eq (second item) '*))
+		     (dotimes (k (first item))
+		       (push (third item) result))
+		     (push item result)))
+	       ;;(format t "result = ~A~%" x)
+	       (nreverse result))))
+
     (cond ((and (listp (car l))
 		(eq (second (car l)) '*))
 	   ;;(format t "parse-data1 1 l = ~A~%" l)
@@ -2348,7 +2360,7 @@ FILENAME                 File containing Fortran code
 		(numberp (first (second v))))
 	   ;; Initializing one element of an array.
 
-	   ;;(format t "parse-data1 array~%")
+	   (format t "parse-data1 array~%")
 	   (let* ((vname (check-reserved-lisp-names (first v)))
 		  (dims (lookup-array-bounds vname)))
 	     ;; FIXME: DO NOT change this to SETF.  Other code uses
@@ -2380,7 +2392,7 @@ FILENAME                 File containing Fortran code
 		   v l))
 	  (t
 	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
-	   ;;(format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
+	   ;; (format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
 	   (cond ((subtypep (lookup-vble-type (check-reserved-lisp-names (first v)))
 			    'string)
 		  ;; Need to initialize a string carefully.
@@ -2390,10 +2402,14 @@ FILENAME                 File containing Fortran code
 		  `(replace ,(check-reserved-lisp-names (first v)) ,l)
 		  )
 		 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
-			(null (rest v)))
+		       (null (rest v)))
+		  ;;(format t "replace case ~%")
+		  ;;(format t "l = ~A~%" l)
 		  `(replace ,(check-reserved-lisp-names (first v))
-		         ',(mapcar #'fix-up-negative-number l)))
+			    ',(mapcar #'fix-up-negative-number
+				      (handle-reps l))))
 		 (t
+		  ;;(format t "t case~%")
 		  `(setq ,(check-reserved-lisp-names (first v))
 		      ,(fix-up-negative-number l))))))))
 
@@ -2827,8 +2843,14 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.171 2007/05/04 18:56:55 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.172 2007/09/20 17:40:15 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.172  2007/09/20 17:40:15  rtoy
+;;; o Extended DO loops were erroneously causing extra labels (without a
+;;;   label number!) to be inserted before the loop.  Fix that.
+;;; o In DATA statements, we weren't handling repetitions correctly when
+;;;   processing the initializers for an array.  This needs more work.
+;;;
 ;;; Revision 1.171  2007/05/04 18:56:55  rtoy
 ;;; Oops.  We don't want to mangle the function name either in case the
 ;;; Fortran code is defining its own version.

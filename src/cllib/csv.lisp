@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.21 2007/04/20 04:14:15 sds Exp $
+;;; $Id: csv.lisp,v 2.22 2007/09/21 16:05:06 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (compile load eval)
@@ -88,10 +88,10 @@ Return 3 values:
   fraction of bytes read
   vector of column names if FIRST-LINE-NAMES is non-NIL
     or if it is :DEFAULT and the first line starts with a +COMMENTS+ character."
-  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols lim l1 fln pro drop ja)
+  (with-gensyms ("WITH-CSV-" in fn fsize ln len cols lim l1 fln drop ja)
     `(with-timing (:out ,out :count ,len :units "records" :progress ,progress
                    :progress-1 ,progress-1)
-       (let* ((,fn ,file) (,pro ,progress) ,fsize ,l1
+       (let* ((,fn ,file) ,fsize ,l1
               (,fln ,first-line-names) (,cols ,columns)
               (,ja ,junk-allowed) (,drop 0)
               ,@(when limit `((,lim ,limit))))

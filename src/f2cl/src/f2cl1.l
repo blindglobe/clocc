@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/21 00:48:31 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/21 04:20:43 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -400,7 +400,6 @@ FILENAME                 File containing Fortran code
 	       :common-as-array common-as-array))
 	(*read-default-float-format* float-format))
     (let ((compiler-keys (remove-f2cl-keys all-keys)))
-      (format t "compiler-keys = ~A~%" compiler-keys)
       (multiple-value-prog1
 	  #+(or cmu scl)
 	  (apply #'compile-file lisp-file :output-file output-file
@@ -2877,8 +2876,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.174 2007/09/21 00:48:31 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.175 2007/09/21 04:20:43 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.175  2007/09/21 04:20:43  rtoy
+;;; Remove debugging print.
+;;;
 ;;; Revision 1.174  2007/09/21 00:48:31  rtoy
 ;;; We were not correctly handling WRITE statements of the form
 ;;;

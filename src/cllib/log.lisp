@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.33 2007/09/21 15:12:58 sds Exp $
+;;; $Id: log.lisp,v 1.34 2007/09/21 16:04:41 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -131,14 +131,15 @@ When :PROGRESS-1 is not NIL, it should be a number indicating after how
               (declare (ignorable (function eta) (function show-eta)))
               (macrolet ((progress (pos &optional (bad ""))
                            ;; has to be a macro to avoid computing pos too often
-                           ,(when count
+                           ,(if count
                               ``(when (and ,',%out ,',pro
                                            (zerop (mod ,',count ,',pro)))
                                  (princ "." ,',%out) (force-output ,',%out)
                                  (when (and ,',pro1
                                             (= ,',pro1 (incf ,',pro1-count)))
                                    (show-eta ,pos ,bad)
-                                   (setq ,',pro1-count 0))))))
+                                   (setq ,',pro1-count 0)))
+                              '(ignore pos bad))))
                 ,@body))
          (when ,%out
            (when ,done (princ "done" ,%out))

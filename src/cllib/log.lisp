@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.32 2006/09/20 01:04:22 sds Exp $
+;;; $Id: log.lisp,v 1.33 2007/09/21 15:12:58 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (compile load eval)
@@ -105,10 +105,10 @@ When :PROGRESS-1 is not NIL, it should be a number indicating after how
   (with-gensyms ("TIMING-" bt b1 %out el last-pos last-time last-tim1
                            pro pro1 pro1-count)
     `(let* ((,bt (get-int-time)) (,b1 (get-int-time nil)) ,el
-            (,pro ,progress) (,pro1 ,progress-1) (,pro1-count 0)
             (,%out (and (print-log-p ,type) ,out))
             (,last-time ,bt) (,last-tim1 ,b1) (,last-pos 0)
-            ,@(when count `((,count 0))))
+            ,@(when count `((,count 0) (,pro ,progress)
+                            (,pro1 ,progress-1) (,pro1-count 0))))
        (unwind-protect
             (labels ((eta (pos) ; pos is the current relative position
                        (if (zerop pos) (values 0 0)

@@ -173,7 +173,7 @@ C
       WRITE(*,FMT='(''LAST ESTIMATE OF COND.NR. OF ACTIVE GRADIENTS '',
      F   E11.4)')       ACCINF(ITSTEP,13)
       WRITE(*,FMT='(''LAST ESTIMATE OF COND.NR. OF APPROX.  HESSIAN '',
-     F            E11.4)') ACCINF(ITSTEP,1 4)
+     F            E11.4)') ACCINF(ITSTEP,14)
       WRITE(*,FMT='(''ITERATIVE STEPS TOTAL           '',I5)') ITSTEP
       WRITE(*,FMT='(''# OF RESTARTS                   '',I5)') NRESTA
       WRITE(*,FMT='(''# OF FULL REGULAR UPDATES       '',I5)') NUPREG

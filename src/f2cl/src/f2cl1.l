@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/21 04:20:43 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/21 15:09:34 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -563,7 +563,7 @@ FILENAME                 File containing Fortran code
   (declare (ignore stream))
   (let ((x (intern (string char)))) x))
 
-(defvar *fortran-readtable*
+(defparameter *fortran-readtable*
   (let ((*readtable* (copy-readtable nil)))
     #+scl
     (ecase ext:*case-mode*
@@ -596,6 +596,7 @@ FILENAME                 File containing Fortran code
       (setsyntax #\')
       (setsyntax #\|)
       (setsyntax #\`)
+      (setsyntax #\#)
       ;; Why do we have to handle \ specially here?
       #+nil (setsyntax #\\)
       )
@@ -796,10 +797,12 @@ FILENAME                 File containing Fortran code
 	     ;; Convert the string format into the appropriate format
 	     (let ((fmt (with-fortran-syntax
 			  ;; read body of a line
-			  (lineread (make-string-input-stream
-				     (if (eq 'fmt (fifth input-list))
-					 (seventh input-list)
-					 (fifth input-list)))))))
+			  (lineread
+			   (make-string-input-stream
+			    (process-format-line
+			     (if (eq 'fmt (fifth input-list))
+				 (seventh input-list)
+				 (fifth input-list))))))))
 	       (setf input-list `(format ,@fmt))
 	       (parse-format (brackets-check (concat-operators input-list)))))
 	    ((eq (car input-list) 'format)
@@ -2284,6 +2287,27 @@ FILENAME                 File containing Fortran code
   )
 
 
+(defun handle-data-reps (x)
+  ;;(format t "handle-data-reps = ~A~%" x)
+  (let (result)
+    (dolist (item x)
+      ;;(format t "item = ~S~%" item)
+      (cond ((and (listp item)
+		  (eq (second item) '*))
+	     ;; Sometimes we get things like
+	     ;;
+	     ;; (3 * 1.1) or (3 * - 1.1)
+	     ;;
+	     ;; So we need to be a little careful in extracting the value.
+	     (let ((val (if (eq (third item) '-)
+			    `(- ,(nthcdr 3 item))
+			    (third item))))
+	       (dotimes (k (first item))
+		 (push val result))))
+	    (t
+	     (push item result))))
+    ;;(format t "result = ~A~%" x)
+    (nreverse result)))
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
 ; restricted to 
@@ -2328,7 +2352,8 @@ FILENAME                 File containing Fortran code
 				   (and (listp var) (listp vals)
 					(listp (caar var))
 					(member '= (caar var)))))
-		     (result (mapcar #'parse-data1 var (if is-array (list vals) vals))))
+		     (result (mapcar #'parse-data1 var
+				     (handle-data-reps (if is-array (list vals) vals)))))
 		;;(format t "result = ~a~%" result)
 		(setf *data-init* (append *data-init* (if (consp (first result))
 							result
@@ -2368,19 +2393,7 @@ FILENAME                 File containing Fortran code
 		     ((listp v)
 		      (mapcar #'car v))
 		     (t
-		      nil)))
-	   (handle-reps (x)
-	     ;;(format t "handle-reps = ~A~%" x)
-	     (let (result)
-	       (dolist (item x)
-		 ;;(format t "item = ~S~%" item)
-		 (if (and (listp item)
-			  (eq (second item) '*))
-		     (dotimes (k (first item))
-		       (push (third item) result))
-		     (push item result)))
-	       ;;(format t "result = ~A~%" x)
-	       (nreverse result))))
+		      nil))))
 
     (cond ((and (listp (car l))
 		(eq (second (car l)) '*))
@@ -2422,7 +2435,7 @@ FILENAME                 File containing Fortran code
 	   (mapcar #'(lambda (var val)
 		       `(setq ,(check-reserved-lisp-names var)
 			      ,(fix-up-negative-number val)))
-		   v l))
+		   v (handle-data-reps l)))
 	  (t
 	   ;;(format t "parse-data1 else: v, l = ~S ~S~%" v l)
 	   ;; (format t "parse-data1 else:  v is array:  ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
@@ -2440,7 +2453,7 @@ FILENAME                 File containing Fortran code
 		  ;;(format t "l = ~A~%" l)
 		  `(replace ,(check-reserved-lisp-names (first v))
 			    ',(mapcar #'fix-up-negative-number
-				      (handle-reps l))))
+				      (handle-data-reps l))))
 		 (t
 		  ;;(format t "t case~%")
 		  `(setq ,(check-reserved-lisp-names (first v))
@@ -2876,8 +2889,18 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.175 2007/09/21 04:20:43 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.176 2007/09/21 15:09:34 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.176  2007/09/21 15:09:34  rtoy
+;;; o Add #\# to the Fortran syntax table.
+;;; o Fix bug in parsing of FMT expressions in WRITE statements.  We
+;;;   need to call PROCESS-FORMAT-LINE to get things in the right form,
+;;;   since the preprocessor did not do it.
+;;; o Need to call HANDLE-REPS in more places, so moved the function out
+;;;   and renamed to HANDLE-DATA-REPS.
+;;; o Make HANDLE-DATA-REPS handle the case of something like (3 * - 1.1)
+;;;   which means 3 copies of -1.1.
+;;;
 ;;; Revision 1.175  2007/09/21 04:20:43  rtoy
 ;;; Remove debugging print.
 ;;;

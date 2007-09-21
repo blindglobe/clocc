@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/20 21:26:29 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/21 00:48:31 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -681,8 +681,16 @@ FILENAME                 File containing Fortran code
 ;; Find a WRITE statement where the format is not a statement number
 ;; but a string giving the format itself.
 (defun id-write-format (input-list)
-  (and (eq (car input-list) 'write)
-       (stringp (fifth input-list))))
+  (when (eq (car input-list) 'write)
+    ;; A write statement looks like the following, so try to match one
+    ;; of these patterns:
+    ;; 
+    ;; (write |(| unit |,| 'foo' |)| ...
+    ;; (write |(| unit |,| fmt = 'foo' |)| ...
+    (or (stringp (fifth input-list))
+	(and (eq 'fmt (fifth input-list))
+	     (eq '= (sixth input-list))
+	     (stringp (seventh input-list))))))
 
 (defun readsubprog-extract-format-stmts (inport)
   (let ((extended-label 100000)		; Must be bigger than any possible valid Fortran label.
@@ -775,17 +783,24 @@ FILENAME                 File containing Fortran code
 	     ;; We have a write statement where the format isn't a
 	     ;; label but a string.  Convert this to a label and add
 	     ;; a format statement.
-	     (let ((new `(write |(| ,(third input-list) |,| ,extended-label |)|
-				,@(nthcdr 6 input-list))))
-	       ;;(format t "new = ~S~%" new)
-	       (push `(,margin ,new) output-list))
+	     (let ((new
+		    ;; Rewrite a WRITE statement with FMT as if it
+		    ;; weren't.
+		    (if (eq 'fmt (fifth input-list))
+			`(write |(| ,(third input-list) |,| ,extended-label |)|
+				,@(nthcdr 8 input-list))
+			`(write |(| ,(third input-list) |,| ,extended-label |)|
+				,@(nthcdr 6 input-list)))))
+	       (push `(,*current_label* ,new) output-list))
 	     (setf *current_label* extended-label)
 	     (incf extended-label)
 	     ;; Convert the string format into the appropriate format
 	     (let ((fmt (with-fortran-syntax
-			    ;; read body of a line
-			    (lineread (make-string-input-stream
-				       (fifth input-list))))))
+			  ;; read body of a line
+			  (lineread (make-string-input-stream
+				     (if (eq 'fmt (fifth input-list))
+					 (seventh input-list)
+					 (fifth input-list)))))))
 	       (setf input-list `(format ,@fmt))
 	       (parse-format (brackets-check (concat-operators input-list)))))
 	    ((eq (car input-list) 'format)
@@ -2862,8 +2877,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.173 2007/09/20 21:26:29 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.174 2007/09/21 00:48:31 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.174  2007/09/21 00:48:31  rtoy
+;;; We were not correctly handling WRITE statements of the form
+;;;
+;;; WRITE(<unit>, FMT = '<string>') ...
+;;;
+;;; Identify and parse these correctly now.  (Still needs work.)
+;;;
 ;;; Revision 1.173  2007/09/20 21:26:29  rtoy
 ;;; Simple attempt to allow passing additional keyword parameters from
 ;;; f2cl-compile to compile-file.

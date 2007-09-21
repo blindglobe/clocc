@@ -1992,6 +1992,10 @@
       (cond
 	;;check for vble with two declarations i.e. an array
 	((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
+	 #+nil
+	 (progn
+	   (format t "declared twice~%")
+	   (format t "vble-decl-done = ~S~%" *vble-declaration-done*))
 	 ;; If we've already processed this variable, we don't need to
 	 ;; do it again.
 	 (unless (member vble *vble-declaration-done*)
@@ -2021,10 +2025,13 @@
 	      (decl nil))
 	     ((null type-clauses) )
 	   (setq type (caar type-clauses))
-	   ;;(format t "type-clauses = ~S~%" type-clauses)
-	   ;;(format t "looping: type = ~A~%" type)
+	   #+nil
+	   (progn
+	     (format t "type-clauses = ~S~%" type-clauses)
+	     (format t "looping: type = ~A~%" type))
 	   (cond ((and (listp type)
 		       (eq (car type) 'character))
+		  ;;(format t "member = ~S~%" (member vble (cdar type-clauses) :key #'car))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return `(,vble_name ,
 				(make-char-init (car decl) type init-val)))))
@@ -2319,12 +2326,20 @@
   (cond ((equal (cadr type) '(*))	; unspecified length spec
 	 ;;(format t "make-char-init unspecified length spec (*)~%")
 	 "")
-	((null (cdr decl))		; scalar, no length spec.      
+	((null (cdr type))		; scalar, no length spec.
+	 (format t "make-char-init scalar, no length~%")
 	 `(make-array '(,(cadr type)) :element-type 'character :initial-element #\Space))
 	((atom (cadr decl))		; scalar, length spec.
-	 (error "shouldn't happen!")
-	 ;;`(make-array '(,(cadr decl)) :element-type 'base-char :initial-element #\Space)
-	 )
+	 ;;(format t "scalar, length spec~%")
+	 (if init
+	     (if (= (length (car init)) (cadr type))
+		 `(make-array '(,(cadr type)) :element-type 'character
+			      :initial-contents ,(car init))
+		 `(replace (make-array '(,(cadr type)) :element-type 'character
+				       :initial-element #\space)
+			   ,(car init)))
+	     `(make-array '(,(cadr type)) :element-type 'character
+			  :initial-element #\space)))
 	(t				; array, no length spec.
 	 ;;(format t "make-char-init array, no length spec~%")
 	 (let ((dims (mapcar #'(lambda (bounds)
@@ -3475,8 +3490,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.155 2007/09/20 17:44:45 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.156 2007/09/21 20:41:16 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.156  2007/09/21 20:41:16  rtoy
+;;; MAKE-CHAR-INIT was not correctly handling a scalar character variable
+;;; with a known length.
+;;;
+;;; (This might need more work still.)
+;;;
 ;;; Revision 1.155  2007/09/20 17:44:45  rtoy
 ;;; Was not constructing the initializer for strings in a common block
 ;;; correctly.  This may need some more work.

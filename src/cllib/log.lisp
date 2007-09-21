@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.35 2007/09/21 16:49:38 sds Exp $
+;;; $Id: log.lisp,v 1.36 2007/09/21 17:05:15 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -139,7 +139,7 @@ When :PROGRESS-1 is not NIL, it should be a number indicating after how
                                             (= ,',pro1 (incf ,',pro1-count)))
                                    (show-eta ,pos ,bad)
                                    (setq ,',pro1-count 0)))
-                              '(ignore pos bad))))
+                              '(declare (ignore pos bad)))))
                 ,@body))
          (when ,%out
            (when ,done (princ "done" ,%out))

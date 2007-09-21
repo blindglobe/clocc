@@ -9,6 +9,7 @@
 
 (mk:defsystem ex-antenna1
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
   :components
   ((:module donlp2
 	    :source-extension "f"
@@ -20,6 +21,7 @@
 
 (mk:defsystem ex-hs101
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
   :components
   ((:module donlp2
 	    :source-extension "f"
@@ -39,6 +41,13 @@
 	    (
 	     (:file "support.lisp"
 		    :language :lisp)
+	     ;; Default dummy routines.  These are default versions
+	     ;; that the user can modify.
+	     (:file "eval_extern")
+	     (:file "user_eval")
+	     (:file "solchk")
+	     (:file "dummy-usr")
+	     ;; The core donlp2 routines.
 	     (:file "donlp2"
 		    :compiler-options (:declare-common t)
 		    :depends-on ("esgradf"
@@ -135,7 +144,4 @@
 		    :depends-on ())
 	     (:file "esg")
 	     (:file "esgradg")
-	     #+nil
-	     (:file "eval_extern")
-	     #+nil
-	     (:file "user_eval")))))
+))))

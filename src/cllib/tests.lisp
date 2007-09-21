@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.46 2007/09/21 16:49:38 sds Exp $
+;;; $Id: tests.lisp,v 2.47 2007/09/21 17:06:17 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -380,7 +380,7 @@
       (incf num-err))
     (setq expected '((0 0) (0 1) (0 2) (1 0) (1 1) (1 2))
           actual (with-collect (c)
-                   (do-iter-ls (z (nreverse '(2 3)))
+                   (do-iter-ls (z (reverse '(2 3)))
                      (c (copy-seq z)))))
     (unless (equalp expected actual)
       (mesg :test out "~& * error in ~S:~% actual:   ~S~% expected: ~S~%"

@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.66 2006/11/28 05:02:23 sds Exp $
+;;; $Id: sys.lisp,v 1.67 2007/09/21 15:56:12 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (compile load eval)
@@ -250,6 +250,7 @@ initargs for all slots are returned, otherwise only the slots with
 
 (defun structure-boa-constructors (struct)
   "Return the list of structure BOA constructor names."
+  (declare (ignorable struct))
   #+clisp (sys::structure-boa-constructors struct)
   #-clisp nil)                  ; what else?
 

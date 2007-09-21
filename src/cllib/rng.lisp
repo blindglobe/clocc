@@ -1,9 +1,13 @@
-;;;; $Id: rng.lisp,v 1.16 2007/09/21 16:49:38 sds Exp $
+;;;; $Id: rng.lisp,v 1.17 2007/09/21 17:04:34 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.17  2007/09/21 17:04:34  sds
+;;;;  avoid non-top-level declaim
+;;;;  (+beta-algo-go+): use defconst
+;;;;
 ;;;;  Revision 1.16  2007/09/21 16:49:38  sds
 ;;;;  (eval-when): use ANSI CL (keyword) situations
 ;;;;
@@ -1019,7 +1023,7 @@ of zero and a variance of 1.
 	   (declare (double-float x)
 		    (optimize (speed 3) (safety 0)))
 	   (exp (* -0.5d0 x x))))
-    (declaim (inline density))
+    (declare (inline density))
     (multiple-value-bind (k-table w-table f-table)
 	(ziggurat-init 127 r 9.91256303526217d-3 31
 		       #'density
@@ -1550,9 +1554,10 @@ order ORDER.
 	     (log x))))))
 
 (eval-when (:compile-toplevel :execute)
-  (defconstant +beta-algo-go+ 0.009572265238289d0)
-  (declaim (type (double-float 0.009572265238289d0 0.009572265238289d0)
-		 +beta-algo-go+)))
+  (defconst +beta-algo-go+
+    (double-float 0.009572265238289d0 0.009572265238289d0)
+    0.009572265238289d0
+    "gen-gamma-variate-algo-go threshold"))
 
 ;; Ahrens and Dieter's Algorithm GO.
 #+(or)
@@ -1919,7 +1924,7 @@ with mean M:
 	     (time (dotimes (k n)
 		     (declare (fixnum k))
 		     (funcall func 1d0))))))
-    (declaim (inline timer))
+    (declare (inline timer))
     (dolist (f (list #'gen-exponential-variate-log-method
 		     #'gen-exponential-variate-algo-s
 		     #'gen-exponential-variate-sa

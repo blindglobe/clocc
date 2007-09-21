@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: string.lisp,v 1.14 2007/01/03 17:32:39 sds Exp $
+;;; $Id: string.lisp,v 1.15 2007/09/21 16:09:42 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/string.lisp,v $
 
 (eval-when (compile load eval)
@@ -90,7 +90,7 @@ See <http://www.merriampark.com/ld.htm>
         `(let ((,len (length ,end)) (,ll ,lenv))
           (and (>= ,ll ,len) (string= ,end ,strv :start2 (- ,ll ,len)))))))
 
-(defcustom *string-junk* (simple-string 5) ":-,./"
+(defcustom *string-junk* string ":-,./"
   "The characters removed from a string by `purge-string'.")
 
 (defsubst purge-string (str &optional (*string-junk* *string-junk*))

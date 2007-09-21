@@ -772,8 +772,19 @@ is not included")
 (defun len (s)
   (length s))
 
+;; From http://www.fortran.com/fortran/F77_std/rjcnf0001-sh-15.html#sh-15.10:
+;;
+;; INDEX(a1 ,a2) returns an integer value indicating the starting
+;; position within the character string a1 of a substring identical
+;; to string a2 . If a2 occurs more than once in a1 , the starting
+;; position of the first occurrence is returned.
+;;
+;; If a2 does not occur in a1 , the value zero is returned. Note
+;; that zero is returned if LEN(a1) < LEN(a2).
+;;
+;; Thus the arguments are in the opposite order for CL's SEARCH function.
 (defun index (s1 s2)
-  (or (search s1 s2) 0))
+  (or (search s2 s1) 0))
 
 ;; These string operations need some work!
 (defun lge (s1 s2)
@@ -1422,8 +1433,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.79 2007/09/20 21:27:12 rtoy Exp $
+;;; $Id: macros.l,v 1.80 2007/09/21 17:45:13 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.80  2007/09/21 17:45:13  rtoy
+;;; INDEX was calling SEARCH with the arguments in the wrong order.
+;;;
 ;;; Revision 1.79  2007/09/20 21:27:12  rtoy
 ;;; Was not handling atoms correctly.  This needs more work.
 ;;;

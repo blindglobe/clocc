@@ -1,9 +1,12 @@
-;;;; $Id: rng.lisp,v 1.15 2005/04/20 18:12:56 sds Exp $
+;;;; $Id: rng.lisp,v 1.16 2007/09/21 16:49:38 sds Exp $
 ;;;; $Source: /cvsroot/clocc/clocc/src/cllib/rng.lisp,v $
 ;;;;
 ;;;;  Class of Random number generators
 ;;;;
 ;;;;  $Log: rng.lisp,v $
+;;;;  Revision 1.16  2007/09/21 16:49:38  sds
+;;;;  (eval-when): use ANSI CL (keyword) situations
+;;;;
 ;;;;  Revision 1.15  2005/04/20 18:12:56  sds
 ;;;;  removed (type random-state *random-state*) declarations because of
 ;;;;  http://www.lisp.org/HyperSpec/Body/sec_11-1-2-1-2.html item 11
@@ -113,7 +116,7 @@
 ;;;;  Initial revision
 ;;;;
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `dfloat', `with-type'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype")))
@@ -142,7 +145,7 @@
           gen-poisson-variate))
 
 ;; CLOCC should not do this, IMO:
-;; (eval-when (compile)
+;; (eval-when (:compile-toplevel)
 ;;   (declaim (optimize (speed 3))))
 
 #+(and cmu negative-zero-is-not-zero)
@@ -1546,11 +1549,10 @@ order ORDER.
 	  (- (gen-gamma-variate-small-order r)
 	     (log x))))))
 
-(eval-when (compile eval)
+(eval-when (:compile-toplevel :execute)
   (defconstant +beta-algo-go+ 0.009572265238289d0)
   (declaim (type (double-float 0.009572265238289d0 0.009572265238289d0)
-		 +beta-algo-go+))
-  )
+		 +beta-algo-go+)))
 
 ;; Ahrens and Dieter's Algorithm GO.
 #+(or)
@@ -1801,7 +1803,7 @@ with parameters a and b:
 ;;; Binomial random variate
 
 #+(or)
-(eval-when (compile eval)
+(eval-when (:compile-toplevel :execute)
 (declaim (ftype (function ((and (integer 0) fixnum)
 			   (non-negative-float double-float 1d0)
 			   &optional random-state)
@@ -1855,7 +1857,7 @@ with parameters N and p:
 ;;; Poisson random variate
 
 #+(or)
-(eval-when (compile)
+(eval-when (:compile-toplevel)
   (declaim (ftype (function ((double-float 0d0) &optional random-state)
 			    (and (integer 0) fixnum))
 		  gen-poisson-variate)))

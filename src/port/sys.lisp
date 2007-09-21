@@ -1,6 +1,6 @@
 ;;; Environment & System access
 ;;;
-;;; Copyright (C) 1999-2006 by Sam Steingold
+;;; Copyright (C) 1999-2007 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,10 +8,10 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.67 2007/09/21 15:56:12 sds Exp $
+;;; $Id: sys.lisp,v 1.68 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   ;; `default-directory'
   (require :port-path (translate-logical-pathname "port:path"))
@@ -22,7 +22,7 @@
 
 (in-package :port)
 
-#+sbcl (eval-when (compile load eval)
+#+sbcl (eval-when (:compile-toplevel :load-toplevel :execute)
          (shadow '(getenv finalize)))
 
 (export
@@ -149,7 +149,7 @@ BEWARE!"
   (error 'not-implemented :proc (list 'arglist fn)))
 
 #+(and clisp (not mop))
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (when (find-symbol "SLOT-DEFINITION-NAME" "CLOS")
     (pushnew :MOP *features*)))
 
@@ -275,12 +275,13 @@ initargs for all slots are returned, otherwise only the slots with
 ;;;
 
 #+cmu
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (shadow "DEFSTRUCT") (export (intern "DEFSTRUCT")))
 #+cmu
 (defmacro defstruct (name &rest slots)
   `(progn
-     (eval-when (compile load eval) (cl:defstruct ,name ,@slots))
+     (eval-when (:compile-toplevel :load-toplevel :execute)
+       (cl:defstruct ,name ,@slots))
      ,(unless (and (consp name) (assoc :type (cdr name)))
        `(defmethod make-load-form ((self ,(if (consp name) (first name) name))
                                    &optional environment)

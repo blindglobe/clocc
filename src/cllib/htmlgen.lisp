@@ -1,13 +1,13 @@
 ;;; HTML generation
 ;;;
-;;; Copyright (C) 2000-2004 by Sam Steingold
+;;; Copyright (C) 2000-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: htmlgen.lisp,v 1.20 2005/01/27 23:02:47 sds Exp $
+;;; $Id: htmlgen.lisp,v 1.21 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/htmlgen.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `dttm->string' - needed only for `directory-index'
   ;; (require :cllib-date (translate-logical-pathname "cllib:date"))

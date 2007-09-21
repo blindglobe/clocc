@@ -1,6 +1,6 @@
 ;;; LispM-style portable multiprocessing
 ;;;
-;;; Copyright (C) 1999-2003 by Sam Steingold
+;;; Copyright (C) 1999-2003, 2007 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: proc.lisp,v 1.17 2005/05/23 15:18:15 sds Exp $
+;;; $Id: proc.lisp,v 1.18 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/proc.lisp,v $
 ;;;
 ;;; This is based on the code donated by Cycorp, Inc. to the public domain.
@@ -51,7 +51,7 @@
 ;;; GIVEUP-LOCK (lock)
 ;;; WITH-LOCK ((lock) &rest body)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   #+CormanLisp (require 'THREADS))
 
@@ -79,7 +79,7 @@
       MCL
       scl)
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (pushnew :threads *features*))
 
 (defconstant +threads-p+ #+threads t #-threads nil

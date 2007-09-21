@@ -1,6 +1,6 @@
 ;;; Network Access
 ;;;
-;;; Copyright (C) 1999-2006 by Sam Steingold
+;;; Copyright (C) 1999-2007 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,10 +8,10 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: net.lisp,v 1.61 2006/06/22 20:33:25 sds Exp $
+;;; $Id: net.lisp,v 1.62 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/net.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   ;; `getenv'
   (require :port-sys (translate-logical-pathname "port:sys"))

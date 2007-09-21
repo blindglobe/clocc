@@ -1,13 +1,13 @@
 ;;; simple operations
 ;;;
-;;; Copyright (C) 2000-2004 by Sam Steingold
+;;; Copyright (C) 2000-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: simple.lisp,v 1.15 2005/01/28 16:55:26 sds Exp $
+;;; $Id: simple.lisp,v 1.16 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/simple.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)

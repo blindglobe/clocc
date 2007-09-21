@@ -1,13 +1,13 @@
 ;;; Dated Lists - extracted from date.lisp
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold
+;;; Copyright (C) 1997-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: datedl.lisp,v 1.14 2005/01/27 23:02:49 sds Exp $
+;;; $Id: datedl.lisp,v 1.15 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/datedl.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))

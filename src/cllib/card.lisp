@@ -5,14 +5,14 @@
 ;;;  http://www.cis.ohio-state.edu/htbin/rfc/rfc2426.html
 ;;;  http://www.imc.org/pdi
 ;;;
-;;; Copyright (C) 1999-2004 by Sam Steingold
+;;; Copyright (C) 1999-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: card.lisp,v 2.15 2005/01/27 23:02:50 sds Exp $
+;;; $Id: card.lisp,v 2.16 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/card.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -35,7 +35,7 @@
 ;;; {{{ definitions
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL
+(eval-when (:compile-toplevel :load-toplevel :execute) ; CMUCL
 (defclass name ()
   ((first :type simple-string :initarg first :accessor name-first
           :documentation "the first name")

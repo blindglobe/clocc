@@ -1,13 +1,13 @@
 ;;; url - handle url's and parse HTTP
 ;;;
-;;; Copyright (C) 1998-2005 by Sam Steingold.
+;;; Copyright (C) 1998-2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: url.lisp,v 2.60 2006/08/24 02:29:16 sds Exp $
+;;; $Id: url.lisp,v 2.61 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/url.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -240,7 +240,8 @@ guess from the protocol; save the guessed value."
     ("ftp" . :ftp) ("news" . :news) ("nntp" . :nntp))
   "*The alist of (\"string\" . protocol) to guess the protocol from the host.")
 
-(eval-when (compile load eval) (fmakunbound 'url))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (fmakunbound 'url)) ; because of autoload
 (declaim (ftype (function (t) url) url))
 ;;;###autoload
 (defgeneric url (xx)

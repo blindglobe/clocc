@@ -5,10 +5,10 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: stat.lisp,v 1.20 2007/03/11 02:48:07 sds Exp $
+;;; $Id: stat.lisp,v 1.21 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/stat.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `mean', `divf', `dot', `d/', `incomplete-gamma', `approx=-abs'
   (require :cllib-math (translate-logical-pathname "cllib:math"))

@@ -1,13 +1,13 @@
 ;;; HyperSpec handling
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2005, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: clhs.lisp,v 3.9 2005/12/06 20:55:19 sds Exp $
+;;; $Id: clhs.lisp,v 3.10 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/clhs.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `index-t'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -285,7 +285,8 @@
       (print (gtk:widget-style w))
       (gtk:event-loop))))
 
- (eval-when (compile load eval) (export '(gtk::signal-connect) :gtk))
+ (eval-when (:compile-toplevel :load-toplevel :execute)
+   (export '(gtk::signal-connect) :gtk))
 
  (defun gtk:signal-connect (widget signal-name fun &optional (bla 0) (blu 0))
   (gtk:signal-connect-full

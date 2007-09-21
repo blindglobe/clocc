@@ -1,13 +1,13 @@
 ;;; misc checks
 ;;;
-;;; Copyright (C) 2000-2001 by Sam Steingold
+;;; Copyright (C) 2000-2001, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: check.lisp,v 1.6 2005/01/27 23:02:50 sds Exp $
+;;; $Id: check.lisp,v 1.7 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/check.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `list-format', `mesg'
   (require :cllib-log (translate-logical-pathname "cllib:log"))

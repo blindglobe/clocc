@@ -11,14 +11,14 @@
 ;;;  Handbook Of Graph Theory, CRC Press, 2004, ISBN 1-58488-090-2
 ;;;  Algorithm 11.3.2, p. 1110
 ;;;
-;;; Copyright (C) 2004 by Sam Steingold
+;;; Copyright (C) 2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: munkres.lisp,v 2.7 2004/11/12 19:17:36 sds Exp $
+;;; $Id: munkres.lisp,v 2.8 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/munkres.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base")))
 
 (in-package :cllib)

@@ -1,13 +1,13 @@
 ;;; HTML parsing - very rudimentary
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold
+;;; Copyright (C) 1997-2002, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: html.lisp,v 1.19 2002/09/24 17:38:18 sds Exp $
+;;; $Id: html.lisp,v 1.20 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/html.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   (require :port-gray (translate-logical-pathname "port:gray"))
   ;; `xml-read-comment'

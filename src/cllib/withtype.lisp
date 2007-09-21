@@ -1,13 +1,13 @@
 ;;; Stuff for Type-optimizations and declarations
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold
+;;; Copyright (C) 1997-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: withtype.lisp,v 1.8 2005/01/27 23:02:46 sds Exp $
+;;; $Id: withtype.lisp,v 1.9 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/withtype.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `mk-arr' [:ext is already required by :base anyway]
   (require :port-ext (translate-logical-pathname "port:ext")))

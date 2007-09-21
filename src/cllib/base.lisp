@@ -1,13 +1,13 @@
 ;;; Basis functionality, required everywhere
 ;;;
-;;; Copyright (C) 1997-2004 by Sam Steingold.
+;;; Copyright (C) 1997-2004, 2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: base.lisp,v 2.19 2005/01/27 23:03:05 sds Exp $
+;;; $Id: base.lisp,v 2.20 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/base.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext"))
   (require :port-sys (translate-logical-pathname "port:sys")))
 

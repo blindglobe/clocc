@@ -1,13 +1,13 @@
 ;;; RPM updates
 ;;;
-;;; Copyright (C) 1998-2004 by Sam Steingold
+;;; Copyright (C) 1998-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: rpm.lisp,v 2.21 2005/01/27 23:02:46 sds Exp $
+;;; $Id: rpm.lisp,v 2.22 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/rpm.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `url' - generic function
   (require :cllib-url (translate-logical-pathname "cllib:url"))
@@ -171,7 +171,8 @@ Do not use it!!!  Use the generic function `rpm' instead!!!"
     (make-rpm :name (subseq name 0 p1) :vers (subseq name (1+ p1) p0)
               :rels (subseq name (1+ p0) p3) :arch (subseq name (1+ p3) p2))))
 
-(eval-when (compile load eval) (fmakunbound 'rpm))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (fmakunbound 'rpm)) ; because of autoload
 (defgeneric rpm (obj)
   (:documentation "Convert to RPM.")
   (:method ((obj rpm)) obj)

@@ -1,13 +1,13 @@
 ;;; Load Emacs-Lisp files into Common Lisp
 ;;;
-;;; Copyright (C) 1999-2004 by Sam Steingold
+;;; Copyright (C) 1999-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: elisp.lisp,v 2.13 2004/12/24 19:35:14 sds Exp $
+;;; $Id: elisp.lisp,v 2.14 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/elisp.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `make-clos-readtable'
   (require :cllib-closio (translate-logical-pathname "cllib:closio"))
@@ -51,7 +51,8 @@
 ;;; Read Emacs-Lisp objects
 ;;;
 
-(eval-when (compile load eval)  ; CMUCL for `+elisp-readtable+'
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  ;; CMUCL for `+elisp-readtable+'
 (defun el::read-elisp-special (stream char)
   (declare (stream stream) (character char))
   (ecase char
@@ -165,7 +166,7 @@
   `(defvar ,name ,val ,doc))
 (defmacro el::defconst (name val doc) `(defconstant ,name ,val ,doc))
 (defmacro el::eval-when-compile (&rest body)
-  `(eval-when (compile load) ,@body))
+  `(eval-when (:compile-toplevel :load-toplevel) ,@body))
 (defmacro el::setq-default (&rest body) `(setq ,@body))
 (defmacro el::save-window-excursion (&rest body) `(progn ,@body))
 (defmacro el::save-excursion (&rest body) `(progn ,@body))

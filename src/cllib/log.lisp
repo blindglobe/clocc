@@ -1,13 +1,13 @@
 ;;; logging and progress reporting
 ;;;
-;;; Copyright (C) 1997-2006 by Sam Steingold
+;;; Copyright (C) 1997-2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: log.lisp,v 1.34 2007/09/21 16:04:41 sds Exp $
+;;; $Id: log.lisp,v 1.35 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/log.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `with-type', `dfloat'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))

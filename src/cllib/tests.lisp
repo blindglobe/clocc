@@ -4,10 +4,10 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: tests.lisp,v 2.45 2007/04/13 04:53:47 sds Exp $
+;;; $Id: tests.lisp,v 2.46 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/tests.lisp,v $
 
-(eval-when (load compile eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `mesg'
   (require :cllib-log (translate-logical-pathname "cllib:log"))

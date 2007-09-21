@@ -1,14 +1,14 @@
 ;;; run a function, answering questions in a pre-defined way,
 ;;; possibly under monitor.
 ;;;
-;;; Copyright (C) 1997-2002 by Sam Steingold
+;;; Copyright (C) 1997-2002, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: doall.lisp,v 1.6 2002/09/24 16:35:34 sds Exp $
+;;; $Id: doall.lisp,v 1.7 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/doall.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   (require :monitor (translate-logical-pathname
                      "clocc:src;tools;metering;metering")))

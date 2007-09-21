@@ -1,13 +1,13 @@
 ;;; itaration: collecting and multi-dim
 ;;;
-;;; Copyright (C) 1997-2001, 2005 by Sam Steingold
+;;; Copyright (C) 1997-2001, 2005, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: iter.lisp,v 1.10 2005/06/29 18:34:10 sds Exp $
+;;; $Id: iter.lisp,v 1.11 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/iter.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `to-list'
   (require :cllib-simple (translate-logical-pathname "cllib:simple"))

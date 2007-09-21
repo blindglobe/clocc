@@ -1,13 +1,13 @@
 ;;; hardcopy printing
 ;;;
-;;; Copyright (C) 1997-2001 by Sam Steingold
+;;; Copyright (C) 1997-2001, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: laser.lisp,v 1.6 2007/03/13 20:40:45 sds Exp $
+;;; $Id: laser.lisp,v 1.7 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/laser.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; for `list-format'
   (require :cllib-log (translate-logical-pathname "cllib:log"))

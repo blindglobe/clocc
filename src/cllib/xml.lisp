@@ -1,13 +1,13 @@
 ;;; XML parsing
 ;;;
-;;; Copyright (C) 2000-2005 by Sam Steingold
+;;; Copyright (C) 2000-2005, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: xml.lisp,v 2.54 2005/09/02 16:01:26 sds Exp $
+;;; $Id: xml.lisp,v 2.55 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/xml.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `+whitespace+', `whitespace-char-p'
   (require :cllib-withtype (translate-logical-pathname "cllib:withtype"))
@@ -177,7 +177,7 @@ If this is `:readably', print for the Lisp reader
            (format out "~s [~:d object~:p]"
                    (xml-misc-type xm) (length (xml-misc-data xm)))))))
 
-(eval-when (compile load eval)  ; ACL
+(eval-when (:compile-toplevel :load-toplevel :execute) ; ACL
 (defcustom *xml-pre-namespaces* hash-table (make-hash-table :test 'equal)
   "The mapping from prefixes to namespaces.")
 

@@ -1,6 +1,6 @@
 ;;; Shell Access
 ;;;
-;;; Copyright (C) 1999-2005 by Sam Steingold
+;;; Copyright (C) 1999-2005, 2007 by Sam Steingold
 ;;; This is open-source software.
 ;;; GNU Lesser General Public License (LGPL) is applicable:
 ;;; No warranty; you may copy/modify/redistribute under the same
@@ -8,10 +8,10 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: shell.lisp,v 1.18 2005/10/09 03:57:34 sds Exp $
+;;; $Id: shell.lisp,v 1.19 2007/09/21 16:49:37 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/shell.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :port-ext (translate-logical-pathname "clocc:src;port;ext")))
 
 (in-package :port)

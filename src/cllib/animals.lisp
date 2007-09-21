@@ -1,13 +1,13 @@
 ;;; Guess an Animal - CL implementation.
 ;;;
-;;; Copyright (C) 1997-2001 by Sam Steingold.
+;;; Copyright (C) 1997-2001, 2007 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: animals.lisp,v 2.11 2005/01/27 23:03:05 sds Exp $
+;;; $Id: animals.lisp,v 2.12 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/animals.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `string-beg-with'
   (require :cllib-string (translate-logical-pathname "cllib:string"))
@@ -145,7 +145,7 @@ Returnes a fresh string."
 ;;; Network implementation
 ;;;
 
-(eval-when (compile load eval)  ; ACL: for `*root-node*'
+(eval-when (:compile-toplevel :load-toplevel :execute) ; ACL: for `*root-node*'
 (defclass node ()
   ((name :type symbol :accessor node-name :initarg name)
    (info :type simple-string :accessor node-info :initarg info)

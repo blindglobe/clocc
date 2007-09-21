@@ -3,14 +3,14 @@
 ;;; http://www.sourcegear.com/CVS
 ;;;
 ;;; Copyright (C) 1996 by Bruno Haible
-;;; Copyright (C) 1998-2004 by Sam Steingold
+;;; Copyright (C) 1998-2004, 2007 by Sam Steingold
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: cvs.lisp,v 2.28 2007/03/13 20:43:04 sds Exp $
+;;; $Id: cvs.lisp,v 2.29 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/cvs.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `string-beg-with', `substitute-subseq'
   (require :cllib-string (translate-logical-pathname "cllib:string"))
@@ -38,7 +38,8 @@
 ;; Sam Steingold fixed some bugs in 1998 and
 ;; converted to the generic function in 2000.
 
-(eval-when (compile load eval) (fmakunbound 'cvs-diff2patch))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (fmakunbound 'cvs-diff2patch)) ; because of autoload
 ;;;###autoload
 (defgeneric cvs-diff2patch (in out)
   (:documentation "Convert a CVS diff to a patchable diff.")

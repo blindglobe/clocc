@@ -6,10 +6,10 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: ocaml.lisp,v 2.6 2007/04/25 03:02:28 sds Exp $
+;;; $Id: ocaml.lisp,v 2.7 2007/09/21 16:49:38 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/ocaml.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   (require :port-mop (translate-logical-pathname "port:mop")))
 

@@ -4,10 +4,10 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: fin.lisp,v 2.10 2007/05/10 02:05:19 sds Exp $
+;;; $Id: fin.lisp,v 2.11 2007/09/21 16:49:39 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/fin.lisp,v $
 
-(eval-when (compile load eval)
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (require :cllib-base (translate-logical-pathname "clocc:src;cllib;base"))
   ;; `*num-tolerance*', `sqr', `cndf'
   (require :cllib-math (translate-logical-pathname "cllib:math"))

@@ -1,7 +1,7 @@
 C*******************************************************************
 C     SCALAR PRODUCT OF TWO VECTORS OR PARTS OF VECTORS
 C*******************************************************************
-      DOUBLEPRECISION FUNCTION O8SC1(I,J,A,B)
+      DOUBLE PRECISION FUNCTION O8SC1(I,J,A,B)
 C     MULPILY TWO VECTORS
       IMPLICIT NONE
       INCLUDE 'O8CONS.INC'

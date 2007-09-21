@@ -5,7 +5,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: bookmark.lisp,v 1.3 2007/09/21 16:49:39 sds Exp $
+;;; $Id: bookmark.lisp,v 1.4 2007/09/21 16:50:45 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/bookmark.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)

@@ -1,6 +1,27 @@
 -*- Mode: text -*-
 
 Changes:
+Sep 20, 2007
+------------
+o Extended DO loops were causing extra labels in the Lisp code, which
+  causes errors when compiling the Lisp code.
+o DATA statements weren't handling repetitions correctly when
+  processing the initializers for an array.
+o The initializer for strings in a common block was done incorrectly.
+  This may been some more work.
+o Initialization of strings was wrong because we tried to coerce 0 to
+  a character.  We really wanted a space.
+o The options in an OPEN statement weren't being parsed correctly.
+  Some of the option values can be an expression.
+o The preprocessor can now recognize INCLUDE statements.  This is an
+  extension in some Fortran's.  (Should we add yet another option to
+  control this?)  Nested include's are supported.
+o Some issues with handling of the last line of the input file are
+  fixed.  (Exposed by the INCLUDE support.)
+o Initialization of some arrays via DATA statements were done
+  incorrectly because the initializers aren't necessarily constants. 
+o Was not correctly handling atoms when executing format statements. 
+
 May 04, 2007
 ------------
 o F2CL was getting confused with functions declared as external that

@@ -1,0 +1,29 @@
+C**************************************************
+C SUITE OF FUNCTION INTERFACES, FOR PERFORMING SCALING AND
+C EXTERNAL EVALUATIONS
+C IF BLOC=.TRUE. THEN IT IS ASUMED THAT PRIOR TO CALLS TO ES<xyz>
+C VALID FUNCTION INFORMATION IS COMPUTED (VIA A CALL OF USER_EVAL)
+C AND STORED IN FU AND FUGRAD , SETTING VALID=.TRUE. AFTERWARDS
+C**************************************************
+C     OBJECTIVE FUNCTION
+      SUBROUTINE ESF(X,FX)
+      INCLUDE 'O8FUCO.INC'
+      INCLUDE 'O8FINT.INC'
+      DOUBLE PRECISION X(*),FX
+      INTEGER I
+      SAVE
+      IF ( BLOC ) THEN
+        IF ( VALID ) THEN
+          FX=FU(0)
+          ICF=ICF+1
+        ELSE
+          STOP 'DONLP2: BLOC-CALL, FUNCTION INFO INVALID'
+        ENDIF
+      ELSE
+        DO I=1,N
+          XTR(I)=X(I)*XSC(I)
+        ENDDO
+        CALL EF(XTR,FX)
+      ENDIF
+      RETURN
+      END

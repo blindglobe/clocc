@@ -1,0 +1,23 @@
+C COMPUTE THE I-TH INEQUALITY CONSTAINT, BOUNDS INCLUDED
+      SUBROUTINE ESG(I,X,GXI)
+      INCLUDE 'O8FUCO.INC'
+      INCLUDE 'O8FINT.INC'
+      DOUBLE PRECISION X(*),GXI
+      INTEGER I
+      INTEGER J
+      SAVE
+      IF ( BLOC ) THEN
+        IF ( VALID ) THEN
+          IF ( GUNIT(1,I+NH) .NE. 1 ) CRES(I+NH)=CRES(I+NH)+1
+          GXI=FU(I+NH)
+        ELSE
+          STOP 'DONLP2: BLOC CALL WITH FUNCTION INFO INVALID'
+        ENDIF
+      ELSE
+        DO J=1,N
+          XTR(J)=X(J)*XSC(J)
+        ENDDO
+        CALL EG(I,XTR,GXI)
+      ENDIF
+      RETURN
+      END

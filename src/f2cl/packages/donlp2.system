@@ -1,0 +1,141 @@
+;;; -*- Mode: Lisp -*-
+
+(defun donlp2-compiler (filename &rest args)
+  (apply #'f2cl:f2cl-compile filename args))
+
+(mk:define-language :f2cl
+    :compiler #'donlp2-compiler
+    :source-extension "f")
+
+(mk:defsystem ex-antenna1
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "antenna1"
+		    :compiler-options (:declare-common t))))))
+
+(mk:defsystem ex-hs101
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "hs101"
+		    :compiler-options (:declare-common t))))))
+
+(mk:defsystem donlp2
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "support.lisp"
+		    :language :lisp)
+	     (:file "donlp2"
+		    :compiler-options (:declare-common t)
+		    :depends-on ("esgradf"
+				 "esgradh"
+				 "esgradg"
+				 "o8vecn"
+				 ))
+	     (:file "o8st"
+		    :depends-on ("esg"
+				 "esh"
+				 "o8msg"))
+	     (:file "o8fin")
+	     (:file "o8info"
+		    :depends-on ("o8mdru"))
+	     (:file "o8sce")
+	     (:file "o8bfgs"
+		    :depends-on ("o8sc2"
+				 "o8vecn"
+				 "o8msg"
+				 "o8sc3"
+				 "o8sc1"
+				 "o8upd"))
+	     (:file "o8shms")
+	     (:file "o8msg")
+	     (:file "o8opti"
+		    :compiler-options (:byte-compile t)
+		    :depends-on ("esh"
+				 "esgradh"
+				 "esg"
+				 "esgradg"
+				 "o8vecn"
+				 "esf"
+				 "esgradf"
+				 "o8left"
+				 "o8ht"
+				 "o8sol"
+				 "o8dec"
+				 "o8ht"
+				 "o8solt"
+				 "o8rght"
+				 "esh"
+				 "esg"
+				 "o8unim"
+				 "o8egph"))
+	     (:file "o8inim")
+	     (:file "o8dird"
+		    :depends-on ("o8sc1"
+				 "o8sc3"))
+	     (:file "o8cutd"
+		    :depends-on ("o8vecn"
+				 "o8sc1"))
+	     (:file "o8smax")
+	     (:file "o8rest")
+	     (:file "o8save")
+	     (:file "o8eval"
+		    :depends-on ("esh"
+				 "esg"
+				 "esf"))
+	     (:file "o8unim")
+	     (:file "o8sc1")
+	     (:file "o8sc2")
+	     (:file "o8sc3")
+	     (:file "o8mdru")
+	     (:file "o8egph")
+	     (:file "o8dec"
+		    :depends-on ("o8left"
+				 "o8ht"
+				 "o8vecn"))
+	     (:file "o8ht")
+	     (:file "o8sol")
+	     (:file "o8solt")
+	     (:file "o8dsq1")
+	     (:file "o8upd"
+		    :depends-on ("o8left"))
+	     (:file "o8rght")
+	     (:file "o8left")
+	     (:file "o8vecn")
+	     (:file "o8qpdu"
+		    :compiler-options (:declare-common t)
+		    :depends-on ("o8rinv"
+				 "o8zup"
+				 "o8rup"
+				 "o8dlcd"))
+	     (:file "o8zup")
+	     (:file "o8rup")
+	     (:file "o8dlcd")
+	     (:file "o8adcd")
+	     (:file "o8rinv")
+	     (:file "esf")
+	     (:file "esgradf"
+		    :depends-on ())
+	     (:file "esh")
+	     (:file "esgradh"
+		    :depends-on ())
+	     (:file "esg")
+	     (:file "esgradg")
+	     #+nil
+	     (:file "eval_extern")
+	     #+nil
+	     (:file "user_eval")))))

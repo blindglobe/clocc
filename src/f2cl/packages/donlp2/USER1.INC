@@ -1,0 +1,7 @@
+      DOUBLE PRECISION ALAMDA(3),F0(3),C(3),
+     F                 FMAG,FDELTA(3),FDELTR(0:0),
+     F                 FDELTB(3),DM0,WRENCH,XT(3),YT(3),
+     F                 XBAL,YBAL,BDFAC
+      INTEGER CASE
+      COMMON/USER/ALAMDA,F0,C,FMAG,FDELTA,FDELTR,FDELTB,
+     F            DM0,WRENCH,XT,YT,XBAL,YBAL,BDFAC,CASE

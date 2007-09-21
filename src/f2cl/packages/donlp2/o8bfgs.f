@@ -1,0 +1,164 @@
+C**********************************************************************
+      SUBROUTINE O8BFGS
+C COMPUTATION OF THE PANTOJA-MAYNE BFGS-UPDATE OF HESSIAN
+      INCLUDE 'O8COMM.INC'
+      INCLUDE 'O8CONS.INC'
+      INTEGER I,J
+      DOUBLE PRECISION DG(NX),ADX(NX),DEN1,DEN2,DEN3,
+     *   TH,TK,XSIK,LTDX(NX),GTDX(NRESM),UPDX(NX),UPDZ(NX),
+     *   TERM,TERM1,ANORM,ACOND,NDX,NGTDX,DEN21
+      DOUBLE PRECISION O8SC1,O8SC2,O8SC3,O8VECN
+      EXTERNAL O8SC1,O8SC2,O8SC3,O8VECN
+      LOGICAL FAIL
+      SAVE
+      DO   I=1,N
+C****** MULTIPLY DX= (S IN THE USUAL NOTATION) BY CHOLESKY-FACTOR
+C       STORED IN THE UPPER HALF OF A
+       LTDX(I)=O8SC2(I,N,I,A,NX,DIFX)
+       DG(I)=GPHI1(I)-GPHI0(I)
+      ENDDO
+      IF ( O8VECN(1,N,DG) .EQ. ZERO ) THEN
+C****** SUPPRESS UPDATE
+        ACCINF(ITSTEP,27)=ZERO
+        ACCINF(ITSTEP,28)=ZERO
+        ACCINF(ITSTEP,29)=ZERO
+        IF ( .NOT. SILENT ) CALL O8MSG(21)
+        RETURN
+      ENDIF
+      DO I=1,N
+        ADX(I)=O8SC3(1,I,I,A,NX,LTDX)
+      ENDDO
+C*** ADX = A * ( X-X0), X-X0=DIFX
+      DO I=1,ALIST(0)
+        GTDX(I)=O8SC3(1,N,ALIST(I),GRES,NX,DIFX)
+        GTDX(I)=GTDX(I)/GRESN(ALIST(I))
+      ENDDO
+C*** GTDX= GRAD(RES)(TRANSP)*(X-X0)
+      NDX=O8VECN(1,N,DIFX)
+      TK=MIN(P5,DNORM**2)
+      ANORM=ZERO
+      TERM1=ABS(A(1,1))
+      ANORM=ZERO
+      DO I=1,N
+        DO J=I,N
+          ANORM=ANORM+A(I,J)**2
+        ENDDO
+        TERM1=MIN(TERM1,ABS(A(I,I)))
+      ENDDO
+      IF ( TERM1 .NE. ZERO ) THEN
+        ACOND=ANORM/TERM1**2
+      ELSE
+        ACOND=EPSMAC/TOLMAC
+      ENDIF
+      DEN1=O8VECN(1,N,LTDX)**2
+      DEN2=O8SC1(1,N,DG,DIFX)
+      IF ( DEN1 .LE. RHO1*ANORM*NDX**2 .OR. ACOND .GE. ONE/RHO1 ) THEN
+C*** TAKE A RESTART STEP
+        CALL O8INIM
+        RETURN
+      ENDIF
+      IF ( NRES .EQ. 0 ) THEN
+C IN THE UNCONSTRAINED CASE WE TAKE THE POWELL UPDATE
+        TH=ONE
+        IF ( DEN2 .LT. P2*DEN1 ) THEN
+          TH=P8*DEN1/(DEN1-DEN2)
+          DO I=1,N
+            DG(I)=TH*DG(I)+(ONE-TH)*ADX(I)
+          ENDDO
+          DEN2=O8SC1(1,N,DG,DIFX)
+        ENDIF
+        TERM=ONE/SQRT(DEN2)
+        DO I=1,N
+          DG(I)=DG(I)*TERM
+          UPDZ(I)=DG(I)
+        ENDDO
+        TERM=ONE/SQRT(DEN1)
+        DO I=1,N
+          UPDX(I)=ADX(I)*TERM
+        ENDDO
+        ACCINF(ITSTEP,28)=DEN2/DEN1
+        ACCINF(ITSTEP,29)=TH
+        ACCINF(ITSTEP,27)=TWO
+        IF ( TH .NE. ONE ) ACCINF(ITSTEP,27)=THREE
+      ELSE
+        NGTDX=O8VECN(1,ALIST(0),GTDX)
+        TERM=ONE/SQRT(DEN1)
+        DO I=1,N
+          UPDX(I)=ADX(I)*TERM
+        ENDDO
+        IF ( DEN2 .GE. RHO1*O8SC1(1,N,DG,DG)
+     F      .AND. O8VECN(1,N,DG) .GE. SQRT(EPSMAC)*NDX ) THEN
+          XSIK=ZERO
+          DO I=1,N
+            UPDZ(I)=DG(I)
+          ENDDO
+          DEN21=DEN2
+        ELSE
+C*** TRY PANTOJA-MAYNE MODIFICATION
+          DEN3=TK*NDX**2+NGTDX**2
+          IF ( DEN2 .GE. RHO1*O8SC1(1,N,DG,DG) ) THEN
+            XSIK=ONE
+          ELSE
+            XSIK=ONE+(TK*NDX**2+ABS(DEN2) )/DEN3
+          ENDIF
+          DO I=1,N
+            TERM=ZERO
+            DO J=1,ALIST(0)
+              TERM1=GRES(I,ALIST(J))*GTDX(J)
+              TERM1=TERM1/GRESN(ALIST(J))
+              TERM=TERM+TERM1
+            ENDDO
+            UPDZ(I)=DG(I)+XSIK*(TK*DIFX(I)+TERM)
+          ENDDO
+          DEN21=O8SC1(1,N,UPDZ,DIFX)
+        ENDIF
+        TERM=ONE/SQRT(DEN21)
+        DO I=1,N
+          UPDZ(I)=UPDZ(I)*TERM
+        ENDDO
+        TH=ONE
+        IF ( DEN2 .LT. P2*DEN1 ) THEN
+          TH=P8*DEN1/(DEN1-DEN2)
+          DO I=1,N
+            DG(I)=TH*DG(I)+(ONE-TH)*ADX(I)
+          ENDDO
+          DEN2=O8SC1(1,N,DG,DIFX)
+        ENDIF
+        TERM=ONE/SQRT(DEN2)
+        DO I=1,N
+          DG(I)=DG(I)*TERM
+        ENDDO
+        IF ( O8VECN(1,N,DG) .LE. TM3*O8VECN(1,N,UPDZ) ) THEN
+C***** THE POWELL UPDATE PRODUCES A SMALLER GROWTH
+          DO I=1,N
+            UPDZ(I)=DG(I)
+          ENDDO
+          ACCINF(ITSTEP,28)=DEN2/DEN1
+          ACCINF(ITSTEP,29)=TH
+          ACCINF(ITSTEP,27)=TWO
+          IF ( TH .NE. ONE ) ACCINF(ITSTEP,27)=THREE
+        ELSE
+C*** NO UPDATE IF STRONGLY IRREGULAR
+          ACCINF(ITSTEP,27)=ONE
+          ACCINF(ITSTEP,28)=TK
+          ACCINF(ITSTEP,29)=XSIK
+        ENDIF
+      ENDIF
+      CALL O8UPD(A,UPDZ,UPDX,N,FAIL)
+C****** CHECK ILLCONDITIONING AFTER UPDATING
+      TERM=ABS(A(1,1))
+      TERM1=TERM
+      I=1
+C***IN ORDER TO OVERCOME A CURIOUS ERROR IN HP'S
+C*** F77COMPILER THIS KIND OF LOOP
+      DO WHILE ( I .LT. N )
+        I=I+1
+        TERM=MAX(TERM,ABS(A(I,I)))
+        TERM1=MIN(TERM1,ABS(A(I,I)))
+      ENDDO
+      IF ( FAIL  .OR. TERM1**2 .LE. RHO1*TERM**2 ) THEN
+C****** RESET
+        CALL O8INIM
+      ENDIF
+      RETURN
+      END

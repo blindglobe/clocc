@@ -1,0 +1,32 @@
+C*****************************************************
+      SUBROUTINE O8ZUP(Z)
+C********** COMPUTE UPDATED PROJECTED GRADIENT (PRIMAL)
+      INCLUDE 'O8COMM.INC'
+      INCLUDE 'O8CONS.INC'
+      INTEGER NDUALM,MDUALM,NDUAL,MI,ME,IQ
+      PARAMETER (NDUALM=NX+NRESM,MDUALM=NRESM*2)
+      DOUBLE PRECISION NP,RNORM,RLOW,XJ,DDUAL,R,UD,UD1
+      COMMON /O8DUPA/RNORM,RLOW,NDUAL,MI,ME,IQ
+      COMMON /O8QPUP/XJ(NDUALM,NDUALM),DDUAL(NDUALM),R(NDUALM,NDUALM),
+     F                NP(NDUALM),UD(MDUALM),UD1(MDUALM)
+      DOUBLE PRECISION Z(NDUALM)
+      INTEGER I,J
+      DOUBLE PRECISION SU
+      SAVE
+C******      D = J(TRANS) *NP
+      DO I=1,NDUAL
+        SU=ZERO
+        DO      J=1,NDUAL
+          SU=SU+XJ(J,I)*NP(J)
+        ENDDO
+        DDUAL(I)=SU
+      ENDDO
+C****** COMPUTATION OF Z
+      DO      I=1,NDUAL
+        Z(I)=ZERO
+        DO      J=IQ+1,NDUAL
+          Z(I)=Z(I)+XJ(I,J)*DDUAL(J)
+        ENDDO
+      ENDDO
+      RETURN
+      END

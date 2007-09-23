@@ -1238,7 +1238,7 @@ causing all pending operations to be flushed"
 	   (let ((k 0)
 		 (forms nil))
 	     (dolist (val inits)
-	       (push `(replace (aref ,init ,k) ,(car val)) forms)
+	       (push `(replace (aref ,init ,k) ,val) forms)
 	       (incf k))
 	     (nreverse forms)))
 		
@@ -1433,8 +1433,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.80 2007/09/21 17:45:13 rtoy Exp $
+;;; $Id: macros.l,v 1.81 2007/09/23 20:51:43 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.81  2007/09/23 20:51:43  rtoy
+;;; Previous checkin changed how character strings are initialized.
+;;; Modify code accordingly.  (This needs to be rethought and made less
+;;; fragile.)
+;;;
 ;;; Revision 1.80  2007/09/21 17:45:13  rtoy
 ;;; INDEX was calling SEARCH with the arguments in the wrong order.
 ;;;

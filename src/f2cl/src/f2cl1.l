@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/21 15:09:34 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/23 20:51:43 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2304,10 +2304,14 @@ FILENAME                 File containing Fortran code
 			    (third item))))
 	       (dotimes (k (first item))
 		 (push val result))))
+	    ((and (listp item)
+		  (null (cdr item)))
+	     (push (car item) result))
 	    (t
 	     (push item result))))
     ;;(format t "result = ~A~%" x)
     (nreverse result)))
+
 ; DATA stmts 
 ;           DATA nlist/clist[,nlist/clist/]...
 ; restricted to 
@@ -2352,8 +2356,9 @@ FILENAME                 File containing Fortran code
 				   (and (listp var) (listp vals)
 					(listp (caar var))
 					(member '= (caar var)))))
+		     (rep-vals (handle-data-reps vals))
 		     (result (mapcar #'parse-data1 var
-				     (handle-data-reps (if is-array (list vals) vals)))))
+				     (if is-array (list rep-vals) rep-vals))))
 		;;(format t "result = ~a~%" result)
 		(setf *data-init* (append *data-init* (if (consp (first result))
 							result
@@ -2395,7 +2400,7 @@ FILENAME                 File containing Fortran code
 		     (t
 		      nil))))
 
-    (cond ((and (listp (car l))
+    (cond ((and (listp l) (listp (car l))
 		(eq (second (car l)) '*))
 	   ;;(format t "parse-data1 1 l = ~A~%" l)
 	   `(fill ,(check-reserved-lisp-names (first v))
@@ -2889,8 +2894,13 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.176 2007/09/21 15:09:34 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.177 2007/09/23 20:51:43 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.177  2007/09/23 20:51:43  rtoy
+;;; Previous checkin changed how character strings are initialized.
+;;; Modify code accordingly.  (This needs to be rethought and made less
+;;; fragile.)
+;;;
 ;;; Revision 1.176  2007/09/21 15:09:34  rtoy
 ;;; o Add #\# to the Fortran syntax table.
 ;;; o Fix bug in parsing of FMT expressions in WRITE statements.  We

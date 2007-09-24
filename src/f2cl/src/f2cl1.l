@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/23 20:51:43 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/24 20:05:55 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -912,8 +912,8 @@ FILENAME                 File containing Fortran code
 	*subprog-arglist* *data-init* *functions-used* *vble-declaration-done*
 	*parsing-lhs*
 	*equivalenced-vars*
+	*common_array_dims*
 	)
-
      (setq fort-fun
 	   (do ((lines prog-list (cdr lines)) 
 		(fort-fun nil (append fort-fun
@@ -2322,6 +2322,11 @@ FILENAME                 File containing Fortran code
 ;; rlt:  also handles
 ;;	data var1, var2, var3/val1, val2, val3/
 
+(defun find-data-var (var)
+  (if (atom var)
+      var
+      (find-data-var (car var))))
+
 (defun parse-data (x)
   ;;(format t "parse-data:  ~S~%" x)
   ;;(setq x (list-split '|/| (cdr x)))
@@ -2351,14 +2356,22 @@ FILENAME                 File containing Fortran code
 	      ;; we want VALS to be all the values.
 	      ;;
 	      ;; (FIXME:  This area probably needs a lot of rework!)
-	      (let* ((is-array (or (and (vble-is-array-p (check-reserved-lisp-names (caar var)))
-					(null (cdar var)))
-				   (and (listp var) (listp vals)
-					(listp (caar var))
-					(member '= (caar var)))))
+	      #+nil
+	      (format t "var = ~A~%" var)
+	      (let* ((is-array
+		      (or (and (vble-is-array-p
+				(check-reserved-lisp-names
+				 (find-data-var var)))
+			       (null (cdar var)))
+			  (and (listp var) (listp vals)
+			       (listp (caar var))
+			       (member '= (caar var)))))
 		     (rep-vals (handle-data-reps vals))
-		     (result (mapcar #'parse-data1 var
-				     (if is-array (list rep-vals) rep-vals))))
+		     (result (progn
+			       #+nil
+			       (format t "is-array ~A= ~A~%" var is-array)
+			       (mapcar #'parse-data1 var
+				     (if is-array (list rep-vals) rep-vals)))))
 		;;(format t "result = ~a~%" result)
 		(setf *data-init* (append *data-init* (if (consp (first result))
 							result
@@ -2384,7 +2397,8 @@ FILENAME                 File containing Fortran code
 	     (let ((result '()))
 	       (dolist (item data (nreverse result))
 		 ;;(format t "data-reps item = ~S~%" item)
-		 (cond ((and (>= (length item) 3)
+		 (cond ((and (listp item)
+			     (>= (length item) 3)
 			     (eq (second item) '*))
 			;;(format t "~a reps of ~S~%" (first item) (rest (rest item)))
 			(let ((num (fix-up-negative-number (rest (rest item)))))
@@ -2454,13 +2468,20 @@ FILENAME                 File containing Fortran code
 		  )
 		 ((and (vble-is-array-p (check-reserved-lisp-names (first v)))
 		       (null (rest v)))
-		  ;;(format t "replace case ~%")
-		  ;;(format t "l = ~A~%" l)
+		  #+nil
+		  (progn
+		    (format t "v = ~A~%" v)
+		    (format t "vble-is-array = ~A~%" (vble-is-array-p (check-reserved-lisp-names (first v))))
+		    (format t "replace case ~%")
+		    (format t "l = ~A~%" l)
+		    (format t "*declared = ~A~%" *declared_vbles*)
+		    (format t "*explicit = ~A~%" *explicit_vble_decls*)
+		    (format t "*common   = ~A~%" *common_array_dims*))
 		  `(replace ,(check-reserved-lisp-names (first v))
 			    ',(mapcar #'fix-up-negative-number
 				      (handle-data-reps l))))
 		 (t
-		  ;;(format t "t case~%")
+		  (format t "t case~%")
 		  `(setq ,(check-reserved-lisp-names (first v))
 		      ,(fix-up-negative-number l))))))))
 
@@ -2894,8 +2915,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.177 2007/09/23 20:51:43 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.178 2007/09/24 20:05:55 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.178  2007/09/24 20:05:55  rtoy
+;;; o Need to clear out *common_array_dims* on each subprogram!
+;;; o Add FIND-DATA-VAR to return the data variable for DATA
+;;;   statements. (The nesting is dependent on the whether the variable is
+;;;   being initialized in an implied do loop or not, and on how the do
+;;;   loop is arranged.)
+;;;
 ;;; Revision 1.177  2007/09/23 20:51:43  rtoy
 ;;; Previous checkin changed how character strings are initialized.
 ;;; Modify code accordingly.  (This needs to be rethought and made less

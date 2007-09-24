@@ -1,3 +1,8 @@
+ANTENNA1.MES
+ANTENNA1.PRO
+HS101XXX.MES
+HS101XXX.PRO
+antenna1
 antenna1.lisp
 donlp2.lisp
 dummy-usr.lisp
@@ -8,6 +13,7 @@ esgradg.lisp
 esgradh.lisp
 esh.lisp
 eval_extern.lisp
+hs101
 hs101.lisp
 o8adcd.lisp
 o8bfgs.lisp

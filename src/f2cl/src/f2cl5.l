@@ -1323,7 +1323,7 @@
 		      ((eq 'fset (first setter))
 		       (second (second setter)))
 		      ((eq 'data-implied-do (first setter))
-		       (third setter))))))
+		       (find-data-var (second setter)))))))
        (when (and *auto-save-data* *data-init* (not (eq *save_vbles* '%save-all-locals%)))
 	 (setf *save_vbles*
 	       (remove-duplicates
@@ -1462,14 +1462,15 @@
 	   (mapcar #'(lambda (init)
 		       (flet ((get-dims (var)
 				(mapcar #'caar
-					    (mapcar #'lookup-array-bounds
-						    (if (listp var) var (list var)))))
+					(mapcar #'(lambda (v)
+						    (lookup-array-bounds (find-data-var v)))
+						(if (listp var) var (list var)))))
 			      (get-types (vars)
 				;; I'm lazy.  Use make-declaration
 				;; to figure out the type of the array
 				;; element.
 				(mapcar #'(lambda (v)
-					    (let ((init (make-declaration v)))
+					    (let ((init (make-declaration (find-data-var v))))
 					      (second (second (second init)))))
 					vars)))
 
@@ -2337,7 +2338,7 @@
 			      :initial-contents ,init)
 		 `(replace (make-array '(,(cadr type)) :element-type 'character
 				       :initial-element #\space)
-			   ,(car init)))
+			   ,init))
 	     `(make-array '(,(cadr type)) :element-type 'character
 			  :initial-element #\space)))
 	(t				; array, no length spec.
@@ -3490,8 +3491,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.157 2007/09/23 20:51:43 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.158 2007/09/24 20:07:15 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.158  2007/09/24 20:07:15  rtoy
+;;; o Extract the actual variable name in implied do loops.  (Was messing
+;;;   this up in some data statements.)
+;;;
 ;;; Revision 1.157  2007/09/23 20:51:43  rtoy
 ;;; Previous checkin changed how character strings are initialized.
 ;;; Modify code accordingly.  (This needs to be rethought and made less

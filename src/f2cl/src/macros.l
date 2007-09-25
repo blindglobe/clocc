@@ -1142,10 +1142,10 @@ causing all pending operations to be flushed"
       (format t "~&formats = ~S~%" formats))
     (cond ((listp (first formats))
 	   (format stream (caar formats) (pop arg-list)))
-	  ((and (eq (first formats) #\:)
-		(null arg-list))
+	  ((eq (first formats) #\:)
 	   ;; Terminate control if there are no more items
-	   (return-from execute-format))
+	   (when (null arg-list)
+	     (return-from execute-format)))
 	  ((numberp (first formats))
 	   ;; Repeat a group some fixed number of times
 	   (dotimes (k (first formats))
@@ -1437,8 +1437,12 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.82 2007/09/25 17:31:05 rtoy Exp $
+;;; $Id: macros.l,v 1.83 2007/09/25 18:17:50 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.83  2007/09/25 18:17:50  rtoy
+;;; Oops.  We should always process #\: and exit only if there is more
+;;; args to process.
+;;;
 ;;; Revision 1.82  2007/09/25 17:31:05  rtoy
 ;;; f2cl5.l:
 ;;; o Return #\: when encountering a colon edit descriptor.

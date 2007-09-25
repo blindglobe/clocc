@@ -31,6 +31,30 @@
 	     (:file "hs101"
 		    :compiler-options (:declare-common t))))))
 
+(mk:defsystem ex-hs102
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "hs102"
+		    :compiler-options (:declare-common t))))))
+
+(mk:defsystem ex-hs103
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "hs103"
+		    :compiler-options (:declare-common t))))))
+
 ;; Not working!
 (mk:defsystem ex-boxparam
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))

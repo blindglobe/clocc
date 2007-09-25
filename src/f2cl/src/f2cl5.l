@@ -2844,15 +2844,36 @@
 			      (list-split '|,| (second x)))))))
     `((f2cl-lib::close$ ,@options))))
 
-;; Handle things like FMT = number
+;; Get the appropriate format string.
+;;
+;; LABEL is the label portion of a WRITE statement, and is one of the
+;; following forms:
+;;
+;; (<number>)
+;; (*)
+;; (FMT = <number>) or (FMT = *)
+;; (FMT = <string>)
 (defun get_format_stmt (label)
   (let ((fmt-num (first label)))
     (cond ((eq fmt-num 'fmt)
-	   ;; We have something like "FMT = number"
+	   ;; We have something like "FMT = number".  Pretend it was
+	   ;; just "number" and look up the format string.
 	   (get_format_stmt (list (third label))))
+	  ((stringp fmt-num)
+	   ;; We have something like FMT = "string".  Process the
+	   ;; format string and return the result.
+	   (let ((*sp* nil)
+		 (fmt (with-fortran-syntax
+			(lineread
+			 (make-string-input-stream
+			  (process-format-line
+			   fmt-num))))))
+	     (declare (special *sp*))
+	     (parse-format1 (brackets-check (concat-operators fmt)))))
 	  ((or (eq fmt-num '*)
 	       (not (numberp fmt-num)))
-	   '(("~A~%")))
+	   ;; Format is * (or something else unknown).  Just use ~A.
+	   '(t (("~A ")) "~%"))
 	  (t
 	   (do ((lis *format_stmts* (cdr lis)))
 	       ((null lis)
@@ -3497,8 +3518,17 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.160 2007/09/25 17:31:05 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.161 2007/09/25 18:48:13 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.161  2007/09/25 18:48:13  rtoy
+;;; f2cl1.l:
+;;; o Comment out the ill-designed ID-WRITE-FORMAT stuff.  This is now
+;;;   handled in a much better way when parsing WRITE statements.
+;;;
+;;; f2cl5.l:
+;;; o Handle FMT=<string> cases in WRITE statements here.  We just go get
+;;;   the string, parse it as a format statement and return the result.
+;;;
 ;;; Revision 1.160  2007/09/25 17:31:05  rtoy
 ;;; f2cl5.l:
 ;;; o Return #\: when encountering a colon edit descriptor.

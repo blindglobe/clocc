@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/24 20:05:55 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/25 18:48:13 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -680,6 +680,7 @@ FILENAME                 File containing Fortran code
 
 ;; Find a WRITE statement where the format is not a statement number
 ;; but a string giving the format itself.
+#+nil
 (defun id-write-format (input-list)
   (when (eq (car input-list) 'write)
     ;; A write statement looks like the following, so try to match one
@@ -779,6 +780,7 @@ FILENAME                 File containing Fortran code
 			  label
 			(push `(nil (goto ,l1)) output-list)
 			(push `(,l2 (continue)) output-list))))))
+	    #+nil
 	    ((id-write-format input-list)
 	     ;; We have a write statement where the format isn't a
 	     ;; label but a string.  Convert this to a label and add
@@ -2915,8 +2917,17 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.178 2007/09/24 20:05:55 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.179 2007/09/25 18:48:13 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.179  2007/09/25 18:48:13  rtoy
+;;; f2cl1.l:
+;;; o Comment out the ill-designed ID-WRITE-FORMAT stuff.  This is now
+;;;   handled in a much better way when parsing WRITE statements.
+;;;
+;;; f2cl5.l:
+;;; o Handle FMT=<string> cases in WRITE statements here.  We just go get
+;;;   the string, parse it as a format statement and return the result.
+;;;
 ;;; Revision 1.178  2007/09/24 20:05:55  rtoy
 ;;; o Need to clear out *common_array_dims* on each subprogram!
 ;;; o Add FIND-DATA-VAR to return the data variable for DATA

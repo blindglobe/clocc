@@ -1159,9 +1159,9 @@ causing all pending operations to be flushed"
 	    ;; Repeat "forever" (until we run out of data)
 	    (loop while arg-list do
 		  (setf arg-list
-			(execute-format nil stream (second formats) arg-list))
-		  ;; Output a newline after the repeat (I think Fortran says this)
-		  (format stream "~%")))
+			(execute-format nil stream (second formats) arg-list)))
+	    ;; Output a newline after the repeat (I think Fortran says this)
+	    (format stream "~%"))
 	  (t
 	   (format stream (car formats))))))
 	   
@@ -1437,8 +1437,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.83 2007/09/25 18:17:50 rtoy Exp $
+;;; $Id: macros.l,v 1.84 2007/09/25 18:46:42 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.84  2007/09/25 18:46:42  rtoy
+;;; For repeated descriptors, we were printing a new line after each item
+;;; instead of after all items had been printed.  Output new line only
+;;; once, when we're done.
+;;;
 ;;; Revision 1.83  2007/09/25 18:17:50  rtoy
 ;;; Oops.  We should always process #\: and exit only if there is more
 ;;; args to process.

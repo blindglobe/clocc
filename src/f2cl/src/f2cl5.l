@@ -3155,9 +3155,7 @@
 		       (format nil "~~~D,~D/f2cl:print-i-format/" width (second w))
 		       (format nil "~~~DD" width)
 		       )))
-    (if (= a 1)
-	(list (list directive))
-	(list a (list (list directive))))))
+    (list a (list (list directive)))))
 
 ;<kP><a>Fw.d -> ~a{~w,d,k,,,[@]F}
 (defun parse-format-descriptor-F (left right)
@@ -3176,9 +3174,7 @@
 			      (fixnum-string k) "," ;k
 			      "'*,"
 			      (if *SP* "@F" "F")))))
-      (if (= a 1)
-	  (list directive)
-	  (list a (list directive))))))
+      (list a (list directive)))))
 
 ;; Note: The Fortran standard says that, for a format like Ew.d, if
 ;; the the exponent is three digits long, the exponent indicator (E or
@@ -3201,9 +3197,7 @@
 			      (fixnum-string e) ","
 			      (fixnum-string k) ",'*,,'E"
 			      (if *SP* "@E" "E")))))
-      (if (= a 1)
-	  (list directive)
-	  (list a (list directive))))))
+      (list a (list directive)))))
 
 (defun parse-format-descriptor-D (left right)
   (let ((k 0) (a nil) w d (e 2))
@@ -3222,9 +3216,7 @@
 			      (fixnum-string e) ","
 			      (fixnum-string k) ",'*,,'D"
 			      (if *SP* "@E" "E")))))
-      (if (= a 1)
-	  (list directive)
-	  (list a (list directive))))))
+      (list a (list directive)))))
 
 (defun parse-format-descriptor-G (left right)
   (let ((k 0) (a 1) w d (e 2))
@@ -3243,9 +3235,7 @@
 			      (fixnum-string e) ","
 			      (fixnum-string k) ",'*"
 			      (if *SP* "@G" "G")))))
-      (if (= a 1)
-	  (list directive)
-	  (list a (list directive))))))
+      (list a (list directive)))))
 
 (defun parse-format-descriptor-/ ()
    '("~%"))
@@ -3528,8 +3518,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.162 2007/09/25 21:31:32 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.163 2007/09/25 21:58:42 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.163  2007/09/25 21:58:42  rtoy
+;;; Revert previous change.
+;;;
 ;;; Revision 1.162  2007/09/25 21:31:32  rtoy
 ;;; f2cl5.l:
 ;;; o Slight change in the format used for "*" format.

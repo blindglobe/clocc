@@ -1123,14 +1123,15 @@ causing all pending operations to be flushed"
 	  `((when (stringp ,dest-lun)
 	     (replace ,dest-lun (get-output-stream-string ,stream))))))))
 
-(defun execute-format (top stream format arg-list)
+(defun execute-format (top stream format arg-list &optional forever)
   (do ((formats format (if (and top (null formats))
 			   format
 			   (rest formats))))
       ((or (null arg-list)
-	   (and (not top)
+	   (and (not forever)
+		(not top)
 		(null formats)))
-       ;;(format t "~&formats = ~S~%" formats)
+       ;;(format t "~&end formats = ~S~%" formats)
        (do ((more formats (rest more)))
 	   ((not (stringp (first more))))
 	 (format stream (first more)))
@@ -1139,6 +1140,7 @@ causing all pending operations to be flushed"
       (setf formats format))
     #+nil
     (let ((*print-circle* t))
+      (format t "~&arg-list = ~S~%" arg-list)
       (format t "~&formats = ~S~%" formats))
     (cond ((listp (first formats))
 	   (format stream (caar formats) (pop arg-list)))
@@ -1152,16 +1154,21 @@ causing all pending operations to be flushed"
 	     ;;(format t "k = ~A, format = ~S~%" k (second formats))
 	     (setf arg-list
 		   (execute-format nil stream (second formats) arg-list)))
+	   (format stream "~%")
 	   (setf formats (rest formats))
+	   ;; Output a newline after the repeat (I think Fortran says this)
+	   ;;(format stream "~&")
 	   ;;(format t "  cont with format = ~S~%" formats)
 	   )
-	   ((eq (first formats) t)
-	    ;; Repeat "forever" (until we run out of data)
-	    (loop while arg-list do
-		  (setf arg-list
-			(execute-format nil stream (second formats) arg-list)))
-	    ;; Output a newline after the repeat (I think Fortran says this)
-	    (format stream "~%"))
+	  ((eq (first formats) t)
+	   ;; Repeat "forever" (until we run out of data)
+	   ;;(format t "forever arg = ~S~%" arg-list)
+	   ;;(format t " formats    = ~S~%" (second formats))
+	   (loop while arg-list do
+		(setf arg-list
+		      (execute-format nil stream (second formats) arg-list t))
+	      ;; Output a newline after the repeat (I think Fortran says this)
+		(format stream "~%")))
 	  (t
 	   (format stream (car formats))))))
 	   
@@ -1437,8 +1444,21 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.84 2007/09/25 18:46:42 rtoy Exp $
+;;; $Id: macros.l,v 1.85 2007/09/25 21:31:32 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.85  2007/09/25 21:31:32  rtoy
+;;; f2cl5.l:
+;;; o Slight change in the format used for "*" format.
+;;; o Change the repeatable descriptors to remove the repeat count if the
+;;;   count is 1.  This was confusing the execute-format when determining
+;;;   when to print out newlines.  This change applied to I, F, E, D, and
+;;;   G descriptors.
+;;;
+;;; macros.l:
+;;; o Handle printing of "repeat forever" loops better.  An extra arg to
+;;;   EXECUTE-FORMAT tells us to repeat "forever".
+;;; o Output a newline at the end of a repeated specification.
+;;;
 ;;; Revision 1.84  2007/09/25 18:46:42  rtoy
 ;;; For repeated descriptors, we were printing a new line after each item
 ;;; instead of after all items had been printed.  Output new line only

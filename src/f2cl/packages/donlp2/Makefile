@@ -55,6 +55,9 @@ antenna1 : donlp2main.o antenna1.o libdonlp2.a
 hs101 : donlp2main.o hs101.o libdonlp2.a
 	$(F77) -o $@ $^
 
+alkylati : donlp2main.o alkylati.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

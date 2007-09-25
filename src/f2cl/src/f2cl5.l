@@ -3089,9 +3089,8 @@
 	      (parse-format-descriptor-/))
 	     ((equal (cadr x) #\:)
 	      ;; The colon descriptor terminates format control if
-	      ;; there are no more items in the input/outpu list.
-	      ;; What should we do here?
-	      '(""))
+	      ;; there are no more items in the input/output list.
+	      '(#\:))
 	     (t (parse-default-format-descriptor x)))))
       (unless matched-p
 	;; Need to reset *scale-factor* if this wasn't a P descriptor.
@@ -3498,8 +3497,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.159 2007/09/25 17:23:52 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.160 2007/09/25 17:31:05 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.160  2007/09/25 17:31:05  rtoy
+;;; f2cl5.l:
+;;; o Return #\: when encountering a colon edit descriptor.
+;;;
+;;; macros.l:
+;;; o Recognize #\: and terminate processing if there are no arguments
+;;;   left.
+;;;
 ;;; Revision 1.159  2007/09/25 17:23:52  rtoy
 ;;; o Need to check for reserved lisp names when looking up array bounds
 ;;;   in data initializers.

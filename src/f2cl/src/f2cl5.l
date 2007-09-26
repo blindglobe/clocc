@@ -2872,8 +2872,8 @@
 	     (parse-format1 (brackets-check (concat-operators fmt)))))
 	  ((or (eq fmt-num '*)
 	       (not (numberp fmt-num)))
-	   ;; Format is * (or something else unknown).  Just use ~A.
-	   '("~1@T" t (("~A ")) "~%"))
+	   ;; List-directed output
+	   :list-directed)
 	  (t
 	   (do ((lis *format_stmts* (cdr lis)))
 	       ((null lis)
@@ -3518,8 +3518,22 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.163 2007/09/25 21:58:42 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.164 2007/09/26 13:10:15 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.164  2007/09/26 13:10:15  rtoy
+;;; Better list-directed output.
+;;;
+;;; f2cl5.l:
+;;; o For list-directed output (format is *), return :list-directed to
+;;;   tell format that we're using list-directed output.  (The previous
+;;;   scheme didn't really work well.)
+;;;
+;;; macros.l:
+;;; o Add FLATTEN-LIST function
+;;; o Don't output a newline for repeated items.  We shouldn't do that.
+;;; o Add support for :list-directed output.  We recognize that and then
+;;;   just output all the args in a special way.
+;;;
 ;;; Revision 1.163  2007/09/25 21:58:42  rtoy
 ;;; Revert previous change.
 ;;;

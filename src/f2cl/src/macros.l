@@ -1154,7 +1154,6 @@ causing all pending operations to be flushed"
 	     ;;(format t "k = ~A, format = ~S~%" k (second formats))
 	     (setf arg-list
 		   (execute-format nil stream (second formats) arg-list)))
-	   (format stream "~%")
 	   (setf formats (rest formats))
 	   ;; Output a newline after the repeat (I think Fortran says this)
 	   ;;(format stream "~&")
@@ -1166,26 +1165,42 @@ causing all pending operations to be flushed"
 	   ;;(format t " formats    = ~S~%" (second formats))
 	   (loop while arg-list do
 		(setf arg-list
-		      (execute-format nil stream (second formats) arg-list t))
+		      (execute-format nil stream (second formats) arg-list ))
 	      ;; Output a newline after the repeat (I think Fortran says this)
 		(format stream "~%")))
 	  (t
 	   (format stream (car formats))))))
 	   
-       
+(defun flatten-list (x)
+  (labels ((flatten-helper (x r);; 'r' is the stuff to the 'right'.
+	     (cond ((null x) r)
+		   ((atom x)
+		    (cons x r))
+		   (t (flatten-helper (car x)
+				      (flatten-helper (cdr x) r))))))
+    (flatten-helper x nil)))
+
 (defun execute-format-main (stream format &rest args)
-  (let ((format-list (copy-tree format))
-	(arg-list (apply #'append (map 'list #'(lambda (x)
-						 (cond ((numberp x)
-							(list x))
-						       ((stringp x)
-							(list x))
-						       ((atom x)
-							(list x))
-						       (t
-							(coerce x 'list))))
-				       args))))
-    (execute-format t stream format-list arg-list)))
+  (cond
+    ((eq format :list-directed)
+     ;; Is something better needed here?
+     ;;(format t "args = ~S~%" args)
+     ;; This prints out the args separated by spaces and puts a line
+     ;; break after about 80 columns.
+     (format stream "~& ~{~<~% ~1,80:;~A~>~^ ~}~%" (flatten-list args)))
+    (t
+     (let ((format-list (copy-tree format))
+	   (arg-list (apply #'append (map 'list #'(lambda (x)
+						    (cond ((numberp x)
+							   (list x))
+							  ((stringp x)
+							   (list x))
+							  ((atom x)
+							   (list x))
+							  (t
+							   (coerce x 'list))))
+					  args))))
+       (execute-format t stream format-list arg-list)))))
 
 
 #||
@@ -1444,8 +1459,22 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.85 2007/09/25 21:31:32 rtoy Exp $
+;;; $Id: macros.l,v 1.86 2007/09/26 13:10:15 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.86  2007/09/26 13:10:15  rtoy
+;;; Better list-directed output.
+;;;
+;;; f2cl5.l:
+;;; o For list-directed output (format is *), return :list-directed to
+;;;   tell format that we're using list-directed output.  (The previous
+;;;   scheme didn't really work well.)
+;;;
+;;; macros.l:
+;;; o Add FLATTEN-LIST function
+;;; o Don't output a newline for repeated items.  We shouldn't do that.
+;;; o Add support for :list-directed output.  We recognize that and then
+;;;   just output all the args in a special way.
+;;;
 ;;; Revision 1.85  2007/09/25 21:31:32  rtoy
 ;;; f2cl5.l:
 ;;; o Slight change in the format used for "*" format.

@@ -76,6 +76,9 @@ amplqp :  donlp2main.o amplqp.o libdonlp2.a
 fractf77new : donlp2main.o fractf77new.o libdonlp2.a
 	$(F77) -o $@ $^
 
+girder : donlp2main.o girder.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

@@ -1,6 +1,17 @@
 -*- Mode: text -*-
 
 Changes:
+Sep 26, 2007
+------------
+o Lots of changes:
+  - Better printing, especially for list-directed output.
+  - Remove unused symbol macros and such.
+  - Remove unused Fortran PARAMETER values
+  - DONLP2 package added.  This is a work in progress.  Several
+    examples work, but several do not.  Some won't even compile
+    correctly due to f2cl not handling nested implied-do lists
+    correctly. 
+
 Sep 20, 2007
 ------------
 o Extended DO loops were causing extra labels in the Lisp code, which

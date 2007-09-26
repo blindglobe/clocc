@@ -109,6 +109,30 @@
 	     (:file "girder"
 		    :compiler-options (:declare-common t))))))
 
+(mk:defsystem ex-irreg1
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "irreg1"
+		    :compiler-options (:declare-common t))))))
+
+(mk:defsystem ex-irreg2
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "irreg2"
+		    :compiler-options (:declare-common t))))))
+
 ;; This incompatibly defines the common block o8xdat, so this won't
 ;; work until that is fixed, if possible.
 (mk:defsystem ex-chemequi

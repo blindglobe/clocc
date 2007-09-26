@@ -79,6 +79,12 @@ fractf77new : donlp2main.o fractf77new.o libdonlp2.a
 girder : donlp2main.o girder.o libdonlp2.a
 	$(F77) -o $@ $^
 
+irreg1 : donlp2main.o irreg1.o libdonlp2.a
+	$(F77) -o $@ $^
+
+irreg2 : donlp2main.o irreg2.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

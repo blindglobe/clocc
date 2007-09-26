@@ -7,7 +7,9 @@
 (defun o8tida (chan)
   ;; Print out time and date to channel chan
   #+cmu
-  (format-universal-time (f2cl-lib::lun->stream chan) (get-universal-time)))
+  (let ((stream (f2cl-lib::lun->stream chan)))
+    (format-universal-time stream (get-universal-time))
+    (terpri stream)))
 
 ;; Tell f2cl the function signatures
 #+#.(cl:if (cl:find-package '#:f2cl) '(and) '(or))

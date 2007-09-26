@@ -1193,6 +1193,17 @@
     (values (nreverse var-type-list)
 	    (nreverse var-decls))))
 
+(defun make-key-param-decls (keys)
+  (let ((code-key-params-decls
+	 (mapcar #'(lambda (param)
+		     (destructuring-bind (v val)
+			 param
+		       (make-declaration v :parameterp (if (numberp val) val nil))))
+		 keys)))
+
+    (setf code-key-params-decls
+	  `((declare ,@(mapcan #'cdr code-key-params-decls))))
+    code-key-params-decls))
 
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
@@ -1204,6 +1215,8 @@
 		   common-block-structs
 		   key-params
 		   key-params-decls
+	           code-key-params
+	 	   code-key-params-decls
 		   all-decls
 		   #+nil additional-args
 		   entry-points equivalences)
@@ -1675,19 +1688,14 @@
      
      ;;(format t "prog-bit = ~a~%" prog-bit)
      ;; Clean up key params by removing any unused key params
-     (setf key-params (remove-unused-key-params key-params prog-bit))
+     (format t "save-inits = ~A~%" save-inits)
+     (format t "data-init = ~A~%" *data-init*)
+     (setf code-key-params (remove-unused-key-params key-params
+						     (list *data-init*
+							   save-inits
+							   prog-bit)))
 
-     (setq key-params-decls
-	   (mapcar #'(lambda (param)
-		       (destructuring-bind (v val)
-			   param
-			 (make-declaration v :parameterp (if (numberp val) val nil))))
-		   key-params))
-     ;;(format t "key-params-decl = ~S~%" key-params-decls)
-     ;; Clean up the declarations
-     (setf key-params-decls
-	   `((declare ,@(mapcan #'cdr key-params-decls))))
-     ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     (setf code-key-params-decls (make-key-param-decls code-key-params))
      
 
      ;; Replace all references to external functions with #'.
@@ -1954,15 +1962,16 @@
 				    *data-init*))))))
 	(let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
 			      ,prog-bit))
-	       (param-stuff (if key-params
-				`(let* ,key-params
-				  ,@key-params-decls
+	       (param-stuff (if code-key-params
+				`(let* ,code-key-params
+				  ,@code-key-params-decls
 				  ,defun-stuff)
 				defun-stuff)))
 	  (return
 	    (values common-blocks
 		    (when common-blocks
-		      (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
+		      (make-common-block-init *common-blocks* common_var_decls
+					      key-params))
 		    param-stuff))
 	  )
 	)
@@ -2001,16 +2010,17 @@
 				 ,@*data-init*
 				 ,defun-stuff)
 			       defun-stuff))
-	       (param-stuff (if key-params
-				`(let* ,key-params
-				  ,@key-params-decls
+	       (param-stuff (if code-key-params
+				`(let* ,code-key-params
+				  ,@code-key-params-decls
 				  ,save-stuff)
 				save-stuff)))
 	  ;;(format t "param-stuff = ~A~%" param-stuff)
 	  (return 
 	    (values common-blocks
 		    (when common-blocks
-		      (make-common-block-init *common-blocks* common_var_decls key-params key-params-decls))
+		      (make-common-block-init *common-blocks* common_var_decls
+					      key-params))
 		    param-stuff)))))
      ))
 
@@ -2962,7 +2972,6 @@
           (parse-dlist arg))
          (t (id-expression arg))))
 
-#+nil
 (defun parse-implied-do (do-list)
    (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
       (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
@@ -2983,6 +2992,7 @@
            ((> ,ivar ,e2) (reverse ret))
 	 (declare (type integer4 ,ivar)))))))
 
+#+nil
 (defun parse-implied-do (do-list)
   (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
      (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
@@ -2994,7 +3004,7 @@
      (return
        (if *dlist-flag*
 	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
-		 (%ret nil (push ,dlist %ret)))
+		 (%ret nil (push ,@(cdr dlist) %ret)))
 		((> ,ivar ,e2)
 		 (nreverse %ret))
 	      (declare (type integer4 ,ivar)))
@@ -3579,7 +3589,7 @@
 ;; common block is initialized with reasonable defaults.  The
 ;; KEY-PARAMS is needed, just in case arrays in the common block are
 ;; dimensioned from PARAMETER values.
-(defun make-common-block-init (comm-blocks comm-decls key-params key-param-decls)
+(defun make-common-block-init (comm-blocks comm-decls key-params)
   ;; COMM-BLOCKS is the hash table of all common blocks.  COMM-DECLS
   ;; is the list of declaims for the variables in the common block.
   ;; KEY-PARAMS is the list of Fortran PARAMETER values.
@@ -3588,24 +3598,39 @@
   (let ((var-inits '()))
     (maphash
      #'(lambda (key val)
-	 (push `(let* ,key-params
-		  ,@key-param-decls
-		  (defparameter ,(intern (concatenate 'string
-						      "*"
-						      (symbol-name key)
-						      (symbol-name '#:-common-block*)))
-		    (,(intern (concatenate 'string
-					   (symbol-name '#:make-)
-					   (symbol-name key)))
-		      ,@(make-common-block-var-init val comm-decls))))
-	       var-inits))
+	 (let* ((init (make-common-block-var-init val comm-decls))
+		(new-keys (remove-unused-key-params key-params init))
+		(new-decls (make-key-param-decls new-keys)))
+	   (push `(let* ,new-keys
+		    ,@new-decls
+		    (defparameter ,(intern (concatenate 'string
+							"*"
+							(symbol-name key)
+							(symbol-name '#:-common-block*)))
+		      (,(intern (concatenate 'string
+					     (symbol-name '#:make-)
+					     (symbol-name key)))
+			,@init)))
+		 var-inits)))
      comm-blocks)
     (nreverse var-inits)))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.166 2007/09/26 15:21:45 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.167 2007/09/26 16:31:06 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.167  2007/09/26 16:31:06  rtoy
+;;; o Revert to old version of PARSE-IMPLIED-DO.  The new version doesn't
+;;;   work in some situations.
+;;; o Add function MAKE-KEY-PARAM-DECLS to create the appropriate
+;;;   declarations for parameter keyword args.  Use it in the appropriate
+;;;   places.
+;;; o Preserve value key-params.  Use new code-key-params that has unused
+;;;   values removed for use with code.
+;;; o Add support for removing unused parameter keywords in initializing
+;;;   common blocks.  This reduces the number of Lis pcompiler warnings
+;;;   quite a bit.
+;;;
 ;;; Revision 1.166  2007/09/26 15:21:45  rtoy
 ;;; o Use push instead of append in creating the lists for implied-do
 ;;;   loops.

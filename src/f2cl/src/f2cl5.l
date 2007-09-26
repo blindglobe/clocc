@@ -1687,9 +1687,9 @@
      ;;(format t "new save-inits  = ~S~%" save-inits)
      
      ;;(format t "prog-bit = ~a~%" prog-bit)
-     ;; Clean up key params by removing any unused key params
-     (format t "save-inits = ~A~%" save-inits)
-     (format t "data-init = ~A~%" *data-init*)
+     
+     ;; Clean up key params by removing any unused key params. This
+     ;; means not used in the code or for intializing data statements.
      (setf code-key-params (remove-unused-key-params key-params
 						     (list *data-init*
 							   save-inits
@@ -3617,8 +3617,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.167 2007/09/26 16:31:06 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.168 2007/09/26 16:32:45 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.168  2007/09/26 16:32:45  rtoy
+;;; Remove debugging prints.
+;;;
 ;;; Revision 1.167  2007/09/26 16:31:06  rtoy
 ;;; o Revert to old version of PARSE-IMPLIED-DO.  The new version doesn't
 ;;;   work in some situations.

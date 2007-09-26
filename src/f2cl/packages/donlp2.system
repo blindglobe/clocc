@@ -55,7 +55,20 @@
 	     (:file "hs103"
 		    :compiler-options (:declare-common t))))))
 
-;; Not working!
+;; Compiles and runs, but incorrect results.
+(mk:defsystem ex-chemequi
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "chemequi"
+		    :compiler-options (:declare-common t))))))
+
+;; F2cl can't convert nested implied do loops.
 (mk:defsystem ex-boxparam
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -68,7 +81,20 @@
 	     (:file "boxparam"
 		    :compiler-options (:declare-common t))))))
 
-;; Not working!
+;; F2cl can't convert nested implied do loops.
+(mk:defsystem ex-betting
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "betting"
+		    :compiler-options (:declare-common t))))))
+
+;; Compiles and runs, but incorrect results.
 (mk:defsystem ex-alkylati
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -157,7 +183,7 @@
 				 "esg"
 				 "esf"))
 	     (:file "o8unim"
-		    :depends-on ("o8eval"))
+		    :depends-on ("o8eval" "o8rest" "o8save"))
 	     (:file "o8sc1")
 	     (:file "o8sc2")
 	     (:file "o8sc3")

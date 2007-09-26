@@ -41,7 +41,7 @@
 	 :arg-types '((f2cl::integer4)
 		      (array double-float (*))
 		      (double-float))
-	 :return-values '(nil nil nil)
+	 :return-values '(nil nil fortran-to-lisp::hxi)
 	 :calls nil))
   (setf (gethash 'f2cl::egradh f2cl::*f2cl-function-info*)
 	(f2cl::make-f2cl-finfo

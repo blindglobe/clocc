@@ -2962,6 +2962,7 @@
           (parse-dlist arg))
          (t (id-expression arg))))
 
+#+nil
 (defun parse-implied-do (do-list)
    (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
       (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
@@ -2980,7 +2981,28 @@
       `(do ((,ivar ,e1 (+ ,ivar ,e3))
             (ret nil (cons ,dlist ret)))
            ((> ,ivar ,e2) (reverse ret))
-	(declare (type integer4 ,ivar)))))))
+	 (declare (type integer4 ,ivar)))))))
+
+(defun parse-implied-do (do-list)
+  (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
+     (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
+	   dlist (parse-dlist (ldiff do-list ctrl-vars))
+	   ivar (first (first ctrl-vars))
+	   e1 (id-expression (cdr (member '= (first ctrl-vars))))
+	   e2 (id-expression (second ctrl-vars))
+	   e3 (if (third ctrl-vars) (third ctrl-vars) 1))
+     (return
+       (if *dlist-flag*
+	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
+		 (%ret nil (push ,dlist %ret)))
+		((> ,ivar ,e2)
+		 (nreverse %ret))
+	      (declare (type integer4 ,ivar)))
+
+	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
+		 (%ret nil (cons ,dlist %ret)))
+		((> ,ivar ,e2) (reverse %ret))
+	      (declare (type integer4 ,ivar)))))))
 
 (defun parse-dlist (x)
    (setq *dlist-flag* t)
@@ -3582,8 +3604,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.165 2007/09/26 15:10:22 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.166 2007/09/26 15:21:45 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.166  2007/09/26 15:21:45  rtoy
+;;; o Use push instead of append in creating the lists for implied-do
+;;;   loops.
+;;; o Don't use RET for the implied-do loops.  Use %RET instead, since
+;;;   %RET can't be a Fortran variable.
+;;;
 ;;; Revision 1.165  2007/09/26 15:10:22  rtoy
 ;;; o Grovel over the Fortran PARAMETER list and remove any that are not
 ;;;   used by other PARAMETER items or by the code.

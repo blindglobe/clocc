@@ -1934,7 +1934,7 @@
 	;; data-init part needs to be moved inside the body and
 	;; massaged to initialize the data.  
 	(multiple-value-bind (sym-macs sym-lets)
-	    (create-sym-macros nil)
+	    (create-sym-macros (list save-inits *data-init*))
 	  #+nil
 	  (format t "save-inits = ~A~%" (mapcar #'(lambda (x)
 						    `(setf ,@x))
@@ -1960,6 +1960,8 @@
 					    `(setf ,@(rest x))
 					    x))
 				    *data-init*))))))
+	(setf code-key-params (remove-unused-key-params key-params prog-bit))
+	(setf code-key-params-decls (make-key-param-decls code-key-params))
 	(let* ((defun-stuff `(defun ,(cadr defun-bit) ,arglist
 			      ,prog-bit))
 	       (param-stuff (if code-key-params
@@ -3617,8 +3619,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.168 2007/09/26 16:32:45 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.169 2007/09/26 16:58:48 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.169  2007/09/26 16:58:48  rtoy
+;;; Was not correctly handling parameter keywords in block data
+;;; subprograms.
+;;;
 ;;; Revision 1.168  2007/09/26 16:32:45  rtoy
 ;;; Remove debugging prints.
 ;;;

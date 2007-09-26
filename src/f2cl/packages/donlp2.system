@@ -55,7 +55,34 @@
 	     (:file "hs103"
 		    :compiler-options (:declare-common t))))))
 
-;; Compiles and runs, but incorrect results.
+(mk:defsystem ex-amplqp
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "amplqp"
+		    :compiler-options (:declare-common t))))))
+
+;; Output is messed up a bit, but the final results match the Fortran
+;; code results.
+(mk:defsystem ex-alkylati
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "alkylati"
+		    :compiler-options (:declare-common t))))))
+
+;; This incompatibly defines the common block o8xdat, so this won't
+;; work until that is fixed, if possible.
 (mk:defsystem ex-chemequi
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -94,18 +121,7 @@
 	     (:file "betting"
 		    :compiler-options (:declare-common t))))))
 
-;; Compiles and runs, but incorrect results.
-(mk:defsystem ex-alkylati
-  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
-  :depends-on ("donlp2")
-  :components
-  ((:module donlp2
-	    :source-extension "f"
-	    :language :f2cl
-	    :components
-	    (
-	     (:file "alkylati"
-		    :compiler-options (:declare-common t))))))
+
 
 (mk:defsystem donlp2
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))

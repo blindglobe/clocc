@@ -61,6 +61,12 @@ hs102 : donlp2main.o hs102.o libdonlp2.a
 hs103 : donlp2main.o hs103.o libdonlp2.a
 	$(F77) -o $@ $^
 
+betting : donlp2main.o betting.o libdonlp2.a
+	$(F77) -o $@ $^
+
+chemequi : donlp2main.o chemequi.o libdonlp2.a
+	$(F77) -o $@ $^
+
 alkylati : donlp2main.o alkylati.o libdonlp2.a
 	$(F77) -o $@ $^
 

@@ -70,6 +70,9 @@ chemequi : donlp2main.o chemequi.o libdonlp2.a
 alkylati : donlp2main.o alkylati.o libdonlp2.a
 	$(F77) -o $@ $^
 
+amplqp :  donlp2main.o amplqp.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

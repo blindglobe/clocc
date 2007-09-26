@@ -748,8 +748,62 @@
 	(t
 	 `(,@(mapcar #'merge-ops expr)))))
 	 
- 
-(defun create-sym-macros ()
+
+(defun find-sym (sym code)
+  (cond ((atom code)
+	 (eq sym code))
+	((null code)
+	 nil)
+	(t
+	 (or (find-sym sym (car code))
+	     (find-sym sym (cdr code))))))
+
+(defun remove-unused-sym-macros (sym-mlets sym-lets prog-bit)
+  #+(or)
+  (progn
+    (format t "sym-mlets = ~S~%" sym-mlets)
+    (format t "sym-lets  = ~S~%" sym-lets)
+    (format t "prog =~%~S~%" prog-bit))
+  (let ((new-sym-mlets nil)
+	(new-sym-lets nil))
+    ;; For each symbol in sym-mlets, look to see if it is used in
+    ;; prog-bit.  If so, keep it.
+    (dolist (mlet sym-mlets)
+      (let ((sym (car mlet)))
+	(when (find-sym sym prog-bit)
+	  (push mlet new-sym-mlets))))
+    (setf new-sym-mlets (nreverse new-sym-mlets))
+    ;;(format t "new-sym-mlets = ~S~%" new-sym-mlets)
+    ;; Look through sym-lets for things that match our new symbol
+    ;; macros.  Save the matches, discarding the rest.
+    (dolist (mlet new-sym-mlets)
+      (when (atom (second mlet))
+	(let ((item (find (second mlet) sym-lets :key #'first)))
+	  (push item new-sym-lets))))
+    (setf new-sym-lets (nreverse new-sym-lets))
+    ;;(format t "new-sym-lets = ~S~%" new-sym-lets)
+    (values new-sym-mlets new-sym-lets)))
+
+(defun remove-unused-key-params (keys code)
+  (let ((used-keys nil))
+    (dolist (key keys)
+      (let ((keyname (first key)))
+	;; If the key is used in other keys, we need to keep it.
+	;; Otherwise, look throught the code to see if the key is
+	;; used.  If so, keep it too.
+	(if (find-if #'(lambda (k)
+			 (if (atom k)
+			     (eq keyname k)
+			     (member keyname k)))
+		     keys :key #'second)
+	    (push key used-keys)
+	    (when (find-sym keyname code)
+	      (push key used-keys)))))
+    (setf used-keys (nreverse used-keys))
+    (values used-keys)))
+
+
+(defun create-sym-macros (prog-bit)
   (let ((sym-mlets '())
 	(sym-lets ()))
     (if *common-blocks-as-arrays*
@@ -781,7 +835,9 @@
 			 ))
 		   varlist))
 	 *common-blocks*))
-    (values sym-mlets sym-lets)))
+    (multiple-value-bind (new-sym-mlets new-sym-lets)
+	(remove-unused-sym-macros sym-mlets sym-lets prog-bit)
+      (values new-sym-mlets new-sym-lets))))
 
 (defun create-sym-macros-array (common_var_decls)
   (let ((sym-mlets '())
@@ -1137,6 +1193,7 @@
     (values (nreverse var-type-list)
 	    (nreverse var-decls))))
 
+
 (defun insert-declarations (fort-fun) 
   (prog (defun-bit arglist prog-bit formal-arg-decls common_var_decls
 		   local-vbles vble-decls body common-blocks
@@ -1348,11 +1405,6 @@
 			      (member v *external-function-names*)))
 		      *undeclared_vbles*))
 
-     (when (eq *save_vbles* '%save-all-locals%)
-       ;; If *save_vbles* is the magic '%save-all-locals%, we want to
-       ;; save all local variables.
-       (setf *save_vbles* (concatenate 'list *declared_vbles* *undeclared_vbles*)))
-       
      ;;(format t "*key_params* = ~S~%" *key_params*)
      ;;(format t "key-params = ~S~%" key-params)
 
@@ -1367,19 +1419,16 @@
 		   *key_params*))
      ;;(format t "key-params = ~S~%" key-params)
      
-     (setq key-params-decls
-	   (mapcar #'(lambda (param)
-		       (destructuring-bind (v val)
-			   param
-			 (make-declaration v :parameterp (if (numberp val) val nil))))
-		   key-params))
-     ;;(format t "key-params-decl = ~S~%" key-params-decls)
-     ;; Clean up the declarations
-     (setf key-params-decls
-	   `((declare ,@(mapcan #'cdr key-params-decls))))
-     ;;(format t "key-params-decl = ~S~%" key-params-decls)
-     
+     (when (eq *save_vbles* '%save-all-locals%)
+       ;; If *save_vbles* is the magic '%save-all-locals%, we want to
+       ;; save all local variables.
+       (setf *save_vbles* (concatenate 'list *declared_vbles* *undeclared_vbles*)))
 
+     ;; No need to save common vars
+     (setf *save_vbles* (set-difference *save_vbles* *subprog_common_vars*))
+     ;; No need to save key-params
+     (setf *save_vbles* (set-difference *save_vbles* (mapcar #'first *key_params*)))
+       
      ;; Initialize local variables
      (setq local-vbles
 	   (remove-duplicates
@@ -1625,6 +1674,21 @@
      ;;(format t "new save-inits  = ~S~%" save-inits)
      
      ;;(format t "prog-bit = ~a~%" prog-bit)
+     ;; Clean up key params by removing any unused key params
+     (setf key-params (remove-unused-key-params key-params prog-bit))
+
+     (setq key-params-decls
+	   (mapcar #'(lambda (param)
+		       (destructuring-bind (v val)
+			   param
+			 (make-declaration v :parameterp (if (numberp val) val nil))))
+		   key-params))
+     ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     ;; Clean up the declarations
+     (setf key-params-decls
+	   `((declare ,@(mapcan #'cdr key-params-decls))))
+     ;;(format t "key-params-decl = ~S~%" key-params-decls)
+     
 
      ;; Replace all references to external functions with #'.
      ;; However, if the external function was on the parameter list,
@@ -1862,7 +1926,7 @@
 	;; data-init part needs to be moved inside the body and
 	;; massaged to initialize the data.  
 	(multiple-value-bind (sym-macs sym-lets)
-	    (create-sym-macros)
+	    (create-sym-macros nil)
 	  #+nil
 	  (format t "save-inits = ~A~%" (mapcar #'(lambda (x)
 						    `(setf ,@x))
@@ -1909,7 +1973,7 @@
 	;; function itself.
 	(when *subprog_common_vars*
 	  (multiple-value-bind (sym-macs sym-lets)
-	      (create-sym-macros)
+	      (create-sym-macros prog-bit)
 	    (setf prog-bit `(let ,sym-lets
 			      (symbol-macrolet ,sym-macs ,prog-bit)))))
 
@@ -3518,8 +3582,14 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.164 2007/09/26 13:10:15 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.165 2007/09/26 15:10:22 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.165  2007/09/26 15:10:22  rtoy
+;;; o Grovel over the Fortran PARAMETER list and remove any that are not
+;;;   used by other PARAMETER items or by the code.
+;;; o Grovel over the symbol macros used to access common blocks and
+;;;   remove the ones that are not used in the code.
+;;;
 ;;; Revision 1.164  2007/09/26 13:10:15  rtoy
 ;;; Better list-directed output.
 ;;;

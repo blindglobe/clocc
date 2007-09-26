@@ -2974,6 +2974,7 @@
           (parse-dlist arg))
          (t (id-expression arg))))
 
+#+nil
 (defun parse-implied-do (do-list)
    (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
       (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
@@ -2994,8 +2995,11 @@
            ((> ,ivar ,e2) (reverse ret))
 	 (declare (type integer4 ,ivar)))))))
 
-#+nil
 (defun parse-implied-do (do-list)
+  (flet ((map-items (items)
+	   (mapcar #'(lambda (x)
+			`(push ,x %ret))
+		items)))
   (prog (ctrl-vars dlist ivar e1 e2 e3 (*dlist-flag* nil))
      (setq ctrl-vars (member-if #'(lambda (x) (eq (second x) '=)) do-list)
 	   dlist (parse-dlist (ldiff do-list ctrl-vars))
@@ -3006,15 +3010,16 @@
      (return
        (if *dlist-flag*
 	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
-		 (%ret nil (push ,@(cdr dlist) %ret)))
+		 (%ret nil))
 		((> ,ivar ,e2)
 		 (nreverse %ret))
-	      (declare (type integer4 ,ivar)))
+	      (declare (type integer4 ,ivar))
+	      ,@(map-items (cdr dlist)))
 
 	   `(do ((,ivar ,e1 (+ ,ivar ,e3))
 		 (%ret nil (cons ,dlist %ret)))
 		((> ,ivar ,e2) (reverse %ret))
-	      (declare (type integer4 ,ivar)))))))
+	      (declare (type integer4 ,ivar))))))))
 
 (defun parse-dlist (x)
    (setq *dlist-flag* t)
@@ -3619,8 +3624,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.169 2007/09/26 16:58:48 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.170 2007/09/26 17:57:09 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.170  2007/09/26 17:57:09  rtoy
+;;; Fix up new PARSE-IMPLIED-DO that uses push instead of append to create
+;;; the arg list.  This version is used now and donlp2 compiles and runs
+;;; ok (for the antenna1 test case).
+;;;
 ;;; Revision 1.169  2007/09/26 16:58:48  rtoy
 ;;; Was not correctly handling parameter keywords in block data
 ;;; subprograms.

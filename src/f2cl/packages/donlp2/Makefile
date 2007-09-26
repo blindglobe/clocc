@@ -73,6 +73,9 @@ alkylati : donlp2main.o alkylati.o libdonlp2.a
 amplqp :  donlp2main.o amplqp.o libdonlp2.a
 	$(F77) -o $@ $^
 
+fractf77new : donlp2main.o fractf77new.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

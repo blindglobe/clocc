@@ -229,7 +229,7 @@
 	     (:file "o8shms")
 	     (:file "o8msg")
 	     (:file "o8opti"
-		    :compiler-options (:byte-compile t)
+		    ;;:compiler-options (:byte-compile t)
 		    :depends-on ("esh"
 				 "esgradh"
 				 "esg"

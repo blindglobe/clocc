@@ -3190,6 +3190,8 @@
 	      (parse-format-descriptor-H left right))
 	     ((pattern-match-and-bind '((> left) #\I (+ right)) x)
 	      (parse-format-descriptor-I left right))
+	     ((pattern-match-and-bind '((> left) #\L (+ right)) x)
+	      (parse-format-descriptor-L left right))
 	     ((pattern-match-and-bind '((+ left) #\F (+ right)) x)
 	      (parse-format-descriptor-F left right))
 	     ((pattern-match-and-bind '((+ left) #\G (+ right)) x)
@@ -3257,6 +3259,17 @@
 	(directive (if (and (listp w) (second w))
 		       (format nil "~~~D,~D/f2cl:print-i-format/" width (second w))
 		       (format nil "~~~DD" width)
+		       )))
+    (list a (list (list directive)))))
+
+(defun parse-format-descriptor-L (a w)
+  ;; aLw
+  (let* ((width (if (listp w)
+		   (car w)
+		   w))
+	(directive (if (and (listp w) (second w))
+		       (format nil "~~~D,~D/f2cl:print-i-format/" width (second w))
+		       (format nil "~~~D@A" width)
 		       )))
     (list a (list (list directive)))))
 
@@ -3624,8 +3637,18 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.170 2007/09/26 17:57:09 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.171 2007/09/27 02:12:12 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.171  2007/09/27 02:12:12  rtoy
+;;; Support the L edit descriptor better.
+;;;
+;;; f2cl5.l:
+;;; o Recognize the L descriptor and convert it to ~wA.
+;;;
+;;; macros.l:
+;;; o Convert T and NIL to :T and :F, respectively.  When coupled with ~A,
+;;;   this prints as T and F, as desired.
+;;;
 ;;; Revision 1.170  2007/09/26 17:57:09  rtoy
 ;;; Fix up new PARSE-IMPLIED-DO that uses push instead of append to create
 ;;; the arg list.  This version is used now and donlp2 compiles and runs

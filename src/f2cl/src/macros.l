@@ -1189,16 +1189,27 @@ causing all pending operations to be flushed"
      (format stream "~& ~{~<~% ~1,80:;~A~>~^ ~}~%" (flatten-list args)))
     (t
      (let ((format-list (copy-tree format))
-	   (arg-list (apply #'append (map 'list #'(lambda (x)
-						    (cond ((numberp x)
-							   (list x))
-							  ((stringp x)
-							   (list x))
-							  ((atom x)
-							   (list x))
-							  (t
-							   (coerce x 'list))))
-					  args))))
+	   (arg-list
+	    (apply #'append
+		   (map 'list #'(lambda (x)
+				  (cond ((numberp x)
+					 (list x))
+					((stringp x)
+					 (list x))
+					((atom x)
+					 ;; Convert T and NIL to :T
+					 ;; and :F so we print out T
+					 ;; and F, respectively.
+					 (case x
+					   ((t)
+					    (list :t))
+					   ((nil)
+					    (list :f))
+					   (t
+					    (list x))))
+					(t
+					 (coerce x 'list))))
+			args))))
        (execute-format t stream format-list arg-list)))))
 
 
@@ -1458,8 +1469,18 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.87 2007/09/26 13:11:06 rtoy Exp $
+;;; $Id: macros.l,v 1.88 2007/09/27 02:12:12 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.88  2007/09/27 02:12:12  rtoy
+;;; Support the L edit descriptor better.
+;;;
+;;; f2cl5.l:
+;;; o Recognize the L descriptor and convert it to ~wA.
+;;;
+;;; macros.l:
+;;; o Convert T and NIL to :T and :F, respectively.  When coupled with ~A,
+;;;   this prints as T and F, as desired.
+;;;
 ;;; Revision 1.87  2007/09/26 13:11:06  rtoy
 ;;; Remove the unused FOREVER parameter from EXECUTE-FORMAT.
 ;;;

@@ -2748,22 +2748,32 @@
       (list-split '|,| (second x))
     ;;(format t "lun-part = ~A~%" lun-part)
     ;;(format t "fmt-part = ~A~%" fmt-part)
-    
-    `((fformat ,(parse_format_dest lun-part)
-       ,(if (null fmt-part) 
-	    '(("~A~%"))
-	    (get_format_stmt fmt-part))
-       ,@(mapcar #'parse-output-argument 
-		 (list-split '|,| (cdddr x)))))))
+
+    (let ((args (if (cdddr x)
+		    (mapcar #'parse-output-argument 
+			    (list-split '|,| (cdddr x)))
+		    nil)))
+      ;; If there are no items to be written, make sure args is NIL,
+      ;; so fformat knows there are no items.
+      `((fformat ,(parse_format_dest lun-part)
+		 ,(if (null fmt-part) 
+		      '(("~A~%"))
+		      (get_format_stmt fmt-part))
+		 ,@args)))))
 
 ;; x is of the form: '(PRINT * |,| X |,| Y)
 ;;               or: '(PRINT 9000 |,| X |,| Y)
 
 (defun parse-print (x)
-  `((fformat t
-     ,(get_format_stmt (list (second x)))
-     ,@(mapcar #'parse-output-argument 
-		       (list-split '|,| (cdddr x))))))
+  (let ((args (if (cdddr x)
+		  (mapcar #'parse-output-argument 
+			  (list-split '|,| (cdddr x)))
+		  nil)))
+    ;; If there are no items to be written, make sure args is NIL,
+    ;; so fformat knows there are no items.
+    `((fformat t
+	       ,(get_format_stmt (list (second x)))
+	       ,@args))))
 
 ;; x is of the form '(read (lun |,| format) var |,| var)
 ;;
@@ -3637,8 +3647,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.171 2007/09/27 02:12:12 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.172 2007/09/27 14:53:22 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.172  2007/09/27 14:53:22  rtoy
+;;; If there are no items to be printed in a WRITE or PRINT statement,
+;;; make sure no args are given to FFORMAT.  This confuses FFORMAT.
+;;;
 ;;; Revision 1.171  2007/09/27 02:12:12  rtoy
 ;;; Support the L edit descriptor better.
 ;;;

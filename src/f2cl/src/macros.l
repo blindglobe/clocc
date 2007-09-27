@@ -1136,7 +1136,18 @@ causing all pending operations to be flushed"
 	 (format stream (first more)))
        arg-list)
     (when (null formats)
-      (setf formats format))
+      ;; We're out of formats but not arguments.  I think Fortran says
+      ;; we should start over at the first repeat spec.  So we look
+      ;; over all the formats until we find the first number.  That
+      ;; means it's a repeat spec.
+      (do ((f format (cdr f)))
+	  ((or (eq (car f) t)
+	       (numberp (car f)))
+	   (setf formats f)))
+      (when (null formats)
+	;; Now what?  We couldn't find a repeat spec, so should we
+	;; just start over?
+	(setf formats format)))
     #+nil
     (let ((*print-circle* t))
       (format t "~&arg-list = ~S~%" arg-list)
@@ -1469,8 +1480,16 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.88 2007/09/27 02:12:12 rtoy Exp $
+;;; $Id: macros.l,v 1.89 2007/09/27 14:56:39 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.89  2007/09/27 14:56:39  rtoy
+;;; When we run out of format specs, but there are still items to print,
+;;; we go back and find the first repeat spec and start there.
+;;;
+;;; If there is no such thing, we just reuse the entire format spec.  Not
+;;; sure if this is right or if it's a bug.  Maybe we should signal an
+;;; error?
+;;;
 ;;; Revision 1.88  2007/09/27 02:12:12  rtoy
 ;;; Support the L edit descriptor better.
 ;;;

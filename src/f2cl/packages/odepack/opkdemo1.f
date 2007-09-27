@@ -196,7 +196,7 @@ c      stop
       end
 
       subroutine jac2 (neq, t, y, ml, mu, pd, nrowpd)
-      integer neq(1), ml, mu, nrowpd, j, mband, mu1, mu2, ng
+      integer neq, ml, mu, nrowpd, j, mband, mu1, mu2, ng
       double precision t, y, pd, alph1, alph2
       dimension y(*), pd(nrowpd,*)
       dimension neq(*)

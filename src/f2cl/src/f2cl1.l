@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/26 15:22:39 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/27 04:02:07 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2422,7 +2422,7 @@ FILENAME                 File containing Fortran code
 	   `(fill ,(check-reserved-lisp-names (first v))
 	          ,(fix-up-negative-number (cddar l))
 	          :end ,(first (car l))))
-	  ((and (listp v) (listp l)
+	  ((and (listp v) ;;(not (listp l))
 		(listp (second v))
 		(numberp (first (second v))))
 	   ;; Initializing one element of an array.
@@ -2917,8 +2917,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.180 2007/09/26 15:22:39 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.181 2007/09/27 04:02:07 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.181  2007/09/27 04:02:07  rtoy
+;;; Was not correctly parsing data statements that initialize one element
+;;; of an array.
+;;;
 ;;; Revision 1.180  2007/09/26 15:22:39  rtoy
 ;;; Oops.  Comment out debugging prints accidentally left in.
 ;;;

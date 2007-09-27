@@ -139,6 +139,13 @@
    (:file "cofx")
    ))
 
+;; Some tests of Fishpack.
+;;
+;; Compile the desired test and run (*main*).  The results won't match
+;; the results printed for the NCAR Control Data 7600, but they should
+;; be close.
+
+;; Works
 (mk:defsystem tst-fishpack-hwscrt
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -148,6 +155,7 @@
   :components
   ((:file "tsthwscrt")))
 
+;; Works
 (mk:defsystem tst-fishpack-hwscyl
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -157,6 +165,7 @@
   :components
   ((:file "tsthwscyl")))
 
+;; Works
 (mk:defsystem tst-fishpack-hwsplr
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -166,6 +175,7 @@
   :components
   ((:file "tsthwsplr")))
 
+;; Works
 (mk:defsystem tst-fishpack-hwsssp
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -175,6 +185,7 @@
   :components
   ((:file "tsthwsssp")))
 
+;; Works
 (mk:defsystem tst-fishpack-hwscsp
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -184,6 +195,7 @@
   :components
   ((:file "tsthwscsp")))
 
+;; Works
 (mk:defsystem tst-fishpack-hstcrt
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -193,6 +205,7 @@
   :components
   ((:file "tsthstcrt")))
 
+;; Works
 (mk:defsystem tst-fishpack-hstplr
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -202,6 +215,7 @@
   :components
   ((:file "tsthstplr")))
 
+;; Works
 (mk:defsystem tst-fishpack-hstcyl
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -211,6 +225,7 @@
   :components
   ((:file "tsthstcyl")))
 
+;; Works
 (mk:defsystem tst-fishpack-hstssp
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -220,6 +235,7 @@
   :components
   ((:file "tsthstssp")))
 
+;; Works
 (mk:defsystem tst-fishpack-hstcsp
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))
@@ -241,6 +257,7 @@
   :components
   ((:file "tsthw3crt")))
 
+;; Works
 (mk:defsystem tst-fishpack-sepx4
   :source-pathname (merge-pathnames (make-pathname :directory '(:relative "fishpack" "ex"))
 				    (make-pathname :directory (pathname-directory *load-pathname*)))

@@ -1523,22 +1523,31 @@
      (setq *data-init*
 	   (mapcar #'(lambda (init)
 		       (flet ((get-dims (var)
-				(mapcar #'(lambda (array-dims)
-					    (mapcar #'car array-dims))
-					(mapcar #'(lambda (v)
-						    (lookup-array-bounds
-						     (check-reserved-lisp-names
-						      (find-data-var v))))
-						(if (listp var) var (list var)))))
+				(mapcar #'(lambda (v)
+					    (lookup-array-bounds
+					     (check-reserved-lisp-names
+					      (find-data-var v))))
+					(if (listp var) var (list var))))
 			      (get-types (vars)
 				;; I'm lazy.  Use make-declaration
 				;; to figure out the type of the array
 				;; element.
+				#+nil
 				(mapcar #'(lambda (v)
 					    (let ((init (make-declaration
 							 (find-data-var (check-reserved-lisp-names v)))))
 					      (second (second (second init)))))
-					vars)))
+					vars)
+				;; Look through explicit_vble_decls
+				(mapcar #'(lambda (v)
+					    (let ((v (find-data-var (check-reserved-lisp-names v))))
+					      (dolist (d *explicit_vble_decls*)
+						(destructuring-bind (vtype &rest vars)
+						    d
+						  (when (member v vars :key #'car)
+						    (return-from get-types (list vtype)))))))
+					vars)
+				))
 
 		       (cond #+nil
 			     ((eq 'fset (first init))
@@ -3649,8 +3658,23 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.173 2007/09/28 03:48:56 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.174 2007/09/28 05:00:58 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.174  2007/09/28 05:00:58  rtoy
+;;; To support multidimensional arrays in implied do loops better, we need
+;;; to pass the entire array bounds, including upper and lower limits so
+;;; that array indexing can work.
+;;;
+;;; f2cl5.l:
+;;; o Find the entire array bounds.
+;;; o Don't use make-declaration to get the array type.  Explicitly look
+;;;   through *explicit_vble_decls* to find the type.  (Are there other
+;;;   places we need to look?)
+;;;
+;;; macros.l:
+;;; o Pass the entire list of array bounds to fref so we can handle
+;;;   multidimensional arrays.
+;;;
 ;;; Revision 1.173  2007/09/28 03:48:56  rtoy
 ;;; Handle implied do loops better in DATA statements.
 ;;;

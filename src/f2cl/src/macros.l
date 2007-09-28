@@ -1097,6 +1097,7 @@ causing all pending operations to be flushed"
 (defmacro rewind (&key unit iostat err)
   (let ((result (gensym)))
     `(prog ((,result (%rewind ,unit)))
+	(declare (ignorable ,result))
 	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
 	,(if iostat `(setf ,iostat (if ,result 0 1))))))
 	  
@@ -1109,6 +1110,7 @@ causing all pending operations to be flushed"
 (defmacro close$ (&key unit iostat err status)
   (let ((result (gensym)))
     `(prog ((,result (%close :unit ,unit  :status ,status)))
+	(declare (ignorable ,result))
 	,(if err `(unless ,result (go ,(f2cl-lib::make-label err))))
 	,(if iostat `(setf ,iostat (if ,result 0 1))))))
 
@@ -1205,6 +1207,8 @@ causing all pending operations to be flushed"
 			  (typecase v
 			    (complex
 			     (list #\( (realpart v) #\, (imagpart v) #\)))
+			    (string
+			     v)
 			    (array
 			     (coerce v 'list))
 			    (t
@@ -1492,8 +1496,13 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.91 2007/09/28 15:41:14 rtoy Exp $
+;;; $Id: macros.l,v 1.92 2007/09/28 20:26:13 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.92  2007/09/28 20:26:13  rtoy
+;;; o For REWIND and CLOSE$, declare the result as ignorable.
+;;; o For list-directed output, don't print out strings as an array with
+;;;   spaces between each element.  Strings should go out as strings.
+;;;
 ;;; Revision 1.91  2007/09/28 15:41:14  rtoy
 ;;; Some cleanup for list-directed output:
 ;;;

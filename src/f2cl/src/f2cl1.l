@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/27 04:02:07 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/28 03:48:55 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2443,12 +2443,32 @@ FILENAME                 File containing Fortran code
 		(member '= (first v)))
 	   ;; Implied do loop.  Extract out the important parts of the
 	   ;; implied do and construct what we need from it.
-	   (let* ((posn (position '= (first v)))
-		  (split (list-split '|,| (subseq (first v) 0 (- posn 2))))
-		  (loop-info
-		   `(,split ,(remove '= (remove '|,| (subseq (first v) (1- posn)))))))
-	     `(data-implied-do ,loop-info ,(data-var split) ,(fix-up-data-reps l))
-	     ))
+	   (flet ((process-implied-do (v l)
+		    ;; By the time we get here an implied-do loop looks something like this:
+		    ;; 
+		    ;; (x (i) '|,| i = 1 '|,| 8)
+		    ;;
+		    ;; List-split will produce
+		    ;;
+		    ;; ((x (i)) (i = 1) (8))
+		    ;;
+		    ;; We want to produce a new list of the form
+		    ;;
+		    ;; (data-implied-do (((x i)) (i 0 8)) (x) <data>)
+		    (destructuring-bind ((var index) (loopvar = start) (stop))
+			(list-split '|,| (first v))
+		      (declare (ignore =))
+		      (setf var (check-reserved-lisp-names var))
+		      (setf loopvar (check-reserved-lisp-names loopvar))
+		      (setf index (remove '|,| index))
+		      (let ((res 
+			     `(data-implied-do
+			       (((,var ,index)) (,loopvar ,start ,stop))
+			       (,var)
+			       ,l
+			       )))
+			res))))
+	     (process-implied-do v (fix-up-data-reps l))))
 	  ((and (listp v) (listp l)
 		(= (length v) (length l))
 		(> (length v) 1))
@@ -2917,8 +2937,19 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.181 2007/09/27 04:02:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.182 2007/09/28 03:48:55 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.182  2007/09/28 03:48:55  rtoy
+;;; Handle implied do loops better in DATA statements.
+;;;
+;;; f2cl1.l:
+;;; o Handle implied do loops where the array is multidimensional.
+;;;
+;;; f2cl5.l:
+;;; o Make sure we get all the lower bounds of the array dimensions.
+;;; o Make sure we check for reserved Lisp names when we figure out the
+;;;   type of the array.
+;;;
 ;;; Revision 1.181  2007/09/27 04:02:07  rtoy
 ;;; Was not correctly parsing data statements that initialize one element
 ;;; of an array.

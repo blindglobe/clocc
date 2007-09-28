@@ -1523,7 +1523,8 @@
      (setq *data-init*
 	   (mapcar #'(lambda (init)
 		       (flet ((get-dims (var)
-				(mapcar #'caar
+				(mapcar #'(lambda (array-dims)
+					    (mapcar #'car array-dims))
 					(mapcar #'(lambda (v)
 						    (lookup-array-bounds
 						     (check-reserved-lisp-names
@@ -1534,7 +1535,8 @@
 				;; to figure out the type of the array
 				;; element.
 				(mapcar #'(lambda (v)
-					    (let ((init (make-declaration (find-data-var v))))
+					    (let ((init (make-declaration
+							 (find-data-var (check-reserved-lisp-names v)))))
 					      (second (second (second init)))))
 					vars)))
 
@@ -3647,8 +3649,19 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.172 2007/09/27 14:53:22 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.173 2007/09/28 03:48:56 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.173  2007/09/28 03:48:56  rtoy
+;;; Handle implied do loops better in DATA statements.
+;;;
+;;; f2cl1.l:
+;;; o Handle implied do loops where the array is multidimensional.
+;;;
+;;; f2cl5.l:
+;;; o Make sure we get all the lower bounds of the array dimensions.
+;;; o Make sure we check for reserved Lisp names when we figure out the
+;;;   type of the array.
+;;;
 ;;; Revision 1.172  2007/09/27 14:53:22  rtoy
 ;;; If there are no items to be printed in a WRITE or PRINT statement,
 ;;; make sure no args are given to FFORMAT.  This confuses FFORMAT.

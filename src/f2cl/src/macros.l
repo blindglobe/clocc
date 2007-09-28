@@ -1193,11 +1193,23 @@ causing all pending operations to be flushed"
 (defun execute-format-main (stream format &rest args)
   (cond
     ((eq format :list-directed)
-     ;; Is something better needed here?
-     ;;(format t "args = ~S~%" args)
      ;; This prints out the args separated by spaces and puts a line
      ;; break after about 80 columns.
-     (format stream "~& ~{~<~% ~1,80:;~A~>~^ ~}~%" (flatten-list args)))
+     (format stream "~& ~{~<~% ~1,80:;~A~>~^ ~}~%"
+	     (flatten-list
+	      (mapcar #'(lambda (v)
+			  ;; Some special cases.  Complex numbers
+			  ;; should be printed out like (r, i).
+			  ;; Arrays should be printed out as if it
+			  ;; were a long list of numbers.
+			  (typecase v
+			    (complex
+			     (list #\( (realpart v) #\, (imagpart v) #\)))
+			    (array
+			     (coerce v 'list))
+			    (t
+			     v)))
+		      (flatten-list args)))))
     (t
      (let ((format-list (copy-tree format))
 	   (arg-list
@@ -1480,8 +1492,14 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.90 2007/09/28 05:00:58 rtoy Exp $
+;;; $Id: macros.l,v 1.91 2007/09/28 15:41:14 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.91  2007/09/28 15:41:14  rtoy
+;;; Some cleanup for list-directed output:
+;;;
+;;; o Complex numbers should be printed in the form (r, i), not #c(r, i)
+;;; o Arrays should print out only the elements instead of #(...).
+;;;
 ;;; Revision 1.90  2007/09/28 05:00:58  rtoy
 ;;; To support multidimensional arrays in implied do loops better, we need
 ;;; to pass the entire array bounds, including upper and lower limits so

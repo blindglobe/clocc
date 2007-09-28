@@ -987,11 +987,33 @@ is not included")
        ,@(map-vars data-vars))
     )))
 
+(defun process-implied-do (ido array-bnds var-types init)
+  (destructuring-bind (data-vars &rest looping)
+      ido
+    (labels
+	((convert-type (type)
+	   (if (eq type 'integer4)
+	       `(truncate (pop ,init))
+	       `(coerce (pop ,init) ',type)))
+	 (map-vars (v)
+	   (mapcar #'(lambda (x b vt)
+		       `(fset (fref ,(first x) ,(second x) ,b)
+			      ,(convert-type vt)))
+		   v array-bnds var-types)))
+      (let ((body (map-vars data-vars)))
+	(dolist (loopvar looping)
+	  (destructuring-bind (index-var start end &optional step)
+	      loopvar
+	    (setf body `((do ((,index-var ,start (+ ,index-var ,(or step 1))))
+			    ((> ,index-var ,end))
+			  ,@body)))))
+	(car body)))))
+
 
 ;; Process implied do loops for data statements
 (defmacro data-implied-do (implied-do array-bnds var-types vals)
   (let ((v (gensym)))
-    `(let ((,v ',vals))
+    `(let ((,v (list ,@vals)))
       ,(process-implied-do implied-do array-bnds var-types v))))
 
 ;;-----------------------------------------------------------------------------  ; end of macros.l
@@ -1197,7 +1219,7 @@ causing all pending operations to be flushed"
     ((eq format :list-directed)
      ;; This prints out the args separated by spaces and puts a line
      ;; break after about 80 columns.
-     (format stream "~& ~{~<~% ~1,80:;~A~>~^ ~}~%"
+     (format stream "~& ~{~<~% ~1,81:;~A~>~^ ~}~%"
 	     (flatten-list
 	      (mapcar #'(lambda (v)
 			  ;; Some special cases.  Complex numbers
@@ -1496,8 +1518,24 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.92 2007/09/28 20:26:13 rtoy Exp $
+;;; $Id: macros.l,v 1.93 2007/09/28 22:01:08 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.93  2007/09/28 22:01:08  rtoy
+;;; First attempt at getting implied-do loops in data statements working
+;;; with nested loops.
+;;;
+;;; f2cl1.l:
+;;; o PARSE-DATA-IMPLIED-DO handles implied do loops even when the loops
+;;;   are nested.
+;;;
+;;; macros.l:
+;;; o Update PROCESS-IMPLIED-DO to handle the new forms returned by
+;;;   PARSE-DATA-IMPLIED-DO.
+;;; o Don't create constants out of the initializer since we use POP to
+;;;   access them one by one.
+;;; o Minor tweak for list-directed output to allow a slightly longer line
+;;;   length. This matches what g77 produces for one simple test case.
+;;;
 ;;; Revision 1.92  2007/09/28 20:26:13  rtoy
 ;;; o For REWIND and CLOSE$, declare the result as ignorable.
 ;;; o For list-directed output, don't print out strings as an array with

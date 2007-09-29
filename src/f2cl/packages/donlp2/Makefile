@@ -88,6 +88,10 @@ irreg2 : donlp2main.o irreg2.o libdonlp2.a
 net1 : donlp2main.o net1.o libdonlp2.a
 	$(F77) -o $@ $^
 
+boxparam : donlp2main.o boxparam.o libdonlp2.a
+	$(F77) -o $@ $^
+
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

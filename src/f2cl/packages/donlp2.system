@@ -172,7 +172,9 @@
 	     (:file "boxparam"
 		    :compiler-options (:declare-common t))))))
 
-;; F2cl can't convert nested implied do loops.
+;; This works, but you have to be sure to run (/blockdata/) before
+;; running (donlp2) so that the block data subprogram actually
+;; initializes the necessary items.
 (mk:defsystem ex-betting
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -303,3 +305,5 @@
 	     (:file "esg")
 	     (:file "esgradg")
 ))))
+
+

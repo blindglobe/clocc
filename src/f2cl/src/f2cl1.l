@@ -15,7 +15,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/28 22:01:07 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/29 02:27:07 $"))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2397,7 +2397,9 @@ FILENAME                 File containing Fortran code
 	     (t (return))))
     (destructuring-bind (var indices)
 	v
+      ;; We probably need to run check-reserved-lisp-names over the indices
       (setf indices (remove '|,| indices))
+      (setf var (check-reserved-lisp-names var))
       (setf v `(,var ,indices))
       (let ((result v))
 	(setf result `((,v) ,@loops))
@@ -2933,8 +2935,12 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.183 2007/09/28 22:01:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.184 2007/09/29 02:27:07 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.184  2007/09/29 02:27:07  rtoy
+;;; Need to check for reserved Lisp names for the variable in the implied
+;;; do loop.
+;;;
 ;;; Revision 1.183  2007/09/28 22:01:07  rtoy
 ;;; First attempt at getting implied-do loops in data statements working
 ;;; with nested loops.

@@ -1511,8 +1511,7 @@
 			    (remove-if 
 			     #'(lambda (x)
 				 (member x key-params :key #'car))
-			     (set-difference *save_vbles*
-					     *subprog_common_vars*))))
+			     *save_vbles*)))
 	    :test #'(lambda (a b)
 		      (eq (first a) (first b)))))
 
@@ -2077,12 +2076,13 @@
       (progn
 	(format t "*data-init* = ~A~%" *data-init*)
 	(format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
+	(format t "*common_array_dims* = ~S~%" *common_array_dims*)
 	(format t "vble = ~a~%" vble)
 	(format t "init-val = ~S~%" init-val))
       (cond
 	;;check for vble with two declarations i.e. an array
 	((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
-	 #+nil
+	 ;;#+nil
 	 (progn
 	   (format t "declared twice~%")
 	   (format t "vble-decl-done = ~S~%" *vble-declaration-done*))
@@ -2154,23 +2154,39 @@
 		 (t
  		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
  		  ;;(format t "default init-val = ~S~%" init-val)
-		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
-		      (return 
-			(if (cdar decl) 
-			    `(,vble_name
-			      ,(make_make-array_stmt (cdar decl) type init-val vble_name))
-			    `(,vble_name
-			      ,(cond (init-val
-				      (remove-*data-init*-var vble_name)
-				      init-val)
-				     (t
-				      (ecase type
-					((fixnum integer4 integer2 integer1)
-					 0)
-					(single-float 0f0)
-					(double-float 0d0)
-					((complex complex8) #c(0f0 0f0))
-					(complex16 #c(0d0 0d0)))))))))))))
+		  #+nil
+		  (progn
+		    (format t "vble = ~S~%" vble)
+		    (format t "vble_name = ~S~%" vble_name)
+		    (format t "dims = ~S~%" *common_array_dims*)
+		    (format t "subprog = ~S~%" *subprog_common_vars*))
+
+		  ;; If vble was dimensioned in a common block, we
+		  ;; don't need to initialize it here.  I think.
+		  (when (member vble *common_array_dims*)
+		    (return nil))
+
+		  ;; If this variable is in a common block, we don't
+		  ;; need to initialize it either.  It would have been
+		  ;; initialized in the clauses above.  I think.
+		  (when (and (setq decl (member vble (cdar type-clauses) :key #'car))
+			     (not (member vble *subprog_common_vars*)))
+		    (return 
+		      (if (cdar decl) 
+			  `(,vble_name
+			    ,(make_make-array_stmt (cdar decl) type init-val vble_name))
+			  `(,vble_name
+			    ,(cond (init-val
+				    (remove-*data-init*-var vble_name)
+				    init-val)
+				   (t
+				    (ecase type
+				      ((fixnum integer4 integer2 integer1)
+				       0)
+				      (single-float 0f0)
+				      (double-float 0d0)
+				      ((complex complex8) #c(0f0 0f0))
+				      (complex16 #c(0d0 0d0)))))))))))))
 	(t
 	 ;;(format t "implicit type = ~A~%" (get-implicit-type vble))
 	 (cond ((setq type (get-implicit-type vble))
@@ -3658,8 +3674,16 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.175 2007/09/29 02:25:30 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.176 2007/09/29 17:04:40 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.176  2007/09/29 17:04:40  rtoy
+;;; o Revert previous change.
+;;; o If variable is dimensioned in a common block statement, don't
+;;;   initialize it in make-initialisation.  Also, no initialization
+;;;   needed if the variable is in a common block.
+;;;
+;;; This might need more work.
+;;;
 ;;; Revision 1.175  2007/09/29 02:25:30  rtoy
 ;;; Need to check for reserved Lisp names for the variable in the implied
 ;;; do loop.

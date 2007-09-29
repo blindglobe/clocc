@@ -147,6 +147,13 @@
 
 ;; This incompatibly defines the common block o8xdat, so this won't
 ;; work until that is fixed, if possible.
+;;
+;; If we modify O8BLO1.INC and O8BLOC.INC to include O8XDAT instead of
+;; O8XBLO.INC, this compiles ok.  (Note that O8XDAT.INC and O8XBLO.INC
+;; appear to be exactly the same, except that the elements of the
+;; common block have different names.)  When run, the results mostly
+;; match except for a very small difference in one intermediate
+;; result.
 (mk:defsystem ex-chemequi
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -159,7 +166,7 @@
 	     (:file "chemequi"
 		    :compiler-options (:declare-common t))))))
 
-;; F2cl can't convert nested implied do loops.
+;; Works.
 (mk:defsystem ex-boxparam
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")

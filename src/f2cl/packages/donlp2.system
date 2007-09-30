@@ -214,6 +214,86 @@
 		    :compiler-options (:declare-common t))))))
 
 
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; HS85ORIG.*
+;;
+;; .Works.
+(mk:defsystem ex-barnes
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "barnes"
+		    :compiler-options (:declare-common t))))))
+
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; DEMBO1AS.*
+;;
+;; .Works.
+(mk:defsystem ex-dembo1as
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "dembo1as"
+		    :compiler-options (:declare-common t))))))
+
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; DEMBO4CX.*
+;;
+;; .Works.
+(mk:defsystem ex-dembo4
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "dembo4"
+		    :compiler-options (:declare-common t))))))
+
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; DEMBO7XX.*
+;;
+;; .Works.
+(mk:defsystem ex-dembo7
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "dembo7"
+		    :compiler-options (:declare-common t))))))
+
+;; Doesn't work because f2cl doesn't know how to handle
+;;
+;; DATA X/NX*0.0D0/
+;;
+;; where NX is a PARAMETER..
+(mk:defsystem ex-hs109
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "hs109"
+		    :compiler-options (:declare-common t))))))
 
 (mk:defsystem donlp2
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))

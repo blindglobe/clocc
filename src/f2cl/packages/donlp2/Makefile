@@ -91,6 +91,20 @@ net1 : donlp2main.o net1.o libdonlp2.a
 boxparam : donlp2main.o boxparam.o libdonlp2.a
 	$(F77) -o $@ $^
 
+barnes: donlp2main.o barnes.o libdonlp2.a
+	$(F77) -o $@ $^
+
+dembo1as: donlp2main.o dembo1as.o libdonlp2.a
+	$(F77) -o $@ $^
+
+dembo4: donlp2main.o dembo4.o libdonlp2.a
+	$(F77) -o $@ $^
+
+dembo7: donlp2main.o dembo7.o libdonlp2.a
+	$(F77) -o $@ $^
+
+hs109: donlp2main.o hs109.o libdonlp2.a
+	$(F77) -o $@ $^
 
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^

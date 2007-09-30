@@ -1,0 +1,244 @@
+       SUBROUTINE SETUP0
+       INCLUDE 'O8COMM.INC'
+       ANALYT=.TRUE.
+       EPSDIF=0.D0
+       PROU=10
+       MEU=20
+       SILENT=.FALSE.
+       NRESET=N
+       RETURN
+       END
+       SUBROUTINE SETUP
+       RETURN
+       END
+C      DATA DI/1.D6,1.D5,1.D6,1.D9,1.D9,1.D3,1.D3,1.D3,1.D5,1.D4,
+C     F        1.D4,1.D0,38*1.D0/
+C     SCALING FACTORS FOR X(I), INCORPORATED INTO FUNCTION SUBPROGRAMS
+C  DEMBO1A
+      BLOCK DATA
+      INCLUDE 'O8BLOC.INC'
+      INTEGER I,J
+      DATA NAME/'DEMBO1ASC'/
+      DATA (X(I),I=1,12)/12*4.D0/
+      DATA N/ 12/ , NH/0/ , NG/15/
+      DATA DEL0/0.05D0/ ,TAU0/1.0D0/ ,TAU/.1D0/
+      DATA (GUNIT(1,I),I=0,3)/4*-1/,((GUNIT(I,J),I=2,3),J=0,3)/8*0/,
+     F     (GUNIT(1,I),I=4,15)/12*1/,(GUNIT(2,I),I=4,15)/1,2,3,4,5,6,
+     F     7,8,9,10,11,12/,(GUNIT(3,I),I=4,15)/12*100/
+      END
+      SUBROUTINE EF(X,FX)
+      INCLUDE 'O8FUCO.INC'
+      DOUBLE PRECISION FX,X(*),ALF(11,1),GAMF(1),DL(NX)
+      INTEGER KF(11,1)
+      SAVE KF,GAMF,ALF
+      DATA KF/1,2,3,4,5,6,7,8,9,10,11/
+      DATA GAMF/1.D5/
+      DATA ALF/ -0.001331720D0,-0.002270927D0,-0.00248546D0,
+     1         -4.67D0,-4.671973D0,-0.00814D0,-0.008092D0,
+     2         -.005D0,-.000909D0,-0.00088D0,-0.00119D0/
+      ICF=ICF+1
+      CALL FGEO(X,0.D0,GAMF,.FALSE.,DL,KF,ALF,11,1,12,FX)
+      RETURN
+      END
+      SUBROUTINE EGRADF(X,GRADF)
+      INCLUDE 'O8FUCO.INC'
+      DOUBLE PRECISION X(NX),GRADF(NX),ALF(11,1),GAMF(1),DL(NX)
+      INTEGER KF(11,1)
+      SAVE KF,GAMF,ALF
+      DATA KF/1,2,3,4,5,6,7,8,9,10,11/
+      DATA GAMF/1.D5/
+      DATA ALF/ -0.001331720D0,-0.002270927D0,-0.00248546D0,
+     1         -4.67D0,-4.671973D0,-0.00814D0,-0.008092D0,
+     2         -.005D0,-.000909D0,-0.00088D0,-0.00119D0/
+      ICGF=ICGF+1
+      CALL DFGEO(X,GAMF,.FALSE.,DL,KF,ALF,11,1,GRADF,12)
+      RETURN
+      END
+      SUBROUTINE EH(I,X,HXI)
+      INCLUDE 'O8FUCO.INC'
+      INTEGER I
+      DOUBLE PRECISION HXI,X(NX)
+      RETURN
+      END
+      SUBROUTINE EGRADH(I,X,GRADHI)
+      INCLUDE 'O8FUCO.INC'
+      INTEGER I
+      DOUBLE PRECISION X(*),GRADHI(*)
+      RETURN
+      END
+      SUBROUTINE EG(I,X,GXI)
+      INCLUDE 'O8FUCO.INC'
+      INTEGER I
+      DOUBLE PRECISION GXI
+      DOUBLE PRECISION X(*),GAM2(9),DL2(NX),DL3(NX)
+      DOUBLE PRECISION  GAM3(5),AL2(4,9),AL3(3,5),UG(12)
+      INTEGER  K2(4,9),K3(3,5)
+      SAVE GAM2,GAM3,AL2,AL3,K2,K3,UG,DL2,DL3
+      DATA GAM2/-1.D-9,-1.D-9,-1.D-3,-1.D-3,
+     F          -1.0898645D-1,-1.6108052D-5,-1.0D-23,-1.9304541D-8,
+     F         - 1.D-4/
+      DATA GAM3/-1.0898645D-1,-1.6108052D-5,-1.D-23,-1.9304541D-8,
+     F         - 1.1184059D-4/
+      DATA AL2/1.D0,1.D0,0.0D0,0.0D0,  1.D0,-1.D0,0.D0,0.D0,
+     F         1.D0,-1.D0,0.D0,0.D0,   1.D0,1.D0,0.D0,0.D0,
+     F         1.D0,1.D0,0.D0,0.D0,    1.D0,1.D0,-1.D0,0.D0,
+     F         1.D0,1.D0,1.D0,0.D0,    1.D0,-1.D0,1.D0,-2.D0,
+     F         1.D0,-1.D0,0.D0,0.D0/
+      DATA  K2/ 4,12,0,0,   5,12,0,0,   6,12,0,0,   7,12,0,0,
+     F          4,5,0,0,    2,5,12,0,   2,4,5,0,    2,4,4,12,
+     F          10,12,0,0/
+      DATA AL3/ 1.D0,1.D0,0.D0,   1.D0,1.D0,0.D0,  3*1.D0,
+     F          1.D0,-1.D0,1.D0,  1.D0,1.D0,0.D0/
+      DATA  K3/4,5,0,   2,5,0,   2,4,5,   2,4,5,   1,9,0/
+      DATA UG/3*.1D0,.01D0,1.D0,7*0.1D0/
+      DATA (DL2(I),I=1,12)/-1.D-6,-1.D-5,-1.D-6,9*0.D0/
+      DATA (DL3(I),I=1,12)/-1.D-6,-1.D-5,-1.D-6,-1.D-9,
+     F         -1.D-9,-1.D-3,0.D0,-1.D-3,
+     F         -1.D-5,0.D0,-1.D-4,0.D0/
+      IF ( I .LE. 3 ) CRES(I+NH)=CRES(I+NH)+1
+      IF(I .GT. 3)      GOTO 700
+      GOTO (100,200,300),I
+  100 CONTINUE
+      GXI=1.D0-5.36373D-2*X(1)-2.1863746D-2*X(2)-9.7733533D-2*X(3)
+     F    -6.6940803D-3*X(4)*X(5)
+      GXI=GXI*1.D1
+      RETURN
+  200 CONTINUE
+      CALL FGEO(X,1.D0,GAM2,.TRUE.,DL2,K2,AL2,4,9,12,GXI)
+      GXI=GXI*1.D1
+      RETURN
+  300 CONTINUE
+      CALL FGEO(X,1.D0,GAM3,.TRUE.,DL3,K3,AL3,3,5,12,GXI)
+      GXI=GXI*1.D2
+      RETURN
+  700 CONTINUE
+      GXI=1.D2*(X(I-3)-UG(I-3))
+      RETURN
+      END
+      SUBROUTINE EGRADG(I,X,GRADGI)
+      INCLUDE 'O8FUCO.INC'
+      INTEGER I,J
+      DOUBLE PRECISION X(NX),GAM2(9),DL2(NX),DL3(NX),GRADGI(NX)
+      DOUBLE PRECISION  GAM3(5),AL2(4,9),AL3(3,5)
+      INTEGER  K2(4,9),K3(3,5)
+      SAVE GAM2,GAM3,AL2,AL3,K2,K3,DL2,DL3
+      DATA GAM2/-1.D-9,-1.D-9,-1.D-3,-1.D-3,
+     F          -1.0898645D-1,-1.6108052D-5,-1.0D-23,-1.9304541D-8,
+     F         - 1.D-4/
+      DATA GAM3/-1.0898645D-1,-1.6108052D-5,-1.D-23,-1.9304541D-8,
+     F         - 1.1184059D-4/
+      DATA AL2/1.D0,1.D0,0.0D0,0.0D0,  1.D0,-1.D0,0.D0,0.D0,
+     F         1.D0,-1.D0,0.D0,0.D0,   1.D0,1.D0,0.D0,0.D0,
+     F         1.D0,1.D0,0.D0,0.D0,    1.D0,1.D0,-1.D0,0.D0,
+     F         1.D0,1.D0,1.D0,0.D0,    1.D0,-1.D0,1.D0,-2.D0,
+     F         1.D0,-1.D0,0.D0,0.D0/
+      DATA  K2/ 4,12,0,0,   5,12,0,0,   6,12,0,0,   7,12,0,0,
+     F          4,5,0,0,    2,5,12,0,   2,4,5,0,    2,4,4,12,
+     F          10,12,0,0/
+      DATA AL3/ 1.D0,1.D0,0.D0,   1.D0,1.D0,0.D0,  3*1.D0,
+     F          1.D0,-1.D0,1.D0,  1.D0,1.D0,0.D0/
+      DATA  K3/4,5,0,   2,5,0,   2,4,5,   2,4,5,   1,9,0/
+      DATA (DL2(I),I=1,12)/-1.D-6,-1.D-5,-1.D-6,9*0.D0/
+      DATA (DL3(I),I=1,12)/-1.D-6,-1.D-5,-1.D-6,-1.D-9,
+     F         -1.D-9,-1.D-3,0.D0,-1.D-3,
+     F         -1.D-5,0.D0,-1.D-4,0.D0/
+C      GXI=1.D0-5.36373D-2*X(1)-2.1863746D-2*X(2)-9.7733533D-2*X(3)
+C     F    -6.6940803D-3*X(4)*X(5)
+C      RETURN
+      IF(I .GT. 3)      RETURN
+      CGRES(I+NH)=CGRES(I+NH)+1
+      GOTO (100,200,300),I
+  100 CONTINUE
+      DO J=1,12
+        GRADGI(J)=0.D0
+      ENDDO
+      GRADGI(1)=-5.36373D-2
+      GRADGI(2)=-2.1863746D-2
+      GRADGI(3)=-9.7733533D-2
+      GRADGI(4)=-X(5)*6.6940803D-3
+      GRADGI(5)=-X(4)*6.6940803D-3
+      DO J=1,12
+        GRADGI(J)=GRADGI(J)*1.D1
+      ENDDO
+      RETURN
+  200 CONTINUE
+      CALL DFGEO(X,GAM2,.TRUE.,DL2,K2,AL2,4,9,GRADGI,12)
+      DO J=1,12
+        GRADGI(J)=GRADGI(J)*1.D1
+      ENDDO
+      RETURN
+  300 CONTINUE
+      CALL DFGEO(X,GAM3,.TRUE.,DL3,K3,AL3,3,5,GRADGI,12)
+      DO J=1,12
+         GRADGI(J)=GRADGI(J)*1.D2
+      ENDDO
+      RETURN
+      END
+C****************************************************************
+      SUBROUTINE FGEO(X,CON,GAM,LIN,DL,K,AL,NLEN,NANZ,NX,FX)
+C  EVALUTION OF A FUNCTION OF A GEOMETRIC PROGRAMMING PROBLEM DESCRIBED BY
+C  THE MODEL
+C     FX = CON + SUM{I=1,NX} X(I)*DL(I)
+C          +  SUM{I=1,NANZ} (GAM(I)*(PROD{J=1,NLEN}X(K(J,I))**AL(J,I)))
+C     IF LIN = .FALSE. DL MAY BE UNDEFINED
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      INTEGER NLEN,NANZ,NX,I,J,IL
+      DOUBLE PRECISION GAM(NANZ),AL(NLEN,NANZ),X(NX),DL(NX)
+      INTEGER K(NLEN,NANZ)
+      LOGICAL LIN
+      S=CON
+      IF(.NOT. LIN)      GOTO 200
+      DO      100      I=1,NX
+      S=S+DL(I)*X(I)
+  100 CONTINUE
+  200 CONTINUE
+      DO      600      I=1,NANZ
+      IF(GAM(I) .EQ. 0.D0)      GOTO 600
+      P=1.D0
+      DO      500      J=1,NLEN
+      IL=K(J,I)
+      IF(IL .EQ. 0)      GOTO 500
+      EXPO=AL(J,I)
+      IF(EXPO .EQ. 0.D0)      GOTO 500
+      P=P*DEXP(EXPO*DLOG(DABS(X(IL))))
+  500 CONTINUE
+      S=S+GAM(I)*P
+  600 CONTINUE
+      FX=S
+      RETURN
+      END
+      SUBROUTINE DFGEO(X,GAM,LIN,DL,K,AL,NLEN,NANZ,G,NX)
+C COMPUTATION OF THE GRADIENT OF A FUNCTION GIVEN BY FGEO ABOVE
+      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
+      INTEGER NLEN,NANZ,NX,I,J,IL,L
+      DOUBLE PRECISION GAM(NANZ),AL(NLEN,NANZ),X(NX),G(NX),DL(NX)
+      INTEGER K(NLEN,NANZ)
+      LOGICAL LIN
+      DO      500      L=1,NX
+      S=0.D0
+      DO      400      I=1,NANZ
+      IF(GAM(I) .EQ. 0.D0)     GOTO 400
+      P=1.D0
+      FC=0.D0
+      DO      300      J=1,NLEN
+      IL=K(J,I)
+      IF(IL .EQ. 0)      GOTO 300
+      IF(IL .NE. L)      GOTO 100
+      FC=1.D0
+  100 CONTINUE
+      EXPO=AL(J,I)
+      IF(EXPO .EQ. 0.D0)      GOTO 300
+      FIJ=1.D0
+      IF(IL .NE. L)      GOTO 200
+      FIJ=EXPO
+      EXPO=EXPO-1.D0
+  200 CONTINUE
+      P=P*FIJ*DEXP(EXPO*DLOG(DABS(X(IL))))
+  300 CONTINUE
+      IF(FC .NE. 0.D0)    S=S+P*GAM(I)
+  400 CONTINUE
+      IF(LIN)    S=S+DL(L)
+      G(L)=S
+  500 CONTINUE
+      RETURN
+      END

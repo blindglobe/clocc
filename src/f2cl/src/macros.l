@@ -1161,13 +1161,19 @@ causing all pending operations to be flushed"
        arg-list)
     (when (null formats)
       ;; We're out of formats but not arguments.  I think Fortran says
-      ;; we should start over at the first repeat spec.  So we look
+      ;; we should start over at the last repeat spec.  So we look
       ;; over all the formats until we find the first number.  That
       ;; means it's a repeat spec.
-      (do ((f format (cdr f)))
-	  ((or (eq (car f) t)
-	       (numberp (car f)))
-	   (setf formats f)))
+      ;;
+      ;; This is probably wrong for complicated format statements.
+      (do ((f format (cdr f))
+	   (last-rep nil))
+	  ((null f)
+	   (setf formats last-rep))
+	(when (or (eq (car f) t)
+		  (numberp (car f)))
+	  (setf last-rep f)))
+
       (when (null formats)
 	;; Now what?  We couldn't find a repeat spec, so should we
 	;; just start over?
@@ -1518,8 +1524,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.93 2007/09/28 22:01:08 rtoy Exp $
+;;; $Id: macros.l,v 1.94 2007/09/30 03:47:47 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.94  2007/09/30 03:47:47  rtoy
+;;; When we're out of formats, we restart with the last repeat spec.
+;;;
 ;;; Revision 1.93  2007/09/28 22:01:08  rtoy
 ;;; First attempt at getting implied-do loops in data statements working
 ;;; with nested loops.

@@ -7,6 +7,7 @@
     :compiler #'donlp2-compiler
     :source-extension "f")
 
+;; Works.  Output in ANTENNA1.*
 (mk:defsystem ex-antenna1
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -19,6 +20,7 @@
 	     (:file "antenna1"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in HS101XXX.*
 (mk:defsystem ex-hs101
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -31,6 +33,7 @@
 	     (:file "hs101"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in HS102XXX.*
 (mk:defsystem ex-hs102
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -43,6 +46,7 @@
 	     (:file "hs102"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in HS103XXX.*
 (mk:defsystem ex-hs103
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -55,6 +59,7 @@
 	     (:file "hs103"
 		    :compiler-options (:declare-common t))))))
 
+;; Gets a type error.
 (mk:defsystem ex-amplqp
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -67,8 +72,8 @@
 	     (:file "amplqp"
 		    :compiler-options (:declare-common t))))))
 
-;; Output is messed up a bit, but the final results match the Fortran
-;; code results.
+;; Output in ALKYLATI.*.  Output is messed up a bit, but the final
+;; results match the Fortran code results.
 (mk:defsystem ex-alkylati
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -81,6 +86,8 @@
 	     (:file "alkylati"
 		    :compiler-options (:declare-common t))))))
 
+;; Output in FRACXOPT.*
+;;
 ;; Runs ok, but the optimal F and solution X are somewhat different.
 ;; The multipliers are quite a bit different. and the number of
 ;; evaluations are too.
@@ -96,7 +103,7 @@
 	     (:file "fractf77new"
 		    :compiler-options (:declare-common t))))))
 
-;; Works just fine.
+;; Works just fine.  Output in GIRDERDE.*.
 (mk:defsystem ex-girder
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -109,6 +116,7 @@
 	     (:file "girder"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in NMCFQMHH.*
 (mk:defsystem ex-irreg1
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -121,6 +129,7 @@
 	     (:file "irreg1"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in NMFCQ11X.*
 (mk:defsystem ex-irreg2
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -133,6 +142,7 @@
 	     (:file "irreg2"
 		    :compiler-options (:declare-common t))))))
 
+;; Works.  Output in NET1AMPL.*
 (mk:defsystem ex-net1
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -145,6 +155,8 @@
 	     (:file "net1"
 		    :compiler-options (:declare-common t))))))
 
+;; Output in HIMMELBL.*
+;;
 ;; This incompatibly defines the common block o8xdat, so this won't
 ;; work until that is fixed, if possible.
 ;;
@@ -166,7 +178,8 @@
 	     (:file "chemequi"
 		    :compiler-options (:declare-common t))))))
 
-;; Works.
+;; Works.  Call (/blockdata/) before running (donlp2)
+;; Output in BOXPARID.*.
 (mk:defsystem ex-boxparam
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")
@@ -179,6 +192,8 @@
 	     (:file "boxparam"
 		    :compiler-options (:declare-common t))))))
 
+;; Output in BETTING8.*
+;;
 ;; This works, but you have to be sure to run (/blockdata/) before
 ;; running (donlp2) so that the block data subprogram actually
 ;; initializes the necessary items.

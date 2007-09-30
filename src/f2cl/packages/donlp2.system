@@ -59,7 +59,11 @@
 	     (:file "hs103"
 		    :compiler-options (:declare-common t))))))
 
-;; Gets a type error.
+;; Output in AMPLEXAM.*
+;;
+;; Appears to work.  Output, though, is a little different from the
+;; Fortran code.  Some numbers appear to be only agree to about 6
+;; digits or so.
 (mk:defsystem ex-amplqp
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :depends-on ("donlp2")

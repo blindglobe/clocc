@@ -1,18 +1,7 @@
 -*- Mode: text -*-
 
 Changes:
-Sep 26, 2007
-------------
-o Lots of changes:
-  - Better printing, especially for list-directed output.
-  - Remove unused symbol macros and such.
-  - Remove unused Fortran PARAMETER values
-  - DONLP2 package added.  This is a work in progress.  Several
-    examples work, but several do not.  Some won't even compile
-    correctly due to f2cl not handling nested implied-do lists
-    correctly. 
-
-Sep 20, 2007
+Sep 2007
 ------------
 o Extended DO loops were causing extra labels in the Lisp code, which
   causes errors when compiling the Lisp code.
@@ -32,6 +21,14 @@ o Some issues with handling of the last line of the input file are
 o Initialization of some arrays via DATA statements were done
   incorrectly because the initializers aren't necessarily constants. 
 o Was not correctly handling atoms when executing format statements. 
+o Better printing, especially for list-directed output.
+o Unused Fortran PARAMETER values and unused symbol macros (for common
+  block variables) are removed from the generated code to reduce
+  warnings from Lisp compilers.
+o Implied do loops over multidimensional arrays are supported.
+o Nested implied do loops are supported.
+o DONLP2 package added.  Many tests are included, and most of them
+  match the Fortran results.
 
 May 04, 2007
 ------------

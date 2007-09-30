@@ -6,7 +6,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;check
 ;functions:
-;errorset - commented out
 ;	f2cl
 ;	concaten
 ;	f-to-l
@@ -15,7 +14,7 @@
 (defvar *verbose* nil)
 (defvar *comments* nil)
 (defparameter *f2cl-version*
-  (remove #\$ "2.0 beta $Date: 2007/09/29 02:27:07 $"))
+  (remove #\$ "2.0 beta $Date: 2007/09/30 13:08:59 $."))
  
 (defvar *intrinsic-function-names*
   '(int ifix idint real float sngl dble cmplx dcmplx ichar char aint dint
@@ -2935,8 +2934,15 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.184 2007/09/29 02:27:07 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.185 2007/09/30 13:08:59 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.185  2007/09/30 13:08:59  rtoy
+;;; NOTES:
+;;; o Update
+;;;
+;;; f2cl1.l:
+;;; o Update version.
+;;;
 ;;; Revision 1.184  2007/09/29 02:27:07  rtoy
 ;;; Need to check for reserved Lisp names for the variable in the implied
 ;;; do loop.

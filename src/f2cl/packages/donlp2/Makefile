@@ -106,6 +106,9 @@ dembo7: donlp2main.o dembo7.o libdonlp2.a
 hs109: donlp2main.o hs109.o libdonlp2.a
 	$(F77) -o $@ $^
 
+maratos: donlp2main.o maratos.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

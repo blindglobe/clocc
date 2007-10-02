@@ -1056,11 +1056,13 @@
 			 (col-major-index (rest indices) (rest limits))))))))
 	 
     (let ((new-saves '())
-	  (new-data '()))
+	  (new-data '())
+	  (array-element-inits '()))
       ;; First, save all non-array data initializers.
       (dolist (item data)
-	(unless (eq 'fset (first item))
-	  (push item new-data)))
+	(if (eq 'fset (first item))
+	    (push (cdr item) array-element-inits)
+	    (push item new-data)))
       ;; Now look through all the saved vars
       (dolist (item saves)
 	(cond ((and (listp (second item))
@@ -1089,7 +1091,13 @@
 			  (push (list (car item)
 				      (append (copy-list (second item))
 					      `(:initial-contents ',(coerce init 'list))))
-				new-saves)))
+				new-saves))
+			;; Remove these from array-element-inits
+			(let ((array-name (first item)))
+			  (setf array-element-inits
+				(remove array-name
+					array-element-inits
+					:key #'cadar))))
 		       (t
 			;; Didn't match.  Save the item, and whatever
 			;; initializers we found that matched the name
@@ -1107,8 +1115,9 @@
 	      (t
 	       ;; Not an array
 	       (push item new-saves))))
-	(values (nreverse new-saves)
-		(nreverse new-data)))))
+      (values (append (nreverse new-saves)
+		      (nreverse array-element-inits))
+	      (nreverse new-data)))))
 
 (defun verify-and-generate-equivalences ()
   ;; Look over equivalences and see if we can handle them.  Right now,
@@ -2076,6 +2085,7 @@
       (progn
 	(format t "*data-init* = ~A~%" *data-init*)
 	(format t "*explicit_vble_decls* = ~a~%" *explicit_vble_decls*)
+	(format t "*declared_vbles* = ~S~%" *declared_vbles*)
 	(format t "*common_array_dims* = ~S~%" *common_array_dims*)
 	(format t "vble = ~a~%" vble)
 	(format t "init-val = ~S~%" init-val))
@@ -3674,8 +3684,13 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.176 2007/09/29 17:04:40 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.177 2007/10/02 14:44:23 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.177  2007/10/02 14:44:23  rtoy
+;;; MERGE-DATA-AND-SAVE-INITS was mishandling initializers to arrays.  If
+;;; the initializers didn't initialize all of the elements of the arrays,
+;;; the initializers were discarded.
+;;;
 ;;; Revision 1.176  2007/09/29 17:04:40  rtoy
 ;;; o Revert previous change.
 ;;; o If variable is dimensioned in a common block statement, don't

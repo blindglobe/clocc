@@ -8,7 +8,7 @@
 ;;; See <URL:http://www.gnu.org/copyleft/lesser.html>
 ;;; for details and the precise copyright document.
 ;;;
-;;; $Id: sys.lisp,v 1.68 2007/09/21 16:49:37 sds Exp $
+;;; $Id: sys.lisp,v 1.69 2007/11/06 20:52:48 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/port/sys.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -29,6 +29,8 @@
  '(getenv finalize variable-special-p variable-not-special arglist
    compiled-file-p
    class-slot-list class-slot-initargs
+   structure-slots structure-keyword-constructor structure-boa-constructors
+   structure-copier structure-predicate
    +month-names+ +week-days+ +time-zones+ tz->string string->tz
    current-time sysinfo))
 

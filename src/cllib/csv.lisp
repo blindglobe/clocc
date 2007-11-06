@@ -4,7 +4,7 @@
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: csv.lisp,v 2.23 2007/09/21 16:49:39 sds Exp $
+;;; $Id: csv.lisp,v 2.24 2007/11/06 21:20:32 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/csv.lisp,v $
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -17,6 +17,7 @@
 (in-package :cllib)
 
 (export '(csv-print-vector csv-parse-string csv-read-file with-csv csv-names
+          class-csv-header class-csv-print
           *csv-separator* *csv-whitespace* *csv-progress* *csv-progress-1*))
 
 (defcustom *csv-separator* character #\,
@@ -162,6 +163,15 @@ Return 3 values:
                                        :junk-allowed junk-allowed)
                       (coll vec))))
             len file-size names)))
+
+;;; defstruct i/o
+(defun class-csv-header (class &key (out *standard-output*))
+  "Print the CSV header for the class to the stream."
+  (format out "#~{~A~^,~}~%" (port:class-slot-list class)))
+
+(defun class-csv-print (obj &key (out *standard-output*))
+  (format out "~{~A~^,~}~%" (mapcar (lambda (slot) (slot-value obj slot))
+                                    (port:class-slot-list obj))))
 
 (provide :cllib-csv)
 ;;; file csv.lisp ends here

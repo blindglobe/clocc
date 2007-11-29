@@ -1,12 +1,12 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;; $Id: chunk.lisp,v 2.7 2006/12/01 17:46:16 airfoyle Exp $
+;;; $Id: chunk.lisp,v 2.8 2007/11/29 14:51:39 airfoyle Exp $
 
 ;;; This file depends on nothing but the facilities introduced
 ;;; in base.lisp
 
 (eval-when (:compile-toplevel :load-toplevel :execute :slurp-toplevel)
-   (export '(Chunk Or-chunk Form-chunk Chunk-basis derive print-innards
+   (export '(Chunk Or-chunk Form-chunk Chunk-basis derive
 	     find-chunk chunk-with-name chunk-destroy
 	     chunk-request-mgt chunk-terminate-mgt
 	     chunk-up-to-date chunk-declare-updated
@@ -157,11 +157,6 @@
 	     :initarg :default
 	     :initform false)))
 ;;;;; >>>> Or-chunk
-
-(defgeneric print-innards (x srm)
-  (:method ((x t) srm)
-     (declare (ignore srm))
-     (values)))
 
 (defmethod print-object ((c Chunk) srm)
    (print-unreadable-object (c srm)

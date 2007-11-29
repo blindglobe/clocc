@@ -1,13 +1,13 @@
 ;-*- Mode: Common-lisp; Package: ytools; Readtable: ytools; -*-
 (in-package :ytools)
-;;;$Id: util.lisp,v 2.4 2006/12/01 17:46:16 airfoyle Exp $
+;;;$Id: util.lisp,v 2.5 2007/11/29 14:51:39 airfoyle Exp $
 
 ;;; Utilities beyond base.lisp, which this depends on.
 
 (eval-when (:load-toplevel)
    (export '(make-Printable printable-as-string eof* funktion
 	     debuggable debuggability* begins-with ends-with
-             dir-strings-concat)))
+             dir-strings-concat print-innards)))
 
 ;;; Return the printed representation of 'x', snipped
 (defun printed-snip (x n)
@@ -174,4 +174,11 @@
 
 (defun gen-var (sym)
    (build-symbol (:package false) (< sym) - (++ symno*)))
+
+;;; Handy abstraction for printing stuff between the #<...> of
+;;; an unreadable object.--
+(defgeneric print-innards (x srm)
+  (:method ((x t) srm)
+     (declare (ignore srm))
+     (values)))
 

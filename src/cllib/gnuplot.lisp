@@ -1,10 +1,10 @@
 ;;; Gnuplot (http://www.gnuplot.info/) interface
 ;;;
-;;; Copyright (C) 1997-2007 by Sam Steingold.
+;;; Copyright (C) 1997-2008 by Sam Steingold.
 ;;; This is Free Software, covered by the GNU GPL (v2)
 ;;; See http://www.gnu.org/copyleft/gpl.html
 ;;;
-;;; $Id: gnuplot.lisp,v 3.44 2007/09/21 16:49:39 sds Exp $
+;;; $Id: gnuplot.lisp,v 3.45 2008/01/30 20:06:49 sds Exp $
 ;;; $Source: /cvsroot/clocc/clocc/src/cllib/gnuplot.lisp,v $
 
 ;;; the main entry point is WITH-PLOT-STREAM
@@ -499,25 +499,26 @@ EMA is the list of parameters for Exponential Moving Averages."
 ;;;###autoload
 (defun plot-lists (lss &rest opts &key (key #'value) (title "List Plot") rel
                    (xlabel "nums") (ylabel (if rel "relative value" "value"))
-                   (depth (1- (reduce #'min lss :key #'length)))
+                   xlogscale (depth (1- (reduce #'min lss :key #'length)))
                    (data-style (plot-data-style depth)) &allow-other-keys)
   "Plot the given lists of numbers.
 Most of the keys are the gnuplot options (see `with-plot-stream' for details.)
 LSS is a list of lists, car of each list is the title, cdr is the numbers."
   (declare (list lss) (type fixnum depth))
-  (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
-                     :data-style data-style :xb 0 :xe (1- depth)
-                     (remove-plist opts :depth :rel :key))
-    (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car lss))
-    (let* (bv (val (if rel
-                       (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
-                       (lambda (ll) (if ll (funcall key (car ll)) bv)))))
-      (dolist (ls lss)
-        (setq bv (funcall key (cadr ls)))
-        (do ((ll (cdr ls) (cdr ll)) (ix 0 (1+ ix)))
-            ((= ix depth) (format str "e~%"))
-          (declare (fixnum ix))
-          (format str "~f~20t~f~%" ix (funcall val ll)))))))
+  (let* ((xb (if xlogscale 1 0)) (xe (- depth xb)))
+    (with-plot-stream (str :xlabel xlabel :ylabel ylabel :title title
+                       :data-style data-style :xb xb :xe xe
+                       (remove-plist opts :depth :rel :key))
+      (format str "plot~{ '-' using 1:2 title ~s~^,~}~%" (mapcar #'car lss))
+      (let* (bv (val (if rel
+                         (lambda (ll) (if ll (/ (funcall key (car ll)) bv) 1))
+                         (lambda (ll) (if ll (funcall key (car ll)) bv)))))
+        (dolist (ls lss)
+          (setq bv (funcall key (cadr ls)))
+          (do ((ll (cdr ls) (cdr ll)) (ix xb (1+ ix)))
+              ((= ix xe) (format str "e~%"))
+            (declare (fixnum ix))
+            (format str "~f~20t~f~%" ix (funcall val ll))))))))
 
 ;;;###autoload
 (defun plot-lists-arg (lss &rest opts &key (key #'identity)

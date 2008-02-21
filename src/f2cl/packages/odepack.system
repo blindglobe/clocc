@@ -158,16 +158,32 @@
      (:file "xsetf")
      (:file "xsetun")))
 
-;; This seems to work.
+
+;;; Demo programs
+;;;
+;;; Note: Each of the demos should probably be run in a separate Lisp
+;;; instance because some of the demos define functions with the same
+;;; name but different parameters.  This will really confuse the
+;;; generated code, because the generated code uses knowledge of the
+;;; function to generate the call.
+
+;; (opkdemo1)
+;;
+;; Output matches Fortran code.
 (mk:defsystem odedemo-lsode
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo1")
+    :binary-pathname (translate-logical-pathname "odepack:demo1")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo1")))
+    ((:file "opkdemo1")
+     (:file "f1")
+     (:file "jac1")
+     (:file "f2")
+     (:file "jac2")
+     (:file "edit2")))
 
 
 ;; This won't work because opkdemo2 equivalences two arrays together.
@@ -182,38 +198,67 @@
     :components
     ((:file "opkdemo2")))
 
-;; This seems to work.
+;; (opkdemo3)
+;;
+;; Output matches Fortran code.
 (mk:defsystem odedemo-lsoda
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo3")
+    :binary-pathname (translate-logical-pathname "odepack:demo3")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo3")))
+    ((:file "opkdemo3")
+     (:file "f1")
+     (:file "jac1")
+     (:file "f2")
+     (:file "jac2")
+     (:file "edit2")))
 
-;; This seems to work.
+;; (opkdemo4)
+;;
+;; Output matches Fortran code.
 (mk:defsystem odedemo-lsodar
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo4")
+    :binary-pathname (translate-logical-pathname "odepack:demo4")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo4")))
+    ((:file "opkdemo4")
+     (:file "f1")
+     (:file "gr1")
+     (:file "f2")
+     (:file "jac2")
+     (:file "gr2")))
 
-;; This seems to work.
+;; (opkdemo5)
+;;
+;; This seems to work, and the output matches the Fortran output, but
+;; the output appears to be truncated.  The output stops when printing
+;; the solution with mf = 24.  I don't know why.
+
 (mk:defsystem odedemo-lsodpk
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo5")
+    :binary-pathname (translate-logical-pathname "odepack:demo5")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo5")))
+    ((:file "opkdemo5")
+     (:file "setpar")
+     (:file "gset")
+     (:file "cinit")
+     (:file "outweb")
+     (:file "fweb")
+     (:file "webr")
+     (:file "jacbg")
+     (:file "fbg")
+     (:file "solsbg")
+     (:file "gs")))
 
 ;; This seems to work.
 (mk:defsystem odedemo-lsodkr
@@ -227,27 +272,51 @@
     ((:file "opkdemo6")))
 
 
-;; Might not be right?
+;; This runs and the expected output seems ok, but there just isn't
+;; enough output compared to the Fortran version.
 (mk:defsystem odedemo-lsodi
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo7")
+    :binary-pathname (translate-logical-pathname "odepack:demo7")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo7")))
+    ((:file "opkdemo7"
+	    :depends-on ("elkup"))
+     (:file "gfun")
+     (:file "res"
+	    :depends-on ("gfun"))
+     (:file "addabd")
+     (:file "addafl")
+     (:file "jacbd")
+     (:file "jacfl")
+     (:file "elkup")))
 
 ;; This seems to work
 (mk:defsystem odedemo-lsoibt
-    :source-pathname (translate-logical-pathname "odepack:")
-    :binary-pathname (translate-logical-pathname "odepack:lib")
+    :source-pathname (translate-logical-pathname "odepack:demo8")
+    :binary-pathname (translate-logical-pathname "odepack:demo8")
     :source-extension "f"
     :language :f2cl
     :compiler-options (:common-as-array t :declare-common t)
     :depends-on ("odepack")
     :components
-    ((:file "opkdemo8")))
+    ((:file "opkdemo8"
+	    :depends-on ("setic"
+			 "edit"
+			 "maxerr"))
+     (:file "addabt")
+     (:file "edit")
+     (:file "gfun")
+     (:file "jacbt")
+     (:file "maxerr")
+     (:file "res"
+	    :depends-on ("subav"
+			 "gfun"))
+     (:file "setic")
+     (:file "subav")
+     ))
 
 ;; Doesn't work.  DIPREPI takes a double precision array and slices it
 ;; up and passes it to DPREPI which wants integer arrays.  That ain't

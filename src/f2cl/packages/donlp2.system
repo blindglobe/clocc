@@ -311,6 +311,64 @@
 	     (:file "maratos"
 		    :compiler-options (:declare-common t))))))
 
+;; Must call (/blockdata/) before running (donlp2).  Output in
+;; PAVIANI2.*
+;;
+;; .Works.
+(mk:defsystem ex-paviani2
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "paviani2"
+		    :compiler-options (:declare-common t))))))
+
+;; F2cl doesn't understand
+;;
+;;       DATA (A(I),A(I+7),I=1,7)/
+;;
+(mk:defsystem ex-tp383mod
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "tp383mod"
+		    :compiler-options (:declare-common t))))))
+
+;; Works.  Output in UNDEFEXA.*.
+(mk:defsystem ex-undefexa
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "undefexa"
+		    :compiler-options (:declare-common t))))))
+
+;; Works.  Output in UNDEFEXA.*.
+(mk:defsystem ex-weaponas
+  :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
+  :depends-on ("donlp2")
+  :components
+  ((:module donlp2
+	    :source-extension "f"
+	    :language :f2cl
+	    :components
+	    (
+	     (:file "weaponas"
+		    :compiler-options (:declare-common t))))))
+
 (mk:defsystem donlp2
   :source-pathname (make-pathname :directory (pathname-directory *load-pathname*))
   :components

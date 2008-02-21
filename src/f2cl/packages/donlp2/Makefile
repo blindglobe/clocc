@@ -109,6 +109,18 @@ hs109: donlp2main.o hs109.o libdonlp2.a
 maratos: donlp2main.o maratos.o libdonlp2.a
 	$(F77) -o $@ $^
 
+paviani2: donlp2main.o paviani2.o libdonlp2.a
+	$(F77) -o $@ $^
+
+tp383mod: donlp2main.o tp383mod.o libdonlp2.a
+	$(F77) -o $@ $^
+
+undefexa: donlp2main.o undefexa.o libdonlp2.a
+	$(F77) -o $@ $^
+
+weaponas: donlp2main.o weaponas.o libdonlp2.a
+	$(F77) -o $@ $^
+
 libdonlp2.a : $(DONLP2_SRC:.f=.o)
 	ar r $@ $^
 

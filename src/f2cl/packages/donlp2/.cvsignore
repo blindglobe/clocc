@@ -34,7 +34,9 @@ irreg1
 irreg1.lisp
 irreg2
 irreg2.lisp
+maratos
 maratos.lisp
+net1
 net1.lisp
 o8adcd.lisp
 o8bfgs.lisp
@@ -72,5 +74,9 @@ o8unim.lisp
 o8upd.lisp
 o8vecn.lisp
 o8zup.lisp
+paviani2
 solchk.lisp
+tp383mod
+undefexa
 user_eval.lisp
+weaponas

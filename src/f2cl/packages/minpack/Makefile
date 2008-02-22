@@ -30,13 +30,13 @@ tst-lmdif : tst-lmdif.o  $(MINPACK:.f=.o)
 	$(F77) -o $@ $^
 
 run-lmdif : tst-lmdif
-	tst-lmdif < lmdif-input.dat
+	tst-lmdif < lmdif-input.dat | tee lmdif-ref.txt
 
 run-lmder : tst-lmder
-	tst-lmder < lmdif-input.dat
+	tst-lmder < lmdif-input.dat | tee lmder-ref.txt
 
 run-hybrd : tst-hybrd
-	tst-hybrd < lmdif-input.dat
+	tst-hybrd < lmdif-input.dat | tee hybrd-ref.txt
 
 clean :
 	rm -f *.o tst-hybrd tst-lmder tst-lmdif

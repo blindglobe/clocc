@@ -21,7 +21,7 @@
 	      *functions-used*)))
 
 (defparameter *f2cl2-version*
-  "$Date: 2008/02/22 22:13:18 $")
+  "$Id: f2cl2.l,v 1.37 2008/02/22 22:19:33 rtoy Rel $")
 
 ;-----------------------------------------------------------------------------
 ; subst-splice substitutes the list b for the atom a in the list c via splicing
@@ -470,8 +470,11 @@ definition.| l) ))
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl2.l
 ;;;
-;;; $Id: f2cl2.l,v 1.36 2008/02/22 22:13:18 rtoy Exp $
+;;; $Id: f2cl2.l,v 1.37 2008/02/22 22:19:33 rtoy Rel $
 ;;; $Log: f2cl2.l,v $
+;;; Revision 1.37  2008/02/22 22:19:33  rtoy
+;;; Use RCS Id as version.
+;;;
 ;;; Revision 1.36  2008/02/22 22:13:18  rtoy
 ;;; o Add function F2CL-VERSION to get version info.
 ;;; o Add version string to each of the files so F2CL-VERSION can get the

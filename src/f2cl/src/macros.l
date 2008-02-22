@@ -6,7 +6,7 @@
 (in-package :f2cl-lib)
 
 (defparameter *f2cl-macros-version*
-  "$Date: 2008/02/22 22:13:18 $")
+  "$Id: macros.l,v 1.96 2008/02/22 22:19:34 rtoy Exp $")
 
 ;; macros:
 ;;	rexpt
@@ -1527,8 +1527,11 @@ causing all pending operations to be flushed"
 ;;;-------------------------------------------------------------------------
 ;;; end of macros.l
 ;;;
-;;; $Id: macros.l,v 1.95 2008/02/22 22:13:18 rtoy Exp $
+;;; $Id: macros.l,v 1.96 2008/02/22 22:19:34 rtoy Exp $
 ;;; $Log: macros.l,v $
+;;; Revision 1.96  2008/02/22 22:19:34  rtoy
+;;; Use RCS Id as version.
+;;;
 ;;; Revision 1.95  2008/02/22 22:13:18  rtoy
 ;;; o Add function F2CL-VERSION to get version info.
 ;;; o Add version string to each of the files so F2CL-VERSION can get the

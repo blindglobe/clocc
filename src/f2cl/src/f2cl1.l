@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.190 2008/02/22 22:17:32 rtoy Exp $"
+  "$Id: f2cl1.l,v 1.191 2008/02/22 22:19:33 rtoy Exp $")
 
 (defun f2cl-version ()
   (list *f2cl1-version*
@@ -2954,8 +2954,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.190 2008/02/22 22:17:32 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.191 2008/02/22 22:19:33 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.191  2008/02/22 22:19:33  rtoy
+;;; Use RCS Id as version.
+;;;
 ;;; Revision 1.190  2008/02/22 22:17:32  rtoy
 ;;; Use Id as version.
 ;;;

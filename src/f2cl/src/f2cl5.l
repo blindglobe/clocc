@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Date: 2008/02/22 22:13:18 $")
+  "$Id: f2cl5.l,v 1.180 2008/02/22 22:19:34 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -3734,8 +3734,11 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.179 2008/02/22 22:13:18 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.180 2008/02/22 22:19:34 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.180  2008/02/22 22:19:34  rtoy
+;;; Use RCS Id as version.
+;;;
 ;;; Revision 1.179  2008/02/22 22:13:18  rtoy
 ;;; o Add function F2CL-VERSION to get version info.
 ;;; o Add version string to each of the files so F2CL-VERSION can get the

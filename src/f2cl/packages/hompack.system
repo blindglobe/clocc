@@ -3,8 +3,13 @@
 ;;; This is a simple defsystem for converting some HOMPACK Fortran
 ;;; routines to Lisp and compiling the result.
 ;;;
-;;; $Id: hompack.system,v 1.7 2006/11/21 18:28:40 rtoy Exp $
+;;; $Id: hompack.system,v 1.8 2008/02/22 18:57:05 rtoy Exp $
 ;;; $Log: hompack.system,v $
+;;; Revision 1.8  2008/02/22 18:57:05  rtoy
+;;; o Add system for hompack-package to build the HOMPACK package.
+;;; o Add compiler option to make generated code go in the HOMPACK
+;;;   package.
+;;;
 ;;; Revision 1.7  2006/11/21 18:28:40  rtoy
 ;;; o Use *load-truename*
 ;;; o Depend on blas-hompack instead of blas so we don't load up all of
@@ -38,13 +43,21 @@
     :compiler #'f2cl:f2cl-compile
     :source-extension "f")
 
+(mk:defsystem hompack-package
+    :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
+      (merge-pathnames (make-pathname :directory '(:relative "hompack"))
+		       (make-pathname :directory (pathname-directory *load-pathname*)))
+    :components
+    ((:file "hompack-package")))
+
 (mk:defsystem hompack
     :source-pathname ;;(translate-logical-pathname "clocc:src;f2cl;packages;hompack;")
       (merge-pathnames (make-pathname :directory '(:relative "hompack"))
 		       (make-pathname :directory (pathname-directory *load-pathname*)))
     :source-extension "f"
     :language :f2cl
-    :depends-on ("blas-hompack")
+    :depends-on ("hompack-package" "blas-hompack")
+    :compiler-options (:package "HOMPACK")
     :components
     (
      ;; The following are :compile-only here because HOMPACK only
@@ -123,7 +136,8 @@
     :depends-on ("hompack")
     :components
     (
-     (:file "mainf" :compiler-options (:declare-common t))
+     (:file "mainf" :compiler-options (:declare-common t
+				       :package "HOMPACK"))
      ))
 
 (mk:defsystem hompack-test-mainp

@@ -70,11 +70,20 @@ BLAS = \
 mainf : mainf.o d1mach.o libhompack.a libblas.a 
 	$(F77) -o mainf $^
 
+ref-mainf.txt : mainf
+	mainf | tee ref-mainf.txt
+
 mainp : mainp.o d1mach.o libhompack.a libblas.a 
 	$(F77) -o mainp $^
 
+ref-mainp.txt : mainp
+	mainp | tee ref-mainp.txt
+
 mains : mains.o d1mach.o libhompack.a libblas.a 
 	$(F77) -o mains $^
+
+ref-mains.txt : mains
+	mains | tee ref-mains.txt
 
 d1mach.o : ../toms/717/d1mach.f
 	$(F77) -c -o d1mach.o $^

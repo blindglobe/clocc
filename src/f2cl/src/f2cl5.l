@@ -50,7 +50,7 @@
 (in-package :f2cl)
 
 (defparameter *f2cl5-version*
-  "$Id: f2cl5.l,v 1.180 2008/02/22 22:19:34 rtoy Exp $")
+  "$Id: f2cl5.l,v 1.181 2008/02/22 22:52:33 rtoy Exp $")
 
 ;; functions for setting up varaible declarations and initialisations
 (eval-when (compile load eval)
@@ -101,7 +101,7 @@
 		;; Function calls get turned into a MULTIPLE-VALUE-BIND, so
 		;; the only possible place for variables is the arg list for
 		;; the function.
-		(mapc #'check_new_vbles (cddr (third exprs))))
+		(mapc #'check_new_vbles (cdr (third exprs))))
 	       ((eq (first exprs) 'array-slice)
 		;; The only place for variables is the array name or
 		;; the indices
@@ -3734,8 +3734,12 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.180 2008/02/22 22:19:34 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.181 2008/02/22 22:52:33 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.181  2008/02/22 22:52:33  rtoy
+;;; Oops.  check_new_vbles was skipping over the first arg in a function
+;;; call.
+;;;
 ;;; Revision 1.180  2008/02/22 22:19:34  rtoy
 ;;; Use RCS Id as version.
 ;;;

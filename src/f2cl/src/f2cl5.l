@@ -1038,8 +1038,11 @@
 			 (setf 1d-array-p nil))))))
 	       (values (nreverse inits) 1d-array-p)))
 	   (col-major-index (indices limits)
-	     ;; Compute the column major index given the set of indices and bounds.
-	     ;; Given indicies (i1 i2 ... in) and limits ((l1 h1) (l2 h2) ... (ln hn)), the colum-major index as used by Fortran would be
+	     ;; Compute the column major index given the set of
+	     ;; indices and bounds.  Given indicies (i1 i2 ... in) and
+	     ;; limits ((l1 h1) (l2 h2) ... (ln hn)), the colum-major
+	     ;; index as used by Fortran would be
+	     ;;
 	     ;; (i1 - l1) +
 	     ;;   (h1-l1+1)*((i2 - l2) +
 	     ;;                (h2-l2+1)*((i3 - l3) +
@@ -1060,64 +1063,99 @@
 	  (array-element-inits '()))
       ;; First, save all non-array data initializers.
       (dolist (item data)
+	;;(format t "data item = ~S~%" item)
 	(if (eq 'fset (first item))
 	    (push (cdr item) array-element-inits)
 	    (push item new-data)))
+      #+nil
+      (progn
+	(format t "new-data = ~A~%" new-data)
+	(format t "array-element-inits = ~A~%" array-element-inits))
       ;; Now look through all the saved vars
       (dolist (item saves)
+	;;(format t "save item = ~S~%" item)
 	(cond ((and (listp (second item))
 		    (eq 'make-array (first (second item))))
 	       ;; Got an array.  Look for initializers in DATA.
 	       (let ((type (second (fourth (second item))))
 		     (inits (find-inits (first item))))
-		 (cond ((and inits (= (length inits) (second (second item))))
-			;; Got enough initializers.
-			(let ((init (make-array (length inits)
-						:element-type type
-						:initial-element
-						(coerce 0 type))))
-			  ;; Gather up the values into an array to be
-			  ;; used for initializing the variable.  The
-			  ;; array is initialized to zero (of the
-			  ;; appropriate type).  If the original code
-			  ;; didn't initialize it, then it didn't
-			  ;; care.
-			  (dolist (i inits)
-			    (destructuring-bind (fset (fref var indices limits) val)
-				i
-			      (declare (ignore fset fref var))
-			      (setf (aref init (col-major-index indices limits))
-				    val)))
-			  (push (list (car item)
-				      (append (copy-list (second item))
-					      `(:initial-contents ',(coerce init 'list))))
-				new-saves))
-			;; Remove these from array-element-inits
-			(let ((array-name (first item)))
-			  (setf array-element-inits
-				(remove array-name
-					array-element-inits
-					:key #'cadar))))
-		       (t
-			;; Didn't match.  Save the item, and whatever
-			;; initializers we found that matched the name
-			;; but not the dimension.
-			(push item new-saves)
-			(dolist (i inits)
-			  (push i new-data))))))
+		 #+nil
+		 (progn
+		   (format t "~D inits for ~S: ~S~%" (length inits) (first item) inits)
+		   (format t "dims = ~S: ~A~%" (second (second item))
+			   (second (second item))))
+		 (let ((init (make-array (second (second item))
+					 :element-type type
+					 :initial-element
+					 (coerce 0 type))))
+		   ;; Gather up the values into an array to be
+		   ;; used for initializing the variable.  The
+		   ;; array is initialized to zero (of the
+		   ;; appropriate type).  If the original code
+		   ;; didn't initialize it, then it didn't
+		   ;; care.
+		   (dolist (i inits)
+		     (destructuring-bind (fset (fref var indices limits) val)
+			 i
+		       (declare (ignore fset fref var))
+		       (setf (aref init (col-major-index indices limits))
+			     val)))
+		   (push (list (car item)
+			       (append (copy-list (second item))
+				       `(:initial-contents ',(coerce init 'list))))
+			 new-saves))
+		 ;; Remove these from array-element-inits
+		 (let ((array-name (first item)))
+		   (setf array-element-inits
+			 (remove array-name
+				 array-element-inits
+				 :key #'cadar)))))
 	      ((and (listp (second item))
 		    (eq 'f2cl-init-string (first (second item))))
 	       ;; Initializing an array of strings.  We don't do
 	       ;; anything special right now.
-	       (push item new-saves)
-	       (dolist (i (find-inits (first item)))
-		 (push i new-data)))
+	       (let ((inits (find-inits (first item))))
+		 #+nil
+		 (progn
+		   (format t "inits for ~S: ~S~%" (first item) inits)
+		   (format t "dims = ~S: ~A~%" (second (second item))
+			   (reduce #'* (second (second item)))))
+		 (let ((init (make-array (length inits)
+					 :initial-element
+					 (make-string (car (third (second item)))))))
+		   ;; Gather up the values into an array to be
+		   ;; used for initializing the variable.  The
+		   ;; array is initialized to zero (of the
+		   ;; appropriate type).  If the original code
+		   ;; didn't initialize it, then it didn't
+		   ;; care.
+		   (dolist (i inits)
+		     (destructuring-bind (fset (fref var indices limits) val)
+			 i
+		       (declare (ignore fset fref var))
+		       (setf (aref init (col-major-index indices limits))
+			     val)))
+		   (push (list (car item)
+			       (append (butlast (copy-list (second item)))
+				       (list (coerce init 'list))))
+			 new-saves))
+		 ;; Remove these from array-element-inits
+		 (let ((array-name (first item)))
+		   (setf array-element-inits
+			 (remove array-name
+				 array-element-inits
+				 :key #'cadar)))))
 	      (t
 	       ;; Not an array
 	       (push item new-saves))))
-      (values (append (nreverse new-saves)
-		      (nreverse array-element-inits))
-	      (nreverse new-data)))))
+      (cond (array-element-inits
+	     (warn "Bug in f2cl:  ~D array element initializers still left:~% ~S~%Merging not done."
+		   (length array-element-inits) array-element-inits)
+	     (values saves data))
+	    (t
+	     (values (append (nreverse new-saves)
+			     (nreverse array-element-inits))
+		     (nreverse new-data)))))))
 
 (defun verify-and-generate-equivalences ()
   ;; Look over equivalences and see if we can handle them.  Right now,
@@ -1526,8 +1564,10 @@
 
      ;; Clean up data inits: handle the fset inits and the
      ;; data-implied-do inits.
-
-     ;;(format t "*data-init* before: ~S~%" *data-init*)
+     #+nil
+     (progn
+       (format t "save-inits*: ~S~%" save-inits)
+       (format t "*data-init* before: ~S~%" *data-init*))
      (setq *data-init*
 	   (mapcar #'(lambda (init)
 		       (flet ((get-dims (var)
@@ -1997,7 +2037,6 @@
 	  )
 	)
        (t
-
 	;; Return 3 pieces: Any proclamations for special variables, the
 	;; declarations for the special variables, and, finally, the
 	;; function itself.
@@ -2036,6 +2075,7 @@
 				  ,@code-key-params-decls
 				  ,save-stuff)
 				save-stuff)))
+	  ;;(format t "save-stuff = ~A~%" save-stuff)
 	  ;;(format t "param-stuff = ~A~%" param-stuff)
 	  (return 
 	    (values common-blocks
@@ -2092,7 +2132,7 @@
       (cond
 	;;check for vble with two declarations i.e. an array
 	((setf decl1 (vble-declared-twice-p vble *explicit_vble_decls*))
-	 ;;#+nil
+	 #+nil
 	 (progn
 	   (format t "declared twice~%")
 	   (format t "vble-decl-done = ~S~%" *vble-declaration-done*))
@@ -2120,7 +2160,10 @@
 	 )
 	;; check for declared variable
 	((member vble *declared_vbles*)
-	 ;;(format t "declared var:  ~A = ~A~%" vble init-val)
+	 #+nil
+	 (progn
+	   (format t "make-init: declared var:  ~A = ~A~%" vble init-val)
+	   (format t "explicit_vble_decls = ~A~%" *explicit_vble_decls*))
 	 (do ((type-clauses *explicit_vble_decls* (cdr type-clauses))
 	      (decl nil))
 	     ((null type-clauses) )
@@ -2136,8 +2179,10 @@
 		      (return `(,vble_name ,
 				(make-char-init (car decl) type init-val)))))
 		 ((eq type 'array)
-		  ;;(format t "array type-clauses = ~S~%" (cdar type-clauses))
-		  ;;(format t "array decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
+		  #+nil
+		  (progn
+		    (format t "array type-clauses = ~S~%" (cdar type-clauses))
+		    (format t "array decl = ~S~%" (member vble (cdar type-clauses) :key #'car)))
 		  (if (setq decl (member vble (cdar type-clauses) :key #'car))
 		      (return 
 			`(,vble_name 
@@ -2162,8 +2207,10 @@
 				`(,vble_name ,init)))
 			    `(,vble_name nil)))))
 		 (t
- 		  ;;(format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
- 		  ;;(format t "default init-val = ~S~%" init-val)
+		  #+nil
+		  (progn
+		    (format t "default decl = ~S~%" (member vble (cdar type-clauses) :key #'car))
+		    (format t "default init-val = ~S~%" init-val))
 		  #+nil
 		  (progn
 		    (format t "vble = ~S~%" vble)
@@ -3684,8 +3731,18 @@
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl5.l
 ;;;
-;;; $Id: f2cl5.l,v 1.177 2007/10/02 14:44:23 rtoy Exp $
+;;; $Id: f2cl5.l,v 1.178 2008/02/22 16:03:42 rtoy Exp $
 ;;; $Log: f2cl5.l,v $
+;;; Revision 1.178  2008/02/22 16:03:42  rtoy
+;;; Fix MERGE-DATA-AND-SAVE-INITS.  This was causing f2cl to miscompile
+;;; dparck.f in TOMS 717.
+;;;
+;;; o Initialize the array even if we don't have enough initializers for
+;;;   the full array.  Should be ok.  The missing elements are initialized
+;;;   to zero (for numbers)
+;;; o Handle string initializers too.  Missing elements are initialized to
+;;;   a string of spaces.
+;;;
 ;;; Revision 1.177  2007/10/02 14:44:23  rtoy
 ;;; MERGE-DATA-AND-SAVE-INITS was mishandling initializers to arrays.  If
 ;;; the initializers didn't initialize all of the elements of the arrays,

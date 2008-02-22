@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Date: 2008/02/22 22:13:18 $")
+  "$RCSfile: f2cl1.l,v $ $Date: 2008/02/22 22:16:36 $")
 
 (defun f2cl-version ()
   (list *f2cl1-version*
@@ -2954,8 +2954,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.188 2008/02/22 22:13:18 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.189 2008/02/22 22:16:36 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.189  2008/02/22 22:16:36  rtoy
+;;; Add RCSfile
+;;;
 ;;; Revision 1.188  2008/02/22 22:13:18  rtoy
 ;;; o Add function F2CL-VERSION to get version info.
 ;;; o Add version string to each of the files so F2CL-VERSION can get the

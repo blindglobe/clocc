@@ -17,7 +17,7 @@
   "Use (f2cl-version) instead")
 
 (defparameter *f2cl1-version*
-  "$Id: f2cl1.l,v 1.191 2008/02/22 22:19:33 rtoy Exp $")
+  "$Id: f2cl1.l,v 1.192 2008/02/22 22:27:37 rtoy Exp $")
 
 (defun f2cl-version ()
   (list *f2cl1-version*
@@ -544,9 +544,11 @@ FILENAME                 File containing Fortran code
 	    ;; Print a header to the file indicating when this was
 	    ;; compiled and the version of f2cl used to compile it.
 	    ;; Include the options used to compile the file.
-	    (format outport ";;; Compiled by f2cl version ~A~%"
-		    *f2cl-version*)
-	    (format outport ";;; Using Lisp ~A ~A~%"
+	    (let ((version-info (f2cl-version)))
+	      (pprint-logical-block (outport version-info :per-line-prefix ";;; ")
+		(format outport "Compiled by f2cl version:~%")
+		(write version-info :stream outport)))
+	    (format outport "~%;;; Using Lisp ~A ~A~%"
 		    (lisp-implementation-type) (lisp-implementation-version))
 	    (let ((*print-case* :downcase))
 	      ;; Insert in-package and declaim, if needed
@@ -2954,8 +2956,11 @@ loop2
 ;;;-----------------------------------------------------------------------------
 ;;; end of f2cl1.l
 ;;;
-;;; $Id: f2cl1.l,v 1.191 2008/02/22 22:19:33 rtoy Exp $
+;;; $Id: f2cl1.l,v 1.192 2008/02/22 22:27:37 rtoy Exp $
 ;;; $Log: f2cl1.l,v $
+;;; Revision 1.192  2008/02/22 22:27:37  rtoy
+;;; Print out f2cl-version info correctly using (f2cl-version).
+;;;
 ;;; Revision 1.191  2008/02/22 22:19:33  rtoy
 ;;; Use RCS Id as version.
 ;;;
